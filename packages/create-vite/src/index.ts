@@ -277,7 +277,7 @@ const FRAMEWORKS: Framework[] = [
         name: 'marko-run',
         display: 'Marko Run ↗',
         color: magenta,
-        customCommand: 'npm create marko@latest -- --name TARGET_DIR',
+        customCommand: 'npm create -- marko@latest --name TARGET_DIR',
       },
     ],
   },
