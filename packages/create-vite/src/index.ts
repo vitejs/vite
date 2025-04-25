@@ -154,7 +154,7 @@ const FRAMEWORKS: Framework[] = [
         name: 'redwoodsdk-standard',
         display: 'RedwoodSDK ↗',
         color: red,
-        customCommand: 'npx degit redwoodjs/sdk/starters/standard TARGET_DIR',
+        customCommand: 'npm exec degit redwoodjs/sdk/starters/standard TARGET_DIR',
       },
     ],
   },
