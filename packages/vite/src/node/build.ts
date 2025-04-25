@@ -7,8 +7,10 @@ import type {
   InternalModuleFormat,
   LogLevel,
   LogOrStringHandler,
+  MinimalPluginContext,
   ModuleFormat,
   OutputOptions,
+  PluginContext,
   RollupBuild,
   RollupError,
   RollupLog,
@@ -75,7 +77,7 @@ import {
   BaseEnvironment,
   getDefaultResolvedEnvironmentOptions,
 } from './baseEnvironment'
-import type { MinimalPluginContext, Plugin, PluginContext } from './plugin'
+import type { Plugin } from './plugin'
 import type { RollupPluginHooks } from './typeUtils'
 import {
   createFilterForTransform,
