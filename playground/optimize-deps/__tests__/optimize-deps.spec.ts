@@ -352,3 +352,9 @@ test('external package name with asset extension', async () => {
     page.textContent('.dep-with-asset-ext-prebundled'),
   ).toBe(String(isServe))
 })
+
+test('dependency with external sub-dependency', async () => {
+  await expectWithRetry(() =>
+    page.textContent('.dep-cjs-with-external-dep'),
+  ).toBe('ok')
+})
