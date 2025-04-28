@@ -150,6 +150,13 @@ const FRAMEWORKS: Framework[] = [
         customCommand:
           'npm create -- tsrouter-app@latest TARGET_DIR --framework react --interactive',
       },
+      {
+        name: 'redwoodsdk-standard',
+        display: 'RedwoodSDK ↗',
+        color: red,
+        customCommand:
+          'npm exec degit redwoodjs/sdk/starters/standard TARGET_DIR',
+      },
     ],
   },
   {
