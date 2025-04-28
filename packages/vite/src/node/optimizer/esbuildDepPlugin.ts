@@ -339,7 +339,7 @@ export function esbuildCjsExternalPlugin(
           contents:
             `import * as m from ${JSON.stringify(
               nonFacadePrefix + args.path,
-            )};` + `module.exports = m;`,
+            )};` + `module.exports = { ...m };`,
         }),
       )
     },

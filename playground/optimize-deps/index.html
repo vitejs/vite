@@ -305,3 +305,13 @@
   import * as sub from '@vitejs/test-dep-source-map-no-sources/sub.js'
   import * as all from '@vitejs/test-dep-source-map-no-sources/all.js'
 </script>
+
+<h2>Pre-bundle dependency with external sub-dependency</h2>
+<div>
+  require('some-external-sub-dependency') returns a plain object:
+  <span class="dep-cjs-with-external-dep">???</span>
+</div>
+<script type="module">
+  import * as optimized from '@vitejs/test-dep-cjs-with-external-dep'
+  text('.dep-cjs-with-external-dep', optimized.result)
+</script>
