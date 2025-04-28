@@ -305,8 +305,8 @@ export function assetPlugin(config: ResolvedConfig): Plugin {
 
 function addQueryToRegex(input: RegExp) {
   return new RegExp(
-    // replace `$` with `\?.*?$` (ignore `\$`)
-    input.source.replace(/(?<!\\)\$/g, '\\?.*?$'),
+    // replace `$` with `(?:\?.*)?$` (ignore `\$`)
+    input.source.replace(/(?<!\\)\$/g, '(?:\\?.*)?$'),
     input.flags,
   )
 }
