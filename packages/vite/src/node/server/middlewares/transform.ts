@@ -39,7 +39,7 @@ import { ERR_CLOSED_SERVER } from '../pluginContainer'
 import { getDepsOptimizer } from '../../optimizer'
 import { cleanUrl, unwrapId, withTrailingSlash } from '../../../shared/utils'
 import { NULL_BYTE_PLACEHOLDER } from '../../../shared/constants'
-import { ensureServingAccess } from './static'
+import { checkServingAccess, respondWithAccessDenied } from './static'
 
 const debugCache = createDebugger('vite:cache')
 
@@ -58,13 +58,24 @@ function deniedServingAccessForTransform(
   res: ServerResponse,
   next: Connect.NextFunction,
 ) {
-  return (
-    (rawRE.test(url) ||
-      urlRE.test(url) ||
-      inlineRE.test(url) ||
-      svgRE.test(url)) &&
-    !ensureServingAccess(url, server, res, next)
-  )
+  if (
+    rawRE.test(url) ||
+    urlRE.test(url) ||
+    inlineRE.test(url) ||
+    svgRE.test(url)
+  ) {
+    const servingAccessResult = checkServingAccess(url, server)
+    if (servingAccessResult === 'denied') {
+      respondWithAccessDenied(url, server, res)
+      return true
+    }
+    if (servingAccessResult === 'fallback') {
+      next()
+      return true
+    }
+    servingAccessResult satisfies 'allowed'
+  }
+  return false
 }
 
 /**
