@@ -1,3 +1,9 @@
+## <small>6.2.7 (2025-04-30)</small>
+
+* fix: check static serve file inside sirv (#19965) ([99980ec](https://github.com/vitejs/vite/commit/99980ecf669aa42379ab0cb0c5889c4b671f4866)), closes [#19965](https://github.com/vitejs/vite/issues/19965)
+
+
+
 ## <small>6.2.6 (2025-04-10)</small>
 
 * fix: reject requests with `#` in request-target (#19830) ([3bb0883](https://github.com/vitejs/vite/commit/3bb0883d22d59cfd901ff18f338e8b4bf11395f7)), closes [#19830](https://github.com/vitejs/vite/issues/19830)
