@@ -357,7 +357,7 @@ export function rolldownCjsExternalPlugin(
             code:
               `import * as m from ${JSON.stringify(
                 nonFacadePrefix + id.slice(cjsExternalFacadeNamespace.length),
-              )};` + `module.exports = m;`,
+              )};` + `module.exports = { ...m };`,
           }
         }
       },

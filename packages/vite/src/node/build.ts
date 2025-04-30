@@ -7,10 +7,12 @@ import type {
   InternalModuleFormat,
   LogLevel,
   LogOrStringHandler,
+  MinimalPluginContext,
   ModuleFormat,
   OutputBundle,
   OutputChunk,
   OutputOptions,
+  PluginContext,
   RenderedChunk,
   RolldownBuild,
   RolldownOptions,
@@ -82,7 +84,7 @@ import {
   BaseEnvironment,
   getDefaultResolvedEnvironmentOptions,
 } from './baseEnvironment'
-import type { MinimalPluginContext, Plugin, PluginContext } from './plugin'
+import type { Plugin } from './plugin'
 import type { RollupPluginHooks } from './typeUtils'
 import { buildOxcPlugin } from './plugins/oxc'
 

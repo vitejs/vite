@@ -3,11 +3,10 @@ import type {
   LoadResult,
   ModuleType,
   ObjectHook,
+  PluginContext,
   ResolveIdResult,
-  MinimalPluginContext as RolldownMinimalPluginContext,
   Plugin as RolldownPlugin,
-  PluginContext as RolldownPluginContext,
-  TransformPluginContext as RolldownTransformPluginContext,
+  TransformPluginContext,
   TransformResult,
 } from 'rolldown'
 import type {
@@ -66,23 +65,7 @@ export interface HotUpdatePluginContext {
   environment: DevEnvironment
 }
 
-export interface MinimalPluginContext
-  extends RolldownMinimalPluginContext,
-    PluginContextExtension {}
-
-export interface PluginContext
-  extends RolldownPluginContext,
-    PluginContextExtension {}
-
-export interface ResolveIdPluginContext
-  extends RolldownPluginContext,
-    PluginContextExtension {}
-
-export interface TransformPluginContext
-  extends RolldownTransformPluginContext,
-    PluginContextExtension {}
-
-// Argument Rolldown types to have the PluginContextExtension
+// Augment Rolldown types to have the PluginContextExtension
 declare module 'rolldown' {
   export interface MinimalPluginContext extends PluginContextExtension {}
 }
@@ -128,7 +111,7 @@ export interface Plugin<A = any> extends RolldownPlugin<A> {
    */
   resolveId?: ObjectHook<
     (
-      this: ResolveIdPluginContext,
+      this: PluginContext,
       source: string,
       importer: string | undefined,
       options: {

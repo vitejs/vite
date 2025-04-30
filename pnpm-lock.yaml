@@ -145,8 +145,8 @@ importers:
         specifier: ^2.5.0
         version: 2.5.0(typescript@5.7.3)
       '@types/express':
-        specifier: ^4.17.21
-        version: 4.17.21
+        specifier: ^5.0.1
+        version: 5.0.1
       feed:
         specifier: ^4.2.2
         version: 4.2.2
@@ -215,8 +215,8 @@ importers:
         specifier: ^1.1.1
         version: 1.1.1
       unbuild:
-        specifier: ^3.5.0
-        version: 3.5.0(sass@1.86.3)(typescript@5.7.3)(vue@3.5.13(typescript@5.7.3))
+        specifier: 3.4.2
+        version: 3.4.2(sass@1.86.3)(typescript@5.7.3)(vue@3.5.13(typescript@5.7.3))
       vite:
         specifier: workspace:rolldown-vite@*
         version: link:../vite
@@ -843,9 +843,6 @@ importers:
       '@vitejs/test-json-module':
         specifier: file:./json-module
         version: file:playground/json/json-module
-      express:
-        specifier: ^5.1.0
-        version: 5.1.0
       vue:
         specifier: ^3.5.13
         version: 3.5.13(typescript@5.7.3)
@@ -946,11 +943,7 @@ importers:
 
   playground/nested-deps/test-package-f: {}
 
-  playground/object-hooks:
-    dependencies:
-      vue:
-        specifier: ^3.5.13
-        version: 3.5.13(typescript@5.7.3)
+  playground/object-hooks: {}
 
   playground/optimize-deps:
     dependencies:
@@ -978,6 +971,9 @@ importers:
       '@vitejs/test-dep-cjs-with-assets':
         specifier: file:./dep-cjs-with-assets
         version: file:playground/optimize-deps/dep-cjs-with-assets
+      '@vitejs/test-dep-cjs-with-external-dep':
+        specifier: file:./dep-cjs-with-external-dep
+        version: file:playground/optimize-deps/dep-cjs-with-external-dep
       '@vitejs/test-dep-css-require':
         specifier: file:./dep-css-require
         version: file:playground/optimize-deps/dep-css-require
@@ -1110,9 +1106,17 @@ importers:
 
   playground/optimize-deps/dep-cjs-with-assets: {}
 
+  playground/optimize-deps/dep-cjs-with-external-dep:
+    dependencies:
+      '@vitejs/test-dep-esm-external':
+        specifier: file:../dep-esm-external
+        version: file:playground/optimize-deps/dep-esm-external
+
   playground/optimize-deps/dep-css-require: {}
 
   playground/optimize-deps/dep-esbuild-plugin-transform: {}
+
+  playground/optimize-deps/dep-esm-external: {}
 
   playground/optimize-deps/dep-incompatible: {}
 
@@ -1646,12 +1650,6 @@ importers:
       tailwindcss:
         specifier: ^4.1.4
         version: 4.1.4
-      vue:
-        specifier: ^3.5.13
-        version: 3.5.13(typescript@5.7.3)
-      vue-router:
-        specifier: ^4.5.0
-        version: 4.5.0(vue@3.5.13(typescript@5.7.3))
     devDependencies:
       tsx:
         specifier: ^4.19.3
@@ -1674,12 +1672,6 @@ importers:
       tailwindcss:
         specifier: ^3.4.17
         version: 3.4.17
-      vue:
-        specifier: ^3.5.13
-        version: 3.5.13(typescript@5.7.3)
-      vue-router:
-        specifier: ^4.5.0
-        version: 4.5.0(vue@3.5.13(typescript@5.7.3))
     devDependencies:
       tsx:
         specifier: ^4.19.3
@@ -3453,11 +3445,11 @@ packages:
   '@types/etag@1.8.3':
     resolution: {integrity: sha512-QYHv9Yeh1ZYSMPQOoxY4XC4F1r+xRUiAriB303F4G6uBsT3KKX60DjiogvVv+2VISVDuJhcIzMdbjT+Bm938QQ==}
 
-  '@types/express-serve-static-core@4.19.6':
-    resolution: {integrity: sha512-N4LZ2xG7DatVqhCZzOGb1Yi5lMbXSZcmdLDe9EzSndPV2HpWYWzRbaerl2n27irrm94EPpprqa8KpskPT085+A==}
+  '@types/express-serve-static-core@5.0.6':
+    resolution: {integrity: sha512-3xhRnjJPkULekpSzgtoNYYcTWgEZkp4myc+Saevii5JPnHNvHMRlBSHDbs7Bh1iPPoVTERHEZXyhyLbMEsExsA==}
 
-  '@types/express@4.17.21':
-    resolution: {integrity: sha512-ejlPM315qwLpaQlQDTjPdsUFSc6ZsP4AN6AlWnogPjQ7CVi7PYF3YVz+CY3jE2pwYf7E/7HlDAN0rV2GxTG0HQ==}
+  '@types/express@5.0.1':
+    resolution: {integrity: sha512-UZUw8vjpWFXuDnjFTh7/5c2TWDlQqeXHi6hcN7F2XSVT5P+WmUnnbFS3KA6Jnc6IsEqI2qCVu2bK0R0J4A8ZQQ==}
 
   '@types/hast@3.0.4':
     resolution: {integrity: sha512-WPs+bbQw5aCj+x6laNGWLH3wviHtoCv/P3+otBhbOhJgG8qtpdAMlTCxLtsTWA7LH1Oh/bFCHsBn0TPS5m30EQ==}
@@ -3752,6 +3744,9 @@ packages:
   '@vitejs/test-dep-cjs-with-assets@file:playground/optimize-deps/dep-cjs-with-assets':
     resolution: {directory: playground/optimize-deps/dep-cjs-with-assets, type: directory}
 
+  '@vitejs/test-dep-cjs-with-external-dep@file:playground/optimize-deps/dep-cjs-with-external-dep':
+    resolution: {directory: playground/optimize-deps/dep-cjs-with-external-dep, type: directory}
+
   '@vitejs/test-dep-conditions@file:packages/vite/src/node/__tests__/fixtures/test-dep-conditions':
     resolution: {directory: packages/vite/src/node/__tests__/fixtures/test-dep-conditions, type: directory}
 
@@ -3760,6 +3755,9 @@ packages:
 
   '@vitejs/test-dep-esbuild-plugin-transform@file:playground/optimize-deps/dep-esbuild-plugin-transform':
     resolution: {directory: playground/optimize-deps/dep-esbuild-plugin-transform, type: directory}
+
+  '@vitejs/test-dep-esm-external@file:playground/optimize-deps/dep-esm-external':
+    resolution: {directory: playground/optimize-deps/dep-esm-external, type: directory}
 
   '@vitejs/test-dep-including-a@file:playground/preload/dep-including-a':
     resolution: {directory: playground/preload/dep-including-a, type: directory}
@@ -7399,6 +7397,15 @@ packages:
     engines: {node: '>=0.8.0'}
     hasBin: true
 
+  unbuild@3.4.2:
+    resolution: {integrity: sha512-bp+xhJ+MvxTDp/gcmzWf/e9IUQ12zFKz42VIMEtJo9GTrbkcAfq+rTcN1GSIr9ZyOEfdlsYdK85wguPHZ97YOQ==}
+    hasBin: true
+    peerDependencies:
+      typescript: ^5.7.3
+    peerDependenciesMeta:
+      typescript:
+        optional: true
+
   unbuild@3.5.0:
     resolution: {integrity: sha512-DPFttsiADnHRb/K+yJ9r9jdn6JyXlsmdT0S12VFC14DFSJD+cxBnHq+v0INmqqPVPxOoUjvJFYUVIb02rWnVeA==}
     hasBin: true
@@ -7578,11 +7585,6 @@ packages:
     resolution: {integrity: sha512-7+iqOueLU7uc9NrMfrzbG8hwMqchfVfSzpVlCMeJQe4pyibqyoifDNbKTZvwxZKDvGkB+PdFeKvnGZMoEb8esg==}
     peerDependencies:
       vue: ^3.0.0
-
-  vue-router@4.5.0:
-    resolution: {integrity: sha512-HDuk+PuH5monfNuY+ct49mNmkCRK4xJAV9Ts4z9UFc4rzdDnxQLyCMGGc8pKhZhHTVzfanpNwB/lwqevcBwI4w==}
-    peerDependencies:
-      vue: ^3.2.0
 
   vue@3.4.38:
     resolution: {integrity: sha512-f0ZgN+mZ5KFgVv9wz0f4OgVKukoXtS3nwET4c2vLBGQR50aI8G0cqbFtLlX9Yiyg3LFGBitruPHt2PxwTduJEw==}
@@ -9419,18 +9421,17 @@ snapshots:
     dependencies:
       '@types/node': 22.13.6
 
-  '@types/express-serve-static-core@4.19.6':
+  '@types/express-serve-static-core@5.0.6':
     dependencies:
       '@types/node': 22.13.6
       '@types/qs': 6.9.18
       '@types/range-parser': 1.2.7
       '@types/send': 0.17.4
 
-  '@types/express@4.17.21':
+  '@types/express@5.0.1':
     dependencies:
       '@types/body-parser': 1.19.5
-      '@types/express-serve-static-core': 4.19.6
-      '@types/qs': 6.9.18
+      '@types/express-serve-static-core': 5.0.6
       '@types/serve-static': 1.15.7
 
   '@types/hast@3.0.4':
@@ -9709,11 +9710,17 @@ snapshots:
 
   '@vitejs/test-dep-cjs-with-assets@file:playground/optimize-deps/dep-cjs-with-assets': {}
 
+  '@vitejs/test-dep-cjs-with-external-dep@file:playground/optimize-deps/dep-cjs-with-external-dep':
+    dependencies:
+      '@vitejs/test-dep-esm-external': file:playground/optimize-deps/dep-esm-external
+
   '@vitejs/test-dep-conditions@file:packages/vite/src/node/__tests__/fixtures/test-dep-conditions': {}
 
   '@vitejs/test-dep-css-require@file:playground/optimize-deps/dep-css-require': {}
 
   '@vitejs/test-dep-esbuild-plugin-transform@file:playground/optimize-deps/dep-esbuild-plugin-transform': {}
+
+  '@vitejs/test-dep-esm-external@file:playground/optimize-deps/dep-esm-external': {}
 
   '@vitejs/test-dep-including-a@file:playground/preload/dep-including-a':
     dependencies:
@@ -13601,6 +13608,38 @@ snapshots:
   uglify-js@3.19.3:
     optional: true
 
+  unbuild@3.4.2(sass@1.86.3)(typescript@5.7.3)(vue@3.5.13(typescript@5.7.3)):
+    dependencies:
+      '@rollup/plugin-alias': 5.1.1(rollup@4.34.9)
+      '@rollup/plugin-commonjs': 28.0.3(rollup@4.34.9)
+      '@rollup/plugin-json': 6.1.0(rollup@4.34.9)
+      '@rollup/plugin-node-resolve': 16.0.1(rollup@4.34.9)
+      '@rollup/plugin-replace': 6.0.2(rollup@4.34.9)
+      '@rollup/pluginutils': 5.1.4(rollup@4.34.9)
+      citty: 0.1.6
+      consola: 3.4.0
+      defu: 6.1.4
+      esbuild: 0.25.0
+      hookable: 5.5.3
+      jiti: 2.4.2
+      magic-string: 0.30.17
+      mkdist: 2.2.0(sass@1.86.3)(typescript@5.7.3)(vue@3.5.13(typescript@5.7.3))
+      mlly: 1.7.4
+      pathe: 2.0.3
+      pkg-types: 2.0.1
+      pretty-bytes: 6.1.1
+      rollup: 4.34.9
+      rollup-plugin-dts: 6.2.1(rollup@4.34.9)(typescript@5.7.3)
+      scule: 1.3.0
+      tinyglobby: 0.2.13
+      untyped: 2.0.0
+    optionalDependencies:
+      typescript: 5.7.3
+    transitivePeerDependencies:
+      - sass
+      - vue
+      - vue-tsc
+
   unbuild@3.5.0(sass@1.86.3)(typescript@5.7.3)(vue@3.5.13(typescript@5.7.3)):
     dependencies:
       '@rollup/plugin-alias': 5.1.1(rollup@4.34.9)
@@ -13880,11 +13919,6 @@ snapshots:
 
   vue-resize@2.0.0-alpha.1(vue@3.5.13(typescript@5.7.3)):
     dependencies:
-      vue: 3.5.13(typescript@5.7.3)
-
-  vue-router@4.5.0(vue@3.5.13(typescript@5.7.3)):
-    dependencies:
-      '@vue/devtools-api': 6.6.4
       vue: 3.5.13(typescript@5.7.3)
 
   vue@3.4.38(typescript@5.7.3):

@@ -2,7 +2,11 @@ import path from 'node:path'
 import fsp from 'node:fs/promises'
 import { Buffer } from 'node:buffer'
 import * as mrmime from 'mrmime'
-import type { NormalizedOutputOptions, RenderedChunk } from 'rolldown'
+import type {
+  NormalizedOutputOptions,
+  PluginContext,
+  RenderedChunk,
+} from 'rolldown'
 import MagicString from 'magic-string'
 import colors from 'picocolors'
 import picomatch from 'picomatch'
@@ -10,7 +14,7 @@ import {
   createToImportMetaURLBasedRelativeRuntime,
   toOutputFilePathInJS,
 } from '../build'
-import type { Plugin, PluginContext } from '../plugin'
+import type { Plugin } from '../plugin'
 import type { ResolvedConfig } from '../config'
 import { checkPublicFile } from '../publicDir'
 import {
