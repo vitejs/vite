@@ -1,3 +1,10 @@
+## <small>4.5.14 (2025-04-30)</small>
+
+* fix: backport #19965, check static serve file inside sirv (#19967) ([7739479](https://github.com/vitejs/vite/commit/7739479)), closes [#19965](https://github.com/vitejs/vite/issues/19965) [#19967](https://github.com/vitejs/vite/issues/19967)
+* chore: run format ([99afb60](https://github.com/vitejs/vite/commit/99afb60))
+
+
+
 ## <small>4.5.13 (2025-04-10)</small>
 
 * fix: backport #19830, reject requests with `#` in request-target (#19832) ([41f3819](https://github.com/vitejs/vite/commit/41f3819)), closes [#19830](https://github.com/vitejs/vite/issues/19830) [#19832](https://github.com/vitejs/vite/issues/19832)
