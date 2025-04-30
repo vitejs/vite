@@ -160,7 +160,7 @@ const server = createServer()
 const ssrEnvironment = server.environment.ssr
 const input = {}
 
-const { createHandler } = await ssrEnvironment.runner.import('./entry.js')
+const { createHandler } = await ssrEnvironment.runner.import('./entrypoint.js')
 const handler = createHandler(input)
 const response = handler(new Request('/'))
 

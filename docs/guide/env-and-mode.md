@@ -2,7 +2,7 @@
 
 Vite exposes certain constants under the special `import.meta.env` object. These constants are defined as global variables during dev and statically replaced at build time to make tree-shaking effective.
 
-## Built-in constants
+## Built-in Constants
 
 Some built-in constants are available in all cases:
 

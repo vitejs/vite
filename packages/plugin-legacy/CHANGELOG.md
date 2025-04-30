@@ -1,3 +1,9 @@
+## <small>6.1.1 (2025-04-28)</small>
+
+* fix(legacy): use unbuild 3.4 for now (#19928) ([96f73d1](https://github.com/vitejs/vite/commit/96f73d16c8501013be57aee1c8a2353a56460281)), closes [#19928](https://github.com/vitejs/vite/issues/19928)
+
+
+
 ## 6.1.0 (2025-04-16)
 
 * feat(legacy): add 'assumptions' option (#19719) ([d1d99c9](https://github.com/vitejs/vite/commit/d1d99c9220989ce903dea9cae6c3608f57f377ea)), closes [#19719](https://github.com/vitejs/vite/issues/19719)

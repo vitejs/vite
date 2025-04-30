@@ -150,6 +150,13 @@ const FRAMEWORKS: Framework[] = [
         customCommand:
           'npm create -- tsrouter-app@latest TARGET_DIR --framework react --interactive',
       },
+      {
+        name: 'redwoodsdk-standard',
+        display: 'RedwoodSDK ↗',
+        color: red,
+        customCommand:
+          'npm exec degit redwoodjs/sdk/starters/standard TARGET_DIR',
+      },
     ],
   },
   {
@@ -278,6 +285,19 @@ const FRAMEWORKS: Framework[] = [
         display: 'Analog ↗',
         color: yellow,
         customCommand: 'npm create analog@latest TARGET_DIR',
+      },
+    ],
+  },
+  {
+    name: 'marko',
+    display: 'Marko',
+    color: magenta,
+    variants: [
+      {
+        name: 'marko-run',
+        display: 'Marko Run ↗',
+        color: magenta,
+        customCommand: 'npm create -- marko@latest --name TARGET_DIR',
       },
     ],
   },
