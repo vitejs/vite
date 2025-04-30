@@ -1494,6 +1494,7 @@ function areSeparateFolders(a: string, b: string) {
 export class BuildEnvironment extends BaseEnvironment {
   mode = 'build' as const
 
+  isBuilt = false
   constructor(
     name: string,
     config: ResolvedConfig,
@@ -1602,9 +1603,26 @@ export async function createBuilder(
     environments,
     config,
     async buildApp() {
-      return configBuilder.buildApp(builder)
+      // order 'pre' and 'normal' hooks are run first, then config.builder.buildApp, then 'post' hooks
+      let configBuilderBuildAppCalled = false
+      for (const p of config.getSortedPlugins('buildApp')) {
+        const hook = p.buildApp
+        if (
+          !configBuilderBuildAppCalled &&
+          typeof hook === 'object' &&
+          hook.order === 'post'
+        ) {
+          configBuilderBuildAppCalled = true
+          await configBuilder.buildApp(builder)
+        }
+        const handler = getHookHandler(hook)
+        await handler(builder)
+      }
     },
-    async build(environment: BuildEnvironment) {
+    async build(
+      environment: BuildEnvironment,
+    ): Promise<RollupOutput | RollupOutput[] | RollupWatcher> {
+      environment.isBuilt = true
       return buildEnvironment(environment)
     },
   }
@@ -1667,3 +1685,5 @@ export async function createBuilder(
 
   return builder
 }
+
+export type BuildAppHook = (this: void, builder: ViteBuilder) => Promise<void>
