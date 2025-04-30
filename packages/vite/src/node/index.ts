@@ -145,6 +145,7 @@ export type {
   StylusPreprocessorOptions,
 } from './plugins/css'
 export type { JsonOptions } from './plugins/json'
+export type { ESBuildOptions } from './plugins/esbuild'
 export type { EsbuildTransformOptions } from 'types/internal/esbuildOptions'
 export type { OxcOptions } from './plugins/oxc'
 export type { Manifest, ManifestChunk } from './plugins/manifest'
