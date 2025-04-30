@@ -69,6 +69,7 @@ export const excludeSelf = /* #__PURE__ */ Object.assign({"./sibling.ts": () => 
 
 
 });
+export const excludeSelfRaw = /* #__PURE__ */ Object.assign({"./sibling.ts": () => import("./sibling.ts?raw")});
 export const customQueryString = /* #__PURE__ */ Object.assign({"./sibling.ts": () => import("./sibling.ts?custom")});
 export const customQueryObject = /* #__PURE__ */ Object.assign({"./sibling.ts": () => import("./sibling.ts?foo=bar&raw=true")
 
@@ -164,6 +165,7 @@ export const excludeSelf = /* #__PURE__ */ Object.assign({"./sibling.ts": () => 
 
 
 });
+export const excludeSelfRaw = /* #__PURE__ */ Object.assign({"./sibling.ts": () => import("./sibling.ts?raw")});
 export const customQueryString = /* #__PURE__ */ Object.assign({"./sibling.ts": () => import("./sibling.ts?custom&lang.ts")});
 export const customQueryObject = /* #__PURE__ */ Object.assign({"./sibling.ts": () => import("./sibling.ts?foo=bar&raw=true&lang.ts")
 

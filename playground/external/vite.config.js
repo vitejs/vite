@@ -2,7 +2,7 @@ import fs from 'node:fs/promises'
 import { defineConfig } from 'vite'
 
 const npmDirectServeConfig = {
-  '/vue@3.2.47.js': 'vue32/dist/vue.runtime.esm-browser.js',
+  '/vue@3.4.38.js': 'vue34/dist/vue.runtime.esm-browser.js',
   '/slash@5.js': 'slash5/index.js',
 }
 /** @type {import('vite').Connect.NextHandleFunction} */
@@ -32,6 +32,7 @@ export default defineConfig({
     },
     commonjsOptions: {
       esmExternals: ['vue', 'slash5'],
+      dynamicRequireTargets: ['test-no-op-fdir-glob'],
     },
   },
   plugins: [

@@ -1,3 +1,42 @@
+## <small>6.1.1 (2025-04-28)</small>
+
+* fix(legacy): use unbuild 3.4 for now (#19928) ([96f73d1](https://github.com/vitejs/vite/commit/96f73d16c8501013be57aee1c8a2353a56460281)), closes [#19928](https://github.com/vitejs/vite/issues/19928)
+
+
+
+## 6.1.0 (2025-04-16)
+
+* feat(legacy): add 'assumptions' option (#19719) ([d1d99c9](https://github.com/vitejs/vite/commit/d1d99c9220989ce903dea9cae6c3608f57f377ea)), closes [#19719](https://github.com/vitejs/vite/issues/19719)
+* feat(legacy): add sourcemapBaseUrl support (#19281) ([a92c74b](https://github.com/vitejs/vite/commit/a92c74b088a253257c01596bd7c67e0f8fa39512)), closes [#19281](https://github.com/vitejs/vite/issues/19281)
+* fix(deps): update all non-major dependencies (#19555) ([f612e0f](https://github.com/vitejs/vite/commit/f612e0fdf6810317b61fcca1ded125755f261d78)), closes [#19555](https://github.com/vitejs/vite/issues/19555)
+* fix(deps): update all non-major dependencies (#19613) ([363d691](https://github.com/vitejs/vite/commit/363d691b4995d72f26a14eb59ed88a9483b1f931)), closes [#19613](https://github.com/vitejs/vite/issues/19613)
+* fix(deps): update all non-major dependencies (#19649) ([f4e712f](https://github.com/vitejs/vite/commit/f4e712ff861f8a9504594a4a5e6d35a7547e5a7e)), closes [#19649](https://github.com/vitejs/vite/issues/19649)
+* refactor: restore endsWith usage (#19554) ([6113a96](https://github.com/vitejs/vite/commit/6113a9670cc9b7d29fe0bffe033f7823e36ded00)), closes [#19554](https://github.com/vitejs/vite/issues/19554)
+
+
+
+## <small>6.0.2 (2025-02-25)</small>
+
+* fix(deps): update all non-major dependencies (#19392) ([60456a5](https://github.com/vitejs/vite/commit/60456a54fe90872dbd4bed332ecbd85bc88deb92)), closes [#19392](https://github.com/vitejs/vite/issues/19392)
+* fix(deps): update all non-major dependencies (#19440) ([ccac73d](https://github.com/vitejs/vite/commit/ccac73d9d0e92c7232f09207d1d6b893e823ed8e)), closes [#19440](https://github.com/vitejs/vite/issues/19440)
+* fix(legacy): warn if plugin-legacy is passed to `worker.plugins` (#19079) ([171f2fb](https://github.com/vitejs/vite/commit/171f2fbe0afe09eeb49f5f29f9ecd845c39a8401)), closes [#19079](https://github.com/vitejs/vite/issues/19079)
+* chore: fix typos (#19398) ([b44e3d4](https://github.com/vitejs/vite/commit/b44e3d43db65babe1c32e143964add02e080dc15)), closes [#19398](https://github.com/vitejs/vite/issues/19398)
+
+
+
+## <small>6.0.1 (2025-02-05)</small>
+
+* fix(deps): update all non-major dependencies (#18853) ([5c02236](https://github.com/vitejs/vite/commit/5c0223636fa277d5daeb4d93c3f32d9f3cd69fc5)), closes [#18853](https://github.com/vitejs/vite/issues/18853)
+* fix(deps): update all non-major dependencies (#18967) ([d88d000](https://github.com/vitejs/vite/commit/d88d0004a8e891ca6026d356695e0b319caa7fce)), closes [#18967](https://github.com/vitejs/vite/issues/18967)
+* fix(deps): update all non-major dependencies (#19098) ([8639538](https://github.com/vitejs/vite/commit/8639538e6498d1109da583ad942c1472098b5919)), closes [#19098](https://github.com/vitejs/vite/issues/19098)
+* fix(deps): update all non-major dependencies (#19190) ([f2c07db](https://github.com/vitejs/vite/commit/f2c07dbfc874b46f6e09bb04996d0514663e4544)), closes [#19190](https://github.com/vitejs/vite/issues/19190)
+* fix(deps): update all non-major dependencies (#19296) ([2bea7ce](https://github.com/vitejs/vite/commit/2bea7cec4b7fddbd5f2fb6090a7eaf5ae7ca0f1b)), closes [#19296](https://github.com/vitejs/vite/issues/19296)
+* fix(legacy): build respect `hashCharacters` config (#19262) ([3aa10b7](https://github.com/vitejs/vite/commit/3aa10b7d618b178aec0f027b1f5fcd3353d2b166)), closes [#19262](https://github.com/vitejs/vite/issues/19262)
+* fix(legacy): import babel once (#19152) ([282496d](https://github.com/vitejs/vite/commit/282496daaca43494feceaa59809f6ceafd62dedd)), closes [#19152](https://github.com/vitejs/vite/issues/19152)
+* revert: update moduleResolution value casing (#18409) (#18774) ([b0fc6e3](https://github.com/vitejs/vite/commit/b0fc6e3c2591a30360d3714263cf7cc0e2acbfdf)), closes [#18409](https://github.com/vitejs/vite/issues/18409) [#18774](https://github.com/vitejs/vite/issues/18774)
+
+
+
 ## 6.0.0 (2024-11-26)
 
 * chore: upgrade to unbuild v3 rc (#18502) ([ddd5c5d](https://github.com/vitejs/vite/commit/ddd5c5d00ff7894462a608841560883f9c771f22)), closes [#18502](https://github.com/vitejs/vite/issues/18502)

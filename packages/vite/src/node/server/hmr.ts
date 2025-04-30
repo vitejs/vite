@@ -389,7 +389,7 @@ export async function handleHMRUpdate(
   )
 
   const isEnv =
-    config.inlineConfig.envFile !== false &&
+    config.envDir !== false &&
     getEnvFilesForMode(config.mode, config.envDir).includes(file)
   if (isConfig || isConfigDependency || isEnv) {
     // auto restart server
@@ -625,14 +625,14 @@ export async function handleHMRUpdate(
   await hotUpdateEnvironments(server, hmr)
 }
 
-type HasDeadEnd = boolean
+type HasDeadEnd = string | boolean
 
 export function updateModules(
   environment: DevEnvironment,
   file: string,
   modules: EnvironmentModuleNode[],
   timestamp: number,
-  afterInvalidation?: boolean,
+  firstInvalidatedBy?: string,
 ): void {
   const { hot } = environment
   const updates: Update[] = []
@@ -661,6 +661,19 @@ export function updateModules(
       continue
     }
 
+    // If import.meta.hot.invalidate was called already on that module for the same update,
+    // it means any importer of that module can't hot update. We should fallback to full reload.
+    if (
+      firstInvalidatedBy &&
+      boundaries.some(
+        ({ acceptedVia }) =>
+          normalizeHmrUrl(acceptedVia.url) === firstInvalidatedBy,
+      )
+    ) {
+      needFullReload = 'circular import invalidate'
+      continue
+    }
+
     updates.push(
       ...boundaries.map(
         ({ boundary, acceptedVia, isWithinCircularImport }) => ({
@@ -673,6 +686,7 @@ export function updateModules(
               ? isExplicitImportRequired(acceptedVia.url)
               : false,
           isWithinCircularImport,
+          firstInvalidatedBy,
         }),
       ),
     )
@@ -685,7 +699,7 @@ export function updateModules(
         : ''
     environment.logger.info(
       colors.green(`page reload `) + colors.dim(file) + reason,
-      { clear: !afterInvalidation, timestamp: true },
+      { clear: !firstInvalidatedBy, timestamp: true },
     )
     hot.send({
       type: 'full-reload',
@@ -702,7 +716,7 @@ export function updateModules(
   environment.logger.info(
     colors.green(`hmr update `) +
       colors.dim([...new Set(updates.map((u) => u.path))].join(', ')),
-    { clear: !afterInvalidation, timestamp: true },
+    { clear: !firstInvalidatedBy, timestamp: true },
   )
   hot.send({
     type: 'update',
@@ -789,6 +803,9 @@ function propagateUpdate(
     // PostCSS plugins) it should be considered a dead end and force full reload.
     if (
       !isCSSRequest(node.url) &&
+      // we assume .svg is never an entrypoint and does not need a full reload
+      // to avoid frequent full reloads when an SVG file is referenced in CSS files (#18979)
+      !node.file?.endsWith('.svg') &&
       [...node.importers].every((i) => isCSSRequest(i.url))
     ) {
       return true

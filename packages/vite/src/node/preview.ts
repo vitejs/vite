@@ -25,6 +25,7 @@ import { indexHtmlMiddleware } from './server/middlewares/indexHtml'
 import { notFoundMiddleware } from './server/middlewares/notFound'
 import { proxyMiddleware } from './server/middlewares/proxy'
 import {
+  getServerUrlByHost,
   resolveHostname,
   resolveServerUrls,
   setupSIGTERMListener,
@@ -137,12 +138,9 @@ export async function preview(
     )
   }
 
+  const httpsOptions = await resolveHttpsConfig(config.preview.https)
   const app = connect() as Connect.Server
-  const httpServer = await resolveHttpServer(
-    config.preview,
-    app,
-    await resolveHttpsConfig(config.preview.https),
-  )
+  const httpServer = await resolveHttpServer(config.preview, app, httpsOptions)
   setClientErrorHandler(httpServer, config.logger)
 
   const options = config.preview
@@ -274,11 +272,12 @@ export async function preview(
   server.resolvedUrls = await resolveServerUrls(
     httpServer,
     config.preview,
+    httpsOptions,
     config,
   )
 
   if (options.open) {
-    const url = server.resolvedUrls.local[0] ?? server.resolvedUrls.network[0]
+    const url = getServerUrlByHost(server.resolvedUrls, options.host)
     if (url) {
       const path =
         typeof options.open === 'string' ? new URL(options.open, url).href : url

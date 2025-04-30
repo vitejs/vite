@@ -102,6 +102,9 @@ For Ubuntu Linux, you may need to add the line `* - nofile 65536` to the file `/
 
 Note that these settings persist but a **restart is required**.
 
+Alternatively, if the server is running inside a VS Code devcontainer, the request may appear to be stalled. To fix this issue, see
+[Dev Containers / VS Code Port Forwarding](#dev-containers-vs-code-port-forwarding).
+
 ### Network requests stop loading
 
 When using a self-signed SSL certificate, Chrome ignores all caching directives and reloads the content. Vite relies on these caching directives.
@@ -129,6 +132,14 @@ When the server / WebSocket server receives a large HTTP header, the request wil
 This is because Node.js limits request header size to mitigate [CVE-2018-12121](https://www.cve.org/CVERecord?id=CVE-2018-12121).
 
 To avoid this, try to reduce your request header size. For example, if the cookie is long, delete it. Or you can use [`--max-http-header-size`](https://nodejs.org/api/cli.html#--max-http-header-sizesize) to change max header size.
+
+### Dev Containers / VS Code Port Forwarding
+
+If you are using a Dev Container or port forwarding feature in VS Code, you may need to set the [`server.host`](/config/server-options.md#server-host) option to `127.0.0.1` in the config to make it work.
+
+This is because [the port forwarding feature in VS Code does not support IPv6](https://github.com/microsoft/vscode-remote-release/issues/7029).
+
+See [#16522](https://github.com/vitejs/vite/issues/16522) for more details.
 
 ## HMR
 

@@ -30,10 +30,16 @@ export interface WebSocketConnectionPayload {
 export interface InvalidatePayload {
   path: string
   message: string | undefined
+  firstInvalidatedBy: string
 }
 
 /**
- * provides types for built-in Vite events
+ * provides types for payloads of built-in Vite events
  */
 export type InferCustomEventPayload<T extends string> =
   T extends keyof CustomEventMap ? CustomEventMap[T] : any
+
+/**
+ * provides types for names of built-in Vite events
+ */
+export type CustomEventName = keyof CustomEventMap | (string & {})

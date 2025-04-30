@@ -2,11 +2,10 @@ import type {
   CustomPluginOptions,
   LoadResult,
   ObjectHook,
+  PluginContext,
   ResolveIdResult,
-  MinimalPluginContext as RollupMinimalPluginContext,
   Plugin as RollupPlugin,
-  PluginContext as RollupPluginContext,
-  TransformPluginContext as RollupTransformPluginContext,
+  TransformPluginContext,
   TransformResult,
 } from 'rollup'
 import type {
@@ -25,6 +24,7 @@ import type { Environment } from './environment'
 import type { PartialEnvironment } from './baseEnvironment'
 import type { PreviewServerHook } from './preview'
 import { arraify, asyncFlatten } from './utils'
+import type { StringFilter } from './plugins/pluginFilter'
 
 /**
  * Vite plugins extends the Rollup plugin interface with a few extra
@@ -64,23 +64,7 @@ export interface HotUpdatePluginContext {
   environment: DevEnvironment
 }
 
-export interface MinimalPluginContext
-  extends RollupMinimalPluginContext,
-    PluginContextExtension {}
-
-export interface PluginContext
-  extends RollupPluginContext,
-    PluginContextExtension {}
-
-export interface ResolveIdPluginContext
-  extends RollupPluginContext,
-    PluginContextExtension {}
-
-export interface TransformPluginContext
-  extends RollupTransformPluginContext,
-    PluginContextExtension {}
-
-// Argument Rollup types to have the PluginContextExtension
+// Augment Rollup types to have the PluginContextExtension
 declare module 'rollup' {
   export interface MinimalPluginContext extends PluginContextExtension {}
 }
@@ -126,7 +110,7 @@ export interface Plugin<A = any> extends RollupPlugin<A> {
    */
   resolveId?: ObjectHook<
     (
-      this: ResolveIdPluginContext,
+      this: PluginContext,
       source: string,
       importer: string | undefined,
       options: {
@@ -139,7 +123,8 @@ export interface Plugin<A = any> extends RollupPlugin<A> {
         scan?: boolean
         isEntry: boolean
       },
-    ) => Promise<ResolveIdResult> | ResolveIdResult
+    ) => Promise<ResolveIdResult> | ResolveIdResult,
+    { filter?: { id?: StringFilter<RegExp> } }
   >
   load?: ObjectHook<
     (
@@ -152,7 +137,8 @@ export interface Plugin<A = any> extends RollupPlugin<A> {
          */
         html?: boolean
       },
-    ) => Promise<LoadResult> | LoadResult
+    ) => Promise<LoadResult> | LoadResult,
+    { filter?: { id?: StringFilter } }
   >
   transform?: ObjectHook<
     (
@@ -162,7 +148,8 @@ export interface Plugin<A = any> extends RollupPlugin<A> {
       options?: {
         ssr?: boolean
       },
-    ) => Promise<TransformResult> | TransformResult
+    ) => Promise<TransformResult> | TransformResult,
+    { filter?: { id?: StringFilter; code?: StringFilter } }
   >
   /**
    * Opt-in this plugin into the shared plugins pipeline.
@@ -288,8 +275,13 @@ export interface Plugin<A = any> extends RollupPlugin<A> {
    * The hook receives the following arguments:
    *
    * - html: string
-   * - ctx?: vite.ServerContext (only present during serve)
-   * - bundle?: rollup.OutputBundle (only present during build)
+   * - ctx: IndexHtmlTransformContext, which contains:
+   *    - path: public path when served
+   *    - filename: filename on disk
+   *    - server?: ViteDevServer (only present during serve)
+   *    - bundle?: rollup.OutputBundle (only present during build)
+   *    - chunk?: rollup.OutputChunk
+   *    - originalUrl?: string
    *
    * It can either return a transformed string, or a list of html tag
    * descriptors that will be injected into the `<head>` or `<body>`.

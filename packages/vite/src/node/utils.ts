@@ -1,9 +1,11 @@
 import fs from 'node:fs'
 import os from 'node:os'
+import net from 'node:net'
 import path from 'node:path'
 import { exec } from 'node:child_process'
 import crypto from 'node:crypto'
 import { URL, fileURLToPath } from 'node:url'
+import type { ServerOptions as HttpsServerOptions } from 'node:https'
 import { builtinModules, createRequire } from 'node:module'
 import { promises as dns } from 'node:dns'
 import { performance } from 'node:perf_hooks'
@@ -102,11 +104,43 @@ const BUN_BUILTIN_NAMESPACE = 'bun:'
 // Some runtimes like Bun injects namespaced modules here, which is not a node builtin
 const nodeBuiltins = builtinModules.filter((id) => !id.includes(':'))
 
-// TODO: Use `isBuiltin` from `node:module`, but Deno doesn't support it
-export function isBuiltin(id: string): boolean {
-  if (process.versions.deno && id.startsWith(NPM_BUILTIN_NAMESPACE)) return true
-  if (process.versions.bun && id.startsWith(BUN_BUILTIN_NAMESPACE)) return true
-  return isNodeBuiltin(id)
+const isBuiltinCache = new WeakMap<
+  (string | RegExp)[],
+  (id: string, importer?: string) => boolean
+>()
+
+export function isBuiltin(builtins: (string | RegExp)[], id: string): boolean {
+  let isBuiltin = isBuiltinCache.get(builtins)
+  if (!isBuiltin) {
+    isBuiltin = createIsBuiltin(builtins)
+    isBuiltinCache.set(builtins, isBuiltin)
+  }
+  return isBuiltin(id)
+}
+
+export function createIsBuiltin(
+  builtins: (string | RegExp)[],
+): (id: string) => boolean {
+  const plainBuiltinsSet = new Set(
+    builtins.filter((builtin) => typeof builtin === 'string'),
+  )
+  const regexBuiltins = builtins.filter(
+    (builtin) => typeof builtin !== 'string',
+  )
+
+  return (id) =>
+    plainBuiltinsSet.has(id) || regexBuiltins.some((regexp) => regexp.test(id))
+}
+
+export const nodeLikeBuiltins = [
+  ...nodeBuiltins,
+  new RegExp(`^${NODE_BUILTIN_NAMESPACE}`),
+  new RegExp(`^${NPM_BUILTIN_NAMESPACE}`),
+  new RegExp(`^${BUN_BUILTIN_NAMESPACE}`),
+]
+
+export function isNodeLikeBuiltin(id: string): boolean {
+  return isBuiltin(nodeLikeBuiltins, id)
 }
 
 export function isNodeBuiltin(id: string): boolean {
@@ -294,9 +328,6 @@ export const isJSRequest = (url: string): boolean => {
   }
   return false
 }
-
-const knownTsRE = /\.(?:ts|mts|cts|tsx)(?:$|\?)/
-export const isTsRequest = (url: string): boolean => knownTsRE.test(url)
 
 const importQueryRE = /(\?|&)import=?(?:&|$)/
 const directRequestRE = /(\?|&)direct=?(?:&|$)/
@@ -748,7 +779,7 @@ function joinSrcset(ret: ImageCandidate[]) {
   The `descriptor` is anything after the space and before the comma.
  */
 const imageCandidateRegex =
-  /(?:^|\s)(?<url>[\w-]+\([^)]*\)|"[^"]*"|'[^']*'|[^,]\S*[^,])\s*(?:\s(?<descriptor>\w[^,]+))?(?:,|$)/g
+  /(?:^|\s|(?<=,))(?<url>[\w-]+\([^)]*\)|"[^"]*"|'[^']*'|[^,]\S*[^,])\s*(?:\s(?<descriptor>\w[^,]+))?(?:,|$)/g
 const escapedSpaceCharacters = /(?: |\\t|\\n|\\f|\\r)+/g
 
 export function parseSrcset(string: string): ImageCandidate[] {
@@ -820,6 +851,10 @@ const nullSourceMap: RawSourceMap = {
   mappings: '',
   version: 3,
 }
+/**
+ * Combines multiple sourcemaps into a single sourcemap.
+ * Note that the length of sourcemapList must be 2.
+ */
 export function combineSourcemaps(
   filename: string,
   sourcemapList: Array<DecodedSourceMap | RawSourceMap>,
@@ -844,6 +879,7 @@ export function combineSourcemaps(
     }
     return newSourcemaps
   })
+  const escapedFilename = escapeToLinuxLikePath(filename)
 
   // We don't declare type here so we can convert/fake/map as RawSourceMap
   let map //: SourceMap
@@ -854,15 +890,12 @@ export function combineSourcemaps(
     map = remapping(sourcemapList, () => null)
   } else {
     map = remapping(sourcemapList[0], function loader(sourcefile) {
-      const mapForSources = sourcemapList
-        .slice(mapIndex)
-        .find((s) => s.sources.includes(sourcefile))
-
-      if (mapForSources) {
-        mapIndex++
-        return mapForSources
+      // this line assumes that the length of the sourcemapList is 2
+      if (sourcefile === escapedFilename && sourcemapList[mapIndex]) {
+        return sourcemapList[mapIndex++]
+      } else {
+        return null
       }
-      return null
     })
   }
   if (!map.file) {
@@ -953,6 +986,7 @@ export async function resolveHostname(
 export async function resolveServerUrls(
   server: Server,
   options: CommonServerOptions,
+  httpsOptions: HttpsServerOptions | undefined,
   config: ResolvedConfig,
 ): Promise<ResolvedServerUrls> {
   const address = server.address()
@@ -1006,7 +1040,63 @@ export async function resolveServerUrls(
         }
       })
   }
+
+  const cert =
+    httpsOptions?.cert && !Array.isArray(httpsOptions.cert)
+      ? new crypto.X509Certificate(httpsOptions.cert)
+      : undefined
+  const hostnameFromCert = cert?.subjectAltName
+    ? extractHostnamesFromSubjectAltName(cert.subjectAltName)
+    : []
+
+  if (hostnameFromCert.length > 0) {
+    const existings = new Set([...local, ...network])
+    local.push(
+      ...hostnameFromCert
+        .map((hostname) => `https://${hostname}:${port}${base}`)
+        .filter((url) => !existings.has(url)),
+    )
+  }
+
   return { local, network }
+}
+
+export function extractHostnamesFromSubjectAltName(
+  subjectAltName: string,
+): string[] {
+  const hostnames: string[] = []
+  let remaining = subjectAltName
+  while (remaining) {
+    const nameEndIndex = remaining.indexOf(':')
+    const name = remaining.slice(0, nameEndIndex)
+    remaining = remaining.slice(nameEndIndex + 1)
+    if (!remaining) break
+
+    const isQuoted = remaining[0] === '"'
+    let value: string
+    if (isQuoted) {
+      const endQuoteIndex = remaining.indexOf('"', 1)
+      value = JSON.parse(remaining.slice(0, endQuoteIndex + 1))
+      remaining = remaining.slice(endQuoteIndex + 1)
+    } else {
+      const maybeEndIndex = remaining.indexOf(',')
+      const endIndex = maybeEndIndex === -1 ? remaining.length : maybeEndIndex
+      value = remaining.slice(0, endIndex)
+      remaining = remaining.slice(endIndex)
+    }
+    remaining = remaining.slice(/* for , */ 1).trimStart()
+
+    if (
+      name === 'DNS' &&
+      // [::1] might be included but skip it as it's already included as a local address
+      value !== '[::1]' &&
+      // skip *.IPv4 addresses, which is invalid
+      !(value.startsWith('*.') && net.isIPv4(value.slice(2)))
+    ) {
+      hostnames.push(value.replace('*', 'vite'))
+    }
+  }
+  return hostnames
 }
 
 export function arraify<T>(target: T | T[]): T[] {
@@ -1093,7 +1183,7 @@ function deepClone<T>(value: T): DeepWritable<T> {
     return value as DeepWritable<T>
   }
   if (value instanceof RegExp) {
-    return structuredClone(value) as DeepWritable<T>
+    return new RegExp(value) as DeepWritable<T>
   }
   if (typeof value === 'object' && value != null) {
     throw new Error('Cannot deep clone non-plain object')
@@ -1271,8 +1361,8 @@ function normalizeSingleAlias({
 }: Alias): Alias {
   if (
     typeof find === 'string' &&
-    find[find.length - 1] === '/' &&
-    replacement[replacement.length - 1] === '/'
+    find.endsWith('/') &&
+    replacement.endsWith('/')
   ) {
     find = find.slice(0, find.length - 1)
     replacement = replacement.slice(0, replacement.length - 1)
@@ -1370,7 +1460,7 @@ export function joinUrlSegments(a: string, b: string): string {
   if (!a || !b) {
     return a || b || ''
   }
-  if (a[a.length - 1] === '/') {
+  if (a.endsWith('/')) {
     a = a.substring(0, a.length - 1)
   }
   if (b[0] !== '/') {
@@ -1565,4 +1655,20 @@ export const teardownSIGTERMListener = (
       process.stdin.off('end', parentSigtermCallback)
     }
   }
+}
+
+export function getServerUrlByHost(
+  resolvedUrls: ResolvedServerUrls | null,
+  host: CommonServerOptions['host'],
+): string | undefined {
+  if (typeof host === 'string') {
+    const matchedUrl = [
+      ...(resolvedUrls?.local ?? []),
+      ...(resolvedUrls?.network ?? []),
+    ].find((url) => url.includes(host))
+    if (matchedUrl) {
+      return matchedUrl
+    }
+  }
+  return resolvedUrls?.local[0] ?? resolvedUrls?.network[0]
 }

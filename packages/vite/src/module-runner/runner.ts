@@ -30,7 +30,7 @@ import {
   ssrModuleExportsKey,
 } from './constants'
 import { hmrLogger, silentConsole } from './hmrLogger'
-import { createHMRHandler } from './hmrHandler'
+import { createHMRHandlerForRunner } from './hmrHandler'
 import { enableSourceMapSupport } from './sourcemap/index'
 import { ESModulesEvaluator } from './esmEvaluator'
 
@@ -83,7 +83,7 @@ export class ModuleRunner {
           'HMR is not supported by this runner transport, but `hmr` option was set to true',
         )
       }
-      this.transport.connect(createHMRHandler(this))
+      this.transport.connect(createHMRHandlerForRunner(this))
     } else {
       this.transport.connect?.()
     }
@@ -429,7 +429,7 @@ function exportAll(exports: any, sourceModule: any) {
     return
 
   for (const key in sourceModule) {
-    if (key !== 'default' && key !== '__esModule') {
+    if (key !== 'default' && key !== '__esModule' && !(key in exports)) {
       try {
         Object.defineProperty(exports, key, {
           enumerable: true,

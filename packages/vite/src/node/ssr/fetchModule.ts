@@ -10,7 +10,6 @@ import {
 } from '../../shared/constants'
 import { genSourceMapUrl } from '../server/sourcemap'
 import type { DevEnvironment } from '../server/environment'
-import { normalizeResolvedIdToUrl } from '../plugins/importAnalysis'
 
 export interface FetchModuleOptions {
   cached?: boolean
@@ -28,8 +27,10 @@ export async function fetchModule(
   importer?: string,
   options: FetchModuleOptions = {},
 ): Promise<FetchResult> {
-  // builtins should always be externalized
-  if (url.startsWith('data:') || isBuiltin(url)) {
+  if (
+    url.startsWith('data:') ||
+    isBuiltin(environment.config.resolve.builtins, url)
+  ) {
     return { externalize: url, type: 'builtin' }
   }
 
@@ -60,6 +61,7 @@ export async function fetchModule(
       isProduction,
       root,
       packageCache: environment.config.packageCache,
+      builtins: environment.config.resolve.builtins,
     })
     if (!resolved) {
       const err: any = new Error(
@@ -73,16 +75,6 @@ export async function fetchModule(
       ? 'module'
       : 'commonjs'
     return { externalize: file, type }
-  }
-
-  // this is an entry point module, very high chance it's not resolved yet
-  // for example: runner.import('./some-file') or runner.import('/some-file')
-  if (isFileUrl || !importer) {
-    const resolved = await environment.pluginContainer.resolveId(url)
-    if (!resolved) {
-      throw new Error(`[vite] cannot find entry point module '${url}'.`)
-    }
-    url = normalizeResolvedIdToUrl(environment, url, resolved)
   }
 
   url = unwrapId(url)

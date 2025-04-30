@@ -136,8 +136,9 @@ export function expandGlobIds(id: string, config: ResolvedConfig): string[] {
       }
     }
 
+    const isMatch = picomatch(pattern)
     const matched = possibleExportPaths
-      .filter(picomatch(pattern))
+      .filter((p) => isMatch(p))
       .map((match) => path.posix.join(pkgName, match))
     matched.unshift(pkgName)
     return matched

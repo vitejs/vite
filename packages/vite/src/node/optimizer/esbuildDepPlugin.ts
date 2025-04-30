@@ -115,7 +115,7 @@ export function esbuildDepPlugin(
         namespace: 'optional-peer-dep',
       }
     }
-    if (environment.config.consumer === 'server' && isBuiltin(resolved)) {
+    if (isBuiltin(environment.config.resolve.builtins, resolved)) {
       return
     }
     if (isExternalUrl(resolved)) {
@@ -339,7 +339,7 @@ export function esbuildCjsExternalPlugin(
           contents:
             `import * as m from ${JSON.stringify(
               nonFacadePrefix + args.path,
-            )};` + `module.exports = m;`,
+            )};` + `module.exports = { ...m };`,
         }),
       )
     },

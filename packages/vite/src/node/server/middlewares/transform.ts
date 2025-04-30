@@ -1,5 +1,6 @@
 import path from 'node:path'
 import fsp from 'node:fs/promises'
+import type { ServerResponse } from 'node:http'
 import type { Connect } from 'dep-types/connect'
 import colors from 'picocolors'
 import type { ExistingRawSourceMap } from 'rollup'
@@ -12,13 +13,15 @@ import {
   isJSRequest,
   normalizePath,
   prettifyUrl,
-  rawRE,
   removeImportQuery,
   removeTimestampQuery,
-  urlRE,
 } from '../../utils'
 import { send } from '../send'
-import { ERR_LOAD_URL, transformRequest } from '../transformRequest'
+import {
+  ERR_DENIED_ID,
+  ERR_LOAD_URL,
+  transformRequest,
+} from '../transformRequest'
 import { applySourcemapIgnoreList } from '../sourcemap'
 import { isHTMLProxy } from '../../plugins/html'
 import {
@@ -38,11 +41,44 @@ import {
   ERR_OUTDATED_OPTIMIZED_DEP,
   NULL_BYTE_PLACEHOLDER,
 } from '../../../shared/constants'
-import { ensureServingAccess } from './static'
+import { checkServingAccess, respondWithAccessDenied } from './static'
 
 const debugCache = createDebugger('vite:cache')
 
 const knownIgnoreList = new Set(['/', '/favicon.ico'])
+const trailingQuerySeparatorsRE = /[?&]+$/
+
+// TODO: consolidate this regex pattern with the url, raw, and inline checks in plugins
+const urlRE = /[?&]url\b/
+const rawRE = /[?&]raw\b/
+const inlineRE = /[?&]inline\b/
+const svgRE = /\.svg\b/
+
+function deniedServingAccessForTransform(
+  url: string,
+  server: ViteDevServer,
+  res: ServerResponse,
+  next: Connect.NextFunction,
+) {
+  if (
+    rawRE.test(url) ||
+    urlRE.test(url) ||
+    inlineRE.test(url) ||
+    svgRE.test(url)
+  ) {
+    const servingAccessResult = checkServingAccess(url, server)
+    if (servingAccessResult === 'denied') {
+      respondWithAccessDenied(url, server, res)
+      return true
+    }
+    if (servingAccessResult === 'fallback') {
+      next()
+      return true
+    }
+    servingAccessResult satisfies 'allowed'
+  }
+  return false
+}
 
 /**
  * A middleware that short-circuits the middleware chain to serve cached transformed modules
@@ -102,6 +138,12 @@ export function transformMiddleware(
         '\0',
       )
     } catch (e) {
+      if (e instanceof URIError) {
+        server.config.logger.warn(
+          colors.yellow('Malformed URI sequence in request URL'),
+        )
+        return next()
+      }
       return next(e)
     }
 
@@ -169,9 +211,17 @@ export function transformMiddleware(
         warnAboutExplicitPublicPathInUrl(url)
       }
 
+      const urlWithoutTrailingQuerySeparators = url.replace(
+        trailingQuerySeparatorsRE,
+        '',
+      )
       if (
-        (rawRE.test(url) || urlRE.test(url)) &&
-        !ensureServingAccess(url, server, res, next)
+        deniedServingAccessForTransform(
+          urlWithoutTrailingQuerySeparators,
+          server,
+          res,
+          next,
+        )
       ) {
         return
       }
@@ -216,6 +266,9 @@ export function transformMiddleware(
         // resolve, load and transform using the plugin container
         const result = await transformRequest(environment, url, {
           html: req.headers.accept?.includes('text/html'),
+          allowId(id) {
+            return !deniedServingAccessForTransform(id, server, res, next)
+          },
         })
         if (result) {
           const depsOptimizer = environment.depsOptimizer
@@ -285,6 +338,10 @@ export function transformMiddleware(
       if (e?.code === ERR_LOAD_URL) {
         // Let other middleware handle if we can't load the url via transformRequest
         return next()
+      }
+      if (e?.code === ERR_DENIED_ID) {
+        // next() is called in ensureServingAccess
+        return
       }
       return next(e)
     }

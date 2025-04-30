@@ -2,14 +2,18 @@ import path from 'node:path'
 import fsp from 'node:fs/promises'
 import { Buffer } from 'node:buffer'
 import * as mrmime from 'mrmime'
-import type { NormalizedOutputOptions, RenderedChunk } from 'rollup'
+import type {
+  NormalizedOutputOptions,
+  PluginContext,
+  RenderedChunk,
+} from 'rollup'
 import MagicString from 'magic-string'
 import colors from 'picocolors'
 import {
   createToImportMetaURLBasedRelativeRuntime,
   toOutputFilePathInJS,
 } from '../build'
-import type { Plugin, PluginContext } from '../plugin'
+import type { Plugin } from '../plugin'
 import type { ResolvedConfig } from '../config'
 import { checkPublicFile } from '../publicDir'
 import {
@@ -36,8 +40,8 @@ export const assetUrlRE = /__VITE_ASSET__([\w$]+)__(?:\$_(.*?)__)?/g
 
 const jsSourceMapRE = /\.[cm]?js\.map$/
 
-const noInlineRE = /[?&]no-inline\b/
-const inlineRE = /[?&]inline\b/
+export const noInlineRE = /[?&]no-inline\b/
+export const inlineRE = /[?&]inline\b/
 const svgExtRE = /\.svg(?:$|\?)/
 
 const assetCache = new WeakMap<Environment, Map<string, string>>()
@@ -148,60 +152,64 @@ export function assetPlugin(config: ResolvedConfig): Plugin {
       cssEntriesMap.set(this.environment, new Set())
     },
 
-    resolveId(id) {
-      if (!config.assetsInclude(cleanUrl(id)) && !urlRE.test(id)) {
-        return
-      }
-      // imports to absolute urls pointing to files in /public
-      // will fail to resolve in the main resolver. handle them here.
-      const publicFile = checkPublicFile(id, config)
-      if (publicFile) {
-        return id
-      }
+    resolveId: {
+      handler(id) {
+        if (!config.assetsInclude(cleanUrl(id)) && !urlRE.test(id)) {
+          return
+        }
+        // imports to absolute urls pointing to files in /public
+        // will fail to resolve in the main resolver. handle them here.
+        const publicFile = checkPublicFile(id, config)
+        if (publicFile) {
+          return id
+        }
+      },
     },
 
-    async load(id) {
-      if (id[0] === '\0') {
-        // Rollup convention, this id should be handled by the
-        // plugin that marked it with \0
-        return
-      }
-
-      // raw requests, read from disk
-      if (rawRE.test(id)) {
-        const file = checkPublicFile(id, config) || cleanUrl(id)
-        this.addWatchFile(file)
-        // raw query, read file and return as string
-        return `export default ${JSON.stringify(
-          await fsp.readFile(file, 'utf-8'),
-        )}`
-      }
-
-      if (!urlRE.test(id) && !config.assetsInclude(cleanUrl(id))) {
-        return
-      }
-
-      id = removeUrlQuery(id)
-      let url = await fileToUrl(this, id)
-
-      // Inherit HMR timestamp if this asset was invalidated
-      if (!url.startsWith('data:') && this.environment.mode === 'dev') {
-        const mod = this.environment.moduleGraph.getModuleById(id)
-        if (mod && mod.lastHMRTimestamp > 0) {
-          url = injectQuery(url, `t=${mod.lastHMRTimestamp}`)
+    load: {
+      async handler(id) {
+        if (id[0] === '\0') {
+          // Rollup convention, this id should be handled by the
+          // plugin that marked it with \0
+          return
         }
-      }
 
-      return {
-        code: `export default ${JSON.stringify(encodeURIPath(url))}`,
-        // Force rollup to keep this module from being shared between other entry points if it's an entrypoint.
-        // If the resulting chunk is empty, it will be removed in generateBundle.
-        moduleSideEffects:
-          config.command === 'build' && this.getModuleInfo(id)?.isEntry
-            ? 'no-treeshake'
-            : false,
-        meta: config.command === 'build' ? { 'vite:asset': true } : undefined,
-      }
+        // raw requests, read from disk
+        if (rawRE.test(id)) {
+          const file = checkPublicFile(id, config) || cleanUrl(id)
+          this.addWatchFile(file)
+          // raw query, read file and return as string
+          return `export default ${JSON.stringify(
+            await fsp.readFile(file, 'utf-8'),
+          )}`
+        }
+
+        if (!urlRE.test(id) && !config.assetsInclude(cleanUrl(id))) {
+          return
+        }
+
+        id = removeUrlQuery(id)
+        let url = await fileToUrl(this, id)
+
+        // Inherit HMR timestamp if this asset was invalidated
+        if (!url.startsWith('data:') && this.environment.mode === 'dev') {
+          const mod = this.environment.moduleGraph.getModuleById(id)
+          if (mod && mod.lastHMRTimestamp > 0) {
+            url = injectQuery(url, `t=${mod.lastHMRTimestamp}`)
+          }
+        }
+
+        return {
+          code: `export default ${JSON.stringify(encodeURIPath(url))}`,
+          // Force rollup to keep this module from being shared between other entry points if it's an entrypoint.
+          // If the resulting chunk is empty, it will be removed in generateBundle.
+          moduleSideEffects:
+            config.command === 'build' && this.getModuleInfo(id)?.isEntry
+              ? 'no-treeshake'
+              : false,
+          meta: config.command === 'build' ? { 'vite:asset': true } : undefined,
+        }
+      },
     },
 
     renderChunk(code, chunk, opts) {
@@ -221,6 +229,7 @@ export function assetPlugin(config: ResolvedConfig): Plugin {
 
     generateBundle(_, bundle) {
       // Remove empty entry point file
+      let importedFiles: Set<string> | undefined
       for (const file in bundle) {
         const chunk = bundle[file]
         if (
@@ -230,7 +239,23 @@ export function assetPlugin(config: ResolvedConfig): Plugin {
           config.assetsInclude(chunk.moduleIds[0]) &&
           this.getModuleInfo(chunk.moduleIds[0])?.meta['vite:asset']
         ) {
-          delete bundle[file]
+          if (!importedFiles) {
+            importedFiles = new Set()
+            for (const file in bundle) {
+              const chunk = bundle[file]
+              if (chunk.type === 'chunk') {
+                for (const importedFile of chunk.imports) {
+                  importedFiles.add(importedFile)
+                }
+                for (const importedFile of chunk.dynamicImports) {
+                  importedFiles.add(importedFile)
+                }
+              }
+            }
+          }
+          if (!importedFiles.has(file)) {
+            delete bundle[file]
+          }
         }
       }
 
@@ -282,8 +307,9 @@ export async function fileToDevUrl(
 
   // If is svg and it's inlined in build, also inline it in dev to match
   // the behaviour in build due to quote handling differences.
-  if (svgExtRE.test(id)) {
-    const file = publicFile || cleanUrl(id)
+  const cleanedId = cleanUrl(id)
+  if (svgExtRE.test(cleanedId)) {
+    const file = publicFile || cleanedId
     const content = await fsp.readFile(file)
     if (shouldInline(environment, file, id, content, undefined, undefined)) {
       return assetToDataURL(environment, file, content)
@@ -381,7 +407,7 @@ async function fileToBuiltUrl(
     return cached
   }
 
-  const { file, postfix } = splitFileAndPostfix(id)
+  let { file, postfix } = splitFileAndPostfix(id)
   const content = await fsp.readFile(file)
 
   let url: string
@@ -401,6 +427,11 @@ async function fileToBuiltUrl(
       originalFileName,
       source: content,
     })
+
+    if (environment.config.command === 'build' && noInlineRE.test(postfix)) {
+      postfix = postfix.replace(noInlineRE, '').replace(/^&/, '?')
+    }
+
     url = `__VITE_ASSET__${referenceId}__${postfix ? `$_${postfix}__` : ``}`
   }
 

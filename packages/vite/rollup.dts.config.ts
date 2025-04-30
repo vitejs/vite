@@ -43,17 +43,17 @@ const identifierWithTrailingDollarRE = /\b(\w+)\$\d+\b/g
 
 /**
  * Replace specific identifiers with a more readable name, grouped by
- * the module that imports the identifer as a named import alias
+ * the module that imports the identifier as a named import alias
  */
 const identifierReplacements: Record<string, Record<string, string>> = {
   rollup: {
     Plugin$1: 'rollup.Plugin',
     PluginContext$1: 'rollup.PluginContext',
-    TransformPluginContext$1: 'rollup.TransformPluginContext',
-    TransformResult$2: 'rollup.TransformResult',
+    MinimalPluginContext$1: 'rollup.MinimalPluginContext',
+    TransformResult$1: 'rollup.TransformResult',
   },
   esbuild: {
-    TransformResult$1: 'esbuild_TransformResult',
+    TransformResult$2: 'esbuild_TransformResult',
     TransformOptions$1: 'esbuild_TransformOptions',
     BuildOptions$1: 'esbuild_BuildOptions',
   },
@@ -94,6 +94,8 @@ function patchTypes(): Plugin {
     renderChunk(code, chunk) {
       if (
         chunk.fileName.startsWith('module-runner') ||
+        // index and moduleRunner have a common chunk "moduleRunnerTransport"
+        chunk.fileName.startsWith('moduleRunnerTransport') ||
         chunk.fileName.startsWith('types.d-')
       ) {
         validateRunnerChunk.call(this, chunk)
@@ -116,6 +118,8 @@ function validateRunnerChunk(this: PluginContext, chunk: RenderedChunk) {
     if (
       !id.startsWith('./') &&
       !id.startsWith('../') &&
+      // index and moduleRunner have a common chunk "moduleRunnerTransport"
+      !id.startsWith('moduleRunnerTransport.d') &&
       !id.startsWith('types.d')
     ) {
       this.warn(
@@ -138,6 +142,8 @@ function validateChunkImports(this: PluginContext, chunk: RenderedChunk) {
       !id.startsWith('node:') &&
       !id.startsWith('types.d') &&
       !id.startsWith('vite/') &&
+      // index and moduleRunner have a common chunk "moduleRunnerTransport"
+      !id.startsWith('moduleRunnerTransport.d') &&
       !deps.includes(id) &&
       !deps.some((name) => id.startsWith(name + '/'))
     ) {

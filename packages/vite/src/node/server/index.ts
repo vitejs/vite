@@ -26,6 +26,7 @@ import type { InlineConfig, ResolvedConfig } from '../config'
 import { resolveConfig } from '../config'
 import {
   diffDnsOrderChange,
+  getServerUrlByHost,
   isInNodeModules,
   isObject,
   isParentDirectory,
@@ -98,6 +99,7 @@ import { transformRequest } from './transformRequest'
 import { searchForPackageRoot, searchForWorkspaceRoot } from './searchRoot'
 import type { DevEnvironment } from './environment'
 import { hostCheckMiddleware } from './middlewares/hostCheck'
+import { rejectInvalidRequestMiddleware } from './middlewares/rejectInvalidRequest'
 
 export interface ServerOptions extends CommonServerOptions {
   /**
@@ -649,6 +651,7 @@ export async function _createServer(
         server.resolvedUrls = await resolveServerUrls(
           httpServer,
           config.server,
+          httpsOptions,
           config,
         )
         if (!isRestart && config.server.open) server.openBrowser()
@@ -657,8 +660,7 @@ export async function _createServer(
     },
     openBrowser() {
       const options = server.config.server
-      const url =
-        server.resolvedUrls?.local[0] ?? server.resolvedUrls?.network[0]
+      const url = getServerUrlByHost(server.resolvedUrls, options.host)
       if (url) {
         const path =
           typeof options.open === 'string'
@@ -855,6 +857,9 @@ export async function _createServer(
   if (process.env.DEBUG) {
     middlewares.use(timeMiddleware(root))
   }
+
+  // disallows request that contains `#` in the URL
+  middlewares.use(rejectInvalidRequestMiddleware())
 
   // cors
   const { cors } = serverConfig
@@ -1154,6 +1159,14 @@ export function resolveServerOptions(
     )
   }
 
+  if (
+    process.env.__VITE_ADDITIONAL_SERVER_ALLOWED_HOSTS &&
+    Array.isArray(server.allowedHosts)
+  ) {
+    const additionalHost = process.env.__VITE_ADDITIONAL_SERVER_ALLOWED_HOSTS
+    server.allowedHosts = [...server.allowedHosts, additionalHost]
+  }
+
   return server
 }
 
@@ -1164,9 +1177,7 @@ async function restartServer(server: ViteDevServer) {
   let inlineConfig = server.config.inlineConfig
   if (server._forceOptimizeOnRestart) {
     inlineConfig = mergeConfig(inlineConfig, {
-      optimizeDeps: {
-        force: true,
-      },
+      forceOptimizeDeps: true,
     })
   }
 
