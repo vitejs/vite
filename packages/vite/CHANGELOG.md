@@ -1,3 +1,9 @@
+## <small>5.4.19 (2025-04-30)</small>
+
+* fix: backport #19965, check static serve file inside sirv (#19966) ([766947e](https://github.com/vitejs/vite/commit/766947e7cbf1cdd07df9737394e8c870401b78b0)), closes [#19965](https://github.com/vitejs/vite/issues/19965) [#19966](https://github.com/vitejs/vite/issues/19966)
+
+
+
 ## <small>5.4.18 (2025-04-10)</small>
 
 * fix: backport #19830, reject requests with `#` in request-target (#19831) ([823675b](https://github.com/vitejs/vite/commit/823675baff2bd6809c74ba2d9acca0327923a54f)), closes [#19830](https://github.com/vitejs/vite/issues/19830) [#19831](https://github.com/vitejs/vite/issues/19831)
