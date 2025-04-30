@@ -25,7 +25,7 @@ export default defineConfig({
     setupFiles: ['./packages/vite/src/node/index.ts'],
   },
   esbuild: {
-    target: 'node18',
+    target: 'node20',
   },
   publicDir: false,
   resolve: {
