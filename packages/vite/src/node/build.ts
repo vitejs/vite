@@ -1625,8 +1625,11 @@ export async function createBuilder(
     async build(
       environment: BuildEnvironment,
     ): Promise<RollupOutput | RollupOutput[] | RollupWatcher> {
-      environment.isBuilt = true
-      return buildEnvironment(environment)
+      const output = buildEnvironment(environment)
+      output.then(() => {
+        environment.isBuilt = true
+      })
+      return output
     },
   }
 
