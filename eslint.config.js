@@ -98,6 +98,7 @@ export default tseslint.config(
           allowModules: [
             'vite',
             'esbuild',
+            'rolldown',
             'less',
             'sass',
             'sass-embedded',
