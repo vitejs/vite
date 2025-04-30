@@ -1,6 +1,7 @@
-import type * as Rollup from 'rolldown'
+import type * as Rolldown from 'rolldown'
+import type * as Rollup from 'types/internal/rollupTypeCompat'
 
-export type { Rollup }
+export type { Rollup, Rolldown }
 export { parseAst, parseAstAsync } from 'rolldown/parseAst'
 export {
   defineConfig,
