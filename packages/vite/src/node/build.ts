@@ -1618,6 +1618,9 @@ export async function createBuilder(
         const handler = getHookHandler(hook)
         await handler(builder)
       }
+      if (!configBuilderBuildAppCalled) {
+        await configBuilder.buildApp(builder)
+      }
     },
     async build(
       environment: BuildEnvironment,
