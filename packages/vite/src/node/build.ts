@@ -1625,10 +1625,8 @@ export async function createBuilder(
     async build(
       environment: BuildEnvironment,
     ): Promise<RollupOutput | RollupOutput[] | RollupWatcher> {
-      const output = buildEnvironment(environment)
-      output.then(() => {
-        environment.isBuilt = true
-      })
+      const output = await buildEnvironment(environment)
+      environment.isBuilt = true
       return output
     },
   }
