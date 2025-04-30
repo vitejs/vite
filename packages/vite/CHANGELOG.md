@@ -1,3 +1,11 @@
+## <small>6.3.4 (2025-04-30)</small>
+
+* fix: check static serve file inside sirv (#19965) ([c22c43d](https://github.com/vitejs/vite/commit/c22c43de612eebb6c182dd67850c24e4fab8cacb)), closes [#19965](https://github.com/vitejs/vite/issues/19965)
+* fix(optimizer): return plain object when using `require` to import externals in optimized dependenci ([efc5eab](https://github.com/vitejs/vite/commit/efc5eab253419fde0a6a48b8d2f233063d6a9643)), closes [#19940](https://github.com/vitejs/vite/issues/19940)
+* refactor: remove duplicate plugin context type (#19935) ([d6d01c2](https://github.com/vitejs/vite/commit/d6d01c2292fa4f9603e05b95d81c8724314c20e0)), closes [#19935](https://github.com/vitejs/vite/issues/19935)
+
+
+
 ## <small>6.3.3 (2025-04-24)</small>
 
 * fix: ignore malformed uris in tranform middleware (#19853) ([e4d5201](https://github.com/vitejs/vite/commit/e4d520141bcd83ad61f16767348b4a813bf9340a)), closes [#19853](https://github.com/vitejs/vite/issues/19853)
