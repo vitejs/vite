@@ -12,12 +12,12 @@ export {
   defaultAllowedOrigins,
 } from './constants'
 export { version as esbuildVersion } from 'esbuild'
-export { isCSSRequest } from './plugins/css'
 export {
   normalizePath,
   mergeConfig,
   mergeAlias,
   createFilter,
+  isCSSRequest,
   rollupVersion,
 } from './utils'
 export { perEnvironmentPlugin } from './plugin'
