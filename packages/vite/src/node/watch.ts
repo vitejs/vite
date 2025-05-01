@@ -1,7 +1,7 @@
 import { EventEmitter } from 'node:events'
 import path from 'node:path'
 import type { FSWatcher, WatchOptions } from 'dep-types/chokidar'
-import type { OutputOptions } from 'rolldown'
+import type { OutputOptions, WatcherOptions } from 'rolldown'
 import colors from 'picocolors'
 import { escapePath } from 'tinyglobby'
 import { withTrailingSlash } from '../shared/utils'
@@ -76,6 +76,16 @@ export function resolveChokidarOptions(
   }
 
   return resolvedWatchOptions
+}
+
+export function convertToNotifyOptions(
+  options: WatchOptions | undefined,
+): WatcherOptions['notify'] {
+  if (!options) return
+
+  return {
+    pollInterval: options.usePolling ? (options.interval ?? 100) : undefined,
+  }
 }
 
 class NoopWatcher extends EventEmitter implements FSWatcher {

@@ -17,11 +17,11 @@ import type {
   RolldownBuild,
   RolldownOptions,
   RolldownOutput,
+  RolldownWatcher,
   RollupError,
   RollupLog,
-  // RollupWatcher,
   WarningHandlerWithDefault,
-  // WatcherOptions,
+  WatcherOptions,
 } from 'rolldown'
 import {
   loadFallbackPlugin as nativeLoadFallbackPlugin,
@@ -72,8 +72,9 @@ import { buildLoadFallbackPlugin } from './plugins/loadFallback'
 import { findNearestMainPackageData, findNearestPackageData } from './packages'
 import type { PackageCache } from './packages'
 import {
+  convertToNotifyOptions,
   getResolvedOutDirs,
-  // resolveChokidarOptions,
+  resolveChokidarOptions,
   resolveEmptyOutDir,
 } from './watch'
 import { completeSystemWrapPlugin } from './plugins/completeSystemWrap'
@@ -280,7 +281,7 @@ export interface BuildEnvironmentOptions {
    * https://rollupjs.org/configuration-options/#watch
    * @default null
    */
-  // watch?: WatcherOptions | null
+  watch?: WatcherOptions | null
   /**
    * create the Build Environment instance
    */
@@ -537,7 +538,7 @@ export async function resolveBuildPlugins(config: ResolvedConfig): Promise<{
  */
 export async function build(
   inlineConfig: InlineConfig = {},
-): Promise<RolldownOutput | RolldownOutput[] /* | RollupWatcher */> {
+): Promise<RolldownOutput | RolldownOutput[] | RolldownWatcher> {
   const builder = await createBuilder(inlineConfig, true)
   const environment = Object.values(builder.environments)[0]
   if (!environment) throw new Error('No environment found')
@@ -565,7 +566,7 @@ function resolveConfigToBuild(
  **/
 async function buildEnvironment(
   environment: BuildEnvironment,
-): Promise<RolldownOutput | RolldownOutput[] /* | RollupWatcher */> {
+): Promise<RolldownOutput | RolldownOutput[] | RolldownWatcher> {
   const { root, packageCache } = environment.config
   const options = environment.config.build
   const libOptions = options.lib
@@ -711,11 +712,11 @@ async function buildEnvironment(
     }
   }
 
-  // const outputBuildError = (e: RollupError) => {
-  //   enhanceRollupError(e)
-  //   clearLine()
-  //   logger.error(e.message, { error: e })
-  // }
+  const outputBuildError = (e: RollupError) => {
+    enhanceRollupError(e)
+    clearLine()
+    logger.error(e.message, { error: e })
+  }
 
   const isSsrTargetWebworkerEnvironment =
     environment.name === 'ssr' &&
@@ -831,42 +832,44 @@ async function buildEnvironment(
     )
 
     // watch file changes with rollup
-    // if (options.watch) {
-    //   logger.info(colors.cyan(`\nwatching for file changes...`))
+    if (options.watch) {
+      logger.info(colors.cyan(`\nwatching for file changes...`))
 
-    //   const resolvedChokidarOptions = resolveChokidarOptions(
-    //     options.watch.chokidar,
-    //     resolvedOutDirs,
-    //     emptyOutDir,
-    //     environment.config.cacheDir,
-    //   )
+      const resolvedChokidarOptions = resolveChokidarOptions(
+        // @ts-expect-error chokidar option does not exist in rolldown but used for backward compat
+        options.watch.chokidar,
+        resolvedOutDirs,
+        emptyOutDir,
+        environment.config.cacheDir,
+      )
 
-    //   const { watch } = await import('rollup')
-    //   const watcher = watch({
-    //     ...rollupOptions,
-    //     output: normalizedOutputs,
-    //     watch: {
-    //       ...options.watch,
-    //       chokidar: resolvedChokidarOptions,
-    //     },
-    //   })
+      const { watch } = await import('rolldown')
+      const watcher = watch({
+        ...rollupOptions,
+        output: normalizedOutputs,
+        watch: {
+          ...options.watch,
+          notify: convertToNotifyOptions(resolvedChokidarOptions),
+        },
+      })
 
-    //   watcher.on('event', (event) => {
-    //     if (event.code === 'BUNDLE_START') {
-    //       logger.info(colors.cyan(`\nbuild started...`))
-    //       if (options.write) {
-    //         prepareOutDir(resolvedOutDirs, emptyOutDir, environment)
-    //       }
-    //     } else if (event.code === 'BUNDLE_END') {
-    //       event.result.close()
-    //       logger.info(colors.cyan(`built in ${event.duration}ms.`))
-    //     } else if (event.code === 'ERROR') {
-    //       outputBuildError(event.error)
-    //     }
-    //   })
+      watcher.on('event', (event) => {
+        if (event.code === 'BUNDLE_START') {
+          logger.info(colors.cyan(`\nbuild started...`))
+          if (options.write) {
+            prepareOutDir(resolvedOutDirs, emptyOutDir, environment)
+          }
+        } else if (event.code === 'BUNDLE_END') {
+          // FIXME: https://github.com/rolldown/rolldown/issues/4380
+          // event.result.close()
+          logger.info(colors.cyan(`built in ${event.duration}ms.`))
+        } else if (event.code === 'ERROR') {
+          outputBuildError(event.error)
+        }
+      })
 
-    //   return watcher
-    // }
+      return watcher
+    }
 
     // write or generate files with rolldown
     const { rolldown } = await import('rolldown')
@@ -1613,7 +1616,7 @@ export interface ViteBuilder {
   buildApp(): Promise<void>
   build(
     environment: BuildEnvironment,
-  ): Promise<RolldownOutput | RolldownOutput[] /* | RollupWatcher */>
+  ): Promise<RolldownOutput | RolldownOutput[] | RolldownWatcher>
 }
 
 export interface BuilderOptions {
