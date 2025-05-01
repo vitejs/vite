@@ -1040,7 +1040,6 @@ function resolveDepOptimizationOptions(
 export function isResolvedConfig(
   inlineConfig: InlineConfig | ResolvedConfig,
 ): inlineConfig is ResolvedConfig {
-  // assume that internal methods cannot be provided in inline config
   return (
     SYMBOL_RESOLVED_CONFIG in inlineConfig &&
     inlineConfig[SYMBOL_RESOLVED_CONFIG]
