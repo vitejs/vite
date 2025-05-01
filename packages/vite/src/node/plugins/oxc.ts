@@ -200,6 +200,9 @@ export async function transformWithOxc(
       resolvedOptions.assumptions ??= {}
       resolvedOptions.assumptions.setPublicClassFields =
         !useDefineForClassFields
+      resolvedOptions.typescript ??= {}
+      resolvedOptions.typescript.removeClassFieldsWithoutInitializer =
+        !useDefineForClassFields
 
       // set target to es2021 or lower to enable class property transforms
       // https://github.com/oxc-project/oxc/issues/6735#issuecomment-2513866362
