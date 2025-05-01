@@ -528,6 +528,9 @@ importers:
       kill-port:
         specifier: ^1.6.1
         version: 1.6.1
+      rolldown:
+        specifier: 1.0.0-beta.8-commit.a720367
+        version: 1.0.0-beta.8-commit.a720367(@oxc-project/runtime@0.67.0)
 
   playground/alias:
     dependencies:

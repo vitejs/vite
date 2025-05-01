@@ -7,7 +7,7 @@ import type {
   InlineConfig,
   Logger,
   PluginOption,
-  // ResolvedConfig,
+  ResolvedConfig,
   UserConfig,
   ViteDevServer,
 } from 'vite'
@@ -20,7 +20,11 @@ import {
   preview,
 } from 'vite'
 import type { Browser, Page } from 'playwright-chromium'
-import type { RollupError, RollupWatcher, RollupWatcherEvent } from 'rollup'
+import type {
+  RolldownWatcher,
+  RolldownWatcherEvent,
+  RollupError,
+} from 'rolldown'
 import type { RunnerTestFile } from 'vitest'
 import { beforeAll, inject } from 'vitest'
 
@@ -70,7 +74,7 @@ export const browserErrors: Error[] = []
 export let page: Page = undefined!
 export let browser: Browser = undefined!
 export let viteTestUrl: string = ''
-export const watcher: RollupWatcher | undefined = undefined
+export let watcher: RolldownWatcher | undefined = undefined
 
 export function setViteUrl(url: string): void {
   viteTestUrl = url
@@ -242,12 +246,12 @@ export async function startDefaultServe(): Promise<void> {
     await page.goto(viteTestUrl)
   } else {
     process.env.VITE_INLINE = 'inline-build'
-    // let resolvedConfig: ResolvedConfig
+    let resolvedConfig: ResolvedConfig
     // determine build watch
     const resolvedPlugin: () => PluginOption = () => ({
       name: 'vite-plugin-watcher',
-      configResolved(_config) {
-        // resolvedConfig = config
+      configResolved(config) {
+        resolvedConfig = config
       },
     })
     const buildConfig = mergeConfig(
@@ -260,13 +264,13 @@ export async function startDefaultServe(): Promise<void> {
       const builder = await createBuilder(buildConfig)
       await builder.buildApp()
     } else {
-      /* const rollupOutput = */ await build(buildConfig)
-      // const isWatch = !!resolvedConfig!.build.watch
-      // // in build watch,call startStaticServer after the build is complete
-      // if (isWatch) {
-      //   watcher = rollupOutput as RollupWatcher
-      //   await notifyRebuildComplete(watcher)
-      // }
+      const rollupOutput = await build(buildConfig)
+      const isWatch = !!resolvedConfig!.build.watch
+      // in build watch,call startStaticServer after the build is complete
+      if (isWatch) {
+        watcher = rollupOutput as RolldownWatcher
+        await notifyRebuildComplete(watcher)
+      }
       if (buildConfig.__test__) {
         buildConfig.__test__()
       }
@@ -293,19 +297,23 @@ export async function startDefaultServe(): Promise<void> {
  * Send the rebuild complete message in build watch
  */
 export async function notifyRebuildComplete(
-  watcher: RollupWatcher,
-): Promise<RollupWatcher> {
+  watcher: RolldownWatcher,
+): Promise<RolldownWatcher> {
   let resolveFn: undefined | (() => void)
-  const callback = (event: RollupWatcherEvent): void => {
+  const callback = (event: RolldownWatcherEvent): void => {
     if (event.code === 'END') {
       resolveFn?.()
+      resolveFn = undefined // set to undefined instead of watcher.off for now
     }
   }
   watcher.on('event', callback)
   await new Promise<void>((resolve) => {
     resolveFn = resolve
   })
-  return watcher.off('event', callback)
+
+  // TODO: not supported yet (https://github.com/rolldown/rolldown/issues/4382)
+  // return watcher.off('event', callback)
+  return watcher
 }
 
 export function createInMemoryLogger(logs: string[]): Logger {
