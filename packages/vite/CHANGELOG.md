@@ -1,3 +1,18 @@
+## <small>6.3.6 (2025-05-01)</small>
+
+* fix: check static serve file inside sirv (#19965) ([c22c43d](https://github.com/vitejs/rolldown-vite/commit/c22c43d)), closes [#19965](https://github.com/vitejs/rolldown-vite/issues/19965)
+* fix: set `typescript.removeClassFieldsWithoutInitializer` for `useDefineForClassFields=false` (#148) ([fca16ad](https://github.com/vitejs/rolldown-vite/commit/fca16ad)), closes [#148](https://github.com/vitejs/rolldown-vite/issues/148)
+* fix(asset): regex filter should not force query to be included (#143) ([265e4d4](https://github.com/vitejs/rolldown-vite/commit/265e4d4)), closes [#143](https://github.com/vitejs/rolldown-vite/issues/143)
+* fix(optimizer): return plain object when using `require` to import externals in optimized dependenci ([efc5eab](https://github.com/vitejs/rolldown-vite/commit/efc5eab)), closes [#19940](https://github.com/vitejs/rolldown-vite/issues/19940)
+* fix(types): add ESBuildOptions type back (#146) ([6eccf22](https://github.com/vitejs/rolldown-vite/commit/6eccf22)), closes [#146](https://github.com/vitejs/rolldown-vite/issues/146)
+* feat: update rolldown ([b3efa58](https://github.com/vitejs/rolldown-vite/commit/b3efa58))
+* feat(types): make exposed `Rollup` type more compatible with Rollup (#145) ([f086663](https://github.com/vitejs/rolldown-vite/commit/f086663)), closes [#145](https://github.com/vitejs/rolldown-vite/issues/145)
+* release: v6.3.4 ([b040d54](https://github.com/vitejs/rolldown-vite/commit/b040d54))
+* chore: add rolldown-vite indicator (#141) ([9c6218e](https://github.com/vitejs/rolldown-vite/commit/9c6218e)), closes [#141](https://github.com/vitejs/rolldown-vite/issues/141)
+* refactor: remove duplicate plugin context type (#19935) ([d6d01c2](https://github.com/vitejs/rolldown-vite/commit/d6d01c2)), closes [#19935](https://github.com/vitejs/rolldown-vite/issues/19935)
+
+
+
 ## <small>6.3.5 (2025-04-24)</small>
 
 * feat: update rolldown ([ec8faac](https://github.com/vitejs/rolldown-vite/commit/ec8faac))
