@@ -278,7 +278,11 @@ export function assetPlugin(config: ResolvedConfig): Plugin {
 
       for (const file in bundle) {
         const chunk = bundle[file]
-        if (chunk.type === 'asset' && !importedAssets.has(file)) {
+        if (
+          chunk.type === 'asset' &&
+          !file.endsWith('.map') &&
+          !importedAssets.has(file)
+        ) {
           // remove unused assets
           delete bundle[file]
         }
