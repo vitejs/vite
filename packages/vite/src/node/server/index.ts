@@ -101,6 +101,8 @@ import type { DevEnvironment } from './environment'
 import { hostCheckMiddleware } from './middlewares/hostCheck'
 import { rejectInvalidRequestMiddleware } from './middlewares/rejectInvalidRequest'
 
+const usedConfigs = new WeakSet<ResolvedConfig>()
+
 export interface ServerOptions extends CommonServerOptions {
   /**
    * Configure HMR-specific options (port, host, path & protocol)
@@ -443,11 +445,17 @@ export async function _createServer(
     ? inlineConfig
     : await resolveConfig(inlineConfig, 'serve')
 
+  if (usedConfigs.has(config)) {
+    throw new Error(`There is already a server associated with the config.`)
+  }
+
   if (config.command !== 'serve') {
     throw new Error(
       `Config was resolved for a "build", expected a "serve" command.`,
     )
   }
+
+  usedConfigs.add(config)
 
   const initPublicFilesPromise = initPublicFiles(config)
 
