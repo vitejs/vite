@@ -2269,7 +2269,7 @@ type PreprocessorAdditionalData =
 
 export type SassPreprocessorOptions = {
   additionalData?: PreprocessorAdditionalData
-} & ({ api?: 'modern' | 'modern-compiler' } & SassModernPreprocessBaseOptions)
+} & SassModernPreprocessBaseOptions
 
 export type LessPreprocessorOptions = {
   additionalData?: PreprocessorAdditionalData
@@ -2393,138 +2393,7 @@ function cleanScssBugUrl(url: string) {
 
 // #region Sass
 // .scss/.sass processor
-const makeModernScssWorker = (
-  environment: PartialEnvironment,
-  resolvers: CSSAtImportResolvers,
-  alias: Alias[],
-  maxWorkers: number | undefined,
-) => {
-  const internalCanonicalize = async (
-    url: string,
-    importer: string,
-  ): Promise<string | null> => {
-    importer = cleanScssBugUrl(importer)
-    const resolved = await resolvers.sass(environment, url, importer)
-    return resolved ?? null
-  }
-
-  const internalLoad = async (file: string, rootFile: string) => {
-    const result = await rebaseUrls(
-      environment,
-      file,
-      rootFile,
-      alias,
-      '$',
-      resolvers.sass,
-    )
-    if (result.contents) {
-      return result.contents
-    }
-    return await fsp.readFile(result.file, 'utf-8')
-  }
-
-  const worker = new WorkerWithFallback(
-    () =>
-      async (
-        sassPath: string,
-        data: string,
-        // additionalData can a function that is not cloneable but it won't be used
-        options: SassStylePreprocessorInternalOptions & {
-          api: 'modern'
-          additionalData: undefined
-        },
-      ) => {
-        // eslint-disable-next-line no-restricted-globals -- this function runs inside a cjs worker
-        const sass: typeof Sass = require(sassPath)
-        // eslint-disable-next-line no-restricted-globals
-        const path: typeof import('node:path') = require('node:path')
-
-        const { fileURLToPath, pathToFileURL }: typeof import('node:url') =
-          // eslint-disable-next-line no-restricted-globals
-          require('node:url')
-
-        const sassOptions = { ...options } as Sass.StringOptions<'async'>
-        sassOptions.url = pathToFileURL(options.filename)
-        sassOptions.sourceMap = options.enableSourcemap
-
-        const internalImporter: Sass.Importer<'async'> = {
-          async canonicalize(url, context) {
-            const importer = context.containingUrl
-              ? fileURLToPath(context.containingUrl)
-              : options.filename
-            const resolved = await internalCanonicalize(url, importer)
-            if (
-              resolved &&
-              // only limit to these extensions because:
-              // - for the `@import`/`@use`s written in file loaded by `load` function,
-              //   the `canonicalize` function of that `importer` is called first
-              // - the `load` function of an importer is only called for the importer
-              //   that returned a non-null result from its `canonicalize` function
-              (resolved.endsWith('.css') ||
-                resolved.endsWith('.scss') ||
-                resolved.endsWith('.sass'))
-            ) {
-              return pathToFileURL(resolved)
-            }
-            return null
-          },
-          async load(canonicalUrl) {
-            const ext = path.extname(canonicalUrl.pathname)
-            let syntax: Sass.Syntax = 'scss'
-            if (ext === '.sass') {
-              syntax = 'indented'
-            } else if (ext === '.css') {
-              syntax = 'css'
-            }
-            const contents = await internalLoad(
-              fileURLToPath(canonicalUrl),
-              options.filename,
-            )
-            return { contents, syntax, sourceMapUrl: canonicalUrl }
-          },
-        }
-        sassOptions.importers = [
-          ...(sassOptions.importers ?? []),
-          internalImporter,
-        ]
-
-        const result = await sass.compileStringAsync(data, sassOptions)
-        return {
-          css: result.css,
-          map: result.sourceMap ? JSON.stringify(result.sourceMap) : undefined,
-          stats: {
-            includedFiles: result.loadedUrls
-              .filter((url) => url.protocol === 'file:')
-              .map((url) => fileURLToPath(url)),
-          },
-        } satisfies ScssWorkerResult
-      },
-    {
-      parentFunctions: {
-        internalCanonicalize,
-        internalLoad,
-      },
-      shouldUseFake(_sassPath, _data, options) {
-        // functions and importer is a function and is not serializable
-        // in that case, fallback to running in main thread
-        return !!(
-          (options.functions && Object.keys(options.functions).length > 0) ||
-          (options.importers &&
-            (!Array.isArray(options.importers) ||
-              options.importers.length > 0)) ||
-          options.logger
-        )
-      },
-      max: maxWorkers,
-    },
-  )
-  return worker
-}
-
-// this is mostly a copy&paste of makeModernScssWorker
-// however sharing code between two is hard because
-// makeModernScssWorker above needs function inlined for worker.
-const makeModernCompilerScssWorker = (
+const makeScssWorker = (
   environment: PartialEnvironment,
   resolvers: CSSAtImportResolvers,
   alias: Alias[],
@@ -2532,7 +2401,23 @@ const makeModernCompilerScssWorker = (
 ) => {
   let compilerPromise: Promise<Sass.AsyncCompiler> | undefined
 
-  const worker: Awaited<ReturnType<typeof makeModernScssWorker>> = {
+  // we use the compiler api provided by sass
+  // instead of creating a worker pool on our own
+  type WorkerType = InstanceType<
+    typeof WorkerWithFallback<
+      [
+        sassPath: string,
+        data: string,
+        // additionalData can a function that is not cloneable but it won't be used
+        options: SassStylePreprocessorInternalOptions & {
+          additionalData: undefined
+        },
+      ],
+      ScssWorkerResult
+    >
+  >
+
+  const worker: WorkerType = {
     async run(sassPath, data, options) {
       // need pathToFileURL for windows since import("D:...") fails
       // https://github.com/nodejs/node/issues/31710
@@ -2620,12 +2505,7 @@ type ScssWorkerResult = {
 const scssProcessor = (
   maxWorkers: number | undefined,
 ): StylePreprocessor<SassStylePreprocessorInternalOptions> => {
-  const workerMap = new Map<
-    unknown,
-    ReturnType<
-      typeof makeModernScssWorker | typeof makeModernCompilerScssWorker
-    >
-  >()
+  const workerMap = new Map<unknown, ReturnType<typeof makeScssWorker>>()
 
   return {
     close() {
@@ -2635,26 +2515,11 @@ const scssProcessor = (
     },
     async process(environment, source, root, options, resolvers) {
       const sassPackage = loadSassPackage(root)
-      const api =
-        options.api ??
-        (sassPackage.name === 'sass-embedded' ? 'modern-compiler' : 'modern')
 
       if (!workerMap.has(options.alias)) {
         workerMap.set(
           options.alias,
-          api === 'modern-compiler'
-            ? makeModernCompilerScssWorker(
-                environment,
-                resolvers,
-                options.alias,
-                maxWorkers,
-              )
-            : makeModernScssWorker(
-                environment,
-                resolvers,
-                options.alias,
-                maxWorkers,
-              ),
+          makeScssWorker(environment, resolvers, options.alias, maxWorkers),
         )
       }
       const worker = workerMap.get(options.alias)!
@@ -2674,7 +2539,6 @@ const scssProcessor = (
         const result = await worker.run(
           sassPackage.path,
           data,
-          // @ts-expect-error the correct worker is selected for `options.type`
           optionsWithoutAdditionalData,
         )
         const deps = result.stats.includedFiles.map((f) => cleanScssBugUrl(f))
