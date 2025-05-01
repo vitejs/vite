@@ -180,6 +180,9 @@ async function getWorkerType(
   return 'classic'
 }
 
+const workerImportMetaUrlRE =
+  /new\s+(?:Worker|SharedWorker).+new\s+URL.+import\.meta\.url/s
+
 export function workerImportMetaUrlPlugin(config: ResolvedConfig): Plugin {
   const isBuild = config.command === 'build'
   let workerResolver: ResolveIdFn
@@ -200,15 +203,15 @@ export function workerImportMetaUrlPlugin(config: ResolvedConfig): Plugin {
       return environment.config.consumer === 'client'
     },
 
-    // shouldTransformCachedModule({ code }) {
-    //   if (isBuild && config.build.watch && isIncludeWorkerImportMetaUrl(code)) {
-    //     return true
-    //   }
-    // },
+    shouldTransformCachedModule({ code }) {
+      if (isBuild && config.build.watch && workerImportMetaUrlRE.test(code)) {
+        return true
+      }
+    },
 
     transform: {
       filter: {
-        code: /new\s+(?:Worker|SharedWorker).+new\s+URL.+import\.meta\.url/s,
+        code: workerImportMetaUrlRE,
       },
       async handler(code, id) {
         let s: MagicString | undefined

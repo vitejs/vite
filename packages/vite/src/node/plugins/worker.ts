@@ -311,11 +311,11 @@ export function webWorkerPlugin(config: ResolvedConfig): Plugin {
       },
     },
 
-    // shouldTransformCachedModule({ id }) {
-    //   if (isBuild && config.build.watch && workerOrSharedWorkerRE.test(id)) {
-    //     return true
-    //   }
-    // },
+    shouldTransformCachedModule({ id }) {
+      if (isBuild && config.build.watch && workerOrSharedWorkerRE.test(id)) {
+        return true
+      }
+    },
 
     transform: {
       filter: {
