@@ -64,7 +64,7 @@ export const createFilter = _createFilter as (
   options?: { resolve?: string | false | null },
 ) => (id: string | unknown) => boolean
 
-export { withFilter } from 'rolldown'
+export { withFilter } from 'rolldown/filter'
 
 const replaceSlashOrColonRE = /[/:]/g
 const replaceDotRE = /\./g
