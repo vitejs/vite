@@ -2,11 +2,10 @@ import type {
   CustomPluginOptions,
   LoadResult,
   ObjectHook,
+  PluginContext,
   ResolveIdResult,
-  MinimalPluginContext as RollupMinimalPluginContext,
   Plugin as RollupPlugin,
-  PluginContext as RollupPluginContext,
-  TransformPluginContext as RollupTransformPluginContext,
+  TransformPluginContext,
   TransformResult,
 } from 'rollup'
 import type {
@@ -65,23 +64,7 @@ export interface HotUpdatePluginContext {
   environment: DevEnvironment
 }
 
-export interface MinimalPluginContext
-  extends RollupMinimalPluginContext,
-    PluginContextExtension {}
-
-export interface PluginContext
-  extends RollupPluginContext,
-    PluginContextExtension {}
-
-export interface ResolveIdPluginContext
-  extends RollupPluginContext,
-    PluginContextExtension {}
-
-export interface TransformPluginContext
-  extends RollupTransformPluginContext,
-    PluginContextExtension {}
-
-// Argument Rollup types to have the PluginContextExtension
+// Augment Rollup types to have the PluginContextExtension
 declare module 'rollup' {
   export interface MinimalPluginContext extends PluginContextExtension {}
 }
@@ -127,7 +110,7 @@ export interface Plugin<A = any> extends RollupPlugin<A> {
    */
   resolveId?: ObjectHook<
     (
-      this: ResolveIdPluginContext,
+      this: PluginContext,
       source: string,
       importer: string | undefined,
       options: {

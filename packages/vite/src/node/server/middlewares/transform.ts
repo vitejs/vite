@@ -41,7 +41,7 @@ import {
   ERR_OUTDATED_OPTIMIZED_DEP,
   NULL_BYTE_PLACEHOLDER,
 } from '../../../shared/constants'
-import { ensureServingAccess } from './static'
+import { checkServingAccess, respondWithAccessDenied } from './static'
 
 const debugCache = createDebugger('vite:cache')
 
@@ -60,13 +60,24 @@ function deniedServingAccessForTransform(
   res: ServerResponse,
   next: Connect.NextFunction,
 ) {
-  return (
-    (rawRE.test(url) ||
-      urlRE.test(url) ||
-      inlineRE.test(url) ||
-      svgRE.test(url)) &&
-    !ensureServingAccess(url, server, res, next)
-  )
+  if (
+    rawRE.test(url) ||
+    urlRE.test(url) ||
+    inlineRE.test(url) ||
+    svgRE.test(url)
+  ) {
+    const servingAccessResult = checkServingAccess(url, server)
+    if (servingAccessResult === 'denied') {
+      respondWithAccessDenied(url, server, res)
+      return true
+    }
+    if (servingAccessResult === 'fallback') {
+      next()
+      return true
+    }
+    servingAccessResult satisfies 'allowed'
+  }
+  return false
 }
 
 /**
@@ -127,6 +138,12 @@ export function transformMiddleware(
         '\0',
       )
     } catch (e) {
+      if (e instanceof URIError) {
+        server.config.logger.warn(
+          colors.yellow('Malformed URI sequence in request URL'),
+        )
+        return next()
+      }
       return next(e)
     }
 

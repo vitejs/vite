@@ -219,8 +219,6 @@ export function resolveCSSOptions(
   if (resolved.transformer === 'lightningcss') {
     resolved.lightningcss ??= {}
     resolved.lightningcss.targets ??= convertTargets(ESBUILD_MODULES_TARGET)
-  } else {
-    resolved.lightningcss = undefined
   }
   return resolved
 }
@@ -512,7 +510,7 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
     return cssBundleName
   }
 
-  return {
+  const plugin = {
     name: 'vite:css-post',
 
     renderStart() {
@@ -1080,7 +1078,14 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
         }
       }
     },
-  }
+  } satisfies Plugin
+
+  // backward compat
+  const handler = plugin.transform.handler
+  ;(plugin as any).transform = handler
+  ;(plugin as any).transform.handler = handler
+
+  return plugin
 }
 
 export function cssAnalysisPlugin(config: ResolvedConfig): Plugin {
@@ -1202,6 +1207,8 @@ export function getEmptyChunkReplacer(
     )
 }
 
+const fileURLWithWindowsDriveRE = /^file:\/\/\/[a-zA-Z]:\//
+
 interface CSSAtImportResolvers {
   css: ResolveIdFn
   sass: ResolveIdFn
@@ -1240,7 +1247,9 @@ function createCSSResolvers(config: ResolvedConfig): CSSAtImportResolvers {
             args[1] = fileURLToPath(args[1], {
               windows:
                 // file:///foo cannot be converted to path with windows mode
-                isWindows && args[1].startsWith('file:///') ? false : undefined,
+                isWindows && !fileURLWithWindowsDriveRE.test(args[1])
+                  ? false
+                  : undefined,
             })
           }
           return resolver(...args)
@@ -2124,18 +2133,14 @@ async function minifyCSS(
         code: Buffer.from(css),
         minify: true,
       })
-      if (warnings.length) {
-        const messages = warnings.map(
-          (warning) =>
-            `${warning.message}\n` +
-            generateCodeFrame(css, {
-              line: warning.loc.line,
-              column: warning.loc.column - 1, // 1-based
-            }),
-        )
-        config.logger.warn(
-          colors.yellow(`warnings when minifying css:\n${messages.join('\n')}`),
-        )
+
+      for (const warning of warnings) {
+        let msg = `[lightningcss minify] ${warning.message}`
+        msg += `\n${generateCodeFrame(css, {
+          line: warning.loc.line,
+          column: warning.loc.column - 1, // 1-based
+        })}`
+        config.logger.warn(colors.yellow(msg))
       }
 
       // NodeJS res.code = Buffer
@@ -2145,6 +2150,11 @@ async function minifyCSS(
       return decoder.decode(code) + (inlined ? '' : '\n')
     } catch (e) {
       e.message = `[lightningcss minify] ${e.message}`
+      const friendlyMessage = getLightningCssErrorMessageForIeSyntaxes(css)
+      if (friendlyMessage) {
+        e.message += friendlyMessage
+      }
+
       if (e.loc) {
         e.loc = {
           line: e.loc.line,
@@ -2164,7 +2174,7 @@ async function minifyCSS(
     if (warnings.length) {
       const msgs = await formatMessages(warnings, { kind: 'warning' })
       config.logger.warn(
-        colors.yellow(`warnings when minifying css:\n${msgs.join('\n')}`),
+        colors.yellow(`[esbuild css minify]\n${msgs.join('\n')}`),
       )
     }
     // esbuild output does return a linebreak at the end
@@ -3496,23 +3506,11 @@ async function compileLightningCSS(
         line: e.loc.line,
         column: e.loc.column - 1, // 1-based
       }
-      // add friendly error for https://github.com/parcel-bundler/lightningcss/issues/39
       try {
         const code = fs.readFileSync(e.fileName, 'utf-8')
-        const commonIeMessage =
-          ', which was used in the past to support old Internet Explorer versions.' +
-          ' This is not a valid CSS syntax and will be ignored by modern browsers. ' +
-          '\nWhile this is not supported by LightningCSS, you can set `css.lightningcss.errorRecovery: true` to strip these codes.'
-        if (/[\s;{]\*[a-zA-Z-][\w-]+\s*:/.test(code)) {
-          // https://stackoverflow.com/a/1667560
-          e.message +=
-            '.\nThis file contains star property hack (e.g. `*zoom`)' +
-            commonIeMessage
-        } else if (/min-width:\s*0\\0/.test(code)) {
-          // https://stackoverflow.com/a/14585820
-          e.message +=
-            '.\nThis file contains @media zero hack (e.g. `@media (min-width: 0\\0)`)' +
-            commonIeMessage
+        const friendlyMessage = getLightningCssErrorMessageForIeSyntaxes(code)
+        if (friendlyMessage) {
+          e.message += friendlyMessage
         }
       } catch {}
     }
@@ -3587,6 +3585,31 @@ async function compileLightningCSS(
     map: 'map' in res ? res.map?.toString() : undefined,
     modules,
   }
+}
+
+// friendly error for https://github.com/parcel-bundler/lightningcss/issues/39
+function getLightningCssErrorMessageForIeSyntaxes(
+  code: string,
+): string | undefined {
+  const commonIeMessage =
+    ', which was used in the past to support old Internet Explorer versions.' +
+    ' This is not a valid CSS syntax and will be ignored by modern browsers. ' +
+    '\nWhile this is not supported by LightningCSS, you can set `css.lightningcss.errorRecovery: true` to strip these codes.'
+  if (/[\s;{]\*[a-zA-Z-][\w-]+\s*:/.test(code)) {
+    // https://stackoverflow.com/a/1667560
+    return (
+      '.\nThis file contains star property hack (e.g. `*zoom`)' +
+      commonIeMessage
+    )
+  }
+  if (/min-width:\s*0\\0/.test(code)) {
+    // https://stackoverflow.com/a/14585820
+    return (
+      '.\nThis file contains @media zero hack (e.g. `@media (min-width: 0\\0)`)' +
+      commonIeMessage
+    )
+  }
+  return undefined
 }
 
 // Convert https://esbuild.github.io/api/#target

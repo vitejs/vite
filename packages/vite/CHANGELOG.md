@@ -1,3 +1,48 @@
+## <small>6.3.4 (2025-04-30)</small>
+
+* fix: check static serve file inside sirv (#19965) ([c22c43d](https://github.com/vitejs/vite/commit/c22c43de612eebb6c182dd67850c24e4fab8cacb)), closes [#19965](https://github.com/vitejs/vite/issues/19965)
+* fix(optimizer): return plain object when using `require` to import externals in optimized dependenci ([efc5eab](https://github.com/vitejs/vite/commit/efc5eab253419fde0a6a48b8d2f233063d6a9643)), closes [#19940](https://github.com/vitejs/vite/issues/19940)
+* refactor: remove duplicate plugin context type (#19935) ([d6d01c2](https://github.com/vitejs/vite/commit/d6d01c2292fa4f9603e05b95d81c8724314c20e0)), closes [#19935](https://github.com/vitejs/vite/issues/19935)
+
+
+
+## <small>6.3.3 (2025-04-24)</small>
+
+* fix: ignore malformed uris in tranform middleware (#19853) ([e4d5201](https://github.com/vitejs/vite/commit/e4d520141bcd83ad61f16767348b4a813bf9340a)), closes [#19853](https://github.com/vitejs/vite/issues/19853)
+* fix(assets): ensure ?no-inline is not included in the asset url in the production environment (#1949 ([16a73c0](https://github.com/vitejs/vite/commit/16a73c05d35daa34117a173784895546212db5f4)), closes [#19496](https://github.com/vitejs/vite/issues/19496)
+* fix(css): resolve relative imports in sass properly on Windows (#19920) ([ffab442](https://github.com/vitejs/vite/commit/ffab44270488f54ae344801024474b597249071b)), closes [#19920](https://github.com/vitejs/vite/issues/19920)
+* fix(deps): update all non-major dependencies (#19899) ([a4b500e](https://github.com/vitejs/vite/commit/a4b500ef9ccc9b19a2882156a9ba8397e69bc6b2)), closes [#19899](https://github.com/vitejs/vite/issues/19899)
+* fix(ssr): fix execution order of re-export (#19841) ([ed29dee](https://github.com/vitejs/vite/commit/ed29dee2eb2e3573b2bc337e1a9124c65222a1e5)), closes [#19841](https://github.com/vitejs/vite/issues/19841)
+* fix(ssr): fix live binding of default export declaration and hoist exports getter (#19842) ([80a91ff](https://github.com/vitejs/vite/commit/80a91ff82426a4c88d54b9f5ec9a4205cb13899b)), closes [#19842](https://github.com/vitejs/vite/issues/19842)
+* perf: skip sourcemap generation for renderChunk hook of import-analysis-build plugin (#19921) ([55cfd04](https://github.com/vitejs/vite/commit/55cfd04b10f98cde7a96814a69b9813543ea79c2)), closes [#19921](https://github.com/vitejs/vite/issues/19921)
+* test(ssr): test `ssrTransform` re-export deps and test stacktrace with first line (#19629) ([9399cda](https://github.com/vitejs/vite/commit/9399cdaf8c3b2efd5f4015d57dc3b0e4e5b91a9d)), closes [#19629](https://github.com/vitejs/vite/issues/19629)
+
+
+
+## <small>6.3.2 (2025-04-18)</small>
+
+* fix: match default asserts case insensitive (#19852) ([cbdab1d](https://github.com/vitejs/vite/commit/cbdab1d6a30e07263ec51b2ca042369e736adec6)), closes [#19852](https://github.com/vitejs/vite/issues/19852)
+* fix: open first url if host does not match any urls (#19886) ([6abbdce](https://github.com/vitejs/vite/commit/6abbdce3d77990409e12380e72c7ec9dd3f8bec5)), closes [#19886](https://github.com/vitejs/vite/issues/19886)
+* fix(css): respect `css.lightningcss` option in css minification process (#19879) ([b5055e0](https://github.com/vitejs/vite/commit/b5055e0dd4c0e084115c3dbfead5736a54807e0c)), closes [#19879](https://github.com/vitejs/vite/issues/19879)
+* fix(deps): update all non-major dependencies (#19698) ([bab4cb9](https://github.com/vitejs/vite/commit/bab4cb92248adf6b9b18df12b2bf03889b0bd1eb)), closes [#19698](https://github.com/vitejs/vite/issues/19698)
+* feat(css): improve lightningcss messages (#19880) ([c713f79](https://github.com/vitejs/vite/commit/c713f79b5a4bd98542d8dbe4c85ba4cce9b1f358)), closes [#19880](https://github.com/vitejs/vite/issues/19880)
+
+
+
+## <small>6.3.1 (2025-04-17)</small>
+
+* fix: avoid using `Promise.allSettled` in preload function (#19805) ([35c7f35](https://github.com/vitejs/vite/commit/35c7f35e2b67f2158ededf2af58ecec53b3f16c5)), closes [#19805](https://github.com/vitejs/vite/issues/19805)
+* fix: backward compat for internal plugin `transform` calls (#19878) ([a152b7c](https://github.com/vitejs/vite/commit/a152b7cbac72e05668f8fc23074d531ecebb77a5)), closes [#19878](https://github.com/vitejs/vite/issues/19878)
+
+
+
+## 6.3.0 (2025-04-16)
+
+* fix(hmr): avoid infinite loop happening with `hot.invalidate` in circular deps (#19870) ([d4ee5e8](https://github.com/vitejs/vite/commit/d4ee5e8655a85f4d6bebc695b063d69406ab53ac)), closes [#19870](https://github.com/vitejs/vite/issues/19870)
+* fix(preview): use host url to open browser (#19836) ([5003434](https://github.com/vitejs/vite/commit/50034340401b4043bb0b158f18ffb7ae1b7f5c86)), closes [#19836](https://github.com/vitejs/vite/issues/19836)
+
+
+
 ## 6.3.0-beta.2 (2025-04-11)
 
 * fix: addWatchFile doesn't work if base is specified (fixes #19792) (#19794) ([8bed1de](https://github.com/vitejs/vite/commit/8bed1de5710f2a097af0e22a196545446d98f988)), closes [#19792](https://github.com/vitejs/vite/issues/19792) [#19794](https://github.com/vitejs/vite/issues/19794)

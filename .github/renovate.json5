@@ -22,16 +22,24 @@
     "node",
     "typescript",
     "@rollup/plugin-dynamic-import-vars", // prefer version using tinyglobby
-    "@types/express", // express latest is still on v4, so types should also be v4
 
     // pinned
     "slash3",
     "slash5",
-    "vue32",
+    "vue34",
 
     // breaking changes
     "kill-port", // `kill-port:^2.0.0 has perf issues (#8392)
   ],
+  "github-actions": {
+    "fileMatch": [
+      // default values
+      "(^|/)(workflow-templates|\\.(?:github|gitea|forgejo)/(?:workflows|actions))/.+\\.ya?ml$",
+      "(^|/)action\\.ya?ml$",
+      // custom value
+      "(^|/)docs/guide/static-deploy-github-pages\\.yaml$",
+    ],
+  },
   "customManagers": [
     {
       "customType": "regex",
