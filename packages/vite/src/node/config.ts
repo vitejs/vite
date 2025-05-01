@@ -632,6 +632,7 @@ export interface ResolvedConfig
       safeModulePaths: Set<string>
       /** @internal */
       additionalAllowedHosts: string[]
+      /** @internal */
       [SYMBOL_RESOLVED_CONFIG]: true
     } & PluginHookUtils
   > {}
