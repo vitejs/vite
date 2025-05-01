@@ -106,6 +106,7 @@ import { getAdditionalAllowedHosts } from './server/middlewares/hostCheck'
 
 const debug = createDebugger('vite:config', { depth: 10 })
 const promisifiedRealpath = promisify(fs.realpath)
+const SYMBOL_RESOLVED_CONFIG = Symbol('vite:resolved-config')
 
 export interface ConfigEnv {
   /**
@@ -631,6 +632,7 @@ export interface ResolvedConfig
       safeModulePaths: Set<string>
       /** @internal */
       additionalAllowedHosts: string[]
+      [SYMBOL_RESOLVED_CONFIG]: true
     } & PluginHookUtils
   > {}
 
@@ -1039,8 +1041,8 @@ export function isResolvedConfig(
 ): inlineConfig is ResolvedConfig {
   // assume that internal methods cannot be provided in inline config
   return (
-    'fsDenyGlob' in inlineConfig &&
-    typeof inlineConfig.fsDenyGlob === 'function'
+    SYMBOL_RESOLVED_CONFIG in inlineConfig &&
+    inlineConfig[SYMBOL_RESOLVED_CONFIG]
   )
 }
 
@@ -1562,6 +1564,7 @@ export async function resolveConfig(
     ),
     safeModulePaths: new Set<string>(),
     additionalAllowedHosts: getAdditionalAllowedHosts(server, preview),
+    [SYMBOL_RESOLVED_CONFIG]: true,
   }
   resolved = {
     ...config,
