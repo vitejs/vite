@@ -315,6 +315,23 @@ export interface Plugin<A = any> extends RolldownPlugin<A> {
       ctx: HmrContext,
     ) => Array<ModuleNode> | void | Promise<Array<ModuleNode> | void>
   >
+
+  /**
+   * This hook is not supported by Rolldown yet. But the type is declared for compatibility.
+   *
+   * @deprecated This hook is **not** deprecated. It is marked as deprecated just to make it clear that this hook is currently a no-op.
+   */
+  shouldTransformCachedModule?: ObjectHook<
+    (
+      this: PluginContext,
+      options: {
+        code: string
+        id: string
+        meta: CustomPluginOptions
+        moduleSideEffects: boolean | 'no-treeshake'
+      },
+    ) => boolean | null | void
+  >
 }
 
 export type HookHandler<T> = T extends ObjectHook<infer H> ? H : T
