@@ -295,7 +295,7 @@ describe('module runner initialization', async () => {
   })
 
   it(`cyclic invalid 2`, async ({ runner }) => {
-    // It should be an error but currently `undefiend` fallback.
+    // It should be an error but currently `undefined` fallback.
     expect(
       await runner.import('/fixtures/cyclic2/test6/index.js'),
     ).toMatchInlineSnapshot(
