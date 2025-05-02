@@ -19,3 +19,6 @@ export type RollupPluginOption = Rolldown.RolldownPluginOption
 
 /** @deprecated use RolldownWatcher instead */
 export type RollupWatcher = Rolldown.RolldownWatcher
+
+/** @deprecated use RollupWatcherEvent instead */
+export type RollupWatcherEvent = Rolldown.RolldownWatcherEvent
