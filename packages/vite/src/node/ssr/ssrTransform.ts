@@ -179,6 +179,7 @@ async function ssrTransformScript(
   }
 
   function defineExport(name: string, local = name) {
+    // wrap with try/catch to fallback to `undefined` for backward compat.
     s.appendLeft(
       fileStartIndex,
       `Object.defineProperty(${ssrModuleExportsKey}, ${JSON.stringify(name)}, ` +
