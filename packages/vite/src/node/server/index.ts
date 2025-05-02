@@ -278,10 +278,8 @@ export interface ViteDevServer {
    */
   ws: WebSocketServer
   /**
-   * HMR broadcaster that can be used to send custom HMR messages to the client
-   *
-   * Always sends a message to at least a WebSocket client. Any third party can
-   * add a channel to the broadcaster to process messages
+   * An alias to `server.environments.client.hot`.
+   * If you want to interact with all environments, loop over `server.environments`.
    */
   hot: HotBroadcaster
   /**
