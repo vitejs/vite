@@ -1157,34 +1157,18 @@ export interface HotBroadcaster extends NormalizedHotChannel {
    * @deprecated
    */
   addChannel(channel: HotChannel): HotBroadcaster
-  close(): Promise<unknown[]>
 }
 
 export function createDeprecatedHotBroadcaster(
   ws: NormalizedHotChannel,
 ): HotBroadcaster {
-  const broadcaster: HotBroadcaster = {
-    on: ws.on,
-    off: ws.off,
-    listen: ws.listen,
-    send: ws.send,
-    setInvokeHandler: ws.setInvokeHandler,
-    handleInvoke: async () => ({
-      error: {
-        name: 'TransportError',
-        message: 'handleInvoke not implemented',
-        stack: new Error().stack,
-      },
-    }),
+  return {
+    ...ws,
     get channels() {
       return [ws]
     },
     addChannel() {
       return broadcaster
     },
-    close() {
-      return Promise.all(broadcaster.channels.map((channel) => channel.close()))
-    },
   }
-  return broadcaster
 }
