@@ -1144,11 +1144,6 @@ export function createServerHotChannel(): ServerHotChannel {
 /** @deprecated use `environment.hot` instead */
 export interface HotBroadcaster extends NormalizedHotChannel {
   readonly channels: NormalizedHotChannel[]
-  /**
-   * A noop.
-   * @deprecated
-   */
-  addChannel(channel: HotChannel): HotBroadcaster
 }
 
 export function createDeprecatedHotBroadcaster(
@@ -1158,9 +1153,6 @@ export function createDeprecatedHotBroadcaster(
     ...ws,
     get channels() {
       return [ws]
-    },
-    addChannel() {
-      return broadcaster
     },
   }
 }
