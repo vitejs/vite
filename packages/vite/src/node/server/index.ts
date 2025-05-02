@@ -87,12 +87,8 @@ import { ModuleGraph } from './mixedModuleGraph'
 import type { ModuleNode } from './mixedModuleGraph'
 import { notFoundMiddleware } from './middlewares/notFound'
 import { buildErrorMessage, errorMiddleware } from './middlewares/error'
-import type { HmrOptions, HotBroadcaster } from './hmr'
-import {
-  createDeprecatedHotBroadcaster,
-  handleHMRUpdate,
-  updateModules,
-} from './hmr'
+import type { HmrOptions, NormalizedHotChannel } from './hmr'
+import { handleHMRUpdate, updateModules } from './hmr'
 import { openBrowser as _openBrowser } from './openBrowser'
 import type { TransformOptions, TransformResult } from './transformRequest'
 import { transformRequest } from './transformRequest'
@@ -281,7 +277,7 @@ export interface ViteDevServer {
    * An alias to `server.environments.client.hot`.
    * If you want to interact with all environments, loop over `server.environments`.
    */
-  hot: HotBroadcaster
+  hot: NormalizedHotChannel
   /**
    * Rollup plugin container that can run plugin hooks on a given file
    */
@@ -565,7 +561,7 @@ export async function _createServer(
     httpServer,
     watcher,
     ws,
-    hot: createDeprecatedHotBroadcaster(ws),
+    hot: ws,
 
     environments,
     pluginContainer,
