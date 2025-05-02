@@ -1,3 +1,11 @@
+## <small>6.3.7 (2025-05-02)</small>
+
+* feat: update rolldown ([9b83bd1](https://github.com/vitejs/rolldown-vite/commit/9b83bd1))
+* feat: use Rolldown's watch API (#67) ([2b287c6](https://github.com/vitejs/rolldown-vite/commit/2b287c6)), closes [#67](https://github.com/vitejs/rolldown-vite/issues/67)
+* feat(types): add `shouldTransformCachedModule` for compat (#150) ([f5d2494](https://github.com/vitejs/rolldown-vite/commit/f5d2494)), closes [#150](https://github.com/vitejs/rolldown-vite/issues/150)
+
+
+
 ## <small>6.3.6 (2025-05-01)</small>
 
 * fix: check static serve file inside sirv (#19965) ([c22c43d](https://github.com/vitejs/rolldown-vite/commit/c22c43d)), closes [#19965](https://github.com/vitejs/rolldown-vite/issues/19965)
