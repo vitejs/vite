@@ -294,6 +294,8 @@ export interface Plugin<A = any> extends RollupPlugin<A> {
   transformIndexHtml?: IndexHtmlTransform
   /**
    * Build Environments
+   *
+   * @experimental
    */
   buildApp?: ObjectHook<BuildAppHook>
   /**
