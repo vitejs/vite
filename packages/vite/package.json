@@ -90,7 +90,7 @@
     "lightningcss": "^1.29.3",
     "picomatch": "^4.0.2",
     "postcss": "^8.5.3",
-    "rolldown": "1.0.0-beta.8-commit.a720367",
+    "rolldown": "1.0.0-beta.8-commit.bc78fa1",
     "tinyglobby": "^0.2.13"
   },
   "optionalDependencies": {
