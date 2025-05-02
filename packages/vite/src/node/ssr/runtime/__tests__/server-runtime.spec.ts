@@ -379,7 +379,7 @@ describe('module runner initialization', async () => {
 
   it(`export default getter is hoisted`, async ({ runner }) => {
     // Node error is `ReferenceError: Cannot access 'dep' before initialization`
-    // It should be an error but currently `undefiend` fallback.
+    // It should be an error but currently `undefined` fallback.
     expect(
       await runner.import('/fixtures/cyclic2/test9/index.js'),
     ).toMatchInlineSnapshot(
