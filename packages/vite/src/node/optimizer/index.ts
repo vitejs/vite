@@ -114,16 +114,6 @@ export interface DepOptimizationConfig {
    */
   extensions?: string[]
   /**
-   * Deps optimization during build was removed in Vite 5.1. This option is
-   * now redundant and will be removed in a future version. Switch to using
-   * `optimizeDeps.noDiscovery` and an empty or undefined `optimizeDeps.include`.
-   * true or 'dev' disables the optimizer, false or 'build' leaves it enabled.
-   * @default 'build'
-   * @deprecated
-   * @experimental
-   */
-  disabled?: boolean | 'build' | 'dev'
-  /**
    * Automatic dependency discovery. When `noDiscovery` is true, only dependencies
    * listed in `include` will be optimized. The scanner isn't run for cold start
    * in this case. CJS-only dependencies must be present in `include` during dev.
@@ -166,11 +156,7 @@ export type DepOptimizationOptions = DepOptimizationConfig & {
 export function isDepOptimizationDisabled(
   optimizeDeps: DepOptimizationOptions,
 ): boolean {
-  return (
-    optimizeDeps.disabled === true ||
-    optimizeDeps.disabled === 'dev' ||
-    (!!optimizeDeps.noDiscovery && !optimizeDeps.include?.length)
-  )
+  return !!optimizeDeps.noDiscovery && !optimizeDeps.include?.length
 }
 
 export interface DepOptimizationResult {

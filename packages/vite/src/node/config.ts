@@ -726,8 +726,6 @@ export const configDefaults = Object.freeze({
     // esbuildOptions
     /** @experimental */
     extensions: [],
-    /** @deprecated @experimental */
-    disabled: 'build',
     // noDiscovery
     /** @experimental */
     holdUntilCrawlEnd: true,
@@ -1023,7 +1021,6 @@ function resolveDepOptimizationOptions(
   return mergeWithDefaults(
     {
       ...configDefaults.optimizeDeps,
-      disabled: undefined, // do not set here to avoid deprecation warning
       noDiscovery: consumer !== 'client',
       esbuildOptions: {
         preserveSymlinks,
@@ -1586,13 +1583,6 @@ export async function resolveConfig(
       .map((hook) => hook(resolved)),
   )
 
-  optimizeDepsDisabledBackwardCompatibility(resolved, resolved.optimizeDeps)
-  optimizeDepsDisabledBackwardCompatibility(
-    resolved,
-    resolved.ssr.optimizeDeps,
-    'ssr.',
-  )
-
   // For backward compat, set ssr environment build.emitAssets with the same value as build.ssrEmitAssets that might be changed in configResolved hook
   // https://github.com/vikejs/vike/blob/953614cea7b418fcc0309b5c918491889fdec90a/vike/node/plugin/plugins/buildConfig.ts#L67
   if (resolved.environments.ssr) {
@@ -2112,48 +2102,6 @@ async function runConfigEnvironmentHook(
       if (res) {
         environments[name] = mergeConfig(environments[name], res)
       }
-    }
-  }
-}
-
-function optimizeDepsDisabledBackwardCompatibility(
-  resolved: ResolvedConfig,
-  optimizeDeps: DepOptimizationOptions,
-  optimizeDepsPath: string = '',
-) {
-  const optimizeDepsDisabled = optimizeDeps.disabled
-  if (optimizeDepsDisabled !== undefined) {
-    if (optimizeDepsDisabled === true || optimizeDepsDisabled === 'dev') {
-      const commonjsOptionsInclude = resolved.build.commonjsOptions.include
-      const commonjsPluginDisabled =
-        Array.isArray(commonjsOptionsInclude) &&
-        commonjsOptionsInclude.length === 0
-      optimizeDeps.noDiscovery = true
-      optimizeDeps.include = undefined
-      if (commonjsPluginDisabled) {
-        resolved.build.commonjsOptions.include = undefined
-      }
-      resolved.logger.warn(
-        colors.yellow(`(!) Experimental ${optimizeDepsPath}optimizeDeps.disabled and deps pre-bundling during build were removed in Vite 5.1.
-    To disable the deps optimizer, set ${optimizeDepsPath}optimizeDeps.noDiscovery to true and ${optimizeDepsPath}optimizeDeps.include as undefined or empty.
-    Please remove ${optimizeDepsPath}optimizeDeps.disabled from your config.
-    ${
-      commonjsPluginDisabled
-        ? 'Empty config.build.commonjsOptions.include will be ignored to support CJS during build. This config should also be removed.'
-        : ''
-    }
-  `),
-      )
-    } else if (
-      optimizeDepsDisabled === false ||
-      optimizeDepsDisabled === 'build'
-    ) {
-      resolved.logger.warn(
-        colors.yellow(`(!) Experimental ${optimizeDepsPath}optimizeDeps.disabled and deps pre-bundling during build were removed in Vite 5.1.
-    Setting it to ${optimizeDepsDisabled} now has no effect.
-    Please remove ${optimizeDepsPath}optimizeDeps.disabled from your config.
-  `),
-      )
     }
   }
 }

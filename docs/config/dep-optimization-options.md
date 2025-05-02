@@ -86,21 +86,6 @@ Set to `true` to force dependency pre-bundling, ignoring previously cached optim
 
 When enabled, it will hold the first optimized deps results until all static imports are crawled on cold start. This avoids the need for full-page reloads when new dependencies are discovered and they trigger the generation of new common chunks. If all dependencies are found by the scanner plus the explicitly defined ones in `include`, it is better to disable this option to let the browser process more requests in parallel.
 
-## optimizeDeps.disabled
-
-- **Deprecated**
-- **Experimental:** [Give Feedback](https://github.com/vitejs/vite/discussions/13839)
-- **Type:** `boolean | 'build' | 'dev'`
-- **Default:** `'build'`
-
-This option is deprecated. As of Vite 5.1, pre-bundling of dependencies during build have been removed. Setting `optimizeDeps.disabled` to `true` or `'dev'` disables the optimizer, and configured to `false` or `'build'` leaves the optimizer during dev enabled.
-
-To disable the optimizer completely, use `optimizeDeps.noDiscovery: true` to disallow automatic discovery of dependencies and leave `optimizeDeps.include` undefined or empty.
-
-:::warning
-Optimizing dependencies during build time was an **experimental** feature. Projects trying out this strategy also removed `@rollup/plugin-commonjs` using `build.commonjsOptions: { include: [] }`. If you did so, a warning will guide you to re-enable it to support CJS only packages while bundling.
-:::
-
 ## optimizeDeps.needsInterop
 
 - **Experimental**
