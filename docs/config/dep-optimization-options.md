@@ -78,6 +78,13 @@ Certain options are omitted since changing them would not be compatible with Vit
 
 Set to `true` to force dependency pre-bundling, ignoring previously cached optimized dependencies.
 
+## optimizeDeps.noDiscovery
+
+- **Type:** `boolean`
+- **Default:** `false`
+
+When set to `true`, automatic dependency discovery will be disabled and only dependencies listed in `optimizeDeps.include` will be optimized. CJS-only dependencies must be present in `optimizeDeps.include` during dev.
+
 ## optimizeDeps.holdUntilCrawlEnd
 
 - **Experimental:** [Give Feedback](https://github.com/vitejs/vite/discussions/15834)
