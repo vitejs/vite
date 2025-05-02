@@ -47,7 +47,6 @@ export async function createModuleRunnerTester(
         external: ['@vitejs/cjs-external', '@vitejs/esm-external'],
       },
       optimizeDeps: {
-        disabled: true,
         noDiscovery: true,
         include: [],
       },

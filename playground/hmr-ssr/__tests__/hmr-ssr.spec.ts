@@ -1110,7 +1110,6 @@ async function setupModuleRunner(
       },
     },
     optimizeDeps: {
-      disabled: true,
       noDiscovery: true,
       include: [],
     },
