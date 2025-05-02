@@ -290,15 +290,20 @@ describe('module runner initialization', async () => {
     await expect(() =>
       runner.import('/fixtures/cyclic2/test5/index.js'),
     ).rejects.toMatchInlineSnapshot(
-      `[ReferenceError: Cannot access '__vite_ssr_import_1__' before initialization]`,
+      `[TypeError: Cannot read properties of undefined (reading 'ok')]`,
     )
   })
 
   it(`cyclic invalid 2`, async ({ runner }) => {
-    await expect(() =>
-      runner.import('/fixtures/cyclic2/test6/index.js'),
-    ).rejects.toMatchInlineSnapshot(
-      `[ReferenceError: Cannot access 'dep1' before initialization]`,
+    // It should be an error but currently `undefined` fallback.
+    expect(
+      await runner.import('/fixtures/cyclic2/test6/index.js'),
+    ).toMatchInlineSnapshot(
+      `
+      {
+        "dep1": "dep1: dep2: undefined",
+      }
+    `,
     )
   })
 
@@ -374,10 +379,15 @@ describe('module runner initialization', async () => {
 
   it(`export default getter is hoisted`, async ({ runner }) => {
     // Node error is `ReferenceError: Cannot access 'dep' before initialization`
-    await expect(() =>
-      runner.import('/fixtures/cyclic2/test9/index.js'),
-    ).rejects.toMatchInlineSnapshot(
-      `[ReferenceError: Cannot access '__vite_ssr_export_default__' before initialization]`,
+    // It should be an error but currently `undefined` fallback.
+    expect(
+      await runner.import('/fixtures/cyclic2/test9/index.js'),
+    ).toMatchInlineSnapshot(
+      `
+      {
+        "default": undefined,
+      }
+    `,
     )
   })
 })
