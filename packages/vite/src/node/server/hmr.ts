@@ -1148,20 +1148,3 @@ export function createServerHotChannel(): ServerHotChannel {
     },
   }
 }
-
-/** @deprecated use `environment.hot` instead */
-export interface HotBroadcaster extends NormalizedHotChannel {
-  /** @deprecated this always returns `[server.ws]` */
-  readonly channels: NormalizedHotChannel[]
-}
-
-export function createDeprecatedHotBroadcaster(
-  ws: NormalizedHotChannel,
-): HotBroadcaster {
-  return {
-    ...ws,
-    get channels() {
-      return [ws]
-    },
-  }
-}
