@@ -182,7 +182,7 @@ async function ssrTransformScript(
     // wrap with try/catch to fallback to `undefined` for backward compat.
     s.appendLeft(
       fileStartIndex,
-      `Object.defineProperty(${ssrModuleExportsKey}, ${JSON.stringify(name)}, ` +
+      `globalThis.Object.defineProperty(${ssrModuleExportsKey}, ${JSON.stringify(name)}, ` +
         `{ enumerable: true, configurable: true, get(){ try { return ${local} } catch {} }});\n`,
     )
   }
