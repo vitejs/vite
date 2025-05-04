@@ -22,7 +22,7 @@ For a simple SPA/MPA, no new APIs around environments are exposed to the config.
 When we move to a typical server-side rendered (SSR) app, we'll have two environments:
 
 - `client`: runs the app in the browser.
-- `server`: runs the app in node (or other server runtimes) which renders pages before sending them to the browser.
+- `ssr`: runs the app in node (or other server runtimes) which renders pages before sending them to the browser.
 
 In dev, Vite executes the server code in the same Node process as the Vite dev server, giving a close approximation to the production environment. However, it is also possible for servers to run in other JS runtimes, like [Cloudflare's workerd](https://github.com/cloudflare/workerd) which have different constraints. Modern apps may also run in more than two environments, e.g. a browser, a node server, and an edge server. Vite 5 didn't allow to properly represent these environments.
 
@@ -58,7 +58,7 @@ export default {
     include: ['lib'],
   },
   environments: {
-    server: {},
+    ssr: {},
     edge: {
       resolve: {
         noExternal: true,
@@ -68,7 +68,7 @@ export default {
 }
 ```
 
-When not explicitly documented, environment inherits the configured top-level config options (for example, the new `server` and `edge` environments will inherit the `build.sourcemap: false` option). A small number of top-level options, like `optimizeDeps`, only apply to the `client` environment, as they don't work well when applied as a default to server environments. The `client` environment can also be configured explicitly through `environments.client`, but we recommend to do it with the top-level options so the client config remains unchanged when adding new environments.
+When not explicitly documented, environment inherits the configured top-level config options (for example, the new `ssr` and `edge` environments will inherit the `build.sourcemap: false` option). A small number of top-level options, like `optimizeDeps`, only apply to the `client` environment, as they don't work well when applied as a default to server environments. The `client` environment can also be configured explicitly through `environments.client`, but we recommend to do it with the top-level options so the client config remains unchanged when adding new environments.
 
 The `EnvironmentOptions` interface exposes all the per-environment options. There are environment options that apply to both `build` and `dev`, like `resolve`. And there are `DevEnvironmentOptions` and `BuildEnvironmentOptions` for dev and build specific options (like `dev.warmup` or `build.outDir`). Some options like `optimizeDeps` only applies to dev, but is kept as top level instead of nested in `dev` for backward compatibility.
 
@@ -99,18 +99,16 @@ Note that the `ssr` top-level property is going to be deprecated once the Enviro
 Low level configuration APIs are available so runtime providers can provide environments with proper defaults for their runtimes. These environments can also spawn other processes or threads to run the modules during dev in a closer runtime to the production environment.
 
 ```js
-import { customEnvironment } from 'vite-environment-provider'
-
 export default {
   build: {
     outDir: '/dist/client',
   },
   environments: {
-    ssr: customEnvironment({
+    ssr: {
       build: {
         outDir: '/dist/ssr',
       },
-    }),
+    },
   },
 }
 ```

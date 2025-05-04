@@ -98,7 +98,7 @@ const server = await createServer({
   server: { middlewareMode: true },
   appType: 'custom',
   environments: {
-    server: {
+    ssr: {
       // by default, modules are run in the same process as the vite server
     },
   },
