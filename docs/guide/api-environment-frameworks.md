@@ -106,7 +106,7 @@ const server = await createServer({
 
 // You might need to cast this to RunnableDevEnvironment in TypeScript or
 // use isRunnableDevEnvironment to guard the access to the runner
-const environment = server.environments.node
+const ssrEnvironment = server.environments.ssr
 
 app.use('*', async (req, res, next) => {
   const url = req.originalUrl
@@ -123,7 +123,7 @@ app.use('*', async (req, res, next) => {
   // 3. Load the server entry. import(url) automatically transforms
   //    ESM source code to be usable in Node.js! There is no bundling
   //    required, and provides full HMR support.
-  const { render } = await environment.runner.import('/src/entry-server.js')
+  const { render } = await ssrEnvironment.runner.import('/src/entry-server.js')
 
   // 4. render the app HTML. This assumes entry-server.js's exported
   //     `render` function calls appropriate framework SSR APIs,
