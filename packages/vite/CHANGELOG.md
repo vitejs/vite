@@ -1,3 +1,9 @@
+## <small>6.3.5 (2025-05-05)</small>
+
+* fix(ssr): handle uninitialized export access as undefined (#19959) ([fd38d07](https://github.com/vitejs/vite/commit/fd38d076fe2455aac1e00a7b15cd51159bf12bb5)), closes [#19959](https://github.com/vitejs/vite/issues/19959)
+
+
+
 ## <small>6.3.4 (2025-04-30)</small>
 
 * fix: check static serve file inside sirv (#19965) ([c22c43d](https://github.com/vitejs/vite/commit/c22c43de612eebb6c182dd67850c24e4fab8cacb)), closes [#19965](https://github.com/vitejs/vite/issues/19965)
