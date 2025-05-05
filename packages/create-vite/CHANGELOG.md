@@ -1,3 +1,13 @@
+## 6.5.0 (2025-05-05)
+
+* feat(create-vite): add Marko (#19257) ([171e856](https://github.com/vitejs/vite/commit/171e856e011512098591234d0557804c6175b625)), closes [#19257](https://github.com/vitejs/vite/issues/19257)
+* feat(create-vite): add RedwoodSDK to create-vite app. (#19927) ([7f5e0e6](https://github.com/vitejs/vite/commit/7f5e0e61a809412b279338772e205ea458011aa4)), closes [#19927](https://github.com/vitejs/vite/issues/19927)
+* feat(create-vite): bump TS to 5.8 (#19892) ([1f90255](https://github.com/vitejs/vite/commit/1f902551207dd4e995eea4263fda28aed59150a6)), closes [#19892](https://github.com/vitejs/vite/issues/19892)
+* fix(deps): update all non-major dependencies (#19698) ([bab4cb9](https://github.com/vitejs/vite/commit/bab4cb92248adf6b9b18df12b2bf03889b0bd1eb)), closes [#19698](https://github.com/vitejs/vite/issues/19698)
+* fix(deps): update all non-major dependencies (#19899) ([a4b500e](https://github.com/vitejs/vite/commit/a4b500ef9ccc9b19a2882156a9ba8397e69bc6b2)), closes [#19899](https://github.com/vitejs/vite/issues/19899)
+
+
+
 ## <small>6.4.1 (2025-04-17)</small>
 
 * docs(create-vite): update react template README files (#19876) ([2d4c20e](https://github.com/vitejs/vite/commit/2d4c20ebadc35dae7327ffe6cba85cc5c36d579a)), closes [#19876](https://github.com/vitejs/vite/issues/19876)
