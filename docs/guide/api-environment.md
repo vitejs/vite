@@ -99,16 +99,18 @@ Note that the `ssr` top-level property is going to be deprecated once the Enviro
 Low level configuration APIs are available so runtime providers can provide environments with proper defaults for their runtimes. These environments can also spawn other processes or threads to run the modules during dev in a closer runtime to the production environment.
 
 ```js
+import { customEnvironment } from 'vite-environment-provider'
+
 export default {
   build: {
     outDir: '/dist/client',
   },
   environments: {
-    ssr: {
+    ssr: customEnvironment({
       build: {
         outDir: '/dist/ssr',
       },
-    },
+    }),
   },
 }
 ```
