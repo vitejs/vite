@@ -22,7 +22,7 @@ describe.runIf(isBuild)('build', () => {
     )
     const namedCode = readFile('dist/named/my-lib-named.umd.cjs')
     // esbuild helpers are injected inside of the UMD wrapper
-    expect(code).toMatch(/^\(function\(/)
+    expect(code).toMatch(/^\/\*[^*]*\*\/\s*\(function\(/)
     expect(noMinifyCode).toMatch(
       /^\/\*[^*]*\*\/\s*\(function\(global.+?"use strict";\s*var.+?function\smyLib\(/s,
     )
@@ -37,7 +37,9 @@ describe.runIf(isBuild)('build', () => {
     )
     const namedCode = readFile('dist/named/my-lib-named.iife.js')
     // esbuild helpers are injected inside of the IIFE wrapper
-    expect(code).toMatch(/^var MyLib=function\(\)\{\s*"use strict";/)
+    expect(code).toMatch(
+      /^\/\*[^*]*\*\/\s*var MyLib=function\(\)\{\s*"use strict";/,
+    )
     expect(noMinifyCode).toMatch(
       /^\/\*[^*]*\*\/\s*var MyLib\s*=\s*function\(\)\s*\{\s*"use strict";/,
     )

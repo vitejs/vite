@@ -6,6 +6,7 @@ export default defineConfig({
     minifySyntax: false,
   },
   build: {
+    minify: 'esbuild',
     cssMinify: 'esbuild',
   },
 })
