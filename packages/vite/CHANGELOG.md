@@ -1,3 +1,14 @@
+## <small>6.3.8 (2025-05-07)</small>
+
+* fix: watch related fixes (#158) ([ccfccef](https://github.com/vitejs/rolldown-vite/commit/ccfccef)), closes [#158](https://github.com/vitejs/rolldown-vite/issues/158)
+* fix(config): make dynamic import work in config (#157) ([6e1d23e](https://github.com/vitejs/rolldown-vite/commit/6e1d23e)), closes [#157](https://github.com/vitejs/rolldown-vite/issues/157)
+* fix(ssr): handle uninitialized export access as undefined (#19959) ([fd38d07](https://github.com/vitejs/rolldown-vite/commit/fd38d07)), closes [#19959](https://github.com/vitejs/rolldown-vite/issues/19959)
+* feat: update rolldown ([2fed74f](https://github.com/vitejs/rolldown-vite/commit/2fed74f))
+* feat(types): add `Rollup.RollupWatcherEvent` type (#152) ([1b31e92](https://github.com/vitejs/rolldown-vite/commit/1b31e92)), closes [#152](https://github.com/vitejs/rolldown-vite/issues/152)
+* release: v6.3.5 ([84e4647](https://github.com/vitejs/rolldown-vite/commit/84e4647))
+
+
+
 ## <small>6.3.7 (2025-05-02)</small>
 
 * feat: update rolldown ([9b83bd1](https://github.com/vitejs/rolldown-vite/commit/9b83bd1))
