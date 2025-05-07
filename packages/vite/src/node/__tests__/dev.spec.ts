@@ -32,7 +32,7 @@ describe('the dev server', () => {
     expect.assertions(1)
 
     const options = {
-      port: 5013,
+      port: 5013, // make sure the port is unique
     }
 
     const { promise, resolve } =
