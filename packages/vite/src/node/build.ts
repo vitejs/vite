@@ -860,8 +860,7 @@ async function buildEnvironment(
             prepareOutDir(resolvedOutDirs, emptyOutDir, environment)
           }
         } else if (event.code === 'BUNDLE_END') {
-          // FIXME: https://github.com/rolldown/rolldown/issues/4380
-          // event.result.close()
+          event.result.close()
           logger.info(colors.cyan(`built in ${event.duration}ms.`))
         } else if (event.code === 'ERROR') {
           outputBuildError(event.error)
