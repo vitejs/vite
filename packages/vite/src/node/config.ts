@@ -103,6 +103,7 @@ import { PartialEnvironment } from './baseEnvironment'
 import { createIdResolver } from './idResolver'
 import { runnerImport } from './ssr/runnerImport'
 import { getAdditionalAllowedHosts } from './server/middlewares/hostCheck'
+import { ImportMetaShim } from './config/importMetaShim'
 
 const debug = createDebugger('vite:config', { depth: 10 })
 const promisifiedRealpath = promisify(fs.realpath)
@@ -1863,7 +1864,7 @@ async function bundleConfigFile(
 
   const dirnameVarName = '__vite_injected_original_dirname'
   const filenameVarName = '__vite_injected_original_filename'
-  const importMetaUrlVarName = '__vite_injected_original_import_meta_url'
+
   const result = await build({
     absWorkingDir: process.cwd(),
     entryPoints: [fileName],
@@ -1880,9 +1881,7 @@ async function bundleConfigFile(
     define: {
       __dirname: dirnameVarName,
       __filename: filenameVarName,
-      'import.meta.url': importMetaUrlVarName,
-      'import.meta.dirname': dirnameVarName,
-      'import.meta.filename': filenameVarName,
+      ...ImportMetaShim.getCodeReplacementDefinitions(),
     },
     plugins: [
       {
@@ -1976,14 +1975,13 @@ async function bundleConfigFile(
         setup(build) {
           build.onLoad({ filter: /\.[cm]?[jt]s$/ }, async (args) => {
             const contents = await fsp.readFile(args.path, 'utf-8')
+            const importMeta = new ImportMetaShim(args.path)
             const injectValues =
               `const ${dirnameVarName} = ${JSON.stringify(
                 path.dirname(args.path),
               )};` +
               `const ${filenameVarName} = ${JSON.stringify(args.path)};` +
-              `const ${importMetaUrlVarName} = ${JSON.stringify(
-                pathToFileURL(args.path).href,
-              )};`
+              importMeta.getCode()
 
             return {
               loader: args.path.endsWith('ts') ? 'ts' : 'js',
