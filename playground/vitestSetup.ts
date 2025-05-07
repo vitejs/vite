@@ -303,7 +303,6 @@ export async function notifyRebuildComplete(
   const callback = (event: RolldownWatcherEvent): void => {
     if (event.code === 'END') {
       resolveFn?.()
-      resolveFn = undefined // set to undefined instead of watcher.off for now
     }
   }
   watcher.on('event', callback)
@@ -311,9 +310,7 @@ export async function notifyRebuildComplete(
     resolveFn = resolve
   })
 
-  // TODO: not supported yet (https://github.com/rolldown/rolldown/issues/4382)
-  // return watcher.off('event', callback)
-  return watcher
+  return watcher.off('event', callback)
 }
 
 export function createInMemoryLogger(logs: string[]): Logger {
