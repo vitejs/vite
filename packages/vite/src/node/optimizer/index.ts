@@ -788,7 +788,7 @@ async function prepareRolldownOptimizerRun(
       ...rollupOptions,
       // TODO: pass target
       input: flatIdDeps,
-      logLevel: 'warn',
+      logLevel: 'silent',
       plugins,
       define,
       platform,
