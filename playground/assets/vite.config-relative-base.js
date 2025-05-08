@@ -7,7 +7,7 @@ export default defineConfig(({ isPreview }) => ({
   build: {
     ...baseConfig.build,
     outDir: 'dist/relative-base',
-    // watch: null,
+    watch: null,
     minify: false,
     assetsInlineLimit: 0,
     rollupOptions: {

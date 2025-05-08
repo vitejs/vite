@@ -14,7 +14,7 @@ export default defineConfig({
   build: {
     ...baseConfig.build,
     outDir: 'dist/url-base',
-    // watch: null,
+    watch: null,
     minify: false,
     assetsInlineLimit: 0,
     rollupOptions: {

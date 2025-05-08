@@ -18,7 +18,6 @@ export default defineConfig({
       ...(isBuild
         ? [
             './playground/object-hooks/**/*.spec.[tj]s', // object hook sequential
-            './playground/optimize-deps/**/*.spec.[tj]s', // https://github.com/rolldown/rolldown/issues/2031
           ]
         : []),
       ...defaultExclude,
