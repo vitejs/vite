@@ -630,6 +630,10 @@ export function copyDir(srcDir: string, destDir: string): void {
       continue
     }
     const destFile = path.resolve(destDir, file)
+    // This may occur if the source directory is a symlink that points to a non-existent directory
+    if (!fs.existsSync(destFile)) {
+      return
+    }
     const stat = fs.statSync(srcFile)
     if (stat.isDirectory()) {
       copyDir(srcFile, destFile)
