@@ -701,7 +701,7 @@ function viteLegacyPlugin(options: Options = {}): Plugin[] {
       }
 
       // 5. inject dynamic import fallback entry
-      if (legacyPolyfillFilename && legacyEntryFilename && genModern) {
+      if ((legacyPolyfillFilename || legacyEntryFilename) && genModern) {
         tags.push({
           tag: 'script',
           attrs: { type: 'module' },
