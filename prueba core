@@ -1,0 +1,3 @@
+npm create vite@latest dashboard-financiero -- --template react
+cd dashboard-financiero
+npm install
