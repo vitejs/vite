@@ -36,9 +36,11 @@ const vite = await createServer({
 
 const dir = path.dirname(fileURLToPath(import.meta.url))
 
-const abs1 = await vite.ssrLoadModule(`/src/error.${ext}`)
-const abs2 = await vite.ssrLoadModule(path.resolve(dir, `./src/error.${ext}`))
-const relative = await vite.ssrLoadModule(`./src/error.${ext}`)
+const abs1 = await vite.ssrLoadModule(`/src/error-${ext}.${ext}`)
+const abs2 = await vite.ssrLoadModule(
+  path.resolve(dir, `./src/error-${ext}.${ext}`),
+)
+const relative = await vite.ssrLoadModule(`./src/error-${ext}.${ext}`)
 
 for (const mod of [abs1, abs2, relative]) {
   try {
