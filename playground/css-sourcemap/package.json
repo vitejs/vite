@@ -13,7 +13,7 @@
     "less": "^4.3.0",
     "lightningcss": "^1.29.3",
     "magic-string": "^0.30.17",
-    "sass": "^1.86.3",
+    "sass": "^1.87.0",
     "stylus": "^0.64.0",
     "sugarss": "^5.0.0"
   }

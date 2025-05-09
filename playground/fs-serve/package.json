@@ -16,6 +16,6 @@
     "preview:deny": "vite preview root --config ./root/vite.config-deny.js"
   },
   "devDependencies": {
-    "ws": "^8.18.1"
+    "ws": "^8.18.2"
   }
 }
