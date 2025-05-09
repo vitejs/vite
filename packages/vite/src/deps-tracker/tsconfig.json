@@ -1,0 +1,11 @@
+{
+  "extends": "../../tsconfig.base.json",
+  "include": ["./"],
+  "compilerOptions": {
+    // https://github.com/microsoft/TypeScript/wiki/Node-Target-Mapping#node-18
+    "lib": ["ES2023"],
+    "target": "ES2022",
+    "skipLibCheck": true, // lib check is done on final types
+    "stripInternal": true
+  }
+}

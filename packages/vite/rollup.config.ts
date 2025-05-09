@@ -206,6 +206,14 @@ const moduleRunnerConfig = defineConfig({
   ],
 })
 
+const depsTrackerConfig = defineConfig({
+  ...sharedNodeOptions,
+  input: {
+    'deps-tracker': path.resolve(__dirname, 'src/deps-tracker/index.ts'),
+  },
+  plugins: [...createSharedNodePlugins({}), bundleSizeLimit(2)],
+})
+
 const cjsConfig = defineConfig({
   ...sharedNodeOptions,
   input: {
@@ -230,6 +238,7 @@ export default defineConfig([
   clientConfig,
   nodeConfig,
   moduleRunnerConfig,
+  depsTrackerConfig,
   cjsConfig,
 ])
 
