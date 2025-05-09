@@ -100,7 +100,7 @@ export function isExplicitImportRequired(url: string): boolean {
   return !isJSRequest(url) && !isCSSRequest(url)
 }
 
-function normalizeResolvedIdToUrl(
+export function normalizeResolvedIdToUrl(
   environment: DevEnvironment,
   url: string,
   resolved: PartialResolvedId,
