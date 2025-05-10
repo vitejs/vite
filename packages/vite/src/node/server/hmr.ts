@@ -10,7 +10,7 @@ import type {
   InvokeSendData,
 } from '../../shared/invokeMethods'
 import { CLIENT_DIR } from '../constants'
-import { createDebugger, normalizePath } from '../utils'
+import { createDebugger, normalizePath, rollupVersion } from '../utils'
 import type { InferCustomEventPayload, ViteDevServer } from '..'
 import { getHookHandler } from '../plugins'
 import { isCSSRequest } from '../plugins/css'
@@ -27,6 +27,10 @@ import type { EnvironmentModuleNode } from './moduleGraph'
 import type { ModuleNode } from './mixedModuleGraph'
 import type { DevEnvironment } from './environment'
 import { prepareError } from './middlewares/error'
+import {
+  BasicMinimalPluginContext,
+  MinimalPluginContext,
+} from './pluginContainer'
 import type { HttpServer } from '.'
 import { restartServerWithUrls } from '.'
 
@@ -460,9 +464,22 @@ export async function handleHMRUpdate(
     modules: [...mixedMods],
   }
 
+  const contextForHandleHotUpdate = new BasicMinimalPluginContext(
+    {
+      rollupVersion,
+      watchMode: true,
+    },
+    config.logger,
+  )
   const clientEnvironment = server.environments.client
   const ssrEnvironment = server.environments.ssr
-  const clientContext = { environment: clientEnvironment }
+  const clientContext = new MinimalPluginContext(
+    {
+      rollupVersion,
+      watchMode: true,
+    },
+    clientEnvironment,
+  )
   const clientHotUpdateOptions = hotMap.get(clientEnvironment)!.options
   const ssrHotUpdateOptions = hotMap.get(ssrEnvironment)?.options
   try {
@@ -506,9 +523,9 @@ export async function handleHMRUpdate(
         )
         // later on, we'll need: if (runtime === 'client')
         // Backward compatibility with mixed client and ssr moduleGraph
-        const filteredModules = await getHookHandler(plugin.handleHotUpdate!)(
-          mixedHmrContext,
-        )
+        const filteredModules = await getHookHandler(
+          plugin.handleHotUpdate!,
+        ).call(contextForHandleHotUpdate, mixedHmrContext)
         if (filteredModules) {
           mixedHmrContext.modules = filteredModules
           clientHotUpdateOptions.modules =
@@ -553,12 +570,18 @@ export async function handleHMRUpdate(
   for (const environment of Object.values(server.environments)) {
     if (environment.name === 'client') continue
     const hot = hotMap.get(environment)!
-    const environmentThis = { environment }
+    const context = new MinimalPluginContext(
+      {
+        rollupVersion,
+        watchMode: true,
+      },
+      environment,
+    )
     try {
       for (const plugin of getSortedHotUpdatePlugins(environment)) {
         if (plugin.hotUpdate) {
           const filteredModules = await getHookHandler(plugin.hotUpdate).call(
-            environmentThis,
+            context,
             hot.options,
           )
           if (filteredModules) {

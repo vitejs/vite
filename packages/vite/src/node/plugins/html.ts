@@ -11,7 +11,7 @@ import colors from 'picocolors'
 import type { DefaultTreeAdapterMap, ParserError, Token } from 'parse5'
 import { stripLiteral } from 'strip-literal'
 import escapeHtml from 'escape-html'
-import type { Plugin } from '../plugin'
+import type { MinimalPluginContextWithoutEnvironment, Plugin } from '../plugin'
 import type { ViteDevServer } from '../server'
 import {
   encodeURIPath,
@@ -404,7 +404,7 @@ export function buildHtmlPlugin(config: ResolvedConfig): Plugin {
           }
 
           // pre-transform
-          html = await applyHtmlTransforms(html, preHooks, {
+          html = await applyHtmlTransforms(html, preHooks, this, {
             path: publicPath,
             filename: id,
           })
@@ -985,6 +985,7 @@ export function buildHtmlPlugin(config: ResolvedConfig): Plugin {
         result = await applyHtmlTransforms(
           result,
           [...normalHooks, ...postHooks],
+          this,
           {
             path: '/' + relativeUrlPath,
             filename: normalizedId,
@@ -1113,7 +1114,7 @@ export interface IndexHtmlTransformContext {
 }
 
 export type IndexHtmlTransformHook = (
-  this: void,
+  this: MinimalPluginContextWithoutEnvironment,
   html: string,
   ctx: IndexHtmlTransformContext,
 ) => IndexHtmlTransformResult | void | Promise<IndexHtmlTransformResult | void>
@@ -1396,10 +1397,11 @@ function headTagInsertCheck(
 export async function applyHtmlTransforms(
   html: string,
   hooks: IndexHtmlTransformHook[],
+  pluginContext: MinimalPluginContextWithoutEnvironment,
   ctx: IndexHtmlTransformContext,
 ): Promise<string> {
   for (const hook of hooks) {
-    const res = await hook(html, ctx)
+    const res = await hook.call(pluginContext, html, ctx)
     if (!res) {
       continue
     }

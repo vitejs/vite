@@ -86,6 +86,7 @@ import {
 import { cleanUrl, unwrapId } from '../../shared/utils'
 import type { PluginHookUtils } from '../config'
 import type { Environment } from '../environment'
+import type { Logger } from '../logger'
 import type { DevEnvironment } from './environment'
 import { buildErrorMessage } from './middlewares/error'
 import type {
@@ -557,10 +558,10 @@ class EnvironmentPluginContainer {
   }
 }
 
-class MinimalPluginContext implements RollupMinimalPluginContext {
+export class BasicMinimalPluginContext<Meta = PluginContextMeta> {
   constructor(
-    public meta: PluginContextMeta,
-    public environment: Environment,
+    public meta: Meta,
+    private _logger: Logger,
   ) {}
 
   debug(rawLog: string | RollupLog | (() => string | RollupLog)): void {
@@ -572,7 +573,7 @@ class MinimalPluginContext implements RollupMinimalPluginContext {
   info(rawLog: string | RollupLog | (() => string | RollupLog)): void {
     const log = this._normalizeRawLog(rawLog)
     const msg = buildErrorMessage(log, [`info: ${log.message}`], false)
-    this.environment.logger.info(msg, { clear: true, timestamp: true })
+    this._logger.info(msg, { clear: true, timestamp: true })
   }
 
   warn(rawLog: string | RollupLog | (() => string | RollupLog)): void {
@@ -582,7 +583,7 @@ class MinimalPluginContext implements RollupMinimalPluginContext {
       [colors.yellow(`warning: ${log.message}`)],
       false,
     )
-    this.environment.logger.warn(msg, { clear: true, timestamp: true })
+    this._logger.warn(msg, { clear: true, timestamp: true })
   }
 
   error(e: string | RollupError): never {
@@ -595,6 +596,17 @@ class MinimalPluginContext implements RollupMinimalPluginContext {
   ): RollupLog {
     const logValue = typeof rawLog === 'function' ? rawLog() : rawLog
     return typeof logValue === 'string' ? new Error(logValue) : logValue
+  }
+}
+
+export class MinimalPluginContext<T extends Environment = Environment>
+  extends BasicMinimalPluginContext
+  implements RollupMinimalPluginContext
+{
+  public environment: T
+  constructor(meta: PluginContextMeta, environment: T) {
+    super(meta, environment.logger)
+    this.environment = environment
   }
 }
 
