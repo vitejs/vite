@@ -31,13 +31,6 @@ export class PartialEnvironment {
 
   config: ResolvedConfig & ResolvedEnvironmentOptions
 
-  /**
-   * @deprecated use environment.config instead
-   **/
-  get options(): ResolvedEnvironmentOptions {
-    return this._options
-  }
-
   logger: Logger
 
   /**

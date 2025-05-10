@@ -85,12 +85,6 @@ export function devToScanEnvironment(
     getTopLevelConfig() {
       return environment.getTopLevelConfig()
     },
-    /**
-     * @deprecated use environment.config instead
-     **/
-    get options() {
-      return environment.options
-    },
     get config() {
       return environment.config
     },
