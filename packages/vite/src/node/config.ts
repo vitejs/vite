@@ -629,8 +629,6 @@ export interface ResolvedConfig
       fsDenyGlob: AnymatchFn
       /** @internal */
       safeModulePaths: Set<string>
-      /** @internal */
-      additionalAllowedHosts: string[]
     } & PluginHookUtils
   > {}
 
@@ -1442,6 +1440,14 @@ export async function resolveConfig(
 
   const preview = resolvePreviewOptions(config.preview, server)
 
+  const additionalAllowedHosts = getAdditionalAllowedHosts(server, preview)
+  if (Array.isArray(server.allowedHosts)) {
+    server.allowedHosts.push(...additionalAllowedHosts)
+  }
+  if (Array.isArray(preview.allowedHosts)) {
+    preview.allowedHosts.push(...additionalAllowedHosts)
+  }
+
   resolved = {
     configFile: configFile ? normalizePath(configFile) : undefined,
     configFileDependencies: configFileDependencies.map((name) =>
@@ -1551,7 +1557,6 @@ export async function resolveConfig(
       },
     ),
     safeModulePaths: new Set<string>(),
-    additionalAllowedHosts: getAdditionalAllowedHosts(server, preview),
   }
   resolved = {
     ...config,
