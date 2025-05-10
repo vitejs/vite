@@ -422,15 +422,15 @@ export default defineConfig({
               link: '/changes/hotupdate-hook',
             },
             {
-              text: 'Move to per-environment APIs',
+              text: 'Move to Per-environment APIs',
               link: '/changes/per-environment-apis',
             },
             {
-              text: 'SSR using ModuleRunner API',
+              text: 'SSR Using ModuleRunner API',
               link: '/changes/ssr-using-modulerunner',
             },
             {
-              text: 'Shared plugins during build',
+              text: 'Shared Plugins During Build',
               link: '/changes/shared-plugins-during-build',
             },
           ],

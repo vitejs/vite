@@ -38,7 +38,7 @@ If your plugin is only going to work for a particular framework, its name should
 
 See also [Virtual Modules Convention](#virtual-modules-convention).
 
-## Plugins config
+## Plugins Config
 
 Users will add plugins to the project `devDependencies` and configure them using the `plugins` array option.
 
