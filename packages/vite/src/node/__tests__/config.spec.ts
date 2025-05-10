@@ -10,10 +10,7 @@ import { createLogger, mergeConfig } from '../publicUtils'
 
 const [nvMajor, nvMinor] = process.versions.node.split('.').map(Number)
 const isImportAttributesSupported =
-  (nvMajor === 18 && nvMinor >= 20) ||
-  // Node v19 doesn't support import attributes
-  (nvMajor === 20 && nvMinor >= 10) ||
-  nvMajor >= 21
+  (nvMajor === 20 && nvMinor >= 10) || nvMajor >= 21
 
 describe('mergeConfig', () => {
   test('handles configs with different alias schemas', () => {
