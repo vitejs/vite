@@ -1549,12 +1549,6 @@ export interface BuilderOptions {
   buildApp?: (builder: ViteBuilder) => Promise<void>
 }
 
-async function defaultBuildApp(builder: ViteBuilder): Promise<void> {
-  for (const environment of Object.values(builder.environments)) {
-    await builder.build(environment)
-  }
-}
-
 export const builderOptionsDefaults = Object.freeze({
   sharedConfigBuild: false,
   sharedPlugins: false,
@@ -1566,7 +1560,7 @@ export function resolveBuilderOptions(
 ): ResolvedBuilderOptions | undefined {
   if (!options) return
   return mergeWithDefaults(
-    { ...builderOptionsDefaults, buildApp: defaultBuildApp },
+    { ...builderOptionsDefaults, buildApp: async () => {} },
     options,
   )
 }
@@ -1620,6 +1614,16 @@ export async function createBuilder(
       }
       if (!configBuilderBuildAppCalled) {
         await configBuilder.buildApp(builder)
+      }
+      // fallback to building all environments if no environments have been built
+      if (
+        Object.values(builder.environments).every(
+          (environment) => !environment.isBuilt,
+        )
+      ) {
+        for (const environment of Object.values(builder.environments)) {
+          await builder.build(environment)
+        }
       }
     },
     async build(
