@@ -9,6 +9,7 @@ import {
   createDebugger,
   fsPathFromId,
   injectQuery,
+  isCSSRequest,
   isImportRequest,
   isJSRequest,
   normalizePath,
@@ -30,11 +31,7 @@ import {
   ERR_OPTIMIZE_DEPS_PROCESSING_ERROR,
   FS_PREFIX,
 } from '../../constants'
-import {
-  isCSSRequest,
-  isDirectCSSRequest,
-  isDirectRequest,
-} from '../../plugins/css'
+import { isDirectCSSRequest, isDirectRequest } from '../../plugins/css'
 import { ERR_CLOSED_SERVER } from '../pluginContainer'
 import { cleanUrl, unwrapId, withTrailingSlash } from '../../../shared/utils'
 import {

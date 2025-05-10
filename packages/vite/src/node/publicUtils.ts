@@ -13,15 +13,11 @@ export {
 } from './constants'
 export { version as esbuildVersion } from 'esbuild'
 export {
-  splitVendorChunkPlugin,
-  splitVendorChunk,
-  isCSSRequest,
-} from './plugins/splitVendorChunk'
-export {
   normalizePath,
   mergeConfig,
   mergeAlias,
   createFilter,
+  isCSSRequest,
   rollupVersion,
 } from './utils'
 export { perEnvironmentPlugin } from './plugin'

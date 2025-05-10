@@ -71,6 +71,7 @@ import {
   getPackageManagerCommand,
   getPkgName,
   injectQuery,
+  isCSSRequest,
   isDataUrl,
   isExternalUrl,
   isObject,
@@ -255,9 +256,6 @@ type CssLang =
   | keyof typeof PureCssLang
   | keyof typeof PreprocessLang
   | keyof typeof PostCssDialectLang
-
-export const isCSSRequest = (request: string): boolean =>
-  CSS_LANGS_RE.test(request)
 
 export const isModuleCSSRequest = (request: string): boolean =>
   cssModuleRE.test(request)
