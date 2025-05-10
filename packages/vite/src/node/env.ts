@@ -2,6 +2,7 @@ import fs from 'node:fs'
 import path from 'node:path'
 import { parse } from 'dotenv'
 import { type DotenvPopulateInput, expand } from 'dotenv-expand'
+import { createDurationTimer } from '../shared/utils'
 import { arraify, createDebugger, normalizePath, tryStatSync } from './utils'
 import type { UserConfig } from './config'
 
@@ -28,8 +29,7 @@ export function loadEnv(
   envDir: string | false,
   prefixes: string | string[] = 'VITE_',
 ): Record<string, string> {
-  const start = performance.now()
-  const getTime = () => `${(performance.now() - start).toFixed(2)}ms`
+  const getDurationTime = createDurationTimer()
 
   if (mode === 'local') {
     throw new Error(
@@ -51,7 +51,7 @@ export function loadEnv(
     }),
   )
 
-  debug?.(`env files loaded in ${getTime()}`)
+  debug?.(`env files loaded in ${getDurationTime()}`)
 
   // test NODE_ENV override before expand as otherwise process.env.NODE_ENV would override this
   if (parsed.NODE_ENV && process.env.VITE_USER_NODE_ENV === undefined) {
