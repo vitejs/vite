@@ -1,1 +1,6 @@
+# See https://git-scm.com/docs/gitattributes#_pattern_format for more about `.gitattributes`.
+
+# Normalize EOL for all files that Git considers text files
 * text=auto eol=lf
+
+packages/vite/bin/openChrome.applescript linguist-vendored
