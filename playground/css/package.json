@@ -24,7 +24,7 @@
     "less": "^4.3.0",
     "lightningcss": "^1.29.3",
     "postcss-nested": "^7.0.2",
-    "sass": "^1.86.3",
+    "sass": "^1.87.0",
     "stylus": "^0.64.0",
     "sugarss": "^5.0.0",
     "tinyglobby": "^0.2.13"
