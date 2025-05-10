@@ -78,8 +78,6 @@ interface PropagationBoundary {
 export interface HotChannelClient {
   send(payload: HotPayload): void
 }
-/** @deprecated use `HotChannelClient` instead */
-export type HMRBroadcasterClient = HotChannelClient
 
 export type HotChannelListener<T extends string = string> = (
   data: InferCustomEventPayload<T>,
@@ -111,8 +109,6 @@ export interface HotChannel<Api = any> {
 
   api?: Api
 }
-/** @deprecated use `HotChannel` instead */
-export type HMRChannel = HotChannel
 
 export function getShortName(file: string, root: string): string {
   return file.startsWith(withTrailingSlash(root))
@@ -1124,8 +1120,6 @@ export type ServerHotChannelApi = {
 export type ServerHotChannel = HotChannel<ServerHotChannelApi>
 export type NormalizedServerHotChannel =
   NormalizedHotChannel<ServerHotChannelApi>
-/** @deprecated use `ServerHotChannel` instead */
-export type ServerHMRChannel = ServerHotChannel
 
 export function createServerHotChannel(): ServerHotChannel {
   const innerEmitter = new EventEmitter()
@@ -1165,8 +1159,6 @@ export interface HotBroadcaster extends NormalizedHotChannel {
   addChannel(channel: HotChannel): HotBroadcaster
   close(): Promise<unknown[]>
 }
-/** @deprecated use `environment.hot` instead */
-export type HMRBroadcaster = HotBroadcaster
 
 export function createDeprecatedHotBroadcaster(
   ws: NormalizedHotChannel,
