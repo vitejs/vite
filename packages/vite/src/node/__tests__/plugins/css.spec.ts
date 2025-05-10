@@ -236,8 +236,8 @@ async function createCssPluginTransform(inlineConfig: InlineConfig = {}) {
 
   return {
     async transform(code: string, id: string) {
-      // @ts-expect-error transform is function
-      return await transform.call(
+      // @ts-expect-error transform.handler is function
+      return await transform.handler.call(
         {
           addWatchFile() {
             return
