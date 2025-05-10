@@ -67,7 +67,6 @@ export function createDevHtmlTransformFn(
 ) => Promise<string> {
   const [preHooks, normalHooks, postHooks] = resolveHtmlTransforms(
     config.plugins,
-    config.logger,
   )
   const transformHooks = [
     preImportMapHook(config),
