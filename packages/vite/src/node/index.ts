@@ -87,6 +87,7 @@ export type {
 } from './server'
 export type {
   ViteBuilder,
+  BuildAppHook,
   BuilderOptions,
   BuildOptions,
   BuildEnvironmentOptions,
