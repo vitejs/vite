@@ -22,6 +22,9 @@ patchedDependencies:
   sirv@3.0.1:
     hash: 95b663b930c5cc6e609c7fa15b69a86ff3b30df68978611d1d3d724c65135cb1
     path: patches/sirv@3.0.1.patch
+  vite-node:
+    hash: aa6923b4c36784da9d52ca43140e9ad2e73e0fb2d31e7be05ad2f247b91ded40
+    path: patches/vite-node.patch
 
 importers:
 
@@ -13634,7 +13637,7 @@ snapshots:
       '@types/unist': 3.0.3
       vfile-message: 4.0.2
 
-  vite-node@3.1.1:
+  vite-node@3.1.1(patch_hash=aa6923b4c36784da9d52ca43140e9ad2e73e0fb2d31e7be05ad2f247b91ded40):
     dependencies:
       cac: 6.7.14
       debug: 4.4.0
@@ -13729,7 +13732,7 @@ snapshots:
       tinypool: 1.0.2
       tinyrainbow: 2.0.0
       vite: link:packages/vite
-      vite-node: 3.1.1
+      vite-node: 3.1.1(patch_hash=aa6923b4c36784da9d52ca43140e9ad2e73e0fb2d31e7be05ad2f247b91ded40)
       why-is-node-running: 2.3.0
     optionalDependencies:
       '@types/debug': 4.1.12
