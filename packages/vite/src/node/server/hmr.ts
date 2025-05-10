@@ -78,8 +78,6 @@ interface PropagationBoundary {
 export interface HotChannelClient {
   send(payload: HotPayload): void
 }
-/** @deprecated use `HotChannelClient` instead */
-export type HMRBroadcasterClient = HotChannelClient
 
 export type HotChannelListener<T extends string = string> = (
   data: InferCustomEventPayload<T>,
@@ -111,8 +109,6 @@ export interface HotChannel<Api = any> {
 
   api?: Api
 }
-/** @deprecated use `HotChannel` instead */
-export type HMRChannel = HotChannel
 
 export function getShortName(file: string, root: string): string {
   return file.startsWith(withTrailingSlash(root))
@@ -1124,8 +1120,6 @@ export type ServerHotChannelApi = {
 export type ServerHotChannel = HotChannel<ServerHotChannelApi>
 export type NormalizedServerHotChannel =
   NormalizedHotChannel<ServerHotChannelApi>
-/** @deprecated use `ServerHotChannel` instead */
-export type ServerHMRChannel = ServerHotChannel
 
 export function createServerHotChannel(): ServerHotChannel {
   const innerEmitter = new EventEmitter()
@@ -1153,46 +1147,4 @@ export function createServerHotChannel(): ServerHotChannel {
       outsideEmitter,
     },
   }
-}
-
-/** @deprecated use `environment.hot` instead */
-export interface HotBroadcaster extends NormalizedHotChannel {
-  readonly channels: NormalizedHotChannel[]
-  /**
-   * A noop.
-   * @deprecated
-   */
-  addChannel(channel: HotChannel): HotBroadcaster
-  close(): Promise<unknown[]>
-}
-/** @deprecated use `environment.hot` instead */
-export type HMRBroadcaster = HotBroadcaster
-
-export function createDeprecatedHotBroadcaster(
-  ws: NormalizedHotChannel,
-): HotBroadcaster {
-  const broadcaster: HotBroadcaster = {
-    on: ws.on,
-    off: ws.off,
-    listen: ws.listen,
-    send: ws.send,
-    setInvokeHandler: ws.setInvokeHandler,
-    handleInvoke: async () => ({
-      error: {
-        name: 'TransportError',
-        message: 'handleInvoke not implemented',
-        stack: new Error().stack,
-      },
-    }),
-    get channels() {
-      return [ws]
-    },
-    addChannel() {
-      return broadcaster
-    },
-    close() {
-      return Promise.all(broadcaster.channels.map((channel) => channel.close()))
-    },
-  }
-  return broadcaster
 }
