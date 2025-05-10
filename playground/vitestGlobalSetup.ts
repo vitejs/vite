@@ -43,8 +43,8 @@ export async function setup({ provide }: TestProject): Promise<void> {
     })
   // also setup dedicated copy for "variant" tests
   for (const [original, variants] of [
-    ['css', ['sass-legacy', 'sass-modern', 'lightningcss']],
-    ['css-sourcemap', ['sass-legacy', 'sass-modern']],
+    ['css', ['sass-modern', 'lightningcss']],
+    ['css-sourcemap', ['sass-modern']],
     ['transform-plugin', ['base']],
   ] as const) {
     for (const variant of variants) {
