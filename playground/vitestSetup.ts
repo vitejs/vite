@@ -233,7 +233,11 @@ export async function startDefaultServe(): Promise<void> {
 
   if (!isBuild) {
     process.env.VITE_INLINE = 'inline-serve'
-    const config = await loadConfig({ command: 'serve', mode: 'development' })
+    const config = await loadConfig({
+      command: 'serve',
+      mode: 'development',
+      version: '6.6.6',
+    })
     viteServer = server = await (await createServer(config)).listen()
     viteTestUrl = stripTrailingSlashIfNeeded(
       server.resolvedUrls.local[0],
@@ -251,7 +255,11 @@ export async function startDefaultServe(): Promise<void> {
       },
     })
     const buildConfig = mergeConfig(
-      await loadConfig({ command: 'build', mode: 'production' }),
+      await loadConfig({
+        command: 'build',
+        mode: 'production',
+        version: '6.6.6',
+      }),
       {
         plugins: [resolvedPlugin()],
       },
@@ -276,6 +284,7 @@ export async function startDefaultServe(): Promise<void> {
       command: 'serve',
       mode: 'development',
       isPreview: true,
+      version: '6.6.6',
     })
     const _nodeEnv = process.env.NODE_ENV
     const previewServer = await preview(previewConfig)
