@@ -1,6 +1,7 @@
 {
   "semi": false,
   "singleQuote": true,
+  "plugins": ["prettier-oxc-parser"],
   "overrides": [
     {
       "files": ["*.json5"],
