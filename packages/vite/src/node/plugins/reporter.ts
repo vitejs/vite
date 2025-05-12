@@ -3,8 +3,7 @@ import { gzip } from 'node:zlib'
 import { promisify } from 'node:util'
 import colors from 'picocolors'
 import type { OutputBundle } from 'rolldown'
-import { reportPlugin as nativeReportPlugin } from 'rolldown/experimental'
-import { type Plugin, perEnvironmentPlugin } from '../plugin'
+import { type Plugin } from '../plugin'
 import type { ResolvedConfig } from '../config'
 import type { Environment } from '../environment'
 import { perEnvironmentState } from '../environment'
@@ -27,7 +26,7 @@ type LogEntry = {
 
 const COMPRESSIBLE_ASSETS_RE = /\.(?:html|json|svg|txt|xml|xhtml|wasm)$/
 
-export function buildReporterPlugin(config: ResolvedConfig): Plugin[] {
+export function buildReporterPlugin(config: ResolvedConfig): Plugin {
   const compress = promisify(gzip)
 
   const numberFormatter = new Intl.NumberFormat('en', {
@@ -271,7 +270,7 @@ export function buildReporterPlugin(config: ResolvedConfig): Plugin[] {
     }
   })
 
-  const jsPlugin: Plugin = {
+  return {
     name: 'vite:reporter',
     sharedDuringBuild: true,
     perEnvironmentStartEndDuringDev: true,
@@ -338,20 +337,6 @@ export function buildReporterPlugin(config: ResolvedConfig): Plugin[] {
       await chunksReporter(this).log(output, dir)
     },
   }
-  const plugins = [jsPlugin]
-
-  if (config.experimental.enableNativePlugin === true) {
-    delete jsPlugin.transform
-    delete jsPlugin.buildStart
-    delete jsPlugin.buildEnd
-    plugins.push(
-      perEnvironmentPlugin('vite:modules-reporter', () =>
-        nativeReportPlugin({ isTty: !!tty }),
-      ),
-    )
-  }
-
-  return plugins
 }
 
 function writeLine(output: string) {
