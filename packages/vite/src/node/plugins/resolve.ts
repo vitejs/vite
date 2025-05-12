@@ -6,6 +6,7 @@ import type { PartialResolvedId } from 'rolldown'
 import { viteResolvePlugin } from 'rolldown/experimental'
 import { exports, imports } from 'resolve.exports'
 import { hasESMSyntax } from 'mlly'
+import { prefixRegex } from '@rolldown/pluginutils'
 import type { Plugin } from '../plugin'
 import {
   CLIENT_ENTRY,
@@ -750,10 +751,7 @@ export function resolvePlugin(
 
     load: {
       filter: {
-        id: [
-          new RegExp(`^${browserExternalId}`),
-          new RegExp(`^${optionalPeerDepId}`),
-        ],
+        id: [prefixRegex(browserExternalId), prefixRegex(optionalPeerDepId)],
       },
       handler(id) {
         if (id.startsWith(browserExternalId)) {

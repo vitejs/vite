@@ -10,6 +10,7 @@ import type {
 import MagicString from 'magic-string'
 import colors from 'picocolors'
 import picomatch from 'picomatch'
+import { makeIdFiltersToMatchWithQuery } from '@rolldown/pluginutils'
 import {
   createToImportMetaURLBasedRelativeRuntime,
   toOutputFilePathInJS,
@@ -162,10 +163,8 @@ export function assetPlugin(config: ResolvedConfig): Plugin {
         id: [
           urlRE,
           DEFAULT_ASSETS_RE,
-          ...config.rawAssetsInclude.map((v) =>
-            typeof v === 'string'
-              ? picomatch.makeRe(`${v}{?*,}`, { dot: true })
-              : addQueryToRegex(v),
+          ...makeIdFiltersToMatchWithQuery(config.rawAssetsInclude).map((v) =>
+            typeof v === 'string' ? picomatch.makeRe(v, { dot: true }) : v,
           ),
         ],
       },
@@ -189,9 +188,7 @@ export function assetPlugin(config: ResolvedConfig): Plugin {
             rawRE,
             urlRE,
             DEFAULT_ASSETS_RE,
-            ...config.rawAssetsInclude.map((v) =>
-              typeof v === 'string' ? `${v}{?*,}` : addQueryToRegex(v),
-            ),
+            ...makeIdFiltersToMatchWithQuery(config.rawAssetsInclude),
           ],
           // Rollup convention, this id should be handled by the
           // plugin that marked it with \0
@@ -305,14 +302,6 @@ export function assetPlugin(config: ResolvedConfig): Plugin {
       }
     },
   }
-}
-
-function addQueryToRegex(input: RegExp) {
-  return new RegExp(
-    // replace `$` with `(?:\?.*)?$` (ignore `\$`)
-    input.source.replace(/(?<!\\)\$/g, '(?:\\?.*)?$'),
-    input.flags,
-  )
 }
 
 export async function fileToUrl(

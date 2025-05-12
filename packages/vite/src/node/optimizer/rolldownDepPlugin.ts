@@ -1,5 +1,6 @@
 import path from 'node:path'
 import type { ImportKind, Plugin, RolldownPlugin } from 'rolldown'
+import { prefixRegex } from '@rolldown/pluginutils'
 import { JS_TYPES_RE, KNOWN_ASSET_TYPES } from '../constants'
 import type { PackageCache } from '../packages'
 import {
@@ -189,7 +190,7 @@ export function rolldownDepPlugin(
       },
       load: {
         filter: {
-          id: new RegExp(`^${externalWithConversionNamespace}`),
+          id: prefixRegex(externalWithConversionNamespace),
         },
         handler(id) {
           const path = id.slice(externalWithConversionNamespace.length)
@@ -246,8 +247,8 @@ export function rolldownDepPlugin(
       load: {
         filter: {
           id: [
-            new RegExp(`^${browserExternalNamespace}`),
-            new RegExp(`^${optionalPeerDepNamespace}`),
+            prefixRegex(browserExternalNamespace),
+            prefixRegex(optionalPeerDepNamespace),
           ],
         },
         handler(id) {
@@ -324,7 +325,7 @@ export function rolldownCjsExternalPlugin(
   return {
     name: 'cjs-external',
     resolveId: {
-      filter: { id: [new RegExp(`^${nonFacadePrefix}`), filter] },
+      filter: { id: [prefixRegex(nonFacadePrefix), filter] },
       handler(id, _importer, options) {
         if (id.startsWith(nonFacadePrefix)) {
           return {
@@ -350,7 +351,7 @@ export function rolldownCjsExternalPlugin(
       },
     },
     load: {
-      filter: { id: [new RegExp(`^${cjsExternalFacadeNamespace}`)] },
+      filter: { id: prefixRegex(cjsExternalFacadeNamespace) },
       handler(id) {
         if (id.startsWith(cjsExternalFacadeNamespace)) {
           return {

@@ -1,5 +1,5 @@
+import { exactRegex } from '@rolldown/pluginutils'
 import type { Plugin } from '../plugin'
-import { exactRegex } from '../utils'
 import { fileToUrl } from './asset'
 
 const wasmHelperId = '\0vite/wasm-helper.js'
