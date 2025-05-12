@@ -142,26 +142,28 @@ test('dep with optional peer dep', async () => {
   await expectWithRetry(() =>
     page.textContent('.dep-with-optional-peer-dep'),
   ).toMatch(`[success]`)
-  if (isServe) {
-    expect(browserErrors.map((error) => error.message)).toEqual(
-      expect.arrayContaining([
-        'Could not resolve "foobar" imported by "@vitejs/test-dep-with-optional-peer-dep". Is it installed?',
-      ]),
-    )
-  }
+  await expectWithRetry(() =>
+    page.textContent('.dep-with-optional-peer-dep-error'),
+  ).toMatch(`[success]`)
 })
 
 test('dep with optional peer dep submodule', async () => {
   await expectWithRetry(() =>
     page.textContent('.dep-with-optional-peer-dep-submodule'),
   ).toMatch(`[success]`)
-  if (isServe) {
-    expect(browserErrors.map((error) => error.message)).toEqual(
-      expect.arrayContaining([
-        'Could not resolve "foobar/baz" imported by "@vitejs/test-dep-with-optional-peer-dep-submodule". Is it installed?',
-      ]),
-    )
-  }
+  await expectWithRetry(() =>
+    page.textContent('.dep-with-optional-peer-dep-submodule-error'),
+  ).toMatch(`[success]`)
+})
+
+test('dep with optional peer dep (cjs)', async () => {
+  await expectWithRetry(() =>
+    page.textContent('.dep-with-optional-peer-dep-cjs'),
+  ).toMatch(`[success]`)
+  // FIXME
+  // await expectWithRetry(() =>
+  //   page.textContent('.dep-with-optional-peer-dep-cjs-error'),
+  // ).toMatch(`[success]`)
 })
 
 test('dep with css import', async () => {
