@@ -1,6 +1,6 @@
+import { exactRegex } from '@rolldown/pluginutils'
 import type { ResolvedConfig } from '..'
 import type { Plugin } from '../plugin'
-import { exactRegex } from '../utils'
 import { isModernFlag } from './importAnalysisBuild'
 
 export const modulePreloadPolyfillId = 'vite/modulepreload-polyfill'

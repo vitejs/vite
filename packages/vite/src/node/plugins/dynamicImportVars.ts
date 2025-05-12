@@ -4,13 +4,13 @@ import { init, parse as parseImports } from 'es-module-lexer'
 import type { ImportSpecifier } from 'es-module-lexer'
 import { parseAst } from 'rolldown/parseAst'
 import { dynamicImportToGlob } from '@rollup/plugin-dynamic-import-vars'
+import { exactRegex } from '@rolldown/pluginutils'
 import type { Plugin } from '../plugin'
 import type { ResolvedConfig } from '../config'
 import { CLIENT_ENTRY } from '../constants'
 import { createBackCompatIdResolver } from '../idResolver'
 import {
   createFilter,
-  exactRegex,
   normalizePath,
   rawRE,
   requestQueryMaybeEscapedSplitRE,
@@ -201,7 +201,7 @@ export function dynamicImportVarsPlugin(config: ResolvedConfig): Plugin {
 
     transform: {
       filter: {
-        id: { exclude: CLIENT_ENTRY },
+        id: { exclude: exactRegex(CLIENT_ENTRY) },
         code: hasDynamicImportRE,
       },
       async handler(source, importer) {

@@ -11,6 +11,7 @@ import { rolldown } from 'rolldown'
 import type { FSWatcher } from 'dep-types/chokidar'
 import { TSConfckParseError } from 'tsconfck'
 import colors from 'picocolors'
+import { exactRegex, prefixRegex } from '@rolldown/pluginutils'
 import {
   combineSourcemaps,
   createFilter,
@@ -318,7 +319,7 @@ export function oxcPlugin(config: ResolvedConfig): Plugin {
     },
     resolveId: {
       filter: {
-        id: /^@oxc-project\/runtime\//,
+        id: prefixRegex('@oxc-project/runtime/'),
       },
       async handler(id, _importer, opts) {
         // @oxc-project/runtime imports will be injected by OXC transform
@@ -501,11 +502,11 @@ async function generateRuntimeHelpers(
       {
         name: 'entrypoint',
         resolveId: {
-          filter: { id: /^entrypoint$/ },
+          filter: { id: exactRegex('entrypoint') },
           handler: (id) => id,
         },
         load: {
-          filter: { id: /^entrypoint$/ },
+          filter: { id: exactRegex('entrypoint') },
           handler() {
             return runtimeHelpers
               .map(

@@ -1,6 +1,7 @@
 import path from 'node:path'
 import MagicString from 'magic-string'
 import { stripLiteral } from 'strip-literal'
+import { exactRegex } from '@rolldown/pluginutils'
 import type { Plugin } from '../plugin'
 import type { ResolvedConfig } from '../config'
 import {
@@ -52,7 +53,7 @@ export function assetImportMetaUrlPlugin(config: ResolvedConfig): Plugin {
     transform: {
       filter: {
         id: {
-          exclude: [preloadHelperId, CLIENT_ENTRY],
+          exclude: [exactRegex(preloadHelperId), exactRegex(CLIENT_ENTRY)],
         },
         code: /new\s+URL.+import\.meta\.url/,
       },

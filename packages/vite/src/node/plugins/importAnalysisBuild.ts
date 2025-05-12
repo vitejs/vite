@@ -9,9 +9,9 @@ import type { SourceMap } from 'rolldown'
 import { buildImportAnalysisPlugin as nativeBuildImportAnalysisPlugin } from 'rolldown/experimental'
 import type { RawSourceMap } from '@ampproject/remapping'
 import convertSourceMap from 'convert-source-map'
+import { exactRegex } from '@rolldown/pluginutils'
 import {
   combineSourcemaps,
-  exactRegex,
   generateCodeFrame,
   isInNodeModules,
   numberToPos,
