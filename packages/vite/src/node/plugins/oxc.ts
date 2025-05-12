@@ -203,45 +203,6 @@ export async function transformWithOxc(
       resolvedOptions.typescript ??= {}
       resolvedOptions.typescript.removeClassFieldsWithoutInitializer =
         !useDefineForClassFields
-
-      // set target to es2021 or lower to enable class property transforms
-      // https://github.com/oxc-project/oxc/issues/6735#issuecomment-2513866362
-      if (!useDefineForClassFields) {
-        let set = false
-        if (!resolvedOptions.target) {
-          resolvedOptions.target = 'es2021'
-          set = true
-        } else {
-          const target = Array.isArray(resolvedOptions.target)
-            ? [...resolvedOptions.target]
-            : resolvedOptions.target.split(',')
-          const esTargetIndex = target.findIndex((t) =>
-            t.toLowerCase().startsWith('es'),
-          )
-          if (esTargetIndex >= 0) {
-            const esTargetTrimmed = target[esTargetIndex].toLowerCase().slice(2)
-            if (
-              esTargetTrimmed === 'next' ||
-              parseInt(esTargetTrimmed, 10) > 2021
-            ) {
-              target[esTargetIndex] = 'es2021'
-              set = true
-            }
-          } else {
-            target.push('es2021')
-            set = true
-          }
-          resolvedOptions.target = target
-        }
-
-        if (set) {
-          warnings.push(
-            'target was modified to include ES2021' +
-              ' because useDefineForClassFields is set to false' +
-              ' and oxc does not support transforming useDefineForClassFields=false for ES2022+ yet',
-          )
-        }
-      }
     } catch (e) {
       if (e instanceof TSConfckParseError) {
         // tsconfig could be out of root, make sure it is watched on dev
