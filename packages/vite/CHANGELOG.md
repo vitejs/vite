@@ -1,3 +1,14 @@
+## <small>6.3.9 (2025-05-12)</small>
+
+* refactor: use util functions from `@rolldown/pluginutils` (#166) ([3903193](https://github.com/vitejs/rolldown-vite/commit/3903193)), closes [#166](https://github.com/vitejs/rolldown-vite/issues/166)
+* feat: support `useDefineForClassFields=false` with `target>=es2022` ([9933779](https://github.com/vitejs/rolldown-vite/commit/9933779))
+* feat: update rolldown ([9ff4513](https://github.com/vitejs/rolldown-vite/commit/9ff4513))
+* ci: run tests with native resolver (#163) ([284487e](https://github.com/vitejs/rolldown-vite/commit/284487e)), closes [#163](https://github.com/vitejs/rolldown-vite/issues/163)
+* fix(cli): make `cleanGlobalCLIOptions()` clean `--force` (#19999) ([d4a171a](https://github.com/vitejs/rolldown-vite/commit/d4a171a)), closes [#19999](https://github.com/vitejs/rolldown-vite/issues/19999)
+* fix(optimizer): suppress warnings for optimizer (#160) ([9615b13](https://github.com/vitejs/rolldown-vite/commit/9615b13)), closes [#160](https://github.com/vitejs/rolldown-vite/issues/160)
+
+
+
 ## <small>6.3.8 (2025-05-07)</small>
 
 * fix: watch related fixes (#158) ([ccfccef](https://github.com/vitejs/rolldown-vite/commit/ccfccef)), closes [#158](https://github.com/vitejs/rolldown-vite/issues/158)
