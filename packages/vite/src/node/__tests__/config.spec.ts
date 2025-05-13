@@ -6,7 +6,8 @@ import type { InlineConfig, PluginOption } from '..'
 import type { UserConfig, UserConfigExport } from '../config'
 import { defineConfig, loadConfigFromFile, resolveConfig } from '../config'
 import { resolveEnvPrefix } from '../env'
-import { createLogger, mergeConfig } from '../publicUtils'
+import { mergeConfig } from '../utils'
+import { createLogger } from '../logger'
 
 describe('mergeConfig', () => {
   test('handles configs with different alias schemas', () => {

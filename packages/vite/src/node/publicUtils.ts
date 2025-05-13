@@ -1,8 +1,4 @@
-/**
- * Exported sync utils should go here.
- * This file will be bundled to ESM and CJS and redirected by ../index.cjs
- * Please control the side-effects by checking the ./dist/node-cjs/publicUtils.cjs bundle
- */
+// TODO: move contents of this file to src/node/index.ts
 export {
   VERSION as version,
   DEFAULT_CLIENT_CONDITIONS as defaultClientConditions,
