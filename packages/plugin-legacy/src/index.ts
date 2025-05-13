@@ -997,3 +997,15 @@ export const cspHashes = [
 export type { Options }
 
 export default viteLegacyPlugin
+
+// Compat for require
+function viteLegacyPluginCjs(this: unknown, options: Options): Plugin[] {
+  return viteLegacyPlugin.call(this, options)
+}
+Object.assign(viteLegacyPluginCjs, {
+  cspHashes,
+  default: viteLegacyPluginCjs,
+  detectPolyfills,
+})
+
+export { viteLegacyPluginCjs as 'module.exports' }
