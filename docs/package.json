@@ -10,7 +10,7 @@
   "devDependencies": {
     "@shikijs/vitepress-twoslash": "^2.5.0",
     "@types/express": "^5.0.1",
-    "feed": "^4.2.2",
+    "feed": "^5.0.1",
     "vitepress": "^1.6.3",
     "vitepress-plugin-group-icons": "^1.5.2",
     "vitepress-plugin-llms": "^1.1.0",
