@@ -609,11 +609,11 @@ export interface ResolvedConfig
       /**
        * createResolver is deprecated. It only works for the client and ssr
        * environments. The `aliasOnly` option is also not being used any more
-       * Plugins should move to createIdResolver(environment) instead.
+       * Plugins should move to createIdResolver(environment.config) instead.
        * create an internal resolver to be used in special scenarios, e.g.
        * optimizer & handling css @imports
        *
-       * @deprecated Use `createIdResolver(environment)` instead.
+       * @deprecated Use `createIdResolver` instead.
        */
       createResolver: (options?: Partial<InternalResolveOptions>) => ResolveFn
       optimizeDeps: DepOptimizationOptions
@@ -1523,13 +1523,6 @@ export async function resolveConfig(
     getSortedPlugins: undefined!,
     getSortedPluginHooks: undefined!,
 
-    /**
-     * createResolver is deprecated. It only works for the client and ssr
-     * environments. The `aliasOnly` option is also not being used any more
-     * Plugins should move to createIdResolver(environment) instead.
-     * create an internal resolver to be used in special scenarios, e.g.
-     * optimizer & handling css @imports
-     */
     createResolver(options) {
       const resolve = createIdResolver(this, options)
       const clientEnvironment = new PartialEnvironment('client', this)
