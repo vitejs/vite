@@ -19,11 +19,7 @@
   "main": "./dist/node/index.js",
   "types": "./dist/node/index.d.ts",
   "exports": {
-    ".": {
-      "module-sync": "./dist/node/index.js",
-      "import": "./dist/node/index.js",
-      "require": "./index.cjs"
-    },
+    ".": "./dist/node/index.js",
     "./client": {
       "types": "./client.d.ts"
     },
