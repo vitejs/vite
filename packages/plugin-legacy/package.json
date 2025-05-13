@@ -13,19 +13,10 @@
     "vite-plugin",
     "@vitejs/plugin-legacy"
   ],
-  "main": "./dist/index.cjs",
-  "module": "./dist/index.mjs",
-  "types": "./dist/index.d.ts",
-  "exports": {
-    ".": {
-      "import": "./dist/index.mjs",
-      "require": "./dist/index.cjs"
-    }
-  },
+  "exports": "./dist/index.mjs",
   "scripts": {
     "dev": "unbuild --stub",
-    "build": "unbuild && pnpm run patch-cjs",
-    "patch-cjs": "tsx ../../scripts/patchCJS.ts",
+    "build": "unbuild",
     "prepublishOnly": "npm run build"
   },
   "engines": {
