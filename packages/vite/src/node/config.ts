@@ -606,6 +606,15 @@ export interface ResolvedConfig
       ssr: ResolvedSSROptions
       assetsInclude: (file: string) => boolean
       logger: Logger
+      /**
+       * createResolver is deprecated. It only works for the client and ssr
+       * environments. The `aliasOnly` option is also not being used any more
+       * Plugins should move to createIdResolver(environment) instead.
+       * create an internal resolver to be used in special scenarios, e.g.
+       * optimizer & handling css @imports
+       *
+       * @deprecated Use `createIdResolver(environment)` instead.
+       */
       createResolver: (options?: Partial<InternalResolveOptions>) => ResolveFn
       optimizeDeps: DepOptimizationOptions
       /** @internal */
