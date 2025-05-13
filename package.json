@@ -63,7 +63,7 @@
     "execa": "^9.5.2",
     "globals": "^16.0.0",
     "gsap": "^3.12.7",
-    "lint-staged": "^15.5.1",
+    "lint-staged": "^16.0.0",
     "picocolors": "^1.1.1",
     "playwright-chromium": "^1.50.1",
     "premove": "^4.0.0",
