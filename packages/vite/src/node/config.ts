@@ -607,13 +607,14 @@ export interface ResolvedConfig
       assetsInclude: (file: string) => boolean
       logger: Logger
       /**
-       * createResolver is deprecated. It only works for the client and ssr
-       * environments. The `aliasOnly` option is also not being used any more
-       * Plugins should move to createIdResolver(environment.config) instead.
-       * create an internal resolver to be used in special scenarios, e.g.
-       * optimizer & handling css @imports
+       * Create an internal resolver to be used in special scenarios, e.g.
+       * optimizer & handling css `@imports`.
        *
-       * @deprecated Use `createIdResolver` instead.
+       * This API is deprecated. It only works for the client and ssr
+       * environments. The `aliasOnly` option is also not being used anymore.
+       * Plugins should move to `createIdResolver(environment.config)` instead.
+       *
+       * @deprecated Use `createIdResolver` from `vite` instead.
        */
       createResolver: (options?: Partial<InternalResolveOptions>) => ResolveFn
       optimizeDeps: DepOptimizationOptions
