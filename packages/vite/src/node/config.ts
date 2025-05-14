@@ -606,6 +606,16 @@ export interface ResolvedConfig
       ssr: ResolvedSSROptions
       assetsInclude: (file: string) => boolean
       logger: Logger
+      /**
+       * Create an internal resolver to be used in special scenarios, e.g.
+       * optimizer & handling css `@imports`.
+       *
+       * This API is deprecated. It only works for the client and ssr
+       * environments. The `aliasOnly` option is also not being used anymore.
+       * Plugins should move to `createIdResolver(environment.config)` instead.
+       *
+       * @deprecated Use `createIdResolver` from `vite` instead.
+       */
       createResolver: (options?: Partial<InternalResolveOptions>) => ResolveFn
       optimizeDeps: DepOptimizationOptions
       /** @internal */
@@ -1514,13 +1524,6 @@ export async function resolveConfig(
     getSortedPlugins: undefined!,
     getSortedPluginHooks: undefined!,
 
-    /**
-     * createResolver is deprecated. It only works for the client and ssr
-     * environments. The `aliasOnly` option is also not being used any more
-     * Plugins should move to createIdResolver(environment) instead.
-     * create an internal resolver to be used in special scenarios, e.g.
-     * optimizer & handling css @imports
-     */
     createResolver(options) {
       const resolve = createIdResolver(this, options)
       const clientEnvironment = new PartialEnvironment('client', this)
