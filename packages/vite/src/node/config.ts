@@ -204,7 +204,7 @@ export interface DevEnvironmentOptions {
 
   /**
    * For environments associated with a module runner.
-   * By default it is true for the client environment and false for non-client environments.
+   * By default, it is false for the client environment and true for non-client environments.
    * This option can also be used instead of the removed config.experimental.skipSsrTransform.
    */
   moduleRunnerTransform?: boolean
