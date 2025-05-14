@@ -137,6 +137,7 @@
       "bcrypt",
       "esbuild",
       "playwright-chromium",
+      "rolldown",
       "simple-git-hooks",
       "workerd"
     ]
