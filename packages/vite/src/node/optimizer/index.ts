@@ -762,6 +762,7 @@ async function prepareRolldownOptimizerRun(
         // as esbuild will replace it automatically when `platform` is `'browser'`
         'process.env.NODE_ENV'
       : JSON.stringify(process.env.NODE_ENV || environment.config.mode),
+    ...rollupOptions.define,
   }
 
   const platform =
