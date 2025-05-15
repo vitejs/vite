@@ -255,6 +255,7 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
     async transform(source, importer) {
       const environment = this.environment as DevEnvironment
       const ssr = environment.config.consumer === 'server'
+      const isDebug = !environment.config.isProduction
       const moduleGraph = environment.moduleGraph
 
       if (canSkipImportAnalysis(importer)) {
@@ -307,6 +308,7 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
       let hasHMR = false
       let isSelfAccepting = false
       let hasEnv = false
+      let hasDebug = false
       let needQueryInjectHelper = false
       let s: MagicString | undefined
       const str = () => s || (s = new MagicString(source))
@@ -486,6 +488,11 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
               }
             } else if (prop === '.env') {
               hasEnv = true
+            } else if (
+              prop === '.DEB' &&
+              source.slice(end, end + 6) === '.DEBUG'
+            ) {
+              hasDebug = true
             }
             return
           } else if (templateLiteralRE.test(rawUrl)) {
@@ -719,6 +726,11 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
       if (hasEnv && !isClassicWorker) {
         // inject import.meta.env
         str().prepend(getEnv(ssr))
+      }
+
+      if (hasDebug && !isClassicWorker) {
+        // inject import.meta.DEBUG
+        str().prepend(`import.meta.DEBUG = ${isDebug};`)
       }
 
       if (hasHMR && !ssr && !isClassicWorker) {
