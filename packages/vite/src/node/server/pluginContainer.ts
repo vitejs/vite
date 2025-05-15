@@ -137,12 +137,14 @@ export interface PluginContainerOptions {
  * instead of using environment.plugins to allow the creation of different
  * pipelines working with the same environment (used for createIdResolver).
  */
-export async function createEnvironmentPluginContainer(
-  environment: Environment,
+export async function createEnvironmentPluginContainer<
+  Env extends Environment = Environment,
+>(
+  environment: Env,
   plugins: Plugin[],
   watcher?: FSWatcher,
   autoStart = true,
-): Promise<EnvironmentPluginContainer> {
+): Promise<EnvironmentPluginContainer<Env>> {
   const container = new EnvironmentPluginContainer(
     environment,
     plugins,
@@ -160,7 +162,7 @@ export type SkipInformation = {
   called?: boolean
 }
 
-class EnvironmentPluginContainer {
+class EnvironmentPluginContainer<Env extends Environment = Environment> {
   private _pluginContextMap = new Map<Plugin, PluginContext>()
   private _resolvedRollupOptions?: InputOptions
   private _processesing = new Set<Promise<any>>()
@@ -177,7 +179,7 @@ class EnvironmentPluginContainer {
 
   moduleGraph: EnvironmentModuleGraph | undefined
   watchFiles = new Set<string>()
-  minimalContext: MinimalPluginContext
+  minimalContext: MinimalPluginContext<Env>
 
   private _started = false
   private _buildStartPromise: Promise<void> | undefined
@@ -187,7 +189,7 @@ class EnvironmentPluginContainer {
    * @internal use `createEnvironmentPluginContainer` instead
    */
   constructor(
-    public environment: Environment,
+    public environment: Env,
     public plugins: Plugin[],
     public watcher?: FSWatcher,
     autoStart = true,
@@ -599,7 +601,7 @@ export class BasicMinimalPluginContext<Meta = PluginContextMeta> {
   }
 }
 
-export class MinimalPluginContext<T extends Environment = Environment>
+class MinimalPluginContext<T extends Environment = Environment>
   extends BasicMinimalPluginContext
   implements RollupMinimalPluginContext
 {

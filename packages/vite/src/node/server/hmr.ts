@@ -27,10 +27,7 @@ import type { EnvironmentModuleNode } from './moduleGraph'
 import type { ModuleNode } from './mixedModuleGraph'
 import type { DevEnvironment } from './environment'
 import { prepareError } from './middlewares/error'
-import {
-  BasicMinimalPluginContext,
-  MinimalPluginContext,
-} from './pluginContainer'
+import { BasicMinimalPluginContext } from './pluginContainer'
 import type { HttpServer } from '.'
 import { restartServerWithUrls } from '.'
 
@@ -473,13 +470,7 @@ export async function handleHMRUpdate(
   )
   const clientEnvironment = server.environments.client
   const ssrEnvironment = server.environments.ssr
-  const clientContext = new MinimalPluginContext(
-    {
-      rollupVersion,
-      watchMode: true,
-    },
-    clientEnvironment,
-  )
+  const clientContext = clientEnvironment.pluginContainer.minimalContext
   const clientHotUpdateOptions = hotMap.get(clientEnvironment)!.options
   const ssrHotUpdateOptions = hotMap.get(ssrEnvironment)?.options
   try {
@@ -570,13 +561,7 @@ export async function handleHMRUpdate(
   for (const environment of Object.values(server.environments)) {
     if (environment.name === 'client') continue
     const hot = hotMap.get(environment)!
-    const context = new MinimalPluginContext(
-      {
-        rollupVersion,
-        watchMode: true,
-      },
-      environment,
-    )
+    const context = environment.pluginContainer.minimalContext
     try {
       for (const plugin of getSortedHotUpdatePlugins(environment)) {
         if (plugin.hotUpdate) {
