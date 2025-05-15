@@ -336,10 +336,13 @@ export function esbuildCjsExternalPlugin(
       build.onLoad(
         { filter: /.*/, namespace: cjsExternalFacadeNamespace },
         (args) => ({
-          contents:
-            `import * as m from ${JSON.stringify(
-              nonFacadePrefix + args.path,
-            )};` + `module.exports = { ...m };`,
+          contents: `\
+import * as m from ${JSON.stringify(nonFacadePrefix + args.path)};
+if (typeof m.default === 'function' || (typeof m.default === 'object' && m.default !== null)) {
+  module.exports = Object.assign(m.default, m);
+} else {
+  module.exports = { ...m };
+}`,
         }),
       )
     },
