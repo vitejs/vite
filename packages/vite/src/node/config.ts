@@ -1965,6 +1965,10 @@ async function bundleConfigFile(
               }
               if (idFsPath && isImport) {
                 idFsPath = pathToFileURL(idFsPath).href
+                if (!idFsPath.includes('/node_modules/')) {
+                  // resolved to a local import, consider it as a relative path
+                  return
+                }
               }
               return {
                 path: idFsPath,
