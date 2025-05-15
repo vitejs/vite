@@ -343,11 +343,11 @@ async function globEntries(
   const nodeModulesPatterns: string[] = []
   const regularPatterns: string[] = []
 
-  for (const entry of arraify(patterns)) {
-    if (entry.includes('node_modules')) {
-      nodeModulesPatterns.push(entry)
+  for (const pattern of arraify(patterns)) {
+    if (pattern.includes('node_modules')) {
+      nodeModulesPatterns.push(pattern)
     } else {
-      regularPatterns.push(entry)
+      regularPatterns.push(pattern)
     }
   }
 
