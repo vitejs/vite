@@ -81,6 +81,20 @@ const importEsbuild = () => {
   return esbuild
 }
 
+let warnedTransformWithEsbuild = false
+const warnTransformWithEsbuildUsageOnce = () => {
+  if (warnedTransformWithEsbuild) return
+  warnedTransformWithEsbuild = true
+
+  // eslint-disable-next-line no-console -- logger cannot be used here
+  console.warn(
+    colors.yellow(
+      '`transformWithEsbuild` is deprecated and will be removed in the future. ' +
+        'Please migrate to `transformWithOxc`.',
+    ),
+  )
+}
+
 export async function transformWithEsbuild(
   code: string,
   filename: string,
@@ -88,6 +102,8 @@ export async function transformWithEsbuild(
   inMap?: object,
   config?: ResolvedConfig,
   watcher?: FSWatcher,
+  /** @internal */
+  ignoreEsbuildWarning = false,
 ): Promise<ESBuildTransformResult> {
   let loader = options?.loader
 
@@ -202,8 +218,23 @@ export async function transformWithEsbuild(
   // @ts-expect-error jsxInject exists in ESBuildOptions
   delete resolvedOptions.jsxInject
 
+  let transform: typeof import('esbuild').transform
   try {
-    const { transform } = await importEsbuild()
+    transform = (await importEsbuild()).transform
+  } catch (e) {
+    throw new Error(
+      'Failed to load `transformWithEsbuild`. ' +
+        'It is deprecated and it now requires esbuild to be installed separately. ' +
+        'If you are a package author, please migrate to `transformWithOxc` instead.',
+      { cause: e },
+    )
+  }
+
+  if (!ignoreEsbuildWarning) {
+    warnTransformWithEsbuildUsageOnce()
+  }
+
+  try {
     const result = await transform(code, resolvedOptions)
     let map: SourceMap
     if (inMap && resolvedOptions.sourcemap) {
@@ -350,6 +381,8 @@ export const buildEsbuildPlugin = (): Plugin => {
         options,
         undefined,
         config,
+        undefined,
+        true,
       )
 
       if (config.build.lib) {
