@@ -337,13 +337,13 @@ function orderedDependencies(deps: Record<string, string>) {
 }
 
 async function globEntries(
-  pattern: string | string[],
+  patterns: string | string[],
   environment: ScanEnvironment,
 ) {
   const nodeModulesPatterns: string[] = []
   const regularPatterns: string[] = []
 
-  for (const entry of arraify(pattern)) {
+  for (const entry of arraify(patterns)) {
     if (entry.includes('node_modules')) {
       nodeModulesPatterns.push(entry)
     } else {
