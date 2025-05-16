@@ -177,7 +177,7 @@ With the Rolldown integration, we have an opportunity to unify the development a
 
 When the Full Bundle Mode is introduced, it will be an opt-in feature at first. Similar to the Rolldown integration, we are aiming to make it the default after gathering feedback and ensuring stability.
 
-## Plugin / Framework authors guide
+## Plugin / Framework Authors Guide
 
 ::: tip
 This section is mostly relevant for plugin and framework authors. If you are a user, you can skip this section.
