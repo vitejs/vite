@@ -45,6 +45,7 @@ describe('fixture', async () => {
     const code = [
       "import.meta.glob('/modules/*.ts')",
       "import.meta.glob(['/../fixture-b/*.ts'])",
+      "import.meta.glob(['./*.ts'], { base: '/modules' })",
     ].join('\n')
     expect(
       (
