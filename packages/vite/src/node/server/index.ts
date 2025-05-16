@@ -23,7 +23,7 @@ import {
   setClientErrorHandler,
 } from '../http'
 import type { InlineConfig, ResolvedConfig } from '../config'
-import { resolveConfig } from '../config'
+import { isResolvedConfig, resolveConfig } from '../config'
 import {
   diffDnsOrderChange,
   getServerUrlByHost,
@@ -100,6 +100,8 @@ import { searchForPackageRoot, searchForWorkspaceRoot } from './searchRoot'
 import type { DevEnvironment } from './environment'
 import { hostCheckMiddleware } from './middlewares/hostCheck'
 import { rejectInvalidRequestMiddleware } from './middlewares/rejectInvalidRequest'
+
+const usedConfigs = new WeakSet<ResolvedConfig>()
 
 export interface ServerOptions extends CommonServerOptions {
   /**
@@ -420,19 +422,33 @@ export interface ResolvedServerUrls {
 }
 
 export function createServer(
-  inlineConfig: InlineConfig = {},
+  inlineConfig: InlineConfig | ResolvedConfig = {},
 ): Promise<ViteDevServer> {
   return _createServer(inlineConfig, { listen: true })
 }
 
 export async function _createServer(
-  inlineConfig: InlineConfig = {},
+  inlineConfig: InlineConfig | ResolvedConfig = {},
   options: {
     listen: boolean
     previousEnvironments?: Record<string, DevEnvironment>
   },
 ): Promise<ViteDevServer> {
-  const config = await resolveConfig(inlineConfig, 'serve')
+  const config = isResolvedConfig(inlineConfig)
+    ? inlineConfig
+    : await resolveConfig(inlineConfig, 'serve')
+
+  if (usedConfigs.has(config)) {
+    throw new Error(`There is already a server associated with the config.`)
+  }
+
+  if (config.command !== 'serve') {
+    throw new Error(
+      `Config was resolved for a "build", expected a "serve" command.`,
+    )
+  }
+
+  usedConfigs.add(config)
 
   const initPublicFilesPromise = initPublicFiles(config)
 
