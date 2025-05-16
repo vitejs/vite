@@ -1564,6 +1564,7 @@ export async function resolveConfig(
   }
 
   // Backward compatibility hook, modify the resolved config before it is used
+  // to create internal plugins. For example, `config.build.ssr`. Once we rework
   // internal plugins to use environment.config, we can remove the dual
   // patchConfig/patchPlugins and have a single patchConfig before configResolved
   // gets called
