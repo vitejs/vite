@@ -1,8 +1,8 @@
 {
   "compilerOptions": {
     "rootDir": ".",
-    "target": "ES2022",
-    "module": "ESNext",
+    "target": "ES2023",
+    "module": "Preserve",
     "moduleResolution": "bundler",
     "strict": true,
     "declaration": true,

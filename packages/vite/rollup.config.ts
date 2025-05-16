@@ -92,7 +92,7 @@ function createSharedNodePlugins({
     nodeResolve({ preferBuiltins: true }),
     esbuild({
       tsconfig: path.resolve(__dirname, 'src/node/tsconfig.json'),
-      target: 'node18',
+      target: 'node20',
       ...esbuildOptions,
     }),
     commonjs({

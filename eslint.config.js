@@ -52,7 +52,7 @@ export default tseslint.config(
     },
     settings: {
       node: {
-        version: '^18.0.0 || ^20.0.0 || >=22.0.0',
+        version: '^20.0.0 || >=22.0.0',
       },
     },
     plugins: {
@@ -66,7 +66,7 @@ export default tseslint.config(
       'n/no-unsupported-features/node-builtins': [
         'error',
         {
-          // TODO: remove this when we don't support Node 18 anymore
+          // TODO: remove this when we don't support Node 20 anymore
           ignores: ['Response', 'Request', 'fetch'],
         },
       ],

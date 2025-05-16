@@ -21,7 +21,7 @@ export default defineConfig({
     isolate: false,
   },
   esbuild: {
-    target: 'node18',
+    target: 'node20',
   },
   publicDir: false,
   resolve: {

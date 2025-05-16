@@ -19,7 +19,7 @@ writeFileSync(
 const serverOptions: BuildOptions = {
   bundle: true,
   platform: 'node',
-  target: 'node18',
+  target: 'node20',
   sourcemap: true,
   external: [
     ...Object.keys(packageJSON.dependencies),

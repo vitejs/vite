@@ -1,4 +1,5 @@
 import path from 'node:path'
+import { URL } from 'node:url'
 import type {
   OutputAsset,
   OutputBundle,
@@ -25,7 +26,6 @@ import {
   processSrcSet,
   removeLeadingSlash,
   unique,
-  urlCanParse,
 } from '../utils'
 import type { ResolvedConfig } from '../config'
 import { checkPublicFile } from '../publicDir'
@@ -1006,7 +1006,7 @@ export function buildHtmlPlugin(config: ResolvedConfig): Plugin {
           )
 
           return encodeURIPath(
-            urlCanParse(publicAssetPath)
+            URL.canParse(publicAssetPath)
               ? publicAssetPath
               : normalizePath(publicAssetPath),
           )

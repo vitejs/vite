@@ -2,8 +2,8 @@
   "include": ["build.config.ts", "src", "__tests__"],
   "compilerOptions": {
     "outDir": "dist",
-    "target": "ES2022",
-    "module": "ES2020",
+    "target": "ES2023",
+    "module": "Preserve",
     "moduleResolution": "bundler",
     "strict": true,
     "skipLibCheck": true,

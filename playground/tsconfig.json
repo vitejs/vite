@@ -3,8 +3,8 @@
   "exclude": ["**/dist/**"],
   "compilerOptions": {
     "checkJs": true,
-    "target": "ES2022",
-    "module": "ESNext",
+    "target": "ES2023",
+    "module": "Preserve",
     "outDir": "dist",
     "baseUrl": ".",
     "allowJs": true,
