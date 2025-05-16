@@ -388,7 +388,7 @@ function wrapCallSite(frame: CallSite, state: State) {
       return name === 'eval' && '_vite' in position ? null : name
     }
     frame.getFileName = function () {
-      return position.source ?? undefined
+      return position.source ?? null
     }
     frame.getLineNumber = function () {
       return position.line

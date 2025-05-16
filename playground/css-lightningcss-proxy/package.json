@@ -9,7 +9,7 @@
     "preview": "vite preview"
   },
   "devDependencies": {
-    "lightningcss": "^1.29.3",
+    "lightningcss": "^1.30.0",
     "express": "^5.1.0"
   }
 }
