@@ -2,9 +2,8 @@ import { transform } from 'esbuild'
 import { TraceMap, decodedMap, encodedMap } from '@jridgewell/trace-mapping'
 import type { ResolvedConfig } from '../config'
 import type { Plugin } from '../plugin'
-import { escapeRegex } from '../utils'
+import { escapeRegex, isCSSRequest } from '../utils'
 import type { Environment } from '../environment'
-import { isCSSRequest } from './css'
 import { isHTMLRequest } from './html'
 
 const nonJsRe = /\.json(?:$|\?)/
