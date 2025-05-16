@@ -299,7 +299,6 @@ export function createWebSocketServer(
     socket.send(JSON.stringify({ type: 'connected' }))
     if (bufferedError) {
       socket.send(JSON.stringify(bufferedError))
-      bufferedError = null
     }
   })
 
@@ -343,15 +342,20 @@ export function createWebSocketServer(
 
   // On page reloads, if a file fails to compile and returns 500, the server
   // sends the error payload before the client connection is established.
-  // If we have no open clients, buffer the error and send it to the next
-  // connected client.
+  // If we have no open clients, buffer the error and send it to any client
+  // that connects later.
   let bufferedError: ErrorPayload | null = null
 
   const normalizedHotChannel = normalizeHotChannel(
     {
       send(payload) {
-        if (payload.type === 'error' && !wss.clients.size) {
+        if (payload.type === 'error') {
           bufferedError = payload
+        } else {
+          bufferedError = null
+        }
+
+        if (!wss.clients.size) {
           return
         }
 
