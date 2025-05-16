@@ -1562,6 +1562,10 @@ export async function resolveConfig(
     safeModulePaths: new Set<string>(),
     [SYMBOL_RESOLVED_CONFIG]: true,
   }
+  resolved = {
+    ...config,
+    ...resolved,
+  }
 
   // Backward compatibility hook, modify the resolved config before it is used
   // to create internal plugins. For example, `config.build.ssr`. Once we rework
