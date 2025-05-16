@@ -23,7 +23,7 @@ import {
   setClientErrorHandler,
 } from '../http'
 import type { InlineConfig, ResolvedConfig } from '../config'
-import { resolveConfig } from '../config'
+import { isResolvedConfig, resolveConfig } from '../config'
 import {
   diffDnsOrderChange,
   getServerUrlByHost,
@@ -106,6 +106,8 @@ import { searchForPackageRoot, searchForWorkspaceRoot } from './searchRoot'
 import type { DevEnvironment } from './environment'
 import { hostCheckMiddleware } from './middlewares/hostCheck'
 import { rejectInvalidRequestMiddleware } from './middlewares/rejectInvalidRequest'
+
+const usedConfigs = new WeakSet<ResolvedConfig>()
 
 export interface ServerOptions extends CommonServerOptions {
   /**
@@ -395,13 +397,6 @@ export interface ViteDevServer {
    */
   _setInternalServer(server: ViteDevServer): void
   /**
-   * Left for backward compatibility with VitePress, HMR may not work in some cases
-   * but the there will not be a hard error.
-   * @internal
-   * @deprecated this map is not used anymore
-   */
-  _importGlobMap: Map<string, { affirmed: string[]; negated: string[] }[]>
-  /**
    * @internal
    */
   _restartPromise: Promise<void> | null
@@ -433,19 +428,33 @@ export interface ResolvedServerUrls {
 }
 
 export function createServer(
-  inlineConfig: InlineConfig = {},
+  inlineConfig: InlineConfig | ResolvedConfig = {},
 ): Promise<ViteDevServer> {
   return _createServer(inlineConfig, { listen: true })
 }
 
 export async function _createServer(
-  inlineConfig: InlineConfig = {},
+  inlineConfig: InlineConfig | ResolvedConfig = {},
   options: {
     listen: boolean
     previousEnvironments?: Record<string, DevEnvironment>
   },
 ): Promise<ViteDevServer> {
-  const config = await resolveConfig(inlineConfig, 'serve')
+  const config = isResolvedConfig(inlineConfig)
+    ? inlineConfig
+    : await resolveConfig(inlineConfig, 'serve')
+
+  if (usedConfigs.has(config)) {
+    throw new Error(`There is already a server associated with the config.`)
+  }
+
+  if (config.command !== 'serve') {
+    throw new Error(
+      `Config was resolved for a "build", expected a "serve" command.`,
+    )
+  }
+
+  usedConfigs.add(config)
 
   const initPublicFilesPromise = initPublicFiles(config)
 
@@ -752,7 +761,6 @@ export async function _createServer(
       // server instance after a restart
       server = _server
     },
-    _importGlobMap: new Map(),
     _restartPromise: null,
     _forceOptimizeOnRestart: false,
     _shortcutsOptions: undefined,
