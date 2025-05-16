@@ -95,6 +95,7 @@ function cleanGlobalCLIOptions<Options extends GlobalCLIOptions>(
   delete ret.filter
   delete ret.m
   delete ret.mode
+  delete ret.force
   delete ret.w
 
   // convert the sourcemap option to a boolean if necessary

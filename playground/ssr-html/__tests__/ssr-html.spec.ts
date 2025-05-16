@@ -86,7 +86,7 @@ describe.runIf(isServe)('stacktrace', () => {
 
         const reg = new RegExp(
           path
-            .resolve(__dirname, '../src', `error.${ext}`)
+            .resolve(__dirname, '../src', `error-${ext}.${ext}`)
             .replace(/\\/g, '\\\\') + ':2:9',
           'i',
         )

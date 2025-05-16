@@ -18,7 +18,7 @@ Affect scope: `Vite Plugin Authors`
 
 ## Migration Guide
 
-For the existing plugin to do a quick migration, replace the `options.ssr` argument with `this.environment.name !== 'client'` in the `resolveId`, `load` and `transform` hooks:
+For the existing plugin to do a quick migration, replace the `options.ssr` argument with `this.environment.config.consumer === 'server'` in the `resolveId`, `load` and `transform` hooks:
 
 ```ts
 import { Plugin } from 'vite'
@@ -28,7 +28,7 @@ export function myPlugin(): Plugin {
     name: 'my-plugin',
     resolveId(id, importer, options) {
       const isSSR = options.ssr // [!code --]
-      const isSSR = this.environment.name !== 'client' // [!code ++]
+      const isSSR = this.environment.config.consumer === 'server' // [!code ++]
 
       if (isSSR) {
         // SSR specific logic

@@ -1470,6 +1470,7 @@ function areSeparateFolders(a: string, b: string) {
 export class BuildEnvironment extends BaseEnvironment {
   mode = 'build' as const
 
+  isBuilt = false
   constructor(
     name: string,
     config: ResolvedConfig,
@@ -1524,12 +1525,6 @@ export interface BuilderOptions {
   buildApp?: (builder: ViteBuilder) => Promise<void>
 }
 
-async function defaultBuildApp(builder: ViteBuilder): Promise<void> {
-  for (const environment of Object.values(builder.environments)) {
-    await builder.build(environment)
-  }
-}
-
 export const builderOptionsDefaults = Object.freeze({
   sharedConfigBuild: false,
   sharedPlugins: false,
@@ -1541,7 +1536,7 @@ export function resolveBuilderOptions(
 ): ResolvedBuilderOptions | undefined {
   if (!options) return
   return mergeWithDefaults(
-    { ...builderOptionsDefaults, buildApp: defaultBuildApp },
+    { ...builderOptionsDefaults, buildApp: async () => {} },
     options,
   )
 }
@@ -1578,10 +1573,41 @@ export async function createBuilder(
     environments,
     config,
     async buildApp() {
-      return configBuilder.buildApp(builder)
+      // order 'pre' and 'normal' hooks are run first, then config.builder.buildApp, then 'post' hooks
+      let configBuilderBuildAppCalled = false
+      for (const p of config.getSortedPlugins('buildApp')) {
+        const hook = p.buildApp
+        if (
+          !configBuilderBuildAppCalled &&
+          typeof hook === 'object' &&
+          hook.order === 'post'
+        ) {
+          configBuilderBuildAppCalled = true
+          await configBuilder.buildApp(builder)
+        }
+        const handler = getHookHandler(hook)
+        await handler(builder)
+      }
+      if (!configBuilderBuildAppCalled) {
+        await configBuilder.buildApp(builder)
+      }
+      // fallback to building all environments if no environments have been built
+      if (
+        Object.values(builder.environments).every(
+          (environment) => !environment.isBuilt,
+        )
+      ) {
+        for (const environment of Object.values(builder.environments)) {
+          await builder.build(environment)
+        }
+      }
     },
-    async build(environment: BuildEnvironment) {
-      return buildEnvironment(environment)
+    async build(
+      environment: BuildEnvironment,
+    ): Promise<RollupOutput | RollupOutput[] | RollupWatcher> {
+      const output = await buildEnvironment(environment)
+      environment.isBuilt = true
+      return output
     },
   }
 
@@ -1643,3 +1669,5 @@ export async function createBuilder(
 
   return builder
 }
+
+export type BuildAppHook = (this: void, builder: ViteBuilder) => Promise<void>
