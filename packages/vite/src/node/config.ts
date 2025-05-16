@@ -106,6 +106,7 @@ import { getAdditionalAllowedHosts } from './server/middlewares/hostCheck'
 
 const debug = createDebugger('vite:config', { depth: 10 })
 const promisifiedRealpath = promisify(fs.realpath)
+const SYMBOL_RESOLVED_CONFIG = Symbol('vite:resolved-config')
 
 export interface ConfigEnv {
   /**
@@ -641,6 +642,8 @@ export interface ResolvedConfig
       safeModulePaths: Set<string>
       /** @internal */
       additionalAllowedHosts: string[]
+      /** @internal */
+      [SYMBOL_RESOLVED_CONFIG]: true
     } & PluginHookUtils
   > {}
 
@@ -1041,6 +1044,15 @@ function resolveDepOptimizationOptions(
       force: forceOptimizeDeps ?? configDefaults.optimizeDeps.force,
     },
     optimizeDeps ?? {},
+  )
+}
+
+export function isResolvedConfig(
+  inlineConfig: InlineConfig | ResolvedConfig,
+): inlineConfig is ResolvedConfig {
+  return (
+    SYMBOL_RESOLVED_CONFIG in inlineConfig &&
+    inlineConfig[SYMBOL_RESOLVED_CONFIG]
   )
 }
 
@@ -1555,6 +1567,7 @@ export async function resolveConfig(
     ),
     safeModulePaths: new Set<string>(),
     additionalAllowedHosts: getAdditionalAllowedHosts(server, preview),
+    [SYMBOL_RESOLVED_CONFIG]: true,
   }
   resolved = {
     ...config,
