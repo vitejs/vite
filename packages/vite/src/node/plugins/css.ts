@@ -312,7 +312,7 @@ export function cssPlugin(config: ResolvedConfig): Plugin {
     })
   }
 
-  const plugin: Plugin = {
+  return {
     name: 'vite:css',
 
     buildStart() {
@@ -362,93 +362,84 @@ export function cssPlugin(config: ResolvedConfig): Plugin {
         }
       },
     },
-  }
+    transform: {
+      async handler(raw, id) {
+        if (
+          !isCSSRequest(id) ||
+          commonjsProxyRE.test(id) ||
+          SPECIAL_QUERY_RE.test(id)
+        ) {
+          return
+        }
 
-  const transformHook: Plugin['transform'] = {
-    async handler(raw, id) {
-      if (
-        !isCSSRequest(id) ||
-        commonjsProxyRE.test(id) ||
-        SPECIAL_QUERY_RE.test(id)
-      ) {
-        return
-      }
+        const { environment } = this
+        const resolveUrl = (url: string, importer?: string) =>
+          idResolver(environment, url, importer)
 
-      const { environment } = this
-      const resolveUrl = (url: string, importer?: string) =>
-        idResolver(environment, url, importer)
-
-      const urlResolver: CssUrlResolver = async (url, importer) => {
-        const decodedUrl = decodeURI(url)
-        if (checkPublicFile(decodedUrl, config)) {
-          if (encodePublicUrlsInCSS(config)) {
-            return [publicFileToBuiltUrl(decodedUrl, config), undefined]
-          } else {
-            return [joinUrlSegments(config.base, decodedUrl), undefined]
+        const urlResolver: CssUrlResolver = async (url, importer) => {
+          const decodedUrl = decodeURI(url)
+          if (checkPublicFile(decodedUrl, config)) {
+            if (encodePublicUrlsInCSS(config)) {
+              return [publicFileToBuiltUrl(decodedUrl, config), undefined]
+            } else {
+              return [joinUrlSegments(config.base, decodedUrl), undefined]
+            }
           }
-        }
-        const [id, fragment] = decodedUrl.split('#')
-        let resolved = await resolveUrl(id, importer)
-        if (resolved) {
-          if (fragment) resolved += '#' + fragment
-          return [await fileToUrl(this, resolved), resolved]
-        }
-        if (config.command === 'build') {
-          const isExternal = config.build.rollupOptions.external
-            ? resolveUserExternal(
-                config.build.rollupOptions.external,
-                decodedUrl, // use URL as id since id could not be resolved
-                id,
-                false,
+          const [id, fragment] = decodedUrl.split('#')
+          let resolved = await resolveUrl(id, importer)
+          if (resolved) {
+            if (fragment) resolved += '#' + fragment
+            return [await fileToUrl(this, resolved), resolved]
+          }
+          if (config.command === 'build') {
+            const isExternal = config.build.rollupOptions.external
+              ? resolveUserExternal(
+                  config.build.rollupOptions.external,
+                  decodedUrl, // use URL as id since id could not be resolved
+                  id,
+                  false,
+                )
+              : false
+
+            if (!isExternal) {
+              // #9800 If we cannot resolve the css url, leave a warning.
+              config.logger.warnOnce(
+                `\n${decodedUrl} referenced in ${id} didn't resolve at build time, it will remain unchanged to be resolved at runtime`,
               )
-            : false
+            }
+          }
+          return [url, undefined]
+        }
 
-          if (!isExternal) {
-            // #9800 If we cannot resolve the css url, leave a warning.
-            config.logger.warnOnce(
-              `\n${decodedUrl} referenced in ${id} didn't resolve at build time, it will remain unchanged to be resolved at runtime`,
-            )
+        const {
+          code: css,
+          modules,
+          deps,
+          map,
+        } = await compileCSS(
+          environment,
+          id,
+          raw,
+          preprocessorWorkerController!,
+          urlResolver,
+        )
+        if (modules) {
+          moduleCache.set(id, modules)
+        }
+
+        if (deps) {
+          for (const file of deps) {
+            this.addWatchFile(file)
           }
         }
-        return [url, undefined]
-      }
 
-      const {
-        code: css,
-        modules,
-        deps,
-        map,
-      } = await compileCSS(
-        environment,
-        id,
-        raw,
-        preprocessorWorkerController!,
-        urlResolver,
-      )
-      if (modules) {
-        moduleCache.set(id, modules)
-      }
-
-      if (deps) {
-        for (const file of deps) {
-          this.addWatchFile(file)
+        return {
+          code: css,
+          map,
         }
-      }
-
-      return {
-        code: css,
-        map,
-      }
+      },
     },
   }
-
-  // for backward compat, make `plugin.transform` a function
-  // but still keep the `handler` property
-  // so that we can use `filter` property in the future
-  plugin.transform = transformHook.handler
-  ;(plugin.transform as any).handler = transformHook.handler
-
-  return plugin
 }
 
 /**
@@ -508,7 +499,7 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
     return cssBundleName
   }
 
-  const plugin = {
+  return {
     name: 'vite:css-post',
 
     renderStart() {
@@ -1076,14 +1067,7 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
         }
       }
     },
-  } satisfies Plugin
-
-  // backward compat
-  const handler = plugin.transform.handler
-  ;(plugin as any).transform = handler
-  ;(plugin as any).transform.handler = handler
-
-  return plugin
+  }
 }
 
 export function cssAnalysisPlugin(config: ResolvedConfig): Plugin {
