@@ -157,12 +157,12 @@
   "peerDependencies": {
     "@types/node": "^20.0.0 || >=22.0.0",
     "jiti": ">=1.21.0",
-    "less": "*",
+    "less": "^4.0.0",
     "lightningcss": "^1.21.0",
-    "sass": "*",
-    "sass-embedded": "*",
-    "stylus": "*",
-    "sugarss": "*",
+    "sass": "^1.70.0",
+    "sass-embedded": "^1.70.0",
+    "stylus": ">=0.54.8",
+    "sugarss": "^5.0.0",
     "terser": "^5.16.0",
     "tsx": "^4.8.1",
     "yaml": "^2.4.2"
