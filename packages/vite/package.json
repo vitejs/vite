@@ -87,7 +87,7 @@
   "dependencies": {
     "@oxc-project/runtime": "0.69.0",
     "fdir": "^6.4.4",
-    "lightningcss": "^1.29.3",
+    "lightningcss": "^1.30.0",
     "picomatch": "^4.0.2",
     "postcss": "^8.5.3",
     "rolldown": "1.0.0-beta.8-commit.985af6d",
