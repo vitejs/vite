@@ -389,13 +389,6 @@ export interface ViteDevServer {
    */
   _setInternalServer(server: ViteDevServer): void
   /**
-   * Left for backward compatibility with VitePress, HMR may not work in some cases
-   * but the there will not be a hard error.
-   * @internal
-   * @deprecated this map is not used anymore
-   */
-  _importGlobMap: Map<string, { affirmed: string[]; negated: string[] }[]>
-  /**
    * @internal
    */
   _restartPromise: Promise<void> | null
@@ -746,7 +739,6 @@ export async function _createServer(
       // server instance after a restart
       server = _server
     },
-    _importGlobMap: new Map(),
     _restartPromise: null,
     _forceOptimizeOnRestart: false,
     _shortcutsOptions: undefined,
