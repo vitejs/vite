@@ -103,18 +103,3 @@ void watch({
   outfile: 'dist/node/module-runner.js',
   format: 'esm',
 })
-// cjsConfig
-void watch({
-  ...serverOptions,
-  entryPoints: ['./src/node/publicUtils.ts'],
-  outfile: 'dist/node-cjs/publicUtils.cjs',
-  format: 'cjs',
-  banner: {
-    js: `
-const { pathToFileURL } = require("node:url")
-const __url = pathToFileURL(__filename)`.trimStart(),
-  },
-  define: {
-    'import.meta.url': '__url',
-  },
-})

@@ -51,6 +51,7 @@ import {
   emptyDir,
   getPkgName,
   joinUrlSegments,
+  mergeConfig,
   mergeWithDefaults,
   normalizePath,
   partialEncodeURIPath,
@@ -70,7 +71,6 @@ import {
   resolveEmptyOutDir,
 } from './watch'
 import { completeSystemWrapPlugin } from './plugins/completeSystemWrap'
-import { mergeConfig } from './publicUtils'
 import { webWorkerPostPlugin } from './plugins/worker'
 import { getHookHandler } from './plugins'
 import {
