@@ -514,17 +514,6 @@ export interface ExperimentalOptions {
 
 export interface LegacyOptions {
   /**
-   * In Vite 4, SSR-externalized modules (modules not bundled and loaded by Node.js at runtime)
-   * are implicitly proxied in dev to automatically handle `default` and `__esModule` access.
-   * However, this does not correctly reflect how it works in the Node.js runtime, causing
-   * inconsistencies between dev and prod.
-   *
-   * In Vite 5, the proxy is removed so dev and prod are consistent, but if you still require
-   * the old behaviour, you can enable this option. If so, please leave your feedback at
-   * https://github.com/vitejs/vite/discussions/14697.
-   */
-  proxySsrExternalModules?: boolean
-  /**
    * In Vite 6.0.8 and below, WebSocket server was able to connect from any web pages. However,
    * that could be exploited by a malicious web page.
    *
@@ -719,7 +708,6 @@ export const configDefaults = Object.freeze({
     removeSsrLoadModule: undefined,
   },
   legacy: {
-    proxySsrExternalModules: false,
     skipWebSocketTokenCheck: false,
   },
   logLevel: 'info',
