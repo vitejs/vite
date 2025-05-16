@@ -53,11 +53,6 @@ export interface HotUpdateOptions {
   modules: Array<EnvironmentModuleNode>
   read: () => string | Promise<string>
   server: ViteDevServer
-
-  /**
-   * @deprecated use this.environment in the hotUpdate hook instead
-   **/
-  environment: DevEnvironment
 }
 
 export interface HmrContext {
@@ -446,8 +441,6 @@ export async function handleHMRUpdate(
     const options = {
       ...contextMeta,
       modules: [...mods],
-      // later on hotUpdate will be called for each runtime with a new HotUpdateOptions
-      environment,
     }
     hotMap.set(environment, { options })
   }
