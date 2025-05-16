@@ -4,7 +4,7 @@ import fsp from 'node:fs/promises'
 import { pathToFileURL } from 'node:url'
 import { promisify } from 'node:util'
 import { performance } from 'node:perf_hooks'
-import { createRequire } from 'node:module'
+import { createRequire, isBuiltin } from 'node:module'
 import crypto from 'node:crypto'
 import colors from 'picocolors'
 import type { Alias, AliasOptions } from 'dep-types/alias'
@@ -66,7 +66,6 @@ import {
   isExternalUrl,
   isFilePathESM,
   isInNodeModules,
-  isNodeBuiltin,
   isNodeLikeBuiltin,
   isObject,
   isParentDirectory,
@@ -1927,12 +1926,12 @@ async function bundleConfigFile(
               if (
                 kind === 'entry-point' ||
                 path.isAbsolute(id) ||
-                isNodeBuiltin(id)
+                isBuiltin(id)
               ) {
                 return
               }
 
-              // With the `isNodeBuiltin` check above, this check captures if the builtin is a
+              // With the `isBuiltin` check above, this check captures if the builtin is a
               // non-node built-in, which esbuild doesn't know how to handle. In that case, we
               // externalize it so the non-node runtime handles it instead.
               if (isNodeLikeBuiltin(id)) {

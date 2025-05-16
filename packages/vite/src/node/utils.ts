@@ -144,11 +144,6 @@ export function isNodeLikeBuiltin(id: string): boolean {
   return isBuiltin(nodeLikeBuiltins, id)
 }
 
-export function isNodeBuiltin(id: string): boolean {
-  if (id.startsWith(NODE_BUILTIN_NAMESPACE)) return true
-  return nodeBuiltins.includes(id)
-}
-
 export function isInNodeModules(id: string): boolean {
   return id.includes('node_modules')
 }
