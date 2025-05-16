@@ -30,7 +30,6 @@ import { WorkerWithFallback } from 'artichokie'
 import { globSync } from 'tinyglobby'
 import type {
   LessPreprocessorBaseOptions,
-  SassLegacyPreprocessBaseOptions,
   SassModernPreprocessBaseOptions,
   StylusPreprocessorBaseOptions,
 } from 'types/internal/cssPreprocessorOptions'
@@ -2252,10 +2251,7 @@ type PreprocessorAdditionalData =
 
 export type SassPreprocessorOptions = {
   additionalData?: PreprocessorAdditionalData
-} & (
-  | ({ api: 'legacy' } & SassLegacyPreprocessBaseOptions)
-  | ({ api?: 'modern' | 'modern-compiler' } & SassModernPreprocessBaseOptions)
-)
+} & ({ api?: 'modern' | 'modern-compiler' } & SassModernPreprocessBaseOptions)
 
 export type LessPreprocessorOptions = {
   additionalData?: PreprocessorAdditionalData
@@ -2377,149 +2373,8 @@ function cleanScssBugUrl(url: string) {
   }
 }
 
-function fixScssBugImportValue(
-  data: Sass.LegacyImporterResult,
-): Sass.LegacyImporterResult {
-  // the scss bug doesn't load files properly so we have to load it ourselves
-  // to prevent internal error when it loads itself
-  if (
-    // check bug via `window` and `location` global
-    typeof window !== 'undefined' &&
-    typeof location !== 'undefined' &&
-    data &&
-    'file' in data &&
-    (!('contents' in data) || data.contents == null)
-  ) {
-    // @ts-expect-error we need to preserve file property for HMR
-    data.contents = fs.readFileSync(data.file, 'utf-8')
-  }
-  return data
-}
-
 // #region Sass
 // .scss/.sass processor
-const makeScssWorker = (
-  environment: PartialEnvironment,
-  resolvers: CSSAtImportResolvers,
-  alias: Alias[],
-  maxWorkers: number | undefined,
-  packageName: 'sass' | 'sass-embedded',
-) => {
-  const internalImporter = async (
-    url: string,
-    importer: string,
-    filename: string,
-  ) => {
-    importer = cleanScssBugUrl(importer)
-    const resolved = await resolvers.sass(environment, url, importer)
-    if (resolved) {
-      try {
-        const data = await rebaseUrls(
-          environment,
-          resolved,
-          filename,
-          alias,
-          '$',
-          resolvers.sass,
-        )
-        if (packageName === 'sass-embedded') {
-          return data
-        }
-        return fixScssBugImportValue(data)
-      } catch (data) {
-        return data
-      }
-    } else {
-      return null
-    }
-  }
-
-  const worker = new WorkerWithFallback(
-    () =>
-      async (
-        sassPath: string,
-        data: string,
-        // additionalData can a function that is not cloneable but it won't be used
-        options: SassStylePreprocessorInternalOptions & {
-          api: 'legacy'
-          additionalData: undefined
-        },
-      ) => {
-        // eslint-disable-next-line no-restricted-globals -- this function runs inside a cjs worker
-        const sass: typeof Sass = require(sassPath)
-        // eslint-disable-next-line no-restricted-globals
-        const path: typeof import('node:path') = require('node:path')
-
-        // NOTE: `sass` always runs it's own importer first, and only falls back to
-        // the `importer` option when it can't resolve a path
-        const _internalImporter: Sass.LegacyAsyncImporter = (
-          url,
-          importer,
-          done,
-        ) => {
-          internalImporter(url, importer, options.filename).then((data) =>
-            done(data),
-          )
-        }
-        const importer = [_internalImporter]
-        if (options.importer) {
-          if (Array.isArray(options.importer)) {
-            importer.unshift(...options.importer)
-          } else {
-            importer.unshift(options.importer)
-          }
-        }
-
-        const finalOptions: Sass.LegacyOptions<'async'> = {
-          // support @import from node dependencies by default
-          includePaths: ['node_modules'],
-          ...options,
-          data,
-          file: options.filename,
-          outFile: options.filename,
-          importer,
-          ...(options.enableSourcemap
-            ? {
-                sourceMap: true,
-                omitSourceMapUrl: true,
-                sourceMapRoot: path.dirname(options.filename),
-              }
-            : {}),
-        }
-        return new Promise<ScssWorkerResult>((resolve, reject) => {
-          sass.render(finalOptions, (err, res) => {
-            if (err) {
-              reject(err)
-            } else {
-              resolve({
-                css: res!.css.toString(),
-                map: res!.map?.toString(),
-                stats: res!.stats,
-              })
-            }
-          })
-        })
-      },
-    {
-      parentFunctions: { internalImporter },
-      shouldUseFake(_sassPath, _data, options) {
-        // functions and importer is a function and is not serializable
-        // in that case, fallback to running in main thread
-        return !!(
-          (options.functions && Object.keys(options.functions).length > 0) ||
-          (options.importer &&
-            (!Array.isArray(options.importer) ||
-              options.importer.length > 0)) ||
-          options.logger ||
-          options.pkgImporter
-        )
-      },
-      max: maxWorkers,
-    },
-  )
-  return worker
-}
-
 const makeModernScssWorker = (
   environment: PartialEnvironment,
   resolvers: CSSAtImportResolvers,
@@ -2741,7 +2596,7 @@ const makeModernCompilerScssWorker = (
 type ScssWorkerResult = {
   css: string
   map?: string | undefined
-  stats: Pick<Sass.LegacyResult['stats'], 'includedFiles'>
+  stats: { includedFiles: string[] }
 }
 
 const scssProcessor = (
@@ -2750,9 +2605,7 @@ const scssProcessor = (
   const workerMap = new Map<
     unknown,
     ReturnType<
-      | typeof makeScssWorker
-      | typeof makeModernScssWorker
-      | typeof makeModernCompilerScssWorker
+      typeof makeModernScssWorker | typeof makeModernCompilerScssWorker
     >
   >()
 
@@ -2778,20 +2631,12 @@ const scssProcessor = (
                 options.alias,
                 maxWorkers,
               )
-            : api === 'modern'
-              ? makeModernScssWorker(
-                  environment,
-                  resolvers,
-                  options.alias,
-                  maxWorkers,
-                )
-              : makeScssWorker(
-                  environment,
-                  resolvers,
-                  options.alias,
-                  maxWorkers,
-                  sassPackage.name,
-                ),
+            : makeModernScssWorker(
+                environment,
+                resolvers,
+                options.alias,
+                maxWorkers,
+              ),
         )
       }
       const worker = workerMap.get(options.alias)!
@@ -3317,11 +3162,7 @@ const createPreprocessorWorkerController = (maxWorkers: number | undefined) => {
   const sassProcess: StylePreprocessor<SassStylePreprocessorInternalOptions>['process'] =
     (environment, source, root, options, resolvers) => {
       const opts: SassStylePreprocessorInternalOptions = { ...options }
-      if (opts.api === 'legacy') {
-        opts.indentedSyntax = true
-      } else {
-        opts.syntax = 'indented'
-      }
+      opts.syntax = 'indented'
       return scss.process(environment, source, root, opts, resolvers)
     }
 
