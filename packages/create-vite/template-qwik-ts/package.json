@@ -11,7 +11,7 @@
   "devDependencies": {
     "serve": "^14.2.4",
     "typescript": "~5.8.3",
-    "vite": "npm:rolldown-vite@^6.3.9"
+    "vite": "npm:rolldown-vite@^6.3.10"
   },
   "dependencies": {
     "@builder.io/qwik": "^1.13.0"

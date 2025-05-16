@@ -1,3 +1,16 @@
+## <small>6.3.10 (2025-05-16)</small>
+
+* chore: add deprecation warning for `transformWithEsbuild` (#173) ([1ee8ef4](https://github.com/vitejs/rolldown-vite/commit/1ee8ef4)), closes [#173](https://github.com/vitejs/rolldown-vite/issues/173)
+* chore: deprecate `ResolvedConfig.createResolver` and recommend `createIdResolver` (#20031) ([d101d64](https://github.com/vitejs/rolldown-vite/commit/d101d64)), closes [#20031](https://github.com/vitejs/rolldown-vite/issues/20031)
+* chore: fix comment for `devEnvironmentOptions.moduleRunnerTransform` (#20035) ([338081d](https://github.com/vitejs/rolldown-vite/commit/338081d)), closes [#20035](https://github.com/vitejs/rolldown-vite/issues/20035)
+* chore: fix types ([1216e2f](https://github.com/vitejs/rolldown-vite/commit/1216e2f))
+* fix(client): render the last part of the stacktrace (#20039) ([c7c1743](https://github.com/vitejs/rolldown-vite/commit/c7c1743)), closes [#20039](https://github.com/vitejs/rolldown-vite/issues/20039)
+* fix(deps): update all non-major dependencies (#19953) ([ac8e1fb](https://github.com/vitejs/rolldown-vite/commit/ac8e1fb)), closes [#19953](https://github.com/vitejs/rolldown-vite/issues/19953)
+* fix(optimizer): pass define option to optimizer (#170) ([b642f48](https://github.com/vitejs/rolldown-vite/commit/b642f48)), closes [#170](https://github.com/vitejs/rolldown-vite/issues/170)
+* feat: update rolldown ([cb2e308](https://github.com/vitejs/rolldown-vite/commit/cb2e308))
+
+
+
 ## <small>6.3.9 (2025-05-12)</small>
 
 * refactor: use util functions from `@rolldown/pluginutils` (#166) ([3903193](https://github.com/vitejs/rolldown-vite/commit/3903193)), closes [#166](https://github.com/vitejs/rolldown-vite/issues/166)
