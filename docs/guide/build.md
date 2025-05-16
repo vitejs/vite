@@ -4,14 +4,14 @@ When it is time to deploy your app for production, simply run the `vite build` c
 
 ## Browser Compatibility
 
-By default, the production bundle assumes support for modern JavaScript, such as [native ES Modules](https://caniuse.com/es6-module), [native ESM dynamic import](https://caniuse.com/es6-module-dynamic-import), [`import.meta`](https://caniuse.com/mdn-javascript_operators_import_meta), [nullish coalescing](https://caniuse.com/mdn-javascript_operators_nullish_coalescing), and [BigInt](https://caniuse.com/bigint). The default browser support range is:
+By default, the production bundle assumes a modern browser that is included in the [Baseline](https://web-platform-dx.github.io/web-features/) Widely Available targets. The default browser support range is:
 
-<!-- Search for the `ESBUILD_MODULES_TARGET` constant for more information -->
+<!-- Search for the `ESBUILD_BASELINE_WIDELY_AVAILABLE_TARGET` constant for more information -->
 
-- Chrome >=87
-- Firefox >=78
-- Safari >=14
-- Edge >=88
+- Chrome >=107
+- Edge >=107
+- Firefox >=104
+- Safari >=16
 
 You can specify custom targets via the [`build.target` config option](/config/build-options.md#build-target), where the lowest target is `es2015`. If a lower target is set, Vite will still require these minimum browser support ranges as it relies on [native ESM dynamic import](https://caniuse.com/es6-module-dynamic-import), and [`import.meta`](https://caniuse.com/mdn-javascript_operators_import_meta):
 

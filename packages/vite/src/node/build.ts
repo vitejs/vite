@@ -27,7 +27,7 @@ import type { TransformOptions } from 'esbuild'
 import { withTrailingSlash } from '../shared/utils'
 import {
   DEFAULT_ASSETS_INLINE_LIMIT,
-  ESBUILD_MODULES_TARGET,
+  ESBUILD_BASELINE_WIDELY_AVAILABLE_TARGET,
   ROLLUP_HOOKS,
   VERSION,
 } from './constants'
@@ -86,18 +86,18 @@ export interface BuildEnvironmentOptions {
    * and the lowest supported target is es2015. Note this only handles
    * syntax transformation and does not cover polyfills
    *
-   * Default: 'modules' - transpile targeting browsers that natively support
-   * dynamic es module imports and `import.meta`
-   * (Chrome 87+, Firefox 78+, Safari 14+, Edge 88+).
+   * Default: 'baseline-widely-available' - transpile targeting browsers that
+   * are included in the Baseline Widely Available on 2025-05-01.
+   * (Chrome 107+, Edge 107+, Firefox 104+, Safari 16+).
    *
    * Another special value is 'esnext' - which only performs minimal transpiling
    * (for minification compat).
    *
    * For custom targets, see https://esbuild.github.io/api/#target and
    * https://esbuild.github.io/content-types/#javascript for more details.
-   * @default 'modules'
+   * @default 'baseline-widely-available'
    */
-  target?: 'modules' | TransformOptions['target'] | false
+  target?: 'baseline-widely-available' | TransformOptions['target'] | false
   /**
    * whether to inject module preload polyfill.
    * Note: does not apply to library mode.
@@ -353,7 +353,7 @@ export interface ResolvedBuildOptions
 }
 
 export const buildEnvironmentOptionsDefaults = Object.freeze({
-  target: 'modules',
+  target: 'baseline-widely-available',
   /** @deprecated */
   polyfillModulePreload: true,
   modulePreload: true,
@@ -423,8 +423,8 @@ export function resolveBuildEnvironmentOptions(
   )
 
   // handle special build targets
-  if (merged.target === 'modules') {
-    merged.target = ESBUILD_MODULES_TARGET
+  if (merged.target === 'baseline-widely-available') {
+    merged.target = ESBUILD_BASELINE_WIDELY_AVAILABLE_TARGET
   }
 
   // normalize false string into actual false
