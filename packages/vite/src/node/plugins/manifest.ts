@@ -21,6 +21,7 @@ export interface ManifestChunk {
   assets?: string[]
   isEntry?: boolean
   name?: string
+  names?: string[]
   isDynamicEntry?: boolean
   imports?: string[]
   dynamicImports?: string[]
@@ -127,7 +128,10 @@ export function manifestPlugin(): Plugin {
           file: asset.fileName,
           src,
         }
-        if (isEntry) manifestChunk.isEntry = true
+        if (isEntry) {
+          manifestChunk.isEntry = true
+          manifestChunk.names = asset.names
+        }
         return manifestChunk
       }
 
