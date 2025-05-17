@@ -1095,8 +1095,10 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
 
   // backward compat
   const handler = plugin.transform.handler
+  const filter = plugin.transform.filter
   ;(plugin as any).transform = handler
   ;(plugin as any).transform.handler = handler
+  ;(plugin as any).transform.filter = filter
 
   return plugin
 }
