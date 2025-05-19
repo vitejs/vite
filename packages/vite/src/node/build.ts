@@ -528,10 +528,11 @@ export async function resolveBuildPlugins(config: ResolvedConfig): Promise<{
                   const tty = process.stdout.isTTY && !process.env.CI
                   const shouldLogInfo =
                     LogLevels[config.logLevel || 'info'] >= LogLevels.info
+                  const assetsDir = path.join(env.config.build.assetsDir, '/')
                   return nativeReportPlugin({
                     isTty: !!tty,
                     isLib: !!env.config.build.lib,
-                    assetsDir: env.config.build.assetsDir,
+                    assetsDir,
                     chunkLimit: env.config.build.chunkSizeWarningLimit,
                     shouldLogInfo,
                     reportCompressedSize: env.config.build.reportCompressedSize,
