@@ -1,3 +1,15 @@
+## <small>6.3.11 (2025-05-19)</small>
+
+* fix: apply filter for css-post plugin and json plugin ([b04fee7](https://github.com/vitejs/rolldown-vite/commit/b04fee7))
+* fix: use correct self-reference import (#180) ([7f1c1dd](https://github.com/vitejs/rolldown-vite/commit/7f1c1dd)), closes [#180](https://github.com/vitejs/rolldown-vite/issues/180)
+* fix: use filter property set on functions ([9f56a22](https://github.com/vitejs/rolldown-vite/commit/9f56a22))
+* fix(native-plugin): align native reporter plugin with non-native one (#178) ([d9c01ec](https://github.com/vitejs/rolldown-vite/commit/d9c01ec)), closes [#178](https://github.com/vitejs/rolldown-vite/issues/178)
+* feat: update rolldown ([ddf15a0](https://github.com/vitejs/rolldown-vite/commit/ddf15a0))
+* feat(types): allow rollup plugin to be assigned to `plugins` option (#176) ([cfc8de8](https://github.com/vitejs/rolldown-vite/commit/cfc8de8)), closes [#176](https://github.com/vitejs/rolldown-vite/issues/176)
+* refactor(native-plugin): rename nativeReporterPlugin ([12e9189](https://github.com/vitejs/rolldown-vite/commit/12e9189))
+
+
+
 ## <small>6.3.10 (2025-05-16)</small>
 
 * chore: add deprecation warning for `transformWithEsbuild` (#173) ([1ee8ef4](https://github.com/vitejs/rolldown-vite/commit/1ee8ef4)), closes [#173](https://github.com/vitejs/rolldown-vite/issues/173)
