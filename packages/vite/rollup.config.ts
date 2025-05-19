@@ -179,7 +179,7 @@ const cjsConfig = defineConfig({
     entryFileNames: `node-cjs/[name].cjs`,
     chunkFileNames: 'node-cjs/chunks/dep-[hash].js',
     format: 'cjs',
-    target: 'es2022', // TODO: use node18
+    target: 'es2023', // TODO: use node20
   },
   external: ['fsevents', 'supports-color', ...Object.keys(pkg.dependencies)],
   plugins: [

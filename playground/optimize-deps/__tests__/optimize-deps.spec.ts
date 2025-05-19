@@ -30,6 +30,18 @@ test('default import from webpacked cjs (clipboard)', async () => {
   await expectWithRetry(() => page.textContent('.cjs-clipboard')).toBe('ok')
 })
 
+test('default import from cjs (cjs-dep-cjs-compiled-from-esm)', async () => {
+  await expectWithRetry(() =>
+    page.textContent('.cjs-dep-cjs-compiled-from-esm'),
+  ).toBe('ok')
+})
+
+test('default import from cjs (cjs-dep-cjs-compiled-from-cjs)', async () => {
+  await expectWithRetry(() =>
+    page.textContent('.cjs-dep-cjs-compiled-from-cjs'),
+  ).toBe('ok')
+})
+
 test('dynamic imports from cjs dep (react)', async () => {
   await expectWithRetry(() => page.textContent('.cjs-dynamic button')).toBe(
     'count is 0',
@@ -351,4 +363,10 @@ test('external package name with asset extension', async () => {
   await expectWithRetry(() =>
     page.textContent('.dep-with-asset-ext-prebundled'),
   ).toBe(String(isServe))
+})
+
+test('dependency with external sub-dependency', async () => {
+  await expectWithRetry(() =>
+    page.textContent('.dep-cjs-with-external-dep'),
+  ).toBe('ok')
 })
