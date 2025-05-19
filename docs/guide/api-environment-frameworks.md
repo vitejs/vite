@@ -329,7 +329,7 @@ export default {
 }
 ```
 
-Plugins can also define a `buildApp` hook. Order `'pre'` and `null'` are executed before the configured `builder.buildApp`, and order `'post'` hooks are executed after it. `environment.isBuilt` can be used to check if an environment has already being build.
+Plugins can also define a `buildApp` hook. Order `'pre'` and `null` are executed before the configured `builder.buildApp`, and order `'post'` hooks are executed after it. `environment.isBuilt` can be used to check if an environment has already being build.
 
 ## Environment Agnostic Code
 
