@@ -344,7 +344,12 @@ type Thenable<T> = T | Promise<T>
 
 export type FalsyPlugin = false | null | undefined
 
-export type PluginOption = Thenable<Plugin | FalsyPlugin | PluginOption[]>
+export type PluginOption = Thenable<
+  | Plugin
+  | { name: string } // for rollup plugin compatibility
+  | FalsyPlugin
+  | PluginOption[]
+>
 
 export async function resolveEnvironmentPlugins(
   environment: PartialEnvironment,
