@@ -106,7 +106,7 @@ if (!isBuild) {
     const map = extractSourcemap(multi)
     expect(formatSourcemapForSnapshot(map)).toMatchInlineSnapshot(`
       {
-        "mappings": "AACA,SACE,WACK,2BAA2B;AAElC,QAAQ,IAAI,yBAAyB,IAAI",
+        "mappings": ";AACA,SACE,WACK,2BAA2B;AAElC,QAAQ,IAAI,yBAAyB,IAAI",
         "sources": [
           "with-multiline-import.ts",
         ],

@@ -1,9 +1,6 @@
 // Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
 
-exports[`load > doesn't load modulepreload polyfill when format is cjs 1`] = `
-""use strict";
-"
-`;
+exports[`load > doesn't load modulepreload polyfill when format is cjs 1`] = `""`;
 
 exports[`load > loads modulepreload polyfill 1`] = `
 "(function polyfill() {

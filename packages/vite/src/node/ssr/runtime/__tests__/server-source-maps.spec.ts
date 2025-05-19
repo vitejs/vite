@@ -78,7 +78,7 @@ describe('module runner initialization', async () => {
       runner.import('/fixtures/has-error-first-comment.ts'),
     )
     expect(serializeStack(server, topLevelErrorTs)).toBe(
-      '    at <root>/fixtures/has-error-first-comment.ts:2:17',
+      '    at <root>/fixtures/has-error-first-comment.ts:2:7',
     )
   })
 
