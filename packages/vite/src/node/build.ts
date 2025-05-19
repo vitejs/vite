@@ -26,7 +26,7 @@ import type {
 import {
   loadFallbackPlugin as nativeLoadFallbackPlugin,
   manifestPlugin as nativeManifestPlugin,
-  reportPlugin as nativeReportPlugin,
+  reporterPlugin as nativeReporterPlugin,
 } from 'rolldown/experimental'
 import type { RollupCommonJSOptions } from 'dep-types/commonjs'
 import type { RollupDynamicImportVarsOptions } from 'dep-types/dynamicImportVars'
@@ -529,7 +529,7 @@ export async function resolveBuildPlugins(config: ResolvedConfig): Promise<{
                   const shouldLogInfo =
                     LogLevels[config.logLevel || 'info'] >= LogLevels.info
                   const assetsDir = path.join(env.config.build.assetsDir, '/')
-                  return nativeReportPlugin({
+                  return nativeReporterPlugin({
                     isTty: !!tty,
                     isLib: !!env.config.build.lib,
                     assetsDir,

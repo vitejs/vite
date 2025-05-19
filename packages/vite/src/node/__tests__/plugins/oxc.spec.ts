@@ -45,12 +45,14 @@ test('should inject helper for worker iife from esm', async () => {
   )
   expect(result).toMatchInlineSnapshot(`
     "(function() {
-    	"use strict";var babelHelpers=function(exports){"use strict";function t(e,t,n,r,i,a,o){try{var s=e[a](o),c=s.value}catch(e){return void n(e)}s.done?t(c):Promise.resolve(c).then(r,i)}function n(e){return function(){var n=this,r=arguments;return new Promise(function(i,a){var o=e.apply(n,r);function s(e){t(o,i,a,s,c,\`next\`,e)}function c(e){t(o,i,a,s,c,\`throw\`,e)}s(void 0)})}}return exports.asyncToGenerator=n,exports}({});
+    	"use strict";var babelHelpers=function(exports){function t(e,t,n,r,i,a,o){try{var s=e[a](o),c=s.value}catch(e){return void n(e)}s.done?t(c):Promise.resolve(c).then(r,i)}function n(e){return function(){var n=this,r=arguments;return new Promise(function(i,a){var o=e.apply(n,r);function s(e){t(o,i,a,s,c,\`next\`,e)}function c(e){t(o,i,a,s,c,\`throw\`,e)}s(void 0)})}}return exports.asyncToGenerator=n,exports}({});
 
+    	//#region src/index.js
     	babelHelpers.asyncToGenerator(function* () {
     		yield new Promise((resolve) => setTimeout(resolve, 1e3));
     		console.log("foo");
     	})();
+    	//#endregion
     })();
     "
   `)
@@ -73,12 +75,14 @@ test('should inject helper for worker iife from cjs', async () => {
     'iife',
   )
   expect(result).toMatchInlineSnapshot(`
-    "(function() {var babelHelpers=function(exports){"use strict";function t(e,t,n,r,i,a,o){try{var s=e[a](o),c=s.value}catch(e){return void n(e)}s.done?t(c):Promise.resolve(c).then(r,i)}function n(e){return function(){var n=this,r=arguments;return new Promise(function(i,a){var o=e.apply(n,r);function s(e){t(o,i,a,s,c,\`next\`,e)}function c(e){t(o,i,a,s,c,\`throw\`,e)}s(void 0)})}}return exports.asyncToGenerator=n,exports}({});
+    "(function() {var babelHelpers=function(exports){function t(e,t,n,r,i,a,o){try{var s=e[a](o),c=s.value}catch(e){return void n(e)}s.done?t(c):Promise.resolve(c).then(r,i)}function n(e){return function(){var n=this,r=arguments;return new Promise(function(i,a){var o=e.apply(n,r);function s(e){t(o,i,a,s,c,\`next\`,e)}function c(e){t(o,i,a,s,c,\`throw\`,e)}s(void 0)})}}return exports.asyncToGenerator=n,exports}({});
 
+    	//#region src/index.js
     	babelHelpers.asyncToGenerator(function* () {
     		yield new Promise((resolve) => setTimeout(resolve, 1e3));
     		console.log("foo");
     	})();
+    	//#endregion
     })();
     "
   `)

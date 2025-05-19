@@ -24,7 +24,7 @@ describe.runIf(isBuild)('build', () => {
     // esbuild helpers are injected inside of the UMD wrapper
     expect(code).toMatch(/^\/\*[^*]*\*\/\s*\(function\(/)
     expect(noMinifyCode).toMatch(
-      /^\/\*[^*]*\*\/\s*\(function\(global.+?"use strict";\s*var.+?function\smyLib\(/s,
+      /^\/\*[^*]*\*\/\s*\(function\(global.+?var.+?function\smyLib\(/s,
     )
     expect(namedCode).toMatch(/^\(function\(/)
   })
@@ -37,15 +37,11 @@ describe.runIf(isBuild)('build', () => {
     )
     const namedCode = readFile('dist/named/my-lib-named.iife.js')
     // esbuild helpers are injected inside of the IIFE wrapper
-    expect(code).toMatch(
-      /^\/\*[^*]*\*\/\s*var MyLib=function\(\)\{\s*"use strict";/,
-    )
+    expect(code).toMatch(/^\/\*[^*]*\*\/\s*var MyLib=function\(\)\{\s*/)
     expect(noMinifyCode).toMatch(
-      /^\/\*[^*]*\*\/\s*var MyLib\s*=\s*function\(\)\s*\{\s*"use strict";/,
+      /^\/\*[^*]*\*\/\s*var MyLib\s*=\s*function\(\)\s*\{\s*/,
     )
-    expect(namedCode).toMatch(
-      /^var MyLibNamed=function\([^()]+\)\{\s*"use strict";/,
-    )
+    expect(namedCode).toMatch(/^var MyLibNamed=function\([^()]+\)\{\s*/)
   })
 
   test('restrisct-helpers-injection', async () => {
