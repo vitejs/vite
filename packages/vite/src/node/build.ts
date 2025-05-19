@@ -524,7 +524,7 @@ export async function resolveBuildPlugins(config: ResolvedConfig): Promise<{
               : manifestPlugin(),
             ssrManifestPlugin(),
             enableNativePlugin === true
-              ? perEnvironmentPlugin('vite:modules-reporter', (env) => {
+              ? perEnvironmentPlugin('native:reporter', (env) => {
                   const tty = process.stdout.isTTY && !process.env.CI
                   const shouldLogInfo =
                     LogLevels[config.logLevel || 'info'] >= LogLevels.info
