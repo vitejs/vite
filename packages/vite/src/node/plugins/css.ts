@@ -107,6 +107,7 @@ import {
 } from './asset'
 import type { ESBuildOptions } from './esbuild'
 import { getChunkOriginalFileName } from './manifest'
+import { IIFE_BEGIN_RE, UMD_BEGIN_RE } from './oxc'
 
 const decoder = new TextDecoder()
 // const debug = createDebugger('vite:css')
@@ -915,22 +916,23 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
               `var ${style} = document.createElement('style');` +
               `${style}.textContent = ${cssString};` +
               `document.head.appendChild(${style});`
-            let injectionPoint
-            const wrapIdx = code.indexOf('System.register')
-            const singleQuoteUseStrict = `'use strict';`
-            const doubleQuoteUseStrict = `"use strict";`
-            if (wrapIdx >= 0) {
-              const executeFnStart = code.indexOf('execute:', wrapIdx)
-              injectionPoint = code.indexOf('{', executeFnStart) + 1
-            } else if (code.includes(singleQuoteUseStrict)) {
-              injectionPoint =
-                code.indexOf(singleQuoteUseStrict) + singleQuoteUseStrict.length
-            } else if (code.includes(doubleQuoteUseStrict)) {
-              injectionPoint =
-                code.indexOf(doubleQuoteUseStrict) + doubleQuoteUseStrict.length
-            } else {
-              throw new Error('Injection point for inlined CSS not found')
+
+            if (opts.format === 'app')
+              this.error('format: "app" is not supported')
+            // TODO: system js support
+            // const wrapIdx = code.indexOf('System.register')
+            // if (wrapIdx >= 0) {
+            //   const executeFnStart = code.indexOf('execute:', wrapIdx)
+            //   injectionPoint = code.indexOf('{', executeFnStart) + 1
+            // }
+            const m = (
+              opts.format === 'iife' ? IIFE_BEGIN_RE : UMD_BEGIN_RE
+            ).exec(code)
+            if (!m) {
+              this.error('Injection point for inlined CSS not found')
+              return
             }
+            const injectionPoint = m.index + m[0].length
             s ||= new MagicString(code)
             s.appendRight(injectionPoint, injectCode)
           }
