@@ -15,7 +15,6 @@ const pkg = JSON.parse(
 
 const external = [
   /^node:*/,
-  /^vite\//,
   /^rolldown\//,
   ...Object.keys(pkg.dependencies),
   ...Object.keys(pkg.peerDependencies),
@@ -32,7 +31,18 @@ export default defineConfig({
     format: 'esm',
   },
   external,
-  plugins: [patchTypes(), dts({ respectExternal: true })],
+  plugins: [
+    {
+      name: 'externalize-vite',
+      resolveId(id) {
+        if (id.startsWith('vite/')) {
+          return { id: id.replace(/^vite\//, 'rolldown-vite/'), external: true }
+        }
+      },
+    },
+    patchTypes(),
+    dts({ respectExternal: true }),
+  ],
 })
 
 // Taken from https://stackoverflow.com/a/36328890
@@ -140,7 +150,7 @@ function validateChunkImports(this: PluginContext, chunk: RenderedChunk) {
       !id.startsWith('../') &&
       !id.startsWith('node:') &&
       !id.startsWith('types.d') &&
-      !id.startsWith('vite/') &&
+      !id.startsWith('rolldown-vite/') &&
       // index and moduleRunner have a common chunk "moduleRunnerTransport"
       !id.startsWith('moduleRunnerTransport.d') &&
       !deps.includes(id) &&
