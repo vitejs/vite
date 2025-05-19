@@ -246,7 +246,12 @@ function shimDepsPlugin(deps: Record<string, ShimOptions[]>): Plugin {
     name: 'shim-deps',
     transform: {
       filter: {
-        id: new RegExp(`(?:${Object.keys(deps).join('|')})$`),
+        id: new RegExp(
+          `(?:${Object.keys(deps)
+            // escape is needed for Windows (https://github.com/rolldown/rolldown/issues/4609)
+            .map((k) => k.replace(/\//g, '[\\\\/]'))
+            .join('|')})$`,
+        ),
       },
       handler(code, id) {
         const file = Object.keys(deps).find((file) =>
