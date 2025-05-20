@@ -2058,6 +2058,10 @@ async function doUrlReplace(
   }
 
   let newUrl = await replacer(rawUrl)
+  if (rawUrl === newUrl) {
+    return matched
+  }
+
   // The new url might need wrapping even if the original did not have it, e.g. if a space was added during replacement
   if (wrap === '' && newUrl !== encodeURI(newUrl)) {
     wrap = '"'
