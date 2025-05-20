@@ -3,8 +3,8 @@
   "compilerOptions": {
     "outDir": "dist",
     "target": "ES2023",
-    "module": "nodenext",
-    "moduleResolution": "nodenext",
+    "module": "Preserve",
+    "moduleResolution": "bundler",
     "allowImportingTsExtensions": true,
     "strict": true,
     "skipLibCheck": true,
