@@ -142,7 +142,7 @@
     "postcss-modules": "^6.0.1",
     "resolve.exports": "^2.0.3",
     "rolldown": "^1.0.0-beta.9",
-    "rolldown-plugin-dts": "^0.13.2",
+    "rolldown-plugin-dts": "^0.13.3",
     "rollup-plugin-license": "^3.6.0",
     "sass": "^1.88.0",
     "sass-embedded": "^1.88.0",

@@ -381,8 +381,8 @@ importers:
         specifier: ^1.0.0-beta.9
         version: 1.0.0-beta.9(@oxc-project/runtime@0.70.0)
       rolldown-plugin-dts:
-        specifier: ^0.13.2
-        version: 0.13.2(rolldown@1.0.0-beta.9(@oxc-project/runtime@0.70.0))(typescript@5.7.3)
+        specifier: ^0.13.3
+        version: 0.13.3(rolldown@1.0.0-beta.9(@oxc-project/runtime@0.70.0))(typescript@5.7.3)
       rollup-plugin-license:
         specifier: ^3.6.0
         version: 3.6.0(picomatch@4.0.2)(rollup@4.40.1)
@@ -6778,11 +6778,11 @@ packages:
   rfdc@1.4.1:
     resolution: {integrity: sha512-q1b3N5QkRUWUl7iyylaaj3kOpIT0N2i9MqIEQXP73GVsN9cw3fdx8X63cEmWhJGi2PPCF23Ijp7ktmd39rawIA==}
 
-  rolldown-plugin-dts@0.13.2:
-    resolution: {integrity: sha512-3/jQZ2d+cOFuPQZ/QC0wmGQv3n6XbJswEgNIPaUoNusTtBrl2Owxn05EOhosr3jkv8eUlzOX4rf9klt2z14SRg==}
+  rolldown-plugin-dts@0.13.3:
+    resolution: {integrity: sha512-l0n0YsO9NI9Ve5Njmb1k2AYoDsgO8go1UEkXYnRgxoJokJXAK1V486XvOMxDpC8FcfgJwfQe71qmwpBjZXUOow==}
     engines: {node: '>=20.18.0'}
     peerDependencies:
-      rolldown: ^1.0.0-beta.8-commit.2a5c6a6
+      rolldown: ^1.0.0-beta.9
       typescript: ^5.0.0
       vue-tsc: ~2.2.0
     peerDependenciesMeta:
@@ -12978,7 +12978,7 @@ snapshots:
 
   rfdc@1.4.1: {}
 
-  rolldown-plugin-dts@0.13.2(rolldown@1.0.0-beta.9(@oxc-project/runtime@0.70.0))(typescript@5.7.3):
+  rolldown-plugin-dts@0.13.3(rolldown@1.0.0-beta.9(@oxc-project/runtime@0.70.0))(typescript@5.7.3):
     dependencies:
       '@babel/generator': 7.27.1
       '@babel/parser': 7.27.2
