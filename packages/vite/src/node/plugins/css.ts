@@ -2484,6 +2484,7 @@ const makeScssWorker = (
         ...(sassOptions.importers ?? []),
         internalImporter,
       ]
+      sassOptions.importer ??= internalImporter
 
       const result = await compiler.compileStringAsync(data, sassOptions)
       return {
