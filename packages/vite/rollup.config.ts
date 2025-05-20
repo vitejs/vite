@@ -1,14 +1,10 @@
-import { readFileSync } from 'node:fs'
+import { readFileSync, writeFileSync } from 'node:fs'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
-import alias from '@rollup/plugin-alias'
-import nodeResolve from '@rollup/plugin-node-resolve'
-import commonjs from '@rollup/plugin-commonjs'
-import json from '@rollup/plugin-json'
 import MagicString from 'magic-string'
-import type { Plugin } from 'rollup'
-import { defineConfig } from 'rollup'
-import esbuild, { type Options as esbuildOptions } from 'rollup-plugin-esbuild'
+import type { Plugin } from 'rolldown'
+import { defineConfig } from 'rolldown'
+import { init, parse } from 'es-module-lexer'
 import licensePlugin from './rollupLicensePlugin'
 
 const pkg = JSON.parse(
@@ -19,46 +15,40 @@ const __dirname = fileURLToPath(new URL('.', import.meta.url))
 
 const envConfig = defineConfig({
   input: path.resolve(__dirname, 'src/client/env.ts'),
-  plugins: [
-    esbuild({
-      tsconfig: path.resolve(__dirname, 'src/client/tsconfig.json'),
-    }),
-  ],
+  platform: 'browser',
   output: {
-    file: path.resolve(__dirname, 'dist/client', 'env.mjs'),
+    dir: path.resolve(__dirname, 'dist'),
+    entryFileNames: 'client/env.mjs',
+    target: 'es2020',
   },
 })
 
 const clientConfig = defineConfig({
   input: path.resolve(__dirname, 'src/client/client.ts'),
+  platform: 'browser',
   external: ['@vite/env'],
-  plugins: [
-    nodeResolve({ preferBuiltins: true }),
-    esbuild({
-      tsconfig: path.resolve(__dirname, 'src/client/tsconfig.json'),
-    }),
-  ],
   output: {
-    file: path.resolve(__dirname, 'dist/client', 'client.mjs'),
+    dir: path.resolve(__dirname, 'dist'),
+    entryFileNames: 'client/client.mjs',
+    target: 'es2020',
   },
 })
 
 const sharedNodeOptions = defineConfig({
+  platform: 'node',
   treeshake: {
-    moduleSideEffects(id, external) {
-      id = id.replaceAll('\\', '/')
-      // These nested dependencies should be considered side-effect free
-      // as it's not set within their package.json
-      if (
-        id.includes('node_modules/astring') ||
-        id.includes('node_modules/acorn')
-      ) {
-        return false
-      }
-      return !external
-    },
-    propertyReadSideEffects: false,
-    tryCatchDeoptimization: false,
+    moduleSideEffects: [
+      {
+        test: /acorn|astring|escape-html/,
+        sideEffects: false,
+      },
+      {
+        external: true,
+        sideEffects: false,
+      },
+    ],
+    // TODO: not supported yet
+    // propertyReadSideEffects: false,
   },
   output: {
     dir: './dist',
@@ -67,7 +57,6 @@ const sharedNodeOptions = defineConfig({
     exports: 'named',
     format: 'esm',
     externalLiveBindings: false,
-    freeze: false,
   },
   onwarn(warning, warn) {
     if (warning.message.includes('Circular dependency')) {
@@ -77,36 +66,6 @@ const sharedNodeOptions = defineConfig({
   },
 })
 
-function createSharedNodePlugins({
-  esbuildOptions,
-}: {
-  esbuildOptions?: esbuildOptions
-}): Plugin[] {
-  return [
-    alias({
-      entries: {
-        // we can always use node version (the default entry point has browser support)
-        debug: 'debug/src/node.js',
-      },
-    }),
-    nodeResolve({ preferBuiltins: true }),
-    esbuild({
-      tsconfig: path.resolve(__dirname, 'src/node/tsconfig.json'),
-      target: 'node20',
-      ...esbuildOptions,
-    }),
-    commonjs({
-      extensions: ['.js'],
-      // Optional peer deps of ws. Native deps that are mostly for performance.
-      // Since ws is not that perf critical for us, just ignore these deps.
-      ignore: ['bufferutil', 'utf-8-validate'],
-      sourceMap: false,
-      strictRequires: 'auto',
-    }),
-    json(),
-  ]
-}
-
 const nodeConfig = defineConfig({
   ...sharedNodeOptions,
   input: {
@@ -114,40 +73,38 @@ const nodeConfig = defineConfig({
     cli: path.resolve(__dirname, 'src/node/cli.ts'),
     constants: path.resolve(__dirname, 'src/node/constants.ts'),
   },
+  resolve: {
+    alias: {
+      // we can always use node version (the default entry point has browser support)
+      debug: 'debug/src/node.js',
+    },
+  },
+  output: {
+    ...sharedNodeOptions.output,
+    // When polyfillRequire is enabled, `require` gets renamed by rolldown.
+    // But the current usage of require() inside inlined workers expects `require`
+    // to not be renamed. To workaround, polyfillRequire is disabled and
+    // the banner is used instead.
+    // Ideally we should move workers to ESM
+    polyfillRequire: false,
+    banner:
+      "import { createRequire as ___createRequire } from 'module'; const require = ___createRequire(import.meta.url);",
+  },
   external: [
     /^vite\//,
     'fsevents',
     'rollup/parseAst',
     /^tsx\//,
     /^#/,
+    'sugarss', // postcss-import -> sugarss
+    'supports-color',
+    'utf-8-validate', // ws
+    'bufferutil', // ws
     ...Object.keys(pkg.dependencies),
     ...Object.keys(pkg.peerDependencies),
   ],
   plugins: [
-    // Some deps have try...catch require of optional deps, but rollup will
-    // generate code that force require them upfront for side effects.
-    // Shim them with eval() so rollup can skip these calls.
     shimDepsPlugin({
-      // chokidar -> fsevents
-      'fsevents-handler.js': [
-        {
-          src: `require('fsevents')`,
-          replacement: `__require('fsevents')`,
-        },
-      ],
-      // postcss-import -> sugarss
-      'process-content.js': [
-        {
-          src: 'require("sugarss")',
-          replacement: `__require('sugarss')`,
-        },
-      ],
-      'lilconfig/src/index.js': [
-        {
-          pattern: /: require;/g,
-          replacement: ': __require;',
-        },
-      ],
       'postcss-load-config/src/req.js': [
         {
           src: "const { pathToFileURL } = require('node:url')",
@@ -179,13 +136,14 @@ const nodeConfig = defineConfig({
         },
       ],
     }),
-    ...createSharedNodePlugins({}),
+    buildTimeImportMetaUrlPlugin(),
     licensePlugin(
       path.resolve(__dirname, 'LICENSE.md'),
       'Vite core license',
       'Vite',
-    ),
-    cjsPatchPlugin(),
+    ) as Plugin,
+    writeTypesPlugin(),
+    externalizeDepsInWatchPlugin(),
   ],
 })
 
@@ -200,10 +158,15 @@ const moduleRunnerConfig = defineConfig({
     'rollup/parseAst',
     ...Object.keys(pkg.dependencies),
   ],
-  plugins: [
-    ...createSharedNodePlugins({ esbuildOptions: { minifySyntax: true } }),
-    bundleSizeLimit(54),
-  ],
+  plugins: [bundleSizeLimit(54)],
+  output: {
+    ...sharedNodeOptions.output,
+    minify: {
+      compress: true,
+      mangle: false,
+      removeWhitespace: false,
+    },
+  },
 })
 
 const cjsConfig = defineConfig({
@@ -216,12 +179,13 @@ const cjsConfig = defineConfig({
     entryFileNames: `node-cjs/[name].cjs`,
     chunkFileNames: 'node-cjs/chunks/dep-[hash].js',
     format: 'cjs',
+    target: 'node20',
   },
-  external: ['fsevents', ...Object.keys(pkg.dependencies)],
+  external: ['fsevents', 'supports-color', ...Object.keys(pkg.dependencies)],
   plugins: [
-    ...createSharedNodePlugins({}),
-    bundleSizeLimit(175),
+    bundleSizeLimit(120),
     exportCheck(),
+    externalizeDepsInWatchPlugin(),
   ],
 })
 
@@ -235,6 +199,40 @@ export default defineConfig([
 
 // #region Plugins
 
+function writeTypesPlugin(): Plugin {
+  return {
+    name: 'write-types',
+    async writeBundle() {
+      if (this.meta.watchMode) {
+        writeFileSync(
+          'dist/node/index.d.ts',
+          "export * from '../../src/node/index.ts'",
+        )
+        writeFileSync(
+          'dist/node/module-runner.d.ts',
+          "export * from '../../src/module-runner/index.ts'",
+        )
+      }
+    },
+  }
+}
+
+function externalizeDepsInWatchPlugin(): Plugin {
+  return {
+    name: 'externalize-deps-in-watch',
+    options(options) {
+      if (this.meta.watchMode) {
+        options.external ||= []
+        if (!Array.isArray(options.external))
+          throw new Error('external must be an array')
+        options.external = options.external.concat(
+          Object.keys(pkg.devDependencies),
+        )
+      }
+    },
+  }
+}
+
 interface ShimOptions {
   src?: string
   replacement: string
@@ -246,52 +244,65 @@ function shimDepsPlugin(deps: Record<string, ShimOptions[]>): Plugin {
 
   return {
     name: 'shim-deps',
-    transform(code, id) {
-      for (const file in deps) {
-        if (id.replace(/\\/g, '/').endsWith(file)) {
-          for (const { src, replacement, pattern } of deps[file]) {
-            const magicString = new MagicString(code)
+    transform: {
+      filter: {
+        id: new RegExp(
+          `(?:${Object.keys(deps)
+            // escape is needed for Windows (https://github.com/rolldown/rolldown/issues/4609)
+            .map((k) => k.replace(/\//g, '[\\\\/]'))
+            .join('|')})$`,
+        ),
+      },
+      handler(code, id) {
+        const file = Object.keys(deps).find((file) =>
+          id.replace(/\\/g, '/').endsWith(file),
+        )
+        if (!file) return
 
-            if (src) {
-              const pos = code.indexOf(src)
-              if (pos < 0) {
-                this.error(
-                  `Could not find expected src "${src}" in file "${file}"`,
-                )
-              }
-              transformed[file] = true
-              magicString.overwrite(pos, pos + src.length, replacement)
+        for (const { src, replacement, pattern } of deps[file]) {
+          const magicString = new MagicString(code)
+
+          if (src) {
+            const pos = code.indexOf(src)
+            if (pos < 0) {
+              this.error(
+                `Could not find expected src "${src}" in file "${file}"`,
+              )
             }
-
-            if (pattern) {
-              let match
-              while ((match = pattern.exec(code))) {
-                transformed[file] = true
-                const start = match.index
-                const end = start + match[0].length
-                let _replacement = replacement
-                for (let i = 1; i <= match.length; i++) {
-                  _replacement = _replacement.replace(`$${i}`, match[i] || '')
-                }
-                magicString.overwrite(start, end, _replacement)
-              }
-              if (!transformed[file]) {
-                this.error(
-                  `Could not find expected pattern "${pattern}" in file "${file}"`,
-                )
-              }
-            }
-
-            code = magicString.toString()
+            transformed[file] = true
+            magicString.overwrite(pos, pos + src.length, replacement)
           }
 
-          console.log(`shimmed: ${file}`)
+          if (pattern) {
+            let match
+            while ((match = pattern.exec(code))) {
+              transformed[file] = true
+              const start = match.index
+              const end = start + match[0].length
+              let _replacement = replacement
+              for (let i = 1; i <= match.length; i++) {
+                _replacement = _replacement.replace(`$${i}`, match[i] || '')
+              }
+              magicString.overwrite(start, end, _replacement)
+            }
+            if (!transformed[file]) {
+              this.error(
+                `Could not find expected pattern "${pattern}" in file "${file}"`,
+              )
+            }
+          }
 
-          return code
+          code = magicString.toString()
         }
-      }
+
+        console.log(`shimmed: ${file}`)
+
+        return code
+      },
     },
     buildEnd(err) {
+      if (this.meta.watchMode) return
+
       if (!err) {
         for (const file in deps) {
           if (!transformed[file]) {
@@ -305,29 +316,81 @@ function shimDepsPlugin(deps: Record<string, ShimOptions[]>): Plugin {
   }
 }
 
-/**
- * Inject CJS Context for each deps chunk
- */
-function cjsPatchPlugin(): Plugin {
-  const cjsPatch = `
-import { createRequire as __cjs_createRequire } from 'node:module';
+function buildTimeImportMetaUrlPlugin(): Plugin {
+  const idMap: Record<string, number> = {}
+  let lastIndex = 0
 
-const __require = __cjs_createRequire(import.meta.url);
-`.trimStart()
+  const prefix = `__vite_buildTimeImportMetaUrl_`
+  const keepCommentRE = /\/\*\*\s*[#@]__KEEP__\s*\*\/\s*$/
 
   return {
-    name: 'cjs-chunk-patch',
-    renderChunk(code, chunk) {
-      if (!chunk.fileName.includes('chunks/dep-')) return
-      if (!code.includes('__require')) return
+    name: 'import-meta-current-dirname',
+    transform: {
+      filter: {
+        code: 'import.meta.url',
+      },
+      async handler(code, id) {
+        const relativeId = path.relative(__dirname, id).replaceAll('\\', '/')
+        // only replace import.meta.url in src/
+        if (!relativeId.startsWith('src/')) return
 
-      const match = /^(?:import[\s\S]*?;\s*)+/.exec(code)
-      const index = match ? match.index! + match[0].length : 0
-      const s = new MagicString(code)
-      // inject after the last `import`
-      s.appendRight(index, cjsPatch)
-      console.log('patched cjs context: ' + chunk.fileName)
-      return s.toString()
+        let index: number
+        if (idMap[id]) {
+          index = idMap[id]
+        } else {
+          index = idMap[id] = lastIndex
+          lastIndex++
+        }
+
+        await init
+
+        const s = new MagicString(code)
+        const [imports] = parse(code)
+        for (const { t, ss, se } of imports) {
+          if (t === 3 && code.slice(se, se + 4) === '.url') {
+            // ignore import.meta.url with /** #__KEEP__ */ comment
+            if (keepCommentRE.test(code.slice(0, se))) {
+              keepCommentRE.lastIndex = 0
+              continue
+            }
+
+            // import.meta.url
+            s.overwrite(ss, se + 4, `${prefix}${index}`)
+          }
+        }
+        return s.hasChanged() ? s.toString() : undefined
+      },
+    },
+    renderChunk(code, chunk, outputOptions) {
+      if (!code.includes(prefix)) return
+
+      return code.replace(
+        /__vite_buildTimeImportMetaUrl_(\d+)/g,
+        (_, index) => {
+          const originalFile = Object.keys(idMap).find(
+            (key) => idMap[key] === +index,
+          )
+          if (!originalFile) {
+            throw new Error(
+              `Could not find original file for ${prefix}${index} in ${chunk.fileName}`,
+            )
+          }
+          const outputFile = path.resolve(outputOptions.dir!, chunk.fileName)
+          const relativePath = path
+            .relative(path.dirname(outputFile), originalFile)
+            .replaceAll('\\', '/')
+
+          if (outputOptions.format === 'es') {
+            return `new URL(${JSON.stringify(relativePath)}, import.meta.url)`
+          } else if (outputOptions.format === 'cjs') {
+            return `new URL(${JSON.stringify(
+              relativePath,
+            )}, require('node:url').pathToFileURL(__filename))`
+          } else {
+            throw new Error(`Unsupported output format ${outputOptions.format}`)
+          }
+        },
+      )
     },
   }
 }
@@ -343,6 +406,8 @@ function bundleSizeLimit(limit: number): Plugin {
   return {
     name: 'bundle-limit',
     generateBundle(_, bundle) {
+      if (this.meta.watchMode) return
+
       size = Buffer.byteLength(
         Object.values(bundle)
           .map((i) => ('code' in i ? i.code : ''))
@@ -351,6 +416,8 @@ function bundleSizeLimit(limit: number): Plugin {
       )
     },
     closeBundle() {
+      if (this.meta.watchMode) return
+
       const kb = size / 1000
       if (kb > limit) {
         this.error(
@@ -367,6 +434,8 @@ function exportCheck(): Plugin {
   return {
     name: 'export-check',
     async writeBundle() {
+      if (this.meta.watchMode) return
+
       // escape import so that it's not bundled while config load
       const dynImport = (id: string) => import(id)
       // ignore warning from CJS entrypoint to avoid misleading logs

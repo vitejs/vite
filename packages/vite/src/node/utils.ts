@@ -177,9 +177,9 @@ export const bareImportRE = /^(?![a-zA-Z]:)[\w@](?!.*:\/\/)/
 export const deepImportRE = /^([^@][^/]*)\/|^(@[^/]+\/[^/]+)\//
 
 // TODO: use import()
-const _require = createRequire(import.meta.url)
+const _require = createRequire(/** #__KEEP__ */ import.meta.url)
 
-const _dirname = path.dirname(fileURLToPath(import.meta.url))
+const _dirname = path.dirname(fileURLToPath(/** #__KEEP__ */ import.meta.url))
 
 // NOTE: we don't use VERSION variable exported from rollup to avoid importing rollup in dev
 export const rollupVersion =

@@ -2009,7 +2009,7 @@ interface NodeModuleWithCompile extends NodeModule {
   _compile(code: string, filename: string): any
 }
 
-const _require = createRequire(import.meta.url)
+const _require = createRequire(/** #__KEEP__ */ import.meta.url)
 async function loadConfigFromBundledFile(
   fileName: string,
   bundledCode: string,
