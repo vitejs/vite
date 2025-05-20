@@ -14,17 +14,17 @@
     "@vitejs/plugin-legacy"
   ],
   "main": "./dist/index.cjs",
-  "module": "./dist/index.mjs",
+  "module": "./dist/index.js",
   "types": "./dist/index.d.ts",
   "exports": {
     ".": {
-      "import": "./dist/index.mjs",
+      "import": "./dist/index.js",
       "require": "./dist/index.cjs"
     }
   },
   "scripts": {
-    "dev": "unbuild --stub",
-    "build": "unbuild && pnpm run patch-cjs",
+    "dev": "tsdown --watch",
+    "build": "tsdown && pnpm run patch-cjs",
     "patch-cjs": "tsx ../../scripts/patchCJS.ts",
     "prepublishOnly": "npm run build"
   },
@@ -58,7 +58,7 @@
   "devDependencies": {
     "acorn": "^8.14.1",
     "picocolors": "^1.1.1",
-    "unbuild": "3.4.2",
+    "tsdown": "^0.11.12",
     "vite": "workspace:*"
   }
 }
