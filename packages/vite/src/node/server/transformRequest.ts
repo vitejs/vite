@@ -4,7 +4,12 @@ import { performance } from 'node:perf_hooks'
 import getEtag from 'etag'
 import MagicString from 'magic-string'
 import { init, parse as parseImports } from 'es-module-lexer'
-import type { PartialResolvedId, SourceDescription, SourceMap } from 'rolldown'
+import type {
+  ModuleType,
+  PartialResolvedId,
+  SourceDescription,
+  SourceMap,
+} from 'rolldown'
 import colors from 'picocolors'
 import type { EnvironmentModuleNode } from '../server/moduleGraph'
 import {
@@ -261,6 +266,7 @@ async function loadAndTransform(
 
   let code: string | null = null
   let map: SourceDescription['map'] = null
+  let moduleType: ModuleType | undefined
 
   // load
   const loadStart = debugLoad ? performance.now() : 0
@@ -314,12 +320,18 @@ async function loadAndTransform(
           timestamp: true,
         })
       }
+
+      const guessedModuleType = getModuleTypeFromId(id)
+      if (guessedModuleType && guessedModuleType !== 'js') {
+        moduleType = guessedModuleType
+      }
     }
   } else {
     debugLoad?.(`${timeFrom(loadStart)} [plugin] ${prettyUrl}`)
     if (isObject(loadResult)) {
       code = loadResult.code
       map = loadResult.map
+      moduleType = loadResult.moduleType
     } else {
       code = loadResult
     }
@@ -356,6 +368,7 @@ async function loadAndTransform(
   const transformStart = debugTransform ? performance.now() : 0
   const transformResult = await pluginContainer.transform(code, id, {
     inMap: map,
+    moduleType,
   })
   const originalCode = code
   if (transformResult.code === originalCode) {
@@ -533,4 +546,31 @@ async function handleModuleSoftInvalidation(
     environment.moduleGraph.updateModuleTransformResult(mod, result)
 
   return result
+}
+
+// https://github.com/rolldown/rolldown/blob/cc66f4b7189dfb3a248608d02f5962edb09b11f8/crates/rolldown/src/utils/normalize_options.rs#L95-L111
+const defaultModuleTypes: Record<string, ModuleType | undefined> = {
+  js: 'js',
+  mjs: 'js',
+  cjs: 'js',
+  jsx: 'jsx',
+  ts: 'ts',
+  mts: 'ts',
+  cts: 'ts',
+  tsx: 'tsx',
+  json: 'json',
+  txt: 'text',
+  css: 'css',
+}
+
+// https://github.com/rolldown/rolldown/blob/bf53a100edf1780d5a5aa41f0bc0459c5696543e/crates/rolldown/src/utils/load_source.rs#L53-L89
+export function getModuleTypeFromId(id: string): ModuleType | undefined {
+  let pos = -1
+  while ((pos = id.indexOf('.', pos + 1)) >= 0) {
+    const ext = id.slice(pos + 1)
+    const moduleType = defaultModuleTypes[ext]
+    if (moduleType) {
+      return moduleType
+    }
+  }
 }

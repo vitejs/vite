@@ -2,6 +2,7 @@ import type {
   CustomPluginOptions,
   LoadResult,
   ModuleType,
+  ModuleTypeFilter,
   ObjectHook,
   PluginContext,
   ResolveIdResult,
@@ -151,7 +152,13 @@ export interface Plugin<A = any> extends RolldownPlugin<A> {
         ssr?: boolean
       },
     ) => Promise<TransformResult> | TransformResult,
-    { filter?: { id?: StringFilter; code?: StringFilter } }
+    {
+      filter?: {
+        id?: StringFilter
+        code?: StringFilter
+        moduleType?: ModuleTypeFilter
+      }
+    }
   >
   /**
    * Opt-in this plugin into the shared plugins pipeline.
