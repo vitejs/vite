@@ -19,11 +19,7 @@
   "main": "./dist/node/index.js",
   "types": "./dist/node/index.d.ts",
   "exports": {
-    ".": {
-      "module-sync": "./dist/node/index.js",
-      "import": "./dist/node/index.js",
-      "require": "./index.cjs"
-    },
+    ".": "./dist/node/index.js",
     "./client": {
       "types": "./client.d.ts"
     },
@@ -58,7 +54,7 @@
     "types"
   ],
   "engines": {
-    "node": "^20.0.0 || >=22.0.0"
+    "node": "^20.19.0 || >=22.12.0"
   },
   "repository": {
     "type": "git",
@@ -156,7 +152,7 @@
     "ws": "^8.18.2"
   },
   "peerDependencies": {
-    "@types/node": "^20.0.0 || >=22.0.0",
+    "@types/node": "^20.19.0 || >=22.12.0",
     "jiti": ">=1.21.0",
     "less": "^4.0.0",
     "lightningcss": "^1.21.0",

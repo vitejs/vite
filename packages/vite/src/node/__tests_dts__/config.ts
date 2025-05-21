@@ -9,7 +9,7 @@ import {
   type UserConfigFnPromise,
   defineConfig,
 } from '../config'
-import { mergeConfig } from '../publicUtils'
+import { mergeConfig } from '../utils'
 
 const configObjectDefined = defineConfig({})
 const configObjectPromiseDefined = defineConfig(Promise.resolve({}))

@@ -6,11 +6,8 @@ import type { InlineConfig, PluginOption } from '..'
 import type { UserConfig, UserConfigExport } from '../config'
 import { defineConfig, loadConfigFromFile, resolveConfig } from '../config'
 import { resolveEnvPrefix } from '../env'
-import { createLogger, mergeConfig } from '../publicUtils'
-
-const [nvMajor, nvMinor] = process.versions.node.split('.').map(Number)
-const isImportAttributesSupported =
-  (nvMajor === 20 && nvMinor >= 10) || nvMajor >= 21
+import { mergeConfig } from '../utils'
+import { createLogger } from '../logger'
 
 describe('mergeConfig', () => {
   test('handles configs with different alias schemas', () => {
@@ -741,21 +738,18 @@ describe('loadConfigFromFile', () => {
     `)
   })
 
-  test.runIf(isImportAttributesSupported)(
-    'loadConfigFromFile with import attributes',
-    async () => {
-      const { config } = (await loadConfigFromFile(
-        {} as any,
-        path.resolve(fixtures, './entry/vite.config.import-attributes.ts'),
-        path.resolve(fixtures, './entry'),
-      ))!
-      expect(config).toMatchInlineSnapshot(`
+  test('loadConfigFromFile with import attributes', async () => {
+    const { config } = (await loadConfigFromFile(
+      {} as any,
+      path.resolve(fixtures, './entry/vite.config.import-attributes.ts'),
+      path.resolve(fixtures, './entry'),
+    ))!
+    expect(config).toMatchInlineSnapshot(`
         {
           "jsonValue": "vite",
         }
       `)
-    },
-  )
+  })
 
   describe('loadConfigFromFile with configLoader: native', () => {
     const fixtureRoot = path.resolve(fixtures, './native-import')

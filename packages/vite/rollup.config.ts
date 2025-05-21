@@ -169,32 +169,11 @@ const moduleRunnerConfig = defineConfig({
   },
 })
 
-const cjsConfig = defineConfig({
-  ...sharedNodeOptions,
-  input: {
-    publicUtils: path.resolve(__dirname, 'src/node/publicUtils.ts'),
-  },
-  output: {
-    ...sharedNodeOptions.output,
-    entryFileNames: `node-cjs/[name].cjs`,
-    chunkFileNames: 'node-cjs/chunks/dep-[hash].js',
-    format: 'cjs',
-    target: 'node20',
-  },
-  external: ['fsevents', 'supports-color', ...Object.keys(pkg.dependencies)],
-  plugins: [
-    bundleSizeLimit(120),
-    exportCheck(),
-    externalizeDepsInWatchPlugin(),
-  ],
-})
-
 export default defineConfig([
   envConfig,
   clientConfig,
   nodeConfig,
   moduleRunnerConfig,
-  cjsConfig,
 ])
 
 // #region Plugins
@@ -424,35 +403,6 @@ function bundleSizeLimit(limit: number): Plugin {
           `Bundle size exceeded ${limit} kB, current size is ${kb.toFixed(
             2,
           )}kb.`,
-        )
-      }
-    },
-  }
-}
-
-function exportCheck(): Plugin {
-  return {
-    name: 'export-check',
-    async writeBundle() {
-      if (this.meta.watchMode) return
-
-      // escape import so that it's not bundled while config load
-      const dynImport = (id: string) => import(id)
-      // ignore warning from CJS entrypoint to avoid misleading logs
-      process.env.VITE_CJS_IGNORE_WARNING = 'true'
-
-      const esmNamespace = await dynImport('./dist/node/index.js')
-      const cjsModuleExports = (await dynImport('./index.cjs')).default
-      const cjsModuleExportsKeys = new Set(
-        Object.getOwnPropertyNames(cjsModuleExports),
-      )
-      const lackingExports = Object.keys(esmNamespace).filter(
-        (key) => !cjsModuleExportsKeys.has(key),
-      )
-      if (lackingExports.length > 0) {
-        this.error(
-          `Exports missing from cjs build: ${lackingExports.join(', ')}.` +
-            ` Please update index.cjs or src/publicUtils.ts.`,
         )
       }
     },

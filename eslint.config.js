@@ -52,7 +52,7 @@ export default tseslint.config(
     },
     settings: {
       node: {
-        version: '^20.0.0 || >=22.0.0',
+        version: '^20.19.0 || >=22.12.0',
       },
     },
     plugins: {
