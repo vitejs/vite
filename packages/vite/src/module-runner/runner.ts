@@ -160,16 +160,21 @@ export class ModuleRunner {
 
     const dfs = (id: string): boolean => {
       const mod = this.evaluatedModules.getModuleById(id);
-      if (!mod) { color.set(id, 2); return false; }
+      if (!mod) {
+        color.set(id, 2);
+        return false;
+      }
 
       for (const imp of mod.importers) {
         const c = color.get(imp) ?? 0;
-        if (c === 1) return true
+        if (c === 1) return true;
+
         if (c === 0) {
           color.set(imp, 1);
-          if (dfs(imp)) return true
+          if (dfs(imp)) return true;
         }
       }
+
       color.set(id, 2);
       return false;
     };
@@ -177,7 +182,10 @@ export class ModuleRunner {
     for (const imp of importers) {
       if ((color.get(imp) ?? 0) === 0) {
         color.set(imp, 1);
-        if (dfs(imp)) return true
+
+        if (dfs(imp)) {
+          return true;
+        }
       }
     }
 
