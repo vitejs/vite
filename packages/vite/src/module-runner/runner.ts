@@ -153,26 +153,72 @@ export class ModuleRunner {
   private isCircularImport(
     importers: Set<string>,
     moduleUrl: string,
-    visited = new Set<string>(),
   ) {
+    // Union-Find data structure
+    const parent = new Map<string, string>();
+    const rank = new Map<string, number>();
+    
+    // Initialize with the target module
+    parent.set(moduleUrl, moduleUrl);
+    rank.set(moduleUrl, 0);
+    
+    // Find with path compression
+    const find = (x: string): string => {
+      if (parent.get(x) !== x) {
+        parent.set(x, find(parent.get(x)!));
+      }
+      return parent.get(x)!;
+    };
+    
+    // Union by rank
+    const union = (x: string, y: string): boolean => {
+      const rootX = find(x);
+      const rootY = find(y);
+      
+      if (rootX === rootY) {
+        console.log('Cycle detected!', x, y);
+        return true;
+      } // Cycle detected!
+      
+      if (rank.get(rootX)! < rank.get(rootY)!) {
+        parent.set(rootX, rootY);
+      } else if (rank.get(rootX)! > rank.get(rootY)!) {
+        parent.set(rootY, rootX);
+      } else {
+        parent.set(rootY, rootX);
+        rank.set(rootX, rank.get(rootX)! + 1);
+      }
+      return false;
+    };
+    
+    // Process all importers
     for (const importer of importers) {
-      if (visited.has(importer)) {
-        continue
+      if (!parent.has(importer)) {
+        parent.set(importer, importer);
+        rank.set(importer, 0);
       }
-      visited.add(importer)
-      if (importer === moduleUrl) {
-        return true
+      
+      // If union returns true, we found a cycle
+      if (union(importer, moduleUrl)) {
+        return true;
       }
-      const mod = this.evaluatedModules.getModuleById(importer)
-      if (
-        mod &&
-        mod.importers.size &&
-        this.isCircularImport(mod.importers, moduleUrl, visited)
-      ) {
-        return true
+      
+      // Check importers of this importer
+      const mod = this.evaluatedModules.getModuleById(importer);
+      if (mod && mod.importers.size) {
+        for (const subImporter of mod.importers) {
+          if (!parent.has(subImporter)) {
+            parent.set(subImporter, subImporter);
+            rank.set(subImporter, 0);
+          }
+          if (union(subImporter, moduleUrl)) {
+            return true;
+          }
+        }
       }
     }
-    return false
+    
+    return false;
   }
 
   private async cachedRequest(
