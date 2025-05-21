@@ -44,7 +44,7 @@ The supported template presets are:
 ## Scaffolding Your First Vite Project
 
 ::: tip Compatibility Note
-Vite requires [Node.js](https://nodejs.org/en/) version 18+ or 20+. However, some templates require a higher Node.js version to work, please upgrade if your package manager warns about it.
+Vite requires [Node.js](https://nodejs.org/en/) version 20+. However, some templates require a higher Node.js version to work, please upgrade if your package manager warns about it.
 :::
 
 ::: code-group
@@ -63,6 +63,10 @@ $ pnpm create vite
 
 ```bash [Bun]
 $ bun create vite
+```
+
+```bash [Deno]
+$ deno init --npm vite
 ```
 
 :::
@@ -88,6 +92,10 @@ $ pnpm create vite my-vue-app --template vue
 
 ```bash [Bun]
 $ bun create vite my-vue-app --template vue
+```
+
+```bash [Deno]
+$ deno init --npm vite my-vue-app --template vue
 ```
 
 :::
@@ -134,6 +142,10 @@ $ pnpm add -D vite
 $ bun add -D vite
 ```
 
+```bash [Deno]
+$ deno add -D npm:vite
+```
+
 :::
 
 And create an `index.html` file like this:
@@ -160,6 +172,10 @@ $ pnpm vite
 
 ```bash [Bun]
 $ bunx vite
+```
+
+```bash [Deno]
+$ deno run -A npm:vite
 ```
 
 :::

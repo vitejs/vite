@@ -110,7 +110,6 @@ export const FS_PREFIX = `/@fs/`
 export const CLIENT_PUBLIC_PATH = `/@vite/client`
 export const ENV_PUBLIC_PATH = `/@vite/env`
 export const VITE_PACKAGE_DIR = resolve(
-  // import.meta.url is `dist/node/constants.js` after bundle
   fileURLToPath(import.meta.url),
   '../../..',
 )
@@ -171,6 +170,7 @@ export const KNOWN_ASSET_TYPES = [
 
 export const DEFAULT_ASSETS_RE = new RegExp(
   `\\.(` + KNOWN_ASSET_TYPES.join('|') + `)(\\?.*)?$`,
+  'i',
 )
 
 export const DEP_VERSION_RE = /[?&](v=[\w.-]+)\b/

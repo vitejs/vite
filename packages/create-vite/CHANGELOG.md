@@ -1,3 +1,31 @@
+## 6.5.0 (2025-05-05)
+
+* feat(create-vite): add Marko (#19257) ([171e856](https://github.com/vitejs/vite/commit/171e856e011512098591234d0557804c6175b625)), closes [#19257](https://github.com/vitejs/vite/issues/19257)
+* feat(create-vite): add RedwoodSDK to create-vite app. (#19927) ([7f5e0e6](https://github.com/vitejs/vite/commit/7f5e0e61a809412b279338772e205ea458011aa4)), closes [#19927](https://github.com/vitejs/vite/issues/19927)
+* feat(create-vite): bump TS to 5.8 (#19892) ([1f90255](https://github.com/vitejs/vite/commit/1f902551207dd4e995eea4263fda28aed59150a6)), closes [#19892](https://github.com/vitejs/vite/issues/19892)
+* fix(deps): update all non-major dependencies (#19698) ([bab4cb9](https://github.com/vitejs/vite/commit/bab4cb92248adf6b9b18df12b2bf03889b0bd1eb)), closes [#19698](https://github.com/vitejs/vite/issues/19698)
+* fix(deps): update all non-major dependencies (#19899) ([a4b500e](https://github.com/vitejs/vite/commit/a4b500ef9ccc9b19a2882156a9ba8397e69bc6b2)), closes [#19899](https://github.com/vitejs/vite/issues/19899)
+
+
+
+## <small>6.4.1 (2025-04-17)</small>
+
+* docs(create-vite): update react template README files (#19876) ([2d4c20e](https://github.com/vitejs/vite/commit/2d4c20ebadc35dae7327ffe6cba85cc5c36d579a)), closes [#19876](https://github.com/vitejs/vite/issues/19876)
+* fix(create-vite): adding an interactive flag to force interactivity (#19875) ([608457c](https://github.com/vitejs/vite/commit/608457cd03ce593492abfe007e20468387c4c895)), closes [#19875](https://github.com/vitejs/vite/issues/19875)
+
+
+
+## 6.4.0 (2025-04-16)
+
+* feat(create-vite): add TanStack Router commands (#19573) ([e49a3b5](https://github.com/vitejs/vite/commit/e49a3b523c8894e8e0df766642999a944e0148ef)), closes [#19573](https://github.com/vitejs/vite/issues/19573)
+* fix(deps): update all non-major dependencies (#19555) ([f612e0f](https://github.com/vitejs/vite/commit/f612e0fdf6810317b61fcca1ded125755f261d78)), closes [#19555](https://github.com/vitejs/vite/issues/19555)
+* fix(deps): update all non-major dependencies (#19613) ([363d691](https://github.com/vitejs/vite/commit/363d691b4995d72f26a14eb59ed88a9483b1f931)), closes [#19613](https://github.com/vitejs/vite/issues/19613)
+* fix(deps): update all non-major dependencies (#19649) ([f4e712f](https://github.com/vitejs/vite/commit/f4e712ff861f8a9504594a4a5e6d35a7547e5a7e)), closes [#19649](https://github.com/vitejs/vite/issues/19649)
+* chore(deps): update dependency globals to v16 (#19556) ([e4bdd6b](https://github.com/vitejs/vite/commit/e4bdd6b9dd6e2ccf7d11e84a9c2da805e98eed58)), closes [#19556](https://github.com/vitejs/vite/issues/19556)
+* docs: remove $ prefix from create-vite terminal commands in README (#19532) ([cb9165c](https://github.com/vitejs/vite/commit/cb9165c1b2569aabe3e110e9684a909918eae22c)), closes [#19532](https://github.com/vitejs/vite/issues/19532)
+
+
+
 ## <small>6.3.1 (2025-02-27)</small>
 
 * fix(create-vite): make custom command visible (#19519) ([5ea9a42](https://github.com/vitejs/vite/commit/5ea9a422c5a000c6a3183c617d6c853cdc4a5151)), closes [#19519](https://github.com/vitejs/vite/issues/19519)

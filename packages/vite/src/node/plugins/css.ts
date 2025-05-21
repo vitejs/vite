@@ -30,7 +30,6 @@ import { WorkerWithFallback } from 'artichokie'
 import { globSync } from 'tinyglobby'
 import type {
   LessPreprocessorBaseOptions,
-  SassLegacyPreprocessBaseOptions,
   SassModernPreprocessBaseOptions,
   StylusPreprocessorBaseOptions,
 } from 'types/internal/cssPreprocessorOptions'
@@ -71,6 +70,7 @@ import {
   getPackageManagerCommand,
   getPkgName,
   injectQuery,
+  isCSSRequest,
   isDataUrl,
   isExternalUrl,
   isObject,
@@ -219,8 +219,6 @@ export function resolveCSSOptions(
   if (resolved.transformer === 'lightningcss') {
     resolved.lightningcss ??= {}
     resolved.lightningcss.targets ??= convertTargets(ESBUILD_MODULES_TARGET)
-  } else {
-    resolved.lightningcss = undefined
   }
   return resolved
 }
@@ -257,9 +255,6 @@ type CssLang =
   | keyof typeof PureCssLang
   | keyof typeof PreprocessLang
   | keyof typeof PostCssDialectLang
-
-export const isCSSRequest = (request: string): boolean =>
-  CSS_LANGS_RE.test(request)
 
 export const isModuleCSSRequest = (request: string): boolean =>
   cssModuleRE.test(request)
@@ -316,7 +311,7 @@ export function cssPlugin(config: ResolvedConfig): Plugin {
     })
   }
 
-  const plugin: Plugin = {
+  return {
     name: 'vite:css',
 
     buildStart() {
@@ -366,93 +361,84 @@ export function cssPlugin(config: ResolvedConfig): Plugin {
         }
       },
     },
-  }
+    transform: {
+      async handler(raw, id) {
+        if (
+          !isCSSRequest(id) ||
+          commonjsProxyRE.test(id) ||
+          SPECIAL_QUERY_RE.test(id)
+        ) {
+          return
+        }
 
-  const transformHook: Plugin['transform'] = {
-    async handler(raw, id) {
-      if (
-        !isCSSRequest(id) ||
-        commonjsProxyRE.test(id) ||
-        SPECIAL_QUERY_RE.test(id)
-      ) {
-        return
-      }
+        const { environment } = this
+        const resolveUrl = (url: string, importer?: string) =>
+          idResolver(environment, url, importer)
 
-      const { environment } = this
-      const resolveUrl = (url: string, importer?: string) =>
-        idResolver(environment, url, importer)
-
-      const urlResolver: CssUrlResolver = async (url, importer) => {
-        const decodedUrl = decodeURI(url)
-        if (checkPublicFile(decodedUrl, config)) {
-          if (encodePublicUrlsInCSS(config)) {
-            return [publicFileToBuiltUrl(decodedUrl, config), undefined]
-          } else {
-            return [joinUrlSegments(config.base, decodedUrl), undefined]
+        const urlResolver: CssUrlResolver = async (url, importer) => {
+          const decodedUrl = decodeURI(url)
+          if (checkPublicFile(decodedUrl, config)) {
+            if (encodePublicUrlsInCSS(config)) {
+              return [publicFileToBuiltUrl(decodedUrl, config), undefined]
+            } else {
+              return [joinUrlSegments(config.base, decodedUrl), undefined]
+            }
           }
-        }
-        const [id, fragment] = decodedUrl.split('#')
-        let resolved = await resolveUrl(id, importer)
-        if (resolved) {
-          if (fragment) resolved += '#' + fragment
-          return [await fileToUrl(this, resolved), resolved]
-        }
-        if (config.command === 'build') {
-          const isExternal = config.build.rollupOptions.external
-            ? resolveUserExternal(
-                config.build.rollupOptions.external,
-                decodedUrl, // use URL as id since id could not be resolved
-                id,
-                false,
+          const [id, fragment] = decodedUrl.split('#')
+          let resolved = await resolveUrl(id, importer)
+          if (resolved) {
+            if (fragment) resolved += '#' + fragment
+            return [await fileToUrl(this, resolved), resolved]
+          }
+          if (config.command === 'build') {
+            const isExternal = config.build.rollupOptions.external
+              ? resolveUserExternal(
+                  config.build.rollupOptions.external,
+                  decodedUrl, // use URL as id since id could not be resolved
+                  id,
+                  false,
+                )
+              : false
+
+            if (!isExternal) {
+              // #9800 If we cannot resolve the css url, leave a warning.
+              config.logger.warnOnce(
+                `\n${decodedUrl} referenced in ${id} didn't resolve at build time, it will remain unchanged to be resolved at runtime`,
               )
-            : false
+            }
+          }
+          return [url, undefined]
+        }
 
-          if (!isExternal) {
-            // #9800 If we cannot resolve the css url, leave a warning.
-            config.logger.warnOnce(
-              `\n${decodedUrl} referenced in ${id} didn't resolve at build time, it will remain unchanged to be resolved at runtime`,
-            )
+        const {
+          code: css,
+          modules,
+          deps,
+          map,
+        } = await compileCSS(
+          environment,
+          id,
+          raw,
+          preprocessorWorkerController!,
+          urlResolver,
+        )
+        if (modules) {
+          moduleCache.set(id, modules)
+        }
+
+        if (deps) {
+          for (const file of deps) {
+            this.addWatchFile(file)
           }
         }
-        return [url, undefined]
-      }
 
-      const {
-        code: css,
-        modules,
-        deps,
-        map,
-      } = await compileCSS(
-        environment,
-        id,
-        raw,
-        preprocessorWorkerController!,
-        urlResolver,
-      )
-      if (modules) {
-        moduleCache.set(id, modules)
-      }
-
-      if (deps) {
-        for (const file of deps) {
-          this.addWatchFile(file)
+        return {
+          code: css,
+          map,
         }
-      }
-
-      return {
-        code: css,
-        map,
-      }
+      },
     },
   }
-
-  // for backward compat, make `plugin.transform` a function
-  // but still keep the `handler` property
-  // so that we can use `filter` property in the future
-  plugin.transform = transformHook.handler
-  ;(plugin.transform as any).handler = transformHook.handler
-
-  return plugin
 }
 
 /**
@@ -640,10 +626,19 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
 
     async renderChunk(code, chunk, opts, meta) {
       let chunkCSS = ''
-      const renderedModules = Object.fromEntries(
-        Object.values(meta.chunks).flatMap((chunk) =>
-          Object.entries(chunk.modules),
-        ),
+      const renderedModules = new Proxy(
+        {} as Record<string, RenderedModule | undefined>,
+        {
+          get(_target, p) {
+            for (const name in meta.chunks) {
+              const modules = meta.chunks[name].modules
+              const module = modules[p as string]
+              if (module) {
+                return module
+              }
+            }
+          },
+        },
       )
       // the chunk is empty if it's a dynamic entry chunk that only contains a CSS import
       const isJsChunkEmpty = code === '' && !chunk.isEntry
@@ -1193,6 +1188,8 @@ export function getEmptyChunkReplacer(
     )
 }
 
+const fileURLWithWindowsDriveRE = /^file:\/\/\/[a-zA-Z]:\//
+
 interface CSSAtImportResolvers {
   css: ResolveIdFn
   sass: ResolveIdFn
@@ -1231,7 +1228,9 @@ function createCSSResolvers(config: ResolvedConfig): CSSAtImportResolvers {
             args[1] = fileURLToPath(args[1], {
               windows:
                 // file:///foo cannot be converted to path with windows mode
-                isWindows && args[1].startsWith('file:///') ? false : undefined,
+                isWindows && !fileURLWithWindowsDriveRE.test(args[1])
+                  ? false
+                  : undefined,
             })
           }
           return resolver(...args)
@@ -2115,18 +2114,14 @@ async function minifyCSS(
         code: Buffer.from(css),
         minify: true,
       })
-      if (warnings.length) {
-        const messages = warnings.map(
-          (warning) =>
-            `${warning.message}\n` +
-            generateCodeFrame(css, {
-              line: warning.loc.line,
-              column: warning.loc.column - 1, // 1-based
-            }),
-        )
-        config.logger.warn(
-          colors.yellow(`warnings when minifying css:\n${messages.join('\n')}`),
-        )
+
+      for (const warning of warnings) {
+        let msg = `[lightningcss minify] ${warning.message}`
+        msg += `\n${generateCodeFrame(css, {
+          line: warning.loc.line,
+          column: warning.loc.column - 1, // 1-based
+        })}`
+        config.logger.warn(colors.yellow(msg))
       }
 
       // NodeJS res.code = Buffer
@@ -2136,6 +2131,11 @@ async function minifyCSS(
       return decoder.decode(code) + (inlined ? '' : '\n')
     } catch (e) {
       e.message = `[lightningcss minify] ${e.message}`
+      const friendlyMessage = getLightningCssErrorMessageForIeSyntaxes(css)
+      if (friendlyMessage) {
+        e.message += friendlyMessage
+      }
+
       if (e.loc) {
         e.loc = {
           line: e.loc.line,
@@ -2155,7 +2155,7 @@ async function minifyCSS(
     if (warnings.length) {
       const msgs = await formatMessages(warnings, { kind: 'warning' })
       config.logger.warn(
-        colors.yellow(`warnings when minifying css:\n${msgs.join('\n')}`),
+        colors.yellow(`[esbuild css minify]\n${msgs.join('\n')}`),
       )
     }
     // esbuild output does return a linebreak at the end
@@ -2251,10 +2251,7 @@ type PreprocessorAdditionalData =
 
 export type SassPreprocessorOptions = {
   additionalData?: PreprocessorAdditionalData
-} & (
-  | ({ api: 'legacy' } & SassLegacyPreprocessBaseOptions)
-  | ({ api?: 'modern' | 'modern-compiler' } & SassModernPreprocessBaseOptions)
-)
+} & ({ api?: 'modern' | 'modern-compiler' } & SassModernPreprocessBaseOptions)
 
 export type LessPreprocessorOptions = {
   additionalData?: PreprocessorAdditionalData
@@ -2353,7 +2350,7 @@ function loadSss(root: string): PostCSS.Syntax {
   if (cachedSss) return cachedSss
 
   const sssPath = loadPreprocessorPath(PostCssDialectLang.sss, root)
-  cachedSss = createRequire(import.meta.url)(sssPath)
+  cachedSss = createRequire(/** #__KEEP__ */ import.meta.url)(sssPath)
   return cachedSss
 }
 
@@ -2376,149 +2373,8 @@ function cleanScssBugUrl(url: string) {
   }
 }
 
-function fixScssBugImportValue(
-  data: Sass.LegacyImporterResult,
-): Sass.LegacyImporterResult {
-  // the scss bug doesn't load files properly so we have to load it ourselves
-  // to prevent internal error when it loads itself
-  if (
-    // check bug via `window` and `location` global
-    typeof window !== 'undefined' &&
-    typeof location !== 'undefined' &&
-    data &&
-    'file' in data &&
-    (!('contents' in data) || data.contents == null)
-  ) {
-    // @ts-expect-error we need to preserve file property for HMR
-    data.contents = fs.readFileSync(data.file, 'utf-8')
-  }
-  return data
-}
-
 // #region Sass
 // .scss/.sass processor
-const makeScssWorker = (
-  environment: PartialEnvironment,
-  resolvers: CSSAtImportResolvers,
-  alias: Alias[],
-  maxWorkers: number | undefined,
-  packageName: 'sass' | 'sass-embedded',
-) => {
-  const internalImporter = async (
-    url: string,
-    importer: string,
-    filename: string,
-  ) => {
-    importer = cleanScssBugUrl(importer)
-    const resolved = await resolvers.sass(environment, url, importer)
-    if (resolved) {
-      try {
-        const data = await rebaseUrls(
-          environment,
-          resolved,
-          filename,
-          alias,
-          '$',
-          resolvers.sass,
-        )
-        if (packageName === 'sass-embedded') {
-          return data
-        }
-        return fixScssBugImportValue(data)
-      } catch (data) {
-        return data
-      }
-    } else {
-      return null
-    }
-  }
-
-  const worker = new WorkerWithFallback(
-    () =>
-      async (
-        sassPath: string,
-        data: string,
-        // additionalData can a function that is not cloneable but it won't be used
-        options: SassStylePreprocessorInternalOptions & {
-          api: 'legacy'
-          additionalData: undefined
-        },
-      ) => {
-        // eslint-disable-next-line no-restricted-globals -- this function runs inside a cjs worker
-        const sass: typeof Sass = require(sassPath)
-        // eslint-disable-next-line no-restricted-globals
-        const path: typeof import('node:path') = require('node:path')
-
-        // NOTE: `sass` always runs it's own importer first, and only falls back to
-        // the `importer` option when it can't resolve a path
-        const _internalImporter: Sass.LegacyAsyncImporter = (
-          url,
-          importer,
-          done,
-        ) => {
-          internalImporter(url, importer, options.filename).then((data) =>
-            done(data),
-          )
-        }
-        const importer = [_internalImporter]
-        if (options.importer) {
-          if (Array.isArray(options.importer)) {
-            importer.unshift(...options.importer)
-          } else {
-            importer.unshift(options.importer)
-          }
-        }
-
-        const finalOptions: Sass.LegacyOptions<'async'> = {
-          // support @import from node dependencies by default
-          includePaths: ['node_modules'],
-          ...options,
-          data,
-          file: options.filename,
-          outFile: options.filename,
-          importer,
-          ...(options.enableSourcemap
-            ? {
-                sourceMap: true,
-                omitSourceMapUrl: true,
-                sourceMapRoot: path.dirname(options.filename),
-              }
-            : {}),
-        }
-        return new Promise<ScssWorkerResult>((resolve, reject) => {
-          sass.render(finalOptions, (err, res) => {
-            if (err) {
-              reject(err)
-            } else {
-              resolve({
-                css: res!.css.toString(),
-                map: res!.map?.toString(),
-                stats: res!.stats,
-              })
-            }
-          })
-        })
-      },
-    {
-      parentFunctions: { internalImporter },
-      shouldUseFake(_sassPath, _data, options) {
-        // functions and importer is a function and is not serializable
-        // in that case, fallback to running in main thread
-        return !!(
-          (options.functions && Object.keys(options.functions).length > 0) ||
-          (options.importer &&
-            (!Array.isArray(options.importer) ||
-              options.importer.length > 0)) ||
-          options.logger ||
-          options.pkgImporter
-        )
-      },
-      max: maxWorkers,
-    },
-  )
-  return worker
-}
-
 const makeModernScssWorker = (
   environment: PartialEnvironment,
   resolvers: CSSAtImportResolvers,
@@ -2740,7 +2596,7 @@ const makeModernCompilerScssWorker = (
 type ScssWorkerResult = {
   css: string
   map?: string | undefined
-  stats: Pick<Sass.LegacyResult['stats'], 'includedFiles'>
+  stats: { includedFiles: string[] }
 }
 
 const scssProcessor = (
@@ -2749,9 +2605,7 @@ const scssProcessor = (
   const workerMap = new Map<
     unknown,
     ReturnType<
-      | typeof makeScssWorker
-      | typeof makeModernScssWorker
-      | typeof makeModernCompilerScssWorker
+      typeof makeModernScssWorker | typeof makeModernCompilerScssWorker
     >
   >()
 
@@ -2777,20 +2631,12 @@ const scssProcessor = (
                 options.alias,
                 maxWorkers,
               )
-            : api === 'modern'
-              ? makeModernScssWorker(
-                  environment,
-                  resolvers,
-                  options.alias,
-                  maxWorkers,
-                )
-              : makeScssWorker(
-                  environment,
-                  resolvers,
-                  options.alias,
-                  maxWorkers,
-                  sassPackage.name,
-                ),
+            : makeModernScssWorker(
+                environment,
+                resolvers,
+                options.alias,
+                maxWorkers,
+              ),
         )
       }
       const worker = workerMap.get(options.alias)!
@@ -3316,11 +3162,7 @@ const createPreprocessorWorkerController = (maxWorkers: number | undefined) => {
   const sassProcess: StylePreprocessor<SassStylePreprocessorInternalOptions>['process'] =
     (environment, source, root, options, resolvers) => {
       const opts: SassStylePreprocessorInternalOptions = { ...options }
-      if (opts.api === 'legacy') {
-        opts.indentedSyntax = true
-      } else {
-        opts.syntax = 'indented'
-      }
+      opts.syntax = 'indented'
       return scss.process(environment, source, root, opts, resolvers)
     }
 
@@ -3487,23 +3329,11 @@ async function compileLightningCSS(
         line: e.loc.line,
         column: e.loc.column - 1, // 1-based
       }
-      // add friendly error for https://github.com/parcel-bundler/lightningcss/issues/39
       try {
         const code = fs.readFileSync(e.fileName, 'utf-8')
-        const commonIeMessage =
-          ', which was used in the past to support old Internet Explorer versions.' +
-          ' This is not a valid CSS syntax and will be ignored by modern browsers. ' +
-          '\nWhile this is not supported by LightningCSS, you can set `css.lightningcss.errorRecovery: true` to strip these codes.'
-        if (/[\s;{]\*[a-zA-Z-][\w-]+\s*:/.test(code)) {
-          // https://stackoverflow.com/a/1667560
-          e.message +=
-            '.\nThis file contains star property hack (e.g. `*zoom`)' +
-            commonIeMessage
-        } else if (/min-width:\s*0\\0/.test(code)) {
-          // https://stackoverflow.com/a/14585820
-          e.message +=
-            '.\nThis file contains @media zero hack (e.g. `@media (min-width: 0\\0)`)' +
-            commonIeMessage
+        const friendlyMessage = getLightningCssErrorMessageForIeSyntaxes(code)
+        if (friendlyMessage) {
+          e.message += friendlyMessage
         }
       } catch {}
     }
@@ -3578,6 +3408,31 @@ async function compileLightningCSS(
     map: 'map' in res ? res.map?.toString() : undefined,
     modules,
   }
+}
+
+// friendly error for https://github.com/parcel-bundler/lightningcss/issues/39
+function getLightningCssErrorMessageForIeSyntaxes(
+  code: string,
+): string | undefined {
+  const commonIeMessage =
+    ', which was used in the past to support old Internet Explorer versions.' +
+    ' This is not a valid CSS syntax and will be ignored by modern browsers. ' +
+    '\nWhile this is not supported by LightningCSS, you can set `css.lightningcss.errorRecovery: true` to strip these codes.'
+  if (/[\s;{]\*[a-zA-Z-][\w-]+\s*:/.test(code)) {
+    // https://stackoverflow.com/a/1667560
+    return (
+      '.\nThis file contains star property hack (e.g. `*zoom`)' +
+      commonIeMessage
+    )
+  }
+  if (/min-width:\s*0\\0/.test(code)) {
+    // https://stackoverflow.com/a/14585820
+    return (
+      '.\nThis file contains @media zero hack (e.g. `@media (min-width: 0\\0)`)' +
+      commonIeMessage
+    )
+  }
+  return undefined
 }
 
 // Convert https://esbuild.github.io/api/#target

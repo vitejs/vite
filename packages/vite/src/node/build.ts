@@ -7,8 +7,10 @@ import type {
   InternalModuleFormat,
   LogLevel,
   LogOrStringHandler,
+  MinimalPluginContext,
   ModuleFormat,
   OutputOptions,
+  PluginContext,
   RollupBuild,
   RollupError,
   RollupLog,
@@ -75,12 +77,8 @@ import {
   BaseEnvironment,
   getDefaultResolvedEnvironmentOptions,
 } from './baseEnvironment'
-import type { MinimalPluginContext, Plugin, PluginContext } from './plugin'
+import type { Plugin } from './plugin'
 import type { RollupPluginHooks } from './typeUtils'
-import {
-  createFilterForTransform,
-  createIdFilter,
-} from './plugins/pluginFilter'
 
 export interface BuildEnvironmentOptions {
   /**
@@ -588,7 +586,7 @@ async function buildEnvironment(
 
   // inject environment and ssr arg to plugin load/transform hooks
   const plugins = environment.plugins.map((p) =>
-    injectEnvironmentAndFilterToHooks(environment, p),
+    injectEnvironmentToHooks(environment, p),
   )
 
   const rollupOptions: RollupOptions = {
@@ -1132,7 +1130,7 @@ function isExternal(id: string, test: string | RegExp) {
   }
 }
 
-export function injectEnvironmentAndFilterToHooks(
+export function injectEnvironmentToHooks(
   environment: BuildEnvironment,
   plugin: Plugin,
 ): Plugin {
@@ -1143,13 +1141,13 @@ export function injectEnvironmentAndFilterToHooks(
   for (const hook of Object.keys(clone) as RollupPluginHooks[]) {
     switch (hook) {
       case 'resolveId':
-        clone[hook] = wrapEnvironmentAndFilterResolveId(environment, resolveId)
+        clone[hook] = wrapEnvironmentResolveId(environment, resolveId)
         break
       case 'load':
-        clone[hook] = wrapEnvironmentAndFilterLoad(environment, load)
+        clone[hook] = wrapEnvironmentLoad(environment, load)
         break
       case 'transform':
-        clone[hook] = wrapEnvironmentAndFilterTransform(environment, transform)
+        clone[hook] = wrapEnvironmentTransform(environment, transform)
         break
       default:
         if (ROLLUP_HOOKS.includes(hook)) {
@@ -1162,20 +1160,14 @@ export function injectEnvironmentAndFilterToHooks(
   return clone
 }
 
-function wrapEnvironmentAndFilterResolveId(
+function wrapEnvironmentResolveId(
   environment: BuildEnvironment,
   hook?: Plugin['resolveId'],
 ): Plugin['resolveId'] {
   if (!hook) return
 
-  const rawIdFilter = typeof hook === 'object' ? hook.filter?.id : undefined
-  const idFilter = rawIdFilter ? createIdFilter(rawIdFilter) : undefined
-
   const fn = getHookHandler(hook)
   const handler: Plugin['resolveId'] = function (id, importer, options) {
-    if (idFilter && !idFilter(id)) {
-      return
-    }
     return fn.call(
       injectEnvironmentInContext(this, environment),
       id,
@@ -1194,20 +1186,14 @@ function wrapEnvironmentAndFilterResolveId(
   }
 }
 
-function wrapEnvironmentAndFilterLoad(
+function wrapEnvironmentLoad(
   environment: BuildEnvironment,
   hook?: Plugin['load'],
 ): Plugin['load'] {
   if (!hook) return
 
-  const rawIdFilter = typeof hook === 'object' ? hook.filter?.id : undefined
-  const idFilter = rawIdFilter ? createIdFilter(rawIdFilter) : undefined
-
   const fn = getHookHandler(hook)
   const handler: Plugin['load'] = function (id, ...args) {
-    if (idFilter && !idFilter(id)) {
-      return
-    }
     return fn.call(
       injectEnvironmentInContext(this, environment),
       id,
@@ -1225,22 +1211,14 @@ function wrapEnvironmentAndFilterLoad(
   }
 }
 
-function wrapEnvironmentAndFilterTransform(
+function wrapEnvironmentTransform(
   environment: BuildEnvironment,
   hook?: Plugin['transform'],
 ): Plugin['transform'] {
   if (!hook) return
 
-  const filters = typeof hook === 'object' ? hook.filter : undefined
-  const filter = filters
-    ? createFilterForTransform(filters.id, filters.code)
-    : undefined
-
   const fn = getHookHandler(hook)
   const handler: Plugin['transform'] = function (code, importer, ...args) {
-    if (filter && !filter(importer, code)) {
-      return
-    }
     return fn.call(
       injectEnvironmentInContext(this, environment),
       code,
@@ -1492,6 +1470,7 @@ function areSeparateFolders(a: string, b: string) {
 export class BuildEnvironment extends BaseEnvironment {
   mode = 'build' as const
 
+  isBuilt = false
   constructor(
     name: string,
     config: ResolvedConfig,
@@ -1546,12 +1525,6 @@ export interface BuilderOptions {
   buildApp?: (builder: ViteBuilder) => Promise<void>
 }
 
-async function defaultBuildApp(builder: ViteBuilder): Promise<void> {
-  for (const environment of Object.values(builder.environments)) {
-    await builder.build(environment)
-  }
-}
-
 export const builderOptionsDefaults = Object.freeze({
   sharedConfigBuild: false,
   sharedPlugins: false,
@@ -1563,7 +1536,7 @@ export function resolveBuilderOptions(
 ): ResolvedBuilderOptions | undefined {
   if (!options) return
   return mergeWithDefaults(
-    { ...builderOptionsDefaults, buildApp: defaultBuildApp },
+    { ...builderOptionsDefaults, buildApp: async () => {} },
     options,
   )
 }
@@ -1600,10 +1573,41 @@ export async function createBuilder(
     environments,
     config,
     async buildApp() {
-      return configBuilder.buildApp(builder)
+      // order 'pre' and 'normal' hooks are run first, then config.builder.buildApp, then 'post' hooks
+      let configBuilderBuildAppCalled = false
+      for (const p of config.getSortedPlugins('buildApp')) {
+        const hook = p.buildApp
+        if (
+          !configBuilderBuildAppCalled &&
+          typeof hook === 'object' &&
+          hook.order === 'post'
+        ) {
+          configBuilderBuildAppCalled = true
+          await configBuilder.buildApp(builder)
+        }
+        const handler = getHookHandler(hook)
+        await handler(builder)
+      }
+      if (!configBuilderBuildAppCalled) {
+        await configBuilder.buildApp(builder)
+      }
+      // fallback to building all environments if no environments have been built
+      if (
+        Object.values(builder.environments).every(
+          (environment) => !environment.isBuilt,
+        )
+      ) {
+        for (const environment of Object.values(builder.environments)) {
+          await builder.build(environment)
+        }
+      }
     },
-    async build(environment: BuildEnvironment) {
-      return buildEnvironment(environment)
+    async build(
+      environment: BuildEnvironment,
+    ): Promise<RollupOutput | RollupOutput[] | RollupWatcher> {
+      const output = await buildEnvironment(environment)
+      environment.isBuilt = true
+      return output
     },
   }
 
@@ -1665,3 +1669,5 @@ export async function createBuilder(
 
   return builder
 }
+
+export type BuildAppHook = (this: void, builder: ViteBuilder) => Promise<void>

@@ -50,7 +50,6 @@ const identifierReplacements: Record<string, Record<string, string>> = {
     Plugin$1: 'rollup.Plugin',
     PluginContext$1: 'rollup.PluginContext',
     MinimalPluginContext$1: 'rollup.MinimalPluginContext',
-    TransformPluginContext$1: 'rollup.TransformPluginContext',
     TransformResult$1: 'rollup.TransformResult',
   },
   esbuild: {
