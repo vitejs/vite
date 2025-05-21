@@ -1,3 +1,12 @@
+## <small>6.3.12 (2025-05-21)</small>
+
+* feat: moduleType support in dev (#172) ([707778e](https://github.com/vitejs/rolldown-vite/commit/707778e)), closes [#172](https://github.com/vitejs/rolldown-vite/issues/172)
+* feat: update rolldown ([7016327](https://github.com/vitejs/rolldown-vite/commit/7016327))
+* feat(native-plugin): support native `webWorkerPostPlugin` (#183) ([f222910](https://github.com/vitejs/rolldown-vite/commit/f222910)), closes [#183](https://github.com/vitejs/rolldown-vite/issues/183)
+* fix(css): inject CSS correctly when `cssCodesplit: true` and IIFE/UMD (#181) ([a31c182](https://github.com/vitejs/rolldown-vite/commit/a31c182)), closes [#181](https://github.com/vitejs/rolldown-vite/issues/181)
+
+
+
 ## <small>6.3.11 (2025-05-19)</small>
 
 * fix: apply filter for css-post plugin and json plugin ([b04fee7](https://github.com/vitejs/rolldown-vite/commit/b04fee7))
