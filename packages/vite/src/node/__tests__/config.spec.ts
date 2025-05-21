@@ -189,6 +189,42 @@ describe('mergeConfig', () => {
     expect(mergeConfig(newConfig, baseConfig)).toEqual(mergedConfig)
   })
 
+  test('handles environments.*.resolve.noExternal', () => {
+    const baseConfig = {
+      environments: {
+        ssr: {
+          resolve: {
+            noExternal: true,
+          },
+        },
+      },
+    }
+
+    const newConfig = {
+      environments: {
+        ssr: {
+          resolve: {
+            noExternal: ['foo'],
+          },
+        },
+      },
+    }
+
+    const mergedConfig = {
+      environments: {
+        ssr: {
+          resolve: {
+            noExternal: true,
+          },
+        },
+      },
+    }
+
+    // merging either ways, `resolve.noExternal: true` should take highest priority
+    expect(mergeConfig(baseConfig, newConfig)).toEqual(mergedConfig)
+    expect(mergeConfig(newConfig, baseConfig)).toEqual(mergedConfig)
+  })
+
   test('handles server.hmr.server', () => {
     const httpServer = http.createServer()
 
