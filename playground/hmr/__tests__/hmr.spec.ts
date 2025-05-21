@@ -1073,11 +1073,20 @@ if (!isBuild) {
     await untilUpdated(() => el.evaluate((it) => `${it.clientHeight}`), '40')
   })
 
-  test('CSS HMR with this.addWatchFile', async () => {
+  test('CSS HMR with this.addWatchFile in transform hook', async () => {
     await page.goto(viteTestUrl + '/css-deps/index.html')
-    expect(await getColor('.css-deps')).toMatch('red')
-    editFile('css-deps/dep.js', (code) => code.replace(`red`, `green`))
-    await untilUpdated(() => getColor('.css-deps'), 'green')
+    expect(await getColor('.css-deps-transform')).toMatch('red')
+    editFile('css-deps/dep-transform.js', (code) =>
+      code.replace(`red`, `green`),
+    )
+    await untilUpdated(() => getColor('.css-deps-transform'), 'green')
+  })
+
+  test('CSS HMR with this.addWatchFile in load hook', async () => {
+    await page.goto(viteTestUrl + '/css-deps/index.html')
+    expect(await getColor('.css-deps-load')).toMatch('red')
+    editFile('css-deps/dep-load.js', (code) => code.replace(`red`, `green`))
+    await untilUpdated(() => getColor('.css-deps-load'), 'green')
   })
 
   test('hmr should happen after missing file is created', async () => {
