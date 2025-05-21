@@ -96,10 +96,8 @@ const identifierReplacements: Record<string, Record<string, string>> = {
 // type names that are declared
 const ignoreConfusingTypeNames = [
   'Plugin$1',
-  'PluginContext$1',
   'MinimalPluginContext$1',
   'ServerOptions$1',
-  'TransformPluginContext$1',
 ]
 
 /**
@@ -304,17 +302,31 @@ function replaceConfusingTypeNames(
     }
   }
 
-  const unreplacedIds = unique(
+  const identifiers = unique(
     Array.from(
       chunk.code.matchAll(identifierWithTrailingDollarRE),
       (m) => m[0],
-    ).filter((id) => !ignoreConfusingTypeNames.includes(id)),
+    ),
+  )
+  const unreplacedIds = identifiers.filter(
+    (id) => !ignoreConfusingTypeNames.includes(id),
   )
   if (unreplacedIds.length) {
     const unreplacedStr = unreplacedIds.map((id) => `\n- ${id}`).join('')
     this.warn(
       `${chunk.fileName} contains confusing identifier names${unreplacedStr}`,
     )
+    process.exitCode = 1
+  }
+  const notUsedConfusingTypeNames = ignoreConfusingTypeNames.filter(
+    (id) => !identifiers.includes(id),
+  )
+  // Validate that `identifierReplacements` is not outdated if there's no match
+  if (notUsedConfusingTypeNames.length) {
+    const notUsedStr = notUsedConfusingTypeNames
+      .map((id) => `\n- ${id}`)
+      .join('')
+    this.warn(`${chunk.fileName} contains unused identifier names${notUsedStr}`)
     process.exitCode = 1
   }
 }
