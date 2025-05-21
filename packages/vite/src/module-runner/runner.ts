@@ -154,15 +154,12 @@ export class ModuleRunner {
     importers: Set<string>,
     moduleUrl: string,
   ) {
-    // Union-Find data structure
     const parent = new Map<string, string>();
     const rank = new Map<string, number>();
-    
-    // Initialize with the target module
+
     parent.set(moduleUrl, moduleUrl);
     rank.set(moduleUrl, 0);
     
-    // Find with path compression
     const find = (x: string): string => {
       if (parent.get(x) !== x) {
         parent.set(x, find(parent.get(x)!));
@@ -170,15 +167,13 @@ export class ModuleRunner {
       return parent.get(x)!;
     };
     
-    // Union by rank
-    const union = (x: string, y: string): boolean => {
+    const unionByRank = (x: string, y: string): boolean => {
       const rootX = find(x);
       const rootY = find(y);
       
       if (rootX === rootY) {
-        console.log('Cycle detected!', x, y);
         return true;
-      } // Cycle detected!
+      }
       
       if (rank.get(rootX)! < rank.get(rootY)!) {
         parent.set(rootX, rootY);
@@ -198,8 +193,8 @@ export class ModuleRunner {
         rank.set(importer, 0);
       }
       
-      // If union returns true, we found a cycle
-      if (union(importer, moduleUrl)) {
+      // If unionByRank returns true, we found a circle
+      if (unionByRank(importer, moduleUrl)) {
         return true;
       }
       
@@ -211,7 +206,7 @@ export class ModuleRunner {
             parent.set(subImporter, subImporter);
             rank.set(subImporter, 0);
           }
-          if (union(subImporter, moduleUrl)) {
+          if (unionByRank(subImporter, moduleUrl)) {
             return true;
           }
         }
