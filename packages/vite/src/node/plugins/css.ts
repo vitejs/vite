@@ -2058,6 +2058,8 @@ async function doUrlReplace(
   }
 
   let newUrl = await replacer(rawUrl)
+  // If the replacer output is same with the input, we don't need to wrap it with quotes.
+  // We also want to keep it as-is because the replacer returns the url as-is when the input starts with a variable.
   if (rawUrl === newUrl) {
     return matched
   }
