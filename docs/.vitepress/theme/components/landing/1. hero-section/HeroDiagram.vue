@@ -29,8 +29,8 @@ const inputLines: Ref<SvgNodeProps>[] = inputPaths.map((path) =>
     visible: false,
     labelVisible: false,
     label: '',
-    dotColor: null,
-    glowColor: null,
+    dotColor: undefined,
+    glowColor: undefined,
     path,
   }),
 )
@@ -117,7 +117,7 @@ const animateDiagram = () => {
 
   // Animate the input nodes/lines
   prepareInputs().forEach((lineIndex, fileIndex) => {
-    timeline.add(
+    timeline?.add(
       isMobile
         ? animateSingleInputMobile(inputLines[lineIndex as number])
         : animateSingleInputDesktop(inputLines[lineIndex as number]),
@@ -133,7 +133,7 @@ const animateDiagram = () => {
   // Animate the output nodes/lines
   timeline.addLabel('showOutput', '<')
   outputLines.forEach((outputLine, index) => {
-    timeline.add(
+    timeline?.add(
       isMobile
         ? animateSingleOutputMobile(outputLine)
         : animateSingleOutputDesktop(outputLine, index),
@@ -173,7 +173,7 @@ const prepareInputs = () => {
     inputLines[lineIndex as number].value.label = inputFileSet[fileIndex].label
     inputLines[lineIndex as number].value.dotColor = inputLines[
       lineIndex as number
-    ].value.glowColor = inputFileSet[fileIndex].color as string | null
+    ].value.glowColor = inputFileSet[fileIndex].color
   })
   return inputs
 }
