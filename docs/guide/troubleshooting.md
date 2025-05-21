@@ -214,3 +214,18 @@ An example of cross drive links are:
 - a symlink/junction to a different drive by `mklink` command (e.g. Yarn global cache)
 
 Related issue: [#10802](https://github.com/vitejs/vite/issues/10802)
+
+<script setup lang="ts">
+// redirect old links with hash to old version docs
+if (typeof window !== "undefined") {
+  const hashForOldVersion = {
+    'vite-cjs-node-api-deprecated': 6
+  }
+
+  const version = hashForOldVersion[location.hash.slice(1)]
+  if (version) {
+    // update the scheme and the port as well so that it works in local preview (it is http and 4173 locally)
+    location.href = `https://v${version}.vite.dev` + location.pathname + location.search + location.hash
+  }
+}
+</script>
