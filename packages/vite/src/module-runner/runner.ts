@@ -154,62 +154,43 @@ export class ModuleRunner {
     importers: Set<string>,
     moduleUrl: string,
   ) {
-    const parent = new Map<string, string>();
-    const rank = new Map<string, number>();
-
-    parent.set(moduleUrl, moduleUrl);
-    rank.set(moduleUrl, 0);
+    // 0 = unvisited, 1 = visiting (on-stack), 2 = done (no cycle below)
+    const color = new Map();
     
-    const find = (x: string): string => {
-      if (parent.get(x) !== x) {
-        parent.set(x, find(parent.get(x)!));
-      }
-      return parent.get(x)!;
-    };
+    // Start by marking the root as “visiting”
+    color.set(moduleUrl, 1);
     
-    const unionByRank = (x: string, y: string): boolean => {
-      const rootX = find(x);
-      const rootY = find(y);
-      
-      if (rootX === rootY) {
-        return true;
+    const dfs = (id) => {
+      const mod = this.evaluatedModules.getModuleById(id);
+      if (!mod) {
+        // no importers → no cycle here
+        color.set(id, 2);
+        return false;
       }
       
-      if (rank.get(rootX)! < rank.get(rootY)!) {
-        parent.set(rootX, rootY);
-      } else if (rank.get(rootX)! > rank.get(rootY)!) {
-        parent.set(rootY, rootX);
-      } else {
-        parent.set(rootY, rootX);
-        rank.set(rootX, rank.get(rootX)! + 1);
+      for (const imp of mod.importers) {
+        const c = color.get(imp) ?? 0;
+        if (c === 1) {
+          // hit the stack → cycle!
+          return true;
+        }
+        if (c === 0) {
+          // first time we see this module
+          color.set(imp, 1);
+          if (dfs(imp)) return true;
+        }
+        // if c === 2, we already know it’s safe → skip
       }
+      
+      color.set(id, 2);
       return false;
     };
     
-    // Process all importers
-    for (const importer of importers) {
-      if (!parent.has(importer)) {
-        parent.set(importer, importer);
-        rank.set(importer, 0);
-      }
-      
-      // If unionByRank returns true, we found a circle
-      if (unionByRank(importer, moduleUrl)) {
-        return true;
-      }
-      
-      // Check importers of this importer
-      const mod = this.evaluatedModules.getModuleById(importer);
-      if (mod && mod.importers.size) {
-        for (const subImporter of mod.importers) {
-          if (!parent.has(subImporter)) {
-            parent.set(subImporter, subImporter);
-            rank.set(subImporter, 0);
-          }
-          if (unionByRank(subImporter, moduleUrl)) {
-            return true;
-          }
-        }
+    for (const imp of importers) {
+      // if it hasn’t been visited, dive in
+      if ((color.get(imp) ?? 0) === 0) {
+        color.set(imp, 1);
+        if (dfs(imp)) return true;
       }
     }
     
