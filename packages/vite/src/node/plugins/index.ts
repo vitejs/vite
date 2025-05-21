@@ -303,6 +303,7 @@ export function getCachedFilterForPlugin<
       filters.transform = createFilterForTransform(
         rawFilters?.id,
         rawFilters?.code,
+        rawFilters?.moduleType,
       )
       filter = filters.transform
       break

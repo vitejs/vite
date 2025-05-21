@@ -47,6 +47,8 @@ export function jsonPlugin(
     transform: {
       filter: {
         id: { include: jsonExtRE, exclude: SPECIAL_QUERY_RE },
+        // don't transform if the file is already transformed to a different format
+        moduleType: ['json'],
       },
       handler(json, id) {
         // for backward compat this if statement is needed

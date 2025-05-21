@@ -1,7 +1,9 @@
 import util from 'node:util'
 import path from 'node:path'
 import { describe, expect, test } from 'vitest'
+import type { ModuleTypeFilter } from 'rolldown'
 import {
+  type StringFilter,
   createCodeFilter,
   createFilterForTransform,
   createIdFilter,
@@ -226,7 +228,22 @@ describe('createCodeFilter', () => {
 })
 
 describe('createFilterForTransform', () => {
-  const filters = [
+  type Filters = {
+    inputFilter: [
+      idFilter: StringFilter | undefined,
+      codeFilter: StringFilter | undefined,
+      moduleTypeFilter?: ModuleTypeFilter | undefined,
+    ]
+    cases:
+      | {
+          id: string
+          code: string
+          moduleType?: string
+          expected: boolean
+        }[]
+      | undefined
+  }[]
+  const filters: Filters = [
     { inputFilter: [undefined, undefined], cases: undefined },
     {
       inputFilter: ['*.js', undefined],
@@ -283,14 +300,29 @@ describe('createFilterForTransform', () => {
         { id: 'a', code: 'a', expected: true },
       ],
     },
+    {
+      inputFilter: [undefined, undefined, ['js']],
+      cases: [
+        { id: 'foo.js', code: 'foo', moduleType: 'js', expected: true },
+        { id: 'foo.ts', code: 'foo', moduleType: 'ts', expected: false },
+      ],
+    },
+    {
+      inputFilter: [undefined, undefined, { include: ['js'] }],
+      cases: [
+        { id: 'foo.js', code: 'foo', moduleType: 'js', expected: true },
+        { id: 'foo.ts', code: 'foo', moduleType: 'ts', expected: false },
+      ],
+    },
   ]
 
   for (const filter of filters) {
     test(`${util.inspect(filter.inputFilter)}`, () => {
-      const [idFilter, codeFilter] = filter.inputFilter
+      const [idFilter, codeFilter, moduleTypeFilter] = filter.inputFilter
       const filterForTransform = createFilterForTransform(
         idFilter,
         codeFilter,
+        moduleTypeFilter,
         '',
       )
       if (!filter.cases) {
@@ -300,10 +332,11 @@ describe('createFilterForTransform', () => {
       expect(filterForTransform).not.toBeUndefined()
 
       for (const testCase of filter.cases) {
-        const { id, code, expected } = testCase
-        expect(filterForTransform!(id, code), util.inspect({ id, code })).toBe(
-          expected,
-        )
+        const { id, code, moduleType, expected } = testCase
+        expect(
+          filterForTransform!(id, code, moduleType ?? 'js'),
+          util.inspect({ id, code, moduleType }),
+        ).toBe(expected)
       }
     })
   }

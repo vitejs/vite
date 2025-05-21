@@ -27,6 +27,22 @@ const transformPlugin = {
   },
 }
 
+const moduleTypePlugins = /** @type {const} */ (['pre', 'post']).map(
+  (enforce) => ({
+    name: `module-type-${enforce}`,
+    enforce,
+    transform(code, id, opts) {
+      if (id.endsWith('/foo.json')) {
+        code = code.replace(
+          `MODULE_TYPE_${enforce.toUpperCase()}`,
+          opts.moduleType,
+        )
+        return code
+      }
+    },
+  }),
+)
+
 export default defineConfig({
-  plugins: [transformPlugin],
+  plugins: [transformPlugin, moduleTypePlugins],
 })
