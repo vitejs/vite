@@ -155,35 +155,32 @@ export class ModuleRunner {
     moduleUrl: string,
   ) {
     // 0 = unvisited, 1 = visiting (on-stack), 2 = done (no cycle below)
-    const color = new Map();
-    
-    // Start by marking the root as “visiting”
+    const color = new Map<string, 0|1|2>();
     color.set(moduleUrl, 1);
-    
-    const dfs = (id) => {
+
+    const dfs = (id: string): boolean => {
       const mod = this.evaluatedModules.getModuleById(id);
-      if (!mod) {
-        // no importers → no cycle here
-        color.set(id, 2);
-        return false;
-      }
-      
+      if (!mod) { color.set(id, 2); return false; }
+
       for (const imp of mod.importers) {
         const c = color.get(imp) ?? 0;
-        if (c === 1) {
-          // hit the stack → cycle!
-          return true;
-        }
+        if (c === 1) return true
         if (c === 0) {
-          // first time we see this module
           color.set(imp, 1);
-          if (dfs(imp)) return true;
+          if (dfs(imp)) return true
         }
-        // if c === 2, we already know it’s safe → skip
       }
-      
       color.set(id, 2);
       return false;
+    };
+
+    for (const imp of importers) {
+      if ((color.get(imp) ?? 0) === 0) {
+        color.set(imp, 1);
+        if (dfs(imp)) return true
+      }
+    }
+    return false;
     };
     
     for (const imp of importers) {
