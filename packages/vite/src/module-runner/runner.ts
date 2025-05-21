@@ -180,19 +180,9 @@ export class ModuleRunner {
         if (dfs(imp)) return true
       }
     }
+
     return false;
-    };
-    
-    for (const imp of importers) {
-      // if it hasn’t been visited, dive in
-      if ((color.get(imp) ?? 0) === 0) {
-        color.set(imp, 1);
-        if (dfs(imp)) return true;
-      }
-    }
-    
-    return false;
-  }
+  };
 
   private async cachedRequest(
     url: string,
