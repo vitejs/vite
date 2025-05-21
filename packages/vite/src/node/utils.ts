@@ -1220,6 +1220,8 @@ function mergeWithDefaultsRecursively<
   return merged as MergeWithDefaultsResult<D, V>
 }
 
+const environmentPathRE = /^environments\.[^.]+$/
+
 export function mergeWithDefaults<
   D extends Record<string, any>,
   V extends Record<string, any>,
@@ -1281,7 +1283,10 @@ function mergeConfigRecursively(
       merged[key] = mergeConfigRecursively(
         existing,
         value,
-        rootPath ? `${rootPath}.${key}` : key,
+        // treat environment.* as root
+        rootPath && !environmentPathRE.test(rootPath)
+          ? `${rootPath}.${key}`
+          : key,
       )
       continue
     }
