@@ -27,6 +27,7 @@ import {
   loadFallbackPlugin as nativeLoadFallbackPlugin,
   manifestPlugin as nativeManifestPlugin,
   reporterPlugin as nativeReporterPlugin,
+  webWorkerPostPlugin as nativeWebWorkerPostPlugin,
 } from 'rolldown/experimental'
 import type { RollupCommonJSOptions } from 'dep-types/commonjs'
 import type { RollupDynamicImportVarsOptions } from 'dep-types/dynamicImportVars'
@@ -494,7 +495,20 @@ export async function resolveBuildPlugins(config: ResolvedConfig): Promise<{
             )
           ).filter(Boolean) as Plugin[],
       ),
-      ...(config.isWorker ? [webWorkerPostPlugin()] : []),
+      ...(config.isWorker
+        ? [
+            enableNativePlugin === true
+              ? perEnvironmentPlugin(
+                  'native:web-worker-post-plugin',
+                  (environment) => {
+                    if (environment.config.worker.format === 'iife') {
+                      return nativeWebWorkerPostPlugin()
+                    }
+                  },
+                )
+              : webWorkerPostPlugin(),
+          ]
+        : []),
     ],
     post: [
       buildImportAnalysisPlugin(config),
