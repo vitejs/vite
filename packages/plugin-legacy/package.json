@@ -13,23 +13,14 @@
     "vite-plugin",
     "@vitejs/plugin-legacy"
   ],
-  "main": "./dist/index.cjs",
-  "module": "./dist/index.js",
-  "types": "./dist/index.d.ts",
-  "exports": {
-    ".": {
-      "import": "./dist/index.js",
-      "require": "./dist/index.cjs"
-    }
-  },
+  "exports": "./dist/index.js",
   "scripts": {
     "dev": "tsdown --watch",
-    "build": "tsdown && pnpm run patch-cjs",
-    "patch-cjs": "tsx ../../scripts/patchCJS.ts",
+    "build": "tsdown",
     "prepublishOnly": "npm run build"
   },
   "engines": {
-    "node": "^20.0.0 || >=22.0.0"
+    "node": "^20.19.0 || >=22.12.0"
   },
   "repository": {
     "type": "git",
