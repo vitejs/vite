@@ -1,4 +1,4 @@
-<script setup>
+<script setup lang="ts">
 import logoJSON from './images/json.svg'
 import logoCSS from './images/css3.svg'
 import logoJS from './images/js.svg'
@@ -18,7 +18,7 @@ useSlideIn('#rich-features-card')
  */
 const { isCardActive, startAnimation } = useCardAnimation(
   '#rich-features-card',
-  null,
+  undefined,
   {
     once: true,
   },
@@ -39,7 +39,6 @@ const { isCardActive, startAnimation } = useCardAnimation(
           width="658"
           height="275"
           viewBox="0 0 658 275"
-          d
           xmlns="http://www.w3.org/2000/svg"
         >
           <path

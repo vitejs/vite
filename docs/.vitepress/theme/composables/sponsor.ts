@@ -20,7 +20,7 @@ interface Sponsor {
 }
 
 // shared data across instances so we load only once.
-const data = ref()
+const data = ref<{ tier: string; size: string; items: Sponsor[] }[]>()
 
 const dataHost = 'https://sponsors.vuejs.org'
 const dataUrl = `${dataHost}/vite.json`

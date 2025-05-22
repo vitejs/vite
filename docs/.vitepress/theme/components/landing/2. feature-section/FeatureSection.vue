@@ -51,7 +51,7 @@ const startAnimation = () => {
       () => {
         animationVisible.value = true
       },
-      null,
+      undefined,
       0,
     )
     .to(
