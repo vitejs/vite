@@ -51,7 +51,7 @@ import {
   CLIENT_PUBLIC_PATH,
   CSS_LANGS_RE,
   DEV_PROD_CONDITION,
-  ESBUILD_MODULES_TARGET,
+  ESBUILD_BASELINE_WIDELY_AVAILABLE_TARGET,
   SPECIAL_QUERY_RE,
 } from '../constants'
 import type { ResolvedConfig } from '../config'
@@ -218,7 +218,9 @@ export function resolveCSSOptions(
   const resolved = mergeWithDefaults(cssConfigDefaults, options ?? {})
   if (resolved.transformer === 'lightningcss') {
     resolved.lightningcss ??= {}
-    resolved.lightningcss.targets ??= convertTargets(ESBUILD_MODULES_TARGET)
+    resolved.lightningcss.targets ??= convertTargets(
+      ESBUILD_BASELINE_WIDELY_AVAILABLE_TARGET,
+    )
   }
   return resolved
 }

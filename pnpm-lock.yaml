@@ -284,6 +284,9 @@ importers:
       artichokie:
         specifier: ^0.3.1
         version: 0.3.1
+      baseline-browser-mapping:
+        specifier: ^2.3.0
+        version: 2.3.0
       cac:
         specifier: ^6.7.14
         version: 6.7.14
@@ -2664,6 +2667,9 @@ packages:
   '@jridgewell/trace-mapping@0.3.9':
     resolution: {integrity: sha512-3Belt6tdc8bPgAtbcmdtNJlirVoTmEb5e2gC94PnkwEW9jI6CAHUeoG85tjWP5WquqfavoMtMwiG4P926ZKKuQ==}
 
+  '@mdn/browser-compat-data@6.0.12':
+    resolution: {integrity: sha512-lQ6p212jKeJBG+L7UYRKchTCcnQbp6yOj5swKxGLjvuW4SmbgWgd/WyA1Dxq1GGT86C7jVTEaKry36LmsBp8SQ==}
+
   '@modelcontextprotocol/sdk@1.11.2':
     resolution: {integrity: sha512-H9vwztj5OAqHg9GockCQC06k1natgcxWQSRpQcPJf6i5+MWBzfKkRtxGbjQf0X2ihii0ffLZCRGbYV2f2bjNCQ==}
     engines: {node: '>=18'}
@@ -4098,6 +4104,9 @@ packages:
 
   balanced-match@1.0.2:
     resolution: {integrity: sha512-3oSeUO0TMV67hN1AmbXsK4yaqU7tjiHlbxRDZOpH0KW9+CeX4bRAaX0Anxt0tx2MrpRpWwQaPwIlISEJhYU5Pw==}
+
+  baseline-browser-mapping@2.3.0:
+    resolution: {integrity: sha512-K6nnZh0g0B/ZxbHSjZfKuJK7q1wto+RBqmVk9u/G+/YSOVlVXls71j2Jbl25Dos6j4HPAtne0MYdXdNOOSJm5g==}
 
   bignumber.js@9.3.0:
     resolution: {integrity: sha512-EM7aMFTXbptt/wZdMlBv2t8IViwQL+h6SLHosp8Yf0dqJMTnY6iL32opnAB6kAdL0SZPuvcAzFr31o0c/R3/RA==}
@@ -7197,6 +7206,9 @@ packages:
     peerDependencies:
       vue: ^3.2.0
 
+  web-features@2.34.2:
+    resolution: {integrity: sha512-OhPNkoNZYxfykP82LwJmpAXZHiO6eojkj9ZgDKB/u16i1rtoSZSzdgXjjTZI/gtTpZo5nuZNyDAZcNESJNylDg==}
+
   which@2.0.2:
     resolution: {integrity: sha512-BLI3Tl1TW3Pvl70l3yq3Y64i+awpwXqsGBYWkkqMtnbXgrMD+yj7rhW0kuEDxzJaYXGjEW5ogapKNMEKNMjibA==}
     engines: {node: '>= 8'}
@@ -8403,6 +8415,8 @@ snapshots:
     dependencies:
       '@jridgewell/resolve-uri': 3.1.2
       '@jridgewell/sourcemap-codec': 1.5.0
+
+  '@mdn/browser-compat-data@6.0.12': {}
 
   '@modelcontextprotocol/sdk@1.11.2':
     dependencies:
@@ -9765,6 +9779,11 @@ snapshots:
   bail@2.0.2: {}
 
   balanced-match@1.0.2: {}
+
+  baseline-browser-mapping@2.3.0:
+    dependencies:
+      '@mdn/browser-compat-data': 6.0.12
+      web-features: 2.34.2
 
   bignumber.js@9.3.0: {}
 
@@ -13100,6 +13119,8 @@ snapshots:
     dependencies:
       '@vue/devtools-api': 6.6.4
       vue: 3.5.13(typescript@5.7.3)
+
+  web-features@2.34.2: {}
 
   which@2.0.2:
     dependencies:

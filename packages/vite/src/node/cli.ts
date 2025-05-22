@@ -267,7 +267,10 @@ cli
 // build
 cli
   .command('build [root]', 'build for production')
-  .option('--target <target>', `[string] transpile target (default: 'modules')`)
+  .option(
+    '--target <target>',
+    `[string] transpile target (default: 'baseline-widely-available')`,
+  )
   .option('--outDir <dir>', `[string] output directory (default: dist)`)
   .option(
     '--assetsDir <dir>',
