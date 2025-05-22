@@ -7,8 +7,7 @@
     "noImplicitOverride": true,
     "noUnusedLocals": true,
     "esModuleInterop": true,
-    "noEmit": true,
-    "typeRoots": ["./svg.d.ts"]
+    "noEmit": true
   },
   "exclude": ["cache", "dist"]
 }
