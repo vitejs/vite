@@ -254,6 +254,9 @@ importers:
       '@oxc-project/runtime':
         specifier: ^0.70.0
         version: 0.70.0
+      '@oxc-project/types':
+        specifier: ^0.70.0
+        version: 0.70.0
       '@polka/compression':
         specifier: ^1.0.0-next.25
         version: 1.0.0-next.25
@@ -380,9 +383,9 @@ importers:
       rolldown:
         specifier: ^1.0.0-beta.9
         version: 1.0.0-beta.9(@oxc-project/runtime@0.70.0)
-      rollup-plugin-dts:
-        specifier: ^6.2.1
-        version: 6.2.1(rollup@4.40.1)(typescript@5.7.3)
+      rolldown-plugin-dts:
+        specifier: ^0.13.3
+        version: 0.13.3(rolldown@1.0.0-beta.9(@oxc-project/runtime@0.70.0))(typescript@5.7.3)
       rollup-plugin-license:
         specifier: ^3.6.0
         version: 3.6.0(picomatch@4.0.2)(rollup@4.40.1)
