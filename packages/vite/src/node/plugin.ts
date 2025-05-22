@@ -63,6 +63,10 @@ export interface PluginContextExtension {
   environment: Environment
 }
 
+export interface PluginContextMetaExtension {
+  viteVersion: string
+}
+
 export interface ConfigPluginContext
   extends Omit<MinimalPluginContext, 'meta' | 'environment'> {
   meta: Omit<PluginContextMeta, 'watchMode'>
@@ -74,6 +78,7 @@ export interface MinimalPluginContextWithoutEnvironment
 // Augment Rollup types to have the PluginContextExtension
 declare module 'rollup' {
   export interface MinimalPluginContext extends PluginContextExtension {}
+  export interface PluginContextMeta extends PluginContextMetaExtension {}
 }
 
 /**
