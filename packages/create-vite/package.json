@@ -14,13 +14,13 @@
     "dist"
   ],
   "scripts": {
-    "dev": "unbuild --stub",
-    "build": "unbuild",
+    "dev": "tsdown --watch",
+    "build": "tsdown",
     "typecheck": "tsc --noEmit",
     "prepublishOnly": "npm run build"
   },
   "engines": {
-    "node": "^20.0.0 || >=22.0.0"
+    "node": "^20.19.0 || >=22.12.0"
   },
   "repository": {
     "type": "git",
@@ -37,6 +37,6 @@
     "cross-spawn": "^7.0.6",
     "mri": "^1.2.0",
     "picocolors": "^1.1.1",
-    "unbuild": "^3.5.0"
+    "tsdown": "^0.11.12"
   }
 }

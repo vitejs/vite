@@ -110,7 +110,6 @@ export const FS_PREFIX = `/@fs/`
 export const CLIENT_PUBLIC_PATH = `/@vite/client`
 export const ENV_PUBLIC_PATH = `/@vite/env`
 export const VITE_PACKAGE_DIR = resolve(
-  // import.meta.url is `dist/node/constants.js` after bundle
   fileURLToPath(import.meta.url),
   '../../..',
 )
