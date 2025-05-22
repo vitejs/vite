@@ -77,6 +77,7 @@
     "typecheck": "tsc --noEmit && tsc --noEmit -p src/node",
     "lint": "eslint --cache --ext .ts src/**",
     "format": "prettier --write --cache --parser typescript \"src/**/*.ts\"",
+    "generate-target": "tsx scripts/generateTarget.ts",
     "prepublishOnly": "npm run build"
   },
   "//": "READ CONTRIBUTING.md to understand what to put under deps vs. devDeps!",
@@ -106,6 +107,7 @@
     "@types/escape-html": "^1.0.4",
     "@types/pnpapi": "^0.0.5",
     "artichokie": "^0.3.1",
+    "baseline-browser-mapping": "^2.3.0",
     "cac": "^6.7.14",
     "chokidar": "^3.6.0",
     "connect": "^3.7.0",
