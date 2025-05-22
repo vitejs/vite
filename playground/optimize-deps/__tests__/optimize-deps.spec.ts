@@ -371,5 +371,5 @@ test('dependency with external sub-dependencies', async () => {
   ).toBe('ok')
   await expectWithRetry(() =>
     page.textContent('.dep-cjs-with-external-deps-function'),
-  ).toBe('foo bar')
+  ).toBe('ok')
 })

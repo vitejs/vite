@@ -29,7 +29,7 @@ export default defineConfig({
       '@vitejs/test-nested-exclude',
       '@vitejs/test-dep-non-optimized',
       '@vitejs/test-dep-esm-external',
-      '@vitejs/test-dep-esm-external-with-default-export',
+      '@vitejs/test-dep-esm-external-with-function-default-export',
     ],
     esbuildOptions: {
       plugins: [

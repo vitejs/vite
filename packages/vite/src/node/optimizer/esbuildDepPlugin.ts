@@ -338,8 +338,8 @@ export function esbuildCjsExternalPlugin(
         (args) => ({
           contents: `\
 import * as m from ${JSON.stringify(nonFacadePrefix + args.path)};
-if (typeof m.default === 'function' || (typeof m.default === 'object' && m.default !== null)) {
-  module.exports = Object.assign(m.default, m);
+if (typeof m.default === 'function') {
+  module.exports = m.default;
 } else {
   module.exports = { ...m };
 }`,

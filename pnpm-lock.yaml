@@ -1102,9 +1102,9 @@ importers:
       '@vitejs/test-dep-esm-external':
         specifier: file:../dep-esm-external
         version: file:playground/optimize-deps/dep-esm-external
-      '@vitejs/test-dep-esm-external-with-default-export':
-        specifier: file:../dep-esm-external-with-default-export
-        version: file:playground/optimize-deps/dep-esm-external-with-default-export
+      '@vitejs/test-dep-esm-external-with-function-default-export':
+        specifier: file:../dep-esm-external-with-function-default-export
+        version: file:playground/optimize-deps/dep-esm-external-with-function-default-export
 
   playground/optimize-deps/dep-css-require: {}
 
@@ -1112,7 +1112,7 @@ importers:
 
   playground/optimize-deps/dep-esm-external: {}
 
-  playground/optimize-deps/dep-esm-external-with-default-export: {}
+  playground/optimize-deps/dep-esm-external-with-function-default-export: {}
 
   playground/optimize-deps/dep-incompatible: {}
 
@@ -3706,8 +3706,8 @@ packages:
   '@vitejs/test-dep-esbuild-plugin-transform@file:playground/optimize-deps/dep-esbuild-plugin-transform':
     resolution: {directory: playground/optimize-deps/dep-esbuild-plugin-transform, type: directory}
 
-  '@vitejs/test-dep-esm-external-with-default-export@file:playground/optimize-deps/dep-esm-external-with-default-export':
-    resolution: {directory: playground/optimize-deps/dep-esm-external-with-default-export, type: directory}
+  '@vitejs/test-dep-esm-external-with-function-default-export@file:playground/optimize-deps/dep-esm-external-with-function-default-export':
+    resolution: {directory: playground/optimize-deps/dep-esm-external-with-function-default-export, type: directory}
 
   '@vitejs/test-dep-esm-external@file:playground/optimize-deps/dep-esm-external':
     resolution: {directory: playground/optimize-deps/dep-esm-external, type: directory}
@@ -9688,7 +9688,7 @@ snapshots:
   '@vitejs/test-dep-cjs-with-external-deps@file:playground/optimize-deps/dep-cjs-with-external-deps':
     dependencies:
       '@vitejs/test-dep-esm-external': file:playground/optimize-deps/dep-esm-external
-      '@vitejs/test-dep-esm-external-with-default-export': file:playground/optimize-deps/dep-esm-external-with-default-export
+      '@vitejs/test-dep-esm-external-with-function-default-export': file:playground/optimize-deps/dep-esm-external-with-function-default-export
 
   '@vitejs/test-dep-conditions@file:packages/vite/src/node/__tests__/fixtures/test-dep-conditions': {}
 
@@ -9696,7 +9696,7 @@ snapshots:
 
   '@vitejs/test-dep-esbuild-plugin-transform@file:playground/optimize-deps/dep-esbuild-plugin-transform': {}
 
-  '@vitejs/test-dep-esm-external-with-default-export@file:playground/optimize-deps/dep-esm-external-with-default-export': {}
+  '@vitejs/test-dep-esm-external-with-function-default-export@file:playground/optimize-deps/dep-esm-external-with-function-default-export': {}
 
   '@vitejs/test-dep-esm-external@file:playground/optimize-deps/dep-esm-external': {}
 
