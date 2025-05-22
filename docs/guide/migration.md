@@ -4,6 +4,20 @@
 
 Vite no longer supports Node.js 18, which reached its EOL. Node.js 20.19+ / 22.12+ is now required.
 
+## Default Browser Target change
+
+The default browser value of `build.target` is updated to a newer browser.
+
+- Chrome 87 → 107
+- Edge 88 → 107
+- Firefox 78 → 104
+- Safari 14.0 → 16.0
+
+These browser versions align with [Baseline](https://web-platform-dx.github.io/web-features/) Widely Available feature sets as of 2025-05-01.
+In other words, they were all released before 2022-11-01.
+
+In Vite 5, the default target was named `'modules'`, but this is no longer available. Instead, a new default target `'baseline-widely-available'` is introduced.
+
 ## General Changes
 
 ### Removed Sass legacy API support
