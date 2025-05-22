@@ -2,7 +2,6 @@ import fs from 'node:fs'
 import fsp from 'node:fs/promises'
 import path from 'node:path'
 import { promisify } from 'node:util'
-import { performance } from 'node:perf_hooks'
 import colors from 'picocolors'
 import type { BuildContext, BuildOptions as EsbuildBuildOptions } from 'esbuild'
 import esbuild, { build } from 'esbuild'
@@ -26,7 +25,7 @@ import {
   transformWithEsbuild,
 } from '../plugins/esbuild'
 import { ESBUILD_MODULES_TARGET, METADATA_FILENAME } from '../constants'
-import { isWindows } from '../../shared/utils'
+import { createDurationTimer, isWindows } from '../../shared/utils'
 import type { Environment } from '../environment'
 import { esbuildCjsExternalPlugin, esbuildDepPlugin } from './esbuildDepPlugin'
 import { ScanEnvironment, scanImports } from './scan'
@@ -612,7 +611,7 @@ export function runOptimizeDeps(
     cancel: cleanUp,
   }
 
-  const start = performance.now()
+  const getDurationTime = createDurationTimer()
 
   const preparedRun = prepareEsbuildOptimizerRun(
     environment,
@@ -715,9 +714,7 @@ export function runOptimizeDeps(
           }
         }
 
-        debug?.(
-          `Dependencies bundled in ${(performance.now() - start).toFixed(2)}ms`,
-        )
+        debug?.(`Dependencies bundled in ${getDurationTime()}`)
 
         return successfulResult
       })

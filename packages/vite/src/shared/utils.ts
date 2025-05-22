@@ -82,3 +82,8 @@ export function promiseWithResolvers<T>(): PromiseWithResolvers<T> {
   })
   return { promise, resolve, reject }
 }
+
+export function createDurationTimer() {
+  const start = performance.now()
+  return (): string => `${(performance.now() - start).toFixed(2)}ms`
+}
