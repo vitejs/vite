@@ -2,7 +2,7 @@
 
 ## Node.js Support
 
-Vite no longer supports Node.js 18, which reached its EOL. Node.js 20 / 22+ is now required.
+Vite no longer supports Node.js 18, which reached its EOL. Node.js 20.19+ / 22.12+ is now required.
 
 ## General Changes
 
