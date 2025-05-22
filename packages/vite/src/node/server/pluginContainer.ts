@@ -77,7 +77,7 @@ import {
   rollupVersion,
   timeFrom,
 } from '../utils'
-import { FS_PREFIX } from '../constants'
+import { FS_PREFIX, VERSION as viteVersion } from '../constants'
 import {
   createPluginHookUtils,
   getCachedFilterForPlugin,
@@ -196,7 +196,7 @@ class EnvironmentPluginContainer<Env extends Environment = Environment> {
   ) {
     this._started = !autoStart
     this.minimalContext = new MinimalPluginContext(
-      { rollupVersion, watchMode: true },
+      { ...basePluginContextMeta, watchMode: true },
       environment,
     )
     const utils = createPluginHookUtils(plugins)
@@ -558,6 +558,11 @@ class EnvironmentPluginContainer<Env extends Environment = Environment> {
       () => [],
     )
   }
+}
+
+export const basePluginContextMeta = {
+  viteVersion,
+  rollupVersion,
 }
 
 export class BasicMinimalPluginContext<Meta = PluginContextMeta> {

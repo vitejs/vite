@@ -55,7 +55,6 @@ import {
   mergeWithDefaults,
   normalizePath,
   partialEncodeURIPath,
-  rollupVersion,
 } from './utils'
 import { perEnvironmentPlugin, resolveEnvironmentPlugins } from './plugin'
 import { manifestPlugin } from './plugins/manifest'
@@ -80,7 +79,10 @@ import {
 } from './baseEnvironment'
 import type { MinimalPluginContextWithoutEnvironment, Plugin } from './plugin'
 import type { RollupPluginHooks } from './typeUtils'
-import { BasicMinimalPluginContext } from './server/pluginContainer'
+import {
+  BasicMinimalPluginContext,
+  basePluginContextMeta,
+} from './server/pluginContainer'
 
 export interface BuildEnvironmentOptions {
   /**
@@ -1269,6 +1271,7 @@ function injectEnvironmentInContext<Context extends MinimalPluginContext>(
   context: Context,
   environment: BuildEnvironment,
 ) {
+  context.meta.viteVersion ??= VERSION
   context.environment ??= environment
   return context
 }
@@ -1576,10 +1579,7 @@ export async function createBuilder(
     config,
     async buildApp() {
       const pluginContext = new BasicMinimalPluginContext(
-        {
-          rollupVersion,
-          watchMode: false,
-        },
+        { ...basePluginContextMeta, watchMode: false },
         config.logger,
       )
 

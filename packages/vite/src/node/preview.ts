@@ -28,7 +28,6 @@ import {
   getServerUrlByHost,
   resolveHostname,
   resolveServerUrls,
-  rollupVersion,
   setupSIGTERMListener,
   shouldServeFile,
   teardownSIGTERMListener,
@@ -41,7 +40,10 @@ import type { InlineConfig, ResolvedConfig } from './config'
 import { DEFAULT_PREVIEW_PORT } from './constants'
 import type { RequiredExceptFor } from './typeUtils'
 import { hostValidationMiddleware } from './server/middlewares/hostCheck'
-import { BasicMinimalPluginContext } from './server/pluginContainer'
+import {
+  BasicMinimalPluginContext,
+  basePluginContextMeta,
+} from './server/pluginContainer'
 import type { MinimalPluginContextWithoutEnvironment } from './plugin'
 
 export interface PreviewOptions extends CommonServerOptions {}
@@ -195,10 +197,7 @@ export async function preview(
 
   // apply server hooks from plugins
   const configurePreviewServerContext = new BasicMinimalPluginContext(
-    {
-      rollupVersion,
-      watchMode: false,
-    },
+    { ...basePluginContextMeta, watchMode: false },
     config.logger,
   )
   const postHooks: ((() => void) | void)[] = []
