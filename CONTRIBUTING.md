@@ -49,7 +49,7 @@ To add a new language to the Vite docs, see [`vite-docs-template`](https://githu
 
 Vite aims to be lightweight, and this includes being aware of the number of npm dependencies and their size.
 
-We use Rollup to pre-bundle most dependencies before publishing! Therefore, most dependencies, even those used in runtime source code, should be added under `devDependencies` by default. This also creates the following constraints that we need to be aware of in the codebase.
+We use Rolldown to pre-bundle most dependencies before publishing! Therefore, most dependencies, even those used in runtime source code, should be added under `devDependencies` by default. This also creates the following constraints that we need to be aware of in the codebase.
 
 ### Usage of `require()`
 
