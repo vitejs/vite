@@ -1,0 +1,7 @@
+{
+  "name": "@vitejs/test-dep-esm-dummy-node-builtin",
+  "private": true,
+  "version": "0.0.0",
+  "main": "index.js",
+  "type": "module"
+}
