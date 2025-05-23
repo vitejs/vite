@@ -19,6 +19,7 @@ export { createIdResolver } from './idResolver'
 
 export { formatPostcssSourceMap, preprocessCSS } from './plugins/css'
 export { transformWithEsbuild } from './plugins/esbuild'
+export { normalizeResolvedIdToUrl } from './plugins/importAnalysis'
 export { buildErrorMessage } from './server/middlewares/error'
 
 export {
