@@ -165,11 +165,7 @@ export default tseslint.config(
       'sort-imports': [
         'error',
         {
-          ignoreCase: false,
           ignoreDeclarationSort: true,
-          ignoreMemberSort: false,
-          memberSyntaxSortOrder: ['none', 'all', 'multiple', 'single'],
-          allowSeparatedGroups: false,
         },
       ],
 
