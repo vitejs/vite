@@ -120,6 +120,7 @@
     "escape-html": "^1.0.3",
     "estree-walker": "^3.0.3",
     "etag": "^1.8.1",
+    "host-validation-middleware": "^0.1.1",
     "http-proxy": "^1.18.1",
     "launch-editor-middleware": "^2.10.0",
     "lightningcss": "^1.30.0",
