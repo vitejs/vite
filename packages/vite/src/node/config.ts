@@ -106,6 +106,7 @@ import { getAdditionalAllowedHosts } from './server/middlewares/hostCheck'
 
 const debug = createDebugger('vite:config', { depth: 10 })
 const promisifiedRealpath = promisify(fs.realpath)
+const SYMBOL_RESOLVED_CONFIG = Symbol('vite:resolved-config')
 
 export interface ConfigEnv {
   /**
@@ -204,7 +205,7 @@ export interface DevEnvironmentOptions {
 
   /**
    * For environments associated with a module runner.
-   * By default it is true for the client environment and false for non-client environments.
+   * By default, it is false for the client environment and true for non-client environments.
    * This option can also be used instead of the removed config.experimental.skipSsrTransform.
    */
   moduleRunnerTransform?: boolean
@@ -513,17 +514,6 @@ export interface ExperimentalOptions {
 
 export interface LegacyOptions {
   /**
-   * In Vite 4, SSR-externalized modules (modules not bundled and loaded by Node.js at runtime)
-   * are implicitly proxied in dev to automatically handle `default` and `__esModule` access.
-   * However, this does not correctly reflect how it works in the Node.js runtime, causing
-   * inconsistencies between dev and prod.
-   *
-   * In Vite 5, the proxy is removed so dev and prod are consistent, but if you still require
-   * the old behaviour, you can enable this option. If so, please leave your feedback at
-   * https://github.com/vitejs/vite/discussions/14697.
-   */
-  proxySsrExternalModules?: boolean
-  /**
    * In Vite 6.0.8 and below, WebSocket server was able to connect from any web pages. However,
    * that could be exploited by a malicious web page.
    *
@@ -606,6 +596,16 @@ export interface ResolvedConfig
       ssr: ResolvedSSROptions
       assetsInclude: (file: string) => boolean
       logger: Logger
+      /**
+       * Create an internal resolver to be used in special scenarios, e.g.
+       * optimizer & handling css `@imports`.
+       *
+       * This API is deprecated. It only works for the client and ssr
+       * environments. The `aliasOnly` option is also not being used anymore.
+       * Plugins should move to `createIdResolver(environment.config)` instead.
+       *
+       * @deprecated Use `createIdResolver` from `vite` instead.
+       */
       createResolver: (options?: Partial<InternalResolveOptions>) => ResolveFn
       optimizeDeps: DepOptimizationOptions
       /** @internal */
@@ -631,6 +631,8 @@ export interface ResolvedConfig
       safeModulePaths: Set<string>
       /** @internal */
       additionalAllowedHosts: string[]
+      /** @internal */
+      [SYMBOL_RESOLVED_CONFIG]: true
     } & PluginHookUtils
   > {}
 
@@ -706,7 +708,6 @@ export const configDefaults = Object.freeze({
     removeSsrLoadModule: undefined,
   },
   legacy: {
-    proxySsrExternalModules: false,
     skipWebSocketTokenCheck: false,
   },
   logLevel: 'info',
@@ -1031,6 +1032,15 @@ function resolveDepOptimizationOptions(
       force: forceOptimizeDeps ?? configDefaults.optimizeDeps.force,
     },
     optimizeDeps ?? {},
+  )
+}
+
+export function isResolvedConfig(
+  inlineConfig: InlineConfig | ResolvedConfig,
+): inlineConfig is ResolvedConfig {
+  return (
+    SYMBOL_RESOLVED_CONFIG in inlineConfig &&
+    inlineConfig[SYMBOL_RESOLVED_CONFIG]
   )
 }
 
@@ -1514,13 +1524,6 @@ export async function resolveConfig(
     getSortedPlugins: undefined!,
     getSortedPluginHooks: undefined!,
 
-    /**
-     * createResolver is deprecated. It only works for the client and ssr
-     * environments. The `aliasOnly` option is also not being used any more
-     * Plugins should move to createIdResolver(environment) instead.
-     * create an internal resolver to be used in special scenarios, e.g.
-     * optimizer & handling css @imports
-     */
     createResolver(options) {
       const resolve = createIdResolver(this, options)
       const clientEnvironment = new PartialEnvironment('client', this)
@@ -1552,6 +1555,7 @@ export async function resolveConfig(
     ),
     safeModulePaths: new Set<string>(),
     additionalAllowedHosts: getAdditionalAllowedHosts(server, preview),
+    [SYMBOL_RESOLVED_CONFIG]: true,
   }
   resolved = {
     ...config,
@@ -2005,7 +2009,7 @@ interface NodeModuleWithCompile extends NodeModule {
   _compile(code: string, filename: string): any
 }
 
-const _require = createRequire(import.meta.url)
+const _require = createRequire(/** #__KEEP__ */ import.meta.url)
 async function loadConfigFromBundledFile(
   fileName: string,
   bundledCode: string,
