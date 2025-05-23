@@ -1,0 +1,14 @@
+{
+  "name": "@vitejs/test-dep-with-optional-peer-dep-cjs",
+  "private": true,
+  "version": "0.0.0",
+  "main": "index.js",
+  "peerDependencies": {
+    "foobar": "0.0.0"
+  },
+  "peerDependenciesMeta": {
+    "foobar": {
+      "optional": true
+    }
+  }
+}

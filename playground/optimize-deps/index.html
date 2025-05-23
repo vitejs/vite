@@ -68,9 +68,15 @@
 
 <h2>Import from dependency with optional peer dep</h2>
 <div class="dep-with-optional-peer-dep"></div>
+<div class="dep-with-optional-peer-dep-error"></div>
 
 <h2>Import from dependency with optional peer dep submodule</h2>
 <div class="dep-with-optional-peer-dep-submodule"></div>
+<div class="dep-with-optional-peer-dep-submodule-error"></div>
+
+<h2>Import from dependency with optional peer dep (cjs)</h2>
+<div class="dep-with-optional-peer-dep-cjs"></div>
+<div class="dep-with-optional-peer-dep-cjs-error"></div>
 
 <h2>Externalize known non-js files in optimize included dep</h2>
 <div class="externalize-known-non-js"></div>
@@ -232,8 +238,20 @@
     callPeerDep,
   } from '@vitejs/test-dep-with-optional-peer-dep'
   text('.dep-with-optional-peer-dep', callItself())
+
   // expect error as optional peer dep not installed
-  callPeerDep()
+  callPeerDep().catch((e) => {
+    text(
+      '.dep-with-optional-peer-dep-error',
+      e &&
+        typeof e.message === 'string' &&
+        e.message.includes(
+          'Could not resolve "foobar" imported by "@vitejs/test-dep-with-optional-peer-dep".',
+        )
+        ? '[success]'
+        : `[failed]: ${e.message}`,
+    )
+  })
 </script>
 
 <script type="module">
@@ -242,8 +260,34 @@
     callPeerDepSubmodule,
   } from '@vitejs/test-dep-with-optional-peer-dep-submodule'
   text('.dep-with-optional-peer-dep-submodule', callItself())
+
   // expect error as optional peer dep not installed
-  callPeerDepSubmodule()
+  callPeerDepSubmodule().catch((e) => {
+    text(
+      '.dep-with-optional-peer-dep-submodule-error',
+      e &&
+        typeof e.message === 'string' &&
+        e.message.includes(
+          'Could not resolve "foobar/baz" imported by "@vitejs/test-dep-with-optional-peer-dep-submodule".',
+        )
+        ? '[success]'
+        : `[failed]: ${e.message}`,
+    )
+  })
+</script>
+
+<script type="module">
+  import {
+    callItself,
+    callPeerDep,
+  } from '@vitejs/test-dep-with-optional-peer-dep-cjs'
+  text('.dep-with-optional-peer-dep-cjs', callItself())
+
+  // expect fallback as optional peer dep not installed
+  text(
+    '.dep-with-optional-peer-dep-cjs-error',
+    callPeerDep() === 'fallback' ? '[success]' : `[failed]: did not fallback`,
+  )
 </script>
 
 <script type="module">
