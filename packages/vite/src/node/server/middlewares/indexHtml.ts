@@ -38,12 +38,14 @@ import {
   joinUrlSegments,
   normalizePath,
   processSrcSetSync,
+  rollupVersion,
   stripBase,
 } from '../../utils'
 import { checkPublicFile } from '../../publicDir'
 import { getCodeWithSourcemap, injectSourcesContent } from '../sourcemap'
 import { cleanUrl, unwrapId, wrapId } from '../../../shared/utils'
 import { getNodeAssetAttributes } from '../../assetSource'
+import { BasicMinimalPluginContext } from '../pluginContainer'
 
 interface AssetNode {
   start: number
@@ -79,13 +81,17 @@ export function createDevHtmlTransformFn(
     injectNonceAttributeTagHook(config),
     postImportMapHook(),
   ]
+  const pluginContext = new BasicMinimalPluginContext(
+    { rollupVersion, watchMode: true },
+    config.logger,
+  )
   return (
     server: ViteDevServer,
     url: string,
     html: string,
     originalUrl?: string,
   ): Promise<string> => {
-    return applyHtmlTransforms(html, transformHooks, {
+    return applyHtmlTransforms(html, transformHooks, pluginContext, {
       path: url,
       filename: getHtmlFilename(url, server),
       server,
