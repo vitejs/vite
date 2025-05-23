@@ -35,15 +35,21 @@ const external = [
 
 export default defineConfig({
   input: {
-    index: './temp/src/node/index.d.ts',
-    'module-runner': './temp/src/module-runner/index.d.ts',
+    index: './src/node/index.ts',
+    'module-runner': './src/module-runner/index.ts',
   },
   output: {
     dir: './dist/node',
     format: 'esm',
   },
+  treeshake: {
+    moduleSideEffects: 'no-external',
+  },
   external,
-  plugins: [patchTypes(), dts({ dtsInput: true })],
+  plugins: [
+    patchTypes(),
+    dts({ tsconfig: './src/node/tsconfig.build.json', emitDtsOnly: true }),
+  ],
 })
 
 // Taken from https://stackoverflow.com/a/36328890
@@ -114,7 +120,7 @@ function patchTypes(): Plugin {
     resolveId: {
       order: 'pre',
       filter: {
-        id: /^(dep-)*types\//,
+        id: /^(dep-)?types\//,
       },
       handler(id) {
         // Dep types should be bundled
@@ -134,26 +140,29 @@ function patchTypes(): Plugin {
         }
       },
     },
-    generateBundle(_opts, bundle) {
-      for (const chunk of Object.values(bundle)) {
-        if (chunk.type !== 'chunk') continue
+    generateBundle: {
+      order: 'post',
+      handler(_opts, bundle) {
+        for (const chunk of Object.values(bundle)) {
+          if (chunk.type !== 'chunk') continue
 
-        const ast = parseAst(chunk.code, { lang: 'ts', sourceType: 'module' })
-        const importBindings = getAllImportBindings(ast)
-        if (
-          chunk.fileName.startsWith('module-runner') ||
-          // index and moduleRunner have a common chunk "moduleRunnerTransport"
-          chunk.fileName.startsWith('moduleRunnerTransport') ||
-          chunk.fileName.startsWith('types.d-')
-        ) {
-          validateRunnerChunk.call(this, chunk, importBindings)
-        } else {
-          validateChunkImports.call(this, chunk, importBindings)
-          replaceConfusingTypeNames.call(this, chunk, importBindings)
-          stripInternalTypes.call(this, chunk)
-          cleanUnnecessaryComments(chunk)
+          const ast = parseAst(chunk.code, { lang: 'ts', sourceType: 'module' })
+          const importBindings = getAllImportBindings(ast)
+          if (
+            chunk.fileName.startsWith('module-runner') ||
+            // index and moduleRunner have a common chunk "moduleRunnerTransport"
+            chunk.fileName.startsWith('moduleRunnerTransport') ||
+            chunk.fileName.startsWith('types.d-')
+          ) {
+            validateRunnerChunk.call(this, chunk, importBindings)
+          } else {
+            validateChunkImports.call(this, chunk, importBindings)
+            replaceConfusingTypeNames.call(this, chunk, importBindings)
+            stripInternalTypes.call(this, chunk)
+            cleanUnnecessaryComments(chunk)
+          }
         }
-      }
+      },
     },
   }
 }
