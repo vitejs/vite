@@ -114,7 +114,7 @@ function patchTypes(): Plugin {
     resolveId: {
       order: 'pre',
       filter: {
-        id: /^(dep-)*types\//,
+        id: /^(dep-)?types\//,
       },
       handler(id) {
         // Dep types should be bundled
