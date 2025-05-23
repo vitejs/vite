@@ -7,6 +7,7 @@ import {
   flattenId,
   isBuiltin,
   isExternalUrl,
+  isNodeBuiltin,
   moduleListContains,
   normalizePath,
 } from '../utils'
@@ -338,11 +339,8 @@ export function esbuildCjsExternalPlugin(
         (args) => ({
           contents: `\
 import * as m from ${JSON.stringify(nonFacadePrefix + args.path)};
-if (typeof m.default === 'function') {
-  module.exports = m.default;
-} else {
-  module.exports = { ...m };
-}`,
+module.exports = ${isNodeBuiltin(args.path) ? 'm.default' : '{ ...m }'};
+`,
         }),
       )
     },

@@ -1,5 +1,5 @@
 {
-  "name": "@vitejs/test-dep-esm-external-with-function-default-export",
+  "name": "@vitejs/test-dep-esm-dummy-node-builtin",
   "private": true,
   "version": "0.0.0",
   "main": "index.js",

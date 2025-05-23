@@ -317,15 +317,15 @@
   <span class="dep-cjs-with-external-deps-object">???</span>
 </div>
 <div>
-  require('some-external-sub-dependency') returns a function if the default
-  export is a function:
-  <span class="dep-cjs-with-external-deps-function">???</span>
+  require('some-external-sub-dependency') returns the default export if the
+  dependency is a Node builtin:
+  <span class="dep-cjs-with-external-deps-node-builtin">???</span>
 </div>
 <script type="module">
   import * as optimized from '@vitejs/test-dep-cjs-with-external-deps'
   text('.dep-cjs-with-external-deps-object', optimized.externalResult)
   text(
-    '.dep-cjs-with-external-deps-function',
-    optimized.externalWithFunctionDefaultExportResult,
+    '.dep-cjs-with-external-deps-node-builtin',
+    optimized.externalDummyNodeBuiltinResult,
   )
 </script>

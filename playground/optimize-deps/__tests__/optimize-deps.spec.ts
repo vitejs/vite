@@ -370,6 +370,6 @@ test('dependency with external sub-dependencies', async () => {
     page.textContent('.dep-cjs-with-external-deps-object'),
   ).toBe('ok')
   await expectWithRetry(() =>
-    page.textContent('.dep-cjs-with-external-deps-function'),
-  ).toBe('ok')
+    page.textContent('.dep-cjs-with-external-deps-node-builtin'),
+  ).toBe('foo bar')
 })
