@@ -10,6 +10,11 @@
 
 @var: '/ok.png';
 .less-url-starts-with-variable {
+  background: url(@var);
+  background-position: center;
+}
+
+.less-url-starts-with-interpolation {
   background: url('@{var}');
   background-position: center;
 }

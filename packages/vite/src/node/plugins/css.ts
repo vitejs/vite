@@ -51,7 +51,7 @@ import {
   CLIENT_PUBLIC_PATH,
   CSS_LANGS_RE,
   DEV_PROD_CONDITION,
-  ESBUILD_MODULES_TARGET,
+  ESBUILD_BASELINE_WIDELY_AVAILABLE_TARGET,
   SPECIAL_QUERY_RE,
 } from '../constants'
 import type { ResolvedConfig } from '../config'
@@ -218,7 +218,9 @@ export function resolveCSSOptions(
   const resolved = mergeWithDefaults(cssConfigDefaults, options ?? {})
   if (resolved.transformer === 'lightningcss') {
     resolved.lightningcss ??= {}
-    resolved.lightningcss.targets ??= convertTargets(ESBUILD_MODULES_TARGET)
+    resolved.lightningcss.targets ??= convertTargets(
+      ESBUILD_BASELINE_WIDELY_AVAILABLE_TARGET,
+    )
   }
   return resolved
 }
@@ -1899,10 +1901,15 @@ type CssUrlResolver = (
 ) =>
   | [url: string, id: string | undefined]
   | Promise<[url: string, id: string | undefined]>
+/**
+ * replace URL references
+ *
+ * When returning `false`, it keeps the content as-is
+ */
 type CssUrlReplacer = (
-  url: string,
-  importer?: string,
-) => string | Promise<string>
+  unquotedUrl: string,
+  rawUrl: string,
+) => string | false | Promise<string | false>
 // https://drafts.csswg.org/css-syntax-3/#identifier-code-point
 export const cssUrlRE =
   /(?<!@import\s+)(?<=^|[^\w\-\u0080-\uffff])url\((\s*('[^']+'|"[^"]+")\s*|[^'")]+)\)/
@@ -2032,12 +2039,12 @@ async function rewriteCssImageSet(
     return url
   })
 }
-function skipUrlReplacer(rawUrl: string) {
+function skipUrlReplacer(unquotedUrl: string) {
   return (
-    isExternalUrl(rawUrl) ||
-    isDataUrl(rawUrl) ||
-    rawUrl[0] === '#' ||
-    functionCallRE.test(rawUrl)
+    isExternalUrl(unquotedUrl) ||
+    isDataUrl(unquotedUrl) ||
+    unquotedUrl[0] === '#' ||
+    functionCallRE.test(unquotedUrl)
   )
 }
 async function doUrlReplace(
@@ -2048,16 +2055,20 @@ async function doUrlReplace(
 ) {
   let wrap = ''
   const first = rawUrl[0]
+  let unquotedUrl = rawUrl
   if (first === `"` || first === `'`) {
     wrap = first
-    rawUrl = rawUrl.slice(1, -1)
+    unquotedUrl = rawUrl.slice(1, -1)
   }
-
-  if (skipUrlReplacer(rawUrl)) {
+  if (skipUrlReplacer(unquotedUrl)) {
     return matched
   }
 
-  let newUrl = await replacer(rawUrl)
+  let newUrl = await replacer(unquotedUrl, rawUrl)
+  if (newUrl === false) {
+    return matched
+  }
+
   // The new url might need wrapping even if the original did not have it, e.g. if a space was added during replacement
   if (wrap === '' && newUrl !== encodeURI(newUrl)) {
     wrap = '"'
@@ -2081,16 +2092,22 @@ async function doImportCSSReplace(
 ) {
   let wrap = ''
   const first = rawUrl[0]
+  let unquotedUrl = rawUrl
   if (first === `"` || first === `'`) {
     wrap = first
-    rawUrl = rawUrl.slice(1, -1)
+    unquotedUrl = rawUrl.slice(1, -1)
   }
-  if (isExternalUrl(rawUrl) || isDataUrl(rawUrl) || rawUrl[0] === '#') {
+  if (skipUrlReplacer(unquotedUrl)) {
+    return matched
+  }
+
+  const newUrl = await replacer(unquotedUrl, rawUrl)
+  if (newUrl === false) {
     return matched
   }
 
   const prefix = matched.includes('url(') ? 'url(' : ''
-  return `@import ${prefix}${wrap}${await replacer(rawUrl)}${wrap}`
+  return `@import ${prefix}${wrap}${newUrl}${wrap}`
 }
 
 async function minifyCSS(
@@ -2350,7 +2367,7 @@ function loadSss(root: string): PostCSS.Syntax {
   if (cachedSss) return cachedSss
 
   const sssPath = loadPreprocessorPath(PostCssDialectLang.sss, root)
-  cachedSss = createRequire(import.meta.url)(sssPath)
+  cachedSss = createRequire(/** #__KEEP__ */ import.meta.url)(sssPath)
   return cachedSss
 }
 
@@ -2412,6 +2429,16 @@ const makeScssWorker = (
       sassOptions.url = pathToFileURL(options.filename)
       sassOptions.sourceMap = options.enableSourcemap
 
+      const skipRebaseUrls = (unquotedUrl: string, rawUrl: string) => {
+        const isQuoted = rawUrl[0] === '"' || rawUrl[0] === "'"
+        // matches `url($foo)`
+        if (!isQuoted && unquotedUrl[0] === '$') {
+          return true
+        }
+        // matches `url(#{foo})` and `url('#{foo}')`
+        return unquotedUrl.startsWith('#{')
+      }
+
       const internalImporter: Sass.Importer<'async'> = {
         async canonicalize(url, context) {
           const importer = context.containingUrl
@@ -2445,8 +2472,8 @@ const makeScssWorker = (
             fileURLToPath(canonicalUrl),
             options.filename,
             alias,
-            '$',
             resolvers.sass,
+            skipRebaseUrls,
           )
           const contents =
             result.contents ?? (await fsp.readFile(result.file, 'utf-8'))
@@ -2571,8 +2598,8 @@ async function rebaseUrls(
   file: string,
   rootFile: string,
   alias: Alias[],
-  variablePrefix: string,
   resolver: ResolveIdFn,
+  ignoreUrl?: (unquotedUrl: string, rawUrl: string) => boolean,
 ): Promise<{ file: string; contents?: string }> {
   file = path.resolve(file) // ensure os-specific flashes
   // in the same dir, no need to rebase
@@ -2595,20 +2622,22 @@ async function rebaseUrls(
   }
 
   let rebased
-  const rebaseFn = async (url: string) => {
-    if (url[0] === '/') return url
-    // ignore url's starting with variable
-    if (url.startsWith(variablePrefix)) return url
+  const rebaseFn = async (unquotedUrl: string, rawUrl: string) => {
+    if (ignoreUrl?.(unquotedUrl, rawUrl)) return false
+    if (unquotedUrl[0] === '/') return unquotedUrl
     // match alias, no need to rewrite
     for (const { find } of alias) {
       const matches =
-        typeof find === 'string' ? url.startsWith(find) : find.test(url)
+        typeof find === 'string'
+          ? unquotedUrl.startsWith(find)
+          : find.test(unquotedUrl)
       if (matches) {
-        return url
+        return unquotedUrl
       }
     }
     const absolute =
-      (await resolver(environment, url, file)) || path.resolve(fileDir, url)
+      (await resolver(environment, unquotedUrl, file)) ||
+      path.resolve(fileDir, unquotedUrl)
     const relative = path.relative(rootDir, absolute)
     return normalizePath(relative)
   }
@@ -2640,6 +2669,13 @@ const makeLessWorker = (
   alias: Alias[],
   maxWorkers: number | undefined,
 ) => {
+  const skipRebaseUrls = (unquotedUrl: string, _rawUrl: string) => {
+    // matches both
+    // - interpolation: `url('@{foo}')`
+    // - variable: `url(@foo)`
+    return unquotedUrl[0] === '@'
+  }
+
   const viteLessResolve = async (
     filename: string,
     dir: string,
@@ -2664,8 +2700,8 @@ const makeLessWorker = (
       resolved,
       rootFile,
       alias,
-      '@',
       resolvers.less,
+      skipRebaseUrls,
     )
     return {
       resolved,
