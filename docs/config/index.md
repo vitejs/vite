@@ -122,6 +122,26 @@ export default defineConfig(({ mode }) => {
 })
 ```
 
+You will also need to update your `vitest.config.ts` file to pass through the `env` variable to your vite config file.
+
+```js twoslash
+import { fileURLToPath } from 'node:url'
+import { mergeConfig, defineConfig, configDefaults } from 'vitest/config'
+import viteConfig from './vite.config'
+
+export default defineConfig((env) => mergeConfig(
+  viteConfig(env),
+  defineConfig({
+    test: {
+      environment: 'jsdom',
+      exclude: [...configDefaults.exclude, 'e2e/**'],
+      root: fileURLToPath(new URL('./', import.meta.url)),
+    },
+  }),
+));
+
+```
+
 ## Debugging the Config File on VS Code
 
 With the default `--configLoader bundle` behavior, Vite writes the generated temporary configuration file to the `node_modules/.vite-temp` folder and a file not found error will occur when setting breakpoint debugging in the Vite config file. To fix the issue, add the following configuration to `.vscode/settings.json`:
