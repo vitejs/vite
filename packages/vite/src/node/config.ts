@@ -253,7 +253,7 @@ export interface SharedEnvironmentOptions {
    */
   resolve?: EnvironmentResolveOptions
   /**
-   * Define if this environment is used for Server Side Rendering
+   * Define if this environment is used for Server-Side Rendering
    * @default 'server' if it isn't the client environment
    */
   consumer?: 'client' | 'server'
