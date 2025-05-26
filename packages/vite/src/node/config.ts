@@ -106,6 +106,7 @@ import { getAdditionalAllowedHosts } from './server/middlewares/hostCheck'
 
 const debug = createDebugger('vite:config', { depth: 10 })
 const promisifiedRealpath = promisify(fs.realpath)
+const SYMBOL_RESOLVED_CONFIG = Symbol('vite:resolved-config')
 
 export interface ConfigEnv {
   /**
@@ -252,7 +253,7 @@ export interface SharedEnvironmentOptions {
    */
   resolve?: EnvironmentResolveOptions
   /**
-   * Define if this environment is used for Server Side Rendering
+   * Define if this environment is used for Server-Side Rendering
    * @default 'server' if it isn't the client environment
    */
   consumer?: 'client' | 'server'
@@ -513,17 +514,6 @@ export interface ExperimentalOptions {
 
 export interface LegacyOptions {
   /**
-   * In Vite 4, SSR-externalized modules (modules not bundled and loaded by Node.js at runtime)
-   * are implicitly proxied in dev to automatically handle `default` and `__esModule` access.
-   * However, this does not correctly reflect how it works in the Node.js runtime, causing
-   * inconsistencies between dev and prod.
-   *
-   * In Vite 5, the proxy is removed so dev and prod are consistent, but if you still require
-   * the old behaviour, you can enable this option. If so, please leave your feedback at
-   * https://github.com/vitejs/vite/discussions/14697.
-   */
-  proxySsrExternalModules?: boolean
-  /**
    * In Vite 6.0.8 and below, WebSocket server was able to connect from any web pages. However,
    * that could be exploited by a malicious web page.
    *
@@ -640,7 +630,7 @@ export interface ResolvedConfig
       /** @internal */
       safeModulePaths: Set<string>
       /** @internal */
-      additionalAllowedHosts: string[]
+      [SYMBOL_RESOLVED_CONFIG]: true
     } & PluginHookUtils
   > {}
 
@@ -716,7 +706,6 @@ export const configDefaults = Object.freeze({
     removeSsrLoadModule: undefined,
   },
   legacy: {
-    proxySsrExternalModules: false,
     skipWebSocketTokenCheck: false,
   },
   logLevel: 'info',
@@ -1041,6 +1030,15 @@ function resolveDepOptimizationOptions(
       force: forceOptimizeDeps ?? configDefaults.optimizeDeps.force,
     },
     optimizeDeps ?? {},
+  )
+}
+
+export function isResolvedConfig(
+  inlineConfig: InlineConfig | ResolvedConfig,
+): inlineConfig is ResolvedConfig {
+  return (
+    SYMBOL_RESOLVED_CONFIG in inlineConfig &&
+    inlineConfig[SYMBOL_RESOLVED_CONFIG]
   )
 }
 
@@ -1452,6 +1450,14 @@ export async function resolveConfig(
 
   const preview = resolvePreviewOptions(config.preview, server)
 
+  const additionalAllowedHosts = getAdditionalAllowedHosts(server, preview)
+  if (Array.isArray(server.allowedHosts)) {
+    server.allowedHosts.push(...additionalAllowedHosts)
+  }
+  if (Array.isArray(preview.allowedHosts)) {
+    preview.allowedHosts.push(...additionalAllowedHosts)
+  }
+
   resolved = {
     configFile: configFile ? normalizePath(configFile) : undefined,
     configFileDependencies: configFileDependencies.map((name) =>
@@ -1554,7 +1560,7 @@ export async function resolveConfig(
       },
     ),
     safeModulePaths: new Set<string>(),
-    additionalAllowedHosts: getAdditionalAllowedHosts(server, preview),
+    [SYMBOL_RESOLVED_CONFIG]: true,
   }
   resolved = {
     ...config,
@@ -2008,7 +2014,7 @@ interface NodeModuleWithCompile extends NodeModule {
   _compile(code: string, filename: string): any
 }
 
-const _require = createRequire(import.meta.url)
+const _require = createRequire(/** #__KEEP__ */ import.meta.url)
 async function loadConfigFromBundledFile(
   fileName: string,
   bundledCode: string,

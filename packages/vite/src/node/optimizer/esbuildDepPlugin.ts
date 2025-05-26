@@ -6,13 +6,14 @@ import {
   escapeRegex,
   flattenId,
   isBuiltin,
+  isCSSRequest,
   isExternalUrl,
   isNodeBuiltin,
   moduleListContains,
   normalizePath,
 } from '../utils'
 import { browserExternalId, optionalPeerDepId } from '../plugins/resolve'
-import { isCSSRequest, isModuleCSSRequest } from '../plugins/css'
+import { isModuleCSSRequest } from '../plugins/css'
 import type { Environment } from '../environment'
 import { createBackCompatIdResolver } from '../idResolver'
 

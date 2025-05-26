@@ -21,7 +21,6 @@ import type * as PostCSS from 'postcss'
 import type Sass from 'sass'
 import type Stylus from 'stylus'
 import type Less from 'less'
-import type { Alias } from 'dep-types/alias'
 import type { LightningCSSOptions } from 'types/internal/lightningcssOptions'
 import type { TransformOptions } from 'esbuild'
 import { formatMessages, transform } from 'esbuild'
@@ -30,7 +29,6 @@ import { WorkerWithFallback } from 'artichokie'
 import { globSync } from 'tinyglobby'
 import type {
   LessPreprocessorBaseOptions,
-  SassLegacyPreprocessBaseOptions,
   SassModernPreprocessBaseOptions,
   StylusPreprocessorBaseOptions,
 } from 'types/internal/cssPreprocessorOptions'
@@ -52,7 +50,7 @@ import {
   CLIENT_PUBLIC_PATH,
   CSS_LANGS_RE,
   DEV_PROD_CONDITION,
-  ESBUILD_MODULES_TARGET,
+  ESBUILD_BASELINE_WIDELY_AVAILABLE_TARGET,
   SPECIAL_QUERY_RE,
 } from '../constants'
 import type { ResolvedConfig } from '../config'
@@ -71,6 +69,7 @@ import {
   getPackageManagerCommand,
   getPkgName,
   injectQuery,
+  isCSSRequest,
   isDataUrl,
   isExternalUrl,
   isObject,
@@ -218,7 +217,9 @@ export function resolveCSSOptions(
   const resolved = mergeWithDefaults(cssConfigDefaults, options ?? {})
   if (resolved.transformer === 'lightningcss') {
     resolved.lightningcss ??= {}
-    resolved.lightningcss.targets ??= convertTargets(ESBUILD_MODULES_TARGET)
+    resolved.lightningcss.targets ??= convertTargets(
+      ESBUILD_BASELINE_WIDELY_AVAILABLE_TARGET,
+    )
   }
   return resolved
 }
@@ -255,9 +256,6 @@ type CssLang =
   | keyof typeof PureCssLang
   | keyof typeof PreprocessLang
   | keyof typeof PostCssDialectLang
-
-export const isCSSRequest = (request: string): boolean =>
-  CSS_LANGS_RE.test(request)
 
 export const isModuleCSSRequest = (request: string): boolean =>
   cssModuleRE.test(request)
@@ -314,7 +312,7 @@ export function cssPlugin(config: ResolvedConfig): Plugin {
     })
   }
 
-  const plugin: Plugin = {
+  return {
     name: 'vite:css',
 
     buildStart() {
@@ -364,93 +362,84 @@ export function cssPlugin(config: ResolvedConfig): Plugin {
         }
       },
     },
-  }
+    transform: {
+      async handler(raw, id) {
+        if (
+          !isCSSRequest(id) ||
+          commonjsProxyRE.test(id) ||
+          SPECIAL_QUERY_RE.test(id)
+        ) {
+          return
+        }
 
-  const transformHook: Plugin['transform'] = {
-    async handler(raw, id) {
-      if (
-        !isCSSRequest(id) ||
-        commonjsProxyRE.test(id) ||
-        SPECIAL_QUERY_RE.test(id)
-      ) {
-        return
-      }
+        const { environment } = this
+        const resolveUrl = (url: string, importer?: string) =>
+          idResolver(environment, url, importer)
 
-      const { environment } = this
-      const resolveUrl = (url: string, importer?: string) =>
-        idResolver(environment, url, importer)
-
-      const urlResolver: CssUrlResolver = async (url, importer) => {
-        const decodedUrl = decodeURI(url)
-        if (checkPublicFile(decodedUrl, config)) {
-          if (encodePublicUrlsInCSS(config)) {
-            return [publicFileToBuiltUrl(decodedUrl, config), undefined]
-          } else {
-            return [joinUrlSegments(config.base, decodedUrl), undefined]
+        const urlResolver: CssUrlResolver = async (url, importer) => {
+          const decodedUrl = decodeURI(url)
+          if (checkPublicFile(decodedUrl, config)) {
+            if (encodePublicUrlsInCSS(config)) {
+              return [publicFileToBuiltUrl(decodedUrl, config), undefined]
+            } else {
+              return [joinUrlSegments(config.base, decodedUrl), undefined]
+            }
           }
-        }
-        const [id, fragment] = decodedUrl.split('#')
-        let resolved = await resolveUrl(id, importer)
-        if (resolved) {
-          if (fragment) resolved += '#' + fragment
-          return [await fileToUrl(this, resolved), resolved]
-        }
-        if (config.command === 'build') {
-          const isExternal = config.build.rollupOptions.external
-            ? resolveUserExternal(
-                config.build.rollupOptions.external,
-                decodedUrl, // use URL as id since id could not be resolved
-                id,
-                false,
+          const [id, fragment] = decodedUrl.split('#')
+          let resolved = await resolveUrl(id, importer)
+          if (resolved) {
+            if (fragment) resolved += '#' + fragment
+            return [await fileToUrl(this, resolved), resolved]
+          }
+          if (config.command === 'build') {
+            const isExternal = config.build.rollupOptions.external
+              ? resolveUserExternal(
+                  config.build.rollupOptions.external,
+                  decodedUrl, // use URL as id since id could not be resolved
+                  id,
+                  false,
+                )
+              : false
+
+            if (!isExternal) {
+              // #9800 If we cannot resolve the css url, leave a warning.
+              config.logger.warnOnce(
+                `\n${decodedUrl} referenced in ${id} didn't resolve at build time, it will remain unchanged to be resolved at runtime`,
               )
-            : false
+            }
+          }
+          return [url, undefined]
+        }
 
-          if (!isExternal) {
-            // #9800 If we cannot resolve the css url, leave a warning.
-            config.logger.warnOnce(
-              `\n${decodedUrl} referenced in ${id} didn't resolve at build time, it will remain unchanged to be resolved at runtime`,
-            )
+        const {
+          code: css,
+          modules,
+          deps,
+          map,
+        } = await compileCSS(
+          environment,
+          id,
+          raw,
+          preprocessorWorkerController!,
+          urlResolver,
+        )
+        if (modules) {
+          moduleCache.set(id, modules)
+        }
+
+        if (deps) {
+          for (const file of deps) {
+            this.addWatchFile(file)
           }
         }
-        return [url, undefined]
-      }
 
-      const {
-        code: css,
-        modules,
-        deps,
-        map,
-      } = await compileCSS(
-        environment,
-        id,
-        raw,
-        preprocessorWorkerController!,
-        urlResolver,
-      )
-      if (modules) {
-        moduleCache.set(id, modules)
-      }
-
-      if (deps) {
-        for (const file of deps) {
-          this.addWatchFile(file)
+        return {
+          code: css,
+          map,
         }
-      }
-
-      return {
-        code: css,
-        map,
-      }
+      },
     },
   }
-
-  // for backward compat, make `plugin.transform` a function
-  // but still keep the `handler` property
-  // so that we can use `filter` property in the future
-  plugin.transform = transformHook.handler
-  ;(plugin.transform as any).handler = transformHook.handler
-
-  return plugin
 }
 
 /**
@@ -510,7 +499,7 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
     return cssBundleName
   }
 
-  const plugin = {
+  return {
     name: 'vite:css-post',
 
     renderStart() {
@@ -1078,14 +1067,7 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
         }
       }
     },
-  } satisfies Plugin
-
-  // backward compat
-  const handler = plugin.transform.handler
-  ;(plugin as any).transform = handler
-  ;(plugin as any).transform.handler = handler
-
-  return plugin
+  }
 }
 
 export function cssAnalysisPlugin(config: ResolvedConfig): Plugin {
@@ -1294,7 +1276,6 @@ async function compileCSSPreprocessors(
   )
   const opts = {
     ...((preprocessorOptions && preprocessorOptions[lang]) || {}),
-    alias: config.resolve.alias,
     // important: set this for relative import resolving
     filename: cleanUrl(id),
     enableSourcemap: devSourcemap ?? false,
@@ -1918,10 +1899,15 @@ type CssUrlResolver = (
 ) =>
   | [url: string, id: string | undefined]
   | Promise<[url: string, id: string | undefined]>
+/**
+ * replace URL references
+ *
+ * When returning `false`, it keeps the content as-is
+ */
 type CssUrlReplacer = (
-  url: string,
-  importer?: string,
-) => string | Promise<string>
+  unquotedUrl: string,
+  rawUrl: string,
+) => string | false | Promise<string | false>
 // https://drafts.csswg.org/css-syntax-3/#identifier-code-point
 export const cssUrlRE =
   /(?<!@import\s+)(?<=^|[^\w\-\u0080-\uffff])url\((\s*('[^']+'|"[^"]+")\s*|[^'")]+)\)/
@@ -2051,12 +2037,12 @@ async function rewriteCssImageSet(
     return url
   })
 }
-function skipUrlReplacer(rawUrl: string) {
+function skipUrlReplacer(unquotedUrl: string) {
   return (
-    isExternalUrl(rawUrl) ||
-    isDataUrl(rawUrl) ||
-    rawUrl[0] === '#' ||
-    functionCallRE.test(rawUrl)
+    isExternalUrl(unquotedUrl) ||
+    isDataUrl(unquotedUrl) ||
+    unquotedUrl[0] === '#' ||
+    functionCallRE.test(unquotedUrl)
   )
 }
 async function doUrlReplace(
@@ -2067,16 +2053,20 @@ async function doUrlReplace(
 ) {
   let wrap = ''
   const first = rawUrl[0]
+  let unquotedUrl = rawUrl
   if (first === `"` || first === `'`) {
     wrap = first
-    rawUrl = rawUrl.slice(1, -1)
+    unquotedUrl = rawUrl.slice(1, -1)
   }
-
-  if (skipUrlReplacer(rawUrl)) {
+  if (skipUrlReplacer(unquotedUrl)) {
     return matched
   }
 
-  let newUrl = await replacer(rawUrl)
+  let newUrl = await replacer(unquotedUrl, rawUrl)
+  if (newUrl === false) {
+    return matched
+  }
+
   // The new url might need wrapping even if the original did not have it, e.g. if a space was added during replacement
   if (wrap === '' && newUrl !== encodeURI(newUrl)) {
     wrap = '"'
@@ -2100,16 +2090,22 @@ async function doImportCSSReplace(
 ) {
   let wrap = ''
   const first = rawUrl[0]
+  let unquotedUrl = rawUrl
   if (first === `"` || first === `'`) {
     wrap = first
-    rawUrl = rawUrl.slice(1, -1)
+    unquotedUrl = rawUrl.slice(1, -1)
   }
-  if (isExternalUrl(rawUrl) || isDataUrl(rawUrl) || rawUrl[0] === '#') {
+  if (skipUrlReplacer(unquotedUrl)) {
+    return matched
+  }
+
+  const newUrl = await replacer(unquotedUrl, rawUrl)
+  if (newUrl === false) {
     return matched
   }
 
   const prefix = matched.includes('url(') ? 'url(' : ''
-  return `@import ${prefix}${wrap}${await replacer(rawUrl)}${wrap}`
+  return `@import ${prefix}${wrap}${newUrl}${wrap}`
 }
 
 async function minifyCSS(
@@ -2270,10 +2266,7 @@ type PreprocessorAdditionalData =
 
 export type SassPreprocessorOptions = {
   additionalData?: PreprocessorAdditionalData
-} & (
-  | ({ api: 'legacy' } & SassLegacyPreprocessBaseOptions)
-  | ({ api?: 'modern' | 'modern-compiler' } & SassModernPreprocessBaseOptions)
-)
+} & ({ api?: 'modern' | 'modern-compiler' } & SassModernPreprocessBaseOptions)
 
 export type LessPreprocessorOptions = {
   additionalData?: PreprocessorAdditionalData
@@ -2286,7 +2279,6 @@ export type StylusPreprocessorOptions = {
 type StylePreprocessorInternalOptions = {
   maxWorkers?: number | true
   filename: string
-  alias: Alias[]
   enableSourcemap: boolean
 }
 
@@ -2372,7 +2364,7 @@ function loadSss(root: string): PostCSS.Syntax {
   if (cachedSss) return cachedSss
 
   const sssPath = loadPreprocessorPath(PostCssDialectLang.sss, root)
-  cachedSss = createRequire(import.meta.url)(sssPath)
+  cachedSss = createRequire(/** #__KEEP__ */ import.meta.url)(sssPath)
   return cachedSss
 }
 
@@ -2395,153 +2387,11 @@ function cleanScssBugUrl(url: string) {
   }
 }
 
-function fixScssBugImportValue(
-  data: Sass.LegacyImporterResult,
-): Sass.LegacyImporterResult {
-  // the scss bug doesn't load files properly so we have to load it ourselves
-  // to prevent internal error when it loads itself
-  if (
-    // check bug via `window` and `location` global
-    typeof window !== 'undefined' &&
-    typeof location !== 'undefined' &&
-    data &&
-    'file' in data &&
-    (!('contents' in data) || data.contents == null)
-  ) {
-    // @ts-expect-error we need to preserve file property for HMR
-    data.contents = fs.readFileSync(data.file, 'utf-8')
-  }
-  return data
-}
-
 // #region Sass
 // .scss/.sass processor
-const makeScssWorker = (
-  environment: PartialEnvironment,
-  resolvers: CSSAtImportResolvers,
-  alias: Alias[],
-  maxWorkers: number | undefined,
-  packageName: 'sass' | 'sass-embedded',
-) => {
-  const internalImporter = async (
-    url: string,
-    importer: string,
-    filename: string,
-  ) => {
-    importer = cleanScssBugUrl(importer)
-    const resolved = await resolvers.sass(environment, url, importer)
-    if (resolved) {
-      try {
-        const data = await rebaseUrls(
-          environment,
-          resolved,
-          filename,
-          alias,
-          '$',
-          resolvers.sass,
-        )
-        if (packageName === 'sass-embedded') {
-          return data
-        }
-        return fixScssBugImportValue(data)
-      } catch (data) {
-        return data
-      }
-    } else {
-      return null
-    }
-  }
-
-  const worker = new WorkerWithFallback(
-    () =>
-      async (
-        sassPath: string,
-        data: string,
-        // additionalData can a function that is not cloneable but it won't be used
-        options: SassStylePreprocessorInternalOptions & {
-          api: 'legacy'
-          additionalData: undefined
-        },
-      ) => {
-        // eslint-disable-next-line no-restricted-globals -- this function runs inside a cjs worker
-        const sass: typeof Sass = require(sassPath)
-        // eslint-disable-next-line no-restricted-globals
-        const path: typeof import('node:path') = require('node:path')
-
-        // NOTE: `sass` always runs it's own importer first, and only falls back to
-        // the `importer` option when it can't resolve a path
-        const _internalImporter: Sass.LegacyAsyncImporter = (
-          url,
-          importer,
-          done,
-        ) => {
-          internalImporter(url, importer, options.filename).then((data) =>
-            done(data),
-          )
-        }
-        const importer = [_internalImporter]
-        if (options.importer) {
-          if (Array.isArray(options.importer)) {
-            importer.unshift(...options.importer)
-          } else {
-            importer.unshift(options.importer)
-          }
-        }
-
-        const finalOptions: Sass.LegacyOptions<'async'> = {
-          // support @import from node dependencies by default
-          includePaths: ['node_modules'],
-          ...options,
-          data,
-          file: options.filename,
-          outFile: options.filename,
-          importer,
-          ...(options.enableSourcemap
-            ? {
-                sourceMap: true,
-                omitSourceMapUrl: true,
-                sourceMapRoot: path.dirname(options.filename),
-              }
-            : {}),
-        }
-        return new Promise<ScssWorkerResult>((resolve, reject) => {
-          sass.render(finalOptions, (err, res) => {
-            if (err) {
-              reject(err)
-            } else {
-              resolve({
-                css: res!.css.toString(),
-                map: res!.map?.toString(),
-                stats: res!.stats,
-              })
-            }
-          })
-        })
-      },
-    {
-      parentFunctions: { internalImporter },
-      shouldUseFake(_sassPath, _data, options) {
-        // functions and importer is a function and is not serializable
-        // in that case, fallback to running in main thread
-        return !!(
-          (options.functions && Object.keys(options.functions).length > 0) ||
-          (options.importer &&
-            (!Array.isArray(options.importer) ||
-              options.importer.length > 0)) ||
-          options.logger ||
-          options.pkgImporter
-        )
-      },
-      max: maxWorkers,
-    },
-  )
-  return worker
-}
-
 const makeModernScssWorker = (
   environment: PartialEnvironment,
   resolvers: CSSAtImportResolvers,
-  alias: Alias[],
   maxWorkers: number | undefined,
 ) => {
   const internalCanonicalize = async (
@@ -2553,14 +2403,23 @@ const makeModernScssWorker = (
     return resolved ?? null
   }
 
+  const skipRebaseUrls = (unquotedUrl: string, rawUrl: string) => {
+    const isQuoted = rawUrl[0] === '"' || rawUrl[0] === "'"
+    // matches `url($foo)`
+    if (!isQuoted && unquotedUrl[0] === '$') {
+      return true
+    }
+    // matches `url(#{foo})` and `url('#{foo}')`
+    return unquotedUrl.startsWith('#{')
+  }
+
   const internalLoad = async (file: string, rootFile: string) => {
     const result = await rebaseUrls(
       environment,
       file,
       rootFile,
-      alias,
-      '$',
       resolvers.sass,
+      skipRebaseUrls,
     )
     if (result.contents) {
       return result.contents
@@ -2672,7 +2531,6 @@ const makeModernScssWorker = (
 const makeModernCompilerScssWorker = (
   environment: PartialEnvironment,
   resolvers: CSSAtImportResolvers,
-  alias: Alias[],
   _maxWorkers: number | undefined,
 ) => {
   let compilerPromise: Promise<Sass.AsyncCompiler> | undefined
@@ -2689,6 +2547,16 @@ const makeModernCompilerScssWorker = (
       const sassOptions = { ...options } as Sass.StringOptions<'async'>
       sassOptions.url = pathToFileURL(options.filename)
       sassOptions.sourceMap = options.enableSourcemap
+
+      const skipRebaseUrls = (unquotedUrl: string, rawUrl: string) => {
+        const isQuoted = rawUrl[0] === '"' || rawUrl[0] === "'"
+        // matches `url($foo)`
+        if (!isQuoted && unquotedUrl[0] === '$') {
+          return true
+        }
+        // matches `url(#{foo})` and `url('#{foo}')`
+        return unquotedUrl.startsWith('#{')
+      }
 
       const internalImporter: Sass.Importer<'async'> = {
         async canonicalize(url, context) {
@@ -2722,9 +2590,8 @@ const makeModernCompilerScssWorker = (
             environment,
             fileURLToPath(canonicalUrl),
             options.filename,
-            alias,
-            '$',
             resolvers.sass,
+            skipRebaseUrls,
           )
           const contents =
             result.contents ?? (await fsp.readFile(result.file, 'utf-8'))
@@ -2759,60 +2626,31 @@ const makeModernCompilerScssWorker = (
 type ScssWorkerResult = {
   css: string
   map?: string | undefined
-  stats: Pick<Sass.LegacyResult['stats'], 'includedFiles'>
+  stats: { includedFiles: string[] }
 }
 
 const scssProcessor = (
   maxWorkers: number | undefined,
 ): StylePreprocessor<SassStylePreprocessorInternalOptions> => {
-  const workerMap = new Map<
-    unknown,
-    ReturnType<
-      | typeof makeScssWorker
-      | typeof makeModernScssWorker
-      | typeof makeModernCompilerScssWorker
-    >
-  >()
+  let worker:
+    | ReturnType<
+        typeof makeModernScssWorker | typeof makeModernCompilerScssWorker
+      >
+    | undefined
 
   return {
     close() {
-      for (const worker of workerMap.values()) {
-        worker.stop()
-      }
+      worker?.stop()
     },
     async process(environment, source, root, options, resolvers) {
       const sassPackage = loadSassPackage(root)
       const api =
         options.api ??
         (sassPackage.name === 'sass-embedded' ? 'modern-compiler' : 'modern')
-
-      if (!workerMap.has(options.alias)) {
-        workerMap.set(
-          options.alias,
-          api === 'modern-compiler'
-            ? makeModernCompilerScssWorker(
-                environment,
-                resolvers,
-                options.alias,
-                maxWorkers,
-              )
-            : api === 'modern'
-              ? makeModernScssWorker(
-                  environment,
-                  resolvers,
-                  options.alias,
-                  maxWorkers,
-                )
-              : makeScssWorker(
-                  environment,
-                  resolvers,
-                  options.alias,
-                  maxWorkers,
-                  sassPackage.name,
-                ),
-        )
-      }
-      const worker = workerMap.get(options.alias)!
+      worker ??=
+        api === 'modern-compiler'
+          ? makeModernCompilerScssWorker(environment, resolvers, maxWorkers)
+          : makeModernScssWorker(environment, resolvers, maxWorkers)
 
       const { content: data, map: additionalMap } = await getSource(
         source,
@@ -2879,9 +2717,8 @@ async function rebaseUrls(
   environment: PartialEnvironment,
   file: string,
   rootFile: string,
-  alias: Alias[],
-  variablePrefix: string,
   resolver: ResolveIdFn,
+  ignoreUrl?: (unquotedUrl: string, rawUrl: string) => boolean,
 ): Promise<{ file: string; contents?: string }> {
   file = path.resolve(file) // ensure os-specific flashes
   // in the same dir, no need to rebase
@@ -2904,20 +2741,12 @@ async function rebaseUrls(
   }
 
   let rebased
-  const rebaseFn = async (url: string) => {
-    if (url[0] === '/') return url
-    // ignore url's starting with variable
-    if (url.startsWith(variablePrefix)) return url
-    // match alias, no need to rewrite
-    for (const { find } of alias) {
-      const matches =
-        typeof find === 'string' ? url.startsWith(find) : find.test(url)
-      if (matches) {
-        return url
-      }
-    }
+  const rebaseFn = async (unquotedUrl: string, rawUrl: string) => {
+    if (ignoreUrl?.(unquotedUrl, rawUrl)) return false
+    if (unquotedUrl[0] === '/') return unquotedUrl
     const absolute =
-      (await resolver(environment, url, file)) || path.resolve(fileDir, url)
+      (await resolver(environment, unquotedUrl, file)) ||
+      path.resolve(fileDir, unquotedUrl)
     const relative = path.relative(rootDir, absolute)
     return normalizePath(relative)
   }
@@ -2946,9 +2775,15 @@ async function rebaseUrls(
 const makeLessWorker = (
   environment: PartialEnvironment,
   resolvers: CSSAtImportResolvers,
-  alias: Alias[],
   maxWorkers: number | undefined,
 ) => {
+  const skipRebaseUrls = (unquotedUrl: string, _rawUrl: string) => {
+    // matches both
+    // - interpolation: `url('@{foo}')`
+    // - variable: `url(@foo)`
+    return unquotedUrl[0] === '@'
+  }
+
   const viteLessResolve = async (
     filename: string,
     dir: string,
@@ -2972,9 +2807,8 @@ const makeLessWorker = (
       environment,
       resolved,
       rootFile,
-      alias,
-      '@',
       resolvers.less,
+      skipRebaseUrls,
     )
     return {
       resolved,
@@ -3087,24 +2921,15 @@ const makeLessWorker = (
 const lessProcessor = (
   maxWorkers: number | undefined,
 ): StylePreprocessor<LessStylePreprocessorInternalOptions> => {
-  const workerMap = new Map<unknown, ReturnType<typeof makeLessWorker>>()
+  let worker: ReturnType<typeof makeLessWorker> | undefined
 
   return {
     close() {
-      for (const worker of workerMap.values()) {
-        worker.stop()
-      }
+      worker?.stop()
     },
     async process(environment, source, root, options, resolvers) {
       const lessPath = loadPreprocessorPath(PreprocessLang.less, root)
-
-      if (!workerMap.has(options.alias)) {
-        workerMap.set(
-          options.alias,
-          makeLessWorker(environment, resolvers, options.alias, maxWorkers),
-        )
-      }
-      const worker = workerMap.get(options.alias)!
+      worker ??= makeLessWorker(environment, resolvers, maxWorkers)
 
       const { content, map: additionalMap } = await getSource(
         source,
@@ -3216,21 +3041,15 @@ const makeStylWorker = (maxWorkers: number | undefined) => {
 const stylProcessor = (
   maxWorkers: number | undefined,
 ): StylePreprocessor<StylusStylePreprocessorInternalOptions> => {
-  const workerMap = new Map<unknown, ReturnType<typeof makeStylWorker>>()
+  let worker: ReturnType<typeof makeStylWorker> | undefined
 
   return {
     close() {
-      for (const worker of workerMap.values()) {
-        worker.stop()
-      }
+      worker?.stop()
     },
     async process(_environment, source, root, options, _resolvers) {
       const stylusPath = loadPreprocessorPath(PreprocessLang.stylus, root)
-
-      if (!workerMap.has(options.alias)) {
-        workerMap.set(options.alias, makeStylWorker(maxWorkers))
-      }
-      const worker = workerMap.get(options.alias)!
+      worker ??= makeStylWorker(maxWorkers)
 
       // Get source with preprocessor options.additionalData. Make sure a new line separator
       // is added to avoid any render error, as added stylus content may not have semi-colon separators
@@ -3335,11 +3154,7 @@ const createPreprocessorWorkerController = (maxWorkers: number | undefined) => {
   const sassProcess: StylePreprocessor<SassStylePreprocessorInternalOptions>['process'] =
     (environment, source, root, options, resolvers) => {
       const opts: SassStylePreprocessorInternalOptions = { ...options }
-      if (opts.api === 'legacy') {
-        opts.indentedSyntax = true
-      } else {
-        opts.syntax = 'indented'
-      }
+      opts.syntax = 'indented'
       return scss.process(environment, source, root, opts, resolvers)
     }
 
