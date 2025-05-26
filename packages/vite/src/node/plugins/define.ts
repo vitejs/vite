@@ -118,6 +118,7 @@ export function definePlugin(config: ResolvedConfig): Plugin {
           this.environment,
         )
         define['import.meta.env'] = importMetaEnvVal
+        define['import.meta.env.*'] = 'undefined'
         option.define = define
       },
     }
