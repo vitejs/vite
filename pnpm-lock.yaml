@@ -317,6 +317,9 @@ importers:
       etag:
         specifier: ^1.8.1
         version: 1.8.1
+      host-validation-middleware:
+        specifier: ^0.1.1
+        version: 0.1.1
       http-proxy:
         specifier: ^1.18.1
         version: 1.18.1(patch_hash=8071c23044f455271f4d4074ae4c7b81beec17a03aefd158d5f4edd4ef751c11)(debug@4.4.1)
@@ -5036,6 +5039,10 @@ packages:
 
   hookable@5.5.3:
     resolution: {integrity: sha512-Yc+BQe8SvoXH1643Qez1zqLRmbA5rCL+sSmk6TVos0LWVfNIB7PGncdlId77WzLGSIB5KaWgTaNTs2lNVEI6VQ==}
+
+  host-validation-middleware@0.1.1:
+    resolution: {integrity: sha512-fakcpp+x4nbP0fACY5gaHWpaOfstq3w8uB6wvhbPBLqH9GV/tdiM9Ht5mclZVbUuPLGBw1bkH5yyTD6HZq057g==}
+    engines: {node: ^18.0.0 || >=20.0.0}
 
   hosted-git-info@7.0.2:
     resolution: {integrity: sha512-puUZAUKT5m8Zzvs72XWy3HtvVbTWljRE66cP60bxJzAqf2DgICo7lYTY2IHUmLnNpjYvw5bvmoHvPc0QO2a62w==}
@@ -10734,6 +10741,8 @@ snapshots:
   he@1.2.0: {}
 
   hookable@5.5.3: {}
+
+  host-validation-middleware@0.1.1: {}
 
   hosted-git-info@7.0.2:
     dependencies:

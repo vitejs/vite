@@ -630,8 +630,6 @@ export interface ResolvedConfig
       /** @internal */
       safeModulePaths: Set<string>
       /** @internal */
-      additionalAllowedHosts: string[]
-      /** @internal */
       [SYMBOL_RESOLVED_CONFIG]: true
     } & PluginHookUtils
   > {}
@@ -1452,6 +1450,14 @@ export async function resolveConfig(
 
   const preview = resolvePreviewOptions(config.preview, server)
 
+  const additionalAllowedHosts = getAdditionalAllowedHosts(server, preview)
+  if (Array.isArray(server.allowedHosts)) {
+    server.allowedHosts.push(...additionalAllowedHosts)
+  }
+  if (Array.isArray(preview.allowedHosts)) {
+    preview.allowedHosts.push(...additionalAllowedHosts)
+  }
+
   resolved = {
     configFile: configFile ? normalizePath(configFile) : undefined,
     configFileDependencies: configFileDependencies.map((name) =>
@@ -1554,7 +1560,6 @@ export async function resolveConfig(
       },
     ),
     safeModulePaths: new Set<string>(),
-    additionalAllowedHosts: getAdditionalAllowedHosts(server, preview),
     [SYMBOL_RESOLVED_CONFIG]: true,
   }
   resolved = {
