@@ -364,7 +364,7 @@ Special queries can modify how assets are loaded:
 ```js twoslash
 import 'vite/client'
 // ---cut---
-// Explicitly load assets as URL
+// Explicitly load assets as URL (automatically inlined depending on the file size)
 import assetAsURL from './asset.js?url'
 ```
 
