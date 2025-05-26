@@ -5,6 +5,6 @@
   "main": "index.js",
   "dependencies": {
     "@vitejs/test-dep-esm-external": "file:../dep-esm-external",
-    "node:dummy-builtin": "file:../dep-esm-dummy-node-builtin"
+    "stream": "file:../dep-esm-dummy-node-builtin"
   }
 }

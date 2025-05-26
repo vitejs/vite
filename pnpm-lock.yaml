@@ -1102,7 +1102,7 @@ importers:
       '@vitejs/test-dep-esm-external':
         specifier: file:../dep-esm-external
         version: file:playground/optimize-deps/dep-esm-external
-      node:dummy-builtin:
+      stream:
         specifier: file:../dep-esm-dummy-node-builtin
         version: '@vitejs/test-dep-esm-dummy-node-builtin@file:playground/optimize-deps/dep-esm-dummy-node-builtin'
 
@@ -9688,7 +9688,7 @@ snapshots:
   '@vitejs/test-dep-cjs-with-external-deps@file:playground/optimize-deps/dep-cjs-with-external-deps':
     dependencies:
       '@vitejs/test-dep-esm-external': file:playground/optimize-deps/dep-esm-external
-      node:dummy-builtin: '@vitejs/test-dep-esm-dummy-node-builtin@file:playground/optimize-deps/dep-esm-dummy-node-builtin'
+      stream: '@vitejs/test-dep-esm-dummy-node-builtin@file:playground/optimize-deps/dep-esm-dummy-node-builtin'
 
   '@vitejs/test-dep-conditions@file:packages/vite/src/node/__tests__/fixtures/test-dep-conditions': {}
 
