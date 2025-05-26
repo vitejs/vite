@@ -98,7 +98,7 @@ import type { TransformOptions, TransformResult } from './transformRequest'
 import { transformRequest } from './transformRequest'
 import { searchForPackageRoot, searchForWorkspaceRoot } from './searchRoot'
 import type { DevEnvironment } from './environment'
-import { hostCheckMiddleware } from './middlewares/hostCheck'
+import { hostValidationMiddleware } from './middlewares/hostCheck'
 import { rejectInvalidRequestMiddleware } from './middlewares/rejectInvalidRequest'
 
 const usedConfigs = new WeakSet<ResolvedConfig>()
@@ -879,7 +879,7 @@ export async function _createServer(
   const { allowedHosts } = serverConfig
   // no need to check for HTTPS as HTTPS is not vulnerable to DNS rebinding attacks
   if (allowedHosts !== true && !serverConfig.https) {
-    middlewares.use(hostCheckMiddleware(config, false))
+    middlewares.use(hostValidationMiddleware(allowedHosts, false))
   }
 
   middlewares.use(cachedTransformMiddleware(server))
