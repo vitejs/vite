@@ -10,9 +10,9 @@
     "preview": "vite preview"
   },
   "devDependencies": {
-    "@tailwindcss/vite": "^4.1.6",
-    "sass": "^1.88.0",
-    "tailwindcss": "^4.1.6",
-    "tinyglobby": "^0.2.13"
+    "@tailwindcss/vite": "^4.1.7",
+    "sass": "^1.89.0",
+    "tailwindcss": "^4.1.7",
+    "tinyglobby": "^0.2.14"
   }
 }
