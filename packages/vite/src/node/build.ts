@@ -511,7 +511,7 @@ export async function resolveBuildPlugins(config: ResolvedConfig): Promise<{
         : []),
     ],
     post: [
-      buildImportAnalysisPlugin(config),
+      ...buildImportAnalysisPlugin(config),
       ...(enableNativePlugin !== true
         ? [
             buildOxcPlugin(),

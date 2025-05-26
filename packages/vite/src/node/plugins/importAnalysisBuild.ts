@@ -217,7 +217,7 @@ function getPreloadCode(
 /**
  * Build only. During serve this is performed as part of ./importAnalysis.
  */
-export function buildImportAnalysisPlugin(config: ResolvedConfig): Plugin {
+export function buildImportAnalysisPlugin(config: ResolvedConfig): Plugin[] {
   const getInsertPreload = (environment: PartialEnvironment) =>
     environment.config.consumer === 'client' &&
     !config.isWorker &&
@@ -765,9 +765,9 @@ export function buildImportAnalysisPlugin(config: ResolvedConfig): Plugin {
     delete plugin.transform
     delete plugin.resolveId
     delete plugin.load
-    return perEnvironmentPlugin(
-      'native:import-analysis-build',
-      (environment) => {
+    return [
+      plugin,
+      perEnvironmentPlugin('native:import-analysis-build', (environment) => {
         const preloadCode = getPreloadCode(
           environment,
           !!renderBuiltUrl,
@@ -781,8 +781,8 @@ export function buildImportAnalysisPlugin(config: ResolvedConfig): Plugin {
           renderBuiltUrl: !!renderBuiltUrl,
           isRelativeBase,
         })
-      },
-    )
+      }),
+    ]
   }
-  return plugin
+  return [plugin]
 }
