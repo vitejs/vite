@@ -284,15 +284,11 @@ module.exports = Object.create(new Proxy({}, {
       build.onLoad(
         { filter: /.*/, namespace: 'optional-peer-dep' },
         ({ path }) => {
-          if (isProduction) {
-            return {
-              contents: 'module.exports = {}',
-            }
-          } else {
-            const [, peerDep, parentDep] = path.split(':')
-            return {
-              contents: `throw new Error(\`Could not resolve "${peerDep}" imported by "${parentDep}". Is it installed?\`)`,
-            }
+          const [, peerDep, parentDep] = path.split(':')
+          return {
+            contents:
+              'module.exports = {};' +
+              `throw new Error(\`Could not resolve "${peerDep}" imported by "${parentDep}".${isProduction ? '' : ' Is it installed?'}\`)`,
           }
         },
       )
