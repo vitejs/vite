@@ -1019,6 +1019,9 @@ importers:
       '@vitejs/test-dep-with-optional-peer-dep':
         specifier: file:./dep-with-optional-peer-dep
         version: file:playground/optimize-deps/dep-with-optional-peer-dep
+      '@vitejs/test-dep-with-optional-peer-dep-cjs':
+        specifier: file:./dep-with-optional-peer-dep-cjs
+        version: file:playground/optimize-deps/dep-with-optional-peer-dep-cjs
       '@vitejs/test-dep-with-optional-peer-dep-submodule':
         specifier: file:./dep-with-optional-peer-dep-submodule
         version: file:playground/optimize-deps/dep-with-optional-peer-dep-submodule
@@ -1156,6 +1159,8 @@ importers:
   playground/optimize-deps/dep-with-dynamic-import: {}
 
   playground/optimize-deps/dep-with-optional-peer-dep: {}
+
+  playground/optimize-deps/dep-with-optional-peer-dep-cjs: {}
 
   playground/optimize-deps/dep-with-optional-peer-dep-submodule: {}
 
@@ -3736,6 +3741,14 @@ packages:
 
   '@vitejs/test-dep-with-dynamic-import@file:playground/optimize-deps/dep-with-dynamic-import':
     resolution: {directory: playground/optimize-deps/dep-with-dynamic-import, type: directory}
+
+  '@vitejs/test-dep-with-optional-peer-dep-cjs@file:playground/optimize-deps/dep-with-optional-peer-dep-cjs':
+    resolution: {directory: playground/optimize-deps/dep-with-optional-peer-dep-cjs, type: directory}
+    peerDependencies:
+      foobar: 0.0.0
+    peerDependenciesMeta:
+      foobar:
+        optional: true
 
   '@vitejs/test-dep-with-optional-peer-dep-submodule@file:playground/optimize-deps/dep-with-optional-peer-dep-submodule':
     resolution: {directory: playground/optimize-deps/dep-with-optional-peer-dep-submodule, type: directory}
@@ -9367,6 +9380,8 @@ snapshots:
   '@vitejs/test-dep-with-builtin-module-esm@file:playground/optimize-deps/dep-with-builtin-module-esm': {}
 
   '@vitejs/test-dep-with-dynamic-import@file:playground/optimize-deps/dep-with-dynamic-import': {}
+
+  '@vitejs/test-dep-with-optional-peer-dep-cjs@file:playground/optimize-deps/dep-with-optional-peer-dep-cjs': {}
 
   '@vitejs/test-dep-with-optional-peer-dep-submodule@file:playground/optimize-deps/dep-with-optional-peer-dep-submodule': {}
 
