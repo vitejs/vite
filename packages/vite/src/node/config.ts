@@ -76,7 +76,6 @@ import {
   nodeLikeBuiltins,
   normalizeAlias,
   normalizePath,
-  rollupVersion,
 } from './utils'
 import {
   createPluginHookUtils,
@@ -104,7 +103,10 @@ import { PartialEnvironment } from './baseEnvironment'
 import { createIdResolver } from './idResolver'
 import { runnerImport } from './ssr/runnerImport'
 import { getAdditionalAllowedHosts } from './server/middlewares/hostCheck'
-import { BasicMinimalPluginContext } from './server/pluginContainer'
+import {
+  BasicMinimalPluginContext,
+  basePluginContextMeta,
+} from './server/pluginContainer'
 
 const debug = createDebugger('vite:config', { depth: 10 })
 const promisifiedRealpath = promisify(fs.realpath)
@@ -1378,7 +1380,7 @@ export async function resolveConfig(
 
   const resolvedConfigContext = new BasicMinimalPluginContext(
     {
-      rollupVersion,
+      ...basePluginContextMeta,
       watchMode:
         (command === 'serve' && !isPreview) ||
         (command === 'build' && !!resolvedBuildOptions.watch),
@@ -2110,7 +2112,7 @@ async function runConfigHook(
   })
   const context = new BasicMinimalPluginContext<
     Omit<PluginContextMeta, 'watchMode'>
-  >({ rollupVersion }, tempLogger)
+  >(basePluginContextMeta, tempLogger)
 
   for (const p of getSortedPluginsByHook('config', plugins)) {
     const hook = p.config
@@ -2133,7 +2135,7 @@ async function runConfigEnvironmentHook(
 ): Promise<void> {
   const context = new BasicMinimalPluginContext<
     Omit<PluginContextMeta, 'watchMode'>
-  >({ rollupVersion }, logger)
+  >(basePluginContextMeta, logger)
 
   const environmentNames = Object.keys(environments)
   for (const p of getSortedPluginsByHook('configEnvironment', plugins)) {

@@ -35,7 +35,6 @@ import {
   normalizePath,
   resolveHostname,
   resolveServerUrls,
-  rollupVersion,
   setupSIGTERMListener,
   teardownSIGTERMListener,
 } from '../utils'
@@ -68,6 +67,7 @@ import type { PluginContainer } from './pluginContainer'
 import {
   BasicMinimalPluginContext,
   ERR_CLOSED_SERVER,
+  basePluginContextMeta,
   createPluginContainer,
 } from './pluginContainer'
 import type { WebSocketServer } from './ws'
@@ -861,10 +861,7 @@ export async function _createServer(
 
   // apply server configuration hooks from plugins
   const configureServerContext = new BasicMinimalPluginContext(
-    {
-      rollupVersion,
-      watchMode: true,
-    },
+    { ...basePluginContextMeta, watchMode: true },
     config.logger,
   )
   const postHooks: ((() => void) | void)[] = []

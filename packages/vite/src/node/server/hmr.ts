@@ -10,12 +10,7 @@ import type {
   InvokeSendData,
 } from '../../shared/invokeMethods'
 import { CLIENT_DIR } from '../constants'
-import {
-  createDebugger,
-  isCSSRequest,
-  normalizePath,
-  rollupVersion,
-} from '../utils'
+import { createDebugger, isCSSRequest, normalizePath } from '../utils'
 import type { InferCustomEventPayload, ViteDevServer } from '..'
 import { getHookHandler } from '../plugins'
 import { isExplicitImportRequired } from '../plugins/importAnalysis'
@@ -31,7 +26,10 @@ import type { EnvironmentModuleNode } from './moduleGraph'
 import type { ModuleNode } from './mixedModuleGraph'
 import type { DevEnvironment } from './environment'
 import { prepareError } from './middlewares/error'
-import { BasicMinimalPluginContext } from './pluginContainer'
+import {
+  BasicMinimalPluginContext,
+  basePluginContextMeta,
+} from './pluginContainer'
 import type { HttpServer } from '.'
 import { restartServerWithUrls } from '.'
 
@@ -455,10 +453,7 @@ export async function handleHMRUpdate(
   }
 
   const contextForHandleHotUpdate = new BasicMinimalPluginContext(
-    {
-      rollupVersion,
-      watchMode: true,
-    },
+    { ...basePluginContextMeta, watchMode: true },
     config.logger,
   )
   const clientEnvironment = server.environments.client

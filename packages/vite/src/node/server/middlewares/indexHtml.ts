@@ -38,14 +38,16 @@ import {
   joinUrlSegments,
   normalizePath,
   processSrcSetSync,
-  rollupVersion,
   stripBase,
 } from '../../utils'
 import { checkPublicFile } from '../../publicDir'
 import { getCodeWithSourcemap, injectSourcesContent } from '../sourcemap'
 import { cleanUrl, unwrapId, wrapId } from '../../../shared/utils'
 import { getNodeAssetAttributes } from '../../assetSource'
-import { BasicMinimalPluginContext } from '../pluginContainer'
+import {
+  BasicMinimalPluginContext,
+  basePluginContextMeta,
+} from '../pluginContainer'
 
 interface AssetNode {
   start: number
@@ -82,7 +84,7 @@ export function createDevHtmlTransformFn(
     postImportMapHook(),
   ]
   const pluginContext = new BasicMinimalPluginContext(
-    { rollupVersion, watchMode: true },
+    { ...basePluginContextMeta, watchMode: true },
     config.logger,
   )
   return (
