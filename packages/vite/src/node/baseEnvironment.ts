@@ -116,7 +116,7 @@ export class PartialEnvironment {
 }
 
 export class BaseEnvironment extends PartialEnvironment {
-  get plugins(): Plugin[] {
+  get plugins(): readonly Plugin[] {
     return this.config.plugins
   }
 
