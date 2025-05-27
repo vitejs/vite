@@ -103,6 +103,7 @@ import { PartialEnvironment } from './baseEnvironment'
 import { createIdResolver } from './idResolver'
 import { runnerImport } from './ssr/runnerImport'
 import { getAdditionalAllowedHosts } from './server/middlewares/hostCheck'
+import type { RequiredExceptFor } from './typeUtils'
 import {
   BasicMinimalPluginContext,
   basePluginContextMeta,
@@ -559,6 +560,7 @@ export interface ResolvedConfig
       | 'build'
       | 'dev'
       | 'environments'
+      | 'experimental'
       | 'server'
       | 'preview'
     > & {
@@ -616,7 +618,7 @@ export interface ResolvedConfig
       packageCache: PackageCache
       worker: ResolvedWorkerOptions
       appType: AppType
-      experimental: ExperimentalOptions
+      experimental: RequiredExceptFor<ExperimentalOptions, 'renderBuiltUrl'>
       environments: Record<string, ResolvedEnvironmentOptions>
       /**
        * The token to connect to the WebSocket server from browsers.
@@ -1519,11 +1521,10 @@ export async function resolveConfig(
     packageCache,
     worker: resolvedWorkerOptions,
     appType: config.appType ?? 'spa',
-    experimental: {
-      importGlobRestoreExtension: false,
-      hmrPartialAccept: false,
-      ...config.experimental,
-    },
+    experimental: mergeWithDefaults(
+      configDefaults.experimental,
+      config.experimental ?? {},
+    ),
     future: config.future,
 
     ssr,
