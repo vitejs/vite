@@ -57,7 +57,7 @@ export class DevEnvironment extends BaseEnvironment {
    */
   _remoteRunnerOptions: DevEnvironmentContext['remoteRunner']
 
-  get pluginContainer(): EnvironmentPluginContainer {
+  get pluginContainer(): EnvironmentPluginContainer<DevEnvironment> {
     if (!this._pluginContainer)
       throw new Error(
         `${this.name} environment.pluginContainer called before initialized`,
@@ -67,7 +67,7 @@ export class DevEnvironment extends BaseEnvironment {
   /**
    * @internal
    */
-  _pluginContainer: EnvironmentPluginContainer | undefined
+  _pluginContainer: EnvironmentPluginContainer<DevEnvironment> | undefined
 
   /**
    * @internal

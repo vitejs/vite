@@ -1,8 +1,10 @@
 import type {
   CustomPluginOptions,
   LoadResult,
+  MinimalPluginContext,
   ObjectHook,
   PluginContext,
+  PluginContextMeta,
   ResolveIdResult,
   Plugin as RollupPlugin,
   TransformPluginContext,
@@ -61,9 +63,13 @@ export interface PluginContextExtension {
   environment: Environment
 }
 
-export interface HotUpdatePluginContext {
-  environment: DevEnvironment
+export interface ConfigPluginContext
+  extends Omit<MinimalPluginContext, 'meta' | 'environment'> {
+  meta: Omit<PluginContextMeta, 'watchMode'>
 }
+
+export interface MinimalPluginContextWithoutEnvironment
+  extends Omit<MinimalPluginContext, 'environment'> {}
 
 // Augment Rollup types to have the PluginContextExtension
 declare module 'rollup' {
@@ -98,7 +104,7 @@ export interface Plugin<A = any> extends RollupPlugin<A> {
    */
   hotUpdate?: ObjectHook<
     (
-      this: HotUpdatePluginContext,
+      this: MinimalPluginContext & { environment: DevEnvironment },
       options: HotUpdateOptions,
     ) =>
       | Array<EnvironmentModuleNode>
@@ -208,7 +214,7 @@ export interface Plugin<A = any> extends RollupPlugin<A> {
    */
   config?: ObjectHook<
     (
-      this: void,
+      this: ConfigPluginContext,
       config: UserConfig,
       env: ConfigEnv,
     ) =>
@@ -229,7 +235,7 @@ export interface Plugin<A = any> extends RollupPlugin<A> {
    */
   configEnvironment?: ObjectHook<
     (
-      this: void,
+      this: ConfigPluginContext,
       name: string,
       config: EnvironmentOptions,
       env: ConfigEnv & {
@@ -249,7 +255,10 @@ export interface Plugin<A = any> extends RollupPlugin<A> {
    * Use this hook to read and store the final resolved vite config.
    */
   configResolved?: ObjectHook<
-    (this: void, config: ResolvedConfig) => void | Promise<void>
+    (
+      this: MinimalPluginContextWithoutEnvironment,
+      config: ResolvedConfig,
+    ) => void | Promise<void>
   >
   /**
    * Configure the vite server. The hook receives the {@link ViteDevServer}
@@ -315,7 +324,7 @@ export interface Plugin<A = any> extends RollupPlugin<A> {
    */
   handleHotUpdate?: ObjectHook<
     (
-      this: void,
+      this: MinimalPluginContextWithoutEnvironment,
       ctx: HmrContext,
     ) => Array<ModuleNode> | void | Promise<Array<ModuleNode> | void>
   >

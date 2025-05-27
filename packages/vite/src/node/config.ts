@@ -8,7 +8,7 @@ import { createRequire } from 'node:module'
 import crypto from 'node:crypto'
 import colors from 'picocolors'
 import type { Alias, AliasOptions } from 'dep-types/alias'
-import type { RollupOptions } from 'rollup'
+import type { PluginContextMeta, RollupOptions } from 'rollup'
 import picomatch from 'picomatch'
 import { build } from 'esbuild'
 import type { AnymatchFn } from '../types/anymatch'
@@ -76,6 +76,7 @@ import {
   nodeLikeBuiltins,
   normalizeAlias,
   normalizePath,
+  rollupVersion,
 } from './utils'
 import {
   createPluginHookUtils,
@@ -103,6 +104,7 @@ import { PartialEnvironment } from './baseEnvironment'
 import { createIdResolver } from './idResolver'
 import { runnerImport } from './ssr/runnerImport'
 import { getAdditionalAllowedHosts } from './server/middlewares/hostCheck'
+import { BasicMinimalPluginContext } from './server/pluginContainer'
 
 const debug = createDebugger('vite:config', { depth: 10 })
 const promisifiedRealpath = promisify(fs.realpath)
@@ -1232,6 +1234,7 @@ export async function resolveConfig(
   await runConfigEnvironmentHook(
     config.environments,
     userPlugins,
+    logger,
     configEnv,
     config.ssr?.target === 'webworker',
   )
@@ -1373,6 +1376,16 @@ export async function resolveConfig(
 
   const BASE_URL = resolvedBase
 
+  const resolvedConfigContext = new BasicMinimalPluginContext(
+    {
+      rollupVersion,
+      watchMode:
+        (command === 'serve' && !isPreview) ||
+        (command === 'build' && !!resolvedBuildOptions.watch),
+    } satisfies PluginContextMeta,
+    logger,
+  )
+
   let resolved: ResolvedConfig
 
   let createUserWorkerPlugins = config.worker?.plugins
@@ -1431,7 +1444,7 @@ export async function resolveConfig(
     await Promise.all(
       createPluginHookUtils(resolvedWorkerPlugins)
         .getSortedPluginHooks('configResolved')
-        .map((hook) => hook(workerResolved)),
+        .map((hook) => hook.call(resolvedConfigContext, workerResolved)),
     )
 
     return {
@@ -1592,7 +1605,7 @@ export async function resolveConfig(
   await Promise.all(
     resolved
       .getSortedPluginHooks('configResolved')
-      .map((hook) => hook(resolved)),
+      .map((hook) => hook.call(resolvedConfigContext, resolved)),
   )
 
   optimizeDepsDisabledBackwardCompatibility(resolved, resolved.optimizeDeps)
@@ -2091,10 +2104,18 @@ async function runConfigHook(
 ): Promise<InlineConfig> {
   let conf = config
 
+  const tempLogger = createLogger(config.logLevel, {
+    allowClearScreen: config.clearScreen,
+    customLogger: config.customLogger,
+  })
+  const context = new BasicMinimalPluginContext<
+    Omit<PluginContextMeta, 'watchMode'>
+  >({ rollupVersion }, tempLogger)
+
   for (const p of getSortedPluginsByHook('config', plugins)) {
     const hook = p.config
     const handler = getHookHandler(hook)
-    const res = await handler(conf, configEnv)
+    const res = await handler.call(context, conf, configEnv)
     if (res && res !== conf) {
       conf = mergeConfig(conf, res)
     }
@@ -2106,15 +2127,20 @@ async function runConfigHook(
 async function runConfigEnvironmentHook(
   environments: Record<string, EnvironmentOptions>,
   plugins: Plugin[],
+  logger: Logger,
   configEnv: ConfigEnv,
   isSsrTargetWebworkerSet: boolean,
 ): Promise<void> {
+  const context = new BasicMinimalPluginContext<
+    Omit<PluginContextMeta, 'watchMode'>
+  >({ rollupVersion }, logger)
+
   const environmentNames = Object.keys(environments)
   for (const p of getSortedPluginsByHook('configEnvironment', plugins)) {
     const hook = p.configEnvironment
     const handler = getHookHandler(hook)
     for (const name of environmentNames) {
-      const res = await handler(name, environments[name], {
+      const res = await handler.call(context, name, environments[name], {
         ...configEnv,
         isSsrTargetWebworker: isSsrTargetWebworkerSet && name === 'ssr',
       })
