@@ -1,4 +1,5 @@
 import path from 'node:path'
+import { URL } from 'node:url'
 import type {
   OutputAsset,
   OutputBundle,
@@ -11,12 +12,13 @@ import colors from 'picocolors'
 import type { DefaultTreeAdapterMap, ParserError, Token } from 'parse5'
 import { stripLiteral } from 'strip-literal'
 import escapeHtml from 'escape-html'
-import type { Plugin } from '../plugin'
+import type { MinimalPluginContextWithoutEnvironment, Plugin } from '../plugin'
 import type { ViteDevServer } from '../server'
 import {
   encodeURIPath,
   generateCodeFrame,
   getHash,
+  isCSSRequest,
   isDataUrl,
   isExternalUrl,
   normalizePath,
@@ -24,13 +26,11 @@ import {
   processSrcSet,
   removeLeadingSlash,
   unique,
-  urlCanParse,
 } from '../utils'
 import type { ResolvedConfig } from '../config'
 import { checkPublicFile } from '../publicDir'
 import { toOutputFilePathInHtml } from '../build'
 import { resolveEnvPrefix } from '../env'
-import type { Logger } from '../logger'
 import { cleanUrl } from '../../shared/utils'
 import { perEnvironmentState } from '../environment'
 import { getNodeAssetAttributes } from '../assetSource'
@@ -40,7 +40,7 @@ import {
   publicAssetUrlRE,
   urlToBuiltUrl,
 } from './asset'
-import { cssBundleNameCache, isCSSRequest } from './css'
+import { cssBundleNameCache } from './css'
 import { modulePreloadPolyfillId } from './modulePreloadPolyfill'
 
 interface ScriptAssetsUrl {
@@ -331,7 +331,6 @@ function handleParseError(
 export function buildHtmlPlugin(config: ResolvedConfig): Plugin {
   const [preHooks, normalHooks, postHooks] = resolveHtmlTransforms(
     config.plugins,
-    config.logger,
   )
   preHooks.unshift(injectCspNonceMetaTagHook(config))
   preHooks.unshift(preImportMapHook(config))
@@ -404,7 +403,7 @@ export function buildHtmlPlugin(config: ResolvedConfig): Plugin {
           }
 
           // pre-transform
-          html = await applyHtmlTransforms(html, preHooks, {
+          html = await applyHtmlTransforms(html, preHooks, this, {
             path: publicPath,
             filename: id,
           })
@@ -985,6 +984,7 @@ export function buildHtmlPlugin(config: ResolvedConfig): Plugin {
         result = await applyHtmlTransforms(
           result,
           [...normalHooks, ...postHooks],
+          this,
           {
             path: '/' + relativeUrlPath,
             filename: normalizedId,
@@ -1007,7 +1007,7 @@ export function buildHtmlPlugin(config: ResolvedConfig): Plugin {
           )
 
           return encodeURIPath(
-            urlCanParse(publicAssetPath)
+            URL.canParse(publicAssetPath)
               ? publicAssetPath
               : normalizePath(publicAssetPath),
           )
@@ -1113,7 +1113,7 @@ export interface IndexHtmlTransformContext {
 }
 
 export type IndexHtmlTransformHook = (
-  this: void,
+  this: MinimalPluginContextWithoutEnvironment,
   html: string,
   ctx: IndexHtmlTransformContext,
 ) => IndexHtmlTransformResult | void | Promise<IndexHtmlTransformResult | void>
@@ -1122,21 +1122,6 @@ export type IndexHtmlTransform =
   | IndexHtmlTransformHook
   | {
       order?: 'pre' | 'post' | null
-      /**
-       * @deprecated renamed to `order`
-       */
-      enforce?: 'pre' | 'post'
-      /**
-       * @deprecated renamed to `handler`
-       */
-      transform: IndexHtmlTransformHook
-    }
-  | {
-      order?: 'pre' | 'post' | null
-      /**
-       * @deprecated renamed to `order`
-       */
-      enforce?: 'pre' | 'post'
       handler: IndexHtmlTransformHook
     }
 
@@ -1305,7 +1290,6 @@ export function injectNonceAttributeTagHook(
 
 export function resolveHtmlTransforms(
   plugins: readonly Plugin[],
-  logger: Logger,
 ): [
   IndexHtmlTransformHook[],
   IndexHtmlTransformHook[],
@@ -1322,31 +1306,10 @@ export function resolveHtmlTransforms(
     if (typeof hook === 'function') {
       normalHooks.push(hook)
     } else {
-      if (!('order' in hook) && 'enforce' in hook) {
-        logger.warnOnce(
-          colors.yellow(
-            `plugin '${plugin.name}' uses deprecated 'enforce' option. Use 'order' option instead.`,
-          ),
-        )
-      }
-      if (!('handler' in hook) && 'transform' in hook) {
-        logger.warnOnce(
-          colors.yellow(
-            `plugin '${plugin.name}' uses deprecated 'transform' option. Use 'handler' option instead.`,
-          ),
-        )
-      }
-
-      // `enforce` had only two possible values for the `transformIndexHtml` hook
-      // `'pre'` and `'post'` (the default). `order` now works with three values
-      // to align with other hooks (`'pre'`, normal, and `'post'`). We map
-      // both `enforce: 'post'` to `order: undefined` to avoid a breaking change
-      const order = hook.order ?? (hook.enforce === 'pre' ? 'pre' : undefined)
-      // @ts-expect-error union type
-      const handler = hook.handler ?? hook.transform
-      if (order === 'pre') {
+      const handler = hook.handler
+      if (hook.order === 'pre') {
         preHooks.push(handler)
-      } else if (order === 'post') {
+      } else if (hook.order === 'post') {
         postHooks.push(handler)
       } else {
         normalHooks.push(handler)
@@ -1396,10 +1359,11 @@ function headTagInsertCheck(
 export async function applyHtmlTransforms(
   html: string,
   hooks: IndexHtmlTransformHook[],
+  pluginContext: MinimalPluginContextWithoutEnvironment,
   ctx: IndexHtmlTransformContext,
 ): Promise<string> {
   for (const hook of hooks) {
-    const res = await hook(html, ctx)
+    const res = await hook.call(pluginContext, html, ctx)
     if (!res) {
       continue
     }

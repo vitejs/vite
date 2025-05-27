@@ -4,7 +4,7 @@ import net from 'node:net'
 import path from 'node:path'
 import { exec } from 'node:child_process'
 import crypto from 'node:crypto'
-import { URL, fileURLToPath } from 'node:url'
+import { fileURLToPath } from 'node:url'
 import type { ServerOptions as HttpsServerOptions } from 'node:https'
 import { builtinModules, createRequire } from 'node:module'
 import { promises as dns } from 'node:dns'
@@ -33,6 +33,7 @@ import { VALID_ID_PREFIX } from '../shared/constants'
 import {
   CLIENT_ENTRY,
   CLIENT_PUBLIC_PATH,
+  CSS_LANGS_RE,
   ENV_PUBLIC_PATH,
   FS_PREFIX,
   OPTIMIZABLE_ENTRY_RE,
@@ -176,9 +177,9 @@ export const bareImportRE = /^(?![a-zA-Z]:)[\w@](?!.*:\/\/)/
 export const deepImportRE = /^([^@][^/]*)\/|^(@[^/]+\/[^/]+)\//
 
 // TODO: use import()
-const _require = createRequire(import.meta.url)
+const _require = createRequire(/** #__KEEP__ */ import.meta.url)
 
-const _dirname = path.dirname(fileURLToPath(import.meta.url))
+const _dirname = path.dirname(fileURLToPath(/** #__KEEP__ */ import.meta.url))
 
 // NOTE: we don't use VERSION variable exported from rollup to avoid importing rollup in dev
 export const rollupVersion =
@@ -238,19 +239,6 @@ function testCaseInsensitiveFS() {
   }
   return fs.existsSync(CLIENT_ENTRY.replace('client.mjs', 'cLiEnT.mjs'))
 }
-
-export const urlCanParse =
-  // eslint-disable-next-line n/no-unsupported-features/node-builtins
-  URL.canParse ??
-  // URL.canParse is supported from Node.js 18.17.0+, 20.0.0+
-  ((path: string, base?: string | undefined): boolean => {
-    try {
-      new URL(path, base)
-      return true
-    } catch {
-      return false
-    }
-  })
 
 export const isCaseInsensitiveFS = testCaseInsensitiveFS()
 
@@ -328,6 +316,9 @@ export const isJSRequest = (url: string): boolean => {
   }
   return false
 }
+
+export const isCSSRequest = (request: string): boolean =>
+  CSS_LANGS_RE.test(request)
 
 const importQueryRE = /(\?|&)import=?(?:&|$)/
 const directRequestRE = /(\?|&)direct=?(?:&|$)/
@@ -702,12 +693,6 @@ function windowsSafeRealPathSync(path: string): string {
 }
 
 function optimizeSafeRealPathSync() {
-  // Skip if using Node <18.10 due to MAX_PATH issue: https://github.com/vitejs/vite/issues/12931
-  const nodeVersion = process.versions.node.split('.').map(Number)
-  if (nodeVersion[0] < 18 || (nodeVersion[0] === 18 && nodeVersion[1] < 10)) {
-    safeRealpathSync = fs.realpathSync
-    return
-  }
   // Check the availability `fs.realpathSync.native`
   // in Windows virtual and RAM disks that bypass the Volume Mount Manager, in programs such as imDisk
   // get the error EISDIR: illegal operation on a directory
@@ -1019,13 +1004,7 @@ export async function resolveServerUrls(
   } else {
     Object.values(os.networkInterfaces())
       .flatMap((nInterface) => nInterface ?? [])
-      .filter(
-        (detail) =>
-          detail.address &&
-          (detail.family === 'IPv4' ||
-            // @ts-expect-error Node 18.0 - 18.3 returns number
-            detail.family === 4),
-      )
+      .filter((detail) => detail.address && detail.family === 'IPv4')
       .forEach((detail) => {
         let host = detail.address.replace('127.0.0.1', hostname.name)
         // ipv6 host
@@ -1111,17 +1090,8 @@ export const requestQueryMaybeEscapedSplitRE = /\\?\?(?!.*[/|}])/
 
 export const blankReplacer = (match: string): string => ' '.repeat(match.length)
 
-const hash =
-  // eslint-disable-next-line n/no-unsupported-features/node-builtins -- crypto.hash is supported in Node 21.7.0+, 20.12.0+
-  crypto.hash ??
-  ((
-    algorithm: string,
-    data: crypto.BinaryLike,
-    outputEncoding: crypto.BinaryToTextEncoding,
-  ) => crypto.createHash(algorithm).update(data).digest(outputEncoding))
-
 export function getHash(text: Buffer | string, length = 8): string {
-  const h = hash('sha256', text, 'hex').substring(0, length)
+  const h = crypto.hash('sha256', text, 'hex').substring(0, length)
   if (length <= 64) return h
   return h.padEnd(length, '_')
 }
@@ -1241,6 +1211,8 @@ function mergeWithDefaultsRecursively<
   return merged as MergeWithDefaultsResult<D, V>
 }
 
+const environmentPathRE = /^environments\.[^.]+$/
+
 export function mergeWithDefaults<
   D extends Record<string, any>,
   V extends Record<string, any>,
@@ -1302,7 +1274,10 @@ function mergeConfigRecursively(
       merged[key] = mergeConfigRecursively(
         existing,
         value,
-        rootPath ? `${rootPath}.${key}` : key,
+        // treat environment.* as root
+        rootPath && !environmentPathRE.test(rootPath)
+          ? `${rootPath}.${key}`
+          : key,
       )
       continue
     }

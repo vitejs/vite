@@ -11,7 +11,7 @@ Resources:
 Please share your feedback with us.
 :::
 
-## Environments and frameworks
+## Environments and Frameworks
 
 The implicit `ssr` environment and other non-client environments use a `RunnableDevEnvironment` by default during dev. While this requires the runtime to be the same with the one the Vite server is running in, this works similarly with `ssrLoadModule` and allows frameworks to migrate and enable HMR for their SSR dev story. You can guard any runnable environment with an `isRunnableDevEnvironment` function.
 
@@ -328,6 +328,8 @@ export default {
   },
 }
 ```
+
+Plugins can also define a `buildApp` hook. Order `'pre'` and `null` are executed before the configured `builder.buildApp`, and order `'post'` hooks are executed after it. `environment.isBuilt` can be used to check if an environment has already being build.
 
 ## Environment Agnostic Code
 
