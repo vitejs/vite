@@ -17,11 +17,27 @@ const resolveConfigWithPlugin = (
   )
 }
 
+const ENTRY_ID = 'entry.js'
+const RESOLVED_ENTRY_ID = `\0${ENTRY_ID}`
+const resolveEntryPlugin: Plugin = {
+  name: 'resolve-entry.js',
+  resolveId(id) {
+    if (id === ENTRY_ID) {
+      return RESOLVED_ENTRY_ID
+    }
+  },
+  load(id) {
+    if (id === RESOLVED_ENTRY_ID) {
+      return 'export default {}'
+    }
+  },
+}
+
 const createServerWithPlugin = async (plugin: Plugin) => {
   const server = await createServer({
     configFile: false,
     root: import.meta.dirname,
-    plugins: [plugin],
+    plugins: [plugin, resolveEntryPlugin],
     logLevel: 'error',
     server: {
       middlewareMode: true,
@@ -62,28 +78,13 @@ const buildWithPlugin = async (plugin: Plugin) => {
     build: {
       write: false,
     },
-    plugins: [
-      {
-        name: 'resolve-entry.js',
-        resolveId(id) {
-          if (id === 'entry.js') {
-            return '\0' + id
-          }
-        },
-        load(id) {
-          if (id === '\0entry.js') {
-            return 'export default {}'
-          }
-        },
-      },
-      plugin,
-    ],
+    plugins: [plugin, resolveEntryPlugin],
   })
 }
 
 describe('supports plugin context', () => {
   test('config hook', async () => {
-    expect.assertions(3)
+    expect.assertions(4)
 
     await resolveConfigWithPlugin({
       name: 'test',
@@ -96,6 +97,7 @@ describe('supports plugin context', () => {
           meta: expect.any(Object),
         })
         expect(this.meta.rollupVersion).toBeTypeOf('string')
+        expect(this.meta.viteVersion).toBeTypeOf('string')
         // @ts-expect-error watchMode should not exist in types
         expect(this.meta.watchMode).toBeUndefined()
       },
@@ -103,7 +105,7 @@ describe('supports plugin context', () => {
   })
 
   test('configEnvironment hook', async () => {
-    expect.assertions(3)
+    expect.assertions(4)
 
     await resolveConfigWithPlugin({
       name: 'test',
@@ -118,6 +120,7 @@ describe('supports plugin context', () => {
           meta: expect.any(Object),
         })
         expect(this.meta.rollupVersion).toBeTypeOf('string')
+        expect(this.meta.viteVersion).toBeTypeOf('string')
         // @ts-expect-error watchMode should not exist in types
         expect(this.meta.watchMode).toBeUndefined()
       },
@@ -125,7 +128,7 @@ describe('supports plugin context', () => {
   })
 
   test('configResolved hook', async () => {
-    expect.assertions(3)
+    expect.assertions(4)
 
     await resolveConfigWithPlugin({
       name: 'test',
@@ -138,13 +141,14 @@ describe('supports plugin context', () => {
           meta: expect.any(Object),
         })
         expect(this.meta.rollupVersion).toBeTypeOf('string')
+        expect(this.meta.viteVersion).toBeTypeOf('string')
         expect(this.meta.watchMode).toBe(true)
       },
     })
   })
 
   test('configureServer hook', async () => {
-    expect.assertions(3)
+    expect.assertions(4)
 
     await createServerWithPlugin({
       name: 'test',
@@ -157,13 +161,14 @@ describe('supports plugin context', () => {
           meta: expect.any(Object),
         })
         expect(this.meta.rollupVersion).toBeTypeOf('string')
+        expect(this.meta.viteVersion).toBeTypeOf('string')
         expect(this.meta.watchMode).toBe(true)
       },
     })
   })
 
   test('configurePreviewServer hook', async () => {
-    expect.assertions(3)
+    expect.assertions(4)
 
     await createPreviewServerWithPlugin({
       name: 'test',
@@ -176,13 +181,14 @@ describe('supports plugin context', () => {
           meta: expect.any(Object),
         })
         expect(this.meta.rollupVersion).toBeTypeOf('string')
+        expect(this.meta.viteVersion).toBeTypeOf('string')
         expect(this.meta.watchMode).toBe(false)
       },
     })
   })
 
   test('transformIndexHtml hook in dev', async () => {
-    expect.assertions(3)
+    expect.assertions(4)
 
     const server = await createServerWithPlugin({
       name: 'test',
@@ -195,6 +201,7 @@ describe('supports plugin context', () => {
           meta: expect.any(Object),
         })
         expect(this.meta.rollupVersion).toBeTypeOf('string')
+        expect(this.meta.viteVersion).toBeTypeOf('string')
         expect(this.meta.watchMode).toBe(true)
       },
     })
@@ -202,7 +209,7 @@ describe('supports plugin context', () => {
   })
 
   test('transformIndexHtml hook in build', async () => {
-    expect.assertions(3)
+    expect.assertions(4)
 
     await buildWithPlugin({
       name: 'test',
@@ -215,13 +222,14 @@ describe('supports plugin context', () => {
           meta: expect.any(Object),
         })
         expect(this.meta.rollupVersion).toBeTypeOf('string')
+        expect(this.meta.viteVersion).toBeTypeOf('string')
         expect(this.meta.watchMode).toBe(false)
       },
     })
   })
 
   test('handleHotUpdate hook', async () => {
-    expect.assertions(3)
+    expect.assertions(4)
 
     const { promise, resolve } = promiseWithResolvers<void>()
     const server = await createServerWithPlugin({
@@ -235,6 +243,7 @@ describe('supports plugin context', () => {
           meta: expect.any(Object),
         })
         expect(this.meta.rollupVersion).toBeTypeOf('string')
+        expect(this.meta.viteVersion).toBeTypeOf('string')
         expect(this.meta.watchMode).toBe(true)
         resolve()
       },
@@ -248,7 +257,7 @@ describe('supports plugin context', () => {
   })
 
   test('hotUpdate hook', async () => {
-    expect.assertions(3)
+    expect.assertions(4)
 
     const { promise, resolve } = promiseWithResolvers<void>()
     const server = await createServerWithPlugin({
@@ -265,6 +274,7 @@ describe('supports plugin context', () => {
           environment: expect.any(Object),
         })
         expect(this.meta.rollupVersion).toBeTypeOf('string')
+        expect(this.meta.viteVersion).toBeTypeOf('string')
         expect(this.meta.watchMode).toBe(true)
         resolve()
       },
@@ -275,5 +285,49 @@ describe('supports plugin context', () => {
     )
 
     await promise
+  })
+
+  test('transform hook in dev', async () => {
+    expect.assertions(4)
+
+    const server = await createServerWithPlugin({
+      name: 'test',
+      transform(_code, id) {
+        if (id !== RESOLVED_ENTRY_ID) return
+        expect(this).toMatchObject({
+          debug: expect.any(Function),
+          info: expect.any(Function),
+          warn: expect.any(Function),
+          error: expect.any(Function),
+          meta: expect.any(Object),
+        })
+        expect(this.meta.rollupVersion).toBeTypeOf('string')
+        expect(this.meta.viteVersion).toBeTypeOf('string')
+        expect(this.meta.watchMode).toBe(true)
+      },
+    })
+    await server.transformRequest(ENTRY_ID)
+    await server.close()
+  })
+
+  test('transform hook in build', async () => {
+    expect.assertions(4)
+
+    await buildWithPlugin({
+      name: 'test',
+      transform(_code, id) {
+        if (id !== RESOLVED_ENTRY_ID) return
+        expect(this).toMatchObject({
+          debug: expect.any(Function),
+          info: expect.any(Function),
+          warn: expect.any(Function),
+          error: expect.any(Function),
+          meta: expect.any(Object),
+        })
+        expect(this.meta.rollupVersion).toBeTypeOf('string')
+        expect(this.meta.viteVersion).toBeTypeOf('string')
+        expect(this.meta.watchMode).toBe(false)
+      },
+    })
   })
 })
