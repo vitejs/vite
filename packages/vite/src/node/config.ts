@@ -25,6 +25,7 @@ import {
   ENV_ENTRY,
   FS_PREFIX,
 } from './constants'
+import { resolveEnvironmentPlugins } from './plugin'
 import type {
   FalsyPlugin,
   HookHandler,
@@ -294,6 +295,7 @@ export type ResolvedEnvironmentOptions = {
   optimizeDeps: DepOptimizationOptions
   dev: ResolvedDevEnvironmentOptions
   build: ResolvedBuildEnvironmentOptions
+  plugins: Plugin[]
 }
 
 export type DefaultEnvironmentOptions = Omit<
@@ -850,6 +852,7 @@ function resolveEnvironmentOptions(
       logger,
       consumer,
     ),
+    plugins: undefined as any, // to be resolved later
   }
 }
 
@@ -1603,6 +1606,12 @@ export async function resolveConfig(
 
   // TODO: Deprecate config.getSortedPlugins and config.getSortedPluginHooks
   Object.assign(resolved, createPluginHookUtils(resolved.plugins))
+
+  for (const name of Object.keys(resolved.environments)) {
+    resolved.environments[name].plugins = await resolveEnvironmentPlugins(
+      new PartialEnvironment(name, resolved),
+    )
+  }
 
   // call configResolved hooks
   await Promise.all(

@@ -56,7 +56,7 @@ import {
   normalizePath,
   partialEncodeURIPath,
 } from './utils'
-import { perEnvironmentPlugin, resolveEnvironmentPlugins } from './plugin'
+import { perEnvironmentPlugin } from './plugin'
 import { manifestPlugin } from './plugins/manifest'
 import type { Logger } from './logger'
 import { dataURIPlugin } from './plugins/dataUri'
@@ -1499,7 +1499,6 @@ export class BuildEnvironment extends BaseEnvironment {
       return
     }
     this._initiated = true
-    this._plugins = await resolveEnvironmentPlugins(this)
   }
 }
 
