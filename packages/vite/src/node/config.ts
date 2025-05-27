@@ -556,6 +556,13 @@ export interface ExperimentalOptions {
    * @default 'v1'
    */
   enableNativePlugin?: boolean | 'resolver' | 'v1'
+  /**
+   * Enable full bundle mode in dev.
+   *
+   * @experimental
+   * @default false
+   */
+  fullBundleMode?: boolean
 }
 
 export interface LegacyOptions {
@@ -769,6 +776,7 @@ const configDefaults = Object.freeze({
     renderBuiltUrl: undefined,
     hmrPartialAccept: false,
     enableNativePlugin: process.env._VITE_TEST_JS_PLUGIN ? false : 'v1',
+    fullBundleMode: false,
   },
   future: {
     removePluginHookHandleHotUpdate: undefined,
