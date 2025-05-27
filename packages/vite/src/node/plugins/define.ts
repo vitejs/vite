@@ -12,6 +12,7 @@ const importMetaEnvKeyReCache = new Map<string, RegExp>()
 const escapedDotRE = /(?<!\\)\\./g
 
 export function definePlugin(config: ResolvedConfig): Plugin {
+  const isBundled = config.isBundled
   const isBuild = config.command === 'build'
   const isBuildLib = isBuild && config.build.lib
 
@@ -35,6 +36,8 @@ export function definePlugin(config: ResolvedConfig): Plugin {
   const importMetaFallbackKeys: Record<string, string> = {}
   if (isBuild) {
     importMetaKeys['import.meta.hot'] = `undefined`
+  }
+  if (isBundled) {
     for (const key in config.env) {
       const val = JSON.stringify(config.env[key])
       importMetaKeys[`import.meta.env.${key}`] = val
@@ -135,7 +138,7 @@ export function definePlugin(config: ResolvedConfig): Plugin {
 
     transform: {
       async handler(code, id) {
-        if (this.environment.config.consumer === 'client' && !isBuild) {
+        if (this.environment.config.consumer === 'client' && !isBundled) {
           // for dev we inject actual global defines in the vite client to
           // avoid the transform cost. see the `clientInjection` and
           // `importAnalysis` plugin.
@@ -221,6 +224,7 @@ export async function replaceDefine(
   })
 
   if (result.errors.length > 0) {
+    // TODO: better error message
     throw new AggregateError(result.errors, 'oxc transform error')
   }
 

@@ -246,6 +246,7 @@ export function oxcResolvePlugin(
         const depsOptimizerEnabled =
           resolveOptions.optimizeDeps &&
           !resolveOptions.isBuild &&
+          !partialEnv.config.experimental.fullBundleMode &&
           !isDepOptimizationDisabled(partialEnv.config.optimizeDeps)
         const getDepsOptimizer = () => {
           const env = getEnv()

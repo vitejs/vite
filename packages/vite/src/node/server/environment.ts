@@ -44,6 +44,8 @@ export interface DevEnvironmentContext {
     inlineSourceMap?: boolean
   }
   depsOptimizer?: DepsOptimizer
+  /** @internal used for full bundle mode */
+  disableDepsOptimizer?: boolean
 }
 
 export class DevEnvironment extends BaseEnvironment {
@@ -153,17 +155,19 @@ export class DevEnvironment extends BaseEnvironment {
       },
     )
 
-    const { optimizeDeps } = this.config
-    if (context.depsOptimizer) {
-      this.depsOptimizer = context.depsOptimizer
-    } else if (isDepOptimizationDisabled(optimizeDeps)) {
-      this.depsOptimizer = undefined
-    } else {
-      this.depsOptimizer = (
-        optimizeDeps.noDiscovery
-          ? createExplicitDepsOptimizer
-          : createDepsOptimizer
-      )(this)
+    if (!context.disableDepsOptimizer) {
+      const { optimizeDeps } = this.config
+      if (context.depsOptimizer) {
+        this.depsOptimizer = context.depsOptimizer
+      } else if (isDepOptimizationDisabled(optimizeDeps)) {
+        this.depsOptimizer = undefined
+      } else {
+        this.depsOptimizer = (
+          optimizeDeps.noDiscovery
+            ? createExplicitDepsOptimizer
+            : createDepsOptimizer
+        )(this)
+      }
     }
   }
 

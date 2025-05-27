@@ -49,6 +49,7 @@ import {
   BasicMinimalPluginContext,
   basePluginContextMeta,
 } from '../pluginContainer'
+import { FullBundleDevEnvironment } from '../environments/fullBundleEnvironment'
 import { checkLoadingAccess, respondWithAccessDenied } from './static'
 
 interface AssetNode {
@@ -442,6 +443,10 @@ export function indexHtmlMiddleware(
   server: ViteDevServer | PreviewServer,
 ): Connect.NextHandleFunction {
   const isDev = isDevServer(server)
+  const memoryFiles =
+    isDev && server.environments.client instanceof FullBundleDevEnvironment
+      ? server.environments.client.memoryFiles
+      : undefined
 
   // Keep the named function. The name is visible in debug logs via `DEBUG=connect:dispatcher ...`
   return async function viteIndexHtmlMiddleware(req, res, next) {
@@ -452,6 +457,21 @@ export function indexHtmlMiddleware(
     const url = req.url && cleanUrl(req.url)
     // htmlFallbackMiddleware appends '.html' to URLs
     if (url?.endsWith('.html') && req.headers['sec-fetch-dest'] !== 'script') {
+      if (memoryFiles) {
+        const cleanedUrl = cleanUrl(url).slice(1) // remove first /
+        const content = memoryFiles.get(cleanedUrl)
+        if (!content) {
+          return next()
+        }
+
+        const html =
+          typeof content === 'string' ? content : Buffer.from(content.buffer)
+        const headers = isDev
+          ? server.config.server.headers
+          : server.config.preview.headers
+        return send(req, res, html, 'html', { headers })
+      }
+
       let filePath: string
       if (isDev && url.startsWith(FS_PREFIX)) {
         filePath = decodeURIComponent(fsPathFromId(url))

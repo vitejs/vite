@@ -167,6 +167,10 @@ export async function transformDynamicImport(
 }
 
 export function dynamicImportVarsPlugin(config: ResolvedConfig): Plugin {
+  if (config.experimental.enableNativePlugin === true && config.isBundled) {
+    return nativeDynamicImportVarsPlugin()
+  }
+
   const resolve = createBackCompatIdResolver(config, {
     preferRelative: true,
     tryIndex: false,
