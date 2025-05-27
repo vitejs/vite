@@ -123,17 +123,17 @@ export function scanImports(environment: ScanEnvironment): {
   }>
 } {
   const start = performance.now()
-  const deps: Record<string, string> = {}
-  const missing: Record<string, string> = {}
-  let entries: string[]
-
   const { config } = environment
-  const scanContext = { cancelled: false }
-  const esbuildContext: Promise<BuildContext | undefined> = computeEntries(
-    environment,
-  ).then((computedEntries) => {
-    entries = computedEntries
 
+  const scanContext = { cancelled: false }
+  let esbuildContext: Promise<BuildContext | undefined> | undefined
+  async function cancel() {
+    scanContext.cancelled = true
+    return esbuildContext?.then((context) => context?.cancel())
+  }
+
+  async function scan() {
+    const entries = await computeEntries(environment)
     if (!entries.length) {
       if (!config.optimizeDeps.entries && !config.optimizeDeps.include) {
         environment.logger.warn(
@@ -153,82 +153,73 @@ export function scanImports(environment: ScanEnvironment): {
         .map((entry) => `\n  ${colors.dim(entry)}`)
         .join('')}`,
     )
-    return prepareEsbuildScanner(
-      environment,
-      entries,
-      deps,
-      missing,
-      scanContext,
-    )
-  })
+    const deps: Record<string, string> = {}
+    const missing: Record<string, string> = {}
 
-  const result = esbuildContext
-    .then((context) => {
-      function disposeContext() {
-        return context?.dispose().catch((e) => {
-          environment.logger.error('Failed to dispose esbuild context', {
-            error: e,
-          })
-        })
-      }
-      if (!context || scanContext.cancelled) {
-        disposeContext()
-        return { deps: {}, missing: {} }
-      }
-      return context
-        .rebuild()
-        .then(() => {
-          return {
-            // Ensure a fixed order so hashes are stable and improve logs
-            deps: orderedDependencies(deps),
-            missing,
-          }
-        })
-        .finally(() => {
-          return disposeContext()
-        })
-    })
-    .catch(async (e) => {
-      if (e.errors && e.message.includes('The build was canceled')) {
-        // esbuild logs an error when cancelling, but this is expected so
-        // return an empty result instead
-        return { deps: {}, missing: {} }
-      }
+    let context: BuildContext | undefined
+    try {
+      esbuildContext = prepareEsbuildScanner(
+        environment,
+        entries,
+        deps,
+        missing,
+      )
+      context = await esbuildContext
+      if (scanContext.cancelled) return
 
-      const prependMessage = colors.red(`\
+      try {
+        await context!.rebuild()
+        return {
+          // Ensure a fixed order so hashes are stable and improve logs
+          deps: orderedDependencies(deps),
+          missing,
+        }
+      } catch (e) {
+        if (e.errors && e.message.includes('The build was canceled')) {
+          // esbuild logs an error when cancelling, but this is expected so
+          // return an empty result instead
+          return
+        }
+
+        const prependMessage = colors.red(`\
   Failed to scan for dependencies from entries:
   ${entries.join('\n')}
 
   `)
-      if (e.errors) {
-        const msgs = await formatMessages(e.errors, {
-          kind: 'error',
-          color: true,
+        if (e.errors) {
+          const msgs = await formatMessages(e.errors, {
+            kind: 'error',
+            color: true,
+          })
+          e.message = prependMessage + msgs.join('\n')
+        } else {
+          e.message = prependMessage + e.message
+        }
+        throw e
+      } finally {
+        if (debug) {
+          const duration = (performance.now() - start).toFixed(2)
+          const depsStr =
+            Object.keys(orderedDependencies(deps))
+              .sort()
+              .map((id) => `\n  ${colors.cyan(id)} -> ${colors.dim(deps[id])}`)
+              .join('') || colors.dim('no dependencies found')
+          debug(`Scan completed in ${duration}ms: ${depsStr}`)
+        }
+      }
+    } finally {
+      context?.dispose().catch((e) => {
+        environment.logger.error('Failed to dispose esbuild context', {
+          error: e,
         })
-        e.message = prependMessage + msgs.join('\n')
-      } else {
-        e.message = prependMessage + e.message
-      }
-      throw e
-    })
-    .finally(() => {
-      if (debug) {
-        const duration = (performance.now() - start).toFixed(2)
-        const depsStr =
-          Object.keys(orderedDependencies(deps))
-            .sort()
-            .map((id) => `\n  ${colors.cyan(id)} -> ${colors.dim(deps[id])}`)
-            .join('') || colors.dim('no dependencies found')
-        debug(`Scan completed in ${duration}ms: ${depsStr}`)
-      }
-    })
+      })
+    }
+  }
+  const result = scan()
 
   return {
-    cancel: async () => {
-      scanContext.cancelled = true
-      return esbuildContext.then((context) => context?.cancel())
-    },
-    result,
+    cancel,
+    result: result.then((res) => res ?? { deps: {}, missing: {} }),
   }
 }
 
@@ -283,10 +274,7 @@ async function prepareEsbuildScanner(
   entries: string[],
   deps: Record<string, string>,
   missing: Record<string, string>,
-  scanContext: { cancelled: boolean },
-): Promise<BuildContext | undefined> {
-  if (scanContext.cancelled) return
-
+): Promise<BuildContext> {
   const plugin = esbuildScanPlugin(environment, deps, missing, entries)
 
   const { plugins = [], ...esbuildOptions } =

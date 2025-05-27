@@ -40,7 +40,7 @@ import { resolveConfig } from './config'
 import type { InlineConfig, ResolvedConfig } from './config'
 import { DEFAULT_PREVIEW_PORT } from './constants'
 import type { RequiredExceptFor } from './typeUtils'
-import { hostCheckMiddleware } from './server/middlewares/hostCheck'
+import { hostValidationMiddleware } from './server/middlewares/hostCheck'
 import { BasicMinimalPluginContext } from './server/pluginContainer'
 import type { MinimalPluginContextWithoutEnvironment } from './plugin'
 
@@ -216,7 +216,7 @@ export async function preview(
   const { allowedHosts } = config.preview
   // no need to check for HTTPS as HTTPS is not vulnerable to DNS rebinding attacks
   if (allowedHosts !== true && !config.preview.https) {
-    app.use(hostCheckMiddleware(config, true))
+    app.use(hostValidationMiddleware(allowedHosts, true))
   }
 
   // proxy
