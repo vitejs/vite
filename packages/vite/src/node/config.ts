@@ -1453,10 +1453,20 @@ export async function resolveConfig(
         .getSortedPluginHooks('configResolved')
         .map((hook) => hook.call(resolvedConfigContext, workerResolved)),
     )
+    ;(workerResolved.plugins as Plugin[]) = resolvedWorkerPlugins
 
     return {
       ...workerResolved,
-      plugins: resolvedWorkerPlugins,
+      environments: {
+        ...workerResolved.environments,
+        // During Build the client environment is used to bundler the worker
+        client: {
+          ...workerResolved.environments.client,
+          plugins: await resolveEnvironmentPlugins(
+            new PartialEnvironment('client', workerResolved),
+          ),
+        },
+      },
     }
   }
 
