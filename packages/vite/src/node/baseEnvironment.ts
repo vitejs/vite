@@ -20,6 +20,7 @@ export function getDefaultResolvedEnvironmentOptions(
     optimizeDeps: config.optimizeDeps,
     dev: config.dev,
     build: config.build,
+    plugins: config.plugins,
   }
 }
 

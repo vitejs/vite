@@ -295,7 +295,7 @@ export type ResolvedEnvironmentOptions = {
   optimizeDeps: DepOptimizationOptions
   dev: ResolvedDevEnvironmentOptions
   build: ResolvedBuildEnvironmentOptions
-  plugins: Plugin[]
+  plugins: readonly Plugin[]
 }
 
 export type DefaultEnvironmentOptions = Omit<
