@@ -959,9 +959,9 @@ importers:
       '@vitejs/test-dep-cjs-with-assets':
         specifier: file:./dep-cjs-with-assets
         version: file:playground/optimize-deps/dep-cjs-with-assets
-      '@vitejs/test-dep-cjs-with-external-dep':
-        specifier: file:./dep-cjs-with-external-dep
-        version: file:playground/optimize-deps/dep-cjs-with-external-dep
+      '@vitejs/test-dep-cjs-with-external-deps':
+        specifier: file:./dep-cjs-with-external-deps
+        version: file:playground/optimize-deps/dep-cjs-with-external-deps
       '@vitejs/test-dep-css-require':
         specifier: file:./dep-css-require
         version: file:playground/optimize-deps/dep-css-require
@@ -1094,15 +1094,20 @@ importers:
 
   playground/optimize-deps/dep-cjs-with-assets: {}
 
-  playground/optimize-deps/dep-cjs-with-external-dep:
+  playground/optimize-deps/dep-cjs-with-external-deps:
     dependencies:
       '@vitejs/test-dep-esm-external':
         specifier: file:../dep-esm-external
         version: file:playground/optimize-deps/dep-esm-external
+      stream:
+        specifier: file:../dep-esm-dummy-node-builtin
+        version: '@vitejs/test-dep-esm-dummy-node-builtin@file:playground/optimize-deps/dep-esm-dummy-node-builtin'
 
   playground/optimize-deps/dep-css-require: {}
 
   playground/optimize-deps/dep-esbuild-plugin-transform: {}
+
+  playground/optimize-deps/dep-esm-dummy-node-builtin: {}
 
   playground/optimize-deps/dep-esm-external: {}
 
@@ -3654,8 +3659,8 @@ packages:
   '@vitejs/test-dep-cjs-with-assets@file:playground/optimize-deps/dep-cjs-with-assets':
     resolution: {directory: playground/optimize-deps/dep-cjs-with-assets, type: directory}
 
-  '@vitejs/test-dep-cjs-with-external-dep@file:playground/optimize-deps/dep-cjs-with-external-dep':
-    resolution: {directory: playground/optimize-deps/dep-cjs-with-external-dep, type: directory}
+  '@vitejs/test-dep-cjs-with-external-deps@file:playground/optimize-deps/dep-cjs-with-external-deps':
+    resolution: {directory: playground/optimize-deps/dep-cjs-with-external-deps, type: directory}
 
   '@vitejs/test-dep-conditions@file:packages/vite/src/node/__tests__/fixtures/test-dep-conditions':
     resolution: {directory: packages/vite/src/node/__tests__/fixtures/test-dep-conditions, type: directory}
@@ -3665,6 +3670,9 @@ packages:
 
   '@vitejs/test-dep-esbuild-plugin-transform@file:playground/optimize-deps/dep-esbuild-plugin-transform':
     resolution: {directory: playground/optimize-deps/dep-esbuild-plugin-transform, type: directory}
+
+  '@vitejs/test-dep-esm-dummy-node-builtin@file:playground/optimize-deps/dep-esm-dummy-node-builtin':
+    resolution: {directory: playground/optimize-deps/dep-esm-dummy-node-builtin, type: directory}
 
   '@vitejs/test-dep-esm-external@file:playground/optimize-deps/dep-esm-external':
     resolution: {directory: playground/optimize-deps/dep-esm-external, type: directory}
@@ -9289,15 +9297,18 @@ snapshots:
 
   '@vitejs/test-dep-cjs-with-assets@file:playground/optimize-deps/dep-cjs-with-assets': {}
 
-  '@vitejs/test-dep-cjs-with-external-dep@file:playground/optimize-deps/dep-cjs-with-external-dep':
+  '@vitejs/test-dep-cjs-with-external-deps@file:playground/optimize-deps/dep-cjs-with-external-deps':
     dependencies:
       '@vitejs/test-dep-esm-external': file:playground/optimize-deps/dep-esm-external
+      stream: '@vitejs/test-dep-esm-dummy-node-builtin@file:playground/optimize-deps/dep-esm-dummy-node-builtin'
 
   '@vitejs/test-dep-conditions@file:packages/vite/src/node/__tests__/fixtures/test-dep-conditions': {}
 
   '@vitejs/test-dep-css-require@file:playground/optimize-deps/dep-css-require': {}
 
   '@vitejs/test-dep-esbuild-plugin-transform@file:playground/optimize-deps/dep-esbuild-plugin-transform': {}
+
+  '@vitejs/test-dep-esm-dummy-node-builtin@file:playground/optimize-deps/dep-esm-dummy-node-builtin': {}
 
   '@vitejs/test-dep-esm-external@file:playground/optimize-deps/dep-esm-external': {}
 
