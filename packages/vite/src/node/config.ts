@@ -640,6 +640,8 @@ export interface ResolvedConfig extends Readonly<
     cacheDir: string
     command: 'build' | 'serve'
     mode: string
+    /** `true` when build or full-bundle mode dev */
+    isBundled: boolean
     isWorker: boolean
     // in nested worker bundle to find the main config
     /** @internal */
@@ -1802,6 +1804,7 @@ export async function resolveConfig(
     cacheDir,
     command,
     mode,
+    isBundled: config.experimental?.fullBundleMode || isBuild,
     isWorker: false,
     mainConfig: null,
     bundleChain: [],
