@@ -55,6 +55,7 @@ import {
   mergeWithDefaults,
   normalizePath,
   partialEncodeURIPath,
+  rollupVersion,
 } from './utils'
 import { perEnvironmentPlugin, resolveEnvironmentPlugins } from './plugin'
 import { manifestPlugin } from './plugins/manifest'
@@ -77,8 +78,9 @@ import {
   BaseEnvironment,
   getDefaultResolvedEnvironmentOptions,
 } from './baseEnvironment'
-import type { Plugin } from './plugin'
+import type { MinimalPluginContextWithoutEnvironment, Plugin } from './plugin'
 import type { RollupPluginHooks } from './typeUtils'
+import { BasicMinimalPluginContext } from './server/pluginContainer'
 
 export interface BuildEnvironmentOptions {
   /**
@@ -1573,6 +1575,14 @@ export async function createBuilder(
     environments,
     config,
     async buildApp() {
+      const pluginContext = new BasicMinimalPluginContext(
+        {
+          rollupVersion,
+          watchMode: false,
+        },
+        config.logger,
+      )
+
       // order 'pre' and 'normal' hooks are run first, then config.builder.buildApp, then 'post' hooks
       let configBuilderBuildAppCalled = false
       for (const p of config.getSortedPlugins('buildApp')) {
@@ -1586,7 +1596,7 @@ export async function createBuilder(
           await configBuilder.buildApp(builder)
         }
         const handler = getHookHandler(hook)
-        await handler(builder)
+        await handler.call(pluginContext, builder)
       }
       if (!configBuilderBuildAppCalled) {
         await configBuilder.buildApp(builder)
@@ -1670,4 +1680,7 @@ export async function createBuilder(
   return builder
 }
 
-export type BuildAppHook = (this: void, builder: ViteBuilder) => Promise<void>
+export type BuildAppHook = (
+  this: MinimalPluginContextWithoutEnvironment,
+  builder: ViteBuilder,
+) => Promise<void>

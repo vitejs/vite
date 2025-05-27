@@ -35,6 +35,7 @@ import {
   normalizePath,
   resolveHostname,
   resolveServerUrls,
+  rollupVersion,
   setupSIGTERMListener,
   teardownSIGTERMListener,
 } from '../utils'
@@ -62,8 +63,13 @@ import {
 import { initPublicFiles } from '../publicDir'
 import { getEnvFilesForMode } from '../env'
 import type { RequiredExceptFor } from '../typeUtils'
+import type { MinimalPluginContextWithoutEnvironment } from '../plugin'
 import type { PluginContainer } from './pluginContainer'
-import { ERR_CLOSED_SERVER, createPluginContainer } from './pluginContainer'
+import {
+  BasicMinimalPluginContext,
+  ERR_CLOSED_SERVER,
+  createPluginContainer,
+} from './pluginContainer'
 import type { WebSocketServer } from './ws'
 import { createWebSocketServer } from './ws'
 import { baseMiddleware } from './middlewares/base'
@@ -242,7 +248,7 @@ export interface FileSystemServeOptions {
 }
 
 export type ServerHook = (
-  this: void,
+  this: MinimalPluginContextWithoutEnvironment,
   server: ViteDevServer,
 ) => (() => void) | void | Promise<(() => void) | void>
 
@@ -854,9 +860,16 @@ export async function _createServer(
   }
 
   // apply server configuration hooks from plugins
+  const configureServerContext = new BasicMinimalPluginContext(
+    {
+      rollupVersion,
+      watchMode: true,
+    },
+    config.logger,
+  )
   const postHooks: ((() => void) | void)[] = []
   for (const hook of config.getSortedPluginHooks('configureServer')) {
-    postHooks.push(await hook(reflexServer))
+    postHooks.push(await hook.call(configureServerContext, reflexServer))
   }
 
   // Internal middlewares ------------------------------------------------------
