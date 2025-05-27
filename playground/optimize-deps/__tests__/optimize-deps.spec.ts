@@ -365,8 +365,11 @@ test('external package name with asset extension', async () => {
   ).toBe(String(isServe))
 })
 
-test('dependency with external sub-dependency', async () => {
+test('dependency with external sub-dependencies', async () => {
   await expectWithRetry(() =>
-    page.textContent('.dep-cjs-with-external-dep'),
+    page.textContent('.dep-cjs-with-external-deps-object'),
   ).toBe('ok')
+  await expectWithRetry(() =>
+    page.textContent('.dep-cjs-with-external-deps-node-builtin'),
+  ).toBe('foo bar')
 })

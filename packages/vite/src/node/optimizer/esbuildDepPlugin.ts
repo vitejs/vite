@@ -8,6 +8,7 @@ import {
   isBuiltin,
   isCSSRequest,
   isExternalUrl,
+  isNodeBuiltin,
   moduleListContains,
   normalizePath,
 } from '../utils'
@@ -337,10 +338,10 @@ export function esbuildCjsExternalPlugin(
       build.onLoad(
         { filter: /.*/, namespace: cjsExternalFacadeNamespace },
         (args) => ({
-          contents:
-            `import * as m from ${JSON.stringify(
-              nonFacadePrefix + args.path,
-            )};` + `module.exports = { ...m };`,
+          contents: `\
+import * as m from ${JSON.stringify(nonFacadePrefix + args.path)};
+module.exports = ${isNodeBuiltin(args.path) ? 'm.default' : '{ ...m }'};
+`,
         }),
       )
     },
