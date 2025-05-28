@@ -213,8 +213,8 @@ function createResolveIdHandler(
       kind:
         importerWithoutNamespace === undefined
           ? 'entry-point'
-          : opts.kind === 'import'
-            ? 'import-statement'
+          : opts.kind === 'new-url' || opts.kind === 'hot-accept'
+            ? 'dynamic-import'
             : opts.kind,
       pluginData: {},
       with: {},

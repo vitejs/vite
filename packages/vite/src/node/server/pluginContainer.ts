@@ -39,6 +39,7 @@ import type {
   CustomPluginOptions,
   EmittedFile,
   FunctionPluginHooks,
+  ImportKind,
   InputOptions,
   LoadResult,
   ModuleInfo,
@@ -346,7 +347,7 @@ class EnvironmentPluginContainer {
       'index.html',
     ),
     options?: {
-      kind?: 'import' | 'dynamic-import' | 'require-call'
+      kind?: ImportKind
       attributes?: Record<string, string>
       custom?: CustomPluginOptions
       /** @deprecated use `skipCalls` instead */
