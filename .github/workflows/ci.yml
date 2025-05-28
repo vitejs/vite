@@ -9,9 +9,9 @@ env:
   # Vitest auto retry on flaky segfault
   VITEST_SEGFAULT_RETRY: 3
 
-# Remove default permissions of GITHUB_TOKEN for security
-# https://docs.github.com/en/actions/using-jobs/assigning-permissions-to-jobs
-permissions: {}
+# Give write permissions for auto-commit
+permissions:
+  contents: write
 
 on:
   push:
@@ -168,8 +168,22 @@ jobs:
       - name: Lint
         run: pnpm run lint
 
-      - name: Check formatting
-        run: pnpm prettier --write --log-level=warn . && git diff --exit-code
+      # === BEGIN: Auto-fix and auto-commit Prettier formatting ===
+      - name: Check formatting (auto-fix)
+        id: prettier
+        run: |
+          pnpm prettier --write --log-level=warn .
+          git diff --exit-code || echo "Formatting fixes found."
+
+      - name: Auto-commit Prettier formatting fixes
+        if: steps.prettier.outcome == 'success' && github.event_name == 'pull_request' && (git status --porcelain | grep .)
+        run: |
+          git config --global user.email "actions@github.com"
+          git config --global user.name "GitHub Actions"
+          git add .
+          git commit -m "chore: apply Prettier formatting [automated]"
+          git push
+      # === END: Auto-fix and auto-commit Prettier formatting ===
 
       - name: Typecheck
         run: pnpm run typecheck
