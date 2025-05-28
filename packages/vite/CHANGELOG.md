@@ -1,3 +1,11 @@
+## <small>6.3.13 (2025-05-28)</small>
+
+* feat: update rolldown (#190) ([3e8a826](https://github.com/vitejs/rolldown-vite/commit/3e8a826)), closes [#190](https://github.com/vitejs/rolldown-vite/issues/190)
+* feat(native-plugin): support `import.meta.env.*` for native define plugin (#188) ([8557f7a](https://github.com/vitejs/rolldown-vite/commit/8557f7a)), closes [#188](https://github.com/vitejs/rolldown-vite/issues/188)
+* fix(native-plugin): run output generation hooks of buildImportAnalysisPlugin (#187) ([52af0fc](https://github.com/vitejs/rolldown-vite/commit/52af0fc)), closes [#187](https://github.com/vitejs/rolldown-vite/issues/187)
+
+
+
 ## <small>6.3.12 (2025-05-21)</small>
 
 * feat: moduleType support in dev (#172) ([707778e](https://github.com/vitejs/rolldown-vite/commit/707778e)), closes [#172](https://github.com/vitejs/rolldown-vite/issues/172)
