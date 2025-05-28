@@ -1,5 +1,6 @@
 import type {
   CustomPluginOptions,
+  ImportKind,
   LoadResult,
   ModuleType,
   ModuleTypeFilter,
@@ -116,7 +117,7 @@ export interface Plugin<A = any> extends RolldownPlugin<A> {
       source: string,
       importer: string | undefined,
       options: {
-        kind?: 'import' | 'dynamic-import' | 'require-call'
+        kind?: ImportKind
         custom?: CustomPluginOptions
         ssr?: boolean
         /**
