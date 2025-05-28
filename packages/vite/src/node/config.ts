@@ -852,7 +852,7 @@ function resolveEnvironmentOptions(
       logger,
       consumer,
     ),
-    plugins: undefined as any, // to be resolved later
+    plugins: undefined!, // to be resolved later
   }
 }
 
