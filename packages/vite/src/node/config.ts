@@ -1440,34 +1440,38 @@ export async function resolveConfig(
       mainConfig: resolved,
       bundleChain,
     }
-    const resolvedWorkerPlugins = (await resolvePlugins(
+
+    // Plugins resolution needs the resolved config (minus plugins) so we need to mutate here
+    ;(workerResolved.plugins as Plugin[]) = await resolvePlugins(
       workerResolved,
       workerPrePlugins,
       workerNormalPlugins,
       workerPostPlugins,
-    )) as Plugin[]
+    )
+
+    // During Build the client environment is used to bundler the worker
+    // Avoid overriding the mainConfig (resolved.environments.client)
+    ;(workerResolved.environments as Record<
+      string,
+      ResolvedEnvironmentOptions
+    >) = {
+      ...workerResolved.environments,
+      client: {
+        ...workerResolved.environments.client,
+        plugins: await resolveEnvironmentPlugins(
+          new PartialEnvironment('client', workerResolved),
+        ),
+      },
+    }
 
     // run configResolved hooks
     await Promise.all(
-      createPluginHookUtils(resolvedWorkerPlugins)
+      createPluginHookUtils(workerResolved.plugins)
         .getSortedPluginHooks('configResolved')
         .map((hook) => hook.call(resolvedConfigContext, workerResolved)),
     )
-    ;(workerResolved.plugins as Plugin[]) = resolvedWorkerPlugins
 
-    return {
-      ...workerResolved,
-      environments: {
-        ...workerResolved.environments,
-        // During Build the client environment is used to bundler the worker
-        client: {
-          ...workerResolved.environments.client,
-          plugins: await resolveEnvironmentPlugins(
-            new PartialEnvironment('client', workerResolved),
-          ),
-        },
-      },
-    }
+    return workerResolved
   }
 
   const resolvedWorkerOptions: ResolvedWorkerOptions = {
