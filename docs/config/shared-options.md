@@ -283,7 +283,7 @@ export default defineConfig({
 - **Type:** `number | true`
 - **Default:** `true`
 
-Specifies how many threads CSS preprocessors will run on. `true` means the number of CPUs minus 1. When set to `0`, Vite will not create any workers and run the preprocessors in the main thread.
+Specifies the maximum number of threads CSS preprocessors can use. `true` means up to the number of CPUs minus 1. When set to `0`, Vite will not create any workers and will run the preprocessors in the main thread.
 
 Depending on the preprocessor options, Vite may run the preprocessors on the main thread even if this option is not set to `0`.
 
