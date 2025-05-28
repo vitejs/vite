@@ -143,8 +143,7 @@ export interface CSSOptions {
    * If this option is set, preprocessors will run in workers when possible.
    * `true` means the number of CPUs minus 1.
    *
-   * @default 0
-   * @experimental
+   * @default true
    */
   preprocessorMaxWorkers?: number | true
   postcss?:
@@ -198,8 +197,7 @@ export const cssConfigDefaults = Object.freeze({
   transformer: 'postcss',
   // modules
   // preprocessorOptions
-  /** @experimental */
-  preprocessorMaxWorkers: 0,
+  preprocessorMaxWorkers: true,
   // postcss
   /** @experimental */
   devSourcemap: false,
