@@ -34,7 +34,7 @@ In addition, Vite is highly extensible via its [Plugin API](https://vite.dev/gui
 
 [Read the Docs to Learn More](https://vite.dev).
 
-➡️ [Get started with your first Vite project](https://vite.dev/guide/#scaffolding-your-first-vite-project)
+[Get started with your first Vite project](https://vite.dev/guide/#scaffolding-your-first-vite-project)
 
 
 ## Packages
