@@ -13,8 +13,7 @@ The default browser value of `build.target` is updated to a newer browser.
 - Firefox 78 → 104
 - Safari 14.0 → 16.0
 
-These browser versions align with [Baseline](https://web-platform-dx.github.io/web-features/) Widely Available feature sets as of 2025-05-01.
-In other words, they were all released before 2022-11-01.
+These browser versions align with [Baseline](https://web-platform-dx.github.io/web-features/) Widely Available feature sets as of 2025-05-01. In other words, they were all released before 2022-11-01.
 
 In Vite 5, the default target was named `'modules'`, but this is no longer available. Instead, a new default target `'baseline-widely-available'` is introduced.
 
@@ -22,7 +21,7 @@ In Vite 5, the default target was named `'modules'`, but this is no longer avail
 
 ### Removed Sass legacy API support
 
-As planned, support for the Sass legacy API is removed. Vite now only supports the modern API.
+As planned, support for the Sass legacy API is removed. Vite now only supports the modern API. You can remove the `css.preprocessorOptions.sass.api` / `css.preprocessorOptions.scss.api` option.
 
 ## Removed deprecated features
 
