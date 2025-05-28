@@ -245,10 +245,11 @@ export function webWorkerPostPlugin(): Plugin {
     name: 'vite:worker-post',
     transform: {
       filter: {
-        code: 'import.meta.url',
+        code: 'import.meta',
       },
+      order: 'post',
       async handler(code, id) {
-        // document is undefined in the worker, so we need to avoid import.meta.url in iife
+        // import.meta is unavailable in the IIFE worker, so we need to replace it
         if (this.environment.config.worker.format === 'iife') {
           await init
 
@@ -260,6 +261,7 @@ export function webWorkerPostPlugin(): Plugin {
             return
           }
 
+          let injectedImportMeta = false
           let s: MagicString | undefined
           for (const { s: start, e: end, d: dynamicIndex } of imports) {
             // is import.meta
@@ -268,6 +270,15 @@ export function webWorkerPostPlugin(): Plugin {
               if (prop === '.url') {
                 s ||= new MagicString(code)
                 s.overwrite(start, end + 4, 'self.location.href')
+              } else {
+                s ||= new MagicString(code)
+                if (!injectedImportMeta) {
+                  s.prepend(
+                    'const _vite_importMeta = { url: self.location.href };\n',
+                  )
+                  injectedImportMeta = true
+                }
+                s.overwrite(start, end, '_vite_importMeta')
               }
             }
           }
