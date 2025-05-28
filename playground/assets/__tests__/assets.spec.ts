@@ -8,7 +8,6 @@ import {
   getColor,
   isBuild,
   isServe,
-  isWindows,
   listAssets,
   notifyRebuildComplete,
   page,
@@ -634,35 +633,31 @@ test.runIf(isBuild)('manifest', async () => {
   }
 })
 
-// TODO: skip on Windows due to https://github.com/rolldown/rolldown/issues/4385
-describe.runIf(isBuild && !isWindows)(
-  'css and assets in css in build watch',
-  () => {
-    test('css will not be lost and css does not contain undefined', async () => {
-      editFile('index.html', (code) => code.replace('Assets', 'assets'))
-      await notifyRebuildComplete(watcher)
-      const cssFile = findAssetFile(/index-[-\w]+\.css$/, 'foo')
-      expect(cssFile).not.toBe('')
-      expect(cssFile).not.toMatch(/undefined/)
-    })
+describe.runIf(isBuild)('css and assets in css in build watch', () => {
+  test('css will not be lost and css does not contain undefined', async () => {
+    editFile('index.html', (code) => code.replace('Assets', 'assets'))
+    await notifyRebuildComplete(watcher)
+    const cssFile = findAssetFile(/index-[-\w]+\.css$/, 'foo')
+    expect(cssFile).not.toBe('')
+    expect(cssFile).not.toMatch(/undefined/)
+  })
 
-    test('import module.css', async () => {
-      expect(await getColor('#foo')).toBe('red')
-      editFile('css/foo.module.css', (code) => code.replace('red', 'blue'))
-      await notifyRebuildComplete(watcher)
-      await page.reload()
-      expect(await getColor('#foo')).toBe('blue')
-    })
+  test('import module.css', async () => {
+    expect(await getColor('#foo')).toBe('red')
+    editFile('css/foo.module.css', (code) => code.replace('red', 'blue'))
+    await notifyRebuildComplete(watcher)
+    await page.reload()
+    expect(await getColor('#foo')).toBe('blue')
+  })
 
-    test('import with raw query', async () => {
-      expect(await page.textContent('.raw-query')).toBe('foo')
-      editFile('static/foo.txt', (code) => code.replace('foo', 'zoo'))
-      await notifyRebuildComplete(watcher)
-      await page.reload()
-      expect(await page.textContent('.raw-query')).toBe('zoo')
-    })
-  },
-)
+  test('import with raw query', async () => {
+    expect(await page.textContent('.raw-query')).toBe('foo')
+    editFile('static/foo.txt', (code) => code.replace('foo', 'zoo'))
+    await notifyRebuildComplete(watcher)
+    await page.reload()
+    expect(await page.textContent('.raw-query')).toBe('zoo')
+  })
+})
 
 test('inline style test', async () => {
   expect(await getBg('.inline-style')).toMatch(assetMatch)
