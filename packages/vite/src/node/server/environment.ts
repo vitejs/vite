@@ -1,10 +1,7 @@
 import type { FetchFunctionOptions, FetchResult } from 'vite/module-runner'
 import type { FSWatcher } from 'dep-types/chokidar'
 import colors from 'picocolors'
-import {
-  BaseEnvironment,
-  getDefaultResolvedEnvironmentOptions,
-} from '../baseEnvironment'
+import { BaseEnvironment } from '../baseEnvironment'
 import type {
   EnvironmentOptions,
   ResolvedConfig,
@@ -101,8 +98,10 @@ export class DevEnvironment extends BaseEnvironment {
     config: ResolvedConfig,
     context: DevEnvironmentContext,
   ) {
-    let options =
-      config.environments[name] ?? getDefaultResolvedEnvironmentOptions(config)
+    let options = config.environments[name]
+    if (!options) {
+      throw new Error(`Environment "${name}" is not defined in the config.`)
+    }
     if (context.options) {
       options = mergeConfig(
         options,
