@@ -1,3 +1,10 @@
+## <small>6.3.14 (2025-05-29)</small>
+
+* feat: update rolldown ([bbd4728](https://github.com/vitejs/rolldown-vite/commit/bbd4728))
+* fix(worker): import.meta should be replaced ([c22ffbc](https://github.com/vitejs/rolldown-vite/commit/c22ffbc))
+
+
+
 ## <small>6.3.13 (2025-05-28)</small>
 
 * feat: update rolldown (#190) ([3e8a826](https://github.com/vitejs/rolldown-vite/commit/3e8a826)), closes [#190](https://github.com/vitejs/rolldown-vite/issues/190)
