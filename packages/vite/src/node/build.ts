@@ -56,7 +56,7 @@ import {
   normalizePath,
   partialEncodeURIPath,
 } from './utils'
-import { perEnvironmentPlugin, resolveEnvironmentPlugins } from './plugin'
+import { perEnvironmentPlugin } from './plugin'
 import { manifestPlugin } from './plugins/manifest'
 import type { Logger } from './logger'
 import { dataURIPlugin } from './plugins/dataUri'
@@ -73,10 +73,7 @@ import {
 import { completeSystemWrapPlugin } from './plugins/completeSystemWrap'
 import { webWorkerPostPlugin } from './plugins/worker'
 import { getHookHandler } from './plugins'
-import {
-  BaseEnvironment,
-  getDefaultResolvedEnvironmentOptions,
-} from './baseEnvironment'
+import { BaseEnvironment } from './baseEnvironment'
 import type { MinimalPluginContextWithoutEnvironment, Plugin } from './plugin'
 import type { RollupPluginHooks } from './typeUtils'
 import {
@@ -1483,8 +1480,10 @@ export class BuildEnvironment extends BaseEnvironment {
       options?: EnvironmentOptions
     },
   ) {
-    let options =
-      config.environments[name] ?? getDefaultResolvedEnvironmentOptions(config)
+    let options = config.environments[name]
+    if (!options) {
+      throw new Error(`Environment "${name}" is not defined in the config.`)
+    }
     if (setup?.options) {
       options = mergeConfig(
         options,
@@ -1499,7 +1498,6 @@ export class BuildEnvironment extends BaseEnvironment {
       return
     }
     this._initiated = true
-    this._plugins = await resolveEnvironmentPlugins(this)
   }
 }
 

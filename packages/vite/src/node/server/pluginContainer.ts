@@ -141,7 +141,7 @@ export async function createEnvironmentPluginContainer<
   Env extends Environment = Environment,
 >(
   environment: Env,
-  plugins: Plugin[],
+  plugins: readonly Plugin[],
   watcher?: FSWatcher,
   autoStart = true,
 ): Promise<EnvironmentPluginContainer<Env>> {
@@ -190,7 +190,7 @@ class EnvironmentPluginContainer<Env extends Environment = Environment> {
    */
   constructor(
     public environment: Env,
-    public plugins: Plugin[],
+    public plugins: readonly Plugin[],
     public watcher?: FSWatcher,
     autoStart = true,
   ) {
