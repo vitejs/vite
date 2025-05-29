@@ -1449,7 +1449,7 @@ export async function resolveConfig(
       workerPostPlugins,
     )
 
-    // During Build the client environment is used to bundler the worker
+    // During Build the client environment is used to bundle the worker
     // Avoid overriding the mainConfig (resolved.environments.client)
     ;(workerResolved.environments as Record<
       string,
