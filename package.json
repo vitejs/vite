@@ -72,7 +72,7 @@
     "typescript": "~5.7.2",
     "typescript-eslint": "^8.32.1",
     "vite": "workspace:*",
-    "vitest": "^3.1.4"
+    "vitest": "3.2.0-beta.3"
   },
   "simple-git-hooks": {
     "pre-commit": "pnpm exec lint-staged --concurrent false"
@@ -100,8 +100,7 @@
       "http-proxy@1.18.1": "patches/http-proxy@1.18.1.patch",
       "sirv@3.0.1": "patches/sirv@3.0.1.patch",
       "chokidar@3.6.0": "patches/chokidar@3.6.0.patch",
-      "dotenv-expand@12.0.2": "patches/dotenv-expand@12.0.2.patch",
-      "vite-node": "patches/vite-node.patch"
+      "dotenv-expand@12.0.2": "patches/dotenv-expand@12.0.2.patch"
     },
     "peerDependencyRules": {
       "allowedVersions": {
