@@ -34,7 +34,6 @@ import {
   virtualModulePrefix,
   virtualModuleRE,
 } from '../utils'
-import { resolveEnvironmentPlugins } from '../plugin'
 import type { EnvironmentPluginContainer } from '../server/pluginContainer'
 import { createEnvironmentPluginContainer } from '../server/pluginContainer'
 import { BaseEnvironment } from '../baseEnvironment'
@@ -63,7 +62,6 @@ export class ScanEnvironment extends BaseEnvironment {
       return
     }
     this._initiated = true
-    this._plugins = await resolveEnvironmentPlugins(this)
     this._pluginContainer = await createEnvironmentPluginContainer(
       this,
       this.plugins,

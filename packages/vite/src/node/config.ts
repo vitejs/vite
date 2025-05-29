@@ -25,6 +25,7 @@ import {
   ENV_ENTRY,
   FS_PREFIX,
 } from './constants'
+import { resolveEnvironmentPlugins } from './plugin'
 import type {
   FalsyPlugin,
   HookHandler,
@@ -294,6 +295,7 @@ export type ResolvedEnvironmentOptions = {
   optimizeDeps: DepOptimizationOptions
   dev: ResolvedDevEnvironmentOptions
   build: ResolvedBuildEnvironmentOptions
+  plugins: readonly Plugin[]
 }
 
 export type DefaultEnvironmentOptions = Omit<
@@ -835,6 +837,7 @@ function resolveEnvironmentOptions(
       logger,
       consumer,
     ),
+    plugins: undefined!, // to be resolved later
   }
 }
 
@@ -1421,24 +1424,38 @@ export async function resolveConfig(
       mainConfig: resolved,
       bundleChain,
     }
-    const resolvedWorkerPlugins = (await resolvePlugins(
+
+    // Plugins resolution needs the resolved config (minus plugins) so we need to mutate here
+    ;(workerResolved.plugins as Plugin[]) = await resolvePlugins(
       workerResolved,
       workerPrePlugins,
       workerNormalPlugins,
       workerPostPlugins,
-    )) as Plugin[]
+    )
+
+    // During Build the client environment is used to bundle the worker
+    // Avoid overriding the mainConfig (resolved.environments.client)
+    ;(workerResolved.environments as Record<
+      string,
+      ResolvedEnvironmentOptions
+    >) = {
+      ...workerResolved.environments,
+      client: {
+        ...workerResolved.environments.client,
+        plugins: await resolveEnvironmentPlugins(
+          new PartialEnvironment('client', workerResolved),
+        ),
+      },
+    }
 
     // run configResolved hooks
     await Promise.all(
-      createPluginHookUtils(resolvedWorkerPlugins)
+      createPluginHookUtils(workerResolved.plugins)
         .getSortedPluginHooks('configResolved')
         .map((hook) => hook.call(resolvedConfigContext, workerResolved)),
     )
 
-    return {
-      ...workerResolved,
-      plugins: resolvedWorkerPlugins,
-    }
+    return workerResolved
   }
 
   const resolvedWorkerOptions: ResolvedWorkerOptions = {
@@ -1587,6 +1604,12 @@ export async function resolveConfig(
 
   // TODO: Deprecate config.getSortedPlugins and config.getSortedPluginHooks
   Object.assign(resolved, createPluginHookUtils(resolved.plugins))
+
+  for (const name of Object.keys(resolved.environments)) {
+    resolved.environments[name].plugins = await resolveEnvironmentPlugins(
+      new PartialEnvironment(name, resolved),
+    )
+  }
 
   // call configResolved hooks
   await Promise.all(
