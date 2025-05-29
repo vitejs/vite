@@ -133,7 +133,7 @@ describe('build', () => {
           "index",
           "_bar",
           "_foo",
-          "\0baz.css",
+          "_baz.css",
         ],
         "unchanged": [
           "_bar.css",
