@@ -8,6 +8,7 @@ import {
   isBuiltin,
   isCSSRequest,
   isExternalUrl,
+  isNodeBuiltin,
   moduleListContains,
   normalizePath,
 } from '../utils'
@@ -283,15 +284,11 @@ module.exports = Object.create(new Proxy({}, {
       build.onLoad(
         { filter: /.*/, namespace: 'optional-peer-dep' },
         ({ path }) => {
-          if (isProduction) {
-            return {
-              contents: 'module.exports = {}',
-            }
-          } else {
-            const [, peerDep, parentDep] = path.split(':')
-            return {
-              contents: `throw new Error(\`Could not resolve "${peerDep}" imported by "${parentDep}". Is it installed?\`)`,
-            }
+          const [, peerDep, parentDep] = path.split(':')
+          return {
+            contents:
+              'module.exports = {};' +
+              `throw new Error(\`Could not resolve "${peerDep}" imported by "${parentDep}".${isProduction ? '' : ' Is it installed?'}\`)`,
           }
         },
       )
@@ -337,10 +334,10 @@ export function esbuildCjsExternalPlugin(
       build.onLoad(
         { filter: /.*/, namespace: cjsExternalFacadeNamespace },
         (args) => ({
-          contents:
-            `import * as m from ${JSON.stringify(
-              nonFacadePrefix + args.path,
-            )};` + `module.exports = { ...m };`,
+          contents: `\
+import * as m from ${JSON.stringify(nonFacadePrefix + args.path)};
+module.exports = ${isNodeBuiltin(args.path) ? 'm.default' : '{ ...m }'};
+`,
         }),
       )
     },
