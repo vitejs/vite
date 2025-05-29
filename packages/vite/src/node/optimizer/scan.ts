@@ -12,7 +12,7 @@ import type {
 import esbuild, { formatMessages, transform } from 'esbuild'
 import type { PartialResolvedId } from 'rollup'
 import colors from 'picocolors'
-import { glob, isDynamicPattern } from 'tinyglobby'
+import { glob } from 'tinyglobby'
 import {
   CSS_LANGS_RE,
   JS_TYPES_RE,
@@ -318,25 +318,42 @@ function orderedDependencies(deps: Record<string, string>) {
   return Object.fromEntries(depsList)
 }
 
-function globEntries(pattern: string | string[], environment: ScanEnvironment) {
-  const resolvedPatterns = arraify(pattern)
-  if (resolvedPatterns.every((str) => !isDynamicPattern(str))) {
-    return resolvedPatterns.map((p) =>
-      normalizePath(path.resolve(environment.config.root, p)),
-    )
+async function globEntries(
+  patterns: string | string[],
+  environment: ScanEnvironment,
+) {
+  const nodeModulesPatterns: string[] = []
+  const regularPatterns: string[] = []
+
+  for (const pattern of arraify(patterns)) {
+    if (pattern.includes('node_modules')) {
+      nodeModulesPatterns.push(pattern)
+    } else {
+      regularPatterns.push(pattern)
+    }
   }
-  return glob(pattern, {
+
+  const sharedOptions = {
     absolute: true,
     cwd: environment.config.root,
     ignore: [
-      '**/node_modules/**',
       `**/${environment.config.build.outDir}/**`,
       // if there aren't explicit entries, also ignore other common folders
       ...(environment.config.optimizeDeps.entries
         ? []
         : [`**/__tests__/**`, `**/coverage/**`]),
     ],
-  })
+  }
+
+  const results = await Promise.all([
+    glob(nodeModulesPatterns, sharedOptions),
+    glob(regularPatterns, {
+      ...sharedOptions,
+      ignore: [...sharedOptions.ignore, '**/node_modules/**'],
+    }),
+  ])
+
+  return results.flat()
 }
 
 export const scriptRE =
