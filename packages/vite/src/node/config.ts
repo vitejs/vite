@@ -507,14 +507,6 @@ export interface ExperimentalOptions {
    * @default false
    */
   hmrPartialAccept?: boolean
-  /**
-   * Skips SSR transform to make it easier to use Vite with Node ESM loaders.
-   * @warning Enabling this will break normal operation of Vite's SSR in development mode.
-   *
-   * @experimental
-   * @default false
-   */
-  skipSsrTransform?: boolean
 }
 
 export interface LegacyOptions {
@@ -701,7 +693,6 @@ export const configDefaults = Object.freeze({
     importGlobRestoreExtension: false,
     renderBuiltUrl: undefined,
     hmrPartialAccept: false,
-    skipSsrTransform: false,
   },
   future: {
     removePluginHookHandleHotUpdate: undefined,
@@ -750,7 +741,6 @@ export function resolveDevEnvironmentOptions(
   environmentName: string | undefined,
   consumer: 'client' | 'server' | undefined,
   // Backward compatibility
-  skipSsrTransform?: boolean,
   preTransformRequest?: boolean,
 ): ResolvedDevEnvironmentOptions {
   const resolved = mergeWithDefaults(
@@ -763,10 +753,7 @@ export function resolveDevEnvironmentOptions(
           ? defaultCreateClientDevEnvironment
           : defaultCreateDevEnvironment,
       recoverable: consumer === 'client',
-      moduleRunnerTransform:
-        skipSsrTransform !== undefined && consumer === 'server'
-          ? skipSsrTransform
-          : consumer === 'server',
+      moduleRunnerTransform: consumer === 'server',
     },
     dev ?? {},
   )
@@ -787,7 +774,6 @@ function resolveEnvironmentOptions(
   logger: Logger,
   environmentName: string,
   // Backward compatibility
-  skipSsrTransform?: boolean,
   isSsrTargetWebworkerSet?: boolean,
   preTransformRequests?: boolean,
 ): ResolvedEnvironmentOptions {
@@ -842,7 +828,6 @@ function resolveEnvironmentOptions(
       options.dev,
       environmentName,
       consumer,
-      skipSsrTransform,
       preTransformRequests,
     ),
     build: resolveBuildEnvironmentOptions(
@@ -1259,7 +1244,6 @@ export async function resolveConfig(
       inlineConfig.forceOptimizeDeps,
       logger,
       environmentName,
-      config.experimental?.skipSsrTransform,
       config.ssr?.target === 'webworker',
       config.server?.preTransformRequests,
     )
