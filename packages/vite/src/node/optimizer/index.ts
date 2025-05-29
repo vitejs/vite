@@ -131,7 +131,6 @@ export interface DepOptimizationConfig {
    * listed in `include` will be optimized. The scanner isn't run for cold start
    * in this case. CJS-only dependencies must be present in `include` during dev.
    * @default false
-   * @experimental
    */
   noDiscovery?: boolean
   /**
