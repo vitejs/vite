@@ -237,6 +237,22 @@ describe('mergeConfig', () => {
     expect(mergedConfig.server.hmr.server).toBe(httpServer)
   })
 
+  test('handles server.allowedHosts', () => {
+    const baseConfig = {
+      server: { allowedHosts: ['example.com'] },
+    }
+
+    const newConfig = {
+      server: { allowedHosts: true },
+    }
+
+    const mergedConfig = {
+      server: { allowedHosts: true },
+    }
+
+    expect(mergeConfig(baseConfig, newConfig)).toEqual(mergedConfig)
+  })
+
   test('throws error with functions', () => {
     const baseConfig = defineConfig(() => ({ base: 'base' }))
     const newConfig = defineConfig(() => ({ base: 'new' }))
