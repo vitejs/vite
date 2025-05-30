@@ -1,7 +1,7 @@
 # Environment API for Plugins
 
 :::warning Experimental
-Environment API is experimental. We'll keep the APIs stable during Vite 6 to let the ecosystem experiment and build on top of it. We're planning to stabilize these new APIs with potential breaking changes in Vite 7.
+Environment API is experimental. We'll still maintain stability in the APIs between major releases to allow the ecosystem to experiment and build upon them. We plan to stabilize these new APIs (with potential breaking changes) in a future major release once downstream projects have had time to experiment with the new features and validate them.
 
 Resources:
 
@@ -198,7 +198,7 @@ Before Vite 6, the plugins pipelines worked in a different way during dev and bu
 
 This forced frameworks to share state between the `client` build and the `ssr` build through manifest files written to the file system. In Vite 6, we are now building all environments in a single process so the way the plugins pipeline and inter-environment communication can be aligned with dev.
 
-In a future major (Vite 7 or 8), we aim to have complete alignment:
+In a future major, we could have complete alignment:
 
 - **During both dev and build:** plugins are shared, with [per-environment filtering](#per-environment-plugins)
 
