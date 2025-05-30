@@ -5,6 +5,8 @@
     "module": "Preserve",
     "target": "ES2023",
     "moduleResolution": "bundler",
+    "types": ["node"],
+    "noEmit": true,
     "strict": true,
     "esModuleInterop": true,
     "skipLibCheck": true,
