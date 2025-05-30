@@ -2075,11 +2075,20 @@ async function loadConfigFromBundledFile(
           `.vite-temp/${path.basename(fileName)}.${hash}.mjs`,
         )
       : `${fileName}.${hash}.mjs`
-    await fsp.writeFile(tempFileName, bundledCode)
     try {
-      return (await import(pathToFileURL(tempFileName).href)).default
-    } finally {
-      fs.unlink(tempFileName, () => {}) // Ignore errors
+      await fsp.writeFile(tempFileName, bundledCode)
+      try {
+        return (await import(pathToFileURL(tempFileName).href)).default
+      } finally {
+        fs.unlink(tempFileName, () => {}) // Ignore errors
+      }
+    } catch (e) {
+      if (e.code === 'EACCES') {
+        const url = `data:text/javascript;base64,${Buffer.from(bundledCode).toString('base64')}`
+        return (await import(url)).default
+      } else {
+        throw e
+      }
     }
   }
   // for cjs, we can register a custom loader via `_require.extensions`
