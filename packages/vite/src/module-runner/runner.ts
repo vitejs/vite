@@ -25,6 +25,7 @@ import {
 import {
   ssrDynamicImportKey,
   ssrExportAllKey,
+  ssrExportNameKey,
   ssrImportKey,
   ssrImportMetaKey,
   ssrModuleExportsKey,
@@ -405,6 +406,12 @@ export class ModuleRunner {
       [ssrDynamicImportKey]: dynamicRequest,
       [ssrModuleExportsKey]: exports,
       [ssrExportAllKey]: (obj: any) => exportAll(exports, obj),
+      [ssrExportNameKey]: (name, getter) =>
+        Object.defineProperty(exports, name, {
+          enumerable: true,
+          configurable: true,
+          get: getter,
+        }),
       [ssrImportMetaKey]: meta,
     }
 

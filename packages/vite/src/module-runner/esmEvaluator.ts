@@ -5,6 +5,7 @@ import {
 import {
   ssrDynamicImportKey,
   ssrExportAllKey,
+  ssrExportNameKey,
   ssrImportKey,
   ssrImportMetaKey,
   ssrModuleExportsKey,
@@ -25,6 +26,7 @@ export class ESModulesEvaluator implements ModuleEvaluator {
       ssrImportKey,
       ssrDynamicImportKey,
       ssrExportAllKey,
+      ssrExportNameKey,
       // source map should already be inlined by Vite
       '"use strict";' + code,
     )
@@ -35,6 +37,7 @@ export class ESModulesEvaluator implements ModuleEvaluator {
       context[ssrImportKey],
       context[ssrDynamicImportKey],
       context[ssrExportAllKey],
+      context[ssrExportNameKey],
     )
 
     Object.seal(context[ssrModuleExportsKey])
