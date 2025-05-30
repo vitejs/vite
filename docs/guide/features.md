@@ -153,7 +153,7 @@ For example, to make the default import of `*.svg` a React component:
     export default content
   }
   ```
-- The file containing the reference to `vite/client`:
+- The file containing the reference to `vite/client` (normally `vite-env.d.ts`):
   ```ts
   /// <reference types="./vite-env-override.d.ts" />
   /// <reference types="vite/client" />
