@@ -10,6 +10,6 @@
     "convert-source-map": "^2.0.0",
     "css-color-names": "^1.0.1",
     "kill-port": "^1.6.1",
-    "rolldown": "1.0.0-beta.10-commit.ac4e5db"
+    "rolldown": "1.0.0-beta.10-commit.2c4c2a8"
   }
 }
