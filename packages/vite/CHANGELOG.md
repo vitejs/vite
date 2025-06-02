@@ -1,3 +1,9 @@
+## <small>6.3.16 (2025-06-02)</small>
+
+* feat: update rolldown ([fdd972b](https://github.com/vitejs/rolldown-vite/commit/fdd972b))
+
+
+
 ## <small>6.3.15 (2025-06-01)</small>
 
 * feat: update rolldown ([c024b3d](https://github.com/vitejs/rolldown-vite/commit/c024b3d))
