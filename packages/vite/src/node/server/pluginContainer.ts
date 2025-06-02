@@ -782,7 +782,7 @@ class PluginContext
     position?: number | { column: number; line: number },
   ): never {
     // error thrown here is caught by the transform middleware and passed on
-    // the the error middleware.
+    // the error middleware.
     throw this._formatLog(e, position)
   }
 

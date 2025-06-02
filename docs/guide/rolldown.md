@@ -91,7 +91,7 @@ While Rolldown aims to be a drop-in replacement for Rollup, there are features t
 
 ### Option Validation Errors
 
-Rolldown throws an error when unknown or invalid options are passed. Because some options available in Rollup are not supported by Rolldown, you may encounter errors based on the options you or the meta framework you use set. Below, you can find an an example of such an error message:
+Rolldown throws an error when unknown or invalid options are passed. Because some options available in Rollup are not supported by Rolldown, you may encounter errors based on the options you or the meta framework you use set. Below, you can find an example of such an error message:
 
 > Error: Failed validate input options.
 >
