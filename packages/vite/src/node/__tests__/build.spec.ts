@@ -886,8 +886,7 @@ test.skip('adjust worker build error for worker.format', async () => {
   expect.unreachable()
 })
 
-// rolldown does not append plugin name to the message automatically
-describe.skip('onRollupLog', () => {
+describe('onRollupLog', () => {
   const pluginName = 'rollup-plugin-test'
   const msgInfo = 'This is the INFO message.'
   const msgWarn = 'This is the WARN message.'
@@ -980,7 +979,7 @@ describe.skip('onRollupLog', () => {
       },
     })
     expect(onLogInfo).toBeCalledWith(
-      expect.objectContaining({ message: `[plugin ${pluginName}] ${msgInfo}` }),
+      expect.objectContaining({ message: msgInfo, plugin: pluginName }),
     )
   })
 
@@ -994,7 +993,7 @@ describe.skip('onRollupLog', () => {
       },
     })
     expect(onWarn).toBeCalledWith(
-      expect.objectContaining({ message: `[plugin ${pluginName}] ${msgWarn}` }),
+      expect.objectContaining({ message: msgWarn, plugin: pluginName }),
     )
   })
 
