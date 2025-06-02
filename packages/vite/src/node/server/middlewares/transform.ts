@@ -266,7 +266,7 @@ export function transformMiddleware(
           html: req.headers.accept?.includes('text/html'),
           allowId(id) {
             return (
-              url.startsWith('\0') ||
+              id.startsWith('\0') ||
               !deniedServingAccessForTransform(id, server, res, next)
             )
           },
