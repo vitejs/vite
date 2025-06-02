@@ -532,8 +532,7 @@ function resolveConfigToBuild(
 async function buildEnvironment(
   environment: BuildEnvironment,
 ): Promise<RollupOutput | RollupOutput[] | RollupWatcher> {
-  const { root, packageCache } = environment.config
-  const options = environment.config.build
+  const { root, packageCache, build: options } = environment.config
   const libOptions = options.lib
   const { logger } = environment
   const ssr = environment.config.consumer === 'server'
