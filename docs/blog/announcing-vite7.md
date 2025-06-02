@@ -33,13 +33,9 @@ _May 26, 2025_
 
 We're happy to share the release of Vite 7! It has been 5 years since Evan You sent the first commit to the Vite repo, and nobody could have predicted how much the frontend ecosystem would change since then. Most modern frontend frameworks and tools are now working together, building on top of Vite's shared infrastructure. And they can innovate at a faster pace by sharing at a higher level. Vite is now being downloaded 27.5 million times a week, with a 10 million increase in the last six months since the previous major release.
 
-If you want to learn about how we got here, stay tuned for the release of the Vite Documentary. Our friends at [CultRepo](https://www.cultrepo.com/) are finalizing the edition, and we're close to the full release! Watch the trailer here.
+This year, we're making several big steps. To start with, [ViteConf](https://viteconf.org) is going to be in person! The Vite Ecosystem will gather in Amsterdam on October 9-10! Organized by [JSWorld](https://jsworldconference.com/) in partnership with [Bolt](https://bolt.new), [VoidZero](https://voidzero.dev), and the Vite Core Team! We had three incredible [ViteConf online editions](https://www.youtube.com/@viteconf/playlists), and we can't wait to meet in real life. Check out the speakers and get your ticket at the [ViteConf site](https://viteconf.org)!
 
-<YouTubeVideo videoId="EKvvptbTx6k?si=EZ-rFJn4pDW3tUvp" />
-
-This year we'll also give another big step: [ViteConf](https://viteconf.org) is going to be in person! Organized by [JSWorld](https://jsworldconference.com/) in partnership with [Bolt](https://bolt.new), [VoidZero](https://voidzero.dev), and the Vite Core Team! We had three incredible [ViteConf online editions](https://www.youtube.com/@viteconf/playlists), and we can't wait to meet in real life. Check out the speakers and get your ticket at the [ViteConf site](https://viteconf.org).
-
-[VoidZero](https://staging.voidzero.dev/posts/announcing-voidzero-inc) continues its mission to build an open source unified development toolchain for the JavaScript ecosystem.
+And [VoidZero](https://staging.voidzero.dev/posts/announcing-voidzero-inc) continues to make big strides in its mission to build an open source unified development toolchain for the JavaScript ecosystem.
 
 TODO: Rolldown in beta, vite-rolldown is available for testing, read more at VoidZero's blog post.
 
