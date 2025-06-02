@@ -1134,23 +1134,29 @@ export function onRollupLog(
       }
     }
 
+    // append plugin name to align with Rollup's behavior
+    let message = logging.message
+    if (logging.plugin) {
+      message = `[plugin ${logging.plugin}] ${message}`
+    }
+
     switch (logLeveling) {
       case 'info':
-        environment.logger.info(logging.message)
+        environment.logger.info(message)
         return
       case 'warn':
-        environment.logger.warn(colors.yellow(logging.message))
+        environment.logger.warn(colors.yellow(message))
         return
       case 'error':
-        environment.logger.error(colors.red(logging.message))
+        environment.logger.error(colors.red(message))
         return
       case 'debug':
-        debugLogger?.(logging.message)
+        debugLogger?.(message)
         return
       default:
         logLeveling satisfies never
         // fallback to info if a unknown log level is passed
-        environment.logger.info(logging.message)
+        environment.logger.info(message)
         return
     }
   }
