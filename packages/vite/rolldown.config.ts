@@ -16,21 +16,25 @@ const __dirname = fileURLToPath(new URL('.', import.meta.url))
 const envConfig = defineConfig({
   input: path.resolve(__dirname, 'src/client/env.ts'),
   platform: 'browser',
+  transform: {
+    target: 'es2020',
+  },
   output: {
     dir: path.resolve(__dirname, 'dist'),
     entryFileNames: 'client/env.mjs',
-    target: 'es2020',
   },
 })
 
 const clientConfig = defineConfig({
   input: path.resolve(__dirname, 'src/client/client.ts'),
   platform: 'browser',
+  transform: {
+    target: 'es2020',
+  },
   external: ['@vite/env'],
   output: {
     dir: path.resolve(__dirname, 'dist'),
     entryFileNames: 'client/client.mjs',
-    target: 'es2020',
   },
 })
 
