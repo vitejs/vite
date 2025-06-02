@@ -1,9 +1,11 @@
+import path from 'node:path'
 import { describe, expect, test } from 'vitest'
 import type { ResolvedConfig, UserConfig } from '../../config'
 import {
   resolveEsbuildTranspileOptions,
   transformWithEsbuild,
 } from '../../plugins/esbuild'
+import { normalizePath } from '../../utils'
 
 describe('resolveEsbuildTranspileOptions', () => {
   test('resolve default', () => {
@@ -326,7 +328,7 @@ describe('transformWithEsbuild', () => {
             bar = 'bar'
           }
         `,
-        'bar.ts',
+        normalizePath(path.resolve(import.meta.dirname, 'bar.ts')),
         {
           target,
           tsconfigRaw: { compilerOptions: tsconfigCompilerOptions },
@@ -387,7 +389,9 @@ describe('transformWithEsbuild', () => {
     })
 
     test('target: es2022 and tsconfig.target: undefined => false', async () => {
-      const actual = await transformClassCode('es2022', {})
+      const actual = await transformClassCode('es2022', {
+        target: undefined,
+      })
       expect(actual).toBe(defineForClassFieldsFalseTransformedCode)
     })
   })
