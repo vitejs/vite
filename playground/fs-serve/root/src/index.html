@@ -61,10 +61,16 @@
 <pre class="unsafe-dotEnV-casing"></pre>
 <pre class="unsafe-dotenv-query-dot-svg-wasm-init"></pre>
 
+<d2>Virtual SVG module</d2>
+<pre class="virtual-svg"></pre>
+
 <script type="module">
   import '../../entry'
   import json, { msg } from '../../safe.json'
   import './code.js'
+
+  // Check virtual svg module still works
+  import fooSvg from 'virtual:foo.svg'
 
   function joinUrlSegments(a, b) {
     if (!a || !b) {
@@ -81,6 +87,7 @@
 
   text('.full', JSON.stringify(json))
   text('.named', msg)
+  text('.virtual-svg', fooSvg)
 
   const base = typeof BASE !== 'undefined' ? BASE : ''
 
