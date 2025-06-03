@@ -124,7 +124,7 @@ importers:
         specifier: workspace:*
         version: link:packages/vite
       vitest:
-        specifier: 3.2.0
+        specifier: ^3.2.0
         version: 3.2.0(@types/debug@4.1.12)(@types/node@22.15.21)
 
   docs:
