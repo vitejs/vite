@@ -35,7 +35,7 @@ We're happy to share the release of Vite 7! It has been 5 years since Evan You s
 
 This year, we're making several big steps. To start with, [ViteConf](https://viteconf.org) is going to be in person! The Vite Ecosystem will gather in Amsterdam on October 9-10! Organized by [JSWorld](https://jsworldconference.com/) in partnership with [Bolt](https://bolt.new), [VoidZero](https://voidzero.dev), and the Vite Core Team! We had three incredible [ViteConf online editions](https://www.youtube.com/@viteconf/playlists), and we can't wait to meet in real life. Check out the speakers and get your ticket at the [ViteConf site](https://viteconf.org)!
 
-And [VoidZero](https://staging.voidzero.dev/posts/announcing-voidzero-inc) continues to make big strides in its mission to build an open source unified development toolchain for the JavaScript ecosystem.
+And [VoidZero](https://voidzero.dev/posts/announcing-voidzero-inc) continues to make big strides in its mission to build an open source unified development toolchain for the JavaScript ecosystem.
 
 TODO: Rolldown in beta, vite-rolldown is available for testing, read more at VoidZero's blog post.
 
