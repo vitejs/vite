@@ -1,6 +1,6 @@
 {
   "name": "@vitejs/plugin-legacy",
-  "version": "6.1.1",
+  "version": "7.0.0-beta.0",
   "type": "module",
   "license": "MIT",
   "author": "Evan You",
@@ -49,7 +49,7 @@
   "devDependencies": {
     "acorn": "^8.14.1",
     "picocolors": "^1.1.1",
-    "tsdown": "^0.11.12",
+    "tsdown": "^0.12.6",
     "vite": "workspace:*"
   }
 }
