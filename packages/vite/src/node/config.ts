@@ -1063,7 +1063,7 @@ function resolveDepOptimizationOptions(
     logger.warn(
       colors.yellow(
         `You or a plugin you are using have set \`optimizeDeps.esbuildOptions\` ` +
-          `but this options is now deprecated. ` +
+          `but this option is now deprecated. ` +
           `Vite now uses Rolldown to optimize the dependencies. ` +
           `Please use \`optimizeDeps.rollupOptions\` instead.`,
       ),
