@@ -1489,9 +1489,6 @@ const relativeUrlMechanisms: Record<
     `(typeof document === 'undefined' && typeof location === 'undefined' ? ${getFileUrlFromRelativePath(
       relativePath,
     )} : ${getRelativeUrlFromDocument(relativePath, true)})`,
-  // FIXME: how to handle this?
-  app: (relativePath) =>
-    `new Error('Cannot resolve ${relativePath} in output format "app".')`,
 }
 /* end of copy */
 
