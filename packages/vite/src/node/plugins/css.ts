@@ -917,8 +917,6 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
               `${style}.textContent = ${cssString};` +
               `document.head.appendChild(${style});`
 
-            if (opts.format === 'app')
-              this.error('format: "app" is not supported')
             // TODO: system js support
             // const wrapIdx = code.indexOf('System.register')
             // if (wrapIdx >= 0) {

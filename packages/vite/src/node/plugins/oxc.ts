@@ -457,10 +457,6 @@ export const buildOxcPlugin = (): Plugin => {
               res.code.slice(0, pos) + helpersCode + '\n' + res.code.slice(pos)
             break
           }
-          case 'app': {
-            throw new Error('format: "app" is not supported yet')
-            break
-          }
           default: {
             opts.format satisfies never
           }
