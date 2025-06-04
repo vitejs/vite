@@ -1,3 +1,14 @@
+## <small>6.3.17 (2025-06-04)</small>
+
+* feat: append plugin name to logs (#205) ([a6ea3f8](https://github.com/vitejs/rolldown-vite/commit/a6ea3f8)), closes [#205](https://github.com/vitejs/rolldown-vite/issues/205)
+* feat: update rolldown ([69d1350](https://github.com/vitejs/rolldown-vite/commit/69d1350))
+* chore: tweak `optimizeDeps.esbuildOptions` deprecate message (#209) ([6133c97](https://github.com/vitejs/rolldown-vite/commit/6133c97)), closes [#209](https://github.com/vitejs/rolldown-vite/issues/209)
+* chore: typo in `optimizeDeps.esbuildOptions` deprecated message ([ee1a884](https://github.com/vitejs/rolldown-vite/commit/ee1a884))
+* test: add oxc plugin unit tests ([ab57b3f](https://github.com/vitejs/rolldown-vite/commit/ab57b3f))
+* test: correct esbuild `useDefineForClassFields` test (#206) ([1e7760e](https://github.com/vitejs/rolldown-vite/commit/1e7760e)), closes [#206](https://github.com/vitejs/rolldown-vite/issues/206)
+
+
+
 ## <small>6.3.16 (2025-06-02)</small>
 
 * feat: update rolldown ([fdd972b](https://github.com/vitejs/rolldown-vite/commit/fdd972b))
