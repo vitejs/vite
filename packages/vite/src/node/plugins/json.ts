@@ -40,11 +40,11 @@ export const isJSONRequest = (request: string): boolean =>
 
 export function jsonPlugin(
   options: Required<JsonOptions>,
-  isBuild: boolean,
+  minify: boolean,
   enableNativePlugin: boolean,
 ): Plugin {
   if (enableNativePlugin) {
-    return nativeJsonPlugin({ ...options, minify: isBuild })
+    return nativeJsonPlugin({ ...options, minify })
   }
 
   return {
@@ -101,7 +101,7 @@ export function jsonPlugin(
             ) {
               // during build, parse then double-stringify to remove all
               // unnecessary whitespaces to reduce bundle size.
-              if (isBuild) {
+              if (minify) {
                 json = JSON.stringify(JSON.parse(json))
               }
 
