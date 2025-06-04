@@ -860,6 +860,7 @@ function resolveEnvironmentOptions(
   preserveSymlinks: boolean,
   forceOptimizeDeps: boolean | undefined,
   logger: Logger,
+  isProduction: boolean,
   environmentName: string,
   // Backward compatibility
   isSsrTargetWebworkerSet?: boolean,
@@ -923,6 +924,7 @@ function resolveEnvironmentOptions(
       options.build ?? {},
       logger,
       consumer,
+      isProduction,
     ),
     plugins: undefined!, // to be resolved later
     // will be set by `setOptimizeDepsPluginNames` later
@@ -1509,65 +1511,6 @@ export async function resolveConfig(
     config.ssr?.target === 'webworker',
   )
 
-  // Backward compatibility: merge config.environments.client.resolve back into config.resolve
-  config.resolve ??= {}
-  config.resolve.conditions = config.environments.client.resolve?.conditions
-  config.resolve.mainFields = config.environments.client.resolve?.mainFields
-
-  const resolvedDefaultResolve = resolveResolveOptions(config.resolve, logger)
-
-  const resolvedEnvironments: Record<string, ResolvedEnvironmentOptions> = {}
-  for (const environmentName of Object.keys(config.environments)) {
-    resolvedEnvironments[environmentName] = resolveEnvironmentOptions(
-      config.environments[environmentName],
-      resolvedDefaultResolve.alias,
-      resolvedDefaultResolve.preserveSymlinks,
-      inlineConfig.forceOptimizeDeps,
-      logger,
-      environmentName,
-      config.ssr?.target === 'webworker',
-      config.server?.preTransformRequests,
-    )
-  }
-
-  // Backward compatibility: merge environments.client.optimizeDeps back into optimizeDeps
-  // The same object is assigned back for backward compatibility. The ecosystem is modifying
-  // optimizeDeps in the ResolvedConfig hook, so these changes will be reflected on the
-  // client environment.
-  const backwardCompatibleOptimizeDeps =
-    resolvedEnvironments.client.optimizeDeps
-
-  const resolvedDevEnvironmentOptions = resolveDevEnvironmentOptions(
-    config.dev,
-    // default environment options
-    undefined,
-    undefined,
-  )
-
-  const resolvedBuildOptions = resolveBuildEnvironmentOptions(
-    config.build ?? {},
-    logger,
-    undefined,
-  )
-
-  // Backward compatibility: merge config.environments.ssr back into config.ssr
-  // so ecosystem SSR plugins continue to work if only environments.ssr is configured
-  const patchedConfigSsr = {
-    ...config.ssr,
-    external: resolvedEnvironments.ssr?.resolve.external,
-    noExternal: resolvedEnvironments.ssr?.resolve.noExternal,
-    optimizeDeps: resolvedEnvironments.ssr?.optimizeDeps,
-    resolve: {
-      ...config.ssr?.resolve,
-      conditions: resolvedEnvironments.ssr?.resolve.conditions,
-      externalConditions: resolvedEnvironments.ssr?.resolve.externalConditions,
-    },
-  }
-  const ssr = resolveSSROptions(
-    patchedConfigSsr,
-    resolvedDefaultResolve.preserveSymlinks,
-  )
-
   // load .env files
   // Backward compatibility: set envDir to false when envFile is false
   let envDir = config.envFile === false ? false : config.envDir
@@ -1597,6 +1540,67 @@ export async function resolveConfig(
   }
 
   const isProduction = process.env.NODE_ENV === 'production'
+
+  // Backward compatibility: merge config.environments.client.resolve back into config.resolve
+  config.resolve ??= {}
+  config.resolve.conditions = config.environments.client.resolve?.conditions
+  config.resolve.mainFields = config.environments.client.resolve?.mainFields
+
+  const resolvedDefaultResolve = resolveResolveOptions(config.resolve, logger)
+
+  const resolvedEnvironments: Record<string, ResolvedEnvironmentOptions> = {}
+  for (const environmentName of Object.keys(config.environments)) {
+    resolvedEnvironments[environmentName] = resolveEnvironmentOptions(
+      config.environments[environmentName],
+      resolvedDefaultResolve.alias,
+      resolvedDefaultResolve.preserveSymlinks,
+      inlineConfig.forceOptimizeDeps,
+      logger,
+      isProduction,
+      environmentName,
+      config.ssr?.target === 'webworker',
+      config.server?.preTransformRequests,
+    )
+  }
+
+  // Backward compatibility: merge environments.client.optimizeDeps back into optimizeDeps
+  // The same object is assigned back for backward compatibility. The ecosystem is modifying
+  // optimizeDeps in the ResolvedConfig hook, so these changes will be reflected on the
+  // client environment.
+  const backwardCompatibleOptimizeDeps =
+    resolvedEnvironments.client.optimizeDeps
+
+  const resolvedDevEnvironmentOptions = resolveDevEnvironmentOptions(
+    config.dev,
+    // default environment options
+    undefined,
+    undefined,
+  )
+
+  const resolvedBuildOptions = resolveBuildEnvironmentOptions(
+    config.build ?? {},
+    logger,
+    undefined,
+    isProduction,
+  )
+
+  // Backward compatibility: merge config.environments.ssr back into config.ssr
+  // so ecosystem SSR plugins continue to work if only environments.ssr is configured
+  const patchedConfigSsr = {
+    ...config.ssr,
+    external: resolvedEnvironments.ssr?.resolve.external,
+    noExternal: resolvedEnvironments.ssr?.resolve.noExternal,
+    optimizeDeps: resolvedEnvironments.ssr?.optimizeDeps,
+    resolve: {
+      ...config.ssr?.resolve,
+      conditions: resolvedEnvironments.ssr?.resolve.conditions,
+      externalConditions: resolvedEnvironments.ssr?.resolve.externalConditions,
+    },
+  }
+  const ssr = resolveSSROptions(
+    patchedConfigSsr,
+    resolvedDefaultResolve.preserveSymlinks,
+  )
 
   // resolve public base url
   const relativeBaseShortcut = config.base === '' || config.base === './'
