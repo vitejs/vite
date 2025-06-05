@@ -638,10 +638,6 @@ export async function toAbsoluteGlob(
     dir = importer ? globSafePath(dirname(importer)) : root
   }
 
-  if (base && glob[0] === '@') {
-    const withoutAlias = /\/.+$/.exec(glob)?.[0]
-    return pre + posix.join(root, base, withoutAlias || glob)
-  }
   if (glob[0] === '/') return pre + posix.join(root, glob.slice(1))
   if (glob.startsWith('./')) return pre + posix.join(dir, glob.slice(2))
   if (glob.startsWith('../')) return pre + posix.join(dir, glob)
