@@ -32,6 +32,7 @@ import {
   isParentDirectory,
   mergeConfig,
   mergeWithDefaults,
+  monotonicDateNow,
   normalizePath,
   resolveHostname,
   resolveServerUrls,
@@ -650,7 +651,7 @@ export async function _createServer(
           environments[environmentModule.environment]!,
           module.file,
           [environmentModule],
-          Date.now(),
+          monotonicDateNow(),
         )
       }
     },

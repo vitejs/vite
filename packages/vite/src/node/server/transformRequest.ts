@@ -12,6 +12,7 @@ import {
   ensureWatchedFile,
   injectQuery,
   isObject,
+  monotonicDateNow,
   prettifyUrl,
   removeImportQuery,
   removeTimestampQuery,
@@ -105,7 +106,7 @@ export function transformRequest(
   //
   // We save the timestamp when we start processing and compare it with the
   // last time this module is invalidated
-  const timestamp = Date.now()
+  const timestamp = monotonicDateNow()
 
   const pending = environment._pendingRequests.get(cacheKey)
   if (pending) {

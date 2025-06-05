@@ -2,6 +2,7 @@ import { extname } from 'node:path'
 import type { ModuleInfo, PartialResolvedId } from 'rollup'
 import { isDirectCSSRequest } from '../plugins/css'
 import {
+  monotonicDateNow,
   normalizePath,
   removeImportQuery,
   removeTimestampQuery,
@@ -165,7 +166,7 @@ export class EnvironmentModuleGraph {
   invalidateModule(
     mod: EnvironmentModuleNode,
     seen = new Set<EnvironmentModuleNode>(),
-    timestamp: number = Date.now(),
+    timestamp: number = monotonicDateNow(),
     isHmr: boolean = false,
     /** @internal */
     softInvalidate = false,
@@ -233,7 +234,7 @@ export class EnvironmentModuleGraph {
   }
 
   invalidateAll(): void {
-    const timestamp = Date.now()
+    const timestamp = monotonicDateNow()
     const seen = new Set<EnvironmentModuleNode>()
     this.idToModuleMap.forEach((mod) => {
       this.invalidateModule(mod, seen, timestamp)
