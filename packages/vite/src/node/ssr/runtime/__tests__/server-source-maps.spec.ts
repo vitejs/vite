@@ -1,6 +1,10 @@
 import { describe, expect } from 'vitest'
 import type { ViteDevServer } from '../../..'
-import { createModuleRunnerTester, editFile, resolvePath } from './utils'
+import {
+  createFixtureEditor,
+  createModuleRunnerTester,
+  resolvePath,
+} from './utils'
 
 describe('module runner initialization', async () => {
   const it = await createModuleRunnerTester(
@@ -47,8 +51,10 @@ describe('module runner initialization', async () => {
       '    at Module.throwError (<root>/fixtures/throws-error-method.ts:6:9)',
     )
 
+    const fixtureEditor = createFixtureEditor()
+
     // simulate HMR
-    editFile(
+    fixtureEditor.editFile(
       resolvePath(import.meta.url, './fixtures/throws-error-method.ts'),
       (code) => '\n\n\n\n\n' + code + '\n',
     )
