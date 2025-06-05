@@ -7,6 +7,7 @@ import {
   createFilter,
   getNpmPackageName,
   isBuiltin,
+  isInNodeModules,
 } from './utils'
 import type { Environment } from './environment'
 import type { PartialEnvironment } from './baseEnvironment'
@@ -15,14 +16,14 @@ const debug = createDebugger('vite:external')
 
 const isExternalCache = new WeakMap<
   Environment,
-  (id: string, importer?: string) => boolean | undefined
+  (id: string, importer?: string) => boolean
 >()
 
 export function shouldExternalize(
   environment: Environment,
   id: string,
   importer: string | undefined,
-): boolean | undefined {
+): boolean {
   let isExternal = isExternalCache.get(environment)
   if (!isExternal) {
     isExternal = createIsExternal(environment)
@@ -31,36 +32,18 @@ export function shouldExternalize(
   return isExternal(id, importer)
 }
 
-const isConfiguredAsExternalCache = new WeakMap<
-  Environment,
-  (id: string, importer?: string) => boolean
->()
-
-export function isConfiguredAsExternal(
-  environment: Environment,
-  id: string,
-  importer?: string,
-): boolean {
-  let isExternal = isConfiguredAsExternalCache.get(environment)
-  if (!isExternal) {
-    isExternal = createIsConfiguredAsExternal(environment)
-    isConfiguredAsExternalCache.set(environment, isExternal)
-  }
-  return isExternal(id, importer)
-}
-
 export function createIsConfiguredAsExternal(
   environment: PartialEnvironment,
 ): (id: string, importer?: string) => boolean {
   const { config } = environment
-  const { root, resolve, webCompatible } = config
+  const { root, resolve } = config
   const { external, noExternal } = resolve
   const noExternalFilter =
     typeof noExternal !== 'boolean' &&
     !(Array.isArray(noExternal) && noExternal.length === 0) &&
     createFilter(undefined, noExternal, { resolve: false })
 
-  const targetConditions = resolve.externalConditions || []
+  const targetConditions = resolve.externalConditions
 
   const resolveOptions: InternalResolveOptions = {
     ...resolve,
@@ -68,32 +51,35 @@ export function createIsConfiguredAsExternal(
     isProduction: false,
     isBuild: true,
     conditions: targetConditions,
-    webCompatible,
   }
 
   const isExternalizable = (
     id: string,
-    importer?: string,
-    configuredAsExternal?: boolean,
+    importer: string | undefined,
+    configuredAsExternal: boolean,
   ): boolean => {
     if (!bareImportRE.test(id) || id.includes('\0')) {
       return false
     }
     try {
-      return !!tryNodeResolve(
+      const resolved = tryNodeResolve(
         id,
         // Skip passing importer in build to avoid externalizing non-hoisted dependencies
         // unresolvable from root (which would be unresolvable from output bundles also)
         config.command === 'build' ? undefined : importer,
         resolveOptions,
         undefined,
-        // try to externalize, will return undefined or an object without
-        // a external flag if it isn't externalizable
-        true,
-        // Allow linked packages to be externalized if they are explicitly
-        // configured as external
-        !!configuredAsExternal,
-      )?.external
+        false,
+      )
+      if (!resolved) {
+        return false
+      }
+      // Only allow linked packages to be externalized
+      // if they are explicitly configured as external
+      if (!configuredAsExternal && !isInNodeModules(resolved.id)) {
+        return false
+      }
+      return canExternalizeFile(resolved.id)
     } catch {
       debug?.(
         `Failed to node resolve "${id}". Skipping externalizing it by default.`,
@@ -116,7 +102,7 @@ export function createIsConfiguredAsExternal(
     }
     const pkgName = getNpmPackageName(id)
     if (!pkgName) {
-      return isExternalizable(id, importer)
+      return isExternalizable(id, importer, false)
     }
     if (
       // A package name in ssr.external externalizes every
@@ -140,20 +126,28 @@ export function createIsConfiguredAsExternal(
 
 function createIsExternal(
   environment: Environment,
-): (id: string, importer?: string) => boolean | undefined {
-  const processedIds = new Map<string, boolean | undefined>()
+): (id: string, importer?: string) => boolean {
+  const processedIds = new Map<string, boolean>()
 
   const isConfiguredAsExternal = createIsConfiguredAsExternal(environment)
 
   return (id: string, importer?: string) => {
     if (processedIds.has(id)) {
-      return processedIds.get(id)
+      return processedIds.get(id)!
     }
     let isExternal = false
     if (id[0] !== '.' && !path.isAbsolute(id)) {
-      isExternal = isBuiltin(id) || isConfiguredAsExternal(id, importer)
+      isExternal =
+        isBuiltin(environment.config.resolve.builtins, id) ||
+        isConfiguredAsExternal(id, importer)
     }
     processedIds.set(id, isExternal)
     return isExternal
   }
+}
+
+export function canExternalizeFile(filePath: string): boolean {
+  const ext = path.extname(filePath)
+  // only external js imports
+  return !ext || ext === '.js' || ext === '.mjs' || ext === '.cjs'
 }

@@ -1,16 +1,13 @@
 import type { FetchFunctionOptions, FetchResult } from 'vite/module-runner'
 import type { FSWatcher } from 'dep-types/chokidar'
 import colors from 'picocolors'
-import {
-  BaseEnvironment,
-  getDefaultResolvedEnvironmentOptions,
-} from '../baseEnvironment'
+import { BaseEnvironment } from '../baseEnvironment'
 import type {
   EnvironmentOptions,
   ResolvedConfig,
   ResolvedEnvironmentOptions,
 } from '../config'
-import { mergeConfig, promiseWithResolvers } from '../utils'
+import { mergeConfig, monotonicDateNow } from '../utils'
 import { fetchModule } from '../ssr/fetchModule'
 import type { DepsOptimizer } from '../optimizer'
 import { isDepOptimizationDisabled } from '../optimizer'
@@ -18,13 +15,13 @@ import {
   createDepsOptimizer,
   createExplicitDepsOptimizer,
 } from '../optimizer/optimizer'
-import { resolveEnvironmentPlugins } from '../plugin'
-import { ERR_OUTDATED_OPTIMIZED_DEP } from '../constants'
+import { ERR_OUTDATED_OPTIMIZED_DEP } from '../../shared/constants'
+import { promiseWithResolvers } from '../../shared/utils'
 import type { ViteDevServer } from '../server'
 import { EnvironmentModuleGraph } from './moduleGraph'
 import type { EnvironmentModuleNode } from './moduleGraph'
-import type { HotChannel } from './hmr'
-import { createNoopHotChannel, getShortName, updateModules } from './hmr'
+import type { HotChannel, NormalizedHotChannel } from './hmr'
+import { getShortName, normalizeHotChannel, updateModules } from './hmr'
 import type { TransformResult } from './transformRequest'
 import { transformRequest } from './transformRequest'
 import type { EnvironmentPluginContainer } from './pluginContainer'
@@ -32,16 +29,16 @@ import {
   ERR_CLOSED_SERVER,
   createEnvironmentPluginContainer,
 } from './pluginContainer'
-import type { RemoteEnvironmentTransport } from './environmentTransport'
-import { isWebSocketServer } from './ws'
+import { type WebSocketServer, isWebSocketServer } from './ws'
 import { warmupFiles } from './warmup'
+import { buildErrorMessage } from './middlewares/error'
 
 export interface DevEnvironmentContext {
-  hot: false | HotChannel
+  hot: boolean
+  transport?: HotChannel | WebSocketServer
   options?: EnvironmentOptions
   remoteRunner?: {
     inlineSourceMap?: boolean
-    transport?: RemoteEnvironmentTransport
   }
   depsOptimizer?: DepsOptimizer
 }
@@ -56,7 +53,7 @@ export class DevEnvironment extends BaseEnvironment {
    */
   _remoteRunnerOptions: DevEnvironmentContext['remoteRunner']
 
-  get pluginContainer(): EnvironmentPluginContainer {
+  get pluginContainer(): EnvironmentPluginContainer<DevEnvironment> {
     if (!this._pluginContainer)
       throw new Error(
         `${this.name} environment.pluginContainer called before initialized`,
@@ -66,7 +63,7 @@ export class DevEnvironment extends BaseEnvironment {
   /**
    * @internal
    */
-  _pluginContainer: EnvironmentPluginContainer | undefined
+  _pluginContainer: EnvironmentPluginContainer<DevEnvironment> | undefined
 
   /**
    * @internal
@@ -95,14 +92,16 @@ export class DevEnvironment extends BaseEnvironment {
    * @example
    * environment.hot.send({ type: 'full-reload' })
    */
-  hot: HotChannel
+  hot: NormalizedHotChannel
   constructor(
     name: string,
     config: ResolvedConfig,
     context: DevEnvironmentContext,
   ) {
-    let options =
-      config.environments[name] ?? getDefaultResolvedEnvironmentOptions(config)
+    let options = config.environments[name]
+    if (!options) {
+      throw new Error(`Environment "${name}" is not defined in the config.`)
+    }
     if (context.options) {
       options = mergeConfig(
         options,
@@ -117,19 +116,32 @@ export class DevEnvironment extends BaseEnvironment {
       this.pluginContainer!.resolveId(url, undefined),
     )
 
-    this.hot = context.hot || createNoopHotChannel()
-
     this._crawlEndFinder = setupOnCrawlEnd()
 
     this._remoteRunnerOptions = context.remoteRunner ?? {}
-    context.remoteRunner?.transport?.register(this)
 
-    this.hot.on('vite:invalidate', async ({ path, message }) => {
-      invalidateModule(this, {
-        path,
-        message,
-      })
+    this.hot = context.transport
+      ? isWebSocketServer in context.transport
+        ? context.transport
+        : normalizeHotChannel(context.transport, context.hot)
+      : normalizeHotChannel({}, context.hot)
+
+    this.hot.setInvokeHandler({
+      fetchModule: (id, importer, options) => {
+        return this.fetchModule(id, importer, options)
+      },
     })
+
+    this.hot.on(
+      'vite:invalidate',
+      async ({ path, message, firstInvalidatedBy }) => {
+        invalidateModule(this, {
+          path,
+          message,
+          firstInvalidatedBy,
+        })
+      },
+    )
 
     const { optimizeDeps } = this.config
     if (context.depsOptimizer) {
@@ -158,10 +170,9 @@ export class DevEnvironment extends BaseEnvironment {
       return
     }
     this._initiated = true
-    this._plugins = resolveEnvironmentPlugins(this)
     this._pluginContainer = await createEnvironmentPluginContainer(
       this,
-      this._plugins,
+      this.config.plugins,
       options?.watcher,
     )
   }
@@ -191,7 +202,7 @@ export class DevEnvironment extends BaseEnvironment {
 
   async reloadModule(module: EnvironmentModuleNode): Promise<void> {
     if (this.config.server.hmr !== false && module.file) {
-      updateModules(this, module.file, [module], Date.now())
+      updateModules(this, module.file, [module], monotonicDateNow())
     }
   }
 
@@ -211,17 +222,20 @@ export class DevEnvironment extends BaseEnvironment {
         return
       }
       // Unexpected error, log the issue but avoid an unhandled exception
-      this.logger.error(`Pre-transform error: ${e.message}`, {
-        error: e,
-        timestamp: true,
-      })
+      this.logger.error(
+        buildErrorMessage(e, [`Pre-transform error: ${e.message}`], false),
+        {
+          error: e,
+          timestamp: true,
+        },
+      )
     }
   }
 
   async close(): Promise<void> {
     this._closing = true
 
-    this._crawlEndFinder?.cancel()
+    this._crawlEndFinder.cancel()
     await Promise.allSettled([
       this.pluginContainer.close(),
       this.depsOptimizer?.close(),
@@ -264,6 +278,7 @@ function invalidateModule(
   m: {
     path: string
     message?: string
+    firstInvalidatedBy: string
   },
 ) {
   const mod = environment.moduleGraph.urlToModuleMap.get(m.path)
@@ -286,7 +301,7 @@ function invalidateModule(
       file,
       [...mod.importers],
       mod.lastHMRTimestamp,
-      true,
+      m.firstInvalidatedBy,
     )
   }
 }

@@ -1,7 +1,11 @@
 import type { ErrorPayload, HotPayload } from 'types/hmrPayload'
 import type { ViteHotContext } from 'types/hot'
-import type { InferCustomEventPayload } from 'types/customEvent'
 import { HMRClient, HMRContext } from '../shared/hmr'
+import {
+  createWebSocketModuleRunnerTransport,
+  normalizeModuleRunnerTransport,
+} from '../shared/moduleRunnerTransport'
+import { createHMRHandler } from '../shared/hmrHandler'
 import { ErrorOverlay, overlayId } from './overlay'
 import '@vite/env'
 
@@ -15,6 +19,7 @@ declare const __HMR_DIRECT_TARGET__: string
 declare const __HMR_BASE__: string
 declare const __HMR_TIMEOUT__: number
 declare const __HMR_ENABLE_OVERLAY__: boolean
+declare const __WS_TOKEN__: string
 
 console.debug('[vite] connecting...')
 
@@ -30,86 +35,79 @@ const socketHost = `${__HMR_HOSTNAME__ || importMetaUrl.hostname}:${
 }${__HMR_BASE__}`
 const directSocketHost = __HMR_DIRECT_TARGET__
 const base = __BASE__ || '/'
+const hmrTimeout = __HMR_TIMEOUT__
+const wsToken = __WS_TOKEN__
 
-let socket: WebSocket
-try {
-  let fallback: (() => void) | undefined
-  // only use fallback when port is inferred to prevent confusion
-  if (!hmrPort) {
-    fallback = () => {
-      // fallback to connecting directly to the hmr server
-      // for servers which does not support proxying websocket
-      socket = setupWebSocket(socketProtocol, directSocketHost, () => {
-        const currentScriptHostURL = new URL(import.meta.url)
-        const currentScriptHost =
-          currentScriptHostURL.host +
-          currentScriptHostURL.pathname.replace(/@vite\/client$/, '')
-        console.error(
-          '[vite] failed to connect to websocket.\n' +
-            'your current setup:\n' +
-            `  (browser) ${currentScriptHost} <--[HTTP]--> ${serverHost} (server)\n` +
-            `  (browser) ${socketHost} <--[WebSocket (failing)]--> ${directSocketHost} (server)\n` +
-            'Check out your Vite / network configuration and https://vite.dev/config/server-options.html#server-hmr .',
-        )
-      })
-      socket.addEventListener(
-        'open',
-        () => {
-          console.info(
-            '[vite] Direct websocket connection fallback. Check out https://vite.dev/config/server-options.html#server-hmr to remove the previous connection error.',
-          )
-        },
-        { once: true },
-      )
+const transport = normalizeModuleRunnerTransport(
+  (() => {
+    let wsTransport = createWebSocketModuleRunnerTransport({
+      createConnection: () =>
+        new WebSocket(
+          `${socketProtocol}://${socketHost}?token=${wsToken}`,
+          'vite-hmr',
+        ),
+      pingInterval: hmrTimeout,
+    })
+
+    return {
+      async connect(handlers) {
+        try {
+          await wsTransport.connect(handlers)
+        } catch (e) {
+          // only use fallback when port is inferred and was not connected before to prevent confusion
+          if (!hmrPort) {
+            wsTransport = createWebSocketModuleRunnerTransport({
+              createConnection: () =>
+                new WebSocket(
+                  `${socketProtocol}://${directSocketHost}?token=${wsToken}`,
+                  'vite-hmr',
+                ),
+              pingInterval: hmrTimeout,
+            })
+            try {
+              await wsTransport.connect(handlers)
+              console.info(
+                '[vite] Direct websocket connection fallback. Check out https://vite.dev/config/server-options.html#server-hmr to remove the previous connection error.',
+              )
+            } catch (e) {
+              if (
+                e instanceof Error &&
+                e.message.includes('WebSocket closed without opened.')
+              ) {
+                const currentScriptHostURL = new URL(import.meta.url)
+                const currentScriptHost =
+                  currentScriptHostURL.host +
+                  currentScriptHostURL.pathname.replace(/@vite\/client$/, '')
+                console.error(
+                  '[vite] failed to connect to websocket.\n' +
+                    'your current setup:\n' +
+                    `  (browser) ${currentScriptHost} <--[HTTP]--> ${serverHost} (server)\n` +
+                    `  (browser) ${socketHost} <--[WebSocket (failing)]--> ${directSocketHost} (server)\n` +
+                    'Check out your Vite / network configuration and https://vite.dev/config/server-options.html#server-hmr .',
+                )
+              }
+            }
+            return
+          }
+          console.error(`[vite] failed to connect to websocket (${e}). `)
+          throw e
+        }
+      },
+      async disconnect() {
+        await wsTransport.disconnect()
+      },
+      send(data) {
+        wsTransport.send(data)
+      },
     }
-  }
+  })(),
+)
 
-  socket = setupWebSocket(socketProtocol, socketHost, fallback)
-} catch (error) {
-  console.error(`[vite] failed to connect to websocket (${error}). `)
-}
-
-function setupWebSocket(
-  protocol: string,
-  hostAndPath: string,
-  onCloseWithoutOpen?: () => void,
-) {
-  const socket = new WebSocket(`${protocol}://${hostAndPath}`, 'vite-hmr')
-  let isOpened = false
-
-  socket.addEventListener(
-    'open',
-    () => {
-      isOpened = true
-      notifyListeners('vite:ws:connect', { webSocket: socket })
-    },
-    { once: true },
-  )
-
-  // Listen for messages
-  socket.addEventListener('message', async ({ data }) => {
-    handleMessage(JSON.parse(data))
+let willUnload = false
+if (typeof window !== 'undefined') {
+  window.addEventListener('beforeunload', () => {
+    willUnload = true
   })
-
-  // ping server
-  socket.addEventListener('close', async ({ wasClean }) => {
-    if (wasClean) return
-
-    if (!isOpened && onCloseWithoutOpen) {
-      onCloseWithoutOpen()
-      return
-    }
-
-    notifyListeners('vite:ws:disconnect', { webSocket: socket })
-
-    if (hasDocument) {
-      console.log(`[vite] server connection lost. Polling for restart...`)
-      await waitForSuccessfulPing(protocol, hostAndPath)
-      location.reload()
-    }
-  })
-
-  return socket
 }
 
 function cleanUrl(pathname: string): string {
@@ -140,10 +138,7 @@ const hmrClient = new HMRClient(
     error: (err) => console.error('[vite]', err),
     debug: (...msg) => console.debug('[vite]', ...msg),
   },
-  {
-    isReady: () => socket && socket.readyState === 1,
-    send: (payload) => socket.send(JSON.stringify(payload)),
-  },
+  transport,
   async function importUpdatedModule({
     acceptedPath,
     timestamp,
@@ -171,22 +166,15 @@ const hmrClient = new HMRClient(
     return await importPromise
   },
 )
+transport.connect!(createHMRHandler(handleMessage))
 
 async function handleMessage(payload: HotPayload) {
   switch (payload.type) {
     case 'connected':
       console.debug(`[vite] connected.`)
-      hmrClient.messenger.flush()
-      // proxy(nginx, docker) hmr ws maybe caused timeout,
-      // so send ping package let ws keep alive.
-      setInterval(() => {
-        if (socket.readyState === socket.OPEN) {
-          socket.send('{"type":"ping"}')
-        }
-      }, __HMR_TIMEOUT__)
       break
     case 'update':
-      notifyListeners('vite:beforeUpdate', payload)
+      await hmrClient.notifyListeners('vite:beforeUpdate', payload)
       if (hasDocument) {
         // if this is the first update and there's already an error overlay, it
         // means the page opened with existing server compile error and the whole
@@ -250,14 +238,24 @@ async function handleMessage(payload: HotPayload) {
           })
         }),
       )
-      notifyListeners('vite:afterUpdate', payload)
+      await hmrClient.notifyListeners('vite:afterUpdate', payload)
       break
     case 'custom': {
-      notifyListeners(payload.event, payload.data)
+      await hmrClient.notifyListeners(payload.event, payload.data)
+      if (payload.event === 'vite:ws:disconnect') {
+        if (hasDocument && !willUnload) {
+          console.log(`[vite] server connection lost. Polling for restart...`)
+          const socket = payload.data.webSocket as WebSocket
+          const url = new URL(socket.url)
+          url.search = '' // remove query string including `token`
+          await waitForSuccessfulPing(url.href)
+          location.reload()
+        }
+      }
       break
     }
     case 'full-reload':
-      notifyListeners('vite:beforeFullReload', payload)
+      await hmrClient.notifyListeners('vite:beforeFullReload', payload)
       if (hasDocument) {
         if (payload.path && payload.path.endsWith('.html')) {
           // if html file is edited, only reload the page if the browser is
@@ -278,11 +276,11 @@ async function handleMessage(payload: HotPayload) {
       }
       break
     case 'prune':
-      notifyListeners('vite:beforePrune', payload)
+      await hmrClient.notifyListeners('vite:beforePrune', payload)
       await hmrClient.prunePaths(payload.paths)
       break
     case 'error': {
-      notifyListeners('vite:error', payload)
+      await hmrClient.notifyListeners('vite:error', payload)
       if (hasDocument) {
         const err = payload.err
         if (enableOverlay) {
@@ -295,6 +293,8 @@ async function handleMessage(payload: HotPayload) {
       }
       break
     }
+    case 'ping': // noop
+      break
     default: {
       const check: never = payload
       return check
@@ -302,20 +302,16 @@ async function handleMessage(payload: HotPayload) {
   }
 }
 
-function notifyListeners<T extends string>(
-  event: T,
-  data: InferCustomEventPayload<T>,
-): void
-function notifyListeners(event: string, data: any): void {
-  hmrClient.notifyListeners(event, data)
-}
-
 const enableOverlay = __HMR_ENABLE_OVERLAY__
 const hasDocument = 'document' in globalThis
 
 function createErrorOverlay(err: ErrorPayload['err']) {
   clearErrorOverlay()
-  document.body.appendChild(new ErrorOverlay(err))
+  const { customElements } = globalThis
+  if (customElements) {
+    const ErrorOverlayConstructor = customElements.get(overlayId)!
+    document.body.appendChild(new ErrorOverlayConstructor(err))
+  }
 }
 
 function clearErrorOverlay() {
@@ -326,16 +322,9 @@ function hasErrorOverlay() {
   return document.querySelectorAll(overlayId).length
 }
 
-async function waitForSuccessfulPing(
-  socketProtocol: string,
-  hostAndPath: string,
-  ms = 1000,
-) {
+async function waitForSuccessfulPing(socketUrl: string, ms = 1000) {
   async function ping() {
-    const socket = new WebSocket(
-      `${socketProtocol}://${hostAndPath}`,
-      'vite-ping',
-    )
+    const socket = new WebSocket(socketUrl, 'vite-ping')
     return new Promise<boolean>((resolve) => {
       function onOpen() {
         resolve(true)
@@ -424,7 +413,7 @@ export function updateStyle(id: string, content: string): void {
       document.head.appendChild(style)
 
       // reset lastInsertedStyle after async
-      // because dynamically imported css will be splitted into a different file
+      // because dynamically imported css will be split into a different file
       setTimeout(() => {
         lastInsertedStyle = undefined
       }, 0)

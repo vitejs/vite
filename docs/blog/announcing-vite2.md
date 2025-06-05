@@ -33,7 +33,7 @@ Vite (French word for "fast", pronounced `/vit/`) is a new kind of build tool fo
 
 To get a sense of how fast Vite is, check out [this video comparison](https://twitter.com/amasad/status/1355379680275128321) of booting up a React application on Repl.it using Vite vs. `create-react-app` (CRA).
 
-If you've never heard of Vite before and would love to learn more about it, check out [the rationale behind the project](https://vite.dev/guide/why.html). If you are interested in how Vite differs from other similar tools, check out the [comparisons](https://vite.dev/guide/comparisons.html).
+If you've never heard of Vite before and would love to learn more about it, check out [the rationale behind the project](https://vite.dev/guide/why.html). If you are interested in how Vite differs from other similar tools, check out the [comparisons](https://v5.vite.dev/guide/comparisons.html).
 
 ## What's New in 2.0
 

@@ -175,7 +175,7 @@ function mapSourcePosition(position: OriginalMapping) {
   let sourceMap = getRunnerSourceMap(position)
   if (!sourceMap) sourceMap = sourceMapCache[position.source]
   if (!sourceMap) {
-    // Call the (overrideable) retrieveSourceMap function to get the source map.
+    // Call the (overridable) retrieveSourceMap function to get the source map.
     const urlAndMap = retrieveSourceMap(position.source)
     if (urlAndMap && urlAndMap.map) {
       const url = urlAndMap.url
@@ -210,7 +210,7 @@ function mapSourcePosition(position: OriginalMapping) {
   }
 
   // Resolve the source URL relative to the URL of the source map
-  if (sourceMap && sourceMap.map && sourceMap.url) {
+  if (sourceMap.map && sourceMap.url) {
     const originalPosition = getOriginalPosition(sourceMap.map, position)
 
     // Only return the original position if a matching line was found. If no
@@ -388,7 +388,7 @@ function wrapCallSite(frame: CallSite, state: State) {
       return name === 'eval' && '_vite' in position ? null : name
     }
     frame.getFileName = function () {
-      return position.source ?? undefined
+      return position.source ?? null
     }
     frame.getLineNumber = function () {
       return position.line

@@ -6,7 +6,7 @@ While Vite is fast by default, performance issues can creep in as the project's 
 - Slow page loads
 - Slow builds
 
-## Review your Browser Setup
+## Review Your Browser Setup
 
 Some browser extensions may interfere with requests and slow down startup and reload times for large apps, especially when using browser dev tools. We recommend creating a dev-only profile without extensions, or switch to incognito mode, while using Vite's dev server in these cases. Incognito mode should also be faster than a regular profile without extensions.
 
@@ -52,7 +52,7 @@ Hence, it's usually better to be explicit with your import paths, e.g. `import '
 If you're a plugin author, make sure to only call [`this.resolve`](https://rollupjs.org/plugin-development/#this-resolve) when needed to reduce the number of checks above.
 
 ::: tip TypeScript
-If you are using TypeScript, enable `"moduleResolution": "Bundler"` and `"allowImportingTsExtensions": true` in your `tsconfig.json`'s `compilerOptions` to use `.ts` and `.tsx` extensions directly in your code.
+If you are using TypeScript, enable `"moduleResolution": "bundler"` and `"allowImportingTsExtensions": true` in your `tsconfig.json`'s `compilerOptions` to use `.ts` and `.tsx` extensions directly in your code.
 :::
 
 ## Avoid Barrel Files
@@ -115,12 +115,13 @@ Keeping Vite fast with a growing codebase is about reducing the amount of work f
 Examples of doing less work:
 
 - Use CSS instead of Sass/Less/Stylus when possible (nesting can be handled by PostCSS)
-- Don't transform SVGs into UI framework components (React, Vue, etc). Import them as strings or URLs instead.
+- Don't transform SVGs into UI framework components (React, Vue, etc.). Import them as strings or URLs instead.
 - When using `@vitejs/plugin-react`, avoid configuring the Babel options, so it skips the transformation during build (only esbuild will be used).
 
 Examples of using native tooling:
 
 Using native tooling often brings larger installation size and as so is not the default when starting a new Vite project. But it may be worth the cost for larger applications.
 
+- Use [Rolldown instead of Rollup and esbuild](./rolldown) for faster builds and a more aligned experience between dev and build.
 - Try out the experimental support for [LightningCSS](https://github.com/vitejs/vite/discussions/13835)
 - Use [`@vitejs/plugin-react-swc`](https://github.com/vitejs/vite-plugin-react-swc) in place of `@vitejs/plugin-react`.

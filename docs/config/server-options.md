@@ -42,6 +42,37 @@ See [the WSL document](https://learn.microsoft.com/en-us/windows/wsl/networking#
 
 :::
 
+## server.allowedHosts
+
+- **Type:** `string[] | true`
+- **Default:** `[]`
+
+The hostnames that Vite is allowed to respond to.
+`localhost` and domains under `.localhost` and all IP addresses are allowed by default.
+When using HTTPS, this check is skipped.
+
+If a string starts with `.`, it will allow that hostname without the `.` and all subdomains under the hostname. For example, `.example.com` will allow `example.com`, `foo.example.com`, and `foo.bar.example.com`. If set to `true`, the server is allowed to respond to requests for any hosts.
+
+::: details What hosts are safe to be added?
+
+Hosts that you have control over which IP addresses they resolve to are safe to add to the list of allowed hosts.
+
+For example, if you own a domain `vite.dev`, you can add `vite.dev` and `.vite.dev` to the list. If you don't own that domain and you cannot trust the owner of that domain, you should not add it.
+
+Especially, you should never add Top-Level Domains like `.com` to the list. This is because anyone can purchase a domain like `example.com` and control the IP address it resolves to.
+
+:::
+
+::: danger
+
+Setting `server.allowedHosts` to `true` allows any website to send requests to your dev server through DNS rebinding attacks, allowing them to download your source code and content. We recommend always using an explicit list of allowed hosts. See [GHSA-vg6x-rcgg-rjx6](https://github.com/vitejs/vite/security/advisories/GHSA-vg6x-rcgg-rjx6) for more details.
+
+:::
+
+::: details Configure via environment variable
+You can set the environment variable `__VITE_ADDITIONAL_SERVER_ALLOWED_HOSTS` to add an additional allowed host.
+:::
+
 ## server.port
 
 - **Type:** `number`
@@ -59,9 +90,9 @@ Set to `true` to exit if port is already in use, instead of automatically trying
 
 - **Type:** `https.ServerOptions`
 
-Enable TLS + HTTP/2. Note this downgrades to TLS only when the [`server.proxy` option](#server-proxy) is also used.
+Enable TLS + HTTP/2. The value is an [options object](https://nodejs.org/api/https.html#https_https_createserver_options_requestlistener) passed to `https.createServer()`.
 
-The value can also be an [options object](https://nodejs.org/api/https.html#https_https_createserver_options_requestlistener) passed to `https.createServer()`.
+Note that this downgrades to TLS only when the [`server.proxy` option](#server-proxy) is also used.
 
 A valid certificate is needed. For a basic setup, you can add [@vitejs/plugin-basic-ssl](https://github.com/vitejs/vite-plugin-basic-ssl) to the project plugins, which will automatically create and cache a self-signed certificate. But we recommend creating your own certificates.
 
@@ -101,15 +132,21 @@ In some cases, you might also want to configure the underlying dev server (e.g. 
 export default defineConfig({
   server: {
     proxy: {
-      // string shorthand: http://localhost:5173/foo -> http://localhost:4567/foo
+      // string shorthand:
+      // http://localhost:5173/foo
+      //   -> http://localhost:4567/foo
       '/foo': 'http://localhost:4567',
-      // with options: http://localhost:5173/api/bar-> http://jsonplaceholder.typicode.com/bar
+      // with options:
+      // http://localhost:5173/api/bar
+      //   -> http://jsonplaceholder.typicode.com/bar
       '/api': {
         target: 'http://jsonplaceholder.typicode.com',
         changeOrigin: true,
         rewrite: (path) => path.replace(/^\/api/, ''),
       },
-      // with RegExp: http://localhost:5173/fallback/ -> http://jsonplaceholder.typicode.com/
+      // with RegExp:
+      // http://localhost:5173/fallback/
+      //   -> http://jsonplaceholder.typicode.com/
       '^/fallback/.*': {
         target: 'http://jsonplaceholder.typicode.com',
         changeOrigin: true,
@@ -123,8 +160,11 @@ export default defineConfig({
           // proxy will be an instance of 'http-proxy'
         },
       },
-      // Proxying websockets or socket.io: ws://localhost:5173/socket.io -> ws://localhost:5174/socket.io
-      // Exercise caution using `rewriteWsOrigin` as it can leave the proxying open to CSRF attacks.
+      // Proxying websockets or socket.io:
+      // ws://localhost:5173/socket.io
+      //   -> ws://localhost:5174/socket.io
+      // Exercise caution using `rewriteWsOrigin` as it can leave the
+      // proxying open to CSRF attacks.
       '/socket.io': {
         target: 'ws://localhost:5174',
         ws: true,
@@ -138,8 +178,15 @@ export default defineConfig({
 ## server.cors
 
 - **Type:** `boolean | CorsOptions`
+- **Default:** `{ origin: /^https?:\/\/(?:(?:[^:]+\.)?localhost|127\.0\.0\.1|\[::1\])(?::\d+)?$/ }` (allows localhost, `127.0.0.1` and `::1`)
 
-Configure CORS for the dev server. This is enabled by default and allows any origin. Pass an [options object](https://github.com/expressjs/cors#configuration-options) to fine tune the behavior or `false` to disable.
+Configure CORS for the dev server. Pass an [options object](https://github.com/expressjs/cors#configuration-options) to fine tune the behavior or `true` to allow any origin.
+
+::: danger
+
+Setting `server.cors` to `true` allows any website to send requests to your dev server and download your source code and content. We recommend always using an explicit list of allowed origins.
+
+:::
 
 ## server.headers
 
@@ -205,7 +252,7 @@ export default defineConfig({
 
 - **Type:** `object | null`
 
-File system watcher options to pass on to [chokidar](https://github.com/paulmillr/chokidar#api).
+File system watcher options to pass on to [chokidar](https://github.com/paulmillr/chokidar/tree/3.6.0#api).
 
 The Vite server watcher watches the `root` and skips the `.git/`, `node_modules/`, and Vite's `cacheDir` and `build.outDir` directories by default. When updating a watched file, Vite will apply HMR and update the page only if needed.
 
@@ -226,7 +273,7 @@ To fix it, you could either:
 - **Recommended**: Use WSL2 applications to edit your files.
   - It is also recommended to move the project folder outside of a Windows filesystem. Accessing Windows filesystem from WSL2 is slow. Removing that overhead will improve performance.
 - Set `{ usePolling: true }`.
-  - Note that [`usePolling` leads to high CPU utilization](https://github.com/paulmillr/chokidar#performance).
+  - Note that [`usePolling` leads to high CPU utilization](https://github.com/paulmillr/chokidar/tree/3.6.0#performance).
 
 :::
 
@@ -251,15 +298,16 @@ async function createServer() {
   // Create Vite server in middleware mode
   const vite = await createViteServer({
     server: { middlewareMode: true },
-    appType: 'custom', // don't include Vite's default HTML handling middlewares
+    // don't include Vite's default HTML handling middlewares
+    appType: 'custom',
   })
   // Use vite's connect instance as middleware
   app.use(vite.middlewares)
 
   app.use('*', async (req, res) => {
     // Since `appType` is `'custom'`, should serve response here.
-    // Note: if `appType` is `'spa'` or `'mpa'`, Vite includes middlewares to handle
-    // HTML requests and 404s so user middlewares should be added
+    // Note: if `appType` is `'spa'` or `'mpa'`, Vite includes middlewares
+    // to handle HTML requests and 404s so user middlewares should be added
     // before Vite's middlewares to take effect instead
   })
 }
@@ -329,13 +377,11 @@ export default defineConfig({
 
 Blocklist for sensitive files being restricted to be served by Vite dev server. This will have higher priority than [`server.fs.allow`](#server-fs-allow). [picomatch patterns](https://github.com/micromatch/picomatch#globbing-features) are supported.
 
-## server.fs.cachedChecks
+::: tip NOTE
 
-- **Type:** `boolean`
-- **Default:** `false`
-- **Experimental**
+This blocklist does not apply to [the public directory](/guide/assets.md#the-public-directory). All files in the public directory are served without any filtering, since they are copied directly to the output directory during build.
 
-Caches filenames of accessed directories to avoid repeated filesystem operations. Particularly in Windows, this could result in a performance boost. It is disabled by default due to edge cases when writing a file in a cached folder and immediately importing it.
+:::
 
 ## server.origin
 

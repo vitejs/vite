@@ -6,32 +6,13 @@ import type DartSass from 'sass'
 import type SassEmbedded from 'sass-embedded'
 // @ts-ignore `less` may not be installed
 import type Less from 'less'
-// @ts-ignore `less` may not be installed
+// @ts-ignore `stylus` may not be installed
 import type Stylus from 'stylus'
 
 /* eslint-enable @typescript-eslint/ban-ts-comment */
 
 // https://github.com/type-challenges/type-challenges/issues/29285
 type IsAny<T> = boolean extends (T extends never ? true : false) ? true : false
-
-type DartSassLegacyStringOptionsAsync = DartSass.LegacyStringOptions<'async'>
-type SassEmbeddedLegacyStringOptionsAsync =
-  SassEmbedded.LegacyStringOptions<'async'>
-type SassLegacyStringOptionsAsync =
-  IsAny<DartSassLegacyStringOptionsAsync> extends false
-    ? DartSassLegacyStringOptionsAsync
-    : SassEmbeddedLegacyStringOptionsAsync
-
-export type SassLegacyPreprocessBaseOptions = Omit<
-  SassLegacyStringOptionsAsync,
-  | 'data'
-  | 'file'
-  | 'outFile'
-  | 'sourceMap'
-  | 'omitSourceMapUrl'
-  | 'sourceMapEmbed'
-  | 'sourceMapRoot'
->
 
 type DartSassStringOptionsAsync = DartSass.StringOptions<'async'>
 type SassEmbeddedStringOptionsAsync = SassEmbedded.StringOptions<'async'>

@@ -1,10 +1,8 @@
 import aliasPlugin, { type ResolverFunction } from '@rollup/plugin-alias'
 import type { ObjectHook } from 'rollup'
 import type { PluginHookUtils, ResolvedConfig } from '../config'
-import { isDepOptimizationDisabled } from '../optimizer'
 import type { HookHandler, Plugin, PluginWithRequiredHook } from '../plugin'
 import { watchPackageDataPlugin } from '../packages'
-import { getFsUtils } from '../fsUtils'
 import { jsonPlugin } from './json'
 import { resolvePlugin } from './resolve'
 import { optimizedDepsPlugin } from './optimizedDeps'
@@ -24,6 +22,12 @@ import { assetImportMetaUrlPlugin } from './assetImportMetaUrl'
 import { metadataPlugin } from './metadata'
 import { dynamicImportVarsPlugin } from './dynamicImportVars'
 import { importGlobPlugin } from './importMetaGlob'
+import {
+  type PluginFilter,
+  type TransformHookFilter,
+  createFilterForTransform,
+  createIdFilter,
+} from './pluginFilter'
 
 export async function resolvePlugins(
   config: ResolvedConfig,
@@ -37,17 +41,12 @@ export async function resolvePlugins(
     ? await (await import('../build')).resolveBuildPlugins(config)
     : { pre: [], post: [] }
   const { modulePreload } = config.build
-  const depOptimizationEnabled =
-    !isBuild &&
-    Object.values(config.environments).some(
-      (environment) => !isDepOptimizationDisabled(environment.optimizeDeps),
-    )
 
   return [
-    depOptimizationEnabled ? optimizedDepsPlugin() : null,
+    !isBuild ? optimizedDepsPlugin() : null,
     isBuild ? metadataPlugin() : null,
     !isWorker ? watchPackageDataPlugin(config.packageCache) : null,
-    preAliasPlugin(config),
+    !isBuild ? preAliasPlugin(config) : null,
     aliasPlugin({
       entries: config.resolve.alias,
       customResolver: viteAliasCustomResolver,
@@ -58,30 +57,19 @@ export async function resolvePlugins(
     modulePreload !== false && modulePreload.polyfill
       ? modulePreloadPolyfillPlugin(config)
       : null,
-    resolvePlugin(
-      {
-        root: config.root,
-        isProduction: config.isProduction,
-        isBuild,
-        packageCache: config.packageCache,
-        asSrc: true,
-        fsUtils: getFsUtils(config),
-        optimizeDeps: true,
-        externalize: isBuild && !!config.build.ssr, // TODO: should we do this for all environments?
-      },
-      config.environments,
-    ),
+    resolvePlugin({
+      root: config.root,
+      isProduction: config.isProduction,
+      isBuild,
+      packageCache: config.packageCache,
+      asSrc: true,
+      optimizeDeps: true,
+      externalize: true,
+    }),
     htmlInlineProxyPlugin(config),
     cssPlugin(config),
     config.esbuild !== false ? esbuildPlugin(config) : null,
-    jsonPlugin(
-      {
-        namedExports: true,
-        stringify: 'auto',
-        ...config.json,
-      },
-      isBuild,
-    ),
+    jsonPlugin(config.json, isBuild),
     wasmHelperPlugin(),
     webWorkerPlugin(config),
     assetPlugin(config),
@@ -174,6 +162,60 @@ export function getHookHandler<T extends ObjectHook<Function>>(
   hook: T,
 ): HookHandler<T> {
   return (typeof hook === 'object' ? hook.handler : hook) as HookHandler<T>
+}
+
+type FilterForPluginValue = {
+  resolveId?: PluginFilter | undefined
+  load?: PluginFilter | undefined
+  transform?: TransformHookFilter | undefined
+}
+const filterForPlugin = new WeakMap<Plugin, FilterForPluginValue>()
+
+export function getCachedFilterForPlugin<
+  H extends 'resolveId' | 'load' | 'transform',
+>(plugin: Plugin, hookName: H): FilterForPluginValue[H] | undefined {
+  let filters = filterForPlugin.get(plugin)
+  if (filters && hookName in filters) {
+    return filters[hookName]
+  }
+
+  if (!filters) {
+    filters = {}
+    filterForPlugin.set(plugin, filters)
+  }
+
+  let filter: PluginFilter | TransformHookFilter | undefined
+  switch (hookName) {
+    case 'resolveId': {
+      const rawFilter =
+        typeof plugin.resolveId === 'object'
+          ? plugin.resolveId.filter?.id
+          : undefined
+      filters.resolveId = createIdFilter(rawFilter)
+      filter = filters.resolveId
+      break
+    }
+    case 'load': {
+      const rawFilter =
+        typeof plugin.load === 'object' ? plugin.load.filter?.id : undefined
+      filters.load = createIdFilter(rawFilter)
+      filter = filters.load
+      break
+    }
+    case 'transform': {
+      const rawFilters =
+        typeof plugin.transform === 'object'
+          ? plugin.transform.filter
+          : undefined
+      filters.transform = createFilterForTransform(
+        rawFilters?.id,
+        rawFilters?.code,
+      )
+      filter = filters.transform
+      break
+    }
+  }
+  return filter as FilterForPluginValue[H] | undefined
 }
 
 // Same as `@rollup/plugin-alias` default resolver, but we attach additional meta

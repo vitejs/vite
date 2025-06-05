@@ -56,6 +56,7 @@ describe.runIf(isBuild)('build', () => {
     const imgAssetEntry = manifest['../images/logo.png']
     const dirFooAssetEntry = manifest['../../dir/foo.css']
     const iconEntrypointEntry = manifest['icon.png']
+    const waterContainerEntry = manifest['water-container.svg']
     expect(htmlEntry.css.length).toEqual(1)
     expect(htmlEntry.assets.length).toEqual(1)
     expect(mainTsEntry.assets?.length ?? 0).toBeGreaterThanOrEqual(1)
@@ -74,7 +75,9 @@ describe.runIf(isBuild)('build', () => {
     expect(dirFooAssetEntry).not.toBeUndefined() // '\\' should not be used even on windows
     // use the entry name
     expect(dirFooAssetEntry.file).toMatch('assets/bar-')
+    expect(dirFooAssetEntry.names).toStrictEqual(['bar.css'])
     expect(iconEntrypointEntry?.file).not.toBeUndefined()
+    expect(waterContainerEntry?.file).not.toBeUndefined()
   })
 
   test('CSS imported from JS entry should have a non-nested chunk name', () => {

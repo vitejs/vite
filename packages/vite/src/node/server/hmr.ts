@@ -4,11 +4,20 @@ import { EventEmitter } from 'node:events'
 import colors from 'picocolors'
 import type { CustomPayload, HotPayload, Update } from 'types/hmrPayload'
 import type { RollupError } from 'rollup'
+import type {
+  InvokeMethods,
+  InvokeResponseData,
+  InvokeSendData,
+} from '../../shared/invokeMethods'
 import { CLIENT_DIR } from '../constants'
-import { createDebugger, normalizePath } from '../utils'
+import {
+  createDebugger,
+  isCSSRequest,
+  monotonicDateNow,
+  normalizePath,
+} from '../utils'
 import type { InferCustomEventPayload, ViteDevServer } from '..'
 import { getHookHandler } from '../plugins'
-import { isCSSRequest } from '../plugins/css'
 import { isExplicitImportRequired } from '../plugins/importAnalysis'
 import { getEnvFilesForMode } from '../env'
 import type { Environment } from '../environment'
@@ -22,6 +31,10 @@ import type { EnvironmentModuleNode } from './moduleGraph'
 import type { ModuleNode } from './mixedModuleGraph'
 import type { DevEnvironment } from './environment'
 import { prepareError } from './middlewares/error'
+import {
+  BasicMinimalPluginContext,
+  basePluginContextMeta,
+} from './pluginContainer'
 import type { HttpServer } from '.'
 import { restartServerWithUrls } from '.'
 
@@ -49,11 +62,6 @@ export interface HotUpdateOptions {
   modules: Array<EnvironmentModuleNode>
   read: () => string | Promise<string>
   server: ViteDevServer
-
-  /**
-   * @deprecated use this.environment in the hotUpdate hook instead
-   **/
-  environment: DevEnvironment
 }
 
 export interface HmrContext {
@@ -71,6 +79,47 @@ interface PropagationBoundary {
 }
 
 export interface HotChannelClient {
+  send(payload: HotPayload): void
+}
+
+export type HotChannelListener<T extends string = string> = (
+  data: InferCustomEventPayload<T>,
+  client: HotChannelClient,
+) => void
+
+export interface HotChannel<Api = any> {
+  /**
+   * Broadcast events to all clients
+   */
+  send?(payload: HotPayload): void
+  /**
+   * Handle custom event emitted by `import.meta.hot.send`
+   */
+  on?<T extends string>(event: T, listener: HotChannelListener<T>): void
+  on?(event: 'connection', listener: () => void): void
+  /**
+   * Unregister event listener
+   */
+  off?(event: string, listener: Function): void
+  /**
+   * Start listening for messages
+   */
+  listen?(): void
+  /**
+   * Disconnect all clients, called when server is closed or restarted.
+   */
+  close?(): Promise<unknown> | void
+
+  api?: Api
+}
+
+export function getShortName(file: string, root: string): string {
+  return file.startsWith(withTrailingSlash(root))
+    ? path.posix.relative(root, file)
+    : file
+}
+
+export interface NormalizedHotChannelClient {
   /**
    * Send event to the client
    */
@@ -80,10 +129,8 @@ export interface HotChannelClient {
    */
   send(event: string, payload?: CustomPayload['data']): void
 }
-/** @deprecated use `HotChannelClient` instead */
-export type HMRBroadcasterClient = HotChannelClient
 
-export interface HotChannel {
+export interface NormalizedHotChannel<Api = any> {
   /**
    * Broadcast events to all clients
    */
@@ -99,8 +146,7 @@ export interface HotChannel {
     event: T,
     listener: (
       data: InferCustomEventPayload<T>,
-      client: HotChannelClient,
-      ...args: any[]
+      client: NormalizedHotChannelClient,
     ) => void,
   ): void
   on(event: 'connection', listener: () => void): void
@@ -108,6 +154,9 @@ export interface HotChannel {
    * Unregister event listener
    */
   off(event: string, listener: Function): void
+  /** @internal */
+  setInvokeHandler(invokeHandlers: InvokeMethods | undefined): void
+  handleInvoke(payload: HotPayload): Promise<{ result: any } | { error: any }>
   /**
    * Start listening for messages
    */
@@ -116,14 +165,171 @@ export interface HotChannel {
    * Disconnect all clients, called when server is closed or restarted.
    */
   close(): Promise<unknown> | void
-}
-/** @deprecated use `HotChannel` instead */
-export type HMRChannel = HotChannel
 
-export function getShortName(file: string, root: string): string {
-  return file.startsWith(withTrailingSlash(root))
-    ? path.posix.relative(root, file)
-    : file
+  api?: Api
+}
+
+export const normalizeHotChannel = (
+  channel: HotChannel,
+  enableHmr: boolean,
+  normalizeClient = true,
+): NormalizedHotChannel => {
+  const normalizedListenerMap = new WeakMap<
+    (data: any, client: NormalizedHotChannelClient) => void | Promise<void>,
+    (data: any, client: HotChannelClient) => void | Promise<void>
+  >()
+  const listenersForEvents = new Map<
+    string,
+    Set<(data: any, client: HotChannelClient) => void | Promise<void>>
+  >()
+
+  let invokeHandlers: InvokeMethods | undefined
+  let listenerForInvokeHandler:
+    | ((data: InvokeSendData, client: HotChannelClient) => void)
+    | undefined
+  const handleInvoke = async <T extends keyof InvokeMethods>(
+    payload: HotPayload,
+  ) => {
+    if (!invokeHandlers) {
+      return {
+        error: {
+          name: 'TransportError',
+          message: 'invokeHandlers is not set',
+          stack: new Error().stack,
+        },
+      }
+    }
+
+    const data: InvokeSendData<T> = (payload as CustomPayload).data
+    const { name, data: args } = data
+    try {
+      const invokeHandler = invokeHandlers[name]
+      // @ts-expect-error `invokeHandler` is `InvokeMethods[T]`, so passing the args is fine
+      const result = await invokeHandler(...args)
+      return { result }
+    } catch (error) {
+      return {
+        error: {
+          name: error.name,
+          message: error.message,
+          stack: error.stack,
+          ...error, // preserve enumerable properties such as RollupError.loc, frame, plugin
+        },
+      }
+    }
+  }
+
+  return {
+    ...channel,
+    on: (
+      event: string,
+      fn: (data: any, client: NormalizedHotChannelClient) => void,
+    ) => {
+      if (event === 'connection' || !normalizeClient) {
+        channel.on?.(event, fn as () => void)
+        return
+      }
+
+      const listenerWithNormalizedClient = (
+        data: any,
+        client: HotChannelClient,
+      ) => {
+        const normalizedClient: NormalizedHotChannelClient = {
+          send: (...args) => {
+            let payload: HotPayload
+            if (typeof args[0] === 'string') {
+              payload = {
+                type: 'custom',
+                event: args[0],
+                data: args[1],
+              }
+            } else {
+              payload = args[0]
+            }
+            client.send(payload)
+          },
+        }
+        fn(data, normalizedClient)
+      }
+      normalizedListenerMap.set(fn, listenerWithNormalizedClient)
+
+      channel.on?.(event, listenerWithNormalizedClient)
+      if (!listenersForEvents.has(event)) {
+        listenersForEvents.set(event, new Set())
+      }
+      listenersForEvents.get(event)!.add(listenerWithNormalizedClient)
+    },
+    off: (event: string, fn: () => void) => {
+      if (event === 'connection' || !normalizeClient) {
+        channel.off?.(event, fn as () => void)
+        return
+      }
+
+      const normalizedListener = normalizedListenerMap.get(fn)
+      if (normalizedListener) {
+        channel.off?.(event, normalizedListener)
+        listenersForEvents.get(event)?.delete(normalizedListener)
+      }
+    },
+    setInvokeHandler(_invokeHandlers) {
+      invokeHandlers = _invokeHandlers
+      if (!_invokeHandlers) {
+        if (listenerForInvokeHandler) {
+          channel.off?.('vite:invoke', listenerForInvokeHandler)
+        }
+        return
+      }
+
+      listenerForInvokeHandler = async (payload, client) => {
+        const responseInvoke = payload.id.replace('send', 'response') as
+          | 'response'
+          | `response:${string}`
+        client.send({
+          type: 'custom',
+          event: 'vite:invoke',
+          data: {
+            name: payload.name,
+            id: responseInvoke,
+            data: (await handleInvoke({
+              type: 'custom',
+              event: 'vite:invoke',
+              data: payload,
+            }))!,
+          } satisfies InvokeResponseData,
+        })
+      }
+      channel.on?.('vite:invoke', listenerForInvokeHandler)
+    },
+    handleInvoke,
+    send: (...args: any[]) => {
+      let payload: HotPayload
+      if (typeof args[0] === 'string') {
+        payload = {
+          type: 'custom',
+          event: args[0],
+          data: args[1],
+        }
+      } else {
+        payload = args[0]
+      }
+
+      if (
+        enableHmr ||
+        payload.type === 'connected' ||
+        payload.type === 'ping' ||
+        payload.type === 'custom' ||
+        payload.type === 'error'
+      ) {
+        channel.send?.(payload)
+      }
+    },
+    listen() {
+      return channel.listen?.()
+    },
+    close() {
+      return channel.close?.()
+    },
+  }
 }
 
 export function getSortedPluginsByHotUpdateHook(
@@ -157,7 +363,7 @@ export function getSortedPluginsByHotUpdateHook(
 
 const sortedHotUpdatePluginsCache = new WeakMap<Environment, Plugin[]>()
 function getSortedHotUpdatePlugins(environment: Environment): Plugin[] {
-  let sortedPlugins = sortedHotUpdatePluginsCache.get(environment) as Plugin[]
+  let sortedPlugins = sortedHotUpdatePluginsCache.get(environment)
   if (!sortedPlugins) {
     sortedPlugins = getSortedPluginsByHotUpdateHook(environment.plugins)
     sortedHotUpdatePluginsCache.set(environment, sortedPlugins)
@@ -182,7 +388,7 @@ export async function handleHMRUpdate(
   )
 
   const isEnv =
-    config.inlineConfig.envFile !== false &&
+    config.envDir !== false &&
     getEnvFilesForMode(config.mode, config.envDir).includes(file)
   if (isConfig || isConfigDependency || isEnv) {
     // auto restart server
@@ -217,7 +423,7 @@ export async function handleHMRUpdate(
     return
   }
 
-  const timestamp = Date.now()
+  const timestamp = monotonicDateNow()
   const contextMeta = {
     type,
     file,
@@ -240,8 +446,6 @@ export async function handleHMRUpdate(
     const options = {
       ...contextMeta,
       modules: [...mods],
-      // later on hotUpdate will be called for each runtime with a new HotUpdateContext
-      environment,
     }
     hotMap.set(environment, { options })
   }
@@ -253,9 +457,13 @@ export async function handleHMRUpdate(
     modules: [...mixedMods],
   }
 
+  const contextForHandleHotUpdate = new BasicMinimalPluginContext(
+    { ...basePluginContextMeta, watchMode: true },
+    config.logger,
+  )
   const clientEnvironment = server.environments.client
   const ssrEnvironment = server.environments.ssr
-  const clientContext = { environment: clientEnvironment }
+  const clientContext = clientEnvironment.pluginContainer.minimalContext
   const clientHotUpdateOptions = hotMap.get(clientEnvironment)!.options
   const ssrHotUpdateOptions = hotMap.get(ssrEnvironment)?.options
   try {
@@ -299,9 +507,9 @@ export async function handleHMRUpdate(
         )
         // later on, we'll need: if (runtime === 'client')
         // Backward compatibility with mixed client and ssr moduleGraph
-        const filteredModules = await getHookHandler(plugin.handleHotUpdate!)(
-          mixedHmrContext,
-        )
+        const filteredModules = await getHookHandler(
+          plugin.handleHotUpdate!,
+        ).call(contextForHandleHotUpdate, mixedHmrContext)
         if (filteredModules) {
           mixedHmrContext.modules = filteredModules
           clientHotUpdateOptions.modules =
@@ -346,12 +554,12 @@ export async function handleHMRUpdate(
   for (const environment of Object.values(server.environments)) {
     if (environment.name === 'client') continue
     const hot = hotMap.get(environment)!
-    const environmentThis = { environment }
+    const context = environment.pluginContainer.minimalContext
     try {
       for (const plugin of getSortedHotUpdatePlugins(environment)) {
         if (plugin.hotUpdate) {
           const filteredModules = await getHookHandler(plugin.hotUpdate).call(
-            environmentThis,
+            context,
             hot.options,
           )
           if (filteredModules) {
@@ -372,7 +580,7 @@ export async function handleHMRUpdate(
       }
       if (!options.modules.length) {
         // html file cannot be hot updated
-        if (file.endsWith('.html')) {
+        if (file.endsWith('.html') && environment.name === 'client') {
           environment.logger.info(
             colors.green(`page reload `) + colors.dim(shortFile),
             {
@@ -418,14 +626,14 @@ export async function handleHMRUpdate(
   await hotUpdateEnvironments(server, hmr)
 }
 
-type HasDeadEnd = boolean
+type HasDeadEnd = string | boolean
 
 export function updateModules(
   environment: DevEnvironment,
   file: string,
   modules: EnvironmentModuleNode[],
   timestamp: number,
-  afterInvalidation?: boolean,
+  firstInvalidatedBy?: string,
 ): void {
   const { hot } = environment
   const updates: Update[] = []
@@ -454,6 +662,19 @@ export function updateModules(
       continue
     }
 
+    // If import.meta.hot.invalidate was called already on that module for the same update,
+    // it means any importer of that module can't hot update. We should fallback to full reload.
+    if (
+      firstInvalidatedBy &&
+      boundaries.some(
+        ({ acceptedVia }) =>
+          normalizeHmrUrl(acceptedVia.url) === firstInvalidatedBy,
+      )
+    ) {
+      needFullReload = 'circular import invalidate'
+      continue
+    }
+
     updates.push(
       ...boundaries.map(
         ({ boundary, acceptedVia, isWithinCircularImport }) => ({
@@ -466,6 +687,7 @@ export function updateModules(
               ? isExplicitImportRequired(acceptedVia.url)
               : false,
           isWithinCircularImport,
+          firstInvalidatedBy,
         }),
       ),
     )
@@ -478,7 +700,7 @@ export function updateModules(
         : ''
     environment.logger.info(
       colors.green(`page reload `) + colors.dim(file) + reason,
-      { clear: !afterInvalidation, timestamp: true },
+      { clear: !firstInvalidatedBy, timestamp: true },
     )
     hot.send({
       type: 'full-reload',
@@ -495,7 +717,7 @@ export function updateModules(
   environment.logger.info(
     colors.green(`hmr update `) +
       colors.dim([...new Set(updates.map((u) => u.path))].join(', ')),
-    { clear: !afterInvalidation, timestamp: true },
+    { clear: !firstInvalidatedBy, timestamp: true },
   )
   hot.send({
     type: 'update',
@@ -582,6 +804,9 @@ function propagateUpdate(
     // PostCSS plugins) it should be considered a dead end and force full reload.
     if (
       !isCSSRequest(node.url) &&
+      // we assume .svg is never an entrypoint and does not need a full reload
+      // to avoid frequent full reloads when an SVG file is referenced in CSS files (#18979)
+      !node.file?.endsWith('.svg') &&
       [...node.importers].every((i) => isCSSRequest(i.url))
     ) {
       return true
@@ -710,7 +935,7 @@ export function handlePrunedModules(
   // update the disposed modules' hmr timestamp
   // since if it's re-imported, it should re-apply side effects
   // and without the timestamp the browser will not re-import it!
-  const t = Date.now()
+  const t = monotonicDateNow()
   mods.forEach((mod) => {
     mod.lastHMRTimestamp = t
     mod.lastHMRInvalidationReceived = false
@@ -782,7 +1007,7 @@ export function lexAcceptedHmrDeps(
               // in both case this indicates a self-accepting module
               return true // done
             }
-          } else if (state === LexerState.inArray) {
+          } else {
             if (char === `]`) {
               return false // done
             } else if (char === ',') {
@@ -892,31 +1117,21 @@ async function readModifiedFile(file: string): Promise<string> {
   }
 }
 
-export interface ServerHotChannel extends HotChannel {
-  api: {
-    innerEmitter: EventEmitter
-    outsideEmitter: EventEmitter
-  }
+export type ServerHotChannelApi = {
+  innerEmitter: EventEmitter
+  outsideEmitter: EventEmitter
 }
-/** @deprecated use `ServerHotChannel` instead */
-export type ServerHMRChannel = ServerHotChannel
+
+export type ServerHotChannel = HotChannel<ServerHotChannelApi>
+export type NormalizedServerHotChannel =
+  NormalizedHotChannel<ServerHotChannelApi>
 
 export function createServerHotChannel(): ServerHotChannel {
   const innerEmitter = new EventEmitter()
   const outsideEmitter = new EventEmitter()
 
   return {
-    send(...args: any[]) {
-      let payload: HotPayload
-      if (typeof args[0] === 'string') {
-        payload = {
-          type: 'custom',
-          event: args[0],
-          data: args[1],
-        }
-      } else {
-        payload = args[0]
-      }
+    send(payload: HotPayload) {
       outsideEmitter.emit('send', payload)
     },
     off(event, listener: () => void) {
@@ -937,50 +1152,4 @@ export function createServerHotChannel(): ServerHotChannel {
       outsideEmitter,
     },
   }
-}
-
-export function createNoopHotChannel(): HotChannel {
-  function noop() {
-    // noop
-  }
-
-  return {
-    send: noop,
-    on: noop,
-    off: noop,
-    listen: noop,
-    close: noop,
-  }
-}
-
-/** @deprecated use `environment.hot` instead */
-export interface HotBroadcaster extends HotChannel {
-  readonly channels: HotChannel[]
-  /**
-   * A noop.
-   * @deprecated
-   */
-  addChannel(channel: HotChannel): HotBroadcaster
-  close(): Promise<unknown[]>
-}
-/** @deprecated use `environment.hot` instead */
-export type HMRBroadcaster = HotBroadcaster
-
-export function createDeprecatedHotBroadcaster(ws: HotChannel): HotBroadcaster {
-  const broadcaster: HotBroadcaster = {
-    on: ws.on,
-    off: ws.off,
-    listen: ws.listen,
-    send: ws.send,
-    get channels() {
-      return [ws]
-    },
-    addChannel() {
-      return broadcaster
-    },
-    close() {
-      return Promise.all(broadcaster.channels.map((channel) => channel.close()))
-    },
-  }
-  return broadcaster
 }

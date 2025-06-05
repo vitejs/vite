@@ -25,7 +25,10 @@ import {
   defaultEsbuildSupported,
   transformWithEsbuild,
 } from '../plugins/esbuild'
-import { ESBUILD_MODULES_TARGET, METADATA_FILENAME } from '../constants'
+import {
+  ESBUILD_BASELINE_WIDELY_AVAILABLE_TARGET,
+  METADATA_FILENAME,
+} from '../constants'
 import { isWindows } from '../../shared/utils'
 import type { Environment } from '../environment'
 import { esbuildCjsExternalPlugin, esbuildDepPlugin } from './esbuildDepPlugin'
@@ -128,7 +131,6 @@ export interface DepOptimizationConfig {
    * listed in `include` will be optimized. The scanner isn't run for cold start
    * in this case. CJS-only dependencies must be present in `include` during dev.
    * @default false
-   * @experimental
    */
   noDiscovery?: boolean
   /**
@@ -246,6 +248,8 @@ export interface DepOptimizationMetadata {
 /**
  * Scan and optimize dependencies within a project.
  * Used by Vite CLI when running `vite optimize`.
+ *
+ * @deprecated the optimization process runs automatically and does not need to be called
  */
 
 export async function optimizeDeps(
@@ -254,6 +258,12 @@ export async function optimizeDeps(
   asCommand = false,
 ): Promise<DepOptimizationMetadata> {
   const log = asCommand ? config.logger.info : debug
+
+  config.logger.warn(
+    colors.yellow(
+      'manually calling optimizeDeps is deprecated. This is done automatically and does not need to be called manually.',
+    ),
+  )
 
   const environment = new ScanEnvironment('client', config)
   await environment.init()
@@ -343,7 +353,7 @@ let firstLoadCachedDepOptimizationMetadata = true
  */
 export async function loadCachedDepOptimizationMetadata(
   environment: Environment,
-  force = environment.config.optimizeDeps?.force ?? false,
+  force = environment.config.optimizeDeps.force ?? false,
   asCommand = false,
 ): Promise<DepOptimizationMetadata | undefined> {
   const log = asCommand ? environment.logger.info : debug
@@ -373,24 +383,36 @@ export async function loadCachedDepOptimizationMetadata(
       if (cachedMetadata.lockfileHash !== getLockfileHash(environment)) {
         environment.logger.info(
           'Re-optimizing dependencies because lockfile has changed',
+          {
+            timestamp: true,
+          },
         )
       } else if (cachedMetadata.configHash !== getConfigHash(environment)) {
         environment.logger.info(
           'Re-optimizing dependencies because vite config has changed',
+          {
+            timestamp: true,
+          },
         )
       } else {
-        log?.('Hash is consistent. Skipping. Use --force to override.')
+        log?.(
+          `(${environment.name}) Hash is consistent. Skipping. Use --force to override.`,
+        )
         // Nothing to commit or cancel as we are using the cache, we only
         // need to resolve the processing promise so requests can move on
         return cachedMetadata
       }
     }
   } else {
-    environment.logger.info('Forced re-optimization of dependencies')
+    environment.logger.info('Forced re-optimization of dependencies', {
+      timestamp: true,
+    })
   }
 
   // Start with a fresh cache
-  debug?.(colors.green(`removing old cache dir ${depsCacheDir}`))
+  debug?.(
+    `(${environment.name}) ${colors.green(`removing old cache dir ${depsCacheDir}`)}`,
+  )
   await fsp.rm(depsCacheDir, { recursive: true, force: true })
 }
 
@@ -673,6 +695,25 @@ export function runOptimizeDeps(
                 browserHash: metadata.browserHash,
               })
             }
+          } else {
+            // workaround Firefox warning by removing blank source map reference
+            // https://github.com/evanw/esbuild/issues/3945
+            const output = meta.outputs[o]
+            // filter by exact bytes of an empty source map
+            if (output.bytes === 93) {
+              const jsMapPath = path.resolve(o)
+              const jsPath = jsMapPath.slice(0, -4)
+              if (fs.existsSync(jsPath) && fs.existsSync(jsMapPath)) {
+                const map = JSON.parse(fs.readFileSync(jsMapPath, 'utf-8'))
+                if (map.sources.length === 0) {
+                  const js = fs.readFileSync(jsPath, 'utf-8')
+                  fs.writeFileSync(
+                    jsPath,
+                    js.slice(0, js.lastIndexOf('//# sourceMappingURL=')),
+                  )
+                }
+              }
+            }
           }
         }
 
@@ -732,7 +773,7 @@ async function prepareEsbuildOptimizerRun(
   const { optimizeDeps } = environment.config
 
   const { plugins: pluginsFromConfig = [], ...esbuildOptions } =
-    optimizeDeps?.esbuildOptions ?? {}
+    optimizeDeps.esbuildOptions ?? {}
 
   await Promise.all(
     Object.keys(depsInfo).map(async (id) => {
@@ -756,14 +797,24 @@ async function prepareEsbuildOptimizerRun(
   if (optimizerContext.cancelled) return { context: undefined, idToExports }
 
   const define = {
-    'process.env.NODE_ENV': JSON.stringify(
-      process.env.NODE_ENV || environment.config.mode,
-    ),
+    'process.env.NODE_ENV': environment.config.keepProcessEnv
+      ? // define process.env.NODE_ENV even for keepProcessEnv === true
+        // as esbuild will replace it automatically when `platform` is `'browser'`
+        'process.env.NODE_ENV'
+      : JSON.stringify(process.env.NODE_ENV || environment.config.mode),
   }
 
-  const platform = environment.config.webCompatible ? 'browser' : 'node'
+  const platform =
+    optimizeDeps.esbuildOptions?.platform ??
+    // We generally don't want to use platform 'neutral', as esbuild has custom handling
+    // when the platform is 'node' or 'browser' that can't be emulated by using mainFields
+    // and conditions
+    (environment.config.consumer === 'client' ||
+    environment.config.ssr.target === 'webworker'
+      ? 'browser'
+      : 'node')
 
-  const external = [...(optimizeDeps?.exclude ?? [])]
+  const external = [...(optimizeDeps.exclude ?? [])]
 
   const plugins = [...pluginsFromConfig]
   if (external.length) {
@@ -775,9 +826,6 @@ async function prepareEsbuildOptimizerRun(
     absWorkingDir: process.cwd(),
     entryPoints: Object.keys(flatIdDeps),
     bundle: true,
-    // We can't use platform 'neutral', as esbuild has custom handling
-    // when the platform is 'node' or 'browser' that can't be emulated
-    // by using mainFields and conditions
     platform,
     define,
     format: 'esm',
@@ -788,7 +836,7 @@ async function prepareEsbuildOptimizerRun(
             js: `import { createRequire } from 'module';const require = createRequire(import.meta.url);`,
           }
         : undefined,
-    target: ESBUILD_MODULES_TARGET,
+    target: ESBUILD_BASELINE_WIDELY_AVAILABLE_TARGET,
     external,
     logLevel: 'error',
     splitting: true,
@@ -813,7 +861,7 @@ export async function addManuallyIncludedOptimizeDeps(
 ): Promise<void> {
   const { logger } = environment
   const { optimizeDeps } = environment.config
-  const optimizeDepsInclude = optimizeDeps?.include ?? []
+  const optimizeDepsInclude = optimizeDeps.include ?? []
   if (optimizeDepsInclude.length) {
     const unableToOptimize = (id: string, msg: string) => {
       if (optimizeDepsInclude.includes(id)) {
@@ -842,9 +890,7 @@ export async function addManuallyIncludedOptimizeDeps(
         const entry = await resolve(id)
         if (entry) {
           if (isOptimizable(entry, optimizeDeps)) {
-            if (!entry.endsWith('?__vite_skip_optimization')) {
-              deps[normalizedId] = entry
-            }
+            deps[normalizedId] = entry
           } else {
             unableToOptimize(id, 'Cannot optimize dependency')
           }
@@ -1061,7 +1107,7 @@ export async function extractExportsData(
 
   const { optimizeDeps } = environment.config
 
-  const esbuildOptions = optimizeDeps?.esbuildOptions ?? {}
+  const esbuildOptions = optimizeDeps.esbuildOptions ?? {}
   if (optimizeDeps.extensions?.some((ext) => filePath.endsWith(ext))) {
     // For custom supported extensions, build the entry file to transform it into JS,
     // and then parse with es-module-lexer. Note that the `bundle` option is not `true`,
@@ -1090,9 +1136,13 @@ export async function extractExportsData(
     debug?.(
       `Unable to parse: ${filePath}.\n Trying again with a ${loader} transform.`,
     )
-    const transformed = await transformWithEsbuild(entryContent, filePath, {
-      loader,
-    })
+    const transformed = await transformWithEsbuild(
+      entryContent,
+      filePath,
+      { loader },
+      undefined,
+      environment.config,
+    )
     parseResult = parse(transformed.code)
     usedJsxLoader = true
   }
@@ -1112,7 +1162,7 @@ function needsInterop(
   exportsData: ExportsData,
   output?: { exports: string[] },
 ): boolean {
-  if (environment.config.optimizeDeps?.needsInterop?.includes(id)) {
+  if (environment.config.optimizeDeps.needsInterop?.includes(id)) {
     return true
   }
   const { hasModuleSyntax, exports } = exportsData
@@ -1128,9 +1178,8 @@ function needsInterop(
     const generatedExports: string[] = output.exports
 
     if (
-      !generatedExports ||
-      (isSingleDefaultExport(generatedExports) &&
-        !isSingleDefaultExport(exports))
+      isSingleDefaultExport(generatedExports) &&
+      !isSingleDefaultExport(exports)
     ) {
       return true
     }
@@ -1143,14 +1192,55 @@ function isSingleDefaultExport(exports: readonly string[]) {
 }
 
 const lockfileFormats = [
-  { name: 'package-lock.json', checkPatches: true, manager: 'npm' },
-  { name: 'yarn.lock', checkPatches: true, manager: 'yarn' }, // Included in lockfile for v2+
-  { name: 'pnpm-lock.yaml', checkPatches: false, manager: 'pnpm' }, // Included in lockfile
-  { name: 'bun.lockb', checkPatches: true, manager: 'bun' },
+  {
+    path: 'node_modules/.package-lock.json',
+    checkPatchesDir: 'patches',
+    manager: 'npm',
+  },
+  {
+    // Yarn non-PnP
+    path: 'node_modules/.yarn-state.yml',
+    checkPatchesDir: false,
+    manager: 'yarn',
+  },
+  {
+    // Yarn v3+ PnP
+    path: '.pnp.cjs',
+    checkPatchesDir: '.yarn/patches',
+    manager: 'yarn',
+  },
+  {
+    // Yarn v2 PnP
+    path: '.pnp.js',
+    checkPatchesDir: '.yarn/patches',
+    manager: 'yarn',
+  },
+  {
+    // yarn 1
+    path: 'node_modules/.yarn-integrity',
+    checkPatchesDir: 'patches',
+    manager: 'yarn',
+  },
+  {
+    path: 'node_modules/.pnpm/lock.yaml',
+    // Included in lockfile
+    checkPatchesDir: false,
+    manager: 'pnpm',
+  },
+  {
+    path: 'bun.lock',
+    checkPatchesDir: 'patches',
+    manager: 'bun',
+  },
+  {
+    path: 'bun.lockb',
+    checkPatchesDir: 'patches',
+    manager: 'bun',
+  },
 ].sort((_, { manager }) => {
   return process.env.npm_config_user_agent?.startsWith(manager) ? 1 : -1
 })
-const lockfileNames = lockfileFormats.map((l) => l.name)
+const lockfilePaths = lockfileFormats.map((l) => l.path)
 
 function getConfigHash(environment: Environment): string {
   // Take config into account
@@ -1159,24 +1249,25 @@ function getConfigHash(environment: Environment): string {
   const { optimizeDeps } = config
   const content = JSON.stringify(
     {
-      mode: process.env.NODE_ENV || config.mode,
+      define: !config.keepProcessEnv
+        ? process.env.NODE_ENV || config.mode
+        : null,
       root: config.root,
       resolve: config.resolve,
       assetsInclude: config.assetsInclude,
       plugins: config.plugins.map((p) => p.name),
       optimizeDeps: {
-        include: optimizeDeps?.include
+        include: optimizeDeps.include
           ? unique(optimizeDeps.include).sort()
           : undefined,
-        exclude: optimizeDeps?.exclude
+        exclude: optimizeDeps.exclude
           ? unique(optimizeDeps.exclude).sort()
           : undefined,
         esbuildOptions: {
-          ...optimizeDeps?.esbuildOptions,
-          plugins: optimizeDeps?.esbuildOptions?.plugins?.map((p) => p.name),
+          ...optimizeDeps.esbuildOptions,
+          plugins: optimizeDeps.esbuildOptions?.plugins?.map((p) => p.name),
         },
       },
-      webCompatible: config.webCompatible,
     },
     (_, value) => {
       if (typeof value === 'function' || value instanceof RegExp) {
@@ -1189,16 +1280,20 @@ function getConfigHash(environment: Environment): string {
 }
 
 function getLockfileHash(environment: Environment): string {
-  const lockfilePath = lookupFile(environment.config.root, lockfileNames)
+  const lockfilePath = lookupFile(environment.config.root, lockfilePaths)
   let content = lockfilePath ? fs.readFileSync(lockfilePath, 'utf-8') : ''
   if (lockfilePath) {
-    const lockfileName = path.basename(lockfilePath)
-    const { checkPatches } = lockfileFormats.find(
-      (f) => f.name === lockfileName,
+    const normalizedLockfilePath = lockfilePath.replaceAll('\\', '/')
+    const lockfileFormat = lockfileFormats.find((f) =>
+      normalizedLockfilePath.endsWith(f.path),
     )!
-    if (checkPatches) {
+    if (lockfileFormat.checkPatchesDir) {
       // Default of https://github.com/ds300/patch-package
-      const fullPath = path.join(path.dirname(lockfilePath), 'patches')
+      const baseDir = lockfilePath.slice(0, -lockfileFormat.path.length)
+      const fullPath = path.join(
+        baseDir,
+        lockfileFormat.checkPatchesDir as string,
+      )
       const stat = tryStatSync(fullPath)
       if (stat?.isDirectory()) {
         content += stat.mtimeMs.toString()
@@ -1340,6 +1435,6 @@ const safeRename = promisify(function gracefulRename(
       if (backoff < 100) backoff += 10
       return
     }
-    if (cb) cb(er)
+    cb(er)
   })
 })

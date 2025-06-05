@@ -3,30 +3,30 @@
 ## Scaffolding Your First Vite Project
 
 > **Compatibility Note:**
-> Vite requires [Node.js](https://nodejs.org/en/) version 18+, 20+. However, some templates require a higher Node.js version to work, please upgrade if your package manager warns about it.
+> Vite requires [Node.js](https://nodejs.org/en/) version 20.19+, 22.12+. However, some templates require a higher Node.js version to work, please upgrade if your package manager warns about it.
 
 With NPM:
 
 ```bash
-$ npm create vite@latest
+npm create vite@latest
 ```
 
 With Yarn:
 
 ```bash
-$ yarn create vite
+yarn create vite
 ```
 
 With PNPM:
 
 ```bash
-$ pnpm create vite
+pnpm create vite
 ```
 
 With Bun:
 
 ```bash
-$ bun create vite
+bun create vite
 ```
 
 Then follow the prompts!

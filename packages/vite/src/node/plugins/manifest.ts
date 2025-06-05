@@ -7,7 +7,7 @@ import type {
 } from 'rollup'
 import type { Plugin } from '../plugin'
 import { normalizePath, sortObjectKeys } from '../utils'
-import { usePerEnvironmentState } from '../environment'
+import { perEnvironmentState } from '../environment'
 import { cssEntriesMap } from './asset'
 
 const endsWithJSRE = /\.[cm]?js$/
@@ -21,17 +21,19 @@ export interface ManifestChunk {
   assets?: string[]
   isEntry?: boolean
   name?: string
+  names?: string[]
   isDynamicEntry?: boolean
   imports?: string[]
   dynamicImports?: string[]
 }
 
 export function manifestPlugin(): Plugin {
-  const getState = usePerEnvironmentState(() => {
+  const getState = perEnvironmentState(() => {
     return {
       manifest: {} as Manifest,
       outputCount: 0,
       reset() {
+        this.manifest = {}
         this.outputCount = 0
       },
     }
@@ -59,7 +61,7 @@ export function manifestPlugin(): Plugin {
       function getChunkName(chunk: OutputChunk) {
         return (
           getChunkOriginalFileName(chunk, root, format) ??
-          `_` + path.basename(chunk.fileName)
+          `_${path.basename(chunk.fileName)}`
         )
       }
 
@@ -126,7 +128,10 @@ export function manifestPlugin(): Plugin {
           file: asset.fileName,
           src,
         }
-        if (isEntry) manifestChunk.isEntry = true
+        if (isEntry) {
+          manifestChunk.isEntry = true
+          manifestChunk.names = asset.names
+        }
         return manifestChunk
       }
 
@@ -142,8 +147,6 @@ export function manifestPlugin(): Plugin {
         }
       }
 
-      const fileNameToAsset = new Map<string, ManifestChunk>()
-
       for (const file in bundle) {
         const chunk = bundle[file]
         if (chunk.type === 'chunk') {
@@ -153,7 +156,7 @@ export function manifestPlugin(): Plugin {
           const src =
             chunk.originalFileNames.length > 0
               ? chunk.originalFileNames[0]
-              : '_' + path.basename(chunk.fileName)
+              : `_${path.basename(chunk.fileName)}`
           const isEntry = entryCssAssetFileNames.has(chunk.fileName)
           const asset = createAsset(chunk, src, isEntry)
 
@@ -162,17 +165,19 @@ export function manifestPlugin(): Plugin {
           const file = manifest[src]?.file
           if (!(file && endsWithJSRE.test(file))) {
             manifest[src] = asset
-            fileNameToAsset.set(chunk.fileName, asset)
           }
 
           for (const originalFileName of chunk.originalFileNames.slice(1)) {
-            manifest[originalFileName] = asset
+            const file = manifest[originalFileName]?.file
+            if (!(file && endsWithJSRE.test(file))) {
+              manifest[originalFileName] = asset
+            }
           }
         }
       }
 
       state.outputCount++
-      const output = buildOptions.rollupOptions?.output
+      const output = buildOptions.rollupOptions.output
       const outputLength = Array.isArray(output) ? output.length : 1
       if (state.outputCount >= outputLength) {
         this.emitFile({
@@ -198,7 +203,7 @@ export function getChunkOriginalFileName(
     if (format === 'system' && !chunk.name.includes('-legacy')) {
       const ext = path.extname(name)
       const endPos = ext.length !== 0 ? -ext.length : undefined
-      name = name.slice(0, endPos) + `-legacy` + ext
+      name = `${name.slice(0, endPos)}-legacy${ext}`
     }
     return name.replace(/\0/g, '')
   }

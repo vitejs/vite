@@ -5,10 +5,10 @@ Unless noted, the options in this section are only applied to build.
 ## build.target
 
 - **Type:** `string | string[]`
-- **Default:** `'modules'`
+- **Default:** `'baseline-widely-available'`
 - **Related:** [Browser Compatibility](/guide/build#browser-compatibility)
 
-Browser compatibility target for the final bundle. The default value is a Vite special value, `'modules'`, which targets browsers with [native ES Modules](https://caniuse.com/es6-module), [native ESM dynamic import](https://caniuse.com/es6-module-dynamic-import), and [`import.meta`](https://caniuse.com/mdn-javascript_operators_import_meta) support. Vite will replace `'modules'` to `['es2020', 'edge88', 'firefox78', 'chrome87', 'safari14']`
+Browser compatibility target for the final bundle. The default value is a Vite special value, `'baseline-widely-available'`, which targets browsers that are included in the [Baseline](https://web-platform-dx.github.io/web-features/) Widely Available on 2025-05-01. Specifically, it is `['chrome107', 'edge107', 'firefox104', 'safari16']`.
 
 Another special value is `'esnext'` - which assumes native dynamic imports support and will only perform minimal transpiling.
 
@@ -162,10 +162,28 @@ Options to pass on to [@rollup/plugin-dynamic-import-vars](https://github.com/ro
 
 ## build.lib
 
-- **Type:** `{ entry: string | string[] | { [entryAlias: string]: string }, name?: string, formats?: ('es' | 'cjs' | 'umd' | 'iife')[], fileName?: string | ((format: ModuleFormat, entryName: string) => string) }`
+- **Type:** `{ entry: string | string[] | { [entryAlias: string]: string }, name?: string, formats?: ('es' | 'cjs' | 'umd' | 'iife')[], fileName?: string | ((format: ModuleFormat, entryName: string) => string), cssFileName?: string }`
 - **Related:** [Library Mode](/guide/build#library-mode)
 
-Build as a library. `entry` is required since the library cannot use HTML as entry. `name` is the exposed global variable and is required when `formats` includes `'umd'` or `'iife'`. Default `formats` are `['es', 'umd']`, or `['es', 'cjs']`, if multiple entries are used. `fileName` is the name of the package file output, default `fileName` is the name option of package.json, it can also be defined as function taking the `format` and `entryName` as arguments.
+Build as a library. `entry` is required since the library cannot use HTML as entry. `name` is the exposed global variable and is required when `formats` includes `'umd'` or `'iife'`. Default `formats` are `['es', 'umd']`, or `['es', 'cjs']`, if multiple entries are used.
+
+`fileName` is the name of the package file output, which defaults to the `"name"` in `package.json`. It can also be defined as a function taking the `format` and `entryName` as arguments, and returning the file name.
+
+If your package imports CSS, `cssFileName` can be used to specify the name of the CSS file output. It defaults to the same value as `fileName` if it's set a string, otherwise it also falls back to the `"name"` in `package.json`.
+
+```js twoslash [vite.config.js]
+import { defineConfig } from 'vite'
+
+export default defineConfig({
+  build: {
+    lib: {
+      entry: ['src/main.js'],
+      fileName: (format, entryName) => `my-lib-${entryName}.${format}.js`,
+      cssFileName: 'my-lib-style',
+    },
+  },
+})
+```
 
 ## build.manifest
 
@@ -173,7 +191,9 @@ Build as a library. `entry` is required since the library cannot use HTML as ent
 - **Default:** `false`
 - **Related:** [Backend Integration](/guide/backend-integration)
 
-When set to `true`, the build will also generate a `.vite/manifest.json` file that contains a mapping of non-hashed asset filenames to their hashed versions, which can then be used by a server framework to render the correct asset links. When the value is a string, it will be used as the manifest file name.
+Whether to generate a manifest file that contains a mapping of non-hashed asset filenames to their hashed versions, which can then be used by a server framework to render the correct asset links.
+
+When the value is a string, it will be used as the manifest file path relative to `build.outDir`. When set to `true`, the path would be `.vite/manifest.json`.
 
 ## build.ssrManifest
 
@@ -181,7 +201,9 @@ When set to `true`, the build will also generate a `.vite/manifest.json` file th
 - **Default:** `false`
 - **Related:** [Server-Side Rendering](/guide/ssr)
 
-When set to `true`, the build will also generate an SSR manifest for determining style links and asset preload directives in production. When the value is a string, it will be used as the manifest file name.
+Whether to generate a SSR manifest file for determining style links and asset preload directives in production.
+
+When the value is a string, it will be used as the manifest file path relative to `build.outDir`. When set to `true`, the path would be `.vite/ssr-manifest.json`.
 
 ## build.ssr
 

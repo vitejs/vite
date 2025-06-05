@@ -5,7 +5,6 @@ import compression from '@polka/compression'
 import connect from 'connect'
 import type { Connect } from 'dep-types/connect'
 import corsMiddleware from 'cors'
-import { DEFAULT_PREVIEW_PORT } from './constants'
 import type {
   HttpServer,
   ResolvedServerOptions,
@@ -26,6 +25,7 @@ import { indexHtmlMiddleware } from './server/middlewares/indexHtml'
 import { notFoundMiddleware } from './server/middlewares/notFound'
 import { proxyMiddleware } from './server/middlewares/proxy'
 import {
+  getServerUrlByHost,
   resolveHostname,
   resolveServerUrls,
   setupSIGTERMListener,
@@ -37,10 +37,19 @@ import { bindCLIShortcuts } from './shortcuts'
 import type { BindCLIShortcutsOptions } from './shortcuts'
 import { resolveConfig } from './config'
 import type { InlineConfig, ResolvedConfig } from './config'
+import { DEFAULT_PREVIEW_PORT } from './constants'
+import type { RequiredExceptFor } from './typeUtils'
+import { hostValidationMiddleware } from './server/middlewares/hostCheck'
+import {
+  BasicMinimalPluginContext,
+  basePluginContextMeta,
+} from './server/pluginContainer'
+import type { MinimalPluginContextWithoutEnvironment } from './plugin'
 
 export interface PreviewOptions extends CommonServerOptions {}
 
-export interface ResolvedPreviewOptions extends PreviewOptions {}
+export interface ResolvedPreviewOptions
+  extends RequiredExceptFor<PreviewOptions, 'host' | 'https' | 'proxy'> {}
 
 export function resolvePreviewOptions(
   preview: PreviewOptions | undefined,
@@ -50,9 +59,10 @@ export function resolvePreviewOptions(
   // except for the port to enable having both the dev and preview servers running
   // at the same time without extra configuration
   return {
-    port: preview?.port,
+    port: preview?.port ?? DEFAULT_PREVIEW_PORT,
     strictPort: preview?.strictPort ?? server.strictPort,
     host: preview?.host ?? server.host,
+    allowedHosts: preview?.allowedHosts ?? server.allowedHosts,
     https: preview?.https ?? server.https,
     open: preview?.open ?? server.open,
     proxy: preview?.proxy ?? server.proxy,
@@ -99,7 +109,7 @@ export interface PreviewServer {
 }
 
 export type PreviewServerHook = (
-  this: void,
+  this: MinimalPluginContextWithoutEnvironment,
   server: PreviewServer,
 ) => (() => void) | void | Promise<(() => void) | void>
 
@@ -117,8 +127,7 @@ export async function preview(
     true,
   )
 
-  const clientOutDir =
-    config.environments.client.build.outDir ?? config.build.outDir
+  const clientOutDir = config.environments.client.build.outDir
   const distDir = path.resolve(config.root, clientOutDir)
   if (
     !fs.existsSync(distDir) &&
@@ -134,12 +143,9 @@ export async function preview(
     )
   }
 
+  const httpsOptions = await resolveHttpsConfig(config.preview.https)
   const app = connect() as Connect.Server
-  const httpServer = await resolveHttpServer(
-    config.preview,
-    app,
-    await resolveHttpsConfig(config.preview?.https),
-  )
+  const httpServer = await resolveHttpServer(config.preview, app, httpsOptions)
   setClientErrorHandler(httpServer, config.logger)
 
   const options = config.preview
@@ -147,14 +153,23 @@ export async function preview(
 
   const closeHttpServer = createServerCloseFn(httpServer)
 
+  // Promise used by `server.close()` to ensure `closeServer()` is only called once
+  let closeServerPromise: Promise<void> | undefined
+  const closeServer = async () => {
+    teardownSIGTERMListener(closeServerAndExit)
+    await closeHttpServer()
+    server.resolvedUrls = null
+  }
+
   const server: PreviewServer = {
     config,
     middlewares: app,
     httpServer,
     async close() {
-      teardownSIGTERMListener(closeServerAndExit)
-      await closeHttpServer()
-      server.resolvedUrls = null
+      if (!closeServerPromise) {
+        closeServerPromise = closeServer()
+      }
+      return closeServerPromise
     },
     resolvedUrls: null,
     printUrls() {
@@ -169,10 +184,11 @@ export async function preview(
     },
   }
 
-  const closeServerAndExit = async () => {
+  const closeServerAndExit = async (_: unknown, exitCode?: number) => {
     try {
       await server.close()
     } finally {
+      process.exitCode ??= exitCode ? 128 + exitCode : undefined
       process.exit()
     }
   }
@@ -180,15 +196,26 @@ export async function preview(
   setupSIGTERMListener(closeServerAndExit)
 
   // apply server hooks from plugins
+  const configurePreviewServerContext = new BasicMinimalPluginContext(
+    { ...basePluginContextMeta, watchMode: false },
+    config.logger,
+  )
   const postHooks: ((() => void) | void)[] = []
   for (const hook of config.getSortedPluginHooks('configurePreviewServer')) {
-    postHooks.push(await hook(server))
+    postHooks.push(await hook.call(configurePreviewServerContext, server))
   }
 
   // cors
   const { cors } = config.preview
   if (cors !== false) {
     app.use(corsMiddleware(typeof cors === 'boolean' ? {} : cors))
+  }
+
+  // host check (to prevent DNS rebinding attacks)
+  const { allowedHosts } = config.preview
+  // no need to check for HTTPS as HTTPS is not vulnerable to DNS rebinding attacks
+  if (allowedHosts !== true && !config.preview.https) {
+    app.use(hostValidationMiddleware(allowedHosts, true))
   }
 
   // proxy
@@ -243,10 +270,9 @@ export async function preview(
   }
 
   const hostname = await resolveHostname(options.host)
-  const port = options.port ?? DEFAULT_PREVIEW_PORT
 
   await httpServerStart(httpServer, {
-    port,
+    port: options.port,
     strictPort: options.strictPort,
     host: hostname.host,
     logger,
@@ -255,11 +281,12 @@ export async function preview(
   server.resolvedUrls = await resolveServerUrls(
     httpServer,
     config.preview,
+    httpsOptions,
     config,
   )
 
   if (options.open) {
-    const url = server.resolvedUrls?.local[0] ?? server.resolvedUrls?.network[0]
+    const url = getServerUrlByHost(server.resolvedUrls, options.host)
     if (url) {
       const path =
         typeof options.open === 'string' ? new URL(options.open, url).href : url

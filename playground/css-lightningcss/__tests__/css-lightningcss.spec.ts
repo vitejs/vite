@@ -19,6 +19,7 @@ test('linked css', async () => {
   expect(await getColor(linked)).toBe('blue')
   expect(await getColor(atImport)).toBe('red')
 
+  if (isBuild) return
   editFile('linked.css', (code) => code.replace('color: blue', 'color: red'))
   await untilUpdated(() => getColor(linked), 'red')
 
@@ -35,6 +36,7 @@ test('css import from js', async () => {
   expect(await getColor(imported)).toBe('green')
   expect(await getColor(atImport)).toBe('purple')
 
+  if (isBuild) return
   editFile('imported.css', (code) => code.replace('color: green', 'color: red'))
   await untilUpdated(() => getColor(imported), 'red')
 
@@ -50,6 +52,7 @@ test('css modules', async () => {
 
   expect(await imported.getAttribute('class')).toMatch(/\w{6}_apply-color/)
 
+  if (isBuild) return
   editFile('mod.module.css', (code) =>
     code.replace('color: turquoise', 'color: red'),
   )
@@ -58,7 +61,7 @@ test('css modules', async () => {
 
 test('inline css modules', async () => {
   const css = await page.textContent('.modules-inline')
-  expect(css).toMatch(/\.\w{6}_apply-color-inline/)
+  expect(css).toMatch(/\._?\w{6}_apply-color-inline/)
 })
 
 test.runIf(isBuild)('minify css', async () => {
@@ -77,5 +80,16 @@ test('nested css with relative asset', async () => {
   const css = await page.$('.nested-css-relative-asset')
   expect(await getBg(css)).toMatch(
     isBuild ? /ok-[-\w]+\.png/ : `${viteTestUrl}/ok.png`,
+  )
+})
+
+test('aliased asset', async () => {
+  const bg = await getBg('.css-url-aliased')
+  expect(bg).toMatch('data:image/svg+xml,')
+})
+
+test('preinlined SVG', async () => {
+  expect(await getBg('.css-url-preinlined-svg')).toMatch(
+    /data:image\/svg\+xml,.+/,
   )
 })

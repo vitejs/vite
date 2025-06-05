@@ -30,6 +30,18 @@ test('default import from webpacked cjs (clipboard)', async () => {
   await expectWithRetry(() => page.textContent('.cjs-clipboard')).toBe('ok')
 })
 
+test('default import from cjs (cjs-dep-cjs-compiled-from-esm)', async () => {
+  await expectWithRetry(() =>
+    page.textContent('.cjs-dep-cjs-compiled-from-esm'),
+  ).toBe('ok')
+})
+
+test('default import from cjs (cjs-dep-cjs-compiled-from-cjs)', async () => {
+  await expectWithRetry(() =>
+    page.textContent('.cjs-dep-cjs-compiled-from-cjs'),
+  ).toBe('ok')
+})
+
 test('dynamic imports from cjs dep (react)', async () => {
   await expectWithRetry(() => page.textContent('.cjs-dynamic button')).toBe(
     'count is 0',
@@ -130,26 +142,28 @@ test('dep with optional peer dep', async () => {
   await expectWithRetry(() =>
     page.textContent('.dep-with-optional-peer-dep'),
   ).toMatch(`[success]`)
-  if (isServe) {
-    expect(browserErrors.map((error) => error.message)).toEqual(
-      expect.arrayContaining([
-        'Could not resolve "foobar" imported by "@vitejs/test-dep-with-optional-peer-dep". Is it installed?',
-      ]),
-    )
-  }
+  await expectWithRetry(() =>
+    page.textContent('.dep-with-optional-peer-dep-error'),
+  ).toMatch(`[success]`)
 })
 
 test('dep with optional peer dep submodule', async () => {
   await expectWithRetry(() =>
     page.textContent('.dep-with-optional-peer-dep-submodule'),
   ).toMatch(`[success]`)
-  if (isServe) {
-    expect(browserErrors.map((error) => error.message)).toEqual(
-      expect.arrayContaining([
-        'Could not resolve "foobar/baz" imported by "@vitejs/test-dep-with-optional-peer-dep-submodule". Is it installed?',
-      ]),
-    )
-  }
+  await expectWithRetry(() =>
+    page.textContent('.dep-with-optional-peer-dep-submodule-error'),
+  ).toMatch(`[success]`)
+})
+
+test('dep with optional peer dep (cjs)', async () => {
+  await expectWithRetry(() =>
+    page.textContent('.dep-with-optional-peer-dep-cjs'),
+  ).toMatch(`[success]`)
+  // FIXME
+  // await expectWithRetry(() =>
+  //   page.textContent('.dep-with-optional-peer-dep-cjs-error'),
+  // ).toMatch(`[success]`)
 })
 
 test('dep with css import', async () => {
@@ -351,4 +365,13 @@ test('external package name with asset extension', async () => {
   await expectWithRetry(() =>
     page.textContent('.dep-with-asset-ext-prebundled'),
   ).toBe(String(isServe))
+})
+
+test('dependency with external sub-dependencies', async () => {
+  await expectWithRetry(() =>
+    page.textContent('.dep-cjs-with-external-deps-object'),
+  ).toBe('ok')
+  await expectWithRetry(() =>
+    page.textContent('.dep-cjs-with-external-deps-node-builtin'),
+  ).toBe('foo bar')
 })

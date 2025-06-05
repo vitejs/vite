@@ -10,20 +10,6 @@ const environmentColors = [
   colors.gray,
 ]
 
-export function getDefaultResolvedEnvironmentOptions(
-  config: ResolvedConfig,
-): ResolvedEnvironmentOptions {
-  return {
-    define: config.define,
-    resolve: config.resolve,
-    consumer: 'server',
-    webCompatible: false,
-    optimizeDeps: config.optimizeDeps,
-    dev: config.dev,
-    build: config.build,
-  }
-}
-
 export class PartialEnvironment {
   name: string
   getTopLevelConfig(): ResolvedConfig {
@@ -31,13 +17,6 @@ export class PartialEnvironment {
   }
 
   config: ResolvedConfig & ResolvedEnvironmentOptions
-
-  /**
-   * @deprecated use environment.config instead
-   **/
-  get options(): ResolvedEnvironmentOptions {
-    return this._options
-  }
 
   logger: Logger
 
@@ -123,18 +102,10 @@ export class PartialEnvironment {
 }
 
 export class BaseEnvironment extends PartialEnvironment {
-  get plugins(): Plugin[] {
-    if (!this._plugins)
-      throw new Error(
-        `${this.name} environment.plugins called before initialized`,
-      )
-    return this._plugins
+  get plugins(): readonly Plugin[] {
+    return this.config.plugins
   }
 
-  /**
-   * @internal
-   */
-  _plugins: Plugin[] | undefined
   /**
    * @internal
    */
@@ -158,7 +129,7 @@ export class BaseEnvironment extends PartialEnvironment {
  * const isDev = environment.mode === 'dev'   // good
  * ```
  *
- * You should also not check against `"unknown"` specfically. It's
+ * You should also not check against `"unknown"` specifically. It's
  * a placeholder for more possible environment types.
  */
 export class UnknownEnvironment extends BaseEnvironment {

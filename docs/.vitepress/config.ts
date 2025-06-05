@@ -5,6 +5,8 @@ import {
   groupIconMdPlugin,
   groupIconVitePlugin,
 } from 'vitepress-plugin-group-icons'
+import llmstxt from 'vitepress-plugin-llms'
+import type { PluginOption } from 'vite'
 import { buildEnd } from './buildEnd.config'
 
 const ogDescription = 'Next Generation Frontend Tooling'
@@ -39,6 +41,10 @@ const additionalTitle = ((): string => {
 const versionLinks = ((): DefaultTheme.NavItemWithLink[] => {
   const oldVersions: DefaultTheme.NavItemWithLink[] = [
     {
+      text: 'Vite 5 Docs',
+      link: 'https://v5.vite.dev',
+    },
+    {
       text: 'Vite 4 Docs',
       link: 'https://v4.vite.dev',
     },
@@ -57,7 +63,7 @@ const versionLinks = ((): DefaultTheme.NavItemWithLink[] => {
     case 'local':
       return [
         {
-          text: 'Vite 5 Docs (release)',
+          text: 'Vite 6 Docs (release)',
           link: 'https://vite.dev',
         },
         ...oldVersions,
@@ -130,6 +136,7 @@ export default defineConfig({
     pt: { label: 'Português', link: 'https://pt.vite.dev' },
     ko: { label: '한국어', link: 'https://ko.vite.dev' },
     de: { label: 'Deutsch', link: 'https://de.vite.dev' },
+    fa: { label: 'فارسی', link: 'https://fa.vite.dev' },
   },
 
   themeConfig: {
@@ -141,8 +148,9 @@ export default defineConfig({
     },
 
     socialLinks: [
+      { icon: 'bluesky', link: 'https://bsky.app/profile/vite.dev' },
       { icon: 'mastodon', link: 'https://elk.zone/m.webtoo.ls/@vite' },
-      { icon: 'twitter', link: 'https://twitter.com/vite_js' },
+      { icon: 'x', link: 'https://x.com/vite_js' },
       { icon: 'discord', link: 'https://chat.vite.dev' },
       { icon: 'github', link: 'https://github.com/vitejs/vite' },
     ],
@@ -179,12 +187,16 @@ export default defineConfig({
           {
             items: [
               {
+                text: 'Bluesky',
+                link: 'https://bsky.app/profile/vite.dev',
+              },
+              {
                 text: 'Mastodon',
                 link: 'https://elk.zone/m.webtoo.ls/@vite',
               },
               {
-                text: 'Twitter',
-                link: 'https://twitter.com/vite_js',
+                text: 'X',
+                link: 'https://x.com/vite_js',
               },
               {
                 text: 'Discord Chat',
@@ -223,16 +235,25 @@ export default defineConfig({
     sidebar: {
       '/guide/': [
         {
-          text: 'Guide',
+          text: 'Introduction',
           items: [
-            {
-              text: 'Why Vite',
-              link: '/guide/why',
-            },
             {
               text: 'Getting Started',
               link: '/guide/',
             },
+            {
+              text: 'Philosophy',
+              link: '/guide/philosophy',
+            },
+            {
+              text: 'Why Vite',
+              link: '/guide/why',
+            },
+          ],
+        },
+        {
+          text: 'Guide',
+          items: [
             {
               text: 'Features',
               link: '/guide/features',
@@ -274,10 +295,6 @@ export default defineConfig({
               link: '/guide/backend-integration',
             },
             {
-              text: 'Comparisons',
-              link: '/guide/comparisons',
-            },
-            {
               text: 'Troubleshooting',
               link: '/guide/troubleshooting',
             },
@@ -286,8 +303,8 @@ export default defineConfig({
               link: '/guide/performance',
             },
             {
-              text: 'Philosophy',
-              link: '/guide/philosophy',
+              text: 'Rolldown',
+              link: '/guide/rolldown',
             },
             {
               text: 'Migration from v5',
@@ -328,7 +345,7 @@ export default defineConfig({
               link: '/guide/api-environment',
             },
             {
-              text: 'Environment instances',
+              text: 'Environment Instances',
               link: '/guide/api-environment-instances',
             },
             {
@@ -406,15 +423,15 @@ export default defineConfig({
               link: '/changes/hotupdate-hook',
             },
             {
-              text: 'Move to per-environment APIs',
+              text: 'Move to Per-environment APIs',
               link: '/changes/per-environment-apis',
             },
             {
-              text: 'SSR using ModuleRunner API',
+              text: 'SSR Using ModuleRunner API',
               link: '/changes/ssr-using-modulerunner',
             },
             {
-              text: 'Shared plugins during build',
+              text: 'Shared Plugins During Build',
               link: '/changes/shared-plugins-during-build',
             },
           ],
@@ -433,7 +450,7 @@ export default defineConfig({
   transformPageData(pageData) {
     const canonicalUrl = `${ogUrl}/${pageData.relativePath}`
       .replace(/\/index\.md$/, '/')
-      .replace(/\.md$/, '/')
+      .replace(/\.md$/, '')
     pageData.frontmatter.head ??= []
     pageData.frontmatter.head.unshift(
       ['link', { rel: 'canonical', href: canonicalUrl }],
@@ -455,6 +472,25 @@ export default defineConfig({
           '.gitlab-ci.yml': 'vscode-icons:file-type-gitlab',
         },
       }),
+      llmstxt({
+        ignoreFiles: ['blog/*', 'blog.md', 'index.md', 'team.md'],
+        description: 'The Build Tool for the Web',
+        details: `\
+- 💡 Instant Server Start
+- ⚡️ Lightning Fast HMR
+- 🛠️ Rich Features
+- 📦 Optimized Build
+- 🔩 Universal Plugin Interface
+- 🔑 Fully Typed APIs
+
+Vite is a new breed of frontend build tooling that significantly improves the frontend development experience. It consists of two major parts:
+
+- A dev server that serves your source files over [native ES modules](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Guide/Modules), with [rich built-in features](https://vite.dev/guide/features.md) and astonishingly fast [Hot Module Replacement (HMR)](https://vite.dev/guide/features.md#hot-module-replacement).
+
+- A [build command](https://vite.dev/guide/build.md) that bundles your code with [Rollup](https://rollupjs.org), pre-configured to output highly optimized static assets for production.
+
+In addition, Vite is highly extensible via its [Plugin API](https://vite.dev/guide/api-plugin.md) and [JavaScript API](https://vite.dev/guide/api-javascript.md) with full typing support.`,
+      }) as PluginOption,
     ],
     optimizeDeps: {
       include: [

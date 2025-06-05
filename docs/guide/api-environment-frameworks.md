@@ -1,17 +1,17 @@
 # Environment API for Frameworks
 
 :::warning Experimental
-Initial work for this API was introduced in Vite 5.1 with the name "Vite Runtime API". This guide describes a revised API, renamed to Environment API. This API will be released in Vite 6 as experimental. You can already test it in the latest `vite@6.0.0-beta.x` version.
+Environment API is experimental. We'll still maintain stability in the APIs between major releases to allow the ecosystem to experiment and build upon them. We plan to stabilize these new APIs (with potential breaking changes) in a future major release once downstream projects have had time to experiment with the new features and validate them.
 
 Resources:
 
 - [Feedback discussion](https://github.com/vitejs/vite/discussions/16358) where we are gathering feedback about the new APIs.
 - [Environment API PR](https://github.com/vitejs/vite/pull/16471) where the new API were implemented and reviewed.
 
-Please share with us your feedback as you test the proposal.
+Please share your feedback with us.
 :::
 
-## Environments and frameworks
+## Environments and Frameworks
 
 The implicit `ssr` environment and other non-client environments use a `RunnableDevEnvironment` by default during dev. While this requires the runtime to be the same with the one the Vite server is running in, this works similarly with `ssrLoadModule` and allows frameworks to migrate and enable HMR for their SSR dev story. You can guard any runnable environment with an `isRunnableDevEnvironment` function.
 
@@ -22,7 +22,8 @@ export class RunnableDevEnvironment extends DevEnvironment {
 
 class ModuleRunner {
   /**
-   * URL to execute. Accepts file path, server path, or id relative to the root.
+   * URL to execute.
+   * Accepts file path, server path, or id relative to the root.
    * Returns an instantiated module (same as in ssrLoadModule)
    */
   public async import(url: string): Promise<Record<string, any>>
@@ -37,45 +38,94 @@ if (isRunnableDevEnvironment(server.environments.ssr)) {
 ```
 
 :::warning
-The `runner` is evaluated eagerly when it's accessed for the first time. Beware that Vite enables source map support when the `runner` is created by calling `process.setSourceMapsEnabled` or by overriding `Error.prepareStackTrace` if it's not available.
+The `runner` is evaluated lazily only when it's accessed for the first time. Beware that Vite enables source map support when the `runner` is created by calling `process.setSourceMapsEnabled` or by overriding `Error.prepareStackTrace` if it's not available.
 :::
 
-## Default `RunnableDevEnvironment`
+Frameworks that communicate with their runtime via the [Fetch API](https://developer.mozilla.org/en-US/docs/Web/API/Window/fetch) can utilize the `FetchableDevEnvironment` that provides a standardized way of handling requests via the `handleRequest` method:
 
-Given a Vite server configured in middleware mode as described by the [SSR setup guide](/guide/ssr#setting-up-the-dev-server), let's implement the SSR middleware using the environment API. Error handling is omitted.
-
-```js
-import { createServer } from 'vite'
+```ts
+import {
+  createServer,
+  createFetchableDevEnvironment,
+  isFetchableDevEnvironment,
+} from 'vite'
 
 const server = await createServer({
   server: { middlewareMode: true },
   appType: 'custom',
   environments: {
-    server: {
-      // by default, the modules are run in the same process as the vite dev server during dev
+    custom: {
+      dev: {
+        createEnvironment(name, config) {
+          return createFetchableDevEnvironment(name, config, {
+            handleRequest(request: Request): Promise<Response> | Response {
+              // handle Request and return a Response
+            },
+          })
+        },
+      },
     },
   },
 })
 
-// You might need to cast this to RunnableDevEnvironment in TypeScript or use
-// the "isRunnableDevEnvironment" function to guard the access to the runner
-const environment = server.environments.node
+// Any consumer of the environment API can now call `dispatchFetch`
+if (isFetchableDevEnvironment(server.environments.custom)) {
+  const response: Response = await server.environments.custom.dispatchFetch(
+    new Request('/request-to-handle'),
+  )
+}
+```
+
+:::warning
+Vite validates the input and output of the `dispatchFetch` method: the request must be an instance of the global `Request` class and the response must be the instance of the global `Response` class. Vite will throw a `TypeError` if this is not the case.
+
+Note that although the `FetchableDevEnvironment` is implemented as a class, it is considered an implementation detail by the Vite team and might change at any moment.
+:::
+
+## Default `RunnableDevEnvironment`
+
+Given a Vite server configured in middleware mode as described by the [SSR setup guide](/guide/ssr#setting-up-the-dev-server), let's implement the SSR middleware using the environment API. Remember that it doesn't have to be called `ssr`, so we'll name it `server` in this example. Error handling is omitted.
+
+```js
+import fs from 'node:fs'
+import path from 'node:path'
+import { fileURLToPath } from 'node:url'
+import { createServer } from 'vite'
+
+const __dirname = path.dirname(fileURLToPath(import.meta.url))
+
+const viteServer = await createServer({
+  server: { middlewareMode: true },
+  appType: 'custom',
+  environments: {
+    server: {
+      // by default, modules are run in the same process as the vite server
+    },
+  },
+})
+
+// You might need to cast this to RunnableDevEnvironment in TypeScript or
+// use isRunnableDevEnvironment to guard the access to the runner
+const serverEnvironment = viteServer.environments.server
 
 app.use('*', async (req, res, next) => {
   const url = req.originalUrl
 
   // 1. Read index.html
-  let template = fs.readFileSync(path.resolve(__dirname, 'index.html'), 'utf-8')
+  const indexHtmlPath = path.resolve(__dirname, 'index.html')
+  let template = fs.readFileSync(indexHtmlPath, 'utf-8')
 
   // 2. Apply Vite HTML transforms. This injects the Vite HMR client,
   //    and also applies HTML transforms from Vite plugins, e.g. global
   //    preambles from @vitejs/plugin-react
-  template = await server.transformIndexHtml(url, template)
+  template = await viteServer.transformIndexHtml(url, template)
 
   // 3. Load the server entry. import(url) automatically transforms
   //    ESM source code to be usable in Node.js! There is no bundling
   //    required, and provides full HMR support.
-  const { render } = await environment.runner.import('/src/entry-server.js')
+  const { render } = await serverEnvironment.runner.import(
+    '/src/entry-server.js',
+  )
 
   // 4. render the app HTML. This assumes entry-server.js's exported
   //     `render` function calls appropriate framework SSR APIs,
@@ -90,7 +140,7 @@ app.use('*', async (req, res, next) => {
 })
 ```
 
-## Runtime agnostic SSR
+## Runtime Agnostic SSR
 
 Since the `RunnableDevEnvironment` can only be used to run the code in the same runtime as the Vite server, it requires a runtime that can run the Vite Server (a runtime that is compatible with Node.js). This means that you will need to use the raw `DevEnvironment` to make it runtime agnostic.
 
@@ -186,10 +236,10 @@ function vitePluginVirtualIndexHtml(): Plugin {
         let html: string
         if (server) {
           this.addWatchFile('index.html')
-          html = await fs.promises.readFile('index.html', 'utf-8')
+          html = fs.readFileSync('index.html', 'utf-8')
           html = await server.transformIndexHtml('/', html)
         } else {
-          html = await fs.promises.readFile('dist/client/index.html', 'utf-8')
+          html = fs.readFileSync('dist/client/index.html', 'utf-8')
         }
         return `export default ${JSON.stringify(html)}`
       }
@@ -262,7 +312,7 @@ export function createHandler(input) {
 }
 ```
 
-## Environments during build
+## Environments During Build
 
 In the CLI, calling `vite build` and `vite build --ssr` will still build the client only and ssr only environments for backward compatibility.
 
@@ -281,6 +331,8 @@ export default {
 }
 ```
 
-## Environment agnostic code
+Plugins can also define a `buildApp` hook. Order `'pre'` and `null` are executed before the configured `builder.buildApp`, and order `'post'` hooks are executed after it. `environment.isBuilt` can be used to check if an environment has already being build.
+
+## Environment Agnostic Code
 
 Most of the time, the current `environment` instance will be available as part of the context of the code being run so the need to access them through `server.environments` should be rare. For example, inside plugin hooks the environment is exposed as part of the `PluginContext`, so it can be accessed using `this.environment`. See [Environment API for Plugins](./api-environment-plugins.md) to learn about how to build environment aware plugins.

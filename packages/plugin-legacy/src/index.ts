@@ -38,12 +38,9 @@ import {
 } from './snippets'
 
 // lazy load babel since it's not used during dev
-let babel: typeof import('@babel/core') | undefined
+let babel: Promise<typeof import('@babel/core')> | undefined
 async function loadBabel() {
-  if (!babel) {
-    babel = await import('@babel/core')
-  }
-  return babel
+  return (babel ??= import('@babel/core'))
 }
 
 // The requested module 'browserslist' is a CommonJS module
@@ -102,7 +99,7 @@ function joinUrlSegments(a: string, b: string): string {
   if (!a || !b) {
     return a || b || ''
   }
-  if (a[a.length - 1] === '/') {
+  if (a.endsWith('/')) {
     a = a.substring(0, a.length - 1)
   }
   if (b[0] !== '/') {
@@ -166,6 +163,8 @@ function viteLegacyPlugin(options: Options = {}): Plugin[] {
   const debugFlags = (process.env.DEBUG || '').split(',')
   const isDebug =
     debugFlags.includes('vite:*') || debugFlags.includes('vite:legacy')
+
+  const assumptions = options.assumptions || {}
 
   const facadeToLegacyChunkMap = new Map()
   const facadeToLegacyPolyfillMap = new Map()
@@ -270,6 +269,13 @@ function viteLegacyPlugin(options: Options = {}): Plugin[] {
           ),
         )
       }
+      if (config.isWorker) {
+        config.logger.warn(
+          colors.yellow(
+            `plugin-legacy should not be passed to 'worker.plugins'. Pass to 'plugins' instead. Note that generating legacy chunks for workers are not supported by plugin-legacy.`,
+          ),
+        )
+      }
     },
   }
 
@@ -334,6 +340,7 @@ function viteLegacyPlugin(options: Options = {}): Plugin[] {
         await detectPolyfills(
           `Promise.resolve(); Promise.all();`,
           targets,
+          assumptions,
           legacyPolyfills,
         )
       }
@@ -460,7 +467,7 @@ function viteLegacyPlugin(options: Options = {}): Plugin[] {
         return null
       }
 
-      // On first run, intialize the map with sorted chunk file names
+      // On first run, initialize the map with sorted chunk file names
       let chunkFileNameToPolyfills = outputToChunkFileNameToPolyfills.get(opts)
       if (chunkFileNameToPolyfills == null) {
         chunkFileNameToPolyfills = new Map()
@@ -486,7 +493,12 @@ function viteLegacyPlugin(options: Options = {}): Plugin[] {
           genModern
         ) {
           // analyze and record modern polyfills
-          await detectPolyfills(raw, modernTargets, polyfillsDiscovered.modern)
+          await detectPolyfills(
+            raw,
+            modernTargets,
+            assumptions,
+            polyfillsDiscovered.modern,
+          )
         }
 
         const ms = new MagicString(raw)
@@ -551,6 +563,7 @@ function viteLegacyPlugin(options: Options = {}): Plugin[] {
         compact: !!config.build.minify,
         sourceMaps,
         inputSourceMap: undefined,
+        assumptions,
         presets: [
           // forcing our plugin to run before preset-env by wrapping it in a
           // preset so we can catch the injected import statements...
@@ -731,6 +744,7 @@ function viteLegacyPlugin(options: Options = {}): Plugin[] {
 export async function detectPolyfills(
   code: string,
   targets: any,
+  assumptions: Record<string, boolean>,
   list: Set<string>,
 ): Promise<void> {
   const babel = await loadBabel()
@@ -739,6 +753,7 @@ export async function detectPolyfills(
     babelrc: false,
     configFile: false,
     compact: false,
+    assumptions,
     presets: [
       [
         (await import('@babel/preset-env')).default,
@@ -814,7 +829,9 @@ async function buildPolyfillChunk(
         },
         output: {
           format,
+          hashCharacters: rollupOutputOptions.hashCharacters,
           entryFileNames: rollupOutputOptions.entryFileNames,
+          sourcemapBaseUrl: rollupOutputOptions.sourcemapBaseUrl,
         },
       },
     },
@@ -970,22 +987,25 @@ function wrapIIFEBabelPlugin(): BabelPlugin {
   }
 }
 
-const hash =
-  // eslint-disable-next-line n/no-unsupported-features/node-builtins -- crypto.hash is supported in Node 21.7.0+, 20.12.0+
-  crypto.hash ??
-  ((
-    algorithm: string,
-    data: crypto.BinaryLike,
-    outputEncoding: crypto.BinaryToTextEncoding,
-  ) => crypto.createHash(algorithm).update(data).digest(outputEncoding))
-
 export const cspHashes = [
   safari10NoModuleFix,
   systemJSInlineCode,
   detectModernBrowserCode,
   dynamicFallbackInlineCode,
-].map((i) => hash('sha256', i, 'base64'))
+].map((i) => crypto.hash('sha256', i, 'base64'))
 
 export type { Options }
 
 export default viteLegacyPlugin
+
+// Compat for require
+function viteLegacyPluginCjs(this: unknown, options: Options): Plugin[] {
+  return viteLegacyPlugin.call(this, options)
+}
+Object.assign(viteLegacyPluginCjs, {
+  cspHashes,
+  default: viteLegacyPluginCjs,
+  detectPolyfills,
+})
+
+export { viteLegacyPluginCjs as 'module.exports' }

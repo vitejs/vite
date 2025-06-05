@@ -71,18 +71,13 @@ If a dependency doesn't work well with `"isolatedModules": true`. You can use `"
 
 - [TypeScript documentation](https://www.typescriptlang.org/tsconfig#useDefineForClassFields)
 
-Starting from Vite 2.5.0, the default value will be `true` if the TypeScript target is `ESNext` or `ES2022` or newer. It is consistent with the [behavior of `tsc` 4.3.2 and later](https://github.com/microsoft/TypeScript/pull/42663). It is also the standard ECMAScript runtime behavior.
-
+The default value will be `true` if the TypeScript target is `ES2022` or newer including `ESNext`. It is consistent with the [behavior of TypeScript 4.3.2+](https://github.com/microsoft/TypeScript/pull/42663).
 Other TypeScript targets will default to `false`.
 
-But it may be counter-intuitive for those coming from other programming languages or older versions of TypeScript.
-You can read more about the transition in the [TypeScript 3.7 release notes](https://www.typescriptlang.org/docs/handbook/release-notes/typescript-3-7.html#the-usedefineforclassfields-flag-and-the-declare-property-modifier).
+`true` is the standard ECMAScript runtime behavior.
 
 If you are using a library that heavily relies on class fields, please be careful about the library's intended usage of it.
-
-Most libraries expect `"useDefineForClassFields": true`, such as [MobX](https://mobx.js.org/installation.html#use-spec-compliant-transpilation-for-class-properties).
-
-But a few libraries haven't transitioned to this new default yet, including [`lit-element`](https://github.com/lit/lit-element/issues/1030). Please explicitly set `useDefineForClassFields` to `false` in these cases.
+While most libraries expect `"useDefineForClassFields": true`, you can explicitly set `useDefineForClassFields` to `false` if your library doesn't support it.
 
 #### `target`
 
@@ -124,20 +119,26 @@ Vite's default types are for its Node.js API. To shim the environment of client 
 /// <reference types="vite/client" />
 ```
 
+::: details Using `compilerOptions.types`
+
 Alternatively, you can add `vite/client` to `compilerOptions.types` inside `tsconfig.json`:
 
 ```json [tsconfig.json]
 {
   "compilerOptions": {
-    "types": ["vite/client"]
+    "types": ["vite/client", "some-other-global-lib"]
   }
 }
 ```
 
-This will provide the following type shims:
+Note that if [`compilerOptions.types`](https://www.typescriptlang.org/tsconfig#types) is specified, only these packages will be included in the global scope (instead of all visible ”@types” packages).
+
+:::
+
+`vite/client` provides the following type shims:
 
 - Asset imports (e.g. importing an `.svg` file)
-- Types for the Vite-injected [env variables](./env-and-mode#env-variables) on `import.meta.env`
+- Types for the Vite-injected [constants](./env-and-mode#env-variables) on `import.meta.env`
 - Types for the [HMR API](./api-hmr) on `import.meta.hot`
 
 ::: tip
@@ -152,7 +153,7 @@ For example, to make the default import of `*.svg` a React component:
     export default content
   }
   ```
-- The file containing the reference to `vite/client`:
+- The file containing the reference to `vite/client` (normally `vite-env.d.ts`):
   ```ts
   /// <reference types="./vite-env-override.d.ts" />
   /// <reference types="vite/client" />
@@ -160,22 +161,68 @@ For example, to make the default import of `*.svg` a React component:
 
 :::
 
-## Vue
+## HTML
 
-Vite provides first-class Vue support:
+HTML files stand [front-and-center](/guide/#index-html-and-project-root) of a Vite project, serving as the entry points for your application, making it simple to build single-page and [multi-page applications](/guide/build.html#multi-page-app).
 
-- Vue 3 SFC support via [@vitejs/plugin-vue](https://github.com/vitejs/vite-plugin-vue/tree/main/packages/plugin-vue)
-- Vue 3 JSX support via [@vitejs/plugin-vue-jsx](https://github.com/vitejs/vite-plugin-vue/tree/main/packages/plugin-vue-jsx)
-- Vue 2.7 SFC support via [@vitejs/plugin-vue2](https://github.com/vitejs/vite-plugin-vue2)
-- Vue 2.7 JSX support via [@vitejs/plugin-vue2-jsx](https://github.com/vitejs/vite-plugin-vue2-jsx)
+Any HTML files in your project root can be directly accessed by its respective directory path:
+
+- `<root>/index.html` -> `http://localhost:5173/`
+- `<root>/about.html` -> `http://localhost:5173/about.html`
+- `<root>/blog/index.html` -> `http://localhost:5173/blog/index.html`
+
+Assets referenced by HTML elements such as `<script type="module" src>` and `<link href>` are processed and bundled as part of the app. The full list of supported elements are as below:
+
+- `<audio src>`
+- `<embed src>`
+- `<img src>` and `<img srcset>`
+- `<image href>` and `<image xlink:href>`
+- `<input src>`
+- `<link href>` and `<link imagesrcset>`
+- `<object data>`
+- `<script type="module" src>`
+- `<source src>` and `<source srcset>`
+- `<track src>`
+- `<use href>` and `<use xlink:href>`
+- `<video src>` and `<video poster>`
+- `<meta content>`
+  - Only if `name` attribute matches `msapplication-tileimage`, `msapplication-square70x70logo`, `msapplication-square150x150logo`, `msapplication-wide310x150logo`, `msapplication-square310x310logo`, `msapplication-config`, or `twitter:image`
+  - Or only if `property` attribute matches `og:image`, `og:image:url`, `og:image:secure_url`, `og:audio`, `og:audio:secure_url`, `og:video`, or `og:video:secure_url`
+
+```html {4-5,8-9}
+<!doctype html>
+<html>
+  <head>
+    <link rel="icon" href="/favicon.ico" />
+    <link rel="stylesheet" href="/src/styles.css" />
+  </head>
+  <body>
+    <img src="/src/images/logo.svg" alt="logo" />
+    <script type="module" src="/src/main.js"></script>
+  </body>
+</html>
+```
+
+To opt-out of HTML processing on certain elements, you can add the `vite-ignore` attribute on the element, which can be useful when referencing external assets or CDN.
+
+## Frameworks
+
+All modern frameworks maintain integrations with Vite. Most framework plugins are maintained by each framework team, with the exception of the official Vue and React Vite plugins that are maintained in the vite org:
+
+- Vue support via [@vitejs/plugin-vue](https://github.com/vitejs/vite-plugin-vue/tree/main/packages/plugin-vue)
+- Vue JSX support via [@vitejs/plugin-vue-jsx](https://github.com/vitejs/vite-plugin-vue/tree/main/packages/plugin-vue-jsx)
+- React support via [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/tree/main/packages/plugin-react)
+- React using SWC support via [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react-swc)
+
+Check out the [Plugins Guide](https://vite.dev/plugins) for more information.
 
 ## JSX
 
 `.jsx` and `.tsx` files are also supported out of the box. JSX transpilation is also handled via [esbuild](https://esbuild.github.io).
 
-Vue users should use the official [@vitejs/plugin-vue-jsx](https://github.com/vitejs/vite-plugin-vue/tree/main/packages/plugin-vue-jsx) plugin, which provides Vue 3 specific features including HMR, global component resolving, directives and slots.
+Your framework of choice will already configure JSX out of the box (for example, Vue users should use the official [@vitejs/plugin-vue-jsx](https://github.com/vitejs/vite-plugin-vue/tree/main/packages/plugin-vue-jsx) plugin, which provides Vue 3 specific features including HMR, global component resolving, directives and slots).
 
-If using JSX without React or Vue, custom `jsxFactory` and `jsxFragment` can be configured using the [`esbuild` option](/config/shared-options.md#esbuild). For example for Preact:
+If using JSX with your own framework, custom `jsxFactory` and `jsxFragment` can be configured using the [`esbuild` option](/config/shared-options.md#esbuild). For example, the Preact plugin would use:
 
 ```js twoslash [vite.config.js]
 import { defineConfig } from 'vite'
@@ -266,7 +313,7 @@ npm add -D stylus
 
 If using Vue single file components, this also automatically enables `<style lang="sass">` et al.
 
-Vite improves `@import` resolving for Sass and Less so that Vite aliases are also respected. In addition, relative `url()` references inside imported Sass/Less files that are in different directories from the root file are also automatically rebased to ensure correctness.
+Vite improves `@import` resolving for Sass and Less so that Vite aliases are also respected. In addition, relative `url()` references inside imported Sass/Less files that are in different directories from the root file are also automatically rebased to ensure correctness. Rebasing `url()` references that starts with a variable or a interpolation are not supported due to its API constraints.
 
 `@import` alias and url rebasing are not supported for Stylus due to its API constraints.
 
@@ -301,10 +348,6 @@ To configure CSS Modules, you'll use [`css.lightningcss.cssModules`](https://lig
 
 By default, Vite uses esbuild to minify CSS. Lightning CSS can also be used as the CSS minifier with [`build.cssMinify: 'lightningcss'`](../config/build-options.md#build-cssminify).
 
-::: tip NOTE
-[CSS Pre-processors](#css-pre-processors) aren't supported when using Lightning CSS.
-:::
-
 ## Static Assets
 
 Importing a static asset will return the resolved public URL when it is served:
@@ -321,7 +364,7 @@ Special queries can modify how assets are loaded:
 ```js twoslash
 import 'vite/client'
 // ---cut---
-// Explicitly load assets as URL
+// Explicitly load assets as URL (automatically inlined depending on the file size)
 import assetAsURL from './asset.js?url'
 ```
 
@@ -376,8 +419,8 @@ The above will be transformed into the following:
 ```js
 // code produced by vite
 const modules = {
-  './dir/foo.js': () => import('./dir/foo.js'),
   './dir/bar.js': () => import('./dir/bar.js'),
+  './dir/foo.js': () => import('./dir/foo.js'),
 }
 ```
 
@@ -403,11 +446,11 @@ The above will be transformed into the following:
 
 ```js
 // code produced by vite
-import * as __glob__0_0 from './dir/foo.js'
-import * as __glob__0_1 from './dir/bar.js'
+import * as __vite_glob_0_0 from './dir/bar.js'
+import * as __vite_glob_0_1 from './dir/foo.js'
 const modules = {
-  './dir/foo.js': __glob__0_0,
-  './dir/bar.js': __glob__0_1,
+  './dir/bar.js': __vite_glob_0_0,
+  './dir/foo.js': __vite_glob_0_1,
 }
 ```
 
@@ -451,8 +494,8 @@ const modules = import.meta.glob('./dir/*.js', { import: 'setup' })
 ```ts
 // code produced by vite
 const modules = {
-  './dir/foo.js': () => import('./dir/foo.js').then((m) => m.setup),
   './dir/bar.js': () => import('./dir/bar.js').then((m) => m.setup),
+  './dir/foo.js': () => import('./dir/foo.js').then((m) => m.setup),
 }
 ```
 
@@ -469,11 +512,11 @@ const modules = import.meta.glob('./dir/*.js', {
 
 ```ts
 // code produced by vite:
-import { setup as __glob__0_0 } from './dir/foo.js'
-import { setup as __glob__0_1 } from './dir/bar.js'
+import { setup as __vite_glob_0_0 } from './dir/bar.js'
+import { setup as __vite_glob_0_1 } from './dir/foo.js'
 const modules = {
-  './dir/foo.js': __glob__0_0,
-  './dir/bar.js': __glob__0_1,
+  './dir/bar.js': __vite_glob_0_0,
+  './dir/foo.js': __vite_glob_0_1,
 }
 ```
 
@@ -490,11 +533,11 @@ const modules = import.meta.glob('./dir/*.js', {
 
 ```ts
 // code produced by vite:
-import __glob__0_0 from './dir/foo.js'
-import __glob__0_1 from './dir/bar.js'
+import { default as __vite_glob_0_0 } from './dir/bar.js'
+import { default as __vite_glob_0_1 } from './dir/foo.js'
 const modules = {
-  './dir/foo.js': __glob__0_0,
-  './dir/bar.js': __glob__0_1,
+  './dir/bar.js': __vite_glob_0_0,
+  './dir/foo.js': __vite_glob_0_1,
 }
 ```
 
@@ -518,12 +561,12 @@ const moduleUrls = import.meta.glob('./dir/*.svg', {
 ```ts
 // code produced by vite:
 const moduleStrings = {
-  './dir/foo.svg': () => import('./dir/foo.js?raw').then((m) => m['default']),
-  './dir/bar.svg': () => import('./dir/bar.js?raw').then((m) => m['default']),
+  './dir/bar.svg': () => import('./dir/bar.svg?raw').then((m) => m['default']),
+  './dir/foo.svg': () => import('./dir/foo.svg?raw').then((m) => m['default']),
 }
 const moduleUrls = {
-  './dir/foo.svg': () => import('./dir/foo.js?url').then((m) => m['default']),
-  './dir/bar.svg': () => import('./dir/bar.js?url').then((m) => m['default']),
+  './dir/bar.svg': () => import('./dir/bar.svg?url').then((m) => m['default']),
+  './dir/foo.svg': () => import('./dir/foo.svg?url').then((m) => m['default']),
 }
 ```
 

@@ -102,6 +102,14 @@ declare module '*.avif' {
   const src: string
   export default src
 }
+declare module '*.cur' {
+  const src: string
+  export default src
+}
+declare module '*.jxl' {
+  const src: string
+  export default src
+}
 
 // media
 declare module '*.mp4' {
@@ -243,6 +251,21 @@ declare module '*?url' {
 }
 
 declare module '*?inline' {
+  const src: string
+  export default src
+}
+
+declare module '*?no-inline' {
+  const src: string
+  export default src
+}
+
+declare module '*?url&inline' {
+  const src: string
+  export default src
+}
+
+declare module '*?url&no-inline' {
   const src: string
   export default src
 }

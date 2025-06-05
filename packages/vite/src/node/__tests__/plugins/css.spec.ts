@@ -1,4 +1,5 @@
 import path from 'node:path'
+import { fileURLToPath } from 'node:url'
 import { describe, expect, test } from 'vitest'
 import { resolveConfig } from '../../config'
 import type { InlineConfig } from '../../config'
@@ -9,8 +10,11 @@ import {
   getEmptyChunkReplacer,
   hoistAtRules,
   preprocessCSS,
+  resolveLibCssFilename,
 } from '../../plugins/css'
 import { PartialEnvironment } from '../../baseEnvironment'
+
+const __dirname = path.resolve(fileURLToPath(import.meta.url), '..')
 
 describe('search css url function', () => {
   test('some spaces before it', () => {
@@ -100,6 +104,25 @@ composes: bar from '@/css/bar.module.css';
         modules: {
           generateScopedName: 'custom__[hash:base64:5]',
         },
+      },
+    })
+    const css = `\
+.foo {
+  color: red;
+}`
+    const result1 = await transform(css, '/foo.module.css') // server
+    const result2 = await transform(css, '/foo.module.css?direct') // client
+    expect(result1.code).toBe(result2.code)
+  })
+
+  test('custom generateScopedName with lightningcss', async () => {
+    const { transform } = await createCssPluginTransform({
+      configFile: false,
+      css: {
+        modules: {
+          generateScopedName: 'custom__[hash:base64:5]',
+        },
+        transformer: 'lightningcss',
       },
     })
     const css = `\
@@ -213,8 +236,8 @@ async function createCssPluginTransform(inlineConfig: InlineConfig = {}) {
 
   return {
     async transform(code: string, id: string) {
-      // @ts-expect-error transform is function
-      return await transform.call(
+      // @ts-expect-error transform.handler is function
+      return await transform.handler.call(
         {
           addWatchFile() {
             return
@@ -305,10 +328,22 @@ require("other-module");`
 
     const replacer = getEmptyChunkReplacer(['pure_css_chunk.js'], 'cjs')
     const newCode = replacer(code)
+    expect(newCode.length).toBe(code.length)
     expect(newCode).toMatchInlineSnapshot(
       `"require("some-module"),/* empty css               */require("other-module");"`,
     )
     // So there should be no pure css chunk anymore
+    expect(newCode).not.toContain('pure_css_chunk.js')
+  })
+
+  test('replaces require call in minified code that uses comma operator 2', () => {
+    const code = 'require("pure_css_chunk.js"),console.log();'
+    const replacer = getEmptyChunkReplacer(['pure_css_chunk.js'], 'cjs')
+    const newCode = replacer(code)
+    expect(newCode.length).toBe(code.length)
+    expect(newCode).toMatchInlineSnapshot(
+      `"/* empty css               */console.log();"`,
+    )
     expect(newCode).not.toContain('pure_css_chunk.js')
   })
 
@@ -317,9 +352,12 @@ require("other-module");`
       'require("some-module"),require("pure_css_chunk.js");const v=require("other-module");'
 
     const replacer = getEmptyChunkReplacer(['pure_css_chunk.js'], 'cjs')
-    expect(replacer(code)).toMatchInlineSnapshot(
+    const newCode = replacer(code)
+    expect(newCode.length).toBe(code.length)
+    expect(newCode).toMatchInlineSnapshot(
       `"require("some-module");/* empty css               */const v=require("other-module");"`,
     )
+    expect(newCode).not.toContain('pure_css_chunk.js')
   })
 })
 
@@ -367,5 +405,50 @@ describe('preprocessCSS', () => {
       }
       "
     `)
+  })
+})
+
+describe('resolveLibCssFilename', () => {
+  test('use name from package.json', () => {
+    const filename = resolveLibCssFilename(
+      {
+        entry: 'mylib.js',
+      },
+      path.resolve(__dirname, '../packages/name'),
+    )
+    expect(filename).toBe('mylib.css')
+  })
+
+  test('set cssFileName', () => {
+    const filename = resolveLibCssFilename(
+      {
+        entry: 'mylib.js',
+        cssFileName: 'style',
+      },
+      path.resolve(__dirname, '../packages/noname'),
+    )
+    expect(filename).toBe('style.css')
+  })
+
+  test('use fileName if set', () => {
+    const filename = resolveLibCssFilename(
+      {
+        entry: 'mylib.js',
+        fileName: 'custom-name',
+      },
+      path.resolve(__dirname, '../packages/name'),
+    )
+    expect(filename).toBe('custom-name.css')
+  })
+
+  test('use fileName if set and has array entry', () => {
+    const filename = resolveLibCssFilename(
+      {
+        entry: ['mylib.js', 'mylib2.js'],
+        fileName: 'custom-name',
+      },
+      path.resolve(__dirname, '../packages/name'),
+    )
+    expect(filename).toBe('custom-name.css')
   })
 })

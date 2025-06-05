@@ -1,9 +1,11 @@
 import fs from 'node:fs'
 import os from 'node:os'
+import net from 'node:net'
 import path from 'node:path'
 import { exec } from 'node:child_process'
 import crypto from 'node:crypto'
-import { URL, fileURLToPath } from 'node:url'
+import { fileURLToPath } from 'node:url'
+import type { ServerOptions as HttpsServerOptions } from 'node:https'
 import { builtinModules, createRequire } from 'node:module'
 import { promises as dns } from 'node:dns'
 import { performance } from 'node:perf_hooks'
@@ -16,6 +18,7 @@ import colors from 'picocolors'
 import debug from 'debug'
 import type { Alias, AliasOptions } from 'dep-types/alias'
 import type MagicString from 'magic-string'
+import type { Equal } from '@type-challenges/utils'
 
 import type { TransformResult } from 'rollup'
 import { createFilter as _createFilter } from '@rollup/pluginutils'
@@ -30,6 +33,7 @@ import { VALID_ID_PREFIX } from '../shared/constants'
 import {
   CLIENT_ENTRY,
   CLIENT_PUBLIC_PATH,
+  CSS_LANGS_RE,
   ENV_PUBLIC_PATH,
   FS_PREFIX,
   OPTIMIZABLE_ENTRY_RE,
@@ -101,11 +105,43 @@ const BUN_BUILTIN_NAMESPACE = 'bun:'
 // Some runtimes like Bun injects namespaced modules here, which is not a node builtin
 const nodeBuiltins = builtinModules.filter((id) => !id.includes(':'))
 
-// TODO: Use `isBuiltin` from `node:module`, but Deno doesn't support it
-export function isBuiltin(id: string): boolean {
-  if (process.versions.deno && id.startsWith(NPM_BUILTIN_NAMESPACE)) return true
-  if (process.versions.bun && id.startsWith(BUN_BUILTIN_NAMESPACE)) return true
-  return isNodeBuiltin(id)
+const isBuiltinCache = new WeakMap<
+  (string | RegExp)[],
+  (id: string, importer?: string) => boolean
+>()
+
+export function isBuiltin(builtins: (string | RegExp)[], id: string): boolean {
+  let isBuiltin = isBuiltinCache.get(builtins)
+  if (!isBuiltin) {
+    isBuiltin = createIsBuiltin(builtins)
+    isBuiltinCache.set(builtins, isBuiltin)
+  }
+  return isBuiltin(id)
+}
+
+export function createIsBuiltin(
+  builtins: (string | RegExp)[],
+): (id: string) => boolean {
+  const plainBuiltinsSet = new Set(
+    builtins.filter((builtin) => typeof builtin === 'string'),
+  )
+  const regexBuiltins = builtins.filter(
+    (builtin) => typeof builtin !== 'string',
+  )
+
+  return (id) =>
+    plainBuiltinsSet.has(id) || regexBuiltins.some((regexp) => regexp.test(id))
+}
+
+export const nodeLikeBuiltins = [
+  ...nodeBuiltins,
+  new RegExp(`^${NODE_BUILTIN_NAMESPACE}`),
+  new RegExp(`^${NPM_BUILTIN_NAMESPACE}`),
+  new RegExp(`^${BUN_BUILTIN_NAMESPACE}`),
+]
+
+export function isNodeLikeBuiltin(id: string): boolean {
+  return isBuiltin(nodeLikeBuiltins, id)
 }
 
 export function isNodeBuiltin(id: string): boolean {
@@ -141,9 +177,9 @@ export const bareImportRE = /^(?![a-zA-Z]:)[\w@](?!.*:\/\/)/
 export const deepImportRE = /^([^@][^/]*)\/|^(@[^/]+\/[^/]+)\//
 
 // TODO: use import()
-const _require = createRequire(import.meta.url)
+const _require = createRequire(/** #__KEEP__ */ import.meta.url)
 
-const _dirname = path.dirname(fileURLToPath(import.meta.url))
+const _dirname = path.dirname(fileURLToPath(/** #__KEEP__ */ import.meta.url))
 
 // NOTE: we don't use VERSION variable exported from rollup to avoid importing rollup in dev
 export const rollupVersion =
@@ -156,6 +192,7 @@ const DEBUG = process.env.DEBUG
 
 interface DebuggerOptions {
   onlyWhenFocused?: boolean | string
+  depth?: number
 }
 
 export type ViteDebugScope = `vite:${string}`
@@ -165,7 +202,13 @@ export function createDebugger(
   options: DebuggerOptions = {},
 ): debug.Debugger['log'] | undefined {
   const log = debug(namespace)
-  const { onlyWhenFocused } = options
+  const { onlyWhenFocused, depth } = options
+
+  // @ts-expect-error - The log function is bound to inspectOpts, but the type is not reflected
+  if (depth && log.inspectOpts && log.inspectOpts.depth == null) {
+    // @ts-expect-error - The log function is bound to inspectOpts, but the type is not reflected
+    log.inspectOpts.depth = options.depth
+  }
 
   let enabled = log.enabled
   if (enabled && onlyWhenFocused) {
@@ -196,19 +239,6 @@ function testCaseInsensitiveFS() {
   }
   return fs.existsSync(CLIENT_ENTRY.replace('client.mjs', 'cLiEnT.mjs'))
 }
-
-export const urlCanParse =
-  // eslint-disable-next-line n/no-unsupported-features/node-builtins
-  URL.canParse ??
-  // URL.canParse is supported from Node.js 18.17.0+, 20.0.0+
-  ((path: string, base?: string | undefined): boolean => {
-    try {
-      new URL(path, base)
-      return true
-    } catch {
-      return false
-    }
-  })
 
 export const isCaseInsensitiveFS = testCaseInsensitiveFS()
 
@@ -262,7 +292,7 @@ export function isSameFileUri(file1: string, file2: string): boolean {
   )
 }
 
-export const externalRE = /^(https?:)?\/\//
+export const externalRE = /^([a-z]+:)?\/\//
 export const isExternalUrl = (url: string): boolean => externalRE.test(url)
 
 export const dataUrlRE = /^\s*data:/i
@@ -287,8 +317,8 @@ export const isJSRequest = (url: string): boolean => {
   return false
 }
 
-const knownTsRE = /\.(?:ts|mts|cts|tsx)(?:$|\?)/
-export const isTsRequest = (url: string): boolean => knownTsRE.test(url)
+export const isCSSRequest = (request: string): boolean =>
+  CSS_LANGS_RE.test(request)
 
 const importQueryRE = /(\?|&)import=?(?:&|$)/
 const directRequestRE = /(\?|&)direct=?(?:&|$)/
@@ -663,12 +693,6 @@ function windowsSafeRealPathSync(path: string): string {
 }
 
 function optimizeSafeRealPathSync() {
-  // Skip if using Node <18.10 due to MAX_PATH issue: https://github.com/vitejs/vite/issues/12931
-  const nodeVersion = process.versions.node.split('.').map(Number)
-  if (nodeVersion[0] < 18 || (nodeVersion[0] === 18 && nodeVersion[1] < 10)) {
-    safeRealpathSync = fs.realpathSync
-    return
-  }
   // Check the availability `fs.realpathSync.native`
   // in Windows virtual and RAM disks that bypass the Volume Mount Manager, in programs such as imDisk
   // get the error EISDIR: illegal operation on a directory
@@ -740,7 +764,7 @@ function joinSrcset(ret: ImageCandidate[]) {
   The `descriptor` is anything after the space and before the comma.
  */
 const imageCandidateRegex =
-  /(?:^|\s)(?<url>[\w-]+\([^)]*\)|"[^"]*"|'[^']*'|[^,]\S*[^,])\s*(?:\s(?<descriptor>\w[^,]+))?(?:,|$)/g
+  /(?:^|\s|(?<=,))(?<url>[\w-]+\([^)]*\)|"[^"]*"|'[^']*'|[^,]\S*[^,])\s*(?:\s(?<descriptor>\w[^,]+))?(?:,|$)/g
 const escapedSpaceCharacters = /(?: |\\t|\\n|\\f|\\r)+/g
 
 export function parseSrcset(string: string): ImageCandidate[] {
@@ -812,6 +836,10 @@ const nullSourceMap: RawSourceMap = {
   mappings: '',
   version: 3,
 }
+/**
+ * Combines multiple sourcemaps into a single sourcemap.
+ * Note that the length of sourcemapList must be 2.
+ */
 export function combineSourcemaps(
   filename: string,
   sourcemapList: Array<DecodedSourceMap | RawSourceMap>,
@@ -836,6 +864,7 @@ export function combineSourcemaps(
     }
     return newSourcemaps
   })
+  const escapedFilename = escapeToLinuxLikePath(filename)
 
   // We don't declare type here so we can convert/fake/map as RawSourceMap
   let map //: SourceMap
@@ -846,15 +875,12 @@ export function combineSourcemaps(
     map = remapping(sourcemapList, () => null)
   } else {
     map = remapping(sourcemapList[0], function loader(sourcefile) {
-      const mapForSources = sourcemapList
-        .slice(mapIndex)
-        .find((s) => s.sources.includes(sourcefile))
-
-      if (mapForSources) {
-        mapIndex++
-        return mapForSources
+      // this line assumes that the length of the sourcemapList is 2
+      if (sourcefile === escapedFilename && sourcemapList[mapIndex]) {
+        return sourcemapList[mapIndex++]
+      } else {
+        return null
       }
-      return null
     })
   }
   if (!map.file) {
@@ -945,6 +971,7 @@ export async function resolveHostname(
 export async function resolveServerUrls(
   server: Server,
   options: CommonServerOptions,
+  httpsOptions: HttpsServerOptions | undefined,
   config: ResolvedConfig,
 ): Promise<ResolvedServerUrls> {
   const address = server.address()
@@ -977,14 +1004,7 @@ export async function resolveServerUrls(
   } else {
     Object.values(os.networkInterfaces())
       .flatMap((nInterface) => nInterface ?? [])
-      .filter(
-        (detail) =>
-          detail &&
-          detail.address &&
-          (detail.family === 'IPv4' ||
-            // @ts-expect-error Node 18.0 - 18.3 returns number
-            detail.family === 4),
-      )
+      .filter((detail) => detail.address && detail.family === 'IPv4')
       .forEach((detail) => {
         let host = detail.address.replace('127.0.0.1', hostname.name)
         // ipv6 host
@@ -999,7 +1019,63 @@ export async function resolveServerUrls(
         }
       })
   }
+
+  const cert =
+    httpsOptions?.cert && !Array.isArray(httpsOptions.cert)
+      ? new crypto.X509Certificate(httpsOptions.cert)
+      : undefined
+  const hostnameFromCert = cert?.subjectAltName
+    ? extractHostnamesFromSubjectAltName(cert.subjectAltName)
+    : []
+
+  if (hostnameFromCert.length > 0) {
+    const existings = new Set([...local, ...network])
+    local.push(
+      ...hostnameFromCert
+        .map((hostname) => `https://${hostname}:${port}${base}`)
+        .filter((url) => !existings.has(url)),
+    )
+  }
+
   return { local, network }
+}
+
+export function extractHostnamesFromSubjectAltName(
+  subjectAltName: string,
+): string[] {
+  const hostnames: string[] = []
+  let remaining = subjectAltName
+  while (remaining) {
+    const nameEndIndex = remaining.indexOf(':')
+    const name = remaining.slice(0, nameEndIndex)
+    remaining = remaining.slice(nameEndIndex + 1)
+    if (!remaining) break
+
+    const isQuoted = remaining[0] === '"'
+    let value: string
+    if (isQuoted) {
+      const endQuoteIndex = remaining.indexOf('"', 1)
+      value = JSON.parse(remaining.slice(0, endQuoteIndex + 1))
+      remaining = remaining.slice(endQuoteIndex + 1)
+    } else {
+      const maybeEndIndex = remaining.indexOf(',')
+      const endIndex = maybeEndIndex === -1 ? remaining.length : maybeEndIndex
+      value = remaining.slice(0, endIndex)
+      remaining = remaining.slice(endIndex)
+    }
+    remaining = remaining.slice(/* for , */ 1).trimStart()
+
+    if (
+      name === 'DNS' &&
+      // [::1] might be included but skip it as it's already included as a local address
+      value !== '[::1]' &&
+      // skip *.IPv4 addresses, which is invalid
+      !(value.startsWith('*.') && net.isIPv4(value.slice(2)))
+    ) {
+      hostnames.push(value.replace('*', 'vite'))
+    }
+  }
+  return hostnames
 }
 
 export function arraify<T>(target: T | T[]): T[] {
@@ -1014,17 +1090,8 @@ export const requestQueryMaybeEscapedSplitRE = /\\?\?(?!.*[/|}])/
 
 export const blankReplacer = (match: string): string => ' '.repeat(match.length)
 
-const hash =
-  // eslint-disable-next-line n/no-unsupported-features/node-builtins -- crypto.hash is supported in Node 21.7.0+, 20.12.0+
-  crypto.hash ??
-  ((
-    algorithm: string,
-    data: crypto.BinaryLike,
-    outputEncoding: crypto.BinaryToTextEncoding,
-  ) => crypto.createHash(algorithm).update(data).digest(outputEncoding))
-
 export function getHash(text: Buffer | string, length = 8): string {
-  const h = hash('sha256', text, 'hex').substring(0, length)
+  const h = crypto.hash('sha256', text, 'hex').substring(0, length)
   if (length <= 64) return h
   return h.padEnd(length, '_')
 }
@@ -1062,6 +1129,99 @@ function backwardCompatibleWorkerPlugins(plugins: any) {
   return []
 }
 
+type DeepWritable<T> =
+  T extends ReadonlyArray<unknown>
+    ? { -readonly [P in keyof T]: DeepWritable<T[P]> }
+    : T extends RegExp
+      ? RegExp
+      : T[keyof T] extends Function
+        ? T
+        : { -readonly [P in keyof T]: DeepWritable<T[P]> }
+
+function deepClone<T>(value: T): DeepWritable<T> {
+  if (Array.isArray(value)) {
+    return value.map((v) => deepClone(v)) as DeepWritable<T>
+  }
+  if (isObject(value)) {
+    const cloned: Record<string, any> = {}
+    for (const key in value) {
+      cloned[key] = deepClone(value[key])
+    }
+    return cloned as DeepWritable<T>
+  }
+  if (typeof value === 'function') {
+    return value as DeepWritable<T>
+  }
+  if (value instanceof RegExp) {
+    return new RegExp(value) as DeepWritable<T>
+  }
+  if (typeof value === 'object' && value != null) {
+    throw new Error('Cannot deep clone non-plain object')
+  }
+  return value as DeepWritable<T>
+}
+
+type MaybeFallback<D, V> = undefined extends V ? Exclude<V, undefined> | D : V
+
+type MergeWithDefaultsResult<D, V> =
+  Equal<D, undefined> extends true
+    ? V
+    : D extends Function | Array<any>
+      ? MaybeFallback<D, V>
+      : V extends Function | Array<any>
+        ? MaybeFallback<D, V>
+        : D extends Record<string, any>
+          ? V extends Record<string, any>
+            ? {
+                [K in keyof D | keyof V]: K extends keyof D
+                  ? K extends keyof V
+                    ? MergeWithDefaultsResult<D[K], V[K]>
+                    : D[K]
+                  : K extends keyof V
+                    ? V[K]
+                    : never
+              }
+            : MaybeFallback<D, V>
+          : MaybeFallback<D, V>
+
+function mergeWithDefaultsRecursively<
+  D extends Record<string, any>,
+  V extends Record<string, any>,
+>(defaults: D, values: V): MergeWithDefaultsResult<D, V> {
+  const merged: Record<string, any> = defaults
+  for (const key in values) {
+    const value = values[key]
+    // let null to set the value (e.g. `server.watch: null`)
+    if (value === undefined) continue
+
+    const existing = merged[key]
+    if (existing === undefined) {
+      merged[key] = value
+      continue
+    }
+
+    if (isObject(existing) && isObject(value)) {
+      merged[key] = mergeWithDefaultsRecursively(existing, value)
+      continue
+    }
+
+    // use replace even for arrays
+    merged[key] = value
+  }
+  return merged as MergeWithDefaultsResult<D, V>
+}
+
+const environmentPathRE = /^environments\.[^.]+$/
+
+export function mergeWithDefaults<
+  D extends Record<string, any>,
+  V extends Record<string, any>,
+>(defaults: D, values: V): MergeWithDefaultsResult<DeepWritable<D>, V> {
+  // NOTE: we need to clone the value here to avoid mutating the defaults
+  const clonedDefaults = deepClone(defaults)
+  return mergeWithDefaultsRecursively(clonedDefaults, values)
+}
+
 function mergeConfigRecursively(
   defaults: Record<string, any>,
   overrides: Record<string, any>,
@@ -1089,8 +1249,9 @@ function mergeConfigRecursively(
       merged[key] = [].concat(existing, value)
       continue
     } else if (
-      key === 'noExternal' &&
-      (rootPath === 'ssr' || rootPath === 'resolve') &&
+      ((key === 'noExternal' &&
+        (rootPath === 'ssr' || rootPath === 'resolve')) ||
+        (key === 'allowedHosts' && rootPath === 'server')) &&
       (existing === true || value === true)
     ) {
       merged[key] = true
@@ -1114,7 +1275,10 @@ function mergeConfigRecursively(
       merged[key] = mergeConfigRecursively(
         existing,
         value,
-        rootPath ? `${rootPath}.${key}` : key,
+        // treat environment.* as root
+        rootPath && !environmentPathRE.test(rootPath)
+          ? `${rootPath}.${key}`
+          : key,
       )
       continue
     }
@@ -1173,8 +1337,8 @@ function normalizeSingleAlias({
 }: Alias): Alias {
   if (
     typeof find === 'string' &&
-    find[find.length - 1] === '/' &&
-    replacement[replacement.length - 1] === '/'
+    find.endsWith('/') &&
+    replacement.endsWith('/')
   ) {
     find = find.slice(0, find.length - 1)
     replacement = replacement.slice(0, replacement.length - 1)
@@ -1208,11 +1372,17 @@ export function transformStableResult(
   }
 }
 
-export async function asyncFlatten<T>(arr: T[]): Promise<T[]> {
+type AsyncFlatten<T extends unknown[]> = T extends (infer U)[]
+  ? Exclude<Awaited<U>, U[]>[]
+  : never
+
+export async function asyncFlatten<T extends unknown[]>(
+  arr: T,
+): Promise<AsyncFlatten<T>> {
   do {
     arr = (await Promise.all(arr)).flat(Infinity) as any
   } while (arr.some((v: any) => v?.then))
-  return arr
+  return arr as unknown[] as AsyncFlatten<T>
 }
 
 // strip UTF-8 BOM
@@ -1266,7 +1436,7 @@ export function joinUrlSegments(a: string, b: string): string {
   if (!a || !b) {
     return a || b || ''
   }
-  if (a[a.length - 1] === '/') {
+  if (a.endsWith('/')) {
     a = a.substring(0, a.length - 1)
   }
   if (b[0] !== '/') {
@@ -1314,6 +1484,10 @@ export function getNpmPackageName(importPath: string): string | null {
   }
 }
 
+export function getPkgName(name: string): string | undefined {
+  return name[0] === '@' ? name.split('/')[1] : name
+}
+
 const escapeRegexRE = /[-/\\^$*+?.()|[\]{}]/g
 export function escapeRegex(str: string): string {
   return str.replace(escapeRegexRE, '\\$&')
@@ -1345,21 +1519,6 @@ export function isDevServer(
   server: ViteDevServer | PreviewServer,
 ): server is ViteDevServer {
   return 'pluginContainer' in server
-}
-
-export interface PromiseWithResolvers<T> {
-  promise: Promise<T>
-  resolve: (value: T | PromiseLike<T>) => void
-  reject: (reason?: any) => void
-}
-export function promiseWithResolvers<T>(): PromiseWithResolvers<T> {
-  let resolve: any
-  let reject: any
-  const promise = new Promise<T>((_resolve, _reject) => {
-    resolve = _resolve
-    reject = _reject
-  })
-  return { promise, resolve, reject }
 }
 
 export function createSerialPromiseQueue<T>(): {
@@ -1408,11 +1567,17 @@ export function displayTime(time: number): string {
     return `${time.toFixed(2)}s`
   }
 
-  const mins = parseInt((time / 60).toString())
-  const seconds = time % 60
+  // Calculate total minutes and remaining seconds
+  const mins = Math.floor(time / 60)
+  const seconds = Math.round(time % 60)
+
+  // Handle case where seconds rounds to 60
+  if (seconds === 60) {
+    return `${mins + 1}m`
+  }
 
   // display: {X}m {Y}s
-  return `${mins}m${seconds < 1 ? '' : ` ${seconds.toFixed(0)}s`}`
+  return `${mins}m${seconds < 1 ? '' : ` ${seconds}s`}`
 }
 
 /**
@@ -1436,18 +1601,70 @@ export function partialEncodeURIPath(uri: string): string {
   return filePath.replaceAll('%', '%25') + postfix
 }
 
-export const setupSIGTERMListener = (callback: () => Promise<void>): void => {
-  process.once('SIGTERM', callback)
-  if (process.env.CI !== 'true') {
-    process.stdin.on('end', callback)
+type SigtermCallback = (signal?: 'SIGTERM', exitCode?: number) => Promise<void>
+
+// Use a shared callback when attaching sigterm listeners to avoid `MaxListenersExceededWarning`
+const sigtermCallbacks = new Set<SigtermCallback>()
+const parentSigtermCallback: SigtermCallback = async (signal, exitCode) => {
+  await Promise.all([...sigtermCallbacks].map((cb) => cb(signal, exitCode)))
+}
+
+export const setupSIGTERMListener = (
+  callback: (signal?: 'SIGTERM', exitCode?: number) => Promise<void>,
+): void => {
+  if (sigtermCallbacks.size === 0) {
+    process.once('SIGTERM', parentSigtermCallback)
+    if (process.env.CI !== 'true') {
+      process.stdin.on('end', parentSigtermCallback)
+    }
   }
+  sigtermCallbacks.add(callback)
 }
 
 export const teardownSIGTERMListener = (
-  callback: () => Promise<void>,
+  callback: Parameters<typeof setupSIGTERMListener>[0],
 ): void => {
-  process.off('SIGTERM', callback)
-  if (process.env.CI !== 'true') {
-    process.stdin.off('end', callback)
+  sigtermCallbacks.delete(callback)
+  if (sigtermCallbacks.size === 0) {
+    process.off('SIGTERM', parentSigtermCallback)
+    if (process.env.CI !== 'true') {
+      process.stdin.off('end', parentSigtermCallback)
+    }
   }
+}
+
+export function getServerUrlByHost(
+  resolvedUrls: ResolvedServerUrls | null,
+  host: CommonServerOptions['host'],
+): string | undefined {
+  if (typeof host === 'string') {
+    const matchedUrl = [
+      ...(resolvedUrls?.local ?? []),
+      ...(resolvedUrls?.network ?? []),
+    ].find((url) => url.includes(host))
+    if (matchedUrl) {
+      return matchedUrl
+    }
+  }
+  return resolvedUrls?.local[0] ?? resolvedUrls?.network[0]
+}
+
+let lastDateNow = 0
+/**
+ * Similar to `Date.now()`, but strictly monotonically increasing.
+ *
+ * This function will never return the same value.
+ * Thus, the value may differ from the actual time.
+ *
+ * related: https://github.com/vitejs/vite/issues/19804
+ */
+export function monotonicDateNow(): number {
+  const now = Date.now()
+  if (now > lastDateNow) {
+    lastDateNow = now
+    return lastDateNow
+  }
+
+  lastDateNow++
+  return lastDateNow
 }

@@ -4,14 +4,23 @@ When it is time to deploy your app for production, simply run the `vite build` c
 
 ## Browser Compatibility
 
-The production bundle assumes support for modern JavaScript. By default, Vite targets browsers which support the [native ES Modules](https://caniuse.com/es6-module), [native ESM dynamic import](https://caniuse.com/es6-module-dynamic-import), and [`import.meta`](https://caniuse.com/mdn-javascript_operators_import_meta):
+By default, the production bundle assumes a modern browser that is included in the [Baseline](https://web-platform-dx.github.io/web-features/) Widely Available targets. The default browser support range is:
 
-- Chrome >=87
-- Firefox >=78
-- Safari >=14
-- Edge >=88
+<!-- Search for the `ESBUILD_BASELINE_WIDELY_AVAILABLE_TARGET` constant for more information -->
 
-You can specify custom targets via the [`build.target` config option](/config/build-options.md#build-target), where the lowest target is `es2015`.
+- Chrome >=107
+- Edge >=107
+- Firefox >=104
+- Safari >=16
+
+You can specify custom targets via the [`build.target` config option](/config/build-options.md#build-target), where the lowest target is `es2015`. If a lower target is set, Vite will still require these minimum browser support ranges as it relies on [native ESM dynamic import](https://caniuse.com/es6-module-dynamic-import), and [`import.meta`](https://caniuse.com/mdn-javascript_operators_import_meta):
+
+<!-- Search for the `defaultEsbuildSupported` constant for more information -->
+
+- Chrome >=64
+- Firefox >=67
+- Safari >=11.1
+- Edge >=79
 
 Note that by default, Vite only handles syntax transforms and **does not cover polyfills**. You can check out https://cdnjs.cloudflare.com/polyfill/ which automatically generates polyfill bundles based on the user's browser UserAgent string.
 
@@ -57,7 +66,7 @@ For example, you can specify multiple Rollup outputs with plugins that are only 
 
 ## Chunking Strategy
 
-You can configure how chunks are split using `build.rollupOptions.output.manualChunks` (see [Rollup docs](https://rollupjs.org/configuration-options/#output-manualchunks)). If you use a framework, refer to their documentation for configuring how chunks are splitted.
+You can configure how chunks are split using `build.rollupOptions.output.manualChunks` (see [Rollup docs](https://rollupjs.org/configuration-options/#output-manualchunks)). If you use a framework, refer to their documentation for configuring how chunks are split.
 
 ## Load Error Handling
 
@@ -71,7 +80,7 @@ window.addEventListener('vite:preloadError', (event) => {
 
 When a new deployment occurs, the hosting service may delete the assets from previous deployments. As a result, a user who visited your site before the new deployment might encounter an import error. This error happens because the assets running on that user's device are outdated and it tries to import the corresponding old chunk, which is deleted. This event is useful for addressing this situation.
 
-## Rebuild on files changes
+## Rebuild on Files Changes
 
 You can enable rollup watcher with `vite build --watch`. Or, you can directly adjust the underlying [`WatcherOptions`](https://rollupjs.org/configuration-options/#watch) via `build.watch`:
 
@@ -106,8 +115,11 @@ During dev, simply navigate or link to `/nested/` - it works as expected, just l
 During build, all you need to do is to specify multiple `.html` files as entry points:
 
 ```js twoslash [vite.config.js]
-import { resolve } from 'path'
+import { dirname, resolve } from 'node:path'
+import { fileURLToPath } from 'node:url'
 import { defineConfig } from 'vite'
+
+const __dirname = dirname(fileURLToPath(import.meta.url))
 
 export default defineConfig({
   build: {
@@ -134,8 +146,11 @@ When it is time to bundle your library for distribution, use the [`build.lib` co
 ::: code-group
 
 ```js twoslash [vite.config.js (single entry)]
-import { resolve } from 'path'
+import { dirname, resolve } from 'node:path'
+import { fileURLToPath } from 'node:url'
 import { defineConfig } from 'vite'
+
+const __dirname = dirname(fileURLToPath(import.meta.url))
 
 export default defineConfig({
   build: {
@@ -162,8 +177,11 @@ export default defineConfig({
 ```
 
 ```js twoslash [vite.config.js (multiple entries)]
-import { resolve } from 'path'
+import { dirname, resolve } from 'node:path'
+import { fileURLToPath } from 'node:url'
 import { defineConfig } from 'vite'
+
+const __dirname = dirname(fileURLToPath(import.meta.url))
 
 export default defineConfig({
   build: {
@@ -200,7 +218,12 @@ import Bar from './Bar.vue'
 export { Foo, Bar }
 ```
 
-Running `vite build` with this config uses a Rollup preset that is oriented towards shipping libraries and produces two bundle formats: `es` and `umd` (configurable via `build.lib`):
+Running `vite build` with this config uses a Rollup preset that is oriented towards shipping libraries and produces two bundle formats:
+
+- `es` and `umd` (for single entry)
+- `es` and `cjs` (for multiple entries)
+
+The formats can be configured with the [`build.lib.formats`](/config/build-options.md#build-lib) option.
 
 ```
 $ vite build
@@ -250,6 +273,29 @@ Recommended `package.json` for your lib:
 ```
 
 :::
+
+### CSS support
+
+If your library imports any CSS, it will be bundled as a single CSS file besides the built JS files, e.g. `dist/my-lib.css`. The name defaults to `build.lib.fileName`, but can also be changed with [`build.lib.cssFileName`](/config/build-options.md#build-lib).
+
+You can export the CSS file in your `package.json` to be imported by users:
+
+```json {12}
+{
+  "name": "my-lib",
+  "type": "module",
+  "files": ["dist"],
+  "main": "./dist/my-lib.umd.cjs",
+  "module": "./dist/my-lib.js",
+  "exports": {
+    ".": {
+      "import": "./dist/my-lib.js",
+      "require": "./dist/my-lib.umd.cjs"
+    },
+    "./style.css": "./dist/my-lib.css"
+  }
+}
+```
 
 ::: tip File Extensions
 If the `package.json` does not contain `"type": "module"`, Vite will generate different file extensions for Node.js compatibility. `.js` will become `.mjs` and `.cjs` will become `.js`.
@@ -309,7 +355,9 @@ experimental: {
     if (type === 'public') {
       return 'https://www.domain.com/' + filename
     } else if (path.extname(hostId) === '.js') {
-      return { runtime: `window.__assetsPath(${JSON.stringify(filename)})` }
+      return {
+        runtime: `window.__assetsPath(${JSON.stringify(filename)})`
+      }
     } else {
       return 'https://cdn.domain.com/assets/' + filename
     }

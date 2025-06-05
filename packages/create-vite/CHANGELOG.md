@@ -1,3 +1,120 @@
+## 6.5.0 (2025-05-05)
+
+* feat(create-vite): add Marko (#19257) ([171e856](https://github.com/vitejs/vite/commit/171e856e011512098591234d0557804c6175b625)), closes [#19257](https://github.com/vitejs/vite/issues/19257)
+* feat(create-vite): add RedwoodSDK to create-vite app. (#19927) ([7f5e0e6](https://github.com/vitejs/vite/commit/7f5e0e61a809412b279338772e205ea458011aa4)), closes [#19927](https://github.com/vitejs/vite/issues/19927)
+* feat(create-vite): bump TS to 5.8 (#19892) ([1f90255](https://github.com/vitejs/vite/commit/1f902551207dd4e995eea4263fda28aed59150a6)), closes [#19892](https://github.com/vitejs/vite/issues/19892)
+* fix(deps): update all non-major dependencies (#19698) ([bab4cb9](https://github.com/vitejs/vite/commit/bab4cb92248adf6b9b18df12b2bf03889b0bd1eb)), closes [#19698](https://github.com/vitejs/vite/issues/19698)
+* fix(deps): update all non-major dependencies (#19899) ([a4b500e](https://github.com/vitejs/vite/commit/a4b500ef9ccc9b19a2882156a9ba8397e69bc6b2)), closes [#19899](https://github.com/vitejs/vite/issues/19899)
+
+
+
+## <small>6.4.1 (2025-04-17)</small>
+
+* docs(create-vite): update react template README files (#19876) ([2d4c20e](https://github.com/vitejs/vite/commit/2d4c20ebadc35dae7327ffe6cba85cc5c36d579a)), closes [#19876](https://github.com/vitejs/vite/issues/19876)
+* fix(create-vite): adding an interactive flag to force interactivity (#19875) ([608457c](https://github.com/vitejs/vite/commit/608457cd03ce593492abfe007e20468387c4c895)), closes [#19875](https://github.com/vitejs/vite/issues/19875)
+
+
+
+## 6.4.0 (2025-04-16)
+
+* feat(create-vite): add TanStack Router commands (#19573) ([e49a3b5](https://github.com/vitejs/vite/commit/e49a3b523c8894e8e0df766642999a944e0148ef)), closes [#19573](https://github.com/vitejs/vite/issues/19573)
+* fix(deps): update all non-major dependencies (#19555) ([f612e0f](https://github.com/vitejs/vite/commit/f612e0fdf6810317b61fcca1ded125755f261d78)), closes [#19555](https://github.com/vitejs/vite/issues/19555)
+* fix(deps): update all non-major dependencies (#19613) ([363d691](https://github.com/vitejs/vite/commit/363d691b4995d72f26a14eb59ed88a9483b1f931)), closes [#19613](https://github.com/vitejs/vite/issues/19613)
+* fix(deps): update all non-major dependencies (#19649) ([f4e712f](https://github.com/vitejs/vite/commit/f4e712ff861f8a9504594a4a5e6d35a7547e5a7e)), closes [#19649](https://github.com/vitejs/vite/issues/19649)
+* chore(deps): update dependency globals to v16 (#19556) ([e4bdd6b](https://github.com/vitejs/vite/commit/e4bdd6b9dd6e2ccf7d11e84a9c2da805e98eed58)), closes [#19556](https://github.com/vitejs/vite/issues/19556)
+* docs: remove $ prefix from create-vite terminal commands in README (#19532) ([cb9165c](https://github.com/vitejs/vite/commit/cb9165c1b2569aabe3e110e9684a909918eae22c)), closes [#19532](https://github.com/vitejs/vite/issues/19532)
+
+
+
+## <small>6.3.1 (2025-02-27)</small>
+
+* fix(create-vite): make custom command visible (#19519) ([5ea9a42](https://github.com/vitejs/vite/commit/5ea9a422c5a000c6a3183c617d6c853cdc4a5151)), closes [#19519](https://github.com/vitejs/vite/issues/19519)
+* fix(create-vite): remove eslint-plugin-react (#19514) ([c0e3dba](https://github.com/vitejs/vite/commit/c0e3dba3108e479ab839205cfb046db327bdaf43)), closes [#19514](https://github.com/vitejs/vite/issues/19514)
+* docs(create-vite): recommend eslint-react for linting (#19524) ([e912080](https://github.com/vitejs/vite/commit/e9120805df4dcf202caa65f15edc7d94fb521a63)), closes [#19524](https://github.com/vitejs/vite/issues/19524)
+* chore: remove prompts alias (#19507) ([276c1d3](https://github.com/vitejs/vite/commit/276c1d3b4761c436dc668e76decb9cf20cb25ab9)), closes [#19507](https://github.com/vitejs/vite/issues/19507)
+
+
+
+## 6.3.0 (2025-02-25)
+
+* feat(create-vite): use `@clack/prompts` (#19445) ([5dae6c1](https://github.com/vitejs/vite/commit/5dae6c17da2ef135c2864500db2c8f3e2cf2b3db)), closes [#19445](https://github.com/vitejs/vite/issues/19445)
+
+
+
+## <small>6.2.1 (2025-02-25)</small>
+
+* fix(deps): update all non-major dependencies (#19392) ([60456a5](https://github.com/vitejs/vite/commit/60456a54fe90872dbd4bed332ecbd85bc88deb92)), closes [#19392](https://github.com/vitejs/vite/issues/19392)
+* fix(deps): update all non-major dependencies (#19440) ([ccac73d](https://github.com/vitejs/vite/commit/ccac73d9d0e92c7232f09207d1d6b893e823ed8e)), closes [#19440](https://github.com/vitejs/vite/issues/19440)
+* fix(deps): update all non-major dependencies (#19501) ([c94c9e0](https://github.com/vitejs/vite/commit/c94c9e052127cf4796374de1d698ec60b2973dfa)), closes [#19501](https://github.com/vitejs/vite/issues/19501)
+* chore(create-vite): remove font family `Inter` (#19474) ([4bcd79a](https://github.com/vitejs/vite/commit/4bcd79a0b38c968825494da1a48f3f91fbc0fbf5)), closes [#19474](https://github.com/vitejs/vite/issues/19474)
+* chore(create-vite): update `@vitejs/plugin-react-swc` version (#19384) ([39fab6d](https://github.com/vitejs/vite/commit/39fab6db204ea88ffdb346ee98d8abe0ff5d685f)), closes [#19384](https://github.com/vitejs/vite/issues/19384)
+* ci: update react-swc plugin version in create-vite by renovate (#19394) ([0f058a9](https://github.com/vitejs/vite/commit/0f058a989f974d6f012539122f0580e37c2e9852)), closes [#19394](https://github.com/vitejs/vite/issues/19394)
+
+
+
+## 6.2.0 (2025-02-05)
+
+* fix(deps): update all non-major dependencies (#19098) ([8639538](https://github.com/vitejs/vite/commit/8639538e6498d1109da583ad942c1472098b5919)), closes [#19098](https://github.com/vitejs/vite/issues/19098)
+* fix(deps): update all non-major dependencies (#19190) ([f2c07db](https://github.com/vitejs/vite/commit/f2c07dbfc874b46f6e09bb04996d0514663e4544)), closes [#19190](https://github.com/vitejs/vite/issues/19190)
+* fix(deps): update all non-major dependencies (#19296) ([2bea7ce](https://github.com/vitejs/vite/commit/2bea7cec4b7fddbd5f2fb6090a7eaf5ae7ca0f1b)), closes [#19296](https://github.com/vitejs/vite/issues/19296)
+* fix(deps): update all non-major dependencies (#19341) ([a2b2fad](https://github.com/vitejs/vite/commit/a2b2fad6adb781d3fb163a7e2ce4670d56d60748)), closes [#19341](https://github.com/vitejs/vite/issues/19341)
+* fix(deps): update react monorepo to v19 (major) (#18917) ([93d5443](https://github.com/vitejs/vite/commit/93d54439784da0c0a995e50dcfcc081ce4da0121)), closes [#18917](https://github.com/vitejs/vite/issues/18917)
+* feat(create-vite): add hint for external CLIs (#19157) ([b9a4cc6](https://github.com/vitejs/vite/commit/b9a4cc6b2875555b621f23ae5457fa37f31e2e24)), closes [#19157](https://github.com/vitejs/vite/issues/19157)
+* feat(create-vite): official starters options naming (#19163) ([1992f68](https://github.com/vitejs/vite/commit/1992f681fc7662780f2f2fa4fdb0865a8a54deff)), closes [#19163](https://github.com/vitejs/vite/issues/19163)
+* chore: bump TypeScript to ~5.7.2 (#19056) ([1acea1f](https://github.com/vitejs/vite/commit/1acea1f7c42e43209a6ea0aa99441f143ee15018)), closes [#19056](https://github.com/vitejs/vite/issues/19056)
+
+
+
+## <small>6.1.1 (2024-12-24)</small>
+
+* fix(create-vite): svelte-ts typecheck command (#19014) ([ac32968](https://github.com/vitejs/vite/commit/ac329685bba229e1ff43e3d96324f817d48abe48)), closes [#19014](https://github.com/vitejs/vite/issues/19014)
+* fix(deps): update all non-major dependencies (#19045) ([b442d12](https://github.com/vitejs/vite/commit/b442d12c97357697be9341b7abebd78382a3d93d)), closes [#19045](https://github.com/vitejs/vite/issues/19045)
+* refactor(create-vite): remove tslib from svelte-ts template (#19015) ([9066049](https://github.com/vitejs/vite/commit/9066049216b41ac8c6b9177539647d50d3498f1f)), closes [#19015](https://github.com/vitejs/vite/issues/19015)
+
+
+
+## 6.1.0 (2024-12-19)
+
+* feat(create-vite): align tsconfigs in svelte-ts template with others (#18995) ([b48b98c](https://github.com/vitejs/vite/commit/b48b98ce0618eb3d142c0ce86a765502fb4ac190)), closes [#18995](https://github.com/vitejs/vite/issues/18995)
+* feat(create-vite): extend from @vue/tsconfig to simplify tsconfig.app.json (#18862) ([89eea02](https://github.com/vitejs/vite/commit/89eea020a3723276495b950542e1c71f4ced781a)), closes [#18862](https://github.com/vitejs/vite/issues/18862)
+* fix(deps): update all non-major dependencies (#18853) ([5c02236](https://github.com/vitejs/vite/commit/5c0223636fa277d5daeb4d93c3f32d9f3cd69fc5)), closes [#18853](https://github.com/vitejs/vite/issues/18853)
+* fix(deps): update all non-major dependencies (#18967) ([d88d000](https://github.com/vitejs/vite/commit/d88d0004a8e891ca6026d356695e0b319caa7fce)), closes [#18967](https://github.com/vitejs/vite/issues/18967)
+* fix(deps): update all non-major dependencies (#18996) ([2b4f115](https://github.com/vitejs/vite/commit/2b4f115129fb3fbd730a92078acb724f8527b7f7)), closes [#18996](https://github.com/vitejs/vite/issues/18996)
+* chore(deps): update all non-major dependencies (#18916) ([ef7a6a3](https://github.com/vitejs/vite/commit/ef7a6a35e6827b92445e5a0c2c0022616efc80dd)), closes [#18916](https://github.com/vitejs/vite/issues/18916)
+* refactor: fix logic errors found by no-unnecessary-condition rule (#18891) ([ea802f8](https://github.com/vitejs/vite/commit/ea802f8f8bcf3771a35c1eaf687378613fbabb24)), closes [#18891](https://github.com/vitejs/vite/issues/18891)
+
+
+
+## <small>6.0.1 (2024-11-27)</small>
+
+* feat(create-vite): bump vite-plugin-solid to `2.11.0` (#18792) ([32ac96f](https://github.com/vitejs/vite/commit/32ac96f54ca459d1a4c7ff7f4dbb4111eaea00f1)), closes [#18792](https://github.com/vitejs/vite/issues/18792)
+* feat(create-vite): change Remix to React Router v7 (#18785) ([31cc61b](https://github.com/vitejs/vite/commit/31cc61b7404b2b22d956856f97eeebd0a62f3b4d)), closes [#18785](https://github.com/vitejs/vite/issues/18785)
+* revert: update moduleResolution value casing (#18409) (#18774) ([b0fc6e3](https://github.com/vitejs/vite/commit/b0fc6e3c2591a30360d3714263cf7cc0e2acbfdf)), closes [#18409](https://github.com/vitejs/vite/issues/18409) [#18774](https://github.com/vitejs/vite/issues/18774)
+
+
+
+## 6.0.0 (2024-11-26)
+
+* chore(create-vite): change directory structure of `template-vanilla` for consistency (#18716) ([56a86ae](https://github.com/vitejs/vite/commit/56a86ae479b6aaf1c0a15bfedb0ee435e8ffcf3a)), closes [#18716](https://github.com/vitejs/vite/issues/18716)
+* chore(create-vite): update to vite 6 (#18770) ([80bf954](https://github.com/vitejs/vite/commit/80bf9549b48c66a47e5cc76a7540ce3e62e2f2da)), closes [#18770](https://github.com/vitejs/vite/issues/18770)
+* chore(deps): update all non-major dependencies (#18562) ([fb227ec](https://github.com/vitejs/vite/commit/fb227ec4402246b5a13e274c881d9de6dd8082dd)), closes [#18562](https://github.com/vitejs/vite/issues/18562)
+* chore(deps): update all non-major dependencies (#18634) ([e2231a9](https://github.com/vitejs/vite/commit/e2231a92af46db144b9c94fb57918ac683dc93cb)), closes [#18634](https://github.com/vitejs/vite/issues/18634)
+* chore(deps): update all non-major dependencies (#18746) ([0ad16e9](https://github.com/vitejs/vite/commit/0ad16e92d57453d9e5392c90fd06bda947be9de6)), closes [#18746](https://github.com/vitejs/vite/issues/18746)
+* feat!: drop node 21 support in version ranges (#18729) ([a384d8f](https://github.com/vitejs/vite/commit/a384d8fd39162190675abcfea31ba657383a3d03)), closes [#18729](https://github.com/vitejs/vite/issues/18729)
+* fix(create-vite): change create-app prompt to not remove existing files by default (#18710) ([c2b7529](https://github.com/vitejs/vite/commit/c2b75292f48be0371e337193c3b37a67b8212f97)), closes [#18710](https://github.com/vitejs/vite/issues/18710)
+* fix(create-vite): improve project name inference from path (#16490) ([8518113](https://github.com/vitejs/vite/commit/8518113dee2554401d23b2fba62ecab31d2b0541)), closes [#16490](https://github.com/vitejs/vite/issues/16490)
+* fix(deps): update all non-major dependencies (#18691) ([f005461](https://github.com/vitejs/vite/commit/f005461ecce89ada21cb0c021f7af460b5479736)), closes [#18691](https://github.com/vitejs/vite/issues/18691)
+
+
+
+## <small>5.5.5 (2024-10-30)</small>
+
+* chore: upgrade to unbuild v3 rc (#18502) ([ddd5c5d](https://github.com/vitejs/vite/commit/ddd5c5d00ff7894462a608841560883f9c771f22)), closes [#18502](https://github.com/vitejs/vite/issues/18502)
+* fix(create-vite): add tsBuildInfoFile option (#18435) ([0a4427f](https://github.com/vitejs/vite/commit/0a4427fc44b9b2075225bf8a9f1d88a8a428a217)), closes [#18435](https://github.com/vitejs/vite/issues/18435)
+* fix(deps): update all non-major dependencies (#18484) ([2ec12df](https://github.com/vitejs/vite/commit/2ec12df98d07eb4c986737e86a4a9f8066724658)), closes [#18484](https://github.com/vitejs/vite/issues/18484)
+
+
+
 ## <small>5.5.4 (2024-10-23)</small>
 
 * chore: change Angular customCommand (#18425) ([b53db53](https://github.com/vitejs/vite/commit/b53db53df17c43602d61a24e9bf579267ee8eb6b)), closes [#18425](https://github.com/vitejs/vite/issues/18425)

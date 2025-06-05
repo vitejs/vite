@@ -1,6 +1,7 @@
 import type { HotPayload, Update } from 'types/hmrPayload'
 import type { ModuleNamespace, ViteHotContext } from 'types/hot'
 import type { InferCustomEventPayload } from 'types/customEvent'
+import type { NormalizedModuleRunnerTransport } from './moduleRunnerTransport'
 
 type CustomListenersMap = Map<string, ((data: any) => void)[]>
 
@@ -18,17 +19,6 @@ interface HotCallback {
 export interface HMRLogger {
   error(msg: string | Error): void
   debug(...msg: unknown[]): void
-}
-
-export interface HMRConnection {
-  /**
-   * Checked before sending messages to the client.
-   */
-  isReady(): boolean
-  /**
-   * Send message to the client.
-   */
-  send(messages: HotPayload): void
 }
 
 export class HMRContext implements ViteHotContext {
@@ -89,7 +79,7 @@ export class HMRContext implements ViteHotContext {
   // extracted in the server for propagation
   acceptExports(
     _: string | readonly string[],
-    callback: (data: any) => void,
+    callback?: (data: any) => void,
   ): void {
     this.acceptDeps([this.ownerPath], ([mod]) => callback?.(mod))
   }
@@ -107,13 +97,17 @@ export class HMRContext implements ViteHotContext {
   decline(): void {}
 
   invalidate(message: string): void {
+    const firstInvalidatedBy =
+      this.hmrClient.currentFirstInvalidatedBy ?? this.ownerPath
     this.hmrClient.notifyListeners('vite:invalidate', {
       path: this.ownerPath,
       message,
+      firstInvalidatedBy,
     })
     this.send('vite:invalidate', {
       path: this.ownerPath,
       message,
+      firstInvalidatedBy,
     })
     this.hmrClient.logger.debug(
       `invalidate ${this.ownerPath}${message ? `: ${message}` : ''}`,
@@ -154,7 +148,7 @@ export class HMRContext implements ViteHotContext {
   }
 
   send<T extends string>(event: T, data?: InferCustomEventPayload<T>): void {
-    this.hmrClient.messenger.send({ type: 'custom', event, data })
+    this.hmrClient.send({ type: 'custom', event, data })
   }
 
   private acceptDeps(
@@ -173,24 +167,6 @@ export class HMRContext implements ViteHotContext {
   }
 }
 
-class HMRMessenger {
-  constructor(private connection: HMRConnection) {}
-
-  private queue: HotPayload[] = []
-
-  public send(payload: HotPayload): void {
-    this.queue.push(payload)
-    this.flush()
-  }
-
-  public flush(): void {
-    if (this.connection.isReady()) {
-      this.queue.forEach((msg) => this.connection.send(msg))
-      this.queue = []
-    }
-  }
-}
-
 export class HMRClient {
   public hotModulesMap = new Map<string, HotModule>()
   public disposeMap = new Map<string, (data: any) => void | Promise<void>>()
@@ -198,17 +174,14 @@ export class HMRClient {
   public dataMap = new Map<string, any>()
   public customListenersMap: CustomListenersMap = new Map()
   public ctxToListenersMap = new Map<string, CustomListenersMap>()
-
-  public messenger: HMRMessenger
+  public currentFirstInvalidatedBy: string | undefined
 
   constructor(
     public logger: HMRLogger,
-    connection: HMRConnection,
+    private transport: NormalizedModuleRunnerTransport,
     // This allows implementing reloading via different methods depending on the environment
     private importUpdatedModule: (update: Update) => Promise<ModuleNamespace>,
-  ) {
-    this.messenger = new HMRMessenger(connection)
-  }
+  ) {}
 
   public async notifyListeners<T extends string>(
     event: T,
@@ -219,6 +192,12 @@ export class HMRClient {
     if (cbs) {
       await Promise.allSettled(cbs.map((cb) => cb(data)))
     }
+  }
+
+  public send(payload: HotPayload): void {
+    this.transport.send(payload).catch((err) => {
+      this.logger.error(err)
+    })
   }
 
   public clear(): void {
@@ -249,7 +228,7 @@ export class HMRClient {
   }
 
   protected warnFailedUpdate(err: Error, path: string | string[]): void {
-    if (!err.message.includes('fetch')) {
+    if (!(err instanceof Error) || !err.message.includes('fetch')) {
       this.logger.error(err)
     }
     this.logger.error(
@@ -280,7 +259,7 @@ export class HMRClient {
   }
 
   private async fetchUpdate(update: Update): Promise<(() => void) | undefined> {
-    const { path, acceptedPath } = update
+    const { path, acceptedPath, firstInvalidatedBy } = update
     const mod = this.hotModulesMap.get(path)
     if (!mod) {
       // In a code-splitting project,
@@ -308,13 +287,20 @@ export class HMRClient {
     }
 
     return () => {
-      for (const { deps, fn } of qualifiedCallbacks) {
-        fn(
-          deps.map((dep) => (dep === acceptedPath ? fetchedModule : undefined)),
-        )
+      try {
+        this.currentFirstInvalidatedBy = firstInvalidatedBy
+        for (const { deps, fn } of qualifiedCallbacks) {
+          fn(
+            deps.map((dep) =>
+              dep === acceptedPath ? fetchedModule : undefined,
+            ),
+          )
+        }
+        const loggedPath = isSelfUpdate ? path : `${acceptedPath} via ${path}`
+        this.logger.debug(`hot updated: ${loggedPath}`)
+      } finally {
+        this.currentFirstInvalidatedBy = undefined
       }
-      const loggedPath = isSelfUpdate ? path : `${acceptedPath} via ${path}`
-      this.logger.debug(`hot updated: ${loggedPath}`)
     }
   }
 }

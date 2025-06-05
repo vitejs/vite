@@ -20,30 +20,30 @@ interface Sponsor {
 }
 
 // shared data across instances so we load only once.
-const data = ref()
+const data = ref<{ tier: string; size: string; items: Sponsor[] }[]>()
 
 const dataHost = 'https://sponsors.vuejs.org'
 const dataUrl = `${dataHost}/vite.json`
+
+export const voidZero = {
+  name: 'VoidZero',
+  url: 'https://voidzero.dev',
+  img: '/voidzero.svg',
+} satisfies Sponsor
 
 const viteSponsors: Pick<Sponsors, 'special' | 'gold'> = {
   special: [
     // sponsors patak-dev
     {
-      name: 'StackBlitz',
-      url: 'https://stackblitz.com',
-      img: '/stackblitz.svg',
+      name: 'Bolt',
+      url: 'https://bolt.new',
+      img: '/bolt.svg',
     },
     // sponsors antfu
     {
       name: 'NuxtLabs',
       url: 'https://nuxtlabs.com',
       img: '/nuxtlabs.svg',
-    },
-    // sponsors bluwy
-    {
-      name: 'Astro',
-      url: 'https://astro.build',
-      img: '/astro.svg',
     },
   ],
   gold: [

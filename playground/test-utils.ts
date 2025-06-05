@@ -15,7 +15,7 @@ import { fromComment } from 'convert-source-map'
 import type { Assertion } from 'vitest'
 import { expect } from 'vitest'
 import type { ResultPromise as ExecaResultPromise } from 'execa'
-import { isBuild, isWindows, page, testDir } from './vitestSetup'
+import { isWindows, page, testDir } from './vitestSetup'
 
 export * from './vitestSetup'
 
@@ -75,7 +75,7 @@ function componentToHex(c: number): string {
   return hex.length === 1 ? '0' + hex : hex
 }
 
-function rgbToHex(rgb: string): string {
+function rgbToHex(rgb: string): string | undefined {
   const match = rgb.match(/rgb\((\d+),\s*(\d+),\s*(\d+)\)/)
   if (match) {
     const [_, rs, gs, bs] = match
@@ -85,9 +85,8 @@ function rgbToHex(rgb: string): string {
       componentToHex(parseInt(gs, 10)) +
       componentToHex(parseInt(bs, 10))
     )
-  } else {
-    return '#000000'
   }
+  return undefined
 }
 
 const timeout = (n: number) => new Promise((r) => setTimeout(r, n))
@@ -127,7 +126,10 @@ export async function getBgColor(
   el: string | ElementHandle | Locator,
 ): Promise<string> {
   el = await toEl(el)
-  return el.evaluate((el) => getComputedStyle(el as Element).backgroundColor)
+  const rgb = await el.evaluate(
+    (el) => getComputedStyle(el as Element).backgroundColor,
+  )
+  return hexToNameMap[rgbToHex(rgb)] ?? rgb
 }
 
 export function readFile(filename: string): string {
@@ -137,9 +139,7 @@ export function readFile(filename: string): string {
 export function editFile(
   filename: string,
   replacer: (str: string) => string,
-  runInBuild: boolean = false,
 ): void {
-  if (isBuild && !runInBuild) return
   filename = path.resolve(testDir, filename)
   const content = fs.readFileSync(filename, 'utf-8')
   const modified = replacer(content)
@@ -203,10 +203,13 @@ export function readManifest(base = ''): Manifest {
   )
 }
 
-export function readDepOptimizationMetadata(): DepOptimizationMetadata {
+export function readDepOptimizationMetadata(
+  environmentName = 'client',
+): DepOptimizationMetadata {
+  const suffix = environmentName === 'client' ? '' : `_${environmentName}`
   return JSON.parse(
     fs.readFileSync(
-      path.join(testDir, 'node_modules/.vite/deps/_metadata.json'),
+      path.join(testDir, `node_modules/.vite/deps${suffix}/_metadata.json`),
       'utf-8',
     ),
   )
@@ -218,9 +221,7 @@ export function readDepOptimizationMetadata(): DepOptimizationMetadata {
 export async function untilUpdated(
   poll: () => string | Promise<string>,
   expected: string | RegExp,
-  runInBuild = false,
 ): Promise<void> {
-  if (isBuild && !runInBuild) return
   const maxTries = process.env.CI ? 200 : 50
   for (let tries = 0; tries < maxTries; tries++) {
     const actual = (await poll()) ?? ''
@@ -241,11 +242,7 @@ export async function untilUpdated(
 /**
  * Retry `func` until it does not throw error.
  */
-export async function withRetry(
-  func: () => Promise<void>,
-  runInBuild = false,
-): Promise<void> {
-  if (isBuild && !runInBuild) return
+export async function withRetry(func: () => Promise<void>): Promise<void> {
   const maxTries = process.env.CI ? 200 : 50
   for (let tries = 0; tries < maxTries; tries++) {
     try {
@@ -263,10 +260,7 @@ export const expectWithRetry = <T>(getActual: () => Promise<T>) => {
     {
       get(_target, key) {
         return async (...args) => {
-          await withRetry(
-            async () => expect(await getActual())[key](...args),
-            true,
-          )
+          await withRetry(async () => expect(await getActual())[key](...args))
         }
       },
     },
@@ -379,6 +373,9 @@ export const formatSourcemapForSnapshot = (map: any): any => {
   const m = { ...map }
   delete m.file
   delete m.names
+  if (m.debugId) {
+    m.debugId = '00000000-0000-0000-0000-000000000000'
+  }
   m.sources = m.sources.map((source) => source.replace(root, '/root'))
   if (m.sourceRoot) {
     m.sourceRoot = m.sourceRoot.replace(root, '/root')

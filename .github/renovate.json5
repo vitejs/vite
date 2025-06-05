@@ -9,6 +9,15 @@
       "depTypeList": ["peerDependencies"],
       "enabled": false,
     },
+    {
+      "matchDepTypes": ["action"],
+      "excludePackagePrefixes": ["actions/", "github/"],
+      "pinDigests": true,
+    },
+    {
+      "groupName": "rolldown-related dependencies",
+      "matchDepNames": ["rolldown", "rolldown-plugin-dts", "tsdown"],
+    },
   ],
   "ignoreDeps": [
     // manually bumping
@@ -16,14 +25,34 @@
     "rollup",
     "node",
     "typescript",
-    "eslint-plugin-react-hooks", // prevent bumping to messy -rc-<hash>-<date>
+    "@rollup/plugin-dynamic-import-vars", // prefer version using tinyglobby
+    "@oxc-project/runtime", // align version with rolldown
+    "@oxc-project/types", // align version with rolldown
 
     // pinned
     "slash3",
     "slash5",
-    "vue32",
+    "vue34",
 
     // breaking changes
     "kill-port", // `kill-port:^2.0.0 has perf issues (#8392)
+  ],
+  "github-actions": {
+    "fileMatch": [
+      // default values
+      "(^|/)(workflow-templates|\\.(?:github|gitea|forgejo)/(?:workflows|actions))/.+\\.ya?ml$",
+      "(^|/)action\\.ya?ml$",
+      // custom value
+      "(^|/)docs/guide/static-deploy-github-pages\\.yaml$",
+    ],
+  },
+  "customManagers": [
+    {
+      "customType": "regex",
+      "fileMatch": ["packages\/create-vite\/src\/index\\.ts$"],
+      "matchStrings": [
+        "\/\/\\s*renovate:\\s+datasource=(?<datasource>\\S+)\\s+depName=(?<depName>\\S+)\\s+(?:var|let|const)\\s+\\S+\\s*=\\s*[\"'](?<currentValue>[^\"']+)[\"']",
+      ],
+    },
   ],
 }

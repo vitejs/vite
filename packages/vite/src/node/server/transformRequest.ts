@@ -12,6 +12,7 @@ import {
   ensureWatchedFile,
   injectQuery,
   isObject,
+  monotonicDateNow,
   prettifyUrl,
   removeImportQuery,
   removeTimestampQuery,
@@ -32,6 +33,7 @@ import type { DevEnvironment } from './environment'
 
 export const ERR_LOAD_URL = 'ERR_LOAD_URL'
 export const ERR_LOAD_PUBLIC_URL = 'ERR_LOAD_PUBLIC_URL'
+export const ERR_DENIED_ID = 'ERR_DENIED_ID'
 
 const debugLoad = createDebugger('vite:load')
 const debugTransform = createDebugger('vite:transform')
@@ -55,6 +57,10 @@ export interface TransformOptions {
    * @internal
    */
   html?: boolean
+  /**
+   * @internal
+   */
+  allowId?: (id: string) => boolean
 }
 
 // TODO: This function could be moved to the DevEnvironment class.
@@ -70,7 +76,7 @@ export function transformRequest(
   options: TransformOptions = {},
 ): Promise<TransformResult | null> {
   // Backward compatibility when only `ssr` is passed
-  if (!options?.ssr) {
+  if (!options.ssr) {
     // Backward compatibility
     options = { ...options, ssr: environment.config.consumer === 'server' }
   }
@@ -100,7 +106,7 @@ export function transformRequest(
   //
   // We save the timestamp when we start processing and compare it with the
   // last time this module is invalidated
-  const timestamp = Date.now()
+  const timestamp = monotonicDateNow()
 
   const pending = environment._pendingRequests.get(cacheKey)
   if (pending) {
@@ -215,16 +221,18 @@ async function getCachedTransformResult(
 
   // tries to handle soft invalidation of the module if available,
   // returns a boolean true is successful, or false if no handling is needed
-  const softInvalidatedTransformResult =
-    module &&
-    (await handleModuleSoftInvalidation(environment, module, timestamp))
+  const softInvalidatedTransformResult = await handleModuleSoftInvalidation(
+    environment,
+    module,
+    timestamp,
+  )
   if (softInvalidatedTransformResult) {
     debugCache?.(`[memory-hmr] ${prettyUrl}`)
     return softInvalidatedTransformResult
   }
 
   // check if we have a fresh cache
-  const cached = module?.transformResult
+  const cached = module.transformResult
   if (cached) {
     debugCache?.(`[memory] ${prettyUrl}`)
     return cached
@@ -245,6 +253,12 @@ async function loadAndTransform(
     debugLoad || debugTransform ? prettifyUrl(url, config.root) : ''
 
   const moduleGraph = environment.moduleGraph
+
+  if (options.allowId && !options.allowId(id)) {
+    const err: any = new Error(`Denied ID ${id}`)
+    err.code = ERR_DENIED_ID
+    throw err
+  }
 
   let code: string | null = null
   let map: SourceDescription['map'] = null
@@ -345,10 +359,7 @@ async function loadAndTransform(
     inMap: map,
   })
   const originalCode = code
-  if (
-    transformResult == null ||
-    (isObject(transformResult) && transformResult.code == null)
-  ) {
+  if (transformResult.code === originalCode) {
     // no transform applied, keep code as-is
     debugTransform?.(
       timeFrom(transformStart) + colors.dim(` [skipped] ${prettyUrl}`),
@@ -413,7 +424,7 @@ async function loadAndTransform(
     ? await ssrTransform(code, normalizedMap, url, originalCode, {
         json: {
           stringify:
-            topLevelConfig.json?.stringify === true &&
+            topLevelConfig.json.stringify === true &&
             topLevelConfig.json.namedExports !== true,
         },
       })

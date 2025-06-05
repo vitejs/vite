@@ -1,3 +1,4 @@
+import fs from 'node:fs'
 import fsp from 'node:fs/promises'
 import path from 'node:path'
 import MagicString from 'magic-string'
@@ -8,10 +9,8 @@ import type { IndexHtmlTransformHook } from '../../plugins/html'
 import {
   addToHTMLProxyCache,
   applyHtmlTransforms,
-  assetAttrsConfig,
   extractImportExpressionFromClassicScript,
   findNeedTransformStyleAttribute,
-  getAttrKey,
   getScriptInfo,
   htmlEnvHook,
   htmlProxyResult,
@@ -21,6 +20,7 @@ import {
   overwriteAttrValue,
   postImportMapHook,
   preImportMapHook,
+  removeViteIgnoreAttr,
   resolveHtmlTransforms,
   traverseHtml,
 } from '../../plugins/html'
@@ -32,6 +32,7 @@ import {
   fsPathFromId,
   getHash,
   injectQuery,
+  isCSSRequest,
   isDevServer,
   isJSRequest,
   joinUrlSegments,
@@ -39,11 +40,14 @@ import {
   processSrcSetSync,
   stripBase,
 } from '../../utils'
-import { getFsUtils } from '../../fsUtils'
 import { checkPublicFile } from '../../publicDir'
-import { isCSSRequest } from '../../plugins/css'
 import { getCodeWithSourcemap, injectSourcesContent } from '../sourcemap'
 import { cleanUrl, unwrapId, wrapId } from '../../../shared/utils'
+import { getNodeAssetAttributes } from '../../assetSource'
+import {
+  BasicMinimalPluginContext,
+  basePluginContextMeta,
+} from '../pluginContainer'
 
 interface AssetNode {
   start: number
@@ -67,7 +71,6 @@ export function createDevHtmlTransformFn(
 ) => Promise<string> {
   const [preHooks, normalHooks, postHooks] = resolveHtmlTransforms(
     config.plugins,
-    config.logger,
   )
   const transformHooks = [
     preImportMapHook(config),
@@ -80,13 +83,17 @@ export function createDevHtmlTransformFn(
     injectNonceAttributeTagHook(config),
     postImportMapHook(),
   ]
+  const pluginContext = new BasicMinimalPluginContext(
+    { ...basePluginContextMeta, watchMode: true },
+    config.logger,
+  )
   return (
     server: ViteDevServer,
     url: string,
     html: string,
     originalUrl?: string,
   ): Promise<string> => {
-    return applyHtmlTransforms(html, transformHooks, {
+    return applyHtmlTransforms(html, transformHooks, pluginContext, {
       path: url,
       filename: getHtmlFilename(url, server),
       server,
@@ -117,8 +124,6 @@ function isBareRelative(url: string) {
   return wordCharRE.test(url[0]) && !url.includes(':')
 }
 
-const isSrcSet = (attr: Token.Attribute) =>
-  attr.name === 'srcset' && attr.prefix === undefined
 const processNodeUrl = (
   url: string,
   useSrcSetReplacer: boolean,
@@ -130,13 +135,6 @@ const processNodeUrl = (
 ): string => {
   // prefix with base (dev only, base is never relative)
   const replacer = (url: string) => {
-    if (server) {
-      const mod = server.environments.client.moduleGraph.urlToModuleMap.get(url)
-      if (mod && mod.lastHMRTimestamp > 0) {
-        url = injectQuery(url, `t=${mod.lastHMRTimestamp}`)
-      }
-    }
-
     if (
       (url[0] === '/' && url[1] !== '/') ||
       // #3230 if some request url (localhost:3000/a/b) return to fallback html, the relative assets
@@ -155,8 +153,9 @@ const processNodeUrl = (
       url = path.posix.join(config.base, url)
     }
 
-    if (server && !isClassicScriptLink && shouldPreTransform(url, config)) {
-      let preTransformUrl: string | undefined
+    let preTransformUrl: string | undefined
+
+    if (!isClassicScriptLink && shouldPreTransform(url, config)) {
       if (url[0] === '/' && url[1] !== '/') {
         preTransformUrl = url
       } else if (url[0] === '.' || isBareRelative(url)) {
@@ -166,16 +165,27 @@ const processNodeUrl = (
           url,
         )
       }
-      if (preTransformUrl) {
-        try {
-          preTransformUrl = decodeURI(preTransformUrl)
-        } catch {
-          // Malformed uri. Skip pre-transform.
-          return url
-        }
-        preTransformRequest(server, preTransformUrl, config.decodedBase)
+    }
+
+    if (server) {
+      const mod = server.environments.client.moduleGraph.urlToModuleMap.get(
+        preTransformUrl || url,
+      )
+      if (mod && mod.lastHMRTimestamp > 0) {
+        url = injectQuery(url, `t=${mod.lastHMRTimestamp}`)
       }
     }
+
+    if (server && preTransformUrl) {
+      try {
+        preTransformUrl = decodeURI(preTransformUrl)
+      } catch {
+        // Malformed uri. Skip pre-transform.
+        return url
+      }
+      preTransformRequest(server, preTransformUrl, config.decodedBase)
+    }
+
     return url
   }
 
@@ -196,7 +206,7 @@ const devHtmlHook: IndexHtmlTransformHook = async (
   let proxyModuleUrl: string
 
   const trailingSlash = htmlPath.endsWith('/')
-  if (!trailingSlash && getFsUtils(config).existsSync(filename)) {
+  if (!trailingSlash && fs.existsSync(filename)) {
     proxyModulePath = htmlPath
     proxyModuleUrl = proxyModulePath
   } else {
@@ -220,6 +230,7 @@ const devHtmlHook: IndexHtmlTransformHook = async (
   )
   const styleUrl: AssetNode[] = []
   const inlineStyles: InlineStyleAttribute[] = []
+  const inlineModulePaths: string[] = []
 
   const addInlineModule = (
     node: DefaultTreeAdapterMap['element'],
@@ -248,13 +259,8 @@ const devHtmlHook: IndexHtmlTransformHook = async (
 
     // inline js module. convert to src="proxy" (dev only, base is never relative)
     const modulePath = `${proxyModuleUrl}?html-proxy&index=${inlineModuleIndex}.${ext}`
+    inlineModulePaths.push(modulePath)
 
-    // invalidate the module so the newly cached contents will be served
-    const clientModuleGraph = server?.environments.client.moduleGraph
-    const module = clientModuleGraph?.getModuleById(modulePath)
-    if (module) {
-      clientModuleGraph!.invalidateModule(module)
-    }
     s.update(
       node.sourceCodeLocation!.startOffset,
       node.sourceCodeLocation!.endOffset,
@@ -270,12 +276,15 @@ const devHtmlHook: IndexHtmlTransformHook = async (
 
     // script tags
     if (node.nodeName === 'script') {
-      const { src, sourceCodeLocation, isModule } = getScriptInfo(node)
+      const { src, srcSourceCodeLocation, isModule, isIgnored } =
+        getScriptInfo(node)
 
-      if (src) {
+      if (isIgnored) {
+        removeViteIgnoreAttr(s, node.sourceCodeLocation!)
+      } else if (src) {
         const processedUrl = processNodeUrl(
           src.value,
-          isSrcSet(src),
+          /* useSrcSetReplacer */ false,
           config,
           htmlPath,
           originalUrl,
@@ -283,7 +292,7 @@ const devHtmlHook: IndexHtmlTransformHook = async (
           !isModule,
         )
         if (processedUrl !== src.value) {
-          overwriteAttrValue(s, sourceCodeLocation!, processedUrl)
+          overwriteAttrValue(s, srcSourceCodeLocation!, processedUrl)
         }
       } else if (isModule && node.childNodes.length) {
         addInlineModule(node, 'js')
@@ -330,29 +339,37 @@ const devHtmlHook: IndexHtmlTransformHook = async (
     }
 
     // elements with [href/src] attrs
-    const assetAttrs = assetAttrsConfig[node.nodeName]
-    if (assetAttrs) {
-      for (const p of node.attrs) {
-        const attrKey = getAttrKey(p)
-        if (p.value && assetAttrs.includes(attrKey)) {
-          const processedUrl = processNodeUrl(
-            p.value,
-            isSrcSet(p),
-            config,
-            htmlPath,
-            originalUrl,
-          )
-          if (processedUrl !== p.value) {
-            overwriteAttrValue(
-              s,
-              node.sourceCodeLocation!.attrs![attrKey],
-              processedUrl,
-            )
-          }
+    const assetAttributes = getNodeAssetAttributes(node)
+    for (const attr of assetAttributes) {
+      if (attr.type === 'remove') {
+        s.remove(attr.location.startOffset, attr.location.endOffset)
+      } else {
+        const processedUrl = processNodeUrl(
+          attr.value,
+          attr.type === 'srcset',
+          config,
+          htmlPath,
+          originalUrl,
+        )
+        if (processedUrl !== attr.value) {
+          overwriteAttrValue(s, attr.location, processedUrl)
         }
       }
     }
   })
+
+  // invalidate the module so the newly cached contents will be served
+  const clientModuelGraph = server?.environments.client.moduleGraph
+  if (clientModuelGraph) {
+    await Promise.all(
+      inlineModulePaths.map(async (url) => {
+        const module = await clientModuelGraph.getModuleByUrl(url)
+        if (module) {
+          clientModuelGraph.invalidateModule(module)
+        }
+      }),
+    )
+  }
 
   await Promise.all([
     ...styleUrl.map(async ({ start, end, code }, index) => {
@@ -370,19 +387,13 @@ const devHtmlHook: IndexHtmlTransformHook = async (
         environment: server!.environments.client,
       })
       let content = ''
-      if (result) {
-        if (result.map && 'version' in result.map) {
-          if (result.map.mappings) {
-            await injectSourcesContent(
-              result.map,
-              proxyModulePath,
-              config.logger,
-            )
-          }
-          content = getCodeWithSourcemap('css', result.code, result.map)
-        } else {
-          content = result.code
+      if (result.map && 'version' in result.map) {
+        if (result.map.mappings) {
+          await injectSourcesContent(result.map, proxyModulePath, config.logger)
         }
+        content = getCodeWithSourcemap('css', result.code, result.map)
+      } else {
+        content = result.code
       }
       s.overwrite(start, end, content)
     }),
@@ -429,7 +440,6 @@ export function indexHtmlMiddleware(
   server: ViteDevServer | PreviewServer,
 ): Connect.NextHandleFunction {
   const isDev = isDevServer(server)
-  const fsUtils = getFsUtils(server.config)
 
   // Keep the named function. The name is visible in debug logs via `DEBUG=connect:dispatcher ...`
   return async function viteIndexHtmlMiddleware(req, res, next) {
@@ -447,7 +457,7 @@ export function indexHtmlMiddleware(
         filePath = path.join(root, decodeURIComponent(url))
       }
 
-      if (fsUtils.existsSync(filePath)) {
+      if (fs.existsSync(filePath)) {
         const headers = isDev
           ? server.config.server.headers
           : server.config.preview.headers

@@ -1,4 +1,5 @@
 import path from 'node:path'
+import { URL } from 'node:url'
 import type {
   OutputAsset,
   OutputBundle,
@@ -11,12 +12,13 @@ import colors from 'picocolors'
 import type { DefaultTreeAdapterMap, ParserError, Token } from 'parse5'
 import { stripLiteral } from 'strip-literal'
 import escapeHtml from 'escape-html'
-import type { Plugin } from '../plugin'
+import type { MinimalPluginContextWithoutEnvironment, Plugin } from '../plugin'
 import type { ViteDevServer } from '../server'
 import {
   encodeURIPath,
   generateCodeFrame,
   getHash,
+  isCSSRequest,
   isDataUrl,
   isExternalUrl,
   normalizePath,
@@ -24,22 +26,21 @@ import {
   processSrcSet,
   removeLeadingSlash,
   unique,
-  urlCanParse,
 } from '../utils'
 import type { ResolvedConfig } from '../config'
 import { checkPublicFile } from '../publicDir'
 import { toOutputFilePathInHtml } from '../build'
 import { resolveEnvPrefix } from '../env'
-import type { Logger } from '../logger'
 import { cleanUrl } from '../../shared/utils'
-import { usePerEnvironmentState } from '../environment'
+import { perEnvironmentState } from '../environment'
+import { getNodeAssetAttributes } from '../assetSource'
 import {
   assetUrlRE,
   getPublicAssetFilename,
   publicAssetUrlRE,
   urlToBuiltUrl,
 } from './asset'
-import { isCSSRequest } from './css'
+import { cssBundleNameCache } from './css'
 import { modulePreloadPolyfillId } from './modulePreloadPolyfill'
 
 interface ScriptAssetsUrl {
@@ -49,8 +50,8 @@ interface ScriptAssetsUrl {
 }
 
 const htmlProxyRE =
-  /\?html-proxy=?(?:&inline-css)?(?:&style-attr)?&index=(\d+)\.(?:js|css)$/
-const isHtmlProxyRE = /\?html-proxy\b/
+  /[?&]html-proxy=?(?:&inline-css)?(?:&style-attr)?&index=(\d+)\.(?:js|css)$/
+const isHtmlProxyRE = /[?&]html-proxy\b/
 
 const inlineCSSRE = /__VITE_INLINE_CSS__([a-z\d]{8}_\d+)__/g
 // Do not allow preceding '.', but do allow preceding '...' for spread operations
@@ -94,26 +95,30 @@ export function htmlInlineProxyPlugin(config: ResolvedConfig): Plugin {
   return {
     name: 'vite:html-inline-proxy',
 
-    resolveId(id) {
-      if (isHTMLProxy(id)) {
-        return id
-      }
+    resolveId: {
+      handler(id) {
+        if (isHTMLProxy(id)) {
+          return id
+        }
+      },
     },
 
-    load(id) {
-      const proxyMatch = htmlProxyRE.exec(id)
-      if (proxyMatch) {
-        const index = Number(proxyMatch[1])
-        const file = cleanUrl(id)
-        const url = file.replace(normalizePath(config.root), '')
-        const result = htmlProxyMap.get(config)!.get(url)?.[index]
-        if (result) {
-          // set moduleSideEffects to keep the module even if `treeshake.moduleSideEffects=false` is set
-          return { ...result, moduleSideEffects: true }
-        } else {
-          throw new Error(`No matching HTML proxy module found from ${id}`)
+    load: {
+      handler(id) {
+        const proxyMatch = htmlProxyRE.exec(id)
+        if (proxyMatch) {
+          const index = Number(proxyMatch[1])
+          const file = cleanUrl(id)
+          const url = file.replace(normalizePath(config.root), '')
+          const result = htmlProxyMap.get(config)!.get(url)?.[index]
+          if (result) {
+            // set moduleSideEffects to keep the module even if `treeshake.moduleSideEffects=false` is set
+            return { ...result, moduleSideEffects: true }
+          } else {
+            throw new Error(`No matching HTML proxy module found from ${id}`)
+          }
         }
-      }
+      },
     },
   }
 }
@@ -138,16 +143,6 @@ export function addToHTMLProxyTransformResult(
   code: string,
 ): void {
   htmlProxyResult.set(hash, code)
-}
-
-// this extends the config in @vue/compiler-sfc with <link href>
-export const assetAttrsConfig: Record<string, string[]> = {
-  link: ['href'],
-  video: ['src', 'poster'],
-  source: ['src', 'srcset'],
-  img: ['src', 'srcset'],
-  image: ['xlink:href', 'href'],
-  use: ['xlink:href', 'href'],
 }
 
 // Some `<link rel>` elements should not be inlined in build. Excluding:
@@ -208,28 +203,32 @@ export async function traverseHtml(
 
 export function getScriptInfo(node: DefaultTreeAdapterMap['element']): {
   src: Token.Attribute | undefined
-  sourceCodeLocation: Token.Location | undefined
+  srcSourceCodeLocation: Token.Location | undefined
   isModule: boolean
   isAsync: boolean
+  isIgnored: boolean
 } {
   let src: Token.Attribute | undefined
-  let sourceCodeLocation: Token.Location | undefined
+  let srcSourceCodeLocation: Token.Location | undefined
   let isModule = false
   let isAsync = false
+  let isIgnored = false
   for (const p of node.attrs) {
     if (p.prefix !== undefined) continue
     if (p.name === 'src') {
       if (!src) {
         src = p
-        sourceCodeLocation = node.sourceCodeLocation?.attrs!['src']
+        srcSourceCodeLocation = node.sourceCodeLocation?.attrs!['src']
       }
-    } else if (p.name === 'type' && p.value && p.value === 'module') {
+    } else if (p.name === 'type' && p.value === 'module') {
       isModule = true
     } else if (p.name === 'async') {
       isAsync = true
+    } else if (p.name === 'vite-ignore') {
+      isIgnored = true
     }
   }
-  return { src, sourceCodeLocation, isModule, isAsync }
+  return { src, srcSourceCodeLocation, isModule, isAsync, isIgnored }
 }
 
 const attrValueStartRE = /=\s*(.)/
@@ -257,6 +256,19 @@ export function overwriteAttrValue(
     sourceCodeLocation.endOffset - wrapOffset,
     newValue,
   )
+  return s
+}
+
+export function removeViteIgnoreAttr(
+  s: MagicString,
+  sourceCodeLocation: Token.Location,
+): MagicString {
+  const loc = (sourceCodeLocation as Token.LocationWithAttributes).attrs?.[
+    'vite-ignore'
+  ]
+  if (loc) {
+    s.remove(loc.startOffset, loc.endOffset)
+  }
   return s
 }
 
@@ -294,11 +306,15 @@ function handleParseError(
       // Accept elements without closing tag in <head>
       return
     case 'duplicate-attribute':
-      // Accept duplicate attributes #9566
+      // Accept duplicate attributes #5966
       // The first attribute is used, browsers silently ignore duplicates
       return
     case 'non-void-html-element-start-tag-with-trailing-solidus':
       // Allow self closing on non-void elements #10439
+      return
+    case 'unexpected-question-mark-instead-of-tag-name':
+      // Allow <?xml> declaration and <?> empty elements
+      // lit generates <?>: https://github.com/lit/lit/issues/2470
       return
   }
   const parseError = formatParseError(parserError, filePath, html)
@@ -315,14 +331,13 @@ function handleParseError(
 export function buildHtmlPlugin(config: ResolvedConfig): Plugin {
   const [preHooks, normalHooks, postHooks] = resolveHtmlTransforms(
     config.plugins,
-    config.logger,
   )
   preHooks.unshift(injectCspNonceMetaTagHook(config))
   preHooks.unshift(preImportMapHook(config))
   preHooks.push(htmlEnvHook(config))
   postHooks.push(injectNonceAttributeTagHook(config))
   postHooks.push(postImportMapHook())
-  const processedHtml = usePerEnvironmentState(() => new Map<string, string>())
+  const processedHtml = perEnvironmentState(() => new Map<string, string>())
 
   const isExcludedUrl = (url: string) =>
     url[0] === '#' || isExternalUrl(url) || isDataUrl(url)
@@ -333,406 +348,425 @@ export function buildHtmlPlugin(config: ResolvedConfig): Plugin {
   return {
     name: 'vite:build-html',
 
-    async transform(html, id) {
-      if (id.endsWith('.html')) {
-        id = normalizePath(id)
-        const relativeUrlPath = normalizePath(path.relative(config.root, id))
-        const publicPath = `/${relativeUrlPath}`
-        const publicBase = getBaseInHTML(relativeUrlPath, config)
+    transform: {
+      async handler(html, id) {
+        if (id.endsWith('.html')) {
+          id = normalizePath(id)
+          const relativeUrlPath = normalizePath(path.relative(config.root, id))
+          const publicPath = `/${relativeUrlPath}`
+          const publicBase = getBaseInHTML(relativeUrlPath, config)
 
-        const publicToRelative = (filename: string) => publicBase + filename
-        const toOutputPublicFilePath = (url: string) =>
-          toOutputFilePathInHtml(
-            url.slice(1),
-            'public',
-            relativeUrlPath,
-            'html',
-            config,
-            publicToRelative,
-          )
-        // Determines true start position for the node, either the < character
-        // position, or the newline at the end of the previous line's node.
-        const nodeStartWithLeadingWhitespace = (
-          node: DefaultTreeAdapterMap['node'],
-        ) => {
-          const startOffset = node.sourceCodeLocation!.startOffset
-          if (startOffset === 0) return 0
+          const publicToRelative = (filename: string) => publicBase + filename
+          const toOutputPublicFilePath = (url: string) =>
+            toOutputFilePathInHtml(
+              url.slice(1),
+              'public',
+              relativeUrlPath,
+              'html',
+              config,
+              publicToRelative,
+            )
+          // Determines true start position for the node, either the < character
+          // position, or the newline at the end of the previous line's node.
+          const nodeStartWithLeadingWhitespace = (
+            node: DefaultTreeAdapterMap['node'],
+          ) => {
+            const startOffset = node.sourceCodeLocation!.startOffset
+            if (startOffset === 0) return 0
 
-          // Gets the offset for the start of the line including the
-          // newline trailing the previous node
-          const lineStartOffset =
-            startOffset - node.sourceCodeLocation!.startCol
+            // Gets the offset for the start of the line including the
+            // newline trailing the previous node
+            const lineStartOffset =
+              startOffset - node.sourceCodeLocation!.startCol
 
-          // <previous-line-node></previous-line-node>
-          // <target-node></target-node>
-          //
-          // Here we want to target the newline at the end of the previous line
-          // as the start position for our target.
-          //
-          // <previous-node></previous-node>
-          // <doubled-up-node></doubled-up-node><target-node></target-node>
-          //
-          // However, if there is content between our target node start and the
-          // previous newline, we cannot strip it out without risking content deletion.
-          let isLineEmpty = false
-          try {
-            const line = s.slice(Math.max(0, lineStartOffset), startOffset)
-            isLineEmpty = !line.trim()
-          } catch {
-            // magic-string may throw if there's some content removed in the sliced string,
-            // which we ignore and assume the line is not empty
-          }
-
-          return isLineEmpty ? lineStartOffset : startOffset
-        }
-
-        // pre-transform
-        html = await applyHtmlTransforms(html, preHooks, {
-          path: publicPath,
-          filename: id,
-        })
-
-        let js = ''
-        const s = new MagicString(html)
-        const scriptUrls: ScriptAssetsUrl[] = []
-        const styleUrls: ScriptAssetsUrl[] = []
-        let inlineModuleIndex = -1
-
-        let everyScriptIsAsync = true
-        let someScriptsAreAsync = false
-        let someScriptsAreDefer = false
-
-        const assetUrlsPromises: Promise<void>[] = []
-
-        // for each encountered asset url, rewrite original html so that it
-        // references the post-build location, ignoring empty attributes and
-        // attributes that directly reference named output.
-        const namedOutput = Object.keys(
-          config?.build?.rollupOptions?.input || {},
-        )
-        const processAssetUrl = async (url: string, shouldInline?: boolean) => {
-          if (
-            url !== '' && // Empty attribute
-            !namedOutput.includes(url) && // Direct reference to named output
-            !namedOutput.includes(removeLeadingSlash(url)) // Allow for absolute references as named output can't be an absolute path
-          ) {
+            // <previous-line-node></previous-line-node>
+            // <target-node></target-node>
+            //
+            // Here we want to target the newline at the end of the previous line
+            // as the start position for our target.
+            //
+            // <previous-node></previous-node>
+            // <doubled-up-node></doubled-up-node><target-node></target-node>
+            //
+            // However, if there is content between our target node start and the
+            // previous newline, we cannot strip it out without risking content deletion.
+            let isLineEmpty = false
             try {
-              return await urlToBuiltUrl(this, url, id, shouldInline)
-            } catch (e) {
-              if (e.code !== 'ENOENT') {
-                throw e
-              }
-            }
-          }
-          return url
-        }
-
-        const setModuleSideEffectPromises: Promise<void>[] = []
-        await traverseHtml(html, id, (node) => {
-          if (!nodeIsElement(node)) {
-            return
-          }
-
-          let shouldRemove = false
-
-          // script tags
-          if (node.nodeName === 'script') {
-            const { src, sourceCodeLocation, isModule, isAsync } =
-              getScriptInfo(node)
-
-            const url = src && src.value
-            const isPublicFile = !!(url && checkPublicFile(url, config))
-            if (isPublicFile) {
-              // referencing public dir url, prefix with base
-              overwriteAttrValue(
-                s,
-                sourceCodeLocation!,
-                partialEncodeURIPath(toOutputPublicFilePath(url)),
-              )
+              const line = s.slice(Math.max(0, lineStartOffset), startOffset)
+              isLineEmpty = !line.trim()
+            } catch {
+              // magic-string may throw if there's some content removed in the sliced string,
+              // which we ignore and assume the line is not empty
             }
 
-            if (isModule) {
-              inlineModuleIndex++
-              if (url && !isExcludedUrl(url) && !isPublicFile) {
-                setModuleSideEffectPromises.push(
-                  this.resolve(url, id)
-                    .then((resolved) => {
-                      if (!resolved) {
-                        return Promise.reject()
-                      }
-                      return this.load(resolved)
-                    })
-                    .then((mod) => {
-                      // set this to keep the module even if `treeshake.moduleSideEffects=false` is set
-                      mod.moduleSideEffects = true
-                    }),
-                )
-                // <script type="module" src="..."/>
-                // add it as an import
-                js += `\nimport ${JSON.stringify(url)}`
-                shouldRemove = true
-              } else if (node.childNodes.length) {
-                const scriptNode =
-                  node.childNodes.pop() as DefaultTreeAdapterMap['textNode']
-                const contents = scriptNode.value
-                // <script type="module">...</script>
-                const filePath = id.replace(normalizePath(config.root), '')
-                addToHTMLProxyCache(config, filePath, inlineModuleIndex, {
-                  code: contents,
-                })
-                js += `\nimport "${id}?html-proxy&index=${inlineModuleIndex}.js"`
-                shouldRemove = true
-              }
-
-              everyScriptIsAsync &&= isAsync
-              someScriptsAreAsync ||= isAsync
-              someScriptsAreDefer ||= !isAsync
-            } else if (url && !isPublicFile) {
-              if (!isExcludedUrl(url)) {
-                config.logger.warn(
-                  `<script src="${url}"> in "${publicPath}" can't be bundled without type="module" attribute`,
-                )
-              }
-            } else if (node.childNodes.length) {
-              const scriptNode =
-                node.childNodes.pop() as DefaultTreeAdapterMap['textNode']
-              scriptUrls.push(
-                ...extractImportExpressionFromClassicScript(scriptNode),
-              )
-            }
+            return isLineEmpty ? lineStartOffset : startOffset
           }
 
-          // For asset references in index.html, also generate an import
-          // statement for each - this will be handled by the asset plugin
-          const assetAttrs = assetAttrsConfig[node.nodeName]
-          if (assetAttrs) {
-            for (const p of node.attrs) {
-              const attrKey = getAttrKey(p)
-              if (p.value && assetAttrs.includes(attrKey)) {
-                if (attrKey === 'srcset') {
-                  assetUrlsPromises.push(
-                    (async () => {
-                      const processedEncodedUrl = await processSrcSet(
-                        p.value,
-                        async ({ url }) => {
-                          const decodedUrl = decodeURI(url)
-                          if (!isExcludedUrl(decodedUrl)) {
-                            const result = await processAssetUrl(url)
-                            return result !== decodedUrl
-                              ? encodeURIPath(result)
-                              : url
-                          }
-                          return url
-                        },
-                      )
-                      if (processedEncodedUrl !== p.value) {
-                        overwriteAttrValue(
-                          s,
-                          getAttrSourceCodeLocation(node, attrKey),
-                          processedEncodedUrl,
-                        )
-                      }
-                    })(),
+          // pre-transform
+          html = await applyHtmlTransforms(html, preHooks, this, {
+            path: publicPath,
+            filename: id,
+          })
+
+          let js = ''
+          const s = new MagicString(html)
+          const scriptUrls: ScriptAssetsUrl[] = []
+          const styleUrls: ScriptAssetsUrl[] = []
+          let inlineModuleIndex = -1
+
+          let everyScriptIsAsync = true
+          let someScriptsAreAsync = false
+          let someScriptsAreDefer = false
+
+          const assetUrlsPromises: Promise<void>[] = []
+
+          // for each encountered asset url, rewrite original html so that it
+          // references the post-build location, ignoring empty attributes and
+          // attributes that directly reference named output.
+          const namedOutput = Object.keys(
+            config.build.rollupOptions.input || {},
+          )
+          const processAssetUrl = async (
+            url: string,
+            shouldInline?: boolean,
+          ) => {
+            if (
+              url !== '' && // Empty attribute
+              !namedOutput.includes(url) && // Direct reference to named output
+              !namedOutput.includes(removeLeadingSlash(url)) // Allow for absolute references as named output can't be an absolute path
+            ) {
+              try {
+                return await urlToBuiltUrl(this, url, id, shouldInline)
+              } catch (e) {
+                if (e.code !== 'ENOENT') {
+                  throw e
+                }
+              }
+            }
+            return url
+          }
+
+          const setModuleSideEffectPromises: Promise<void>[] = []
+          await traverseHtml(html, id, (node) => {
+            if (!nodeIsElement(node)) {
+              return
+            }
+
+            let shouldRemove = false
+
+            // script tags
+            if (node.nodeName === 'script') {
+              const {
+                src,
+                srcSourceCodeLocation,
+                isModule,
+                isAsync,
+                isIgnored,
+              } = getScriptInfo(node)
+
+              if (isIgnored) {
+                removeViteIgnoreAttr(s, node.sourceCodeLocation!)
+              } else {
+                const url = src && src.value
+                const isPublicFile = !!(url && checkPublicFile(url, config))
+                if (isPublicFile) {
+                  // referencing public dir url, prefix with base
+                  overwriteAttrValue(
+                    s,
+                    srcSourceCodeLocation!,
+                    partialEncodeURIPath(toOutputPublicFilePath(url)),
                   )
-                } else {
-                  const url = decodeURI(p.value)
-                  if (checkPublicFile(url, config)) {
-                    overwriteAttrValue(
-                      s,
-                      getAttrSourceCodeLocation(node, attrKey),
-                      partialEncodeURIPath(toOutputPublicFilePath(url)),
-                    )
-                  } else if (!isExcludedUrl(url)) {
-                    if (
-                      node.nodeName === 'link' &&
-                      isCSSRequest(url) &&
-                      // should not be converted if following attributes are present (#6748)
-                      !node.attrs.some(
-                        (p) =>
-                          p.prefix === undefined &&
-                          (p.name === 'media' || p.name === 'disabled'),
-                      )
-                    ) {
-                      // CSS references, convert to import
-                      const importExpression = `\nimport ${JSON.stringify(url)}`
-                      styleUrls.push({
-                        url,
-                        start: nodeStartWithLeadingWhitespace(node),
-                        end: node.sourceCodeLocation!.endOffset,
-                      })
-                      js += importExpression
-                    } else {
-                      // If the node is a link, check if it can be inlined. If not, set `shouldInline`
-                      // to `false` to force no inline. If `undefined`, it leaves to the default heuristics.
-                      const isNoInlineLink =
-                        node.nodeName === 'link' &&
-                        node.attrs.some(
-                          (p) =>
-                            p.name === 'rel' &&
-                            parseRelAttr(p.value).some((v) =>
-                              noInlineLinkRels.has(v),
-                            ),
-                        )
-                      const shouldInline = isNoInlineLink ? false : undefined
-                      assetUrlsPromises.push(
-                        (async () => {
-                          const processedUrl = await processAssetUrl(
-                            url,
-                            shouldInline,
+                }
+
+                if (isModule) {
+                  inlineModuleIndex++
+                  if (url && !isExcludedUrl(url) && !isPublicFile) {
+                    setModuleSideEffectPromises.push(
+                      this.resolve(url, id).then((resolved) => {
+                        if (!resolved) {
+                          return Promise.reject(
+                            new Error(`Failed to resolve ${url} from ${id}`),
                           )
-                          if (processedUrl !== url) {
-                            overwriteAttrValue(
-                              s,
-                              getAttrSourceCodeLocation(node, attrKey),
-                              partialEncodeURIPath(processedUrl),
-                            )
-                          }
-                        })(),
-                      )
+                        }
+                        // set moduleSideEffects to keep the module even if `treeshake.moduleSideEffects=false` is set
+                        const moduleInfo = this.getModuleInfo(resolved.id)
+                        if (moduleInfo) {
+                          moduleInfo.moduleSideEffects = true
+                        } else if (!resolved.external) {
+                          return this.load(resolved).then((mod) => {
+                            mod.moduleSideEffects = true
+                          })
+                        }
+                      }),
+                    )
+                    // <script type="module" src="..."/>
+                    // add it as an import
+                    js += `\nimport ${JSON.stringify(url)}`
+                    shouldRemove = true
+                  } else if (node.childNodes.length) {
+                    const scriptNode =
+                      node.childNodes.pop() as DefaultTreeAdapterMap['textNode']
+                    const contents = scriptNode.value
+                    // <script type="module">...</script>
+                    const filePath = id.replace(normalizePath(config.root), '')
+                    addToHTMLProxyCache(config, filePath, inlineModuleIndex, {
+                      code: contents,
+                    })
+                    js += `\nimport "${id}?html-proxy&index=${inlineModuleIndex}.js"`
+                    shouldRemove = true
+                  }
+
+                  everyScriptIsAsync &&= isAsync
+                  someScriptsAreAsync ||= isAsync
+                  someScriptsAreDefer ||= !isAsync
+                } else if (url && !isPublicFile) {
+                  if (!isExcludedUrl(url)) {
+                    config.logger.warn(
+                      `<script src="${url}"> in "${publicPath}" can't be bundled without type="module" attribute`,
+                    )
+                  }
+                } else if (node.childNodes.length) {
+                  const scriptNode =
+                    node.childNodes.pop() as DefaultTreeAdapterMap['textNode']
+                  scriptUrls.push(
+                    ...extractImportExpressionFromClassicScript(scriptNode),
+                  )
+                }
+              }
+            }
+
+            // For asset references in index.html, also generate an import
+            // statement for each - this will be handled by the asset plugin
+            const assetAttributes = getNodeAssetAttributes(node)
+            for (const attr of assetAttributes) {
+              if (attr.type === 'remove') {
+                s.remove(attr.location.startOffset, attr.location.endOffset)
+                continue
+              } else if (attr.type === 'srcset') {
+                assetUrlsPromises.push(
+                  (async () => {
+                    const processedEncodedUrl = await processSrcSet(
+                      attr.value,
+                      async ({ url }) => {
+                        const decodedUrl = decodeURIIfPossible(url)
+                        if (
+                          decodedUrl !== undefined &&
+                          !isExcludedUrl(decodedUrl)
+                        ) {
+                          const result = await processAssetUrl(url)
+                          return result !== decodedUrl
+                            ? encodeURIPath(result)
+                            : url
+                        }
+                        return url
+                      },
+                    )
+                    if (processedEncodedUrl !== attr.value) {
+                      overwriteAttrValue(s, attr.location, processedEncodedUrl)
                     }
+                  })(),
+                )
+              } else if (attr.type === 'src') {
+                const url = decodeURIIfPossible(attr.value)
+                if (url === undefined) {
+                  // ignore it
+                } else if (checkPublicFile(url, config)) {
+                  overwriteAttrValue(
+                    s,
+                    attr.location,
+                    partialEncodeURIPath(toOutputPublicFilePath(url)),
+                  )
+                } else if (!isExcludedUrl(url)) {
+                  if (
+                    node.nodeName === 'link' &&
+                    isCSSRequest(url) &&
+                    // should not be converted if following attributes are present (#6748)
+                    !(
+                      'media' in attr.attributes ||
+                      'disabled' in attr.attributes
+                    )
+                  ) {
+                    // CSS references, convert to import
+                    const importExpression = `\nimport ${JSON.stringify(url)}`
+                    styleUrls.push({
+                      url,
+                      start: nodeStartWithLeadingWhitespace(node),
+                      end: node.sourceCodeLocation!.endOffset,
+                    })
+                    js += importExpression
+                  } else {
+                    // If the node is a link, check if it can be inlined. If not, set `shouldInline`
+                    // to `false` to force no inline. If `undefined`, it leaves to the default heuristics.
+                    const isNoInlineLink =
+                      node.nodeName === 'link' &&
+                      attr.attributes.rel &&
+                      parseRelAttr(attr.attributes.rel).some((v) =>
+                        noInlineLinkRels.has(v),
+                      )
+                    const shouldInline = isNoInlineLink ? false : undefined
+                    assetUrlsPromises.push(
+                      (async () => {
+                        const processedUrl = await processAssetUrl(
+                          url,
+                          shouldInline,
+                        )
+                        if (processedUrl !== url) {
+                          overwriteAttrValue(
+                            s,
+                            attr.location,
+                            partialEncodeURIPath(processedUrl),
+                          )
+                        }
+                      })(),
+                    )
                   }
                 }
               }
             }
-          }
 
-          const inlineStyle = findNeedTransformStyleAttribute(node)
-          if (inlineStyle) {
-            inlineModuleIndex++
-            // replace `inline style` with __VITE_INLINE_CSS__**_**__
-            // and import css in js code
-            const code = inlineStyle.attr.value
-            const filePath = id.replace(normalizePath(config.root), '')
-            addToHTMLProxyCache(config, filePath, inlineModuleIndex, { code })
-            // will transform with css plugin and cache result with css-post plugin
-            js += `\nimport "${id}?html-proxy&inline-css&style-attr&index=${inlineModuleIndex}.css"`
-            const hash = getHash(cleanUrl(id))
-            // will transform in `applyHtmlTransforms`
-            overwriteAttrValue(
-              s,
-              inlineStyle.location!,
-              `__VITE_INLINE_CSS__${hash}_${inlineModuleIndex}__`,
+            const inlineStyle = findNeedTransformStyleAttribute(node)
+            if (inlineStyle) {
+              inlineModuleIndex++
+              // replace `inline style` with __VITE_INLINE_CSS__**_**__
+              // and import css in js code
+              const code = inlineStyle.attr.value
+              const filePath = id.replace(normalizePath(config.root), '')
+              addToHTMLProxyCache(config, filePath, inlineModuleIndex, { code })
+              // will transform with css plugin and cache result with css-post plugin
+              js += `\nimport "${id}?html-proxy&inline-css&style-attr&index=${inlineModuleIndex}.css"`
+              const hash = getHash(cleanUrl(id))
+              // will transform in `applyHtmlTransforms`
+              overwriteAttrValue(
+                s,
+                inlineStyle.location!,
+                `__VITE_INLINE_CSS__${hash}_${inlineModuleIndex}__`,
+              )
+            }
+
+            // <style>...</style>
+            if (node.nodeName === 'style' && node.childNodes.length) {
+              const styleNode =
+                node.childNodes.pop() as DefaultTreeAdapterMap['textNode']
+              const filePath = id.replace(normalizePath(config.root), '')
+              inlineModuleIndex++
+              addToHTMLProxyCache(config, filePath, inlineModuleIndex, {
+                code: styleNode.value,
+              })
+              js += `\nimport "${id}?html-proxy&inline-css&index=${inlineModuleIndex}.css"`
+              const hash = getHash(cleanUrl(id))
+              // will transform in `applyHtmlTransforms`
+              s.update(
+                styleNode.sourceCodeLocation!.startOffset,
+                styleNode.sourceCodeLocation!.endOffset,
+                `__VITE_INLINE_CSS__${hash}_${inlineModuleIndex}__`,
+              )
+            }
+
+            if (shouldRemove) {
+              // remove the script tag from the html. we are going to inject new
+              // ones in the end.
+              s.remove(
+                nodeStartWithLeadingWhitespace(node),
+                node.sourceCodeLocation!.endOffset,
+              )
+            }
+          })
+
+          isAsyncScriptMap.get(config)!.set(id, everyScriptIsAsync)
+
+          if (someScriptsAreAsync && someScriptsAreDefer) {
+            config.logger.warn(
+              `\nMixed async and defer script modules in ${id}, output script will fallback to defer. Every script, including inline ones, need to be marked as async for your output script to be async.`,
             )
           }
 
-          // <style>...</style>
-          if (node.nodeName === 'style' && node.childNodes.length) {
-            const styleNode =
-              node.childNodes.pop() as DefaultTreeAdapterMap['textNode']
-            const filePath = id.replace(normalizePath(config.root), '')
-            inlineModuleIndex++
-            addToHTMLProxyCache(config, filePath, inlineModuleIndex, {
-              code: styleNode.value,
-            })
-            js += `\nimport "${id}?html-proxy&inline-css&index=${inlineModuleIndex}.css"`
-            const hash = getHash(cleanUrl(id))
-            // will transform in `applyHtmlTransforms`
-            s.update(
-              styleNode.sourceCodeLocation!.startOffset,
-              styleNode.sourceCodeLocation!.endOffset,
-              `__VITE_INLINE_CSS__${hash}_${inlineModuleIndex}__`,
-            )
+          await Promise.all(assetUrlsPromises)
+
+          // emit <script>import("./aaa")</script> asset
+          for (const { start, end, url } of scriptUrls) {
+            if (checkPublicFile(url, config)) {
+              s.update(
+                start,
+                end,
+                partialEncodeURIPath(toOutputPublicFilePath(url)),
+              )
+            } else if (!isExcludedUrl(url)) {
+              s.update(
+                start,
+                end,
+                partialEncodeURIPath(await urlToBuiltUrl(this, url, id)),
+              )
+            }
           }
 
-          if (shouldRemove) {
-            // remove the script tag from the html. we are going to inject new
-            // ones in the end.
-            s.remove(
-              nodeStartWithLeadingWhitespace(node),
-              node.sourceCodeLocation!.endOffset,
-            )
-          }
-        })
-
-        isAsyncScriptMap.get(config)!.set(id, everyScriptIsAsync)
-
-        if (someScriptsAreAsync && someScriptsAreDefer) {
-          config.logger.warn(
-            `\nMixed async and defer script modules in ${id}, output script will fallback to defer. Every script, including inline ones, need to be marked as async for your output script to be async.`,
+          // ignore <link rel="stylesheet"> if its url can't be resolved
+          const resolvedStyleUrls = await Promise.all(
+            styleUrls.map(async (styleUrl) => ({
+              ...styleUrl,
+              resolved: await this.resolve(styleUrl.url, id),
+            })),
           )
-        }
-
-        await Promise.all(assetUrlsPromises)
-
-        // emit <script>import("./aaa")</script> asset
-        for (const { start, end, url } of scriptUrls) {
-          if (checkPublicFile(url, config)) {
-            s.update(
-              start,
-              end,
-              partialEncodeURIPath(toOutputPublicFilePath(url)),
-            )
-          } else if (!isExcludedUrl(url)) {
-            s.update(
-              start,
-              end,
-              partialEncodeURIPath(await urlToBuiltUrl(this, url, id)),
-            )
+          for (const { start, end, url, resolved } of resolvedStyleUrls) {
+            if (resolved == null) {
+              config.logger.warnOnce(
+                `\n${url} doesn't exist at build time, it will remain unchanged to be resolved at runtime`,
+              )
+              const importExpression = `\nimport ${JSON.stringify(url)}`
+              js = js.replace(importExpression, '')
+            } else {
+              s.remove(start, end)
+            }
           }
-        }
 
-        // ignore <link rel="stylesheet"> if its url can't be resolved
-        const resolvedStyleUrls = await Promise.all(
-          styleUrls.map(async (styleUrl) => ({
-            ...styleUrl,
-            resolved: await this.resolve(styleUrl.url, id),
-          })),
-        )
-        for (const { start, end, url, resolved } of resolvedStyleUrls) {
-          if (resolved == null) {
-            config.logger.warnOnce(
-              `\n${url} doesn't exist at build time, it will remain unchanged to be resolved at runtime`,
-            )
-            const importExpression = `\nimport ${JSON.stringify(url)}`
-            js = js.replace(importExpression, '')
-          } else {
-            s.remove(start, end)
+          processedHtml(this).set(id, s.toString())
+
+          // inject module preload polyfill only when configured and needed
+          const { modulePreload } = this.environment.config.build
+          if (
+            modulePreload !== false &&
+            modulePreload.polyfill &&
+            (someScriptsAreAsync || someScriptsAreDefer)
+          ) {
+            js = `import "${modulePreloadPolyfillId}";\n${js}`
           }
+
+          await Promise.all(setModuleSideEffectPromises)
+
+          // Force rollup to keep this module from being shared between other entry points.
+          // If the resulting chunk is empty, it will be removed in generateBundle.
+          return { code: js, moduleSideEffects: 'no-treeshake' }
         }
-
-        processedHtml(this).set(id, s.toString())
-
-        // inject module preload polyfill only when configured and needed
-        const { modulePreload } = this.environment.config.build
-        if (
-          modulePreload !== false &&
-          modulePreload.polyfill &&
-          (someScriptsAreAsync || someScriptsAreDefer)
-        ) {
-          js = `import "${modulePreloadPolyfillId}";\n${js}`
-        }
-
-        await Promise.all(setModuleSideEffectPromises)
-
-        // Force rollup to keep this module from being shared between other entry points.
-        // If the resulting chunk is empty, it will be removed in generateBundle.
-        return { code: js, moduleSideEffects: 'no-treeshake' }
-      }
+      },
     },
 
     async generateBundle(options, bundle) {
-      const analyzedChunk = new Map<OutputChunk, number>()
+      const analyzedImportedCssFiles = new Map<OutputChunk, string[]>()
       const inlineEntryChunk = new Set<string>()
       const getImportedChunks = (
         chunk: OutputChunk,
         seen: Set<string> = new Set(),
-      ): OutputChunk[] => {
-        const chunks: OutputChunk[] = []
+      ): (OutputChunk | string)[] => {
+        const chunks: (OutputChunk | string)[] = []
         chunk.imports.forEach((file) => {
           const importee = bundle[file]
-          if (importee?.type === 'chunk' && !seen.has(file)) {
-            seen.add(file)
+          if (importee) {
+            if (importee.type === 'chunk' && !seen.has(file)) {
+              seen.add(file)
 
-            // post-order traversal
-            chunks.push(...getImportedChunks(importee, seen))
-            chunks.push(importee)
+              // post-order traversal
+              chunks.push(...getImportedChunks(importee, seen))
+              chunks.push(importee)
+            }
+          } else {
+            // external imports
+            chunks.push(file)
           }
         })
         return chunks
       }
 
       const toScriptTag = (
-        chunk: OutputChunk,
+        chunkOrUrl: OutputChunk | string,
         toOutputPath: (filename: string) => string,
         isAsync: boolean,
       ): HtmlTagDescriptor => ({
@@ -747,7 +781,10 @@ export function buildHtmlPlugin(config: ResolvedConfig): Plugin {
           // https://developer.chrome.com/blog/modulepreload/#ok-so-why-doesnt-link-relpreload-work-for-modules:~:text=For%20%3Cscript%3E,of%20other%20modules.
           // Now `<script type="module">` uses `same origin`: https://github.com/whatwg/html/pull/3656#:~:text=Module%20scripts%20are%20always%20fetched%20with%20credentials%20mode%20%22same%2Dorigin%22%20by%20default%20and%20can%20no%20longer%0Ause%20%22omit%22
           crossorigin: true,
-          src: toOutputPath(chunk.fileName),
+          src:
+            typeof chunkOrUrl === 'string'
+              ? chunkOrUrl
+              : toOutputPath(chunkOrUrl.fileName),
         },
       })
 
@@ -763,38 +800,61 @@ export function buildHtmlPlugin(config: ResolvedConfig): Plugin {
         },
       })
 
-      const getCssTagsForChunk = (
-        chunk: OutputChunk,
+      const toStyleSheetLinkTag = (
+        file: string,
         toOutputPath: (filename: string) => string,
-        seen: Set<string> = new Set(),
-      ): HtmlTagDescriptor[] => {
-        const tags: HtmlTagDescriptor[] = []
-        if (!analyzedChunk.has(chunk)) {
-          analyzedChunk.set(chunk, 1)
-          chunk.imports.forEach((file) => {
-            const importee = bundle[file]
-            if (importee?.type === 'chunk') {
-              tags.push(...getCssTagsForChunk(importee, toOutputPath, seen))
-            }
-          })
+      ): HtmlTagDescriptor => ({
+        tag: 'link',
+        attrs: {
+          rel: 'stylesheet',
+          crossorigin: true,
+          href: toOutputPath(file),
+        },
+      })
+
+      const getCssFilesForChunk = (
+        chunk: OutputChunk,
+        seenChunks: Set<string> = new Set(),
+        seenCss: Set<string> = new Set(),
+      ): string[] => {
+        if (seenChunks.has(chunk.fileName)) {
+          return []
+        }
+        seenChunks.add(chunk.fileName)
+
+        if (analyzedImportedCssFiles.has(chunk)) {
+          const files = analyzedImportedCssFiles.get(chunk)!
+          const additionals = files.filter((file) => !seenCss.has(file))
+          additionals.forEach((file) => seenCss.add(file))
+          return additionals
         }
 
+        const files: string[] = []
+        chunk.imports.forEach((file) => {
+          const importee = bundle[file]
+          if (importee?.type === 'chunk') {
+            files.push(...getCssFilesForChunk(importee, seenChunks, seenCss))
+          }
+        })
+        analyzedImportedCssFiles.set(chunk, files)
+
         chunk.viteMetadata!.importedCss.forEach((file) => {
-          if (!seen.has(file)) {
-            seen.add(file)
-            tags.push({
-              tag: 'link',
-              attrs: {
-                rel: 'stylesheet',
-                crossorigin: true,
-                href: toOutputPath(file),
-              },
-            })
+          if (!seenCss.has(file)) {
+            seenCss.add(file)
+            files.push(file)
           }
         })
 
-        return tags
+        return files
       }
+
+      const getCssTagsForChunk = (
+        chunk: OutputChunk,
+        toOutputPath: (filename: string) => string,
+      ) =>
+        getCssFilesForChunk(chunk).map((file) =>
+          toStyleSheetLinkTag(file, toOutputPath),
+        )
 
       for (const [normalizedId, html] of processedHtml(this)) {
         const relativeUrlPath = normalizePath(
@@ -864,7 +924,9 @@ export function buildHtmlPlugin(config: ResolvedConfig): Plugin {
               const resolveDependencies =
                 typeof modulePreload === 'object' &&
                 modulePreload.resolveDependencies
-              const importsFileNames = imports.map((chunk) => chunk.fileName)
+              const importsFileNames = imports
+                .filter((chunkOrUrl) => typeof chunkOrUrl !== 'string')
+                .map((chunk) => chunk.fileName)
               const resolvedDeps = resolveDependencies
                 ? resolveDependencies(chunk.fileName, importsFileNames, {
                     hostId: relativeUrlPath,
@@ -885,10 +947,13 @@ export function buildHtmlPlugin(config: ResolvedConfig): Plugin {
 
         // inject css link when cssCodeSplit is false
         if (!this.environment.config.build.cssCodeSplit) {
-          const cssChunk = Object.values(bundle).find(
-            (chunk) =>
-              chunk.type === 'asset' && chunk.names.includes('style.css'),
-          ) as OutputAsset | undefined
+          const cssBundleName = cssBundleNameCache.get(config)
+          const cssChunk =
+            cssBundleName &&
+            (Object.values(bundle).find(
+              (chunk) =>
+                chunk.type === 'asset' && chunk.names.includes(cssBundleName),
+            ) as OutputAsset | undefined)
           if (cssChunk) {
             result = injectToHead(result, [
               {
@@ -919,6 +984,7 @@ export function buildHtmlPlugin(config: ResolvedConfig): Plugin {
         result = await applyHtmlTransforms(
           result,
           [...normalHooks, ...postHooks],
+          this,
           {
             path: '/' + relativeUrlPath,
             filename: normalizedId,
@@ -941,7 +1007,7 @@ export function buildHtmlPlugin(config: ResolvedConfig): Plugin {
           )
 
           return encodeURIPath(
-            urlCanParse(publicAssetPath)
+            URL.canParse(publicAssetPath)
               ? publicAssetPath
               : normalizePath(publicAssetPath),
           )
@@ -1047,7 +1113,7 @@ export interface IndexHtmlTransformContext {
 }
 
 export type IndexHtmlTransformHook = (
-  this: void,
+  this: MinimalPluginContextWithoutEnvironment,
   html: string,
   ctx: IndexHtmlTransformContext,
 ) => IndexHtmlTransformResult | void | Promise<IndexHtmlTransformResult | void>
@@ -1056,21 +1122,6 @@ export type IndexHtmlTransform =
   | IndexHtmlTransformHook
   | {
       order?: 'pre' | 'post' | null
-      /**
-       * @deprecated renamed to `order`
-       */
-      enforce?: 'pre' | 'post'
-      /**
-       * @deprecated renamed to `handler`
-       */
-      transform: IndexHtmlTransformHook
-    }
-  | {
-      order?: 'pre' | 'post' | null
-      /**
-       * @deprecated renamed to `order`
-       */
-      enforce?: 'pre' | 'post'
       handler: IndexHtmlTransformHook
     }
 
@@ -1239,7 +1290,6 @@ export function injectNonceAttributeTagHook(
 
 export function resolveHtmlTransforms(
   plugins: readonly Plugin[],
-  logger: Logger,
 ): [
   IndexHtmlTransformHook[],
   IndexHtmlTransformHook[],
@@ -1256,31 +1306,10 @@ export function resolveHtmlTransforms(
     if (typeof hook === 'function') {
       normalHooks.push(hook)
     } else {
-      if (!('order' in hook) && 'enforce' in hook) {
-        logger.warnOnce(
-          colors.yellow(
-            `plugin '${plugin.name}' uses deprecated 'enforce' option. Use 'order' option instead.`,
-          ),
-        )
-      }
-      if (!('handler' in hook) && 'transform' in hook) {
-        logger.warnOnce(
-          colors.yellow(
-            `plugin '${plugin.name}' uses deprecated 'transform' option. Use 'handler' option instead.`,
-          ),
-        )
-      }
-
-      // `enforce` had only two possible values for the `transformIndexHtml` hook
-      // `'pre'` and `'post'` (the default). `order` now works with three values
-      // to align with other hooks (`'pre'`, normal, and `'post'`). We map
-      // both `enforce: 'post'` to `order: undefined` to avoid a breaking change
-      const order = hook.order ?? (hook.enforce === 'pre' ? 'pre' : undefined)
-      // @ts-expect-error union type
-      const handler = hook.handler ?? hook.transform
-      if (order === 'pre') {
+      const handler = hook.handler
+      if (hook.order === 'pre') {
         preHooks.push(handler)
-      } else if (order === 'post') {
+      } else if (hook.order === 'post') {
         postHooks.push(handler)
       } else {
         normalHooks.push(handler)
@@ -1330,10 +1359,11 @@ function headTagInsertCheck(
 export async function applyHtmlTransforms(
   html: string,
   hooks: IndexHtmlTransformHook[],
+  pluginContext: MinimalPluginContextWithoutEnvironment,
   ctx: IndexHtmlTransformContext,
 ): Promise<string> {
   for (const hook of hooks) {
-    const res = await hook(html, ctx)
+    const res = await hook.call(pluginContext, html, ctx)
     if (!res) {
       continue
     }
@@ -1539,13 +1569,11 @@ function incrementIndent(indent: string = '') {
   return `${indent}${indent[0] === '\t' ? '\t' : '  '}`
 }
 
-export function getAttrKey(attr: Token.Attribute): string {
-  return attr.prefix === undefined ? attr.name : `${attr.prefix}:${attr.name}`
-}
-
-function getAttrSourceCodeLocation(
-  node: DefaultTreeAdapterMap['element'],
-  attrKey: string,
-) {
-  return node.sourceCodeLocation!.attrs![attrKey]
+function decodeURIIfPossible(input: string): string | undefined {
+  try {
+    return decodeURI(input)
+  } catch {
+    // url is malformed, probably a interpolate syntax of template engines
+    return
+  }
 }

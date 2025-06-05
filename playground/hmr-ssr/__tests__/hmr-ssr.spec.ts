@@ -11,11 +11,7 @@ import {
   vi,
 } from 'vitest'
 import type { InlineConfig, RunnableDevEnvironment, ViteDevServer } from 'vite'
-import {
-  createRunnableDevEnvironment,
-  createServer,
-  createServerHotChannel,
-} from 'vite'
+import { createRunnableDevEnvironment, createServer } from 'vite'
 import type { ModuleRunner } from 'vite/module-runner'
 import {
   addFile,
@@ -220,6 +216,26 @@ if (!isBuild) {
       )
     })
 
+    test('invalidate in circular dep should not trigger infinite HMR', async () => {
+      const el = () => hmr('.invalidation-circular-deps')
+      await untilUpdated(() => el(), 'child')
+      editFile(
+        'invalidation-circular-deps/circular-invalidate/child.js',
+        (code) => code.replace('child', 'child updated'),
+      )
+      await untilUpdated(() => el(), 'child updated')
+    })
+
+    test('invalidate in circular dep should be hot updated if possible', async () => {
+      const el = () => hmr('.invalidation-circular-deps-handled')
+      await untilUpdated(() => el(), 'child')
+      editFile(
+        'invalidation-circular-deps/invalidate-handled-in-circle/child.js',
+        (code) => code.replace('child', 'child updated'),
+      )
+      await untilUpdated(() => el(), 'child updated')
+    })
+
     test('plugin hmr handler + custom event', async () => {
       const el = () => hmr('.custom')
       editFile('customFile.js', (code) => code.replace('custom', 'edited'))
@@ -254,7 +270,7 @@ if (!isBuild) {
 
   describe('self accept with different entry point formats', () => {
     test.each(['./unresolved.ts', './unresolved', '/unresolved'])(
-      'accepts if entry point is relative to root',
+      'accepts if entry point is relative to root %s',
       async (entrypoint) => {
         await setupModuleRunner(entrypoint, {}, '/unresolved.ts')
 
@@ -274,7 +290,7 @@ if (!isBuild) {
             'foo was: 1',
             '(self-accepting 1) foo is now: 2',
             '(self-accepting 2) foo is now: 2',
-            updated('/unresolved.ts'),
+            updated(entrypoint),
           ],
           true,
         )
@@ -289,7 +305,7 @@ if (!isBuild) {
             'foo was: 2',
             '(self-accepting 1) foo is now: 3',
             '(self-accepting 2) foo is now: 3',
-            updated('/unresolved.ts'),
+            updated(entrypoint),
           ],
           true,
         )
@@ -855,20 +871,17 @@ if (!isBuild) {
     editFile('self-accept-within-circular/c.js', (code) =>
       code.replace(`export const c = 'c'`, `export const c = 'cc'`),
     )
+    // it throws a same error as browser case,
+    // but it doesn't auto reload and it calls `hot.accept(nextExports)` with `nextExports = undefined`
+    await untilUpdated(() => el(), '')
+
+    // test reloading manually for now
+    server.moduleGraph.invalidateAll() // TODO: why is `runner.clearCache()` not enough?
+    await runner.import('/self-accept-within-circular/index')
     await untilUpdated(() => el(), 'cc')
-    await vi.waitFor(() => {
-      expect(serverLogs.length).greaterThanOrEqual(1)
-      // Should still keep hmr update, but it'll error on the browser-side and will refresh itself.
-      // Match on full log not possible because of color markers
-      expect(serverLogs.at(-1)!).toContain('hmr update')
-    })
   })
 
-  test('hmr should not reload if no accepted within circular imported files', async (ctx) => {
-    // TODO: Investigate race condition that causes an inconsistent behaviour for the last `untilUpdated`
-    // assertion where it'll sometimes receive "mod-a -> mod-b (edited) -> mod-c -> mod-a (expected no error)"
-    ctx.skip()
-
+  test('hmr should not reload if no accepted within circular imported files', async () => {
     await setupModuleRunner('/circular/index')
     const el = () => hmr('.circular')
     expect(el()).toBe(
@@ -884,9 +897,24 @@ if (!isBuild) {
     )
   })
 
-  test('assets HMR', async () => {
+  test('not inlined assets HMR', async () => {
+    await setupModuleRunner('/hmr.ts')
+    const el = () => hmr('#logo-no-inline')
+    await untilConsoleLogAfter(
+      () =>
+        editFile('logo-no-inline.svg', (code) =>
+          code.replace('height="30px"', 'height="40px"'),
+        ),
+      /Logo-no-inline updated/,
+    )
+    await vi.waitUntil(() => el().includes('logo-no-inline.svg?t='))
+  })
+
+  test('inlined assets HMR', async () => {
     await setupModuleRunner('/hmr.ts')
     const el = () => hmr('#logo')
+    const initialLogoUrl = el()
+    expect(initialLogoUrl).toMatch(/^data:image\/svg\+xml/)
     await untilConsoleLogAfter(
       () =>
         editFile('logo.svg', (code) =>
@@ -894,7 +922,10 @@ if (!isBuild) {
         ),
       /Logo updated/,
     )
-    await vi.waitUntil(() => el().includes('logo.svg?t='))
+    // Should be updated with new data url
+    const updatedLogoUrl = el()
+    expect(updatedLogoUrl).toMatch(/^data:image\/svg\+xml/)
+    expect(updatedLogoUrl).not.toEqual(initialLogoUrl)
   })
 } else {
   test('this file only includes test for serve', () => {
@@ -1067,7 +1098,6 @@ async function setupModuleRunner(
           createEnvironment(name, config) {
             return createRunnableDevEnvironment(name, config, {
               runnerOptions: { hmr: { logger } },
-              hot: createServerHotChannel(),
             })
           },
         },
