@@ -50,6 +50,7 @@ import {
   basePluginContextMeta,
 } from '../pluginContainer'
 import { FullBundleDevEnvironment } from '../environments/fullBundleEnvironment'
+import { getHmrImplementation } from '../../plugins/clientInjections'
 import { checkLoadingAccess, respondWithAccessDenied } from './static'
 
 interface AssetNode {
@@ -459,10 +460,11 @@ export function indexHtmlMiddleware(
     if (url?.endsWith('.html') && req.headers['sec-fetch-dest'] !== 'script') {
       if (memoryFiles) {
         const cleanedUrl = cleanUrl(url).slice(1) // remove first /
-        const content = memoryFiles.get(cleanedUrl)
-        if (!content) {
+        let content = memoryFiles.get(cleanedUrl)
+        if (!content && memoryFiles.size !== 0) {
           return next()
         }
+        content ??= await generateFallbackHtml(server as ViteDevServer)
 
         const html =
           typeof content === 'string' ? content : Buffer.from(content.buffer)
@@ -530,4 +532,51 @@ function preTransformRequest(
   // transform all url as non-ssr as html includes client-side assets only
   decodedUrl = unwrapId(stripBase(decodedUrl, decodedBase))
   server.warmupRequest(decodedUrl)
+}
+
+async function generateFallbackHtml(server: ViteDevServer) {
+  const hmrRuntime = await getHmrImplementation(server.config)
+  return /* html */ `
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <script type="module">
+    ${hmrRuntime.replaceAll('</script>', '<\\/script>')}
+  </script>
+  <style>
+    body {
+      margin: 0;
+      min-height: 100vh;
+      display: flex;
+    }
+
+    .container {
+      margin: auto;
+      padding: 2rem;
+      text-align: center;
+      border-radius: 1rem;
+    }
+
+    .spinner {
+      width: 3rem;
+      height: 3rem;
+      margin: 2rem auto;
+      border: 3px solid #f5f5f7;
+      border-top-color: #0071e3;
+      border-radius: 50%;
+      animation: spin 1s linear infinite;
+    }
+
+    @keyframes spin { to { transform: rotate(360deg) } }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>Bundling in progress</h1>
+    <p>The page will automatically reload when ready.</p>
+    <div class="spinner"></div>
+  </div>
+</body>
+</html>
+`
 }
