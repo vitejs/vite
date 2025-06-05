@@ -600,7 +600,7 @@ const modulesWithBase = {
 }
 ```
 
-The base option can only be a dir path relative to the importer file or absolute against the project root. Aliases and virtual modules aren't supported.
+The base option can only be a directory path relative to the importer file or absolute against the project root. Aliases and virtual modules aren't supported.
 
 Only the globs that are relative paths are interpreted as relative to the resolved base.
 
