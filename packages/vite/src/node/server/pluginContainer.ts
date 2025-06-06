@@ -77,7 +77,7 @@ import {
   rollupVersion,
   timeFrom,
 } from '../utils'
-import { FS_PREFIX } from '../constants'
+import { FS_PREFIX, VERSION as viteVersion } from '../constants'
 import {
   createPluginHookUtils,
   getCachedFilterForPlugin,
@@ -86,6 +86,7 @@ import {
 import { cleanUrl, unwrapId } from '../../shared/utils'
 import type { PluginHookUtils } from '../config'
 import type { Environment } from '../environment'
+import type { Logger } from '../logger'
 import type { DevEnvironment } from './environment'
 import { buildErrorMessage } from './middlewares/error'
 import type {
@@ -136,12 +137,14 @@ export interface PluginContainerOptions {
  * instead of using environment.plugins to allow the creation of different
  * pipelines working with the same environment (used for createIdResolver).
  */
-export async function createEnvironmentPluginContainer(
-  environment: Environment,
-  plugins: Plugin[],
+export async function createEnvironmentPluginContainer<
+  Env extends Environment = Environment,
+>(
+  environment: Env,
+  plugins: readonly Plugin[],
   watcher?: FSWatcher,
   autoStart = true,
-): Promise<EnvironmentPluginContainer> {
+): Promise<EnvironmentPluginContainer<Env>> {
   const container = new EnvironmentPluginContainer(
     environment,
     plugins,
@@ -159,7 +162,7 @@ export type SkipInformation = {
   called?: boolean
 }
 
-class EnvironmentPluginContainer {
+class EnvironmentPluginContainer<Env extends Environment = Environment> {
   private _pluginContextMap = new Map<Plugin, PluginContext>()
   private _resolvedRollupOptions?: InputOptions
   private _processesing = new Set<Promise<any>>()
@@ -176,7 +179,7 @@ class EnvironmentPluginContainer {
 
   moduleGraph: EnvironmentModuleGraph | undefined
   watchFiles = new Set<string>()
-  minimalContext: MinimalPluginContext
+  minimalContext: MinimalPluginContext<Env>
 
   private _started = false
   private _buildStartPromise: Promise<void> | undefined
@@ -186,14 +189,14 @@ class EnvironmentPluginContainer {
    * @internal use `createEnvironmentPluginContainer` instead
    */
   constructor(
-    public environment: Environment,
-    public plugins: Plugin[],
+    public environment: Env,
+    public plugins: readonly Plugin[],
     public watcher?: FSWatcher,
     autoStart = true,
   ) {
     this._started = !autoStart
     this.minimalContext = new MinimalPluginContext(
-      { rollupVersion, watchMode: true },
+      { ...basePluginContextMeta, watchMode: true },
       environment,
     )
     const utils = createPluginHookUtils(plugins)
@@ -557,10 +560,15 @@ class EnvironmentPluginContainer {
   }
 }
 
-class MinimalPluginContext implements RollupMinimalPluginContext {
+export const basePluginContextMeta = {
+  viteVersion,
+  rollupVersion,
+}
+
+export class BasicMinimalPluginContext<Meta = PluginContextMeta> {
   constructor(
-    public meta: PluginContextMeta,
-    public environment: Environment,
+    public meta: Meta,
+    private _logger: Logger,
   ) {}
 
   debug(rawLog: string | RollupLog | (() => string | RollupLog)): void {
@@ -572,7 +580,7 @@ class MinimalPluginContext implements RollupMinimalPluginContext {
   info(rawLog: string | RollupLog | (() => string | RollupLog)): void {
     const log = this._normalizeRawLog(rawLog)
     const msg = buildErrorMessage(log, [`info: ${log.message}`], false)
-    this.environment.logger.info(msg, { clear: true, timestamp: true })
+    this._logger.info(msg, { clear: true, timestamp: true })
   }
 
   warn(rawLog: string | RollupLog | (() => string | RollupLog)): void {
@@ -582,7 +590,7 @@ class MinimalPluginContext implements RollupMinimalPluginContext {
       [colors.yellow(`warning: ${log.message}`)],
       false,
     )
-    this.environment.logger.warn(msg, { clear: true, timestamp: true })
+    this._logger.warn(msg, { clear: true, timestamp: true })
   }
 
   error(e: string | RollupError): never {
@@ -595,6 +603,17 @@ class MinimalPluginContext implements RollupMinimalPluginContext {
   ): RollupLog {
     const logValue = typeof rawLog === 'function' ? rawLog() : rawLog
     return typeof logValue === 'string' ? new Error(logValue) : logValue
+  }
+}
+
+class MinimalPluginContext<T extends Environment = Environment>
+  extends BasicMinimalPluginContext
+  implements RollupMinimalPluginContext
+{
+  public environment: T
+  constructor(meta: PluginContextMeta, environment: T) {
+    super(meta, environment.logger)
+    this.environment = environment
   }
 }
 
@@ -763,7 +782,7 @@ class PluginContext
     position?: number | { column: number; line: number },
   ): never {
     // error thrown here is caught by the transform middleware and passed on
-    // the the error middleware.
+    // the error middleware.
     throw this._formatLog(e, position)
   }
 

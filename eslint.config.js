@@ -52,7 +52,7 @@ export default tseslint.config(
     },
     settings: {
       node: {
-        version: '^20.0.0 || >=22.0.0',
+        version: '^20.19.0 || >=22.12.0',
       },
     },
     plugins: {
@@ -161,7 +161,19 @@ export default tseslint.config(
         { allow: builtinModules.map((mod) => `node:${mod}`) },
       ],
       'import-x/no-duplicates': 'error',
-      'import-x/order': 'error',
+      'import-x/order': [
+        'error',
+        {
+          groups: [
+            'builtin',
+            'external',
+            'internal',
+            'parent',
+            'sibling',
+            'index',
+          ],
+        },
+      ],
       'sort-imports': [
         'error',
         {
@@ -198,7 +210,7 @@ export default tseslint.config(
           name: d,
           message:
             `devDependencies can only be imported using ESM syntax so ` +
-            `that they are included in the rollup bundle. If you are trying to ` +
+            `that they are included in the rolldown bundle. If you are trying to ` +
             `lazy load a dependency, use (await import('dependency')).default instead.`,
         })),
       ],

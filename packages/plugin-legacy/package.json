@@ -1,6 +1,6 @@
 {
   "name": "@vitejs/plugin-legacy",
-  "version": "6.1.1",
+  "version": "7.0.0-beta.0",
   "type": "module",
   "license": "MIT",
   "author": "Evan You",
@@ -13,23 +13,14 @@
     "vite-plugin",
     "@vitejs/plugin-legacy"
   ],
-  "main": "./dist/index.cjs",
-  "module": "./dist/index.js",
-  "types": "./dist/index.d.ts",
-  "exports": {
-    ".": {
-      "import": "./dist/index.js",
-      "require": "./dist/index.cjs"
-    }
-  },
+  "exports": "./dist/index.js",
   "scripts": {
     "dev": "tsdown --watch",
-    "build": "tsdown && pnpm run patch-cjs",
-    "patch-cjs": "tsx ../../scripts/patchCJS.ts",
+    "build": "tsdown",
     "prepublishOnly": "npm run build"
   },
   "engines": {
-    "node": "^20.0.0 || >=22.0.0"
+    "node": "^20.19.0 || >=22.12.0"
   },
   "repository": {
     "type": "git",
@@ -42,9 +33,9 @@
   "homepage": "https://github.com/vitejs/vite/tree/main/packages/plugin-legacy#readme",
   "funding": "https://github.com/vitejs/vite?sponsor=1",
   "dependencies": {
-    "@babel/core": "^7.27.1",
+    "@babel/core": "^7.27.4",
     "@babel/preset-env": "^7.27.2",
-    "browserslist": "^4.24.5",
+    "browserslist": "^4.25.0",
     "browserslist-to-esbuild": "^2.1.1",
     "core-js": "^3.42.0",
     "magic-string": "^0.30.17",
@@ -58,7 +49,7 @@
   "devDependencies": {
     "acorn": "^8.14.1",
     "picocolors": "^1.1.1",
-    "tsdown": "^0.11.12",
+    "tsdown": "^0.12.6",
     "vite": "workspace:*"
   }
 }

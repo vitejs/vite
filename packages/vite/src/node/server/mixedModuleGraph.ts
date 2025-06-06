@@ -1,4 +1,5 @@
 import type { ModuleInfo } from 'rollup'
+import { monotonicDateNow } from '../utils'
 import type { TransformResult } from './transformRequest'
 import type {
   EnvironmentModuleGraph,
@@ -387,7 +388,7 @@ export class ModuleGraph {
   invalidateModule(
     mod: ModuleNode,
     seen = new Set<ModuleNode>(),
-    timestamp: number = Date.now(),
+    timestamp: number = monotonicDateNow(),
     isHmr: boolean = false,
     /** @internal */
     softInvalidate = false,

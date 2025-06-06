@@ -10,27 +10,30 @@ import licensePlugin from './rollupLicensePlugin'
 const pkg = JSON.parse(
   readFileSync(new URL('./package.json', import.meta.url)).toString(),
 )
-
 const __dirname = fileURLToPath(new URL('.', import.meta.url))
 
 const envConfig = defineConfig({
   input: path.resolve(__dirname, 'src/client/env.ts'),
   platform: 'browser',
+  transform: {
+    target: 'es2020',
+  },
   output: {
     dir: path.resolve(__dirname, 'dist'),
     entryFileNames: 'client/env.mjs',
-    target: 'es2020',
   },
 })
 
 const clientConfig = defineConfig({
   input: path.resolve(__dirname, 'src/client/client.ts'),
   platform: 'browser',
+  transform: {
+    target: 'es2020',
+  },
   external: ['@vite/env'],
   output: {
     dir: path.resolve(__dirname, 'dist'),
     entryFileNames: 'client/client.mjs',
-    target: 'es2020',
   },
 })
 
@@ -143,6 +146,7 @@ const nodeConfig = defineConfig({
       'Vite',
     ) as Plugin,
     writeTypesPlugin(),
+    enableSourceMapsInWatchModePlugin(),
     externalizeDepsInWatchPlugin(),
   ],
 })
@@ -158,7 +162,7 @@ const moduleRunnerConfig = defineConfig({
     'rollup/parseAst',
     ...Object.keys(pkg.dependencies),
   ],
-  plugins: [bundleSizeLimit(54)],
+  plugins: [bundleSizeLimit(54), enableSourceMapsInWatchModePlugin()],
   output: {
     ...sharedNodeOptions.output,
     minify: {
@@ -169,35 +173,25 @@ const moduleRunnerConfig = defineConfig({
   },
 })
 
-const cjsConfig = defineConfig({
-  ...sharedNodeOptions,
-  input: {
-    publicUtils: path.resolve(__dirname, 'src/node/publicUtils.ts'),
-  },
-  output: {
-    ...sharedNodeOptions.output,
-    entryFileNames: `node-cjs/[name].cjs`,
-    chunkFileNames: 'node-cjs/chunks/dep-[hash].js',
-    format: 'cjs',
-    target: 'node20',
-  },
-  external: ['fsevents', 'supports-color', ...Object.keys(pkg.dependencies)],
-  plugins: [
-    bundleSizeLimit(120),
-    exportCheck(),
-    externalizeDepsInWatchPlugin(),
-  ],
-})
-
 export default defineConfig([
   envConfig,
   clientConfig,
   nodeConfig,
   moduleRunnerConfig,
-  cjsConfig,
 ])
 
 // #region Plugins
+
+function enableSourceMapsInWatchModePlugin(): Plugin {
+  return {
+    name: 'enable-source-maps',
+    outputOptions(options) {
+      if (this.meta.watchMode) {
+        options.sourcemap = 'inline'
+      }
+    },
+  }
+}
 
 function writeTypesPlugin(): Plugin {
   return {
@@ -424,35 +418,6 @@ function bundleSizeLimit(limit: number): Plugin {
           `Bundle size exceeded ${limit} kB, current size is ${kb.toFixed(
             2,
           )}kb.`,
-        )
-      }
-    },
-  }
-}
-
-function exportCheck(): Plugin {
-  return {
-    name: 'export-check',
-    async writeBundle() {
-      if (this.meta.watchMode) return
-
-      // escape import so that it's not bundled while config load
-      const dynImport = (id: string) => import(id)
-      // ignore warning from CJS entrypoint to avoid misleading logs
-      process.env.VITE_CJS_IGNORE_WARNING = 'true'
-
-      const esmNamespace = await dynImport('./dist/node/index.js')
-      const cjsModuleExports = (await dynImport('./index.cjs')).default
-      const cjsModuleExportsKeys = new Set(
-        Object.getOwnPropertyNames(cjsModuleExports),
-      )
-      const lackingExports = Object.keys(esmNamespace).filter(
-        (key) => !cjsModuleExportsKeys.has(key),
-      )
-      if (lackingExports.length > 0) {
-        this.error(
-          `Exports missing from cjs build: ${lackingExports.join(', ')}.` +
-            ` Please update index.cjs or src/publicUtils.ts.`,
         )
       }
     },

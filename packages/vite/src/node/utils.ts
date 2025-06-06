@@ -1090,17 +1090,8 @@ export const requestQueryMaybeEscapedSplitRE = /\\?\?(?!.*[/|}])/
 
 export const blankReplacer = (match: string): string => ' '.repeat(match.length)
 
-const hash =
-  // eslint-disable-next-line n/no-unsupported-features/node-builtins -- crypto.hash is supported in Node 21.7.0+, 20.12.0+
-  crypto.hash ??
-  ((
-    algorithm: string,
-    data: crypto.BinaryLike,
-    outputEncoding: crypto.BinaryToTextEncoding,
-  ) => crypto.createHash(algorithm).update(data).digest(outputEncoding))
-
 export function getHash(text: Buffer | string, length = 8): string {
-  const h = hash('sha256', text, 'hex').substring(0, length)
+  const h = crypto.hash('sha256', text, 'hex').substring(0, length)
   if (length <= 64) return h
   return h.padEnd(length, '_')
 }
@@ -1220,6 +1211,8 @@ function mergeWithDefaultsRecursively<
   return merged as MergeWithDefaultsResult<D, V>
 }
 
+const environmentPathRE = /^environments\.[^.]+$/
+
 export function mergeWithDefaults<
   D extends Record<string, any>,
   V extends Record<string, any>,
@@ -1256,8 +1249,9 @@ function mergeConfigRecursively(
       merged[key] = [].concat(existing, value)
       continue
     } else if (
-      key === 'noExternal' &&
-      (rootPath === 'ssr' || rootPath === 'resolve') &&
+      ((key === 'noExternal' &&
+        (rootPath === 'ssr' || rootPath === 'resolve')) ||
+        (key === 'allowedHosts' && rootPath === 'server')) &&
       (existing === true || value === true)
     ) {
       merged[key] = true
@@ -1281,7 +1275,10 @@ function mergeConfigRecursively(
       merged[key] = mergeConfigRecursively(
         existing,
         value,
-        rootPath ? `${rootPath}.${key}` : key,
+        // treat environment.* as root
+        rootPath && !environmentPathRE.test(rootPath)
+          ? `${rootPath}.${key}`
+          : key,
       )
       continue
     }
@@ -1650,4 +1647,24 @@ export function getServerUrlByHost(
     }
   }
   return resolvedUrls?.local[0] ?? resolvedUrls?.network[0]
+}
+
+let lastDateNow = 0
+/**
+ * Similar to `Date.now()`, but strictly monotonically increasing.
+ *
+ * This function will never return the same value.
+ * Thus, the value may differ from the actual time.
+ *
+ * related: https://github.com/vitejs/vite/issues/19804
+ */
+export function monotonicDateNow(): number {
+  const now = Date.now()
+  if (now > lastDateNow) {
+    lastDateNow = now
+    return lastDateNow
+  }
+
+  lastDateNow++
+  return lastDateNow
 }

@@ -23,12 +23,13 @@ export default defineConfig({
       '@vitejs/test-dep-optimize-exports-with-glob/**/*',
       '@vitejs/test-dep-optimize-exports-with-root-glob/**/*.js',
       '@vitejs/test-dep-optimize-with-glob/**/*.js',
-      '@vitejs/test-dep-cjs-with-external-dep',
+      '@vitejs/test-dep-cjs-with-external-deps',
     ],
     exclude: [
       '@vitejs/test-nested-exclude',
       '@vitejs/test-dep-non-optimized',
       '@vitejs/test-dep-esm-external',
+      'stream',
     ],
     esbuildOptions: {
       plugins: [
