@@ -444,9 +444,9 @@ export function indexHtmlMiddleware(
   server: ViteDevServer | PreviewServer,
 ): Connect.NextHandleFunction {
   const isDev = isDevServer(server)
-  const memoryFiles =
+  const fullBundleEnv =
     isDev && server.environments.client instanceof FullBundleDevEnvironment
-      ? server.environments.client.memoryFiles
+      ? server.environments.client
       : undefined
 
   // Keep the named function. The name is visible in debug logs via `DEBUG=connect:dispatcher ...`
@@ -458,13 +458,18 @@ export function indexHtmlMiddleware(
     const url = req.url && cleanUrl(req.url)
     // htmlFallbackMiddleware appends '.html' to URLs
     if (url?.endsWith('.html') && req.headers['sec-fetch-dest'] !== 'script') {
-      if (memoryFiles) {
+      if (fullBundleEnv) {
         const cleanedUrl = cleanUrl(url).slice(1) // remove first /
-        let content = memoryFiles.get(cleanedUrl)
-        if (!content && memoryFiles.size !== 0) {
+        let content = fullBundleEnv.memoryFiles.get(cleanedUrl)
+        if (!content && fullBundleEnv.memoryFiles.size !== 0) {
           return next()
         }
-        content ??= await generateFallbackHtml(server as ViteDevServer)
+        if (
+          fullBundleEnv.triggerBundleRegenerationIfStale() ||
+          content === undefined
+        ) {
+          content = await generateFallbackHtml(server as ViteDevServer)
+        }
 
         const html =
           typeof content === 'string' ? content : Buffer.from(content.buffer)

@@ -1,3 +1,4 @@
+import path from 'node:path'
 import type { RolldownBuild, RolldownOptions } from 'rolldown'
 import type { Update } from 'types/hmrPayload'
 import colors from 'picocolors'
@@ -11,7 +12,7 @@ import { getHmrImplementation } from '../../plugins/clientInjections'
 import { DevEnvironment, type DevEnvironmentContext } from '../environment'
 import type { ResolvedConfig } from '../../config'
 import type { ViteDevServer } from '../../server'
-import { arraify, createDebugger } from '../../utils'
+import { arraify, createDebugger, normalizePath } from '../../utils'
 import { prepareError } from '../middlewares/error'
 
 const debug = createDebugger('vite:full-bundle-mode')
@@ -57,7 +58,6 @@ export class FullBundleDevEnvironment extends DevEnvironment {
   async onFileChange(
     _type: 'create' | 'update' | 'delete',
     file: string,
-    server: ViteDevServer,
   ): Promise<void> {
     if (this.state.type === 'initial') {
       return
@@ -67,15 +67,21 @@ export class FullBundleDevEnvironment extends DevEnvironment {
       debug?.(
         `BUNDLING: file update detected ${file}, retriggering bundle generation`,
       )
-      this.state.abortController.abort()
       this.triggerGenerateBundle(this.state)
       return
     }
     if (this.state.type === 'bundle-error') {
-      debug?.(
-        `BUNDLE-ERROR: file update detected ${file}, retriggering bundle generation`,
-      )
-      this.triggerGenerateBundle(this.state)
+      const files = await this.state.bundle.watchFiles
+      if (files.includes(file)) {
+        debug?.(
+          `BUNDLE-ERROR: file update detected ${file}, retriggering bundle generation`,
+        )
+        this.triggerGenerateBundle(this.state)
+      } else {
+        debug?.(
+          `BUNDLE-ERROR: file update detected ${file}, but ignored as it is not a dependency`,
+        )
+      }
       return
     }
 
@@ -95,33 +101,109 @@ export class FullBundleDevEnvironment extends DevEnvironment {
         type: 'generating-hmr-patch',
         options: this.state.options,
         bundle: this.state.bundle,
+        patched: this.state.patched,
       }
 
       let hmrOutput: HmrOutput
       try {
         // NOTE: only single outputOptions is supported here
-        hmrOutput = (await this.state.bundle.generateHmrPatch([file]))!
+        hmrOutput = await this.state.bundle.generateHmrPatch([file])
       } catch (e) {
         // TODO: support multiple errors
-        server.ws.send({ type: 'error', err: prepareError(e.errors[0]) })
+        this.hot.send({ type: 'error', err: prepareError(e.errors[0]) })
 
         this.state = {
           type: 'bundled',
           options: this.state.options,
           bundle: this.state.bundle,
+          patched: this.state.patched,
         }
         return
       }
-
-      debug?.(`handle hmr output for ${file}`, {
-        ...hmrOutput,
-        code: typeof hmrOutput.code === 'string' ? '[code]' : hmrOutput.code,
-      })
 
       this.handleHmrOutput(file, hmrOutput, this.state)
       return
     }
     this.state satisfies never // exhaustive check
+  }
+
+  protected override invalidateModule(m: {
+    path: string
+    message?: string
+    firstInvalidatedBy: string
+  }): void {
+    ;(async () => {
+      if (
+        this.state.type === 'initial' ||
+        this.state.type === 'bundling' ||
+        this.state.type === 'bundle-error'
+      ) {
+        debug?.(
+          `${this.state.type.toUpperCase()}: invalidate received, but ignored`,
+        )
+        return
+      }
+      this.state.type satisfies 'bundled' | 'generating-hmr-patch' // exhaustive check
+
+      debug?.(
+        `${this.state.type.toUpperCase()}: invalidate received, re-triggering HMR`,
+      )
+
+      // TODO: should this be a separate state?
+      this.state = {
+        type: 'generating-hmr-patch',
+        options: this.state.options,
+        bundle: this.state.bundle,
+        patched: this.state.patched,
+      }
+
+      let hmrOutput: HmrOutput
+      try {
+        // NOTE: only single outputOptions is supported here
+        hmrOutput = await this.state.bundle.hmrInvalidate(
+          normalizePath(path.join(this.config.root, m.path)),
+          m.firstInvalidatedBy,
+        )
+      } catch (e) {
+        // TODO: support multiple errors
+        this.hot.send({ type: 'error', err: prepareError(e.errors[0]) })
+
+        this.state = {
+          type: 'bundled',
+          options: this.state.options,
+          bundle: this.state.bundle,
+          patched: this.state.patched,
+        }
+        return
+      }
+
+      if (hmrOutput.isSelfAccepting) {
+        this.logger.info(
+          colors.yellow(`hmr invalidate `) +
+            colors.dim(m.path) +
+            (m.message ? ` ${m.message}` : ''),
+          { timestamp: true },
+        )
+      }
+
+      // TODO: need to check if this is enough
+      this.handleHmrOutput(m.path, hmrOutput, this.state)
+    })()
+  }
+
+  triggerBundleRegenerationIfStale(): boolean {
+    if (
+      (this.state.type === 'bundled' ||
+        this.state.type === 'generating-hmr-patch') &&
+      this.state.patched
+    ) {
+      this.triggerGenerateBundle(this.state)
+      debug?.(
+        `${this.state.type.toUpperCase()}: access to stale bundle, triggered bundle re-generation`,
+      )
+      return true
+    }
+    return false
   }
 
   override async close(): Promise<void> {
@@ -161,6 +243,10 @@ export class FullBundleDevEnvironment extends DevEnvironment {
     options,
     bundle,
   }: BundleStateCommonProperties) {
+    if (this.state.type === 'bundling') {
+      this.state.abortController.abort()
+    }
+
     const controller = new AbortController()
     const promise = this.generateBundle(
       options.output,
@@ -211,6 +297,7 @@ export class FullBundleDevEnvironment extends DevEnvironment {
         type: 'bundled',
         bundle: this.state.bundle,
         options: this.state.options,
+        patched: false,
       }
       debug?.('BUNDLED: bundle generated')
 
@@ -234,7 +321,7 @@ export class FullBundleDevEnvironment extends DevEnvironment {
     }
   }
 
-  private async handleHmrOutput(
+  private handleHmrOutput(
     file: string,
     hmrOutput: HmrOutput,
     { options, bundle }: BundleStateCommonProperties,
@@ -255,7 +342,16 @@ export class FullBundleDevEnvironment extends DevEnvironment {
       return
     }
 
-    if (hmrOutput.code) {
+    // TODO: handle `No corresponding module found for changed file path`
+    if (
+      hmrOutput.code &&
+      hmrOutput.code !== '__rolldown_runtime__.applyUpdates([]);'
+    ) {
+      debug?.(`handle hmr output for ${file}`, {
+        ...hmrOutput,
+        code: typeof hmrOutput.code === 'string' ? '[code]' : hmrOutput.code,
+      })
+
       this.memoryFiles.set(hmrOutput.filename, hmrOutput.code)
       if (hmrOutput.sourcemapFilename && hmrOutput.sourcemap) {
         this.memoryFiles.set(hmrOutput.sourcemapFilename, hmrOutput.sourcemap)
@@ -279,7 +375,17 @@ export class FullBundleDevEnvironment extends DevEnvironment {
           colors.dim([...new Set(updates.map((u) => u.path))].join(', ')),
         { clear: !hmrOutput.firstInvalidatedBy, timestamp: true },
       )
+
+      this.state = {
+        type: 'bundled',
+        options,
+        bundle,
+        patched: true,
+      }
+      return
     }
+
+    debug?.(`ignored file change for ${file}`)
   }
 }
 
@@ -296,12 +402,26 @@ type BundleStateBundling = {
   promise: Promise<void>
   abortController: AbortController
 } & BundleStateCommonProperties
-type BundleStateBundled = { type: 'bundled' } & BundleStateCommonProperties
+type BundleStateBundled = {
+  type: 'bundled'
+  /**
+   * Whether a hmr patch was generated.
+   *
+   * In other words, whether the bundle is stale.
+   */
+  patched: boolean
+} & BundleStateCommonProperties
 type BundleStateBundleError = {
   type: 'bundle-error'
 } & BundleStateCommonProperties
 type BundleStateGeneratingHmrPatch = {
   type: 'generating-hmr-patch'
+  /**
+   * Whether a hmr patch was generated.
+   *
+   * In other words, whether the bundle is stale.
+   */
+  patched: boolean
 } & BundleStateCommonProperties
 
 type BundleStateCommonProperties = {

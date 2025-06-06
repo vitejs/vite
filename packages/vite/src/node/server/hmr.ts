@@ -423,7 +423,7 @@ export async function handleHMRUpdate(
   if (config.experimental.fullBundleMode) {
     // TODO: support handleHotUpdate / hotUpdate
     const environment = server.environments.client as FullBundleDevEnvironment
-    environment.onFileChange(type, file, server)
+    environment.onFileChange(type, file)
     return
   }
 

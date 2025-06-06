@@ -1,3 +1,4 @@
+/// <reference types="rolldown/experimental/runtime-types" />
 import type { ErrorPayload, HotPayload } from '#types/hmrPayload'
 import type { ViteHotContext } from '#types/hot'
 import { HMRClient, HMRContext } from '../shared/hmr'
@@ -618,67 +619,26 @@ export function injectQuery(url: string, queryToInject: string): string {
 export { ErrorOverlay }
 
 if (isFullBundleMode) {
-  class DevRuntime {
-    modules: Record<string, { exports: any }> = {}
-
-    static getInstance() {
-      // @ts-expect-error __rolldown_runtime__
-      let instance = globalThis.__rolldown_runtime__
-      if (!instance) {
-        instance = new DevRuntime()
-        // @ts-expect-error __rolldown_runtime__
-        globalThis.__rolldown_runtime__ = instance
-      }
-      return instance
-    }
-
-    createModuleHotContext(moduleId: string) {
+  class ViteDevRuntime extends DevRuntime {
+    override createModuleHotContext(moduleId: string) {
       const ctx = createHotContext(moduleId)
       // @ts-expect-error TODO: support CSS
       ctx._internal = {
         updateStyle,
         removeStyle,
       }
+      // @ts-expect-error TODO: support this function (used by plugin-react)
+      ctx.getExports = async () =>
+        // @ts-expect-error __rolldown_runtime__ / ctx.ownerPath
+        __rolldown_runtime__.loadExports(ctx.ownerPath)
       return ctx
     }
 
-    applyUpdates(_boundaries: string[]) {
-      //
+    override applyUpdates(_boundaries: string[]): void {
+      // TODO: how should this be handled?
+      // noop, handled in the HMR client
     }
-
-    registerModule(
-      id: string,
-      module: { exports: Record<string, () => unknown> },
-    ) {
-      this.modules[id] = module
-    }
-
-    loadExports(id: string) {
-      const module = this.modules[id]
-      if (module) {
-        return module.exports
-      } else {
-        console.warn(`Module ${id} not found`)
-        return {}
-      }
-    }
-
-    // __esmMin
-    // @ts-expect-error need to add typing
-    createEsmInitializer = (fn, res) => () => (fn && (res = fn((fn = 0))), res)
-    // __commonJSMin
-    // @ts-expect-error need to add typing
-    createCjsInitializer = (cb, mod) => () => (
-      mod || cb((mod = { exports: {} }).exports, mod), mod.exports
-    )
-    // @ts-expect-error it is exits
-    __toESM = __toESM
-    // @ts-expect-error it is exits
-    __toCommonJS = __toCommonJS
-    // @ts-expect-error it is exits
-    __export = __export
   }
 
-  // @ts-expect-error __rolldown_runtime__
-  globalThis.__rolldown_runtime__ ||= new DevRuntime()
+  ;(globalThis as any).__rolldown_runtime__ ??= new ViteDevRuntime()
 }
