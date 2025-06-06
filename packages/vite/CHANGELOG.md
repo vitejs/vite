@@ -1,3 +1,10 @@
+## <small>6.3.18 (2025-06-06)</small>
+
+* feat: update rolldown (#227) ([b63345a](https://github.com/vitejs/rolldown-vite/commit/b63345a)), closes [#227](https://github.com/vitejs/rolldown-vite/issues/227)
+* test: `onTestFinished` instead of `afterEach` for file restoration (#221) ([82d9315](https://github.com/vitejs/rolldown-vite/commit/82d9315)), closes [#221](https://github.com/vitejs/rolldown-vite/issues/221)
+
+
+
 ## <small>6.3.17 (2025-06-04)</small>
 
 * feat: append plugin name to logs (#205) ([a6ea3f8](https://github.com/vitejs/rolldown-vite/commit/a6ea3f8)), closes [#205](https://github.com/vitejs/rolldown-vite/issues/205)
