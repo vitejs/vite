@@ -64,7 +64,7 @@
     "globals": "^16.2.0",
     "lint-staged": "^16.1.0",
     "picocolors": "^1.1.1",
-    "playwright-chromium": "^1.52.0",
+    "playwright-chromium": "^1.50.1",
     "prettier": "3.5.3",
     "rollup": "^4.40.0",
     "simple-git-hooks": "^2.13.0",
