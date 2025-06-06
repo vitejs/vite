@@ -161,7 +161,19 @@ export default tseslint.config(
         { allow: builtinModules.map((mod) => `node:${mod}`) },
       ],
       'import-x/no-duplicates': 'error',
-      'import-x/order': 'error',
+      'import-x/order': [
+        'error',
+        {
+          groups: [
+            'builtin',
+            'external',
+            'internal',
+            'parent',
+            'sibling',
+            'index',
+          ],
+        },
+      ],
       'sort-imports': [
         'error',
         {

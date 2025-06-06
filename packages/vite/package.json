@@ -82,9 +82,9 @@
   "//": "READ CONTRIBUTING.md to understand what to put under deps vs. devDeps!",
   "dependencies": {
     "esbuild": "^0.25.0",
-    "fdir": "^6.4.4",
+    "fdir": "^6.4.5",
     "picomatch": "^4.0.2",
-    "postcss": "^8.5.3",
+    "postcss": "^8.5.4",
     "rollup": "^4.40.0",
     "tinyglobby": "^0.2.14"
   },
@@ -93,7 +93,7 @@
   },
   "devDependencies": {
     "@ampproject/remapping": "^2.3.0",
-    "@babel/parser": "^7.27.2",
+    "@babel/parser": "^7.27.5",
     "@jridgewell/trace-mapping": "^0.3.25",
     "@oxc-project/runtime": "^0.70.0",
     "@oxc-project/types": "^0.70.0",
@@ -105,7 +105,7 @@
     "@types/escape-html": "^1.0.4",
     "@types/pnpapi": "^0.0.5",
     "artichokie": "^0.3.1",
-    "baseline-browser-mapping": "^2.4.3",
+    "baseline-browser-mapping": "^2.4.4",
     "cac": "^6.7.14",
     "chokidar": "^3.6.0",
     "connect": "^3.7.0",
@@ -145,7 +145,7 @@
     "sass-embedded": "^1.89.0",
     "sirv": "^3.0.1",
     "strip-literal": "^3.0.0",
-    "terser": "^5.39.2",
+    "terser": "^5.41.0",
     "tsconfck": "^3.1.6",
     "types": "link:./types",
     "ufo": "^1.6.1",

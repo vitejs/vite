@@ -13,7 +13,7 @@
     "@vitejs/test-worker-exports": "file:./worker-exports"
   },
   "devDependencies": {
-    "miniflare": "^4.20250508.3",
+    "miniflare": "^4.20250525.1",
     "@vitejs/test-resolve-linked": "workspace:*"
   }
 }
