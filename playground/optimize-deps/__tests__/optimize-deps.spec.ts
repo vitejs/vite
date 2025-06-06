@@ -42,8 +42,7 @@ test('default import from cjs (cjs-dep-cjs-compiled-from-cjs)', async () => {
   ).toBe('ok')
 })
 
-// NOTE: rolldown behaves differently from @rollup/plugin-commonjs https://github.com/rolldown/rolldown/issues/2031
-test.skip('dynamic imports from cjs dep (react)', async () => {
+test('dynamic imports from cjs dep (react)', async () => {
   await expectWithRetry(() => page.textContent('.cjs-dynamic button')).toBe(
     'count is 0',
   )
