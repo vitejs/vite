@@ -1458,6 +1458,11 @@ export async function resolveConfig(
       },
     }
 
+    await runEnvironmentConfigResolvedHook(
+      new PartialEnvironment('client', workerResolved),
+      logger,
+    )
+
     return workerResolved
   }
 
@@ -1621,6 +1626,14 @@ export async function resolveConfig(
   for (const name of Object.keys(resolved.environments)) {
     resolved.environments[name].plugins = await resolveEnvironmentPlugins(
       new PartialEnvironment(name, resolved),
+    )
+  }
+
+  // Run environmentConfigResolved hooks for each environment
+  for (const name of Object.keys(resolved.environments)) {
+    await runEnvironmentConfigResolvedHook(
+      new PartialEnvironment(name, resolved),
+      logger,
     )
   }
 
@@ -2165,6 +2178,26 @@ async function runConfigEnvironmentHook(
       }
     }
   }
+}
+
+async function runEnvironmentConfigResolvedHook(
+  environment: PartialEnvironment,
+  logger: Logger,
+): Promise<void> {
+  const context = new BasicMinimalPluginContext<
+    Omit<PluginContextMeta, 'watchMode'>
+  >(basePluginContextMeta, logger)
+
+  await Promise.all(
+    getSortedPluginsByHook(
+      'environmentConfigResolved',
+      environment.config.plugins,
+    ).map((p) => {
+      const hook = p.environmentConfigResolved
+      const handler = getHookHandler(hook)
+      return handler.call(context, environment)
+    }),
+  )
 }
 
 function optimizeDepsDisabledBackwardCompatibility(
