@@ -90,7 +90,7 @@
     "lightningcss": "^1.30.0",
     "picomatch": "^4.0.2",
     "postcss": "^8.5.3",
-    "rolldown": "1.0.0-beta.11-commit.83d4d62",
+    "rolldown": "1.0.0-beta.11-commit.0a985f3",
     "tinyglobby": "^0.2.13"
   },
   "optionalDependencies": {
@@ -102,7 +102,7 @@
     "@jridgewell/trace-mapping": "^0.3.25",
     "@oxc-project/types": "0.72.2",
     "@polka/compression": "^1.0.0-next.25",
-    "@rolldown/pluginutils": "1.0.0-beta.11-commit.83d4d62",
+    "@rolldown/pluginutils": "1.0.0-beta.11-commit.0a985f3",
     "@rollup/plugin-alias": "^5.1.1",
     "@rollup/plugin-commonjs": "^28.0.3",
     "@rollup/plugin-dynamic-import-vars": "2.1.4",
