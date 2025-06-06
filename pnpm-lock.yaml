@@ -389,9 +389,6 @@ importers:
       sirv:
         specifier: ^3.0.1
         version: 3.0.1(patch_hash=95b663b930c5cc6e609c7fa15b69a86ff3b30df68978611d1d3d724c65135cb1)
-      source-map-support:
-        specifier: ^0.5.21
-        version: 0.5.21
       strip-literal:
         specifier: ^3.0.0
         version: 3.0.0

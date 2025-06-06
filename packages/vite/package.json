@@ -144,7 +144,6 @@
     "sass": "^1.89.0",
     "sass-embedded": "^1.89.0",
     "sirv": "^3.0.1",
-    "source-map-support": "^0.5.21",
     "strip-literal": "^3.0.0",
     "terser": "^5.39.2",
     "tsconfck": "^3.1.6",
