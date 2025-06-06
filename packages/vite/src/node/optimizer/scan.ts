@@ -231,10 +231,15 @@ async function computeEntries(environment: ScanEnvironment) {
     entries = await globEntries(explicitEntryPatterns, environment)
   } else if (buildInput) {
     const resolvePath = async (p: string) => {
+      // rollup resolves the input from process.cwd()
       const id = (
-        await environment.pluginContainer.resolveId(p, undefined, {
-          scan: true,
-        })
+        await environment.pluginContainer.resolveId(
+          p,
+          path.join(process.cwd(), '*'),
+          {
+            scan: true,
+          },
+        )
       )?.id
       if (id === undefined) {
         throw new Error(
