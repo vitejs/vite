@@ -20,6 +20,9 @@ export default defineConfig({
       // Prevent Vitest from running the workspace packages in Vite's SSR runtime
       moduleDirectories: ['node_modules', 'packages'],
     },
+    env: {
+      DEBUG_DISABLE_SOURCE_MAP: '1',
+    },
   },
   esbuild: {
     target: 'node20',

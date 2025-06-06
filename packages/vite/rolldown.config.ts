@@ -11,6 +11,7 @@ const pkg = JSON.parse(
   readFileSync(new URL('./package.json', import.meta.url)).toString(),
 )
 const __dirname = fileURLToPath(new URL('.', import.meta.url))
+const disableSourceMap = !!process.env.DEBUG_DISABLE_SOURCE_MAP
 
 const envConfig = defineConfig({
   input: path.resolve(__dirname, 'src/client/env.ts'),
@@ -186,7 +187,7 @@ function enableSourceMapsInWatchModePlugin(): Plugin {
   return {
     name: 'enable-source-maps',
     outputOptions(options) {
-      if (this.meta.watchMode) {
+      if (this.meta.watchMode && !disableSourceMap) {
         options.sourcemap = 'inline'
       }
     },
