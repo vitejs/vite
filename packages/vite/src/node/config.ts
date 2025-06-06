@@ -1433,6 +1433,16 @@ export async function resolveConfig(
       workerPostPlugins,
     )
 
+    // run configResolved hooks
+    await Promise.all(
+      createPluginHookUtils(workerResolved.plugins)
+        .getSortedPluginHooks('configResolved')
+        .map((hook) => hook.call(resolvedConfigContext, workerResolved)),
+    )
+
+    // Resolve environment plugins after configResolved because there are
+    // downstream projects modifying the plugins in it. This may change
+    // once the ecosystem is ready.
     // During Build the client environment is used to bundle the worker
     // Avoid overriding the mainConfig (resolved.environments.client)
     ;(workerResolved.environments as Record<
@@ -1447,13 +1457,6 @@ export async function resolveConfig(
         ),
       },
     }
-
-    // run configResolved hooks
-    await Promise.all(
-      createPluginHookUtils(workerResolved.plugins)
-        .getSortedPluginHooks('configResolved')
-        .map((hook) => hook.call(resolvedConfigContext, workerResolved)),
-    )
 
     return workerResolved
   }
@@ -1605,18 +1608,21 @@ export async function resolveConfig(
   // TODO: Deprecate config.getSortedPlugins and config.getSortedPluginHooks
   Object.assign(resolved, createPluginHookUtils(resolved.plugins))
 
-  for (const name of Object.keys(resolved.environments)) {
-    resolved.environments[name].plugins = await resolveEnvironmentPlugins(
-      new PartialEnvironment(name, resolved),
-    )
-  }
-
   // call configResolved hooks
   await Promise.all(
     resolved
       .getSortedPluginHooks('configResolved')
       .map((hook) => hook.call(resolvedConfigContext, resolved)),
   )
+
+  // Resolve environment plugins after configResolved because there are
+  // downstream projects modifying the plugins in it. This may change
+  // once the ecosystem is ready.
+  for (const name of Object.keys(resolved.environments)) {
+    resolved.environments[name].plugins = await resolveEnvironmentPlugins(
+      new PartialEnvironment(name, resolved),
+    )
+  }
 
   optimizeDepsDisabledBackwardCompatibility(resolved, resolved.optimizeDeps)
   optimizeDepsDisabledBackwardCompatibility(
