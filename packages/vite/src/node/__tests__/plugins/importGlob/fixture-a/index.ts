@@ -116,3 +116,7 @@ export const customBase = import.meta.glob('./**/*.ts', { base: './' })
 export const customRootBase = import.meta.glob('./**/*.ts', {
   base: '/fixture-b',
 })
+
+export const customBaseParent = import.meta.glob('/fixture-b/**/*.ts', {
+  base: '/fixture-a',
+})
