@@ -19,9 +19,6 @@ export default defineConfig({
     },
     testTimeout: 20000,
     isolate: false,
-    env: {
-      DEBUG_DISABLE_SOURCE_MAP: '1',
-    },
   },
   esbuild: {
     target: 'node20',
