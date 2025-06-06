@@ -14,6 +14,7 @@ export const sassTest = () => {
     const imported = await page.$('.sass')
     const atImport = await page.$('.sass-at-import')
     const atImportAlias = await page.$('.sass-at-import-alias')
+    const atImportRelative = await page.$('.sass-at-import-relative')
     const urlStartsWithVariable = await page.$('.sass-url-starts-with-variable')
     const urlStartsWithVariableInterpolation1 = await page.$(
       '.sass-url-starts-with-interpolation1',
@@ -36,6 +37,10 @@ export const sassTest = () => {
     )
     expect(await getColor(atImportAlias)).toBe('olive')
     expect(await getBg(atImportAlias)).toMatch(
+      isBuild ? /base64/ : '/nested/icon.png',
+    )
+    expect(await getColor(atImportRelative)).toBe('olive')
+    expect(await getBg(atImportRelative)).toMatch(
       isBuild ? /base64/ : '/nested/icon.png',
     )
     expect(await getBg(urlStartsWithVariable)).toMatch(

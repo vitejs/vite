@@ -10,19 +10,6 @@ const environmentColors = [
   colors.gray,
 ]
 
-export function getDefaultResolvedEnvironmentOptions(
-  config: ResolvedConfig,
-): ResolvedEnvironmentOptions {
-  return {
-    define: config.define,
-    resolve: config.resolve,
-    consumer: 'server',
-    optimizeDeps: config.optimizeDeps,
-    dev: config.dev,
-    build: config.build,
-  }
-}
-
 export class PartialEnvironment {
   name: string
   getTopLevelConfig(): ResolvedConfig {
@@ -115,18 +102,10 @@ export class PartialEnvironment {
 }
 
 export class BaseEnvironment extends PartialEnvironment {
-  get plugins(): Plugin[] {
-    if (!this._plugins)
-      throw new Error(
-        `${this.name} environment.plugins called before initialized`,
-      )
-    return this._plugins
+  get plugins(): readonly Plugin[] {
+    return this.config.plugins
   }
 
-  /**
-   * @internal
-   */
-  _plugins: Plugin[] | undefined
   /**
    * @internal
    */

@@ -1,16 +1,13 @@
-import type { FetchFunctionOptions, FetchResult } from 'vite/module-runner'
 import type { FSWatcher } from 'dep-types/chokidar'
 import colors from 'picocolors'
-import {
-  BaseEnvironment,
-  getDefaultResolvedEnvironmentOptions,
-} from '../baseEnvironment'
+import type { FetchFunctionOptions, FetchResult } from 'vite/module-runner'
+import { BaseEnvironment } from '../baseEnvironment'
 import type {
   EnvironmentOptions,
   ResolvedConfig,
   ResolvedEnvironmentOptions,
 } from '../config'
-import { mergeConfig } from '../utils'
+import { mergeConfig, monotonicDateNow } from '../utils'
 import { fetchModule } from '../ssr/fetchModule'
 import type { DepsOptimizer } from '../optimizer'
 import { isDepOptimizationDisabled } from '../optimizer'
@@ -18,7 +15,6 @@ import {
   createDepsOptimizer,
   createExplicitDepsOptimizer,
 } from '../optimizer/optimizer'
-import { resolveEnvironmentPlugins } from '../plugin'
 import { ERR_OUTDATED_OPTIMIZED_DEP } from '../../shared/constants'
 import { promiseWithResolvers } from '../../shared/utils'
 import type { ViteDevServer } from '../server'
@@ -102,8 +98,10 @@ export class DevEnvironment extends BaseEnvironment {
     config: ResolvedConfig,
     context: DevEnvironmentContext,
   ) {
-    let options =
-      config.environments[name] ?? getDefaultResolvedEnvironmentOptions(config)
+    let options = config.environments[name]
+    if (!options) {
+      throw new Error(`Environment "${name}" is not defined in the config.`)
+    }
     if (context.options) {
       options = mergeConfig(
         options,
@@ -172,10 +170,9 @@ export class DevEnvironment extends BaseEnvironment {
       return
     }
     this._initiated = true
-    this._plugins = await resolveEnvironmentPlugins(this)
     this._pluginContainer = await createEnvironmentPluginContainer(
       this,
-      this._plugins,
+      this.config.plugins,
       options?.watcher,
     )
   }
@@ -205,7 +202,7 @@ export class DevEnvironment extends BaseEnvironment {
 
   async reloadModule(module: EnvironmentModuleNode): Promise<void> {
     if (this.config.server.hmr !== false && module.file) {
-      updateModules(this, module.file, [module], Date.now())
+      updateModules(this, module.file, [module], monotonicDateNow())
     }
   }
 

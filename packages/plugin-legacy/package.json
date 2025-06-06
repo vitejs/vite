@@ -1,6 +1,6 @@
 {
   "name": "@vitejs/plugin-legacy",
-  "version": "6.1.1",
+  "version": "7.0.0-beta.0",
   "type": "module",
   "license": "MIT",
   "author": "Evan You",
@@ -33,9 +33,9 @@
   "homepage": "https://github.com/vitejs/vite/tree/main/packages/plugin-legacy#readme",
   "funding": "https://github.com/vitejs/vite?sponsor=1",
   "dependencies": {
-    "@babel/core": "^7.27.1",
+    "@babel/core": "^7.27.4",
     "@babel/preset-env": "^7.27.2",
-    "browserslist": "^4.24.5",
+    "browserslist": "^4.25.0",
     "browserslist-to-esbuild": "^2.1.1",
     "core-js": "^3.42.0",
     "magic-string": "^0.30.17",
@@ -49,7 +49,7 @@
   "devDependencies": {
     "acorn": "^8.14.1",
     "picocolors": "^1.1.1",
-    "tsdown": "^0.11.12",
+    "tsdown": "^0.12.6",
     "vite": "workspace:*"
   }
 }
