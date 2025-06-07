@@ -68,6 +68,7 @@ export function resolvePreviewOptions(
     proxy: preview?.proxy ?? server.proxy,
     cors: preview?.cors ?? server.cors,
     headers: preview?.headers ?? server.headers,
+    watchStdin: preview?.watchStdin ?? server.watchStdin,
   }
 }
 
@@ -156,7 +157,7 @@ export async function preview(
   // Promise used by `server.close()` to ensure `closeServer()` is only called once
   let closeServerPromise: Promise<void> | undefined
   const closeServer = async () => {
-    teardownSIGTERMListener(closeServerAndExit)
+    teardownSIGTERMListener(config.preview.watchStdin, closeServerAndExit)
     await closeHttpServer()
     server.resolvedUrls = null
   }
@@ -193,7 +194,7 @@ export async function preview(
     }
   }
 
-  setupSIGTERMListener(closeServerAndExit)
+  setupSIGTERMListener(config.preview.watchStdin, closeServerAndExit)
 
   // apply server hooks from plugins
   const configurePreviewServerContext = new BasicMinimalPluginContext(
