@@ -1,8 +1,11 @@
-<div class="css-deps">should be red</div>
+<div class="css-deps-transform">should be red</div>
+<div class="css-deps-load">should be red</div>
 
 <script type="module">
-  import './main.css'
+  import './main-transform.css'
+  import 'virtual:css-deps-load.css'
   // Import dep.js so that not only the CSS depends on dep.js, as Vite will do
   // a full page reload if the only importers are CSS files.
-  import './dep.js'
+  import './dep-transform.js'
+  import './dep-load.js'
 </script>
