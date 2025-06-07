@@ -120,6 +120,7 @@ const knownOptions = {
   import: ['string'],
   exhaustive: ['boolean'],
   query: ['object', 'string'],
+  base: ['string'],
 }
 
 const forceDefaultAs = ['raw', 'url']
@@ -160,6 +161,21 @@ function parseGlobOptions(
         `Expected glob option "${key}" to be of type ${allowedTypes.join(
           ' or ',
         )}, but got ${valueType}`,
+        optsStartIndex,
+      )
+    }
+  }
+
+  if (opts.base) {
+    if (opts.base[0] === '!') {
+      throw err('Option "base" cannot start with "!"', optsStartIndex)
+    } else if (
+      opts.base[0] !== '/' &&
+      !opts.base.startsWith('./') &&
+      !opts.base.startsWith('../')
+    ) {
+      throw err(
+        `Option "base" must start with '/', './' or '../', but got "${opts.base}"`,
         optsStartIndex,
       )
     }
@@ -309,7 +325,9 @@ export async function parseImportGlob(
     }
 
     const globsResolved = await Promise.all(
-      globs.map((glob) => toAbsoluteGlob(glob, root, importer, resolveId)),
+      globs.map((glob) =>
+        toAbsoluteGlob(glob, root, importer, resolveId, options.base),
+      ),
     )
     const isRelative = globs.every((i) => '.!'.includes(i[0]))
     const sliceCode = cleanCode.slice(0, start)
@@ -432,19 +450,35 @@ export async function transformGlobImport(
 
           const resolvePaths = (file: string) => {
             if (!dir) {
-              if (isRelative)
+              if (!options.base && isRelative)
                 throw new Error(
                   "In virtual modules, all globs must start with '/'",
                 )
-              const filePath = `/${relative(root, file)}`
-              return { filePath, importPath: filePath }
+              const importPath = `/${relative(root, file)}`
+              let filePath = options.base
+                ? `${relative(posix.join(root, options.base), file)}`
+                : importPath
+              if (options.base && filePath[0] !== '.') {
+                filePath = `./${filePath}`
+              }
+              return { filePath, importPath }
             }
 
             let importPath = relative(dir, file)
             if (importPath[0] !== '.') importPath = `./${importPath}`
 
             let filePath: string
-            if (isRelative) {
+            if (options.base) {
+              const resolvedBasePath = options.base[0] === '/' ? root : dir
+              filePath = relative(
+                posix.join(resolvedBasePath, options.base),
+                file,
+              )
+              if (filePath[0] !== '.') filePath = `./${filePath}`
+              if (options.base[0] === '/') {
+                importPath = `/${relative(root, file)}`
+              }
+            } else if (isRelative) {
               filePath = importPath
             } else {
               filePath = relative(root, file)
@@ -582,6 +616,7 @@ export async function toAbsoluteGlob(
   root: string,
   importer: string | undefined,
   resolveId: IdResolver,
+  base?: string,
 ): Promise<string> {
   let pre = ''
   if (glob[0] === '!') {
@@ -589,7 +624,20 @@ export async function toAbsoluteGlob(
     glob = glob.slice(1)
   }
   root = globSafePath(root)
-  const dir = importer ? globSafePath(dirname(importer)) : root
+  let dir
+  if (base) {
+    if (base.startsWith('/')) {
+      dir = posix.join(root, base)
+    } else {
+      dir = posix.resolve(
+        importer ? globSafePath(dirname(importer)) : root,
+        base,
+      )
+    }
+  } else {
+    dir = importer ? globSafePath(dirname(importer)) : root
+  }
+
   if (glob[0] === '/') return pre + posix.join(root, glob.slice(1))
   if (glob.startsWith('./')) return pre + posix.join(dir, glob.slice(2))
   if (glob.startsWith('../')) return pre + posix.join(dir, glob)
