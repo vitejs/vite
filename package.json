@@ -130,11 +130,13 @@
     ],
     "onlyBuiltDependencies": [
       "@parcel/watcher",
+      "@tailwindcss/oxide",
       "bcrypt",
       "esbuild",
       "playwright-chromium",
       "rolldown",
       "simple-git-hooks",
+      "unrs-resolver",
       "workerd"
     ]
   },

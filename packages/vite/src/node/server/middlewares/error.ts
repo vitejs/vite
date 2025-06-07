@@ -42,10 +42,16 @@ function cleanStack(stack: string) {
     .join('\n')
 }
 
-export function logError(server: ViteDevServer, err: RollupError): void {
-  const msg = buildErrorMessage(err, [
-    colors.red(`Internal server error: ${err.message}`),
-  ])
+export function logError(
+  server: ViteDevServer,
+  err: RollupError,
+  stack: boolean,
+): void {
+  const msg = buildErrorMessage(
+    err,
+    [colors.red(`Internal server error: ${err.message}`)],
+    stack,
+  )
 
   server.config.logger.error(msg, {
     clear: true,
@@ -66,7 +72,8 @@ export function errorMiddleware(
   // note the 4 args must be kept for connect to treat this as error middleware
   // Keep the named function. The name is visible in debug logs via `DEBUG=connect:dispatcher ...`
   return function viteErrorMiddleware(err: RollupError, _req, res, next) {
-    logError(server, err)
+    const printStack = process.env.VITE_BACKTRACE
+    logError(server, err, printStack === undefined || printStack !== '0')
 
     if (allowNext) {
       next()
