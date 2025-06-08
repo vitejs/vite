@@ -171,7 +171,7 @@ $ pnpm vite
 ```
 
 ```bash [Bun]
-$ bunx vite
+$ bunx --bun vite
 ```
 
 ```bash [Deno]
