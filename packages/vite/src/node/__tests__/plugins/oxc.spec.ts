@@ -159,7 +159,7 @@ describe('transformWithOxc', () => {
 })
 
 describe('renderChunk', () => {
-  test('should inject helper for worker iife from esm', async () => {
+  test('should inject helper for iife without exports from esm', async () => {
     const renderChunk = await createBuildOxcPluginRenderChunk('es2015')
     const result = await renderChunk(
       `(function() {
@@ -191,7 +191,7 @@ describe('renderChunk', () => {
   `)
   })
 
-  test('should inject helper for worker iife from cjs', async () => {
+  test('should inject helper for iife without exports from cjs', async () => {
     const renderChunk = await createBuildOxcPluginRenderChunk('es2015')
     const result = await renderChunk(
       `(function() {
@@ -219,5 +219,115 @@ describe('renderChunk', () => {
     })();
     "
   `)
+  })
+
+  test('should inject helper for iife with exports', async () => {
+    const renderChunk = await createBuildOxcPluginRenderChunk('es2015')
+    const result = await renderChunk(
+      `var lib = (function(exports) {
+
+
+//#region entry.js
+(async () => {
+	await new Promise((resolve) => setTimeout(resolve, 1e3));
+	console.log("foo");
+})();
+const foo = "foo";
+
+//#endregion
+exports.foo = foo;
+return exports;
+})({});`,
+      'iife',
+    )
+    expect(result).toMatchInlineSnapshot(`
+      "var lib = function(exports) {var babelHelpers=function(exports){function t(e,t,n,r,i,a,o){try{var s=e[a](o),c=s.value}catch(e){return void n(e)}s.done?t(c):Promise.resolve(c).then(r,i)}function n(e){return function(){var n=this,r=arguments;return new Promise(function(i,a){var o=e.apply(n,r);function s(e){t(o,i,a,s,c,\`next\`,e)}function c(e){t(o,i,a,s,c,\`throw\`,e)}s(void 0)})}}return exports.asyncToGenerator=n,exports}({});
+
+      	//#region entry.js
+      	babelHelpers.asyncToGenerator(function* () {
+      		yield new Promise((resolve) => setTimeout(resolve, 1e3));
+      		console.log("foo");
+      	})();
+      	const foo = "foo";
+      	//#endregion
+      	exports.foo = foo;
+      	return exports;
+      }({});
+      "
+    `)
+  })
+
+  test('should inject helper for umd without exports', async () => {
+    const renderChunk = await createBuildOxcPluginRenderChunk('es2015')
+    const result = await renderChunk(
+      `(function(factory) {
+
+  typeof define === 'function' && define.amd ? define([], factory) :
+  factory();
+})(function() {
+
+//#region entry.js
+(async () => {
+	await new Promise((resolve) => setTimeout(resolve, 1e3));
+	console.log("foo");
+})();
+
+//#endregion
+});`,
+      'umd',
+    )
+    expect(result).toMatchInlineSnapshot(`
+      "(function(factory) {
+      	typeof define === "function" && define.amd ? define([], factory) : factory();
+      })(function() {var babelHelpers=function(exports){function t(e,t,n,r,i,a,o){try{var s=e[a](o),c=s.value}catch(e){return void n(e)}s.done?t(c):Promise.resolve(c).then(r,i)}function n(e){return function(){var n=this,r=arguments;return new Promise(function(i,a){var o=e.apply(n,r);function s(e){t(o,i,a,s,c,\`next\`,e)}function c(e){t(o,i,a,s,c,\`throw\`,e)}s(void 0)})}}return exports.asyncToGenerator=n,exports}({});
+
+      	//#region entry.js
+      	babelHelpers.asyncToGenerator(function* () {
+      		yield new Promise((resolve) => setTimeout(resolve, 1e3));
+      		console.log("foo");
+      	})();
+      	//#endregion
+      });
+      "
+    `)
+  })
+
+  test('should inject helper for umd with exports', async () => {
+    const renderChunk = await createBuildOxcPluginRenderChunk('es2015')
+    const result = await renderChunk(
+      `(function(global, factory) {
+  typeof exports === 'object' && typeof module !== 'undefined' ?  factory(exports) :
+  typeof define === 'function' && define.amd ? define(['exports'], factory) :
+  (global = typeof globalThis !== 'undefined' ? globalThis : global || self, factory((global.lib = {})));
+})(this, function(exports) {
+
+//#region entry.js
+(async () => {
+	await new Promise((resolve) => setTimeout(resolve, 1e3));
+	console.log("foo");
+})();
+const foo = "foo";
+
+//#endregion
+exports.foo = foo;
+});`,
+      'umd',
+    )
+    expect(result).toMatchInlineSnapshot(`
+      "(function(global, factory) {
+      	typeof exports === "object" && typeof module !== "undefined" ? factory(exports) : typeof define === "function" && define.amd ? define(["exports"], factory) : (global = typeof globalThis !== "undefined" ? globalThis : global || self, factory(global.lib = {}));
+      })(this, function(exports) {var babelHelpers=function(exports){function t(e,t,n,r,i,a,o){try{var s=e[a](o),c=s.value}catch(e){return void n(e)}s.done?t(c):Promise.resolve(c).then(r,i)}function n(e){return function(){var n=this,r=arguments;return new Promise(function(i,a){var o=e.apply(n,r);function s(e){t(o,i,a,s,c,\`next\`,e)}function c(e){t(o,i,a,s,c,\`throw\`,e)}s(void 0)})}}return exports.asyncToGenerator=n,exports}({});
+
+      	//#region entry.js
+      	babelHelpers.asyncToGenerator(function* () {
+      		yield new Promise((resolve) => setTimeout(resolve, 1e3));
+      		console.log("foo");
+      	})();
+      	const foo = "foo";
+      	//#endregion
+      	exports.foo = foo;
+      });
+      "
+    `)
   })
 })
