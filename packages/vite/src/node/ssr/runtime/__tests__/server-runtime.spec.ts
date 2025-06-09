@@ -390,6 +390,15 @@ describe('module runner initialization', async () => {
     `,
     )
   })
+
+  it(`handle Object variable`, async ({ runner }) => {
+    const mod = await runner.import('/fixtures/top-level-object.js')
+    expect(mod).toMatchInlineSnapshot(`
+      {
+        "Object": "my-object",
+      }
+    `)
+  })
 })
 
 describe('optimize-deps', async () => {
