@@ -40,4 +40,4 @@ export function myPlugin(): Plugin {
 }
 ```
 
-For a more robust long term implementation, the plugin hook should handle for [multiple environments](/guide/api-environment.html#accessing-the-current-environment-in-hooks) using fine-grained environment options instead of relying on the environment name.
+For a more robust long term implementation, the plugin hook should handle for [multiple environments](/guide/api-environment-plugins.html#accessing-the-current-environment-in-hooks) using fine-grained environment options instead of relying on the environment name.
