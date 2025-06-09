@@ -76,7 +76,7 @@ This change add predictability to the default browser target for future releases
 
 ## Vitest
 
-For Vitest users, Vite 7.0 is supported from Vitest 3.2. You can read more about how the Vitest team keeps improving Vite testing story in the [Vitest 3.2 release blog post](https://vitest.dev/blog/vitest-3.2.html).
+For Vitest users, Vite 7.0 is supported from Vitest 3.2. You can read more about how the Vitest team keeps improving Vite testing story in the [Vitest 3.2 release blog post](https://vitest.dev/blog/vitest-3-2.html).
 
 ## Environment API
 
