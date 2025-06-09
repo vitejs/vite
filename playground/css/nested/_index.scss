@@ -20,6 +20,23 @@ $var: '/ok.png';
   background-position: center;
 }
 
+.sass-url-starts-with-interpolation1 {
+  background: url(#{$var});
+  background-position: center;
+}
+
+.sass-url-starts-with-interpolation2 {
+  background: url('#{$var}');
+  background-position: center;
+}
+
+$var-c1: '/ok';
+$var-c2: '.png';
+.sass-url-starts-with-variable-concat {
+  background: url($var-c1 + $var-c2);
+  background-position: center;
+}
+
 $var2: '/OK.PNG';
 .sass-url-starts-with-function-call {
   background: url(string.to-lower-case($var2));

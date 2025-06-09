@@ -9,7 +9,7 @@ Before Vite 6, only two environments were available: `client` and `ssr`. A singl
 Affect scope: `Vite Plugin Authors`
 
 ::: warning Future Deprecation
-`this.environment` was introduced in `v6.0`. The deprecation of `options.ssr` is planned for `v7.0`. At that point we'll start recommending migrating your plugins to use the new API. To identify your usage, set `future.removePluginHookSsrArgument` to `"warn"` in your vite config.
+`this.environment` was introduced in `v6.0`. The deprecation of `options.ssr` is planned for a future major. At that point we'll start recommending migrating your plugins to use the new API. To identify your usage, set `future.removePluginHookSsrArgument` to `"warn"` in your vite config.
 :::
 
 ## Motivation

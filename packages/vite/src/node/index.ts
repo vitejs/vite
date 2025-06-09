@@ -49,7 +49,32 @@ export { createServerHotChannel } from './server/hmr'
 export { ssrTransform as moduleRunnerTransform } from './ssr/ssrTransform'
 export type { ModuleRunnerTransformOptions } from './ssr/ssrTransform'
 
-export * from './publicUtils'
+export {
+  VERSION as version,
+  DEFAULT_CLIENT_CONDITIONS as defaultClientConditions,
+  DEFAULT_CLIENT_MAIN_FIELDS as defaultClientMainFields,
+  DEFAULT_SERVER_CONDITIONS as defaultServerConditions,
+  DEFAULT_SERVER_MAIN_FIELDS as defaultServerMainFields,
+  defaultAllowedOrigins,
+} from './constants'
+export { version as esbuildVersion } from 'esbuild'
+export {
+  normalizePath,
+  mergeConfig,
+  mergeAlias,
+  createFilter,
+  isCSSRequest,
+  rollupVersion,
+} from './utils'
+export { send } from './server/send'
+export { createLogger } from './logger'
+export { searchForWorkspaceRoot } from './server/searchRoot'
+
+export {
+  isFileServingAllowed,
+  isFileLoadingAllowed,
+} from './server/middlewares/static'
+export { loadEnv, resolveEnvPrefix } from './env'
 
 // additional types
 export type {
@@ -72,7 +97,13 @@ export type {
   DevEnvironmentOptions,
   ResolvedDevEnvironmentOptions,
 } from './config'
-export type { Plugin, PluginOption, HookHandler } from './plugin'
+export type {
+  Plugin,
+  PluginOption,
+  HookHandler,
+  ConfigPluginContext,
+  MinimalPluginContextWithoutEnvironment,
+} from './plugin'
 export type { Environment } from './environment'
 export type { FilterPattern } from './utils'
 export type { CorsOptions, CorsOrigin, CommonServerOptions } from './http'

@@ -27,7 +27,7 @@ import type { TransformOptions } from 'esbuild'
 import { withTrailingSlash } from '../shared/utils'
 import {
   DEFAULT_ASSETS_INLINE_LIMIT,
-  ESBUILD_MODULES_TARGET,
+  ESBUILD_BASELINE_WIDELY_AVAILABLE_TARGET,
   ROLLUP_HOOKS,
   VERSION,
 } from './constants'
@@ -56,7 +56,7 @@ import {
   normalizePath,
   partialEncodeURIPath,
 } from './utils'
-import { perEnvironmentPlugin, resolveEnvironmentPlugins } from './plugin'
+import { perEnvironmentPlugin } from './plugin'
 import { manifestPlugin } from './plugins/manifest'
 import type { Logger } from './logger'
 import { dataURIPlugin } from './plugins/dataUri'
@@ -73,12 +73,13 @@ import {
 import { completeSystemWrapPlugin } from './plugins/completeSystemWrap'
 import { webWorkerPostPlugin } from './plugins/worker'
 import { getHookHandler } from './plugins'
-import {
-  BaseEnvironment,
-  getDefaultResolvedEnvironmentOptions,
-} from './baseEnvironment'
-import type { Plugin } from './plugin'
+import { BaseEnvironment } from './baseEnvironment'
+import type { MinimalPluginContextWithoutEnvironment, Plugin } from './plugin'
 import type { RollupPluginHooks } from './typeUtils'
+import {
+  BasicMinimalPluginContext,
+  basePluginContextMeta,
+} from './server/pluginContainer'
 
 export interface BuildEnvironmentOptions {
   /**
@@ -86,18 +87,18 @@ export interface BuildEnvironmentOptions {
    * and the lowest supported target is es2015. Note this only handles
    * syntax transformation and does not cover polyfills
    *
-   * Default: 'modules' - transpile targeting browsers that natively support
-   * dynamic es module imports and `import.meta`
-   * (Chrome 87+, Firefox 78+, Safari 14+, Edge 88+).
+   * Default: 'baseline-widely-available' - transpile targeting browsers that
+   * are included in the Baseline Widely Available on 2025-05-01.
+   * (Chrome 107+, Edge 107+, Firefox 104+, Safari 16+).
    *
    * Another special value is 'esnext' - which only performs minimal transpiling
    * (for minification compat).
    *
    * For custom targets, see https://esbuild.github.io/api/#target and
    * https://esbuild.github.io/content-types/#javascript for more details.
-   * @default 'modules'
+   * @default 'baseline-widely-available'
    */
-  target?: 'modules' | TransformOptions['target'] | false
+  target?: 'baseline-widely-available' | TransformOptions['target'] | false
   /**
    * whether to inject module preload polyfill.
    * Note: does not apply to library mode.
@@ -353,7 +354,7 @@ export interface ResolvedBuildOptions
 }
 
 export const buildEnvironmentOptionsDefaults = Object.freeze({
-  target: 'modules',
+  target: 'baseline-widely-available',
   /** @deprecated */
   polyfillModulePreload: true,
   modulePreload: true,
@@ -423,8 +424,8 @@ export function resolveBuildEnvironmentOptions(
   )
 
   // handle special build targets
-  if (merged.target === 'modules') {
-    merged.target = ESBUILD_MODULES_TARGET
+  if (merged.target === 'baseline-widely-available') {
+    merged.target = ESBUILD_BASELINE_WIDELY_AVAILABLE_TARGET
   }
 
   // normalize false string into actual false
@@ -531,8 +532,7 @@ function resolveConfigToBuild(
 async function buildEnvironment(
   environment: BuildEnvironment,
 ): Promise<RollupOutput | RollupOutput[] | RollupWatcher> {
-  const { root, packageCache } = environment.config
-  const options = environment.config.build
+  const { root, packageCache, build: options } = environment.config
   const libOptions = options.lib
   const { logger } = environment
   const ssr = environment.config.consumer === 'server'
@@ -1267,6 +1267,7 @@ function injectEnvironmentInContext<Context extends MinimalPluginContext>(
   context: Context,
   environment: BuildEnvironment,
 ) {
+  context.meta.viteVersion ??= VERSION
   context.environment ??= environment
   return context
 }
@@ -1478,8 +1479,10 @@ export class BuildEnvironment extends BaseEnvironment {
       options?: EnvironmentOptions
     },
   ) {
-    let options =
-      config.environments[name] ?? getDefaultResolvedEnvironmentOptions(config)
+    let options = config.environments[name]
+    if (!options) {
+      throw new Error(`Environment "${name}" is not defined in the config.`)
+    }
     if (setup?.options) {
       options = mergeConfig(
         options,
@@ -1494,7 +1497,6 @@ export class BuildEnvironment extends BaseEnvironment {
       return
     }
     this._initiated = true
-    this._plugins = await resolveEnvironmentPlugins(this)
   }
 }
 
@@ -1573,6 +1575,11 @@ export async function createBuilder(
     environments,
     config,
     async buildApp() {
+      const pluginContext = new BasicMinimalPluginContext(
+        { ...basePluginContextMeta, watchMode: false },
+        config.logger,
+      )
+
       // order 'pre' and 'normal' hooks are run first, then config.builder.buildApp, then 'post' hooks
       let configBuilderBuildAppCalled = false
       for (const p of config.getSortedPlugins('buildApp')) {
@@ -1586,7 +1593,7 @@ export async function createBuilder(
           await configBuilder.buildApp(builder)
         }
         const handler = getHookHandler(hook)
-        await handler(builder)
+        await handler.call(pluginContext, builder)
       }
       if (!configBuilderBuildAppCalled) {
         await configBuilder.buildApp(builder)
@@ -1670,4 +1677,7 @@ export async function createBuilder(
   return builder
 }
 
-export type BuildAppHook = (this: void, builder: ViteBuilder) => Promise<void>
+export type BuildAppHook = (
+  this: MinimalPluginContextWithoutEnvironment,
+  builder: ViteBuilder,
+) => Promise<void>

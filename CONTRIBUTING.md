@@ -49,7 +49,7 @@ To add a new language to the Vite docs, see [`vite-docs-template`](https://githu
 
 Vite aims to be lightweight, and this includes being aware of the number of npm dependencies and their size.
 
-We use Rollup to pre-bundle most dependencies before publishing! Therefore, most dependencies, even those used in runtime source code, should be added under `devDependencies` by default. This also creates the following constraints that we need to be aware of in the codebase.
+We use Rolldown to pre-bundle most dependencies before publishing! Therefore, most dependencies, even those used in runtime source code, should be added under `devDependencies` by default. This also creates the following constraints that we need to be aware of in the codebase.
 
 ### Usage of `require()`
 
@@ -119,6 +119,12 @@ Some errors are masked and hidden away because of the layers of abstraction and 
 ### Debug Logging
 
 You can set the `--debug` option to turn on debugging logs (e.g. `vite --debug resolve`). To see all debug logs, you can set `vite --debug *`, but be warned that it will be quite noisy. You can run `grep -r "createDebugger('vite:" packages/vite/src/` to see a list of available debug scopes.
+
+### Disabling Source Maps
+
+Source maps for Vite's source code are enabled by default when Vite is placed outside `node_modules` so that you can easily debug it. When bundling Vite in watch mode, source maps will be generated.
+
+However, this behavior may not be desirable when you are developing source map related features. In that case, you can disable source maps by setting the `DEBUG_DISABLE_SOURCE_MAP` environment variable to `1` when running Vite (e.g. `DEBUG_DISABLE_SOURCE_MAP=1 vite`). This environment variable can also be used to disable source map generation.
 
 ## Testing Vite against external packages
 
