@@ -35,9 +35,9 @@ import { loadTsconfigJsonForFile } from './esbuild'
 // IIFE content looks like `var MyLib = (function() {`.
 export const IIFE_BEGIN_RE =
   /(?:(?:const|var)\s+\S+\s*=\s*|^|\n)\(?function\([^()]*\)\s*\{(?:\s*"use strict";)?/
-// UMD content looks like `(this, function(exports) {`.
+// UMD content looks like `(this, function(exports) {` or `factory(); })(function() {`.
 export const UMD_BEGIN_RE =
-  /\(this,\s*function\([^()]*\)\s*\{(?:\s*"use strict";)?/
+  /(?:\(this,\s*function\([^()]+\)\s*\{|factory\(\);\s*\}\)\(function\(\)\s*\{)(?:\s*"use strict";)?/
 
 const jsxExtensionsRE = /\.(?:j|t)sx\b/
 const validExtensionRE = /\.\w+$/
