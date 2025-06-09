@@ -7,6 +7,7 @@
  */
 
 import { dataToEsm, makeLegalIdentifier } from '@rollup/pluginutils'
+import { jsonPlugin as nativeJsonPlugin } from 'rolldown/experimental'
 import { SPECIAL_QUERY_RE } from '../constants'
 import type { Plugin } from '../plugin'
 import { stripBomTag } from '../utils'
@@ -40,7 +41,12 @@ export const isJSONRequest = (request: string): boolean =>
 export function jsonPlugin(
   options: Required<JsonOptions>,
   isBuild: boolean,
+  enableNativePlugin: boolean,
 ): Plugin {
+  if (enableNativePlugin) {
+    return nativeJsonPlugin({ ...options, minify: isBuild })
+  }
+
   const plugin = {
     name: 'vite:json',
 

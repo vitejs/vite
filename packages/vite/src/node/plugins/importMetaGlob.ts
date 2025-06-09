@@ -16,6 +16,7 @@ import { stringifyQuery } from 'ufo'
 import type { GeneralImportGlobOptions } from 'types/importGlob'
 import { parseAstAsync } from 'rolldown/parseAst'
 import { escapePath, glob } from 'tinyglobby'
+import { importGlobPlugin as nativeImportGlobPlugin } from 'rolldown/experimental'
 import type { Plugin } from '../plugin'
 import type { EnvironmentModuleNode } from '../server/moduleGraph'
 import type { ResolvedConfig } from '../config'
@@ -41,6 +42,13 @@ interface ParsedGeneralImportGlobOptions extends GeneralImportGlobOptions {
 }
 
 export function importGlobPlugin(config: ResolvedConfig): Plugin {
+  if (config.experimental.enableNativePlugin === true) {
+    return nativeImportGlobPlugin({
+      root: config.root,
+      restoreQueryExtension: config.experimental.importGlobRestoreExtension,
+    })
+  }
+
   const importGlobMaps = new Map<
     Environment,
     Map<string, Array<(file: string) => boolean>>

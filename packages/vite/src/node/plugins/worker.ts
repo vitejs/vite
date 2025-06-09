@@ -4,8 +4,9 @@ import type { OutputChunk, RollupError } from 'rolldown'
 import colors from 'picocolors'
 import { type ImportSpecifier, init, parse } from 'es-module-lexer'
 import type { ChunkMetadata } from 'types/metadata'
+import { webWorkerPostPlugin as nativeWebWorkerPostPlugin } from 'rolldown/experimental'
 import type { ResolvedConfig } from '../config'
-import type { Plugin } from '../plugin'
+import { type Plugin, perEnvironmentPlugin } from '../plugin'
 import { ENV_ENTRY, ENV_PUBLIC_PATH } from '../constants'
 import {
   encodeURIPath,
@@ -240,7 +241,18 @@ export async function workerFileToUrl(
   return encodeWorkerAssetFileName(fileName, workerMap)
 }
 
-export function webWorkerPostPlugin(): Plugin {
+export function webWorkerPostPlugin(config: ResolvedConfig): Plugin {
+  if (config.experimental.enableNativePlugin === true) {
+    return perEnvironmentPlugin(
+      'native:web-worker-post-plugin',
+      (environment) => {
+        if (environment.config.worker.format === 'iife') {
+          return nativeWebWorkerPostPlugin()
+        }
+      },
+    )
+  }
+
   return {
     name: 'vite:worker-post',
     transform: {

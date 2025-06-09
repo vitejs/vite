@@ -3,7 +3,8 @@ import { gzip } from 'node:zlib'
 import { promisify } from 'node:util'
 import colors from 'picocolors'
 import type { OutputBundle } from 'rolldown'
-import { type Plugin } from '../plugin'
+import { reporterPlugin as nativeReporterPlugin } from 'rolldown/experimental'
+import { type Plugin, perEnvironmentPlugin } from '../plugin'
 import type { ResolvedConfig } from '../config'
 import type { Environment } from '../environment'
 import { perEnvironmentState } from '../environment'
@@ -27,6 +28,23 @@ type LogEntry = {
 const COMPRESSIBLE_ASSETS_RE = /\.(?:html|json|svg|txt|xml|xhtml|wasm)$/
 
 export function buildReporterPlugin(config: ResolvedConfig): Plugin {
+  if (config.experimental.enableNativePlugin === true) {
+    return perEnvironmentPlugin('native:reporter', (env) => {
+      const tty = process.stdout.isTTY && !process.env.CI
+      const shouldLogInfo =
+        LogLevels[config.logLevel || 'info'] >= LogLevels.info
+      const assetsDir = path.join(env.config.build.assetsDir, '/')
+      return nativeReporterPlugin({
+        isTty: !!tty,
+        isLib: !!env.config.build.lib,
+        assetsDir,
+        chunkLimit: env.config.build.chunkSizeWarningLimit,
+        shouldLogInfo,
+        reportCompressedSize: env.config.build.reportCompressedSize,
+      })
+    })
+  }
+
   const compress = promisify(gzip)
 
   const numberFormatter = new Intl.NumberFormat('en', {

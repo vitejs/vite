@@ -1,5 +1,6 @@
 import { exactRegex } from '@rolldown/pluginutils'
-import type { ResolvedConfig } from '..'
+import { modulePreloadPolyfillPlugin as nativeModulePreloadPolyfillPlugin } from 'rolldown/experimental'
+import { type ResolvedConfig, perEnvironmentPlugin } from '..'
 import type { Plugin } from '../plugin'
 import { isModernFlag } from './importAnalysisBuild'
 
@@ -7,6 +8,20 @@ export const modulePreloadPolyfillId = 'vite/modulepreload-polyfill'
 const resolvedModulePreloadPolyfillId = '\0' + modulePreloadPolyfillId + '.js'
 
 export function modulePreloadPolyfillPlugin(config: ResolvedConfig): Plugin {
+  if (config.experimental.enableNativePlugin === true) {
+    return perEnvironmentPlugin(
+      'native:modulepreload-polyfill',
+      (environment) => {
+        if (
+          config.command !== 'build' ||
+          environment.config.consumer !== 'client'
+        )
+          return false
+        return nativeModulePreloadPolyfillPlugin()
+      },
+    )
+  }
+
   let polyfillString: string | undefined
 
   return {

@@ -23,12 +23,7 @@ import type {
   WarningHandlerWithDefault,
   WatcherOptions,
 } from 'rolldown'
-import {
-  loadFallbackPlugin as nativeLoadFallbackPlugin,
-  manifestPlugin as nativeManifestPlugin,
-  reporterPlugin as nativeReporterPlugin,
-  webWorkerPostPlugin as nativeWebWorkerPostPlugin,
-} from 'rolldown/experimental'
+import { loadFallbackPlugin as nativeLoadFallbackPlugin } from 'rolldown/experimental'
 import type { RollupCommonJSOptions } from 'dep-types/commonjs'
 import type { RollupDynamicImportVarsOptions } from 'dep-types/dynamicImportVars'
 import type { EsbuildTarget } from 'types/internal/esbuildOptions'
@@ -67,7 +62,7 @@ import {
 } from './utils'
 import { perEnvironmentPlugin, resolveEnvironmentPlugins } from './plugin'
 import { manifestPlugin } from './plugins/manifest'
-import { LogLevels, type Logger } from './logger'
+import { type Logger } from './logger'
 import { buildImportAnalysisPlugin } from './plugins/importAnalysisBuild'
 import { ssrManifestPlugin } from './ssr/ssrManifestPlugin'
 import { findNearestMainPackageData, findNearestPackageData } from './packages'
@@ -481,7 +476,6 @@ export async function resolveBuildPlugins(config: ResolvedConfig): Promise<{
   pre: Plugin[]
   post: Plugin[]
 }> {
-  const enableNativePlugin = config.experimental.enableNativePlugin
   return {
     pre: [
       completeSystemWrapPlugin(),
@@ -494,24 +488,11 @@ export async function resolveBuildPlugins(config: ResolvedConfig): Promise<{
             )
           ).filter(Boolean) as Plugin[],
       ),
-      ...(config.isWorker
-        ? [
-            enableNativePlugin === true
-              ? perEnvironmentPlugin(
-                  'native:web-worker-post-plugin',
-                  (environment) => {
-                    if (environment.config.worker.format === 'iife') {
-                      return nativeWebWorkerPostPlugin()
-                    }
-                  },
-                )
-              : webWorkerPostPlugin(),
-          ]
-        : []),
+      ...(config.isWorker ? [webWorkerPostPlugin(config)] : []),
     ],
     post: [
       ...buildImportAnalysisPlugin(config),
-      ...(enableNativePlugin !== true
+      ...(config.experimental.enableNativePlugin !== true
         ? [
             buildOxcPlugin(),
             ...(config.build.minify === 'esbuild'
@@ -522,36 +503,9 @@ export async function resolveBuildPlugins(config: ResolvedConfig): Promise<{
       terserPlugin(config),
       ...(!config.isWorker
         ? [
-            config.build.manifest && enableNativePlugin === true
-              ? perEnvironmentPlugin('native:manifest', (environment) => {
-                  if (!environment.config.build.manifest) return false
-
-                  return nativeManifestPlugin({
-                    root: environment.config.root,
-                    outPath:
-                      environment.config.build.manifest === true
-                        ? '.vite/manifest.json'
-                        : environment.config.build.manifest,
-                  })
-                })
-              : manifestPlugin(),
+            manifestPlugin(config),
             ssrManifestPlugin(),
-            enableNativePlugin === true
-              ? perEnvironmentPlugin('native:reporter', (env) => {
-                  const tty = process.stdout.isTTY && !process.env.CI
-                  const shouldLogInfo =
-                    LogLevels[config.logLevel || 'info'] >= LogLevels.info
-                  const assetsDir = path.join(env.config.build.assetsDir, '/')
-                  return nativeReporterPlugin({
-                    isTty: !!tty,
-                    isLib: !!env.config.build.lib,
-                    assetsDir,
-                    chunkLimit: env.config.build.chunkSizeWarningLimit,
-                    shouldLogInfo,
-                    reportCompressedSize: env.config.build.reportCompressedSize,
-                  })
-                })
-              : buildReporterPlugin(config),
+            buildReporterPlugin(config),
           ]
         : []),
       nativeLoadFallbackPlugin(),
