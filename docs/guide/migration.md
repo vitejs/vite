@@ -46,6 +46,8 @@ There are other breaking changes which only affect few users.
   - These properties were deprecated from the beginning. It is now removed.
 - [[#19987] refactor!: remove deprecated `HotBroadcaster` related types](https://github.com/vitejs/vite/pull/19987)
   - These types were introduced as part of the now-deprecated Runtime API. It is now removed: `HMRBroadcaster`, `HMRBroadcasterClient`, `ServerHMRChannel`, `HMRChannel`
+- [[#19996] fix(ssr)!: don't access `Object` variable in ssr transformed code](https://github.com/vitejs/vite/pull/19996)
+  - `__vite_ssr_exportName__` is now required for the module runner runtime context.
 - [[#20045] fix: treat all `optimizeDeps.entries` values as globs](https://github.com/vitejs/vite/pull/20045)
   - `optimizeDeps.entries` now does not receive literal string paths. Instead, it always receives globs.
 
