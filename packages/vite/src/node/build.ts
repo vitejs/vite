@@ -70,7 +70,6 @@ import { manifestPlugin } from './plugins/manifest'
 import { LogLevels, type Logger } from './logger'
 import { buildImportAnalysisPlugin } from './plugins/importAnalysisBuild'
 import { ssrManifestPlugin } from './ssr/ssrManifestPlugin'
-import { buildLoadFallbackPlugin } from './plugins/loadFallback'
 import { findNearestMainPackageData, findNearestPackageData } from './packages'
 import type { PackageCache } from './packages'
 import {
@@ -555,9 +554,7 @@ export async function resolveBuildPlugins(config: ResolvedConfig): Promise<{
               : buildReporterPlugin(config),
           ]
         : []),
-      enableNativePlugin === true
-        ? nativeLoadFallbackPlugin()
-        : buildLoadFallbackPlugin(),
+      nativeLoadFallbackPlugin(),
     ],
   }
 }
