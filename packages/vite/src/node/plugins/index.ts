@@ -1,26 +1,13 @@
-import url from 'node:url'
 import aliasPlugin, { type ResolverFunction } from '@rollup/plugin-alias'
 import type { ObjectHook } from 'rolldown'
-import type { TransformOptions as OxcTransformOptions } from 'rolldown/experimental'
-import {
-  aliasPlugin as nativeAliasPlugin,
-  dynamicImportVarsPlugin as nativeDynamicImportVarsPlugin,
-  importGlobPlugin as nativeImportGlobPlugin,
-  jsonPlugin as nativeJsonPlugin,
-  modulePreloadPolyfillPlugin as nativeModulePreloadPolyfillPlugin,
-  transformPlugin as nativeTransformPlugin,
-  wasmFallbackPlugin as nativeWasmFallbackPlugin,
-  wasmHelperPlugin as nativeWasmHelperPlugin,
-} from 'rolldown/experimental'
+import { aliasPlugin as nativeAliasPlugin } from 'rolldown/experimental'
 import type { PluginHookUtils, ResolvedConfig } from '../config'
 import {
   type HookHandler,
   type Plugin,
   type PluginWithRequiredHook,
-  perEnvironmentPlugin,
 } from '../plugin'
 import { watchPackageDataPlugin } from '../packages'
-import { normalizePath } from '../utils'
 import { jsonPlugin } from './json'
 import { oxcResolvePlugin, resolvePlugin } from './resolve'
 import { optimizedDepsPlugin } from './optimizedDeps'
@@ -44,7 +31,7 @@ import {
   createFilterForTransform,
   createIdFilter,
 } from './pluginFilter'
-import { type OxcOptions, oxcPlugin } from './oxc'
+import { oxcPlugin } from './oxc'
 import { esbuildBannerFooterCompatPlugin } from './esbuildBannerFooterCompatPlugin'
 
 export async function resolvePlugins(
@@ -83,19 +70,7 @@ export async function resolvePlugins(
     ...prePlugins,
 
     modulePreload !== false && modulePreload.polyfill
-      ? enableNativePlugin === true
-        ? perEnvironmentPlugin(
-            'native:modulepreload-polyfill',
-            (environment) => {
-              if (
-                config.command !== 'build' ||
-                environment.config.consumer !== 'client'
-              )
-                return false
-              return nativeModulePreloadPolyfillPlugin()
-            },
-          )
-        : modulePreloadPolyfillPlugin(config)
+      ? modulePreloadPolyfillPlugin(config)
       : null,
     ...(enableNativePlugin
       ? oxcResolvePlugin(
@@ -126,65 +101,23 @@ export async function resolvePlugins(
     htmlInlineProxyPlugin(config),
     cssPlugin(config),
     esbuildBannerFooterCompatPlugin(config),
-    config.oxc !== false
-      ? enableNativePlugin === true
-        ? perEnvironmentPlugin('native:transform', (environment) => {
-            const {
-              jsxInject,
-              include = /\.(m?ts|[jt]sx)$/,
-              exclude = /\.js$/,
-              jsxRefreshInclude,
-              jsxRefreshExclude,
-              ..._transformOptions
-            } = config.oxc as Exclude<OxcOptions, false | undefined>
-
-            const transformOptions: OxcTransformOptions = _transformOptions
-            transformOptions.sourcemap =
-              environment.config.mode !== 'build' ||
-              !!environment.config.build.sourcemap
-
-            return nativeTransformPlugin({
-              include,
-              exclude,
-              jsxRefreshInclude,
-              jsxRefreshExclude,
-              isServerConsumer: environment.config.consumer === 'server',
-              runtimeResolveBase: normalizePath(
-                url.fileURLToPath(import.meta.url),
-              ),
-              jsxInject,
-              transformOptions,
-            })
-          })
-        : oxcPlugin(config)
-      : null,
-    enableNativePlugin === true
-      ? nativeJsonPlugin({ ...config.json, minify: isBuild })
-      : jsonPlugin(config.json, isBuild),
-    enableNativePlugin === true ? nativeWasmHelperPlugin() : wasmHelperPlugin(),
+    config.oxc !== false ? oxcPlugin(config) : null,
+    jsonPlugin(config.json, isBuild, enableNativePlugin === true),
+    wasmHelperPlugin(config),
     webWorkerPlugin(config),
     assetPlugin(config),
 
     ...normalPlugins,
 
-    enableNativePlugin === true
-      ? nativeWasmFallbackPlugin()
-      : wasmFallbackPlugin(),
+    wasmFallbackPlugin(config),
     definePlugin(config),
     cssPostPlugin(config),
     isBuild && buildHtmlPlugin(config),
     workerImportMetaUrlPlugin(config),
     assetImportMetaUrlPlugin(config),
     ...buildPlugins.pre,
-    enableNativePlugin === true
-      ? nativeDynamicImportVarsPlugin()
-      : dynamicImportVarsPlugin(config),
-    enableNativePlugin === true
-      ? nativeImportGlobPlugin({
-          root: config.root,
-          restoreQueryExtension: config.experimental.importGlobRestoreExtension,
-        })
-      : importGlobPlugin(config),
+    dynamicImportVarsPlugin(config),
+    importGlobPlugin(config),
 
     ...postPlugins,
 

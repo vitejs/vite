@@ -4,7 +4,10 @@ import type {
   TransformOptions as OxcTransformOptions,
   TransformResult as OxcTransformResult,
 } from 'rolldown/experimental'
-import { transform } from 'rolldown/experimental'
+import {
+  transformPlugin as nativeTransformPlugin,
+  transform,
+} from 'rolldown/experimental'
 import type { RawSourceMap } from '@ampproject/remapping'
 import type { InternalModuleFormat, RollupError, SourceMap } from 'rolldown'
 import { rolldown } from 'rolldown'
@@ -22,7 +25,7 @@ import {
 import type { ResolvedConfig } from '../config'
 import type { Plugin } from '../plugin'
 import { cleanUrl } from '../../shared/utils'
-import type { Environment } from '..'
+import { type Environment, perEnvironmentPlugin } from '..'
 import type { ViteDevServer } from '../server'
 import { JS_TYPES_RE } from '../constants'
 import type { Logger } from '../logger'
@@ -267,6 +270,35 @@ function resolveTsconfigTarget(target: string | undefined): number | 'next' {
 }
 
 export function oxcPlugin(config: ResolvedConfig): Plugin {
+  if (config.experimental.enableNativePlugin === true) {
+    return perEnvironmentPlugin('native:transform', (environment) => {
+      const {
+        jsxInject,
+        include = /\.(m?ts|[jt]sx)$/,
+        exclude = /\.js$/,
+        jsxRefreshInclude,
+        jsxRefreshExclude,
+        ..._transformOptions
+      } = config.oxc as Exclude<OxcOptions, false | undefined>
+
+      const transformOptions: OxcTransformOptions = _transformOptions
+      transformOptions.sourcemap =
+        environment.config.mode !== 'build' ||
+        !!environment.config.build.sourcemap
+
+      return nativeTransformPlugin({
+        include,
+        exclude,
+        jsxRefreshInclude,
+        jsxRefreshExclude,
+        isServerConsumer: environment.config.consumer === 'server',
+        runtimeResolveBase: normalizePath(url.fileURLToPath(import.meta.url)),
+        jsxInject,
+        transformOptions,
+      })
+    })
+  }
+
   const options = config.oxc as OxcOptions
   const {
     jsxInject,
