@@ -42,7 +42,10 @@ interface ParsedGeneralImportGlobOptions extends GeneralImportGlobOptions {
 }
 
 export function importGlobPlugin(config: ResolvedConfig): Plugin {
-  if (config.experimental.enableNativePlugin === true) {
+  if (
+    config.experimental.enableNativePlugin === true &&
+    config.command === 'build'
+  ) {
     return nativeImportGlobPlugin({
       root: config.root,
       restoreQueryExtension: config.experimental.importGlobRestoreExtension,
