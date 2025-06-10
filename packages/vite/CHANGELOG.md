@@ -1,3 +1,24 @@
+## 7.0.0-beta.1 (2025-06-10)
+
+* feat: add base option to import.meta.glob (#20163) ([253d6c6](https://github.com/vitejs/vite/commit/253d6c6df2ebe3c4a88dabb6cec000128681561f)), closes [#20163](https://github.com/vitejs/vite/issues/20163)
+* fix(ssr)!: don't access `Object` variable in ssr transformed code (#19996) ([fceff60](https://github.com/vitejs/vite/commit/fceff60dc81730f7768b57f14e7a112facff387d)), closes [#19996](https://github.com/vitejs/vite/issues/19996)
+* fix: align dynamic import detection (#20115) ([1ea2222](https://github.com/vitejs/vite/commit/1ea2222302f128c4000289683480d8311ea34223)), closes [#20115](https://github.com/vitejs/vite/issues/20115)
+* fix: applyToEnvironment after configResolved (#20170) ([a330b80](https://github.com/vitejs/vite/commit/a330b805b0733fadd1f7d586218c2aafcbb41a7f)), closes [#20170](https://github.com/vitejs/vite/issues/20170)
+* fix: handle dynamic import with `.then(m => m.a)` (#20117) ([7b7410a](https://github.com/vitejs/vite/commit/7b7410abab7c95880d943e46bd1a16dcb1a893fc)), closes [#20117](https://github.com/vitejs/vite/issues/20117)
+* fix: virtual svg module (#20144) ([7dfcb31](https://github.com/vitejs/vite/commit/7dfcb316ee64aca0a98a1d2905deb1dfd113ae6d)), closes [#20144](https://github.com/vitejs/vite/issues/20144)
+* fix(deps): update all non-major dependencies (#20141) ([89ca65b](https://github.com/vitejs/vite/commit/89ca65ba1d849046dccdea52e9eca980f331be26)), closes [#20141](https://github.com/vitejs/vite/issues/20141)
+* fix(hmr): use monotonicDateNow for timestamp (#20158) ([8d26785](https://github.com/vitejs/vite/commit/8d26785b8c3f5295ca0c1519dda1ddae9096fc73)), closes [#20158](https://github.com/vitejs/vite/issues/20158)
+* fix(optimizer): align relative `build.rollupOptions.input` resolution with rollup (#20080) ([9759c29](https://github.com/vitejs/vite/commit/9759c29a8985da1a51de452d741850f0bf2ef7ef)), closes [#20080](https://github.com/vitejs/vite/issues/20080)
+* fix(types): prefer sass-embedded types over sass types for `preprocessorOptions.sass` (fix #20150) ( ([7db56be](https://github.com/vitejs/vite/commit/7db56be237dd1e1e875518475421d5c90cf950da)), closes [#20150](https://github.com/vitejs/vite/issues/20150) [#20166](https://github.com/vitejs/vite/issues/20166)
+* chore: add a way to disable source maps when developing Vite (#20168) ([3a30c0a](https://github.com/vitejs/vite/commit/3a30c0a084a1b92a6265f8900df89e5102418e5e)), closes [#20168](https://github.com/vitejs/vite/issues/20168)
+* chore: fix source map support when developing Vite (#20167) ([279ab0d](https://github.com/vitejs/vite/commit/279ab0dc954c5e986810b78efa7fe898945f8f21)), closes [#20167](https://github.com/vitejs/vite/issues/20167)
+* chore: use destructuring alias in buildEnvironment function (#19472) ([501572a](https://github.com/vitejs/vite/commit/501572a9a3e1e22ab7e19afb5b13d3f54da67c37)), closes [#19472](https://github.com/vitejs/vite/issues/19472)
+* chore(deps): update rolldown-related dependencies (#20140) ([0387447](https://github.com/vitejs/vite/commit/03874471e3de14e7d2f474ecb354499e7f5eb418)), closes [#20140](https://github.com/vitejs/vite/issues/20140)
+* refactor(worker): set virtual file content in load hook (#20160) ([0d60667](https://github.com/vitejs/vite/commit/0d60667e03d91cc0d48dd2cdbd8154d94e0aba74)), closes [#20160](https://github.com/vitejs/vite/issues/20160)
+* test: correct esbuild `useDefineForClassFields` test (#20143) ([d90796e](https://github.com/vitejs/vite/commit/d90796ece7d30d1879d74c422628be30d1c90a7f)), closes [#20143](https://github.com/vitejs/vite/issues/20143)
+
+
+
 ## 7.0.0-beta.0 (2025-06-02)
 
 * chore: declare version range for peer dependencies (#19979) ([c9bfd57](https://github.com/vitejs/vite/commit/c9bfd578f4c56314c6c6d6f34e49fe494ae11072)), closes [#19979](https://github.com/vitejs/vite/issues/19979)
