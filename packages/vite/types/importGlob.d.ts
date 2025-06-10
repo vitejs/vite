@@ -28,6 +28,10 @@ export interface ImportGlobOptions<
    * @default false
    */
   exhaustive?: boolean
+  /**
+   * Base path to resolve relative paths.
+   */
+  base?: string
 }
 
 export type GeneralImportGlobOptions = ImportGlobOptions<boolean, string>
