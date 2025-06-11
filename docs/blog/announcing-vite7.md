@@ -35,9 +35,7 @@ We're happy to share the release of Vite 7! It has been 5 years since Evan You s
 
 This year, we're making several big steps. To start with, [ViteConf](https://viteconf.org) is going to be in person! The Vite Ecosystem will gather in Amsterdam on October 9-10! Organized by [JSWorld](https://jsworldconference.com/) in partnership with [Bolt](https://bolt.new), [VoidZero](https://voidzero.dev), and the Vite Core Team! We had three incredible [ViteConf online editions](https://www.youtube.com/@viteconf/playlists), and we can't wait to meet in real life. Check out the speakers and get your ticket at the [ViteConf site](https://viteconf.org)!
 
-And [VoidZero](https://voidzero.dev/posts/announcing-voidzero-inc) continues to make big strides in its mission to build an open source unified development toolchain for the JavaScript ecosystem.
-
-TODO: Rolldown in beta, vite-rolldown is available for testing, read more at VoidZero's blog post.
+And [VoidZero](https://voidzero.dev/posts/announcing-voidzero-inc) continues to make significant strides in its mission to build an open source unified development toolchain for the JavaScript ecosystem. Over the last year, the VoidZero team has been working on [Rolldown](https://rolldown.rs/), a Rust-based next-generation bundler, as part of a broader effort to modernize Vite's core. You can try out the Rolldown-powered Vite today by using the rolldown-vite package instead of the default vite package. It is a drop-in replacement, as Rolldown will become the default bundler for Vite in the future. Switching should reduce your build time, especially for larger projects. Read more at the [Rolldown-vite announcement blog post](https://voidzero.dev/posts/announcing-rolldown-vite).
 
 VoidZero has also partnered with [NuxtLabs](https://nuxtlabs.com/). Anthony Fu will work on creating Vite DevTools, a tool that will offer deeper and more insightful debugging and analysis for all projects and frameworks built on top of Vite. You can read more on the [VoidZero and NuxtLabs join forces on Vite Devtools blog post](https://voidzero.dev/posts/voidzero-nuxtlabs-vite-devtools).
 
