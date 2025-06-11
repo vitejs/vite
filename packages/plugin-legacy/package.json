@@ -37,7 +37,7 @@
     "@babel/preset-env": "^7.27.2",
     "browserslist": "^4.25.0",
     "browserslist-to-esbuild": "^2.1.1",
-    "core-js": "^3.42.0",
+    "core-js": "^3.43.0",
     "magic-string": "^0.30.17",
     "regenerator-runtime": "^0.14.1",
     "systemjs": "^6.15.1"
@@ -47,7 +47,7 @@
     "vite": "^6.0.0"
   },
   "devDependencies": {
-    "acorn": "^8.14.1",
+    "acorn": "^8.15.0",
     "picocolors": "^1.1.1",
     "tsdown": "^0.12.7",
     "vite": "workspace:*"

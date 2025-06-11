@@ -48,9 +48,9 @@
     "@types/cross-spawn": "^6.0.6",
     "@types/debug": "^4.1.12",
     "@types/estree": "^1.0.8",
-    "@types/etag": "^1.8.3",
+    "@types/etag": "^1.8.4",
     "@types/less": "^3.0.8",
-    "@types/node": "^22.15.30",
+    "@types/node": "^22.15.31",
     "@types/picomatch": "^4.0.0",
     "@types/stylus": "^0.48.43",
     "@types/ws": "^8.18.1",
@@ -59,20 +59,20 @@
     "eslint": "^9.28.0",
     "eslint-plugin-import-x": "^4.15.1",
     "eslint-plugin-n": "^17.19.0",
-    "eslint-plugin-regexp": "^2.8.0",
+    "eslint-plugin-regexp": "^2.9.0",
     "execa": "^9.6.0",
     "globals": "^16.2.0",
     "lint-staged": "^16.1.0",
     "picocolors": "^1.1.1",
-    "playwright-chromium": "^1.50.1",
+    "playwright-chromium": "^1.53.0",
     "prettier": "3.5.3",
     "rollup": "^4.40.0",
     "simple-git-hooks": "^2.13.0",
-    "tsx": "^4.19.4",
+    "tsx": "^4.20.1",
     "typescript": "~5.7.2",
-    "typescript-eslint": "^8.33.1",
+    "typescript-eslint": "^8.34.0",
     "vite": "workspace:*",
-    "vitest": "^3.2.2"
+    "vitest": "^3.2.3"
   },
   "simple-git-hooks": {
     "pre-commit": "pnpm exec lint-staged --concurrent false"
@@ -91,7 +91,7 @@
       "eslint --cache --fix"
     ]
   },
-  "packageManager": "pnpm@10.11.1",
+  "packageManager": "pnpm@10.12.1",
   "pnpm": {
     "overrides": {
       "vite": "workspace:*"
