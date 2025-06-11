@@ -129,6 +129,8 @@ npm add -D terser
 
   Set to `false` to only output the legacy bundles that support all target browsers.
 
+  This is also useful when running the project locally using `file:` protocol, as loading modern chunks with `type="module"` may trigger CORS restrictions. To avoid this issue, simply set `renderModernChunks` to `false` to exclusively use legacy chunks instead.
+
 ## Browsers that supports ESM but does not support widely-available features
 
 The legacy plugin offers a way to use widely-available features natively in the modern build, while falling back to the legacy build in browsers with native ESM but without those features supported (e.g. Legacy Edge). This feature works by injecting a runtime check and loading the legacy bundle with SystemJs runtime if needed. There are the following drawbacks:
