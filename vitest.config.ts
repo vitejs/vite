@@ -1,10 +1,16 @@
 import path from 'node:path'
 import url from 'node:url'
 import { defineConfig } from 'vitest/config'
+import tailwindcss from '@tailwindcss/vite'
 
 const _dirname = path.dirname(url.fileURLToPath(import.meta.url))
 
 export default defineConfig({
+
+  plugins: [
+    tailwindcss(),
+  ],
+})
   test: {
     include: ['**/__tests__/**/*.spec.[tj]s'],
     exclude: [
