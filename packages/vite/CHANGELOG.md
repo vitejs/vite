@@ -1,3 +1,21 @@
+## <small>6.3.19 (2025-06-12)</small>
+
+* feat: enable preserveEntrySignatures (#253) ([e625289](https://github.com/vitejs/rolldown-vite/commit/e625289)), closes [#253](https://github.com/vitejs/rolldown-vite/issues/253)
+* feat: update rolldown ([849e744](https://github.com/vitejs/rolldown-vite/commit/849e744))
+* feat: update rolldown (#247) ([52e2490](https://github.com/vitejs/rolldown-vite/commit/52e2490)), closes [#247](https://github.com/vitejs/rolldown-vite/issues/247)
+* feat: update rolldown (#252) ([5d2bba3](https://github.com/vitejs/rolldown-vite/commit/5d2bba3)), closes [#252](https://github.com/vitejs/rolldown-vite/issues/252)
+* feat(native-plugin): use js alias plugin in dev environment (#231) ([bf84ccb](https://github.com/vitejs/rolldown-vite/commit/bf84ccb)), closes [#231](https://github.com/vitejs/rolldown-vite/issues/231)
+* feat(native-plugin): use js dynamic import vars plugin in dev environment (#233) ([f6d1dd5](https://github.com/vitejs/rolldown-vite/commit/f6d1dd5)), closes [#233](https://github.com/vitejs/rolldown-vite/issues/233)
+* feat(native-plugin): use js import glob plugin in dev environment (#234) ([a56245e](https://github.com/vitejs/rolldown-vite/commit/a56245e)), closes [#234](https://github.com/vitejs/rolldown-vite/issues/234)
+* feat(native-plugin): use js oxc transform plugin in dev environment (#238) ([7246509](https://github.com/vitejs/rolldown-vite/commit/7246509)), closes [#238](https://github.com/vitejs/rolldown-vite/issues/238)
+* feat(native-plugin): use js wasm helper in dev environment (#245) ([94c97b7](https://github.com/vitejs/rolldown-vite/commit/94c97b7)), closes [#245](https://github.com/vitejs/rolldown-vite/issues/245)
+* feat(native-plugin): use js web worker post in dev environment (#244) ([420eb32](https://github.com/vitejs/rolldown-vite/commit/420eb32)), closes [#244](https://github.com/vitejs/rolldown-vite/issues/244)
+* fix: accept umd without exports (#240) ([85f2db0](https://github.com/vitejs/rolldown-vite/commit/85f2db0)), closes [#240](https://github.com/vitejs/rolldown-vite/issues/240)
+* refactor: move the condition related to `enableNativePlugin` to the plugin file side (#239) ([a4d8319](https://github.com/vitejs/rolldown-vite/commit/a4d8319)), closes [#239](https://github.com/vitejs/rolldown-vite/issues/239)
+* perf: always use native plugin for load fallback plugin (#236) ([031c41a](https://github.com/vitejs/rolldown-vite/commit/031c41a)), closes [#236](https://github.com/vitejs/rolldown-vite/issues/236)
+
+
+
 ## <small>6.3.18 (2025-06-06)</small>
 
 * feat: update rolldown (#227) ([b63345a](https://github.com/vitejs/rolldown-vite/commit/b63345a)), closes [#227](https://github.com/vitejs/rolldown-vite/issues/227)
