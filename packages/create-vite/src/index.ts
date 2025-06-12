@@ -358,7 +358,7 @@ async function init() {
       placeholder: defaultTargetDir,
     })
     if (prompts.isCancel(projectName)) return cancel()
-    targetDir = formatTargetDir(projectName as string)
+    targetDir = formatTargetDir(projectName as string) || defaultTargetDir
   }
 
   // 2. Handle directory if exist and not empty
