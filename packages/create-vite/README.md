@@ -63,6 +63,8 @@ Currently supported template presets include:
 - `lit-ts`
 - `svelte`
 - `svelte-ts`
+- `ember`
+- `ember-ts`
 - `solid`
 - `solid-ts`
 - `qwik`
