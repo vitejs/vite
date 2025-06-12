@@ -125,7 +125,7 @@ This option allows users to set a different browser target for CSS minification 
 
 It should only be used when you are targeting a non-mainstream browser.
 One example is Android WeChat WebView, which supports most modern JavaScript features but not the [`#RGBA` hexadecimal color notation in CSS](https://developer.mozilla.org/en-US/docs/Web/CSS/color_value#rgb_colors).
-In this case, you need to set `build.cssTarget` to `chrome61` to prevent vite from transform `rgba()` colors into `#RGBA` hexadecimal notations.
+In this case, you need to set `build.cssTarget` to `chrome61` to prevent vite from transforming `rgba()` colors into `#RGBA` hexadecimal notations.
 
 ## build.cssMinify
 
