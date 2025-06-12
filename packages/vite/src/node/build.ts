@@ -608,11 +608,11 @@ async function buildEnvironment(
   )
 
   const rollupOptions: RolldownOptions = {
-    // preserveEntrySignatures: ssr
-    //   ? 'allow-extension'
-    //   : libOptions
-    //     ? 'strict'
-    //     : false,
+    preserveEntrySignatures: ssr
+      ? 'allow-extension'
+      : libOptions
+        ? 'strict'
+        : false,
     // cache: options.watch ? undefined : false,
     ...options.rollupOptions,
     output: options.rollupOptions.output,

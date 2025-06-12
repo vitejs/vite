@@ -6,7 +6,7 @@ export default defineConfig({
     outDir: './dist',
     emptyOutDir: true,
     rollupOptions: {
-      // preserveEntrySignatures: 'strict',
+      preserveEntrySignatures: 'strict',
       input: {
         a0: resolve(__dirname, 'entrypoints/a0.js'),
         a1: resolve(__dirname, 'entrypoints/a1.js'),
