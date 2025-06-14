@@ -61,7 +61,7 @@ test('should load dynamic import with vars', async () => {
 // dynamic import css
 test('should load dynamic import with css', async () => {
   await page.click('.css')
-  await expect.poll(() => getColor('.view')).toMatch('red')
+  await expect.poll(() => getColor('.view')).toBe('red')
 })
 
 test('should load dynamic import with vars', async () => {
@@ -120,7 +120,7 @@ test('should load dynamic import with vars worker', async () => {
 
 test('should load dynamic import with css in package', async () => {
   await page.click('.pkg-css')
-  await expect.poll(() => getColor('.pkg-css')).toMatch('blue')
+  await expect.poll(() => getColor('.pkg-css')).toBe('blue')
 })
 
 test('should work with load ../ and itself directory', async () => {

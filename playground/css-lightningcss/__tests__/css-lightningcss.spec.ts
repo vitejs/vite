@@ -20,12 +20,12 @@ test('linked css', async () => {
 
   if (isBuild) return
   editFile('linked.css', (code) => code.replace('color: blue', 'color: red'))
-  await expect.poll(() => getColor(linked)).toMatch('red')
+  await expect.poll(() => getColor(linked)).toBe('red')
 
   editFile('linked-at-import.css', (code) =>
     code.replace('color: red', 'color: blue'),
   )
-  await expect.poll(() => getColor(atImport)).toMatch('blue')
+  await expect.poll(() => getColor(atImport)).toBe('blue')
 })
 
 test('css import from js', async () => {
@@ -37,12 +37,12 @@ test('css import from js', async () => {
 
   if (isBuild) return
   editFile('imported.css', (code) => code.replace('color: green', 'color: red'))
-  await expect.poll(() => getColor(imported)).toMatch('red')
+  await expect.poll(() => getColor(imported)).toBe('red')
 
   editFile('imported-at-import.css', (code) =>
     code.replace('color: purple', 'color: blue'),
   )
-  await expect.poll(() => getColor(atImport)).toMatch('blue')
+  await expect.poll(() => getColor(atImport)).toBe('blue')
 })
 
 test('css modules', async () => {
@@ -55,7 +55,7 @@ test('css modules', async () => {
   editFile('mod.module.css', (code) =>
     code.replace('color: turquoise', 'color: red'),
   )
-  await expect.poll(() => getColor(imported)).toMatch('red')
+  await expect.poll(() => getColor(imported)).toBe('red')
 })
 
 test('inline css modules', async () => {

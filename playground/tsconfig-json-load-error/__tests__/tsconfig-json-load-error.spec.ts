@@ -46,9 +46,7 @@ describe.runIf(isServe)('server', () => {
       return content.replace('"compilerOptions":', '"compilerOptions":{}')
     })
     await expect
-      .poll(() =>
-        browserLogs.find((x) => x === 'tsconfig error fixed, file loaded'),
-      )
-      .toMatch('tsconfig error fixed, file loaded')
+      .poll(() => browserLogs)
+      .toContain('tsconfig error fixed, file loaded')
   })
 })

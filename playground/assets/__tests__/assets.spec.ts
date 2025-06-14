@@ -662,11 +662,11 @@ test('inline style test', async () => {
 
 if (!isBuild) {
   test('@import in html style tag hmr', async () => {
-    await expect.poll(() => getColor('.import-css')).toMatch('rgb(0, 136, 255)')
+    await expect.poll(() => getColor('.import-css')).toBe('rgb(0, 136, 255)')
     const loadPromise = page.waitForEvent('load')
     editFile('./css/import.css', (code) => code.replace('#0088ff', '#00ff88'))
     await loadPromise
-    await expect.poll(() => getColor('.import-css')).toMatch('rgb(0, 255, 136)')
+    await expect.poll(() => getColor('.import-css')).toBe('rgb(0, 255, 136)')
   })
 }
 

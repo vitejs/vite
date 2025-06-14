@@ -60,17 +60,17 @@ export const sassTest = () => {
     editFile('sass.scss', (code) =>
       code.replace('color: $injectedColor', 'color: red'),
     )
-    await expect.poll(() => getColor(imported)).toMatch('red')
+    await expect.poll(() => getColor(imported)).toBe('red')
 
     editFile('nested/_index.scss', (code) =>
       code.replace('color: olive', 'color: blue'),
     )
-    await expect.poll(() => getColor(atImport)).toMatch('blue')
+    await expect.poll(() => getColor(atImport)).toBe('blue')
 
     editFile('nested/_partial.scss', (code) =>
       code.replace('color: orchid', 'color: green'),
     )
-    await expect.poll(() => getColor(partialImport)).toMatch('green')
+    await expect.poll(() => getColor(partialImport)).toBe('green')
   })
 }
 
@@ -108,7 +108,7 @@ export const sassModuleTests = (enableHmrTests = false) => {
     editFile('mod.module.scss', (code) =>
       code.replace('color: orangered', 'color: blue'),
     )
-    await expect.poll(() => getColor(imported)).toMatch('blue')
+    await expect.poll(() => getColor(imported)).toBe('blue')
   })
 }
 

@@ -33,7 +33,7 @@ test.runIf(isServe)('regenerate CSS and HMR (glob pattern)', async () => {
     ],
     false,
   )
-  await expect.poll(() => getColor(el)).toMatch('oklch(0.646 0.222 41.116)')
+  await expect.poll(() => getColor(el)).toBe('oklch(0.646 0.222 41.116)')
 })
 
 test.runIf(isServe)(
@@ -54,7 +54,7 @@ test.runIf(isServe)(
       ],
       false,
     )
-    await expect.poll(() => getColor(el)).toMatch('oklch(0.546 0.245 262.881)')
+    await expect.poll(() => getColor(el)).toBe('oklch(0.546 0.245 262.881)')
   },
 )
 
@@ -70,5 +70,5 @@ test.runIf(isServe)('regenerate CSS and HMR (relative path)', async () => {
     ['[vite] css hot updated: /index.css', '[vite] hot updated: /src/main.js'],
     false,
   )
-  await expect.poll(() => getColor(el)).toMatch('oklch(0.609 0.126 221.723)')
+  await expect.poll(() => getColor(el)).toBe('oklch(0.609 0.126 221.723)')
 })

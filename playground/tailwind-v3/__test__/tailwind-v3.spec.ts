@@ -33,7 +33,7 @@ test.runIf(isServe)('regenerate CSS and HMR (glob pattern)', async () => {
     ],
     false,
   )
-  await expect.poll(() => getColor(el)).toMatch('rgb(234, 88, 12)')
+  await expect.poll(() => getColor(el)).toBe('rgb(234, 88, 12)')
 })
 
 test.runIf(isServe)(
@@ -54,7 +54,7 @@ test.runIf(isServe)(
       ],
       false,
     )
-    await expect.poll(() => getColor(el)).toMatch('rgb(37, 99, 235)')
+    await expect.poll(() => getColor(el)).toBe('rgb(37, 99, 235)')
   },
 )
 
@@ -70,5 +70,5 @@ test.runIf(isServe)('regenerate CSS and HMR (relative path)', async () => {
     ['[vite] css hot updated: /index.css', '[vite] hot updated: /src/main.js'],
     false,
   )
-  await expect.poll(() => getColor(el)).toMatch('rgb(8, 145, 178)')
+  await expect.poll(() => getColor(el)).toBe('rgb(8, 145, 178)')
 })

@@ -225,7 +225,7 @@ if (!isBuild) {
     )
     await expect
       .poll(() => el.textContent())
-      .toMatch(
+      .toBe(
         'soft-invalidation/index.js is transformed 1 times. child is updated',
       )
 
@@ -237,7 +237,7 @@ if (!isBuild) {
     )
     await expect
       .poll(() => el.textContent())
-      .toMatch(
+      .toBe(
         'soft-invalidation/index.js is transformed 2 times. child is now updated?',
       )
   })
@@ -296,7 +296,7 @@ if (!isBuild) {
     await page.waitForEvent('load')
     await expect
       .poll(async () => (await page.$('#app')).textContent())
-      .toMatch('title2')
+      .toBe('title2')
   })
 
   test('CSS update preserves query params', async () => {
@@ -790,7 +790,7 @@ if (!isBuild) {
         const el = await page.$('.virtual')
         return await el.textContent()
       })
-      .toMatch('[wow]')
+      .toBe('[wow]0')
   })
 
   test('invalidate virtual module', async () => {
@@ -804,7 +804,7 @@ if (!isBuild) {
         const el = await page.$('.virtual')
         return await el.textContent()
       })
-      .toMatch('[wow]1')
+      .toBe('[wow]1')
   })
 
   test('handle virtual module accept updates', async () => {
@@ -817,7 +817,7 @@ if (!isBuild) {
         const el = await page.$('.virtual-dep')
         return await el.textContent()
       })
-      .toMatch('[wow]')
+      .toBe('[wow]0')
   })
 
   test('invalidate virtual module and accept', async () => {
@@ -831,7 +831,7 @@ if (!isBuild) {
         const el = await page.$('.virtual-dep')
         return await el.textContent()
       })
-      .toMatch('[wow]2')
+      .toBe('[wow]2')
   })
 
   test('keep hmr reload after missing import on server startup', async () => {
@@ -1020,7 +1020,7 @@ if (!isBuild) {
     )
     await expect
       .poll(() => page.textContent('.self-accept-within-circular'))
-      .toMatch('cc')
+      .toBe('cc')
     expect(serverLogs.length).greaterThanOrEqual(1)
     // Should still keep hmr update, but it'll error on the browser-side and will refresh itself.
     // Match on full log not possible because of color markers
@@ -1038,7 +1038,7 @@ if (!isBuild) {
     )
     await expect
       .poll(() => el.textContent())
-      .toMatch('mod-a -> mod-b (edited) -> mod-c -> mod-a (expected error)')
+      .toBe('mod-a -> mod-b (edited) -> mod-c -> mod-a (expected error)')
   })
 
   test('not inlined assets HMR', async () => {
@@ -1073,9 +1073,9 @@ if (!isBuild) {
 
   test('CSS HMR with this.addWatchFile', async () => {
     await page.goto(viteTestUrl + '/css-deps/index.html')
-    expect(await getColor('.css-deps')).toMatch('red')
+    expect(await getColor('.css-deps')).toBe('red')
     editFile('css-deps/dep.js', (code) => code.replace(`red`, `green`))
-    await expect.poll(() => getColor('.css-deps')).toMatch('green')
+    await expect.poll(() => getColor('.css-deps')).toBe('green')
   })
 
   test('hmr should happen after missing file is created', async () => {

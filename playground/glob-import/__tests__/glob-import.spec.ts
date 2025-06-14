@@ -202,15 +202,13 @@ if (!isBuild) {
 
     addFile('pkg-pages/bar.js', '// empty')
     await expect
-      .poll(() => resultElement.textContent())
-      .toMatch(
-        JSON.stringify(['/pkg-pages/foo.js', '/pkg-pages/bar.js'].sort()),
-      )
+      .poll(async () => JSON.parse(await resultElement.textContent()))
+      .toStrictEqual(['/pkg-pages/foo.js', '/pkg-pages/bar.js'].sort())
 
     removeFile('pkg-pages/bar.js')
     await expect
-      .poll(() => resultElement.textContent())
-      .toMatch(JSON.stringify(['/pkg-pages/foo.js']))
+      .poll(async () => JSON.parse(await resultElement.textContent()))
+      .toStrictEqual(['/pkg-pages/foo.js'])
   })
 }
 

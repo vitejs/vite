@@ -211,7 +211,7 @@ if (!isBuild) {
       )
       await expect
         .poll(() => el())
-        .toMatch(
+        .toBe(
           'soft-invalidation/index.js is transformed 1 times. child is updated',
         )
     })
@@ -263,8 +263,8 @@ if (!isBuild) {
       expect(query2()).toBe('query2')
 
       editFile('queries/multi-query.js', (code) => code + '//comment')
-      await expect.poll(() => query1()).toMatch('//commentquery1')
-      await expect.poll(() => query2()).toMatch('//commentquery2')
+      await expect.poll(() => query1()).toBe('//commentquery1')
+      await expect.poll(() => query2()).toBe('//commentquery2')
     })
   })
 
@@ -721,7 +721,7 @@ if (!isBuild) {
     const el = () => hmr('.virtual')
     expect(el()).toBe('[success]0')
     editFile('importedVirtual.js', (code) => code.replace('[success]', '[wow]'))
-    await expect.poll(el).toMatch('[wow]')
+    await expect.poll(el).toBe('[wow]0')
   })
 
   test('invalidate virtual module', async () => {
@@ -729,7 +729,7 @@ if (!isBuild) {
     const el = () => hmr('.virtual')
     expect(el()).toBe('[wow]0')
     globalThis.__HMR__['virtual:increment']()
-    await expect.poll(el).toMatch('[wow]1')
+    await expect.poll(el).toBe('[wow]1')
   })
 
   test('should hmr when file is deleted and restored', async () => {
@@ -873,12 +873,11 @@ if (!isBuild) {
     )
     // it throws a same error as browser case,
     // but it doesn't auto reload and it calls `hot.accept(nextExports)` with `nextExports = undefined`
-    await expect.poll(() => el()).toMatch('')
 
     // test reloading manually for now
     server.moduleGraph.invalidateAll() // TODO: why is `runner.clearCache()` not enough?
     await runner.import('/self-accept-within-circular/index')
-    await expect.poll(() => el()).toMatch('cc')
+    await expect.poll(() => el()).toBe('cc')
   })
 
   test('hmr should not reload if no accepted within circular imported files', async () => {
@@ -893,9 +892,7 @@ if (!isBuild) {
     )
     await expect
       .poll(() => el())
-      .toMatch(
-        'mod-a -> mod-b (edited) -> mod-c -> undefined (expected no error)',
-      )
+      .toBe('mod-a -> mod-b (edited) -> mod-c -> undefined (expected no error)')
   })
 
   test('not inlined assets HMR', async () => {

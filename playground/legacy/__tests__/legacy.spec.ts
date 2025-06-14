@@ -73,7 +73,7 @@ test('correctly emits styles', async () => {
 // dynamic import css
 test('should load dynamic import with css', async () => {
   await page.click('#dynamic-css-button')
-  await expect.poll(() => getColor('#dynamic-css')).toMatch('red')
+  await expect.poll(() => getColor('#dynamic-css')).toBe('red')
 })
 
 test('asset url', async () => {

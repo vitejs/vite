@@ -7,9 +7,9 @@ export const tests = () => {
 
     if (isBuild) return
     editFile('plugin-dep.js', (str) => str)
-    await expect.poll(() => page.textContent('#transform-count')).toMatch('2')
+    await expect.poll(() => page.textContent('#transform-count')).toBe('2')
 
     editFile('plugin-dep-load.js', (str) => str)
-    await expect.poll(() => page.textContent('#transform-count')).toMatch('3')
+    await expect.poll(() => page.textContent('#transform-count')).toBe('3')
   })
 }
