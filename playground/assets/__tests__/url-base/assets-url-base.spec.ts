@@ -165,10 +165,7 @@ describe('svg fragments', () => {
   })
 
   test('via css url()', async () => {
-    const bg = await page.evaluate(
-      () => getComputedStyle(document.querySelector('.icon')).backgroundImage,
-    )
-    expect(bg).toMatch(/svg#icon-clock-view"\)$/)
+    expect(await getBg('.icon')).toMatch(/svg#icon-clock-view"\)$/)
   })
 
   test('from js import', async () => {
