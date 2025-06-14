@@ -9,7 +9,6 @@ import {
   page,
   removeFile,
   untilUpdated,
-  withRetry,
 } from '~utils'
 
 const filteredResult = {
@@ -90,18 +89,17 @@ const baseRawResult = {
 }
 
 test('should work', async () => {
-  await withRetry(async () => {
-    const actual = await page.textContent('.result')
-    expect(JSON.parse(actual)).toStrictEqual(allResult)
-  })
-  await withRetry(async () => {
-    const actualEager = await page.textContent('.result-eager')
-    expect(JSON.parse(actualEager)).toStrictEqual(allResult)
-  })
-  await withRetry(async () => {
-    const actualNodeModules = await page.textContent('.result-node_modules')
-    expect(JSON.parse(actualNodeModules)).toStrictEqual(nodeModulesResult)
-  })
+  await expect
+    .poll(async () => JSON.parse(await page.textContent('.result')))
+    .toStrictEqual(allResult)
+  await expect
+    .poll(async () => JSON.parse(await page.textContent('.result-eager')))
+    .toStrictEqual(allResult)
+  await expect
+    .poll(async () =>
+      JSON.parse(await page.textContent('.result-node_modules')),
+    )
+    .toStrictEqual(nodeModulesResult)
 })
 
 test('import glob raw', async () => {
@@ -139,9 +137,12 @@ if (!isBuild) {
     const resultElement = page.locator('.result')
 
     addFile('dir/a.js', '')
-    await withRetry(async () => {
-      const actualAdd = await resultElement.textContent()
-      expect(JSON.parse(actualAdd)).toStrictEqual({
+    await expect
+      .poll(async () => {
+        const actualAdd = await resultElement.textContent()
+        return JSON.parse(actualAdd)
+      })
+      .toStrictEqual({
         '/dir/a.js': {},
         ...allResult,
         '/dir/index.js': {
@@ -152,13 +153,15 @@ if (!isBuild) {
           },
         },
       })
-    })
 
     // edit the added file
     editFile('dir/a.js', () => 'export const msg ="a"')
-    await withRetry(async () => {
-      const actualEdit = await resultElement.textContent()
-      expect(JSON.parse(actualEdit)).toStrictEqual({
+    await expect
+      .poll(async () => {
+        const actualEdit = await resultElement.textContent()
+        return JSON.parse(actualEdit)
+      })
+      .toStrictEqual({
         '/dir/a.js': {
           msg: 'a',
         },
@@ -173,13 +176,14 @@ if (!isBuild) {
           },
         },
       })
-    })
 
     removeFile('dir/a.js')
-    await withRetry(async () => {
-      const actualRemove = await resultElement.textContent()
-      expect(JSON.parse(actualRemove)).toStrictEqual(allResult)
-    })
+    await expect
+      .poll(async () => {
+        const actualRemove = await resultElement.textContent()
+        return JSON.parse(actualRemove)
+      })
+      .toStrictEqual(allResult)
   })
 
   test('no hmr for adding/removing files', async () => {

@@ -13,7 +13,6 @@ import {
   serverLogs,
   untilUpdated,
   viteTestUrl,
-  withRetry,
 } from '~utils'
 
 export const tests = (isLightningCSS: boolean) => {
@@ -507,16 +506,18 @@ export const tests = (isLightningCSS: boolean) => {
 
   // NOTE: the match inline snapshot should generate by build mode
   test('async css order', async () => {
-    await withRetry(async () => {
-      expect(await getColor('.async-green')).toMatchInlineSnapshot('"green"')
-      expect(await getColor('.async-blue')).toMatchInlineSnapshot('"blue"')
-    })
+    await expect
+      .poll(() => getColor('.async-green'))
+      .toMatchInlineSnapshot('"green"')
+    await expect
+      .poll(() => getColor('.async-blue'))
+      .toMatchInlineSnapshot('"blue"')
   })
 
   test('async css order with css modules', async () => {
-    await withRetry(async () => {
-      expect(await getColor('.modules-pink')).toMatchInlineSnapshot('"pink"')
-    })
+    await expect
+      .poll(() => getColor('.modules-pink'))
+      .toMatchInlineSnapshot('"pink"')
   })
 
   test('@import scss', async () => {

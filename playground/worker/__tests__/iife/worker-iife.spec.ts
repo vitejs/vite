@@ -2,7 +2,6 @@ import fs from 'node:fs'
 import path from 'node:path'
 import { describe, expect, test } from 'vitest'
 import {
-  expectWithRetry,
   isBuild,
   isServe,
   page,
@@ -166,21 +165,21 @@ test('import.meta.glob eager in worker', async () => {
 })
 
 test('self reference worker', async () => {
-  await expectWithRetry(() => page.textContent('.self-reference-worker')).toBe(
-    'pong: main\npong: nested\n',
-  )
+  await expect
+    .poll(() => page.textContent('.self-reference-worker'))
+    .toBe('pong: main\npong: nested\n')
 })
 
 test('self reference url worker', async () => {
-  await expectWithRetry(() =>
-    page.textContent('.self-reference-url-worker'),
-  ).toBe('pong: main\npong: nested\n')
+  await expect
+    .poll(() => page.textContent('.self-reference-url-worker'))
+    .toBe('pong: main\npong: nested\n')
 })
 
 test('self reference url worker in dependency', async () => {
-  await expectWithRetry(() =>
-    page.textContent('.self-reference-url-worker-dep'),
-  ).toBe('pong: main\npong: nested\n')
+  await expect
+    .poll(() => page.textContent('.self-reference-url-worker-dep'))
+    .toBe('pong: main\npong: nested\n')
 })
 
 test.runIf(isServe)('sourcemap is correct after env is injected', async () => {

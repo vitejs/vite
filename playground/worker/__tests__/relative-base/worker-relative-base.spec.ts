@@ -1,7 +1,7 @@
 import fs from 'node:fs'
 import path from 'node:path'
 import { describe, expect, test } from 'vitest'
-import { expectWithRetry, isBuild, page, testDir, untilUpdated } from '~utils'
+import { isBuild, page, testDir, untilUpdated } from '~utils'
 
 test('normal', async () => {
   await untilUpdated(() => page.textContent('.pong'), 'pong')
@@ -141,13 +141,13 @@ test('import.meta.glob with eager in worker', async () => {
 })
 
 test('self reference worker', async () => {
-  await expectWithRetry(() => page.textContent('.self-reference-worker')).toBe(
-    'pong: main\npong: nested\n',
-  )
+  await expect
+    .poll(() => page.textContent('.self-reference-worker'))
+    .toBe('pong: main\npong: nested\n')
 })
 
 test('self reference url worker', async () => {
-  await expectWithRetry(() =>
-    page.textContent('.self-reference-url-worker'),
-  ).toBe('pong: main\npong: nested\n')
+  await expect
+    .poll(() => page.textContent('.self-reference-url-worker'))
+    .toBe('pong: main\npong: nested\n')
 })
