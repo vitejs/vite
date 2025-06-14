@@ -1,12 +1,5 @@
 import { expect, test } from 'vitest'
-import {
-  editFile,
-  getColor,
-  isServe,
-  page,
-  untilBrowserLogAfter,
-  untilUpdated,
-} from '~utils'
+import { editFile, getColor, isServe, page, untilBrowserLogAfter } from '~utils'
 
 test('should render', async () => {
   expect(await page.textContent('#pagetitle')).toBe('Page title')
@@ -27,7 +20,7 @@ test.runIf(isServe)('regenerate CSS and HMR (glob pattern)', async () => {
     ],
     false,
   )
-  await untilUpdated(() => el.textContent(), '|view1 updated|')
+  await expect.poll(() => el.textContent()).toMatch('|view1 updated|')
 
   await untilBrowserLogAfter(
     () =>
@@ -40,7 +33,7 @@ test.runIf(isServe)('regenerate CSS and HMR (glob pattern)', async () => {
     ],
     false,
   )
-  await untilUpdated(async () => getColor(el), 'rgb(234, 88, 12)')
+  await expect.poll(() => getColor(el)).toBe('rgb(234, 88, 12)')
 })
 
 test.runIf(isServe)(
@@ -61,7 +54,7 @@ test.runIf(isServe)(
       ],
       false,
     )
-    await untilUpdated(() => getColor(el), 'rgb(37, 99, 235)')
+    await expect.poll(() => getColor(el)).toBe('rgb(37, 99, 235)')
   },
 )
 
@@ -77,5 +70,5 @@ test.runIf(isServe)('regenerate CSS and HMR (relative path)', async () => {
     ['[vite] css hot updated: /index.css', '[vite] hot updated: /src/main.js'],
     false,
   )
-  await untilUpdated(() => getColor(el), 'rgb(8, 145, 178)')
+  await expect.poll(() => getColor(el)).toBe('rgb(8, 145, 178)')
 })

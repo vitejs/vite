@@ -1,9 +1,8 @@
-import { test } from 'vitest'
-import { isBuild, page, untilUpdated } from '~utils'
+import { expect, test } from 'vitest'
+import { isBuild, page } from '~utils'
 
 test('asset url', async () => {
-  await untilUpdated(
-    () => page.textContent('.asset-url'),
-    isBuild ? '/worker-assets/worker_asset-vite' : '/vite.svg',
-  )
+  await expect
+    .poll(() => page.textContent('.asset-url'))
+    .toMatch(isBuild ? '/worker-assets/worker_asset-vite' : '/vite.svg')
 })

@@ -6,61 +6,64 @@ import {
   listAssets,
   page,
   readManifest,
-  untilUpdated,
 } from '~utils'
 
 test('should load the worker', async () => {
-  await untilUpdated(() => page.textContent('.worker-message'), 'module')
+  await expect.poll(() => page.textContent('.worker-message')).toMatch('module')
 })
 
 test('should work', async () => {
-  await untilUpdated(() => page.textContent('#app'), 'Hello')
+  await expect.poll(() => page.textContent('#app')).toMatch('Hello')
 })
 
 test('import.meta.env.LEGACY', async () => {
-  await untilUpdated(() => page.textContent('#env'), isBuild ? 'true' : 'false')
-  await untilUpdated(() => page.textContent('#env-equal'), 'true')
+  await expect
+    .poll(() => page.textContent('#env'))
+    .toMatch(isBuild ? 'true' : 'false')
+  await expect.poll(() => page.textContent('#env-equal')).toMatch('true')
 })
 
 // https://github.com/vitejs/vite/issues/3400
 test('transpiles down iterators correctly', async () => {
-  await untilUpdated(() => page.textContent('#iterators'), 'hello')
+  await expect.poll(() => page.textContent('#iterators')).toMatch('hello')
 })
 
 test('async generator', async () => {
-  await untilUpdated(() => page.textContent('#async-generator'), '[0,1,2]')
+  await expect
+    .poll(() => page.textContent('#async-generator'))
+    .toMatch('[0,1,2]')
 })
 
 test('wraps with iife', async () => {
-  await untilUpdated(
-    () => page.textContent('#babel-helpers'),
-    'exposed babel helpers: false',
-  )
+  await expect
+    .poll(() => page.textContent('#babel-helpers'))
+    .toMatch('exposed babel helpers: false')
 })
 
 test('generates assets', async () => {
-  await untilUpdated(
-    () => page.textContent('#assets'),
-    isBuild
-      ? [
-          'index: text/html',
-          'index-legacy: text/html',
-          'chunk-async: text/html',
-          'chunk-async-legacy: text/html',
-          'immutable-chunk: text/javascript',
-          'immutable-chunk-legacy: text/javascript',
-          'polyfills-legacy: text/html',
-        ].join('\n')
-      : [
-          'index: text/html',
-          'index-legacy: text/html',
-          'chunk-async: text/html',
-          'chunk-async-legacy: text/html',
-          'immutable-chunk: text/html',
-          'immutable-chunk-legacy: text/html',
-          'polyfills-legacy: text/html',
-        ].join('\n'),
-  )
+  await expect
+    .poll(() => page.textContent('#assets'))
+    .toMatch(
+      isBuild
+        ? [
+            'index: text/html',
+            'index-legacy: text/html',
+            'chunk-async: text/html',
+            'chunk-async-legacy: text/html',
+            'immutable-chunk: text/javascript',
+            'immutable-chunk-legacy: text/javascript',
+            'polyfills-legacy: text/html',
+          ].join('\n')
+        : [
+            'index: text/html',
+            'index-legacy: text/html',
+            'chunk-async: text/html',
+            'chunk-async-legacy: text/html',
+            'immutable-chunk: text/html',
+            'immutable-chunk-legacy: text/html',
+            'polyfills-legacy: text/html',
+          ].join('\n'),
+    )
 })
 
 test('correctly emits styles', async () => {
@@ -70,7 +73,7 @@ test('correctly emits styles', async () => {
 // dynamic import css
 test('should load dynamic import with css', async () => {
   await page.click('#dynamic-css-button')
-  await untilUpdated(() => getColor('#dynamic-css'), 'red')
+  await expect.poll(() => getColor('#dynamic-css')).toBe('red')
 })
 
 test('asset url', async () => {

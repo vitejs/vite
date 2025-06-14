@@ -4,7 +4,7 @@ import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { describe, expect, test } from 'vitest'
 import { port } from './serve'
-import { editFile, isServe, page, untilUpdated } from '~utils'
+import { editFile, isServe, page } from '~utils'
 
 const url = `http://localhost:${port}`
 
@@ -55,10 +55,12 @@ describe.runIf(isServe)('hmr', () => {
     )
     await loadPromise
 
-    await untilUpdated(async () => {
-      const el = await page.$('.virtual')
-      return await el.textContent()
-    }, '[wow]')
+    await expect
+      .poll(async () => {
+        const el = await page.$('.virtual')
+        return await el.textContent()
+      })
+      .toMatch('[wow]')
   })
 })
 

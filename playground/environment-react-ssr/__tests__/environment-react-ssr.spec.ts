@@ -9,7 +9,6 @@ import {
   readFile,
   serverLogs,
   testDir,
-  untilUpdated,
 } from '~utils'
 
 test('basic', async () => {
@@ -76,8 +75,8 @@ describe.runIf(!isBuild)('pre-bundling', () => {
       })
     })
 
-    await untilUpdated(
-      () =>
+    await expect
+      .poll(() =>
         serverLogs
           .map(
             (log) =>
@@ -85,10 +84,9 @@ describe.runIf(!isBuild)('pre-bundling', () => {
                 /new dependencies optimized: (react-fake-.*)/,
               )?.[1],
           )
-          .filter(Boolean)
-          .join(', '),
-      'react-fake-server, react-fake-client',
-    )
+          .filter(Boolean),
+      )
+      .toStrictEqual(['react-fake-server', 'react-fake-client'])
 
     const clientMetaNew = readDepOptimizationMetadata('client')
     const ssrMetaNew = readDepOptimizationMetadata('ssr')
