@@ -8,7 +8,6 @@ import {
   isBuild,
   page,
   removeFile,
-  untilUpdated,
 } from '~utils'
 
 const filteredResult = {
@@ -202,16 +201,16 @@ if (!isBuild) {
     const resultElement = page.locator('.in-package')
 
     addFile('pkg-pages/bar.js', '// empty')
-    await untilUpdated(
-      () => resultElement.textContent(),
-      JSON.stringify(['/pkg-pages/foo.js', '/pkg-pages/bar.js'].sort()),
-    )
+    await expect
+      .poll(() => resultElement.textContent())
+      .toMatch(
+        JSON.stringify(['/pkg-pages/foo.js', '/pkg-pages/bar.js'].sort()),
+      )
 
     removeFile('pkg-pages/bar.js')
-    await untilUpdated(
-      () => resultElement.textContent(),
-      JSON.stringify(['/pkg-pages/foo.js']),
-    )
+    await expect
+      .poll(() => resultElement.textContent())
+      .toMatch(JSON.stringify(['/pkg-pages/foo.js']))
   })
 }
 

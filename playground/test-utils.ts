@@ -88,8 +88,6 @@ function rgbToHex(rgb: string): string | undefined {
   return undefined
 }
 
-const timeout = (n: number) => new Promise((r) => setTimeout(r, n))
-
 async function toEl(
   el: string | ElementHandle | Locator,
 ): Promise<ElementHandle> {
@@ -212,30 +210,6 @@ export function readDepOptimizationMetadata(
       'utf-8',
     ),
   )
-}
-
-/**
- * Poll a getter until the value it returns includes the expected value.
- */
-export async function untilUpdated(
-  poll: () => string | Promise<string>,
-  expected: string | RegExp,
-): Promise<void> {
-  const maxTries = process.env.CI ? 200 : 50
-  for (let tries = 0; tries < maxTries; tries++) {
-    const actual = (await poll()) ?? ''
-    if (
-      (typeof expected === 'string'
-        ? actual.indexOf(expected) > -1
-        : actual.match(expected)) ||
-      tries === maxTries - 1
-    ) {
-      expect(actual).toMatch(expected)
-      break
-    } else {
-      await timeout(50)
-    }
-  }
 }
 
 type UntilBrowserLogAfterCallback = (logs: string[]) => PromiseLike<void> | void

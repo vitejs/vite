@@ -11,7 +11,6 @@ import {
   page,
   removeFile,
   serverLogs,
-  untilUpdated,
   viteTestUrl,
 } from '~utils'
 
@@ -35,12 +34,12 @@ export const tests = (isLightningCSS: boolean) => {
     if (isBuild) return
 
     editFile('linked.css', (code) => code.replace('color: blue', 'color: red'))
-    await untilUpdated(() => getColor(linked), 'red')
+    await expect.poll(() => getColor(linked)).toMatch('red')
 
     editFile('linked-at-import.css', (code) =>
       code.replace('color: red', 'color: blue'),
     )
-    await untilUpdated(() => getColor(atImport), 'blue')
+    await expect.poll(() => getColor(atImport)).toMatch('blue')
   })
 
   test('css import from js', async () => {
@@ -55,12 +54,12 @@ export const tests = (isLightningCSS: boolean) => {
     editFile('imported.css', (code) =>
       code.replace('color: green', 'color: red'),
     )
-    await untilUpdated(() => getColor(imported), 'red')
+    await expect.poll(() => getColor(imported)).toMatch('red')
 
     editFile('imported-at-import.css', (code) =>
       code.replace('color: purple', 'color: blue'),
     )
-    await untilUpdated(() => getColor(atImport), 'blue')
+    await expect.poll(() => getColor(atImport)).toMatch('blue')
   })
 
   test('css import asset with space', async () => {
@@ -78,7 +77,7 @@ export const tests = (isLightningCSS: boolean) => {
     editFile('imported.css', (code) =>
       code.replace('color: pink', 'color: red'),
     )
-    await untilUpdated(() => getColor(imported), 'red')
+    await expect.poll(() => getColor(imported)).toMatch('red')
   })
 
   test('postcss plugin that injects url()', async () => {
@@ -121,12 +120,12 @@ export const tests = (isLightningCSS: boolean) => {
     if (isBuild) return
 
     editFile('less.less', (code) => code.replace('@color: blue', '@color: red'))
-    await untilUpdated(() => getColor(imported), 'red')
+    await expect.poll(() => getColor(imported)).toMatch('red')
 
     editFile('nested/nested.less', (code) =>
       code.replace('color: darkslateblue', 'color: blue'),
     )
-    await untilUpdated(() => getColor(atImport), 'blue')
+    await expect.poll(() => getColor(atImport)).toMatch('blue')
   })
 
   test('less-plugin', async () => {
@@ -167,12 +166,12 @@ export const tests = (isLightningCSS: boolean) => {
     editFile('stylus.styl', (code) =>
       code.replace('$color ?= blue', '$color ?= red'),
     )
-    await untilUpdated(() => getColor(imported), 'red')
+    await expect.poll(() => getColor(imported)).toMatch('red')
 
     editFile('nested/nested.styl', (code) =>
       code.replace('color: darkslateblue', 'color: blue'),
     )
-    await untilUpdated(() => getColor(relativeImport), 'blue')
+    await expect.poll(() => getColor(relativeImport)).toMatch('blue')
   })
 
   test('css modules', async () => {
@@ -190,7 +189,7 @@ export const tests = (isLightningCSS: boolean) => {
     editFile('mod.module.css', (code) =>
       code.replace('color: turquoise', 'color: red'),
     )
-    await untilUpdated(() => getColor(imported), 'red')
+    await expect.poll(() => getColor(imported)).toMatch('red')
   })
 
   test('css modules composes/from path resolving', async () => {
@@ -211,7 +210,7 @@ export const tests = (isLightningCSS: boolean) => {
     // editFile('composed.module.css', (code) =>
     //   code.replace('color: turquoise', 'color: red')
     // )
-    // await untilUpdated(() => getColor(imported), 'red')
+    // await expect.poll(() => getColor(imported)).toMatch('red')
   })
 
   sassModuleTests()
@@ -234,7 +233,7 @@ export const tests = (isLightningCSS: boolean) => {
     // editFile('composed.module.scss', (code) =>
     //   code.replace('color: orangered', 'color: red')
     // )
-    // await untilUpdated(() => getColor(imported), 'red')
+    // await expect.poll(() => getColor(imported)).toMatch('red')
   })
 
   test('inline css modules', async () => {
@@ -288,7 +287,7 @@ export const tests = (isLightningCSS: boolean) => {
       editFile('async.css', (code) =>
         code.replace('color: teal', 'color: blue'),
       )
-      await untilUpdated(() => getColor(el), 'blue')
+      await expect.poll(() => getColor(el)).toMatch('blue')
     }
   })
 
@@ -316,7 +315,7 @@ export const tests = (isLightningCSS: boolean) => {
       editFile('async-treeshaken.css', (code) =>
         code.replace('color: plum', 'color: blue'),
       )
-      await untilUpdated(() => getColor(el), 'blue')
+      await expect.poll(() => getColor(el)).toMatch('blue')
     }
   })
 
@@ -334,25 +333,25 @@ export const tests = (isLightningCSS: boolean) => {
       editFile('glob-dep/foo.css', (code) =>
         code.replace('color: grey', 'color: blue'),
       )
-      await untilUpdated(() => getColor(el1), 'blue')
+      await expect.poll(() => getColor(el1)).toMatch('blue')
       expect(await getColor(el2)).toBe('grey')
 
       editFile('glob-dep/bar.css', (code) =>
         code.replace('color: grey', 'color: red'),
       )
-      await untilUpdated(() => getColor(el2), 'red')
+      await expect.poll(() => getColor(el2)).toMatch('red')
       expect(await getColor(el1)).toBe('blue')
 
       editFile('glob-dep/nested (dir)/baz.css', (code) =>
         code.replace('color: grey', 'color: green'),
       )
-      await untilUpdated(() => getColor(el3), 'green')
+      await expect.poll(() => getColor(el3)).toMatch('green')
       expect(await getColor(el1)).toBe('blue')
       expect(await getColor(el2)).toBe('red')
 
       // test add/remove
       removeFile('glob-dep/bar.css')
-      await untilUpdated(() => getColor(el2), 'black')
+      await expect.poll(() => getColor(el2)).toMatch('black')
     }
   })
 
@@ -429,10 +428,9 @@ export const tests = (isLightningCSS: boolean) => {
       editFile('raw-imported.css', (code) =>
         code.replace('color: yellow', 'color: blue'),
       )
-      await untilUpdated(
-        () => page.textContent('.raw-imported-css'),
-        'color: blue',
-      )
+      await expect
+        .poll(() => page.textContent('.raw-imported-css'))
+        .toMatch('color: blue')
     }
   })
 
@@ -496,28 +494,22 @@ export const tests = (isLightningCSS: boolean) => {
     editFile('sugarss.sss', (code) =>
       code.replace('color: blue', 'color: coral'),
     )
-    await untilUpdated(() => getColor(imported), 'coral')
+    await expect.poll(() => getColor(imported)).toMatch('coral')
 
     editFile('nested/nested.sss', (code) =>
       code.replace('color: darkslateblue', 'color: blue'),
     )
-    await untilUpdated(() => getColor(atImport), 'blue')
+    await expect.poll(() => getColor(atImport)).toMatch('blue')
   })
 
   // NOTE: the match inline snapshot should generate by build mode
   test('async css order', async () => {
-    await expect
-      .poll(() => getColor('.async-green'))
-      .toMatchInlineSnapshot('"green"')
-    await expect
-      .poll(() => getColor('.async-blue'))
-      .toMatchInlineSnapshot('"blue"')
+    await expect.poll(() => getColor('.async-green')).toBe('green')
+    await expect.poll(() => getColor('.async-blue')).toBe('blue')
   })
 
   test('async css order with css modules', async () => {
-    await expect
-      .poll(() => getColor('.modules-pink'))
-      .toMatchInlineSnapshot('"pink"')
+    await expect.poll(() => getColor('.modules-pink')).toBe('pink')
   })
 
   test('@import scss', async () => {
