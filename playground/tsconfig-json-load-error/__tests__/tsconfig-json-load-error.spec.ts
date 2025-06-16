@@ -1,14 +1,6 @@
 import { describe, expect, test } from 'vitest'
 import { clearServeError, serveError } from './serve'
-import {
-  browserLogs,
-  editFile,
-  isBuild,
-  isServe,
-  page,
-  readFile,
-  untilUpdated,
-} from '~utils'
+import { browserLogs, editFile, isBuild, isServe, page, readFile } from '~utils'
 
 const unexpectedTokenSyntaxErrorRE =
   /(\[vite:esbuild\] )*parsing .* failed: SyntaxError: Unexpected token.*\}.*/
@@ -53,8 +45,8 @@ describe.runIf(isServe)('server', () => {
     editFile('has-error/tsconfig.json', (content) => {
       return content.replace('"compilerOptions":', '"compilerOptions":{}')
     })
-    await untilUpdated(() => {
-      return browserLogs.find((x) => x === 'tsconfig error fixed, file loaded')
-    }, 'tsconfig error fixed, file loaded')
+    await expect
+      .poll(() => browserLogs)
+      .toContain('tsconfig error fixed, file loaded')
   })
 })

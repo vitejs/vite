@@ -14,7 +14,6 @@ import {
   readFile,
   readManifest,
   serverLogs,
-  untilUpdated,
   viteTestUrl,
   watcher,
 } from '~utils'
@@ -342,7 +341,7 @@ describe('css url() references', () => {
       editFile('nested/fragment-bg-hmr.svg', (code) =>
         code.replace('fill="blue"', 'fill="red"'),
       )
-      await untilUpdated(() => getBg('.css-url-svg'), 'red')
+      await expect.poll(() => getBg('.css-url-svg')).toMatch('red')
     }
   })
 
@@ -360,7 +359,7 @@ describe('css url() references', () => {
       editFile('nested/fragment-bg-hmr2.svg', (code) =>
         code.replace('fill="blue"', 'fill="red"'),
       )
-      await untilUpdated(() => getBg('.css-url-svg'), 'red')
+      await expect.poll(() => getBg('.css-url-svg')).toMatch('red')
     }
   })
 })
@@ -663,11 +662,11 @@ test('inline style test', async () => {
 
 if (!isBuild) {
   test('@import in html style tag hmr', async () => {
-    await untilUpdated(() => getColor('.import-css'), 'rgb(0, 136, 255)')
+    await expect.poll(() => getColor('.import-css')).toBe('rgb(0, 136, 255)')
     const loadPromise = page.waitForEvent('load')
     editFile('./css/import.css', (code) => code.replace('#0088ff', '#00ff88'))
     await loadPromise
-    await untilUpdated(() => getColor('.import-css'), 'rgb(0, 255, 136)')
+    await expect.poll(() => getColor('.import-css')).toBe('rgb(0, 255, 136)')
   })
 }
 
