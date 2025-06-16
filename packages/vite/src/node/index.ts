@@ -150,7 +150,6 @@ export type { EsbuildTransformOptions } from 'types/internal/esbuildOptions'
 export type { OxcOptions } from './plugins/oxc'
 export type { Manifest, ManifestChunk } from './plugins/manifest'
 export type { ResolveOptions, InternalResolveOptions } from './plugins/resolve'
-export type { SplitVendorChunkCache } from './plugins/splitVendorChunk'
 export type { TerserOptions } from './plugins/terser'
 
 export type {
@@ -174,10 +173,6 @@ export type {
   HmrOptions,
   HmrContext,
   HotUpdateOptions,
-  HMRBroadcaster,
-  HMRBroadcasterClient,
-  ServerHMRChannel,
-  HMRChannel,
   HotChannelListener,
   HotChannel,
   ServerHotChannel,
