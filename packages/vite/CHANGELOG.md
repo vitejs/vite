@@ -1,3 +1,10 @@
+## <small>6.3.20 (2025-06-16)</small>
+
+* feat: update rolldown (#259) ([a4a60e9](https://github.com/vitejs/rolldown-vite/commit/a4a60e9)), closes [#259](https://github.com/vitejs/rolldown-vite/issues/259)
+* feat(native-plugin): use js modulepreload polyfill plugin in dev environment (#237) ([d86c3bd](https://github.com/vitejs/rolldown-vite/commit/d86c3bd)), closes [#237](https://github.com/vitejs/rolldown-vite/issues/237)
+
+
+
 ## <small>6.3.19 (2025-06-12)</small>
 
 * feat: enable preserveEntrySignatures (#253) ([e625289](https://github.com/vitejs/rolldown-vite/commit/e625289)), closes [#253](https://github.com/vitejs/rolldown-vite/issues/253)
