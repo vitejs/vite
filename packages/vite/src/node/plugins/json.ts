@@ -47,7 +47,7 @@ export function jsonPlugin(
     return nativeJsonPlugin({ ...options, minify: isBuild })
   }
 
-  const plugin = {
+  return {
     name: 'vite:json',
 
     transform: {
@@ -133,16 +133,7 @@ export function jsonPlugin(
         }
       },
     },
-  } satisfies Plugin
-
-  // backward compat
-  const handler = plugin.transform.handler
-  const filter = plugin.transform.filter
-  ;(plugin as any).transform = handler
-  ;(plugin as any).transform.handler = handler
-  ;(plugin as any).transform.filter = filter
-
-  return plugin
+  }
 }
 
 function serializeValue(value: unknown): string {
