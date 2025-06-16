@@ -54,7 +54,7 @@ For example, when setting `['node', 'custom']`, you should run `NODE_OPTIONS='--
 
 :::
 
-### ssr.resolve.mainFields
+## ssr.resolve.mainFields
 
 - **Type:** `string[]`
 - **Default:** `['module', 'jsnext:main', 'jsnext']`
