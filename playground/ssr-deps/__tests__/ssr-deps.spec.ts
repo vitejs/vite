@@ -1,6 +1,6 @@
 import { describe, expect, test } from 'vitest'
 import { port } from './serve'
-import { editFile, getColor, isServe, page, untilUpdated } from '~utils'
+import { editFile, getColor, isServe, page } from '~utils'
 
 const url = `http://localhost:${port}`
 
@@ -139,24 +139,30 @@ describe.runIf(isServe)('hmr', () => {
     )
     // Allowing additional time for this element to be filled in
     // by a client script that is loaded using dynamic import
-    await untilUpdated(async () => {
-      return page.textContent('.isomorphic-module-browser')
-    }, '[browser]')
+    await expect
+      .poll(async () => {
+        return page.textContent('.isomorphic-module-browser')
+      })
+      .toMatch('[browser]')
 
     editFile('src/isomorphic-module-browser.js', (code) =>
       code.replace('[browser]', '[browser-hmr]'),
     )
     await page.waitForNavigation()
-    await untilUpdated(async () => {
-      return page.textContent('.isomorphic-module-browser')
-    }, '[browser-hmr]')
+    await expect
+      .poll(async () => {
+        return page.textContent('.isomorphic-module-browser')
+      })
+      .toMatch('[browser-hmr]')
 
     editFile('src/isomorphic-module-server.js', (code) =>
       code.replace('[server]', '[server-hmr]'),
     )
     await page.waitForNavigation()
-    await untilUpdated(async () => {
-      return page.textContent('.isomorphic-module-server')
-    }, '[server-hmr]')
+    await expect
+      .poll(async () => {
+        return page.textContent('.isomorphic-module-server')
+      })
+      .toMatch('[server-hmr]')
   })
 })

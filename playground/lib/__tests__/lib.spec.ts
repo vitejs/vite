@@ -1,13 +1,5 @@
 import { describe, expect, test } from 'vitest'
-import {
-  isBuild,
-  isServe,
-  page,
-  readFile,
-  serverLogs,
-  untilUpdated,
-  withRetry,
-} from '~utils'
+import { isBuild, isServe, page, readFile, serverLogs } from '~utils'
 
 describe.runIf(isBuild)('build', () => {
   test('es', async () => {
@@ -56,10 +48,9 @@ describe.runIf(isBuild)('build', () => {
   })
 
   test('Library mode does not include `preload`', async () => {
-    await untilUpdated(
-      () => page.textContent('.dynamic-import-message'),
-      'hello vite',
-    )
+    await expect
+      .poll(() => page.textContent('.dynamic-import-message'))
+      .toMatch('hello vite')
     const code = readFile('dist/lib/dynamic-import-message.es.mjs')
     expect(code).not.toMatch('__vitePreload')
 
@@ -131,7 +122,5 @@ describe.runIf(isBuild)('build', () => {
 })
 
 test.runIf(isServe)('dev', async () => {
-  await withRetry(async () => {
-    expect(await page.textContent('.demo')).toBe('It works')
-  })
+  await expect.poll(() => page.textContent('.demo')).toBe('It works')
 })

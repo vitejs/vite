@@ -6,17 +6,16 @@ import {
   isBuild,
   page,
   serverLogs,
-  untilUpdated,
 } from '~utils'
 
 test('should load literal dynamic import', async () => {
   await page.click('.baz')
-  await untilUpdated(() => page.textContent('.view'), 'Baz view')
+  await expect.poll(() => page.textContent('.view')).toMatch('Baz view')
 })
 
 test('should load full dynamic import from public', async () => {
   await page.click('.qux')
-  await untilUpdated(() => page.textContent('.view'), 'Qux view')
+  await expect.poll(() => page.textContent('.view')).toMatch('Qux view')
   // No warning should be logged as we are using @vite-ignore
   expect(
     serverLogs.some((log) => log.includes('cannot be analyzed by vite')),
@@ -25,58 +24,56 @@ test('should load full dynamic import from public', async () => {
 
 test('should load data URL of `blob:`', async () => {
   await page.click('.issue-2658-1')
-  await untilUpdated(() => page.textContent('.view'), 'blob')
+  await expect.poll(() => page.textContent('.view')).toMatch('blob')
 })
 
 test('should load data URL of `data:`', async () => {
   await page.click('.issue-2658-2')
-  await untilUpdated(() => page.textContent('.view'), 'data')
+  await expect.poll(() => page.textContent('.view')).toMatch('data')
 })
 
 test('should have same reference on static and dynamic js import, .mxd', async () => {
   await page.click('.mxd')
-  await untilUpdated(() => page.textContent('.view'), 'true')
+  await expect.poll(() => page.textContent('.view')).toMatch('true')
 })
 
 // in this case, it is not possible to detect the correct module
 test('should have same reference on static and dynamic js import, .mxd2', async () => {
   await page.click('.mxd2')
-  await untilUpdated(() => page.textContent('.view'), 'false')
+  await expect.poll(() => page.textContent('.view')).toMatch('false')
 })
 
 test('should have same reference on static and dynamic js import, .mxdjson', async () => {
   await page.click('.mxdjson')
-  await untilUpdated(() => page.textContent('.view'), 'true')
+  await expect.poll(() => page.textContent('.view')).toMatch('true')
 })
 
 // since this test has a timeout, it should be put last so that it
 // does not bleed on the last
 test('should load dynamic import with vars', async () => {
   await page.click('.foo')
-  await untilUpdated(() => page.textContent('.view'), 'Foo view')
+  await expect.poll(() => page.textContent('.view')).toMatch('Foo view')
 
   await page.click('.bar')
-  await untilUpdated(() => page.textContent('.view'), 'Bar view')
+  await expect.poll(() => page.textContent('.view')).toMatch('Bar view')
 })
 
 // dynamic import css
 test('should load dynamic import with css', async () => {
   await page.click('.css')
-  await untilUpdated(() => getColor('.view'), 'red')
+  await expect.poll(() => getColor('.view')).toBe('red')
 })
 
 test('should load dynamic import with vars', async () => {
-  await untilUpdated(
-    () => page.textContent('.dynamic-import-with-vars'),
-    'hello',
-  )
+  await expect
+    .poll(() => page.textContent('.dynamic-import-with-vars'))
+    .toMatch('hello')
 })
 
 test('should load dynamic import with vars ignored', async () => {
-  await untilUpdated(
-    () => page.textContent('.dynamic-import-with-vars-ignored'),
-    'hello',
-  )
+  await expect
+    .poll(() => page.textContent('.dynamic-import-with-vars-ignored'))
+    .toMatch('hello')
   // No warning should be logged as we are using @vite-ignore
   expect(
     serverLogs.some((log) =>
@@ -86,71 +83,64 @@ test('should load dynamic import with vars ignored', async () => {
 })
 
 test('should load dynamic import with double slash ignored', async () => {
-  await untilUpdated(
-    () => page.textContent('.dynamic-import-with-double-slash-ignored'),
-    'hello',
-  )
+  await expect
+    .poll(() => page.textContent('.dynamic-import-with-double-slash-ignored'))
+    .toMatch('hello')
 })
 
 test('should load dynamic import with vars multiline', async () => {
-  await untilUpdated(
-    () => page.textContent('.dynamic-import-with-vars-multiline'),
-    'hello',
-  )
+  await expect
+    .poll(() => page.textContent('.dynamic-import-with-vars-multiline'))
+    .toMatch('hello')
 })
 
 test('should load dynamic import with vars alias', async () => {
-  await untilUpdated(
-    () => page.textContent('.dynamic-import-with-vars-alias'),
-    'hi',
-  )
+  await expect
+    .poll(() => page.textContent('.dynamic-import-with-vars-alias'))
+    .toMatch('hi')
 })
 
 test('should load dynamic import with vars raw', async () => {
-  await untilUpdated(
-    () => page.textContent('.dynamic-import-with-vars-raw'),
-    'export function hello()',
-  )
+  await expect
+    .poll(() => page.textContent('.dynamic-import-with-vars-raw'))
+    .toMatch('export function hello()')
 })
 
 test('should load dynamic import with vars url', async () => {
-  await untilUpdated(
-    () => page.textContent('.dynamic-import-with-vars-url'),
-    isBuild ? 'data:text/javascript' : '/alias/url.js',
-  )
+  await expect
+    .poll(() => page.textContent('.dynamic-import-with-vars-url'))
+    .toMatch(isBuild ? 'data:text/javascript' : '/alias/url.js')
 })
 
 test('should load dynamic import with vars worker', async () => {
-  await untilUpdated(
-    () => page.textContent('.dynamic-import-with-vars-worker'),
-    'load worker',
-  )
+  await expect
+    .poll(() => page.textContent('.dynamic-import-with-vars-worker'))
+    .toMatch('load worker')
 })
 
 test('should load dynamic import with css in package', async () => {
   await page.click('.pkg-css')
-  await untilUpdated(() => getColor('.pkg-css'), 'blue')
+  await expect.poll(() => getColor('.pkg-css')).toBe('blue')
 })
 
 test('should work with load ../ and itself directory', async () => {
-  await untilUpdated(
-    () => page.textContent('.dynamic-import-self'),
-    'dynamic-import-self-content',
-  )
+  await expect
+    .poll(() => page.textContent('.dynamic-import-self'))
+    .toMatch('dynamic-import-self-content')
 })
 
 test('should work with load ../ and contain itself directory', async () => {
-  await untilUpdated(
-    () => page.textContent('.dynamic-import-nested-self'),
-    'dynamic-import-nested-self-content',
-  )
+  await expect
+    .poll(() => page.textContent('.dynamic-import-nested-self'))
+    .toMatch('dynamic-import-nested-self-content')
 })
 
 test('should work a load path that contains parentheses.', async () => {
-  await untilUpdated(
-    () => page.textContent('.dynamic-import-with-vars-contains-parenthesis'),
-    'dynamic-import-with-vars-contains-parenthesis',
-  )
+  await expect
+    .poll(() =>
+      page.textContent('.dynamic-import-with-vars-contains-parenthesis'),
+    )
+    .toMatch('dynamic-import-with-vars-contains-parenthesis')
 })
 
 test.runIf(isBuild)(

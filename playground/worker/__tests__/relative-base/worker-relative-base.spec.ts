@@ -1,59 +1,60 @@
 import fs from 'node:fs'
 import path from 'node:path'
 import { describe, expect, test } from 'vitest'
-import { expectWithRetry, isBuild, page, testDir, untilUpdated } from '~utils'
+import { isBuild, page, testDir } from '~utils'
 
 test('normal', async () => {
-  await untilUpdated(() => page.textContent('.pong'), 'pong')
-  await untilUpdated(() => page.textContent('.mode'), process.env.NODE_ENV)
-  await untilUpdated(
-    () => page.textContent('.bundle-with-plugin'),
-    'worker bundle with plugin success!',
-  )
-  await untilUpdated(
-    () => page.textContent('.asset-url'),
-    isBuild ? '/worker-assets/worker_asset-vite' : '/vite.svg',
-  )
+  await expect.poll(() => page.textContent('.pong')).toMatch('pong')
+  await expect
+    .poll(() => page.textContent('.mode'))
+    .toMatch(process.env.NODE_ENV)
+  await expect
+    .poll(() => page.textContent('.bundle-with-plugin'))
+    .toMatch('worker bundle with plugin success!')
+  await expect
+    .poll(() => page.textContent('.asset-url'))
+    .toMatch(isBuild ? '/worker-assets/worker_asset-vite' : '/vite.svg')
 })
 
 test('named', async () => {
-  await untilUpdated(() => page.textContent('.pong-named'), 'namedWorker')
+  await expect
+    .poll(() => page.textContent('.pong-named'))
+    .toMatch('namedWorker')
 })
 
 test('TS output', async () => {
-  await untilUpdated(() => page.textContent('.pong-ts-output'), 'pong')
+  await expect.poll(() => page.textContent('.pong-ts-output')).toMatch('pong')
 })
 
 // TODO: inline worker should inline assets
 test.skip('inlined', async () => {
-  await untilUpdated(() => page.textContent('.pong-inline'), 'pong')
+  await expect.poll(() => page.textContent('.pong-inline')).toMatch('pong')
 })
 
 test('shared worker', async () => {
-  await untilUpdated(() => page.textContent('.tick-count'), 'pong')
+  await expect.poll(() => page.textContent('.tick-count')).toMatch('pong')
 })
 
 test('named shared worker', async () => {
-  await untilUpdated(() => page.textContent('.tick-count-named'), 'pong')
+  await expect.poll(() => page.textContent('.tick-count-named')).toMatch('pong')
 })
 
 test('inline shared worker', async () => {
-  await untilUpdated(() => page.textContent('.pong-shared-inline'), 'pong')
+  await expect
+    .poll(() => page.textContent('.pong-shared-inline'))
+    .toMatch('pong')
 })
 
 test('worker emitted and import.meta.url in nested worker (serve)', async () => {
-  await untilUpdated(
-    () => page.textContent('.nested-worker'),
-    'worker-nested-worker',
-  )
-  await untilUpdated(
-    () => page.textContent('.nested-worker-module'),
-    'sub-worker',
-  )
-  await untilUpdated(
-    () => page.textContent('.nested-worker-constructor'),
-    '"type":"constructor"',
-  )
+  await expect
+    .poll(() => page.textContent('.nested-worker'))
+    .toMatch('worker-nested-worker')
+  await expect
+    .poll(() => page.textContent('.nested-worker-module'))
+    .toMatch('sub-worker')
+  await expect
+    .poll(() => page.textContent('.nested-worker-constructor'))
+    .toMatch('"type":"constructor"')
 })
 
 describe.runIf(isBuild)('build', () => {
@@ -86,68 +87,66 @@ describe.runIf(isBuild)('build', () => {
   })
 
   test('worker emitted and import.meta.url in nested worker (build)', async () => {
-    await untilUpdated(
-      () => page.textContent('.nested-worker-module'),
-      '"type":"module"',
-    )
-    await untilUpdated(
-      () => page.textContent('.nested-worker-constructor'),
-      '"type":"constructor"',
-    )
+    await expect
+      .poll(() => page.textContent('.nested-worker-module'))
+      .toMatch('"type":"module"')
+    await expect
+      .poll(() => page.textContent('.nested-worker-constructor'))
+      .toMatch('"type":"constructor"')
   })
 })
 
 test('module worker', async () => {
-  await untilUpdated(
-    () => page.textContent('.shared-worker-import-meta-url'),
-    'A string',
-  )
+  await expect
+    .poll(() => page.textContent('.shared-worker-import-meta-url'))
+    .toMatch('A string')
 })
 
 test('classic worker', async () => {
-  await untilUpdated(() => page.textContent('.classic-worker'), 'A classic')
+  await expect
+    .poll(() => page.textContent('.classic-worker'))
+    .toMatch('A classic')
   if (!isBuild) {
-    await untilUpdated(
-      () => page.textContent('.classic-worker-import'),
-      '[success] classic-esm',
-    )
+    await expect
+      .poll(() => page.textContent('.classic-worker-import'))
+      .toMatch('[success] classic-esm')
   }
-  await untilUpdated(
-    () => page.textContent('.classic-shared-worker'),
-    'A classic',
-  )
+  await expect
+    .poll(() => page.textContent('.classic-shared-worker'))
+    .toMatch('A classic')
 })
 
 test.runIf(isBuild)('emit chunk', async () => {
-  await untilUpdated(
-    () => page.textContent('.emit-chunk-worker'),
-    '["A string",{"type":"emit-chunk-sub-worker","data":"A string"},{"type":"module-and-worker:worker","data":"A string"},{"type":"module-and-worker:module","data":"module and worker"},{"type":"emit-chunk-sub-worker","data":{"module":"module and worker","msg1":"module1","msg2":"module2","msg3":"module3"}}]',
-  )
-  await untilUpdated(
-    () => page.textContent('.emit-chunk-dynamic-import-worker'),
-    '"A stringmodule1./"',
-  )
+  await expect
+    .poll(() => page.textContent('.emit-chunk-worker'))
+    .toMatch(
+      '["A string",{"type":"emit-chunk-sub-worker","data":"A string"},{"type":"module-and-worker:worker","data":"A string"},{"type":"module-and-worker:module","data":"module and worker"},{"type":"emit-chunk-sub-worker","data":{"module":"module and worker","msg1":"module1","msg2":"module2","msg3":"module3"}}]',
+    )
+  await expect
+    .poll(() => page.textContent('.emit-chunk-dynamic-import-worker'))
+    .toMatch('"A stringmodule1./"')
 })
 
 test('import.meta.glob in worker', async () => {
-  await untilUpdated(() => page.textContent('.importMetaGlob-worker'), '["')
+  await expect
+    .poll(() => page.textContent('.importMetaGlob-worker'))
+    .toMatch('["')
 })
 
 test('import.meta.glob with eager in worker', async () => {
-  await untilUpdated(
-    () => page.textContent('.importMetaGlobEager-worker'),
-    '["',
-  )
+  await expect
+    .poll(() => page.textContent('.importMetaGlobEager-worker'))
+    .toMatch('["')
 })
 
 test('self reference worker', async () => {
-  await expectWithRetry(() => page.textContent('.self-reference-worker')).toBe(
-    'pong: main\npong: nested\n',
-  )
+  await expect
+    .poll(() => page.textContent('.self-reference-worker'))
+    .toBe('pong: main\npong: nested\n')
 })
 
 test('self reference url worker', async () => {
-  await expectWithRetry(() =>
-    page.textContent('.self-reference-url-worker'),
-  ).toBe('pong: main\npong: nested\n')
+  await expect
+    .poll(() => page.textContent('.self-reference-url-worker'))
+    .toBe('pong: main\npong: nested\n')
 })

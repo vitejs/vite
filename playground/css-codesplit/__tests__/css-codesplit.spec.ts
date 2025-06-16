@@ -6,7 +6,6 @@ import {
   listAssets,
   page,
   readManifest,
-  untilUpdated,
 } from '~utils'
 
 test('should load all stylesheets', async () => {
@@ -34,7 +33,7 @@ test('should load dynamic import with module', async () => {
 test('style order should be consistent when style tag is inserted by JS', async () => {
   expect(await getColor('.order-bulk')).toBe('orange')
   await page.click('.order-bulk-update')
-  await untilUpdated(() => getColor('.order-bulk'), 'green')
+  await expect.poll(() => getColor('.order-bulk')).toBe('green')
 })
 
 describe.runIf(isBuild)('build', () => {

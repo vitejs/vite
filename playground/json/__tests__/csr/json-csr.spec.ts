@@ -3,7 +3,7 @@ import { expect, test } from 'vitest'
 import deepJson from 'vue/package.json'
 import testJson from '../../test.json'
 import hmrJson from '../../hmr.json'
-import { editFile, isBuild, isServe, page, untilUpdated } from '~utils'
+import { editFile, isBuild, isServe, page } from '~utils'
 
 const stringified = JSON.stringify(testJson)
 const deepStringified = JSON.stringify(deepJson)
@@ -55,8 +55,7 @@ test.runIf(isServe)('should full reload', async () => {
   editFile('hmr.json', (code) =>
     code.replace('"this is hmr json"', '"this is hmr update json"'),
   )
-  await untilUpdated(
-    () => page.textContent('.hmr'),
-    '"this is hmr update json"',
-  )
+  await expect
+    .poll(() => page.textContent('.hmr'))
+    .toMatch('"this is hmr update json"')
 })
