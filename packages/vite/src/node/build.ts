@@ -864,6 +864,13 @@ async function buildEnvironment(
     for (const output of normalizedOutputs) {
       res.push(await bundle[options.write ? 'write' : 'generate'](output))
     }
+    for (const output of res) {
+      for (const chunk of output.output) {
+        if (chunk.type === 'chunk') {
+          injectChunkMetadata(chunkMetadataMap, chunk)
+        }
+      }
+    }
     logger.info(
       `${colors.green(`✓ built in ${displayTime(Date.now() - startTime)}`)}`,
     )
