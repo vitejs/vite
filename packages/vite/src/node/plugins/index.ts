@@ -106,7 +106,7 @@ export async function resolvePlugins(
     cssPlugin(config),
     esbuildBannerFooterCompatPlugin(config),
     config.oxc !== false ? oxcPlugin(config) : null,
-    jsonPlugin(config.json, config.isProduction, enableNativePluginV1),
+    jsonPlugin(config.json, isBuild, enableNativePluginV1),
     wasmHelperPlugin(config),
     webWorkerPlugin(config),
     assetPlugin(config),
