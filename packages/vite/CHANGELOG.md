@@ -1,3 +1,10 @@
+## <small>6.3.21 (2025-06-16)</small>
+
+* fix: make `viteMetadata` and `modules` enumerable (#261) ([f44607f](https://github.com/vitejs/rolldown-vite/commit/f44607f)), closes [#261](https://github.com/vitejs/rolldown-vite/issues/261)
+* fix: set `viteMetadata` for return value of `build` function (#262) ([3a86721](https://github.com/vitejs/rolldown-vite/commit/3a86721)), closes [#262](https://github.com/vitejs/rolldown-vite/issues/262)
+
+
+
 ## <small>6.3.20 (2025-06-16)</small>
 
 * feat: update rolldown (#259) ([a4a60e9](https://github.com/vitejs/rolldown-vite/commit/a4a60e9)), closes [#259](https://github.com/vitejs/rolldown-vite/issues/259)
