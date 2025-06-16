@@ -1351,11 +1351,13 @@ function injectChunkMetadata(
   // https://github.com/rolldown/rolldown/blob/f4c5ff27799f2b0152c689c398e61bc7d30429ff/packages/rolldown/src/utils/transform-to-rollup-output.ts#L87
   Object.defineProperty(chunk, 'viteMetadata', {
     value: chunkMetadataMap.get(key),
+    enumerable: true,
   })
   Object.defineProperty(chunk, 'modules', {
     get() {
       return chunk.viteMetadata!.__modules
     },
+    enumerable: true,
   })
 }
 
