@@ -3,7 +3,7 @@ import { fileURLToPath } from 'node:url'
 import { stripVTControlCharacters } from 'node:util'
 import fsp from 'node:fs/promises'
 import colors from 'picocolors'
-import { afterEach, describe, expect, onTestFinished, test, vi } from 'vitest'
+import { afterEach, describe, expect, test, vi } from 'vitest'
 import type {
   LogLevel,
   OutputChunk,
@@ -809,13 +809,6 @@ test('default sharedConfigBuild true on build api', async () => {
 test.for([true, false])(
   'minify per environment (builder.sharedPlugins: %s)',
   async (sharedPlugins) => {
-    const _nodeEnv = process.env.NODE_ENV
-    // Overriding the NODE_ENV set by vitest
-    process.env.NODE_ENV = ''
-    onTestFinished(() => {
-      process.env.NODE_ENV = _nodeEnv
-    })
-
     const root = resolve(__dirname, 'fixtures/shared-plugins/minify')
     const builder = await createBuilder({
       root,
