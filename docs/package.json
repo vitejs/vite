@@ -9,12 +9,12 @@
   },
   "devDependencies": {
     "@shikijs/vitepress-twoslash": "^2.5.0",
-    "@types/express": "^5.0.1",
+    "@types/express": "^5.0.2",
     "feed": "^5.0.1",
     "gsap": "^3.13.0",
     "vitepress": "^1.6.3",
-    "vitepress-plugin-group-icons": "^1.5.2",
-    "vitepress-plugin-llms": "^1.1.4",
-    "vue": "^3.5.13"
+    "vitepress-plugin-group-icons": "^1.5.5",
+    "vitepress-plugin-llms": "^1.3.3",
+    "vue": "^3.5.14"
   }
 }

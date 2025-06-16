@@ -84,7 +84,7 @@ Note that although the `FetchableDevEnvironment` is implemented as a class, it i
 
 ## Default `RunnableDevEnvironment`
 
-Given a Vite server configured in middleware mode as described by the [SSR setup guide](/guide/ssr#setting-up-the-dev-server), let's implement the SSR middleware using the environment API. Error handling is omitted.
+Given a Vite server configured in middleware mode as described by the [SSR setup guide](/guide/ssr#setting-up-the-dev-server), let's implement the SSR middleware using the environment API. Remember that it doesn't have to be called `ssr`, so we'll name it `server` in this example. Error handling is omitted.
 
 ```js
 import fs from 'node:fs'
@@ -94,7 +94,7 @@ import { createServer } from 'vite'
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
 
-const server = await createServer({
+const viteServer = await createServer({
   server: { middlewareMode: true },
   appType: 'custom',
   environments: {
@@ -106,7 +106,7 @@ const server = await createServer({
 
 // You might need to cast this to RunnableDevEnvironment in TypeScript or
 // use isRunnableDevEnvironment to guard the access to the runner
-const environment = server.environments.node
+const serverEnvironment = viteServer.environments.server
 
 app.use('*', async (req, res, next) => {
   const url = req.originalUrl
@@ -118,12 +118,14 @@ app.use('*', async (req, res, next) => {
   // 2. Apply Vite HTML transforms. This injects the Vite HMR client,
   //    and also applies HTML transforms from Vite plugins, e.g. global
   //    preambles from @vitejs/plugin-react
-  template = await server.transformIndexHtml(url, template)
+  template = await viteServer.transformIndexHtml(url, template)
 
   // 3. Load the server entry. import(url) automatically transforms
   //    ESM source code to be usable in Node.js! There is no bundling
   //    required, and provides full HMR support.
-  const { render } = await environment.runner.import('/src/entry-server.js')
+  const { render } = await serverEnvironment.runner.import(
+    '/src/entry-server.js',
+  )
 
   // 4. render the app HTML. This assumes entry-server.js's exported
   //     `render` function calls appropriate framework SSR APIs,
