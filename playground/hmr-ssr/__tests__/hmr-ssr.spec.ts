@@ -824,22 +824,29 @@ if (!isBuild) {
 
     const parentFile = 'file-delete-restore/parent.js'
     const childFile = 'file-delete-restore/child.js'
-
-    // delete the file
-    editFile(parentFile, (code) =>
-      code.replace(
-        "export { value as childValue } from './child'",
-        "export const childValue = 'not-child'",
-      ),
-    )
     const originalChildFileCode = readFile(childFile)
-    removeFile(childFile)
+
+    await untilConsoleLogAfter(
+      () => {
+        // delete the file
+        editFile(parentFile, (code) =>
+          code.replace(
+            "export { value as childValue } from './child'",
+            "export const childValue = 'not-child'",
+          ),
+        )
+        removeFile(childFile)
+      },
+      [
+        'file-delete-restore/child.js is disposed',
+        'file-delete-restore/child.js is pruned',
+      ],
+      false,
+    )
 
     await expect
       .poll(() => hmr('.file-delete-restore'))
       .toMatch('parent:not-child')
-    expect(clientLogs).to.include('file-delete-restore/child.js is disposed')
-    expect(clientLogs).to.include('file-delete-restore/child.js is pruned')
 
     // restore the file
     addFile(childFile, originalChildFileCode)
