@@ -2364,7 +2364,7 @@ function loadSss(root: string): PostCSS.Syntax {
   if (cachedSss) return cachedSss
 
   const sssPath = loadPreprocessorPath(PostCssDialectLang.sss, root)
-  cachedSss = createRequire(import.meta.url)(sssPath)
+  cachedSss = createRequire(/** #__KEEP__ */ import.meta.url)(sssPath)
   return cachedSss
 }
 

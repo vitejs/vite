@@ -179,9 +179,9 @@ export const bareImportRE = /^(?![a-zA-Z]:)[\w@](?!.*:\/\/)/
 export const deepImportRE = /^([^@][^/]*)\/|^(@[^/]+\/[^/]+)\//
 
 // TODO: use import()
-const _require = createRequire(import.meta.url)
+const _require = createRequire(/** #__KEEP__ */ import.meta.url)
 
-const _dirname = path.dirname(fileURLToPath(import.meta.url))
+const _dirname = path.dirname(fileURLToPath(/** #__KEEP__ */ import.meta.url))
 
 // https://github.com/rolldown/rolldown/blob/62fba31428af244f871f0e119ed43936ee5d01fd/packages/rolldown/src/log/logger.ts#L64
 export const rollupVersion = '4.23.0'

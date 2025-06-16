@@ -2,7 +2,7 @@ import fs from 'node:fs'
 import license from 'rollup-plugin-license'
 import type { Dependency } from 'rollup-plugin-license'
 import colors from 'picocolors'
-import type { Plugin } from 'rollup'
+import type { Plugin, PluginContext } from 'rollup'
 
 export default function licensePlugin(
   licenseFilePath: string,
@@ -10,7 +10,7 @@ export default function licensePlugin(
   packageName: string,
   additionalSection?: string,
 ): Plugin {
-  return license({
+  const originalPlugin = license({
     thirdParty(dependencies) {
       // https://github.com/rollup/rollup/blob/master/build-plugins/generate-license-file.js
       // MIT Licensed https://github.com/rollup/rollup/blob/master/LICENSE-CORE.md
@@ -115,6 +115,15 @@ export default function licensePlugin(
       }
     },
   })
+  // skip for watch mode
+  for (const hook of ['renderChunk', 'generateBundle'] as const) {
+    const originalHook = originalPlugin[hook]!
+    originalPlugin[hook] = function (this: PluginContext, ...args: unknown[]) {
+      if (this.meta.watchMode) return
+      return (originalHook as Function).apply(this, args)
+    }
+  }
+  return originalPlugin
 }
 
 function sortDependencies(dependencies: Dependency[]) {
