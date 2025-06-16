@@ -14,16 +14,12 @@ export {
 // NOTE: export for backward compat
 export const esbuildVersion = '0.25.0'
 export {
-  splitVendorChunkPlugin,
-  splitVendorChunk,
-  isCSSRequest,
-} from './plugins/splitVendorChunk'
-export {
   normalizePath,
   mergeConfig,
   mergeAlias,
   createFilter,
   withFilter,
+  isCSSRequest,
   rollupVersion,
   rolldownVersion,
 } from './utils'

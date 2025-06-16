@@ -10,10 +10,9 @@ import type {
   InvokeSendData,
 } from '../../shared/invokeMethods'
 import { CLIENT_DIR } from '../constants'
-import { createDebugger, normalizePath } from '../utils'
+import { createDebugger, isCSSRequest, normalizePath } from '../utils'
 import type { InferCustomEventPayload, ViteDevServer } from '..'
 import { getHookHandler } from '../plugins'
-import { isCSSRequest } from '../plugins/css'
 import { isExplicitImportRequired } from '../plugins/importAnalysis'
 import { getEnvFilesForMode } from '../env'
 import type { Environment } from '../environment'
@@ -54,11 +53,6 @@ export interface HotUpdateOptions {
   modules: Array<EnvironmentModuleNode>
   read: () => string | Promise<string>
   server: ViteDevServer
-
-  /**
-   * @deprecated use this.environment in the hotUpdate hook instead
-   **/
-  environment: DevEnvironment
 }
 
 export interface HmrContext {
@@ -78,8 +72,6 @@ interface PropagationBoundary {
 export interface HotChannelClient {
   send(payload: HotPayload): void
 }
-/** @deprecated use `HotChannelClient` instead */
-export type HMRBroadcasterClient = HotChannelClient
 
 export type HotChannelListener<T extends string = string> = (
   data: InferCustomEventPayload<T>,
@@ -111,8 +103,6 @@ export interface HotChannel<Api = any> {
 
   api?: Api
 }
-/** @deprecated use `HotChannel` instead */
-export type HMRChannel = HotChannel
 
 export function getShortName(file: string, root: string): string {
   return file.startsWith(withTrailingSlash(root))
@@ -447,8 +437,6 @@ export async function handleHMRUpdate(
     const options = {
       ...contextMeta,
       modules: [...mods],
-      // later on hotUpdate will be called for each runtime with a new HotUpdateOptions
-      environment,
     }
     hotMap.set(environment, { options })
   }
@@ -1124,8 +1112,6 @@ export type ServerHotChannelApi = {
 export type ServerHotChannel = HotChannel<ServerHotChannelApi>
 export type NormalizedServerHotChannel =
   NormalizedHotChannel<ServerHotChannelApi>
-/** @deprecated use `ServerHotChannel` instead */
-export type ServerHMRChannel = ServerHotChannel
 
 export function createServerHotChannel(): ServerHotChannel {
   const innerEmitter = new EventEmitter()
@@ -1165,8 +1151,6 @@ export interface HotBroadcaster extends NormalizedHotChannel {
   addChannel(channel: HotChannel): HotBroadcaster
   close(): Promise<unknown[]>
 }
-/** @deprecated use `environment.hot` instead */
-export type HMRBroadcaster = HotBroadcaster
 
 export function createDeprecatedHotBroadcaster(
   ws: NormalizedHotChannel,
