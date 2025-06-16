@@ -157,6 +157,13 @@ const FRAMEWORKS: Framework[] = [
         customCommand:
           'npm exec degit redwoodjs/sdk/starters/standard TARGET_DIR',
       },
+      {
+        name: '@hiogawa/vite-rsc',
+        display: '@hiogawa/vite-rsc ↗',
+        color: magenta,
+        customCommand:
+          'npm exec degit hi-ogawa/vite-plugins/packages/rsc/examples/starter TARGET_DIR',
+      },
     ],
   },
   {
