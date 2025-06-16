@@ -15,7 +15,7 @@ import type { InternalResolveOptions } from './plugins/resolve'
 let pnp: typeof import('pnpapi') | undefined
 if (process.versions.pnp) {
   try {
-    pnp = createRequire(import.meta.url)('pnpapi')
+    pnp = createRequire(/** #__KEEP__ */ import.meta.url)('pnpapi')
   } catch {}
 }
 

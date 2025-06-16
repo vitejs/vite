@@ -1,38 +1,27 @@
 import path from 'node:path'
 import url from 'node:url'
-import { defineBuildConfig } from 'unbuild'
-import licensePlugin from '../vite/rollupLicensePlugin'
+import { defineConfig } from 'tsdown'
+import licensePlugin from '../vite/rollupLicensePlugin.ts'
 
 const __dirname = path.dirname(url.fileURLToPath(import.meta.url))
 
-export default defineBuildConfig({
-  entries: ['src/index'],
-  clean: true,
-  rollup: {
-    inlineDependencies: true,
-    esbuild: {
-      target: 'node20',
-      minify: true,
-    },
-  },
-  hooks: {
-    'rollup:options'(_ctx, options) {
-      options.plugins = [
-        options.plugins,
-        licensePlugin(
-          path.resolve(__dirname, './LICENSE'),
-          'create-vite license',
-          'create-vite',
-          '# License of the files in the directories starting with "template-" in create-vite\n' +
-            'The files in the directories starting with "template-" in create-vite and files\n' +
-            'generated from those files are licensed under the CC0 1.0 Universal license:\n\n' +
-            cc0LicenseText +
-            '\n\n',
-        ),
-      ]
-    },
-  },
-})
+export default defineConfig(() => ({
+  entry: ['src/index.ts'],
+  target: 'node20',
+  minify: true,
+  plugins: [
+    licensePlugin(
+      path.resolve(__dirname, './LICENSE'),
+      'create-vite license',
+      'create-vite',
+      '# License of the files in the directories starting with "template-" in create-vite\n' +
+        'The files in the directories starting with "template-" in create-vite and files\n' +
+        'generated from those files are licensed under the CC0 1.0 Universal license:\n\n' +
+        cc0LicenseText +
+        '\n\n',
+    ),
+  ],
+}))
 
 const cc0LicenseText = `
 CC0 1.0 Universal

@@ -1709,7 +1709,7 @@ export async function createBuilder(
     },
     async build(
       environment: BuildEnvironment,
-    ): Promise<RollupOutput | RollupOutput[] | RollupWatcher> {
+    ): Promise<RolldownOutput | RolldownOutput[] | RolldownWatcher> {
       const output = await buildEnvironment(environment)
       environment.isBuilt = true
       return output

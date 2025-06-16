@@ -4,6 +4,10 @@ import { loadConfigFromFile } from 'vite'
 import { runnerImport } from '../ssr/runnerImport'
 import { slash } from '../../shared/utils'
 
+const [nvMajor, nvMinor] = process.versions.node.split('.').map(Number)
+const isTypeStrippingSupported =
+  (nvMajor === 23 && nvMinor >= 6) || nvMajor >= 24
+
 describe('importing files using inlined environment', () => {
   const fixture = (name: string) =>
     resolve(import.meta.dirname, './fixtures/runner-import', name)
@@ -51,15 +55,17 @@ describe('importing files using inlined environment', () => {
     ])
 
     // confirm that it fails with a bundle approach
-    await expect(async () => {
-      const root = resolve(import.meta.dirname, './fixtures/runner-import')
-      await loadConfigFromFile(
-        { mode: 'production', command: 'serve' },
-        resolve(root, './vite.config.outside-pkg-import.mts'),
-        root,
-        'silent',
-      )
-    }).rejects.toThrow('Unknown file extension ".ts"')
+    if (!isTypeStrippingSupported) {
+      await expect(async () => {
+        const root = resolve(import.meta.dirname, './fixtures/runner-import')
+        await loadConfigFromFile(
+          { mode: 'production', command: 'serve' },
+          resolve(root, './vite.config.outside-pkg-import.mts'),
+          root,
+          'silent',
+        )
+      }).rejects.toThrow('Unknown file extension ".ts"')
+    }
   })
 
   test('dynamic import', async () => {
