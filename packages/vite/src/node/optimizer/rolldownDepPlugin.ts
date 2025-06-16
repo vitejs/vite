@@ -9,6 +9,7 @@ import {
   isBuiltin,
   isCSSRequest,
   isExternalUrl,
+  isNodeBuiltin,
   moduleListContains,
   normalizePath,
 } from '../utils'
@@ -295,16 +296,12 @@ export function rolldownDepPlugin(
           }
 
           if (id.startsWith(optionalPeerDepNamespace)) {
-            if (isProduction) {
-              return {
-                code: 'module.exports = {}',
-              }
-            } else {
-              const path = id.slice(externalWithConversionNamespace.length)
-              const [, peerDep, parentDep] = path.split(':')
-              return {
-                code: `throw new Error(\`Could not resolve "${peerDep}" imported by "${parentDep}". Is it installed?\`)`,
-              }
+            const path = id.slice(externalWithConversionNamespace.length)
+            const [, peerDep, parentDep] = path.split(':')
+            return {
+              code:
+                'module.exports = {};' +
+                `throw new Error(\`Could not resolve "${peerDep}" imported by "${parentDep}". Is it installed?\`)`,
             }
           }
         },
@@ -355,11 +352,12 @@ export function rolldownCjsExternalPlugin(
       filter: { id: prefixRegex(cjsExternalFacadeNamespace) },
       handler(id) {
         if (id.startsWith(cjsExternalFacadeNamespace)) {
+          const idWithoutNamespace = id.slice(cjsExternalFacadeNamespace.length)
           return {
-            code:
-              `import * as m from ${JSON.stringify(
-                nonFacadePrefix + id.slice(cjsExternalFacadeNamespace.length),
-              )};` + `module.exports = { ...m };`,
+            code: `\
+import * as m from ${JSON.stringify(nonFacadePrefix + idWithoutNamespace)};
+module.exports = ${isNodeBuiltin(idWithoutNamespace) ? 'm.default' : '{ ...m }'};
+`,
           }
         }
       },

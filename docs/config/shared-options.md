@@ -54,7 +54,7 @@ export default defineConfig({
 ```
 
 ::: tip NOTE
-For TypeScript users, make sure to add the type declarations in the `env.d.ts` or `vite-env.d.ts` file to get type checks and Intellisense.
+For TypeScript users, make sure to add the type declarations in the `vite-env.d.ts` file to get type checks and Intellisense.
 
 Example:
 
@@ -227,7 +227,7 @@ Note if an inline config is provided, Vite will not search for other PostCSS con
 Specify options to pass to CSS pre-processors. The file extensions are used as keys for the options. The supported options for each preprocessor can be found in their respective documentation:
 
 - `sass`/`scss`:
-  - Select the sass API to use with `api: "modern-compiler" | "modern"` (default `"modern-compiler"` if `sass-embedded` is installed, otherwise `"modern"`). For the best performance, it's recommended to use `api: "modern-compiler"` with the `sass-embedded` package.
+  - Uses `sass-embedded` if installed, otherwise uses `sass`. For the best performance, it's recommended to install the `sass-embedded` package.
   - [Options](https://sass-lang.com/documentation/js-api/interfaces/stringoptions/)
 - `less`: [Options](https://lesscss.org/usage/#less-options).
 - `styl`/`stylus`: Only [`define`](https://stylus-lang.com/docs/js.html#define-name-node) is supported, which can be passed as an object.
@@ -247,7 +247,6 @@ export default defineConfig({
         },
       },
       scss: {
-        api: 'modern-compiler', // or "modern"
         importers: [
           // ...
         ],
@@ -279,11 +278,12 @@ export default defineConfig({
 
 ## css.preprocessorMaxWorkers
 
-- **Experimental:** [Give Feedback](https://github.com/vitejs/vite/discussions/15835)
 - **Type:** `number | true`
-- **Default:** `0` (does not create any workers and run in the main thread)
+- **Default:** `true`
 
-If this option is set, CSS preprocessors will run in workers when possible. `true` means the number of CPUs minus 1.
+Specifies the maximum number of threads CSS preprocessors can use. `true` means up to the number of CPUs minus 1. When set to `0`, Vite will not create any workers and will run the preprocessors in the main thread.
+
+Depending on the preprocessor options, Vite may run the preprocessors on the main thread even if this option is not set to `0`.
 
 ## css.devSourcemap
 

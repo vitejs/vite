@@ -39,7 +39,12 @@ import { resolveConfig } from './config'
 import type { InlineConfig, ResolvedConfig } from './config'
 import { DEFAULT_PREVIEW_PORT } from './constants'
 import type { RequiredExceptFor } from './typeUtils'
-import { hostCheckMiddleware } from './server/middlewares/hostCheck'
+import { hostValidationMiddleware } from './server/middlewares/hostCheck'
+import {
+  BasicMinimalPluginContext,
+  basePluginContextMeta,
+} from './server/pluginContainer'
+import type { MinimalPluginContextWithoutEnvironment } from './plugin'
 
 export interface PreviewOptions extends CommonServerOptions {}
 
@@ -104,7 +109,7 @@ export interface PreviewServer {
 }
 
 export type PreviewServerHook = (
-  this: void,
+  this: MinimalPluginContextWithoutEnvironment,
   server: PreviewServer,
 ) => (() => void) | void | Promise<(() => void) | void>
 
@@ -191,9 +196,13 @@ export async function preview(
   setupSIGTERMListener(closeServerAndExit)
 
   // apply server hooks from plugins
+  const configurePreviewServerContext = new BasicMinimalPluginContext(
+    { ...basePluginContextMeta, watchMode: false },
+    config.logger,
+  )
   const postHooks: ((() => void) | void)[] = []
   for (const hook of config.getSortedPluginHooks('configurePreviewServer')) {
-    postHooks.push(await hook(server))
+    postHooks.push(await hook.call(configurePreviewServerContext, server))
   }
 
   // cors
@@ -206,7 +215,7 @@ export async function preview(
   const { allowedHosts } = config.preview
   // no need to check for HTTPS as HTTPS is not vulnerable to DNS rebinding attacks
   if (allowedHosts !== true && !config.preview.https) {
-    app.use(hostCheckMiddleware(config, true))
+    app.use(hostValidationMiddleware(allowedHosts, true))
   }
 
   // proxy
