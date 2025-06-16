@@ -37,7 +37,7 @@ This year, we're making several big steps. To start with, [ViteConf](https://vit
 
 And [VoidZero](https://voidzero.dev/posts/announcing-voidzero-inc) continues to make significant strides in its mission to build an open source unified development toolchain for the JavaScript ecosystem. Over the last year, the VoidZero team has been working on [Rolldown](https://rolldown.rs/), a Rust-based next-generation bundler, as part of a broader effort to modernize Vite's core. You can try out the Rolldown-powered Vite today by using the rolldown-vite package instead of the default vite package. It is a drop-in replacement, as Rolldown will become the default bundler for Vite in the future. Switching should reduce your build time, especially for larger projects. Read more at the [Rolldown-vite announcement blog post](https://voidzero.dev/posts/announcing-rolldown-vite).
 
-VoidZero has also partnered with [NuxtLabs](https://nuxtlabs.com/). Anthony Fu will work on creating Vite DevTools, a tool that will offer deeper and more insightful debugging and analysis for all projects and frameworks built on top of Vite. You can read more on the [VoidZero and NuxtLabs join forces on Vite Devtools blog post](https://voidzero.dev/posts/voidzero-nuxtlabs-vite-devtools).
+Through a partnership between VoidZero and [NuxtLabs](https://nuxtlabs.com/), Anthony Fu is working on creating Vite DevTools. They will offer deeper and more insightful debugging and analysis for all Vite-based projects and frameworks. You can read more on the [VoidZero and NuxtLabs join forces on Vite Devtools blog post](https://voidzero.dev/posts/voidzero-nuxtlabs-vite-devtools).
 
 Quick links:
 
