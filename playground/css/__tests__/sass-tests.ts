@@ -15,6 +15,15 @@ export const sassTest = () => {
     const atImport = await page.$('.sass-at-import')
     const atImportAlias = await page.$('.sass-at-import-alias')
     const urlStartsWithVariable = await page.$('.sass-url-starts-with-variable')
+    const urlStartsWithVariableInterpolation1 = await page.$(
+      '.sass-url-starts-with-interpolation1',
+    )
+    const urlStartsWithVariableInterpolation2 = await page.$(
+      '.sass-url-starts-with-interpolation2',
+    )
+    const urlStartsWithVariableConcat = await page.$(
+      '.sass-url-starts-with-variable-concat',
+    )
     const urlStartsWithFunctionCall = await page.$(
       '.sass-url-starts-with-function-call',
     )
@@ -30,6 +39,15 @@ export const sassTest = () => {
       isBuild ? /base64/ : '/nested/icon.png',
     )
     expect(await getBg(urlStartsWithVariable)).toMatch(
+      isBuild ? /ok-[-\w]+\.png/ : `${viteTestUrl}/ok.png`,
+    )
+    expect(await getBg(urlStartsWithVariableInterpolation1)).toMatch(
+      isBuild ? /ok-[-\w]+\.png/ : `${viteTestUrl}/ok.png`,
+    )
+    expect(await getBg(urlStartsWithVariableInterpolation2)).toMatch(
+      isBuild ? /ok-[-\w]+\.png/ : `${viteTestUrl}/ok.png`,
+    )
+    expect(await getBg(urlStartsWithVariableConcat)).toMatch(
       isBuild ? /ok-[-\w]+\.png/ : `${viteTestUrl}/ok.png`,
     )
     expect(await getBg(urlStartsWithFunctionCall)).toMatch(

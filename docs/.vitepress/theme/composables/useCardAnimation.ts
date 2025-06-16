@@ -8,7 +8,7 @@ gsap.registerPlugin(ScrollTrigger)
  * A custom hook for animating a card element.
  *
  * @param {HTMLElement | string} el - The element or selector for the element to be animated
- * @param {() => GSAPTimeline | null} animation - A function that returns a GSAP timeline for the animation
+ * @param {() => GSAPTimeline} animation - A function that returns a GSAP timeline for the animation
  * @param {object} options - Options for the animation
  */
 export function useCardAnimation(

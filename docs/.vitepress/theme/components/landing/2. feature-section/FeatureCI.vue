@@ -44,7 +44,7 @@ const { startAnimation, isCardActive } = useCardAnimation(
       () => {
         glowVisible.value = true
       },
-      null,
+      undefined,
       0.2,
     )
     // Make the glowing lines hidden shortly after
@@ -52,7 +52,7 @@ const { startAnimation, isCardActive } = useCardAnimation(
       () => {
         glowVisible.value = false
       },
-      null,
+      undefined,
       1.1,
     )
 
@@ -62,7 +62,7 @@ const { startAnimation, isCardActive } = useCardAnimation(
         () => {
           checkmark.value = true
         },
-        null,
+        undefined,
         1.3 + index * 0.2,
       )
     })
@@ -228,91 +228,91 @@ const { startAnimation, isCardActive } = useCardAnimation(
             path="M1.00048 119.402L200.243 68.2732C213.283 65.4129 221.832 58.4923 221.832 50.7968V20.323V1"
             :position="glowPosition"
             :visible="glowVisible"
-            :dot-color="false"
+            :dot-color="undefined"
             glow-color="#13B351"
           />
           <SvgNode
             path="M1.00048 136.779L231.212 68.7423C242.847 65.5523 250.195 59.0356 250.195 51.9076V20.323V1"
             :position="glowPosition"
             :visible="glowVisible"
-            :dot-color="false"
+            :dot-color="undefined"
             glow-color="#13B351"
           />
           <SvgNode
             path="M1 165.731L263.267 69.1267C272.82 65.6348 278.558 59.7587 278.558 53.4667V20.323V1"
             :position="glowPosition"
             :visible="glowVisible"
-            :dot-color="false"
+            :dot-color="undefined"
             glow-color="#13B351"
           />
           <SvgNode
             path="M719.001 154.23L464.019 69.1276C454.474 65.6348 448.743 59.7616 448.743 53.4731V20.323V1"
             :position="glowPosition"
             :visible="glowVisible"
-            :dot-color="false"
+            :dot-color="undefined"
             glow-color="#13B351"
           />
           <SvgNode
             path="M719.001 125.219L496.078 68.7439C484.449 65.5528 477.106 59.0377 477.106 51.9119V20.323V1"
             :position="glowPosition"
             :visible="glowVisible"
-            :dot-color="false"
+            :dot-color="undefined"
             glow-color="#13B351"
           />
           <SvgNode
             path="M719 107.817L527.05 68.2749C514.015 65.4134 505.469 58.4939 505.469 50.8001V20.323V1"
             :position="glowPosition"
             :visible="glowVisible"
-            :dot-color="false"
+            :dot-color="undefined"
             glow-color="#13B351"
           />
           <SvgNode
             path="M719.001 96.2159L557.314 67.8323C543.291 65.2673 533.835 58.0756 533.835 49.976V20.323V9.78386C533.835 4.93267 529.902 1 525.051 1"
             :position="glowPosition"
             :visible="glowVisible"
-            :dot-color="false"
+            :dot-color="undefined"
             glow-color="#13B351"
           />
           <SvgNode
             path="M1 107.817L169.982 67.8308C184.008 65.2668 193.467 58.0743 193.467 49.9735V20.323V9.78387C193.467 4.93267 197.4 1 202.251 1"
             :position="glowPosition"
             :visible="glowVisible"
-            :dot-color="false"
+            :dot-color="undefined"
             glow-color="#13B351"
           />
           <SvgNode
             path="M306.924 1V20.323V55.7423C306.924 60.7337 303.306 65.5207 296.865 69.0509L62.8139 197.336C52.968 202.733 46.8471 213.068 46.8471 224.296V240.342"
             :position="1 - glowPosition"
             :visible="glowVisible"
-            :dot-color="false"
+            :dot-color="undefined"
             glow-color="#13B351"
           />
           <SvgNode
             path="M335.286 1V20.323V59.0919C335.286 62.0155 334.043 64.8989 331.656 67.5136L213.175 197.282C208.003 202.947 205.136 210.34 205.136 218.011V240.342"
             :position="1 - glowPosition"
             :visible="glowVisible"
-            :dot-color="false"
+            :dot-color="undefined"
             glow-color="#13B351"
           />
           <SvgNode
             path="M363.65 1V20.323L363.428 206.088V240.342"
             :position="1 - glowPosition"
             :visible="glowVisible"
-            :dot-color="false"
+            :dot-color="undefined"
             glow-color="#13B351"
           />
           <SvgNode
             path="M392.015 1V20.323V59.1056C392.015 62.0204 393.25 64.8954 395.624 67.5041L513.712 197.291C518.862 202.951 521.716 210.328 521.716 217.981V240.342"
             :position="1 - glowPosition"
             :visible="glowVisible"
-            :dot-color="false"
+            :dot-color="undefined"
             glow-color="#13B351"
           />
           <SvgNode
             path="M420.377 1V20.323V55.7518C420.377 60.7376 423.987 65.5197 430.415 69.0489L664.058 197.332C673.893 202.732 680.005 213.061 680.005 224.28V240.342"
             :position="1 - glowPosition"
             :visible="glowVisible"
-            :dot-color="false"
+            :dot-color="undefined"
             glow-color="#13B351"
           />
         </svg>

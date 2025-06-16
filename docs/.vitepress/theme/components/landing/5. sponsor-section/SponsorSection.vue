@@ -1,4 +1,4 @@
-<script setup>
+<script setup lang="ts">
 import { useSponsor, voidZero } from '../../../composables/sponsor'
 import { VPSponsors } from 'vitepress/theme'
 

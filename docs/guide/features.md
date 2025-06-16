@@ -176,7 +176,7 @@ Assets referenced by HTML elements such as `<script type="module" src>` and `<li
 - `<audio src>`
 - `<embed src>`
 - `<img src>` and `<img srcset>`
-- `<image src>`
+- `<image href>` and `<image xlink:href>`
 - `<input src>`
 - `<link href>` and `<link imagesrcset>`
 - `<object data>`

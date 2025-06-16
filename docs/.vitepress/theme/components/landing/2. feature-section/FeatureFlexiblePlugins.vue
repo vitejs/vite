@@ -12,7 +12,7 @@ useSlideIn('#flexible-plugin-system')
  */
 const { isCardActive, startAnimation } = useCardAnimation(
   '#flexible-plugin-system',
-  null,
+  undefined,
   {
     once: true,
   },

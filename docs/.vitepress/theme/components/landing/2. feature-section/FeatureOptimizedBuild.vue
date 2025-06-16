@@ -43,7 +43,7 @@ const { startAnimation } = useCardAnimation(
         () => {
           node.visible.value = false
         },
-        null,
+        undefined,
         '-=0.6',
       )
       timeline.add(subTimeline, Math.random())
@@ -54,7 +54,7 @@ const { startAnimation } = useCardAnimation(
       () => {
         isBoltActive.value = true
       },
-      null,
+      undefined,
       '-=0.5',
     )
 
@@ -92,7 +92,7 @@ const { startAnimation } = useCardAnimation(
           path="M195 31.5L89.8055 30.377C76.1575 30.377 62.535 29.076 49.0906 26.4886L-21 13"
           :position="nodes[0].position.value"
           :visible="nodes[0].visible.value"
-          :dot-color="false"
+          :dot-color="undefined"
           glow-color="#FFE358"
         />
 
@@ -105,7 +105,7 @@ const { startAnimation } = useCardAnimation(
           path="M195 50L69.295 47.754L-21 41.016"
           :position="nodes[1].position.value"
           :visible="nodes[1].visible.value"
-          :dot-color="false"
+          :dot-color="undefined"
           glow-color="#FFE358"
         />
 
@@ -118,7 +118,7 @@ const { startAnimation } = useCardAnimation(
           path="M195 68.5L-21 69.5642"
           :position="nodes[2].position.value"
           :visible="nodes[2].visible.value"
-          :dot-color="false"
+          :dot-color="undefined"
           glow-color="#FFE358"
         />
 
@@ -131,7 +131,7 @@ const { startAnimation } = useCardAnimation(
           path="M195 87L69.2951 89.2463L-21 96.1614"
           :position="nodes[3].position.value"
           :visible="nodes[3].visible.value"
-          :dot-color="false"
+          :dot-color="undefined"
           glow-color="#FFE358"
         />
 
@@ -144,7 +144,7 @@ const { startAnimation } = useCardAnimation(
           path="M195 105.5L89.8055 106.623C76.1575 106.623 62.535 107.924 49.0906 110.511L-21 124"
           :position="nodes[4].position.value"
           :visible="nodes[4].visible.value"
-          :dot-color="false"
+          :dot-color="undefined"
           glow-color="#FFE358"
         />
 
@@ -182,7 +182,7 @@ const { startAnimation } = useCardAnimation(
           path="M0 93.5L105.194 94.623C118.843 94.623 132.465 95.924 145.909 98.5114L216 112"
           :position="nodes[5].position.value"
           :visible="nodes[5].visible.value"
-          :dot-color="false"
+          :dot-color="undefined"
           glow-color="#FFE358"
         />
 
@@ -195,7 +195,7 @@ const { startAnimation } = useCardAnimation(
           path="M0 75L125.705 77.246L216 83.984"
           :position="nodes[6].position.value"
           :visible="nodes[6].visible.value"
-          :dot-color="false"
+          :dot-color="undefined"
           glow-color="#FFE358"
         />
 
@@ -208,7 +208,7 @@ const { startAnimation } = useCardAnimation(
           path="M4.65162e-08 56.5L216 55.4358"
           :position="nodes[7].position.value"
           :visible="nodes[7].visible.value"
-          :dot-color="false"
+          :dot-color="undefined"
           glow-color="#FFE358"
         />
 
@@ -221,7 +221,7 @@ const { startAnimation } = useCardAnimation(
           path="M4.00455e-07 38L125.705 35.7537L216 28.8386"
           :position="nodes[8].position.value"
           :visible="nodes[8].visible.value"
-          :dot-color="false"
+          :dot-color="undefined"
           glow-color="#FFE358"
         />
 
@@ -234,7 +234,7 @@ const { startAnimation } = useCardAnimation(
           path="M8.0866e-07 19.5L105.194 18.377C118.843 18.377 132.465 17.076 145.909 14.4887L216 1"
           :position="nodes[9].position.value"
           :visible="nodes[9].visible.value"
-          :dot-color="false"
+          :dot-color="undefined"
           glow-color="#FFE358"
         />
 

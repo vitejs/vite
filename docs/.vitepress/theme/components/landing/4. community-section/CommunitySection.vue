@@ -1,6 +1,5 @@
 <script setup lang="ts">
 import CommunityCard, { Testimonial } from './CommunityCard.vue'
-import placeholderAvatar from '/images/community/placeholder.jpg'
 
 const testimonials: Testimonial[] = [
   {

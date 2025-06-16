@@ -34,12 +34,12 @@ export interface SvgNodeProps {
   /**
    * The color of the glow effect.
    */
-  glowColor?: string
+  glowColor?: string | undefined
 
   /**
    * The color of the dot.
    */
-  dotColor?: string | boolean
+  dotColor?: string | undefined
 }
 
 const props = withDefaults(defineProps<SvgNodeProps>(), {

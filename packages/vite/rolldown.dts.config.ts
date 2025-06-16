@@ -1,12 +1,23 @@
 import { readFileSync } from 'node:fs'
 import { fileURLToPath } from 'node:url'
-import { findStaticImports } from 'mlly'
-import { defineConfig } from 'rollup'
-import type { Plugin, PluginContext, RenderedChunk } from 'rollup'
-import dts from 'rollup-plugin-dts'
-import { parse } from '@babel/parser'
+import { defineConfig } from 'rolldown'
+import type {
+  OutputChunk,
+  Plugin,
+  PluginContext,
+  RenderedChunk,
+} from 'rolldown'
+import { parseAst } from 'rolldown/parseAst'
+import { dts } from 'rolldown-plugin-dts'
+import { parse as parseWithBabel } from '@babel/parser'
 import { walk } from 'estree-walker'
 import MagicString from 'magic-string'
+import type {
+  Directive,
+  ModuleExportName,
+  Program,
+  Statement,
+} from '@oxc-project/types'
 
 const depTypesDir = new URL('./src/types/', import.meta.url)
 const pkg = JSON.parse(
@@ -23,12 +34,15 @@ const external = [
 
 export default defineConfig({
   input: {
-    index: './temp/src/node/index.d.ts',
-    'module-runner': './temp/src/module-runner/index.d.ts',
+    index: './src/node/index.ts',
+    'module-runner': './src/module-runner/index.ts',
   },
   output: {
     dir: './dist/node',
     format: 'esm',
+  },
+  treeshake: {
+    moduleSideEffects: 'no-external',
   },
   external,
   plugins: [
@@ -41,7 +55,7 @@ export default defineConfig({
       },
     },
     patchTypes(),
-    dts({ respectExternal: true }),
+    dts({ tsconfig: './src/node/tsconfig.build.json', emitDtsOnly: true }),
   ],
 })
 
@@ -57,20 +71,42 @@ const identifierWithTrailingDollarRE = /\b(\w+)\$\d+\b/g
  */
 const identifierReplacements: Record<string, Record<string, string>> = {
   rolldown: {
-    Plugin$1: 'rolldown.Plugin',
-    PluginContext$1: 'rolldown.PluginContext',
-    MinimalPluginContext$1: 'rolldown.MinimalPluginContext',
-    TransformResult$1: 'rolldown.TransformResult',
+    Plugin$2: 'Rolldown.Plugin',
+    TransformResult$1: 'Rolldown.TransformResult',
   },
   'rolldown/experimental': {
     TransformOptions$1: 'rolldown_experimental_TransformOptions',
     TransformResult$2: 'rolldown_experimental_TransformResult',
   },
+  'node:http': {
+    Server$1: 'http.Server',
+    IncomingMessage$1: 'http.IncomingMessage',
+  },
   'node:https': {
-    Server$1: 'HttpsServer',
-    ServerOptions$1: 'HttpsServerOptions',
+    Server$2: 'HttpsServer',
+    ServerOptions$2: 'HttpsServerOptions',
+  },
+  '../../types/hmrPayload.js': {
+    CustomPayload$1: 'hmrPayload_CustomPayload',
+    HotPayload$1: 'hmrPayload_HotPayload',
+  },
+  '../../types/customEvent.js': {
+    InferCustomEventPayload$1: 'hmrPayload_InferCustomEventPayload',
+  },
+  '../../types/internal/esbuildOptions.js': {
+    EsbuildTransformOptions$1: 'esbuildOptions_EsbuildTransformOptions',
+  },
+  '../../types/internal/lightningcssOptions.js': {
+    LightningCSSOptions$1: 'lightningcssOptions_LightningCSSOptions',
   },
 }
+
+// type names that are declared
+const ignoreConfusingTypeNames = [
+  'Plugin$1',
+  'MinimalPluginContext$1',
+  'ServerOptions$1',
+]
 
 /**
  * Patch the types files before passing to dts plugin
@@ -83,47 +119,108 @@ const identifierReplacements: Record<string, Record<string, string>> = {
 function patchTypes(): Plugin {
   return {
     name: 'patch-types',
-    resolveId(id) {
-      // Dep types should be bundled
-      if (id.startsWith('dep-types/')) {
-        const fileUrl = new URL(
-          `./${id.slice('dep-types/'.length)}.d.ts`,
-          depTypesDir,
-        )
-        return fileURLToPath(fileUrl)
-      }
-      // Ambient types are unbundled and externalized
-      if (id.startsWith('types/')) {
-        return {
-          id: '../../' + (id.endsWith('.js') ? id : id + '.js'),
-          external: true,
+    resolveId: {
+      order: 'pre',
+      filter: {
+        id: /^(dep-)?types\//,
+      },
+      handler(id) {
+        // Dep types should be bundled
+        if (id.startsWith('dep-types/')) {
+          const fileUrl = new URL(
+            `./${id.slice('dep-types/'.length)}.d.ts`,
+            depTypesDir,
+          )
+          return fileURLToPath(fileUrl)
         }
-      }
+        // Ambient types are unbundled and externalized
+        if (id.startsWith('types/')) {
+          return {
+            id: '../../' + (id.endsWith('.js') ? id : id + '.js'),
+            external: true,
+          }
+        }
+      },
     },
-    renderChunk(code, chunk) {
-      if (
-        chunk.fileName.startsWith('module-runner') ||
-        // index and moduleRunner have a common chunk "moduleRunnerTransport"
-        chunk.fileName.startsWith('moduleRunnerTransport') ||
-        chunk.fileName.startsWith('types.d-')
-      ) {
-        validateRunnerChunk.call(this, chunk)
-      } else {
-        validateChunkImports.call(this, chunk)
-        code = replaceConfusingTypeNames.call(this, code, chunk)
-        code = stripInternalTypes.call(this, code, chunk)
-        code = cleanUnnecessaryComments(code)
-      }
-      return code
+    generateBundle: {
+      order: 'post',
+      handler(_opts, bundle) {
+        for (const chunk of Object.values(bundle)) {
+          if (chunk.type !== 'chunk') continue
+
+          const ast = parseAst(chunk.code, { lang: 'ts', sourceType: 'module' })
+          const importBindings = getAllImportBindings(ast)
+          if (
+            chunk.fileName.startsWith('module-runner') ||
+            // index and moduleRunner have a common chunk "index-"
+            chunk.fileName.startsWith('index-') ||
+            chunk.fileName.startsWith('types.d-')
+          ) {
+            validateRunnerChunk.call(this, chunk, importBindings)
+          } else {
+            validateChunkImports.call(this, chunk, importBindings)
+            replaceConfusingTypeNames.call(this, chunk, importBindings)
+            stripInternalTypes.call(this, chunk)
+            cleanUnnecessaryComments(chunk)
+          }
+        }
+      },
     },
   }
+}
+
+function stringifyModuleExportName(node: ModuleExportName): string {
+  if (node.type === 'Identifier') {
+    return node.name
+  }
+  return node.value
+}
+
+type ImportBindings = { id: string; bindings: string[]; locals: string[] }
+
+function getImportBindings(
+  node: Directive | Statement,
+): ImportBindings | undefined {
+  if (node.type === 'ImportDeclaration') {
+    return {
+      id: node.source.value,
+      bindings: node.specifiers.map((s) =>
+        s.type === 'ImportDefaultSpecifier'
+          ? 'default'
+          : s.type === 'ImportNamespaceSpecifier'
+            ? '*'
+            : stringifyModuleExportName(s.imported),
+      ),
+      locals: node.specifiers.map((s) => s.local.name),
+    }
+  }
+  if (node.type === 'ExportNamedDeclaration') {
+    if (!node.source) return undefined
+    return {
+      id: node.source.value,
+      bindings: node.specifiers.map((s) => stringifyModuleExportName(s.local)),
+      locals: [],
+    }
+  }
+  if (node.type === 'ExportAllDeclaration') {
+    if (!node.source) return undefined
+    return { id: node.source.value, bindings: ['*'], locals: [] }
+  }
+}
+
+function getAllImportBindings(ast: Program): ImportBindings[] {
+  return ast.body.flatMap((node) => getImportBindings(node) ?? [])
 }
 
 /**
  * Runner chunk should only import local dependencies to stay lightweight
  */
-function validateRunnerChunk(this: PluginContext, chunk: RenderedChunk) {
-  for (const [id, bindings] of Object.entries(chunk.importedBindings)) {
+function validateRunnerChunk(
+  this: PluginContext,
+  chunk: RenderedChunk,
+  importBindings: ImportBindings[],
+) {
+  for (const { id, bindings } of importBindings) {
     if (
       !id.startsWith('./') &&
       !id.startsWith('../') &&
@@ -142,9 +239,13 @@ function validateRunnerChunk(this: PluginContext, chunk: RenderedChunk) {
 /**
  * Validate that chunk imports do not import dev deps
  */
-function validateChunkImports(this: PluginContext, chunk: RenderedChunk) {
+function validateChunkImports(
+  this: PluginContext,
+  chunk: RenderedChunk,
+  importBindings: ImportBindings[],
+) {
   const deps = Object.keys(pkg.dependencies)
-  for (const [id, bindings] of Object.entries(chunk.importedBindings)) {
+  for (const { id, bindings } of importBindings) {
     if (
       !id.startsWith('./') &&
       !id.startsWith('../') &&
@@ -172,17 +273,13 @@ function validateChunkImports(this: PluginContext, chunk: RenderedChunk) {
  */
 function replaceConfusingTypeNames(
   this: PluginContext,
-  code: string,
-  chunk: RenderedChunk,
+  chunk: OutputChunk,
+  importBindings: ImportBindings[],
 ) {
-  const imports = findStaticImports(code)
-
   for (const modName in identifierReplacements) {
-    const imp = imports.find(
-      (imp) => imp.specifier === modName && imp.imports.includes('{'),
-    )
+    const imp = importBindings.filter((imp) => imp.id === modName)
     // Validate that `identifierReplacements` is not outdated if there's no match
-    if (!imp) {
+    if (imp.length === 0) {
       this.warn(
         `${chunk.fileName} does not import "${modName}" for replacement`,
       )
@@ -193,7 +290,7 @@ function replaceConfusingTypeNames(
     const replacements = identifierReplacements[modName]
     for (const id in replacements) {
       // Validate that `identifierReplacements` is not outdated if there's no match
-      if (!imp.imports.includes(id)) {
+      if (!imp.some((i) => i.locals.includes(id))) {
         this.warn(
           `${chunk.fileName} does not import "${id}" from "${modName}" for replacement`,
         )
@@ -207,17 +304,26 @@ function replaceConfusingTypeNames(
       // named import cannot be replaced with `Foo as Namespace.Foo`, so we
       // pre-emptively remove the whole named import
       if (betterId.includes('.')) {
-        code = code.replace(
+        chunk.code = chunk.code.replace(
           new RegExp(`\\b\\w+\\b as ${regexEscapedId},?\\s?`),
           '',
         )
       }
-      code = code.replace(new RegExp(`\\b${regexEscapedId}\\b`, 'g'), betterId)
+      chunk.code = chunk.code.replace(
+        new RegExp(`\\b${regexEscapedId}\\b`, 'g'),
+        betterId,
+      )
     }
   }
 
-  const unreplacedIds = unique(
-    Array.from(code.matchAll(identifierWithTrailingDollarRE), (m) => m[0]),
+  const identifiers = unique(
+    Array.from(
+      chunk.code.matchAll(identifierWithTrailingDollarRE),
+      (m) => m[0],
+    ),
+  )
+  const unreplacedIds = identifiers.filter(
+    (id) => !ignoreConfusingTypeNames.includes(id),
   )
   if (unreplacedIds.length) {
     const unreplacedStr = unreplacedIds.map((id) => `\n- ${id}`).join('')
@@ -226,8 +332,17 @@ function replaceConfusingTypeNames(
     )
     process.exitCode = 1
   }
-
-  return code
+  const notUsedConfusingTypeNames = ignoreConfusingTypeNames.filter(
+    (id) => !identifiers.includes(id),
+  )
+  // Validate that `identifierReplacements` is not outdated if there's no match
+  if (notUsedConfusingTypeNames.length) {
+    const notUsedStr = notUsedConfusingTypeNames
+      .map((id) => `\n- ${id}`)
+      .join('')
+    this.warn(`${chunk.fileName} contains unused identifier names${notUsedStr}`)
+    process.exitCode = 1
+  }
 }
 
 /**
@@ -235,14 +350,11 @@ function replaceConfusingTypeNames(
  * like internal parameters are still not stripped by TypeScript, so we run another
  * pass here.
  */
-function stripInternalTypes(
-  this: PluginContext,
-  code: string,
-  chunk: RenderedChunk,
-) {
-  if (code.includes('@internal')) {
-    const s = new MagicString(code)
-    const ast = parse(code, {
+function stripInternalTypes(this: PluginContext, chunk: OutputChunk) {
+  if (chunk.code.includes('@internal')) {
+    const s = new MagicString(chunk.code)
+    // need to parse with babel to get the comments
+    const ast = parseWithBabel(chunk.code, {
       plugins: ['typescript'],
       sourceType: 'module',
     })
@@ -255,15 +367,13 @@ function stripInternalTypes(
       },
     })
 
-    code = s.toString()
+    chunk.code = s.toString()
 
-    if (code.includes('@internal')) {
+    if (chunk.code.includes('@internal')) {
       this.warn(`${chunk.fileName} has unhandled @internal declarations`)
       process.exitCode = 1
     }
   }
-
-  return code
 }
 
 /**
@@ -292,8 +402,8 @@ function removeInternal(s: MagicString, node: any): boolean {
   return false
 }
 
-function cleanUnnecessaryComments(code: string) {
-  return code
+function cleanUnnecessaryComments(chunk: OutputChunk) {
+  chunk.code = chunk.code
     .replace(multilineCommentsRE, (m) => {
       return licenseCommentsRE.test(m) ? '' : m
     })

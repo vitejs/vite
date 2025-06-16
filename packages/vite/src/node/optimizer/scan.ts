@@ -116,15 +116,15 @@ export function scanImports(environment: ScanEnvironment): {
   }>
 } {
   const start = performance.now()
-  const deps: Record<string, string> = {}
-  const missing: Record<string, string> = {}
-  let entries: string[]
-
   const { config } = environment
-  const scanContext = { cancelled: false }
-  const context = computeEntries(environment).then((computedEntries) => {
-    entries = computedEntries
 
+  const scanContext = { cancelled: false }
+  async function cancel() {
+    scanContext.cancelled = true
+  }
+
+  async function scan() {
+    const entries = await computeEntries(environment)
     if (!entries.length) {
       if (!config.optimizeDeps.entries && !config.optimizeDeps.include) {
         environment.logger.warn(
@@ -144,29 +144,25 @@ export function scanImports(environment: ScanEnvironment): {
         .map((entry) => `\n  ${colors.dim(entry)}`)
         .join('')}`,
     )
-    return prepareRolldownScanner(
+    const deps: Record<string, string> = {}
+    const missing: Record<string, string> = {}
+
+    const context = await prepareRolldownScanner(
       environment,
       entries,
       deps,
       missing,
-      scanContext,
     )
-  })
+    if (scanContext.cancelled) return
 
-  const result = context
-    .then((context) => {
-      if (!context || scanContext.cancelled) {
-        return { deps: {}, missing: {} }
+    try {
+      await context.build()
+      return {
+        // Ensure a fixed order so hashes are stable and improve logs
+        deps: orderedDependencies(deps),
+        missing,
       }
-      return context.build().then(() => {
-        return {
-          // Ensure a fixed order so hashes are stable and improve logs
-          deps: orderedDependencies(deps),
-          missing,
-        }
-      })
-    })
-    .catch(async (e) => {
+    } catch (e) {
       const prependMessage = colors.red(`\
   Failed to scan for dependencies from entries:
   ${entries.join('\n')}
@@ -174,8 +170,7 @@ export function scanImports(environment: ScanEnvironment): {
   `)
       e.message = prependMessage + e.message
       throw e
-    })
-    .finally(() => {
+    } finally {
       if (debug) {
         const duration = (performance.now() - start).toFixed(2)
         const depsStr =
@@ -185,13 +180,13 @@ export function scanImports(environment: ScanEnvironment): {
             .join('') || colors.dim('no dependencies found')
         debug(`Scan completed in ${duration}ms: ${depsStr}`)
       }
-    })
+    }
+  }
+  const result = scan()
 
   return {
-    cancel: async () => {
-      scanContext.cancelled = true
-    },
-    result,
+    cancel,
+    result: result.then((res) => res ?? { deps: {}, missing: {} }),
   }
 }
 
@@ -246,10 +241,7 @@ async function prepareRolldownScanner(
   entries: string[],
   deps: Record<string, string>,
   missing: Record<string, string>,
-  scanContext: { cancelled: boolean },
-): Promise<{ build: () => Promise<void> } | undefined> {
-  if (scanContext.cancelled) return
-
+): Promise<{ build: () => Promise<void> }> {
   const { plugins: pluginsFromConfig = [], ...rollupOptions } =
     environment.config.optimizeDeps.rollupOptions ?? {}
 

@@ -200,11 +200,23 @@ export function createDepsOptimizer(
             try {
               debug?.(colors.green(`scanning for dependencies...`))
 
-              discover = discoverProjectDependencies(
-                devToScanEnvironment(environment),
-              )
-              const deps = await discover.result
-              discover = undefined
+              let deps: Record<string, string>
+              try {
+                discover = discoverProjectDependencies(
+                  devToScanEnvironment(environment),
+                )
+                deps = await discover.result
+                discover = undefined
+              } catch (e) {
+                environment.logger.error(
+                  colors.red(
+                    '(!) Failed to run dependency scan. ' +
+                      'Skipping dependency pre-bundling. ' +
+                      e.stack,
+                  ),
+                )
+                return
+              }
 
               const manuallyIncluded = Object.keys(manuallyIncludedDepsInfo)
               discoveredDepsWhileScanning.push(
