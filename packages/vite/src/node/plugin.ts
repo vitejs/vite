@@ -18,6 +18,7 @@ import type {
   UserConfig,
 } from './config'
 import type { ServerHook } from './server'
+import type { BuildAppHook } from './build'
 import type { IndexHtmlTransform } from './plugins/html'
 import type { EnvironmentModuleNode } from './server/moduleGraph'
 import type { ModuleNode } from './server/mixedModuleGraph'
@@ -301,7 +302,12 @@ export interface Plugin<A = any> extends RolldownPlugin<A> {
    * `{ order: 'pre', handler: hook }`
    */
   transformIndexHtml?: IndexHtmlTransform
-
+  /**
+   * Build Environments
+   *
+   * @experimental
+   */
+  buildApp?: ObjectHook<BuildAppHook>
   /**
    * Perform custom handling of HMR updates.
    * The handler receives a context containing changed filename, timestamp, a
