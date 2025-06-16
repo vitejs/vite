@@ -51,7 +51,35 @@ export { createServerHotChannel } from './server/hmr'
 export { ssrTransform as moduleRunnerTransform } from './ssr/ssrTransform'
 export type { ModuleRunnerTransformOptions } from './ssr/ssrTransform'
 
-export * from './publicUtils'
+export {
+  VERSION as version,
+  DEFAULT_CLIENT_CONDITIONS as defaultClientConditions,
+  DEFAULT_CLIENT_MAIN_FIELDS as defaultClientMainFields,
+  DEFAULT_SERVER_CONDITIONS as defaultServerConditions,
+  DEFAULT_SERVER_MAIN_FIELDS as defaultServerMainFields,
+  defaultAllowedOrigins,
+} from './constants'
+// NOTE: export for backward compat
+export const esbuildVersion = '0.25.0'
+export {
+  normalizePath,
+  mergeConfig,
+  mergeAlias,
+  createFilter,
+  withFilter,
+  isCSSRequest,
+  rollupVersion,
+  rolldownVersion,
+} from './utils'
+export { send } from './server/send'
+export { createLogger } from './logger'
+export { searchForWorkspaceRoot } from './server/searchRoot'
+
+export {
+  isFileServingAllowed,
+  isFileLoadingAllowed,
+} from './server/middlewares/static'
+export { loadEnv, resolveEnvPrefix } from './env'
 
 // additional types
 export type {

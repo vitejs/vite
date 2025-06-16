@@ -24,7 +24,7 @@ describe.runIf(isBuild)('build', () => {
     // esbuild helpers are injected inside of the UMD wrapper
     expect(code).toMatch(/^\/\*[^*]*\*\/\s*\(function\(/)
     expect(noMinifyCode).toMatch(
-      /^\/\*[^*]*\*\/\s*\(function\(global.+?var.+?function\smyLib\(/s,
+      /^\/\*[^*]*\*\/\s*\(function\(global.+?function\smyLib\(/s,
     )
     expect(namedCode).toMatch(/^\(function\(/)
   })

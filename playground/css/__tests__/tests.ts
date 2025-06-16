@@ -98,6 +98,9 @@ export const tests = (isLightningCSS: boolean) => {
     const atImportAlias = await page.$('.less-at-import-alias')
     const atImportUrlOmmer = await page.$('.less-at-import-url-ommer')
     const urlStartsWithVariable = await page.$('.less-url-starts-with-variable')
+    const urlStartsWithInterpolation = await page.$(
+      '.less-url-starts-with-interpolation',
+    )
 
     expect(await getColor(imported)).toBe('blue')
     expect(await getColor(atImport)).toBe('darkslateblue')
@@ -110,6 +113,9 @@ export const tests = (isLightningCSS: boolean) => {
     )
     expect(await getColor(atImportUrlOmmer)).toBe('darkorange')
     expect(await getBg(urlStartsWithVariable)).toMatch(
+      isBuild ? /ok-[-\w]+\.png/ : `${viteTestUrl}/ok.png`,
+    )
+    expect(await getBg(urlStartsWithInterpolation)).toMatch(
       isBuild ? /ok-[-\w]+\.png/ : `${viteTestUrl}/ok.png`,
     )
 
