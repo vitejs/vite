@@ -84,7 +84,7 @@
     "esbuild": "^0.25.0",
     "fdir": "^6.4.6",
     "picomatch": "^4.0.2",
-    "postcss": "^8.5.4",
+    "postcss": "^8.5.5",
     "rollup": "^4.40.0",
     "tinyglobby": "^0.2.14"
   },
@@ -99,7 +99,7 @@
     "@oxc-project/types": "^0.70.0",
     "@polka/compression": "^1.0.0-next.25",
     "@rollup/plugin-alias": "^5.1.1",
-    "@rollup/plugin-commonjs": "^28.0.3",
+    "@rollup/plugin-commonjs": "^28.0.5",
     "@rollup/plugin-dynamic-import-vars": "2.1.4",
     "@rollup/pluginutils": "^5.1.4",
     "@types/escape-html": "^1.0.4",
