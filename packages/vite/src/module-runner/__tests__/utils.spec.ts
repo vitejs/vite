@@ -1,14 +1,6 @@
 import { describe, expect, test, vi } from 'vitest'
 import { normalizeModuleId } from '../utils'
 
-vi.mock('../shared/utils', async (importOriginal) => {
-  const mod: object = await importOriginal()
-  return {
-    ...mod,
-    isWindows: true,
-  }
-})
-
 describe('normalizeModuleId', () => {
   test('normalizes file paths', () => {
     expect(normalizeModuleId('/root/id')).toBe('/root/id')
@@ -16,8 +8,28 @@ describe('normalizeModuleId', () => {
     expect(normalizeModuleId('C:\\root\\id')).toBe('C:/root/id')
   })
 
-  test('removes @fs prefix', () => {
-    expect(normalizeModuleId('/@fs/root/id')).toBe('/root/id')
+  test('removes @fs prefix on windows', async () => {
+    vi.stubGlobal('process', {
+      ...globalThis.process,
+      platform: 'win32',
+    })
+    vi.resetModules()
+    const normalize = await import('../utils').then((m) => m.normalizeModuleId)
+    expect(normalize('/@fs/root/id')).toBe('root/id')
+
+    vi.unstubAllGlobals()
+  })
+
+  test('removes @fs prefix on linux', async () => {
+    vi.stubGlobal('process', {
+      ...globalThis.process,
+      platform: 'linux',
+    })
+    vi.resetModules()
+    const normalize = await import('../utils').then((m) => m.normalizeModuleId)
+    expect(normalize('/@fs/root/id')).toBe('/root/id')
+
+    vi.unstubAllGlobals()
   })
 
   test('preserves virtual module IDs', () => {
