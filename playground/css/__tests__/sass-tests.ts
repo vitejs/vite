@@ -1,13 +1,5 @@
 import { expect, test } from 'vitest'
-import {
-  editFile,
-  getBg,
-  getColor,
-  isBuild,
-  page,
-  untilUpdated,
-  viteTestUrl,
-} from '~utils'
+import { editFile, getBg, getColor, isBuild, page, viteTestUrl } from '~utils'
 
 export const sassTest = () => {
   test('sass', async () => {
@@ -68,17 +60,17 @@ export const sassTest = () => {
     editFile('sass.scss', (code) =>
       code.replace('color: $injectedColor', 'color: red'),
     )
-    await untilUpdated(() => getColor(imported), 'red')
+    await expect.poll(() => getColor(imported)).toBe('red')
 
     editFile('nested/_index.scss', (code) =>
       code.replace('color: olive', 'color: blue'),
     )
-    await untilUpdated(() => getColor(atImport), 'blue')
+    await expect.poll(() => getColor(atImport)).toBe('blue')
 
     editFile('nested/_partial.scss', (code) =>
       code.replace('color: orchid', 'color: green'),
     )
-    await untilUpdated(() => getColor(partialImport), 'green')
+    await expect.poll(() => getColor(partialImport)).toBe('green')
   })
 }
 
@@ -101,7 +93,7 @@ export const sassModuleTests = (enableHmrTests = false) => {
     // editFile('composed.module.scss', (code) =>
     //   code.replace('color: orangered', 'color: red')
     // )
-    // await untilUpdated(() => getColor(imported), 'red')
+    // await expect.poll(() => getColor(imported)).toMatch('red')
   })
 
   test('css modules w/ sass', async () => {
@@ -116,7 +108,7 @@ export const sassModuleTests = (enableHmrTests = false) => {
     editFile('mod.module.scss', (code) =>
       code.replace('color: orangered', 'color: blue'),
     )
-    await untilUpdated(() => getColor(imported), 'blue')
+    await expect.poll(() => getColor(imported)).toBe('blue')
   })
 }
 
