@@ -377,6 +377,9 @@ importers:
       rolldown-plugin-dts:
         specifier: ^0.13.3
         version: 0.13.11(rolldown@1.0.0-beta.16)(typescript@5.7.3)
+      rollup:
+        specifier: ^4.40.0
+        version: 4.43.0
       rollup-plugin-license:
         specifier: ^3.6.0
         version: 3.6.0(picomatch@4.0.2)(rollup@4.43.0)
