@@ -1,6 +1,5 @@
 import { cleanUrl, isWindows, slash, unwrapId } from '../shared/utils'
 import { SOURCEMAPPING_URL } from '../shared/constants'
-import { decodeBase64 } from './utils'
 import { DecodedMap } from './sourcemap/decoder'
 import type { ResolvedResult } from './types'
 
@@ -112,7 +111,7 @@ export class EvaluatedModules {
       mod.meta.code,
     )?.[1]
     if (!mapString) return null
-    mod.map = new DecodedMap(JSON.parse(decodeBase64(mapString)), mod.file)
+    mod.map = new DecodedMap(JSON.parse(atob(mapString)), mod.file)
     return mod.map
   }
 
