@@ -1,3 +1,12 @@
+## 7.0.0-beta.0 (2025-06-02)
+
+* chore!: remove node 18 support (#19972) ([00b8a98](https://github.com/vitejs/vite/commit/00b8a98f36376804437e1342265453915ae613de)), closes [#19972](https://github.com/vitejs/vite/issues/19972)
+* refactor!: bump required node version to 20.19+, 22.12+ and remove cjs build (#20032) ([2b80243](https://github.com/vitejs/vite/commit/2b80243fada75378e80475028fdcc78f4432bd6f)), closes [#20032](https://github.com/vitejs/vite/issues/20032)
+* chore: use tsdown (#20065) ([d488efd](https://github.com/vitejs/vite/commit/d488efda95ff40f63684194d51858f84c3d05379)), closes [#20065](https://github.com/vitejs/vite/issues/20065)
+* fix(deps): update all non-major dependencies (#19953) ([ac8e1fb](https://github.com/vitejs/vite/commit/ac8e1fb289a06fc0671dab1f4ef68e508e34360e)), closes [#19953](https://github.com/vitejs/vite/issues/19953)
+
+
+
 ## <small>6.1.1 (2025-04-28)</small>
 
 * fix(legacy): use unbuild 3.4 for now (#19928) ([96f73d1](https://github.com/vitejs/vite/commit/96f73d16c8501013be57aee1c8a2353a56460281)), closes [#19928](https://github.com/vitejs/vite/issues/19928)

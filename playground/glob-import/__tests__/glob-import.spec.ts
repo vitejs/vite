@@ -83,6 +83,12 @@ const relativeRawResult = {
   },
 }
 
+const baseRawResult = {
+  './baz.json': {
+    msg: 'baz',
+  },
+}
+
 test('should work', async () => {
   await withRetry(async () => {
     const actual = await page.textContent('.result')
@@ -246,4 +252,10 @@ test('subpath imports', async () => {
 
 test('#alias imports', async () => {
   expect(await page.textContent('.hash-alias-imports')).toMatch('bar foo')
+})
+
+test('import base glob raw', async () => {
+  expect(await page.textContent('.result-base')).toBe(
+    JSON.stringify(baseRawResult, null, 2),
+  )
 })

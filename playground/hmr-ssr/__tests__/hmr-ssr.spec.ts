@@ -864,8 +864,7 @@ if (!isBuild) {
     await untilUpdated(() => hmr('.optional-chaining')?.toString(), '2')
   })
 
-  // TODO: this is flaky due to https://github.com/vitejs/vite/issues/19804
-  test.skip('hmr works for self-accepted module within circular imported files', async () => {
+  test('hmr works for self-accepted module within circular imported files', async () => {
     await setupModuleRunner('/self-accept-within-circular/index')
     const el = () => hmr('.self-accept-within-circular')
     expect(el()).toBe('c')
@@ -882,12 +881,7 @@ if (!isBuild) {
     await untilUpdated(() => el(), 'cc')
   })
 
-  test('hmr should not reload if no accepted within circular imported files', async (ctx) => {
-    // TODO: Investigate race condition that causes an inconsistent behaviour for the last `untilUpdated`
-    // assertion where it'll sometimes receive "mod-a -> mod-b (edited) -> mod-c -> mod-a (expected no error)"
-    // This is probably related to https://github.com/vitejs/vite/issues/19804
-    ctx.skip()
-
+  test('hmr should not reload if no accepted within circular imported files', async () => {
     await setupModuleRunner('/circular/index')
     const el = () => hmr('.circular')
     expect(el()).toBe(

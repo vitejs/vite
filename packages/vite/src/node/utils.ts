@@ -1650,3 +1650,23 @@ export function getServerUrlByHost(
   }
   return resolvedUrls?.local[0] ?? resolvedUrls?.network[0]
 }
+
+let lastDateNow = 0
+/**
+ * Similar to `Date.now()`, but strictly monotonically increasing.
+ *
+ * This function will never return the same value.
+ * Thus, the value may differ from the actual time.
+ *
+ * related: https://github.com/vitejs/vite/issues/19804
+ */
+export function monotonicDateNow(): number {
+  const now = Date.now()
+  if (now > lastDateNow) {
+    lastDateNow = now
+    return lastDateNow
+  }
+
+  lastDateNow++
+  return lastDateNow
+}

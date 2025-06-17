@@ -10,7 +10,12 @@ import type {
   InvokeSendData,
 } from '../../shared/invokeMethods'
 import { CLIENT_DIR } from '../constants'
-import { createDebugger, isCSSRequest, normalizePath } from '../utils'
+import {
+  createDebugger,
+  isCSSRequest,
+  monotonicDateNow,
+  normalizePath,
+} from '../utils'
 import type { InferCustomEventPayload, ViteDevServer } from '..'
 import { getHookHandler } from '../plugins'
 import { isExplicitImportRequired } from '../plugins/importAnalysis'
@@ -418,7 +423,7 @@ export async function handleHMRUpdate(
     return
   }
 
-  const timestamp = Date.now()
+  const timestamp = monotonicDateNow()
   const contextMeta = {
     type,
     file,
@@ -930,7 +935,7 @@ export function handlePrunedModules(
   // update the disposed modules' hmr timestamp
   // since if it's re-imported, it should re-apply side effects
   // and without the timestamp the browser will not re-import it!
-  const t = Date.now()
+  const t = monotonicDateNow()
   mods.forEach((mod) => {
     mod.lastHMRTimestamp = t
     mod.lastHMRInvalidationReceived = false

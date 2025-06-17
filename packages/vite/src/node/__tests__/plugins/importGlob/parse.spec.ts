@@ -141,6 +141,28 @@ describe('parse positives', async () => {
     `)
   })
 
+  it('options with base', async () => {
+    expect(
+      await run(`
+    import.meta.glob('./**/dir/*.md', {
+      base: './path/to/base'
+    })
+    `),
+    ).toMatchInlineSnapshot(`
+      [
+        {
+          "globs": [
+            "./**/dir/*.md",
+          ],
+          "options": {
+            "base": "./path/to/base",
+          },
+          "start": 5,
+        },
+      ]
+    `)
+  })
+
   it('object properties - 1', async () => {
     expect(
       await run(`
@@ -375,5 +397,21 @@ describe('parse negatives', async () => {
     ).toMatchInlineSnapshot(
       '[Error: Vite is unable to parse the glob options as the value is not static]',
     )
+  })
+
+  it('options base', async () => {
+    expect(
+      await runError('import.meta.glob("./*.js", { base: 1 })'),
+    ).toMatchInlineSnapshot(
+      '[Error: Expected glob option "base" to be of type string, but got number]',
+    )
+    expect(
+      await runError('import.meta.glob("./*.js", { base: "foo" })'),
+    ).toMatchInlineSnapshot(
+      "[Error: Option \"base\" must start with '/', './' or '../', but got \"foo\"]",
+    )
+    expect(
+      await runError('import.meta.glob("./*.js", { base: "!/foo" })'),
+    ).toMatchInlineSnapshot('[Error: Option "base" cannot start with "!"]')
   })
 })
