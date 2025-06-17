@@ -78,7 +78,7 @@ For Vitest users, Vite 7.0 is supported from Vitest 3.2. You can read more about
 
 ## Environment API
 
-Vite 6 was the most significant major release since Vite 2, adding new capabilities with the [new experimental Environment API](https://vite.dev/blog/announcing-vite6.html#experimental-environment-api). We are keeping the new APIs as experimental while the ecosystem review how the new APIs fit on their projects and provide feedback. If you're building on top of vite, we encourage you to test the new APIs and reach out to us in the [open Feedback discussion here](https://github.com/vitejs/vite/discussions/16358).
+Vite 6 was the most significant major release since Vite 2, adding new capabilities with the [new experimental Environment API](https://vite.dev/blog/announcing-vite6.html#experimental-environment-api). We are keeping the new APIs as experimental while the ecosystem review how the new APIs fit on their projects and provide feedback. If you're building on top of Vite, we encourage you to test the new APIs and reach out to us in the [open Feedback discussion here](https://github.com/vitejs/vite/discussions/16358).
 
 In Vite 7, we added a new `buildApp` hook to let plugins coordinate the building of environments. Read more in the [Environment API for Frameworks guide](/guide/api-environment-frameworks.html#environments-during-build).
 
