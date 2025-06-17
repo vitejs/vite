@@ -1,3 +1,14 @@
+## 7.0.0-beta.2 (2025-06-17)
+
+* feat: apply some middlewares before `configurePreviewServer` hook (#20224) ([b989c42](https://github.com/vitejs/vite/commit/b989c42cf84378e6cb93970de739941f0d56d6f6)), closes [#20224](https://github.com/vitejs/vite/issues/20224)
+* feat: apply some middlewares before `configureServer` hook (#20222) ([f5cc4c0](https://github.com/vitejs/vite/commit/f5cc4c0ded337670b439e51bc95f173e2b5cf9ad)), closes [#20222](https://github.com/vitejs/vite/issues/20222)
+* chore(deps): update rolldown-related dependencies (#20182) ([6172f41](https://github.com/vitejs/vite/commit/6172f410b44cbae8d052997bb1819a6197a4d397)), closes [#20182](https://github.com/vitejs/vite/issues/20182)
+* chore(deps): update rolldown-related dependencies (#20211) ([b13b7f5](https://github.com/vitejs/vite/commit/b13b7f5e21fe05c3214766b3de584a026fbfe144)), closes [#20211](https://github.com/vitejs/vite/issues/20211)
+* fix(deps): update all non-major dependencies (#20181) ([d91d4f7](https://github.com/vitejs/vite/commit/d91d4f7ad55edbcb4a51fc23376cbff89f776d30)), closes [#20181](https://github.com/vitejs/vite/issues/20181)
+* fix(deps): update all non-major dependencies (#20212) ([a80339b](https://github.com/vitejs/vite/commit/a80339b1798607dd7389f42964272181cf9eb453)), closes [#20212](https://github.com/vitejs/vite/issues/20212)
+
+
+
 ## 7.0.0-beta.1 (2025-06-10)
 
 * feat: add base option to import.meta.glob (#20163) ([253d6c6](https://github.com/vitejs/vite/commit/253d6c6df2ebe3c4a88dabb6cec000128681561f)), closes [#20163](https://github.com/vitejs/vite/issues/20163)
