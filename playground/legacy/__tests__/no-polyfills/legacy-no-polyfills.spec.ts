@@ -1,18 +1,16 @@
-import { test } from 'vitest'
-import { isBuild, page, untilUpdated, viteTestUrl } from '~utils'
+import { expect, test } from 'vitest'
+import { isBuild, page, viteTestUrl } from '~utils'
 
 test('should load and execute the JS file', async () => {
   await page.goto(viteTestUrl + '/no-polyfills.html')
-  await untilUpdated(() => page.textContent('main'), '👋')
+  await expect.poll(() => page.textContent('main')).toMatch('👋')
 })
 
 test.runIf(isBuild)('includes a script tag for SystemJS', async () => {
-  await untilUpdated(
-    () => page.getAttribute('#vite-legacy-polyfill', 'src'),
-    /.\/assets\/polyfills-legacy-(.+)\.js/,
-  )
-  await untilUpdated(
-    () => page.getAttribute('#vite-legacy-entry', 'data-src'),
-    /.\/assets\/index-legacy-(.+)\.js/,
-  )
+  await expect
+    .poll(() => page.getAttribute('#vite-legacy-polyfill', 'src'))
+    .toMatch(/.\/assets\/polyfills-legacy-(.+)\.js/)
+  await expect
+    .poll(() => page.getAttribute('#vite-legacy-entry', 'data-src'))
+    .toMatch(/.\/assets\/index-legacy-(.+)\.js/)
 })
