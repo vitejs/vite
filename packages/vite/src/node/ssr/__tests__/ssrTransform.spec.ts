@@ -1065,7 +1065,7 @@ import foo from "foo"`,
   `)
 })
 
-test('indentity function helper injected after hashbang', async () => {
+test('identity function helper injected after hashbang', async () => {
   expect(
     await ssrTransformSimpleCode(
       `#!/usr/bin/env node
