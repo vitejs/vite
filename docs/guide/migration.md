@@ -50,6 +50,8 @@ There are other breaking changes which only affect few users.
   - `__vite_ssr_exportName__` is now required for the module runner runtime context.
 - [[#20045] fix: treat all `optimizeDeps.entries` values as globs](https://github.com/vitejs/vite/pull/20045)
   - `optimizeDeps.entries` now does not receive literal string paths. Instead, it always receives globs.
+- [[#20222] feat: apply some middlewares before `configureServer` hook](https://github.com/vitejs/vite/pull/20222), [[#20224] feat: apply some middlewares before `configurePreviewServer` hook](https://github.com/vitejs/vite/pull/20224)
+  - Some middlewares are now applied before the `configureServer` / `configurePreviewServer` hook. Note that if you don't expect a certain route to apply the [`server.cors`](../config/server-options.md#server-cors) / [`preview.cors`](../config/preview-options.md#preview-cors) option, make sure to remove the related headers from the response.
 
 ## Migration from v5
 
