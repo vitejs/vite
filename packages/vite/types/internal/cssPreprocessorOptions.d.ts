@@ -17,9 +17,9 @@ type IsAny<T> = boolean extends (T extends never ? true : false) ? true : false
 type DartSassStringOptionsAsync = DartSass.StringOptions<'async'>
 type SassEmbeddedStringOptionsAsync = SassEmbedded.StringOptions<'async'>
 type SassStringOptionsAsync =
-  IsAny<DartSassStringOptionsAsync> extends false
-    ? DartSassStringOptionsAsync
-    : SassEmbeddedStringOptionsAsync
+  IsAny<SassEmbeddedStringOptionsAsync> extends false
+    ? SassEmbeddedStringOptionsAsync
+    : DartSassStringOptionsAsync
 
 export type SassModernPreprocessBaseOptions = Omit<
   SassStringOptionsAsync,

@@ -38,6 +38,10 @@ describe.runIf(isServe)('main', () => {
     expect(await page.textContent('.named')).toBe(testJSON.msg)
   })
 
+  test('virtual svg module', async () => {
+    expect(await page.textContent('.virtual-svg')).toMatch('<svg')
+  })
+
   test('safe fetch', async () => {
     expect(await page.textContent('.safe-fetch')).toMatch('KEY=safe')
     expect(await page.textContent('.safe-fetch-status')).toBe('200')

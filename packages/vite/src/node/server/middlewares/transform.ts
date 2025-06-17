@@ -213,6 +213,7 @@ export function transformMiddleware(
         '',
       )
       if (
+        !url.startsWith('/@id/\0') &&
         deniedServingAccessForTransform(
           urlWithoutTrailingQuerySeparators,
           server,
@@ -264,7 +265,10 @@ export function transformMiddleware(
         const result = await transformRequest(environment, url, {
           html: req.headers.accept?.includes('text/html'),
           allowId(id) {
-            return !deniedServingAccessForTransform(id, server, res, next)
+            return (
+              id.startsWith('\0') ||
+              !deniedServingAccessForTransform(id, server, res, next)
+            )
           },
         })
         if (result) {

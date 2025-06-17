@@ -1,18 +1,18 @@
 {
   "$schema": "https://docs.renovatebot.com/renovate-schema.json",
-  "extends": ["config:base", "schedule:weekly", "group:allNonMajor"],
+  "extends": ["config:recommended", "schedule:weekly", "group:allNonMajor"],
   "labels": ["dependencies"],
   "ignorePaths": ["**/__tests__/**"],
   "rangeStrategy": "bump",
   "packageRules": [
     {
-      "depTypeList": ["peerDependencies"],
+      "matchDepTypes": ["peerDependencies"],
       "enabled": false,
     },
     {
       "matchDepTypes": ["action"],
-      "excludePackagePrefixes": ["actions/", "github/"],
       "pinDigests": true,
+      "matchPackageNames": ["!actions/{/,}**", "!github/{/,}**"],
     },
     {
       "groupName": "rolldown-related dependencies",
@@ -38,20 +38,20 @@
     "kill-port", // `kill-port:^2.0.0 has perf issues (#8392)
   ],
   "github-actions": {
-    "fileMatch": [
+    "managerFilePatterns": [
       // default values
-      "(^|/)(workflow-templates|\\.(?:github|gitea|forgejo)/(?:workflows|actions))/.+\\.ya?ml$",
-      "(^|/)action\\.ya?ml$",
+      "/(^|/)(workflow-templates|\\.(?:github|gitea|forgejo)/(?:workflows|actions))/.+\\.ya?ml$/",
+      "/(^|/)action\\.ya?ml$/",
       // custom value
-      "(^|/)docs/guide/static-deploy-github-pages\\.yaml$",
+      "/(^|/)docs/guide/static-deploy-github-pages\\.yaml$/",
     ],
   },
   "customManagers": [
     {
       "customType": "regex",
-      "fileMatch": ["packages\/create-vite\/src\/index\\.ts$"],
+      "managerFilePatterns": ["/packages/create-vite/src/index\\.ts$/"],
       "matchStrings": [
-        "\/\/\\s*renovate:\\s+datasource=(?<datasource>\\S+)\\s+depName=(?<depName>\\S+)\\s+(?:var|let|const)\\s+\\S+\\s*=\\s*[\"'](?<currentValue>[^\"']+)[\"']",
+        "//\\s*renovate:\\s+datasource=(?<datasource>\\S+)\\s+depName=(?<depName>\\S+)\\s+(?:var|let|const)\\s+\\S+\\s*=\\s*[\"'](?<currentValue>[^\"']+)[\"']",
       ],
     },
   ],

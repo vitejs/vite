@@ -99,6 +99,42 @@ Rolldown throws an error when unknown or invalid options are passed. Because som
 
 If you don't pass the option in yourself, this must be fixed by the utilized framework. You can suppress this error in the meantime by setting the `ROLLDOWN_OPTIONS_VALIDATION=loose` environment variable.
 
+### API Differences
+
+#### `manualChunks` to `advancedChunks`
+
+Rolldown does not support the `manualChunks` option that was available in Rollup. Instead, it offers a more fine-grained setting via the [`advancedChunks` option](https://rolldown.rs/guide/in-depth/advanced-chunks#advanced-chunks), which is more similar to webpack's `splitChunk`:
+
+```js
+// Old configuration (Rollup)
+export default {
+  build: {
+    rollupOptions: {
+      output: {
+        manualChunks(id) {
+          if (/\/react(?:-dom)?/.test(id)) {
+            return 'vendor'
+          }
+        }
+      }
+    }
+  }
+}
+
+// New configuration (Rolldown)
+export default {
+  build: {
+    rollupOptions: {
+      output: {
+        advancedChunks: {
+          groups: [{ name: 'vendor', test: /\/react(?:-dom)?// }]
+        }
+      }
+    }
+  }
+}
+```
+
 ## Performance
 
 `rolldown-vite` is focused on ensuring compatibility with the existing ecosystem, so defaults are geared towards a smooth transition. You can get further performance gains by switching over to faster Rust-based internal plugins and other customizations.
@@ -108,6 +144,12 @@ If you don't pass the option in yourself, this must be fixed by the utilized fra
 Thanks to Rolldown and Oxc, various internal Vite plugins, such as the alias or resolve plugin, have been converted to Rust. At the time of writing, using these plugins is not enabled by default, as their behavior may differ from the JavaScript versions.
 
 To test them, you can set the `experimental.enableNativePlugin` option to `true` in your Vite config.
+
+### `@vitejs/plugin-react-oxc`
+
+When using `@vitejs/plugin-react` or `@vitejs/plugin-react-swc`, you can switch to the `@vitejs/plugin-react-oxc` plugin, which uses Oxc for React's fast-refresh instead of Babel or SWC. It is designed to be a drop-in replacement, providing better build performance and aligning with the underlying architecture of `rolldown-vite`.
+
+Be aware that you can only switch to `@vitejs/plugin-react-oxc` if you are not using any Babel or SWC plugins (including the React compiler), or mutate the SWC options.
 
 ### `withFilter` Wrapper
 

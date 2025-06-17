@@ -174,6 +174,9 @@ import(`../nested/nested/${base}.js`).then((mod) => {
   const foo2 = await import('./treeshaken/syntax.js').then(
     ({ foo = {} }) => foo,
   )
+  const foo3 = await import('./treeshaken/syntax.js').then((m) => m.foo)
+  const e = ('' + window.doesntExist)[3] // to disallow minifier to constant fold
+  const foo4 = await import('./treeshaken/syntax.js')[`th${e}n`]((m) => m.foo)
   await import('./treeshaken/syntax.js').then((mod) => mod.foo({ foo }))
   const obj = [
     '',
@@ -189,6 +192,8 @@ import(`../nested/nested/${base}.js`).then((mod) => {
   other()
   foo()
   foo2()
+  foo3()
+  foo4()
   obj[1].lazy()
 })()
 

@@ -212,7 +212,7 @@ All modern frameworks maintain integrations with Vite. Most framework plugins ar
 - Vue support via [@vitejs/plugin-vue](https://github.com/vitejs/vite-plugin-vue/tree/main/packages/plugin-vue)
 - Vue JSX support via [@vitejs/plugin-vue-jsx](https://github.com/vitejs/vite-plugin-vue/tree/main/packages/plugin-vue-jsx)
 - React support via [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/tree/main/packages/plugin-react)
-- React using SWC support via [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react-swc)
+- React using SWC support via [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/tree/main/packages/plugin-react-swc)
 
 Check out the [Plugins Guide](https://vite.dev/plugins) for more information.
 
@@ -579,6 +579,32 @@ const modules = import.meta.glob('./dir/*.js', {
   query: { foo: 'bar', bar: true },
 })
 ```
+
+#### Base Path
+
+You can also use the `base` option to provide base path for the imports:
+
+```ts twoslash
+import 'vite/client'
+// ---cut---
+const modulesWithBase = import.meta.glob('./**/*.js', {
+  base: './base',
+})
+```
+
+```ts
+// code produced by vite:
+const modulesWithBase = {
+  './dir/foo.js': () => import('./base/dir/foo.js'),
+  './dir/bar.js': () => import('./base/dir/bar.js'),
+}
+```
+
+The base option can only be a directory path relative to the importer file or absolute against the project root. Aliases and virtual modules aren't supported.
+
+Only the globs that are relative paths are interpreted as relative to the resolved base.
+
+All the resulting module keys are modified to be relative to the base if provided.
 
 ### Glob Import Caveats
 

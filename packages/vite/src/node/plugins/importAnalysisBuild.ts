@@ -10,12 +10,7 @@ import { buildImportAnalysisPlugin as nativeBuildImportAnalysisPlugin } from 'ro
 import type { RawSourceMap } from '@ampproject/remapping'
 import convertSourceMap from 'convert-source-map'
 import { exactRegex } from '@rolldown/pluginutils'
-import {
-  combineSourcemaps,
-  generateCodeFrame,
-  isInNodeModules,
-  numberToPos,
-} from '../utils'
+import { combineSourcemaps, generateCodeFrame, numberToPos } from '../utils'
 import { type Plugin, perEnvironmentPlugin } from '../plugin'
 import type { ResolvedConfig } from '../config'
 import { toOutputFilePathInJS } from '../build'
@@ -47,7 +42,7 @@ const preloadMarkerRE = new RegExp(preloadMarker, 'g')
 const dynamicImportPrefixRE = /import\s*\(/
 
 const dynamicImportTreeshakenRE =
-  /((?:\bconst\s+|\blet\s+|\bvar\s+|,\s*)(\{[^{}.=]+\})\s*=\s*await\s+import\([^)]+\))|(\(\s*await\s+import\([^)]+\)\s*\)(\??\.[\w$]+))|\bimport\([^)]+\)(\s*\.then\(\s*(?:function\s*)?\(\s*\{([^{}.=]+)\}\))/g
+  /((?:\bconst\s+|\blet\s+|\bvar\s+|,\s*)(\{[^{}.=]+\})\s*=\s*await\s+import\([^)]+\))(?=\s*(?:$|[^[.]))|(\(\s*await\s+import\([^)]+\)\s*\)(\??\.[\w$]+))|\bimport\([^)]+\)(\s*\.then\(\s*(?:function\s*)?\(\s*\{([^{}.=]+)\}\))/g
 
 function toRelativePath(filename: string, importer: string) {
   const relPath = path.posix.relative(path.posix.dirname(importer), filename)
@@ -253,7 +248,7 @@ export function buildImportAnalysisPlugin(config: ResolvedConfig): Plugin[] {
 
     transform: {
       async handler(source, importer) {
-        if (isInNodeModules(importer) && !dynamicImportPrefixRE.test(source)) {
+        if (!dynamicImportPrefixRE.test(source)) {
           return
         }
 

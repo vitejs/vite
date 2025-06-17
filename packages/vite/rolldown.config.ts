@@ -10,27 +10,31 @@ import licensePlugin from './rollupLicensePlugin'
 const pkg = JSON.parse(
   readFileSync(new URL('./package.json', import.meta.url)).toString(),
 )
-
 const __dirname = fileURLToPath(new URL('.', import.meta.url))
+const disableSourceMap = !!process.env.DEBUG_DISABLE_SOURCE_MAP
 
 const envConfig = defineConfig({
   input: path.resolve(__dirname, 'src/client/env.ts'),
   platform: 'browser',
+  transform: {
+    target: 'es2020',
+  },
   output: {
     dir: path.resolve(__dirname, 'dist'),
     entryFileNames: 'client/env.mjs',
-    target: 'es2020',
   },
 })
 
 const clientConfig = defineConfig({
   input: path.resolve(__dirname, 'src/client/client.ts'),
   platform: 'browser',
+  transform: {
+    target: 'es2020',
+  },
   external: ['@vite/env'],
   output: {
     dir: path.resolve(__dirname, 'dist'),
     entryFileNames: 'client/client.mjs',
-    target: 'es2020',
   },
 })
 
@@ -150,6 +154,7 @@ const nodeConfig = defineConfig({
       'Vite',
     ) as Plugin,
     writeTypesPlugin(),
+    enableSourceMapsInWatchModePlugin(),
     externalizeDepsInWatchPlugin(),
   ],
 })
@@ -165,7 +170,7 @@ const moduleRunnerConfig = defineConfig({
     /^rolldown\//,
     ...Object.keys(pkg.dependencies),
   ],
-  plugins: [bundleSizeLimit(54)],
+  plugins: [bundleSizeLimit(54), enableSourceMapsInWatchModePlugin()],
   output: {
     ...sharedNodeOptions.output,
     minify: {
@@ -184,6 +189,17 @@ export default defineConfig([
 ])
 
 // #region Plugins
+
+function enableSourceMapsInWatchModePlugin(): Plugin {
+  return {
+    name: 'enable-source-maps',
+    outputOptions(options) {
+      if (this.meta.watchMode && !disableSourceMap) {
+        options.sourcemap = 'inline'
+      }
+    },
+  }
+}
 
 function writeTypesPlugin(): Plugin {
   return {
