@@ -35,9 +35,13 @@ import {
   safeRealpathSync,
   tryStatSync,
 } from '../utils'
-import { optimizedDepInfoFromFile, optimizedDepInfoFromId } from '../optimizer'
+import {
+  isDepOptimizationDisabled,
+  optimizedDepInfoFromFile,
+  optimizedDepInfoFromId,
+} from '../optimizer'
 import type { DepsOptimizer } from '../optimizer'
-import { type Environment, perEnvironmentPlugin } from '..'
+import type { Environment } from '..'
 import type { PackageCache, PackageData } from '../packages'
 import { canExternalizeFile, shouldExternalize } from '../external'
 import {
@@ -168,15 +172,42 @@ export interface ResolvePluginOptionsWithOverrides
 const perEnvironmentOrWorkerPlugin = (
   name: string,
   overrideEnvConfig: (ResolvedConfig & ResolvedEnvironmentOptions) | undefined,
-  f: (env: {
-    name: string
-    config: ResolvedConfig & ResolvedEnvironmentOptions
-  }) => Plugin,
-): Plugin => {
-  if (overrideEnvConfig) {
-    return f({ name: 'client', config: overrideEnvConfig })
+  f: (
+    env: {
+      name: string
+      config: ResolvedConfig & ResolvedEnvironmentOptions
+    },
+    getEnvironment: () => Environment,
+  ) => Plugin,
+): Plugin[] => {
+  const envs: Record<string, Environment> = {}
+  const getEnvironmentPlugin: Plugin = {
+    name: `${name}:get-environment`,
+    buildStart() {
+      envs[this.environment.name] = this.environment
+    },
+    perEnvironmentStartEndDuringDev: true,
   }
-  return perEnvironmentPlugin(name, f)
+  const createGetEnvironment = (name: string) => () => envs[name]
+
+  if (overrideEnvConfig) {
+    return [
+      getEnvironmentPlugin,
+      f(
+        { name: 'client', config: overrideEnvConfig },
+        createGetEnvironment('client'),
+      ),
+    ]
+  }
+  return [
+    getEnvironmentPlugin,
+    {
+      name,
+      applyToEnvironment(environment) {
+        return f(environment, createGetEnvironment(environment.name))
+      },
+    },
+  ]
 }
 
 export function oxcResolvePlugin(
@@ -188,20 +219,27 @@ export function oxcResolvePlugin(
       ? [optimizerResolvePlugin(resolveOptions)]
       : []),
     importGlobSubpathImportsResolvePlugin(resolveOptions),
-    perEnvironmentOrWorkerPlugin(
+    ...perEnvironmentOrWorkerPlugin(
       'vite:resolve-builtin',
       overrideEnvConfig,
-      (env) => {
-        const environment = env as Environment
+      (partialEnv, getEnv) => {
         // The resolve plugin is used for createIdResolver and the depsOptimizer should be
         // disabled in that case, so deps optimization is opt-in when creating the plugin.
-        const depsOptimizer =
-          resolveOptions.optimizeDeps && environment?.mode === 'dev'
-            ? environment.depsOptimizer
-            : undefined
+        const depsOptimizerEnabled =
+          resolveOptions.optimizeDeps &&
+          !resolveOptions.isBuild &&
+          !isDepOptimizationDisabled(partialEnv.config.optimizeDeps)
+        const getDepsOptimizer = () => {
+          const env = getEnv()
+          if (env.mode !== 'dev')
+            throw new Error('The environment mode should be dev')
+          if (!env.depsOptimizer)
+            throw new Error('The environment should have a depsOptimizer')
+          return env.depsOptimizer
+        }
 
         const options: InternalResolveOptions = {
-          ...environment.config.resolve,
+          ...partialEnv.config.resolve,
           ...resolveOptions, // plugin options + resolve options overrides
         }
         const noExternal =
@@ -229,15 +267,16 @@ export function oxcResolvePlugin(
             tryPrefix: options.tryPrefix,
             preserveSymlinks: options.preserveSymlinks,
           },
-          environmentConsumer: environment.config.consumer,
-          environmentName: environment.name,
-          builtins: environment.config.resolve.builtins,
+          environmentConsumer: partialEnv.config.consumer,
+          environmentName: partialEnv.name,
+          builtins: partialEnv.config.resolve.builtins,
           external: options.external,
           noExternal: noExternal,
           dedupe: options.dedupe,
-          finalizeBareSpecifier: !depsOptimizer
+          finalizeBareSpecifier: !depsOptimizerEnabled
             ? undefined
             : (resolvedId, rawId, importer) => {
+                const depsOptimizer = getDepsOptimizer()
                 // if we reach here, it's a valid dep import that hasn't been optimized.
                 const isJsType = isOptimizable(
                   resolvedId,
@@ -283,9 +322,10 @@ export function oxcResolvePlugin(
                 }
                 return newId
               },
-          finalizeOtherSpecifiers: !depsOptimizer
+          finalizeOtherSpecifiers: !depsOptimizerEnabled
             ? undefined
             : (resolvedId, rawId) => {
+                const depsOptimizer = getDepsOptimizer()
                 const newResolvedId = ensureVersionQuery(
                   resolvedId,
                   rawId,
