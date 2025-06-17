@@ -296,7 +296,7 @@ export function rolldownDepPlugin(
           }
 
           if (id.startsWith(optionalPeerDepNamespace)) {
-            const path = id.slice(externalWithConversionNamespace.length)
+            const path = id.slice(optionalPeerDepNamespace.length)
             const [, peerDep, parentDep] = path.split(':')
             return {
               code:
