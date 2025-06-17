@@ -82,7 +82,7 @@ Vite 6 was the most significant major release since Vite 2, adding new capabilit
 
 In Vite 7, we added a new `buildApp` hook to let plugins coordinate the building of environments. Read more in the [Environment API for Frameworks guide](/guide/api-environment-frameworks.html#environments-during-build).
 
-We want to thanks the teams that have been testing the new APIs and helping us stabilize the new features. The Cloudflare team, for example, announced the 1.0 release of their Cloudflare Vite plugin, as well as official support for React Router v7. Their plugin shows the potential of Environment API for runtime providers. Learn more about their approach and future steps at ["Just use Vite”… with the Workers runtime](https://blog.cloudflare.com/introducing-the-cloudflare-vite-plugin/).
+We want to thank the teams that have been testing the new APIs and helping us stabilize the new features. The Cloudflare team, for example, announced the 1.0 release of their Cloudflare Vite plugin, as well as official support for React Router v7. Their plugin shows the potential of Environment API for runtime providers. Learn more about their approach and future steps at ["Just use Vite”… with the Workers runtime](https://blog.cloudflare.com/introducing-the-cloudflare-vite-plugin/).
 
 ## Migrating to Vite 7
 
