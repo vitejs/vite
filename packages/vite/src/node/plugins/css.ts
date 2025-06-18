@@ -602,7 +602,7 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
             `${modulesCode || 'import.meta.hot.accept()'}`,
             `import.meta.hot.prune(() => __vite__removeStyle(__vite__id))`,
           ].join('\n')
-          return { code, map: { mappings: '' } }
+          return { code, map: { mappings: '' }, moduleType: 'js' }
         }
 
         // build CSS handling ----------------------------------------------------
@@ -632,6 +632,7 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
           // avoid the css module from being tree-shaken so that we can retrieve
           // it in renderChunk()
           moduleSideEffects: modulesCode || inlined ? false : 'no-treeshake',
+          moduleType: 'js',
         }
       },
     },
