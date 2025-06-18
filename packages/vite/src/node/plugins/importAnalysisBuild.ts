@@ -247,11 +247,8 @@ export function buildImportAnalysisPlugin(config: ResolvedConfig): Plugin[] {
     },
 
     transform: {
+      filter: { code: dynamicImportPrefixRE },
       async handler(source, importer) {
-        if (!dynamicImportPrefixRE.test(source)) {
-          return
-        }
-
         await init
 
         let imports: readonly ImportSpecifier[] = []
