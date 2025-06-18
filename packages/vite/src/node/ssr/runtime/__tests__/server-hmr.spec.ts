@@ -29,7 +29,7 @@ describe(
       expect(runner.hmrClient!.hotModulesMap.size).toBe(2)
       expect(runner.hmrClient!.dataMap.size).toBe(2)
       expect(runner.hmrClient!.ctxToListenersMap.size).toBe(2)
-
+      console.log(runner.hmrClient!.hotModulesMap)
       for (const fixture of [fixtureC, fixtureD]) {
         expect(runner.hmrClient!.hotModulesMap.has(fixture)).toBe(true)
         expect(runner.hmrClient!.dataMap.has(fixture)).toBe(true)
