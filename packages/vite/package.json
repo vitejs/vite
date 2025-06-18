@@ -1,6 +1,6 @@
 {
   "name": "rolldown-vite",
-  "version": "6.3.21",
+  "version": "7.0.0-alpha.0",
   "type": "module",
   "license": "MIT",
   "author": "Evan You",
