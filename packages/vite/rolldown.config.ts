@@ -344,7 +344,7 @@ function buildTimeImportMetaUrlPlugin(): Plugin {
         for (const { t, ss, se } of imports) {
           if (t === 3 && code.slice(se, se + 4) === '.url') {
             // ignore import.meta.url with /** #__KEEP__ */ comment
-            if (keepCommentRE.test(code.slice(0, se))) {
+            if (keepCommentRE.test(code.slice(0, ss))) {
               keepCommentRE.lastIndex = 0
               continue
             }
