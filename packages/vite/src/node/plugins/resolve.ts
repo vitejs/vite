@@ -812,14 +812,7 @@ export function resolvePlugin(
           }
         }
         if (id.startsWith(optionalPeerDepId)) {
-          const [, peerDep, parentDep, isRequire] = id.split(':')
-          // rollup + @rollup/plugin-commonjs hoists dynamic `require`s by default
-          // If we add a `throw` statement, it will be injected to the top-level and break the whole bundle
-          // Instead, we mock the module for now
-          // This can be fixed when we migrate to rolldown
-          if (isRequire === 'true' && isProduction) {
-            return 'export default {}'
-          }
+          const [, peerDep, parentDep] = id.split(':')
           return (
             'export default {};' +
             `throw new Error(\`Could not resolve "${peerDep}" imported by "${parentDep}".${isProduction ? '' : ' Is it installed?'}\`)`
@@ -1088,7 +1081,7 @@ export function tryNodeResolve(
           mainPkg.peerDependenciesMeta?.[pkgName]?.optional
         ) {
           return {
-            id: `${optionalPeerDepId}:${id}:${mainPkg.name}:${!!options.isRequire}`,
+            id: `${optionalPeerDepId}:${id}:${mainPkg.name}`,
           }
         }
       }

@@ -142,10 +142,9 @@ test('dep with optional peer dep (cjs)', async () => {
   await expect
     .poll(() => page.textContent('.dep-with-optional-peer-dep-cjs'))
     .toMatch(`[success]`)
-  // FIXME
-  // await expect
-  //   .poll(() => page.textContent('.dep-with-optional-peer-dep-cjs-error'))
-  //   .toMatch(`[success]`)
+  await expect
+    .poll(() => page.textContent('.dep-with-optional-peer-dep-cjs-error'))
+    .toMatch(`[success]`)
 })
 
 test('dep with css import', async () => {
