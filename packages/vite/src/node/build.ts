@@ -1317,7 +1317,7 @@ function wrapEnvironmentHook<HookName extends keyof Plugin>(
     if (hookName === 'augmentChunkHash') {
       injectChunkMetadata(chunkMetadataMap, args[0])
     }
-    if (hookName === 'generateBundle') {
+    if (hookName === 'generateBundle' || hookName === 'writeBundle') {
       const bundle = args[1] as OutputBundle
       for (const chunk of Object.values(bundle)) {
         if (chunk.type === 'chunk') {
