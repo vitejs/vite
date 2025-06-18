@@ -295,7 +295,9 @@ export function oxcPlugin(config: ResolvedConfig): Plugin {
         jsxRefreshInclude,
         jsxRefreshExclude,
         isServerConsumer: environment.config.consumer === 'server',
-        runtimeResolveBase: normalizePath(url.fileURLToPath(import.meta.url)),
+        runtimeResolveBase: normalizePath(
+          url.fileURLToPath(/** #__KEEP__ */ import.meta.url),
+        ),
         jsxInject,
         transformOptions,
       })
@@ -344,7 +346,9 @@ export function oxcPlugin(config: ResolvedConfig): Plugin {
 
     return result
   }
-  const runtimeResolveBase = normalizePath(url.fileURLToPath(import.meta.url))
+  const runtimeResolveBase = normalizePath(
+    url.fileURLToPath(/** #__KEEP__ */ import.meta.url),
+  )
 
   let server: ViteDevServer
 
@@ -526,7 +530,7 @@ async function generateRuntimeHelpers(
   runtimeHelpers: readonly [string, string][],
 ): Promise<string> {
   const bundle = await rolldown({
-    cwd: url.fileURLToPath(import.meta.url),
+    cwd: url.fileURLToPath(/** #__KEEP__ */ import.meta.url),
     input: 'entrypoint',
     platform: 'neutral',
     logLevel: 'silent',
