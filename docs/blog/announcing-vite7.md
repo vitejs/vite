@@ -27,7 +27,7 @@ head:
 
 # Vite 7.0 is out!
 
-_May 26, 2025_
+_June 19, 2025_
 
 ![Vite 7 Announcement Cover Image](/og-image-announcing-vite7.png)
 
