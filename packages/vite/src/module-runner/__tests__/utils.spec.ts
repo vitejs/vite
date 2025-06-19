@@ -8,6 +8,9 @@ describe('normalizeModuleId', () => {
     expect(normalizeModuleId('C:\\root\\id')).toBe('C:/root/id')
   })
 
+  /**
+   * Because test are running with isolate: false these test and stubGlobal are causing "spooky action at a distance” failing other random tests.
+   */
   test.skip('removes @fs prefix on windows', async () => {
     vi.stubGlobal('process', {
       ...globalThis.process,
