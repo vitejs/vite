@@ -138,7 +138,7 @@ function PerEnvironmentCountTransformedModulesPlugin() {
     perEnvironmentStartEndDuringDev: true,
     buildStart() {
       state.set(this.environment, { count: 0 })
-    }
+    },
     transform(id) {
       state.get(this.environment).count++
     },
