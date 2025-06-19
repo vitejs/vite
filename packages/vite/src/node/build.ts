@@ -632,6 +632,10 @@ async function buildEnvironment(
       ...options.rollupOptions.moduleTypes,
       '.css': 'js',
     },
+    experimental: {
+      ...options.rollupOptions.experimental,
+      viteMode: true,
+    },
   }
 
   /**
