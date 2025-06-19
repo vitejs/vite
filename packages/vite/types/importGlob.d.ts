@@ -36,6 +36,11 @@ export interface ImportGlobOptions<
 
 export type GeneralImportGlobOptions = ImportGlobOptions<boolean, string>
 
+// provide a fallback in case the Worker interface isn't provided in the environment
+declare global {
+  interface Worker {}
+}
+
 export interface KnownAsTypeMap {
   raw: string
   url: string
