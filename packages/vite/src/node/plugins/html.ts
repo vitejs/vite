@@ -914,9 +914,11 @@ export function buildHtmlPlugin(config: ResolvedConfig): Plugin {
           const imports = getImportedChunks(chunk)
           let assetTags: HtmlTagDescriptor[]
           if (canInlineEntry) {
-            assetTags = imports.map((chunk) =>
-              toScriptTag(chunk, toOutputAssetFilePath, isAsync),
-            )
+            assetTags = imports
+              .filter((chunk) => typeof chunk !== 'string')
+              .map((chunk) =>
+                toScriptTag(chunk, toOutputAssetFilePath, isAsync),
+              )
           } else {
             const { modulePreload } = this.environment.config.build
             assetTags = [toScriptTag(chunk, toOutputAssetFilePath, isAsync)]
