@@ -2,7 +2,7 @@
 title: Vite 7.0 is out!
 author:
   name: The Vite Team
-date: 2025-05-26
+date: 2025-06-19
 sidebar: false
 head:
   - - meta
