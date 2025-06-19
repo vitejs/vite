@@ -149,8 +149,6 @@ function PerEnvironmentCountTransformedModulesPlugin() {
 }
 ```
 
-Note: Currently, plugins are only shared during dev; see [Shared Plugins During Build](./api-environment-plugins/#shared-plugins-during-build) for more information.
-
 ## Per-environment Plugins
 
 A plugin can define what are the environments it should apply to with the `applyToEnvironment` function.
