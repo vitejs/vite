@@ -36,7 +36,11 @@ export interface ImportGlobOptions<
 
 export type GeneralImportGlobOptions = ImportGlobOptions<boolean, string>
 
-// provide a fallback in case the Worker interface isn't provided in the environment
+/**
+ * Declare Worker in case DOM is not added to the tsconfig lib causing
+ * Worker interface is not defined. For developers with DOM lib added,
+ * the Worker interface will be merged correctly.
+ */
 declare global {
   interface Worker {}
 }
