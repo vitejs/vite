@@ -1,3 +1,12 @@
+## 7.0.0-beta.0 (2025-06-19)
+
+* fix: resolve oxc runtime from Vite directory correctly (#269) ([d6369f3](https://github.com/vitejs/rolldown-vite/commit/d6369f3)), closes [#269](https://github.com/vitejs/rolldown-vite/issues/269)
+* fix(css): set moduleType in css-post plugin (#272) ([8638a59](https://github.com/vitejs/rolldown-vite/commit/8638a59)), closes [#272](https://github.com/vitejs/rolldown-vite/issues/272)
+* fix(json): require(json) should return the content (#268) ([bdd4d29](https://github.com/vitejs/rolldown-vite/commit/bdd4d29)), closes [#268](https://github.com/vitejs/rolldown-vite/issues/268)
+* feat: update rolldown ([b292707](https://github.com/vitejs/rolldown-vite/commit/b292707))
+
+
+
 ## 7.0.0-alpha.0 (2025-06-18)
 
 * fix: align dynamic import detection (#20115) ([1ea2222](https://github.com/vitejs/rolldown-vite/commit/1ea2222)), closes [#20115](https://github.com/vitejs/rolldown-vite/issues/20115)
