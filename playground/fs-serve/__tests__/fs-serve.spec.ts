@@ -223,7 +223,7 @@ describe.runIf(isServe)('main', () => {
     // It is 403 in case insensitive system, 404 in others
     await expect
       .poll(() => page.textContent('.unsafe-dotEnV-casing'))
-      .toBe(expect.toBeOneOf(['403', '404']))
+      .toStrictEqual(expect.toBeOneOf(['403', '404']))
   })
 
   test('denied env with ?.svg?.wasm?init', async () => {
