@@ -182,6 +182,9 @@
 <h2>utf8-bom-package</h2>
 <p class="utf8-bom-package">fail</p>
 
+<h2>resolve package with dir with pkg.json</h2>
+<p class="dir-with-pkgjson">fail</p>
+
 <script type="module">
   import '@generated-content-virtual-file'
   function text(selector, text) {
@@ -411,6 +414,9 @@
 
   import { msg as utf8BomPackage } from '@vitejs/test-utf8-bom-package'
   text('.utf8-bom-package', utf8BomPackage)
+
+  import dirWithPkgJson from './dir-with-pkgjson'
+  text('.dir-with-pkgjson', dirWithPkgJson)
 </script>
 
 <style>

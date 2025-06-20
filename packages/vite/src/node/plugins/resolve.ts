@@ -285,7 +285,7 @@ export function resolvePlugin(
           return res
         }
 
-        if ((res = tryFsResolve(fsPath, options))) {
+        if ((res = tryFsResolve(fsPath, options, undefined, 'exports'))) {
           res = ensureVersionQuery(res, id, options, depsOptimizer)
           debug?.(`[relative] ${colors.cyan(id)} -> ${colors.dim(res)}`)
 
@@ -547,7 +547,7 @@ export function tryFsResolve(
   fsPath: string,
   options: InternalResolveOptions,
   tryIndex = true,
-  skipPackageJson = false,
+  skipPackageJson: boolean | 'exports' = false,
 ): string | undefined {
   // Dependencies like es5-ext use `#` in their paths. We don't support `#` in user
   // source code so we only need to perform the check for dependencies.
@@ -575,7 +575,7 @@ function tryCleanFsResolve(
   file: string,
   options: InternalResolveOptions,
   tryIndex = true,
-  skipPackageJson = false,
+  skipPackageJson: boolean | 'exports' = false,
 ): string | undefined {
   const { tryPrefix, extensions, preserveSymlinks } = options
 
@@ -640,7 +640,7 @@ function tryCleanFsResolve(
     // Path points to a directory, check for package.json and entry and /index file
     const dirPath = file
 
-    if (!skipPackageJson) {
+    if (skipPackageJson !== true) {
       let pkgPath = `${dirPath}/package.json`
       try {
         if (fs.existsSync(pkgPath)) {
@@ -649,7 +649,12 @@ function tryCleanFsResolve(
           }
           // path points to a node package
           const pkg = loadPackageData(pkgPath)
-          return resolvePackageEntry(dirPath, pkg, options)
+          return resolvePackageEntry(
+            dirPath,
+            pkg,
+            options,
+            skipPackageJson === 'exports',
+          )
         }
       } catch (e) {
         // This check is best effort, so if an entry is not found, skip error for now
@@ -893,6 +898,7 @@ export function resolvePackageEntry(
   id: string,
   { dir, data, setResolvedCache, getResolvedCache }: PackageData,
   options: InternalResolveOptions,
+  skipExports = false,
 ): string | undefined {
   const { file: idWithoutPostfix, postfix } = splitFileAndPostfix(id)
 
@@ -906,7 +912,7 @@ export function resolvePackageEntry(
 
     // resolve exports field with highest priority
     // using https://github.com/lukeed/resolve.exports
-    if (data.exports) {
+    if (!skipExports && data.exports) {
       entryPoint = resolveExportsOrImports(data, '.', options, 'exports')
     }
 
