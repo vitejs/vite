@@ -17,6 +17,10 @@ export type BindCLIShortcutsOptions<Server = ViteDevServer | PreviewServer> = {
    * To disable a default shortcut, define the same key but with `action: undefined`.
    */
   customShortcuts?: CLIShortcut<Server>[]
+  /**
+   * Whether to bind default shortcuts options
+   */
+  default?: boolean
 }
 
 export type CLIShortcut<Server = ViteDevServer | PreviewServer> = {
@@ -24,6 +28,8 @@ export type CLIShortcut<Server = ViteDevServer | PreviewServer> = {
   description: string
   action?(server: Server): void | Promise<void>
 }
+
+let rl: readline.Interface
 
 export function bindCLIShortcuts<Server extends ViteDevServer | PreviewServer>(
   server: Server,
@@ -34,6 +40,7 @@ export function bindCLIShortcuts<Server extends ViteDevServer | PreviewServer>(
   }
 
   const isDev = isDevServer(server)
+  const shortcuts: CLIShortcut[] = []
 
   if (isDev) {
     server._shortcutsOptions = opts as BindCLIShortcutsOptions<ViteDevServer>
@@ -48,16 +55,10 @@ export function bindCLIShortcuts<Server extends ViteDevServer | PreviewServer>(
     )
   }
 
-  const shortcuts = (opts?.customShortcuts ?? []).concat(
-    (isDev
-      ? BASE_DEV_SHORTCUTS
-      : BASE_PREVIEW_SHORTCUTS) as CLIShortcut<Server>[],
-  )
-
   let actionRunning = false
-
   const onInput = async (input: string) => {
     if (actionRunning) return
+    shortcuts.push(...(opts?.customShortcuts ?? []))
 
     if (input === 'h') {
       const loggedKeys = new Set<string>()
@@ -87,9 +88,18 @@ export function bindCLIShortcuts<Server extends ViteDevServer | PreviewServer>(
     actionRunning = false
   }
 
-  const rl = readline.createInterface({ input: process.stdin })
-  rl.on('line', onInput)
-  server.httpServer.on('close', () => rl.close())
+  /**
+   * user may add custom shortcuts (see #15781)
+   * this ensures that readline is only created once
+   */
+  if (!rl) {
+    if (opts?.default !== false) {
+      shortcuts.push(...(isDev ? BASE_DEV_SHORTCUTS : BASE_PREVIEW_SHORTCUTS))
+    }
+    rl = readline.createInterface({ input: process.stdin })
+    rl.on('line', onInput)
+    server.httpServer.on('close', () => rl.close())
+  }
 }
 
 const BASE_DEV_SHORTCUTS: CLIShortcut<ViteDevServer>[] = [
