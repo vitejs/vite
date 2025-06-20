@@ -115,6 +115,34 @@ composes: bar from '@/css/bar.module.css';
     expect(result1.code).toBe(result2.code)
   })
 
+  test('modify url', async () => {
+    const { transform } = await createCssPluginTransform({
+      configFile: false,
+      css: {
+        resolveId: (id, importer) => {
+          return `${id}?inline`;
+        },
+      },
+    })
+    const result = await transform(
+      `\
+.foo {
+position: fixed;
+background: url('/foo.png');
+}`,
+      '/css/foo.module.css',
+    )
+
+    expect(result.code).toMatchInlineSnapshot(
+      `
+      .foo {
+      position: fixed;
+      background: url('/foo.png?inline');
+      }"
+    `,
+    )
+  })
+
   test('custom generateScopedName with lightningcss', async () => {
     const { transform } = await createCssPluginTransform({
       configFile: false,
