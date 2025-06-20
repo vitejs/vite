@@ -26,7 +26,7 @@ describe.runIf(isBuild)('build', () => {
 
 describe.runIf(isServe)('server', () => {
   test('should log 500 error in browser for malformed tsconfig', () => {
-    // don't test for actual complete message as this might be locale dependant. chrome does log 500 consistently though
+    // don't test for actual complete message as this might be locale dependent. chrome does log 500 consistently though
     expect(browserLogs.find((x) => x.includes('500'))).toBeTruthy()
     expect(browserLogs).not.toContain('tsconfig error fixed, file loaded')
   })
