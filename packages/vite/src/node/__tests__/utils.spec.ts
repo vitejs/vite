@@ -17,6 +17,7 @@ import {
   isFileReadable,
   mergeWithDefaults,
   normalizePath,
+  numberToPos,
   posToNumber,
   processSrcSetSync,
   resolveHostname,
@@ -242,6 +243,34 @@ describe('posToNumber', () => {
   test('out of range', () => {
     const actual = posToNumber('a\nb', { line: 4, column: 0 })
     expect(actual).toBe(4)
+  })
+})
+
+describe('numberToPos', () => {
+  test('simple', () => {
+    const actual = numberToPos('a\nb', 2)
+    expect(actual).toEqual({ line: 2, column: 0 })
+  })
+  test('pass though pos', () => {
+    const actual = numberToPos('a\nb', { line: 2, column: 0 })
+    expect(actual).toEqual({ line: 2, column: 0 })
+  })
+  test('empty line', () => {
+    const actual = numberToPos('a\n\nb', 3)
+    expect(actual).toEqual({ line: 3, column: 0 })
+  })
+  test('middle of line', () => {
+    const actual = numberToPos('abc\ndef', 5)
+    expect(actual).toEqual({ line: 2, column: 1 })
+  })
+  test('end of line', () => {
+    const actual = numberToPos('abc\ndef', 3)
+    expect(actual).toEqual({ line: 1, column: 3 })
+  })
+  test('out of range', () => {
+    expect(() => numberToPos('a\nb', 5)).toThrowError(
+      'offset is longer than source length',
+    )
   })
 })
 

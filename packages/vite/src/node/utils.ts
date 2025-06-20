@@ -493,19 +493,12 @@ export function numberToPos(source: string, offset: number | Pos): Pos {
       `offset is longer than source length! offset ${offset} > length ${source.length}`,
     )
   }
-  const lines = source.split(splitRE)
-  let counted = 0
-  let line = 0
-  let column = 0
-  for (; line < lines.length; line++) {
-    const lineLength = lines[line].length + 1
-    if (counted + lineLength >= offset) {
-      column = offset - counted + 1
-      break
-    }
-    counted += lineLength
+
+  const lines = source.slice(0, offset).split(splitRE)
+  return {
+    line: lines.length,
+    column: lines[lines.length - 1].length,
   }
-  return { line: line + 1, column }
 }
 
 export function generateCodeFrame(
