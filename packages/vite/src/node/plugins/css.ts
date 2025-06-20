@@ -118,7 +118,7 @@ export interface CSSOptions {
    *
    * @experimental
    */
-  resolveId?: (id: string, importer: string) => string
+  resolveId?: (id: string, importer?: string) => string
   /**
    * Using lightningcss is an experimental option to handle CSS modules,
    * assets and imports via Lightning CSS. It requires to install it as a
