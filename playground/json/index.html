@@ -25,6 +25,9 @@
 <h2>Has BOM Tag</h2>
 <pre class="bom"></pre>
 
+<h2>require(json) returns object without default export</h2>
+<pre class="require"></pre>
+
 <h2>HMR</h2>
 <pre class="hmr"></pre>
 
@@ -60,6 +63,9 @@
 
   import hasBomJson from './json-bom/has-bom.json'
   text('.bom', JSON.stringify(hasBomJson))
+
+  import requireJson from '@vitejs/test-json-require'
+  text('.require', JSON.stringify(requireJson.content))
 
   import hmrJSON from './hmr.json'
   text('.hmr', JSON.stringify(hmrJSON))
