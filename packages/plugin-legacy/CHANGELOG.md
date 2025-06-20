@@ -1,3 +1,13 @@
+## 7.0.0-beta.1 (2025-06-17)
+
+* fix(legacy)!: remove `location.protocol!="file:"` condition for modern android webview (#20179) ([a6d5997](https://github.com/vitejs/vite/commit/a6d599718ee109798e8f552e317f175513d157e7)), closes [#20179](https://github.com/vitejs/vite/issues/20179)
+* fix(deps): update all non-major dependencies (#20141) ([89ca65b](https://github.com/vitejs/vite/commit/89ca65ba1d849046dccdea52e9eca980f331be26)), closes [#20141](https://github.com/vitejs/vite/issues/20141)
+* fix(deps): update all non-major dependencies (#20181) ([d91d4f7](https://github.com/vitejs/vite/commit/d91d4f7ad55edbcb4a51fc23376cbff89f776d30)), closes [#20181](https://github.com/vitejs/vite/issues/20181)
+* chore(deps): update rolldown-related dependencies (#20140) ([0387447](https://github.com/vitejs/vite/commit/03874471e3de14e7d2f474ecb354499e7f5eb418)), closes [#20140](https://github.com/vitejs/vite/issues/20140)
+* chore(deps): update rolldown-related dependencies (#20182) ([6172f41](https://github.com/vitejs/vite/commit/6172f410b44cbae8d052997bb1819a6197a4d397)), closes [#20182](https://github.com/vitejs/vite/issues/20182)
+
+
+
 ## 7.0.0-beta.0 (2025-06-02)
 
 * chore!: remove node 18 support (#19972) ([00b8a98](https://github.com/vitejs/vite/commit/00b8a98f36376804437e1342265453915ae613de)), closes [#19972](https://github.com/vitejs/vite/issues/19972)
