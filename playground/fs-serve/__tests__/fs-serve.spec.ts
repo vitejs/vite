@@ -31,164 +31,205 @@ describe.runIf(isServe)('main', () => {
   })
 
   test('default import', async () => {
-    expect(await page.textContent('.full')).toBe(stringified)
+    await expect.poll(() => page.textContent('.full')).toBe(stringified)
   })
 
   test('named import', async () => {
-    expect(await page.textContent('.named')).toBe(testJSON.msg)
+    await expect.poll(() => page.textContent('.named')).toBe(testJSON.msg)
   })
 
   test('virtual svg module', async () => {
-    expect(await page.textContent('.virtual-svg')).toMatch('<svg')
+    await expect.poll(() => page.textContent('.virtual-svg')).toMatch('<svg')
   })
 
   test('safe fetch', async () => {
-    expect(await page.textContent('.safe-fetch')).toMatch('KEY=safe')
-    expect(await page.textContent('.safe-fetch-status')).toBe('200')
+    await expect.poll(() => page.textContent('.safe-fetch')).toMatch('KEY=safe')
+    await expect.poll(() => page.textContent('.safe-fetch-status')).toBe('200')
   })
 
   test('safe fetch with query', async () => {
-    expect(await page.textContent('.safe-fetch-query')).toMatch('KEY=safe')
-    expect(await page.textContent('.safe-fetch-query-status')).toBe('200')
+    await expect
+      .poll(() => page.textContent('.safe-fetch-query'))
+      .toMatch('KEY=safe')
+    await expect
+      .poll(() => page.textContent('.safe-fetch-query-status'))
+      .toBe('200')
   })
 
   test('safe fetch with special characters', async () => {
-    expect(
-      await page.textContent('.safe-fetch-subdir-special-characters'),
-    ).toMatch('KEY=safe')
-    expect(
-      await page.textContent('.safe-fetch-subdir-special-characters-status'),
-    ).toBe('200')
+    await expect
+      .poll(() => page.textContent('.safe-fetch-subdir-special-characters'))
+      .toMatch('KEY=safe')
+    await expect
+      .poll(() =>
+        page.textContent('.safe-fetch-subdir-special-characters-status'),
+      )
+      .toBe('200')
   })
 
   test('unsafe fetch', async () => {
-    expect(await page.textContent('.unsafe-fetch')).toMatch('403 Restricted')
-    expect(await page.textContent('.unsafe-fetch-status')).toBe('403')
+    await expect
+      .poll(() => page.textContent('.unsafe-fetch'))
+      .toMatch('403 Restricted')
+    await expect
+      .poll(() => page.textContent('.unsafe-fetch-status'))
+      .toBe('403')
   })
 
   test('unsafe fetch with special characters (#8498)', async () => {
-    expect(await page.textContent('.unsafe-fetch-8498')).toBe('')
-    expect(await page.textContent('.unsafe-fetch-8498-status')).toBe('404')
+    await expect.poll(() => page.textContent('.unsafe-fetch-8498')).toBe('')
+    await expect
+      .poll(() => page.textContent('.unsafe-fetch-8498-status'))
+      .toBe('404')
   })
 
   test('unsafe fetch with special characters 2 (#8498)', async () => {
-    expect(await page.textContent('.unsafe-fetch-8498-2')).toBe('')
-    expect(await page.textContent('.unsafe-fetch-8498-2-status')).toBe('404')
+    await expect.poll(() => page.textContent('.unsafe-fetch-8498-2')).toBe('')
+    await expect
+      .poll(() => page.textContent('.unsafe-fetch-8498-2-status'))
+      .toBe('404')
   })
 
   test('unsafe fetch import inline', async () => {
-    expect(await page.textContent('.unsafe-fetch-import-inline-status')).toBe(
-      '403',
-    )
+    await expect
+      .poll(() => page.textContent('.unsafe-fetch-import-inline-status'))
+      .toBe('403')
   })
 
   test('unsafe fetch raw query import', async () => {
-    expect(
-      await page.textContent('.unsafe-fetch-raw-query-import-status'),
-    ).toBe('403')
+    await expect
+      .poll(() => page.textContent('.unsafe-fetch-raw-query-import-status'))
+      .toBe('403')
   })
 
   test('unsafe fetch ?.svg?import', async () => {
-    expect(
-      await page.textContent('.unsafe-fetch-query-dot-svg-import-status'),
-    ).toBe('403')
+    await expect
+      .poll(() => page.textContent('.unsafe-fetch-query-dot-svg-import-status'))
+      .toBe('403')
   })
 
   test('unsafe fetch .svg?import', async () => {
-    expect(await page.textContent('.unsafe-fetch-svg-status')).toBe('403')
+    await expect
+      .poll(() => page.textContent('.unsafe-fetch-svg-status'))
+      .toBe('403')
   })
 
   test('safe fs fetch', async () => {
-    expect(await page.textContent('.safe-fs-fetch')).toBe(stringified)
-    expect(await page.textContent('.safe-fs-fetch-status')).toBe('200')
+    await expect
+      .poll(() => page.textContent('.safe-fs-fetch'))
+      .toBe(stringified)
+    await expect
+      .poll(() => page.textContent('.safe-fs-fetch-status'))
+      .toBe('200')
   })
 
   test('safe fs fetch', async () => {
-    expect(await page.textContent('.safe-fs-fetch-query')).toBe(stringified)
-    expect(await page.textContent('.safe-fs-fetch-query-status')).toBe('200')
+    await expect
+      .poll(() => page.textContent('.safe-fs-fetch-query'))
+      .toBe(stringified)
+    await expect
+      .poll(() => page.textContent('.safe-fs-fetch-query-status'))
+      .toBe('200')
   })
 
   test('safe fs fetch with special characters', async () => {
-    expect(await page.textContent('.safe-fs-fetch-special-characters')).toBe(
-      stringified,
-    )
-    expect(
-      await page.textContent('.safe-fs-fetch-special-characters-status'),
-    ).toBe('200')
+    await expect
+      .poll(() => page.textContent('.safe-fs-fetch-special-characters'))
+      .toBe(stringified)
+    await expect
+      .poll(() => page.textContent('.safe-fs-fetch-special-characters-status'))
+      .toBe('200')
   })
 
   test('unsafe fs fetch', async () => {
-    expect(await page.textContent('.unsafe-fs-fetch')).toBe('')
-    expect(await page.textContent('.unsafe-fs-fetch-status')).toBe('403')
+    await expect.poll(() => page.textContent('.unsafe-fs-fetch')).toBe('')
+    await expect
+      .poll(() => page.textContent('.unsafe-fs-fetch-status'))
+      .toBe('403')
   })
 
   test('unsafe fs fetch', async () => {
-    expect(await page.textContent('.unsafe-fs-fetch-raw')).toBe('')
-    expect(await page.textContent('.unsafe-fs-fetch-raw-status')).toBe('403')
+    await expect.poll(() => page.textContent('.unsafe-fs-fetch-raw')).toBe('')
+    await expect
+      .poll(() => page.textContent('.unsafe-fs-fetch-raw-status'))
+      .toBe('403')
   })
 
   test('unsafe fs fetch query 1', async () => {
-    expect(await page.textContent('.unsafe-fs-fetch-raw-query1')).toBe('')
-    expect(await page.textContent('.unsafe-fs-fetch-raw-query1-status')).toBe(
-      '403',
-    )
+    await expect
+      .poll(() => page.textContent('.unsafe-fs-fetch-raw-query1'))
+      .toBe('')
+    await expect
+      .poll(() => page.textContent('.unsafe-fs-fetch-raw-query1-status'))
+      .toBe('403')
   })
 
   test('unsafe fs fetch query 2', async () => {
-    expect(await page.textContent('.unsafe-fs-fetch-raw-query2')).toBe('')
-    expect(await page.textContent('.unsafe-fs-fetch-raw-query2-status')).toBe(
-      '403',
-    )
+    await expect
+      .poll(() => page.textContent('.unsafe-fs-fetch-raw-query2'))
+      .toBe('')
+    await expect
+      .poll(() => page.textContent('.unsafe-fs-fetch-raw-query2-status'))
+      .toBe('403')
   })
 
   test('unsafe fs fetch with special characters (#8498)', async () => {
-    expect(await page.textContent('.unsafe-fs-fetch-8498')).toBe('')
-    expect(await page.textContent('.unsafe-fs-fetch-8498-status')).toBe('404')
+    await expect.poll(() => page.textContent('.unsafe-fs-fetch-8498')).toBe('')
+    await expect
+      .poll(() => page.textContent('.unsafe-fs-fetch-8498-status'))
+      .toBe('404')
   })
 
   test('unsafe fs fetch with special characters 2 (#8498)', async () => {
-    expect(await page.textContent('.unsafe-fs-fetch-8498-2')).toBe('')
-    expect(await page.textContent('.unsafe-fs-fetch-8498-2-status')).toBe('404')
+    await expect
+      .poll(() => page.textContent('.unsafe-fs-fetch-8498-2'))
+      .toBe('')
+    await expect
+      .poll(() => page.textContent('.unsafe-fs-fetch-8498-2-status'))
+      .toBe('404')
   })
 
   test('unsafe fs fetch import inline', async () => {
-    expect(
-      await page.textContent('.unsafe-fs-fetch-import-inline-status'),
-    ).toBe('403')
+    await expect
+      .poll(() => page.textContent('.unsafe-fs-fetch-import-inline-status'))
+      .toBe('403')
   })
 
   test('unsafe fs fetch import inline wasm init', async () => {
-    expect(
-      await page.textContent('.unsafe-fs-fetch-import-inline-wasm-init-status'),
-    ).toBe('403')
+    await expect
+      .poll(() =>
+        page.textContent('.unsafe-fs-fetch-import-inline-wasm-init-status'),
+      )
+      .toBe('403')
   })
 
   test('unsafe fs fetch with relative path after query status', async () => {
-    expect(
-      await page.textContent(
-        '.unsafe-fs-fetch-relative-path-after-query-status',
-      ),
-    ).toBe('403')
+    await expect
+      .poll(() =>
+        page.textContent('.unsafe-fs-fetch-relative-path-after-query-status'),
+      )
+      .toBe('403')
   })
 
   test('nested entry', async () => {
-    expect(await page.textContent('.nested-entry')).toBe('foobar')
+    await expect.poll(() => page.textContent('.nested-entry')).toBe('foobar')
   })
 
   test('denied', async () => {
-    expect(await page.textContent('.unsafe-dotenv')).toBe('403')
+    await expect.poll(() => page.textContent('.unsafe-dotenv')).toBe('403')
   })
 
   test('denied EnV casing', async () => {
     // It is 403 in case insensitive system, 404 in others
-    const code = await page.textContent('.unsafe-dotEnV-casing')
-    expect(code === '403' || code === '404').toBeTruthy()
+    await expect
+      .poll(() => page.textContent('.unsafe-dotEnV-casing'))
+      .toStrictEqual(expect.toBeOneOf(['403', '404']))
   })
 
   test('denied env with ?.svg?.wasm?init', async () => {
-    expect(
-      await page.textContent('.unsafe-dotenv-query-dot-svg-wasm-init'),
-    ).toBe('403')
+    await expect
+      .poll(() => page.textContent('.unsafe-dotenv-query-dot-svg-wasm-init'))
+      .toBe('403')
   })
 })
 

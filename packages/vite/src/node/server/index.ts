@@ -854,17 +854,7 @@ export async function _createServer(
     })
   }
 
-  // apply server configuration hooks from plugins
-  const configureServerContext = new BasicMinimalPluginContext(
-    { ...basePluginContextMeta, watchMode: true },
-    config.logger,
-  )
-  const postHooks: ((() => void) | void)[] = []
-  for (const hook of config.getSortedPluginHooks('configureServer')) {
-    postHooks.push(await hook.call(configureServerContext, reflexServer))
-  }
-
-  // Internal middlewares ------------------------------------------------------
+  // Pre applied internal middlewares ------------------------------------------
 
   // request timer
   if (process.env.DEBUG) {
@@ -886,6 +876,19 @@ export async function _createServer(
   if (allowedHosts !== true && !serverConfig.https) {
     middlewares.use(hostValidationMiddleware(allowedHosts, false))
   }
+
+  // apply configureServer hooks ------------------------------------------------
+
+  const configureServerContext = new BasicMinimalPluginContext(
+    { ...basePluginContextMeta, watchMode: true },
+    config.logger,
+  )
+  const postHooks: ((() => void) | void)[] = []
+  for (const hook of config.getSortedPluginHooks('configureServer')) {
+    postHooks.push(await hook.call(configureServerContext, reflexServer))
+  }
+
+  // Internal middlewares ------------------------------------------------------
 
   middlewares.use(cachedTransformMiddleware(server))
 
@@ -934,7 +937,8 @@ export async function _createServer(
     middlewares.use(htmlFallbackMiddleware(root, config.appType === 'spa'))
   }
 
-  // run post config hooks
+  // apply configureServer post hooks ------------------------------------------
+
   // This is applied before the html middleware so that user middleware can
   // serve custom content instead of index.html.
   postHooks.forEach((fn) => fn && fn())

@@ -195,16 +195,6 @@ export async function preview(
 
   setupSIGTERMListener(closeServerAndExit)
 
-  // apply server hooks from plugins
-  const configurePreviewServerContext = new BasicMinimalPluginContext(
-    { ...basePluginContextMeta, watchMode: false },
-    config.logger,
-  )
-  const postHooks: ((() => void) | void)[] = []
-  for (const hook of config.getSortedPluginHooks('configurePreviewServer')) {
-    postHooks.push(await hook.call(configurePreviewServerContext, server))
-  }
-
   // cors
   const { cors } = config.preview
   if (cors !== false) {
@@ -216,6 +206,16 @@ export async function preview(
   // no need to check for HTTPS as HTTPS is not vulnerable to DNS rebinding attacks
   if (allowedHosts !== true && !config.preview.https) {
     app.use(hostValidationMiddleware(allowedHosts, true))
+  }
+
+  // apply server hooks from plugins
+  const configurePreviewServerContext = new BasicMinimalPluginContext(
+    { ...basePluginContextMeta, watchMode: false },
+    config.logger,
+  )
+  const postHooks: ((() => void) | void)[] = []
+  for (const hook of config.getSortedPluginHooks('configurePreviewServer')) {
+    postHooks.push(await hook.call(configurePreviewServerContext, server))
   }
 
   // proxy
