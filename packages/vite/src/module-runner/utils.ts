@@ -1,11 +1,6 @@
 import * as pathe from 'pathe'
 import { isWindows } from '../shared/utils'
 
-export const decodeBase64 =
-  typeof atob !== 'undefined'
-    ? atob
-    : (str: string) => Buffer.from(str, 'base64').toString('utf-8')
-
 const CHAR_FORWARD_SLASH = 47
 const CHAR_BACKWARD_SLASH = 92
 
