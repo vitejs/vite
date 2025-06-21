@@ -34,6 +34,10 @@ import { hmrLogger, silentConsole } from './hmrLogger'
 import { createHMRHandlerForRunner } from './hmrHandler'
 import { enableSourceMapSupport } from './sourcemap/index'
 import { ESModulesEvaluator } from './esmEvaluator'
+import {
+  type ImportMetaResolver,
+  createImportMetaResolver,
+} from './importMetaResolver'
 
 interface ModuleRunnerDebugger {
   (formatter: unknown, ...args: unknown[]): void
@@ -56,6 +60,8 @@ export class ModuleRunner {
     string,
     Promise<EvaluatedModuleNode>
   >()
+
+  private importMetaResolver?: Promise<ImportMetaResolver | undefined>
 
   private closed = false
 
@@ -351,6 +357,9 @@ export class ModuleRunner {
       )
     }
 
+    this.importMetaResolver ??= createImportMetaResolver()
+    const importMetaResolver = await this.importMetaResolver
+
     const modulePath = cleanUrl(file || moduleId)
     // disambiguate the `<UNIT>:/` on windows: see nodejs/node#31710
     const href = posixPathToFileHref(modulePath)
@@ -361,7 +370,10 @@ export class ModuleRunner {
       dirname: isWindows ? toWindowsPath(dirname) : dirname,
       url: href,
       env: this.envProxy,
-      resolve(_id, _parent?) {
+      resolve(id: string, parent?: string) {
+        if (importMetaResolver) {
+          return importMetaResolver(id, parent ?? href)
+        }
         throw new Error(
           '[module runner] "import.meta.resolve" is not supported.',
         )
