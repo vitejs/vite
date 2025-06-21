@@ -33,8 +33,16 @@ export async function createImportMetaResolver(): Promise<
     return
   }
 
-  const hookModuleContent = `data:text/javascript,${encodeURI(customizationHooksModule)}`
-  module.register(hookModuleContent)
+  try {
+    const hookModuleContent = `data:text/javascript,${encodeURI(customizationHooksModule)}`
+    module.register(hookModuleContent)
+  } catch (e) {
+    // For `--experimental-network-imports` flag that exists in Node before v22
+    if ('code' in e && e.code === 'ERR_NETWORK_IMPORT_DISALLOWED') {
+      return
+    }
+    throw e
+  }
 
   return (specifier: string, importer: string) =>
     import.meta.resolve(
