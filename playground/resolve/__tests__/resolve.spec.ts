@@ -256,3 +256,7 @@ test.runIf(isBuild)('public dir is not copied', async () => {
 test('import utf8-bom package', async () => {
   expect(await page.textContent('.utf8-bom-package')).toMatch('[success]')
 })
+
+test('exports field of package.json should not be used for relative dir imports', async () => {
+  expect(await page.textContent('.dir-with-pkgjson')).toMatch('[success]')
+})

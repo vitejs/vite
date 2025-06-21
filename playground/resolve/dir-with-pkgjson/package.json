@@ -1,0 +1,5 @@
+{
+  "name": "@vitejs/test-dir-with-pkgjson",
+  "main": "./main.js",
+  "exports": "./exports.js"
+}
