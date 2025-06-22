@@ -120,7 +120,7 @@ composes: bar from '@/css/bar.module.css';
       configFile: false,
       css: {
         resolveId: (id) => {
-          return `${id}?inline`
+          return `${id}?vitebase=cdn`
         },
       },
     })
@@ -135,9 +135,9 @@ background: url('/foo.png');
 
     expect(result.code).toMatchInlineSnapshot(
       `
-      .foo {
+      "._foo_r7h0q_1 {
       position: fixed;
-      background: url('/foo.png?inline');
+      background: url('/foo.png');
       }"
     `,
     )
