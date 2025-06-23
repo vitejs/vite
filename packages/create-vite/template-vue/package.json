@@ -9,10 +9,10 @@
     "preview": "vite preview"
   },
   "dependencies": {
-    "vue": "^3.5.16"
+    "vue": "^3.5.17"
   },
   "devDependencies": {
     "@vitejs/plugin-vue": "^6.0.0-beta.2",
-    "vite": "^7.0.0-beta.1"
+    "vite": "^7.0.0-beta.2"
   }
 }

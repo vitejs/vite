@@ -11,8 +11,8 @@
   },
   "dependencies": {
     "aliased-module": "file:./dir/module",
-    "vue": "^3.5.16",
-    "@vue/shared": "^3.5.16"
+    "vue": "^3.5.17",
+    "@vue/shared": "^3.5.17"
   },
   "devDependencies": {
     "@vitejs/test-resolve-linked": "workspace:*"
