@@ -135,6 +135,7 @@
       "esbuild",
       "playwright-chromium",
       "rolldown",
+      "sharp",
       "simple-git-hooks",
       "unrs-resolver",
       "workerd"
