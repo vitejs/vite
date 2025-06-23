@@ -73,10 +73,6 @@ const identifierReplacements: Record<string, Record<string, string>> = {
     BuildOptions$1: 'esbuild_BuildOptions',
   },
   'node:http': {
-    // https://github.com/rolldown/rolldown/issues/4324
-    http$1: 'http_1',
-    http$2: 'http_2',
-    http$3: 'http_3',
     Server$1: 'http.Server',
     IncomingMessage$1: 'http.IncomingMessage',
   },
