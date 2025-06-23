@@ -459,6 +459,7 @@ export default defineConfig({
     return pageData
   },
   markdown: {
+    languages: ['ts', 'json'],
     codeTransformers: [transformerTwoslash()],
     config(md) {
       md.use(groupIconMdPlugin)
