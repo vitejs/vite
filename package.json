@@ -65,7 +65,7 @@
     "lint-staged": "^16.1.2",
     "picocolors": "^1.1.1",
     "playwright-chromium": "^1.53.1",
-    "prettier": "3.5.3",
+    "prettier": "3.6.0",
     "rollup": "^4.40.0",
     "simple-git-hooks": "^2.13.0",
     "tsx": "^4.20.3",
