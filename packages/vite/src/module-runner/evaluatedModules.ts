@@ -1,6 +1,6 @@
-import { cleanUrl, isWindows, slash, unwrapId } from '../shared/utils'
+import { cleanUrl, unwrapId } from '../shared/utils'
 import { SOURCEMAPPING_URL } from '../shared/constants'
-import { decodeBase64 } from './utils'
+import { decodeBase64, normalizeModuleId } from './utils'
 import { DecodedMap } from './sourcemap/decoder'
 import type { ResolvedResult } from './types'
 
@@ -121,33 +121,4 @@ export class EvaluatedModules {
     this.fileToModulesMap.clear()
     this.urlToIdModuleMap.clear()
   }
-}
-
-// unique id that is not available as "$bare_import" like "test"
-// https://nodejs.org/api/modules.html#built-in-modules-with-mandatory-node-prefix
-const prefixedBuiltins = new Set([
-  'node:sea',
-  'node:sqlite',
-  'node:test',
-  'node:test/reporters',
-])
-
-// transform file url to id
-// virtual:custom -> virtual:custom
-// \0custom -> \0custom
-// /root/id -> /id
-// /root/id.js -> /id.js
-// C:/root/id.js -> /id.js
-// C:\root\id.js -> /id.js
-function normalizeModuleId(file: string): string {
-  if (prefixedBuiltins.has(file)) return file
-
-  // unix style, but Windows path still starts with the drive letter to check the root
-  const unixFile = slash(file)
-    .replace(/^\/@fs\//, isWindows ? '' : '/')
-    .replace(/^node:/, '')
-    .replace(/^\/+/, '/')
-
-  // if it's not in the root, keep it as a path, not a URL
-  return unixFile.replace(/^file:\//, '/')
 }
