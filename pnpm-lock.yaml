@@ -169,8 +169,8 @@ importers:
         specifier: ^1.1.1
         version: 1.1.1
       tsdown:
-        specifier: ^0.12.7
-        version: 0.12.7(publint@0.3.5)(typescript@5.7.3)
+        specifier: ^0.12.8
+        version: 0.12.8(publint@0.3.5)(typescript@5.7.3)
 
   packages/plugin-legacy:
     dependencies:
@@ -206,8 +206,8 @@ importers:
         specifier: ^1.1.1
         version: 1.1.1
       tsdown:
-        specifier: ^0.12.7
-        version: 0.12.7(publint@0.3.5)(typescript@5.7.3)
+        specifier: ^0.12.8
+        version: 0.12.8(publint@0.3.5)(typescript@5.7.3)
       vite:
         specifier: workspace:*
         version: link:../vite
@@ -372,11 +372,11 @@ importers:
         specifier: ^2.0.3
         version: 2.0.3
       rolldown:
-        specifier: ^1.0.0-beta.16
+        specifier: ^1.0.0-beta.19
         version: 1.0.0-beta.11-commit.f051675
       rolldown-plugin-dts:
-        specifier: ^0.13.11
-        version: 0.13.11(rolldown@1.0.0-beta.11-commit.f051675)(typescript@5.7.3)
+        specifier: ^0.13.12
+        version: 0.13.12(rolldown@1.0.0-beta.11-commit.f051675)(typescript@5.7.3)
       rollup-plugin-license:
         specifier: ^3.6.0
         version: 3.6.0(picomatch@4.0.2)(rollup@4.40.1)
@@ -2781,9 +2781,6 @@ packages:
   '@mdn/browser-compat-data@6.0.17':
     resolution: {integrity: sha512-yBMooSEtOoVz6vUP5OeGUnq4JBVMyE4vWsGalbrOLoGaXXNwA3YAE2mkgT4YPcOhGuPosSIk901PQI9pSMzgVg==}
 
-  '@napi-rs/wasm-runtime@0.2.10':
-    resolution: {integrity: sha512-bCsCyeZEwVErsGmyPNSzwfwFn4OdxBj0mmv6hOFucB/k81Ojdu68RbZdxYsRQUPc9l6SU5F/cG+bXgWs3oUgsQ==}
-
   '@napi-rs/wasm-runtime@0.2.11':
     resolution: {integrity: sha512-9DPkXtvHydrcOsopiYpUgPHpmj0HWZKMUnL2dZqpvC42lsratuBG06V5ipyno0fUek5VlFsNQ+AcFATSrJXgMA==}
 
@@ -2897,11 +2894,18 @@ packages:
     resolution: {integrity: sha512-J2lsPDen2mFs3cOA1gIBd0wsHEhum2vTnuKIRwmj3HJJcIz/XgeNdzvgSOioIXOJgURIpcDaK05jwaDG1rhDwg==}
     engines: {node: '>=6.9.0'}
 
+  '@oxc-project/runtime@0.72.3':
+    resolution: {integrity: sha512-FtOS+0v7rZcnjXzYTTqv1vu/KDptD1UztFgoZkYBGe/6TcNFm+SP/jQoLvzau1SPir95WgDOBOUm2Gmsm+bQag==}
+    engines: {node: '>=6.9.0'}
+
   '@oxc-project/types@0.70.0':
     resolution: {integrity: sha512-ngyLUpUjO3dpqygSRQDx7nMx8+BmXbWOU4oIwTJFV2MVIDG7knIZwgdwXlQWLg3C3oxg1lS7ppMtPKqKFb7wzw==}
 
   '@oxc-project/types@0.72.2':
     resolution: {integrity: sha512-il5RF8AP85XC0CMjHF4cnVT9nT/v/ocm6qlZQpSiAR9qBbQMGkFKloBZwm7PcnOdiUX97yHgsKM7uDCCWCu3tg==}
+
+  '@oxc-project/types@0.72.3':
+    resolution: {integrity: sha512-CfAC4wrmMkUoISpQkFAIfMVvlPfQV3xg7ZlcqPXPOIMQhdKIId44G8W0mCPgtpWdFFAyJ+SFtiM+9vbyCkoVng==}
 
   '@parcel/watcher-android-arm64@2.5.1':
     resolution: {integrity: sha512-KF8+j9nNbUN8vzOFDpRMsaKBHZ/mcjEjMToVMJOhTozkDonQFFrRcfdLWn6yWKCmJKmdVxSgHiYvTCef4/qcBA==}
@@ -3009,8 +3013,18 @@ packages:
     cpu: [arm64]
     os: [darwin]
 
+  '@rolldown/binding-darwin-arm64@1.0.0-beta.15':
+    resolution: {integrity: sha512-YInZppDBLp5DadbJZGc7xBfDrMCSj3P6i2rPlvOCMlvjBQxJi2kX8Jquh+LufsWUiHD3JsvvH5EuUUc/tF5fkA==}
+    cpu: [arm64]
+    os: [darwin]
+
   '@rolldown/binding-darwin-x64@1.0.0-beta.11-commit.f051675':
     resolution: {integrity: sha512-Bnst+HBwhW2YrNybEiNf9TJkI1myDgXmiPBVIOS0apzrLCmByzei6PilTClOpTpNFYB+UviL3Ox2gKUmcgUjGw==}
+    cpu: [x64]
+    os: [darwin]
+
+  '@rolldown/binding-darwin-x64@1.0.0-beta.15':
+    resolution: {integrity: sha512-Zwv8KHU/XdVwLseHG6slJ0FAFklPpiO0sjNvhrcMp1X3F2ajPzUdIO8Cnu3KLmX1GWVSvu6q1kyARLUqPvlh7Q==}
     cpu: [x64]
     os: [darwin]
 
@@ -3019,8 +3033,18 @@ packages:
     cpu: [x64]
     os: [freebsd]
 
+  '@rolldown/binding-freebsd-x64@1.0.0-beta.15':
+    resolution: {integrity: sha512-FwhNC23Fz9ldHW1/rX4QaoQe4kyOybCgxO9eglue3cbb3ol28KWpQl3xJfvXc9+O6PDefAs4oFBCbtTh8seiUw==}
+    cpu: [x64]
+    os: [freebsd]
+
   '@rolldown/binding-linux-arm-gnueabihf@1.0.0-beta.11-commit.f051675':
     resolution: {integrity: sha512-TpUltUdvcsAf2WvXXD8AVc3BozvhgazJ2gJLXp4DVV2V82m26QelI373Bzx8d/4hB167EEIg4wWW/7GXB/ltoQ==}
+    cpu: [arm]
+    os: [linux]
+
+  '@rolldown/binding-linux-arm-gnueabihf@1.0.0-beta.15':
+    resolution: {integrity: sha512-E60pNliWl4j7EFEVX2oeJZ5VzR+NG6fvDJoqfqRfCl8wtKIf9E1WPWVQIrT+zkz+Fhc5op8g7h25z6rtxsDy9g==}
     cpu: [arm]
     os: [linux]
 
@@ -3029,8 +3053,18 @@ packages:
     cpu: [arm64]
     os: [linux]
 
+  '@rolldown/binding-linux-arm64-gnu@1.0.0-beta.15':
+    resolution: {integrity: sha512-d+qo1LZ/a3EcQW08byIIZy0PBthmG/7dr69pifmNIet/azWR8jbceQaRFFczVc/NwVV3fsZDCmjG8mgJzsNEAg==}
+    cpu: [arm64]
+    os: [linux]
+
   '@rolldown/binding-linux-arm64-musl@1.0.0-beta.11-commit.f051675':
     resolution: {integrity: sha512-0NJZWXJls83FpBRzkTbGBsXXstaQLsfodnyeOghxbnNdsjn+B4dcNPpMK5V3QDsjC0pNjDLaDdzB2jWKlZbP/Q==}
+    cpu: [arm64]
+    os: [linux]
+
+  '@rolldown/binding-linux-arm64-musl@1.0.0-beta.15':
+    resolution: {integrity: sha512-P1hbtYF+5ftJI2Ergs4iARbAk6Xd6WnTQb3CF9kjN3KfJTsRYdo5/fvU8Lz/gzhZVvkCXXH3NxDd9308UBO8cw==}
     cpu: [arm64]
     os: [linux]
 
@@ -3039,8 +3073,18 @@ packages:
     cpu: [x64]
     os: [linux]
 
+  '@rolldown/binding-linux-x64-gnu@1.0.0-beta.15':
+    resolution: {integrity: sha512-Q9NM9uMFN9cjcrW7gd9U087B5WzkEj9dQQHOgoENZSy+vYJYS2fINCIG40ljEVC6jXmVrJgUhJKv7elRZM1nng==}
+    cpu: [x64]
+    os: [linux]
+
   '@rolldown/binding-linux-x64-musl@1.0.0-beta.11-commit.f051675':
     resolution: {integrity: sha512-e6tvsZbtHt4kzl82oCajOUxwIN8uMfjhuQ0qxIVRzPekRRjKEzyH9agYPW6toN0cnHpkhPsu51tyZKJOdUl7jg==}
+    cpu: [x64]
+    os: [linux]
+
+  '@rolldown/binding-linux-x64-musl@1.0.0-beta.15':
+    resolution: {integrity: sha512-1tuCWuR8gx9PyW2pxAx2ZqnOnwhoY6NWBVP6ZmrjCKQ16NclYc61BzegFXSdugCy8w1QpBPT8/c5oh2W4E5aeA==}
     cpu: [x64]
     os: [linux]
 
@@ -3049,8 +3093,18 @@ packages:
     engines: {node: '>=14.21.3'}
     cpu: [wasm32]
 
+  '@rolldown/binding-wasm32-wasi@1.0.0-beta.15':
+    resolution: {integrity: sha512-zrSeYrpTf27hRxMLh0qpkCoWgzRKG8EyR6o09Zt9xkqCOeE5tEK/S3jV1Nii9WSqVCWFRA+OYxKzMNoykV590g==}
+    engines: {node: '>=14.21.3'}
+    cpu: [wasm32]
+
   '@rolldown/binding-win32-arm64-msvc@1.0.0-beta.11-commit.f051675':
     resolution: {integrity: sha512-Rey/ECXKI/UEykrKfJX3oVAPXDH2k1p2BKzYGza0z3S2X5I3sTDOeBn2I0IQgyyf7U3+DCBhYjkDFnmSePrU/A==}
+    cpu: [arm64]
+    os: [win32]
+
+  '@rolldown/binding-win32-arm64-msvc@1.0.0-beta.15':
+    resolution: {integrity: sha512-diR41DsMUnkvb9hvW8vuIrA0WaacAN1fu6lPseXhYifAOZN6kvxEwKn7Xib8i0zjdrYErLv7GNSQ48W+xiNOnA==}
     cpu: [arm64]
     os: [win32]
 
@@ -3059,13 +3113,26 @@ packages:
     cpu: [ia32]
     os: [win32]
 
+  '@rolldown/binding-win32-ia32-msvc@1.0.0-beta.15':
+    resolution: {integrity: sha512-oCbbcDC3Lk8YgdxCkG23UqVrvXVvllIBgmmwq89bhq5okPP899OI/P+oTTDsUTbhljzNq1pH8a+mR6YBxAFfvw==}
+    cpu: [ia32]
+    os: [win32]
+
   '@rolldown/binding-win32-x64-msvc@1.0.0-beta.11-commit.f051675':
     resolution: {integrity: sha512-YY8UYfBm4dbWa4psgEPPD9T9X0nAvlYu0BOsQC5vDfCwzzU7IHT4jAfetvlQq+4+M6qWHSTr6v+/WX5EmlM1WA==}
     cpu: [x64]
     os: [win32]
 
+  '@rolldown/binding-win32-x64-msvc@1.0.0-beta.15':
+    resolution: {integrity: sha512-w5hVsOv3dzKo10wAXizmnDvUo1yasn/ps+mcn9H9TiJ/GeRE5/15Y6hG6vUQYRQNLVbYRHUt2qG0MyOoasPcHg==}
+    cpu: [x64]
+    os: [win32]
+
   '@rolldown/pluginutils@1.0.0-beta.11-commit.f051675':
     resolution: {integrity: sha512-TAqMYehvpauLKz7v4TZOTUQNjxa5bUQWw2+51/+Zk3ItclBxgoSWhnZ31sXjdoX6le6OXdK2vZfV3KoyW/O/GA==}
+
+  '@rolldown/pluginutils@1.0.0-beta.15':
+    resolution: {integrity: sha512-lvFtIbidq5EqyAAeiVk41ZNjGRgUoGRBIuqpe1VRJ7R8Av7TLAgGWAwGlHNhO7MFkl7MNRX350CsTtIWIYkNIQ==}
 
   '@rollup/plugin-alias@5.1.1':
     resolution: {integrity: sha512-PR9zDb+rOzkRb2VD+EuKB7UC41vU5DIwZ5qqCpk0KJudcWAyi8rvYOhS7+L5aZCspw1stTViLgN5v6FF1p5cgQ==}
@@ -4271,8 +4338,8 @@ packages:
   birpc@0.2.19:
     resolution: {integrity: sha512-5WeXXAvTmitV1RqJFppT5QtUiz2p1mRSYU000Jkft5ZUCLJIk4uQriYNO50HknxKwM6jd8utNc66K1qGIwwWBQ==}
 
-  birpc@2.3.0:
-    resolution: {integrity: sha512-ijbtkn/F3Pvzb6jHypHRyve2QApOCZDR25D/VnkY2G/lBNcXCTsnsCxgY4k4PkVB7zfwzYbY3O9Lcqe3xufS5g==}
+  birpc@2.4.0:
+    resolution: {integrity: sha512-5IdNxTyhXHv2UlgnPHQ0h+5ypVmkrYHzL8QT+DwFZ//2N/oNV8Ch+BCRmTJ3x6/z9Axo/cXYBc9eprsUVK/Jsg==}
 
   body-parser@2.2.0:
     resolution: {integrity: sha512-02qvAaxv8tp7fBa/mw1ga98OGm+eCbqzJOKoRt70sLmfEEi+jyBYVTDGfCL/k06/4EMk/z01gCe7HoCH/f2LTg==}
@@ -6415,24 +6482,8 @@ packages:
   rfdc@1.4.1:
     resolution: {integrity: sha512-q1b3N5QkRUWUl7iyylaaj3kOpIT0N2i9MqIEQXP73GVsN9cw3fdx8X63cEmWhJGi2PPCF23Ijp7ktmd39rawIA==}
 
-  rolldown-plugin-dts@0.13.11:
-    resolution: {integrity: sha512-1TScN31JImk8xcq9kdm52z2W8/QX3zeDpEjFkyZmK+GcD0u8QqSWWARBsCEdfS99NyI6D9NIbUpsABXlcpZhig==}
-    engines: {node: '>=20.18.0'}
-    peerDependencies:
-      '@typescript/native-preview': '>=7.0.0-dev.20250601.1'
-      rolldown: ^1.0.0-beta.9
-      typescript: ^5.0.0
-      vue-tsc: ~2.2.0
-    peerDependenciesMeta:
-      '@typescript/native-preview':
-        optional: true
-      typescript:
-        optional: true
-      vue-tsc:
-        optional: true
-
-  rolldown-plugin-dts@0.13.9:
-    resolution: {integrity: sha512-gE8g7+fejx48PW20QLvIYuNOG5d/3MIjDP4WrIRUpUvrwz+wXDiF7Y/XxOU0/DnCaQMZySsTqOCBS4j8+nJiyg==}
+  rolldown-plugin-dts@0.13.12:
+    resolution: {integrity: sha512-4QdQQfMOWNDLhmvoG3USAUpCm75dgwWk3IrK6SV9Fw2U5uwcSE7oQTqEcmsUGEBsNxZ58+gtM1oX38MMf0g5PA==}
     engines: {node: '>=20.18.0'}
     peerDependencies:
       '@typescript/native-preview': '>=7.0.0-dev.20250601.1'
@@ -6449,6 +6500,10 @@ packages:
 
   rolldown@1.0.0-beta.11-commit.f051675:
     resolution: {integrity: sha512-g8MCVkvg2GnrrG+j+WplOTx1nAmjSwYOMSOQI0qfxf8D4NmYZqJuG3f85yWK64XXQv6pKcXZsfMkOPs9B6B52A==}
+    hasBin: true
+
+  rolldown@1.0.0-beta.15:
+    resolution: {integrity: sha512-ep788NsIGl0W5gT+99hBrSGe4Hdhcwc55PqM3O0mR5H0C4ZpGpDGgu9YzTJ8a6mFDLnFnc/LYC+Dszb7oWK/dg==}
     hasBin: true
 
   rollup-plugin-license@3.6.0:
@@ -7003,8 +7058,8 @@ packages:
       typescript:
         optional: true
 
-  tsdown@0.12.7:
-    resolution: {integrity: sha512-VJjVaqJfIQuQwtOoeuEJMOJUf3MPDrfX0X7OUNx3nq5pQeuIl3h58tmdbM1IZcu8Dn2j8NQjLh+5TXa0yPb9zg==}
+  tsdown@0.12.8:
+    resolution: {integrity: sha512-niHeVcFCNjvVZYVGTeoM4BF+/DWxP8pFH2tUs71sEKYdcKtJIbkSdEmtxByaRZeMgwVbVgPb8nv9i9okVwFLAA==}
     engines: {node: '>=18.0.0'}
     hasBin: true
     peerDependencies:
@@ -8573,13 +8628,6 @@ snapshots:
 
   '@mdn/browser-compat-data@6.0.17': {}
 
-  '@napi-rs/wasm-runtime@0.2.10':
-    dependencies:
-      '@emnapi/core': 1.4.3
-      '@emnapi/runtime': 1.4.3
-      '@tybys/wasm-util': 0.9.0
-    optional: true
-
   '@napi-rs/wasm-runtime@0.2.11':
     dependencies:
       '@emnapi/core': 1.4.3
@@ -8671,9 +8719,13 @@ snapshots:
 
   '@oxc-project/runtime@0.72.2': {}
 
+  '@oxc-project/runtime@0.72.3': {}
+
   '@oxc-project/types@0.70.0': {}
 
   '@oxc-project/types@0.72.2': {}
+
+  '@oxc-project/types@0.72.3': {}
 
   '@parcel/watcher-android-arm64@2.5.1':
     optional: true
@@ -8752,42 +8804,82 @@ snapshots:
   '@rolldown/binding-darwin-arm64@1.0.0-beta.11-commit.f051675':
     optional: true
 
+  '@rolldown/binding-darwin-arm64@1.0.0-beta.15':
+    optional: true
+
   '@rolldown/binding-darwin-x64@1.0.0-beta.11-commit.f051675':
+    optional: true
+
+  '@rolldown/binding-darwin-x64@1.0.0-beta.15':
     optional: true
 
   '@rolldown/binding-freebsd-x64@1.0.0-beta.11-commit.f051675':
     optional: true
 
+  '@rolldown/binding-freebsd-x64@1.0.0-beta.15':
+    optional: true
+
   '@rolldown/binding-linux-arm-gnueabihf@1.0.0-beta.11-commit.f051675':
+    optional: true
+
+  '@rolldown/binding-linux-arm-gnueabihf@1.0.0-beta.15':
     optional: true
 
   '@rolldown/binding-linux-arm64-gnu@1.0.0-beta.11-commit.f051675':
     optional: true
 
+  '@rolldown/binding-linux-arm64-gnu@1.0.0-beta.15':
+    optional: true
+
   '@rolldown/binding-linux-arm64-musl@1.0.0-beta.11-commit.f051675':
+    optional: true
+
+  '@rolldown/binding-linux-arm64-musl@1.0.0-beta.15':
     optional: true
 
   '@rolldown/binding-linux-x64-gnu@1.0.0-beta.11-commit.f051675':
     optional: true
 
+  '@rolldown/binding-linux-x64-gnu@1.0.0-beta.15':
+    optional: true
+
   '@rolldown/binding-linux-x64-musl@1.0.0-beta.11-commit.f051675':
+    optional: true
+
+  '@rolldown/binding-linux-x64-musl@1.0.0-beta.15':
     optional: true
 
   '@rolldown/binding-wasm32-wasi@1.0.0-beta.11-commit.f051675':
     dependencies:
-      '@napi-rs/wasm-runtime': 0.2.10
+      '@napi-rs/wasm-runtime': 0.2.11
+    optional: true
+
+  '@rolldown/binding-wasm32-wasi@1.0.0-beta.15':
+    dependencies:
+      '@napi-rs/wasm-runtime': 0.2.11
     optional: true
 
   '@rolldown/binding-win32-arm64-msvc@1.0.0-beta.11-commit.f051675':
     optional: true
 
+  '@rolldown/binding-win32-arm64-msvc@1.0.0-beta.15':
+    optional: true
+
   '@rolldown/binding-win32-ia32-msvc@1.0.0-beta.11-commit.f051675':
+    optional: true
+
+  '@rolldown/binding-win32-ia32-msvc@1.0.0-beta.15':
     optional: true
 
   '@rolldown/binding-win32-x64-msvc@1.0.0-beta.11-commit.f051675':
     optional: true
 
+  '@rolldown/binding-win32-x64-msvc@1.0.0-beta.15':
+    optional: true
+
   '@rolldown/pluginutils@1.0.0-beta.11-commit.f051675': {}
+
+  '@rolldown/pluginutils@1.0.0-beta.15': {}
 
   '@rollup/plugin-alias@5.1.1(rollup@4.40.1)':
     optionalDependencies:
@@ -9984,7 +10076,7 @@ snapshots:
 
   birpc@0.2.19: {}
 
-  birpc@2.3.0: {}
+  birpc@2.4.0: {}
 
   body-parser@2.2.0:
     dependencies:
@@ -12273,13 +12365,13 @@ snapshots:
 
   rfdc@1.4.1: {}
 
-  rolldown-plugin-dts@0.13.11(rolldown@1.0.0-beta.11-commit.f051675)(typescript@5.7.3):
+  rolldown-plugin-dts@0.13.12(rolldown@1.0.0-beta.11-commit.f051675)(typescript@5.7.3):
     dependencies:
       '@babel/generator': 7.27.5
       '@babel/parser': 7.27.5
       '@babel/types': 7.27.6
       ast-kit: 2.1.0
-      birpc: 2.3.0
+      birpc: 2.4.0
       debug: 4.4.1
       dts-resolver: 2.1.1
       get-tsconfig: 4.10.1
@@ -12290,17 +12382,17 @@ snapshots:
       - oxc-resolver
       - supports-color
 
-  rolldown-plugin-dts@0.13.9(rolldown@1.0.0-beta.11-commit.f051675)(typescript@5.7.3):
+  rolldown-plugin-dts@0.13.12(rolldown@1.0.0-beta.15)(typescript@5.7.3):
     dependencies:
       '@babel/generator': 7.27.5
       '@babel/parser': 7.27.5
       '@babel/types': 7.27.6
       ast-kit: 2.1.0
-      birpc: 2.3.0
+      birpc: 2.4.0
       debug: 4.4.1
       dts-resolver: 2.1.1
       get-tsconfig: 4.10.1
-      rolldown: 1.0.0-beta.11-commit.f051675
+      rolldown: 1.0.0-beta.15
     optionalDependencies:
       typescript: 5.7.3
     transitivePeerDependencies:
@@ -12326,6 +12418,26 @@ snapshots:
       '@rolldown/binding-win32-arm64-msvc': 1.0.0-beta.11-commit.f051675
       '@rolldown/binding-win32-ia32-msvc': 1.0.0-beta.11-commit.f051675
       '@rolldown/binding-win32-x64-msvc': 1.0.0-beta.11-commit.f051675
+
+  rolldown@1.0.0-beta.15:
+    dependencies:
+      '@oxc-project/runtime': 0.72.3
+      '@oxc-project/types': 0.72.3
+      '@rolldown/pluginutils': 1.0.0-beta.15
+      ansis: 4.1.0
+    optionalDependencies:
+      '@rolldown/binding-darwin-arm64': 1.0.0-beta.15
+      '@rolldown/binding-darwin-x64': 1.0.0-beta.15
+      '@rolldown/binding-freebsd-x64': 1.0.0-beta.15
+      '@rolldown/binding-linux-arm-gnueabihf': 1.0.0-beta.15
+      '@rolldown/binding-linux-arm64-gnu': 1.0.0-beta.15
+      '@rolldown/binding-linux-arm64-musl': 1.0.0-beta.15
+      '@rolldown/binding-linux-x64-gnu': 1.0.0-beta.15
+      '@rolldown/binding-linux-x64-musl': 1.0.0-beta.15
+      '@rolldown/binding-wasm32-wasi': 1.0.0-beta.15
+      '@rolldown/binding-win32-arm64-msvc': 1.0.0-beta.15
+      '@rolldown/binding-win32-ia32-msvc': 1.0.0-beta.15
+      '@rolldown/binding-win32-x64-msvc': 1.0.0-beta.15
 
   rollup-plugin-license@3.6.0(picomatch@4.0.2)(rollup@4.40.1):
     dependencies:
@@ -12914,7 +13026,7 @@ snapshots:
     optionalDependencies:
       typescript: 5.7.3
 
-  tsdown@0.12.7(publint@0.3.5)(typescript@5.7.3):
+  tsdown@0.12.8(publint@0.3.5)(typescript@5.7.3):
     dependencies:
       ansis: 4.1.0
       cac: 6.7.14
@@ -12923,8 +13035,8 @@ snapshots:
       diff: 8.0.2
       empathic: 1.1.0
       hookable: 5.5.3
-      rolldown: 1.0.0-beta.11-commit.f051675
-      rolldown-plugin-dts: 0.13.9(rolldown@1.0.0-beta.11-commit.f051675)(typescript@5.7.3)
+      rolldown: 1.0.0-beta.15
+      rolldown-plugin-dts: 0.13.12(rolldown@1.0.0-beta.15)(typescript@5.7.3)
       semver: 7.7.2
       tinyexec: 1.0.1
       tinyglobby: 0.2.14
