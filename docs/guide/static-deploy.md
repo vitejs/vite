@@ -265,7 +265,6 @@ You can deploy your Vite app as a Static Site on [Render](https://render.com/).
 3. Connect your GitHub/GitLab account or use a public repository.
 
 4. Specify a project name and branch.
-
    - **Build Command**: `npm install && npm run build`
    - **Publish Directory**: `dist`
 
