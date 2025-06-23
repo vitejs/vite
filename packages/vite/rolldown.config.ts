@@ -145,7 +145,7 @@ const nodeConfig = defineConfig({
       path.resolve(__dirname, 'LICENSE.md'),
       'Vite core license',
       'Vite',
-    ) as Plugin,
+    ),
     writeTypesPlugin(),
     enableSourceMapsInWatchModePlugin(),
     externalizeDepsInWatchPlugin(),
@@ -241,12 +241,7 @@ function shimDepsPlugin(deps: Record<string, ShimOptions[]>): Plugin {
     name: 'shim-deps',
     transform: {
       filter: {
-        id: new RegExp(
-          `(?:${Object.keys(deps)
-            // escape is needed for Windows (https://github.com/rolldown/rolldown/issues/4609)
-            .map((k) => k.replace(/\//g, '[\\\\/]'))
-            .join('|')})$`,
-        ),
+        id: new RegExp(`(?:${Object.keys(deps).join('|')})$`),
       },
       handler(code, id) {
         const file = Object.keys(deps).find((file) =>
