@@ -134,7 +134,6 @@
       "bcrypt",
       "esbuild",
       "playwright-chromium",
-      "rolldown",
       "sharp",
       "simple-git-hooks",
       "unrs-resolver",
