@@ -25,6 +25,7 @@ export type {
 export {
   ssrDynamicImportKey,
   ssrExportAllKey,
+  ssrExportNameKey,
   ssrImportKey,
   ssrImportMetaKey,
   ssrModuleExportsKey,
