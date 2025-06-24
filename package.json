@@ -91,7 +91,7 @@
       "eslint --cache --fix"
     ]
   },
-  "packageManager": "pnpm@10.8.1",
+  "packageManager": "pnpm@10.12.2",
   "stackblitz": {
     "startCommand": "pnpm --filter='./packages/vite' run dev"
   }

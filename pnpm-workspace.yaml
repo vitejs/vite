@@ -37,8 +37,11 @@ ignoredBuiltDependencies:
   - es5-ext
 onlyBuiltDependencies:
   - "@parcel/watcher"
+  - "@tailwindcss/oxide"
   - "bcrypt"
   - "esbuild"
   - "playwright-chromium"
+  - "sharp"
   - "simple-git-hooks"
+  - "unrs-resolver"
   - "workerd"
