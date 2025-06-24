@@ -45,7 +45,6 @@ If you need a custom integration, you can follow the steps in this guide to conf
    ```
 
    In order to properly serve assets, you have two options:
-
    - Make sure the server is configured to proxy static assets requests to the Vite server
    - Set [`server.origin`](/config/server-options.md#server-origin) so that generated asset URLs will be resolved using the back-end server URL instead of a relative path
 
@@ -100,7 +99,6 @@ If you need a custom integration, you can follow the steps in this guide to conf
      }
    }
    ```
-
    - The manifest has a `Record<name, chunk>` structure
    - For entry or dynamic entry chunks, the key is the relative src path from project root.
    - For non entry chunks, the key is the base name of the generated file prefixed with `_`.
@@ -131,7 +129,6 @@ If you need a custom integration, you can follow the steps in this guide to conf
 
    Specifically, a backend generating HTML should include the following tags given a manifest
    file and an entry point:
-
    - A `<link rel="stylesheet">` tag for each file in the entry point chunk's `css` list
    - Recursively follow all chunks in the entry point's `imports` list and include a
      `<link rel="stylesheet">` tag for each CSS file of each imported chunk.

@@ -102,6 +102,7 @@ export default tseslint.config(
             'less',
             'sass',
             'sass-embedded',
+            'terser',
             'lightningcss',
             'vitest',
             'unbuild',
