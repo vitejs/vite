@@ -1,3 +1,22 @@
+## 7.0.0 (2025-06-24)
+
+* release: v7.0.0 ([b85f322](https://github.com/vitejs/rolldown-vite/commit/b85f322))
+* release: v7.0.0-beta.2 ([1d5b9be](https://github.com/vitejs/rolldown-vite/commit/1d5b9be))
+* fix: keep `import.meta.url` in bundled Vite (#20235) ([3bf3a8a](https://github.com/vitejs/rolldown-vite/commit/3bf3a8a)), closes [#20235](https://github.com/vitejs/rolldown-vite/issues/20235)
+* fix(deps): update all non-major dependencies (#20271) ([6b64d63](https://github.com/vitejs/rolldown-vite/commit/6b64d63)), closes [#20271](https://github.com/vitejs/rolldown-vite/issues/20271)
+* fix(module-runner): export `ssrExportNameKey` (#20266) ([ac302a7](https://github.com/vitejs/rolldown-vite/commit/ac302a7)), closes [#20266](https://github.com/vitejs/rolldown-vite/issues/20266)
+* fix(module-runner): expose `normalizeModuleId` (#20277) ([9b98dcb](https://github.com/vitejs/rolldown-vite/commit/9b98dcb)), closes [#20277](https://github.com/vitejs/rolldown-vite/issues/20277)
+* feat: apply some middlewares before `configurePreviewServer` hook (#20224) ([b989c42](https://github.com/vitejs/rolldown-vite/commit/b989c42)), closes [#20224](https://github.com/vitejs/rolldown-vite/issues/20224)
+* feat: apply some middlewares before `configureServer` hook (#20222) ([f5cc4c0](https://github.com/vitejs/rolldown-vite/commit/f5cc4c0)), closes [#20222](https://github.com/vitejs/rolldown-vite/issues/20222)
+* feat(native-plugin): fallback to js alias plugin when alias entries include `customResolver` (#280) ([de9074c](https://github.com/vitejs/rolldown-vite/commit/de9074c)), closes [#280](https://github.com/vitejs/rolldown-vite/issues/280)
+* feat(types): use terser types from terser package (#20274) ([a5799fa](https://github.com/vitejs/rolldown-vite/commit/a5799fa)), closes [#20274](https://github.com/vitejs/rolldown-vite/issues/20274)
+* chore: "indentity" → "identity" in test description (#20225) ([ea9aed7](https://github.com/vitejs/rolldown-vite/commit/ea9aed7)), closes [#20225](https://github.com/vitejs/rolldown-vite/issues/20225)
+* chore: typos in comments (#20259) ([b135918](https://github.com/vitejs/rolldown-vite/commit/b135918)), closes [#20259](https://github.com/vitejs/rolldown-vite/issues/20259)
+* chore(deps): update rolldown-related dependencies (#20270) ([f7377c3](https://github.com/vitejs/rolldown-vite/commit/f7377c3)), closes [#20270](https://github.com/vitejs/rolldown-vite/issues/20270)
+* perf(utils): improve performance of `numberToPos` (#20244) ([3f46901](https://github.com/vitejs/rolldown-vite/commit/3f46901)), closes [#20244](https://github.com/vitejs/rolldown-vite/issues/20244)
+
+
+
 ## 7.0.0-beta.0 (2025-06-19)
 
 * fix: resolve oxc runtime from Vite directory correctly (#269) ([d6369f3](https://github.com/vitejs/rolldown-vite/commit/d6369f3)), closes [#269](https://github.com/vitejs/rolldown-vite/issues/269)
