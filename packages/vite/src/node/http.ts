@@ -1,9 +1,9 @@
 import fsp from 'node:fs/promises'
 import path from 'node:path'
+import { styleText } from 'node:util'
 import type { OutgoingHttpHeaders as HttpServerHeaders } from 'node:http'
 import type { ServerOptions as HttpsServerOptions } from 'node:https'
 import type { Connect } from 'dep-types/connect'
-import colors from 'picocolors'
 import type { ProxyOptions } from './server/middlewares/proxy'
 import type { Logger } from './logger'
 import type { HttpServer } from './server'
@@ -210,7 +210,8 @@ export function setClientErrorHandler(
     if ((err as any).code === 'HPE_HEADER_OVERFLOW') {
       msg = '431 Request Header Fields Too Large'
       logger.warn(
-        colors.yellow(
+        styleText(
+          'yellow',
           'Server responded with status code 431. ' +
             'See https://vite.dev/guide/troubleshooting.html#_431-request-header-fields-too-large.',
         ),

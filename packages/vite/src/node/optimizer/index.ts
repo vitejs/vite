@@ -1,9 +1,8 @@
 import fs from 'node:fs'
 import fsp from 'node:fs/promises'
 import path from 'node:path'
-import { promisify } from 'node:util'
+import { promisify, styleText } from 'node:util'
 import { performance } from 'node:perf_hooks'
-import colors from 'picocolors'
 import type { BuildContext, BuildOptions as EsbuildBuildOptions } from 'esbuild'
 import esbuild, { build } from 'esbuild'
 import { init, parse } from 'es-module-lexer'
@@ -260,7 +259,8 @@ export async function optimizeDeps(
   const log = asCommand ? config.logger.info : debug
 
   config.logger.warn(
-    colors.yellow(
+    styleText(
+      'yellow',
       'manually calling optimizeDeps is deprecated. This is done automatically and does not need to be called manually.',
     ),
   )
@@ -282,7 +282,7 @@ export async function optimizeDeps(
   await addManuallyIncludedOptimizeDeps(environment, deps)
 
   const depsString = depsLogString(Object.keys(deps))
-  log?.(colors.green(`Optimizing dependencies:\n  ${depsString}`))
+  log?.(styleText('green', `Optimizing dependencies:\n  ${depsString}`))
 
   const depsInfo = toDiscoveredDependencies(environment, deps)
 
@@ -411,7 +411,7 @@ export async function loadCachedDepOptimizationMetadata(
 
   // Start with a fresh cache
   debug?.(
-    `(${environment.name}) ${colors.green(`removing old cache dir ${depsCacheDir}`)}`,
+    `(${environment.name}) ${styleText('green', `removing old cache dir ${depsCacheDir}`)}`,
   )
   await fsp.rm(depsCacheDir, { recursive: true, force: true })
 }
@@ -435,8 +435,9 @@ export function discoverProjectDependencies(environment: ScanEnvironment): {
           `The following dependencies are imported but could not be resolved:\n\n  ${missingIds
             .map(
               (id) =>
-                `${colors.cyan(id)} ${colors.white(
-                  colors.dim(`(imported by ${missing[id]})`),
+                `${styleText('cyan', id)} ${styleText(
+                  'white',
+                  styleText('dim', `(imported by ${missing[id]})`),
                 )}`,
             )
             .join(`\n  `)}\n\nAre they installed?`,
@@ -473,7 +474,7 @@ export function toDiscoveredDependencies(
 }
 
 export function depsLogString(qualifiedIds: string[]): string {
-  return colors.yellow(qualifiedIds.join(`, `))
+  return styleText('yellow', qualifiedIds.join(`, `))
 }
 
 /**
@@ -499,7 +500,7 @@ export function runOptimizeDeps(
 
   // a hint for Node.js
   // all files in the cache directory should be recognized as ES modules
-  debug?.(colors.green(`creating package.json in ${processingCacheDir}`))
+  debug?.(styleText('green', `creating package.json in ${processingCacheDir}`))
   fs.writeFileSync(
     path.resolve(processingCacheDir, 'package.json'),
     `{\n  "type": "module"\n}\n`,
@@ -526,7 +527,7 @@ export function runOptimizeDeps(
       cleaned = true
       // No need to wait, we can clean up in the background because temp folders
       // are unique per run
-      debug?.(colors.green(`removing cache dir ${processingCacheDir}`))
+      debug?.(styleText('green', `removing cache dir ${processingCacheDir}`))
       try {
         // When exiting the process, `fsp.rm` may not take effect, so we use `fs.rmSync`
         fs.rmSync(processingCacheDir, { recursive: true, force: true })
@@ -553,7 +554,10 @@ export function runOptimizeDeps(
       // Rewire the file paths from the temporary processing dir to the final deps cache dir
       const dataPath = path.join(processingCacheDir, METADATA_FILENAME)
       debug?.(
-        colors.green(`creating ${METADATA_FILENAME} in ${processingCacheDir}`),
+        styleText(
+          'green',
+          `creating ${METADATA_FILENAME} in ${processingCacheDir}`,
+        ),
       )
       fs.writeFileSync(
         dataPath,
@@ -572,27 +576,37 @@ export function runOptimizeDeps(
       const depsCacheDirPresent = fs.existsSync(depsCacheDir)
       if (isWindows) {
         if (depsCacheDirPresent) {
-          debug?.(colors.green(`renaming ${depsCacheDir} to ${temporaryPath}`))
+          debug?.(
+            styleText('green', `renaming ${depsCacheDir} to ${temporaryPath}`),
+          )
           await safeRename(depsCacheDir, temporaryPath)
         }
         debug?.(
-          colors.green(`renaming ${processingCacheDir} to ${depsCacheDir}`),
+          styleText(
+            'green',
+            `renaming ${processingCacheDir} to ${depsCacheDir}`,
+          ),
         )
         await safeRename(processingCacheDir, depsCacheDir)
       } else {
         if (depsCacheDirPresent) {
-          debug?.(colors.green(`renaming ${depsCacheDir} to ${temporaryPath}`))
+          debug?.(
+            styleText('green', `renaming ${depsCacheDir} to ${temporaryPath}`),
+          )
           fs.renameSync(depsCacheDir, temporaryPath)
         }
         debug?.(
-          colors.green(`renaming ${processingCacheDir} to ${depsCacheDir}`),
+          styleText(
+            'green',
+            `renaming ${processingCacheDir} to ${depsCacheDir}`,
+          ),
         )
         fs.renameSync(processingCacheDir, depsCacheDir)
       }
 
       // Delete temporary path in the background
       if (depsCacheDirPresent) {
-        debug?.(colors.green(`removing cache temp dir ${temporaryPath}`))
+        debug?.(styleText('green', `removing cache temp dir ${temporaryPath}`))
         fsp.rm(temporaryPath, { recursive: true, force: true })
       }
     },
@@ -866,7 +880,7 @@ export async function addManuallyIncludedOptimizeDeps(
     const unableToOptimize = (id: string, msg: string) => {
       if (optimizeDepsInclude.includes(id)) {
         logger.warn(
-          `${msg}: ${colors.cyan(id)}, present in ${environment.name} 'optimizeDeps.include'`,
+          `${msg}: ${styleText('cyan', id)}, present in ${environment.name} 'optimizeDeps.include'`,
         )
       }
     }

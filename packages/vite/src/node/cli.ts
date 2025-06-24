@@ -1,8 +1,8 @@
 import path from 'node:path'
 import fs from 'node:fs'
 import { performance } from 'node:perf_hooks'
+import { styleText } from 'node:util'
 import { cac } from 'cac'
-import colors from 'picocolors'
 import { VERSION } from './constants'
 import type { BuildEnvironmentOptions } from './build'
 import type { ServerOptions } from './server'
@@ -54,8 +54,9 @@ export const stopProfiler = (
         )
         fs.writeFileSync(outPath, JSON.stringify(profile))
         log(
-          colors.yellow(
-            `CPU profile written to ${colors.white(colors.dim(outPath))}`,
+          styleText(
+            'yellow',
+            `CPU profile written to ${styleText('white', styleText('dim', outPath))}`,
           ),
         )
         profileSession = undefined
@@ -204,13 +205,18 @@ cli
 
       const modeString =
         options.mode && options.mode !== 'development'
-          ? `  ${colors.bgGreen(` ${colors.bold(options.mode)} `)}`
+          ? `  ${styleText('bgGreen', ` ${styleText('bold', options.mode)} `)}`
           : ''
       const viteStartTime = global.__vite_start_time ?? false
       const startupDurationString = viteStartTime
-        ? colors.dim(
-            `ready in ${colors.reset(
-              colors.bold(Math.ceil(performance.now() - viteStartTime)),
+        ? styleText(
+            'dim',
+            `ready in ${styleText(
+              'reset',
+              styleText(
+                'bold',
+                String(Math.ceil(performance.now() - viteStartTime)),
+              ),
             )} ms`,
           )
         : ''
@@ -218,8 +224,9 @@ cli
         process.stdout.bytesWritten > 0 || process.stderr.bytesWritten > 0
 
       info(
-        `\n  ${colors.green(
-          `${colors.bold('VITE')} v${VERSION}`,
+        `\n  ${styleText(
+          'green',
+          `${styleText('bold', 'VITE')} v${VERSION}`,
         )}${modeString}  ${startupDurationString}\n`,
         {
           clear: !hasExistingLogs,
@@ -256,9 +263,12 @@ cli
       server.bindCLIShortcuts({ print: true, customShortcuts })
     } catch (e) {
       const logger = createLogger(options.logLevel)
-      logger.error(colors.red(`error when starting dev server:\n${e.stack}`), {
-        error: e,
-      })
+      logger.error(
+        styleText('red', `error when starting dev server:\n${e.stack}`),
+        {
+          error: e,
+        },
+      )
       stopProfiler(logger.info)
       process.exit(1)
     }
@@ -329,7 +339,7 @@ cli
         await builder.buildApp()
       } catch (e) {
         createLogger(options.logLevel).error(
-          colors.red(`error during build:\n${e.stack}`),
+          styleText('red', `error during build:\n${e.stack}`),
           { error: e },
         )
         process.exit(1)
@@ -368,7 +378,7 @@ cli
         await optimizeDeps(config, options.force, true)
       } catch (e) {
         createLogger(options.logLevel).error(
-          colors.red(`error when optimizing deps:\n${e.stack}`),
+          styleText('red', `error when optimizing deps:\n${e.stack}`),
           { error: e },
         )
         process.exit(1)
@@ -419,7 +429,7 @@ cli
         server.bindCLIShortcuts({ print: true })
       } catch (e) {
         createLogger(options.logLevel).error(
-          colors.red(`error when starting preview server:\n${e.stack}`),
+          styleText('red', `error when starting preview server:\n${e.stack}`),
           { error: e },
         )
         process.exit(1)

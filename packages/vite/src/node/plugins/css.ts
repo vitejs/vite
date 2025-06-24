@@ -3,6 +3,7 @@ import fsp from 'node:fs/promises'
 import path from 'node:path'
 import { createRequire } from 'node:module'
 import { fileURLToPath, pathToFileURL } from 'node:url'
+import { styleText } from 'node:util'
 import postcssrc from 'postcss-load-config'
 import type {
   ExistingRawSourceMap,
@@ -15,7 +16,6 @@ import type {
   SourceMapInput,
 } from 'rollup'
 import { dataToEsm } from '@rollup/pluginutils'
-import colors from 'picocolors'
 import MagicString from 'magic-string'
 import type * as PostCSS from 'postcss'
 import type Sass from 'sass'
@@ -1474,7 +1474,8 @@ async function compilePostCSS(
           // warn here to provide a better error message.
           if (!path.isAbsolute(id)) {
             environment.logger.error(
-              colors.red(
+              styleText(
+                'red',
                 `Unable to resolve \`@import "${id}"\` from ${basedir}`,
               ),
             )
@@ -1664,7 +1665,7 @@ async function runPostCSS(
               }
             : undefined,
         )}`
-        logger.warn(colors.yellow(msg))
+        logger.warn(styleText('yellow', msg))
       }
     }
   } catch (e) {
@@ -2134,7 +2135,7 @@ async function minifyCSS(
           line: warning.loc.line,
           column: warning.loc.column - 1, // 1-based
         })}`
-        config.logger.warn(colors.yellow(msg))
+        config.logger.warn(styleText('yellow', msg))
       }
 
       // NodeJS res.code = Buffer
@@ -2168,7 +2169,7 @@ async function minifyCSS(
     if (warnings.length) {
       const msgs = await formatMessages(warnings, { kind: 'warning' })
       config.logger.warn(
-        colors.yellow(`[esbuild css minify]\n${msgs.join('\n')}`),
+        styleText('yellow', `[esbuild css minify]\n${msgs.join('\n')}`),
       )
     }
     // esbuild output does return a linebreak at the end
@@ -3203,7 +3204,7 @@ async function compileLightningCSS(
       line: warning.loc.line,
       column: warning.loc.column - 1, // 1-based
     })}`
-    environment.logger.warn(colors.yellow(msg))
+    environment.logger.warn(styleText('yellow', msg))
   }
 
   // NodeJS res.code = Buffer

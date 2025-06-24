@@ -1,7 +1,6 @@
 import path from 'node:path'
 import { gzip } from 'node:zlib'
-import { promisify } from 'node:util'
-import colors from 'picocolors'
+import { promisify, styleText } from 'node:util'
 import type { OutputBundle } from 'rollup'
 import type { Plugin } from '../plugin'
 import type { ResolvedConfig } from '../config'
@@ -12,10 +11,10 @@ import { LogLevels } from '../logger'
 import { withTrailingSlash } from '../../shared/utils'
 
 const groups = [
-  { name: 'Assets', color: colors.green },
-  { name: 'CSS', color: colors.magenta },
-  { name: 'JS', color: colors.cyan },
-]
+  { name: 'Assets', color: 'green' },
+  { name: 'CSS', color: 'magenta' },
+  { name: 'JS', color: 'cyan' },
+] as const
 type LogEntry = {
   name: string
   group: (typeof groups)[number]['name']
@@ -47,7 +46,8 @@ export function buildReporterPlugin(config: ResolvedConfig): Plugin {
 
         const logTransform = throttle((id: string) => {
           writeLine(
-            `transforming (${transformedCount}) ${colors.dim(
+            `transforming (${transformedCount}) ${styleText(
+              'dim',
               path.relative(config.root, id),
             )}`,
           )
@@ -74,7 +74,7 @@ export function buildReporterPlugin(config: ResolvedConfig): Plugin {
               clearLine()
             }
             environment.logger.info(
-              `${colors.green(`✓`)} ${transformedCount} modules transformed.`,
+              `${styleText('green', `✓`)} ${transformedCount} modules transformed.`,
             )
           },
         }
@@ -213,30 +213,34 @@ export function buildReporterPlugin(config: ResolvedConfig): Plugin {
               const isLarge =
                 group.name === 'JS' && entry.size / 1000 > chunkLimit
               if (isLarge) hasLargeChunks = true
-              const sizeColor = isLarge ? colors.yellow : colors.dim
-              let log = colors.dim(withTrailingSlash(relativeOutDir))
+              const sizeColor = isLarge ? 'yellow' : 'dim'
+              let log = styleText('dim', withTrailingSlash(relativeOutDir))
               log +=
                 !config.build.lib &&
                 entry.name.startsWith(withTrailingSlash(assetsDir))
-                  ? colors.dim(assetsDir) +
-                    group.color(
+                  ? styleText('dim', assetsDir) +
+                    styleText(
+                      group.color,
                       entry.name
                         .slice(assetsDir.length)
                         .padEnd(longest + 2 - assetsDir.length),
                     )
-                  : group.color(entry.name.padEnd(longest + 2))
-              log += colors.bold(
-                sizeColor(displaySize(entry.size).padStart(sizePad)),
+                  : styleText(group.color, entry.name.padEnd(longest + 2))
+              log += styleText(
+                'bold',
+                styleText(sizeColor, displaySize(entry.size).padStart(sizePad)),
               )
               if (entry.compressedSize) {
-                log += colors.dim(
+                log += styleText(
+                  'dim',
                   ` │ gzip: ${displaySize(entry.compressedSize).padStart(
                     compressPad,
                   )}`,
                 )
               }
               if (entry.mapSize) {
-                log += colors.dim(
+                log += styleText(
+                  'dim',
                   ` │ map: ${displaySize(entry.mapSize).padStart(mapPad)}`,
                 )
               }
@@ -258,7 +262,8 @@ export function buildReporterPlugin(config: ResolvedConfig): Plugin {
           environment.config.consumer === 'client'
         ) {
           environment.logger.warn(
-            colors.yellow(
+            styleText(
+              'yellow',
               `\n(!) Some chunks are larger than ${chunkLimit} kB after minification. Consider:\n` +
                 `- Using dynamic import() to code-split the application\n` +
                 `- Use build.rollupOptions.output.manualChunks to improve chunking: https://rollupjs.org/configuration-options/#output-manualchunks\n` +

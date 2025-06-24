@@ -1,4 +1,4 @@
-import colors from 'picocolors'
+import { styleText } from 'node:util'
 import type { FutureOptions, ResolvedConfig } from './config'
 
 const docsURL = 'https://vite.dev'
@@ -53,12 +53,12 @@ export function warnFutureDeprecation(
   if (extraMessage) {
     msg += ` ${extraMessage}`
   }
-  msg = colors.yellow(msg)
+  msg = styleText('yellow', msg)
 
   const docs = `${docsURL}/changes/${deprecationCode[type].toLowerCase()}`
   msg +=
-    colors.gray(`\n  ${stacktrace ? '├' : '└'}─── `) +
-    colors.underline(docs) +
+    styleText('gray', `\n  ${stacktrace ? '├' : '└'}─── `) +
+    styleText('underline', docs) +
     '\n'
 
   if (stacktrace) {
@@ -74,7 +74,7 @@ export function warnFutureDeprecation(
       stacks = stacks.map(
         (i, idx) => `  ${idx === stacks.length - 1 ? '└' : '│'} ${i.trim()}`,
       )
-      msg += colors.dim(stacks.join('\n')) + '\n'
+      msg += styleText('dim', stacks.join('\n')) + '\n'
     }
   }
   config.logger.warnOnce(msg)

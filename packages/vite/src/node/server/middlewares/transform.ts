@@ -1,8 +1,8 @@
 import path from 'node:path'
 import fsp from 'node:fs/promises'
 import type { ServerResponse } from 'node:http'
+import { styleText } from 'node:util'
 import type { Connect } from 'dep-types/connect'
-import colors from 'picocolors'
 import type { ExistingRawSourceMap } from 'rollup'
 import type { ViteDevServer } from '..'
 import {
@@ -137,7 +137,7 @@ export function transformMiddleware(
     } catch (e) {
       if (e instanceof URIError) {
         server.config.logger.warn(
-          colors.yellow('Malformed URI sequence in request URL'),
+          styleText('yellow', 'Malformed URI sequence in request URL'),
         )
         return next()
       }
@@ -333,7 +333,7 @@ export function transformMiddleware(
           res.statusCode = 404
           res.end()
         }
-        server.config.logger.warn(colors.yellow(e.message))
+        server.config.logger.warn(styleText('yellow', e.message))
         return
       }
       if (e?.code === ERR_LOAD_URL) {
@@ -358,27 +358,31 @@ export function transformMiddleware(
       if (urlRE.test(url)) {
         warning =
           `Assets in the public directory are served at the root path.\n` +
-          `Instead of ${colors.cyan(rawUrl)}, use ${colors.cyan(
+          `Instead of ${styleText('cyan', rawUrl)}, use ${styleText(
+            'cyan',
             rawUrl.replace(publicPath, '/'),
           )}.`
       } else {
         warning =
           'Assets in public directory cannot be imported from JavaScript.\n' +
-          `If you intend to import that asset, put the file in the src directory, and use ${colors.cyan(
+          `If you intend to import that asset, put the file in the src directory, and use ${styleText(
+            'cyan',
             rawUrl.replace(publicPath, '/src/'),
-          )} instead of ${colors.cyan(rawUrl)}.\n` +
-          `If you intend to use the URL of that asset, use ${colors.cyan(
+          )} instead of ${styleText('cyan', rawUrl)}.\n` +
+          `If you intend to use the URL of that asset, use ${styleText(
+            'cyan',
             injectQuery(rawUrl.replace(publicPath, '/'), 'url'),
           )}.`
       }
     } else {
       warning =
         `Files in the public directory are served at the root path.\n` +
-        `Instead of ${colors.cyan(url)}, use ${colors.cyan(
+        `Instead of ${styleText('cyan', url)}, use ${styleText(
+          'cyan',
           url.replace(publicPath, '/'),
         )}.`
     }
 
-    server.config.logger.warn(colors.yellow(warning))
+    server.config.logger.warn(styleText('yellow', warning))
   }
 }

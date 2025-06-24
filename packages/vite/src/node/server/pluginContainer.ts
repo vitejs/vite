@@ -32,6 +32,7 @@ SOFTWARE.
 import fs from 'node:fs'
 import { join } from 'node:path'
 import { performance } from 'node:perf_hooks'
+import { styleText } from 'node:util'
 import { parseAst as rollupParseAst } from 'rollup/parseAst'
 import type {
   AsyncPluginHooks,
@@ -62,7 +63,6 @@ import type { RawSourceMap } from '@ampproject/remapping'
 import { TraceMap, originalPositionFor } from '@jridgewell/trace-mapping'
 import MagicString from 'magic-string'
 import type { FSWatcher } from 'dep-types/chokidar'
-import colors from 'picocolors'
 import type { Plugin } from '../plugin'
 import {
   combineSourcemaps,
@@ -424,8 +424,9 @@ class EnvironmentPluginContainer<Env extends Environment = Environment> {
       if (!this._seenResolves[key]) {
         this._seenResolves[key] = true
         debugResolve(
-          `${timeFrom(resolveStart)} ${colors.cyan(rawId)} -> ${colors.dim(
-            id,
+          `${timeFrom(resolveStart)} ${styleText('cyan', rawId)} -> ${styleText(
+            'dim',
+            id || '',
           )}`,
         )
       }
@@ -587,7 +588,7 @@ export class BasicMinimalPluginContext<Meta = PluginContextMeta> {
     const log = this._normalizeRawLog(rawLog)
     const msg = buildErrorMessage(
       log,
-      [colors.yellow(`warning: ${log.message}`)],
+      [styleText('yellow', `warning: ${log.message}`)],
       false,
     )
     this._logger.warn(msg, { clear: true, timestamp: true })
@@ -808,7 +809,8 @@ class PluginContext
           errLocation = numberToPos(this._activeCode, pos)
         } catch (err2) {
           this.environment.logger.error(
-            colors.red(
+            styleText(
+              'red',
               `Error in error handler:\n${err2.stack || err2.message}\n`,
             ),
             // print extra newline to separate the two errors
@@ -890,9 +892,11 @@ class PluginContext
 
   _warnIncompatibleMethod(method: string): void {
     this.environment.logger.warn(
-      colors.cyan(`[plugin:${this._plugin.name}] `) +
-        colors.yellow(
-          `context method ${colors.bold(
+      styleText('cyan', `[plugin:${this._plugin.name}] `) +
+        styleText(
+          'yellow',
+          `context method ${styleText(
+            'bold',
             `${method}()`,
           )} is not supported in serve mode. This plugin is likely not vite-compatible.`,
         ),

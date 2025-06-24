@@ -1,8 +1,8 @@
 import { EventEmitter } from 'node:events'
 import path from 'node:path'
+import { styleText } from 'node:util'
 import type { FSWatcher, WatchOptions } from 'dep-types/chokidar'
 import type { OutputOptions } from 'rollup'
-import colors from 'picocolors'
 import { escapePath } from 'tinyglobby'
 import { withTrailingSlash } from '../shared/utils'
 import { arraify, normalizePath } from './utils'
@@ -35,9 +35,11 @@ export function resolveEmptyOutDir(
     if (!normalizePath(outDir).startsWith(withTrailingSlash(root))) {
       // warn if outDir is outside of root
       logger?.warn(
-        colors.yellow(
-          `\n${colors.bold(`(!)`)} outDir ${colors.white(
-            colors.dim(outDir),
+        styleText(
+          'yellow',
+          `\n${styleText('bold', `(!)`)} outDir ${styleText(
+            'white',
+            styleText('dim', outDir),
           )} is not inside project root and will not be emptied.\n` +
             `Use --emptyOutDir to override.\n`,
         ),

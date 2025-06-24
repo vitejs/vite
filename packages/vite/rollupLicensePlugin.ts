@@ -1,7 +1,7 @@
 import fs from 'node:fs'
+import { styleText } from 'node:util'
 import license from 'rollup-plugin-license'
 import type { Dependency } from 'rollup-plugin-license'
-import colors from 'picocolors'
 import type { Plugin, PluginContext } from 'rollup'
 
 export default function licensePlugin(
@@ -108,7 +108,8 @@ export default function licensePlugin(
       if (existingLicenseText !== licenseText) {
         fs.writeFileSync(licenseFilePath, licenseText)
         console.warn(
-          colors.yellow(
+          styleText(
+            'yellow',
             '\nLICENSE.md updated. You should commit the updated file.\n',
           ),
         )

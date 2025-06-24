@@ -1,7 +1,7 @@
 import path from 'node:path'
+import { styleText } from 'node:util'
 import MagicString from 'magic-string'
 import type { OutputChunk, RollupError } from 'rollup'
-import colors from 'picocolors'
 import type { ResolvedConfig } from '../config'
 import type { Plugin } from '../plugin'
 import { ENV_ENTRY, ENV_PUBLIC_PATH } from '../constants'
@@ -62,7 +62,8 @@ function saveEmitWorkerAsset(
     if (!isSameContent(duplicateAsset.source, asset.source)) {
       config.logger.warn(
         `\n` +
-          colors.yellow(
+          styleText(
+            'yellow',
             `The emitted file ${JSON.stringify(asset.fileName)} overwrites a previously emitted file of the same name.`,
           ),
       )

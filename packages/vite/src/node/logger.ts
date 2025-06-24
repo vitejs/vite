@@ -1,7 +1,7 @@
 /* eslint no-console: 0 */
 
 import readline from 'node:readline'
-import colors from 'picocolors'
+import { styleText } from 'node:util'
 import type { RollupError } from 'rollup'
 import type { ResolvedServerUrls } from './server'
 
@@ -88,14 +88,14 @@ export function createLogger(
     if (options.timestamp) {
       let tag = ''
       if (type === 'info') {
-        tag = colors.cyan(colors.bold(prefix))
+        tag = styleText('cyan', styleText('bold', prefix))
       } else if (type === 'warn') {
-        tag = colors.yellow(colors.bold(prefix))
+        tag = styleText('yellow', styleText('bold', prefix))
       } else {
-        tag = colors.red(colors.bold(prefix))
+        tag = styleText('red', styleText('bold', prefix))
       }
       const environment = options.environment ? options.environment + ' ' : ''
-      return `${colors.dim(getTimeFormatter().format(new Date()))} ${tag} ${environment}${msg}`
+      return `${styleText('dim', getTimeFormatter().format(new Date()))} ${tag} ${environment}${msg}`
     } else {
       return msg
     }
@@ -114,7 +114,7 @@ export function createLogger(
           clear()
           console[method](
             format(type, msg, options),
-            colors.yellow(`(x${sameCount + 1})`),
+            styleText('yellow', `(x${sameCount + 1})`),
           )
         } else {
           sameCount = 0
@@ -171,18 +171,28 @@ export function printServerUrls(
   info: Logger['info'],
 ): void {
   const colorUrl = (url: string) =>
-    colors.cyan(url.replace(/:(\d+)\//, (_, port) => `:${colors.bold(port)}/`))
+    styleText(
+      'cyan',
+      url.replace(/:(\d+)\//, (_, port) => `:${styleText('bold', port)}/`),
+    )
   for (const url of urls.local) {
-    info(`  ${colors.green('➜')}  ${colors.bold('Local')}:   ${colorUrl(url)}`)
+    info(
+      `  ${styleText('green', '➜')}  ${styleText('bold', 'Local')}:   ${colorUrl(url)}`,
+    )
   }
   for (const url of urls.network) {
-    info(`  ${colors.green('➜')}  ${colors.bold('Network')}: ${colorUrl(url)}`)
+    info(
+      `  ${styleText('green', '➜')}  ${styleText('bold', 'Network')}: ${colorUrl(url)}`,
+    )
   }
   if (urls.network.length === 0 && optionsHost === undefined) {
     info(
-      colors.dim(`  ${colors.green('➜')}  ${colors.bold('Network')}: use `) +
-        colors.bold('--host') +
-        colors.dim(' to expose'),
+      styleText(
+        'dim',
+        `  ${styleText('green', '➜')}  ${styleText('bold', 'Network')}: use `,
+      ) +
+        styleText('bold', '--host') +
+        styleText('dim', ' to expose'),
     )
   }
 }

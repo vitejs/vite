@@ -1,5 +1,5 @@
 import readline from 'node:readline'
-import colors from 'picocolors'
+import { styleText } from 'node:util'
 import { restartServerWithUrls } from './server'
 import type { ViteDevServer } from './server'
 import { isDevServer } from './utils'
@@ -41,10 +41,10 @@ export function bindCLIShortcuts<Server extends ViteDevServer | PreviewServer>(
 
   if (opts?.print) {
     server.config.logger.info(
-      colors.dim(colors.green('  ➜')) +
-        colors.dim('  press ') +
-        colors.bold('h + enter') +
-        colors.dim(' to show help'),
+      styleText('dim', styleText('green', '  ➜')) +
+        styleText('dim', '  press ') +
+        styleText('bold', 'h + enter') +
+        styleText('dim', ' to show help'),
     )
   }
 
@@ -70,9 +70,9 @@ export function bindCLIShortcuts<Server extends ViteDevServer | PreviewServer>(
         if (shortcut.action == null) continue
 
         server.config.logger.info(
-          colors.dim('  press ') +
-            colors.bold(`${shortcut.key} + enter`) +
-            colors.dim(` to ${shortcut.description}`),
+          styleText('dim', '  press ') +
+            styleText('bold', `${shortcut.key} + enter`) +
+            styleText('dim', ` to ${shortcut.description}`),
         )
       }
 

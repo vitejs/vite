@@ -1,9 +1,9 @@
 import type * as http from 'node:http'
 import type * as net from 'node:net'
+import { styleText } from 'node:util'
 import httpProxy from 'http-proxy'
 import type { Connect } from 'dep-types/connect'
 import type { HttpProxy } from 'dep-types/http-proxy'
-import colors from 'picocolors'
 import { createDebugger } from '../../utils'
 import type { CommonServerOptions, ResolvedConfig } from '../..'
 import type { HttpServer } from '..'
@@ -56,7 +56,8 @@ const rewriteOriginHeader = (
 
     if (proxyReq.headersSent) {
       config.logger.warn(
-        colors.yellow(
+        styleText(
+          'yellow',
           `Unable to rewrite Origin header as headers are already sent.`,
         ),
       )
@@ -102,7 +103,7 @@ export function proxyMiddleware(
       const res = originalRes as http.ServerResponse | net.Socket | undefined
       if (!res) {
         config.logger.error(
-          `${colors.red(`http proxy error: ${err.message}`)}\n${err.stack}`,
+          `${styleText('red', `http proxy error: ${err.message}`)}\n${err.stack}`,
           {
             timestamp: true,
             error: err,
@@ -110,7 +111,7 @@ export function proxyMiddleware(
         )
       } else if ('req' in res) {
         config.logger.error(
-          `${colors.red(`http proxy error: ${originalRes.req.url}`)}\n${
+          `${styleText('red', `http proxy error: ${originalRes.req.url}`)}\n${
             err.stack
           }`,
           {
@@ -126,10 +127,13 @@ export function proxyMiddleware(
             .end()
         }
       } else {
-        config.logger.error(`${colors.red(`ws proxy error:`)}\n${err.stack}`, {
-          timestamp: true,
-          error: err,
-        })
+        config.logger.error(
+          `${styleText('red', `ws proxy error:`)}\n${err.stack}`,
+          {
+            timestamp: true,
+            error: err,
+          },
+        )
         res.end()
       }
     })
@@ -139,7 +143,7 @@ export function proxyMiddleware(
 
       socket.on('error', (err) => {
         config.logger.error(
-          `${colors.red(`ws proxy socket error:`)}\n${err.stack}`,
+          `${styleText('red', `ws proxy socket error:`)}\n${err.stack}`,
           {
             timestamp: true,
             error: err,
@@ -189,7 +193,7 @@ export function proxyMiddleware(
                 }
               } catch (err) {
                 config.logger.error(
-                  `${colors.red(`ws proxy bypass error:`)}\n${err.stack}`,
+                  `${styleText('red', `ws proxy bypass error:`)}\n${err.stack}`,
                   {
                     timestamp: true,
                     error: err,

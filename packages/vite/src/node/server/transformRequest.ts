@@ -1,11 +1,11 @@
 import fsp from 'node:fs/promises'
 import path from 'node:path'
 import { performance } from 'node:perf_hooks'
+import { styleText } from 'node:util'
 import getEtag from 'etag'
 import MagicString from 'magic-string'
 import { init, parse as parseImports } from 'es-module-lexer'
 import type { PartialResolvedId, SourceDescription, SourceMap } from 'rollup'
-import colors from 'picocolors'
 import type { EnvironmentModuleNode } from '../server/moduleGraph'
 import {
   createDebugger,
@@ -362,7 +362,7 @@ async function loadAndTransform(
   if (transformResult.code === originalCode) {
     // no transform applied, keep code as-is
     debugTransform?.(
-      timeFrom(transformStart) + colors.dim(` [skipped] ${prettyUrl}`),
+      timeFrom(transformStart) + styleText('dim', ` [skipped] ${prettyUrl}`),
     )
   } else {
     debugTransform?.(`${timeFrom(transformStart)} ${prettyUrl}`)

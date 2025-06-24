@@ -1,7 +1,7 @@
 import fsp from 'node:fs/promises'
 import path from 'node:path'
 import { EventEmitter } from 'node:events'
-import colors from 'picocolors'
+import { styleText } from 'node:util'
 import type { CustomPayload, HotPayload, Update } from 'types/hmrPayload'
 import type { RollupError } from 'rollup'
 import type {
@@ -392,9 +392,10 @@ export async function handleHMRUpdate(
     getEnvFilesForMode(config.mode, config.envDir).includes(file)
   if (isConfig || isConfigDependency || isEnv) {
     // auto restart server
-    debugHmr?.(`[config change] ${colors.dim(shortFile)}`)
+    debugHmr?.(`[config change] ${styleText('dim', shortFile)}`)
     config.logger.info(
-      colors.green(
+      styleText(
+        'green',
         `${normalizePath(
           path.relative(process.cwd(), file),
         )} changed, restarting server...`,
@@ -404,12 +405,12 @@ export async function handleHMRUpdate(
     try {
       await restartServerWithUrls(server)
     } catch (e) {
-      config.logger.error(colors.red(e))
+      config.logger.error(styleText('red', e))
     }
     return
   }
 
-  debugHmr?.(`[file change] ${colors.dim(shortFile)}`)
+  debugHmr?.(`[file change] ${styleText('dim', shortFile)}`)
 
   // (dev only) the client itself cannot be hot updated.
   if (file.startsWith(withTrailingSlash(normalizedClientDir))) {
@@ -582,7 +583,7 @@ export async function handleHMRUpdate(
         // html file cannot be hot updated
         if (file.endsWith('.html') && environment.name === 'client') {
           environment.logger.info(
-            colors.green(`page reload `) + colors.dim(shortFile),
+            styleText('green', `page reload `) + styleText('dim', shortFile),
             {
               clear: true,
               timestamp: true,
@@ -597,7 +598,7 @@ export async function handleHMRUpdate(
         } else {
           // loaded but not in the module graph, probably not js
           debugHmr?.(
-            `(${environment.name}) [no modules matched] ${colors.dim(shortFile)}`,
+            `(${environment.name}) [no modules matched] ${styleText('dim', shortFile)}`,
           )
         }
         return
@@ -696,10 +697,10 @@ export function updateModules(
   if (needFullReload) {
     const reason =
       typeof needFullReload === 'string'
-        ? colors.dim(` (${needFullReload})`)
+        ? styleText('dim', ` (${needFullReload})`)
         : ''
     environment.logger.info(
-      colors.green(`page reload `) + colors.dim(file) + reason,
+      styleText('green', `page reload `) + styleText('dim', file) + reason,
       { clear: !firstInvalidatedBy, timestamp: true },
     )
     hot.send({
@@ -710,13 +711,15 @@ export function updateModules(
   }
 
   if (updates.length === 0) {
-    debugHmr?.(colors.yellow(`no update happened `) + colors.dim(file))
+    debugHmr?.(
+      styleText('yellow', `no update happened `) + styleText('dim', file),
+    )
     return
   }
 
   environment.logger.info(
-    colors.green(`hmr update `) +
-      colors.dim([...new Set(updates.map((u) => u.path))].join(', ')),
+    styleText('green', `hmr update `) +
+      styleText('dim', [...new Set(updates.map((u) => u.path))].join(', ')),
     { clear: !firstInvalidatedBy, timestamp: true },
   )
   hot.send({
@@ -753,7 +756,8 @@ function propagateUpdate(
   // been loaded in the browser and we should stop propagation.
   if (node.id && node.isSelfAccepting === undefined) {
     debugHmr?.(
-      `[propagate update] stop propagation because not analyzed: ${colors.dim(
+      `[propagate update] stop propagation because not analyzed: ${styleText(
+        'dim',
         node.id,
       )}`,
     )
@@ -907,8 +911,8 @@ function isNodeWithinCircularImports(
           ...nodeChain.slice(importerIndex, -1).reverse(),
         ]
         debugHmr(
-          colors.yellow(`circular imports detected: `) +
-            importChain.map((m) => colors.dim(m.url)).join(' -> '),
+          styleText('yellow', `circular imports detected: `) +
+            importChain.map((m) => styleText('dim', m.url)).join(' -> '),
         )
       }
       return true
@@ -939,7 +943,7 @@ export function handlePrunedModules(
   mods.forEach((mod) => {
     mod.lastHMRTimestamp = t
     mod.lastHMRInvalidationReceived = false
-    debugHmr?.(`[dispose] ${colors.dim(mod.file)}`)
+    debugHmr?.(`[dispose] ${styleText('dim', mod.file || '')}`)
   })
   hot.send({
     type: 'prune',

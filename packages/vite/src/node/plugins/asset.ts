@@ -1,6 +1,7 @@
 import path from 'node:path'
 import fsp from 'node:fs/promises'
 import { Buffer } from 'node:buffer'
+import { styleText } from 'node:util'
 import * as mrmime from 'mrmime'
 import type {
   NormalizedOutputOptions,
@@ -8,7 +9,6 @@ import type {
   RenderedChunk,
 } from 'rollup'
 import MagicString from 'magic-string'
-import colors from 'picocolors'
 import {
   createToImportMetaURLBasedRelativeRuntime,
   toOutputFilePathInJS,
@@ -501,7 +501,10 @@ function assetToDataURL(
 ) {
   if (environment.config.build.lib && isGitLfsPlaceholder(content)) {
     environment.logger.warn(
-      colors.yellow(`Inlined file ${file} was not downloaded via Git LFS`),
+      styleText(
+        'yellow',
+        `Inlined file ${file} was not downloaded via Git LFS`,
+      ),
     )
   }
 

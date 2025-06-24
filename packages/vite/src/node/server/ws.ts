@@ -6,7 +6,7 @@ import { createServer as createHttpsServer } from 'node:https'
 import type { Socket } from 'node:net'
 import type { Duplex } from 'node:stream'
 import crypto from 'node:crypto'
-import colors from 'picocolors'
+import { styleText } from 'node:util'
 import type { WebSocket as WebSocketRaw } from 'ws'
 import { WebSocketServer as WebSocketServerRaw_ } from 'ws'
 import type { WebSocket as WebSocketTypes } from 'dep-types/ws'
@@ -267,14 +267,15 @@ export function createWebSocketServer(
     wsHttpServer.on('error', (e: Error & { code: string; port: number }) => {
       if (e.code === 'EADDRINUSE') {
         config.logger.error(
-          colors.red(
+          styleText(
+            'red',
             `WebSocket server error: Port ${e.port} is already in use`,
           ),
           { error: e },
         )
       } else {
         config.logger.error(
-          colors.red(`WebSocket server error:\n${e.stack || e.message}`),
+          styleText('red', `WebSocket server error:\n${e.stack || e.message}`),
           { error: e },
         )
       }
@@ -297,7 +298,7 @@ export function createWebSocketServer(
       )
     })
     socket.on('error', (err) => {
-      config.logger.error(`${colors.red(`ws error:`)}\n${err.stack}`, {
+      config.logger.error(`${styleText('red', `ws error:`)}\n${err.stack}`, {
         timestamp: true,
         error: err,
       })
@@ -312,12 +313,15 @@ export function createWebSocketServer(
   wss.on('error', (e: Error & { code: string; port: number }) => {
     if (e.code === 'EADDRINUSE') {
       config.logger.error(
-        colors.red(`WebSocket server error: Port ${e.port} is already in use`),
+        styleText(
+          'red',
+          `WebSocket server error: Port ${e.port} is already in use`,
+        ),
         { error: e },
       )
     } else {
       config.logger.error(
-        colors.red(`WebSocket server error:\n${e.stack || e.message}`),
+        styleText('red', `WebSocket server error:\n${e.stack || e.message}`),
         { error: e },
       )
     }

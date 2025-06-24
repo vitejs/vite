@@ -1,5 +1,5 @@
 import fsp from 'node:fs/promises'
-import colors from 'picocolors'
+import { styleText } from 'node:util'
 import type { DevEnvironment } from '..'
 import type { Plugin } from '../plugin'
 import {
@@ -70,7 +70,7 @@ export function optimizedDepsPlugin(): Plugin {
             }
           }
         }
-        debug?.(`load ${colors.cyan(file)}`)
+        debug?.(`load ${styleText('cyan', file)}`)
         // Load the file from the cache instead of waiting for other plugin
         // load hooks to avoid race conditions, once processing is resolved,
         // we are sure that the file has been properly save to disk

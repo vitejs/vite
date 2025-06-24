@@ -2,6 +2,7 @@ import fs from 'node:fs'
 import fsp from 'node:fs/promises'
 import path from 'node:path'
 import { performance } from 'node:perf_hooks'
+import { styleText } from 'node:util'
 import type {
   BuildContext,
   Loader,
@@ -11,7 +12,6 @@ import type {
 } from 'esbuild'
 import esbuild, { formatMessages, transform } from 'esbuild'
 import type { PartialResolvedId } from 'rollup'
-import colors from 'picocolors'
 import { glob } from 'tinyglobby'
 import {
   CSS_LANGS_RE,
@@ -135,7 +135,8 @@ export function scanImports(environment: ScanEnvironment): {
     if (!entries.length) {
       if (!config.optimizeDeps.entries && !config.optimizeDeps.include) {
         environment.logger.warn(
-          colors.yellow(
+          styleText(
+            'yellow',
             '(!) Could not auto-determine entry point from rollupOptions or html files ' +
               'and there are no explicit optimizeDeps.include patterns. ' +
               'Skipping dependency pre-bundling.',
@@ -148,7 +149,7 @@ export function scanImports(environment: ScanEnvironment): {
 
     debug?.(
       `Crawling dependencies using entries: ${entries
-        .map((entry) => `\n  ${colors.dim(entry)}`)
+        .map((entry) => `\n  ${styleText('dim', entry)}`)
         .join('')}`,
     )
     const deps: Record<string, string> = {}
@@ -179,11 +180,14 @@ export function scanImports(environment: ScanEnvironment): {
           return
         }
 
-        const prependMessage = colors.red(`\
+        const prependMessage = styleText(
+          'red',
+          `\
   Failed to scan for dependencies from entries:
   ${entries.join('\n')}
 
-  `)
+  `,
+        )
         if (e.errors) {
           const msgs = await formatMessages(e.errors, {
             kind: 'error',
@@ -200,8 +204,11 @@ export function scanImports(environment: ScanEnvironment): {
           const depsStr =
             Object.keys(orderedDependencies(deps))
               .sort()
-              .map((id) => `\n  ${colors.cyan(id)} -> ${colors.dim(deps[id])}`)
-              .join('') || colors.dim('no dependencies found')
+              .map(
+                (id) =>
+                  `\n  ${styleText('cyan', id)} -> ${styleText('dim', deps[id])}`,
+              )
+              .join('') || styleText('dim', 'no dependencies found')
           debug(`Scan completed in ${duration}ms: ${depsStr}`)
         }
       }
