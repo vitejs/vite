@@ -363,9 +363,14 @@ async function init() {
       message: 'Project name:',
       defaultValue: defaultTargetDir,
       placeholder: defaultTargetDir,
+      validate: (value) => {
+        return value.length === 0 || formatTargetDir(value).length > 0
+          ? undefined
+          : 'Invalid project name'
+      },
     })
     if (prompts.isCancel(projectName)) return cancel()
-    targetDir = formatTargetDir(projectName as string) || defaultTargetDir
+    targetDir = formatTargetDir(projectName)
   }
 
   // 2. Handle directory if exist and not empty

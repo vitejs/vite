@@ -139,7 +139,7 @@ const prefixedBuiltins = new Set([
 // /root/id.js -> /id.js
 // C:/root/id.js -> /id.js
 // C:\root\id.js -> /id.js
-function normalizeModuleId(file: string): string {
+export function normalizeModuleId(file: string): string {
   if (prefixedBuiltins.has(file)) return file
 
   // unix style, but Windows path still starts with the drive letter to check the root

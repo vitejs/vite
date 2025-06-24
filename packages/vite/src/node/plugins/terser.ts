@@ -1,10 +1,13 @@
-import type { Terser } from 'dep-types/terser'
+import type {
+  TerserMinifyOptions,
+  TerserMinifyOutput,
+} from 'types/internal/terserOptions'
 import { WorkerWithFallback } from 'artichokie'
 import type { Plugin } from '../plugin'
 import type { ResolvedConfig } from '..'
 import { requireResolveFromRootWithFallback } from '../utils'
 
-export interface TerserOptions extends Terser.MinifyOptions {
+export interface TerserOptions extends TerserMinifyOptions {
   /**
    * Vite-specific option to specify the max number of workers to spawn
    * when minifying files with terser.
@@ -42,12 +45,12 @@ export function terserPlugin(config: ResolvedConfig): Plugin {
         async (
           terserPath: string,
           code: string,
-          options: Terser.MinifyOptions,
+          options: TerserMinifyOptions,
         ) => {
           // test fails when using `import`. maybe related: https://github.com/nodejs/node/issues/43205
           // eslint-disable-next-line no-restricted-globals -- this function runs inside cjs
           const terser = require(terserPath)
-          return terser.minify(code, options) as Terser.MinifyOutput
+          return terser.minify(code, options) as TerserMinifyOutput
         },
       {
         shouldUseFake(_terserPath, _code, options) {
