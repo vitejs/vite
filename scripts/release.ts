@@ -1,5 +1,5 @@
+import { styleText } from 'node:util'
 import { release } from '@vitejs/release-scripts'
-import colors from 'picocolors'
 import { logRecentCommits, run, updateTemplateVersions } from './releaseUtils'
 import extendCommitHash from './extendCommitHash'
 
@@ -12,7 +12,7 @@ release({
   generateChangelog: async (pkgName) => {
     if (pkgName === 'create-vite') await updateTemplateVersions()
 
-    console.log(colors.cyan('\nGenerating changelog...'))
+    console.log(styleText('cyan', '\nGenerating changelog...'))
     const changelogArgs = [
       'conventional-changelog',
       '-p',
