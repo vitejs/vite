@@ -1,3 +1,17 @@
+## 7.0.0 (2025-06-24)
+
+* fix: keep `import.meta.url` in bundled Vite (#20235) ([3bf3a8a](https://github.com/vitejs/vite/commit/3bf3a8ab00e5a0dfab0bb5741cb871ea30b72651)), closes [#20235](https://github.com/vitejs/vite/issues/20235)
+* fix(deps): update all non-major dependencies (#20271) ([6b64d63](https://github.com/vitejs/vite/commit/6b64d63d700154de2c00270300b671cef8863708)), closes [#20271](https://github.com/vitejs/vite/issues/20271)
+* fix(module-runner): export `ssrExportNameKey` (#20266) ([ac302a7](https://github.com/vitejs/vite/commit/ac302a729062dbfc67f762b3c4af46b7893c214f)), closes [#20266](https://github.com/vitejs/vite/issues/20266)
+* fix(module-runner): expose `normalizeModuleId` (#20277) ([9b98dcb](https://github.com/vitejs/vite/commit/9b98dcbf75546240e1609185828e18a77bac8c8d)), closes [#20277](https://github.com/vitejs/vite/issues/20277)
+* feat(types): use terser types from terser package (#20274) ([a5799fa](https://github.com/vitejs/vite/commit/a5799fa74c6190ecbb2da3d280136ff32463afc6)), closes [#20274](https://github.com/vitejs/vite/issues/20274)
+* chore: "indentity" → "identity" in test description (#20225) ([ea9aed7](https://github.com/vitejs/vite/commit/ea9aed7ebcb7f4be542bd2a384cbcb5a1e7b31bd)), closes [#20225](https://github.com/vitejs/vite/issues/20225)
+* chore: typos in comments (#20259) ([b135918](https://github.com/vitejs/vite/commit/b135918b91e8381c50bd2d076d40e9a65fe68bfe)), closes [#20259](https://github.com/vitejs/vite/issues/20259)
+* chore(deps): update rolldown-related dependencies (#20270) ([f7377c3](https://github.com/vitejs/vite/commit/f7377c3eae6323bd3237ff5de5ae55c879fe7325)), closes [#20270](https://github.com/vitejs/vite/issues/20270)
+* perf(utils): improve performance of `numberToPos` (#20244) ([3f46901](https://github.com/vitejs/vite/commit/3f469012ad38e3cb330adc74a8b3ec88561c822e)), closes [#20244](https://github.com/vitejs/vite/issues/20244)
+
+
+
 ## 7.0.0-beta.2 (2025-06-17)
 
 * feat: apply some middlewares before `configurePreviewServer` hook (#20224) ([b989c42](https://github.com/vitejs/vite/commit/b989c42cf84378e6cb93970de739941f0d56d6f6)), closes [#20224](https://github.com/vitejs/vite/issues/20224)
