@@ -48,7 +48,6 @@
   },
   "devDependencies": {
     "acorn": "^8.15.0",
-    "picocolors": "^1.1.1",
     "tsdown": "^0.12.8",
     "vite": "workspace:*"
   }
