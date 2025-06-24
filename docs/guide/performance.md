@@ -6,7 +6,7 @@ While Vite is fast by default, performance issues can creep in as the project's 
 - Slow page loads
 - Slow builds
 
-## Review your Browser Setup
+## Review Your Browser Setup
 
 Some browser extensions may interfere with requests and slow down startup and reload times for large apps, especially when using browser dev tools. We recommend creating a dev-only profile without extensions, or switch to incognito mode, while using Vite's dev server in these cases. Incognito mode should also be faster than a regular profile without extensions.
 
@@ -115,7 +115,7 @@ Keeping Vite fast with a growing codebase is about reducing the amount of work f
 Examples of doing less work:
 
 - Use CSS instead of Sass/Less/Stylus when possible (nesting can be handled by PostCSS)
-- Don't transform SVGs into UI framework components (React, Vue, etc). Import them as strings or URLs instead.
+- Don't transform SVGs into UI framework components (React, Vue, etc.). Import them as strings or URLs instead.
 - When using `@vitejs/plugin-react`, avoid configuring the Babel options, so it skips the transformation during build (only esbuild will be used).
 
 Examples of using native tooling:

@@ -36,6 +36,7 @@ import {
   getHash,
   injectQuery,
   isBuiltin,
+  isCSSRequest,
   isDataUrl,
   isDefined,
   isExternalUrl,
@@ -67,7 +68,7 @@ import {
 } from '../../shared/utils'
 import type { TransformPluginContext } from '../server/pluginContainer'
 import { throwOutdatedRequest } from './optimizedDeps'
-import { isCSSRequest, isDirectCSSRequest } from './css'
+import { isDirectCSSRequest } from './css'
 import { browserExternalId } from './resolve'
 import { serializeDefine } from './define'
 import { WORKER_FILE_ID } from './worker'

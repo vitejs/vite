@@ -290,16 +290,114 @@ describe('module runner initialization', async () => {
     await expect(() =>
       runner.import('/fixtures/cyclic2/test5/index.js'),
     ).rejects.toMatchInlineSnapshot(
-      `[ReferenceError: Cannot access '__vite_ssr_import_1__' before initialization]`,
+      `[TypeError: Cannot read properties of undefined (reading 'ok')]`,
     )
   })
 
   it(`cyclic invalid 2`, async ({ runner }) => {
-    await expect(() =>
-      runner.import('/fixtures/cyclic2/test6/index.js'),
-    ).rejects.toMatchInlineSnapshot(
-      `[ReferenceError: Cannot access 'dep1' before initialization]`,
+    // It should be an error but currently `undefined` fallback.
+    expect(
+      await runner.import('/fixtures/cyclic2/test6/index.js'),
+    ).toMatchInlineSnapshot(
+      `
+      {
+        "dep1": "dep1: dep2: undefined",
+      }
+    `,
     )
+  })
+
+  it(`cyclic with mixed import and re-export`, async ({ runner }) => {
+    const mod = await runner.import('/fixtures/cyclic2/test7/Ion.js')
+    expect(mod).toMatchInlineSnapshot(`
+      {
+        "IonTypes": {
+          "BLOB": "Blob",
+        },
+        "dom": {
+          "Blob": "Blob",
+        },
+      }
+    `)
+  })
+
+  it(`execution order with mixed import and re-export`, async ({
+    runner,
+    onTestFinished,
+  }) => {
+    const spy = vi.spyOn(console, 'log')
+    onTestFinished(() => spy.mockRestore())
+
+    await runner.import('/fixtures/execution-order-re-export/index.js')
+    expect(spy.mock.calls.map((v) => v[0])).toMatchInlineSnapshot(`
+      [
+        "dep1",
+        "dep2",
+      ]
+    `)
+  })
+
+  it(`live binding (export default function f)`, async ({ runner }) => {
+    const mod = await runner.import('/fixtures/live-binding/test1/index.js')
+    expect(mod.default).toMatchInlineSnapshot(`
+      [
+        2,
+        3,
+      ]
+    `)
+  })
+
+  it(`live binding (export default f)`, async ({ runner }) => {
+    const mod = await runner.import('/fixtures/live-binding/test2/index.js')
+    expect(mod.default).toMatchInlineSnapshot(`
+      [
+        1,
+        1,
+      ]
+    `)
+  })
+
+  it(`live binding (export { f as default })`, async ({ runner }) => {
+    const mod = await runner.import('/fixtures/live-binding/test3/index.js')
+    expect(mod.default).toMatchInlineSnapshot(`
+      [
+        2,
+        3,
+      ]
+    `)
+  })
+
+  it(`live binding (export default class C)`, async ({ runner }) => {
+    const mod = await runner.import('/fixtures/live-binding/test4/index.js')
+    expect(mod.default).toMatchInlineSnapshot(`
+      [
+        2,
+        3,
+      ]
+    `)
+  })
+
+  it(`export default getter is hoisted`, async ({ runner }) => {
+    // Node error is `ReferenceError: Cannot access 'dep' before initialization`
+    // It should be an error but currently `undefined` fallback.
+    expect(
+      await runner.import('/fixtures/cyclic2/test9/index.js'),
+    ).toMatchInlineSnapshot(
+      `
+      {
+        "default": undefined,
+      }
+    `,
+    )
+  })
+
+  it(`handle Object variable`, async ({ runner }) => {
+    const mod = await runner.import('/fixtures/top-level-object.js')
+    expect(mod).toMatchInlineSnapshot(`
+      {
+        "Object": "my-object",
+      }
+    `)
   })
 })
 

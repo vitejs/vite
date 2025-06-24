@@ -1,10 +1,9 @@
-import { test } from 'vitest'
+import { expect, test } from 'vitest'
 import {
   editFile,
   isBuild,
   page,
   untilBrowserLogAfter,
-  untilUpdated,
   viteTestUrl,
 } from '~utils'
 
@@ -16,12 +15,13 @@ test.runIf(!isBuild)('proxy-hmr', async () => {
   )
 
   const otherAppTextLocator = page.frameLocator('iframe').locator('.content')
-  await untilUpdated(() => otherAppTextLocator.textContent(), 'other app')
+  await expect
+    .poll(() => otherAppTextLocator.textContent())
+    .toMatch('other app')
   editFile('other-app/index.html', (code) =>
     code.replace('app', 'modified app'),
   )
-  await untilUpdated(
-    () => otherAppTextLocator.textContent(),
-    'other modified app',
-  )
+  await expect
+    .poll(() => otherAppTextLocator.textContent())
+    .toMatch('other modified app')
 })

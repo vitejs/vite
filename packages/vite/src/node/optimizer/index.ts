@@ -25,7 +25,10 @@ import {
   defaultEsbuildSupported,
   transformWithEsbuild,
 } from '../plugins/esbuild'
-import { ESBUILD_MODULES_TARGET, METADATA_FILENAME } from '../constants'
+import {
+  ESBUILD_BASELINE_WIDELY_AVAILABLE_TARGET,
+  METADATA_FILENAME,
+} from '../constants'
 import { isWindows } from '../../shared/utils'
 import type { Environment } from '../environment'
 import { esbuildCjsExternalPlugin, esbuildDepPlugin } from './esbuildDepPlugin'
@@ -128,7 +131,6 @@ export interface DepOptimizationConfig {
    * listed in `include` will be optimized. The scanner isn't run for cold start
    * in this case. CJS-only dependencies must be present in `include` during dev.
    * @default false
-   * @experimental
    */
   noDiscovery?: boolean
   /**
@@ -834,7 +836,7 @@ async function prepareEsbuildOptimizerRun(
             js: `import { createRequire } from 'module';const require = createRequire(import.meta.url);`,
           }
         : undefined,
-    target: ESBUILD_MODULES_TARGET,
+    target: ESBUILD_BASELINE_WIDELY_AVAILABLE_TARGET,
     external,
     logLevel: 'error',
     splitting: true,

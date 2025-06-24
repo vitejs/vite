@@ -298,7 +298,7 @@ function CallSiteToString(this: CallSite) {
   const isMethodCall = !(this.isToplevel() || isConstructor)
   if (isMethodCall) {
     let typeName = this.getTypeName()
-    // Fixes shim to be backward compatable with Node v0 to v4
+    // Fixes shim to be backward compatible with Node v0 to v4
     if (typeName === '[object Object]') typeName = 'null'
 
     const methodName = this.getMethodName()
@@ -388,7 +388,7 @@ function wrapCallSite(frame: CallSite, state: State) {
       return name === 'eval' && '_vite' in position ? null : name
     }
     frame.getFileName = function () {
-      return position.source ?? undefined
+      return position.source ?? null
     }
     frame.getLineNumber = function () {
       return position.line

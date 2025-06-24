@@ -1,3 +1,28 @@
+## 7.0.0-beta.1 (2025-06-17)
+
+* fix(legacy)!: remove `location.protocol!="file:"` condition for modern android webview (#20179) ([a6d5997](https://github.com/vitejs/vite/commit/a6d599718ee109798e8f552e317f175513d157e7)), closes [#20179](https://github.com/vitejs/vite/issues/20179)
+* fix(deps): update all non-major dependencies (#20141) ([89ca65b](https://github.com/vitejs/vite/commit/89ca65ba1d849046dccdea52e9eca980f331be26)), closes [#20141](https://github.com/vitejs/vite/issues/20141)
+* fix(deps): update all non-major dependencies (#20181) ([d91d4f7](https://github.com/vitejs/vite/commit/d91d4f7ad55edbcb4a51fc23376cbff89f776d30)), closes [#20181](https://github.com/vitejs/vite/issues/20181)
+* chore(deps): update rolldown-related dependencies (#20140) ([0387447](https://github.com/vitejs/vite/commit/03874471e3de14e7d2f474ecb354499e7f5eb418)), closes [#20140](https://github.com/vitejs/vite/issues/20140)
+* chore(deps): update rolldown-related dependencies (#20182) ([6172f41](https://github.com/vitejs/vite/commit/6172f410b44cbae8d052997bb1819a6197a4d397)), closes [#20182](https://github.com/vitejs/vite/issues/20182)
+
+
+
+## 7.0.0-beta.0 (2025-06-02)
+
+* chore!: remove node 18 support (#19972) ([00b8a98](https://github.com/vitejs/vite/commit/00b8a98f36376804437e1342265453915ae613de)), closes [#19972](https://github.com/vitejs/vite/issues/19972)
+* refactor!: bump required node version to 20.19+, 22.12+ and remove cjs build (#20032) ([2b80243](https://github.com/vitejs/vite/commit/2b80243fada75378e80475028fdcc78f4432bd6f)), closes [#20032](https://github.com/vitejs/vite/issues/20032)
+* chore: use tsdown (#20065) ([d488efd](https://github.com/vitejs/vite/commit/d488efda95ff40f63684194d51858f84c3d05379)), closes [#20065](https://github.com/vitejs/vite/issues/20065)
+* fix(deps): update all non-major dependencies (#19953) ([ac8e1fb](https://github.com/vitejs/vite/commit/ac8e1fb289a06fc0671dab1f4ef68e508e34360e)), closes [#19953](https://github.com/vitejs/vite/issues/19953)
+
+
+
+## <small>6.1.1 (2025-04-28)</small>
+
+* fix(legacy): use unbuild 3.4 for now (#19928) ([96f73d1](https://github.com/vitejs/vite/commit/96f73d16c8501013be57aee1c8a2353a56460281)), closes [#19928](https://github.com/vitejs/vite/issues/19928)
+
+
+
 ## 6.1.0 (2025-04-16)
 
 * feat(legacy): add 'assumptions' option (#19719) ([d1d99c9](https://github.com/vitejs/vite/commit/d1d99c9220989ce903dea9cae6c3608f57f377ea)), closes [#19719](https://github.com/vitejs/vite/issues/19719)

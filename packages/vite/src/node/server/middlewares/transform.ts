@@ -9,6 +9,7 @@ import {
   createDebugger,
   fsPathFromId,
   injectQuery,
+  isCSSRequest,
   isImportRequest,
   isJSRequest,
   normalizePath,
@@ -30,18 +31,14 @@ import {
   ERR_OPTIMIZE_DEPS_PROCESSING_ERROR,
   FS_PREFIX,
 } from '../../constants'
-import {
-  isCSSRequest,
-  isDirectCSSRequest,
-  isDirectRequest,
-} from '../../plugins/css'
+import { isDirectCSSRequest, isDirectRequest } from '../../plugins/css'
 import { ERR_CLOSED_SERVER } from '../pluginContainer'
 import { cleanUrl, unwrapId, withTrailingSlash } from '../../../shared/utils'
 import {
   ERR_OUTDATED_OPTIMIZED_DEP,
   NULL_BYTE_PLACEHOLDER,
 } from '../../../shared/constants'
-import { ensureServingAccess } from './static'
+import { checkServingAccess, respondWithAccessDenied } from './static'
 
 const debugCache = createDebugger('vite:cache')
 
@@ -60,13 +57,24 @@ function deniedServingAccessForTransform(
   res: ServerResponse,
   next: Connect.NextFunction,
 ) {
-  return (
-    (rawRE.test(url) ||
-      urlRE.test(url) ||
-      inlineRE.test(url) ||
-      svgRE.test(url)) &&
-    !ensureServingAccess(url, server, res, next)
-  )
+  if (
+    rawRE.test(url) ||
+    urlRE.test(url) ||
+    inlineRE.test(url) ||
+    svgRE.test(url)
+  ) {
+    const servingAccessResult = checkServingAccess(url, server)
+    if (servingAccessResult === 'denied') {
+      respondWithAccessDenied(url, server, res)
+      return true
+    }
+    if (servingAccessResult === 'fallback') {
+      next()
+      return true
+    }
+    servingAccessResult satisfies 'allowed'
+  }
+  return false
 }
 
 /**
@@ -127,6 +135,12 @@ export function transformMiddleware(
         '\0',
       )
     } catch (e) {
+      if (e instanceof URIError) {
+        server.config.logger.warn(
+          colors.yellow('Malformed URI sequence in request URL'),
+        )
+        return next()
+      }
       return next(e)
     }
 
@@ -199,6 +213,7 @@ export function transformMiddleware(
         '',
       )
       if (
+        !url.startsWith('/@id/\0') &&
         deniedServingAccessForTransform(
           urlWithoutTrailingQuerySeparators,
           server,
@@ -250,7 +265,10 @@ export function transformMiddleware(
         const result = await transformRequest(environment, url, {
           html: req.headers.accept?.includes('text/html'),
           allowId(id) {
-            return !deniedServingAccessForTransform(id, server, res, next)
+            return (
+              id.startsWith('\0') ||
+              !deniedServingAccessForTransform(id, server, res, next)
+            )
           },
         })
         if (result) {

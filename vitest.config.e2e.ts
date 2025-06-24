@@ -20,9 +20,14 @@ export default defineConfig({
       // Prevent Vitest from running the workspace packages in Vite's SSR runtime
       moduleDirectories: ['node_modules', 'packages'],
     },
+    expect: {
+      poll: {
+        timeout: 50 * (process.env.CI ? 200 : 50),
+      },
+    },
   },
   esbuild: {
-    target: 'node18',
+    target: 'node20',
   },
   publicDir: false,
 })

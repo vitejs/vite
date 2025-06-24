@@ -32,17 +32,18 @@ For additional insights on the motivations behind Rolldown, see the [reasons why
 
 ## How to Try Rolldown
 
-The rolldown-powered version of Vite is currently available as a separate package called `rolldown-vite`. If you have `vite` as a direct dependency, you can alias the `vite` package to `rolldown-vite` in your project, which should result in a drop-in replacement.
+The rolldown-powered version of Vite is currently available as a separate package called `rolldown-vite`. If you have `vite` as a direct dependency, you can alias the `vite` package to `rolldown-vite` in your project's `package.json`, which should result in a drop-in replacement.
 
 ```json
 {
   "dependencies": {
-    "vite": "npm:rolldown-vite@latest"
+    "vite": "^6.0.0" // [!code --]
+    "vite": "npm:rolldown-vite@latest" // [!code ++]
   }
 }
 ```
 
-If you use a Vitepress or a meta framework that has Vite as peer dependency, you have to override the `vite` dependency in your package manager:
+If you use a Vitepress or a meta framework that has Vite as peer dependency, you have to override the `vite` dependency in your `package.json`, which works slightly different depending on your package manager:
 
 :::code-group
 
@@ -88,15 +89,51 @@ After adding these overrides, reinstall your dependencies and start your develop
 
 While Rolldown aims to be a drop-in replacement for Rollup, there are features that are still being implemented and minor intentional behavior differences. For a comprehensive list, please refer to [this GitHub PR](https://github.com/vitejs/rolldown-vite/pull/84#issue-2903144667) which is regularly updated.
 
-### Option Validation Errors
+### Option Validation Warnings
 
-Rolldown throws an error when unknown or invalid options are passed. Because some options available in Rollup are not supported by Rolldown, you may encounter errors based on the options you or the meta framework you use set. Below, you can find an an example of such an error message:
+Rolldown outputs an warning when unknown or invalid options are passed. Because some options available in Rollup are not supported by Rolldown, you may encounter warnings based on the options you or the meta framework you use set. Below, you can find an example of such an warning message:
 
-> Error: Failed validate input options.
+> Warning validate output options.
 >
-> - For the "preserveEntrySignatures". Invalid key: Expected never but received "preserveEntrySignatures".
+> - For the "generatedCode". Invalid key: Expected never but received "generatedCode".
 
-If you don't pass the option in yourself, this must be fixed by the utilized framework. You can suppress this error in the meantime by setting the `ROLLDOWN_OPTIONS_VALIDATION=loose` environment variable.
+If you don't pass the option in yourself, this must be fixed by the utilized framework.
+
+### API Differences
+
+#### `manualChunks` to `advancedChunks`
+
+Rolldown does not support the `manualChunks` option that was available in Rollup. Instead, it offers a more fine-grained setting via the [`advancedChunks` option](https://rolldown.rs/guide/in-depth/advanced-chunks#advanced-chunks), which is more similar to webpack's `splitChunk`:
+
+```js
+// Old configuration (Rollup)
+export default {
+  build: {
+    rollupOptions: {
+      output: {
+        manualChunks(id) {
+          if (/\/react(?:-dom)?/.test(id)) {
+            return 'vendor'
+          }
+        }
+      }
+    }
+  }
+}
+
+// New configuration (Rolldown)
+export default {
+  build: {
+    rollupOptions: {
+      output: {
+        advancedChunks: {
+          groups: [{ name: 'vendor', test: /\/react(?:-dom)?// }]
+        }
+      }
+    }
+  }
+}
+```
 
 ## Performance
 
@@ -107,6 +144,12 @@ If you don't pass the option in yourself, this must be fixed by the utilized fra
 Thanks to Rolldown and Oxc, various internal Vite plugins, such as the alias or resolve plugin, have been converted to Rust. At the time of writing, using these plugins is not enabled by default, as their behavior may differ from the JavaScript versions.
 
 To test them, you can set the `experimental.enableNativePlugin` option to `true` in your Vite config.
+
+### `@vitejs/plugin-react-oxc`
+
+When using `@vitejs/plugin-react` or `@vitejs/plugin-react-swc`, you can switch to the `@vitejs/plugin-react-oxc` plugin, which uses Oxc for React's fast-refresh instead of Babel or SWC. It is designed to be a drop-in replacement, providing better build performance and aligning with the underlying architecture of `rolldown-vite`.
+
+Be aware that you can only switch to `@vitejs/plugin-react-oxc` if you are not using any Babel or SWC plugins (including the React compiler), or mutate the SWC options.
 
 ### `withFilter` Wrapper
 
@@ -125,7 +168,7 @@ export default defineConfig({
       svgr({
         /*...*/
       }),
-      { load: { id: /\.svg?react$/ } },
+      { load: { id: /\.svg\?react$/ } },
     ),
   ],
 })
@@ -176,7 +219,7 @@ With the Rolldown integration, we have an opportunity to unify the development a
 
 When the Full Bundle Mode is introduced, it will be an opt-in feature at first. Similar to the Rolldown integration, we are aiming to make it the default after gathering feedback and ensuring stability.
 
-## Plugin / Framework authors guide
+## Plugin / Framework Authors Guide
 
 ::: tip
 This section is mostly relevant for plugin and framework authors. If you are a user, you can skip this section.
@@ -214,6 +257,12 @@ const plugin = {
 }
 ```
 
+::: tip
+
+Since Vite 7.0.0, `this.meta` is available in all hooks. In previous versions, `this.meta` was not available in Vite-specific hooks, such as the `config` hook.
+
+:::
+
 <br>
 
 Checking the existence of the `rolldownVersion` export:
@@ -232,16 +281,15 @@ If you have `vite` as a dependency (not a peer dependency), the `rolldownVersion
 
 ### Ignoring option validation in Rolldown
 
-As [mentioned above](#option-validation-errors), Rolldown throws an error when unknown or invalid options are passed.
+As [mentioned above](#option-validation-errors), Rolldown outputs a warning when unknown or invalid options are passed.
 
 This can be fixed by conditionally passing the option by checking whether it's running with `rolldown-vite` as [shown above](#detecting-rolldown-vite).
 
-Suppressing the error by setting the `ROLLDOWN_OPTIONS_VALIDATION=loose` environment variable also works in this case.
-However, keep in mind that you will **eventually need to stop passing the options not supported by Rolldown**.
-
 ### `transformWithEsbuild` requires `esbuild` to be installed separately
 
-A similar function called `transformWithOxc`, which uses Oxc instead of `esbuild`, is exported from `rolldown-vite`.
+Since Vite itself does not use `esbuild` any more, `esbuild` is now an optional peer dependency. If your plugin uses `transformWithEsbuild`, the plugin needs to add `esbuild` to its dependencies or the user needs to install it manually.
+
+The recommended migration is to use the newly exported `transformWithOxc` function, which utilizes Oxc instead of `esbuild`.
 
 ### Compatibility layer for `esbuild` options
 
@@ -263,6 +311,12 @@ const plugin = {
 Rolldown introduced a [hook filter feature](https://rolldown.rs/guide/plugin-development#plugin-hook-filters) to reduce the communication overhead the between Rust and JavaScript runtimes. By using this feature you can make your plugin more performant.
 This is also supported by Rollup 4.38.0+ and Vite 6.3.0+. To make your plugin backward compatible with the older versions, make sure to also run the filter inside the hook handlers.
 
+::: tip
+
+[`@rolldown/pluginutils`](https://www.npmjs.com/package/@rolldown/pluginutils) exports some utilities for hook filters like `exactRegex` and `prefixRegex`.
+
+:::
+
 ### Converting content to JavaScript in `load` or `transform` hooks
 
 If you are converting the content to JavaScript from other types in `load` or `transform` hooks, you may need to add `moduleType: 'js'` to the returned value.
@@ -282,4 +336,4 @@ const plugin = {
 }
 ```
 
-This is because [Rolldown supports non-JavaScript modules](https://rolldown.rs/guide/in-depth/module-types) and infers the module type from extensions unless specified. Note that `rolldown-vite` does not support ModuleTypes in dev.
+This is because [Rolldown supports non-JavaScript modules](https://rolldown.rs/guide/in-depth/module-types) and infers the module type from extensions unless specified.

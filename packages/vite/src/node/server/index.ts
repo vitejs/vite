@@ -23,7 +23,7 @@ import {
   setClientErrorHandler,
 } from '../http'
 import type { InlineConfig, ResolvedConfig } from '../config'
-import { resolveConfig } from '../config'
+import { isResolvedConfig, resolveConfig } from '../config'
 import {
   diffDnsOrderChange,
   getServerUrlByHost,
@@ -32,6 +32,7 @@ import {
   isParentDirectory,
   mergeConfig,
   mergeWithDefaults,
+  monotonicDateNow,
   normalizePath,
   resolveHostname,
   resolveServerUrls,
@@ -62,8 +63,14 @@ import {
 import { initPublicFiles } from '../publicDir'
 import { getEnvFilesForMode } from '../env'
 import type { RequiredExceptFor } from '../typeUtils'
+import type { MinimalPluginContextWithoutEnvironment } from '../plugin'
 import type { PluginContainer } from './pluginContainer'
-import { ERR_CLOSED_SERVER, createPluginContainer } from './pluginContainer'
+import {
+  BasicMinimalPluginContext,
+  ERR_CLOSED_SERVER,
+  basePluginContextMeta,
+  createPluginContainer,
+} from './pluginContainer'
 import type { WebSocketServer } from './ws'
 import { createWebSocketServer } from './ws'
 import { baseMiddleware } from './middlewares/base'
@@ -87,19 +94,17 @@ import { ModuleGraph } from './mixedModuleGraph'
 import type { ModuleNode } from './mixedModuleGraph'
 import { notFoundMiddleware } from './middlewares/notFound'
 import { buildErrorMessage, errorMiddleware } from './middlewares/error'
-import type { HmrOptions, HotBroadcaster } from './hmr'
-import {
-  createDeprecatedHotBroadcaster,
-  handleHMRUpdate,
-  updateModules,
-} from './hmr'
+import type { HmrOptions, NormalizedHotChannel } from './hmr'
+import { handleHMRUpdate, updateModules } from './hmr'
 import { openBrowser as _openBrowser } from './openBrowser'
 import type { TransformOptions, TransformResult } from './transformRequest'
 import { transformRequest } from './transformRequest'
 import { searchForPackageRoot, searchForWorkspaceRoot } from './searchRoot'
 import type { DevEnvironment } from './environment'
-import { hostCheckMiddleware } from './middlewares/hostCheck'
+import { hostValidationMiddleware } from './middlewares/hostCheck'
 import { rejectInvalidRequestMiddleware } from './middlewares/rejectInvalidRequest'
+
+const usedConfigs = new WeakSet<ResolvedConfig>()
 
 export interface ServerOptions extends CommonServerOptions {
   /**
@@ -240,7 +245,7 @@ export interface FileSystemServeOptions {
 }
 
 export type ServerHook = (
-  this: void,
+  this: MinimalPluginContextWithoutEnvironment,
   server: ViteDevServer,
 ) => (() => void) | void | Promise<(() => void) | void>
 
@@ -276,12 +281,10 @@ export interface ViteDevServer {
    */
   ws: WebSocketServer
   /**
-   * HMR broadcaster that can be used to send custom HMR messages to the client
-   *
-   * Always sends a message to at least a WebSocket client. Any third party can
-   * add a channel to the broadcaster to process messages
+   * An alias to `server.environments.client.hot`.
+   * If you want to interact with all environments, loop over `server.environments`.
    */
-  hot: HotBroadcaster
+  hot: NormalizedHotChannel
   /**
    * Rollup plugin container that can run plugin hooks on a given file
    */
@@ -389,13 +392,6 @@ export interface ViteDevServer {
    */
   _setInternalServer(server: ViteDevServer): void
   /**
-   * Left for backward compatibility with VitePress, HMR may not work in some cases
-   * but the there will not be a hard error.
-   * @internal
-   * @deprecated this map is not used anymore
-   */
-  _importGlobMap: Map<string, { affirmed: string[]; negated: string[] }[]>
-  /**
    * @internal
    */
   _restartPromise: Promise<void> | null
@@ -427,19 +423,33 @@ export interface ResolvedServerUrls {
 }
 
 export function createServer(
-  inlineConfig: InlineConfig = {},
+  inlineConfig: InlineConfig | ResolvedConfig = {},
 ): Promise<ViteDevServer> {
   return _createServer(inlineConfig, { listen: true })
 }
 
 export async function _createServer(
-  inlineConfig: InlineConfig = {},
+  inlineConfig: InlineConfig | ResolvedConfig = {},
   options: {
     listen: boolean
     previousEnvironments?: Record<string, DevEnvironment>
   },
 ): Promise<ViteDevServer> {
-  const config = await resolveConfig(inlineConfig, 'serve')
+  const config = isResolvedConfig(inlineConfig)
+    ? inlineConfig
+    : await resolveConfig(inlineConfig, 'serve')
+
+  if (usedConfigs.has(config)) {
+    throw new Error(`There is already a server associated with the config.`)
+  }
+
+  if (config.command !== 'serve') {
+    throw new Error(
+      `Config was resolved for a "build", expected a "serve" command.`,
+    )
+  }
+
+  usedConfigs.add(config)
 
   const initPublicFilesPromise = initPublicFiles(config)
 
@@ -558,7 +568,7 @@ export async function _createServer(
     httpServer,
     watcher,
     ws,
-    hot: createDeprecatedHotBroadcaster(ws),
+    hot: ws,
 
     environments,
     pluginContainer,
@@ -641,7 +651,7 @@ export async function _createServer(
           environments[environmentModule.environment]!,
           module.file,
           [environmentModule],
-          Date.now(),
+          monotonicDateNow(),
         )
       }
     },
@@ -746,7 +756,6 @@ export async function _createServer(
       // server instance after a restart
       server = _server
     },
-    _importGlobMap: new Map(),
     _restartPromise: null,
     _forceOptimizeOnRestart: false,
     _shortcutsOptions: undefined,
@@ -845,13 +854,7 @@ export async function _createServer(
     })
   }
 
-  // apply server configuration hooks from plugins
-  const postHooks: ((() => void) | void)[] = []
-  for (const hook of config.getSortedPluginHooks('configureServer')) {
-    postHooks.push(await hook(reflexServer))
-  }
-
-  // Internal middlewares ------------------------------------------------------
+  // Pre applied internal middlewares ------------------------------------------
 
   // request timer
   if (process.env.DEBUG) {
@@ -871,8 +874,21 @@ export async function _createServer(
   const { allowedHosts } = serverConfig
   // no need to check for HTTPS as HTTPS is not vulnerable to DNS rebinding attacks
   if (allowedHosts !== true && !serverConfig.https) {
-    middlewares.use(hostCheckMiddleware(config, false))
+    middlewares.use(hostValidationMiddleware(allowedHosts, false))
   }
+
+  // apply configureServer hooks ------------------------------------------------
+
+  const configureServerContext = new BasicMinimalPluginContext(
+    { ...basePluginContextMeta, watchMode: true },
+    config.logger,
+  )
+  const postHooks: ((() => void) | void)[] = []
+  for (const hook of config.getSortedPluginHooks('configureServer')) {
+    postHooks.push(await hook.call(configureServerContext, reflexServer))
+  }
+
+  // Internal middlewares ------------------------------------------------------
 
   middlewares.use(cachedTransformMiddleware(server))
 
@@ -921,7 +937,8 @@ export async function _createServer(
     middlewares.use(htmlFallbackMiddleware(root, config.appType === 'spa'))
   }
 
-  // run post config hooks
+  // apply configureServer post hooks ------------------------------------------
+
   // This is applied before the html middleware so that user middleware can
   // serve custom content instead of index.html.
   postHooks.forEach((fn) => fn && fn())

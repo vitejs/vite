@@ -12,7 +12,6 @@ import type {
 import type { DepOptimizationMetadata, Manifest } from 'vite'
 import { normalizePath } from 'vite'
 import { fromComment } from 'convert-source-map'
-import type { Assertion } from 'vitest'
 import { expect } from 'vitest'
 import type { ResultPromise as ExecaResultPromise } from 'execa'
 import { isWindows, page, testDir } from './vitestSetup'
@@ -88,8 +87,6 @@ function rgbToHex(rgb: string): string | undefined {
   }
   return undefined
 }
-
-const timeout = (n: number) => new Promise((r) => setTimeout(r, n))
 
 async function toEl(
   el: string | ElementHandle | Locator,
@@ -213,60 +210,6 @@ export function readDepOptimizationMetadata(
       'utf-8',
     ),
   )
-}
-
-/**
- * Poll a getter until the value it returns includes the expected value.
- */
-export async function untilUpdated(
-  poll: () => string | Promise<string>,
-  expected: string | RegExp,
-): Promise<void> {
-  const maxTries = process.env.CI ? 200 : 50
-  for (let tries = 0; tries < maxTries; tries++) {
-    const actual = (await poll()) ?? ''
-    if (
-      (typeof expected === 'string'
-        ? actual.indexOf(expected) > -1
-        : actual.match(expected)) ||
-      tries === maxTries - 1
-    ) {
-      expect(actual).toMatch(expected)
-      break
-    } else {
-      await timeout(50)
-    }
-  }
-}
-
-/**
- * Retry `func` until it does not throw error.
- */
-export async function withRetry(func: () => Promise<void>): Promise<void> {
-  const maxTries = process.env.CI ? 200 : 50
-  for (let tries = 0; tries < maxTries; tries++) {
-    try {
-      await func()
-      return
-    } catch {}
-    await timeout(50)
-  }
-  await func()
-}
-
-export const expectWithRetry = <T>(getActual: () => Promise<T>) => {
-  return new Proxy(
-    {},
-    {
-      get(_target, key) {
-        return async (...args) => {
-          await withRetry(async () => expect(await getActual())[key](...args))
-        }
-      },
-    },
-  ) as Assertion<T>['resolves']
-  // NOTE: `Assertion<T>['resolves']` has the special "promisify all assertion property functions"
-  // behaviour that we're lending here, which is the same as `PromisifyAssertion<T>` if Vitest exposes it
 }
 
 type UntilBrowserLogAfterCallback = (logs: string[]) => PromiseLike<void> | void

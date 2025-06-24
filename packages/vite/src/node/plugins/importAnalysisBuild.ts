@@ -8,12 +8,7 @@ import { init, parse as parseImports } from 'es-module-lexer'
 import type { SourceMap } from 'rollup'
 import type { RawSourceMap } from '@ampproject/remapping'
 import convertSourceMap from 'convert-source-map'
-import {
-  combineSourcemaps,
-  generateCodeFrame,
-  isInNodeModules,
-  numberToPos,
-} from '../utils'
+import { combineSourcemaps, generateCodeFrame, numberToPos } from '../utils'
 import type { Plugin } from '../plugin'
 import type { ResolvedConfig } from '../config'
 import { toOutputFilePathInJS } from '../build'
@@ -45,7 +40,7 @@ const preloadMarkerRE = new RegExp(preloadMarker, 'g')
 const dynamicImportPrefixRE = /import\s*\(/
 
 const dynamicImportTreeshakenRE =
-  /((?:\bconst\s+|\blet\s+|\bvar\s+|,\s*)(\{[^{}.=]+\})\s*=\s*await\s+import\([^)]+\))|(\(\s*await\s+import\([^)]+\)\s*\)(\??\.[\w$]+))|\bimport\([^)]+\)(\s*\.then\(\s*(?:function\s*)?\(\s*\{([^{}.=]+)\}\))/g
+  /((?:\bconst\s+|\blet\s+|\bvar\s+|,\s*)(\{[^{}.=]+\})\s*=\s*await\s+import\([^)]+\))(?=\s*(?:$|[^[.]))|(\(\s*await\s+import\([^)]+\)\s*\)(\??\.[\w$]+))|\bimport\([^)]+\)(\s*\.then\(\s*(?:function\s*)?\(\s*\{([^{}.=]+)\}\))/g
 
 function toRelativePath(filename: string, importer: string) {
   const relPath = path.posix.relative(path.posix.dirname(importer), filename)
@@ -236,7 +231,7 @@ export function buildImportAnalysisPlugin(config: ResolvedConfig): Plugin {
 
     transform: {
       async handler(source, importer) {
-        if (isInNodeModules(importer) && !dynamicImportPrefixRE.test(source)) {
+        if (!dynamicImportPrefixRE.test(source)) {
           return
         }
 
@@ -403,18 +398,11 @@ export function buildImportAnalysisPlugin(config: ResolvedConfig): Plugin {
       if (code.indexOf(isModernFlag) > -1) {
         const re = new RegExp(isModernFlag, 'g')
         const isModern = String(format === 'es')
-        if (this.environment.config.build.sourcemap) {
-          const s = new MagicString(code)
-          let match: RegExpExecArray | null
-          while ((match = re.exec(code))) {
-            s.update(match.index, match.index + isModernFlag.length, isModern)
-          }
-          return {
-            code: s.toString(),
-            map: s.generateMap({ hires: 'boundary' }),
-          }
-        } else {
-          return code.replace(re, isModern)
+        const isModernWithPadding =
+          isModern + ' '.repeat(isModernFlag.length - isModern.length)
+        return {
+          code: code.replace(re, isModernWithPadding),
+          map: null,
         }
       }
       return null
