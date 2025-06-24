@@ -1,3 +1,10 @@
+## 7.0.0 (2025-06-24)
+
+* chore(deps): update rolldown-related dependencies (#20270) ([f7377c3](https://github.com/vitejs/vite/commit/f7377c3eae6323bd3237ff5de5ae55c879fe7325)), closes [#20270](https://github.com/vitejs/vite/issues/20270)
+* chore(legacy): update peer dep Vite to 7 ([8ff13cd](https://github.com/vitejs/vite/commit/8ff13cdba1c57284eb8f4586b52f814fcf5afcdf))
+
+
+
 ## 7.0.0-beta.1 (2025-06-17)
 
 * fix(legacy)!: remove `location.protocol!="file:"` condition for modern android webview (#20179) ([a6d5997](https://github.com/vitejs/vite/commit/a6d599718ee109798e8f552e317f175513d157e7)), closes [#20179](https://github.com/vitejs/vite/issues/20179)
