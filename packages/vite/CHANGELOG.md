@@ -4,7 +4,7 @@
 
 Today, we're excited to announce the release of the next Vite major:
 
-- **[Vite 7.0 announcement blog post](https://vite.dev/blog/announcing-vite6.html)**
+- **[Vite 7.0 announcement blog post](https://vite.dev/blog/announcing-vite7.html)**
 - [Docs](https://vite.dev/) (translations: [简体中文](https://cn.vite.dev/), [日本語](https://ja.vite.dev/), [Español](https://es.vite.dev/), [Português](https://pt.vite.dev/), [한국어](https://ko.vite.dev/), [Deutsch](https://de.vite.dev/), [فارسی](https://fa.vite.dev/))
 - [Migration Guide](https://vite.dev/guide/migration.html)
 
