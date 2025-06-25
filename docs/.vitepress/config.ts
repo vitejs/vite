@@ -462,6 +462,8 @@ export default defineConfig({
     return pageData
   },
   markdown: {
+    // languages used for twoslash and jsdocs in twoslash
+    languages: ['ts', 'js', 'json'],
     codeTransformers: [transformerTwoslash()],
     config(md) {
       md.use(groupIconMdPlugin)
