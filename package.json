@@ -92,54 +92,6 @@
     ]
   },
   "packageManager": "pnpm@10.12.2",
-  "pnpm": {
-    "overrides": {
-      "vite": "workspace:*"
-    },
-    "patchedDependencies": {
-      "http-proxy@1.18.1": "patches/http-proxy@1.18.1.patch",
-      "sirv@3.0.1": "patches/sirv@3.0.1.patch",
-      "chokidar@3.6.0": "patches/chokidar@3.6.0.patch",
-      "dotenv-expand@12.0.2": "patches/dotenv-expand@12.0.2.patch"
-    },
-    "peerDependencyRules": {
-      "allowedVersions": {
-        "vite": "*"
-      },
-      "ignoreMissing": [
-        "@algolia/client-search",
-        "postcss",
-        "search-insights"
-      ]
-    },
-    "packageExtensions": {
-      "sass-embedded": {
-        "peerDependencies": {
-          "source-map-js": "*"
-        },
-        "peerDependenciesMeta": {
-          "source-map-js": {
-            "optional": true
-          }
-        }
-      }
-    },
-    "ignoredBuiltDependencies": [
-      "core-js",
-      "es5-ext"
-    ],
-    "onlyBuiltDependencies": [
-      "@parcel/watcher",
-      "@tailwindcss/oxide",
-      "bcrypt",
-      "esbuild",
-      "playwright-chromium",
-      "sharp",
-      "simple-git-hooks",
-      "unrs-resolver",
-      "workerd"
-    ]
-  },
   "stackblitz": {
     "startCommand": "pnpm --filter='./packages/vite' run dev"
   }
