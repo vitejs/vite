@@ -1,3 +1,33 @@
+## 7.0.0 (2025-06-24)
+
+* feat(create-vite): add `@hiogawa/vite-rsc` (#20209) ([7cf0aff](https://github.com/vitejs/vite/commit/7cf0aff0370ca106b0ec88a3741f505f3351a3f4)), closes [#20209](https://github.com/vitejs/vite/issues/20209)
+* feat(create-vite): update "react" and "react-ts" templates to use extends in eslint config (#19732) ([8679a43](https://github.com/vitejs/vite/commit/8679a43de710052c5c84bb6c253829ab999b040a)), closes [#19732](https://github.com/vitejs/vite/issues/19732)
+* feat(create-vite): update target to es2023 in `tsconfig.node.json` (#20078) ([8424af3](https://github.com/vitejs/vite/commit/8424af398159e58cf662f7175fca2bed90dbd671)), closes [#20078](https://github.com/vitejs/vite/issues/20078)
+* feat(create-vite): use more extends in eslint config (#20008) ([976103e](https://github.com/vitejs/vite/commit/976103ea7ccd831ee4ae334e5ee1e0f5edb5d5b1)), closes [#20008](https://github.com/vitejs/vite/issues/20008)
+* feat(create-vite): validate project name (#20257) ([17700b7](https://github.com/vitejs/vite/commit/17700b76a6535b90e27ebfa67e2f2f78bd4ea844)), closes [#20257](https://github.com/vitejs/vite/issues/20257)
+* feat(deps): update plugin-vue to 6.0.0 in create-vite templates for Vite 7 (#20281) ([ec06767](https://github.com/vitejs/vite/commit/ec067671d019023109f974310a9cd974a4091251)), closes [#20281](https://github.com/vitejs/vite/issues/20281)
+* chore: speed up typechecking (#20131) ([a357c19](https://github.com/vitejs/vite/commit/a357c1987f332519d7bacafebc5620c7ab534d8f)), closes [#20131](https://github.com/vitejs/vite/issues/20131)
+* chore: update deps in create-vite for 7.0-beta (#20148) ([c05c159](https://github.com/vitejs/vite/commit/c05c159b84c5e358c1a03991e50179952235910c)), closes [#20148](https://github.com/vitejs/vite/issues/20148)
+* chore: use tsdown (#20065) ([d488efd](https://github.com/vitejs/vite/commit/d488efda95ff40f63684194d51858f84c3d05379)), closes [#20065](https://github.com/vitejs/vite/issues/20065)
+* chore(deps): update rolldown-related dependencies (#20140) ([0387447](https://github.com/vitejs/vite/commit/03874471e3de14e7d2f474ecb354499e7f5eb418)), closes [#20140](https://github.com/vitejs/vite/issues/20140)
+* chore(deps): update rolldown-related dependencies (#20182) ([6172f41](https://github.com/vitejs/vite/commit/6172f410b44cbae8d052997bb1819a6197a4d397)), closes [#20182](https://github.com/vitejs/vite/issues/20182)
+* chore(deps): update rolldown-related dependencies (#20270) ([f7377c3](https://github.com/vitejs/vite/commit/f7377c3eae6323bd3237ff5de5ae55c879fe7325)), closes [#20270](https://github.com/vitejs/vite/issues/20270)
+* fix: error starting project with TanStack Router template (#20184) ([44bd3eb](https://github.com/vitejs/vite/commit/44bd3ebe51a861739ec1656d188246654149eab5)), closes [#20184](https://github.com/vitejs/vite/issues/20184)
+* fix: error starting solid project with Tanstack Router template (#20189) ([dad3962](https://github.com/vitejs/vite/commit/dad3962257fdf916caafefc45743898a56cbac0b)), closes [#20189](https://github.com/vitejs/vite/issues/20189)
+* fix(create-vite): targetDir is empty fallback defaultTargetDir (#20199) ([1aae595](https://github.com/vitejs/vite/commit/1aae59594dfc2138144874322e0f26f8fd2188bd)), closes [#20199](https://github.com/vitejs/vite/issues/20199)
+* fix(deps): update all non-major dependencies (#19953) ([ac8e1fb](https://github.com/vitejs/vite/commit/ac8e1fb289a06fc0671dab1f4ef68e508e34360e)), closes [#19953](https://github.com/vitejs/vite/issues/19953)
+* fix(deps): update all non-major dependencies (#20061) ([7b58856](https://github.com/vitejs/vite/commit/7b588563636a6f735a6e25832f33fc08572b25d9)), closes [#20061](https://github.com/vitejs/vite/issues/20061)
+* fix(deps): update all non-major dependencies (#20141) ([89ca65b](https://github.com/vitejs/vite/commit/89ca65ba1d849046dccdea52e9eca980f331be26)), closes [#20141](https://github.com/vitejs/vite/issues/20141)
+* fix(deps): update all non-major dependencies (#20181) ([d91d4f7](https://github.com/vitejs/vite/commit/d91d4f7ad55edbcb4a51fc23376cbff89f776d30)), closes [#20181](https://github.com/vitejs/vite/issues/20181)
+* fix(deps): update all non-major dependencies (#20212) ([a80339b](https://github.com/vitejs/vite/commit/a80339b1798607dd7389f42964272181cf9eb453)), closes [#20212](https://github.com/vitejs/vite/issues/20212)
+* fix(deps): update all non-major dependencies (#20271) ([6b64d63](https://github.com/vitejs/vite/commit/6b64d63d700154de2c00270300b671cef8863708)), closes [#20271](https://github.com/vitejs/vite/issues/20271)
+* docs: tiny typo (#20110) ([d20fc2c](https://github.com/vitejs/vite/commit/d20fc2cdc9700513425b18b625e01224f61e4eab)), closes [#20110](https://github.com/vitejs/vite/issues/20110)
+* chore!: remove node 18 support (#19972) ([00b8a98](https://github.com/vitejs/vite/commit/00b8a98f36376804437e1342265453915ae613de)), closes [#19972](https://github.com/vitejs/vite/issues/19972)
+* feat!: bump `build.target` and name it `baseline-widely-available` (#20007) ([4a8aa82](https://github.com/vitejs/vite/commit/4a8aa82556eb2b9e54673a6aac77873e0eb27fa9)), closes [#20007](https://github.com/vitejs/vite/issues/20007)
+* refactor!: bump required node version to 20.19+, 22.12+ and remove cjs build (#20032) ([2b80243](https://github.com/vitejs/vite/commit/2b80243fada75378e80475028fdcc78f4432bd6f)), closes [#20032](https://github.com/vitejs/vite/issues/20032)
+
+
+
 ## 6.5.0 (2025-05-05)
 
 * feat(create-vite): add Marko (#19257) ([171e856](https://github.com/vitejs/vite/commit/171e856e011512098591234d0557804c6175b625)), closes [#19257](https://github.com/vitejs/vite/issues/19257)
