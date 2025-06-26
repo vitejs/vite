@@ -16,6 +16,31 @@ Some built-in constants are available in all cases:
 
 - **`import.meta.env.SSR`**: {boolean} whether the app is running in the [server](./ssr.md#conditional-logic).
 
+## Conditional Compilation
+
+You can include code only in certain modes (for example, only in development, not in production) by wrapping it in conditionals based on Vite's `import.meta.env` values.
+
+For example:
+
+```js
+if (import.meta.env.DEV) {
+  // This code will only run when import.meta.env.DEV is true (in development mode).
+  console.log('Dev mode only!');
+}
+```
+
+This is especially useful for including debugging tools or logs only during development, or for excluding code from your production build.
+
+Similarly, you can use `import.meta.env.PROD` for production-only code:
+
+```js
+if (import.meta.env.PROD) {
+  // This code will only run in production mode.
+}
+```
+
+The conditionals are statically replaced at build time, so code that is only meant for development will not be included in your production bundle, allowing for effective tree-shaking and smaller builds.
+
 ## Env Variables
 
 Vite exposes env variables under `import.meta.env` object as strings automatically.
