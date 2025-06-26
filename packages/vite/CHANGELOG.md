@@ -1,3 +1,9 @@
+## <small>7.0.2 (2025-06-26)</small>
+
+* feat: update rolldown ([0100764](https://github.com/vitejs/rolldown-vite/commit/0100764))
+
+
+
 ## <small>7.0.1 (2025-06-25)</small>
 
 * feat: update rolldown (#279) ([0b5708b](https://github.com/vitejs/rolldown-vite/commit/0b5708b)), closes [#279](https://github.com/vitejs/rolldown-vite/issues/279)
