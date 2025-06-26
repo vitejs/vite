@@ -1287,6 +1287,9 @@ importers:
       '@vitejs/test-resolve-sharp-dir':
         specifier: link:./sharp-dir
         version: link:sharp-dir
+      '@vitejs/test-resolve-side-effects-glob':
+        specifier: link:./side-effects-glob
+        version: link:side-effects-glob
       '@vitejs/test-utf8-bom-package':
         specifier: link:./utf8-bom-package
         version: link:utf8-bom-package
@@ -1365,6 +1368,8 @@ importers:
       es5-ext:
         specifier: 0.10.64
         version: 0.10.64
+
+  playground/resolve/side-effects-glob: {}
 
   playground/resolve/utf8-bom-package: {}
 

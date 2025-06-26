@@ -256,3 +256,10 @@ test.runIf(isBuild)('public dir is not copied', async () => {
 test('import utf8-bom package', async () => {
   expect(await page.textContent('.utf8-bom-package')).toMatch('[success]')
 })
+
+test.runIf(isBuild)('sideEffects field glob pattern is respected', async () => {
+  const sideEffectValues = await page.evaluate(
+    () => (window as any).__SIDE_EFFECT,
+  )
+  expect(sideEffectValues).toStrictEqual(['success'])
+})
