@@ -1,6 +1,6 @@
 import fs from 'node:fs'
 import path from 'node:path'
-import colors from 'picocolors'
+import { styleText } from 'node:util'
 import type {
   ExternalOption,
   InputOption,
@@ -538,8 +538,10 @@ async function buildEnvironment(
   const ssr = environment.config.consumer === 'server'
 
   logger.info(
-    colors.cyan(
-      `vite v${VERSION} ${colors.green(
+    styleText(
+      'cyan',
+      `vite v${VERSION} ${styleText(
+        'green',
         `building ${ssr ? `SSR bundle ` : ``}for ${environment.config.mode}...`,
       )}`,
     ),
@@ -639,19 +641,21 @@ async function buildEnvironment(
   const enhanceRollupError = (e: RollupError) => {
     const stackOnly = extractStack(e)
 
-    let msg = colors.red((e.plugin ? `[${e.plugin}] ` : '') + e.message)
+    let msg = styleText('red', (e.plugin ? `[${e.plugin}] ` : '') + e.message)
     if (e.loc && e.loc.file && e.loc.file !== e.id) {
-      msg += `\nfile: ${colors.cyan(
+      msg += `\nfile: ${styleText(
+        'cyan',
         `${e.loc.file}:${e.loc.line}:${e.loc.column}` +
           (e.id ? ` (${e.id})` : ''),
       )}`
     } else if (e.id) {
-      msg += `\nfile: ${colors.cyan(
+      msg += `\nfile: ${styleText(
+        'cyan',
         e.id + (e.loc ? `:${e.loc.line}:${e.loc.column}` : ''),
       )}`
     }
     if (e.frame) {
-      msg += `\n` + colors.yellow(normalizeCodeFrame(e.frame))
+      msg += `\n` + styleText('yellow', normalizeCodeFrame(e.frame))
     }
 
     e.message = msg
@@ -695,7 +699,8 @@ async function buildEnvironment(
       }
       if (output.sourcemap) {
         logger.warnOnce(
-          colors.yellow(
+          styleText(
+            'yellow',
             `Vite does not support "rollupOptions.output.sourcemap". ` +
               `Please use "build.sourcemap" instead.`,
           ),
@@ -780,7 +785,7 @@ async function buildEnvironment(
 
     // watch file changes with rollup
     if (options.watch) {
-      logger.info(colors.cyan(`\nwatching for file changes...`))
+      logger.info(styleText('cyan', `\nwatching for file changes...`))
 
       const resolvedChokidarOptions = resolveChokidarOptions(
         options.watch.chokidar,
@@ -801,13 +806,13 @@ async function buildEnvironment(
 
       watcher.on('event', (event) => {
         if (event.code === 'BUNDLE_START') {
-          logger.info(colors.cyan(`\nbuild started...`))
+          logger.info(styleText('cyan', `\nbuild started...`))
           if (options.write) {
             prepareOutDir(resolvedOutDirs, emptyOutDir, environment)
           }
         } else if (event.code === 'BUNDLE_END') {
           event.result.close()
-          logger.info(colors.cyan(`built in ${event.duration}ms.`))
+          logger.info(styleText('cyan', `built in ${event.duration}ms.`))
         } else if (event.code === 'ERROR') {
           outputBuildError(event.error)
         }
@@ -830,7 +835,7 @@ async function buildEnvironment(
       res.push(await bundle[options.write ? 'write' : 'generate'](output))
     }
     logger.info(
-      `${colors.green(`✓ built in ${displayTime(Date.now() - startTime)}`)}`,
+      `${styleText('green', `✓ built in ${displayTime(Date.now() - startTime)}`)}`,
     )
     return Array.isArray(outputs) ? res : res[0]
   } catch (e) {
@@ -838,7 +843,7 @@ async function buildEnvironment(
     clearLine()
     if (startTime) {
       logger.error(
-        `${colors.red('✗')} Build failed in ${displayTime(Date.now() - startTime)}`,
+        `${styleText('red', '✗')} Build failed in ${displayTime(Date.now() - startTime)}`,
       )
       startTime = undefined
     }
@@ -880,13 +885,17 @@ function prepareOutDir(
     ) {
       if (!areSeparateFolders(outDir, publicDir)) {
         environment.logger.warn(
-          colors.yellow(
-            `\n${colors.bold(
+          styleText(
+            'yellow',
+            `\n${styleText(
+              'bold',
               `(!)`,
-            )} The public directory feature may not work correctly. outDir ${colors.white(
-              colors.dim(outDir),
-            )} and publicDir ${colors.white(
-              colors.dim(publicDir),
+            )} The public directory feature may not work correctly. outDir ${styleText(
+              'white',
+              styleText('dim', outDir),
+            )} and publicDir ${styleText(
+              'white',
+              styleText('dim', publicDir),
             )} are not separate folders.\n`,
           ),
         )
@@ -976,7 +985,8 @@ export function resolveBuildOutputs(
     // By this point, we know "outputs" is an Array.
     if (libOptions.formats) {
       logger.warn(
-        colors.yellow(
+        styleText(
+          'yellow',
           '"build.lib.formats" will be ignored because "build.rollupOptions.output" is already an array format.',
         ),
       )
@@ -1055,10 +1065,10 @@ export function onRollupLog(
         environment.logger.info(logging.message)
         return
       case 'warn':
-        environment.logger.warn(colors.yellow(logging.message))
+        environment.logger.warn(styleText('yellow', logging.message))
         return
       case 'error':
-        environment.logger.error(colors.red(logging.message))
+        environment.logger.error(styleText('red', logging.message))
         return
       case 'debug':
         debugLogger?.(logging.message)

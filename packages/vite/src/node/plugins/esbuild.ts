@@ -1,5 +1,5 @@
 import path from 'node:path'
-import colors from 'picocolors'
+import { styleText } from 'node:util'
 import type {
   Loader,
   Message,
@@ -467,7 +467,7 @@ export function resolveEsbuildTranspileOptions(
 }
 
 function prettifyMessage(m: Message, code: string): string {
-  let res = colors.yellow(m.text)
+  let res = styleText('yellow', m.text)
   if (m.location) {
     res += `\n` + generateCodeFrame(code, m.location)
   }

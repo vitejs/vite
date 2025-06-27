@@ -1,4 +1,4 @@
-import colors from 'picocolors'
+import { styleText } from 'node:util'
 import { createDebugger, getHash } from '../utils'
 import {
   type PromiseWithResolvers,
@@ -76,7 +76,8 @@ export function createDepsOptimizer(
   const logNewlyDiscoveredDeps = () => {
     if (newDepsToLog.length) {
       logger.info(
-        colors.green(
+        styleText(
+          'green',
           `✨ new dependencies optimized: ${depsLogString(newDepsToLog)}`,
         ),
         {
@@ -91,7 +92,8 @@ export function createDepsOptimizer(
   const logDiscoveredDepsWhileScanning = () => {
     if (discoveredDepsWhileScanning.length) {
       logger.info(
-        colors.green(
+        styleText(
+          'green',
           `✨ discovered while scanning: ${depsLogString(
             discoveredDepsWhileScanning,
           )}`,
@@ -198,7 +200,7 @@ export function createDepsOptimizer(
           // Runs in the background in case blocking high priority tasks
           ;(async () => {
             try {
-              debug?.(colors.green(`scanning for dependencies...`))
+              debug?.(styleText('green', `scanning for dependencies...`))
 
               let deps: Record<string, string>
               try {
@@ -209,7 +211,8 @@ export function createDepsOptimizer(
                 discover = undefined
               } catch (e) {
                 environment.logger.error(
-                  colors.red(
+                  styleText(
+                    'red',
                     '(!) Failed to run dependency scan. ' +
                       'Skipping dependency pre-bundling. ' +
                       e.stack,
@@ -431,7 +434,8 @@ export function createDepsOptimizer(
             if (warnAboutMissedDependencies) {
               logDiscoveredDepsWhileScanning()
               logger.info(
-                colors.magenta(
+                styleText(
+                  'magenta',
                   `❗ add these dependencies to optimizeDeps.include to speed up cold start`,
                 ),
                 { timestamp: true },
@@ -441,7 +445,8 @@ export function createDepsOptimizer(
           }, 2 * debounceMs)
         } else {
           debug(
-            colors.green(
+            styleText(
+              'green',
               `✨ ${
                 !isRerun
                   ? `dependencies optimized`
@@ -459,7 +464,8 @@ export function createDepsOptimizer(
           processingResult.cancel()
 
           debug?.(
-            colors.green(
+            styleText(
+              'green',
               `✨ delaying reload as new dependencies have been found...`,
             ),
           )
@@ -473,7 +479,8 @@ export function createDepsOptimizer(
             if (warnAboutMissedDependencies) {
               logDiscoveredDepsWhileScanning()
               logger.info(
-                colors.magenta(
+                styleText(
+                  'magenta',
                   `❗ add these dependencies to optimizeDeps.include to avoid a full page reload during cold start`,
                 ),
                 { timestamp: true },
@@ -483,14 +490,15 @@ export function createDepsOptimizer(
           }
 
           logger.info(
-            colors.green(`✨ optimized dependencies changed. reloading`),
+            styleText('green', `✨ optimized dependencies changed. reloading`),
             {
               timestamp: true,
             },
           )
           if (needsInteropMismatch.length > 0) {
             logger.warn(
-              `Mixed ESM and CJS detected in ${colors.yellow(
+              `Mixed ESM and CJS detected in ${styleText(
+                'yellow',
                 needsInteropMismatch.join(', '),
               )}, add ${
                 needsInteropMismatch.length === 1 ? 'it' : 'them'
@@ -506,7 +514,7 @@ export function createDepsOptimizer(
       }
     } catch (e) {
       logger.error(
-        colors.red(`error while updating dependencies:\n${e.stack}`),
+        styleText('red', `error while updating dependencies:\n${e.stack}`),
         { timestamp: true, error: e },
       )
       resolveEnqueuedProcessingPromises()
@@ -538,7 +546,7 @@ export function createDepsOptimizer(
     // optimizeDeps processing is finished
     const deps = Object.keys(metadata.discovered)
     const depsString = depsLogString(deps)
-    debug?.(colors.green(`new dependencies found: ${depsString}`))
+    debug?.(styleText('green', `new dependencies found: ${depsString}`))
     runOptimizer()
   }
 
@@ -635,7 +643,7 @@ export function createDepsOptimizer(
     // switch after this point to a simple debounce strategy
     waitingForCrawlEnd = false
 
-    debug?.(colors.green(`✨ static imports crawl ended`))
+    debug?.(styleText('green', `✨ static imports crawl ended`))
     if (closed) {
       return
     }
@@ -663,7 +671,8 @@ export function createDepsOptimizer(
 
       if (scanDeps.length === 0 && crawlDeps.length === 0) {
         debug?.(
-          colors.green(
+          styleText(
+            'green',
             `✨ no dependencies found by the scanner or crawling static imports`,
           ),
         )
@@ -694,16 +703,18 @@ export function createDepsOptimizer(
         }
         if (scannerMissedDeps) {
           debug?.(
-            colors.yellow(
+            styleText(
+              'yellow',
               `✨ new dependencies were found while crawling that weren't detected by the scanner`,
             ),
           )
         }
-        debug?.(colors.green(`✨ re-running optimizer`))
+        debug?.(styleText('green', `✨ re-running optimizer`))
         debouncedProcessing(0)
       } else {
         debug?.(
-          colors.green(
+          styleText(
+            'green',
             `✨ using post-scan optimizer result, the scanner found every used dependency`,
           ),
         )
@@ -717,7 +728,8 @@ export function createDepsOptimizer(
       // optimize result is compatible in this case
       if (newDepsDiscovered) {
         debug?.(
-          colors.green(
+          styleText(
+            'green',
             `✨ new dependencies were found while crawling static imports, re-running optimizer`,
           ),
         )
@@ -730,7 +742,8 @@ export function createDepsOptimizer(
 
       if (crawlDeps.length === 0) {
         debug?.(
-          colors.green(
+          styleText(
+            'green',
             `✨ no dependencies found while crawling the static imports`,
           ),
         )
@@ -796,7 +809,7 @@ function findInteropMismatches(
       // This only happens when a discovered dependency has mixed ESM and CJS syntax
       // and it hasn't been manually added to optimizeDeps.needsInterop
       needsInteropMismatch.push(dep)
-      debug?.(colors.cyan(`✨ needsInterop mismatch detected for ${dep}`))
+      debug?.(styleText('cyan', `✨ needsInterop mismatch detected for ${dep}`))
     }
   }
   return needsInteropMismatch

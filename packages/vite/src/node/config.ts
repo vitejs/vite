@@ -2,11 +2,10 @@ import fs from 'node:fs'
 import path from 'node:path'
 import fsp from 'node:fs/promises'
 import { pathToFileURL } from 'node:url'
-import { promisify } from 'node:util'
+import { promisify, styleText } from 'node:util'
 import { performance } from 'node:perf_hooks'
 import { createRequire } from 'node:module'
 import crypto from 'node:crypto'
-import colors from 'picocolors'
 import type { Alias, AliasOptions } from 'dep-types/alias'
 import type { PluginContextMeta, RollupOptions } from 'rollup'
 import picomatch from 'picomatch'
@@ -794,7 +793,8 @@ function resolveEnvironmentOptions(
       )?.[0]
       if (pathKey) {
         logger.warnOnce(
-          colors.yellow(
+          styleText(
+            'yellow',
             `The \`define\` option contains an object with ${JSON.stringify(pathKey)} for "process.env" key. ` +
               'It looks like you may have passed the entire `process.env` object to `define`, ' +
               'which can unintentionally expose all environment variables. ' +
@@ -899,8 +899,10 @@ function checkBadCharactersInPath(
     const inflectedChars = badChars.length > 1 ? 'characters' : 'character'
 
     logger.warn(
-      colors.yellow(
-        `${name} contains the ${charString} ${inflectedChars} (${colors.cyan(
+      styleText(
+        'yellow',
+        `${name} contains the ${charString} ${inflectedChars} (${styleText(
+          'cyan',
           path,
         )}), which may not work when running Vite. Consider renaming the directory / file to remove the characters.`,
       ),
@@ -967,7 +969,8 @@ function resolveEnvironmentResolveOptions(
     resolvedResolve.mainFields.includes('browser')
   ) {
     logger.warn(
-      colors.yellow(
+      styleText(
+        'yellow',
         `\`resolve.browserField\` is set to false, but the option is removed in favour of ` +
           `the 'browser' string in \`resolve.mainFields\`. You may want to update \`resolve.mainFields\` ` +
           `to remove the 'browser' string and preserve the previous browser behaviour.`,
@@ -990,7 +993,8 @@ function resolveResolveOptions(
 
   if (alias.some((a) => a.find === '/')) {
     logger.warn(
-      colors.yellow(
+      styleText(
+        'yellow',
         `\`resolve.alias\` contains an alias that maps \`/\`. ` +
           `This is not recommended as it can cause unexpected behavior when resolving paths.`,
       ),
@@ -1385,7 +1389,8 @@ export async function resolveConfig(
     createUserWorkerPlugins = () => config.worker?.plugins
 
     logger.warn(
-      colors.yellow(
+      styleText(
+        'yellow',
         `worker.plugins is now a function that returns an array of plugins. ` +
           `Please update your Vite config accordingly.\n`,
       ),
@@ -1664,9 +1669,12 @@ export async function resolveConfig(
       )
       if (hasDifferentReference) {
         resolved.logger.warn(
-          colors.yellow(`
+          styleText(
+            'yellow',
+            `
 assetFileNames isn't equal for every build.rollupOptions.output. A single pattern across all outputs is supported by Vite.
-`),
+`,
+          ),
         )
       }
     }
@@ -1680,10 +1688,13 @@ assetFileNames isn't equal for every build.rollupOptions.output. A single patter
     config.ssr?.format === 'cjs'
   ) {
     resolved.logger.warn(
-      colors.yellow(`
+      styleText(
+        'yellow',
+        `
 (!) Experimental legacy.buildSsrCjsExternalHeuristics and ssr.format were be removed in Vite 5.
     The only SSR Output format is ESM. Find more information at https://github.com/vitejs/vite/discussions/13816.
-`),
+`,
+      ),
     )
   }
 
@@ -1695,9 +1706,12 @@ assetFileNames isn't equal for every build.rollupOptions.output. A single patter
     resolvedBuildOutDir === resolved.root
   ) {
     resolved.logger.warn(
-      colors.yellow(`
+      styleText(
+        'yellow',
+        `
 (!) build.outDir must not be the same directory of root or a parent directory of root as this could cause Vite to overwriting source files with build outputs.
-`),
+`,
+      ),
     )
   }
 
@@ -1715,8 +1729,10 @@ export function resolveBaseUrl(
 ): string {
   if (base[0] === '.') {
     logger.warn(
-      colors.yellow(
-        colors.bold(
+      styleText(
+        'yellow',
+        styleText(
+          'bold',
           `(!) invalid "base" option: "${base}". The value can only be an absolute ` +
             `URL, "./", or an empty string.`,
         ),
@@ -1730,8 +1746,9 @@ export function resolveBaseUrl(
   // no leading slash warn
   if (!isExternal && base[0] !== '/') {
     logger.warn(
-      colors.yellow(
-        colors.bold(`(!) "base" option should start with a slash.`),
+      styleText(
+        'yellow',
+        styleText('bold', `(!) "base" option should start with a slash.`),
       ),
     )
   }
@@ -1848,9 +1865,12 @@ export async function loadConfigFromFile(
   } catch (e) {
     const logger = createLogger(logLevel, { customLogger })
     checkBadCharactersInPath('The config path', resolvedPath, logger)
-    logger.error(colors.red(`failed to load config from ${resolvedPath}`), {
-      error: e,
-    })
+    logger.error(
+      styleText('red', `failed to load config from ${resolvedPath}`),
+      {
+        error: e,
+      },
+    )
     throw e
   }
 }
@@ -2185,7 +2205,9 @@ function optimizeDepsDisabledBackwardCompatibility(
         resolved.build.commonjsOptions.include = undefined
       }
       resolved.logger.warn(
-        colors.yellow(`(!) Experimental ${optimizeDepsPath}optimizeDeps.disabled and deps pre-bundling during build were removed in Vite 5.1.
+        styleText(
+          'yellow',
+          `(!) Experimental ${optimizeDepsPath}optimizeDeps.disabled and deps pre-bundling during build were removed in Vite 5.1.
     To disable the deps optimizer, set ${optimizeDepsPath}optimizeDeps.noDiscovery to true and ${optimizeDepsPath}optimizeDeps.include as undefined or empty.
     Please remove ${optimizeDepsPath}optimizeDeps.disabled from your config.
     ${
@@ -2193,17 +2215,21 @@ function optimizeDepsDisabledBackwardCompatibility(
         ? 'Empty config.build.commonjsOptions.include will be ignored to support CJS during build. This config should also be removed.'
         : ''
     }
-  `),
+  `,
+        ),
       )
     } else if (
       optimizeDepsDisabled === false ||
       optimizeDepsDisabled === 'build'
     ) {
       resolved.logger.warn(
-        colors.yellow(`(!) Experimental ${optimizeDepsPath}optimizeDeps.disabled and deps pre-bundling during build were removed in Vite 5.1.
+        styleText(
+          'yellow',
+          `(!) Experimental ${optimizeDepsPath}optimizeDeps.disabled and deps pre-bundling during build were removed in Vite 5.1.
     Setting it to ${optimizeDepsDisabled} now has no effect.
     Please remove ${optimizeDepsPath}optimizeDeps.disabled from your config.
-  `),
+  `,
+        ),
       )
     }
   }

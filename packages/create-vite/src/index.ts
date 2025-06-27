@@ -1,23 +1,23 @@
 import fs from 'node:fs'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
+import { styleText } from 'node:util'
 import spawn from 'cross-spawn'
 import mri from 'mri'
 import * as prompts from '@clack/prompts'
-import colors from 'picocolors'
 
-const {
-  blue,
-  blueBright,
-  cyan,
-  green,
-  greenBright,
-  magenta,
-  red,
-  redBright,
-  reset,
-  yellow,
-} = colors
+const blue = (str: string | number) => styleText('blue', String(str))
+const blueBright = (str: string | number) =>
+  styleText('blueBright', String(str))
+const cyan = (str: string | number) => styleText('cyan', String(str))
+const green = (str: string | number) => styleText('green', String(str))
+const greenBright = (str: string | number) =>
+  styleText('greenBright', String(str))
+const magenta = (str: string | number) => styleText('magenta', String(str))
+const red = (str: string | number) => styleText('red', String(str))
+const redBright = (str: string | number) => styleText('redBright', String(str))
+const yellow = (str: string | number) => styleText('yellow', String(str))
+const reset = (str: string | number) => styleText('reset', String(str))
 
 const argv = mri<{
   template?: string

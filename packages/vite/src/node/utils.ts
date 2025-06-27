@@ -11,10 +11,10 @@ import { promises as dns } from 'node:dns'
 import { performance } from 'node:perf_hooks'
 import type { AddressInfo, Server } from 'node:net'
 import fsp from 'node:fs/promises'
+import { styleText } from 'node:util'
 import type { FSWatcher } from 'dep-types/chokidar'
 import remapping from '@ampproject/remapping'
 import type { DecodedSourceMap, RawSourceMap } from '@ampproject/remapping'
-import colors from 'picocolors'
 import debug from 'debug'
 import type { Alias, AliasOptions } from 'dep-types/alias'
 import type MagicString from 'magic-string'
@@ -382,11 +382,11 @@ export function timeFrom(start: number, subtract = 0): string {
   const time: number | string = performance.now() - start - subtract
   const timeString = (time.toFixed(2) + `ms`).padEnd(5, ' ')
   if (time < 10) {
-    return colors.green(timeString)
+    return styleText('green', timeString)
   } else if (time < 50) {
-    return colors.yellow(timeString)
+    return styleText('yellow', timeString)
   } else {
-    return colors.red(timeString)
+    return styleText('red', timeString)
   }
 }
 
@@ -401,9 +401,9 @@ export function prettifyUrl(url: string, root: string): string {
       root,
       isAbsoluteFile ? url : fsPathFromId(url),
     )
-    return colors.dim(file)
+    return styleText('dim', file)
   } else {
-    return colors.dim(url)
+    return styleText('dim', url)
   }
 }
 

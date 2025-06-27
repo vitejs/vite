@@ -1,6 +1,5 @@
 import path from 'node:path'
-import { stripVTControlCharacters as strip } from 'node:util'
-import colors from 'picocolors'
+import { stripVTControlCharacters as strip, styleText } from 'node:util'
 import type { RollupError } from 'rollup'
 import type { Connect } from 'dep-types/connect'
 import type { ErrorPayload } from 'types/hmrPayload'
@@ -27,10 +26,10 @@ export function buildErrorMessage(
   args: string[] = [],
   includeStack = true,
 ): string {
-  if (err.plugin) args.push(`  Plugin: ${colors.magenta(err.plugin)}`)
+  if (err.plugin) args.push(`  Plugin: ${styleText('magenta', err.plugin)}`)
   const loc = err.loc ? `:${err.loc.line}:${err.loc.column}` : ''
-  if (err.id) args.push(`  File: ${colors.cyan(err.id)}${loc}`)
-  if (err.frame) args.push(colors.yellow(pad(err.frame)))
+  if (err.id) args.push(`  File: ${styleText('cyan', err.id)}${loc}`)
+  if (err.frame) args.push(styleText('yellow', pad(err.frame)))
   if (includeStack && err.stack) args.push(pad(cleanStack(err.stack)))
   return args.join('\n')
 }
@@ -44,7 +43,7 @@ function cleanStack(stack: string) {
 
 export function logError(server: ViteDevServer, err: RollupError): void {
   const msg = buildErrorMessage(err, [
-    colors.red(`Internal server error: ${err.message}`),
+    styleText('red', `Internal server error: ${err.message}`),
   ])
 
   server.config.logger.error(msg, {

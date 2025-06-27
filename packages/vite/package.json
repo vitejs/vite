@@ -132,7 +132,6 @@
     "parse5": "^7.3.0",
     "pathe": "^2.0.3",
     "periscopic": "^4.0.2",
-    "picocolors": "^1.1.1",
     "postcss-import": "^16.1.1",
     "postcss-load-config": "^6.0.1",
     "postcss-modules": "^6.0.1",

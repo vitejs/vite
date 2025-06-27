@@ -1,6 +1,6 @@
 import fs from 'node:fs/promises'
 import path from 'node:path'
-import colors from 'picocolors'
+import { styleText } from 'node:util'
 import { glob, isDynamicPattern } from 'tinyglobby'
 import { FS_PREFIX } from '../constants'
 import { normalizePath } from '../utils'
@@ -36,7 +36,7 @@ async function warmupFile(
       } catch (e) {
         // Unexpected error, log the issue but avoid an unhandled exception
         environment.logger.error(
-          `Pre-transform error (${colors.cyan(file)}): ${e.message}`,
+          `Pre-transform error (${styleText('cyan', file)}): ${e.message}`,
           {
             error: e,
             timestamp: true,

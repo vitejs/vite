@@ -1,14 +1,9 @@
-import colors from 'picocolors'
+import { styleText } from 'node:util'
 import type { Logger } from './logger'
 import type { ResolvedConfig, ResolvedEnvironmentOptions } from './config'
 import type { Plugin } from './plugin'
 
-const environmentColors = [
-  colors.blue,
-  colors.magenta,
-  colors.green,
-  colors.gray,
-]
+const environmentColors = ['blue', 'magenta', 'green', 'gray'] as const
 
 export class PartialEnvironment {
   name: string
@@ -58,7 +53,7 @@ export class PartialEnvironment {
         },
       },
     )
-    const environment = colors.dim(`(${this.name})`)
+    const environment = styleText('dim', `(${this.name})`)
     const colorIndex =
       [...this.name].reduce((acc, c) => acc + c.charCodeAt(0), 0) %
       environmentColors.length
@@ -70,25 +65,25 @@ export class PartialEnvironment {
       info(msg, opts) {
         return topLevelConfig.logger.info(msg, {
           ...opts,
-          environment: infoColor(environment),
+          environment: styleText(infoColor, environment),
         })
       },
       warn(msg, opts) {
         return topLevelConfig.logger.warn(msg, {
           ...opts,
-          environment: colors.yellow(environment),
+          environment: styleText('yellow', environment),
         })
       },
       warnOnce(msg, opts) {
         return topLevelConfig.logger.warnOnce(msg, {
           ...opts,
-          environment: colors.yellow(environment),
+          environment: styleText('yellow', environment),
         })
       },
       error(msg, opts) {
         return topLevelConfig.logger.error(msg, {
           ...opts,
-          environment: colors.red(environment),
+          environment: styleText('red', environment),
         })
       },
       clearScreen(type) {

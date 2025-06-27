@@ -3,6 +3,7 @@ import path from 'node:path'
 import crypto from 'node:crypto'
 import { createRequire } from 'node:module'
 import { fileURLToPath } from 'node:url'
+import { styleText } from 'node:util'
 import { build, normalizePath } from 'vite'
 import MagicString from 'magic-string'
 import type {
@@ -24,7 +25,6 @@ import type {
   PluginItem as BabelPlugin,
   types as BabelTypes,
 } from '@babel/core'
-import colors from 'picocolors'
 import browserslist from 'browserslist'
 import type { Options } from './types'
 import {
@@ -257,21 +257,24 @@ function viteLegacyPlugin(options: Options = {}): Plugin[] {
     configResolved(config) {
       if (overriddenBuildTarget) {
         config.logger.warn(
-          colors.yellow(
+          styleText(
+            'yellow',
             `plugin-legacy overrode 'build.target'. You should pass 'targets' as an option to this plugin with the list of legacy browsers to support instead.`,
           ),
         )
       }
       if (overriddenDefaultModernTargets) {
         config.logger.warn(
-          colors.yellow(
+          styleText(
+            'yellow',
             `plugin-legacy 'modernTargets' option overrode the builtin targets of modern chunks. Some versions of browsers between legacy and modern may not be supported.`,
           ),
         )
       }
       if (config.isWorker) {
         config.logger.warn(
-          colors.yellow(
+          styleText(
+            'yellow',
             `plugin-legacy should not be passed to 'worker.plugins'. Pass to 'plugins' instead. Note that generating legacy chunks for workers are not supported by plugin-legacy.`,
           ),
         )

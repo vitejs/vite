@@ -6,9 +6,9 @@ import { get as httpsGet } from 'node:https'
 import type * as http from 'node:http'
 import { performance } from 'node:perf_hooks'
 import type { Http2SecureServer } from 'node:http2'
+import { styleText } from 'node:util'
 import connect from 'connect'
 import corsMiddleware from 'cors'
-import colors from 'picocolors'
 import chokidar from 'chokidar'
 import type { FSWatcher, WatchOptions } from 'dep-types/chokidar'
 import type { Connect } from 'dep-types/connect'
@@ -1168,8 +1168,9 @@ export function resolveServerOptions(
   if (server.origin?.endsWith('/')) {
     server.origin = server.origin.slice(0, -1)
     logger.warn(
-      colors.yellow(
-        `${colors.bold('(!)')} server.origin should not end with "/". Using "${
+      styleText(
+        'yellow',
+        `${styleText('bold', '(!)')} server.origin should not end with "/". Using "${
           server.origin
         }" instead.`,
       ),

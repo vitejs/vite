@@ -1,5 +1,5 @@
+import { styleText } from 'node:util'
 import type { FSWatcher } from 'dep-types/chokidar'
-import colors from 'picocolors'
 import type { FetchFunctionOptions, FetchResult } from 'vite/module-runner'
 import { BaseEnvironment } from '../baseEnvironment'
 import type {
@@ -290,8 +290,8 @@ function invalidateModule(
   ) {
     mod.lastHMRInvalidationReceived = true
     environment.logger.info(
-      colors.yellow(`hmr invalidate `) +
-        colors.dim(m.path) +
+      styleText('yellow', `hmr invalidate `) +
+        styleText('dim', m.path) +
         (m.message ? ` ${m.message}` : ''),
       { timestamp: true },
     )

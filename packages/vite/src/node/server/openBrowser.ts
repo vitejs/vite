@@ -11,10 +11,10 @@
 import { join } from 'node:path'
 import { exec } from 'node:child_process'
 import type { ExecOptions } from 'node:child_process'
+import { styleText } from 'node:util'
 import open from 'open'
 import type { Options } from 'open'
 import spawn from 'cross-spawn'
-import colors from 'picocolors'
 import type { Logger } from '../logger'
 import { VITE_PACKAGE_DIR } from '../constants'
 
@@ -47,8 +47,10 @@ function executeNodeScript(scriptPath: string, url: string, logger: Logger) {
   child.on('close', (code) => {
     if (code !== 0) {
       logger.error(
-        colors.red(
-          `\nThe script specified as BROWSER environment variable failed.\n\n${colors.cyan(
+        styleText(
+          'red',
+          `\nThe script specified as BROWSER environment variable failed.\n\n${styleText(
+            'cyan',
             scriptPath,
           )} exited with code ${code}.`,
         ),

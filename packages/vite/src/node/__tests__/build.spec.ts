@@ -1,8 +1,7 @@
 import { basename, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
-import { stripVTControlCharacters } from 'node:util'
+import { stripVTControlCharacters, styleText } from 'node:util'
 import fsp from 'node:fs/promises'
-import colors from 'picocolors'
 import { afterEach, describe, expect, test, vi } from 'vitest'
 import type {
   LogLevel,
@@ -675,7 +674,8 @@ describe('resolveBuildOutputs', () => {
       ),
     ).toEqual([{ name: 'A' }])
     expect(log.warn).toHaveBeenLastCalledWith(
-      colors.yellow(
+      styleText(
+        'yellow',
         `"build.lib.formats" will be ignored because "build.rollupOptions.output" is already an array format.`,
       ),
     )

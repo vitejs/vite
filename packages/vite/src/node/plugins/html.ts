@@ -1,5 +1,6 @@
 import path from 'node:path'
 import { URL } from 'node:url'
+import { styleText } from 'node:util'
 import type {
   OutputAsset,
   OutputBundle,
@@ -8,7 +9,6 @@ import type {
   SourceMapInput,
 } from 'rollup'
 import MagicString from 'magic-string'
-import colors from 'picocolors'
 import type { DefaultTreeAdapterMap, ParserError, Token } from 'parse5'
 import { stripLiteral } from 'strip-literal'
 import escapeHtml from 'escape-html'
@@ -1140,8 +1140,10 @@ export function preImportMapHook(
         path.relative(config.root, ctx.filename),
       )
       config.logger.warnOnce(
-        colors.yellow(
-          colors.bold(
+        styleText(
+          'yellow',
+          styleText(
+            'bold',
             `(!) <script type="importmap"> should come before <script type="module"> and <link rel="modulepreload"> in /${relativeHtml}`,
           ),
         ),
@@ -1226,8 +1228,10 @@ export function htmlEnvHook(config: ResolvedConfig): IndexHtmlTransformHook {
             path.relative(config.root, ctx.filename),
           )
           config.logger.warn(
-            colors.yellow(
-              colors.bold(
+            styleText(
+              'yellow',
+              styleText(
+                'bold',
                 `(!) ${text} is not defined in env variables found in /${relativeHtml}. ` +
                   `Is the variable mistyped?`,
               ),
@@ -1347,8 +1351,10 @@ function headTagInsertCheck(
       disallowedTags.map((tagDescriptor) => `<${tagDescriptor.tag}>`),
     )
     logger?.warn(
-      colors.yellow(
-        colors.bold(
+      styleText(
+        'yellow',
+        styleText(
+          'bold',
           `[${dedupedTags.join(',')}] can not be used inside the <head> Element, please check the 'injectTo' value`,
         ),
       ),

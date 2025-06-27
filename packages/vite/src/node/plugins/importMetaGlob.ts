@@ -1,7 +1,7 @@
 import { isAbsolute, posix } from 'node:path'
+import { styleText } from 'node:util'
 import picomatch from 'picomatch'
 import { stripLiteral } from 'strip-literal'
-import colors from 'picocolors'
 import type {
   ArrayExpression,
   Expression,
@@ -200,7 +200,8 @@ function parseGlobOptions(
       ? `, import: 'default'`
       : ''
     logger.warn(
-      colors.yellow(
+      styleText(
+        'yellow',
         `The glob option "as" has been deprecated in favour of "query". Please update \`as: '${opts.as}'\` to \`query: '?${opts.as}'${importSuggestion}\`.`,
       ),
     )

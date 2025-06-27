@@ -1,4 +1,4 @@
-import colors from 'picocolors'
+import { styleText } from 'node:util'
 import type { EvaluatedModuleNode } from 'vite/module-runner'
 import { ESModulesEvaluator, ModuleRunner } from 'vite/module-runner'
 import type { ViteDevServer } from '../server'
@@ -49,7 +49,10 @@ async function instantiateModule(
 
     environment.logger.error(
       buildErrorMessage(e, [
-        colors.red(`Error when evaluating SSR module ${url}: ${e.message}`),
+        styleText(
+          'red',
+          `Error when evaluating SSR module ${url}: ${e.message}`,
+        ),
       ]),
       {
         timestamp: true,

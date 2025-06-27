@@ -1,7 +1,7 @@
 import fs from 'node:fs'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
-import colors from 'picocolors'
+import { styleText } from 'node:util'
 import type { PartialResolvedId } from 'rollup'
 import { exports, imports } from 'resolve.exports'
 import { hasESMSyntax } from 'mlly'
@@ -233,7 +233,7 @@ export function resolvePlugin(
         // We don't need to resolve these paths since they are already resolved
         // always return here even if res doesn't exist since /@fs/ is explicit
         // if the file doesn't exist it should be a 404.
-        debug?.(`[@fs] ${colors.cyan(id)} -> ${colors.dim(res)}`)
+        debug?.(`[@fs] ${styleText('cyan', id)} -> ${styleText('dim', res)}`)
         return ensureVersionQuery(res, id, options, depsOptimizer)
       }
 
@@ -246,7 +246,7 @@ export function resolvePlugin(
       ) {
         const fsPath = path.resolve(root, id.slice(1))
         if ((res = tryFsResolve(fsPath, options))) {
-          debug?.(`[url] ${colors.cyan(id)} -> ${colors.dim(res)}`)
+          debug?.(`[url] ${styleText('cyan', id)} -> ${styleText('dim', res)}`)
           return ensureVersionQuery(res, id, options, depsOptimizer)
         }
       }
@@ -287,7 +287,9 @@ export function resolvePlugin(
 
         if ((res = tryFsResolve(fsPath, options))) {
           res = ensureVersionQuery(res, id, options, depsOptimizer)
-          debug?.(`[relative] ${colors.cyan(id)} -> ${colors.dim(res)}`)
+          debug?.(
+            `[relative] ${styleText('cyan', id)} -> ${styleText('dim', res)}`,
+          )
 
           if (!options.idOnly && !options.scan && options.isBuild) {
             const resPkg = findNearestPackageData(
@@ -316,7 +318,9 @@ export function resolvePlugin(
         const basedir = importer ? path.dirname(importer) : process.cwd()
         const fsPath = path.resolve(basedir, id)
         if ((res = tryFsResolve(fsPath, options))) {
-          debug?.(`[drive-relative] ${colors.cyan(id)} -> ${colors.dim(res)}`)
+          debug?.(
+            `[drive-relative] ${styleText('cyan', id)} -> ${styleText('dim', res)}`,
+          )
           return ensureVersionQuery(res, id, options, depsOptimizer)
         }
       }
@@ -326,7 +330,7 @@ export function resolvePlugin(
         isNonDriveRelativeAbsolutePath(id) &&
         (res = tryFsResolve(id, options))
       ) {
-        debug?.(`[fs] ${colors.cyan(id)} -> ${colors.dim(res)}`)
+        debug?.(`[fs] ${styleText('cyan', id)} -> ${styleText('dim', res)}`)
         return ensureVersionQuery(res, id, options, depsOptimizer)
       }
 
@@ -435,7 +439,7 @@ export function resolvePlugin(
           if (!asSrc) {
             debug?.(
               `externalized node built-in "${id}" to empty module. ` +
-                `(imported by: ${colors.white(colors.dim(importer))})`,
+                `(imported by: ${styleText('white', styleText('dim', importer || ''))})`,
             )
           } else if (isProduction) {
             this.warn(
@@ -447,7 +451,7 @@ export function resolvePlugin(
         }
       }
 
-      debug?.(`[fallthrough] ${colors.dim(id)}`)
+      debug?.(`[fallthrough] ${styleText('dim', id)}`)
     },
 
     load: {
@@ -778,7 +782,7 @@ export function tryNodeResolve(
       if (index > -1) {
         resolvedId = resolved.id.slice(index)
         debug?.(
-          `[processResult] ${colors.cyan(id)} -> ${colors.dim(resolvedId)}`,
+          `[processResult] ${styleText('cyan', id)} -> ${styleText('dim', resolvedId)}`,
         )
       }
     }
@@ -958,7 +962,8 @@ export function resolvePackageEntry(
       )
       if (resolvedEntryPoint) {
         debug?.(
-          `[package entry] ${colors.cyan(idWithoutPostfix)} -> ${colors.dim(
+          `[package entry] ${styleText('cyan', idWithoutPostfix)} -> ${styleText(
+            'dim',
             resolvedEntryPoint,
           )}${postfix !== '' ? ` (postfix: ${postfix})` : ''}`,
         )
@@ -1060,7 +1065,7 @@ function resolveDeepImport(
     )
     if (resolved) {
       debug?.(
-        `[node/deep-import] ${colors.cyan(id)} -> ${colors.dim(resolved)}`,
+        `[node/deep-import] ${styleText('cyan', id)} -> ${styleText('dim', resolved)}`,
       )
       setResolvedCache(id, resolved, options)
       return resolved
@@ -1094,7 +1099,9 @@ function tryResolveBrowserMapping(
             )?.id
           : tryFsResolve(path.join(pkg.dir, browserMappedPath), options))
       ) {
-        debug?.(`[browser mapped] ${colors.cyan(id)} -> ${colors.dim(res)}`)
+        debug?.(
+          `[browser mapped] ${styleText('cyan', id)} -> ${styleText('dim', res)}`,
+        )
         let result: PartialResolvedId = { id: res }
         if (options.idOnly) {
           return result

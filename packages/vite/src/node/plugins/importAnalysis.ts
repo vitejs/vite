@@ -1,7 +1,7 @@
 import path from 'node:path'
 import fs from 'node:fs'
 import { performance } from 'node:perf_hooks'
-import colors from 'picocolors'
+import { styleText } from 'node:util'
 import MagicString from 'magic-string'
 import type {
   ParseError as EsModuleLexerParseError,
@@ -259,7 +259,7 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
       const moduleGraph = environment.moduleGraph
 
       if (canSkipImportAnalysis(importer)) {
-        debug?.(colors.dim(`[skipped] ${prettifyUrl(importer, root)}`))
+        debug?.(styleText('dim', `[skipped] ${prettifyUrl(importer, root)}`))
         return null
       }
 
@@ -298,7 +298,8 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
       ) {
         importerModule.isSelfAccepting = false
         debug?.(
-          `${timeFrom(msAtStart)} ${colors.dim(
+          `${timeFrom(msAtStart)} ${styleText(
+            'dim',
             `[no imports] ${prettifyUrl(importer, root)}`,
           )}`,
         )
@@ -584,7 +585,8 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
                   // a dynamic import, then it is an internal Vite error
                   if (!optimizedDepDynamicRE.test(file)) {
                     config.logger.error(
-                      colors.red(
+                      styleText(
+                        'red',
                         `Vite Error, ${url} optimized info should be defined`,
                       ),
                     )
@@ -667,12 +669,14 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
               if (!hasViteIgnore) {
                 this.warn(
                   `\n` +
-                    colors.cyan(importerModule.file) +
+                    styleText('cyan', importerModule.file || '') +
                     `\n` +
-                    colors.reset(generateCodeFrame(source, start, end)) +
-                    colors.yellow(
+                    styleText('reset', generateCodeFrame(source, start, end)) +
+                    styleText(
+                      'yellow',
                       `\nThe above dynamic import cannot be analyzed by Vite.\n` +
-                        `See ${colors.blue(
+                        `See ${styleText(
+                          'blue',
                           `https://github.com/rollup/plugins/tree/master/packages/dynamic-import-vars#limitations`,
                         )} ` +
                         `for supported dynamic import formats. ` +
@@ -840,7 +844,8 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
       }
 
       debug?.(
-        `${timeFrom(msAtStart)} ${colors.dim(
+        `${timeFrom(msAtStart)} ${styleText(
+          'dim',
           `[${importedUrls.size} imports rewritten] ${prettifyUrl(
             importer,
             root,
@@ -991,7 +996,8 @@ export function transformCjsImport(
     !node.exported
   ) {
     config.logger.warn(
-      colors.yellow(
+      styleText(
+        'yellow',
         `\nUnable to interop \`${importExp}\` in ${importer}, this may lose module exports. Please export "${rawUrl}" as ESM or use named exports instead, e.g. \`export { A, B } from "${rawUrl}"\``,
       ),
     )

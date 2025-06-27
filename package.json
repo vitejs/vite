@@ -63,7 +63,6 @@
     "execa": "^9.6.0",
     "globals": "^16.2.0",
     "lint-staged": "^16.1.2",
-    "picocolors": "^1.1.1",
     "playwright-chromium": "^1.53.1",
     "prettier": "3.6.0",
     "rollup": "^4.40.0",

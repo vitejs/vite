@@ -1,6 +1,6 @@
 import fs from 'node:fs/promises'
 import path from 'node:path'
-import colors from 'picocolors'
+import { styleText } from 'node:util'
 import type { Options as ExecaOptions, ResultPromise } from 'execa'
 import { execa } from 'execa'
 
@@ -29,10 +29,12 @@ export async function logRecentCommits(pkgName: string): Promise<void> {
     stdio: 'pipe',
   }).then((res) => res.stdout.trim())
   console.log(
-    colors.bold(
-      `\n${colors.blue(`i`)} Commits of ${colors.green(
+    styleText(
+      'bold',
+      `\n${styleText('blue', `i`)} Commits of ${styleText(
+        'green',
         pkgName,
-      )} since ${colors.green(tag)} ${colors.gray(`(${sha.slice(0, 5)})`)}`,
+      )} since ${styleText('green', tag)} ${styleText('gray', `(${sha.slice(0, 5)})`)}`,
     ),
   )
   await run(
