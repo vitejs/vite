@@ -1,4 +1,3 @@
-## [7.0.0](https://github.com/vitejs/vite/compare/create-vite@7.0.0...create-vite@7.0.0) (2025-06-27)
 ## [7.0.0](https://github.com/vitejs/vite/compare/create-vite@6.5.0...create-vite@7.0.0) (2025-06-24)
 ### ⚠ BREAKING CHANGES
 
