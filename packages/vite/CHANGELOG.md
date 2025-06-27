@@ -1,3 +1,12 @@
+## <small>7.0.3 (2025-06-27)</small>
+
+* feat: add `resolve.tsconfigPaths` option to resolve with tsconfig paths (#277) ([5f3ce8b](https://github.com/vitejs/rolldown-vite/commit/5f3ce8b)), closes [#277](https://github.com/vitejs/rolldown-vite/issues/277)
+* feat: update rolldown ([d499b50](https://github.com/vitejs/rolldown-vite/commit/d499b50))
+* fix(css): skip resolving resolved paths in sass (#20300) ([ac528a4](https://github.com/vitejs/rolldown-vite/commit/ac528a4)), closes [#20300](https://github.com/vitejs/rolldown-vite/issues/20300)
+* fix(types): add a global interface for Worker (#20243) ([37bdfc1](https://github.com/vitejs/rolldown-vite/commit/37bdfc1)), closes [#20243](https://github.com/vitejs/rolldown-vite/issues/20243)
+
+
+
 ## <small>7.0.2 (2025-06-26)</small>
 
 * feat: update rolldown ([0100764](https://github.com/vitejs/rolldown-vite/commit/0100764))
