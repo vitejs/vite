@@ -38,7 +38,8 @@ The supported template presets are:
 |  [preact](https://vite.new/preact)  |  [preact-ts](https://vite.new/preact-ts)  |
 |     [lit](https://vite.new/lit)     |     [lit-ts](https://vite.new/lit-ts)     |
 |  [svelte](https://vite.new/svelte)  |  [svelte-ts](https://vite.new/svelte-ts)  |
-|   [ember](https://vite.new/ember)   |   [ember-ts](https://vite.new/ember-ts)   |
+|   [ember app](https://vite.new/ember-app)   |   [ember app (ts)](https://vite.new/ember-app-ts)   |
+|   [ember library](https://vite.new/ember-library)   |   [ember library (ts)](https://vite.new/ember-library-ts)   |
 |   [solid](https://vite.new/solid)   |   [solid-ts](https://vite.new/solid-ts)   |
 |    [qwik](https://vite.new/qwik)    |    [qwik-ts](https://vite.new/qwik-ts)    |
 
