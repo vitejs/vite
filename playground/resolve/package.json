@@ -41,6 +41,7 @@
     "@vitejs/test-resolve-linked": "workspace:*",
     "@vitejs/test-resolve-imports-pkg": "link:./imports-path/other-pkg",
     "@vitejs/test-resolve-sharp-dir": "link:./sharp-dir",
+    "@vitejs/test-resolve-side-effects-glob": "link:./side-effects-glob",
     "@vitejs/test-utf8-bom-package": "link:./utf8-bom-package"
   }
 }

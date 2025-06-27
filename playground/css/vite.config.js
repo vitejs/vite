@@ -62,13 +62,20 @@ export default defineConfig({
     },
   },
   resolve: {
-    alias: {
-      '=': __dirname,
-      spacefolder: __dirname + '/folder with space',
-      '#alias': __dirname + '/aliased/foo.css',
-      '#alias?inline': __dirname + '/aliased/foo.css?inline',
-      '#alias-module': __dirname + '/aliased/bar.module.css',
-    },
+    alias: [
+      { find: '=', replacement: __dirname },
+      { find: /=replace\/(.*)/, replacement: `${__dirname}/$1` },
+      { find: 'spacefolder', replacement: __dirname + '/folder with space' },
+      { find: '#alias', replacement: __dirname + '/aliased/foo.css' },
+      {
+        find: '#alias?inline',
+        replacement: __dirname + '/aliased/foo.css?inline',
+      },
+      {
+        find: '#alias-module',
+        replacement: __dirname + '/aliased/bar.module.css',
+      },
+    ],
   },
   css: {
     modules: {

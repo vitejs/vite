@@ -254,7 +254,7 @@ export default defineConfig({
 
 File system watcher options to pass on to [chokidar](https://github.com/paulmillr/chokidar/tree/3.6.0#api).
 
-The Vite server watcher watches the `root` and skips the `.git/`, `node_modules/`, and Vite's `cacheDir` and `build.outDir` directories by default. When updating a watched file, Vite will apply HMR and update the page only if needed.
+The Vite server watcher watches the `root` and skips the `.git/`, `node_modules/`, `test-results/`, and Vite's `cacheDir` and `build.outDir` directories by default. When updating a watched file, Vite will apply HMR and update the page only if needed.
 
 If set to `null`, no files will be watched. `server.watcher` will provide a compatible event emitter, but calling `add` or `unwatch` will have no effect.
 
