@@ -266,6 +266,7 @@ export function oxcResolvePlugin(
             tryIndex: options.tryIndex ?? true,
             tryPrefix: options.tryPrefix,
             preserveSymlinks: options.preserveSymlinks,
+            tsconfigPaths: false,
           },
           environmentConsumer: partialEnv.config.consumer,
           environmentName: partialEnv.name,
