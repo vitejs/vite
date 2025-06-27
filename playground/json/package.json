@@ -10,6 +10,7 @@
     "preview": "vite preview"
   },
   "devDependencies": {
+    "@vitejs/test-json-require": "file:./dep-json-require",
     "@vitejs/test-json-module": "file:./json-module",
     "vue": "^3.5.17"
   }
