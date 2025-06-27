@@ -4,7 +4,7 @@ import colors from 'picocolors'
 import type { Options as ExecaOptions, ResultPromise } from 'execa'
 import { execa } from 'execa'
 
-export function run<EO extends ExecaOptions>(
+function run<EO extends ExecaOptions>(
   bin: string,
   args: string[],
   opts?: EO,
