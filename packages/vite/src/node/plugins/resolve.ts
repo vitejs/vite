@@ -114,6 +114,15 @@ export interface ResolveOptions extends EnvironmentResolveOptions {
    * @default false
    */
   preserveSymlinks?: boolean
+  /**
+   * Enable tsconfig paths resolution
+   *
+   * This option does not have any effect if `experimental.enableNativePlugin` is set to `false`.
+   *
+   * @default false
+   * @experimental
+   */
+  tsconfigPaths?: boolean
 }
 
 interface ResolvePluginOptions {
@@ -266,7 +275,7 @@ export function oxcResolvePlugin(
             tryIndex: options.tryIndex ?? true,
             tryPrefix: options.tryPrefix,
             preserveSymlinks: options.preserveSymlinks,
-            tsconfigPaths: false,
+            tsconfigPaths: options.tsconfigPaths,
           },
           environmentConsumer: partialEnv.config.consumer,
           environmentName: partialEnv.name,

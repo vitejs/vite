@@ -681,6 +681,7 @@ export const configDefaults = Object.freeze({
     noExternal: [],
     external: [],
     preserveSymlinks: false,
+    tsconfigPaths: false,
     alias: [],
   },
 
@@ -1934,6 +1935,17 @@ assetFileNames isn't equal for every build.rollupOptions.output. A single patter
     )
   }
 
+  if (
+    resolved.resolve.tsconfigPaths &&
+    resolved.experimental.enableNativePlugin === false
+  ) {
+    resolved.logger.warn(
+      colors.yellow(`
+(!) resolve.tsconfigPaths is set to true, but native plugins are disabled. To use resolve.tsconfigPaths, please enable native plugins via experimental.enableNativePlugin.
+`),
+    )
+  }
+
   return resolved
 }
 
@@ -2177,6 +2189,7 @@ async function bundleConfigFile(
             dedupe: [],
             extensions: configDefaults.resolve.extensions,
             preserveSymlinks: false,
+            tsconfigPaths: false,
             packageCache,
             isRequire,
             builtins: nodeLikeBuiltins,
