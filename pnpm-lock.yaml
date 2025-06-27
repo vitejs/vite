@@ -1316,6 +1316,8 @@ importers:
 
   playground/resolve-linked: {}
 
+  playground/resolve-tsconfig-paths: {}
+
   playground/resolve/browser-field:
     dependencies:
       '@vitejs/test-resolve-browser-field-bare-import-fail':
