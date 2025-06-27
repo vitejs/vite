@@ -146,6 +146,131 @@ See [Reason: CORS request not HTTP - HTTP | MDN](https://developer.mozilla.org/e
 
 You will need to access the file with `http` protocol. The easiest way to achieve this is to run `npx vite preview`.
 
+### `Failed to fetch dynamically imported module` error
+
+> TypeError: Failed to fetch dynamically imported module
+
+This error occurs in several cases:
+
+- Version skew
+- Poor network conditions
+- Browser extensions blocking requests
+
+#### Version skew
+
+When you deploy a new version of your application, the HTML file and the JS files still reference old chunk names that were deleted in the new deployment. This happens when:
+
+1. Users have an old version of your app cached in their browser
+2. You deploy a new version with different chunk names (due to code changes)
+3. The cached HTML tries to load chunks that no longer exist
+
+If you are using a framework, refer to their documentation first as it may have a built-in solution for this problem.
+
+To resolve this, you can:
+
+- **Keep old chunks temporarily**: Consider keeping the previous deployment's chunks for a period to allow cached users to transition smoothly.
+- **Use a service worker**: Implement a service worker that will prefetch all the assets and cache them.
+- **Prefetch the dynamic chunks**: Note that this does not help if your HTML file is cached by the browser due to `Cache-Control` headers.
+- **Implement a graceful fallback**: Implement error handling for dynamic imports to reload the page when chunks are missing. See [Load Error Handling](./build.md#load-error-handling) for more details.
+
+::: details Dynamic chunk prefetch plugin example
+
+```js
+import path from 'node:path'
+import { type HtmlTagDescriptor, type Plugin } from 'vite'
+
+export default function prefetchDynamicImports(): Plugin {
+  let base: string
+  return {
+    name: 'vite-plugin-prefetch-dynamic-imports',
+    apply: 'build',
+    configResolved(config) {
+      if (config.experimental.renderBuiltUrl) {
+        throw new Error('renderBuiltUrl is not supported')
+      }
+      base = config.base
+    },
+    transformIndexHtml(html, ctx) {
+      if (!ctx.bundle) throw new Error()
+
+      const basePrefix =
+        base === './' || base === ''
+          ? path.posix.join(
+              path.posix.relative(ctx.path, '').slice(0, -2),
+              './',
+            )
+          : base + (base.endsWith('/') ? '' : '/')
+
+      const getOutputPath = (urlWithoutLeadingSlash: string) =>
+        basePrefix + urlWithoutLeadingSlash
+
+      const tags: HtmlTagDescriptor[] = []
+      const prefetchScripts = new Set<string>()
+      const prefetchedStyle = new Set<string>()
+      for (const chunk of Object.values(ctx.bundle)) {
+        if (!(chunk.type === 'chunk' && chunk.isDynamicEntry)) continue
+
+        const href = getOutputPath(chunk.fileName)
+        if (!prefetchScripts.has(href)) {
+          prefetchScripts.add(href)
+        }
+
+        if (chunk.viteMetadata?.importedCss) {
+          for (const cssFileName of chunk.viteMetadata.importedCss) {
+            const href = getOutputPath(cssFileName)
+            if (!prefetchedStyle.has(href)) {
+              tags.push({
+                tag: 'link',
+                attrs: { rel: 'prefetch', href: href },
+                injectTo: 'head',
+              })
+              prefetchedStyle.add(href)
+            }
+          }
+        }
+      }
+      tags.unshift({
+        tag: 'script',
+        attrs: { type: 'module', defer: true },
+        // prefetch cannot save cache of module scripts
+        children: /* js */ `
+const scripts = ${JSON.stringify([...prefetchScripts])}
+const rIcb = globalThis.requestIdleCallback || (cb => setTimeout(cb, 10))
+const asyncRIcb = cb => new Promise(resolve => rIcb(resolve))
+const prefetch = async (url) => {
+  const link = document.createElement('link')
+  link.rel = 'modulepreload'
+  link.href = url
+  document.head.appendChild(link)
+  await new Promise(resolve => link.addEventListener('load', () => resolve()))
+}
+for (const url of scripts) {
+  await asyncRIcb()
+  await prefetch(url)
+}
+        `.trim(),
+        injectTo: 'head',
+      })
+      return tags
+    },
+  }
+}
+```
+
+:::
+
+#### Poor network conditions
+
+This error may occur in unstable network environments. For example, when the request fails due to network errors or server downtime.
+
+Note that you cannot retry the dynamic import due to browser limitations ([whatwg/html#6768](https://github.com/whatwg/html/issues/6768)).
+
+#### Browser extensions blocking requests
+
+The error may also occur if the browser extensions (like ad-blockers) are blocking that request.
+
+It might be possible to workaround by selecting a different chunk name by [`build.rollupOptions.output.chunkFileNames`](../config/build-options.md#build-rollupoptions).
+
 ## Optimized Dependencies
 
 ### Outdated pre-bundled deps when linking to a local package
@@ -202,7 +327,11 @@ If these codes are used inside dependencies, you could use [`patch-package`](htt
 
 ### Browser extensions
 
-Some browser extensions (like ad-blockers) may prevent the Vite client from sending requests to the Vite dev server. You may see a white screen without logged errors in this case. Try disabling extensions if you have this issue.
+Some browser extensions (like ad-blockers) may prevent the Vite client from sending requests to the Vite dev server. You may see a white screen without logged errors in this case. You may also see the following error:
+
+> TypeError: Failed to fetch dynamically imported module
+
+Try disabling extensions if you have this issue.
 
 ### Cross drive links on Windows
 
