@@ -30,6 +30,7 @@ SOFTWARE.
 */
 
 import fs from 'node:fs'
+import fsp from 'node:fs/promises'
 import { join } from 'node:path'
 import { performance } from 'node:perf_hooks'
 import { parseAst as rollupParseAst } from 'rollup/parseAst'
@@ -50,6 +51,7 @@ import type {
   PluginContextMeta,
   ResolvedId,
   RollupError,
+  RollupFsModule,
   RollupLog,
   MinimalPluginContext as RollupMinimalPluginContext,
   PluginContext as RollupPluginContext,
@@ -617,6 +619,22 @@ class MinimalPluginContext<T extends Environment = Environment>
   }
 }
 
+const fsModule: RollupFsModule = {
+  appendFile: fsp.appendFile,
+  copyFile: fsp.copyFile,
+  mkdir: fsp.mkdir as RollupFsModule['mkdir'],
+  mkdtemp: fsp.mkdtemp,
+  readdir: fsp.readdir,
+  readFile: fsp.readFile as RollupFsModule['readFile'],
+  realpath: fsp.realpath,
+  rename: fsp.rename,
+  rmdir: fsp.rmdir,
+  stat: fsp.stat,
+  lstat: fsp.lstat,
+  unlink: fsp.unlink,
+  writeFile: fsp.writeFile,
+}
+
 class PluginContext
   extends MinimalPluginContext
   implements Omit<RollupPluginContext, 'cache'>
@@ -634,6 +652,8 @@ class PluginContext
   ) {
     super(_container.minimalContext.meta, _container.environment)
   }
+
+  fs = fsModule
 
   parse(code: string, opts: any) {
     return rollupParseAst(code, opts)
