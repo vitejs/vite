@@ -13,6 +13,7 @@
     "vite-plugin",
     "@vitejs/plugin-legacy"
   ],
+  "types": "./dist/index.d.ts",
   "exports": "./dist/index.js",
   "scripts": {
     "dev": "tsdown --watch",
