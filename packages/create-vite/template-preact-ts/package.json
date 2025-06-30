@@ -12,7 +12,7 @@
     "preact": "^10.26.9"
   },
   "devDependencies": {
-    "@preact/preset-vite": "^2.10.1",
+    "@preact/preset-vite": "^2.10.2",
     "typescript": "~5.8.3",
     "vite": "^7.0.0"
   }
