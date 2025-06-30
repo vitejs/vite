@@ -416,6 +416,7 @@ Vite plugins can also provide hooks that serve Vite-specific purposes. These hoo
     server: ViteDevServer
   }
   ```
+
   - `modules` is an array of modules that are affected by the changed file. It's an array because a single file may map to multiple served modules (e.g. Vue SFCs).
 
   - `read` is an async read function that returns the content of the file. This is provided because on some systems, the file change callback may fire too fast before the editor finishes updating the file and direct `fs.readFile` will return empty content. The read function passed in normalizes this behavior.

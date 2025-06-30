@@ -99,6 +99,7 @@ If you need a custom integration, you can follow the steps in this guide to conf
      }
    }
    ```
+
    - The manifest has a `Record<name, chunk>` structure
    - For entry or dynamic entry chunks, the key is the relative src path from project root.
    - For non entry chunks, the key is the base name of the generated file prefixed with `_`.

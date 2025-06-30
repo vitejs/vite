@@ -12,9 +12,9 @@
     "@types/express": "^5.0.3",
     "feed": "^5.1.0",
     "gsap": "^3.13.0",
-    "vitepress": "^2.0.0-alpha.6",
-    "vitepress-plugin-group-icons": "^1.6.0",
-    "vitepress-plugin-llms": "^1.5.1",
+    "vitepress": "^2.0.0-alpha.7",
+    "vitepress-plugin-group-icons": "^1.6.1",
+    "vitepress-plugin-llms": "^1.6.0",
     "vue": "^3.5.17"
   }
 }
