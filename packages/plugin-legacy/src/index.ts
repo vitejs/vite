@@ -1,4 +1,3 @@
-/* eslint-disable n/no-extraneous-import */
 import path from 'node:path'
 import crypto from 'node:crypto'
 import { createRequire } from 'node:module'
@@ -10,16 +9,8 @@ import type {
   HtmlTagDescriptor,
   Plugin,
   ResolvedConfig,
+  Rollup,
 } from 'vite'
-import type {
-  NormalizedOutputOptions,
-  OutputAsset,
-  OutputBundle,
-  OutputChunk,
-  OutputOptions,
-  PreRenderedChunk,
-  RenderedChunk,
-} from 'rollup'
 import type {
   PluginItem as BabelPlugin,
   types as BabelTypes,
@@ -174,7 +165,7 @@ function viteLegacyPlugin(options: Options = {}): Plugin[] {
   // When discovering polyfills in `renderChunk`, the hook may be non-deterministic, so we group the
   // modern and legacy polyfills in a sorted chunks map for each rendered outputs before merging them.
   const outputToChunkFileNameToPolyfills = new WeakMap<
-    NormalizedOutputOptions,
+    Rollup.NormalizedOutputOptions,
     Map<string, { modern: Set<string>; legacy: Set<string> }> | null
   >()
 
@@ -405,10 +396,10 @@ function viteLegacyPlugin(options: Options = {}): Plugin[] {
       const getLegacyOutputFileName = (
         fileNames:
           | string
-          | ((chunkInfo: PreRenderedChunk) => string)
+          | ((chunkInfo: Rollup.PreRenderedChunk) => string)
           | undefined,
         defaultFileName = '[name]-legacy-[hash].js',
-      ): string | ((chunkInfo: PreRenderedChunk) => string) => {
+      ): string | ((chunkInfo: Rollup.PreRenderedChunk) => string) => {
         if (!fileNames) {
           return path.posix.join(config.build.assetsDir, defaultFileName)
         }
@@ -437,8 +428,8 @@ function viteLegacyPlugin(options: Options = {}): Plugin[] {
       }
 
       const createLegacyOutput = (
-        options: OutputOptions = {},
-      ): OutputOptions => {
+        options: Rollup.OutputOptions = {},
+      ): Rollup.OutputOptions => {
         return {
           ...options,
           format: 'system',
@@ -798,11 +789,11 @@ function createBabelPresetEnvOptions(
 async function buildPolyfillChunk(
   mode: string,
   imports: Set<string>,
-  bundle: OutputBundle,
+  bundle: Rollup.OutputBundle,
   facadeToChunkMap: Map<string, string>,
   buildOptions: BuildOptions,
   format: 'iife' | 'es',
-  rollupOutputOptions: NormalizedOutputOptions,
+  rollupOutputOptions: Rollup.NormalizedOutputOptions,
   excludeSystemJS?: boolean,
   prependModenChunkLegacyGuard?: boolean,
 ) {
@@ -852,7 +843,7 @@ async function buildPolyfillChunk(
   if (!('output' in _polyfillChunk)) return
   const polyfillChunk = _polyfillChunk.output.find(
     (chunk) => chunk.type === 'chunk' && chunk.isEntry,
-  ) as OutputChunk
+  ) as Rollup.OutputChunk
 
   // associate the polyfill chunk to every entry chunk so that we can retrieve
   // the polyfill filename in index html transform
@@ -870,7 +861,7 @@ async function buildPolyfillChunk(
       (chunk) =>
         chunk.type === 'asset' &&
         chunk.fileName === polyfillChunk.sourcemapFileName,
-    ) as OutputAsset | undefined
+    ) as Rollup.OutputAsset | undefined
     if (polyfillChunkMapAsset) {
       bundle[polyfillChunk.sourcemapFileName] = polyfillChunkMapAsset
     }
@@ -923,13 +914,16 @@ function prependModenChunkLegacyGuardPlugin(): Plugin {
   }
 }
 
-function isLegacyChunk(chunk: RenderedChunk, options: NormalizedOutputOptions) {
+function isLegacyChunk(
+  chunk: Rollup.RenderedChunk,
+  options: Rollup.NormalizedOutputOptions,
+) {
   return options.format === 'system' && chunk.fileName.includes('-legacy')
 }
 
 function isLegacyBundle(
-  bundle: OutputBundle,
-  options: NormalizedOutputOptions,
+  bundle: Rollup.OutputBundle,
+  options: Rollup.NormalizedOutputOptions,
 ) {
   if (options.format === 'system') {
     const entryChunk = Object.values(bundle).find(
