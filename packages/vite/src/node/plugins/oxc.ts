@@ -488,7 +488,7 @@ export const buildOxcPlugin = (): Plugin => {
               opts.format === 'iife' ? IIFE_BEGIN_RE : UMD_BEGIN_RE
             ).exec(res.code)
             if (!m) {
-              this.error('Unexpected IIFE format')
+              this.error(`Unexpected ${opts.format.toUpperCase()} format`)
               return
             }
             const pos = m.index + m[0].length
