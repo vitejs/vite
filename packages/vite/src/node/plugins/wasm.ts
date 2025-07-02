@@ -58,7 +58,9 @@ export const wasmHelperPlugin = (config: ResolvedConfig): Plugin => {
     config.experimental.enableNativePlugin === true &&
     config.command === 'build'
   ) {
-    return nativeWasmHelperPlugin()
+    return nativeWasmHelperPlugin({
+      decodedBase: config.decodedBase,
+    })
   }
 
   return {
