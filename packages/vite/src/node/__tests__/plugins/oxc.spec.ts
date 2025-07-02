@@ -330,4 +330,43 @@ exports.foo = foo;
       "
     `)
   })
+
+  test('should inject helper for umd with only default export', async () => {
+    const renderChunk = await createBuildOxcPluginRenderChunk('es2015')
+    const result = await renderChunk(
+      `(function(global, factory) {
+  typeof exports === 'object' && typeof module !== 'undefined' ? module.exports =  factory() :
+  typeof define === 'function' && define.amd ? define([], factory) :
+  (global = typeof globalThis !== 'undefined' ? globalThis : global || self, (global.lib = factory()));
+})(this, function() {
+
+//#region entry.js
+(async () => {
+	await new Promise((resolve) => setTimeout(resolve, 1e3));
+	console.log("foo");
+})();
+var index_default = "foo";
+
+//#endregion
+return index_default;
+});`,
+      'umd',
+    )
+    expect(result).toMatchInlineSnapshot(`
+      "(function(global, factory) {
+      	typeof exports === "object" && typeof module !== "undefined" ? module.exports = factory() : typeof define === "function" && define.amd ? define([], factory) : (global = typeof globalThis !== "undefined" ? globalThis : global || self, global.lib = factory());
+      })(this, function() {var babelHelpers=function(exports){function t(e,t,n,r,i,a,o){try{var s=e[a](o),c=s.value}catch(e){return void n(e)}s.done?t(c):Promise.resolve(c).then(r,i)}function n(e){return function(){var n=this,r=arguments;return new Promise(function(i,a){var o=e.apply(n,r);function s(e){t(o,i,a,s,c,\`next\`,e)}function c(e){t(o,i,a,s,c,\`throw\`,e)}s(void 0)})}}return exports.asyncToGenerator=n,exports}({});
+
+      	//#region entry.js
+      	babelHelpers.asyncToGenerator(function* () {
+      		yield new Promise((resolve) => setTimeout(resolve, 1e3));
+      		console.log("foo");
+      	})();
+      	var index_default = "foo";
+      	//#endregion
+      	return index_default;
+      });
+      "
+    `)
+  })
 })
