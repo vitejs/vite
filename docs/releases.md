@@ -12,7 +12,7 @@ Vite does not have a fixed release cycle.
 - **Minor** releases always contain new features and are released as needed. Minor releases always have a beta pre-release phase (usually every two months).
 - **Major** releases generally align with [Node.js EOL schedule](https://endoflife.date/nodejs), and will be announced ahead of time. These releases will go through long-term discussions with the ecosystem, and have alpha and beta pre-release phases (usually every year).
 
-The Vite versions ranges that are supported by the Vite team is automatically determined by:
+The Vite version ranges that are supported by the Vite team are automatically determined by:
 
 - **Current Minor** gets regular fixes.
 - **Previous Major** (only for its latest minor) and **Previous Minor** receives important fixes and security patches.

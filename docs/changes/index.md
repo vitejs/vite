@@ -22,6 +22,6 @@ We don't recommend switching to these APIs yet. They are included in Vite to hel
 
 ## Past
 
-The changes below has been done or reverted. They are no longer relevant in the current major version.
+The changes below have been done or reverted. They are no longer relevant in the current major version.
 
 - _No past changes yet_
