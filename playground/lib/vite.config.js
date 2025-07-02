@@ -11,6 +11,10 @@ export default defineConfig({
     },
   },
   build: {
+    // Force oxc inject helpers to test regex
+    // - object rest spread
+    // - optional chaining
+    target: 'chrome46',
     rollupOptions: {
       output: {
         banner: `/*!\nMayLib\n*/`,
