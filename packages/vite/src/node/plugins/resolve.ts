@@ -227,7 +227,6 @@ export function oxcResolvePlugin(
     ...(!resolveOptions.isBuild
       ? [optimizerResolvePlugin(resolveOptions)]
       : []),
-    importGlobSubpathImportsResolvePlugin(resolveOptions),
     ...perEnvironmentOrWorkerPlugin(
       'vite:resolve-builtin',
       overrideEnvConfig,
@@ -344,6 +343,11 @@ export function oxcResolvePlugin(
                 )
                 return newResolvedId === resolvedId ? undefined : newResolvedId
               },
+          resolveSubpathImports(id, importer, isRequire, scan) {
+            options.isRequire = resolveOptions.isRequire ?? isRequire
+            options.scan = scan
+            return resolveSubpathImports(id, importer, options)
+          },
         })
       },
     ),
@@ -441,39 +445,6 @@ function optimizerResolvePlugin(
             ) {
               return res
             }
-          }
-        }
-      },
-    },
-  }
-}
-
-function importGlobSubpathImportsResolvePlugin(
-  resolveOptions: ResolvePluginOptionsWithOverrides,
-): Plugin {
-  const { root } = resolveOptions
-
-  return {
-    name: 'vite:resolve-import-glob-subpath-imports',
-    resolveId: {
-      filter: {
-        id: {
-          include: [/^#/],
-        },
-      },
-      handler(id, importer, resolveOpts) {
-        const options: InternalResolveOptions = {
-          isRequire: resolveOpts.kind === 'require-call',
-          ...this.environment.config.resolve,
-          ...resolveOptions,
-          scan: resolveOpts.scan ?? resolveOptions.scan,
-        }
-        options.preferRelative ||= importer?.endsWith('.html')
-
-        if (resolveOpts.custom?.['vite:import-glob']?.isSubImportsPattern) {
-          const resolvedImports = resolveSubpathImports(id, importer, options)
-          if (resolvedImports) {
-            return normalizePath(path.join(root, resolvedImports))
           }
         }
       },
