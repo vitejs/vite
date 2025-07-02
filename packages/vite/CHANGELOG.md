@@ -1,3 +1,14 @@
+## <small>7.0.4 (2025-07-02)</small>
+
+* feat: update rolldown and support `resolveSubpathImports` for `oxcResolvePlugin` (#287) ([5c0dddb](https://github.com/vitejs/rolldown-vite/commit/5c0dddb)), closes [#287](https://github.com/vitejs/rolldown-vite/issues/287)
+* feat(native-plugin): avoid presetting `process.env.NODE_ENV` when platform is `browser` (#290) ([6058493](https://github.com/vitejs/rolldown-vite/commit/6058493)), closes [#290](https://github.com/vitejs/rolldown-vite/issues/290)
+* feat(native-plugin): pass `decodedBase` to `nativeWasmHelperPlugin` (#300) ([2d7ce9a](https://github.com/vitejs/rolldown-vite/commit/2d7ce9a)), closes [#300](https://github.com/vitejs/rolldown-vite/issues/300)
+* feat(native-plugin): use js define plugin in dev environment (#298) ([c45adb3](https://github.com/vitejs/rolldown-vite/commit/c45adb3)), closes [#298](https://github.com/vitejs/rolldown-vite/issues/298)
+* fix(deps): update all non-major dependencies (#20324) ([3e81af3](https://github.com/vitejs/rolldown-vite/commit/3e81af3)), closes [#20324](https://github.com/vitejs/rolldown-vite/issues/20324)
+* chore(deps): update rolldown-related dependencies (#20323) ([30d2f1b](https://github.com/vitejs/rolldown-vite/commit/30d2f1b)), closes [#20323](https://github.com/vitejs/rolldown-vite/issues/20323)
+
+
+
 ## <small>7.0.3 (2025-06-27)</small>
 
 * feat: add `resolve.tsconfigPaths` option to resolve with tsconfig paths (#277) ([5f3ce8b](https://github.com/vitejs/rolldown-vite/commit/5f3ce8b)), closes [#277](https://github.com/vitejs/rolldown-vite/issues/277)
