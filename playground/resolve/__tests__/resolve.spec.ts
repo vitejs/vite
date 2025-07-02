@@ -97,7 +97,7 @@ test('exact extension vs. duplicated (.js.js)', async () => {
   expect(await page.textContent('.exact-extension')).toMatch('[success]')
 })
 
-test('dont add extension to directory name (./dir-with-ext.js/index.js)', async () => {
+test("don't add extension to directory name (./dir-with-ext.js/index.js)", async () => {
   expect(await page.textContent('.dir-with-ext')).toMatch('[success]')
 })
 
@@ -224,7 +224,7 @@ test('Resolving with query with imports field', async () => {
   )
 })
 
-test('Resolve doesnt interrupt page request with trailing query and .css', async () => {
+test("Resolve doesn't interrupt page request with trailing query and .css", async () => {
   await page.goto(viteTestUrl + '/?test.css')
   expect(await page.locator('vite-error-overlay').count()).toBe(0)
   expect(await page.textContent('h1')).toBe('Resolve')
@@ -235,7 +235,7 @@ test('resolve non-normalized absolute path', async () => {
 })
 
 test.runIf(!isWindows)(
-  'Resolve doesnt interrupt page request that clashes with local project package.json',
+  "Resolve doesn't interrupt page request that clashes with local project package.json",
   async () => {
     // Sometimes request path may point to a different project's package.json, but for testing
     // we point to Vite's own monorepo which always exists, and the package.json is not a library
