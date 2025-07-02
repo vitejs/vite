@@ -323,9 +323,9 @@ Repository: git+https://github.com/jridgewell/sourcemap-codec.git
 ## @jridgewell/trace-mapping
 License: MIT
 By: Justin Ridgewell
-Repository: git+https://github.com/jridgewell/trace-mapping.git
+Repository: git+https://github.com/jridgewell/sourcemaps.git
 
-> Copyright 2022 Justin Ridgewell <justin@ridgewell.name>
+> Copyright 2024 Justin Ridgewell <justin@ridgewell.name>
 > 
 > Permission is hereby granted, free of charge, to any person obtaining a copy
 > of this software and associated documentation files (the "Software"), to deal
