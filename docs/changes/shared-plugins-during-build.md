@@ -6,10 +6,10 @@ Give us feedback at [Environment API feedback discussion](https://github.com/vit
 
 See [Shared plugins during build](/guide/api-environment-plugins.md#shared-plugins-during-build).
 
-Affect scope: `Vite Plugin Authors`
+Affected scope: `Vite Plugin Authors`
 
 ::: warning Future Default Change
-`builder.sharedConfigBuild` was first introduce in `v6.0`. You can set it true to check how your plugins work with a shared config. We're looking for feedback about changing the default in a future major once the plugin ecosystem is ready.
+`builder.sharedConfigBuild` was first introduced in `v6.0`. You can set it true to check how your plugins work with a shared config. We're looking for feedback about changing the default in a future major once the plugin ecosystem is ready.
 :::
 
 ## Motivation
