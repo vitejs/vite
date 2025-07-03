@@ -70,14 +70,8 @@ importers:
         specifier: ^8.18.1
         version: 8.18.1
       '@vitejs/release-scripts':
-        specifier: ^1.5.0
-        version: 1.5.0
-      conventional-changelog:
-        specifier: ^7.1.0
-        version: 7.1.0(conventional-commits-filter@5.0.0)
-      conventional-changelog-conventionalcommits:
-        specifier: ^9.0.0
-        version: 9.0.0
+        specifier: ^1.6.0
+        version: 1.6.0(conventional-commits-filter@5.0.0)
       eslint:
         specifier: ^9.30.0
         version: 9.30.0(jiti@2.4.2)
@@ -173,7 +167,7 @@ importers:
         version: 1.1.1
       tsdown:
         specifier: ^0.12.9
-        version: 0.12.9(publint@0.3.5)(typescript@5.7.3)
+        version: 0.12.9(publint@0.3.12)(typescript@5.7.3)
 
   packages/plugin-legacy:
     dependencies:
@@ -210,7 +204,7 @@ importers:
         version: 1.1.1
       tsdown:
         specifier: ^0.12.9
-        version: 0.12.9(publint@0.3.5)(typescript@5.7.3)
+        version: 0.12.9(publint@0.3.12)(typescript@5.7.3)
       vite:
         specifier: workspace:*
         version: link:../vite
@@ -3004,8 +2998,8 @@ packages:
   '@polka/url@1.0.0-next.28':
     resolution: {integrity: sha512-8LduaNlMZGwdZ6qWrKlfa+2M4gahzFkprZiAt2TF8uS0qQgBizKXpXURqvTJ4WtmupWxaLqjRb2UCTe72mu+Aw==}
 
-  '@publint/pack@0.1.1':
-    resolution: {integrity: sha512-TvCl79Y8v18ZhFGd5mjO1kYPovSBq3+4LVCi5Nfl1JI8fS8i8kXbgQFGwBJRXczim8GlW8c2LMBKTtExYXOy/A==}
+  '@publint/pack@0.1.2':
+    resolution: {integrity: sha512-S+9ANAvUmjutrshV4jZjaiG8XQyuJIZ8a4utWmN/vW1sgQ9IfBnPndwkmQYw53QmouOIytT874u65HEmu6H5jw==}
     engines: {node: '>=18'}
 
   '@quansync/fs@0.1.3':
@@ -3695,8 +3689,8 @@ packages:
       vite: workspace:*
       vue: ^3.2.25
 
-  '@vitejs/release-scripts@1.5.0':
-    resolution: {integrity: sha512-rZQdM5AneNJHzDOTUaQOOifauH6MkGTSI+GH8bKKrimBaa5BtvpnE1iz43fJ4QDO7RdGxAlxWnPQAVlFhGM1cQ==}
+  '@vitejs/release-scripts@1.6.0':
+    resolution: {integrity: sha512-XV+w22Fvn+wqDtEkz8nQIJzvmRVSh90c2xvOO7cX9fkX8+39ZJpYRiXDIRJG1JRnF8khm1rHjulid+l+khc7TQ==}
 
   '@vitejs/test-added-in-entries@file:playground/optimize-deps/added-in-entries':
     resolution: {directory: playground/optimize-deps/added-in-entries, type: directory}
@@ -5969,6 +5963,9 @@ packages:
   package-manager-detector@0.2.9:
     resolution: {integrity: sha512-+vYvA/Y31l8Zk8dwxHhL3JfTuHPm6tlxM2A3GeQyl7ovYnSp1+mzAxClxaOr0qO1TtPxbQxetI7v5XqKLJZk7Q==}
 
+  package-manager-detector@1.3.0:
+    resolution: {integrity: sha512-ZsEbbZORsyHuO00lY1kV3/t72yp6Ysay6Pd17ZAlNGuGwmWDLCJxFpRs0IzfXfj1o4icJOkUEioexFHzyPurSQ==}
+
   package-name-regex@2.0.6:
     resolution: {integrity: sha512-gFL35q7kbE/zBaPA3UKhp2vSzcPYx2ecbYuwv1ucE9Il6IIgBDweBlH8D68UFGZic2MkllKa2KHCfC1IQBQUYA==}
     engines: {node: '>=12'}
@@ -6223,8 +6220,8 @@ packages:
   prr@1.0.1:
     resolution: {integrity: sha512-yPw4Sng1gWghHQWj0B3ZggWUm4qVbPwPFcRG8KyxiU7J2OHFSoEHKS+EZ3fv5l1t9CyCiop6l/ZYeWbrgoQejw==}
 
-  publint@0.3.5:
-    resolution: {integrity: sha512-/84pl/T/emCA5hHmNYqsE/x0Voikg278QmFwNiORYqnZgqeII2HSZ+aAGs4frfDpOCQlU1SAgYloz8ayJGMbIg==}
+  publint@0.3.12:
+    resolution: {integrity: sha512-1w3MMtL9iotBjm1mmXtG3Nk06wnq9UhGNRpQ2j6n1Zq7YAD6gnxMMZMIxlRPAydVjVbjSm+n0lhwqsD1m4LD5w==}
     engines: {node: '>=18'}
     hasBin: true
 
@@ -6586,11 +6583,6 @@ packages:
 
   semver@6.3.1:
     resolution: {integrity: sha512-BR7VvDCVHO+q2xBEWskxS6DJE1qRnb7DxzUrogb71CWoSficBxYsiAGd+Kl0mmq/MprG9yArRkyrQxTO6XjMzA==}
-    hasBin: true
-
-  semver@7.7.1:
-    resolution: {integrity: sha512-hlq8tAfn0m/61p4BVRcPzIGr6LKiMwo4VM6dGi6pt4qcRkmNzTcWq6eCEjEh+qXjkMDvPlOFFSGwQjoEa6gyMA==}
-    engines: {node: '>=10'}
     hasBin: true
 
   semver@7.7.2:
@@ -8688,7 +8680,7 @@ snapshots:
 
   '@polka/url@1.0.0-next.28': {}
 
-  '@publint/pack@0.1.1': {}
+  '@publint/pack@0.1.2': {}
 
   '@quansync/fs@0.1.3':
     dependencies:
@@ -9350,14 +9342,18 @@ snapshots:
       vite: link:packages/vite
       vue: 3.5.17(typescript@5.7.3)
 
-  '@vitejs/release-scripts@1.5.0':
+  '@vitejs/release-scripts@1.6.0(conventional-commits-filter@5.0.0)':
     dependencies:
+      conventional-changelog: 7.1.0(conventional-commits-filter@5.0.0)
+      conventional-changelog-conventionalcommits: 9.0.0
       execa: 8.0.1
       mri: 1.2.0
       picocolors: 1.1.1
       prompts: 2.4.2
-      publint: 0.3.5
-      semver: 7.7.1
+      publint: 0.3.12
+      semver: 7.7.2
+    transitivePeerDependencies:
+      - conventional-commits-filter
 
   '@vitejs/test-added-in-entries@file:playground/optimize-deps/added-in-entries': {}
 
@@ -11753,6 +11749,8 @@ snapshots:
 
   package-manager-detector@0.2.9: {}
 
+  package-manager-detector@1.3.0: {}
+
   package-name-regex@2.0.6: {}
 
   parent-module@1.0.1:
@@ -11958,10 +11956,10 @@ snapshots:
   prr@1.0.1:
     optional: true
 
-  publint@0.3.5:
+  publint@0.3.12:
     dependencies:
-      '@publint/pack': 0.1.1
-      package-manager-detector: 0.2.9
+      '@publint/pack': 0.1.2
+      package-manager-detector: 1.3.0
       picocolors: 1.1.1
       sade: 1.8.1
 
@@ -12384,8 +12382,6 @@ snapshots:
 
   semver@6.3.1: {}
 
-  semver@7.7.1: {}
-
   semver@7.7.2: {}
 
   send@1.2.0:
@@ -12790,7 +12786,7 @@ snapshots:
     optionalDependencies:
       typescript: 5.7.3
 
-  tsdown@0.12.9(publint@0.3.5)(typescript@5.7.3):
+  tsdown@0.12.9(publint@0.3.12)(typescript@5.7.3):
     dependencies:
       ansis: 4.1.0
       cac: 6.7.14
@@ -12806,7 +12802,7 @@ snapshots:
       tinyglobby: 0.2.14
       unconfig: 7.3.2
     optionalDependencies:
-      publint: 0.3.5
+      publint: 0.3.12
       typescript: 5.7.3
     transitivePeerDependencies:
       - '@typescript/native-preview'
