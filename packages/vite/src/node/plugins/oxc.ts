@@ -431,24 +431,30 @@ export const buildOxcPlugin = (): Plugin => {
 
       const runtimeHelpers = Object.entries(res.helpersUsed)
       if (runtimeHelpers.length > 0) {
+        // The length is kept to avoid sourcemap generation
+        let newCode = res.code.replace(
+          /babelHelpers\.([A-Za-z_$][\w$]*)\b/g,
+          'babelHelpers_$1',
+        )
+
         const helpersCode = await generateRuntimeHelpers(runtimeHelpers)
         switch (opts.format) {
           case 'es': {
-            if (res.code.startsWith('#!')) {
-              let secondLinePos = res.code.indexOf('\n')
+            if (newCode.startsWith('#!')) {
+              let secondLinePos = newCode.indexOf('\n')
               if (secondLinePos === -1) {
                 secondLinePos = 0
               }
               // inject after hashbang
-              res.code =
-                res.code.slice(0, secondLinePos) +
+              newCode =
+                newCode.slice(0, secondLinePos) +
                 helpersCode +
-                res.code.slice(secondLinePos)
+                newCode.slice(secondLinePos)
               if (res.map) {
                 res.map.mappings = res.map.mappings.replace(';', ';;')
               }
             } else {
-              res.code = helpersCode + res.code
+              newCode = helpersCode + newCode
               if (res.map) {
                 res.map.mappings = ';' + res.map.mappings
               }
@@ -456,15 +462,15 @@ export const buildOxcPlugin = (): Plugin => {
             break
           }
           case 'cjs': {
-            if (/^\s*['"]use strict['"];/.test(res.code)) {
+            if (/^\s*['"]use strict['"];/.test(newCode)) {
               // inject after use strict
-              res.code = res.code.replace(
+              newCode = newCode.replace(
                 /^\s*['"]use strict['"];/,
                 (m) => m + helpersCode,
               )
               // no need to update sourcemap because the runtime helpers are injected in the same line with "use strict"
             } else {
-              res.code = helpersCode + res.code
+              newCode = helpersCode + newCode
               if (res.map) {
                 res.map.mappings = ';' + res.map.mappings
               }
@@ -486,20 +492,21 @@ export const buildOxcPlugin = (): Plugin => {
           case 'umd': {
             const m = (
               opts.format === 'iife' ? IIFE_BEGIN_RE : UMD_BEGIN_RE
-            ).exec(res.code)
+            ).exec(newCode)
             if (!m) {
               this.error(`Unexpected ${opts.format.toUpperCase()} format`)
               return
             }
             const pos = m.index + m[0].length
-            res.code =
-              res.code.slice(0, pos) + helpersCode + '\n' + res.code.slice(pos)
+            newCode =
+              newCode.slice(0, pos) + helpersCode + '\n' + newCode.slice(pos)
             break
           }
           default: {
             opts.format satisfies never
           }
         }
+        res.code = newCode
       }
 
       return res
@@ -529,6 +536,9 @@ export function resolveOxcTranspileOptions(
 async function generateRuntimeHelpers(
   runtimeHelpers: readonly [string, string][],
 ): Promise<string> {
+  const isAsciiOnlyIdentifierRE = /^[A-Za-z_$][\w$]*$/
+  const cjsExportRE = /\bexports\.([A-Za-z_$][\w$]*)\s*=/g
+
   const bundle = await rolldown({
     cwd: url.fileURLToPath(/** #__KEEP__ */ import.meta.url),
     input: 'entrypoint',
@@ -553,14 +563,28 @@ async function generateRuntimeHelpers(
           },
         },
       },
+      {
+        name: 'ensure-helper-names',
+        renderChunk(_code, chunk) {
+          if (chunk.exports.some((e) => !isAsciiOnlyIdentifierRE.test(e))) {
+            throw new Error(
+              `Expected all runtime helper export names to be ASCII-only. Got ${chunk.exports.filter((e) => !isAsciiOnlyIdentifierRE.test(e)).join(', ')}`,
+            )
+          }
+        },
+      },
     ],
   })
   const output = await bundle.generate({
-    format: 'iife',
-    name: 'babelHelpers',
+    format: 'cjs',
     minify: true,
   })
-  return output.output[0].code
+  const outputCode = output.output[0].code
+  const exportNames = [...outputCode.matchAll(cjsExportRE)].map((m) => m[1])
+  return (
+    `var ${exportNames.map((n) => `babelHelpers_${n}`).join(', ')};` +
+    `!(() => {${output.output[0].code.replace(cjsExportRE, ';babelHelpers_$1=')}})();`
+  )
 }
 
 type OxcJsxOptions = Exclude<OxcOptions['jsx'], string | undefined>

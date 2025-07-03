@@ -177,18 +177,18 @@ describe('renderChunk', () => {
       'iife',
     )
     expect(result).toMatchInlineSnapshot(`
-    "(function() {
-    	"use strict";var babelHelpers=function(exports){function t(e,t,n,r,i,a,o){try{var s=e[a](o),c=s.value}catch(e){return void n(e)}s.done?t(c):Promise.resolve(c).then(r,i)}function n(e){return function(){var n=this,r=arguments;return new Promise(function(i,a){var o=e.apply(n,r);function s(e){t(o,i,a,s,c,\`next\`,e)}function c(e){t(o,i,a,s,c,\`throw\`,e)}s(void 0)})}}return exports.asyncToGenerator=n,exports}({});
+      "(function() {
+      	"use strict";var babelHelpers_asyncToGenerator;!(() => {function e(e,t,n,r,i,a,o){try{var s=e[a](o),c=s.value}catch(e){return void n(e)}s.done?t(c):Promise.resolve(c).then(r,i)}function t(t){return function(){var n=this,r=arguments;return new Promise(function(i,a){var o=t.apply(n,r);function s(t){e(o,i,a,s,c,\`next\`,t)}function c(t){e(o,i,a,s,c,\`throw\`,t)}s(void 0)})}};babelHelpers_asyncToGenerator=t;})();
 
-    	//#region src/index.js
-    	babelHelpers.asyncToGenerator(function* () {
-    		yield new Promise((resolve) => setTimeout(resolve, 1e3));
-    		console.log("foo");
-    	})();
-    	//#endregion
-    })();
-    "
-  `)
+      	//#region src/index.js
+      	babelHelpers_asyncToGenerator(function* () {
+      		yield new Promise((resolve) => setTimeout(resolve, 1e3));
+      		console.log("foo");
+      	})();
+      	//#endregion
+      })();
+      "
+    `)
   })
 
   test('should inject helper for iife without exports from cjs', async () => {
@@ -208,17 +208,17 @@ describe('renderChunk', () => {
       'iife',
     )
     expect(result).toMatchInlineSnapshot(`
-    "(function() {var babelHelpers=function(exports){function t(e,t,n,r,i,a,o){try{var s=e[a](o),c=s.value}catch(e){return void n(e)}s.done?t(c):Promise.resolve(c).then(r,i)}function n(e){return function(){var n=this,r=arguments;return new Promise(function(i,a){var o=e.apply(n,r);function s(e){t(o,i,a,s,c,\`next\`,e)}function c(e){t(o,i,a,s,c,\`throw\`,e)}s(void 0)})}}return exports.asyncToGenerator=n,exports}({});
+      "(function() {var babelHelpers_asyncToGenerator;!(() => {function e(e,t,n,r,i,a,o){try{var s=e[a](o),c=s.value}catch(e){return void n(e)}s.done?t(c):Promise.resolve(c).then(r,i)}function t(t){return function(){var n=this,r=arguments;return new Promise(function(i,a){var o=t.apply(n,r);function s(t){e(o,i,a,s,c,\`next\`,t)}function c(t){e(o,i,a,s,c,\`throw\`,t)}s(void 0)})}};babelHelpers_asyncToGenerator=t;})();
 
-    	//#region src/index.js
-    	babelHelpers.asyncToGenerator(function* () {
-    		yield new Promise((resolve) => setTimeout(resolve, 1e3));
-    		console.log("foo");
-    	})();
-    	//#endregion
-    })();
-    "
-  `)
+      	//#region src/index.js
+      	babelHelpers_asyncToGenerator(function* () {
+      		yield new Promise((resolve) => setTimeout(resolve, 1e3));
+      		console.log("foo");
+      	})();
+      	//#endregion
+      })();
+      "
+    `)
   })
 
   test('should inject helper for iife with exports', async () => {
@@ -241,10 +241,10 @@ return exports;
       'iife',
     )
     expect(result).toMatchInlineSnapshot(`
-      "var lib = function(exports) {var babelHelpers=function(exports){function t(e,t,n,r,i,a,o){try{var s=e[a](o),c=s.value}catch(e){return void n(e)}s.done?t(c):Promise.resolve(c).then(r,i)}function n(e){return function(){var n=this,r=arguments;return new Promise(function(i,a){var o=e.apply(n,r);function s(e){t(o,i,a,s,c,\`next\`,e)}function c(e){t(o,i,a,s,c,\`throw\`,e)}s(void 0)})}}return exports.asyncToGenerator=n,exports}({});
+      "var lib = function(exports) {var babelHelpers_asyncToGenerator;!(() => {function e(e,t,n,r,i,a,o){try{var s=e[a](o),c=s.value}catch(e){return void n(e)}s.done?t(c):Promise.resolve(c).then(r,i)}function t(t){return function(){var n=this,r=arguments;return new Promise(function(i,a){var o=t.apply(n,r);function s(t){e(o,i,a,s,c,\`next\`,t)}function c(t){e(o,i,a,s,c,\`throw\`,t)}s(void 0)})}};babelHelpers_asyncToGenerator=t;})();
 
       	//#region entry.js
-      	babelHelpers.asyncToGenerator(function* () {
+      	babelHelpers_asyncToGenerator(function* () {
       		yield new Promise((resolve) => setTimeout(resolve, 1e3));
       		console.log("foo");
       	})();
@@ -279,10 +279,10 @@ return exports;
     expect(result).toMatchInlineSnapshot(`
       "(function(factory) {
       	typeof define === "function" && define.amd ? define([], factory) : factory();
-      })(function() {var babelHelpers=function(exports){function t(e,t,n,r,i,a,o){try{var s=e[a](o),c=s.value}catch(e){return void n(e)}s.done?t(c):Promise.resolve(c).then(r,i)}function n(e){return function(){var n=this,r=arguments;return new Promise(function(i,a){var o=e.apply(n,r);function s(e){t(o,i,a,s,c,\`next\`,e)}function c(e){t(o,i,a,s,c,\`throw\`,e)}s(void 0)})}}return exports.asyncToGenerator=n,exports}({});
+      })(function() {var babelHelpers_asyncToGenerator;!(() => {function e(e,t,n,r,i,a,o){try{var s=e[a](o),c=s.value}catch(e){return void n(e)}s.done?t(c):Promise.resolve(c).then(r,i)}function t(t){return function(){var n=this,r=arguments;return new Promise(function(i,a){var o=t.apply(n,r);function s(t){e(o,i,a,s,c,\`next\`,t)}function c(t){e(o,i,a,s,c,\`throw\`,t)}s(void 0)})}};babelHelpers_asyncToGenerator=t;})();
 
       	//#region entry.js
-      	babelHelpers.asyncToGenerator(function* () {
+      	babelHelpers_asyncToGenerator(function* () {
       		yield new Promise((resolve) => setTimeout(resolve, 1e3));
       		console.log("foo");
       	})();
@@ -316,10 +316,10 @@ exports.foo = foo;
     expect(result).toMatchInlineSnapshot(`
       "(function(global, factory) {
       	typeof exports === "object" && typeof module !== "undefined" ? factory(exports) : typeof define === "function" && define.amd ? define(["exports"], factory) : (global = typeof globalThis !== "undefined" ? globalThis : global || self, factory(global.lib = {}));
-      })(this, function(exports) {var babelHelpers=function(exports){function t(e,t,n,r,i,a,o){try{var s=e[a](o),c=s.value}catch(e){return void n(e)}s.done?t(c):Promise.resolve(c).then(r,i)}function n(e){return function(){var n=this,r=arguments;return new Promise(function(i,a){var o=e.apply(n,r);function s(e){t(o,i,a,s,c,\`next\`,e)}function c(e){t(o,i,a,s,c,\`throw\`,e)}s(void 0)})}}return exports.asyncToGenerator=n,exports}({});
+      })(this, function(exports) {var babelHelpers_asyncToGenerator;!(() => {function e(e,t,n,r,i,a,o){try{var s=e[a](o),c=s.value}catch(e){return void n(e)}s.done?t(c):Promise.resolve(c).then(r,i)}function t(t){return function(){var n=this,r=arguments;return new Promise(function(i,a){var o=t.apply(n,r);function s(t){e(o,i,a,s,c,\`next\`,t)}function c(t){e(o,i,a,s,c,\`throw\`,t)}s(void 0)})}};babelHelpers_asyncToGenerator=t;})();
 
       	//#region entry.js
-      	babelHelpers.asyncToGenerator(function* () {
+      	babelHelpers_asyncToGenerator(function* () {
       		yield new Promise((resolve) => setTimeout(resolve, 1e3));
       		console.log("foo");
       	})();
@@ -355,10 +355,10 @@ return index_default;
     expect(result).toMatchInlineSnapshot(`
       "(function(global, factory) {
       	typeof exports === "object" && typeof module !== "undefined" ? module.exports = factory() : typeof define === "function" && define.amd ? define([], factory) : (global = typeof globalThis !== "undefined" ? globalThis : global || self, global.lib = factory());
-      })(this, function() {var babelHelpers=function(exports){function t(e,t,n,r,i,a,o){try{var s=e[a](o),c=s.value}catch(e){return void n(e)}s.done?t(c):Promise.resolve(c).then(r,i)}function n(e){return function(){var n=this,r=arguments;return new Promise(function(i,a){var o=e.apply(n,r);function s(e){t(o,i,a,s,c,\`next\`,e)}function c(e){t(o,i,a,s,c,\`throw\`,e)}s(void 0)})}}return exports.asyncToGenerator=n,exports}({});
+      })(this, function() {var babelHelpers_asyncToGenerator;!(() => {function e(e,t,n,r,i,a,o){try{var s=e[a](o),c=s.value}catch(e){return void n(e)}s.done?t(c):Promise.resolve(c).then(r,i)}function t(t){return function(){var n=this,r=arguments;return new Promise(function(i,a){var o=t.apply(n,r);function s(t){e(o,i,a,s,c,\`next\`,t)}function c(t){e(o,i,a,s,c,\`throw\`,t)}s(void 0)})}};babelHelpers_asyncToGenerator=t;})();
 
       	//#region entry.js
-      	babelHelpers.asyncToGenerator(function* () {
+      	babelHelpers_asyncToGenerator(function* () {
       		yield new Promise((resolve) => setTimeout(resolve, 1e3));
       		console.log("foo");
       	})();
