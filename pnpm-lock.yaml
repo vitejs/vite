@@ -358,7 +358,7 @@ importers:
         version: 16.1.1(postcss@8.5.6)
       postcss-load-config:
         specifier: ^6.0.1
-        version: 6.0.1(jiti@2.4.2)(postcss@8.5.6)(tsx@4.20.3)(yaml@2.8.0)
+        version: 6.0.1(postcss@8.5.6)
       postcss-modules:
         specifier: ^6.0.1
         version: 6.0.1(postcss@8.5.6)
@@ -373,7 +373,7 @@ importers:
         version: 1.0.0-beta.21
       rolldown-plugin-dts:
         specifier: ^0.13.13
-        version: 0.13.13(rolldown@1.0.0-beta.21)(typescript@5.7.3)
+        version: 0.13.13(rolldown@1.0.0-beta.21)
       rollup-plugin-license:
         specifier: ^3.6.0
         version: 3.6.0(picomatch@4.0.2)(rollup@4.40.1)
@@ -394,7 +394,7 @@ importers:
         version: 5.43.1
       tsconfck:
         specifier: ^3.1.6
-        version: 3.1.6(typescript@5.7.3)
+        version: 3.1.6
       types:
         specifier: link:./types
         version: link:types
@@ -1880,16 +1880,8 @@ packages:
     resolution: {integrity: sha512-Tub4ZKEXqbPjXgWLl2+3JpQAYBJ8+ikpQ2Ocj/q/r0LwE3UhENh7EUabyHjz2kCEsrRY83ew2DQdHluuiDQFzg==}
     engines: {node: '>=6.9.0'}
 
-  '@babel/helper-string-parser@7.25.9':
-    resolution: {integrity: sha512-4A/SCr/2KLd5jrtOMFzaKjVtAei3+2r/NChoBNoZ3EyP/+GlhoaEGoWOZUmFmoITP7zOJyHIMm+DYRd8o3PvHA==}
-    engines: {node: '>=6.9.0'}
-
   '@babel/helper-string-parser@7.27.1':
     resolution: {integrity: sha512-qMlSxKbpRlAridDExk92nSobyDdpPijUq2DW6oDnUqd0iOGxmQjyqhMIihI9+zv4LPyZdRje2cavWPbCbWm3eA==}
-    engines: {node: '>=6.9.0'}
-
-  '@babel/helper-validator-identifier@7.25.9':
-    resolution: {integrity: sha512-Ed61U6XJc3CVRfkERJWDz4dJwKe7iLmmJsbOGu9wSloNSFttHV0I8g6UAgb7qnK5ly5bGLPd4oXZlxCdANBOWQ==}
     engines: {node: '>=6.9.0'}
 
   '@babel/helper-validator-identifier@7.27.1':
@@ -2297,18 +2289,6 @@ packages:
 
   '@babel/traverse@7.27.7':
     resolution: {integrity: sha512-X6ZlfR/O/s5EQ/SnUSLzr+6kGnkg8HXGMzpgsMsrJVcfDtH1vIp6ctCN4eZ1LS5c0+te5Cb6Y514fASjMRJ1nw==}
-    engines: {node: '>=6.9.0'}
-
-  '@babel/types@7.27.0':
-    resolution: {integrity: sha512-H45s8fVLYjbhFH62dIJ3WtmJ6RSPt/3DRO0ZcT2SUiYiQyz3BLVb9ADEnLl91m74aQPS3AzzeajZHYOalWe3bg==}
-    engines: {node: '>=6.9.0'}
-
-  '@babel/types@7.27.3':
-    resolution: {integrity: sha512-Y1GkI4ktrtvmawoSq+4FCVHNryea6uR+qUQy0AGxLSsjCX0nVmkYQMBLHDkXZuo5hGx7eYdnIaslsdBFm7zbUw==}
-    engines: {node: '>=6.9.0'}
-
-  '@babel/types@7.27.6':
-    resolution: {integrity: sha512-ETyHEk2VHHvl9b9jZP5IHPavHYk57EhanlRRuae9XCpb/j5bDCbPPMOBfCWhnl/7EDJz0jEMCi/RhccCE8r1+Q==}
     engines: {node: '>=6.9.0'}
 
   '@babel/types@7.27.7':
@@ -7601,11 +7581,7 @@ snapshots:
     transitivePeerDependencies:
       - supports-color
 
-  '@babel/helper-string-parser@7.25.9': {}
-
   '@babel/helper-string-parser@7.27.1': {}
-
-  '@babel/helper-validator-identifier@7.25.9': {}
 
   '@babel/helper-validator-identifier@7.27.1': {}
 
@@ -7626,7 +7602,7 @@ snapshots:
 
   '@babel/parser@7.27.5':
     dependencies:
-      '@babel/types': 7.27.3
+      '@babel/types': 7.27.7
 
   '@babel/parser@7.27.7':
     dependencies:
@@ -8119,21 +8095,6 @@ snapshots:
       globals: 11.12.0
     transitivePeerDependencies:
       - supports-color
-
-  '@babel/types@7.27.0':
-    dependencies:
-      '@babel/helper-string-parser': 7.25.9
-      '@babel/helper-validator-identifier': 7.25.9
-
-  '@babel/types@7.27.3':
-    dependencies:
-      '@babel/helper-string-parser': 7.27.1
-      '@babel/helper-validator-identifier': 7.27.1
-
-  '@babel/types@7.27.6':
-    dependencies:
-      '@babel/helper-string-parser': 7.27.1
-      '@babel/helper-validator-identifier': 7.27.1
 
   '@babel/types@7.27.7':
     dependencies:
@@ -8987,25 +8948,25 @@ snapshots:
   '@types/babel__core@7.20.5':
     dependencies:
       '@babel/parser': 7.27.5
-      '@babel/types': 7.27.0
+      '@babel/types': 7.27.7
       '@types/babel__generator': 7.6.8
       '@types/babel__template': 7.4.4
       '@types/babel__traverse': 7.20.6
 
   '@types/babel__generator@7.6.8':
     dependencies:
-      '@babel/types': 7.27.6
+      '@babel/types': 7.27.7
 
   '@types/babel__preset-env@7.10.0': {}
 
   '@types/babel__template@7.4.4':
     dependencies:
       '@babel/parser': 7.27.7
-      '@babel/types': 7.27.6
+      '@babel/types': 7.27.7
 
   '@types/babel__traverse@7.20.6':
     dependencies:
-      '@babel/types': 7.27.6
+      '@babel/types': 7.27.7
 
   '@types/body-parser@1.19.5':
     dependencies:
@@ -11851,14 +11812,11 @@ snapshots:
     optionalDependencies:
       postcss: 8.5.6
 
-  postcss-load-config@6.0.1(jiti@2.4.2)(postcss@8.5.6)(tsx@4.20.3)(yaml@2.8.0):
+  postcss-load-config@6.0.1(postcss@8.5.6):
     dependencies:
       lilconfig: 3.1.3
     optionalDependencies:
-      jiti: 2.4.2
       postcss: 8.5.6
-      tsx: 4.20.3
-      yaml: 2.8.0
 
   postcss-modules-extract-imports@3.1.0(postcss@8.5.6):
     dependencies:
@@ -12169,6 +12127,21 @@ snapshots:
   reusify@1.0.4: {}
 
   rfdc@1.4.1: {}
+
+  rolldown-plugin-dts@0.13.13(rolldown@1.0.0-beta.21):
+    dependencies:
+      '@babel/generator': 7.27.5
+      '@babel/parser': 7.27.7
+      '@babel/types': 7.27.7
+      ast-kit: 2.1.0
+      birpc: 2.4.0
+      debug: 4.4.1
+      dts-resolver: 2.1.1
+      get-tsconfig: 4.10.1
+      rolldown: 1.0.0-beta.21
+    transitivePeerDependencies:
+      - oxc-resolver
+      - supports-color
 
   rolldown-plugin-dts@0.13.13(rolldown@1.0.0-beta.21)(typescript@5.7.3):
     dependencies:
@@ -12782,9 +12755,7 @@ snapshots:
 
   ts-interface-checker@0.1.13: {}
 
-  tsconfck@3.1.6(typescript@5.7.3):
-    optionalDependencies:
-      typescript: 5.7.3
+  tsconfck@3.1.6: {}
 
   tsdown@0.12.9(publint@0.3.12)(typescript@5.7.3):
     dependencies:
