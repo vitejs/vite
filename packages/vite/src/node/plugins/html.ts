@@ -1128,8 +1128,17 @@ export type IndexHtmlTransform =
 export function preImportMapHook(
   config: ResolvedConfig,
 ): IndexHtmlTransformHook {
-  return (html, ctx) => {
-    html = stripLiteral(html)
+  return async (html, ctx) => {
+    const s = new MagicString(html)
+    await traverseHtml(html, ctx.path, (node) => {
+      if (node.nodeName === '#comment') {
+        s.remove(
+          node.sourceCodeLocation!.startOffset,
+          node.sourceCodeLocation!.endOffset,
+        )
+      }
+    })
+    html = s.toString()
     const importMapIndex = html.search(importMapRE)
     if (importMapIndex < 0) return
 
@@ -1155,24 +1164,26 @@ export function preImportMapHook(
  * Move importmap before the first module script and modulepreload link
  */
 export function postImportMapHook(): IndexHtmlTransformHook {
-  return (html) => {
-    html = stripLiteral(html)
-    if (!importMapAppendRE.test(html)) return
+  return async (html, { path }) => {
+    const s = new MagicString(html)
+    await traverseHtml(html, path, (node) => {
+      if (!nodeIsElement(node)) {
+        return
+      }
 
-    let importMap: string | undefined
-    html = html.replace(importMapRE, (match) => {
-      importMap = match
-      return ''
+      const { nodeName, attrs, sourceCodeLocation } = node
+      if (
+        nodeName === 'script' &&
+        attrs.some((attr) => attr.name === 'type' && attr.value === 'importmap')
+      ) {
+        s.move(
+          sourceCodeLocation!.startTag!.startOffset,
+          sourceCodeLocation!.endOffset,
+          0,
+        )
+      }
     })
-
-    if (importMap) {
-      html = html.replace(
-        importMapAppendRE,
-        (match) => `${importMap}\n${match}`,
-      )
-    }
-
-    return html
+    return s.toString()
   }
 }
 
