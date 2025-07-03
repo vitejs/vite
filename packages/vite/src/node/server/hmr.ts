@@ -861,7 +861,7 @@ function isNodeWithinCircularImports(
   currentChain: EnvironmentModuleNode[] = [node],
   traversedModules = new Set<EnvironmentModuleNode>(),
 ): boolean {
-  // To help visualize how each parameters work, imagine this import graph:
+  // To help visualize how each parameter works, imagine this import graph:
   //
   // A -> B -> C -> ACCEPTED -> D -> E -> NODE
   //      ^--------------------------|
