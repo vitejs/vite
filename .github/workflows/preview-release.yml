@@ -31,8 +31,14 @@ jobs:
       - name: Install dependencies
         run: pnpm install
 
-      - name: Build
+      - name: Build Vite core
         working-directory: ./packages/vite
         run: pnpm build
 
       - run: pnpm dlx pkg-pr-new@0.0 publish --pnpm ./packages/vite
+
+      - name: Build plugin-legacy
+        working-directory: ./packages/plugin-legacy
+        run: pnpm build
+
+      - run: pnpm dlx pkg-pr-new@0.0 publish --pnpm ./packages/plugin-legacy
