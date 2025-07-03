@@ -71,7 +71,7 @@ export const core = [
     avatar: 'https://github.com/ArnaudBarre.png',
     name: 'Arnaud Barré',
     title: 'Frontend Developer',
-    desc: 'Passionate by tooling around TypeScript and React.',
+    desc: 'Passionate about tooling around TypeScript and React.',
     links: [
       { icon: 'github', link: 'https://github.com/ArnaudBarre' },
       {
@@ -164,7 +164,7 @@ export const emeriti = [
     name: 'Niputi',
     title: 'Developer',
     org: 'Computershare Denmark',
-    desc: 'weeb/javascript lover.',
+    desc: 'weeb/JavaScript lover.',
     links: [
       { icon: 'github', link: 'https://github.com/Niputi' },
       { icon: 'x', link: 'https://x.com/Niputi_' },

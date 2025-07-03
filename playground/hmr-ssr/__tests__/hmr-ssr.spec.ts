@@ -508,7 +508,7 @@ if (!isBuild) {
         })
       })
 
-      describe("doesn't reload if files not in the the entrypoint importers chain is changed", async () => {
+      describe("doesn't reload if files not in the entrypoint importers chain is changed", async () => {
         const testFile = 'non-tested/index.js'
 
         beforeAll(async () => {

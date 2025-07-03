@@ -56,7 +56,7 @@ describe('transformWithEsbuild', () => {
         }
       }`,
     })
-    // "verbatimModuleSyntax": true from from tsconfig.json should not be read
+    // "verbatimModuleSyntax": true from tsconfig.json should not be read
     // and defaults to false
     expect(result.code).not.toMatch(/import.*".\/not-used-type";/)
   })
