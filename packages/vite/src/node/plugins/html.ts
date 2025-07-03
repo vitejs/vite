@@ -1129,6 +1129,7 @@ export function preImportMapHook(
   config: ResolvedConfig,
 ): IndexHtmlTransformHook {
   return (html, ctx) => {
+    html = stripLiteral(html)
     const importMapIndex = html.search(importMapRE)
     if (importMapIndex < 0) return
 
@@ -1155,6 +1156,7 @@ export function preImportMapHook(
  */
 export function postImportMapHook(): IndexHtmlTransformHook {
   return (html) => {
+    html = stripLiteral(html)
     if (!importMapAppendRE.test(html)) return
 
     let importMap: string | undefined
