@@ -849,7 +849,10 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
         }
 
         if (this.environment.config.build.cssCodeSplit) {
-          if (opts.format === 'es' || opts.format === 'cjs') {
+          if (
+            (opts.format === 'es' || opts.format === 'cjs') &&
+            !chunk.fileName.includes('-legacy')
+          ) {
             const isEntry = chunk.isEntry && isPureCssChunk
             const cssFullAssetName = ensureFileExt(chunk.name, '.css')
             // if facadeModuleId doesn't exist or doesn't have a CSS extension,
@@ -863,7 +866,6 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
             const originalFileName = getChunkOriginalFileName(
               chunk,
               config.root,
-              opts.format,
             )
 
             chunkCSS = resolveAssetUrlsInCss(chunkCSS, cssAssetName)
@@ -904,20 +906,32 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
               `${style}.textContent = ${cssString};` +
               `document.head.appendChild(${style});`
 
-            // TODO: system js support
-            // const wrapIdx = code.indexOf('System.register')
-            // if (wrapIdx >= 0) {
-            //   const executeFnStart = code.indexOf('execute:', wrapIdx)
-            //   injectionPoint = code.indexOf('{', executeFnStart) + 1
-            // }
-            const m = (
-              opts.format === 'iife' ? IIFE_BEGIN_RE : UMD_BEGIN_RE
-            ).exec(code)
-            if (!m) {
-              this.error('Injection point for inlined CSS not found')
+            let injectionPoint: number
+            if (opts.format === 'iife' || opts.format === 'umd') {
+              const m = (
+                opts.format === 'iife' ? IIFE_BEGIN_RE : UMD_BEGIN_RE
+              ).exec(code)
+              if (!m) {
+                this.error('Injection point for inlined CSS not found')
+                return
+              }
+              injectionPoint = m.index + m[0].length
+            } else if (opts.format === 'es') {
+              // legacy build
+              if (code.startsWith('#!')) {
+                let secondLinePos = code.indexOf('\n')
+                if (secondLinePos === -1) {
+                  secondLinePos = 0
+                }
+                injectionPoint = secondLinePos
+              } else {
+                injectionPoint = 0
+              }
+            } else {
+              this.error('Non supported format')
               return
             }
-            const injectionPoint = m.index + m[0].length
+
             s ||= new MagicString(code)
             s.appendRight(injectionPoint, injectCode)
           }
@@ -954,8 +968,8 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
     },
 
     async generateBundle(opts, bundle) {
-      // @ts-expect-error asset emits are skipped in legacy bundle
-      if (opts.__vite_skip_asset_emit__) {
+      // to avoid emitting duplicate assets for modern build and legacy build
+      if (this.environment.config.isOutputOptionsForLegacyChunks?.(opts)) {
         return
       }
 

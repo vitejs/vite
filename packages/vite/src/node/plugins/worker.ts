@@ -523,8 +523,11 @@ export function webWorkerPlugin(config: ResolvedConfig): Plugin {
     },
 
     generateBundle(opts, bundle) {
-      // @ts-expect-error asset emits are skipped in legacy bundle
-      if (opts.__vite_skip_asset_emit__ || isWorker) {
+      // to avoid emitting duplicate assets for modern build and legacy build
+      if (
+        this.environment.config.isOutputOptionsForLegacyChunks?.(opts) ||
+        isWorker
+      ) {
         return
       }
       const workerMap = workerCache.get(config)!

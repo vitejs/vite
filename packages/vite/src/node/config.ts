@@ -10,6 +10,7 @@ import colors from 'picocolors'
 import type { Alias, AliasOptions } from 'dep-types/alias'
 import picomatch from 'picomatch'
 import {
+  type NormalizedOutputOptions,
   type OutputChunk,
   type PluginContextMeta,
   type RolldownOptions,
@@ -637,6 +638,10 @@ export interface ResolvedConfig
       appType: AppType
       experimental: RequiredExceptFor<ExperimentalOptions, 'renderBuiltUrl'>
       environments: Record<string, ResolvedEnvironmentOptions>
+      /** @internal injected by legacy plugin */
+      isOutputOptionsForLegacyChunks?(
+        outputOptions: NormalizedOutputOptions,
+      ): boolean
       /**
        * The token to connect to the WebSocket server from browsers.
        *

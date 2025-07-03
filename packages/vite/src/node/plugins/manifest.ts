@@ -1,10 +1,5 @@
 import path from 'node:path'
-import type {
-  InternalModuleFormat,
-  OutputAsset,
-  OutputChunk,
-  RenderedChunk,
-} from 'rolldown'
+import type { OutputAsset, OutputChunk, RenderedChunk } from 'rolldown'
 import { manifestPlugin as nativeManifestPlugin } from 'rolldown/experimental'
 import type { Plugin } from '../plugin'
 import { normalizePath, sortObjectKeys } from '../utils'
@@ -71,7 +66,7 @@ export function manifestPlugin(config: ResolvedConfig): Plugin {
       getState(this).reset()
     },
 
-    generateBundle({ format }, bundle) {
+    generateBundle(_opts, bundle) {
       const state = getState(this)
       const { manifest } = state
       const { root } = this.environment.config
@@ -79,7 +74,7 @@ export function manifestPlugin(config: ResolvedConfig): Plugin {
 
       function getChunkName(chunk: OutputChunk) {
         return (
-          getChunkOriginalFileName(chunk, root, format) ??
+          getChunkOriginalFileName(chunk, root) ??
           `_${path.basename(chunk.fileName)}`
         )
       }
@@ -215,16 +210,9 @@ export function manifestPlugin(config: ResolvedConfig): Plugin {
 export function getChunkOriginalFileName(
   chunk: OutputChunk | RenderedChunk,
   root: string,
-  format: InternalModuleFormat,
 ): string | undefined {
   if (chunk.facadeModuleId) {
-    let name = normalizePath(path.relative(root, chunk.facadeModuleId))
-    // @ts-expect-error TODO: system format is not supported
-    if (format === 'system' && !chunk.name.includes('-legacy')) {
-      const ext = path.extname(name)
-      const endPos = ext.length !== 0 ? -ext.length : undefined
-      name = `${name.slice(0, endPos)}-legacy${ext}`
-    }
+    const name = normalizePath(path.relative(root, chunk.facadeModuleId))
     return name.replace(/\0/g, '')
   }
 }

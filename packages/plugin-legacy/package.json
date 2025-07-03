@@ -15,8 +15,8 @@
   ],
   "exports": "./dist/index.js",
   "scripts": {
-    "//dev": "tsdown --watch",
-    "//build": "tsdown",
+    "dev": "tsdown --watch",
+    "build": "tsdown",
     "prepublishOnly": "npm run build"
   },
   "engines": {
@@ -34,6 +34,8 @@
   "funding": "https://github.com/vitejs/vite?sponsor=1",
   "dependencies": {
     "@babel/core": "^7.27.7",
+    "@babel/plugin-transform-dynamic-import": "^7.27.1",
+    "@babel/plugin-transform-modules-systemjs": "^7.27.1",
     "@babel/preset-env": "^7.27.2",
     "browserslist": "^4.25.1",
     "browserslist-to-esbuild": "^2.1.1",
