@@ -406,8 +406,9 @@ export const buildOxcPlugin = (): Plugin => {
       return environment.config.oxc !== false
     },
     async renderChunk(code, chunk, opts) {
-      // @ts-expect-error injected by @vitejs/plugin-legacy
-      if (opts.__vite_skip_esbuild__) {
+      // avoid on legacy chunks since it produces legacy-unsafe code
+      // e.g. rewriting object properties into shorthands
+      if (this.environment.config.isOutputOptionsForLegacyChunks?.(opts)) {
         return null
       }
 
