@@ -64,7 +64,7 @@ export default defineConfig({
   resolve: {
     alias: [
       { find: '=', replacement: __dirname },
-      { find: /=replace\/(.*)/, replacement: `${__dirname}/$1` },
+      { find: /^=replace\/(.*)/, replacement: `${__dirname}/$1` },
       { find: 'spacefolder', replacement: __dirname + '/folder with space' },
       { find: '#alias', replacement: __dirname + '/aliased/foo.css' },
       {
