@@ -469,7 +469,6 @@ export function webWorkerPlugin(config: ResolvedConfig): Plugin {
               map: s.generateMap({ hires: 'boundary' }),
             }
           }
-          return
         }
       },
     },
