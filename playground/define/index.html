@@ -72,6 +72,12 @@
   </p>
 </section>
 
+<h2>Optional values are detected by pattern properly</h2>
+<p>
+  process?.env?.SOMEVAR
+  <code class="optional-env"></code>
+</p>
+
 <script>
   // inject __VITE_SOME_IDENTIFIER__ to test if it's replaced
   window.__VITE_SOME_IDENTIFIER__ = true
@@ -154,6 +160,9 @@
     '.replace-undefined-constants-on-import-meta-env .import-meta-env-SOME_IDENTIFIER',
     `${import.meta.env.SOME_IDENTIFIER}`,
   )
+
+  import optionalEnv from './optional-env.js'
+  text('.optional-env', optionalEnv)
 </script>
 
 <style>
