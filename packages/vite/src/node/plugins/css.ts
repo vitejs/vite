@@ -2433,31 +2433,23 @@ const makeScssWorker = (
         return unquotedUrl.startsWith('#{')
       }
 
-      const createInternalImporter = (
-        isForRelative: boolean,
-      ): Sass.Importer<'async'> => ({
+      const internalImporter: Sass.Importer<'async'> = {
         async canonicalize(url, context) {
-          if (isForRelative) {
-            // sass passes resolved paths for importer passed to `importer` option
-            const resolved = new URL(url, context.containingUrl ?? undefined)
-            if (fs.existsSync(resolved)) return resolved
-          } else {
-            const importer = context.containingUrl
-              ? fileURLToPath(context.containingUrl)
-              : options.filename
-            const resolved = await resolvers.sass(
-              environment,
-              url,
-              cleanScssBugUrl(importer),
-            )
-            if (
-              resolved &&
-              (resolved.endsWith('.css') ||
-                resolved.endsWith('.scss') ||
-                resolved.endsWith('.sass'))
-            ) {
-              return pathToFileURL(resolved)
-            }
+          const importer = context.containingUrl
+            ? fileURLToPath(context.containingUrl)
+            : options.filename
+          const resolved = await resolvers.sass(
+            environment,
+            url,
+            cleanScssBugUrl(importer),
+          )
+          if (
+            resolved &&
+            (resolved.endsWith('.css') ||
+              resolved.endsWith('.scss') ||
+              resolved.endsWith('.sass'))
+          ) {
+            return pathToFileURL(resolved)
           }
           return null
         },
@@ -2480,13 +2472,12 @@ const makeScssWorker = (
             result.contents ?? (await fsp.readFile(result.file, 'utf-8'))
           return { contents, syntax, sourceMapUrl: canonicalUrl }
         },
-      })
-
+      }
       sassOptions.importers = [
         ...(sassOptions.importers ?? []),
-        createInternalImporter(false),
+        internalImporter,
       ]
-      sassOptions.importer ??= createInternalImporter(true)
+      sassOptions.importer ??= internalImporter
 
       const result = await compiler.compileStringAsync(data, sassOptions)
       return {
