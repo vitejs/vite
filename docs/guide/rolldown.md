@@ -37,7 +37,7 @@ The rolldown-powered version of Vite is currently available as a separate packag
 ```json
 {
   "dependencies": {
-    "vite": "^6.0.0" // [!code --]
+    "vite": "^7.0.0" // [!code --]
     "vite": "npm:rolldown-vite@latest" // [!code ++]
   }
 }
@@ -103,7 +103,7 @@ If you don't pass the option in yourself, this must be fixed by the utilized fra
 
 #### `manualChunks` to `advancedChunks`
 
-Rolldown does not support the `manualChunks` option that was available in Rollup. Instead, it offers a more fine-grained setting via the [`advancedChunks` option](https://rolldown.rs/guide/in-depth/advanced-chunks#advanced-chunks), which is more similar to webpack's `splitChunk`:
+While Rolldown has support for the `manualChunks` option that is also exposed by Rollup, it is marked deprecated. Instead of it, Rolldown offers a more fine-grained setting via the [`advancedChunks` option](https://rolldown.rs/guide/in-depth/advanced-chunks#advanced-chunks), which is more similar to webpack's `splitChunk`:
 
 ```js
 // Old configuration (Rollup)
