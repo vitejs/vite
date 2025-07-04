@@ -6,7 +6,7 @@ import { fileURLToPath, pathToFileURL } from 'node:url'
 import postcssrc from 'postcss-load-config'
 import type {
   ExistingRawSourceMap,
-  ModuleFormat,
+  InternalModuleFormat,
   OutputAsset,
   OutputChunk,
   RenderedChunk,
@@ -1153,7 +1153,7 @@ function isCssScopeToRendered(
  */
 export function getEmptyChunkReplacer(
   pureCssChunkNames: string[],
-  outputFormat: ModuleFormat,
+  outputFormat: InternalModuleFormat,
 ): (code: string) => string {
   const emptyChunkFiles = pureCssChunkNames
     .map((file) => escapeRegex(path.basename(file)))
