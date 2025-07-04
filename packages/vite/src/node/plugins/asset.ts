@@ -172,7 +172,7 @@ export function assetPlugin(config: ResolvedConfig): Plugin {
           // Rollup convention, this id should be handled by the
           // plugin that marked it with \0
           exclude: /^\0/,
-        }
+        },
       },
       async handler(id) {
         // raw requests, read from disk
