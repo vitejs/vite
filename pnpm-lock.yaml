@@ -248,6 +248,9 @@ importers:
       '@polka/compression':
         specifier: ^1.0.0-next.25
         version: 1.0.0-next.25
+      '@rolldown/pluginutils':
+        specifier: ^1.0.0-beta.21
+        version: 1.0.0-beta.21
       '@rollup/plugin-alias':
         specifier: ^5.1.1
         version: 5.1.1(rollup@4.40.1)

@@ -45,10 +45,10 @@ export function jsonPlugin(
     name: 'vite:json',
 
     transform: {
+      filter: {
+        id: { include: jsonExtRE, exclude: SPECIAL_QUERY_RE },
+      },
       handler(json, id) {
-        if (!jsonExtRE.test(id)) return null
-        if (SPECIAL_QUERY_RE.test(id)) return null
-
         if (inlineRE.test(id) || noInlineRE.test(id)) {
           this.warn(
             `\n` +
