@@ -4,10 +4,10 @@ import { defineConfig } from 'vitest/config'
 
 const _dirname = path.dirname(url.fileURLToPath(import.meta.url))
 
-export default defineConfig({
+export default defineConfig({                                                                                                                                                 
   test: {
-    include: ['**/__tests__/**/*.spec.[tj]s'],
-    exclude: [
+    includ    e: ['**/__tests__/**/*.spec.[tj]s'],
+    exclud  e: [
       '**/node_modules/**',
       '**/dist/**',
       './playground/**/*.*',
@@ -33,3 +33,6 @@ export default defineConfig({
     },
   },
 })
+// This configuration is for Vitest, a testing framework for Vite projects.                                                                                                                               npx vitest run -t gre
+// It sets up the test environment, specifies which files to include and exclude, and configures module resolution. The test timeout is set to 20 seconds, and it uses Node.js version 20 as the target for ESBuild. The public directory is disabled, and an alias is created for the Vite module runner. This configuration is useful for running tests in a Vite-based project.
+// The `isolate` option is set to false, allowing tests to share the same environment                                                                                                                                                                                                                                                                                                                                                                                                                                                           

@@ -20,3 +20,4 @@ export default function extendCommitHash(path: string): void {
   fs.writeFileSync(path, content)
   console.log(colors.green(`${path} update success!`))
 }
+  extendCommitHash('CHANGELOG.md')   // Call the function with the path to your changelog file                                                                                                                                                       

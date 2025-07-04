@@ -26,3 +26,10 @@ jobs:
       run: |
         npm install
         npx webpack
+    - name: Run Tests
+      run: |
+        npm test
+        # Add any additional test commands here
+      env:
+        NODE_ENV: test
+        CI: true                                

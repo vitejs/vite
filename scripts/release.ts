@@ -27,5 +27,18 @@ release({
     await run('npx', changelogArgs, { cwd: `packages/${pkgName}` })
     // conventional-changelog generates links with short commit hashes, extend them to full hashes
     extendCommitHash(`packages/${pkgName}/CHANGELOG.md`)
-  },
+  },  
+  })  .then(() => {
+  console.log(colors.green('\nRelease process completed successfully!'))
 })
+  .catch((error) => {
+    console.error(colors.red('\nRelease process failed!'), error)
+    process.exit(1)
+  })
+  .finally(() => {
+    console.log(colors.cyan('\nCleaning up...'))
+    // Clean up any temporary files or states if necessary
+    // This is a placeholder for any cleanup logic you might need
+  });                                                                                                                                                                                                                                                               
+// This script is used to automate the release process for Vite and its related packages.
+      // It handles generating changelogs, updating package versions, and publishing to npm.                            
