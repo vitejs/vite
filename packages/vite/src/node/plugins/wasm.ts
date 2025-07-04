@@ -1,4 +1,4 @@
-import { exactRegex } from '@rollup/pluginutils'
+import { exactRegex } from '@rolldown/pluginutils'
 import type { Plugin } from '../plugin'
 import { fileToUrl } from './asset'
 
