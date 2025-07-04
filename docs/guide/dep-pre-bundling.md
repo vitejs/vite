@@ -70,7 +70,7 @@ You can further customize esbuild too with the [`optimizeDeps.esbuildOptions` op
 
 Vite caches the pre-bundled dependencies in `node_modules/.vite`. It determines whether it needs to re-run the pre-bundling step based on a few sources:
 
-- Package manager lockfile content, e.g. `package-lock.json`, `yarn.lock`, `pnpm-lock.yaml` or `bun.lockb`.
+- Package manager lockfile content, e.g. `package-lock.json`, `yarn.lock`, `pnpm-lock.yaml` or `bun.lock`.
 - Patches folder modification time.
 - Relevant fields in your `vite.config.js`, if present.
 - `NODE_ENV` value.
