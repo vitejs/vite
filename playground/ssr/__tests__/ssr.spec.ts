@@ -44,6 +44,14 @@ test(`deadlock doesn't happen for dynamic imports`, async () => {
   )
 })
 
+test(`import.meta.resolve is supported`, async () => {
+  await page.goto(`${url}/import-meta`)
+
+  const metaUrl = await page.textContent('.import-meta-url')
+  expect(metaUrl).not.toBe('')
+  expect(await page.textContent('.import-meta-resolve')).toBe(metaUrl)
+})
+
 test.runIf(isServe)('html proxy is encoded', async () => {
   await page.goto(
     `${url}?%22%3E%3C/script%3E%3Cscript%3Econsole.log(%27html%20proxy%20is%20not%20encoded%27)%3C/script%3E`,
