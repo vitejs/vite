@@ -6,7 +6,7 @@ import { parseAst } from 'rolldown/parseAst'
 import { dynamicImportToGlob } from '@rollup/plugin-dynamic-import-vars'
 import { dynamicImportVarsPlugin as nativeDynamicImportVarsPlugin } from 'rolldown/experimental'
 import { exactRegex } from '@rolldown/pluginutils'
-import type { Plugin } from '../plugin'
+import { type Plugin, perEnvironmentPlugin } from '../plugin'
 import type { ResolvedConfig } from '../config'
 import { CLIENT_ENTRY } from '../constants'
 import { createBackCompatIdResolver } from '../idResolver'
@@ -167,18 +167,29 @@ export async function transformDynamicImport(
 }
 
 export function dynamicImportVarsPlugin(config: ResolvedConfig): Plugin {
-  if (
-    config.experimental.enableNativePlugin === true &&
-    config.command === 'build'
-  ) {
-    return nativeDynamicImportVarsPlugin()
-  }
-
   const resolve = createBackCompatIdResolver(config, {
     preferRelative: true,
     tryIndex: false,
     extensions: [],
   })
+
+  if (
+    config.experimental.enableNativePlugin === true &&
+    config.command === 'build'
+  ) {
+    return perEnvironmentPlugin('native:dynamic-import-vars', (environment) => {
+      const { include, exclude } =
+        environment.config.build.dynamicImportVarsOptions
+
+      return nativeDynamicImportVarsPlugin({
+        include,
+        exclude,
+        resolver(id, importer) {
+          return resolve(environment, id, importer)
+        },
+      })
+    })
+  }
 
   const getFilter = perEnvironmentState((environment: Environment) => {
     const { include, exclude } =
