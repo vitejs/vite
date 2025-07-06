@@ -60,17 +60,6 @@ const inlineImportRE =
 const htmlLangRE = /\.(?:html|htm)$/
 const spaceRe = /[\t\n\f\r ]/
 
-const importMapRE =
-  /[ \t]*<script[^>]*type\s*=\s*(?:"importmap"|'importmap'|importmap)[^>]*>.*?<\/script>/is
-const moduleScriptRE =
-  /[ \t]*<script[^>]*type\s*=\s*(?:"module"|'module'|module)[^>]*>/i
-const modulePreloadLinkRE =
-  /[ \t]*<link[^>]*rel\s*=\s*(?:"modulepreload"|'modulepreload'|modulepreload)[\s\S]*?\/>/i
-const importMapAppendRE = new RegExp(
-  [moduleScriptRE, modulePreloadLinkRE].map((r) => r.source).join('|'),
-  'i',
-)
-
 export const isHTMLProxy = (id: string): boolean => isHtmlProxyRE.test(id)
 
 export const isHTMLRequest = (request: string): boolean =>
@@ -1129,21 +1118,34 @@ export function preImportMapHook(
   config: ResolvedConfig,
 ): IndexHtmlTransformHook {
   return async (html, ctx) => {
-    const s = new MagicString(html)
+    let importMapIndex = 0
+    let importMapAppendIndex = 0
     await traverseHtml(html, ctx.path, (node) => {
-      if (node.nodeName === '#comment') {
-        s.remove(
-          node.sourceCodeLocation!.startOffset,
-          node.sourceCodeLocation!.endOffset,
-        )
+      if (!nodeIsElement(node)) {
+        return
+      }
+      const { nodeName, attrs } = node
+      if (
+        nodeName === 'script' &&
+        attrs.some((attr) => attr.name === 'type' && attr.value === 'importmap')
+      ) {
+        importMapIndex = node.sourceCodeLocation!.startTag!.startOffset
+      }
+      // find the first module script or modulepreload link index
+      if (
+        !importMapAppendIndex &&
+        ((nodeName === 'script' &&
+          attrs.some(
+            (attr) => attr.name === 'type' && attr.value === 'module',
+          )) ||
+          (nodeName === 'link' &&
+            attrs.some(
+              (attr) => attr.name === 'rel' && attr.value === 'modulepreload',
+            )))
+      ) {
+        importMapAppendIndex = node.sourceCodeLocation!.startTag!.startOffset
       }
     })
-    html = s.toString()
-    const importMapIndex = html.search(importMapRE)
-    if (importMapIndex < 0) return
-
-    const importMapAppendIndex = html.search(importMapAppendRE)
-    if (importMapAppendIndex < 0) return
 
     if (importMapAppendIndex < importMapIndex) {
       const relativeHtml = normalizePath(
