@@ -636,6 +636,15 @@ async function buildEnvironment(
       ...options.rollupOptions.experimental,
       viteMode: true,
     },
+    treeshake:
+      options.rollupOptions.treeshake === false
+        ? false
+        : {
+            commonjs: true,
+            ...(options.rollupOptions.treeshake === true
+              ? {}
+              : options.rollupOptions.treeshake),
+          },
   }
 
   /**
