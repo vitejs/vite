@@ -584,7 +584,7 @@ async function generateRuntimeHelpers(
   const exportNames = [...outputCode.matchAll(cjsExportRE)].map((m) => m[1])
   return (
     `var ${exportNames.map((n) => `babelHelpers_${n}`).join(', ')};` +
-    `!(() => {${output.output[0].code.replace(cjsExportRE, ';babelHelpers_$1=')}})();`
+    `!(() => {${outputCode.replace(cjsExportRE, 'babelHelpers_$1=')}})();`
   )
 }
 
