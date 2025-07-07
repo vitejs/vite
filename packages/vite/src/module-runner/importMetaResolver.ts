@@ -11,11 +11,7 @@ export async function resolve(specifier, context, nextResolve) {
     context.parentURL = parsedImporter
   }
 
-  const result = await nextResolve(specifier, context)
-  return {
-    ...result,
-    shortCircuit: true,
-  }
+  return nextResolve(specifier, context)
 }
 
 `
