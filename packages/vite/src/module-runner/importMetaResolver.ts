@@ -25,7 +25,8 @@ export async function createImportMetaResolver(): Promise<
   } catch {
     return
   }
-  if (!module.register) {
+  // `module.Module` may be `undefined` when `node:module` is mocked
+  if (!module?.register) {
     return
   }
 
