@@ -62,19 +62,17 @@ export function manifestPlugin(config: ResolvedConfig): Plugin {
       return !!environment.config.build.manifest
     },
 
-    buildStart() {
-      getState(this).reset()
-    },
-
-    generateBundle(_opts, bundle) {
+    generateBundle(opts, bundle) {
       const state = getState(this)
       const { manifest } = state
       const { root } = this.environment.config
       const buildOptions = this.environment.config.build
 
+      const isLegacy =
+        this.environment.config.isOutputOptionsForLegacyChunks?.(opts) ?? false
       function getChunkName(chunk: OutputChunk) {
         return (
-          getChunkOriginalFileName(chunk, root) ??
+          getChunkOriginalFileName(chunk, root, isLegacy) ??
           `_${path.basename(chunk.fileName)}`
         )
       }
@@ -202,6 +200,7 @@ export function manifestPlugin(config: ResolvedConfig): Plugin {
           type: 'asset',
           source: JSON.stringify(sortObjectKeys(manifest), undefined, 2),
         })
+        state.reset()
       }
     },
   }
@@ -210,9 +209,15 @@ export function manifestPlugin(config: ResolvedConfig): Plugin {
 export function getChunkOriginalFileName(
   chunk: OutputChunk | RenderedChunk,
   root: string,
+  isLegacy: boolean,
 ): string | undefined {
   if (chunk.facadeModuleId) {
-    const name = normalizePath(path.relative(root, chunk.facadeModuleId))
+    let name = normalizePath(path.relative(root, chunk.facadeModuleId))
+    if (isLegacy && !chunk.name.includes('-legacy')) {
+      const ext = path.extname(name)
+      const endPos = ext.length !== 0 ? -ext.length : undefined
+      name = `${name.slice(0, endPos)}-legacy${ext}`
+    }
     return name.replace(/\0/g, '')
   }
 }

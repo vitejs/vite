@@ -866,6 +866,8 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
             const originalFileName = getChunkOriginalFileName(
               chunk,
               config.root,
+              this.environment.config.isOutputOptionsForLegacyChunks?.(opts) ??
+                false,
             )
 
             chunkCSS = resolveAssetUrlsInCss(chunkCSS, cssAssetName)

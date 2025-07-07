@@ -14,7 +14,6 @@ export default defineConfig({
   test: {
     include: ['./playground/**/*.spec.[tj]s'],
     exclude: [
-      './playground/legacy/**/*.spec.[tj]s', // system format
       ...(isBuild
         ? [
             './playground/object-hooks/**/*.spec.[tj]s', // object hook sequential
