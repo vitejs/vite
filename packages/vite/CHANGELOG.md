@@ -1,3 +1,23 @@
+## <small>[7.0.5](https://github.com/vitejs/rolldown-vite/compare/v7.0.4...v7.0.5) (2025-07-07)</small>
+### Features
+
+* make oxc runtime helpers name mangle-able ([#306](https://github.com/vitejs/rolldown-vite/issues/306)) ([d9627ee](https://github.com/vitejs/rolldown-vite/commit/d9627ee1f2f048e1c51cb70c3d69c848de07b5f5))
+* plugin legacy ([#293](https://github.com/vitejs/rolldown-vite/issues/293)) ([e1ef2e5](https://github.com/vitejs/rolldown-vite/commit/e1ef2e58068a1185e1af10d076a7bb4b5514f21b))
+* update rolldown and support custom configs for native dynamic import vars plugin ([#310](https://github.com/vitejs/rolldown-vite/issues/310)) ([3f07670](https://github.com/vitejs/rolldown-vite/commit/3f076704917b468bbc87083d5bd562828330af06))
+
+### Bug Fixes
+
+* accept umd with only default export ([#305](https://github.com/vitejs/rolldown-vite/issues/305)) ([12f8197](https://github.com/vitejs/rolldown-vite/commit/12f81973e359a707e75bc5cf70a2e1c0132d1ce7))
+* correct "Unexpected IIFE format" shown for UMD output ([139d016](https://github.com/vitejs/rolldown-vite/commit/139d016b6750e938e4b2923d677975556eb34c87))
+* **css:** resolve relative paths in sass, revert [#20300](https://github.com/vitejs/rolldown-vite/issues/20300) ([#20349](https://github.com/vitejs/rolldown-vite/issues/20349)) ([db8bd41](https://github.com/vitejs/rolldown-vite/commit/db8bd412a8b783fe8e9f82d1a822b0534abbf5a3))
+* inject oxc runtime helpers correctly when multiple helpers are required ([#311](https://github.com/vitejs/rolldown-vite/issues/311)) ([6c5f468](https://github.com/vitejs/rolldown-vite/commit/6c5f46863c625e2ee7508cd02acd5de37c64be70))
+
+### Miscellaneous Chores
+
+* fix typos and grammatical errors across documentation and comments ([#20337](https://github.com/vitejs/rolldown-vite/issues/20337)) ([c1c951d](https://github.com/vitejs/rolldown-vite/commit/c1c951dcc32ec9f133b03ebbceddd749fc14f1e9))
+* group commits by category in changelog ([#20310](https://github.com/vitejs/rolldown-vite/issues/20310)) ([41e83f6](https://github.com/vitejs/rolldown-vite/commit/41e83f62b1adb65f5af4c1ec006de1c845437edc))
+* reduce diff ([a657265](https://github.com/vitejs/rolldown-vite/commit/a6572654bea3942e3bbc5eca3fd35f7cbbb773f0))
+
 ## <small>[7.0.4](https://github.com/vitejs/rolldown-vite/compare/v7.0.3...v7.0.4) (2025-07-02)</small>
 ### Features
 
