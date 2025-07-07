@@ -14,7 +14,7 @@
     "gsap": "^3.13.0",
     "vitepress": "^2.0.0-alpha.7",
     "vitepress-plugin-group-icons": "^1.6.1",
-    "vitepress-plugin-llms": "^1.6.0",
+    "vitepress-plugin-llms": "^1.7.0",
     "vue": "^3.5.17"
   }
 }
