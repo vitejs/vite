@@ -825,9 +825,14 @@ importers:
       '@vitejs/test-json-module':
         specifier: file:./json-module
         version: file:playground/json/json-module
+      '@vitejs/test-json-require':
+        specifier: file:./dep-json-require
+        version: '@vitejs/require@file:playground/json/dep-json-require'
       vue:
         specifier: ^3.5.17
         version: 3.5.17(typescript@5.7.3)
+
+  playground/json/dep-json-require: {}
 
   playground/json/json-module: {}
 
@@ -3716,6 +3721,9 @@ packages:
 
   '@vitejs/release-scripts@1.6.0':
     resolution: {integrity: sha512-XV+w22Fvn+wqDtEkz8nQIJzvmRVSh90c2xvOO7cX9fkX8+39ZJpYRiXDIRJG1JRnF8khm1rHjulid+l+khc7TQ==}
+
+  '@vitejs/require@file:playground/json/dep-json-require':
+    resolution: {directory: playground/json/dep-json-require, type: directory}
 
   '@vitejs/test-added-in-entries@file:playground/optimize-deps/added-in-entries':
     resolution: {directory: playground/optimize-deps/added-in-entries, type: directory}
@@ -9382,6 +9390,8 @@ snapshots:
       semver: 7.7.2
     transitivePeerDependencies:
       - conventional-commits-filter
+
+  '@vitejs/require@file:playground/json/dep-json-require': {}
 
   '@vitejs/test-added-in-entries@file:playground/optimize-deps/added-in-entries': {}
 
