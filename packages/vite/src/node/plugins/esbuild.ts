@@ -69,6 +69,7 @@ type TSConfigJSON = {
     preserveValueImports?: boolean
     target?: string
     useDefineForClassFields?: boolean
+    emitDecoratorMetadata?: boolean
     verbatimModuleSyntax?: boolean
   }
   [key: string]: any
