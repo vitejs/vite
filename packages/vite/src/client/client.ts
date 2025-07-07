@@ -105,7 +105,8 @@ const transport = normalizeModuleRunnerTransport(
 
 let willUnload = false
 if (typeof window !== 'undefined') {
-  window.addEventListener('beforeunload', () => {
+  // window can be misleadingly defined in a worker if using define (see #19307)
+  window.addEventListener?.('beforeunload', () => {
     willUnload = true
   })
 }
