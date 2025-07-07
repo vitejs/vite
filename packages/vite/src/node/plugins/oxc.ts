@@ -148,6 +148,13 @@ export async function transformWithOxc(
           resolvedOptions.decorator ??= {}
           resolvedOptions.decorator.legacy = experimentalDecorators
         }
+        const emitDecoratorMetadata =
+          loadedCompilerOptions.emitDecoratorMetadata
+        if (emitDecoratorMetadata !== undefined) {
+          resolvedOptions.decorator ??= {}
+          resolvedOptions.decorator.emitDecoratorMetadata =
+            emitDecoratorMetadata
+        }
       }
 
       /**
