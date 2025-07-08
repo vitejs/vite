@@ -33,10 +33,10 @@
   "homepage": "https://github.com/vitejs/vite/tree/main/packages/plugin-legacy#readme",
   "funding": "https://github.com/vitejs/vite?sponsor=1",
   "dependencies": {
-    "@babel/core": "^7.27.7",
+    "@babel/core": "^7.28.0",
     "@babel/plugin-transform-dynamic-import": "^7.27.1",
     "@babel/plugin-transform-modules-systemjs": "^7.27.1",
-    "@babel/preset-env": "^7.27.2",
+    "@babel/preset-env": "^7.28.0",
     "browserslist": "^4.25.1",
     "browserslist-to-esbuild": "^2.1.1",
     "core-js": "^3.43.0",

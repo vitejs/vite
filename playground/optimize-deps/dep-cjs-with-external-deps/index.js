@@ -1,5 +1,5 @@
 // `stream` is used as the package name for `@vitejs/test-dep-esm-dummy-node-builtin` so that it is treated like a Node builtin
-// eslint-disable-next-line import-x/no-nodejs-modules
+// eslint-disable-next-line n/prefer-node-protocol
 let externalDummyNodeBuiltin = require('stream')
 // NOTE: plugin-commonjs adds some compat code (`requireReturnsDefault`), but rolldown doesn't
 if (process.env.NODE_ENV === 'production') {
