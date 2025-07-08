@@ -604,65 +604,6 @@ async function buildEnvironment(
     },
   }
 
-  /**
-   * The stack string usually contains a copy of the message at the start of the stack.
-   * If the stack starts with the message, we remove it and just return the stack trace
-   * portion. Otherwise the original stack trace is used.
-   */
-  function extractStack(e: RollupError) {
-    const { stack, name = 'Error', message } = e
-
-    // If we don't have a stack, not much we can do.
-    if (!stack) {
-      return stack
-    }
-
-    const expectedPrefix = `${name}: ${message}\n`
-    if (stack.startsWith(expectedPrefix)) {
-      return stack.slice(expectedPrefix.length)
-    }
-
-    return stack
-  }
-
-  /**
-   * Esbuild code frames have newlines at the start and end of the frame, rollup doesn't
-   * This function normalizes the frame to match the esbuild format which has more pleasing padding
-   */
-  const normalizeCodeFrame = (frame: string) => {
-    const trimmedPadding = frame.replace(/^\n|\n$/g, '')
-    return `\n${trimmedPadding}\n`
-  }
-
-  const enhanceRollupError = (e: RollupError) => {
-    const stackOnly = extractStack(e)
-
-    let msg = colors.red((e.plugin ? `[${e.plugin}] ` : '') + e.message)
-    if (e.loc && e.loc.file && e.loc.file !== e.id) {
-      msg += `\nfile: ${colors.cyan(
-        `${e.loc.file}:${e.loc.line}:${e.loc.column}` +
-          (e.id ? ` (${e.id})` : ''),
-      )}`
-    } else if (e.id) {
-      msg += `\nfile: ${colors.cyan(
-        e.id + (e.loc ? `:${e.loc.line}:${e.loc.column}` : ''),
-      )}`
-    }
-    if (e.frame) {
-      msg += `\n` + colors.yellow(normalizeCodeFrame(e.frame))
-    }
-
-    e.message = msg
-
-    // We are rebuilding the stack trace to include the more detailed message at the top.
-    // Previously this code was relying on mutating e.message changing the generated stack
-    // when it was accessed, but we don't have any guarantees that the error we are working
-    // with hasn't already had its stack accessed before we get here.
-    if (stackOnly !== undefined) {
-      e.stack = `${e.message}\n${stackOnly}`
-    }
-  }
-
   const isSsrTargetWebworkerEnvironment =
     environment.name === 'ssr' &&
     environment.getTopLevelConfig().ssr?.target === 'webworker'
@@ -833,6 +774,65 @@ async function buildEnvironment(
   } finally {
     if (bundle) await bundle.close()
   }
+}
+
+function enhanceRollupError(e: RollupError) {
+  const stackOnly = extractStack(e)
+
+  let msg = colors.red((e.plugin ? `[${e.plugin}] ` : '') + e.message)
+  if (e.loc && e.loc.file && e.loc.file !== e.id) {
+    msg += `\nfile: ${colors.cyan(
+      `${e.loc.file}:${e.loc.line}:${e.loc.column}` +
+        (e.id ? ` (${e.id})` : ''),
+    )}`
+  } else if (e.id) {
+    msg += `\nfile: ${colors.cyan(
+      e.id + (e.loc ? `:${e.loc.line}:${e.loc.column}` : ''),
+    )}`
+  }
+  if (e.frame) {
+    msg += `\n` + colors.yellow(normalizeCodeFrame(e.frame))
+  }
+
+  e.message = msg
+
+  // We are rebuilding the stack trace to include the more detailed message at the top.
+  // Previously this code was relying on mutating e.message changing the generated stack
+  // when it was accessed, but we don't have any guarantees that the error we are working
+  // with hasn't already had its stack accessed before we get here.
+  if (stackOnly !== undefined) {
+    e.stack = `${e.message}\n${stackOnly}`
+  }
+}
+
+/**
+ * The stack string usually contains a copy of the message at the start of the stack.
+ * If the stack starts with the message, we remove it and just return the stack trace
+ * portion. Otherwise the original stack trace is used.
+ */
+function extractStack(e: RollupError) {
+  const { stack, name = 'Error', message } = e
+
+  // If we don't have a stack, not much we can do.
+  if (!stack) {
+    return stack
+  }
+
+  const expectedPrefix = `${name}: ${message}\n`
+  if (stack.startsWith(expectedPrefix)) {
+    return stack.slice(expectedPrefix.length)
+  }
+
+  return stack
+}
+
+/**
+ * Esbuild code frames have newlines at the start and end of the frame, rollup doesn't
+ * This function normalizes the frame to match the esbuild format which has more pleasing padding
+ */
+function normalizeCodeFrame(frame: string) {
+  const trimmedPadding = frame.replace(/^\n|\n$/g, '')
+  return `\n${trimmedPadding}\n`
 }
 
 type JsExt = 'js' | 'cjs' | 'mjs'
