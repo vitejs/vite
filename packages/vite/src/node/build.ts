@@ -76,6 +76,7 @@ import {
   basePluginContextMeta,
 } from './server/pluginContainer'
 import { prepareOutDirPlugin } from './plugins/prepareOutDir'
+import type { Environment } from './environment'
 
 export interface BuildEnvironmentOptions {
   /**
@@ -952,7 +953,7 @@ function clearLine() {
 export function onRollupLog(
   level: LogLevel,
   log: RollupLog,
-  environment: BuildEnvironment,
+  environment: Environment,
 ): void {
   const debugLogger = createDebugger('vite:build')
   const viteLog: LogOrStringHandler = (logLeveling, rawLogging) => {
@@ -1069,7 +1070,7 @@ function isExternal(id: string, test: string | RegExp) {
 }
 
 export function injectEnvironmentToHooks(
-  environment: BuildEnvironment,
+  environment: Environment,
   plugin: Plugin,
 ): Plugin {
   const { resolveId, load, transform } = plugin
@@ -1099,7 +1100,7 @@ export function injectEnvironmentToHooks(
 }
 
 function wrapEnvironmentResolveId(
-  environment: BuildEnvironment,
+  environment: Environment,
   hook?: Plugin['resolveId'],
 ): Plugin['resolveId'] {
   if (!hook) return
@@ -1125,7 +1126,7 @@ function wrapEnvironmentResolveId(
 }
 
 function wrapEnvironmentLoad(
-  environment: BuildEnvironment,
+  environment: Environment,
   hook?: Plugin['load'],
 ): Plugin['load'] {
   if (!hook) return
@@ -1150,7 +1151,7 @@ function wrapEnvironmentLoad(
 }
 
 function wrapEnvironmentTransform(
-  environment: BuildEnvironment,
+  environment: Environment,
   hook?: Plugin['transform'],
 ): Plugin['transform'] {
   if (!hook) return
@@ -1176,7 +1177,7 @@ function wrapEnvironmentTransform(
 }
 
 function wrapEnvironmentHook<HookName extends keyof Plugin>(
-  environment: BuildEnvironment,
+  environment: Environment,
   hook?: Plugin[HookName],
 ): Plugin[HookName] {
   if (!hook) return
@@ -1203,7 +1204,7 @@ function wrapEnvironmentHook<HookName extends keyof Plugin>(
 
 function injectEnvironmentInContext<Context extends MinimalPluginContext>(
   context: Context,
-  environment: BuildEnvironment,
+  environment: Environment,
 ) {
   context.meta.viteVersion ??= VERSION
   context.environment ??= environment
@@ -1212,7 +1213,7 @@ function injectEnvironmentInContext<Context extends MinimalPluginContext>(
 
 function injectSsrFlag<T extends Record<string, any>>(
   options?: T,
-  environment?: BuildEnvironment,
+  environment?: Environment,
 ): T & { ssr?: boolean } {
   const ssr = environment ? environment.config.consumer === 'server' : true
   return { ...(options ?? {}), ssr } as T & {
