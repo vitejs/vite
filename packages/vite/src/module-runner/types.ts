@@ -108,7 +108,7 @@ export interface ModuleRunnerOptions {
   /**
    * Create import.meta object for the module.
    *
-   * @default createImportMetaDefault
+   * @default createDefaultImportMeta
    */
   createImportMeta?: (
     modulePath: string,
