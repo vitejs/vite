@@ -162,7 +162,7 @@ const FRAMEWORKS: Framework[] = [
         display: 'RSC ↗',
         color: magenta,
         customCommand:
-          'npm exec degit vitejs/plugin-react/packages/plugin-rsc/examples/starter TARGET_DIR',
+          'npm exec degit vitejs/vite-plugin-react/packages/plugin-rsc/examples/starter TARGET_DIR',
       },
     ],
   },
