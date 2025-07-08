@@ -1,3 +1,26 @@
+## <small>[7.0.6](https://github.com/vitejs/rolldown-vite/compare/v7.0.5...v7.0.6) (2025-07-08)</small>
+### Features
+
+* enable `treeshake.commonjs` by default ([#313](https://github.com/vitejs/rolldown-vite/issues/313)) ([d1efdd0](https://github.com/vitejs/rolldown-vite/commit/d1efdd02340661f031afc3f5953d95f03503f573))
+* enable decorator-metadata transform automatically ([#315](https://github.com/vitejs/rolldown-vite/issues/315)) ([36a8ca4](https://github.com/vitejs/rolldown-vite/commit/36a8ca464e3f46f338080fd3ceac026b48008343))
+
+### Bug Fixes
+
+* **client:** protect against window being defined but addEv undefined ([#20359](https://github.com/vitejs/rolldown-vite/issues/20359)) ([31d1467](https://github.com/vitejs/rolldown-vite/commit/31d1467cf0da1e1dca623e6df0d345b30fae0c3d))
+* **define:** replace optional values ([#20338](https://github.com/vitejs/rolldown-vite/issues/20338)) ([9465ae1](https://github.com/vitejs/rolldown-vite/commit/9465ae1378b456e08659a22286bee6bce8edeedc))
+* **deps:** update all non-major dependencies ([#20366](https://github.com/vitejs/rolldown-vite/issues/20366)) ([43ac73d](https://github.com/vitejs/rolldown-vite/commit/43ac73da27b3907c701e95e6a7d28fde659729ec))
+* **legacy:** fix remaining issues ([#312](https://github.com/vitejs/rolldown-vite/issues/312)) ([5d7dc73](https://github.com/vitejs/rolldown-vite/commit/5d7dc73cdbed9a7daae2390b4372be724e220372))
+
+### Miscellaneous Chores
+
+* **deps:** update dependency dotenv to v17 ([#20325](https://github.com/vitejs/rolldown-vite/issues/20325)) ([45040d4](https://github.com/vitejs/rolldown-vite/commit/45040d48076302eeb101f8d07bbcd04758fde8a4))
+* **deps:** update dependency rolldown to ^1.0.0-beta.24 ([#20365](https://github.com/vitejs/rolldown-vite/issues/20365)) ([5ab25e7](https://github.com/vitejs/rolldown-vite/commit/5ab25e73a2ea2a2e2c0469350288a183dfb57030))
+* use `n/prefer-node-protocol` rule ([#20368](https://github.com/vitejs/rolldown-vite/issues/20368)) ([38bb268](https://github.com/vitejs/rolldown-vite/commit/38bb268cde15541321f36016e77d61eecb707298))
+
+### Code Refactoring
+
+* minor changes to reduce diff between normal Vite and rolldown-vite ([#20354](https://github.com/vitejs/rolldown-vite/issues/20354)) ([2e8050e](https://github.com/vitejs/rolldown-vite/commit/2e8050e4cd8835673baf07375b7db35128144222))
+
 ## <small>[7.0.5](https://github.com/vitejs/rolldown-vite/compare/v7.0.4...v7.0.5) (2025-07-07)</small>
 ### Features
 
