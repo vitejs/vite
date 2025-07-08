@@ -59,6 +59,16 @@ const inlineImportRE =
   /(?<!(?<!\.\.)\.)\bimport\s*\(("(?:[^"]|(?<=\\)")*"|'(?:[^']|(?<=\\)')*')\)/dg
 const htmlLangRE = /\.(?:html|htm)$/
 const spaceRe = /[\t\n\f\r ]/
+const importMapRE =
+  /[ \t]*<script[^>]*type\s*=\s*(?:"importmap"|'importmap'|importmap)[^>]*>.*?<\/script>/is
+const moduleScriptRE =
+  /[ \t]*<script[^>]*type\s*=\s*(?:"module"|'module'|module)[^>]*>/i
+const modulePreloadLinkRE =
+  /[ \t]*<link[^>]*rel\s*=\s*(?:"modulepreload"|'modulepreload'|modulepreload)[\s\S]*?\/>/i
+const importMapAppendRE = new RegExp(
+  [moduleScriptRE, modulePreloadLinkRE].map((r) => r.source).join('|'),
+  'i',
+)
 
 export const isHTMLProxy = (id: string): boolean => isHtmlProxyRE.test(id)
 
@@ -1118,6 +1128,9 @@ export function preImportMapHook(
   config: ResolvedConfig,
 ): IndexHtmlTransformHook {
   return async (html, ctx) => {
+    if (!importMapRE.test(html)) return
+    if (!importMapAppendRE.test(html)) return
+
     let importMapIndex = 0
     let importMapAppendIndex = 0
     await traverseHtml(html, ctx.path, (node) => {
@@ -1130,9 +1143,7 @@ export function preImportMapHook(
         attrs.some((attr) => attr.name === 'type' && attr.value === 'importmap')
       ) {
         importMapIndex = node.sourceCodeLocation!.startTag!.startOffset
-      }
-      // find the first module script or modulepreload link index
-      if (
+      } else if (
         !importMapAppendIndex &&
         ((nodeName === 'script' &&
           attrs.some(
@@ -1167,6 +1178,8 @@ export function preImportMapHook(
  */
 export function postImportMapHook(): IndexHtmlTransformHook {
   return async (html, { path }) => {
+    if (!importMapAppendRE.test(html)) return
+    if (!importMapRE.test(html)) return
     const s = new MagicString(html)
     await traverseHtml(html, path, (node) => {
       if (!nodeIsElement(node)) {
