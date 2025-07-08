@@ -1,5 +1,5 @@
 // @ts-check
-import { builtinModules, createRequire } from 'node:module'
+import { createRequire } from 'node:module'
 import eslint from '@eslint/js'
 import pluginN from 'eslint-plugin-n'
 import pluginImportX from 'eslint-plugin-import-x'
@@ -115,6 +115,7 @@ export default tseslint.config(
           allowModules: ['vite'],
         },
       ],
+      'n/prefer-node-protocol': 'error',
 
       '@typescript-eslint/ban-ts-comment': 'error',
       '@typescript-eslint/no-unsafe-function-type': 'off',
@@ -159,10 +160,6 @@ export default tseslint.config(
       '@typescript-eslint/prefer-for-of': 'off',
       '@typescript-eslint/prefer-function-type': 'off',
 
-      'import-x/no-nodejs-modules': [
-        'error',
-        { allow: builtinModules.map((mod) => `node:${mod}`) },
-      ],
       'import-x/no-duplicates': 'error',
       'import-x/order': [
         'error',
