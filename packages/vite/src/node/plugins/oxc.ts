@@ -327,9 +327,17 @@ export function oxcPlugin(config: ResolvedConfig): Plugin {
       ? createFilter(jsxRefreshInclude, jsxRefreshExclude)
       : undefined
 
+  const jsxImportSource =
+    (typeof oxcTransformOptions.jsx === 'object' &&
+      oxcTransformOptions.jsx.importSource) ||
+    'react'
+  const jsxImportRuntime = `${jsxImportSource}/jsx-runtime`
+  const jsxImportDevRuntime = `${jsxImportSource}/jsx-dev-runtime`
+
   const getModifiedOxcTransformOptions = (
     oxcTransformOptions: OxcTransformOptions,
     id: string,
+    code: string,
     environment: Environment,
   ): OxcTransformOptions => {
     const result: OxcTransformOptions = {
@@ -339,11 +347,22 @@ export function oxcPlugin(config: ResolvedConfig): Plugin {
     }
 
     const jsxOptions = result.jsx
+
+    // disable refresh based by the same condition as @vitejs/plugin-react
+    // https://github.com/vitejs/vite-plugin-react/blob/c8ecad052001b6fc42e508f18433e6b305bca641/packages/plugin-react/src/index.ts#L261-L269
+    const [filepath] = id.split('?')
+    const isJSX = filepath.endsWith('x')
+
     if (
       typeof jsxOptions === 'object' &&
       jsxOptions.refresh &&
       (environment.config.consumer === 'server' ||
-        (jsxRefreshFilter && !jsxRefreshFilter(id)))
+        (jsxRefreshFilter && !jsxRefreshFilter(id)) ||
+        !(
+          isJSX ||
+          code.includes(jsxImportRuntime) ||
+          code.includes(jsxImportDevRuntime)
+        ))
     ) {
       result.jsx = { ...jsxOptions, refresh: false }
     }
@@ -380,6 +399,7 @@ export function oxcPlugin(config: ResolvedConfig): Plugin {
         const modifiedOxcTransformOptions = getModifiedOxcTransformOptions(
           oxcTransformOptions,
           id,
+          code,
           this.environment,
         )
         const result = await transformWithOxc(
