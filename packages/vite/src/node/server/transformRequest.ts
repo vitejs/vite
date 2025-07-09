@@ -277,10 +277,7 @@ async function loadAndTransform(
         code = await fsp.readFile(file, 'utf-8')
         debugLoad?.(`${timeFrom(loadStart)} [fs] ${prettyUrl}`)
       } catch (e) {
-        if (e.code !== 'ENOENT') {
-          if (e.code === 'EISDIR') {
-            e.message = `${e.message} ${file}`
-          }
+        if (e.code !== 'ENOENT' && e.code !== 'EISDIR') {
           throw e
         }
       }
