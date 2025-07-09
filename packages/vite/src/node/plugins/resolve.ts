@@ -254,7 +254,9 @@ export function resolvePlugin(
       // relative
       if (
         id[0] === '.' ||
-        ((preferRelative || importer?.endsWith('.html')) &&
+        ((preferRelative ||
+          resolveOpts.isEntry ||
+          importer?.endsWith('.html')) &&
           startsWithWordCharRE.test(id))
       ) {
         const basedir = importer ? path.dirname(importer) : process.cwd()
