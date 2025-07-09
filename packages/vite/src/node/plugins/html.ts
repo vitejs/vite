@@ -1178,8 +1178,9 @@ export function preImportMapHook(
  */
 export function postImportMapHook(): IndexHtmlTransformHook {
   return async (html, { path }) => {
-    if (!importMapAppendRE.test(html)) return
     if (!importMapRE.test(html)) return
+    if (!importMapAppendRE.test(html)) return
+    let importMapAppendIndex = 0
     const s = new MagicString(html)
     await traverseHtml(html, path, (node) => {
       if (!nodeIsElement(node)) {
@@ -1188,14 +1189,27 @@ export function postImportMapHook(): IndexHtmlTransformHook {
 
       const { nodeName, attrs, sourceCodeLocation } = node
       if (
+        importMapAppendIndex &&
         nodeName === 'script' &&
         attrs.some((attr) => attr.name === 'type' && attr.value === 'importmap')
       ) {
         s.move(
           sourceCodeLocation!.startTag!.startOffset,
           sourceCodeLocation!.endOffset,
-          0,
+          importMapAppendIndex,
         )
+      } else if (
+        !importMapAppendIndex &&
+        ((nodeName === 'script' &&
+          attrs.some(
+            (attr) => attr.name === 'type' && attr.value === 'module',
+          )) ||
+          (nodeName === 'link' &&
+            attrs.some(
+              (attr) => attr.name === 'rel' && attr.value === 'modulepreload',
+            )))
+      ) {
+        importMapAppendIndex = node.sourceCodeLocation!.startTag!.startOffset
       }
     })
     return s.toString()
