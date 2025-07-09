@@ -236,6 +236,20 @@ export class FullBundleDevEnvironment extends DevEnvironment {
 
     rolldownOptions.treeshake = false
 
+    // set filenames to make output paths predictable so that `renderChunk` hook does not need to be used
+    if (Array.isArray(rolldownOptions.output)) {
+      for (const output of rolldownOptions.output) {
+        output.entryFileNames = 'assets/[name].js'
+        output.chunkFileNames = 'assets/[name]-[hash].js'
+        output.assetFileNames = 'assets/[name]-[hash][extname]'
+      }
+    } else {
+      rolldownOptions.output ??= {}
+      rolldownOptions.output.entryFileNames = 'assets/[name].js'
+      rolldownOptions.output.chunkFileNames = 'assets/[name]-[hash].js'
+      rolldownOptions.output.assetFileNames = 'assets/[name]-[hash][extname]'
+    }
+
     return rolldownOptions
   }
 
