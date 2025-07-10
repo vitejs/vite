@@ -553,6 +553,7 @@ function viteLegacyPlugin(options: Options = {}): Plugin[] {
         babelrc: false,
         configFile: false,
         ast: true,
+        code: false,
         sourceMaps,
         plugins: [
           // @ts-expect-error -- not typed
@@ -565,6 +566,7 @@ function viteLegacyPlugin(options: Options = {}): Plugin[] {
       const babelTransformOptions: babel.TransformOptions = {
         babelrc: false,
         configFile: false,
+        cloneInputAst: false,
         compact: !!config.build.minify,
         sourceMaps,
         inputSourceMap: undefined,
@@ -591,7 +593,7 @@ function viteLegacyPlugin(options: Options = {}): Plugin[] {
       if (resultSystem) {
         result = babel.transformFromAstSync(
           resultSystem.ast!,
-          resultSystem.code ?? undefined,
+          undefined,
           babelTransformOptions,
         )
       } else {
