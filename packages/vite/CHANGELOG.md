@@ -1,3 +1,12 @@
+## <small>[7.0.4](https://github.com/vitejs/vite/compare/v7.0.3...v7.0.4) (2025-07-10)</small>
+### Bug Fixes
+
+* allow resolving bare specifiers to relative paths for entries ([#20379](https://github.com/vitejs/vite/issues/20379)) ([324669c](https://github.com/vitejs/vite/commit/324669c2d84966a822b1b2c134c9830a90bed271))
+
+### Build System
+
+* remove `@oxc-project/runtime` devDep ([#20389](https://github.com/vitejs/vite/issues/20389)) ([5e29602](https://github.com/vitejs/vite/commit/5e29602f6fe4bf28f6e7c869a214dee6957f855c))
+
 ## <small>[7.0.3](https://github.com/vitejs/vite/compare/v7.0.2...v7.0.3) (2025-07-08)</small>
 ### Bug Fixes
 
