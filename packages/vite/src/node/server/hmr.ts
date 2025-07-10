@@ -705,9 +705,11 @@ export function updateModules(
       type: 'full-reload',
       triggeredBy: path.resolve(environment.config.root, file),
       path:
-        isClientHtmlChange && !environment.config.server.middlewareMode
-          ? '/' + file
-          : '*',
+        !isClientHtmlChange ||
+        environment.config.server.middlewareMode ||
+        updates.length > 0 // if there's an update, other URLs may be affected
+          ? '*'
+          : '/' + file,
     })
     return
   }
