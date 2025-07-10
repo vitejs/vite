@@ -127,7 +127,7 @@ export default {
     rollupOptions: {
       output: {
         advancedChunks: {
-          groups: [{ name: 'vendor', test: /\/react(?:-dom)?// }]
+          groups: [{ name: 'vendor', test: /\/react(?:-dom)?/ }]
         }
       }
     }
