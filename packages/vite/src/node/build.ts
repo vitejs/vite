@@ -793,6 +793,7 @@ async function buildEnvironment(
             : options.minify === false
               ? 'dce-only'
               : false,
+        minifyInternalExports: format === 'es' || format === 'esm',
         ...output,
       }
     }
