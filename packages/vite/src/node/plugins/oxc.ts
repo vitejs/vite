@@ -1,5 +1,6 @@
 import path from 'node:path'
 import url from 'node:url'
+import { createRequire } from 'node:module'
 import type {
   TransformOptions as OxcTransformOptions,
   TransformResult as OxcTransformResult,
@@ -372,8 +373,9 @@ export function oxcPlugin(config: ResolvedConfig): Plugin {
 
     return result
   }
+  const require = createRequire(/** #__KEEP__ */ import.meta.url)
   const runtimeResolveBase = normalizePath(
-    url.fileURLToPath(/** #__KEEP__ */ import.meta.url),
+    require.resolve('rolldown/package.json'),
   )
 
   let server: ViteDevServer
@@ -389,7 +391,7 @@ export function oxcPlugin(config: ResolvedConfig): Plugin {
       },
       async handler(id, _importer, opts) {
         // @oxc-project/runtime imports will be injected by OXC transform
-        // since it's injected by the transform, @oxc-project/runtime should be resolved to the one Vite depends on
+        // since it's injected by the transform, @oxc-project/runtime should be resolved to the one Rolldown depends on
         const resolved = await this.resolve(id, runtimeResolveBase, opts)
         return resolved
       },
