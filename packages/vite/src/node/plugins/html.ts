@@ -1131,8 +1131,8 @@ export function preImportMapHook(
     if (!importMapRE.test(html)) return
     if (!importMapAppendRE.test(html)) return
 
-    let importMapIndex = 0
-    let importMapAppendIndex = 0
+    let importMapIndex = -1
+    let importMapAppendIndex = -1
     await traverseHtml(html, ctx.path, (node) => {
       if (!nodeIsElement(node)) {
         return
@@ -1144,7 +1144,7 @@ export function preImportMapHook(
       ) {
         importMapIndex = node.sourceCodeLocation!.startTag!.startOffset
       } else if (
-        !importMapAppendIndex &&
+        importMapAppendIndex < 0 &&
         ((nodeName === 'script' &&
           attrs.some(
             (attr) => attr.name === 'type' && attr.value === 'module',
@@ -1157,6 +1157,7 @@ export function preImportMapHook(
         importMapAppendIndex = node.sourceCodeLocation!.startTag!.startOffset
       }
     })
+    if (importMapIndex < 0 || importMapAppendIndex < 0) return
 
     if (importMapAppendIndex < importMapIndex) {
       const relativeHtml = normalizePath(
