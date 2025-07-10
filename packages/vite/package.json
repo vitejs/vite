@@ -95,7 +95,6 @@
     "@ampproject/remapping": "^2.3.0",
     "@babel/parser": "^7.28.0",
     "@jridgewell/trace-mapping": "^0.3.29",
-    "@oxc-project/runtime": "0.75.1",
     "@oxc-project/types": "0.75.1",
     "@polka/compression": "^1.0.0-next.25",
     "@rollup/plugin-alias": "^5.1.1",
