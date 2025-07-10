@@ -1,3 +1,8 @@
+## <small>[7.0.2](https://github.com/vitejs/vite/compare/create-vite@7.0.1...create-vite@7.0.2) (2025-07-10)</small>
+### Bug Fixes
+
+* **create-vite:** fix command for react rsc template ([#20378](https://github.com/vitejs/vite/issues/20378)) ([0362484](https://github.com/vitejs/vite/commit/03624844ebc2950cfb1a48379726d60e6d31bd6e))
+
 ## <small>[7.0.1](https://github.com/vitejs/vite/compare/create-vite@7.0.0...create-vite@7.0.1) (2025-07-08)</small>
 ### Features
 
