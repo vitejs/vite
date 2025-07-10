@@ -237,6 +237,7 @@ async function computeEntries(environment: ScanEnvironment) {
           p,
           path.join(process.cwd(), '*'),
           {
+            isEntry: true,
             scan: true,
           },
         )
