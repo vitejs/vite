@@ -1,3 +1,21 @@
+## <small>[7.0.7](https://github.com/vitejs/rolldown-vite/compare/v7.0.6...v7.0.7) (2025-07-10)</small>
+### Features
+
+* enable `output.minifyInternalExports` by default ([#322](https://github.com/vitejs/rolldown-vite/issues/322)) ([287a36e](https://github.com/vitejs/rolldown-vite/commit/287a36e85a6ea5076e78de8170ed524ee24dca10))
+* update rolldown ([949076c](https://github.com/vitejs/rolldown-vite/commit/949076c086c3edd8728bfcf4e464d34c8685cdda))
+
+### Bug Fixes
+
+* disable refresh for non-jsx without react import ([#318](https://github.com/vitejs/rolldown-vite/issues/318)) ([de24b6b](https://github.com/vitejs/rolldown-vite/commit/de24b6bd8c3c5825ae72d3b8a7d95212245837b3))
+
+### Code Refactoring
+
+* use Rolldown's `@oxc-project/runtime` ([#321](https://github.com/vitejs/rolldown-vite/issues/321)) ([d352c1b](https://github.com/vitejs/rolldown-vite/commit/d352c1b5153056c4ff1b85ba5a4690763ae8158a))
+
+### Build System
+
+* remove `@oxc-project/runtime` devDep ([#20389](https://github.com/vitejs/rolldown-vite/issues/20389)) ([5e29602](https://github.com/vitejs/rolldown-vite/commit/5e29602f6fe4bf28f6e7c869a214dee6957f855c))
+
 ## <small>[7.0.6](https://github.com/vitejs/rolldown-vite/compare/v7.0.5...v7.0.6) (2025-07-08)</small>
 ### Features
 
