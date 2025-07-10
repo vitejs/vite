@@ -239,9 +239,6 @@ importers:
       '@jridgewell/trace-mapping':
         specifier: ^0.3.29
         version: 0.3.29
-      '@oxc-project/runtime':
-        specifier: 0.75.1
-        version: 0.75.1
       '@oxc-project/types':
         specifier: 0.75.1
         version: 0.75.1
