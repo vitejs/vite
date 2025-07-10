@@ -220,9 +220,6 @@ importers:
 
   packages/vite:
     dependencies:
-      '@oxc-project/runtime':
-        specifier: 0.75.0
-        version: 0.75.0
       fdir:
         specifier: ^6.4.6
         version: 6.4.6(picomatch@4.0.2)
