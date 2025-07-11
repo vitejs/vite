@@ -328,7 +328,7 @@ function handleParseError(
 /**
  * Compiles index.html into an entry js module
  */
-export function buildHtmlPlugin(config: ResolvedConfig): Plugin {
+export function htmlPlugin(config: ResolvedConfig): Plugin {
   const [preHooks, normalHooks, postHooks] = resolveHtmlTransforms(
     config.plugins,
   )
@@ -345,8 +345,14 @@ export function buildHtmlPlugin(config: ResolvedConfig): Plugin {
   // Same reason with `htmlInlineProxyPlugin`
   isAsyncScriptMap.set(config, new Map())
 
+  let server: ViteDevServer | undefined
+
   return {
     name: 'vite:build-html',
+
+    configureServer(s) {
+      server = s
+    },
 
     transform: {
       async handler(html, id) {
@@ -355,6 +361,15 @@ export function buildHtmlPlugin(config: ResolvedConfig): Plugin {
           const relativeUrlPath = normalizePath(path.relative(config.root, id))
           const publicPath = `/${relativeUrlPath}`
           const publicBase = getBaseInHTML(relativeUrlPath, config)
+
+          if (server) {
+            const result = await server.transformIndexHtml(publicPath, html)
+            return {
+              code: '',
+              map: { mappings: '' },
+              meta: { 'vite:build-html': result },
+            }
+          }
 
           const publicToRelative = (filename: string) => publicBase + filename
           const toOutputPublicFilePath = (url: string) =>

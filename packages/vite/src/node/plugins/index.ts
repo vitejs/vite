@@ -11,7 +11,7 @@ import { importAnalysisPlugin } from './importAnalysis'
 import { cssAnalysisPlugin, cssPlugin, cssPostPlugin } from './css'
 import { assetPlugin } from './asset'
 import { clientInjectionsPlugin } from './clientInjections'
-import { buildHtmlPlugin, htmlInlineProxyPlugin } from './html'
+import { htmlInlineProxyPlugin, htmlPlugin } from './html'
 import { wasmFallbackPlugin, wasmHelperPlugin } from './wasm'
 import { modulePreloadPolyfillPlugin } from './modulePreloadPolyfill'
 import { webWorkerPlugin } from './worker'
@@ -79,7 +79,7 @@ export async function resolvePlugins(
     wasmFallbackPlugin(),
     definePlugin(config),
     cssPostPlugin(config),
-    isBuild && buildHtmlPlugin(config),
+    htmlPlugin(config),
     workerImportMetaUrlPlugin(config),
     assetImportMetaUrlPlugin(config),
     ...buildPlugins.pre,
