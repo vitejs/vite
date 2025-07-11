@@ -104,7 +104,7 @@ export class FullBundleDevEnvironment extends DevEnvironment {
         patched: this.state.patched,
       }
 
-      let hmrOutput: HmrOutput
+      let hmrOutput: HmrOutput | undefined
       try {
         // NOTE: only single outputOptions is supported here
         hmrOutput = await this.state.bundle.generateHmrPatch([file])
@@ -118,6 +118,11 @@ export class FullBundleDevEnvironment extends DevEnvironment {
           bundle: this.state.bundle,
           patched: this.state.patched,
         }
+        return
+      }
+
+      if (!hmrOutput) {
+        debug?.(`ignored file change for ${file}`)
         return
       }
 
@@ -356,50 +361,41 @@ export class FullBundleDevEnvironment extends DevEnvironment {
       return
     }
 
-    // TODO: handle `No corresponding module found for changed file path`
-    if (
-      hmrOutput.code &&
-      hmrOutput.code !== '__rolldown_runtime__.applyUpdates([]);'
-    ) {
-      debug?.(`handle hmr output for ${file}`, {
-        ...hmrOutput,
-        code: typeof hmrOutput.code === 'string' ? '[code]' : hmrOutput.code,
-      })
+    debug?.(`handle hmr output for ${file}`, {
+      ...hmrOutput,
+      code: typeof hmrOutput.code === 'string' ? '[code]' : hmrOutput.code,
+    })
 
-      this.memoryFiles.set(hmrOutput.filename, hmrOutput.code)
-      if (hmrOutput.sourcemapFilename && hmrOutput.sourcemap) {
-        this.memoryFiles.set(hmrOutput.sourcemapFilename, hmrOutput.sourcemap)
-      }
-      const updates: Update[] = hmrOutput.hmrBoundaries.map((boundary: any) => {
-        return {
-          type: 'js-update',
-          url: hmrOutput.filename,
-          path: boundary.boundary,
-          acceptedPath: boundary.acceptedVia,
-          firstInvalidatedBy: hmrOutput.firstInvalidatedBy,
-          timestamp: 0,
-        }
-      })
-      this.hot.send({
-        type: 'update',
-        updates,
-      })
-      this.logger.info(
-        colors.green(`hmr update `) +
-          colors.dim([...new Set(updates.map((u) => u.path))].join(', ')),
-        { clear: !hmrOutput.firstInvalidatedBy, timestamp: true },
-      )
-
-      this.state = {
-        type: 'bundled',
-        options,
-        bundle,
-        patched: true,
-      }
-      return
+    this.memoryFiles.set(hmrOutput.filename, hmrOutput.code)
+    if (hmrOutput.sourcemapFilename && hmrOutput.sourcemap) {
+      this.memoryFiles.set(hmrOutput.sourcemapFilename, hmrOutput.sourcemap)
     }
+    const updates: Update[] = hmrOutput.hmrBoundaries.map((boundary: any) => {
+      return {
+        type: 'js-update',
+        url: hmrOutput.filename,
+        path: boundary.boundary,
+        acceptedPath: boundary.acceptedVia,
+        firstInvalidatedBy: hmrOutput.firstInvalidatedBy,
+        timestamp: 0,
+      }
+    })
+    this.hot.send({
+      type: 'update',
+      updates,
+    })
+    this.logger.info(
+      colors.green(`hmr update `) +
+        colors.dim([...new Set(updates.map((u) => u.path))].join(', ')),
+      { clear: !hmrOutput.firstInvalidatedBy, timestamp: true },
+    )
 
-    debug?.(`ignored file change for ${file}`)
+    this.state = {
+      type: 'bundled',
+      options,
+      bundle,
+      patched: true,
+    }
   }
 }
 
