@@ -15,8 +15,6 @@ export interface CustomPluginOptionsVite {
    * ```js
    * cssScopeTo: ['/src/App.vue', 'default']
    * ```
-   *
-   * @experimental
    */
   cssScopeTo?: readonly [importerId: string, exportName: string | undefined]
 
