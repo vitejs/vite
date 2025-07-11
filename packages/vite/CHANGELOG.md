@@ -1,3 +1,12 @@
+## <small>[7.0.8](https://github.com/vitejs/rolldown-vite/compare/v7.0.7...v7.0.8) (2025-07-11)</small>
+### Features
+
+* update rolldown ([98ca5e3](https://github.com/vitejs/rolldown-vite/commit/98ca5e3cbd97718e05d53c617069db35378ce83e))
+
+### Bug Fixes
+
+* allow resolving bare specifiers to relative paths for entries ([#20379](https://github.com/vitejs/rolldown-vite/issues/20379)) ([324669c](https://github.com/vitejs/rolldown-vite/commit/324669c2d84966a822b1b2c134c9830a90bed271))
+
 ## <small>[7.0.7](https://github.com/vitejs/rolldown-vite/compare/v7.0.6...v7.0.7) (2025-07-10)</small>
 ### Features
 
