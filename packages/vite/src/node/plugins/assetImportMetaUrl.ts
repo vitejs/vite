@@ -141,6 +141,7 @@ export function assetImportMetaUrlPlugin(config: ResolvedConfig): Plugin {
                   const publicPath = '/' + path.posix.relative(publicDir, file)
                   builtUrl = await fileToUrl(this, publicPath)
                 } else {
+                  this.addWatchFile(file)
                   builtUrl = await fileToUrl(this, file)
                 }
               } catch {
