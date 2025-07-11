@@ -1004,7 +1004,7 @@ describe('onRollupLog', () => {
         code: 'UNRESOLVED_IMPORT',
         message: 'test',
       }),
-    ).rejects.toThrowError(/Rollup failed to resolve import/)
+    ).rejects.toThrowError(/Rolldown failed to resolve import/)
   })
 
   test.each([[`Unsupported expression`], [`statically analyzed`]])(
