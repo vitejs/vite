@@ -449,7 +449,7 @@ export interface UserConfig extends DefaultEnvironmentOptions {
     /**
      * Vite plugins that apply to worker bundle. The plugins returned by this function
      * should be new instances every time it is called, because they are used for each
-     * rollup worker bundling process.
+     * rolldown worker bundling process.
      */
     plugins?: () => PluginOption[]
     /**
