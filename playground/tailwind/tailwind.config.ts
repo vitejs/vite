@@ -6,6 +6,7 @@ export default {
     // Look https://github.com/vitejs/vite/pull/6959 for more details
     __dirname + '/src/{components,views}/**/*.js',
     __dirname + '/src/main.js',
+    __dirname + '/index.html',
   ],
   theme: {
     extend: {},
