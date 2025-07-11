@@ -1,3 +1,8 @@
+## <small>[7.0.3](https://github.com/vitejs/vite/compare/create-vite@7.0.2...create-vite@7.0.3) (2025-07-11)</small>
+### Features
+
+* **create-vite:** bump vite-plugin-svelte to new major for vite7 ([#20394](https://github.com/vitejs/vite/issues/20394)) ([a829a29](https://github.com/vitejs/vite/commit/a829a2963cd201ef0422afdc4cfca3d3e7c92770))
+
 ## <small>[7.0.2](https://github.com/vitejs/vite/compare/create-vite@7.0.1...create-vite@7.0.2) (2025-07-10)</small>
 ### Bug Fixes
 
