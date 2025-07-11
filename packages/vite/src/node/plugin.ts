@@ -144,10 +144,6 @@ export interface Plugin<A = any> extends RollupPlugin<A> {
       id: string,
       options?: {
         ssr?: boolean
-        /**
-         * @internal
-         */
-        html?: boolean
       },
     ) => Promise<LoadResult> | LoadResult,
     { filter?: { id?: StringFilter } }
