@@ -177,6 +177,12 @@ importers:
       '@babel/preset-env':
         specifier: ^7.28.0
         version: 7.28.0(@babel/core@7.28.0)
+      babel-plugin-polyfill-corejs3:
+        specifier: ^0.13.0
+        version: 0.13.0(@babel/core@7.28.0)
+      babel-plugin-polyfill-regenerator:
+        specifier: ^0.6.5
+        version: 0.6.5(@babel/core@7.28.0)
       browserslist:
         specifier: ^4.25.1
         version: 4.25.1
