@@ -142,6 +142,17 @@ app.use('*', async (req, res, next) => {
 })
 ```
 
+The `RunnableDevEnvironment` supports server HMR, but you should add `import.meta.hot.accept()` in your server entry file for optimal behavior. Without this, server file changes will invalidate the entire server module graph:
+
+```js
+// src/entry-server.js
+export function render(...) { ... }
+
+if (import.meta.hot) {
+  import.meta.hot.accept()
+}
+```
+
 ## Runtime Agnostic SSR
 
 Since the `RunnableDevEnvironment` can only be used to run the code in the same runtime as the Vite server, it requires a runtime that can run the Vite Server (a runtime that is compatible with Node.js). This means that you will need to use the raw `DevEnvironment` to make it runtime agnostic.
