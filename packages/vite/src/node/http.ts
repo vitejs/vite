@@ -48,8 +48,8 @@ export interface CommonServerOptions {
   /**
    * Configure custom proxy rules for the dev server. Expects an object
    * of `{ key: options }` pairs.
-   * Uses [`http-proxy`](https://github.com/http-party/node-http-proxy).
-   * Full options [here](https://github.com/http-party/node-http-proxy#options).
+   * Uses [`http-proxy-3`](https://github.com/sagemathinc/http-proxy-3).
+   * Full options [here](https://github.com/sagemathinc/http-proxy-3#options).
    *
    * Example `vite.config.js`:
    * ``` js
