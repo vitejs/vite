@@ -1,5 +1,6 @@
 import { readFileSync } from 'node:fs'
 import { fileURLToPath } from 'node:url'
+import { builtinModules } from 'node:module'
 import { defineConfig } from 'rolldown'
 import type {
   OutputChunk,
@@ -30,7 +31,6 @@ const external = [
   'rollup/parseAst',
   ...Object.keys(pkg.dependencies),
   ...Object.keys(pkg.peerDependencies),
-  ...Object.keys(pkg.devDependencies),
 ]
 
 export default defineConfig({
@@ -48,7 +48,12 @@ export default defineConfig({
   external,
   plugins: [
     patchTypes(),
-    dts({ tsconfig: './src/node/tsconfig.build.json', emitDtsOnly: true }),
+    addNodePrefix(),
+    dts({
+      tsconfig: './src/node/tsconfig.build.json',
+      emitDtsOnly: true,
+      resolve: true,
+    }),
   ],
 })
 
@@ -80,6 +85,9 @@ const identifierReplacements: Record<string, Record<string, string>> = {
     Server$2: 'HttpsServer',
     ServerOptions$2: 'HttpsServerOptions',
   },
+  'node:url': {
+    URL$1: 'url_URL',
+  },
   'vite/module-runner': {
     FetchResult$1: 'moduleRunner_FetchResult',
   },
@@ -100,6 +108,7 @@ const ignoreConfusingTypeNames = [
   'Plugin$1',
   'MinimalPluginContext$1',
   'ServerOptions$1',
+  'ServerOptions$3',
 ]
 
 /**
@@ -411,4 +420,19 @@ function escapeRegex(str: string): string {
 
 function unique<T>(arr: T[]): T[] {
   return Array.from(new Set(arr))
+}
+
+function addNodePrefix(): Plugin {
+  return {
+    name: 'add-node-prefix',
+    resolveId: {
+      order: 'pre',
+      filter: {
+        id: new RegExp(`^(?:${builtinModules.join('|')})$`),
+      },
+      handler(id) {
+        return { id: `node:${id}`, external: true }
+      },
+    },
+  }
 }
