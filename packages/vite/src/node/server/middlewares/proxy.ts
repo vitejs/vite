@@ -86,7 +86,7 @@ export function proxyMiddleware(
       return
     }
     if (typeof opts === 'string') {
-      opts = { target: opts, changeOrigin: true } as ProxyOptions
+      opts = { target: opts, changeOrigin: true }
     }
     const proxy = httpProxy.createProxyServer(opts)
 
@@ -94,19 +94,9 @@ export function proxyMiddleware(
       opts.configure(proxy, opts)
     }
 
-    proxy.on('error', (err, _req, originalRes) => {
+    proxy.on('error', (err, _req, res) => {
       // When it is ws proxy, res is net.Socket
-      // originalRes can be falsy if the proxy itself errored
-      const res = originalRes
-      if (!res) {
-        config.logger.error(
-          `${colors.red(`http proxy error: ${err.message}`)}\n${err.stack}`,
-          {
-            timestamp: true,
-            error: err,
-          },
-        )
-      } else if ('req' in res) {
+      if ('req' in res) {
         config.logger.error(
           `${colors.red(`http proxy error: ${res.req.url}`)}\n${err.stack}`,
           {
@@ -141,17 +131,6 @@ export function proxyMiddleware(
             error: err,
           },
         )
-      })
-    })
-
-    // https://github.com/http-party/node-http-proxy/issues/1520#issue-877626125
-    // https://github.com/chimurai/http-proxy-middleware/blob/cd58f962aec22c925b7df5140502978da8f87d5f/src/plugins/default/debug-proxy-errors-plugin.ts#L25-L37
-    proxy.on('proxyRes', (proxyRes, _req, res) => {
-      res.on('close', () => {
-        if (!res.writableEnded) {
-          debug?.('destroying proxyRes in proxyRes close event')
-          proxyRes.destroy()
-        }
       })
     })
 
