@@ -1,3 +1,12 @@
+## <small>[7.0.9](https://github.com/vitejs/rolldown-vite/compare/v7.0.8...v7.0.9) (2025-07-14)</small>
+### Features
+
+* update rolldown ([722cbf8](https://github.com/vitejs/rolldown-vite/commit/722cbf82a1603040bfeb7830eb4ee59f528f908c))
+
+### Miscellaneous Chores
+
+* update some "rollup" -> "rolldown" ([ce60f95](https://github.com/vitejs/rolldown-vite/commit/ce60f955e14966f9276d68683fe76bfee4a911ec))
+
 ## <small>[7.0.8](https://github.com/vitejs/rolldown-vite/compare/v7.0.7...v7.0.8) (2025-07-11)</small>
 ### Features
 
