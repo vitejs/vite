@@ -43,7 +43,6 @@ import { checkServingAccess, respondWithAccessDenied } from './static'
 const debugCache = createDebugger('vite:cache')
 
 const knownIgnoreList = new Set(['/', '/favicon.ico'])
-const trailingQuerySeparatorsRE = /[?&]+$/
 
 // TODO: consolidate this regex pattern with the url, raw, and inline checks in plugins
 const urlRE = /[?&]url\b/
@@ -206,22 +205,6 @@ export function transformMiddleware(
 
       if (publicDirInRoot && url.startsWith(publicPath)) {
         warnAboutExplicitPublicPathInUrl(url)
-      }
-
-      const urlWithoutTrailingQuerySeparators = url.replace(
-        trailingQuerySeparatorsRE,
-        '',
-      )
-      if (
-        !url.startsWith('/@id/\0') &&
-        deniedServingAccessForTransform(
-          urlWithoutTrailingQuerySeparators,
-          server,
-          res,
-          next,
-        )
-      ) {
-        return
       }
 
       if (
