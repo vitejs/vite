@@ -23,6 +23,8 @@ test.runIf(isBuild)('correctly resolve entrypoints', async () => {
     new RegExp(`from ${_}@vitejs/test-deep-import/bar${_}`),
   )
 
+  expect(contents).toMatch(new RegExp(`from ${_}@vitejs/test-module-sync${_}`))
+
   await expect(import(`${testDir}/dist/main.mjs`)).resolves.toBeTruthy()
 })
 
