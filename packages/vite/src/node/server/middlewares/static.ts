@@ -310,21 +310,6 @@ export function checkLoadingAccess(
   return 'fallback'
 }
 
-export function checkServingAccess(
-  url: string,
-  server: ViteDevServer,
-): 'allowed' | 'denied' | 'fallback' {
-  if (isFileServingAllowed(url, server)) {
-    return 'allowed'
-  }
-  if (isFileReadable(cleanUrl(url))) {
-    return 'denied'
-  }
-  // if the file doesn't exist, we shouldn't restrict this path as it can
-  // be an API call. Middlewares would issue a 404 if the file isn't handled
-  return 'fallback'
-}
-
 export function respondWithAccessDenied(
   id: string,
   server: ViteDevServer,
