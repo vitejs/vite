@@ -42,8 +42,8 @@ export class FullBundleDevEnvironment extends DevEnvironment {
     super(name, config, { ...context, disableDepsOptimizer: true })
   }
 
-  override async listen(server: ViteDevServer): Promise<void> {
-    await super.listen(server)
+  override async listen(_server: ViteDevServer): Promise<void> {
+    this.hot.listen()
 
     debug?.('INITIAL: setup bundle options')
     const rollupOptions = await this.getRolldownOptions()
@@ -130,6 +130,10 @@ export class FullBundleDevEnvironment extends DevEnvironment {
       return
     }
     this.state satisfies never // exhaustive check
+  }
+
+  override async warmupRequest(_url: string): Promise<void> {
+    // no-op
   }
 
   protected override invalidateModule(m: {
