@@ -1,4 +1,3 @@
-import fs from 'node:fs'
 import path from 'node:path'
 import { cleanUrl, withTrailingSlash } from '../shared/utils'
 import type { ResolvedConfig } from './config'
@@ -6,6 +5,7 @@ import {
   ERR_SYMLINK_IN_RECURSIVE_READDIR,
   normalizePath,
   recursiveReaddir,
+  tryStatSync,
 } from './utils'
 
 const publicFilesMap = new WeakMap<ResolvedConfig, Set<string>>()
@@ -60,5 +60,5 @@ export function checkPublicFile(
     return
   }
 
-  return fs.existsSync(publicFile) ? publicFile : undefined
+  return tryStatSync(publicFile)?.isFile() ? publicFile : undefined
 }
