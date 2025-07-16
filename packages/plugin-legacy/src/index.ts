@@ -721,7 +721,7 @@ function viteLegacyPlugin(options: Options = {}): Plugin[] {
       if (isLegacyBundle(bundle, opts) && genModern) {
         // avoid emitting duplicate assets
         for (const name in bundle) {
-          if (bundle[name].type === 'asset' && !/.+\.map$/.test(name)) {
+          if (bundle[name].type === 'asset' && !name.endsWith('.map')) {
             delete bundle[name]
           }
         }

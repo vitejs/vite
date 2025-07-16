@@ -42,7 +42,6 @@ const jsSourceMapRE = /\.[cm]?js\.map$/
 
 export const noInlineRE = /[?&]no-inline\b/
 export const inlineRE = /[?&]inline\b/
-const svgExtRE = /\.svg(?:$|\?)/
 
 const assetCache = new WeakMap<Environment, Map<string, string>>()
 
@@ -308,7 +307,7 @@ export async function fileToDevUrl(
   // If is svg and it's inlined in build, also inline it in dev to match
   // the behaviour in build due to quote handling differences.
   const cleanedId = cleanUrl(id)
-  if (svgExtRE.test(cleanedId)) {
+  if (cleanedId.endsWith('.svg')) {
     const file = publicFile || cleanedId
     const content = await fsp.readFile(file)
     if (shouldInline(environment, file, id, content, undefined, undefined)) {
