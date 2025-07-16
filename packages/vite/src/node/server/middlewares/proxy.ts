@@ -64,7 +64,7 @@ const rewriteOriginHeader = (
     if (proxyReq.getHeader('origin') && target) {
       const changedOrigin =
         typeof target === 'object'
-          ? `${'protocol' in target ? target.protocol : 'http'}//${target.host}`
+          ? `${target.protocol ?? 'http:'}//${target.host}`
           : target
 
       proxyReq.setHeader('origin', changedOrigin)
