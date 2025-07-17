@@ -268,7 +268,7 @@ test('HEAD request to .js file should return correct content-type', async () => 
   // Test HEAD request to an existing JS file
   const headResponse = await page.request.head(`${viteTestUrl}/absolute.js`)
   
-  expect(headResponse.headers()['content-type']).toBe('application/javascript')
+  expect(headResponse.headers()['content-type']).toBe('text/javascript')
   expect(headResponse.status()).toBe(200)
 })
 
