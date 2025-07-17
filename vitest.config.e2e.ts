@@ -26,6 +26,12 @@ export default defineConfig({
       },
     },
   },
+  ssr: {
+    resolve: {
+      // FIXME: this is a bug in Vitest, resolving externalized modules should use externalConditions
+      conditions: ['node', 'module-sync'],
+    },
+  },
   esbuild: {
     target: 'node20',
   },

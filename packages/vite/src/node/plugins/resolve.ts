@@ -755,7 +755,7 @@ export function tryNodeResolve(
   const resolveId = deepMatch ? resolveDeepImport : resolvePackageEntry
   const unresolvedId = deepMatch ? '.' + id.slice(pkgId.length) : id
 
-  let resolved = resolveId(unresolvedId, pkg, options)
+  let resolved = resolveId(unresolvedId, pkg, options, externalize)
   if (!resolved) {
     return
   }
@@ -895,6 +895,7 @@ export function resolvePackageEntry(
   id: string,
   { dir, data, setResolvedCache, getResolvedCache }: PackageData,
   options: InternalResolveOptions,
+  externalize?: boolean,
 ): string | undefined {
   const { file: idWithoutPostfix, postfix } = splitFileAndPostfix(id)
 
@@ -909,7 +910,13 @@ export function resolvePackageEntry(
     // resolve exports field with highest priority
     // using https://github.com/lukeed/resolve.exports
     if (data.exports) {
-      entryPoint = resolveExportsOrImports(data, '.', options, 'exports')
+      entryPoint = resolveExportsOrImports(
+        data,
+        '.',
+        options,
+        'exports',
+        externalize,
+      )
     }
 
     // fallback to mainFields if still not resolved
@@ -989,8 +996,12 @@ function resolveExportsOrImports(
   key: string,
   options: InternalResolveOptions,
   type: 'imports' | 'exports',
+  externalize?: boolean,
 ) {
-  const conditions = options.conditions.map((condition) => {
+  const rawConditions = externalize
+    ? options.externalConditions
+    : options.conditions
+  const conditions = rawConditions.map((condition) => {
     if (condition === DEV_PROD_CONDITION) {
       return options.isProduction ? 'production' : 'development'
     }
@@ -1012,6 +1023,7 @@ function resolveDeepImport(
   id: string,
   { setResolvedCache, getResolvedCache, dir, data }: PackageData,
   options: InternalResolveOptions,
+  externalize?: boolean,
 ): string | undefined {
   const cache = getResolvedCache(id, options)
   if (cache) {
@@ -1026,7 +1038,13 @@ function resolveDeepImport(
     if (isObject(exportsField) && !Array.isArray(exportsField)) {
       // resolve without postfix (see #7098)
       const { file, postfix } = splitFileAndPostfix(relativeId)
-      const exportsId = resolveExportsOrImports(data, file, options, 'exports')
+      const exportsId = resolveExportsOrImports(
+        data,
+        file,
+        options,
+        'exports',
+        externalize,
+      )
       if (exportsId !== undefined) {
         relativeId = exportsId + postfix
       } else {

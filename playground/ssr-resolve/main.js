@@ -6,6 +6,7 @@ import fileEntry from '@vitejs/test-entries/file'
 import pkgExportsEntry from '@vitejs/test-resolve-pkg-exports/entry'
 import deepFoo from '@vitejs/test-deep-import/foo'
 import deepBar from '@vitejs/test-deep-import/bar'
+import moduleSync from '@vitejs/test-module-sync'
 import { used } from './util'
 
 export default `
@@ -14,5 +15,6 @@ export default `
   pkg-exports/entry: ${pkgExportsEntry}
   deep-import/foo: ${deepFoo}
   deep-import/bar: ${deepBar}
+  module-sync: ${moduleSync}
   util: ${used(['[success]'])}
 `
