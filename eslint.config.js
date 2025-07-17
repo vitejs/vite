@@ -19,6 +19,7 @@ export default tseslint.config(
   {
     ignores: [
       'packages/create-vite/template-*',
+      'packages/plugin-legacy/vendor/**',
       '**/dist/**',
       '**/fixtures/**',
       '**/playground-temp/**',
