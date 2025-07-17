@@ -198,9 +198,6 @@ importers:
       core-js:
         specifier: ^3.44.0
         version: 3.44.0
-      fdir:
-        specifier: ^6.4.6
-        version: 6.4.6(picomatch@4.0.2)
       magic-string:
         specifier: ^0.30.17
         version: 0.30.17
@@ -217,6 +214,9 @@ importers:
       acorn:
         specifier: ^8.15.0
         version: 8.15.0
+      fdir:
+        specifier: ^6.4.6
+        version: 6.4.6(picomatch@4.0.2)
       picocolors:
         specifier: ^1.1.1
         version: 1.1.1
