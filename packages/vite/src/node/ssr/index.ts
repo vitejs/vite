@@ -40,7 +40,7 @@ export interface SSROptions {
     /**
      * Conditions that are used during ssr import (including `ssrLoadModule`) of externalized dependencies.
      *
-     * @default ['node']
+     * @default ['node', 'module-sync']
      */
     externalConditions?: string[]
 
