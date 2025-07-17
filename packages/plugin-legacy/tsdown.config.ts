@@ -1,11 +1,12 @@
 import path from 'node:path'
 import fs from 'node:fs'
 import { defineConfig } from 'tsdown'
-import { parseTarGzip } from 'nanotar'
+import { fdir } from 'fdir'
 
-// for rolldown-vite v7.0.9, check https://pkg.pr.new/~/vitejs/rolldown-vite
-const PLUGIN_LEGACY_FOR_ROLLDOWN_VITE =
-  'https://pkg.pr.new/vitejs/rolldown-vite/@vitejs/plugin-legacy@5c52bbc'
+const pluginLegacyForRolldownVitePackagePath = path.resolve(
+  import.meta.dirname,
+  './node_modules/@vitejs/plugin-legacy-for-rolldown-vite',
+)
 
 export default defineConfig({
   entry: ['src/index.ts'],
@@ -14,48 +15,42 @@ export default defineConfig({
   dts: true,
   hooks: {
     async 'build:prepare'() {
-      const result = await getPluginLegacyForRolldownVite()
-      for (const entry of result) {
-        if (entry.type === 'file') {
-          if (entry.name === 'package/package.json') {
-            validateAllDepsForRolldownViteIsIncluded(entry.text)
-            continue
-          }
+      validateAllDepsForRolldownViteIsIncluded()
 
-          const dist = path.resolve(
-            import.meta.dirname,
-            'vendor/rolldown-vite',
-            entry.name.replace('package/dist/', ''),
-          )
-          fs.mkdirSync(path.dirname(dist), { recursive: true })
-          fs.writeFileSync(dist, entry.data!)
-        }
+      const files = new fdir()
+        .glob('!**/*.d.ts')
+        .withRelativePaths()
+        .crawl(path.join(pluginLegacyForRolldownVitePackagePath, 'dist'))
+        .sync()
+      for (const file of files) {
+        const src = path.resolve(
+          pluginLegacyForRolldownVitePackagePath,
+          'dist',
+          file,
+        )
+        const dist = path.resolve(
+          import.meta.dirname,
+          'vendor/rolldown-vite',
+          file,
+        )
+        fs.mkdirSync(path.dirname(dist), { recursive: true })
+        fs.copyFileSync(src, dist)
       }
     },
   },
 })
 
-async function getPluginLegacyForRolldownVite() {
-  const res = await fetch(PLUGIN_LEGACY_FOR_ROLLDOWN_VITE)
-  return await parseTarGzip(await res.arrayBuffer(), {
-    filter(file) {
-      return (
-        (file.name.startsWith('package/dist') &&
-          !file.name.endsWith('.d.ts')) ||
-        file.name === 'package/package.json'
-      )
-    },
-  })
-}
-
-function validateAllDepsForRolldownViteIsIncluded(
-  pkgJsonForRolldownViteStr: string,
-) {
+function validateAllDepsForRolldownViteIsIncluded() {
   const pkgJsonStr = fs.readFileSync(
     path.resolve(import.meta.dirname, 'package.json'),
     'utf-8',
   )
   const pkgJson = JSON.parse(pkgJsonStr)
+
+  const pkgJsonForRolldownViteStr = fs.readFileSync(
+    path.resolve(pluginLegacyForRolldownVitePackagePath, 'package.json'),
+    'utf-8',
+  )
   const pkgJsonForRolldownVite = JSON.parse(pkgJsonForRolldownViteStr)
 
   for (const depName of Object.keys(

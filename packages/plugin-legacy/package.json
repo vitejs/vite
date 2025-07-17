@@ -58,8 +58,9 @@
     "vite": "^7.0.0"
   },
   "devDependencies": {
+    "@vitejs/plugin-legacy-for-rolldown-vite": "https://pkg.pr.new/vitejs/rolldown-vite/@vitejs/plugin-legacy@5c52bbc",
     "acorn": "^8.15.0",
-    "nanotar": "^0.2.0",
+    "fdir": "^6.4.6",
     "picocolors": "^1.1.1",
     "tsdown": "^0.12.9",
     "vite": "workspace:*"
