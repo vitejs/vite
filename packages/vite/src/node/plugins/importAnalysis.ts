@@ -509,9 +509,11 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
           // static import or valid string in dynamic import
           // If resolvable, let's resolve it
           if (specifier !== undefined) {
-            // skip external / data uri
+            // skip external / data uri, but allow if it matches an alias
             if (
-              (isExternalUrl(specifier) && !specifier.startsWith('file://')) ||
+              (isExternalUrl(specifier) &&
+                !specifier.startsWith('file://') &&
+                !matchAlias(specifier)) ||
               isDataUrl(specifier)
             ) {
               return
