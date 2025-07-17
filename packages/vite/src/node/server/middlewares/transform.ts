@@ -261,21 +261,6 @@ export function transformMiddleware(
           }
         }
 
-        // For HEAD requests, we need to determine content type without transformation
-        if (req.method === 'HEAD') {
-          const type = isDirectCSSRequest(url) ? 'css' : 'js'
-          const depsOptimizer = environment.depsOptimizer
-          const isDep =
-            DEP_VERSION_RE.test(url) || depsOptimizer?.isOptimizedDepUrl(url)
-          return send(req, res, '', type, {
-            etag: '',
-            // allow browser to cache npm deps!
-            cacheControl: isDep ? 'max-age=31536000,immutable' : 'no-cache',
-            headers: server.config.server.headers,
-            map: null,
-          })
-        }
-
         // resolve, load and transform using the plugin container
         const result = await transformRequest(environment, url, {
           allowId(id) {
@@ -290,6 +275,18 @@ export function transformMiddleware(
           const type = isDirectCSSRequest(url) ? 'css' : 'js'
           const isDep =
             DEP_VERSION_RE.test(url) || depsOptimizer?.isOptimizedDepUrl(url)
+          
+          // For HEAD requests, we need to determine content type without transformation
+          if (req.method === 'HEAD') {
+            return send(req, res, '', type, {
+              etag: result.etag,
+              // allow browser to cache npm deps!
+              cacheControl: isDep ? 'max-age=31536000,immutable' : 'no-cache',
+              headers: server.config.server.headers,
+              map: null,
+            })
+          }
+          
           return send(req, res, result.code, type, {
             etag: result.etag,
             // allow browser to cache npm deps!
