@@ -64,6 +64,8 @@ export class FullBundleDevEnvironment extends DevEnvironment {
     }
 
     if (this.state.type === 'bundling') {
+      // FIXME: we should retrigger only when we know that file is watched.
+      //        but for the initial bundle we don't know that and need to trigger after the initial bundle
       debug?.(
         `BUNDLING: file update detected ${file}, retriggering bundle generation`,
       )
@@ -291,6 +293,7 @@ export class FullBundleDevEnvironment extends DevEnvironment {
     signal: AbortSignal,
   ) {
     try {
+      const startTime = Date.now()
       const newMemoryFiles = new Map<string, string | Uint8Array>()
       for (const outputOpts of arraify(outOpts)) {
         const output = await bundle.generate(outputOpts)
@@ -303,6 +306,7 @@ export class FullBundleDevEnvironment extends DevEnvironment {
           )
         }
       }
+      const generateTime = Date.now()
 
       this.memoryFiles.clear()
       for (const [file, code] of newMemoryFiles) {
@@ -314,6 +318,7 @@ export class FullBundleDevEnvironment extends DevEnvironment {
         this.watchFiles.add(file)
       }
       if (signal.aborted) return
+      const postGenerateTime = Date.now()
 
       if (this.state.type === 'initial') throw new Error('unreachable')
       this.state = {
@@ -322,7 +327,9 @@ export class FullBundleDevEnvironment extends DevEnvironment {
         options: this.state.options,
         patched: false,
       }
-      debug?.('BUNDLED: bundle generated')
+      debug?.(
+        `BUNDLED: bundle generated in ${generateTime - startTime}ms + ${postGenerateTime - generateTime}ms`,
+      )
 
       this.hot.send({ type: 'full-reload' })
       this.logger.info(colors.green(`page reload`), { timestamp: true })
