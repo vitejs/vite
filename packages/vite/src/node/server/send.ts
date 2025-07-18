@@ -92,7 +92,6 @@ export function send(
   }
 
   res.statusCode = 200
-  // For HEAD requests, don't send the body content
   if (req.method === 'HEAD') {
     res.end()
   } else {

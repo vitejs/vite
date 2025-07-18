@@ -269,28 +269,18 @@ describe.runIf(isServe)('HEAD request handling', () => {
     const response = await fetch(new URL('/absolute.js', viteTestUrl), {
       method: 'HEAD',
     })
-
     expect(response.headers.get('content-type')).toBe('text/javascript')
     expect(response.status).toBe(200)
-  })
-
-  test('HEAD request body should be empty', async () => {
-    const response = await fetch(new URL('/absolute.js', viteTestUrl), {
-      method: 'HEAD',
-    })
-
     const text = await response.text()
     expect(text).toBe('')
   })
-
   test('HEAD request to CSS file returns correct Content-Type', async () => {
     const response = await fetch(new URL('/style.css', viteTestUrl), {
       method: 'HEAD',
       headers: {
-        Accept: 'text/css,*/*;q=0.1',
+        Accept: 'text/css',
       },
     })
-
     expect(response.headers.get('content-type')).toBe('text/css')
     expect(response.status).toBe(200)
   })
