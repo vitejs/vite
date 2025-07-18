@@ -276,17 +276,6 @@ export function transformMiddleware(
           const isDep =
             DEP_VERSION_RE.test(url) || depsOptimizer?.isOptimizedDepUrl(url)
           
-          // For HEAD requests, we need to determine content type without transformation
-          if (req.method === 'HEAD') {
-            return send(req, res, '', type, {
-              etag: result.etag,
-              // allow browser to cache npm deps!
-              cacheControl: isDep ? 'max-age=31536000,immutable' : 'no-cache',
-              headers: server.config.server.headers,
-              map: null,
-            })
-          }
-          
           return send(req, res, result.code, type, {
             etag: result.etag,
             // allow browser to cache npm deps!
