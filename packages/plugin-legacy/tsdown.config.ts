@@ -14,7 +14,7 @@ export default defineConfig({
   tsconfig: false, // disable tsconfig `paths` when bundling
   dts: true,
   hooks: {
-    async 'build:prepare'() {
+    async 'build:done'() {
       validateAllDepsForRolldownViteIsIncluded()
 
       const files = new fdir()
@@ -30,7 +30,7 @@ export default defineConfig({
         )
         const dist = path.resolve(
           import.meta.dirname,
-          'vendor/rolldown-vite',
+          'dist/vendor/rolldown-vite',
           file,
         )
         fs.mkdirSync(path.dirname(dist), { recursive: true })

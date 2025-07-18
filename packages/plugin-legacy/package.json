@@ -5,8 +5,7 @@
   "license": "MIT",
   "author": "Evan You",
   "files": [
-    "dist",
-    "vendor"
+    "dist"
   ],
   "keywords": [
     "frontend",
@@ -35,8 +34,8 @@
   "funding": "https://github.com/vitejs/vite?sponsor=1",
   "imports": {
     "#legacy-for-rolldown-vite": {
-      "types": "./vendor/legacy-for-rolldown-vite.d.ts",
-      "default": "./vendor/rolldown-vite/index.js"
+      "types": "./types/legacy-for-rolldown-vite.d.ts",
+      "default": "./dist/vendor/rolldown-vite/index.js"
     }
   },
   "dependencies": {
