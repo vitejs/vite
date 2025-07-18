@@ -1698,6 +1698,14 @@ export async function resolveConfig(
     } else {
       oxc = convertEsbuildConfigToOxcConfig(config.esbuild, logger)
     }
+  } else if (config.esbuild === false && config.oxc !== false) {
+    logger.warn(
+      colors.yellow(
+        `\`esbuild\` option is set to false, but \`oxc\` option was not set to false. ` +
+          `\`esbuild: false\` does not have effect any more. ` +
+          `If you want to disable the default transformation, which is now handled by Oxc, please set \`oxc: false\` instead.`,
+      ),
+    )
   }
 
   resolved = {
