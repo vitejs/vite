@@ -10,9 +10,16 @@ describe('transform middleware integration', () => {
   let port: number
 
   beforeAll(async () => {
+    // Create a temporary directory for testing
+    const { mkdirSync, writeFileSync } = await import('node:fs')
+    const tmpDir = '/tmp/vite-test-' + Date.now()
+    mkdirSync(tmpDir, { recursive: true })
+    mkdirSync(tmpDir + '/src', { recursive: true })
+    writeFileSync(tmpDir + '/src/main.js', 'console.log("Hello World")')
+
     server = await createServer({
       configFile: false,
-      root: '/tmp/test-project',
+      root: tmpDir,
       server: {
         middlewareMode: true,
       },
