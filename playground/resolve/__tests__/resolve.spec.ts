@@ -274,6 +274,7 @@ describe.runIf(isServe)('HEAD request handling', () => {
     const text = await response.text()
     expect(text).toBe('')
   })
+
   test('HEAD request to CSS file returns correct Content-Type', async () => {
     const response = await fetch(new URL('/style.css', viteTestUrl), {
       method: 'HEAD',
