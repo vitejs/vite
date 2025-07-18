@@ -270,8 +270,6 @@ describe.runIf(isServe)('HEAD request handling', () => {
       method: 'HEAD',
     })
 
-    // The fix ensures that HEAD requests are processed by transform middleware
-    // and return the correct Content-Type header
     expect(response.headers.get('content-type')).toBe('text/javascript')
     expect(response.status).toBe(200)
   })
@@ -281,30 +279,19 @@ describe.runIf(isServe)('HEAD request handling', () => {
       method: 'HEAD',
     })
 
-    // HEAD requests should not have a body
     const text = await response.text()
     expect(text).toBe('')
-    expect(response.headers.get('content-type')).toBe('text/javascript')
   })
 
-  test('GET request to JS file returns correct Content-Type', async () => {
-    const response = await fetch(new URL('/absolute.js', viteTestUrl), {
-      method: 'GET',
+  test('HEAD request to CSS file returns correct Content-Type', async () => {
+    const response = await fetch(new URL('/style.css', viteTestUrl), {
+      method: 'HEAD',
+      headers: {
+        Accept: 'text/css,*/*;q=0.1',
+      },
     })
 
-    // GET requests should work as before
-    expect(response.headers.get('content-type')).toBe('text/javascript')
+    expect(response.headers.get('content-type')).toBe('text/css')
     expect(response.status).toBe(200)
-  })
-
-  test('GET request body should not be empty', async () => {
-    const response = await fetch(new URL('/absolute.js', viteTestUrl), {
-      method: 'GET',
-    })
-
-    // GET requests should have a body
-    const text = await response.text()
-    expect(text).toBeTruthy()
-    expect(response.headers.get('content-type')).toBe('text/javascript')
   })
 })
