@@ -1,8 +1,8 @@
 import fs from 'node:fs'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
-import { expect, test } from 'vitest'
-import { isBuild, isWindows, page, testDir, viteTestUrl } from '~utils'
+import { describe, expect, test } from 'vitest'
+import { isBuild, isServe, isWindows, page, testDir, viteTestUrl } from '~utils'
 
 test('bom import', async () => {
   expect(await page.textContent('.utf8-bom')).toMatch('[success]')
@@ -262,4 +262,49 @@ test.runIf(isBuild)('sideEffects field glob pattern is respected', async () => {
     () => (window as any).__SIDE_EFFECT,
   )
   expect(sideEffectValues).toStrictEqual(['success'])
+})
+
+describe.runIf(isServe)('HEAD request handling', () => {
+  test('HEAD request to JS file returns correct Content-Type', async () => {
+    const response = await fetch(new URL('/absolute.js', viteTestUrl), {
+      method: 'HEAD',
+    })
+
+    // The fix ensures that HEAD requests are processed by transform middleware
+    // and return the correct Content-Type header
+    expect(response.headers.get('content-type')).toBe('text/javascript')
+    expect(response.status).toBe(200)
+  })
+
+  test('HEAD request body should be empty', async () => {
+    const response = await fetch(new URL('/absolute.js', viteTestUrl), {
+      method: 'HEAD',
+    })
+
+    // HEAD requests should not have a body
+    const text = await response.text()
+    expect(text).toBe('')
+    expect(response.headers.get('content-type')).toBe('text/javascript')
+  })
+
+  test('GET request to JS file returns correct Content-Type', async () => {
+    const response = await fetch(new URL('/absolute.js', viteTestUrl), {
+      method: 'GET',
+    })
+
+    // GET requests should work as before
+    expect(response.headers.get('content-type')).toBe('text/javascript')
+    expect(response.status).toBe(200)
+  })
+
+  test('GET request body should not be empty', async () => {
+    const response = await fetch(new URL('/absolute.js', viteTestUrl), {
+      method: 'GET',
+    })
+
+    // GET requests should have a body
+    const text = await response.text()
+    expect(text).toBeTruthy()
+    expect(response.headers.get('content-type')).toBe('text/javascript')
+  })
 })
