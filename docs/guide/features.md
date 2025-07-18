@@ -113,7 +113,7 @@ Vite starter templates have `"skipLibCheck": "true"` by default to avoid typeche
 
 ### Client Types
 
-Vite's default types are for its Node.js API. To shim the environment of client side code in a Vite application, add a `d.ts` declaration file:
+Vite's default types are for its Node.js API. To shim the environment of client-side code in a Vite application, add a `d.ts` declaration file:
 
 ```typescript
 /// <reference types="vite/client" />

@@ -212,7 +212,7 @@ function viteLegacyPlugin(options: Options = {}): Plugin[] {
           config.build = {}
         }
 
-        if (!config.build.cssTarget) {
+        if (genLegacy && !config.build.cssTarget) {
           // Hint for esbuild that we are targeting legacy browsers when minifying CSS.
           // Full CSS compat table available at https://github.com/evanw/esbuild/blob/78e04680228cf989bdd7d471e02bbc2c8d345dc9/internal/compat/css_table.go
           // But note that only the `HexRGBA` feature affects the minify outcome.
@@ -570,7 +570,9 @@ function viteLegacyPlugin(options: Options = {}): Plugin[] {
         compact: !!config.build.minify,
         sourceMaps,
         inputSourceMap: undefined,
+        targets,
         assumptions,
+        browserslistConfigFile: false,
         presets: [
           // forcing our plugin to run before preset-env by wrapping it in a
           // preset so we can catch the injected import statements...
@@ -585,7 +587,18 @@ function viteLegacyPlugin(options: Options = {}): Plugin[] {
           ],
           [
             (await import('@babel/preset-env')).default,
-            createBabelPresetEnvOptions(targets, { needPolyfills }),
+            {
+              bugfixes: true,
+              modules: false,
+              useBuiltIns: needPolyfills ? 'usage' : false,
+              corejs: needPolyfills
+                ? {
+                    version: _require('core-js/package.json').version,
+                    proposals: false,
+                  }
+                : undefined,
+              shippedProposals: true,
+            },
           ],
         ],
       }
@@ -748,7 +761,7 @@ function viteLegacyPlugin(options: Options = {}): Plugin[] {
         for (const name in bundle) {
           if (
             bundle[name].type === 'asset' &&
-            !/.+\.map$/.test(name) &&
+            !name.endsWith('.map') &&
             !name.includes('-legacy') // legacy chunks
           ) {
             delete bundle[name]
@@ -770,14 +783,27 @@ export async function detectPolyfills(
   const babel = await loadBabel()
   const result = babel.transform(code, {
     ast: true,
+    code: false,
     babelrc: false,
     configFile: false,
     compact: false,
+    targets,
     assumptions,
-    presets: [
+    browserslistConfigFile: false,
+    plugins: [
       [
-        (await import('@babel/preset-env')).default,
-        createBabelPresetEnvOptions(targets, {}),
+        (await import('babel-plugin-polyfill-corejs3')).default,
+        {
+          method: 'usage-global',
+          version: _require('core-js/package.json').version,
+          shippedProposals: true,
+        },
+      ],
+      [
+        (await import('babel-plugin-polyfill-regenerator')).default,
+        {
+          method: 'usage-global',
+        },
       ],
     ],
   })
@@ -791,27 +817,6 @@ export async function detectPolyfills(
         list.add(source)
       }
     }
-  }
-}
-
-function createBabelPresetEnvOptions(
-  targets: any,
-  { needPolyfills = true }: { needPolyfills?: boolean },
-) {
-  return {
-    targets,
-    bugfixes: true,
-    loose: false,
-    modules: false,
-    useBuiltIns: needPolyfills ? 'usage' : false,
-    corejs: needPolyfills
-      ? {
-          version: _require('core-js/package.json').version,
-          proposals: false,
-        }
-      : undefined,
-    shippedProposals: true,
-    ignoreBrowserslistConfig: true,
   }
 }
 

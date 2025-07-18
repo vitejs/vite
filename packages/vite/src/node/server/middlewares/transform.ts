@@ -263,7 +263,6 @@ export function transformMiddleware(
 
         // resolve, load and transform using the plugin container
         const result = await transformRequest(environment, url, {
-          html: req.headers.accept?.includes('text/html'),
           allowId(id) {
             return (
               id.startsWith('\0') ||

@@ -584,7 +584,7 @@
   document.body.appendChild(linkTag)
 
   // const url = new URL('non_existent_file.png', import.meta.url)
-  const metaUrl = new URL('./nested/asset.png', import.meta.url)
+  const metaUrl = new URL('./import-meta-url/img.png', import.meta.url)
   text('.import-meta-url', metaUrl)
   document.querySelector('.import-meta-url-img').src = metaUrl
 
