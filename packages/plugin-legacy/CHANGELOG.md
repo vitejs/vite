@@ -1,3 +1,25 @@
+## <small>[7.0.1](https://github.com/vitejs/vite/compare/plugin-legacy@7.0.0...plugin-legacy@7.0.1) (2025-07-17)</small>
+### Bug Fixes
+
+* **deps:** update all non-major dependencies ([#20324](https://github.com/vitejs/vite/issues/20324)) ([3e81af3](https://github.com/vitejs/vite/commit/3e81af38a80c7617aba6bf3300d8b4267570f9cf))
+* **deps:** update all non-major dependencies ([#20366](https://github.com/vitejs/vite/issues/20366)) ([43ac73d](https://github.com/vitejs/vite/commit/43ac73da27b3907c701e95e6a7d28fde659729ec))
+* **deps:** update all non-major dependencies ([#20406](https://github.com/vitejs/vite/issues/20406)) ([1a1cc8a](https://github.com/vitejs/vite/commit/1a1cc8a435a21996255b3e5cc75ed4680de2a7f3))
+* **legacy:** don't lower CSS if legacy chunks are not generated ([#20392](https://github.com/vitejs/vite/issues/20392)) ([d2c81f7](https://github.com/vitejs/vite/commit/d2c81f7c13030c08becd8a768182074eedb87333))
+
+### Performance Improvements
+
+* **legacy:** skip lowering when detecting polyfills ([#20387](https://github.com/vitejs/vite/issues/20387)) ([7cc0338](https://github.com/vitejs/vite/commit/7cc0338de3a67597956af58e931e46e7913c063b))
+
+### Miscellaneous Chores
+
+* **deps:** update rolldown-related dependencies ([#20323](https://github.com/vitejs/vite/issues/20323)) ([30d2f1b](https://github.com/vitejs/vite/commit/30d2f1b38c72387ffdca3ee4746730959a020b59))
+* group commits by category in changelog ([#20310](https://github.com/vitejs/vite/issues/20310)) ([41e83f6](https://github.com/vitejs/vite/commit/41e83f62b1adb65f5af4c1ec006de1c845437edc))
+
+### Code Refactoring
+
+* **legacy:** use Rollup type export from Vite ([#20335](https://github.com/vitejs/vite/issues/20335)) ([d62dc33](https://github.com/vitejs/vite/commit/d62dc3321db05d91e74facff51799496ce8601f3))
+* use `foo.endsWith("bar")` instead of `/bar$/.test(foo)` ([#20413](https://github.com/vitejs/vite/issues/20413)) ([862e192](https://github.com/vitejs/vite/commit/862e192d21f66039635a998724bdc6b94fd293a0))
+
 ## [7.0.0](https://github.com/vitejs/vite/compare/plugin-legacy@7.0.0-beta.1...plugin-legacy@7.0.0) (2025-06-24)
 ### Miscellaneous Chores
 

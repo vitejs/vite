@@ -536,7 +536,31 @@ describe.runIf(isBuild)('encodeURI', () => {
 })
 
 test('new URL(..., import.meta.url)', async () => {
-  expect(await page.textContent('.import-meta-url')).toMatch(assetMatch)
+  const imgMatch = isBuild
+    ? /\/foo\/bar\/assets\/img-[-\w]{8}\.png/
+    : '/foo/bar/import-meta-url/img.png'
+
+  expect(await page.textContent('.import-meta-url')).toMatch(imgMatch)
+  if (isServe) {
+    const loadPromise = page.waitForEvent('load')
+    const newContent = readFile('import-meta-url/img-update.png', null)
+    let oldContent: Buffer
+    editFile('import-meta-url/img.png', null, (_oldContent) => {
+      oldContent = _oldContent
+      return newContent
+    })
+    await loadPromise // expect reload
+    await expect
+      .poll(() => page.textContent('.import-meta-url'))
+      .toMatch(imgMatch)
+
+    const loadPromise2 = page.waitForEvent('load')
+    editFile('import-meta-url/img.png', null, (_) => oldContent)
+    await loadPromise2 // expect reload
+    await expect
+      .poll(() => page.textContent('.import-meta-url'))
+      .toMatch(imgMatch)
+  }
 })
 
 test('new URL("@/...", import.meta.url)', async () => {
