@@ -94,13 +94,10 @@ async function startBrowserProcess(
           ? preferredOSXBrowser
           : supportedChromiumBrowsers.find((b) => ps.includes(b))
       if (openedBrowser) {
-        // Try our best to reuse existing tab with AppleScript
-        await execAsync(
-          `osascript openChrome.applescript "${url}" "${openedBrowser}"`,
-          {
-            cwd: join(VITE_PACKAGE_DIR, 'bin'),
-          },
-        )
+        // Try our best to reuse existing tab with JXA
+        await execAsync(`osascript openChrome.js "${url}" "${openedBrowser}"`, {
+          cwd: join(VITE_PACKAGE_DIR, 'bin'),
+        })
         return true
       }
     } catch {
