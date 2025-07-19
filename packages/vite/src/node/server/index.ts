@@ -591,11 +591,6 @@ export async function _createServer(
         },
       })
     },
-    // environment.transformRequest and .warmupRequest don't take an options param for now,
-    // so the logic and error handling needs to be duplicated here.
-    // The only param in options that could be important is `html`, but we may remove it as
-    // that is part of the internal control flow for the vite dev server to be able to bail
-    // out and do the html fallback
     transformRequest(url, options) {
       warnFutureDeprecation(
         config,
