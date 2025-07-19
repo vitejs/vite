@@ -71,12 +71,6 @@ export function transformRequest(
   url: string,
   options: TransformOptions = {},
 ): Promise<TransformResult | null> {
-  // Backward compatibility when only `ssr` is passed
-  if (!options.ssr) {
-    // Backward compatibility
-    options = { ...options, ssr: environment.config.consumer === 'server' }
-  }
-
   if (environment._closing && environment.config.dev.recoverable)
     throwClosedServerError()
 
