@@ -24,7 +24,7 @@ const deprecationMessages = {
     'The `server.moduleGraph` is replaced with `this.environment.moduleGraph`.',
   removeServerHot: 'The `server.hot` is replaced with `this.environment.hot`.',
   removeServerTransformRequest:
-    'The `server.transformRequest` is replaced with `this.environment.transformRequest`.',
+    'The `server.transformRequest` related APIs are replaced with methods in `this.environment`.',
 
   removeSsrLoadModule:
     'The `server.ssrLoadModule` is replaced with Environment Runner.',
