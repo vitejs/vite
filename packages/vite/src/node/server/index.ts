@@ -601,6 +601,11 @@ export async function _createServer(
       return environment.transformRequest(url)
     },
     warmupRequest(url, options) {
+      warnFutureDeprecation(
+        config,
+        'removeServerTransformRequest',
+        'server.warmupRequest() is deprecated. Use environment.warmupRequest() instead.',
+      )
       const environment = server.environments[options?.ssr ? 'ssr' : 'client']
       return environment.warmupRequest(url)
     },
