@@ -15,6 +15,7 @@ The `Environment` instance was first introduced at `v6.0`. The deprecation of `s
 future: {
   removeServerModuleGraph: 'warn',
   removeServerTransformRequest: 'warn',
+  removeServerHot: 'warn',
 }
 ```
 
@@ -31,3 +32,4 @@ In Vite v6, it is now possible to create any number of custom environments (`cli
 - `server.moduleGraph` -> [`environment.moduleGraph`](/guide/api-environment-instances#separate-module-graphs)
 - `server.transformRequest(url, ssr)` -> `environment.transformRequest(url)`
 - `server.warmupRequest(url, ssr)` -> `environment.warmupRequest(url)`
+- `server.hot` -> `server.client.environment.hot`
