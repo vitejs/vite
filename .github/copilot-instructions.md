@@ -4,7 +4,7 @@ This is a TypeScript project that implements a frontend build tooling called Vit
 
 ### Required Before Each Commit
 
-- Run `pnpm run lint` to ensure that your code adheres the code standards.
+- Run `pnpm run lint` to ensure that your code adheres to the code standards.
 - Run `pnpm run format` to format your code.
 
 ### Development Flow
