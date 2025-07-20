@@ -87,6 +87,10 @@ import { cleanUrl, unwrapId } from '../../shared/utils'
 import type { PluginHookUtils } from '../config'
 import type { Environment } from '../environment'
 import type { Logger } from '../logger'
+import {
+  isFutureDeprecationEnabled,
+  warnFutureDeprecation,
+} from '../deprecations'
 import type { DevEnvironment } from './environment'
 import { buildErrorMessage } from './middlewares/error'
 import type {
@@ -367,6 +371,7 @@ class EnvironmentPluginContainer<Env extends Environment = Environment> {
     const scan = !!options?.scan
     const ssr = this.environment.config.consumer === 'server'
     const ctx = new ResolveIdContext(this, skip, skipCalls, scan)
+    const topLevelConfig = this.environment.getTopLevelConfig()
 
     const mergedSkip = new Set<Plugin>(skip)
     for (const call of skipCalls ?? []) {
@@ -388,16 +393,35 @@ class EnvironmentPluginContainer<Env extends Environment = Environment> {
 
       ctx._plugin = plugin
 
+      const normalizedOptions = {
+        attributes: options?.attributes ?? {},
+        custom: options?.custom,
+        isEntry: !!options?.isEntry,
+        ssr,
+        scan,
+      }
+      if (
+        isFutureDeprecationEnabled(
+          topLevelConfig,
+          'removePluginHookSsrArgument',
+        )
+      ) {
+        let ssrTemp = ssr
+        Object.defineProperty(normalizedOptions, 'ssr', {
+          get() {
+            warnFutureDeprecation(topLevelConfig, 'removePluginHookSsrArgument')
+            return ssrTemp
+          },
+          set(v) {
+            ssrTemp = v
+          },
+        })
+      }
+
       const pluginResolveStart = debugPluginResolve ? performance.now() : 0
       const handler = getHookHandler(plugin.resolveId)
       const result = await this.handleHookPromise(
-        handler.call(ctx as any, rawId, importer, {
-          attributes: options?.attributes ?? {},
-          custom: options?.custom,
-          isEntry: !!options?.isEntry,
-          ssr,
-          scan,
-        }),
+        handler.call(ctx as any, rawId, importer, normalizedOptions),
       )
       if (!result) continue
 
@@ -440,7 +464,8 @@ class EnvironmentPluginContainer<Env extends Environment = Environment> {
   }
 
   async load(id: string): Promise<LoadResult | null> {
-    const ssr = this.environment.config.consumer === 'server'
+    let ssr = this.environment.config.consumer === 'server'
+    const topLevelConfig = this.environment.getTopLevelConfig()
     const options = { ssr }
     const ctx = new LoadPluginContext(this)
     for (const plugin of this.getSortedPlugins('load')) {
@@ -451,6 +476,28 @@ class EnvironmentPluginContainer<Env extends Environment = Environment> {
       if (filter && !filter(id)) continue
 
       ctx._plugin = plugin
+
+      if (
+        isFutureDeprecationEnabled(
+          topLevelConfig,
+          'removePluginHookSsrArgument',
+        )
+      ) {
+        Object.defineProperty(options, 'ssr', {
+          get() {
+            warnFutureDeprecation(
+              topLevelConfig,
+              'removePluginHookSsrArgument',
+              `Used in plugin "${plugin.name}".`,
+            )
+            return ssr
+          },
+          set(v) {
+            ssr = v
+          },
+        })
+      }
+
       const handler = getHookHandler(plugin.load)
       const result = await this.handleHookPromise(
         handler.call(ctx as any, id, options),
@@ -474,7 +521,8 @@ class EnvironmentPluginContainer<Env extends Environment = Environment> {
       inMap?: SourceDescription['map']
     },
   ): Promise<{ code: string; map: SourceMap | { mappings: '' } | null }> {
-    const ssr = this.environment.config.consumer === 'server'
+    let ssr = this.environment.config.consumer === 'server'
+    const topLevelConfig = this.environment.getTopLevelConfig()
     const optionsWithSSR = options ? { ...options, ssr } : { ssr }
     const inMap = options?.inMap
 
@@ -487,6 +535,27 @@ class EnvironmentPluginContainer<Env extends Environment = Environment> {
 
       const filter = getCachedFilterForPlugin(plugin, 'transform')
       if (filter && !filter(id, code)) continue
+
+      if (
+        isFutureDeprecationEnabled(
+          topLevelConfig,
+          'removePluginHookSsrArgument',
+        )
+      ) {
+        Object.defineProperty(optionsWithSSR, 'ssr', {
+          get() {
+            warnFutureDeprecation(
+              topLevelConfig,
+              'removePluginHookSsrArgument',
+              `Used in plugin "${plugin.name}".`,
+            )
+            return ssr
+          },
+          set(v) {
+            ssr = v
+          },
+        })
+      }
 
       ctx._updateActiveInfo(plugin, id, code)
       const start = debugPluginTransform ? performance.now() : 0
