@@ -42,7 +42,7 @@ export function optimizedDepsPlugin(): Plugin {
       if (depsOptimizer?.isOptimizedDepFile(id)) {
         const metadata = depsOptimizer.metadata
         const file = cleanUrl(id)
-        const versionMatch = DEP_VERSION_RE.exec(file)
+        const versionMatch = DEP_VERSION_RE.exec(id)
         const browserHash = versionMatch
           ? versionMatch[1].split('=')[1]
           : undefined
@@ -77,9 +77,8 @@ export function optimizedDepsPlugin(): Plugin {
         try {
           return await fsp.readFile(file, 'utf-8')
         } catch {
-          const newMetadata = depsOptimizer.metadata
-          if (optimizedDepInfoFromFile(newMetadata, file)) {
-            // Outdated non-entry points (CHUNK), loaded after a rerun
+          if (browserHash) {
+            // Outdated optimized files loaded after a rerun
             throwOutdatedRequest(id)
           }
           throwFileNotFoundInOptimizedDep(id)
