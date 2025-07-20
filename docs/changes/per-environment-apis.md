@@ -31,3 +31,4 @@ In Vite v6, it is now possible to create any number of custom environments (`cli
 - `server.moduleGraph` -> [`environment.moduleGraph`](/guide/api-environment-instances#separate-module-graphs)
 - `server.transformRequest(url, ssr)` -> `environment.transformRequest(url)`
 - `server.warmupRequest(url, ssr)` -> `environment.warmupRequest(url)`
+- `server.reloadModule(module)` -> `environment.reloadModule(module)`
