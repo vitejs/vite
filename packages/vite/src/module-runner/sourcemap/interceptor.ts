@@ -103,7 +103,9 @@ function supportRelativeURL(file: string, url: string) {
 
 function getRunnerSourceMap(position: OriginalMapping): CachedMapEntry | null {
   for (const moduleGraph of evaluatedModulesCache) {
-    const sourceMap = moduleGraph.getModuleSourceMapById(position.source!)
+    const sourceMap = moduleGraph.getModuleSourceMapById(
+      slash(position.source!),
+    )
     if (sourceMap) {
       return {
         url: position.source,
