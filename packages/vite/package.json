@@ -83,7 +83,7 @@
   "dependencies": {
     "esbuild": "^0.25.0",
     "fdir": "^6.4.6",
-    "picomatch": "^4.0.2",
+    "picomatch": "^4.0.3",
     "postcss": "^8.5.6",
     "rollup": "^4.40.0",
     "tinyglobby": "^0.2.14"
@@ -104,7 +104,7 @@
     "@types/escape-html": "^1.0.4",
     "@types/pnpapi": "^0.0.5",
     "artichokie": "^0.3.2",
-    "baseline-browser-mapping": "^2.5.3",
+    "baseline-browser-mapping": "^2.5.5",
     "cac": "^6.7.14",
     "chokidar": "^3.6.0",
     "connect": "^3.7.0",
