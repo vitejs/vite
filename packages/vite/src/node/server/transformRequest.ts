@@ -58,6 +58,9 @@ export interface TransformOptions {
    * @deprecated inferred from environment
    */
   ssr?: boolean
+}
+
+export interface TransformOptionsInternal {
   /**
    * @internal
    */
@@ -74,14 +77,8 @@ export interface TransformOptions {
 export function transformRequest(
   environment: DevEnvironment,
   url: string,
-  options: TransformOptions = {},
+  options: TransformOptionsInternal = {},
 ): Promise<TransformResult | null> {
-  // Backward compatibility when only `ssr` is passed
-  if (!options.ssr) {
-    // Backward compatibility
-    options = { ...options, ssr: environment.config.consumer === 'server' }
-  }
-
   if (environment._closing && environment.config.dev.recoverable)
     throwClosedServerError()
 
@@ -152,7 +149,7 @@ export function transformRequest(
 async function doTransform(
   environment: DevEnvironment,
   url: string,
-  options: TransformOptions,
+  options: TransformOptionsInternal,
   timestamp: number,
 ) {
   url = removeTimestampQuery(url)
@@ -242,7 +239,7 @@ async function loadAndTransform(
   environment: DevEnvironment,
   id: string,
   url: string,
-  options: TransformOptions,
+  options: TransformOptionsInternal,
   timestamp: number,
   mod?: EnvironmentModuleNode,
   resolved?: PartialResolvedId,
