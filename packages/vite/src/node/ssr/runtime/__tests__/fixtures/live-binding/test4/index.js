@@ -1,6 +1,6 @@
-import C, { update } from "./dep.js";
+import C, { update } from './dep.js'
 
-const x = C.f();
-update();
-const y = C.f();
-export default [x, y];
+const x = C.f()
+update()
+const y = C.f()
+export default [x, y]

@@ -1,1 +1,1 @@
-export { Blob } from './Blob.js';
+export { Blob } from './Blob.js'
