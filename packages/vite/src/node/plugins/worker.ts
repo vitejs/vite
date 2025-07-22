@@ -304,9 +304,6 @@ export function webWorkerPlugin(config: ResolvedConfig): Plugin {
                 objURL = blob && (self.URL || self.webkitURL).createObjectURL(blob);
                 if (!objURL) throw ''
                 const worker = new ${workerConstructor}(objURL, ${workerTypeOption});
-                // Don't revoke the objURL immediately after creating the worker as it breaks 
-                // WebKit-based browsers (including Playwright's WebKit). The URL is revoked 
-                // by the worker itself via self.location.href for better compatibility.
                 worker.addEventListener("error", () => {
                   (self.URL || self.webkitURL).revokeObjectURL(objURL);
                 });
