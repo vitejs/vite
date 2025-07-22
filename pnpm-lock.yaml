@@ -174,6 +174,12 @@ importers:
       '@babel/core':
         specifier: ^7.28.0
         version: 7.28.0
+      '@babel/plugin-transform-dynamic-import':
+        specifier: ^7.27.1
+        version: 7.27.1(@babel/core@7.28.0)
+      '@babel/plugin-transform-modules-systemjs':
+        specifier: ^7.27.1
+        version: 7.27.1(@babel/core@7.28.0)
       '@babel/preset-env':
         specifier: ^7.28.0
         version: 7.28.0(@babel/core@7.28.0)
@@ -202,9 +208,15 @@ importers:
         specifier: ^6.15.1
         version: 6.15.1
     devDependencies:
+      '@vitejs/plugin-legacy-for-rolldown-vite':
+        specifier: https://pkg.pr.new/vitejs/rolldown-vite/@vitejs/plugin-legacy@b19b90a
+        version: '@vitejs/plugin-legacy@https://pkg.pr.new/vitejs/rolldown-vite/@vitejs/plugin-legacy@b19b90a(terser@5.43.1)(vite@packages+vite)'
       acorn:
         specifier: ^8.15.0
         version: 8.15.0
+      fdir:
+        specifier: ^6.4.6
+        version: 6.4.6(picomatch@4.0.2)
       picocolors:
         specifier: ^1.1.1
         version: 1.1.1
@@ -3765,6 +3777,14 @@ packages:
 
   '@vitejs/longfilename-aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa@file:playground/optimize-deps/longfilename':
     resolution: {directory: playground/optimize-deps/longfilename, type: directory}
+
+  '@vitejs/plugin-legacy@https://pkg.pr.new/vitejs/rolldown-vite/@vitejs/plugin-legacy@b19b90a':
+    resolution: {tarball: https://pkg.pr.new/vitejs/rolldown-vite/@vitejs/plugin-legacy@b19b90a}
+    version: 7.0.1
+    engines: {node: ^20.19.0 || >=22.12.0}
+    peerDependencies:
+      terser: ^5.16.0
+      vite: workspace:*
 
   '@vitejs/plugin-vue@6.0.0':
     resolution: {integrity: sha512-iAliE72WsdhjzTOp2DtvKThq1VBC4REhwRcaA+zPAAph6I+OQhUXv+Xu2KS7ElxYtb7Zc/3R30Hwv1DxEo7NXQ==}
@@ -7625,7 +7645,7 @@ snapshots:
       '@babel/helper-optimise-call-expression': 7.27.1
       '@babel/helper-replace-supers': 7.27.1(@babel/core@7.28.0)
       '@babel/helper-skip-transparent-expression-wrappers': 7.27.1
-      '@babel/traverse': 7.27.7
+      '@babel/traverse': 7.28.0
       semver: 6.3.1
     transitivePeerDependencies:
       - supports-color
@@ -7684,7 +7704,7 @@ snapshots:
       '@babel/core': 7.28.0
       '@babel/helper-annotate-as-pure': 7.27.1
       '@babel/helper-wrap-function': 7.27.1
-      '@babel/traverse': 7.27.7
+      '@babel/traverse': 7.28.0
     transitivePeerDependencies:
       - supports-color
 
@@ -7699,7 +7719,7 @@ snapshots:
 
   '@babel/helper-skip-transparent-expression-wrappers@7.27.1':
     dependencies:
-      '@babel/traverse': 7.27.7
+      '@babel/traverse': 7.28.0
       '@babel/types': 7.27.7
     transitivePeerDependencies:
       - supports-color
@@ -7713,7 +7733,7 @@ snapshots:
   '@babel/helper-wrap-function@7.27.1':
     dependencies:
       '@babel/template': 7.27.2
-      '@babel/traverse': 7.27.7
+      '@babel/traverse': 7.28.0
       '@babel/types': 7.27.7
     transitivePeerDependencies:
       - supports-color
@@ -7960,7 +7980,7 @@ snapshots:
       '@babel/helper-module-transforms': 7.27.3(@babel/core@7.28.0)
       '@babel/helper-plugin-utils': 7.27.1
       '@babel/helper-validator-identifier': 7.27.1
-      '@babel/traverse': 7.27.7
+      '@babel/traverse': 7.28.0
     transitivePeerDependencies:
       - supports-color
 
@@ -9500,6 +9520,25 @@ snapshots:
     optional: true
 
   '@vitejs/longfilename-aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa@file:playground/optimize-deps/longfilename': {}
+
+  '@vitejs/plugin-legacy@https://pkg.pr.new/vitejs/rolldown-vite/@vitejs/plugin-legacy@b19b90a(terser@5.43.1)(vite@packages+vite)':
+    dependencies:
+      '@babel/core': 7.28.0
+      '@babel/plugin-transform-dynamic-import': 7.27.1(@babel/core@7.28.0)
+      '@babel/plugin-transform-modules-systemjs': 7.27.1(@babel/core@7.28.0)
+      '@babel/preset-env': 7.28.0(@babel/core@7.28.0)
+      babel-plugin-polyfill-corejs3: 0.13.0(@babel/core@7.28.0)
+      babel-plugin-polyfill-regenerator: 0.6.5(@babel/core@7.28.0)
+      browserslist: 4.25.1
+      browserslist-to-esbuild: 2.1.1(browserslist@4.25.1)
+      core-js: 3.44.0
+      magic-string: 0.30.17
+      regenerator-runtime: 0.14.1
+      systemjs: 6.15.1
+      terser: 5.43.1
+      vite: link:packages/vite
+    transitivePeerDependencies:
+      - supports-color
 
   '@vitejs/plugin-vue@6.0.0(vite@packages+vite)(vue@3.5.17(typescript@5.7.3))':
     dependencies:
