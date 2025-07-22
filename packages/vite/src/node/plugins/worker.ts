@@ -292,6 +292,7 @@ export function webWorkerPlugin(config: ResolvedConfig): Plugin {
               workerConstructor === 'Worker'
                 ? `${jsContent}
             const blob = typeof self !== "undefined" && self.Blob && new Blob([${
+              // NOTE: Revoke the objURL after creating the worker, otherwise it breaks WebKit-based browsers
               workerType === 'classic'
                 ? `'(self.URL || self.webkitURL).revokeObjectURL(self.location.href);',`
                 : // `URL` is always available, in `Worker[type="module"]`
