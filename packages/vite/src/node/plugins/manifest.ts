@@ -32,13 +32,50 @@ export function manifestPlugin(config: ResolvedConfig): Plugin {
     return perEnvironmentPlugin('native:manifest', (environment) => {
       if (!environment.config.build.manifest) return false
 
-      return nativeManifestPlugin({
-        root: environment.config.root,
-        outPath:
-          environment.config.build.manifest === true
-            ? '.vite/manifest.json'
-            : environment.config.build.manifest,
-      })
+      const root = environment.config.root
+      const outPath =
+        environment.config.build.manifest === true
+          ? '.vite/manifest.json'
+          : environment.config.build.manifest
+
+      function getChunkName(chunk: OutputChunk) {
+        return (
+          getChunkOriginalFileName(chunk, root, false) ??
+          `_${path.basename(chunk.fileName)}`
+        )
+      }
+
+      return [
+        nativeManifestPlugin({ root, outPath }),
+        {
+          name: 'native:manifest-compatible',
+          generateBundle(_, bundle) {
+            const asset = bundle[outPath]
+            if (asset.type === 'asset') {
+              let manifest: Manifest | undefined
+              for (const chunk of Object.values(bundle)) {
+                if (chunk.type !== 'chunk') continue
+                const importedCss = chunk.viteMetadata?.importedCss
+                const importedAssets = chunk.viteMetadata?.importedAssets
+                if (!importedCss?.size && !importedAssets?.size) continue
+                manifest ??= JSON.parse(asset.source.toString()) as Manifest
+                const name = getChunkName(chunk)
+                const item = manifest[name]
+                if (!item) continue
+                if (importedCss?.size) {
+                  item.css = [...importedCss]
+                }
+                if (importedAssets?.size) {
+                  item.assets = [...importedAssets]
+                }
+              }
+              if (manifest) {
+                asset.source = JSON.stringify(manifest)
+              }
+            }
+          },
+        },
+      ]
     })
   }
 
