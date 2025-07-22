@@ -45,7 +45,6 @@ import { ssrTransform } from '../ssr/ssrTransform'
 import { reloadOnTsconfigChange } from '../plugins/esbuild'
 import { bindCLIShortcuts } from '../shortcuts'
 import type { BindCLIShortcutsOptions } from '../shortcuts'
-import { ERR_OUTDATED_OPTIMIZED_DEP } from '../../shared/constants'
 import {
   CLIENT_DIR,
   DEFAULT_DEV_PORT,
@@ -67,7 +66,6 @@ import type { MinimalPluginContextWithoutEnvironment } from '../plugin'
 import type { PluginContainer } from './pluginContainer'
 import {
   BasicMinimalPluginContext,
-  ERR_CLOSED_SERVER,
   basePluginContextMeta,
   createPluginContainer,
 } from './pluginContainer'
@@ -93,12 +91,11 @@ import { timeMiddleware } from './middlewares/time'
 import { ModuleGraph } from './mixedModuleGraph'
 import type { ModuleNode } from './mixedModuleGraph'
 import { notFoundMiddleware } from './middlewares/notFound'
-import { buildErrorMessage, errorMiddleware } from './middlewares/error'
+import { errorMiddleware } from './middlewares/error'
 import type { HmrOptions, NormalizedHotChannel } from './hmr'
 import { handleHMRUpdate, updateModules } from './hmr'
 import { openBrowser as _openBrowser } from './openBrowser'
 import type { TransformOptions, TransformResult } from './transformRequest'
-import { transformRequest } from './transformRequest'
 import { searchForPackageRoot, searchForWorkspaceRoot } from './searchRoot'
 import type { DevEnvironment } from './environment'
 import { hostValidationMiddleware } from './middlewares/hostCheck'
@@ -594,11 +591,6 @@ export async function _createServer(
         },
       })
     },
-    // environment.transformRequest and .warmupRequest don't take an options param for now,
-    // so the logic and error handling needs to be duplicated here.
-    // The only param in options that could be important is `html`, but we may remove it as
-    // that is part of the internal control flow for the vite dev server to be able to bail
-    // out and do the html fallback
     transformRequest(url, options) {
       warnFutureDeprecation(
         config,
@@ -606,29 +598,11 @@ export async function _createServer(
         'server.transformRequest() is deprecated. Use environment.transformRequest() instead.',
       )
       const environment = server.environments[options?.ssr ? 'ssr' : 'client']
-      return transformRequest(environment, url, options)
+      return environment.transformRequest(url)
     },
-    async warmupRequest(url, options) {
-      try {
-        const environment = server.environments[options?.ssr ? 'ssr' : 'client']
-        await transformRequest(environment, url, options)
-      } catch (e) {
-        if (
-          e?.code === ERR_OUTDATED_OPTIMIZED_DEP ||
-          e?.code === ERR_CLOSED_SERVER
-        ) {
-          // these are expected errors
-          return
-        }
-        // Unexpected error, log the issue but avoid an unhandled exception
-        server.config.logger.error(
-          buildErrorMessage(e, [`Pre-transform error: ${e.message}`], false),
-          {
-            error: e,
-            timestamp: true,
-          },
-        )
-      }
+    warmupRequest(url, options) {
+      const environment = server.environments[options?.ssr ? 'ssr' : 'client']
+      return environment.warmupRequest(url)
     },
     transformIndexHtml(url, html, originalUrl) {
       return devHtmlTransformFn(server, url, html, originalUrl)
