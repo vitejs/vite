@@ -789,7 +789,15 @@ async function buildEnvironment(
             (typeof input === 'string' || Object.keys(input).length === 1)),
         minify:
           options.minify === 'oxc'
-            ? true
+            ? libOptions && (format === 'es' || format === 'esm')
+              ? {
+                  compress: true,
+                  mangle: true,
+                  // Do not minify whitespace for ES lib output since that would remove
+                  // pure annotations and break tree-shaking
+                  removeWhitespace: false,
+                }
+              : true
             : options.minify === false
               ? 'dce-only'
               : false,
