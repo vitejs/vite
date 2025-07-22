@@ -503,16 +503,15 @@ describe('virtual module hmr', async () => {
       posix.join(server.config.root, 'fixtures/import-external.ts'),
     )
     const moduleNode = runner.evaluatedModules.getModuleByUrl('tinyglobby')!
-    console.log(moduleNode)
     const meta = moduleNode.meta as ExternalFetchResult
     if (process.platform === 'win32') {
-      expect(meta.externalize).toMatch(/file:\/\/\/\w:\//) // file:///C:/
-      expect(moduleNode.id).toMatch(/\w:\//) // C:/
-      expect(moduleNode.file).toMatch(/\w:\//) // C:/
+      expect(meta.externalize).toMatch(/^file:\/\/\/\w:\//) // file:///C:/
+      expect(moduleNode.id).toMatch(/^\w:\//) // C:/
+      expect(moduleNode.file).toMatch(/^\w:\//) // C:/
     } else {
-      expect(meta.externalize).toMatch(/file:\/\/\//) // file:///
-      expect(moduleNode.id).toMatch(/\//) // /
-      expect(moduleNode.file).toMatch(/\//) // /
+      expect(meta.externalize).toMatch(/^file:\/\/\//) // file:///
+      expect(moduleNode.id).toMatch(/^\//) // /
+      expect(moduleNode.file).toMatch(/^\//) // /
     }
   })
 })
