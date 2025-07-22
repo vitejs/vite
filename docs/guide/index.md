@@ -1,3 +1,7 @@
+<script setup>
+import ViteCommandBuilder from '../.vitepress/components/ViteCommandBuilder.vue'
+</script>
+
 # Getting Started
 
 <audio id="vite-audio">
@@ -103,6 +107,12 @@ $ deno init --npm vite my-vue-app --template vue
 See [create-vite](https://github.com/vitejs/vite/tree/main/packages/create-vite) for more details on each supported template: `vanilla`, `vanilla-ts`, `vue`, `vue-ts`, `react`, `react-ts`, `react-swc`, `react-swc-ts`, `preact`, `preact-ts`, `lit`, `lit-ts`, `svelte`, `svelte-ts`, `solid`, `solid-ts`, `qwik`, `qwik-ts`.
 
 You can use `.` for the project name to scaffold in the current directory.
+
+## Interactive Vite Project Command Builder
+
+Easily generate the correct command for scaffolding a new Vite project using your preferred build tool, template, and options:
+
+<ViteCommandBuilder />
 
 ## Community Templates
 
