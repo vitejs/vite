@@ -7,6 +7,7 @@ import { Socket } from 'phoenix'
 import clip from 'clipboard'
 import cjsFromESM from '@vitejs/test-dep-cjs-compiled-from-esm'
 import cjsFromCJS from '@vitejs/test-dep-cjs-compiled-from-cjs'
+import * as cjsFromCJSNamespace from '@vitejs/test-dep-cjs-compiled-from-cjs'
 
 // Test exporting a name that was already imported
 export { useState } from 'react'
@@ -25,7 +26,11 @@ if (typeof cjsFromESM === 'function') {
   text('.cjs-dep-cjs-compiled-from-esm', 'ok')
 }
 
-if (typeof cjsFromCJS === 'function') {
+if (
+  typeof cjsFromCJS === 'function' &&
+  typeof cjsFromCJSNamespace !== 'function' &&
+  cjsFromCJSNamespace.bar === 'bar'
+) {
   text('.cjs-dep-cjs-compiled-from-cjs', 'ok')
 }
 
