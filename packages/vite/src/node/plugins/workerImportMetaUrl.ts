@@ -182,7 +182,7 @@ async function getWorkerType(
 }
 
 const workerImportMetaUrlRE =
-  /new\s+(?:Worker|SharedWorker).+new\s+URL.+import\.meta\.url/s
+  /new\s+(?:Worker|SharedWorker)\s*\(\s*new\s+URL.+?import\.meta\.url/s
 
 export function workerImportMetaUrlPlugin(config: ResolvedConfig): Plugin {
   const isBuild = config.command === 'build'
