@@ -77,16 +77,16 @@ async function startBrowserProcess(
 ) {
   // If we're on OS X, the user hasn't specifically
   // requested a different browser, we can try opening
-  // a Chromium browser with AppleScript. This lets us reuse an
+  // a Chromium browser with JXA. This lets us reuse an
   // existing tab when possible instead of creating a new one.
   const preferredOSXBrowser =
     browser === 'google chrome' ? 'Google Chrome' : browser
-  const shouldTryOpenChromeWithAppleScript =
+  const shouldTryOpenChromeWithJXA =
     process.platform === 'darwin' &&
     (!preferredOSXBrowser ||
       supportedChromiumBrowsers.includes(preferredOSXBrowser))
 
-  if (shouldTryOpenChromeWithAppleScript) {
+  if (shouldTryOpenChromeWithJXA) {
     try {
       const ps = await execAsync('ps cax')
       const openedBrowser =
