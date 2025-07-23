@@ -26,7 +26,6 @@
     "node",
     "typescript",
     "@rollup/plugin-dynamic-import-vars", // prefer version using tinyglobby
-    "@oxc-project/runtime", // align version with rolldown
     "@oxc-project/types", // align version with rolldown
 
     // pinned

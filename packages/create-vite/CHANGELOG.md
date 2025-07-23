@@ -1,3 +1,28 @@
+## <small>[7.0.3](https://github.com/vitejs/vite/compare/create-vite@7.0.2...create-vite@7.0.3) (2025-07-11)</small>
+### Features
+
+* **create-vite:** bump vite-plugin-svelte to new major for vite7 ([#20394](https://github.com/vitejs/vite/issues/20394)) ([a829a29](https://github.com/vitejs/vite/commit/a829a2963cd201ef0422afdc4cfca3d3e7c92770))
+
+## <small>[7.0.2](https://github.com/vitejs/vite/compare/create-vite@7.0.1...create-vite@7.0.2) (2025-07-10)</small>
+### Bug Fixes
+
+* **create-vite:** fix command for react rsc template ([#20378](https://github.com/vitejs/vite/issues/20378)) ([0362484](https://github.com/vitejs/vite/commit/03624844ebc2950cfb1a48379726d60e6d31bd6e))
+
+## <small>[7.0.1](https://github.com/vitejs/vite/compare/create-vite@7.0.0...create-vite@7.0.1) (2025-07-08)</small>
+### Features
+
+* **create-vite:** update rsc template to use `@vitejs/plugin-rsc` ([#20351](https://github.com/vitejs/vite/issues/20351)) ([b9ebc96](https://github.com/vitejs/vite/commit/b9ebc967bb9e8137dedb7d1304e4f693a52f1c03))
+
+### Bug Fixes
+
+* **deps:** update all non-major dependencies ([#20324](https://github.com/vitejs/vite/issues/20324)) ([3e81af3](https://github.com/vitejs/vite/commit/3e81af38a80c7617aba6bf3300d8b4267570f9cf))
+* **deps:** update all non-major dependencies ([#20366](https://github.com/vitejs/vite/issues/20366)) ([43ac73d](https://github.com/vitejs/vite/commit/43ac73da27b3907c701e95e6a7d28fde659729ec))
+
+### Miscellaneous Chores
+
+* **deps:** update rolldown-related dependencies ([#20323](https://github.com/vitejs/vite/issues/20323)) ([30d2f1b](https://github.com/vitejs/vite/commit/30d2f1b38c72387ffdca3ee4746730959a020b59))
+* group commits by category in changelog ([#20310](https://github.com/vitejs/vite/issues/20310)) ([41e83f6](https://github.com/vitejs/vite/commit/41e83f62b1adb65f5af4c1ec006de1c845437edc))
+
 ## [7.0.0](https://github.com/vitejs/vite/compare/create-vite@6.5.0...create-vite@7.0.0) (2025-06-24)
 ### ⚠ BREAKING CHANGES
 

@@ -1,3 +1,44 @@
+## <small>[7.0.5](https://github.com/vitejs/vite/compare/v7.0.4...v7.0.5) (2025-07-17)</small>
+### Bug Fixes
+
+* **deps:** update all non-major dependencies ([#20406](https://github.com/vitejs/vite/issues/20406)) ([1a1cc8a](https://github.com/vitejs/vite/commit/1a1cc8a435a21996255b3e5cc75ed4680de2a7f3))
+* remove special handling for `Accept: text/html` ([#20376](https://github.com/vitejs/vite/issues/20376)) ([c9614b9](https://github.com/vitejs/vite/commit/c9614b9c378be4a32e84f37be71a8becce52af7b))
+* watch assets referenced by `new URL(, import.meta.url)` ([#20382](https://github.com/vitejs/vite/issues/20382)) ([6bc8bf6](https://github.com/vitejs/vite/commit/6bc8bf634d4a2c9915da9813963dd80a4186daeb))
+
+### Miscellaneous Chores
+
+* **deps:** update dependency rolldown to ^1.0.0-beta.27 ([#20405](https://github.com/vitejs/vite/issues/20405)) ([1165667](https://github.com/vitejs/vite/commit/1165667b271fb1fb76584278e72a85d564c9bb09))
+
+### Code Refactoring
+
+* use `foo.endsWith("bar")` instead of `/bar$/.test(foo)` ([#20413](https://github.com/vitejs/vite/issues/20413)) ([862e192](https://github.com/vitejs/vite/commit/862e192d21f66039635a998724bdc6b94fd293a0))
+
+## <small>[7.0.4](https://github.com/vitejs/vite/compare/v7.0.3...v7.0.4) (2025-07-10)</small>
+### Bug Fixes
+
+* allow resolving bare specifiers to relative paths for entries ([#20379](https://github.com/vitejs/vite/issues/20379)) ([324669c](https://github.com/vitejs/vite/commit/324669c2d84966a822b1b2c134c9830a90bed271))
+
+### Build System
+
+* remove `@oxc-project/runtime` devDep ([#20389](https://github.com/vitejs/vite/issues/20389)) ([5e29602](https://github.com/vitejs/vite/commit/5e29602f6fe4bf28f6e7c869a214dee6957f855c))
+
+## <small>[7.0.3](https://github.com/vitejs/vite/compare/v7.0.2...v7.0.3) (2025-07-08)</small>
+### Bug Fixes
+
+* **client:** protect against window being defined but addEv undefined ([#20359](https://github.com/vitejs/vite/issues/20359)) ([31d1467](https://github.com/vitejs/vite/commit/31d1467cf0da1e1dca623e6df0d345b30fae0c3d))
+* **define:** replace optional values ([#20338](https://github.com/vitejs/vite/issues/20338)) ([9465ae1](https://github.com/vitejs/vite/commit/9465ae1378b456e08659a22286bee6bce8edeedc))
+* **deps:** update all non-major dependencies ([#20366](https://github.com/vitejs/vite/issues/20366)) ([43ac73d](https://github.com/vitejs/vite/commit/43ac73da27b3907c701e95e6a7d28fde659729ec))
+
+### Miscellaneous Chores
+
+* **deps:** update dependency dotenv to v17 ([#20325](https://github.com/vitejs/vite/issues/20325)) ([45040d4](https://github.com/vitejs/vite/commit/45040d48076302eeb101f8d07bbcd04758fde8a4))
+* **deps:** update dependency rolldown to ^1.0.0-beta.24 ([#20365](https://github.com/vitejs/vite/issues/20365)) ([5ab25e7](https://github.com/vitejs/vite/commit/5ab25e73a2ea2a2e2c0469350288a183dfb57030))
+* use `n/prefer-node-protocol` rule ([#20368](https://github.com/vitejs/vite/issues/20368)) ([38bb268](https://github.com/vitejs/vite/commit/38bb268cde15541321f36016e77d61eecb707298))
+
+### Code Refactoring
+
+* minor changes to reduce diff between normal Vite and rolldown-vite ([#20354](https://github.com/vitejs/vite/issues/20354)) ([2e8050e](https://github.com/vitejs/vite/commit/2e8050e4cd8835673baf07375b7db35128144222))
+
 ## <small>[7.0.2](https://github.com/vitejs/vite/compare/v7.0.1...v7.0.2) (2025-07-04)</small>
 ### Bug Fixes
 
