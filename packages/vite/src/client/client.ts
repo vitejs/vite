@@ -402,6 +402,7 @@ function pingWorkerContentMain(socketUrl: string) {
     port.addEventListener('message', (event) => {
       const { visibility } = event.data
       visibilityManager.currentState = visibility
+      console.debug('new window visibility', visibility)
       for (const listener of visibilityManager.listeners) {
         listener(visibility)
       }
