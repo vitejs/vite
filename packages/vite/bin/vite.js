@@ -3,10 +3,10 @@ import { performance } from 'node:perf_hooks'
 import module from 'node:module'
 
 if (!import.meta.url.includes('node_modules')) {
-  try {
-    // only available as dev dependency
-    await import('source-map-support').then((r) => r.default.install())
-  } catch {}
+  if (!process.env.DEBUG_DISABLE_SOURCE_MAP) {
+    // eslint-disable-next-line n/no-unsupported-features/node-builtins -- only used in dev
+    process.setSourceMapsEnabled(true)
+  }
 
   process.on('unhandledRejection', (err) => {
     throw new Error('UNHANDLED PROMISE REJECTION', { cause: err })
@@ -49,6 +49,15 @@ function start() {
   try {
     // eslint-disable-next-line n/no-unsupported-features/node-builtins -- it is supported in Node 22.8.0+ and only called if it exists
     module.enableCompileCache?.()
+    // flush the cache after 10s because the cache is not flushed until process end
+    // for dev server, the cache is never flushed unless manually flushed because the process.exit is called
+    // also flushing the cache in SIGINT handler seems to cause the process to hang
+    setTimeout(() => {
+      try {
+        // eslint-disable-next-line n/no-unsupported-features/node-builtins -- it is supported in Node 22.12.0+ and only called if it exists
+        module.flushCompileCache?.()
+      } catch {}
+    }, 10 * 1000).unref()
   } catch {}
   return import('../dist/node/cli.js')
 }

@@ -135,11 +135,10 @@ const prefixedBuiltins = new Set([
 // transform file url to id
 // virtual:custom -> virtual:custom
 // \0custom -> \0custom
-// /root/id -> /id
-// /root/id.js -> /id.js
-// C:/root/id.js -> /id.js
-// C:\root\id.js -> /id.js
-function normalizeModuleId(file: string): string {
+// node:fs -> fs
+// /@fs/C:/root/id.js => C:/root/id.js
+// file:///C:/root/id.js -> C:/root/id.js
+export function normalizeModuleId(file: string): string {
   if (prefixedBuiltins.has(file)) return file
 
   // unix style, but Windows path still starts with the drive letter to check the root
@@ -149,5 +148,5 @@ function normalizeModuleId(file: string): string {
     .replace(/^\/+/, '/')
 
   // if it's not in the root, keep it as a path, not a URL
-  return unixFile.replace(/^file:\//, '/')
+  return unixFile.replace(/^file:\/+/, isWindows ? '' : '/')
 }

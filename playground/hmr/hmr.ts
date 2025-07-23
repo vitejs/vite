@@ -1,6 +1,8 @@
 import { virtual } from 'virtual:file'
+import { virtual as virtualDep } from 'virtual:file-dep'
 import { foo as depFoo, nestedFoo } from './hmrDep'
 import './importing-updated'
+import './invalidation-circular-deps'
 import './file-delete-restore'
 import './optional-chaining/parent'
 import './intermediate-file-delete'
@@ -14,14 +16,26 @@ text('.app', foo)
 text('.dep', depFoo)
 text('.nested', nestedFoo)
 text('.virtual', virtual)
+text('.virtual-dep', virtualDep)
 text('.soft-invalidation', softInvalidationMsg)
 setImgSrc('#logo', logo)
 setImgSrc('#logo-no-inline', logoNoInline)
+
+text('.virtual-dep', 0)
 
 const btn = document.querySelector('.virtual-update') as HTMLButtonElement
 btn.onclick = () => {
   if (import.meta.hot) {
     import.meta.hot.send('virtual:increment')
+  }
+}
+
+const btnDep = document.querySelector(
+  '.virtual-update-dep',
+) as HTMLButtonElement
+btnDep.onclick = () => {
+  if (import.meta.hot) {
+    import.meta.hot.send('virtual:increment', '-dep')
   }
 }
 
@@ -53,6 +67,10 @@ if (import.meta.hot) {
 
   import.meta.hot.accept('./hmrDep', ({ foo, nestedFoo }) => {
     handleDep('single dep', foo, nestedFoo)
+  })
+
+  import.meta.hot.accept('virtual:file-dep', ({ virtual }) => {
+    text('.virtual-dep', virtual)
   })
 
   import.meta.hot.accept(['./hmrDep'], ([{ foo, nestedFoo }]) => {

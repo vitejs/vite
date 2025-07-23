@@ -2,7 +2,6 @@ import { beforeAll, describe, expect, test } from 'vitest'
 import {
   browserLogs,
   editFile,
-  expectWithRetry,
   getColor,
   isBuild,
   isServe,
@@ -11,7 +10,6 @@ import {
   untilBrowserLogAfter,
   viteServer,
   viteTestUrl,
-  withRetry,
 } from '~utils'
 
 function fetchHtml(p: string) {
@@ -295,8 +293,8 @@ describe.runIf(isServe)('invalid', () => {
     expect(errorOverlay).toBeTruthy()
 
     await page.click('html')
-    const isVisbleOverlay = await errorOverlay.isVisible()
-    expect(isVisbleOverlay).toBeFalsy()
+    const isVisibleOverlay = await errorOverlay.isVisible()
+    expect(isVisibleOverlay).toBeFalsy()
   })
 
   test('should close overlay when escape key is pressed', async () => {
@@ -305,8 +303,8 @@ describe.runIf(isServe)('invalid', () => {
     expect(errorOverlay).toBeTruthy()
 
     await page.keyboard.press('Escape')
-    const isVisbleOverlay = await errorOverlay.isVisible()
-    expect(isVisbleOverlay).toBeFalsy()
+    const isVisibleOverlay = await errorOverlay.isVisible()
+    expect(isVisibleOverlay).toBeFalsy()
   })
 
   test('stack is updated', async () => {
@@ -419,7 +417,7 @@ describe('relative input', () => {
   })
 
   test('passing relative path to rollupOptions.input works', async () => {
-    await expectWithRetry(() => page.textContent('.relative-input')).toBe('OK')
+    await expect.poll(() => page.textContent('.relative-input')).toBe('OK')
   })
 })
 
@@ -427,13 +425,13 @@ describe.runIf(isServe)('warmup', () => {
   test('should warmup /warmup/warm.js', async () => {
     // warmup transform files async during server startup, so the module check
     // here might take a while to load
-    await withRetry(async () => {
-      const mod =
-        await viteServer.environments.client.moduleGraph.getModuleByUrl(
+    await expect
+      .poll(() =>
+        viteServer.environments.client.moduleGraph.getModuleByUrl(
           '/warmup/warm.js',
-        )
-      expect(mod).toBeTruthy()
-    })
+        ),
+      )
+      .toBeTruthy()
   })
 })
 

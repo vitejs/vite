@@ -2,15 +2,15 @@ import { transform } from 'esbuild'
 import { TraceMap, decodedMap, encodedMap } from '@jridgewell/trace-mapping'
 import type { ResolvedConfig } from '../config'
 import type { Plugin } from '../plugin'
-import { escapeRegex } from '../utils'
+import { escapeRegex, isCSSRequest } from '../utils'
 import type { Environment } from '../environment'
-import { isCSSRequest } from './css'
 import { isHTMLRequest } from './html'
 
 const nonJsRe = /\.json(?:$|\?)/
 const isNonJsRequest = (request: string): boolean => nonJsRe.test(request)
 const importMetaEnvMarker = '__vite_import_meta_env__'
 const importMetaEnvKeyReCache = new Map<string, RegExp>()
+const escapedDotRE = /(?<!\\)\\./g
 
 export function definePlugin(config: ResolvedConfig): Plugin {
   const isBuild = config.command === 'build'
@@ -92,7 +92,12 @@ export function definePlugin(config: ResolvedConfig): Plugin {
       patternKeys.push('import.meta.env', 'import.meta.hot')
     }
     const pattern = patternKeys.length
-      ? new RegExp(patternKeys.map(escapeRegex).join('|'))
+      ? new RegExp(
+          patternKeys
+            // replace `\.` (ignore `\\.`) with `\??\.` to match with `?.` as well
+            .map((key) => escapeRegex(key).replaceAll(escapedDotRE, '\\??\\.'))
+            .join('|'),
+        )
       : null
 
     return [define, pattern, importMetaEnvVal] as const
@@ -114,69 +119,72 @@ export function definePlugin(config: ResolvedConfig): Plugin {
   return {
     name: 'vite:define',
 
-    async transform(code, id) {
-      if (this.environment.config.consumer === 'client' && !isBuild) {
-        // for dev we inject actual global defines in the vite client to
-        // avoid the transform cost. see the `clientInjection` and
-        // `importAnalysis` plugin.
-        return
-      }
-
-      if (
-        // exclude html, css and static assets for performance
-        isHTMLRequest(id) ||
-        isCSSRequest(id) ||
-        isNonJsRequest(id) ||
-        config.assetsInclude(id)
-      ) {
-        return
-      }
-
-      let [define, pattern, importMetaEnvVal] = getPattern(this.environment)
-      if (!pattern) return
-
-      // Check if our code needs any replacements before running esbuild
-      pattern.lastIndex = 0
-      if (!pattern.test(code)) return
-
-      const hasDefineImportMetaEnv = 'import.meta.env' in define
-      let marker = importMetaEnvMarker
-
-      if (hasDefineImportMetaEnv && code.includes(marker)) {
-        // append a number to the marker until it's unique, to avoid if there is a
-        // marker already in the code
-        let i = 1
-        do {
-          marker = importMetaEnvMarker + i++
-        } while (code.includes(marker))
-
-        if (marker !== importMetaEnvMarker) {
-          define = { ...define, 'import.meta.env': marker }
+    transform: {
+      async handler(code, id) {
+        if (this.environment.config.consumer === 'client' && !isBuild) {
+          // for dev we inject actual global defines in the vite client to
+          // avoid the transform cost. see the `clientInjection` and
+          // `importAnalysis` plugin.
+          return
         }
-      }
 
-      const result = await replaceDefine(this.environment, code, id, define)
+        if (
+          // exclude html, css and static assets for performance
+          isHTMLRequest(id) ||
+          isCSSRequest(id) ||
+          isNonJsRequest(id) ||
+          config.assetsInclude(id)
+        ) {
+          return
+        }
 
-      if (hasDefineImportMetaEnv) {
-        // Replace `import.meta.env.*` with undefined
-        result.code = result.code.replaceAll(
-          getImportMetaEnvKeyRe(marker),
-          (m) => 'undefined'.padEnd(m.length),
-        )
+        let [define, pattern, importMetaEnvVal] = getPattern(this.environment)
+        if (!pattern) return
 
-        // If there's bare `import.meta.env` references, prepend the banner
-        if (result.code.includes(marker)) {
-          result.code = `const ${marker} = ${importMetaEnvVal};\n` + result.code
+        // Check if our code needs any replacements before running esbuild
+        pattern.lastIndex = 0
+        if (!pattern.test(code)) return
 
-          if (result.map) {
-            const map = JSON.parse(result.map)
-            map.mappings = ';' + map.mappings
-            result.map = map
+        const hasDefineImportMetaEnv = 'import.meta.env' in define
+        let marker = importMetaEnvMarker
+
+        if (hasDefineImportMetaEnv && code.includes(marker)) {
+          // append a number to the marker until it's unique, to avoid if there is a
+          // marker already in the code
+          let i = 1
+          do {
+            marker = importMetaEnvMarker + i++
+          } while (code.includes(marker))
+
+          if (marker !== importMetaEnvMarker) {
+            define = { ...define, 'import.meta.env': marker }
           }
         }
-      }
 
-      return result
+        const result = await replaceDefine(this.environment, code, id, define)
+
+        if (hasDefineImportMetaEnv) {
+          // Replace `import.meta.env.*` with undefined
+          result.code = result.code.replaceAll(
+            getImportMetaEnvKeyRe(marker),
+            (m) => 'undefined'.padEnd(m.length),
+          )
+
+          // If there's bare `import.meta.env` references, prepend the banner
+          if (result.code.includes(marker)) {
+            result.code =
+              `const ${marker} = ${importMetaEnvVal};\n` + result.code
+
+            if (result.map) {
+              const map = JSON.parse(result.map)
+              map.mappings = ';' + map.mappings
+              result.map = map
+            }
+          }
+        }
+
+        return result
+      },
     },
   }
 }

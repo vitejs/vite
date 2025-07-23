@@ -36,6 +36,7 @@ import {
   getHash,
   injectQuery,
   isBuiltin,
+  isCSSRequest,
   isDataUrl,
   isDefined,
   isExternalUrl,
@@ -67,7 +68,7 @@ import {
 } from '../../shared/utils'
 import type { TransformPluginContext } from '../server/pluginContainer'
 import { throwOutdatedRequest } from './optimizedDeps'
-import { isCSSRequest, isDirectCSSRequest } from './css'
+import { isDirectCSSRequest } from './css'
 import { browserExternalId } from './resolve'
 import { serializeDefine } from './define'
 import { WORKER_FILE_ID } from './worker'
@@ -100,7 +101,7 @@ export function isExplicitImportRequired(url: string): boolean {
   return !isJSRequest(url) && !isCSSRequest(url)
 }
 
-export function normalizeResolvedIdToUrl(
+function normalizeResolvedIdToUrl(
   environment: DevEnvironment,
   url: string,
   resolved: PartialResolvedId,
@@ -321,7 +322,7 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
         url: string,
         pos: number,
         forceSkipImportAnalysis: boolean = false,
-      ): Promise<[string, string]> => {
+      ): Promise<[string, string | null]> => {
         url = stripBase(url, base)
 
         let importerFile = importer
@@ -355,7 +356,7 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
         if (!resolved || resolved.meta?.['vite:alias']?.noResolved) {
           // in ssr, we should let node handle the missing modules
           if (ssr) {
-            return [url, url]
+            return [url, null]
           }
           // fix#9534, prevent the importerModuleNode being stopped from propagating updates
           importerModule.isSelfAccepting = false
@@ -396,31 +397,34 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
               url = injectQuery(url, versionMatch[1])
             }
           }
+        }
 
+        try {
+          // delay setting `isSelfAccepting` until the file is actually used (#7870)
+          // We use an internal function to avoid resolving the url again
+          const depModule = await moduleGraph._ensureEntryFromUrl(
+            unwrapId(url),
+            canSkipImportAnalysis(url) || forceSkipImportAnalysis,
+            resolved,
+          )
           // check if the dep has been hmr updated. If yes, we need to attach
           // its last updated timestamp to force the browser to fetch the most
           // up-to-date version of this module.
-          try {
-            // delay setting `isSelfAccepting` until the file is actually used (#7870)
-            // We use an internal function to avoid resolving the url again
-            const depModule = await moduleGraph._ensureEntryFromUrl(
-              unwrapId(url),
-              canSkipImportAnalysis(url) || forceSkipImportAnalysis,
-              resolved,
-            )
-            if (depModule.lastHMRTimestamp > 0) {
-              url = injectQuery(url, `t=${depModule.lastHMRTimestamp}`)
-            }
-          } catch (e: any) {
-            // it's possible that the dep fails to resolve (non-existent import)
-            // attach location to the missing import
-            e.pos = pos
-            throw e
+          if (
+            environment.config.consumer === 'client' &&
+            depModule.lastHMRTimestamp > 0
+          ) {
+            url = injectQuery(url, `t=${depModule.lastHMRTimestamp}`)
           }
-
-          // prepend base
-          if (!ssr) url = joinUrlSegments(base, url)
+        } catch (e: any) {
+          // it's possible that the dep fails to resolve (non-existent import)
+          // attach location to the missing import
+          e.pos = pos
+          throw e
         }
+
+        // prepend base
+        if (!ssr) url = joinUrlSegments(base, url)
 
         return [url, resolved.id]
       }
@@ -517,7 +521,7 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
               if (shouldExternalize(environment, specifier, importer)) {
                 return
               }
-              if (isBuiltin(specifier)) {
+              if (isBuiltin(environment.config.resolve.builtins, specifier)) {
                 return
               }
             }
@@ -547,7 +551,8 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
             }
 
             // normalize
-            const [url, resolvedId] = await normalizeUrl(specifier, start)
+            let [url, resolvedId] = await normalizeUrl(specifier, start)
+            resolvedId = resolvedId || url
 
             // record as safe modules
             // safeModulesPath should not include the base prefix.
@@ -751,9 +756,40 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
       // normalize and rewrite accepted urls
       const normalizedAcceptedUrls = new Set<string>()
       for (const { url, start, end } of acceptedUrls) {
-        const [normalized] = await moduleGraph.resolveUrl(toAbsoluteUrl(url))
+        let [normalized, resolvedId] = await normalizeUrl(url, start).catch(
+          () => [],
+        )
+        if (resolvedId) {
+          const mod = moduleGraph.getModuleById(resolvedId)
+          if (!mod) {
+            this.error(
+              `module was not found for ${JSON.stringify(resolvedId)}`,
+              start,
+            )
+            return
+          }
+          normalized = mod.url
+        } else {
+          try {
+            // this fallback is for backward compat and will be removed in Vite 7
+            const [resolved] = await moduleGraph.resolveUrl(toAbsoluteUrl(url))
+            normalized = resolved
+            if (resolved) {
+              this.warn({
+                message:
+                  `Failed to resolve ${JSON.stringify(url)} from ${importer}.` +
+                  ' An id should be written. Did you pass a URL?',
+                pos: start,
+              })
+            }
+          } catch {
+            this.error(`Failed to resolve ${JSON.stringify(url)}`, start)
+            return
+          }
+        }
         normalizedAcceptedUrls.add(normalized)
-        str().overwrite(start, end, JSON.stringify(normalized), {
+        const hmrAccept = normalizeHmrUrl(normalized)
+        str().overwrite(start, end, JSON.stringify(hmrAccept), {
           contentOnly: true,
         })
       }
@@ -771,7 +807,7 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
             await Promise.all(
               [...pluginImports].map((id) => normalizeUrl(id, 0, true)),
             )
-          ).forEach(([url]) => importedUrls.add(url))
+          ).forEach(([url]) => importedUrls.add(stripBase(url, base)))
         }
         // HMR transforms are no-ops in SSR, so an `accept` call will
         // never be injected. Avoid updating the `isSelfAccepting`
@@ -861,8 +897,18 @@ export function createParseErrorInfo(
     showCodeFrame: !probablyBinary,
   }
 }
-// prettier-ignore
-const interopHelper = (m: any) => m?.__esModule ? m : { ...(typeof m === 'object' && !Array.isArray(m) || typeof m === 'function' ? m : {}), default: m }
+
+const interopHelper = (m: any) =>
+  m?.__esModule
+    ? m
+    : {
+        ...((typeof m === 'object' && !Array.isArray(m)) ||
+        typeof m === 'function'
+          ? m
+          : {}),
+        default: m,
+      }
+const interopHelperStr = interopHelper.toString().replaceAll('\n', '')
 
 export function interopNamedImports(
   str: MagicString,
@@ -886,7 +932,7 @@ export function interopNamedImports(
     str.overwrite(
       expStart,
       expEnd,
-      `import('${rewrittenUrl}').then(m => (${interopHelper.toString()})(m.default))` +
+      `import('${rewrittenUrl}').then(m => (${interopHelperStr})(m.default))` +
         getLineBreaks(exp),
       { contentOnly: true },
     )
@@ -1022,7 +1068,7 @@ export function transformCjsImport(
     importNames.forEach(({ importedName, localName }) => {
       if (importedName === '*') {
         lines.push(
-          `const ${localName} = (${interopHelper.toString()})(${cjsModuleName})`,
+          `const ${localName} = (${interopHelperStr})(${cjsModuleName})`,
         )
       } else if (importedName === 'default') {
         lines.push(

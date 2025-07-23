@@ -23,14 +23,16 @@ import {
   setClientErrorHandler,
 } from '../http'
 import type { InlineConfig, ResolvedConfig } from '../config'
-import { resolveConfig } from '../config'
+import { isResolvedConfig, resolveConfig } from '../config'
 import {
   diffDnsOrderChange,
+  getServerUrlByHost,
   isInNodeModules,
   isObject,
   isParentDirectory,
   mergeConfig,
   mergeWithDefaults,
+  monotonicDateNow,
   normalizePath,
   resolveHostname,
   resolveServerUrls,
@@ -43,8 +45,11 @@ import { ssrTransform } from '../ssr/ssrTransform'
 import { reloadOnTsconfigChange } from '../plugins/esbuild'
 import { bindCLIShortcuts } from '../shortcuts'
 import type { BindCLIShortcutsOptions } from '../shortcuts'
-import { ERR_OUTDATED_OPTIMIZED_DEP } from '../../shared/constants'
-import { CLIENT_DIR, DEFAULT_DEV_PORT } from '../constants'
+import {
+  CLIENT_DIR,
+  DEFAULT_DEV_PORT,
+  defaultAllowedOrigins,
+} from '../constants'
 import type { Logger } from '../logger'
 import { printServerUrls } from '../logger'
 import { warnFutureDeprecation } from '../deprecations'
@@ -57,8 +62,13 @@ import {
 import { initPublicFiles } from '../publicDir'
 import { getEnvFilesForMode } from '../env'
 import type { RequiredExceptFor } from '../typeUtils'
+import type { MinimalPluginContextWithoutEnvironment } from '../plugin'
 import type { PluginContainer } from './pluginContainer'
-import { ERR_CLOSED_SERVER, createPluginContainer } from './pluginContainer'
+import {
+  BasicMinimalPluginContext,
+  basePluginContextMeta,
+  createPluginContainer,
+} from './pluginContainer'
 import type { WebSocketServer } from './ws'
 import { createWebSocketServer } from './ws'
 import { baseMiddleware } from './middlewares/base'
@@ -81,18 +91,17 @@ import { timeMiddleware } from './middlewares/time'
 import { ModuleGraph } from './mixedModuleGraph'
 import type { ModuleNode } from './mixedModuleGraph'
 import { notFoundMiddleware } from './middlewares/notFound'
-import { buildErrorMessage, errorMiddleware } from './middlewares/error'
-import type { HmrOptions, HotBroadcaster } from './hmr'
-import {
-  createDeprecatedHotBroadcaster,
-  handleHMRUpdate,
-  updateModules,
-} from './hmr'
+import { errorMiddleware } from './middlewares/error'
+import type { HmrOptions, NormalizedHotChannel } from './hmr'
+import { handleHMRUpdate, updateModules } from './hmr'
 import { openBrowser as _openBrowser } from './openBrowser'
 import type { TransformOptions, TransformResult } from './transformRequest'
-import { transformRequest } from './transformRequest'
 import { searchForPackageRoot, searchForWorkspaceRoot } from './searchRoot'
 import type { DevEnvironment } from './environment'
+import { hostValidationMiddleware } from './middlewares/hostCheck'
+import { rejectInvalidRequestMiddleware } from './middlewares/rejectInvalidRequest'
+
+const usedConfigs = new WeakSet<ResolvedConfig>()
 
 export interface ServerOptions extends CommonServerOptions {
   /**
@@ -233,7 +242,7 @@ export interface FileSystemServeOptions {
 }
 
 export type ServerHook = (
-  this: void,
+  this: MinimalPluginContextWithoutEnvironment,
   server: ViteDevServer,
 ) => (() => void) | void | Promise<(() => void) | void>
 
@@ -269,12 +278,10 @@ export interface ViteDevServer {
    */
   ws: WebSocketServer
   /**
-   * HMR broadcaster that can be used to send custom HMR messages to the client
-   *
-   * Always sends a message to at least a WebSocket client. Any third party can
-   * add a channel to the broadcaster to process messages
+   * An alias to `server.environments.client.hot`.
+   * If you want to interact with all environments, loop over `server.environments`.
    */
-  hot: HotBroadcaster
+  hot: NormalizedHotChannel
   /**
    * Rollup plugin container that can run plugin hooks on a given file
    */
@@ -382,13 +389,6 @@ export interface ViteDevServer {
    */
   _setInternalServer(server: ViteDevServer): void
   /**
-   * Left for backward compatibility with VitePress, HMR may not work in some cases
-   * but the there will not be a hard error.
-   * @internal
-   * @deprecated this map is not used anymore
-   */
-  _importGlobMap: Map<string, { affirmed: string[]; negated: string[] }[]>
-  /**
    * @internal
    */
   _restartPromise: Promise<void> | null
@@ -420,19 +420,33 @@ export interface ResolvedServerUrls {
 }
 
 export function createServer(
-  inlineConfig: InlineConfig = {},
+  inlineConfig: InlineConfig | ResolvedConfig = {},
 ): Promise<ViteDevServer> {
   return _createServer(inlineConfig, { listen: true })
 }
 
 export async function _createServer(
-  inlineConfig: InlineConfig = {},
+  inlineConfig: InlineConfig | ResolvedConfig = {},
   options: {
     listen: boolean
     previousEnvironments?: Record<string, DevEnvironment>
   },
 ): Promise<ViteDevServer> {
-  const config = await resolveConfig(inlineConfig, 'serve')
+  const config = isResolvedConfig(inlineConfig)
+    ? inlineConfig
+    : await resolveConfig(inlineConfig, 'serve')
+
+  if (usedConfigs.has(config)) {
+    throw new Error(`There is already a server associated with the config.`)
+  }
+
+  if (config.command !== 'serve') {
+    throw new Error(
+      `Config was resolved for a "build", expected a "serve" command.`,
+    )
+  }
+
+  usedConfigs.add(config)
 
   const initPublicFilesPromise = initPublicFiles(config)
 
@@ -523,13 +537,35 @@ export async function _createServer(
 
   const devHtmlTransformFn = createDevHtmlTransformFn(config)
 
+  // Promise used by `server.close()` to ensure `closeServer()` is only called once
+  let closeServerPromise: Promise<void> | undefined
+  const closeServer = async () => {
+    if (!middlewareMode) {
+      teardownSIGTERMListener(closeServerAndExit)
+    }
+
+    await Promise.allSettled([
+      watcher.close(),
+      ws.close(),
+      Promise.allSettled(
+        Object.values(server.environments).map((environment) =>
+          environment.close(),
+        ),
+      ),
+      closeHttpServer(),
+      server._ssrCompatModuleRunner?.close(),
+    ])
+    server.resolvedUrls = null
+    server._ssrCompatModuleRunner = undefined
+  }
+
   let server: ViteDevServer = {
     config,
     middlewares,
     httpServer,
     watcher,
     ws,
-    hot: createDeprecatedHotBroadcaster(ws),
+    hot: ws,
 
     environments,
     pluginContainer,
@@ -555,11 +591,6 @@ export async function _createServer(
         },
       })
     },
-    // environment.transformRequest and .warmupRequest don't take an options param for now,
-    // so the logic and error handling needs to be duplicated here.
-    // The only param in options that could be important is `html`, but we may remove it as
-    // that is part of the internal control flow for the vite dev server to be able to bail
-    // out and do the html fallback
     transformRequest(url, options) {
       warnFutureDeprecation(
         config,
@@ -567,29 +598,11 @@ export async function _createServer(
         'server.transformRequest() is deprecated. Use environment.transformRequest() instead.',
       )
       const environment = server.environments[options?.ssr ? 'ssr' : 'client']
-      return transformRequest(environment, url, options)
+      return environment.transformRequest(url)
     },
-    async warmupRequest(url, options) {
-      try {
-        const environment = server.environments[options?.ssr ? 'ssr' : 'client']
-        await transformRequest(environment, url, options)
-      } catch (e) {
-        if (
-          e?.code === ERR_OUTDATED_OPTIMIZED_DEP ||
-          e?.code === ERR_CLOSED_SERVER
-        ) {
-          // these are expected errors
-          return
-        }
-        // Unexpected error, log the issue but avoid an unhandled exception
-        server.config.logger.error(
-          buildErrorMessage(e, [`Pre-transform error: ${e.message}`], false),
-          {
-            error: e,
-            timestamp: true,
-          },
-        )
-      }
+    warmupRequest(url, options) {
+      const environment = server.environments[options?.ssr ? 'ssr' : 'client']
+      return environment.warmupRequest(url)
     },
     transformIndexHtml(url, html, originalUrl) {
       return devHtmlTransformFn(server, url, html, originalUrl)
@@ -612,7 +625,7 @@ export async function _createServer(
           environments[environmentModule.environment]!,
           module.file,
           [environmentModule],
-          Date.now(),
+          monotonicDateNow(),
         )
       }
     },
@@ -622,6 +635,7 @@ export async function _createServer(
         server.resolvedUrls = await resolveServerUrls(
           httpServer,
           config.server,
+          httpsOptions,
           config,
         )
         if (!isRestart && config.server.open) server.openBrowser()
@@ -630,8 +644,7 @@ export async function _createServer(
     },
     openBrowser() {
       const options = server.config.server
-      const url =
-        server.resolvedUrls?.local[0] ?? server.resolvedUrls?.network[0]
+      const url = getServerUrlByHost(server.resolvedUrls, options.host)
       if (url) {
         const path =
           typeof options.open === 'string'
@@ -674,23 +687,10 @@ export async function _createServer(
       }
     },
     async close() {
-      if (!middlewareMode) {
-        teardownSIGTERMListener(closeServerAndExit)
+      if (!closeServerPromise) {
+        closeServerPromise = closeServer()
       }
-
-      await Promise.allSettled([
-        watcher.close(),
-        ws.close(),
-        Promise.allSettled(
-          Object.values(server.environments).map((environment) =>
-            environment.close(),
-          ),
-        ),
-        closeHttpServer(),
-        server._ssrCompatModuleRunner?.close(),
-      ])
-      server.resolvedUrls = null
-      server._ssrCompatModuleRunner = undefined
+      return closeServerPromise
     },
     printUrls() {
       if (server.resolvedUrls) {
@@ -730,7 +730,6 @@ export async function _createServer(
       // server instance after a restart
       server = _server
     },
-    _importGlobMap: new Map(),
     _restartPromise: null,
     _forceOptimizeOnRestart: false,
     _shortcutsOptions: undefined,
@@ -829,24 +828,41 @@ export async function _createServer(
     })
   }
 
-  // apply server configuration hooks from plugins
-  const postHooks: ((() => void) | void)[] = []
-  for (const hook of config.getSortedPluginHooks('configureServer')) {
-    postHooks.push(await hook(reflexServer))
-  }
-
-  // Internal middlewares ------------------------------------------------------
+  // Pre applied internal middlewares ------------------------------------------
 
   // request timer
   if (process.env.DEBUG) {
     middlewares.use(timeMiddleware(root))
   }
 
-  // cors (enabled by default)
+  // disallows request that contains `#` in the URL
+  middlewares.use(rejectInvalidRequestMiddleware())
+
+  // cors
   const { cors } = serverConfig
   if (cors !== false) {
     middlewares.use(corsMiddleware(typeof cors === 'boolean' ? {} : cors))
   }
+
+  // host check (to prevent DNS rebinding attacks)
+  const { allowedHosts } = serverConfig
+  // no need to check for HTTPS as HTTPS is not vulnerable to DNS rebinding attacks
+  if (allowedHosts !== true && !serverConfig.https) {
+    middlewares.use(hostValidationMiddleware(allowedHosts, false))
+  }
+
+  // apply configureServer hooks ------------------------------------------------
+
+  const configureServerContext = new BasicMinimalPluginContext(
+    { ...basePluginContextMeta, watchMode: true },
+    config.logger,
+  )
+  const postHooks: ((() => void) | void)[] = []
+  for (const hook of config.getSortedPluginHooks('configureServer')) {
+    postHooks.push(await hook.call(configureServerContext, reflexServer))
+  }
+
+  // Internal middlewares ------------------------------------------------------
 
   middlewares.use(cachedTransformMiddleware(server))
 
@@ -895,7 +911,8 @@ export async function _createServer(
     middlewares.use(htmlFallbackMiddleware(root, config.appType === 'spa'))
   }
 
-  // run post config hooks
+  // apply configureServer post hooks ------------------------------------------
+
   // This is applied before the html middleware so that user middleware can
   // serve custom content instead of index.html.
   postHooks.forEach((fn) => fn && fn())
@@ -1034,10 +1051,11 @@ export const serverConfigDefaults = Object.freeze({
   port: DEFAULT_DEV_PORT,
   strictPort: false,
   host: 'localhost',
+  allowedHosts: [],
   https: undefined,
   open: false,
   proxy: undefined,
-  cors: true,
+  cors: { origin: defaultAllowedOrigins },
   headers: {},
   // hmr
   // ws
@@ -1132,6 +1150,14 @@ export function resolveServerOptions(
     )
   }
 
+  if (
+    process.env.__VITE_ADDITIONAL_SERVER_ALLOWED_HOSTS &&
+    Array.isArray(server.allowedHosts)
+  ) {
+    const additionalHost = process.env.__VITE_ADDITIONAL_SERVER_ALLOWED_HOSTS
+    server.allowedHosts = [...server.allowedHosts, additionalHost]
+  }
+
   return server
 }
 
@@ -1142,9 +1168,7 @@ async function restartServer(server: ViteDevServer) {
   let inlineConfig = server.config.inlineConfig
   if (server._forceOptimizeOnRestart) {
     inlineConfig = mergeConfig(inlineConfig, {
-      optimizeDeps: {
-        force: true,
-      },
+      forceOptimizeDeps: true,
     })
   }
 

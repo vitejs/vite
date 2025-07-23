@@ -1,5 +1,4 @@
 import path from 'node:path'
-import fetch from 'node-fetch'
 import { describe, expect, test } from 'vitest'
 import {
   browserLogs,
@@ -15,7 +14,6 @@ import {
   readFile,
   readManifest,
   serverLogs,
-  untilUpdated,
   viteTestUrl,
   watcher,
 } from '~utils'
@@ -154,6 +152,47 @@ describe('asset imports from js', () => {
           '[success] Raw js from /public loaded'
         "
       `)
+    expect(await page.textContent('.public-js-import-content-type')).toMatch(
+      'text/javascript',
+    )
+  })
+
+  test('from /public (ts)', async () => {
+    expect(await page.textContent('.public-ts-import')).toMatch(
+      '/foo/bar/raw.ts',
+    )
+    expect(await page.textContent('.public-ts-import-content'))
+      .toMatchInlineSnapshot(`
+      "export default function other() {
+        return 1 + 2
+      }
+      "
+    `)
+    // NOTE: users should configure the mime type for .ts files for preview server
+    if (isServe) {
+      expect(await page.textContent('.public-ts-import-content-type')).toMatch(
+        'text/javascript',
+      )
+    }
+  })
+
+  test('from /public (mts)', async () => {
+    expect(await page.textContent('.public-mts-import')).toMatch(
+      '/foo/bar/raw.mts',
+    )
+    expect(await page.textContent('.public-mts-import-content'))
+      .toMatchInlineSnapshot(`
+      "export default function foobar() {
+        return 1 + 2
+      }
+      "
+    `)
+    // NOTE: users should configure the mime type for .ts files for preview server
+    if (isServe) {
+      expect(await page.textContent('.public-mts-import-content-type')).toMatch(
+        'text/javascript',
+      )
+    }
   })
 })
 
@@ -293,11 +332,35 @@ describe('css url() references', () => {
   })
 
   test('url() with svg', async () => {
-    expect(await getBg('.css-url-svg')).toMatch(/data:image\/svg\+xml,.+/)
+    const bg = await getBg('.css-url-svg')
+    expect(bg).toMatch(/data:image\/svg\+xml,.+/)
+    expect(bg).toContain('blue')
+    expect(bg).not.toContain('red')
+
+    if (isServe) {
+      editFile('nested/fragment-bg-hmr.svg', (code) =>
+        code.replace('fill="blue"', 'fill="red"'),
+      )
+      await expect.poll(() => getBg('.css-url-svg')).toMatch('red')
+    }
   })
 
   test('image-set() with svg', async () => {
     expect(await getBg('.css-image-set-svg')).toMatch(/data:image\/svg\+xml,.+/)
+  })
+
+  test('url() with svg in .css?url', async () => {
+    const bg = await getBg('.css-url-svg-in-url')
+    expect(bg).toMatch(/data:image\/svg\+xml,.+/)
+    expect(bg).toContain('blue')
+    expect(bg).not.toContain('red')
+
+    if (isServe) {
+      editFile('nested/fragment-bg-hmr2.svg', (code) =>
+        code.replace('fill="blue"', 'fill="red"'),
+      )
+      await expect.poll(() => getBg('.css-url-svg')).toMatch('red')
+    }
   })
 })
 
@@ -374,10 +437,7 @@ describe('svg fragments', () => {
   })
 
   test('via css url()', async () => {
-    const bg = await page.evaluate(() => {
-      return getComputedStyle(document.querySelector('.icon')).backgroundImage
-    })
-    expect(bg).toMatch(/svg#icon-clock-view"\)$/)
+    expect(await getBg('.icon')).toMatch(/svg#icon-clock-view"\)$/)
   })
 
   test('from js import', async () => {
@@ -408,8 +468,16 @@ test('?raw import', async () => {
 test('?no-inline svg import', async () => {
   expect(await page.textContent('.no-inline-svg')).toMatch(
     isBuild
-      ? /\/foo\/bar\/assets\/fragment-[-\w]{8}\.svg\?no-inline/
+      ? /\/foo\/bar\/assets\/fragment-[-\w]{8}\.svg/
       : '/foo/bar/nested/fragment.svg?no-inline',
+  )
+})
+
+test('?no-inline svg import -- multiple postfix', async () => {
+  expect(await page.textContent('.no-inline-svg-mp')).toMatch(
+    isBuild
+      ? /\/foo\/bar\/assets\/fragment-[-\w]{8}\.svg\?foo=bar/
+      : '/foo/bar/nested/fragment.svg?no-inline&foo=bar',
   )
 })
 
@@ -468,7 +536,31 @@ describe.runIf(isBuild)('encodeURI', () => {
 })
 
 test('new URL(..., import.meta.url)', async () => {
-  expect(await page.textContent('.import-meta-url')).toMatch(assetMatch)
+  const imgMatch = isBuild
+    ? /\/foo\/bar\/assets\/img-[-\w]{8}\.png/
+    : '/foo/bar/import-meta-url/img.png'
+
+  expect(await page.textContent('.import-meta-url')).toMatch(imgMatch)
+  if (isServe) {
+    const loadPromise = page.waitForEvent('load')
+    const newContent = readFile('import-meta-url/img-update.png', null)
+    let oldContent: Buffer
+    editFile('import-meta-url/img.png', null, (_oldContent) => {
+      oldContent = _oldContent
+      return newContent
+    })
+    await loadPromise // expect reload
+    await expect
+      .poll(() => page.textContent('.import-meta-url'))
+      .toMatch(imgMatch)
+
+    const loadPromise2 = page.waitForEvent('load')
+    editFile('import-meta-url/img.png', null, (_) => oldContent)
+    await loadPromise2 // expect reload
+    await expect
+      .poll(() => page.textContent('.import-meta-url'))
+      .toMatch(imgMatch)
+  }
 })
 
 test('new URL("@/...", import.meta.url)', async () => {
@@ -552,8 +644,8 @@ test.runIf(isBuild)('manifest', async () => {
 
   for (const file of listAssets('foo')) {
     if (file.endsWith('.css')) {
-      // ignore icons-*.css as it's imported with ?url
-      if (file.includes('icons-')) continue
+      // ignore icons-*.css and css-url-url-*.css as it's imported with ?url
+      if (file.includes('icons-') || file.includes('css-url-url-')) continue
       expect(entry.css).toContain(`assets/${file}`)
     } else if (!file.endsWith('.js')) {
       expect(entry.assets).toContain(`assets/${file}`)
@@ -594,11 +686,11 @@ test('inline style test', async () => {
 
 if (!isBuild) {
   test('@import in html style tag hmr', async () => {
-    await untilUpdated(() => getColor('.import-css'), 'rgb(0, 136, 255)')
+    await expect.poll(() => getColor('.import-css')).toBe('rgb(0, 136, 255)')
     const loadPromise = page.waitForEvent('load')
     editFile('./css/import.css', (code) => code.replace('#0088ff', '#00ff88'))
     await loadPromise
-    await untilUpdated(() => getColor('.import-css'), 'rgb(0, 255, 136)')
+    await expect.poll(() => getColor('.import-css')).toBe('rgb(0, 255, 136)')
   })
 }
 

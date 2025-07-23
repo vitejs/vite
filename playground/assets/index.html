@@ -38,7 +38,18 @@
   </li>
   <li>
     From publicDir (js): <code class="public-js-import"></code> Content:
-    <code class="public-js-import-content"></code>
+    <code class="public-js-import-content"></code> Content-Type:
+    <code class="public-js-import-content-type"></code>
+  </li>
+  <li>
+    From publicDir (ts): <code class="public-ts-import"></code> Content:
+    <code class="public-ts-import-content"></code> Content-Type:
+    <code class="public-ts-import-content-type"></code>
+  </li>
+  <li>
+    From publicDir (mts): <code class="public-mts-import"></code> Content:
+    <code class="public-mts-import-content"></code> Content-Type:
+    <code class="public-mts-import-content-type"></code>
   </li>
 </ul>
 
@@ -105,8 +116,8 @@
 <div
   class="image-set-and-url-exsiting-at-same-time"
   style="
-    background-image: image-set(url('./nested/asset.png')),
-      url('./nested/asset.png');
+    background-image:
+      image-set(url('./nested/asset.png')), url('./nested/asset.png');
     background-size: 10px 10px;
   "
 >
@@ -150,6 +161,9 @@
 
 <div class="css-url-svg">
   <span style="background: #fff">CSS SVG background</span>
+</div>
+<div class="css-url-svg-in-url">
+  <span style="background: #fff">CSS (?url) SVG background</span>
 </div>
 
 <div class="css-image-set-svg">
@@ -254,6 +268,9 @@
 
 <h2>?no-inline svg import</h2>
 <code class="no-inline-svg"></code>
+
+<h2>?no-inline svg import -- multiple postfix</h2>
+<code class="no-inline-svg-mp"></code>
 
 <h2>?inline png import</h2>
 <code class="inline-png"></code>
@@ -491,6 +508,32 @@
   ;(async () => {
     const res = await fetch(publicJsUrl)
     text('.public-js-import-content', await res.text())
+    text(
+      '.public-js-import-content-type',
+      await res.headers.get('Content-Type'),
+    )
+  })()
+
+  import publicTsUrl from '/raw.ts?url'
+  text('.public-ts-import', publicTsUrl)
+  ;(async () => {
+    const res = await fetch(publicTsUrl)
+    text('.public-ts-import-content', await res.text())
+    text(
+      '.public-ts-import-content-type',
+      await res.headers.get('Content-Type'),
+    )
+  })()
+
+  import publicMtsUrl from '/raw.mts?url'
+  text('.public-mts-import', publicMtsUrl)
+  ;(async () => {
+    const res = await fetch(publicMtsUrl)
+    text('.public-mts-import-content', await res.text())
+    text(
+      '.public-mts-import-content-type',
+      await res.headers.get('Content-Type'),
+    )
   })()
 
   import svgFrag from './nested/fragment.svg'
@@ -505,6 +548,9 @@
 
   import noInlineSvg from './nested/fragment.svg?no-inline'
   text('.no-inline-svg', noInlineSvg)
+
+  import noInlineSvgMP from './nested/fragment.svg?no-inline&foo=bar'
+  text('.no-inline-svg-mp', noInlineSvgMP)
 
   import inlinePng from './nested/asset.png?inline'
   text('.inline-png', inlinePng)
@@ -531,8 +577,14 @@
   import cssUrl from './css/icons.css?url'
   text('.url-css', cssUrl)
 
+  import cssUrlUrl from './css/css-url-url.css?url'
+  const linkTag = document.createElement('link')
+  linkTag.href = cssUrlUrl
+  linkTag.rel = 'stylesheet'
+  document.body.appendChild(linkTag)
+
   // const url = new URL('non_existent_file.png', import.meta.url)
-  const metaUrl = new URL('./nested/asset.png', import.meta.url)
+  const metaUrl = new URL('./import-meta-url/img.png', import.meta.url)
   text('.import-meta-url', metaUrl)
   document.querySelector('.import-meta-url-img').src = metaUrl
 

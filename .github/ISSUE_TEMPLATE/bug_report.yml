@@ -1,6 +1,7 @@
 name: "\U0001F41E Bug report"
 description: Report an issue with Vite
 labels: [pending triage]
+type: Bug
 body:
   - type: markdown
     attributes:

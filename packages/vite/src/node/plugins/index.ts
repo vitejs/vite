@@ -1,7 +1,6 @@
 import aliasPlugin, { type ResolverFunction } from '@rollup/plugin-alias'
 import type { ObjectHook } from 'rollup'
 import type { PluginHookUtils, ResolvedConfig } from '../config'
-import { isDepOptimizationDisabled } from '../optimizer'
 import type { HookHandler, Plugin, PluginWithRequiredHook } from '../plugin'
 import { watchPackageDataPlugin } from '../packages'
 import { jsonPlugin } from './json'
@@ -23,6 +22,12 @@ import { assetImportMetaUrlPlugin } from './assetImportMetaUrl'
 import { metadataPlugin } from './metadata'
 import { dynamicImportVarsPlugin } from './dynamicImportVars'
 import { importGlobPlugin } from './importMetaGlob'
+import {
+  type PluginFilter,
+  type TransformHookFilter,
+  createFilterForTransform,
+  createIdFilter,
+} from './pluginFilter'
 
 export async function resolvePlugins(
   config: ResolvedConfig,
@@ -36,17 +41,12 @@ export async function resolvePlugins(
     ? await (await import('../build')).resolveBuildPlugins(config)
     : { pre: [], post: [] }
   const { modulePreload } = config.build
-  const depOptimizationEnabled =
-    !isBuild &&
-    Object.values(config.environments).some(
-      (environment) => !isDepOptimizationDisabled(environment.optimizeDeps),
-    )
 
   return [
-    depOptimizationEnabled ? optimizedDepsPlugin() : null,
+    !isBuild ? optimizedDepsPlugin() : null,
     isBuild ? metadataPlugin() : null,
     !isWorker ? watchPackageDataPlugin(config.packageCache) : null,
-    preAliasPlugin(config),
+    !isBuild ? preAliasPlugin(config) : null,
     aliasPlugin({
       entries: config.resolve.alias,
       customResolver: viteAliasCustomResolver,
@@ -162,6 +162,59 @@ export function getHookHandler<T extends ObjectHook<Function>>(
   hook: T,
 ): HookHandler<T> {
   return (typeof hook === 'object' ? hook.handler : hook) as HookHandler<T>
+}
+
+type FilterForPluginValue = {
+  resolveId?: PluginFilter | undefined
+  load?: PluginFilter | undefined
+  transform?: TransformHookFilter | undefined
+}
+const filterForPlugin = new WeakMap<Plugin, FilterForPluginValue>()
+
+export function getCachedFilterForPlugin<
+  H extends 'resolveId' | 'load' | 'transform',
+>(plugin: Plugin, hookName: H): FilterForPluginValue[H] | undefined {
+  let filters = filterForPlugin.get(plugin)
+  if (filters && hookName in filters) {
+    return filters[hookName]
+  }
+
+  if (!filters) {
+    filters = {}
+    filterForPlugin.set(plugin, filters)
+  }
+
+  let filter: PluginFilter | TransformHookFilter | undefined
+  switch (hookName) {
+    case 'resolveId': {
+      const rawFilter = extractFilter(plugin.resolveId)?.id
+      filters.resolveId = createIdFilter(rawFilter)
+      filter = filters.resolveId
+      break
+    }
+    case 'load': {
+      const rawFilter = extractFilter(plugin.load)?.id
+      filters.load = createIdFilter(rawFilter)
+      filter = filters.load
+      break
+    }
+    case 'transform': {
+      const rawFilters = extractFilter(plugin.transform)
+      filters.transform = createFilterForTransform(
+        rawFilters?.id,
+        rawFilters?.code,
+      )
+      filter = filters.transform
+      break
+    }
+  }
+  return filter as FilterForPluginValue[H] | undefined
+}
+
+function extractFilter<T extends Function, F>(
+  hook: ObjectHook<T, { filter?: F }> | undefined,
+) {
+  return hook && 'filter' in hook && hook.filter ? hook.filter : undefined
 }
 
 // Same as `@rollup/plugin-alias` default resolver, but we attach additional meta

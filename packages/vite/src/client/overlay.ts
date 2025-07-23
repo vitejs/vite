@@ -200,7 +200,7 @@ const createTemplate = () =>
     h('style', {}, templateStyle),
   )
 
-const fileRE = /(?:[a-zA-Z]:\\|\/).*?:\d+:\d+/g
+const fileRE = /(?:file:\/\/)?(?:[a-zA-Z]:\\|\/).*?:\d+:\d+/g
 const codeframeRE = /^(?:>?\s*\d+\s+\|.*|\s+\|\s*\^.*)\r?\n/gm
 
 // Allow `ErrorOverlay` to extend `HTMLElement` even in environments where
@@ -279,6 +279,9 @@ export class ErrorOverlay extends HTMLElement {
         }
         el.appendChild(link)
         curIndex += frag.length + file.length
+      }
+      if (curIndex < text.length) {
+        el.appendChild(document.createTextNode(text.slice(curIndex)))
       }
     }
   }

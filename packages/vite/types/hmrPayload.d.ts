@@ -32,6 +32,8 @@ export interface Update {
   /** @internal */
   isWithinCircularImport?: boolean
   /** @internal */
+  firstInvalidatedBy?: string
+  /** @internal */
   invalidates?: string[]
 }
 

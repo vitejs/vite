@@ -43,6 +43,7 @@ export const ssrModuleExportsKey = `__vite_ssr_exports__`
 export const ssrImportKey = `__vite_ssr_import__`
 export const ssrDynamicImportKey = `__vite_ssr_dynamic_import__`
 export const ssrExportAllKey = `__vite_ssr_exportAll__`
+export const ssrExportNameKey = `__vite_ssr_exportName__`
 export const ssrImportMetaKey = `__vite_ssr_import_meta__`
 
 const hashbangRE = /^#!.*\n/
@@ -126,24 +127,19 @@ async function ssrTransformScript(
   ) {
     const source = importNode.source.value as string
     deps.add(source)
-    const importId = `__vite_ssr_import_${uid++}__`
 
     // Reduce metadata to undefined if it's all default values
-    if (
-      metadata &&
-      (metadata.importedNames == null || metadata.importedNames.length === 0)
-    ) {
-      metadata = undefined
-    }
-    const metadataStr = metadata ? `, ${JSON.stringify(metadata)}` : ''
+    const metadataArg =
+      (metadata?.importedNames?.length ?? 0) > 0
+        ? `, ${JSON.stringify(metadata)}`
+        : ''
 
-    s.update(
-      importNode.start,
-      importNode.end,
-      `const ${importId} = await ${ssrImportKey}(${JSON.stringify(
-        source,
-      )}${metadataStr});\n`,
-    )
+    const importId = `__vite_ssr_import_${uid++}__`
+    const transformedImport = `const ${importId} = await ${ssrImportKey}(${JSON.stringify(
+      source,
+    )}${metadataArg});\n`
+
+    s.update(importNode.start, importNode.end, transformedImport)
 
     if (importNode.start === index) {
       // no need to hoist, but update hoistIndex to keep the order
@@ -157,35 +153,71 @@ async function ssrTransformScript(
     return importId
   }
 
-  function defineExport(position: number, name: string, local = name) {
+  function defineExport(name: string, local = name) {
+    // wrap with try/catch to fallback to `undefined` for backward compat.
     s.appendLeft(
-      position,
-      `\nObject.defineProperty(${ssrModuleExportsKey}, ${JSON.stringify(name)}, ` +
-        `{ enumerable: true, configurable: true, get(){ return ${local} }});`,
+      fileStartIndex,
+      `${ssrExportNameKey}(${JSON.stringify(name)}, () => { try { return ${local} } catch {} });\n`,
     )
   }
 
-  const imports: RollupAstNode<ImportDeclaration>[] = []
+  const imports: (
+    | RollupAstNode<ImportDeclaration>
+    | RollupAstNode<ExportNamedDeclaration>
+    | RollupAstNode<ExportAllDeclaration>
+  )[] = []
   const exports: (
     | RollupAstNode<ExportNamedDeclaration>
     | RollupAstNode<ExportDefaultDeclaration>
     | RollupAstNode<ExportAllDeclaration>
   )[] = []
+  const reExportImportIdMap = new Map<
+    RollupAstNode<ExportNamedDeclaration> | RollupAstNode<ExportAllDeclaration>,
+    string
+  >()
 
   for (const node of ast.body as Node[]) {
     if (node.type === 'ImportDeclaration') {
       imports.push(node)
+    } else if (node.type === 'ExportDefaultDeclaration') {
+      exports.push(node)
     } else if (
       node.type === 'ExportNamedDeclaration' ||
-      node.type === 'ExportDefaultDeclaration' ||
       node.type === 'ExportAllDeclaration'
     ) {
+      imports.push(node)
       exports.push(node)
     }
   }
 
-  // 1. check all import statements and record id -> importName map
+  // 1. check all import statements, hoist imports, and record id -> importName map
   for (const node of imports) {
+    // hoist re-export's import at the same time as normal imports to preserve execution order
+    if (node.type === 'ExportNamedDeclaration') {
+      if (node.source) {
+        // export { foo, bar } from './foo'
+        const importId = defineImport(
+          hoistIndex,
+          node as RollupAstNode<ExportNamedDeclaration & { source: Literal }>,
+          {
+            importedNames: node.specifiers.map(
+              (s) => getIdentifierNameOrLiteralValue(s.local) as string,
+            ),
+          },
+        )
+        reExportImportIdMap.set(node, importId)
+      }
+      continue
+    }
+    if (node.type === 'ExportAllDeclaration') {
+      if (node.source) {
+        // export * from './foo'
+        const importId = defineImport(hoistIndex, node)
+        reExportImportIdMap.set(node, importId)
+      }
+      continue
+    }
+
     // import foo from 'foo' --> foo -> __import_foo__.default
     // import { baz } from 'foo' --> baz -> __import_foo__.baz
     // import * as ok from 'foo' --> ok -> __import_foo__
@@ -230,50 +262,37 @@ async function ssrTransformScript(
           node.declaration.type === 'ClassDeclaration'
         ) {
           // export function foo() {}
-          defineExport(node.end, node.declaration.id!.name)
+          defineExport(node.declaration.id!.name)
         } else {
           // export const foo = 1, bar = 2
           for (const declaration of node.declaration.declarations) {
             const names = extractNames(declaration.id as any)
             for (const name of names) {
-              defineExport(node.end, name)
+              defineExport(name)
             }
           }
         }
         s.remove(node.start, (node.declaration as Node).start)
       } else {
-        s.remove(node.start, node.end)
         if (node.source) {
           // export { foo, bar } from './foo'
-          const importId = defineImport(
-            node.start,
-            node as RollupAstNode<ExportNamedDeclaration & { source: Literal }>,
-            {
-              importedNames: node.specifiers.map(
-                (s) => getIdentifierNameOrLiteralValue(s.local) as string,
-              ),
-            },
-          )
+          const importId = reExportImportIdMap.get(node)!
           for (const spec of node.specifiers) {
             const exportedAs = getIdentifierNameOrLiteralValue(
               spec.exported,
             ) as string
 
             if (spec.local.type === 'Identifier') {
-              defineExport(
-                node.end,
-                exportedAs,
-                `${importId}.${spec.local.name}`,
-              )
+              defineExport(exportedAs, `${importId}.${spec.local.name}`)
             } else {
               defineExport(
-                node.end,
                 exportedAs,
                 `${importId}[${JSON.stringify(spec.local.value as string)}]`,
               )
             }
           }
         } else {
+          s.remove(node.start, node.end)
           // export { foo, bar }
           for (const spec of node.specifiers) {
             // spec.local can be Literal only when it has "from 'something'"
@@ -283,7 +302,7 @@ async function ssrTransformScript(
               spec.exported,
             ) as string
 
-            defineExport(node.end, exportedAs, binding || local)
+            defineExport(exportedAs, binding || local)
           }
         }
       }
@@ -302,28 +321,27 @@ async function ssrTransformScript(
         // export default class A {}
         const { name } = node.declaration.id
         s.remove(node.start, node.start + 15 /* 'export default '.length */)
-        s.append(
-          `\nObject.defineProperty(${ssrModuleExportsKey}, "default", ` +
-            `{ enumerable: true, configurable: true, value: ${name} });`,
-        )
+        defineExport('default', name)
       } else {
         // anonymous default exports
+        const name = `__vite_ssr_export_default__`
         s.update(
           node.start,
           node.start + 14 /* 'export default'.length */,
-          `${ssrModuleExportsKey}.default =`,
+          `const ${name} =`,
         )
+        defineExport('default', name)
       }
     }
 
     // export * from './foo'
     if (node.type === 'ExportAllDeclaration') {
-      const importId = defineImport(node.start, node)
+      const importId = reExportImportIdMap.get(node)!
       if (node.exported) {
         const exportedAs = getIdentifierNameOrLiteralValue(
           node.exported,
         ) as string
-        defineExport(node.end, exportedAs, `${importId}`)
+        defineExport(exportedAs, `${importId}`)
       } else {
         s.appendLeft(node.end, `${ssrExportAllKey}(${importId});\n`)
       }
@@ -343,7 +361,7 @@ async function ssrTransformScript(
           stmt.type !== 'BlockStatement' &&
           stmt.type !== 'ImportDeclaration'
         ) {
-          s.appendRight(stmt.end, ';')
+          s.appendLeft(stmt.end, ';')
         }
       }
     },
@@ -398,21 +416,26 @@ async function ssrTransformScript(
     },
   })
 
-  let map = s.generateMap({ hires: 'boundary' })
-  map.sources = [path.basename(url)]
-  // needs to use originalCode instead of code
-  // because code might be already transformed even if map is null
-  map.sourcesContent = [originalCode]
-  if (
-    inMap &&
-    inMap.mappings &&
-    'sources' in inMap &&
-    inMap.sources.length > 0
-  ) {
-    map = combineSourcemaps(url, [
-      map as RawSourceMap,
-      inMap as RawSourceMap,
-    ]) as SourceMap
+  let map: TransformResult['map']
+  if (inMap?.mappings === '') {
+    map = inMap
+  } else {
+    map = s.generateMap({ hires: 'boundary' })
+    map.sources = [path.basename(url)]
+    // needs to use originalCode instead of code
+    // because code might be already transformed even if map is null
+    map.sourcesContent = [originalCode]
+    if (
+      inMap &&
+      inMap.mappings &&
+      'sources' in inMap &&
+      inMap.sources.length > 0
+    ) {
+      map = combineSourcemaps(url, [
+        map as RawSourceMap,
+        inMap as RawSourceMap,
+      ]) as SourceMap
+    }
   }
 
   return {
@@ -693,7 +716,12 @@ function isRefIdentifier(id: Identifier, parent: _Node, parentStack: _Node[]) {
     return false
   }
 
-  if (parent.type === 'ExportSpecifier') {
+  // export { id } from "lib"
+  // export * as id from "lib"
+  if (
+    parent.type === 'ExportSpecifier' ||
+    parent.type === 'ExportAllDeclaration'
+  ) {
     return false
   }
 

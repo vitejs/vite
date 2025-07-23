@@ -176,10 +176,7 @@ describe('svg fragments', () => {
   })
 
   test('via css url()', async () => {
-    const bg = await page.evaluate(() => {
-      return getComputedStyle(document.querySelector('.icon')).backgroundImage
-    })
-    expect(bg).toMatch(/svg#icon-clock-view"\)$/)
+    expect(await getBg('.icon')).toMatch(/svg#icon-clock-view"\)$/)
   })
 
   test('from js import', async () => {
@@ -210,7 +207,10 @@ test('?url import on css', async () => {
 })
 
 test('new URL(..., import.meta.url)', async () => {
-  expect(await page.textContent('.import-meta-url')).toMatch(absoluteAssetMatch)
+  const absoluteImgMatch = isBuild
+    ? /http.*\/other-assets\/img-[-\w]{8}\.png/
+    : '/import-meta-url/img.png'
+  expect(await page.textContent('.import-meta-url')).toMatch(absoluteImgMatch)
 })
 
 test('new URL(`${dynamic}`, import.meta.url)', async () => {

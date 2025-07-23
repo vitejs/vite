@@ -1,6 +1,6 @@
 import { expect, test } from 'vitest'
 import { port, serverLogs } from './serve'
-import { browserLogs, editFile, isServe, page, withRetry } from '~utils'
+import { browserLogs, editFile, isServe, page } from '~utils'
 
 const url = `http://localhost:${port}`
 
@@ -12,8 +12,16 @@ test(`circular dependencies modules doesn't throw`, async () => {
   )
 })
 
-test(`circular import doesn't throw`, async () => {
+test(`circular import doesn't throw (1)`, async () => {
   await page.goto(`${url}/circular-import`)
+
+  expect(await page.textContent('.circ-import')).toMatchInlineSnapshot(
+    '"A is: __A__"',
+  )
+})
+
+test(`circular import doesn't throw (2)`, async () => {
+  await page.goto(`${url}/circular-import2`)
 
   expect(await page.textContent('.circ-import')).toMatchInlineSnapshot(
     '"A is: __A__"',
@@ -47,12 +55,14 @@ test.runIf(isServe)('html proxy is encoded', async () => {
 // run this at the end to reduce flakiness
 test.runIf(isServe)('should restart ssr', async () => {
   editFile('./vite.config.ts', (content) => content)
-  await withRetry(async () => {
-    expect(serverLogs).toEqual(
-      expect.arrayContaining([expect.stringMatching('server restarted')]),
-    )
-    expect(serverLogs).not.toEqual(
-      expect.arrayContaining([expect.stringMatching('error')]),
-    )
-  })
+  await expect
+    .poll(() => {
+      expect(serverLogs).toEqual(
+        expect.arrayContaining([expect.stringMatching('server restarted')]),
+      )
+      expect(serverLogs).not.toEqual(
+        expect.arrayContaining([expect.stringMatching('error')]),
+      )
+    })
+    .toSatisfy(() => true)
 })

@@ -1,11 +1,11 @@
 import type { ErrorPayload, HotPayload } from 'types/hmrPayload'
 import type { ViteHotContext } from 'types/hot'
-import type { InferCustomEventPayload } from 'types/customEvent'
 import { HMRClient, HMRContext } from '../shared/hmr'
 import {
   createWebSocketModuleRunnerTransport,
   normalizeModuleRunnerTransport,
 } from '../shared/moduleRunnerTransport'
+import { createHMRHandler } from '../shared/hmrHandler'
 import { ErrorOverlay, overlayId } from './overlay'
 import '@vite/env'
 
@@ -19,6 +19,7 @@ declare const __HMR_DIRECT_TARGET__: string
 declare const __HMR_BASE__: string
 declare const __HMR_TIMEOUT__: number
 declare const __HMR_ENABLE_OVERLAY__: boolean
+declare const __WS_TOKEN__: string
 
 console.debug('[vite] connecting...')
 
@@ -35,12 +36,16 @@ const socketHost = `${__HMR_HOSTNAME__ || importMetaUrl.hostname}:${
 const directSocketHost = __HMR_DIRECT_TARGET__
 const base = __BASE__ || '/'
 const hmrTimeout = __HMR_TIMEOUT__
+const wsToken = __WS_TOKEN__
 
 const transport = normalizeModuleRunnerTransport(
   (() => {
     let wsTransport = createWebSocketModuleRunnerTransport({
       createConnection: () =>
-        new WebSocket(`${socketProtocol}://${socketHost}`, 'vite-hmr'),
+        new WebSocket(
+          `${socketProtocol}://${socketHost}?token=${wsToken}`,
+          'vite-hmr',
+        ),
       pingInterval: hmrTimeout,
     })
 
@@ -54,7 +59,7 @@ const transport = normalizeModuleRunnerTransport(
             wsTransport = createWebSocketModuleRunnerTransport({
               createConnection: () =>
                 new WebSocket(
-                  `${socketProtocol}://${directSocketHost}`,
+                  `${socketProtocol}://${directSocketHost}?token=${wsToken}`,
                   'vite-hmr',
                 ),
               pingInterval: hmrTimeout,
@@ -100,7 +105,8 @@ const transport = normalizeModuleRunnerTransport(
 
 let willUnload = false
 if (typeof window !== 'undefined') {
-  window.addEventListener('beforeunload', () => {
+  // window can be misleadingly defined in a worker if using define (see #19307)
+  window.addEventListener?.('beforeunload', () => {
     willUnload = true
   })
 }
@@ -161,7 +167,7 @@ const hmrClient = new HMRClient(
     return await importPromise
   },
 )
-transport.connect!(handleMessage)
+transport.connect!(createHMRHandler(handleMessage))
 
 async function handleMessage(payload: HotPayload) {
   switch (payload.type) {
@@ -169,7 +175,7 @@ async function handleMessage(payload: HotPayload) {
       console.debug(`[vite] connected.`)
       break
     case 'update':
-      notifyListeners('vite:beforeUpdate', payload)
+      await hmrClient.notifyListeners('vite:beforeUpdate', payload)
       if (hasDocument) {
         // if this is the first update and there's already an error overlay, it
         // means the page opened with existing server compile error and the whole
@@ -233,22 +239,24 @@ async function handleMessage(payload: HotPayload) {
           })
         }),
       )
-      notifyListeners('vite:afterUpdate', payload)
+      await hmrClient.notifyListeners('vite:afterUpdate', payload)
       break
     case 'custom': {
-      notifyListeners(payload.event, payload.data)
+      await hmrClient.notifyListeners(payload.event, payload.data)
       if (payload.event === 'vite:ws:disconnect') {
         if (hasDocument && !willUnload) {
           console.log(`[vite] server connection lost. Polling for restart...`)
           const socket = payload.data.webSocket as WebSocket
-          await waitForSuccessfulPing(socket.url)
+          const url = new URL(socket.url)
+          url.search = '' // remove query string including `token`
+          await waitForSuccessfulPing(url.href)
           location.reload()
         }
       }
       break
     }
     case 'full-reload':
-      notifyListeners('vite:beforeFullReload', payload)
+      await hmrClient.notifyListeners('vite:beforeFullReload', payload)
       if (hasDocument) {
         if (payload.path && payload.path.endsWith('.html')) {
           // if html file is edited, only reload the page if the browser is
@@ -269,11 +277,11 @@ async function handleMessage(payload: HotPayload) {
       }
       break
     case 'prune':
-      notifyListeners('vite:beforePrune', payload)
+      await hmrClient.notifyListeners('vite:beforePrune', payload)
       await hmrClient.prunePaths(payload.paths)
       break
     case 'error': {
-      notifyListeners('vite:error', payload)
+      await hmrClient.notifyListeners('vite:error', payload)
       if (hasDocument) {
         const err = payload.err
         if (enableOverlay) {
@@ -293,14 +301,6 @@ async function handleMessage(payload: HotPayload) {
       return check
     }
   }
-}
-
-function notifyListeners<T extends string>(
-  event: T,
-  data: InferCustomEventPayload<T>,
-): void
-function notifyListeners(event: string, data: any): void {
-  hmrClient.notifyListeners(event, data)
 }
 
 const enableOverlay = __HMR_ENABLE_OVERLAY__
@@ -508,7 +508,7 @@ export function updateStyle(id: string, content: string): void {
       document.head.appendChild(style)
 
       // reset lastInsertedStyle after async
-      // because dynamically imported css will be splitted into a different file
+      // because dynamically imported css will be split into a different file
       setTimeout(() => {
         lastInsertedStyle = undefined
       }, 0)

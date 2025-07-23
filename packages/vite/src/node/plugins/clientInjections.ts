@@ -76,6 +76,7 @@ export function clientInjectionsPlugin(config: ResolvedConfig): Plugin {
       const hmrTimeoutReplacement = escapeReplacement(timeout)
       const hmrEnableOverlayReplacement = escapeReplacement(overlay)
       const hmrConfigNameReplacement = escapeReplacement(hmrConfigName)
+      const wsTokenReplacement = escapeReplacement(config.webSocketToken)
 
       injectConfigValues = (code: string) => {
         return code
@@ -90,11 +91,11 @@ export function clientInjectionsPlugin(config: ResolvedConfig): Plugin {
           .replace(`__HMR_TIMEOUT__`, hmrTimeoutReplacement)
           .replace(`__HMR_ENABLE_OVERLAY__`, hmrEnableOverlayReplacement)
           .replace(`__HMR_CONFIG_NAME__`, hmrConfigNameReplacement)
+          .replace(`__WS_TOKEN__`, wsTokenReplacement)
       }
     },
-    async transform(code, id, options) {
-      // TODO: Remove options?.ssr, Vitest currently hijacks this plugin
-      const ssr = options?.ssr ?? this.environment.config.consumer === 'server'
+    async transform(code, id) {
+      const ssr = this.environment.config.consumer === 'server'
       if (id === normalizedClientEntry || id === normalizedEnvEntry) {
         const defineReplacer = getDefineReplacer(this)
         return defineReplacer(injectConfigValues(code))

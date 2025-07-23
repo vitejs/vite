@@ -1,10 +1,13 @@
 import http from 'node:http'
-import { describe, expect, test } from 'vitest'
+import path from 'node:path'
+import fs from 'node:fs'
+import { afterEach, describe, expect, test } from 'vitest'
 import type { InlineConfig, PluginOption } from '..'
 import type { UserConfig, UserConfigExport } from '../config'
-import { defineConfig, resolveConfig } from '../config'
+import { defineConfig, loadConfigFromFile, resolveConfig } from '../config'
 import { resolveEnvPrefix } from '../env'
-import { createLogger, mergeConfig } from '../publicUtils'
+import { mergeConfig } from '../utils'
+import { createLogger } from '../logger'
 
 describe('mergeConfig', () => {
   test('handles configs with different alias schemas', () => {
@@ -186,6 +189,42 @@ describe('mergeConfig', () => {
     expect(mergeConfig(newConfig, baseConfig)).toEqual(mergedConfig)
   })
 
+  test('handles environments.*.resolve.noExternal', () => {
+    const baseConfig = {
+      environments: {
+        ssr: {
+          resolve: {
+            noExternal: true,
+          },
+        },
+      },
+    }
+
+    const newConfig = {
+      environments: {
+        ssr: {
+          resolve: {
+            noExternal: ['foo'],
+          },
+        },
+      },
+    }
+
+    const mergedConfig = {
+      environments: {
+        ssr: {
+          resolve: {
+            noExternal: true,
+          },
+        },
+      },
+    }
+
+    // merging either ways, `resolve.noExternal: true` should take highest priority
+    expect(mergeConfig(baseConfig, newConfig)).toEqual(mergedConfig)
+    expect(mergeConfig(newConfig, baseConfig)).toEqual(mergedConfig)
+  })
+
   test('handles server.hmr.server', () => {
     const httpServer = http.createServer()
 
@@ -196,6 +235,22 @@ describe('mergeConfig', () => {
 
     // Server instance should not be recreated
     expect(mergedConfig.server.hmr.server).toBe(httpServer)
+  })
+
+  test('handles server.allowedHosts', () => {
+    const baseConfig = {
+      server: { allowedHosts: ['example.com'] },
+    }
+
+    const newConfig = {
+      server: { allowedHosts: true },
+    }
+
+    const mergedConfig = {
+      server: { allowedHosts: true },
+    }
+
+    expect(mergeConfig(baseConfig, newConfig)).toEqual(mergedConfig)
   })
 
   test('throws error with functions', () => {
@@ -249,7 +304,7 @@ describe('preview config', () => {
       'Cache-Control': 'no-store',
     },
     proxy: { '/foo': 'http://localhost:4567' },
-    cors: false,
+    cors: true,
   })
 
   test('preview inherits server config with default port', async () => {
@@ -285,7 +340,7 @@ describe('preview config', () => {
     open: false,
     host: false,
     proxy: { '/bar': 'http://localhost:3010' },
-    cors: true,
+    cors: false,
   })
 
   test('preview overrides server config', async () => {
@@ -346,17 +401,17 @@ describe('resolveConfig', () => {
     expect(results2.clearScreen).toBe(false)
   })
 
-  test('resolveConfig with root path including "#" and "?" should warn ', async () => {
+  test('resolveConfig with root path including "#" and "?" and "*" should warn ', async () => {
     expect.assertions(1)
 
     const logger = createLogger('info')
     logger.warn = (str) => {
       expect(str).to.include(
-        'Consider renaming the directory to remove the characters',
+        'Consider renaming the directory / file to remove the characters',
       )
     }
 
-    await resolveConfig({ root: './inc?ud#s', customLogger: logger }, 'build')
+    await resolveConfig({ root: './inc?ud#s*', customLogger: logger }, 'build')
   })
 })
 
@@ -480,4 +535,292 @@ test('config compat 2', async () => {
       "ssr1",
     ]
   `)
+})
+
+test('config compat 3', async () => {
+  const config = await resolveConfig({}, 'serve')
+  expect(config.resolve.conditions).toMatchInlineSnapshot(`
+    [
+      "module",
+      "browser",
+      "development|production",
+    ]
+  `)
+  expect(config.environments.client.resolve.conditions).toMatchInlineSnapshot(`
+    [
+      "module",
+      "browser",
+      "development|production",
+    ]
+  `)
+  expect(config.ssr.resolve?.conditions).toMatchInlineSnapshot(`
+    [
+      "module",
+      "node",
+      "development|production",
+    ]
+  `)
+  expect(config.environments.ssr.resolve?.conditions).toMatchInlineSnapshot(`
+    [
+      "module",
+      "node",
+      "development|production",
+    ]
+  `)
+})
+
+test('preTransformRequests', async () => {
+  async function testConfig(inlineConfig: InlineConfig) {
+    return Object.fromEntries(
+      Object.entries(
+        (await resolveConfig(inlineConfig, 'serve')).environments,
+      ).map(([name, e]) => [name, e.dev.preTransformRequests]),
+    )
+  }
+
+  expect(
+    await testConfig({
+      environments: {
+        custom: {},
+        customTrue: {
+          dev: {
+            preTransformRequests: true,
+          },
+        },
+        customFalse: {
+          dev: {
+            preTransformRequests: false,
+          },
+        },
+      },
+    }),
+  ).toMatchInlineSnapshot(`
+    {
+      "client": true,
+      "custom": false,
+      "customFalse": false,
+      "customTrue": true,
+      "ssr": false,
+    }
+  `)
+
+  expect(
+    await testConfig({
+      server: {
+        preTransformRequests: true,
+      },
+      environments: {
+        custom: {},
+        customTrue: {
+          dev: {
+            preTransformRequests: true,
+          },
+        },
+        customFalse: {
+          dev: {
+            preTransformRequests: false,
+          },
+        },
+      },
+    }),
+  ).toMatchInlineSnapshot(`
+    {
+      "client": true,
+      "custom": true,
+      "customFalse": false,
+      "customTrue": true,
+      "ssr": true,
+    }
+  `)
+
+  expect(
+    await testConfig({
+      server: {
+        preTransformRequests: false,
+      },
+      environments: {
+        custom: {},
+        customTrue: {
+          dev: {
+            preTransformRequests: true,
+          },
+        },
+        customFalse: {
+          dev: {
+            preTransformRequests: false,
+          },
+        },
+      },
+    }),
+  ).toMatchInlineSnapshot(`
+    {
+      "client": false,
+      "custom": false,
+      "customFalse": false,
+      "customTrue": true,
+      "ssr": false,
+    }
+  `)
+})
+
+describe('loadConfigFromFile', () => {
+  const fixtures = path.resolve(__dirname, './fixtures/config')
+
+  describe('load default files', () => {
+    const root = path.resolve(fixtures, './loadConfigFromFile')
+
+    let writtenConfig: string | undefined
+    afterEach(() => {
+      if (writtenConfig) {
+        fs.unlinkSync(path.resolve(root, writtenConfig))
+      }
+      fs.unlinkSync(path.resolve(root, 'package.json'))
+    })
+
+    const writeConfig = (fileName: string, content: string) => {
+      fs.writeFileSync(path.resolve(root, fileName), content)
+      writtenConfig = fileName
+    }
+    const writePackageJson = (typeField: string | undefined) => {
+      fs.writeFileSync(
+        path.resolve(root, 'package.json'),
+        JSON.stringify({
+          name: '@vitejs/test-load-config-from-file',
+          type: typeField,
+        }),
+      )
+    }
+
+    const canLoadConfig = async () => {
+      const result = await loadConfigFromFile(
+        { command: 'build', mode: 'production' },
+        undefined,
+        root,
+      )
+      expect(result).toBeTruthy()
+      expect(result?.config).toStrictEqual({ define: { foo: 1 } })
+      expect(path.normalize(result!.path)).toBe(
+        path.resolve(root, writtenConfig!),
+      )
+    }
+
+    const cases = [
+      {
+        fileName: 'vite.config.js',
+        content: 'export default { define: { foo: 1 } }',
+      },
+      {
+        fileName: 'vite.config.js',
+        content: 'export default { define: { foo: 1 } }',
+      },
+      {
+        fileName: 'vite.config.cjs',
+        content: 'module.exports = { define: { foo: 1 } }',
+      },
+      {
+        fileName: 'vite.config.cjs',
+        content: 'module.exports = { define: { foo: 1 } }',
+      },
+      {
+        fileName: 'vite.config.mjs',
+        content: 'export default { define: { foo: 1 } }',
+      },
+      {
+        fileName: 'vite.config.mjs',
+        content: 'export default { define: { foo: 1 } }',
+      },
+      {
+        fileName: 'vite.config.ts',
+        content: 'export default { define: { foo: 1 as number } }',
+      },
+      {
+        fileName: 'vite.config.ts',
+        content: 'export default { define: { foo: 1 as number } }',
+      },
+      {
+        fileName: 'vite.config.mts',
+        content: 'export default { define: { foo: 1 as number } }',
+      },
+      {
+        fileName: 'vite.config.mts',
+        content: 'export default { define: { foo: 1 as number } }',
+      },
+      {
+        fileName: 'vite.config.cts',
+        content: 'module.exports = { define: { foo: 1 as number } }',
+      },
+      {
+        fileName: 'vite.config.cts',
+        content: 'module.exports = { define: { foo: 1 as number } }',
+      },
+    ]
+
+    for (const { fileName, content } of cases) {
+      for (const typeField of [undefined, 'module']) {
+        test(`load ${fileName}${typeField ? ' with package#type module' : ''}`, async () => {
+          writePackageJson(typeField)
+          writeConfig(fileName, content)
+          await canLoadConfig()
+        })
+      }
+    }
+  })
+
+  test('can import values', async () => {
+    const { config } = (await loadConfigFromFile(
+      {} as any,
+      path.resolve(fixtures, './entry/vite.config.ts'),
+      path.resolve(fixtures, './entry'),
+    ))!
+    expect(config).toMatchInlineSnapshot(`
+      {
+        "array": [
+          [
+            1,
+            3,
+          ],
+          [
+            2,
+            4,
+          ],
+        ],
+        "importsField": "imports-field",
+        "moduleCondition": "import condition",
+      }
+    `)
+  })
+
+  test('loadConfigFromFile with import attributes', async () => {
+    const { config } = (await loadConfigFromFile(
+      {} as any,
+      path.resolve(fixtures, './entry/vite.config.import-attributes.ts'),
+      path.resolve(fixtures, './entry'),
+    ))!
+    expect(config).toMatchInlineSnapshot(`
+        {
+          "jsonValue": "vite",
+        }
+      `)
+  })
+
+  describe('loadConfigFromFile with configLoader: native', () => {
+    const fixtureRoot = path.resolve(fixtures, './native-import')
+
+    test('imports a basic js config', async () => {
+      const result = (await loadConfigFromFile(
+        {} as any,
+        path.resolve(fixtureRoot, 'basic.js'),
+        fixtureRoot,
+        undefined,
+        undefined,
+        'native',
+      ))!
+      expect(result.config).toMatchInlineSnapshot(`
+        {
+          "value": "works",
+        }
+      `)
+      expect(result.dependencies.length).toBe(0)
+    })
+  })
 })

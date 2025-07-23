@@ -54,7 +54,7 @@ export default defineConfig({
 ```
 
 ::: tip NOTE
-For TypeScript users, make sure to add the type declarations in the `env.d.ts` or `vite-env.d.ts` file to get type checks and Intellisense.
+For TypeScript users, make sure to add the type declarations in the `vite-env.d.ts` file to get type checks and Intellisense.
 
 Example:
 
@@ -139,10 +139,6 @@ Here, `import` and `require` are "conditions". Conditions can be nested and shou
 `development|production` is a special value that is replaced with `production` or `development` depending on the value of `process.env.NODE_ENV`. It is replaced with `production` when `process.env.NODE_ENV === 'production'` and `development` otherwise.
 
 Note that `import`, `require`, `default` conditions are always applied if the requirements are met.
-
-:::warning Resolving subpath exports
-Export keys ending with "/" is deprecated by Node and may not work well. Please contact the package author to use [`*` subpath patterns](https://nodejs.org/api/packages.html#package-entry-points) instead.
-:::
 
 ## resolve.mainFields
 
@@ -231,9 +227,8 @@ Note if an inline config is provided, Vite will not search for other PostCSS con
 Specify options to pass to CSS pre-processors. The file extensions are used as keys for the options. The supported options for each preprocessor can be found in their respective documentation:
 
 - `sass`/`scss`:
-  - Select the sass API to use with `api: "modern-compiler" | "modern" | "legacy"` (default `"modern-compiler"` if `sass-embedded` is installed, otherwise `"modern"`). For the best performance, it's recommended to use `api: "modern-compiler"` with the `sass-embedded` package. The `"legacy"` API is deprecated and will be removed in Vite 7.
-  - [Options (modern)](https://sass-lang.com/documentation/js-api/interfaces/stringoptions/)
-  - [Options (legacy)](https://sass-lang.com/documentation/js-api/interfaces/LegacyStringOptions).
+  - Uses `sass-embedded` if installed, otherwise uses `sass`. For the best performance, it's recommended to install the `sass-embedded` package.
+  - [Options](https://sass-lang.com/documentation/js-api/interfaces/stringoptions/)
 - `less`: [Options](https://lesscss.org/usage/#less-options).
 - `styl`/`stylus`: Only [`define`](https://stylus-lang.com/docs/js.html#define-name-node) is supported, which can be passed as an object.
 
@@ -252,7 +247,6 @@ export default defineConfig({
         },
       },
       scss: {
-        api: 'modern-compiler', // or "modern", "legacy"
         importers: [
           // ...
         ],
@@ -284,11 +278,12 @@ export default defineConfig({
 
 ## css.preprocessorMaxWorkers
 
-- **Experimental:** [Give Feedback](https://github.com/vitejs/vite/discussions/15835)
 - **Type:** `number | true`
-- **Default:** `0` (does not create any workers and run in the main thread)
+- **Default:** `true`
 
-If this option is set, CSS preprocessors will run in workers when possible. `true` means the number of CPUs minus 1.
+Specifies the maximum number of threads CSS preprocessors can use. `true` means up to the number of CPUs minus 1. When set to `0`, Vite will not create any workers and will run the preprocessors in the main thread.
+
+Depending on the preprocessor options, Vite may run the preprocessors on the main thread even if this option is not set to `0`.
 
 ## css.devSourcemap
 
@@ -459,10 +454,10 @@ Set to `false` to prevent Vite from clearing the terminal screen when logging ce
 
 ## envDir
 
-- **Type:** `string`
+- **Type:** `string | false`
 - **Default:** `root`
 
-The directory from which `.env` files are loaded. Can be an absolute path, or a path relative to the project root.
+The directory from which `.env` files are loaded. Can be an absolute path, or a path relative to the project root. `false` will disable the `.env` file loading.
 
 See [here](/guide/env-and-mode#env-files) for more about environment files.
 
@@ -471,7 +466,7 @@ See [here](/guide/env-and-mode#env-files) for more about environment files.
 - **Type:** `string | string[]`
 - **Default:** `VITE_`
 
-Env variables starting with `envPrefix` will be exposed to your client source code via import.meta.env.
+Env variables starting with `envPrefix` will be exposed to your client source code via `import.meta.env`.
 
 :::warning SECURITY NOTES
 `envPrefix` should not be set as `''`, which will expose all your env variables and cause unexpected leaking of sensitive information. Vite will throw an error when detecting `''`.

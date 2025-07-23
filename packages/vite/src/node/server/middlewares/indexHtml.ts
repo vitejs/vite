@@ -32,6 +32,7 @@ import {
   fsPathFromId,
   getHash,
   injectQuery,
+  isCSSRequest,
   isDevServer,
   isJSRequest,
   joinUrlSegments,
@@ -40,10 +41,13 @@ import {
   stripBase,
 } from '../../utils'
 import { checkPublicFile } from '../../publicDir'
-import { isCSSRequest } from '../../plugins/css'
 import { getCodeWithSourcemap, injectSourcesContent } from '../sourcemap'
 import { cleanUrl, unwrapId, wrapId } from '../../../shared/utils'
 import { getNodeAssetAttributes } from '../../assetSource'
+import {
+  BasicMinimalPluginContext,
+  basePluginContextMeta,
+} from '../pluginContainer'
 
 interface AssetNode {
   start: number
@@ -67,7 +71,6 @@ export function createDevHtmlTransformFn(
 ) => Promise<string> {
   const [preHooks, normalHooks, postHooks] = resolveHtmlTransforms(
     config.plugins,
-    config.logger,
   )
   const transformHooks = [
     preImportMapHook(config),
@@ -80,13 +83,17 @@ export function createDevHtmlTransformFn(
     injectNonceAttributeTagHook(config),
     postImportMapHook(),
   ]
+  const pluginContext = new BasicMinimalPluginContext(
+    { ...basePluginContextMeta, watchMode: true },
+    config.logger,
+  )
   return (
     server: ViteDevServer,
     url: string,
     html: string,
     originalUrl?: string,
   ): Promise<string> => {
-    return applyHtmlTransforms(html, transformHooks, {
+    return applyHtmlTransforms(html, transformHooks, pluginContext, {
       path: url,
       filename: getHtmlFilename(url, server),
       server,
@@ -128,13 +135,6 @@ const processNodeUrl = (
 ): string => {
   // prefix with base (dev only, base is never relative)
   const replacer = (url: string) => {
-    if (server) {
-      const mod = server.environments.client.moduleGraph.urlToModuleMap.get(url)
-      if (mod && mod.lastHMRTimestamp > 0) {
-        url = injectQuery(url, `t=${mod.lastHMRTimestamp}`)
-      }
-    }
-
     if (
       (url[0] === '/' && url[1] !== '/') ||
       // #3230 if some request url (localhost:3000/a/b) return to fallback html, the relative assets
@@ -153,8 +153,9 @@ const processNodeUrl = (
       url = path.posix.join(config.base, url)
     }
 
-    if (server && !isClassicScriptLink && shouldPreTransform(url, config)) {
-      let preTransformUrl: string | undefined
+    let preTransformUrl: string | undefined
+
+    if (!isClassicScriptLink && shouldPreTransform(url, config)) {
       if (url[0] === '/' && url[1] !== '/') {
         preTransformUrl = url
       } else if (url[0] === '.' || isBareRelative(url)) {
@@ -164,16 +165,27 @@ const processNodeUrl = (
           url,
         )
       }
-      if (preTransformUrl) {
-        try {
-          preTransformUrl = decodeURI(preTransformUrl)
-        } catch {
-          // Malformed uri. Skip pre-transform.
-          return url
-        }
-        preTransformRequest(server, preTransformUrl, config.decodedBase)
+    }
+
+    if (server) {
+      const mod = server.environments.client.moduleGraph.urlToModuleMap.get(
+        preTransformUrl || url,
+      )
+      if (mod && mod.lastHMRTimestamp > 0) {
+        url = injectQuery(url, `t=${mod.lastHMRTimestamp}`)
       }
     }
+
+    if (server && preTransformUrl) {
+      try {
+        preTransformUrl = decodeURI(preTransformUrl)
+      } catch {
+        // Malformed uri. Skip pre-transform.
+        return url
+      }
+      preTransformRequest(server, preTransformUrl, config.decodedBase)
+    }
+
     return url
   }
 
@@ -264,11 +276,11 @@ const devHtmlHook: IndexHtmlTransformHook = async (
 
     // script tags
     if (node.nodeName === 'script') {
-      const { src, sourceCodeLocation, isModule, isIgnored } =
+      const { src, srcSourceCodeLocation, isModule, isIgnored } =
         getScriptInfo(node)
 
       if (isIgnored) {
-        removeViteIgnoreAttr(s, sourceCodeLocation!)
+        removeViteIgnoreAttr(s, node.sourceCodeLocation!)
       } else if (src) {
         const processedUrl = processNodeUrl(
           src.value,
@@ -280,7 +292,7 @@ const devHtmlHook: IndexHtmlTransformHook = async (
           !isModule,
         )
         if (processedUrl !== src.value) {
-          overwriteAttrValue(s, sourceCodeLocation!, processedUrl)
+          overwriteAttrValue(s, srcSourceCodeLocation!, processedUrl)
         }
       } else if (isModule && node.childNodes.length) {
         addInlineModule(node, 'js')

@@ -26,12 +26,12 @@ exports[`parse error 2`] = `
 2  |  ",
   "id": "/fixtures/errors/syntax-error.js",
   "loc": {
-    "column": 9,
+    "column": 8,
     "file": "/fixtures/errors/syntax-error.js",
     "line": 1,
   },
   "message": "Parse failure: Expected ';', '}' or <eof>
-At file: /fixtures/errors/syntax-error.js:1:9",
+At file: /fixtures/errors/syntax-error.js:1:8",
 }
 `;
 
@@ -61,11 +61,11 @@ exports[`parse error 4`] = `
 2  |  ",
   "id": "/fixtures/errors/syntax-error.js",
   "loc": {
-    "column": 9,
+    "column": 8,
     "file": "/fixtures/errors/syntax-error.js",
     "line": 1,
   },
   "message": "Parse failure: Expected ';', '}' or <eof>
-At file: /fixtures/errors/syntax-error.js:1:9",
+At file: /fixtures/errors/syntax-error.js:1:8",
 }
 `;

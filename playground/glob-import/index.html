@@ -27,6 +27,8 @@
 <pre class="hash-alias-imports"></pre>
 <h2>In package</h2>
 <pre class="in-package"></pre>
+<h2>Base</h2>
+<pre class="result-base"></pre>
 
 <script type="module" src="./dir/index.js"></script>
 <script type="module">
@@ -166,4 +168,22 @@
 
 <script type="module">
   import '@vitejs/test-import-meta-glob-pkg'
+</script>
+
+<script type="module">
+  const baseModules = import.meta.glob('./*.json', {
+    query: '?raw',
+    eager: true,
+    import: 'default',
+    base: './dir',
+  })
+  const globBase = {}
+  Object.keys(baseModules).forEach((key) => {
+    globBase[key] = JSON.parse(baseModules[key])
+  })
+  document.querySelector('.result-base').textContent = JSON.stringify(
+    globBase,
+    null,
+    2,
+  )
 </script>
