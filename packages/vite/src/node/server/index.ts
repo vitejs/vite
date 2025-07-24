@@ -618,11 +618,7 @@ export async function _createServer(
       return ssrRewriteStacktrace(stack, server.environments.ssr.moduleGraph)
     },
     async reloadModule(module) {
-      warnFutureDeprecation(
-        config,
-        'removeServerModuleGraph',
-        'server.reloadModule is deprecated. Use environment.reloadModule instead.',
-      )
+      warnFutureDeprecation(config, 'removeServerReloadModule')
       if (serverConfig.hmr !== false && module.file) {
         // TODO: Should we also update the node moduleGraph for backward compatibility?
         const environmentModule = (module._clientModule ?? module._ssrModule)!

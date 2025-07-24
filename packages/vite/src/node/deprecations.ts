@@ -8,6 +8,7 @@ const deprecationCode = {
   removePluginHookHandleHotUpdate: 'changes/hotupdate-hook',
 
   removeServerModuleGraph: 'changes/per-environment-apis',
+  removeServerReloadModule: 'changes/per-environment-apis',
   removeServerHot: 'changes/per-environment-apis',
   removeServerTransformRequest: 'changes/per-environment-apis',
 
@@ -22,6 +23,8 @@ const deprecationMessages = {
 
   removeServerModuleGraph:
     'The `server.moduleGraph` is replaced with `this.environment.moduleGraph`.',
+  removeServerReloadModule:
+    'The `server.reloadModule` is replaced with `environment.reloadModule`.',
   removeServerHot: 'The `server.hot` is replaced with `this.environment.hot`.',
   removeServerTransformRequest:
     'The `server.transformRequest` is replaced with `this.environment.transformRequest`.',
