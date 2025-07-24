@@ -116,7 +116,7 @@ export class DevEnvironment extends BaseEnvironment {
     this._pendingRequests = new Map()
 
     this.moduleGraph = new EnvironmentModuleGraph(name, (url: string) =>
-      this.pluginContainer!.resolveId(url, undefined),
+      this.pluginContainer!.resolveId(url, config.fallbackImporter),
     )
 
     this._crawlEndFinder = setupOnCrawlEnd()

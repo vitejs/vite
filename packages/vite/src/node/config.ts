@@ -562,6 +562,8 @@ export interface ResolvedConfig
       configFileDependencies: string[]
       inlineConfig: InlineConfig
       root: string
+      /** @internal */
+      fallbackImporter: string
       base: string
       /** @internal */
       decodedBase: string
@@ -1486,6 +1488,7 @@ export async function resolveConfig(
     ),
     inlineConfig,
     root: resolvedRoot,
+    fallbackImporter: normalizePath(path.resolve(resolvedRoot, 'index.html')),
     base,
     decodedBase: decodeBase(base),
     rawBase: resolvedBase,

@@ -165,7 +165,10 @@ async function doTransform(
 
   const resolved = module
     ? undefined
-    : ((await pluginContainer.resolveId(url, undefined)) ?? undefined)
+    : ((await pluginContainer.resolveId(
+        url,
+        environment.config.fallbackImporter,
+      )) ?? undefined)
 
   // resolve
   const id = module?.id ?? resolved?.id ?? url

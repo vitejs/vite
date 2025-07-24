@@ -30,7 +30,6 @@ SOFTWARE.
 */
 
 import fs from 'node:fs'
-import { join } from 'node:path'
 import { performance } from 'node:perf_hooks'
 import { parseAst as rollupParseAst } from 'rollup/parseAst'
 import type {
@@ -341,10 +340,7 @@ class EnvironmentPluginContainer<Env extends Environment = Environment> {
 
   async resolveId(
     rawId: string,
-    importer: string | undefined = join(
-      this.environment.config.root,
-      'index.html',
-    ),
+    importer: string | undefined,
     options?: {
       attributes?: Record<string, string>
       custom?: CustomPluginOptions
