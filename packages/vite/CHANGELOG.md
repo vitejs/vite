@@ -1,3 +1,20 @@
+## <small>[7.0.6](https://github.com/vitejs/vite/compare/v7.0.5...v7.0.6) (2025-07-24)</small>
+### Bug Fixes
+
+* **deps:** update all non-major dependencies ([#20442](https://github.com/vitejs/vite/issues/20442)) ([e49f505](https://github.com/vitejs/vite/commit/e49f50599d852eec644e79b074b4648e2dff1e5d))
+* **dev:** incorrect sourcemap when optimized CJS is imported ([#20458](https://github.com/vitejs/vite/issues/20458)) ([ead2dec](https://github.com/vitejs/vite/commit/ead2dec74170ad26db8a18bbd68f075efaceb0e3))
+* **module-runner:** normalize file:// on windows ([#20449](https://github.com/vitejs/vite/issues/20449)) ([1c9cb49](https://github.com/vitejs/vite/commit/1c9cb493f0467c463113d301b00ce07cbe4b6f58))
+* respond with correct headers and status code for HEAD requests ([#20421](https://github.com/vitejs/vite/issues/20421)) ([23d04fc](https://github.com/vitejs/vite/commit/23d04fc2d8a4fcf7c2011418693d6000748aa655))
+
+### Miscellaneous Chores
+
+* **deps:** update rolldown-related dependencies ([#20441](https://github.com/vitejs/vite/issues/20441)) ([f689d61](https://github.com/vitejs/vite/commit/f689d613429ae9452c74f8bc482d8cc2584ea6b8))
+* remove some files from prettier ignore ([#20459](https://github.com/vitejs/vite/issues/20459)) ([8403f69](https://github.com/vitejs/vite/commit/8403f69551131b5c39bfaf242ffac2e5efcd1dd6))
+
+### Code Refactoring
+
+* use environment transform request ([#20430](https://github.com/vitejs/vite/issues/20430)) ([24e6a0c](https://github.com/vitejs/vite/commit/24e6a0c3165557396db6ab59d3001e037c76ce32))
+
 ## <small>[7.0.5](https://github.com/vitejs/vite/compare/v7.0.4...v7.0.5) (2025-07-17)</small>
 ### Bug Fixes
 
