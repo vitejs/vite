@@ -484,6 +484,7 @@ export interface FutureOptions {
   removeServerModuleGraph?: 'warn'
   removeServerHot?: 'warn'
   removeServerTransformRequest?: 'warn'
+  removeServerWarmupRequest?: 'warn'
 
   removeSsrLoadModule?: 'warn'
 }
@@ -702,6 +703,7 @@ export const configDefaults = Object.freeze({
     removeServerModuleGraph: undefined,
     removeServerHot: undefined,
     removeServerTransformRequest: undefined,
+    removeServerWarmupRequest: undefined,
     removeSsrLoadModule: undefined,
   },
   legacy: {
