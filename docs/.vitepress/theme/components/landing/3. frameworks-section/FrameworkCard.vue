@@ -56,6 +56,7 @@ const props = withDefaults(defineProps<Props>(), {
       v-if="props.framework.logo"
       :src="props.framework.logo"
       :alt="props.framework.name"
+      loading="lazy"
     />
   </component>
 </template>
