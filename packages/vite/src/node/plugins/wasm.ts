@@ -1,3 +1,4 @@
+import { exactRegex } from '@rolldown/pluginutils'
 import type { Plugin } from '../plugin'
 import { fileToUrl } from './asset'
 
@@ -52,21 +53,17 @@ export const wasmHelperPlugin = (): Plugin => {
     name: 'vite:wasm-helper',
 
     resolveId: {
+      filter: { id: exactRegex(wasmHelperId) },
       handler(id) {
-        if (id === wasmHelperId) {
-          return id
-        }
+        return id
       },
     },
 
     load: {
+      filter: { id: [exactRegex(wasmHelperId), wasmInitRE] },
       async handler(id) {
         if (id === wasmHelperId) {
           return `export default ${wasmHelperCode}`
-        }
-
-        if (!wasmInitRE.test(id)) {
-          return
         }
 
         const url = await fileToUrl(this, id)
@@ -85,11 +82,8 @@ export const wasmFallbackPlugin = (): Plugin => {
     name: 'vite:wasm-fallback',
 
     load: {
-      handler(id) {
-        if (!id.endsWith('.wasm')) {
-          return
-        }
-
+      filter: { id: /\.wasm$/ },
+      handler(_id) {
         throw new Error(
           '"ESM integration proposal for Wasm" is not supported currently. ' +
             'Use vite-plugin-wasm or other community plugins to handle this. ' +

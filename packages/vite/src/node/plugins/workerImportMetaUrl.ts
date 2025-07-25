@@ -181,16 +181,8 @@ async function getWorkerType(
   return 'classic'
 }
 
-function isIncludeWorkerImportMetaUrl(code: string): boolean {
-  if (
-    (code.includes('new Worker') || code.includes('new SharedWorker')) &&
-    code.includes('new URL') &&
-    code.includes(`import.meta.url`)
-  ) {
-    return true
-  }
-  return false
-}
+const workerImportMetaUrlRE =
+  /new\s+(?:Worker|SharedWorker)\s*\(\s*new\s+URL.+?import\.meta\.url/s
 
 export function workerImportMetaUrlPlugin(config: ResolvedConfig): Plugin {
   const isBuild = config.command === 'build'
@@ -213,85 +205,84 @@ export function workerImportMetaUrlPlugin(config: ResolvedConfig): Plugin {
     },
 
     shouldTransformCachedModule({ code }) {
-      if (isBuild && config.build.watch && isIncludeWorkerImportMetaUrl(code)) {
+      if (isBuild && config.build.watch && workerImportMetaUrlRE.test(code)) {
         return true
       }
     },
 
     transform: {
+      filter: { code: workerImportMetaUrlRE },
       async handler(code, id) {
-        if (isIncludeWorkerImportMetaUrl(code)) {
-          let s: MagicString | undefined
-          const cleanString = stripLiteral(code)
-          const workerImportMetaUrlRE =
-            /\bnew\s+(?:Worker|SharedWorker)\s*\(\s*(new\s+URL\s*\(\s*('[^']+'|"[^"]+"|`[^`]+`)\s*,\s*import\.meta\.url\s*\))/dg
+        let s: MagicString | undefined
+        const cleanString = stripLiteral(code)
+        const workerImportMetaUrlRE =
+          /\bnew\s+(?:Worker|SharedWorker)\s*\(\s*(new\s+URL\s*\(\s*('[^']+'|"[^"]+"|`[^`]+`)\s*,\s*import\.meta\.url\s*\))/dg
 
-          let match: RegExpExecArray | null
-          while ((match = workerImportMetaUrlRE.exec(cleanString))) {
-            const [[, endIndex], [expStart, expEnd], [urlStart, urlEnd]] =
-              match.indices!
+        let match: RegExpExecArray | null
+        while ((match = workerImportMetaUrlRE.exec(cleanString))) {
+          const [[, endIndex], [expStart, expEnd], [urlStart, urlEnd]] =
+            match.indices!
 
-            const rawUrl = code.slice(urlStart, urlEnd)
+          const rawUrl = code.slice(urlStart, urlEnd)
 
-            // potential dynamic template string
-            if (rawUrl[0] === '`' && rawUrl.includes('${')) {
-              this.error(
-                `\`new URL(url, import.meta.url)\` is not supported in dynamic template string.`,
-                expStart,
-              )
-            }
-
-            s ||= new MagicString(code)
-            const workerType = await getWorkerType(code, cleanString, endIndex)
-            const url = rawUrl.slice(1, -1)
-            let file: string | undefined
-            if (url[0] === '.') {
-              file = path.resolve(path.dirname(id), url)
-              file = slash(tryFsResolve(file, fsResolveOptions) ?? file)
-            } else {
-              workerResolver ??= createBackCompatIdResolver(config, {
-                extensions: [],
-                tryIndex: false,
-                preferRelative: true,
-              })
-              file = await workerResolver(this.environment, url, id)
-              file ??=
-                url[0] === '/'
-                  ? slash(path.join(config.publicDir, url))
-                  : slash(path.resolve(path.dirname(id), url))
-            }
-
-            if (
-              isBuild &&
-              config.isWorker &&
-              config.bundleChain.at(-1) === cleanUrl(file)
-            ) {
-              s.update(expStart, expEnd, 'self.location.href')
-            } else {
-              let builtUrl: string
-              if (isBuild) {
-                builtUrl = await workerFileToUrl(config, file)
-              } else {
-                builtUrl = await fileToUrl(this, cleanUrl(file))
-                builtUrl = injectQuery(
-                  builtUrl,
-                  `${WORKER_FILE_ID}&type=${workerType}`,
-                )
-              }
-              s.update(
-                expStart,
-                expEnd,
-                `new URL(/* @vite-ignore */ ${JSON.stringify(builtUrl)}, import.meta.url)`,
-              )
-            }
+          // potential dynamic template string
+          if (rawUrl[0] === '`' && rawUrl.includes('${')) {
+            this.error(
+              `\`new URL(url, import.meta.url)\` is not supported in dynamic template string.`,
+              expStart,
+            )
           }
 
-          if (s) {
-            return transformStableResult(s, id, config)
+          s ||= new MagicString(code)
+          const workerType = await getWorkerType(code, cleanString, endIndex)
+          const url = rawUrl.slice(1, -1)
+          let file: string | undefined
+          if (url[0] === '.') {
+            file = path.resolve(path.dirname(id), url)
+            file = slash(tryFsResolve(file, fsResolveOptions) ?? file)
+          } else {
+            workerResolver ??= createBackCompatIdResolver(config, {
+              extensions: [],
+              tryIndex: false,
+              preferRelative: true,
+            })
+            file = await workerResolver(this.environment, url, id)
+            file ??=
+              url[0] === '/'
+                ? slash(path.join(config.publicDir, url))
+                : slash(path.resolve(path.dirname(id), url))
           }
 
-          return null
+          if (
+            isBuild &&
+            config.isWorker &&
+            config.bundleChain.at(-1) === cleanUrl(file)
+          ) {
+            s.update(expStart, expEnd, 'self.location.href')
+          } else {
+            let builtUrl: string
+            if (isBuild) {
+              builtUrl = await workerFileToUrl(config, file)
+            } else {
+              builtUrl = await fileToUrl(this, cleanUrl(file))
+              builtUrl = injectQuery(
+                builtUrl,
+                `${WORKER_FILE_ID}&type=${workerType}`,
+              )
+            }
+            s.update(
+              expStart,
+              expEnd,
+              `new URL(/* @vite-ignore */ ${JSON.stringify(builtUrl)}, import.meta.url)`,
+            )
+          }
         }
+
+        if (s) {
+          return transformStableResult(s, id, config)
+        }
+
+        return null
       },
     },
   }
