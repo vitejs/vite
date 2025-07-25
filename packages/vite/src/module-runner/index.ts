@@ -7,6 +7,10 @@ export {
 } from './evaluatedModules'
 export { ModuleRunner } from './runner'
 export { ESModulesEvaluator } from './esmEvaluator'
+export {
+  createDefaultImportMeta,
+  createNodeImportMeta,
+} from './createImportMeta'
 
 export { createWebSocketModuleRunnerTransport } from '../shared/moduleRunnerTransport'
 

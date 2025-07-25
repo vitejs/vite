@@ -1,6 +1,6 @@
 import { existsSync, readFileSync } from 'node:fs'
 import type { HotPayload } from 'types/hmrPayload'
-import { ModuleRunner } from 'vite/module-runner'
+import { ModuleRunner, createNodeImportMeta } from 'vite/module-runner'
 import type {
   ModuleEvaluator,
   ModuleRunnerHmr,
@@ -130,6 +130,7 @@ export function createServerModuleRunner(
         channel: environment.hot as NormalizedServerHotChannel,
       }),
       hmr,
+      createImportMeta: createNodeImportMeta,
       sourcemapInterceptor: resolveSourceMapOptions(options),
     },
     options.evaluator,
