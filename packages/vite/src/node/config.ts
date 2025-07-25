@@ -483,8 +483,11 @@ export interface FutureOptions {
   removePluginHookSsrArgument?: 'warn'
 
   removeServerModuleGraph?: 'warn'
+  removeServerReloadModule?: 'warn'
+  removeServerPluginContainer?: 'warn'
   removeServerHot?: 'warn'
   removeServerTransformRequest?: 'warn'
+  removeServerWarmupRequest?: 'warn'
 
   removeSsrLoadModule?: 'warn'
 }
@@ -703,6 +706,7 @@ export const configDefaults = Object.freeze({
     removeServerModuleGraph: undefined,
     removeServerHot: undefined,
     removeServerTransformRequest: undefined,
+    removeServerWarmupRequest: undefined,
     removeSsrLoadModule: undefined,
   },
   legacy: {
@@ -1362,7 +1366,7 @@ export async function resolveConfig(
         )
       : ''
 
-  const server = resolveServerOptions(resolvedRoot, config.server, logger)
+  const server = await resolveServerOptions(resolvedRoot, config.server, logger)
 
   const builder = resolveBuilderOptions(config.builder)
 

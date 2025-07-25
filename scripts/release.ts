@@ -1,7 +1,6 @@
-import { release } from '@vitejs/release-scripts'
+import { generateChangelog, release } from '@vitejs/release-scripts'
 import colors from 'picocolors'
-import { logRecentCommits, run, updateTemplateVersions } from './releaseUtils'
-import extendCommitHash from './extendCommitHash'
+import { logRecentCommits, updateTemplateVersions } from './releaseUtils'
 
 release({
   repo: 'vite',
@@ -13,19 +12,10 @@ release({
     if (pkgName === 'create-vite') await updateTemplateVersions()
 
     console.log(colors.cyan('\nGenerating changelog...'))
-    const changelogArgs = [
-      'conventional-changelog',
-      '-p',
-      'angular',
-      '-i',
-      'CHANGELOG.md',
-      '-s',
-      '--commit-path',
-      '.',
-    ]
-    if (pkgName !== 'vite') changelogArgs.push('--lerna-package', pkgName)
-    await run('npx', changelogArgs, { cwd: `packages/${pkgName}` })
-    // conventional-changelog generates links with short commit hashes, extend them to full hashes
-    extendCommitHash(`packages/${pkgName}/CHANGELOG.md`)
+
+    await generateChangelog({
+      getPkgDir: () => `packages/${pkgName}`,
+      tagPrefix: pkgName === 'vite' ? undefined : `${pkgName}@`,
+    })
   },
 })

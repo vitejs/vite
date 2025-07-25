@@ -18,11 +18,7 @@ import {
   removeTimestampQuery,
 } from '../../utils'
 import { send } from '../send'
-import {
-  ERR_DENIED_ID,
-  ERR_LOAD_URL,
-  transformRequest,
-} from '../transformRequest'
+import { ERR_DENIED_ID, ERR_LOAD_URL } from '../transformRequest'
 import { applySourcemapIgnoreList } from '../sourcemap'
 import { isHTMLProxy } from '../../plugins/html'
 import {
@@ -124,7 +120,10 @@ export function transformMiddleware(
   return async function viteTransformMiddleware(req, res, next) {
     const environment = server.environments.client
 
-    if (req.method !== 'GET' || knownIgnoreList.has(req.url!)) {
+    if (
+      (req.method !== 'GET' && req.method !== 'HEAD') ||
+      knownIgnoreList.has(req.url!)
+    ) {
       return next()
     }
 
@@ -262,8 +261,7 @@ export function transformMiddleware(
         }
 
         // resolve, load and transform using the plugin container
-        const result = await transformRequest(environment, url, {
-          html: req.headers.accept?.includes('text/html'),
+        const result = await environment.transformRequest(url, {
           allowId(id) {
             return (
               id.startsWith('\0') ||

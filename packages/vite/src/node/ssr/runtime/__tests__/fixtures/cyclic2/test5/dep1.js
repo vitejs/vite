@@ -1,1 +1,1 @@
-export const dep1 = { ok: true };
+export const dep1 = { ok: true }
