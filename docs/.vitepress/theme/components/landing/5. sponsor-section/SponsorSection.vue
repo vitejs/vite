@@ -55,7 +55,7 @@ const { data } = useSponsor()
     <h4>Brought to you by</h4>
     <div class="voidzero">
       <a :href="voidZero.url" target="_blank">
-        <img :src="voidZero.img" />
+        <img :src="voidZero.img" alt="VoidZero logo" />
       </a>
     </div>
 
