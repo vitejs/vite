@@ -592,15 +592,12 @@ export async function _createServer(
       })
     },
     transformRequest(url, options) {
-      warnFutureDeprecation(
-        config,
-        'removeServerTransformRequest',
-        'server.transformRequest() is deprecated. Use environment.transformRequest() instead.',
-      )
+      warnFutureDeprecation(config, 'removeServerTransformRequest')
       const environment = server.environments[options?.ssr ? 'ssr' : 'client']
       return environment.transformRequest(url)
     },
     warmupRequest(url, options) {
+      warnFutureDeprecation(config, 'removeServerWarmupRequest')
       const environment = server.environments[options?.ssr ? 'ssr' : 'client']
       return environment.warmupRequest(url)
     },
