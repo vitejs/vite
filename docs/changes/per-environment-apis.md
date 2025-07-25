@@ -14,6 +14,7 @@ The `Environment` instance was first introduced at `v6.0`. The deprecation of `s
 ```ts
 future: {
   removeServerModuleGraph: 'warn',
+  removeServerPluginContainer: 'warn',
   removeServerTransformRequest: 'warn',
   removeServerWarmupRequest: 'warn',
 }
@@ -30,5 +31,6 @@ In Vite v6, it is now possible to create any number of custom environments (`cli
 ## Migration Guide
 
 - `server.moduleGraph` -> [`environment.moduleGraph`](/guide/api-environment-instances#separate-module-graphs)
+- `server.pluginContainer` -> `environment.pluginContainer`
 - `server.transformRequest(url, ssr)` -> `environment.transformRequest(url)`
 - `server.warmupRequest(url, ssr)` -> `environment.warmupRequest(url)`
