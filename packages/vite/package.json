@@ -85,7 +85,7 @@
     "fdir": "^6.4.6",
     "picomatch": "^4.0.3",
     "postcss": "^8.5.6",
-    "rollup": "^4.40.0",
+    "rollup": "^4.43.0",
     "tinyglobby": "^0.2.14"
   },
   "optionalDependencies": {
