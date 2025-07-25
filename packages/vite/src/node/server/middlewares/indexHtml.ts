@@ -32,6 +32,7 @@ import {
   fsPathFromId,
   getHash,
   injectQuery,
+  isCSSRequest,
   isDevServer,
   isJSRequest,
   joinUrlSegments,
@@ -40,10 +41,13 @@ import {
   stripBase,
 } from '../../utils'
 import { checkPublicFile } from '../../publicDir'
-import { isCSSRequest } from '../../plugins/css'
 import { getCodeWithSourcemap, injectSourcesContent } from '../sourcemap'
 import { cleanUrl, unwrapId, wrapId } from '../../../shared/utils'
 import { getNodeAssetAttributes } from '../../assetSource'
+import {
+  BasicMinimalPluginContext,
+  basePluginContextMeta,
+} from '../pluginContainer'
 
 interface AssetNode {
   start: number
@@ -67,7 +71,6 @@ export function createDevHtmlTransformFn(
 ) => Promise<string> {
   const [preHooks, normalHooks, postHooks] = resolveHtmlTransforms(
     config.plugins,
-    config.logger,
   )
   const transformHooks = [
     preImportMapHook(config),
@@ -80,13 +83,17 @@ export function createDevHtmlTransformFn(
     injectNonceAttributeTagHook(config),
     postImportMapHook(),
   ]
+  const pluginContext = new BasicMinimalPluginContext(
+    { ...basePluginContextMeta, watchMode: true },
+    config.logger,
+  )
   return (
     server: ViteDevServer,
     url: string,
     html: string,
     originalUrl?: string,
   ): Promise<string> => {
-    return applyHtmlTransforms(html, transformHooks, {
+    return applyHtmlTransforms(html, transformHooks, pluginContext, {
       path: url,
       filename: getHtmlFilename(url, server),
       server,

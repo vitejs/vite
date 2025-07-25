@@ -12,7 +12,6 @@ import {
   readManifest,
   serverLogs,
   untilBrowserLogAfter,
-  untilUpdated,
 } from '~utils'
 
 test('should have no 404s', () => {
@@ -75,6 +74,7 @@ describe.runIf(isBuild)('build', () => {
     expect(dirFooAssetEntry).not.toBeUndefined() // '\\' should not be used even on windows
     // use the entry name
     expect(dirFooAssetEntry.file).toMatch('assets/bar-')
+    expect(dirFooAssetEntry.names).toStrictEqual(['bar.css'])
     expect(iconEntrypointEntry?.file).not.toBeUndefined()
     expect(waterContainerEntry?.file).not.toBeUndefined()
   })
@@ -106,11 +106,11 @@ describe.runIf(isServe)('serve', () => {
   })
 
   test('preserve the base in CSS HMR', async () => {
-    await untilUpdated(() => getColor('body'), 'black') // sanity check
+    await expect.poll(() => getColor('body')).toBe('black') // sanity check
     editFile('frontend/entrypoints/global.css', (code) =>
       code.replace('black', 'red'),
     )
-    await untilUpdated(() => getColor('body'), 'red') // successful HMR
+    await expect.poll(() => getColor('body')).toBe('red') // successful HMR
 
     // Verify that the base (/dev/) was added during the css-update
     const link = await page.$('link[rel="stylesheet"]:last-of-type')
@@ -126,6 +126,6 @@ describe.runIf(isServe)('serve', () => {
         ),
       '[vite] css hot updated: /global.css',
     )
-    await untilUpdated(() => getColor(el), 'rgb(204, 0, 0)')
+    await expect.poll(() => getColor(el)).toBe('rgb(204, 0, 0)')
   })
 })

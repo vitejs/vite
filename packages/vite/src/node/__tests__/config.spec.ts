@@ -6,14 +6,8 @@ import type { InlineConfig, PluginOption } from '..'
 import type { UserConfig, UserConfigExport } from '../config'
 import { defineConfig, loadConfigFromFile, resolveConfig } from '../config'
 import { resolveEnvPrefix } from '../env'
-import { createLogger, mergeConfig } from '../publicUtils'
-
-const [nvMajor, nvMinor] = process.versions.node.split('.').map(Number)
-const isImportAttributesSupported =
-  (nvMajor === 18 && nvMinor >= 20) ||
-  // Node v19 doesn't support import attributes
-  (nvMajor === 20 && nvMinor >= 10) ||
-  nvMajor >= 21
+import { mergeConfig } from '../utils'
+import { createLogger } from '../logger'
 
 describe('mergeConfig', () => {
   test('handles configs with different alias schemas', () => {
@@ -195,6 +189,42 @@ describe('mergeConfig', () => {
     expect(mergeConfig(newConfig, baseConfig)).toEqual(mergedConfig)
   })
 
+  test('handles environments.*.resolve.noExternal', () => {
+    const baseConfig = {
+      environments: {
+        ssr: {
+          resolve: {
+            noExternal: true,
+          },
+        },
+      },
+    }
+
+    const newConfig = {
+      environments: {
+        ssr: {
+          resolve: {
+            noExternal: ['foo'],
+          },
+        },
+      },
+    }
+
+    const mergedConfig = {
+      environments: {
+        ssr: {
+          resolve: {
+            noExternal: true,
+          },
+        },
+      },
+    }
+
+    // merging either ways, `resolve.noExternal: true` should take highest priority
+    expect(mergeConfig(baseConfig, newConfig)).toEqual(mergedConfig)
+    expect(mergeConfig(newConfig, baseConfig)).toEqual(mergedConfig)
+  })
+
   test('handles server.hmr.server', () => {
     const httpServer = http.createServer()
 
@@ -205,6 +235,22 @@ describe('mergeConfig', () => {
 
     // Server instance should not be recreated
     expect(mergedConfig.server.hmr.server).toBe(httpServer)
+  })
+
+  test('handles server.allowedHosts', () => {
+    const baseConfig = {
+      server: { allowedHosts: ['example.com'] },
+    }
+
+    const newConfig = {
+      server: { allowedHosts: true },
+    }
+
+    const mergedConfig = {
+      server: { allowedHosts: true },
+    }
+
+    expect(mergeConfig(baseConfig, newConfig)).toEqual(mergedConfig)
   })
 
   test('throws error with functions', () => {
@@ -744,21 +790,18 @@ describe('loadConfigFromFile', () => {
     `)
   })
 
-  test.runIf(isImportAttributesSupported)(
-    'loadConfigFromFile with import attributes',
-    async () => {
-      const { config } = (await loadConfigFromFile(
-        {} as any,
-        path.resolve(fixtures, './entry/vite.config.import-attributes.ts'),
-        path.resolve(fixtures, './entry'),
-      ))!
-      expect(config).toMatchInlineSnapshot(`
+  test('loadConfigFromFile with import attributes', async () => {
+    const { config } = (await loadConfigFromFile(
+      {} as any,
+      path.resolve(fixtures, './entry/vite.config.import-attributes.ts'),
+      path.resolve(fixtures, './entry'),
+    ))!
+    expect(config).toMatchInlineSnapshot(`
         {
           "jsonValue": "vite",
         }
       `)
-    },
-  )
+  })
 
   describe('loadConfigFromFile with configLoader: native', () => {
     const fixtureRoot = path.resolve(fixtures, './native-import')

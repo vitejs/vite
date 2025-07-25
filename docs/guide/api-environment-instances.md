@@ -1,7 +1,9 @@
 # Using `Environment` Instances
 
-:::warning Experimental
-Environment API is experimental. We'll keep the APIs stable during Vite 6 to let the ecosystem experiment and build on top of it. We're planning to stabilize these new APIs with potential breaking changes in Vite 7.
+:::info Release Candidate
+The Environment API is generally in the release candidate phase. We'll maintain stability in the APIs between major releases to allow the ecosystem to experiment and build upon them. However, note that [some specific APIs](/changes/#considering) are still considered experimental.
+
+We plan to stabilize these new APIs (with potential breaking changes) in a future major release once downstream projects have had time to experiment with the new features and validate them.
 
 Resources:
 
@@ -19,8 +21,8 @@ During dev, the available environments in a dev server can be accessed using `se
 // create the server, or get it from the configureServer hook
 const server = await createServer(/* options */)
 
-const environment = server.environments.client
-environment.transformRequest(url)
+const clientEnvironment = server.environments.client
+clientEnvironment.transformRequest(url)
 console.log(server.environments.ssr.moduleGraph)
 ```
 
@@ -185,7 +187,7 @@ export class EnvironmentModuleGraph {
   invalidateModule(
     mod: EnvironmentModuleNode,
     seen: Set<EnvironmentModuleNode> = new Set(),
-    timestamp: number = Date.now(),
+    timestamp: number = monotonicDateNow(),
     isHmr: boolean = false,
   ): void
 

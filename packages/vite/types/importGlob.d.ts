@@ -28,9 +28,23 @@ export interface ImportGlobOptions<
    * @default false
    */
   exhaustive?: boolean
+  /**
+   * Base path to resolve relative paths.
+   */
+  base?: string
 }
 
 export type GeneralImportGlobOptions = ImportGlobOptions<boolean, string>
+
+/**
+ * Declare Worker in case DOM is not added to the tsconfig lib causing
+ * Worker interface is not defined. For developers with DOM lib added,
+ * the Worker interface will be merged correctly.
+ */
+declare global {
+  // eslint-disable-next-line @typescript-eslint/no-empty-object-type
+  interface Worker {}
+}
 
 export interface KnownAsTypeMap {
   raw: string

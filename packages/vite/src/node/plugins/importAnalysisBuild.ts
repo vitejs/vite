@@ -8,17 +8,12 @@ import { init, parse as parseImports } from 'es-module-lexer'
 import type { SourceMap } from 'rollup'
 import type { RawSourceMap } from '@ampproject/remapping'
 import convertSourceMap from 'convert-source-map'
-import {
-  combineSourcemaps,
-  generateCodeFrame,
-  isInNodeModules,
-  numberToPos,
-} from '../utils'
+import { combineSourcemaps, generateCodeFrame, numberToPos } from '../utils'
 import type { Plugin } from '../plugin'
 import type { ResolvedConfig } from '../config'
 import { toOutputFilePathInJS } from '../build'
 import { genSourceMapUrl } from '../server/sourcemap'
-import type { Environment } from '../environment'
+import type { PartialEnvironment } from '../baseEnvironment'
 import { removedPureCssFilesCache } from './css'
 import { createParseErrorInfo } from './importAnalysis'
 
@@ -45,7 +40,7 @@ const preloadMarkerRE = new RegExp(preloadMarker, 'g')
 const dynamicImportPrefixRE = /import\s*\(/
 
 const dynamicImportTreeshakenRE =
-  /((?:\bconst\s+|\blet\s+|\bvar\s+|,\s*)(\{[^{}.=]+\})\s*=\s*await\s+import\([^)]+\))|(\(\s*await\s+import\([^)]+\)\s*\)(\??\.[\w$]+))|\bimport\([^)]+\)(\s*\.then\(\s*(?:function\s*)?\(\s*\{([^{}.=]+)\}\))/g
+  /((?:\bconst\s+|\blet\s+|\bvar\s+|,\s*)(\{[^{}.=]+\})\s*=\s*await\s+import\([^)]+\))(?=\s*(?:$|[^[.]))|(\(\s*await\s+import\([^)]+\)\s*\)(\??\.[\w$]+))|\bimport\([^)]+\)(\s*\.then\(\s*(?:function\s*)?\(\s*\{([^{}.=]+)\}\))/g
 
 function toRelativePath(filename: string, importer: string) {
   const relPath = path.posix.relative(path.posix.dirname(importer), filename)
@@ -180,11 +175,43 @@ function preload(
   })
 }
 
+function getPreloadCode(
+  environment: PartialEnvironment,
+  renderBuiltUrlBoolean: boolean,
+  isRelativeBase: boolean,
+) {
+  const { modulePreload } = environment.config.build
+
+  const scriptRel =
+    modulePreload && modulePreload.polyfill
+      ? `'modulepreload'`
+      : `/* @__PURE__ */ (${detectScriptRel.toString()})()`
+
+  // There are two different cases for the preload list format in __vitePreload
+  //
+  // __vitePreload(() => import(asyncChunk), [ ...deps... ])
+  //
+  // This is maintained to keep backwards compatibility as some users developed plugins
+  // using regex over this list to workaround the fact that module preload wasn't
+  // configurable.
+  const assetsURL =
+    renderBuiltUrlBoolean || isRelativeBase
+      ? // If `experimental.renderBuiltUrl` is used, the dependencies might be relative to the current chunk.
+        // If relative base is used, the dependencies are relative to the current chunk.
+        // The importerUrl is passed as third parameter to __vitePreload in this case
+        `function(dep, importerUrl) { return new URL(dep, importerUrl).href }`
+      : // If the base isn't relative, then the deps are relative to the projects `outDir` and the base
+        // is appended inside __vitePreload too.
+        `function(dep) { return ${JSON.stringify(environment.config.base)}+dep }`
+  const preloadCode = `const scriptRel = ${scriptRel};const assetsURL = ${assetsURL};const seen = {};export const ${preloadMethod} = ${preload.toString()}`
+  return preloadCode
+}
+
 /**
  * Build only. During serve this is performed as part of ./importAnalysis.
  */
 export function buildImportAnalysisPlugin(config: ResolvedConfig): Plugin {
-  const getInsertPreload = (environment: Environment) =>
+  const getInsertPreload = (environment: PartialEnvironment) =>
     environment.config.consumer === 'client' &&
     !config.isWorker &&
     !config.build.lib
@@ -205,30 +232,11 @@ export function buildImportAnalysisPlugin(config: ResolvedConfig): Plugin {
     load: {
       handler(id) {
         if (id === preloadHelperId) {
-          const { modulePreload } = this.environment.config.build
-
-          const scriptRel =
-            modulePreload && modulePreload.polyfill
-              ? `'modulepreload'`
-              : `/* @__PURE__ */ (${detectScriptRel.toString()})()`
-
-          // There are two different cases for the preload list format in __vitePreload
-          //
-          // __vitePreload(() => import(asyncChunk), [ ...deps... ])
-          //
-          // This is maintained to keep backwards compatibility as some users developed plugins
-          // using regex over this list to workaround the fact that module preload wasn't
-          // configurable.
-          const assetsURL =
-            renderBuiltUrl || isRelativeBase
-              ? // If `experimental.renderBuiltUrl` is used, the dependencies might be relative to the current chunk.
-                // If relative base is used, the dependencies are relative to the current chunk.
-                // The importerUrl is passed as third parameter to __vitePreload in this case
-                `function(dep, importerUrl) { return new URL(dep, importerUrl).href }`
-              : // If the base isn't relative, then the deps are relative to the projects `outDir` and the base
-                // is appended inside __vitePreload too.
-                `function(dep) { return ${JSON.stringify(config.base)}+dep }`
-          const preloadCode = `const scriptRel = ${scriptRel};const assetsURL = ${assetsURL};const seen = {};export const ${preloadMethod} = ${preload.toString()}`
+          const preloadCode = getPreloadCode(
+            this.environment,
+            !!renderBuiltUrl,
+            isRelativeBase,
+          )
           return { code: preloadCode, moduleSideEffects: false }
         }
       },
@@ -236,7 +244,7 @@ export function buildImportAnalysisPlugin(config: ResolvedConfig): Plugin {
 
     transform: {
       async handler(source, importer) {
-        if (isInNodeModules(importer) && !dynamicImportPrefixRE.test(source)) {
+        if (!dynamicImportPrefixRE.test(source)) {
           return
         }
 

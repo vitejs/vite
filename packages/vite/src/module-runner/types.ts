@@ -15,6 +15,7 @@ import type { EvaluatedModuleNode, EvaluatedModules } from './evaluatedModules'
 import type {
   ssrDynamicImportKey,
   ssrExportAllKey,
+  ssrExportNameKey,
   ssrImportKey,
   ssrImportMetaKey,
   ssrModuleExportsKey,
@@ -38,6 +39,7 @@ export interface ModuleRunnerContext {
     options?: ImportCallOptions,
   ) => Promise<any>
   [ssrExportAllKey]: (obj: any) => void
+  [ssrExportNameKey]: (name: string, getter: () => unknown) => void
   [ssrImportMetaKey]: ModuleRunnerImportMeta
 }
 
@@ -83,11 +85,6 @@ export interface ModuleRunnerHmr {
 }
 
 export interface ModuleRunnerOptions {
-  /**
-   * Root of the project
-   * @deprecated not used and to be removed
-   */
-  root?: string
   /**
    * A set of methods to communicate with the server.
    */

@@ -8,7 +8,7 @@ import { createRequire } from 'node:module'
 import crypto from 'node:crypto'
 import colors from 'picocolors'
 import type { Alias, AliasOptions } from 'dep-types/alias'
-import type { RollupOptions } from 'rollup'
+import type { PluginContextMeta, RollupOptions } from 'rollup'
 import picomatch from 'picomatch'
 import { build } from 'esbuild'
 import type { AnymatchFn } from '../types/anymatch'
@@ -25,6 +25,7 @@ import {
   ENV_ENTRY,
   FS_PREFIX,
 } from './constants'
+import { resolveEnvironmentPlugins } from './plugin'
 import type {
   FalsyPlugin,
   HookHandler,
@@ -103,9 +104,15 @@ import { PartialEnvironment } from './baseEnvironment'
 import { createIdResolver } from './idResolver'
 import { runnerImport } from './ssr/runnerImport'
 import { getAdditionalAllowedHosts } from './server/middlewares/hostCheck'
+import type { RequiredExceptFor } from './typeUtils'
+import {
+  BasicMinimalPluginContext,
+  basePluginContextMeta,
+} from './server/pluginContainer'
 
 const debug = createDebugger('vite:config', { depth: 10 })
 const promisifiedRealpath = promisify(fs.realpath)
+const SYMBOL_RESOLVED_CONFIG = Symbol('vite:resolved-config')
 
 export interface ConfigEnv {
   /**
@@ -204,7 +211,7 @@ export interface DevEnvironmentOptions {
 
   /**
    * For environments associated with a module runner.
-   * By default it is true for the client environment and false for non-client environments.
+   * By default, it is false for the client environment and true for non-client environments.
    * This option can also be used instead of the removed config.experimental.skipSsrTransform.
    */
   moduleRunnerTransform?: boolean
@@ -252,7 +259,7 @@ export interface SharedEnvironmentOptions {
    */
   resolve?: EnvironmentResolveOptions
   /**
-   * Define if this environment is used for Server Side Rendering
+   * Define if this environment is used for Server-Side Rendering
    * @default 'server' if it isn't the client environment
    */
   consumer?: 'client' | 'server'
@@ -288,6 +295,7 @@ export type ResolvedEnvironmentOptions = {
   optimizeDeps: DepOptimizationOptions
   dev: ResolvedDevEnvironmentOptions
   build: ResolvedBuildEnvironmentOptions
+  plugins: readonly Plugin[]
 }
 
 export type DefaultEnvironmentOptions = Omit<
@@ -501,28 +509,9 @@ export interface ExperimentalOptions {
    * @default false
    */
   hmrPartialAccept?: boolean
-  /**
-   * Skips SSR transform to make it easier to use Vite with Node ESM loaders.
-   * @warning Enabling this will break normal operation of Vite's SSR in development mode.
-   *
-   * @experimental
-   * @default false
-   */
-  skipSsrTransform?: boolean
 }
 
 export interface LegacyOptions {
-  /**
-   * In Vite 4, SSR-externalized modules (modules not bundled and loaded by Node.js at runtime)
-   * are implicitly proxied in dev to automatically handle `default` and `__esModule` access.
-   * However, this does not correctly reflect how it works in the Node.js runtime, causing
-   * inconsistencies between dev and prod.
-   *
-   * In Vite 5, the proxy is removed so dev and prod are consistent, but if you still require
-   * the old behaviour, you can enable this option. If so, please leave your feedback at
-   * https://github.com/vitejs/vite/discussions/14697.
-   */
-  proxySsrExternalModules?: boolean
   /**
    * In Vite 6.0.8 and below, WebSocket server was able to connect from any web pages. However,
    * that could be exploited by a malicious web page.
@@ -565,6 +554,7 @@ export interface ResolvedConfig
       | 'build'
       | 'dev'
       | 'environments'
+      | 'experimental'
       | 'server'
       | 'preview'
     > & {
@@ -606,13 +596,23 @@ export interface ResolvedConfig
       ssr: ResolvedSSROptions
       assetsInclude: (file: string) => boolean
       logger: Logger
+      /**
+       * Create an internal resolver to be used in special scenarios, e.g.
+       * optimizer & handling css `@imports`.
+       *
+       * This API is deprecated. It only works for the client and ssr
+       * environments. The `aliasOnly` option is also not being used anymore.
+       * Plugins should move to `createIdResolver(environment.config)` instead.
+       *
+       * @deprecated Use `createIdResolver` from `vite` instead.
+       */
       createResolver: (options?: Partial<InternalResolveOptions>) => ResolveFn
       optimizeDeps: DepOptimizationOptions
       /** @internal */
       packageCache: PackageCache
       worker: ResolvedWorkerOptions
       appType: AppType
-      experimental: ExperimentalOptions
+      experimental: RequiredExceptFor<ExperimentalOptions, 'renderBuiltUrl'>
       environments: Record<string, ResolvedEnvironmentOptions>
       /**
        * The token to connect to the WebSocket server from browsers.
@@ -630,7 +630,7 @@ export interface ResolvedConfig
       /** @internal */
       safeModulePaths: Set<string>
       /** @internal */
-      additionalAllowedHosts: string[]
+      [SYMBOL_RESOLVED_CONFIG]: true
     } & PluginHookUtils
   > {}
 
@@ -695,7 +695,6 @@ export const configDefaults = Object.freeze({
     importGlobRestoreExtension: false,
     renderBuiltUrl: undefined,
     hmrPartialAccept: false,
-    skipSsrTransform: false,
   },
   future: {
     removePluginHookHandleHotUpdate: undefined,
@@ -706,7 +705,6 @@ export const configDefaults = Object.freeze({
     removeSsrLoadModule: undefined,
   },
   legacy: {
-    proxySsrExternalModules: false,
     skipWebSocketTokenCheck: false,
   },
   logLevel: 'info',
@@ -745,7 +743,6 @@ export function resolveDevEnvironmentOptions(
   environmentName: string | undefined,
   consumer: 'client' | 'server' | undefined,
   // Backward compatibility
-  skipSsrTransform?: boolean,
   preTransformRequest?: boolean,
 ): ResolvedDevEnvironmentOptions {
   const resolved = mergeWithDefaults(
@@ -758,10 +755,7 @@ export function resolveDevEnvironmentOptions(
           ? defaultCreateClientDevEnvironment
           : defaultCreateDevEnvironment,
       recoverable: consumer === 'client',
-      moduleRunnerTransform:
-        skipSsrTransform !== undefined && consumer === 'server'
-          ? skipSsrTransform
-          : consumer === 'server',
+      moduleRunnerTransform: consumer === 'server',
     },
     dev ?? {},
   )
@@ -782,7 +776,6 @@ function resolveEnvironmentOptions(
   logger: Logger,
   environmentName: string,
   // Backward compatibility
-  skipSsrTransform?: boolean,
   isSsrTargetWebworkerSet?: boolean,
   preTransformRequests?: boolean,
 ): ResolvedEnvironmentOptions {
@@ -837,7 +830,6 @@ function resolveEnvironmentOptions(
       options.dev,
       environmentName,
       consumer,
-      skipSsrTransform,
       preTransformRequests,
     ),
     build: resolveBuildEnvironmentOptions(
@@ -845,6 +837,7 @@ function resolveEnvironmentOptions(
       logger,
       consumer,
     ),
+    plugins: undefined!, // to be resolved later
   }
 }
 
@@ -1031,6 +1024,15 @@ function resolveDepOptimizationOptions(
       force: forceOptimizeDeps ?? configDefaults.optimizeDeps.force,
     },
     optimizeDeps ?? {},
+  )
+}
+
+export function isResolvedConfig(
+  inlineConfig: InlineConfig | ResolvedConfig,
+): inlineConfig is ResolvedConfig {
+  return (
+    SYMBOL_RESOLVED_CONFIG in inlineConfig &&
+    inlineConfig[SYMBOL_RESOLVED_CONFIG]
   )
 }
 
@@ -1224,6 +1226,7 @@ export async function resolveConfig(
   await runConfigEnvironmentHook(
     config.environments,
     userPlugins,
+    logger,
     configEnv,
     config.ssr?.target === 'webworker',
   )
@@ -1244,7 +1247,6 @@ export async function resolveConfig(
       inlineConfig.forceOptimizeDeps,
       logger,
       environmentName,
-      config.experimental?.skipSsrTransform,
       config.ssr?.target === 'webworker',
       config.server?.preTransformRequests,
     )
@@ -1365,6 +1367,16 @@ export async function resolveConfig(
 
   const BASE_URL = resolvedBase
 
+  const resolvedConfigContext = new BasicMinimalPluginContext(
+    {
+      ...basePluginContextMeta,
+      watchMode:
+        (command === 'serve' && !isPreview) ||
+        (command === 'build' && !!resolvedBuildOptions.watch),
+    } satisfies PluginContextMeta,
+    logger,
+  )
+
   let resolved: ResolvedConfig
 
   let createUserWorkerPlugins = config.worker?.plugins
@@ -1412,24 +1424,41 @@ export async function resolveConfig(
       mainConfig: resolved,
       bundleChain,
     }
-    const resolvedWorkerPlugins = (await resolvePlugins(
+
+    // Plugins resolution needs the resolved config (minus plugins) so we need to mutate here
+    ;(workerResolved.plugins as Plugin[]) = await resolvePlugins(
       workerResolved,
       workerPrePlugins,
       workerNormalPlugins,
       workerPostPlugins,
-    )) as Plugin[]
+    )
 
     // run configResolved hooks
     await Promise.all(
-      createPluginHookUtils(resolvedWorkerPlugins)
+      createPluginHookUtils(workerResolved.plugins)
         .getSortedPluginHooks('configResolved')
-        .map((hook) => hook(workerResolved)),
+        .map((hook) => hook.call(resolvedConfigContext, workerResolved)),
     )
 
-    return {
-      ...workerResolved,
-      plugins: resolvedWorkerPlugins,
+    // Resolve environment plugins after configResolved because there are
+    // downstream projects modifying the plugins in it. This may change
+    // once the ecosystem is ready.
+    // During Build the client environment is used to bundle the worker
+    // Avoid overriding the mainConfig (resolved.environments.client)
+    ;(workerResolved.environments as Record<
+      string,
+      ResolvedEnvironmentOptions
+    >) = {
+      ...workerResolved.environments,
+      client: {
+        ...workerResolved.environments.client,
+        plugins: await resolveEnvironmentPlugins(
+          new PartialEnvironment('client', workerResolved),
+        ),
+      },
     }
+
+    return workerResolved
   }
 
   const resolvedWorkerOptions: ResolvedWorkerOptions = {
@@ -1441,6 +1470,14 @@ export async function resolveConfig(
   const base = withTrailingSlash(resolvedBase)
 
   const preview = resolvePreviewOptions(config.preview, server)
+
+  const additionalAllowedHosts = getAdditionalAllowedHosts(server, preview)
+  if (Array.isArray(server.allowedHosts)) {
+    server.allowedHosts.push(...additionalAllowedHosts)
+  }
+  if (Array.isArray(preview.allowedHosts)) {
+    preview.allowedHosts.push(...additionalAllowedHosts)
+  }
 
   resolved = {
     configFile: configFile ? normalizePath(configFile) : undefined,
@@ -1488,11 +1525,10 @@ export async function resolveConfig(
     packageCache,
     worker: resolvedWorkerOptions,
     appType: config.appType ?? 'spa',
-    experimental: {
-      importGlobRestoreExtension: false,
-      hmrPartialAccept: false,
-      ...config.experimental,
-    },
+    experimental: mergeWithDefaults(
+      configDefaults.experimental,
+      config.experimental ?? {},
+    ),
     future: config.future,
 
     ssr,
@@ -1514,13 +1550,6 @@ export async function resolveConfig(
     getSortedPlugins: undefined!,
     getSortedPluginHooks: undefined!,
 
-    /**
-     * createResolver is deprecated. It only works for the client and ssr
-     * environments. The `aliasOnly` option is also not being used any more
-     * Plugins should move to createIdResolver(environment) instead.
-     * create an internal resolver to be used in special scenarios, e.g.
-     * optimizer & handling css @imports
-     */
     createResolver(options) {
       const resolve = createIdResolver(this, options)
       const clientEnvironment = new PartialEnvironment('client', this)
@@ -1551,7 +1580,7 @@ export async function resolveConfig(
       },
     ),
     safeModulePaths: new Set<string>(),
-    additionalAllowedHosts: getAdditionalAllowedHosts(server, preview),
+    [SYMBOL_RESOLVED_CONFIG]: true,
   }
   resolved = {
     ...config,
@@ -1583,8 +1612,17 @@ export async function resolveConfig(
   await Promise.all(
     resolved
       .getSortedPluginHooks('configResolved')
-      .map((hook) => hook(resolved)),
+      .map((hook) => hook.call(resolvedConfigContext, resolved)),
   )
+
+  // Resolve environment plugins after configResolved because there are
+  // downstream projects modifying the plugins in it. This may change
+  // once the ecosystem is ready.
+  for (const name of Object.keys(resolved.environments)) {
+    resolved.environments[name].plugins = await resolveEnvironmentPlugins(
+      new PartialEnvironment(name, resolved),
+    )
+  }
 
   optimizeDepsDisabledBackwardCompatibility(resolved, resolved.optimizeDeps)
   optimizeDepsDisabledBackwardCompatibility(
@@ -2005,7 +2043,7 @@ interface NodeModuleWithCompile extends NodeModule {
   _compile(code: string, filename: string): any
 }
 
-const _require = createRequire(import.meta.url)
+const _require = createRequire(/** #__KEEP__ */ import.meta.url)
 async function loadConfigFromBundledFile(
   fileName: string,
   bundledCode: string,
@@ -2082,10 +2120,18 @@ async function runConfigHook(
 ): Promise<InlineConfig> {
   let conf = config
 
+  const tempLogger = createLogger(config.logLevel, {
+    allowClearScreen: config.clearScreen,
+    customLogger: config.customLogger,
+  })
+  const context = new BasicMinimalPluginContext<
+    Omit<PluginContextMeta, 'watchMode'>
+  >(basePluginContextMeta, tempLogger)
+
   for (const p of getSortedPluginsByHook('config', plugins)) {
     const hook = p.config
     const handler = getHookHandler(hook)
-    const res = await handler(conf, configEnv)
+    const res = await handler.call(context, conf, configEnv)
     if (res && res !== conf) {
       conf = mergeConfig(conf, res)
     }
@@ -2097,15 +2143,20 @@ async function runConfigHook(
 async function runConfigEnvironmentHook(
   environments: Record<string, EnvironmentOptions>,
   plugins: Plugin[],
+  logger: Logger,
   configEnv: ConfigEnv,
   isSsrTargetWebworkerSet: boolean,
 ): Promise<void> {
+  const context = new BasicMinimalPluginContext<
+    Omit<PluginContextMeta, 'watchMode'>
+  >(basePluginContextMeta, logger)
+
   const environmentNames = Object.keys(environments)
   for (const p of getSortedPluginsByHook('configEnvironment', plugins)) {
     const hook = p.configEnvironment
     const handler = getHookHandler(hook)
     for (const name of environmentNames) {
-      const res = await handler(name, environments[name], {
+      const res = await handler.call(context, name, environments[name], {
         ...configEnv,
         isSsrTargetWebworker: isSsrTargetWebworkerSet && name === 'ssr',
       })

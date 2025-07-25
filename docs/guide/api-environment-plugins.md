@@ -1,7 +1,9 @@
 # Environment API for Plugins
 
-:::warning Experimental
-Environment API is experimental. We'll keep the APIs stable during Vite 6 to let the ecosystem experiment and build on top of it. We're planning to stabilize these new APIs with potential breaking changes in Vite 7.
+:::info Release Candidate
+The Environment API is generally in the release candidate phase. We'll maintain stability in the APIs between major releases to allow the ecosystem to experiment and build upon them. However, note that [some specific APIs](/changes/#considering) are still considered experimental.
+
+We plan to stabilize these new APIs (with potential breaking changes) in a future major release once downstream projects have had time to experiment with the new features and validate them.
 
 Resources:
 
@@ -126,6 +128,29 @@ The hook can choose to:
   }
   ```
 
+## Per-environment State in Plugins
+
+Given that the same plugin instance is used for different environments, the plugin state needs to be keyed with `this.environment`. This is the same pattern the ecosystem has already been using to keep state about modules using the `ssr` boolean as key to avoid mixing client and ssr modules state. A `Map<Environment, State>` can be used to keep the state for each environment separately. Note that for backward compatibility, `buildStart` and `buildEnd` are only called for the client environment without the `perEnvironmentStartEndDuringDev: true` flag.
+
+```js
+function PerEnvironmentCountTransformedModulesPlugin() {
+  const state = new Map<Environment, { count: number }>()
+  return {
+    name: 'count-transformed-modules',
+    perEnvironmentStartEndDuringDev: true,
+    buildStart() {
+      state.set(this.environment, { count: 0 })
+    },
+    transform(id) {
+      state.get(this.environment).count++
+    },
+    buildEnd() {
+      console.log(this.environment.name, state.get(this.environment).count)
+    }
+  }
+}
+```
+
 ## Per-environment Plugins
 
 A plugin can define what are the environments it should apply to with the `applyToEnvironment` function.
@@ -184,6 +209,8 @@ export default defineConfig({
 })
 ```
 
+The `applyToEnvironment` hook is called at config time, currently after `configResolved` due to projects in the ecosystem modifying the plugins in it. Environment plugins resolution may be moved before `configResolved` in the future.
+
 ## Environment in Build Hooks
 
 In the same way as during dev, plugin hooks also receive the environment instance during build, replacing the `ssr` boolean.
@@ -198,7 +225,7 @@ Before Vite 6, the plugins pipelines worked in a different way during dev and bu
 
 This forced frameworks to share state between the `client` build and the `ssr` build through manifest files written to the file system. In Vite 6, we are now building all environments in a single process so the way the plugins pipeline and inter-environment communication can be aligned with dev.
 
-In a future major (Vite 7 or 8), we aim to have complete alignment:
+In a future major, we could have complete alignment:
 
 - **During both dev and build:** plugins are shared, with [per-environment filtering](#per-environment-plugins)
 
