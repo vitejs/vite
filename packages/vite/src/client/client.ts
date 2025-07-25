@@ -132,7 +132,7 @@ const debounceReload = (time: number) => {
     }, time)
   }
 }
-const pageReload = debounceReload(50)
+const pageReload = debounceReload(20)
 
 const hmrClient = new HMRClient(
   {
