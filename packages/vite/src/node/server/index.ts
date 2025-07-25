@@ -609,9 +609,19 @@ export async function _createServer(
       return ssrLoadModule(url, server, opts?.fixStacktrace)
     },
     ssrFixStacktrace(e) {
+      warnFutureDeprecation(
+        config,
+        'removeSsrLoadModule',
+        "ssrFixStacktrace doesn't need to be used for Environment Module Runners.",
+      )
       ssrFixStacktrace(e, server.environments.ssr.moduleGraph)
     },
     ssrRewriteStacktrace(stack: string) {
+      warnFutureDeprecation(
+        config,
+        'removeSsrLoadModule',
+        "ssrRewriteStacktrace doesn't need to be used for Environment Module Runners.",
+      )
       return ssrRewriteStacktrace(stack, server.environments.ssr.moduleGraph)
     },
     async reloadModule(module) {
