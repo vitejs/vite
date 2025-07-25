@@ -602,7 +602,7 @@ async function buildEnvironment(
   const outDir = resolve(options.outDir)
 
   // inject environment and ssr arg to plugin load/transform hooks
-  const chunkMetadataMap = new Map<string, ChunkMetadata>()
+  const chunkMetadataMap = new ChunkMetadataMap()
   const plugins = environment.plugins.map((p) =>
     injectEnvironmentToHooks(environment, chunkMetadataMap, p),
   )
@@ -859,6 +859,7 @@ async function buildEnvironment(
       watcher.on('event', (event) => {
         if (event.code === 'BUNDLE_START') {
           logger.info(colors.cyan(`\nbuild started...`))
+          chunkMetadataMap.clearResetChunks()
           if (options.write) {
             prepareOutDir(resolvedOutDirs, emptyOutDir, environment)
           }
@@ -1200,9 +1201,51 @@ function isExternal(id: string, test: string | RegExp) {
   }
 }
 
+export class ChunkMetadataMap {
+  private _inner = new Map<string, ChunkMetadata>()
+  private _resetChunks = new Set<string>()
+
+  private _getKey(chunk: RenderedChunk | OutputChunk): string {
+    return 'preliminaryFileName' in chunk
+      ? chunk.preliminaryFileName
+      : chunk.fileName
+  }
+
+  private _getDefaultValue(chunk: RenderedChunk | OutputChunk): ChunkMetadata {
+    return {
+      importedAssets: new Set(),
+      importedCss: new Set(),
+      // NOTE: adding this as a workaround for now ideally we'd want to remove this workaround
+      // use shared `chunk.modules` object to allow mutation on js side plugins
+      __modules: chunk.modules,
+    }
+  }
+
+  get(chunk: RenderedChunk | OutputChunk): ChunkMetadata {
+    const key = this._getKey(chunk)
+    if (!this._inner.has(key)) {
+      this._inner.set(key, this._getDefaultValue(chunk))
+    }
+    return this._inner.get(key)!
+  }
+
+  // reset chunk metadata on the first RenderChunk call for watch mode
+  reset(chunk: RenderedChunk | OutputChunk): void {
+    const key = this._getKey(chunk)
+    if (this._resetChunks.has(key)) return
+
+    this._resetChunks.add(key)
+    this._inner.set(key, this._getDefaultValue(chunk))
+  }
+
+  clearResetChunks(): void {
+    this._resetChunks.clear()
+  }
+}
+
 export function injectEnvironmentToHooks(
   environment: BuildEnvironment,
-  chunkMetadataMap: Map<string, ChunkMetadata>,
+  chunkMetadataMap: ChunkMetadataMap,
   plugin: Plugin,
 ): Plugin {
   const { resolveId, load, transform } = plugin
@@ -1319,7 +1362,7 @@ function wrapEnvironmentTransform(
 
 function wrapEnvironmentHook<HookName extends keyof Plugin>(
   environment: BuildEnvironment,
-  chunkMetadataMap: Map<string, ChunkMetadata>,
+  chunkMetadataMap: ChunkMetadataMap,
   plugin: Plugin,
   hookName: HookName,
 ): Plugin[HookName] {
@@ -1334,7 +1377,7 @@ function wrapEnvironmentHook<HookName extends keyof Plugin>(
     ...args: any[]
   ) {
     if (hookName === 'renderChunk') {
-      injectChunkMetadata(chunkMetadataMap, args[1])
+      injectChunkMetadata(chunkMetadataMap, args[1], true)
     }
     if (hookName === 'augmentChunkHash') {
       injectChunkMetadata(chunkMetadataMap, args[0])
@@ -1361,25 +1404,17 @@ function wrapEnvironmentHook<HookName extends keyof Plugin>(
 }
 
 function injectChunkMetadata(
-  chunkMetadataMap: Map<string, ChunkMetadata>,
+  chunkMetadataMap: ChunkMetadataMap,
   chunk: RenderedChunk | OutputChunk,
+  resetChunkMetadata = false,
 ) {
-  const key =
-    'preliminaryFileName' in chunk ? chunk.preliminaryFileName : chunk.fileName
-  if (!chunkMetadataMap.has(key)) {
-    chunkMetadataMap.set(key, {
-      importedAssets: new Set(),
-      importedCss: new Set(),
-      // NOTE: adding this as a workaround for now ideally we'd want to remove this workaround
-      // use shared `chunk.modules` object
-      // to allow mutation on js side plugins
-      __modules: chunk.modules,
-    })
+  if (resetChunkMetadata) {
+    chunkMetadataMap.reset(chunk)
   }
   // define instead of assign to avoid detected as a change
   // https://github.com/rolldown/rolldown/blob/f4c5ff27799f2b0152c689c398e61bc7d30429ff/packages/rolldown/src/utils/transform-to-rollup-output.ts#L87
   Object.defineProperty(chunk, 'viteMetadata', {
-    value: chunkMetadataMap.get(key),
+    value: chunkMetadataMap.get(chunk),
     enumerable: true,
   })
   Object.defineProperty(chunk, 'modules', {
