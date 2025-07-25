@@ -1,5 +1,9 @@
+import { execFile } from 'node:child_process'
+import { promisify } from 'node:util'
 import { expect, test } from 'vitest'
 import { isBuild, readFile, testDir } from '~utils'
+
+const execFileAsync = promisify(execFile)
 
 test.runIf(isBuild)('correctly resolve entrypoints', async () => {
   const contents = readFile('dist/main.mjs')
@@ -25,7 +29,7 @@ test.runIf(isBuild)('correctly resolve entrypoints', async () => {
 
   expect(contents).toMatch(new RegExp(`from ${_}@vitejs/test-module-sync${_}`))
 
-  await expect(import(`${testDir}/dist/main.mjs`)).resolves.toBeTruthy()
+  await execFileAsync('node', [`${testDir}/dist/main.mjs`])
 })
 
 test.runIf(isBuild)(
