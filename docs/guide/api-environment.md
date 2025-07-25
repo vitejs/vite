@@ -1,7 +1,9 @@
 # Environment API
 
-:::warning Experimental
-Environment API is experimental. We'll still maintain stability in the APIs between major releases to allow the ecosystem to experiment and build upon them. We plan to stabilize these new APIs (with potential breaking changes) in a future major release once downstream projects have had time to experiment with the new features and validate them.
+:::info Release Candidate
+The Environment API is generally in the release candidate phase. We'll maintain stability in the APIs between major releases to allow the ecosystem to experiment and build upon them. However, note that [some specific APIs](/changes/#considering) are still considered experimental.
+
+We plan to stabilize these new APIs (with potential breaking changes) in a future major release once downstream projects have had time to experiment with the new features and validate them.
 
 Resources:
 
@@ -13,7 +15,7 @@ Please share your feedback with us.
 
 ## Formalizing Environments
 
-Vite 6 formalizes the concept of Environments. Until Vite 5, there were two implicit Environments (`client`, and optionally `ssr`). The new Environment API allows users and framework authors to create as many environments as needed to map the way their apps work in production. This new capability required a big internal refactoring, but a lot of effort has been placed on backward compatibility. The initial goal of Vite 6 is to move the ecosystem to the new major as smoothly as possible, delaying the adoption of these new experimental APIs until enough users have migrated and frameworks and plugin authors have validated the new design.
+Vite 6 formalizes the concept of Environments. Until Vite 5, there were two implicit Environments (`client`, and optionally `ssr`). The new Environment API allows users and framework authors to create as many environments as needed to map the way their apps work in production. This new capability required a big internal refactoring, but a lot of effort has been placed on backward compatibility. The initial goal of Vite 6 is to move the ecosystem to the new major as smoothly as possible, delaying the adoption of the APIs until enough users have migrated and frameworks and plugin authors have validated the new design.
 
 ## Closing the Gap Between Build and Dev
 
@@ -117,7 +119,7 @@ export default {
 
 ## Backward Compatibility
 
-The current Vite server API are not yet deprecated and are backward compatible with Vite 5. The new Environment API is experimental.
+The current Vite server API is not yet deprecated and is backward compatible with Vite 5.
 
 The `server.moduleGraph` returns a mixed view of the client and ssr module graphs. Backward compatible mixed module nodes will be returned from all its methods. The same scheme is used for the module nodes passed to `handleHotUpdate`.
 

@@ -1,4 +1,6 @@
-import type { DefaultTheme } from 'vitepress'
+import path from 'node:path'
+import fs from 'node:fs'
+import type { DefaultTheme, HeadConfig } from 'vitepress'
 import { defineConfig } from 'vitepress'
 import { transformerTwoslash } from '@shikijs/vitepress-twoslash'
 import {
@@ -41,6 +43,10 @@ const additionalTitle = ((): string => {
 const versionLinks = ((): DefaultTheme.NavItemWithLink[] => {
   const oldVersions: DefaultTheme.NavItemWithLink[] = [
     {
+      text: 'Vite 6 Docs',
+      link: 'https://v6.vite.dev',
+    },
+    {
       text: 'Vite 5 Docs',
       link: 'https://v5.vite.dev',
     },
@@ -63,7 +69,7 @@ const versionLinks = ((): DefaultTheme.NavItemWithLink[] => {
     case 'local':
       return [
         {
-          text: 'Vite 6 Docs (release)',
+          text: 'Vite 7 Docs (release)',
           link: 'https://vite.dev',
         },
         ...oldVersions,
@@ -72,6 +78,17 @@ const versionLinks = ((): DefaultTheme.NavItemWithLink[] => {
       return oldVersions
   }
 })()
+
+function inlineScript(file: string): HeadConfig {
+  return [
+    'script',
+    {},
+    fs.readFileSync(
+      path.resolve(__dirname, `./inlined-scripts/${file}`),
+      'utf-8',
+    ),
+  ]
+}
 
 export default defineConfig({
   title: `Vite${additionalTitle}`,
@@ -107,6 +124,7 @@ export default defineConfig({
         href: 'https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Manrope:wght@600&family=IBM+Plex+Mono:wght@400&display=swap',
       },
     ],
+    inlineScript('banner.js'),
     ['link', { rel: 'me', href: 'https://m.webtoo.ls/@vite' }],
     ['meta', { property: 'og:type', content: 'website' }],
     ['meta', { property: 'og:title', content: ogTitle }],

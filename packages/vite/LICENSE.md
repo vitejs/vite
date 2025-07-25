@@ -323,9 +323,9 @@ Repository: git+https://github.com/jridgewell/sourcemap-codec.git
 ## @jridgewell/trace-mapping
 License: MIT
 By: Justin Ridgewell
-Repository: git+https://github.com/jridgewell/trace-mapping.git
+Repository: git+https://github.com/jridgewell/sourcemaps.git
 
-> Copyright 2022 Justin Ridgewell <justin@ridgewell.name>
+> Copyright 2024 Justin Ridgewell <justin@ridgewell.name>
 > 
 > Permission is hereby granted, free of charge, to any person obtaining a copy
 > of this software and associated documentation files (the "Software"), to deal
@@ -509,10 +509,10 @@ Repository: jonschlinkert/is-number
 
 ---------------------------------------
 
-## bundle-name, default-browser, default-browser-id, define-lazy-prop, is-docker, is-inside-container, is-wsl, open, run-applescript
+## bundle-name, default-browser, default-browser-id, define-lazy-prop, is-docker, is-inside-container, is-wsl, open, run-applescript, wsl-utils
 License: MIT
 By: Sindre Sorhus
-Repositories: sindresorhus/bundle-name, sindresorhus/default-browser, sindresorhus/default-browser-id, sindresorhus/define-lazy-prop, sindresorhus/is-docker, sindresorhus/is-inside-container, sindresorhus/is-wsl, sindresorhus/open, sindresorhus/run-applescript
+Repositories: sindresorhus/bundle-name, sindresorhus/default-browser, sindresorhus/default-browser-id, sindresorhus/define-lazy-prop, sindresorhus/is-docker, sindresorhus/is-inside-container, sindresorhus/is-wsl, sindresorhus/open, sindresorhus/run-applescript, sindresorhus/wsl-utils
 
 > MIT License
 > 

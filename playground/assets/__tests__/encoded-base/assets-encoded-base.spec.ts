@@ -192,7 +192,10 @@ test('?url import on css', async () => {
 })
 
 test('new URL(..., import.meta.url)', async () => {
-  expect(await page.textContent('.import-meta-url')).toMatch(urlAssetMatch)
+  const urlImgMatch = isBuild
+    ? /\/foo%20bar\/other-assets\/img-[-\w]{8}\.png/
+    : '/import-meta-url/img.png'
+  expect(await page.textContent('.import-meta-url')).toMatch(urlImgMatch)
 })
 
 test('new URL(`${dynamic}`, import.meta.url)', async () => {
