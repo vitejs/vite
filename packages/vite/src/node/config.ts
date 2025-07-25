@@ -391,7 +391,7 @@ export interface UserConfig extends DefaultEnvironmentOptions {
   /**
    * Options to opt-in to future behavior
    */
-  future?: FutureOptions
+  future?: FutureOptions | 'warn'
   /**
    * Legacy options
    *
@@ -559,6 +559,7 @@ export interface ResolvedConfig
       | 'dev'
       | 'environments'
       | 'experimental'
+      | 'future'
       | 'server'
       | 'preview'
     > & {
@@ -617,6 +618,7 @@ export interface ResolvedConfig
       worker: ResolvedWorkerOptions
       appType: AppType
       experimental: RequiredExceptFor<ExperimentalOptions, 'renderBuiltUrl'>
+      future: FutureOptions | undefined
       environments: Record<string, ResolvedEnvironmentOptions>
       /**
        * The token to connect to the WebSocket server from browsers.
@@ -1534,7 +1536,20 @@ export async function resolveConfig(
       configDefaults.experimental,
       config.experimental ?? {},
     ),
-    future: config.future,
+    future:
+      config.future === 'warn'
+        ? ({
+            removePluginHookHandleHotUpdate: 'warn',
+            removePluginHookSsrArgument: 'warn',
+            removeServerModuleGraph: 'warn',
+            removeServerReloadModule: 'warn',
+            removeServerPluginContainer: 'warn',
+            removeServerHot: 'warn',
+            removeServerTransformRequest: 'warn',
+            removeServerWarmupRequest: 'warn',
+            removeSsrLoadModule: 'warn',
+          } satisfies Required<FutureOptions>)
+        : config.future,
 
     ssr,
 
