@@ -1,3 +1,22 @@
+## <small>[7.0.11](https://github.com/vitejs/rolldown-vite/compare/v7.0.10...v7.0.11) (2025-07-25)</small>
+### Features
+
+* **native-plugin:** inject css and assets for native manifest plugin ([#335](https://github.com/vitejs/rolldown-vite/issues/335)) ([f16e598](https://github.com/vitejs/rolldown-vite/commit/f16e598e0ed6a5316cb8a5f8f3b47acd68c1ef4d))
+
+### Bug Fixes
+
+* **deps:** update all non-major dependencies ([#20442](https://github.com/vitejs/rolldown-vite/issues/20442)) ([e49f505](https://github.com/vitejs/rolldown-vite/commit/e49f50599d852eec644e79b074b4648e2dff1e5d))
+* **dev:** incorrect sourcemap when optimized CJS is imported ([#20458](https://github.com/vitejs/rolldown-vite/issues/20458)) ([ead2dec](https://github.com/vitejs/rolldown-vite/commit/ead2dec74170ad26db8a18bbd68f075efaceb0e3))
+* **lib:** keep annotation comments for es output ([#337](https://github.com/vitejs/rolldown-vite/issues/337)) ([c252dee](https://github.com/vitejs/rolldown-vite/commit/c252dee98a0195a13d83b3fd51f8ac3f15c85e32))
+* **module-runner:** normalize file:// on windows ([#20449](https://github.com/vitejs/rolldown-vite/issues/20449)) ([1c9cb49](https://github.com/vitejs/rolldown-vite/commit/1c9cb493f0467c463113d301b00ce07cbe4b6f58))
+* respond with correct headers and status code for HEAD requests ([#20421](https://github.com/vitejs/rolldown-vite/issues/20421)) ([23d04fc](https://github.com/vitejs/rolldown-vite/commit/23d04fc2d8a4fcf7c2011418693d6000748aa655))
+* **worker:** match worker import meta more quickly ([#336](https://github.com/vitejs/rolldown-vite/issues/336)) ([8cab72c](https://github.com/vitejs/rolldown-vite/commit/8cab72c3dac6ac3203c0b90c4b47673b88100071))
+
+### Miscellaneous Chores
+
+* **deps:** update rolldown-related dependencies ([#20441](https://github.com/vitejs/rolldown-vite/issues/20441)) ([f689d61](https://github.com/vitejs/rolldown-vite/commit/f689d613429ae9452c74f8bc482d8cc2584ea6b8))
+* remove some files from prettier ignore ([#20459](https://github.com/vitejs/rolldown-vite/issues/20459)) ([8403f69](https://github.com/vitejs/rolldown-vite/commit/8403f69551131b5c39bfaf242ffac2e5efcd1dd6))
+
 ## <small>[7.0.10](https://github.com/vitejs/rolldown-vite/compare/v7.0.9...v7.0.10) (2025-07-22)</small>
 ### Features
 
