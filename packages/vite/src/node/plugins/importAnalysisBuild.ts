@@ -8,6 +8,7 @@ import { init, parse as parseImports } from 'es-module-lexer'
 import type { SourceMap } from 'rollup'
 import type { RawSourceMap } from '@ampproject/remapping'
 import convertSourceMap from 'convert-source-map'
+import { exactRegex } from '@rolldown/pluginutils'
 import { combineSourcemaps, generateCodeFrame, numberToPos } from '../utils'
 import type { Plugin } from '../plugin'
 import type { ResolvedConfig } from '../config'
@@ -222,32 +223,27 @@ export function buildImportAnalysisPlugin(config: ResolvedConfig): Plugin {
   return {
     name: 'vite:build-import-analysis',
     resolveId: {
+      filter: { id: exactRegex(preloadHelperId) },
       handler(id) {
-        if (id === preloadHelperId) {
-          return id
-        }
+        return id
       },
     },
 
     load: {
-      handler(id) {
-        if (id === preloadHelperId) {
-          const preloadCode = getPreloadCode(
-            this.environment,
-            !!renderBuiltUrl,
-            isRelativeBase,
-          )
-          return { code: preloadCode, moduleSideEffects: false }
-        }
+      filter: { id: exactRegex(preloadHelperId) },
+      handler(_id) {
+        const preloadCode = getPreloadCode(
+          this.environment,
+          !!renderBuiltUrl,
+          isRelativeBase,
+        )
+        return { code: preloadCode, moduleSideEffects: false }
       },
     },
 
     transform: {
+      filter: { code: dynamicImportPrefixRE },
       async handler(source, importer) {
-        if (!dynamicImportPrefixRE.test(source)) {
-          return
-        }
-
         await init
 
         let imports: readonly ImportSpecifier[] = []

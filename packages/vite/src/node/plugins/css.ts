@@ -334,9 +334,10 @@ export function cssPlugin(config: ResolvedConfig): Plugin {
     },
 
     load: {
+      filter: {
+        id: CSS_LANGS_RE,
+      },
       async handler(id) {
-        if (!isCSSRequest(id)) return
-
         if (urlRE.test(id)) {
           if (isModuleCSSRequest(id)) {
             throw new Error(
@@ -361,15 +362,13 @@ export function cssPlugin(config: ResolvedConfig): Plugin {
       },
     },
     transform: {
+      filter: {
+        id: {
+          include: CSS_LANGS_RE,
+          exclude: [commonjsProxyRE, SPECIAL_QUERY_RE],
+        },
+      },
       async handler(raw, id) {
-        if (
-          !isCSSRequest(id) ||
-          commonjsProxyRE.test(id) ||
-          SPECIAL_QUERY_RE.test(id)
-        ) {
-          return
-        }
-
         const { environment } = this
         const resolveUrl = (url: string, importer?: string) =>
           idResolver(environment, url, importer)
@@ -509,15 +508,13 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
     },
 
     transform: {
+      filter: {
+        id: {
+          include: CSS_LANGS_RE,
+          exclude: [commonjsProxyRE, SPECIAL_QUERY_RE],
+        },
+      },
       async handler(css, id) {
-        if (
-          !isCSSRequest(id) ||
-          commonjsProxyRE.test(id) ||
-          SPECIAL_QUERY_RE.test(id)
-        ) {
-          return
-        }
-
         css = stripBomTag(css)
 
         // cache css compile result to map
@@ -1073,15 +1070,13 @@ export function cssAnalysisPlugin(config: ResolvedConfig): Plugin {
     name: 'vite:css-analysis',
 
     transform: {
+      filter: {
+        id: {
+          include: CSS_LANGS_RE,
+          exclude: [commonjsProxyRE, SPECIAL_QUERY_RE],
+        },
+      },
       async handler(_, id) {
-        if (
-          !isCSSRequest(id) ||
-          commonjsProxyRE.test(id) ||
-          SPECIAL_QUERY_RE.test(id)
-        ) {
-          return
-        }
-
         const { moduleGraph } = this.environment as DevEnvironment
         const thisModule = moduleGraph.getModuleById(id)
 
