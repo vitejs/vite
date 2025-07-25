@@ -1,9 +1,7 @@
 packages/*/CHANGELOG.md
-packages/vite/src/node/ssr/runtime/__tests__/fixtures
-packages/vite/src/node/ssr/__tests__/fixtures/errors
+packages/vite/src/node/ssr/__tests__/fixtures/errors/syntax-error.*
 playground-temp/
 dist/
-temp/
 LICENSE.md
 pnpm-lock.yaml
 pnpm-workspace.yaml

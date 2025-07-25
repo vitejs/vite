@@ -12,15 +12,20 @@ if (!parentPort) {
 const pPort = parentPort
 
 /** @type {import('birpc').BirpcReturn<{ invoke: (data: any) => any }>} */
-const rpc = createBirpc({}, {
-  post: (data) => pPort.postMessage(data),
-  on: (data) => pPort.on('message', data),
-})
+const rpc = createBirpc(
+  {},
+  {
+    post: (data) => pPort.postMessage(data),
+    on: (data) => pPort.on('message', data),
+  },
+)
 
 const runner = new ModuleRunner(
   {
     transport: {
-      invoke(data) { return rpc.invoke(data) }
+      invoke(data) {
+        return rpc.invoke(data)
+      },
     },
     hmr: false,
   },

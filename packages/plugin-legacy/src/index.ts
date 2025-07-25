@@ -3,6 +3,7 @@ import crypto from 'node:crypto'
 import { createRequire } from 'node:module'
 import { fileURLToPath } from 'node:url'
 import { build, normalizePath } from 'vite'
+import * as vite from 'vite'
 import MagicString from 'magic-string'
 import type {
   BuildOptions,
@@ -128,6 +129,13 @@ const outputOptionsForLegacyChunks =
   new WeakSet<Rollup.NormalizedOutputOptions>()
 
 function viteLegacyPlugin(options: Options = {}): Plugin[] {
+  if ('rolldownVersion' in vite) {
+    const { default: viteLegacyPluginForRolldownVite } = _require(
+      '#legacy-for-rolldown-vite',
+    )
+    return viteLegacyPluginForRolldownVite(options)
+  }
+
   let config: ResolvedConfig
   let targets: Options['targets']
   let modernTargets: Options['modernTargets']

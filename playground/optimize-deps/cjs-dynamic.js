@@ -22,7 +22,11 @@
   }
 
   const cjsFromCJS = await import('@vitejs/test-dep-cjs-compiled-from-cjs')
-  if (typeof cjsFromCJS.default === 'function') {
+  if (
+    typeof cjsFromCJS.default === 'function' &&
+    typeof cjsFromCJS !== 'function' &&
+    cjsFromCJS.bar === 'bar'
+  ) {
     text('.cjs-dynamic-dep-cjs-compiled-from-cjs', 'ok')
   }
 
