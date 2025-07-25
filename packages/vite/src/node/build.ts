@@ -1,4 +1,3 @@
-import fs from 'node:fs'
 import path from 'node:path'
 import colors from 'picocolors'
 import type {
@@ -24,7 +23,6 @@ import commonjsPlugin from '@rollup/plugin-commonjs'
 import type { RollupCommonJSOptions } from 'dep-types/commonjs'
 import type { RollupDynamicImportVarsOptions } from 'dep-types/dynamicImportVars'
 import type { TransformOptions } from 'esbuild'
-import { withTrailingSlash } from '../shared/utils'
 import {
   DEFAULT_ASSETS_INLINE_LIMIT,
   ESBUILD_BASELINE_WIDELY_AVAILABLE_TARGET,
@@ -45,15 +43,12 @@ import { type TerserOptions, terserPlugin } from './plugins/terser'
 import {
   arraify,
   asyncFlatten,
-  copyDir,
   createDebugger,
   displayTime,
-  emptyDir,
   getPkgName,
   joinUrlSegments,
   mergeConfig,
   mergeWithDefaults,
-  normalizePath,
   partialEncodeURIPath,
 } from './utils'
 import { perEnvironmentPlugin } from './plugin'
@@ -80,6 +75,7 @@ import {
   BasicMinimalPluginContext,
   basePluginContextMeta,
 } from './server/pluginContainer'
+import { prepareOutDirPlugin } from './plugins/prepareOutDir'
 
 export interface BuildEnvironmentOptions {
   /**
@@ -466,6 +462,7 @@ export async function resolveBuildPlugins(config: ResolvedConfig): Promise<{
   return {
     pre: [
       completeSystemWrapPlugin(),
+      prepareOutDirPlugin(),
       perEnvironmentPlugin('commonjs', (environment) => {
         const { commonjsOptions } = environment.config.build
         const usePluginCommonjs =
@@ -665,12 +662,6 @@ async function buildEnvironment(
     }
   }
 
-  const outputBuildError = (e: RollupError) => {
-    enhanceRollupError(e)
-    clearLine()
-    logger.error(e.message, { error: e })
-  }
-
   const isSsrTargetWebworkerEnvironment =
     environment.name === 'ssr' &&
     environment.getTopLevelConfig().ssr?.target === 'webworker'
@@ -766,22 +757,21 @@ async function buildEnvironment(
       normalizedOutputs.push(buildOutputOptions(outputs))
     }
 
-    const resolvedOutDirs = getResolvedOutDirs(
-      root,
-      options.outDir,
-      options.rollupOptions.output,
-    )
-    const emptyOutDir = resolveEmptyOutDir(
-      options.emptyOutDir,
-      root,
-      resolvedOutDirs,
-      logger,
-    )
-
     // watch file changes with rollup
     if (options.watch) {
       logger.info(colors.cyan(`\nwatching for file changes...`))
 
+      const resolvedOutDirs = getResolvedOutDirs(
+        root,
+        options.outDir,
+        options.rollupOptions.output,
+      )
+      const emptyOutDir = resolveEmptyOutDir(
+        options.emptyOutDir,
+        root,
+        resolvedOutDirs,
+        logger,
+      )
       const resolvedChokidarOptions = resolveChokidarOptions(
         options.watch.chokidar,
         resolvedOutDirs,
@@ -802,14 +792,14 @@ async function buildEnvironment(
       watcher.on('event', (event) => {
         if (event.code === 'BUNDLE_START') {
           logger.info(colors.cyan(`\nbuild started...`))
-          if (options.write) {
-            prepareOutDir(resolvedOutDirs, emptyOutDir, environment)
-          }
         } else if (event.code === 'BUNDLE_END') {
           event.result.close()
           logger.info(colors.cyan(`built in ${event.duration}ms.`))
         } else if (event.code === 'ERROR') {
-          outputBuildError(event.error)
+          const e = event.error
+          enhanceRollupError(e)
+          clearLine()
+          logger.error(e.message, { error: e })
         }
       })
 
@@ -820,10 +810,6 @@ async function buildEnvironment(
     const { rollup } = await import('rollup')
     startTime = Date.now()
     bundle = await rollup(rollupOptions)
-
-    if (options.write) {
-      prepareOutDir(resolvedOutDirs, emptyOutDir, environment)
-    }
 
     const res: RollupOutput[] = []
     for (const output of normalizedOutputs) {
@@ -845,54 +831,6 @@ async function buildEnvironment(
     throw e
   } finally {
     if (bundle) await bundle.close()
-  }
-}
-
-function prepareOutDir(
-  outDirs: Set<string>,
-  emptyOutDir: boolean | null,
-  environment: BuildEnvironment,
-) {
-  const { publicDir } = environment.config
-  const outDirsArray = [...outDirs]
-  for (const outDir of outDirs) {
-    if (emptyOutDir !== false && fs.existsSync(outDir)) {
-      // skip those other outDirs which are nested in current outDir
-      const skipDirs = outDirsArray
-        .map((dir) => {
-          const relative = path.relative(outDir, dir)
-          if (
-            relative &&
-            !relative.startsWith('..') &&
-            !path.isAbsolute(relative)
-          ) {
-            return relative
-          }
-          return ''
-        })
-        .filter(Boolean)
-      emptyDir(outDir, [...skipDirs, '.git'])
-    }
-    if (
-      environment.config.build.copyPublicDir &&
-      publicDir &&
-      fs.existsSync(publicDir)
-    ) {
-      if (!areSeparateFolders(outDir, publicDir)) {
-        environment.logger.warn(
-          colors.yellow(
-            `\n${colors.bold(
-              `(!)`,
-            )} The public directory feature may not work correctly. outDir ${colors.white(
-              colors.dim(outDir),
-            )} and publicDir ${colors.white(
-              colors.dim(publicDir),
-            )} are not separate folders.\n`,
-          ),
-        )
-      }
-      copyDir(publicDir, outDir)
-    }
   }
 }
 
@@ -1457,16 +1395,6 @@ export function toOutputFilePathWithoutRuntime(
 
 export const toOutputFilePathInCss = toOutputFilePathWithoutRuntime
 export const toOutputFilePathInHtml = toOutputFilePathWithoutRuntime
-
-function areSeparateFolders(a: string, b: string) {
-  const na = normalizePath(a)
-  const nb = normalizePath(b)
-  return (
-    na !== nb &&
-    !na.startsWith(withTrailingSlash(nb)) &&
-    !nb.startsWith(withTrailingSlash(na))
-  )
-}
 
 export class BuildEnvironment extends BaseEnvironment {
   mode = 'build' as const
