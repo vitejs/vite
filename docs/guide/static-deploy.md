@@ -26,7 +26,7 @@ These guides provide instructions for performing a static deployment of your Vit
 You may run `npm run build` command to build the app.
 
 ```bash
-$ npm run build
+npm run build
 ```
 
 By default, the build output will be placed at `dist`. You may deploy this `dist` folder to any of your preferred platforms.
@@ -36,7 +36,7 @@ By default, the build output will be placed at `dist`. You may deploy this `dist
 Once you've built the app, you may test it locally by running `npm run preview` command.
 
 ```bash
-$ npm run preview
+npm run preview
 ```
 
 The `vite preview` command will boot up a local static web server that serves the files from `dist` at `http://localhost:4173`. It's an easy way to check if the production build looks OK in your local environment.
@@ -301,3 +301,16 @@ Deploy your static site using [Kinsta](https://kinsta.com/static-site-hosting/) 
 ## xmit Static Site Hosting
 
 Deploy your static site using [xmit](https://xmit.co) by following this [guide](https://xmit.dev/posts/vite-quickstart/).
+
+## Azion Web Platform
+
+You can quickly deploy your Vite app to [Azion Web Platform](https://azion.com/) following this steps:
+
+1. Create your account at [Azion](https://console.azion.com/signup)
+2. Install [Azion CLI](https://www.azion.com/en/documentation/products/azion-cli/overview/)
+3. In a existant project, run `azion link` and follow the instructions
+4. Run `azion deploy`
+
+At the end, you will receive a URL to access your deployed site that will looks like `https://xxxxxxx.map.azionedge.net`
+
+For more information, check the [Azion Web Platform documentation](https://www.azion.com/en/documentation/).
