@@ -24,6 +24,7 @@ import {
 } from '../http'
 import type { InlineConfig, ResolvedConfig } from '../config'
 import { isResolvedConfig, resolveConfig } from '../config'
+import type { Hostname } from '../utils'
 import {
   diffDnsOrderChange,
   getServerUrlByHost,
@@ -206,6 +207,8 @@ export interface ResolvedServerOptions
   > {
   fs: Required<FileSystemServeOptions>
   middlewareMode: NonNullable<ServerOptions['middlewareMode']>
+  /** @internal */
+  hostname: Hostname
   sourcemapIgnoreList: Exclude<
     ServerOptions['sourcemapIgnoreList'],
     false | undefined
@@ -643,14 +646,18 @@ export async function _createServer(
       }
     },
     async listen(port?: number, isRestart?: boolean) {
+      if (httpServer) {
+        httpServer.prependListener('listening', () => {
+          server.resolvedUrls = resolveServerUrls(
+            httpServer,
+            config.server,
+            httpsOptions,
+            config,
+          )
+        })
+      }
       await startServer(server, port)
       if (httpServer) {
-        server.resolvedUrls = await resolveServerUrls(
-          httpServer,
-          config.server,
-          httpsOptions,
-          config,
-        )
         if (!isRestart && config.server.open) server.openBrowser()
       }
       return server
@@ -998,7 +1005,6 @@ async function startServer(
   }
 
   const options = server.config.server
-  const hostname = await resolveHostname(options.host)
   const configPort = inlinePort ?? options.port
   // When using non strict port for the dev server, the running port can be different from the config one.
   // When restarting, the original port may be available but to avoid a switch of URL for the running
@@ -1012,7 +1018,7 @@ async function startServer(
   const serverPort = await httpServerStart(httpServer, {
     port,
     strictPort: options.strictPort,
-    host: hostname.host,
+    host: options.hostname.host,
     logger: server.config.logger,
   })
   server._currentServerPort = serverPort
@@ -1090,11 +1096,11 @@ export const serverConfigDefaults = Object.freeze({
   // hotUpdateEnvironments
 } satisfies ServerOptions)
 
-export function resolveServerOptions(
+export async function resolveServerOptions(
   root: string,
   raw: ServerOptions | undefined,
   logger: Logger,
-): ResolvedServerOptions {
+): Promise<ResolvedServerOptions> {
   const _server = mergeWithDefaults(
     {
       ...serverConfigDefaults,
@@ -1106,6 +1112,7 @@ export function resolveServerOptions(
 
   const server: ResolvedServerOptions = {
     ..._server,
+    hostname: await resolveHostname(_server.host),
     fs: {
       ..._server.fs,
       // run searchForWorkspaceRoot only if needed

@@ -961,12 +961,12 @@ export async function resolveHostname(
   return { host, name }
 }
 
-export async function resolveServerUrls(
+export function resolveServerUrls(
   server: Server,
   options: CommonServerOptions,
   httpsOptions: HttpsServerOptions | undefined,
   config: ResolvedConfig,
-): Promise<ResolvedServerUrls> {
+): ResolvedServerUrls {
   const address = server.address()
 
   const isAddressInfo = (x: any): x is AddressInfo => x?.address
@@ -976,7 +976,7 @@ export async function resolveServerUrls(
 
   const local: string[] = []
   const network: string[] = []
-  const hostname = await resolveHostname(options.host)
+  const hostname = config.server.hostname
   const protocol = options.https ? 'https' : 'http'
   const port = address.port
   const base =
