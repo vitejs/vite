@@ -483,6 +483,7 @@ export interface FutureOptions {
   removePluginHookSsrArgument?: 'warn'
 
   removeServerModuleGraph?: 'warn'
+  removeServerPluginContainer?: 'warn'
   removeServerHot?: 'warn'
   removeServerTransformRequest?: 'warn'
   removeServerWarmupRequest?: 'warn'

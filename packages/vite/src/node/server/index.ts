@@ -531,7 +531,7 @@ export async function _createServer(
     client: () => environments.client.moduleGraph,
     ssr: () => environments.ssr.moduleGraph,
   })
-  const pluginContainer = createPluginContainer(environments)
+  let pluginContainer = createPluginContainer(environments)
 
   const closeHttpServer = createServerCloseFn(httpServer)
 
@@ -568,7 +568,13 @@ export async function _createServer(
     hot: ws,
 
     environments,
-    pluginContainer,
+    get pluginContainer() {
+      warnFutureDeprecation(config, 'removeServerPluginContainer')
+      return pluginContainer
+    },
+    set pluginContainer(p) {
+      pluginContainer = p
+    },
     get moduleGraph() {
       warnFutureDeprecation(config, 'removeServerModuleGraph')
       return moduleGraph

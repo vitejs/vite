@@ -383,9 +383,11 @@ const devHtmlHook: IndexHtmlTransformHook = async (
         )
       ensureWatchedFile(watcher, mod.file, config.root)
 
-      const result = await server!.pluginContainer.transform(code, mod.id!, {
-        environment: server!.environments.client,
-      })
+      const result =
+        await server!.environments.client.pluginContainer.transform(
+          code,
+          mod.id!,
+        )
       let content = ''
       if (result.map && 'version' in result.map) {
         if (result.map.mappings) {
@@ -408,9 +410,7 @@ const devHtmlHook: IndexHtmlTransformHook = async (
         )
       ensureWatchedFile(watcher, mod.file, config.root)
 
-      await server?.pluginContainer.transform(code, mod.id!, {
-        environment: server!.environments.client,
-      })
+      await server?.environments.client.pluginContainer.transform(code, mod.id!)
 
       const hash = getHash(cleanUrl(mod.id!))
       const result = htmlProxyResult.get(`${hash}_${index}`)
