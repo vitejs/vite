@@ -3,7 +3,6 @@ import MagicString from 'magic-string'
 import type { OutputChunk, RollupError } from 'rolldown'
 import colors from 'picocolors'
 import { type ImportSpecifier, init, parse } from 'es-module-lexer'
-import type { ChunkMetadata } from 'types/metadata'
 import { webWorkerPostPlugin as nativeWebWorkerPostPlugin } from 'rolldown/experimental'
 import type { ResolvedConfig } from '../config'
 import { type Plugin, perEnvironmentPlugin } from '../plugin'
@@ -17,6 +16,7 @@ import {
 } from '../utils'
 import {
   BuildEnvironment,
+  ChunkMetadataMap,
   createToImportMetaURLBasedRelativeRuntime,
   injectEnvironmentToHooks,
   onRollupLog,
@@ -94,7 +94,7 @@ async function bundleWorkerEntry(
   const workerEnvironment = new BuildEnvironment('client', workerConfig) // TODO: should this be 'worker'?
   await workerEnvironment.init()
 
-  const chunkMetadataMap = new Map<string, ChunkMetadata>()
+  const chunkMetadataMap = new ChunkMetadataMap()
   const bundle = await rolldown({
     ...rollupOptions,
     input,
