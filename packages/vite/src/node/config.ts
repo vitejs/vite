@@ -483,6 +483,7 @@ export interface FutureOptions {
   removePluginHookSsrArgument?: 'warn'
 
   removeServerModuleGraph?: 'warn'
+  removeServerPluginContainer?: 'warn'
   removeServerHot?: 'warn'
   removeServerTransformRequest?: 'warn'
   removeServerWarmupRequest?: 'warn'
@@ -1364,7 +1365,7 @@ export async function resolveConfig(
         )
       : ''
 
-  const server = resolveServerOptions(resolvedRoot, config.server, logger)
+  const server = await resolveServerOptions(resolvedRoot, config.server, logger)
 
   const builder = resolveBuilderOptions(config.builder)
 
