@@ -14,8 +14,9 @@ The `Environment` instance was first introduced at `v6.0`. The deprecation of `s
 ```ts
 future: {
   removeServerModuleGraph: 'warn',
-  removeServerTransformRequest: 'warn',
   removeServerHot: 'warn',
+  removeServerTransformRequest: 'warn',
+  removeServerWarmupRequest: 'warn',
 }
 ```
 

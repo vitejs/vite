@@ -10,6 +10,7 @@ const deprecationCode = {
   removeServerModuleGraph: 'changes/per-environment-apis',
   removeServerHot: 'changes/per-environment-apis',
   removeServerTransformRequest: 'changes/per-environment-apis',
+  removeServerWarmupRequest: 'changes/per-environment-apis',
 
   removeSsrLoadModule: 'changes/ssr-using-modulerunner',
 } satisfies Record<keyof FutureOptions, string>
@@ -25,6 +26,8 @@ const deprecationMessages = {
   removeServerHot: 'The `server.hot` is replaced with `this.environment.hot`.',
   removeServerTransformRequest:
     'The `server.transformRequest` is replaced with `this.environment.transformRequest`.',
+  removeServerWarmupRequest:
+    'The `server.warmupRequest` is replaced with `this.environment.warmupRequest`.',
 
   removeSsrLoadModule:
     'The `server.ssrLoadModule` is replaced with Environment Runner.',
