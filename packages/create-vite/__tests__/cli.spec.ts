@@ -152,3 +152,33 @@ test('return help usage how to use create-vite with -h alias', () => {
   const message = 'Usage: create-vite [OPTION]... [DIRECTORY]'
   expect(stdout).toContain(message)
 })
+
+test('shows immediate and agent options in help', () => {
+  const { stdout } = run(['--help'], { cwd: __dirname })
+  expect(stdout).toMatchInlineSnapshot()
+})
+
+test('accepts immediate flag', () => {
+  const { stdout } = run([projectName, '--template', 'vue', '--immediate'], {
+    cwd: __dirname,
+  })
+  expect(stdout).toContain(`Scaffolding project in ${genPath}`)
+})
+
+test('accepts immediate flag and skips install prompt', () => {
+  const { stdout } = run(
+    [projectName, '--template', 'vue', '--immediate', 'false'],
+    {
+      cwd: __dirname,
+    },
+  )
+  expect(stdout).not.toContain('Install and start now?')
+  expect(stdout).toContain(`Scaffolding project in ${genPath}`)
+})
+
+test('accepts agent flag', () => {
+  const { stdout } = run([projectName, '--template', 'vue', '-a', 'npm'], {
+    cwd: __dirname,
+  })
+  expect(stdout).toContain(`Scaffolding project in ${genPath}`)
+})
