@@ -76,6 +76,7 @@ import {
   basePluginContextMeta,
 } from './server/pluginContainer'
 import { prepareOutDirPlugin } from './plugins/prepareOutDir'
+import type { Environment } from './environment'
 
 export interface BuildEnvironmentOptions {
   /**
@@ -523,24 +524,11 @@ function resolveConfigToBuild(
   )
 }
 
-/**
- * Build an App environment, or a App library (if libraryOptions is provided)
- **/
-async function buildEnvironment(
-  environment: BuildEnvironment,
-): Promise<RollupOutput | RollupOutput[] | RollupWatcher> {
+function resolveRollupOptions(environment: Environment) {
   const { root, packageCache, build: options } = environment.config
   const libOptions = options.lib
   const { logger } = environment
   const ssr = environment.config.consumer === 'server'
-
-  logger.info(
-    colors.cyan(
-      `vite v${VERSION} ${colors.green(
-        `building ${ssr ? `SSR bundle ` : ``}for ${environment.config.mode}...`,
-      )}`,
-    ),
-  )
 
   const resolve = (p: string) => path.resolve(root, p)
   const input = libOptions
@@ -603,159 +591,120 @@ async function buildEnvironment(
     },
   }
 
-  /**
-   * The stack string usually contains a copy of the message at the start of the stack.
-   * If the stack starts with the message, we remove it and just return the stack trace
-   * portion. Otherwise the original stack trace is used.
-   */
-  function extractStack(e: RollupError) {
-    const { stack, name = 'Error', message } = e
-
-    // If we don't have a stack, not much we can do.
-    if (!stack) {
-      return stack
-    }
-
-    const expectedPrefix = `${name}: ${message}\n`
-    if (stack.startsWith(expectedPrefix)) {
-      return stack.slice(expectedPrefix.length)
-    }
-
-    return stack
-  }
-
-  /**
-   * Esbuild code frames have newlines at the start and end of the frame, rollup doesn't
-   * This function normalizes the frame to match the esbuild format which has more pleasing padding
-   */
-  const normalizeCodeFrame = (frame: string) => {
-    const trimmedPadding = frame.replace(/^\n|\n$/g, '')
-    return `\n${trimmedPadding}\n`
-  }
-
-  const enhanceRollupError = (e: RollupError) => {
-    const stackOnly = extractStack(e)
-
-    let msg = colors.red((e.plugin ? `[${e.plugin}] ` : '') + e.message)
-    if (e.loc && e.loc.file && e.loc.file !== e.id) {
-      msg += `\nfile: ${colors.cyan(
-        `${e.loc.file}:${e.loc.line}:${e.loc.column}` +
-          (e.id ? ` (${e.id})` : ''),
-      )}`
-    } else if (e.id) {
-      msg += `\nfile: ${colors.cyan(
-        e.id + (e.loc ? `:${e.loc.line}:${e.loc.column}` : ''),
-      )}`
-    }
-    if (e.frame) {
-      msg += `\n` + colors.yellow(normalizeCodeFrame(e.frame))
-    }
-
-    e.message = msg
-
-    // We are rebuilding the stack trace to include the more detailed message at the top.
-    // Previously this code was relying on mutating e.message changing the generated stack
-    // when it was accessed, but we don't have any guarantees that the error we are working
-    // with hasn't already had its stack accessed before we get here.
-    if (stackOnly !== undefined) {
-      e.stack = `${e.message}\n${stackOnly}`
-    }
-  }
-
   const isSsrTargetWebworkerEnvironment =
     environment.name === 'ssr' &&
     environment.getTopLevelConfig().ssr?.target === 'webworker'
 
+  const buildOutputOptions = (output: OutputOptions = {}): OutputOptions => {
+    // @ts-expect-error See https://github.com/vitejs/vite/issues/5812#issuecomment-984345618
+    if (output.output) {
+      logger.warn(
+        `You've set "rollupOptions.output.output" in your config. ` +
+          `This is deprecated and will override all Vite.js default output options. ` +
+          `Please use "rollupOptions.output" instead.`,
+      )
+    }
+    if (output.file) {
+      throw new Error(
+        `Vite does not support "rollupOptions.output.file". ` +
+          `Please use "rollupOptions.output.dir" and "rollupOptions.output.entryFileNames" instead.`,
+      )
+    }
+    if (output.sourcemap) {
+      logger.warnOnce(
+        colors.yellow(
+          `Vite does not support "rollupOptions.output.sourcemap". ` +
+            `Please use "build.sourcemap" instead.`,
+        ),
+      )
+    }
+
+    const format = output.format || 'es'
+    const jsExt =
+      (ssr && !isSsrTargetWebworkerEnvironment) || libOptions
+        ? resolveOutputJsExtension(
+            format,
+            findNearestPackageData(root, packageCache)?.data.type,
+          )
+        : 'js'
+    return {
+      dir: outDir,
+      // Default format is 'es' for regular and for SSR builds
+      format,
+      exports: 'auto',
+      sourcemap: options.sourcemap,
+      name: libOptions ? libOptions.name : undefined,
+      hoistTransitiveImports: libOptions ? false : undefined,
+      // es2015 enables `generatedCode.symbols`
+      // - #764 add `Symbol.toStringTag` when build es module into cjs chunk
+      // - #1048 add `Symbol.toStringTag` for module default export
+      generatedCode: 'es2015',
+      entryFileNames: ssr
+        ? `[name].${jsExt}`
+        : libOptions
+          ? ({ name }) =>
+              resolveLibFilename(
+                libOptions,
+                format,
+                name,
+                root,
+                jsExt,
+                packageCache,
+              )
+          : path.posix.join(options.assetsDir, `[name]-[hash].${jsExt}`),
+      chunkFileNames: libOptions
+        ? `[name]-[hash].${jsExt}`
+        : path.posix.join(options.assetsDir, `[name]-[hash].${jsExt}`),
+      assetFileNames: libOptions
+        ? `[name].[ext]`
+        : path.posix.join(options.assetsDir, `[name]-[hash].[ext]`),
+      inlineDynamicImports:
+        output.format === 'umd' ||
+        output.format === 'iife' ||
+        (isSsrTargetWebworkerEnvironment &&
+          (typeof input === 'string' || Object.keys(input).length === 1)),
+      ...output,
+    }
+  }
+
+  // resolve lib mode outputs
+  const outputs = resolveBuildOutputs(
+    options.rollupOptions.output,
+    libOptions,
+    logger,
+  )
+
+  if (Array.isArray(outputs)) {
+    rollupOptions.output = outputs.map(buildOutputOptions)
+  } else {
+    rollupOptions.output = buildOutputOptions(outputs)
+  }
+
+  return rollupOptions
+}
+
+/**
+ * Build an App environment, or a App library (if libraryOptions is provided)
+ **/
+async function buildEnvironment(
+  environment: BuildEnvironment,
+): Promise<RollupOutput | RollupOutput[] | RollupWatcher> {
+  const { logger, config } = environment
+  const { root, build: options } = config
+  const ssr = config.consumer === 'server'
+
+  logger.info(
+    colors.cyan(
+      `vite v${VERSION} ${colors.green(
+        `building ${ssr ? `SSR bundle ` : ``}for ${environment.config.mode}...`,
+      )}`,
+    ),
+  )
+
   let bundle: RollupBuild | undefined
   let startTime: number | undefined
   try {
-    const buildOutputOptions = (output: OutputOptions = {}): OutputOptions => {
-      // @ts-expect-error See https://github.com/vitejs/vite/issues/5812#issuecomment-984345618
-      if (output.output) {
-        logger.warn(
-          `You've set "rollupOptions.output.output" in your config. ` +
-            `This is deprecated and will override all Vite.js default output options. ` +
-            `Please use "rollupOptions.output" instead.`,
-        )
-      }
-      if (output.file) {
-        throw new Error(
-          `Vite does not support "rollupOptions.output.file". ` +
-            `Please use "rollupOptions.output.dir" and "rollupOptions.output.entryFileNames" instead.`,
-        )
-      }
-      if (output.sourcemap) {
-        logger.warnOnce(
-          colors.yellow(
-            `Vite does not support "rollupOptions.output.sourcemap". ` +
-              `Please use "build.sourcemap" instead.`,
-          ),
-        )
-      }
-
-      const format = output.format || 'es'
-      const jsExt =
-        (ssr && !isSsrTargetWebworkerEnvironment) || libOptions
-          ? resolveOutputJsExtension(
-              format,
-              findNearestPackageData(root, packageCache)?.data.type,
-            )
-          : 'js'
-      return {
-        dir: outDir,
-        // Default format is 'es' for regular and for SSR builds
-        format,
-        exports: 'auto',
-        sourcemap: options.sourcemap,
-        name: libOptions ? libOptions.name : undefined,
-        hoistTransitiveImports: libOptions ? false : undefined,
-        // es2015 enables `generatedCode.symbols`
-        // - #764 add `Symbol.toStringTag` when build es module into cjs chunk
-        // - #1048 add `Symbol.toStringTag` for module default export
-        generatedCode: 'es2015',
-        entryFileNames: ssr
-          ? `[name].${jsExt}`
-          : libOptions
-            ? ({ name }) =>
-                resolveLibFilename(
-                  libOptions,
-                  format,
-                  name,
-                  root,
-                  jsExt,
-                  packageCache,
-                )
-            : path.posix.join(options.assetsDir, `[name]-[hash].${jsExt}`),
-        chunkFileNames: libOptions
-          ? `[name]-[hash].${jsExt}`
-          : path.posix.join(options.assetsDir, `[name]-[hash].${jsExt}`),
-        assetFileNames: libOptions
-          ? `[name].[ext]`
-          : path.posix.join(options.assetsDir, `[name]-[hash].[ext]`),
-        inlineDynamicImports:
-          output.format === 'umd' ||
-          output.format === 'iife' ||
-          (isSsrTargetWebworkerEnvironment &&
-            (typeof input === 'string' || Object.keys(input).length === 1)),
-        ...output,
-      }
-    }
-
-    // resolve lib mode outputs
-    const outputs = resolveBuildOutputs(
-      options.rollupOptions.output,
-      libOptions,
-      logger,
-    )
-    const normalizedOutputs: OutputOptions[] = []
-
-    if (Array.isArray(outputs)) {
-      for (const resolvedOutput of outputs) {
-        normalizedOutputs.push(buildOutputOptions(resolvedOutput))
-      }
-    } else {
-      normalizedOutputs.push(buildOutputOptions(outputs))
-    }
+    const rollupOptions = resolveRollupOptions(environment)
 
     // watch file changes with rollup
     if (options.watch) {
@@ -782,7 +731,6 @@ async function buildEnvironment(
       const { watch } = await import('rollup')
       const watcher = watch({
         ...rollupOptions,
-        output: normalizedOutputs,
         watch: {
           ...options.watch,
           chokidar: resolvedChokidarOptions,
@@ -812,13 +760,13 @@ async function buildEnvironment(
     bundle = await rollup(rollupOptions)
 
     const res: RollupOutput[] = []
-    for (const output of normalizedOutputs) {
+    for (const output of arraify(rollupOptions.output!)) {
       res.push(await bundle[options.write ? 'write' : 'generate'](output))
     }
     logger.info(
       `${colors.green(`✓ built in ${displayTime(Date.now() - startTime)}`)}`,
     )
-    return Array.isArray(outputs) ? res : res[0]
+    return Array.isArray(rollupOptions.output) ? res : res[0]
   } catch (e) {
     enhanceRollupError(e)
     clearLine()
@@ -832,6 +780,65 @@ async function buildEnvironment(
   } finally {
     if (bundle) await bundle.close()
   }
+}
+
+function enhanceRollupError(e: RollupError) {
+  const stackOnly = extractStack(e)
+
+  let msg = colors.red((e.plugin ? `[${e.plugin}] ` : '') + e.message)
+  if (e.loc && e.loc.file && e.loc.file !== e.id) {
+    msg += `\nfile: ${colors.cyan(
+      `${e.loc.file}:${e.loc.line}:${e.loc.column}` +
+        (e.id ? ` (${e.id})` : ''),
+    )}`
+  } else if (e.id) {
+    msg += `\nfile: ${colors.cyan(
+      e.id + (e.loc ? `:${e.loc.line}:${e.loc.column}` : ''),
+    )}`
+  }
+  if (e.frame) {
+    msg += `\n` + colors.yellow(normalizeCodeFrame(e.frame))
+  }
+
+  e.message = msg
+
+  // We are rebuilding the stack trace to include the more detailed message at the top.
+  // Previously this code was relying on mutating e.message changing the generated stack
+  // when it was accessed, but we don't have any guarantees that the error we are working
+  // with hasn't already had its stack accessed before we get here.
+  if (stackOnly !== undefined) {
+    e.stack = `${e.message}\n${stackOnly}`
+  }
+}
+
+/**
+ * The stack string usually contains a copy of the message at the start of the stack.
+ * If the stack starts with the message, we remove it and just return the stack trace
+ * portion. Otherwise the original stack trace is used.
+ */
+function extractStack(e: RollupError) {
+  const { stack, name = 'Error', message } = e
+
+  // If we don't have a stack, not much we can do.
+  if (!stack) {
+    return stack
+  }
+
+  const expectedPrefix = `${name}: ${message}\n`
+  if (stack.startsWith(expectedPrefix)) {
+    return stack.slice(expectedPrefix.length)
+  }
+
+  return stack
+}
+
+/**
+ * Esbuild code frames have newlines at the start and end of the frame, rollup doesn't
+ * This function normalizes the frame to match the esbuild format which has more pleasing padding
+ */
+function normalizeCodeFrame(frame: string) {
+  const trimmedPadding = frame.replace(/^\n|\n$/g, '')
+  return `\n${trimmedPadding}\n`
 }
 
 type JsExt = 'js' | 'cjs' | 'mjs'
@@ -952,7 +959,7 @@ function clearLine() {
 export function onRollupLog(
   level: LogLevel,
   log: RollupLog,
-  environment: BuildEnvironment,
+  environment: Environment,
 ): void {
   const debugLogger = createDebugger('vite:build')
   const viteLog: LogOrStringHandler = (logLeveling, rawLogging) => {
@@ -1069,7 +1076,7 @@ function isExternal(id: string, test: string | RegExp) {
 }
 
 export function injectEnvironmentToHooks(
-  environment: BuildEnvironment,
+  environment: Environment,
   plugin: Plugin,
 ): Plugin {
   const { resolveId, load, transform } = plugin
@@ -1099,7 +1106,7 @@ export function injectEnvironmentToHooks(
 }
 
 function wrapEnvironmentResolveId(
-  environment: BuildEnvironment,
+  environment: Environment,
   hook?: Plugin['resolveId'],
 ): Plugin['resolveId'] {
   if (!hook) return
@@ -1125,7 +1132,7 @@ function wrapEnvironmentResolveId(
 }
 
 function wrapEnvironmentLoad(
-  environment: BuildEnvironment,
+  environment: Environment,
   hook?: Plugin['load'],
 ): Plugin['load'] {
   if (!hook) return
@@ -1150,7 +1157,7 @@ function wrapEnvironmentLoad(
 }
 
 function wrapEnvironmentTransform(
-  environment: BuildEnvironment,
+  environment: Environment,
   hook?: Plugin['transform'],
 ): Plugin['transform'] {
   if (!hook) return
@@ -1176,7 +1183,7 @@ function wrapEnvironmentTransform(
 }
 
 function wrapEnvironmentHook<HookName extends keyof Plugin>(
-  environment: BuildEnvironment,
+  environment: Environment,
   hook?: Plugin[HookName],
 ): Plugin[HookName] {
   if (!hook) return
@@ -1203,7 +1210,7 @@ function wrapEnvironmentHook<HookName extends keyof Plugin>(
 
 function injectEnvironmentInContext<Context extends MinimalPluginContext>(
   context: Context,
-  environment: BuildEnvironment,
+  environment: Environment,
 ) {
   context.meta.viteVersion ??= VERSION
   context.environment ??= environment
@@ -1212,7 +1219,7 @@ function injectEnvironmentInContext<Context extends MinimalPluginContext>(
 
 function injectSsrFlag<T extends Record<string, any>>(
   options?: T,
-  environment?: BuildEnvironment,
+  environment?: Environment,
 ): T & { ssr?: boolean } {
   const ssr = environment ? environment.config.consumer === 'server' : true
   return { ...(options ?? {}), ssr } as T & {
