@@ -562,13 +562,20 @@ export async function _createServer(
     server._ssrCompatModuleRunner = undefined
   }
 
+  let hot = ws
   let server: ViteDevServer = {
     config,
     middlewares,
     httpServer,
     watcher,
     ws,
-    hot: ws,
+    get hot() {
+      warnFutureDeprecation(config, 'removeServerHot')
+      return hot
+    },
+    set hot(h) {
+      hot = h
+    },
 
     environments,
     get pluginContainer() {
