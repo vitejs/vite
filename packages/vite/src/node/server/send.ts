@@ -92,6 +92,10 @@ export function send(
   }
 
   res.statusCode = 200
-  res.end(content)
+  if (req.method === 'HEAD') {
+    res.end()
+  } else {
+    res.end(content)
+  }
   return
 }
