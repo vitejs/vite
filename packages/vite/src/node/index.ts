@@ -53,6 +53,7 @@ export {
   VERSION as version,
   DEFAULT_CLIENT_CONDITIONS as defaultClientConditions,
   DEFAULT_CLIENT_MAIN_FIELDS as defaultClientMainFields,
+  DEFAULT_EXTERNAL_CONDITIONS as defaultExternalConditions,
   DEFAULT_SERVER_CONDITIONS as defaultServerConditions,
   DEFAULT_SERVER_MAIN_FIELDS as defaultServerMainFields,
   defaultAllowedOrigins,
