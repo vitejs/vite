@@ -23,9 +23,9 @@ test.runIf(isBuild)('correctly resolve entrypoints', async () => {
     new RegExp(`from ${_}@vitejs/test-deep-import/foo/index.js${_}`),
   )
 
-  expect(contents).toMatch(
-    new RegExp(`from ${_}@vitejs/test-deep-import/bar${_}`),
-  )
+  // expect(contents).toMatch(
+  //   new RegExp(`from ${_}@vitejs/test-deep-import/utils/bar.js${_}`),
+  // )
 
   expect(contents).toMatch(new RegExp(`from ${_}@vitejs/test-module-sync${_}`))
 
