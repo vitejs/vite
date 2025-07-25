@@ -114,7 +114,7 @@ If you have duplicated copies of the same dependency in your app (likely due to 
 For SSR builds, deduplication does not work for ESM build outputs configured from `build.rollupOptions.output`. A workaround is to use CJS build outputs until ESM has better plugin support for module loading.
 :::
 
-## resolve.conditions
+## resolve.conditions <NonInheritBadge />
 
 - **Type:** `string[]`
 - **Default:** `['module', 'browser', 'development|production']` (`defaultClientConditions`)
@@ -140,7 +140,7 @@ Here, `import` and `require` are "conditions". Conditions can be nested and shou
 
 Note that `import`, `require`, `default` conditions are always applied if the requirements are met.
 
-## resolve.mainFields
+## resolve.mainFields <NonInheritBadge />
 
 - **Type:** `string[]`
 - **Default:** `['browser', 'module', 'jsnext:main', 'jsnext']` (`defaultClientMainFields`)
