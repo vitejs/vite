@@ -103,7 +103,7 @@ test('asks to overwrite non-empty current directory', () => {
 })
 
 test('successfully scaffolds a project based on vue starter template', () => {
-  const { stdout } = run([projectName, '--template', 'vue', '-i', 'false'], {
+  const { stdout } = run([projectName, '--template', 'vue'], {
     cwd: __dirname,
   })
   const generatedFiles = fs.readdirSync(genPath).sort()
@@ -114,12 +114,9 @@ test('successfully scaffolds a project based on vue starter template', () => {
 })
 
 test('successfully scaffolds a project with subfolder based on react starter template', () => {
-  const { stdout } = run(
-    [`subfolder/${projectName}`, '--template', 'react', '-i', 'false'],
-    {
-      cwd: __dirname,
-    },
-  )
+  const { stdout } = run([`subfolder/${projectName}`, '--template', 'react'], {
+    cwd: __dirname,
+  })
   const generatedFiles = fs.readdirSync(genPathWithSubfolder).sort()
 
   // Assertions
@@ -128,7 +125,7 @@ test('successfully scaffolds a project with subfolder based on react starter tem
 })
 
 test('works with the -t alias', () => {
-  const { stdout } = run([projectName, '-t', 'vue', '-i', 'false'], {
+  const { stdout } = run([projectName, '-t', 'vue'], {
     cwd: __dirname,
   })
   const generatedFiles = fs.readdirSync(genPath).sort()
@@ -158,12 +155,14 @@ test('return help usage how to use create-vite with -h alias', () => {
 
 test('shows immediate and agent options in help', () => {
   const { stdout } = run(['--help'], { cwd: __dirname })
-  expect(stdout).toContain(
-    '-i, --immediate            install dependencies and start dev',
-  )
-  expect(stdout).toContain(
-    '-a, --agent AGENT          install dependencies via npm, yarn, or pnpm',
-  )
+  expect(stdout).toMatchInlineSnapshot()
+})
+
+test('accepts immediate flag', () => {
+  const { stdout } = run([projectName, '--template', 'vue', '--immediate'], {
+    cwd: __dirname,
+  })
+  expect(stdout).toContain(`Scaffolding project in ${genPath}`)
 })
 
 test('accepts immediate flag and skips install prompt', () => {
@@ -178,11 +177,8 @@ test('accepts immediate flag and skips install prompt', () => {
 })
 
 test('accepts agent flag', () => {
-  const { stdout } = run(
-    [projectName, '--template', 'vue', '-i', 'false', '-a', 'npm'],
-    {
-      cwd: __dirname,
-    },
-  )
+  const { stdout } = run([projectName, '--template', 'vue', '-a', 'npm'], {
+    cwd: __dirname,
+  })
   expect(stdout).toContain(`Scaffolding project in ${genPath}`)
 })

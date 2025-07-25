@@ -42,7 +42,7 @@ With no arguments, start the CLI in interactive mode.
 Options:
   -t, --template NAME        use a specific template
   -i, --immediate            install dependencies and start dev
-  -a, --agent AGENT          install dependencies via npm, yarn, or pnpm
+  -a, --agent AGENT          install dependencies via npm, yarn, pnpm, or bun
 
 Available templates:
 ${yellow    ('vanilla-ts     vanilla'  )}
@@ -519,19 +519,6 @@ async function init() {
     immediate = immediateResult
   }
 
-  if (immediate && !agent) {
-    const agentResult = await prompts.select({
-      message: 'Select a package manager:',
-      options: [
-        { label: 'npm', value: 'npm' },
-        { label: 'yarn', value: 'yarn' },
-        { label: 'pnpm', value: 'pnpm' },
-      ],
-    })
-    if (prompts.isCancel(agentResult)) return cancel()
-    agent = agentResult
-  }
-
   const root = path.join(cwd, targetDir)
   fs.mkdirSync(root, { recursive: true })
 
@@ -543,6 +530,21 @@ async function init() {
   }
 
   const pkgManager = pkgInfo ? pkgInfo.name : 'npm'
+
+  if (immediate && !agent) {
+    const agentResult = await prompts.select({
+      message: 'Select a package manager:',
+      options: [
+        { label: 'npm', value: 'npm' },
+        { label: 'yarn', value: 'yarn' },
+        { label: 'pnpm', value: 'pnpm' },
+        { label: 'bun', value: 'bun' },
+      ],
+      initialValue: pkgManager,
+    })
+    if (prompts.isCancel(agentResult)) return cancel()
+    agent = agentResult
+  }
 
   const { customCommand } =
     FRAMEWORKS.flatMap((f) => f.variants).find((v) => v.name === template) ?? {}
@@ -595,7 +597,8 @@ async function init() {
     setupReactSwc(root, template.endsWith('-ts'))
   }
 
-  if (immediate && agent) {
+  if (immediate) {
+    if (!agent) throw new Error()
     install(root, agent)
     start(root, agent)
   } else {
