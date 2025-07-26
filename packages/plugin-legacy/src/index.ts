@@ -125,12 +125,45 @@ const _require = createRequire(import.meta.url)
 const nonLeadingHashInFileNameRE = /[^/]+\[hash(?::\d+)?\]/
 const prefixedHashInFileNameRE = /\W?\[hash(?::\d+)?\]/
 
-function viteLegacyPlugin(options: Options = {}): Plugin[] {
-  if ('rolldownVersion' in vite) {
-    const { default: viteLegacyPluginForRolldownVite } = _require(
-      '#legacy-for-rolldown-vite',
+function detectModuleType(moduleId: string): 'esm' | 'cjs' {
+  try {
+    const resolvedPath = _require.resolve(moduleId)
+    const packageJsonPath = path.join(
+      path.dirname(resolvedPath),
+      'package.json',
     )
-    return viteLegacyPluginForRolldownVite(options)
+    const fs = _require('node:fs')
+    const packageJson = JSON.parse(fs.readFileSync(packageJsonPath, 'utf-8'))
+    return packageJson.type === 'module' ? 'esm' : 'cjs'
+  } catch {
+    return 'esm'
+  }
+}
+
+async function viteLegacyPlugin(options: Options = {}): Promise<Plugin[]> {
+  if ('rolldownVersion' in vite) {
+    const moduleType = await detectModuleType('#legacy-for-rolldown-vite')
+    try {
+      let viteLegacyPluginForRolldownVite
+      if (moduleType === 'esm') {
+        try {
+          viteLegacyPluginForRolldownVite = (
+            await import('#legacy-for-rolldown-vite')
+          ).default
+        } catch {
+          viteLegacyPluginForRolldownVite = _require(
+            '#legacy-for-rolldown-vite',
+          )
+        }
+      } else {
+        viteLegacyPluginForRolldownVite = _require('#legacy-for-rolldown-vite')
+      }
+      return viteLegacyPluginForRolldownVite(options)
+    } catch (error: any) {
+      throw new Error(
+        `Failed to load #legacy-for-rolldown-vite (${moduleType}): ${error?.message || 'Unknown error'}`,
+      )
+    }
   }
 
   let config: ResolvedConfig
@@ -1006,7 +1039,10 @@ export type { Options }
 export default viteLegacyPlugin
 
 // Compat for require
-function viteLegacyPluginCjs(this: unknown, options: Options): Plugin[] {
+function viteLegacyPluginCjs(
+  this: unknown,
+  options: Options,
+): Promise<Plugin[]> {
   return viteLegacyPlugin.call(this, options)
 }
 Object.assign(viteLegacyPluginCjs, {
