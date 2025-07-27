@@ -564,6 +564,12 @@ importers:
         specifier: ^0.11.4
         version: 0.11.4
 
+  playground/client-errors:
+    devDependencies:
+      vite:
+        specifier: workspace:*
+        version: link:../../packages/vite
+
   playground/client-reload: {}
 
   playground/csp: {}

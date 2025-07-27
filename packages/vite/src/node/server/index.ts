@@ -93,6 +93,7 @@ import { ModuleGraph } from './mixedModuleGraph'
 import type { ModuleNode } from './mixedModuleGraph'
 import { notFoundMiddleware } from './middlewares/notFound'
 import { buildErrorMessage, errorMiddleware } from './middlewares/error'
+import { errorIngestMiddleware } from './middlewares/errorIngest'
 import type { HmrOptions, NormalizedHotChannel } from './hmr'
 import { handleHMRUpdate, updateModules } from './hmr'
 import { openBrowser as _openBrowser } from './openBrowser'
@@ -945,6 +946,9 @@ export async function _createServer(
     // handle 404s
     middlewares.use(notFoundMiddleware())
   }
+
+  // error handler
+  middlewares.use(errorIngestMiddleware(server))
 
   // error handler
   middlewares.use(errorMiddleware(server, !!middlewareMode))

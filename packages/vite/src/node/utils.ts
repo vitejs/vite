@@ -33,6 +33,7 @@ import { VALID_ID_PREFIX } from '../shared/constants'
 import {
   CLIENT_ENTRY,
   CLIENT_PUBLIC_PATH,
+  CLIENT_ERROR_RELAY_PATH,
   CSS_LANGS_RE,
   ENV_PUBLIC_PATH,
   FS_PREFIX,
@@ -326,6 +327,7 @@ const internalPrefixes = [
   FS_PREFIX,
   VALID_ID_PREFIX,
   CLIENT_PUBLIC_PATH,
+  CLIENT_ERROR_RELAY_PATH,
   ENV_PUBLIC_PATH,
 ]
 const InternalPrefixRE = new RegExp(`^(?:${internalPrefixes.join('|')})`)
