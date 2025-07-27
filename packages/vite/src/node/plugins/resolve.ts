@@ -460,7 +460,7 @@ export function resolvePlugin(
 
     load: {
       filter: {
-        id: new RegExp(`^(${browserExternalId}|${optionalPeerDepId})`),
+        id: new RegExp(`^(?:${browserExternalId}|${optionalPeerDepId})`),
       },
       handler(id) {
         if (id.startsWith(browserExternalId)) {
