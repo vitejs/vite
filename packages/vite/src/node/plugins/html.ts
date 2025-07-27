@@ -317,7 +317,7 @@ function handleParseError(
       // lit generates <?>: https://github.com/lit/lit/issues/2470
       return
     case 'control-character-in-input-stream':
-      // Allow control characters in HTML
+      // Allow control characters in HTML #20482
       return
   }
   const parseError = formatParseError(parserError, filePath, html)
