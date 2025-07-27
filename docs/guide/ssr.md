@@ -97,7 +97,7 @@ async function createServer() {
     // serve index.html - we will tackle this next
   })
 
-  app.listen(5173)
+  app.listen(vite.config.server.port)
 }
 
 createServer()
