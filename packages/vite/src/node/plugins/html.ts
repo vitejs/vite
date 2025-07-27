@@ -316,6 +316,9 @@ function handleParseError(
       // Allow <?xml> declaration and <?> empty elements
       // lit generates <?>: https://github.com/lit/lit/issues/2470
       return
+    case 'control-character-in-input-stream':
+      // Allow control characters in HTML
+      return
   }
   const parseError = formatParseError(parserError, filePath, html)
   throw new Error(
