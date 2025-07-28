@@ -93,6 +93,7 @@ import { ModuleGraph } from './mixedModuleGraph'
 import type { ModuleNode } from './mixedModuleGraph'
 import { notFoundMiddleware } from './middlewares/notFound'
 import { errorMiddleware } from './middlewares/error'
+import { errorIngestMiddleware } from './middlewares/errorIngest'
 import type { HmrOptions, NormalizedHotChannel } from './hmr'
 import { handleHMRUpdate, updateModules } from './hmr'
 import { openBrowser as _openBrowser } from './openBrowser'
@@ -910,6 +911,9 @@ export async function _createServer(
   // open in editor support
   middlewares.use('/__open-in-editor', launchEditorMiddleware())
 
+  // error ingest handler
+  middlewares.use(errorIngestMiddleware(server))
+
   // ping request handler
   // Keep the named function. The name is visible in debug logs via `DEBUG=connect:dispatcher ...`
   middlewares.use(function viteHMRPingMiddleware(req, res, next) {
@@ -954,7 +958,7 @@ export async function _createServer(
   }
 
   // error handler
-  middlewares.use(errorMiddleware(server, !!middlewareMode))
+  middlewares.use(errorIngestMiddleware(server))
 
   // httpServer.listen can be called multiple times
   // when port when using next port number

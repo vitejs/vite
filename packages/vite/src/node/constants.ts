@@ -104,6 +104,7 @@ export const SPECIAL_QUERY_RE = /[?&](?:worker|sharedworker|raw|url)\b/
 export const FS_PREFIX = `/@fs/`
 
 export const CLIENT_PUBLIC_PATH = `/@vite/client`
+export const CLIENT_ERROR_RELAY_PATH = '/@vite/errors'
 export const ENV_PUBLIC_PATH = `/@vite/env`
 export const VITE_PACKAGE_DIR = resolve(
   fileURLToPath(import.meta.url),

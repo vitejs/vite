@@ -109,6 +109,21 @@ if (typeof window !== 'undefined') {
   window.addEventListener?.('beforeunload', () => {
     willUnload = true
   })
+  window.addEventListener('error', (error) => {
+    fetch('/@vite/errors', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        stack: error.error.stack,
+        filename: error.filename,
+        message: error.message,
+        colno: error.colno,
+        lineno: error.lineno,
+      })
+    })
+  })
 }
 
 function cleanUrl(pathname: string): string {
