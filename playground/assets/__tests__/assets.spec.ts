@@ -1,4 +1,5 @@
 import path from 'node:path'
+import { stripVTControlCharacters } from 'node:util'
 import { describe, expect, test } from 'vitest'
 import {
   browserLogs,
@@ -463,6 +464,20 @@ test('Unknown extension assets import', async () => {
 
 test('?raw import', async () => {
   expect(await page.textContent('.raw')).toMatch('SVG')
+  expect(await page.textContent('.raw-html')).toBe('<div>partial</div>\n')
+
+  if (isBuild) return
+  editFile('nested/partial.html', (code) =>
+    code.replace('<div>partial</div>', '<div>partial updated</div>'),
+  )
+  await expect
+    .poll(() => page.textContent('.raw-html'))
+    .toBe('<div>partial updated</div>\n')
+  expect(browserLogs).toStrictEqual(
+    expect.arrayContaining([
+      expect.stringContaining('hot updated: /nested/partial.html?raw via'),
+    ]),
+  )
 })
 
 test('?no-inline svg import', async () => {

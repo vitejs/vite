@@ -690,7 +690,12 @@ export function updateModules(
 
   // html file cannot be hot updated
   const isClientHtmlChange =
-    file.endsWith('.html') && environment.name === 'client'
+    file.endsWith('.html') &&
+    environment.name === 'client' &&
+    // if the html file is imported as a module, we assume that this file is
+    // not used as the template for top-level request response
+    // (i.e. not used by the middleware).
+    modules.every((mod) => mod.type !== 'js')
 
   if (needFullReload || isClientHtmlChange) {
     const reason =
