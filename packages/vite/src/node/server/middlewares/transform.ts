@@ -34,12 +34,11 @@ import {
   ERR_OUTDATED_OPTIMIZED_DEP,
   NULL_BYTE_PLACEHOLDER,
 } from '../../../shared/constants'
-import { checkServingAccess, respondWithAccessDenied } from './static'
+import { checkLoadingAccess, respondWithAccessDenied } from './static'
 
 const debugCache = createDebugger('vite:cache')
 
 const knownIgnoreList = new Set(['/', '/favicon.ico'])
-const trailingQuerySeparatorsRE = /[?&]+$/
 
 // TODO: consolidate this regex pattern with the url, raw, and inline checks in plugins
 const urlRE = /[?&]url\b/
@@ -48,20 +47,15 @@ const inlineRE = /[?&]inline\b/
 const svgRE = /\.svg\b/
 
 function deniedServingAccessForTransform(
-  url: string,
+  id: string,
   server: ViteDevServer,
   res: ServerResponse,
   next: Connect.NextFunction,
 ) {
-  if (
-    rawRE.test(url) ||
-    urlRE.test(url) ||
-    inlineRE.test(url) ||
-    svgRE.test(url)
-  ) {
-    const servingAccessResult = checkServingAccess(url, server)
+  if (rawRE.test(id) || urlRE.test(id) || inlineRE.test(id) || svgRE.test(id)) {
+    const servingAccessResult = checkLoadingAccess(server.config, id)
     if (servingAccessResult === 'denied') {
-      respondWithAccessDenied(url, server, res)
+      respondWithAccessDenied(id, server, res)
       return true
     }
     if (servingAccessResult === 'fallback') {
@@ -205,22 +199,6 @@ export function transformMiddleware(
 
       if (publicDirInRoot && url.startsWith(publicPath)) {
         warnAboutExplicitPublicPathInUrl(url)
-      }
-
-      const urlWithoutTrailingQuerySeparators = url.replace(
-        trailingQuerySeparatorsRE,
-        '',
-      )
-      if (
-        !url.startsWith('/@id/\0') &&
-        deniedServingAccessForTransform(
-          urlWithoutTrailingQuerySeparators,
-          server,
-          res,
-          next,
-        )
-      ) {
-        return
       }
 
       if (

@@ -285,7 +285,7 @@ export function isParentDirectory(dir: string, file: string): boolean {
  * @param file2 - normalized absolute path
  * @returns true if both files url are identical
  */
-export function isSameFileUri(file1: string, file2: string): boolean {
+export function isSameFilePath(file1: string, file2: string): boolean {
   return (
     file1 === file2 ||
     (isCaseInsensitiveFS && file1.toLowerCase() === file2.toLowerCase())

@@ -208,7 +208,7 @@ describe.runIf(isServe)('main', () => {
       .poll(() =>
         page.textContent('.unsafe-fs-fetch-relative-path-after-query-status'),
       )
-      .toBe('403')
+      .toBe('404')
   })
 
   test('nested entry', async () => {
