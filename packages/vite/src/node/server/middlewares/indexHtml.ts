@@ -269,94 +269,99 @@ const devHtmlHook: IndexHtmlTransformHook = async (
     preTransformRequest(server!, modulePath, decodedBase)
   }
 
-  await traverseHtml(html, filename, (node) => {
-    if (!nodeIsElement(node)) {
-      return
-    }
+  await traverseHtml(
+    html,
+    filename,
+    (node) => {
+      if (!nodeIsElement(node)) {
+        return
+      }
 
-    // script tags
-    if (node.nodeName === 'script') {
-      const { src, srcSourceCodeLocation, isModule, isIgnored } =
-        getScriptInfo(node)
+      // script tags
+      if (node.nodeName === 'script') {
+        const { src, srcSourceCodeLocation, isModule, isIgnored } =
+          getScriptInfo(node)
 
-      if (isIgnored) {
-        removeViteIgnoreAttr(s, node.sourceCodeLocation!)
-      } else if (src) {
-        const processedUrl = processNodeUrl(
-          src.value,
-          /* useSrcSetReplacer */ false,
-          config,
-          htmlPath,
-          originalUrl,
-          server,
-          !isModule,
-        )
-        if (processedUrl !== src.value) {
-          overwriteAttrValue(s, srcSourceCodeLocation!, processedUrl)
-        }
-      } else if (isModule && node.childNodes.length) {
-        addInlineModule(node, 'js')
-      } else if (node.childNodes.length) {
-        const scriptNode = node.childNodes[
-          node.childNodes.length - 1
-        ] as DefaultTreeAdapterMap['textNode']
-        for (const {
-          url,
-          start,
-          end,
-        } of extractImportExpressionFromClassicScript(scriptNode)) {
+        if (isIgnored) {
+          removeViteIgnoreAttr(s, node.sourceCodeLocation!)
+        } else if (src) {
           const processedUrl = processNodeUrl(
+            src.value,
+            /* useSrcSetReplacer */ false,
+            config,
+            htmlPath,
+            originalUrl,
+            server,
+            !isModule,
+          )
+          if (processedUrl !== src.value) {
+            overwriteAttrValue(s, srcSourceCodeLocation!, processedUrl)
+          }
+        } else if (isModule && node.childNodes.length) {
+          addInlineModule(node, 'js')
+        } else if (node.childNodes.length) {
+          const scriptNode = node.childNodes[
+            node.childNodes.length - 1
+          ] as DefaultTreeAdapterMap['textNode']
+          for (const {
             url,
-            false,
+            start,
+            end,
+          } of extractImportExpressionFromClassicScript(scriptNode)) {
+            const processedUrl = processNodeUrl(
+              url,
+              false,
+              config,
+              htmlPath,
+              originalUrl,
+            )
+            if (processedUrl !== url) {
+              s.update(start, end, processedUrl)
+            }
+          }
+        }
+      }
+
+      const inlineStyle = findNeedTransformStyleAttribute(node)
+      if (inlineStyle) {
+        inlineModuleIndex++
+        inlineStyles.push({
+          index: inlineModuleIndex,
+          location: inlineStyle.location!,
+          code: inlineStyle.attr.value,
+        })
+      }
+
+      if (node.nodeName === 'style' && node.childNodes.length) {
+        const children = node.childNodes[0] as DefaultTreeAdapterMap['textNode']
+        styleUrl.push({
+          start: children.sourceCodeLocation!.startOffset,
+          end: children.sourceCodeLocation!.endOffset,
+          code: children.value,
+        })
+      }
+
+      // elements with [href/src] attrs
+      const assetAttributes = getNodeAssetAttributes(node)
+      for (const attr of assetAttributes) {
+        if (attr.type === 'remove') {
+          s.remove(attr.location.startOffset, attr.location.endOffset)
+        } else {
+          const processedUrl = processNodeUrl(
+            attr.value,
+            attr.type === 'srcset',
             config,
             htmlPath,
             originalUrl,
           )
-          if (processedUrl !== url) {
-            s.update(start, end, processedUrl)
+          if (processedUrl !== attr.value) {
+            overwriteAttrValue(s, attr.location, processedUrl)
           }
         }
       }
-    }
-
-    const inlineStyle = findNeedTransformStyleAttribute(node)
-    if (inlineStyle) {
-      inlineModuleIndex++
-      inlineStyles.push({
-        index: inlineModuleIndex,
-        location: inlineStyle.location!,
-        code: inlineStyle.attr.value,
-      })
-    }
-
-    if (node.nodeName === 'style' && node.childNodes.length) {
-      const children = node.childNodes[0] as DefaultTreeAdapterMap['textNode']
-      styleUrl.push({
-        start: children.sourceCodeLocation!.startOffset,
-        end: children.sourceCodeLocation!.endOffset,
-        code: children.value,
-      })
-    }
-
-    // elements with [href/src] attrs
-    const assetAttributes = getNodeAssetAttributes(node)
-    for (const attr of assetAttributes) {
-      if (attr.type === 'remove') {
-        s.remove(attr.location.startOffset, attr.location.endOffset)
-      } else {
-        const processedUrl = processNodeUrl(
-          attr.value,
-          attr.type === 'srcset',
-          config,
-          htmlPath,
-          originalUrl,
-        )
-        if (processedUrl !== attr.value) {
-          overwriteAttrValue(s, attr.location, processedUrl)
-        }
-      }
-    }
-  })
+    },
+    config.logger.warn,
+  )
 
   // invalidate the module so the newly cached contents will be served
   const clientModuelGraph = server?.environments.client.moduleGraph

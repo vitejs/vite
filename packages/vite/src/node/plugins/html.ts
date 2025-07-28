@@ -188,6 +188,7 @@ export async function traverseHtml(
   html: string,
   filePath: string,
   visitor: (node: DefaultTreeAdapterMap['node']) => void,
+  warn: ResolvedConfig['logger']['warn'],
 ): Promise<void> {
   // lazy load compiler
   const { parse } = await import('parse5')
@@ -195,7 +196,7 @@ export async function traverseHtml(
     scriptingEnabled: false, // parse inside <noscript>
     sourceCodeLocationInfo: true,
     onParseError: (e: ParserError) => {
-      handleParseError(e, html, filePath)
+      handleParseError(e, html, filePath, warn)
     },
   })
   traverseNodes(ast, visitor)
@@ -293,10 +294,12 @@ function formatParseError(parserError: ParserError, id: string, html: string) {
   return formattedError
 }
 
+const fileErrorInfo: Record<string, Record<string, boolean>> = {}
 function handleParseError(
   parserError: ParserError,
   html: string,
   filePath: string,
+  warn: ResolvedConfig['logger']['warn'],
 ) {
   switch (parserError.code) {
     case 'missing-doctype':
@@ -316,15 +319,21 @@ function handleParseError(
       // Allow <?xml> declaration and <?> empty elements
       // lit generates <?>: https://github.com/lit/lit/issues/2470
       return
-    case 'control-character-in-input-stream':
-      // Allow control characters in HTML #20482
-      return
   }
+  fileErrorInfo[filePath] ??= {}
+  if (fileErrorInfo[filePath][parserError.code]) {
+    // already warned about this error
+    return
+  }
+  fileErrorInfo[filePath][parserError.code] = true
   const parseError = formatParseError(parserError, filePath, html)
-  throw new Error(
-    `Unable to parse HTML; ${parseError.message}\n` +
-      ` at ${parseError.loc.file}:${parseError.loc.line}:${parseError.loc.column}\n` +
-      `${parseError.frame}`,
+
+  warn(
+    colors.yellow(
+      `Unable to parse HTML; ${parseError.message}\n` +
+        ` at ${parseError.loc.file}:${parseError.loc.line}:${parseError.loc.column}\n` +
+        `${parseError.frame.length > 300 ? '[this line is omitted as the content was too long] ' : parseError.frame}`,
+    ),
   )
 }
 
@@ -445,222 +454,235 @@ export function buildHtmlPlugin(config: ResolvedConfig): Plugin {
         }
 
         const setModuleSideEffectPromises: Promise<void>[] = []
-        await traverseHtml(html, id, (node) => {
-          if (!nodeIsElement(node)) {
-            return
-          }
+        await traverseHtml(
+          html,
+          id,
+          (node) => {
+            if (!nodeIsElement(node)) {
+              return
+            }
 
-          let shouldRemove = false
+            let shouldRemove = false
 
-          // script tags
-          if (node.nodeName === 'script') {
-            const { src, srcSourceCodeLocation, isModule, isAsync, isIgnored } =
-              getScriptInfo(node)
+            // script tags
+            if (node.nodeName === 'script') {
+              const {
+                src,
+                srcSourceCodeLocation,
+                isModule,
+                isAsync,
+                isIgnored,
+              } = getScriptInfo(node)
 
-            if (isIgnored) {
-              removeViteIgnoreAttr(s, node.sourceCodeLocation!)
-            } else {
-              const url = src && src.value
-              const isPublicFile = !!(url && checkPublicFile(url, config))
-              if (isPublicFile) {
-                // referencing public dir url, prefix with base
-                overwriteAttrValue(
-                  s,
-                  srcSourceCodeLocation!,
-                  partialEncodeURIPath(toOutputPublicFilePath(url)),
-                )
-              }
-
-              if (isModule) {
-                inlineModuleIndex++
-                if (url && !isExcludedUrl(url) && !isPublicFile) {
-                  setModuleSideEffectPromises.push(
-                    this.resolve(url, id).then((resolved) => {
-                      if (!resolved) {
-                        return Promise.reject(
-                          new Error(`Failed to resolve ${url} from ${id}`),
-                        )
-                      }
-                      // set moduleSideEffects to keep the module even if `treeshake.moduleSideEffects=false` is set
-                      const moduleInfo = this.getModuleInfo(resolved.id)
-                      if (moduleInfo) {
-                        moduleInfo.moduleSideEffects = true
-                      } else if (!resolved.external) {
-                        return this.load(resolved).then((mod) => {
-                          mod.moduleSideEffects = true
-                        })
-                      }
-                    }),
+              if (isIgnored) {
+                removeViteIgnoreAttr(s, node.sourceCodeLocation!)
+              } else {
+                const url = src && src.value
+                const isPublicFile = !!(url && checkPublicFile(url, config))
+                if (isPublicFile) {
+                  // referencing public dir url, prefix with base
+                  overwriteAttrValue(
+                    s,
+                    srcSourceCodeLocation!,
+                    partialEncodeURIPath(toOutputPublicFilePath(url)),
                   )
-                  // <script type="module" src="..."/>
-                  // add it as an import
-                  js += `\nimport ${JSON.stringify(url)}`
-                  shouldRemove = true
+                }
+
+                if (isModule) {
+                  inlineModuleIndex++
+                  if (url && !isExcludedUrl(url) && !isPublicFile) {
+                    setModuleSideEffectPromises.push(
+                      this.resolve(url, id).then((resolved) => {
+                        if (!resolved) {
+                          return Promise.reject(
+                            new Error(`Failed to resolve ${url} from ${id}`),
+                          )
+                        }
+                        // set moduleSideEffects to keep the module even if `treeshake.moduleSideEffects=false` is set
+                        const moduleInfo = this.getModuleInfo(resolved.id)
+                        if (moduleInfo) {
+                          moduleInfo.moduleSideEffects = true
+                        } else if (!resolved.external) {
+                          return this.load(resolved).then((mod) => {
+                            mod.moduleSideEffects = true
+                          })
+                        }
+                      }),
+                    )
+                    // <script type="module" src="..."/>
+                    // add it as an import
+                    js += `\nimport ${JSON.stringify(url)}`
+                    shouldRemove = true
+                  } else if (node.childNodes.length) {
+                    const scriptNode =
+                      node.childNodes.pop() as DefaultTreeAdapterMap['textNode']
+                    const contents = scriptNode.value
+                    // <script type="module">...</script>
+                    const filePath = id.replace(normalizePath(config.root), '')
+                    addToHTMLProxyCache(config, filePath, inlineModuleIndex, {
+                      code: contents,
+                    })
+                    js += `\nimport "${id}?html-proxy&index=${inlineModuleIndex}.js"`
+                    shouldRemove = true
+                  }
+
+                  everyScriptIsAsync &&= isAsync
+                  someScriptsAreAsync ||= isAsync
+                  someScriptsAreDefer ||= !isAsync
+                } else if (url && !isPublicFile) {
+                  if (!isExcludedUrl(url)) {
+                    config.logger.warn(
+                      `<script src="${url}"> in "${publicPath}" can't be bundled without type="module" attribute`,
+                    )
+                  }
                 } else if (node.childNodes.length) {
                   const scriptNode =
                     node.childNodes.pop() as DefaultTreeAdapterMap['textNode']
-                  const contents = scriptNode.value
-                  // <script type="module">...</script>
-                  const filePath = id.replace(normalizePath(config.root), '')
-                  addToHTMLProxyCache(config, filePath, inlineModuleIndex, {
-                    code: contents,
-                  })
-                  js += `\nimport "${id}?html-proxy&index=${inlineModuleIndex}.js"`
-                  shouldRemove = true
-                }
-
-                everyScriptIsAsync &&= isAsync
-                someScriptsAreAsync ||= isAsync
-                someScriptsAreDefer ||= !isAsync
-              } else if (url && !isPublicFile) {
-                if (!isExcludedUrl(url)) {
-                  config.logger.warn(
-                    `<script src="${url}"> in "${publicPath}" can't be bundled without type="module" attribute`,
+                  scriptUrls.push(
+                    ...extractImportExpressionFromClassicScript(scriptNode),
                   )
                 }
-              } else if (node.childNodes.length) {
-                const scriptNode =
-                  node.childNodes.pop() as DefaultTreeAdapterMap['textNode']
-                scriptUrls.push(
-                  ...extractImportExpressionFromClassicScript(scriptNode),
-                )
               }
             }
-          }
 
-          // For asset references in index.html, also generate an import
-          // statement for each - this will be handled by the asset plugin
-          const assetAttributes = getNodeAssetAttributes(node)
-          for (const attr of assetAttributes) {
-            if (attr.type === 'remove') {
-              s.remove(attr.location.startOffset, attr.location.endOffset)
-              continue
-            } else if (attr.type === 'srcset') {
-              assetUrlsPromises.push(
-                (async () => {
-                  const processedEncodedUrl = await processSrcSet(
-                    attr.value,
-                    async ({ url }) => {
-                      const decodedUrl = decodeURIIfPossible(url)
-                      if (
-                        decodedUrl !== undefined &&
-                        !isExcludedUrl(decodedUrl)
-                      ) {
-                        const result = await processAssetUrl(url)
-                        return result !== decodedUrl
-                          ? encodeURIPath(result)
-                          : url
-                      }
-                      return url
-                    },
-                  )
-                  if (processedEncodedUrl !== attr.value) {
-                    overwriteAttrValue(s, attr.location, processedEncodedUrl)
-                  }
-                })(),
-              )
-            } else if (attr.type === 'src') {
-              const url = decodeURIIfPossible(attr.value)
-              if (url === undefined) {
-                // ignore it
-              } else if (checkPublicFile(url, config)) {
-                overwriteAttrValue(
-                  s,
-                  attr.location,
-                  partialEncodeURIPath(toOutputPublicFilePath(url)),
-                )
-              } else if (!isExcludedUrl(url)) {
-                if (
-                  node.nodeName === 'link' &&
-                  isCSSRequest(url) &&
-                  // should not be converted if following attributes are present (#6748)
-                  !('media' in attr.attributes || 'disabled' in attr.attributes)
-                ) {
-                  // CSS references, convert to import
-                  const importExpression = `\nimport ${JSON.stringify(url)}`
-                  styleUrls.push({
-                    url,
-                    start: nodeStartWithLeadingWhitespace(node),
-                    end: node.sourceCodeLocation!.endOffset,
-                  })
-                  js += importExpression
-                } else {
-                  // If the node is a link, check if it can be inlined. If not, set `shouldInline`
-                  // to `false` to force no inline. If `undefined`, it leaves to the default heuristics.
-                  const isNoInlineLink =
-                    node.nodeName === 'link' &&
-                    attr.attributes.rel &&
-                    parseRelAttr(attr.attributes.rel).some((v) =>
-                      noInlineLinkRels.has(v),
+            // For asset references in index.html, also generate an import
+            // statement for each - this will be handled by the asset plugin
+            const assetAttributes = getNodeAssetAttributes(node)
+            for (const attr of assetAttributes) {
+              if (attr.type === 'remove') {
+                s.remove(attr.location.startOffset, attr.location.endOffset)
+                continue
+              } else if (attr.type === 'srcset') {
+                assetUrlsPromises.push(
+                  (async () => {
+                    const processedEncodedUrl = await processSrcSet(
+                      attr.value,
+                      async ({ url }) => {
+                        const decodedUrl = decodeURIIfPossible(url)
+                        if (
+                          decodedUrl !== undefined &&
+                          !isExcludedUrl(decodedUrl)
+                        ) {
+                          const result = await processAssetUrl(url)
+                          return result !== decodedUrl
+                            ? encodeURIPath(result)
+                            : url
+                        }
+                        return url
+                      },
                     )
-                  const shouldInline = isNoInlineLink ? false : undefined
-                  assetUrlsPromises.push(
-                    (async () => {
-                      const processedUrl = await processAssetUrl(
-                        url,
-                        shouldInline,
-                      )
-                      if (processedUrl !== url) {
-                        overwriteAttrValue(
-                          s,
-                          attr.location,
-                          partialEncodeURIPath(processedUrl),
-                        )
-                      }
-                    })(),
+                    if (processedEncodedUrl !== attr.value) {
+                      overwriteAttrValue(s, attr.location, processedEncodedUrl)
+                    }
+                  })(),
+                )
+              } else if (attr.type === 'src') {
+                const url = decodeURIIfPossible(attr.value)
+                if (url === undefined) {
+                  // ignore it
+                } else if (checkPublicFile(url, config)) {
+                  overwriteAttrValue(
+                    s,
+                    attr.location,
+                    partialEncodeURIPath(toOutputPublicFilePath(url)),
                   )
+                } else if (!isExcludedUrl(url)) {
+                  if (
+                    node.nodeName === 'link' &&
+                    isCSSRequest(url) &&
+                    // should not be converted if following attributes are present (#6748)
+                    !(
+                      'media' in attr.attributes ||
+                      'disabled' in attr.attributes
+                    )
+                  ) {
+                    // CSS references, convert to import
+                    const importExpression = `\nimport ${JSON.stringify(url)}`
+                    styleUrls.push({
+                      url,
+                      start: nodeStartWithLeadingWhitespace(node),
+                      end: node.sourceCodeLocation!.endOffset,
+                    })
+                    js += importExpression
+                  } else {
+                    // If the node is a link, check if it can be inlined. If not, set `shouldInline`
+                    // to `false` to force no inline. If `undefined`, it leaves to the default heuristics.
+                    const isNoInlineLink =
+                      node.nodeName === 'link' &&
+                      attr.attributes.rel &&
+                      parseRelAttr(attr.attributes.rel).some((v) =>
+                        noInlineLinkRels.has(v),
+                      )
+                    const shouldInline = isNoInlineLink ? false : undefined
+                    assetUrlsPromises.push(
+                      (async () => {
+                        const processedUrl = await processAssetUrl(
+                          url,
+                          shouldInline,
+                        )
+                        if (processedUrl !== url) {
+                          overwriteAttrValue(
+                            s,
+                            attr.location,
+                            partialEncodeURIPath(processedUrl),
+                          )
+                        }
+                      })(),
+                    )
+                  }
                 }
               }
             }
-          }
 
-          const inlineStyle = findNeedTransformStyleAttribute(node)
-          if (inlineStyle) {
-            inlineModuleIndex++
-            // replace `inline style` with __VITE_INLINE_CSS__**_**__
-            // and import css in js code
-            const code = inlineStyle.attr.value
-            const filePath = id.replace(normalizePath(config.root), '')
-            addToHTMLProxyCache(config, filePath, inlineModuleIndex, { code })
-            // will transform with css plugin and cache result with css-post plugin
-            js += `\nimport "${id}?html-proxy&inline-css&style-attr&index=${inlineModuleIndex}.css"`
-            const hash = getHash(cleanUrl(id))
-            // will transform in `applyHtmlTransforms`
-            overwriteAttrValue(
-              s,
-              inlineStyle.location!,
-              `__VITE_INLINE_CSS__${hash}_${inlineModuleIndex}__`,
-            )
-          }
+            const inlineStyle = findNeedTransformStyleAttribute(node)
+            if (inlineStyle) {
+              inlineModuleIndex++
+              // replace `inline style` with __VITE_INLINE_CSS__**_**__
+              // and import css in js code
+              const code = inlineStyle.attr.value
+              const filePath = id.replace(normalizePath(config.root), '')
+              addToHTMLProxyCache(config, filePath, inlineModuleIndex, { code })
+              // will transform with css plugin and cache result with css-post plugin
+              js += `\nimport "${id}?html-proxy&inline-css&style-attr&index=${inlineModuleIndex}.css"`
+              const hash = getHash(cleanUrl(id))
+              // will transform in `applyHtmlTransforms`
+              overwriteAttrValue(
+                s,
+                inlineStyle.location!,
+                `__VITE_INLINE_CSS__${hash}_${inlineModuleIndex}__`,
+              )
+            }
 
-          // <style>...</style>
-          if (node.nodeName === 'style' && node.childNodes.length) {
-            const styleNode =
-              node.childNodes.pop() as DefaultTreeAdapterMap['textNode']
-            const filePath = id.replace(normalizePath(config.root), '')
-            inlineModuleIndex++
-            addToHTMLProxyCache(config, filePath, inlineModuleIndex, {
-              code: styleNode.value,
-            })
-            js += `\nimport "${id}?html-proxy&inline-css&index=${inlineModuleIndex}.css"`
-            const hash = getHash(cleanUrl(id))
-            // will transform in `applyHtmlTransforms`
-            s.update(
-              styleNode.sourceCodeLocation!.startOffset,
-              styleNode.sourceCodeLocation!.endOffset,
-              `__VITE_INLINE_CSS__${hash}_${inlineModuleIndex}__`,
-            )
-          }
+            // <style>...</style>
+            if (node.nodeName === 'style' && node.childNodes.length) {
+              const styleNode =
+                node.childNodes.pop() as DefaultTreeAdapterMap['textNode']
+              const filePath = id.replace(normalizePath(config.root), '')
+              inlineModuleIndex++
+              addToHTMLProxyCache(config, filePath, inlineModuleIndex, {
+                code: styleNode.value,
+              })
+              js += `\nimport "${id}?html-proxy&inline-css&index=${inlineModuleIndex}.css"`
+              const hash = getHash(cleanUrl(id))
+              // will transform in `applyHtmlTransforms`
+              s.update(
+                styleNode.sourceCodeLocation!.startOffset,
+                styleNode.sourceCodeLocation!.endOffset,
+                `__VITE_INLINE_CSS__${hash}_${inlineModuleIndex}__`,
+              )
+            }
 
-          if (shouldRemove) {
-            // remove the script tag from the html. we are going to inject new
-            // ones in the end.
-            s.remove(
-              nodeStartWithLeadingWhitespace(node),
-              node.sourceCodeLocation!.endOffset,
-            )
-          }
-        })
+            if (shouldRemove) {
+              // remove the script tag from the html. we are going to inject new
+              // ones in the end.
+              s.remove(
+                nodeStartWithLeadingWhitespace(node),
+                node.sourceCodeLocation!.endOffset,
+              )
+            }
+          },
+          config.logger.warn,
+        )
 
         isAsyncScriptMap.get(config)!.set(id, everyScriptIsAsync)
 
@@ -1241,37 +1263,42 @@ export function injectNonceAttributeTagHook(
 
     const s = new MagicString(html)
 
-    await traverseHtml(html, filename, (node) => {
-      if (!nodeIsElement(node)) {
-        return
-      }
-
-      const { nodeName, attrs, sourceCodeLocation } = node
-
-      if (
-        nodeName === 'script' ||
-        nodeName === 'style' ||
-        (nodeName === 'link' &&
-          attrs.some(
-            (attr) =>
-              attr.name === 'rel' &&
-              parseRelAttr(attr.value).some((a) => processRelType.has(a)),
-          ))
-      ) {
-        // If we already have a nonce attribute, we don't need to add another one
-        if (attrs.some(({ name }) => name === 'nonce')) {
+    await traverseHtml(
+      html,
+      filename,
+      (node) => {
+        if (!nodeIsElement(node)) {
           return
         }
 
-        const startTagEndOffset = sourceCodeLocation!.startTag!.endOffset
+        const { nodeName, attrs, sourceCodeLocation } = node
 
-        // if the closing of the start tag includes a `/`, the offset should be 2 so the nonce
-        // is appended prior to the `/`
-        const appendOffset = html[startTagEndOffset - 2] === '/' ? 2 : 1
+        if (
+          nodeName === 'script' ||
+          nodeName === 'style' ||
+          (nodeName === 'link' &&
+            attrs.some(
+              (attr) =>
+                attr.name === 'rel' &&
+                parseRelAttr(attr.value).some((a) => processRelType.has(a)),
+            ))
+        ) {
+          // If we already have a nonce attribute, we don't need to add another one
+          if (attrs.some(({ name }) => name === 'nonce')) {
+            return
+          }
 
-        s.appendRight(startTagEndOffset - appendOffset, ` nonce="${nonce}"`)
-      }
-    })
+          const startTagEndOffset = sourceCodeLocation!.startTag!.endOffset
+
+          // if the closing of the start tag includes a `/`, the offset should be 2 so the nonce
+          // is appended prior to the `/`
+          const appendOffset = html[startTagEndOffset - 2] === '/' ? 2 : 1
+
+          s.appendRight(startTagEndOffset - appendOffset, ` nonce="${nonce}"`)
+        }
+      },
+      config.logger.warn,
+    )
 
     return s.toString()
   }
