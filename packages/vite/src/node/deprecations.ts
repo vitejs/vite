@@ -41,6 +41,13 @@ const deprecationMessages = {
 
 let _ignoreDeprecationWarnings = false
 
+export function isFutureDeprecationEnabled(
+  config: ResolvedConfig,
+  type: keyof FutureOptions,
+): boolean {
+  return !!config.future?.[type]
+}
+
 // Later we could have a `warnDeprecation` utils when the deprecation is landed
 /**
  * Warn about future deprecations.
