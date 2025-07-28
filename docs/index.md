@@ -10,6 +10,7 @@ markdownStyles: false
 ---
 
 <script setup>
+import { useData } from 'vitepress'
 import { onBeforeUnmount, onMounted, ref } from 'vue'
 
 import Hero from '.vitepress/theme/components/landing/1. hero-section/HeroSection.vue'
@@ -27,15 +28,14 @@ import FeatureTypedAPI from './.vitepress/theme/components/landing/2. feature-se
 import FeatureSSRSupport from './.vitepress/theme/components/landing/2. feature-section/FeatureSSRSupport.vue'
 import FeatureCI from './.vitepress/theme/components/landing/2. feature-section/FeatureCI.vue'
 
-const darkMode = ref(false)
+const { isDark } = useData()
 
 onMounted(() => {
-  darkMode.value = document.documentElement.classList.contains('dark')
   document.documentElement.classList.add('dark')
 })
 
 onBeforeUnmount(() => {
-  document.documentElement.classList.toggle('dark', darkMode.value)
+  document.documentElement.classList.toggle('dark', isDark.value)
 })
 </script>
 
