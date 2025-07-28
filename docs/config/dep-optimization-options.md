@@ -4,7 +4,7 @@
 
 Unless noted, the options in this section are only applied to the dependency optimizer, which is only used in dev.
 
-## optimizeDeps.entries
+## optimizeDeps.entries <NonInheritBadge />
 
 - **Type:** `string | string[]`
 
@@ -12,7 +12,7 @@ By default, Vite will crawl all your `.html` files to detect dependencies that n
 
 If neither of these fit your needs, you can specify custom entries using this option - the value should be a [`tinyglobby` pattern](https://github.com/SuperchupuDev/tinyglobby) or array of patterns that are relative from Vite project root. This will overwrite default entries inference. Only `node_modules` and `build.outDir` folders will be ignored by default when `optimizeDeps.entries` is explicitly defined. If other folders need to be ignored, you can use an ignore pattern as part of the entries list, marked with an initial `!`. `node_modules` will not be ignored for patterns that explicitly include the string `node_modules`.
 
-## optimizeDeps.exclude
+## optimizeDeps.exclude <NonInheritBadge />
 
 - **Type:** `string[]`
 
@@ -33,7 +33,7 @@ export default defineConfig({
 
 :::
 
-## optimizeDeps.include
+## optimizeDeps.include <NonInheritBadge />
 
 - **Type:** `string[]`
 
@@ -51,7 +51,7 @@ export default defineConfig({
 })
 ```
 
-## optimizeDeps.esbuildOptions
+## optimizeDeps.esbuildOptions <NonInheritBadge />
 
 - **Type:** [`Omit`](https://www.typescriptlang.org/docs/handbook/utility-types.html#omittype-keys)`<`[`EsbuildBuildOptions`](https://esbuild.github.io/api/#general-options)`,
 | 'bundle'
@@ -72,20 +72,20 @@ Certain options are omitted since changing them would not be compatible with Vit
 - `external` is also omitted, use Vite's `optimizeDeps.exclude` option
 - `plugins` are merged with Vite's dep plugin
 
-## optimizeDeps.force
+## optimizeDeps.force <NonInheritBadge />
 
 - **Type:** `boolean`
 
 Set to `true` to force dependency pre-bundling, ignoring previously cached optimized dependencies.
 
-## optimizeDeps.noDiscovery
+## optimizeDeps.noDiscovery <NonInheritBadge />
 
 - **Type:** `boolean`
 - **Default:** `false`
 
 When set to `true`, automatic dependency discovery will be disabled and only dependencies listed in `optimizeDeps.include` will be optimized. CJS-only dependencies must be present in `optimizeDeps.include` during dev.
 
-## optimizeDeps.holdUntilCrawlEnd
+## optimizeDeps.holdUntilCrawlEnd <NonInheritBadge />
 
 - **Experimental:** [Give Feedback](https://github.com/vitejs/vite/discussions/15834)
 - **Type:** `boolean`
@@ -93,7 +93,7 @@ When set to `true`, automatic dependency discovery will be disabled and only dep
 
 When enabled, it will hold the first optimized deps results until all static imports are crawled on cold start. This avoids the need for full-page reloads when new dependencies are discovered and they trigger the generation of new common chunks. If all dependencies are found by the scanner plus the explicitly defined ones in `include`, it is better to disable this option to let the browser process more requests in parallel.
 
-## optimizeDeps.disabled
+## optimizeDeps.disabled <NonInheritBadge />
 
 - **Deprecated**
 - **Experimental:** [Give Feedback](https://github.com/vitejs/vite/discussions/13839)
@@ -108,7 +108,7 @@ To disable the optimizer completely, use `optimizeDeps.noDiscovery: true` to dis
 Optimizing dependencies during build time was an **experimental** feature. Projects trying out this strategy also removed `@rollup/plugin-commonjs` using `build.commonjsOptions: { include: [] }`. If you did so, a warning will guide you to re-enable it to support CJS only packages while bundling.
 :::
 
-## optimizeDeps.needsInterop
+## optimizeDeps.needsInterop <NonInheritBadge />
 
 - **Experimental**
 - **Type:** `string[]`
