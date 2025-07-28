@@ -1,7 +1,11 @@
 // @ts-check
 
 import { BroadcastChannel, parentPort } from 'node:worker_threads'
-import { ESModulesEvaluator, ModuleRunner, createNodeImportMeta } from 'vite/module-runner'
+import {
+  ESModulesEvaluator,
+  ModuleRunner,
+  createNodeImportMeta,
+} from 'vite/module-runner'
 import { createBirpc } from 'birpc'
 
 if (!parentPort) {
