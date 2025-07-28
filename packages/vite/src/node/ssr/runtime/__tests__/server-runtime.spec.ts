@@ -3,12 +3,17 @@ import { posix, win32 } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { describe, expect, vi } from 'vitest'
 import { isWindows } from '../../../../shared/utils'
+import type { ExternalFetchResult } from '../../../../shared/invokeMethods'
 import { createModuleRunnerTester } from './utils'
 
 const _URL = URL
 
 describe('module runner initialization', async () => {
-  const it = await createModuleRunnerTester()
+  const it = await createModuleRunnerTester({
+    resolve: {
+      external: ['tinyglobby'],
+    },
+  })
 
   it('correctly runs ssr code', async ({ runner }) => {
     const mod = await runner.import('/fixtures/simple.js')
@@ -390,6 +395,15 @@ describe('module runner initialization', async () => {
     `,
     )
   })
+
+  it(`handle Object variable`, async ({ runner }) => {
+    const mod = await runner.import('/fixtures/top-level-object.js')
+    expect(mod).toMatchInlineSnapshot(`
+      {
+        "Object": "my-object",
+      }
+    `)
+  })
 })
 
 describe('optimize-deps', async () => {
@@ -479,5 +493,25 @@ describe('virtual module hmr', async () => {
       const mod = runner.evaluatedModules.getModuleById('\0virtual:test')
       expect(mod?.exports.default).toBe('reloaded')
     })
+  })
+
+  it("the external module's ID and file are resolved correctly", async ({
+    server,
+    runner,
+  }) => {
+    await runner.import(
+      posix.join(server.config.root, 'fixtures/import-external.ts'),
+    )
+    const moduleNode = runner.evaluatedModules.getModuleByUrl('tinyglobby')!
+    const meta = moduleNode.meta as ExternalFetchResult
+    if (process.platform === 'win32') {
+      expect(meta.externalize).toMatch(/^file:\/\/\/\w:\//) // file:///C:/
+      expect(moduleNode.id).toMatch(/^\w:\//) // C:/
+      expect(moduleNode.file).toMatch(/^\w:\//) // C:/
+    } else {
+      expect(meta.externalize).toMatch(/^file:\/\/\//) // file:///
+      expect(moduleNode.id).toMatch(/^\//) // /
+      expect(moduleNode.file).toMatch(/^\//) // /
+    }
   })
 })

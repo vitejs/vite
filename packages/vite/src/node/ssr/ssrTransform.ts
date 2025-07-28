@@ -43,6 +43,7 @@ export const ssrModuleExportsKey = `__vite_ssr_exports__`
 export const ssrImportKey = `__vite_ssr_import__`
 export const ssrDynamicImportKey = `__vite_ssr_dynamic_import__`
 export const ssrExportAllKey = `__vite_ssr_exportAll__`
+export const ssrExportNameKey = `__vite_ssr_exportName__`
 export const ssrImportMetaKey = `__vite_ssr_import_meta__`
 
 const hashbangRE = /^#!.*\n/
@@ -156,8 +157,7 @@ async function ssrTransformScript(
     // wrap with try/catch to fallback to `undefined` for backward compat.
     s.appendLeft(
       fileStartIndex,
-      `Object.defineProperty(${ssrModuleExportsKey}, ${JSON.stringify(name)}, ` +
-        `{ enumerable: true, configurable: true, get(){ try { return ${local} } catch {} }});\n`,
+      `${ssrExportNameKey}(${JSON.stringify(name)}, () => { try { return ${local} } catch {} });\n`,
     )
   }
 

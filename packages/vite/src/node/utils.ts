@@ -495,19 +495,12 @@ export function numberToPos(source: string, offset: number | Pos): Pos {
       `offset is longer than source length! offset ${offset} > length ${source.length}`,
     )
   }
-  const lines = source.split(splitRE)
-  let counted = 0
-  let line = 0
-  let column = 0
-  for (; line < lines.length; line++) {
-    const lineLength = lines[line].length + 1
-    if (counted + lineLength >= offset) {
-      column = offset - counted + 1
-      break
-    }
-    counted += lineLength
+
+  const lines = source.slice(0, offset).split(splitRE)
+  return {
+    line: lines.length,
+    column: lines[lines.length - 1].length,
   }
-  return { line: line + 1, column }
 }
 
 export function generateCodeFrame(
@@ -970,12 +963,12 @@ export async function resolveHostname(
   return { host, name }
 }
 
-export async function resolveServerUrls(
+export function resolveServerUrls(
   server: Server,
   options: CommonServerOptions,
   httpsOptions: HttpsServerOptions | undefined,
   config: ResolvedConfig,
-): Promise<ResolvedServerUrls> {
+): ResolvedServerUrls {
   const address = server.address()
 
   const isAddressInfo = (x: any): x is AddressInfo => x?.address
@@ -985,7 +978,7 @@ export async function resolveServerUrls(
 
   const local: string[] = []
   const network: string[] = []
-  const hostname = await resolveHostname(options.host)
+  const hostname = config.server.hostname
   const protocol = options.https ? 'https' : 'http'
   const port = address.port
   const base =
@@ -1251,8 +1244,9 @@ function mergeConfigRecursively(
       merged[key] = [].concat(existing, value)
       continue
     } else if (
-      key === 'noExternal' &&
-      (rootPath === 'ssr' || rootPath === 'resolve') &&
+      ((key === 'noExternal' &&
+        (rootPath === 'ssr' || rootPath === 'resolve')) ||
+        (key === 'allowedHosts' && rootPath === 'server')) &&
       (existing === true || value === true)
     ) {
       merged[key] = true
@@ -1648,4 +1642,24 @@ export function getServerUrlByHost(
     }
   }
   return resolvedUrls?.local[0] ?? resolvedUrls?.network[0]
+}
+
+let lastDateNow = 0
+/**
+ * Similar to `Date.now()`, but strictly monotonically increasing.
+ *
+ * This function will never return the same value.
+ * Thus, the value may differ from the actual time.
+ *
+ * related: https://github.com/vitejs/vite/issues/19804
+ */
+export function monotonicDateNow(): number {
+  const now = Date.now()
+  if (now > lastDateNow) {
+    lastDateNow = now
+    return lastDateNow
+  }
+
+  lastDateNow++
+  return lastDateNow
 }

@@ -120,6 +120,12 @@ Some errors are masked and hidden away because of the layers of abstraction and 
 
 You can set the `--debug` option to turn on debugging logs (e.g. `vite --debug resolve`). To see all debug logs, you can set `vite --debug *`, but be warned that it will be quite noisy. You can run `grep -r "createDebugger('vite:" packages/vite/src/` to see a list of available debug scopes.
 
+### Disabling Source Maps
+
+Source maps for Vite's source code are enabled by default when Vite is placed outside `node_modules` so that you can easily debug it. When bundling Vite in watch mode, source maps will be generated.
+
+However, this behavior may not be desirable when you are developing source map related features. In that case, you can disable source maps by setting the `DEBUG_DISABLE_SOURCE_MAP` environment variable to `1` when running Vite (e.g. `DEBUG_DISABLE_SOURCE_MAP=1 vite`). This environment variable can also be used to disable source map generation.
+
 ## Testing Vite against external packages
 
 You may wish to test your locally modified copy of Vite against another package that is built with Vite. For pnpm, after building Vite, you can use [`pnpm.overrides`](https://pnpm.io/package_json#pnpmoverrides) to do this. Note that `pnpm.overrides` must be specified in the root `package.json`, and you must list the package as a dependency in the root `package.json`:
@@ -127,7 +133,7 @@ You may wish to test your locally modified copy of Vite against another package 
 ```json
 {
   "dependencies": {
-    "vite": "^6.0.0"
+    "vite": "^7.0.0"
   },
   "pnpm": {
     "overrides": {
@@ -226,18 +232,15 @@ For a mock dependency, make sure you add a `@vitejs/test-` prefix to the package
 - Checkout a topic branch from a base branch (e.g. `main`), and merge back against that branch.
 
 - If adding a new feature:
-
   - Add accompanying test case.
   - Provide a convincing reason to add this feature. Ideally, you should open a suggestion issue first, and have it approved before working on it.
 
 - If fixing a bug:
-
   - If you are resolving a special issue, add `(fix #xxxx[,#xxxx])` (#xxxx is the issue id) in your PR title for a better release log (e.g. `fix: update entities encoding/decoding (fix #3899)`).
   - Provide a detailed description of the bug in the PR. Live demo preferred.
   - Add appropriate test coverage if applicable.
 
 - If it's a chore:
-
   - For typos and comment changes, try to combine multiple of them into a single PR.
   - **Note that we discourage contributors from submitting code refactors that are largely stylistic.** Code refactors are only accepted if it improves performance, or objectively improves code quality (e.g. makes a related bug fix or feature implementation easier, and it is as a separate PR to improve git history).
     - The reason is that code readability is subjective. The maintainers of this project have chosen to write the code in its current style based on our preferences, and we do not want to spend time explaining our stylistic preferences. Contributors should just respect the established conventions when contributing code. Another aspect of it is that large scale stylistic changes result in massive diffs that touch multiple files, adding noise to the git history and makes tracing behavior changes across commits more cumbersome.

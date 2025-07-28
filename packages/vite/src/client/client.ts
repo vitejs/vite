@@ -105,17 +105,19 @@ const transport = normalizeModuleRunnerTransport(
 
 let willUnload = false
 if (typeof window !== 'undefined') {
-  window.addEventListener('beforeunload', () => {
+  // window can be misleadingly defined in a worker if using define (see #19307)
+  window.addEventListener?.('beforeunload', () => {
     willUnload = true
   })
   window.addEventListener('error', (error) => {
-    console.log(error);
     fetch('/@vite/errors', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
+        stack: error.error.stack,
+        filename: error.filename,
         message: error.message,
         colno: error.colno,
         lineno: error.lineno,
@@ -145,7 +147,7 @@ const debounceReload = (time: number) => {
     }, time)
   }
 }
-const pageReload = debounceReload(50)
+const pageReload = debounceReload(20)
 
 const hmrClient = new HMRClient(
   {

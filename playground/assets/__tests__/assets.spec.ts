@@ -14,7 +14,6 @@ import {
   readFile,
   readManifest,
   serverLogs,
-  untilUpdated,
   viteTestUrl,
   watcher,
 } from '~utils'
@@ -342,7 +341,7 @@ describe('css url() references', () => {
       editFile('nested/fragment-bg-hmr.svg', (code) =>
         code.replace('fill="blue"', 'fill="red"'),
       )
-      await untilUpdated(() => getBg('.css-url-svg'), 'red')
+      await expect.poll(() => getBg('.css-url-svg')).toMatch('red')
     }
   })
 
@@ -360,7 +359,7 @@ describe('css url() references', () => {
       editFile('nested/fragment-bg-hmr2.svg', (code) =>
         code.replace('fill="blue"', 'fill="red"'),
       )
-      await untilUpdated(() => getBg('.css-url-svg'), 'red')
+      await expect.poll(() => getBg('.css-url-svg')).toMatch('red')
     }
   })
 })
@@ -438,10 +437,7 @@ describe('svg fragments', () => {
   })
 
   test('via css url()', async () => {
-    const bg = await page.evaluate(() => {
-      return getComputedStyle(document.querySelector('.icon')).backgroundImage
-    })
-    expect(bg).toMatch(/svg#icon-clock-view"\)$/)
+    expect(await getBg('.icon')).toMatch(/svg#icon-clock-view"\)$/)
   })
 
   test('from js import', async () => {
@@ -540,7 +536,31 @@ describe.runIf(isBuild)('encodeURI', () => {
 })
 
 test('new URL(..., import.meta.url)', async () => {
-  expect(await page.textContent('.import-meta-url')).toMatch(assetMatch)
+  const imgMatch = isBuild
+    ? /\/foo\/bar\/assets\/img-[-\w]{8}\.png/
+    : '/foo/bar/import-meta-url/img.png'
+
+  expect(await page.textContent('.import-meta-url')).toMatch(imgMatch)
+  if (isServe) {
+    const loadPromise = page.waitForEvent('load')
+    const newContent = readFile('import-meta-url/img-update.png', null)
+    let oldContent: Buffer
+    editFile('import-meta-url/img.png', null, (_oldContent) => {
+      oldContent = _oldContent
+      return newContent
+    })
+    await loadPromise // expect reload
+    await expect
+      .poll(() => page.textContent('.import-meta-url'))
+      .toMatch(imgMatch)
+
+    const loadPromise2 = page.waitForEvent('load')
+    editFile('import-meta-url/img.png', null, (_) => oldContent)
+    await loadPromise2 // expect reload
+    await expect
+      .poll(() => page.textContent('.import-meta-url'))
+      .toMatch(imgMatch)
+  }
 })
 
 test('new URL("@/...", import.meta.url)', async () => {
@@ -666,11 +686,11 @@ test('inline style test', async () => {
 
 if (!isBuild) {
   test('@import in html style tag hmr', async () => {
-    await untilUpdated(() => getColor('.import-css'), 'rgb(0, 136, 255)')
+    await expect.poll(() => getColor('.import-css')).toBe('rgb(0, 136, 255)')
     const loadPromise = page.waitForEvent('load')
     editFile('./css/import.css', (code) => code.replace('#0088ff', '#00ff88'))
     await loadPromise
-    await untilUpdated(() => getColor('.import-css'), 'rgb(0, 255, 136)')
+    await expect.poll(() => getColor('.import-css')).toBe('rgb(0, 255, 136)')
   })
 }
 

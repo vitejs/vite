@@ -10,27 +10,31 @@ import licensePlugin from './rollupLicensePlugin'
 const pkg = JSON.parse(
   readFileSync(new URL('./package.json', import.meta.url)).toString(),
 )
-
 const __dirname = fileURLToPath(new URL('.', import.meta.url))
+const disableSourceMap = !!process.env.DEBUG_DISABLE_SOURCE_MAP
 
 const envConfig = defineConfig({
   input: path.resolve(__dirname, 'src/client/env.ts'),
   platform: 'browser',
+  transform: {
+    target: 'es2020',
+  },
   output: {
     dir: path.resolve(__dirname, 'dist'),
     entryFileNames: 'client/env.mjs',
-    target: 'es2020',
   },
 })
 
 const clientConfig = defineConfig({
   input: path.resolve(__dirname, 'src/client/client.ts'),
   platform: 'browser',
+  transform: {
+    target: 'es2020',
+  },
   external: ['@vite/env'],
   output: {
     dir: path.resolve(__dirname, 'dist'),
     entryFileNames: 'client/client.mjs',
-    target: 'es2020',
   },
 })
 
@@ -141,8 +145,9 @@ const nodeConfig = defineConfig({
       path.resolve(__dirname, 'LICENSE.md'),
       'Vite core license',
       'Vite',
-    ) as Plugin,
+    ),
     writeTypesPlugin(),
+    enableSourceMapsInWatchModePlugin(),
     externalizeDepsInWatchPlugin(),
   ],
 })
@@ -158,7 +163,7 @@ const moduleRunnerConfig = defineConfig({
     'rollup/parseAst',
     ...Object.keys(pkg.dependencies),
   ],
-  plugins: [bundleSizeLimit(54)],
+  plugins: [bundleSizeLimit(54), enableSourceMapsInWatchModePlugin()],
   output: {
     ...sharedNodeOptions.output,
     minify: {
@@ -177,6 +182,17 @@ export default defineConfig([
 ])
 
 // #region Plugins
+
+function enableSourceMapsInWatchModePlugin(): Plugin {
+  return {
+    name: 'enable-source-maps',
+    outputOptions(options) {
+      if (this.meta.watchMode && !disableSourceMap) {
+        options.sourcemap = 'inline'
+      }
+    },
+  }
+}
 
 function writeTypesPlugin(): Plugin {
   return {
@@ -225,12 +241,7 @@ function shimDepsPlugin(deps: Record<string, ShimOptions[]>): Plugin {
     name: 'shim-deps',
     transform: {
       filter: {
-        id: new RegExp(
-          `(?:${Object.keys(deps)
-            // escape is needed for Windows (https://github.com/rolldown/rolldown/issues/4609)
-            .map((k) => k.replace(/\//g, '[\\\\/]'))
-            .join('|')})$`,
-        ),
+        id: new RegExp(`(?:${Object.keys(deps).join('|')})$`),
       },
       handler(code, id) {
         const file = Object.keys(deps).find((file) =>
@@ -328,7 +339,7 @@ function buildTimeImportMetaUrlPlugin(): Plugin {
         for (const { t, ss, se } of imports) {
           if (t === 3 && code.slice(se, se + 4) === '.url') {
             // ignore import.meta.url with /** #__KEEP__ */ comment
-            if (keepCommentRE.test(code.slice(0, se))) {
+            if (keepCommentRE.test(code.slice(0, ss))) {
               keepCommentRE.lastIndex = 0
               continue
             }

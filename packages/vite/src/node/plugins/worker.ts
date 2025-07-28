@@ -262,9 +262,97 @@ export function webWorkerPlugin(config: ResolvedConfig): Plugin {
     },
 
     load: {
-      handler(id) {
-        if (isBuild && workerOrSharedWorkerRE.test(id)) {
-          return ''
+      async handler(id) {
+        const workerMatch = workerOrSharedWorkerRE.exec(id)
+        if (!workerMatch) return
+
+        const { format } = config.worker
+        const workerConstructor =
+          workerMatch[1] === 'sharedworker' ? 'SharedWorker' : 'Worker'
+        const workerType = isBuild
+          ? format === 'es'
+            ? 'module'
+            : 'classic'
+          : 'module'
+        const workerTypeOption = `{
+          ${workerType === 'module' ? `type: "module",` : ''}
+          name: options?.name
+        }`
+
+        let urlCode: string
+        if (isBuild) {
+          if (isWorker && config.bundleChain.at(-1) === cleanUrl(id)) {
+            urlCode = 'self.location.href'
+          } else if (inlineRE.test(id)) {
+            const chunk = await bundleWorkerEntry(config, id)
+            const jsContent = `const jsContent = ${JSON.stringify(chunk.code)};`
+
+            const code =
+              // Using blob URL for SharedWorker results in multiple instances of a same worker
+              workerConstructor === 'Worker'
+                ? `${jsContent}
+            const blob = typeof self !== "undefined" && self.Blob && new Blob([${
+              // NOTE: Revoke the objURL after creating the worker, otherwise it breaks WebKit-based browsers
+              workerType === 'classic'
+                ? `'(self.URL || self.webkitURL).revokeObjectURL(self.location.href);',`
+                : // `URL` is always available, in `Worker[type="module"]`
+                  `'URL.revokeObjectURL(import.meta.url);',`
+            }jsContent], { type: "text/javascript;charset=utf-8" });
+            export default function WorkerWrapper(options) {
+              let objURL;
+              try {
+                objURL = blob && (self.URL || self.webkitURL).createObjectURL(blob);
+                if (!objURL) throw ''
+                const worker = new ${workerConstructor}(objURL, ${workerTypeOption});
+                worker.addEventListener("error", () => {
+                  (self.URL || self.webkitURL).revokeObjectURL(objURL);
+                });
+                return worker;
+              } catch(e) {
+                return new ${workerConstructor}(
+                  'data:text/javascript;charset=utf-8,' + encodeURIComponent(jsContent),
+                  ${workerTypeOption}
+                );
+              }
+            }`
+                : `${jsContent}
+            export default function WorkerWrapper(options) {
+              return new ${workerConstructor}(
+                'data:text/javascript;charset=utf-8,' + encodeURIComponent(jsContent),
+                ${workerTypeOption}
+              );
+            }
+            `
+
+            return {
+              code,
+              // Empty sourcemap to suppress Rollup warning
+              map: { mappings: '' },
+            }
+          } else {
+            urlCode = JSON.stringify(await workerFileToUrl(config, id))
+          }
+        } else {
+          let url = await fileToUrl(this, cleanUrl(id))
+          url = injectQuery(url, `${WORKER_FILE_ID}&type=${workerType}`)
+          urlCode = JSON.stringify(url)
+        }
+
+        if (urlRE.test(id)) {
+          return {
+            code: `export default ${urlCode}`,
+            map: { mappings: '' }, // Empty sourcemap to suppress Rollup warning
+          }
+        }
+
+        return {
+          code: `export default function WorkerWrapper(options) {
+            return new ${workerConstructor}(
+              ${urlCode},
+              ${workerTypeOption}
+            );
+          }`,
+          map: { mappings: '' }, // Empty sourcemap to suppress Rollup warning
         }
       },
     },
@@ -313,106 +401,6 @@ export function webWorkerPlugin(config: ResolvedConfig): Plugin {
               map: s.generateMap({ hires: 'boundary' }),
             }
           }
-          return
-        }
-
-        const workerMatch = workerOrSharedWorkerRE.exec(id)
-        if (!workerMatch) return
-
-        const { format } = config.worker
-        const workerConstructor =
-          workerMatch[1] === 'sharedworker' ? 'SharedWorker' : 'Worker'
-        const workerType = isBuild
-          ? format === 'es'
-            ? 'module'
-            : 'classic'
-          : 'module'
-        const workerTypeOption = `{
-          ${workerType === 'module' ? `type: "module",` : ''}
-          name: options?.name
-        }`
-
-        let urlCode: string
-        if (isBuild) {
-          if (isWorker && config.bundleChain.at(-1) === cleanUrl(id)) {
-            urlCode = 'self.location.href'
-          } else if (inlineRE.test(id)) {
-            const chunk = await bundleWorkerEntry(config, id)
-            const jsContent = `const jsContent = ${JSON.stringify(chunk.code)};`
-
-            const code =
-              // Using blob URL for SharedWorker results in multiple instances of a same worker
-              workerConstructor === 'Worker'
-                ? `${jsContent}
-            const blob = typeof self !== "undefined" && self.Blob && new Blob([${
-              workerType === 'classic'
-                ? ''
-                : // `URL` is always available, in `Worker[type="module"]`
-                  `'URL.revokeObjectURL(import.meta.url);',`
-            }jsContent], { type: "text/javascript;charset=utf-8" });
-            export default function WorkerWrapper(options) {
-              let objURL;
-              try {
-                objURL = blob && (self.URL || self.webkitURL).createObjectURL(blob);
-                if (!objURL) throw ''
-                const worker = new ${workerConstructor}(objURL, ${workerTypeOption});
-                worker.addEventListener("error", () => {
-                  (self.URL || self.webkitURL).revokeObjectURL(objURL);
-                });
-                return worker;
-              } catch(e) {
-                return new ${workerConstructor}(
-                  'data:text/javascript;charset=utf-8,' + encodeURIComponent(jsContent),
-                  ${workerTypeOption}
-                );
-              }${
-                // For module workers, we should not revoke the URL until the worker runs,
-                // otherwise the worker fails to run
-                workerType === 'classic'
-                  ? ` finally {
-                      objURL && (self.URL || self.webkitURL).revokeObjectURL(objURL);
-                    }`
-                  : ''
-              }
-            }`
-                : `${jsContent}
-            export default function WorkerWrapper(options) {
-              return new ${workerConstructor}(
-                'data:text/javascript;charset=utf-8,' + encodeURIComponent(jsContent),
-                ${workerTypeOption}
-              );
-            }
-            `
-
-            return {
-              code,
-              // Empty sourcemap to suppress Rollup warning
-              map: { mappings: '' },
-            }
-          } else {
-            urlCode = JSON.stringify(await workerFileToUrl(config, id))
-          }
-        } else {
-          let url = await fileToUrl(this, cleanUrl(id))
-          url = injectQuery(url, `${WORKER_FILE_ID}&type=${workerType}`)
-          urlCode = JSON.stringify(url)
-        }
-
-        if (urlRE.test(id)) {
-          return {
-            code: `export default ${urlCode}`,
-            map: { mappings: '' }, // Empty sourcemap to suppress Rollup warning
-          }
-        }
-
-        return {
-          code: `export default function WorkerWrapper(options) {
-            return new ${workerConstructor}(
-              ${urlCode},
-              ${workerTypeOption}
-            );
-          }`,
-          map: { mappings: '' }, // Empty sourcemap to suppress Rollup warning
         }
       },
     },

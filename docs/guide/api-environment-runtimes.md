@@ -1,7 +1,9 @@
 # Environment API for Runtimes
 
-:::warning Experimental
-Environment API is experimental. We'll keep the APIs stable during Vite 6 to let the ecosystem experiment and build on top of it. We're planning to stabilize these new APIs with potential breaking changes in Vite 7.
+:::info Release Candidate
+The Environment API is generally in the release candidate phase. We'll maintain stability in the APIs between major releases to allow the ecosystem to experiment and build upon them. However, note that [some specific APIs](/changes/#considering) are still considered experimental.
+
+We plan to stabilize these new APIs (with potential breaking changes) in a future major release once downstream projects have had time to experiment with the new features and validate them.
 
 Resources:
 
@@ -107,6 +109,8 @@ function createWorkerdDevEnvironment(
   return workerdDevEnvironment
 }
 ```
+
+There are [multiple communication levels for the `DevEnvironment`](/guide/api-environment-frameworks#devenvironment-communication-levels). To make it easier for frameworks to write runtime agnostic code, we recommend to implement the most flexible communication level possible.
 
 ## `ModuleRunner`
 

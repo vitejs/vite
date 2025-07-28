@@ -1,13 +1,13 @@
-import type { FetchFunctionOptions, FetchResult } from 'vite/module-runner'
 import type { FSWatcher } from 'dep-types/chokidar'
 import colors from 'picocolors'
+import type { FetchFunctionOptions, FetchResult } from 'vite/module-runner'
 import { BaseEnvironment } from '../baseEnvironment'
 import type {
   EnvironmentOptions,
   ResolvedConfig,
   ResolvedEnvironmentOptions,
 } from '../config'
-import { mergeConfig } from '../utils'
+import { mergeConfig, monotonicDateNow } from '../utils'
 import { fetchModule } from '../ssr/fetchModule'
 import type { DepsOptimizer } from '../optimizer'
 import { isDepOptimizationDisabled } from '../optimizer'
@@ -22,7 +22,10 @@ import { EnvironmentModuleGraph } from './moduleGraph'
 import type { EnvironmentModuleNode } from './moduleGraph'
 import type { HotChannel, NormalizedHotChannel } from './hmr'
 import { getShortName, normalizeHotChannel, updateModules } from './hmr'
-import type { TransformResult } from './transformRequest'
+import type {
+  TransformOptionsInternal,
+  TransformResult,
+} from './transformRequest'
 import { transformRequest } from './transformRequest'
 import type { EnvironmentPluginContainer } from './pluginContainer'
 import {
@@ -202,12 +205,16 @@ export class DevEnvironment extends BaseEnvironment {
 
   async reloadModule(module: EnvironmentModuleNode): Promise<void> {
     if (this.config.server.hmr !== false && module.file) {
-      updateModules(this, module.file, [module], Date.now())
+      updateModules(this, module.file, [module], monotonicDateNow())
     }
   }
 
-  transformRequest(url: string): Promise<TransformResult | null> {
-    return transformRequest(this, url)
+  transformRequest(
+    url: string,
+    /** @internal */
+    options?: TransformOptionsInternal,
+  ): Promise<TransformResult | null> {
+    return transformRequest(this, url, options)
   }
 
   async warmupRequest(url: string): Promise<void> {

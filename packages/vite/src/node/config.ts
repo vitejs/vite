@@ -19,6 +19,7 @@ import {
   DEFAULT_CLIENT_CONDITIONS,
   DEFAULT_CLIENT_MAIN_FIELDS,
   DEFAULT_CONFIG_FILES,
+  DEFAULT_EXTERNAL_CONDITIONS,
   DEFAULT_PREVIEW_PORT,
   DEFAULT_SERVER_CONDITIONS,
   DEFAULT_SERVER_MAIN_FIELDS,
@@ -482,8 +483,11 @@ export interface FutureOptions {
   removePluginHookSsrArgument?: 'warn'
 
   removeServerModuleGraph?: 'warn'
+  removeServerReloadModule?: 'warn'
+  removeServerPluginContainer?: 'warn'
   removeServerHot?: 'warn'
   removeServerTransformRequest?: 'warn'
+  removeServerWarmupRequest?: 'warn'
 
   removeSsrLoadModule?: 'warn'
 }
@@ -651,7 +655,7 @@ export const configDefaults = Object.freeze({
   resolve: {
     // mainFields
     // conditions
-    externalConditions: ['node'],
+    externalConditions: [...DEFAULT_EXTERNAL_CONDITIONS],
     extensions: ['.mjs', '.js', '.mts', '.ts', '.jsx', '.tsx', '.json'],
     dedupe: [],
     /** @experimental */
@@ -702,6 +706,7 @@ export const configDefaults = Object.freeze({
     removeServerModuleGraph: undefined,
     removeServerHot: undefined,
     removeServerTransformRequest: undefined,
+    removeServerWarmupRequest: undefined,
     removeSsrLoadModule: undefined,
   },
   legacy: {
@@ -1361,7 +1366,7 @@ export async function resolveConfig(
         )
       : ''
 
-  const server = resolveServerOptions(resolvedRoot, config.server, logger)
+  const server = await resolveServerOptions(resolvedRoot, config.server, logger)
 
   const builder = resolveBuilderOptions(config.builder)
 
@@ -1433,6 +1438,16 @@ export async function resolveConfig(
       workerPostPlugins,
     )
 
+    // run configResolved hooks
+    await Promise.all(
+      createPluginHookUtils(workerResolved.plugins)
+        .getSortedPluginHooks('configResolved')
+        .map((hook) => hook.call(resolvedConfigContext, workerResolved)),
+    )
+
+    // Resolve environment plugins after configResolved because there are
+    // downstream projects modifying the plugins in it. This may change
+    // once the ecosystem is ready.
     // During Build the client environment is used to bundle the worker
     // Avoid overriding the mainConfig (resolved.environments.client)
     ;(workerResolved.environments as Record<
@@ -1447,13 +1462,6 @@ export async function resolveConfig(
         ),
       },
     }
-
-    // run configResolved hooks
-    await Promise.all(
-      createPluginHookUtils(workerResolved.plugins)
-        .getSortedPluginHooks('configResolved')
-        .map((hook) => hook.call(resolvedConfigContext, workerResolved)),
-    )
 
     return workerResolved
   }
@@ -1605,18 +1613,21 @@ export async function resolveConfig(
   // TODO: Deprecate config.getSortedPlugins and config.getSortedPluginHooks
   Object.assign(resolved, createPluginHookUtils(resolved.plugins))
 
-  for (const name of Object.keys(resolved.environments)) {
-    resolved.environments[name].plugins = await resolveEnvironmentPlugins(
-      new PartialEnvironment(name, resolved),
-    )
-  }
-
   // call configResolved hooks
   await Promise.all(
     resolved
       .getSortedPluginHooks('configResolved')
       .map((hook) => hook.call(resolvedConfigContext, resolved)),
   )
+
+  // Resolve environment plugins after configResolved because there are
+  // downstream projects modifying the plugins in it. This may change
+  // once the ecosystem is ready.
+  for (const name of Object.keys(resolved.environments)) {
+    resolved.environments[name].plugins = await resolveEnvironmentPlugins(
+      new PartialEnvironment(name, resolved),
+    )
+  }
 
   optimizeDepsDisabledBackwardCompatibility(resolved, resolved.optimizeDeps)
   optimizeDepsDisabledBackwardCompatibility(

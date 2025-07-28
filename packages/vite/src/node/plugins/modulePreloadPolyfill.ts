@@ -1,3 +1,4 @@
+import { exactRegex } from '@rolldown/pluginutils'
 import type { ResolvedConfig } from '..'
 import type { Plugin } from '../plugin'
 import { isModernFlag } from './importAnalysisBuild'
@@ -11,27 +12,25 @@ export function modulePreloadPolyfillPlugin(config: ResolvedConfig): Plugin {
   return {
     name: 'vite:modulepreload-polyfill',
     resolveId: {
-      handler(id) {
-        if (id === modulePreloadPolyfillId) {
-          return resolvedModulePreloadPolyfillId
-        }
+      filter: { id: exactRegex(modulePreloadPolyfillId) },
+      handler(_id) {
+        return resolvedModulePreloadPolyfillId
       },
     },
     load: {
-      handler(id) {
-        if (id === resolvedModulePreloadPolyfillId) {
-          // `isModernFlag` is only available during build since it is resolved by `vite:build-import-analysis`
-          if (
-            config.command !== 'build' ||
-            this.environment.config.consumer !== 'client'
-          ) {
-            return ''
-          }
-          if (!polyfillString) {
-            polyfillString = `${isModernFlag}&&(${polyfill.toString()}());`
-          }
-          return { code: polyfillString, moduleSideEffects: true }
+      filter: { id: exactRegex(resolvedModulePreloadPolyfillId) },
+      handler(_id) {
+        // `isModernFlag` is only available during build since it is resolved by `vite:build-import-analysis`
+        if (
+          config.command !== 'build' ||
+          this.environment.config.consumer !== 'client'
+        ) {
+          return ''
         }
+        if (!polyfillString) {
+          polyfillString = `${isModernFlag}&&(${polyfill.toString()}());`
+        }
+        return { code: polyfillString, moduleSideEffects: true }
       },
     },
   }

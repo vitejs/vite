@@ -1,0 +1,10 @@
+{
+  "name": "@vitejs/test-resolve-side-effects-glob",
+  "version": "1.0.0",
+  "type": "module",
+  "main": "index.js",
+  "sideEffects": [
+    "index.js",
+    "effects/*"
+  ]
+}

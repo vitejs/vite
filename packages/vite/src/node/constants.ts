@@ -64,6 +64,8 @@ export const DEFAULT_SERVER_CONDITIONS = Object.freeze(
   DEFAULT_CONDITIONS.filter((c) => c !== 'browser'),
 )
 
+export const DEFAULT_EXTERNAL_CONDITIONS = Object.freeze(['node'])
+
 /**
  * The browser versions that are included in the Baseline Widely Available on 2025-05-01.
  *
