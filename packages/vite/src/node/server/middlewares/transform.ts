@@ -18,11 +18,7 @@ import {
   removeTimestampQuery,
 } from '../../utils'
 import { send } from '../send'
-import {
-  ERR_DENIED_ID,
-  ERR_LOAD_URL,
-  transformRequest,
-} from '../transformRequest'
+import { ERR_DENIED_ID, ERR_LOAD_URL } from '../transformRequest'
 import { applySourcemapIgnoreList } from '../sourcemap'
 import { isHTMLProxy } from '../../plugins/html'
 import {
@@ -38,12 +34,11 @@ import {
   ERR_OUTDATED_OPTIMIZED_DEP,
   NULL_BYTE_PLACEHOLDER,
 } from '../../../shared/constants'
-import { checkServingAccess, respondWithAccessDenied } from './static'
+import { checkLoadingAccess, respondWithAccessDenied } from './static'
 
 const debugCache = createDebugger('vite:cache')
 
 const knownIgnoreList = new Set(['/', '/favicon.ico'])
-const trailingQuerySeparatorsRE = /[?&]+$/
 
 // TODO: consolidate this regex pattern with the url, raw, and inline checks in plugins
 const urlRE = /[?&]url\b/
@@ -52,20 +47,15 @@ const inlineRE = /[?&]inline\b/
 const svgRE = /\.svg\b/
 
 function deniedServingAccessForTransform(
-  url: string,
+  id: string,
   server: ViteDevServer,
   res: ServerResponse,
   next: Connect.NextFunction,
 ) {
-  if (
-    rawRE.test(url) ||
-    urlRE.test(url) ||
-    inlineRE.test(url) ||
-    svgRE.test(url)
-  ) {
-    const servingAccessResult = checkServingAccess(url, server)
+  if (rawRE.test(id) || urlRE.test(id) || inlineRE.test(id) || svgRE.test(id)) {
+    const servingAccessResult = checkLoadingAccess(server.config, id)
     if (servingAccessResult === 'denied') {
-      respondWithAccessDenied(url, server, res)
+      respondWithAccessDenied(id, server, res)
       return true
     }
     if (servingAccessResult === 'fallback') {
@@ -124,7 +114,10 @@ export function transformMiddleware(
   return async function viteTransformMiddleware(req, res, next) {
     const environment = server.environments.client
 
-    if (req.method !== 'GET' || knownIgnoreList.has(req.url!)) {
+    if (
+      (req.method !== 'GET' && req.method !== 'HEAD') ||
+      knownIgnoreList.has(req.url!)
+    ) {
       return next()
     }
 
@@ -208,22 +201,6 @@ export function transformMiddleware(
         warnAboutExplicitPublicPathInUrl(url)
       }
 
-      const urlWithoutTrailingQuerySeparators = url.replace(
-        trailingQuerySeparatorsRE,
-        '',
-      )
-      if (
-        !url.startsWith('/@id/\0') &&
-        deniedServingAccessForTransform(
-          urlWithoutTrailingQuerySeparators,
-          server,
-          res,
-          next,
-        )
-      ) {
-        return
-      }
-
       if (
         req.headers['sec-fetch-dest'] === 'script' ||
         isJSRequest(url) ||
@@ -262,8 +239,7 @@ export function transformMiddleware(
         }
 
         // resolve, load and transform using the plugin container
-        const result = await transformRequest(environment, url, {
-          html: req.headers.accept?.includes('text/html'),
+        const result = await environment.transformRequest(url, {
           allowId(id) {
             return (
               id.startsWith('\0') ||

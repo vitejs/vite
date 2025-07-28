@@ -106,6 +106,14 @@ export interface ModuleRunnerOptions {
    */
   hmr?: boolean | ModuleRunnerHmr
   /**
+   * Create import.meta object for the module.
+   *
+   * @default createDefaultImportMeta
+   */
+  createImportMeta?: (
+    modulePath: string,
+  ) => ModuleRunnerImportMeta | Promise<ModuleRunnerImportMeta>
+  /**
    * Custom module cache. If not provided, creates a separate module cache for each ModuleRunner instance.
    */
   evaluatedModules?: EvaluatedModules
