@@ -75,6 +75,10 @@ import {
   BasicMinimalPluginContext,
   basePluginContextMeta,
 } from './server/pluginContainer'
+import {
+  isFutureDeprecationEnabled,
+  warnFutureDeprecation,
+} from './deprecations'
 import { prepareOutDirPlugin } from './plugins/prepareOutDir'
 import type { Environment } from './environment'
 
@@ -1086,13 +1090,21 @@ export function injectEnvironmentToHooks(
   for (const hook of Object.keys(clone) as RollupPluginHooks[]) {
     switch (hook) {
       case 'resolveId':
-        clone[hook] = wrapEnvironmentResolveId(environment, resolveId)
+        clone[hook] = wrapEnvironmentResolveId(
+          environment,
+          resolveId,
+          plugin.name,
+        )
         break
       case 'load':
-        clone[hook] = wrapEnvironmentLoad(environment, load)
+        clone[hook] = wrapEnvironmentLoad(environment, load, plugin.name)
         break
       case 'transform':
-        clone[hook] = wrapEnvironmentTransform(environment, transform)
+        clone[hook] = wrapEnvironmentTransform(
+          environment,
+          transform,
+          plugin.name,
+        )
         break
       default:
         if (ROLLUP_HOOKS.includes(hook)) {
@@ -1107,7 +1119,8 @@ export function injectEnvironmentToHooks(
 
 function wrapEnvironmentResolveId(
   environment: Environment,
-  hook?: Plugin['resolveId'],
+  hook: Plugin['resolveId'] | undefined,
+  pluginName: string,
 ): Plugin['resolveId'] {
   if (!hook) return
 
@@ -1117,7 +1130,7 @@ function wrapEnvironmentResolveId(
       injectEnvironmentInContext(this, environment),
       id,
       importer,
-      injectSsrFlag(options, environment),
+      injectSsrFlag(options, environment, pluginName),
     )
   }
 
@@ -1133,7 +1146,8 @@ function wrapEnvironmentResolveId(
 
 function wrapEnvironmentLoad(
   environment: Environment,
-  hook?: Plugin['load'],
+  hook: Plugin['load'] | undefined,
+  pluginName: string,
 ): Plugin['load'] {
   if (!hook) return
 
@@ -1142,7 +1156,7 @@ function wrapEnvironmentLoad(
     return fn.call(
       injectEnvironmentInContext(this, environment),
       id,
-      injectSsrFlag(args[0], environment),
+      injectSsrFlag(args[0], environment, pluginName),
     )
   }
 
@@ -1158,7 +1172,8 @@ function wrapEnvironmentLoad(
 
 function wrapEnvironmentTransform(
   environment: Environment,
-  hook?: Plugin['transform'],
+  hook: Plugin['transform'] | undefined,
+  pluginName: string,
 ): Plugin['transform'] {
   if (!hook) return
 
@@ -1168,7 +1183,7 @@ function wrapEnvironmentTransform(
       injectEnvironmentInContext(this, environment),
       code,
       importer,
-      injectSsrFlag(args[0], environment),
+      injectSsrFlag(args[0], environment, pluginName),
     )
   }
 
@@ -1218,13 +1233,37 @@ function injectEnvironmentInContext<Context extends MinimalPluginContext>(
 }
 
 function injectSsrFlag<T extends Record<string, any>>(
-  options?: T,
-  environment?: Environment,
+  options: T | undefined,
+  environment: Environment,
+  pluginName: string,
 ): T & { ssr?: boolean } {
-  const ssr = environment ? environment.config.consumer === 'server' : true
-  return { ...(options ?? {}), ssr } as T & {
+  let ssr = environment.config.consumer === 'server'
+  const newOptions = { ...(options ?? {}), ssr } as T & {
     ssr?: boolean
   }
+
+  if (
+    isFutureDeprecationEnabled(
+      environment?.getTopLevelConfig(),
+      'removePluginHookSsrArgument',
+    )
+  ) {
+    Object.defineProperty(newOptions, 'ssr', {
+      get() {
+        warnFutureDeprecation(
+          environment?.getTopLevelConfig(),
+          'removePluginHookSsrArgument',
+          `Used in plugin "${pluginName}".`,
+        )
+        return ssr
+      },
+      set(v) {
+        ssr = v
+      },
+    })
+  }
+
+  return newOptions
 }
 
 /*
