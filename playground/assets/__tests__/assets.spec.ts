@@ -1,5 +1,4 @@
 import path from 'node:path'
-import { stripVTControlCharacters } from 'node:util'
 import { describe, expect, test } from 'vitest'
 import {
   browserLogs,
