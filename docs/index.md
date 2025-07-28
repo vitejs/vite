@@ -10,6 +10,8 @@ markdownStyles: false
 ---
 
 <script setup>
+import { onBeforeUnmount, onMounted, ref } from 'vue'
+
 import Hero from '.vitepress/theme/components/landing/1. hero-section/HeroSection.vue'
 import FeatureSection from './.vitepress/theme/components/landing/2. feature-section/FeatureSection.vue'
 import FrameworksSection from './.vitepress/theme/components/landing/3. frameworks-section/FrameworksSection.vue'
@@ -24,6 +26,17 @@ import FeatureFlexiblePlugins from './.vitepress/theme/components/landing/2. fea
 import FeatureTypedAPI from './.vitepress/theme/components/landing/2. feature-section/FeatureTypedAPI.vue'
 import FeatureSSRSupport from './.vitepress/theme/components/landing/2. feature-section/FeatureSSRSupport.vue'
 import FeatureCI from './.vitepress/theme/components/landing/2. feature-section/FeatureCI.vue'
+
+const darkMode = ref(false)
+
+onMounted(() => {
+  darkMode.value = document.documentElement.classList.contains('dark')
+  document.documentElement.classList.add('dark')
+})
+
+onBeforeUnmount(() => {
+  document.documentElement.classList.toggle('dark', darkMode.value)
+})
 </script>
 
 <div class="VPHome">
