@@ -411,7 +411,11 @@ class EnvironmentPluginContainer<Env extends Environment = Environment> {
         let ssrTemp = ssr
         Object.defineProperty(normalizedOptions, 'ssr', {
           get() {
-            warnFutureDeprecation(topLevelConfig, 'removePluginHookSsrArgument')
+            warnFutureDeprecation(
+              topLevelConfig,
+              'removePluginHookSsrArgument',
+              `Used in plugin "${plugin.name}".`,
+            )
             return ssrTemp
           },
           set(v) {
