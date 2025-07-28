@@ -1237,7 +1237,7 @@ function injectSsrFlag<T extends Record<string, any>>(
   environment: Environment,
   pluginName: string,
 ): T & { ssr?: boolean } {
-  let ssr = environment ? environment.config.consumer === 'server' : true
+  let ssr = environment.config.consumer === 'server'
   const newOptions = { ...(options ?? {}), ssr } as T & {
     ssr?: boolean
   }
