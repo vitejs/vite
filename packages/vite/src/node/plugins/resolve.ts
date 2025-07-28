@@ -5,6 +5,7 @@ import colors from 'picocolors'
 import type { PartialResolvedId } from 'rollup'
 import { exports, imports } from 'resolve.exports'
 import { hasESMSyntax } from 'mlly'
+import { prefixRegex } from '@rolldown/pluginutils'
 import type { Plugin } from '../plugin'
 import {
   CLIENT_ENTRY,
@@ -175,7 +176,7 @@ export function resolvePlugin(
     resolveId: {
       filter: {
         id: {
-          exclude: /^(\0|(\/)?virtual:)/,
+          exclude: /^(?:\0|\/?virtual:)/, // `/virtual:` is used when it's injected directly in html/client code
         },
       },
       async handler(id, importer, resolveOpts) {
@@ -460,7 +461,7 @@ export function resolvePlugin(
 
     load: {
       filter: {
-        id: new RegExp(`^(?:${browserExternalId}|${optionalPeerDepId})`),
+        id: [prefixRegex(browserExternalId), prefixRegex(optionalPeerDepId)],
       },
       handler(id) {
         if (id.startsWith(browserExternalId)) {
