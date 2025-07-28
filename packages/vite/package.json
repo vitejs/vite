@@ -129,7 +129,7 @@
     "mrmime": "^2.0.1",
     "nanoid": "^5.1.5",
     "open": "^10.2.0",
-    "parse5": "^7.3.0",
+    "parse5": "^8.0.0",
     "pathe": "^2.0.3",
     "periscopic": "^4.0.2",
     "picocolors": "^1.1.1",
