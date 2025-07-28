@@ -7,6 +7,7 @@ const pathRenderers = {
   '/circular-import2': renderCircularImport2,
   '/forked-deadlock-static-imports': renderForkedDeadlockStaticImports,
   '/forked-deadlock-dynamic-imports': renderForkedDeadlockDynamicImports,
+  '/import-meta': renderImportMeta,
 }
 
 export async function render(url, rootDir) {
@@ -59,4 +60,13 @@ async function renderForkedDeadlockDynamicImports(rootDir) {
   )
   await commonModuleExport()
   return `<div class="forked-deadlock-dynamic-imports">rendered</div>`
+}
+
+async function renderImportMeta(rootDir) {
+  const metaUrl = import.meta.url
+  const resolveResult = import.meta.resolve('./app.js')
+  return (
+    `<div class="import-meta-url">${escapeHtml(metaUrl)}</div>` +
+    `<div class="import-meta-resolve">${escapeHtml(resolveResult)}</div>`
+  )
 }

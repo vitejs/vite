@@ -1,7 +1,7 @@
 // @ts-check
 
 import { BroadcastChannel, parentPort } from 'node:worker_threads'
-import { ESModulesEvaluator, ModuleRunner } from 'vite/module-runner'
+import { ESModulesEvaluator, ModuleRunner, createNodeImportMeta } from 'vite/module-runner'
 
 if (!parentPort) {
   throw new Error('File "worker.js" must be run in a worker thread')
@@ -24,6 +24,7 @@ const messagePortTransport = {
 const runner = new ModuleRunner(
   {
     transport: messagePortTransport,
+    createImportMeta: createNodeImportMeta,
   },
   new ESModulesEvaluator(),
 )
