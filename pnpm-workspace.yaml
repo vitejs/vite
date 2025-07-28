@@ -20,10 +20,6 @@ patchedDependencies:
 peerDependencyRules:
   allowedVersions:
     vite: "*"
-  ignoreMissing:
-    - "@algolia/client-search"
-    - "postcss"
-    - "search-insights"
 packageExtensions:
   sass-embedded:
     peerDependencies:
