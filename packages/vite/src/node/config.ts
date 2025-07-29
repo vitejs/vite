@@ -1368,7 +1368,7 @@ export async function resolveConfig(
         )
       : ''
 
-  const server = await resolveServerOptions(resolvedRoot, config.server, logger)
+  const server = resolveServerOptions(resolvedRoot, config.server, logger)
 
   const builder = resolveBuilderOptions(config.builder)
 

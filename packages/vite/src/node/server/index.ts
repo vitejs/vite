@@ -24,8 +24,8 @@ import {
 } from '../http'
 import type { InlineConfig, ResolvedConfig } from '../config'
 import { isResolvedConfig, resolveConfig } from '../config'
-import type { Hostname } from '../utils'
 import {
+  type Hostname,
   diffDnsOrderChange,
   getServerUrlByHost,
   isInNodeModules,
@@ -207,8 +207,6 @@ export interface ResolvedServerOptions
   > {
   fs: Required<FileSystemServeOptions>
   middlewareMode: NonNullable<ServerOptions['middlewareMode']>
-  /** @internal */
-  hostname: Hostname
   sourcemapIgnoreList: Exclude<
     ServerOptions['sourcemapIgnoreList'],
     false | undefined
@@ -654,17 +652,19 @@ export async function _createServer(
       }
     },
     async listen(port?: number, isRestart?: boolean) {
+      const hostname = await resolveHostname(config.server.host)
       if (httpServer) {
         httpServer.prependListener('listening', () => {
           server.resolvedUrls = resolveServerUrls(
             httpServer,
             config.server,
+            hostname,
             httpsOptions,
             config,
           )
         })
       }
-      await startServer(server, port)
+      await startServer(server, hostname, port)
       if (httpServer) {
         if (!isRestart && config.server.open) server.openBrowser()
       }
@@ -1005,6 +1005,7 @@ export async function _createServer(
 
 async function startServer(
   server: ViteDevServer,
+  hostname: Hostname,
   inlinePort?: number,
 ): Promise<void> {
   const httpServer = server.httpServer
@@ -1026,7 +1027,7 @@ async function startServer(
   const serverPort = await httpServerStart(httpServer, {
     port,
     strictPort: options.strictPort,
-    host: options.hostname.host,
+    host: hostname.host,
     logger: server.config.logger,
   })
   server._currentServerPort = serverPort
@@ -1104,11 +1105,11 @@ export const serverConfigDefaults = Object.freeze({
   // hotUpdateEnvironments
 } satisfies ServerOptions)
 
-export async function resolveServerOptions(
+export function resolveServerOptions(
   root: string,
   raw: ServerOptions | undefined,
   logger: Logger,
-): Promise<ResolvedServerOptions> {
+): ResolvedServerOptions {
   const _server = mergeWithDefaults(
     {
       ...serverConfigDefaults,
@@ -1120,7 +1121,6 @@ export async function resolveServerOptions(
 
   const server: ResolvedServerOptions = {
     ..._server,
-    hostname: await resolveHostname(_server.host),
     fs: {
       ..._server.fs,
       // run searchForWorkspaceRoot only if needed
