@@ -1625,6 +1625,9 @@ importers:
       '@vitejs/test-entries':
         specifier: file:./entries
         version: file:playground/ssr-resolve/entries
+      '@vitejs/test-module-sync':
+        specifier: file:./pkg-module-sync
+        version: file:playground/ssr-resolve/pkg-module-sync
       '@vitejs/test-resolve-pkg-exports':
         specifier: file:./pkg-exports
         version: file:playground/ssr-resolve/pkg-exports
@@ -1638,6 +1641,8 @@ importers:
   playground/ssr-resolve/entries: {}
 
   playground/ssr-resolve/pkg-exports: {}
+
+  playground/ssr-resolve/pkg-module-sync: {}
 
   playground/ssr-webworker:
     dependencies:
@@ -3826,6 +3831,9 @@ packages:
 
   '@vitejs/test-module-condition@file:playground/ssr-deps/module-condition':
     resolution: {directory: playground/ssr-deps/module-condition, type: directory}
+
+  '@vitejs/test-module-sync@file:playground/ssr-resolve/pkg-module-sync':
+    resolution: {directory: playground/ssr-resolve/pkg-module-sync, type: directory}
 
   '@vitejs/test-multi-entry-dep@file:playground/optimize-missing-deps/multi-entry-dep':
     resolution: {directory: playground/optimize-missing-deps/multi-entry-dep, type: directory}
@@ -9389,6 +9397,8 @@ snapshots:
       '@vitejs/test-multi-entry-dep': file:playground/optimize-missing-deps/multi-entry-dep
 
   '@vitejs/test-module-condition@file:playground/ssr-deps/module-condition': {}
+
+  '@vitejs/test-module-sync@file:playground/ssr-resolve/pkg-module-sync': {}
 
   '@vitejs/test-multi-entry-dep@file:playground/optimize-missing-deps/multi-entry-dep': {}
 
