@@ -147,14 +147,14 @@ To test them, you can set the `experimental.enableNativePlugin` option to `true`
 
 ### Utilizing Oxc's React refresh transform
 
-`@vitejs/plugin-react` v5.0.0+ uses Oxc's React refresh transform. If you are not using any Babel plugins (including the React compiler), the full transform would now be done by Oxc and will improve the build performance without any changes.
+`@vitejs/plugin-react` v5.0.0+ uses Oxc's React refresh transform. If you are not using any Babel plugins (including the React compiler), the full transform would now be done by Oxc and will improve the build performance without any changes other than updating `@vitejs/plugin-react`.
 
 If you are using `@vitejs/plugin-react-swc` without SWC plugins and custom SWC options, you can switch to the `@vitejs/plugin-react` plugin to utilize Oxc.
 
 ::: details `@vitejs/plugin-react-oxc` plugin is deprecated
 
 Previously, we recommended using `@vitejs/plugin-react-oxc` to utilize Oxc's React refresh transform.
-However, we have merged the implementation into `@vitejs/plugin-react` so that it is more easier to switch to `rolldown-vite`.
+However, we have merged the implementation into `@vitejs/plugin-react` so that it is easier to switch to `rolldown-vite`.
 `@vitejs/plugin-react-oxc` is now deprecated and will no longer be updated.
 
 :::
