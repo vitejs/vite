@@ -320,6 +320,11 @@ export function createInMemoryLogger(logs: string[]): Logger {
       logs.push(msg)
     },
     warn(msg) {
+      // for invalid HTML, we throw an error
+      // to avoid false positives in tests
+      if (msg.includes('Unable to parse HTML;')) {
+        throw new Error(msg)
+      }
       logs.push(msg)
       logger.hasWarned = true
     },
