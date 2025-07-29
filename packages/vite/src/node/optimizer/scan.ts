@@ -294,8 +294,31 @@ async function prepareEsbuildScanner(
     const { tsconfig } = await loadTsconfigJsonForFile(
       path.join(environment.config.root, '_dummy.js'),
     )
-    if (tsconfig.compilerOptions?.experimentalDecorators) {
-      tsconfigRaw = { compilerOptions: { experimentalDecorators: true } }
+    if (
+      tsconfig.compilerOptions?.experimentalDecorators ||
+      tsconfig.compilerOptions?.jsx ||
+      tsconfig.compilerOptions?.jsxFactory ||
+      tsconfig.compilerOptions?.jsxFragmentFactory ||
+      tsconfig.compilerOptions?.jsxImportSource
+    ) {
+      tsconfigRaw = {
+        compilerOptions: {
+          experimentalDecorators:
+            tsconfig.compilerOptions?.experimentalDecorators,
+          // esbuild uses tsconfig fields when both the normal options and tsconfig was set
+          // but we want to prioritize the normal options
+          jsx: esbuildOptions.jsx ? undefined : tsconfig.compilerOptions?.jsx,
+          jsxFactory: esbuildOptions.jsxFactory
+            ? undefined
+            : tsconfig.compilerOptions?.jsxFactory,
+          jsxFragmentFactory: esbuildOptions.jsxFragment
+            ? undefined
+            : tsconfig.compilerOptions?.jsxFragmentFactory,
+          jsxImportSource: esbuildOptions.jsxImportSource
+            ? undefined
+            : tsconfig.compilerOptions?.jsxImportSource,
+        },
+      }
     }
   }
 
@@ -310,6 +333,7 @@ async function prepareEsbuildScanner(
     format: 'esm',
     logLevel: 'silent',
     plugins: [...plugins, plugin],
+    jsxDev: !environment.config.isProduction,
     ...esbuildOptions,
     tsconfigRaw,
   })
