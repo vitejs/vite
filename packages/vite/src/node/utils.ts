@@ -964,6 +964,7 @@ export async function resolveHostname(
 export function resolveServerUrls(
   server: Server,
   options: CommonServerOptions,
+  hostname: Hostname,
   httpsOptions: HttpsServerOptions | undefined,
   config: ResolvedConfig,
 ): ResolvedServerUrls {
@@ -976,7 +977,6 @@ export function resolveServerUrls(
 
   const local: string[] = []
   const network: string[] = []
-  const hostname = config.server.hostname
   const protocol = options.https ? 'https' : 'http'
   const port = address.port
   const base =
