@@ -301,23 +301,24 @@ async function prepareEsbuildScanner(
       tsconfig.compilerOptions?.jsxFragmentFactory ||
       tsconfig.compilerOptions?.jsxImportSource
     ) {
-      const compilerOptions = {
-        experimentalDecorators:
-          tsconfig.compilerOptions?.experimentalDecorators,
-        jsx: tsconfig.compilerOptions?.jsx,
-        jsxFactory: tsconfig.compilerOptions?.jsxFactory,
-        jsxFragmentFactory: tsconfig.compilerOptions?.jsxFragmentFactory,
-        jsxImportSource: tsconfig.compilerOptions?.jsxImportSource,
+      tsconfigRaw = {
+        compilerOptions: {
+          experimentalDecorators:
+            tsconfig.compilerOptions?.experimentalDecorators,
+          // esbuild uses tsconfig fields when both the normal options and tsconfig was set
+          // but we want to prioritize the normal options
+          jsx: esbuildOptions.jsx ? undefined : tsconfig.compilerOptions?.jsx,
+          jsxFactory: esbuildOptions.jsxFactory
+            ? undefined
+            : tsconfig.compilerOptions?.jsxFactory,
+          jsxFragmentFactory: esbuildOptions.jsxFragment
+            ? undefined
+            : tsconfig.compilerOptions?.jsxFragmentFactory,
+          jsxImportSource: esbuildOptions.jsxImportSource
+            ? undefined
+            : tsconfig.compilerOptions?.jsxImportSource,
+        },
       }
-      // esbuild uses tsconfig fields when both the normal options and tsconfig was set
-      // but we want to prioritize the normal options
-      if (esbuildOptions.jsx) compilerOptions.jsx = undefined
-      if (esbuildOptions.jsxFactory) compilerOptions.jsxFactory = undefined
-      if (esbuildOptions.jsxFragment)
-        compilerOptions.jsxFragmentFactory = undefined
-      if (esbuildOptions.jsxImportSource)
-        compilerOptions.jsxImportSource = undefined
-      tsconfigRaw = { compilerOptions }
     }
   }
 
