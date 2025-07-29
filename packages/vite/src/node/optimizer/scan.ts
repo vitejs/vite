@@ -294,8 +294,23 @@ async function prepareEsbuildScanner(
     const { tsconfig } = await loadTsconfigJsonForFile(
       path.join(environment.config.root, '_dummy.js'),
     )
-    if (tsconfig.compilerOptions?.experimentalDecorators) {
-      tsconfigRaw = { compilerOptions: { experimentalDecorators: true } }
+    if (
+      tsconfig.compilerOptions?.experimentalDecorators ||
+      tsconfig.compilerOptions?.jsx ||
+      tsconfig.compilerOptions?.jsxFactory ||
+      tsconfig.compilerOptions?.jsxFragmentFactory ||
+      tsconfig.compilerOptions?.jsxImportSource
+    ) {
+      tsconfigRaw = {
+        compilerOptions: {
+          experimentalDecorators:
+            tsconfig.compilerOptions?.experimentalDecorators,
+          jsx: tsconfig.compilerOptions?.jsx,
+          jsxFactory: tsconfig.compilerOptions?.jsxFactory,
+          jsxFragmentFactory: tsconfig.compilerOptions?.jsxFragmentFactory,
+          jsxImportSource: tsconfig.compilerOptions?.jsxImportSource,
+        },
+      }
     }
   }
 
@@ -310,6 +325,7 @@ async function prepareEsbuildScanner(
     format: 'esm',
     logLevel: 'silent',
     plugins: [...plugins, plugin],
+    jsxDev: !environment.config.isProduction,
     ...esbuildOptions,
     tsconfigRaw,
   })
