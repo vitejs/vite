@@ -301,16 +301,23 @@ async function prepareEsbuildScanner(
       tsconfig.compilerOptions?.jsxFragmentFactory ||
       tsconfig.compilerOptions?.jsxImportSource
     ) {
-      tsconfigRaw = {
-        compilerOptions: {
-          experimentalDecorators:
-            tsconfig.compilerOptions?.experimentalDecorators,
-          jsx: tsconfig.compilerOptions?.jsx,
-          jsxFactory: tsconfig.compilerOptions?.jsxFactory,
-          jsxFragmentFactory: tsconfig.compilerOptions?.jsxFragmentFactory,
-          jsxImportSource: tsconfig.compilerOptions?.jsxImportSource,
-        },
+      const compilerOptions = {
+        experimentalDecorators:
+          tsconfig.compilerOptions?.experimentalDecorators,
+        jsx: tsconfig.compilerOptions?.jsx,
+        jsxFactory: tsconfig.compilerOptions?.jsxFactory,
+        jsxFragmentFactory: tsconfig.compilerOptions?.jsxFragmentFactory,
+        jsxImportSource: tsconfig.compilerOptions?.jsxImportSource,
       }
+      // esbuild uses tsconfig fields when both the normal options and tsconfig was set
+      // but we want to prioritize the normal options
+      if (esbuildOptions.jsx) compilerOptions.jsx = undefined
+      if (esbuildOptions.jsxFactory) compilerOptions.jsxFactory = undefined
+      if (esbuildOptions.jsxFragment)
+        compilerOptions.jsxFragmentFactory = undefined
+      if (esbuildOptions.jsxImportSource)
+        compilerOptions.jsxImportSource = undefined
+      tsconfigRaw = { compilerOptions }
     }
   }
 
