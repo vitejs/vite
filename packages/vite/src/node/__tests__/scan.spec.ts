@@ -151,7 +151,7 @@ test('scan jsx-runtime', async (ctx) => {
     },
   })
 
-  // TODO: should server listen be needed for optimizer?
+  // start server to ensure optimizer run
   await server.listen()
   ctx.onTestFinished(() => server.close())
 
