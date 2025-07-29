@@ -688,7 +688,7 @@ export function updateModules(
     )
   }
 
-  // html file cannot be hot updated
+  // html file cannot be hot updated because it may be used as the template for a top-level request response.
   const isClientHtmlChange =
     file.endsWith('.html') &&
     environment.name === 'client' &&
