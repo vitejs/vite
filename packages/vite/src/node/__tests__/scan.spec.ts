@@ -155,7 +155,9 @@ test('scan jsx-runtime', async (ctx) => {
   await server.listen()
   ctx.onTestFinished(() => server.close())
 
-  const runner = createServerModuleRunner(server.environments.ssr)
+  const runner = createServerModuleRunner(server.environments.ssr, {
+    hmr: { logger: false },
+  })
 
   // flush initial optimizer by importing any file
   await runner.import('./entry-no-jsx.js')
