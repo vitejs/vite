@@ -295,7 +295,7 @@ function formatParseError(parserError: ParserError, id: string, html: string) {
   return formattedError
 }
 
-const fileErrorInfo: Record<string, Record<string, boolean>> = {}
+const shownWarnings: Record<string, Record<string, boolean>> = {}
 function handleParseError(
   parserError: ParserError,
   html: string,
@@ -321,12 +321,13 @@ function handleParseError(
       // lit generates <?>: https://github.com/lit/lit/issues/2470
       return
   }
-  fileErrorInfo[filePath] ??= {}
-  if (fileErrorInfo[filePath][parserError.code]) {
+  const contentHash = getHash(html, 32)
+  shownWarnings[contentHash] ??= {}
+  if (shownWarnings[contentHash][parserError.code]) {
     // already warned about this error
     return
   }
-  fileErrorInfo[filePath][parserError.code] = true
+  shownWarnings[contentHash][parserError.code] = true
   const parseError = formatParseError(parserError, filePath, html)
 
   warn(
