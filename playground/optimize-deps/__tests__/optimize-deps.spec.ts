@@ -55,8 +55,7 @@ test('dynamic default import from webpacked cjs (clipboard)', async () => {
   await expect.poll(() => page.textContent('.cjs-dynamic-clipboard')).toBe('ok')
 })
 
-// NOTE: rolldown behaves differently from @rollup/plugin-commonjs https://github.com/rolldown/rolldown/issues/2031
-test.skip('dynamic default import from cjs (cjs-dynamic-dep-cjs-compiled-from-esm)', async () => {
+test('dynamic default import from cjs (cjs-dynamic-dep-cjs-compiled-from-esm)', async () => {
   await expect
     .poll(() => page.textContent('.cjs-dynamic-dep-cjs-compiled-from-esm'))
     .toBe('ok')
