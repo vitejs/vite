@@ -129,7 +129,7 @@ describe('optimizer-scan:script-test', () => {
 test('scan jsx-runtime', async (ctx) => {
   const server = await createServer({
     configFile: false,
-    // logLevel: 'error',
+    logLevel: 'error',
     root: path.join(import.meta.dirname, 'fixtures', 'scan-jsx-runtime'),
     environments: {
       client: {
