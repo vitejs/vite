@@ -9,6 +9,7 @@ import {
   isDataUrl,
   isParentDirectory,
   transformStableResult,
+  tryStatSync,
 } from '../utils'
 import { CLIENT_ENTRY } from '../constants'
 import { slash } from '../../shared/utils'
@@ -142,8 +143,11 @@ export function assetImportMetaUrlPlugin(config: ResolvedConfig): Plugin {
                 const publicPath = '/' + path.posix.relative(publicDir, file)
                 builtUrl = await fileToUrl(this, publicPath)
               } else {
-                this.addWatchFile(file)
                 builtUrl = await fileToUrl(this, file)
+                // during dev, builtUrl may point to a directory or a non-existing file
+                if (tryStatSync(file)?.isFile()) {
+                  this.addWatchFile(file)
+                }
               }
             } catch {
               // do nothing, we'll log a warning after this
