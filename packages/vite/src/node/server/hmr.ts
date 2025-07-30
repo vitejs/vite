@@ -10,12 +10,7 @@ import type {
   InvokeSendData,
 } from '../../shared/invokeMethods'
 import { CLIENT_DIR } from '../constants'
-import {
-  createDebugger,
-  isCSSRequest,
-  monotonicDateNow,
-  normalizePath,
-} from '../utils'
+import { createDebugger, monotonicDateNow, normalizePath } from '../utils'
 import type { InferCustomEventPayload, ViteDevServer } from '..'
 import { getHookHandler } from '../plugins'
 import { isExplicitImportRequired } from '../plugins/importAnalysis'
@@ -73,7 +68,7 @@ export interface HmrContext {
 }
 
 interface PropagationBoundary {
-  boundary: EnvironmentModuleNode
+  boundary: EnvironmentModuleNode & { type: 'js' | 'css' }
   acceptedVia: EnvironmentModuleNode
   isWithinCircularImport: boolean
 }
@@ -693,7 +688,16 @@ export function updateModules(
     )
   }
 
-  if (needFullReload) {
+  // html file cannot be hot updated because it may be used as the template for a top-level request response.
+  const isClientHtmlChange =
+    file.endsWith('.html') &&
+    environment.name === 'client' &&
+    // if the html file is imported as a module, we assume that this file is
+    // not used as the template for top-level request response
+    // (i.e. not used by the middleware).
+    modules.every((mod) => mod.type !== 'js')
+
+  if (needFullReload || isClientHtmlChange) {
     const reason =
       typeof needFullReload === 'string'
         ? colors.dim(` (${needFullReload})`)
@@ -705,6 +709,12 @@ export function updateModules(
     hot.send({
       type: 'full-reload',
       triggeredBy: path.resolve(environment.config.root, file),
+      path:
+        !isClientHtmlChange ||
+        environment.config.server.middlewareMode ||
+        updates.length > 0 // if there's an update, other URLs may be affected
+          ? '*'
+          : '/' + file,
     })
     return
   }
@@ -761,25 +771,13 @@ function propagateUpdate(
   }
 
   if (node.isSelfAccepting) {
+    // isSelfAccepting is only true for js and css
+    const boundary = node as EnvironmentModuleNode & { type: 'js' | 'css' }
     boundaries.push({
-      boundary: node,
-      acceptedVia: node,
+      boundary,
+      acceptedVia: boundary,
       isWithinCircularImport: isNodeWithinCircularImports(node, currentChain),
     })
-
-    // additionally check for CSS importers, since a PostCSS plugin like
-    // Tailwind JIT may register any file as a dependency to a CSS file.
-    for (const importer of node.importers) {
-      if (isCSSRequest(importer.url) && !currentChain.includes(importer)) {
-        propagateUpdate(
-          importer,
-          traversedModules,
-          boundaries,
-          currentChain.concat(importer),
-        )
-      }
-    }
-
     return false
   }
 
@@ -789,26 +787,15 @@ function propagateUpdate(
   // Also, the imported module (this one) must be updated before the importers,
   // so that they do get the fresh imported module when/if they are reloaded.
   if (node.acceptedHmrExports) {
+    // acceptedHmrExports is only true for js and css
+    const boundary = node as EnvironmentModuleNode & { type: 'js' | 'css' }
     boundaries.push({
-      boundary: node,
-      acceptedVia: node,
+      boundary,
+      acceptedVia: boundary,
       isWithinCircularImport: isNodeWithinCircularImports(node, currentChain),
     })
   } else {
     if (!node.importers.size) {
-      return true
-    }
-
-    // #3716, #3913
-    // For a non-CSS file, if all of its importers are CSS files (registered via
-    // PostCSS plugins) it should be considered a dead end and force full reload.
-    if (
-      !isCSSRequest(node.url) &&
-      // we assume .svg is never an entrypoint and does not need a full reload
-      // to avoid frequent full reloads when an SVG file is referenced in CSS files (#18979)
-      !node.file?.endsWith('.svg') &&
-      [...node.importers].every((i) => isCSSRequest(i.url))
-    ) {
       return true
     }
   }
@@ -817,8 +804,12 @@ function propagateUpdate(
     const subChain = currentChain.concat(importer)
 
     if (importer.acceptedHmrDeps.has(node)) {
+      // acceptedHmrDeps has value only for js and css
+      const boundary = importer as EnvironmentModuleNode & {
+        type: 'js' | 'css'
+      }
       boundaries.push({
-        boundary: importer,
+        boundary,
         acceptedVia: node,
         isWithinCircularImport: isNodeWithinCircularImports(importer, subChain),
       })
@@ -885,11 +876,6 @@ function isNodeWithinCircularImports(
   for (const importer of node.importers) {
     // Node may import itself which is safe
     if (importer === node) continue
-
-    // a PostCSS plugin like Tailwind JIT may register
-    // any file as a dependency to a CSS file.
-    // But in that case, the actual dependency chain is separate.
-    if (isCSSRequest(importer.url)) continue
 
     // Check circular imports
     const importerIndex = nodeChain.indexOf(importer)
