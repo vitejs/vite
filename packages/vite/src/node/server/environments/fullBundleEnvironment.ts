@@ -2,8 +2,8 @@ import path from 'node:path'
 import type { RolldownBuild, RolldownOptions } from 'rolldown'
 import type { Update } from 'types/hmrPayload'
 import colors from 'picocolors'
-import type { ChunkMetadata } from 'types/metadata'
 import {
+  ChunkMetadataMap,
   clearLine,
   enhanceRollupError,
   resolveRolldownOptions,
@@ -18,7 +18,7 @@ import { prepareError } from '../middlewares/error'
 const debug = createDebugger('vite:full-bundle-mode')
 
 type HmrOutput = Exclude<
-  Awaited<ReturnType<RolldownBuild['generateHmrPatch']>>,
+  Awaited<ReturnType<RolldownBuild['hmrInvalidate']>>,
   undefined
 >
 
@@ -106,7 +106,7 @@ export class FullBundleDevEnvironment extends DevEnvironment {
         patched: this.state.patched,
       }
 
-      let hmrOutput: HmrOutput | undefined
+      let hmrOutput: HmrOutput[]
       try {
         // NOTE: only single outputOptions is supported here
         hmrOutput = await this.state.bundle.generateHmrPatch([file])
@@ -123,12 +123,14 @@ export class FullBundleDevEnvironment extends DevEnvironment {
         return
       }
 
-      if (!hmrOutput) {
+      if (hmrOutput.every((output) => output.type === 'Noop')) {
         debug?.(`ignored file change for ${file}`)
         return
       }
 
-      this.handleHmrOutput(file, hmrOutput, this.state)
+      for (const output of hmrOutput) {
+        this.handleHmrOutput(file, output, this.state)
+      }
       return
     }
     this.state satisfies never // exhaustive check
@@ -188,7 +190,7 @@ export class FullBundleDevEnvironment extends DevEnvironment {
         return
       }
 
-      if (hmrOutput.isSelfAccepting) {
+      if (hmrOutput.type === 'Patch') {
         this.logger.info(
           colors.yellow(`hmr invalidate `) +
             colors.dim(m.path) +
@@ -198,7 +200,7 @@ export class FullBundleDevEnvironment extends DevEnvironment {
       }
 
       // TODO: need to check if this is enough
-      this.handleHmrOutput(m.path, hmrOutput, this.state)
+      this.handleHmrOutput(m.path, hmrOutput, this.state, m.firstInvalidatedBy)
     })()
   }
 
@@ -238,7 +240,7 @@ export class FullBundleDevEnvironment extends DevEnvironment {
   }
 
   private async getRolldownOptions() {
-    const chunkMetadataMap = new Map<string, ChunkMetadata>()
+    const chunkMetadataMap = new ChunkMetadataMap()
     const rolldownOptions = resolveRolldownOptions(this, chunkMetadataMap)
     rolldownOptions.experimental ??= {}
     rolldownOptions.experimental.hmr = {
@@ -355,19 +357,19 @@ export class FullBundleDevEnvironment extends DevEnvironment {
     file: string,
     hmrOutput: HmrOutput,
     { options, bundle }: BundleStateCommonProperties,
+    firstInvalidatedBy?: string,
   ) {
-    if (hmrOutput.fullReload) {
+    if (hmrOutput.type === 'Noop') return
+
+    if (hmrOutput.type === 'FullReload') {
       this.triggerGenerateBundle({ options, bundle })
 
-      const reason = hmrOutput.fullReloadReason
-        ? colors.dim(` (${hmrOutput.fullReloadReason})`)
+      const reason = hmrOutput.reason
+        ? colors.dim(` (${hmrOutput.reason})`)
         : ''
       this.logger.info(
         colors.green(`trigger page reload `) + colors.dim(file) + reason,
-        {
-          // clear: !hmrOutput.firstInvalidatedBy,
-          timestamp: true,
-        },
+        { clear: !firstInvalidatedBy, timestamp: true },
       )
       return
     }
@@ -387,7 +389,7 @@ export class FullBundleDevEnvironment extends DevEnvironment {
         url: hmrOutput.filename,
         path: boundary.boundary,
         acceptedPath: boundary.acceptedVia,
-        firstInvalidatedBy: hmrOutput.firstInvalidatedBy,
+        firstInvalidatedBy,
         timestamp: 0,
       }
     })
@@ -398,7 +400,7 @@ export class FullBundleDevEnvironment extends DevEnvironment {
     this.logger.info(
       colors.green(`hmr update `) +
         colors.dim([...new Set(updates.map((u) => u.path))].join(', ')),
-      { clear: !hmrOutput.firstInvalidatedBy, timestamp: true },
+      { clear: !firstInvalidatedBy, timestamp: true },
     )
 
     this.state = {
