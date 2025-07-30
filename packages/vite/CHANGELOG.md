@@ -1,3 +1,17 @@
+## <small>[7.0.12](https://github.com/vitejs/rolldown-vite/compare/v7.0.11...v7.0.12) (2025-07-30)</small>
+### Features
+
+* bump rolldown ([#344](https://github.com/vitejs/rolldown-vite/issues/344)) ([56f94c7](https://github.com/vitejs/rolldown-vite/commit/56f94c7c1c1a23188f3ac41925b3bd7e52240c2d))
+* **native-plugin:** output warn / debug logs from resolver ([#343](https://github.com/vitejs/rolldown-vite/issues/343)) ([2ea6194](https://github.com/vitejs/rolldown-vite/commit/2ea61943c4a1934d3268ef5c42655a98c54b7130))
+
+### Bug Fixes
+
+* reset viteMetadata in watch mode ([#342](https://github.com/vitejs/rolldown-vite/issues/342)) ([e2bb54e](https://github.com/vitejs/rolldown-vite/commit/e2bb54e794947c45e2a438c2df187e953ac5916c))
+
+### Miscellaneous Chores
+
+* update rolldown-plugin-dts ([2c4159e](https://github.com/vitejs/rolldown-vite/commit/2c4159e516d63fd8f180b507fc2c561fbb3ee52e))
+
 ## <small>[7.0.11](https://github.com/vitejs/rolldown-vite/compare/v7.0.10...v7.0.11) (2025-07-25)</small>
 ### Features
 
