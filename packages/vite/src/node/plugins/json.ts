@@ -57,9 +57,6 @@ export function jsonPlugin(
         moduleType: ['json'],
       },
       handler(json, id) {
-        // for backward compat this if statement is needed
-        if (!jsonExtRE.test(id) || SPECIAL_QUERY_RE.test(id)) return null
-
         if (inlineRE.test(id) || noInlineRE.test(id)) {
           this.warn(
             `\n` +

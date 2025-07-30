@@ -201,18 +201,14 @@ export function dynamicImportVarsPlugin(config: ResolvedConfig): Plugin {
     name: 'vite:dynamic-import-vars',
 
     resolveId: {
-      filter: {
-        id: exactRegex(dynamicImportHelperId),
-      },
+      filter: { id: exactRegex(dynamicImportHelperId) },
       handler(id) {
         return id
       },
     },
 
     load: {
-      filter: {
-        id: exactRegex(dynamicImportHelperId),
-      },
+      filter: { id: exactRegex(dynamicImportHelperId) },
       handler(_id) {
         return `export default ${dynamicImportHelper.toString()}`
       },

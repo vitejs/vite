@@ -34,6 +34,8 @@ import { BaseEnvironment } from '../baseEnvironment'
 import type { DevEnvironment } from '../server/environment'
 import { transformGlobImport } from '../plugins/importMetaGlob'
 import { cleanUrl } from '../../shared/utils'
+import { loadTsconfigJsonForFile } from '../plugins/esbuild'
+import { setOxcTransformOptionsFromTsconfigOptions } from '../plugins/oxc'
 
 export class ScanEnvironment extends BaseEnvironment {
   mode = 'scan' as const
@@ -249,11 +251,27 @@ async function prepareRolldownScanner(
   const { plugins: pluginsFromConfig = [], ...rollupOptions } =
     environment.config.optimizeDeps.rollupOptions ?? {}
 
-  // The plugin pipeline automatically loads the closest tsconfig.json.
-  // Rolldown reads the tsconfig.json when a ts file is passed to it.
   const plugins = await asyncFlatten(arraify(pluginsFromConfig))
 
   plugins.push(...rolldownScanPlugin(environment, deps, missing, entries))
+
+  // The plugin pipeline automatically loads the closest tsconfig.json.
+  // But Rolldown doesn't support reading tsconfig.json (https://github.com/rolldown/rolldown/issues/4968).
+  // Due to syntax incompatibilities between the experimental decorators in TypeScript and TC39 decorators,
+  // we cannot simply set `"experimentalDecorators": true` or `false`. (https://github.com/vitejs/vite/pull/15206#discussion_r1417414715)
+  // Therefore, we use the closest tsconfig.json from the root to make it work in most cases.
+  const { tsconfig } = await loadTsconfigJsonForFile(
+    path.join(environment.config.root, '_dummy.js'),
+  )
+  rollupOptions.transform ??= {}
+  setOxcTransformOptionsFromTsconfigOptions(
+    rollupOptions.transform,
+    tsconfig.compilerOptions,
+    [], // NOTE: ignore warnings as the same warning will be shown by the plugin container
+  )
+  if (typeof rollupOptions.transform.jsx === 'object') {
+    rollupOptions.transform.jsx.development ??= !environment.config.isProduction
+  }
 
   async function build() {
     await scan({

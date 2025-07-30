@@ -5,6 +5,22 @@ test('should render', async () => {
   expect(await page.textContent('#pagetitle')).toBe('Page title')
 })
 
+test.runIf(isServe)(
+  'full reload happens when the HTML is changed',
+  async () => {
+    await expect
+      .poll(() => getColor('.html'))
+      .toBe('oklch(0.623 0.214 259.815)')
+
+    editFile('index.html', (code) =>
+      code.replace('"html text-blue-500"', '"html text-green-500"'),
+    )
+    await expect
+      .poll(() => getColor('.html'))
+      .toBe('oklch(0.723 0.219 149.579)')
+  },
+)
+
 test.runIf(isServe)('regenerate CSS and HMR (glob pattern)', async () => {
   const el = page.locator('#view1-text')
   expect(await getColor(el)).toBe('oklch(0.627 0.194 149.214)')

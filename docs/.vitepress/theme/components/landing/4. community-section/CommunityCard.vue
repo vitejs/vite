@@ -36,6 +36,7 @@ defineProps<{
         :src="testimonial.avatar"
         :alt="testimonial.name"
         class="card__avatar"
+        loading="lazy"
       />
       <div class="card__meta">
         <span class="card__name">

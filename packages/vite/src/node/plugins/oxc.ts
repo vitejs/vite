@@ -30,7 +30,7 @@ import { type Environment, perEnvironmentPlugin } from '..'
 import type { ViteDevServer } from '../server'
 import { JS_TYPES_RE } from '../constants'
 import type { Logger } from '../logger'
-import type { ESBuildOptions } from './esbuild'
+import type { ESBuildOptions, TSCompilerOptions } from './esbuild'
 import { loadTsconfigJsonForFile } from './esbuild'
 
 // IIFE content looks like `var MyLib = (function() {`.
@@ -53,6 +53,120 @@ export interface OxcOptions
   jsxInject?: string
   jsxRefreshInclude?: string | RegExp | ReadonlyArray<string | RegExp>
   jsxRefreshExclude?: string | RegExp | ReadonlyArray<string | RegExp>
+}
+
+export function setOxcTransformOptionsFromTsconfigOptions(
+  oxcOptions: OxcTransformOptions,
+  tsCompilerOptions: Readonly<TSCompilerOptions> = {},
+  warnings: string[],
+): void {
+  // when both the normal options and tsconfig is set,
+  // we want to prioritize the normal options
+  if (
+    oxcOptions.jsx === undefined ||
+    (typeof oxcOptions.jsx === 'object' && oxcOptions.jsx.runtime === undefined)
+  ) {
+    if (tsCompilerOptions.jsx === 'preserve') {
+      oxcOptions.jsx = 'preserve'
+    } else {
+      const jsxOptions: OxcJsxOptions = { ...oxcOptions.jsx }
+
+      if (tsCompilerOptions.jsxFactory) {
+        jsxOptions.pragma ??= tsCompilerOptions.jsxFactory
+      }
+      if (tsCompilerOptions.jsxFragmentFactory) {
+        jsxOptions.pragmaFrag ??= tsCompilerOptions.jsxFragmentFactory
+      }
+      if (tsCompilerOptions.jsxImportSource) {
+        jsxOptions.importSource ??= tsCompilerOptions.jsxImportSource
+      }
+
+      switch (tsCompilerOptions.jsx) {
+        case 'react':
+          jsxOptions.runtime = 'classic'
+          // this option should not be set when using classic runtime
+          jsxOptions.importSource = undefined
+          break
+        case 'react-jsxdev':
+          jsxOptions.development = true
+        // eslint-disable-next-line no-fallthrough
+        case 'react-jsx':
+          jsxOptions.runtime = 'automatic'
+          // these options should not be set when using automatic runtime
+          jsxOptions.pragma = undefined
+          jsxOptions.pragmaFrag = undefined
+          break
+        default:
+          break
+      }
+
+      oxcOptions.jsx = jsxOptions
+    }
+  }
+  if (oxcOptions.decorator?.legacy === undefined) {
+    const experimentalDecorators = tsCompilerOptions.experimentalDecorators
+    if (experimentalDecorators !== undefined) {
+      oxcOptions.decorator ??= {}
+      oxcOptions.decorator.legacy = experimentalDecorators
+    }
+    const emitDecoratorMetadata = tsCompilerOptions.emitDecoratorMetadata
+    if (emitDecoratorMetadata !== undefined) {
+      oxcOptions.decorator ??= {}
+      oxcOptions.decorator.emitDecoratorMetadata = emitDecoratorMetadata
+    }
+  }
+
+  /**
+   * | preserveValueImports | importsNotUsedAsValues | verbatimModuleSyntax | onlyRemoveTypeImports |
+   * | -------------------- | ---------------------- | -------------------- |---------------------- |
+   * | false                | remove                 | false                | false                 |
+   * | false                | preserve, error        | -                    | -                     |
+   * | true                 | remove                 | -                    | -                     |
+   * | true                 | preserve, error        | true                 | true                  |
+   */
+  if (tsCompilerOptions.verbatimModuleSyntax !== undefined) {
+    oxcOptions.typescript ??= {}
+    oxcOptions.typescript.onlyRemoveTypeImports =
+      tsCompilerOptions.verbatimModuleSyntax
+  } else if (
+    tsCompilerOptions.preserveValueImports !== undefined ||
+    tsCompilerOptions.importsNotUsedAsValues !== undefined
+  ) {
+    const preserveValueImports = tsCompilerOptions.preserveValueImports ?? false
+    const importsNotUsedAsValues =
+      tsCompilerOptions.importsNotUsedAsValues ?? 'remove'
+    if (preserveValueImports === false && importsNotUsedAsValues === 'remove') {
+      oxcOptions.typescript ??= {}
+      oxcOptions.typescript.onlyRemoveTypeImports = true
+    } else if (
+      preserveValueImports === true &&
+      (importsNotUsedAsValues === 'preserve' ||
+        importsNotUsedAsValues === 'error')
+    ) {
+      oxcOptions.typescript ??= {}
+      oxcOptions.typescript.onlyRemoveTypeImports = false
+    } else {
+      warnings.push(
+        `preserveValueImports=${preserveValueImports} + importsNotUsedAsValues=${importsNotUsedAsValues} is not supported by oxc.` +
+          'Please migrate to the new verbatimModuleSyntax option.',
+      )
+      oxcOptions.typescript ??= {}
+      oxcOptions.typescript.onlyRemoveTypeImports = false
+    }
+  } else {
+    oxcOptions.typescript ??= {}
+    oxcOptions.typescript.onlyRemoveTypeImports = false
+  }
+
+  const resolvedTsconfigTarget = resolveTsconfigTarget(tsCompilerOptions.target)
+  const useDefineForClassFields =
+    tsCompilerOptions.useDefineForClassFields ??
+    (resolvedTsconfigTarget === 'next' || resolvedTsconfigTarget >= 2022)
+  oxcOptions.assumptions ??= {}
+  oxcOptions.assumptions.setPublicClassFields = !useDefineForClassFields
+  oxcOptions.typescript ??= {}
+  oxcOptions.typescript.removeClassFieldsWithoutInitializer =
+    !useDefineForClassFields
 }
 
 export async function transformWithOxc(
@@ -96,126 +210,11 @@ export async function transformWithOxc(
       if (watcher && tsconfigFile && config) {
         ensureWatchedFile(watcher, tsconfigFile, config.root)
       }
-      const loadedCompilerOptions = loadedTsconfig.compilerOptions ?? {}
-
-      // when both the normal options and tsconfig is set,
-      // we want to prioritize the normal options
-      if (
-        resolvedOptions.jsx === undefined ||
-        (typeof resolvedOptions.jsx === 'object' &&
-          resolvedOptions.jsx.runtime === undefined)
-      ) {
-        if (loadedCompilerOptions.jsx === 'preserve') {
-          resolvedOptions.jsx = 'preserve'
-        } else {
-          const jsxOptions: OxcJsxOptions = { ...resolvedOptions.jsx }
-
-          if (loadedCompilerOptions.jsxFactory) {
-            jsxOptions.pragma ??= loadedCompilerOptions.jsxFactory
-          }
-          if (loadedCompilerOptions.jsxFragmentFactory) {
-            jsxOptions.pragmaFrag ??= loadedCompilerOptions.jsxFragmentFactory
-          }
-          if (loadedCompilerOptions.jsxImportSource) {
-            jsxOptions.importSource ??= loadedCompilerOptions.jsxImportSource
-          }
-
-          switch (loadedCompilerOptions.jsx) {
-            case 'react':
-              jsxOptions.runtime = 'classic'
-              // this option should not be set when using classic runtime
-              jsxOptions.importSource = undefined
-              break
-            case 'react-jsxdev':
-              jsxOptions.development = true
-            // eslint-disable-next-line no-fallthrough
-            case 'react-jsx':
-              jsxOptions.runtime = 'automatic'
-              // these options should not be set when using automatic runtime
-              jsxOptions.pragma = undefined
-              jsxOptions.pragmaFrag = undefined
-              break
-            default:
-              break
-          }
-
-          resolvedOptions.jsx = jsxOptions
-        }
-      }
-      if (resolvedOptions.decorator?.legacy === undefined) {
-        const experimentalDecorators =
-          loadedCompilerOptions.experimentalDecorators
-        if (experimentalDecorators !== undefined) {
-          resolvedOptions.decorator ??= {}
-          resolvedOptions.decorator.legacy = experimentalDecorators
-        }
-        const emitDecoratorMetadata =
-          loadedCompilerOptions.emitDecoratorMetadata
-        if (emitDecoratorMetadata !== undefined) {
-          resolvedOptions.decorator ??= {}
-          resolvedOptions.decorator.emitDecoratorMetadata =
-            emitDecoratorMetadata
-        }
-      }
-
-      /**
-       * | preserveValueImports | importsNotUsedAsValues | verbatimModuleSyntax | onlyRemoveTypeImports |
-       * | -------------------- | ---------------------- | -------------------- |---------------------- |
-       * | false                | remove                 | false                | false                 |
-       * | false                | preserve, error        | -                    | -                     |
-       * | true                 | remove                 | -                    | -                     |
-       * | true                 | preserve, error        | true                 | true                  |
-       */
-      if (loadedCompilerOptions.verbatimModuleSyntax !== undefined) {
-        resolvedOptions.typescript ??= {}
-        resolvedOptions.typescript.onlyRemoveTypeImports =
-          loadedCompilerOptions.verbatimModuleSyntax
-      } else if (
-        loadedCompilerOptions.preserveValueImports !== undefined ||
-        loadedCompilerOptions.importsNotUsedAsValues !== undefined
-      ) {
-        const preserveValueImports =
-          loadedCompilerOptions.preserveValueImports ?? false
-        const importsNotUsedAsValues =
-          loadedCompilerOptions.importsNotUsedAsValues ?? 'remove'
-        if (
-          preserveValueImports === false &&
-          importsNotUsedAsValues === 'remove'
-        ) {
-          resolvedOptions.typescript ??= {}
-          resolvedOptions.typescript.onlyRemoveTypeImports = true
-        } else if (
-          preserveValueImports === true &&
-          (importsNotUsedAsValues === 'preserve' ||
-            importsNotUsedAsValues === 'error')
-        ) {
-          resolvedOptions.typescript ??= {}
-          resolvedOptions.typescript.onlyRemoveTypeImports = false
-        } else {
-          warnings.push(
-            `preserveValueImports=${preserveValueImports} + importsNotUsedAsValues=${importsNotUsedAsValues} is not supported by oxc.` +
-              'Please migrate to the new verbatimModuleSyntax option.',
-          )
-          resolvedOptions.typescript ??= {}
-          resolvedOptions.typescript.onlyRemoveTypeImports = false
-        }
-      } else {
-        resolvedOptions.typescript ??= {}
-        resolvedOptions.typescript.onlyRemoveTypeImports = false
-      }
-
-      const resolvedTsconfigTarget = resolveTsconfigTarget(
-        loadedCompilerOptions.target,
+      setOxcTransformOptionsFromTsconfigOptions(
+        resolvedOptions,
+        loadedTsconfig.compilerOptions,
+        warnings,
       )
-      const useDefineForClassFields =
-        loadedCompilerOptions.useDefineForClassFields ??
-        (resolvedTsconfigTarget === 'next' || resolvedTsconfigTarget >= 2022)
-      resolvedOptions.assumptions ??= {}
-      resolvedOptions.assumptions.setPublicClassFields =
-        !useDefineForClassFields
-      resolvedOptions.typescript ??= {}
-      resolvedOptions.typescript.removeClassFieldsWithoutInitializer =
-        !useDefineForClassFields
     } catch (e) {
       if (e instanceof TSConfckParseError) {
         // tsconfig could be out of root, make sure it is watched on dev

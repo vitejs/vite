@@ -74,7 +74,7 @@ type TSConfigJSON = {
   }
   [key: string]: any
 }
-type TSCompilerOptions = NonNullable<TSConfigJSON['compilerOptions']>
+export type TSCompilerOptions = NonNullable<TSConfigJSON['compilerOptions']>
 
 let esbuild: Promise<typeof import('esbuild')> | undefined
 const importEsbuild = () => {

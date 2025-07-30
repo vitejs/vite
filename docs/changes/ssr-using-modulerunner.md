@@ -19,3 +19,5 @@ The `server.ssrLoadModule(url)` only allows importing modules in the `ssr` e
 ## Migration Guide
 
 Check out the [Environment API for Frameworks Guide](../guide/api-environment-frameworks.md).
+
+`server.ssrFixStacktrace` and `server.ssrRewriteStacktrace` does not have to be called when using the Module Runner APIs. The stack traces will be updated unless `sourcemapInterceptor` is set to `false`.

@@ -330,4 +330,18 @@ describe('supports plugin context', () => {
       },
     })
   })
+
+  test('this.fs is supported in dev', async () => {
+    expect.hasAssertions()
+
+    const server = await createServerWithPlugin({
+      name: 'test',
+      resolveId(id) {
+        if (id !== ENTRY_ID) return
+        expect(this.fs.readFile).toBeTypeOf('function')
+      },
+    })
+    await server.transformRequest(ENTRY_ID)
+    await server.close()
+  })
 })

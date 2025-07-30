@@ -55,6 +55,7 @@ export {
   VERSION as version,
   DEFAULT_CLIENT_CONDITIONS as defaultClientConditions,
   DEFAULT_CLIENT_MAIN_FIELDS as defaultClientMainFields,
+  DEFAULT_EXTERNAL_CONDITIONS as defaultExternalConditions,
   DEFAULT_SERVER_CONDITIONS as defaultServerConditions,
   DEFAULT_SERVER_MAIN_FIELDS as defaultServerMainFields,
   defaultAllowedOrigins,
@@ -256,7 +257,7 @@ export type {
 } from 'dep-types/alias'
 export type { Connect } from 'dep-types/connect'
 export type { WebSocket, WebSocketAlias } from 'dep-types/ws'
-export type { HttpProxy } from 'dep-types/http-proxy'
+export type * as HttpProxy from 'http-proxy-3'
 export type { FSWatcher, WatchOptions } from 'dep-types/chokidar'
 export type { Terser } from 'types/internal/terserOptions'
 export type { RollupCommonJSOptions } from 'dep-types/commonjs'

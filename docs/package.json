@@ -12,10 +12,11 @@
     "@types/express": "^5.0.3",
     "feed": "^5.1.0",
     "gsap": "^3.13.0",
+    "markdown-it-image-size": "^14.7.0",
     "oxc-minify": "^0.74.0",
-    "vitepress": "^2.0.0-alpha.8",
+    "vitepress": "^2.0.0-alpha.9",
     "vitepress-plugin-group-icons": "^1.6.1",
     "vitepress-plugin-llms": "^1.7.1",
-    "vue": "^3.5.17"
+    "vue": "^3.5.18"
   }
 }

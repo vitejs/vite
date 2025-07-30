@@ -63,9 +63,7 @@ export function importGlobPlugin(config: ResolvedConfig): Plugin {
       importGlobMaps.clear()
     },
     transform: {
-      filter: {
-        code: 'import.meta.glob',
-      },
+      filter: { code: 'import.meta.glob' },
       async handler(code, id) {
         const result = await transformGlobImport(
           code,

@@ -80,7 +80,7 @@ function dismiss() {
         Register
       </a>
     </p>
-    <button @click="dismiss">
+    <button aria-label="close" @click="dismiss">
       <svg
         class="close"
         xmlns="http://www.w3.org/2000/svg"

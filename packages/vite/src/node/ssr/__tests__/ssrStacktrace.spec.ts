@@ -13,7 +13,7 @@ async function createDevServer() {
       noDiscovery: true,
     },
   })
-  server.pluginContainer.buildStart({})
+  server.environments.ssr.pluginContainer.buildStart({})
   return server
 }
 
