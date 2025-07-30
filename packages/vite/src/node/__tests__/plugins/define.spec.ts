@@ -31,11 +31,11 @@ describe('definePlugin', () => {
     const transform = await createDefinePluginTransform({
       __APP_VERSION__: JSON.stringify('1.0'),
     })
-    expect(await transform('const version = __APP_VERSION__ ;')).toBe(
-      'const version = "1.0";\n',
+    expect(await transform('export const version = __APP_VERSION__ ;')).toBe(
+      'export const version = "1.0";\n',
     )
-    expect(await transform('const version = __APP_VERSION__;')).toBe(
-      'const version = "1.0";\n',
+    expect(await transform('export const version = __APP_VERSION__;')).toBe(
+      'export const version = "1.0";\n',
     )
   })
 
@@ -43,45 +43,47 @@ describe('definePlugin', () => {
     const transform = await createDefinePluginTransform({
       __APP_VERSION__: JSON.stringify('1.0'),
     })
-    expect(await transform('const version = "1.0";')).toBe(undefined)
-    expect(await transform('const version = import.meta.SOMETHING')).toBe(
-      undefined,
-    )
+    expect(await transform('export const version = "1.0";')).toBe(undefined)
+    expect(
+      await transform('export const version = import.meta.SOMETHING'),
+    ).toBe(undefined)
   })
 
   test('replaces import.meta.env.SSR with false', async () => {
     const transform = await createDefinePluginTransform()
-    expect(await transform('const isSSR = import.meta.env.SSR;')).toBe(
-      'const isSSR = false;\n',
+    expect(await transform('export const isSSR = import.meta.env.SSR;')).toBe(
+      'export const isSSR = false;\n',
     )
   })
 
   test('preserve import.meta.hot with override', async () => {
     // assert that the default behavior is to replace import.meta.hot with undefined
     const transform = await createDefinePluginTransform()
-    expect(await transform('const hot = import.meta.hot;')).toBe(
-      'const hot = void 0;\n',
+    expect(await transform('export const hot = import.meta.hot;')).toBe(
+      'export const hot = void 0;\n',
     )
     // assert that we can specify a user define to preserve import.meta.hot
     const overrideTransform = await createDefinePluginTransform({
       'import.meta.hot': 'import.meta.hot',
     })
-    expect(await overrideTransform('const hot = import.meta.hot;')).toBe(
-      'const hot = import.meta.hot;\n',
+    expect(await overrideTransform('export const hot = import.meta.hot;')).toBe(
+      'export const hot = import.meta.hot;\n',
     )
   })
 
   test('replace import.meta.env.UNKNOWN with undefined', async () => {
     const transform = await createDefinePluginTransform()
-    expect(await transform('const foo = import.meta.env.UNKNOWN;')).toBe(
-      'const foo = undefined                       ;\n',
+    expect(await transform('export const foo = import.meta.env.UNKNOWN;')).toBe(
+      'export const foo = undefined                       ;\n',
     )
   })
 
   test('leave import.meta.env["UNKNOWN"] to runtime', async () => {
     const transform = await createDefinePluginTransform()
-    expect(await transform('const foo = import.meta.env["UNKNOWN"];')).toMatch(
-      /const __vite_import_meta_env__ = .*;\nconst foo = __vite_import_meta_env__\["UNKNOWN"\];/,
+    expect(
+      await transform('export const foo = import.meta.env["UNKNOWN"];'),
+    ).toMatch(
+      /const __vite_import_meta_env__ = .*;\nexport const foo = __vite_import_meta_env__\["UNKNOWN"\];/,
     )
   })
 
@@ -89,8 +91,8 @@ describe('definePlugin', () => {
     const transform = await createDefinePluginTransform({
       'import.meta.env.UNKNOWN': 'import.meta.env.UNKNOWN',
     })
-    expect(await transform('const foo = import.meta.env.UNKNOWN;')).toBe(
-      'const foo = import.meta.env.UNKNOWN;\n',
+    expect(await transform('export const foo = import.meta.env.UNKNOWN;')).toBe(
+      'export const foo = import.meta.env.UNKNOWN;\n',
     )
   })
 
@@ -101,10 +103,10 @@ describe('definePlugin', () => {
 
     expect(
       await transform(
-        'const isLegacy = import.meta.env.LEGACY;\nimport.meta.env.UNDEFINED && console.log(import.meta.env.UNDEFINED);',
+        'export const isLegacy = import.meta.env.LEGACY;\nimport.meta.env.UNDEFINED && console.log(import.meta.env.UNDEFINED);',
       ),
     ).toMatchInlineSnapshot(`
-      "const isLegacy = __VITE_IS_LEGACY__;
+      "export const isLegacy = __VITE_IS_LEGACY__;
       undefined                          && console.log(undefined                         );
       "
     `)
@@ -112,8 +114,8 @@ describe('definePlugin', () => {
 
   test('replace bare import.meta.env', async () => {
     const transform = await createDefinePluginTransform()
-    expect(await transform('const env = import.meta.env;')).toMatch(
-      /const __vite_import_meta_env__ = .*;\nconst env = __vite_import_meta_env__;/,
+    expect(await transform('export const env = import.meta.env;')).toMatch(
+      /const __vite_import_meta_env__ = .*;\nexport const env = __vite_import_meta_env__;/,
     )
   })
 
@@ -121,26 +123,26 @@ describe('definePlugin', () => {
     const transform = await createDefinePluginTransform()
     expect(
       await transform(
-        'console.log(__vite_import_meta_env__);\nconst env = import.meta.env;',
+        'console.log(__vite_import_meta_env__);\nexport const env = import.meta.env;',
       ),
     ).toMatch(
-      /const __vite_import_meta_env__1 = .*;\nconsole.log\(__vite_import_meta_env__\);\nconst env = __vite_import_meta_env__1;/,
+      /const __vite_import_meta_env__1 = .*;\nconsole.log\(__vite_import_meta_env__\);\nexport const env = __vite_import_meta_env__1;/,
     )
 
     expect(
       await transform(
-        'console.log(__vite_import_meta_env__, __vite_import_meta_env__1);\n const env = import.meta.env;',
+        'console.log(__vite_import_meta_env__, __vite_import_meta_env__1);\n export const env = import.meta.env;',
       ),
     ).toMatch(
-      /const __vite_import_meta_env__2 = .*;\nconsole.log\(__vite_import_meta_env__, __vite_import_meta_env__1\);\nconst env = __vite_import_meta_env__2;/,
+      /const __vite_import_meta_env__2 = .*;\nconsole.log\(__vite_import_meta_env__, __vite_import_meta_env__1\);\nexport const env = __vite_import_meta_env__2;/,
     )
 
     expect(
       await transform(
-        'console.log(__vite_import_meta_env__);\nconst env = import.meta.env;\nconsole.log(import.meta.env.UNDEFINED);',
+        'console.log(__vite_import_meta_env__);\nexport const env = import.meta.env;\nconsole.log(import.meta.env.UNDEFINED);',
       ),
     ).toMatch(
-      /const __vite_import_meta_env__1 = .*;\nconsole.log\(__vite_import_meta_env__\);\nconst env = __vite_import_meta_env__1;\nconsole.log\(undefined {26}\);/,
+      /const __vite_import_meta_env__1 = .*;\nconsole.log\(__vite_import_meta_env__\);\nexport const env = __vite_import_meta_env__1;\nconsole.log\(undefined {26}\);/,
     )
   })
 })

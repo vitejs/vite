@@ -643,7 +643,8 @@ class MinimalPluginContext<T extends Environment = Environment>
 
 class PluginContext
   extends MinimalPluginContext
-  implements Omit<RollupPluginContext, 'cache'>
+  // fs will be implemented in 7.1
+  implements Omit<RollupPluginContext, 'cache' | 'fs'>
 {
   ssr = false
   _scan = false
@@ -960,7 +961,8 @@ class LoadPluginContext extends PluginContext {
 
 class TransformPluginContext
   extends LoadPluginContext
-  implements Omit<RollupTransformPluginContext, 'cache'>
+  // fs will be implemented in 7.1
+  implements Omit<RollupTransformPluginContext, 'cache' | 'fs'>
 {
   filename: string
   originalCode: string

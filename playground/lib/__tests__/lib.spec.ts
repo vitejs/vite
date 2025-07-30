@@ -29,11 +29,11 @@ describe.runIf(isBuild)('build', () => {
     )
     const namedCode = readFile('dist/named/my-lib-named.iife.js')
     // esbuild helpers are injected inside of the IIFE wrapper
-    expect(code).toMatch(/^\/\*[^*]*\*\/\s*var MyLib=function\(\)\{\s*/)
+    expect(code).toMatch(/^\/\*[^*]*\*\/\s*var MyLib=\(function\(\)\{\s*/)
     expect(noMinifyCode).toMatch(
-      /^\/\*[^*]*\*\/\s*var MyLib\s*=\s*function\(\)\s*\{\s*/,
+      /^\/\*[^*]*\*\/\s*var MyLib\s*=\s*\(function\(\)\s*\{\s*/,
     )
-    expect(namedCode).toMatch(/^var MyLibNamed=function\([^()]+\)\{\s*/)
+    expect(namedCode).toMatch(/^var MyLibNamed=\(function\([^()]+\)\{\s*/)
   })
 
   test('restrisct-helpers-injection', async () => {
