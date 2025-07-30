@@ -54,7 +54,7 @@ import type {
   PluginContextMeta,
   ResolvedId,
   RollupError,
-  RollupFsModule,
+  RolldownFsModule as RollupFsModule,
   RollupLog,
   MinimalPluginContext as RollupMinimalPluginContext,
   PluginContext as RollupPluginContext,
