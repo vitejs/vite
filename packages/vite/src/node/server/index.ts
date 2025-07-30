@@ -25,6 +25,7 @@ import {
 import type { InlineConfig, ResolvedConfig } from '../config'
 import { isResolvedConfig, resolveConfig } from '../config'
 import {
+  type Hostname,
   diffDnsOrderChange,
   getServerUrlByHost,
   isInNodeModules,
@@ -531,7 +532,7 @@ export async function _createServer(
     client: () => environments.client.moduleGraph,
     ssr: () => environments.ssr.moduleGraph,
   })
-  const pluginContainer = createPluginContainer(environments)
+  let pluginContainer = createPluginContainer(environments)
 
   const closeHttpServer = createServerCloseFn(httpServer)
 
@@ -559,16 +560,29 @@ export async function _createServer(
     server._ssrCompatModuleRunner = undefined
   }
 
+  let hot = ws
   let server: ViteDevServer = {
     config,
     middlewares,
     httpServer,
     watcher,
     ws,
-    hot: ws,
+    get hot() {
+      warnFutureDeprecation(config, 'removeServerHot')
+      return hot
+    },
+    set hot(h) {
+      hot = h
+    },
 
     environments,
-    pluginContainer,
+    get pluginContainer() {
+      warnFutureDeprecation(config, 'removeServerPluginContainer')
+      return pluginContainer
+    },
+    set pluginContainer(p) {
+      pluginContainer = p
+    },
     get moduleGraph() {
       warnFutureDeprecation(config, 'removeServerModuleGraph')
       return moduleGraph
@@ -592,15 +606,12 @@ export async function _createServer(
       })
     },
     transformRequest(url, options) {
-      warnFutureDeprecation(
-        config,
-        'removeServerTransformRequest',
-        'server.transformRequest() is deprecated. Use environment.transformRequest() instead.',
-      )
+      warnFutureDeprecation(config, 'removeServerTransformRequest')
       const environment = server.environments[options?.ssr ? 'ssr' : 'client']
       return environment.transformRequest(url)
     },
     warmupRequest(url, options) {
+      warnFutureDeprecation(config, 'removeServerWarmupRequest')
       const environment = server.environments[options?.ssr ? 'ssr' : 'client']
       return environment.warmupRequest(url)
     },
@@ -612,12 +623,23 @@ export async function _createServer(
       return ssrLoadModule(url, server, opts?.fixStacktrace)
     },
     ssrFixStacktrace(e) {
+      warnFutureDeprecation(
+        config,
+        'removeSsrLoadModule',
+        "ssrFixStacktrace doesn't need to be used for Environment Module Runners.",
+      )
       ssrFixStacktrace(e, server.environments.ssr.moduleGraph)
     },
     ssrRewriteStacktrace(stack: string) {
+      warnFutureDeprecation(
+        config,
+        'removeSsrLoadModule',
+        "ssrRewriteStacktrace doesn't need to be used for Environment Module Runners.",
+      )
       return ssrRewriteStacktrace(stack, server.environments.ssr.moduleGraph)
     },
     async reloadModule(module) {
+      warnFutureDeprecation(config, 'removeServerReloadModule')
       if (serverConfig.hmr !== false && module.file) {
         // TODO: Should we also update the node moduleGraph for backward compatibility?
         const environmentModule = (module._clientModule ?? module._ssrModule)!
@@ -630,14 +652,20 @@ export async function _createServer(
       }
     },
     async listen(port?: number, isRestart?: boolean) {
-      await startServer(server, port)
+      const hostname = await resolveHostname(config.server.host)
       if (httpServer) {
-        server.resolvedUrls = await resolveServerUrls(
-          httpServer,
-          config.server,
-          httpsOptions,
-          config,
-        )
+        httpServer.prependListener('listening', () => {
+          server.resolvedUrls = resolveServerUrls(
+            httpServer,
+            config.server,
+            hostname,
+            httpsOptions,
+            config,
+          )
+        })
+      }
+      await startServer(server, hostname, port)
+      if (httpServer) {
         if (!isRestart && config.server.open) server.openBrowser()
       }
       return server
@@ -977,6 +1005,7 @@ export async function _createServer(
 
 async function startServer(
   server: ViteDevServer,
+  hostname: Hostname,
   inlinePort?: number,
 ): Promise<void> {
   const httpServer = server.httpServer
@@ -985,7 +1014,6 @@ async function startServer(
   }
 
   const options = server.config.server
-  const hostname = await resolveHostname(options.host)
   const configPort = inlinePort ?? options.port
   // When using non strict port for the dev server, the running port can be different from the config one.
   // When restarting, the original port may be available but to avoid a switch of URL for the running

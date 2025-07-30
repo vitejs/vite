@@ -26,7 +26,7 @@ import {
 } from '../utils'
 import { ssrTransform } from '../ssr/ssrTransform'
 import { checkPublicFile } from '../publicDir'
-import { cleanUrl, unwrapId } from '../../shared/utils'
+import { cleanUrl, slash, unwrapId } from '../../shared/utils'
 import {
   applySourcemapIgnoreList,
   extractSourcemapFromFile,
@@ -274,7 +274,7 @@ async function loadAndTransform(
     // like /service-worker.js or /api/users
     if (
       environment.config.consumer === 'server' ||
-      isFileLoadingAllowed(environment.getTopLevelConfig(), file)
+      isFileLoadingAllowed(environment.getTopLevelConfig(), slash(file))
     ) {
       try {
         code = await fsp.readFile(file, 'utf-8')

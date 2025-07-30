@@ -210,9 +210,7 @@ export function workerImportMetaUrlPlugin(config: ResolvedConfig): Plugin {
     },
 
     transform: {
-      filter: {
-        code: workerImportMetaUrlRE,
-      },
+      filter: { code: workerImportMetaUrlRE },
       async handler(code, id) {
         let s: MagicString | undefined
         const cleanString = stripLiteral(code)

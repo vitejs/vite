@@ -97,7 +97,6 @@ import { addToHTMLProxyTransformResult } from './html'
 import {
   assetUrlRE,
   cssEntriesMap,
-  fileToDevUrl,
   fileToUrl,
   publicAssetUrlCache,
   publicAssetUrlRE,
@@ -369,15 +368,6 @@ export function cssPlugin(config: ResolvedConfig): Plugin {
         },
       },
       async handler(raw, id) {
-        // for backward compat this if statement is needed
-        if (
-          !isCSSRequest(id) ||
-          commonjsProxyRE.test(id) ||
-          SPECIAL_QUERY_RE.test(id)
-        ) {
-          return
-        }
-
         const { environment } = this
         const resolveUrl = (url: string, importer?: string) =>
           idResolver(environment, url, importer)
@@ -522,15 +512,6 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
         },
       },
       async handler(css, id) {
-        // for backward compat this if statement is needed
-        if (
-          !isCSSRequest(id) ||
-          commonjsProxyRE.test(id) ||
-          SPECIAL_QUERY_RE.test(id)
-        ) {
-          return
-        }
-
         css = stripBomTag(css)
 
         // cache css compile result to map
@@ -1128,20 +1109,7 @@ export function cssAnalysisPlugin(config: ResolvedConfig): Plugin {
             // main import to hot update
             const depModules = new Set<string | EnvironmentModuleNode>()
             for (const file of pluginImports) {
-              if (isCSSRequest(file)) {
-                depModules.add(moduleGraph.createFileOnlyEntry(file))
-              } else {
-                const url = await fileToDevUrl(
-                  this.environment,
-                  file,
-                  /* skipBase */ true,
-                )
-                if (url.startsWith('data:')) {
-                  depModules.add(moduleGraph.createFileOnlyEntry(file))
-                } else {
-                  depModules.add(await moduleGraph.ensureEntryFromUrl(url))
-                }
-              }
+              depModules.add(moduleGraph.createFileOnlyEntry(file))
             }
             moduleGraph.updateModuleInfo(
               thisModule,

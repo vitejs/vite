@@ -140,7 +140,7 @@ export class ModuleNode {
   set file(value: string | null) {
     this._set('file', value)
   }
-  get type(): 'js' | 'css' {
+  get type(): 'js' | 'css' | 'asset' {
     return this._get('type')
   }
   // `info` needs special care as it's defined as a proxy in `pluginContainer`,

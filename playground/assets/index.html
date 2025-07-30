@@ -265,6 +265,7 @@
 
 <h2>?raw import</h2>
 <code class="raw"></code>
+<code class="raw-html"></code>
 
 <h2>?no-inline svg import</h2>
 <code class="no-inline-svg"></code>
@@ -545,6 +546,12 @@
 
   import rawSvg from './nested/fragment.svg?raw'
   text('.raw', rawSvg)
+
+  import rawHtml from './nested/partial.html?raw'
+  text('.raw-html', rawHtml)
+  import.meta.hot?.accept('./nested/partial.html?raw', (m) => {
+    text('.raw-html', m.default)
+  })
 
   import noInlineSvg from './nested/fragment.svg?no-inline'
   text('.no-inline-svg', noInlineSvg)

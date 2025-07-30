@@ -96,18 +96,14 @@ export function htmlInlineProxyPlugin(config: ResolvedConfig): Plugin {
     name: 'vite:html-inline-proxy',
 
     resolveId: {
-      filter: {
-        id: isHtmlProxyRE,
-      },
+      filter: { id: isHtmlProxyRE },
       handler(id) {
         return id
       },
     },
 
     load: {
-      filter: {
-        id: isHtmlProxyRE,
-      },
+      filter: { id: isHtmlProxyRE },
       handler(id) {
         const proxyMatch = htmlProxyRE.exec(id)
         if (proxyMatch) {
@@ -353,9 +349,7 @@ export function buildHtmlPlugin(config: ResolvedConfig): Plugin {
     name: 'vite:build-html',
 
     transform: {
-      filter: {
-        id: /\.html$/,
-      },
+      filter: { id: /\.html$/ },
       async handler(html, id) {
         id = normalizePath(id)
         const relativeUrlPath = normalizePath(path.relative(config.root, id))

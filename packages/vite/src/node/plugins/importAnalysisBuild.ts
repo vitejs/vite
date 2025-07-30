@@ -224,18 +224,14 @@ export function buildImportAnalysisPlugin(config: ResolvedConfig): Plugin[] {
   const plugin: Plugin = {
     name: 'vite:build-import-analysis',
     resolveId: {
-      filter: {
-        id: exactRegex(preloadHelperId),
-      },
+      filter: { id: exactRegex(preloadHelperId) },
       handler(id) {
         return id
       },
     },
 
     load: {
-      filter: {
-        id: exactRegex(preloadHelperId),
-      },
+      filter: { id: exactRegex(preloadHelperId) },
       handler(_id) {
         const preloadCode = getPreloadCode(
           this.environment,
