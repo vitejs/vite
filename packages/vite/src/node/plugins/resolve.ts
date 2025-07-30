@@ -348,6 +348,24 @@ export function oxcResolvePlugin(
             options.scan = scan
             return resolveSubpathImports(id, importer, options)
           },
+
+          ...(partialEnv.config.command === 'serve'
+            ? {
+                async onWarn(msg) {
+                  getEnv().logger.warn(`warning: ${msg}`, {
+                    clear: true,
+                    timestamp: true,
+                  })
+                },
+              }
+            : {}),
+          ...(debug
+            ? {
+                async onDebug(message) {
+                  debug(message)
+                },
+              }
+            : {}),
         })
       },
     ),

@@ -214,22 +214,18 @@ describe('file url', () => {
       expect(resolved).toBeNull()
     })
 
-    // skip for native plugin because logs are not output (https://github.com/rolldown/rolldown/issues/4290)
-    test.skipIf(!!process.env._VITE_TEST_NATIVE_PLUGIN)(
-      'non declared node builtin',
-      async () => {
-        await expect(
-          run({
-            builtins: [
-              /* empty */
-            ],
-            idToResolve: 'node:fs',
-          }),
-        ).rejects.toThrowError(
-          /warning: Automatically externalized node built-in module "node:fs"/,
-        )
-      },
-    )
+    test('non declared node builtin', async () => {
+      await expect(
+        run({
+          builtins: [
+            /* empty */
+          ],
+          idToResolve: 'node:fs',
+        }),
+      ).rejects.toThrowError(
+        /warning: Automatically externalized node built-in module "node:fs"/,
+      )
+    })
 
     test('default to node-like builtins', async () => {
       const resolved = await run({
