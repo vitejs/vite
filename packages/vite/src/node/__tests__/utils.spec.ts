@@ -7,6 +7,7 @@ import {
   asyncFlatten,
   bareImportRE,
   combineSourcemaps,
+  deepImportRE,
   extractHostnamesFromSubjectAltName,
   flattenId,
   generateCodeFrame,
@@ -41,6 +42,49 @@ describe('bareImportRE', () => {
   test('should work with relative path', () => {
     expect(bareImportRE.test('./foo')).toBe(false)
     expect(bareImportRE.test('.\\foo')).toBe(false)
+  })
+})
+
+describe('deepImportRE', () => {
+  test('should match regular package with subpath', () => {
+    expect(deepImportRE.test('my-lib/schemas')).toBe(true)
+    const match = deepImportRE.exec('my-lib/schemas')
+    expect(match?.[1]).toBe('my-lib')
+    expect(match?.[2]).toBeUndefined()
+  })
+
+  test('should match scoped package with subpath', () => {
+    expect(deepImportRE.test('@vitejs/plugin-vue/dist/index')).toBe(true)
+    const match = deepImportRE.exec('@vitejs/plugin-vue/dist/index')
+    expect(match?.[1]).toBeUndefined()
+    expect(match?.[2]).toBe('@vitejs/plugin-vue')
+  })
+
+  test('should match @/ scoped package with subpath', () => {
+    expect(deepImportRE.test('@/lib/schemas')).toBe(true)
+    const match = deepImportRE.exec('@/lib/schemas')
+    expect(match?.[1]).toBeUndefined()
+    expect(match?.[2]).toBe('@/lib')
+  })
+
+  test('should not match package without subpath', () => {
+    expect(deepImportRE.test('my-lib')).toBe(false)
+    expect(deepImportRE.test('@vitejs/plugin-vue')).toBe(false)
+    expect(deepImportRE.test('@/lib')).toBe(false)
+  })
+
+  test('should match relative imports', () => {
+    expect(deepImportRE.test('./lib/schemas')).toBe(true)
+    const match = deepImportRE.exec('./lib/schemas')
+    expect(match?.[1]).toBe('.')
+    expect(match?.[2]).toBeUndefined()
+  })
+
+  test('should match absolute imports', () => {
+    expect(deepImportRE.test('/lib/schemas')).toBe(true)
+    const match = deepImportRE.exec('/lib/schemas')
+    expect(match?.[1]).toBe('/lib')
+    expect(match?.[2]).toBeUndefined()
   })
 })
 
