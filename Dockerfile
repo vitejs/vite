@@ -1,6 +1,9 @@
 # Use Node 20 as the base image
 FROM node:20-alpine
 
+# Install git to avoid errors with git-based commands
+RUN apk add --no-cache git
+
 # Set the working directory
 WORKDIR /app
 
@@ -12,6 +15,9 @@ RUN npm install -g pnpm
 
 # Install dependencies with pnpm
 RUN pnpm install
+
+# Install tsdown if needed (based on your error)
+RUN pnpm add tsdown --save-dev
 
 # Copy the rest of the project files
 COPY . .
