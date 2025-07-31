@@ -730,7 +730,12 @@ export function runOptimizeDeps(
           // return an empty result instead
           return cancelledResult
         }
-        throw e
+        // Add context about dependency optimization to make errors clearer
+        const depOptError = new Error(
+          `Error during dependency optimization:\n${e.message}`,
+        )
+        depOptError.stack = e.stack
+        throw depOptError
       })
       .finally(() => {
         return disposeContext()
