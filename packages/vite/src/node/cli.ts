@@ -54,7 +54,7 @@ interface GlobalCLIOptions {
 }
 
 interface ExperimentalDevOptions {
-  fullBundleMode?: boolean
+  fullBundle?: boolean
 }
 
 interface BuilderCLIOptions {
@@ -199,7 +199,7 @@ cli
     '--force',
     `[boolean] force the optimizer to ignore the cache and re-bundle`,
   )
-  .option('--fullBundleMode', `[boolean] use experimental full bundle mode`)
+  .option('--fullBundle', `[boolean] use experimental full bundle mode`)
   .action(
     async (
       root: string,
@@ -221,7 +221,7 @@ cli
           server: cleanGlobalCLIOptions(options),
           forceOptimizeDeps: options.force,
           experimental: {
-            fullBundleMode: options.fullBundleMode,
+            fullBundleMode: options.fullBundle,
           },
         })
 
