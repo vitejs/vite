@@ -2038,20 +2038,7 @@ async function bundleConfigFile(
         setup(build) {
           build.onLoad({ filter: /\.[cm]?[jt]s$/ }, async (args) => {
             const contents = await fsp.readFile(args.path, 'utf-8')
-
-            // Create a working import.meta.resolve function
-            const importMetaResolver = await createImportMetaResolver()
             const fileUrl = pathToFileURL(args.path).href
-
-            // Create a serializable resolve function
-            const resolveFunction = importMetaResolver
-              ? `(function(specifier, parent) {
-                  // This will be replaced with actual implementation
-                  return __vite_import_meta_resolve_impl(specifier, parent || ${JSON.stringify(fileUrl)});
-                })`
-              : `(function(specifier, parent) {
-                  throw new Error('[config] "import.meta.resolve" is not supported.');
-                })`
 
             const injectValues =
               `const ${dirnameVarName} = ${JSON.stringify(
@@ -2059,7 +2046,13 @@ async function bundleConfigFile(
               )};` +
               `const ${filenameVarName} = ${JSON.stringify(args.path)};` +
               `const ${importMetaUrlVarName} = ${JSON.stringify(fileUrl)};` +
-              `const ${importMetaResolveVarName} = ${resolveFunction};`
+              `const ${importMetaResolveVarName} = (function(specifier, parent) {
+                // Use Node.js built-in import.meta.resolve when available
+                if (typeof globalThis !== 'undefined' && globalThis.__vite_import_meta_resolve_impl) {
+                  return globalThis.__vite_import_meta_resolve_impl(specifier, parent || ${JSON.stringify(fileUrl)});
+                }
+                throw new Error('[config] "import.meta.resolve" is not supported.');
+              });`
 
             return {
               loader: args.path.endsWith('ts') ? 'ts' : 'js',
@@ -2106,12 +2099,48 @@ async function loadConfigFromBundledFile(
   // Set up import.meta.resolve support
   await setupImportMetaResolverForConfig()
 
-  // Create global resolver implementation
-  const importMetaResolver = await createImportMetaResolver()
-  if (importMetaResolver) {
-    // @ts-expect-error - adding global function for config loading
-    globalThis.__vite_import_meta_resolve_impl = importMetaResolver
+  // Create simpler resolver implementation using Node.js built-in capabilities
+  const createSimpleResolver = () => {
+    // Try to use native import.meta.resolve if available
+    try {
+      const testResolve = eval('import.meta.resolve')
+      if (typeof testResolve === 'function') {
+        return (specifier: string, parent: string) => {
+          return testResolve(specifier, parent)
+        }
+      }
+    } catch {
+      // Fall back to require.resolve for relative paths
+    }
+
+    return (specifier: string, parent: string) => {
+      if (specifier.startsWith('.')) {
+        // Handle relative imports
+        const parentDir = path.dirname(parent.replace(/^file:\/\//, ''))
+        let resolved = path.resolve(parentDir, specifier)
+
+        // Try to add extension if not present
+        if (!path.extname(resolved)) {
+          // Try common extensions
+          const extensions = ['.js', '.mjs', '.cjs', '.ts', '.mts', '.cts']
+          for (const ext of extensions) {
+            const withExt = resolved + ext
+            if (fs.existsSync(withExt)) {
+              resolved = withExt
+              break
+            }
+          }
+        }
+
+        return pathToFileURL(resolved).href
+      }
+      // For non-relative imports, just return as is or throw
+      throw new Error(`[config] Cannot resolve "${specifier}" from "${parent}"`)
+    }
   }
+
+  // @ts-expect-error - adding global function for config loading
+  globalThis.__vite_import_meta_resolve_impl = createSimpleResolver()
 
   try {
     // for esm, before we can register loaders without requiring users to run node
