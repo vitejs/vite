@@ -1,32 +1,35 @@
-# Use Node 20 as the base image
+# استفاده از Node 20 به عنوان تصویر پایه
 FROM node:20-alpine
 
-# Install git to avoid errors with git-based commands
+# نصب Git برای جلوگیری از خطاهای مرتبط با دستورات Git
 RUN apk add --no-cache git
 
-# Set the working directory
+# تعیین پوشه کاری
 WORKDIR /app
 
-# Copy package.json and pnpm-lock.yaml
+# کپی فایل‌های package.json و pnpm-lock.yaml
 COPY package*.json ./
 
-# Install pnpm globally
+# نصب pnpm به صورت جهانی
 RUN npm install -g pnpm
 
-# Install dependencies with pnpm
+# نصب وابستگی‌ها با pnpm
 RUN pnpm install
 
-# Install tsdown if needed (based on your error)
+# نصب tsdown در صورت نیاز (بر اساس خطای شما)
 RUN pnpm add tsdown --save-dev
 
-# Copy the rest of the project files
+# نصب سایر وابستگی‌های گم شده در صورت لزوم
+RUN pnpm add rollup-plugin-license --save-dev
+
+# کپی بقیه فایل‌های پروژه
 COPY . .
 
-# Build the project
+# اجرای بیلد پروژه
 RUN pnpm run build
 
-# Expose port 3000
+# نمایش پورت 3000
 EXPOSE 3000
 
-# Command to start the app
+# دستور برای شروع برنامه
 CMD ["pnpm", "run", "serve"]
