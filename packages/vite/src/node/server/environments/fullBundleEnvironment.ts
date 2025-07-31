@@ -247,8 +247,6 @@ export class FullBundleDevEnvironment extends DevEnvironment {
       implement: await getHmrImplementation(this.getTopLevelConfig()),
     }
 
-    rolldownOptions.treeshake = false
-
     // set filenames to make output paths predictable so that `renderChunk` hook does not need to be used
     if (Array.isArray(rolldownOptions.output)) {
       for (const output of rolldownOptions.output) {
