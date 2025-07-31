@@ -508,12 +508,10 @@ async function init() {
 
   // 5. Ask about immediate install and package manager
   let immediate = argImmediate
-  let agent = argAgent
 
   if (immediate === undefined) {
     const immediateResult = await prompts.confirm({
       message: 'Install and start now?',
-      initialValue: false,
     })
     if (prompts.isCancel(immediateResult)) return cancel()
     immediate = immediateResult
@@ -531,6 +529,7 @@ async function init() {
 
   const pkgManager = pkgInfo ? pkgInfo.name : 'npm'
 
+  let agent = argAgent
   if (immediate && !agent) {
     const agentResult = await prompts.select({
       message: 'Select a package manager:',
