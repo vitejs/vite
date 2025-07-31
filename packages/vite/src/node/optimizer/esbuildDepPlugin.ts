@@ -24,6 +24,10 @@ const convertedExternalPrefix = 'vite-dep-pre-bundle-external:'
 const cjsExternalFacadeNamespace = 'vite:cjs-external-facade'
 const nonFacadePrefix = 'vite-cjs-external-facade:'
 
+// Cache for frequently used RegExp objects to improve performance
+const nonFacadePrefixRegExp = new RegExp(`^${nonFacadePrefix}`)
+const externalsRegExpCache = new Map<string, RegExp>()
+
 const externalTypes = [
   'css',
   // supported pre-processor types
@@ -307,9 +311,16 @@ export function esbuildCjsExternalPlugin(
   return {
     name: 'cjs-external',
     setup(build) {
-      const filter = new RegExp(externals.map(matchesEntireLine).join('|'))
+      // Create cache key for externals RegExp
+      const cacheKey = externals.join('|')
+      let filter = externalsRegExpCache.get(cacheKey)
 
-      build.onResolve({ filter: new RegExp(`^${nonFacadePrefix}`) }, (args) => {
+      if (!filter) {
+        filter = new RegExp(externals.map(matchesEntireLine).join('|'))
+        externalsRegExpCache.set(cacheKey, filter)
+      }
+
+      build.onResolve({ filter: nonFacadePrefixRegExp }, (args) => {
         return {
           path: args.path.slice(nonFacadePrefix.length),
           external: true,

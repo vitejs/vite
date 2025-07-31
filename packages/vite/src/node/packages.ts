@@ -19,6 +19,9 @@ if (process.versions.pnp) {
   } catch {}
 }
 
+// Cache for package.json file contents and metadata to avoid repeated file system reads
+const packageFileCache = new Map<string, { data: any; mtime: number }>()
+
 /** Cache for package.json resolution and package.json contents */
 export type PackageCache = Map<string, PackageData>
 
@@ -58,6 +61,8 @@ function invalidatePackageData(
       packageCache.delete(cacheKey)
     }
   })
+  // Also invalidate file cache
+  packageFileCache.delete(pkgPath)
 }
 
 export function resolvePackageData(
@@ -176,8 +181,37 @@ export function findNearestMainPackageData(
 }
 
 export function loadPackageData(pkgPath: string): PackageData {
+  // Check cache first - use file modification time as cache key
+  const normalizedPath = normalizePath(pkgPath)
+  const stat = tryStatSync(normalizedPath)
+
+  if (stat?.isFile()) {
+    const mtime = stat.mtimeMs
+    const cached = packageFileCache.get(normalizedPath)
+
+    if (cached && cached.mtime === mtime) {
+      // Use cached data if file hasn't changed
+      const data = cached.data
+      const pkgDir = normalizePath(path.dirname(pkgPath))
+      return createPackageDataFromRaw(data, pkgDir)
+    }
+
+    // Read file and cache it
+    const fileContent = fs.readFileSync(pkgPath, 'utf-8')
+    const data = JSON.parse(stripBomTag(fileContent))
+    packageFileCache.set(normalizedPath, { data, mtime })
+
+    const pkgDir = normalizePath(path.dirname(pkgPath))
+    return createPackageDataFromRaw(data, pkgDir)
+  }
+
+  // Fallback for non-existing files (should not happen in normal cases)
   const data = JSON.parse(stripBomTag(fs.readFileSync(pkgPath, 'utf-8')))
   const pkgDir = normalizePath(path.dirname(pkgPath))
+  return createPackageDataFromRaw(data, pkgDir)
+}
+
+function createPackageDataFromRaw(data: any, pkgDir: string): PackageData {
   const { sideEffects } = data
   let hasSideEffects: (id: string) => boolean | null
   if (typeof sideEffects === 'boolean') {

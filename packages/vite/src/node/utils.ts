@@ -244,8 +244,23 @@ export const isCaseInsensitiveFS = testCaseInsensitiveFS()
 
 const VOLUME_RE = /^[A-Z]:/i
 
+// Cache for normalized paths to improve performance
+const normalizePathCache = new Map<string, string>()
+
 export function normalizePath(id: string): string {
-  return path.posix.normalize(isWindows ? slash(id) : id)
+  const cached = normalizePathCache.get(id)
+  if (cached !== undefined) {
+    return cached
+  }
+
+  const normalized = path.posix.normalize(isWindows ? slash(id) : id)
+
+  // Only cache if the cache isn't too large (prevent memory leaks)
+  if (normalizePathCache.size < 10000) {
+    normalizePathCache.set(id, normalized)
+  }
+
+  return normalized
 }
 
 export function fsPathFromId(id: string): string {
