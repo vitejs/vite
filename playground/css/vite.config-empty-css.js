@@ -4,6 +4,7 @@ import { defineConfig } from 'vite'
 export default defineConfig({
   build: {
     manifest: true,
+    cssCodeSplit: true, // Ensure CSS code splitting
     rollupOptions: {
       input: [
         'empty.css', // Empty CSS file with comments
