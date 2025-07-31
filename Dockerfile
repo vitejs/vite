@@ -20,6 +20,9 @@ RUN pnpm install
 # کپی بقیه فایل‌های پروژه
 COPY . .
 
+# نصب ابزارهای مورد نیاز build
+RUN pnpm add -w -D tsdown premove
+
 # اجرای lint و format طبق CONTRIBUTING.md
 RUN pnpm run lint && pnpm run format
 
