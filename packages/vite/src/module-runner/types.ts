@@ -28,6 +28,7 @@ export interface ModuleRunnerImportMeta extends ImportMeta {
   url: string
   env: ImportMetaEnv
   hot?: ViteHotContext
+  main: boolean
   [key: string]: any
 }
 
@@ -112,6 +113,7 @@ export interface ModuleRunnerOptions {
    */
   createImportMeta?: (
     modulePath: string,
+    isMainModule?: boolean,
   ) => ModuleRunnerImportMeta | Promise<ModuleRunnerImportMeta>
   /**
    * Custom module cache. If not provided, creates a separate module cache for each ModuleRunner instance.

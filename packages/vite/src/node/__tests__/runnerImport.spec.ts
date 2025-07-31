@@ -76,4 +76,23 @@ describe('importing files using inlined environment', () => {
     // const dep = await module.default();
     // expect(dep.default).toMatchInlineSnapshot(`"ok"`)
   })
+
+  test('import.meta.main is true for main module', async () => {
+    const { module } = await runnerImport<
+      typeof import('./fixtures/runner-import/simple-main')
+    >(fixture('simple-main.ts'))
+
+    expect(module.isMain).toBe(true)
+  })
+
+  test('import.meta.main is false for imported modules', async () => {
+    const { module } = await runnerImport<
+      typeof import('./fixtures/runner-import/main-test')
+    >(fixture('main-test.ts'))
+
+    // The main module should have import.meta.main = true
+    expect(module.isMainModule).toBe(true)
+    // The imported dependency should have import.meta.main = false
+    expect(module.depIsMainModule).toBe(false)
+  })
 })

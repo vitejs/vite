@@ -16,6 +16,7 @@ const envProxy = new Proxy({} as any, {
 
 export function createDefaultImportMeta(
   modulePath: string,
+  isMainModule = false,
 ): ModuleRunnerImportMeta {
   const href = posixPathToFileHref(modulePath)
   const filename = modulePath
@@ -25,6 +26,7 @@ export function createDefaultImportMeta(
     dirname: isWindows ? toWindowsPath(dirname) : dirname,
     url: href,
     env: envProxy,
+    main: isMainModule,
     resolve(_id: string, _parent?: string) {
       throw new Error('[module runner] "import.meta.resolve" is not supported.')
     },
@@ -45,8 +47,9 @@ let importMetaResolverCache: Promise<ImportMetaResolver | undefined> | undefined
  */
 export async function createNodeImportMeta(
   modulePath: string,
+  isMainModule = false,
 ): Promise<ModuleRunnerImportMeta> {
-  const defaultMeta = createDefaultImportMeta(modulePath)
+  const defaultMeta = createDefaultImportMeta(modulePath, isMainModule)
   const href = defaultMeta.url
 
   importMetaResolverCache ??= createImportMetaResolver()
