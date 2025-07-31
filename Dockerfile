@@ -1,30 +1,23 @@
-# مرحله اول: ساخت اپلیکیشن
-FROM node:20-alpine as build
+# Use an official Node.js runtime as the base image
+FROM node:18-alpine
 
-# تنظیم پوشه کاری
+# Set the working directory inside the container
 WORKDIR /app
 
-# کپی کردن فایل‌های package و نصب وابستگی‌ها
-COPY package.json pnpm-lock.yaml ./
-RUN npm install -g pnpm && pnpm install
+# Copy package.json and package-lock.json (or pnpm-lock.yaml if you're using pnpm)
+COPY package*.json ./
 
-# کپی کردن کل پروژه به داخل کانتینر
+# Install the dependencies
+RUN npm install
+
+# Copy the entire project
 COPY . .
 
-# ساخت پروژه
-RUN pnpm build
+# Build the Vite project
+RUN npm run build
 
-# مرحله دوم: اجرای اپلیکیشن
-FROM node:20-alpine
-
-WORKDIR /app
-
-# کپی کردن فقط فایل‌های لازم از مرحله ساخت به کانتینر نهایی
-COPY --from=build /app/dist /app/dist
-COPY --from=build /app/node_modules /app/node_modules
-
-# پورت مورد نظر برای اپلیکیشن
+# Expose the port the app will run on
 EXPOSE 3000
 
-# اجرای اپلیکیشن
-CMD ["pnpm", "run", "dev"]
+# Command to run the app
+CMD ["npm", "run", "serve"]

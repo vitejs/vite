@@ -1,8 +1,9 @@
 {
   "schemaVersion": 2,
   "dockerfilePath": "./Dockerfile",
-  "appName": "front-dply",
   "env": {
     "NODE_ENV": "production"
-  }
+  },
+  "image": "vite-app",
+  "appName": "vite-app"
 }
