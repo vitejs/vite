@@ -152,3 +152,18 @@ test('return help usage how to use create-vite with -h alias', () => {
   const message = 'Usage: create-vite [OPTION]... [DIRECTORY]'
   expect(stdout).toContain(message)
 })
+
+test('sets index.html title to project name', () => {
+  const { stdout } = run([projectName, '--template', 'react'], {
+    cwd: __dirname,
+  })
+
+  // Read the generated index.html file
+  const indexHtmlPath = path.join(genPath, 'index.html')
+  const indexHtmlContent = fs.readFileSync(indexHtmlPath, 'utf-8')
+
+  // Assertions
+  expect(stdout).toContain(`Scaffolding project in ${genPath}`)
+  expect(indexHtmlContent).toContain(`<title>${projectName}</title>`)
+  expect(indexHtmlContent).not.toContain('<title>Vite + React</title>')
+})
