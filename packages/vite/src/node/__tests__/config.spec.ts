@@ -803,6 +803,24 @@ describe('loadConfigFromFile', () => {
       `)
   })
 
+  test('import.meta.main is correctly set', async () => {
+    const { config } = (await loadConfigFromFile(
+      {} as any,
+      path.resolve(fixtures, './import-meta-main/vite.config.ts'),
+      path.resolve(fixtures, './import-meta-main'),
+    ))!
+    expect(config).toMatchObject({
+      isMain: true,
+      dependencyIsMain: false,
+    })
+    expect(typeof config.url).toBe('string')
+    expect(typeof config.dirname).toBe('string')
+    expect(typeof config.filename).toBe('string')
+    expect(config.url).toContain('file://')
+    expect(config.dirname).toContain('import-meta-main')
+    expect(config.filename).toContain('vite.config.ts')
+  })
+
   describe('loadConfigFromFile with configLoader: native', () => {
     const fixtureRoot = path.resolve(fixtures, './native-import')
 
