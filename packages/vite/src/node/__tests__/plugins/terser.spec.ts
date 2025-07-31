@@ -8,7 +8,7 @@ import type { TerserOptions } from '../../plugins/terser'
 const __dirname = resolve(fileURLToPath(import.meta.url), '..')
 
 describe('terser', () => {
-  const run = async (terserOptions: TerserOptions) => {
+  const run = async (terserOptions: TerserOptions, buildOptions = {}) => {
     const result = (await build({
       root: resolve(__dirname, '../packages/build-project'),
       logLevel: 'silent',
@@ -16,6 +16,7 @@ describe('terser', () => {
         write: false,
         minify: 'terser',
         terserOptions,
+        ...buildOptions,
       },
       plugins: [
         {

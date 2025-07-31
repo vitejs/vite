@@ -82,6 +82,21 @@ describe.runIf(isBuild)('build', () => {
     expect(umd).toMatch('process.env.NODE_ENV')
   })
 
+  test('terser minification for es lib mode', () => {
+    const terserEs = readFile('dist/terser/my-lib-custom-filename.js')
+    const normalEs = readFile('dist/my-lib-custom-filename.js')
+
+    // Terser version should be significantly smaller
+    expect(terserEs.length).toBeLessThan(normalEs.length / 2)
+
+    // Should not contain console.log since drop_console is true
+    expect(terserEs).not.toMatch('console.log')
+
+    // Should be minified - contains function but no excessive whitespace/newlines
+    expect(terserEs).toMatch(/function/)
+    expect(terserEs.split('\n').length).toBeLessThan(5) // Should be on very few lines
+  })
+
   test('single entry with css', () => {
     const css = readFile('dist/css-single-entry/test-my-lib.css')
     const js = readFile('dist/css-single-entry/test-my-lib.js')
