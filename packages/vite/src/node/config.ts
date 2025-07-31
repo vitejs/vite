@@ -12,6 +12,7 @@ import type { PluginContextMeta, RollupOptions } from 'rollup'
 import picomatch from 'picomatch'
 import { build } from 'esbuild'
 import type { AnymatchFn } from '../types/anymatch'
+import { createImportMetaResolver } from '../module-runner/importMetaResolver'
 import { withTrailingSlash } from '../shared/utils'
 import {
   CLIENT_ENTRY,
@@ -1922,6 +1923,8 @@ async function bundleConfigFile(
   const dirnameVarName = '__vite_injected_original_dirname'
   const filenameVarName = '__vite_injected_original_filename'
   const importMetaUrlVarName = '__vite_injected_original_import_meta_url'
+  const importMetaResolveVarName =
+    '__vite_injected_original_import_meta_resolve'
   const result = await build({
     absWorkingDir: process.cwd(),
     entryPoints: [fileName],
@@ -1941,6 +1944,7 @@ async function bundleConfigFile(
       'import.meta.url': importMetaUrlVarName,
       'import.meta.dirname': dirnameVarName,
       'import.meta.filename': filenameVarName,
+      'import.meta.resolve': importMetaResolveVarName,
     },
     plugins: [
       {
@@ -2034,14 +2038,28 @@ async function bundleConfigFile(
         setup(build) {
           build.onLoad({ filter: /\.[cm]?[jt]s$/ }, async (args) => {
             const contents = await fsp.readFile(args.path, 'utf-8')
+
+            // Create a working import.meta.resolve function
+            const importMetaResolver = await createImportMetaResolver()
+            const fileUrl = pathToFileURL(args.path).href
+
+            // Create a serializable resolve function
+            const resolveFunction = importMetaResolver
+              ? `(function(specifier, parent) {
+                  // This will be replaced with actual implementation
+                  return __vite_import_meta_resolve_impl(specifier, parent || ${JSON.stringify(fileUrl)});
+                })`
+              : `(function(specifier, parent) {
+                  throw new Error('[config] "import.meta.resolve" is not supported.');
+                })`
+
             const injectValues =
               `const ${dirnameVarName} = ${JSON.stringify(
                 path.dirname(args.path),
               )};` +
               `const ${filenameVarName} = ${JSON.stringify(args.path)};` +
-              `const ${importMetaUrlVarName} = ${JSON.stringify(
-                pathToFileURL(args.path).href,
-              )};`
+              `const ${importMetaUrlVarName} = ${JSON.stringify(fileUrl)};` +
+              `const ${importMetaResolveVarName} = ${resolveFunction};`
 
             return {
               loader: args.path.endsWith('ts') ? 'ts' : 'js',
@@ -2064,72 +2082,107 @@ interface NodeModuleWithCompile extends NodeModule {
 }
 
 const _require = createRequire(/** #__KEEP__ */ import.meta.url)
+
+// Set up import.meta.resolve support for config loading
+let importMetaResolverSetup: Promise<void> | undefined
+async function setupImportMetaResolverForConfig() {
+  if (!importMetaResolverSetup) {
+    importMetaResolverSetup = (async () => {
+      try {
+        await createImportMetaResolver()
+      } catch {
+        // Ignore errors - import.meta.resolve may not be available
+      }
+    })()
+  }
+  return importMetaResolverSetup
+}
+
 async function loadConfigFromBundledFile(
   fileName: string,
   bundledCode: string,
   isESM: boolean,
 ): Promise<UserConfigExport> {
-  // for esm, before we can register loaders without requiring users to run node
-  // with --experimental-loader themselves, we have to do a hack here:
-  // write it to disk, load it with native Node ESM, then delete the file.
-  if (isESM) {
-    // Storing the bundled file in node_modules/ is avoided for Deno
-    // because Deno only supports Node.js style modules under node_modules/
-    // and configs with `npm:` import statements will fail when executed.
-    let nodeModulesDir =
-      typeof process.versions.deno === 'string'
-        ? undefined
-        : findNearestNodeModules(path.dirname(fileName))
-    if (nodeModulesDir) {
-      try {
-        await fsp.mkdir(path.resolve(nodeModulesDir, '.vite-temp/'), {
-          recursive: true,
-        })
-      } catch (e) {
-        if (e.code === 'EACCES') {
-          // If there is no access permission, a temporary configuration file is created by default.
-          nodeModulesDir = undefined
-        } else {
-          throw e
+  // Set up import.meta.resolve support
+  await setupImportMetaResolverForConfig()
+
+  // Create global resolver implementation
+  const importMetaResolver = await createImportMetaResolver()
+  if (importMetaResolver) {
+    // @ts-expect-error - adding global function for config loading
+    globalThis.__vite_import_meta_resolve_impl = importMetaResolver
+  }
+
+  try {
+    // for esm, before we can register loaders without requiring users to run node
+    // with --experimental-loader themselves, we have to do a hack here:
+    // write it to disk, load it with native Node ESM, then delete the file.
+    if (isESM) {
+      // Storing the bundled file in node_modules/ is avoided for Deno
+      // because Deno only supports Node.js style modules under node_modules/
+      // and configs with `npm:` import statements will fail when executed.
+      let nodeModulesDir =
+        typeof process.versions.deno === 'string'
+          ? undefined
+          : findNearestNodeModules(path.dirname(fileName))
+      if (nodeModulesDir) {
+        try {
+          await fsp.mkdir(path.resolve(nodeModulesDir, '.vite-temp/'), {
+            recursive: true,
+          })
+        } catch (e) {
+          if (e.code === 'EACCES') {
+            // If there is no access permission, a temporary configuration file is created by default.
+            nodeModulesDir = undefined
+          } else {
+            throw e
+          }
         }
       }
-    }
-    const hash = `timestamp-${Date.now()}-${Math.random().toString(16).slice(2)}`
-    const tempFileName = nodeModulesDir
-      ? path.resolve(
-          nodeModulesDir,
-          `.vite-temp/${path.basename(fileName)}.${hash}.mjs`,
-        )
-      : `${fileName}.${hash}.mjs`
-    await fsp.writeFile(tempFileName, bundledCode)
-    try {
-      return (await import(pathToFileURL(tempFileName).href)).default
-    } finally {
-      fs.unlink(tempFileName, () => {}) // Ignore errors
-    }
-  }
-  // for cjs, we can register a custom loader via `_require.extensions`
-  else {
-    const extension = path.extname(fileName)
-    // We don't use fsp.realpath() here because it has the same behaviour as
-    // fs.realpath.native. On some Windows systems, it returns uppercase volume
-    // letters (e.g. "C:\") while the Node.js loader uses lowercase volume letters.
-    // See https://github.com/vitejs/vite/issues/12923
-    const realFileName = await promisifiedRealpath(fileName)
-    const loaderExt = extension in _require.extensions ? extension : '.js'
-    const defaultLoader = _require.extensions[loaderExt]!
-    _require.extensions[loaderExt] = (module: NodeModule, filename: string) => {
-      if (filename === realFileName) {
-        ;(module as NodeModuleWithCompile)._compile(bundledCode, filename)
-      } else {
-        defaultLoader(module, filename)
+      const hash = `timestamp-${Date.now()}-${Math.random().toString(16).slice(2)}`
+      const tempFileName = nodeModulesDir
+        ? path.resolve(
+            nodeModulesDir,
+            `.vite-temp/${path.basename(fileName)}.${hash}.mjs`,
+          )
+        : `${fileName}.${hash}.mjs`
+      await fsp.writeFile(tempFileName, bundledCode)
+      try {
+        return (await import(pathToFileURL(tempFileName).href)).default
+      } finally {
+        fs.unlink(tempFileName, () => {}) // Ignore errors
       }
     }
-    // clear cache in case of server restart
-    delete _require.cache[_require.resolve(fileName)]
-    const raw = _require(fileName)
-    _require.extensions[loaderExt] = defaultLoader
-    return raw.__esModule ? raw.default : raw
+    // for cjs, we can register a custom loader via `_require.extensions`
+    else {
+      const extension = path.extname(fileName)
+      // We don't use fsp.realpath() here because it has the same behaviour as
+      // fs.realpath.native. On some Windows systems, it returns uppercase volume
+      // letters (e.g. "C:\") while the Node.js loader uses lowercase volume letters.
+      // See https://github.com/vitejs/vite/issues/12923
+      const realFileName = await promisifiedRealpath(fileName)
+      const loaderExt = extension in _require.extensions ? extension : '.js'
+      const defaultLoader = _require.extensions[loaderExt]!
+      _require.extensions[loaderExt] = (
+        module: NodeModule,
+        filename: string,
+      ) => {
+        if (filename === realFileName) {
+          ;(module as NodeModuleWithCompile)._compile(bundledCode, filename)
+        } else {
+          defaultLoader(module, filename)
+        }
+      }
+      // clear cache in case of server restart
+      delete _require.cache[_require.resolve(fileName)]
+      const raw = _require(fileName)
+      _require.extensions[loaderExt] = defaultLoader
+      return raw.__esModule ? raw.default : raw
+    }
+  } finally {
+    // Clean up global resolver implementation
+    // @ts-expect-error - removing global function after config loading
+    delete globalThis.__vite_import_meta_resolve_impl
   }
 }
 
