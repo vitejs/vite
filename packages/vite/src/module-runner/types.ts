@@ -28,7 +28,6 @@ export interface ModuleRunnerImportMeta extends ImportMeta {
   url: string
   env: ImportMetaEnv
   hot?: ViteHotContext
-  main: boolean
   [key: string]: any
 }
 
