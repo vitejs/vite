@@ -174,7 +174,7 @@ export function isOptimizable(
 }
 
 export const bareImportRE = /^(?![a-zA-Z]:)[\w@](?!.*:\/\/)/
-export const deepImportRE = /^([^@][^/]*)\/|^(@[^/]+\/[^/]+)\//
+export const deepImportRE = /^([^@][^/]*)\/|^(@[^/]*\/[^/]+)\//
 
 // TODO: use import()
 const _require = createRequire(/** #__KEEP__ */ import.meta.url)
