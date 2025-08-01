@@ -15,7 +15,10 @@ const run = <SO extends SyncOptions>(
   args: string[],
   options?: SO,
 ): SyncResult<SO> => {
-  return execaCommandSync(`node ${CLI_PATH} ${args.join(' ')}`, options)
+  return execaCommandSync(`node ${CLI_PATH} ${args.join(' ')}`, {
+    env: { ...process.env, _VITE_TEST_CLI: 'true' },
+    ...options,
+  })
 }
 
 // Helper to create a non-empty directory
