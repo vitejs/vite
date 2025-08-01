@@ -803,6 +803,42 @@ describe('loadConfigFromFile', () => {
       `)
   })
 
+  test('loadConfigFromFile with import.meta.resolve', async () => {
+    const result = await loadConfigFromFile(
+      { command: 'build', mode: 'production' },
+      path.resolve(fixtures, './import-meta-resolve/vite.config.mjs'),
+      path.resolve(fixtures, './import-meta-resolve'),
+    )
+    expect(result).toBeTruthy()
+    expect(result?.config).toHaveProperty('define')
+    expect(result?.config.define).toHaveProperty('IMPORT_META_URL')
+    expect(result?.config.define).toHaveProperty('IMPORT_META_RESOLVE_TEST')
+    expect(typeof result?.config.define.IMPORT_META_RESOLVE_TEST).toBe('string')
+    expect(result?.config.define.IMPORT_META_RESOLVE_TEST).toMatch(
+      /test-module\.js$/,
+    )
+  })
+
+  test('loadConfigFromFile with import.meta.resolve advanced cases', async () => {
+    const result = await loadConfigFromFile(
+      { command: 'build', mode: 'production' },
+      path.resolve(fixtures, './import-meta-resolve/vite.advanced.mjs'),
+      path.resolve(fixtures, './import-meta-resolve'),
+    )
+    expect(result).toBeTruthy()
+    expect(result?.config).toHaveProperty('define')
+
+    // Check all resolved paths
+    expect(result?.config.define.RESOLVED_MODULE).toMatch(/test-module\.js$/)
+    expect(result?.config.define.RESOLVED_WITH_EXT).toMatch(/test-module\.js$/)
+    expect(result?.config.define.BASE_URL).toMatch(/vite\.advanced\.mjs$/)
+
+    // Both should resolve to the same file
+    expect(result?.config.define.RESOLVED_MODULE).toBe(
+      result?.config.define.RESOLVED_WITH_EXT,
+    )
+  })
+
   describe('loadConfigFromFile with configLoader: native', () => {
     const fixtureRoot = path.resolve(fixtures, './native-import')
 
