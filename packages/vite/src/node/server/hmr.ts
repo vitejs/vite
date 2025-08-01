@@ -44,6 +44,13 @@ const whitespaceRE = /\s/
 
 const normalizedClientDir = normalizePath(CLIENT_DIR)
 
+interface ErrorEvent extends Event {
+  readonly error: any
+  readonly message: string
+  readonly filename?: string
+  readonly lineno?: number
+  readonly colno?: number
+}
 export interface HmrOptions {
   protocol?: string
   host?: string
