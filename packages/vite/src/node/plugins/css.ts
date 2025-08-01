@@ -848,11 +848,11 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
               opts.format,
             )
 
-            chunkCSS = resolveAssetUrlsInCss(chunkCSS, cssAssetName)
+            chunkCSS = resolveAssetUrlsInCss(chunkCSS!, cssAssetName)
 
             // wait for previous tasks as well
             chunkCSS = await codeSplitEmitQueue.run(async () => {
-              return finalizeCss(chunkCSS, true, config)
+              return finalizeCss(chunkCSS!, true, config)
             })
 
             // emit corresponding css file
