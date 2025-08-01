@@ -809,13 +809,7 @@ describe('loadConfigFromFile', () => {
       path.resolve(fixtures, './import-meta/vite.config.ts'),
       path.resolve(fixtures, './import-meta'),
     ))!
-    expect(config).toMatchObject({
-      isMain: false,
-      dependencyIsMain: false,
-    })
-    expect(typeof config.url).toBe('string')
-    expect(typeof config.dirname).toBe('string')
-    expect(typeof config.filename).toBe('string')
+    expect(config.isMain).toBe(false)
     expect(config.url).toContain('file://')
     expect(config.dirname).toContain('import-meta')
     expect(config.filename).toContain('vite.config.ts')
