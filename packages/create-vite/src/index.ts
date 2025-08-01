@@ -521,11 +521,16 @@ async function init() {
     immediate = true
   }
   if (immediate === undefined) {
-    const immediateResult = await prompts.confirm({
-      message: 'Install and start now?',
-    })
-    if (prompts.isCancel(immediateResult)) return cancel()
-    immediate = immediateResult
+    // In test mode, default to false to avoid prompts
+    if (process.env._VITE_TEST_CLI) {
+      immediate = false
+    } else {
+      const immediateResult = await prompts.confirm({
+        message: 'Install and start now?',
+      })
+      if (prompts.isCancel(immediateResult)) return cancel()
+      immediate = immediateResult
+    }
   }
 
   const pkgManager = pkgInfo ? pkgInfo.name : 'npm'
