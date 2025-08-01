@@ -1922,7 +1922,6 @@ async function bundleConfigFile(
   const dirnameVarName = '__vite_injected_original_dirname'
   const filenameVarName = '__vite_injected_original_filename'
   const importMetaUrlVarName = '__vite_injected_original_import_meta_url'
-  const importMetaMainVarName = '__vite_injected_original_import_meta_main'
   const result = await build({
     absWorkingDir: process.cwd(),
     entryPoints: [fileName],
@@ -1942,7 +1941,7 @@ async function bundleConfigFile(
       'import.meta.url': importMetaUrlVarName,
       'import.meta.dirname': dirnameVarName,
       'import.meta.filename': filenameVarName,
-      'import.meta.main': importMetaMainVarName,
+      'import.meta.main': 'false',
     },
     plugins: [
       {
@@ -2043,8 +2042,7 @@ async function bundleConfigFile(
               `const ${filenameVarName} = ${JSON.stringify(args.path)};` +
               `const ${importMetaUrlVarName} = ${JSON.stringify(
                 pathToFileURL(args.path).href,
-              )};` +
-              `const ${importMetaMainVarName} = ${JSON.stringify(false)};`
+              )};`
 
             return {
               loader: args.path.endsWith('ts') ? 'ts' : 'js',
