@@ -100,7 +100,7 @@ export function terserPlugin(config: ResolvedConfig): Plugin {
       const preserveComments = isEsLibMode
         ? terserOptions.output?.comments === 'all'
           ? 'all'
-          : /^#__/ // pure annotation comments
+          : /@__PURE__/
         : terserOptions.output?.comments
 
       const res = await worker.run(terserPath, code, {
