@@ -620,7 +620,7 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
     },
 
     async renderChunk(code, chunk, opts, meta) {
-      let chunkCSS: string | undefined = undefined
+      let chunkCSS: string | undefined
       const renderedModules = new Proxy(
         {} as Record<string, RenderedModule | undefined>,
         {
@@ -848,7 +848,7 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
               opts.format,
             )
 
-            chunkCSS = resolveAssetUrlsInCss(chunkCSS!, cssAssetName)
+            chunkCSS = resolveAssetUrlsInCss(chunkCSS, cssAssetName)
 
             // wait for previous tasks as well
             chunkCSS = await codeSplitEmitQueue.run(async () => {
