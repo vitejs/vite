@@ -288,6 +288,9 @@ foo()
 // 2
 // 3
 `.trim()
+  const veryLongSource = Array.from({ length: 2000 }, (_, i) => `// ${i}`).join(
+    '\n',
+  )
 
   const expectSnapshot = (value: string) => {
     try {
@@ -339,6 +342,10 @@ foo()
 
   test('invalid start > end', () => {
     expectSnapshot(generateCodeFrame(source, 2, 0))
+  })
+
+  test('supports more than 1000 lines', () => {
+    expectSnapshot(generateCodeFrame(veryLongSource, { line: 1200, column: 0 }))
   })
 })
 
