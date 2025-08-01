@@ -809,10 +809,26 @@ describe('loadConfigFromFile', () => {
       path.resolve(fixtures, './import-meta/vite.config.ts'),
       path.resolve(fixtures, './import-meta'),
     ))!
-    expect(config.isMain).toBe(false)
-    expect(config.url).toContain('file://')
-    expect(config.dirname).toContain('import-meta')
-    expect(config.filename).toContain('vite.config.ts')
+
+    // Normalize paths for snapshot testing
+    const normalizedConfig = {
+      ...config,
+      dirname: path.relative(fixtures, config.dirname),
+      filename: path.relative(fixtures, config.filename),
+      url: config.url.replace(
+        path.resolve(fixtures, './import-meta'),
+        '[FIXTURES]/import-meta',
+      ),
+    }
+
+    expect(normalizedConfig).toMatchInlineSnapshot(`
+      {
+        "dirname": "import-meta",
+        "filename": "import-meta/vite.config.ts",
+        "isMain": false,
+        "url": "file://[FIXTURES]/import-meta/vite.config.ts",
+      }
+    `)
   })
 
   describe('loadConfigFromFile with configLoader: native', () => {
