@@ -52,7 +52,7 @@ test(`import.meta.resolve is supported`, async () => {
   expect(await page.textContent('.import-meta-resolve')).toBe(metaUrl)
 })
 
-test(`import.meta.main is false in Node.js environment`, async () => {
+test(`import.meta.main is supported`, async () => {
   await page.goto(`${url}/import-meta`)
 
   expect(await page.textContent('.import-meta-main')).toBe('false')
