@@ -59,7 +59,6 @@ describe('deepImportRE', () => {
   })
 
   test('should match @/ scoped package with subpath', () => {
-    expect(deepImportRE.test('@/lib/schemas')).toBe(true)
     const match = deepImportRE.exec('@/lib/schemas')
     expect(match?.[1]).toBeUndefined()
     expect(match?.[2]).toBe('@/lib')
