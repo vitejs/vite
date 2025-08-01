@@ -512,7 +512,6 @@ async function init() {
     if (content) {
       fs.writeFileSync(targetPath, content)
     } else if (file === 'index.html') {
-      // Handle index.html files specially to replace title with project name
       const templatePath = path.join(templateDir, file)
       const templateContent = fs.readFileSync(templatePath, 'utf-8')
       const updatedContent = templateContent.replace(
