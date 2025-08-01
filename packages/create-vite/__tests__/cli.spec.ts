@@ -1,7 +1,7 @@
 import fs from 'node:fs'
 import path from 'node:path'
 import { stripVTControlCharacters } from 'node:util'
-import type { SyncOptions, SyncResult } from 'execa'
+import type { SyncOptions } from 'execa'
 import { execaCommandSync } from 'execa'
 import { afterEach, beforeAll, expect, test } from 'vitest'
 
@@ -11,10 +11,7 @@ const projectName = 'test-app'
 const genPath = path.join(__dirname, projectName)
 const genPathWithSubfolder = path.join(__dirname, 'subfolder', projectName)
 
-const run = <SO extends SyncOptions>(
-  args: string[],
-  options?: SO,
-): SyncResult<SO> => {
+const run = (args: string[], options?: SyncOptions) => {
   return execaCommandSync(`node ${CLI_PATH} ${args.join(' ')}`, {
     env: { ...process.env, _VITE_TEST_CLI: 'true' },
     ...options,
@@ -159,7 +156,7 @@ test('return help usage how to use create-vite with -h alias', () => {
 
 test('shows immediate and agent options in help', () => {
   const { stdout } = run(['--help'], { cwd: __dirname })
-  expect(stripVTControlCharacters(stdout)).toMatchInlineSnapshot(`
+  expect(stripVTControlCharacters(stdout as string)).toMatchInlineSnapshot(`
     "Usage: create-vite [OPTION]... [DIRECTORY]
 
     Create a new Vite project in JavaScript or TypeScript.
