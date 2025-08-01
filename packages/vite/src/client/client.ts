@@ -39,6 +39,7 @@ const base = __BASE__ || '/'
 const hmrTimeout = __HMR_TIMEOUT__
 const wsToken = __WS_TOKEN__
 const runtimeErrors = __HMR_RUNTIME_ERRORS__
+const enableOverlay = __HMR_ENABLE_OVERLAY__
 
 const transport = normalizeModuleRunnerTransport(
   (() => {
@@ -112,7 +113,7 @@ if (typeof window !== 'undefined') {
     willUnload = true
   })
 
-  if (runtimeErrors) {
+  if (enableOverlay && runtimeErrors) {
     if (typeof runtimeErrors === 'function') {
       window.addEventListener('error', runtimeErrors)
     } else {
@@ -318,7 +319,6 @@ async function handleMessage(payload: HotPayload) {
   }
 }
 
-const enableOverlay = __HMR_ENABLE_OVERLAY__
 const hasDocument = 'document' in globalThis
 
 function createErrorOverlay(err: ErrorPayload['err'] | Error) {
