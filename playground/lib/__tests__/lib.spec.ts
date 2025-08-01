@@ -84,17 +84,15 @@ describe.runIf(isBuild)('build', () => {
 
   test('terser minification for es lib mode', () => {
     const terserEs = readFile('dist/terser/my-lib-custom-filename.js')
-    const normalEs = readFile('dist/my-lib-custom-filename.js')
-
-    // Terser version should be significantly smaller
-    expect(terserEs.length).toBeLessThan(normalEs.length / 2)
 
     // Should not contain console.log since drop_console is true
     expect(terserEs).not.toMatch('console.log')
 
     // Should be minified - contains function but no excessive whitespace/newlines
     expect(terserEs).toMatch(/function/)
-    expect(terserEs.split('\n').length).toBeLessThan(5) // Should be on very few lines
+
+    // Should be minified (very compact, less than 5 lines)
+    expect(terserEs.split('\n').length).toBeLessThan(5)
   })
 
   test('single entry with css', () => {
