@@ -87,7 +87,7 @@ describe.runIf(isBuild)('build', () => {
     expect(terserEs).not.toMatch('console.log')
   })
 
-  test('pure annotations respected by terser for tree-shaking', () => {
+  test('pure annotations are not removed by terser for es', () => {
     const terserEs = readFile('dist/terser/my-lib-custom-filename.js')
     // Verify that the createObject function is present (not tree-shaken) since it's used
     expect(terserEs).toMatch(/Date\.now/)
