@@ -44,7 +44,6 @@ export class ModuleRunner {
     string,
     Promise<EvaluatedModuleNode>
   >()
-  private mainModuleUrl?: string
 
   private closed = false
 
@@ -86,10 +85,6 @@ export class ModuleRunner {
    * URL to execute. Accepts file path, server path or id relative to the root.
    */
   public async import<T = any>(url: string): Promise<T> {
-    // Track the first imported module as the main module
-    if (!this.mainModuleUrl) {
-      this.mainModuleUrl = url
-    }
     const fetchedModule = await this.cachedModule(url)
     return await this.cachedRequest(url, fetchedModule)
   }
@@ -100,7 +95,6 @@ export class ModuleRunner {
   public clearCache(): void {
     this.evaluatedModules.clear()
     this.hmrClient?.clear()
-    this.mainModuleUrl = undefined
   }
 
   /**
@@ -351,9 +345,7 @@ export class ModuleRunner {
     const modulePath = cleanUrl(file || moduleId)
     // disambiguate the `<UNIT>:/` on windows: see nodejs/node#31710
     const href = posixPathToFileHref(modulePath)
-    // Check if this is the main module by comparing with the first imported module URL
-    const isMainModule = this.mainModuleUrl === url
-    const meta = await createImportMeta(modulePath, isMainModule)
+    const meta = await createImportMeta(modulePath)
     const exports = Object.create(null)
     Object.defineProperty(exports, Symbol.toStringTag, {
       value: 'Module',
