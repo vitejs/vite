@@ -54,6 +54,7 @@ export interface HmrOptions {
   timeout?: number
   overlay?: boolean
   server?: HttpServer
+  runtimeErrors?: boolean | ((err: ErrorEvent) => unknown)
 }
 
 export interface HotUpdateOptions {

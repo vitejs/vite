@@ -86,6 +86,7 @@ async function createClientConfigValueReplacer(
   const overlay = hmrConfig?.overlay !== false
   const isHmrServerSpecified = !!hmrConfig?.server
   const hmrConfigName = path.basename(config.configFile || 'vite.config.js')
+  const runtimeErrors = hmrConfig?.runtimeErrors ?? true
 
   // hmr.clientPort -> hmr.port
   // -> (24678 if middleware mode and HMR server is not specified) -> new URL(import.meta.url).port
@@ -115,6 +116,10 @@ async function createClientConfigValueReplacer(
   const hmrEnableOverlayReplacement = escapeReplacement(overlay)
   const hmrConfigNameReplacement = escapeReplacement(hmrConfigName)
   const wsTokenReplacement = escapeReplacement(config.webSocketToken)
+  const hmrRuntimeErrorsReplacement =
+    typeof runtimeErrors === 'function'
+      ? () => runtimeErrors.toString()
+      : escapeReplacement(runtimeErrors)
   const serverForwardConsoleReplacement = escapeReplacement(
     config.server.forwardConsole as any,
   )
@@ -136,6 +141,7 @@ async function createClientConfigValueReplacer(
       .replace(`__HMR_ENABLE_OVERLAY__`, hmrEnableOverlayReplacement)
       .replace(`__HMR_CONFIG_NAME__`, hmrConfigNameReplacement)
       .replace(`__WS_TOKEN__`, wsTokenReplacement)
+      .replace(`__HMR_RUNTIME_ERRORS__`, hmrRuntimeErrorsReplacement)
       .replace(`__SERVER_FORWARD_CONSOLE__`, serverForwardConsoleReplacement)
       .replaceAll(`__BUNDLED_DEV__`, bundleDevReplacement)
 }
