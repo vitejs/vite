@@ -511,19 +511,17 @@ async function init() {
     const targetPath = path.join(root, renameFiles[file] ?? file)
     if (content) {
       fs.writeFileSync(targetPath, content)
+    } else if (file === 'index.html') {
+      // Handle index.html files specially to replace project name placeholder
+      const templatePath = path.join(templateDir, file)
+      const templateContent = fs.readFileSync(templatePath, 'utf-8')
+      const updatedContent = templateContent.replace(
+        '{{PROJECT_NAME}}',
+        packageName,
+      )
+      fs.writeFileSync(targetPath, updatedContent)
     } else {
-      if (file === 'index.html') {
-        // Handle index.html files specially to replace project name placeholder
-        const templatePath = path.join(templateDir, file)
-        const templateContent = fs.readFileSync(templatePath, 'utf-8')
-        const updatedContent = templateContent.replace(
-          '{{PROJECT_NAME}}',
-          packageName,
-        )
-        fs.writeFileSync(targetPath, updatedContent)
-      } else {
-        copy(path.join(templateDir, file), targetPath)
-      }
+      copy(path.join(templateDir, file), targetPath)
     }
   }
 

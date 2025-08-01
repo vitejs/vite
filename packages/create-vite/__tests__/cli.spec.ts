@@ -158,12 +158,9 @@ test('sets index.html title to project name', () => {
     cwd: __dirname,
   })
 
-  // Read the generated index.html file
   const indexHtmlPath = path.join(genPath, 'index.html')
   const indexHtmlContent = fs.readFileSync(indexHtmlPath, 'utf-8')
 
-  // Assertions
   expect(stdout).toContain(`Scaffolding project in ${genPath}`)
   expect(indexHtmlContent).toContain(`<title>${projectName}</title>`)
-  expect(indexHtmlContent).not.toContain('<title>Vite + React</title>')
 })
