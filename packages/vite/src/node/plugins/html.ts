@@ -9,7 +9,12 @@ import type {
 } from 'rollup'
 import MagicString from 'magic-string'
 import colors from 'picocolors'
-import type { DefaultTreeAdapterMap, ParserError, Token } from 'parse5'
+import type {
+  DefaultTreeAdapterMap,
+  ErrorCodes,
+  ParserError,
+  Token,
+} from 'parse5'
 import { stripLiteral } from 'strip-literal'
 import escapeHtml from 'escape-html'
 import type { MinimalPluginContextWithoutEnvironment, Plugin } from '../plugin'
@@ -34,6 +39,7 @@ import { resolveEnvPrefix } from '../env'
 import { cleanUrl } from '../../shared/utils'
 import { perEnvironmentState } from '../environment'
 import { getNodeAssetAttributes } from '../assetSource'
+import type { Logger } from '../logger'
 import {
   assetUrlRE,
   getPublicAssetFilename,
@@ -184,21 +190,29 @@ function traverseNodes(
   }
 }
 
+type ParseWarnings = Partial<Record<ErrorCodes, string>>
+
 export async function traverseHtml(
   html: string,
   filePath: string,
+  warn: Logger['warn'],
   visitor: (node: DefaultTreeAdapterMap['node']) => void,
 ): Promise<void> {
   // lazy load compiler
   const { parse } = await import('parse5')
+  const warnings: ParseWarnings = {}
   const ast = parse(html, {
     scriptingEnabled: false, // parse inside <noscript>
     sourceCodeLocationInfo: true,
     onParseError: (e: ParserError) => {
-      handleParseError(e, html, filePath)
+      handleParseError(e, html, filePath, warnings)
     },
   })
   traverseNodes(ast, visitor)
+
+  for (const message of Object.values(warnings)) {
+    warn(colors.yellow(`\n${message}`))
+  }
 }
 
 export function getScriptInfo(node: DefaultTreeAdapterMap['element']): {
@@ -297,6 +311,7 @@ function handleParseError(
   parserError: ParserError,
   html: string,
   filePath: string,
+  warnings: ParseWarnings,
 ) {
   switch (parserError.code) {
     case 'missing-doctype':
@@ -318,11 +333,10 @@ function handleParseError(
       return
   }
   const parseError = formatParseError(parserError, filePath, html)
-  throw new Error(
+  warnings[parseError.code] ??=
     `Unable to parse HTML; ${parseError.message}\n` +
-      ` at ${parseError.loc.file}:${parseError.loc.line}:${parseError.loc.column}\n` +
-      `${parseError.frame}`,
-  )
+    ` at ${parseError.loc.file}:${parseError.loc.line}:${parseError.loc.column}\n` +
+    `${parseError.frame.length > 300 ? '[this code frame is omitted as the content was too long] ' : parseError.frame}`
 }
 
 /**
@@ -442,7 +456,7 @@ export function buildHtmlPlugin(config: ResolvedConfig): Plugin {
         }
 
         const setModuleSideEffectPromises: Promise<void>[] = []
-        await traverseHtml(html, id, (node) => {
+        await traverseHtml(html, id, config.logger.warn, (node) => {
           if (!nodeIsElement(node)) {
             return
           }
@@ -1238,7 +1252,7 @@ export function injectNonceAttributeTagHook(
 
     const s = new MagicString(html)
 
-    await traverseHtml(html, filename, (node) => {
+    await traverseHtml(html, filename, config.logger.warn, (node) => {
       if (!nodeIsElement(node)) {
         return
       }

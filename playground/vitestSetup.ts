@@ -76,6 +76,21 @@ export function setViteUrl(url: string): void {
   viteTestUrl = url
 }
 
+function throwHtmlParseError() {
+  return {
+    name: 'vite-plugin-throw-html-parse-error',
+    configResolved(config: ResolvedConfig) {
+      const warn = config.logger.warn
+      config.logger.warn = (msg, opts) => {
+        // convert HTML parse warnings to make it easier to test
+        if (msg.includes('Unable to parse HTML;')) {
+          throw new Error(msg)
+        }
+        warn.call(config.logger, msg, opts)
+      }
+    },
+  }
+}
 // #endregion
 
 beforeAll(async (s) => {
@@ -224,6 +239,7 @@ async function loadConfig(configEnv: ConfigEnv) {
       emptyOutDir: false,
     },
     customLogger: createInMemoryLogger(serverLogs),
+    plugins: [throwHtmlParseError()],
   }
   return mergeConfig(options, config || {})
 }
