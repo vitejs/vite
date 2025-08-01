@@ -39,6 +39,7 @@ export default defineConfig({
   ],
   build: {
     cssTarget: 'chrome61',
+    manifest: true,
     rollupOptions: {
       input: {
         index: path.resolve(__dirname, './index.html'),
@@ -46,6 +47,8 @@ export default defineConfig({
           __dirname,
           './treeshake-scoped/index.html',
         ),
+        empty: path.resolve(__dirname, './empty.css'),
+        empty2: path.resolve(__dirname, './empty2.css'),
       },
       output: {
         manualChunks(id) {
