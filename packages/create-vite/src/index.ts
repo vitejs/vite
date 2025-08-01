@@ -359,6 +359,11 @@ function run(...params: Parameters<typeof spawn.sync>) {
 }
 
 function install(root: string, agent: string) {
+  // Skip actual installation in test environment
+  if (process.env._VITE_TEST_CLI) {
+    console.log(`\nInstalling dependencies via ${agent}... (skipped in test)`)
+    return
+  }
   console.log(`\nInstalling dependencies via ${agent}...`)
   run(agent, agent === 'yarn' ? [] : ['install'], {
     stdio: 'inherit',
@@ -367,6 +372,11 @@ function install(root: string, agent: string) {
 }
 
 function start(root: string, agent: string) {
+  // Skip actual start in test environment
+  if (process.env._VITE_TEST_CLI) {
+    console.log('\nStart dev server... (skipped in test)')
+    return
+  }
   console.log('\nStart dev server...')
   run(agent, agent === 'npm' ? ['run', 'dev'] : ['dev'], {
     stdio: 'inherit',
