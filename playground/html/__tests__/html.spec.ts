@@ -284,11 +284,11 @@ describe.runIf(isServe)('invalid', () => {
     const message = await errorOverlay.$$eval('.message-body', (m) => {
       return m[0].innerHTML
     })
-    expect(message).toMatch(/^Unable to parse HTML/)
+    expect(message).toContain('Unable to parse HTML')
   })
 
   test('should close overlay when clicked away', async () => {
-    await page.goto(viteTestUrl + '/invalid.html')
+    await page.goto(viteTestUrl + '/invalidClick.html')
     const errorOverlay = await page.waitForSelector('vite-error-overlay')
     expect(errorOverlay).toBeTruthy()
 
@@ -298,7 +298,7 @@ describe.runIf(isServe)('invalid', () => {
   })
 
   test('should close overlay when escape key is pressed', async () => {
-    await page.goto(viteTestUrl + '/invalid.html')
+    await page.goto(viteTestUrl + '/invalidEscape.html')
     const errorOverlay = await page.waitForSelector('vite-error-overlay')
     expect(errorOverlay).toBeTruthy()
 
