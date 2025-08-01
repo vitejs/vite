@@ -82,12 +82,10 @@ function throwHtmlParseError() {
     configResolved(config: ResolvedConfig) {
       const warn = config.logger.warn
       config.logger.warn = (msg, opts) => {
-        // for invalid HTML, we throw an error
-        // to avoid false positives in tests
+        // convert HTML parse warnings to make it easier to test
         if (msg.includes('Unable to parse HTML;')) {
           throw new Error(msg)
         }
-        // call original logger
         warn.call(config.logger, msg, opts)
       }
     },
