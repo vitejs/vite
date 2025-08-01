@@ -149,11 +149,7 @@ You will need to access the file with `http` protocol. The easiest way to achiev
 ### ENOENT: no such file or directory error due to case sensitivity
 
 If you encounter errors like `ENOENT: no such file or directory` or `Module not found`, this often occurs when your project was developed on a case-insensitive filesystem (Windows / macOS) but built on a case-sensitive one (Linux).
-
-This happens when file references don't match actual file casing; fix by renaming files or updating references to match exactly.
-
-**Prevention:** Enable case-sensitive checking in your development environment.
-
+Please make sure that the imports have the correct casing.
 
 ## Optimized Dependencies
 
