@@ -153,7 +153,7 @@ If you need a custom integration, you can follow the steps in this guide to conf
    ```
 
    Specifically, a backend generating HTML should include the following tags given a manifest
-   file and an entry point. Note that following this order is recommended for optimal performance, though not strictly required:
+   file and an entry point. Note that following this order is recommended for optimal performance:
    1. A `<link rel="stylesheet">` tag for each file in the entry point chunk's `css` list (if it exists)
    2. Recursively follow all chunks in the entry point's `imports` list and include a
       `<link rel="stylesheet">` tag for each CSS file of each imported chunk's `css` list (if it exists).
