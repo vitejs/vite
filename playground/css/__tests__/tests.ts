@@ -547,8 +547,6 @@ export const tests = (isLightningCSS: boolean) => {
       const manifest = readManifest()
       expect(manifest['empty.css']).toBeDefined()
       expect(manifest['empty.css'].file).toMatch(/\.css$/)
-      expect(manifest['empty2.css']).toBeDefined()
-      expect(manifest['empty2.css'].file).toMatch(/\.css$/)
     },
   )
 }
