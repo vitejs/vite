@@ -155,7 +155,28 @@ test('return help usage how to use create-vite with -h alias', () => {
 
 test('shows immediate and agent options in help', () => {
   const { stdout } = run(['--help'], { cwd: __dirname })
-  expect(stdout).toMatchInlineSnapshot()
+  expect(stdout).toMatchInlineSnapshot(`
+    "Usage: create-vite [OPTION]... [DIRECTORY]
+
+    Create a new Vite project in JavaScript or TypeScript.
+    With no arguments, start the CLI in interactive mode.
+
+    Options:
+      -t, --template NAME        use a specific template
+      -i, --immediate            install dependencies and start dev
+      -a, --agent AGENT          install dependencies via npm, yarn, pnpm, or bun
+
+    Available templates:
+    \u001b[33mvanilla-ts     vanilla\u001b[39m
+    \u001b[32mvue-ts         vue\u001b[39m
+    \u001b[36mreact-ts       react\u001b[39m
+    \u001b[36mreact-swc-ts   react-swc\u001b[39m
+    \u001b[35mpreact-ts      preact\u001b[39m
+    \u001b[91mlit-ts         lit\u001b[39m
+    \u001b[31msvelte-ts      svelte\u001b[39m
+    \u001b[34msolid-ts       solid\u001b[39m
+    \u001b[94mqwik-ts        qwik\u001b[39m"
+  `)
 })
 
 test('accepts immediate flag', () => {
