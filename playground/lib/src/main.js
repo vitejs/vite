@@ -14,8 +14,7 @@ export default function myLib(sel) {
   // make sure umd helper has been moved to the right position
   console.log(`amd function(){ "use strict"; }`)
 
-  // Test pure annotation preservation for tree-shaking
-  // This should preserve the pure annotation comment
+  // Pure annotation comment should be kept for ESM format
   const result = /* #__PURE__ */ createObject()
 
   return result
