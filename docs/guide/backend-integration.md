@@ -23,7 +23,6 @@ If you need a custom integration, you can follow the steps in this guide to conf
        manifest: true,
        rollupOptions: {
          // overwrite default .html entry
-         // input can be a string, array, or object for multiple entries
          input: '/path/to/main.js',
        },
      },
@@ -125,7 +124,7 @@ If you need a custom integration, you can follow the steps in this guide to conf
    Each entry in the manifest represents one of the following:
    - **Entry chunks**: Generated from files specified in [`build.rollupOptions.input`](https://rollupjs.org/configuration-options/#input). These chunks have `isEntry: true` and their key is the relative src path from project root.
    - **Dynamic entry chunks**: Generated from dynamic imports. These chunks have `isDynamicEntry: true` and their key is the relative src path from project root.
-   - **Non-entry chunks**: Their key is the base name of the generated file prefixed with `_`. Their file names are controlled by [`build.rollupOptions.output.chunkFileNames`](https://rollupjs.org/configuration-options/#output-chunkfilenames).
+   - **Non-entry chunks**: Their key is the base name of the generated file prefixed with `_`.
    - **Asset chunks**: Generated from imported assets like images, fonts. Their key is the relative src path from project root.
    - **CSS files**: When [`build.cssCodeSplit`](/config/build-options.md#build-csscodesplit) is `false`, a single CSS file is generated with the key `style.css`. When `build.cssCodeSplit` is not `false`, the key is generated similar to JS chunks (i.e. entry chunks will not have `_` prefix and non-entry chunks will have `_` prefix).
 
