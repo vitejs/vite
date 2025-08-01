@@ -148,18 +148,9 @@ You will need to access the file with `http` protocol. The easiest way to achiev
 
 ### ENOENT: no such file or directory error due to case sensitivity
 
-If you encounter errors like `ENOENT: no such file or directory` or `Module not found`, this often occurs when your project was developed on a case-insensitive filesystem (Windows/macOS) but deployed on a case-sensitive one (Linux).
+If you encounter errors like `ENOENT: no such file or directory` or `Module not found`, this often occurs when your project was developed on a case-insensitive filesystem (Windows / macOS) but built on a case-sensitive one (Linux).
 
-**Common causes:**
-
-- Asset files with mismatched casing (e.g., `Quicksand-Regular` folder but `quicksand-regular` reference)
-- Import statements with incorrect casing (e.g., `import './component.jsx'` when file is `Component.jsx`)
-
-**Solutions:**
-
-1. **Rename files/folders** to match their references exactly
-2. **Update references** to match the actual file/folder names
-3. **Use consistent naming conventions** across your project
+This happens when file references don't match actual file casing; fix by renaming files or updating references to match exactly.
 
 **Prevention:** Enable case-sensitive checking in your development environment.
 
