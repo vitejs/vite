@@ -48,7 +48,7 @@ export function clientInjectionsPlugin(config: ResolvedConfig): Plugin {
       const overlay = hmrConfig?.overlay !== false
       const isHmrServerSpecified = !!hmrConfig?.server
       const hmrConfigName = path.basename(config.configFile || 'vite.config.js')
-      const runtimeErrors = hmrConfig?.runtimeErrors ?? true
+      const runtimeErrors = hmrConfig?.runtimeErrors ?? false
 
       // hmr.clientPort -> hmr.port
       // -> (24678 if middleware mode and HMR server is not specified) -> new URL(import.meta.url).port
