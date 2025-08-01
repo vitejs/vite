@@ -1,4 +1,4 @@
-import { expect, test } from 'vitest'
+import { beforeEach, describe, expect, test } from 'vitest'
 import { port, serverLogs } from './serve'
 import { browserLogs, editFile, isServe, page } from '~utils'
 
@@ -44,18 +44,20 @@ test(`deadlock doesn't happen for dynamic imports`, async () => {
   )
 })
 
-test(`import.meta.resolve is supported`, async () => {
-  await page.goto(`${url}/import-meta`)
+describe('import.meta is supported', () => {
+  beforeEach(async () => {
+    await page.goto(`${url}/import-meta`)
+  })
 
-  const metaUrl = await page.textContent('.import-meta-url')
-  expect(metaUrl).not.toBe('')
-  expect(await page.textContent('.import-meta-resolve')).toBe(metaUrl)
-})
+  test(`import.meta.resolve is supported`, async () => {
+    const metaUrl = await page.textContent('.import-meta-url')
+    expect(metaUrl).not.toBe('')
+    expect(await page.textContent('.import-meta-resolve')).toBe(metaUrl)
+  })
 
-test(`import.meta.main is false in Node.js environment`, async () => {
-  await page.goto(`${url}/import-meta`)
-
-  expect(await page.textContent('.import-meta-main')).toBe('false')
+  test(`import.meta.main is false in Node.js environment`, async () => {
+    expect(await page.textContent('.import-meta-main')).toBe('false')
+  })
 })
 
 test.runIf(isServe)('html proxy is encoded', async () => {
