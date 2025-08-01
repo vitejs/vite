@@ -82,6 +82,17 @@ describe.runIf(isBuild)('build', () => {
     expect(umd).toMatch('process.env.NODE_ENV')
   })
 
+  test('terser minification for es lib mode', () => {
+    const terserEs = readFile('dist/terser/my-lib-custom-filename.js')
+    expect(terserEs).not.toMatch('console.log')
+  })
+
+  test('pure annotations are not removed by terser for es', () => {
+    const terserEs = readFile('dist/terser/my-lib-custom-filename.js')
+    // Verify that the pure annotation comment is preserved in the output
+    expect(terserEs).toMatch(/@__PURE__/)
+  })
+
   test('single entry with css', () => {
     const css = readFile('dist/css-single-entry/test-my-lib.css')
     const js = readFile('dist/css-single-entry/test-my-lib.js')

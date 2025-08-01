@@ -1,15 +1,27 @@
-export default function myLib(sel) {
-  // Force esbuild spread helpers (https://github.com/evanw/esbuild/issues/951)
-  console.log({ ...'foo' })
-
-  document.querySelector(sel).textContent = 'It works'
-
-  // Env vars should not be replaced
-  console.log(process.env.NODE_ENV)
-
-  // make sure umd helper has been moved to the right position
-  console.log(`amd function(){ "use strict"; }`)
+function createObject() {
+  return { created: Date.now() }
 }
+
+export default /* @__PURE__ */ Object.assign(
+  function myLib(sel) {
+    // Force esbuild spread helpers (https://github.com/evanw/esbuild/issues/951)
+    console.log({ ...'foo' })
+
+    document.querySelector(sel).textContent = 'It works'
+
+    // Env vars should not be replaced
+    console.log(process.env.NODE_ENV)
+
+    // make sure umd helper has been moved to the right position
+    console.log(`amd function(){ "use strict"; }`)
+
+    // Pure annotation comment should be kept for ESM format
+    const result = createObject()
+
+    return result
+  },
+  { version: '1.0.0' },
+)
 
 // For triggering unhandled global esbuild helpers in previous regex-based implementation for injection
 ;(function () {})()?.foo

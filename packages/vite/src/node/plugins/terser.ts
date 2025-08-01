@@ -90,19 +90,26 @@ export function terserPlugin(config: ResolvedConfig): Plugin {
         return null
       }
 
-      // Do not minify ES lib output since that would remove pure annotations
-      // and break tree-shaking.
-      if (config.build.lib && outputOptions.format === 'es') {
-        return null
-      }
-
       // Lazy load worker.
       worker ||= makeWorker()
 
       const terserPath = loadTerserPath(config.root)
+
+      // For ES lib mode, preserve comments to maintain pure annotations for tree-shaking
+      const isEsLibMode = config.build.lib && outputOptions.format === 'es'
+      const preserveComments = isEsLibMode
+        ? terserOptions.output?.comments === 'all'
+          ? 'all'
+          : /^[@#]__PURE__/ // pure annotation comments
+        : terserOptions.output?.comments
+
       const res = await worker.run(terserPath, code, {
         safari10: true,
         ...terserOptions,
+        output: {
+          ...terserOptions.output,
+          comments: preserveComments,
+        },
         sourceMap: !!outputOptions.sourcemap,
         module: outputOptions.format.startsWith('es'),
         toplevel: outputOptions.format === 'cjs',
