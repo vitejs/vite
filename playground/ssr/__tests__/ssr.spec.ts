@@ -44,10 +44,8 @@ test(`deadlock doesn't happen for dynamic imports`, async () => {
   )
 })
 
-describe('import.meta is supported', () => {
-  beforeEach(async () => {
-    await page.goto(`${url}/import-meta`)
-  })
+describe('import.meta is supported', async () => {
+  await page.goto(`${url}/import-meta`)
 
   test(`import.meta.resolve is supported`, async () => {
     const metaUrl = await page.textContent('.import-meta-url')
@@ -55,7 +53,7 @@ describe('import.meta is supported', () => {
     expect(await page.textContent('.import-meta-resolve')).toBe(metaUrl)
   })
 
-  test(`import.meta.main is false in Node.js environment`, async () => {
+  test(`import.meta.main is supported`, async () => {
     expect(await page.textContent('.import-meta-main')).toBe('false')
   })
 })
