@@ -513,19 +513,13 @@ async function init() {
       fs.writeFileSync(targetPath, content)
     } else if (file === 'index.html') {
       // Handle index.html files specially to replace title with project name
-      // Skip lit templates to maintain StackBlitz compatibility
       const templatePath = path.join(templateDir, file)
       const templateContent = fs.readFileSync(templatePath, 'utf-8')
-      if (template.includes('lit')) {
-        // Keep original title for lit templates
-        fs.writeFileSync(targetPath, templateContent)
-      } else {
-        const updatedContent = templateContent.replace(
-          /<title>.*?<\/title>/,
-          `<title>${packageName}</title>`,
-        )
-        fs.writeFileSync(targetPath, updatedContent)
-      }
+      const updatedContent = templateContent.replace(
+        /<title>.*?<\/title>/,
+        `<title>${packageName}</title>`,
+      )
+      fs.writeFileSync(targetPath, updatedContent)
     } else {
       copy(path.join(templateDir, file), targetPath)
     }
