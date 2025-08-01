@@ -148,30 +148,20 @@ You will need to access the file with `http` protocol. The easiest way to achiev
 
 ### ENOENT: no such file or directory error due to case sensitivity
 
-If you encounter an error like this during build or development:
+If you encounter errors like `ENOENT: no such file or directory` or `Module not found`, this often occurs when your project was developed on a case-insensitive filesystem (Windows/macOS) but deployed on a case-sensitive one (Linux).
 
-> [vite:css] [postcss] ENOENT: no such file or directory, open '/path/to/assets/fonts/quicksand-regular/font.ttf'
-
-> Module not found: Error: Can't resolve './Component.jsx'
-
-This often occurs when your project was developed on a case-insensitive filesystem (Windows or macOS) but is being deployed or run on a case-sensitive filesystem (most Linux distributions).
-
-**Common scenarios:**
+**Common causes:**
 
 - Asset files with mismatched casing (e.g., `Quicksand-Regular` folder but `quicksand-regular` reference)
 - Import statements with incorrect casing (e.g., `import './component.jsx'` when file is `Component.jsx`)
-- Image or font file references in CSS with different casing
 
 **Solutions:**
 
-1. **Rename files/folders** to match their references exactly, including casing
+1. **Rename files/folders** to match their references exactly
 2. **Update references** to match the actual file/folder names
-3. **Use a consistent naming convention** across your project (e.g., always use kebab-case or camelCase)
-4. **Check your IDE settings** to ensure it shows actual file casing
-5. **Use linting rules** that can catch case sensitivity issues during development
+3. **Use consistent naming conventions** across your project
 
-**Prevention:**
-Enable case-sensitive checking in your development environment or use tools that warn about case mismatches before deployment.
+**Prevention:** Enable case-sensitive checking in your development environment.
 
 See: [#18043](https://github.com/vitejs/vite/issues/18043)
 
