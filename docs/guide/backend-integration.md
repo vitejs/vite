@@ -105,12 +105,29 @@ If you need a custom integration, you can follow the steps in this guide to conf
    }
    ```
 
-   The manifest has a `Record<name, chunk>` structure where each chunk follows the [`ManifestChunk`](https://github.com/vitejs/vite/blob/main/packages/vite/src/node/plugins/manifest.ts#L17-L28) interface. Each entry in the manifest represents one of the following:
+   The manifest has a `Record<name, chunk>` structure where each chunk follows the `ManifestChunk` interface:
+
+   ```ts
+   interface ManifestChunk {
+     src?: string
+     file: string
+     css?: string[]
+     assets?: string[]
+     isEntry?: boolean
+     name?: string
+     names?: string[]
+     isDynamicEntry?: boolean
+     imports?: string[]
+     dynamicImports?: string[]
+   }
+   ```
+
+   Each entry in the manifest represents one of the following:
    - **Entry chunks**: Generated from files specified in [`build.rollupOptions.input`](https://rollupjs.org/configuration-options/#input). These chunks have `isEntry: true` and their key is the relative src path from project root.
    - **Dynamic entry chunks**: Generated from dynamic imports. These chunks have `isDynamicEntry: true` and their key is the relative src path from project root.
-   - **Non-entry chunks**: Generated when code is split into separate chunks. Their key is the base name of the generated file prefixed with `_`. Their file names are controlled by [`build.rollupOptions.output.chunkFileNames`](https://rollupjs.org/configuration-options/#output-chunkfilenames).
-   - **Asset chunks**: Generated from imported assets like images, fonts, or CSS files. Their key is the relative src path from project root (without `_` prefix). Asset file names are controlled by [`build.rollupOptions.output.assetFileNames`](https://rollupjs.org/configuration-options/#output-assetfilenames).
-   - **CSS files**: When [`build.cssCodeSplit`](/config/build-options.md#build-csscodesplit) is `false`, a single CSS file is generated with the key `style.css`.
+   - **Non-entry chunks**: Their key is the base name of the generated file prefixed with `_`. Their file names are controlled by [`build.rollupOptions.output.chunkFileNames`](https://rollupjs.org/configuration-options/#output-chunkfilenames).
+   - **Asset chunks**: Generated from imported assets like images, fonts. Their key is the relative src path from project root.
+   - **CSS files**: When [`build.cssCodeSplit`](/config/build-options.md#build-csscodesplit) is `false`, a single CSS file is generated with the key `style.css`. When `build.cssCodeSplit` is not `false`, the key is generated similar to JS chunks (i.e. entry chunks will not have `_` prefix and non-entry chunks will have `_` prefix).
 
    Chunks will contain information on their static and dynamic imports (both are keys that map to the corresponding chunk in the manifest), and also their corresponding CSS and asset files (if any).
 
@@ -137,11 +154,11 @@ If you need a custom integration, you can follow the steps in this guide to conf
    ```
 
    Specifically, a backend generating HTML should include the following tags given a manifest
-   file and an entry point. **Note that following this order is recommended for optimal performance, though not strictly required:**
+   file and an entry point. Note that following this order is recommended for optimal performance, though not strictly required:
    1. A `<link rel="stylesheet">` tag for each file in the entry point chunk's `css` list (if it exists)
    2. Recursively follow all chunks in the entry point's `imports` list and include a
-      `<link rel="stylesheet">` tag for each CSS file of each imported chunk's `css` list (if it exists). For CSS entry points, they won't have a `css` property, so you can check if the property exists before processing.
-   3. A tag for the `file` key of the entry point chunk. This can be `<script type="module">` for JavaScript, `<link rel="stylesheet">` for CSS, or appropriate tags for other file types (entry points can include HTML files, assets, etc.)
+      `<link rel="stylesheet">` tag for each CSS file of each imported chunk's `css` list (if it exists).
+   3. A tag for the `file` key of the entry point chunk. This can be `<script type="module">` for JavaScript, `<link rel="stylesheet">` for CSS.
    4. Optionally, `<link rel="modulepreload">` tag for the `file` of each imported JavaScript
       chunk, again recursively following the imports starting from the entry point chunk.
 
