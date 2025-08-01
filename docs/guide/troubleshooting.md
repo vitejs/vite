@@ -154,7 +154,6 @@ This happens when file references don't match actual file casing; fix by renamin
 
 **Prevention:** Enable case-sensitive checking in your development environment.
 
-See: [#18043](https://github.com/vitejs/vite/issues/18043)
 
 ## Optimized Dependencies
 
