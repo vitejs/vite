@@ -2044,9 +2044,7 @@ async function bundleConfigFile(
               `const ${importMetaUrlVarName} = ${JSON.stringify(
                 pathToFileURL(args.path).href,
               )};` +
-              `const ${importMetaMainVarName} = ${JSON.stringify(
-                args.path === fileName,
-              )};`
+              `const ${importMetaMainVarName} = ${JSON.stringify(false)};`
 
             return {
               loader: args.path.endsWith('ts') ? 'ts' : 'js',

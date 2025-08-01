@@ -810,7 +810,7 @@ describe('loadConfigFromFile', () => {
       path.resolve(fixtures, './import-meta'),
     ))!
     expect(config).toMatchObject({
-      isMain: true,
+      isMain: false,
       dependencyIsMain: false,
     })
     expect(typeof config.url).toBe('string')
