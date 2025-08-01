@@ -89,9 +89,8 @@ describe.runIf(isBuild)('build', () => {
 
   test('pure annotations are not removed by terser for es', () => {
     const terserEs = readFile('dist/terser/my-lib-custom-filename.js')
-    // Verify that terser respects pure annotations for tree-shaking:
-    // The createObject function should be preserved and called
-    expect(terserEs).toMatch(/Date\.now/)
+    // Verify that the pure annotation comment is preserved in the output
+    expect(terserEs).toMatch(/@__PURE__/)
   })
 
   test('single entry with css', () => {
