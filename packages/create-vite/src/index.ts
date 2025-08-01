@@ -359,11 +359,6 @@ function run(...params: Parameters<typeof spawn.sync>) {
 }
 
 function install(root: string, agent: string) {
-  // Skip actual installation in test environment
-  if (process.env.NODE_ENV === 'test' || process.env.VITEST) {
-    console.log(`\nInstalling dependencies via ${agent}... (skipped in test)`)
-    return
-  }
   console.log(`\nInstalling dependencies via ${agent}...`)
   run(agent, agent === 'yarn' ? [] : ['install'], {
     stdio: 'inherit',
@@ -372,11 +367,6 @@ function install(root: string, agent: string) {
 }
 
 function start(root: string, agent: string) {
-  // Skip actual start in test environment
-  if (process.env.NODE_ENV === 'test' || process.env.VITEST) {
-    console.log('\nStart dev server... (skipped in test)')
-    return
-  }
   console.log('\nStart dev server...')
   run(agent, agent === 'npm' ? ['run', 'dev'] : ['dev'], {
     stdio: 'inherit',
@@ -517,43 +507,34 @@ async function init() {
   }
 
   // 5. Ask about immediate install and package manager
-  const pkgManager = pkgInfo ? pkgInfo.name : 'npm'
-  let agent = argAgent
   let immediate = argImmediate
-
   // If agent is specified but immediate is not explicitly set, default immediate to true
-  if (agent && immediate === undefined) {
+  if (argAgent && immediate === undefined) {
     immediate = true
   }
-
-  // If immediate is true but no agent specified, use detected package manager
-  if (immediate && !agent) {
-    agent = pkgManager
-  }
-
-  // Only prompt for immediate if not already determined
   if (immediate === undefined) {
     const immediateResult = await prompts.confirm({
       message: 'Install and start now?',
     })
     if (prompts.isCancel(immediateResult)) return cancel()
     immediate = immediateResult
+  }
 
-    // If user wants immediate install, prompt for package manager
-    if (immediate && !agent) {
-      const agentResult = await prompts.select({
-        message: 'Select a package manager:',
-        options: [
-          { label: 'npm', value: 'npm' },
-          { label: 'yarn', value: 'yarn' },
-          { label: 'pnpm', value: 'pnpm' },
-          { label: 'bun', value: 'bun' },
-        ],
-        initialValue: pkgManager,
-      })
-      if (prompts.isCancel(agentResult)) return cancel()
-      agent = agentResult
-    }
+  const pkgManager = pkgInfo ? pkgInfo.name : 'npm'
+  let agent = argAgent
+  if (immediate && !agent) {
+    const agentResult = await prompts.select({
+      message: 'Select a package manager:',
+      options: [
+        { label: 'npm', value: 'npm' },
+        { label: 'yarn', value: 'yarn' },
+        { label: 'pnpm', value: 'pnpm' },
+        { label: 'bun', value: 'bun' },
+      ],
+      initialValue: pkgManager,
+    })
+    if (prompts.isCancel(agentResult)) return cancel()
+    agent = agentResult
   }
 
   const root = path.join(cwd, targetDir)
