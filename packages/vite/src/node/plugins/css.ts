@@ -620,7 +620,7 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
     },
 
     async renderChunk(code, chunk, opts, meta) {
-      let chunkCSS = ''
+      let chunkCSS: string | undefined = undefined
       const renderedModules = new Proxy(
         {} as Record<string, RenderedModule | undefined>,
         {
@@ -661,7 +661,7 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
             isPureCssChunk = false
           }
 
-          chunkCSS += styles.get(id)
+          chunkCSS = (chunkCSS || '') + styles.get(id)
         } else if (!isJsChunkEmpty) {
           // if the module does not have a style, then it's not a pure css chunk.
           // this is true because in the `transform` hook above, only modules
@@ -824,7 +824,7 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
         }
       }
 
-      if (chunkCSS || (isPureCssChunk && chunk.isEntry)) {
+      if (chunkCSS !== undefined) {
         if (isPureCssChunk && (opts.format === 'es' || opts.format === 'cjs')) {
           // this is a shared CSS-only chunk that is empty.
           pureCssChunks.add(chunk)
