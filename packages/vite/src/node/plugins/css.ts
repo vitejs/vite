@@ -2006,17 +2006,7 @@ async function rewriteCssImageSet(
     const url = await processSrcSet(rawUrl, async ({ url }) => {
       // the url maybe url(...)
       if (cssUrlRE.test(url)) {
-        // Extract and check if URL already contains VITE_ASSET token
-        const urlMatch = url.match(/url\(([^)]+)\)/)
-        if (urlMatch) {
-          const unquotedUrl = urlMatch[1].replace(/^['"]|['"]$/g, '').trim()
-          const assetTokenRE = /__VITE_ASSET__[\w$]+__(?:\$_.*?__)?/
-          if (!assetTokenRE.test(unquotedUrl)) {
-            return await rewriteCssUrls(url, replacer)
-          }
-        } else {
-          return await rewriteCssUrls(url, replacer)
-        }
+        return await rewriteCssUrls(url, replacer)
       }
       if (!cssNotProcessedRE.test(url)) {
         return await doUrlReplace(url, url, replacer)
@@ -2031,7 +2021,8 @@ function skipUrlReplacer(unquotedUrl: string) {
     isExternalUrl(unquotedUrl) ||
     isDataUrl(unquotedUrl) ||
     unquotedUrl[0] === '#' ||
-    functionCallRE.test(unquotedUrl)
+    functionCallRE.test(unquotedUrl) ||
+    /__VITE_ASSET__[\w$]+__(?:\$_.*?__)?/.test(unquotedUrl)
   )
 }
 async function doUrlReplace(
