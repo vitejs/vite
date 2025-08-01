@@ -806,8 +806,8 @@ describe('loadConfigFromFile', () => {
   test('import.meta.main is correctly set', async () => {
     const { config } = (await loadConfigFromFile(
       {} as any,
-      path.resolve(fixtures, './import-meta-main/vite.config.ts'),
-      path.resolve(fixtures, './import-meta-main'),
+      path.resolve(fixtures, './import-meta/vite.config.ts'),
+      path.resolve(fixtures, './import-meta'),
     ))!
     expect(config).toMatchObject({
       isMain: true,
@@ -817,7 +817,7 @@ describe('loadConfigFromFile', () => {
     expect(typeof config.dirname).toBe('string')
     expect(typeof config.filename).toBe('string')
     expect(config.url).toContain('file://')
-    expect(config.dirname).toContain('import-meta-main')
+    expect(config.dirname).toContain('import-meta')
     expect(config.filename).toContain('vite.config.ts')
   })
 
