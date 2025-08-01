@@ -512,14 +512,20 @@ async function init() {
     if (content) {
       fs.writeFileSync(targetPath, content)
     } else if (file === 'index.html') {
-      // Handle index.html files specially to replace project name placeholder
+      // Handle index.html files specially to replace title with project name
+      // Skip lit templates to maintain StackBlitz compatibility
       const templatePath = path.join(templateDir, file)
       const templateContent = fs.readFileSync(templatePath, 'utf-8')
-      const updatedContent = templateContent.replace(
-        '{{PROJECT_NAME}}',
-        packageName,
-      )
-      fs.writeFileSync(targetPath, updatedContent)
+      if (template.includes('lit')) {
+        // Keep original title for lit templates
+        fs.writeFileSync(targetPath, templateContent)
+      } else {
+        const updatedContent = templateContent.replace(
+          /<title>.*?<\/title>/,
+          `<title>${packageName}</title>`,
+        )
+        fs.writeFileSync(targetPath, updatedContent)
+      }
     } else {
       copy(path.join(templateDir, file), targetPath)
     }
