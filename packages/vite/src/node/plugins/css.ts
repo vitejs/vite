@@ -2022,7 +2022,8 @@ function skipUrlReplacer(unquotedUrl: string) {
     isDataUrl(unquotedUrl) ||
     unquotedUrl[0] === '#' ||
     functionCallRE.test(unquotedUrl) ||
-    /__VITE_ASSET__[\w$]+__(?:\$_.*?__)?/.test(unquotedUrl)
+    unquotedUrl.startsWith('__VITE_ASSET__') ||
+    unquotedUrl.startsWith('__VITE_PUBLIC_ASSET__')
   )
 }
 async function doUrlReplace(
