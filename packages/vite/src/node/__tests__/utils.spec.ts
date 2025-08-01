@@ -53,7 +53,6 @@ describe('deepImportRE', () => {
   })
 
   test('should match scoped package with subpath', () => {
-    expect(deepImportRE.test('@vitejs/plugin-vue/dist/index')).toBe(true)
     const match = deepImportRE.exec('@vitejs/plugin-vue/dist/index')
     expect(match?.[1]).toBeUndefined()
     expect(match?.[2]).toBe('@vitejs/plugin-vue')
