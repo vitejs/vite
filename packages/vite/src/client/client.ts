@@ -19,6 +19,7 @@ declare const __HMR_DIRECT_TARGET__: string
 declare const __HMR_BASE__: string
 declare const __HMR_TIMEOUT__: number
 declare const __HMR_ENABLE_OVERLAY__: boolean
+declare const __HMR_RUNTIME_ERRORS__: boolean | ((err: ErrorEvent) => unknown)
 declare const __WS_TOKEN__: string
 
 console.debug('[vite] connecting...')
@@ -37,6 +38,8 @@ const directSocketHost = __HMR_DIRECT_TARGET__
 const base = __BASE__ || '/'
 const hmrTimeout = __HMR_TIMEOUT__
 const wsToken = __WS_TOKEN__
+const runtimeErrors = __HMR_RUNTIME_ERRORS__
+const enableOverlay = __HMR_ENABLE_OVERLAY__
 
 const transport = normalizeModuleRunnerTransport(
   (() => {
@@ -109,6 +112,19 @@ if (typeof window !== 'undefined') {
   window.addEventListener?.('beforeunload', () => {
     willUnload = true
   })
+
+  if (enableOverlay && runtimeErrors) {
+    if (typeof runtimeErrors === 'function') {
+      window.addEventListener('error', runtimeErrors)
+    } else {
+      window.addEventListener('error', (err: ErrorEvent) => {
+        const { error, message } = err
+        const errorObject =
+          error instanceof Error ? error : new Error(error || message)
+        createErrorOverlay(errorObject)
+      })
+    }
+  }
 }
 
 function cleanUrl(pathname: string): string {
@@ -303,10 +319,9 @@ async function handleMessage(payload: HotPayload) {
   }
 }
 
-const enableOverlay = __HMR_ENABLE_OVERLAY__
 const hasDocument = 'document' in globalThis
 
-function createErrorOverlay(err: ErrorPayload['err']) {
+function createErrorOverlay(err: ErrorPayload['err'] | Error) {
   clearErrorOverlay()
   const { customElements } = globalThis
   if (customElements) {
