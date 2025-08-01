@@ -54,6 +54,7 @@ export async function createNodeImportMeta(
 
   return {
     ...defaultMeta,
+    main: false,
     resolve(id: string, parent?: string) {
       const resolver = importMetaResolver ?? defaultMeta.resolve
       return resolver(id, parent ?? href)
