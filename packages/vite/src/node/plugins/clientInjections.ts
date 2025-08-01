@@ -48,6 +48,7 @@ export function clientInjectionsPlugin(config: ResolvedConfig): Plugin {
       const overlay = hmrConfig?.overlay !== false
       const isHmrServerSpecified = !!hmrConfig?.server
       const hmrConfigName = path.basename(config.configFile || 'vite.config.js')
+      const runtimeErrors = hmrConfig?.runtimeErrors ?? true
 
       // hmr.clientPort -> hmr.port
       // -> (24678 if middleware mode and HMR server is not specified) -> new URL(import.meta.url).port
@@ -77,6 +78,10 @@ export function clientInjectionsPlugin(config: ResolvedConfig): Plugin {
       const hmrEnableOverlayReplacement = escapeReplacement(overlay)
       const hmrConfigNameReplacement = escapeReplacement(hmrConfigName)
       const wsTokenReplacement = escapeReplacement(config.webSocketToken)
+      const hmrRuntimeErrorsReplacement =
+        typeof runtimeErrors === 'function'
+          ? () => runtimeErrors.toString()
+          : escapeReplacement(runtimeErrors)
 
       injectConfigValues = (code: string) => {
         return code
@@ -92,6 +97,7 @@ export function clientInjectionsPlugin(config: ResolvedConfig): Plugin {
           .replace(`__HMR_ENABLE_OVERLAY__`, hmrEnableOverlayReplacement)
           .replace(`__HMR_CONFIG_NAME__`, hmrConfigNameReplacement)
           .replace(`__WS_TOKEN__`, wsTokenReplacement)
+          .replace(`__HMR_RUNTIME_ERRORS__`, hmrRuntimeErrorsReplacement)
       }
     },
     async transform(code, id) {
