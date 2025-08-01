@@ -334,29 +334,27 @@ export function cssPlugin(config: ResolvedConfig): Plugin {
 
     load: {
       filter: {
-        id: CSS_LANGS_RE,
+        id: [CSS_LANGS_RE, urlRE],
       },
       async handler(id) {
-        if (urlRE.test(id)) {
-          if (isModuleCSSRequest(id)) {
-            throw new Error(
-              `?url is not supported with CSS modules. (tried to import ${JSON.stringify(
-                id,
-              )})`,
-            )
-          }
+        if (isModuleCSSRequest(id)) {
+          throw new Error(
+            `?url is not supported with CSS modules. (tried to import ${JSON.stringify(
+              id,
+            )})`,
+          )
+        }
 
-          // *.css?url
-          // in dev, it's handled by assets plugin.
-          if (isBuild) {
-            id = injectQuery(removeUrlQuery(id), 'transform-only')
-            return (
-              `import ${JSON.stringify(id)};` +
-              `export default "__VITE_CSS_URL__${Buffer.from(id).toString(
-                'hex',
-              )}__"`
-            )
-          }
+        // *.css?url
+        // in dev, it's handled by assets plugin.
+        if (isBuild) {
+          id = injectQuery(removeUrlQuery(id), 'transform-only')
+          return (
+            `import ${JSON.stringify(id)};` +
+            `export default "__VITE_CSS_URL__${Buffer.from(id).toString(
+              'hex',
+            )}__"`
+          )
         }
       },
     },

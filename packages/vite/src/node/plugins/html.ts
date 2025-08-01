@@ -109,7 +109,7 @@ export function htmlInlineProxyPlugin(config: ResolvedConfig): Plugin {
     },
 
     load: {
-      filter: { id: isHtmlProxyRE },
+      filter: { id: [isHtmlProxyRE, htmlLangRE] },
       handler(id) {
         const proxyMatch = htmlProxyRE.exec(id)
         if (proxyMatch) {
