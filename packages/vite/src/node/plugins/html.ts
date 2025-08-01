@@ -9,7 +9,12 @@ import type {
 } from 'rollup'
 import MagicString from 'magic-string'
 import colors from 'picocolors'
-import type { DefaultTreeAdapterMap, ParserError, Token } from 'parse5'
+import type {
+  DefaultTreeAdapterMap,
+  ErrorCodes,
+  ParserError,
+  Token,
+} from 'parse5'
 import { stripLiteral } from 'strip-literal'
 import escapeHtml from 'escape-html'
 import type { MinimalPluginContextWithoutEnvironment, Plugin } from '../plugin'
@@ -185,6 +190,8 @@ function traverseNodes(
   }
 }
 
+type ParseWarnings = Partial<Record<ErrorCodes, string>>
+
 export async function traverseHtml(
   html: string,
   filePath: string,
@@ -193,20 +200,18 @@ export async function traverseHtml(
 ): Promise<void> {
   // lazy load compiler
   const { parse } = await import('parse5')
-  shownWarnings[filePath] = {}
+  const warnings: ParseWarnings = {}
   const ast = parse(html, {
     scriptingEnabled: false, // parse inside <noscript>
     sourceCodeLocationInfo: true,
     onParseError: (e: ParserError) => {
-      handleParseError(e, html, filePath)
+      handleParseError(e, html, filePath, warnings)
     },
   })
   traverseNodes(ast, visitor)
-  if (Object.keys(shownWarnings[filePath]).length) {
-    // only show warnings if there are any
-    Object.entries(shownWarnings[filePath]).forEach(([_, message]) => {
-      warn(colors.yellow(`\n${message}`))
-    })
+
+  for (const message of Object.values(warnings)) {
+    warn(colors.yellow(`\n${message}`))
   }
 }
 
@@ -302,11 +307,11 @@ function formatParseError(parserError: ParserError, id: string, html: string) {
   return formattedError
 }
 
-const shownWarnings: Record<string, Record<string, string>> = {}
 function handleParseError(
   parserError: ParserError,
   html: string,
   filePath: string,
+  warnings: ParseWarnings,
 ) {
   switch (parserError.code) {
     case 'missing-doctype':
@@ -327,10 +332,8 @@ function handleParseError(
       // lit generates <?>: https://github.com/lit/lit/issues/2470
       return
   }
-
   const parseError = formatParseError(parserError, filePath, html)
-
-  shownWarnings[filePath][parseError.code] ||=
+  warnings[parseError.code] ??=
     `Unable to parse HTML; ${parseError.message}\n` +
     ` at ${parseError.loc.file}:${parseError.loc.line}:${parseError.loc.column}\n` +
     `${parseError.frame.length > 300 ? '[this code frame is omitted as the content was too long] ' : parseError.frame}`
