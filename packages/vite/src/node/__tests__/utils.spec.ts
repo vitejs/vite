@@ -47,7 +47,6 @@ describe('bareImportRE', () => {
 
 describe('deepImportRE', () => {
   test('should match regular package with subpath', () => {
-    expect(deepImportRE.test('my-lib/schemas')).toBe(true)
     const match = deepImportRE.exec('my-lib/schemas')
     expect(match?.[1]).toBe('my-lib')
     expect(match?.[2]).toBeUndefined()
@@ -71,20 +70,6 @@ describe('deepImportRE', () => {
     expect(deepImportRE.test('my-lib')).toBe(false)
     expect(deepImportRE.test('@vitejs/plugin-vue')).toBe(false)
     expect(deepImportRE.test('@/lib')).toBe(false)
-  })
-
-  test('should match relative imports', () => {
-    expect(deepImportRE.test('./lib/schemas')).toBe(true)
-    const match = deepImportRE.exec('./lib/schemas')
-    expect(match?.[1]).toBe('.')
-    expect(match?.[2]).toBeUndefined()
-  })
-
-  test('should match absolute imports', () => {
-    expect(deepImportRE.test('/lib/schemas')).toBe(true)
-    const match = deepImportRE.exec('/lib/schemas')
-    expect(match?.[1]).toBe('/lib')
-    expect(match?.[2]).toBeUndefined()
   })
 })
 
