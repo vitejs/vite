@@ -9,6 +9,7 @@ import {
   getColor,
   isBuild,
   page,
+  readManifest,
   removeFile,
   serverLogs,
   viteTestUrl,
@@ -539,4 +540,13 @@ export const tests = (isLightningCSS: boolean) => {
     expect(await getColor('.treeshake-scoped-order')).toBe('red')
     expect(await getBgColor('.treeshake-scoped-order')).toBe('blue')
   })
+
+  test.runIf(isBuild)(
+    'empty CSS files should generate .css assets, not .js assets',
+    () => {
+      const manifest = readManifest()
+      expect(manifest['empty.css']).toBeDefined()
+      expect(manifest['empty.css'].file).toMatch(/\.css$/)
+    },
+  )
 }
