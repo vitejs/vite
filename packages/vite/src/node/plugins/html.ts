@@ -193,14 +193,21 @@ export async function traverseHtml(
 ): Promise<void> {
   // lazy load compiler
   const { parse } = await import('parse5')
+  shownWarnings[filePath] = {}
   const ast = parse(html, {
     scriptingEnabled: false, // parse inside <noscript>
     sourceCodeLocationInfo: true,
     onParseError: (e: ParserError) => {
-      handleParseError(e, html, filePath, warn)
+      handleParseError(e, html, filePath)
     },
   })
   traverseNodes(ast, visitor)
+  if (Object.keys(shownWarnings[filePath]).length) {
+    // only show warnings if there are any
+    Object.entries(shownWarnings[filePath]).forEach(([_, message]) => {
+      warn(colors.yellow(`\n${message}`))
+    })
+  }
 }
 
 export function getScriptInfo(node: DefaultTreeAdapterMap['element']): {
@@ -295,12 +302,11 @@ function formatParseError(parserError: ParserError, id: string, html: string) {
   return formattedError
 }
 
-const shownWarnings: Record<string, Record<string, boolean>> = {}
+const shownWarnings: Record<string, Record<string, string>> = {}
 function handleParseError(
   parserError: ParserError,
   html: string,
   filePath: string,
-  warn: Logger['warn'],
 ) {
   switch (parserError.code) {
     case 'missing-doctype':
@@ -321,22 +327,13 @@ function handleParseError(
       // lit generates <?>: https://github.com/lit/lit/issues/2470
       return
   }
-  const contentHash = getHash(html, 32)
-  shownWarnings[contentHash] ??= {}
-  if (shownWarnings[contentHash][parserError.code]) {
-    // already warned about this error
-    return
-  }
-  shownWarnings[contentHash][parserError.code] = true
+
   const parseError = formatParseError(parserError, filePath, html)
 
-  warn(
-    colors.yellow(
-      `Unable to parse HTML; ${parseError.message}\n` +
-        ` at ${parseError.loc.file}:${parseError.loc.line}:${parseError.loc.column}\n` +
-        `${parseError.frame.length > 300 ? '[this code frame is omitted as the content was too long] ' : parseError.frame}`,
-    ),
-  )
+  shownWarnings[filePath][parseError.code] ||=
+    `Unable to parse HTML; ${parseError.message}\n` +
+    ` at ${parseError.loc.file}:${parseError.loc.line}:${parseError.loc.column}\n` +
+    `${parseError.frame.length > 300 ? '[this code frame is omitted as the content was too long] ' : parseError.frame}`
 }
 
 /**
