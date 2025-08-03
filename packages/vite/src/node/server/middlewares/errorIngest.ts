@@ -1,7 +1,6 @@
 import path from 'node:path'
 import repl from 'node:repl'
 import { readFileSync } from 'fs';
-import { codeToANSI } from '@shikijs/cli';
 
 import { stripVTControlCharacters as strip } from 'node:util'
 import colors from 'picocolors'
@@ -55,9 +54,7 @@ async function getErrorFragment (info) {
   for (const [lineno, line] of filtered) {
     fragment += `${
       lineno === (info.lineno - 1) ? colors.red('>') : ' '
-    }${String(lineno).padStart(padding)} | ${
-      await codeToANSI(line, 'typescript', 'slack-dark')
-    }`
+    }${String(lineno).padStart(padding)} | ${line}`
     if (lineno === (info.lineno - 1)) {
       const leftPadding = Math.max(0, (info.colno - 1) + padding + 5)
       fragment += `${new Array(leftPadding).fill('').join(' ')}${colors.red('^')}\n`
