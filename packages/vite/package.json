@@ -81,7 +81,6 @@
   },
   "//": "READ CONTRIBUTING.md to understand what to put under deps vs. devDeps!",
   "dependencies": {
-    "body-parser": "^2.2.0",
     "esbuild": "^0.25.0",
     "fdir": "^6.4.6",
     "picomatch": "^4.0.3",
