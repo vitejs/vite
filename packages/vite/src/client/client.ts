@@ -110,18 +110,13 @@ if (typeof window !== 'undefined') {
     willUnload = true
   })
   window.addEventListener('error', (error) => {
-    fetch('/@vite/errors', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        stack: error.error.stack,
-        filename: error.filename,
-        message: error.message,
-        colno: error.colno,
-        lineno: error.lineno,
-      })
+    transport.send({
+      type: 'browser-error',
+      stack: error.error.stack,
+      filename: error.filename,
+      message: error.message,
+      colno: error.colno,
+      lineno: error.lineno,
     })
   })
 }

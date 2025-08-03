@@ -18,6 +18,9 @@ import { isObject } from '../utils'
 import type { NormalizedHotChannel, NormalizedHotChannelClient } from './hmr'
 import { normalizeHotChannel } from './hmr'
 import type { HttpServer } from '.'
+import type { EnvironmentModuleGraph } from '..'
+import { browserRewriteStacktrace } from './stacktrace'
+import { logBrowserError } from './errorIngestion'
 
 /* In Bun, the `ws` module is overridden to hook into the native code. Using the bundled `js` version
  * of `ws` will not work as Bun's req.socket does not allow reading/writing to the underlying socket.
@@ -116,6 +119,7 @@ export function createWebSocketServer(
   server: HttpServer | null,
   config: ResolvedConfig,
   httpsOptions?: HttpsServerOptions,
+  moduleGraph: EnvironmentModuleGraph,
 ): WebSocketServer {
   if (config.server.ws === false) {
     return {
@@ -283,11 +287,15 @@ export function createWebSocketServer(
 
   wss.on('connection', (socket) => {
     socket.on('message', (raw) => {
-      if (!customListeners.size) return
       let parsed: any
       try {
         parsed = JSON.parse(String(raw))
       } catch {}
+      if (parsed.type === 'browser-error') {
+        const [source, stack] = browserRewriteStacktrace(parsed.stack, moduleGraph)
+        logBrowserError(source, parsed, stack, config)
+      }
+      if (!customListeners.size) return
       if (!parsed || parsed.type !== 'custom' || !parsed.event) return
       const listeners = customListeners.get(parsed.event)
       if (!listeners?.size) return

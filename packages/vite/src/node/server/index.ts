@@ -93,7 +93,6 @@ import { ModuleGraph } from './mixedModuleGraph'
 import type { ModuleNode } from './mixedModuleGraph'
 import { notFoundMiddleware } from './middlewares/notFound'
 import { errorMiddleware } from './middlewares/error'
-import { errorIngestMiddleware } from './middlewares/errorIngest'
 import type { HmrOptions, NormalizedHotChannel } from './hmr'
 import { handleHMRUpdate, updateModules } from './hmr'
 import { openBrowser as _openBrowser } from './openBrowser'
@@ -483,7 +482,14 @@ export async function _createServer(
     ? null
     : await resolveHttpServer(serverConfig, middlewares, httpsOptions)
 
-  const ws = createWebSocketServer(httpServer, config, httpsOptions)
+  const environments: Record<string, DevEnvironment> = {}
+
+  let moduleGraph = new ModuleGraph({
+    client: () => environments.client.moduleGraph,
+    ssr: () => environments.ssr.moduleGraph,
+  })
+
+  const ws = createWebSocketServer(httpServer, config, httpsOptions, moduleGraph)
 
   const publicFiles = await initPublicFilesPromise
   const { publicDir } = config
@@ -510,7 +516,6 @@ export async function _createServer(
       ) as FSWatcher)
     : createNoopWatcher(resolvedWatchOptions)
 
-  const environments: Record<string, DevEnvironment> = {}
 
   for (const [name, environmentOptions] of Object.entries(
     config.environments,
@@ -531,10 +536,6 @@ export async function _createServer(
 
   // Backward compatibility
 
-  let moduleGraph = new ModuleGraph({
-    client: () => environments.client.moduleGraph,
-    ssr: () => environments.ssr.moduleGraph,
-  })
   let pluginContainer = createPluginContainer(environments)
 
   const closeHttpServer = createServerCloseFn(httpServer)
@@ -911,9 +912,6 @@ export async function _createServer(
   // open in editor support
   middlewares.use('/__open-in-editor', launchEditorMiddleware())
 
-  // error ingest handler
-  middlewares.use(errorIngestMiddleware(server))
-
   // ping request handler
   // Keep the named function. The name is visible in debug logs via `DEBUG=connect:dispatcher ...`
   middlewares.use(function viteHMRPingMiddleware(req, res, next) {
@@ -958,7 +956,7 @@ export async function _createServer(
   }
 
   // error handler
-  middlewares.use(errorIngestMiddleware(server))
+  middlewares.use(errorMiddleware(server, !!middlewareMode))
 
   // httpServer.listen can be called multiple times
   // when port when using next port number
