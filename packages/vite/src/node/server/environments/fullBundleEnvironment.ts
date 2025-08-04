@@ -106,6 +106,7 @@ export class FullBundleDevEnvironment extends DevEnvironment {
         patched: this.state.patched,
       }
 
+      const startTime = Date.now()
       let hmrOutput: HmrOutput[]
       try {
         // NOTE: only single outputOptions is supported here
@@ -127,6 +128,10 @@ export class FullBundleDevEnvironment extends DevEnvironment {
         debug?.(`ignored file change for ${file}`)
         return
       }
+      const generateTime = Date.now()
+      debug?.(
+        `GENERATING-HMR-PATCH: patch generated in ${generateTime - startTime}ms`,
+      )
 
       for (const output of hmrOutput) {
         this.handleHmrOutput(file, output, this.state)
