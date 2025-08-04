@@ -441,24 +441,28 @@ async function waitForSuccessfulPingInternal(
   }
 
   async function ping() {
-    const socket = new WebSocket(socketUrl, 'vite-ping')
-    return new Promise<boolean>((resolve) => {
-      function onOpen() {
-        resolve(true)
-        close()
-      }
-      function onError() {
-        resolve(false)
-        close()
-      }
-      function close() {
-        socket.removeEventListener('open', onOpen)
-        socket.removeEventListener('error', onError)
-        socket.close()
-      }
-      socket.addEventListener('open', onOpen)
-      socket.addEventListener('error', onError)
-    })
+    try {
+      const socket = new WebSocket(socketUrl, 'vite-ping')
+      return new Promise<boolean>((resolve) => {
+        function onOpen() {
+          resolve(true)
+          close()
+        }
+        function onError() {
+          resolve(false)
+          close()
+        }
+        function close() {
+          socket.removeEventListener('open', onOpen)
+          socket.removeEventListener('error', onError)
+          socket.close()
+        }
+        socket.addEventListener('open', onOpen)
+        socket.addEventListener('error', onError)
+      })
+    } catch {
+      return false
+    }
   }
 
   function waitForWindowShow(visibilityManager: VisibilityManager) {
