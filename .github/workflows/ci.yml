@@ -143,7 +143,7 @@ jobs:
     steps:
       - run: echo "Build & Test Failed"
 
-  test-native-plugins:
+  test-js-plugins:
     needs: changed
     if: needs.changed.outputs.should_skip != 'true'
     timeout-minutes: 20
@@ -154,7 +154,7 @@ jobs:
         node_version: [22]
       fail-fast: false
 
-    name: "Build&Test: node-${{ matrix.node_version }}, ${{ matrix.os }} (native plugins)"
+    name: "Build&Test: node-${{ matrix.node_version }}, ${{ matrix.os }} (js plugins)"
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -203,17 +203,17 @@ jobs:
       - name: Test unit
         run: pnpm run test-unit
         env:
-          _VITE_TEST_NATIVE_PLUGIN: 1
+          _VITE_TEST_JS_PLUGIN: 1
 
       - name: Test serve
         run: pnpm run test-serve
         env:
-          _VITE_TEST_NATIVE_PLUGIN: 1
+          _VITE_TEST_JS_PLUGIN: 1
 
       - name: Test build
         run: pnpm run test-build
         env:
-          _VITE_TEST_NATIVE_PLUGIN: 1
+          _VITE_TEST_JS_PLUGIN: 1
 
   lint:
     timeout-minutes: 10
