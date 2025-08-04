@@ -730,9 +730,7 @@ export const configDefaults = Object.freeze({
     importGlobRestoreExtension: false,
     renderBuiltUrl: undefined,
     hmrPartialAccept: false,
-    enableNativePlugin: process.env._VITE_TEST_NATIVE_PLUGIN
-      ? 'resolver'
-      : false,
+    enableNativePlugin: process.env._VITE_TEST_JS_PLUGIN ? false : 'resolver',
   },
   future: {
     removePluginHookHandleHotUpdate: undefined,
