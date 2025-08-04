@@ -22,11 +22,50 @@ type HmrOutput = Exclude<
   undefined
 >
 
+export class MemoryFiles {
+  private files = new Map<
+    string,
+    string | Uint8Array | (() => string | Uint8Array)
+  >()
+
+  get size(): number {
+    return this.files.size
+  }
+
+  get(file: string): string | Uint8Array | undefined {
+    const result = this.files.get(file)
+    if (result === undefined) {
+      return undefined
+    }
+    if (typeof result === 'function') {
+      const content = result()
+      this.files.set(file, content)
+      return content
+    }
+    return result
+  }
+
+  set(
+    file: string,
+    content: string | Uint8Array | (() => string | Uint8Array),
+  ): void {
+    this.files.set(file, content)
+  }
+
+  has(file: string): boolean {
+    return this.files.has(file)
+  }
+
+  clear(): void {
+    this.files.clear()
+  }
+}
+
 export class FullBundleDevEnvironment extends DevEnvironment {
   private state: BundleState = { type: 'initial' }
 
   watchFiles = new Set<string>()
-  memoryFiles = new Map<string, string | Uint8Array>()
+  memoryFiles = new MemoryFiles()
 
   constructor(
     name: string,
@@ -299,14 +338,13 @@ export class FullBundleDevEnvironment extends DevEnvironment {
   ) {
     try {
       const startTime = Date.now()
-      const newMemoryFiles = new Map<string, string | Uint8Array>()
+      const newMemoryFiles = new Map<string, () => string | Uint8Array>()
       for (const outputOpts of arraify(outOpts)) {
         const output = await bundle.generate(outputOpts)
         if (signal.aborted) return
 
         for (const outputFile of output.output) {
-          newMemoryFiles.set(
-            outputFile.fileName,
+          newMemoryFiles.set(outputFile.fileName, () =>
             outputFile.type === 'chunk' ? outputFile.code : outputFile.source,
           )
         }
