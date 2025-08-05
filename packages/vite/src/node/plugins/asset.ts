@@ -476,7 +476,7 @@ async function fileToBuiltUrl(
           throw new Error('unreachable')
         },
       )
-      if (typeof outputUrl === 'object') throw new Error('not supported')
+      if (typeof outputUrl === 'object') throw new Error('unreachable')
       url = outputUrl
     } else {
       url = `__VITE_ASSET__${referenceId}__${postfix ? `$_${postfix}__` : ``}`

@@ -1804,6 +1804,10 @@ export async function resolveConfig(
     configDefaults.experimental,
     config.experimental ?? {},
   )
+  if (command === 'serve' && experimental.fullBundleMode) {
+    // full bundle mode does not support experimental.renderBuiltUrl
+    experimental.renderBuiltUrl = undefined
+  }
 
   resolved = {
     configFile: configFile ? normalizePath(configFile) : undefined,
