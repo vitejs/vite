@@ -2021,7 +2021,10 @@ function skipUrlReplacer(unquotedUrl: string) {
     isExternalUrl(unquotedUrl) ||
     isDataUrl(unquotedUrl) ||
     unquotedUrl[0] === '#' ||
-    functionCallRE.test(unquotedUrl)
+    functionCallRE.test(unquotedUrl) ||
+    // skip if it is already a placeholder
+    unquotedUrl.startsWith('__VITE_ASSET__') ||
+    unquotedUrl.startsWith('__VITE_PUBLIC_ASSET__')
   )
 }
 async function doUrlReplace(
