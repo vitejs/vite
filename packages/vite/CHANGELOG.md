@@ -1,3 +1,16 @@
+## [7.1.0-beta.1](https://github.com/vitejs/rolldown-vite/compare/v7.1.0-beta.0...v7.1.0-beta.1) (2025-08-05)
+### Features
+
+* enable native resolver by default ([#346](https://github.com/vitejs/rolldown-vite/issues/346)) ([793cf71](https://github.com/vitejs/rolldown-vite/commit/793cf716df2e38995012c0cdd68c651b4fd881c2))
+
+### Bug Fixes
+
+* watch the config file itself ([#354](https://github.com/vitejs/rolldown-vite/issues/354)) ([6958a48](https://github.com/vitejs/rolldown-vite/commit/6958a484d0857953744c13d17094c996bec30c75))
+
+### Code Refactoring
+
+* introduce `*.rolldownOptions` and deprecate `*.rollupOptions` ([#348](https://github.com/vitejs/rolldown-vite/issues/348)) ([80dc4d6](https://github.com/vitejs/rolldown-vite/commit/80dc4d6a11c32fef7cb5fe3048ff8c2a22d90203))
+
 ## [7.1.0-beta.0](https://github.com/vitejs/rolldown-vite/compare/v7.0.12...v7.1.0-beta.0) (2025-08-04)
 ### Features
 
