@@ -730,10 +730,9 @@ export function runOptimizeDeps(
           // return an empty result instead
           return cancelledResult
         }
-        const prependMessage = colors.red(`\
-Error during dependency optimization:
-
-`)
+        const prependMessage = colors.red(
+          'Error during dependency optimization:\n\n',
+        )
         if (e.errors) {
           const msgs = await formatMessages(e.errors, {
             kind: 'error',
