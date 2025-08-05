@@ -84,6 +84,7 @@ import {
   nodeLikeBuiltins,
   normalizeAlias,
   normalizePath,
+  setupRollupOptionCompat,
 } from './utils'
 import {
   createPluginHookUtils,
@@ -454,9 +455,17 @@ export interface UserConfig extends DefaultEnvironmentOptions {
      */
     plugins?: () => PluginOption[]
     /**
-     * Rollup options to build worker bundle
+     * Alias to `rolldownOptions`.
+     * @deprecated Use `rolldownOptions` instead.
      */
     rollupOptions?: Omit<
+      RolldownOptions,
+      'plugins' | 'input' | 'onwarn' | 'preserveEntrySignatures'
+    >
+    /**
+     * Rolldown options to build worker bundle
+     */
+    rolldownOptions?: Omit<
       RolldownOptions,
       'plugins' | 'input' | 'onwarn' | 'preserveEntrySignatures'
     >
@@ -555,7 +564,11 @@ export interface LegacyOptions {
 export interface ResolvedWorkerOptions {
   format: 'es' | 'iife'
   plugins: (bundleChain: string[]) => Promise<ResolvedConfig>
+  /**
+   * @deprecated Use `rolldownOptions` instead.
+   */
   rollupOptions: RolldownOptions
+  rolldownOptions: RolldownOptions
 }
 
 export interface InlineConfig extends UserConfig {
@@ -1261,6 +1274,16 @@ export async function resolveConfig(
   patchPlugins: ((resolvedPlugins: Plugin[]) => void) | undefined = undefined,
 ): Promise<ResolvedConfig> {
   let config = inlineConfig
+  config.build ??= {}
+  setupRollupOptionCompat(config.build)
+  config.worker ??= {}
+  setupRollupOptionCompat(config.worker)
+  config.optimizeDeps ??= {}
+  setupRollupOptionCompat(config.optimizeDeps)
+  config.ssr ??= {}
+  config.ssr.optimizeDeps ??= {}
+  setupRollupOptionCompat(config.ssr.optimizeDeps)
+
   let configFileDependencies: string[] = []
   let mode = inlineConfig.mode || defaultMode
   const isNodeEnvSet = !!process.env.NODE_ENV
@@ -1674,11 +1697,18 @@ export async function resolveConfig(
     return workerResolved
   }
 
-  const resolvedWorkerOptions: ResolvedWorkerOptions = {
+  const resolvedWorkerOptions: Omit<
+    ResolvedWorkerOptions,
+    'rolldownOptions'
+  > & {
+    rolldownOptions: ResolvedWorkerOptions['rolldownOptions'] | undefined
+  } = {
     format: config.worker?.format || 'iife',
     plugins: createWorkerPlugins,
     rollupOptions: config.worker?.rollupOptions || {},
+    rolldownOptions: config.worker?.rolldownOptions, // will be set by setupRollupOptionCompat if undefined
   }
+  setupRollupOptionCompat(resolvedWorkerOptions)
 
   const base = withTrailingSlash(resolvedBase)
 

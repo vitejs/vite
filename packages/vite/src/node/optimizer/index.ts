@@ -97,7 +97,16 @@ export interface DepOptimizationConfig {
    * https://esbuild.github.io/api
    */
   esbuildOptions?: DepsOptimizerEsbuildOptions
+  /**
+   * @deprecated Use `rolldownOptions` instead.
+   */
   rollupOptions?: Omit<RolldownOptions, 'input' | 'logLevel' | 'output'> & {
+    output?: Omit<
+      RolldownOutputOptions,
+      'format' | 'sourcemap' | 'dir' | 'banner'
+    >
+  }
+  rolldownOptions?: Omit<RolldownOptions, 'input' | 'logLevel' | 'output'> & {
     output?: Omit<
       RolldownOutputOptions,
       'format' | 'sourcemap' | 'dir' | 'banner'

@@ -54,6 +54,7 @@ import {
   mergeConfig,
   mergeWithDefaults,
   partialEncodeURIPath,
+  setupRollupOptionCompat,
   unique,
 } from './utils'
 import { perEnvironmentPlugin } from './plugin'
@@ -187,10 +188,15 @@ export interface BuildEnvironmentOptions {
    */
   terserOptions?: TerserOptions
   /**
-   * Will be merged with internal rollup options.
-   * https://rollupjs.org/configuration-options/
+   * Alias to `rolldownOptions`
+   * @deprecated Use `rolldownOptions` instead.
    */
   rollupOptions?: RolldownOptions
+  /**
+   * Will be merged with internal rolldown options.
+   * https://rolldown.rs/reference/config-options
+   */
+  rolldownOptions?: RolldownOptions
   /**
    * Options to pass on to `@rollup/plugin-commonjs`
    */
@@ -373,7 +379,7 @@ export const buildEnvironmentOptionsDefaults = Object.freeze({
   sourcemap: false,
   // minify
   terserOptions: {},
-  rollupOptions: {},
+  rolldownOptions: {},
   commonjsOptions: {
     include: [/node_modules/],
     extensions: ['.js', '.cjs'],
@@ -422,15 +428,19 @@ export function resolveBuildEnvironmentOptions(
       ...buildEnvironmentOptionsDefaults,
       cssCodeSplit: !raw.lib,
       minify: consumer === 'server' ? false : 'oxc',
-      rollupOptions: {
-        platform: consumer === 'server' ? 'node' : 'browser',
-      },
+      rollupOptions: {},
+      rolldownOptions: undefined,
       ssr: consumer === 'server',
       emitAssets: consumer === 'client',
       createEnvironment: (name, config) => new BuildEnvironment(name, config),
     } satisfies BuildEnvironmentOptions,
     raw,
   )
+  setupRollupOptionCompat(merged)
+  merged.rolldownOptions = {
+    ...merged.rolldownOptions,
+    platform: consumer === 'server' ? 'node' : 'browser',
+  }
 
   // handle special build targets
   if (merged.target === 'baseline-widely-available') {
