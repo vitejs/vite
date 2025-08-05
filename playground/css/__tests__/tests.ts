@@ -545,6 +545,7 @@ export const tests = (isLightningCSS: boolean) => {
     () => {
       // Check that empty CSS entry point generates a .css file, not a .js file
       expect(findAssetFile(/empty-[-\w]{8}\.css$/)).not.toBeUndefined()
+      expect(findAssetFile(/empty-[-\w]{8}\.js$/)).toBeUndefined()
     },
   )
 }
