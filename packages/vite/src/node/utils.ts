@@ -511,6 +511,11 @@ export function generateCodeFrame(
     end !== undefined ? posToNumber(source, end) : start,
     source.length,
   )
+  const lastPosLine =
+    end !== undefined
+      ? numberToPos(source, end).line
+      : numberToPos(source, start).line + range
+  const lineNumberWidth = Math.max(3, String(lastPosLine).length + 1)
   const lines = source.split(splitRE)
   let count = 0
   const res: string[] = []
@@ -521,7 +526,7 @@ export function generateCodeFrame(
         if (j < 0 || j >= lines.length) continue
         const line = j + 1
         res.push(
-          `${line}${' '.repeat(Math.max(3 - String(line).length, 0))}|  ${
+          `${line}${' '.repeat(lineNumberWidth - String(line).length)}|  ${
             lines[j]
           }`,
         )
@@ -533,11 +538,15 @@ export function generateCodeFrame(
             1,
             end > count ? lineLength - pad : end - start,
           )
-          res.push(`   |  ` + ' '.repeat(pad) + '^'.repeat(length))
+          res.push(
+            `${' '.repeat(lineNumberWidth)}|  ` +
+              ' '.repeat(pad) +
+              '^'.repeat(length),
+          )
         } else if (j > i) {
           if (end > count) {
             const length = Math.max(Math.min(end - count, lineLength), 1)
-            res.push(`   |  ` + '^'.repeat(length))
+            res.push(`${' '.repeat(lineNumberWidth)}|  ` + '^'.repeat(length))
           }
           count += lineLength + 1
         }
