@@ -5,7 +5,7 @@ import { promisify } from 'node:util'
 import { performance } from 'node:perf_hooks'
 import colors from 'picocolors'
 import type { BuildContext, BuildOptions as EsbuildBuildOptions } from 'esbuild'
-import esbuild, { build } from 'esbuild'
+import esbuild, { build, formatMessages } from 'esbuild'
 import { init, parse } from 'es-module-lexer'
 import { isDynamicPattern } from 'tinyglobby'
 import type { ResolvedConfig } from '../config'
@@ -724,11 +724,23 @@ export function runOptimizeDeps(
         return successfulResult
       })
 
-      .catch((e) => {
+      .catch(async (e) => {
         if (e.errors && e.message.includes('The build was canceled')) {
           // esbuild logs an error when cancelling, but this is expected so
           // return an empty result instead
           return cancelledResult
+        }
+        const prependMessage = colors.red(
+          'Error during dependency optimization:\n\n',
+        )
+        if (e.errors) {
+          const msgs = await formatMessages(e.errors, {
+            kind: 'error',
+            color: true,
+          })
+          e.message = prependMessage + msgs.join('\n')
+        } else {
+          e.message = prependMessage + e.message
         }
         throw e
       })
