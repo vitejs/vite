@@ -308,7 +308,7 @@ export const tests = (isLightningCSS: boolean) => {
         '.async{color:plum}',
       )
       // should have no chunk!
-      expect(findAssetFile(/async-treeshaken/)).toBe('')
+      expect(findAssetFile(/async-treeshaken/)).toBeUndefined()
     } else {
       // should be present in dev
       const el = await page.$('.async-treeshaken')
@@ -519,7 +519,11 @@ export const tests = (isLightningCSS: boolean) => {
   test.runIf(isBuild)('manual chunk path', async () => {
     // assert that the manual-chunk css is output in the directory specified in manualChunk (#12072)
     expect(
-      findAssetFile(/dir\/dir2\/manual-chunk-[-\w]{8}\.css$/),
+      findAssetFile(
+        /manual-chunk-[-\w]{8}\.css$/,
+        undefined,
+        'assets/dir/dir2',
+      ),
     ).not.toBeUndefined()
   })
 
@@ -539,4 +543,13 @@ export const tests = (isLightningCSS: boolean) => {
     expect(await getColor('.treeshake-scoped-order')).toBe('red')
     expect(await getBgColor('.treeshake-scoped-order')).toBe('blue')
   })
+
+  test.runIf(isBuild)(
+    'empty CSS files should generate .css assets, not .js assets',
+    () => {
+      // Check that empty CSS entry point generates a .css file, not a .js file
+      expect(findAssetFile(/empty-[-\w]{8}\.css$/)).not.toBeUndefined()
+      expect(findAssetFile(/empty-[-\w]{8}\.js$/)).toBeUndefined()
+    },
+  )
 }

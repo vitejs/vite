@@ -3,6 +3,6 @@ import { findAssetFile, isBuild } from '~utils'
 
 describe.runIf(isBuild)('css lib entry', () => {
   test('remove useless js sourcemap', async () => {
-    expect(findAssetFile('linked.js.map', 'lib-entry', './')).toBe('')
+    expect(findAssetFile('linked.js.map', 'lib-entry', './')).toBeUndefined()
   })
 })
