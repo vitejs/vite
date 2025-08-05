@@ -2348,7 +2348,6 @@ async function bundleConfigFile(
 
   const allModules = new Set<string>()
   collectAllModules(bundleChunks, entryChunk.fileName, allModules)
-  allModules.delete(fileName)
 
   return {
     code: entryChunk.code,
