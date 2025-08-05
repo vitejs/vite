@@ -65,6 +65,7 @@ export const optionalPeerDepId = '__vite-optional-peer-dep'
 
 const subpathImportsPrefix = '#'
 
+const relativePrefixRE = /^\.\.?(?:[/\\]|$)/
 const startsWithWordCharRE = /^\w/
 
 const debug = createDebugger('vite:resolve-details', {
@@ -251,7 +252,7 @@ export function resolvePlugin(
 
         // relative
         if (
-          id[0] === '.' ||
+          relativePrefixRE.test(id) ||
           ((preferRelative ||
             resolveOpts.isEntry ||
             importer?.endsWith('.html')) &&
