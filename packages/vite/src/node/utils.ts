@@ -515,7 +515,7 @@ export function generateCodeFrame(
     end !== undefined
       ? numberToPos(source, end).line
       : numberToPos(source, start).line + range
-  const lineNumberWidth = Math.max(3, Math.floor(Math.log10(lastPosLine)) + 1)
+  const lineNumberWidth = Math.max(3, String(lastPosLine).length)
   const lines = source.split(splitRE)
   let count = 0
   const res: string[] = []
