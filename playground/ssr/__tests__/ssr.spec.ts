@@ -52,6 +52,12 @@ test(`import.meta.resolve is supported`, async () => {
   expect(await page.textContent('.import-meta-resolve')).toBe(metaUrl)
 })
 
+test(`import.meta.main is supported`, async () => {
+  await page.goto(`${url}/import-meta`)
+
+  expect(await page.textContent('.import-meta-main')).toBe('false')
+})
+
 test.runIf(isServe)('html proxy is encoded', async () => {
   await page.goto(
     `${url}?%22%3E%3C/script%3E%3Cscript%3Econsole.log(%27html%20proxy%20is%20not%20encoded%27)%3C/script%3E`,
