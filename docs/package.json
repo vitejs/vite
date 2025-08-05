@@ -8,14 +8,14 @@
     "docs-serve": "vitepress serve"
   },
   "devDependencies": {
-    "@shikijs/vitepress-twoslash": "^3.8.1",
+    "@shikijs/vitepress-twoslash": "^3.9.2",
     "@types/express": "^5.0.3",
     "feed": "^5.1.0",
     "gsap": "^3.13.0",
     "markdown-it-image-size": "^14.7.0",
     "vitepress": "^2.0.0-alpha.9",
     "vitepress-plugin-group-icons": "^1.6.1",
-    "vitepress-plugin-llms": "^1.7.1",
+    "vitepress-plugin-llms": "^1.7.2",
     "vue": "^3.5.18"
   }
 }
