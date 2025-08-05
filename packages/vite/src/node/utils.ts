@@ -49,6 +49,7 @@ import {
   findNearestPackageData,
   resolvePackageData,
 } from './packages'
+import type { BuildEnvironmentOptions } from './build'
 import type { CommonServerOptions } from '.'
 
 /**
@@ -1217,19 +1218,60 @@ export function mergeWithDefaults<
   return mergeWithDefaultsRecursively(clonedDefaults, values)
 }
 
+export function setupRollupOptionCompat<
+  T extends Pick<BuildEnvironmentOptions, 'rollupOptions' | 'rolldownOptions'>,
+>(
+  buildConfig: T,
+): asserts buildConfig is T & {
+  rolldownOptions: Exclude<T['rolldownOptions'], undefined>
+} {
+  // if both rollupOptions and rolldownOptions are present,
+  // ignore rollupOptions and use rolldownOptions
+  buildConfig.rolldownOptions ??= buildConfig.rollupOptions
+
+  // proxy rolldownOptions to rollupOptions
+  Object.defineProperty(buildConfig, 'rollupOptions', {
+    get() {
+      return buildConfig.rolldownOptions
+    },
+    set(newValue) {
+      buildConfig.rolldownOptions = newValue
+    },
+    configurable: true,
+    enumerable: true,
+  })
+}
+
+const rollupOptionsRootPaths = new Set([
+  'build',
+  'worker',
+  'optimizeDeps',
+  'ssr.optimizeDeps',
+])
+
 function mergeConfigRecursively(
   defaults: Record<string, any>,
   overrides: Record<string, any>,
   rootPath: string,
 ) {
   const merged: Record<string, any> = { ...defaults }
+  if (rollupOptionsRootPaths.has(rootPath)) {
+    setupRollupOptionCompat(merged)
+  }
+
   for (const key in overrides) {
     const value = overrides[key]
     if (value == null) {
       continue
     }
 
-    const existing = merged[key]
+    let existing = merged[key]
+    if (key === 'rollupOptions' && rollupOptionsRootPaths.has(rootPath)) {
+      // if both rollupOptions and rolldownOptions are present,
+      // ignore rollupOptions and use rolldownOptions
+      if (overrides.rolldownOptions) continue
+      existing = merged.rolldownOptions
+    }
 
     if (existing == null) {
       merged[key] = value
