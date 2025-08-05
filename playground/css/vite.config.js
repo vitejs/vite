@@ -39,7 +39,6 @@ export default defineConfig({
   ],
   build: {
     cssTarget: 'chrome61',
-    manifest: true,
     rollupOptions: {
       input: {
         index: path.resolve(__dirname, './index.html'),

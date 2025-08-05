@@ -9,7 +9,6 @@ import {
   getColor,
   isBuild,
   page,
-  readManifest,
   removeFile,
   serverLogs,
   viteTestUrl,
