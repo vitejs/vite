@@ -189,14 +189,14 @@ export function findAssetFile(
   base = '',
   assets = 'assets',
   matchAll = false,
-): string {
+): string | undefined {
   const assetsDir = path.join(testDir, 'dist', base, assets)
   let files: string[]
   try {
     files = fs.readdirSync(assetsDir)
   } catch (e) {
     if (e.code === 'ENOENT') {
-      return ''
+      return undefined
     }
     throw e
   }
@@ -208,12 +208,12 @@ export function findAssetFile(
             fs.readFileSync(path.resolve(assetsDir, file), 'utf-8'),
           )
           .join('')
-      : ''
+      : undefined
   } else {
     const matchedFile = files.find((file) => file.match(match))
     return matchedFile
       ? fs.readFileSync(path.resolve(assetsDir, matchedFile), 'utf-8')
-      : ''
+      : undefined
   }
 }
 

@@ -46,6 +46,7 @@ export default defineConfig({
           __dirname,
           './treeshake-scoped/index.html',
         ),
+        empty: path.resolve(__dirname, './empty.css'),
       },
       output: {
         manualChunks(id) {
