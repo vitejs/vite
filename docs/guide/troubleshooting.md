@@ -146,6 +146,10 @@ See [Reason: CORS request not HTTP - HTTP | MDN](https://developer.mozilla.org/e
 
 You will need to access the file with `http` protocol. The easiest way to achieve this is to run `npx vite preview`.
 
+### No such file or directory error due to case sensitivity
+
+If you encounter errors like `ENOENT: no such file or directory` or `Module not found`, this often occurs when your project was developed on a case-insensitive filesystem (Windows / macOS) but built on a case-sensitive one (Linux). Please make sure that the imports have the correct casing.
+
 ## Optimized Dependencies
 
 ### Outdated pre-bundled deps when linking to a local package

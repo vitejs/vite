@@ -225,6 +225,42 @@ describe('mergeConfig', () => {
     expect(mergeConfig(newConfig, baseConfig)).toEqual(mergedConfig)
   })
 
+  test('merge ssr.noExternal and environments.ssr.resolve.noExternal', async () => {
+    const oldTrue = await resolveConfig(
+      {
+        ssr: {
+          noExternal: true,
+        },
+        environments: {
+          ssr: {
+            resolve: {
+              noExternal: ['dep'],
+            },
+          },
+        },
+      },
+      'serve',
+    )
+    expect(oldTrue.environments.ssr.resolve.noExternal).toEqual(true)
+
+    const newTrue = await resolveConfig(
+      {
+        ssr: {
+          noExternal: ['dep'],
+        },
+        environments: {
+          ssr: {
+            resolve: {
+              noExternal: true,
+            },
+          },
+        },
+      },
+      'serve',
+    )
+    expect(newTrue.environments.ssr.resolve.noExternal).toEqual(true)
+  })
+
   test('handles server.hmr.server', () => {
     const httpServer = http.createServer()
 
@@ -1048,6 +1084,20 @@ describe('loadConfigFromFile', () => {
           "jsonValue": "rolldown-vite",
         }
       `)
+  })
+
+  test('import.meta.main is correctly set', async () => {
+    const { config } = (await loadConfigFromFile(
+      {} as any,
+      path.resolve(fixtures, './import-meta/vite.config.ts'),
+      path.resolve(fixtures, './import-meta'),
+    ))!
+
+    const c = config as any
+    expect(c.isMain).toBe(false)
+    expect(c.url).toContain('file://')
+    expect(c.dirname).toContain('import-meta')
+    expect(c.filename).toContain('vite.config.ts')
   })
 
   describe('loadConfigFromFile with configLoader: native', () => {
