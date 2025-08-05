@@ -544,9 +544,8 @@ export const tests = (isLightningCSS: boolean) => {
   test.runIf(isBuild)(
     'empty CSS files should generate .css assets, not .js assets',
     () => {
-      const manifest = readManifest()
-      expect(manifest['empty.css']).toBeDefined()
-      expect(manifest['empty.css'].file).toMatch(/\.css$/)
+      // Check that empty CSS entry point generates a .css file, not a .js file
+      expect(findAssetFile(/empty-[-\w]{8}\.css$/)).not.toBeUndefined()
     },
   )
 }
