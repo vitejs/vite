@@ -1404,16 +1404,21 @@ export async function resolveConfig(
       configEnvironmentsSsr.optimizeDeps ?? {},
     )
 
+    // merge with `resolve` as the root to merge `noExternal` correctly
     configEnvironmentsSsr.resolve = mergeConfig(
       {
-        conditions: config.ssr?.resolve?.conditions,
-        externalConditions: config.ssr?.resolve?.externalConditions,
-        mainFields: config.ssr?.resolve?.mainFields,
-        external: config.ssr?.external,
-        noExternal: config.ssr?.noExternal,
-      } satisfies EnvironmentResolveOptions,
-      configEnvironmentsSsr.resolve ?? {},
-    )
+        resolve: {
+          conditions: config.ssr?.resolve?.conditions,
+          externalConditions: config.ssr?.resolve?.externalConditions,
+          mainFields: config.ssr?.resolve?.mainFields,
+          external: config.ssr?.external,
+          noExternal: config.ssr?.noExternal,
+        },
+      } satisfies EnvironmentOptions,
+      {
+        resolve: configEnvironmentsSsr.resolve ?? {},
+      },
+    ).resolve
   }
 
   if (config.build?.ssrEmitAssets !== undefined) {
@@ -2222,6 +2227,7 @@ async function bundleConfigFile(
       'import.meta.url': importMetaUrlVarName,
       'import.meta.dirname': dirnameVarName,
       'import.meta.filename': filenameVarName,
+      'import.meta.main': 'false',
     },
     // disable treeshake to include files that is not sideeffectful to `moduleIds`
     treeshake: false,

@@ -65,8 +65,10 @@ async function renderForkedDeadlockDynamicImports(rootDir) {
 async function renderImportMeta(rootDir) {
   const metaUrl = import.meta.url
   const resolveResult = import.meta.resolve('./app.js')
+  const metaMain = import.meta.main
   return (
     `<div class="import-meta-url">${escapeHtml(metaUrl)}</div>` +
-    `<div class="import-meta-resolve">${escapeHtml(resolveResult)}</div>`
+    `<div class="import-meta-resolve">${escapeHtml(resolveResult)}</div>` +
+    `<div class="import-meta-main">${escapeHtml(String(metaMain))}</div>`
   )
 }

@@ -269,7 +269,7 @@ const devHtmlHook: IndexHtmlTransformHook = async (
     preTransformRequest(server!, modulePath, decodedBase)
   }
 
-  await traverseHtml(html, filename, (node) => {
+  await traverseHtml(html, filename, config.logger.warn, (node) => {
     if (!nodeIsElement(node)) {
       return
     }

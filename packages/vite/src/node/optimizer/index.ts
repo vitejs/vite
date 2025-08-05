@@ -697,12 +697,17 @@ export function runOptimizeDeps(
 
         return successfulResult
       })
+
       .catch((e) => {
         if (e.errors && e.message.includes('The build was canceled')) {
           // an error happens when cancelling, but this is expected so
           // return an empty result instead
           return cancelledResult
         }
+        const prependMessage = colors.red(
+          'Error during dependency optimization:\n\n',
+        )
+        e.message = prependMessage + e.message
         throw e
       })
   })
