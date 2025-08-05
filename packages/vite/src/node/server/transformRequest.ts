@@ -248,6 +248,7 @@ async function loadAndTransform(
   if (options.allowId && !options.allowId(id)) {
     const err: any = new Error(`Denied ID ${id}`)
     err.code = ERR_DENIED_ID
+    err.id = id
     throw err
   }
 

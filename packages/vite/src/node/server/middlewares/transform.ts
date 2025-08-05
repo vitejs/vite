@@ -1,6 +1,5 @@
 import path from 'node:path'
 import fsp from 'node:fs/promises'
-import type { ServerResponse } from 'node:http'
 import type { Connect } from 'dep-types/connect'
 import colors from 'picocolors'
 import type { ExistingRawSourceMap } from 'rollup'
@@ -34,6 +33,7 @@ import {
   ERR_OUTDATED_OPTIMIZED_DEP,
   NULL_BYTE_PLACEHOLDER,
 } from '../../../shared/constants'
+import type { ResolvedConfig } from '../../config'
 import { checkLoadingAccess, respondWithAccessDenied } from './static'
 
 const debugCache = createDebugger('vite:cache')
@@ -46,23 +46,9 @@ const rawRE = /[?&]raw\b/
 const inlineRE = /[?&]inline\b/
 const svgRE = /\.svg\b/
 
-function deniedServingAccessForTransform(
-  id: string,
-  server: ViteDevServer,
-  res: ServerResponse,
-  next: Connect.NextFunction,
-) {
+function isServerAccessDeniedForTransform(config: ResolvedConfig, id: string) {
   if (rawRE.test(id) || urlRE.test(id) || inlineRE.test(id) || svgRE.test(id)) {
-    const servingAccessResult = checkLoadingAccess(server.config, id)
-    if (servingAccessResult === 'denied') {
-      respondWithAccessDenied(id, server, res)
-      return true
-    }
-    if (servingAccessResult === 'fallback') {
-      next()
-      return true
-    }
-    servingAccessResult satisfies 'allowed'
+    return checkLoadingAccess(config, id) !== 'allowed'
   }
   return false
 }
@@ -243,7 +229,7 @@ export function transformMiddleware(
           allowId(id) {
             return (
               id.startsWith('\0') ||
-              !deniedServingAccessForTransform(id, server, res, next)
+              !isServerAccessDeniedForTransform(server.config, id)
             )
           },
         })
@@ -317,8 +303,18 @@ export function transformMiddleware(
         return next()
       }
       if (e?.code === ERR_DENIED_ID) {
-        // next() is called in ensureServingAccess
-        return
+        const id: string = e.id
+        const servingAccessResult = checkLoadingAccess(server.config, id)
+        if (servingAccessResult === 'denied') {
+          respondWithAccessDenied(id, server, res)
+          return true
+        }
+        if (servingAccessResult === 'fallback') {
+          next()
+          return true
+        }
+        servingAccessResult satisfies 'allowed'
+        throw new Error(`Unexpected access result for id ${id}`)
       }
       return next(e)
     }
