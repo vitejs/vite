@@ -225,6 +225,42 @@ describe('mergeConfig', () => {
     expect(mergeConfig(newConfig, baseConfig)).toEqual(mergedConfig)
   })
 
+  test('merge ssr.noExternal and environments.ssr.resolve.noExternal', async () => {
+    const oldTrue = await resolveConfig(
+      {
+        ssr: {
+          noExternal: true,
+        },
+        environments: {
+          ssr: {
+            resolve: {
+              noExternal: ['dep'],
+            },
+          },
+        },
+      },
+      'serve',
+    )
+    expect(oldTrue.environments.ssr.resolve.noExternal).toEqual(true)
+
+    const newTrue = await resolveConfig(
+      {
+        ssr: {
+          noExternal: ['dep'],
+        },
+        environments: {
+          ssr: {
+            resolve: {
+              noExternal: true,
+            },
+          },
+        },
+      },
+      'serve',
+    )
+    expect(newTrue.environments.ssr.resolve.noExternal).toEqual(true)
+  })
+
   test('handles server.hmr.server', () => {
     const httpServer = http.createServer()
 
