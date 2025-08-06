@@ -40,6 +40,17 @@ test('should have no 404s', () => {
   })
 })
 
+test.runIf(isBuild)(
+  'should not warn about VITE_ASSET tokens in image-set',
+  async () => {
+    expect(serverLogs).toStrictEqual(
+      expect.not.arrayContaining([
+        expect.stringMatching(/VITE_ASSET__.*?didn't resolve at build time/),
+      ]),
+    )
+  },
+)
+
 test('should get a 404 when using incorrect case', async () => {
   expect((await fetchPath('icon.png')).headers.get('Content-Type')).toBe(
     'image/png',
