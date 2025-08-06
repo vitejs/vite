@@ -95,6 +95,8 @@ export interface DepOptimizationConfig {
    * - `plugins` are merged with Vite's dep plugin
    *
    * https://esbuild.github.io/api
+   *
+   * @deprecated Use `rolldownOptions` instead.
    */
   esbuildOptions?: DepsOptimizerEsbuildOptions
   /**
@@ -106,6 +108,14 @@ export interface DepOptimizationConfig {
       'format' | 'sourcemap' | 'dir' | 'banner'
     >
   }
+  /**
+   * Options to pass to rolldown during the dep scanning and optimization
+   *
+   * Certain options are omitted since changing them would not be compatible
+   * with Vite's dep optimization.
+   *
+   * - `plugins` are merged with Vite's dep plugin
+   */
   rolldownOptions?: Omit<RolldownOptions, 'input' | 'logLevel' | 'output'> & {
     output?: Omit<
       RolldownOutputOptions,
