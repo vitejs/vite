@@ -541,7 +541,7 @@ export interface ExperimentalOptions {
    * Enable builtin plugin that written by rust, which is faster than js plugin.
    *
    * @experimental
-   * @default false
+   * @default 'resolver'
    */
   enableNativePlugin?: boolean | 'resolver'
 }
