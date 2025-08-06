@@ -372,6 +372,8 @@ export interface UserConfig extends DefaultEnvironmentOptions {
   /**
    * Transform options to pass to esbuild.
    * Or set to `false` to disable esbuild.
+   *
+   * @deprecated Use `oxc` option instead.
    */
   esbuild?: ESBuildOptions | false
   /**
@@ -626,6 +628,7 @@ export interface ResolvedConfig
       plugins: readonly Plugin[]
       css: ResolvedCSSOptions
       json: Required<JsonOptions>
+      /** @deprecated Use `oxc` option instead. */
       esbuild: ESBuildOptions | false
       oxc: OxcOptions | false
       server: ResolvedServerOptions
