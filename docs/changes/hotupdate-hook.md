@@ -18,11 +18,11 @@ The [`handleHotUpdate` hook](/guide/api-plugin.md#handlehotupdate) allows to per
 
 ```ts
 interface HmrContext {
-  file: string
-  timestamp: number
-  modules: Array<ModuleNode>
-  read: () => string | Promise<string>
-  server: ViteDevServer
+  file: string;
+  timestamp: number;
+  modules: Array<ModuleNode>;
+  read: () => string | Promise<string>;
+  server: ViteDevServer;
 }
 ```
 
@@ -32,12 +32,12 @@ The new `hotUpdate` hook works in the same way as `handleHotUpdate` but it is ca
 
 ```ts
 interface HotUpdateOptions {
-  type: 'create' | 'update' | 'delete'
-  file: string
-  timestamp: number
-  modules: Array<EnvironmentModuleNode>
-  read: () => string | Promise<string>
-  server: ViteDevServer
+  type: 'create' | 'update' | 'delete';
+  file: string;
+  timestamp: number;
+  modules: Array<EnvironmentModuleNode>;
+  read: () => string | Promise<string>;
+  server: ViteDevServer;
 }
 ```
 
