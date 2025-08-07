@@ -20,6 +20,8 @@ describe('custom environment conditions', () => {
         middlewareMode: true,
         ws: false,
       },
+      // disable scanner for client env to suppress scanner warnings
+      optimizeDeps: { entries: [] },
       environments: {
         // default
         ssr: {

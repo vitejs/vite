@@ -185,7 +185,7 @@ export function manifestPlugin(config: ResolvedConfig): Plugin {
       }
 
       const entryCssReferenceIds = cssEntriesMap.get(this.environment)!
-      const entryCssAssetFileNames = new Set(entryCssReferenceIds)
+      const entryCssAssetFileNames = new Set()
       for (const id of entryCssReferenceIds) {
         try {
           const fileName = this.getFileName(id)
