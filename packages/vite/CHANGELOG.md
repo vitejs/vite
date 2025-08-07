@@ -69,12 +69,11 @@
 
 #### [7.1.0-beta.1](https://github.com/vitejs/vite/compare/v7.1.0-beta.0...v7.1.0-beta.1) (2025-08-05)
 
-See [7.1.0-beta.1 changelog](https://github.com/vitejs/vite/blob/v7.0.0-beta.1/packages/vite/CHANGELOG.md)
+See [7.1.0-beta.1 changelog](https://github.com/vitejs/vite/blob/v7.1.0-beta.1/packages/vite/CHANGELOG.md)
 
 #### [7.1.0-beta.0](https://github.com/vitejs/vite/compare/v7.0.6...v7.1.0-beta.0) (2025-07-30)
 
-See [7.1.0-beta.0 changelog](https://github.com/vitejs/vite/blob/v7.0.0-beta.0/packages/vite/CHANGELOG.md)
-
+See [7.1.0-beta.0 changelog](https://github.com/vitejs/vite/blob/v7.1.0-beta.0/packages/vite/CHANGELOG.md)
 
 
 ## <small>[7.0.6](https://github.com/vitejs/vite/compare/v7.0.5...v7.0.6) (2025-07-24)</small>
