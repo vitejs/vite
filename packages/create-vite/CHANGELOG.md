@@ -1,3 +1,21 @@
+## [7.1.0](https://github.com/vitejs/vite/compare/create-vite@7.0.3...create-vite@7.1.0) (2025-08-07)
+### Bug Fixes
+
+* **deps:** update all non-major dependencies ([#20406](https://github.com/vitejs/vite/issues/20406)) ([1a1cc8a](https://github.com/vitejs/vite/commit/1a1cc8a435a21996255b3e5cc75ed4680de2a7f3))
+* **deps:** update all non-major dependencies ([#20442](https://github.com/vitejs/vite/issues/20442)) ([e49f505](https://github.com/vitejs/vite/commit/e49f50599d852eec644e79b074b4648e2dff1e5d))
+* **deps:** update all non-major dependencies ([#20489](https://github.com/vitejs/vite/issues/20489)) ([f6aa04a](https://github.com/vitejs/vite/commit/f6aa04a52d486c8881f666c450caa3dab3c6bba1))
+* **deps:** update all non-major dependencies ([#20537](https://github.com/vitejs/vite/issues/20537)) ([fc9a9d3](https://github.com/vitejs/vite/commit/fc9a9d3f1493caa3d614f64e0a61fd5684f0928b))
+
+### Documentation
+
+* tiny typo ([#20404](https://github.com/vitejs/vite/issues/20404)) ([3123eb7](https://github.com/vitejs/vite/commit/3123eb7071b7f89c7d0043030edc8eb5b3731680))
+
+### Miscellaneous Chores
+
+* **deps:** update dependency vue-tsc to v3 ([#20491](https://github.com/vitejs/vite/issues/20491)) ([51f512f](https://github.com/vitejs/vite/commit/51f512f12aae4b2905863d25b803c1f5d634ba03))
+* **deps:** update rolldown-related dependencies ([#20441](https://github.com/vitejs/vite/issues/20441)) ([f689d61](https://github.com/vitejs/vite/commit/f689d613429ae9452c74f8bc482d8cc2584ea6b8))
+* **deps:** update rolldown-related dependencies ([#20536](https://github.com/vitejs/vite/issues/20536)) ([8be2787](https://github.com/vitejs/vite/commit/8be278748a92b128c49a24619d8d537dd2b08ceb))
+
 ## <small>[7.0.3](https://github.com/vitejs/vite/compare/create-vite@7.0.2...create-vite@7.0.3) (2025-07-11)</small>
 ### Features
 
