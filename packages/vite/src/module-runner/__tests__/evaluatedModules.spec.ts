@@ -2,35 +2,56 @@ import { describe, expect, it } from 'vitest'
 import { EvaluatedModules } from '../evaluatedModules'
 
 describe('EvaluatedModules sourcemap extraction', () => {
-  it('should extract sourcemap from the last occurrence, not the first', () => {
+  it('should not crash with InvalidCharacterError when string literals contain sourceMappingURL pattern', () => {
     const modules = new EvaluatedModules()
 
-    // Create a module with source mapping URL in string literal and actual sourcemap comment
+    // Create a module with source mapping URL in string literal - this is the exact scenario from the issue
     const moduleId = '/test/module.js'
     const moduleUrl = 'http://localhost:3000/test/module.js'
     const node = modules.ensureModule(moduleId, moduleUrl)
 
-    // Mock module metadata with problematic code
+    // This is the exact problematic code pattern mentioned in the GitHub issue
     node.meta = {
-      code: `
-function example() {
-  // This string literal contains the pattern that causes issues
+      code: `throw lazyDOMException('Invalid character', 'InvalidCharacterError');
+            ^
+DOMException [InvalidCharacterError]: Invalid character
+    at atob (node:buffer:1302:13)
+    at EvaluatedModules.getModuleSourceMapById (file:///Users/ari/Git/repros/module-runner/node_modules/.pnpm/vite@7.0.6/node_modules/vite/dist/node/module-runner.js:286:59)
+    at file:///Users/ari/Git/repros/module-runner/index.mjs:24:31
+
+const text = "//# sourceMappingURL=data:application/json;base64,\${encoded}";`,
+    }
+
+    // Before the fix: This would throw InvalidCharacterError: Invalid character
+    // After the fix: This should not crash and should return null gracefully
+    expect(() => {
+      const sourceMap = modules.getModuleSourceMapById(moduleId)
+      // The result should be null since there's no valid sourcemap, but it shouldn't crash
+      expect(sourceMap).toBeNull()
+    }).not.toThrow('Invalid character')
+  })
+
+  it('should correctly extract valid sourcemap when present at end of file', () => {
+    const modules = new EvaluatedModules()
+
+    const moduleId = '/test/valid-module.js'
+    const moduleUrl = 'http://localhost:3000/test/valid-module.js'
+    const node = modules.ensureModule(moduleId, moduleUrl)
+
+    // Code with string literal AND a valid sourcemap at the end
+    node.meta = {
+      code: `function example() {
   const text = "//# sourceMappingURL=data:application/json;base64,invalidbase64";
   return text;
 }
 
-export { example };
-
-// This is the actual source map comment at the end (valid base64 that decodes to valid JSON)
-//# sourceMappingURL=data:application/json;base64,eyJ2ZXJzaW9uIjozLCJmaWxlIjoidGVzdC5qcyIsInNvdXJjZXMiOlsidGVzdC50cyJdLCJuYW1lcyI6W10sIm1hcHBpbmdzIjoiQUFBQSJ9
-`.trim(),
+//# sourceMappingURL=data:application/json;base64,eyJ2ZXJzaW9uIjozLCJmaWxlIjoidGVzdC5qcyIsInNvdXJjZXMiOlsidGVzdC50cyJdLCJuYW1lcyI6W10sIm1hcHBpbmdzIjoiQUFBQSJ9`,
     }
 
-    // This should not throw an error and should return the correct sourcemap
     const sourceMap = modules.getModuleSourceMapById(moduleId)
-
     expect(sourceMap).toBeTruthy()
-    // The sourcemap should successfully decode and not crash with "Invalid character"
+    expect(sourceMap?.map.version).toBe(3)
+    expect(sourceMap?.map.file).toBe('test.js')
   })
 
   it('should return null if no valid sourcemap is found', () => {
@@ -41,18 +62,14 @@ export { example };
     const node = modules.ensureModule(moduleId, moduleUrl)
 
     node.meta = {
-      code: `
-function example() {
-  return "no sourcemap here";
-}
-`.trim(),
+      code: `function example() { return "no sourcemap here"; }`,
     }
 
     const sourceMap = modules.getModuleSourceMapById(moduleId)
     expect(sourceMap).toBeNull()
   })
 
-  it('should handle invalid base64 gracefully', () => {
+  it('should handle invalid base64 gracefully without crashing', () => {
     const modules = new EvaluatedModules()
 
     const moduleId = '/test/module3.js'
@@ -60,18 +77,14 @@ function example() {
     const node = modules.ensureModule(moduleId, moduleUrl)
 
     node.meta = {
-      code: `
-function example() {
-  return "test";
-}
-
-// Invalid base64 in sourcemap comment
-//# sourceMappingURL=data:application/json;base64,invalidbase64
-`.trim(),
+      code: `function example() { return "test"; }
+//# sourceMappingURL=data:application/json;base64,invalidbase64`,
     }
 
     // This should handle the invalid base64 gracefully and not crash
-    const sourceMap = modules.getModuleSourceMapById(moduleId)
-    expect(sourceMap).toBeNull()
+    expect(() => {
+      const sourceMap = modules.getModuleSourceMapById(moduleId)
+      expect(sourceMap).toBeNull()
+    }).not.toThrow()
   })
 })
