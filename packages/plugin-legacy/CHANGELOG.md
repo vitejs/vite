@@ -1,3 +1,8 @@
+## <small>[7.2.1](https://github.com/vitejs/vite/compare/plugin-legacy@7.2.0...plugin-legacy@7.2.1) (2025-08-07)</small>
+### Features
+
+* **legacy:** update plugin-legacy code for rolldown-vite ([6401a49](https://github.com/vitejs/vite/commit/6401a49d53fbff8a4a519bb2ad107b8a223250d6))
+
 ## [7.2.0](https://github.com/vitejs/vite/compare/plugin-legacy@7.1.0...plugin-legacy@7.2.0) (2025-08-07)
 ### Bug Fixes
 
