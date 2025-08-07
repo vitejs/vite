@@ -57,7 +57,7 @@
     "vite": "^7.0.0"
   },
   "devDependencies": {
-    "@vitejs/plugin-legacy-for-rolldown-vite": "https://pkg.pr.new/vitejs/rolldown-vite/@vitejs/plugin-legacy@b19b90a",
+    "@vitejs/plugin-legacy-for-rolldown-vite": "https://pkg.pr.new/vitejs/rolldown-vite/@vitejs/plugin-legacy@a2594ec",
     "acorn": "^8.15.0",
     "fdir": "^6.4.6",
     "picocolors": "^1.1.1",
