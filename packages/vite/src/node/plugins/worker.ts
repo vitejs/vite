@@ -1,6 +1,6 @@
 import path from 'node:path'
 import MagicString from 'magic-string'
-import type { OutputChunk, RollupError } from 'rollup'
+import type { RollupError, RollupOutput } from 'rollup'
 import colors from 'picocolors'
 import type { ResolvedConfig } from '../config'
 import type { Plugin } from '../plugin'
@@ -9,6 +9,7 @@ import {
   encodeURIPath,
   getHash,
   injectQuery,
+  normalizePath,
   prettifyUrl,
   urlRE,
 } from '../utils'
@@ -20,7 +21,16 @@ import {
   toOutputFilePathInJS,
 } from '../build'
 import { cleanUrl } from '../../shared/utils'
+import type { Logger } from '../logger'
 import { fileToUrl } from './asset'
+
+type WorkerBundle = {
+  entryFilename: string
+  entryCode: string
+  entryUrlPlaceholder: string
+  referencedAssets: Set<string>
+  watchedFiles: string[]
+}
 
 type WorkerBundleAsset = {
   fileName: string
@@ -30,17 +40,119 @@ type WorkerBundleAsset = {
   source: string | Uint8Array
 }
 
-interface WorkerCache {
-  // save worker all emit chunk avoid rollup make the same asset unique.
-  assets: Map<string, WorkerBundleAsset>
+class WorkerOutputCache {
+  /**
+   * worker bundle information for each input id
+   * used to bundle the same worker file only once
+   */
+  private bundles = new Map<
+    /* inputId */ string,
+    {
+      entryFilename: string
+      entryCode: string
+      entryUrlPlaceholder: string
+      referencedAssets: Set<string>
+      watchedFiles: string[]
+    }
+  >()
+  /** list of assets emitted for the worker bundles */
+  private assets = new Map<string, WorkerBundleAsset>()
+  private fileNameHash = new Map<
+    /* hash */ string,
+    /* entryFilename */ string
+  >()
+  private invalidatedBundles = new Set</* inputId */ string>()
 
-  // worker bundle don't deps on any more worker runtime info an id only had a result.
-  // save worker bundled file id to avoid repeated execution of bundles
-  // <input_filename, fileName>
-  bundle: Map<string, string>
+  saveWorkerBundle(
+    id: string,
+    watchedFiles: string[],
+    outputEntryFilename: string,
+    outputEntryCode: string,
+    outputAssets: WorkerBundleAsset[],
+    logger: Logger,
+  ): WorkerBundle {
+    for (const asset of outputAssets) {
+      this.saveAsset(asset, logger)
+    }
+    const bundle: WorkerBundle = {
+      entryFilename: outputEntryFilename,
+      entryCode: outputEntryCode,
+      entryUrlPlaceholder:
+        this.generateEntryUrlPlaceholder(outputEntryFilename),
+      referencedAssets: new Set(outputAssets.map((asset) => asset.fileName)),
+      watchedFiles,
+    }
+    this.bundles.set(id, bundle)
+    return bundle
+  }
 
-  // <hash, fileName>
-  fileNameHash: Map<string, string>
+  saveAsset(asset: WorkerBundleAsset, logger: Logger) {
+    const duplicateAsset = this.assets.get(asset.fileName)
+    if (duplicateAsset) {
+      if (!isSameContent(duplicateAsset.source, asset.source)) {
+        logger.warn(
+          `\n` +
+            colors.yellow(
+              `The emitted file ${JSON.stringify(asset.fileName)} overwrites a previously emitted file of the same name.`,
+            ),
+        )
+      }
+    }
+    this.assets.set(asset.fileName, asset)
+  }
+
+  invalidateAffectedBundles(file: string) {
+    for (const [inputId, bundle] of this.bundles.entries()) {
+      if (bundle.watchedFiles.includes(file)) {
+        this.invalidatedBundles.add(inputId)
+      }
+    }
+  }
+
+  removeBundleIfInvalidated(inputId: string) {
+    if (this.invalidatedBundles.has(inputId)) {
+      this.invalidatedBundles.delete(inputId)
+      this.removeBundle(inputId)
+    }
+  }
+
+  private removeBundle(inputId: string) {
+    const bundle = this.bundles.get(inputId)
+    if (!bundle) return
+
+    this.bundles.delete(inputId)
+    this.fileNameHash.delete(getHash(bundle.entryFilename))
+
+    this.assets.delete(bundle.entryFilename)
+
+    const keptBundles = [...this.bundles.values()]
+    // remove assets that are only referenced by this bundle
+    for (const asset of bundle.referencedAssets) {
+      if (keptBundles.every((b) => !b.referencedAssets.has(asset))) {
+        this.assets.delete(asset)
+      }
+    }
+  }
+
+  getWorkerBundle(id: string) {
+    return this.bundles.get(id)
+  }
+
+  getAssets() {
+    return this.assets.values()
+  }
+
+  getEntryFilenameFromHash(hash: string) {
+    return this.fileNameHash.get(hash)
+  }
+
+  private generateEntryUrlPlaceholder(entryFilename: string): string {
+    const hash = getHash(entryFilename)
+    if (!this.fileNameHash.has(hash)) {
+      this.fileNameHash.set(hash, entryFilename)
+    }
+    return `__VITE_WORKER_ASSET__${hash}__`
+  }
 }
 
 export type WorkerType = 'classic' | 'module' | 'ignore'
@@ -50,32 +162,22 @@ const workerFileRE = /(?:\?|&)worker_file&type=(\w+)(?:&|$)/
 const inlineRE = /[?&]inline\b/
 
 export const WORKER_FILE_ID = 'worker_file'
-const workerCache = new WeakMap<ResolvedConfig, WorkerCache>()
-
-function saveEmitWorkerAsset(
-  config: ResolvedConfig,
-  asset: WorkerBundleAsset,
-): void {
-  const workerMap = workerCache.get(config.mainConfig || config)!
-  const duplicateAsset = workerMap.assets.get(asset.fileName)
-  if (duplicateAsset) {
-    if (!isSameContent(duplicateAsset.source, asset.source)) {
-      config.logger.warn(
-        `\n` +
-          colors.yellow(
-            `The emitted file ${JSON.stringify(asset.fileName)} overwrites a previously emitted file of the same name.`,
-          ),
-      )
-    }
-  }
-  workerMap.assets.set(asset.fileName, asset)
-}
+const workerOutputCaches = new WeakMap<ResolvedConfig, WorkerOutputCache>()
 
 async function bundleWorkerEntry(
   config: ResolvedConfig,
   id: string,
-): Promise<OutputChunk> {
+): Promise<WorkerBundle> {
   const input = cleanUrl(id)
+
+  const workerOutput = workerOutputCaches.get(config.mainConfig || config)!
+  workerOutput.removeBundleIfInvalidated(input)
+
+  const bundleInfo = workerOutput.getWorkerBundle(input)
+  if (bundleInfo) {
+    return bundleInfo
+  }
+
   const newBundleChain = [...config.bundleChain, input]
   if (config.bundleChain.includes(input)) {
     throw new Error(
@@ -102,7 +204,8 @@ async function bundleWorkerEntry(
     },
     preserveEntrySignatures: false,
   })
-  let chunk: OutputChunk
+  let result: RollupOutput
+  let watchedFiles: string[] | undefined
   try {
     const workerOutputConfig = config.worker.rollupOptions.output
     const workerConfig = workerOutputConfig
@@ -110,9 +213,7 @@ async function bundleWorkerEntry(
         ? workerOutputConfig[0] || {}
         : workerOutputConfig
       : {}
-    const {
-      output: [outputChunk, ...outputChunks],
-    } = await bundle.generate({
+    result = await bundle.generate({
       entryFileNames: path.posix.join(
         config.build.assetsDir,
         '[name]-[hash].js',
@@ -129,19 +230,7 @@ async function bundleWorkerEntry(
       format,
       sourcemap: config.build.sourcemap,
     })
-    chunk = outputChunk
-    outputChunks.forEach((outputChunk) => {
-      if (outputChunk.type === 'asset') {
-        saveEmitWorkerAsset(config, outputChunk)
-      } else if (outputChunk.type === 'chunk') {
-        saveEmitWorkerAsset(config, {
-          fileName: outputChunk.fileName,
-          originalFileName: null,
-          originalFileNames: [],
-          source: outputChunk.code,
-        })
-      }
-    })
+    watchedFiles = bundle.watchFiles.map((f) => normalizePath(f))
   } catch (e) {
     // adjust rollup format error
     if (
@@ -156,66 +245,63 @@ async function bundleWorkerEntry(
   } finally {
     await bundle.close()
   }
-  return emitSourcemapForWorkerEntry(config, chunk)
-}
 
-function emitSourcemapForWorkerEntry(
-  config: ResolvedConfig,
-  chunk: OutputChunk,
-): OutputChunk {
-  const { map: sourcemap } = chunk
-
-  if (sourcemap) {
-    if (
-      config.build.sourcemap === 'hidden' ||
-      config.build.sourcemap === true
-    ) {
-      const data = sourcemap.toString()
-      const mapFileName = chunk.fileName + '.map'
-      saveEmitWorkerAsset(config, {
-        fileName: mapFileName,
-        originalFileName: null,
-        originalFileNames: [],
-        source: data,
-      })
-    }
+  const {
+    output: [outputChunk, ...outputChunks],
+  } = result
+  const assets = outputChunks.map((outputChunk) =>
+    outputChunk.type === 'asset'
+      ? outputChunk
+      : {
+          fileName: outputChunk.fileName,
+          originalFileName: null,
+          originalFileNames: [],
+          source: outputChunk.code,
+        },
+  )
+  if (
+    (config.build.sourcemap === 'hidden' || config.build.sourcemap === true) &&
+    outputChunk.map
+  ) {
+    assets.push({
+      fileName: outputChunk.fileName + '.map',
+      originalFileName: null,
+      originalFileNames: [],
+      source: outputChunk.map.toString(),
+    })
   }
 
-  return chunk
+  const newBundleInfo = workerOutputCaches
+    .get(config.mainConfig || config)!
+    .saveWorkerBundle(
+      id,
+      watchedFiles,
+      outputChunk.fileName,
+      outputChunk.code,
+      assets,
+      config.logger,
+    )
+  return newBundleInfo
 }
 
 export const workerAssetUrlRE = /__VITE_WORKER_ASSET__([a-z\d]{8})__/g
 
-function encodeWorkerAssetFileName(
-  fileName: string,
-  workerCache: WorkerCache,
-): string {
-  const { fileNameHash } = workerCache
-  const hash = getHash(fileName)
-  if (!fileNameHash.get(hash)) {
-    fileNameHash.set(hash, fileName)
-  }
-  return `__VITE_WORKER_ASSET__${hash}__`
-}
-
 export async function workerFileToUrl(
   config: ResolvedConfig,
   id: string,
-): Promise<string> {
-  const workerMap = workerCache.get(config.mainConfig || config)!
-  let fileName = workerMap.bundle.get(id)
-  if (!fileName) {
-    const outputChunk = await bundleWorkerEntry(config, id)
-    fileName = outputChunk.fileName
-    saveEmitWorkerAsset(config, {
-      fileName,
+): Promise<WorkerBundle> {
+  const workerOutput = workerOutputCaches.get(config.mainConfig || config)!
+  const bundle = await bundleWorkerEntry(config, id)
+  workerOutput.saveAsset(
+    {
+      fileName: bundle.entryFilename,
       originalFileName: null,
       originalFileNames: [],
-      source: outputChunk.code,
-    })
-    workerMap.bundle.set(id, fileName)
-  }
-  return encodeWorkerAssetFileName(fileName, workerMap)
+      source: bundle.entryCode,
+    },
+    config.logger,
+  )
+  return bundle
 }
 
 export function webWorkerPostPlugin(): Plugin {
@@ -247,18 +333,15 @@ export function webWorkerPlugin(config: ResolvedConfig): Plugin {
   const isBuild = config.command === 'build'
   const isWorker = config.isWorker
 
+  workerOutputCaches.set(config, new WorkerOutputCache())
+  const emittedAssets = new Set<string>()
+
   return {
     name: 'vite:worker',
 
     buildStart() {
-      if (isWorker) {
-        return
-      }
-      workerCache.set(config, {
-        assets: new Map(),
-        bundle: new Map(),
-        fileNameHash: new Map(),
-      })
+      if (isWorker) return
+      emittedAssets.clear()
     },
 
     load: {
@@ -285,8 +368,12 @@ export function webWorkerPlugin(config: ResolvedConfig): Plugin {
           if (isWorker && config.bundleChain.at(-1) === cleanUrl(id)) {
             urlCode = 'self.location.href'
           } else if (inlineRE.test(id)) {
-            const chunk = await bundleWorkerEntry(config, id)
-            const jsContent = `const jsContent = ${JSON.stringify(chunk.code)};`
+            const result = await bundleWorkerEntry(config, id)
+            for (const file of result.watchedFiles) {
+              this.addWatchFile(file)
+            }
+
+            const jsContent = `const jsContent = ${JSON.stringify(result.entryCode)};`
 
             const code =
               // Using blob URL for SharedWorker results in multiple instances of a same worker
@@ -331,7 +418,11 @@ export function webWorkerPlugin(config: ResolvedConfig): Plugin {
               map: { mappings: '' },
             }
           } else {
-            urlCode = JSON.stringify(await workerFileToUrl(config, id))
+            const result = await workerFileToUrl(config, id)
+            urlCode = JSON.stringify(result.entryUrlPlaceholder)
+            for (const file of result.watchedFiles) {
+              this.addWatchFile(file)
+            }
           }
         } else {
           let url = await fileToUrl(this, cleanUrl(id))
@@ -356,12 +447,6 @@ export function webWorkerPlugin(config: ResolvedConfig): Plugin {
           map: { mappings: '' }, // Empty sourcemap to suppress Rollup warning
         }
       },
-    },
-
-    shouldTransformCachedModule({ id }) {
-      if (isBuild && config.build.watch && workerOrSharedWorkerRE.test(id)) {
-        return true
-      }
     },
 
     transform: {
@@ -431,12 +516,17 @@ export function webWorkerPlugin(config: ResolvedConfig): Plugin {
         workerAssetUrlRE.lastIndex = 0
 
         // Replace "__VITE_WORKER_ASSET__5aa0ddc0__" using relative paths
-        const workerMap = workerCache.get(config.mainConfig || config)!
-        const { fileNameHash } = workerMap
+        const workerOutputCache = workerOutputCaches.get(
+          config.mainConfig || config,
+        )!
 
         while ((match = workerAssetUrlRE.exec(code))) {
           const [full, hash] = match
-          const filename = fileNameHash.get(hash)!
+          const filename = workerOutputCache.getEntryFilenameFromHash(hash)
+          if (!filename) {
+            this.warn(`Could not find worker asset for hash: ${hash}`)
+            continue
+          }
           const replacement = toOutputFilePathInJS(
             this.environment,
             filename,
@@ -460,8 +550,10 @@ export function webWorkerPlugin(config: ResolvedConfig): Plugin {
       if (opts.__vite_skip_asset_emit__ || isWorker) {
         return
       }
-      const workerMap = workerCache.get(config)!
-      workerMap.assets.forEach((asset) => {
+      for (const asset of workerOutputCaches.get(config)!.getAssets()) {
+        if (emittedAssets.has(asset.fileName)) continue
+        emittedAssets.add(asset.fileName)
+
         const duplicateAsset = bundle[asset.fileName]
         if (duplicateAsset) {
           const content =
@@ -481,8 +573,14 @@ export function webWorkerPlugin(config: ResolvedConfig): Plugin {
           // NOTE: fileName is already generated when bundling the worker
           //       so no need to pass originalFileNames/names
         })
-      })
-      workerMap.assets.clear()
+      }
+    },
+
+    watchChange(file) {
+      if (isWorker) return
+      workerOutputCaches
+        .get(config)!
+        .invalidateAffectedBundles(normalizePath(file))
     },
   }
 }
