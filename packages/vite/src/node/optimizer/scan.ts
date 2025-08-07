@@ -477,6 +477,15 @@ function esbuildScanPlugin(
         external: true,
       }))
 
+      // virtual-module-named-svelte-dummy modules (for Svelte snippets)
+      build.onResolve(
+        { filter: /^virtual-module-named-svelte-dummy/ },
+        ({ path }) => ({
+          path,
+          external: true,
+        }),
+      )
+
       // local scripts (`<script>` in Svelte and `<script setup>` in Vue)
       build.onResolve({ filter: virtualModuleRE }, ({ path }) => {
         return {
@@ -603,6 +612,11 @@ function esbuildScanPlugin(
               }
               if (!isModule) {
                 addedImport = true
+                js += `import ${virtualModulePath}\n`
+              } else if (raw.includes('#snippet')) {
+                // For Svelte files with #snippet, add virtual module export to handle snippet exports
+                addedImport = true
+                js += `export * from 'virtual-module-named-svelte-dummy:${normalizePath(p)}'\n`
                 js += `import ${virtualModulePath}\n`
               }
             }
