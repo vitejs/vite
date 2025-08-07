@@ -168,3 +168,129 @@ test('scan jsx-runtime', async (ctx) => {
   expect((globalThis as any).__test_scan_jsx_runtime).toBe(1)
   expect(mod1).toBe(mod2)
 })
+
+test('scan svelte snippet exports', async () => {
+  // Create a temporary test directory
+  const testDir = path.join(
+    import.meta.dirname,
+    'fixtures',
+    'scan-svelte-snippet',
+  )
+  await import('node:fs/promises').then((fs) =>
+    fs.mkdir(testDir, { recursive: true }),
+  )
+
+  // Create test files
+  const fs = await import('node:fs/promises')
+  await fs.writeFile(
+    path.join(testDir, 'index.html'),
+    `<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>Test</title>
+</head>
+<body>
+  <script type="module" src="./main.js"></script>
+</body>
+</html>`,
+  )
+
+  await fs.writeFile(
+    path.join(testDir, 'main.js'),
+    `import App from './App.svelte';`,
+  )
+
+  await fs.writeFile(
+    path.join(testDir, 'App.svelte'),
+    `<script module>
+  export { foo };
+</script>
+
+{#snippet foo()}
+  <p>Hello from snippet</p>
+{/snippet}
+
+<div>
+  {@render foo()}
+</div>`,
+  )
+
+  const server = await createServer({
+    configFile: false,
+    logLevel: 'error',
+    root: testDir,
+    environments: {
+      client: {
+        optimizeDeps: {
+          force: true,
+          noDiscovery: false,
+          entries: ['./index.html'],
+        },
+      },
+    },
+  })
+
+  // This should not throw an error with the fix
+  try {
+    await server.listen()
+    await server.close()
+    // If we get here without throwing, the scan succeeded
+    expect(true).toBe(true)
+  } catch (error) {
+    await server.close()
+    // Clean up before re-throwing
+    await fs.rm(testDir, { recursive: true, force: true })
+    console.error('Scan error:', error.message)
+    throw error
+  }
+
+  // Clean up
+  await fs.rm(testDir, { recursive: true, force: true })
+})
+
+test('hasUndeclaredExports should detect snippet exports', async () => {
+  const { hasUndeclaredExports } = await import('../optimizer/scan')
+
+  // Script with export of undeclared identifier (snippet)
+  const scriptWithSnippetExport = `
+  export { foo };
+  const bar = 'hello';
+  `
+
+  expect(hasUndeclaredExports(scriptWithSnippetExport)).toBe(true)
+
+  // Script with export of declared identifier
+  const scriptWithDeclaredExport = `
+  const foo = 'hello';
+  export { foo };
+  `
+
+  expect(hasUndeclaredExports(scriptWithDeclaredExport)).toBe(false)
+
+  // Script with mixed exports
+  const scriptWithMixedExports = `
+  const bar = 'hello';
+  export { foo, bar }; // foo is undeclared, bar is declared
+  `
+
+  expect(hasUndeclaredExports(scriptWithMixedExports)).toBe(true)
+
+  // Test actual Svelte snippet scenario
+  const svelteSnippetScript = `
+  export { foo };
+  // foo is defined as {#snippet foo()} in template
+  `
+
+  expect(hasUndeclaredExports(svelteSnippetScript)).toBe(true)
+
+  // Test with comments and whitespace
+  const scriptWithComments = `
+  // This is a comment
+  /* export { fake } */ // commented out export
+  export { realExport };
+  const realExport = 'defined';
+  `
+
+  expect(hasUndeclaredExports(scriptWithComments)).toBe(false)
+})

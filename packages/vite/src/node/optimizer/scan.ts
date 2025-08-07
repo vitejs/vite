@@ -604,6 +604,14 @@ function esbuildScanPlugin(
               if (!isModule) {
                 addedImport = true
                 js += `import ${virtualModulePath}\n`
+              } else {
+                // For Svelte module scripts, check if we have exports that might reference
+                // undeclared identifiers (like snippets defined in template)
+                // This prevents esbuild errors when exports reference template-defined identifiers
+                if (hasUndeclaredExports(contents)) {
+                  addedImport = true
+                  js += `import ${virtualModulePath}\n`
+                }
               }
             }
 
@@ -823,4 +831,77 @@ function isScannable(id: string, extensions: string[] | undefined): boolean {
     extensions?.includes(path.extname(id)) ||
     false
   )
+}
+
+/**
+ * Check if script content has exports that reference undeclared identifiers.
+ * This is common in Svelte files where exports reference snippets defined in the template.
+ * @internal - exported for testing
+ */
+export function hasUndeclaredExports(content: string): boolean {
+  // Remove comments to avoid false positives
+  const cleanContent = content
+    .replace(multilineCommentsRE, '/* */')
+    .replace(singlelineCommentsRE, '')
+
+  // Extract export patterns: export { foo, bar }, export { foo as bar }, etc.
+  const exportMatches = cleanContent.match(/export\s*\{[^}]*\}/g)
+  if (!exportMatches) {
+    return false
+  }
+
+  // Extract all declared identifiers from the script
+  const declaredIdentifiers = new Set<string>()
+
+  // Match various declaration patterns: var/let/const, function, class, etc.
+  const declarationPatterns = [
+    /(?:var|let|const)\s+([a-zA-Z_$]\w*)/g, // variable declarations
+    /function\s+([a-zA-Z_$]\w*)/g, // function declarations
+    /class\s+([a-zA-Z_$]\w*)/g, // class declarations
+    /import\s+([a-zA-Z_$]\w*)/g, // default imports
+    /import\s*\{[^}]*\}/g, // named imports
+  ]
+
+  for (const pattern of declarationPatterns) {
+    let match
+    while ((match = pattern.exec(cleanContent)) !== null) {
+      if (pattern.source.includes('import\\s*\\{')) {
+        // Handle named imports: parse the comma-separated list
+        const namedImports = match[0]
+          .replace(/import\s*\{/, '')
+          .replace(/\}/, '')
+          .split(',')
+          .map((imp) => {
+            const parts = imp.trim().split(/\s+as\s+/)
+            return parts.length > 1 ? parts[1].trim() : parts[0].trim()
+          })
+          .filter((imp) => imp !== '' && imp !== null)
+        namedImports.forEach((imp) => declaredIdentifiers.add(imp))
+      } else {
+        declaredIdentifiers.add(match[1])
+      }
+    }
+  }
+
+  // Check if any exported identifier is not declared in the script
+  for (const exportMatch of exportMatches) {
+    const exportsContent = exportMatch
+      .replace(/export\s*\{/, '')
+      .replace(/\}/, '')
+    const exportedIdentifiers = exportsContent
+      .split(',')
+      .map((exp) => {
+        const parts = exp.trim().split(/\s+as\s+/)
+        return parts[0] !== null ? parts[0].trim() : ''
+      })
+      .filter((id) => id !== '')
+
+    for (const exportedId of exportedIdentifiers) {
+      if (!declaredIdentifiers.has(exportedId)) {
+        return true
+      }
+    }
+  }
+
+  return false
 }
