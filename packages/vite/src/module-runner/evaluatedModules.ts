@@ -118,16 +118,8 @@ export class EvaluatedModules {
       mod.meta.code.slice(lastIndex),
     )?.[1]
     if (!mapString) return null
-
-    try {
-      const decoded = decodeBase64(mapString)
-      const parsed = JSON.parse(decoded)
-      mod.map = new DecodedMap(parsed, mod.file)
-      return mod.map
-    } catch {
-      // Invalid base64 or malformed JSON
-      return null
-    }
+    mod.map = new DecodedMap(JSON.parse(decodeBase64(mapString)), mod.file)
+    return mod.map
   }
 
   public clear(): void {
