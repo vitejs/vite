@@ -13,6 +13,6 @@
   },
   "devDependencies": {
     "typescript": "~5.8.3",
-    "vite": "npm:rolldown-vite@^7.0.12"
+    "vite": "npm:rolldown-vite@^7.1.0"
   }
 }
