@@ -1,6 +1,3 @@
-function createObject() {
-  return { created: Date.now() }
-}
 
 export default /* @__PURE__ */ Object.assign(
   function myLib(sel) {
@@ -18,7 +15,6 @@ export default /* @__PURE__ */ Object.assign(
     // Add debugger statement for testing
     debugger
   },
-  { version: '1.0.0' },
 )
 
 // For triggering unhandled global esbuild helpers in previous regex-based implementation for injection
