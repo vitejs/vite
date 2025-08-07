@@ -104,7 +104,7 @@ $ deno init --npm vite my-vue-app --template vue
 
 :::
 
-See [create-vite](https://github.com/vitejs/vite/tree/main/packages/create-vite) for more details on each supported template: `vanilla`, `vanilla-ts`, `vue`, `vue-ts`, `react`, `react-ts`, `react-swc`, `react-swc-ts`, `preact`, `preact-ts`, `lit`, `lit-ts`, `svelte`, `svelte-ts`, `ember`, `ember-ts`, `solid`, `solid-ts`, `qwik`, `qwik-ts`.
+See [create-vite](https://github.com/vitejs/vite/tree/main/packages/create-vite) for more details on each supported template: `vanilla`, `vanilla-ts`, `vue`, `vue-ts`, `react`, `react-ts`, `react-swc`, `react-swc-ts`, `preact`, `preact-ts`, `lit`, `lit-ts`, `svelte`, `svelte-ts`, `ember-app`, `ember-app-ts`, `ember-library`, `ember-library-ts`, `solid`, `solid-ts`, `qwik`, `qwik-ts`.
 
 You can use `.` for the project name to scaffold in the current directory.
 
