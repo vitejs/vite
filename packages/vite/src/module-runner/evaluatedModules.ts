@@ -114,16 +114,9 @@ export class EvaluatedModules {
     const lastIndex = mod.meta.code.lastIndexOf(pattern)
     if (lastIndex === -1) return null
 
-    // Extract the line containing the last occurrence
-    const codeFromLastMatch = mod.meta.code.substring(lastIndex)
-    const firstLineBreak = codeFromLastMatch.indexOf('\n')
-    const line =
-      firstLineBreak === -1
-        ? codeFromLastMatch
-        : codeFromLastMatch.substring(0, firstLineBreak)
-
-    // Apply the original regex to just this line
-    const mapString = MODULE_RUNNER_SOURCEMAPPING_REGEXP.exec(line)?.[1]
+    const mapString = MODULE_RUNNER_SOURCEMAPPING_REGEXP.exec(
+      mod.meta.code.slice(lastIndex),
+    )?.[1]
     if (!mapString) return null
 
     try {

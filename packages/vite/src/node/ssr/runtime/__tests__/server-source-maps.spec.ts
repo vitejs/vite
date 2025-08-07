@@ -97,22 +97,17 @@ describe('module runner initialization', async () => {
   it('should not crash when sourceMappingURL pattern appears in string literals', async ({
     runner,
   }) => {
-    // This test ensures that the ModuleRunner doesn't crash with InvalidCharacterError
-    // when source code contains string literals with sourceMappingURL pattern
     const modules = runner.evaluatedModules
 
     const moduleId = '/test/string-literal-sourcemap.js'
     const moduleUrl = 'http://localhost:3000/test/string-literal-sourcemap.js'
     const node = modules.ensureModule(moduleId, moduleUrl)
 
-    // This code pattern was causing crashes in issue #20551
     node.meta = {
       code: `const text = "//# sourceMappingURL=data:application/json;base64,invalidbase64";
 console.log(text);`,
     }
 
-    // Before the fix: This would throw InvalidCharacterError: Invalid character
-    // After the fix: This should not crash and should return null gracefully
     expect(() => {
       const sourceMap = modules.getModuleSourceMapById(moduleId)
       expect(sourceMap).toBeNull()
