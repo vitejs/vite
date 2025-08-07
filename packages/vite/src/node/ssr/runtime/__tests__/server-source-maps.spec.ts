@@ -102,7 +102,6 @@ describe('module runner initialization', async () => {
       '//# sourceMappingURL=data:application/json;base64,invalidbase64',
     )
 
-    // Test that stacktraces work correctly even with sourceMappingURL in string literals
     const error = await getError(() => mod.throwError())
     expect(error.message).toBe('Test error for stacktrace')
   })
