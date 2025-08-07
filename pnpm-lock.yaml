@@ -339,8 +339,8 @@ importers:
         specifier: ^1.20.10
         version: 1.20.10
       launch-editor-middleware:
-        specifier: ^2.11.0
-        version: 2.11.0
+        specifier: 2.10.0
+        version: 2.10.0
       lightningcss:
         specifier: ^1.30.1
         version: 1.30.1
@@ -5412,8 +5412,8 @@ packages:
   kolorist@1.8.0:
     resolution: {integrity: sha512-Y+60/zizpJ3HRH8DCss+q95yr6145JXZo46OTpFvDZWLfRCE4qChOyk1b26nMaNpfHHgxagk9dXT5OP0Tfe+dQ==}
 
-  launch-editor-middleware@2.11.0:
-    resolution: {integrity: sha512-AEKcN/lnbugcXYoYOpEuTR87vhFvEWH6azZl6gqqUrnntFBNowIkgof2g8wHQ+UrM9aNRKykTWFz/TW+uiqlow==}
+  launch-editor-middleware@2.10.0:
+    resolution: {integrity: sha512-RzZu7MeVlE3p1H6Sadc2BhuDGAj7bkeDCBpNq/zSENP4ohJGhso00k5+iYaRwKshIpiOAhMmimce+5D389xmSg==}
 
   launch-editor@2.11.0:
     resolution: {integrity: sha512-R/PIF14L6e2eHkhvQPu7jDRCr0msfCYCxbYiLgkkAGi0dVPWuM+RrsPu0a5dpuNe0KWGL3jpAkOlv53xGfPheQ==}
@@ -11026,7 +11026,7 @@ snapshots:
 
   kolorist@1.8.0: {}
 
-  launch-editor-middleware@2.11.0:
+  launch-editor-middleware@2.10.0:
     dependencies:
       launch-editor: 2.11.0
 
