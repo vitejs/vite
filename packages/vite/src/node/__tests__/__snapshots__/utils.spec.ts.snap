@@ -139,6 +139,17 @@ exports[`generateCodeFrames > start with position 3`] = `
 "
 `;
 
+exports[`generateCodeFrames > supports more than 1000 lines 1`] = `
+"
+1198 |  // 1197
+1199 |  // 1198
+1200 |  // 1199
+     |  ^
+1201 |  // 1200
+1202 |  // 1201
+"
+`;
+
 exports[`generateCodeFrames > works with CRLF 1`] = `
 "
 1  |  import foo from './foo'

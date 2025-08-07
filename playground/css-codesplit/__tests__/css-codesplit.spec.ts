@@ -38,10 +38,10 @@ test('style order should be consistent when style tag is inserted by JS', async 
 
 describe.runIf(isBuild)('build', () => {
   test('should remove empty chunk', async () => {
-    expect(findAssetFile(/style-.*\.js$/)).toBe('')
+    expect(findAssetFile(/style-.*\.js$/)).toBeUndefined()
     expect(findAssetFile('main.*.js$')).toMatch(`/* empty css`)
     expect(findAssetFile('other.*.js$')).toMatch(`/* empty css`)
-    expect(findAssetFile(/async-[-\w]{8}\.js$/)).toBe('')
+    expect(findAssetFile(/async-[-\w]{8}\.js$/)).toBeUndefined()
 
     const assets = listAssets()
     expect(assets).not.toContainEqual(

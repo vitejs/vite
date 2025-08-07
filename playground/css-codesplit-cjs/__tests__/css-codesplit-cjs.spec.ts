@@ -8,7 +8,7 @@ test('should load both stylesheets', async () => {
 
 describe.runIf(isBuild)('build', () => {
   test('should remove empty chunk', async () => {
-    expect(findAssetFile(/style.*\.js$/)).toBe('')
+    expect(findAssetFile(/style.*\.js$/)).toBeUndefined()
     expect(findAssetFile('main.*.js$')).toMatch(`/* empty css`)
     expect(findAssetFile('other.*.js$')).toMatch(`/* empty css`)
   })

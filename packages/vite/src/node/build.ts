@@ -491,7 +491,7 @@ export async function resolveBuildPlugins(config: ResolvedConfig): Promise<{
   return {
     pre: [
       completeSystemWrapPlugin(),
-      prepareOutDirPlugin(),
+      ...(!config.isWorker ? [prepareOutDirPlugin()] : []),
       perEnvironmentPlugin(
         'vite:rollup-options-plugins',
         async (environment) =>

@@ -8,7 +8,7 @@ beforeEach(async () => {
 for (let i = 0; i < 5; i++) {
   describe.runIf(isBuild)('css-codesplit build', () => {
     test('should be consistent with same content', () => {
-      expect(findAssetFile(/style-.+\.css/)).toBe('')
+      expect(findAssetFile(/style-.+\.css/)).toBeUndefined()
       expect(findAssetFile(/style2-.+\.css/)).toMatch('h2{color:#00f}')
     })
   })

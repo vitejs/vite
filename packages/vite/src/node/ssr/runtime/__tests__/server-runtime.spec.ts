@@ -330,7 +330,7 @@ describe('module runner initialization', async () => {
     runner,
     onTestFinished,
   }) => {
-    const spy = vi.spyOn(console, 'log')
+    const spy = vi.spyOn(console, 'log').mockImplementation(() => {})
     onTestFinished(() => spy.mockRestore())
 
     await runner.import('/fixtures/execution-order-re-export/index.js')
