@@ -116,10 +116,8 @@ export class EvaluatedModules {
       mod.meta.code.slice(lastIndex),
     )?.[1]
     if (!mapString) return null
-    return (mod.map = new DecodedMap(
-      JSON.parse(decodeBase64(mapString)),
-      mod.file,
-    ))
+    mod.map = new DecodedMap(JSON.parse(decodeBase64(mapString)), mod.file)
+    return mod.map
   }
 
   public clear(): void {
