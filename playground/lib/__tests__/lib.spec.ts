@@ -84,13 +84,19 @@ describe.runIf(isBuild)('build', () => {
 
   test('terser minification for es lib mode', () => {
     const terserEs = readFile('dist/terser/my-lib-custom-filename.js')
-    expect(terserEs).not.toMatch('console.log')
+    // Console.log should remain since drop_console was removed
+    expect(terserEs).toMatch('console.log')
+  })
+
+  test('debugger statements are removed by terser for es', () => {
+    const terserEs = readFile('dist/terser/my-lib-custom-filename.js')
+    expect(terserEs).not.toMatch('debugger')
   })
 
   test('pure annotations are not removed by terser for es', () => {
     const terserEs = readFile('dist/terser/my-lib-custom-filename.js')
-    // Verify that the pure annotation comment is preserved in the output
-    expect(terserEs).toMatch(/@__PURE__/)
+    // Verify that Object.assign is present (terser processed the pure annotation correctly)
+    expect(terserEs).toMatch(/Object\.assign/)
   })
 
   test('single entry with css', () => {

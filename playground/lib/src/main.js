@@ -15,10 +15,8 @@ export default /* @__PURE__ */ Object.assign(
     // make sure umd helper has been moved to the right position
     console.log(`amd function(){ "use strict"; }`)
 
-    // Pure annotation comment should be kept for ESM format
-    const result = createObject()
-
-    return result
+    // Add debugger statement for testing
+    debugger
   },
   { version: '1.0.0' },
 )
