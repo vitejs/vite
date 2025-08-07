@@ -125,6 +125,20 @@ const _require = createRequire(import.meta.url)
 const nonLeadingHashInFileNameRE = /[^/]+\[hash(?::\d+)?\]/
 const prefixedHashInFileNameRE = /\W?\[hash(?::\d+)?\]/
 
+// browsers supporting ESM + dynamic import + import.meta + async generator
+const modernTargetsEsbuild = [
+  'es2020',
+  'edge79',
+  'firefox67',
+  'chrome64',
+  'safari12',
+]
+// same with above but by browserslist syntax
+// es2020 = chrome 80+, safari 13.1+, firefox 72+, edge 80+
+// https://github.com/evanw/esbuild/issues/121#issuecomment-646956379
+const modernTargetsBabel =
+  'edge>=79, firefox>=67, chrome>=64, safari>=12, chromeAndroid>=64, iOS>=12'
+
 function viteLegacyPlugin(options: Options = {}): Plugin[] {
   if ('rolldownVersion' in vite) {
     const { default: viteLegacyPluginForRolldownVite } = _require(
@@ -135,21 +149,8 @@ function viteLegacyPlugin(options: Options = {}): Plugin[] {
 
   let config: ResolvedConfig
   let targets: Options['targets']
-  let modernTargets: Options['modernTargets']
-
-  // browsers supporting ESM + dynamic import + import.meta + async generator
-  const modernTargetsEsbuild = [
-    'es2020',
-    'edge79',
-    'firefox67',
-    'chrome64',
-    'safari12',
-  ]
-  // same with above but by browserslist syntax
-  // es2020 = chrome 80+, safari 13.1+, firefox 72+, edge 80+
-  // https://github.com/evanw/esbuild/issues/121#issuecomment-646956379
-  const modernTargetsBabel =
-    'edge>=79, firefox>=67, chrome>=64, safari>=12, chromeAndroid>=64, iOS>=12'
+  const modernTargets: Options['modernTargets'] =
+    options.modernTargets || modernTargetsBabel
 
   const genLegacy = options.renderLegacyChunks !== false
   const genModern = options.renderModernChunks !== false
@@ -207,6 +208,7 @@ function viteLegacyPlugin(options: Options = {}): Plugin[] {
   }
 
   let overriddenBuildTarget = false
+  let overriddenBuildTargetOnlyModern = false
   let overriddenDefaultModernTargets = false
   const legacyConfigPlugin: Plugin = {
     name: 'vite:legacy-config',
@@ -231,16 +233,18 @@ function viteLegacyPlugin(options: Options = {}): Plugin[] {
           // See https://github.com/vitejs/vite/pull/10052#issuecomment-1242076461
           overriddenBuildTarget = config.build.target !== undefined
           overriddenDefaultModernTargets = options.modernTargets !== undefined
+        } else {
+          overriddenBuildTargetOnlyModern = config.build.target !== undefined
+        }
 
-          if (options.modernTargets) {
-            // Package is ESM only
-            const { default: browserslistToEsbuild } = await import(
-              'browserslist-to-esbuild'
-            )
-            config.build.target = browserslistToEsbuild(options.modernTargets)
-          } else {
-            config.build.target = modernTargetsEsbuild
-          }
+        if (options.modernTargets) {
+          // Package is ESM only
+          const { default: browserslistToEsbuild } = await import(
+            'browserslist-to-esbuild'
+          )
+          config.build.target = browserslistToEsbuild(options.modernTargets)
+        } else {
+          config.build.target = modernTargetsEsbuild
         }
       }
 
@@ -258,6 +262,13 @@ function viteLegacyPlugin(options: Options = {}): Plugin[] {
         config.logger.warn(
           colors.yellow(
             `plugin-legacy overrode 'build.target'. You should pass 'targets' as an option to this plugin with the list of legacy browsers to support instead.`,
+          ),
+        )
+      }
+      if (overriddenBuildTargetOnlyModern) {
+        config.logger.warn(
+          colors.yellow(
+            `plugin-legacy overrode 'build.target'. You should pass 'modernTargets' as an option to this plugin with the list of browsers to support instead.`,
           ),
         )
       }
@@ -384,7 +395,6 @@ function viteLegacyPlugin(options: Options = {}): Plugin[] {
       }
       config = _config
 
-      modernTargets = options.modernTargets || modernTargetsBabel
       if (isDebug) {
         console.log(`[@vitejs/plugin-legacy] modernTargets:`, modernTargets)
       }
