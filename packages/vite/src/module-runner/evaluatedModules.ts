@@ -4,6 +4,10 @@ import { decodeBase64 } from './utils'
 import { DecodedMap } from './sourcemap/decoder'
 import type { ResolvedResult } from './types'
 
+const MODULE_RUNNER_SOURCEMAPPING_REGEXP = new RegExp(
+  `//# ${SOURCEMAPPING_URL}=data:application/json;base64,(.+)`,
+)
+
 export class EvaluatedModuleNode {
   public importers = new Set<string>()
   public imports = new Set<string>()
@@ -105,27 +109,28 @@ export class EvaluatedModules {
     if (mod.map) return mod.map
     if (!mod.meta || !('code' in mod.meta)) return null
 
-    // Find the last occurrence of sourceMappingURL to avoid matching string literals
-    // Use a more specific regex that expects the sourcemap to be at the end of a line
-    const regex = new RegExp(
-      `//# ${SOURCEMAPPING_URL}=data:application/json;base64,([A-Za-z0-9+/=]+)\\s*$`,
-      'gm',
-    )
-    let match
-    let lastMatch = null
-    while ((match = regex.exec(mod.meta.code)) !== null) {
-      lastMatch = match
-    }
+    // Find the last occurrence of sourceMappingURL by finding the last line that contains it
+    const pattern = `//# ${SOURCEMAPPING_URL}=data:application/json;base64,`
+    const lastIndex = mod.meta.code.lastIndexOf(pattern)
+    if (lastIndex === -1) return null
 
-    const mapString = lastMatch?.[1]
+    // Extract the line containing the last occurrence
+    const codeFromLastMatch = mod.meta.code.substring(lastIndex)
+    const firstLineBreak = codeFromLastMatch.indexOf('\n')
+    const line =
+      firstLineBreak === -1
+        ? codeFromLastMatch
+        : codeFromLastMatch.substring(0, firstLineBreak)
+
+    // Apply the original regex to just this line
+    const mapString = MODULE_RUNNER_SOURCEMAPPING_REGEXP.exec(line)?.[1]
     if (!mapString) return null
+
     try {
-      const decoded = decodeBase64(mapString)
-      const parsed = JSON.parse(decoded)
-      mod.map = new DecodedMap(parsed, mod.file)
+      mod.map = new DecodedMap(JSON.parse(decodeBase64(mapString)), mod.file)
       return mod.map
     } catch {
-      // Invalid base64 or malformed JSON
+      // Invalid base64 or malformed JSON - return null gracefully
       return null
     }
   }
