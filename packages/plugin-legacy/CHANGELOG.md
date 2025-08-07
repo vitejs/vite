@@ -1,3 +1,14 @@
+## [7.2.0](https://github.com/vitejs/vite/compare/plugin-legacy@7.1.0...plugin-legacy@7.2.0) (2025-08-07)
+### Bug Fixes
+
+* **deps:** update all non-major dependencies ([#20537](https://github.com/vitejs/vite/issues/20537)) ([fc9a9d3](https://github.com/vitejs/vite/commit/fc9a9d3f1493caa3d614f64e0a61fd5684f0928b))
+* **legacy:** `modernTargets` should set `build.target` ([#20393](https://github.com/vitejs/vite/issues/20393)) ([76c5e40](https://github.com/vitejs/vite/commit/76c5e40864f42bb33ee7ea9184e32d5156fa1a4a))
+
+### Miscellaneous Chores
+
+* **deps:** update rolldown-related dependencies ([#20441](https://github.com/vitejs/vite/issues/20441)) ([f689d61](https://github.com/vitejs/vite/commit/f689d613429ae9452c74f8bc482d8cc2584ea6b8))
+* **deps:** update rolldown-related dependencies ([#20536](https://github.com/vitejs/vite/issues/20536)) ([8be2787](https://github.com/vitejs/vite/commit/8be278748a92b128c49a24619d8d537dd2b08ceb))
+
 ## [7.1.0](https://github.com/vitejs/vite/compare/plugin-legacy@7.0.1...plugin-legacy@7.1.0) (2025-07-22)
 ### Features
 
