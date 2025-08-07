@@ -467,7 +467,7 @@ export async function resolveBuildPlugins(config: ResolvedConfig): Promise<{
   return {
     pre: [
       completeSystemWrapPlugin(),
-      prepareOutDirPlugin(),
+      ...(!config.isWorker ? [prepareOutDirPlugin()] : []),
       perEnvironmentPlugin('commonjs', (environment) => {
         const { commonjsOptions } = environment.config.build
         const usePluginCommonjs =
