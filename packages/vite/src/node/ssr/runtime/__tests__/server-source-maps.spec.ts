@@ -97,20 +97,9 @@ describe('module runner initialization', async () => {
   it('should not crash when sourceMappingURL pattern appears in string literals', async ({
     runner,
   }) => {
-    const modules = runner.evaluatedModules
-
-    const moduleId = '/test/string-literal-sourcemap.js'
-    const moduleUrl = 'http://localhost:3000/test/string-literal-sourcemap.js'
-    const node = modules.ensureModule(moduleId, moduleUrl)
-
-    node.meta = {
-      code: `const text = "//# sourceMappingURL=data:application/json;base64,invalidbase64";
-console.log(text);`,
-    }
-
-    expect(() => {
-      const sourceMap = modules.getModuleSourceMapById(moduleId)
-      expect(sourceMap).toBeNull()
-    }).not.toThrow()
+    const mod = await runner.import('/fixtures/string-literal-sourcemap.ts')
+    expect(mod.getMessage()).toBe(
+      '//# sourceMappingURL=data:application/json;base64,invalidbase64',
+    )
   })
 })
