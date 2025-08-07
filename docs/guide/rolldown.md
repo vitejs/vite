@@ -153,9 +153,7 @@ If you are using `@vitejs/plugin-react-swc` without SWC plugins and custom SWC o
 
 ::: details `@vitejs/plugin-react-oxc` plugin is deprecated
 
-Previously, we recommended using `@vitejs/plugin-react-oxc` to utilize Oxc's React refresh transform.
-However, we have merged the implementation into `@vitejs/plugin-react` so that it is easier to switch to `rolldown-vite`.
-`@vitejs/plugin-react-oxc` is now deprecated and will no longer be updated.
+Previously, we recommended using `@vitejs/plugin-react-oxc` to utilize Oxc's React refresh transform. However, we have merged the implementation into `@vitejs/plugin-react` so that it is easier to switch to `rolldown-vite`. `@vitejs/plugin-react-oxc` is now deprecated and will no longer be updated.
 
 :::
 
