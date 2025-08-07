@@ -59,7 +59,7 @@ function start() {
       } catch {}
     }, 10 * 1000).unref()
   } catch {}
-  return import('../dist/node/cli.js')
+  return import('../vite/dist/node/cli.js')
 }
 
 if (profileIndex > 0) {
