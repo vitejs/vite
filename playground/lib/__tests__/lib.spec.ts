@@ -82,6 +82,11 @@ describe.runIf(isBuild)('build', () => {
     expect(umd).toMatch('process.env.NODE_ENV')
   })
 
+  test('debugger statements are removed by terser for es', () => {
+    const terserEs = readFile('dist/terser/my-lib-custom-filename.js')
+    expect(terserEs).not.toMatch('debugger')
+  })
+
   test('pure annotations are not removed by terser for es', () => {
     const terserEs = readFile('dist/terser/my-lib-custom-filename.js')
     expect(terserEs).toMatch(/[@#]__PURE__/)
