@@ -93,4 +93,20 @@ describe('module runner initialization', async () => {
       '    at Module.main (<root>/fixtures/has-error-deep.ts:6:3)',
     ])
   })
+
+  it('should not crash when sourceMappingURL pattern appears in string literals', async ({
+    runner,
+    server,
+  }) => {
+    const mod = await runner.import('/fixtures/string-literal-sourcemap.ts')
+    expect(mod.getMessage()).toBe(
+      '//# sourceMappingURL=data:application/json;base64,invalidbase64',
+    )
+    const error = await getError(() => mod.throwError())
+    expect(error.message).toBe('Test error for stacktrace')
+    expect(serializeStackDeep(server, error).slice(0, 2)).toEqual([
+      'Error: Test error for stacktrace',
+      '    at Module.throwError (<root>/fixtures/string-literal-sourcemap.ts:11:9)',
+    ])
+  })
 })

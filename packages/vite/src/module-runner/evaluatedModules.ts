@@ -108,8 +108,13 @@ export class EvaluatedModules {
     if (!mod) return null
     if (mod.map) return mod.map
     if (!mod.meta || !('code' in mod.meta)) return null
+
+    const pattern = `//# ${SOURCEMAPPING_URL}=data:application/json;base64,`
+    const lastIndex = mod.meta.code.lastIndexOf(pattern)
+    if (lastIndex === -1) return null
+
     const mapString = MODULE_RUNNER_SOURCEMAPPING_REGEXP.exec(
-      mod.meta.code,
+      mod.meta.code.slice(lastIndex),
     )?.[1]
     if (!mapString) return null
     mod.map = new DecodedMap(JSON.parse(decodeBase64(mapString)), mod.file)
