@@ -1996,7 +1996,7 @@ async function bundleConfigFile(
               // With the `isNodeBuiltin` check above, this check captures if the builtin is a
               // non-node built-in, which esbuild doesn't know how to handle. In that case, we
               // externalize it so the non-node runtime handles it instead.
-              if (isNodeLikeBuiltin(id)) {
+              if (isNodeLikeBuiltin(id) || id.startsWith('npm:')) {
                 return { external: true }
               }
 
