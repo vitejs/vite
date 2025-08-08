@@ -556,6 +556,64 @@ describe('mergeConfig', () => {
     expect(upOutput.hashCharacters).toBe('base36')
     expect(downOutput.hashCharacters).toBe('base36')
   })
+
+  test('rollupOptions/rolldownOptions.platform', async () => {
+    const testRollupOptions = await resolveConfig(
+      {
+        plugins: [
+          {
+            name: 'set-rollupOptions-platform',
+            configEnvironment(name) {
+              if (name === 'ssr') {
+                return {
+                  build: {
+                    rollupOptions: {
+                      platform: 'neutral',
+                    },
+                  },
+                }
+              }
+            },
+          },
+        ],
+      },
+      'serve',
+    )
+    expect(
+      testRollupOptions.environments.ssr.build.rolldownOptions.platform,
+    ).toBe('neutral')
+    expect(
+      testRollupOptions.environments.client.build.rolldownOptions.platform,
+    ).toBe('browser')
+
+    const testRolldownOptions = await resolveConfig(
+      {
+        plugins: [
+          {
+            name: 'set-rollupOptions-platform',
+            configEnvironment(name) {
+              if (name === 'ssr') {
+                return {
+                  build: {
+                    rolldownOptions: {
+                      platform: 'neutral',
+                    },
+                  },
+                }
+              }
+            },
+          },
+        ],
+      },
+      'serve',
+    )
+    expect(
+      testRolldownOptions.environments.ssr.build.rolldownOptions.platform,
+    ).toBe('neutral')
+    expect(
+      testRolldownOptions.environments.client.build.rolldownOptions.platform,
+    ).toBe('browser')
+  })
 })
 
 describe('resolveEnvPrefix', () => {
