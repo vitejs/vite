@@ -108,6 +108,7 @@ export class EvaluatedModules {
     if (!mod) return null
     if (mod.map) return mod.map
     if (!mod.meta || !('code' in mod.meta)) return null
+
     const pattern = `//# ${SOURCEMAPPING_URL}=data:application/json;base64,`
     const lastIndex = mod.meta.code.lastIndexOf(pattern)
     if (lastIndex === -1) return null
