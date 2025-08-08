@@ -1,10 +1,22 @@
 import path from 'node:path'
 import { describe, expect, test } from 'vitest'
-import { commentRE, importsRE, scriptRE } from '../optimizer/scan'
+import {
+  ScanEnvironment,
+  commentRE,
+  importsRE,
+  scanImports,
+  scriptRE,
+} from '../optimizer/scan'
 import { multilineCommentsRE, singlelineCommentsRE } from '../utils'
-import { createServer, createServerModuleRunner } from '..'
+import { createServer, createServerModuleRunner, resolveConfig } from '..'
 
 describe('optimizer-scan:script-test', () => {
+  const execScriptRE = (input: string) => {
+    const result = scriptRE.exec(input)
+    scriptRE.lastIndex = 0
+    return result
+  }
+
   const scriptContent = `import { defineComponent } from 'vue'
       import ScriptDevelopPane from './ScriptDevelopPane.vue';
       export default defineComponent({
@@ -14,15 +26,13 @@ describe('optimizer-scan:script-test', () => {
       })`
 
   test('component return value test', () => {
-    scriptRE.lastIndex = 0
-    const [, tsOpenTag, tsContent] = scriptRE.exec(
+    const [, tsOpenTag, tsContent] = execScriptRE(
       `<script lang="ts">${scriptContent}</script>`,
     )!
     expect(tsOpenTag).toEqual('<script lang="ts">')
     expect(tsContent).toEqual(scriptContent)
 
-    scriptRE.lastIndex = 0
-    const [, openTag, content] = scriptRE.exec(
+    const [, openTag, content] = execScriptRE(
       `<script>${scriptContent}</script>`,
     )!
     expect(openTag).toEqual('<script>')
@@ -30,8 +40,7 @@ describe('optimizer-scan:script-test', () => {
   })
 
   test('include comments test', () => {
-    scriptRE.lastIndex = 0
-    const ret = scriptRE.exec(
+    const ret = execScriptRE(
       `<template>
         <!--  <script >var test1 = null</script> -->
         <!--  <script >var test2 = null</script> -->
@@ -41,35 +50,26 @@ describe('optimizer-scan:script-test', () => {
   })
 
   test('components with script keyword test', () => {
-    scriptRE.lastIndex = 0
-    let ret = scriptRE.exec(`<template><script-develop-pane/></template>`)
+    let ret = execScriptRE(`<template><script-develop-pane/></template>`)
     expect(ret).toBe(null)
 
-    scriptRE.lastIndex = 0
-    ret = scriptRE.exec(
+    ret = execScriptRE(
       `<template><script-develop-pane></script-develop-pane></template>`,
     )
     expect(ret).toBe(null)
 
-    scriptRE.lastIndex = 0
-    ret = scriptRE.exec(
+    ret = execScriptRE(
       `<template><script-develop-pane  > content </script-develop-pane></template>`,
     )
     expect(ret).toBe(null)
   })
 
   test('ordinary script tag test', () => {
-    scriptRE.lastIndex = 0
-    const [, tag, content] = scriptRE.exec(
-      `<script  >var test = null</script>`,
-    )!
+    const [, tag, content] = execScriptRE(`<script  >var test = null</script>`)!
     expect(tag).toEqual('<script  >')
     expect(content).toEqual('var test = null')
 
-    scriptRE.lastIndex = 0
-    const [, tag1, content1] = scriptRE.exec(
-      `<script>var test = null</script>`,
-    )!
+    const [, tag1, content1] = execScriptRE(`<script>var test = null</script>`)!
     expect(tag1).toEqual('<script>')
     expect(content1).toEqual('var test = null')
   })
@@ -126,73 +126,23 @@ describe('optimizer-scan:script-test', () => {
   })
 })
 
-test('svelte snippet export handling', () => {
-  // Test detection and handling of Svelte files with #snippet
-  const svelteWithSnippet = `
-<script module>
-  export { foo };
-</script>
-
-{#snippet foo()}
-  <p>Hello snippet!</p>
-{/snippet}
-`
-
-  const svelteWithoutSnippet = `
-<script module>
-  export { bar };
-</script>
-
-<p>Regular content</p>
-`
-
-  // These tests verify that we detect #snippet correctly
-  expect(svelteWithSnippet.includes('#snippet')).toBe(true)
-  expect(svelteWithoutSnippet.includes('#snippet')).toBe(false)
-})
-
-test('svelte snippet virtual module pattern', () => {
-  // Test that our virtual module pattern is correctly handled
-  const virtualModulePath = 'virtual-module-named-svelte-dummy:test.svelte'
-  expect(
-    virtualModulePath.startsWith('virtual-module-named-svelte-dummy'),
-  ).toBe(true)
-
-  // Test regex pattern for externalization
-  const pattern = /^virtual-module-named-svelte-dummy/
-  expect(pattern.test(virtualModulePath)).toBe(true)
-  expect(pattern.test('regular-module')).toBe(false)
-})
-
-test('svelte snippet scanning behavior', async () => {
-  // Create a minimal Vite environment to test the scanning logic
-  const server = await createServer({
-    configFile: false,
-    logLevel: 'silent',
-    root: path.join(import.meta.dirname, 'fixtures'),
-    environments: {
-      client: {
-        optimizeDeps: {
-          include: [],
-          entries: ['./svelte-snippet.svelte'],
-        },
+test('scan svelte', async () => {
+  const config = await resolveConfig(
+    {
+      configFile: false,
+      root: path.join(import.meta.dirname, 'fixtures', 'scan-svelte'),
+      optimizeDeps: {
+        include: [],
+        entries: ['./svelte-snippet.svelte'],
+        extensions: ['.svelte'],
       },
     },
-  })
-
-  try {
-    // The scanner should handle the Svelte file with snippets without throwing errors
-    await server.listen()
-    // If we get here without errors, the scanning worked
-    expect(true).toBe(true)
-  } catch (error) {
-    // The test should not fail due to snippet export issues
-    expect(error.message).not.toContain(
-      '"mySnippet" is not declared in this file',
-    )
-  } finally {
-    await server.close()
-  }
+    'serve',
+  )
+  const environment = new ScanEnvironment('client', config)
+  await environment.init()
+  const { result } = scanImports(environment)
+  await result
 })
 
 test('scan jsx-runtime', async (ctx) => {
