@@ -94,13 +94,12 @@ export function terserPlugin(config: ResolvedConfig): Plugin {
       worker ||= makeWorker()
 
       const terserPath = loadTerserPath(config.root)
-
       const res = await worker.run(terserPath, code, {
         safari10: true,
         ...terserOptions,
         format: {
           ...terserOptions.format,
-          // For ES lib mode, preserve comments to maintain pure annotations for tree-shaking
+          // For ES lib mode, preserve comments to keep pure annotations for tree-shaking
           preserve_annotations:
             config.build.lib && outputOptions.format === 'es',
         },
