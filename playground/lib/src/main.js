@@ -1,21 +1,18 @@
+export default /* @__PURE__ */ Object.assign(function myLib(sel) {
+  // Force esbuild spread helpers (https://github.com/evanw/esbuild/issues/951)
+  console.log({ ...'foo' })
 
-export default /* @__PURE__ */ Object.assign(
-  function myLib(sel) {
-    // Force esbuild spread helpers (https://github.com/evanw/esbuild/issues/951)
-    console.log({ ...'foo' })
+  document.querySelector(sel).textContent = 'It works'
 
-    document.querySelector(sel).textContent = 'It works'
+  // Env vars should not be replaced
+  console.log(process.env.NODE_ENV)
 
-    // Env vars should not be replaced
-    console.log(process.env.NODE_ENV)
+  // make sure umd helper has been moved to the right position
+  console.log(`amd function(){ "use strict"; }`)
 
-    // make sure umd helper has been moved to the right position
-    console.log(`amd function(){ "use strict"; }`)
-
-    // Add debugger statement for testing
-    debugger
-  },
-)
+  // eslint-disable-next-line no-debugger
+  debugger
+})
 
 // For triggering unhandled global esbuild helpers in previous regex-based implementation for injection
 ;(function () {})()?.foo
