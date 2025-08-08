@@ -95,20 +95,14 @@ export function terserPlugin(config: ResolvedConfig): Plugin {
 
       const terserPath = loadTerserPath(config.root)
 
-      // For ES lib mode, preserve comments to maintain pure annotations for tree-shaking
-      const isEsLibMode = config.build.lib && outputOptions.format === 'es'
-      const preserveComments = isEsLibMode
-        ? terserOptions.format?.comments === 'all'
-          ? 'all'
-          : /^[@#]__PURE__/ // pure annotation comments
-        : terserOptions.format?.comments
-
       const res = await worker.run(terserPath, code, {
         safari10: true,
         ...terserOptions,
         format: {
           ...terserOptions.format,
-          comments: preserveComments,
+          // For ES lib mode, preserve comments to maintain pure annotations for tree-shaking
+          preserve_annotations:
+            config.build.lib && outputOptions.format === 'es',
         },
         sourceMap: !!outputOptions.sourcemap,
         module: outputOptions.format.startsWith('es'),
