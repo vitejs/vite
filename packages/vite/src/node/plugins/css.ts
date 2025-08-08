@@ -24,7 +24,7 @@ import type Less from 'less'
 import type { LightningCSSOptions } from 'types/internal/lightningcssOptions'
 import type { TransformOptions } from 'esbuild'
 import { formatMessages, transform } from 'esbuild'
-import type { RawSourceMap } from '@ampproject/remapping'
+import type { RawSourceMap } from '@jridgewell/remapping'
 import { WorkerWithFallback } from 'artichokie'
 import { globSync } from 'tinyglobby'
 import type {
