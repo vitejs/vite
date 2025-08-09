@@ -92,8 +92,8 @@
     "fsevents": "~2.3.3"
   },
   "devDependencies": {
-    "@ampproject/remapping": "^2.3.0",
     "@babel/parser": "^7.28.0",
+    "@jridgewell/remapping": "^2.3.0",
     "@jridgewell/trace-mapping": "^0.3.29",
     "@oxc-project/types": "0.77.0",
     "@polka/compression": "^1.0.0-next.25",

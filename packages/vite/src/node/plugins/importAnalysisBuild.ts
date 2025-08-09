@@ -6,7 +6,7 @@ import type {
 } from 'es-module-lexer'
 import { init, parse as parseImports } from 'es-module-lexer'
 import type { SourceMap } from 'rollup'
-import type { RawSourceMap } from '@ampproject/remapping'
+import type { RawSourceMap } from '@jridgewell/remapping'
 import convertSourceMap from 'convert-source-map'
 import { exactRegex } from '@rolldown/pluginutils'
 import { combineSourcemaps, generateCodeFrame, numberToPos } from '../utils'
