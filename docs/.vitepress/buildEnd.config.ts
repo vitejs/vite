@@ -14,7 +14,7 @@ export const buildEnd = async (config: SiteConfig): Promise<void> => {
     id: blogUrl,
     link: blogUrl,
     language: 'en',
-    image: 'https://vite.dev/og-image.png',
+    image: 'https://vite.dev/og-image.jpg',
     favicon: 'https://vite.dev/logo.svg',
     copyright: 'Copyright © 2019-present VoidZero Inc. & Vite Contributors',
   })
