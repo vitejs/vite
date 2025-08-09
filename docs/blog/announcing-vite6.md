@@ -39,7 +39,7 @@ New frameworks have also joined the Vite ecosystem, including [TanStack Start](h
 
 Vite is used by OpenAI, Google, Apple, Microsoft, NASA, Shopify, Cloudflare, GitLab, Reddit, Linear, among many others. Two months ago, we started a list of [companies using Vite](https://github.com/vitejs/companies-using-vite). We're happy to see many developers sending us a PR to add their companies to the list. It's hard to believe how much the ecosystem we built together has grown since Vite gave its first steps.
 
-![Vite weekly npm downloads](/vite6-npm-weekly-downloads.webp)
+![Vite weekly npm downloads](../images/vite6-npm-weekly-downloads.webp)
 
 ## Speeding up the Vite ecosystem
 
