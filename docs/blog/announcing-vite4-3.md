@@ -13,7 +13,7 @@ head:
       content: Announcing Vite 4.3
   - - meta
     - property: og:image
-      content: https://vite.dev/og-image-announcing-vite4-3.png
+      content: https://vite.dev/og-image-announcing-vite4-3.webp
   - - meta
     - property: og:url
       content: https://vite.dev/blog/announcing-vite4-3
@@ -29,7 +29,7 @@ head:
 
 _April 20, 2023_
 
-![Vite 4.3 Announcement Cover Image](/og-image-announcing-vite4-3.png)
+![Vite 4.3 Announcement Cover Image](/og-image-announcing-vite4-3.webp)
 
 Quick links:
 
@@ -60,9 +60,9 @@ These are the performance improvements as measured by [sapphi-red/performance-co
 | **Root HMR**       |    30.5ms |   24.0ms |      -21.3% |
 | **Leaf HMR**       |    16.9ms |   10.0ms |      -40.8% |
 
-![Vite 4.3 vs 4.2 startup time comparison](/vite4-3-startup-time.png)
+![Vite 4.3 vs 4.2 startup time comparison](../images/vite4-3-startup-time.webp)
 
-![Vite 4.3 vs 4.2 HMR time comparison](/vite4-3-hmr-time.png)
+![Vite 4.3 vs 4.2 HMR time comparison](../images/vite4-3-hmr-time.webp)
 
 You can read more information about the benchmark [here](https://gist.github.com/sapphi-red/25be97327ee64a3c1dce793444afdf6e). Specs and Versions for this performance run:
 
