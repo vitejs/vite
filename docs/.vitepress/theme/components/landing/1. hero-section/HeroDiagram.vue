@@ -470,7 +470,7 @@ onMounted(() => {
       </div>
       <div class="vite-chip__filter" />
       <img
-        :src="isUwu ? '/logo-uwu.png' : '/logo.svg'"
+        :src="isUwu ? '/logo-uwu.webp' : '/logo.svg'"
         :alt="isUwu ? 'Vite Kawaii Logo by @icarusgkx' : 'Vite Logo'"
         class="vite-chip__logo"
         :class="{ uwu: isUwu }"
@@ -715,7 +715,7 @@ onMounted(() => {
   }
 
   background:
-    url('/noise.png'),
+    url('../common/noise.webp'),
     radial-gradient(
       circle at right center,
       rgb(86, 50, 119) 0%,
@@ -732,7 +732,7 @@ onMounted(() => {
 
   @media (min-width: 1024px) {
     background:
-      url('/noise.png'),
+      url('../common/noise.webp'),
       radial-gradient(
         circle at right center,
         rgba(75, 41, 105, 0.5) 0%,
@@ -751,7 +751,7 @@ onMounted(() => {
 
   @media (min-width: 1500px) {
     background:
-      url('/noise.png'),
+      url('../common/noise.webp'),
       radial-gradient(
         circle at right center,
         rgba(75, 41, 105, 0.5) 0%,
@@ -770,7 +770,7 @@ onMounted(() => {
 
   @media (min-width: 1800px) {
     background:
-      url('/noise.png'),
+      url('../common/noise.webp'),
       radial-gradient(
         circle at right center,
         rgba(75, 41, 105, 0.5) 0%,
