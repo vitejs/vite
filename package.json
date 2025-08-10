@@ -68,7 +68,7 @@
     "rollup": "^4.43.0",
     "simple-git-hooks": "^2.13.1",
     "tsx": "^4.20.3",
-    "typescript": "~5.7.2",
+    "typescript": "~5.9.2",
     "typescript-eslint": "^8.39.0",
     "vite": "workspace:*",
     "vitest": "^3.2.4"
