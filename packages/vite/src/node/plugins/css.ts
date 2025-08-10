@@ -863,7 +863,7 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
               source: chunkCSS,
             })
             if (isEntry) {
-              cssEntriesMap.get(this.environment)!.add(referenceId)
+              cssEntriesMap.get(this.environment)!.set(chunk.name, referenceId)
             }
             chunk.viteMetadata!.importedCss.add(this.getFileName(referenceId))
           } else if (this.environment.config.consumer === 'client') {
