@@ -125,9 +125,9 @@ Vite's default types are for its Node.js API. To shim the environment of client-
 
 Note that if [`compilerOptions.types`](https://www.typescriptlang.org/tsconfig#types) is specified, only these packages will be included in the global scope (instead of all visible ”@types” packages). This is recommended since TS 5.9.
 
-Alternatively, you can add a `d.ts` declaration file:
-
 ::: details Using triple-slash directive
+
+Alternatively, you can add a `d.ts` declaration file:
 
 ```typescript [vite-env.d.ts]
 /// <reference types="vite/client" />
