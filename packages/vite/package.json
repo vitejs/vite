@@ -139,7 +139,7 @@
     "premove": "^4.0.0",
     "resolve.exports": "^2.0.3",
     "rolldown": "^1.0.0-beta.31",
-    "rolldown-plugin-dts": "^0.15.3",
+    "rolldown-plugin-dts": "^0.15.6",
     "rollup-plugin-license": "^3.6.0",
     "sass": "^1.89.2",
     "sass-embedded": "^1.89.2",
