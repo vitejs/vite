@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { Ref, ref } from 'vue'
+import { type Ref, ref } from 'vue'
 
 /**
  * A single framework or tool to display in the frameworks section.

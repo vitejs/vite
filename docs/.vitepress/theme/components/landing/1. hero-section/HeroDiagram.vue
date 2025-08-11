@@ -1,13 +1,13 @@
 <script setup lang="ts">
 import { gsap } from 'gsap'
 import { MotionPathPlugin } from 'gsap/dist/MotionPathPlugin'
-import { onMounted, onUnmounted, Ref, ref } from 'vue'
+import { onMounted, onUnmounted, type Ref, ref } from 'vue'
 import SvgInputs from './svg-elements/SvgInputs.vue'
 import SvgOutputs from './svg-elements/SvgOutputs.vue'
 import SvgBlueIndicator from './svg-elements/SvgBlueIndicator.vue'
 import SvgPinkIndicator from './svg-elements/SvgPinkIndicator.vue'
 import { ScrollTrigger } from 'gsap/dist/ScrollTrigger'
-import { SvgNodeProps } from '../common/SvgNode.vue'
+import type { SvgNodeProps } from '../common/SvgNode.vue'
 
 gsap.registerPlugin(MotionPathPlugin)
 
