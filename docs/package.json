@@ -3,6 +3,7 @@
   "private": true,
   "type": "module",
   "scripts": {
+    "typecheck": "vue-tsc",
     "docs": "vitepress dev",
     "docs-build": "vitepress build",
     "docs-serve": "vitepress serve"
@@ -16,6 +17,7 @@
     "vitepress": "^2.0.0-alpha.9",
     "vitepress-plugin-group-icons": "^1.6.1",
     "vitepress-plugin-llms": "^1.7.2",
-    "vue": "^3.5.18"
+    "vue": "^3.5.18",
+    "vue-tsc": "^3.0.5"
   }
 }

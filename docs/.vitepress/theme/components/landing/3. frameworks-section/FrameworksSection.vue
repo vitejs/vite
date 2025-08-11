@@ -1,6 +1,13 @@
 <script setup lang="ts">
-import { computed, ComputedRef, onMounted, onUnmounted, Ref, ref } from 'vue'
-import FrameworkCard, { Framework } from './FrameworkCard.vue'
+import {
+  computed,
+  type ComputedRef,
+  onMounted,
+  onUnmounted,
+  type Ref,
+  ref,
+} from 'vue'
+import FrameworkCard, { type Framework } from './FrameworkCard.vue'
 import { gsap } from 'gsap'
 import { ScrollTrigger } from 'gsap/dist/ScrollTrigger'
 
