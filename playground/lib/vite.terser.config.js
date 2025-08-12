@@ -14,6 +14,7 @@ export default defineConfig({
     outDir: 'dist/terser',
     lib: {
       ...baseConfig.build.lib,
+      entry: baseConfig.build.lib.entry!,
       formats: ['es'],
     },
   },
