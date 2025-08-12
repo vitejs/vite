@@ -861,7 +861,7 @@ test.for([true, false])(
       ([client, ssr, custom1, custom2] as RolldownOutput[]).map(
         (o) => o.output[0].code.split('\n').length,
       ),
-    ).toEqual([1, 5, 1, 5])
+    ).toEqual([1, 6, 1, 6])
   },
 )
 
