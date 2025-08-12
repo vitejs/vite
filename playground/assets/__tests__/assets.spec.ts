@@ -373,6 +373,14 @@ describe('css url() references', () => {
       await expect.poll(() => getBg('.css-url-svg')).toMatch('red')
     }
   })
+
+  test.runIf(isServe)('non inlined url() HMR', async () => {
+    const bg = await getBg('.css-url-non-inline-hmr')
+    editFile('nested/donuts-large.svg', (code) =>
+      code.replace('fill="blue"', 'fill="red"'),
+    )
+    await expect.poll(() => getBg('.css-url-non-inline-hmr')).not.toBe(bg)
+  })
 })
 
 describe('image', () => {

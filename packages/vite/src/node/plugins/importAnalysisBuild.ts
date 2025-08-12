@@ -7,7 +7,7 @@ import type {
 import { init, parse as parseImports } from 'es-module-lexer'
 import type { SourceMap } from 'rolldown'
 import { buildImportAnalysisPlugin as nativeBuildImportAnalysisPlugin } from 'rolldown/experimental'
-import type { RawSourceMap } from '@ampproject/remapping'
+import type { RawSourceMap } from '@jridgewell/remapping'
 import convertSourceMap from 'convert-source-map'
 import { exactRegex } from '@rolldown/pluginutils'
 import { combineSourcemaps, generateCodeFrame, numberToPos } from '../utils'

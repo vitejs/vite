@@ -1,6 +1,6 @@
 <script setup lang="ts">
-import SvgNode, { SvgNodeProps } from '../../common/SvgNode.vue'
-import { Ref } from 'vue'
+import SvgNode, { type SvgNodeProps } from '../../common/SvgNode.vue'
+import type { Ref } from 'vue'
 
 defineProps({
   inputLines: {

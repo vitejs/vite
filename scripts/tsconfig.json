@@ -9,6 +9,7 @@
     "noEmit": true,
     "strict": true,
     "esModuleInterop": true,
+    "erasableSyntaxOnly": true,
     "skipLibCheck": true,
     "noUnusedLocals": true
   }

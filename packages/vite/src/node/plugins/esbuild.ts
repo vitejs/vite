@@ -6,7 +6,7 @@ import type {
   EsbuildTransformOptions,
   EsbuildTransformResult as RawEsbuildTransformResult,
 } from 'types/internal/esbuildOptions'
-import type { RawSourceMap } from '@ampproject/remapping'
+import type { RawSourceMap } from '@jridgewell/remapping'
 import type { InternalModuleFormat, SourceMap } from 'rolldown'
 import type { TSConfckParseResult } from 'tsconfck'
 import { TSConfckCache, TSConfckParseError, parse } from 'tsconfck'

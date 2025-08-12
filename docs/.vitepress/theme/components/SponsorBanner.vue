@@ -1,4 +1,4 @@
-<script setup>
+<script setup lang="ts">
 /**
  * Adding a new banner:
  * 1. uncomment the banner slot in ../index.ts
@@ -15,7 +15,7 @@ const open = ref(true)
 function dismiss() {
   open.value = false
   document.documentElement.classList.add('banner-dismissed')
-  localStorage.setItem(`vite-docs-banner-${__VITE_BANNER_ID__}`, 'true')
+  localStorage.setItem(`vite-docs-banner-${window.__VITE_BANNER_ID__}`, 'true')
 }
 </script>
 

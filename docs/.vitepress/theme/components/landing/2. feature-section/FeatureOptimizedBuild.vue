@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import SvgNode from '../common/SvgNode.vue'
-import { ref, Ref } from 'vue'
+import { ref, type Ref } from 'vue'
 import { gsap } from 'gsap'
 import { useSlideIn } from '../../../composables/useSlideIn'
 import { useCardAnimation } from '../../../composables/useCardAnimation'
@@ -29,7 +29,7 @@ const { startAnimation } = useCardAnimation(
     const timeline = gsap.timeline()
 
     // Animate in each node
-    nodes.forEach((node, i) => {
+    nodes.forEach((node) => {
       let subTimeline = gsap.timeline()
       subTimeline.call(() => {
         node.visible.value = true
