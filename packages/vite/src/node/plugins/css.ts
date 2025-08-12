@@ -385,7 +385,18 @@ export function cssPlugin(config: ResolvedConfig): Plugin {
           let resolved = await resolveUrl(id, importer)
           if (resolved) {
             if (fragment) resolved += '#' + fragment
-            return [await fileToUrl(this, resolved), resolved]
+            let url = await fileToUrl(this, resolved)
+            // Inherit HMR timestamp if this asset was invalidated
+            if (!url.startsWith('data:') && this.environment.mode === 'dev') {
+              const mod = [
+                ...(this.environment.moduleGraph.getModulesByFile(resolved) ??
+                  []),
+              ].find((mod) => mod.type === 'asset')
+              if (mod?.lastHMRTimestamp) {
+                url = injectQuery(url, `t=${mod.lastHMRTimestamp}`)
+              }
+            }
+            return [url, resolved]
           }
           if (config.command === 'build') {
             const isExternal = config.build.rollupOptions.external
@@ -1926,8 +1937,7 @@ const UrlRewritePostcssPlugin: PostCSS.PluginCreator<{
         if (isCssUrl || isCssImageSet) {
           const replacerForDeclaration = async (rawUrl: string) => {
             const [newUrl, resolvedId] = await opts.resolver(rawUrl, importer)
-            // only register inlined assets to avoid frequent full refresh (#18979)
-            if (newUrl.startsWith('data:') && resolvedId) {
+            if (resolvedId) {
               opts.deps.add(resolvedId)
             }
             return newUrl
@@ -3205,8 +3215,7 @@ async function compileLightningCSS(
             dep.url,
             dep.loc.filePath.replace(NULL_BYTE_PLACEHOLDER, '\0'),
           )
-          // only register inlined assets to avoid frequent full refresh (#18979)
-          if (newUrl.startsWith('data:') && resolvedId) {
+          if (resolvedId) {
             deps.add(resolvedId)
           }
           replaceUrl = newUrl

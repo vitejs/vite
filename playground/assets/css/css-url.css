@@ -130,3 +130,8 @@ urls inside comments should be ignored
   );
   background-size: 10px;
 }
+
+.css-url-non-inline-hmr {
+  background: url(../nested/donuts-large.svg);
+  background-size: 20px;
+}
