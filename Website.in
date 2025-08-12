@@ -1,0 +1,122 @@
+import React from "react"; import { motion } from "framer-motion"; import { Mail, Phone, Github } from "lucide-react";
+
+// Single-file React component (Tailwind CSS required in parent project) // Default export is the page component ready to drop into a Create React App / Vite + React project.
+
+export default function PersonalWebsite() { return ( <div className="min-h-screen bg-gradient-to-b from-white to-gray-50 text-gray-900"> <header className="max-w-6xl mx-auto p-6 flex items-center justify-between"> <div className="text-2xl font-extrabold tracking-tight">YourName</div> <nav className="space-x-6 hidden md:flex items-center text-sm"> <a href="#about" className="hover:underline">About</a> <a href="#work" className="hover:underline">Work</a> <a href="#contact" className="hover:underline">Contact</a> <a href="#" className="bg-black text-white px-4 py-2 rounded-2xl">Resume</a> </nav> <button className="md:hidden p-2 rounded-lg">Menu</button> </header>
+
+<main className="max-w-6xl mx-auto px-6 py-12">
+    <section className="grid grid-cols-1 md:grid-cols-2 gap-8 items-center">
+      <motion.div
+        initial={{ opacity: 0, y: 12 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.6 }}
+      >
+        <h1 className="text-4xl md:text-5xl font-extrabold leading-tight">
+          Hi — I'm <span className="text-indigo-600">YourName</span>.
+        </h1>
+        <p className="mt-4 text-lg text-gray-700">
+          I build delightful web experiences. I design, develop, and ship fast,
+          accessible websites and apps.
+        </p>
+
+        <div className="mt-6 flex gap-4">
+          <a
+            href="#contact"
+            className="inline-flex items-center px-5 py-3 bg-indigo-600 text-white rounded-2xl shadow"
+          >
+            Get in touch
+          </a>
+          <a
+            href="#work"
+            className="inline-flex items-center px-5 py-3 border border-gray-200 rounded-2xl"
+          >
+            View work
+          </a>
+        </div>
+
+        <div className="mt-8 grid grid-cols-2 gap-4 text-sm text-gray-600">
+          <div>
+            <div className="font-medium">Location</div>
+            <div>City, Country</div>
+          </div>
+          <div>
+            <div className="font-medium">Available for</div>
+            <div>Freelance / Full-time</div>
+          </div>
+        </div>
+      </motion.div>
+
+      <motion.div
+        className="hidden md:flex justify-center"
+        initial={{ scale: 0.98, opacity: 0 }}
+        animate={{ scale: 1, opacity: 1 }}
+        transition={{ duration: 0.6 }}
+      >
+        <div className="w-80 h-80 rounded-3xl bg-gradient-to-br from-indigo-100 to-white shadow-lg flex items-center justify-center">
+          {/* Placeholder for profile image */}
+          <div className="w-56 h-56 rounded-2xl bg-gray-100 flex items-center justify-center">
+            <span className="text-gray-400">Profile</span>
+          </div>
+        </div>
+      </motion.div>
+    </section>
+
+    <section id="work" className="mt-16">
+      <h2 className="text-2xl font-bold">Selected work</h2>
+      <div className="mt-6 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+        {Array.from({ length: 3 }).map((_, i) => (
+          <article key={i} className="p-4 rounded-2xl bg-white shadow">
+            <div className="h-40 rounded-md bg-gray-50 flex items-center justify-center">Project screenshot</div>
+            <h3 className="mt-4 font-semibold">Project Title {i + 1}</h3>
+            <p className="mt-2 text-sm text-gray-600">Short project description that explains the goal and tech used.</p>
+            <div className="mt-4 flex gap-3">
+              <a className="text-sm hover:underline">Live</a>
+              <a className="text-sm hover:underline">Code</a>
+            </div>
+          </article>
+        ))}
+      </div>
+    </section>
+
+    <section id="about" className="mt-16">
+      <h2 className="text-2xl font-bold">About</h2>
+      <p className="mt-4 text-gray-700">A short bio about you — skills, interests, and what you’re currently building.</p>
+
+      <div className="mt-6 grid grid-cols-1 sm:grid-cols-2 gap-6">
+        <div className="p-4 rounded-lg bg-white shadow">Skill 1</div>
+        <div className="p-4 rounded-lg bg-white shadow">Skill 2</div>
+        <div className="p-4 rounded-lg bg-white shadow">Skill 3</div>
+        <div className="p-4 rounded-lg bg-white shadow">Skill 4</div>
+      </div>
+    </section>
+
+    <section id="contact" className="mt-16">
+      <h2 className="text-2xl font-bold">Contact</h2>
+      <p className="mt-2 text-gray-600">Say hi — I respond to messages within a few days.</p>
+
+      <form
+        onSubmit={(e) => {
+          e.preventDefault();
+          alert("Thanks — message sent (demo). Replace this with real backend code.");
+        }}
+        className="mt-6 grid grid-cols-1 sm:grid-cols-2 gap-4"
+      >
+        <input required name="name" placeholder="Your name" className="p-3 rounded-lg border" />
+        <input required name="email" placeholder="Your email" className="p-3 rounded-lg border" />
+        <textarea required name="message" placeholder="Your message" className="p-3 rounded-lg border col-span-1 sm:col-span-2 h-28" />
+        <button type="submit" className="col-span-1 sm:col-span-2 px-4 py-3 rounded-2xl bg-indigo-600 text-white">Send message</button>
+      </form>
+
+      <div className="mt-6 flex gap-4 items-center text-sm text-gray-600">
+        <Mail size={16} /> <span>name@example.com</span>
+        <Phone size={16} /> <span>+91 98765 43210</span>
+        <Github size={16} /> <span>github.com/yourname</span>
+      </div>
+    </section>
+
+    <footer className="mt-20 border-t pt-6 text-sm text-gray-600">© {new Date().getFullYear()} YourName — Built with React + Tailwind</footer>
+  </main>
+</div>
+
+); }
+
