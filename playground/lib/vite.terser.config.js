@@ -1,3 +1,4 @@
+import path from 'node:path'
 import { defineConfig } from 'vite'
 import baseConfig from './vite.config'
 
@@ -14,7 +15,7 @@ export default defineConfig({
     outDir: 'dist/terser',
     lib: {
       ...baseConfig.build.lib,
-      entry: baseConfig.build.lib.entry!,
+      entry: path.resolve(__dirname, 'src/main.js'),
       formats: ['es'],
     },
   },
