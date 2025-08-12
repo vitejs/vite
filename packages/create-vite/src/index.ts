@@ -23,10 +23,12 @@ const argv = mri<{
   template?: string
   help?: boolean
   overwrite?: boolean
+  immediate?: boolean
+  agent?: string
 }>(process.argv.slice(2), {
-  alias: { h: 'help', t: 'template' },
-  boolean: ['help', 'overwrite'],
-  string: ['template'],
+  alias: { h: 'help', t: 'template', i: 'immediate', a: 'agent' },
+  boolean: ['help', 'overwrite', 'immediate'],
+  string: ['template', 'agent'],
 })
 const cwd = process.cwd()
 
@@ -39,6 +41,8 @@ With no arguments, start the CLI in interactive mode.
 
 Options:
   -t, --template NAME        use a specific template
+  -i, --immediate            install dependencies and start dev
+  -a, --agent AGENT          install dependencies via npm, yarn, pnpm, or bun
 
 Available templates:
 ${yellow    ('vanilla-ts     vanilla'  )}
@@ -340,12 +344,52 @@ const renameFiles: Record<string, string | undefined> = {
 
 const defaultTargetDir = 'vite-project'
 
+function run(...params: Parameters<typeof spawn.sync>) {
+  const { status, error } = spawn.sync(...params)
+
+  if (status != null && status > 0) {
+    process.exit(status)
+  }
+
+  if (error) {
+    console.error(`\n${params.slice(0, -1).join(' ')} error!`)
+    console.error(error)
+    process.exit(1)
+  }
+}
+
+function install(root: string, agent: string) {
+  if (process.env._VITE_TEST_CLI) {
+    console.log(`\nInstalling dependencies via ${agent}... (skipped in test)`)
+    return
+  }
+  console.log(`\nInstalling dependencies via ${agent}...`)
+  run(agent, agent === 'yarn' ? [] : ['install'], {
+    stdio: 'inherit',
+    cwd: root,
+  })
+}
+
+function start(root: string, agent: string) {
+  if (process.env._VITE_TEST_CLI) {
+    console.log('\nStart dev server... (skipped in test)')
+    return
+  }
+  console.log('\nStart dev server...')
+  run(agent, agent === 'npm' ? ['run', 'dev'] : ['dev'], {
+    stdio: 'inherit',
+    cwd: root,
+  })
+}
+
 async function init() {
   const argTargetDir = argv._[0]
     ? formatTargetDir(String(argv._[0]))
     : undefined
   const argTemplate = argv.template
   const argOverwrite = argv.overwrite
+  const argImmediate = argv.immediate
+  const argAgent = argv.agent
 
   const help = argv.help
   if (help) {
@@ -470,6 +514,42 @@ async function init() {
     template = variant
   }
 
+  // 5. Ask about immediate install and package manager
+  let immediate = argImmediate
+  // If agent is specified but immediate is not explicitly set, default immediate to true
+  if (argAgent && immediate === undefined) {
+    immediate = true
+  }
+  if (immediate === undefined) {
+    // In test mode, default to false to avoid prompts
+    if (process.env._VITE_TEST_CLI) {
+      immediate = false
+    } else {
+      const immediateResult = await prompts.confirm({
+        message: 'Install and start now?',
+      })
+      if (prompts.isCancel(immediateResult)) return cancel()
+      immediate = immediateResult
+    }
+  }
+
+  const pkgManager = pkgInfo ? pkgInfo.name : 'npm'
+  let agent = argAgent
+  if (immediate && !agent) {
+    const agentResult = await prompts.select({
+      message: 'Select a package manager:',
+      options: [
+        { label: 'npm', value: 'npm' },
+        { label: 'yarn', value: 'yarn' },
+        { label: 'pnpm', value: 'pnpm' },
+        { label: 'bun', value: 'bun' },
+      ],
+      initialValue: pkgManager,
+    })
+    if (prompts.isCancel(agentResult)) return cancel()
+    agent = agentResult
+  }
+
   const root = path.join(cwd, targetDir)
   fs.mkdirSync(root, { recursive: true })
 
@@ -479,8 +559,6 @@ async function init() {
     isReactSwc = true
     template = template.replace('-swc', '')
   }
-
-  const pkgManager = pkgInfo ? pkgInfo.name : 'npm'
 
   const { customCommand } =
     FRAMEWORKS.flatMap((f) => f.variants).find((v) => v.name === template) ?? {}
@@ -533,25 +611,31 @@ async function init() {
     setupReactSwc(root, template.endsWith('-ts'))
   }
 
-  let doneMessage = ''
-  const cdProjectName = path.relative(cwd, root)
-  doneMessage += `Done. Now run:\n`
-  if (root !== cwd) {
-    doneMessage += `\n  cd ${
-      cdProjectName.includes(' ') ? `"${cdProjectName}"` : cdProjectName
-    }`
+  if (immediate) {
+    if (!agent) throw new Error()
+    install(root, agent)
+    start(root, agent)
+  } else {
+    let doneMessage = ''
+    const cdProjectName = path.relative(cwd, root)
+    doneMessage += `Done. Now run:\n`
+    if (root !== cwd) {
+      doneMessage += `\n  cd ${
+        cdProjectName.includes(' ') ? `"${cdProjectName}"` : cdProjectName
+      }`
+    }
+    switch (pkgManager) {
+      case 'yarn':
+        doneMessage += '\n  yarn'
+        doneMessage += '\n  yarn dev'
+        break
+      default:
+        doneMessage += `\n  ${pkgManager} install`
+        doneMessage += `\n  ${pkgManager} run dev`
+        break
+    }
+    prompts.outro(doneMessage)
   }
-  switch (pkgManager) {
-    case 'yarn':
-      doneMessage += '\n  yarn'
-      doneMessage += '\n  yarn dev'
-      break
-    default:
-      doneMessage += `\n  ${pkgManager} install`
-      doneMessage += `\n  ${pkgManager} run dev`
-      break
-  }
-  prompts.outro(doneMessage)
 }
 
 function formatTargetDir(targetDir: string) {
