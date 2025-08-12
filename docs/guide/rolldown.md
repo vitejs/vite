@@ -143,7 +143,7 @@ export default {
 
 Thanks to Rolldown and Oxc, various internal Vite plugins, such as the alias or resolve plugin, have been converted to Rust. Native plugins are now enabled by default, with the default value set to `'v1'`.
 
-If you encounter any issues, you can change the `experimental.enableNativePlugin` option in your Vite config to `'resolver'` or `false`.
+If you encounter any issues, you can change the `experimental.enableNativePlugin` option in your Vite config to `'resolver'` or `false` as a workaround. Note that this option will be removed in the future.
 
 ### `@vitejs/plugin-react-oxc`
 
