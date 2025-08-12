@@ -1,4 +1,3 @@
-import path from 'node:path'
 import type { RolldownBuild, RolldownOptions } from 'rolldown'
 import type { Update } from 'types/hmrPayload'
 import colors from 'picocolors'
@@ -12,7 +11,7 @@ import { getHmrImplementation } from '../../plugins/clientInjections'
 import { DevEnvironment, type DevEnvironmentContext } from '../environment'
 import type { ResolvedConfig } from '../../config'
 import type { ViteDevServer } from '../../server'
-import { arraify, createDebugger, normalizePath } from '../../utils'
+import { arraify, createDebugger } from '../../utils'
 import { prepareError } from '../middlewares/error'
 
 const debug = createDebugger('vite:full-bundle-mode')
@@ -218,7 +217,7 @@ export class FullBundleDevEnvironment extends DevEnvironment {
       try {
         // NOTE: only single outputOptions is supported here
         hmrOutput = await this.state.bundle.hmrInvalidate(
-          normalizePath(path.join(this.config.root, m.path)),
+          m.path,
           m.firstInvalidatedBy,
         )
       } catch (e) {
