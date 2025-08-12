@@ -1,3 +1,18 @@
+## <small>[7.1.1](https://github.com/vitejs/vite/compare/create-vite@7.1.0...create-vite@7.1.1) (2025-08-12)</small>
+### Bug Fixes
+
+* **deps:** update all non-major dependencies ([#20587](https://github.com/vitejs/vite/issues/20587)) ([20d4817](https://github.com/vitejs/vite/commit/20d48172a0352d32f766b3c878d52a8944fdbf6e))
+
+### Miscellaneous Chores
+
+* **deps:** update dependency @vitejs/plugin-react to v5 ([#20588](https://github.com/vitejs/vite/issues/20588)) ([a627a0b](https://github.com/vitejs/vite/commit/a627a0ba91fc5a9174ca7356dcab0e86b9703e0f))
+* **deps:** update dependency @vitejs/plugin-react-swc to v4 ([#20589](https://github.com/vitejs/vite/issues/20589)) ([1c372dd](https://github.com/vitejs/vite/commit/1c372dde7ff4d228f0eb620733ef1c5b66ef49f0))
+* **deps:** update rolldown-related dependencies ([#20586](https://github.com/vitejs/vite/issues/20586)) ([77632c5](https://github.com/vitejs/vite/commit/77632c55db51cd6d03bcf24a1cef8d21058100a3))
+
+### Code Refactoring
+
+* **create-vite:** add jsdoc for svelte.config.js in svelte-ts template ([#20543](https://github.com/vitejs/vite/issues/20543)) ([aa93814](https://github.com/vitejs/vite/commit/aa938149337f5232011f203bfe55c741fbaddd6c))
+
 ## [7.1.0](https://github.com/vitejs/vite/compare/create-vite@7.0.3...create-vite@7.1.0) (2025-08-07)
 ### Bug Fixes
 
