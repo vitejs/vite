@@ -3,6 +3,7 @@
 @use './nested/relative'; // relative path
 @use '@vitejs/test-css-dep'; // package w/ sass entry points
 @use '@vitejs/test-css-dep-exports'; // package with a sass export mapping
+@use '@vitejs/test-css-dep-exports/foo.scss'; // package with a sass export mapping (deep)
 @use '@vitejs/test-scss-proxy-dep'; // package with a sass proxy import
 @use 'virtual-dep'; // virtual file added through importer
 @use '=/pkg-dep'; // package w/out sass field

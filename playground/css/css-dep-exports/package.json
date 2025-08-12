@@ -7,6 +7,9 @@
       "sass": "./style.scss",
       "style": "./style.css",
       "import": "./index.js"
+    },
+    "./foo.scss": {
+      "sass": "./foo1.scss"
     }
   }
 }
