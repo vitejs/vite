@@ -1,3 +1,18 @@
+## <small>[7.1.2](https://github.com/vitejs/vite/compare/v7.1.1...v7.1.2) (2025-08-12)</small>
+### Bug Fixes
+
+* **client:** add `[vite]` prefixes to debug logs ([#20595](https://github.com/vitejs/vite/issues/20595)) ([7cdef61](https://github.com/vitejs/vite/commit/7cdef612a65da5363905723f77516b6745ac9a94))
+* **config:** make debugger work with bundle loader ([#20573](https://github.com/vitejs/vite/issues/20573)) ([c583927](https://github.com/vitejs/vite/commit/c583927bee657f15f63fdf80468fbe6a74eacdec))
+* **deps:** update all non-major dependencies ([#20587](https://github.com/vitejs/vite/issues/20587)) ([20d4817](https://github.com/vitejs/vite/commit/20d48172a0352d32f766b3c878d52a8944fdbf6e))
+* don't consider ids with `npm:` prefix as a built-in module ([#20558](https://github.com/vitejs/vite/issues/20558)) ([ab33803](https://github.com/vitejs/vite/commit/ab33803f2c831a82ddee637ad62e0c4ceeb663f1))
+* **hmr:** watch non-inlined assets referenced by CSS ([#20581](https://github.com/vitejs/vite/issues/20581)) ([b7d494b](https://github.com/vitejs/vite/commit/b7d494bf60af3ef7316d87266bb3ebf56617d5fd))
+* **module-runner:** prevent crash when sourceMappingURL pattern appears in string literals ([#20554](https://github.com/vitejs/vite/issues/20554)) ([2770478](https://github.com/vitejs/vite/commit/2770478d1c190d3e3de34ef9a3d2c493c06e9933))
+
+### Miscellaneous Chores
+
+* **deps:** migrate to `@jridgewell/remapping` from `@ampproject/remapping` ([#20577](https://github.com/vitejs/vite/issues/20577)) ([0a6048a](https://github.com/vitejs/vite/commit/0a6048aba4523f451edf29ae4037d252cc963815))
+* **deps:** update rolldown-related dependencies ([#20586](https://github.com/vitejs/vite/issues/20586)) ([77632c5](https://github.com/vitejs/vite/commit/77632c55db51cd6d03bcf24a1cef8d21058100a3))
+
 ## <small>[7.1.1](https://github.com/vitejs/vite/compare/v7.1.0...v7.1.1) (2025-08-08)</small>
 ### Bug Fixes
 
