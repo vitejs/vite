@@ -28,7 +28,7 @@ type LogEntry = {
 const COMPRESSIBLE_ASSETS_RE = /\.(?:html|json|svg|txt|xml|xhtml|wasm)$/
 
 export function buildReporterPlugin(config: ResolvedConfig): Plugin {
-  if (config.experimental.enableNativePlugin === true) {
+  if (config.nativePluginEnabledLevel >= 1) {
     return perEnvironmentPlugin('native:reporter', (env) => {
       const tty = process.stdout.isTTY && !process.env.CI
       const shouldLogInfo =

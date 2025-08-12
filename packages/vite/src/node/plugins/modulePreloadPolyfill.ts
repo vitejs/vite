@@ -8,10 +8,7 @@ export const modulePreloadPolyfillId = 'vite/modulepreload-polyfill'
 const resolvedModulePreloadPolyfillId = '\0' + modulePreloadPolyfillId + '.js'
 
 export function modulePreloadPolyfillPlugin(config: ResolvedConfig): Plugin {
-  if (
-    config.experimental.enableNativePlugin === true &&
-    config.command === 'build'
-  ) {
+  if (config.command === 'build' && config.nativePluginEnabledLevel >= 1) {
     return perEnvironmentPlugin(
       'native:modulepreload-polyfill',
       (environment) => {

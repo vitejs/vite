@@ -173,10 +173,7 @@ export function dynamicImportVarsPlugin(config: ResolvedConfig): Plugin {
     extensions: [],
   })
 
-  if (
-    config.experimental.enableNativePlugin === true &&
-    config.command === 'build'
-  ) {
+  if (config.command === 'build' && config.nativePluginEnabledLevel >= 1) {
     return perEnvironmentPlugin('native:dynamic-import-vars', (environment) => {
       const { include, exclude } =
         environment.config.build.dynamicImportVarsOptions

@@ -542,10 +542,14 @@ export interface ExperimentalOptions {
   /**
    * Enable builtin plugin that written by rust, which is faster than js plugin.
    *
+   * - 'resolver': Enable only the native resolver plugin.
+   * - 'v1': Enable the first stable set of native plugins (including resolver).
+   * - true: Enable all native plugins (currently an alias of 'v1', it will map to a newer one in the future versions).
+   *
    * @experimental
-   * @default 'resolver'
+   * @default 'v1'
    */
-  enableNativePlugin?: boolean | 'resolver'
+  enableNativePlugin?: boolean | 'resolver' | 'v1'
 }
 
 export interface LegacyOptions {
@@ -680,6 +684,8 @@ export interface ResolvedConfig
       /** @internal */
       safeModulePaths: Set<string>
       /** @internal */
+      nativePluginEnabledLevel: number
+      /** @internal */
       [SYMBOL_RESOLVED_CONFIG]: true
     } & PluginHookUtils
   > {}
@@ -746,7 +752,7 @@ export const configDefaults = Object.freeze({
     importGlobRestoreExtension: false,
     renderBuiltUrl: undefined,
     hmrPartialAccept: false,
-    enableNativePlugin: process.env._VITE_TEST_JS_PLUGIN ? false : 'resolver',
+    enableNativePlugin: process.env._VITE_TEST_JS_PLUGIN ? false : 'v1',
   },
   future: {
     removePluginHookHandleHotUpdate: undefined,
@@ -1751,6 +1757,11 @@ export async function resolveConfig(
     )
   }
 
+  const experimental = mergeWithDefaults(
+    configDefaults.experimental,
+    config.experimental ?? {},
+  )
+
   resolved = {
     configFile: configFile ? normalizePath(configFile) : undefined,
     configFileDependencies: configFileDependencies.map((name) =>
@@ -1812,10 +1823,7 @@ export async function resolveConfig(
     packageCache,
     worker: resolvedWorkerOptions,
     appType: config.appType ?? 'spa',
-    experimental: mergeWithDefaults(
-      configDefaults.experimental,
-      config.experimental ?? {},
-    ),
+    experimental,
     future:
       config.future === 'warn'
         ? ({
@@ -1880,6 +1888,9 @@ export async function resolveConfig(
       },
     ),
     safeModulePaths: new Set<string>(),
+    nativePluginEnabledLevel: resolveNativePluginEnabledLevel(
+      experimental.enableNativePlugin,
+    ),
     [SYMBOL_RESOLVED_CONFIG]: true,
   }
   resolved = {
@@ -2016,6 +2027,26 @@ assetFileNames isn't equal for every build.rollupOptions.output. A single patter
   }
 
   return resolved
+}
+
+function resolveNativePluginEnabledLevel(
+  enableNativePlugin: Exclude<
+    ExperimentalOptions['enableNativePlugin'],
+    undefined
+  >,
+) {
+  switch (enableNativePlugin) {
+    case 'resolver':
+      return 0
+    case 'v1':
+    case true:
+      return 1
+    case false:
+      return -1
+    default:
+      enableNativePlugin satisfies never
+      return -1
+  }
 }
 
 /**
