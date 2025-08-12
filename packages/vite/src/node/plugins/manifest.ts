@@ -35,10 +35,7 @@ export function manifestPlugin(config: ResolvedConfig): Plugin {
       },
     }
   })
-  if (
-    config.build.manifest &&
-    config.experimental.enableNativePlugin === true
-  ) {
+  if (config.build.manifest && config.nativePluginEnabledLevel >= 1) {
     return perEnvironmentPlugin('native:manifest', (environment) => {
       if (!environment.config.build.manifest) return false
 

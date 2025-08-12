@@ -749,7 +749,7 @@ export function buildImportAnalysisPlugin(config: ResolvedConfig): Plugin[] {
     },
   }
 
-  if (config.experimental.enableNativePlugin === true) {
+  if (config.nativePluginEnabledLevel >= 1) {
     delete plugin.transform
     delete plugin.resolveId
     delete plugin.load

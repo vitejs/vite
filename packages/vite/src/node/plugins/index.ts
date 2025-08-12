@@ -46,14 +46,15 @@ export async function resolvePlugins(
     ? await (await import('../build')).resolveBuildPlugins(config)
     : { pre: [], post: [] }
   const { modulePreload } = config.build
-  const enableNativePlugin = config.experimental.enableNativePlugin
+  const enableNativePlugin = config.nativePluginEnabledLevel >= 0
+  const enableNativePluginV1 = config.nativePluginEnabledLevel >= 1
 
   return [
     !isBuild ? optimizedDepsPlugin() : null,
     !isWorker ? watchPackageDataPlugin(config.packageCache) : null,
     !isBuild ? preAliasPlugin(config) : null,
-    enableNativePlugin === true &&
     isBuild &&
+    enableNativePluginV1 &&
     !config.resolve.alias.some((v) => v.customResolver)
       ? nativeAliasPlugin({
           entries: config.resolve.alias.map((item) => {
@@ -104,7 +105,7 @@ export async function resolvePlugins(
     cssPlugin(config),
     esbuildBannerFooterCompatPlugin(config),
     config.oxc !== false ? oxcPlugin(config) : null,
-    jsonPlugin(config.json, isBuild, enableNativePlugin === true),
+    jsonPlugin(config.json, isBuild, enableNativePluginV1),
     wasmHelperPlugin(config),
     webWorkerPlugin(config),
     assetPlugin(config),

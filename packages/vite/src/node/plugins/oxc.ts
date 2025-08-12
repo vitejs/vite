@@ -277,10 +277,7 @@ function resolveTsconfigTarget(target: string | undefined): number | 'next' {
 }
 
 export function oxcPlugin(config: ResolvedConfig): Plugin {
-  if (
-    config.experimental.enableNativePlugin === true &&
-    config.command === 'build'
-  ) {
+  if (config.command === 'build' && config.nativePluginEnabledLevel >= 1) {
     return perEnvironmentPlugin('native:transform', (environment) => {
       const {
         jsxInject,

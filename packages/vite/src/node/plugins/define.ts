@@ -115,7 +115,7 @@ export function definePlugin(config: ResolvedConfig): Plugin {
     return pattern
   }
 
-  if (config.experimental.enableNativePlugin === true && isBuild) {
+  if (isBuild && config.nativePluginEnabledLevel >= 1) {
     return {
       name: 'vite:define',
       options(option) {
