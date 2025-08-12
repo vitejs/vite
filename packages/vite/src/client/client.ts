@@ -402,17 +402,17 @@ function pingWorkerContentMain(socketUrl: string) {
     port.addEventListener('message', (event) => {
       const { visibility } = event.data
       visibilityManager.currentState = visibility
-      console.debug('new window visibility', visibility)
+      console.debug('[vite] new window visibility', visibility)
       for (const listener of visibilityManager.listeners) {
         listener(visibility)
       }
     })
     port.start()
 
-    console.debug('connected from window')
+    console.debug('[vite] connected from window')
     waitForSuccessfulPingInternal(socketUrl, visibilityManager).then(
       () => {
-        console.debug('ping successful')
+        console.debug('[vite] ping successful')
         try {
           port.postMessage({ type: 'success' })
         } catch (error) {
@@ -420,7 +420,7 @@ function pingWorkerContentMain(socketUrl: string) {
         }
       },
       (error) => {
-        console.debug('error happened', error)
+        console.debug('[vite] error happened', error)
         try {
           port.postMessage({ type: 'error', error })
         } catch (error) {
