@@ -9,7 +9,7 @@ import {
   transformPlugin as nativeTransformPlugin,
   transform,
 } from 'rolldown/experimental'
-import type { RawSourceMap } from '@ampproject/remapping'
+import type { RawSourceMap } from '@jridgewell/remapping'
 import type { InternalModuleFormat, RollupError, SourceMap } from 'rolldown'
 import { rolldown } from 'rolldown'
 import type { FSWatcher } from 'dep-types/chokidar'
