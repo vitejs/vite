@@ -86,6 +86,7 @@ import {
   resolvePlugins,
 } from './plugins'
 import type { ESBuildOptions } from './plugins/esbuild'
+import type { OxcOptions } from './plugins/oxc'
 import {
   type EnvironmentResolveOptions,
   type InternalResolveOptions,
@@ -364,6 +365,11 @@ export interface UserConfig extends DefaultEnvironmentOptions {
    */
   esbuild?: ESBuildOptions | false
   /**
+   * Transform options to pass to Oxc.
+   * Or set to `false` to disable Oxc.
+   */
+  oxc?: OxcOptions | false
+  /**
    * Specify additional picomatch patterns to be treated as static assets.
    */
   assetsInclude?: string | RegExp | (string | RegExp)[]
@@ -592,6 +598,7 @@ export interface ResolvedConfig
       css: ResolvedCSSOptions
       json: Required<JsonOptions>
       esbuild: ESBuildOptions | false
+      oxc: OxcOptions | false
       server: ResolvedServerOptions
       dev: ResolvedDevEnvironmentOptions
       /** @experimental */
@@ -1518,6 +1525,13 @@ export async function resolveConfig(
         : {
             jsxDev: !isProduction,
             ...config.esbuild,
+          },
+    oxc:
+      config.oxc === false
+        ? false
+        : {
+            sourcemap: true,
+            ...config.oxc,
           },
     server,
     builder,
