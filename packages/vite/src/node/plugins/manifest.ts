@@ -4,7 +4,7 @@ import { manifestPlugin as nativeManifestPlugin } from 'rolldown/experimental'
 import type { Plugin } from '../plugin'
 import { normalizePath, sortObjectKeys } from '../utils'
 import { perEnvironmentState } from '../environment'
-import { type ResolvedConfig, perEnvironmentPlugin } from '..'
+import { type Environment, type ResolvedConfig, perEnvironmentPlugin } from '..'
 import { cssEntriesMap } from './asset'
 
 const endsWithJSRE = /\.[cm]?js$/
@@ -25,6 +25,16 @@ export interface ManifestChunk {
 }
 
 export function manifestPlugin(config: ResolvedConfig): Plugin {
+  const getState = perEnvironmentState(() => {
+    return {
+      manifest: {} as Manifest,
+      outputCount: 0,
+      reset() {
+        this.manifest = {}
+        this.outputCount = 0
+      },
+    }
+  })
   if (
     config.build.manifest &&
     config.experimental.enableNativePlugin === true
@@ -38,6 +48,8 @@ export function manifestPlugin(config: ResolvedConfig): Plugin {
           ? '.vite/manifest.json'
           : environment.config.build.manifest
 
+      const isLegacySet = new Set<string>()
+      const envs: Record<string, Environment> = {}
       function getChunkName(chunk: OutputChunk) {
         return (
           getChunkOriginalFileName(chunk, root, false) ??
@@ -46,7 +58,36 @@ export function manifestPlugin(config: ResolvedConfig): Plugin {
       }
 
       return [
-        nativeManifestPlugin({ root, outPath }),
+        {
+          name: 'native:manifest-envs',
+          buildStart() {
+            envs[environment.name] = this.environment
+          },
+          ...(config.isOutputOptionsForLegacyChunks
+            ? {
+                generateBundle(opts) {
+                  const isLegacy =
+                    environment.config.isOutputOptionsForLegacyChunks?.(opts) ??
+                    false
+                  if (isLegacy) {
+                    isLegacySet.add(environment.name)
+                  } else {
+                    isLegacySet.delete(environment.name)
+                  }
+                },
+              }
+            : {}),
+        },
+        nativeManifestPlugin({
+          root,
+          outPath,
+          isLegacy: config.isOutputOptionsForLegacyChunks
+            ? () => isLegacySet.has(environment.name)
+            : undefined,
+          cssEntries() {
+            return cssEntriesMap.get(envs[environment.name])!
+          },
+        }),
         {
           name: 'native:manifest-compatible',
           generateBundle(_, bundle) {
@@ -69,8 +110,25 @@ export function manifestPlugin(config: ResolvedConfig): Plugin {
                   item.assets = [...importedAssets]
                 }
               }
-              if (manifest) {
+              const output =
+                this.environment.config.build.rolldownOptions.output
+              const outputLength = Array.isArray(output) ? output.length : 1
+              if (manifest && outputLength === 1) {
                 asset.source = JSON.stringify(manifest)
+                return
+              }
+
+              const state = getState(this)
+              state.outputCount++
+              state.manifest = Object.assign(
+                state.manifest,
+                manifest ?? JSON.parse(asset.source.toString()),
+              )
+              if (state.outputCount >= outputLength) {
+                asset.source = JSON.stringify(state.manifest, undefined, 2)
+                state.reset()
+              } else {
+                delete bundle[outPath]
               }
             }
           },
@@ -78,18 +136,6 @@ export function manifestPlugin(config: ResolvedConfig): Plugin {
       ]
     })
   }
-
-  const getState = perEnvironmentState(() => {
-    return {
-      manifest: {} as Manifest,
-      outputCount: 0,
-      reset() {
-        this.manifest = {}
-        this.outputCount = 0
-      },
-    }
-  })
-
   return {
     name: 'vite:manifest',
 
