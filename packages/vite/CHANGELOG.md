@@ -1,3 +1,27 @@
+## <small>[7.1.1](https://github.com/vitejs/rolldown-vite/compare/v7.1.0...v7.1.1) (2025-08-12)</small>
+### Features
+
+* update rolldown ([#366](https://github.com/vitejs/rolldown-vite/issues/366)) ([f51756e](https://github.com/vitejs/rolldown-vite/commit/f51756e8e9404b12a0c1bfde01c3663c64e5d337))
+
+### Bug Fixes
+
+* **client:** add `[vite]` prefixes to debug logs ([#20595](https://github.com/vitejs/rolldown-vite/issues/20595)) ([7cdef61](https://github.com/vitejs/rolldown-vite/commit/7cdef612a65da5363905723f77516b6745ac9a94))
+* **config:** make debugger work with bundle loader ([#20573](https://github.com/vitejs/rolldown-vite/issues/20573)) ([c583927](https://github.com/vitejs/rolldown-vite/commit/c583927bee657f15f63fdf80468fbe6a74eacdec))
+* **deps:** update `launch-editor-middleware` ([#20569](https://github.com/vitejs/rolldown-vite/issues/20569)) ([826b394](https://github.com/vitejs/rolldown-vite/commit/826b394e0efd033d2fe88126fe9a28da9573bd8f))
+* **deps:** update all non-major dependencies ([#20587](https://github.com/vitejs/rolldown-vite/issues/20587)) ([20d4817](https://github.com/vitejs/rolldown-vite/commit/20d48172a0352d32f766b3c878d52a8944fdbf6e))
+* don't consider ids with `npm:` prefix as a built-in module ([#20558](https://github.com/vitejs/rolldown-vite/issues/20558)) ([ab33803](https://github.com/vitejs/rolldown-vite/commit/ab33803f2c831a82ddee637ad62e0c4ceeb663f1))
+* **hmr:** watch non-inlined assets referenced by CSS ([#20581](https://github.com/vitejs/rolldown-vite/issues/20581)) ([b7d494b](https://github.com/vitejs/rolldown-vite/commit/b7d494bf60af3ef7316d87266bb3ebf56617d5fd))
+* **module-runner:** prevent crash when sourceMappingURL pattern appears in string literals ([#20554](https://github.com/vitejs/rolldown-vite/issues/20554)) ([2770478](https://github.com/vitejs/rolldown-vite/commit/2770478d1c190d3e3de34ef9a3d2c493c06e9933))
+* respect `rollupOptions.platform` options ([#361](https://github.com/vitejs/rolldown-vite/issues/361)) ([2603932](https://github.com/vitejs/rolldown-vite/commit/2603932b9e6bb4b9e1f9a1f070111e14eeff846c))
+
+### Miscellaneous Chores
+
+* **deps:** migrate to `@jridgewell/remapping` from `@ampproject/remapping` ([#20577](https://github.com/vitejs/rolldown-vite/issues/20577)) ([0a6048a](https://github.com/vitejs/rolldown-vite/commit/0a6048aba4523f451edf29ae4037d252cc963815))
+* **deps:** update rolldown-related dependencies ([#20586](https://github.com/vitejs/rolldown-vite/issues/20586)) ([77632c5](https://github.com/vitejs/rolldown-vite/commit/77632c55db51cd6d03bcf24a1cef8d21058100a3))
+* fix changelog beta links ([#20561](https://github.com/vitejs/rolldown-vite/issues/20561)) ([2e0c21a](https://github.com/vitejs/rolldown-vite/commit/2e0c21a07ec5ca7ed5eaa1b6a7d44682fa467a06))
+* fix typecheck ([aa8f700](https://github.com/vitejs/rolldown-vite/commit/aa8f700641bc7871f973774a15269abbf575db35))
+* update 7.1 changelog ([#20560](https://github.com/vitejs/rolldown-vite/issues/20560)) ([d8869b8](https://github.com/vitejs/rolldown-vite/commit/d8869b84208879c7aa6a0268ec073a34760c0d80))
+
 ## [7.1.0](https://github.com/vitejs/rolldown-vite/compare/v7.1.0-beta.2...v7.1.0) (2025-08-07)
 ### Features
 
