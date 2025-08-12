@@ -1,3 +1,8 @@
+## <small>[7.1.2](https://github.com/vitejs/rolldown-vite/compare/v7.1.1...v7.1.2) (2025-08-12)</small>
+### Features
+
+* enable all native plugins by default ([#168](https://github.com/vitejs/rolldown-vite/issues/168)) ([7ad2330](https://github.com/vitejs/rolldown-vite/commit/7ad23302e63b1402fb0295111464cd0f2f86b9c4))
+
 ## <small>[7.1.1](https://github.com/vitejs/rolldown-vite/compare/v7.1.0...v7.1.1) (2025-08-12)</small>
 ### Features
 
