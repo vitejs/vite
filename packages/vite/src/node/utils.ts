@@ -12,8 +12,8 @@ import { performance } from 'node:perf_hooks'
 import type { AddressInfo, Server } from 'node:net'
 import fsp from 'node:fs/promises'
 import type { FSWatcher } from 'dep-types/chokidar'
-import remapping from '@ampproject/remapping'
-import type { DecodedSourceMap, RawSourceMap } from '@ampproject/remapping'
+import remapping from '@jridgewell/remapping'
+import type { DecodedSourceMap, RawSourceMap } from '@jridgewell/remapping'
 import colors from 'picocolors'
 import debug from 'debug'
 import type { Alias, AliasOptions } from 'dep-types/alias'
@@ -101,8 +101,6 @@ export const normalizeId = (id: string): string =>
 
 // Supported by Node, Deno, Bun
 const NODE_BUILTIN_NAMESPACE = 'node:'
-// Supported by Deno
-const NPM_BUILTIN_NAMESPACE = 'npm:'
 // Supported by Bun
 const BUN_BUILTIN_NAMESPACE = 'bun:'
 // Some runtimes like Bun injects namespaced modules here, which is not a node builtin
@@ -139,7 +137,6 @@ export function createIsBuiltin(
 export const nodeLikeBuiltins = [
   ...nodeBuiltins,
   new RegExp(`^${NODE_BUILTIN_NAMESPACE}`),
-  new RegExp(`^${NPM_BUILTIN_NAMESPACE}`),
   new RegExp(`^${BUN_BUILTIN_NAMESPACE}`),
 ]
 

@@ -11,7 +11,7 @@
   },
   "devDependencies": {
     "@tailwindcss/vite": "^4.1.11",
-    "sass": "^1.89.2",
+    "sass": "^1.90.0",
     "tailwindcss": "^4.1.11",
     "tinyglobby": "^0.2.14"
   }
