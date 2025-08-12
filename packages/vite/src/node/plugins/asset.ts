@@ -46,7 +46,7 @@ export const inlineRE = /[?&]inline\b/
 const assetCache = new WeakMap<Environment, Map<string, string>>()
 
 /** a set of referenceId for entry CSS assets for each environment */
-export const cssEntriesMap = new WeakMap<Environment, Set<string>>()
+export const cssEntriesMap = new WeakMap<Environment, Map<string, string>>()
 
 // add own dictionary entry by directly assigning mrmime
 export function registerCustomMime(): void {
@@ -148,7 +148,7 @@ export function assetPlugin(config: ResolvedConfig): Plugin {
 
     buildStart() {
       assetCache.set(this.environment, new Map())
-      cssEntriesMap.set(this.environment, new Set())
+      cssEntriesMap.set(this.environment, new Map())
     },
 
     resolveId: {

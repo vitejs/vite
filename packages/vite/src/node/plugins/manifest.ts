@@ -122,25 +122,25 @@ export function manifestPlugin(): Plugin {
       function createAsset(
         asset: OutputAsset,
         src: string,
-        isEntry?: boolean,
+        name?: string,
       ): ManifestChunk {
         const manifestChunk: ManifestChunk = {
           file: asset.fileName,
           src,
         }
-        if (isEntry) {
+        if (name) {
           manifestChunk.isEntry = true
-          manifestChunk.names = asset.names
+          manifestChunk.name = name
         }
         return manifestChunk
       }
 
       const entryCssReferenceIds = cssEntriesMap.get(this.environment)!
-      const entryCssAssetFileNames = new Set()
-      for (const id of entryCssReferenceIds) {
+      const entryCssAssetFileNames = new Map()
+      for (const [name, id] of entryCssReferenceIds) {
         try {
           const fileName = this.getFileName(id)
-          entryCssAssetFileNames.add(fileName)
+          entryCssAssetFileNames.set(fileName, name)
         } catch {
           // The asset was generated as part of a different output option.
           // It was already handled during the previous run of this plugin.
@@ -157,8 +157,8 @@ export function manifestPlugin(): Plugin {
             chunk.originalFileNames.length > 0
               ? chunk.originalFileNames[0]
               : `_${path.basename(chunk.fileName)}`
-          const isEntry = entryCssAssetFileNames.has(chunk.fileName)
-          const asset = createAsset(chunk, src, isEntry)
+          const name = entryCssAssetFileNames.get(chunk.fileName)
+          const asset = createAsset(chunk, src, name)
 
           // If JS chunk and asset chunk are both generated from the same source file,
           // prioritize JS chunk as it contains more information
