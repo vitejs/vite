@@ -16,25 +16,25 @@ const debug = createDebugger('vite:external')
 
 const isExternalCache = new WeakMap<
   Environment,
-  (id: string, importer?: string) => boolean
+  (id: string, importer?: string) => Promise<boolean>
 >()
 
-export function shouldExternalize(
+export async function shouldExternalize(
   environment: Environment,
   id: string,
   importer: string | undefined,
-): boolean {
+): Promise<boolean> {
   let isExternal = isExternalCache.get(environment)
   if (!isExternal) {
     isExternal = createIsExternal(environment)
     isExternalCache.set(environment, isExternal)
   }
-  return isExternal(id, importer)
+  return await isExternal(id, importer)
 }
 
 export function createIsConfiguredAsExternal(
   environment: PartialEnvironment,
-): (id: string, importer?: string) => boolean {
+): (id: string, importer?: string) => Promise<boolean> {
   const { config } = environment
   const { root, resolve } = config
   const { external, noExternal } = resolve
@@ -53,16 +53,16 @@ export function createIsConfiguredAsExternal(
     conditions: targetConditions,
   }
 
-  const isExternalizable = (
+  const isExternalizable = async (
     id: string,
     importer: string | undefined,
     configuredAsExternal: boolean,
-  ): boolean => {
+  ): Promise<boolean> => {
     if (!bareImportRE.test(id) || id.includes('\0')) {
       return false
     }
     try {
-      const resolved = tryNodeResolve(
+      const resolved = await tryNodeResolve(
         id,
         // Skip passing importer in build to avoid externalizing non-hoisted dependencies
         // unresolvable from root (which would be unresolvable from output bundles also)
@@ -91,7 +91,7 @@ export function createIsConfiguredAsExternal(
 
   // Returns true if it is configured as external, false if it is filtered
   // by noExternal and undefined if it isn't affected by the explicit config
-  return (id: string, importer?: string) => {
+  return async (id: string, importer?: string) => {
     if (
       // If this id is defined as external, force it as external
       // Note that individual package entries are allowed in `external`
@@ -120,18 +120,18 @@ export function createIsConfiguredAsExternal(
     }
     // If external is true, all will be externalized by default, regardless if
     // it's a linked package
-    return isExternalizable(id, importer, external === true)
+    return await isExternalizable(id, importer, external === true)
   }
 }
 
 function createIsExternal(
   environment: Environment,
-): (id: string, importer?: string) => boolean {
+): (id: string, importer?: string) => Promise<boolean> {
   const processedIds = new Map<string, boolean>()
 
   const isConfiguredAsExternal = createIsConfiguredAsExternal(environment)
 
-  return (id: string, importer?: string) => {
+  return async (id: string, importer?: string) => {
     if (processedIds.has(id)) {
       return processedIds.get(id)!
     }
@@ -139,7 +139,7 @@ function createIsExternal(
     if (id[0] !== '.' && !path.isAbsolute(id)) {
       isExternal =
         isBuiltin(environment.config.resolve.builtins, id) ||
-        isConfiguredAsExternal(id, importer)
+        (await isConfiguredAsExternal(id, importer))
     }
     processedIds.set(id, isExternal)
     return isExternal
