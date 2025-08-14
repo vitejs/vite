@@ -49,7 +49,7 @@
     "@genkit-ai/core": "^1.16.0",
     "@genkit-ai/flow": "^0.5.17",
     "@genkit-ai/googleai": "^1.16.0",
-    "@hookform/": "^3.10.0",
+    "@hookform/resolvers": "^3.10.0",
     "@jridgewell/trace-mapping": "^0.3.25",
     "@neondatabase/serverless": "^0.10.4",
     "@radix-ui/react-accordion": "^1.2.4",
