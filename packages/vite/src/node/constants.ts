@@ -138,7 +138,7 @@ export const KNOWN_ASSET_TYPES = [
   'svg',
   'ico',
   'webp',
-  'avif',
+  'avifs?',
   'cur',
   'jxl',
 

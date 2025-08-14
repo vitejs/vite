@@ -102,6 +102,10 @@ declare module '*.avif' {
   const src: string
   export default src
 }
+declare module '*.avifs' {
+  const src: string
+  export default src
+}
 declare module '*.cur' {
   const src: string
   export default src
