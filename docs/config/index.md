@@ -131,11 +131,11 @@ export default defineConfig(({ mode }) => {
     },
   }
 })
+```
 
 ::: note
-`loadEnv` is *not* required if you only need variables available in application source code (`import.meta.env`). It's only needed when env values must participate in creating the config itself.
+`loadEnv` is _not_ required if you only need variables available in application source code (`import.meta.env`). It's only needed when env values must participate in creating the config itself.
 :::
-```
 
 ## Debugging the Config File on VS Code
 
