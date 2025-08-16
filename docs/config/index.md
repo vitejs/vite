@@ -101,25 +101,40 @@ export default defineConfig(async ({ command, mode }) => {
 
 ## Using Environment Variables in Config
 
-Environmental Variables can be obtained from `process.env` as usual.
+Environment variables available while the config itself is being evaluated are only those that already exist in the current process environment (`process.env`). Vite deliberately defers loading any `.env*` files until _after_ the user config has been resolved because the set of files to load depends on config options like [`root`](/guide/#index-html-and-project-root) and [`envDir`](/config/shared-options.md#envdir), and also on the final `mode`.
 
-Note that Vite doesn't load `.env` files by default as the files to load can only be determined after evaluating the Vite config, for example, the `root` and `envDir` options affect the loading behaviour. However, you can use the exported `loadEnv` helper to load the specific `.env` file if needed.
+This means: variables defined in `.env`, `.env.local`, `.env.[mode]`, or `.env.[mode].local` are **not** automatically injected into `process.env` while your `vite.config.*` is running. They _are_ automatically loaded later and exposed to application code via `import.meta.env` (with the default `VITE_` prefix filter) exactly as documented in [Env Variables and Modes](/guide/env-and-mode.html). So if you only need to pass values from `.env*` files to the app, you don't need to call anything in the config — just prefix them (or adjust [`envPrefix`](/config/shared-options.html#envprefix)).
+
+If, however, values from `.env*` files must influence the config itself (for example to set `server.port`, conditionally enable plugins, or compute `define` replacements), load them manually using the exported `loadEnv` helper. You control which directory to scan (usually `process.cwd()` or a derived `envDir`), and you may widen the prefix filter during loading if you also want access to non-exposed keys at config time.
+
+::: tip Why manual loading is needed
+Manual loading lets you read env values _before_ Vite performs its normal post-config load, so they can participate in producing the final config.
+:::
 
 ```js twoslash
 import { defineConfig, loadEnv } from 'vite'
 
 export default defineConfig(({ mode }) => {
-  // Load env file based on `mode` in the current working directory.
-  // Set the third parameter to '' to load all env regardless of the
-  // `VITE_` prefix.
+  // Load early so values can affect the config.
+  // If you plan to return a custom `root` or `envDir`, pass its path instead of `process.cwd()`.
+  // Passing '' as the third arg intentionally lifts the default VITE_ exposure filter
+  // so we can read all keys now and choose which ones to expose or transform.
   const env = loadEnv(mode, process.cwd(), '')
   return {
-    // vite config
     define: {
+      // Provide an explicit app-level constant derived from an env var.
       __APP_ENV__: JSON.stringify(env.APP_ENV),
+    },
+    // Example: use an env var to set the dev server port conditionally.
+    server: {
+      port: env.APP_PORT ? Number(env.APP_PORT) : 5173,
     },
   }
 })
+
+::: note
+`loadEnv` is *not* required if you only need variables available in application source code (`import.meta.env`). It's only needed when env values must participate in creating the config itself.
+:::
 ```
 
 ## Debugging the Config File on VS Code
