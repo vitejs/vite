@@ -818,3 +818,13 @@ Entry ---> (A + C)
 ```
 
 It is possible for `C` to have further imports, which will result in even more roundtrips in the un-optimized scenario. Vite's optimization will trace all the direct imports to completely eliminate the roundtrips regardless of import depth.
+
+## React Server Components
+
+Vite supports [React Server Components (RSC)](https://react.dev/reference/rsc/server-components) through the official [`@vitejs/plugin-rsc`](https://github.com/vitejs/vite-plugin-react/tree/main/packages/plugin-rsc) plugin. The plugin utilizes [Environment API](https://vite.dev/guide/api-environment.html) to provides low-level primitives that React frameworks can use to integrate RSC features. You can try a minimal standalone RSC application by:
+
+```bash
+npm create vite@latest -- --template rsc
+```
+
+Read the [plugin documentation](https://github.com/vitejs/vite-plugin-react/tree/main/packages/plugin-rsc) to learn more details.
