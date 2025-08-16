@@ -31,7 +31,7 @@ A plugin could use the `environment` instance to change how a module is processe
 
 ## Registering New Environments Using Hooks
 
-Plugins can add new environments in the `config` hook. For example, [Vite RSC support](/guide/features#react-server-components) uses an additional environment to have a separate module graph for `react-server` condition by:
+Plugins can add new environments in the `config` hook. For example, [RSC support](/guide/features#react-server-components) uses an additional environment to have a separate module graph for `react-server` condition by:
 
 ```ts
   config(config: UserConfig) {
