@@ -821,7 +821,7 @@ It is possible for `C` to have further imports, which will result in even more r
 
 ## React Server Components
 
-Vite supports [React Server Components (RSC)](https://react.dev/reference/rsc/server-components) through the official [`@vitejs/plugin-rsc`](https://github.com/vitejs/vite-plugin-react/tree/main/packages/plugin-rsc) plugin. The plugin utilizes [Environment API](https://vite.dev/guide/api-environment.html) to provides low-level primitives that React frameworks can use to integrate RSC features. To try a minimal standalone RSC app without framework abstraction, you can start by:
+Vite supports [React Server Components (RSC)](https://react.dev/reference/rsc/server-components) through the official [`@vitejs/plugin-rsc`](https://github.com/vitejs/vite-plugin-react/tree/main/packages/plugin-rsc) plugin. The plugin utilizes [Environment API](https://vite.dev/guide/api-environment.html) to provides low-level primitives that React frameworks can use to integrate RSC features. You can try a minimal standalone RSC application by:
 
 ```bash
 npm create vite@latest -- --template rsc
