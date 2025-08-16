@@ -435,9 +435,11 @@ async function init() {
   }
   if (!template) {
     const framework = await prompts.select({
-      message: hasInvalidArgTemplate
-        ? `"${argTemplate}" isn't a valid template. Please choose from below: `
-        : 'Select a framework:',
+      message:
+        (hasInvalidArgTemplate
+          ? `"${argTemplate}" isn't a valid template. Please choose from below:`
+          : 'Select a framework:') +
+        `\n  ${colors.dim('(Use ↑/↓ to move, Enter to select)')}`,
       options: FRAMEWORKS.map((framework) => {
         const frameworkColor = framework.color
         return {
@@ -449,7 +451,9 @@ async function init() {
     if (prompts.isCancel(framework)) return cancel()
 
     const variant = await prompts.select({
-      message: 'Select a variant:',
+      message:
+        'Select a variant:' +
+        `\n  ${colors.dim('(Use ↑/↓ to move, Enter to select)')}`,
       options: framework.variants.map((variant) => {
         const variantColor = variant.color
         const command = variant.customCommand
