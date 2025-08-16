@@ -774,6 +774,14 @@ The nonce value of a meta tag with `property="csp-nonce"` will be used by Vite w
 Ensure that you replace the placeholder with a unique value for each request. This is important to prevent bypassing a resource's policy, which can otherwise be easily done.
 :::
 
+::: tip Placeholder vs runtime nonce
+`html.cspNonce` must be a stable placeholder string (e.g. `CSP_NONCE_PLACEHOLDER`). Your server (or edge middleware) is responsible for generating a cryptographically strong random nonce per request, inserting it into the `Content-Security-Policy` header, and replacing every occurrence of the placeholder in the HTML before sending it. Do not configure Vite with a pre-generated random value; a build-time nonce reused across requests provides no protection and creates a false sense of security.
+:::
+
+::: info Static hosting limitations
+If you deploy pure static files (e.g. to an object store/CDN with immutable caching) and cannot mutate HTML per request, a nonce-based CSP is usually incompatible because the HTML would need to vary per request to carry the fresh nonce. In such cases use a hash-based CSP (hashes of inline snippets) or remove inline code. Community plugins like `vite-plugin-csp-guard` illustrate a hash approach. See the additional guidance in [`html.cspNonce` docs](/config/shared-options#htmlcspnonce).
+:::
+
 ### [`data:`](<https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Content-Security-Policy/Sources#scheme-source:~:text=schemes%20(not%20recommended).-,data%3A,-Allows%20data%3A>)
 
 By default, during build, Vite inlines small assets as data URIs. Allowing `data:` for related directives (e.g. [`img-src`](https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Content-Security-Policy/img-src), [`font-src`](https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Content-Security-Policy/font-src)), or, disabling it by setting [`build.assetsInlineLimit: 0`](/config/build-options#build-assetsinlinelimit) is necessary.
