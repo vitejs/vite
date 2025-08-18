@@ -107,10 +107,6 @@ This means: variables defined in `.env`, `.env.local`, `.env.[mode]`, or `.env.[
 
 If, however, values from `.env*` files must influence the config itself (for example to set `server.port`, conditionally enable plugins, or compute `define` replacements), you can load them manually using the exported [`loadEnv`](/guide/api-javascript.html#loadenv) helper.
 
-::: tip Why manual loading is needed
-Manual loading lets you read env values _before_ Vite performs its normal post-config load, so they can participate in producing the final config.
-:::
-
 ```js twoslash
 import { defineConfig, loadEnv } from 'vite'
 
