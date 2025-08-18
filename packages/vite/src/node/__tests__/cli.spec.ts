@@ -1,13 +1,11 @@
-import { afterEach, beforeEach, describe, expect, test, vi } from 'vitest'
+import { afterEach, beforeEach, describe, expect, test } from 'vitest'
 import { checkNodeVersion } from '../cli'
 
 describe('CLI Node.js version checking', () => {
   let originalNodeVersion: string
-  let consoleSpy: any
 
   beforeEach(() => {
     originalNodeVersion = process.versions.node
-    consoleSpy = vi.spyOn(console, 'warn').mockImplementation(() => {})
   })
 
   afterEach(() => {
@@ -16,7 +14,6 @@ describe('CLI Node.js version checking', () => {
       value: originalNodeVersion,
       writable: true,
     })
-    consoleSpy.mockRestore()
   })
 
   function mockNodeVersion(version: string) {
@@ -26,76 +23,67 @@ describe('CLI Node.js version checking', () => {
     })
   }
 
-  test('should warn for Node.js version < 20.19.0', () => {
+  test('should return false for Node.js version < 20.19.0', () => {
     mockNodeVersion('18.20.0')
 
-    checkNodeVersion()
+    const result = checkNodeVersion()
 
-    expect(consoleSpy).toHaveBeenCalledWith(
-      expect.stringContaining('You are using Node.js 18.20.0'),
-    )
-    expect(consoleSpy).toHaveBeenCalledWith(
-      expect.stringContaining('Vite requires Node.js version 20.19+ or 22.12+'),
-    )
+    expect(result).toBe(false)
   })
 
-  test('should warn for Node.js version 20.18.x', () => {
+  test('should return false for Node.js version 20.18.x', () => {
     mockNodeVersion('20.18.5')
 
-    checkNodeVersion()
+    const result = checkNodeVersion()
 
-    expect(consoleSpy).toHaveBeenCalledWith(
-      expect.stringContaining('You are using Node.js 20.18.5'),
-    )
+    expect(result).toBe(false)
   })
 
-  test('should warn for Node.js version 22.11.x', () => {
+  test('should return false for Node.js version 22.11.x', () => {
     mockNodeVersion('22.11.0')
 
-    checkNodeVersion()
+    const result = checkNodeVersion()
 
-    expect(consoleSpy).toHaveBeenCalledWith(
-      expect.stringContaining('You are using Node.js 22.11.0'),
-    )
+    expect(result).toBe(false)
   })
 
-  test('should not warn for Node.js version 20.19.0', () => {
+  test('should return true for Node.js version 20.19.0', () => {
     mockNodeVersion('20.19.0')
 
-    checkNodeVersion()
+    const result = checkNodeVersion()
 
-    expect(consoleSpy).not.toHaveBeenCalled()
+    expect(result).toBe(true)
   })
 
-  test('should not warn for Node.js version 20.20.x', () => {
+  test('should return true for Node.js version 20.20.x', () => {
     mockNodeVersion('20.20.1')
 
-    checkNodeVersion()
+    const result = checkNodeVersion()
 
-    expect(consoleSpy).not.toHaveBeenCalled()
+    expect(result).toBe(true)
   })
 
-  test('should not warn for Node.js version 22.12.0', () => {
+  test('should return true for Node.js version 22.12.0', () => {
     mockNodeVersion('22.12.0')
 
-    checkNodeVersion()
+    const result = checkNodeVersion()
 
-    expect(consoleSpy).not.toHaveBeenCalled()
+    expect(result).toBe(true)
   })
 
-  test('should not warn for Node.js version 22.13.x', () => {
+  test('should return true for Node.js version 22.13.x', () => {
     mockNodeVersion('22.13.1')
 
-    checkNodeVersion()
+    const result = checkNodeVersion()
 
-    expect(consoleSpy).not.toHaveBeenCalled()
+    expect(result).toBe(true)
   })
 
-  test('should not warn for Node.js version 23.x.x', () => {
+  test('should return true for Node.js version 23.x.x', () => {
     mockNodeVersion('23.0.0')
 
-    checkNodeVersion()
+    const result = checkNodeVersion()
 
-    expect(consoleSpy).not.toHaveBeenCalled()
+    expect(result).toBe(true)
   })
 })

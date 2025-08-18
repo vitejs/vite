@@ -14,8 +14,9 @@ import type { InlineConfig } from './config'
 
 /**
  * Check if the current Node.js version is supported
+ * @returns true if the version is supported, false otherwise
  */
-export function checkNodeVersion(): void {
+export function checkNodeVersion(): boolean {
   const currentVersion = process.versions.node.split('.')
   const major = parseInt(currentVersion[0], 10)
   const minor = parseInt(currentVersion[1], 10)
@@ -36,6 +37,8 @@ export function checkNodeVersion(): void {
       ),
     )
   }
+
+  return isSupported
 }
 
 // Check Node.js version before proceeding
