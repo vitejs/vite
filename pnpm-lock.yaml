@@ -169,8 +169,8 @@ importers:
         specifier: ^1.1.1
         version: 1.1.1
       tsdown:
-        specifier: ^0.14.0
-        version: 0.14.0(publint@0.3.12)(typescript@5.9.2)(vue-tsc@3.0.5(typescript@5.9.2))
+        specifier: ^0.14.1
+        version: 0.14.1(publint@0.3.12)(typescript@5.9.2)(vue-tsc@3.0.5(typescript@5.9.2))
 
   packages/plugin-legacy:
     dependencies:
@@ -224,8 +224,8 @@ importers:
         specifier: ^1.1.1
         version: 1.1.1
       tsdown:
-        specifier: ^0.14.0
-        version: 0.14.0(publint@0.3.12)(typescript@5.9.2)(vue-tsc@3.0.5(typescript@5.9.2))
+        specifier: ^0.14.1
+        version: 0.14.1(publint@0.3.12)(typescript@5.9.2)(vue-tsc@3.0.5(typescript@5.9.2))
       vite:
         specifier: workspace:*
         version: link:../vite
@@ -261,8 +261,8 @@ importers:
         specifier: ^0.3.29
         version: 0.3.29
       '@oxc-project/types':
-        specifier: 0.77.0
-        version: 0.77.0
+        specifier: 0.81.0
+        version: 0.81.0
       '@polka/compression':
         specifier: ^1.0.0-next.25
         version: 1.0.0-next.25
@@ -390,7 +390,7 @@ importers:
         specifier: ^2.0.3
         version: 2.0.3
       rolldown:
-        specifier: ^1.0.0-beta.31
+        specifier: ^1.0.0-beta.32
         version: 1.0.0-beta.32
       rolldown-plugin-dts:
         specifier: ^0.15.6
@@ -2801,9 +2801,6 @@ packages:
   '@oxc-project/runtime@0.81.0':
     resolution: {integrity: sha512-zm/LDVOq9FEmHiuM8zO4DWirv0VP2Tv2VsgaiHby9nvpq+FVrcqNYgv+TysLKOITQXWZj/roluTxFvpkHP0Iuw==}
     engines: {node: '>=6.9.0'}
-
-  '@oxc-project/types@0.77.0':
-    resolution: {integrity: sha512-iUQj185VvCPnSba+ltUV5tVDrPX6LeZVtQywnnoGbe4oJ1VKvDKisjGkD/AvVtdm98b/BdsVS35IlJV1m2mBBA==}
 
   '@oxc-project/types@0.81.0':
     resolution: {integrity: sha512-CnOqkybZK8z6Gx7Wb1qF7AEnSzbol1WwcIzxYOr8e91LytGOjo0wCpgoYWZo8sdbpqX+X+TJayIzo4Pv0R/KjA==}
@@ -6899,8 +6896,8 @@ packages:
       typescript:
         optional: true
 
-  tsdown@0.14.0:
-    resolution: {integrity: sha512-3zBEDUC1XPnVE5rwfsm1y8REh58CJsDT319hkRwBgIpN9eMClE30dqF4HkK8zPKoczNNqFrQ2cKGrjE50WprIw==}
+  tsdown@0.14.1:
+    resolution: {integrity: sha512-/nBuFDKZeYln9hAxwWG5Cm55/823sNIVI693iVi0xRFHzf9OVUq4b/lx9PH1TErFr/IQ0kd2hutFbJIPM0XQWA==}
     engines: {node: '>=20.19.0'}
     hasBin: true
     peerDependencies:
@@ -8408,8 +8405,6 @@ snapshots:
       fastq: 1.19.0
 
   '@oxc-project/runtime@0.81.0': {}
-
-  '@oxc-project/types@0.77.0': {}
 
   '@oxc-project/types@0.81.0': {}
 
@@ -12610,7 +12605,7 @@ snapshots:
     optionalDependencies:
       typescript: 5.9.2
 
-  tsdown@0.14.0(publint@0.3.12)(typescript@5.9.2)(vue-tsc@3.0.5(typescript@5.9.2)):
+  tsdown@0.14.1(publint@0.3.12)(typescript@5.9.2)(vue-tsc@3.0.5(typescript@5.9.2)):
     dependencies:
       ansis: 4.1.0
       cac: 6.7.14
