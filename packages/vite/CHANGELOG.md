@@ -1,3 +1,13 @@
+## <small>[7.1.3](https://github.com/vitejs/rolldown-vite/compare/v7.1.2...v7.1.3) (2025-08-18)</small>
+### Features
+
+* update rolldown ([#379](https://github.com/vitejs/rolldown-vite/issues/379)) ([4056cc6](https://github.com/vitejs/rolldown-vite/commit/4056cc655d1f46585413bf1663d8bb3c319a1131))
+* warn if a plugin specified both `rollupOptions` and `rolldownOptions` ([#377](https://github.com/vitejs/rolldown-vite/issues/377)) ([07da856](https://github.com/vitejs/rolldown-vite/commit/07da85623d9dce8d0a8b1cf83fe9e97f7b623f3f))
+
+### Bug Fixes
+
+* merge tsconfig jsx options even when `oxc.jsx.runtime` is set  ([#376](https://github.com/vitejs/rolldown-vite/issues/376)) ([e6eb30a](https://github.com/vitejs/rolldown-vite/commit/e6eb30a1b713b8b6c29480533fe8c9ec487cd2c3))
+
 ## <small>[7.1.2](https://github.com/vitejs/rolldown-vite/compare/v7.1.1...v7.1.2) (2025-08-12)</small>
 ### Features
 
