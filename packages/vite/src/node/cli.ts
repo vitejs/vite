@@ -27,22 +27,20 @@ export function checkNodeVersion(): boolean {
     (major === 22 && minor >= 12) ||
     major > 22
 
-  if (!isSupported) {
-    const logger = createLogger('warn')
-    logger.warn(
-      colors.yellow(
-        `You are using Node.js ${process.versions.node}. ` +
-          `Vite requires Node.js version 20.19+ or 22.12+. ` +
-          `Please upgrade your Node.js version.`,
-      ),
-    )
-  }
-
   return isSupported
 }
 
 // Check Node.js version before proceeding
-checkNodeVersion()
+if (!checkNodeVersion()) {
+  // eslint-disable-next-line no-console
+  console.warn(
+    colors.yellow(
+      `You are using Node.js ${process.versions.node}. ` +
+        `Vite requires Node.js version 20.19+ or 22.12+. ` +
+        `Please upgrade your Node.js version.`,
+    ),
+  )
+}
 
 const cli = cac('vite')
 
