@@ -95,7 +95,7 @@
     "@babel/parser": "^7.28.0",
     "@jridgewell/remapping": "^2.3.4",
     "@jridgewell/trace-mapping": "^0.3.29",
-    "@oxc-project/types": "0.77.0",
+    "@oxc-project/types": "0.81.0",
     "@polka/compression": "^1.0.0-next.25",
     "@rolldown/pluginutils": "^1.0.0-beta.32",
     "@rollup/plugin-alias": "^5.1.1",
