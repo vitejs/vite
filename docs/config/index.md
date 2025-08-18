@@ -105,7 +105,7 @@ Environment variables available while the config itself is being evaluated are o
 
 This means: variables defined in `.env`, `.env.local`, `.env.[mode]`, or `.env.[mode].local` are **not** automatically injected into `process.env` while your `vite.config.*` is running. They _are_ automatically loaded later and exposed to application code via `import.meta.env` (with the default `VITE_` prefix filter) exactly as documented in [Env Variables and Modes](/guide/env-and-mode.html). So if you only need to pass values from `.env*` files to the app, you don't need to call anything in the config — just prefix them (or adjust [`envPrefix`](/config/shared-options.html#envprefix)).
 
-If, however, values from `.env*` files must influence the config itself (for example to set `server.port`, conditionally enable plugins, or compute `define` replacements), load them manually using the exported `loadEnv` helper. You control which directory to scan (usually `process.cwd()` or a derived `envDir`), and you may widen the prefix filter during loading if you also want access to non-exposed keys at config time.
+If, however, values from `.env*` files must influence the config itself (for example to set `server.port`, conditionally enable plugins, or compute `define` replacements), you can load them manually using the exported [`loadEnv`](/guide/api-javascript.html#loadenv) helper.
 
 ::: tip Why manual loading is needed
 Manual loading lets you read env values _before_ Vite performs its normal post-config load, so they can participate in producing the final config.
