@@ -71,6 +71,7 @@ import {
   asyncFlatten,
   createDebugger,
   createFilter,
+  hasBothRollupOptionsAndRolldownOptions,
   isExternalUrl,
   isFilePathESM,
   isInNodeModules,
@@ -2512,6 +2513,12 @@ async function runConfigHook(
     const handler = getHookHandler(hook)
     const res = await handler.call(context, conf, configEnv)
     if (res && res !== conf) {
+      if (hasBothRollupOptionsAndRolldownOptions(res)) {
+        context.warn(
+          `Both \`rollupOptions\` and \`rolldownOptions\` were specified by ${JSON.stringify(p.name)} plugin. ` +
+            `\`rollupOptions\` specified by that plugin will be ignored.`,
+        )
+      }
       conf = mergeConfig(conf, res)
     }
   }

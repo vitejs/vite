@@ -1255,6 +1255,26 @@ const rollupOptionsRootPaths = new Set([
   'ssr.optimizeDeps',
 ])
 
+export function hasBothRollupOptionsAndRolldownOptions(
+  options: Record<string, any>,
+): boolean {
+  for (const opt of [
+    options.build,
+    options.worker,
+    options.optimizeDeps,
+    options.ssr?.optimizeDeps,
+  ]) {
+    if (
+      opt != null &&
+      opt.rollupOptions != null &&
+      opt.rolldownOptions != null
+    ) {
+      return true
+    }
+  }
+  return false
+}
+
 function mergeConfigRecursively(
   defaults: Record<string, any>,
   overrides: Record<string, any>,
