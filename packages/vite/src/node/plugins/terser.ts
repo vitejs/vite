@@ -55,7 +55,7 @@ export function terserPlugin(config: ResolvedConfig): Plugin {
           } catch (e) {
             // convert to a plain object as additional properties of Error instances are not
             // sent back to the main thread
-            throw { ...e }
+            throw { stack: e.stack /* stack is non-enumerable */, ...e }
           }
         },
       {
@@ -124,7 +124,8 @@ export function terserPlugin(config: ResolvedConfig): Plugin {
           line: e.line,
           column: e.col,
         }
-        e.frame = generateCodeFrame(code, e.pos)
+        e.frame =
+          e.pos !== undefined ? generateCodeFrame(code, e.pos) : undefined
         throw e
       }
     },
