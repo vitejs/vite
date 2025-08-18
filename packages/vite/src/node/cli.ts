@@ -12,6 +12,35 @@ import { createLogger } from './logger'
 import { resolveConfig } from './config'
 import type { InlineConfig } from './config'
 
+/**
+ * Check if the current Node.js version is supported
+ */
+export function checkNodeVersion(): void {
+  const currentVersion = process.versions.node.split('.')
+  const major = parseInt(currentVersion[0], 10)
+  const minor = parseInt(currentVersion[1], 10)
+  const patch = parseInt(currentVersion[2], 10)
+
+  const isSupported =
+    (major === 20 && (minor > 19 || (minor === 19 && patch >= 0))) ||
+    (major === 22 && minor >= 12) ||
+    major > 22
+
+  if (!isSupported) {
+    const logger = createLogger('warn')
+    logger.warn(
+      colors.yellow(
+        `You are using Node.js ${process.versions.node}. ` +
+          `Vite requires Node.js version 20.19+ or 22.12+. ` +
+          `Please upgrade your Node.js version.`,
+      ),
+    )
+  }
+}
+
+// Check Node.js version before proceeding
+checkNodeVersion()
+
 const cli = cac('vite')
 
 // global options
