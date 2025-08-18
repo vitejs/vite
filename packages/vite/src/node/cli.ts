@@ -14,10 +14,11 @@ import type { InlineConfig } from './config'
 
 /**
  * Check if the current Node.js version is supported
+ * @param nodeVersion - The Node.js version string (e.g., '20.19.0')
  * @returns true if the version is supported, false otherwise
  */
-export function checkNodeVersion(): boolean {
-  const currentVersion = process.versions.node.split('.')
+export function checkNodeVersion(nodeVersion: string): boolean {
+  const currentVersion = nodeVersion.split('.')
   const major = parseInt(currentVersion[0], 10)
   const minor = parseInt(currentVersion[1], 10)
   const patch = parseInt(currentVersion[2], 10)
@@ -31,7 +32,7 @@ export function checkNodeVersion(): boolean {
 }
 
 // Check Node.js version before proceeding
-if (!checkNodeVersion()) {
+if (!checkNodeVersion(process.versions.node)) {
   // eslint-disable-next-line no-console
   console.warn(
     colors.yellow(
