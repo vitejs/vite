@@ -52,8 +52,8 @@ export function importGlobPlugin(config: ResolvedConfig): Plugin {
       importGlobMaps.clear()
     },
     transform: {
+      filter: { code: 'import.meta.glob' },
       async handler(code, id) {
-        if (!code.includes('import.meta.glob')) return
         const result = await transformGlobImport(
           code,
           id,
@@ -626,7 +626,7 @@ export async function toAbsoluteGlob(
   root = globSafePath(root)
   let dir
   if (base) {
-    if (base.startsWith('/')) {
+    if (base[0] === '/') {
       dir = posix.join(root, base)
     } else {
       dir = posix.resolve(

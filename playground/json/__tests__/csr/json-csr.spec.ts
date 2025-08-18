@@ -49,6 +49,10 @@ test('?raw', async () => {
   )
 })
 
+test('require(json) returns object without default export', async () => {
+  expect(await page.textContent('.require')).toBe(JSON.stringify({ 200: 'ok' }))
+})
+
 test.runIf(isServe)('should full reload', async () => {
   expect(await page.textContent('.hmr')).toBe(hmrStringified)
 

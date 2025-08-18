@@ -13,6 +13,7 @@ describe('import and resolveId', () => {
       logLevel: 'error',
       server: {
         middlewareMode: true,
+        ws: false,
       },
     })
     onTestFinished(() => server.close())

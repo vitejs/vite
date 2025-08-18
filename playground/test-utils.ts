@@ -129,17 +129,43 @@ export async function getBgColor(
   return hexToNameMap[rgbToHex(rgb)] ?? rgb
 }
 
-export function readFile(filename: string): string {
-  return fs.readFileSync(path.resolve(testDir, filename), 'utf-8')
+export function readFile(filename: string, encoding?: BufferEncoding): string
+export function readFile(filename: string, encoding: null): Buffer
+export function readFile(
+  filename: string,
+  encoding?: BufferEncoding | null,
+): Buffer | string {
+  if (encoding === undefined) encoding = 'utf-8'
+  return fs.readFileSync(path.resolve(testDir, filename), encoding)
 }
 
 export function editFile(
   filename: string,
-  replacer: (str: string) => string,
+  replacer: (content: string) => string,
+): void
+export function editFile(
+  filename: string,
+  encoding: null,
+  replacer: (content: Buffer) => Buffer,
+): void
+export function editFile(
+  filename: string,
+  encoding: BufferEncoding | null,
+  replacer: ((content: Buffer) => Buffer) | ((content: string) => string),
+): void
+export function editFile(
+  filename: string,
+  encodingOrReplacer: BufferEncoding | null | ((content: string) => string),
+  maybeReplacer?: ((content: Buffer) => Buffer) | ((content: string) => string),
 ): void {
   filename = path.resolve(testDir, filename)
-  const content = fs.readFileSync(filename, 'utf-8')
-  const modified = replacer(content)
+  const [encoding, replacer] = maybeReplacer
+    ? [encodingOrReplacer as BufferEncoding | null, maybeReplacer]
+    : ['utf-8' as const, encodingOrReplacer as (content: string) => string]
+  const content: string | Buffer = fs.readFileSync(filename, encoding)
+  const modified = (replacer as (content: string | Buffer) => string | Buffer)(
+    content,
+  )
   fs.writeFileSync(filename, modified)
 }
 
@@ -163,14 +189,14 @@ export function findAssetFile(
   base = '',
   assets = 'assets',
   matchAll = false,
-): string {
+): string | undefined {
   const assetsDir = path.join(testDir, 'dist', base, assets)
   let files: string[]
   try {
     files = fs.readdirSync(assetsDir)
   } catch (e) {
     if (e.code === 'ENOENT') {
-      return ''
+      return undefined
     }
     throw e
   }
@@ -182,12 +208,12 @@ export function findAssetFile(
             fs.readFileSync(path.resolve(assetsDir, file), 'utf-8'),
           )
           .join('')
-      : ''
+      : undefined
   } else {
     const matchedFile = files.find((file) => file.match(match))
     return matchedFile
       ? fs.readFileSync(path.resolve(assetsDir, matchedFile), 'utf-8')
-      : ''
+      : undefined
   }
 }
 

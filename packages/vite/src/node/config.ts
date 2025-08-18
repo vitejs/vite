@@ -19,6 +19,7 @@ import {
   DEFAULT_CLIENT_CONDITIONS,
   DEFAULT_CLIENT_MAIN_FIELDS,
   DEFAULT_CONFIG_FILES,
+  DEFAULT_EXTERNAL_CONDITIONS,
   DEFAULT_PREVIEW_PORT,
   DEFAULT_SERVER_CONDITIONS,
   DEFAULT_SERVER_MAIN_FIELDS,
@@ -390,7 +391,7 @@ export interface UserConfig extends DefaultEnvironmentOptions {
   /**
    * Options to opt-in to future behavior
    */
-  future?: FutureOptions
+  future?: FutureOptions | 'warn'
   /**
    * Legacy options
    *
@@ -482,8 +483,11 @@ export interface FutureOptions {
   removePluginHookSsrArgument?: 'warn'
 
   removeServerModuleGraph?: 'warn'
+  removeServerReloadModule?: 'warn'
+  removeServerPluginContainer?: 'warn'
   removeServerHot?: 'warn'
   removeServerTransformRequest?: 'warn'
+  removeServerWarmupRequest?: 'warn'
 
   removeSsrLoadModule?: 'warn'
 }
@@ -555,6 +559,7 @@ export interface ResolvedConfig
       | 'dev'
       | 'environments'
       | 'experimental'
+      | 'future'
       | 'server'
       | 'preview'
     > & {
@@ -613,6 +618,7 @@ export interface ResolvedConfig
       worker: ResolvedWorkerOptions
       appType: AppType
       experimental: RequiredExceptFor<ExperimentalOptions, 'renderBuiltUrl'>
+      future: FutureOptions | undefined
       environments: Record<string, ResolvedEnvironmentOptions>
       /**
        * The token to connect to the WebSocket server from browsers.
@@ -651,7 +657,7 @@ export const configDefaults = Object.freeze({
   resolve: {
     // mainFields
     // conditions
-    externalConditions: ['node'],
+    externalConditions: [...DEFAULT_EXTERNAL_CONDITIONS],
     extensions: ['.mjs', '.js', '.mts', '.ts', '.jsx', '.tsx', '.json'],
     dedupe: [],
     /** @experimental */
@@ -702,6 +708,7 @@ export const configDefaults = Object.freeze({
     removeServerModuleGraph: undefined,
     removeServerHot: undefined,
     removeServerTransformRequest: undefined,
+    removeServerWarmupRequest: undefined,
     removeSsrLoadModule: undefined,
   },
   legacy: {
@@ -1168,16 +1175,21 @@ export async function resolveConfig(
       configEnvironmentsSsr.optimizeDeps ?? {},
     )
 
+    // merge with `resolve` as the root to merge `noExternal` correctly
     configEnvironmentsSsr.resolve = mergeConfig(
       {
-        conditions: config.ssr?.resolve?.conditions,
-        externalConditions: config.ssr?.resolve?.externalConditions,
-        mainFields: config.ssr?.resolve?.mainFields,
-        external: config.ssr?.external,
-        noExternal: config.ssr?.noExternal,
-      } satisfies EnvironmentResolveOptions,
-      configEnvironmentsSsr.resolve ?? {},
-    )
+        resolve: {
+          conditions: config.ssr?.resolve?.conditions,
+          externalConditions: config.ssr?.resolve?.externalConditions,
+          mainFields: config.ssr?.resolve?.mainFields,
+          external: config.ssr?.external,
+          noExternal: config.ssr?.noExternal,
+        },
+      } satisfies EnvironmentOptions,
+      {
+        resolve: configEnvironmentsSsr.resolve ?? {},
+      },
+    ).resolve
   }
 
   if (config.build?.ssrEmitAssets !== undefined) {
@@ -1529,7 +1541,20 @@ export async function resolveConfig(
       configDefaults.experimental,
       config.experimental ?? {},
     ),
-    future: config.future,
+    future:
+      config.future === 'warn'
+        ? ({
+            removePluginHookHandleHotUpdate: 'warn',
+            removePluginHookSsrArgument: 'warn',
+            removeServerModuleGraph: 'warn',
+            removeServerReloadModule: 'warn',
+            removeServerPluginContainer: 'warn',
+            removeServerHot: 'warn',
+            removeServerTransformRequest: 'warn',
+            removeServerWarmupRequest: 'warn',
+            removeSsrLoadModule: 'warn',
+          } satisfies Required<FutureOptions>)
+        : config.future,
 
     ssr,
 
@@ -1913,7 +1938,7 @@ async function bundleConfigFile(
     mainFields: ['main'],
     sourcemap: 'inline',
     // the last slash is needed to make the path correct
-    sourceRoot: path.dirname(fileName) + path.sep,
+    sourceRoot: pathToFileURL(path.dirname(fileName)).href + '/',
     metafile: true,
     define: {
       __dirname: dirnameVarName,
@@ -1921,6 +1946,7 @@ async function bundleConfigFile(
       'import.meta.url': importMetaUrlVarName,
       'import.meta.dirname': dirnameVarName,
       'import.meta.filename': filenameVarName,
+      'import.meta.main': 'false',
     },
     plugins: [
       {
@@ -1970,7 +1996,7 @@ async function bundleConfigFile(
               // With the `isNodeBuiltin` check above, this check captures if the builtin is a
               // non-node built-in, which esbuild doesn't know how to handle. In that case, we
               // externalize it so the non-node runtime handles it instead.
-              if (isNodeLikeBuiltin(id)) {
+              if (isNodeLikeBuiltin(id) || id.startsWith('npm:')) {
                 return { external: true }
               }
 

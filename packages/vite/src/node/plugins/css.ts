@@ -6,7 +6,7 @@ import { fileURLToPath, pathToFileURL } from 'node:url'
 import postcssrc from 'postcss-load-config'
 import type {
   ExistingRawSourceMap,
-  ModuleFormat,
+  InternalModuleFormat,
   OutputAsset,
   OutputChunk,
   RenderedChunk,
@@ -24,7 +24,7 @@ import type Less from 'less'
 import type { LightningCSSOptions } from 'types/internal/lightningcssOptions'
 import type { TransformOptions } from 'esbuild'
 import { formatMessages, transform } from 'esbuild'
-import type { RawSourceMap } from '@ampproject/remapping'
+import type { RawSourceMap } from '@jridgewell/remapping'
 import { WorkerWithFallback } from 'artichokie'
 import { globSync } from 'tinyglobby'
 import type {
@@ -98,7 +98,6 @@ import { addToHTMLProxyTransformResult } from './html'
 import {
   assetUrlRE,
   cssEntriesMap,
-  fileToDevUrl,
   fileToUrl,
   publicAssetUrlCache,
   publicAssetUrlRE,
@@ -334,9 +333,10 @@ export function cssPlugin(config: ResolvedConfig): Plugin {
     },
 
     load: {
+      filter: {
+        id: CSS_LANGS_RE,
+      },
       async handler(id) {
-        if (!isCSSRequest(id)) return
-
         if (urlRE.test(id)) {
           if (isModuleCSSRequest(id)) {
             throw new Error(
@@ -361,15 +361,13 @@ export function cssPlugin(config: ResolvedConfig): Plugin {
       },
     },
     transform: {
+      filter: {
+        id: {
+          include: CSS_LANGS_RE,
+          exclude: [commonjsProxyRE, SPECIAL_QUERY_RE],
+        },
+      },
       async handler(raw, id) {
-        if (
-          !isCSSRequest(id) ||
-          commonjsProxyRE.test(id) ||
-          SPECIAL_QUERY_RE.test(id)
-        ) {
-          return
-        }
-
         const { environment } = this
         const resolveUrl = (url: string, importer?: string) =>
           idResolver(environment, url, importer)
@@ -387,7 +385,18 @@ export function cssPlugin(config: ResolvedConfig): Plugin {
           let resolved = await resolveUrl(id, importer)
           if (resolved) {
             if (fragment) resolved += '#' + fragment
-            return [await fileToUrl(this, resolved), resolved]
+            let url = await fileToUrl(this, resolved)
+            // Inherit HMR timestamp if this asset was invalidated
+            if (!url.startsWith('data:') && this.environment.mode === 'dev') {
+              const mod = [
+                ...(this.environment.moduleGraph.getModulesByFile(resolved) ??
+                  []),
+              ].find((mod) => mod.type === 'asset')
+              if (mod?.lastHMRTimestamp) {
+                url = injectQuery(url, `t=${mod.lastHMRTimestamp}`)
+              }
+            }
+            return [url, resolved]
           }
           if (config.command === 'build') {
             const isExternal = config.build.rollupOptions.external
@@ -509,15 +518,13 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
     },
 
     transform: {
+      filter: {
+        id: {
+          include: CSS_LANGS_RE,
+          exclude: [commonjsProxyRE, SPECIAL_QUERY_RE],
+        },
+      },
       async handler(css, id) {
-        if (
-          !isCSSRequest(id) ||
-          commonjsProxyRE.test(id) ||
-          SPECIAL_QUERY_RE.test(id)
-        ) {
-          return
-        }
-
         css = stripBomTag(css)
 
         // cache css compile result to map
@@ -624,7 +631,7 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
     },
 
     async renderChunk(code, chunk, opts, meta) {
-      let chunkCSS = ''
+      let chunkCSS: string | undefined
       const renderedModules = new Proxy(
         {} as Record<string, RenderedModule | undefined>,
         {
@@ -665,7 +672,7 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
             isPureCssChunk = false
           }
 
-          chunkCSS += styles.get(id)
+          chunkCSS = (chunkCSS || '') + styles.get(id)
         } else if (!isJsChunkEmpty) {
           // if the module does not have a style, then it's not a pure css chunk.
           // this is true because in the `transform` hook above, only modules
@@ -828,7 +835,7 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
         }
       }
 
-      if (chunkCSS) {
+      if (chunkCSS !== undefined) {
         if (isPureCssChunk && (opts.format === 'es' || opts.format === 'cjs')) {
           // this is a shared CSS-only chunk that is empty.
           pureCssChunks.add(chunk)
@@ -856,7 +863,7 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
 
             // wait for previous tasks as well
             chunkCSS = await codeSplitEmitQueue.run(async () => {
-              return finalizeCss(chunkCSS, true, config)
+              return finalizeCss(chunkCSS!, true, config)
             })
 
             // emit corresponding css file
@@ -1073,15 +1080,13 @@ export function cssAnalysisPlugin(config: ResolvedConfig): Plugin {
     name: 'vite:css-analysis',
 
     transform: {
+      filter: {
+        id: {
+          include: CSS_LANGS_RE,
+          exclude: [commonjsProxyRE, SPECIAL_QUERY_RE],
+        },
+      },
       async handler(_, id) {
-        if (
-          !isCSSRequest(id) ||
-          commonjsProxyRE.test(id) ||
-          SPECIAL_QUERY_RE.test(id)
-        ) {
-          return
-        }
-
         const { moduleGraph } = this.environment as DevEnvironment
         const thisModule = moduleGraph.getModuleById(id)
 
@@ -1101,20 +1106,7 @@ export function cssAnalysisPlugin(config: ResolvedConfig): Plugin {
             // main import to hot update
             const depModules = new Set<string | EnvironmentModuleNode>()
             for (const file of pluginImports) {
-              if (isCSSRequest(file)) {
-                depModules.add(moduleGraph.createFileOnlyEntry(file))
-              } else {
-                const url = await fileToDevUrl(
-                  this.environment,
-                  file,
-                  /* skipBase */ true,
-                )
-                if (url.startsWith('data:')) {
-                  depModules.add(moduleGraph.createFileOnlyEntry(file))
-                } else {
-                  depModules.add(await moduleGraph.ensureEntryFromUrl(url))
-                }
-              }
+              depModules.add(moduleGraph.createFileOnlyEntry(file))
             }
             moduleGraph.updateModuleInfo(
               thisModule,
@@ -1153,7 +1145,7 @@ function isCssScopeToRendered(
  */
 export function getEmptyChunkReplacer(
   pureCssChunkNames: string[],
-  outputFormat: ModuleFormat,
+  outputFormat: InternalModuleFormat,
 ): (code: string) => string {
   const emptyChunkFiles = pureCssChunkNames
     .map((file) => escapeRegex(path.basename(file)))
@@ -1945,8 +1937,7 @@ const UrlRewritePostcssPlugin: PostCSS.PluginCreator<{
         if (isCssUrl || isCssImageSet) {
           const replacerForDeclaration = async (rawUrl: string) => {
             const [newUrl, resolvedId] = await opts.resolver(rawUrl, importer)
-            // only register inlined assets to avoid frequent full refresh (#18979)
-            if (newUrl.startsWith('data:') && resolvedId) {
+            if (resolvedId) {
               opts.deps.add(resolvedId)
             }
             return newUrl
@@ -2040,7 +2031,10 @@ function skipUrlReplacer(unquotedUrl: string) {
     isExternalUrl(unquotedUrl) ||
     isDataUrl(unquotedUrl) ||
     unquotedUrl[0] === '#' ||
-    functionCallRE.test(unquotedUrl)
+    functionCallRE.test(unquotedUrl) ||
+    // skip if it is already a placeholder
+    unquotedUrl.startsWith('__VITE_ASSET__') ||
+    unquotedUrl.startsWith('__VITE_PUBLIC_ASSET__')
   )
 }
 async function doUrlReplace(
@@ -3221,8 +3215,7 @@ async function compileLightningCSS(
             dep.url,
             dep.loc.filePath.replace(NULL_BYTE_PLACEHOLDER, '\0'),
           )
-          // only register inlined assets to avoid frequent full refresh (#18979)
-          if (newUrl.startsWith('data:') && resolvedId) {
+          if (resolvedId) {
             deps.add(resolvedId)
           }
           replaceUrl = newUrl

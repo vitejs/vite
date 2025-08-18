@@ -1,13 +1,13 @@
 <script setup lang="ts">
 import { gsap } from 'gsap'
 import { MotionPathPlugin } from 'gsap/dist/MotionPathPlugin'
-import { onMounted, onUnmounted, Ref, ref } from 'vue'
+import { onMounted, onUnmounted, type Ref, ref } from 'vue'
 import SvgInputs from './svg-elements/SvgInputs.vue'
 import SvgOutputs from './svg-elements/SvgOutputs.vue'
 import SvgBlueIndicator from './svg-elements/SvgBlueIndicator.vue'
 import SvgPinkIndicator from './svg-elements/SvgPinkIndicator.vue'
 import { ScrollTrigger } from 'gsap/dist/ScrollTrigger'
-import { SvgNodeProps } from '../common/SvgNode.vue'
+import type { SvgNodeProps } from '../common/SvgNode.vue'
 
 gsap.registerPlugin(MotionPathPlugin)
 
@@ -470,7 +470,7 @@ onMounted(() => {
       </div>
       <div class="vite-chip__filter" />
       <img
-        :src="isUwu ? '/logo-uwu.png' : '/logo.svg'"
+        :src="isUwu ? '/logo-uwu.webp' : '/logo.svg'"
         :alt="isUwu ? 'Vite Kawaii Logo by @icarusgkx' : 'Vite Logo'"
         class="vite-chip__logo"
         :class="{ uwu: isUwu }"
@@ -715,7 +715,7 @@ onMounted(() => {
   }
 
   background:
-    url('/noise.png'),
+    url('../common/noise.webp'),
     radial-gradient(
       circle at right center,
       rgb(86, 50, 119) 0%,
@@ -732,7 +732,7 @@ onMounted(() => {
 
   @media (min-width: 1024px) {
     background:
-      url('/noise.png'),
+      url('../common/noise.webp'),
       radial-gradient(
         circle at right center,
         rgba(75, 41, 105, 0.5) 0%,
@@ -751,7 +751,7 @@ onMounted(() => {
 
   @media (min-width: 1500px) {
     background:
-      url('/noise.png'),
+      url('../common/noise.webp'),
       radial-gradient(
         circle at right center,
         rgba(75, 41, 105, 0.5) 0%,
@@ -770,7 +770,7 @@ onMounted(() => {
 
   @media (min-width: 1800px) {
     background:
-      url('/noise.png'),
+      url('../common/noise.webp'),
       radial-gradient(
         circle at right center,
         rgba(75, 41, 105, 0.5) 0%,

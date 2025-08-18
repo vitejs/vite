@@ -6,10 +6,10 @@ Give us feedback at [Environment API feedback discussion](https://github.com/vit
 
 `server.ssrLoadModule` has been replaced by importing from a [Module Runner](/guide/api-environment#modulerunner).
 
-Affect scope: `Vite Plugin Authors`
+Affected scope: `Vite Plugin Authors`
 
 ::: warning Future Deprecation
-`ModuleRunner` was first introduce in `v6.0`. The deprecation of `server.ssrLoadModule` is planned for a future major. To identify your usage, set `future.removeSsrLoadModule` to `"warn"` in your vite config.
+`ModuleRunner` was first introduced in `v6.0`. The deprecation of `server.ssrLoadModule` is planned for a future major. To identify your usage, set `future.removeSsrLoadModule` to `"warn"` in your vite config.
 :::
 
 ## Motivation
@@ -19,3 +19,5 @@ The `server.ssrLoadModule(url)` only allows importing modules in the `ssr` e
 ## Migration Guide
 
 Check out the [Environment API for Frameworks Guide](../guide/api-environment-frameworks.md).
+
+`server.ssrFixStacktrace` and `server.ssrRewriteStacktrace` does not have to be called when using the Module Runner APIs. The stack traces will be updated unless `sourcemapInterceptor` is set to `false`.

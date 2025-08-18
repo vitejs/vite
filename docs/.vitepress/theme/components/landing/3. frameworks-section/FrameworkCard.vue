@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { Ref, ref } from 'vue'
+import { type Ref, ref } from 'vue'
 
 /**
  * A single framework or tool to display in the frameworks section.
@@ -56,6 +56,7 @@ const props = withDefaults(defineProps<Props>(), {
       v-if="props.framework.logo"
       :src="props.framework.logo"
       :alt="props.framework.name"
+      loading="lazy"
     />
   </component>
 </template>

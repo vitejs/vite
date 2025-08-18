@@ -40,6 +40,17 @@ test('should have no 404s', () => {
   })
 })
 
+test.runIf(isBuild)(
+  'should not warn about VITE_ASSET tokens in image-set',
+  async () => {
+    expect(serverLogs).toStrictEqual(
+      expect.not.arrayContaining([
+        expect.stringMatching(/VITE_ASSET__.*?didn't resolve at build time/),
+      ]),
+    )
+  },
+)
+
 test('should get a 404 when using incorrect case', async () => {
   expect((await fetchPath('icon.png')).headers.get('Content-Type')).toBe(
     'image/png',
@@ -362,6 +373,14 @@ describe('css url() references', () => {
       await expect.poll(() => getBg('.css-url-svg')).toMatch('red')
     }
   })
+
+  test.runIf(isServe)('non inlined url() HMR', async () => {
+    const bg = await getBg('.css-url-non-inline-hmr')
+    editFile('nested/donuts-large.svg', (code) =>
+      code.replace('fill="blue"', 'fill="red"'),
+    )
+    await expect.poll(() => getBg('.css-url-non-inline-hmr')).not.toBe(bg)
+  })
 })
 
 describe('image', () => {
@@ -463,6 +482,20 @@ test('Unknown extension assets import', async () => {
 
 test('?raw import', async () => {
   expect(await page.textContent('.raw')).toMatch('SVG')
+  expect(await page.textContent('.raw-html')).toBe('<div>partial</div>\n')
+
+  if (isBuild) return
+  editFile('nested/partial.html', (code) =>
+    code.replace('<div>partial</div>', '<div>partial updated</div>'),
+  )
+  await expect
+    .poll(() => page.textContent('.raw-html'))
+    .toBe('<div>partial updated</div>\n')
+  expect(browserLogs).toStrictEqual(
+    expect.arrayContaining([
+      expect.stringContaining('hot updated: /nested/partial.html?raw via'),
+    ]),
+  )
 })
 
 test('?no-inline svg import', async () => {
@@ -536,7 +569,31 @@ describe.runIf(isBuild)('encodeURI', () => {
 })
 
 test('new URL(..., import.meta.url)', async () => {
-  expect(await page.textContent('.import-meta-url')).toMatch(assetMatch)
+  const imgMatch = isBuild
+    ? /\/foo\/bar\/assets\/img-[-\w]{8}\.png/
+    : '/foo/bar/import-meta-url/img.png'
+
+  expect(await page.textContent('.import-meta-url')).toMatch(imgMatch)
+  if (isServe) {
+    const loadPromise = page.waitForEvent('load')
+    const newContent = readFile('import-meta-url/img-update.png', null)
+    let oldContent: Buffer
+    editFile('import-meta-url/img.png', null, (_oldContent) => {
+      oldContent = _oldContent
+      return newContent
+    })
+    await loadPromise // expect reload
+    await expect
+      .poll(() => page.textContent('.import-meta-url'))
+      .toMatch(imgMatch)
+
+    const loadPromise2 = page.waitForEvent('load')
+    editFile('import-meta-url/img.png', null, (_) => oldContent)
+    await loadPromise2 // expect reload
+    await expect
+      .poll(() => page.textContent('.import-meta-url'))
+      .toMatch(imgMatch)
+  }
 })
 
 test('new URL("@/...", import.meta.url)', async () => {

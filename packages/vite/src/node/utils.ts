@@ -12,8 +12,8 @@ import { performance } from 'node:perf_hooks'
 import type { AddressInfo, Server } from 'node:net'
 import fsp from 'node:fs/promises'
 import type { FSWatcher } from 'dep-types/chokidar'
-import remapping from '@ampproject/remapping'
-import type { DecodedSourceMap, RawSourceMap } from '@ampproject/remapping'
+import remapping from '@jridgewell/remapping'
+import type { DecodedSourceMap, RawSourceMap } from '@jridgewell/remapping'
 import colors from 'picocolors'
 import debug from 'debug'
 import type { Alias, AliasOptions } from 'dep-types/alias'
@@ -98,8 +98,6 @@ export const normalizeId = (id: string): string =>
 
 // Supported by Node, Deno, Bun
 const NODE_BUILTIN_NAMESPACE = 'node:'
-// Supported by Deno
-const NPM_BUILTIN_NAMESPACE = 'npm:'
 // Supported by Bun
 const BUN_BUILTIN_NAMESPACE = 'bun:'
 // Some runtimes like Bun injects namespaced modules here, which is not a node builtin
@@ -136,7 +134,6 @@ export function createIsBuiltin(
 export const nodeLikeBuiltins = [
   ...nodeBuiltins,
   new RegExp(`^${NODE_BUILTIN_NAMESPACE}`),
-  new RegExp(`^${NPM_BUILTIN_NAMESPACE}`),
   new RegExp(`^${BUN_BUILTIN_NAMESPACE}`),
 ]
 
@@ -285,7 +282,7 @@ export function isParentDirectory(dir: string, file: string): boolean {
  * @param file2 - normalized absolute path
  * @returns true if both files url are identical
  */
-export function isSameFileUri(file1: string, file2: string): boolean {
+export function isSameFilePath(file1: string, file2: string): boolean {
   return (
     file1 === file2 ||
     (isCaseInsensitiveFS && file1.toLowerCase() === file2.toLowerCase())
@@ -511,6 +508,11 @@ export function generateCodeFrame(
     end !== undefined ? posToNumber(source, end) : start,
     source.length,
   )
+  const lastPosLine =
+    end !== undefined
+      ? numberToPos(source, end).line
+      : numberToPos(source, start).line + range
+  const lineNumberWidth = Math.max(3, String(lastPosLine).length + 1)
   const lines = source.split(splitRE)
   let count = 0
   const res: string[] = []
@@ -521,7 +523,7 @@ export function generateCodeFrame(
         if (j < 0 || j >= lines.length) continue
         const line = j + 1
         res.push(
-          `${line}${' '.repeat(Math.max(3 - String(line).length, 0))}|  ${
+          `${line}${' '.repeat(lineNumberWidth - String(line).length)}|  ${
             lines[j]
           }`,
         )
@@ -533,11 +535,15 @@ export function generateCodeFrame(
             1,
             end > count ? lineLength - pad : end - start,
           )
-          res.push(`   |  ` + ' '.repeat(pad) + '^'.repeat(length))
+          res.push(
+            `${' '.repeat(lineNumberWidth)}|  ` +
+              ' '.repeat(pad) +
+              '^'.repeat(length),
+          )
         } else if (j > i) {
           if (end > count) {
             const length = Math.max(Math.min(end - count, lineLength), 1)
-            res.push(`   |  ` + '^'.repeat(length))
+            res.push(`${' '.repeat(lineNumberWidth)}|  ` + '^'.repeat(length))
           }
           count += lineLength + 1
         }
@@ -961,12 +967,13 @@ export async function resolveHostname(
   return { host, name }
 }
 
-export async function resolveServerUrls(
+export function resolveServerUrls(
   server: Server,
   options: CommonServerOptions,
+  hostname: Hostname,
   httpsOptions: HttpsServerOptions | undefined,
   config: ResolvedConfig,
-): Promise<ResolvedServerUrls> {
+): ResolvedServerUrls {
   const address = server.address()
 
   const isAddressInfo = (x: any): x is AddressInfo => x?.address
@@ -976,7 +983,6 @@ export async function resolveServerUrls(
 
   const local: string[] = []
   const network: string[] = []
-  const hostname = await resolveHostname(options.host)
   const protocol = options.https ? 'https' : 'http'
   const port = address.port
   const base =
