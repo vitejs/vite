@@ -119,7 +119,7 @@ describe.runIf(isBuild)('build', () => {
     )
     // inlined shared worker
     expect(content).toMatch(
-      'return new SharedWorker(`data:text/javascript;charset=utf-8,`+',
+      'return new SharedWorker(`data:text/javascript;charset=utf-8,',
     )
   })
 

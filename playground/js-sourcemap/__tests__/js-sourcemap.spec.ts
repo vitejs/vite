@@ -106,7 +106,7 @@ if (!isBuild) {
     const map = extractSourcemap(multi)
     expect(formatSourcemapForSnapshot(map)).toMatchInlineSnapshot(`
       {
-        "mappings": ";AACA,SACE,WACK,2BAA2B;AAElC,QAAQ,IAAI,yBAAyB,IAAI",
+        "mappings": ";AACA,SACE,WACK;AAEP,QAAQ,IAAI,yBAAyB",
         "sources": [
           "with-multiline-import.ts",
         ],
@@ -144,7 +144,7 @@ describe.runIf(isBuild)('build tests', () => {
       {
         "debugId": "00000000-0000-0000-0000-000000000000",
         "ignoreList": [],
-        "mappings": ";grCAAA,OAAO,qDAEP,QAAQ,IAAI,wBAAwB",
+        "mappings": ";grCAAA,OAAO,qDAEP,QAAQ,IAAI",
         "sources": [
           "../../after-preload-dynamic.js",
         ],
@@ -159,8 +159,8 @@ describe.runIf(isBuild)('build tests', () => {
     `
     if (process.env._VITE_TEST_JS_PLUGIN) {
       mapSnapshot = mapSnapshot.replace(
-        ';grCAAA,OAAO,qDAEP,QAAQ,IAAI,wBAAwB',
-        ';grCAAA,OAAO,6BAAuB,wBAE9B,QAAQ,IAAI,wBAAuB',
+        ';grCAAA,OAAO,qDAEP,QAAQ,IAAI',
+        ';grCAAA,OAAO,6BAAuB,wBAE9B,QAAQ,IAAI',
       )
     }
     expect(formatSourcemapForSnapshot(JSON.parse(map))).toMatchInlineSnapshot(
@@ -191,7 +191,7 @@ describe.runIf(isBuild)('build tests', () => {
     expect(formatSourcemapForSnapshot(JSON.parse(map))).toMatchInlineSnapshot(`
       {
         "debugId": "00000000-0000-0000-0000-000000000000",
-        "mappings": "AAEA,SAAS,GAAO,CACd,GAAW,AACZ,CAED,SAAS,GAAY,CAEnB,QAAQ,MAAM,qBAAA,CAAA,MAAA,MAAA,EAAyC,AACxD,CAED,GAAM",
+        "mappings": "AAEA,SAAS,GAAO,CACd,GACD,CAED,SAAS,GAAY,CAEnB,QAAQ,MAAM,qBAAA,CAAA,MAAA,OAAA,CACf,CAED",
         "sources": [
           "../../with-define-object.ts",
         ],
