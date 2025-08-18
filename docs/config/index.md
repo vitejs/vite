@@ -111,10 +111,9 @@ If, however, values from `.env*` files must influence the config itself (for exa
 import { defineConfig, loadEnv } from 'vite'
 
 export default defineConfig(({ mode }) => {
-  // Load early so values can affect the config.
-  // If you plan to return a custom `root` or `envDir`, pass its path instead of `process.cwd()`.
-  // Passing '' as the third arg intentionally lifts the default VITE_ exposure filter
-  // so we can read all keys now and choose which ones to expose or transform.
+  // Load env file based on `mode` in the current working directory.
+  // Set the third parameter to '' to load all env regardless of the
+  // `VITE_` prefix.
   const env = loadEnv(mode, process.cwd(), '')
   return {
     define: {
