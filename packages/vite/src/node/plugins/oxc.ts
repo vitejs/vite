@@ -63,24 +63,27 @@ export function setOxcTransformOptionsFromTsconfigOptions(
   // when both the normal options and tsconfig is set,
   // we want to prioritize the normal options
   if (
-    oxcOptions.jsx === undefined ||
-    (typeof oxcOptions.jsx === 'object' && oxcOptions.jsx.runtime === undefined)
+    tsCompilerOptions.jsx === 'preserve' &&
+    (oxcOptions.jsx === undefined ||
+      (typeof oxcOptions.jsx === 'object' &&
+        oxcOptions.jsx.runtime === undefined))
   ) {
-    if (tsCompilerOptions.jsx === 'preserve') {
-      oxcOptions.jsx = 'preserve'
-    } else {
-      const jsxOptions: OxcJsxOptions = { ...oxcOptions.jsx }
+    oxcOptions.jsx = 'preserve'
+  }
+  if (oxcOptions.jsx !== 'preserve') {
+    const jsxOptions: OxcJsxOptions = { ...oxcOptions.jsx }
 
-      if (tsCompilerOptions.jsxFactory) {
-        jsxOptions.pragma ??= tsCompilerOptions.jsxFactory
-      }
-      if (tsCompilerOptions.jsxFragmentFactory) {
-        jsxOptions.pragmaFrag ??= tsCompilerOptions.jsxFragmentFactory
-      }
-      if (tsCompilerOptions.jsxImportSource) {
-        jsxOptions.importSource ??= tsCompilerOptions.jsxImportSource
-      }
+    if (tsCompilerOptions.jsxFactory) {
+      jsxOptions.pragma ??= tsCompilerOptions.jsxFactory
+    }
+    if (tsCompilerOptions.jsxFragmentFactory) {
+      jsxOptions.pragmaFrag ??= tsCompilerOptions.jsxFragmentFactory
+    }
+    if (tsCompilerOptions.jsxImportSource) {
+      jsxOptions.importSource ??= tsCompilerOptions.jsxImportSource
+    }
 
+    if (!jsxOptions.runtime) {
       switch (tsCompilerOptions.jsx) {
         case 'react':
           jsxOptions.runtime = 'classic'
@@ -99,10 +102,11 @@ export function setOxcTransformOptionsFromTsconfigOptions(
         default:
           break
       }
-
-      oxcOptions.jsx = jsxOptions
     }
+
+    oxcOptions.jsx = jsxOptions
   }
+
   if (oxcOptions.decorator?.legacy === undefined) {
     const experimentalDecorators = tsCompilerOptions.experimentalDecorators
     if (experimentalDecorators !== undefined) {
