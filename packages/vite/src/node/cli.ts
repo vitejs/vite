@@ -12,26 +12,17 @@ import { createLogger } from './logger'
 import { resolveConfig } from './config'
 import type { InlineConfig } from './config'
 
-/**
- * Check if the current Node.js version is supported
- * @param nodeVersion - The Node.js version string (e.g., '20.19.0')
- * @returns true if the version is supported, false otherwise
- */
 export function checkNodeVersion(nodeVersion: string): boolean {
   const currentVersion = nodeVersion.split('.')
   const major = parseInt(currentVersion[0], 10)
   const minor = parseInt(currentVersion[1], 10)
-  const patch = parseInt(currentVersion[2], 10)
-
   const isSupported =
-    (major === 20 && (minor > 19 || (minor === 19 && patch >= 0))) ||
+    (major === 20 && minor >= 19) ||
     (major === 22 && minor >= 12) ||
     major > 22
-
   return isSupported
 }
 
-// Check Node.js version before proceeding
 if (!checkNodeVersion(process.versions.node)) {
   // eslint-disable-next-line no-console
   console.warn(
