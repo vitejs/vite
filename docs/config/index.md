@@ -128,10 +128,6 @@ export default defineConfig(({ mode }) => {
 })
 ```
 
-::: note
-`loadEnv` is _not_ required if you only need variables available in application source code (`import.meta.env`). It's only needed when env values must participate in creating the config itself.
-:::
-
 ## Debugging the Config File on VS Code
 
 With the default `--configLoader bundle` behavior, Vite writes the generated temporary configuration file to the `node_modules/.vite-temp` folder and a file not found error will occur when setting breakpoint debugging in the Vite config file. To fix the issue, add the following configuration to `.vscode/settings.json`:
