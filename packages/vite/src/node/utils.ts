@@ -499,6 +499,7 @@ export function numberToPos(source: string, offset: number | Pos): Pos {
 }
 
 const MAX_DISPLAY_LEN = 120
+const ELLIPSIS = '...'
 
 export function generateCodeFrame(
   source: string,
@@ -542,10 +543,11 @@ export function generateCodeFrame(
               const center = pad + Math.floor(underlineLength / 2)
               startIdx = Math.max(0, center - Math.floor(MAX_DISPLAY_LEN / 2))
             }
-            underlinePad = Math.max(0, pad - startIdx) + (startIdx > 0 ? 3 : 0)
+            underlinePad =
+              Math.max(0, pad - startIdx) + (startIdx > 0 ? ELLIPSIS.length : 0)
           }
-          const prefix = startIdx > 0 ? '...' : ''
-          const suffix = lineLength - startIdx > MAX_DISPLAY_LEN ? '...' : ''
+          const prefix = startIdx > 0 ? ELLIPSIS : ''
+          const suffix = lineLength - startIdx > MAX_DISPLAY_LEN ? ELLIPSIS : ''
           const sliceLen = MAX_DISPLAY_LEN - prefix.length - suffix.length
           displayLine =
             prefix + displayLine.slice(startIdx, startIdx + sliceLen) + suffix
