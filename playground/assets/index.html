@@ -324,6 +324,10 @@
 <img class="import-meta-url-img-comma-nl" />
 <code class="import-meta-url-comma-nl"></code>
 
+<h2>new URL('...', import.meta.url) (multiline)</h2>
+<img class="import-meta-url-img-multiline" />
+<code class="import-meta-url-multiline"></code>
+
 <h2>new URL(`./${dynamic}`, import.meta.url)</h2>
 <p>
   <img class="dynamic-import-meta-url-img-1" />
@@ -637,6 +641,12 @@
   text('.import-meta-url-comma-nl', metaUrlWithCommaNL)
   document.querySelector('.import-meta-url-img-comma-nl').src =
     metaUrlWithCommaNL
+
+  // testing multiline new URL without trailing comma (issue #20631)
+  const metaUrlMultiline = new URL('./nested/asset.png', import.meta.url)
+  text('.import-meta-url-multiline', metaUrlMultiline)
+  document.querySelector('.import-meta-url-img-multiline').src =
+    metaUrlMultiline
 
   import classNames from './css/foo.module.css'
   document.querySelector('#foo').className = classNames['foo-module']
