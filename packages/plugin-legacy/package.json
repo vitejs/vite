@@ -39,10 +39,10 @@
     }
   },
   "dependencies": {
-    "@babel/core": "^7.28.0",
+    "@babel/core": "^7.28.3",
     "@babel/plugin-transform-dynamic-import": "^7.27.1",
     "@babel/plugin-transform-modules-systemjs": "^7.27.1",
-    "@babel/preset-env": "^7.28.0",
+    "@babel/preset-env": "^7.28.3",
     "babel-plugin-polyfill-corejs3": "^0.13.0",
     "babel-plugin-polyfill-regenerator": "^0.6.5",
     "browserslist": "^4.25.2",
@@ -59,7 +59,7 @@
   "devDependencies": {
     "@vitejs/plugin-legacy-for-rolldown-vite": "https://pkg.pr.new/vitejs/rolldown-vite/@vitejs/plugin-legacy@a2594ec",
     "acorn": "^8.15.0",
-    "fdir": "^6.4.6",
+    "fdir": "^6.5.0",
     "picocolors": "^1.1.1",
     "tsdown": "^0.14.1",
     "vite": "workspace:*"
