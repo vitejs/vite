@@ -1,3 +1,33 @@
+## <small>[7.1.3](https://github.com/vitejs/vite/compare/v7.1.2...v7.1.3) (2025-08-19)</small>
+### Features
+
+* **cli:** add Node.js version warning for unsupported versions ([#20638](https://github.com/vitejs/vite/issues/20638)) ([a1be1bf](https://github.com/vitejs/vite/commit/a1be1bf0905b9086e5f1370c63d76a7fa4a195ec))
+* generate code frame for parse errors thrown by terser ([#20642](https://github.com/vitejs/vite/issues/20642)) ([a9ba017](https://github.com/vitejs/vite/commit/a9ba0174a58b949373d6b4240bc69180dff0b780))
+* support long lines in `generateCodeFrame` ([#20640](https://github.com/vitejs/vite/issues/20640)) ([1559577](https://github.com/vitejs/vite/commit/15595773170c2a07f2efdccee05964fb87c19ae6))
+
+### Bug Fixes
+
+* **deps:** update all non-major dependencies ([#20634](https://github.com/vitejs/vite/issues/20634)) ([4851cab](https://github.com/vitejs/vite/commit/4851cab3ba818b5f0f82eef3796b61d4b12768f1))
+* **optimizer:** incorrect incompatible error ([#20439](https://github.com/vitejs/vite/issues/20439)) ([446fe83](https://github.com/vitejs/vite/commit/446fe83033686dd38d13b786a217b8277b5c5f09))
+* support multiline new URL(..., import.meta.url) expressions ([#20644](https://github.com/vitejs/vite/issues/20644)) ([9ccf142](https://github.com/vitejs/vite/commit/9ccf142764d48292aa33e5ca6f020a7d55b97f61))
+
+### Performance Improvements
+
+* **cli:** dynamically import `resolveConfig` ([#20646](https://github.com/vitejs/vite/issues/20646)) ([f691f57](https://github.com/vitejs/vite/commit/f691f57e46118328e00174160ceab2101b7256ca))
+
+### Miscellaneous Chores
+
+* **deps:** update rolldown-related dependencies ([#20633](https://github.com/vitejs/vite/issues/20633)) ([98b92e8](https://github.com/vitejs/vite/commit/98b92e8c4b10ae87c48292a8ac09b01ca81a02cf))
+
+### Code Refactoring
+
+* replace startsWith with strict equality ([#20603](https://github.com/vitejs/vite/issues/20603)) ([42816de](https://github.com/vitejs/vite/commit/42816dee0e177dded1c9de4d9099089ec4acef96))
+* use `import` in worker threads ([#20641](https://github.com/vitejs/vite/issues/20641)) ([530687a](https://github.com/vitejs/vite/commit/530687a344c51daf3115d1c134586bbde58356e0))
+
+### Tests
+
+* remove `checkNodeVersion` test ([#20647](https://github.com/vitejs/vite/issues/20647)) ([731d3e6](https://github.com/vitejs/vite/commit/731d3e61f444f6c5e611f67b531416ed6450f90f))
+
 ## <small>[7.1.2](https://github.com/vitejs/vite/compare/v7.1.1...v7.1.2) (2025-08-12)</small>
 ### Bug Fixes
 
