@@ -718,8 +718,6 @@
   // Import from separate file to test multiline expressions are correctly processed
   import('./multiline-import-meta-url.js').then((module) => {
     text('.multiline-url-1', module.multilineUrl)
-    text('.multiline-url-2', module.multilineUrl2)
-    text('.multiline-url-3', module.multilineUrl3)
   })
 
   function text(el, text) {
