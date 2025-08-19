@@ -2676,11 +2676,11 @@ const makeLessWorker = (
   }
 
   const worker = new WorkerWithFallback(
-    () => {
-      // eslint-disable-next-line no-restricted-globals -- this function runs inside a cjs worker
-      const fsp = require('node:fs/promises')
-      // eslint-disable-next-line no-restricted-globals
-      const path = require('node:path')
+    async () => {
+      const [fsp, path] = await Promise.all([
+        import('node:fs/promises'),
+        import('node:path'),
+      ])
 
       let ViteLessManager: any
       const createViteLessPlugin = (
@@ -2741,8 +2741,7 @@ const makeLessWorker = (
           additionalData: undefined
         },
       ) => {
-        // eslint-disable-next-line no-restricted-globals -- this function runs inside a cjs worker
-        const nodeLess: typeof Less = require(lessPath)
+        const nodeLess: typeof Less = (await import(lessPath)).default
         const viteResolverPlugin = createViteLessPlugin(
           nodeLess,
           options.filename,
@@ -2787,7 +2786,9 @@ const lessProcessor = (
       worker?.stop()
     },
     async process(environment, source, root, options, resolvers) {
-      const lessPath = loadPreprocessorPath(PreprocessLang.less, root)
+      const lessPath = pathToFileURL(
+        loadPreprocessorPath(PreprocessLang.less, root),
+      ).href
       worker ??= makeLessWorker(environment, resolvers, maxWorkers)
 
       const { content, map: additionalMap } = await getSource(
@@ -2853,8 +2854,7 @@ const makeStylWorker = (maxWorkers: number | undefined) => {
           additionalData: undefined
         },
       ) => {
-        // eslint-disable-next-line no-restricted-globals -- this function runs inside a cjs worker
-        const nodeStylus: typeof Stylus = require(stylusPath)
+        const nodeStylus: typeof Stylus = (await import(stylusPath)).default
 
         const ref = nodeStylus(content, {
           // support @import from node dependencies by default
@@ -2907,7 +2907,9 @@ const stylProcessor = (
       worker?.stop()
     },
     async process(_environment, source, root, options, _resolvers) {
-      const stylusPath = loadPreprocessorPath(PreprocessLang.stylus, root)
+      const stylusPath = pathToFileURL(
+        loadPreprocessorPath(PreprocessLang.stylus, root),
+      ).href
       worker ??= makeStylWorker(maxWorkers)
 
       // Get source with preprocessor options.additionalData. Make sure a new line separator
