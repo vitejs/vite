@@ -11,7 +11,7 @@ import type {
 } from 'playwright-chromium'
 import type { DepOptimizationMetadata, Manifest } from 'vite'
 import { normalizePath } from 'vite'
-import { fromComment } from 'convert-source-map'
+import { fromComment, removeComments } from 'convert-source-map'
 import { expect } from 'vitest'
 import type { ResultPromise as ExecaResultPromise } from 'execa'
 import { isWindows, page, sourcemapSnapshot, testDir } from './vitestSetup'
@@ -351,7 +351,7 @@ export const formatSourcemapForSnapshot = (map: any, code: string): any => {
   if (m.sourceRoot) {
     m.sourceRoot = m.sourceRoot.replace(root, '/root')
   }
-  const c = code.replace(/\?v=[\da-f]{8}/, '?v=00000000')
+  const c = removeComments(code.replace(/\?v=[\da-f]{8}/, '?v=00000000'))
   return { map: m, code: c, [sourcemapSnapshot]: true }
 }
 
