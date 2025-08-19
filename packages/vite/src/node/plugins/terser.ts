@@ -48,9 +48,9 @@ export function terserPlugin(config: ResolvedConfig): Plugin {
           code: string,
           options: TerserMinifyOptions,
         ) => {
+          const terser: typeof import('terser') = (await import(terserPath))
+            .default
           try {
-            const terser: typeof import('terser') = (await import(terserPath))
-              .default
             return (await terser.minify(code, options)) as TerserMinifyOutput
           } catch (e) {
             // convert to a plain object as additional properties of Error instances are not
