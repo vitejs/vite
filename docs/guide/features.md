@@ -227,6 +227,7 @@ If using JSX with your own framework, custom `jsxFactory` and `jsxFragment` can 
 ```js twoslash [vite.config.js]
 import { defineConfig } from 'vite'
 
+// using Preact instead of React
 export default defineConfig({
   esbuild: {
     jsxFactory: 'h',
@@ -242,6 +243,7 @@ You can inject the JSX helpers using `jsxInject` (which is a Vite-only option) t
 ```js twoslash [vite.config.js]
 import { defineConfig } from 'vite'
 
+// automatically inject React into JSX files
 export default defineConfig({
   esbuild: {
     jsxInject: `import React from 'react'`,
