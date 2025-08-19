@@ -124,7 +124,16 @@ export function terserPlugin(config: ResolvedConfig): Plugin {
           line: e.line,
           column: e.col,
         }
-        e.frame =
+        if (e.line !== undefined && e.col !== undefined) {
+          e.loc = {
+            file: chunk.fileName,
+            line: e.line,
+            column: e.col,
+          }
+        }
+        if (e.pos !== undefined) {
+          e.frame = generateCodeFrame(code, e.pos)
+        }
           e.pos !== undefined ? generateCodeFrame(code, e.pos) : undefined
         throw e
       }
