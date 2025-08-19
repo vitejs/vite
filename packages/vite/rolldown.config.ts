@@ -83,17 +83,6 @@ const nodeConfig = defineConfig({
       debug: 'debug/src/node.js',
     },
   },
-  output: {
-    ...sharedNodeOptions.output,
-    // When polyfillRequire is enabled, `require` gets renamed by rolldown.
-    // But the current usage of require() inside inlined workers expects `require`
-    // to not be renamed. To workaround, polyfillRequire is disabled and
-    // the banner is used instead.
-    // Ideally we should move workers to ESM
-    polyfillRequire: false,
-    banner:
-      "import { createRequire as ___createRequire } from 'module'; const require = ___createRequire(import.meta.url);",
-  },
   external: [
     /^vite\//,
     'fsevents',
