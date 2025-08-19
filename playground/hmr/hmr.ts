@@ -40,6 +40,10 @@ btnDep.onclick = () => {
 }
 
 if (import.meta.hot) {
+  import.meta.hot.getExports().then((exports) => {
+    text('.exports', JSON.stringify(exports))
+  })
+
   import.meta.hot.accept(({ foo }) => {
     console.log('(self-accepting 1) foo is now:', foo)
   })

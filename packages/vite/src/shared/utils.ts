@@ -1,5 +1,7 @@
 import { NULL_BYTE_PLACEHOLDER, VALID_ID_PREFIX } from './constants'
 
+export type MaybePromise<T> = T | Promise<T>
+
 export const isWindows =
   typeof process !== 'undefined' && process.platform === 'win32'
 

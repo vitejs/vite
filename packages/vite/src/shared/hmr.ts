@@ -2,6 +2,7 @@ import type { HotPayload, Update } from 'types/hmrPayload'
 import type { ModuleNamespace, ViteHotContext } from 'types/hot'
 import type { InferCustomEventPayload } from 'types/customEvent'
 import type { NormalizedModuleRunnerTransport } from './moduleRunnerTransport'
+import type { MaybePromise } from './utils'
 
 type CustomListenersMap = Map<string, ((data: any) => void)[]>
 
@@ -27,6 +28,7 @@ export class HMRContext implements ViteHotContext {
   constructor(
     private hmrClient: HMRClient,
     private ownerPath: string,
+    private getCurrentExports: () => MaybePromise<ModuleNamespace | undefined>,
   ) {
     if (!hmrClient.dataMap.has(ownerPath)) {
       hmrClient.dataMap.set(ownerPath, {})
@@ -59,6 +61,10 @@ export class HMRContext implements ViteHotContext {
 
   get data(): any {
     return this.hmrClient.dataMap.get(this.ownerPath)
+  }
+
+  async getExports(): Promise<ModuleNamespace | undefined> {
+    return this.getCurrentExports()
   }
 
   accept(deps?: any, callback?: any): void {

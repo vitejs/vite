@@ -28,6 +28,10 @@ globalThis.__HMR__['virtual:increment'] = () => {
 }
 
 if (import.meta.hot) {
+  import.meta.hot.getExports().then((exports) => {
+    globalThis.__HMR__['.exports'] = JSON.stringify(exports)
+  })
+
   import.meta.hot.accept(({ foo }) => {
     log('(self-accepting 1) foo is now:', foo)
   })

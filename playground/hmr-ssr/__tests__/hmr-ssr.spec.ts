@@ -55,6 +55,10 @@ if (!isBuild) {
       expect(clientLogs).toContain('[vite] connected.')
     })
 
+    test('supports import.meta.hot.getExports', async () => {
+      expect(hmr('.exports')).toBe('{"foo":1}')
+    })
+
     test('self accept', async () => {
       const el = () => hmr('.app')
       await untilConsoleLogAfter(

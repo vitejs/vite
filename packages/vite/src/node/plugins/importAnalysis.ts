@@ -740,7 +740,7 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
           `import { createHotContext as __vite__createHotContext } from "${clientPublicPath}";` +
             `import.meta.hot = __vite__createHotContext(${JSON.stringify(
               normalizeHmrUrl(importerModule.url),
-            )});`,
+            )}, import.meta.url);`,
         )
       }
 

@@ -364,7 +364,11 @@ export class ModuleRunner {
             throw new Error(`[module runner] HMR client was closed.`)
           }
           this.debug?.('[module runner] creating hmr context for', mod.url)
-          hotContext ||= new HMRContext(this.hmrClient, mod.url)
+          hotContext ||= new HMRContext(
+            this.hmrClient,
+            mod.url,
+            () => mod.exports,
+          )
           return hotContext
         },
         set: (value) => {

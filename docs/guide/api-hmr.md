@@ -22,6 +22,7 @@ interface ImportMeta {
 
 interface ViteHotContext {
   readonly data: any
+  getExports(): Promise<ModuleNamespace | undefined>
 
   accept(): void
   accept(cb: (mod: ModuleNamespace | undefined) => void): void
@@ -198,6 +199,10 @@ import.meta.hot.accept((module) => {
   }
 })
 ```
+
+## `hot.getExports()`
+
+This function returns the exports of the current module. It is similar to `import(import.meta.url)`.
 
 ## `hot.on(event, cb)`
 

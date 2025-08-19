@@ -6,6 +6,7 @@ export type ModuleNamespace = Record<string, any> & {
 
 export interface ViteHotContext {
   readonly data: any
+  getExports(): Promise<ModuleNamespace | undefined>
 
   accept(): void
   accept(cb: (mod: ModuleNamespace | undefined) => void): void

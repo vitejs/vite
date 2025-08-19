@@ -552,8 +552,11 @@ export function removeStyle(id: string): void {
   }
 }
 
-export function createHotContext(ownerPath: string): ViteHotContext {
-  return new HMRContext(hmrClient, ownerPath)
+export function createHotContext(
+  ownerPath: string,
+  importMetaUrl: string,
+): ViteHotContext {
+  return new HMRContext(hmrClient, ownerPath, () => import(importMetaUrl))
 }
 
 /**

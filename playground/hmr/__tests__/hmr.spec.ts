@@ -29,6 +29,10 @@ if (!isBuild) {
     browserLogs.length = 0
   })
 
+  test('supports import.meta.hot.getExports', async () => {
+    expect(await page.textContent('.exports')).toBe('{"foo":1}')
+  })
+
   test('self accept', async () => {
     const el = await page.$('.app')
     await untilBrowserLogAfter(
