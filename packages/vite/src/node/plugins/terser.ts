@@ -6,7 +6,7 @@ import type {
 import { WorkerWithFallback } from 'artichokie'
 import type { Plugin } from '../plugin'
 import type { ResolvedConfig } from '..'
-import { requireResolveFromRootWithFallback } from '../utils'
+import { generateCodeFrame, requireResolveFromRootWithFallback } from '../utils'
 
 export interface TerserOptions extends TerserMinifyOptions {
   /**
@@ -50,7 +50,13 @@ export function terserPlugin(config: ResolvedConfig): Plugin {
         ) => {
           const terser: typeof import('terser') = (await import(terserPath))
             .default
-          return terser.minify(code, options) as TerserMinifyOutput
+          try {
+            return (await terser.minify(code, options)) as TerserMinifyOutput
+          } catch (e) {
+            // convert to a plain object as additional properties of Error instances are not
+            // sent back to the main thread
+            throw { stack: e.stack /* stack is non-enumerable */, ...e }
+          }
         },
       {
         shouldUseFake(_terserPath, _code, options) {
@@ -78,7 +84,7 @@ export function terserPlugin(config: ResolvedConfig): Plugin {
       return !!environment.config.build.minify
     },
 
-    async renderChunk(code, _chunk, outputOptions) {
+    async renderChunk(code, chunk, outputOptions) {
       // This plugin is included for any non-false value of config.build.minify,
       // so that normal chunks can use the preferred minifier, and legacy chunks
       // can use terser.
@@ -100,16 +106,30 @@ export function terserPlugin(config: ResolvedConfig): Plugin {
       worker ||= makeWorker()
 
       const terserPath = pathToFileURL(loadTerserPath(config.root)).href
-      const res = await worker.run(terserPath, code, {
-        safari10: true,
-        ...terserOptions,
-        sourceMap: !!outputOptions.sourcemap,
-        module: outputOptions.format.startsWith('es'),
-        toplevel: outputOptions.format === 'cjs',
-      })
-      return {
-        code: res.code!,
-        map: res.map as any,
+      try {
+        const res = await worker.run(terserPath, code, {
+          safari10: true,
+          ...terserOptions,
+          sourceMap: !!outputOptions.sourcemap,
+          module: outputOptions.format.startsWith('es'),
+          toplevel: outputOptions.format === 'cjs',
+        })
+        return {
+          code: res.code!,
+          map: res.map as any,
+        }
+      } catch (e) {
+        if (e.line !== undefined && e.col !== undefined) {
+          e.loc = {
+            file: chunk.fileName,
+            line: e.line,
+            column: e.col,
+          }
+        }
+        if (e.pos !== undefined) {
+          e.frame = generateCodeFrame(code, e.pos)
+        }
+        throw e
       }
     },
 
