@@ -60,6 +60,62 @@ exports[`generateCodeFrames > invalid start > end 1`] = `
 "
 `;
 
+exports[`generateCodeFrames > long line (center) 1`] = `
+"
+1  |  ...aaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbccccccccccccccccccccccccccccccccccccccc...
+   |                                                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+2  |  short line
+3  |  aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb...
+"
+`;
+
+exports[`generateCodeFrames > long line (end) 1`] = `
+"
+1  |  ...bbbbbbbbbbbbbbbcccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
+   |                                                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+2  |  short line
+3  |  aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb...
+"
+`;
+
+exports[`generateCodeFrames > long line (multiline 1) 1`] = `
+"
+1  |  ...bbbbbcccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
+   |                                                            ^^^^^^^^^^
+2  |  short line
+   |  ^^^^^^
+3  |  aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb...
+"
+`;
+
+exports[`generateCodeFrames > long line (multiline 2) 1`] = `
+"
+1  |  aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb...
+2  |  short line
+   |       ^^^^^
+3  |  aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb...
+   |  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+"
+`;
+
+exports[`generateCodeFrames > long line (start) 1`] = `
+"
+1  |  aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb...
+   |  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+2  |  short line
+3  |  aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb...
+"
+`;
+
+exports[`generateCodeFrames > long line (whole) 1`] = `
+"
+1  |  aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb...
+   |  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+2  |  short line
+3  |  aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb...
+"
+`;
+
 exports[`generateCodeFrames > range 1`] = `
 "
 1  |  import foo from './foo'
