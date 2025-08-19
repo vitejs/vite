@@ -156,8 +156,31 @@ describe.runIf(isBuild)('build tests', () => {
   test('sourcemap is correct when preload information is injected', async () => {
     const js = findAssetFile(/after-preload-dynamic-[-\w]{8}\.js$/)
     const map = findAssetFile(/after-preload-dynamic-[-\w]{8}\.js\.map/)
-    expect(formatSourcemapForSnapshot(JSON.parse(map), js))
-      .toMatchInlineSnapshot(`
+    if (process.env._VITE_TEST_JS_PLUGIN) {
+      expect(formatSourcemapForSnapshot(JSON.parse(map), js))
+        .toMatchInlineSnapshot(`
+          SourceMap {
+            content: {
+              "debugId": "00000000-0000-0000-0000-000000000000",
+              "ignoreList": [],
+              "mappings": ";grCAAA,OAAO,6BAAuB,wBAE9B,QAAQ,IAAI",
+              "sources": [
+                "../../after-preload-dynamic.js",
+              ],
+              "sourcesContent": [
+                "import('./dynamic/dynamic-foo')
+
+          console.log('after preload dynamic')
+          ",
+              ],
+              "version": 3,
+            },
+            visualization: "https://evanw.github.io/source-map-visualization/#MTU2NQBjb25zdCBfX3ZpdGVfX21hcERlcHM9KGksbT1fX3ZpdGVfX21hcERlcHMsZD0obS5mfHwobS5mPVsiYXNzZXRzL2R5bmFtaWMtZm9vLUNlak9nenJ4LmpzIiwiYXNzZXRzL2R5bmFtaWMtZm9vLURzcUtSckV5LmNzcyJdKSkpPT5pLm1hcChpPT5kW2ldKTsKY29uc3QgZT1mdW5jdGlvbihlKXtyZXR1cm5gL2ArZX0sdD17fSxuPWZ1bmN0aW9uKG4scixpKXtsZXQgYT1Qcm9taXNlLnJlc29sdmUoKTtpZihyJiZyLmxlbmd0aD4wKXtsZXQgbj1kb2N1bWVudC5nZXRFbGVtZW50c0J5VGFnTmFtZShgbGlua2ApLG89ZG9jdW1lbnQucXVlcnlTZWxlY3RvcihgbWV0YVtwcm9wZXJ0eT1jc3Atbm9uY2VdYCkscz1vPy5ub25jZXx8bz8uZ2V0QXR0cmlidXRlKGBub25jZWApO2Z1bmN0aW9uIGMoZSl7cmV0dXJuIFByb21pc2UuYWxsKGUubWFwKGU9PlByb21pc2UucmVzb2x2ZShlKS50aGVuKGU9Pih7c3RhdHVzOmBmdWxmaWxsZWRgLHZhbHVlOmV9KSxlPT4oe3N0YXR1czpgcmVqZWN0ZWRgLHJlYXNvbjplfSkpKSl9YT1jKHIubWFwKHI9PntpZihyPWUocixpKSxyIGluIHQpcmV0dXJuO3Rbcl09ITA7bGV0IGE9ci5lbmRzV2l0aChgLmNzc2ApLG89YT9gW3JlbD0ic3R5bGVzaGVldCJdYDpgYCxjPSEhaTtpZihjKWZvcihsZXQgZT1uLmxlbmd0aC0xO2U+PTA7ZS0tKXtsZXQgdD1uW2VdO2lmKHQuaHJlZj09PXImJighYXx8dC5yZWw9PT1gc3R5bGVzaGVldGApKXJldHVybn1lbHNlIGlmKGRvY3VtZW50LnF1ZXJ5U2VsZWN0b3IoYGxpbmtbaHJlZj0iJHtyfSJdJHtvfWApKXJldHVybjtsZXQgbD1kb2N1bWVudC5jcmVhdGVFbGVtZW50KGBsaW5rYCk7aWYobC5yZWw9YT9gc3R5bGVzaGVldGA6YG1vZHVsZXByZWxvYWRgLGF8fChsLmFzPWBzY3JpcHRgKSxsLmNyb3NzT3JpZ2luPWBgLGwuaHJlZj1yLHMmJmwuc2V0QXR0cmlidXRlKGBub25jZWAscyksZG9jdW1lbnQuaGVhZC5hcHBlbmRDaGlsZChsKSxhKXJldHVybiBuZXcgUHJvbWlzZSgoZSx0KT0+e2wuYWRkRXZlbnRMaXN0ZW5lcihgbG9hZGAsZSksbC5hZGRFdmVudExpc3RlbmVyKGBlcnJvcmAsKCk9PnQoRXJyb3IoYFVuYWJsZSB0byBwcmVsb2FkIENTUyBmb3IgJHtyfWApKSl9KX0pKX1mdW5jdGlvbiBvKGUpe2xldCB0PW5ldyBFdmVudChgdml0ZTpwcmVsb2FkRXJyb3JgLHtjYW5jZWxhYmxlOiEwfSk7aWYodC5wYXlsb2FkPWUsd2luZG93LmRpc3BhdGNoRXZlbnQodCksIXQuZGVmYXVsdFByZXZlbnRlZCl0aHJvdyBlfXJldHVybiBhLnRoZW4oZT0+e2ZvcihsZXQgdCBvZiBlfHxbXSl7aWYodC5zdGF0dXMhPT1gcmVqZWN0ZWRgKWNvbnRpbnVlO28odC5yZWFzb24pfXJldHVybiBuKCkuY2F0Y2gobyl9KX07bigoKT0+aW1wb3J0KGAuL2R5bmFtaWMtZm9vLUNlak9nenJ4LmpzYCksX192aXRlX19tYXBEZXBzKFswLDFdKSksY29uc29sZS5sb2coYGFmdGVyIHByZWxvYWQgZHluYW1pY2ApO2V4cG9ydHtuIGFzIGJ9OwovLyMgZGVidWdJZD01ZDczODRlYS1kMzg2LTQ3YTItODNiYi1iNjkwY2I4ZThjNjEKLy8jIHNvdXJjZU1hcHBpbmdVUkw9YWZ0ZXItcHJlbG9hZC1keW5hbWljLUJkYzRUcTA0LmpzLm1hcDI2OAB7InZlcnNpb24iOjMsIm1hcHBpbmdzIjoiO2dyQ0FBQSxPQUFPLDZCQUF1Qix3QkFFOUIsUUFBUSxJQUFJIiwiaWdub3JlTGlzdCI6W10sInNvdXJjZXMiOlsiLi4vLi4vYWZ0ZXItcHJlbG9hZC1keW5hbWljLmpzIl0sInNvdXJjZXNDb250ZW50IjpbImltcG9ydCgnLi9keW5hbWljL2R5bmFtaWMtZm9vJylcblxuY29uc29sZS5sb2coJ2FmdGVyIHByZWxvYWQgZHluYW1pYycpXG4iXSwiZGVidWdJZCI6IjAwMDAwMDAwLTAwMDAtMDAwMC0wMDAwLTAwMDAwMDAwMDAwMCJ9"
+          }
+        `)
+    } else {
+      expect(formatSourcemapForSnapshot(JSON.parse(map), js))
+        .toMatchInlineSnapshot(`
         SourceMap {
           content: {
             "debugId": "00000000-0000-0000-0000-000000000000",
@@ -177,6 +200,7 @@ describe.runIf(isBuild)('build tests', () => {
           visualization: "https://evanw.github.io/source-map-visualization/#MTU2NQBjb25zdCBfX3ZpdGVfX21hcERlcHM9KGksbT1fX3ZpdGVfX21hcERlcHMsZD0obS5mfHwobS5mPVsiYXNzZXRzL2R5bmFtaWMtZm9vLUNlak9nenJ4LmpzIiwiYXNzZXRzL2R5bmFtaWMtZm9vLURzcUtSckV5LmNzcyJdKSkpPT5pLm1hcChpPT5kW2ldKTsKY29uc3QgZT1mdW5jdGlvbihlKXtyZXR1cm5gL2ArZX0sdD17fSxuPWZ1bmN0aW9uKG4scixpKXtsZXQgYT1Qcm9taXNlLnJlc29sdmUoKTtpZihyJiZyLmxlbmd0aD4wKXtsZXQgbj1kb2N1bWVudC5nZXRFbGVtZW50c0J5VGFnTmFtZShgbGlua2ApLG89ZG9jdW1lbnQucXVlcnlTZWxlY3RvcihgbWV0YVtwcm9wZXJ0eT1jc3Atbm9uY2VdYCkscz1vPy5ub25jZXx8bz8uZ2V0QXR0cmlidXRlKGBub25jZWApO2Z1bmN0aW9uIGMoZSl7cmV0dXJuIFByb21pc2UuYWxsKGUubWFwKGU9PlByb21pc2UucmVzb2x2ZShlKS50aGVuKGU9Pih7c3RhdHVzOmBmdWxmaWxsZWRgLHZhbHVlOmV9KSxlPT4oe3N0YXR1czpgcmVqZWN0ZWRgLHJlYXNvbjplfSkpKSl9YT1jKHIubWFwKHI9PntpZihyPWUocixpKSxyIGluIHQpcmV0dXJuO3Rbcl09ITA7bGV0IGE9ci5lbmRzV2l0aChgLmNzc2ApLG89YT9gW3JlbD0ic3R5bGVzaGVldCJdYDpgYCxjPSEhaTtpZihjKWZvcihsZXQgZT1uLmxlbmd0aC0xO2U+PTA7ZS0tKXtsZXQgdD1uW2VdO2lmKHQuaHJlZj09PXImJighYXx8dC5yZWw9PT1gc3R5bGVzaGVldGApKXJldHVybn1lbHNlIGlmKGRvY3VtZW50LnF1ZXJ5U2VsZWN0b3IoYGxpbmtbaHJlZj0iJHtyfSJdJHtvfWApKXJldHVybjtsZXQgbD1kb2N1bWVudC5jcmVhdGVFbGVtZW50KGBsaW5rYCk7aWYobC5yZWw9YT9gc3R5bGVzaGVldGA6YG1vZHVsZXByZWxvYWRgLGF8fChsLmFzPWBzY3JpcHRgKSxsLmNyb3NzT3JpZ2luPWBgLGwuaHJlZj1yLHMmJmwuc2V0QXR0cmlidXRlKGBub25jZWAscyksZG9jdW1lbnQuaGVhZC5hcHBlbmRDaGlsZChsKSxhKXJldHVybiBuZXcgUHJvbWlzZSgoZSx0KT0+e2wuYWRkRXZlbnRMaXN0ZW5lcihgbG9hZGAsZSksbC5hZGRFdmVudExpc3RlbmVyKGBlcnJvcmAsKCk9PnQoRXJyb3IoYFVuYWJsZSB0byBwcmVsb2FkIENTUyBmb3IgJHtyfWApKSl9KX0pKX1mdW5jdGlvbiBvKGUpe2xldCB0PW5ldyBFdmVudChgdml0ZTpwcmVsb2FkRXJyb3JgLHtjYW5jZWxhYmxlOiEwfSk7aWYodC5wYXlsb2FkPWUsd2luZG93LmRpc3BhdGNoRXZlbnQodCksIXQuZGVmYXVsdFByZXZlbnRlZCl0aHJvdyBlfXJldHVybiBhLnRoZW4oZT0+e2ZvcihsZXQgdCBvZiBlfHxbXSl7aWYodC5zdGF0dXMhPT1gcmVqZWN0ZWRgKWNvbnRpbnVlO28odC5yZWFzb24pfXJldHVybiBuKCkuY2F0Y2gobyl9KX07bigoKT0+aW1wb3J0KGAuL2R5bmFtaWMtZm9vLUNlak9nenJ4LmpzYCksX192aXRlX19tYXBEZXBzKFswLDFdKSksY29uc29sZS5sb2coYGFmdGVyIHByZWxvYWQgZHluYW1pY2ApO2V4cG9ydHtuIGFzIGJ9OwovLyMgZGVidWdJZD01ZDczODRlYS1kMzg2LTQ3YTItODNiYi1iNjkwY2I4ZThjNjEKLy8jIHNvdXJjZU1hcHBpbmdVUkw9YWZ0ZXItcHJlbG9hZC1keW5hbWljLUJkYzRUcTA0LmpzLm1hcDI2MAB7InZlcnNpb24iOjMsIm1hcHBpbmdzIjoiO2dyQ0FBQSxPQUFPLHFEQUVQLFFBQVEsSUFBSSIsImlnbm9yZUxpc3QiOltdLCJzb3VyY2VzIjpbIi4uLy4uL2FmdGVyLXByZWxvYWQtZHluYW1pYy5qcyJdLCJzb3VyY2VzQ29udGVudCI6WyJpbXBvcnQoJy4vZHluYW1pYy9keW5hbWljLWZvbycpXG5cbmNvbnNvbGUubG9nKCdhZnRlciBwcmVsb2FkIGR5bmFtaWMnKVxuIl0sImRlYnVnSWQiOiIwMDAwMDAwMC0wMDAwLTAwMDAtMDAwMC0wMDAwMDAwMDAwMDAifQ=="
         }
       `)
+    }
     // verify sourcemap comment is preserved at the last line
     expect(js).toMatch(
       /\n\/\/# sourceMappingURL=after-preload-dynamic-[-\w]{8}\.js\.map\n?$/,
