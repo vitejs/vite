@@ -336,7 +336,7 @@ function handleParseError(
   warnings[parseError.code] ??=
     `Unable to parse HTML; ${parseError.message}\n` +
     ` at ${parseError.loc.file}:${parseError.loc.line}:${parseError.loc.column}\n` +
-    `${parseError.frame.length > 300 ? '[this code frame is omitted as the content was too long] ' : parseError.frame}`
+    parseError.frame
 }
 
 /**
