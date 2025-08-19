@@ -377,6 +377,11 @@
   <code class="dynamic-import-meta-url-all"></code>
 </p>
 
+<h2>Multiline new URL(..., import.meta.url)</h2>
+<p>Multiline URL 1: <code class="multiline-url-1"></code></p>
+<p>Multiline URL 2: <code class="multiline-url-2"></code></p>
+<p>Multiline URL 3: <code class="multiline-url-3"></code></p>
+
 <h2>simple script tag import-expression</h2>
 <code class="import-expression"></code>
 <code class="obj-import-express"></code>
@@ -708,6 +713,14 @@
     const metaUrl = new URL(`${name}.png`, import.meta.url)
     text(`.dynamic-import-meta-url-all`, metaUrl)
   }
+
+  // Test multiline new URL(..., import.meta.url) expressions
+  // Import from separate file to test multiline expressions are correctly processed
+  import('./multiline-import-meta-url.js').then((module) => {
+    text('.multiline-url-1', module.multilineUrl)
+    text('.multiline-url-2', module.multilineUrl2)
+    text('.multiline-url-3', module.multilineUrl3)
+  })
 
   function text(el, text) {
     document.querySelector(el).textContent = text
