@@ -492,6 +492,7 @@
   import './css/css-url.css'
   import './css/icons.css'
   import './css/manual-chunks.css'
+  import { multilineUrl } from './multiline-import-meta-url.js'
 
   text('.base', `import.meta.${``}env.BASE_URL: ${import.meta.env.BASE_URL}`)
 
@@ -712,9 +713,7 @@
     text(`.dynamic-import-meta-url-all`, metaUrl)
   }
 
-  import('./multiline-import-meta-url.js').then((module) => {
-    text('.multiline-url', module.multilineUrl)
-  })
+  text('.multiline-url', multilineUrl)
 
   function text(el, text) {
     document.querySelector(el).textContent = text
