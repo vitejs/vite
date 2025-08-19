@@ -11,7 +11,7 @@ import type { LogLevel } from './logger'
 import { createLogger } from './logger'
 import type { InlineConfig } from './config'
 
-export function checkNodeVersion(nodeVersion: string): boolean {
+function checkNodeVersion(nodeVersion: string): boolean {
   const currentVersion = nodeVersion.split('.')
   const major = parseInt(currentVersion[0], 10)
   const minor = parseInt(currentVersion[1], 10)

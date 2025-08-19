@@ -56,7 +56,7 @@ export function assetImportMetaUrlPlugin(config: ResolvedConfig): Plugin {
         id: {
           exclude: [exactRegex(preloadHelperId), exactRegex(CLIENT_ENTRY)],
         },
-        code: /new\s+URL.+import\.meta\.url/,
+        code: /new\s+URL.+import\.meta\.url/s,
       },
       async handler(code, id) {
         let s: MagicString | undefined
