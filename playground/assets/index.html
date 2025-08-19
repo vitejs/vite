@@ -378,9 +378,7 @@
 </p>
 
 <h2>Multiline new URL(..., import.meta.url)</h2>
-<p>Multiline URL 1: <code class="multiline-url-1"></code></p>
-<p>Multiline URL 2: <code class="multiline-url-2"></code></p>
-<p>Multiline URL 3: <code class="multiline-url-3"></code></p>
+<code class="multiline-url"></code>
 
 <h2>simple script tag import-expression</h2>
 <code class="import-expression"></code>
@@ -714,10 +712,8 @@
     text(`.dynamic-import-meta-url-all`, metaUrl)
   }
 
-  // Test multiline new URL(..., import.meta.url) expressions
-  // Import from separate file to test multiline expressions are correctly processed
   import('./multiline-import-meta-url.js').then((module) => {
-    text('.multiline-url-1', module.multilineUrl)
+    text('.multiline-url', module.multilineUrl)
   })
 
   function text(el, text) {
