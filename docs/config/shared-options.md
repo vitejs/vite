@@ -185,28 +185,6 @@ Use this option when you have a server that can:
 
 If you are deploying the built files as immutable static assets (for example on a static host / CDN with `Cache-Control: max-age=31536000, immutable`) and you do not have an HTML edge function or origin server performing on-the-fly substitution, a nonce based policy is usually impractical because the HTML would need to vary per request and therefore cannot be cached immutably. In that scenario prefer a hash-based CSP (hashes of the inline runtime snippets) or a policy that avoids inline code entirely.
 
-### Example server-side replacement (Node / Express style middleware)
-
-```js
-// Why: generate a new nonce each request and replace the placeholder that Vite emitted at build time
-const PLACEHOLDER = 'CSP_NONCE_PLACEHOLDER'
-
-app.use(async (req, res, next) => {
-  const nonce = crypto.randomBytes(16).toString('base64')
-  res.setHeader(
-    'Content-Security-Policy',
-    `default-src 'self'; script-src 'self' 'nonce-${nonce}'; style-src 'self' 'nonce-${nonce}'`,
-  )
-  let html = await fs.promises.readFile(
-    path.join(distDir, 'index.html'),
-    'utf8',
-  )
-  html = html.replaceAll(PLACEHOLDER, nonce)
-  res.setHeader('Content-Type', 'text/html')
-  res.end(html)
-})
-```
-
 ### Static hosting & hashes
 
 If you cannot do per-request HTML mutation, consider a hash-based CSP. A community plugin (for example `vite-plugin-csp-guard`) demonstrates a hash workflow. Hash policies allow the HTML to stay byte-for-byte cacheable because the hash values are derived at build time and stay constant as long as the content does.
