@@ -1,3 +1,4 @@
+import { pathToFileURL } from 'node:url'
 import type {
   TerserMinifyOptions,
   TerserMinifyOutput,
@@ -48,9 +49,8 @@ export function terserPlugin(config: ResolvedConfig): Plugin {
           options: TerserMinifyOptions,
         ) => {
           try {
-            // test fails when using `import`. maybe related: https://github.com/nodejs/node/issues/43205
-            // eslint-disable-next-line no-restricted-globals -- this function runs inside cjs
-            const terser = require(terserPath)
+            const terser: typeof import('terser') = (await import(terserPath))
+              .default
             return (await terser.minify(code, options)) as TerserMinifyOutput
           } catch (e) {
             // convert to a plain object as additional properties of Error instances are not
@@ -105,7 +105,7 @@ export function terserPlugin(config: ResolvedConfig): Plugin {
       // Lazy load worker.
       worker ||= makeWorker()
 
-      const terserPath = loadTerserPath(config.root)
+      const terserPath = pathToFileURL(loadTerserPath(config.root)).href
       try {
         const res = await worker.run(terserPath, code, {
           safari10: true,
