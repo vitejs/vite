@@ -26,7 +26,30 @@ import type {
   RollupError,
 } from 'rolldown'
 import type { RunnerTestFile } from 'vitest'
-import { beforeAll, inject } from 'vitest'
+import { beforeAll, expect, inject } from 'vitest'
+
+// #region serializer
+
+export const sourcemapSnapshot = Symbol()
+
+const generateVisualizationLink = (code: string, map: string) => {
+  const hash = `${code.length}\0${code}${map.length}\0${map}`
+  return `https://evanw.github.io/source-map-visualization/#${btoa(hash)}`
+}
+
+expect.addSnapshotSerializer({
+  serialize(val, config, indentation, depth, refs, printer) {
+    return `${indentation}SourceMap {
+${indentation}${config.indent}content: ${printer(val.map, config, indentation + config.indent, depth, refs)},
+${indentation}${config.indent}visualization: ${JSON.stringify(generateVisualizationLink(val.code, JSON.stringify(val.map)))}
+${indentation}}`
+  },
+  test(val) {
+    return typeof val === 'object' && val && val[sourcemapSnapshot] === true
+  },
+})
+
+// #endregion
 
 // #region env
 

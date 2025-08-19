@@ -21,17 +21,20 @@ if (!isBuild) {
     const res = await page.request.get(new URL('./foo.js', page.url()).href)
     const js = await res.text()
     const map = extractSourcemap(js)
-    expect(formatSourcemapForSnapshot(map)).toMatchInlineSnapshot(`
-      {
-        "mappings": "AAAA,MAAM,CAAC,KAAK,CAAC,GAAG,CAAC,CAAC,CAAC,CAAC,GAAG;",
-        "sources": [
-          "foo.js",
-        ],
-        "sourcesContent": [
-          "export const foo = 'foo'
+    expect(formatSourcemapForSnapshot(map, js)).toMatchInlineSnapshot(`
+      SourceMap {
+        content: {
+          "mappings": "AAAA,MAAM,CAAC,KAAK,CAAC,GAAG,CAAC,CAAC,CAAC,CAAC,GAAG;",
+          "sources": [
+            "foo.js",
+          ],
+          "sourcesContent": [
+            "export const foo = 'foo'
       ",
-        ],
-        "version": 3,
+          ],
+          "version": 3,
+        },
+        visualization: "https://evanw.github.io/source-map-visualization/#MjUAZXhwb3J0IGNvbnN0IGZvbyA9ICdmb28nCjE1MQB7InZlcnNpb24iOjMsInNvdXJjZXMiOlsiZm9vLmpzIl0sInNvdXJjZXNDb250ZW50IjpbImV4cG9ydCBjb25zdCBmb28gPSAnZm9vJ1xuIl0sIm1hcHBpbmdzIjoiQUFBQSxNQUFNLENBQUMsS0FBSyxDQUFDLEdBQUcsQ0FBQyxDQUFDLENBQUMsQ0FBQyxHQUFHOyJ9"
       }
     `)
   })
@@ -42,17 +45,20 @@ if (!isBuild) {
     expect(js).toContain('// add comment')
 
     const map = extractSourcemap(js)
-    expect(formatSourcemapForSnapshot(map)).toMatchInlineSnapshot(`
-      {
-        "mappings": "AAAA,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC;",
-        "sources": [
-          "zoo.js",
-        ],
-        "sourcesContent": [
-          "export const zoo = 'zoo'
+    expect(formatSourcemapForSnapshot(map, js)).toMatchInlineSnapshot(`
+      SourceMap {
+        content: {
+          "mappings": "AAAA,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC;",
+          "sources": [
+            "zoo.js",
+          ],
+          "sourcesContent": [
+            "export const zoo = 'zoo'
       ",
-        ],
-        "version": 3,
+          ],
+          "version": 3,
+        },
+        visualization: "https://evanw.github.io/source-map-visualization/#NDAAZXhwb3J0IGNvbnN0IHpvbyA9ICd6b28nCi8vIGFkZCBjb21tZW50CjIxNgB7InZlcnNpb24iOjMsInNvdXJjZXMiOlsiem9vLmpzIl0sInNvdXJjZXNDb250ZW50IjpbImV4cG9ydCBjb25zdCB6b28gPSAnem9vJ1xuIl0sIm1hcHBpbmdzIjoiQUFBQSxDQUFDLENBQUMsQ0FBQyxDQUFDLENBQUMsQ0FBQyxDQUFDLENBQUMsQ0FBQyxDQUFDLENBQUMsQ0FBQyxDQUFDLENBQUMsQ0FBQyxDQUFDLENBQUMsQ0FBQyxDQUFDLENBQUMsQ0FBQyxDQUFDLENBQUM7In0="
       }
     `)
   })
@@ -68,13 +74,16 @@ if (!isBuild) {
     expect(sourcemapComments).toBe(1)
 
     const map = extractSourcemap(js)
-    expect(formatSourcemapForSnapshot(map)).toMatchInlineSnapshot(`
-      {
-        "mappings": "AAAA,MAAM,CAAC,KAAK,CAAC,GAAG,CAAC,CAAC,CAAC,CAAC,GAAG",
-        "sources": [
-          "",
-        ],
-        "version": 3,
+    expect(formatSourcemapForSnapshot(map, js)).toMatchInlineSnapshot(`
+      SourceMap {
+        content: {
+          "mappings": "AAAA,MAAM,CAAC,KAAK,CAAC,GAAG,CAAC,CAAC,CAAC,CAAC,GAAG",
+          "sources": [
+            "",
+          ],
+          "version": 3,
+        },
+        visualization: "https://evanw.github.io/source-map-visualization/#NzMAZXhwb3J0IGNvbnN0IGZvbyA9ICdmb28nCi8vIGRlZmF1bHQgYm91bmRhcnkgc291cmNlbWFwIHdpdGggbWFnaWMtc3RyaW5nCjk2AHsidmVyc2lvbiI6Mywic291cmNlcyI6WyIiXSwibWFwcGluZ3MiOiJBQUFBLE1BQU0sQ0FBQyxLQUFLLENBQUMsR0FBRyxDQUFDLENBQUMsQ0FBQyxDQUFDLEdBQUcifQ=="
       }
     `)
   })
@@ -83,17 +92,20 @@ if (!isBuild) {
     const res = await page.request.get(new URL('./bar.ts', page.url()).href)
     const js = await res.text()
     const map = extractSourcemap(js)
-    expect(formatSourcemapForSnapshot(map)).toMatchInlineSnapshot(`
-      {
-        "mappings": "AAAA,OAAO,MAAM,MAAM",
-        "sources": [
-          "bar.ts",
-        ],
-        "sourcesContent": [
-          "export const bar = 'bar'
+    expect(formatSourcemapForSnapshot(map, js)).toMatchInlineSnapshot(`
+      SourceMap {
+        content: {
+          "mappings": "AAAA,OAAO,MAAM,MAAM",
+          "sources": [
+            "bar.ts",
+          ],
+          "sourcesContent": [
+            "export const bar = 'bar'
       ",
-        ],
-        "version": 3,
+          ],
+          "version": 3,
+        },
+        visualization: "https://evanw.github.io/source-map-visualization/#MjYAZXhwb3J0IGNvbnN0IGJhciA9ICJiYXIiOwoxMTUAeyJtYXBwaW5ncyI6IkFBQUEsT0FBTyxNQUFNLE1BQU0iLCJzb3VyY2VzIjpbImJhci50cyJdLCJzb3VyY2VzQ29udGVudCI6WyJleHBvcnQgY29uc3QgYmFyID0gJ2JhcidcbiJdLCJ2ZXJzaW9uIjozfQ=="
       }
     `)
   })
@@ -102,24 +114,27 @@ if (!isBuild) {
     const res = await page.request.get(
       new URL('./with-multiline-import.ts', page.url()).href,
     )
-    const multi = await res.text()
-    const map = extractSourcemap(multi)
-    expect(formatSourcemapForSnapshot(map)).toMatchInlineSnapshot(`
-      {
-        "mappings": ";AACA,SACE,WACK;AAEP,QAAQ,IAAI,yBAAyB",
-        "sources": [
-          "with-multiline-import.ts",
-        ],
-        "sourcesContent": [
-          "// prettier-ignore
+    const js = await res.text()
+    const map = extractSourcemap(js)
+    expect(formatSourcemapForSnapshot(map, js)).toMatchInlineSnapshot(`
+      SourceMap {
+        content: {
+          "mappings": ";AACA,SACE,WACK;AAEP,QAAQ,IAAI,yBAAyB",
+          "sources": [
+            "with-multiline-import.ts",
+          ],
+          "sourcesContent": [
+            "// prettier-ignore
       import {
         foo
       } from '@vitejs/test-importee-pkg'
 
       console.log('with-multiline-import', foo)
       ",
-        ],
-        "version": 3,
+          ],
+          "version": 3,
+        },
+        visualization: "https://evanw.github.io/source-map-visualization/#MjQ4AC8vIHByZXR0aWVyLWlnbm9yZQppbXBvcnQgX192aXRlX19janNJbXBvcnQwX192aXRlanNfdGVzdEltcG9ydGVlUGtnIGZyb20gIi9ub2RlX21vZHVsZXMvLnZpdGUvZGVwcy9Adml0ZWpzX3Rlc3QtaW1wb3J0ZWUtcGtnLmpzP3Y9MDAwMDAwMDAiOyBjb25zdCBmb28gPSBfX3ZpdGVfX2Nqc0ltcG9ydDBfX3ZpdGVqc190ZXN0SW1wb3J0ZWVQa2dbImZvbyJdOwpjb25zb2xlLmxvZygid2l0aC1tdWx0aWxpbmUtaW1wb3J0IiwgZm9vKTsKMjQzAHsibWFwcGluZ3MiOiI7QUFDQSxTQUNFLFdBQ0s7QUFFUCxRQUFRLElBQUkseUJBQXlCIiwic291cmNlcyI6WyJ3aXRoLW11bHRpbGluZS1pbXBvcnQudHMiXSwic291cmNlc0NvbnRlbnQiOlsiLy8gcHJldHRpZXItaWdub3JlXG5pbXBvcnQge1xuICBmb29cbn0gZnJvbSAnQHZpdGVqcy90ZXN0LWltcG9ydGVlLXBrZydcblxuY29uc29sZS5sb2coJ3dpdGgtbXVsdGlsaW5lLWltcG9ydCcsIGZvbylcbiJdLCJ2ZXJzaW9uIjozfQ=="
       }
     `)
   })
@@ -139,35 +154,30 @@ describe.runIf(isBuild)('build tests', () => {
   })
 
   test('sourcemap is correct when preload information is injected', async () => {
-    const map = findAssetFile(/after-preload-dynamic-[-\w]{8}\.js\.map/)
-    let mapSnapshot = `
-      {
-        "debugId": "00000000-0000-0000-0000-000000000000",
-        "ignoreList": [],
-        "mappings": ";grCAAA,OAAO,qDAEP,QAAQ,IAAI",
-        "sources": [
-          "../../after-preload-dynamic.js",
-        ],
-        "sourcesContent": [
-          "import('./dynamic/dynamic-foo')
-
-      console.log('after preload dynamic')
-      ",
-        ],
-        "version": 3,
-      }
-    `
-    if (process.env._VITE_TEST_JS_PLUGIN) {
-      mapSnapshot = mapSnapshot.replace(
-        ';grCAAA,OAAO,qDAEP,QAAQ,IAAI',
-        ';grCAAA,OAAO,6BAAuB,wBAE9B,QAAQ,IAAI',
-      )
-    }
-    expect(formatSourcemapForSnapshot(JSON.parse(map))).toMatchInlineSnapshot(
-      mapSnapshot,
-    )
-    // verify sourcemap comment is preserved at the last line
     const js = findAssetFile(/after-preload-dynamic-[-\w]{8}\.js$/)
+    const map = findAssetFile(/after-preload-dynamic-[-\w]{8}\.js\.map/)
+    expect(formatSourcemapForSnapshot(JSON.parse(map), js))
+      .toMatchInlineSnapshot(`
+        SourceMap {
+          content: {
+            "debugId": "00000000-0000-0000-0000-000000000000",
+            "ignoreList": [],
+            "mappings": ";grCAAA,OAAO,qDAEP,QAAQ,IAAI",
+            "sources": [
+              "../../after-preload-dynamic.js",
+            ],
+            "sourcesContent": [
+              "import('./dynamic/dynamic-foo')
+
+        console.log('after preload dynamic')
+        ",
+            ],
+            "version": 3,
+          },
+          visualization: "https://evanw.github.io/source-map-visualization/#MTU2NQBjb25zdCBfX3ZpdGVfX21hcERlcHM9KGksbT1fX3ZpdGVfX21hcERlcHMsZD0obS5mfHwobS5mPVsiYXNzZXRzL2R5bmFtaWMtZm9vLUNlak9nenJ4LmpzIiwiYXNzZXRzL2R5bmFtaWMtZm9vLURzcUtSckV5LmNzcyJdKSkpPT5pLm1hcChpPT5kW2ldKTsKY29uc3QgZT1mdW5jdGlvbihlKXtyZXR1cm5gL2ArZX0sdD17fSxuPWZ1bmN0aW9uKG4scixpKXtsZXQgYT1Qcm9taXNlLnJlc29sdmUoKTtpZihyJiZyLmxlbmd0aD4wKXtsZXQgbj1kb2N1bWVudC5nZXRFbGVtZW50c0J5VGFnTmFtZShgbGlua2ApLG89ZG9jdW1lbnQucXVlcnlTZWxlY3RvcihgbWV0YVtwcm9wZXJ0eT1jc3Atbm9uY2VdYCkscz1vPy5ub25jZXx8bz8uZ2V0QXR0cmlidXRlKGBub25jZWApO2Z1bmN0aW9uIGMoZSl7cmV0dXJuIFByb21pc2UuYWxsKGUubWFwKGU9PlByb21pc2UucmVzb2x2ZShlKS50aGVuKGU9Pih7c3RhdHVzOmBmdWxmaWxsZWRgLHZhbHVlOmV9KSxlPT4oe3N0YXR1czpgcmVqZWN0ZWRgLHJlYXNvbjplfSkpKSl9YT1jKHIubWFwKHI9PntpZihyPWUocixpKSxyIGluIHQpcmV0dXJuO3Rbcl09ITA7bGV0IGE9ci5lbmRzV2l0aChgLmNzc2ApLG89YT9gW3JlbD0ic3R5bGVzaGVldCJdYDpgYCxjPSEhaTtpZihjKWZvcihsZXQgZT1uLmxlbmd0aC0xO2U+PTA7ZS0tKXtsZXQgdD1uW2VdO2lmKHQuaHJlZj09PXImJighYXx8dC5yZWw9PT1gc3R5bGVzaGVldGApKXJldHVybn1lbHNlIGlmKGRvY3VtZW50LnF1ZXJ5U2VsZWN0b3IoYGxpbmtbaHJlZj0iJHtyfSJdJHtvfWApKXJldHVybjtsZXQgbD1kb2N1bWVudC5jcmVhdGVFbGVtZW50KGBsaW5rYCk7aWYobC5yZWw9YT9gc3R5bGVzaGVldGA6YG1vZHVsZXByZWxvYWRgLGF8fChsLmFzPWBzY3JpcHRgKSxsLmNyb3NzT3JpZ2luPWBgLGwuaHJlZj1yLHMmJmwuc2V0QXR0cmlidXRlKGBub25jZWAscyksZG9jdW1lbnQuaGVhZC5hcHBlbmRDaGlsZChsKSxhKXJldHVybiBuZXcgUHJvbWlzZSgoZSx0KT0+e2wuYWRkRXZlbnRMaXN0ZW5lcihgbG9hZGAsZSksbC5hZGRFdmVudExpc3RlbmVyKGBlcnJvcmAsKCk9PnQoRXJyb3IoYFVuYWJsZSB0byBwcmVsb2FkIENTUyBmb3IgJHtyfWApKSl9KX0pKX1mdW5jdGlvbiBvKGUpe2xldCB0PW5ldyBFdmVudChgdml0ZTpwcmVsb2FkRXJyb3JgLHtjYW5jZWxhYmxlOiEwfSk7aWYodC5wYXlsb2FkPWUsd2luZG93LmRpc3BhdGNoRXZlbnQodCksIXQuZGVmYXVsdFByZXZlbnRlZCl0aHJvdyBlfXJldHVybiBhLnRoZW4oZT0+e2ZvcihsZXQgdCBvZiBlfHxbXSl7aWYodC5zdGF0dXMhPT1gcmVqZWN0ZWRgKWNvbnRpbnVlO28odC5yZWFzb24pfXJldHVybiBuKCkuY2F0Y2gobyl9KX07bigoKT0+aW1wb3J0KGAuL2R5bmFtaWMtZm9vLUNlak9nenJ4LmpzYCksX192aXRlX19tYXBEZXBzKFswLDFdKSksY29uc29sZS5sb2coYGFmdGVyIHByZWxvYWQgZHluYW1pY2ApO2V4cG9ydHtuIGFzIGJ9OwovLyMgZGVidWdJZD01ZDczODRlYS1kMzg2LTQ3YTItODNiYi1iNjkwY2I4ZThjNjEKLy8jIHNvdXJjZU1hcHBpbmdVUkw9YWZ0ZXItcHJlbG9hZC1keW5hbWljLUJkYzRUcTA0LmpzLm1hcDI2MAB7InZlcnNpb24iOjMsIm1hcHBpbmdzIjoiO2dyQ0FBQSxPQUFPLHFEQUVQLFFBQVEsSUFBSSIsImlnbm9yZUxpc3QiOltdLCJzb3VyY2VzIjpbIi4uLy4uL2FmdGVyLXByZWxvYWQtZHluYW1pYy5qcyJdLCJzb3VyY2VzQ29udGVudCI6WyJpbXBvcnQoJy4vZHluYW1pYy9keW5hbWljLWZvbycpXG5cbmNvbnNvbGUubG9nKCdhZnRlciBwcmVsb2FkIGR5bmFtaWMnKVxuIl0sImRlYnVnSWQiOiIwMDAwMDAwMC0wMDAwLTAwMDAtMDAwMC0wMDAwMDAwMDAwMDAifQ=="
+        }
+      `)
+    // verify sourcemap comment is preserved at the last line
     expect(js).toMatch(
       /\n\/\/# sourceMappingURL=after-preload-dynamic-[-\w]{8}\.js\.map\n?$/,
     )
@@ -187,32 +197,37 @@ describe.runIf(isBuild)('build tests', () => {
   })
 
   test('sourcemap is correct when using object as "define" value', async () => {
+    const js = findAssetFile(/with-define-object.*\.js$/)
     const map = findAssetFile(/with-define-object.*\.js\.map/)
-    expect(formatSourcemapForSnapshot(JSON.parse(map))).toMatchInlineSnapshot(`
-      {
-        "debugId": "00000000-0000-0000-0000-000000000000",
-        "mappings": "AAEA,SAAS,GAAO,CACd,GACD,CAED,SAAS,GAAY,CAEnB,QAAQ,MAAM,qBAAA,CAAA,MAAA,OAAA,CACf,CAED",
-        "sources": [
-          "../../with-define-object.ts",
-        ],
-        "sourcesContent": [
-          "// test complicated stack since broken sourcemap
-      // might still look correct with a simple case
-      function main() {
-        mainInner()
-      }
+    expect(formatSourcemapForSnapshot(JSON.parse(map), js))
+      .toMatchInlineSnapshot(`
+        SourceMap {
+          content: {
+            "debugId": "00000000-0000-0000-0000-000000000000",
+            "mappings": "AAEA,SAAS,GAAO,CACd,GACD,CAED,SAAS,GAAY,CAEnB,QAAQ,MAAM,qBAAA,CAAA,MAAA,OAAA,CACf,CAED",
+            "sources": [
+              "../../with-define-object.ts",
+            ],
+            "sourcesContent": [
+              "// test complicated stack since broken sourcemap
+        // might still look correct with a simple case
+        function main() {
+          mainInner()
+        }
 
-      function mainInner() {
-        // @ts-expect-error "define"
-        console.trace('with-define-object', __testDefineObject)
-      }
+        function mainInner() {
+          // @ts-expect-error "define"
+          console.trace('with-define-object', __testDefineObject)
+        }
 
-      main()
-      ",
-        ],
-        "version": 3,
-      }
-    `)
+        main()
+        ",
+            ],
+            "version": 3,
+          },
+          visualization: "https://evanw.github.io/source-map-visualization/#MTkwAGZ1bmN0aW9uIGUoKXt0KCl9ZnVuY3Rpb24gdCgpe2NvbnNvbGUudHJhY2UoYHdpdGgtZGVmaW5lLW9iamVjdGAse2hlbGxvOmB0ZXN0YH0pfWUoKTsKLy8jIGRlYnVnSWQ9OThkZWUzNDEtYTA2Ni00MzFkLWFmMDUtNzk1ZWE5ZmM2NTA5Ci8vIyBzb3VyY2VNYXBwaW5nVVJMPXdpdGgtZGVmaW5lLW9iamVjdC1DWTN1TkJvRy5qcy5tYXA0OTMAeyJ2ZXJzaW9uIjozLCJzb3VyY2VzIjpbIi4uLy4uL3dpdGgtZGVmaW5lLW9iamVjdC50cyJdLCJzb3VyY2VzQ29udGVudCI6WyIvLyB0ZXN0IGNvbXBsaWNhdGVkIHN0YWNrIHNpbmNlIGJyb2tlbiBzb3VyY2VtYXBcbi8vIG1pZ2h0IHN0aWxsIGxvb2sgY29ycmVjdCB3aXRoIGEgc2ltcGxlIGNhc2VcbmZ1bmN0aW9uIG1haW4oKSB7XG4gIG1haW5Jbm5lcigpXG59XG5cbmZ1bmN0aW9uIG1haW5Jbm5lcigpIHtcbiAgLy8gQHRzLWV4cGVjdC1lcnJvciBcImRlZmluZVwiXG4gIGNvbnNvbGUudHJhY2UoJ3dpdGgtZGVmaW5lLW9iamVjdCcsIF9fdGVzdERlZmluZU9iamVjdClcbn1cblxubWFpbigpXG4iXSwibWFwcGluZ3MiOiJBQUVBLFNBQVMsR0FBTyxDQUNkLEdBQ0QsQ0FFRCxTQUFTLEdBQVksQ0FFbkIsUUFBUSxNQUFNLHFCQUFBLENBQUEsTUFBQSxPQUFBLENBQ2YsQ0FFRCIsImRlYnVnSWQiOiIwMDAwMDAwMC0wMDAwLTAwMDAtMDAwMC0wMDAwMDAwMDAwMDAifQ=="
+        }
+      `)
   })
 
   test('correct sourcemap during ssr dev when using object as "define" value', async () => {

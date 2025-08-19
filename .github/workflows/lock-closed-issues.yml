@@ -12,13 +12,13 @@ jobs:
     if: github.repository == 'vitejs/vite'
     runs-on: ubuntu-latest
     steps:
-      - uses: dessant/lock-threads@1bf7ec25051fe7c00bdd17e6a7cf3d7bfb7dc771 # v5
+      - uses: actions-cool/issues-helper@50068f49b7b2b3857270ead65e2d02e4459b022c # v3
         with:
-          github-token: ${{ secrets.GITHUB_TOKEN }}
-          issue-inactive-days: "14"
-          #issue-comment: |
+          actions: "lock-issues"
+          token: ${{ secrets.GITHUB_TOKEN }}
+          #body: |
           #  This issue has been locked since it has been closed for more than 14 days.
           #
           #  If you have found a concrete bug or regression related to it, please open a new [bug report](https://github.com/vitejs/vite/issues/new/choose) with a reproduction against the latest Vite version. If you have any other comments you should join the chat at [Vite Land](https://chat.vite.dev) or create a new [discussion](https://github.com/vitejs/vite/discussions).
-          issue-lock-reason: ""
-          process-only: "issues"
+          issue-state: closed
+          inactive-day: 14
