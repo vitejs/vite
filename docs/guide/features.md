@@ -214,7 +214,7 @@ All modern frameworks maintain integrations with Vite. Most framework plugins ar
 - React support via [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/tree/main/packages/plugin-react)
 - React using SWC support via [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/tree/main/packages/plugin-react-swc)
 
-Check out the [Plugins Guide](/plugins) for more information.
+Check out the [Plugins Guide](/plugins/) for more information.
 
 ## JSX
 
