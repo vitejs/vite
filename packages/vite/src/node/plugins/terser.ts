@@ -101,7 +101,9 @@ export function terserPlugin(config: ResolvedConfig): Plugin {
           ...terserOptions.format,
           // For ES lib mode, preserve comments to keep pure annotations for tree-shaking
           preserve_annotations:
-            config.build.lib && outputOptions.format === 'es',
+            config.build.lib && outputOptions.format === 'es'
+              ? true
+              : terserOptions.format?.preserve_annotations,
         },
         sourceMap: !!outputOptions.sourcemap,
         module: outputOptions.format.startsWith('es'),
