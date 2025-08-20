@@ -228,7 +228,7 @@ export function transformMiddleware(
         const result = await environment.transformRequest(url, {
           allowId(id) {
             return (
-              id.startsWith('\0') ||
+              id[0] === '\0' ||
               !isServerAccessDeniedForTransform(server.config, id)
             )
           },

@@ -150,6 +150,45 @@ You will need to access the file with `http` protocol. The easiest way to achiev
 
 If you encounter errors like `ENOENT: no such file or directory` or `Module not found`, this often occurs when your project was developed on a case-insensitive filesystem (Windows / macOS) but built on a case-sensitive one (Linux). Please make sure that the imports have the correct casing.
 
+### `Failed to fetch dynamically imported module` error
+
+> TypeError: Failed to fetch dynamically imported module
+
+This error occurs in several cases:
+
+- Version skew
+- Poor network conditions
+- Browser extensions blocking requests
+
+#### Version skew
+
+When you deploy a new version of your application, the HTML file and the JS files still reference old chunk names that were deleted in the new deployment. This happens when:
+
+1. Users have an old version of your app cached in their browser
+2. You deploy a new version with different chunk names (due to code changes)
+3. The cached HTML tries to load chunks that no longer exist
+
+If you are using a framework, refer to their documentation first as it may have a built-in solution for this problem.
+
+To resolve this, you can:
+
+- **Keep old chunks temporarily**: Consider keeping the previous deployment's chunks for a period to allow cached users to transition smoothly.
+- **Use a service worker**: Implement a service worker that will prefetch all the assets and cache them.
+- **Prefetch the dynamic chunks**: Note that this does not help if your HTML file is cached by the browser due to `Cache-Control` headers.
+- **Implement a graceful fallback**: Implement error handling for dynamic imports to reload the page when chunks are missing. See [Load Error Handling](./build.md#load-error-handling) for more details.
+
+#### Poor network conditions
+
+This error may occur in unstable network environments. For example, when the request fails due to network errors or server downtime.
+
+Note that you cannot retry the dynamic import due to browser limitations ([whatwg/html#6768](https://github.com/whatwg/html/issues/6768)).
+
+#### Browser extensions blocking requests
+
+The error may also occur if the browser extensions (like ad-blockers) are blocking that request.
+
+It might be possible to work around by selecting a different chunk name by [`build.rollupOptions.output.chunkFileNames`](../config/build-options.md#build-rollupoptions), as these extensions often block requests based on file names (e.g. names containing `ad`, `track`).
+
 ## Optimized Dependencies
 
 ### Outdated pre-bundled deps when linking to a local package
@@ -206,7 +245,11 @@ If these codes are used inside dependencies, you could use [`patch-package`](htt
 
 ### Browser extensions
 
-Some browser extensions (like ad-blockers) may prevent the Vite client from sending requests to the Vite dev server. You may see a white screen without logged errors in this case. Try disabling extensions if you have this issue.
+Some browser extensions (like ad-blockers) may prevent the Vite client from sending requests to the Vite dev server. You may see a white screen without logged errors in this case. You may also see the following error:
+
+> TypeError: Failed to fetch dynamically imported module
+
+Try disabling extensions if you have this issue.
 
 ### Cross drive links on Windows
 

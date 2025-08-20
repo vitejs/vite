@@ -56,7 +56,7 @@ export function assetImportMetaUrlPlugin(config: ResolvedConfig): Plugin {
         id: {
           exclude: [exactRegex(preloadHelperId), exactRegex(CLIENT_ENTRY)],
         },
-        code: /new\s+URL.+import\.meta\.url/,
+        code: /new\s+URL.+import\.meta\.url/s,
       },
       async handler(code, id) {
         let s: MagicString | undefined
@@ -87,7 +87,7 @@ export function assetImportMetaUrlPlugin(config: ResolvedConfig): Plugin {
             const templateLiteral = (ast as any).body[0].expression
             if (templateLiteral.expressions.length) {
               const pattern = buildGlobPattern(templateLiteral)
-              if (pattern.startsWith('*')) {
+              if (pattern[0] === '*') {
                 // don't transform for patterns like this
                 // because users won't intend to do that in most cases
                 continue

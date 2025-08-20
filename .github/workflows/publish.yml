@@ -18,7 +18,7 @@ jobs:
     environment: Release
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
 
       - name: Install pnpm
         uses: pnpm/action-setup@a7487c7e89a18df4991f7f222e4898a00d66ddda # v4.1.0
@@ -36,6 +36,4 @@ jobs:
           PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD: "1"
 
       - name: Publish package
-        run: pnpm run ci-publish ${{ github.ref_name }}
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+        run: npm i -g npm@^11.5.2 && pnpm run ci-publish ${{ github.ref_name }}

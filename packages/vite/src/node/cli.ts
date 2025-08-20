@@ -9,8 +9,27 @@ import type { ServerOptions } from './server'
 import type { CLIShortcut } from './shortcuts'
 import type { LogLevel } from './logger'
 import { createLogger } from './logger'
-import { resolveConfig } from './config'
 import type { InlineConfig } from './config'
+
+function checkNodeVersion(nodeVersion: string): boolean {
+  const currentVersion = nodeVersion.split('.')
+  const major = parseInt(currentVersion[0], 10)
+  const minor = parseInt(currentVersion[1], 10)
+  const isSupported =
+    (major === 20 && minor >= 19) || (major === 22 && minor >= 12) || major > 22
+  return isSupported
+}
+
+if (!checkNodeVersion(process.versions.node)) {
+  // eslint-disable-next-line no-console
+  console.warn(
+    colors.yellow(
+      `You are using Node.js ${process.versions.node}. ` +
+        `Vite requires Node.js version 20.19+ or 22.12+. ` +
+        `Please upgrade your Node.js version.`,
+    ),
+  )
+}
 
 const cli = cac('vite')
 
@@ -352,6 +371,7 @@ cli
   .action(
     async (root: string, options: { force?: boolean } & GlobalCLIOptions) => {
       filterDuplicateOptions(options)
+      const { resolveConfig } = await import('./config')
       const { optimizeDeps } = await import('./optimizer')
       try {
         const config = await resolveConfig(

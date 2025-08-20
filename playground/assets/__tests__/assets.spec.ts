@@ -671,6 +671,16 @@ test("new URL(/* @vite-ignore */ 'non-existent', import.meta.url)", async () => 
   )
 })
 
+test('new URL(..., import.meta.url) (multiline)', async () => {
+  const assetMatch = isBuild
+    ? /\/foo\/bar\/assets\/asset-[-\w]{8}\.png/
+    : '/foo/bar/nested/asset.png'
+
+  expect(await page.textContent('.import-meta-url-multiline')).toMatch(
+    assetMatch,
+  )
+})
+
 test.runIf(isBuild)('manifest', async () => {
   const manifest = readManifest('foo')
   const entry = manifest['index.html']

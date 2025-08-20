@@ -347,6 +347,72 @@ foo()
   test('supports more than 1000 lines', () => {
     expectSnapshot(generateCodeFrame(veryLongSource, { line: 1200, column: 0 }))
   })
+
+  test('long line (start)', () => {
+    const longLine = 'a'.repeat(60) + 'b'.repeat(60) + 'c'.repeat(60)
+    const src = `${longLine}\nshort line\n${longLine}`
+    const frame = generateCodeFrame(
+      src,
+      { line: 1, column: 0 },
+      { line: 1, column: 30 },
+    )
+    expectSnapshot(frame)
+  })
+
+  test('long line (center)', () => {
+    const longLine = 'a'.repeat(60) + 'b'.repeat(60) + 'c'.repeat(60)
+    const src = `${longLine}\nshort line\n${longLine}`
+    const frame = generateCodeFrame(
+      src,
+      { line: 1, column: 90 },
+      { line: 1, column: 120 },
+    )
+    expectSnapshot(frame)
+  })
+
+  test('long line (end)', () => {
+    const longLine = 'a'.repeat(60) + 'b'.repeat(60) + 'c'.repeat(60)
+    const src = `${longLine}\nshort line\n${longLine}`
+    const frame = generateCodeFrame(
+      src,
+      { line: 1, column: 150 },
+      { line: 1, column: 180 },
+    )
+    expectSnapshot(frame)
+  })
+
+  test('long line (whole)', () => {
+    const longLine = 'a'.repeat(60) + 'b'.repeat(60) + 'c'.repeat(60)
+    const src = `${longLine}\nshort line\n${longLine}`
+    const frame = generateCodeFrame(
+      src,
+      { line: 1, column: 0 },
+      { line: 1, column: 180 },
+    )
+    expectSnapshot(frame)
+  })
+
+  test('long line (multiline 1)', () => {
+    const longLine = 'a'.repeat(60) + 'b'.repeat(60) + 'c'.repeat(60)
+    const src = `${longLine}\nshort line\n${longLine}`
+    const frame = generateCodeFrame(
+      src,
+      { line: 1, column: 170 },
+      { line: 2, column: 5 },
+    )
+    expectSnapshot(frame)
+  })
+
+  test('long line (multiline 2)', () => {
+    const longLine = 'a'.repeat(60) + 'b'.repeat(60) + 'c'.repeat(60)
+    const src = `${longLine}\nshort line\n${longLine}`
+    const frame = generateCodeFrame(
+      src,
+      { line: 2, column: 5 },
+      { line: 3, column: 30 },
+    )
+    expectSnapshot(frame)
+  })
 })
 
 describe('getHash', () => {
