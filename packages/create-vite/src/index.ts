@@ -512,6 +512,8 @@ async function init() {
     template = variant
   }
 
+  const pkgManager = pkgInfo ? pkgInfo.name : 'npm'
+
   // 5. Ask about immediate install and package manager
   let immediate = argImmediate
   if (immediate === undefined) {
@@ -520,28 +522,11 @@ async function init() {
       immediate = false
     } else {
       const immediateResult = await prompts.confirm({
-        message: 'Install and start now?',
+        message: `Install with ${pkgManager} and start now?`,
       })
       if (prompts.isCancel(immediateResult)) return cancel()
       immediate = immediateResult
     }
-  }
-
-  const pkgManager = pkgInfo ? pkgInfo.name : 'npm'
-  let agent = 'npm'
-  if (immediate) {
-    const agentResult = await prompts.select({
-      message: 'Select a package manager:',
-      options: [
-        { label: 'npm', value: 'npm' },
-        { label: 'yarn', value: 'yarn' },
-        { label: 'pnpm', value: 'pnpm' },
-        { label: 'bun', value: 'bun' },
-      ],
-      initialValue: pkgManager,
-    })
-    if (prompts.isCancel(agentResult)) return cancel()
-    agent = agentResult
   }
 
   const root = path.join(cwd, targetDir)
@@ -606,9 +591,8 @@ async function init() {
   }
 
   if (immediate) {
-    if (!agent) throw new Error()
-    install(root, agent)
-    start(root, agent)
+    install(root, pkgManager)
+    start(root, pkgManager)
   } else {
     let doneMessage = ''
     const cdProjectName = path.relative(cwd, root)
