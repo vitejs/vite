@@ -129,7 +129,7 @@ const imgUrl = new URL('./img.png', import.meta.url).href
 document.getElementById('hero-img').src = imgUrl
 ```
 
-This works natively in modern browsers – in fact, Vite doesn't need to process this code at all during development!
+This works natively in modern browsers - in fact, Vite doesn't need to process this code at all during development!
 
 This pattern also supports dynamic URLs via template literals:
 
