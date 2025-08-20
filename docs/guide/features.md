@@ -777,12 +777,7 @@ Ensure that you replace the placeholder with a unique value for each request. Th
 :::
 
 :::tip Limitations in SPA deployments
-When deploying as a Single Page Application (SPA), be aware that the nonce value is only set in the initial HTML.
-Because navigation in an SPA does not reload the HTML document, the nonce meta tag will not be refreshed on
-subsequent requests. This means that enforcing CSP with nonces in a pure SPA deployment is not fully reliable.
-
-For stronger guarantees, prefer using SSR or serving fresh HTML responses per request so that a new nonce
-can be injected dynamically.
+The CSP specification requires generating a unique nonce for each HTTP response. In a pure SPA, client-side navigations do not reload the HTML document, so the nonce is not rotated automatically after the initial load. This is fine per the spec, but you must propagate the current document’s nonce to any scripts created at runtime, or use `strict-dynamic` from a trusted bootstrap script. If you rely on per-navigation rotation or need policy changes between routes, serve a fresh HTML response (SSR/MPA).
 :::
 
 ### [`data:`](<https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Content-Security-Policy/Sources#scheme-source:~:text=schemes%20(not%20recommended).-,data%3A,-Allows%20data%3A>)
