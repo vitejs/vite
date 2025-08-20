@@ -1175,16 +1175,21 @@ export async function resolveConfig(
       configEnvironmentsSsr.optimizeDeps ?? {},
     )
 
+    // merge with `resolve` as the root to merge `noExternal` correctly
     configEnvironmentsSsr.resolve = mergeConfig(
       {
-        conditions: config.ssr?.resolve?.conditions,
-        externalConditions: config.ssr?.resolve?.externalConditions,
-        mainFields: config.ssr?.resolve?.mainFields,
-        external: config.ssr?.external,
-        noExternal: config.ssr?.noExternal,
-      } satisfies EnvironmentResolveOptions,
-      configEnvironmentsSsr.resolve ?? {},
-    )
+        resolve: {
+          conditions: config.ssr?.resolve?.conditions,
+          externalConditions: config.ssr?.resolve?.externalConditions,
+          mainFields: config.ssr?.resolve?.mainFields,
+          external: config.ssr?.external,
+          noExternal: config.ssr?.noExternal,
+        },
+      } satisfies EnvironmentOptions,
+      {
+        resolve: configEnvironmentsSsr.resolve ?? {},
+      },
+    ).resolve
   }
 
   if (config.build?.ssrEmitAssets !== undefined) {
@@ -1933,7 +1938,7 @@ async function bundleConfigFile(
     mainFields: ['main'],
     sourcemap: 'inline',
     // the last slash is needed to make the path correct
-    sourceRoot: path.dirname(fileName) + path.sep,
+    sourceRoot: pathToFileURL(path.dirname(fileName)).href + '/',
     metafile: true,
     define: {
       __dirname: dirnameVarName,
@@ -1941,6 +1946,7 @@ async function bundleConfigFile(
       'import.meta.url': importMetaUrlVarName,
       'import.meta.dirname': dirnameVarName,
       'import.meta.filename': filenameVarName,
+      'import.meta.main': 'false',
     },
     plugins: [
       {
@@ -1990,7 +1996,7 @@ async function bundleConfigFile(
               // With the `isNodeBuiltin` check above, this check captures if the builtin is a
               // non-node built-in, which esbuild doesn't know how to handle. In that case, we
               // externalize it so the non-node runtime handles it instead.
-              if (isNodeLikeBuiltin(id)) {
+              if (isNodeLikeBuiltin(id) || id.startsWith('npm:')) {
                 return { external: true }
               }
 

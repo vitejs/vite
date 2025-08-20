@@ -22,7 +22,30 @@ import {
 import type { Browser, Page } from 'playwright-chromium'
 import type { RollupError, RollupWatcher, RollupWatcherEvent } from 'rollup'
 import type { RunnerTestFile } from 'vitest'
-import { beforeAll, inject } from 'vitest'
+import { beforeAll, expect, inject } from 'vitest'
+
+// #region serializer
+
+export const sourcemapSnapshot = Symbol()
+
+const generateVisualizationLink = (code: string, map: string) => {
+  const hash = `${code.length}\0${code}${map.length}\0${map}`
+  return `https://evanw.github.io/source-map-visualization/#${btoa(hash)}`
+}
+
+expect.addSnapshotSerializer({
+  serialize(val, config, indentation, depth, refs, printer) {
+    return `${indentation}SourceMap {
+${indentation}${config.indent}content: ${printer(val.map, config, indentation + config.indent, depth, refs)},
+${indentation}${config.indent}visualization: ${JSON.stringify(generateVisualizationLink(val.code, JSON.stringify(val.map)))}
+${indentation}}`
+  },
+  test(val) {
+    return typeof val === 'object' && val && val[sourcemapSnapshot] === true
+  },
+})
+
+// #endregion
 
 // #region env
 
@@ -76,6 +99,21 @@ export function setViteUrl(url: string): void {
   viteTestUrl = url
 }
 
+function throwHtmlParseError() {
+  return {
+    name: 'vite-plugin-throw-html-parse-error',
+    configResolved(config: ResolvedConfig) {
+      const warn = config.logger.warn
+      config.logger.warn = (msg, opts) => {
+        // convert HTML parse warnings to make it easier to test
+        if (msg.includes('Unable to parse HTML;')) {
+          throw new Error(msg)
+        }
+        warn.call(config.logger, msg, opts)
+      }
+    },
+  }
+}
 // #endregion
 
 beforeAll(async (s) => {
@@ -224,6 +262,7 @@ async function loadConfig(configEnv: ConfigEnv) {
       emptyOutDir: false,
     },
     customLogger: createInMemoryLogger(serverLogs),
+    plugins: [throwHtmlParseError()],
   }
   return mergeConfig(options, config || {})
 }

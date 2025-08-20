@@ -195,7 +195,7 @@ jobs:
             }
 
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
         with:
           ref: refs/pull/${{ fromJSON(steps.get-pr-data.outputs.result).num }}/head
           fetch-depth: 0
