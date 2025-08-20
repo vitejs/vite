@@ -26,9 +26,9 @@ const argv = mri<{
   immediate?: boolean
   agent?: string
 }>(process.argv.slice(2), {
-  alias: { h: 'help', t: 'template', i: 'immediate', a: 'agent' },
+  alias: { h: 'help', t: 'template', i: 'immediate' },
   boolean: ['help', 'overwrite', 'immediate'],
-  string: ['template', 'agent'],
+  string: ['template'],
 })
 const cwd = process.cwd()
 
@@ -42,7 +42,6 @@ With no arguments, start the CLI in interactive mode.
 Options:
   -t, --template NAME        use a specific template
   -i, --immediate            install dependencies and start dev
-  -a, --agent AGENT          install dependencies via npm, yarn, pnpm, or bun
 
 Available templates:
 ${yellow    ('vanilla-ts     vanilla'  )}
@@ -389,7 +388,6 @@ async function init() {
   const argTemplate = argv.template
   const argOverwrite = argv.overwrite
   const argImmediate = argv.immediate
-  const argAgent = argv.agent
 
   const help = argv.help
   if (help) {
@@ -516,10 +514,6 @@ async function init() {
 
   // 5. Ask about immediate install and package manager
   let immediate = argImmediate
-  // If agent is specified but immediate is not explicitly set, default immediate to true
-  if (argAgent && immediate === undefined) {
-    immediate = true
-  }
   if (immediate === undefined) {
     // In test mode, default to false to avoid prompts
     if (process.env._VITE_TEST_CLI) {
@@ -534,8 +528,8 @@ async function init() {
   }
 
   const pkgManager = pkgInfo ? pkgInfo.name : 'npm'
-  let agent = argAgent
-  if (immediate && !agent) {
+  let agent = 'npm'
+  if (immediate) {
     const agentResult = await prompts.select({
       message: 'Select a package manager:',
       options: [

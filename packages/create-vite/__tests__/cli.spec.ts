@@ -154,7 +154,7 @@ test('return help usage how to use create-vite with -h alias', () => {
   expect(stdout).toContain(message)
 })
 
-test('shows immediate and agent options in help', () => {
+test('shows help', () => {
   const { stdout } = run(['--help'], { cwd: __dirname })
   expect(stripVTControlCharacters(stdout as string)).toMatchInlineSnapshot(`
     "Usage: create-vite [OPTION]... [DIRECTORY]
@@ -165,7 +165,6 @@ test('shows immediate and agent options in help', () => {
     Options:
       -t, --template NAME        use a specific template
       -i, --immediate            install dependencies and start dev
-      -a, --agent AGENT          install dependencies via npm, yarn, pnpm, or bun
 
     Available templates:
     vanilla-ts     vanilla
@@ -181,12 +180,9 @@ test('shows immediate and agent options in help', () => {
 })
 
 test('accepts immediate flag', () => {
-  const { stdout } = run(
-    [projectName, '--template', 'vue', '--immediate', '--agent', 'npm'],
-    {
-      cwd: __dirname,
-    },
-  )
+  const { stdout } = run([projectName, '--template', 'vue', '--immediate'], {
+    cwd: __dirname,
+  })
   expect(stdout).toContain(`Scaffolding project in ${genPath}`)
 })
 
@@ -198,12 +194,5 @@ test('accepts immediate flag and skips install prompt', () => {
     },
   )
   expect(stdout).not.toContain('Install and start now?')
-  expect(stdout).toContain(`Scaffolding project in ${genPath}`)
-})
-
-test('accepts agent flag', () => {
-  const { stdout } = run([projectName, '--template', 'vue', '-a', 'npm'], {
-    cwd: __dirname,
-  })
   expect(stdout).toContain(`Scaffolding project in ${genPath}`)
 })
