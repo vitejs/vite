@@ -16,7 +16,7 @@ export default defineConfig({
     lib: {
       ...baseConfig.build.lib,
       entry: path.resolve(__dirname, 'src/main.js'),
-      formats: ['es'],
+      formats: ['es', 'iife'],
     },
   },
   plugins: [],
