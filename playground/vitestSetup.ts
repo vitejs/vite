@@ -29,19 +29,28 @@ import { beforeAll, expect, inject } from 'vitest'
 export const sourcemapSnapshot = Symbol()
 
 const generateVisualizationLink = (code: string, map: string) => {
-  const hash = `${code.length}\0${code}${map.length}\0${map}`
+  const utf16ToUTF8 = (x) => unescape(encodeURIComponent(x))
+  const convertedCode = utf16ToUTF8(code)
+  const convertedMap = utf16ToUTF8(map)
+  const hash = `${convertedCode.length}\0${convertedCode}${convertedMap.length}\0${convertedMap}`
   return `https://evanw.github.io/source-map-visualization/#${btoa(hash)}`
 }
 
 expect.addSnapshotSerializer({
   serialize(val, config, indentation, depth, refs, printer) {
+    const options = val[sourcemapSnapshot]
+    const map = { ...val.map }
+    if (options.withoutContent) {
+      delete map.sourcesContent
+    }
+
     return `${indentation}SourceMap {
-${indentation}${config.indent}content: ${printer(val.map, config, indentation + config.indent, depth, refs)},
+${indentation}${config.indent}content: ${printer(map, config, indentation + config.indent, depth, refs)},
 ${indentation}${config.indent}visualization: ${JSON.stringify(generateVisualizationLink(val.code, JSON.stringify(val.map)))}
 ${indentation}}`
   },
   test(val) {
-    return typeof val === 'object' && val && val[sourcemapSnapshot] === true
+    return typeof val === 'object' && val && val[sourcemapSnapshot]
   },
 })
 
