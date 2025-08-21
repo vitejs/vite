@@ -355,7 +355,7 @@ export const formatSourcemapForSnapshot = (
   if (m.sourceRoot) {
     m.sourceRoot = m.sourceRoot.replace(root, '/root')
   }
-  const c = removeComments(code.replace(/\?v=[\da-f]{8}/, '?v=00000000'))
+  const c = removeComments(code.replace(/\?v=[\da-f]{8}/g, '?v=00000000'))
   return { map: m, code: c, [sourcemapSnapshot]: { withoutContent } }
 }
 
