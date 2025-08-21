@@ -343,6 +343,7 @@ export const formatSourcemapForSnapshot = (
   withoutContent = false,
 ): any => {
   const root = normalizePath(testDir)
+  const repoRoot = normalizePath(path.resolve(import.meta.dirname, '../'))
   const m = { ...map }
   delete m.file
   if (m.names && m.names.length === 0) {
@@ -355,7 +356,11 @@ export const formatSourcemapForSnapshot = (
   if (m.sourceRoot) {
     m.sourceRoot = m.sourceRoot.replace(root, '/root')
   }
-  const c = removeComments(code.replace(/\?v=[\da-f]{8}/, '?v=00000000'))
+  const c = removeComments(
+    code
+      .replace(/\?v=[\da-f]{8}/, '?v=00000000')
+      .replaceAll(repoRoot, `/repo${'_'.repeat(repoRoot.length - 5)}`),
+  )
   return { map: m, code: c, [sourcemapSnapshot]: { withoutContent } }
 }
 
