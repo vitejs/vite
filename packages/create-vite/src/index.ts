@@ -24,7 +24,6 @@ const argv = mri<{
   help?: boolean
   overwrite?: boolean
   immediate?: boolean
-  agent?: string
 }>(process.argv.slice(2), {
   alias: { h: 'help', t: 'template', i: 'immediate' },
   boolean: ['help', 'overwrite', 'immediate'],
