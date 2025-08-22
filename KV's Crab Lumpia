@@ -1,0 +1,75 @@
+import Head from "next/head";
+
+export default function Home() {
+  return (
+    <>
+      <Head>
+        <title>KV's Crab Lumpia | Order Now</title>
+        <meta name="description" content="Delicious cheesy crab lumpia delivered fresh! Order Original, Cheesy, and Spicy flavors today." />
+        <meta name="keywords" content="crab lumpia, cheesy lumpia, spicy lumpia, KV's lumpia, lumpia delivery" />
+        <meta name="robots" content="index, follow" />
+        <meta property="og:title" content="KV's Crab Lumpia" />
+        <meta property="og:description" content="Taste the best cheesy crab lumpia in town! Available in Original, Cheesy, and Spicy." />
+        <meta property="og:image" content="/images/cheesy.jpg" />
+        <meta property="og:url" content="https://yourdomain.com" />
+        <link rel="canonical" href="https://yourdomain.com" />
+      </Head>
+
+      <main className="bg-gray-50 min-h-screen">
+        {/* Hero Section */}
+        <section className="bg-orange-500 text-white text-center py-16">
+          <h1 className="text-5xl font-bold">KV's Crab Lumpia</h1>
+          <p className="mt-4 text-xl">The best cheesy crab lumpia in town! 🦀</p>
+          <a href="#order" className="mt-6 inline-block bg-white text-orange-500 px-6 py-3 rounded-lg font-semibold hover:bg-gray-100">
+            Order Now
+          </a>
+        </section>
+
+        {/* Menu Section */}
+        <section className="py-16 px-6">
+          <h2 className="text-3xl font-bold text-center mb-10">Our Flavors</h2>
+          <div className="grid md:grid-cols-3 gap-8">
+            <div className="bg-white p-4 rounded-lg shadow text-center">
+              <img src="/images/original.jpg" alt="Original Lumpia" className="rounded-lg mb-4" />
+              <h3 className="text-xl font-semibold">Original</h3>
+              <p className="text-gray-600">Classic crab lumpia, crispy and flavorful.</p>
+            </div>
+            <div className="bg-white p-4 rounded-lg shadow text-center">
+              <img src="/images/cheesy.jpg" alt="Cheesy Lumpia" className="rounded-lg mb-4" />
+              <h3 className="text-xl font-semibold">Cheesy</h3>
+              <p className="text-gray-600">Loaded with creamy cheese and crab.</p>
+            </div>
+            <div className="bg-white p-4 rounded-lg shadow text-center">
+              <img src="/images/spicy.jpg" alt="Spicy Lumpia" className="rounded-lg mb-4" />
+              <h3 className="text-xl font-semibold">Spicy</h3>
+              <p className="text-gray-600">For those who love a little kick!</p>
+            </div>
+          </div>
+        </section>
+
+        {/* Order Form */}
+        <section id="order" className="bg-gray-100 py-16 px-6">
+          <h2 className="text-3xl font-bold text-center mb-8">Place Your Order</h2>
+          <form className="max-w-lg mx-auto bg-white p-6 rounded-lg shadow space-y-4">
+            <input type="text" placeholder="Your Name" className="w-full p-3 border rounded" required />
+            <input type="text" placeholder="Phone Number" className="w-full p-3 border rounded" required />
+            <select className="w-full p-3 border rounded">
+              <option>Original</option>
+              <option>Cheesy</option>
+              <option>Spicy</option>
+            </select>
+            <input type="number" placeholder="Quantity" className="w-full p-3 border rounded" required />
+            <button type="submit" className="w-full bg-orange-500 text-white py-3 rounded-lg font-semibold hover:bg-orange-600">
+              Submit Order
+            </button>
+          </form>
+        </section>
+
+        {/* Footer */}
+        <footer className="bg-orange-500 text-white text-center py-4">
+          <p>&copy; 2025 KV's Crab Lumpia | Follow us on Facebook: <a href="#" className="underline">KV's Crab Lumpia</a></p>
+        </footer>
+      </main>
+    </>
+  );
+}
