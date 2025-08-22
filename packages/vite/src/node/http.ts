@@ -138,8 +138,9 @@ export async function resolveHttpServer(
         ...httpsOptions,
         allowHTTP1: true,
       },
-      // @ts-expect-error TODO: is this correct?
-      app,
+      // When allowHTTP1 is true, the HTTP/2 server can handle HTTP/1.1 requests,
+      // making the Connect app compatible as a request listener
+      app as unknown as Parameters<typeof createSecureServer>[1],
     )
   }
 }
