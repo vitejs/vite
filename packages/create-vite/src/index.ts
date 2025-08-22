@@ -342,39 +342,93 @@ const renameFiles: Record<string, string | undefined> = {
 
 const defaultTargetDir = 'vite-project'
 
-function run(...params: Parameters<typeof spawn.sync>) {
-  const { status, error } = spawn.sync(...params)
-
-  if (status != null && status > 0) {
-    process.exit(status)
-  }
-
-  if (error) {
-    console.error(`\n${params.slice(0, -1).join(' ')} error!`)
-    console.error(error)
-    process.exit(1)
+async function* bufferToString(iterable: AsyncIterable<Buffer>) {
+  for await (const chunk of iterable) {
+    yield chunk.toString()
   }
 }
 
-function install(root: string, agent: string) {
+async function* skipInitialLineBreaks(iterable: AsyncIterable<string>) {
+  let hadContent = false
+  for await (const chunk of iterable) {
+    if (hadContent) {
+      yield chunk
+      continue
+    }
+    const trimmedChunk = chunk.replace(/^\n+/, '')
+    if (trimmedChunk.length !== 0) {
+      yield trimmedChunk
+      hadContent = true
+    }
+  }
+}
+
+async function callOnlyIfNeeded<T>(
+  iterable: AsyncIterable<T>,
+  callback: (iterable: AsyncIterable<T>) => unknown,
+) {
+  const iter = iterable[Symbol.asyncIterator]()
+  const first = await iter.next()
+  if (first.done) return
+
+  callback(
+    (async function* () {
+      yield first.value
+      let item
+      while ((item = await iter.next())) {
+        if (item.done) break
+        yield item.value
+      }
+    })(),
+  )
+}
+
+async function run(...params: Parameters<typeof spawn>) {
+  const spawned = spawn(...params)
+  const streamPromises: Promise<unknown>[] = []
+  if (spawned.stdout) {
+    callOnlyIfNeeded(
+      skipInitialLineBreaks(bufferToString(spawned.stdout)),
+      (iter) => prompts.stream.message(iter),
+    )
+  }
+  if (spawned.stderr) {
+    callOnlyIfNeeded(
+      skipInitialLineBreaks(bufferToString(spawned.stderr)),
+      (iter) => prompts.stream.error(iter),
+    )
+  }
+  await new Promise<void>((resolve) => {
+    spawned.once('close', (code) => {
+      if (code !== 0) {
+        process.exit(1)
+      }
+      resolve()
+    })
+  })
+  await Promise.all(streamPromises)
+}
+
+async function install(root: string, agent: string) {
   if (process.env._VITE_TEST_CLI) {
-    console.log(`\nInstalling dependencies with ${agent}... (skipped in test)`)
+    prompts.log.step(
+      `Installing dependencies with ${agent}... (skipped in test)`,
+    )
     return
   }
-  console.log(`\nInstalling dependencies with ${agent}...`)
-  run(agent, agent === 'yarn' ? [] : ['install'], {
-    stdio: 'inherit',
+  prompts.log.step(`Installing dependencies with ${agent}...`)
+  await run(agent, agent === 'yarn' ? [] : ['install'], {
     cwd: root,
   })
 }
 
-function start(root: string, agent: string) {
+async function start(root: string, agent: string) {
   if (process.env._VITE_TEST_CLI) {
-    console.log('\nStarting dev server... (skipped in test)')
+    prompts.log.step('Starting dev server... (skipped in test)')
     return
   }
-  console.log('\nStarting dev server...')
-  run(agent, agent === 'npm' ? ['run', 'dev'] : ['dev'], {
+  prompts.log.step('Starting dev server...')
+  await run(agent, agent === 'npm' ? ['run', 'dev'] : ['dev'], {
     stdio: 'inherit',
     cwd: root,
   })
@@ -590,8 +644,8 @@ async function init() {
   }
 
   if (immediate) {
-    install(root, pkgManager)
-    start(root, pkgManager)
+    await install(root, pkgManager)
+    await start(root, pkgManager)
   } else {
     let doneMessage = ''
     const cdProjectName = path.relative(cwd, root)
