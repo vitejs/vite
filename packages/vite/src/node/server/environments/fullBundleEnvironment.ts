@@ -62,6 +62,7 @@ export class MemoryFiles {
 
 export class FullBundleDevEnvironment extends DevEnvironment {
   private state: BundleState = { type: 'initial' }
+  private invalidateCalledModules = new Set<string>()
 
   watchFiles = new Set<string>()
   memoryFiles = new MemoryFiles()
@@ -160,6 +161,8 @@ export class FullBundleDevEnvironment extends DevEnvironment {
           patched: this.state.patched,
         }
         return
+      } finally {
+        this.invalidateCalledModules.clear()
       }
 
       if (hmrOutput.every((output) => output.type === 'Noop')) {
@@ -189,13 +192,20 @@ export class FullBundleDevEnvironment extends DevEnvironment {
     firstInvalidatedBy: string
   }): void {
     ;(async () => {
+      if (this.invalidateCalledModules.has(m.path)) {
+        debug?.(
+          `${this.state.type.toUpperCase()}: invalidate received, but ignored because it was already invalidated`,
+        )
+        return
+      }
+
       if (
         this.state.type === 'initial' ||
         this.state.type === 'bundling' ||
         this.state.type === 'bundle-error'
       ) {
         debug?.(
-          `${this.state.type.toUpperCase()}: invalidate received, but ignored`,
+          `${this.state.type.toUpperCase()}: invalidate received, but ignored because the state type has changed`,
         )
         return
       }
@@ -212,6 +222,7 @@ export class FullBundleDevEnvironment extends DevEnvironment {
         bundle: this.state.bundle,
         patched: this.state.patched,
       }
+      this.invalidateCalledModules.add(m.path)
 
       let hmrOutput: HmrOutput
       try {
@@ -430,7 +441,7 @@ export class FullBundleDevEnvironment extends DevEnvironment {
         path: boundary.boundary,
         acceptedPath: boundary.acceptedVia,
         firstInvalidatedBy,
-        timestamp: 0,
+        timestamp: Date.now(),
       }
     })
     this.hot.send({
