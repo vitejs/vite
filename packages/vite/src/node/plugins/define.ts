@@ -44,6 +44,7 @@ export function definePlugin(config: ResolvedConfig): Plugin {
     // these will be set to a proper value in `generatePattern`
     importMetaKeys['import.meta.env.SSR'] = `undefined`
     importMetaFallbackKeys['import.meta.env'] = `undefined`
+    importMetaKeys['import.meta.DEBUG'] = !config.isProduction + ''
   }
 
   function generatePattern(environment: Environment) {
@@ -89,7 +90,11 @@ export function definePlugin(config: ResolvedConfig): Plugin {
       patternKeys.push('process.env')
     }
     if (Object.keys(importMetaKeys).length) {
-      patternKeys.push('import.meta.env', 'import.meta.hot')
+      patternKeys.push(
+        'import.meta.env',
+        'import.meta.hot',
+        'import.meta.DEBUG',
+      )
     }
     const pattern = patternKeys.length
       ? new RegExp(
