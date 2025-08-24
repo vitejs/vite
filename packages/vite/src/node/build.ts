@@ -736,6 +736,7 @@ async function buildEnvironment(
       const watcher = watch({
         ...rollupOptions,
         watch: {
+          ...rollupOptions.watch,
           ...options.watch,
           chokidar: resolvedChokidarOptions,
         },
