@@ -165,7 +165,8 @@ const moduleRunnerConfig = defineConfig({
     minify: {
       compress: true,
       mangle: false,
-      removeWhitespace: false,
+      // FIXME: https://github.com/rolldown/rolldown/pull/5893
+      // removeWhitespace: false,
     },
   },
 })
