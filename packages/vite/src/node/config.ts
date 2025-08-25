@@ -1222,6 +1222,9 @@ function resolveDepOptimizationOptions(
         resolve: {
           symlinks: !preserveSymlinks,
         },
+        output: {
+          topLevelVar: true,
+        },
       },
       force: forceOptimizeDeps ?? configDefaults.optimizeDeps.force,
     },
