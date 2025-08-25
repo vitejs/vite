@@ -1,3 +1,12 @@
+## <small>[7.1.5](https://github.com/vitejs/rolldown-vite/compare/v7.1.4...v7.1.5) (2025-08-25)</small>
+### Features
+
+* update rolldown ([#389](https://github.com/vitejs/rolldown-vite/issues/389)) ([6db67e5](https://github.com/vitejs/rolldown-vite/commit/6db67e5ed45e6a2ffc5b5e5799b79a0ef006e032))
+
+### Bug Fixes
+
+* **native-plugin:** generate a more readable manifest ([#388](https://github.com/vitejs/rolldown-vite/issues/388)) ([e76ad17](https://github.com/vitejs/rolldown-vite/commit/e76ad172ab66c545ae4a2508b512f817adbff255))
+
 ## <small>[7.1.4](https://github.com/vitejs/rolldown-vite/compare/v7.1.3...v7.1.4) (2025-08-19)</small>
 ### Features
 
