@@ -4,6 +4,9 @@ import { defineConfig } from 'vite'
 const require = module.createRequire(import.meta.url)
 
 export default defineConfig({
+  define: {
+    __VUE_PROD_HYDRATION_MISMATCH_DETAILS__: false,
+  },
   resolve: {
     dedupe: ['react'],
     alias: {
