@@ -219,6 +219,20 @@ export function proxyMiddleware(
         debug?.(`${req.url} -> ${opts.target || opts.forward}`)
         if (opts.rewrite) {
           req.url = opts.rewrite(req.url!)
+          // some users set `''` to req.url
+          // this was supported by http-proxy, but is not supported by http-proxy-3
+          const target = opts.target
+          if (
+            (req.url === '' || req.url.startsWith('?')) &&
+            target &&
+            opts.prependPath !== false
+          ) {
+            const normalizedTarget =
+              typeof target === 'string' ? new URL(target) : target
+            req.url =
+              'pathname' in normalizedTarget ? normalizedTarget.pathname : '/'
+            options.prependPath = false
+          }
         }
         proxy.web(req, res, options)
         return
