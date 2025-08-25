@@ -111,7 +111,7 @@ export function manifestPlugin(config: ResolvedConfig): Plugin {
                 this.environment.config.build.rolldownOptions.output
               const outputLength = Array.isArray(output) ? output.length : 1
               if (manifest && outputLength === 1) {
-                asset.source = JSON.stringify(manifest)
+                asset.source = JSON.stringify(manifest, undefined, 2)
                 return
               }
 
