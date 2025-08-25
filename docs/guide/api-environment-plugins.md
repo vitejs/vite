@@ -31,11 +31,19 @@ A plugin could use the `environment` instance to change how a module is processe
 
 ## Registering New Environments Using Hooks
 
-Plugins can add new environments in the `config` hook (for example to have a separate module graph for [RSC](https://react.dev/blog/2023/03/22/react-labs-what-we-have-been-working-on-march-2023#react-server-components)):
+Plugins can add new environments in the `config` hook. For example, [RSC support](/plugins/#vitejs-plugin-rsc) uses an additional environment to have a separate module graph with the `react-server` condition:
 
 ```ts
   config(config: UserConfig) {
-    config.environments.rsc ??= {}
+    return {
+      environments: {
+        rsc: {
+          resolve: {
+            conditions: ['react-server', ...defaultServerConditions],
+          },
+        },
+      },
+    }
   }
 ```
 
@@ -48,8 +56,15 @@ Plugins should set default values using the `config` hook. To configure each env
 
 ```ts
   configEnvironment(name: string, options: EnvironmentOptions) {
+    // add "workerd" condition to the rsc environment
     if (name === 'rsc') {
-      options.resolve.conditions = // ...
+      return {
+        resolve: {
+          conditions: ['workerd'],
+        },
+      }
+    }
+  }
 ```
 
 ## The `hotUpdate` Hook
