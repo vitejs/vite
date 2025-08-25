@@ -726,7 +726,10 @@ async function buildEnvironment(
         logger,
       )
       const resolvedChokidarOptions = resolveChokidarOptions(
-        options.watch.chokidar,
+        {
+          ...(rollupOptions.watch || {}).chokidar,
+          ...options.watch.chokidar,
+        },
         resolvedOutDirs,
         emptyOutDir,
         environment.config.cacheDir,
