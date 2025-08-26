@@ -1,0 +1,192 @@
+import React, { useState } from 'react';
+import { Plus, Edit2, Trash2, Calendar, User, Package, AlertCircle, Search } from 'lucide-react';
+
+const TempleBorrowSystem = () => {
+  const [borrowItems, setBorrowItems] = useState([
+    {
+      id: 1,
+      itemName: 'เก้าอี้พลาสติก',
+      quantity: 50,
+      borrowerName: 'นายสมชาย ใจดี',
+      borrowerPhone: '081-234-5678',
+      borrowDate: '2025-08-20',
+      returnDate: '2025-08-25',
+      status: 'กำลังยืม',
+      purpose: 'จัดงานบุญกฐิน',
+      notes: 'เก้าอี้สีขาว สภาพดี'
+    },
+    {
+      id: 2,
+      itemName: 'โต๊ะพับได้',
+      quantity: 10,
+      borrowerName: 'นางสาวมาลี สุขใจ',
+      borrowerPhone: '082-345-6789',
+      borrowDate: '2025-08-22',
+      returnDate: '2025-08-24',
+      status: 'คืนแล้ว',
+      purpose: 'งานแต่งงาน',
+      notes: 'โต๊ะขาว ขนาด 6 ฟุต'
+    }
+  ]);
+
+  const [showAddForm, setShowAddForm] = useState(false);
+  const [editingItem, setEditingItem] = useState(null);
+  const [searchTerm, setSearchTerm] = useState('');
+
+  const [formData, setFormData] = useState({
+    itemName: '',
+    quantity: '',
+    borrowerName: '',
+    borrowerPhone: '',
+    borrowDate: '',
+    returnDate: '',
+    status: 'กำลังยืม',
+    purpose: '',
+    notes: ''
+  });
+
+  const handleInputChange = (e) => {
+    const { name, value } = e.target;
+    setFormData(prev => ({
+      ...prev,
+      [name]: value
+    }));
+  };
+
+  const handleSubmit = () => {
+    if (!formData.itemName || !formData.quantity || !formData.borrowerName || !formData.borrowDate || !formData.returnDate) {
+      alert('กรุณากรอกข้อมูลที่จำเป็น (มีเครื่องหมาย *)');
+      return;
+    }
+
+    if (editingItem) {
+      setBorrowItems(prev => prev.map(item =>
+        item.id === editingItem.id
+          ? { ...formData, id: editingItem.id }
+          : item
+      ));
+      setEditingItem(null);
+    } else {
+      const newItem = {
+        ...formData,
+        id: Date.now(),
+        quantity: parseInt(formData.quantity)
+      };
+      setBorrowItems(prev => [...prev, newItem]);
+    }
+
+    setFormData({
+      itemName: '',
+      quantity: '',
+      borrowerName: '',
+      borrowerPhone: '',
+      borrowDate: '',
+      returnDate: '',
+      status: 'กำลังยืม',
+      purpose: '',
+      notes: ''
+    });
+    setShowAddForm(false);
+  };
+
+  const handleEdit = (item) => {
+    setEditingItem(item);
+    setFormData(item);
+    setShowAddForm(true);
+  };
+
+  const handleDelete = (id) => {
+    if (window.confirm('คุณแน่ใจหรือไม่ว่าต้องการลบรายการนี้?')) {
+      setBorrowItems(prev => prev.filter(item => item.id !== id));
+    }
+  };
+
+  const getStatusColor = (status) => {
+    switch (status) {
+      case 'กำลังยืม': return 'bg-yellow-100 text-yellow-800 border-yellow-300';
+      case 'คืนแล้ว': return 'bg-green-100 text-green-800 border-green-300';
+      case 'เกินกำหนด': return 'bg-red-100 text-red-800 border-red-300';
+      default: return 'bg-gray-100 text-gray-800 border-gray-300';
+    }
+  };
+
+  const checkOverdue = (returnDate, status) => {
+    if (status === 'คืนแล้ว') return false;
+    const today = new Date();
+    const returnDateObj = new Date(returnDate);
+    return returnDateObj < today;
+  };
+
+  const filteredItems = borrowItems.filter(item =>
+    item.itemName.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    item.borrowerName.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    item.purpose.toLowerCase().includes(searchTerm.toLowerCase())
+  );
+
+  return (
+    <div className="min-h-screen bg-gradient-to-br from-orange-50 to-yellow-50 p-4">
+      <div className="max-w-7xl mx-auto">
+        {/* Header */}
+        <div className="bg-white rounded-lg shadow-lg p-6 mb-6">
+          <div className="flex items-center justify-between">
+            <div>
+              <h1 className="text-3xl font-bold text-orange-800 mb-2">
+                🏛️ วัดเกาะแก้วอัมพวัน
+              </h1>
+              <h2 className="text-xl text-gray-600">ระบบจัดการรายการยืมของ</h2>
+            </div>
+            <button
+              onClick={() => {
+                setShowAddForm(true);
+                setEditingItem(null);
+                setFormData({
+                  itemName: '',
+                  quantity: '',
+                  borrowerName: '',
+                  borrowerPhone: '',
+                  borrowDate: '',
+                  returnDate: '',
+                  status: 'กำลังยืม',
+                  purpose: '',
+                  notes: ''
+                });
+              }}
+              className="bg-orange-600 hover:bg-orange-700 text-white px-6 py-3 rounded-lg flex items-center gap-2 transition-colors"
+            >
+              <Plus size={20} />
+              เพิ่มรายการยืม
+            </button>
+          </div>
+        </div>
+
+        {/* Search Bar */}
+        <div className="bg-white rounded-lg shadow-lg p-4 mb-6">
+          <div className="relative">
+            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={20} />
+            <input
+              type="text"
+              placeholder="ค้นหาชื่อของ, ผู้ยืม, หรือวัตถุประสงค์..."
+              className="w-full pl-10 pr-4 py-3 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500"
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+            />
+          </div>
+        </div>
+
+        {/* Add/Edit Form */}
+        {showAddForm && (
+          <div className="bg-white rounded-lg shadow-lg p-6 mb-6">
+            {/* --- ฟอร์มเหมือนที่คุณเขียน --- */}
+          </div>
+        )}
+
+        {/* Borrow Items List */}
+        <div className="bg-white rounded-lg shadow-lg overflow-hidden">
+          {/* ตารางแสดงข้อมูลเหมือนโค้ดที่คุณมี */}
+        </div>
+      </div>
+    </div>
+  );
+};
+
+export default TempleBorrowSystem;
