@@ -291,8 +291,8 @@ You can deploy your Vite app as a Static Site on [Sevalla's free static site hos
 5. (Optional) Enable **Pull Request previews**.
 
 6. Click **Continue** to open **Build settings**. Sevalla will auto-detect settings, but confirm the following for a Vite app:
-  - **Build command:** `npm run build`
-  - **Publish directory:** `dist`
+     - **Build command:** `npm run build`
+     - **Publish directory:** `dist`
 
 7. If you have environment variables, add them now, then click **Create site**.
 
