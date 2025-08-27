@@ -1,6 +1,7 @@
 import type { RolldownBuild, RolldownOptions } from 'rolldown'
 import type { Update } from 'types/hmrPayload'
 import colors from 'picocolors'
+import type { FSWatcher } from 'chokidar'
 import {
   ChunkMetadataMap,
   clearLine,
@@ -11,7 +12,7 @@ import { getHmrImplementation } from '../../plugins/clientInjections'
 import { DevEnvironment, type DevEnvironmentContext } from '../environment'
 import type { ResolvedConfig } from '../../config'
 import type { ViteDevServer } from '../../server'
-import { arraify, createDebugger } from '../../utils'
+import { arraify, createDebugger, tryStatSync } from '../../utils'
 import { prepareError } from '../middlewares/error'
 import { getShortName } from '../hmr'
 
@@ -65,6 +66,7 @@ export class FullBundleDevEnvironment extends DevEnvironment {
   private state: BundleState = { type: 'initial' }
   private invalidateCalledModules = new Set<string>()
 
+  watcher!: FSWatcher
   watchFiles = new Set<string>()
   memoryFiles = new MemoryFiles()
 
@@ -82,8 +84,9 @@ export class FullBundleDevEnvironment extends DevEnvironment {
     super(name, config, { ...context, disableDepsOptimizer: true })
   }
 
-  override async listen(_server: ViteDevServer): Promise<void> {
+  override async listen(server: ViteDevServer): Promise<void> {
     this.hot.listen()
+    this.watcher = server.watcher
 
     debug?.('INITIAL: setup bundle options')
     const rollupOptions = await this.getRolldownOptions()
@@ -368,8 +371,19 @@ export class FullBundleDevEnvironment extends DevEnvironment {
       }
 
       // TODO: should this be done for hmr patch file generation?
-      for (const file of await bundle.watchFiles) {
-        this.watchFiles.add(file)
+      const bundleWatchFiles = new Set(await bundle.watchFiles)
+      for (const file of this.watchFiles) {
+        if (!bundleWatchFiles.has(file)) {
+          this.watcher.unwatch(file)
+        }
+      }
+      for (const file of bundleWatchFiles) {
+        if (!this.watchFiles.has(file)) {
+          if (tryStatSync(file)) {
+            this.watcher.add(file)
+          }
+          this.watchFiles.add(file)
+        }
       }
       if (signal.aborted) return
       const postGenerateTime = Date.now()

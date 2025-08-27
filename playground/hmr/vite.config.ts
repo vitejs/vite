@@ -9,6 +9,22 @@ export default defineConfig({
     hmrPartialAccept: true,
   },
   build: {
+    rollupOptions: {
+      input: [
+        path.resolve(import.meta.dirname, './index.html'),
+        path.resolve(import.meta.dirname, './missing-import/index.html'),
+        path.resolve(
+          import.meta.dirname,
+          './unicode-path/中文-にほんご-한글-🌕🌖🌗/index.html',
+        ),
+        path.resolve(import.meta.dirname, './counter/index.html'),
+        path.resolve(
+          import.meta.dirname,
+          './self-accept-within-circular/index.html',
+        ),
+        path.resolve(import.meta.dirname, './css-deps/index.html'),
+      ],
+    },
     assetsInlineLimit(filePath) {
       if (filePath.endsWith('logo-no-inline.svg')) {
         return false
