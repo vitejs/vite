@@ -71,7 +71,6 @@ export function errorMiddleware(
     if (allowNext) {
       next()
     } else {
-      // TODO: support error overlay
       res.statusCode = 500
       res.end(`
         <!DOCTYPE html>

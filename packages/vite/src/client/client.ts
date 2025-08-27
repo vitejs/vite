@@ -618,7 +618,7 @@ export function injectQuery(url: string, queryToInject: string): string {
 
 export { ErrorOverlay }
 
-if (isFullBundleMode) {
+if (isFullBundleMode && typeof DevRuntime !== 'undefined') {
   class ViteDevRuntime extends DevRuntime {
     override createModuleHotContext(moduleId: string) {
       const ctx = createHotContext(moduleId)
