@@ -13,6 +13,7 @@ import type { ResolvedConfig } from '../../config'
 import type { ViteDevServer } from '../../server'
 import { arraify, createDebugger } from '../../utils'
 import { prepareError } from '../middlewares/error'
+import { getShortName } from '../hmr'
 
 const debug = createDebugger('vite:full-bundle-mode')
 
@@ -412,6 +413,7 @@ export class FullBundleDevEnvironment extends DevEnvironment {
   ) {
     if (hmrOutput.type === 'Noop') return
 
+    const shortFile = getShortName(file, this.config.root)
     if (hmrOutput.type === 'FullReload') {
       this.triggerGenerateBundle({ options, bundle })
 
@@ -419,13 +421,13 @@ export class FullBundleDevEnvironment extends DevEnvironment {
         ? colors.dim(` (${hmrOutput.reason})`)
         : ''
       this.logger.info(
-        colors.green(`trigger page reload `) + colors.dim(file) + reason,
+        colors.green(`trigger page reload `) + colors.dim(shortFile) + reason,
         { clear: !firstInvalidatedBy, timestamp: true },
       )
       return
     }
 
-    debug?.(`handle hmr output for ${file}`, {
+    debug?.(`handle hmr output for ${shortFile}`, {
       ...hmrOutput,
       code: typeof hmrOutput.code === 'string' ? '[code]' : hmrOutput.code,
     })
