@@ -276,6 +276,32 @@ By default, any new commit pushed to the specified branch will automatically tri
 
 You can also add a [custom domain](https://render.com/docs/custom-domains) to your project.
 
+## Sevalla
+
+You can deploy your Vite app as a Static Site on [Sevalla's free static site hosting](https://sevalla.com/static-site-hosting/).
+
+1. Log in to your [Sevalla dashboard](https://app.sevalla.com).
+
+2. Click **Static Sites** > **Add Static Site**.
+
+3. Connect your **GitHub**, **GitLab**, or **Bitbucket** repository.
+
+4. Select your project repo and branch (commonly `main`).
+
+5. (Optional) Enable **Pull Request previews**.
+
+6. Click **Continue** to open **Build settings**. Sevalla will auto-detect settings, but confirm the following for a Vite app:
+  - **Build command:** `npm run build`
+  - **Publish directory:** `dist`
+
+7. If you have environment variables, add them now, then click **Create site**.
+
+8. Sevalla will build and deploy your site to a Sevalla-generated URL like `https://<PROJECTNAME>.sevalla.page`.
+
+If you checked **Automatic deployments on commit**, new pushes to the selected branch will trigger fresh deployments (you can change this later in settings).
+
+You can also add a [custom domain](https://docs.sevalla.com/static-sites/domains) to your project.
+
 <!--
   NOTE: The sections below are reserved for more deployment platforms not listed above.
   Feel free to submit a PR that adds a new section with a link to your platform's
@@ -293,10 +319,6 @@ You can also add a [custom domain](https://render.com/docs/custom-domains) to yo
 ## Flightcontrol
 
 Deploy your static site using [Flightcontrol](https://www.flightcontrol.dev/?ref=docs-vite) by following these [instructions](https://www.flightcontrol.dev/docs/reference/examples/vite?ref=docs-vite).
-
-## Kinsta Static Site Hosting
-
-Deploy your static site using [Kinsta](https://kinsta.com/static-site-hosting/) by following these [instructions](https://kinsta.com/docs/react-vite-example/).
 
 ## xmit Static Site Hosting
 
