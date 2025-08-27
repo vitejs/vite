@@ -1,7 +1,7 @@
 import path from 'node:path'
 import fs from 'node:fs'
 import type { Connect } from '#dep-types/connect'
-import { createDebugger } from '../../utils'
+import { createDebugger, joinUrlSegments } from '../../utils'
 import { cleanUrl } from '../../../shared/utils'
 import type { DevEnvironment } from '../environment'
 import { FullBundleDevEnvironment } from '../environments/fullBundleEnvironment'
@@ -20,8 +20,9 @@ export function htmlFallbackMiddleware(
 
   function checkFileExists(relativePath: string) {
     return (
-      memoryFiles?.has(relativePath) ??
-      fs.existsSync(path.join(root, relativePath))
+      memoryFiles?.has(
+        relativePath.slice(1), // remove first /
+      ) ?? fs.existsSync(path.join(root, relativePath))
     )
   }
 
@@ -63,7 +64,7 @@ export function htmlFallbackMiddleware(
     }
     // trailing slash should check for fallback index.html
     else if (pathname.endsWith('/')) {
-      if (checkFileExists(path.join(pathname, 'index.html'))) {
+      if (checkFileExists(joinUrlSegments(pathname, 'index.html'))) {
         const newUrl = url + 'index.html'
         debug?.(`Rewriting ${req.method} ${req.url} to ${newUrl}`)
         req.url = newUrl

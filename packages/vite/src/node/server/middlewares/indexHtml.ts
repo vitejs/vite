@@ -459,8 +459,10 @@ export function indexHtmlMiddleware(
     // htmlFallbackMiddleware appends '.html' to URLs
     if (url?.endsWith('.html') && req.headers['sec-fetch-dest'] !== 'script') {
       if (fullBundleEnv) {
-        const cleanedUrl = cleanUrl(url).slice(1) // remove first /
-        let content = fullBundleEnv.memoryFiles.get(cleanedUrl)
+        const pathname = decodeURIComponent(url)
+        const filePath = pathname.slice(1) // remove first /
+
+        let content = fullBundleEnv.memoryFiles.get(filePath)
         if (!content && fullBundleEnv.memoryFiles.size !== 0) {
           return next()
         }

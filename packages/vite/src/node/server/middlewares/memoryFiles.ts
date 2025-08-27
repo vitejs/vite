@@ -17,13 +17,17 @@ export function memoryFilesMiddleware(
   const headers = server.config.server.headers
 
   return function viteMemoryFilesMiddleware(req, res, next) {
-    const cleanedUrl = cleanUrl(req.url!).slice(1) // remove first /
+    const cleanedUrl = cleanUrl(req.url!)
     if (cleanedUrl.endsWith('.html')) {
       return next()
     }
-    const file = memoryFiles.get(cleanedUrl)
+
+    const pathname = decodeURIComponent(cleanedUrl)
+    const filePath = pathname.slice(1) // remove first /
+
+    const file = memoryFiles.get(filePath)
     if (file) {
-      const mime = mrmime.lookup(cleanedUrl)
+      const mime = mrmime.lookup(filePath)
       if (mime) {
         res.setHeader('Content-Type', mime)
       }
