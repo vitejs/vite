@@ -272,7 +272,7 @@ cli
           },
         })
       }
-      server.bindCLIShortcuts({ print: true, customShortcuts })
+      server.bindCLIShortcuts({ print: true, customShortcuts, default: true })
     } catch (e) {
       const logger = createLogger(options.logLevel)
       logger.error(colors.red(`error when starting dev server:\n${e.stack}`), {
