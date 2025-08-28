@@ -542,7 +542,7 @@ export async function _createServer(
   let closeServerPromise: Promise<void> | undefined
   const closeServer = async () => {
     if (!middlewareMode) {
-      teardownSIGTERMListener(closeServerAndExit)
+      teardownSIGTERMListener(config.server.watchStdin, closeServerAndExit)
     }
 
     await Promise.allSettled([
@@ -784,7 +784,7 @@ export async function _createServer(
   }
 
   if (!middlewareMode) {
-    setupSIGTERMListener(closeServerAndExit)
+    setupSIGTERMListener(config.server.watchStdin, closeServerAndExit)
   }
 
   const onHMRUpdate = async (
@@ -1082,6 +1082,7 @@ export const serverConfigDefaults = Object.freeze({
   allowedHosts: [],
   https: undefined,
   open: false,
+  watchStdin: false,
   proxy: undefined,
   cors: { origin: defaultAllowedOrigins },
   headers: {},
