@@ -64,7 +64,7 @@ class WorkerOutputCache {
   private invalidatedBundles = new Set</* inputId */ string>()
 
   saveWorkerBundle(
-    id: string,
+    file: string,
     watchedFiles: string[],
     outputEntryFilename: string,
     outputEntryCode: string,
@@ -82,7 +82,7 @@ class WorkerOutputCache {
       referencedAssets: new Set(outputAssets.map((asset) => asset.fileName)),
       watchedFiles,
     }
-    this.bundles.set(id, bundle)
+    this.bundles.set(file, bundle)
     return bundle
   }
 
@@ -102,25 +102,25 @@ class WorkerOutputCache {
   }
 
   invalidateAffectedBundles(file: string) {
-    for (const [inputId, bundle] of this.bundles.entries()) {
+    for (const [bundleInputFile, bundle] of this.bundles.entries()) {
       if (bundle.watchedFiles.includes(file)) {
-        this.invalidatedBundles.add(inputId)
+        this.invalidatedBundles.add(bundleInputFile)
       }
     }
   }
 
-  removeBundleIfInvalidated(inputId: string) {
-    if (this.invalidatedBundles.has(inputId)) {
-      this.invalidatedBundles.delete(inputId)
-      this.removeBundle(inputId)
+  removeBundleIfInvalidated(file: string) {
+    if (this.invalidatedBundles.has(file)) {
+      this.invalidatedBundles.delete(file)
+      this.removeBundle(file)
     }
   }
 
-  private removeBundle(inputId: string) {
-    const bundle = this.bundles.get(inputId)
+  private removeBundle(file: string) {
+    const bundle = this.bundles.get(file)
     if (!bundle) return
 
-    this.bundles.delete(inputId)
+    this.bundles.delete(file)
     this.fileNameHash.delete(getHash(bundle.entryFilename))
 
     this.assets.delete(bundle.entryFilename)
@@ -134,8 +134,8 @@ class WorkerOutputCache {
     }
   }
 
-  getWorkerBundle(id: string) {
-    return this.bundles.get(id)
+  getWorkerBundle(file: string) {
+    return this.bundles.get(file)
   }
 
   getAssets() {
@@ -274,7 +274,7 @@ async function bundleWorkerEntry(
   const newBundleInfo = workerOutputCaches
     .get(config.mainConfig || config)!
     .saveWorkerBundle(
-      id,
+      input,
       watchedFiles,
       outputChunk.fileName,
       outputChunk.code,
