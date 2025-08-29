@@ -128,6 +128,13 @@ const FRAMEWORKS: Framework[] = [
         color: blue,
       },
       {
+        name: 'React Compiler (TS)',
+        display: 'TypeScript + React Compiler',
+        color: blue,
+        customCommand:
+          'npm exec degit vitejs/vite-plugin-react/packages/plugin-react/examples/compiler-ts TARGET_DIR',
+      },
+      {
         name: 'react',
         display: 'JavaScript',
         color: yellow,
@@ -136,6 +143,13 @@ const FRAMEWORKS: Framework[] = [
         name: 'react-swc',
         display: 'JavaScript + SWC',
         color: yellow,
+      },
+      {
+        name: 'React Compiler (JS)',
+        display: 'JavaScript + React Compiler',
+        color: yellow,
+        customCommand:
+          'npm exec degit vitejs/vite-plugin-react/packages/plugin-react/examples/compiler TARGET_DIR',
       },
       {
         name: 'custom-react-router',
