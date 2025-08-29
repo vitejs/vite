@@ -59,9 +59,8 @@ describe('running module runner inside a worker and using the ModuleRunnerTransp
     )
   })
 
-  afterAll(() => {
-    server.close()
-    worker.terminate()
+  afterAll(async () => {
+    await Promise.allSettled([server.close(), worker.terminate()])
     rpc.$close()
   })
 
