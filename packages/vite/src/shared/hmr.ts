@@ -219,12 +219,14 @@ export class HMRClient {
         if (disposer) return disposer(this.dataMap.get(path))
       }),
     )
-    paths.forEach((path) => {
-      const fn = this.pruneMap.get(path)
-      if (fn) {
-        fn(this.dataMap.get(path))
-      }
-    })
+    await Promise.all(
+      paths.map((path) => {
+        const fn = this.pruneMap.get(path)
+        if (fn) {
+          fn(this.dataMap.get(path))
+        }
+      }),
+    )
   }
 
   protected warnFailedUpdate(err: Error, path: string | string[]): void {
