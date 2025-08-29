@@ -2481,7 +2481,8 @@ const makeScssWorker = (
       } satisfies ScssWorkerResult
     },
     async stop() {
-      ;(await compilerPromise)?.dispose()
+      const compiler = await compilerPromise
+      await compiler?.dispose()
       compilerPromise = undefined
     },
   }
