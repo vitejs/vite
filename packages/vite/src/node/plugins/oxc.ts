@@ -128,38 +128,41 @@ export function setOxcTransformOptionsFromTsconfigOptions(
    * | true                 | remove                 | -                    | -                     |
    * | true                 | preserve, error        | true                 | true                  |
    */
-  if (tsCompilerOptions.verbatimModuleSyntax !== undefined) {
-    oxcOptions.typescript ??= {}
-    oxcOptions.typescript.onlyRemoveTypeImports =
-      tsCompilerOptions.verbatimModuleSyntax
-  } else if (
-    tsCompilerOptions.preserveValueImports !== undefined ||
-    tsCompilerOptions.importsNotUsedAsValues !== undefined
-  ) {
-    const preserveValueImports = tsCompilerOptions.preserveValueImports ?? false
-    const importsNotUsedAsValues =
-      tsCompilerOptions.importsNotUsedAsValues ?? 'remove'
-    if (preserveValueImports === false && importsNotUsedAsValues === 'remove') {
+  if (oxcOptions.typescript?.onlyRemoveTypeImports === undefined) {
+    if (tsCompilerOptions.verbatimModuleSyntax !== undefined) {
       oxcOptions.typescript ??= {}
-      oxcOptions.typescript.onlyRemoveTypeImports = true
+      oxcOptions.typescript.onlyRemoveTypeImports =
+        tsCompilerOptions.verbatimModuleSyntax
     } else if (
-      preserveValueImports === true &&
-      (importsNotUsedAsValues === 'preserve' ||
-        importsNotUsedAsValues === 'error')
+      tsCompilerOptions.preserveValueImports !== undefined ||
+      tsCompilerOptions.importsNotUsedAsValues !== undefined
     ) {
-      oxcOptions.typescript ??= {}
-      oxcOptions.typescript.onlyRemoveTypeImports = false
-    } else {
-      warnings.push(
-        `preserveValueImports=${preserveValueImports} + importsNotUsedAsValues=${importsNotUsedAsValues} is not supported by oxc.` +
-          'Please migrate to the new verbatimModuleSyntax option.',
-      )
-      oxcOptions.typescript ??= {}
-      oxcOptions.typescript.onlyRemoveTypeImports = false
+      const preserveValueImports =
+        tsCompilerOptions.preserveValueImports ?? false
+      const importsNotUsedAsValues =
+        tsCompilerOptions.importsNotUsedAsValues ?? 'remove'
+      if (
+        preserveValueImports === false &&
+        importsNotUsedAsValues === 'remove'
+      ) {
+        oxcOptions.typescript ??= {}
+        oxcOptions.typescript.onlyRemoveTypeImports = true
+      } else if (
+        preserveValueImports === true &&
+        (importsNotUsedAsValues === 'preserve' ||
+          importsNotUsedAsValues === 'error')
+      ) {
+        oxcOptions.typescript ??= {}
+        oxcOptions.typescript.onlyRemoveTypeImports = false
+      } else {
+        warnings.push(
+          `preserveValueImports=${preserveValueImports} + importsNotUsedAsValues=${importsNotUsedAsValues} is not supported by oxc.` +
+            'Please migrate to the new verbatimModuleSyntax option.',
+        )
+        oxcOptions.typescript ??= {}
+        oxcOptions.typescript.onlyRemoveTypeImports = false
+      }
     }
-  } else {
-    oxcOptions.typescript ??= {}
-    oxcOptions.typescript.onlyRemoveTypeImports = false
   }
 
   const resolvedTsconfigTarget = resolveTsconfigTarget(tsCompilerOptions.target)
