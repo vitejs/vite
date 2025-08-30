@@ -153,12 +153,10 @@ For example, to make the default import of `*.svg` a React component:
     export default content
   }
   ```
-- If you are using `compilerOptions.types`, update `tsconfig.json` to include your override file:
+- If you are using `compilerOptions.types`, ensure the file is included in `tsconfig.json`:
   ```json [tsconfig.json]
   {
-    "compilerOptions": {
-      "types": ["./vite-env-override.d.ts", "vite/client"]
-    }
+    "include": ["src", "./vite-env-override.d.ts"]
   }
   ```
 - If you are using triple-slash directives, update the file containing the reference to `vite/client` (normally `vite-env.d.ts`):
