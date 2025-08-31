@@ -993,6 +993,10 @@ export async function resolveHostname(
   return { host, name }
 }
 
+export function bufferify(buffer: string | Buffer): Buffer {
+  return Buffer.isBuffer(buffer) ? buffer : Buffer.from(buffer)
+}
+
 export function resolveServerUrls(
   server: Server,
   options: CommonServerOptions,
@@ -1045,19 +1049,27 @@ export function resolveServerUrls(
       })
   }
 
-  const cert =
-    httpsOptions?.cert && !Array.isArray(httpsOptions.cert)
-      ? new crypto.X509Certificate(httpsOptions.cert)
-      : undefined
-  const hostnameFromCert = cert?.subjectAltName
-    ? extractHostnamesFromSubjectAltName(cert.subjectAltName)
-    : []
+  const certs = httpsOptions?.cert ? arraify(httpsOptions.cert) : []
+  const hostnameFromCert = certs
+    .map((cert) => {
+      try {
+        const buf = bufferify(cert)
+        return new crypto.X509Certificate(buf)
+      } catch {
+        return null
+      }
+    })
+    .flatMap((cert) =>
+      cert && cert.subjectAltName
+        ? extractHostnamesFromSubjectAltName(cert.subjectAltName)
+        : [],
+    )
 
   if (hostnameFromCert.length > 0) {
     const existings = new Set([...local, ...network])
     local.push(
       ...hostnameFromCert
-        .map((hostname) => `https://${hostname}:${port}${base}`)
+        .map((hostname) => `${protocol}://${hostname}:${port}${base}`)
         .filter((url) => !existings.has(url)),
     )
   }
