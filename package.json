@@ -50,7 +50,7 @@
     "@types/estree": "^1.0.8",
     "@types/etag": "^1.8.4",
     "@types/less": "^3.0.8",
-    "@types/node": "^22.17.2",
+    "@types/node": "^22.18.0",
     "@types/picomatch": "^4.0.2",
     "@types/stylus": "^0.48.43",
     "@types/ws": "^8.18.1",
@@ -69,7 +69,7 @@
     "simple-git-hooks": "^2.13.1",
     "tsx": "^4.20.5",
     "typescript": "~5.9.2",
-    "typescript-eslint": "^8.40.0",
+    "typescript-eslint": "^8.41.0",
     "vite": "workspace:*",
     "vitest": "^3.2.4"
   },
