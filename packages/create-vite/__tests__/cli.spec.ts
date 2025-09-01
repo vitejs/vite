@@ -124,6 +124,27 @@ test('successfully scaffolds a project with subfolder based on react starter tem
   expect(templateFilesReact).toEqual(generatedFiles)
 })
 
+test('successfully scaffolds a project based on react-compiler-ts starter template', () => {
+  const { stdout } = run([projectName, '--template', 'react-compiler-ts'], {
+    cwd: __dirname,
+  })
+  const configFile = fs.readFileSync(
+    path.join(genPath, 'vite.config.ts'),
+    'utf-8',
+  )
+  const packageJsonFile = fs.readFileSync(
+    path.join(genPath, 'package.json'),
+    'utf-8',
+  )
+  const readmeFile = fs.readFileSync(path.join(genPath, 'README.md'), 'utf-8')
+
+  // Assertions
+  expect(stdout).toContain(`Scaffolding project in ${genPath}`)
+  expect(configFile).toContain('babel-plugin-react-compiler')
+  expect(packageJsonFile).toContain('babel-plugin-react-compiler')
+  expect(readmeFile).toContain('The React Compiler is enabled on this template')
+})
+
 test('works with the -t alias', () => {
   const { stdout } = run([projectName, '-t', 'vue'], {
     cwd: __dirname,
