@@ -1,0 +1,21 @@
+// https://code.visualstudio.com/docs/devcontainers/containers
+// https://containers.dev/implementors/json_reference/
+{
+  "name": "vite-devcontainer",
+  "forwardPorts": [5173],
+  "image": "node:lts",
+  "features": {},
+  "customizations": {
+    "vscode": {
+      "settings": {},
+      "extensions": [
+        "ms-azuretools.vscode-docker",
+        "dbaeumer.vscode-eslint",
+        "github.vscode-github-actions",
+        "esbenp.prettier-vscode"
+      ]
+    }
+  },
+  "postStartCommand": "npm i -g pnpm && pnpm install && pnpm build",
+  "mounts": ["type=volume,target=${containerWorkspaceFolder}/node_modules"]
+}
