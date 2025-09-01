@@ -1,6 +1,7 @@
 import fs from 'node:fs'
 import path from 'node:path'
-import type { SyncOptions, SyncResult } from 'execa'
+import { stripVTControlCharacters } from 'node:util'
+import type { SyncOptions } from 'execa'
 import { execaCommandSync } from 'execa'
 import { afterEach, beforeAll, expect, test } from 'vitest'
 
@@ -10,11 +11,11 @@ const projectName = 'test-app'
 const genPath = path.join(__dirname, projectName)
 const genPathWithSubfolder = path.join(__dirname, 'subfolder', projectName)
 
-const run = <SO extends SyncOptions>(
-  args: string[],
-  options?: SO,
-): SyncResult<SO> => {
-  return execaCommandSync(`node ${CLI_PATH} ${args.join(' ')}`, options)
+const run = (args: string[], options?: SyncOptions) => {
+  return execaCommandSync(`node ${CLI_PATH} ${args.join(' ')}`, {
+    env: { ...process.env, _VITE_TEST_CLI: 'true' },
+    ...options,
+  })
 }
 
 // Helper to create a non-empty directory
@@ -151,4 +152,47 @@ test('return help usage how to use create-vite with -h alias', () => {
   const { stdout } = run(['--h'], { cwd: __dirname })
   const message = 'Usage: create-vite [OPTION]... [DIRECTORY]'
   expect(stdout).toContain(message)
+})
+
+test('shows help', () => {
+  const { stdout } = run(['--help'], { cwd: __dirname })
+  expect(stripVTControlCharacters(stdout as string)).toMatchInlineSnapshot(`
+    "Usage: create-vite [OPTION]... [DIRECTORY]
+
+    Create a new Vite project in JavaScript or TypeScript.
+    With no arguments, start the CLI in interactive mode.
+
+    Options:
+      -t, --template NAME        use a specific template
+      -i, --immediate            install dependencies and start dev
+
+    Available templates:
+    vanilla-ts     vanilla
+    vue-ts         vue
+    react-ts       react
+    react-swc-ts   react-swc
+    preact-ts      preact
+    lit-ts         lit
+    svelte-ts      svelte
+    solid-ts       solid
+    qwik-ts        qwik"
+  `)
+})
+
+test('accepts immediate flag', () => {
+  const { stdout } = run([projectName, '--template', 'vue', '--immediate'], {
+    cwd: __dirname,
+  })
+  expect(stdout).toContain(`Scaffolding project in ${genPath}`)
+})
+
+test('accepts immediate flag and skips install prompt', () => {
+  const { stdout } = run(
+    [projectName, '--template', 'vue', '--immediate', 'false'],
+    {
+      cwd: __dirname,
+    },
+  )
+  expect(stdout).not.toContain('Install and start now?')
+  expect(stdout).toContain(`Scaffolding project in ${genPath}`)
 })
