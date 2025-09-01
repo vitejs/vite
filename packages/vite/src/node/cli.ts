@@ -278,7 +278,7 @@ cli
       logger.error(colors.red(`error when starting dev server:\n${e.stack}`), {
         error: e,
       })
-      stopProfiler(logger.info)
+      await stopProfiler(logger.info)
       process.exit(1)
     }
   })
@@ -353,7 +353,9 @@ cli
         )
         process.exit(1)
       } finally {
-        stopProfiler((message) => createLogger(options.logLevel).info(message))
+        await stopProfiler((message) =>
+          createLogger(options.logLevel).info(message),
+        )
       }
     },
   )
@@ -444,7 +446,9 @@ cli
         )
         process.exit(1)
       } finally {
-        stopProfiler((message) => createLogger(options.logLevel).info(message))
+        await stopProfiler((message) =>
+          createLogger(options.logLevel).info(message),
+        )
       }
     },
   )
