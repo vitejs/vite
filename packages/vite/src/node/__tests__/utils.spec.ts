@@ -989,7 +989,7 @@ X2JN
   test('should handle IPv4 multiple certificates', () => {
     const mockServer = createMockServer()
     const { options, hostname, config } = createTestConfig()
-    const httpsOptions = { cert: [createWorkingCert] }
+    const httpsOptions = { cert: [createWorkingCert, createWorkingCert] }
 
     const result = resolveServerUrls(
       mockServer,
@@ -1007,9 +1007,7 @@ X2JN
   test('should handle IPv6 single certificate', () => {
     const mockServer = createMockServer('IPv6', '::1')
     const { options, hostname, config } = createTestConfig()
-    const httpsOptions = {
-      cert: [createWorkingCert],
-    }
+    const httpsOptions = { cert: [createWorkingCert] }
 
     const result = resolveServerUrls(
       mockServer,
@@ -1027,29 +1025,7 @@ X2JN
   test('should handle IPv6 multiple certificates', () => {
     const mockServer = createMockServer('IPv6', '::1')
     const { options, hostname, config } = createTestConfig()
-    const httpsOptions = {
-      cert: [createWorkingCert],
-    }
-
-    const result = resolveServerUrls(
-      mockServer,
-      options,
-      hostname,
-      httpsOptions,
-      config,
-    )
-
-    expect(result.local).toContain('https://localhost:3000/')
-    expect(result.local).toContain('https://foo.localhost:3000/')
-    expect(result.local).toContain('https://vite.vite.localhost:3000/')
-  })
-
-  test('should handle mixed IPv4 and IPv6', () => {
-    const mockServer = createMockServer('IPv4', '0.0.0.0')
-    const { options, hostname, config } = createTestConfig()
-    const httpsOptions = {
-      cert: [createWorkingCert],
-    } as any
+    const httpsOptions = { cert: [createWorkingCert, createWorkingCert] }
 
     const result = resolveServerUrls(
       mockServer,
