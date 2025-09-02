@@ -431,7 +431,7 @@ export function resolveEsbuildTranspileOptions(
         minify: false,
         minifyIdentifiers: options.minifyIdentifiers ?? true,
         minifySyntax: options.minifySyntax ?? true,
-        minifyWhitespace: false,
+        minifyWhitespace: options.minifyWhitespace ?? false,
         treeShaking: true,
       }
     } else {
