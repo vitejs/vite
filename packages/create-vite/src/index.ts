@@ -604,7 +604,10 @@ async function emptyDir(dir: string) {
     if (file === '.git') {
       continue
     }
-    await fs.promises.rm(path.resolve(dir, file), { recursive: true, force: true })
+    await fs.promises.rm(path.resolve(dir, file), { 
+      recursive: true, 
+      force: true 
+    })
   }
 }
 
