@@ -596,7 +596,7 @@ function isEmpty(path: string) {
   return files.length === 0 || (files.length === 1 && files[0] === '.git')
 }
 
-function emptyDir(dir: string) {
+assync function emptyDir(dir: string) {
   if (!fs.existsSync(dir)) {
     return
   }
@@ -604,7 +604,7 @@ function emptyDir(dir: string) {
     if (file === '.git') {
       continue
     }
-    fs.rmSync(path.resolve(dir, file), { recursive: true, force: true })
+    await fs.promises.rm(path.resolve(dir, file), { recursive: true, force: true })
   }
 }
 
