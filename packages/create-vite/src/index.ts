@@ -604,7 +604,7 @@ function emptyDir(dir: string) {
     if (file === '.git') {
       continue
     }
-    fs.rmSync(path.resolve(dir, file), { recursive: true, force: true })
+    fs.promises.rm(path.resolve(dir, file), { recursive: true, force: true })
   }
 }
 
