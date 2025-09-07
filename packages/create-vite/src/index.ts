@@ -596,7 +596,7 @@ function isEmpty(path: string) {
   return files.length === 0 || (files.length === 1 && files[0] === '.git')
 }
 
-assync function emptyDir(dir: string) {
+async function emptyDir(dir: string) {
   if (!fs.existsSync(dir)) {
     return
   }
