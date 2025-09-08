@@ -1,3 +1,13 @@
+## <small>[7.0.7](https://github.com/vitejs/vite/compare/v7.0.6...v7.0.7) (2025-09-08)</small>
+### Bug Fixes
+
+* apply `fs.strict` check to HTML files ([#20736](https://github.com/vitejs/vite/issues/20736)) ([6f01ff4](https://github.com/vitejs/vite/commit/6f01ff4fe072bcfcd4e2a84811772b818cd51fe6))
+* upgrade sirv to 3.0.2 ([#20735](https://github.com/vitejs/vite/issues/20735)) ([63e2a5d](https://github.com/vitejs/vite/commit/63e2a5d232218f3f8d852056751e609a5367aaec))
+
+### Tests
+
+* detect ts support via `process.features` ([#20544](https://github.com/vitejs/vite/issues/20544)) ([45fdb16](https://github.com/vitejs/vite/commit/45fdb1658195c75142b6a152c066f1b1909a66a6))
+
 ## <small>[7.0.6](https://github.com/vitejs/vite/compare/v7.0.5...v7.0.6) (2025-07-24)</small>
 ### Bug Fixes
 
