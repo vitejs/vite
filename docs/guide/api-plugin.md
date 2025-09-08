@@ -403,6 +403,7 @@ Vite plugins can also provide hooks that serve Vite-specific purposes. These hoo
 ### `handleHotUpdate`
 
 - **Type:** `(ctx: HmrContext) => Array<ModuleNode> | void | Promise<Array<ModuleNode> | void>`
+- **Kind:** `async`, `sequential`
 - **See also:** [HMR API](./api-hmr)
 
   Perform custom HMR update handling. The hook receives a context object with the following signature:

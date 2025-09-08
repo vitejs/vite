@@ -792,7 +792,7 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
       await urlEmitQueue.run(async () =>
         Promise.all(
           urlEmitTasks.map(async (info) => {
-            info.content = await finalizeCss(info.content, true, config)
+            info.content = await finalizeCss(info.content, config)
           }),
         ),
       )
@@ -863,7 +863,7 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
 
             // wait for previous tasks as well
             chunkCSS = await codeSplitEmitQueue.run(async () => {
-              return finalizeCss(chunkCSS!, true, config)
+              return finalizeCss(chunkCSS!, config)
             })
 
             // emit corresponding css file
@@ -886,7 +886,7 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
             // But because entry chunk can be imported by dynamic import,
             // we shouldn't remove the inlined CSS. (#10285)
 
-            chunkCSS = await finalizeCss(chunkCSS, true, config)
+            chunkCSS = await finalizeCss(chunkCSS, config)
             let cssString = JSON.stringify(chunkCSS)
             cssString =
               renderAssetUrlInJS(this, chunk, opts, cssString)?.toString() ||
@@ -989,7 +989,7 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
         // Finally, if there's any extracted CSS, we emit the asset
         if (extractedCss) {
           hasEmitted = true
-          extractedCss = await finalizeCss(extractedCss, true, config)
+          extractedCss = await finalizeCss(extractedCss, config)
           this.emitFile({
             name: getCssBundleName(),
             type: 'asset',
@@ -1802,16 +1802,12 @@ function combineSourcemapsIfExists(
 const viteHashUpdateMarker = '/*$vite$:1*/'
 const viteHashUpdateMarkerRE = /\/\*\$vite\$:\d+\*\//
 
-async function finalizeCss(
-  css: string,
-  minify: boolean,
-  config: ResolvedConfig,
-) {
+async function finalizeCss(css: string, config: ResolvedConfig) {
   // hoist external @imports and @charset to the top of the CSS chunk per spec (#1845 and #6333)
   if (css.includes('@import') || css.includes('@charset')) {
     css = await hoistAtRules(css)
   }
-  if (minify && config.build.cssMinify) {
+  if (config.build.cssMinify) {
     css = await minifyCSS(css, config, false)
   }
   // inject an additional string to generate a different hash for https://github.com/vitejs/vite/issues/18038
@@ -2485,7 +2481,8 @@ const makeScssWorker = (
       } satisfies ScssWorkerResult
     },
     async stop() {
-      ;(await compilerPromise)?.dispose()
+      const compiler = await compilerPromise
+      await compiler?.dispose()
       compilerPromise = undefined
     },
   }
