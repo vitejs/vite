@@ -1,3 +1,9 @@
+## <small>5.4.20 (2025-09-08)</small>
+
+* fix: apply `fs.strict` check to HTML files (#20736) ([482000f](https://github.com/vitejs/vite/commit/482000f57f56fe6ff2e905305100cfe03043ddea)), closes [#20736](https://github.com/vitejs/vite/issues/20736)
+
+
+
 ## <small>5.4.19 (2025-04-30)</small>
 
 * fix: backport #19965, check static serve file inside sirv (#19966) ([766947e](https://github.com/vitejs/vite/commit/766947e7cbf1cdd07df9737394e8c870401b78b0)), closes [#19965](https://github.com/vitejs/vite/issues/19965) [#19966](https://github.com/vitejs/vite/issues/19966)
