@@ -1,5 +1,5 @@
 diff --git a/build.js b/build.js
-index 0884d9ffaa24d0ae3ec020a6faff12b3125b2071..c41e542888a01112fabf4b692642812239a265b5 100644
+index 0884d9ffaa24d0ae3ec020a6faff12b3125b2071..0e2a690abb3bd121f6ba7c0855163b816f5a7a70 100644
 --- a/build.js
 +++ b/build.js
 @@ -1,5 +1,5 @@
@@ -31,7 +31,7 @@ index 0884d9ffaa24d0ae3ec020a6faff12b3125b2071..c41e542888a01112fabf4b6926428122
  	}
  
 -	let lookup = opts.dev ? viaLocal.bind(0, dir, isEtag) : viaCache.bind(0, FILES);
-+	let lookup = opts.dev ? viaLocal.bind(0, dir + sep, isEtag) : viaCache.bind(0, FILES);
++	let lookup = opts.dev ? viaLocal.bind(0, dir.endsWith(sep) ? dir : dir + sep, isEtag) : viaCache.bind(0, FILES);
  
  	return function (req, res, next) {
  		let extns = [''];
@@ -45,7 +45,7 @@ index 0884d9ffaa24d0ae3ec020a6faff12b3125b2071..c41e542888a01112fabf4b6926428122
  
  		if (isEtag && req.headers['if-none-match'] === data.headers['ETag']) {
 diff --git a/build.mjs b/build.mjs
-index c93bbe6bdfb7ad13ee20f0c44d80d6aacdd64087..7291b761dec495bbf1ace13098d8cae5c8733d93 100644
+index c93bbe6bdfb7ad13ee20f0c44d80d6aacdd64087..9127789c792ffb23022524fd2a6f997286afe0cf 100644
 --- a/build.mjs
 +++ b/build.mjs
 @@ -1,5 +1,5 @@
@@ -77,7 +77,7 @@ index c93bbe6bdfb7ad13ee20f0c44d80d6aacdd64087..7291b761dec495bbf1ace13098d8cae5
  	}
  
 -	let lookup = opts.dev ? viaLocal.bind(0, dir, isEtag) : viaCache.bind(0, FILES);
-+	let lookup = opts.dev ? viaLocal.bind(0, dir + sep, isEtag) : viaCache.bind(0, FILES);
++	let lookup = opts.dev ? viaLocal.bind(0, dir.endsWith(sep) ? dir : dir + sep, isEtag) : viaCache.bind(0, FILES);
  
  	return function (req, res, next) {
  		let extns = [''];
