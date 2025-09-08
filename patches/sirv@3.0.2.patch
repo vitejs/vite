@@ -1,5 +1,5 @@
 diff --git a/build.js b/build.js
-index 3734120d67745ff83b2df07fa5d0a40dcb92a69b..7bfb6faa81ccfcb9016fd2b071a2f93b24e75479 100644
+index 3734120d67745ff83b2df07fa5d0a40dcb92a69b..bd57f693ac2bd4555a12e7a5436fb9524789ef66 100644
 --- a/build.js
 +++ b/build.js
 @@ -35,7 +35,7 @@ function viaCache(cache, uri, extns) {
@@ -19,6 +19,15 @@ index 3734120d67745ff83b2df07fa5d0a40dcb92a69b..7bfb6faa81ccfcb9016fd2b071a2f93b
  			headers = toHeaders(name, stats, isEtag);
  			headers['Cache-Control'] = isEtag ? 'no-cache' : 'no-store';
  			return { abs, stats, headers };
+@@ -164,7 +165,7 @@ module.exports = function (dir, opts={}) {
+ 		});
+ 	}
+ 
+-	let lookup = opts.dev ? viaLocal.bind(0, dir + sep, isEtag) : viaCache.bind(0, FILES);
++	let lookup = opts.dev ? viaLocal.bind(0, dir.endsWith(sep) ? dir : dir + sep, isEtag) : viaCache.bind(0, FILES);
+ 
+ 	return function (req, res, next) {
+ 		let extns = [''];
 @@ -179,7 +180,7 @@ module.exports = function (dir, opts={}) {
  			catch (err) { /* malform uri */ }
  		}
@@ -29,7 +38,7 @@ index 3734120d67745ff83b2df07fa5d0a40dcb92a69b..7bfb6faa81ccfcb9016fd2b071a2f93b
  
  		if (isEtag && req.headers['if-none-match'] === data.headers['ETag']) {
 diff --git a/build.mjs b/build.mjs
-index 2f866d5216c951ec125f2044af070fa6b530e375..a4dfae6d0738568b4f9b86fdfbec47c94562957c 100644
+index 2f866d5216c951ec125f2044af070fa6b530e375..d5335bfbb16e23b57385c1a83226611e29c39093 100644
 --- a/build.mjs
 +++ b/build.mjs
 @@ -35,7 +35,7 @@ function viaCache(cache, uri, extns) {
@@ -49,6 +58,15 @@ index 2f866d5216c951ec125f2044af070fa6b530e375..a4dfae6d0738568b4f9b86fdfbec47c9
  			headers = toHeaders(name, stats, isEtag);
  			headers['Cache-Control'] = isEtag ? 'no-cache' : 'no-store';
  			return { abs, stats, headers };
+@@ -164,7 +165,7 @@ export default function (dir, opts={}) {
+ 		});
+ 	}
+ 
+-	let lookup = opts.dev ? viaLocal.bind(0, dir + sep, isEtag) : viaCache.bind(0, FILES);
++	let lookup = opts.dev ? viaLocal.bind(0, dir.endsWith(sep) ? dir : dir + sep, isEtag) : viaCache.bind(0, FILES);
+ 
+ 	return function (req, res, next) {
+ 		let extns = [''];
 @@ -179,7 +180,7 @@ export default function (dir, opts={}) {
  			catch (err) { /* malform uri */ }
  		}

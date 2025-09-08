@@ -17,7 +17,7 @@ patchedDependencies:
     hash: 49330a663821151418e003e822a82a6a61d2f0f8a6e3cab00c1c94815a112889
     path: patches/dotenv-expand@12.0.3.patch
   sirv@3.0.2:
-    hash: 072611f3564d76f0b627bdd633376cb22c7a00dda91f75361662c101fe103f16
+    hash: c07c56eb72faea34341d465cde2314e89db472106ed378181e3447893af6bf95
     path: patches/sirv@3.0.2.patch
 
 importers:
@@ -406,7 +406,7 @@ importers:
         version: 1.92.1(source-map-js@1.2.1)
       sirv:
         specifier: ^3.0.2
-        version: 3.0.2(patch_hash=072611f3564d76f0b627bdd633376cb22c7a00dda91f75361662c101fe103f16)
+        version: 3.0.2(patch_hash=c07c56eb72faea34341d465cde2314e89db472106ed378181e3447893af6bf95)
       strip-literal:
         specifier: ^3.0.0
         version: 3.0.0
@@ -879,7 +879,7 @@ importers:
     devDependencies:
       sirv:
         specifier: ^3.0.2
-        version: 3.0.2(patch_hash=072611f3564d76f0b627bdd633376cb22c7a00dda91f75361662c101fe103f16)
+        version: 3.0.2(patch_hash=c07c56eb72faea34341d465cde2314e89db472106ed378181e3447893af6bf95)
 
   playground/minify:
     dependencies:
@@ -1429,7 +1429,7 @@ importers:
         version: 5.1.0
       sirv:
         specifier: ^3.0.2
-        version: 3.0.2(patch_hash=072611f3564d76f0b627bdd633376cb22c7a00dda91f75361662c101fe103f16)
+        version: 3.0.2(patch_hash=c07c56eb72faea34341d465cde2314e89db472106ed378181e3447893af6bf95)
 
   playground/ssr-conditions/external: {}
 
@@ -12792,7 +12792,7 @@ snapshots:
     dependencies:
       is-arrayish: 0.3.2
 
-  sirv@3.0.2(patch_hash=072611f3564d76f0b627bdd633376cb22c7a00dda91f75361662c101fe103f16):
+  sirv@3.0.2(patch_hash=c07c56eb72faea34341d465cde2314e89db472106ed378181e3447893af6bf95):
     dependencies:
       '@polka/url': 1.0.0-next.28
       mrmime: 2.0.1
