@@ -262,7 +262,7 @@ export function isFileServingAllowed(
   return isFileLoadingAllowed(config, filePath)
 }
 
-function isUriInFilePath(uri: string, filePath: string) {
+export function isUriInFilePath(uri: string, filePath: string): boolean {
   return isSameFileUri(uri, filePath) || isParentDirectory(uri, filePath)
 }
 

@@ -26,6 +26,7 @@ import { notFoundMiddleware } from './server/middlewares/notFound'
 import { proxyMiddleware } from './server/middlewares/proxy'
 import {
   getServerUrlByHost,
+  normalizePath,
   resolveHostname,
   resolveServerUrls,
   setupSIGTERMListener,
@@ -254,7 +255,8 @@ export async function preview(
 
   if (config.appType === 'spa' || config.appType === 'mpa') {
     // transform index.html
-    app.use(indexHtmlMiddleware(distDir, server))
+    const normalizedDistDir = normalizePath(distDir)
+    app.use(indexHtmlMiddleware(normalizedDistDir, server))
 
     // handle 404s
     app.use(notFoundMiddleware())
