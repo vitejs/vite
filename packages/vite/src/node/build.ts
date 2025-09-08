@@ -727,15 +727,13 @@ function resolveRolldownOptions(
       minify:
         options.minify === 'oxc'
           ? libOptions && (format === 'es' || format === 'esm')
-            ? // FIXME: https://github.com/rolldown/rolldown/pull/5893
-              // ? {
-              //     compress: true,
-              //     mangle: true,
-              //     // Do not minify whitespace for ES lib output since that would remove
-              //     // pure annotations and break tree-shaking
-              //     // removeWhitespace: false,
-              //   }
-              'dce-only'
+            ? {
+                compress: true,
+                mangle: true,
+                // Do not minify whitespace for ES lib output since that would remove
+                // pure annotations and break tree-shaking
+                codegen: false,
+              }
             : true
           : options.minify === false
             ? 'dce-only'
