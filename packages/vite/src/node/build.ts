@@ -505,14 +505,8 @@ export async function resolveBuildPlugins(config: ResolvedConfig): Promise<{
     ],
     post: [
       ...buildImportAnalysisPlugin(config),
-      ...(config.nativePluginEnabledLevel >= 1
-        ? []
-        : [
-            buildOxcPlugin(),
-            ...(config.build.minify === 'esbuild'
-              ? [buildEsbuildPlugin()]
-              : []),
-          ]),
+      ...(config.nativePluginEnabledLevel >= 1 ? [] : [buildOxcPlugin()]),
+      ...(config.build.minify === 'esbuild' ? [buildEsbuildPlugin()] : []),
       terserPlugin(config),
       ...(!config.isWorker
         ? [
