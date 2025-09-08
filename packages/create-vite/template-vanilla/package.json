@@ -9,6 +9,6 @@
     "preview": "vite preview"
   },
   "devDependencies": {
-    "vite": "npm:rolldown-vite@^7.1.7"
+    "vite": "npm:rolldown-vite@^7.1.8"
   }
 }
