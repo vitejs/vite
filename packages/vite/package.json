@@ -144,7 +144,7 @@
     "rollup-plugin-license": "^3.6.0",
     "sass": "^1.86.3",
     "sass-embedded": "^1.86.3",
-    "sirv": "^3.0.1",
+    "sirv": "^3.0.2",
     "source-map-support": "^0.5.21",
     "strip-literal": "^3.0.0",
     "terser": "^5.39.0",
