@@ -13,6 +13,6 @@
   },
   "devDependencies": {
     "@preact/preset-vite": "^2.10.2",
-    "vite": "npm:rolldown-vite@^7.1.6"
+    "vite": "npm:rolldown-vite@^7.1.7"
   }
 }
