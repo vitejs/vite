@@ -1,3 +1,16 @@
+## <small>[7.1.8](https://github.com/vitejs/rolldown-vite/compare/v7.1.7...v7.1.8) (2025-09-08)</small>
+### Features
+
+* enable `optimization.inlineConst: { mode: 'smart' }` by default ([#399](https://github.com/vitejs/rolldown-vite/issues/399)) ([b2b89d7](https://github.com/vitejs/rolldown-vite/commit/b2b89d7cf76ecea8fd538916f84c447a3631cd75))
+* update rolldown ([#400](https://github.com/vitejs/rolldown-vite/issues/400)) ([88a0359](https://github.com/vitejs/rolldown-vite/commit/88a0359b03b65d45760618de77e50c2ed27a84b7))
+
+### Miscellaneous Chores
+
+* **deps:** update rolldown-related dependencies ([#20675](https://github.com/vitejs/rolldown-vite/issues/20675)) ([a67bb5f](https://github.com/vitejs/rolldown-vite/commit/a67bb5fbec5f3e42151dc7e3166858d0d33533de))
+* support ESM rolldown ([80120d6](https://github.com/vitejs/rolldown-vite/commit/80120d6a024ac498a70ea2445616d8632c8c844c))
+* update type build ([762cb49](https://github.com/vitejs/rolldown-vite/commit/762cb49b9bec5f5e66c1f9721eddc8d1c2655118))
+* update typos ([4698941](https://github.com/vitejs/rolldown-vite/commit/4698941ef4d87a93878e6381bf4b8869f5bc6f07))
+
 ## <small>[7.1.7](https://github.com/vitejs/rolldown-vite/compare/v7.1.6...v7.1.7) (2025-09-08)</small>
 ### Bug Fixes
 
