@@ -51,8 +51,7 @@ const sharedNodeOptions = defineConfig({
         sideEffects: false,
       },
     ],
-    // TODO: not supported yet
-    // propertyReadSideEffects: false,
+    propertyReadSideEffects: false,
   },
   output: {
     dir: './dist',
@@ -157,7 +156,7 @@ const moduleRunnerConfig = defineConfig({
     minify: {
       compress: true,
       mangle: false,
-      removeWhitespace: false,
+      codegen: false,
     },
   },
 })
