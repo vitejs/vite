@@ -34,7 +34,7 @@ import type {
   TransformAttributeResult as LightningCssTransformAttributeResult,
   TransformResult as LightningCssTransformResult,
 } from 'lightningcss'
-import type { CustomPluginOptionsVite } from 'types/metadata'
+import type { CustomPluginOptionsVite } from 'types/metadata.mjs'
 import type { EsbuildTransformOptions } from 'types/internal/esbuildOptions'
 import { getCodeWithSourcemap, injectSourcesContent } from '../server/sourcemap'
 import type { EnvironmentModuleNode } from '../server/moduleGraph'

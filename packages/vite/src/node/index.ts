@@ -1,5 +1,5 @@
 import type * as Rolldown from 'rolldown'
-import type * as Rollup from 'types/internal/rollupTypeCompat'
+import type * as Rollup from 'types/internal/rollupTypeCompat.mjs'
 
 export type { Rollup, Rolldown }
 export { parseAst, parseAstAsync } from 'rolldown/parseAst'
@@ -246,7 +246,7 @@ export type {
   GeneralImportGlobOptions,
   KnownAsTypeMap,
 } from 'types/importGlob'
-export type { ChunkMetadata, CustomPluginOptionsVite } from 'types/metadata'
+export type { ChunkMetadata, CustomPluginOptionsVite } from 'types/metadata.mjs'
 
 // dep types
 export type {
