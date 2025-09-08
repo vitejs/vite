@@ -223,7 +223,7 @@ export class HMRClient {
       paths.map((path) => {
         const fn = this.pruneMap.get(path)
         if (fn) {
-          fn(this.dataMap.get(path))
+          return fn(this.dataMap.get(path))
         }
       }),
     )
