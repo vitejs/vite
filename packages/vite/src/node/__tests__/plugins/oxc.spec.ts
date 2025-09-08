@@ -200,7 +200,7 @@ describe('renderChunk', () => {
     )
     expect(result).toMatchInlineSnapshot(`
       "(function() {
-      	"use strict";var babelHelpers_asyncToGenerator;!(() => {function e(e,t,n,r,i,a,o){try{var s=e[a](o),c=s.value}catch(e){return void n(e)}s.done?t(c):Promise.resolve(c).then(r,i)}function t(t){return function(){var n=this,r=arguments;return new Promise(function(i,a){var o=t.apply(n,r);function s(t){e(o,i,a,s,c,\`next\`,t)}function c(t){e(o,i,a,s,c,\`throw\`,t)}s(void 0)})}}babelHelpers_asyncToGenerator=t;})();
+      	"use strict";var babelHelpers_asyncToGenerator;!(() => {function e(e,t,n,r,i,a,o){try{var s=e[a](o),c=s.value}catch(e){n(e);return}s.done?t(c):Promise.resolve(c).then(r,i)}function t(t){return function(){var n=this,r=arguments;return new Promise(function(i,a){var o=t.apply(n,r);function s(t){e(o,i,a,s,c,\`next\`,t)}function c(t){e(o,i,a,s,c,\`throw\`,t)}s(void 0)})}}babelHelpers_asyncToGenerator=t;})();
 
       	//#region src/index.js
       	babelHelpers_asyncToGenerator(function* () {
@@ -230,7 +230,7 @@ describe('renderChunk', () => {
       'iife',
     )
     expect(result).toMatchInlineSnapshot(`
-      "(function() {var babelHelpers_asyncToGenerator;!(() => {function e(e,t,n,r,i,a,o){try{var s=e[a](o),c=s.value}catch(e){return void n(e)}s.done?t(c):Promise.resolve(c).then(r,i)}function t(t){return function(){var n=this,r=arguments;return new Promise(function(i,a){var o=t.apply(n,r);function s(t){e(o,i,a,s,c,\`next\`,t)}function c(t){e(o,i,a,s,c,\`throw\`,t)}s(void 0)})}}babelHelpers_asyncToGenerator=t;})();
+      "(function() {var babelHelpers_asyncToGenerator;!(() => {function e(e,t,n,r,i,a,o){try{var s=e[a](o),c=s.value}catch(e){n(e);return}s.done?t(c):Promise.resolve(c).then(r,i)}function t(t){return function(){var n=this,r=arguments;return new Promise(function(i,a){var o=t.apply(n,r);function s(t){e(o,i,a,s,c,\`next\`,t)}function c(t){e(o,i,a,s,c,\`throw\`,t)}s(void 0)})}}babelHelpers_asyncToGenerator=t;})();
 
       	//#region src/index.js
       	babelHelpers_asyncToGenerator(function* () {
@@ -263,7 +263,7 @@ return exports;
       'iife',
     )
     expect(result).toMatchInlineSnapshot(`
-      "var lib = (function(exports) {var babelHelpers_asyncToGenerator;!(() => {function e(e,t,n,r,i,a,o){try{var s=e[a](o),c=s.value}catch(e){return void n(e)}s.done?t(c):Promise.resolve(c).then(r,i)}function t(t){return function(){var n=this,r=arguments;return new Promise(function(i,a){var o=t.apply(n,r);function s(t){e(o,i,a,s,c,\`next\`,t)}function c(t){e(o,i,a,s,c,\`throw\`,t)}s(void 0)})}}babelHelpers_asyncToGenerator=t;})();
+      "var lib = (function(exports) {var babelHelpers_asyncToGenerator;!(() => {function e(e,t,n,r,i,a,o){try{var s=e[a](o),c=s.value}catch(e){n(e);return}s.done?t(c):Promise.resolve(c).then(r,i)}function t(t){return function(){var n=this,r=arguments;return new Promise(function(i,a){var o=t.apply(n,r);function s(t){e(o,i,a,s,c,\`next\`,t)}function c(t){e(o,i,a,s,c,\`throw\`,t)}s(void 0)})}}babelHelpers_asyncToGenerator=t;})();
 
       	//#region entry.js
       	babelHelpers_asyncToGenerator(function* () {
@@ -301,7 +301,7 @@ return exports;
     expect(result).toMatchInlineSnapshot(`
       "(function(factory) {
       	typeof define === "function" && define.amd ? define([], factory) : factory();
-      })(function() {var babelHelpers_asyncToGenerator;!(() => {function e(e,t,n,r,i,a,o){try{var s=e[a](o),c=s.value}catch(e){return void n(e)}s.done?t(c):Promise.resolve(c).then(r,i)}function t(t){return function(){var n=this,r=arguments;return new Promise(function(i,a){var o=t.apply(n,r);function s(t){e(o,i,a,s,c,\`next\`,t)}function c(t){e(o,i,a,s,c,\`throw\`,t)}s(void 0)})}}babelHelpers_asyncToGenerator=t;})();
+      })(function() {var babelHelpers_asyncToGenerator;!(() => {function e(e,t,n,r,i,a,o){try{var s=e[a](o),c=s.value}catch(e){n(e);return}s.done?t(c):Promise.resolve(c).then(r,i)}function t(t){return function(){var n=this,r=arguments;return new Promise(function(i,a){var o=t.apply(n,r);function s(t){e(o,i,a,s,c,\`next\`,t)}function c(t){e(o,i,a,s,c,\`throw\`,t)}s(void 0)})}}babelHelpers_asyncToGenerator=t;})();
 
       	//#region entry.js
       	babelHelpers_asyncToGenerator(function* () {
@@ -338,7 +338,7 @@ exports.foo = foo;
     expect(result).toMatchInlineSnapshot(`
       "(function(global, factory) {
       	typeof exports === "object" && typeof module !== "undefined" ? factory(exports) : typeof define === "function" && define.amd ? define(["exports"], factory) : (global = typeof globalThis !== "undefined" ? globalThis : global || self, factory(global.lib = {}));
-      })(this, function(exports) {var babelHelpers_asyncToGenerator;!(() => {function e(e,t,n,r,i,a,o){try{var s=e[a](o),c=s.value}catch(e){return void n(e)}s.done?t(c):Promise.resolve(c).then(r,i)}function t(t){return function(){var n=this,r=arguments;return new Promise(function(i,a){var o=t.apply(n,r);function s(t){e(o,i,a,s,c,\`next\`,t)}function c(t){e(o,i,a,s,c,\`throw\`,t)}s(void 0)})}}babelHelpers_asyncToGenerator=t;})();
+      })(this, function(exports) {var babelHelpers_asyncToGenerator;!(() => {function e(e,t,n,r,i,a,o){try{var s=e[a](o),c=s.value}catch(e){n(e);return}s.done?t(c):Promise.resolve(c).then(r,i)}function t(t){return function(){var n=this,r=arguments;return new Promise(function(i,a){var o=t.apply(n,r);function s(t){e(o,i,a,s,c,\`next\`,t)}function c(t){e(o,i,a,s,c,\`throw\`,t)}s(void 0)})}}babelHelpers_asyncToGenerator=t;})();
 
       	//#region entry.js
       	babelHelpers_asyncToGenerator(function* () {
@@ -377,7 +377,7 @@ return index_default;
     expect(result).toMatchInlineSnapshot(`
       "(function(global, factory) {
       	typeof exports === "object" && typeof module !== "undefined" ? module.exports = factory() : typeof define === "function" && define.amd ? define([], factory) : (global = typeof globalThis !== "undefined" ? globalThis : global || self, global.lib = factory());
-      })(this, function() {var babelHelpers_asyncToGenerator;!(() => {function e(e,t,n,r,i,a,o){try{var s=e[a](o),c=s.value}catch(e){return void n(e)}s.done?t(c):Promise.resolve(c).then(r,i)}function t(t){return function(){var n=this,r=arguments;return new Promise(function(i,a){var o=t.apply(n,r);function s(t){e(o,i,a,s,c,\`next\`,t)}function c(t){e(o,i,a,s,c,\`throw\`,t)}s(void 0)})}}babelHelpers_asyncToGenerator=t;})();
+      })(this, function() {var babelHelpers_asyncToGenerator;!(() => {function e(e,t,n,r,i,a,o){try{var s=e[a](o),c=s.value}catch(e){n(e);return}s.done?t(c):Promise.resolve(c).then(r,i)}function t(t){return function(){var n=this,r=arguments;return new Promise(function(i,a){var o=t.apply(n,r);function s(t){e(o,i,a,s,c,\`next\`,t)}function c(t){e(o,i,a,s,c,\`throw\`,t)}s(void 0)})}}babelHelpers_asyncToGenerator=t;})();
 
       	//#region entry.js
       	babelHelpers_asyncToGenerator(function* () {
@@ -411,7 +411,7 @@ return index_default;
     )
     expect(result).toMatchInlineSnapshot(`
       "(function() {
-      	"use strict";var babelHelpers_asyncToGenerator, babelHelpers_objectSpread2;!(() => {function e(e,t,n,r,i,a,o){try{var s=e[a](o),c=s.value}catch(e){return void n(e)}s.done?t(c):Promise.resolve(c).then(r,i)}function t(t){return function(){var n=this,r=arguments;return new Promise(function(i,a){var o=t.apply(n,r);function s(t){e(o,i,a,s,c,\`next\`,t)}function c(t){e(o,i,a,s,c,\`throw\`,t)}s(void 0)})}}function n(e){"@babel/helpers - typeof";return n=typeof Symbol==\`function\`&&typeof Symbol.iterator==\`symbol\`?function(e){return typeof e}:function(e){return e&&typeof Symbol==\`function\`&&e.constructor===Symbol&&e!==Symbol.prototype?\`symbol\`:typeof e},n(e)}function r(e,t){if(n(e)!=\`object\`||!e)return e;var r=e[Symbol.toPrimitive];if(r!==void 0){var i=r.call(e,t||\`default\`);if(n(i)!=\`object\`)return i;throw TypeError(\`@@toPrimitive must return a primitive value.\`)}return(t===\`string\`?String:Number)(e)}function i(e){var t=r(e,\`string\`);return n(t)==\`symbol\`?t:t+\`\`}function a(e,t,n){return(t=i(t))in e?Object.defineProperty(e,t,{value:n,enumerable:!0,configurable:!0,writable:!0}):e[t]=n,e}function o(e,t){var n=Object.keys(e);if(Object.getOwnPropertySymbols){var r=Object.getOwnPropertySymbols(e);t&&(r=r.filter(function(t){return Object.getOwnPropertyDescriptor(e,t).enumerable})),n.push.apply(n,r)}return n}function s(e){for(var t=1;t<arguments.length;t++){var n=arguments[t]==null?{}:arguments[t];t%2?o(Object(n),!0).forEach(function(t){a(e,t,n[t])}):Object.getOwnPropertyDescriptors?Object.defineProperties(e,Object.getOwnPropertyDescriptors(n)):o(Object(n)).forEach(function(t){Object.defineProperty(e,t,Object.getOwnPropertyDescriptor(n,t))})}return e}babelHelpers_asyncToGenerator=t,babelHelpers_objectSpread2=s;})();
+      	"use strict";var babelHelpers_asyncToGenerator, babelHelpers_objectSpread2;!(() => {function e(e,t,n,r,i,a,o){try{var s=e[a](o),c=s.value}catch(e){n(e);return}s.done?t(c):Promise.resolve(c).then(r,i)}function t(t){return function(){var n=this,r=arguments;return new Promise(function(i,a){var o=t.apply(n,r);function s(t){e(o,i,a,s,c,\`next\`,t)}function c(t){e(o,i,a,s,c,\`throw\`,t)}s(void 0)})}}function n(e){"@babel/helpers - typeof";return n=typeof Symbol==\`function\`&&typeof Symbol.iterator==\`symbol\`?function(e){return typeof e}:function(e){return e&&typeof Symbol==\`function\`&&e.constructor===Symbol&&e!==Symbol.prototype?\`symbol\`:typeof e},n(e)}function r(e,t){if(n(e)!=\`object\`||!e)return e;var r=e[Symbol.toPrimitive];if(r!==void 0){var i=r.call(e,t||\`default\`);if(n(i)!=\`object\`)return i;throw TypeError(\`@@toPrimitive must return a primitive value.\`)}return(t===\`string\`?String:Number)(e)}function i(e){var t=r(e,\`string\`);return n(t)==\`symbol\`?t:t+\`\`}function a(e,t,n){return(t=i(t))in e?Object.defineProperty(e,t,{value:n,enumerable:!0,configurable:!0,writable:!0}):e[t]=n,e}function o(e,t){var n=Object.keys(e);if(Object.getOwnPropertySymbols){var r=Object.getOwnPropertySymbols(e);t&&(r=r.filter(function(t){return Object.getOwnPropertyDescriptor(e,t).enumerable})),n.push.apply(n,r)}return n}function s(e){for(var t=1;t<arguments.length;t++){var n=arguments[t]==null?{}:arguments[t];t%2?o(Object(n),!0).forEach(function(t){a(e,t,n[t])}):Object.getOwnPropertyDescriptors?Object.defineProperties(e,Object.getOwnPropertyDescriptors(n)):o(Object(n)).forEach(function(t){Object.defineProperty(e,t,Object.getOwnPropertyDescriptor(n,t))})}return e}babelHelpers_asyncToGenerator=t,babelHelpers_objectSpread2=s;})();
 
       	//#region src/index.js
       	babelHelpers_asyncToGenerator(function* () {

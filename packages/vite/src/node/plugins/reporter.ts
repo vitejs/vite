@@ -41,6 +41,10 @@ export function buildReporterPlugin(config: ResolvedConfig): Plugin {
         chunkLimit: env.config.build.chunkSizeWarningLimit,
         shouldLogInfo,
         reportCompressedSize: env.config.build.reportCompressedSize,
+        warnLargeChunks:
+          env.config.build.minify &&
+          !env.config.build.lib &&
+          env.config.consumer === 'client',
       })
     })
   }
