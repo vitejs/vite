@@ -499,6 +499,20 @@ async function init() {
     process.exit(status ?? 0)
   }
 
+  const useRolldownVite = await prompts.select({
+    message: 'Use rolldown-vite (Experimental)?:',
+    options: [
+      {
+        label: 'Yes',
+        value: true,
+        hint: 'The future default Vite, which is powered by Rolldown',
+      },
+      { label: 'No', value: false },
+    ],
+    initialValue: false,
+  })
+  if (prompts.isCancel(useRolldownVite)) return cancel()
+
   prompts.log.step(`Scaffolding project in ${root}...`)
 
   const templateDir = path.resolve(
@@ -526,6 +540,27 @@ async function init() {
   )
 
   pkg.name = packageName
+
+  if (useRolldownVite) {
+    // renovate: datasource=npm depName=rolldown-vite
+    const rolldownViteVersion = '7.1.7'
+    const pkgVersion = `npm:rolldown-vite@${rolldownViteVersion}`
+    pkg.devDependencies.vite = pkgVersion
+    switch (pkgManager) {
+      case 'pnpm':
+        pkg.pnpm ??= {}
+        pkg.pnpm.overrides ??= {}
+        pkg.pnpm.overrides.vite = pkgVersion
+        break
+      case 'yarn':
+        pkg.resolutions ??= {}
+        pkg.resolutions.vite = pkgVersion
+        break
+      default:
+        pkg.overrides ??= {}
+        pkg.overrides.vite = pkgVersion
+    }
+  }
 
   write('package.json', JSON.stringify(pkg, null, 2) + '\n')
 
