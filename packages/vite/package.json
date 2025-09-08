@@ -142,7 +142,7 @@
     "rollup-plugin-license": "^3.6.0",
     "sass": "^1.89.2",
     "sass-embedded": "^1.89.2",
-    "sirv": "^3.0.1",
+    "sirv": "^3.0.2",
     "strip-literal": "^3.0.0",
     "terser": "^5.43.1",
     "tsconfck": "^3.1.6",

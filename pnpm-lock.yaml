@@ -19,9 +19,9 @@ patchedDependencies:
   http-proxy@1.18.1:
     hash: 8071c23044f455271f4d4074ae4c7b81beec17a03aefd158d5f4edd4ef751c11
     path: patches/http-proxy@1.18.1.patch
-  sirv@3.0.1:
-    hash: 95b663b930c5cc6e609c7fa15b69a86ff3b30df68978611d1d3d724c65135cb1
-    path: patches/sirv@3.0.1.patch
+  sirv@3.0.2:
+    hash: c07c56eb72faea34341d465cde2314e89db472106ed378181e3447893af6bf95
+    path: patches/sirv@3.0.2.patch
 
 importers:
 
@@ -399,8 +399,8 @@ importers:
         specifier: ^1.89.2
         version: 1.89.2(source-map-js@1.2.1)
       sirv:
-        specifier: ^3.0.1
-        version: 3.0.1(patch_hash=95b663b930c5cc6e609c7fa15b69a86ff3b30df68978611d1d3d724c65135cb1)
+        specifier: ^3.0.2
+        version: 3.0.2(patch_hash=c07c56eb72faea34341d465cde2314e89db472106ed378181e3447893af6bf95)
       strip-literal:
         specifier: ^3.0.0
         version: 3.0.0
@@ -869,8 +869,8 @@ importers:
   playground/lib:
     devDependencies:
       sirv:
-        specifier: ^3.0.1
-        version: 3.0.1(patch_hash=95b663b930c5cc6e609c7fa15b69a86ff3b30df68978611d1d3d724c65135cb1)
+        specifier: ^3.0.2
+        version: 3.0.2(patch_hash=c07c56eb72faea34341d465cde2314e89db472106ed378181e3447893af6bf95)
 
   playground/minify:
     dependencies:
@@ -1419,8 +1419,8 @@ importers:
         specifier: ^5.1.0
         version: 5.1.0
       sirv:
-        specifier: ^3.0.1
-        version: 3.0.1(patch_hash=95b663b930c5cc6e609c7fa15b69a86ff3b30df68978611d1d3d724c65135cb1)
+        specifier: ^3.0.2
+        version: 3.0.2(patch_hash=c07c56eb72faea34341d465cde2314e89db472106ed378181e3447893af6bf95)
 
   playground/ssr-conditions/external: {}
 
@@ -6711,8 +6711,8 @@ packages:
   simple-swizzle@0.2.2:
     resolution: {integrity: sha512-JA//kQgZtbuY83m+xT+tXJkmJncGMTFT+C+g2h2R9uxkYIrE2yy9sgmcLhCnw57/WSD+Eh3J97FPEDFnbXnDUg==}
 
-  sirv@3.0.1:
-    resolution: {integrity: sha512-FoqMu0NCGBLCcAkS1qA+XJIQTR6/JHfQXl+uGteNCQ76T91DMUjPa9xfmeqMY3z80nLSg9yQmNjK0Px6RWsH/A==}
+  sirv@3.0.2:
+    resolution: {integrity: sha512-2wcC/oGxHis/BoHkkPwldgiPSYcpZK3JU28WoMVv55yHJgcZ8rlXvuG9iZggz+sU1d4bRgIGASwyWqjxu3FM0g==}
     engines: {node: '>=18'}
 
   sisteransi@1.0.5:
@@ -12635,7 +12635,7 @@ snapshots:
     dependencies:
       is-arrayish: 0.3.2
 
-  sirv@3.0.1(patch_hash=95b663b930c5cc6e609c7fa15b69a86ff3b30df68978611d1d3d724c65135cb1):
+  sirv@3.0.2(patch_hash=c07c56eb72faea34341d465cde2314e89db472106ed378181e3447893af6bf95):
     dependencies:
       '@polka/url': 1.0.0-next.28
       mrmime: 2.0.1
