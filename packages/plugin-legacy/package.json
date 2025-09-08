@@ -61,7 +61,7 @@
     "acorn": "^8.15.0",
     "fdir": "^6.5.0",
     "picocolors": "^1.1.1",
-    "tsdown": "^0.14.1",
+    "tsdown": "^0.14.2",
     "vite": "workspace:*"
   }
 }
