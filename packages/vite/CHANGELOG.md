@@ -1,3 +1,14 @@
+## <small>[7.1.6](https://github.com/vitejs/rolldown-vite/compare/v7.1.5...v7.1.6) (2025-09-08)</small>
+### Features
+
+* enable `output.topLevelVar` by default ([#380](https://github.com/vitejs/rolldown-vite/issues/380)) ([7ea4f54](https://github.com/vitejs/rolldown-vite/commit/7ea4f5457ffb68b7238613060941e97cdf63c6fe))
+* update rolldown ([6ea9918](https://github.com/vitejs/rolldown-vite/commit/6ea991806f5b9c9d383d5fcb6c8e0eb6cad78eb9))
+
+### Bug Fixes
+
+* `build.minify: 'esbuild'` + native plugins were not working ([#397](https://github.com/vitejs/rolldown-vite/issues/397)) ([1a05fc4](https://github.com/vitejs/rolldown-vite/commit/1a05fc4bca1ab6f56c6c31ba1115cb1846174bb7))
+* **oxc:** respect `oxc.typescript.onlyRemoveTypeImports` if it's set ([#394](https://github.com/vitejs/rolldown-vite/issues/394)) ([dd64f89](https://github.com/vitejs/rolldown-vite/commit/dd64f89c8b2ef7bf2f40fe4a692fa037a3fd33c0))
+
 ## <small>[7.1.5](https://github.com/vitejs/rolldown-vite/compare/v7.1.4...v7.1.5) (2025-08-25)</small>
 ### Features
 
