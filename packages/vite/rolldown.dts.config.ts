@@ -48,10 +48,16 @@ export default defineConfig({
   plugins: [
     {
       name: 'externalize-vite',
-      resolveId(id) {
-        if (id.startsWith('vite/')) {
-          return { id: id.replace(/^vite\//, 'rolldown-vite/'), external: true }
-        }
+      resolveId: {
+        order: 'pre',
+        handler(id) {
+          if (id.startsWith('vite/')) {
+            return {
+              id: id.replace(/^vite\//, 'rolldown-vite/'),
+              external: true,
+            }
+          }
+        },
       },
     },
     patchTypes(),
@@ -83,6 +89,9 @@ const identifierWithTrailingDollarRE = /\b(\w+)\$\d+\b/g
  * the module that imports the identifier as a named import alias
  */
 const identifierReplacements: Record<string, Record<string, string>> = {
+  'rolldown-vite/module-runner': {
+    FetchResult$1: 'moduleRunner_FetchResult',
+  },
   rolldown: {
     Plugin$2: 'Rolldown.Plugin',
     TransformResult$1: 'Rolldown.TransformResult',
@@ -172,8 +181,8 @@ function patchTypes(): Plugin {
           const importBindings = getAllImportBindings(ast)
           if (
             chunk.fileName.startsWith('module-runner') ||
-            // index and moduleRunner have a common chunk "index-"
-            chunk.fileName.startsWith('index-') ||
+            // index and moduleRunner have a common chunk "moduleRunnerTransport-"
+            chunk.fileName.startsWith('moduleRunnerTransport-') ||
             chunk.fileName.startsWith('types.d-')
           ) {
             validateRunnerChunk.call(this, chunk, importBindings)
@@ -245,7 +254,7 @@ function validateRunnerChunk(
       !id.startsWith('./') &&
       !id.startsWith('../') &&
       // index and moduleRunner have a common chunk "moduleRunnerTransport"
-      !id.startsWith('moduleRunnerTransport.d') &&
+      !id.startsWith('moduleRunnerTransport-') &&
       !id.startsWith('types.d')
     ) {
       this.warn(
