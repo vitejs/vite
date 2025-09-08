@@ -1,6 +1,7 @@
 ## <small>5.4.20 (2025-09-08)</small>
 
 * fix: apply `fs.strict` check to HTML files (#20736) ([482000f](https://github.com/vitejs/vite/commit/482000f57f56fe6ff2e905305100cfe03043ddea)), closes [#20736](https://github.com/vitejs/vite/issues/20736)
+* fix: port sirv@3.0.2 changes to sirv@2.0.4 (#20737) ([4f1c35b](https://github.com/vitejs/vite/commit/4f1c35bcbb5830290c694aa14b6789e07450f069)), closes [#20737](https://github.com/vitejs/vite/issues/20737)
 
 
 
