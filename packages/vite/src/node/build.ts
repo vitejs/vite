@@ -792,8 +792,12 @@ async function buildEnvironment(
         logger,
       )
       const resolvedChokidarOptions = resolveChokidarOptions(
-        // @ts-expect-error chokidar option does not exist in rolldown but used for backward compat
-        options.watch.chokidar,
+        {
+          // @ts-expect-error chokidar option does not exist in rolldown but used for backward compat
+          ...(rollupOptions.watch || {}).chokidar,
+          // @ts-expect-error chokidar option does not exist in rolldown but used for backward compat
+          ...options.watch.chokidar,
+        },
         resolvedOutDirs,
         emptyOutDir,
         environment.config.cacheDir,
@@ -803,6 +807,7 @@ async function buildEnvironment(
       const watcher = watch({
         ...rollupOptions,
         watch: {
+          ...rollupOptions.watch,
           ...options.watch,
           notify: convertToNotifyOptions(resolvedChokidarOptions),
         },

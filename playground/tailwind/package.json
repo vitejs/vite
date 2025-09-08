@@ -10,10 +10,10 @@
     "preview": "vite preview"
   },
   "dependencies": {
-    "@tailwindcss/vite": "^4.1.12",
-    "tailwindcss": "^4.1.12"
+    "@tailwindcss/vite": "^4.1.13",
+    "tailwindcss": "^4.1.13"
   },
   "devDependencies": {
-    "tsx": "^4.20.4"
+    "tsx": "^4.20.5"
   }
 }

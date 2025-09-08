@@ -14,9 +14,9 @@ dedupeInjectedDeps: false
 overrides:
   vite: 'workspace:rolldown-vite@*'
 patchedDependencies:
-  "sirv@3.0.1": "patches/sirv@3.0.1.patch"
+  "sirv@3.0.2": "patches/sirv@3.0.2.patch"
   "chokidar@3.6.0": "patches/chokidar@3.6.0.patch"
-  "dotenv-expand@12.0.2": "patches/dotenv-expand@12.0.2.patch"
+  "dotenv-expand@12.0.3": "patches/dotenv-expand@12.0.3.patch"
 peerDependencyRules:
   allowedVersions:
     vite: "*"
