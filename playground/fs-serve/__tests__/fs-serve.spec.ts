@@ -76,6 +76,15 @@ describe.runIf(isServe)('main', () => {
       .toBe('403')
   })
 
+  test('unsafe HTML fetch', async () => {
+    await expect
+      .poll(() => page.textContent('.unsafe-fetch-html'))
+      .toMatch('403 Restricted')
+    await expect
+      .poll(() => page.textContent('.unsafe-fetch-html-status'))
+      .toBe('403')
+  })
+
   test('unsafe fetch with special characters (#8498)', async () => {
     await expect.poll(() => page.textContent('.unsafe-fetch-8498')).toBe('')
     await expect
@@ -535,5 +544,19 @@ describe.runIf(isServe)('invalid request', () => {
       path.posix.join('/@fs/', root, 'root/src/dummy.crt/') + '.',
     )
     expect(response).toContain('HTTP/1.1 403 Forbidden')
+  })
+
+  test('should deny request to HTML file outside root by default with relative path', async () => {
+    const response = await sendRawRequest(viteTestUrl, '/../unsafe.html')
+    expect(response).toContain('HTTP/1.1 403 Forbidden')
+  })
+})
+
+describe.runIf(!isServe)('preview HTML', () => {
+  test('unsafe HTML fetch', async () => {
+    await expect.poll(() => page.textContent('.unsafe-fetch-html')).toBe('')
+    await expect
+      .poll(() => page.textContent('.unsafe-fetch-html-status'))
+      .toBe('404')
   })
 })
