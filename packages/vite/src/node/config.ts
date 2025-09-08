@@ -378,8 +378,8 @@ export interface UserConfig extends DefaultEnvironmentOptions {
    */
   esbuild?: ESBuildOptions | false
   /**
-   * Transform options to pass to esbuild.
-   * Or set to `false` to disable OXC.
+   * Transform options to pass to Oxc.
+   * Or set to `false` to disable Oxc.
    */
   oxc?: OxcOptions | false
   /**

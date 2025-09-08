@@ -393,7 +393,7 @@ export function oxcPlugin(config: ResolvedConfig): Plugin {
         id: prefixRegex('@oxc-project/runtime/'),
       },
       async handler(id, _importer, opts) {
-        // @oxc-project/runtime imports will be injected by OXC transform
+        // @oxc-project/runtime imports will be injected by Oxc transform
         // since it's injected by the transform, @oxc-project/runtime should be resolved to the one Rolldown depends on
         const resolved = await this.resolve(id, runtimeResolveBase, opts)
         return resolved
