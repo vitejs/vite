@@ -597,18 +597,17 @@ function isEmpty(path: string) {
 }
 
 async function emptyDir(dir: string) {
-  if (!fs.existsSync(dir)) {
-    return
-  }
-  for (const file of fs.readdirSync(dir)) {
-    if (file === '.git') {
-      continue
-    }
-    await fs.promises.rm(path.resolve(dir, file), {
-      recursive: true,
-      force: true,
-    })
-  }
+  await Promise.all(
+    fs
+      .readdirSync(dir)
+      .filter((file) => file !== '.git')
+      .map((file) =>
+        fs.promises.rm(path.resolve(dir, file), {
+          recursive: true,
+          force: true,
+        }),
+      ),
+  )
 }
 
 interface PkgInfo {
