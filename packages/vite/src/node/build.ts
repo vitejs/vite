@@ -26,7 +26,7 @@ import { loadFallbackPlugin as nativeLoadFallbackPlugin } from 'rolldown/experim
 import type { RollupCommonJSOptions } from 'dep-types/commonjs'
 import type { RollupDynamicImportVarsOptions } from 'dep-types/dynamicImportVars'
 import type { EsbuildTarget } from 'types/internal/esbuildOptions'
-import type { ChunkMetadata } from 'types/metadata'
+import type { ChunkMetadata } from 'types/metadata.mjs'
 import {
   DEFAULT_ASSETS_INLINE_LIMIT,
   ESBUILD_BASELINE_WIDELY_AVAILABLE_TARGET,

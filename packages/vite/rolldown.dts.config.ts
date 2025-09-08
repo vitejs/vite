@@ -144,8 +144,11 @@ function patchTypes(): Plugin {
         }
         // Ambient types are unbundled and externalized
         if (id.startsWith('types/')) {
+          const filename = id.replace(/(\.m?js)?$/, (_m, ext) =>
+            ext ? ext : '.js',
+          )
           return {
-            id: '../../' + (id.endsWith('.js') ? id : id + '.js'),
+            id: '../../' + filename,
             external: true,
           }
         }
