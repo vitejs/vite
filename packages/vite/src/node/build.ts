@@ -640,6 +640,16 @@ function resolveRolldownOptions(
               ? {}
               : options.rollupOptions.treeshake),
           },
+    optimization: {
+      inlineConst:
+        typeof options.rollupOptions.optimization?.inlineConst === 'boolean'
+          ? options.rollupOptions.optimization.inlineConst
+          : {
+              mode: 'smart',
+              ...options.rollupOptions.optimization?.inlineConst,
+            },
+      ...options.rollupOptions.optimization,
+    },
   }
 
   const isSsrTargetWebworkerEnvironment =
