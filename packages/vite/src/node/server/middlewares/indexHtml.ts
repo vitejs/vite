@@ -34,6 +34,7 @@ import {
   injectQuery,
   isDevServer,
   isJSRequest,
+  isParentDirectory,
   joinUrlSegments,
   normalizePath,
   processSrcSetSync,
@@ -44,6 +45,7 @@ import { checkPublicFile } from '../../publicDir'
 import { isCSSRequest } from '../../plugins/css'
 import { getCodeWithSourcemap, injectSourcesContent } from '../sourcemap'
 import { cleanUrl, unwrapId, wrapId } from '../../../shared/utils'
+import { checkLoadingAccess, respondWithAccessDenied } from './static'
 
 interface AssetNode {
   start: number
@@ -431,7 +433,26 @@ export function indexHtmlMiddleware(
       if (isDev && url.startsWith(FS_PREFIX)) {
         filePath = decodeURIComponent(fsPathFromId(url))
       } else {
-        filePath = path.join(root, decodeURIComponent(url))
+        filePath = normalizePath(
+          path.resolve(path.join(root, decodeURIComponent(url))),
+        )
+      }
+
+      if (isDev) {
+        const servingAccessResult = checkLoadingAccess(server, filePath)
+        if (servingAccessResult === 'denied') {
+          return respondWithAccessDenied(filePath, server, res)
+        }
+        if (servingAccessResult === 'fallback') {
+          return next()
+        }
+        servingAccessResult satisfies 'allowed'
+      } else {
+        // `server.fs` options does not apply to the preview server.
+        // But we should disallow serving files outside the output directory.
+        if (!isParentDirectory(root, filePath)) {
+          return next()
+        }
       }
 
       if (fsUtils.existsSync(filePath)) {
