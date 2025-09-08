@@ -268,7 +268,10 @@ export function isFileServingAllowed(
  * @param targetPath - normalized absolute path
  * @param filePath - normalized absolute path
  */
-function isFileInTargetPath(targetPath: string, filePath: string) {
+export function isFileInTargetPath(
+  targetPath: string,
+  filePath: string,
+): boolean {
   return (
     isSameFilePath(targetPath, filePath) ||
     isParentDirectory(targetPath, filePath)

@@ -39,16 +39,16 @@
     }
   },
   "dependencies": {
-    "@babel/core": "^7.28.3",
+    "@babel/core": "^7.28.4",
     "@babel/plugin-transform-dynamic-import": "^7.27.1",
     "@babel/plugin-transform-modules-systemjs": "^7.27.1",
     "@babel/preset-env": "^7.28.3",
     "babel-plugin-polyfill-corejs3": "^0.13.0",
     "babel-plugin-polyfill-regenerator": "^0.6.5",
-    "browserslist": "^4.25.2",
+    "browserslist": "^4.25.4",
     "browserslist-to-esbuild": "^2.1.1",
-    "core-js": "^3.45.0",
-    "magic-string": "^0.30.17",
+    "core-js": "^3.45.1",
+    "magic-string": "^0.30.18",
     "regenerator-runtime": "^0.14.1",
     "systemjs": "^6.15.1"
   },

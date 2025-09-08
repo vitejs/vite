@@ -15,6 +15,7 @@ import {
   getServerUrlByHost,
   injectQuery,
   isFileReadable,
+  isParentDirectory,
   mergeWithDefaults,
   normalizePath,
   numberToPos,
@@ -42,6 +43,33 @@ describe('bareImportRE', () => {
     expect(bareImportRE.test('./foo')).toBe(false)
     expect(bareImportRE.test('.\\foo')).toBe(false)
   })
+})
+
+describe('isParentDirectory', () => {
+  const cases = {
+    '/parent': {
+      '/parent': false,
+      '/parenta': false,
+      '/parent/': true,
+      '/parent/child': true,
+      '/parent/child/child2': true,
+    },
+    '/parent/': {
+      '/parent': false,
+      '/parenta': false,
+      '/parent/': true,
+      '/parent/child': true,
+      '/parent/child/child2': true,
+    },
+  }
+
+  for (const [parent, children] of Object.entries(cases)) {
+    for (const [child, expected] of Object.entries(children)) {
+      test(`isParentDirectory("${parent}", "${child}")`, () => {
+        expect(isParentDirectory(parent, child)).toBe(expected)
+      })
+    }
+  }
 })
 
 describe('injectQuery', () => {

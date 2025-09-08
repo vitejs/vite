@@ -19,6 +19,8 @@
 <h2>Unsafe Fetch</h2>
 <pre class="unsafe-fetch-status"></pre>
 <pre class="unsafe-fetch"></pre>
+<pre class="unsafe-fetch-html-status"></pre>
+<pre class="unsafe-fetch-html"></pre>
 <pre class="unsafe-fetch-8498-status"></pre>
 <pre class="unsafe-fetch-8498"></pre>
 <pre class="unsafe-fetch-8498-2-status"></pre>
@@ -39,6 +41,8 @@
 <h2>Unsafe /@fs/ Fetch</h2>
 <pre class="unsafe-fs-fetch-status"></pre>
 <pre class="unsafe-fs-fetch"></pre>
+<pre class="unsafe-fs-fetch-html-status"></pre>
+<pre class="unsafe-fs-fetch-html"></pre>
 <pre class="unsafe-fs-fetch-raw-status"></pre>
 <pre class="unsafe-fs-fetch-raw"></pre>
 <pre class="unsafe-fs-fetch-raw-query1-status"></pre>
@@ -149,6 +153,19 @@
       console.error(e)
     })
 
+  // outside of allowed dir, treated as unsafe
+  fetch(joinUrlSegments(base, '/unsafe.html'))
+    .then((r) => {
+      text('.unsafe-fetch-html-status', r.status)
+      return r.text()
+    })
+    .then((data) => {
+      text('.unsafe-fetch-html', data)
+    })
+    .catch((e) => {
+      console.error(e)
+    })
+
   // outside of allowed dir with special characters #8498
   fetch(joinUrlSegments(base, '/src/%2e%2e%2funsafe%2etxt'))
     .then((r) => {
@@ -241,6 +258,19 @@
     })
     .then((data) => {
       text('.unsafe-fs-fetch', JSON.stringify(data))
+    })
+    .catch((e) => {
+      console.error(e)
+    })
+
+  // not imported before, outside of root, treated as unsafe
+  fetch(joinUrlSegments(base, joinUrlSegments('/@fs/', ROOT) + '/unsafe.html'))
+    .then((r) => {
+      text('.unsafe-fs-fetch-html-status', r.status)
+      return r.text()
+    })
+    .then((data) => {
+      text('.unsafe-fs-fetch-html', data)
     })
     .catch((e) => {
       console.error(e)
