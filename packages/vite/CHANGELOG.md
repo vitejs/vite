@@ -1,3 +1,11 @@
+## <small>6.3.6 (2025-09-08)</small>
+
+* fix: apply `fs.strict` check to HTML files (#20736) ([0ab19ea](https://github.com/vitejs/vite/commit/0ab19ea9fcb66f544328f442cf6e70f7c0528d5f)), closes [#20736](https://github.com/vitejs/vite/issues/20736)
+* fix: upgrade sirv to 3.0.2 (#20735) ([e11d240](https://github.com/vitejs/vite/commit/e11d24008b97d4ca731ecc1a3b95260a6d12e7e0)), closes [#20735](https://github.com/vitejs/vite/issues/20735)
+* test: detect ts support via `process.features` (#20544) ([7d99229](https://github.com/vitejs/vite/commit/7d9922972b62329d37a71d4da5a4a382d0bf8a79)), closes [#20544](https://github.com/vitejs/vite/issues/20544)
+
+
+
 ## <small>6.3.5 (2025-05-05)</small>
 
 * fix(ssr): handle uninitialized export access as undefined (#19959) ([fd38d07](https://github.com/vitejs/vite/commit/fd38d076fe2455aac1e00a7b15cd51159bf12bb5)), closes [#19959](https://github.com/vitejs/vite/issues/19959)
