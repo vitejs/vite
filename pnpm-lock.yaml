@@ -18,7 +18,7 @@ patchedDependencies:
     hash: qqiqxx62zlcu62nljjmhlvexni
     path: patches/http-proxy@1.18.1.patch
   sirv@2.0.4:
-    hash: amdes53ifqfntejkflpaq5ifce
+    hash: ggmmlv4ti7cjqfkdq4i5wcerle
     path: patches/sirv@2.0.4.patch
 
 importers:
@@ -390,7 +390,7 @@ importers:
         version: 1.77.8
       sirv:
         specifier: ^2.0.4
-        version: 2.0.4(patch_hash=amdes53ifqfntejkflpaq5ifce)
+        version: 2.0.4(patch_hash=ggmmlv4ti7cjqfkdq4i5wcerle)
       source-map-support:
         specifier: ^0.5.21
         version: 0.5.21
@@ -802,7 +802,7 @@ importers:
     devDependencies:
       sirv:
         specifier: ^2.0.4
-        version: 2.0.4(patch_hash=amdes53ifqfntejkflpaq5ifce)
+        version: 2.0.4(patch_hash=ggmmlv4ti7cjqfkdq4i5wcerle)
 
   playground/minify:
     dependencies:
@@ -12438,7 +12438,7 @@ snapshots:
 
   simple-git-hooks@2.11.1: {}
 
-  sirv@2.0.4(patch_hash=amdes53ifqfntejkflpaq5ifce):
+  sirv@2.0.4(patch_hash=ggmmlv4ti7cjqfkdq4i5wcerle):
     dependencies:
       '@polka/url': 1.0.0-next.24
       mrmime: 2.0.0
