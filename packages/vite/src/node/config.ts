@@ -1801,13 +1801,22 @@ export function sortUserPlugins(
   return [prePlugins, normalPlugins, postPlugins]
 }
 
+function getDefaultConfigLoader(): 'bundle' | 'runner' | 'native' {
+  // Deno supports running TS/TSX files natively
+  if (typeof process.versions.deno === 'string') {
+    return 'native'
+  }
+
+  return 'bundle'
+}
+
 export async function loadConfigFromFile(
   configEnv: ConfigEnv,
   configFile?: string,
   configRoot: string = process.cwd(),
   logLevel?: LogLevel,
   customLogger?: Logger,
-  configLoader: 'bundle' | 'runner' | 'native' = 'bundle',
+  configLoader: 'bundle' | 'runner' | 'native' = getDefaultConfigLoader(),
 ): Promise<{
   path: string
   config: UserConfig
