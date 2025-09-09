@@ -467,7 +467,7 @@ export function indexHtmlMiddleware(
           return next()
         }
         if (
-          fullBundleEnv.triggerBundleRegenerationIfStale() ||
+          (await fullBundleEnv.triggerBundleRegenerationIfStale()) ||
           content === undefined
         ) {
           content = await generateFallbackHtml(server as ViteDevServer)
