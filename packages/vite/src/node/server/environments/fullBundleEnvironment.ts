@@ -107,7 +107,19 @@ export class FullBundleDevEnvironment extends DevEnvironment {
         }
       },
     })
-    this.devEngine.run().catch(() => {})
+    debug?.('INITIAL: setup dev engine')
+    this.devEngine.run().then(
+      () => {
+        debug?.('INITIAL: run done')
+      },
+      () => {
+        debug?.('INITIAL: run error')
+      },
+    )
+    this.devEngine.ensureCurrentBuildFinish().then(() => {
+      debug?.('INITIAL: build done')
+      this.hot.send({ type: 'full-reload', path: '*' })
+    })
   }
 
   override async warmupRequest(_url: string): Promise<void> {
@@ -152,14 +164,14 @@ export class FullBundleDevEnvironment extends DevEnvironment {
 
   async triggerBundleRegenerationIfStale(): Promise<boolean> {
     const scheduled = await this.devEngine.scheduleBuildIfStale()
-    if (scheduled) {
+    if (scheduled === 'scheduled') {
       this.devEngine.ensureCurrentBuildFinish().then(() => {
         this.hot.send({ type: 'full-reload', path: '*' })
         this.logger.info(colors.green(`page reload`), { timestamp: true })
       })
       debug?.(`TRIGGER: access to stale bundle, triggered bundle re-generation`)
     }
-    return scheduled
+    return !!scheduled
   }
 
   override async close(): Promise<void> {
