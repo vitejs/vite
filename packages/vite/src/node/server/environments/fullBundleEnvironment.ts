@@ -153,6 +153,10 @@ export class FullBundleDevEnvironment extends DevEnvironment {
   async triggerBundleRegenerationIfStale(): Promise<boolean> {
     const scheduled = await this.devEngine.scheduleBuildIfStale()
     if (scheduled) {
+      this.devEngine.ensureCurrentBuildFinish().then(() => {
+        this.hot.send({ type: 'full-reload', path: '*' })
+        this.logger.info(colors.green(`page reload`), { timestamp: true })
+      })
       debug?.(`TRIGGER: access to stale bundle, triggered bundle re-generation`)
     }
     return scheduled
@@ -173,6 +177,7 @@ export class FullBundleDevEnvironment extends DevEnvironment {
     const rolldownOptions = resolveRolldownOptions(this, chunkMetadataMap)
     rolldownOptions.experimental ??= {}
     rolldownOptions.experimental.hmr = {
+      new: true,
       implement: await getHmrImplementation(this.getTopLevelConfig()),
     }
 
@@ -181,7 +186,7 @@ export class FullBundleDevEnvironment extends DevEnvironment {
       {
         name: 'vite:full-bundle-mode:save-output',
         generateBundle: (_, bundle) => {
-          this.memoryFiles.clear()
+          // NOTE: don't clear memoryFiles here as incremental build re-uses the files
           for (const outputFile of Object.values(bundle)) {
             this.memoryFiles.set(outputFile.fileName, () =>
               outputFile.type === 'chunk' ? outputFile.code : outputFile.source,
@@ -228,6 +233,10 @@ export class FullBundleDevEnvironment extends DevEnvironment {
         colors.green(`trigger page reload `) + colors.dim(shortFile) + reason,
         { clear: !firstInvalidatedBy, timestamp: true },
       )
+      this.devEngine.ensureLatestBuild().then(() => {
+        this.hot.send({ type: 'full-reload', path: '*' })
+        this.logger.info(colors.green(`page reload`), { timestamp: true })
+      })
       return
     }
 
