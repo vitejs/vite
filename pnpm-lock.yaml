@@ -393,8 +393,8 @@ importers:
         specifier: ^2.0.3
         version: 2.0.3
       rolldown-plugin-dts:
-        specifier: ^0.16.1
-        version: 0.16.1(rolldown@1.0.0-beta.36)(typescript@5.9.2)(vue-tsc@3.0.6(typescript@5.9.2))
+        specifier: ^0.16.2
+        version: 0.16.2(rolldown@1.0.0-beta.36)(typescript@5.9.2)(vue-tsc@3.0.6(typescript@5.9.2))
       rollup:
         specifier: ^4.43.0
         version: 4.43.0
@@ -6643,8 +6643,8 @@ packages:
       vue-tsc:
         optional: true
 
-  rolldown-plugin-dts@0.16.1:
-    resolution: {integrity: sha512-bEfJpvhHm+h2cldNUbj8dT5tF9BJrJawPquScFdodob/55DqYkBis7iar8nkn8wSNIFKxwd2jP9ly/Z7lRME2w==}
+  rolldown-plugin-dts@0.16.2:
+    resolution: {integrity: sha512-WV1J5OqhWL8O8Nd5VAVQghmNcjyQvcGI5w51VszjO9k73avbXpz9X86KLYcKTWXXH6L0f+93JzZxiiSrcYhDLw==}
     engines: {node: '>=20.18.0'}
     peerDependencies:
       '@typescript/native-preview': '>=7.0.0-dev.20250601.1'
@@ -12680,7 +12680,7 @@ snapshots:
       - oxc-resolver
       - supports-color
 
-  rolldown-plugin-dts@0.16.1(rolldown@1.0.0-beta.36)(typescript@5.9.2)(vue-tsc@3.0.6(typescript@5.9.2)):
+  rolldown-plugin-dts@0.16.2(rolldown@1.0.0-beta.36)(typescript@5.9.2)(vue-tsc@3.0.6(typescript@5.9.2)):
     dependencies:
       '@babel/generator': 7.28.3
       '@babel/parser': 7.28.4
