@@ -358,6 +358,13 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
           if (ssr) {
             return [url, null]
           }
+
+          // Check if the module is marked as external before throwing an error
+          const externalArray = environment.config.resolve.external
+          if (Array.isArray(externalArray) && externalArray.includes(url)) {
+            return [url, null]
+          }
+
           // fix#9534, prevent the importerModuleNode being stopped from propagating updates
           importerModule.isSelfAccepting = false
           moduleGraph._hasResolveFailedErrorModules.add(importerModule)
