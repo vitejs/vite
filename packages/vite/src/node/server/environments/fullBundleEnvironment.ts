@@ -116,10 +116,17 @@ export class FullBundleDevEnvironment extends DevEnvironment {
         debug?.('INITIAL: run error')
       },
     )
-    this.devEngine.ensureCurrentBuildFinish().then(() => {
+    this.waitForInitialBuildFinish().then(() => {
       debug?.('INITIAL: build done')
       this.hot.send({ type: 'full-reload', path: '*' })
     })
+  }
+
+  private async waitForInitialBuildFinish(): Promise<void> {
+    while (this.memoryFiles.size === 0) {
+      await this.devEngine.ensureCurrentBuildFinish()
+      await new Promise((resolve) => setTimeout(resolve, 10))
+    }
   }
 
   override async warmupRequest(_url: string): Promise<void> {
