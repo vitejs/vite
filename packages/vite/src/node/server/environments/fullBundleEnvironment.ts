@@ -311,12 +311,14 @@ export class FullBundleDevEnvironment extends DevEnvironment {
         output.entryFileNames = 'assets/[name].js'
         output.chunkFileNames = 'assets/[name]-[hash].js'
         output.assetFileNames = 'assets/[name]-[hash][extname]'
+        output.minify = false
       }
     } else {
       rolldownOptions.output ??= {}
       rolldownOptions.output.entryFileNames = 'assets/[name].js'
       rolldownOptions.output.chunkFileNames = 'assets/[name]-[hash].js'
       rolldownOptions.output.assetFileNames = 'assets/[name]-[hash][extname]'
+      rolldownOptions.output.minify = false
     }
 
     return rolldownOptions
