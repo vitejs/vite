@@ -1,3 +1,16 @@
+## <small>[7.1.9](https://github.com/vitejs/rolldown-vite/compare/v7.1.8...v7.1.9) (2025-09-11)</small>
+### Features
+
+* update rolldown ([d14afd7](https://github.com/vitejs/rolldown-vite/commit/d14afd72acd25bf2cbc84030552a7a556b769486))
+
+### Bug Fixes
+
+* enable minify other than codegen for ES lib mode ([ad72fc3](https://github.com/vitejs/rolldown-vite/commit/ad72fc3ec6d5eac24b21c0413566b9eb1551aabd))
+
+### Miscellaneous Chores
+
+* bump `rolldown-plugin-dts` ([#409](https://github.com/vitejs/rolldown-vite/issues/409)) ([2fbd7f1](https://github.com/vitejs/rolldown-vite/commit/2fbd7f1654ee01b638c1b7167cd79944e7ef2ad8))
+
 ## <small>[7.1.8](https://github.com/vitejs/rolldown-vite/compare/v7.1.7...v7.1.8) (2025-09-08)</small>
 ### Features
 
