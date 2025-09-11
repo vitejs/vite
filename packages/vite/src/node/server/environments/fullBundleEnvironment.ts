@@ -106,6 +106,9 @@ export class FullBundleDevEnvironment extends DevEnvironment {
           this.handleHmrOutput(files, update)
         }
       },
+      watch: {
+        skipWrite: true,
+      },
     })
     debug?.('INITIAL: setup dev engine')
     this.devEngine.run().then(
