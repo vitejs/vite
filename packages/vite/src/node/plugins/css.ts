@@ -977,18 +977,18 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
             }
             return null
           },
+
+          augmentChunkHash(chunk) {
+            if (chunk.viteMetadata?.importedCss.size) {
+              let hash = ''
+              for (const id of chunk.viteMetadata.importedCss) {
+                hash += id
+              }
+              return hash
+            }
+          },
         }
       : {}),
-
-    augmentChunkHash(chunk) {
-      if (chunk.viteMetadata?.importedCss.size) {
-        let hash = ''
-        for (const id of chunk.viteMetadata.importedCss) {
-          hash += id
-        }
-        return hash
-      }
-    },
 
     async generateBundle(opts, bundle) {
       // to avoid emitting duplicate assets for modern build and legacy build
