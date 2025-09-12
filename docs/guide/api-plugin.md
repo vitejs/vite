@@ -338,6 +338,7 @@ Vite plugins can also provide hooks that serve Vite-specific purposes. These hoo
   Dedicated hook for transforming HTML entry point files such as `index.html`. The hook receives the current HTML string and a transform context. The context exposes the [`ViteDevServer`](./api-javascript#vitedevserver) instance during dev, and exposes the Rollup output bundle during build.
 
   The hook can be async and can return one of the following:
+
   - Transformed HTML string
   - An array of tag descriptor objects (`{ tag, attrs, children }`) to inject to the existing HTML. Each tag can also specify where it should be injected to (default is prepending to `<head>`)
   - An object containing both as `{ html, tags }`
@@ -353,7 +354,7 @@ Vite plugins can also provide hooks that serve Vite-specific purposes. These hoo
       transformIndexHtml(html) {
         return html.replace(
           /<title>(.*?)<\/title>/,
-          `<title>Title replaced!</title>`,
+          `<title>Title replaced!</title>`
         )
       },
     }
@@ -371,7 +372,7 @@ Vite plugins can also provide hooks that serve Vite-specific purposes. These hoo
       server?: ViteDevServer
       bundle?: import('rollup').OutputBundle
       chunk?: import('rollup').OutputChunk
-    },
+    }
   ) =>
     | IndexHtmlTransformResult
     | void
@@ -423,6 +424,7 @@ Vite plugins can also provide hooks that serve Vite-specific purposes. These hoo
   - `read` is an async read function that returns the content of the file. This is provided because on some systems, the file change callback may fire too fast before the editor finishes updating the file and direct `fs.readFile` will return empty content. The read function passed in normalizes this behavior.
 
   The hook can choose to:
+
   - Filter and narrow down the affected module list so that the HMR is more accurate.
 
   - Return an empty array and perform a full reload:
@@ -554,7 +556,7 @@ Vite supports hook filters to improve plugin performance by reducing communicati
 
 Hook filters allow you to specify patterns that determine when a hook should be called, avoiding unnecessary hook invocations for files that don't match the filter criteria.
 
-**Using Hook Filters:**
+#### Using Hook Filters
 
 ```js
 export default function myPlugin() {
@@ -608,7 +610,7 @@ export default function myPlugin() {
 }
 ```
 
-**Utility Functions:**
+#### Utility Functions
 
 [`@rollup/pluginutils`](https://www.npmjs.com/package/@rolldown/pluginutils) provides utility functions for creating common filter patterns:
 

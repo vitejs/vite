@@ -174,7 +174,7 @@ export default defineConfig({
       svgr({
         /*...*/
       }),
-      { load: { id: /\.svg\?react$/ } },
+      { load: { id: /\.svg\?react$/ } }
     ),
   ],
 })
@@ -314,14 +314,9 @@ const plugin = {
 
 ### Hook filter feature
 
-Rolldown introduced a [hook filter feature](https://rolldown.rs/plugins/hook-filters) to reduce the communication overhead the between Rust and JavaScript runtimes. By using this feature you can make your plugin more performant.
-This is also supported by Rollup 4.38.0+ and Vite 6.3.0+. To make your plugin backward compatible with the older versions, make sure to also run the filter inside the hook handlers.
+Rolldown introduced a [hook filter feature](https://rolldown.rs/plugins/hook-filters) to reduce the communication overhead between the Rust and JavaScript runtimes. This feature allows plugins to specify patterns that determine when hooks should be called, improving performance by avoiding unnecessary hook invocations.
 
-::: tip
-
-[`@rolldown/pluginutils`](https://www.npmjs.com/package/@rolldown/pluginutils) exports some utilities for hook filters like `exactRegex` and `prefixRegex`.
-
-:::
+For detailed information on how to use hook filters in your plugins, including code examples and backward compatibility guidance, see the [Hook Filters section in the Plugin Authors guide](/guide/api-plugin#hook-filters).
 
 ### Converting content to JavaScript in `load` or `transform` hooks
 
