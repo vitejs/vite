@@ -1083,6 +1083,9 @@ function isExternal(id: string, test: string | RegExp) {
   }
 }
 
+/**
+ * Inject an environment into the hooks of a plugin.
+ */
 export function injectEnvironmentToHooks(
   environment: Environment,
   plugin: Plugin,
