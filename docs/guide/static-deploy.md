@@ -304,7 +304,7 @@ Deploy your static site using [xmit](https://xmit.co) by following this [guide](
 
 ## Zephyr Cloud
 
-[Zephyr Cloud](https://zephyr-cloud.io) is deployment platform that integrates directly into your build process and provides global edge distribution for module federation and other kind of applications.
+[Zephyr Cloud](https://zephyr-cloud.io) is a deployment platform that integrates directly into your build process and provides global edge distribution for module federation and other kind of applications.
 
 Zephyr follows a different approach than other cloud providers. It integrates directly with Vite build process, so every time you build or run the dev server for your application, it will be automatically deployed with Zephyr Cloud.
 
