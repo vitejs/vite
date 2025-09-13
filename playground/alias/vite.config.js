@@ -15,6 +15,8 @@ export default defineConfig({
         replacement: `${path.resolve(__dirname, 'dir')}/$1`,
       },
       { find: '/@', replacement: path.resolve(__dirname, 'dir') },
+      // aliasing a pattern that conflicts with url schemes
+      { find: /^\/\//, replacement: path.join(__dirname, 'dir/') },
       // aliasing an optimized dep
       { find: 'vue', replacement: 'vue/dist/vue.esm-bundler.js' },
       // aliasing an optimized dep to absolute URL
