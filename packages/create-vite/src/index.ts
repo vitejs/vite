@@ -596,16 +596,18 @@ function isEmpty(path: string) {
   return files.length === 0 || (files.length === 1 && files[0] === '.git')
 }
 
-function emptyDir(dir: string) {
-  if (!fs.existsSync(dir)) {
-    return
-  }
-  for (const file of fs.readdirSync(dir)) {
-    if (file === '.git') {
-      continue
-    }
-    fs.rmSync(path.resolve(dir, file), { recursive: true, force: true })
-  }
+async function emptyDir(dir: string) {
+  await Promise.all(
+    fs
+      .readdirSync(dir)
+      .filter((file) => file !== '.git')
+      .map((file) =>
+        fs.promises.rm(path.resolve(dir, file), {
+          recursive: true,
+          force: true,
+        }),
+      ),
+  )
 }
 
 interface PkgInfo {
