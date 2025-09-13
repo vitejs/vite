@@ -243,6 +243,8 @@ export function createDepsOptimizer(
               // current server and any subsequent server loading _metadata.json will
               // produce the same browserHash for these deps, avoiding mismatches during
               // mid-load restarts.
+              // Note that there are still cases where the browserHash is not consistent.
+              // See https://github.com/vitejs/vite/pull/20609#discussion_r2313053174
               metadata.browserHash = getOptimizedBrowserHash(
                 metadata.hash,
                 depsFromOptimizedDepInfo(knownDeps),
