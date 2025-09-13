@@ -318,6 +318,37 @@ const rollupToEsbuildFormatMap: Record<
   iife: undefined,
 }
 
+// #7188, esbuild adds helpers out of the UMD and IIFE wrappers, and the
+// names are minified potentially causing collision with other globals.
+// We inject the helpers inside the wrappers.
+// e.g. turn:
+//    <esbuild helpers> (function(){ /*actual content/* })()
+// into:
+//    (function(){ <esbuild helpers> /*actual content/* })()
+// Not using regex because it's too hard to rule out performance issues like #8738 #8099 #10900 #14065
+// Instead, using plain string index manipulation (indexOf, slice) which is simple and performant
+// We don't need to create a MagicString here because both the helpers and
+// the headers don't modify the sourcemap
+export const injectEsbuildHelpers = (
+  esbuildCode: string,
+  format: string,
+): string => {
+  const contentIndex =
+    format === 'iife'
+      ? Math.max(esbuildCode.search(IIFE_BEGIN_RE), 0)
+      : format === 'umd'
+        ? esbuildCode.indexOf(`(function(`) // same for minified or not
+        : 0
+
+  if (contentIndex > 0) {
+    const esbuildHelpers = esbuildCode.slice(0, contentIndex)
+    return esbuildCode
+      .slice(contentIndex)
+      .replace('"use strict";', (m: string) => m + esbuildHelpers)
+  }
+
+  return esbuildCode
+}
 export const buildEsbuildPlugin = (): Plugin => {
   return {
     name: 'vite:esbuild-transpile',
@@ -346,30 +377,7 @@ export const buildEsbuildPlugin = (): Plugin => {
       )
 
       if (config.build.lib) {
-        // #7188, esbuild adds helpers out of the UMD and IIFE wrappers, and the
-        // names are minified potentially causing collision with other globals.
-        // We inject the helpers inside the wrappers.
-        // e.g. turn:
-        //    <esbuild helpers> (function(){ /*actual content/* })()
-        // into:
-        //    (function(){ <esbuild helpers> /*actual content/* })()
-        // Not using regex because it's too hard to rule out performance issues like #8738 #8099 #10900 #14065
-        // Instead, using plain string index manipulation (indexOf, slice) which is simple and performant
-        // We don't need to create a MagicString here because both the helpers and
-        // the headers don't modify the sourcemap
-        const esbuildCode = res.code
-        const contentIndex =
-          opts.format === 'iife'
-            ? Math.max(esbuildCode.search(IIFE_BEGIN_RE), 0)
-            : opts.format === 'umd'
-              ? esbuildCode.indexOf(`(function(`) // same for minified or not
-              : 0
-        if (contentIndex > 0) {
-          const esbuildHelpers = esbuildCode.slice(0, contentIndex)
-          res.code = esbuildCode
-            .slice(contentIndex)
-            .replace(`"use strict";`, `"use strict";` + esbuildHelpers)
-        }
+        res.code = injectEsbuildHelpers(res.code, opts.format)
       }
 
       return res
