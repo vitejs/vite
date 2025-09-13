@@ -541,7 +541,6 @@ async function ensureVersionQuery(
     depsOptimizer &&
     !(resolved === normalizedClientEntry || resolved === normalizedEnvEntry)
   ) {
-    await depsOptimizer.scanProcessing
     // Ensure that direct imports of node_modules have the same version query
     // as if they would have been imported through a bare import
     // Use the original id to do the check as the resolved id may be the real
@@ -549,6 +548,7 @@ async function ensureVersionQuery(
     const isNodeModule = isInNodeModules(id) || isInNodeModules(resolved)
 
     if (isNodeModule && !DEP_VERSION_RE.test(resolved)) {
+      await depsOptimizer.scanProcessing
       const versionHash = depsOptimizer.metadata.browserHash
       if (versionHash && isOptimizable(resolved, depsOptimizer.options)) {
         resolved = injectQuery(resolved, `v=${versionHash}`)
