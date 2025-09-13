@@ -346,9 +346,9 @@ export const injectEsbuildHelpers = (
       .slice(contentIndex)
       .replace('"use strict";', (m: string) => m + esbuildHelpers)
   }
-
   return esbuildCode
 }
+
 export const buildEsbuildPlugin = (): Plugin => {
   return {
     name: 'vite:esbuild-transpile',
