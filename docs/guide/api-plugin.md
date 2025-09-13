@@ -548,6 +548,91 @@ normalizePath('foo/bar') // 'foo/bar'
 
 Vite exposes [`@rollup/pluginutils`'s `createFilter`](https://github.com/rollup/plugins/tree/master/packages/pluginutils#createfilter) function to encourage Vite specific plugins and integrations to use the standard include/exclude filtering pattern, which is also used in Vite core itself.
 
+### Hook Filters
+
+Vite supports hook filters to improve plugin performance by reducing communication overhead between the Rust and JavaScript runtimes. This feature is supported by Rolldown, Rollup 4.38.0+, and Vite 6.3.0+.
+
+Hook filters allow you to specify patterns that determine when a hook should be called, avoiding unnecessary hook invocations for files that don't match the filter criteria.
+
+#### Using Hook Filters
+
+```js
+export default function myPlugin() {
+  return {
+    name: 'my-plugin',
+
+    // Hook filter example - only call transform for .js files
+    transform: {
+      filter: {
+        id: /\.js$/,
+      },
+      handler(code, id) {
+        // Transform logic here
+        return {
+          code: transformMyCode(code),
+          map: null,
+        }
+      },
+    },
+  }
+}
+```
+
+#### Backward Compatibility
+
+To ensure your plugin works with older versions of Vite/Rollup that don't support hook filters, implement the filter logic inside the hook handler as well:
+
+```js
+export default function myPlugin() {
+  const jsFileRegex = /\.js$/
+
+  return {
+    name: 'my-plugin',
+
+    // With hook filter for performance
+    transform: {
+      filter: {
+        id: jsFileRegex,
+      },
+      handler(code, id) {
+        // Additional check for backward compatibility
+        if (!jsFileRegex.test(id)) return null
+
+        return {
+          code: transformMyCode(code),
+          map: null,
+        }
+      },
+    },
+  }
+}
+```
+
+#### Utility Functions
+
+[`@rollup/pluginutils`](https://www.npmjs.com/package/@rolldown/pluginutils) provides utility functions for creating common filter patterns:
+
+```js
+import { exactRegex, prefixRegex } from '@rolldown/pluginutils'
+
+export default function myPlugin() {
+  return {
+    name: 'my-plugin',
+
+    load: {
+      filter: {
+        id: prefixRegex('virtual:'),
+      },
+      handler(id) {
+        if (id.startsWith('virtual:')) {
+          return `export default "Virtual module: ${id}"`
+        }
+      },
+    },
+  }
+}
+```
+
 ## Client-server Communication
 
 Since Vite 2.9, we provide some utilities for plugins to help handle the communication with clients.
