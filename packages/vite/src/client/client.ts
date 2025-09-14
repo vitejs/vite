@@ -495,6 +495,7 @@ async function waitForSuccessfulPingInternal(
 }
 
 const sheetsMap = new Map<string, HTMLStyleElement>()
+const linkSheetsMap = new Map<string, HTMLLinkElement>()
 
 // collect existing style elements that may have been inserted during SSR
 // to avoid FOUC or duplicate styles
@@ -503,6 +504,13 @@ if ('document' in globalThis) {
     .querySelectorAll<HTMLStyleElement>('style[data-vite-dev-id]')
     .forEach((el) => {
       sheetsMap.set(el.getAttribute('data-vite-dev-id')!, el)
+    })
+  document
+    .querySelectorAll<HTMLLinkElement>(
+      'link[rel="stylesheet"][data-vite-dev-id]',
+    )
+    .forEach((el) => {
+      linkSheetsMap.set(el.getAttribute('data-vite-dev-id')!, el)
     })
 }
 
@@ -516,6 +524,8 @@ const cspNonce =
 let lastInsertedStyle: HTMLStyleElement | undefined
 
 export function updateStyle(id: string, content: string): void {
+  if (linkSheetsMap.has(id)) return
+
   let style = sheetsMap.get(id)
   if (!style) {
     style = document.createElement('style')
@@ -545,6 +555,11 @@ export function updateStyle(id: string, content: string): void {
 }
 
 export function removeStyle(id: string): void {
+  const link = linkSheetsMap.get(id)
+  if (link) {
+    document.head.removeChild(link)
+    linkSheetsMap.delete(id)
+  }
   const style = sheetsMap.get(id)
   if (style) {
     document.head.removeChild(style)
