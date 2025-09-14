@@ -997,6 +997,29 @@ export function bufferify(buffer: string | Buffer): Buffer {
   return Buffer.isBuffer(buffer) ? buffer : Buffer.from(buffer)
 }
 
+export function extractHostnamesFromCerts(
+  certs: HttpsServerOptions['cert'] | undefined,
+): string[] {
+  const certList = certs ? arraify(certs) : []
+  if (certList.length === 0) return []
+
+  const hostnames = certList
+    .map((cert) => {
+      try {
+        return new crypto.X509Certificate(cert)
+      } catch {
+        return null
+      }
+    })
+    .flatMap((cert) =>
+      cert?.subjectAltName
+        ? extractHostnamesFromSubjectAltName(cert.subjectAltName)
+        : [],
+    )
+
+  return hostnames
+}
+
 export function resolveServerUrls(
   server: Server,
   options: CommonServerOptions,
@@ -1049,26 +1072,12 @@ export function resolveServerUrls(
       })
   }
 
-  const certs = httpsOptions?.cert ? arraify(httpsOptions.cert) : []
-  const hostnameFromCert = certs
-    .map((cert) => {
-      try {
-        const buf = bufferify(cert)
-        return new crypto.X509Certificate(buf)
-      } catch {
-        return null
-      }
-    })
-    .flatMap((cert) =>
-      cert && cert.subjectAltName
-        ? extractHostnamesFromSubjectAltName(cert.subjectAltName)
-        : [],
-    )
+  const hostnames = extractHostnamesFromCerts(httpsOptions?.cert)
 
-  if (hostnameFromCert.length > 0) {
+  if (hostnames.length > 0) {
     const existings = new Set([...local, ...network])
     local.push(
-      ...hostnameFromCert
+      ...hostnames
         .map((hostname) => `${protocol}://${hostname}:${port}${base}`)
         .filter((url) => !existings.has(url)),
     )
