@@ -1,3 +1,26 @@
+## <small>[7.1.5](https://github.com/vitejs/vite/compare/v7.1.4...v7.1.5) (2025-09-08)</small>
+### Bug Fixes
+
+* apply `fs.strict` check to HTML files ([#20736](https://github.com/vitejs/vite/issues/20736)) ([14015d7](https://github.com/vitejs/vite/commit/14015d794f69accba68798bd0e15135bc51c9c1e))
+* **deps:** update all non-major dependencies ([#20732](https://github.com/vitejs/vite/issues/20732)) ([122bfba](https://github.com/vitejs/vite/commit/122bfbabeb1f095ce7cabd30893e5531e9a007c4))
+* upgrade sirv to 3.0.2 ([#20735](https://github.com/vitejs/vite/issues/20735)) ([09f2b52](https://github.com/vitejs/vite/commit/09f2b52e8d5907f26602653caf41b3a56692600d))
+
+## <small>[7.1.4](https://github.com/vitejs/vite/compare/v7.1.3...v7.1.4) (2025-09-01)</small>
+### Bug Fixes
+
+* add missing awaits ([#20697](https://github.com/vitejs/vite/issues/20697)) ([79d10ed](https://github.com/vitejs/vite/commit/79d10ed6341ba7a751d007b7ad113a9b8be9c853))
+* **deps:** update all non-major dependencies ([#20676](https://github.com/vitejs/vite/issues/20676)) ([5a274b2](https://github.com/vitejs/vite/commit/5a274b29df83744cf0ce4dafd94029d2a9e01135))
+* **deps:** update all non-major dependencies ([#20709](https://github.com/vitejs/vite/issues/20709)) ([0401feb](https://github.com/vitejs/vite/commit/0401feba17e60bd7e976c5643128a0da49670a83))
+* pass rollup watch options when building in watch mode ([#20674](https://github.com/vitejs/vite/issues/20674)) ([f367453](https://github.com/vitejs/vite/commit/f367453ca2825bc8a390d41c5d13b161756f2b41))
+
+### Miscellaneous Chores
+
+* remove unused constants entry from rolldown.config.ts ([#20710](https://github.com/vitejs/vite/issues/20710)) ([537fcf9](https://github.com/vitejs/vite/commit/537fcf91862a1bf51e70ce6fe9b414319dd3a675))
+
+### Code Refactoring
+
+* remove unnecessary `minify` parameter from `finalizeCss` ([#20701](https://github.com/vitejs/vite/issues/20701)) ([8099582](https://github.com/vitejs/vite/commit/8099582e5364f907f2bc6cb8e2d52ae0c4d937e4))
+
 ## <small>[7.1.3](https://github.com/vitejs/vite/compare/v7.1.2...v7.1.3) (2025-08-19)</small>
 ### Features
 

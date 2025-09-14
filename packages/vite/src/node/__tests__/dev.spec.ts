@@ -24,8 +24,8 @@ describe('resolveBuildEnvironmentOptions in dev', () => {
 describe('the dev server', () => {
   let server: ViteDevServer
 
-  afterEach(() => {
-    server?.close()
+  afterEach(async () => {
+    await server?.close()
   })
 
   test('resolves the server URLs before the httpServer listening events are called', async () => {

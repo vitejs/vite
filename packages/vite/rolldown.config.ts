@@ -51,8 +51,7 @@ const sharedNodeOptions = defineConfig({
         sideEffects: false,
       },
     ],
-    // TODO: not supported yet
-    // propertyReadSideEffects: false,
+    propertyReadSideEffects: false,
   },
   output: {
     dir: './dist',
@@ -75,7 +74,6 @@ const nodeConfig = defineConfig({
   input: {
     index: path.resolve(__dirname, 'src/node/index.ts'),
     cli: path.resolve(__dirname, 'src/node/cli.ts'),
-    constants: path.resolve(__dirname, 'src/node/constants.ts'),
   },
   resolve: {
     alias: {
@@ -158,7 +156,7 @@ const moduleRunnerConfig = defineConfig({
     minify: {
       compress: true,
       mangle: false,
-      removeWhitespace: false,
+      codegen: false,
     },
   },
 })
