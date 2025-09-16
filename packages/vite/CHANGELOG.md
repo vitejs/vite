@@ -1,3 +1,8 @@
+## <small>[7.1.10](https://github.com/vitejs/rolldown-vite/compare/v7.1.9...v7.1.10) (2025-09-16)</small>
+### Features
+
+* update rolldown ([#415](https://github.com/vitejs/rolldown-vite/issues/415)) ([854436b](https://github.com/vitejs/rolldown-vite/commit/854436b145843a192fcb62598af8bd9f21b67102))
+
 ## <small>[7.1.9](https://github.com/vitejs/rolldown-vite/compare/v7.1.8...v7.1.9) (2025-09-11)</small>
 ### Features
 
