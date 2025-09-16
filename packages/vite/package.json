@@ -24,6 +24,7 @@
       "types": "./client.d.ts"
     },
     "./module-runner": "./dist/node/module-runner.js",
+    "./internal": "./dist/node/internal.js",
     "./dist/client/*": "./dist/client/*",
     "./types/*": {
       "types": "./types/*"
@@ -81,11 +82,12 @@
   },
   "//": "READ CONTRIBUTING.md to understand what to put under deps vs. devDeps!",
   "dependencies": {
+    "@oxc-project/runtime": "0.89.0",
     "fdir": "^6.5.0",
     "lightningcss": "^1.30.1",
     "picomatch": "^4.0.3",
     "postcss": "^8.5.6",
-    "rolldown": "1.0.0-beta.37",
+    "rolldown": "1.0.0-beta.38",
     "tinyglobby": "^0.2.15"
   },
   "optionalDependencies": {
@@ -95,9 +97,9 @@
     "@babel/parser": "^7.28.4",
     "@jridgewell/remapping": "^2.3.5",
     "@jridgewell/trace-mapping": "^0.3.30",
-    "@oxc-project/types": "0.87.0",
+    "@oxc-project/types": "0.89.0",
     "@polka/compression": "^1.0.0-next.25",
-    "@rolldown/pluginutils": "^1.0.0-beta.37",
+    "@rolldown/pluginutils": "^1.0.0-beta.38",
     "@rollup/plugin-alias": "^5.1.1",
     "@rollup/plugin-commonjs": "^28.0.6",
     "@rollup/plugin-dynamic-import-vars": "2.1.4",

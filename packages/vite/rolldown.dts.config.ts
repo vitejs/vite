@@ -36,6 +36,7 @@ export default defineConfig({
   input: {
     index: './src/node/index.ts',
     'module-runner': './src/module-runner/index.ts',
+    internal: './src/node/internalIndex.ts',
   },
   output: {
     dir: './dist/node',
@@ -305,43 +306,46 @@ function replaceConfusingTypeNames(
   chunk: OutputChunk,
   importBindings: ImportBindings[],
 ) {
-  for (const modName in identifierReplacements) {
-    const imp = importBindings.filter((imp) => imp.id === modName)
-    // Validate that `identifierReplacements` is not outdated if there's no match
-    if (imp.length === 0) {
-      this.warn(
-        `${chunk.fileName} does not import "${modName}" for replacement`,
-      )
-      process.exitCode = 1
-      continue
-    }
-
-    const replacements = identifierReplacements[modName]
-    for (const id in replacements) {
+  const isInternalEntry = chunk.fileName.startsWith('internal.')
+  if (!isInternalEntry) {
+    for (const modName in identifierReplacements) {
+      const imp = importBindings.filter((imp) => imp.id === modName)
       // Validate that `identifierReplacements` is not outdated if there's no match
-      if (!imp.some((i) => i.locals.includes(id))) {
+      if (imp.length === 0) {
         this.warn(
-          `${chunk.fileName} does not import "${id}" from "${modName}" for replacement`,
+          `${chunk.fileName} does not import "${modName}" for replacement`,
         )
         process.exitCode = 1
         continue
       }
 
-      const betterId = replacements[id]
-      const regexEscapedId = escapeRegex(id)
-      // If the better id accesses a namespace, the existing `Foo as Foo$1`
-      // named import cannot be replaced with `Foo as Namespace.Foo`, so we
-      // pre-emptively remove the whole named import
-      if (betterId.includes('.')) {
+      const replacements = identifierReplacements[modName]
+      for (const id in replacements) {
+        // Validate that `identifierReplacements` is not outdated if there's no match
+        if (!imp.some((i) => i.locals.includes(id))) {
+          this.warn(
+            `${chunk.fileName} does not import "${id}" from "${modName}" for replacement`,
+          )
+          process.exitCode = 1
+          continue
+        }
+
+        const betterId = replacements[id]
+        const regexEscapedId = escapeRegex(id)
+        // If the better id accesses a namespace, the existing `Foo as Foo$1`
+        // named import cannot be replaced with `Foo as Namespace.Foo`, so we
+        // pre-emptively remove the whole named import
+        if (betterId.includes('.')) {
+          chunk.code = chunk.code.replace(
+            new RegExp(`\\b\\w+\\b as ${regexEscapedId},?\\s?`),
+            '',
+          )
+        }
         chunk.code = chunk.code.replace(
-          new RegExp(`\\b\\w+\\b as ${regexEscapedId},?\\s?`),
-          '',
+          new RegExp(`\\b${regexEscapedId}\\b`, 'g'),
+          betterId,
         )
       }
-      chunk.code = chunk.code.replace(
-        new RegExp(`\\b${regexEscapedId}\\b`, 'g'),
-        betterId,
-      )
     }
   }
 
@@ -361,16 +365,21 @@ function replaceConfusingTypeNames(
     )
     process.exitCode = 1
   }
-  const notUsedConfusingTypeNames = ignoreConfusingTypeNames.filter(
-    (id) => !identifiers.includes(id),
-  )
-  // Validate that `identifierReplacements` is not outdated if there's no match
-  if (notUsedConfusingTypeNames.length) {
-    const notUsedStr = notUsedConfusingTypeNames
-      .map((id) => `\n- ${id}`)
-      .join('')
-    this.warn(`${chunk.fileName} contains unused identifier names${notUsedStr}`)
-    process.exitCode = 1
+
+  if (!isInternalEntry) {
+    const notUsedConfusingTypeNames = ignoreConfusingTypeNames.filter(
+      (id) => !identifiers.includes(id),
+    )
+    // Validate that `identifierReplacements` is not outdated if there's no match
+    if (notUsedConfusingTypeNames.length) {
+      const notUsedStr = notUsedConfusingTypeNames
+        .map((id) => `\n- ${id}`)
+        .join('')
+      this.warn(
+        `${chunk.fileName} contains unused identifier names${notUsedStr}`,
+      )
+      process.exitCode = 1
+    }
   }
 }
 
