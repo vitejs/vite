@@ -507,7 +507,7 @@ export async function _createServer(
     ? (chokidar.watch(
         // config file dependencies and env file might be outside of root
         [
-          root,
+          ...(config.experimental.fullBundleMode ? [] : [root]),
           ...config.configFileDependencies,
           ...getEnvFilesForMode(config.mode, config.envDir),
           // Watch the public directory explicitly because it might be outside
