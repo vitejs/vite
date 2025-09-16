@@ -59,6 +59,10 @@ export class MemoryFiles {
 export class FullBundleDevEnvironment extends DevEnvironment {
   private devEngine!: DevEngine
   private invalidateCalledModules = new Set<string>()
+  private debouncedFullReload = debounce(20, () => {
+    this.hot.send({ type: 'full-reload', path: '*' })
+    this.logger.info(colors.green(`page reload`), { timestamp: true })
+  })
 
   memoryFiles = new MemoryFiles()
 
@@ -96,12 +100,15 @@ export class FullBundleDevEnvironment extends DevEnvironment {
 
     this.devEngine = await dev(rollupOptions, outputOptions, {
       onHmrUpdates: (updates, files) => {
-        this.invalidateCalledModules.clear()
+        if (files.length === 0) {
+          return
+        }
         // TODO: how to handle errors?
         if (updates.every((update) => update.type === 'Noop')) {
           debug?.(`ignored file change for ${files.join(', ')}`)
           return
         }
+        this.invalidateCalledModules.clear()
         for (const update of updates) {
           this.handleHmrOutput(files, update)
         }
@@ -126,9 +133,10 @@ export class FullBundleDevEnvironment extends DevEnvironment {
   }
 
   private async waitForInitialBuildFinish(): Promise<void> {
+    await this.devEngine.ensureCurrentBuildFinish()
     while (this.memoryFiles.size === 0) {
-      await this.devEngine.ensureCurrentBuildFinish()
       await new Promise((resolve) => setTimeout(resolve, 10))
+      await this.devEngine.ensureCurrentBuildFinish()
     }
   }
 
@@ -144,12 +152,14 @@ export class FullBundleDevEnvironment extends DevEnvironment {
     ;(async () => {
       if (this.invalidateCalledModules.has(m.path)) {
         debug?.(
-          'INVALIDATE: invalidate received, but ignored because it was already invalidated',
+          `INVALIDATE: invalidate received from ${m.path}, but ignored because it was already invalidated`,
         )
         return
       }
 
-      debug?.('INVALIDATE: invalidate received, re-triggering HMR')
+      debug?.(
+        `INVALIDATE: invalidate received from ${m.path}, re-triggering HMR`,
+      )
       this.invalidateCalledModules.add(m.path)
 
       // TODO: how to handle errors?
@@ -168,7 +178,10 @@ export class FullBundleDevEnvironment extends DevEnvironment {
       }
 
       // TODO: need to check if this is enough
-      this.handleHmrOutput([m.path], update, m.firstInvalidatedBy)
+      this.handleHmrOutput([m.path], update, {
+        firstInvalidatedBy: m.firstInvalidatedBy,
+        reason: m.message,
+      })
     })()
   }
 
@@ -176,8 +189,7 @@ export class FullBundleDevEnvironment extends DevEnvironment {
     const scheduled = await this.devEngine.scheduleBuildIfStale()
     if (scheduled === 'scheduled') {
       this.devEngine.ensureCurrentBuildFinish().then(() => {
-        this.hot.send({ type: 'full-reload', path: '*' })
-        this.logger.info(colors.green(`page reload`), { timestamp: true })
+        this.debouncedFullReload()
       })
       debug?.(`TRIGGER: access to stale bundle, triggered bundle re-generation`)
     }
@@ -207,13 +219,18 @@ export class FullBundleDevEnvironment extends DevEnvironment {
       rolldownOptions.plugins,
       {
         name: 'vite:full-bundle-mode:save-output',
-        generateBundle: (_, bundle) => {
-          // NOTE: don't clear memoryFiles here as incremental build re-uses the files
-          for (const outputFile of Object.values(bundle)) {
-            this.memoryFiles.set(outputFile.fileName, () =>
-              outputFile.type === 'chunk' ? outputFile.code : outputFile.source,
-            )
-          }
+        generateBundle: {
+          order: 'post',
+          handler: (_, bundle) => {
+            // NOTE: don't clear memoryFiles here as incremental build re-uses the files
+            for (const outputFile of Object.values(bundle)) {
+              this.memoryFiles.set(outputFile.fileName, () =>
+                outputFile.type === 'chunk'
+                  ? outputFile.code
+                  : outputFile.source,
+              )
+            }
+          },
         },
       },
     ]
@@ -240,7 +257,7 @@ export class FullBundleDevEnvironment extends DevEnvironment {
   private handleHmrOutput(
     files: string[],
     hmrOutput: HmrOutput,
-    firstInvalidatedBy?: string,
+    invalidateInformation?: { firstInvalidatedBy: string; reason?: string },
   ) {
     if (hmrOutput.type === 'Noop') return
 
@@ -248,16 +265,17 @@ export class FullBundleDevEnvironment extends DevEnvironment {
       .map((file) => getShortName(file, this.config.root))
       .join(', ')
     if (hmrOutput.type === 'FullReload') {
-      const reason = hmrOutput.reason
-        ? colors.dim(` (${hmrOutput.reason})`)
-        : ''
+      const reason =
+        (hmrOutput.reason ? colors.dim(` (${hmrOutput.reason})`) : '') +
+        (invalidateInformation?.reason
+          ? colors.dim(` (${invalidateInformation.reason})`)
+          : '')
       this.logger.info(
         colors.green(`trigger page reload `) + colors.dim(shortFile) + reason,
-        { clear: !firstInvalidatedBy, timestamp: true },
+        { clear: !invalidateInformation, timestamp: true },
       )
       this.devEngine.ensureLatestBuild().then(() => {
-        this.hot.send({ type: 'full-reload', path: '*' })
-        this.logger.info(colors.green(`page reload`), { timestamp: true })
+        this.debouncedFullReload()
       })
       return
     }
@@ -277,7 +295,7 @@ export class FullBundleDevEnvironment extends DevEnvironment {
         url: hmrOutput.filename,
         path: boundary.boundary,
         acceptedPath: boundary.acceptedVia,
-        firstInvalidatedBy,
+        firstInvalidatedBy: invalidateInformation?.firstInvalidatedBy,
         timestamp: Date.now(),
       }
     })
@@ -288,7 +306,18 @@ export class FullBundleDevEnvironment extends DevEnvironment {
     this.logger.info(
       colors.green(`hmr update `) +
         colors.dim([...new Set(updates.map((u) => u.path))].join(', ')),
-      { clear: !firstInvalidatedBy, timestamp: true },
+      { clear: !invalidateInformation, timestamp: true },
     )
+  }
+}
+
+function debounce(time: number, cb: () => void) {
+  let timer: ReturnType<typeof setTimeout> | null
+  return () => {
+    if (timer) {
+      clearTimeout(timer)
+      timer = null
+    }
+    timer = setTimeout(cb, time)
   }
 }
