@@ -308,4 +308,4 @@ Deploy your static site using [xmit](https://xmit.co) by following this [guide](
 
 Zephyr follows a different approach than other cloud providers. It integrates directly with Vite build process, so every time you build or run the dev server for your application, it will be automatically deployed with Zephyr Cloud.
 
-Follow the steps in [the vite deployment guide](https://docs.zephyr-cloud.io/recipes/react-vite) to get started.
+Follow the steps in [the Vite deployment guide](https://docs.zephyr-cloud.io/recipes/react-vite) to get started.
