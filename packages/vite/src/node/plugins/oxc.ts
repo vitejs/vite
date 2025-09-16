@@ -1,6 +1,5 @@
 import path from 'node:path'
 import url from 'node:url'
-import { createRequire } from 'node:module'
 import type {
   TransformOptions as OxcTransformOptions,
   TransformResult as OxcTransformResult,
@@ -28,7 +27,7 @@ import type { Plugin } from '../plugin'
 import { cleanUrl } from '../../shared/utils'
 import { type Environment, perEnvironmentPlugin } from '..'
 import type { ViteDevServer } from '../server'
-import { JS_TYPES_RE } from '../constants'
+import { JS_TYPES_RE, VITE_PACKAGE_DIR } from '../constants'
 import type { Logger } from '../logger'
 import type { ESBuildOptions, TSCompilerOptions } from './esbuild'
 import { loadTsconfigJsonForFile } from './esbuild'
@@ -306,9 +305,7 @@ export function oxcPlugin(config: ResolvedConfig): Plugin {
         jsxRefreshInclude,
         jsxRefreshExclude,
         isServerConsumer: environment.config.consumer === 'server',
-        runtimeResolveBase: normalizePath(
-          url.fileURLToPath(/** #__KEEP__ */ import.meta.url),
-        ),
+        runtimeResolveBase: '', // not used
         jsxInject,
         transformOptions,
       })
@@ -376,9 +373,8 @@ export function oxcPlugin(config: ResolvedConfig): Plugin {
 
     return result
   }
-  const require = createRequire(/** #__KEEP__ */ import.meta.url)
   const runtimeResolveBase = normalizePath(
-    require.resolve('rolldown/package.json'),
+    path.join(VITE_PACKAGE_DIR, 'package.json'),
   )
 
   let server: ViteDevServer
@@ -388,17 +384,23 @@ export function oxcPlugin(config: ResolvedConfig): Plugin {
     configureServer(_server) {
       server = _server
     },
-    resolveId: {
-      filter: {
-        id: prefixRegex('@oxc-project/runtime/'),
-      },
-      async handler(id, _importer, opts) {
-        // @oxc-project/runtime imports will be injected by Oxc transform
-        // since it's injected by the transform, @oxc-project/runtime should be resolved to the one Rolldown depends on
-        const resolved = await this.resolve(id, runtimeResolveBase, opts)
-        return resolved
-      },
-    },
+    // @oxc-project/runtime resolution is handled by rolldown in build
+    ...(config.command === 'serve'
+      ? {
+          resolveId: {
+            filter: {
+              id: prefixRegex('@oxc-project/runtime/'),
+            },
+            async handler(id, _importer, opts) {
+              // @oxc-project/runtime imports will be injected by Oxc transform
+              // since it's injected by the transform, @oxc-project/runtime should be resolved to the one Vite depends on
+              const resolved = await this.resolve(id, runtimeResolveBase, opts)
+              return resolved
+            },
+            order: 'pre',
+          },
+        }
+      : {}),
     async transform(code, id) {
       if (filter(id) || filter(cleanUrl(id)) || jsxRefreshFilter?.(id)) {
         const modifiedOxcTransformOptions = getModifiedOxcTransformOptions(

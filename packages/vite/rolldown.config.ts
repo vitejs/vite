@@ -74,6 +74,7 @@ const nodeConfig = defineConfig({
   input: {
     index: path.resolve(__dirname, 'src/node/index.ts'),
     cli: path.resolve(__dirname, 'src/node/cli.ts'),
+    internal: path.resolve(__dirname, 'src/node/internalIndex.ts'),
   },
   resolve: {
     alias: {
