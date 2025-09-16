@@ -271,7 +271,7 @@ export function assetPlugin(config: ResolvedConfig): Plugin {
       // Remove CSS and assets that were not imported by any chunk
       for (const file in bundle) {
         const chunk = bundle[file]
-        if (chunk.type === 'asset' && importedCssAssets) {
+        if (chunk.type === 'asset' && importedCssAssets.size > 0) {
           if (!importedCssAssets.has(cleanUrl(chunk.fileName))) {
             delete bundle[file]
           }
