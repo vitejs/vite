@@ -1659,7 +1659,7 @@ export async function resolveConfig(
   // For backward compat, set ssr environment build.emitAssets with the same value as build.ssrEmitAssets that might be changed in configResolved hook
   // https://github.com/vikejs/vike/blob/953614cea7b418fcc0309b5c918491889fdec90a/vike/node/plugin/plugins/buildConfig.ts#L67
   if (resolved.environments.ssr) {
-    resolved.environments.ssr.build.emitAssets =
+    resolved.environments.ssr.build.emitAssets ||=
       resolved.build.ssrEmitAssets || resolved.build.emitAssets
   }
 

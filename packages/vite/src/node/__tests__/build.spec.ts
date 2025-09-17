@@ -865,6 +865,52 @@ test.for([true, false])(
   },
 )
 
+test('sharedConfigBuild and emitAssets', async () => {
+  const builder = await createBuilder({
+    root: resolve(__dirname, 'fixtures/shared-config-build'),
+    logLevel: 'warn',
+    configFile: false,
+    environments: {
+      client: {
+        build: {
+          outDir: './dist/client',
+          emitAssets: true,
+          rollupOptions: {
+            input: '/entry.js',
+          },
+        },
+      },
+      ssr: {
+        build: {
+          outDir: './dist/ssr',
+          emitAssets: true,
+          rollupOptions: {
+            input: '/entry.js',
+          },
+        },
+      },
+      custom: {
+        build: {
+          outDir: './dist/custom',
+          emitAssets: true,
+          rollupOptions: {
+            input: '/entry.js',
+          },
+        },
+      },
+    },
+    builder: {
+      sharedConfigBuild: true,
+    },
+  })
+
+  expect([
+    builder.environments.client.config.build.emitAssets,
+    builder.environments.ssr.config.build.emitAssets,
+    builder.environments.custom.config.build.emitAssets,
+  ]).toEqual([true, true, true])
+})
+
 test('adjust worker build error for worker.format', async () => {
   try {
     await build({
