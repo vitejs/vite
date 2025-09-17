@@ -17,6 +17,7 @@ import {
   asyncFlatten,
   createDebugger,
   dataUrlRE,
+  deepClone,
   externalRE,
   isInNodeModules,
   isObject,
@@ -263,19 +264,20 @@ async function prepareRolldownScanner(
   const { tsconfig } = await loadTsconfigJsonForFile(
     path.join(environment.config.root, '_dummy.js'),
   )
-  rollupOptions.transform ??= {}
+  const transformOptions = deepClone(rollupOptions.transform) ?? {}
   setOxcTransformOptionsFromTsconfigOptions(
-    rollupOptions.transform,
+    transformOptions,
     tsconfig.compilerOptions,
     [], // NOTE: ignore warnings as the same warning will be shown by the plugin container
   )
-  if (typeof rollupOptions.transform.jsx === 'object') {
-    rollupOptions.transform.jsx.development ??= !environment.config.isProduction
+  if (typeof transformOptions.jsx === 'object') {
+    transformOptions.jsx.development ??= !environment.config.isProduction
   }
 
   async function build() {
     await scan({
       ...rollupOptions,
+      transform: transformOptions,
       input: entries,
       logLevel: 'silent',
       plugins,

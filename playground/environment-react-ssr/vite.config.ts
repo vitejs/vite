@@ -37,6 +37,12 @@ export default defineConfig((env) => ({
         sourcemap: true,
         outDir: 'dist/client',
       },
+      optimizeDeps: {
+        rolldownOptions: {
+          // manual test for https://github.com/vitejs/rolldown-vite/issues/416
+          transform: {},
+        },
+      },
     },
     ssr: {
       optimizeDeps: {
