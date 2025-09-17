@@ -905,34 +905,26 @@ test('sharedConfigBuild and emitAssets', async () => {
     },
   })
 
-  expect([
-    builder.environments.client.config.build.emitAssets,
-    builder.environments.ssr.config.build.emitAssets,
-    builder.environments.custom.config.build.emitAssets,
-  ]).toEqual([true, true, true])
+  expect(
+    ['client', 'ssr', 'custom'].map(
+      (name) => builder.environments[name].config.build.emitAssets,
+    ),
+  ).toEqual([true, true, true])
 
   await builder.buildApp()
 
   expect(
-    await Promise.all([
-      fsp.readdir(
-        resolve(
-          root,
-          builder.environments.client.config.build.outDir,
-          'assets',
+    await Promise.all(
+      ['client', 'ssr', 'custom'].map((name) =>
+        fsp.readdir(
+          resolve(
+            root,
+            builder.environments[name].config.build.outDir,
+            'assets',
+          ),
         ),
       ),
-      fsp.readdir(
-        resolve(root, builder.environments.ssr.config.build.outDir, 'assets'),
-      ),
-      fsp.readdir(
-        resolve(
-          root,
-          builder.environments.custom.config.build.outDir,
-          'assets',
-        ),
-      ),
-    ]),
+    ),
   ).toEqual([
     expect.arrayContaining([expect.stringMatching(/\.css$/)]),
     expect.arrayContaining([expect.stringMatching(/\.css$/)]),
