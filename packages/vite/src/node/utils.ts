@@ -1166,7 +1166,7 @@ type DeepWritable<T> =
         ? T
         : { -readonly [P in keyof T]: DeepWritable<T[P]> }
 
-function deepClone<T>(value: T): DeepWritable<T> {
+export function deepClone<T>(value: T): DeepWritable<T> {
   if (Array.isArray(value)) {
     return value.map((v) => deepClone(v)) as DeepWritable<T>
   }
