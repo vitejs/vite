@@ -30,13 +30,5 @@ packageExtensions:
 ignoredBuiltDependencies:
   - core-js
   - es5-ext
-onlyBuiltDependencies:
-  - "@parcel/watcher"
-  - "@tailwindcss/oxide"
-  - "bcrypt"
-  - "esbuild"
-  - "playwright-chromium"
-  - "sharp"
-  - "simple-git-hooks"
-  - "unrs-resolver"
-  - "workerd"
+# uses scripts/onlyBuiltDependencies.release.json for release workflow
+onlyBuiltDependenciesFile: scripts/onlyBuiltDependencies.dev.json

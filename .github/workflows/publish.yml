@@ -30,6 +30,12 @@ jobs:
           registry-url: https://registry.npmjs.org/
           cache: "pnpm"
 
+      - name: Disallow installation scripts
+        run: |
+          FOUND="$(mktemp)"
+          sed -i "s#scripts/onlyBuiltDependencies.dev.json#scripts/onlyBuiltDependencies.release.json#w $FOUND" pnpm-workspace.yaml
+          if [ ! -s "$FOUND" ]; then exit 1; fi
+
       - name: Install deps
         run: pnpm install
         env:

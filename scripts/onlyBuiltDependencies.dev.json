@@ -1,0 +1,10 @@
+[
+  "@parcel/watcher",
+  "@tailwindcss/oxide",
+  "esbuild",
+  "playwright-chromium",
+  "sharp",
+  "simple-git-hooks",
+  "unrs-resolver",
+  "workerd"
+]

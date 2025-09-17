@@ -28,8 +28,23 @@ jobs:
       - name: Install pnpm
         uses: pnpm/action-setup@a7487c7e89a18df4991f7f222e4898a00d66ddda # v4.1.0
 
-      - name: Install dependencies
+      - name: Set node version to 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          registry-url: https://registry.npmjs.org/
+          cache: "pnpm"
+
+      - name: Disallow installation scripts
+        run: |
+          FOUND="$(mktemp)"
+          sed -i "s#scripts/onlyBuiltDependencies.dev.json#scripts/onlyBuiltDependencies.release.json#w $FOUND" pnpm-workspace.yaml
+          if [ ! -s "$FOUND" ]; then exit 1; fi
+
+      - name: Install deps
         run: pnpm install
+        env:
+          PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD: "1"
 
       - name: Build
         working-directory: ./packages/vite
