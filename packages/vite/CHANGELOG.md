@@ -1,3 +1,17 @@
+## <small>[7.1.11](https://github.com/vitejs/rolldown-vite/compare/v7.1.10...v7.1.11) (2025-09-18)</small>
+### Bug Fixes
+
+* **deps:** update all non-major dependencies ([#20773](https://github.com/vitejs/rolldown-vite/issues/20773)) ([88af2ae](https://github.com/vitejs/rolldown-vite/commit/88af2ae7df77160e7d11a9fa147a4967c8499f13))
+* **esbuild:** inject esbuild helper functions with minified `$` variables correctly ([#20761](https://github.com/vitejs/rolldown-vite/issues/20761)) ([7e8e004](https://github.com/vitejs/rolldown-vite/commit/7e8e0043d60379e11da481d9cc3c3556c9756ac0))
+* fallback terser to main thread when nameCache is provided ([#20750](https://github.com/vitejs/rolldown-vite/issues/20750)) ([a679a64](https://github.com/vitejs/rolldown-vite/commit/a679a643404c95556dda2670643e14eca9c585bd))
+* **optimizer:** avoid mutating `optimizeDeps.rollupOptions.transforms` for stable optimizer hash ([#417](https://github.com/vitejs/rolldown-vite/issues/417)) ([efed40f](https://github.com/vitejs/rolldown-vite/commit/efed40fe328019dcf6989ea7d19ead0393d9689f))
+* **types:** strict env typings fail when `skipLibCheck` is `false` ([#20755](https://github.com/vitejs/rolldown-vite/issues/20755)) ([cc54e29](https://github.com/vitejs/rolldown-vite/commit/cc54e294746d3eac868de96f85d98dd0fa0cda11))
+
+### Miscellaneous Chores
+
+* **deps:** update rolldown-related dependencies ([#20772](https://github.com/vitejs/rolldown-vite/issues/20772)) ([d785e72](https://github.com/vitejs/rolldown-vite/commit/d785e72f2ead705e8b2416c0a5097878fced3435))
+* fix typecheck ([438fee4](https://github.com/vitejs/rolldown-vite/commit/438fee4b17a91c7fa678f0385e40cf3d81d615a4))
+
 ## <small>[7.1.10](https://github.com/vitejs/rolldown-vite/compare/v7.1.9...v7.1.10) (2025-09-16)</small>
 ### Features
 
