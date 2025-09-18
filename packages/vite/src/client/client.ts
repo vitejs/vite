@@ -6,7 +6,7 @@ import {
   normalizeModuleRunnerTransport,
 } from '../shared/moduleRunnerTransport'
 import { createHMRHandler } from '../shared/hmrHandler'
-import { ErrorOverlay, overlayId } from './overlay'
+import { ErrorOverlay, cspNonce, overlayId } from './overlay'
 import '@vite/env'
 
 // injected by the hmr plugin when served
@@ -513,11 +513,6 @@ if ('document' in globalThis) {
       linkSheetsMap.set(el.getAttribute('data-vite-dev-id')!, el)
     })
 }
-
-const cspNonce =
-  'document' in globalThis
-    ? document.querySelector<HTMLMetaElement>('meta[property=csp-nonce]')?.nonce
-    : undefined
 
 // all css imports should be inserted at the same position
 // because after build it will be a single css file
