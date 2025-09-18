@@ -36,7 +36,7 @@ const helpMessage = `\
 Usage: create-vite [OPTION]... [DIRECTORY]
 
 Create a new Vite project in JavaScript or TypeScript.
-If it is run in TTY, the CLI will start in interactive mode.
+When running in TTY, the CLI will start in interactive mode.
 
 Options:
   -t, --template NAME                   use a specific template
