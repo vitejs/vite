@@ -111,10 +111,12 @@ jobs:
         if: fromJSON(steps.check-package.outputs.result).exists == false
         uses: actions/github-script@v8
         id: trigger-preview-release
+        env:
+          PR_DATA: ${{ steps.get-pr-data.outputs.result }}
         with:
           github-token: ${{ steps.generate-token.outputs.token }}
           script: |
-            const prData = ${{ steps.get-pr-data.outputs.result }}
+            const prData = JSON.parse(process.env.PR_DATA)
             console.log('Package not found, triggering preview release...')
 
             // Add label "trigger: preview" to the PR
@@ -130,10 +132,13 @@ jobs:
         if: fromJSON(steps.check-package.outputs.result).exists == false
         uses: actions/github-script@v8
         id: wait-preview-release
+        env:
+          PR_DATA: ${{ steps.get-pr-data.outputs.result }}
+          REACTION: ${{ fromJSON(steps.check-package.outputs.result).reaction }}
         with:
           script: |
-            const prData = ${{ steps.get-pr-data.outputs.result }}
-            const reaction = ${{ fromJSON(steps.check-package.outputs.result).reaction }}
+            const prData = JSON.parse(process.env.PR_DATA)
+            const reaction = +process.env.REACTION
             const workflowFileName = 'preview-release.yml'
             const workflow = await github.rest.actions.getWorkflow({
               owner: context.repo.owner,
@@ -205,11 +210,12 @@ jobs:
         id: trigger
         env:
           COMMENT: ${{ github.event.comment.body }}
+          PR_DATA: ${{ steps.get-pr-data.outputs.result }}
         with:
           github-token: ${{ steps.generate-token.outputs.token }}
           script: |
             const comment = process.env.COMMENT.trim()
-            const prData = ${{ steps.get-pr-data.outputs.result }}
+            const prData = JSON.parse(process.env.PR_DATA)
 
             const suite = comment.split('\n')[0].replace(/^\/ecosystem-ci run/, '').trim()
 
