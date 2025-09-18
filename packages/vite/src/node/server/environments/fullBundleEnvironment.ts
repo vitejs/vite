@@ -276,7 +276,7 @@ export class FullBundleDevEnvironment extends DevEnvironment {
         colors.green(`trigger page reload `) + colors.dim(shortFile) + reason,
         { clear: !invalidateInformation, timestamp: true },
       )
-      this.devEngine.ensureLatestBuild().then(() => {
+      this.devEngine.ensureLatestBuildOutput().then(() => {
         this.debouncedFullReload()
       })
       return
