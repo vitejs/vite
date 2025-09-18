@@ -66,7 +66,8 @@ export function terserPlugin(config: ResolvedConfig): Plugin {
                 (typeof options.mangle.properties === 'object' &&
                   options.mangle.properties.nth_identifier?.get))) ||
             typeof options.format?.comments === 'function' ||
-            typeof options.output?.comments === 'function'
+            typeof options.output?.comments === 'function' ||
+            options.nameCache
           )
         },
         max: maxWorkers,
