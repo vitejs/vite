@@ -55,28 +55,33 @@ beforeAll(() => clearAnyPreviousFolders())
 afterEach(() => clearAnyPreviousFolders())
 
 test('prompts for the project name if none supplied', () => {
-  const { stdout } = run([])
+  const { stdout } = run(['--interactive'])
   expect(stdout).toContain('Project name:')
 })
 
 test('prompts for the framework if none supplied when target dir is current directory', () => {
   fs.mkdirSync(genPath, { recursive: true })
-  const { stdout } = run(['.'], { cwd: genPath })
+  const { stdout } = run(['.', '--interactive'], { cwd: genPath })
   expect(stdout).toContain('Select a framework:')
 })
 
 test('prompts for the framework if none supplied', () => {
-  const { stdout } = run([projectName])
+  const { stdout } = run([projectName, '--interactive'])
   expect(stdout).toContain('Select a framework:')
 })
 
 test('prompts for the framework on not supplying a value for --template', () => {
-  const { stdout } = run([projectName, '--template'])
+  const { stdout } = run([projectName, '--interactive', '--template'])
   expect(stdout).toContain('Select a framework:')
 })
 
 test('prompts for the framework on supplying an invalid template', () => {
-  const { stdout } = run([projectName, '--template', 'unknown'])
+  const { stdout } = run([
+    projectName,
+    '--interactive',
+    '--template',
+    'unknown',
+  ])
   expect(stdout).toContain(
     `"unknown" isn't a valid template. Please choose from below:`,
   )
@@ -84,13 +89,15 @@ test('prompts for the framework on supplying an invalid template', () => {
 
 test('asks to overwrite non-empty target directory', () => {
   createNonEmptyDir()
-  const { stdout } = run([projectName], { cwd: __dirname })
+  const { stdout } = run([projectName, '--interactive'], { cwd: __dirname })
   expect(stdout).toContain(`Target directory "${projectName}" is not empty.`)
 })
 
 test('asks to overwrite non-empty target directory with subfolder', () => {
   createNonEmptyDir(genPathWithSubfolder)
-  const { stdout } = run([`subfolder/${projectName}`], { cwd: __dirname })
+  const { stdout } = run([`subfolder/${projectName}`, '--interactive'], {
+    cwd: __dirname,
+  })
   expect(stdout).toContain(
     `Target directory "subfolder/${projectName}" is not empty.`,
   )
@@ -98,12 +105,12 @@ test('asks to overwrite non-empty target directory with subfolder', () => {
 
 test('asks to overwrite non-empty current directory', () => {
   createNonEmptyDir()
-  const { stdout } = run(['.'], { cwd: genPath })
+  const { stdout } = run(['.', '--interactive'], { cwd: genPath })
   expect(stdout).toContain(`Current directory is not empty.`)
 })
 
 test('successfully scaffolds a project based on vue starter template', () => {
-  const { stdout } = run([projectName, '--template', 'vue'], {
+  const { stdout } = run([projectName, '--interactive', '--template', 'vue'], {
     cwd: __dirname,
   })
   const generatedFiles = fs.readdirSync(genPath).sort()
@@ -114,9 +121,12 @@ test('successfully scaffolds a project based on vue starter template', () => {
 })
 
 test('successfully scaffolds a project with subfolder based on react starter template', () => {
-  const { stdout } = run([`subfolder/${projectName}`, '--template', 'react'], {
-    cwd: __dirname,
-  })
+  const { stdout } = run(
+    [`subfolder/${projectName}`, '--interactive', '--template', 'react'],
+    {
+      cwd: __dirname,
+    },
+  )
   const generatedFiles = fs.readdirSync(genPathWithSubfolder).sort()
 
   // Assertions
@@ -125,7 +135,7 @@ test('successfully scaffolds a project with subfolder based on react starter tem
 })
 
 test('works with the -t alias', () => {
-  const { stdout } = run([projectName, '-t', 'vue'], {
+  const { stdout } = run([projectName, '--interactive', '-t', 'vue'], {
     cwd: __dirname,
   })
   const generatedFiles = fs.readdirSync(genPath).sort()
@@ -137,8 +147,17 @@ test('works with the -t alias', () => {
 
 test('accepts command line override for --overwrite', () => {
   createNonEmptyDir()
-  const { stdout } = run(['.', '--overwrite', 'ignore'], { cwd: genPath })
+  const { stdout } = run(['.', '--interactive', '--overwrite', 'ignore'], {
+    cwd: genPath,
+  })
   expect(stdout).not.toContain(`Current directory is not empty.`)
+})
+
+test('skip prompts when --no-interactive is passed', () => {
+  createNonEmptyDir()
+  const { stdout } = run([projectName, '--no-interactive'], { cwd: genPath })
+  expect(stdout).not.toContain('Project name:')
+  expect(stdout).toContain('Done. Now run:')
 })
 
 test('return help usage how to use create-vite', () => {
