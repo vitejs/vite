@@ -144,7 +144,7 @@ const FRAMEWORKS: Framework[] = [
         customCommand: 'npm create react-router@latest TARGET_DIR',
       },
       {
-        name: 'custom-tanstack-router',
+        name: 'custom-tanstack-router-react',
         display: 'TanStack Router ↗',
         color: cyan,
         customCommand:
@@ -245,7 +245,7 @@ const FRAMEWORKS: Framework[] = [
         color: yellow,
       },
       {
-        name: 'custom-tanstack-router',
+        name: 'custom-tanstack-router-solid',
         display: 'TanStack Router ↗',
         color: cyan,
         customCommand:

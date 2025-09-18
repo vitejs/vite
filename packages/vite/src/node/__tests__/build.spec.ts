@@ -865,6 +865,73 @@ test.for([true, false])(
   },
 )
 
+test('sharedConfigBuild and emitAssets', async () => {
+  const root = resolve(__dirname, 'fixtures/shared-config-build/emitAssets')
+  const builder = await createBuilder({
+    root,
+    logLevel: 'warn',
+    configFile: false,
+    environments: {
+      client: {
+        build: {
+          outDir: './dist/client',
+          emitAssets: true,
+          rollupOptions: {
+            input: '/entry.js',
+          },
+        },
+      },
+      ssr: {
+        build: {
+          outDir: './dist/ssr',
+          emitAssets: true,
+          rollupOptions: {
+            input: '/entry.js',
+          },
+        },
+      },
+      custom: {
+        build: {
+          outDir: './dist/custom',
+          emitAssets: true,
+          rollupOptions: {
+            input: '/entry.js',
+          },
+        },
+      },
+    },
+    builder: {
+      sharedConfigBuild: true,
+    },
+  })
+
+  expect(
+    ['client', 'ssr', 'custom'].map(
+      (name) => builder.environments[name].config.build.emitAssets,
+    ),
+  ).toEqual([true, true, true])
+
+  await builder.buildApp()
+
+  expect(
+    await Promise.all(
+      ['client', 'ssr', 'custom'].map((name) =>
+        fsp.readdir(
+          resolve(
+            root,
+            builder.environments[name].config.build.outDir,
+            'assets',
+          ),
+        ),
+      ),
+    ),
+  ).toEqual([
+    expect.arrayContaining([expect.stringMatching(/\.css$/)]),
+    expect.arrayContaining([expect.stringMatching(/\.css$/)]),
+    expect.arrayContaining([expect.stringMatching(/\.css$/)]),
+  ])
+})
+
 test('adjust worker build error for worker.format', async () => {
   try {
     await build({

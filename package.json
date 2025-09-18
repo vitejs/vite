@@ -50,17 +50,17 @@
     "@types/estree": "^1.0.8",
     "@types/etag": "^1.8.4",
     "@types/less": "^3.0.8",
-    "@types/node": "^22.18.1",
+    "@types/node": "^22.18.3",
     "@types/picomatch": "^4.0.2",
     "@types/stylus": "^0.48.43",
     "@types/ws": "^8.18.1",
     "@vitejs/release-scripts": "^1.6.0",
     "eslint": "^9.35.0",
     "eslint-plugin-import-x": "^4.16.1",
-    "eslint-plugin-n": "^17.21.3",
+    "eslint-plugin-n": "^17.22.0",
     "eslint-plugin-regexp": "^2.10.0",
     "execa": "^9.6.0",
-    "globals": "^16.3.0",
+    "globals": "^16.4.0",
     "lint-staged": "^16.1.6",
     "picocolors": "^1.1.1",
     "playwright-chromium": "^1.55.0",
@@ -69,7 +69,7 @@
     "simple-git-hooks": "^2.13.1",
     "tsx": "^4.20.5",
     "typescript": "~5.9.2",
-    "typescript-eslint": "^8.42.0",
+    "typescript-eslint": "^8.43.0",
     "vite": "workspace:*",
     "vitest": "^3.2.4"
   },
@@ -90,7 +90,7 @@
       "eslint --cache --fix"
     ]
   },
-  "packageManager": "pnpm@10.15.1",
+  "packageManager": "pnpm@10.16.1",
   "stackblitz": {
     "startCommand": "pnpm --filter='./packages/vite' run dev"
   }
