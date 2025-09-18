@@ -30,6 +30,9 @@ jobs:
           registry-url: https://registry.npmjs.org/
           # disable cache, to avoid cache poisoning (https://docs.zizmor.sh/audits/#cache-poisoning)
 
+      - name: Disallow installation scripts
+        run: yq '.onlyBuiltDependencies = []' -i pnpm-workspace.yaml
+
       - name: Install deps
         run: pnpm install
         env:
