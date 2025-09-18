@@ -242,6 +242,7 @@ export class FullBundleDevEnvironment extends DevEnvironment {
         output.chunkFileNames = 'assets/[name]-[hash].js'
         output.assetFileNames = 'assets/[name]-[hash][extname]'
         output.minify = false
+        output.sourcemap = true
       }
     } else {
       rolldownOptions.output ??= {}
@@ -249,6 +250,7 @@ export class FullBundleDevEnvironment extends DevEnvironment {
       rolldownOptions.output.chunkFileNames = 'assets/[name]-[hash].js'
       rolldownOptions.output.assetFileNames = 'assets/[name]-[hash][extname]'
       rolldownOptions.output.minify = false
+      rolldownOptions.output.sourcemap = true
     }
 
     return rolldownOptions
