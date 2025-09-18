@@ -245,6 +245,23 @@ export default tseslint.config(
       ],
     },
   },
+  {
+    name: 'configs',
+    files: [
+      'packages/create-vite/tsdown.config.ts',
+      'packages/plugin-legacy/tsdown.config.ts',
+    ],
+    rules: {
+      'n/no-unsupported-features/node-builtins': [
+        'error',
+        {
+          // ideally we would like to allow all experimental features
+          // https://github.com/eslint-community/eslint-plugin-n/issues/199
+          ignores: ['fetch', 'import.meta.dirname'],
+        },
+      ],
+    },
+  },
 
   {
     name: 'disables/vite/client',

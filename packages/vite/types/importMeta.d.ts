@@ -11,8 +11,7 @@ interface ViteTypeOptions {
 type ImportMetaEnvFallbackKey =
   'strictImportMetaEnv' extends keyof ViteTypeOptions ? never : string
 
-interface ImportMetaEnv {
-  [key: ImportMetaEnvFallbackKey]: any
+interface ImportMetaEnv extends Record<ImportMetaEnvFallbackKey, any> {
   BASE_URL: string
   MODE: string
   DEV: boolean
