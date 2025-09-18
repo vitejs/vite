@@ -28,7 +28,7 @@ jobs:
         with:
           node-version: 22
           registry-url: https://registry.npmjs.org/
-          cache: "pnpm"
+          # disable cache, to avoid cache poisoning (https://docs.zizmor.sh/audits/#cache-poisoning)
 
       - name: Install deps
         run: pnpm install
