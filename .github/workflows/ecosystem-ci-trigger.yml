@@ -200,19 +200,6 @@ jobs:
           ref: refs/pull/${{ fromJSON(steps.get-pr-data.outputs.result).num }}/head
           fetch-depth: 0
 
-      # This step can be removed on May 26 2025
-      - name: Check Commit Hash Ambiguity
-        id: check_ambiguity
-        run: |
-          HEAD_SHA=${{ steps.get-pr-data.outputs.head_sha }}
-          COMMIT_SHORT=${HEAD_SHA:0:7}
-
-          if git show "$COMMIT_SHORT"; then
-            echo "COLLISION=false" >> $GITHUB_ENV
-          else
-            echo "COLLISION=true" >> $GITHUB_ENV
-          fi
-
       - name: Trigger Downstream Workflow
         uses: actions/github-script@v8
         id: trigger
