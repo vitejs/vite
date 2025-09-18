@@ -31,10 +31,7 @@ jobs:
           cache: "pnpm"
 
       - name: Disallow installation scripts
-        run: |
-          FOUND="$(mktemp)"
-          sed -i "s#scripts/onlyBuiltDependencies.dev.json#scripts/onlyBuiltDependencies.release.json#w $FOUND" pnpm-workspace.yaml
-          if [ ! -s "$FOUND" ]; then exit 1; fi
+        run: yq '.onlyBuiltDependencies = []' -i pnpm-workspace.yaml
 
       - name: Install deps
         run: pnpm install
