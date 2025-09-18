@@ -44,11 +44,6 @@ export default defineConfig((env) => ({
       },
       build: {
         outDir: 'dist/server',
-        // [feedback]
-        // is this still meant to be used?
-        // for example, `ssr: true` seems to make `minify: false` automatically
-        // and also externalization.
-        ssr: true,
         rollupOptions: {
           input: {
             index: '/src/entry-server',
