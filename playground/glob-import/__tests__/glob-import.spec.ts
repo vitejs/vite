@@ -56,7 +56,7 @@ const allResult = {
       },
   '/dir/nested/bar.js': {
     modules: {
-      './../baz.json': json,
+      '../baz.json': json,
     },
     msg: 'bar',
   },

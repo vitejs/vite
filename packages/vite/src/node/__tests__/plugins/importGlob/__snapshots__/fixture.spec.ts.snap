@@ -81,14 +81,14 @@ export const parent = /* #__PURE__ */ Object.assign({
 
 
 });
-export const rootMixedRelative = /* #__PURE__ */ Object.assign({"/fixture-b/a.ts": () => import("./../fixture-b/a.ts?url").then(m => m["default"]),"/fixture-b/b.ts": () => import("./../fixture-b/b.ts?url").then(m => m["default"]),"/fixture-b/index.ts": () => import("./../fixture-b/index.ts?url").then(m => m["default"]),"/fixture.spec.ts": () => import("./../fixture.spec.ts?url").then(m => m["default"]),"/parse.spec.ts": () => import("./../parse.spec.ts?url").then(m => m["default"]),"/utils.spec.ts": () => import("./../utils.spec.ts?url").then(m => m["default"])
+export const rootMixedRelative = /* #__PURE__ */ Object.assign({"/fixture-b/a.ts": () => import("../fixture-b/a.ts?url").then(m => m["default"]),"/fixture-b/b.ts": () => import("../fixture-b/b.ts?url").then(m => m["default"]),"/fixture-b/index.ts": () => import("../fixture-b/index.ts?url").then(m => m["default"]),"/fixture.spec.ts": () => import("../fixture.spec.ts?url").then(m => m["default"]),"/parse.spec.ts": () => import("../parse.spec.ts?url").then(m => m["default"]),"/utils.spec.ts": () => import("../utils.spec.ts?url").then(m => m["default"])
 
 
 });
 export const cleverCwd1 = /* #__PURE__ */ Object.assign({"./node_modules/framework/pages/hello.page.js": () => import("./node_modules/framework/pages/hello.page.js")
 
 });
-export const cleverCwd2 = /* #__PURE__ */ Object.assign({"./modules/a.ts": () => import("./modules/a.ts"),"./modules/b.ts": () => import("./modules/b.ts"),"./../fixture-b/a.ts": () => import("./../fixture-b/a.ts"),"./../fixture-b/b.ts": () => import("./../fixture-b/b.ts")
+export const cleverCwd2 = /* #__PURE__ */ Object.assign({"./modules/a.ts": () => import("./modules/a.ts"),"./modules/b.ts": () => import("./modules/b.ts"),"../fixture-b/a.ts": () => import("../fixture-b/a.ts"),"../fixture-b/b.ts": () => import("../fixture-b/b.ts")
 
 
 
@@ -184,14 +184,14 @@ export const parent = /* #__PURE__ */ Object.assign({
 
 
 });
-export const rootMixedRelative = /* #__PURE__ */ Object.assign({"/fixture-b/a.ts": () => import("./../fixture-b/a.ts?url&lang.ts").then(m => m["default"]),"/fixture-b/b.ts": () => import("./../fixture-b/b.ts?url&lang.ts").then(m => m["default"]),"/fixture-b/index.ts": () => import("./../fixture-b/index.ts?url&lang.ts").then(m => m["default"]),"/fixture.spec.ts": () => import("./../fixture.spec.ts?url&lang.ts").then(m => m["default"]),"/parse.spec.ts": () => import("./../parse.spec.ts?url&lang.ts").then(m => m["default"]),"/utils.spec.ts": () => import("./../utils.spec.ts?url&lang.ts").then(m => m["default"])
+export const rootMixedRelative = /* #__PURE__ */ Object.assign({"/fixture-b/a.ts": () => import("../fixture-b/a.ts?url&lang.ts").then(m => m["default"]),"/fixture-b/b.ts": () => import("../fixture-b/b.ts?url&lang.ts").then(m => m["default"]),"/fixture-b/index.ts": () => import("../fixture-b/index.ts?url&lang.ts").then(m => m["default"]),"/fixture.spec.ts": () => import("../fixture.spec.ts?url&lang.ts").then(m => m["default"]),"/parse.spec.ts": () => import("../parse.spec.ts?url&lang.ts").then(m => m["default"]),"/utils.spec.ts": () => import("../utils.spec.ts?url&lang.ts").then(m => m["default"])
 
 
 });
 export const cleverCwd1 = /* #__PURE__ */ Object.assign({"./node_modules/framework/pages/hello.page.js": () => import("./node_modules/framework/pages/hello.page.js")
 
 });
-export const cleverCwd2 = /* #__PURE__ */ Object.assign({"./modules/a.ts": () => import("./modules/a.ts"),"./modules/b.ts": () => import("./modules/b.ts"),"./../fixture-b/a.ts": () => import("./../fixture-b/a.ts"),"./../fixture-b/b.ts": () => import("./../fixture-b/b.ts")
+export const cleverCwd2 = /* #__PURE__ */ Object.assign({"./modules/a.ts": () => import("./modules/a.ts"),"./modules/b.ts": () => import("./modules/b.ts"),"../fixture-b/a.ts": () => import("../fixture-b/a.ts"),"../fixture-b/b.ts": () => import("../fixture-b/b.ts")
 
 
 
