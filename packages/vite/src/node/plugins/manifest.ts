@@ -21,7 +21,7 @@ export interface ManifestChunk {
   assets?: string[]
   isEntry?: boolean
   name?: string
-  names?: string[]
+  // names field is deprecated (removed from types, but still emitted for backward compatibility)
   isDynamicEntry?: boolean
   imports?: string[]
   dynamicImports?: string[]
@@ -131,12 +131,14 @@ export function manifestPlugin(): Plugin {
         if (name) {
           manifestChunk.isEntry = true
           manifestChunk.name = name
+          // @ts-expect-error keep names field for backward compatibility
+          manifestChunk.names = asset.names
         }
         return manifestChunk
       }
 
       const entryCssReferenceIds = cssEntriesMap.get(this.environment)!
-      const entryCssAssetFileNames = new Map()
+      const entryCssAssetFileNames = new Map<string, string>()
       for (const [name, id] of entryCssReferenceIds) {
         try {
           const fileName = this.getFileName(id)
