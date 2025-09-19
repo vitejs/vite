@@ -458,7 +458,11 @@ export async function transformGlobImport(
               let filePath = options.base
                 ? `${relative(posix.join(root, options.base), file)}`
                 : importPath
-              if (options.base && filePath[0] !== '.') {
+              if (
+                options.base &&
+                !filePath.startsWith('./') &&
+                !filePath.startsWith('../')
+              ) {
                 filePath = `./${filePath}`
               }
               return { filePath, importPath }
@@ -476,7 +480,9 @@ export async function transformGlobImport(
                 posix.join(resolvedBasePath, options.base),
                 file,
               )
-              if (filePath[0] !== '.') filePath = `./${filePath}`
+              if (!filePath.startsWith('./') && !filePath.startsWith('../')) {
+                filePath = `./${filePath}`
+              }
               if (options.base[0] === '/') {
                 importPath = `/${relative(root, file)}`
               }
@@ -484,7 +490,7 @@ export async function transformGlobImport(
               filePath = importPath
             } else {
               filePath = relative(root, file)
-              if (filePath[0] !== '.') filePath = `/${filePath}`
+              filePath = `/${filePath}`
             }
 
             return { filePath, importPath }

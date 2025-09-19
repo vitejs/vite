@@ -122,3 +122,8 @@ export const customBaseParent = import.meta.glob('/fixture-b/**/*.ts', {
 })
 
 export const dotFolder = import.meta.glob('./.foo/*.ts', { eager: true })
+
+export const dotFolderWithBase = import.meta.glob('./.foo/*.ts', {
+  eager: true,
+  base: './',
+})
