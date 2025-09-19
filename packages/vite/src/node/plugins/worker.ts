@@ -45,16 +45,7 @@ class WorkerOutputCache {
    * worker bundle information for each input id
    * used to bundle the same worker file only once
    */
-  private bundles = new Map<
-    /* inputId */ string,
-    {
-      entryFilename: string
-      entryCode: string
-      entryUrlPlaceholder: string
-      referencedAssets: Set<string>
-      watchedFiles: string[]
-    }
-  >()
+  private bundles = new Map</* inputId */ string, WorkerBundle>()
   /** list of assets emitted for the worker bundles */
   private assets = new Map<string, WorkerBundleAsset>()
   private fileNameHash = new Map<
