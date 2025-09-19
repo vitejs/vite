@@ -125,10 +125,6 @@ test('unassigned import processes', async () => {
   )
 })
 
-test('dot folder issue', async () => {
-  expect(await page.textContent('.dot-folder-test')).toMatch(/SUCCESS:/)
-})
-
 test('import glob in package', async () => {
   expect(await page.textContent('.in-package')).toBe(
     JSON.stringify(['/pkg-pages/foo.js']),

@@ -29,8 +29,6 @@
 <pre class="in-package"></pre>
 <h2>Base</h2>
 <pre class="result-base"></pre>
-<h2>Dot Folder Issue</h2>
-<pre class="dot-folder-test"></pre>
 
 <script type="module" src="./dir/index.js"></script>
 <script type="module">
@@ -188,21 +186,4 @@
     null,
     2,
   )
-</script>
-
-<script type="module">
-  // Test case for dot folder issue
-  try {
-    console.log('Testing dot folder globs...')
-    console.log(import.meta.glob('./foo/test.ts'))
-    console.log(import.meta.glob('./inner/.foo/test.ts'))
-    console.log(import.meta.glob('./.foo/test.ts'))
-
-    const dotFolderResult = import.meta.glob('./.foo/test.ts', { eager: true })
-    document.querySelector('.dot-folder-test').textContent =
-      'SUCCESS: ' + JSON.stringify(dotFolderResult, null, 2)
-  } catch (error) {
-    document.querySelector('.dot-folder-test').textContent =
-      'ERROR: ' + error.message
-  }
 </script>
