@@ -56,7 +56,7 @@ const allResult = {
       },
   '/dir/nested/bar.js': {
     modules: {
-      '../baz.json': json,
+      './../baz.json': json,
     },
     msg: 'bar',
   },
@@ -123,6 +123,10 @@ test('unassigned import processes', async () => {
   expect(await page.textContent('.side-effect-result')).toBe(
     'Hello from side effect',
   )
+})
+
+test('dot folder issue', async () => {
+  expect(await page.textContent('.dot-folder-test')).toMatch(/SUCCESS:/)
 })
 
 test('import glob in package', async () => {

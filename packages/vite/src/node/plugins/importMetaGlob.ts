@@ -465,7 +465,7 @@ export async function transformGlobImport(
             }
 
             let importPath = relative(dir, file)
-            if (importPath[0] !== '.') importPath = `./${importPath}`
+            if (!importPath.startsWith('./')) importPath = `./${importPath}`
 
             let filePath: string
             if (options.base) {
