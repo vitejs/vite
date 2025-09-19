@@ -490,7 +490,9 @@ export async function transformGlobImport(
               filePath = importPath
             } else {
               filePath = relative(root, file)
-              filePath = `/${filePath}`
+              if (!filePath.startsWith('./') && !filePath.startsWith('../')) {
+                filePath = `/${filePath}`
+              }
             }
 
             return { filePath, importPath }
