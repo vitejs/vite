@@ -1560,7 +1560,7 @@ importers:
         version: '@vitejs/test-nested-external@file:playground/ssr-deps/nested-external'
       nested-external-cjs:
         specifier: file:../nested-external-cjs
-        version: file:playground/ssr-deps/nested-external-cjs
+        version: '@vitejs/test-nested-external-cjs@file:playground/ssr-deps/nested-external-cjs'
 
   playground/ssr-deps/object-assigned-exports: {}
 
@@ -3980,6 +3980,9 @@ packages:
   '@vitejs/test-nested-exclude@file:playground/ssr-deps/nested-exclude':
     resolution: {directory: playground/ssr-deps/nested-exclude, type: directory}
 
+  '@vitejs/test-nested-external-cjs@file:playground/ssr-deps/nested-external-cjs':
+    resolution: {directory: playground/ssr-deps/nested-external-cjs, type: directory}
+
   '@vitejs/test-nested-external@file:playground/ssr-deps/nested-external':
     resolution: {directory: playground/ssr-deps/nested-external, type: directory}
 
@@ -6024,9 +6027,6 @@ packages:
 
   neo-async@2.6.2:
     resolution: {integrity: sha512-Yd3UES5mWCSqR+qNT93S3UoYUkqAZ9lLg8a7g9rimsWmYGK8cVToA4/sF3RrshdyV3sAGMXVUmpMYOw+dLpOuw==}
-
-  nested-external-cjs@file:playground/ssr-deps/nested-external-cjs:
-    resolution: {directory: playground/ssr-deps/nested-external-cjs, type: directory}
 
   next-tick@1.1.0:
     resolution: {integrity: sha512-CXdUiJembsNjuToQvxayPZF9Vqht7hewsvy2sOWafLvi2awflj9mOC6bHIg50orX8IJvWKY9wYQ/zB2kogPslQ==}
@@ -9748,6 +9748,8 @@ snapshots:
     dependencies:
       '@vitejs/test-nested-include': file:playground/ssr-deps/nested-include
 
+  '@vitejs/test-nested-external-cjs@file:playground/ssr-deps/nested-external-cjs': {}
+
   '@vitejs/test-nested-external@file:playground/ssr-deps/nested-external': {}
 
   '@vitejs/test-nested-include@file:playground/optimize-deps/nested-include': {}
@@ -11967,8 +11969,6 @@ snapshots:
   negotiator@1.0.0: {}
 
   neo-async@2.6.2: {}
-
-  nested-external-cjs@file:playground/ssr-deps/nested-external-cjs: {}
 
   next-tick@1.1.0: {}
 
