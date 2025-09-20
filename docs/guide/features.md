@@ -113,15 +113,7 @@ Vite starter templates have `"skipLibCheck": "true"` by default to avoid typeche
 
 ### Client Types
 
-Vite's default types are for its Node.js API. To shim the environment of client-side code in a Vite application, add a `d.ts` declaration file:
-
-```typescript
-/// <reference types="vite/client" />
-```
-
-::: details Using `compilerOptions.types`
-
-Alternatively, you can add `vite/client` to `compilerOptions.types` inside `tsconfig.json`:
+Vite's default types are for its Node.js API. To shim the environment of client-side code in a Vite application, you can add `vite/client` to `compilerOptions.types` inside `tsconfig.json`:
 
 ```json [tsconfig.json]
 {
@@ -131,7 +123,15 @@ Alternatively, you can add `vite/client` to `compilerOptions.types` inside `tsco
 }
 ```
 
-Note that if [`compilerOptions.types`](https://www.typescriptlang.org/tsconfig#types) is specified, only these packages will be included in the global scope (instead of all visible ”@types” packages).
+Note that if [`compilerOptions.types`](https://www.typescriptlang.org/tsconfig#types) is specified, only these packages will be included in the global scope (instead of all visible ”@types” packages). This is recommended since TS 5.9.
+
+::: details Using triple-slash directive
+
+Alternatively, you can add a `d.ts` declaration file:
+
+```typescript [vite-env.d.ts]
+/// <reference types="vite/client" />
+```
 
 :::
 
@@ -153,7 +153,13 @@ For example, to make the default import of `*.svg` a React component:
     export default content
   }
   ```
-- The file containing the reference to `vite/client` (normally `vite-env.d.ts`):
+- If you are using `compilerOptions.types`, ensure the file is included in `tsconfig.json`:
+  ```json [tsconfig.json]
+  {
+    "include": ["src", "./vite-env-override.d.ts"]
+  }
+  ```
+- If you are using triple-slash directives, update the file containing the reference to `vite/client` (normally `vite-env.d.ts`):
   ```ts
   /// <reference types="./vite-env-override.d.ts" />
   /// <reference types="vite/client" />
