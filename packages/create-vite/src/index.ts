@@ -23,9 +23,10 @@ const argv = mri<{
   template?: string
   help?: boolean
   overwrite?: boolean
+  immediate?: boolean
 }>(process.argv.slice(2), {
-  alias: { h: 'help', t: 'template' },
-  boolean: ['help', 'overwrite'],
+  alias: { h: 'help', t: 'template', i: 'immediate' },
+  boolean: ['help', 'overwrite', 'immediate'],
   string: ['template'],
 })
 const cwd = process.cwd()
@@ -39,6 +40,7 @@ With no arguments, start the CLI in interactive mode.
 
 Options:
   -t, --template NAME        use a specific template
+  -i, --immediate            install dependencies and start dev
 
 Available templates:
 ${yellow    ('vanilla-ts     vanilla'  )}
@@ -340,12 +342,52 @@ const renameFiles: Record<string, string | undefined> = {
 
 const defaultTargetDir = 'vite-project'
 
+function run(...params: Parameters<typeof spawn.sync>) {
+  const { status, error } = spawn.sync(...params)
+  if (status != null && status > 0) {
+    process.exit(status)
+  }
+
+  if (error) {
+    console.error(`\n${params.slice(0, -1).join(' ')} error!`)
+    console.error(error)
+    process.exit(1)
+  }
+}
+
+function install(root: string, agent: string) {
+  if (process.env._VITE_TEST_CLI) {
+    prompts.log.step(
+      `Installing dependencies with ${agent}... (skipped in test)`,
+    )
+    return
+  }
+  prompts.log.step(`Installing dependencies with ${agent}...`)
+  run(agent, agent === 'yarn' ? [] : ['install'], {
+    stdio: 'inherit',
+    cwd: root,
+  })
+}
+
+function start(root: string, agent: string) {
+  if (process.env._VITE_TEST_CLI) {
+    prompts.log.step('Starting dev server... (skipped in test)')
+    return
+  }
+  prompts.log.step('Starting dev server...')
+  run(agent, agent === 'npm' ? ['run', 'dev'] : ['dev'], {
+    stdio: 'inherit',
+    cwd: root,
+  })
+}
+
 async function init() {
   const argTargetDir = argv._[0]
     ? formatTargetDir(String(argv._[0]))
     : undefined
   const argTemplate = argv.template
   const argOverwrite = argv.overwrite
+  const argImmediate = argv.immediate
 
   const help = argv.help
   if (help) {
@@ -470,6 +512,23 @@ async function init() {
     template = variant
   }
 
+  const pkgManager = pkgInfo ? pkgInfo.name : 'npm'
+
+  // 5. Ask about immediate install and package manager
+  let immediate = argImmediate
+  if (immediate === undefined) {
+    // In test mode, default to false to avoid prompts
+    if (process.env._VITE_TEST_CLI) {
+      immediate = false
+    } else {
+      const immediateResult = await prompts.confirm({
+        message: `Install with ${pkgManager} and start now?`,
+      })
+      if (prompts.isCancel(immediateResult)) return cancel()
+      immediate = immediateResult
+    }
+  }
+
   const root = path.join(cwd, targetDir)
   fs.mkdirSync(root, { recursive: true })
 
@@ -479,8 +538,6 @@ async function init() {
     isReactSwc = true
     template = template.replace('-swc', '')
   }
-
-  const pkgManager = pkgInfo ? pkgInfo.name : 'npm'
 
   const { customCommand } =
     FRAMEWORKS.flatMap((f) => f.variants).find((v) => v.name === template) ?? {}
@@ -533,25 +590,30 @@ async function init() {
     setupReactSwc(root, template.endsWith('-ts'))
   }
 
-  let doneMessage = ''
-  const cdProjectName = path.relative(cwd, root)
-  doneMessage += `Done. Now run:\n`
-  if (root !== cwd) {
-    doneMessage += `\n  cd ${
-      cdProjectName.includes(' ') ? `"${cdProjectName}"` : cdProjectName
-    }`
+  if (immediate) {
+    install(root, pkgManager)
+    start(root, pkgManager)
+  } else {
+    let doneMessage = ''
+    const cdProjectName = path.relative(cwd, root)
+    doneMessage += `Done. Now run:\n`
+    if (root !== cwd) {
+      doneMessage += `\n  cd ${
+        cdProjectName.includes(' ') ? `"${cdProjectName}"` : cdProjectName
+      }`
+    }
+    switch (pkgManager) {
+      case 'yarn':
+        doneMessage += '\n  yarn'
+        doneMessage += '\n  yarn dev'
+        break
+      default:
+        doneMessage += `\n  ${pkgManager} install`
+        doneMessage += `\n  ${pkgManager} run dev`
+        break
+    }
+    prompts.outro(doneMessage)
   }
-  switch (pkgManager) {
-    case 'yarn':
-      doneMessage += '\n  yarn'
-      doneMessage += '\n  yarn dev'
-      break
-    default:
-      doneMessage += `\n  ${pkgManager} install`
-      doneMessage += `\n  ${pkgManager} run dev`
-      break
-  }
-  prompts.outro(doneMessage)
 }
 
 function formatTargetDir(targetDir: string) {
