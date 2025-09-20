@@ -658,6 +658,10 @@ function getFullCustomCommand(customCommand: string, pkgInfo?: PkgInfo) {
         if (pkgManager === 'bun') {
           return 'bun x create-'
         }
+        // Deno uses `init --npm` instead of `create`
+        if (pkgManager === 'deno') {
+          return 'deno init --npm '
+        }
         // pnpm doesn't support the -- syntax
         if (pkgManager === 'pnpm') {
           return 'pnpm create '
