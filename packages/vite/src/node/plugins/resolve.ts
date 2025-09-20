@@ -233,7 +233,7 @@ export function resolvePlugin(
           // always return here even if res doesn't exist since /@fs/ is explicit
           // if the file doesn't exist it should be a 404.
           debug?.(`[@fs] ${colors.cyan(id)} -> ${colors.dim(res)}`)
-          return ensureVersionQuery(res, id, options, depsOptimizer)
+          return await ensureVersionQuery(res, id, options, depsOptimizer)
         }
 
         // URL
@@ -246,7 +246,7 @@ export function resolvePlugin(
           const fsPath = path.resolve(root, id.slice(1))
           if ((res = tryFsResolve(fsPath, options))) {
             debug?.(`[url] ${colors.cyan(id)} -> ${colors.dim(res)}`)
-            return ensureVersionQuery(res, id, options, depsOptimizer)
+            return await ensureVersionQuery(res, id, options, depsOptimizer)
           }
         }
 
@@ -268,6 +268,7 @@ export function resolvePlugin(
             // Optimized files could not yet exist in disk, resolve to the full path
             // Inject the current browserHash version if the path doesn't have one
             if (!options.isBuild && !DEP_VERSION_RE.test(normalizedFsPath)) {
+              await depsOptimizer.scanProcessing
               const browserHash = optimizedDepInfoFromFile(
                 depsOptimizer.metadata,
                 normalizedFsPath,
@@ -287,7 +288,7 @@ export function resolvePlugin(
           }
 
           if ((res = tryFsResolve(fsPath, options))) {
-            res = ensureVersionQuery(res, id, options, depsOptimizer)
+            res = await ensureVersionQuery(res, id, options, depsOptimizer)
             debug?.(`[relative] ${colors.cyan(id)} -> ${colors.dim(res)}`)
 
             if (!options.idOnly && !options.scan && options.isBuild) {
@@ -318,7 +319,7 @@ export function resolvePlugin(
           const fsPath = path.resolve(basedir, id)
           if ((res = tryFsResolve(fsPath, options))) {
             debug?.(`[drive-relative] ${colors.cyan(id)} -> ${colors.dim(res)}`)
-            return ensureVersionQuery(res, id, options, depsOptimizer)
+            return await ensureVersionQuery(res, id, options, depsOptimizer)
           }
         }
 
@@ -328,7 +329,7 @@ export function resolvePlugin(
           (res = tryFsResolve(id, options))
         ) {
           debug?.(`[fs] ${colors.cyan(id)} -> ${colors.dim(res)}`)
-          return ensureVersionQuery(res, id, options, depsOptimizer)
+          return await ensureVersionQuery(res, id, options, depsOptimizer)
         }
 
         // external
@@ -528,12 +529,12 @@ function resolveSubpathImports(
   return importsPath + postfix
 }
 
-function ensureVersionQuery(
+async function ensureVersionQuery(
   resolved: string,
   id: string,
   options: InternalResolveOptions,
   depsOptimizer?: DepsOptimizer,
-): string {
+): Promise<string> {
   if (
     !options.isBuild &&
     !options.scan &&
@@ -547,6 +548,7 @@ function ensureVersionQuery(
     const isNodeModule = isInNodeModules(id) || isInNodeModules(resolved)
 
     if (isNodeModule && !DEP_VERSION_RE.test(resolved)) {
+      await depsOptimizer.scanProcessing
       const versionHash = depsOptimizer.metadata.browserHash
       if (versionHash && isOptimizable(resolved, depsOptimizer.options)) {
         resolved = injectQuery(resolved, `v=${versionHash}`)
