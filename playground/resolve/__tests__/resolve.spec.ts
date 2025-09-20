@@ -163,6 +163,10 @@ test('plugin resolved custom virtual file', async () => {
   expect(await page.textContent('.custom-virtual')).toMatch('[success]')
 })
 
+test('virtual file with URL scheme should not be rewritten (#20803)', async () => {
+  expect(await page.textContent('.virtual-url-scheme')).toMatch('[success]')
+})
+
 test('resolve inline package', async () => {
   expect(await page.textContent('.inline-pkg')).toMatch('[success]')
 })
