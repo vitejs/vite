@@ -835,7 +835,7 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
           isSelfAccepting,
           staticImportedUrls,
         )
-        if (hasHMR && prunedImports) {
+        if (prunedImports) {
           handlePrunedModules(prunedImports, environment)
         }
       }
