@@ -958,9 +958,6 @@ X2JN
       'localhost',
       'foo.localhost',
       'vite.vite.localhost',
-      'localhost',
-      'foo.localhost',
-      'vite.vite.localhost',
     ])
   })
 })
