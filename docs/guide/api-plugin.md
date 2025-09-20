@@ -548,6 +548,68 @@ normalizePath('foo/bar') // 'foo/bar'
 
 Vite exposes [`@rollup/pluginutils`'s `createFilter`](https://github.com/rollup/plugins/tree/master/packages/pluginutils#createfilter) function to encourage Vite specific plugins and integrations to use the standard include/exclude filtering pattern, which is also used in Vite core itself.
 
+### Hook Filters
+
+Rolldown introduced a [hook filter feature](https://rolldown.rs/plugins/hook-filters) to reduce the communication overhead between the Rust and JavaScript runtimes. This feature allows plugins to specify patterns that determine when hooks should be called, improving performance by avoiding unnecessary hook invocations.
+
+This is also supported by Rollup 4.38.0+ and Vite 6.3.0+. To make your plugin backward compatible with the older versions, make sure to also run the filter inside the hook handlers.
+
+#### Using Hook Filters
+
+```js
+export default function myPlugin() {
+  return {
+    name: 'my-plugin',
+
+    // Hook filter example - only call transform for .js files
+    transform: {
+      filter: {
+        id: /\.js$/,
+      },
+      handler(code, id) {
+        // Transform logic here
+        return {
+          code: transformMyCode(code),
+          map: null,
+        }
+      },
+    },
+  }
+}
+```
+
+#### Backward Compatibility
+
+To ensure your plugin works with older versions of Vite/Rollup that don't support hook filters, implement the filter logic inside the hook handler as well:
+
+```js
+export default function myPlugin() {
+  const jsFileRegex = /\.js$/
+
+  return {
+    name: 'my-plugin',
+
+    // With hook filter for performance
+    transform: {
+      filter: {
+        id: jsFileRegex,
+      },
+      handler(code, id) {
+        // Additional check for backward compatibility
+        if (!jsFileRegex.test(id)) return null
+
+        return {
+          code: transformMyCode(code),
+          map: null,
+        }
+      },
+    },
+  }
+}
+```
+
+For detailed information on how to use hook filters in your plugins, including code examples and backward compatibility guidance, see the [Hook Filters section](/guide/api-plugin#hook-filters) in the plugin guide.
+
 ## Client-server Communication
 
 Since Vite 2.9, we provide some utilities for plugins to help handle the communication with clients.
