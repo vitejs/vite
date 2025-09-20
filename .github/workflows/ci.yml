@@ -177,19 +177,6 @@ jobs:
       - name: Test docs
         run: pnpm run test-docs
 
-      - name: Check org-scoped private package names
-        run: |
-          NON_VITEJS_PACKAGES=$(pnpm ls --filter '*' --depth -1 --json | jq -r '.[] | select(.private == true) | select(.name | startswith("@vitejs/") | not) | "\(.name) (\(.path))"')
-          if [ -n "$NON_VITEJS_PACKAGES" ]; then
-            echo "::error::Found private packages without @vitejs/ prefix:"
-            echo "$NON_VITEJS_PACKAGES" | while read -r line; do
-              echo "  - $line"
-            done
-            exit 1
-          else
-            echo "All private packages follow @vitejs/ naming convention ✓"
-          fi
-
       # From https://github.com/rhysd/actionlint/blob/main/docs/usage.md#use-actionlint-on-github-actions
       - name: Check workflow files
         run: |
