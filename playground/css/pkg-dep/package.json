@@ -1,5 +1,5 @@
 {
-  "name": "dep",
+  "name": "@vitejs/test-pkg-dep",
   "private": true,
   "version": "1.0.0",
   "main": "index.js"
