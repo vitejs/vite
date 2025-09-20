@@ -1017,7 +1017,7 @@ export function extractHostnamesFromCerts(
         : [],
     )
 
-  return hostnames
+  return unique(hostnames)
 }
 
 export function resolveServerUrls(
