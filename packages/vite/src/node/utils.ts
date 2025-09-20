@@ -993,10 +993,6 @@ export async function resolveHostname(
   return { host, name }
 }
 
-export function bufferify(buffer: string | Buffer): Buffer {
-  return Buffer.isBuffer(buffer) ? buffer : Buffer.from(buffer)
-}
-
 export function extractHostnamesFromCerts(
   certs: HttpsServerOptions['cert'] | undefined,
 ): string[] {
