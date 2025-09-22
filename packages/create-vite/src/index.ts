@@ -593,6 +593,14 @@ async function init() {
     const targetPath = path.join(root, renameFiles[file] ?? file)
     if (content) {
       fs.writeFileSync(targetPath, content)
+    } else if (file === 'index.html') {
+      const templatePath = path.join(templateDir, file)
+      const templateContent = fs.readFileSync(templatePath, 'utf-8')
+      const updatedContent = templateContent.replace(
+        /<title>.*?<\/title>/,
+        `<title>${packageName}</title>`,
+      )
+      fs.writeFileSync(targetPath, updatedContent)
     } else {
       copy(path.join(templateDir, file), targetPath)
     }
