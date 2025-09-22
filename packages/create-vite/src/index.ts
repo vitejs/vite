@@ -578,7 +578,7 @@ async function init() {
 
   if (useRolldownVite) {
     // renovate: datasource=npm depName=rolldown-vite
-    const rolldownViteVersion = '7.1.1'
+    const rolldownViteVersion = '7.1.12'
     const pkgVersion = `npm:rolldown-vite@${rolldownViteVersion}`
     pkg.devDependencies.vite = pkgVersion
     switch (pkgManager) {
