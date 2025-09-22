@@ -1,6 +1,6 @@
 import fs from 'node:fs'
 import path from 'node:path'
-import type { SyncOptions, SyncResult } from 'execa'
+import type { SyncOptions } from 'execa'
 import { execaCommandSync } from 'execa'
 import { afterEach, beforeAll, expect, test } from 'vitest'
 
@@ -10,11 +10,11 @@ const projectName = 'test-app'
 const genPath = path.join(__dirname, projectName)
 const genPathWithSubfolder = path.join(__dirname, 'subfolder', projectName)
 
-const run = <SO extends SyncOptions>(
-  args: string[],
-  options?: SO,
-): SyncResult<SO> => {
-  return execaCommandSync(`node ${CLI_PATH} ${args.join(' ')}`, options)
+const run = (args: string[], options?: SyncOptions) => {
+  return execaCommandSync(`node ${CLI_PATH} ${args.join(' ')}`, {
+    env: { ...process.env, _VITE_TEST_CLI: 'true' },
+    ...options,
+  })
 }
 
 // Helper to create a non-empty directory
@@ -111,7 +111,14 @@ test('asks to overwrite non-empty current directory', () => {
 
 test('successfully scaffolds a project based on vue starter template', () => {
   const { stdout } = run(
-    [projectName, '--interactive', '--template', 'vue', '--no-rolldown'],
+    [
+      projectName,
+      '--interactive',
+      '--no-immediate',
+      '--template',
+      'vue',
+      '--no-rolldown',
+    ],
     {
       cwd: __dirname,
     },
@@ -128,6 +135,7 @@ test('successfully scaffolds a project with subfolder based on react starter tem
     [
       `subfolder/${projectName}`,
       '--interactive',
+      '--no-immediate',
       '--template',
       'react',
       '--no-rolldown',
@@ -164,7 +172,14 @@ test('successfully scaffolds a project with subfolder based on react starter tem
 
 test('works with the -t alias', () => {
   const { stdout } = run(
-    [projectName, '--interactive', '-t', 'vue', '--no-rolldown'],
+    [
+      projectName,
+      '--interactive',
+      '--no-immediate',
+      '-t',
+      'vue',
+      '--no-rolldown',
+    ],
     {
       cwd: __dirname,
     },
@@ -213,4 +228,22 @@ test('sets index.html title to project name', () => {
 
   expect(stdout).toContain(`Scaffolding project in ${genPath}`)
   expect(indexHtmlContent).toContain(`<title>${projectName}</title>`)
+})
+
+test('accepts immediate flag', () => {
+  const { stdout } = run([projectName, '--template', 'vue', '--immediate'], {
+    cwd: __dirname,
+  })
+  expect(stdout).not.toContain('Install and start now?')
+  expect(stdout).toContain(`Scaffolding project in ${genPath}`)
+  expect(stdout).toContain('Installing dependencies')
+})
+
+test('accepts immediate flag and skips install prompt', () => {
+  const { stdout } = run([projectName, '--template', 'vue', '--no-immediate'], {
+    cwd: __dirname,
+  })
+  expect(stdout).not.toContain('Install and start now?')
+  expect(stdout).not.toContain('Installing dependencies')
+  expect(stdout).toContain(`Scaffolding project in ${genPath}`)
 })
