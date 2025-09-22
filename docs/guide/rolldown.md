@@ -85,6 +85,8 @@ If you use a Vitepress or a meta framework that has Vite as peer dependency, you
 
 After adding these overrides, reinstall your dependencies and start your development server or build your project as usual. No further configuration changes are required.
 
+If you are starting a new project, you can use `create-vite` as normal for rolldown-vite, too. The latest version will ask you whether to use `rolldown-vite` or not.
+
 ## Known Limitations
 
 While Rolldown aims to be a drop-in replacement for Rollup, there are features that are still being implemented and minor intentional behavior differences. For a comprehensive list, please refer to [this GitHub PR](https://github.com/vitejs/rolldown-vite/pull/84#issue-2903144667) which is regularly updated.
