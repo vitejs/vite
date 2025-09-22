@@ -611,7 +611,7 @@ function esbuildScanPlugin(
                 addedImport = true
                 js += `import ${virtualModulePath}\n`
               } else if (raw.includes('#snippet')) {
-                // <script module> in files with #snippet contains exports that is not declared
+                // <script module> in files with #snippet contains exports that are not declared
                 // skip scanning the script content
                 addedImport = true
                 js += `export * from 'svelte-snippet-dummy:${normalizePath(p)}'\n`
