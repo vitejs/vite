@@ -658,6 +658,10 @@ function getFullCustomCommand(customCommand: string, pkgInfo?: PkgInfo) {
         if (pkgManager === 'bun') {
           return 'bun x create-'
         }
+        // Deno uses `run -A npm:create-` instead of `create` or `init` to also provide needed perms
+        if (pkgManager === 'deno') {
+          return 'deno run -A npm:create-'
+        }
         // pnpm doesn't support the -- syntax
         if (pkgManager === 'pnpm') {
           return 'pnpm create '
@@ -669,20 +673,23 @@ function getFullCustomCommand(customCommand: string, pkgInfo?: PkgInfo) {
       })
       // Only Yarn 1.x doesn't support `@version` in the `create` command
       .replace('@latest', () => (isYarn1 ? '' : '@latest'))
-      .replace(/^npm exec/, () => {
+      .replace(/^npm exec /, () => {
         // Prefer `pnpm dlx`, `yarn dlx`, or `bun x`
         if (pkgManager === 'pnpm') {
-          return 'pnpm dlx'
+          return 'pnpm dlx '
         }
         if (pkgManager === 'yarn' && !isYarn1) {
-          return 'yarn dlx'
+          return 'yarn dlx '
         }
         if (pkgManager === 'bun') {
-          return 'bun x'
+          return 'bun x '
+        }
+        if (pkgManager === 'deno') {
+          return 'deno run -A npm:'
         }
         // Use `npm exec` in all other cases,
         // including Yarn 1.x and other custom npm clients.
-        return 'npm exec'
+        return 'npm exec '
       })
   )
 }
