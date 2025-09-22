@@ -305,7 +305,6 @@ export function oxcPlugin(config: ResolvedConfig): Plugin {
         jsxRefreshInclude,
         jsxRefreshExclude,
         isServerConsumer: environment.config.consumer === 'server',
-        runtimeResolveBase: '', // not used
         jsxInject,
         transformOptions,
       })
