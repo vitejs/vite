@@ -111,7 +111,14 @@ test('asks to overwrite non-empty current directory', () => {
 
 test('successfully scaffolds a project based on vue starter template', () => {
   const { stdout } = run(
-    [projectName, '--interactive', '--no-immediate', '--template', 'vue'],
+    [
+      projectName,
+      '--interactive',
+      '--no-immediate',
+      '--template',
+      'vue',
+      '--no-rolldown',
+    ],
     {
       cwd: __dirname,
     },
@@ -131,6 +138,7 @@ test('successfully scaffolds a project with subfolder based on react starter tem
       '--no-immediate',
       '--template',
       'react',
+      '--no-rolldown',
     ],
     {
       cwd: __dirname,
@@ -143,9 +151,35 @@ test('successfully scaffolds a project with subfolder based on react starter tem
   expect(templateFilesReact).toEqual(generatedFiles)
 })
 
+test('successfully scaffolds a project with subfolder based on react starter template with rolldown flag', () => {
+  const { stdout } = run(
+    [`subfolder/${projectName}`, '--template', 'react', '--rolldown'],
+    {
+      cwd: __dirname,
+    },
+  )
+  const generatedFiles = fs.readdirSync(genPathWithSubfolder).sort()
+
+  // Assertions
+  expect(stdout).toContain(`Scaffolding project in ${genPathWithSubfolder}`)
+  expect(templateFilesReact).toEqual(generatedFiles)
+  const generatedPackageJson = fs.readFileSync(
+    path.join(genPathWithSubfolder, 'package.json'),
+    'utf-8',
+  )
+  expect(generatedPackageJson).toContain('rolldown-vite')
+})
+
 test('works with the -t alias', () => {
   const { stdout } = run(
-    [projectName, '--interactive', '--no-immediate', '-t', 'vue'],
+    [
+      projectName,
+      '--interactive',
+      '--no-immediate',
+      '-t',
+      'vue',
+      '--no-rolldown',
+    ],
     {
       cwd: __dirname,
     },
