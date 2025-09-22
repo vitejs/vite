@@ -844,13 +844,13 @@ function updateReactCompilerReadme(root: string, newBody: string) {
   editFile(path.resolve(root, `README.md`), (content) => {
     const h2Start = content.indexOf('## React Compiler')
     const bodyStart = content.indexOf('\n\n', h2Start)
-    const comilerSectionEnd = content.indexOf('\n## ', bodyStart)
-    if (h2Start === -1 || bodyStart === -1 || comilerSectionEnd === -1) {
+    const compilerSectionEnd = content.indexOf('\n## ', bodyStart)
+    if (h2Start === -1 || bodyStart === -1 || compilerSectionEnd === -1) {
       console.warn('Could not update compiler section in README.md')
       return content
     }
     return content.replace(
-      content.slice(bodyStart + 2, comilerSectionEnd - 1),
+      content.slice(bodyStart + 2, compilerSectionEnd - 1),
       newBody,
     )
   })
