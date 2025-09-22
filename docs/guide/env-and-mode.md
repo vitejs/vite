@@ -19,7 +19,7 @@ Some built-in constants are available in all cases:
 :::details Example
 ```js
 if (import.meta.env.DEV) {
-  // code inside here will be treeshaken
+  // code inside here will be tree-shaken in production builds
   console.log('Dev mode') 
 }
 ```
