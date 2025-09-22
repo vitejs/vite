@@ -1,3 +1,38 @@
+## <small>[7.1.2](https://github.com/vitejs/vite/compare/create-vite@7.1.1...create-vite@7.1.2) (2025-09-18)</small>
+### Bug Fixes
+
+* **create-vite:** unique name for tanstack router options ([#20783](https://github.com/vitejs/vite/issues/20783)) ([91e68a3](https://github.com/vitejs/vite/commit/91e68a3015bdf30667ba9365f8fc51d3571f10d0))
+* **deps:** update all non-major dependencies ([#20634](https://github.com/vitejs/vite/issues/20634)) ([4851cab](https://github.com/vitejs/vite/commit/4851cab3ba818b5f0f82eef3796b61d4b12768f1))
+* **deps:** update all non-major dependencies ([#20676](https://github.com/vitejs/vite/issues/20676)) ([5a274b2](https://github.com/vitejs/vite/commit/5a274b29df83744cf0ce4dafd94029d2a9e01135))
+* **deps:** update all non-major dependencies ([#20709](https://github.com/vitejs/vite/issues/20709)) ([0401feb](https://github.com/vitejs/vite/commit/0401feba17e60bd7e976c5643128a0da49670a83))
+* **deps:** update all non-major dependencies ([#20732](https://github.com/vitejs/vite/issues/20732)) ([122bfba](https://github.com/vitejs/vite/commit/122bfbabeb1f095ce7cabd30893e5531e9a007c4))
+* **deps:** update all non-major dependencies ([#20773](https://github.com/vitejs/vite/issues/20773)) ([88af2ae](https://github.com/vitejs/vite/commit/88af2ae7df77160e7d11a9fa147a4967c8499f13))
+
+### Miscellaneous Chores
+
+* **deps:** update rolldown-related dependencies ([#20633](https://github.com/vitejs/vite/issues/20633)) ([98b92e8](https://github.com/vitejs/vite/commit/98b92e8c4b10ae87c48292a8ac09b01ca81a02cf))
+* **deps:** update rolldown-related dependencies ([#20675](https://github.com/vitejs/vite/issues/20675)) ([a67bb5f](https://github.com/vitejs/vite/commit/a67bb5fbec5f3e42151dc7e3166858d0d33533de))
+* **deps:** update rolldown-related dependencies ([#20772](https://github.com/vitejs/vite/issues/20772)) ([d785e72](https://github.com/vitejs/vite/commit/d785e72f2ead705e8b2416c0a5097878fced3435))
+
+### Code Refactoring
+
+* **create-vite:** migrate `tseslint.config` to ESLint core's `defineConfig` ([#20734](https://github.com/vitejs/vite/issues/20734)) ([feeb8bc](https://github.com/vitejs/vite/commit/feeb8bccfb6981c21f3f8a09b26e36373a51dae0))
+
+## <small>[7.1.1](https://github.com/vitejs/vite/compare/create-vite@7.1.0...create-vite@7.1.1) (2025-08-12)</small>
+### Bug Fixes
+
+* **deps:** update all non-major dependencies ([#20587](https://github.com/vitejs/vite/issues/20587)) ([20d4817](https://github.com/vitejs/vite/commit/20d48172a0352d32f766b3c878d52a8944fdbf6e))
+
+### Miscellaneous Chores
+
+* **deps:** update dependency @vitejs/plugin-react to v5 ([#20588](https://github.com/vitejs/vite/issues/20588)) ([a627a0b](https://github.com/vitejs/vite/commit/a627a0ba91fc5a9174ca7356dcab0e86b9703e0f))
+* **deps:** update dependency @vitejs/plugin-react-swc to v4 ([#20589](https://github.com/vitejs/vite/issues/20589)) ([1c372dd](https://github.com/vitejs/vite/commit/1c372dde7ff4d228f0eb620733ef1c5b66ef49f0))
+* **deps:** update rolldown-related dependencies ([#20586](https://github.com/vitejs/vite/issues/20586)) ([77632c5](https://github.com/vitejs/vite/commit/77632c55db51cd6d03bcf24a1cef8d21058100a3))
+
+### Code Refactoring
+
+* **create-vite:** add jsdoc for svelte.config.js in svelte-ts template ([#20543](https://github.com/vitejs/vite/issues/20543)) ([aa93814](https://github.com/vitejs/vite/commit/aa938149337f5232011f203bfe55c741fbaddd6c))
+
 ## [7.1.0](https://github.com/vitejs/vite/compare/create-vite@7.0.3...create-vite@7.1.0) (2025-08-07)
 ### Bug Fixes
 

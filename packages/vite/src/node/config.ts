@@ -1658,7 +1658,7 @@ export async function resolveConfig(
 
   // For backward compat, set ssr environment build.emitAssets with the same value as build.ssrEmitAssets that might be changed in configResolved hook
   // https://github.com/vikejs/vike/blob/953614cea7b418fcc0309b5c918491889fdec90a/vike/node/plugin/plugins/buildConfig.ts#L67
-  if (resolved.environments.ssr) {
+  if (!resolved.builder?.sharedConfigBuild && resolved.environments.ssr) {
     resolved.environments.ssr.build.emitAssets =
       resolved.build.ssrEmitAssets || resolved.build.emitAssets
   }
@@ -1938,7 +1938,7 @@ async function bundleConfigFile(
     mainFields: ['main'],
     sourcemap: 'inline',
     // the last slash is needed to make the path correct
-    sourceRoot: path.dirname(fileName) + path.sep,
+    sourceRoot: pathToFileURL(path.dirname(fileName)).href + '/',
     metafile: true,
     define: {
       __dirname: dirnameVarName,
@@ -1996,7 +1996,7 @@ async function bundleConfigFile(
               // With the `isNodeBuiltin` check above, this check captures if the builtin is a
               // non-node built-in, which esbuild doesn't know how to handle. In that case, we
               // externalize it so the non-node runtime handles it instead.
-              if (isNodeLikeBuiltin(id)) {
+              if (isNodeLikeBuiltin(id) || id.startsWith('npm:')) {
                 return { external: true }
               }
 

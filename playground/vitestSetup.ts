@@ -22,7 +22,39 @@ import {
 import type { Browser, Page } from 'playwright-chromium'
 import type { RollupError, RollupWatcher, RollupWatcherEvent } from 'rollup'
 import type { RunnerTestFile } from 'vitest'
-import { beforeAll, inject } from 'vitest'
+import { beforeAll, expect, inject } from 'vitest'
+
+// #region serializer
+
+export const sourcemapSnapshot = Symbol()
+
+const generateVisualizationLink = (code: string, map: string) => {
+  const utf16ToUTF8 = (x) => unescape(encodeURIComponent(x))
+  const convertedCode = utf16ToUTF8(code)
+  const convertedMap = utf16ToUTF8(map)
+  const hash = `${convertedCode.length}\0${convertedCode}${convertedMap.length}\0${convertedMap}`
+  return `https://evanw.github.io/source-map-visualization/#${btoa(hash)}`
+}
+
+expect.addSnapshotSerializer({
+  serialize(val, config, indentation, depth, refs, printer) {
+    const options = val[sourcemapSnapshot]
+    const map = { ...val.map }
+    if (options.withoutContent) {
+      delete map.sourcesContent
+    }
+
+    return `${indentation}SourceMap {
+${indentation}${config.indent}content: ${printer(map, config, indentation + config.indent, depth, refs)},
+${indentation}${config.indent}visualization: ${JSON.stringify(generateVisualizationLink(val.code, JSON.stringify(val.map)))}
+${indentation}}`
+  },
+  test(val) {
+    return typeof val === 'object' && val && val[sourcemapSnapshot]
+  },
+})
+
+// #endregion
 
 // #region env
 

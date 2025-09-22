@@ -41,7 +41,7 @@ const { data } = useSponsor()
     <!-- Title Section -->
     <img
       class="icon-heart"
-      src="/heart.svg"
+      src="./heart.svg"
       alt="Vite is made possible by our contributors, partner companies, and sponsors"
       width="58"
       height="55"

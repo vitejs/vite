@@ -12,8 +12,8 @@ import { performance } from 'node:perf_hooks'
 import type { AddressInfo, Server } from 'node:net'
 import fsp from 'node:fs/promises'
 import type { FSWatcher } from 'dep-types/chokidar'
-import remapping from '@ampproject/remapping'
-import type { DecodedSourceMap, RawSourceMap } from '@ampproject/remapping'
+import remapping from '@jridgewell/remapping'
+import type { DecodedSourceMap, RawSourceMap } from '@jridgewell/remapping'
 import colors from 'picocolors'
 import debug from 'debug'
 import type { Alias, AliasOptions } from 'dep-types/alias'
@@ -98,8 +98,6 @@ export const normalizeId = (id: string): string =>
 
 // Supported by Node, Deno, Bun
 const NODE_BUILTIN_NAMESPACE = 'node:'
-// Supported by Deno
-const NPM_BUILTIN_NAMESPACE = 'npm:'
 // Supported by Bun
 const BUN_BUILTIN_NAMESPACE = 'bun:'
 // Some runtimes like Bun injects namespaced modules here, which is not a node builtin
@@ -136,7 +134,6 @@ export function createIsBuiltin(
 export const nodeLikeBuiltins = [
   ...nodeBuiltins,
   new RegExp(`^${NODE_BUILTIN_NAMESPACE}`),
-  new RegExp(`^${NPM_BUILTIN_NAMESPACE}`),
   new RegExp(`^${BUN_BUILTIN_NAMESPACE}`),
 ]
 
@@ -501,6 +498,9 @@ export function numberToPos(source: string, offset: number | Pos): Pos {
   }
 }
 
+const MAX_DISPLAY_LEN = 120
+const ELLIPSIS = '...'
+
 export function generateCodeFrame(
   source: string,
   start: number | Pos = 0,
@@ -525,28 +525,51 @@ export function generateCodeFrame(
       for (let j = i - range; j <= i + range || end > count; j++) {
         if (j < 0 || j >= lines.length) continue
         const line = j + 1
-        res.push(
-          `${line}${' '.repeat(lineNumberWidth - String(line).length)}|  ${
-            lines[j]
-          }`,
-        )
         const lineLength = lines[j].length
+        const pad = Math.max(start - (count - lineLength), 0)
+        const underlineLength = Math.max(
+          1,
+          end > count ? lineLength - pad : end - start,
+        )
+
+        let displayLine = lines[j]
+        let underlinePad = pad
+        if (lineLength > MAX_DISPLAY_LEN) {
+          let startIdx = 0
+          if (j === i) {
+            if (underlineLength > MAX_DISPLAY_LEN) {
+              startIdx = pad
+            } else {
+              const center = pad + Math.floor(underlineLength / 2)
+              startIdx = Math.max(0, center - Math.floor(MAX_DISPLAY_LEN / 2))
+            }
+            underlinePad =
+              Math.max(0, pad - startIdx) + (startIdx > 0 ? ELLIPSIS.length : 0)
+          }
+          const prefix = startIdx > 0 ? ELLIPSIS : ''
+          const suffix = lineLength - startIdx > MAX_DISPLAY_LEN ? ELLIPSIS : ''
+          const sliceLen = MAX_DISPLAY_LEN - prefix.length - suffix.length
+          displayLine =
+            prefix + displayLine.slice(startIdx, startIdx + sliceLen) + suffix
+        }
+        res.push(
+          `${line}${' '.repeat(lineNumberWidth - String(line).length)}|  ${displayLine}`,
+        )
         if (j === i) {
           // push underline
-          const pad = Math.max(start - (count - lineLength), 0)
-          const length = Math.max(
-            1,
-            end > count ? lineLength - pad : end - start,
+          const underline = '^'.repeat(
+            Math.min(underlineLength, MAX_DISPLAY_LEN),
           )
           res.push(
             `${' '.repeat(lineNumberWidth)}|  ` +
-              ' '.repeat(pad) +
-              '^'.repeat(length),
+              ' '.repeat(underlinePad) +
+              underline,
           )
         } else if (j > i) {
           if (end > count) {
             const length = Math.max(Math.min(end - count, lineLength), 1)
-            res.push(`${' '.repeat(lineNumberWidth)}|  ` + '^'.repeat(length))
+            const underline = '^'.repeat(Math.min(length, MAX_DISPLAY_LEN))
+            res.push(`${' '.repeat(lineNumberWidth)}|  ` + underline)
           }
           count += lineLength + 1
         }

@@ -373,6 +373,14 @@ describe('css url() references', () => {
       await expect.poll(() => getBg('.css-url-svg')).toMatch('red')
     }
   })
+
+  test.runIf(isServe)('non inlined url() HMR', async () => {
+    const bg = await getBg('.css-url-non-inline-hmr')
+    editFile('nested/donuts-large.svg', (code) =>
+      code.replace('fill="blue"', 'fill="red"'),
+    )
+    await expect.poll(() => getBg('.css-url-non-inline-hmr')).not.toBe(bg)
+  })
 })
 
 describe('image', () => {
@@ -660,6 +668,16 @@ test("new URL(/* @vite-ignore */ 'non-existent', import.meta.url)", async () => 
   )
   expect(serverLogs).not.toContainEqual(
     expect.stringContaining("doesn't exist at build time"),
+  )
+})
+
+test('new URL(..., import.meta.url) (multiline)', async () => {
+  const assetMatch = isBuild
+    ? /\/foo\/bar\/assets\/asset-[-\w]{8}\.png/
+    : '/foo/bar/nested/asset.png'
+
+  expect(await page.textContent('.import-meta-url-multiline')).toMatch(
+    assetMatch,
   )
 })
 
