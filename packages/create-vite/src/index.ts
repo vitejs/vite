@@ -23,10 +23,11 @@ const argv = mri<{
   template?: string
   help?: boolean
   overwrite?: boolean
+  rolldown?: boolean
   interactive?: boolean
 }>(process.argv.slice(2), {
   alias: { h: 'help', t: 'template' },
-  boolean: ['help', 'overwrite', 'interactive'],
+  boolean: ['help', 'overwrite', 'rolldown', 'interactive'],
   string: ['template'],
 })
 const cwd = process.cwd()
@@ -40,6 +41,7 @@ When running in TTY, the CLI will start in interactive mode.
 
 Options:
   -t, --template NAME                   use a specific template
+  --rolldown                            use rolldown-vite (Experimental)
   --interactive / --no-interactive      force interactive / non-interactive mode
 
 Available templates:
@@ -348,6 +350,7 @@ async function init() {
     : undefined
   const argTemplate = argv.template
   const argOverwrite = argv.overwrite
+  const argRolldown = argv.rolldown
   const argInteractive = argv.interactive
 
   const help = argv.help
@@ -525,21 +528,25 @@ async function init() {
     process.exit(status ?? 0)
   }
 
-  const useRolldownVite = argTemplate
-    ? false
-    : await prompts.select({
-        message: 'Use rolldown-vite (Experimental)?:',
-        options: [
-          {
-            label: 'Yes',
-            value: true,
-            hint: 'The future default Vite, which is powered by Rolldown',
-          },
-          { label: 'No', value: false },
-        ],
-        initialValue: false,
-      })
-  if (prompts.isCancel(useRolldownVite)) return cancel()
+  let useRolldownVite: boolean
+  if (interactive) {
+    const rolldownViteValue = await prompts.select({
+      message: 'Use rolldown-vite (Experimental)?:',
+      options: [
+        {
+          label: 'Yes',
+          value: true,
+          hint: 'The future default Vite, which is powered by Rolldown',
+        },
+        { label: 'No', value: false },
+      ],
+      initialValue: false,
+    })
+    if (prompts.isCancel(rolldownViteValue)) return cancel()
+    useRolldownVite = rolldownViteValue
+  } else {
+    useRolldownVite = argRolldown ?? false
+  }
 
   prompts.log.step(`Scaffolding project in ${root}...`)
 
@@ -571,7 +578,7 @@ async function init() {
 
   if (useRolldownVite) {
     // renovate: datasource=npm depName=rolldown-vite
-    const rolldownViteVersion = '7.1.9'
+    const rolldownViteVersion = '7.1.1'
     const pkgVersion = `npm:rolldown-vite@${rolldownViteVersion}`
     pkg.devDependencies.vite = pkgVersion
     switch (pkgManager) {
