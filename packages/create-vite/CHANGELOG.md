@@ -1,3 +1,9 @@
+## <small>[7.1.3](https://github.com/vitejs/vite/compare/create-vite@7.1.2...create-vite@7.1.3) (2025-09-22)</small>
+### Bug Fixes
+
+* **create-vite:** support deno create command ([#20806](https://github.com/vitejs/vite/issues/20806)) ([a50a162](https://github.com/vitejs/vite/commit/a50a16274ab6a23cb14b2b65b8df4a36dc5f84d2))
+* **deps:** update all non-major dependencies ([#20811](https://github.com/vitejs/vite/issues/20811)) ([9f2247c](https://github.com/vitejs/vite/commit/9f2247c066cac75746356c9391845235445a154b))
+
 ## <small>[7.1.2](https://github.com/vitejs/vite/compare/create-vite@7.1.1...create-vite@7.1.2) (2025-09-18)</small>
 ### Bug Fixes
 

@@ -2,6 +2,17 @@
 
 Vite exposes certain constants under the special `import.meta.env` object. These constants are defined as global variables during dev and statically replaced at build time to make tree-shaking effective.
 
+:::details Example
+
+```js
+if (import.meta.env.DEV) {
+  // code inside here will be tree-shaken in production builds
+  console.log('Dev mode')
+}
+```
+
+:::
+
 ## Built-in Constants
 
 Some built-in constants are available in all cases:
