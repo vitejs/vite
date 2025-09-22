@@ -110,9 +110,12 @@ test('asks to overwrite non-empty current directory', () => {
 })
 
 test('successfully scaffolds a project based on vue starter template', () => {
-  const { stdout } = run([projectName, '--interactive', '--template', 'vue'], {
-    cwd: __dirname,
-  })
+  const { stdout } = run(
+    [projectName, '--interactive', '--template', 'vue', '--rolldown', 'false'],
+    {
+      cwd: __dirname,
+    },
+  )
   const generatedFiles = fs.readdirSync(genPath).sort()
 
   // Assertions
@@ -122,7 +125,14 @@ test('successfully scaffolds a project based on vue starter template', () => {
 
 test('successfully scaffolds a project with subfolder based on react starter template', () => {
   const { stdout } = run(
-    [`subfolder/${projectName}`, '--interactive', '--template', 'react'],
+    [
+      `subfolder/${projectName}`,
+      '--interactive',
+      '--template',
+      'react',
+      '--rolldown',
+      'false',
+    ],
     {
       cwd: __dirname,
     },
@@ -134,10 +144,32 @@ test('successfully scaffolds a project with subfolder based on react starter tem
   expect(templateFilesReact).toEqual(generatedFiles)
 })
 
+test('successfully scaffolds a project with subfolder based on react starter template with rolldown flag', () => {
+  const { stdout } = run(
+    [`subfolder/${projectName}`, '--template', 'react', '--rolldown', 'true'],
+    {
+      cwd: __dirname,
+    },
+  )
+  const generatedFiles = fs.readdirSync(genPathWithSubfolder).sort()
+
+  // Assertions
+  expect(stdout).toContain(`Scaffolding project in ${genPathWithSubfolder}`)
+  expect(templateFilesReact).toEqual(generatedFiles)
+  const generatedPackageJson = fs.readFileSync(
+    path.join(genPathWithSubfolder, 'package.json'),
+    'utf-8',
+  )
+  expect(generatedPackageJson).toContain('rolldown-vite')
+})
+
 test('works with the -t alias', () => {
-  const { stdout } = run([projectName, '--interactive', '-t', 'vue'], {
-    cwd: __dirname,
-  })
+  const { stdout } = run(
+    [projectName, '--interactive', '-t', 'vue', '--rolldown', 'false'],
+    {
+      cwd: __dirname,
+    },
+  )
   const generatedFiles = fs.readdirSync(genPath).sort()
 
   // Assertions
