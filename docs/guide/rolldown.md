@@ -45,7 +45,7 @@ The rolldown-powered version of Vite is currently available as a separate packag
 
 ::: tip Please pin the version!
 
-While these examples uses `@latest`, we recommend using a specific version number to avoid unexpected breaking changes as [`rolldown-vite` is considered experimental](#versioning-policy).
+While these examples use `@latest`, we recommend using a specific version number to avoid unexpected breaking changes as [`rolldown-vite` is considered experimental](#versioning-policy).
 
 :::
 
