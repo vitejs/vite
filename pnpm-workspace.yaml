@@ -33,7 +33,6 @@ ignoredBuiltDependencies:
 onlyBuiltDependencies:
   - "@parcel/watcher"
   - "@tailwindcss/oxide"
-  - "bcrypt"
   - "esbuild"
   - "playwright-chromium"
   - "sharp"
