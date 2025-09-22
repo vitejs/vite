@@ -1,6 +1,5 @@
 import fs from 'node:fs'
 import path from 'node:path'
-import { stripVTControlCharacters } from 'node:util'
 import type { SyncOptions } from 'execa'
 import { execaCommandSync } from 'execa'
 import { afterEach, beforeAll, expect, test } from 'vitest'
