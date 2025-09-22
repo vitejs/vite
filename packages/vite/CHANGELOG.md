@@ -1,3 +1,13 @@
+## <small>[7.1.7](https://github.com/vitejs/vite/compare/v7.1.6...v7.1.7) (2025-09-22)</small>
+### Bug Fixes
+
+* **build:** fix ssr environment `emitAssets: true` when `sharedConfigBuild: true` ([#20787](https://github.com/vitejs/vite/issues/20787)) ([4c4583c](https://github.com/vitejs/vite/commit/4c4583ce7a13306e0853901570c5d95517fe81da))
+* **client:** use CSP nonce when rendering error overlay ([#20791](https://github.com/vitejs/vite/issues/20791)) ([9bc9d12](https://github.com/vitejs/vite/commit/9bc9d1258f550e9d8f5e530cd27aecb1bee32bdb))
+* **deps:** update all non-major dependencies ([#20811](https://github.com/vitejs/vite/issues/20811)) ([9f2247c](https://github.com/vitejs/vite/commit/9f2247c066cac75746356c9391845235445a154b))
+* **glob:** handle glob imports from folders starting with dot ([#20800](https://github.com/vitejs/vite/issues/20800)) ([105abe8](https://github.com/vitejs/vite/commit/105abe87c412cf0f83859ba41fed869221cbb3e0))
+* **hmr:** trigger prune event when import is removed from non hmr module ([#20768](https://github.com/vitejs/vite/issues/20768)) ([9f32b1d](https://github.com/vitejs/vite/commit/9f32b1dc710991c53a9f665c8d0d6945f342bf92))
+* **hmr:** wait for `import.meta.hot.prune` callbacks to complete before running other HMRs ([#20698](https://github.com/vitejs/vite/issues/20698)) ([98a3484](https://github.com/vitejs/vite/commit/98a3484733443ee529870477a6ab6a03572e3cbc))
+
 ## <small>[7.1.6](https://github.com/vitejs/vite/compare/v7.1.5...v7.1.6) (2025-09-18)</small>
 ### Bug Fixes
 
