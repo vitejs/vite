@@ -51,6 +51,9 @@ pnpm create vite my-vue-app --template vue
 
 # Bun
 bun create vite my-vue-app --template vue
+
+# Deno
+deno run -A npm:create-vite my-vue-app --template vue
 ```
 
 Currently supported template presets include:
