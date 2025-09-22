@@ -836,7 +836,7 @@ function setupReactCompiler(root: string, isTs: boolean) {
   )
   updateReactCompilerReadme(
     root,
-    'The React Compiler is enabled on this template. See [this documentation](https://react.dev/learn/react-compiler) for more information.',
+    'The React Compiler is enabled on this template. See [this documentation](https://react.dev/learn/react-compiler) for more information.\n\nNote: This will impact Vite dev & build performances.',
   )
 }
 
