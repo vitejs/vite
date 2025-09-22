@@ -23,12 +23,12 @@ const argv = mri<{
   template?: string
   help?: boolean
   overwrite?: boolean
-  rolldown?: string
+  rolldown?: boolean
   interactive?: boolean
 }>(process.argv.slice(2), {
   alias: { h: 'help', t: 'template' },
-  boolean: ['help', 'overwrite', 'interactive'],
-  string: ['template', 'rolldown'],
+  boolean: ['help', 'overwrite', 'rolldown', 'interactive'],
+  string: ['template'],
 })
 const cwd = process.cwd()
 
@@ -41,7 +41,7 @@ When running in TTY, the CLI will start in interactive mode.
 
 Options:
   -t, --template NAME                   use a specific template
-  --rolldown true / --rolldown false    use / do not use rolldown-vite (Experimental)
+  --rolldown / --no-rolldown            use / do not use rolldown-vite (Experimental)
   --interactive / --no-interactive      force interactive / non-interactive mode
 
 Available templates:
@@ -350,12 +350,7 @@ async function init() {
     : undefined
   const argTemplate = argv.template
   const argOverwrite = argv.overwrite
-  const argRolldown =
-    argv.rolldown === 'true'
-      ? true
-      : argv.rolldown === 'false'
-        ? false
-        : undefined
+  const argRolldown = argv.rolldown
   const argInteractive = argv.interactive
 
   const help = argv.help

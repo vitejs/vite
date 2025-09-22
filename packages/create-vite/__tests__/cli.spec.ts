@@ -111,7 +111,7 @@ test('asks to overwrite non-empty current directory', () => {
 
 test('successfully scaffolds a project based on vue starter template', () => {
   const { stdout } = run(
-    [projectName, '--interactive', '--template', 'vue', '--rolldown', 'false'],
+    [projectName, '--interactive', '--template', 'vue', '--no-rolldown'],
     {
       cwd: __dirname,
     },
@@ -130,8 +130,7 @@ test('successfully scaffolds a project with subfolder based on react starter tem
       '--interactive',
       '--template',
       'react',
-      '--rolldown',
-      'false',
+      '--no-rolldown',
     ],
     {
       cwd: __dirname,
@@ -146,7 +145,7 @@ test('successfully scaffolds a project with subfolder based on react starter tem
 
 test('successfully scaffolds a project with subfolder based on react starter template with rolldown flag', () => {
   const { stdout } = run(
-    [`subfolder/${projectName}`, '--template', 'react', '--rolldown', 'true'],
+    [`subfolder/${projectName}`, '--template', 'react', '--rolldown'],
     {
       cwd: __dirname,
     },
@@ -165,7 +164,7 @@ test('successfully scaffolds a project with subfolder based on react starter tem
 
 test('works with the -t alias', () => {
   const { stdout } = run(
-    [projectName, '--interactive', '-t', 'vue', '--rolldown', 'false'],
+    [projectName, '--interactive', '-t', 'vue', '--no-rolldown'],
     {
       cwd: __dirname,
     },
