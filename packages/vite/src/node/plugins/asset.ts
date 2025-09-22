@@ -166,13 +166,14 @@ export function assetPlugin(config: ResolvedConfig): Plugin {
     },
 
     load: {
-      async handler(id) {
-        if (id[0] === '\0') {
+      filter: {
+        id: {
           // Rollup convention, this id should be handled by the
           // plugin that marked it with \0
-          return
-        }
-
+          exclude: /^\0/,
+        },
+      },
+      async handler(id) {
         // raw requests, read from disk
         if (rawRE.test(id)) {
           const file = checkPublicFile(id, config) || cleanUrl(id)

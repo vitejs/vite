@@ -35,6 +35,7 @@ import {
   isCSSRequest,
   isDevServer,
   isJSRequest,
+  isParentDirectory,
   joinUrlSegments,
   normalizePath,
   processSrcSetSync,
@@ -48,6 +49,7 @@ import {
   BasicMinimalPluginContext,
   basePluginContextMeta,
 } from '../pluginContainer'
+import { checkLoadingAccess, respondWithAccessDenied } from './static'
 
 interface AssetNode {
   start: number
@@ -269,7 +271,7 @@ const devHtmlHook: IndexHtmlTransformHook = async (
     preTransformRequest(server!, modulePath, decodedBase)
   }
 
-  await traverseHtml(html, filename, (node) => {
+  await traverseHtml(html, filename, config.logger.warn, (node) => {
     if (!nodeIsElement(node)) {
       return
     }
@@ -383,9 +385,11 @@ const devHtmlHook: IndexHtmlTransformHook = async (
         )
       ensureWatchedFile(watcher, mod.file, config.root)
 
-      const result = await server!.pluginContainer.transform(code, mod.id!, {
-        environment: server!.environments.client,
-      })
+      const result =
+        await server!.environments.client.pluginContainer.transform(
+          code,
+          mod.id!,
+        )
       let content = ''
       if (result.map && 'version' in result.map) {
         if (result.map.mappings) {
@@ -408,9 +412,7 @@ const devHtmlHook: IndexHtmlTransformHook = async (
         )
       ensureWatchedFile(watcher, mod.file, config.root)
 
-      await server?.pluginContainer.transform(code, mod.id!, {
-        environment: server!.environments.client,
-      })
+      await server?.environments.client.pluginContainer.transform(code, mod.id!)
 
       const hash = getHash(cleanUrl(mod.id!))
       const result = htmlProxyResult.get(`${hash}_${index}`)
@@ -454,7 +456,26 @@ export function indexHtmlMiddleware(
       if (isDev && url.startsWith(FS_PREFIX)) {
         filePath = decodeURIComponent(fsPathFromId(url))
       } else {
-        filePath = path.join(root, decodeURIComponent(url))
+        filePath = normalizePath(
+          path.resolve(path.join(root, decodeURIComponent(url))),
+        )
+      }
+
+      if (isDev) {
+        const servingAccessResult = checkLoadingAccess(server.config, filePath)
+        if (servingAccessResult === 'denied') {
+          return respondWithAccessDenied(filePath, server, res)
+        }
+        if (servingAccessResult === 'fallback') {
+          return next()
+        }
+        servingAccessResult satisfies 'allowed'
+      } else {
+        // `server.fs` options does not apply to the preview server.
+        // But we should disallow serving files outside the output directory.
+        if (!isParentDirectory(root, filePath)) {
+          return next()
+        }
       }
 
       if (fs.existsSync(filePath)) {

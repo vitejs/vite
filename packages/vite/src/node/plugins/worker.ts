@@ -262,6 +262,7 @@ export function webWorkerPlugin(config: ResolvedConfig): Plugin {
     },
 
     load: {
+      filter: { id: workerOrSharedWorkerRE },
       async handler(id) {
         const workerMatch = workerOrSharedWorkerRE.exec(id)
         if (!workerMatch) return
@@ -292,8 +293,9 @@ export function webWorkerPlugin(config: ResolvedConfig): Plugin {
               workerConstructor === 'Worker'
                 ? `${jsContent}
             const blob = typeof self !== "undefined" && self.Blob && new Blob([${
+              // NOTE: Revoke the objURL after creating the worker, otherwise it breaks WebKit-based browsers
               workerType === 'classic'
-                ? ''
+                ? `'(self.URL || self.webkitURL).revokeObjectURL(self.location.href);',`
                 : // `URL` is always available, in `Worker[type="module"]`
                   `'URL.revokeObjectURL(import.meta.url);',`
             }jsContent], { type: "text/javascript;charset=utf-8" });
@@ -312,14 +314,6 @@ export function webWorkerPlugin(config: ResolvedConfig): Plugin {
                   'data:text/javascript;charset=utf-8,' + encodeURIComponent(jsContent),
                   ${workerTypeOption}
                 );
-              }${
-                // For module workers, we should not revoke the URL until the worker runs,
-                // otherwise the worker fails to run
-                workerType === 'classic'
-                  ? ` finally {
-                      objURL && (self.URL || self.webkitURL).revokeObjectURL(objURL);
-                    }`
-                  : ''
               }
             }`
                 : `${jsContent}
@@ -371,6 +365,7 @@ export function webWorkerPlugin(config: ResolvedConfig): Plugin {
     },
 
     transform: {
+      filter: { id: workerFileRE },
       async handler(raw, id) {
         const workerFileMatch = workerFileRE.exec(id)
         if (workerFileMatch) {

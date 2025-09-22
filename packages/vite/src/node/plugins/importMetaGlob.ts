@@ -52,8 +52,8 @@ export function importGlobPlugin(config: ResolvedConfig): Plugin {
       importGlobMaps.clear()
     },
     transform: {
+      filter: { code: 'import.meta.glob' },
       async handler(code, id) {
-        if (!code.includes('import.meta.glob')) return
         const result = await transformGlobImport(
           code,
           id,
@@ -458,14 +458,20 @@ export async function transformGlobImport(
               let filePath = options.base
                 ? `${relative(posix.join(root, options.base), file)}`
                 : importPath
-              if (options.base && filePath[0] !== '.') {
+              if (
+                options.base &&
+                !filePath.startsWith('./') &&
+                !filePath.startsWith('../')
+              ) {
                 filePath = `./${filePath}`
               }
               return { filePath, importPath }
             }
 
             let importPath = relative(dir, file)
-            if (importPath[0] !== '.') importPath = `./${importPath}`
+            if (!importPath.startsWith('./') && !importPath.startsWith('../')) {
+              importPath = `./${importPath}`
+            }
 
             let filePath: string
             if (options.base) {
@@ -474,7 +480,9 @@ export async function transformGlobImport(
                 posix.join(resolvedBasePath, options.base),
                 file,
               )
-              if (filePath[0] !== '.') filePath = `./${filePath}`
+              if (!filePath.startsWith('./') && !filePath.startsWith('../')) {
+                filePath = `./${filePath}`
+              }
               if (options.base[0] === '/') {
                 importPath = `/${relative(root, file)}`
               }
@@ -482,7 +490,9 @@ export async function transformGlobImport(
               filePath = importPath
             } else {
               filePath = relative(root, file)
-              if (filePath[0] !== '.') filePath = `/${filePath}`
+              if (!filePath.startsWith('./') && !filePath.startsWith('../')) {
+                filePath = `/${filePath}`
+              }
             }
 
             return { filePath, importPath }
@@ -626,7 +636,7 @@ export async function toAbsoluteGlob(
   root = globSafePath(root)
   let dir
   if (base) {
-    if (base.startsWith('/')) {
+    if (base[0] === '/') {
       dir = posix.join(root, base)
     } else {
       dir = posix.resolve(

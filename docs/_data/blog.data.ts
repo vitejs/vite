@@ -17,8 +17,9 @@ export default createContentLoader('blog/*.md', {
   transform(raw): Post[] {
     return raw
       .map(({ url, frontmatter }) => ({
-        title: frontmatter.head.find((e) => e[1].property === 'og:title')[1]
-          .content,
+        title: frontmatter.head.find(
+          (e: any) => e[1].property === 'og:title',
+        )[1].content,
         url,
         date: formatDate(frontmatter.date),
       }))

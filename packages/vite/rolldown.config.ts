@@ -51,8 +51,7 @@ const sharedNodeOptions = defineConfig({
         sideEffects: false,
       },
     ],
-    // TODO: not supported yet
-    // propertyReadSideEffects: false,
+    propertyReadSideEffects: false,
   },
   output: {
     dir: './dist',
@@ -75,24 +74,12 @@ const nodeConfig = defineConfig({
   input: {
     index: path.resolve(__dirname, 'src/node/index.ts'),
     cli: path.resolve(__dirname, 'src/node/cli.ts'),
-    constants: path.resolve(__dirname, 'src/node/constants.ts'),
   },
   resolve: {
     alias: {
       // we can always use node version (the default entry point has browser support)
       debug: 'debug/src/node.js',
     },
-  },
-  output: {
-    ...sharedNodeOptions.output,
-    // When polyfillRequire is enabled, `require` gets renamed by rolldown.
-    // But the current usage of require() inside inlined workers expects `require`
-    // to not be renamed. To workaround, polyfillRequire is disabled and
-    // the banner is used instead.
-    // Ideally we should move workers to ESM
-    polyfillRequire: false,
-    banner:
-      "import { createRequire as ___createRequire } from 'module'; const require = ___createRequire(import.meta.url);",
   },
   external: [
     /^vite\//,
@@ -169,7 +156,7 @@ const moduleRunnerConfig = defineConfig({
     minify: {
       compress: true,
       mangle: false,
-      removeWhitespace: false,
+      codegen: false,
     },
   },
 })

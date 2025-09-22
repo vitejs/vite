@@ -15,6 +15,7 @@ import {
   getServerUrlByHost,
   injectQuery,
   isFileReadable,
+  isParentDirectory,
   mergeWithDefaults,
   normalizePath,
   numberToPos,
@@ -42,6 +43,33 @@ describe('bareImportRE', () => {
     expect(bareImportRE.test('./foo')).toBe(false)
     expect(bareImportRE.test('.\\foo')).toBe(false)
   })
+})
+
+describe('isParentDirectory', () => {
+  const cases = {
+    '/parent': {
+      '/parent': false,
+      '/parenta': false,
+      '/parent/': true,
+      '/parent/child': true,
+      '/parent/child/child2': true,
+    },
+    '/parent/': {
+      '/parent': false,
+      '/parenta': false,
+      '/parent/': true,
+      '/parent/child': true,
+      '/parent/child/child2': true,
+    },
+  }
+
+  for (const [parent, children] of Object.entries(cases)) {
+    for (const [child, expected] of Object.entries(children)) {
+      test(`isParentDirectory("${parent}", "${child}")`, () => {
+        expect(isParentDirectory(parent, child)).toBe(expected)
+      })
+    }
+  }
 })
 
 describe('injectQuery', () => {
@@ -288,6 +316,9 @@ foo()
 // 2
 // 3
 `.trim()
+  const veryLongSource = Array.from({ length: 2000 }, (_, i) => `// ${i}`).join(
+    '\n',
+  )
 
   const expectSnapshot = (value: string) => {
     try {
@@ -339,6 +370,76 @@ foo()
 
   test('invalid start > end', () => {
     expectSnapshot(generateCodeFrame(source, 2, 0))
+  })
+
+  test('supports more than 1000 lines', () => {
+    expectSnapshot(generateCodeFrame(veryLongSource, { line: 1200, column: 0 }))
+  })
+
+  test('long line (start)', () => {
+    const longLine = 'a'.repeat(60) + 'b'.repeat(60) + 'c'.repeat(60)
+    const src = `${longLine}\nshort line\n${longLine}`
+    const frame = generateCodeFrame(
+      src,
+      { line: 1, column: 0 },
+      { line: 1, column: 30 },
+    )
+    expectSnapshot(frame)
+  })
+
+  test('long line (center)', () => {
+    const longLine = 'a'.repeat(60) + 'b'.repeat(60) + 'c'.repeat(60)
+    const src = `${longLine}\nshort line\n${longLine}`
+    const frame = generateCodeFrame(
+      src,
+      { line: 1, column: 90 },
+      { line: 1, column: 120 },
+    )
+    expectSnapshot(frame)
+  })
+
+  test('long line (end)', () => {
+    const longLine = 'a'.repeat(60) + 'b'.repeat(60) + 'c'.repeat(60)
+    const src = `${longLine}\nshort line\n${longLine}`
+    const frame = generateCodeFrame(
+      src,
+      { line: 1, column: 150 },
+      { line: 1, column: 180 },
+    )
+    expectSnapshot(frame)
+  })
+
+  test('long line (whole)', () => {
+    const longLine = 'a'.repeat(60) + 'b'.repeat(60) + 'c'.repeat(60)
+    const src = `${longLine}\nshort line\n${longLine}`
+    const frame = generateCodeFrame(
+      src,
+      { line: 1, column: 0 },
+      { line: 1, column: 180 },
+    )
+    expectSnapshot(frame)
+  })
+
+  test('long line (multiline 1)', () => {
+    const longLine = 'a'.repeat(60) + 'b'.repeat(60) + 'c'.repeat(60)
+    const src = `${longLine}\nshort line\n${longLine}`
+    const frame = generateCodeFrame(
+      src,
+      { line: 1, column: 170 },
+      { line: 2, column: 5 },
+    )
+    expectSnapshot(frame)
+  })
+
+  test('long line (multiline 2)', () => {
+    const longLine = 'a'.repeat(60) + 'b'.repeat(60) + 'c'.repeat(60)
+    const src = `${longLine}\nshort line\n${longLine}`
+    const frame = generateCodeFrame(
+      src,
+      { line: 2, column: 5 },
+      { line: 3, column: 30 },
+    )
+    expectSnapshot(frame)
   })
 })
 
