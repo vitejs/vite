@@ -543,15 +543,14 @@ async function init() {
   // 5. Ask about immediate install and package manager
   let immediate = argImmediate
   if (immediate === undefined) {
-    // In test mode, default to false to avoid prompts
-    if (process.env._VITE_TEST_CLI) {
-      immediate = false
-    } else {
+    if (interactive) {
       const immediateResult = await prompts.confirm({
         message: `Install with ${pkgManager} and start now?`,
       })
       if (prompts.isCancel(immediateResult)) return cancel()
       immediate = immediateResult
+    } else {
+      immediate = false
     }
   }
 

@@ -111,9 +111,12 @@ test('asks to overwrite non-empty current directory', () => {
 })
 
 test('successfully scaffolds a project based on vue starter template', () => {
-  const { stdout } = run([projectName, '--interactive', '--template', 'vue'], {
-    cwd: __dirname,
-  })
+  const { stdout } = run(
+    [projectName, '--interactive', '--no-immediate', '--template', 'vue'],
+    {
+      cwd: __dirname,
+    },
+  )
   const generatedFiles = fs.readdirSync(genPath).sort()
 
   // Assertions
@@ -123,7 +126,13 @@ test('successfully scaffolds a project based on vue starter template', () => {
 
 test('successfully scaffolds a project with subfolder based on react starter template', () => {
   const { stdout } = run(
-    [`subfolder/${projectName}`, '--interactive', '--template', 'react'],
+    [
+      `subfolder/${projectName}`,
+      '--interactive',
+      '--no-immediate',
+      '--template',
+      'react',
+    ],
     {
       cwd: __dirname,
     },
@@ -136,9 +145,12 @@ test('successfully scaffolds a project with subfolder based on react starter tem
 })
 
 test('works with the -t alias', () => {
-  const { stdout } = run([projectName, '--interactive', '-t', 'vue'], {
-    cwd: __dirname,
-  })
+  const { stdout } = run(
+    [projectName, '--interactive', '--no-immediate', '-t', 'vue'],
+    {
+      cwd: __dirname,
+    },
+  )
   const generatedFiles = fs.readdirSync(genPath).sort()
 
   // Assertions
@@ -173,45 +185,20 @@ test('return help usage how to use create-vite with -h alias', () => {
   expect(stdout).toContain(message)
 })
 
-test('shows help', () => {
-  const { stdout } = run(['--help'], { cwd: __dirname })
-  expect(stripVTControlCharacters(stdout as string)).toMatchInlineSnapshot(`
-    "Usage: create-vite [OPTION]... [DIRECTORY]
-
-    Create a new Vite project in JavaScript or TypeScript.
-    With no arguments, start the CLI in interactive mode.
-
-    Options:
-      -t, --template NAME        use a specific template
-      -i, --immediate            install dependencies and start dev
-
-    Available templates:
-    vanilla-ts     vanilla
-    vue-ts         vue
-    react-ts       react
-    react-swc-ts   react-swc
-    preact-ts      preact
-    lit-ts         lit
-    svelte-ts      svelte
-    solid-ts       solid
-    qwik-ts        qwik"
-  `)
-})
-
 test('accepts immediate flag', () => {
   const { stdout } = run([projectName, '--template', 'vue', '--immediate'], {
     cwd: __dirname,
   })
+  expect(stdout).not.toContain('Install and start now?')
   expect(stdout).toContain(`Scaffolding project in ${genPath}`)
+  expect(stdout).toContain('Installing dependencies')
 })
 
 test('accepts immediate flag and skips install prompt', () => {
-  const { stdout } = run(
-    [projectName, '--template', 'vue', '--immediate', 'false'],
-    {
-      cwd: __dirname,
-    },
-  )
+  const { stdout } = run([projectName, '--template', 'vue', '--no-immediate'], {
+    cwd: __dirname,
+  })
   expect(stdout).not.toContain('Install and start now?')
+  expect(stdout).not.toContain('Installing dependencies')
   expect(stdout).toContain(`Scaffolding project in ${genPath}`)
 })
