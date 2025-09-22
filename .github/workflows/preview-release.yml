@@ -33,7 +33,8 @@ jobs:
         with:
           node-version: 22
           registry-url: https://registry.npmjs.org/
-          cache: "pnpm"
+          # disable cache, to avoid cache poisoning (https://docs.zizmor.sh/audits/#cache-poisoning)
+          package-manager-cache: false
 
       - name: Disallow installation scripts
         run: yq '.onlyBuiltDependencies = []' -i pnpm-workspace.yaml
