@@ -24,6 +24,7 @@ if (import.meta.env.DEV) {
 }
 ```
 :::
+
 ## Env Variables
 
 Vite exposes env variables under `import.meta.env` object as strings automatically.
