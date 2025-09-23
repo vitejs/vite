@@ -1,3 +1,13 @@
+## [8.0.0-beta.0](https://github.com/vitejs/vite/compare/create-vite@7.1.3...create-vite@8.0.0-beta.0) (2025-09-23)
+### Features
+
+* **create-vite:** add `--interactive` / `--no-interactive` ([#20797](https://github.com/vitejs/vite/issues/20797)) ([03a56c5](https://github.com/vitejs/vite/commit/03a56c50a1a6eac76c99b0ce00c17518ed3ccae6))
+* **create-vite:** scaffold with rolldown-vite ([#20739](https://github.com/vitejs/vite/issues/20739)) ([b3227d5](https://github.com/vitejs/vite/commit/b3227d5398a14c1a7aa9a1a997879bca4d80e719))
+* **create-vite:** set default title in index.html to project name ([#20519](https://github.com/vitejs/vite/issues/20519)) ([b178f90](https://github.com/vitejs/vite/commit/b178f90ad0b337fc2a2e5c5091e889a9912ce948))
+* **create-vite:** set types compiler option in tsconfigs ([#20132](https://github.com/vitejs/vite/issues/20132)) ([52469c3](https://github.com/vitejs/vite/commit/52469c3dfe6f46a928a24805ef498993de5d491c))
+* **create-vite:** support auto install dependencies and start dev ([#20468](https://github.com/vitejs/vite/issues/20468)) ([925cefe](https://github.com/vitejs/vite/commit/925cefe8ee5c88c9b5b6fa525f46addc4a8aef83))
+* **create-vite:** support React Compiler ([#20704](https://github.com/vitejs/vite/issues/20704)) ([052aa88](https://github.com/vitejs/vite/commit/052aa88d5618e48a47fe8e868157e768ce38af2e))
+
 ## <small>[7.1.3](https://github.com/vitejs/vite/compare/create-vite@7.1.2...create-vite@7.1.3) (2025-09-22)</small>
 ### Bug Fixes
 
