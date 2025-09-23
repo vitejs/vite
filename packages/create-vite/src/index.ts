@@ -379,7 +379,7 @@ function start(root: string, agent: string) {
     return
   }
   prompts.log.step('Starting dev server...')
-  run(agent, agent === 'npm' ? ['run', 'dev'] : ['dev'], {
+  run(agent, agent === 'yarn' ? ['dev'] : ['run', 'dev'], {
     stdio: 'inherit',
     cwd: root,
   })
