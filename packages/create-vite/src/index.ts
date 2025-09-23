@@ -1,7 +1,7 @@
 import fs from 'node:fs'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
-import type { SpawnOptions } from 'node:child_process';
+import type { SpawnOptions } from 'node:child_process'
 import spawn from 'cross-spawn'
 import mri from 'mri'
 import * as prompts from '@clack/prompts'
