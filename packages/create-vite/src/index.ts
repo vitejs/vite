@@ -47,15 +47,16 @@ Options:
   --interactive / --no-interactive      force interactive / non-interactive mode
 
 Available templates:
-${yellow    ('vanilla-ts     vanilla'  )}
-${green     ('vue-ts         vue'      )}
-${cyan      ('react-ts       react'    )}
-${cyan      ('react-swc-ts   react-swc')}
-${magenta   ('preact-ts      preact'   )}
-${redBright ('lit-ts         lit'      )}
-${red       ('svelte-ts      svelte'   )}
-${blue      ('solid-ts       solid'    )}
-${blueBright('qwik-ts        qwik'     )}`
+${yellow    ('vanilla-ts          vanilla'       )}
+${green     ('vue-ts              vue'           )}
+${cyan      ('react-ts            react'         )}
+${cyan      ('react-compiler-ts   react-compiler')}
+${cyan      ('react-swc-ts        react-swc'     )}
+${magenta   ('preact-ts           preact'        )}
+${redBright ('lit-ts              lit'           )}
+${red       ('svelte-ts           svelte'        )}
+${blue      ('solid-ts            solid'         )}
+${blueBright('qwik-ts             qwik'          )}`
 
 type ColorFunc = (str: string | number) => string
 type Framework = {
@@ -129,6 +130,11 @@ const FRAMEWORKS: Framework[] = [
         color: blue,
       },
       {
+        name: 'react-compiler-ts',
+        display: 'TypeScript + React Compiler',
+        color: blue,
+      },
+      {
         name: 'react-swc-ts',
         display: 'TypeScript + SWC',
         color: blue,
@@ -136,6 +142,11 @@ const FRAMEWORKS: Framework[] = [
       {
         name: 'react',
         display: 'JavaScript',
+        color: yellow,
+      },
+      {
+        name: 'react-compiler',
+        display: 'JavaScript + React Compiler',
         color: yellow,
       },
       {
@@ -566,6 +577,11 @@ async function init() {
     isReactSwc = true
     template = template.replace('-swc', '')
   }
+  let isReactCompiler = false
+  if (template.includes('react-compiler')) {
+    isReactCompiler = true
+    template = template.replace('-compiler', '')
+  }
 
   const { customCommand } =
     FRAMEWORKS.flatMap((f) => f.variants).find((v) => v.name === template) ?? {}
@@ -667,6 +683,8 @@ async function init() {
 
   if (isReactSwc) {
     setupReactSwc(root, template.endsWith('-ts'))
+  } else if (isReactCompiler) {
+    setupReactCompiler(root, template.endsWith('-ts'))
   }
 
   if (immediate) {
@@ -780,6 +798,62 @@ function setupReactSwc(root: string, isTs: boolean) {
       return content.replace('@vitejs/plugin-react', '@vitejs/plugin-react-swc')
     },
   )
+  updateReactCompilerReadme(
+    root,
+    'The React Compiler is currently not compatible with SWC. See [this issue](https://github.com/vitejs/vite-plugin-react/issues/428) for tracking the progress.',
+  )
+}
+
+function setupReactCompiler(root: string, isTs: boolean) {
+  // renovate: datasource=npm depName=babel-plugin-react-compiler
+  const reactCompilerPluginVersion = '19.1.0-rc.3'
+
+  editFile(path.resolve(root, 'package.json'), (content) => {
+    const asObject = JSON.parse(content)
+    const devDepsEntries = Object.entries(asObject.devDependencies)
+    devDepsEntries.push([
+      'babel-plugin-react-compiler',
+      `^${reactCompilerPluginVersion}`,
+    ])
+    devDepsEntries.sort()
+    asObject.devDependencies = Object.fromEntries(devDepsEntries)
+    return JSON.stringify(asObject, null, 2) + '\n'
+  })
+  editFile(
+    path.resolve(root, `vite.config.${isTs ? 'ts' : 'js'}`),
+    (content) => {
+      return content.replace(
+        '  plugins: [react()],',
+        `  plugins: [
+    react({
+      babel: {
+        plugins: [['babel-plugin-react-compiler']],
+      },
+    }),
+  ],`,
+      )
+    },
+  )
+  updateReactCompilerReadme(
+    root,
+    'The React Compiler is enabled on this template. See [this documentation](https://react.dev/learn/react-compiler) for more information.\n\nNote: This will impact Vite dev & build performances.',
+  )
+}
+
+function updateReactCompilerReadme(root: string, newBody: string) {
+  editFile(path.resolve(root, `README.md`), (content) => {
+    const h2Start = content.indexOf('## React Compiler')
+    const bodyStart = content.indexOf('\n\n', h2Start)
+    const compilerSectionEnd = content.indexOf('\n## ', bodyStart)
+    if (h2Start === -1 || bodyStart === -1 || compilerSectionEnd === -1) {
+      console.warn('Could not update compiler section in README.md')
+      return content
+    }
+    return content.replace(
+      content.slice(bodyStart + 2, compilerSectionEnd - 1),
+      newBody,
+    )
+  })
 }
 
 function editFile(file: string, callback: (content: string) => string) {
