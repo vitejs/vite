@@ -347,7 +347,7 @@ const renameFiles: Record<string, string | undefined> = {
 const defaultTargetDir = 'vite-project'
 
 function run(...params: Parameters<typeof spawn.sync>) {
-  const { status, error } = spawn.sync(...params)
+  const { status, error, signal } = spawn.sync(...params)
   if (status != null && status > 0) {
     process.exit(status)
   }
@@ -356,6 +356,10 @@ function run(...params: Parameters<typeof spawn.sync>) {
     console.error(`\n${params.slice(0, -1).join(' ')} error!`)
     console.error(error)
     process.exit(1)
+  }
+
+  if (signal) {
+    process.emit(signal)
   }
 }
 
