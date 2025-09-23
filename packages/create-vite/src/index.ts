@@ -1,6 +1,7 @@
 import fs from 'node:fs'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
+import type { SpawnOptions } from 'node:child_process';
 import spawn from 'cross-spawn'
 import mri from 'mri'
 import * as prompts from '@clack/prompts'
@@ -357,8 +358,10 @@ const renameFiles: Record<string, string | undefined> = {
 
 const defaultTargetDir = 'vite-project'
 
-function run(...params: Parameters<typeof spawn.sync>) {
-  const { status, error } = spawn.sync(...params)
+type IgnoreFirst<T extends any[]> = T extends [infer First, ...infer R] ? R : never;
+
+function run([command, ...args]: string[], options?: SpawnOptions) {
+  const { status, error } = spawn.sync(command, args, options)
   if (status != null && status > 0) {
     process.exit(status)
   }
@@ -378,7 +381,7 @@ function install(root: string, agent: string) {
     return
   }
   prompts.log.step(`Installing dependencies with ${agent}...`)
-  run(agent, getInstallCommand(agent), {
+  run(getInstallCommand(agent), {
     stdio: 'inherit',
     cwd: root,
   })
@@ -390,7 +393,7 @@ function start(root: string, agent: string) {
     return
   }
   prompts.log.step('Starting dev server...')
-  run(agent, getRunCommand(agent, 'dev'), {
+  run(getRunCommand(agent, 'dev'), {
     stdio: 'inherit',
     cwd: root,
   })
@@ -699,8 +702,8 @@ async function init() {
         cdProjectName.includes(' ') ? `"${cdProjectName}"` : cdProjectName
       }`
     }
-    doneMessage += `\n  ${pkgManager} ${getInstallCommand(pkgManager).join(' ')}`
-    doneMessage += `\n  ${pkgManager} ${getRunCommand(pkgManager, 'dev').join(' ')}`
+    doneMessage += `\n  ${getInstallCommand(pkgManager).join(' ')}`
+    doneMessage += `\n  ${getRunCommand(pkgManager, 'dev').join(' ')}`
     prompts.outro(doneMessage)
   }
 }
@@ -903,9 +906,9 @@ function getFullCustomCommand(customCommand: string, pkgInfo?: PkgInfo) {
 
 function getInstallCommand(agent: string) {
   if (agent === 'yarn') {
-    return []
+    return [agent]
   }
-  return ['install']
+  return [agent, 'install']
 }
 
 function getRunCommand(agent: string, script: string) {
@@ -913,11 +916,11 @@ function getRunCommand(agent: string, script: string) {
     case 'yarn':
     case 'pnpm':
     case 'bun':
-      return [script]
+      return [agent, script]
     case 'deno':
-      return ['task', script]
+      return [agent, 'task', script]
     default:
-      return ['run', script]
+      return [agent, 'run', script]
   }
 }
 
