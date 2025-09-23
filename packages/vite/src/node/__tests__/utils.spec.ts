@@ -59,7 +59,7 @@ lxMwFPTTWLFFjxbXjXmt5cEiL2mpcq13VCF2HmheCen37CyYIkrwK9IfLhBd5QQh
 WEIBLwjKCAscrtyayXWp6zUTmgvb8PQf//3Mh2DiEngAi3WI/nL+8Y0RkqbvxBar
 X2JN
 -----END CERTIFICATE-----
-`.trim() as any
+`.trim()
 
 describe('bareImportRE', () => {
   test('should work with normal package name', () => {
@@ -920,9 +920,8 @@ describe('getServerUrlByHost', () => {
 
 describe('extractHostnamesFromCerts', () => {
   test('should extract hostnames from certificate', () => {
-    const httpsOptions = { cert: [WORKING_TEST_CERT] } as any
-    const result = extractHostnamesFromCerts(httpsOptions.cert)
-
+    const certs = [WORKING_TEST_CERT]
+    const result = extractHostnamesFromCerts(certs)
     expect(result).toStrictEqual([
       'localhost',
       'foo.localhost',
@@ -931,9 +930,8 @@ describe('extractHostnamesFromCerts', () => {
   })
 
   test('should extract hostnames from multiple certificates', () => {
-    const httpsOptions = { cert: [WORKING_TEST_CERT, WORKING_TEST_CERT] } as any
-    const result = extractHostnamesFromCerts(httpsOptions.cert)
-
+    const certs = [WORKING_TEST_CERT, WORKING_TEST_CERT]
+    const result = extractHostnamesFromCerts(certs)
     expect(result).toStrictEqual([
       'localhost',
       'foo.localhost',
@@ -960,7 +958,7 @@ describe('resolveServerUrls', () => {
   test('should handle no certificate', () => {
     const mockServer = createMockServer()
     const { options, hostname, config } = createTestConfig()
-    const httpsOptions = {} as never
+    const httpsOptions = {}
 
     const result = resolveServerUrls(
       mockServer,

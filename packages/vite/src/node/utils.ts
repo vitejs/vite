@@ -1068,12 +1068,11 @@ export function resolveServerUrls(
       })
   }
 
-  const hostnames = extractHostnamesFromCerts(httpsOptions?.cert)
-
-  if (hostnames.length > 0) {
+  const hostnamesFromCert = extractHostnamesFromCerts(httpsOptions?.cert)
+  if (hostnamesFromCert.length > 0) {
     const existings = new Set([...local, ...network])
     local.push(
-      ...hostnames
+      ...hostnamesFromCert
         .map((hostname) => `${protocol}://${hostname}:${port}${base}`)
         .filter((url) => !existings.has(url)),
     )
