@@ -365,7 +365,7 @@ function run([command, ...args]: string[], options?: SpawnOptions) {
   }
 
   if (error) {
-    console.error(`\n${params.slice(0, -1).join(' ')} error!`)
+    console.error(`\n${command} ${args.join(' ')} error!`)
     console.error(error)
     process.exit(1)
   }
