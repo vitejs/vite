@@ -358,8 +358,6 @@ const renameFiles: Record<string, string | undefined> = {
 
 const defaultTargetDir = 'vite-project'
 
-type IgnoreFirst<T extends any[]> = T extends [infer First, ...infer R] ? R : never;
-
 function run([command, ...args]: string[], options?: SpawnOptions) {
   const { status, error } = spawn.sync(command, args, options)
   if (status != null && status > 0) {
