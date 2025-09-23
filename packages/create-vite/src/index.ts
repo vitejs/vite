@@ -699,8 +699,8 @@ async function init() {
         cdProjectName.includes(' ') ? `"${cdProjectName}"` : cdProjectName
       }`
     }
-    doneMessage += `\n  ${getInstallCommand(pkgManager).join(' ')}`
-    doneMessage += `\n  ${getRunCommand(pkgManager, 'dev').join(' ')}`
+    doneMessage += `\n  ${pkgManager} ${getInstallCommand(pkgManager).join(' ')}`
+    doneMessage += `\n  ${pkgManager} ${getRunCommand(pkgManager, 'dev').join(' ')}`
     prompts.outro(doneMessage)
   }
 }
@@ -903,9 +903,9 @@ function getFullCustomCommand(customCommand: string, pkgInfo?: PkgInfo) {
 
 function getInstallCommand(agent: string) {
   if (agent === 'yarn') {
-    return [agent]
+    return []
   }
-  return [agent, 'install']
+  return ['install']
 }
 
 function getRunCommand(agent: string, script: string) {
@@ -913,11 +913,11 @@ function getRunCommand(agent: string, script: string) {
     case 'yarn':
     case 'pnpm':
     case 'bun':
-      return [agent, script]
+      return [script]
     case 'deno':
-      return [agent, 'task', script]
+      return ['task', script]
     default:
-      return [agent, 'run', script]
+      return ['run', script]
   }
 }
 
