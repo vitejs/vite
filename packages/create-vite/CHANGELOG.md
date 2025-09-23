@@ -1,3 +1,16 @@
+## [8.0.0](https://github.com/vitejs/vite/compare/create-vite@8.0.0-beta.0...create-vite@8.0.0) (2025-09-23)
+### Features
+
+* **create-vite:** ask rolldown-vite before asking auto install ([#20820](https://github.com/vitejs/vite/issues/20820)) ([123f239](https://github.com/vitejs/vite/commit/123f2396c8e84308928daf0d61488fa886fc7d50))
+
+### Bug Fixes
+
+* **create-vite:** use shorter command name for `run dev` for each package manager ([#20821](https://github.com/vitejs/vite/issues/20821)) ([0c1bc8a](https://github.com/vitejs/vite/commit/0c1bc8af3422a4c4a3f39ba4a759d9f169e04833))
+
+### Miscellaneous Chores
+
+* **deps:** update rolldown-related dependencies ([#20810](https://github.com/vitejs/vite/issues/20810)) ([ea68a88](https://github.com/vitejs/vite/commit/ea68a8868c7ee249213057f8a81c3f92a9839dde))
+
 ## [8.0.0-beta.0](https://github.com/vitejs/vite/compare/create-vite@7.1.3...create-vite@8.0.0-beta.0) (2025-09-23)
 ### Features
 
