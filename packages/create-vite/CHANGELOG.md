@@ -1,3 +1,8 @@
+## <small>[8.0.1](https://github.com/vitejs/vite/compare/create-vite@8.0.0...create-vite@8.0.1) (2025-09-23)</small>
+### Bug Fixes
+
+* **create-vite:** fix installing dependencies ([#20826](https://github.com/vitejs/vite/issues/20826)) ([01ae663](https://github.com/vitejs/vite/commit/01ae66387cf1f44e029c427251af7d09b9eb2567))
+
 ## [8.0.0](https://github.com/vitejs/vite/compare/create-vite@8.0.0-beta.0...create-vite@8.0.0) (2025-09-23)
 ### Features
 
