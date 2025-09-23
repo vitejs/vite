@@ -378,7 +378,7 @@ function install(root: string, agent: string) {
     return
   }
   prompts.log.step(`Installing dependencies with ${agent}...`)
-  run(agent, agent === 'yarn' ? [] : ['install'], {
+  run(agent, getInstallCommand(agent), {
     stdio: 'inherit',
     cwd: root,
   })
@@ -390,7 +390,7 @@ function start(root: string, agent: string) {
     return
   }
   prompts.log.step('Starting dev server...')
-  run(agent, agent === 'npm' ? ['run', 'dev'] : ['dev'], {
+  run(agent, getRunCommand(agent, 'dev'), {
     stdio: 'inherit',
     cwd: root,
   })
@@ -699,16 +699,8 @@ async function init() {
         cdProjectName.includes(' ') ? `"${cdProjectName}"` : cdProjectName
       }`
     }
-    switch (pkgManager) {
-      case 'yarn':
-        doneMessage += '\n  yarn'
-        doneMessage += '\n  yarn dev'
-        break
-      default:
-        doneMessage += `\n  ${pkgManager} install`
-        doneMessage += `\n  ${pkgManager} run dev`
-        break
-    }
+    doneMessage += `\n  ${getInstallCommand(pkgManager).join(' ')}`
+    doneMessage += `\n  ${getRunCommand(pkgManager, 'dev').join(' ')}`
     prompts.outro(doneMessage)
   }
 }
@@ -907,6 +899,26 @@ function getFullCustomCommand(customCommand: string, pkgInfo?: PkgInfo) {
         return 'npm exec '
       })
   )
+}
+
+function getInstallCommand(agent: string) {
+  if (agent === 'yarn') {
+    return [agent]
+  }
+  return [agent, 'install']
+}
+
+function getRunCommand(agent: string, script: string) {
+  switch (agent) {
+    case 'yarn':
+    case 'pnpm':
+    case 'bun':
+      return [agent, script]
+    case 'deno':
+      return [agent, 'task', script]
+    default:
+      return [agent, 'run', script]
+  }
 }
 
 init().catch((e) => {
