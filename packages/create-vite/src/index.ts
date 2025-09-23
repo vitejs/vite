@@ -541,6 +541,28 @@ async function init() {
     }
   }
 
+  let useRolldownVite = argRolldown
+  if (useRolldownVite === undefined) {
+    if (interactive) {
+      const rolldownViteValue = await prompts.select({
+        message: 'Use rolldown-vite (Experimental)?:',
+        options: [
+          {
+            label: 'Yes',
+            value: true,
+            hint: 'The future default Vite, which is powered by Rolldown',
+          },
+          { label: 'No', value: false },
+        ],
+        initialValue: false,
+      })
+      if (prompts.isCancel(rolldownViteValue)) return cancel()
+      useRolldownVite = rolldownViteValue
+    } else {
+      useRolldownVite = false
+    }
+  }
+
   const pkgManager = pkgInfo ? pkgInfo.name : 'npm'
 
   // 5. Ask about immediate install and package manager
@@ -582,28 +604,6 @@ async function init() {
       stdio: 'inherit',
     })
     process.exit(status ?? 0)
-  }
-
-  let useRolldownVite = argRolldown
-  if (useRolldownVite === undefined) {
-    if (interactive) {
-      const rolldownViteValue = await prompts.select({
-        message: 'Use rolldown-vite (Experimental)?:',
-        options: [
-          {
-            label: 'Yes',
-            value: true,
-            hint: 'The future default Vite, which is powered by Rolldown',
-          },
-          { label: 'No', value: false },
-        ],
-        initialValue: false,
-      })
-      if (prompts.isCancel(rolldownViteValue)) return cancel()
-      useRolldownVite = rolldownViteValue
-    } else {
-      useRolldownVite = false
-    }
   }
 
   prompts.log.step(`Scaffolding project in ${root}...`)
