@@ -1,6 +1,7 @@
 import fs from 'node:fs'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
+import type { SpawnOptions } from 'node:child_process'
 import spawn from 'cross-spawn'
 import mri from 'mri'
 import * as prompts from '@clack/prompts'
@@ -357,14 +358,14 @@ const renameFiles: Record<string, string | undefined> = {
 
 const defaultTargetDir = 'vite-project'
 
-function run(...params: Parameters<typeof spawn.sync>) {
-  const { status, error } = spawn.sync(...params)
+function run([command, ...args]: string[], options?: SpawnOptions) {
+  const { status, error } = spawn.sync(command, args, options)
   if (status != null && status > 0) {
     process.exit(status)
   }
 
   if (error) {
-    console.error(`\n${params.slice(0, -1).join(' ')} error!`)
+    console.error(`\n${command} ${args.join(' ')} error!`)
     console.error(error)
     process.exit(1)
   }
@@ -378,7 +379,7 @@ function install(root: string, agent: string) {
     return
   }
   prompts.log.step(`Installing dependencies with ${agent}...`)
-  run(agent, getInstallCommand(agent), {
+  run(getInstallCommand(agent), {
     stdio: 'inherit',
     cwd: root,
   })
@@ -390,7 +391,7 @@ function start(root: string, agent: string) {
     return
   }
   prompts.log.step('Starting dev server...')
-  run(agent, getRunCommand(agent, 'dev'), {
+  run(getRunCommand(agent, 'dev'), {
     stdio: 'inherit',
     cwd: root,
   })
