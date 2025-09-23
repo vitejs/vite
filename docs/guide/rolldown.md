@@ -43,6 +43,12 @@ The rolldown-powered version of Vite is currently available as a separate packag
 }
 ```
 
+::: tip Please pin the version!
+
+While these examples use `@latest`, we recommend using a specific version number to avoid unexpected breaking changes as [`rolldown-vite` is considered experimental](#versioning-policy).
+
+:::
+
 If you use a Vitepress or a meta framework that has Vite as peer dependency, you have to override the `vite` dependency in your `package.json`, which works slightly different depending on your package manager:
 
 :::code-group
