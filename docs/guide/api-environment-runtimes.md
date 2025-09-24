@@ -1,7 +1,9 @@
 # Environment API for Runtimes
 
-:::warning Experimental
-Environment API is experimental. We'll keep the APIs stable during Vite 6 to let the ecosystem experiment and build on top of it. We're planning to stabilize these new APIs with potential breaking changes in Vite 7.
+:::info Release Candidate
+The Environment API is generally in the release candidate phase. We'll maintain stability in the APIs between major releases to allow the ecosystem to experiment and build upon them. However, note that [some specific APIs](/changes/#considering) are still considered experimental.
+
+We plan to stabilize these new APIs (with potential breaking changes) in a future major release once downstream projects have had time to experiment with the new features and validate them.
 
 Resources:
 
@@ -108,6 +110,8 @@ function createWorkerdDevEnvironment(
 }
 ```
 
+There are [multiple communication levels for the `DevEnvironment`](/guide/api-environment-frameworks#devenvironment-communication-levels). To make it easier for frameworks to write runtime agnostic code, we recommend to implement the most flexible communication level possible.
+
 ## `ModuleRunner`
 
 A module runner is instantiated in the target runtime. All APIs in the next section are imported from `vite/module-runner` unless stated otherwise. This export entry point is kept as lightweight as possible, only exporting the minimal needed to create module runners.
@@ -149,12 +153,17 @@ Module runner exposes `import` method. When Vite server triggers `full-reload` H
 **Example Usage:**
 
 ```js
-import { ModuleRunner, ESModulesEvaluator } from 'vite/module-runner'
+import {
+  ModuleRunner,
+  ESModulesEvaluator,
+  createNodeImportMeta,
+} from 'vite/module-runner'
 import { transport } from './rpc-implementation.js'
 
 const moduleRunner = new ModuleRunner(
   {
     transport,
+    createImportMeta: createNodeImportMeta, // if the module runner runs in Node.js
   },
   new ESModulesEvaluator(),
 )
@@ -274,7 +283,11 @@ You need to couple it with the `HotChannel` instance on the server like in this 
 ```js [worker.js]
 import { parentPort } from 'node:worker_threads'
 import { fileURLToPath } from 'node:url'
-import { ESModulesEvaluator, ModuleRunner } from 'vite/module-runner'
+import {
+  ESModulesEvaluator,
+  ModuleRunner,
+  createNodeImportMeta,
+} from 'vite/module-runner'
 
 /** @type {import('vite/module-runner').ModuleRunnerTransport} */
 const transport = {
@@ -290,6 +303,7 @@ const transport = {
 const runner = new ModuleRunner(
   {
     transport,
+    createImportMeta: createNodeImportMeta,
   },
   new ESModulesEvaluator(),
 )

@@ -17,7 +17,7 @@ async function createDevServer() {
       noDiscovery: true,
     },
   })
-  server.pluginContainer.buildStart({})
+  await server.environments.ssr.pluginContainer.buildStart({})
   return server
 }
 
@@ -93,7 +93,7 @@ test('virtual module invalidation simple', async () => {
       },
     ],
   })
-  await server.pluginContainer.buildStart({})
+  await server.environments.ssr.pluginContainer.buildStart({})
 
   const mod1 = await server.ssrLoadModule('virtual:test')
   expect(mod1.default).toEqual(1)
@@ -151,7 +151,7 @@ test('virtual module invalidation nested', async () => {
       },
     ],
   })
-  await server.pluginContainer.buildStart({})
+  await server.environments.ssr.pluginContainer.buildStart({})
 
   const mod1 = await server.ssrLoadModule('virtual:test')
   expect(mod1.default).toEqual(1)
@@ -235,7 +235,7 @@ test('json', async () => {
     null,
     '/test.json',
   )
-  expect(json?.code.length).toMatchInlineSnapshot(`61`)
+  expect(json?.code.length).toMatchInlineSnapshot(`165`)
 })
 
 test('file url', async () => {
@@ -363,9 +363,6 @@ test('buildStart before transform', async () => {
       ],
       [
         "buildStart:out",
-      ],
-      [
-        "resolveId",
       ],
       [
         "resolveId",

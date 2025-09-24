@@ -2,7 +2,6 @@ import { beforeAll, describe, expect, test } from 'vitest'
 import {
   browserLogs,
   editFile,
-  expectWithRetry,
   getColor,
   isBuild,
   isServe,
@@ -11,7 +10,6 @@ import {
   untilBrowserLogAfter,
   viteServer,
   viteTestUrl,
-  withRetry,
 } from '~utils'
 
 function fetchHtml(p: string) {
@@ -286,11 +284,11 @@ describe.runIf(isServe)('invalid', () => {
     const message = await errorOverlay.$$eval('.message-body', (m) => {
       return m[0].innerHTML
     })
-    expect(message).toMatch(/^Unable to parse HTML/)
+    expect(message).toContain('Unable to parse HTML')
   })
 
   test('should close overlay when clicked away', async () => {
-    await page.goto(viteTestUrl + '/invalid.html')
+    await page.goto(viteTestUrl + '/invalidClick.html')
     const errorOverlay = await page.waitForSelector('vite-error-overlay')
     expect(errorOverlay).toBeTruthy()
 
@@ -300,7 +298,7 @@ describe.runIf(isServe)('invalid', () => {
   })
 
   test('should close overlay when escape key is pressed', async () => {
-    await page.goto(viteTestUrl + '/invalid.html')
+    await page.goto(viteTestUrl + '/invalidEscape.html')
     const errorOverlay = await page.waitForSelector('vite-error-overlay')
     expect(errorOverlay).toBeTruthy()
 
@@ -419,7 +417,7 @@ describe('relative input', () => {
   })
 
   test('passing relative path to rollupOptions.input works', async () => {
-    await expectWithRetry(() => page.textContent('.relative-input')).toBe('OK')
+    await expect.poll(() => page.textContent('.relative-input')).toBe('OK')
   })
 })
 
@@ -427,13 +425,13 @@ describe.runIf(isServe)('warmup', () => {
   test('should warmup /warmup/warm.js', async () => {
     // warmup transform files async during server startup, so the module check
     // here might take a while to load
-    await withRetry(async () => {
-      const mod =
-        await viteServer.environments.client.moduleGraph.getModuleByUrl(
+    await expect
+      .poll(() =>
+        viteServer.environments.client.moduleGraph.getModuleByUrl(
           '/warmup/warm.js',
-        )
-      expect(mod).toBeTruthy()
-    })
+        ),
+      )
+      .toBeTruthy()
   })
 })
 

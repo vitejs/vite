@@ -21,6 +21,7 @@ export interface ManifestChunk {
   assets?: string[]
   isEntry?: boolean
   name?: string
+  names?: string[]
   isDynamicEntry?: boolean
   imports?: string[]
   dynamicImports?: string[]
@@ -127,12 +128,15 @@ export function manifestPlugin(): Plugin {
           file: asset.fileName,
           src,
         }
-        if (isEntry) manifestChunk.isEntry = true
+        if (isEntry) {
+          manifestChunk.isEntry = true
+          manifestChunk.names = asset.names
+        }
         return manifestChunk
       }
 
       const entryCssReferenceIds = cssEntriesMap.get(this.environment)!
-      const entryCssAssetFileNames = new Set(entryCssReferenceIds)
+      const entryCssAssetFileNames = new Set()
       for (const id of entryCssReferenceIds) {
         try {
           const fileName = this.getFileName(id)

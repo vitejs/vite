@@ -11,11 +11,10 @@ import type {
 } from 'playwright-chromium'
 import type { DepOptimizationMetadata, Manifest } from 'vite'
 import { normalizePath } from 'vite'
-import { fromComment } from 'convert-source-map'
-import type { Assertion } from 'vitest'
+import { fromComment, removeComments } from 'convert-source-map'
 import { expect } from 'vitest'
 import type { ResultPromise as ExecaResultPromise } from 'execa'
-import { isWindows, page, testDir } from './vitestSetup'
+import { isWindows, page, sourcemapSnapshot, testDir } from './vitestSetup'
 
 export * from './vitestSetup'
 
@@ -89,8 +88,6 @@ function rgbToHex(rgb: string): string | undefined {
   return undefined
 }
 
-const timeout = (n: number) => new Promise((r) => setTimeout(r, n))
-
 async function toEl(
   el: string | ElementHandle | Locator,
 ): Promise<ElementHandle> {
@@ -132,17 +129,43 @@ export async function getBgColor(
   return hexToNameMap[rgbToHex(rgb)] ?? rgb
 }
 
-export function readFile(filename: string): string {
-  return fs.readFileSync(path.resolve(testDir, filename), 'utf-8')
+export function readFile(filename: string, encoding?: BufferEncoding): string
+export function readFile(filename: string, encoding: null): Buffer
+export function readFile(
+  filename: string,
+  encoding?: BufferEncoding | null,
+): Buffer | string {
+  if (encoding === undefined) encoding = 'utf-8'
+  return fs.readFileSync(path.resolve(testDir, filename), encoding)
 }
 
 export function editFile(
   filename: string,
-  replacer: (str: string) => string,
+  replacer: (content: string) => string,
+): void
+export function editFile(
+  filename: string,
+  encoding: null,
+  replacer: (content: Buffer) => Buffer,
+): void
+export function editFile(
+  filename: string,
+  encoding: BufferEncoding | null,
+  replacer: ((content: Buffer) => Buffer) | ((content: string) => string),
+): void
+export function editFile(
+  filename: string,
+  encodingOrReplacer: BufferEncoding | null | ((content: string) => string),
+  maybeReplacer?: ((content: Buffer) => Buffer) | ((content: string) => string),
 ): void {
   filename = path.resolve(testDir, filename)
-  const content = fs.readFileSync(filename, 'utf-8')
-  const modified = replacer(content)
+  const [encoding, replacer] = maybeReplacer
+    ? [encodingOrReplacer as BufferEncoding | null, maybeReplacer]
+    : ['utf-8' as const, encodingOrReplacer as (content: string) => string]
+  const content: string | Buffer = fs.readFileSync(filename, encoding)
+  const modified = (replacer as (content: string | Buffer) => string | Buffer)(
+    content,
+  )
   fs.writeFileSync(filename, modified)
 }
 
@@ -166,14 +189,14 @@ export function findAssetFile(
   base = '',
   assets = 'assets',
   matchAll = false,
-): string {
+): string | undefined {
   const assetsDir = path.join(testDir, 'dist', base, assets)
   let files: string[]
   try {
     files = fs.readdirSync(assetsDir)
   } catch (e) {
     if (e.code === 'ENOENT') {
-      return ''
+      return undefined
     }
     throw e
   }
@@ -185,12 +208,12 @@ export function findAssetFile(
             fs.readFileSync(path.resolve(assetsDir, file), 'utf-8'),
           )
           .join('')
-      : ''
+      : undefined
   } else {
     const matchedFile = files.find((file) => file.match(match))
     return matchedFile
       ? fs.readFileSync(path.resolve(assetsDir, matchedFile), 'utf-8')
-      : ''
+      : undefined
   }
 }
 
@@ -213,60 +236,6 @@ export function readDepOptimizationMetadata(
       'utf-8',
     ),
   )
-}
-
-/**
- * Poll a getter until the value it returns includes the expected value.
- */
-export async function untilUpdated(
-  poll: () => string | Promise<string>,
-  expected: string | RegExp,
-): Promise<void> {
-  const maxTries = process.env.CI ? 200 : 50
-  for (let tries = 0; tries < maxTries; tries++) {
-    const actual = (await poll()) ?? ''
-    if (
-      (typeof expected === 'string'
-        ? actual.indexOf(expected) > -1
-        : actual.match(expected)) ||
-      tries === maxTries - 1
-    ) {
-      expect(actual).toMatch(expected)
-      break
-    } else {
-      await timeout(50)
-    }
-  }
-}
-
-/**
- * Retry `func` until it does not throw error.
- */
-export async function withRetry(func: () => Promise<void>): Promise<void> {
-  const maxTries = process.env.CI ? 200 : 50
-  for (let tries = 0; tries < maxTries; tries++) {
-    try {
-      await func()
-      return
-    } catch {}
-    await timeout(50)
-  }
-  await func()
-}
-
-export const expectWithRetry = <T>(getActual: () => Promise<T>) => {
-  return new Proxy(
-    {},
-    {
-      get(_target, key) {
-        return async (...args) => {
-          await withRetry(async () => expect(await getActual())[key](...args))
-        }
-      },
-    },
-  ) as Assertion<T>['resolves']
-  // NOTE: `Assertion<T>['resolves']` has the special "promisify all assertion property functions"
-  // behaviour that we're lending here, which is the same as `PromisifyAssertion<T>` if Vitest exposes it
 }
 
 type UntilBrowserLogAfterCallback = (logs: string[]) => PromiseLike<void> | void
@@ -368,11 +337,17 @@ export const extractSourcemap = (content: string): any => {
   return fromComment(lines[lines.length - 1]).toObject()
 }
 
-export const formatSourcemapForSnapshot = (map: any): any => {
+export const formatSourcemapForSnapshot = (
+  map: any,
+  code: string,
+  withoutContent = false,
+): any => {
   const root = normalizePath(testDir)
   const m = { ...map }
   delete m.file
-  delete m.names
+  if (m.names && m.names.length === 0) {
+    delete m.names
+  }
   if (m.debugId) {
     m.debugId = '00000000-0000-0000-0000-000000000000'
   }
@@ -380,7 +355,8 @@ export const formatSourcemapForSnapshot = (map: any): any => {
   if (m.sourceRoot) {
     m.sourceRoot = m.sourceRoot.replace(root, '/root')
   }
-  return m
+  const c = removeComments(code.replace(/\?v=[\da-f]{8}/g, '?v=00000000'))
+  return { map: m, code: c, [sourcemapSnapshot]: { withoutContent } }
 }
 
 // helper function to kill process, uses taskkill on windows to ensure child process is killed too

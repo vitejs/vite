@@ -21,10 +21,8 @@ on:
       - feat/*
       - fix/*
       - perf/*
-      - v1
-      - v2
-      - v2.*
-      - v3.*
+      - "v[0-9]+" # v1, v2, ...
+      - "v[0-9]+.[0-9]+" # v4.0, v4.1, ...
   pull_request:
   workflow_dispatch:
 
@@ -41,14 +39,14 @@ jobs:
 
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
         with:
           # Assume PRs are less than 50 commits
           fetch-depth: 50
 
       - name: Get changed files
         id: changed-files
-        uses: tj-actions/changed-files@dcc7a0cba800f454d79fff4b993e8c3555bcc0a8 # v45.0.7
+        uses: tj-actions/changed-files@24d32ffd492484c1d75e0c0b894501ddb9d30d62 # v47.0.0
         with:
           files: |
             docs/**
@@ -65,7 +63,7 @@ jobs:
     strategy:
       matrix:
         os: [ubuntu-latest]
-        node_version: [18, 20, 22]
+        node_version: [20, 22, 24]
         include:
           # Active LTS + other OS
           - os: macos-latest
@@ -77,13 +75,13 @@ jobs:
     name: "Build&Test: node-${{ matrix.node_version }}, ${{ matrix.os }}"
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
 
       - name: Install pnpm
         uses: pnpm/action-setup@a7487c7e89a18df4991f7f222e4898a00d66ddda # v4.1.0
 
       - name: Set node version to ${{ matrix.node_version }}
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v5
         with:
           node-version: ${{ matrix.node_version }}
           cache: "pnpm"
@@ -148,17 +146,17 @@ jobs:
   lint:
     timeout-minutes: 10
     runs-on: ubuntu-latest
-    name: "Lint: node-20, ubuntu-latest"
+    name: "Lint: node-22, ubuntu-latest"
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
 
       - name: Install pnpm
         uses: pnpm/action-setup@a7487c7e89a18df4991f7f222e4898a00d66ddda # v4.1.0
 
-      - name: Set node version to 20
-        uses: actions/setup-node@v4
+      - name: Set node version to 22
+        uses: actions/setup-node@v5
         with:
-          node-version: 20
+          node-version: 22
           cache: "pnpm"
 
       - name: Install deps

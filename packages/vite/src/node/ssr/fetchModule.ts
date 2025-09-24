@@ -10,7 +10,6 @@ import {
 } from '../../shared/constants'
 import { genSourceMapUrl } from '../server/sourcemap'
 import type { DevEnvironment } from '../server/environment'
-import { normalizeResolvedIdToUrl } from '../plugins/importAnalysis'
 
 export interface FetchModuleOptions {
   cached?: boolean
@@ -76,16 +75,6 @@ export async function fetchModule(
       ? 'module'
       : 'commonjs'
     return { externalize: file, type }
-  }
-
-  // this is an entry point module, very high chance it's not resolved yet
-  // for example: runner.import('./some-file') or runner.import('/some-file')
-  if (isFileUrl || !importer) {
-    const resolved = await environment.pluginContainer.resolveId(url)
-    if (!resolved) {
-      throw new Error(`[vite] cannot find entry point module '${url}'.`)
-    }
-    url = normalizeResolvedIdToUrl(environment, url, resolved)
   }
 
   url = unwrapId(url)

@@ -20,6 +20,12 @@ export default defineConfig((env) => ({
         Object.assign(globalThis, { __globalServer: server })
       },
     },
+    {
+      name: 'build-client',
+      async buildApp(builder) {
+        await builder.build(builder.environments.client)
+      },
+    },
   ],
   resolve: {
     noExternal: true,
@@ -38,11 +44,6 @@ export default defineConfig((env) => ({
       },
       build: {
         outDir: 'dist/server',
-        // [feedback]
-        // is this still meant to be used?
-        // for example, `ssr: true` seems to make `minify: false` automatically
-        // and also externalization.
-        ssr: true,
         rollupOptions: {
           input: {
             index: '/src/entry-server',
@@ -54,7 +55,9 @@ export default defineConfig((env) => ({
 
   builder: {
     async buildApp(builder) {
-      await builder.build(builder.environments.client)
+      if (!builder.environments.client.isBuilt) {
+        throw new Error('Client environment should be built first')
+      }
       await builder.build(builder.environments.ssr)
     },
   },

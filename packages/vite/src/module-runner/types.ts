@@ -15,6 +15,7 @@ import type { EvaluatedModuleNode, EvaluatedModules } from './evaluatedModules'
 import type {
   ssrDynamicImportKey,
   ssrExportAllKey,
+  ssrExportNameKey,
   ssrImportKey,
   ssrImportMetaKey,
   ssrModuleExportsKey,
@@ -38,6 +39,7 @@ export interface ModuleRunnerContext {
     options?: ImportCallOptions,
   ) => Promise<any>
   [ssrExportAllKey]: (obj: any) => void
+  [ssrExportNameKey]: (name: string, getter: () => unknown) => void
   [ssrImportMetaKey]: ModuleRunnerImportMeta
 }
 
@@ -84,11 +86,6 @@ export interface ModuleRunnerHmr {
 
 export interface ModuleRunnerOptions {
   /**
-   * Root of the project
-   * @deprecated not used and to be removed
-   */
-  root?: string
-  /**
    * A set of methods to communicate with the server.
    */
   transport: ModuleRunnerTransport
@@ -108,6 +105,14 @@ export interface ModuleRunnerOptions {
    * @default true
    */
   hmr?: boolean | ModuleRunnerHmr
+  /**
+   * Create import.meta object for the module.
+   *
+   * @default createDefaultImportMeta
+   */
+  createImportMeta?: (
+    modulePath: string,
+  ) => ModuleRunnerImportMeta | Promise<ModuleRunnerImportMeta>
   /**
    * Custom module cache. If not provided, creates a separate module cache for each ModuleRunner instance.
    */

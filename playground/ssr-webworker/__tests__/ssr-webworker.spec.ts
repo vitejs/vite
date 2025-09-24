@@ -32,5 +32,5 @@ test('supports nodejs_compat', async () => {
 
 test.runIf(isBuild)('inlineDynamicImports', () => {
   const dynamicJsContent = findAssetFile(/dynamic-[-\w]+\.js/, 'worker')
-  expect(dynamicJsContent).toBe('')
+  expect(dynamicJsContent).toBeUndefined()
 })

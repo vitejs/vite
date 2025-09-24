@@ -113,15 +113,7 @@ Vite starter templates have `"skipLibCheck": "true"` by default to avoid typeche
 
 ### Client Types
 
-Vite's default types are for its Node.js API. To shim the environment of client side code in a Vite application, add a `d.ts` declaration file:
-
-```typescript
-/// <reference types="vite/client" />
-```
-
-::: details Using `compilerOptions.types`
-
-Alternatively, you can add `vite/client` to `compilerOptions.types` inside `tsconfig.json`:
+Vite's default types are for its Node.js API. To shim the environment of client-side code in a Vite application, you can add `vite/client` to `compilerOptions.types` inside `tsconfig.json`:
 
 ```json [tsconfig.json]
 {
@@ -131,7 +123,15 @@ Alternatively, you can add `vite/client` to `compilerOptions.types` inside `tsco
 }
 ```
 
-Note that if [`compilerOptions.types`](https://www.typescriptlang.org/tsconfig#types) is specified, only these packages will be included in the global scope (instead of all visible ”@types” packages).
+Note that if [`compilerOptions.types`](https://www.typescriptlang.org/tsconfig#types) is specified, only these packages will be included in the global scope (instead of all visible ”@types” packages). This is recommended since TS 5.9.
+
+::: details Using triple-slash directive
+
+Alternatively, you can add a `d.ts` declaration file:
+
+```typescript [vite-env.d.ts]
+/// <reference types="vite/client" />
+```
 
 :::
 
@@ -153,7 +153,13 @@ For example, to make the default import of `*.svg` a React component:
     export default content
   }
   ```
-- The file containing the reference to `vite/client`:
+- If you are using `compilerOptions.types`, ensure the file is included in `tsconfig.json`:
+  ```json [tsconfig.json]
+  {
+    "include": ["src", "./vite-env-override.d.ts"]
+  }
+  ```
+- If you are using triple-slash directives, update the file containing the reference to `vite/client` (normally `vite-env.d.ts`):
   ```ts
   /// <reference types="./vite-env-override.d.ts" />
   /// <reference types="vite/client" />
@@ -176,7 +182,7 @@ Assets referenced by HTML elements such as `<script type="module" src>` and `<li
 - `<audio src>`
 - `<embed src>`
 - `<img src>` and `<img srcset>`
-- `<image src>`
+- `<image href>` and `<image xlink:href>`
 - `<input src>`
 - `<link href>` and `<link imagesrcset>`
 - `<object data>`
@@ -212,9 +218,10 @@ All modern frameworks maintain integrations with Vite. Most framework plugins ar
 - Vue support via [@vitejs/plugin-vue](https://github.com/vitejs/vite-plugin-vue/tree/main/packages/plugin-vue)
 - Vue JSX support via [@vitejs/plugin-vue-jsx](https://github.com/vitejs/vite-plugin-vue/tree/main/packages/plugin-vue-jsx)
 - React support via [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/tree/main/packages/plugin-react)
-- React using SWC support via [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react-swc)
+- React using SWC support via [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/tree/main/packages/plugin-react-swc)
+- [React Server Components (RSC)](https://react.dev/reference/rsc/server-components) support via [@vitejs/plugin-rsc](https://github.com/vitejs/vite-plugin-react/tree/main/packages/plugin-rsc)
 
-Check out the [Plugins Guide](https://vite.dev/plugins) for more information.
+Check out the [Plugins Guide](/plugins/) for more information.
 
 ## JSX
 
@@ -313,7 +320,7 @@ npm add -D stylus
 
 If using Vue single file components, this also automatically enables `<style lang="sass">` et al.
 
-Vite improves `@import` resolving for Sass and Less so that Vite aliases are also respected. In addition, relative `url()` references inside imported Sass/Less files that are in different directories from the root file are also automatically rebased to ensure correctness.
+Vite improves `@import` resolving for Sass and Less so that Vite aliases are also respected. In addition, relative `url()` references inside imported Sass/Less files that are in different directories from the root file are also automatically rebased to ensure correctness. Rebasing `url()` references that starts with a variable or a interpolation are not supported due to its API constraints.
 
 `@import` alias and url rebasing are not supported for Stylus due to its API constraints.
 
@@ -364,7 +371,7 @@ Special queries can modify how assets are loaded:
 ```js twoslash
 import 'vite/client'
 // ---cut---
-// Explicitly load assets as URL
+// Explicitly load assets as URL (automatically inlined depending on the file size)
 import assetAsURL from './asset.js?url'
 ```
 
@@ -543,7 +550,7 @@ const modules = {
 
 #### Custom Queries
 
-You can also use the `query` option to provide queries to imports, for example, to import assets [as a string](https://vite.dev/guide/assets.html#importing-asset-as-string) or [as a url](https://vite.dev/guide/assets.html#importing-asset-as-url):
+You can also use the `query` option to provide queries to imports, for example, to import assets [as a string](/guide/assets.html#importing-asset-as-string) or [as a url](/guide/assets.html#importing-asset-as-url):
 
 ```ts twoslash
 import 'vite/client'
@@ -579,6 +586,32 @@ const modules = import.meta.glob('./dir/*.js', {
   query: { foo: 'bar', bar: true },
 })
 ```
+
+#### Base Path
+
+You can also use the `base` option to provide base path for the imports:
+
+```ts twoslash
+import 'vite/client'
+// ---cut---
+const modulesWithBase = import.meta.glob('./**/*.js', {
+  base: './base',
+})
+```
+
+```ts
+// code produced by vite:
+const modulesWithBase = {
+  './dir/foo.js': () => import('./base/dir/foo.js'),
+  './dir/bar.js': () => import('./base/dir/bar.js'),
+}
+```
+
+The base option can only be a directory path relative to the importer file or absolute against the project root. Aliases and virtual modules aren't supported.
+
+Only the globs that are relative paths are interpreted as relative to the resolved base.
+
+All the resulting module keys are modified to be relative to the base if provided.
 
 ### Glob Import Caveats
 

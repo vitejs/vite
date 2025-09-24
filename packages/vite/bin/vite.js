@@ -3,10 +3,10 @@ import { performance } from 'node:perf_hooks'
 import module from 'node:module'
 
 if (!import.meta.url.includes('node_modules')) {
-  try {
-    // only available as dev dependency
-    await import('source-map-support').then((r) => r.default.install())
-  } catch {}
+  if (!process.env.DEBUG_DISABLE_SOURCE_MAP) {
+    // eslint-disable-next-line n/no-unsupported-features/node-builtins -- only used in dev
+    process.setSourceMapsEnabled(true)
+  }
 
   process.on('unhandledRejection', (err) => {
     throw new Error('UNHANDLED PROMISE REJECTION', { cause: err })
@@ -24,7 +24,7 @@ const profileIndex = process.argv.indexOf('--profile')
 
 if (debugIndex > 0) {
   let value = process.argv[debugIndex + 1]
-  if (!value || value.startsWith('-')) {
+  if (!value || value[0] === '-') {
     value = 'vite:*'
   } else {
     // support debugging multiple flags with comma-separated list
@@ -39,7 +39,7 @@ if (debugIndex > 0) {
 
   if (filterIndex > 0) {
     const filter = process.argv[filterIndex + 1]
-    if (filter && !filter.startsWith('-')) {
+    if (filter && filter[0] !== '-') {
       process.env.VITE_DEBUG_FILTER = filter
     }
   }
@@ -65,7 +65,7 @@ function start() {
 if (profileIndex > 0) {
   process.argv.splice(profileIndex, 1)
   const next = process.argv[profileIndex]
-  if (next && !next.startsWith('-')) {
+  if (next && next[0] !== '-') {
     process.argv.splice(profileIndex, 1)
   }
   const inspector = await import('node:inspector').then((r) => r.default)

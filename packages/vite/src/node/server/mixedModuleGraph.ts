@@ -1,4 +1,5 @@
 import type { ModuleInfo } from 'rollup'
+import { monotonicDateNow } from '../utils'
 import type { TransformResult } from './transformRequest'
 import type {
   EnvironmentModuleGraph,
@@ -139,7 +140,7 @@ export class ModuleNode {
   set file(value: string | null) {
     this._set('file', value)
   }
-  get type(): 'js' | 'css' {
+  get type(): 'js' | 'css' | 'asset' {
     return this._get('type')
   }
   // `info` needs special care as it's defined as a proxy in `pluginContainer`,
@@ -387,7 +388,7 @@ export class ModuleGraph {
   invalidateModule(
     mod: ModuleNode,
     seen = new Set<ModuleNode>(),
-    timestamp: number = Date.now(),
+    timestamp: number = monotonicDateNow(),
     isHmr: boolean = false,
     /** @internal */
     softInvalidate = false,

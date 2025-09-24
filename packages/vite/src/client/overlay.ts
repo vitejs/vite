@@ -7,15 +7,22 @@ declare const __HMR_CONFIG_NAME__: string
 const hmrConfigName = __HMR_CONFIG_NAME__
 const base = __BASE__ || '/'
 
+export const cspNonce =
+  'document' in globalThis
+    ? document.querySelector<HTMLMetaElement>('meta[property=csp-nonce]')?.nonce
+    : undefined
+
 // Create an element with provided attributes and optional children
 function h(
   e: string,
-  attrs: Record<string, string> = {},
+  attrs: Record<string, string | undefined> = {},
   ...children: (string | Node)[]
 ) {
   const elem = document.createElement(e)
   for (const [k, v] of Object.entries(attrs)) {
-    elem.setAttribute(k, v)
+    if (v !== undefined) {
+      elem.setAttribute(k, v)
+    }
   }
   elem.append(...children)
   return elem
@@ -197,10 +204,10 @@ const createTemplate = () =>
         '.',
       ),
     ),
-    h('style', {}, templateStyle),
+    h('style', { nonce: cspNonce }, templateStyle),
   )
 
-const fileRE = /(?:[a-zA-Z]:\\|\/).*?:\d+:\d+/g
+const fileRE = /(?:file:\/\/)?(?:[a-zA-Z]:\\|\/).*?:\d+:\d+/g
 const codeframeRE = /^(?:>?\s*\d+\s+\|.*|\s+\|\s*\^.*)\r?\n/gm
 
 // Allow `ErrorOverlay` to extend `HTMLElement` even in environments where
@@ -279,6 +286,9 @@ export class ErrorOverlay extends HTMLElement {
         }
         el.appendChild(link)
         curIndex += frag.length + file.length
+      }
+      if (curIndex < text.length) {
+        el.appendChild(document.createTextNode(text.slice(curIndex)))
       }
     }
   }

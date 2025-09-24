@@ -16,7 +16,7 @@ import type {
 } from 'estree'
 import { extract_names as extractNames } from 'periscopic'
 import { walk as eswalk } from 'estree-walker'
-import type { RawSourceMap } from '@ampproject/remapping'
+import type { RawSourceMap } from '@jridgewell/remapping'
 import { parseAstAsync as rollupParseAstAsync } from 'rollup/parseAst'
 import type { TransformResult } from '../server/transformRequest'
 import {
@@ -43,6 +43,7 @@ export const ssrModuleExportsKey = `__vite_ssr_exports__`
 export const ssrImportKey = `__vite_ssr_import__`
 export const ssrDynamicImportKey = `__vite_ssr_dynamic_import__`
 export const ssrExportAllKey = `__vite_ssr_exportAll__`
+export const ssrExportNameKey = `__vite_ssr_exportName__`
 export const ssrImportMetaKey = `__vite_ssr_import_meta__`
 
 const hashbangRE = /^#!.*\n/
@@ -136,77 +137,87 @@ async function ssrTransformScript(
     const importId = `__vite_ssr_import_${uid++}__`
     const transformedImport = `const ${importId} = await ${ssrImportKey}(${JSON.stringify(
       source,
-    )}${metadataArg});`
+    )}${metadataArg});\n`
 
     s.update(importNode.start, importNode.end, transformedImport)
 
-    // If there's only whitespace characters between the last import and the
-    // current one, that means there's no statements between them and
-    // hoisting is not needed.
-    // FIXME: account for comments between imports
-    const nonWhitespaceRegex = /\S/g
-    nonWhitespaceRegex.lastIndex = index
-    nonWhitespaceRegex.exec(code)
-    if (importNode.start > nonWhitespaceRegex.lastIndex) {
-      // Imports are moved to the top of the file (AKA “hoisting”) to ensure any
-      // non-import statements before them are executed after the import. This
-      // aligns SSR imports with native ESM import behavior.
-      s.move(importNode.start, importNode.end, index)
-    } else {
-      // Only update hoistIndex when *not* hoisting the current import. This
-      // ensures that once any import in this module has been hoisted, all
-      // remaining imports will also be hoisted. This is inherently true because
-      // we work from the top of the file downward.
+    if (importNode.start === index) {
+      // no need to hoist, but update hoistIndex to keep the order
       hoistIndex = importNode.end
-    }
-
-    // Track how many lines the original import statement spans, so we can
-    // preserve the line offset.
-    let linesSpanned = 1
-    for (let i = importNode.start; i < importNode.end; i++) {
-      if (code[i] === '\n') {
-        linesSpanned++
-      }
-    }
-    if (linesSpanned > 1) {
-      // This leaves behind any extra newlines that were removed during
-      // transformation, in the position of the original import statement
-      // (before any hoisting).
-      s.prependRight(importNode.end, '\n'.repeat(linesSpanned - 1))
+    } else {
+      // There will be an error if the module is called before it is imported,
+      // so the module import statement is hoisted to the top
+      s.move(importNode.start, importNode.end, index)
     }
 
     return importId
   }
 
   function defineExport(name: string, local = name) {
+    // wrap with try/catch to fallback to `undefined` for backward compat.
     s.appendLeft(
       fileStartIndex,
-      `Object.defineProperty(${ssrModuleExportsKey}, ${JSON.stringify(name)}, ` +
-        `{ enumerable: true, configurable: true, get(){ return ${local} }});\n`,
+      `${ssrExportNameKey}(${JSON.stringify(name)}, () => { try { return ${local} } catch {} });\n`,
     )
   }
 
-  const imports: RollupAstNode<ImportDeclaration>[] = []
+  const imports: (
+    | RollupAstNode<ImportDeclaration>
+    | RollupAstNode<ExportNamedDeclaration>
+    | RollupAstNode<ExportAllDeclaration>
+  )[] = []
   const exports: (
     | RollupAstNode<ExportNamedDeclaration>
     | RollupAstNode<ExportDefaultDeclaration>
     | RollupAstNode<ExportAllDeclaration>
   )[] = []
+  const reExportImportIdMap = new Map<
+    RollupAstNode<ExportNamedDeclaration> | RollupAstNode<ExportAllDeclaration>,
+    string
+  >()
 
   for (const node of ast.body as Node[]) {
     if (node.type === 'ImportDeclaration') {
       imports.push(node)
+    } else if (node.type === 'ExportDefaultDeclaration') {
+      exports.push(node)
     } else if (
       node.type === 'ExportNamedDeclaration' ||
-      node.type === 'ExportDefaultDeclaration' ||
       node.type === 'ExportAllDeclaration'
     ) {
+      imports.push(node)
       exports.push(node)
     }
   }
 
-  // 1. check all import statements and record id -> importName map
+  // 1. check all import statements, hoist imports, and record id -> importName map
   for (const node of imports) {
+    // hoist re-export's import at the same time as normal imports to preserve execution order
+    if (node.type === 'ExportNamedDeclaration') {
+      if (node.source) {
+        // export { foo, bar } from './foo'
+        const importId = defineImport(
+          hoistIndex,
+          node as RollupAstNode<ExportNamedDeclaration & { source: Literal }>,
+          {
+            importedNames: node.specifiers.map(
+              (s) => getIdentifierNameOrLiteralValue(s.local) as string,
+            ),
+          },
+        )
+        reExportImportIdMap.set(node, importId)
+      }
+      continue
+    }
+    if (node.type === 'ExportAllDeclaration') {
+      if (node.source) {
+        // export * from './foo'
+        const importId = defineImport(hoistIndex, node)
+        reExportImportIdMap.set(node, importId)
+      }
+      continue
+    }
+
     // import foo from 'foo' --> foo -> __import_foo__.default
     // import { baz } from 'foo' --> baz -> __import_foo__.baz
     // import * as ok from 'foo' --> ok -> __import_foo__
@@ -263,18 +274,9 @@ async function ssrTransformScript(
         }
         s.remove(node.start, (node.declaration as Node).start)
       } else {
-        s.remove(node.start, node.end)
         if (node.source) {
           // export { foo, bar } from './foo'
-          const importId = defineImport(
-            node.start,
-            node as RollupAstNode<ExportNamedDeclaration & { source: Literal }>,
-            {
-              importedNames: node.specifiers.map(
-                (s) => getIdentifierNameOrLiteralValue(s.local) as string,
-              ),
-            },
-          )
+          const importId = reExportImportIdMap.get(node)!
           for (const spec of node.specifiers) {
             const exportedAs = getIdentifierNameOrLiteralValue(
               spec.exported,
@@ -290,6 +292,7 @@ async function ssrTransformScript(
             }
           }
         } else {
+          s.remove(node.start, node.end)
           // export { foo, bar }
           for (const spec of node.specifiers) {
             // spec.local can be Literal only when it has "from 'something'"
@@ -318,23 +321,22 @@ async function ssrTransformScript(
         // export default class A {}
         const { name } = node.declaration.id
         s.remove(node.start, node.start + 15 /* 'export default '.length */)
-        s.append(
-          `\nObject.defineProperty(${ssrModuleExportsKey}, "default", ` +
-            `{ enumerable: true, configurable: true, value: ${name} });`,
-        )
+        defineExport('default', name)
       } else {
         // anonymous default exports
+        const name = `__vite_ssr_export_default__`
         s.update(
           node.start,
           node.start + 14 /* 'export default'.length */,
-          `${ssrModuleExportsKey}.default =`,
+          `const ${name} =`,
         )
+        defineExport('default', name)
       }
     }
 
     // export * from './foo'
     if (node.type === 'ExportAllDeclaration') {
-      const importId = defineImport(node.start, node)
+      const importId = reExportImportIdMap.get(node)!
       if (node.exported) {
         const exportedAs = getIdentifierNameOrLiteralValue(
           node.exported,

@@ -5,7 +5,7 @@ import { promisify } from 'node:util'
 import { performance } from 'node:perf_hooks'
 import colors from 'picocolors'
 import type { BuildContext, BuildOptions as EsbuildBuildOptions } from 'esbuild'
-import esbuild, { build } from 'esbuild'
+import esbuild, { build, formatMessages } from 'esbuild'
 import { init, parse } from 'es-module-lexer'
 import { isDynamicPattern } from 'tinyglobby'
 import type { ResolvedConfig } from '../config'
@@ -25,7 +25,10 @@ import {
   defaultEsbuildSupported,
   transformWithEsbuild,
 } from '../plugins/esbuild'
-import { ESBUILD_MODULES_TARGET, METADATA_FILENAME } from '../constants'
+import {
+  ESBUILD_BASELINE_WIDELY_AVAILABLE_TARGET,
+  METADATA_FILENAME,
+} from '../constants'
 import { isWindows } from '../../shared/utils'
 import type { Environment } from '../environment'
 import { esbuildCjsExternalPlugin, esbuildDepPlugin } from './esbuildDepPlugin'
@@ -128,7 +131,6 @@ export interface DepOptimizationConfig {
    * listed in `include` will be optimized. The scanner isn't run for cold start
    * in this case. CJS-only dependencies must be present in `include` during dev.
    * @default false
-   * @experimental
    */
   noDiscovery?: boolean
   /**
@@ -722,11 +724,23 @@ export function runOptimizeDeps(
         return successfulResult
       })
 
-      .catch((e) => {
+      .catch(async (e) => {
         if (e.errors && e.message.includes('The build was canceled')) {
           // esbuild logs an error when cancelling, but this is expected so
           // return an empty result instead
           return cancelledResult
+        }
+        const prependMessage = colors.red(
+          'Error during dependency optimization:\n\n',
+        )
+        if (e.errors) {
+          const msgs = await formatMessages(e.errors, {
+            kind: 'error',
+            color: true,
+          })
+          e.message = prependMessage + msgs.join('\n')
+        } else {
+          e.message = prependMessage + e.message
         }
         throw e
       })
@@ -834,7 +848,7 @@ async function prepareEsbuildOptimizerRun(
             js: `import { createRequire } from 'module';const require = createRequire(import.meta.url);`,
           }
         : undefined,
-    target: ESBUILD_MODULES_TARGET,
+    target: ESBUILD_BASELINE_WIDELY_AVAILABLE_TARGET,
     external,
     logLevel: 'error',
     splitting: true,

@@ -1,6 +1,13 @@
 <script setup lang="ts">
-import { computed, ComputedRef, onMounted, onUnmounted, Ref, ref } from 'vue'
-import FrameworkCard, { Framework } from './FrameworkCard.vue'
+import {
+  computed,
+  type ComputedRef,
+  onMounted,
+  onUnmounted,
+  type Ref,
+  ref,
+} from 'vue'
+import FrameworkCard, { type Framework } from './FrameworkCard.vue'
 import { gsap } from 'gsap'
 import { ScrollTrigger } from 'gsap/dist/ScrollTrigger'
 
@@ -318,7 +325,7 @@ const rowStyle: ComputedRef<{ transform: string }> = computed(() => {
     <div class="frameworks-container">
       <!-- Top Row -->
       <div class="framework-row" :style="rowStyle">
-        <FrameworkCard v-for="i in numBlocksPerRow + 2" />
+        <FrameworkCard v-for="_ in numBlocksPerRow + 2" />
       </div>
 
       <!-- Logo Rows -->
@@ -350,7 +357,7 @@ const rowStyle: ComputedRef<{ transform: string }> = computed(() => {
 
       <!-- Bottom Row -->
       <div class="framework-row" :style="rowStyle">
-        <FrameworkCard v-for="i in numBlocksPerRow + 2" />
+        <FrameworkCard v-for="_ in numBlocksPerRow + 2" />
       </div>
     </div>
   </section>

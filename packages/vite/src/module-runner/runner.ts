@@ -1,6 +1,6 @@
 import type { ViteHotContext } from 'types/hot'
 import { HMRClient, HMRContext, type HMRLogger } from '../shared/hmr'
-import { cleanUrl, isPrimitive, isWindows } from '../shared/utils'
+import { cleanUrl, isPrimitive } from '../shared/utils'
 import { analyzeImportedModDifference } from '../shared/ssrTransform'
 import {
   type NormalizedModuleRunnerTransport,
@@ -11,28 +11,24 @@ import { EvaluatedModules } from './evaluatedModules'
 import type {
   ModuleEvaluator,
   ModuleRunnerContext,
-  ModuleRunnerImportMeta,
   ModuleRunnerOptions,
   ResolvedResult,
   SSRImportMetadata,
 } from './types'
-import {
-  posixDirname,
-  posixPathToFileHref,
-  posixResolve,
-  toWindowsPath,
-} from './utils'
+import { posixDirname, posixPathToFileHref, posixResolve } from './utils'
 import {
   ssrDynamicImportKey,
   ssrExportAllKey,
+  ssrExportNameKey,
   ssrImportKey,
   ssrImportMetaKey,
   ssrModuleExportsKey,
 } from './constants'
 import { hmrLogger, silentConsole } from './hmrLogger'
-import { createHMRHandler } from './hmrHandler'
+import { createHMRHandlerForRunner } from './hmrHandler'
 import { enableSourceMapSupport } from './sourcemap/index'
 import { ESModulesEvaluator } from './esmEvaluator'
+import { createDefaultImportMeta } from './createImportMeta'
 
 interface ModuleRunnerDebugger {
   (formatter: unknown, ...args: unknown[]): void
@@ -42,13 +38,6 @@ export class ModuleRunner {
   public evaluatedModules: EvaluatedModules
   public hmrClient?: HMRClient
 
-  private readonly envProxy = new Proxy({} as any, {
-    get(_, p) {
-      throw new Error(
-        `[module runner] Dynamic access of "import.meta.env" is not supported. Please, use "import.meta.env.${String(p)}" instead.`,
-      )
-    },
-  })
   private readonly transport: NormalizedModuleRunnerTransport
   private readonly resetSourceMapSupport?: () => void
   private readonly concurrentModuleNodePromises = new Map<
@@ -83,7 +72,7 @@ export class ModuleRunner {
           'HMR is not supported by this runner transport, but `hmr` option was set to true',
         )
       }
-      this.transport.connect(createHMRHandler(this))
+      this.transport.connect(createHMRHandlerForRunner(this))
     } else {
       this.transport.connect?.()
     }
@@ -350,29 +339,13 @@ export class ModuleRunner {
       )
     }
 
+    const createImportMeta =
+      this.options.createImportMeta ?? createDefaultImportMeta
+
     const modulePath = cleanUrl(file || moduleId)
     // disambiguate the `<UNIT>:/` on windows: see nodejs/node#31710
     const href = posixPathToFileHref(modulePath)
-    const filename = modulePath
-    const dirname = posixDirname(modulePath)
-    const meta: ModuleRunnerImportMeta = {
-      filename: isWindows ? toWindowsPath(filename) : filename,
-      dirname: isWindows ? toWindowsPath(dirname) : dirname,
-      url: href,
-      env: this.envProxy,
-      resolve(_id, _parent?) {
-        throw new Error(
-          '[module runner] "import.meta.resolve" is not supported.',
-        )
-      },
-      // should be replaced during transformation
-      glob() {
-        throw new Error(
-          `[module runner] "import.meta.glob" is statically replaced during ` +
-            `file transformation. Make sure to reference it by the full name.`,
-        )
-      },
-    }
+    const meta = await createImportMeta(modulePath)
     const exports = Object.create(null)
     Object.defineProperty(exports, Symbol.toStringTag, {
       value: 'Module',
@@ -405,6 +378,12 @@ export class ModuleRunner {
       [ssrDynamicImportKey]: dynamicRequest,
       [ssrModuleExportsKey]: exports,
       [ssrExportAllKey]: (obj: any) => exportAll(exports, obj),
+      [ssrExportNameKey]: (name, getter) =>
+        Object.defineProperty(exports, name, {
+          enumerable: true,
+          configurable: true,
+          get: getter,
+        }),
       [ssrImportMetaKey]: meta,
     }
 

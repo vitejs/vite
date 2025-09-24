@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, Ref, ref, watch, ComputedRef } from 'vue'
+import { computed, type Ref, ref, watch, type ComputedRef } from 'vue'
 import { gsap } from 'gsap'
 
 /**
@@ -34,12 +34,12 @@ export interface SvgNodeProps {
   /**
    * The color of the glow effect.
    */
-  glowColor?: string
+  glowColor?: string | undefined
 
   /**
    * The color of the dot.
    */
-  dotColor?: string | boolean
+  dotColor?: string | undefined
 }
 
 const props = withDefaults(defineProps<SvgNodeProps>(), {

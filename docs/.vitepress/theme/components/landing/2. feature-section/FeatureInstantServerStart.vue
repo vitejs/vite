@@ -1,4 +1,4 @@
-<script setup>
+<script setup lang="ts">
 import { onMounted, onUnmounted, ref } from 'vue'
 import { gsap } from 'gsap'
 import { useSlideIn } from '../../../composables/useSlideIn'
@@ -26,6 +26,7 @@ const { startAnimation } = useCardAnimation(
       commandTriggered.value = true
       highlightEnter.value = false
     })
+    return timeline
   },
   {
     once: true,
@@ -35,7 +36,7 @@ const { startAnimation } = useCardAnimation(
 /**
  * Run the command animation on enter press
  */
-function handleEnterPress(event) {
+function handleEnterPress(event: KeyboardEvent) {
   if (event.key === 'Enter') {
     startAnimation()
     window.removeEventListener('keydown', handleEnterPress)
@@ -343,7 +344,7 @@ onUnmounted(() => {
       height: 100%;
       border-radius: 12px 0 0 12px;
       background:
-        url('/noise.png'),
+        url('../common/noise.webp'),
         radial-gradient(
           ellipse 140% 80% at 96% bottom,
           #13b351 0%,
@@ -380,7 +381,7 @@ onUnmounted(() => {
     right: 40px;
     width: 1px;
     height: calc(100% - 170px - 33px);
-    background: url('/noise.png'), #13b351;
+    background: url('../common/noise.webp'), #13b351;
     box-shadow: 0 0 10px 0 #13b351;
     transition: all 0.5s ease-in;
     will-change: transform, opacity;

@@ -30,6 +30,7 @@ export interface WebSocketConnectionPayload {
 export interface InvalidatePayload {
   path: string
   message: string | undefined
+  firstInvalidatedBy: string
 }
 
 /**

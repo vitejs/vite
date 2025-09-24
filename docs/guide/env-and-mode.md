@@ -2,7 +2,18 @@
 
 Vite exposes certain constants under the special `import.meta.env` object. These constants are defined as global variables during dev and statically replaced at build time to make tree-shaking effective.
 
-## Built-in constants
+:::details Example
+
+```js
+if (import.meta.env.DEV) {
+  // code inside here will be tree-shaken in production builds
+  console.log('Dev mode')
+}
+```
+
+:::
+
+## Built-in Constants
 
 Some built-in constants are available in all cases:
 
@@ -106,8 +117,6 @@ By default, Vite provides type definitions for `import.meta.env` in [`vite/clien
 To achieve this, you can create an `vite-env.d.ts` in `src` directory, then augment `ImportMetaEnv` like this:
 
 ```typescript [vite-env.d.ts]
-/// <reference types="vite/client" />
-
 interface ViteTypeOptions {
   // By adding this line, you can make the type of ImportMetaEnv strict
   // to disallow unknown keys.

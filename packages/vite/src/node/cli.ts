@@ -9,8 +9,27 @@ import type { ServerOptions } from './server'
 import type { CLIShortcut } from './shortcuts'
 import type { LogLevel } from './logger'
 import { createLogger } from './logger'
-import { resolveConfig } from './config'
 import type { InlineConfig } from './config'
+
+function checkNodeVersion(nodeVersion: string): boolean {
+  const currentVersion = nodeVersion.split('.')
+  const major = parseInt(currentVersion[0], 10)
+  const minor = parseInt(currentVersion[1], 10)
+  const isSupported =
+    (major === 20 && minor >= 19) || (major === 22 && minor >= 12) || major > 22
+  return isSupported
+}
+
+if (!checkNodeVersion(process.versions.node)) {
+  // eslint-disable-next-line no-console
+  console.warn(
+    colors.yellow(
+      `You are using Node.js ${process.versions.node}. ` +
+        `Vite requires Node.js version 20.19+ or 22.12+. ` +
+        `Please upgrade your Node.js version.`,
+    ),
+  )
+}
 
 const cli = cac('vite')
 
@@ -95,6 +114,7 @@ function cleanGlobalCLIOptions<Options extends GlobalCLIOptions>(
   delete ret.filter
   delete ret.m
   delete ret.mode
+  delete ret.force
   delete ret.w
 
   // convert the sourcemap option to a boolean if necessary
@@ -258,7 +278,7 @@ cli
       logger.error(colors.red(`error when starting dev server:\n${e.stack}`), {
         error: e,
       })
-      stopProfiler(logger.info)
+      await stopProfiler(logger.info)
       process.exit(1)
     }
   })
@@ -266,7 +286,10 @@ cli
 // build
 cli
   .command('build [root]', 'build for production')
-  .option('--target <target>', `[string] transpile target (default: 'modules')`)
+  .option(
+    '--target <target>',
+    `[string] transpile target (default: 'baseline-widely-available')`,
+  )
   .option('--outDir <dir>', `[string] output directory (default: dist)`)
   .option(
     '--assetsDir <dir>',
@@ -330,7 +353,9 @@ cli
         )
         process.exit(1)
       } finally {
-        stopProfiler((message) => createLogger(options.logLevel).info(message))
+        await stopProfiler((message) =>
+          createLogger(options.logLevel).info(message),
+        )
       }
     },
   )
@@ -348,6 +373,7 @@ cli
   .action(
     async (root: string, options: { force?: boolean } & GlobalCLIOptions) => {
       filterDuplicateOptions(options)
+      const { resolveConfig } = await import('./config')
       const { optimizeDeps } = await import('./optimizer')
       try {
         const config = await resolveConfig(
@@ -420,7 +446,9 @@ cli
         )
         process.exit(1)
       } finally {
-        stopProfiler((message) => createLogger(options.logLevel).info(message))
+        await stopProfiler((message) =>
+          createLogger(options.logLevel).info(message),
+        )
       }
     },
   )

@@ -1,12 +1,13 @@
 import type {
   CustomPluginOptions,
   LoadResult,
+  MinimalPluginContext,
   ObjectHook,
+  PluginContext,
+  PluginContextMeta,
   ResolveIdResult,
-  MinimalPluginContext as RollupMinimalPluginContext,
   Plugin as RollupPlugin,
-  PluginContext as RollupPluginContext,
-  TransformPluginContext as RollupTransformPluginContext,
+  TransformPluginContext,
   TransformResult,
 } from 'rollup'
 import type {
@@ -16,6 +17,7 @@ import type {
   UserConfig,
 } from './config'
 import type { ServerHook } from './server'
+import type { BuildAppHook } from './build'
 import type { IndexHtmlTransform } from './plugins/html'
 import type { EnvironmentModuleNode } from './server/moduleGraph'
 import type { ModuleNode } from './server/mixedModuleGraph'
@@ -61,29 +63,22 @@ export interface PluginContextExtension {
   environment: Environment
 }
 
-export interface HotUpdatePluginContext {
-  environment: DevEnvironment
+export interface PluginContextMetaExtension {
+  viteVersion: string
 }
 
-export interface MinimalPluginContext
-  extends RollupMinimalPluginContext,
-    PluginContextExtension {}
+export interface ConfigPluginContext
+  extends Omit<MinimalPluginContext, 'meta' | 'environment'> {
+  meta: Omit<PluginContextMeta, 'watchMode'>
+}
 
-export interface PluginContext
-  extends RollupPluginContext,
-    PluginContextExtension {}
+export interface MinimalPluginContextWithoutEnvironment
+  extends Omit<MinimalPluginContext, 'environment'> {}
 
-export interface ResolveIdPluginContext
-  extends RollupPluginContext,
-    PluginContextExtension {}
-
-export interface TransformPluginContext
-  extends RollupTransformPluginContext,
-    PluginContextExtension {}
-
-// Argument Rollup types to have the PluginContextExtension
+// Augment Rollup types to have the PluginContextExtension
 declare module 'rollup' {
   export interface MinimalPluginContext extends PluginContextExtension {}
+  export interface PluginContextMeta extends PluginContextMetaExtension {}
 }
 
 /**
@@ -114,7 +109,7 @@ export interface Plugin<A = any> extends RollupPlugin<A> {
    */
   hotUpdate?: ObjectHook<
     (
-      this: HotUpdatePluginContext,
+      this: MinimalPluginContext & { environment: DevEnvironment },
       options: HotUpdateOptions,
     ) =>
       | Array<EnvironmentModuleNode>
@@ -127,7 +122,7 @@ export interface Plugin<A = any> extends RollupPlugin<A> {
    */
   resolveId?: ObjectHook<
     (
-      this: ResolveIdPluginContext,
+      this: PluginContext,
       source: string,
       importer: string | undefined,
       options: {
@@ -149,10 +144,6 @@ export interface Plugin<A = any> extends RollupPlugin<A> {
       id: string,
       options?: {
         ssr?: boolean
-        /**
-         * @internal
-         */
-        html?: boolean
       },
     ) => Promise<LoadResult> | LoadResult,
     { filter?: { id?: StringFilter } }
@@ -224,7 +215,7 @@ export interface Plugin<A = any> extends RollupPlugin<A> {
    */
   config?: ObjectHook<
     (
-      this: void,
+      this: ConfigPluginContext,
       config: UserConfig,
       env: ConfigEnv,
     ) =>
@@ -245,7 +236,7 @@ export interface Plugin<A = any> extends RollupPlugin<A> {
    */
   configEnvironment?: ObjectHook<
     (
-      this: void,
+      this: ConfigPluginContext,
       name: string,
       config: EnvironmentOptions,
       env: ConfigEnv & {
@@ -265,7 +256,10 @@ export interface Plugin<A = any> extends RollupPlugin<A> {
    * Use this hook to read and store the final resolved vite config.
    */
   configResolved?: ObjectHook<
-    (this: void, config: ResolvedConfig) => void | Promise<void>
+    (
+      this: MinimalPluginContextWithoutEnvironment,
+      config: ResolvedConfig,
+    ) => void | Promise<void>
   >
   /**
    * Configure the vite server. The hook receives the {@link ViteDevServer}
@@ -292,8 +286,13 @@ export interface Plugin<A = any> extends RollupPlugin<A> {
    * The hook receives the following arguments:
    *
    * - html: string
-   * - ctx?: vite.ServerContext (only present during serve)
-   * - bundle?: rollup.OutputBundle (only present during build)
+   * - ctx: IndexHtmlTransformContext, which contains:
+   *    - path: public path when served
+   *    - filename: filename on disk
+   *    - server?: ViteDevServer (only present during serve)
+   *    - bundle?: rollup.OutputBundle (only present during build)
+   *    - chunk?: rollup.OutputChunk
+   *    - originalUrl?: string
    *
    * It can either return a transformed string, or a list of html tag
    * descriptors that will be injected into the `<head>` or `<body>`.
@@ -303,7 +302,12 @@ export interface Plugin<A = any> extends RollupPlugin<A> {
    * `{ order: 'pre', handler: hook }`
    */
   transformIndexHtml?: IndexHtmlTransform
-
+  /**
+   * Build Environments
+   *
+   * @experimental
+   */
+  buildApp?: ObjectHook<BuildAppHook>
   /**
    * Perform custom handling of HMR updates.
    * The handler receives a context containing changed filename, timestamp, a
@@ -321,7 +325,7 @@ export interface Plugin<A = any> extends RollupPlugin<A> {
    */
   handleHotUpdate?: ObjectHook<
     (
-      this: void,
+      this: MinimalPluginContextWithoutEnvironment,
       ctx: HmrContext,
     ) => Array<ModuleNode> | void | Promise<Array<ModuleNode> | void>
   >

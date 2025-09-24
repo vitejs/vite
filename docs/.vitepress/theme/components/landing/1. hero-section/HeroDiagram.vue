@@ -1,13 +1,13 @@
 <script setup lang="ts">
 import { gsap } from 'gsap'
 import { MotionPathPlugin } from 'gsap/dist/MotionPathPlugin'
-import { onMounted, onUnmounted, Ref, ref } from 'vue'
+import { onMounted, onUnmounted, type Ref, ref } from 'vue'
 import SvgInputs from './svg-elements/SvgInputs.vue'
 import SvgOutputs from './svg-elements/SvgOutputs.vue'
 import SvgBlueIndicator from './svg-elements/SvgBlueIndicator.vue'
 import SvgPinkIndicator from './svg-elements/SvgPinkIndicator.vue'
 import { ScrollTrigger } from 'gsap/dist/ScrollTrigger'
-import { SvgNodeProps } from '../common/SvgNode.vue'
+import type { SvgNodeProps } from '../common/SvgNode.vue'
 
 gsap.registerPlugin(MotionPathPlugin)
 
@@ -29,8 +29,8 @@ const inputLines: Ref<SvgNodeProps>[] = inputPaths.map((path) =>
     visible: false,
     labelVisible: false,
     label: '',
-    dotColor: null,
-    glowColor: null,
+    dotColor: undefined,
+    glowColor: undefined,
     path,
   }),
 )
@@ -117,10 +117,10 @@ const animateDiagram = () => {
 
   // Animate the input nodes/lines
   prepareInputs().forEach((lineIndex, fileIndex) => {
-    timeline.add(
+    timeline!.add(
       isMobile
-        ? animateSingleInputMobile(inputLines[lineIndex as number])
-        : animateSingleInputDesktop(inputLines[lineIndex as number]),
+        ? animateSingleInputMobile(inputLines[lineIndex])
+        : animateSingleInputDesktop(inputLines[lineIndex]),
       fileIndex * (isMobile ? 0.4 : 0.2),
     )
   })
@@ -133,7 +133,7 @@ const animateDiagram = () => {
   // Animate the output nodes/lines
   timeline.addLabel('showOutput', '<')
   outputLines.forEach((outputLine, index) => {
-    timeline.add(
+    timeline!.add(
       isMobile
         ? animateSingleOutputMobile(outputLine)
         : animateSingleOutputDesktop(outputLine, index),
@@ -161,7 +161,7 @@ const prepareInputs = () => {
     inputFileSets.value[Math.floor(Math.random() * inputFileSets.value.length)]
 
   // Choose enough unique lines for the input file nodes to slide along
-  const inputLineIndexes = new Set()
+  const inputLineIndexes = new Set<number>()
   while (inputLineIndexes.size < 3) {
     const index: number = Math.floor(Math.random() * inputLines.length)
     inputLineIndexes.add(index)
@@ -170,10 +170,10 @@ const prepareInputs = () => {
   // Assign each line it's appropriate node label
   const inputs = [...inputLineIndexes]
   inputs.forEach((lineIndex, fileIndex) => {
-    inputLines[lineIndex as number].value.label = inputFileSet[fileIndex].label
-    inputLines[lineIndex as number].value.dotColor = inputLines[
-      lineIndex as number
-    ].value.glowColor = inputFileSet[fileIndex].color as string | null
+    inputLines[lineIndex].value.label = inputFileSet[fileIndex].label
+    inputLines[lineIndex].value.dotColor = inputLines[
+      lineIndex
+    ].value.glowColor = inputFileSet[fileIndex].color
   })
   return inputs
 }
@@ -470,7 +470,7 @@ onMounted(() => {
       </div>
       <div class="vite-chip__filter" />
       <img
-        :src="isUwu ? '/logo-uwu.png' : '/logo.svg'"
+        :src="isUwu ? '/logo-uwu.webp' : '/logo.svg'"
         :alt="isUwu ? 'Vite Kawaii Logo by @icarusgkx' : 'Vite Logo'"
         class="vite-chip__logo"
         :class="{ uwu: isUwu }"
@@ -715,7 +715,7 @@ onMounted(() => {
   }
 
   background:
-    url('/noise.png'),
+    url('../common/noise.webp'),
     radial-gradient(
       circle at right center,
       rgb(86, 50, 119) 0%,
@@ -732,7 +732,7 @@ onMounted(() => {
 
   @media (min-width: 1024px) {
     background:
-      url('/noise.png'),
+      url('../common/noise.webp'),
       radial-gradient(
         circle at right center,
         rgba(75, 41, 105, 0.5) 0%,
@@ -751,7 +751,7 @@ onMounted(() => {
 
   @media (min-width: 1500px) {
     background:
-      url('/noise.png'),
+      url('../common/noise.webp'),
       radial-gradient(
         circle at right center,
         rgba(75, 41, 105, 0.5) 0%,
@@ -770,7 +770,7 @@ onMounted(() => {
 
   @media (min-width: 1800px) {
     background:
-      url('/noise.png'),
+      url('../common/noise.webp'),
       radial-gradient(
         circle at right center,
         rgba(75, 41, 105, 0.5) 0%,

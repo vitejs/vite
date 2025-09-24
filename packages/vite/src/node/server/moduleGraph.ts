@@ -2,6 +2,7 @@ import { extname } from 'node:path'
 import type { ModuleInfo, PartialResolvedId } from 'rollup'
 import { isDirectCSSRequest } from '../plugins/css'
 import {
+  monotonicDateNow,
   normalizePath,
   removeImportQuery,
   removeTimestampQuery,
@@ -21,7 +22,7 @@ export class EnvironmentModuleNode {
    */
   id: string | null = null
   file: string | null = null
-  type: 'js' | 'css'
+  type: 'js' | 'css' | 'asset'
   info?: ModuleInfo
   meta?: Record<string, any>
   importers = new Set<EnvironmentModuleNode>()
@@ -165,7 +166,7 @@ export class EnvironmentModuleGraph {
   invalidateModule(
     mod: EnvironmentModuleNode,
     seen = new Set<EnvironmentModuleNode>(),
-    timestamp: number = Date.now(),
+    timestamp: number = monotonicDateNow(),
     isHmr: boolean = false,
     /** @internal */
     softInvalidate = false,
@@ -218,7 +219,7 @@ export class EnvironmentModuleGraph {
         // But we exclude direct CSS files as those cannot be soft invalidated.
         const shouldSoftInvalidateImporter =
           (importer.staticImportedUrls?.has(mod.url) || softInvalidate) &&
-          importer.type !== 'css'
+          importer.type === 'js'
         this.invalidateModule(
           importer,
           seen,
@@ -233,7 +234,7 @@ export class EnvironmentModuleGraph {
   }
 
   invalidateAll(): void {
-    const timestamp = Date.now()
+    const timestamp = monotonicDateNow()
     const seen = new Set<EnvironmentModuleNode>()
     this.idToModuleMap.forEach((mod) => {
       this.invalidateModule(mod, seen, timestamp)
@@ -401,12 +402,13 @@ export class EnvironmentModuleGraph {
 
     const url = `${FS_PREFIX}${file}`
     for (const m of fileMappedModules) {
-      if (m.url === url || m.id === file) {
+      if ((m.url === url || m.id === file) && m.type === 'asset') {
         return m
       }
     }
 
     const mod = new EnvironmentModuleNode(url, this.environment)
+    mod.type = 'asset'
     mod.file = file
     fileMappedModules.add(mod)
     return mod

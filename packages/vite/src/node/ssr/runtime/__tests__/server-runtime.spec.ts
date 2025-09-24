@@ -1,14 +1,19 @@
 import { existsSync, readdirSync } from 'node:fs'
 import { posix, win32 } from 'node:path'
 import { fileURLToPath } from 'node:url'
-import { describe, expect } from 'vitest'
+import { describe, expect, vi } from 'vitest'
 import { isWindows } from '../../../../shared/utils'
+import type { ExternalFetchResult } from '../../../../shared/invokeMethods'
 import { createModuleRunnerTester } from './utils'
 
 const _URL = URL
 
 describe('module runner initialization', async () => {
-  const it = await createModuleRunnerTester()
+  const it = await createModuleRunnerTester({
+    resolve: {
+      external: ['tinyglobby'],
+    },
+  })
 
   it('correctly runs ssr code', async ({ runner }) => {
     const mod = await runner.import('/fixtures/simple.js')
@@ -29,17 +34,36 @@ describe('module runner initialization', async () => {
     const mod = await runner.import('virtual:test')
     expect(mod.msg).toBe('virtual')
 
-    // virtual module query is not supported out of the box
-    // (`?t=...` was working on Vite 5 ssrLoadModule as `transformRequest` strips off timestamp query)
+    // already resolved id works similar to `transformRequest`
+    expect(await runner.import(`\0virtual:normal`)).toMatchInlineSnapshot(`
+      {
+        "default": "ok",
+      }
+    `)
+
+    // escaped virtual module id works
+    expect(await runner.import(`/@id/__x00__virtual:normal`))
+      .toMatchInlineSnapshot(`
+      {
+        "default": "ok",
+      }
+    `)
+
+    // timestamp query works
+    expect(await runner.import(`virtual:normal?t=${Date.now()}`))
+      .toMatchInlineSnapshot(`
+      {
+        "default": "ok",
+      }
+    `)
+
+    // other arbitrary queries don't work
     await expect(() =>
-      runner.import(`virtual:test?t=${Date.now()}`),
+      runner.import('virtual:normal?abcd=1234'),
     ).rejects.toMatchObject({
-      message: expect.stringContaining('cannot find entry point module'),
-    })
-    await expect(() =>
-      runner.import('virtual:test?abcd=1234'),
-    ).rejects.toMatchObject({
-      message: expect.stringContaining('cannot find entry point module'),
+      message: expect.stringContaining(
+        'Failed to load url virtual:normal?abcd=1234',
+      ),
     })
   })
 
@@ -271,16 +295,114 @@ describe('module runner initialization', async () => {
     await expect(() =>
       runner.import('/fixtures/cyclic2/test5/index.js'),
     ).rejects.toMatchInlineSnapshot(
-      `[ReferenceError: Cannot access '__vite_ssr_import_1__' before initialization]`,
+      `[TypeError: Cannot read properties of undefined (reading 'ok')]`,
     )
   })
 
   it(`cyclic invalid 2`, async ({ runner }) => {
-    await expect(() =>
-      runner.import('/fixtures/cyclic2/test6/index.js'),
-    ).rejects.toMatchInlineSnapshot(
-      `[ReferenceError: Cannot access 'dep1' before initialization]`,
+    // It should be an error but currently `undefined` fallback.
+    expect(
+      await runner.import('/fixtures/cyclic2/test6/index.js'),
+    ).toMatchInlineSnapshot(
+      `
+      {
+        "dep1": "dep1: dep2: undefined",
+      }
+    `,
     )
+  })
+
+  it(`cyclic with mixed import and re-export`, async ({ runner }) => {
+    const mod = await runner.import('/fixtures/cyclic2/test7/Ion.js')
+    expect(mod).toMatchInlineSnapshot(`
+      {
+        "IonTypes": {
+          "BLOB": "Blob",
+        },
+        "dom": {
+          "Blob": "Blob",
+        },
+      }
+    `)
+  })
+
+  it(`execution order with mixed import and re-export`, async ({
+    runner,
+    onTestFinished,
+  }) => {
+    const spy = vi.spyOn(console, 'log').mockImplementation(() => {})
+    onTestFinished(() => spy.mockRestore())
+
+    await runner.import('/fixtures/execution-order-re-export/index.js')
+    expect(spy.mock.calls.map((v) => v[0])).toMatchInlineSnapshot(`
+      [
+        "dep1",
+        "dep2",
+      ]
+    `)
+  })
+
+  it(`live binding (export default function f)`, async ({ runner }) => {
+    const mod = await runner.import('/fixtures/live-binding/test1/index.js')
+    expect(mod.default).toMatchInlineSnapshot(`
+      [
+        2,
+        3,
+      ]
+    `)
+  })
+
+  it(`live binding (export default f)`, async ({ runner }) => {
+    const mod = await runner.import('/fixtures/live-binding/test2/index.js')
+    expect(mod.default).toMatchInlineSnapshot(`
+      [
+        1,
+        1,
+      ]
+    `)
+  })
+
+  it(`live binding (export { f as default })`, async ({ runner }) => {
+    const mod = await runner.import('/fixtures/live-binding/test3/index.js')
+    expect(mod.default).toMatchInlineSnapshot(`
+      [
+        2,
+        3,
+      ]
+    `)
+  })
+
+  it(`live binding (export default class C)`, async ({ runner }) => {
+    const mod = await runner.import('/fixtures/live-binding/test4/index.js')
+    expect(mod.default).toMatchInlineSnapshot(`
+      [
+        2,
+        3,
+      ]
+    `)
+  })
+
+  it(`export default getter is hoisted`, async ({ runner }) => {
+    // Node error is `ReferenceError: Cannot access 'dep' before initialization`
+    // It should be an error but currently `undefined` fallback.
+    expect(
+      await runner.import('/fixtures/cyclic2/test9/index.js'),
+    ).toMatchInlineSnapshot(
+      `
+      {
+        "default": undefined,
+      }
+    `,
+    )
+  })
+
+  it(`handle Object variable`, async ({ runner }) => {
+    const mod = await runner.import('/fixtures/top-level-object.js')
+    expect(mod).toMatchInlineSnapshot(`
+      {
+        "Object": "my-object",
+      }
+    `)
   })
 })
 
@@ -336,5 +458,60 @@ describe('resolveId absolute path entry', async () => {
       posix.join(server.config.root, 'fixtures/basic.js'),
     )
     expect(mod.name).toMatchInlineSnapshot(`"virtual:basic"`)
+  })
+})
+
+describe('virtual module hmr', async () => {
+  let state = 'init'
+
+  const it = await createModuleRunnerTester({
+    plugins: [
+      {
+        name: 'test-resolevId',
+        enforce: 'pre',
+        resolveId(source) {
+          if (source === 'virtual:test') {
+            return '\0' + source
+          }
+        },
+        load(id) {
+          if (id === '\0virtual:test') {
+            return `export default ${JSON.stringify(state)}`
+          }
+        },
+      },
+    ],
+  })
+
+  it('full reload', async ({ server, runner }) => {
+    const mod = await runner.import('virtual:test')
+    expect(mod.default).toBe('init')
+    state = 'reloaded'
+    server.environments.ssr.moduleGraph.invalidateAll()
+    server.environments.ssr.hot.send({ type: 'full-reload' })
+    await vi.waitFor(() => {
+      const mod = runner.evaluatedModules.getModuleById('\0virtual:test')
+      expect(mod?.exports.default).toBe('reloaded')
+    })
+  })
+
+  it("the external module's ID and file are resolved correctly", async ({
+    server,
+    runner,
+  }) => {
+    await runner.import(
+      posix.join(server.config.root, 'fixtures/import-external.ts'),
+    )
+    const moduleNode = runner.evaluatedModules.getModuleByUrl('tinyglobby')!
+    const meta = moduleNode.meta as ExternalFetchResult
+    if (process.platform === 'win32') {
+      expect(meta.externalize).toMatch(/^file:\/\/\/\w:\//) // file:///C:/
+      expect(moduleNode.id).toMatch(/^\w:\//) // C:/
+      expect(moduleNode.file).toMatch(/^\w:\//) // C:/
+    } else {
+      expect(meta.externalize).toMatch(/^file:\/\/\//) // file:///
+      expect(moduleNode.id).toMatch(/^\//) // /
+      expect(moduleNode.file).toMatch(/^\//) // /
+    }
   })
 })

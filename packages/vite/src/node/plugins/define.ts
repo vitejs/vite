@@ -2,15 +2,15 @@ import { transform } from 'esbuild'
 import { TraceMap, decodedMap, encodedMap } from '@jridgewell/trace-mapping'
 import type { ResolvedConfig } from '../config'
 import type { Plugin } from '../plugin'
-import { escapeRegex } from '../utils'
+import { escapeRegex, isCSSRequest } from '../utils'
 import type { Environment } from '../environment'
-import { isCSSRequest } from './css'
 import { isHTMLRequest } from './html'
 
 const nonJsRe = /\.json(?:$|\?)/
 const isNonJsRequest = (request: string): boolean => nonJsRe.test(request)
 const importMetaEnvMarker = '__vite_import_meta_env__'
 const importMetaEnvKeyReCache = new Map<string, RegExp>()
+const escapedDotRE = /(?<!\\)\\./g
 
 export function definePlugin(config: ResolvedConfig): Plugin {
   const isBuild = config.command === 'build'
@@ -92,7 +92,12 @@ export function definePlugin(config: ResolvedConfig): Plugin {
       patternKeys.push('import.meta.env', 'import.meta.hot')
     }
     const pattern = patternKeys.length
-      ? new RegExp(patternKeys.map(escapeRegex).join('|'))
+      ? new RegExp(
+          patternKeys
+            // replace `\.` (ignore `\\.`) with `\??\.` to match with `?.` as well
+            .map((key) => escapeRegex(key).replaceAll(escapedDotRE, '\\??\\.'))
+            .join('|'),
+        )
       : null
 
     return [define, pattern, importMetaEnvVal] as const

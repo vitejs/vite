@@ -1,4 +1,7 @@
 import { onMounted, onUnmounted, ref } from 'vue'
+import voidZeroSvg from './images/voidzero.svg'
+import boltSvg from './images/bolt.svg'
+import nuxtLabsSvg from './images/nuxtlabs.svg'
 
 interface Sponsors {
   special: Sponsor[]
@@ -20,7 +23,7 @@ interface Sponsor {
 }
 
 // shared data across instances so we load only once.
-const data = ref()
+const data = ref<{ tier: string; size: string; items: Sponsor[] }[]>()
 
 const dataHost = 'https://sponsors.vuejs.org'
 const dataUrl = `${dataHost}/vite.json`
@@ -28,22 +31,22 @@ const dataUrl = `${dataHost}/vite.json`
 export const voidZero = {
   name: 'VoidZero',
   url: 'https://voidzero.dev',
-  img: '/voidzero.svg',
+  img: voidZeroSvg,
 } satisfies Sponsor
 
 const viteSponsors: Pick<Sponsors, 'special' | 'gold'> = {
   special: [
     // sponsors patak-dev
     {
-      name: 'StackBlitz',
-      url: 'https://stackblitz.com',
-      img: '/stackblitz.svg',
+      name: 'Bolt',
+      url: 'https://bolt.new',
+      img: boltSvg,
     },
     // sponsors antfu
     {
       name: 'NuxtLabs',
       url: 'https://nuxtlabs.com',
-      img: '/nuxtlabs.svg',
+      img: nuxtLabsSvg,
     },
   ],
   gold: [

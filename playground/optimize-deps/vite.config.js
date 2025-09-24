@@ -4,6 +4,9 @@ import { defineConfig } from 'vite'
 const require = module.createRequire(import.meta.url)
 
 export default defineConfig({
+  define: {
+    __VUE_PROD_HYDRATION_MISMATCH_DETAILS__: false,
+  },
   resolve: {
     dedupe: ['react'],
     alias: {
@@ -23,8 +26,14 @@ export default defineConfig({
       '@vitejs/test-dep-optimize-exports-with-glob/**/*',
       '@vitejs/test-dep-optimize-exports-with-root-glob/**/*.js',
       '@vitejs/test-dep-optimize-with-glob/**/*.js',
+      '@vitejs/test-dep-cjs-with-external-deps',
     ],
-    exclude: ['@vitejs/test-nested-exclude', '@vitejs/test-dep-non-optimized'],
+    exclude: [
+      '@vitejs/test-nested-exclude',
+      '@vitejs/test-dep-non-optimized',
+      '@vitejs/test-dep-esm-external',
+      'stream',
+    ],
     esbuildOptions: {
       plugins: [
         {

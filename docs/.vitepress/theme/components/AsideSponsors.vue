@@ -8,7 +8,7 @@ const { data } = useSponsor()
 const sponsors = computed(() => {
   return [
     { size: 'small', items: [voidZero] },
-    ...(data?.value.map((sponsor) => {
+    ...(data.value?.map((sponsor) => {
       return {
         size: sponsor.size === 'big' ? 'mini' : 'xmini',
         items: sponsor.items,
@@ -24,7 +24,12 @@ const sponsors = computed(() => {
     href="https://viteconf.org/?utm=vite-sidebar"
     target="_blank"
   >
-    <img width="22" height="22" src="/viteconf.svg" alt="ViteConf Logo" />
+    <img
+      width="22"
+      height="22"
+      src="../../../images/viteconf.svg"
+      alt="ViteConf Logo"
+    />
     <span>
       <p class="extra-info">Building Together</p>
       <p class="heading">ViteConf 2025</p>

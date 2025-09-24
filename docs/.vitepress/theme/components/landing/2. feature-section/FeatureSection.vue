@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import SvgNode from '../common/SvgNode.vue'
-import { onMounted, onUnmounted, Ref, ref } from 'vue'
+import { onMounted, onUnmounted, type Ref, ref } from 'vue'
 import { gsap } from 'gsap'
 
 const props = defineProps({
@@ -51,7 +51,7 @@ const startAnimation = () => {
       () => {
         animationVisible.value = true
       },
-      null,
+      undefined,
       0,
     )
     .to(

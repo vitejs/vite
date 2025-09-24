@@ -23,7 +23,7 @@ import { metadataPlugin } from './metadata'
 import { dynamicImportVarsPlugin } from './dynamicImportVars'
 import { importGlobPlugin } from './importMetaGlob'
 import {
-  type PluginFilterWithFallback,
+  type PluginFilter,
   type TransformHookFilter,
   createFilterForTransform,
   createIdFilter,
@@ -165,8 +165,8 @@ export function getHookHandler<T extends ObjectHook<Function>>(
 }
 
 type FilterForPluginValue = {
-  resolveId?: PluginFilterWithFallback | undefined
-  load?: PluginFilterWithFallback | undefined
+  resolveId?: PluginFilter | undefined
+  load?: PluginFilter | undefined
   transform?: TransformHookFilter | undefined
 }
 const filterForPlugin = new WeakMap<Plugin, FilterForPluginValue>()
@@ -184,29 +184,22 @@ export function getCachedFilterForPlugin<
     filterForPlugin.set(plugin, filters)
   }
 
-  let filter: PluginFilterWithFallback | TransformHookFilter | undefined
+  let filter: PluginFilter | TransformHookFilter | undefined
   switch (hookName) {
     case 'resolveId': {
-      const rawFilter =
-        typeof plugin.resolveId === 'object'
-          ? plugin.resolveId.filter?.id
-          : undefined
+      const rawFilter = extractFilter(plugin.resolveId)?.id
       filters.resolveId = createIdFilter(rawFilter)
       filter = filters.resolveId
       break
     }
     case 'load': {
-      const rawFilter =
-        typeof plugin.load === 'object' ? plugin.load.filter?.id : undefined
+      const rawFilter = extractFilter(plugin.load)?.id
       filters.load = createIdFilter(rawFilter)
       filter = filters.load
       break
     }
     case 'transform': {
-      const rawFilters =
-        typeof plugin.transform === 'object'
-          ? plugin.transform.filter
-          : undefined
+      const rawFilters = extractFilter(plugin.transform)
       filters.transform = createFilterForTransform(
         rawFilters?.id,
         rawFilters?.code,
@@ -216,6 +209,12 @@ export function getCachedFilterForPlugin<
     }
   }
   return filter as FilterForPluginValue[H] | undefined
+}
+
+function extractFilter<T extends Function, F>(
+  hook: ObjectHook<T, { filter?: F }> | undefined,
+) {
+  return hook && 'filter' in hook && hook.filter ? hook.filter : undefined
 }
 
 // Same as `@rollup/plugin-alias` default resolver, but we attach additional meta

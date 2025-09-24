@@ -4,7 +4,7 @@ import net from 'node:net'
 import path from 'node:path'
 import { exec } from 'node:child_process'
 import crypto from 'node:crypto'
-import { URL, fileURLToPath } from 'node:url'
+import { fileURLToPath } from 'node:url'
 import type { ServerOptions as HttpsServerOptions } from 'node:https'
 import { builtinModules, createRequire } from 'node:module'
 import { promises as dns } from 'node:dns'
@@ -12,8 +12,8 @@ import { performance } from 'node:perf_hooks'
 import type { AddressInfo, Server } from 'node:net'
 import fsp from 'node:fs/promises'
 import type { FSWatcher } from 'dep-types/chokidar'
-import remapping from '@ampproject/remapping'
-import type { DecodedSourceMap, RawSourceMap } from '@ampproject/remapping'
+import remapping from '@jridgewell/remapping'
+import type { DecodedSourceMap, RawSourceMap } from '@jridgewell/remapping'
 import colors from 'picocolors'
 import debug from 'debug'
 import type { Alias, AliasOptions } from 'dep-types/alias'
@@ -33,6 +33,7 @@ import { VALID_ID_PREFIX } from '../shared/constants'
 import {
   CLIENT_ENTRY,
   CLIENT_PUBLIC_PATH,
+  CSS_LANGS_RE,
   ENV_PUBLIC_PATH,
   FS_PREFIX,
   OPTIMIZABLE_ENTRY_RE,
@@ -97,8 +98,6 @@ export const normalizeId = (id: string): string =>
 
 // Supported by Node, Deno, Bun
 const NODE_BUILTIN_NAMESPACE = 'node:'
-// Supported by Deno
-const NPM_BUILTIN_NAMESPACE = 'npm:'
 // Supported by Bun
 const BUN_BUILTIN_NAMESPACE = 'bun:'
 // Some runtimes like Bun injects namespaced modules here, which is not a node builtin
@@ -135,7 +134,6 @@ export function createIsBuiltin(
 export const nodeLikeBuiltins = [
   ...nodeBuiltins,
   new RegExp(`^${NODE_BUILTIN_NAMESPACE}`),
-  new RegExp(`^${NPM_BUILTIN_NAMESPACE}`),
   new RegExp(`^${BUN_BUILTIN_NAMESPACE}`),
 ]
 
@@ -176,9 +174,9 @@ export const bareImportRE = /^(?![a-zA-Z]:)[\w@](?!.*:\/\/)/
 export const deepImportRE = /^([^@][^/]*)\/|^(@[^/]+\/[^/]+)\//
 
 // TODO: use import()
-const _require = createRequire(import.meta.url)
+const _require = createRequire(/** #__KEEP__ */ import.meta.url)
 
-const _dirname = path.dirname(fileURLToPath(import.meta.url))
+const _dirname = path.dirname(fileURLToPath(/** #__KEEP__ */ import.meta.url))
 
 // NOTE: we don't use VERSION variable exported from rollup to avoid importing rollup in dev
 export const rollupVersion =
@@ -239,19 +237,6 @@ function testCaseInsensitiveFS() {
   return fs.existsSync(CLIENT_ENTRY.replace('client.mjs', 'cLiEnT.mjs'))
 }
 
-export const urlCanParse =
-  // eslint-disable-next-line n/no-unsupported-features/node-builtins
-  URL.canParse ??
-  // URL.canParse is supported from Node.js 18.17.0+, 20.0.0+
-  ((path: string, base?: string | undefined): boolean => {
-    try {
-      new URL(path, base)
-      return true
-    } catch {
-      return false
-    }
-  })
-
 export const isCaseInsensitiveFS = testCaseInsensitiveFS()
 
 const VOLUME_RE = /^[A-Z]:/i
@@ -297,7 +282,7 @@ export function isParentDirectory(dir: string, file: string): boolean {
  * @param file2 - normalized absolute path
  * @returns true if both files url are identical
  */
-export function isSameFileUri(file1: string, file2: string): boolean {
+export function isSameFilePath(file1: string, file2: string): boolean {
   return (
     file1 === file2 ||
     (isCaseInsensitiveFS && file1.toLowerCase() === file2.toLowerCase())
@@ -328,6 +313,9 @@ export const isJSRequest = (url: string): boolean => {
   }
   return false
 }
+
+export const isCSSRequest = (request: string): boolean =>
+  CSS_LANGS_RE.test(request)
 
 const importQueryRE = /(\?|&)import=?(?:&|$)/
 const directRequestRE = /(\?|&)direct=?(?:&|$)/
@@ -502,20 +490,16 @@ export function numberToPos(source: string, offset: number | Pos): Pos {
       `offset is longer than source length! offset ${offset} > length ${source.length}`,
     )
   }
-  const lines = source.split(splitRE)
-  let counted = 0
-  let line = 0
-  let column = 0
-  for (; line < lines.length; line++) {
-    const lineLength = lines[line].length + 1
-    if (counted + lineLength >= offset) {
-      column = offset - counted + 1
-      break
-    }
-    counted += lineLength
+
+  const lines = source.slice(0, offset).split(splitRE)
+  return {
+    line: lines.length,
+    column: lines[lines.length - 1].length,
   }
-  return { line: line + 1, column }
 }
+
+const MAX_DISPLAY_LEN = 120
+const ELLIPSIS = '...'
 
 export function generateCodeFrame(
   source: string,
@@ -527,6 +511,11 @@ export function generateCodeFrame(
     end !== undefined ? posToNumber(source, end) : start,
     source.length,
   )
+  const lastPosLine =
+    end !== undefined
+      ? numberToPos(source, end).line
+      : numberToPos(source, start).line + range
+  const lineNumberWidth = Math.max(3, String(lastPosLine).length + 1)
   const lines = source.split(splitRE)
   let count = 0
   const res: string[] = []
@@ -536,24 +525,51 @@ export function generateCodeFrame(
       for (let j = i - range; j <= i + range || end > count; j++) {
         if (j < 0 || j >= lines.length) continue
         const line = j + 1
-        res.push(
-          `${line}${' '.repeat(Math.max(3 - String(line).length, 0))}|  ${
-            lines[j]
-          }`,
-        )
         const lineLength = lines[j].length
+        const pad = Math.max(start - (count - lineLength), 0)
+        const underlineLength = Math.max(
+          1,
+          end > count ? lineLength - pad : end - start,
+        )
+
+        let displayLine = lines[j]
+        let underlinePad = pad
+        if (lineLength > MAX_DISPLAY_LEN) {
+          let startIdx = 0
+          if (j === i) {
+            if (underlineLength > MAX_DISPLAY_LEN) {
+              startIdx = pad
+            } else {
+              const center = pad + Math.floor(underlineLength / 2)
+              startIdx = Math.max(0, center - Math.floor(MAX_DISPLAY_LEN / 2))
+            }
+            underlinePad =
+              Math.max(0, pad - startIdx) + (startIdx > 0 ? ELLIPSIS.length : 0)
+          }
+          const prefix = startIdx > 0 ? ELLIPSIS : ''
+          const suffix = lineLength - startIdx > MAX_DISPLAY_LEN ? ELLIPSIS : ''
+          const sliceLen = MAX_DISPLAY_LEN - prefix.length - suffix.length
+          displayLine =
+            prefix + displayLine.slice(startIdx, startIdx + sliceLen) + suffix
+        }
+        res.push(
+          `${line}${' '.repeat(lineNumberWidth - String(line).length)}|  ${displayLine}`,
+        )
         if (j === i) {
           // push underline
-          const pad = Math.max(start - (count - lineLength), 0)
-          const length = Math.max(
-            1,
-            end > count ? lineLength - pad : end - start,
+          const underline = '^'.repeat(
+            Math.min(underlineLength, MAX_DISPLAY_LEN),
           )
-          res.push(`   |  ` + ' '.repeat(pad) + '^'.repeat(length))
+          res.push(
+            `${' '.repeat(lineNumberWidth)}|  ` +
+              ' '.repeat(underlinePad) +
+              underline,
+          )
         } else if (j > i) {
           if (end > count) {
             const length = Math.max(Math.min(end - count, lineLength), 1)
-            res.push(`   |  ` + '^'.repeat(length))
+            const underline = '^'.repeat(Math.min(length, MAX_DISPLAY_LEN))
+            res.push(`${' '.repeat(lineNumberWidth)}|  ` + underline)
           }
           count += lineLength + 1
         }
@@ -702,12 +718,6 @@ function windowsSafeRealPathSync(path: string): string {
 }
 
 function optimizeSafeRealPathSync() {
-  // Skip if using Node <18.10 due to MAX_PATH issue: https://github.com/vitejs/vite/issues/12931
-  const nodeVersion = process.versions.node.split('.').map(Number)
-  if (nodeVersion[0] < 18 || (nodeVersion[0] === 18 && nodeVersion[1] < 10)) {
-    safeRealpathSync = fs.realpathSync
-    return
-  }
   // Check the availability `fs.realpathSync.native`
   // in Windows virtual and RAM disks that bypass the Volume Mount Manager, in programs such as imDisk
   // get the error EISDIR: illegal operation on a directory
@@ -983,12 +993,13 @@ export async function resolveHostname(
   return { host, name }
 }
 
-export async function resolveServerUrls(
+export function resolveServerUrls(
   server: Server,
   options: CommonServerOptions,
+  hostname: Hostname,
   httpsOptions: HttpsServerOptions | undefined,
   config: ResolvedConfig,
-): Promise<ResolvedServerUrls> {
+): ResolvedServerUrls {
   const address = server.address()
 
   const isAddressInfo = (x: any): x is AddressInfo => x?.address
@@ -998,7 +1009,6 @@ export async function resolveServerUrls(
 
   const local: string[] = []
   const network: string[] = []
-  const hostname = await resolveHostname(options.host)
   const protocol = options.https ? 'https' : 'http'
   const port = address.port
   const base =
@@ -1019,13 +1029,7 @@ export async function resolveServerUrls(
   } else {
     Object.values(os.networkInterfaces())
       .flatMap((nInterface) => nInterface ?? [])
-      .filter(
-        (detail) =>
-          detail.address &&
-          (detail.family === 'IPv4' ||
-            // @ts-expect-error Node 18.0 - 18.3 returns number
-            detail.family === 4),
-      )
+      .filter((detail) => detail.address && detail.family === 'IPv4')
       .forEach((detail) => {
         let host = detail.address.replace('127.0.0.1', hostname.name)
         // ipv6 host
@@ -1111,17 +1115,8 @@ export const requestQueryMaybeEscapedSplitRE = /\\?\?(?!.*[/|}])/
 
 export const blankReplacer = (match: string): string => ' '.repeat(match.length)
 
-const hash =
-  // eslint-disable-next-line n/no-unsupported-features/node-builtins -- crypto.hash is supported in Node 21.7.0+, 20.12.0+
-  crypto.hash ??
-  ((
-    algorithm: string,
-    data: crypto.BinaryLike,
-    outputEncoding: crypto.BinaryToTextEncoding,
-  ) => crypto.createHash(algorithm).update(data).digest(outputEncoding))
-
 export function getHash(text: Buffer | string, length = 8): string {
-  const h = hash('sha256', text, 'hex').substring(0, length)
+  const h = crypto.hash('sha256', text, 'hex').substring(0, length)
   if (length <= 64) return h
   return h.padEnd(length, '_')
 }
@@ -1241,6 +1236,8 @@ function mergeWithDefaultsRecursively<
   return merged as MergeWithDefaultsResult<D, V>
 }
 
+const environmentPathRE = /^environments\.[^.]+$/
+
 export function mergeWithDefaults<
   D extends Record<string, any>,
   V extends Record<string, any>,
@@ -1277,8 +1274,9 @@ function mergeConfigRecursively(
       merged[key] = [].concat(existing, value)
       continue
     } else if (
-      key === 'noExternal' &&
-      (rootPath === 'ssr' || rootPath === 'resolve') &&
+      ((key === 'noExternal' &&
+        (rootPath === 'ssr' || rootPath === 'resolve')) ||
+        (key === 'allowedHosts' && rootPath === 'server')) &&
       (existing === true || value === true)
     ) {
       merged[key] = true
@@ -1302,7 +1300,10 @@ function mergeConfigRecursively(
       merged[key] = mergeConfigRecursively(
         existing,
         value,
-        rootPath ? `${rootPath}.${key}` : key,
+        // treat environment.* as root
+        rootPath && !environmentPathRE.test(rootPath)
+          ? `${rootPath}.${key}`
+          : key,
       )
       continue
     }
@@ -1655,4 +1656,40 @@ export const teardownSIGTERMListener = (
       process.stdin.off('end', parentSigtermCallback)
     }
   }
+}
+
+export function getServerUrlByHost(
+  resolvedUrls: ResolvedServerUrls | null,
+  host: CommonServerOptions['host'],
+): string | undefined {
+  if (typeof host === 'string') {
+    const matchedUrl = [
+      ...(resolvedUrls?.local ?? []),
+      ...(resolvedUrls?.network ?? []),
+    ].find((url) => url.includes(host))
+    if (matchedUrl) {
+      return matchedUrl
+    }
+  }
+  return resolvedUrls?.local[0] ?? resolvedUrls?.network[0]
+}
+
+let lastDateNow = 0
+/**
+ * Similar to `Date.now()`, but strictly monotonically increasing.
+ *
+ * This function will never return the same value.
+ * Thus, the value may differ from the actual time.
+ *
+ * related: https://github.com/vitejs/vite/issues/19804
+ */
+export function monotonicDateNow(): number {
+  const now = Date.now()
+  if (now > lastDateNow) {
+    lastDateNow = now
+    return lastDateNow
+  }
+
+  lastDateNow++
+  return lastDateNow
 }

@@ -65,6 +65,23 @@ describe('module runner initialization', async () => {
     )
   })
 
+  it('stacktrace column on first line', async ({ runner, server }) => {
+    // column is off by "use strict"
+    const topLevelError = await getError(() =>
+      runner.import('/fixtures/has-error-first.js'),
+    )
+    expect(serializeStack(server, topLevelError)).toBe(
+      '    at <root>/fixtures/has-error-first.js:1:18',
+    )
+
+    const topLevelErrorTs = await getError(() =>
+      runner.import('/fixtures/has-error-first-comment.ts'),
+    )
+    expect(serializeStack(server, topLevelErrorTs)).toBe(
+      '    at <root>/fixtures/has-error-first-comment.ts:2:17',
+    )
+  })
+
   it('deep stacktrace', async ({ runner, server }) => {
     const methodError = await getError(async () => {
       const mod = await runner.import('/fixtures/has-error-deep.ts')
@@ -74,6 +91,22 @@ describe('module runner initialization', async () => {
       'Error: crash',
       '    at crash (<root>/fixtures/has-error-deep.ts:2:9)',
       '    at Module.main (<root>/fixtures/has-error-deep.ts:6:3)',
+    ])
+  })
+
+  it('should not crash when sourceMappingURL pattern appears in string literals', async ({
+    runner,
+    server,
+  }) => {
+    const mod = await runner.import('/fixtures/string-literal-sourcemap.ts')
+    expect(mod.getMessage()).toBe(
+      '//# sourceMappingURL=data:application/json;base64,invalidbase64',
+    )
+    const error = await getError(() => mod.throwError())
+    expect(error.message).toBe('Test error for stacktrace')
+    expect(serializeStackDeep(server, error).slice(0, 2)).toEqual([
+      'Error: Test error for stacktrace',
+      '    at Module.throwError (<root>/fixtures/string-literal-sourcemap.ts:11:9)',
     ])
   })
 })

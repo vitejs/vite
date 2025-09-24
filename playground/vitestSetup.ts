@@ -22,7 +22,39 @@ import {
 import type { Browser, Page } from 'playwright-chromium'
 import type { RollupError, RollupWatcher, RollupWatcherEvent } from 'rollup'
 import type { RunnerTestFile } from 'vitest'
-import { beforeAll, inject } from 'vitest'
+import { beforeAll, expect, inject } from 'vitest'
+
+// #region serializer
+
+export const sourcemapSnapshot = Symbol()
+
+const generateVisualizationLink = (code: string, map: string) => {
+  const utf16ToUTF8 = (x) => unescape(encodeURIComponent(x))
+  const convertedCode = utf16ToUTF8(code)
+  const convertedMap = utf16ToUTF8(map)
+  const hash = `${convertedCode.length}\0${convertedCode}${convertedMap.length}\0${convertedMap}`
+  return `https://evanw.github.io/source-map-visualization/#${btoa(hash)}`
+}
+
+expect.addSnapshotSerializer({
+  serialize(val, config, indentation, depth, refs, printer) {
+    const options = val[sourcemapSnapshot]
+    const map = { ...val.map }
+    if (options.withoutContent) {
+      delete map.sourcesContent
+    }
+
+    return `${indentation}SourceMap {
+${indentation}${config.indent}content: ${printer(map, config, indentation + config.indent, depth, refs)},
+${indentation}${config.indent}visualization: ${JSON.stringify(generateVisualizationLink(val.code, JSON.stringify(val.map)))}
+${indentation}}`
+  },
+  test(val) {
+    return typeof val === 'object' && val && val[sourcemapSnapshot]
+  },
+})
+
+// #endregion
 
 // #region env
 
@@ -67,8 +99,6 @@ export const serverLogs: string[] = []
 export const browserLogs: string[] = []
 export const browserErrors: Error[] = []
 
-export let resolvedConfig: ResolvedConfig = undefined!
-
 export let page: Page = undefined!
 export let browser: Browser = undefined!
 export let viteTestUrl: string = ''
@@ -78,6 +108,21 @@ export function setViteUrl(url: string): void {
   viteTestUrl = url
 }
 
+function throwHtmlParseError() {
+  return {
+    name: 'vite-plugin-throw-html-parse-error',
+    configResolved(config: ResolvedConfig) {
+      const warn = config.logger.warn
+      config.logger.warn = (msg, opts) => {
+        // convert HTML parse warnings to make it easier to test
+        if (msg.includes('Unable to parse HTML;')) {
+          throw new Error(msg)
+        }
+        warn.call(config.logger, msg, opts)
+      }
+    },
+  }
+}
 // #endregion
 
 beforeAll(async (s) => {
@@ -106,15 +151,6 @@ beforeAll(async (s) => {
 
   browser = await chromium.connect(wsEndpoint)
   page = await browser.newPage()
-
-  const globalConsole = global.console
-  const warn = globalConsole.warn
-  globalConsole.warn = (msg, ...args) => {
-    // suppress @vue/reactivity-transform warning
-    if (msg.includes('@vue/reactivity-transform')) return
-    if (msg.includes('Generated an empty chunk')) return
-    warn.call(globalConsole, msg, ...args)
-  }
 
   try {
     page.on('console', (msg) => {
@@ -226,9 +262,6 @@ async function loadConfig(configEnv: ConfigEnv) {
         usePolling: true,
         interval: 100,
       },
-      fs: {
-        strict: !isBuild,
-      },
     },
     build: {
       // esbuild do not minify ES lib output since that would remove pure annotations and break tree-shaking
@@ -238,6 +271,7 @@ async function loadConfig(configEnv: ConfigEnv) {
       emptyOutDir: false,
     },
     customLogger: createInMemoryLogger(serverLogs),
+    plugins: [throwHtmlParseError()],
   }
   return mergeConfig(options, config || {})
 }
@@ -249,13 +283,14 @@ export async function startDefaultServe(): Promise<void> {
     process.env.VITE_INLINE = 'inline-serve'
     const config = await loadConfig({ command: 'serve', mode: 'development' })
     viteServer = server = await (await createServer(config)).listen()
-    viteTestUrl = server.resolvedUrls.local[0]
-    if (server.config.base === '/') {
-      viteTestUrl = viteTestUrl.replace(/\/$/, '')
-    }
+    viteTestUrl = stripTrailingSlashIfNeeded(
+      server.resolvedUrls.local[0],
+      server.config.base,
+    )
     await page.goto(viteTestUrl)
   } else {
     process.env.VITE_INLINE = 'inline-build'
+    let resolvedConfig: ResolvedConfig
     // determine build watch
     const resolvedPlugin: () => PluginOption = () => ({
       name: 'vite-plugin-watcher',
@@ -294,7 +329,10 @@ export async function startDefaultServe(): Promise<void> {
     const previewServer = await preview(previewConfig)
     // prevent preview change NODE_ENV
     process.env.NODE_ENV = _nodeEnv
-    viteTestUrl = previewServer.resolvedUrls.local[0]
+    viteTestUrl = stripTrailingSlashIfNeeded(
+      previewServer.resolvedUrls.local[0],
+      previewServer.config.base,
+    )
     await page.goto(viteTestUrl)
   }
 }
@@ -360,6 +398,13 @@ function setupConsoleWarnCollector(logs: string[]) {
 
 export function slash(p: string): string {
   return p.replace(/\\/g, '/')
+}
+
+function stripTrailingSlashIfNeeded(url: string, base: string): string {
+  if (base === '/') {
+    return url.replace(/\/$/, '')
+  }
+  return url
 }
 
 declare module 'vite' {

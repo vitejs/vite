@@ -25,6 +25,8 @@ import { indexHtmlMiddleware } from './server/middlewares/indexHtml'
 import { notFoundMiddleware } from './server/middlewares/notFound'
 import { proxyMiddleware } from './server/middlewares/proxy'
 import {
+  getServerUrlByHost,
+  normalizePath,
   resolveHostname,
   resolveServerUrls,
   setupSIGTERMListener,
@@ -38,7 +40,12 @@ import { resolveConfig } from './config'
 import type { InlineConfig, ResolvedConfig } from './config'
 import { DEFAULT_PREVIEW_PORT } from './constants'
 import type { RequiredExceptFor } from './typeUtils'
-import { hostCheckMiddleware } from './server/middlewares/hostCheck'
+import { hostValidationMiddleware } from './server/middlewares/hostCheck'
+import {
+  BasicMinimalPluginContext,
+  basePluginContextMeta,
+} from './server/pluginContainer'
+import type { MinimalPluginContextWithoutEnvironment } from './plugin'
 
 export interface PreviewOptions extends CommonServerOptions {}
 
@@ -103,7 +110,7 @@ export interface PreviewServer {
 }
 
 export type PreviewServerHook = (
-  this: void,
+  this: MinimalPluginContextWithoutEnvironment,
   server: PreviewServer,
 ) => (() => void) | void | Promise<(() => void) | void>
 
@@ -189,12 +196,6 @@ export async function preview(
 
   setupSIGTERMListener(closeServerAndExit)
 
-  // apply server hooks from plugins
-  const postHooks: ((() => void) | void)[] = []
-  for (const hook of config.getSortedPluginHooks('configurePreviewServer')) {
-    postHooks.push(await hook(server))
-  }
-
   // cors
   const { cors } = config.preview
   if (cors !== false) {
@@ -205,7 +206,17 @@ export async function preview(
   const { allowedHosts } = config.preview
   // no need to check for HTTPS as HTTPS is not vulnerable to DNS rebinding attacks
   if (allowedHosts !== true && !config.preview.https) {
-    app.use(hostCheckMiddleware(config, true))
+    app.use(hostValidationMiddleware(allowedHosts, true))
+  }
+
+  // apply server hooks from plugins
+  const configurePreviewServerContext = new BasicMinimalPluginContext(
+    { ...basePluginContextMeta, watchMode: false },
+    config.logger,
+  )
+  const postHooks: ((() => void) | void)[] = []
+  for (const hook of config.getSortedPluginHooks('configurePreviewServer')) {
+    postHooks.push(await hook.call(configurePreviewServerContext, server))
   }
 
   // proxy
@@ -253,7 +264,8 @@ export async function preview(
 
   if (config.appType === 'spa' || config.appType === 'mpa') {
     // transform index.html
-    app.use(indexHtmlMiddleware(distDir, server))
+    const normalizedDistDir = normalizePath(distDir)
+    app.use(indexHtmlMiddleware(normalizedDistDir, server))
 
     // handle 404s
     app.use(notFoundMiddleware())
@@ -268,15 +280,16 @@ export async function preview(
     logger,
   })
 
-  server.resolvedUrls = await resolveServerUrls(
+  server.resolvedUrls = resolveServerUrls(
     httpServer,
     config.preview,
+    hostname,
     httpsOptions,
     config,
   )
 
   if (options.open) {
-    const url = server.resolvedUrls.local[0] ?? server.resolvedUrls.network[0]
+    const url = getServerUrlByHost(server.resolvedUrls, options.host)
     if (url) {
       const path =
         typeof options.open === 'string' ? new URL(options.open, url).href : url
