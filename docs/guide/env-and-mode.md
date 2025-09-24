@@ -117,8 +117,6 @@ By default, Vite provides type definitions for `import.meta.env` in [`vite/clien
 To achieve this, you can create an `vite-env.d.ts` in `src` directory, then augment `ImportMetaEnv` like this:
 
 ```typescript [vite-env.d.ts]
-/// <reference types="vite/client" />
-
 interface ViteTypeOptions {
   // By adding this line, you can make the type of ImportMetaEnv strict
   // to disallow unknown keys.

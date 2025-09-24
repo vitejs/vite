@@ -172,8 +172,8 @@ importers:
         specifier: ^1.1.1
         version: 1.1.1
       tsdown:
-        specifier: ^0.15.1
-        version: 0.15.2(publint@0.3.12)(typescript@5.9.2)(vue-tsc@3.0.7(typescript@5.9.2))
+        specifier: ^0.15.4
+        version: 0.15.4(publint@0.3.12)(typescript@5.9.2)(vue-tsc@3.0.7(typescript@5.9.2))
 
   packages/plugin-legacy:
     dependencies:
@@ -227,8 +227,8 @@ importers:
         specifier: ^1.1.1
         version: 1.1.1
       tsdown:
-        specifier: ^0.15.1
-        version: 0.15.2(publint@0.3.12)(typescript@5.9.2)(vue-tsc@3.0.7(typescript@5.9.2))
+        specifier: ^0.15.4
+        version: 0.15.4(publint@0.3.12)(typescript@5.9.2)(vue-tsc@3.0.7(typescript@5.9.2))
       vite:
         specifier: workspace:rolldown-vite@*
         version: link:../vite
@@ -396,8 +396,8 @@ importers:
         specifier: ^2.0.3
         version: 2.0.3
       rolldown-plugin-dts:
-        specifier: ^0.16.5
-        version: 0.16.5(rolldown@1.0.0-beta.40)(typescript@5.9.2)(vue-tsc@3.0.7(typescript@5.9.2))
+        specifier: ^0.16.8
+        version: 0.16.8(rolldown@1.0.0-beta.40)(typescript@5.9.2)(vue-tsc@3.0.7(typescript@5.9.2))
       rollup:
         specifier: ^4.43.0
         version: 4.43.0
@@ -6636,8 +6636,8 @@ packages:
   rfdc@1.4.1:
     resolution: {integrity: sha512-q1b3N5QkRUWUl7iyylaaj3kOpIT0N2i9MqIEQXP73GVsN9cw3fdx8X63cEmWhJGi2PPCF23Ijp7ktmd39rawIA==}
 
-  rolldown-plugin-dts@0.16.5:
-    resolution: {integrity: sha512-bOAfJ7Tc11xK/Uou7KWYha25/Sy80G0DZkhX8WMYx6l8PUalR+bvVzQNuEqXafpKEisZfUHQrkhS2gZG76Xntw==}
+  rolldown-plugin-dts@0.16.8:
+    resolution: {integrity: sha512-lsx7yrYA0ZXfARLEcPKgHIw8DX4fLQOhmMChgZbn5eFhqibY2Bav1+/Yn5WNm+ATtw+cefXYgEYO/7njeHsgAA==}
     engines: {node: '>=20.18.0'}
     peerDependencies:
       '@ts-macro/tsc': ^0.3.6
@@ -7230,8 +7230,8 @@ packages:
       typescript:
         optional: true
 
-  tsdown@0.15.2:
-    resolution: {integrity: sha512-qPbWcVnI7Ekq5p4xPiLwuS9siczCGPAyZYsAzcS1xTcFvkkZIsDbh3ejlmUoe/ypLJl5+oQ4Rbwp63Zf+eWiMw==}
+  tsdown@0.15.4:
+    resolution: {integrity: sha512-aoFE8disBg8BgYcOgradr/5Yd+QDBRQ+6z8mXo/Ib7+GIaJwJsI5l/ppve05CZGcSDqwdhF4gdrA0HPHBtbBqA==}
     engines: {node: '>=20.19.0'}
     hasBin: true
     peerDependencies:
@@ -12667,7 +12667,7 @@ snapshots:
 
   rfdc@1.4.1: {}
 
-  rolldown-plugin-dts@0.16.5(rolldown@1.0.0-beta.40)(typescript@5.9.2)(vue-tsc@3.0.7(typescript@5.9.2)):
+  rolldown-plugin-dts@0.16.8(rolldown@1.0.0-beta.40)(typescript@5.9.2)(vue-tsc@3.0.7(typescript@5.9.2)):
     dependencies:
       '@babel/generator': 7.28.3
       '@babel/parser': 7.28.4
@@ -13338,7 +13338,7 @@ snapshots:
     optionalDependencies:
       typescript: 5.9.2
 
-  tsdown@0.15.2(publint@0.3.12)(typescript@5.9.2)(vue-tsc@3.0.7(typescript@5.9.2)):
+  tsdown@0.15.4(publint@0.3.12)(typescript@5.9.2)(vue-tsc@3.0.7(typescript@5.9.2)):
     dependencies:
       ansis: 4.1.0
       cac: 6.7.14
@@ -13348,7 +13348,7 @@ snapshots:
       empathic: 2.0.0
       hookable: 5.5.3
       rolldown: 1.0.0-beta.40
-      rolldown-plugin-dts: 0.16.5(rolldown@1.0.0-beta.40)(typescript@5.9.2)(vue-tsc@3.0.7(typescript@5.9.2))
+      rolldown-plugin-dts: 0.16.8(rolldown@1.0.0-beta.40)(typescript@5.9.2)(vue-tsc@3.0.7(typescript@5.9.2))
       semver: 7.7.2
       tinyexec: 1.0.1
       tinyglobby: 0.2.15
