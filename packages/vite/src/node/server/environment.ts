@@ -306,7 +306,7 @@ function invalidateModule(
     updateModules(
       environment,
       file,
-      [...mod.importers],
+      [...mod.importers].filter((imp) => imp !== mod), // ignore self-imports
       mod.lastHMRTimestamp,
       m.firstInvalidatedBy,
     )
