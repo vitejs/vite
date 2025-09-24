@@ -1,0 +1,34 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Malformed URL Test</title>
+  </head>
+  <body>
+    <h1>Malformed URL Test</h1>
+    <p>Testing various malformed URLs that could come from template engines</p>
+
+    <!-- Test case from issue #20829: template expressions in src attributes -->
+    <img
+      src="{% if product[0].image_urls[0] %}{{product[0].image_urls[0]}}{% endif %}"
+      alt="Template expression"
+      class="template-expression"
+    />
+
+    <!-- Test case from PR #19397: another malformed src -->
+    <img src="{{malformed}}" alt="Malformed src" class="malformed-src" />
+
+    <!-- Test case: malformed URLs with percent encoding -->
+    <img
+      src="%ZZ%invalid"
+      alt="Invalid percent encoding"
+      class="invalid-percent"
+    />
+
+    <!-- Valid image for comparison -->
+    <img src="/favicon.ico" alt="Valid image" class="valid-image" />
+
+    <p class="status">Page loaded successfully</p>
+  </body>
+</html>

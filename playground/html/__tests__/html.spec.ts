@@ -517,3 +517,38 @@ test('invalidate inline proxy module on reload', async () => {
   await page.reload()
   expect(await page.textContent('.test')).toContain('ok')
 })
+
+test('malformed URLs in src attributes should not crash server (issue #20829)', async () => {
+  await page.goto(`${viteTestUrl}/malformed-url.html`)
+
+  // Should load successfully
+  expect(await page.textContent('.status')).toContain(
+    'Page loaded successfully',
+  )
+
+  // All image elements should be present even with malformed src attributes
+  expect(await page.$('.template-expression')).toBeTruthy()
+  expect(await page.$('.malformed-src')).toBeTruthy()
+  expect(await page.$('.invalid-percent')).toBeTruthy()
+  expect(await page.$('.valid-image')).toBeTruthy()
+})
+
+test('malformed src attributes should not cause errors (PR #19397)', async () => {
+  // Test that pages with malformed src attributes load without errors
+  await page.goto(`${viteTestUrl}/malformed-url.html`)
+
+  // The page should load and not show any client-side errors
+  const logs = await page.evaluate(() => {
+    // Get any error logs from the console
+    const errors = (window as any).__viteTestErrors || []
+    return errors
+  })
+
+  // Should not have any critical errors that would prevent page loading
+  expect(await page.textContent('h1')).toContain('Malformed URL Test')
+
+  // Images with malformed URLs should still be parsed and rendered as img elements,
+  // even if they don't load actual images
+  const imgElements = await page.$$('img')
+  expect(imgElements.length).toBe(4) // 3 malformed + 1 valid
+})
