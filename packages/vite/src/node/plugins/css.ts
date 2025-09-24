@@ -398,7 +398,7 @@ export function cssPlugin(config: ResolvedConfig): Plugin {
                 url = injectQuery(url, `t=${mod.lastHMRTimestamp}`)
               }
             }
-            return [url, resolved]
+            return [url, cleanUrl(resolved)]
           }
           if (config.command === 'build') {
             const isExternal = config.build.rollupOptions.external

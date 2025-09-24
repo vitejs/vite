@@ -122,8 +122,8 @@ export class FullBundleDevEnvironment extends DevEnvironment {
       () => {
         debug?.('INITIAL: run done')
       },
-      () => {
-        debug?.('INITIAL: run error')
+      (e) => {
+        debug?.('INITIAL: run error', e)
       },
     )
     this.waitForInitialBuildFinish().then(() => {
