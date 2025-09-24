@@ -186,14 +186,14 @@ export class FullBundleDevEnvironment extends DevEnvironment {
   }
 
   async triggerBundleRegenerationIfStale(): Promise<boolean> {
-    const scheduled = await this.devEngine.scheduleBuildIfStale()
-    if (scheduled === 'scheduled') {
-      this.devEngine.ensureCurrentBuildFinish().then(() => {
+    const hasLatestBuildOutput = await this.devEngine.hasLatestBuildOutput()
+    if (!hasLatestBuildOutput) {
+      this.devEngine.ensureLatestBuildOutput().then(() => {
         this.debouncedFullReload()
       })
       debug?.(`TRIGGER: access to stale bundle, triggered bundle re-generation`)
     }
-    return !!scheduled
+    return !hasLatestBuildOutput
   }
 
   override async close(): Promise<void> {
