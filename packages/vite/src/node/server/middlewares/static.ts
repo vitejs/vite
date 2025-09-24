@@ -153,8 +153,6 @@ export function serveStaticMiddleware(
 
     const url = new URL(req.url!, 'http://example.com')
     const pathname = decodeURIIfPossible(url.pathname)
-
-    // Skip processing if pathname couldn't be decoded
     if (pathname === undefined) {
       return next()
     }
@@ -220,8 +218,6 @@ export function serveRawFsMiddleware(
     if (req.url!.startsWith(FS_PREFIX)) {
       const url = new URL(req.url!, 'http://example.com')
       const pathname = decodeURIIfPossible(url.pathname)
-
-      // Skip processing if pathname couldn't be decoded
       if (pathname === undefined) {
         return next()
       }

@@ -1626,10 +1626,6 @@ export function partialEncodeURIPath(uri: string): string {
   return filePath.replaceAll('%', '%25') + postfix
 }
 
-/**
- * Safely decodes a URI component, returning undefined if the URI is malformed.
- * This is useful for handling potentially invalid URIs from user input or template engines.
- */
 export function decodeURIIfPossible(input: string): string | undefined {
   try {
     return decodeURI(input)
