@@ -103,6 +103,7 @@ import type { DevEnvironment } from './environment'
 import { hostValidationMiddleware } from './middlewares/hostCheck'
 import { rejectInvalidRequestMiddleware } from './middlewares/rejectInvalidRequest'
 import { memoryFilesMiddleware } from './middlewares/memoryFiles'
+import { rejectNoCorsRequestMiddleware } from './middlewares/rejectNoCorsRequest'
 
 const usedConfigs = new WeakSet<ResolvedConfig>()
 
@@ -885,8 +886,8 @@ export async function _createServer(
     middlewares.use(timeMiddleware(root))
   }
 
-  // disallows request that contains `#` in the URL
   middlewares.use(rejectInvalidRequestMiddleware())
+  middlewares.use(rejectNoCorsRequestMiddleware())
 
   // cors
   const { cors } = serverConfig
