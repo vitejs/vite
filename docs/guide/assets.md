@@ -46,7 +46,7 @@ document.getElementById('hero-img').style.background = `url("${imgUrl}")`
 
 ### Explicit URL Imports
 
-Assets that are not included in the internal list or in `assetsInclude`, can be explicitly imported as a URL using the `?url` suffix. This is useful, for example, to import [Houdini Paint Worklets](https://developer.mozilla.org/en-US/docs/Web/API/CSS/paintWorklet_static).
+Assets that are not included in the internal list or in `assetsInclude` can be explicitly imported as a URL using the `?url` suffix. This is useful, for example, to import [Houdini Paint Worklets](https://developer.mozilla.org/en-US/docs/Web/API/CSS/paintWorklet_static).
 
 ```js twoslash
 import 'vite/client'
@@ -167,5 +167,5 @@ function getImageUrl(name) {
 :::
 
 ::: warning Does not work with SSR
-This pattern does not work if you are using Vite for Server-Side Rendering, because `import.meta.url` have different semantics in browsers vs. Node.js. The server bundle also cannot determine the client host URL ahead of time.
+This pattern does not work if you are using Vite for Server-Side Rendering, because `import.meta.url` has different semantics in browsers vs. Node.js. The server bundle also cannot determine the client host URL ahead of time.
 :::

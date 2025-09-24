@@ -997,6 +997,17 @@ if (!isBuild) {
       .toMatch('parent:child')
   })
 
+  test('deleting import from non-self-accepting module can trigger prune event', async () => {
+    await page.goto(viteTestUrl)
+    await expect.poll(() => page.textContent('.prune')).toMatch('prune-init')
+    editFile('prune/dep1.js', (code) =>
+      code.replace(`import './dep2.js'`, `// import './dep2.js'`),
+    )
+    await expect
+      .poll(() => page.textContent('.prune'))
+      .toMatch('prune-init|dep2-disposed|dep2-pruned')
+  })
+
   test('import.meta.hot?.accept', async () => {
     await page.goto(viteTestUrl)
 

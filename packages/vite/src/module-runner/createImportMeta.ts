@@ -35,7 +35,8 @@ export function createDefaultImportMeta(
           `file transformation. Make sure to reference it by the full name.`,
       )
     },
-  }
+    // @types/node adds `main` to `import.meta`, but we don't add that for the defaultImportMeta
+  } satisfies Omit<ModuleRunnerImportMeta, 'main'> as any
 }
 
 let importMetaResolverCache: Promise<ImportMetaResolver | undefined> | undefined

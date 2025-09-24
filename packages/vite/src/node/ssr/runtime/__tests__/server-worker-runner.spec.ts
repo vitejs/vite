@@ -75,15 +75,14 @@ describe('running module runner inside a worker', () => {
         },
       },
     })
-    onTestFinished(() => {
-      server.close()
-      worker.terminate()
+    onTestFinished(async () => {
+      await Promise.allSettled([server.close(), worker.terminate()])
     })
     const channel = new BroadcastChannel('vite-worker')
     return new Promise<void>((resolve, reject) => {
       channel.onmessage = (event) => {
         try {
-          expect((event as MessageEvent).data).toEqual({
+          expect(event.data).toEqual({
             result: 'hello world',
           })
         } catch (e) {

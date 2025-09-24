@@ -43,6 +43,12 @@ The rolldown-powered version of Vite is currently available as a separate packag
 }
 ```
 
+::: tip Please pin the version!
+
+While these examples use `@latest`, we recommend using a specific version number to avoid unexpected breaking changes as [`rolldown-vite` is considered experimental](#versioning-policy).
+
+:::
+
 If you use a Vitepress or a meta framework that has Vite as peer dependency, you have to override the `vite` dependency in your `package.json`, which works slightly different depending on your package manager:
 
 :::code-group
@@ -84,6 +90,8 @@ If you use a Vitepress or a meta framework that has Vite as peer dependency, you
 :::
 
 After adding these overrides, reinstall your dependencies and start your development server or build your project as usual. No further configuration changes are required.
+
+If you are starting a new project, you can use `create-vite` as normal for rolldown-vite, too. The latest version will ask you whether to use `rolldown-vite` or not.
 
 ## Known Limitations
 
@@ -314,7 +322,7 @@ const plugin = {
 
 ### Hook filter feature
 
-Rolldown introduced a [hook filter feature](https://rolldown.rs/guide/plugin-development#plugin-hook-filters) to reduce the communication overhead the between Rust and JavaScript runtimes. By using this feature you can make your plugin more performant.
+Rolldown introduced a [hook filter feature](https://rolldown.rs/plugins/hook-filters) to reduce the communication overhead the between Rust and JavaScript runtimes. By using this feature you can make your plugin more performant.
 This is also supported by Rollup 4.38.0+ and Vite 6.3.0+. To make your plugin backward compatible with the older versions, make sure to also run the filter inside the hook handlers.
 
 ::: tip

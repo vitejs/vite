@@ -17,7 +17,7 @@ async function createDevServer() {
       noDiscovery: true,
     },
   })
-  server.environments.ssr.pluginContainer.buildStart({})
+  await server.environments.ssr.pluginContainer.buildStart({})
   return server
 }
 
@@ -93,7 +93,7 @@ test('virtual module invalidation simple', async () => {
       },
     ],
   })
-  server.environments.ssr.pluginContainer.buildStart({})
+  await server.environments.ssr.pluginContainer.buildStart({})
 
   const mod1 = await server.ssrLoadModule('virtual:test')
   expect(mod1.default).toEqual(1)
@@ -151,7 +151,7 @@ test('virtual module invalidation nested', async () => {
       },
     ],
   })
-  server.environments.ssr.pluginContainer.buildStart({})
+  await server.environments.ssr.pluginContainer.buildStart({})
 
   const mod1 = await server.ssrLoadModule('virtual:test')
   expect(mod1.default).toEqual(1)

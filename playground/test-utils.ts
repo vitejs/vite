@@ -11,10 +11,10 @@ import type {
 } from 'playwright-chromium'
 import type { DepOptimizationMetadata, Manifest } from 'vite'
 import { normalizePath } from 'vite'
-import { fromComment } from 'convert-source-map'
+import { fromComment, removeComments } from 'convert-source-map'
 import { expect } from 'vitest'
 import type { ResultPromise as ExecaResultPromise } from 'execa'
-import { isWindows, page, testDir } from './vitestSetup'
+import { isWindows, page, sourcemapSnapshot, testDir } from './vitestSetup'
 
 export * from './vitestSetup'
 
@@ -337,11 +337,17 @@ export const extractSourcemap = (content: string): any => {
   return fromComment(lines[lines.length - 1]).toObject()
 }
 
-export const formatSourcemapForSnapshot = (map: any): any => {
+export const formatSourcemapForSnapshot = (
+  map: any,
+  code: string,
+  withoutContent = false,
+): any => {
   const root = normalizePath(testDir)
   const m = { ...map }
   delete m.file
-  delete m.names
+  if (m.names && m.names.length === 0) {
+    delete m.names
+  }
   if (m.debugId) {
     m.debugId = '00000000-0000-0000-0000-000000000000'
   }
@@ -349,7 +355,8 @@ export const formatSourcemapForSnapshot = (map: any): any => {
   if (m.sourceRoot) {
     m.sourceRoot = m.sourceRoot.replace(root, '/root')
   }
-  return m
+  const c = removeComments(code.replace(/\?v=[\da-f]{8}/g, '?v=00000000'))
+  return { map: m, code: c, [sourcemapSnapshot]: { withoutContent } }
 }
 
 // helper function to kill process, uses taskkill on windows to ensure child process is killed too

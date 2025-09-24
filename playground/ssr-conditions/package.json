@@ -17,6 +17,6 @@
   },
   "devDependencies": {
     "express": "^5.1.0",
-    "sirv": "^3.0.1"
+    "sirv": "^3.0.2"
   }
 }

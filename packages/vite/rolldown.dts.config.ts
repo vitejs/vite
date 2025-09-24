@@ -50,7 +50,15 @@ export default defineConfig({
     patchTypes(),
     addNodePrefix(),
     dts({
-      tsconfig: './src/node/tsconfig.build.json',
+      tsconfig: './tsconfig.base.json',
+      compilerOptions: {
+        noEmit: false,
+        skipLibCheck: true, // lib check is done on final types
+        stripInternal: true,
+        paths: {
+          'vite/module-runner': ['./src/module-runner'],
+        },
+      },
       emitDtsOnly: true,
       resolve: true,
     }),

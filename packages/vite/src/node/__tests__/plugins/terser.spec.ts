@@ -27,7 +27,12 @@ describe('terser', () => {
           },
           load(id) {
             if (id === '\0entry.js') {
-              return `const foo = 1;console.log(foo)`
+              return `
+                const foo = 1;
+                console.log(foo);
+                const bar = { hello: 1, ["world"]: 2 };
+                console.log(bar.hello + bar["world"]);
+              `
             }
           },
         },
@@ -51,5 +56,22 @@ describe('terser', () => {
       },
     })
     expect(resultCode).toContain('prefix_')
+  })
+
+  test('nameCache', async () => {
+    const nameCache = {}
+
+    await run({
+      compress: false,
+      mangle: {
+        properties: {
+          keep_quoted: true,
+        },
+      },
+      nameCache,
+    })
+
+    expect(nameCache).toHaveProperty('props.props.$hello')
+    expect(nameCache).not.toHaveProperty('props.props.$world')
   })
 })

@@ -59,9 +59,8 @@ describe('running module runner inside a worker and using the ModuleRunnerTransp
     )
   })
 
-  afterAll(() => {
-    server.close()
-    worker.terminate()
+  afterAll(async () => {
+    await Promise.allSettled([server.close(), worker.terminate()])
     rpc.$close()
   })
 
@@ -70,7 +69,7 @@ describe('running module runner inside a worker and using the ModuleRunnerTransp
     return new Promise<any>((resolve, reject) => {
       channel.onmessage = (event) => {
         try {
-          resolve((event as MessageEvent).data)
+          resolve(event.data)
         } catch (e) {
           reject(e)
         }
