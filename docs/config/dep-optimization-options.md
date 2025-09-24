@@ -78,25 +78,6 @@ Certain options are omitted since changing them would not be compatible with Vit
 
 Set to `true` to force dependency pre-bundling, ignoring previously cached optimized dependencies.
 
-## optimizeDeps.lockFilePath <NonInheritBadge />
-
-- **Experimental**
-- **Type:** `string`
-
-Path to a custom lockfile to use for dependency optimization hash calculation. When specified, Vite will use this lockfile instead of searching for standard lockfiles (package-lock.json, yarn.lock, pnpm-lock.yaml, etc.).
-
-This is useful for monorepo tools like Rush.js that place lockfiles in non-standard locations such as `.rush/temp/shrinkwrap-deps.json`.
-
-```js twoslash
-import { defineConfig } from 'vite'
-// ---cut---
-export default defineConfig({
-  optimizeDeps: {
-    lockFilePath: '.rush/temp/shrinkwrap-deps.json',
-  },
-})
-```
-
 ## optimizeDeps.noDiscovery <NonInheritBadge />
 
 - **Type:** `boolean`

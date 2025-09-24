@@ -83,15 +83,6 @@ export interface DepOptimizationConfig {
    */
   needsInterop?: string[]
   /**
-   * Path to a custom lockfile to use for dependency optimization hash calculation.
-   * When specified, Vite will use this lockfile instead of searching for standard
-   * lockfiles (package-lock.json, yarn.lock, pnpm-lock.yaml, etc.).
-   * This is useful for monorepo tools like Rush.js that place lockfiles in
-   * non-standard locations.
-   * @experimental
-   */
-  lockFilePath?: string
-  /**
    * Options to pass to esbuild during the dep scanning and optimization
    *
    * Certain options are omitted since changing them would not be compatible
@@ -1307,22 +1298,7 @@ function getConfigHash(environment: Environment): string {
 }
 
 function getLockfileHash(environment: Environment): string {
-  const { config } = environment
-  const customLockFilePath = config.optimizeDeps.lockFilePath
-
-  let lockfilePath: string | undefined
-
-  if (customLockFilePath) {
-    // Use custom lockfile path if specified
-    const fullCustomPath = path.resolve(config.root, customLockFilePath)
-    lockfilePath = tryStatSync(fullCustomPath)?.isFile()
-      ? fullCustomPath
-      : undefined
-  } else {
-    // Use standard lockfile detection
-    lockfilePath = lookupFile(config.root, lockfilePaths)
-  }
-
+  const lockfilePath = lookupFile(environment.config.root, lockfilePaths)
   let content = lockfilePath ? fs.readFileSync(lockfilePath, 'utf-8') : ''
   if (lockfilePath) {
     const normalizedLockfilePath = lockfilePath.replaceAll('\\', '/')
