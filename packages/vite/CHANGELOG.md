@@ -1,3 +1,9 @@
+## <small>[7.1.13](https://github.com/vitejs/rolldown-vite/compare/v7.1.12...v7.1.13) (2025-09-24)</small>
+### Features
+
+* **hmr:** skip self-imports for `import.meta.hot.invalidate` ([ebd134f](https://github.com/vitejs/rolldown-vite/commit/ebd134faefd60e8716543b6b765763b6fa7b5371))
+* update rolldown ([007e115](https://github.com/vitejs/rolldown-vite/commit/007e115a714772524db97c3bde1d23acce1179dd))
+
 ## <small>[7.1.12](https://github.com/vitejs/rolldown-vite/compare/v7.1.11...v7.1.12) (2025-09-22)</small>
 ### Features
 
