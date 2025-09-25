@@ -517,3 +517,19 @@ test('invalidate inline proxy module on reload', async () => {
   await page.reload()
   expect(await page.textContent('.test')).toContain('ok')
 })
+
+test.runIf(isServe)(
+  'malformed URLs in src attributes should show errors',
+  async () => {
+    serverLogs.length = 0
+    await page.goto(`${viteTestUrl}/malformed-url.html`)
+    expect(await page.textContent('.status')).toContain(
+      'Page loaded successfully',
+    )
+    expect(serverLogs).not.toEqual(
+      expect.arrayContaining([
+        expect.stringMatching('Internal server error: URI malformed'),
+      ]),
+    )
+  },
+)
