@@ -1896,7 +1896,7 @@ type CssUrlReplacer = (
 ) => string | false | Promise<string | false>
 // https://drafts.csswg.org/css-syntax-3/#identifier-code-point
 export const cssUrlRE =
-  /(?<!@import\s+)(?<=^|[^\w\-\u0080-\uffff])url\((\s*('[^']+'|"[^"]+")\s*|[^'")]+)\)/
+  /(?<!@import\s+)(?<=^|[^\w\-\u0080-\uffff])url\(\s*(?:'((?:\\.|[^'\\])*)'|"((?:\\.|[^"\\])*)"|((?:\\.|[^\s'")\\])+))\s*\)/g
 export const cssDataUriRE =
   /(?<=^|[^\w\-\u0080-\uffff])data-uri\((\s*('[^']+'|"[^"]+")\s*|[^'")]+)\)/
 export const importCssRE =
