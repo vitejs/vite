@@ -466,11 +466,23 @@ export function indexHtmlMiddleware(
         if (!content && fullBundleEnv.memoryFiles.size !== 0) {
           return next()
         }
+        const secFetchDest = req.headers['sec-fetch-dest']
         if (
-          (await fullBundleEnv.triggerBundleRegenerationIfStale()) ||
-          content === undefined
+          [
+            'document',
+            'iframe',
+            'frame',
+            'fencedframe',
+            '',
+            undefined,
+          ].includes(secFetchDest) &&
+          ((await fullBundleEnv.triggerBundleRegenerationIfStale()) ||
+            content === undefined)
         ) {
           content = await generateFallbackHtml(server as ViteDevServer)
+        }
+        if (!content) {
+          return next()
         }
 
         const html =
