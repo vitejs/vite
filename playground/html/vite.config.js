@@ -40,6 +40,7 @@ export default defineConfig({
           process.cwd(),
           resolve(__dirname, 'relative-input.html'),
         ),
+        malformedUrl: resolve(__dirname, 'malformed-url.html'),
       },
       external: ['/external-path-by-rollup-options.js'],
     },

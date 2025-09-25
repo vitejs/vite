@@ -116,7 +116,9 @@ export function transformMiddleware(
     } catch (e) {
       if (e instanceof URIError) {
         server.config.logger.warn(
-          colors.yellow('Malformed URI sequence in request URL'),
+          colors.yellow(
+            `Malformed URI sequence in request URL: ${removeTimestampQuery(req.url!)}`,
+          ),
         )
         return next()
       }
