@@ -1,3 +1,4 @@
+import { randomUUID } from 'node:crypto'
 import type { RolldownBuild } from 'rolldown'
 import { type DevEngine, dev } from 'rolldown/experimental'
 import type { Update } from 'types/hmrPayload'
@@ -9,6 +10,7 @@ import type { ResolvedConfig } from '../../config'
 import type { ViteDevServer } from '../../server'
 import { createDebugger } from '../../utils'
 import { getShortName } from '../hmr'
+import type { WebSocketClient } from '../ws'
 
 const debug = createDebugger('vite:full-bundle-mode')
 
@@ -58,7 +60,11 @@ export class MemoryFiles {
 
 export class FullBundleDevEnvironment extends DevEnvironment {
   private devEngine!: DevEngine
-  private invalidateCalledModules = new Set<string>()
+  private clients = new Clients()
+  private invalidateCalledModules = new Map<
+    /* clientId */ string,
+    Set<string>
+  >()
   private debouncedFullReload = debounce(20, () => {
     this.hot.send({ type: 'full-reload', path: '*' })
     this.logger.info(colors.green(`page reload`), { timestamp: true })
@@ -80,7 +86,7 @@ export class FullBundleDevEnvironment extends DevEnvironment {
     super(name, config, { ...context, disableDepsOptimizer: true })
   }
 
-  override async listen(_server: ViteDevServer): Promise<void> {
+  override async listen(server: ViteDevServer): Promise<void> {
     this.hot.listen()
 
     debug?.('INITIAL: setup bundle options')
@@ -98,19 +104,39 @@ export class FullBundleDevEnvironment extends DevEnvironment {
         : rollupOptions.output
     )!
 
+    // TODO: use hot API
+    server.ws.on(
+      'vite:module-loaded',
+      (payload: { modules: string[] }, client: WebSocketClient) => {
+        const clientId = this.clients.setupIfNeeded(client, () => {
+          this.devEngine.removeClient(clientId)
+        })
+        this.devEngine.registerModules(clientId, payload.modules)
+      },
+    )
+    server.ws.on('vite:invalidate', (payload, client: WebSocketClient) => {
+      this.handleInvalidateModule(client, payload)
+    })
+
     this.devEngine = await dev(rollupOptions, outputOptions, {
       onHmrUpdates: (updates, files) => {
         if (files.length === 0) {
           return
         }
-        // TODO: how to handle errors?
-        if (updates.every((update) => update.type === 'Noop')) {
+        // TODO: fix the need to clone
+        const clonedUpdates = updates.map((u) => ({
+          clientId: u.clientId,
+          update: { ...u.update },
+        }))
+        if (clonedUpdates.every((update) => update.update.type === 'Noop')) {
           debug?.(`ignored file change for ${files.join(', ')}`)
           return
         }
-        this.invalidateCalledModules.clear()
-        for (const update of updates) {
-          this.handleHmrOutput(files, update)
+        // TODO: how to handle errors?
+        for (const { clientId, update } of clonedUpdates) {
+          this.invalidateCalledModules.get(clientId)?.clear()
+          const client = this.clients.get(clientId)!
+          this.handleHmrOutput(client, files, update)
         }
       },
       watch: {
@@ -144,13 +170,24 @@ export class FullBundleDevEnvironment extends DevEnvironment {
     // no-op
   }
 
-  protected override invalidateModule(m: {
-    path: string
-    message?: string
-    firstInvalidatedBy: string
-  }): void {
+  protected override invalidateModule(_m: unknown): void {
+    // no-op, handled via `server.ws` instead
+  }
+
+  private handleInvalidateModule(
+    client: WebSocketClient,
+    m: {
+      path: string
+      message?: string
+      firstInvalidatedBy: string
+    },
+  ): void {
     ;(async () => {
-      if (this.invalidateCalledModules.has(m.path)) {
+      const clientId = this.clients.getId(client)
+      if (!clientId) return
+
+      const invalidateCalledModules = this.invalidateCalledModules.get(clientId)
+      if (invalidateCalledModules?.has(m.path)) {
         debug?.(
           `INVALIDATE: invalidate received from ${m.path}, but ignored because it was already invalidated`,
         )
@@ -160,13 +197,18 @@ export class FullBundleDevEnvironment extends DevEnvironment {
       debug?.(
         `INVALIDATE: invalidate received from ${m.path}, re-triggering HMR`,
       )
-      this.invalidateCalledModules.add(m.path)
+      if (!invalidateCalledModules) {
+        this.invalidateCalledModules.set(clientId, new Set([]))
+      }
+      this.invalidateCalledModules.get(clientId)!.add(m.path)
 
       // TODO: how to handle errors?
-      const update = await this.devEngine.invalidate(
+      const _update = await this.devEngine.invalidate(
         m.path,
         m.firstInvalidatedBy,
       )
+      const update = _update.find((u) => u.clientId === clientId)?.update
+      if (!update) return
 
       if (update.type === 'Patch') {
         this.logger.info(
@@ -178,7 +220,7 @@ export class FullBundleDevEnvironment extends DevEnvironment {
       }
 
       // TODO: need to check if this is enough
-      this.handleHmrOutput([m.path], update, {
+      this.handleHmrOutput(client, [m.path], update, {
         firstInvalidatedBy: m.firstInvalidatedBy,
       })
     })()
@@ -265,6 +307,7 @@ export class FullBundleDevEnvironment extends DevEnvironment {
   }
 
   private handleHmrOutput(
+    client: WebSocketClient,
     files: string[],
     hmrOutput: HmrOutput,
     invalidateInformation?: { firstInvalidatedBy: string },
@@ -307,7 +350,7 @@ export class FullBundleDevEnvironment extends DevEnvironment {
         timestamp: Date.now(),
       }
     })
-    this.hot.send({
+    client.send({
       type: 'update',
       updates,
     })
@@ -316,6 +359,42 @@ export class FullBundleDevEnvironment extends DevEnvironment {
         colors.dim([...new Set(updates.map((u) => u.path))].join(', ')),
       { clear: !invalidateInformation, timestamp: true },
     )
+  }
+}
+
+class Clients {
+  private clientToId = new Map<WebSocketClient, string>()
+  private idToClient = new Map<string, WebSocketClient>()
+
+  setupIfNeeded(client: WebSocketClient, onClose?: () => void): string {
+    const id = this.clientToId.get(client)
+    if (id) return id
+
+    const newId = randomUUID()
+    this.clientToId.set(client, newId)
+    this.idToClient.set(newId, client)
+    client.socket.once('close', () => {
+      this.clientToId.delete(client)
+      this.idToClient.delete(newId)
+      onClose?.()
+    })
+    return newId
+  }
+
+  get(id: string): WebSocketClient | undefined {
+    return this.idToClient.get(id)
+  }
+
+  getId(client: WebSocketClient): string | undefined {
+    return this.clientToId.get(client)
+  }
+
+  delete(client: WebSocketClient): void {
+    const id = this.clientToId.get(client)
+    if (id) {
+      this.clientToId.delete(client)
+      this.idToClient.delete(id)
+    }
   }
 }
 

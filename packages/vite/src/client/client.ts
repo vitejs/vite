@@ -640,5 +640,19 @@ if (isFullBundleMode && typeof DevRuntime !== 'undefined') {
     }
   }
 
-  ;(globalThis as any).__rolldown_runtime__ ??= new ViteDevRuntime()
+  // TODO: make this more performant
+  const wrappedSocket = {
+    readyState: WebSocket.OPEN,
+    send(data: string) {
+      const d = JSON.parse(data)
+      transport.send({
+        type: 'custom',
+        event: 'vite:module-loaded',
+        data: { modules: d.modules },
+      })
+    },
+  }
+  ;(globalThis as any).__rolldown_runtime__ ??= new ViteDevRuntime(
+    wrappedSocket,
+  )
 }
