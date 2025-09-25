@@ -180,7 +180,6 @@ export class FullBundleDevEnvironment extends DevEnvironment {
       // TODO: need to check if this is enough
       this.handleHmrOutput([m.path], update, {
         firstInvalidatedBy: m.firstInvalidatedBy,
-        reason: m.message,
       })
     })()
   }
@@ -243,6 +242,10 @@ export class FullBundleDevEnvironment extends DevEnvironment {
         output.assetFileNames = 'assets/[name]-[hash][extname]'
         output.minify = false
         output.sourcemap = true
+        // output.advancedChunks ||= {}
+        // output.advancedChunks.groups = [
+        //   { name: 'chunk', maxSize: 1024 * 1024 },
+        // ]
       }
     } else {
       rolldownOptions.output ??= {}
@@ -251,7 +254,12 @@ export class FullBundleDevEnvironment extends DevEnvironment {
       rolldownOptions.output.assetFileNames = 'assets/[name]-[hash][extname]'
       rolldownOptions.output.minify = false
       rolldownOptions.output.sourcemap = true
+      // rolldownOptions.output.advancedChunks ||= {}
+      // rolldownOptions.output.advancedChunks.groups = [
+      //   { name: 'chunk', maxSize: 1024 * 1024 },
+      // ]
     }
+    // rolldownOptions.experimental.strictExecutionOrder = true
 
     return rolldownOptions
   }
@@ -259,7 +267,7 @@ export class FullBundleDevEnvironment extends DevEnvironment {
   private handleHmrOutput(
     files: string[],
     hmrOutput: HmrOutput,
-    invalidateInformation?: { firstInvalidatedBy: string; reason?: string },
+    invalidateInformation?: { firstInvalidatedBy: string },
   ) {
     if (hmrOutput.type === 'Noop') return
 
@@ -267,11 +275,9 @@ export class FullBundleDevEnvironment extends DevEnvironment {
       .map((file) => getShortName(file, this.config.root))
       .join(', ')
     if (hmrOutput.type === 'FullReload') {
-      const reason =
-        (hmrOutput.reason ? colors.dim(` (${hmrOutput.reason})`) : '') +
-        (invalidateInformation?.reason
-          ? colors.dim(` (${invalidateInformation.reason})`)
-          : '')
+      const reason = hmrOutput.reason
+        ? colors.dim(` (${hmrOutput.reason})`)
+        : ''
       this.logger.info(
         colors.green(`trigger page reload `) + colors.dim(shortFile) + reason,
         { clear: !invalidateInformation, timestamp: true },
