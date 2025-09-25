@@ -262,6 +262,14 @@ export interface Plugin<A = any> extends RollupPlugin<A> {
     ) => void | Promise<void>
   >
   /**
+   * Use this hook to read and store the final resolved config for
+   * each environment
+   * @experimental
+   */
+  environmentConfigResolved?: (
+    environment: PartialEnvironment,
+  ) => boolean | Promise<boolean> | PluginOption
+  /**
    * Configure the vite server. The hook receives the {@link ViteDevServer}
    * instance. This can also be used to store a reference to the server
    * for use in other hooks.
