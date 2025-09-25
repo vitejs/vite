@@ -512,8 +512,9 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
           if (specifier !== undefined) {
             // skip external / data uri
             if (
-              (isExternalUrl(specifier) && !specifier.startsWith('file://')) ||
-              isDataUrl(specifier)
+              ((isExternalUrl(specifier) && !specifier.startsWith('file://')) ||
+                isDataUrl(specifier)) &&
+              !matchAlias(specifier)
             ) {
               return
             }
