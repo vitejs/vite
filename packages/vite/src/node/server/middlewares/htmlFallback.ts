@@ -63,8 +63,20 @@ export function htmlFallbackMiddleware(
     }
 
     if (spaFallback) {
-      debug?.(`Rewriting ${req.method} ${req.url} to /index.html`)
-      req.url = '/index.html'
+      // remove a path component at a time from pathname and check for
+      // the presence of a corresponding index.html
+      let workingPathname = pathname
+      while (true) {
+        const filePath = path.join(root, workingPathname, 'index.html')
+        if (fs.existsSync(filePath)) {
+          const newUrl = workingPathname + '/index.html'
+          debug?.(`Rewriting ${req.method} ${req.url} to ${newUrl}`)
+          req.url = newUrl
+          return next()
+        }
+        if (workingPathname === '/') break
+        workingPathname = path.dirname(workingPathname)
+      }
     }
 
     next()
