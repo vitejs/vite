@@ -1626,6 +1626,15 @@ export function partialEncodeURIPath(uri: string): string {
   return filePath.replaceAll('%', '%25') + postfix
 }
 
+export function decodeURIIfPossible(input: string): string | undefined {
+  try {
+    return decodeURI(input)
+  } catch {
+    // url is malformed, probably a interpolate syntax of template engines
+    return
+  }
+}
+
 type SigtermCallback = (signal?: 'SIGTERM', exitCode?: number) => Promise<void>
 
 // Use a shared callback when attaching sigterm listeners to avoid `MaxListenersExceededWarning`
