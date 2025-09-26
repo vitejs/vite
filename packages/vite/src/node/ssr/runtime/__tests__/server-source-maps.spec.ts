@@ -44,7 +44,7 @@ describe('module runner initialization', async () => {
       mod.throwError()
     })
     expect(serializeStack(server, methodError)).toBe(
-      '    at Module.throwError (<root>/fixtures/throws-error-method.ts:21:9)',
+      '    at Module.throwError (<root>/fixtures/throws-error-method.ts:6:9)',
     )
 
     // simulate HMR
@@ -61,7 +61,7 @@ describe('module runner initialization', async () => {
     })
 
     expect(serializeStack(server, methodErrorNew)).toBe(
-      '    at Module.throwError (<root>/fixtures/throws-error-method.ts:26:9)',
+      '    at Module.throwError (<root>/fixtures/throws-error-method.ts:11:9)',
     )
   })
 
