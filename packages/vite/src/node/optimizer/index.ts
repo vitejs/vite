@@ -1123,7 +1123,7 @@ export async function extractExportsData(
   let parseResult: ReturnType<typeof parse>
   let usedJsxLoader = false
 
-  const entryContent = await fsp.readFile(filePath, 'utf-8')
+  const entryContent = fs.readFileSync(filePath, 'utf-8')
   try {
     parseResult = parse(entryContent)
   } catch {
