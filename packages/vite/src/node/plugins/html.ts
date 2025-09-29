@@ -1410,12 +1410,12 @@ export async function applyHtmlTransforms(
   return html
 }
 
-const importRE = /\bimport\s*(?:"[^"]*[^\\]"|'[^']*[^\\]');*/g
-const commentRE = /\/\*[\s\S]*?\*\/|\/\/.*$/gm
+const entirelyImportRE =
+  /^(?:import\s*(?:"[^"\n]*[^\\\n]"|'[^'\n]*[^\\\n]');*|\/\*[\s\S]*?\*\/|\/\/.*[$\n])*$/
 function isEntirelyImport(code: string) {
   // only consider "side-effect" imports, which match <script type=module> semantics exactly
   // the regexes will remove too little in some exotic cases, but false-negatives are alright
-  return !code.replace(importRE, '').replace(commentRE, '').trim().length
+  return entirelyImportRE.test(code.trim())
 }
 
 function getBaseInHTML(urlRelativePath: string, config: ResolvedConfig) {
