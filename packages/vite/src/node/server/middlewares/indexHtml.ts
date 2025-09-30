@@ -462,8 +462,8 @@ export function indexHtmlMiddleware(
         const pathname = decodeURIComponent(url)
         const filePath = pathname.slice(1) // remove first /
 
-        let content = fullBundleEnv.memoryFiles.get(filePath)
-        if (!content && fullBundleEnv.memoryFiles.size !== 0) {
+        let file = fullBundleEnv.memoryFiles.get(filePath)
+        if (!file && fullBundleEnv.memoryFiles.size !== 0) {
           return next()
         }
         const secFetchDest = req.headers['sec-fetch-dest']
@@ -477,20 +477,22 @@ export function indexHtmlMiddleware(
             undefined,
           ].includes(secFetchDest) &&
           ((await fullBundleEnv.triggerBundleRegenerationIfStale()) ||
-            content === undefined)
+            file === undefined)
         ) {
-          content = await generateFallbackHtml(server as ViteDevServer)
+          file = { source: await generateFallbackHtml(server as ViteDevServer) }
         }
-        if (!content) {
+        if (!file) {
           return next()
         }
 
         const html =
-          typeof content === 'string' ? content : Buffer.from(content.buffer)
+          typeof file.source === 'string'
+            ? file.source
+            : Buffer.from(file.source)
         const headers = isDev
           ? server.config.server.headers
           : server.config.preview.headers
-        return send(req, res, html, 'html', { headers })
+        return send(req, res, html, 'html', { headers, etag: file.etag })
       }
 
       let filePath: string

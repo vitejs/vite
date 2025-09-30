@@ -27,6 +27,15 @@ export function memoryFilesMiddleware(
 
     const file = memoryFiles.get(filePath)
     if (file) {
+      if (file.etag) {
+        if (req.headers['if-none-match'] === file.etag) {
+          res.statusCode = 304
+          res.end()
+          return
+        }
+        res.setHeader('Etag', file.etag)
+      }
+
       const mime = mrmime.lookup(filePath)
       if (mime) {
         res.setHeader('Content-Type', mime)
@@ -36,7 +45,7 @@ export function memoryFilesMiddleware(
         res.setHeader(name, headers[name]!)
       }
 
-      return res.end(file)
+      return res.end(file.source)
     }
     next()
   }

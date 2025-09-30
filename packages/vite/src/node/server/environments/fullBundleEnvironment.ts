@@ -3,6 +3,7 @@ import type { RolldownBuild } from 'rolldown'
 import { type DevEngine, dev } from 'rolldown/experimental'
 import type { Update } from 'types/hmrPayload'
 import colors from 'picocolors'
+import getEtag from 'etag'
 import { ChunkMetadataMap, resolveRolldownOptions } from '../../build'
 import { getHmrImplementation } from '../../plugins/clientInjections'
 import { DevEnvironment, type DevEnvironmentContext } from '../environment'
@@ -19,17 +20,19 @@ type HmrOutput = Exclude<
   undefined
 >
 
+type MemoryFile = {
+  source: string | Uint8Array
+  etag?: string
+}
+
 export class MemoryFiles {
-  private files = new Map<
-    string,
-    string | Uint8Array | (() => string | Uint8Array)
-  >()
+  private files = new Map<string, MemoryFile | (() => MemoryFile)>()
 
   get size(): number {
     return this.files.size
   }
 
-  get(file: string): string | Uint8Array | undefined {
+  get(file: string): MemoryFile | undefined {
     const result = this.files.get(file)
     if (result === undefined) {
       return undefined
@@ -42,10 +45,7 @@ export class MemoryFiles {
     return result
   }
 
-  set(
-    file: string,
-    content: string | Uint8Array | (() => string | Uint8Array),
-  ): void {
+  set(file: string, content: MemoryFile | (() => MemoryFile)): void {
     this.files.set(file, content)
   }
 
@@ -265,11 +265,16 @@ export class FullBundleDevEnvironment extends DevEnvironment {
           handler: (_, bundle) => {
             // NOTE: don't clear memoryFiles here as incremental build re-uses the files
             for (const outputFile of Object.values(bundle)) {
-              this.memoryFiles.set(outputFile.fileName, () =>
-                outputFile.type === 'chunk'
-                  ? outputFile.code
-                  : outputFile.source,
-              )
+              this.memoryFiles.set(outputFile.fileName, () => {
+                const source =
+                  outputFile.type === 'chunk'
+                    ? outputFile.code
+                    : outputFile.source
+                return {
+                  source,
+                  etag: getEtag(Buffer.from(source), { weak: true }),
+                }
+              })
             }
           },
         },
@@ -336,9 +341,11 @@ export class FullBundleDevEnvironment extends DevEnvironment {
       code: typeof hmrOutput.code === 'string' ? '[code]' : hmrOutput.code,
     })
 
-    this.memoryFiles.set(hmrOutput.filename, hmrOutput.code)
+    this.memoryFiles.set(hmrOutput.filename, { source: hmrOutput.code })
     if (hmrOutput.sourcemapFilename && hmrOutput.sourcemap) {
-      this.memoryFiles.set(hmrOutput.sourcemapFilename, hmrOutput.sourcemap)
+      this.memoryFiles.set(hmrOutput.sourcemapFilename, {
+        source: hmrOutput.sourcemap,
+      })
     }
     const updates: Update[] = hmrOutput.hmrBoundaries.map((boundary: any) => {
       return {
