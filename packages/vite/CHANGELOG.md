@@ -1,3 +1,25 @@
+## <small>[7.1.14](https://github.com/vitejs/rolldown-vite/compare/v7.1.13...v7.1.14) (2025-09-30)</small>
+### Features
+
+* set `generatedCode: 'es2015'` ([4cfe8e1](https://github.com/vitejs/rolldown-vite/commit/4cfe8e1d2e0d75e47ac58de9c382efc7786cd023))
+* update rolldown ([bac2c1b](https://github.com/vitejs/rolldown-vite/commit/bac2c1b10fc39350eba46925ed87e5fa8e944b7d))
+
+### Bug Fixes
+
+* use readFileSync to avoid "too many open files" ([7c7ffdc](https://github.com/vitejs/rolldown-vite/commit/7c7ffdc2536f39a0ae7a04fe384aa59cc1b5a7e7))
+
+### Performance Improvements
+
+* use single regex for `isEntirelyImport` ([ac1ceaf](https://github.com/vitejs/rolldown-vite/commit/ac1ceaf804d52360f94312a6602046da72c4fb03))
+
+### Documentation
+
+* **create-vite:** provide deno example ([#20747](https://github.com/vitejs/rolldown-vite/issues/20747)) ([fdb758a](https://github.com/vitejs/rolldown-vite/commit/fdb758a51796b1ab605437b2eee778a84e87e169))
+
+### Miscellaneous Chores
+
+* **deps:** update rolldown-related dependencies ([#20810](https://github.com/vitejs/rolldown-vite/issues/20810)) ([ea68a88](https://github.com/vitejs/rolldown-vite/commit/ea68a8868c7ee249213057f8a81c3f92a9839dde))
+
 ## <small>[7.1.13](https://github.com/vitejs/rolldown-vite/compare/v7.1.12...v7.1.13) (2025-09-24)</small>
 ### Features
 
