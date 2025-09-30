@@ -699,7 +699,9 @@ function resolveRolldownOptions(
       // es2015 enables `generatedCode.symbols`
       // - #764 add `Symbol.toStringTag` when build es module into cjs chunk
       // - #1048 add `Symbol.toStringTag` for module default export
-      // generatedCode: 'es2015',
+      generatedCode: {
+        preset: 'es2015',
+      },
       entryFileNames: ssr
         ? `[name].${jsExt}`
         : libOptions
