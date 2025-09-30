@@ -1,6 +1,9 @@
 import { randomUUID } from 'node:crypto'
-import type { RolldownBuild } from 'rolldown'
-import { type DevEngine, dev } from 'rolldown/experimental'
+import {
+  type BindingClientHmrUpdate,
+  type DevEngine,
+  dev,
+} from 'rolldown/experimental'
 import type { Update } from 'types/hmrPayload'
 import colors from 'picocolors'
 import getEtag from 'etag'
@@ -15,10 +18,7 @@ import type { WebSocketClient } from '../ws'
 
 const debug = createDebugger('vite:full-bundle-mode')
 
-type HmrOutput = Exclude<
-  Awaited<ReturnType<RolldownBuild['hmrInvalidate']>>,
-  undefined
->
+type HmrOutput = BindingClientHmrUpdate['update']
 
 type MemoryFile = {
   source: string | Uint8Array
@@ -252,7 +252,6 @@ export class FullBundleDevEnvironment extends DevEnvironment {
     const rolldownOptions = resolveRolldownOptions(this, chunkMetadataMap)
     rolldownOptions.experimental ??= {}
     rolldownOptions.experimental.hmr = {
-      new: true,
       implement: await getHmrImplementation(this.getTopLevelConfig()),
     }
 
