@@ -8,6 +8,7 @@ import type { ViteDevServer } from '../../server'
 import type { ResolvedConfig } from '../../config'
 import { FS_PREFIX } from '../../constants'
 import {
+  decodeURIIfPossible,
   fsPathFromUrl,
   isFileReadable,
   isImportRequest,
@@ -151,7 +152,10 @@ export function serveStaticMiddleware(
     }
 
     const url = new URL(req.url!, 'http://example.com')
-    const pathname = decodeURI(url.pathname)
+    const pathname = decodeURIIfPossible(url.pathname)
+    if (pathname === undefined) {
+      return next()
+    }
 
     // apply aliases to static requests as well
     let redirectedPathname: string | undefined
@@ -213,7 +217,11 @@ export function serveRawFsMiddleware(
     // searching based from fs root.
     if (req.url!.startsWith(FS_PREFIX)) {
       const url = new URL(req.url!, 'http://example.com')
-      const pathname = decodeURI(url.pathname)
+      const pathname = decodeURIIfPossible(url.pathname)
+      if (pathname === undefined) {
+        return next()
+      }
+
       let newPathname = pathname.slice(FS_PREFIX.length)
       if (isWindows) newPathname = newPathname.replace(/^[A-Z]:/i, '')
       url.pathname = encodeURI(newPathname)

@@ -1,3 +1,37 @@
+## <small>[8.0.1](https://github.com/vitejs/vite/compare/create-vite@8.0.0...create-vite@8.0.1) (2025-09-23)</small>
+### Bug Fixes
+
+* **create-vite:** fix installing dependencies ([#20826](https://github.com/vitejs/vite/issues/20826)) ([01ae663](https://github.com/vitejs/vite/commit/01ae66387cf1f44e029c427251af7d09b9eb2567))
+
+## [8.0.0](https://github.com/vitejs/vite/compare/create-vite@8.0.0-beta.0...create-vite@8.0.0) (2025-09-23)
+### Features
+
+* **create-vite:** ask rolldown-vite before asking auto install ([#20820](https://github.com/vitejs/vite/issues/20820)) ([123f239](https://github.com/vitejs/vite/commit/123f2396c8e84308928daf0d61488fa886fc7d50))
+
+### Bug Fixes
+
+* **create-vite:** use shorter command name for `run dev` for each package manager ([#20821](https://github.com/vitejs/vite/issues/20821)) ([0c1bc8a](https://github.com/vitejs/vite/commit/0c1bc8af3422a4c4a3f39ba4a759d9f169e04833))
+
+### Miscellaneous Chores
+
+* **deps:** update rolldown-related dependencies ([#20810](https://github.com/vitejs/vite/issues/20810)) ([ea68a88](https://github.com/vitejs/vite/commit/ea68a8868c7ee249213057f8a81c3f92a9839dde))
+
+## [8.0.0-beta.0](https://github.com/vitejs/vite/compare/create-vite@7.1.3...create-vite@8.0.0-beta.0) (2025-09-23)
+### Features
+
+* **create-vite:** add `--interactive` / `--no-interactive` ([#20797](https://github.com/vitejs/vite/issues/20797)) ([03a56c5](https://github.com/vitejs/vite/commit/03a56c50a1a6eac76c99b0ce00c17518ed3ccae6))
+* **create-vite:** scaffold with rolldown-vite ([#20739](https://github.com/vitejs/vite/issues/20739)) ([b3227d5](https://github.com/vitejs/vite/commit/b3227d5398a14c1a7aa9a1a997879bca4d80e719))
+* **create-vite:** set default title in index.html to project name ([#20519](https://github.com/vitejs/vite/issues/20519)) ([b178f90](https://github.com/vitejs/vite/commit/b178f90ad0b337fc2a2e5c5091e889a9912ce948))
+* **create-vite:** set types compiler option in tsconfigs ([#20132](https://github.com/vitejs/vite/issues/20132)) ([52469c3](https://github.com/vitejs/vite/commit/52469c3dfe6f46a928a24805ef498993de5d491c))
+* **create-vite:** support auto install dependencies and start dev ([#20468](https://github.com/vitejs/vite/issues/20468)) ([925cefe](https://github.com/vitejs/vite/commit/925cefe8ee5c88c9b5b6fa525f46addc4a8aef83))
+* **create-vite:** support React Compiler ([#20704](https://github.com/vitejs/vite/issues/20704)) ([052aa88](https://github.com/vitejs/vite/commit/052aa88d5618e48a47fe8e868157e768ce38af2e))
+
+## <small>[7.1.3](https://github.com/vitejs/vite/compare/create-vite@7.1.2...create-vite@7.1.3) (2025-09-22)</small>
+### Bug Fixes
+
+* **create-vite:** support deno create command ([#20806](https://github.com/vitejs/vite/issues/20806)) ([a50a162](https://github.com/vitejs/vite/commit/a50a16274ab6a23cb14b2b65b8df4a36dc5f84d2))
+* **deps:** update all non-major dependencies ([#20811](https://github.com/vitejs/vite/issues/20811)) ([9f2247c](https://github.com/vitejs/vite/commit/9f2247c066cac75746356c9391845235445a154b))
+
 ## <small>[7.1.2](https://github.com/vitejs/vite/compare/create-vite@7.1.1...create-vite@7.1.2) (2025-09-18)</small>
 ### Bug Fixes
 
