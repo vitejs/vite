@@ -462,8 +462,7 @@ class EnvironmentPluginContainer<Env extends Environment = Environment> {
     }
 
     if (id) {
-      partial.id =
-        isExternalUrl(id) || id[0] === '\0' ? id : normalizePath(id)
+      partial.id = isExternalUrl(id) || id[0] === '\0' ? id : normalizePath(id)
       return partial as PartialResolvedId
     } else {
       return null
