@@ -1,73 +1,58 @@
-# Migration from v3
+# Migration from v6
 
-## Rollup 3
+## Node.js Support
 
-Vite is now using [Rollup 3](https://github.com/vitejs/vite/issues/9870), which allowed us to simplify Vite's internal asset handling and has many improvements. See the [Rollup 3 release notes here](https://github.com/rollup/rollup/releases/tag/v3.0.0).
+Vite no longer supports Node.js 18, which reached its EOL. Node.js 20.19+ / 22.12+ is now required.
 
-Rollup 3 is mostly compatible with Rollup 2. If you are using custom [`rollupOptions`](../config/build-options.md#rollup-options) in your project and encounter issues, refer to the [Rollup migration guide](https://rollupjs.org/migration/) to upgrade your config.
+## Default Browser Target change
 
-## Modern Browser Baseline change
+The default browser value of `build.target` is updated to a newer browser.
 
-The modern browser build now targets `safari14` by default for wider ES2020 compatibility (bumped from `safari13`). This means that modern builds can now use [`BigInt`](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/BigInt) and that the [nullish coalescing operator](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Operators/Nullish_coalescing) isn't transpiled anymore. If you need to support older browsers, you can add [`@vitejs/plugin-legacy`](https://github.com/vitejs/vite/tree/main/packages/plugin-legacy) as usual.
+- Chrome 87 → 107
+- Edge 88 → 107
+- Firefox 78 → 104
+- Safari 14.0 → 16.0
+
+These browser versions align with [Baseline](https://web-platform-dx.github.io/web-features/) Widely Available feature sets as of 2025-05-01. In other words, they were all released before 2022-11-01.
+
+In Vite 5, the default target was named `'modules'`, but this is no longer available. Instead, a new default target `'baseline-widely-available'` is introduced.
 
 ## General Changes
 
-### Encoding
+### Removed Sass legacy API support
 
-The build default charset is now utf8 (see [#10753](https://github.com/vitejs/vite/issues/10753) for details).
+As planned, support for the Sass legacy API is removed. Vite now only supports the modern API. You can remove the `css.preprocessorOptions.sass.api` / `css.preprocessorOptions.scss.api` option.
 
-### Importing CSS as a String
+## Removed deprecated features
 
-In Vite 3, importing the default export of a `.css` file could introduce a double loading of CSS.
-
-```ts
-import cssString from './global.css'
-```
-
-This double loading could occur since a `.css` file will be emitted and it's likely that the CSS string will also be used by the application code — for example, injected by the framework runtime. From Vite 4, the `.css` default export [has been deprecated](https://github.com/vitejs/vite/issues/11094). The `?inline` query suffix modifier needs to be used in this case, as that doesn't emit the imported `.css` styles.
-
-```ts
-import stuff from './global.css?inline'
-```
-
-### Production Builds by Default
-
-`vite build` will now always build for production regardless of the `--mode` passed. Previously, changing `mode` to other than `production` would result in a development build. If you wish to still build for development, you can set `NODE_ENV=development` in the `.env.{mode}` file.
-
-In part of this change, `vite dev` and `vite build` will not override `process.env.NODE_ENV` anymore if it is already defined. So if you've set `process.env.NODE_ENV = 'development'` before building, it will also build for development. This gives more control when running multiple builds or dev servers in parallel.
-
-See the updated [`mode` documentation](https://vitejs.dev/guide/env-and-mode.html#modes) for more details.
-
-### Environment Variables
-
-Vite now uses `dotenv` 16 and `dotenv-expand` 9 (previously `dotenv` 14 and `dotenv-expand` 5). If you have a value including `#` or `` ` ``, you will need to wrap them with quotes.
-
-```diff
--VITE_APP=ab#cd`ef
-+VITE_APP="ab#cd`ef"
-```
-
-For more details, see the [`dotenv`](https://github.com/motdotla/dotenv/blob/master/CHANGELOG.md) and [`dotenv-expand` changelog](https://github.com/motdotla/dotenv-expand/blob/master/CHANGELOG.md).
+- `splitVendorChunkPlugin` (deprecated in v5.2.7)
+  - This plugin was originally provided to ease migration to Vite v2.9.
+  - The `build.rollupOptions.output.manualChunks` option can be used to control the chunking behavior if needed.
+- Hook-level `enforce` / `transform` for `transformIndexHtml` (deprecated in v4.0.0)
+  - It was changed to align the interface with [Rollup's object hooks](https://rollupjs.org/plugin-development/#build-hooks:~:text=Instead%20of%20a%20function%2C%20hooks%20can%20also%20be%20objects.).
+  - `order` should be used instead of `enforce`, and `handler` should be used instead of `transform`.
 
 ## Advanced
 
-There are some changes which only affect plugin/tool creators.
+There are other breaking changes which only affect few users.
 
-- [[#11036] feat(client)!: remove never implemented hot.decline](https://github.com/vitejs/vite/issues/11036)
-  - use `hot.invalidate` instead
-- [[#9669] feat: align object interface for `transformIndexHtml` hook](https://github.com/vitejs/vite/issues/9669)
-  - use `order` instead of `enforce`
+- [[#19979] chore: declare version range for peer dependencies](https://github.com/vitejs/vite/pull/19979)
+  - Specified the peer dependencies version range for CSS preprocessors.
+- [[#20013] refactor: remove no-op `legacy.proxySsrExternalModules`](https://github.com/vitejs/vite/pull/20013)
+  - `legacy.proxySsrExternalModules` property had no effect since Vite 6. It is now removed.
+- [[#19985] refactor!: remove deprecated no-op type only properties](https://github.com/vitejs/vite/pull/19985)
+  - The following unused properties are now removed: `ModuleRunnerOptions.root`, `ViteDevServer._importGlobMap`, `ResolvePluginOptions.isFromTsImporter`, `ResolvePluginOptions.getDepsOptimizer`, `ResolvePluginOptions.shouldExternalize`, `ResolvePluginOptions.ssrConfig`
+- [[#19986] refactor: remove deprecated env api properties](https://github.com/vitejs/vite/pull/19986)
+  - These properties were deprecated from the beginning. It is now removed.
+- [[#19987] refactor!: remove deprecated `HotBroadcaster` related types](https://github.com/vitejs/vite/pull/19987)
+  - These types were introduced as part of the now-deprecated Runtime API. It is now removed: `HMRBroadcaster`, `HMRBroadcasterClient`, `ServerHMRChannel`, `HMRChannel`
+- [[#19996] fix(ssr)!: don't access `Object` variable in ssr transformed code](https://github.com/vitejs/vite/pull/19996)
+  - `__vite_ssr_exportName__` is now required for the module runner runtime context.
+- [[#20045] fix: treat all `optimizeDeps.entries` values as globs](https://github.com/vitejs/vite/pull/20045)
+  - `optimizeDeps.entries` now does not receive literal string paths. Instead, it always receives globs.
+- [[#20222] feat: apply some middlewares before `configureServer` hook](https://github.com/vitejs/vite/pull/20222), [[#20224] feat: apply some middlewares before `configurePreviewServer` hook](https://github.com/vitejs/vite/pull/20224)
+  - Some middlewares are now applied before the `configureServer` / `configurePreviewServer` hook. Note that if you don't expect a certain route to apply the [`server.cors`](../config/server-options.md#server-cors) / [`preview.cors`](../config/preview-options.md#preview-cors) option, make sure to remove the related headers from the response.
 
-Also there are other breaking changes which only affect few users.
+## Migration from v5
 
-- [[#11101] feat(ssr)!: remove dedupe and mode support for CJS](https://github.com/vitejs/vite/pull/11101)
-  - You should migrate to the default ESM mode for SSR, CJS SSR support may be removed in the next Vite major.
-- [[#10475] feat: handle static assets in case-sensitive manner](https://github.com/vitejs/vite/pull/10475)
-  - Your project shouldn't rely on an OS ignoring file names casing.
-- [[#10996] fix!: make `NODE_ENV` more predictable](https://github.com/vitejs/vite/pull/10996)
-  - Refer to the PR for an explanation about this change.
-- [[#10903] refactor(types)!: remove facade type files](https://github.com/vitejs/vite/pull/10903)
-
-## Migration from v2
-
-Check the [Migration from v2 Guide](https://v3.vitejs.dev/guide/migration.html) in the Vite v3 docs first to see the needed changes to port your app to Vite v3, and then proceed with the changes on this page.
+Check the [Migration from v5 Guide](https://v6.vite.dev/guide/migration.html) in the Vite v6 docs first to see the needed changes to port your app to Vite 6, and then proceed with the changes on this page.

@@ -1,21 +1,25 @@
 import path from 'node:path'
 import MagicString from 'magic-string'
 import { stripLiteral } from 'strip-literal'
+import { exactRegex } from '@rolldown/pluginutils'
 import type { Plugin } from '../plugin'
 import type { ResolvedConfig } from '../config'
-import type { ResolveFn } from '../'
 import {
   injectQuery,
+  isDataUrl,
   isParentDirectory,
-  normalizePath,
-  slash,
   transformStableResult,
+  tryStatSync,
 } from '../utils'
 import { CLIENT_ENTRY } from '../constants'
+import { slash } from '../../shared/utils'
+import { createBackCompatIdResolver } from '../idResolver'
+import type { ResolveIdFn } from '../idResolver'
 import { fileToUrl } from './asset'
 import { preloadHelperId } from './importAnalysisBuild'
 import type { InternalResolveOptions } from './resolve'
 import { tryFsResolve } from './resolve'
+import { hasViteIgnoreRE } from './importAnalysis'
 
 /**
  * Convert `new URL('./foo.png', import.meta.url)` to its resolved built URL
@@ -28,8 +32,8 @@ import { tryFsResolve } from './resolve'
  * ```
  */
 export function assetImportMetaUrlPlugin(config: ResolvedConfig): Plugin {
-  const normalizedPublicDir = normalizePath(config.publicDir)
-  let assetResolver: ResolveFn
+  const { publicDir } = config
+  let assetResolver: ResolveIdFn
 
   const fsResolveOptions: InternalResolveOptions = {
     ...config.resolve,
@@ -37,31 +41,34 @@ export function assetImportMetaUrlPlugin(config: ResolvedConfig): Plugin {
     isProduction: config.isProduction,
     isBuild: config.command === 'build',
     packageCache: config.packageCache,
-    ssrConfig: config.ssr,
     asSrc: true,
   }
 
   return {
     name: 'vite:asset-import-meta-url',
-    async transform(code, id, options) {
-      if (
-        !options?.ssr &&
-        id !== preloadHelperId &&
-        id !== CLIENT_ENTRY &&
-        code.includes('new URL') &&
-        code.includes(`import.meta.url`)
-      ) {
+
+    applyToEnvironment(environment) {
+      return environment.config.consumer === 'client'
+    },
+
+    transform: {
+      filter: {
+        id: {
+          exclude: [exactRegex(preloadHelperId), exactRegex(CLIENT_ENTRY)],
+        },
+        code: /new\s+URL.+import\.meta\.url/s,
+      },
+      async handler(code, id) {
         let s: MagicString | undefined
         const assetImportMetaUrlRE =
-          /\bnew\s+URL\s*\(\s*('[^']+'|"[^"]+"|`[^`]+`)\s*,\s*import\.meta\.url\s*(?:,\s*)?\)/g
+          /\bnew\s+URL\s*\(\s*('[^']+'|"[^"]+"|`[^`]+`)\s*,\s*import\.meta\.url\s*(?:,\s*)?\)/dg
         const cleanString = stripLiteral(code)
 
         let match: RegExpExecArray | null
         while ((match = assetImportMetaUrlRE.exec(cleanString))) {
-          const { 0: exp, 1: emptyUrl, index } = match
+          const [[startIndex, endIndex], [urlStart, urlEnd]] = match.indices!
+          if (hasViteIgnoreRE.test(code.slice(startIndex, urlStart))) continue
 
-          const urlStart = cleanString.indexOf(emptyUrl, index)
-          const urlEnd = urlStart + emptyUrl.length
           const rawUrl = code.slice(urlStart, urlEnd)
 
           if (!s) s = new MagicString(code)
@@ -80,7 +87,7 @@ export function assetImportMetaUrlPlugin(config: ResolvedConfig): Plugin {
             const templateLiteral = (ast as any).body[0].expression
             if (templateLiteral.expressions.length) {
               const pattern = buildGlobPattern(templateLiteral)
-              if (pattern.startsWith('**')) {
+              if (pattern[0] === '*') {
                 // don't transform for patterns like this
                 // because users won't intend to do that in most cases
                 continue
@@ -92,39 +99,39 @@ export function assetImportMetaUrlPlugin(config: ResolvedConfig): Plugin {
                 // A hack to allow 'as' & 'query' exist at the same time
                 query: injectQuery(queryString, 'url'),
               }
-              // Note: native import.meta.url is not supported in the baseline
-              // target so we use the global location here. It can be
-              // window.location or self.location in case it is used in a Web Worker.
-              // @see https://developer.mozilla.org/en-US/docs/Web/API/Window/self
               s.update(
-                index,
-                index + exp.length,
+                startIndex,
+                endIndex,
                 `new URL((import.meta.glob(${JSON.stringify(
                   pattern,
                 )}, ${JSON.stringify(
                   globOptions,
-                )}))[${pureUrl}], self.location)`,
+                )}))[${pureUrl}], import.meta.url)`,
               )
               continue
             }
           }
 
           const url = rawUrl.slice(1, -1)
+          if (isDataUrl(url)) {
+            continue
+          }
           let file: string | undefined
           if (url[0] === '.') {
             file = slash(path.resolve(path.dirname(id), url))
             file = tryFsResolve(file, fsResolveOptions) ?? file
           } else {
-            assetResolver ??= config.createResolver({
+            assetResolver ??= createBackCompatIdResolver(config, {
               extensions: [],
               mainFields: [],
               tryIndex: false,
               preferRelative: true,
             })
-            file = await assetResolver(url, id)
-            file ??= url.startsWith('/')
-              ? slash(path.join(config.publicDir, url))
-              : slash(path.resolve(path.dirname(id), url))
+            file = await assetResolver(this.environment, url, id)
+            file ??=
+              url[0] === '/'
+                ? slash(path.join(publicDir, url))
+                : slash(path.resolve(path.dirname(id), url))
           }
 
           // Get final asset URL. If the file does not exist,
@@ -132,54 +139,56 @@ export function assetImportMetaUrlPlugin(config: ResolvedConfig): Plugin {
           let builtUrl: string | undefined
           if (file) {
             try {
-              if (isParentDirectory(normalizedPublicDir, file)) {
-                const publicPath =
-                  '/' + path.posix.relative(normalizedPublicDir, file)
-                builtUrl = await fileToUrl(publicPath, config, this)
+              if (publicDir && isParentDirectory(publicDir, file)) {
+                const publicPath = '/' + path.posix.relative(publicDir, file)
+                builtUrl = await fileToUrl(this, publicPath)
               } else {
-                builtUrl = await fileToUrl(file, config, this)
+                builtUrl = await fileToUrl(this, file)
+                // during dev, builtUrl may point to a directory or a non-existing file
+                if (tryStatSync(file)?.isFile()) {
+                  this.addWatchFile(file)
+                }
               }
             } catch {
               // do nothing, we'll log a warning after this
             }
           }
           if (!builtUrl) {
-            const rawExp = code.slice(index, index + exp.length)
+            const rawExp = code.slice(startIndex, endIndex)
             config.logger.warnOnce(
-              `\n${rawExp} doesn't exist at build time, it will remain unchanged to be resolved at runtime`,
+              `\n${rawExp} doesn't exist at build time, it will remain unchanged to be resolved at runtime. ` +
+                `If this is intended, you can use the /* @vite-ignore */ comment to suppress this warning.`,
             )
             builtUrl = url
           }
           s.update(
-            index,
-            index + exp.length,
-            `new URL(${JSON.stringify(builtUrl)}, self.location)`,
+            startIndex,
+            endIndex,
+            `new URL(${JSON.stringify(builtUrl)}, import.meta.url)`,
           )
         }
         if (s) {
           return transformStableResult(s, id, config)
         }
-      }
-      return null
+      },
     },
   }
 }
 
 function buildGlobPattern(ast: any) {
   let pattern = ''
-  let lastElementIndex = -1
-  for (const exp of ast.expressions) {
-    for (let i = lastElementIndex + 1; i < ast.quasis.length; i++) {
-      const el = ast.quasis[i]
-      if (el.end < exp.start) {
-        pattern += el.value.raw
-        lastElementIndex = i
-      }
+  let lastIsGlob = false
+  for (let i = 0; i < ast.quasis.length; i++) {
+    const str = ast.quasis[i].value.raw
+    if (str) {
+      pattern += str
+      lastIsGlob = false
     }
-    pattern += '**'
-  }
-  for (let i = lastElementIndex + 1; i < ast.quasis.length; i++) {
-    pattern += ast.quasis[i].value.raw
+
+    if (ast.expressions[i] && !lastIsGlob) {
+      pattern += '*'
+      lastIsGlob = true
+    }
   }
   return pattern
 }

@@ -1,14 +1,29 @@
 import { beforeEach, describe, expect, test, vi } from 'vitest'
 import { transformCjsImport } from '../../plugins/importAnalysis'
 
-describe('transformCjsImport', () => {
-  const url = './node_modules/.vite/deps/react.js'
-  const rawUrl = 'react'
+describe('runTransform', () => {
   const config: any = {
     command: 'serve',
     logger: {
       warn: vi.fn(),
     },
+  }
+
+  function runTransformCjsImport(importExp: string) {
+    const result = transformCjsImport(
+      importExp,
+      './node_modules/.vite/deps/react.js',
+      'react',
+      0,
+      'modA',
+      config,
+    )
+    if (result !== undefined) {
+      expect(result.split('\n').length, 'result line count').toBe(
+        importExp.split('\n').length,
+      )
+    }
+    return result
   }
 
   beforeEach(() => {
@@ -17,45 +32,25 @@ describe('transformCjsImport', () => {
 
   test('import specifier', () => {
     expect(
-      transformCjsImport(
-        'import { useState, Component } from "react"',
-        url,
-        rawUrl,
-        0,
-        '',
-        config,
+      runTransformCjsImport(
+        'import { useState, Component, "👋" as fake } from "react"',
       ),
     ).toBe(
       'import __vite__cjsImport0_react from "./node_modules/.vite/deps/react.js"; ' +
         'const useState = __vite__cjsImport0_react["useState"]; ' +
-        'const Component = __vite__cjsImport0_react["Component"]',
+        'const Component = __vite__cjsImport0_react["Component"]; ' +
+        'const fake = __vite__cjsImport0_react["👋"]',
     )
   })
 
   test('import default specifier', () => {
-    expect(
-      transformCjsImport(
-        'import React from "react"',
-        url,
-        rawUrl,
-        0,
-        '',
-        config,
-      ),
-    ).toBe(
+    expect(runTransformCjsImport('import React from "react"')).toBe(
       'import __vite__cjsImport0_react from "./node_modules/.vite/deps/react.js"; ' +
         'const React = __vite__cjsImport0_react.__esModule ? __vite__cjsImport0_react.default : __vite__cjsImport0_react',
     )
 
     expect(
-      transformCjsImport(
-        'import { default as React } from "react"',
-        url,
-        rawUrl,
-        0,
-        '',
-        config,
-      ),
+      runTransformCjsImport('import { default as React } from "react"'),
     ).toBe(
       'import __vite__cjsImport0_react from "./node_modules/.vite/deps/react.js"; ' +
         'const React = __vite__cjsImport0_react.__esModule ? __vite__cjsImport0_react.default : __vite__cjsImport0_react',
@@ -63,125 +58,69 @@ describe('transformCjsImport', () => {
   })
 
   test('import all specifier', () => {
-    expect(
-      transformCjsImport(
-        'import * as react from "react"',
-        url,
-        rawUrl,
-        0,
-        '',
-        config,
-      ),
-    ).toBe(
+    expect(runTransformCjsImport('import * as react from "react"')).toBe(
       'import __vite__cjsImport0_react from "./node_modules/.vite/deps/react.js"; ' +
-        'const react = __vite__cjsImport0_react',
+        `const react = ((m) => m?.__esModule ? m : {  ...typeof m === "object" && !Array.isArray(m) || typeof m === "function" ? m : {},  default: m})(__vite__cjsImport0_react)`,
     )
   })
 
   test('export all specifier', () => {
-    expect(
-      transformCjsImport(
-        'export * from "react"',
-        url,
-        rawUrl,
-        0,
-        'modA',
-        config,
-      ),
-    ).toBe(undefined)
+    expect(runTransformCjsImport('export * from "react"')).toBe(undefined)
 
     expect(config.logger.warn).toBeCalledWith(
       expect.stringContaining(`export * from "react"\` in modA`),
     )
 
-    expect(
-      transformCjsImport(
-        'export * as react from "react"',
-        url,
-        rawUrl,
-        0,
-        '',
-        config,
-      ),
-    ).toBe(undefined)
+    expect(runTransformCjsImport('export * as react from "react"')).toBe(
+      undefined,
+    )
 
     expect(config.logger.warn).toBeCalledTimes(1)
   })
 
   test('export name specifier', () => {
     expect(
-      transformCjsImport(
-        'export { useState, Component } from "react"',
-        url,
-        rawUrl,
-        0,
-        '',
-        config,
+      runTransformCjsImport(
+        'export { useState, Component, "👋" } from "react"',
       ),
     ).toBe(
       'import __vite__cjsImport0_react from "./node_modules/.vite/deps/react.js"; ' +
-        'const __vite__cjsExport_useState = __vite__cjsImport0_react["useState"]; ' +
-        'const __vite__cjsExport_Component = __vite__cjsImport0_react["Component"]; ' +
-        'export { __vite__cjsExport_useState as useState, __vite__cjsExport_Component as Component }',
+        'const __vite__cjsExportI_useState = __vite__cjsImport0_react["useState"]; ' +
+        'const __vite__cjsExportI_Component = __vite__cjsImport0_react["Component"]; ' +
+        'const __vite__cjsExportL_1d0452e3 = __vite__cjsImport0_react["👋"]; ' +
+        'export { __vite__cjsExportI_useState as useState, __vite__cjsExportI_Component as Component, __vite__cjsExportL_1d0452e3 as "👋" }',
     )
 
     expect(
-      transformCjsImport(
-        'export { useState as useStateAlias, Component as ComponentAlias } from "react"',
-        url,
-        rawUrl,
-        0,
-        '',
-        config,
+      runTransformCjsImport(
+        'export { useState as useStateAlias, Component as ComponentAlias, "👋" as "👍" } from "react"',
       ),
     ).toBe(
       'import __vite__cjsImport0_react from "./node_modules/.vite/deps/react.js"; ' +
-        'const __vite__cjsExport_useStateAlias = __vite__cjsImport0_react["useState"]; ' +
-        'const __vite__cjsExport_ComponentAlias = __vite__cjsImport0_react["Component"]; ' +
-        'export { __vite__cjsExport_useStateAlias as useStateAlias, __vite__cjsExport_ComponentAlias as ComponentAlias }',
+        'const __vite__cjsExportI_useStateAlias = __vite__cjsImport0_react["useState"]; ' +
+        'const __vite__cjsExportI_ComponentAlias = __vite__cjsImport0_react["Component"]; ' +
+        'const __vite__cjsExportL_5d57d39e = __vite__cjsImport0_react["👋"]; ' +
+        'export { __vite__cjsExportI_useStateAlias as useStateAlias, __vite__cjsExportI_ComponentAlias as ComponentAlias, __vite__cjsExportL_5d57d39e as "👍" }',
     )
   })
 
   test('export default specifier', () => {
-    expect(
-      transformCjsImport(
-        'export { default } from "react"',
-        url,
-        rawUrl,
-        0,
-        '',
-        config,
-      ),
-    ).toBe(
+    expect(runTransformCjsImport('export { default } from "react"')).toBe(
       'import __vite__cjsImport0_react from "./node_modules/.vite/deps/react.js"; ' +
         'const __vite__cjsExportDefault_0 = __vite__cjsImport0_react.__esModule ? __vite__cjsImport0_react.default : __vite__cjsImport0_react; ' +
         'export default __vite__cjsExportDefault_0',
     )
 
     expect(
-      transformCjsImport(
-        'export { default as React} from "react"',
-        url,
-        rawUrl,
-        0,
-        '',
-        config,
-      ),
+      runTransformCjsImport('export { default as React} from "react"'),
     ).toBe(
       'import __vite__cjsImport0_react from "./node_modules/.vite/deps/react.js"; ' +
-        'const __vite__cjsExport_React = __vite__cjsImport0_react.__esModule ? __vite__cjsImport0_react.default : __vite__cjsImport0_react; ' +
-        'export { __vite__cjsExport_React as React }',
+        'const __vite__cjsExportI_React = __vite__cjsImport0_react.__esModule ? __vite__cjsImport0_react.default : __vite__cjsImport0_react; ' +
+        'export { __vite__cjsExportI_React as React }',
     )
 
     expect(
-      transformCjsImport(
-        'export { Component as default } from "react"',
-        url,
-        rawUrl,
-        0,
-        '',
-        config,
-      ),
+      runTransformCjsImport('export { Component as default } from "react"'),
     ).toBe(
       'import __vite__cjsImport0_react from "./node_modules/.vite/deps/react.js"; ' +
         'const __vite__cjsExportDefault_0 = __vite__cjsImport0_react["Component"]; ' +

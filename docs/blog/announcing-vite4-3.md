@@ -1,4 +1,8 @@
 ---
+title: Vite 4.3 is out!
+author:
+  name: The Vite Team
+date: 2023-04-20
 sidebar: false
 head:
   - - meta
@@ -9,10 +13,10 @@ head:
       content: Announcing Vite 4.3
   - - meta
     - property: og:image
-      content: https://vitejs.dev/og-image-announcing-vite4-3.png
+      content: https://vite.dev/og-image-announcing-vite4-3.webp
   - - meta
     - property: og:url
-      content: https://vitejs.dev/blog/announcing-vite4-3
+      content: https://vite.dev/blog/announcing-vite4-3
   - - meta
     - property: og:description
       content: Vite 4.3 Release Announcement
@@ -25,11 +29,11 @@ head:
 
 _April 20, 2023_
 
-![Vite 4.3 Announcement Cover Image](/og-image-announcing-vite4-3.png)
+![Vite 4.3 Announcement Cover Image](/og-image-announcing-vite4-3.webp)
 
 Quick links:
 
-- Docs: [English](/), [简体中文](https://cn.vitejs.dev/), [日本語](https://ja.vitejs.dev/), [Español](https://es.vitejs.dev/), [Português](https://pt.vitejs.dev/)
+- Docs: [English](/), [简体中文](https://cn.vite.dev/), [日本語](https://ja.vite.dev/), [Español](https://es.vite.dev/), [Português](https://pt.vite.dev/)
 - [Vite 4.3 Changelog](https://github.com/vitejs/vite/blob/main/packages/vite/CHANGELOG.md#430-2023-04-20)
 
 ## Performance Improvements
@@ -56,9 +60,9 @@ These are the performance improvements as measured by [sapphi-red/performance-co
 | **Root HMR**       |    30.5ms |   24.0ms |      -21.3% |
 | **Leaf HMR**       |    16.9ms |   10.0ms |      -40.8% |
 
-![Vite 4.3 vs 4.2 startup time comparison](/vite4-3-startup-time.png)
+![Vite 4.3 vs 4.2 startup time comparison](../images/vite4-3-startup-time.webp)
 
-![Vite 4.3 vs 4.2 HMR time comparison](/vite4-3-hmr-time.png)
+![Vite 4.3 vs 4.2 HMR time comparison](../images/vite4-3-hmr-time.webp)
 
 You can read more information about the benchmark [here](https://gist.github.com/sapphi-red/25be97327ee64a3c1dce793444afdf6e). Specs and Versions for this performance run:
 
@@ -79,7 +83,7 @@ We'll continue to work on Vite's performance. We're working on an official [Benc
 
 And [vite-plugin-inspect](https://github.com/antfu/vite-plugin-inspect) now has more performance-related features to help you identify which plugins or middlewares are the bottleneck for your applications.
 
-Using `vite --profile` (and then pressing `p`) once the page loads will save a CPU profile of the dev server startup. You can open them in an app as [speedscope](https://www.speedscope.app/) to identify performance issues. And you can share your findings with the Vite Team in a [Discussion](https://github.com/vitejs/vite/discussions) or in [Vite's Discord](https://chat.vitejs.dev).
+Using `vite --profile` (and then pressing `p`) once the page loads will save a CPU profile of the dev server startup. You can open them in an app as [speedscope](https://www.speedscope.app/) to identify performance issues. And you can share your findings with the Vite Team in a [Discussion](https://github.com/vitejs/vite/discussions) or in [Vite's Discord](https://chat.vite.dev).
 
 ## Next Steps
 

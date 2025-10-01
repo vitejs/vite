@@ -1,9 +1,12 @@
+import path from 'node:path'
 import { describe, expect, test } from 'vitest'
 import type { ResolvedConfig, UserConfig } from '../../config'
 import {
+  injectEsbuildHelpers,
   resolveEsbuildTranspileOptions,
   transformWithEsbuild,
 } from '../../plugins/esbuild'
+import { normalizePath } from '../../utils'
 
 describe('resolveEsbuildTranspileOptions', () => {
   test('resolve default', () => {
@@ -21,6 +24,7 @@ describe('resolveEsbuildTranspileOptions', () => {
     )
     expect(options).toEqual({
       charset: 'utf8',
+      loader: 'js',
       target: 'es2020',
       format: 'esm',
       keepNames: true,
@@ -64,6 +68,7 @@ describe('resolveEsbuildTranspileOptions', () => {
     )
     expect(options).toEqual({
       charset: 'utf8',
+      loader: 'js',
       target: undefined,
       format: 'esm',
       keepNames: true,
@@ -94,6 +99,7 @@ describe('resolveEsbuildTranspileOptions', () => {
     )
     expect(options).toEqual({
       charset: 'utf8',
+      loader: 'js',
       target: 'es2020',
       format: 'esm',
       keepNames: true,
@@ -126,6 +132,7 @@ describe('resolveEsbuildTranspileOptions', () => {
     )
     expect(options).toEqual({
       charset: 'utf8',
+      loader: 'js',
       target: undefined,
       format: 'esm',
       keepNames: true,
@@ -158,6 +165,7 @@ describe('resolveEsbuildTranspileOptions', () => {
     )
     expect(options).toEqual({
       charset: 'utf8',
+      loader: 'js',
       target: undefined,
       format: 'cjs',
       keepNames: true,
@@ -189,6 +197,7 @@ describe('resolveEsbuildTranspileOptions', () => {
     )
     expect(options).toEqual({
       charset: 'utf8',
+      loader: 'js',
       target: undefined,
       format: 'esm',
       keepNames: true,
@@ -224,6 +233,7 @@ describe('resolveEsbuildTranspileOptions', () => {
     )
     expect(options).toEqual({
       charset: 'utf8',
+      loader: 'js',
       target: undefined,
       format: 'cjs',
       keepNames: true,
@@ -319,7 +329,7 @@ describe('transformWithEsbuild', () => {
             bar = 'bar'
           }
         `,
-        'bar.ts',
+        normalizePath(path.resolve(import.meta.dirname, 'bar.ts')),
         {
           target,
           tsconfigRaw: { compilerOptions: tsconfigCompilerOptions },
@@ -380,9 +390,38 @@ describe('transformWithEsbuild', () => {
     })
 
     test('target: es2022 and tsconfig.target: undefined => false', async () => {
-      const actual = await transformClassCode('es2022', {})
+      const actual = await transformClassCode('es2022', {
+        target: undefined,
+      })
       expect(actual).toBe(defineForClassFieldsFalseTransformedCode)
     })
+  })
+})
+
+describe('injectEsbuildHelpers', () => {
+  test('injects helpers in IIFE format', () => {
+    const esbuildCode =
+      'var $=function(){};var MyLib=function(){"use strict";return 42;}'
+    const result = injectEsbuildHelpers(esbuildCode, 'iife')
+    expect(result).toBe(
+      'var MyLib=function(){"use strict";var $=function(){};return 42;}',
+    )
+  })
+
+  test('injects helpers in UMD format', () => {
+    const esbuildCode =
+      'var $=function(){};(function(global){"use strict";return 42;})'
+    const result = injectEsbuildHelpers(esbuildCode, 'umd')
+    expect(result).toBe(
+      '(function(global){"use strict";var $=function(){};return 42;})',
+    )
+  })
+
+  test('handles helpers with special characters', () => {
+    const esbuildCode =
+      'var $$=function(){};var MyLib=function(){"use strict";return 42;}'
+    const result = injectEsbuildHelpers(esbuildCode, 'iife')
+    expect(result).toContain('"use strict";var $$=function(){};')
   })
 })
 

@@ -8,12 +8,16 @@
     "build": "vite build --debug legacy",
     "build:custom-filename": "vite --config ./vite.config-custom-filename.js build  --debug legacy",
     "build:multiple-output": "vite --config ./vite.config-multiple-output.js build",
+    "build:no-polyfills": "vite --config ./vite.config-no-polyfills.js build",
+    "build:no-polyfills-no-systemjs": "vite --config ./vite.config-no-polyfills-no-systemjs.js build",
+    "build:watch": "vite --config ./vite.config-watch.js build --debug legacy",
     "debug": "node --inspect-brk ../../packages/vite/bin/vite",
     "preview": "vite preview"
   },
   "devDependencies": {
+    "vite": "workspace:*",
     "@vitejs/plugin-legacy": "workspace:*",
-    "express": "^4.18.2",
-    "terser": "^5.19.0"
+    "express": "^5.1.0",
+    "terser": "^5.44.0"
   }
 }

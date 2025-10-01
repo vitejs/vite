@@ -3,6 +3,9 @@ import viteSvgPath from './vite.svg'
 import MyWorker from './worker?worker'
 
 async function run() {
+  await import('./custom0.js')
+  await import('./custom1.js')
+  await import('./custom2.js')
   const { fn } = await import('./async.js')
   fn()
 }

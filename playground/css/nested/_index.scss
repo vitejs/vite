@@ -1,3 +1,7 @@
+@use 'sass:string';
+@use '/nested/root-relative'; // root relative path
+@use '../weapp.wxss'; // test user's custom importer in a file loaded by vite's custom importer
+
 @import './css-in-scss.css';
 
 .sass-at-import {
@@ -13,5 +17,28 @@
 $var: '/ok.png';
 .sass-url-starts-with-variable {
   background: url($var);
+  background-position: center;
+}
+
+.sass-url-starts-with-interpolation1 {
+  background: url(#{$var});
+  background-position: center;
+}
+
+.sass-url-starts-with-interpolation2 {
+  background: url('#{$var}');
+  background-position: center;
+}
+
+$var-c1: '/ok';
+$var-c2: '.png';
+.sass-url-starts-with-variable-concat {
+  background: url($var-c1 + $var-c2);
+  background-position: center;
+}
+
+$var2: '/OK.PNG';
+.sass-url-starts-with-function-call {
+  background: url(string.to-lower-case($var2));
   background-position: center;
 }

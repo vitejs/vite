@@ -1,25 +1,27 @@
 import path from 'node:path'
-import glob from 'fast-glob'
-import micromatch from 'micromatch'
+import picomatch from 'picomatch'
+import { globSync } from 'tinyglobby'
 import type { ResolvedConfig } from '../config'
-import { escapeRegex, getNpmPackageName, slash } from '../utils'
+import { escapeRegex, getNpmPackageName } from '../utils'
 import { resolvePackageData } from '../packages'
+import { slash } from '../../shared/utils'
+import type { Environment } from '../environment'
+import { createBackCompatIdResolver } from '../idResolver'
 
 export function createOptimizeDepsIncludeResolver(
-  config: ResolvedConfig,
-  ssr: boolean,
+  environment: Environment,
 ): (id: string) => Promise<string | undefined> {
-  const resolve = config.createResolver({
+  const topLevelConfig = environment.getTopLevelConfig()
+  const resolve = createBackCompatIdResolver(topLevelConfig, {
     asSrc: false,
     scan: true,
-    ssrOptimizeCheck: ssr,
-    ssrConfig: config.ssr,
     packageCache: new Map(),
   })
+
   return async (id: string) => {
     const lastArrowIndex = id.lastIndexOf('>')
     if (lastArrowIndex === -1) {
-      return await resolve(id, undefined, undefined, ssr)
+      return await resolve(environment, id, undefined)
     }
     // split nested selected id by last '>', for example:
     // 'foo > bar > baz' => 'foo > bar' & 'baz'
@@ -27,14 +29,13 @@ export function createOptimizeDepsIncludeResolver(
     const nestedPath = id.substring(lastArrowIndex + 1).trim()
     const basedir = nestedResolveBasedir(
       nestedRoot,
-      config.root,
-      config.resolve.preserveSymlinks,
+      topLevelConfig.root,
+      topLevelConfig.resolve.preserveSymlinks,
     )
     return await resolve(
+      environment,
       nestedPath,
       path.resolve(basedir, 'package.json'),
-      undefined,
-      ssr,
     )
   }
 }
@@ -58,7 +59,7 @@ export function expandGlobIds(id: string, config: ResolvedConfig): string[] {
   const exports = pkgData.data.exports
 
   // if package has exports field, get all possible export paths and apply
-  // glob on them with micromatch
+  // glob on them with picomatch
   if (exports) {
     if (typeof exports === 'string' || Array.isArray(exports)) {
       return [pkgName]
@@ -66,7 +67,7 @@ export function expandGlobIds(id: string, config: ResolvedConfig): string[] {
 
     const possibleExportPaths: string[] = []
     for (const key in exports) {
-      if (key.startsWith('.')) {
+      if (key[0] === '.') {
         if (key.includes('*')) {
           // "./glob/*": {
           //   "browser": "./dist/glob/*-browser/*.js", <-- get this one
@@ -80,7 +81,7 @@ export function expandGlobIds(id: string, config: ResolvedConfig): string[] {
 
           // "./dist/glob/*-browser/*.js" => "./dist/glob/**/*-browser/**/*.js"
           // NOTE: in some cases, this could expand to consecutive /**/*/**/* etc
-          // but it's fine since fast-glob handles it the same.
+          // but it's fine since `tinyglobby` handles it the same.
           const exportValuePattern = exportsValue.replace(/\*/g, '**/*')
           // "./dist/glob/*-browser/*.js" => /dist\/glob\/(.*)-browser\/(.*)\.js/
           const exportsValueGlobRe = new RegExp(
@@ -88,17 +89,24 @@ export function expandGlobIds(id: string, config: ResolvedConfig): string[] {
           )
 
           possibleExportPaths.push(
-            ...glob
-              .sync(exportValuePattern, {
-                cwd: pkgData.dir,
-                ignore: ['node_modules'],
-              })
+            ...globSync(exportValuePattern, {
+              cwd: pkgData.dir,
+              expandDirectories: false,
+              ignore: ['node_modules'],
+            })
               .map((filePath) => {
+                // `tinyglobby` returns paths as they are formatted by the underlying `fdir`.
+                // Both `globSync("./some-dir/**/*")` and `globSync("./**/*")` result in
+                // `"some-dir/somefile"` being returned, so we ensure the correct prefix manually.
+                if (exportsValue.startsWith('./')) {
+                  filePath = './' + filePath
+                }
+
                 // "./glob/*": "./dist/glob/*-browser/*.js"
                 // `filePath`: "./dist/glob/foo-browser/foo.js"
                 // we need to revert the file path back to the export key by
                 // matching value regex and replacing the capture groups to the key
-                const matched = slash(filePath).match(exportsValueGlobRe)
+                const matched = exportsValueGlobRe.exec(slash(filePath))
                 // `matched`: [..., 'foo', 'foo']
                 if (matched) {
                   let allGlobSame = matched.length === 2
@@ -128,16 +136,19 @@ export function expandGlobIds(id: string, config: ResolvedConfig): string[] {
       }
     }
 
-    const matched = micromatch(possibleExportPaths, pattern).map((match) =>
-      path.posix.join(pkgName, match),
-    )
+    const isMatch = picomatch(pattern)
+    const matched = possibleExportPaths
+      .filter((p) => isMatch(p))
+      .map((match) => path.posix.join(pkgName, match))
     matched.unshift(pkgName)
     return matched
   } else {
     // for packages without exports, we can do a simple glob
-    const matched = glob
-      .sync(pattern, { cwd: pkgData.dir, ignore: ['node_modules'] })
-      .map((match) => path.posix.join(pkgName, slash(match)))
+    const matched = globSync(pattern, {
+      cwd: pkgData.dir,
+      expandDirectories: false,
+      ignore: ['node_modules'],
+    }).map((match) => path.posix.join(pkgName, slash(match)))
     matched.unshift(pkgName)
     return matched
   }

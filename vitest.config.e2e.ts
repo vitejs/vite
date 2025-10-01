@@ -1,7 +1,7 @@
 import { resolve } from 'node:path'
 import { defineConfig } from 'vitest/config'
 
-const timeout = process.env.CI ? 50000 : 30000
+const timeout = process.env.PWDEBUG ? Infinity : process.env.CI ? 50000 : 30000
 
 export default defineConfig({
   resolve: {
@@ -20,12 +20,14 @@ export default defineConfig({
       // Prevent Vitest from running the workspace packages in Vite's SSR runtime
       moduleDirectories: ['node_modules', 'packages'],
     },
-    onConsoleLog(log) {
-      if (log.match(/experimental|jit engine|emitted file|tailwind/i))
-        return false
+    expect: {
+      poll: {
+        timeout: 50 * (process.env.CI ? 200 : 50),
+      },
     },
   },
   esbuild: {
-    target: 'node14',
+    target: 'node20',
   },
+  publicDir: false,
 })

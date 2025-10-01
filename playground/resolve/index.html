@@ -61,6 +61,9 @@
 <h2>Resolving from other package with imports field</h2>
 <p class="imports-pkg-slash">fail</p>
 
+<h2>Resolving with query with imports field</h2>
+<p class="imports-query">fail</p>
+
 <h2>Resolve /index.*</h2>
 <p class="index">fail</p>
 
@@ -110,6 +113,9 @@
 </h2>
 <p class="cjs-extension">fail</p>
 
+<h2>A js module can import TS modules using its corresponding js file name</h2>
+<p class="js-ts-extension">fail</p>
+
 <h2>Resolve file name containing dot</h2>
 <p class="dot">fail</p>
 
@@ -118,6 +124,9 @@
 
 <h2>Resolve absolute path</h2>
 <p class="absolute">fail</p>
+
+<h2>Resolve file url</h2>
+<p class="file-url">fail</p>
 
 <h2>Browser Field</h2>
 <p class="browser">fail</p>
@@ -158,11 +167,20 @@
 <h2>resolve.mainFields</h2>
 <p class="custom-main-fields"></p>
 
+<h2>resolve.mainFields.custom-browser-main</h2>
+<p class="custom-browser-main-field"></p>
+
 <h2>resolve.conditions</h2>
 <p class="custom-condition"></p>
 
 <h2>resolve package that contains # in path</h2>
 <p class="path-contains-sharp-symbol"></p>
+
+<h2>resolve non normalized absolute path</h2>
+<p class="non-normalized"></p>
+
+<h2>utf8-bom-package</h2>
+<p class="utf8-bom-package">fail</p>
 
 <script type="module">
   import '@generated-content-virtual-file'
@@ -248,6 +266,9 @@
   import { msg as importsPkgSlash } from '#other-pkg-slash/index.js'
   text('.imports-pkg-slash', importsPkgSlash)
 
+  import importsQuery from '#query?url'
+  text('.imports-query', importsQuery)
+
   // implicit index resolving
   import { foo } from './util'
   text('.index', foo())
@@ -285,6 +306,9 @@
 
   import { msgMjs as tsMjsExtensionWithQueryMsg } from './ts-extension?query=1'
   text('.mjs-extension-with-query', tsMjsExtensionWithQueryMsg)
+
+  import { msg as jsTsExtensionMsg } from './ts-extension/index-js.js'
+  text('.js-ts-extension', jsTsExtensionMsg)
 
   // filename with dot
   import { bar } from './util/bar.util'
@@ -341,6 +365,9 @@
   import { msg as customMainMsg } from '@vitejs/test-resolve-custom-main-field'
   text('.custom-main-fields', customMainMsg)
 
+  import { msg as customBrowserMsg } from '@vitejs/test-resolve-custom-browser-main-field'
+  text('.custom-browser-main-field', customBrowserMsg)
+
   import { msg as customConditionMsg } from '@vitejs/test-resolve-custom-condition'
   text('.custom-condition', customConditionMsg)
 
@@ -349,7 +376,7 @@
   import '@vitejs/test-resolve-browser-field/multiple.dot.path'
 
   // css entry
-  import css from 'normalize.css'
+  import css from 'normalize.css?inline'
   if (typeof css === 'string') {
     text('.css', '[success] resolve package with css entry file')
   }
@@ -378,6 +405,14 @@
     '.path-contains-sharp-symbol',
     `[success] ${contains.call('#', '#')} ${last.call('#')}`,
   )
+
+  import nonNormalizedAbsolute from '@non-normalized'
+  text('.non-normalized', nonNormalizedAbsolute)
+
+  import { msg as utf8BomPackage } from '@vitejs/test-utf8-bom-package'
+  text('.utf8-bom-package', utf8BomPackage)
+
+  import '@vitejs/test-resolve-side-effects-glob'
 </script>
 
 <style>

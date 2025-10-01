@@ -1,4 +1,4 @@
-This test aim to check for a particular type of circular dependency that causes tricky deadlocks, **deadlocks with forked imports stack**
+This test aims to check for a particular type of circular dependency that causes tricky deadlocks, **deadlocks with forked imports stack**
 
 ```
 A -> B means: B is imported by A and B has A in its stack
@@ -44,7 +44,7 @@ This may seems a traditional deadlock, but the thing that makes this special is 
 	[H]
 ```
 
-Even if `[X]` is imported by `[B]`, `[B]` is not in `[X]`'s stack because it's imported by `[H]` in first place then it's stack is only composed by `[H]`. `[H]` **forks** the imports **stack** and this make hard to be found.
+Even if `[X]` is imported by `[B]`, `[B]` is not in `[X]`'s stack because it's imported by `[H]` in first place then it's stack is only composed by `[H]`. `[H]` **forks** the imports **stack** and this makes it hard to be found.
 
 ### Fix description
 

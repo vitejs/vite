@@ -5,14 +5,14 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "tsc && vite build",
-    "preview": "vite preview"
+    "build": "vite build",
+    "preview": "serve dist"
   },
   "devDependencies": {
-    "typescript": "^5.0.2",
-    "vite": "^4.4.5"
+    "serve": "^14.2.5",
+    "vite": "^7.1.7"
   },
   "dependencies": {
-    "@builder.io/qwik": "^1.2.6"
+    "@builder.io/qwik": "^1.16.1"
   }
 }

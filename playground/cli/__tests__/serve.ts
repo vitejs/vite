@@ -1,6 +1,7 @@
 // this is automatically detected by playground/vitestSetup.ts and will replace
 // the default e2e test serve behavior
 
+import { stripVTControlCharacters } from 'node:util'
 import { execaCommand } from 'execa'
 import kill from 'kill-port'
 import {
@@ -73,6 +74,7 @@ export async function serve() {
   const serverProcess = execaCommand(serverCommand, {
     cwd: rootDir,
     stdio: 'pipe',
+    forceKillAfterDelay: 3000,
   })
   collectStreams('server', serverProcess)
 
@@ -119,14 +121,12 @@ async function startedOnPort(serverProcess, port, timeout) {
   let checkPort
   const startedPromise = new Promise<void>((resolve, reject) => {
     checkPort = (data) => {
-      const str = data.toString()
-      // hack, console output may contain color code gibberish
-      // skip gibberish between localhost: and port number
+      const str = stripVTControlCharacters(data.toString())
       const match = str.match(
-        /(http:\/\/(?:localhost|127\.0\.0\.1|\[::1\]):).*(\d{4})/,
+        /http:\/\/(?:localhost|127\.0\.0\.1|\[::1\]):(\d{4})/,
       )
       if (match) {
-        const startedPort = parseInt(match[2], 10)
+        const startedPort = parseInt(match[1], 10)
         if (startedPort === port) {
           resolve()
         } else {

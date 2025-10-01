@@ -1,0 +1,18 @@
+# temporary, we'll flip this around some day
+https://vitejs.dev/* https://vite.dev/:splat 301!
+
+/guide/api-vite-runtime /guide/api-environment 301
+/guide/api-vite-runtime.html /guide/api-environment 301
+/guide/api-vite-environment /guide/api-environment 301
+/guide/api-vite-environment.html /guide/api-environment 301
+/guide/comparisons /guide/why#how-vite-relates-to-other-unbundled-build-tools 301
+/guide/comparisons.html /guide/why#how-vite-relates-to-other-unbundled-build-tools 301
+
+# llms.txt
+/*.txt           /:splat.md 301
+/llms.md         /llms.txt 301
+/llms.txt        /llms.txt 200!
+/llms-full.txt   /llms-full.txt 200!
+
+# short links
+/rolldown /guide/rolldown 301

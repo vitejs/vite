@@ -1,5 +1,8 @@
-export type HMRPayload =
+/** @deprecated use HotPayload */
+export type HMRPayload = HotPayload
+export type HotPayload =
   | ConnectedPayload
+  | PingPayload
   | UpdatePayload
   | FullReloadPayload
   | CustomPayload
@@ -8,6 +11,10 @@ export type HMRPayload =
 
 export interface ConnectedPayload {
   type: 'connected'
+}
+
+export interface PingPayload {
+  type: 'ping'
 }
 
 export interface UpdatePayload {
@@ -20,10 +27,14 @@ export interface Update {
   path: string
   acceptedPath: string
   timestamp: number
-  /**
-   * @experimental internal
-   */
-  explicitImportRequired?: boolean | undefined
+  /** @internal */
+  explicitImportRequired?: boolean
+  /** @internal */
+  isWithinCircularImport?: boolean
+  /** @internal */
+  firstInvalidatedBy?: string
+  /** @internal */
+  invalidates?: string[]
 }
 
 export interface PrunePayload {
@@ -34,6 +45,8 @@ export interface PrunePayload {
 export interface FullReloadPayload {
   type: 'full-reload'
   path?: string
+  /** @internal */
+  triggeredBy?: string
 }
 
 export interface CustomPayload {

@@ -10,43 +10,48 @@ export default defineConfig({
   },
   worker: {
     format: 'iife',
-    plugins: [
-      workerPluginTestPlugin(),
-      {
-        name: 'config-test',
-        config() {
-          return {
-            worker: {
-              rollupOptions: {
-                output: {
-                  entryFileNames: 'assets/worker_entry-[name].js',
-                },
-              },
-            },
-          }
-        },
-      },
-    ],
+    plugins: () => [workerPluginTestPlugin()],
     rollupOptions: {
       output: {
-        assetFileNames: 'assets/worker_asset-[name].[ext]',
-        chunkFileNames: 'assets/worker_chunk-[name].js',
-        // should fix by config-test plugin
+        assetFileNames: 'assets/worker_asset-[name]-[hash].[ext]',
+        chunkFileNames: 'assets/worker_chunk-[name]-[hash].js',
+        // should be overwritten to worker_entry-[name] by the config-test plugin
         entryFileNames: 'assets/worker_-[name].js',
       },
     },
   },
   build: {
     outDir: 'dist/iife',
+    assetsInlineLimit: (filePath) =>
+      filePath.endsWith('.svg') ? false : undefined,
     manifest: true,
     rollupOptions: {
       output: {
-        assetFileNames: 'assets/[name].[ext]',
-        chunkFileNames: 'assets/[name].js',
+        assetFileNames: 'assets/[name]-[hash].[ext]',
+        chunkFileNames: 'assets/[name]-[hash].js',
         entryFileNames: 'assets/[name].js',
       },
     },
   },
-  plugins: [workerPluginTestPlugin()],
+  plugins: [
+    workerPluginTestPlugin(),
+    {
+      name: 'config-test',
+      config() {
+        return {
+          worker: {
+            rollupOptions: {
+              output: {
+                entryFileNames: 'assets/worker_entry-[name].js',
+              },
+            },
+          },
+        }
+      },
+    },
+  ],
   cacheDir: 'node_modules/.vite-iife',
+  optimizeDeps: {
+    exclude: ['@vitejs/test-dep-self-reference-url-worker'],
+  },
 })

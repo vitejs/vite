@@ -7,15 +7,15 @@
     "dev": "vite",
     "build": "vite build",
     "preview": "vite preview",
-    "check": "svelte-check --tsconfig ./tsconfig.json"
+    "check": "svelte-check --tsconfig ./tsconfig.app.json && tsc -p tsconfig.node.json"
   },
   "devDependencies": {
-    "@sveltejs/vite-plugin-svelte": "^2.4.2",
-    "@tsconfig/svelte": "^5.0.0",
-    "svelte": "^4.0.5",
-    "svelte-check": "^3.4.6",
-    "tslib": "^2.6.0",
-    "typescript": "^5.0.2",
-    "vite": "^4.4.5"
+    "@sveltejs/vite-plugin-svelte": "^6.2.1",
+    "@tsconfig/svelte": "^5.0.5",
+    "@types/node": "^24.6.0",
+    "svelte": "^5.39.6",
+    "svelte-check": "^4.3.2",
+    "typescript": "~5.8.3",
+    "vite": "^7.1.7"
   }
 }

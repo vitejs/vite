@@ -13,12 +13,19 @@ jobs:
   release:
     if: github.repository == 'vitejs/vite'
     runs-on: ubuntu-latest
+    permissions:
+      contents: write # for yyx990803/release-tag to create a release tag
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v5
 
       - name: Get pkgName for tag
         id: tag
         run: |
+          # skip if alpha
+          if [[ $GITHUB_REF_NAME =~ alpha ]]; then
+            exit 0
+          fi
+
           # matching v2.0.0 / v2.0.0-beta.8 etc
           if [[ $GITHUB_REF_NAME =~ ^v.+ ]]; then
             pkgName="vite"
@@ -31,8 +38,10 @@ jobs:
           echo "pkgName=$pkgName" >> $GITHUB_OUTPUT
 
       - name: Create Release for Tag
+        # only run if tag is not alpha
+        if: steps.tag.outputs.pkgName
         id: release_tag
-        uses: yyx990803/release-tag@master
+        uses: yyx990803/release-tag@8cccf7c5aa332d71d222df46677f70f77a8d2dc0 # v1.0.0
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:

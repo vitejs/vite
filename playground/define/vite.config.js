@@ -6,6 +6,7 @@ export default defineConfig({
     __STRING__: '"hello"',
     __NUMBER__: 123,
     __BOOLEAN__: true,
+    __UNDEFINED__: undefined,
     __OBJ__: {
       foo: 1,
       bar: {
@@ -19,9 +20,22 @@ export default defineConfig({
     },
     'process.env.NODE_ENV': '"dev"',
     'process.env.SOMEVAR': '"SOMEVAR"',
+    'process.env': {
+      NODE_ENV: 'dev',
+      SOMEVAR: 'SOMEVAR',
+      OTHER: 'works',
+    },
     $DOLLAR: 456,
     ÖUNICODE_LETTERɵ: 789,
     __VAR_NAME__: false,
     __STRINGIFIED_OBJ__: JSON.stringify({ foo: true }),
+    'import.meta.env.SOME_IDENTIFIER': '__VITE_SOME_IDENTIFIER__',
+  },
+  environments: {
+    client: {
+      define: {
+        __DEFINE_IN_ENVIRONMENT__: '"defined only in client"',
+      },
+    },
   },
 })

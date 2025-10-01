@@ -1,9 +1,9 @@
 import { defineConfig } from 'vite'
 import baseConfig from './vite.config.js'
 
-export default defineConfig({
+export default defineConfig(({ isPreview }) => ({
   ...baseConfig,
-  base: './', // relative base to make dist portable
+  base: !isPreview ? './' : '/relative-base/', // relative base to make dist portable
   build: {
     ...baseConfig.build,
     outDir: 'dist/relative-base',
@@ -15,11 +15,13 @@ export default defineConfig({
         entryFileNames: 'entries/[name].js',
         chunkFileNames: 'chunks/[name]-[hash].js',
         assetFileNames: 'other-assets/[name]-[hash][extname]',
+        manualChunks(id) {
+          if (id.includes('css/manual-chunks.css')) {
+            return 'css/manual-chunks'
+          }
+        },
       },
     },
   },
-  testConfig: {
-    baseRoute: '/relative-base/',
-  },
   cacheDir: 'node_modules/.vite-relative-base',
-})
+}))

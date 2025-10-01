@@ -1,0 +1,215 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`generateCodeFrames > end 1`] = `
+"
+1  |  import foo from './foo'
+   |  ^
+2  |  foo()
+"
+`;
+
+exports[`generateCodeFrames > end 2`] = `
+"
+1  |  import foo from './foo'
+   |  ^^^^^^^^^^^^^^^^^^^^^^^
+2  |  foo()
+"
+`;
+
+exports[`generateCodeFrames > end 3`] = `
+"
+1  |  import foo from './foo'
+   |  ^^^^^^^^^^^^^^^^^^^^^^^
+2  |  foo()
+   |  ^^^^^
+"
+`;
+
+exports[`generateCodeFrames > end 4`] = `
+"
+1  |  import foo from './foo'
+   |  ^^^^^^^^^^^^^^^^^^^^^^^
+2  |  foo()
+   |  ^^^^^
+"
+`;
+
+exports[`generateCodeFrames > end 5`] = `
+"
+1  |  import foo from './foo'
+   |  ^^^^^^^^^^^^^^^^^^^^^^^
+2  |  foo()
+   |  ^^^^^
+"
+`;
+
+exports[`generateCodeFrames > end 6`] = `
+"
+1  |  import foo from './foo'
+   |  ^^^^^^^^^^^^^^^^^^^^^^^
+2  |  foo()
+   |  ^^^^^
+"
+`;
+
+exports[`generateCodeFrames > invalid start > end 1`] = `
+"
+1  |  import foo from './foo'
+   |    ^
+2  |  foo()
+"
+`;
+
+exports[`generateCodeFrames > long line (center) 1`] = `
+"
+1  |  ...aaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbccccccccccccccccccccccccccccccccccccccc...
+   |                                                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+2  |  short line
+3  |  aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb...
+"
+`;
+
+exports[`generateCodeFrames > long line (end) 1`] = `
+"
+1  |  ...bbbbbbbbbbbbbbbcccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
+   |                                                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+2  |  short line
+3  |  aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb...
+"
+`;
+
+exports[`generateCodeFrames > long line (multiline 1) 1`] = `
+"
+1  |  ...bbbbbcccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
+   |                                                            ^^^^^^^^^^
+2  |  short line
+   |  ^^^^^^
+3  |  aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb...
+"
+`;
+
+exports[`generateCodeFrames > long line (multiline 2) 1`] = `
+"
+1  |  aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb...
+2  |  short line
+   |       ^^^^^
+3  |  aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb...
+   |  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+"
+`;
+
+exports[`generateCodeFrames > long line (start) 1`] = `
+"
+1  |  aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb...
+   |  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+2  |  short line
+3  |  aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb...
+"
+`;
+
+exports[`generateCodeFrames > long line (whole) 1`] = `
+"
+1  |  aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb...
+   |  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+2  |  short line
+3  |  aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb...
+"
+`;
+
+exports[`generateCodeFrames > range 1`] = `
+"
+1  |  import foo from './foo'
+2  |  
+3  |  foo()
+   |  ^
+4  |  // 1
+5  |  // 2
+"
+`;
+
+exports[`generateCodeFrames > range 2`] = `
+"
+1  |  import foo from './foo'
+2  |  
+3  |  foo()
+   |  ^^^^^
+4  |  // 1
+   |  ^
+5  |  // 2
+"
+`;
+
+exports[`generateCodeFrames > start with number 1`] = `
+"
+1  |  import foo from './foo'
+   |  ^
+2  |  foo()
+"
+`;
+
+exports[`generateCodeFrames > start with number 2`] = `
+"
+1  |  import foo from './foo'
+   |  ^
+2  |  foo()
+"
+`;
+
+exports[`generateCodeFrames > start with number 3`] = `
+"
+1  |  import foo from './foo'
+   |   ^
+2  |  foo()
+"
+`;
+
+exports[`generateCodeFrames > start with number 4`] = `
+"
+1  |  import foo from './foo'
+2  |  foo()
+   |  ^
+"
+`;
+
+exports[`generateCodeFrames > start with position 1`] = `
+"
+1  |  import foo from './foo'
+   |  ^
+2  |  foo()
+"
+`;
+
+exports[`generateCodeFrames > start with position 2`] = `
+"
+1  |  import foo from './foo'
+   |   ^
+2  |  foo()
+"
+`;
+
+exports[`generateCodeFrames > start with position 3`] = `
+"
+1  |  import foo from './foo'
+2  |  foo()
+   |  ^
+"
+`;
+
+exports[`generateCodeFrames > supports more than 1000 lines 1`] = `
+"
+1198 |  // 1197
+1199 |  // 1198
+1200 |  // 1199
+     |  ^
+1201 |  // 1200
+1202 |  // 1201
+"
+`;
+
+exports[`generateCodeFrames > works with CRLF 1`] = `
+"
+1  |  import foo from './foo'
+2  |  foo()
+   |  ^
+"
+`;

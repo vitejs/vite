@@ -4,6 +4,8 @@ export interface ImportGlobOptions<
 > {
   /**
    * Import type for the import url.
+   *
+   * @deprecated Use `query` instead, e.g. `as: 'url'` -> `query: '?url', import: 'default'`
    */
   as?: AsType
   /**
@@ -26,9 +28,23 @@ export interface ImportGlobOptions<
    * @default false
    */
   exhaustive?: boolean
+  /**
+   * Base path to resolve relative paths.
+   */
+  base?: string
 }
 
 export type GeneralImportGlobOptions = ImportGlobOptions<boolean, string>
+
+/**
+ * Declare Worker in case DOM is not added to the tsconfig lib causing
+ * Worker interface is not defined. For developers with DOM lib added,
+ * the Worker interface will be merged correctly.
+ */
+declare global {
+  // eslint-disable-next-line @typescript-eslint/no-empty-object-type
+  interface Worker {}
+}
 
 export interface KnownAsTypeMap {
   raw: string
@@ -69,29 +85,5 @@ export interface ImportGlobFunction {
   <M>(
     glob: string | string[],
     options: ImportGlobOptions<true, string>,
-  ): Record<string, M>
-}
-
-export interface ImportGlobEagerFunction {
-  /**
-   * Eagerly import a list of files with a glob pattern.
-   *
-   * Overload 1: No generic provided, infer the type from `as`
-   */
-  <
-    As extends string,
-    T = As extends keyof KnownAsTypeMap ? KnownAsTypeMap[As] : unknown,
-  >(
-    glob: string | string[],
-    options?: Omit<ImportGlobOptions<boolean, As>, 'eager'>,
-  ): Record<string, T>
-  /**
-   * Eagerly import a list of files with a glob pattern.
-   *
-   * Overload 2: Module generic provided
-   */
-  <M>(
-    glob: string | string[],
-    options?: Omit<ImportGlobOptions<boolean, string>, 'eager'>,
   ): Record<string, M>
 }

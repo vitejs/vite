@@ -22,7 +22,7 @@ export function dataURIPlugin(): Plugin {
     },
 
     resolveId(id) {
-      if (!dataUriRE.test(id)) {
+      if (!id.trimStart().startsWith('data:')) {
         return
       }
 
@@ -31,7 +31,7 @@ export function dataURIPlugin(): Plugin {
         return
       }
 
-      const match = uri.pathname.match(dataUriRE)
+      const match = dataUriRE.exec(uri.pathname)
       if (!match) {
         return
       }

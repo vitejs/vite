@@ -3,10 +3,10 @@ import module from 'node:module'
 import { defineConfig } from 'vite'
 const require = module.createRequire(import.meta.url)
 
-// Overriding the NODE_ENV set by vitest
-process.env.NODE_ENV = ''
-
 export default defineConfig({
+  define: {
+    __VUE_PROD_HYDRATION_MISMATCH_DETAILS__: false,
+  },
   resolve: {
     dedupe: ['react'],
     alias: {
@@ -17,16 +17,23 @@ export default defineConfig({
     },
   },
   optimizeDeps: {
-    disabled: false,
     include: [
       '@vitejs/test-dep-linked-include',
       '@vitejs/test-nested-exclude > @vitejs/test-nested-include',
+      '@vitejs/test-dep-cjs-external-package-omit-js-suffix',
       // will throw if optimized (should log warning instead)
       '@vitejs/test-non-optimizable-include',
       '@vitejs/test-dep-optimize-exports-with-glob/**/*',
+      '@vitejs/test-dep-optimize-exports-with-root-glob/**/*.js',
       '@vitejs/test-dep-optimize-with-glob/**/*.js',
+      '@vitejs/test-dep-cjs-with-external-deps',
     ],
-    exclude: ['@vitejs/test-nested-exclude', '@vitejs/test-dep-non-optimized'],
+    exclude: [
+      '@vitejs/test-nested-exclude',
+      '@vitejs/test-dep-non-optimized',
+      '@vitejs/test-dep-esm-external',
+      'stream',
+    ],
     esbuildOptions: {
       plugins: [
         {
@@ -49,10 +56,6 @@ export default defineConfig({
   build: {
     // to make tests faster
     minify: false,
-    // Avoid @rollup/plugin-commonjs
-    commonjsOptions: {
-      include: [],
-    },
     rollupOptions: {
       onwarn(msg, warn) {
         // filter `"Buffer" is not exported by "__vite-browser-external"` warning

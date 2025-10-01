@@ -7,12 +7,14 @@
 
 Importing a static asset will return the resolved public URL when it is served:
 
-```js
+```js twoslash
+import 'vite/client'
+// ---cut---
 import imgUrl from './img.png'
 document.getElementById('hero-img').src = imgUrl
 ```
 
-For example, `imgUrl` will be `/img.png` during development, and become `/assets/img.2d8efhg.png` in the production build.
+For example, `imgUrl` will be `/src/img.png` during development, and become `/assets/img.2d8efhg.png` in the production build.
 
 The behavior is similar to webpack's `file-loader`. The difference is that the import can be either using absolute public paths (based on project root during dev) or relative paths.
 
@@ -30,20 +32,47 @@ The behavior is similar to webpack's `file-loader`. The difference is that the i
 
 - TypeScript, by default, does not recognize static asset imports as valid modules. To fix this, include [`vite/client`](./features#client-types).
 
+::: tip Inlining SVGs through `url()`
+When passing a URL of SVG to a manually constructed `url()` by JS, the variable should be wrapped within double quotes.
+
+```js twoslash
+import 'vite/client'
+// ---cut---
+import imgUrl from './img.svg'
+document.getElementById('hero-img').style.background = `url("${imgUrl}")`
+```
+
+:::
+
 ### Explicit URL Imports
 
-Assets that are not included in the internal list or in `assetsInclude`, can be explicitly imported as a URL using the `?url` suffix. This is useful, for example, to import [Houdini Paint Worklets](https://houdini.how/usage).
+Assets that are not included in the internal list or in `assetsInclude` can be explicitly imported as a URL using the `?url` suffix. This is useful, for example, to import [Houdini Paint Worklets](https://developer.mozilla.org/en-US/docs/Web/API/CSS/paintWorklet_static).
 
-```js
+```js twoslash
+import 'vite/client'
+// ---cut---
 import workletURL from 'extra-scalloped-border/worklet.js?url'
 CSS.paintWorklet.addModule(workletURL)
+```
+
+### Explicit Inline Handling
+
+Assets can be explicitly imported with inlining or no inlining using the `?inline` or `?no-inline` suffix respectively.
+
+```js twoslash
+import 'vite/client'
+// ---cut---
+import imgUrl1 from './img.svg?no-inline'
+import imgUrl2 from './img.png?inline'
 ```
 
 ### Importing Asset as String
 
 Assets can be imported as strings using the `?raw` suffix.
 
-```js
+```js twoslash
+import 'vite/client'
+// ---cut---
 import shaderString from './shader.glsl?raw'
 ```
 
@@ -51,19 +80,25 @@ import shaderString from './shader.glsl?raw'
 
 Scripts can be imported as web workers with the `?worker` or `?sharedworker` suffix.
 
-```js
+```js twoslash
+import 'vite/client'
+// ---cut---
 // Separate chunk in the production build
 import Worker from './shader.js?worker'
 const worker = new Worker()
 ```
 
-```js
+```js twoslash
+import 'vite/client'
+// ---cut---
 // sharedworker
 import SharedWorker from './shader.js?sharedworker'
 const sharedWorker = new SharedWorker()
 ```
 
-```js
+```js twoslash
+import 'vite/client'
+// ---cut---
 // Inlined as base64 strings
 import InlineWorker from './shader.js?worker&inline'
 ```
@@ -82,10 +117,7 @@ Then you can place the asset in a special `public` directory under your project 
 
 The directory defaults to `<root>/public`, but can be configured via the [`publicDir` option](/config/shared-options.md#publicdir).
 
-Note that:
-
-- You should always reference `public` assets using root absolute path - for example, `public/icon.png` should be referenced in source code as `/icon.png`.
-- Assets in `public` cannot be imported from JavaScript.
+Note that you should always reference `public` assets using root absolute path - for example, `public/icon.png` should be referenced in source code as `/icon.png`.
 
 ## new URL(url, import.meta.url)
 
@@ -103,6 +135,7 @@ This pattern also supports dynamic URLs via template literals:
 
 ```js
 function getImageUrl(name) {
+  // note that this does not include files in subdirectories
   return new URL(`./dir/${name}.png`, import.meta.url).href
 }
 ```
@@ -114,6 +147,25 @@ During the production build, Vite will perform necessary transforms so that the 
 const imgUrl = new URL(imagePath, import.meta.url).href
 ```
 
+::: details How it works
+
+Vite will transform the `getImageUrl` function to:
+
+```js
+import __img0png from './dir/img0.png'
+import __img1png from './dir/img1.png'
+
+function getImageUrl(name) {
+  const modules = {
+    './dir/img0.png': __img0png,
+    './dir/img1.png': __img1png,
+  }
+  return new URL(modules[`./dir/${name}.png`], import.meta.url).href
+}
+```
+
+:::
+
 ::: warning Does not work with SSR
-This pattern does not work if you are using Vite for Server-Side Rendering, because `import.meta.url` have different semantics in browsers vs. Node.js. The server bundle also cannot determine the client host URL ahead of time.
+This pattern does not work if you are using Vite for Server-Side Rendering, because `import.meta.url` has different semantics in browsers vs. Node.js. The server bundle also cannot determine the client host URL ahead of time.
 :::

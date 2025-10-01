@@ -1,8 +1,10 @@
 // @ts-check
 import fs from 'node:fs'
 import path from 'node:path'
+import { fileURLToPath } from 'node:url'
 import express from 'express'
 
+const __dirname = path.dirname(fileURLToPath(import.meta.url))
 const isTest = process.env.VITEST
 
 export async function createServer(root = process.cwd(), hmrPort) {
@@ -28,7 +30,7 @@ export async function createServer(root = process.cwd(), hmrPort) {
   })
   app.use(vite.middlewares)
 
-  app.use('*', async (req, res) => {
+  app.use('*all', async (req, res) => {
     try {
       let template = fs.readFileSync(resolve('index.html'), 'utf-8')
       template = await vite.transformIndexHtml(req.originalUrl, template)

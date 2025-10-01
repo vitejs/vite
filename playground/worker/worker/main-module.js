@@ -1,3 +1,4 @@
+import * as depSelfReferenceUrlWorker from '@vitejs/test-dep-self-reference-url-worker'
 import myWorker from '../my-worker.ts?worker'
 import InlineWorker from '../my-worker.ts?worker&inline'
 import InlineSharedWorker from '../my-inline-shared-worker?sharedworker&inline'
@@ -5,6 +6,7 @@ import mySharedWorker from '../my-shared-worker?sharedworker&name=shared'
 import TSOutputWorker from '../possible-ts-output-worker?worker'
 import NestedWorker from '../worker-nested-worker?worker'
 import { mode } from '../modules/workerImport'
+import SelfReferenceWorker from '../self-reference-worker?worker'
 
 function text(el, text) {
   document.querySelector(el).textContent = text
@@ -19,12 +21,37 @@ worker.addEventListener('message', (e) => {
   text('.mode', e.data.mode)
   text('.bundle-with-plugin', e.data.bundleWithPlugin)
   text('.asset-url', e.data.viteSvg)
+  text('.dep-cjs', e.data.depCjs.test)
+})
+
+const namedWorker = new myWorker({ name: 'namedWorker' })
+namedWorker.postMessage('ping')
+namedWorker.addEventListener('message', (e) => {
+  text('.pong-named', e.data.name)
 })
 
 const inlineWorker = new InlineWorker()
 inlineWorker.postMessage('ping')
 inlineWorker.addEventListener('message', (e) => {
   text('.pong-inline', e.data.msg)
+})
+
+const namedInlineWorker = new InlineWorker({ name: 'namedInlineWorker' })
+namedInlineWorker.postMessage('ping')
+namedInlineWorker.addEventListener('message', (e) => {
+  text('.pong-inline-named', e.data.name)
+})
+
+const inlineWorkerUrl = new InlineWorker()
+inlineWorkerUrl.postMessage('ping')
+inlineWorkerUrl.addEventListener('message', (e) => {
+  text('.pong-inline-url', e.data.metaUrl)
+})
+
+const unicodeInlineWorker = new InlineWorker()
+unicodeInlineWorker.postMessage('ping-unicode')
+unicodeInlineWorker.addEventListener('message', (e) => {
+  text('.pong-inline-unicode', e.data.msg)
 })
 
 const startSharedWorker = () => {
@@ -36,6 +63,16 @@ const startSharedWorker = () => {
 }
 startSharedWorker()
 startSharedWorker()
+
+const startNamedSharedWorker = () => {
+  const sharedWorker = new mySharedWorker({ name: 'namedSharedWorker' })
+  sharedWorker.port.addEventListener('message', (event) => {
+    text('.tick-count-named', event.data)
+  })
+  sharedWorker.port.start()
+}
+startNamedSharedWorker()
+startNamedSharedWorker()
 
 const startInlineSharedWorker = () => {
   const inlineSharedWorker = new InlineSharedWorker()
@@ -103,7 +140,6 @@ const genWorkerName = () => 'module'
 const w2 = new SharedWorker(
   new URL('../url-shared-worker.js', import.meta.url),
   {
-    /* @vite-ignore */
     name: genWorkerName(),
     type: 'module',
   },
@@ -114,7 +150,7 @@ w2.port.addEventListener('message', (ev) => {
 w2.port.start()
 
 const workers = import.meta.glob('../importMetaGlobEager.*.js', {
-  as: 'worker',
+  query: '?worker',
   eager: true,
 })
 const importMetaGlobEagerWorker = new workers[
@@ -123,4 +159,27 @@ const importMetaGlobEagerWorker = new workers[
 importMetaGlobEagerWorker.postMessage('1')
 importMetaGlobEagerWorker.addEventListener('message', (e) => {
   text('.importMetaGlobEager-worker', JSON.stringify(e.data))
+})
+
+const selfReferenceWorker = new SelfReferenceWorker()
+selfReferenceWorker.postMessage('main')
+selfReferenceWorker.addEventListener('message', (e) => {
+  document.querySelector('.self-reference-worker').textContent += `${e.data}\n`
+})
+
+const selfReferenceUrlWorker = new Worker(
+  new URL('../self-reference-url-worker.js', import.meta.url),
+  {
+    type: 'module',
+  },
+)
+selfReferenceUrlWorker.postMessage('main')
+selfReferenceUrlWorker.addEventListener('message', (e) => {
+  document.querySelector('.self-reference-url-worker').textContent +=
+    `${e.data}\n`
+})
+
+depSelfReferenceUrlWorker.startWorker((e) => {
+  document.querySelector('.self-reference-url-worker-dep').textContent +=
+    `${e.data}\n`
 })

@@ -1,11 +1,11 @@
 import fs from 'node:fs'
 import path from 'node:path'
-import glob from 'fast-glob'
+import { globSync } from 'tinyglobby'
 import { normalizePath } from 'vite'
 import postcssNested from 'postcss-nested'
 
 export default {
-  plugins: [postcssNested, testDirDep, testSourceInput],
+  plugins: [postcssNested, testDirDep, testSourceInput, testInjectUrl],
 }
 
 /**
@@ -19,7 +19,7 @@ function testDirDep() {
         const pattern = normalizePath(
           path.resolve(path.dirname(result.opts.from), './glob-dep/**/*.css'),
         )
-        const files = glob.sync(pattern)
+        const files = globSync(pattern, { expandDirectories: false })
         const text = files.map((f) => fs.readFileSync(f, 'utf-8')).join('\n')
         atRule.parent.insertAfter(atRule, text)
         atRule.remove()
@@ -61,3 +61,25 @@ function testSourceInput() {
   }
 }
 testSourceInput.postcss = true
+
+function testInjectUrl() {
+  return {
+    postcssPlugin: 'inject-url',
+    Once(root, { Rule }) {
+      root.walkAtRules('inject-url', (atRule) => {
+        const rule = new Rule({
+          selector: '.inject-url',
+          source: atRule.source,
+        })
+        rule.append({
+          prop: 'background',
+          value: "url('=/ok.png')",
+          source: atRule.source,
+        })
+        atRule.after(rule)
+        atRule.remove()
+      })
+    },
+  }
+}
+testInjectUrl.postcss = true

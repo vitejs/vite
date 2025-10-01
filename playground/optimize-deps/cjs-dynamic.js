@@ -17,14 +17,16 @@
   }
 
   const cjsFromESM = await import('@vitejs/test-dep-cjs-compiled-from-esm')
-  console.log('cjsFromESM', cjsFromESM)
   if (typeof cjsFromESM.default === 'function') {
     text('.cjs-dynamic-dep-cjs-compiled-from-esm', 'ok')
   }
 
   const cjsFromCJS = await import('@vitejs/test-dep-cjs-compiled-from-cjs')
-  console.log('cjsFromCJS', cjsFromCJS)
-  if (typeof cjsFromCJS.default === 'function') {
+  if (
+    typeof cjsFromCJS.default === 'function' &&
+    typeof cjsFromCJS !== 'function' &&
+    cjsFromCJS.bar === 'bar'
+  ) {
     text('.cjs-dynamic-dep-cjs-compiled-from-cjs', 'ok')
   }
 

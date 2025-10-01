@@ -10,21 +10,23 @@ export default defineConfig({
   },
   worker: {
     format: 'es',
-    plugins: [workerPluginTestPlugin()],
+    plugins: () => [workerPluginTestPlugin()],
     rollupOptions: {
       output: {
-        assetFileNames: 'assets/worker_asset-[name].[ext]',
-        chunkFileNames: 'assets/worker_chunk-[name].js',
+        assetFileNames: 'assets/worker_asset-[name]-[hash].[ext]',
+        chunkFileNames: 'assets/worker_chunk-[name]-[hash].js',
         entryFileNames: 'assets/worker_entry-[name].js',
       },
     },
   },
   build: {
     outDir: 'dist/es',
+    assetsInlineLimit: (filePath) =>
+      filePath.endsWith('.svg') ? false : undefined,
     rollupOptions: {
       output: {
-        assetFileNames: 'assets/[name].[ext]',
-        chunkFileNames: 'assets/[name].js',
+        assetFileNames: 'assets/[name]-[hash].[ext]',
+        chunkFileNames: 'assets/[name]-[hash].js',
         entryFileNames: 'assets/[name].js',
       },
     },

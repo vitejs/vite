@@ -1,0 +1,22 @@
+{
+  "name": "@vitejs/test-ssr-conditions",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "scripts": {
+    "dev": "node server",
+    "build": "npm run build:client && npm run build:server",
+    "build:client": "vite build --outDir dist/client",
+    "build:server": "vite build --ssr src/app.js --outDir dist/server",
+    "serve": "NODE_ENV=production node server",
+    "debug": "node --inspect-brk server"
+  },
+  "dependencies": {
+    "@vitejs/test-ssr-conditions-external": "file:./external",
+    "@vitejs/test-ssr-conditions-no-external": "file:./no-external"
+  },
+  "devDependencies": {
+    "express": "^5.1.0",
+    "sirv": "^3.0.2"
+  }
+}

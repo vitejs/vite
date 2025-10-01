@@ -6,4 +6,4 @@ if (import.meta.hot) {
 
 console.log('(invalidation) parent is executing')
 
-document.querySelector('.invalidation').innerHTML = value
+document.querySelector('.invalidation-parent').innerHTML = value

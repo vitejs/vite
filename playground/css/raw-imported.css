@@ -1,3 +1,6 @@
-.raw-imported {
-  color: yellow;
+.raw {
+  /* should not be transformed by postcss */
+  &-imported {
+    color: yellow;
+  }
 }

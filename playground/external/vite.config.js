@@ -1,4 +1,24 @@
+import fs from 'node:fs/promises'
 import { defineConfig } from 'vite'
+
+const npmDirectServeConfig = {
+  '/vue@3.4.38.js': 'vue34/dist/vue.runtime.esm-browser.js',
+  '/slash@5.js': 'slash5/index.js',
+}
+/** @type {import('vite').Connect.NextHandleFunction} */
+const serveNpmCodeDirectlyMiddleware = async (req, res, next) => {
+  for (const [url, file] of Object.entries(npmDirectServeConfig)) {
+    if (req.originalUrl === url) {
+      const code = await fs.readFile(
+        new URL(`./node_modules/${file}`, import.meta.url),
+      )
+      res.setHeader('Content-Type', 'text/javascript')
+      res.end(code)
+      return
+    }
+  }
+  next()
+}
 
 export default defineConfig({
   optimizeDeps: {
@@ -12,6 +32,18 @@ export default defineConfig({
     },
     commonjsOptions: {
       esmExternals: ['vue', 'slash5'],
+      dynamicRequireTargets: ['test-no-op-fdir-glob'],
     },
   },
+  plugins: [
+    {
+      name: 'serve-npm-code-directly',
+      configureServer({ middlewares }) {
+        middlewares.use(serveNpmCodeDirectlyMiddleware)
+      },
+      configurePreviewServer({ middlewares }) {
+        middlewares.use(serveNpmCodeDirectlyMiddleware)
+      },
+    },
+  ],
 })

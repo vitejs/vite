@@ -19,9 +19,19 @@ export default defineConfig({
     alias: {
       ...escapeAliases,
       '@dir': path.resolve(__dirname, './dir/'),
+      '#alias': path.resolve(__dirname, './imports-path/'),
     },
   },
   build: {
     sourcemap: true,
+    rollupOptions: {
+      output: {
+        manualChunks(id) {
+          if (id.includes('foo.css')) {
+            return 'foo_css'
+          }
+        },
+      },
+    },
   },
 })

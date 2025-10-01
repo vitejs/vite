@@ -1,5 +1,5 @@
 name: "\U0001F4DA Documentation"
-description: Suggest a change or new page to be added to vitejs.dev
+description: Suggest a change or new page to be added to vite.dev
 labels: [documentation]
 body:
   - type: markdown

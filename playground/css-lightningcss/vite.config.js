@@ -1,10 +1,13 @@
+import path from 'node:path'
 import { defineConfig } from 'vite'
 
 export default defineConfig({
   css: {
     transformer: 'lightningcss',
-    lightningcss: {
-      drafts: { nesting: true },
+  },
+  resolve: {
+    alias: {
+      '@': path.resolve(__dirname, 'nested'),
     },
   },
   build: {

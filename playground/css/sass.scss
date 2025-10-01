@@ -1,10 +1,16 @@
-@import '=/nested'; // alias + custom index resolving -> /nested/_index.scss
-@import '=/nested/partial'; // sass convention: omitting leading _ for partials
-@import '@vitejs/test-css-dep'; // package w/ sass entry points
-@import '@vitejs/test-css-dep-exports'; // package with a sass export mapping
-@import 'virtual-dep'; // virtual file added through importer
-@import '=/pkg-dep'; // package w/out sass field
-@import '=/weapp.wxss'; // wxss file
+@use '=/nested'; // alias + custom index resolving -> /nested/_index.scss
+@use '=/nested/partial'; // sass convention: omitting leading _ for partials
+@use './nested/relative'; // relative path
+@use '@vitejs/test-css-dep'; // package w/ sass entry points
+@use '@vitejs/test-css-dep-exports'; // package with a sass export mapping
+@use '@vitejs/test-css-dep-exports/foo.scss'; // package with a sass export mapping (deep)
+@use '@vitejs/test-scss-proxy-dep'; // package with a sass proxy import
+@use 'virtual-dep'; // virtual file added through importer
+@use '=/pkg-dep'; // package w/out sass field
+@use '=/weapp.wxss'; // wxss file
+@use 'virtual-file-absolute';
+@use '=/scss-dir/main.scss'; // "./dir" reference from vite custom importer
+@use '=replace/nested/replacement-alias.scss';
 
 .sass {
   /* injected via vite.config.js */

@@ -12,6 +12,7 @@ import { join } from 'node:path'
 import { exec } from 'node:child_process'
 import type { ExecOptions } from 'node:child_process'
 import open from 'open'
+import type { Options } from 'open'
 import spawn from 'cross-spawn'
 import colors from 'picocolors'
 import type { Logger } from '../logger'
@@ -34,7 +35,7 @@ export function openBrowser(
     const browserArgs = process.env.BROWSER_ARGS
       ? process.env.BROWSER_ARGS.split(' ')
       : []
-    startBrowserProcess(browser, browserArgs, url)
+    startBrowserProcess(browser, browserArgs, url, logger)
   }
 }
 
@@ -72,19 +73,20 @@ async function startBrowserProcess(
   browser: string | undefined,
   browserArgs: string[],
   url: string,
+  logger: Logger,
 ) {
   // If we're on OS X, the user hasn't specifically
   // requested a different browser, we can try opening
-  // a Chromium browser with AppleScript. This lets us reuse an
+  // a Chromium browser with JXA. This lets us reuse an
   // existing tab when possible instead of creating a new one.
   const preferredOSXBrowser =
     browser === 'google chrome' ? 'Google Chrome' : browser
-  const shouldTryOpenChromeWithAppleScript =
+  const shouldTryOpenChromeWithJXA =
     process.platform === 'darwin' &&
     (!preferredOSXBrowser ||
       supportedChromiumBrowsers.includes(preferredOSXBrowser))
 
-  if (shouldTryOpenChromeWithAppleScript) {
+  if (shouldTryOpenChromeWithJXA) {
     try {
       const ps = await execAsync('ps cax')
       const openedBrowser =
@@ -92,18 +94,13 @@ async function startBrowserProcess(
           ? preferredOSXBrowser
           : supportedChromiumBrowsers.find((b) => ps.includes(b))
       if (openedBrowser) {
-        // Try our best to reuse existing tab with AppleScript
-        await execAsync(
-          `osascript openChrome.applescript "${encodeURI(
-            url,
-          )}" "${openedBrowser}"`,
-          {
-            cwd: join(VITE_PACKAGE_DIR, 'bin'),
-          },
-        )
+        // Try our best to reuse existing tab with JXA
+        await execAsync(`osascript openChrome.js "${url}" "${openedBrowser}"`, {
+          cwd: join(VITE_PACKAGE_DIR, 'bin'),
+        })
         return true
       }
-    } catch (err) {
+    } catch {
       // Ignore errors
     }
   }
@@ -119,12 +116,22 @@ async function startBrowserProcess(
   // Fallback to open
   // (It will always open new tab)
   try {
-    const options: open.Options = browser
+    const options: Options = browser
       ? { app: { name: browser, arguments: browserArgs } }
       : {}
-    open(url, options).catch(() => {}) // Prevent `unhandledRejection` error.
+
+    new Promise((_, reject) => {
+      open(url, options)
+        .then((subprocess) => {
+          subprocess.on('error', reject)
+        })
+        .catch(reject)
+    }).catch((err) => {
+      logger.error(err.stack || err.message)
+    })
+
     return true
-  } catch (err) {
+  } catch {
     return false
   }
 }

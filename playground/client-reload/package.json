@@ -1,0 +1,12 @@
+{
+  "name": "@vitejs/test-client-reload",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "scripts": {
+    "debug": "node --inspect-brk ../../packages/vite/bin/vite",
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview"
+  }
+}
