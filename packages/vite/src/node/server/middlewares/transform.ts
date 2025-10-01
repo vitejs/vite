@@ -40,6 +40,16 @@ const debugCache = createDebugger('vite:cache')
 
 const knownIgnoreList = new Set(['/', '/favicon.ico'])
 
+const documentFetchDests = new Set<string | undefined>([
+  'document',
+  'iframe',
+  'frame',
+  'fencedframe',
+])
+function isDocumentFetchDest(req: Connect.IncomingMessage) {
+  return documentFetchDests.has(req.headers['sec-fetch-dest'])
+}
+
 // TODO: consolidate this regex pattern with the url, raw, and inline checks in plugins
 const urlRE = /[?&]url\b/
 const rawRE = /[?&]raw\b/
@@ -62,6 +72,11 @@ export function cachedTransformMiddleware(
   // Keep the named function. The name is visible in debug logs via `DEBUG=connect:dispatcher ...`
   return function viteCachedTransformMiddleware(req, res, next) {
     const environment = server.environments.client
+
+    if (isDocumentFetchDest(req)) {
+      res.appendHeader('Vary', 'Sec-Fetch-Dest')
+      return next()
+    }
 
     // check if we can return 304 early
     const ifNoneMatch = req.headers['if-none-match']
@@ -102,7 +117,8 @@ export function transformMiddleware(
 
     if (
       (req.method !== 'GET' && req.method !== 'HEAD') ||
-      knownIgnoreList.has(req.url!)
+      knownIgnoreList.has(req.url!) ||
+      isDocumentFetchDest(req)
     ) {
       return next()
     }
