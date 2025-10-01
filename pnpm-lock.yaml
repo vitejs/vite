@@ -288,8 +288,8 @@ importers:
         specifier: ^0.0.5
         version: 0.0.5
       artichokie:
-        specifier: ^0.4.0
-        version: 0.4.0
+        specifier: ^0.4.2
+        version: 0.4.2
       baseline-browser-mapping:
         specifier: ^2.8.9
         version: 2.8.9
@@ -4270,8 +4270,8 @@ packages:
   array-ify@1.0.0:
     resolution: {integrity: sha512-c5AMf34bKdvPhQ7tBGhqkgKNUzMr4WUs+WDtC2ZUGOUncbxKMTvqxYctiseW3+L4bA8ec+GcZ6/A/FW4m8ukng==}
 
-  artichokie@0.4.0:
-    resolution: {integrity: sha512-dBpBmA19hTRCTH19Egtpv2WYj1LUAS2JmtwkCGjpNV8yrCMSgLPiILHTdOFdOVDWpK0awS+I1JPxJTzigAVdJQ==}
+  artichokie@0.4.2:
+    resolution: {integrity: sha512-S9NYe2VBada7bd2f8VtbX0GAQwaKmK3Ze6VbYcfe/sDvMpwtIuJ0kIH2yN6LmYI4HG3saRqWwlMN2i2eVamUcA==}
     engines: {node: ^18.0.0 || >=20.0.0}
 
   asap@2.0.6:
@@ -10100,7 +10100,7 @@ snapshots:
 
   array-ify@1.0.0: {}
 
-  artichokie@0.4.0: {}
+  artichokie@0.4.2: {}
 
   asap@2.0.6: {}
 
