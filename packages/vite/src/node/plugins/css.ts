@@ -2049,16 +2049,16 @@ async function doUrlReplace(
   if (skipUrlReplacer(unquotedUrl)) {
     return matched
   }
-  // The URL may contain escaped characters, which the regex can capture. Before resolving the file path, the escapes are removed to get the actual file name.
-  unquotedUrl = unquotedUrl.replace(/\\([ !"&'()*+,./:;<=>?@[\]^`{|}~])/g, '$1')
+  //  Remove escape sequences to get the actual file name before resolving.
+  unquotedUrl = unquotedUrl.replace(/\\(\W)/g, '$1')
 
   let newUrl = await replacer(unquotedUrl, rawUrl)
   if (newUrl === false) {
     return matched
   }
 
-  // The new url might need wrapping even if the original did not have it, e.g. if a space was added during replacement
-  // If the URL contains ), it will be explicitly wrapped in quotes.
+  // The new url might need wrapping even if the original did not have it, e.g.
+  // if a space was added during replacement or the URL contains ")"
   if (wrap === '' && (newUrl !== encodeURI(newUrl) || newUrl.includes(')'))) {
     wrap = '"'
   }

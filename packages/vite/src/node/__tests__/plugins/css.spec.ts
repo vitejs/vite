@@ -59,24 +59,7 @@ describe('search css url function', () => {
   test('should capture the full url with escaped parentheses', () => {
     const css = 'background-image: url(public/awkward-name\\)2.png);'
     const match = cssUrlRE.exec(css)
-
-    if (match) {
-      const capturedUrlContent = match[1].trim()
-      try {
-        // Try to assert
-        expect(capturedUrlContent).toBe('public/awkward-name\\)2.png')
-      } catch (error) {
-        // If the assertion fails, it will enter the catch block
-        console.error('Test failed! URL parsing did not match.')
-        console.error('Expected:', 'public/awkward-name\\)2.png')
-        console.error('Actual captured:', capturedUrlContent) // Output actual result
-
-        // Must re-throw the error, otherwise the test would incorrectly pass
-        throw error
-      }
-    } else {
-      expect.fail('The regex should have found a match but it did not.')
-    }
+    expect(match?.[1].trim()).toBe('public/awkward-name\\)2.png')
   })
 })
 
