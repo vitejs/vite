@@ -2,6 +2,7 @@ import fs from 'node:fs/promises'
 import path from 'node:path'
 import { defineConfig } from 'vite'
 import type { Plugin } from 'vite'
+import { TestCssLinkPlugin } from './css-link/plugin'
 
 export default defineConfig({
   experimental: {
@@ -37,6 +38,7 @@ export default defineConfig({
     virtualPlugin(),
     transformCountPlugin(),
     watchCssDepsPlugin(),
+    TestCssLinkPlugin(),
   ],
 })
 
