@@ -213,63 +213,35 @@ if (!isBuild) {
 
   test('hmr for adding/removing files with array patterns and exclusions', async () => {
     const resultElement = page.locator('.array-result')
-
-    // Ensure we start clean
-    try {
-      removeFile('array-test-dir/new-file.js')
-    } catch {
-      // File might not exist, that's fine
-    }
-
-    // Wait for initial state to be correct
     await expect
-      .poll(async () => {
-        const text = await resultElement.textContent()
-        return JSON.parse(text)
-      })
-      .toMatchObject({
+      .poll(async () => JSON.parse(await resultElement.textContent()))
+      .toStrictEqual({
         './array-test-dir/included.js': 'included',
       })
 
-    // Add a new file that matches the glob pattern
     addFile('array-test-dir/new-file.js', 'export default "new"')
     await expect
-      .poll(async () => {
-        const text = await resultElement.textContent()
-        return JSON.parse(text)
-      })
-      .toMatchObject({
+      .poll(async () => JSON.parse(await resultElement.textContent()))
+      .toStrictEqual({
         './array-test-dir/included.js': 'included',
         './array-test-dir/new-file.js': 'new',
       })
 
-    // Remove the new file
     removeFile('array-test-dir/new-file.js')
     await expect
-      .poll(async () => {
-        const text = await resultElement.textContent()
-        return JSON.parse(text)
-      })
-      .toMatchObject({
+      .poll(async () => JSON.parse(await resultElement.textContent()))
+      .toStrictEqual({
         './array-test-dir/included.js': 'included',
       })
   })
 }
 
 test('array pattern with exclusions', async () => {
-  // This test verifies that excluded files are properly filtered out
   await expect
-    .poll(async () => {
-      const text = await page.textContent('.array-result')
-      return JSON.parse(text)
-    })
-    .toMatchObject({
+    .poll(async () => JSON.parse(await page.textContent('.array-result')))
+    .toStrictEqual({
       './array-test-dir/included.js': 'included',
     })
-
-  // Verify excluded file is not present
-  const result = JSON.parse(await page.textContent('.array-result'))
-  expect(result).not.toHaveProperty('./array-test-dir/excluded.js')
 })
 
 test('tree-shake eager css', async () => {
@@ -297,15 +269,12 @@ test('escapes special chars in globs without mangling user supplied glob suffix'
     .filter((f) => f.isDirectory())
     .map((f) => `/escape/${f.name}/glob.js`)
     .sort()
-
-  // Wait for content to be populated
   await expect
     .poll(async () => {
       const text = await page.textContent('.escape-relative')
       return text.split('\n').sort()
     })
     .toEqual(expectedNames)
-
   await expect
     .poll(async () => {
       const text = await page.textContent('.escape-alias')
