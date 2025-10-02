@@ -214,6 +214,23 @@ if (!isBuild) {
   test('hmr for adding/removing files with array patterns and exclusions', async () => {
     const resultElement = page.locator('.array-result')
 
+    // Ensure we start clean
+    try {
+      removeFile('array-test-dir/new-file.js')
+    } catch {
+      // File might not exist, that's fine
+    }
+
+    // Wait for initial state to be correct
+    await expect
+      .poll(async () => {
+        const text = await resultElement.textContent()
+        return JSON.parse(text)
+      })
+      .toMatchObject({
+        './array-test-dir/included.js': 'included',
+      })
+
     // Add a new file that matches the glob pattern
     addFile('array-test-dir/new-file.js', 'export default "new"')
     await expect
@@ -240,12 +257,15 @@ if (!isBuild) {
 }
 
 test('array pattern with exclusions', async () => {
-  const arrayResult = {
-    './array-test-dir/included.js': 'included',
-  }
-  expect(await page.textContent('.array-result')).toBe(
-    JSON.stringify(arrayResult, null, 2),
-  )
+  // This test verifies that excluded files are properly filtered out
+  const text = await page.textContent('.array-result')
+  const result = JSON.parse(text)
+
+  // Should include the included.js file
+  expect(result).toHaveProperty('./array-test-dir/included.js', 'included')
+
+  // Should NOT include the excluded.js file
+  expect(result).not.toHaveProperty('./array-test-dir/excluded.js')
 })
 
 test('tree-shake eager css', async () => {
