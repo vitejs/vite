@@ -258,14 +258,17 @@ if (!isBuild) {
 
 test('array pattern with exclusions', async () => {
   // This test verifies that excluded files are properly filtered out
-  const result = await expect
-    .poll(async () => JSON.parse(await page.textContent('.array-result')))
-    .resolves.toBeDefined()
+  await expect
+    .poll(async () => {
+      const text = await page.textContent('.array-result')
+      return JSON.parse(text)
+    })
+    .toMatchObject({
+      './array-test-dir/included.js': 'included',
+    })
 
-  // Should include the included.js file
-  expect(result).toHaveProperty('./array-test-dir/included.js', 'included')
-
-  // Should NOT include the excluded.js file
+  // Verify excluded file is not present
+  const result = JSON.parse(await page.textContent('.array-result'))
   expect(result).not.toHaveProperty('./array-test-dir/excluded.js')
 })
 
