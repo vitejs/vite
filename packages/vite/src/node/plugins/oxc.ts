@@ -71,12 +71,15 @@ export function setOxcTransformOptionsFromTsconfigOptions(
   }
   if (oxcOptions.jsx !== 'preserve') {
     const jsxOptions: OxcJsxOptions = { ...oxcOptions.jsx }
+    const typescriptOptions = { ...oxcOptions.typescript }
 
     if (tsCompilerOptions.jsxFactory) {
       jsxOptions.pragma ??= tsCompilerOptions.jsxFactory
+      typescriptOptions.jsxPragma = jsxOptions.pragma
     }
     if (tsCompilerOptions.jsxFragmentFactory) {
       jsxOptions.pragmaFrag ??= tsCompilerOptions.jsxFragmentFactory
+      typescriptOptions.jsxPragmaFrag = jsxOptions.pragmaFrag
     }
     if (tsCompilerOptions.jsxImportSource) {
       jsxOptions.importSource ??= tsCompilerOptions.jsxImportSource
@@ -96,7 +99,9 @@ export function setOxcTransformOptionsFromTsconfigOptions(
           jsxOptions.runtime = 'automatic'
           // these options should not be set when using automatic runtime
           jsxOptions.pragma = undefined
+          typescriptOptions.jsxPragma = undefined
           jsxOptions.pragmaFrag = undefined
+          typescriptOptions.jsxPragmaFrag = undefined
           break
         default:
           break
@@ -104,6 +109,7 @@ export function setOxcTransformOptionsFromTsconfigOptions(
     }
 
     oxcOptions.jsx = jsxOptions
+    oxcOptions.typescript = typescriptOptions
   }
 
   if (oxcOptions.decorator?.legacy === undefined) {
