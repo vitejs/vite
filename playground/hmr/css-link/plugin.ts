@@ -1,5 +1,5 @@
-import { normalizePath, type Plugin } from 'vite'
 import path from 'node:path'
+import { type Plugin, normalizePath } from 'vite'
 
 // use plugin to simulate server rendered css link
 export function TestCssLinkPlugin(): Plugin {
