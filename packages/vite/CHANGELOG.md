@@ -1,3 +1,21 @@
+## <small>[7.1.15](https://github.com/vitejs/rolldown-vite/compare/v7.1.14...v7.1.15) (2025-10-02)</small>
+### Bug Fixes
+
+* **css:** improve url escape characters handling ([#20847](https://github.com/vitejs/rolldown-vite/issues/20847)) ([24a61a3](https://github.com/vitejs/rolldown-vite/commit/24a61a3f5404279e91f7ceebf7449a5e874f9d56))
+* **deps:** update all non-major dependencies ([#20855](https://github.com/vitejs/rolldown-vite/issues/20855)) ([788a183](https://github.com/vitejs/rolldown-vite/commit/788a183afce57de13f5656f0cf42cdf6fdc3ebaa))
+* **deps:** update artichokie to 0.4.2 ([#20864](https://github.com/vitejs/rolldown-vite/issues/20864)) ([e670799](https://github.com/vitejs/rolldown-vite/commit/e670799e123dca78e1a63aeb06dbadade3d5ab51))
+* **dev:** skip JS responses for document requests ([#20866](https://github.com/vitejs/rolldown-vite/issues/20866)) ([6bc6c4d](https://github.com/vitejs/rolldown-vite/commit/6bc6c4dbc23501577d3919dc841454eb2eb14a54))
+* **glob:** fix HMR for array patterns with exclusions ([#20872](https://github.com/vitejs/rolldown-vite/issues/20872)) ([63e040f](https://github.com/vitejs/rolldown-vite/commit/63e040f1ca6b635a007eb40aa7c8b891e8cc5799))
+* keep ids for virtual modules as-is ([#20808](https://github.com/vitejs/rolldown-vite/issues/20808)) ([d4eca98](https://github.com/vitejs/rolldown-vite/commit/d4eca986d679c77bd449db20fd99d8255985b550))
+* **oxc:** set typescript jsx options ([9afe6f6](https://github.com/vitejs/rolldown-vite/commit/9afe6f6daaa097f3dc60dff9f9aa09a21e5d377d))
+* **server:** drain stdin when not interactive ([#20837](https://github.com/vitejs/rolldown-vite/issues/20837)) ([bb950e9](https://github.com/vitejs/rolldown-vite/commit/bb950e92b372f9a52245e9542cf9d9700d23ef8c))
+* **server:** improve malformed URL handling in middlewares ([#20830](https://github.com/vitejs/rolldown-vite/issues/20830)) ([d65a983](https://github.com/vitejs/rolldown-vite/commit/d65a9831c984e562c5bf2b5f427de16f6e1bd931))
+
+### Miscellaneous Chores
+
+* **deps:** update rolldown-related dependencies ([#20854](https://github.com/vitejs/rolldown-vite/issues/20854)) ([4dd06fd](https://github.com/vitejs/rolldown-vite/commit/4dd06fdc8d643059c2abf88188eae7c4877aab6e))
+* update url of `create-react-app` license ([#20865](https://github.com/vitejs/rolldown-vite/issues/20865)) ([166a178](https://github.com/vitejs/rolldown-vite/commit/166a178f45b6e48db27b5626559f5ec3358c2fb4))
+
 ## <small>[7.1.14](https://github.com/vitejs/rolldown-vite/compare/v7.1.13...v7.1.14) (2025-09-30)</small>
 ### Features
 

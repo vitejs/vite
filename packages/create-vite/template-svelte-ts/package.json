@@ -16,6 +16,6 @@
     "svelte": "^5.39.6",
     "svelte-check": "^4.3.2",
     "typescript": "~5.9.3",
-    "vite": "npm:rolldown-vite@^7.1.14"
+    "vite": "npm:rolldown-vite@^7.1.15"
   }
 }
