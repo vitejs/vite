@@ -56,6 +56,12 @@ describe('search css url function', () => {
       ),
     ).toBe(true)
   })
+
+  test('should capture the full url with escaped parentheses', () => {
+    const css = 'background-image: url(public/awkward-name\\)2.png);'
+    const match = cssUrlRE.exec(css)
+    expect(match?.[1].trim()).toBe('public/awkward-name\\)2.png')
+  })
 })
 
 describe('css modules', () => {
