@@ -297,14 +297,21 @@ test('escapes special chars in globs without mangling user supplied glob suffix'
     .filter((f) => f.isDirectory())
     .map((f) => `/escape/${f.name}/glob.js`)
     .sort()
-  const foundRelativeNames = (await page.textContent('.escape-relative'))
-    .split('\n')
-    .sort()
-  expect(expectedNames).toEqual(foundRelativeNames)
-  const foundAliasNames = (await page.textContent('.escape-alias'))
-    .split('\n')
-    .sort()
-  expect(expectedNames).toEqual(foundAliasNames)
+
+  // Wait for content to be populated
+  await expect
+    .poll(async () => {
+      const text = await page.textContent('.escape-relative')
+      return text.split('\n').sort()
+    })
+    .toEqual(expectedNames)
+
+  await expect
+    .poll(async () => {
+      const text = await page.textContent('.escape-alias')
+      return text.split('\n').sort()
+    })
+    .toEqual(expectedNames)
 })
 
 test('subpath imports', async () => {
