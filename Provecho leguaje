@@ -1,0 +1,90 @@
+import { motion } from "framer-motion";
+import { BookOpen, FileText, PenTool, Globe, CheckCircle, Users } from "lucide-react";
+
+export default function ProyectoDigital() {
+  return (
+    <div className="min-h-screen bg-gray-50 text-gray-800">
+      {/* Navbar */}
+      <header className="bg-purple-600 text-white p-4 shadow-md">
+        <h1 className="text-2xl font-bold text-center">Proyecto Digital</h1>
+        <p className="text-center text-sm">Lectura y Escritura - 1er Parcial</p>
+      </header>
+
+      <main className="p-6 space-y-6">
+        {/* Introducción */}
+        <div className="text-center">
+          <h2 className="text-3xl font-bold mb-2">Lectura y Escritura</h2>
+          <p className="text-lg">Explorando sus beneficios y aplicaciones en la vida diaria.</p>
+        </div>
+
+        {/* Secciones */}
+        <div className="grid gap-6 md:grid-cols-2">
+          {[
+            {
+              title: "La escritura como posibilidad de desarrollo",
+              text: "La escritura favorece el pensamiento humano, la empatía, la comunicación y la creación individual y colectiva. Además impulsa el avance científico.",
+              icon: <PenTool className="w-8 h-8 text-purple-600" />,
+            },
+            {
+              title: "La lectura como diálogo cultural",
+              text: "Leer permite un diálogo entre personas de distintos contextos sociales, históricos y culturales.",
+              icon: <Globe className="w-8 h-8 text-purple-600" />,
+            },
+            {
+              title: "La lectura como experiencia de placer",
+              text: "La lectura puede disfrutarse de manera individual o compartida, ofreciendo placer y reflexión.",
+              icon: <BookOpen className="w-8 h-8 text-purple-600" />,
+            },
+            {
+              title: "Diversidad de textos escritos",
+              text: "Existen múltiples tipos de textos, en diferentes soportes y formatos: libros, revistas, artículos digitales, etc.",
+              icon: <FileText className="w-8 h-8 text-purple-600" />,
+            },
+            {
+              title: "Características de los textos",
+              text: "Los textos escritos poseen rasgos generales como estructura, coherencia y propósito comunicativo.",
+              icon: <CheckCircle className="w-8 h-8 text-purple-600" />,
+            },
+            {
+              title: "Textos en la vida cotidiana",
+              text: "Los textos están presentes en situaciones diarias como instrucciones, anuncios, redes sociales o correos.",
+              icon: <Users className="w-8 h-8 text-purple-600" />,
+            },
+          ].map((item, index) => (
+            <motion.div
+              key={index}
+              className="bg-white shadow-md rounded-2xl p-6 flex flex-col items-center text-center space-y-3"
+              initial={{ opacity: 0, y: 50 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.5, delay: index * 0.1 }}
+            >
+              {item.icon}
+              <h3 className="text-lg font-semibold">{item.title}</h3>
+              <p>{item.text}</p>
+            </motion.div>
+          ))}
+        </div>
+
+        {/* Conclusión */}
+        <motion.div
+          className="bg-purple-100 p-6 rounded-2xl text-center shadow-md"
+          initial={{ scale: 0.9, opacity: 0 }}
+          whileInView={{ scale: 1, opacity: 1 }}
+          transition={{ duration: 0.5 }}
+        >
+          <h2 className="text-xl font-bold mb-2">Conclusión</h2>
+          <p>
+            La lectura y la escritura son herramientas esenciales para aprender,
+            comunicarnos y disfrutar en la vida cotidiana.
+          </p>
+        </motion.div>
+      </main>
+
+      {/* Footer */}
+      <footer className="bg-gray-200 text-center p-4 text-sm mt-6 rounded-t-xl">
+        <p>📘 Proyecto Digital - 1er Parcial</p>
+        <p>Alumno: [Tu Nombre] | Grupo: [Tu Grupo]</p>
+      </footer>
+    </div>
+  );
+}
