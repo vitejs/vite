@@ -552,35 +552,7 @@ Vite exposes [`@rollup/pluginutils`'s `createFilter`](https://github.com/rollup/
 
 Rolldown introduced a [hook filter feature](https://rolldown.rs/plugins/hook-filters) to reduce the communication overhead between the Rust and JavaScript runtimes. This feature allows plugins to specify patterns that determine when hooks should be called, improving performance by avoiding unnecessary hook invocations.
 
-This is also supported by Rollup 4.38.0+ and Vite 6.3.0+. To make your plugin backward compatible with the older versions, make sure to also run the filter inside the hook handlers.
-
-#### Using Hook Filters
-
-```js
-export default function myPlugin() {
-  return {
-    name: 'my-plugin',
-
-    // Hook filter example - only call transform for .js files
-    transform: {
-      filter: {
-        id: /\.js$/,
-      },
-      handler(code, id) {
-        // Transform logic here
-        return {
-          code: transformMyCode(code),
-          map: null,
-        }
-      },
-    },
-  }
-}
-```
-
-#### Backward Compatibility
-
-To ensure your plugin works with older versions of Vite/Rollup that don't support hook filters, implement the filter logic inside the hook handler as well:
+This is also supported by Rollup 4.38.0+ and Vite 6.3.0+. To make your plugin backward compatible with older versions, make sure to also run the filter inside the hook handlers.
 
 ```js
 export default function myPlugin() {
@@ -588,8 +560,7 @@ export default function myPlugin() {
 
   return {
     name: 'my-plugin',
-
-    // With hook filter for performance
+    // Example: only call transform for .js files
     transform: {
       filter: {
         id: jsFileRegex,
@@ -599,7 +570,7 @@ export default function myPlugin() {
         if (!jsFileRegex.test(id)) return null
 
         return {
-          code: transformMyCode(code),
+          code: transformCode(code),
           map: null,
         }
       },
@@ -607,8 +578,6 @@ export default function myPlugin() {
   }
 }
 ```
-
-For detailed information on how to use hook filters in your plugins, including code examples and backward compatibility guidance, see the [Hook Filters section](/guide/api-plugin#hook-filters) in the plugin guide.
 
 ## Client-server Communication
 
