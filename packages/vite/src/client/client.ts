@@ -550,9 +550,17 @@ export function updateStyle(id: string, content: string): void {
 }
 
 export function removeStyle(id: string): void {
-  const link = linkSheetsMap.get(id)
-  if (link) {
-    document.head.removeChild(link)
+  if (linkSheetsMap.has(id)) {
+    // re-select elements since HMR can replace links
+    document
+      .querySelectorAll<HTMLLinkElement>(
+        `link[rel="stylesheet"][data-vite-dev-id]`,
+      )
+      .forEach((el) => {
+        if (el.getAttribute('data-vite-dev-id') === id) {
+          el.remove()
+        }
+      })
     linkSheetsMap.delete(id)
   }
   const style = sheetsMap.get(id)
