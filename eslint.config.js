@@ -5,6 +5,7 @@ import pluginN from 'eslint-plugin-n'
 import pluginImportX from 'eslint-plugin-import-x'
 import pluginRegExp from 'eslint-plugin-regexp'
 import tseslint from 'typescript-eslint'
+import { defineConfig } from 'eslint/config'
 import globals from 'globals'
 
 const require = createRequire(import.meta.url)
@@ -15,7 +16,7 @@ const pkgVite = require('./packages/vite/package.json')
 // explicitly, set this to `true` manually.
 const shouldTypeCheck = typeof process.env.VSCODE_PID === 'string'
 
-export default tseslint.config(
+export default defineConfig(
   {
     ignores: [
       'packages/create-vite/template-*',

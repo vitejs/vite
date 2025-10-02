@@ -273,6 +273,16 @@ describe('link with props', () => {
   })
 })
 
+describe.runIf(isServe)('SPA fallback', () => {
+  test('should serve index.html via page navigation even when path matches file basename', async () => {
+    const response = await page.goto(viteTestUrl + '/test')
+    expect(response.status()).toBe(200)
+    const content = await page.content()
+    expect(content).toContain('Transformed')
+    expect(content).not.toContain('This is test.js')
+  })
+})
+
 describe.runIf(isServe)('invalid', () => {
   test('should be 500 with overlay', async () => {
     const response = await page.goto(viteTestUrl + '/invalid.html')
@@ -517,3 +527,19 @@ test('invalidate inline proxy module on reload', async () => {
   await page.reload()
   expect(await page.textContent('.test')).toContain('ok')
 })
+
+test.runIf(isServe)(
+  'malformed URLs in src attributes should show errors',
+  async () => {
+    serverLogs.length = 0
+    await page.goto(`${viteTestUrl}/malformed-url.html`)
+    expect(await page.textContent('.status')).toContain(
+      'Page loaded successfully',
+    )
+    expect(serverLogs).not.toEqual(
+      expect.arrayContaining([
+        expect.stringMatching('Internal server error: URI malformed'),
+      ]),
+    )
+  },
+)

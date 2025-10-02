@@ -1912,7 +1912,7 @@ type CssUrlReplacer = (
 ) => string | false | Promise<string | false>
 // https://drafts.csswg.org/css-syntax-3/#identifier-code-point
 export const cssUrlRE =
-  /(?<!@import\s+)(?<=^|[^\w\-\u0080-\uffff])url\((\s*('[^']+'|"[^"]+")\s*|[^'")]+)\)/
+  /(?<!@import\s+)(?<=^|[^\w\-\u0080-\uffff])url\((\s*('[^']+'|"[^"]+")\s*|(?:\\.|[^'")\\])+)\)/
 export const cssDataUriRE =
   /(?<=^|[^\w\-\u0080-\uffff])data-uri\((\s*('[^']+'|"[^"]+")\s*|[^'")]+)\)/
 export const importCssRE =
@@ -2065,14 +2065,17 @@ async function doUrlReplace(
   if (skipUrlReplacer(unquotedUrl)) {
     return matched
   }
+  //  Remove escape sequences to get the actual file name before resolving.
+  unquotedUrl = unquotedUrl.replace(/\\(\W)/g, '$1')
 
   let newUrl = await replacer(unquotedUrl, rawUrl)
   if (newUrl === false) {
     return matched
   }
 
-  // The new url might need wrapping even if the original did not have it, e.g. if a space was added during replacement
-  if (wrap === '' && newUrl !== encodeURI(newUrl)) {
+  // The new url might need wrapping even if the original did not have it, e.g.
+  // if a space was added during replacement or the URL contains ")"
+  if (wrap === '' && (newUrl !== encodeURI(newUrl) || newUrl.includes(')'))) {
     wrap = '"'
   }
   // If wrapping in single quotes and newUrl also contains single quotes, switch to double quotes.
