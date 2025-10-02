@@ -210,6 +210,44 @@ if (!isBuild) {
       .poll(async () => JSON.parse(await resultElement.textContent()))
       .toStrictEqual(['/pkg-pages/foo.js'])
   })
+
+  test('hmr for adding/removing files with array patterns and exclusions', async () => {
+    await page.goto('/array-test.html')
+    const resultElement = page.locator('.array-result')
+
+    // Initial state: should only have included.js (excluded.js is filtered out)
+    await expect
+      .poll(async () => {
+        const text = await resultElement.textContent()
+        return JSON.parse(text)
+      })
+      .toMatchObject({
+        './array-test-dir/included.js': 'included',
+      })
+
+    // Add a new file that matches the glob pattern
+    addFile('array-test-dir/new-file.js', 'export default "new"')
+    await expect
+      .poll(async () => {
+        const text = await resultElement.textContent()
+        return JSON.parse(text)
+      })
+      .toMatchObject({
+        './array-test-dir/included.js': 'included',
+        './array-test-dir/new-file.js': 'new',
+      })
+
+    // Remove the new file
+    removeFile('array-test-dir/new-file.js')
+    await expect
+      .poll(async () => {
+        const text = await resultElement.textContent()
+        return JSON.parse(text)
+      })
+      .toMatchObject({
+        './array-test-dir/included.js': 'included',
+      })
+  })
 }
 
 test('tree-shake eager css', async () => {

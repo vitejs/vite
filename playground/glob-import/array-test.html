@@ -1,0 +1,17 @@
+<h1>Array Pattern with Exclusions HMR Test</h1>
+<pre class="array-result"></pre>
+
+<script type="module">
+  const modules = import.meta.glob(
+    ['./array-test-dir/*.js', '!./array-test-dir/excluded.js'],
+    {
+      eager: true,
+      import: 'default',
+    },
+  )
+  document.querySelector('.array-result').textContent = JSON.stringify(
+    modules,
+    null,
+    2,
+  )
+</script>
