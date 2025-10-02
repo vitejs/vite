@@ -1,3 +1,22 @@
+## <small>[8.0.2](https://github.com/vitejs/vite/compare/create-vite@8.0.1...create-vite@8.0.2) (2025-10-02)</small>
+### Features
+
+* **create-vite:** add @types/node to typescript templates ([#18642](https://github.com/vitejs/vite/issues/18642)) ([302f809](https://github.com/vitejs/vite/commit/302f8091b2a5e342f90d98c97331d2177bb48336))
+* **create-vite:** bump TS to 5.9 ([#20870](https://github.com/vitejs/vite/issues/20870)) ([4e35c9d](https://github.com/vitejs/vite/commit/4e35c9dfcf948e333f22add061b84b9e9603cafd))
+
+### Bug Fixes
+
+* **deps:** update all non-major dependencies ([#20855](https://github.com/vitejs/vite/issues/20855)) ([788a183](https://github.com/vitejs/vite/commit/788a183afce57de13f5656f0cf42cdf6fdc3ebaa))
+
+### Documentation
+
+* **create-vite:** mention oxc in React templates ([#20871](https://github.com/vitejs/vite/issues/20871)) ([c1caacd](https://github.com/vitejs/vite/commit/c1caacdfae2917e91d26d3cb4d3a80d9fa11634f))
+* **create-vite:** provide deno example ([#20747](https://github.com/vitejs/vite/issues/20747)) ([fdb758a](https://github.com/vitejs/vite/commit/fdb758a51796b1ab605437b2eee778a84e87e169))
+
+### Miscellaneous Chores
+
+* **deps:** update rolldown-related dependencies ([#20854](https://github.com/vitejs/vite/issues/20854)) ([4dd06fd](https://github.com/vitejs/vite/commit/4dd06fdc8d643059c2abf88188eae7c4877aab6e))
+
 ## <small>[8.0.1](https://github.com/vitejs/vite/compare/create-vite@8.0.0...create-vite@8.0.1) (2025-09-23)</small>
 ### Bug Fixes
 

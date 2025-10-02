@@ -20,6 +20,7 @@ import escapeHtml from 'escape-html'
 import type { MinimalPluginContextWithoutEnvironment, Plugin } from '../plugin'
 import type { ViteDevServer } from '../server'
 import {
+  decodeURIIfPossible,
   encodeURIPath,
   generateCodeFrame,
   getHash,
@@ -1568,13 +1569,4 @@ function serializeAttrs(attrs: HtmlTagDescriptor['attrs']): string {
 
 function incrementIndent(indent: string = '') {
   return `${indent}${indent[0] === '\t' ? '\t' : '  '}`
-}
-
-function decodeURIIfPossible(input: string): string | undefined {
-  try {
-    return decodeURI(input)
-  } catch {
-    // url is malformed, probably a interpolate syntax of template engines
-    return
-  }
 }
