@@ -1626,6 +1626,15 @@ export function partialEncodeURIPath(uri: string): string {
   return filePath.replaceAll('%', '%25') + postfix
 }
 
+export function decodeURIIfPossible(input: string): string | undefined {
+  try {
+    return decodeURI(input)
+  } catch {
+    // url is malformed, probably a interpolate syntax of template engines
+    return
+  }
+}
+
 type SigtermCallback = (signal?: 'SIGTERM', exitCode?: number) => Promise<void>
 
 // Use a shared callback when attaching sigterm listeners to avoid `MaxListenersExceededWarning`
@@ -1634,12 +1643,17 @@ const parentSigtermCallback: SigtermCallback = async (signal, exitCode) => {
   await Promise.all([...sigtermCallbacks].map((cb) => cb(signal, exitCode)))
 }
 
+const drain = () => {}
+
 export const setupSIGTERMListener = (
   callback: (signal?: 'SIGTERM', exitCode?: number) => Promise<void>,
 ): void => {
   if (sigtermCallbacks.size === 0) {
     process.once('SIGTERM', parentSigtermCallback)
     if (process.env.CI !== 'true') {
+      if (!process.stdin.isTTY) {
+        process.stdin.on('data', drain)
+      }
       process.stdin.on('end', parentSigtermCallback)
     }
   }
@@ -1653,6 +1667,7 @@ export const teardownSIGTERMListener = (
   if (sigtermCallbacks.size === 0) {
     process.off('SIGTERM', parentSigtermCallback)
     if (process.env.CI !== 'true') {
+      process.stdin.off('data', drain)
       process.stdin.off('end', parentSigtermCallback)
     }
   }

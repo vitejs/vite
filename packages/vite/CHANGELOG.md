@@ -1,3 +1,48 @@
+## <small>[7.1.8](https://github.com/vitejs/vite/compare/v7.1.7...v7.1.8) (2025-10-02)</small>
+### Bug Fixes
+
+* **css:** improve url escape characters handling ([#20847](https://github.com/vitejs/vite/issues/20847)) ([24a61a3](https://github.com/vitejs/vite/commit/24a61a3f5404279e91f7ceebf7449a5e874f9d56))
+* **deps:** update all non-major dependencies ([#20855](https://github.com/vitejs/vite/issues/20855)) ([788a183](https://github.com/vitejs/vite/commit/788a183afce57de13f5656f0cf42cdf6fdc3ebaa))
+* **deps:** update artichokie to 0.4.2 ([#20864](https://github.com/vitejs/vite/issues/20864)) ([e670799](https://github.com/vitejs/vite/commit/e670799e123dca78e1a63aeb06dbadade3d5ab51))
+* **dev:** skip JS responses for document requests ([#20866](https://github.com/vitejs/vite/issues/20866)) ([6bc6c4d](https://github.com/vitejs/vite/commit/6bc6c4dbc23501577d3919dc841454eb2eb14a54))
+* **glob:** fix HMR for array patterns with exclusions ([#20872](https://github.com/vitejs/vite/issues/20872)) ([63e040f](https://github.com/vitejs/vite/commit/63e040f1ca6b635a007eb40aa7c8b891e8cc5799))
+* keep ids for virtual modules as-is ([#20808](https://github.com/vitejs/vite/issues/20808)) ([d4eca98](https://github.com/vitejs/vite/commit/d4eca986d679c77bd449db20fd99d8255985b550))
+* **server:** drain stdin when not interactive ([#20837](https://github.com/vitejs/vite/issues/20837)) ([bb950e9](https://github.com/vitejs/vite/commit/bb950e92b372f9a52245e9542cf9d9700d23ef8c))
+* **server:** improve malformed URL handling in middlewares ([#20830](https://github.com/vitejs/vite/issues/20830)) ([d65a983](https://github.com/vitejs/vite/commit/d65a9831c984e562c5bf2b5f427de16f6e1bd931))
+
+### Documentation
+
+* **create-vite:** provide deno example ([#20747](https://github.com/vitejs/vite/issues/20747)) ([fdb758a](https://github.com/vitejs/vite/commit/fdb758a51796b1ab605437b2eee778a84e87e169))
+
+### Miscellaneous Chores
+
+* **deps:** update rolldown-related dependencies ([#20810](https://github.com/vitejs/vite/issues/20810)) ([ea68a88](https://github.com/vitejs/vite/commit/ea68a8868c7ee249213057f8a81c3f92a9839dde))
+* **deps:** update rolldown-related dependencies ([#20854](https://github.com/vitejs/vite/issues/20854)) ([4dd06fd](https://github.com/vitejs/vite/commit/4dd06fdc8d643059c2abf88188eae7c4877aab6e))
+* update url of `create-react-app` license ([#20865](https://github.com/vitejs/vite/issues/20865)) ([166a178](https://github.com/vitejs/vite/commit/166a178f45b6e48db27b5626559f5ec3358c2fb4))
+
+## <small>[7.1.7](https://github.com/vitejs/vite/compare/v7.1.6...v7.1.7) (2025-09-22)</small>
+### Bug Fixes
+
+* **build:** fix ssr environment `emitAssets: true` when `sharedConfigBuild: true` ([#20787](https://github.com/vitejs/vite/issues/20787)) ([4c4583c](https://github.com/vitejs/vite/commit/4c4583ce7a13306e0853901570c5d95517fe81da))
+* **client:** use CSP nonce when rendering error overlay ([#20791](https://github.com/vitejs/vite/issues/20791)) ([9bc9d12](https://github.com/vitejs/vite/commit/9bc9d1258f550e9d8f5e530cd27aecb1bee32bdb))
+* **deps:** update all non-major dependencies ([#20811](https://github.com/vitejs/vite/issues/20811)) ([9f2247c](https://github.com/vitejs/vite/commit/9f2247c066cac75746356c9391845235445a154b))
+* **glob:** handle glob imports from folders starting with dot ([#20800](https://github.com/vitejs/vite/issues/20800)) ([105abe8](https://github.com/vitejs/vite/commit/105abe87c412cf0f83859ba41fed869221cbb3e0))
+* **hmr:** trigger prune event when import is removed from non hmr module ([#20768](https://github.com/vitejs/vite/issues/20768)) ([9f32b1d](https://github.com/vitejs/vite/commit/9f32b1dc710991c53a9f665c8d0d6945f342bf92))
+* **hmr:** wait for `import.meta.hot.prune` callbacks to complete before running other HMRs ([#20698](https://github.com/vitejs/vite/issues/20698)) ([98a3484](https://github.com/vitejs/vite/commit/98a3484733443ee529870477a6ab6a03572e3cbc))
+
+## <small>[7.1.6](https://github.com/vitejs/vite/compare/v7.1.5...v7.1.6) (2025-09-18)</small>
+### Bug Fixes
+
+* **deps:** update all non-major dependencies ([#20773](https://github.com/vitejs/vite/issues/20773)) ([88af2ae](https://github.com/vitejs/vite/commit/88af2ae7df77160e7d11a9fa147a4967c8499f13))
+* **esbuild:** inject esbuild helper functions with minified `$` variables correctly ([#20761](https://github.com/vitejs/vite/issues/20761)) ([7e8e004](https://github.com/vitejs/vite/commit/7e8e0043d60379e11da481d9cc3c3556c9756ac0))
+* fallback terser to main thread when nameCache is provided ([#20750](https://github.com/vitejs/vite/issues/20750)) ([a679a64](https://github.com/vitejs/vite/commit/a679a643404c95556dda2670643e14eca9c585bd))
+* **types:** strict env typings fail when `skipLibCheck` is `false` ([#20755](https://github.com/vitejs/vite/issues/20755)) ([cc54e29](https://github.com/vitejs/vite/commit/cc54e294746d3eac868de96f85d98dd0fa0cda11))
+
+### Miscellaneous Chores
+
+* **deps:** update rolldown-related dependencies ([#20675](https://github.com/vitejs/vite/issues/20675)) ([a67bb5f](https://github.com/vitejs/vite/commit/a67bb5fbec5f3e42151dc7e3166858d0d33533de))
+* **deps:** update rolldown-related dependencies ([#20772](https://github.com/vitejs/vite/issues/20772)) ([d785e72](https://github.com/vitejs/vite/commit/d785e72f2ead705e8b2416c0a5097878fced3435))
+
 ## <small>[7.1.5](https://github.com/vitejs/vite/compare/v7.1.4...v7.1.5) (2025-09-08)</small>
 ### Bug Fixes
 

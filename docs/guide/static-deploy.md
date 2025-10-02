@@ -301,3 +301,11 @@ Deploy your static site using [Kinsta](https://kinsta.com/static-site-hosting/) 
 ## xmit Static Site Hosting
 
 Deploy your static site using [xmit](https://xmit.co) by following this [guide](https://xmit.dev/posts/vite-quickstart/).
+
+## Zephyr Cloud
+
+[Zephyr Cloud](https://zephyr-cloud.io) is a deployment platform that integrates directly into your build process and provides global edge distribution for module federation and other kind of applications.
+
+Zephyr follows a different approach than other cloud providers. It integrates directly with Vite build process, so every time you build or run the dev server for your application, it will be automatically deployed with Zephyr Cloud.
+
+Follow the steps in [the Vite deployment guide](https://docs.zephyr-cloud.io/recipes/react-vite) to get started.

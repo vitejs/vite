@@ -5,6 +5,7 @@ import pluginN from 'eslint-plugin-n'
 import pluginImportX from 'eslint-plugin-import-x'
 import pluginRegExp from 'eslint-plugin-regexp'
 import tseslint from 'typescript-eslint'
+import { defineConfig } from 'eslint/config'
 import globals from 'globals'
 
 const require = createRequire(import.meta.url)
@@ -15,7 +16,7 @@ const pkgVite = require('./packages/vite/package.json')
 // explicitly, set this to `true` manually.
 const shouldTypeCheck = typeof process.env.VSCODE_PID === 'string'
 
-export default tseslint.config(
+export default defineConfig(
   {
     ignores: [
       'packages/create-vite/template-*',
@@ -175,11 +176,7 @@ export default tseslint.config(
       'sort-imports': [
         'error',
         {
-          ignoreCase: false,
           ignoreDeclarationSort: true,
-          ignoreMemberSort: false,
-          memberSyntaxSortOrder: ['none', 'all', 'multiple', 'single'],
-          allowSeparatedGroups: false,
         },
       ],
 
@@ -232,6 +229,23 @@ export default tseslint.config(
   {
     name: 'tests',
     files: ['**/__tests__/**/*.?([cm])[jt]s?(x)'],
+    rules: {
+      'n/no-unsupported-features/node-builtins': [
+        'error',
+        {
+          // ideally we would like to allow all experimental features
+          // https://github.com/eslint-community/eslint-plugin-n/issues/199
+          ignores: ['fetch', 'import.meta.dirname'],
+        },
+      ],
+    },
+  },
+  {
+    name: 'configs',
+    files: [
+      'packages/create-vite/tsdown.config.ts',
+      'packages/plugin-legacy/tsdown.config.ts',
+    ],
     rules: {
       'n/no-unsupported-features/node-builtins': [
         'error',

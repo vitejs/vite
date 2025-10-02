@@ -28,8 +28,21 @@ jobs:
       - name: Install pnpm
         uses: pnpm/action-setup@a7487c7e89a18df4991f7f222e4898a00d66ddda # v4.1.0
 
-      - name: Install dependencies
+      - name: Set node version to 22
+        uses: actions/setup-node@v5
+        with:
+          node-version: 22
+          registry-url: https://registry.npmjs.org/
+          # disable cache, to avoid cache poisoning (https://docs.zizmor.sh/audits/#cache-poisoning)
+          package-manager-cache: false
+
+      - name: Disallow installation scripts
+        run: yq '.onlyBuiltDependencies = []' -i pnpm-workspace.yaml
+
+      - name: Install deps
         run: pnpm install
+        env:
+          PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD: "1"
 
       - name: Build
         working-directory: ./packages/vite
