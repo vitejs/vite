@@ -187,3 +187,21 @@
     2,
   )
 </script>
+
+<h2>Array Pattern with Exclusions</h2>
+<pre class="array-result"></pre>
+
+<script type="module">
+  const arrayModules = import.meta.glob(
+    ['./array-test-dir/*.js', '!./array-test-dir/excluded.js'],
+    {
+      eager: true,
+      import: 'default',
+    },
+  )
+  document.querySelector('.array-result').textContent = JSON.stringify(
+    arrayModules,
+    null,
+    2,
+  )
+</script>
