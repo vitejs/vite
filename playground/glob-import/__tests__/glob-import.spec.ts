@@ -308,15 +308,19 @@ test('escapes special chars in globs without mangling user supplied glob suffix'
 })
 
 test('subpath imports', async () => {
-  expect(await page.textContent('.subpath-imports')).toMatch('bar foo')
+  await expect
+    .poll(async () => await page.textContent('.subpath-imports'))
+    .toMatch('bar foo')
 })
 
 test('#alias imports', async () => {
-  expect(await page.textContent('.hash-alias-imports')).toMatch('bar foo')
+  await expect
+    .poll(async () => await page.textContent('.hash-alias-imports'))
+    .toMatch('bar foo')
 })
 
 test('import base glob raw', async () => {
-  expect(await page.textContent('.result-base')).toBe(
-    JSON.stringify(baseRawResult, null, 2),
-  )
+  await expect
+    .poll(async () => await page.textContent('.result-base'))
+    .toBe(JSON.stringify(baseRawResult, null, 2))
 })
