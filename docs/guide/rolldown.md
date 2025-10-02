@@ -324,7 +324,7 @@ const plugin = {
 
 Rolldown introduced a [hook filter feature](https://rolldown.rs/plugins/hook-filters) to reduce the communication overhead between the Rust and JavaScript runtimes. This feature allows plugins to specify patterns that determine when hooks should be called, improving performance by avoiding unnecessary hook invocations.
 
-For detailed information on how to use hook filters in your plugins, including code examples and backward compatibility guidance, see the [Hook Filters section in the Plugin Authors guide](/guide/api-plugin#hook-filters).
+See the [Hook Filters guide](/guide/api-plugin#hook-filters) for more information.
 
 ### Converting content to JavaScript in `load` or `transform` hooks
 
