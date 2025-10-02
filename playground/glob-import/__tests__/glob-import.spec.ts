@@ -258,8 +258,9 @@ if (!isBuild) {
 
 test('array pattern with exclusions', async () => {
   // This test verifies that excluded files are properly filtered out
-  const text = await page.textContent('.array-result')
-  const result = JSON.parse(text)
+  const result = await expect
+    .poll(async () => JSON.parse(await page.textContent('.array-result')))
+    .resolves.toBeDefined()
 
   // Should include the included.js file
   expect(result).toHaveProperty('./array-test-dir/included.js', 'included')
