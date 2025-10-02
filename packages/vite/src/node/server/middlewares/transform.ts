@@ -40,14 +40,15 @@ const debugCache = createDebugger('vite:cache')
 
 const knownIgnoreList = new Set(['/', '/favicon.ico'])
 
-const documentFetchDests = new Set<string | undefined>([
+const documentFetchDests = new Set([
   'document',
   'iframe',
   'frame',
   'fencedframe',
 ])
 function isDocumentFetchDest(req: Connect.IncomingMessage) {
-  return documentFetchDests.has(req.headers['sec-fetch-dest'])
+  const fetchDest = req.headers['sec-fetch-dest']
+  return fetchDest !== undefined && documentFetchDests.has(fetchDest)
 }
 
 // TODO: consolidate this regex pattern with the url, raw, and inline checks in plugins
