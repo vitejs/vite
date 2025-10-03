@@ -953,8 +953,18 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
         return
       }
 
+      // vite:asset cleans up earlier assets of 'renderChunk',
+      // but with cssCodeSplit=false we may still emit CSS here.
+      // So is our responsibility to respect emitAssets
+      const canEmitAssets =
+        config.command !== 'build' || this.environment.config.build.emitAssets
+
       // extract as single css bundle if no codesplit
-      if (!this.environment.config.build.cssCodeSplit && !hasEmitted) {
+      if (
+        canEmitAssets &&
+        !this.environment.config.build.cssCodeSplit &&
+        !hasEmitted
+      ) {
         let extractedCss = ''
         const collected = new Set<OutputChunk>()
         // will be populated in order they are used by entry points
