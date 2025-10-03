@@ -548,6 +548,41 @@ normalizePath('foo/bar') // 'foo/bar'
 
 Vite exposes [`@rollup/pluginutils`'s `createFilter`](https://github.com/rollup/plugins/tree/master/packages/pluginutils#createfilter) function to encourage Vite specific plugins and integrations to use the standard include/exclude filtering pattern, which is also used in Vite core itself.
 
+### Hook Filters
+
+Rolldown introduced a [hook filter feature](https://rolldown.rs/plugins/hook-filters) to reduce the communication overhead between the Rust and JavaScript runtimes. This feature allows plugins to specify patterns that determine when hooks should be called, improving performance by avoiding unnecessary hook invocations.
+
+This is also supported by Rollup 4.38.0+ and Vite 6.3.0+. To make your plugin backward compatible with older versions, make sure to also run the filter inside the hook handlers.
+
+```js
+export default function myPlugin() {
+  const jsFileRegex = /\.js$/
+
+  return {
+    name: 'my-plugin',
+    // Example: only call transform for .js files
+    transform: {
+      filter: {
+        id: jsFileRegex,
+      },
+      handler(code, id) {
+        // Additional check for backward compatibility
+        if (!jsFileRegex.test(id)) return null
+
+        return {
+          code: transformCode(code),
+          map: null,
+        }
+      },
+    },
+  }
+}
+```
+
+::: tip
+[`@rolldown/pluginutils`](https://www.npmjs.com/package/@rolldown/pluginutils) exports some utilities for hook filters like `exactRegex` and `prefixRegex`.
+:::
+
 ## Client-server Communication
 
 Since Vite 2.9, we provide some utilities for plugins to help handle the communication with clients.
