@@ -622,6 +622,10 @@ function resolveRolldownOptions(
       // disable builtin process.env.NODE_ENV replacement as it is handled by the define plugin
       'process.env.NODE_ENV': 'process.env.NODE_ENV',
     },
+    transform: {
+      target: options.target === false ? undefined : options.target,
+      ...options.rollupOptions.transform,
+    },
     // TODO: remove this and enable rolldown's CSS support later
     moduleTypes: {
       ...options.rollupOptions.moduleTypes,
