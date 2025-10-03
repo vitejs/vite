@@ -15,6 +15,7 @@ import {
   depsLogString,
   discoverProjectDependencies,
   extractExportsData,
+  getOptimizedBrowserHash,
   getOptimizedDepPath,
   initDepsOptimizerMetadata,
   loadCachedDepOptimizationMetadata,
@@ -236,6 +237,22 @@ export function createDepsOptimizer(
 
               const knownDeps = prepareKnownDeps()
               startNextDiscoveredBatch()
+
+              // Ensure consistent browserHash between in-memory and persisted metadata.
+              // By setting it eagerly here (before scanProcessing resolves), both the
+              // current server and any subsequent server loading _metadata.json will
+              // produce the same browserHash for these deps, avoiding mismatches during
+              // mid-load restarts.
+              // Note that there are still cases where the browserHash is not consistent.
+              // See https://github.com/vitejs/vite/pull/20609#discussion_r2313053174
+              metadata.browserHash = getOptimizedBrowserHash(
+                metadata.hash,
+                depsFromOptimizedDepInfo(knownDeps),
+              )
+
+              for (const dep of Object.keys(metadata.discovered)) {
+                metadata.discovered[dep].browserHash = metadata.browserHash
+              }
 
               // For dev, we run the scanner and the first optimization
               // run on the background
