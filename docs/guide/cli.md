@@ -106,6 +106,8 @@ vite optimize [root]
 
 Locally preview the production build. Do not use this as a production server as it's not designed for it.
 
+This command starts a server in the build directory (by default `dist`). Run `vite build` beforehand to ensure that the build directory is up-to-date. Depending on the project's configured [`appType`](/config/shared-options.html#apptype), it makes use of certain middleware.
+
 #### Usage
 
 ```bash
