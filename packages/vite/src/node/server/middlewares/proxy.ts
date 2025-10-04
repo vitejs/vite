@@ -100,7 +100,8 @@ export function proxyMiddleware(
     }
 
     // Defensive validation: non-empty, looks like a target
-    if (!isLikelyValidProxyTarget(opts.target)) {
+    // Only validate target if there's no bypass function (bypass can work without target)
+    if (!opts.bypass && !isLikelyValidProxyTarget(opts.target)) {
       // Provide actionable error for developers
       throw new Error(
         `Invalid Vite proxy target for rule "${context}": expected a non-empty URL string (e.g. "http://localhost:3000"). ` +
@@ -110,18 +111,23 @@ export function proxyMiddleware(
     }
 
     // extra validation: attempt to construct a URL so absolute urls are enforced
-    try {
-      // allow protocol-relative by using 'http:' base when leading //
-      const tryUrl = opts.target.startsWith('//')
-        ? `http:${opts.target}`
-        : opts.target
-      // This will throw if not a valid URL
-      new URL(tryUrl)
-    } catch (_e) {
-      throw new Error(
-        `Invalid Vite proxy target for rule "${context}": cannot parse URL from ${JSON.stringify(opts.target)}. ` +
-          `Please provide an absolute URL (e.g. "http://127.0.0.1:3000").`,
-      )
+    // Only validate if target exists and there's no bypass
+    if (opts.target && !opts.bypass) {
+      try {
+        // allow protocol-relative by using 'http:' base when leading //
+        const tryUrl = opts.target.startsWith('//')
+          ? `http:${opts.target}`
+          : opts.target
+        // This will throw if not a valid URL
+        new URL(tryUrl)
+      } catch (_e) {
+        throw new Error(
+          `Invalid Vite proxy target for rule "${context}": cannot parse URL from ${JSON.stringify(
+            opts.target,
+          )}. ` +
+            `Please provide an absolute URL (e.g. "http://127.0.0.1:3000").`,
+        )
+      }
     }
 
     const proxy = httpProxy.createProxyServer(opts)
