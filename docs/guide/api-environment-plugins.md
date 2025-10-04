@@ -227,6 +227,8 @@ export default defineConfig({
 
 The `applyToEnvironment` hook is called at config time, currently after `configResolved` due to projects in the ecosystem modifying the plugins in it. Environment plugins resolution may be moved before `configResolved` in the future.
 
+Plugins can use the `environmentConfigResolved(environment)` hook to check the final state of the configuration for each environment, including the resolved environment plugins at `environment.config.plugins`. This hook is called for each resolved environment plugin.
+
 ## Environment in Build Hooks
 
 In the same way as during dev, plugin hooks also receive the environment instance during build, replacing the `ssr` boolean.
