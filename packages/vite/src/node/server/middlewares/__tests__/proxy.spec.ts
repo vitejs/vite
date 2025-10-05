@@ -13,19 +13,35 @@ describe('proxy target validation', () => {
   } as any
 
   it('throws for empty string target', () => {
-    expect(() => proxyMiddleware(null, { '/api': { target: '' } }, mockConfig)).toThrowError(/Invalid Vite proxy target/)
+    expect(() =>
+      proxyMiddleware(null, { '/api': { target: '' } }, mockConfig),
+    ).toThrowError(/Invalid Vite proxy target/)
   })
 
   it('throws for non-string target', () => {
-    expect(() => proxyMiddleware(null, { '/api': { target: null as any } }, mockConfig)).toThrowError(/Invalid Vite proxy target/)
+    expect(() =>
+      proxyMiddleware(null, { '/api': { target: null as any } }, mockConfig),
+    ).toThrowError(/Invalid Vite proxy target/)
   })
 
   it('accepts absolute http target', () => {
-    expect(() => proxyMiddleware(null, { '/api': { target: 'http://localhost:4000' } }, mockConfig)).not.toThrow()
+    expect(() =>
+      proxyMiddleware(
+        null,
+        { '/api': { target: 'http://localhost:4000' } },
+        mockConfig,
+      ),
+    ).not.toThrow()
   })
 
   it('accepts protocol-relative target', () => {
-    expect(() => proxyMiddleware(null, { '/api': { target: '//localhost:4000' } }, mockConfig)).not.toThrow()
+    expect(() =>
+      proxyMiddleware(
+        null,
+        { '/api': { target: '//localhost:4000' } },
+        mockConfig,
+      ),
+    ).not.toThrow()
   })
 
   it('throws for invalid URL', () => {
