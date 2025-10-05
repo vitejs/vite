@@ -286,7 +286,7 @@ Vite plugins can also provide hooks that serve Vite-specific purposes. These hoo
 
   **Storing Server Access**
 
-  In some cases, other plugin hooks may need access to the dev server instance (e.g. accessing the web socket server, the file system watcher, or the module graph). This hook can also be used to store the server instance for access in other hooks:
+  In some cases, other plugin hooks may need access to the dev server instance (e.g. accessing the WebSocket server, the file system watcher, or the module graph). This hook can also be used to store the server instance for access in other hooks:
 
   ```js
   const myPlugin = () => {
