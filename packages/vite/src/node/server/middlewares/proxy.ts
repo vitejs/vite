@@ -122,15 +122,12 @@ export function proxyMiddleware(
         new URL(tryUrl)
       } catch (_e) {
         throw new Error(
-          `Invalid Vite proxy target for rule "${context}": cannot parse URL from ${JSON.stringify(
-            opts.target,
-          )}. ` +
-            `Please provide an absolute URL (e.g. "http://127.0.0.1:3000").`,
+          `Invalid Vite proxy target: cannot parse URL from ${JSON.stringify(opts.target)}. Please provide an absolute URL.`,
         )
-      }
     }
 
     const proxy = httpProxy.createProxyServer(opts)
+      }
 
     if (opts.configure) {
       opts.configure(proxy, opts)
