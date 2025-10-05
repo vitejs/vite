@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { proxyMiddleware } from '../proxy'
-import type { ResolvedConfig } from '../../../..'
+import type { ResolvedConfig } from '../../../config'
 
 describe('proxy target validation', () => {
   const mockConfig: ResolvedConfig = {

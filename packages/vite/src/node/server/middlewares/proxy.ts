@@ -115,9 +115,8 @@ export function proxyMiddleware(
     if (opts.target && !opts.bypass) {
       try {
         // allow protocol-relative by using 'http:' base when leading //
-        const tryUrl = opts.target.startsWith('//')
-          ? `http:${opts.target}`
-          : opts.target
+        const target = opts.target as string
+        const tryUrl = target.startsWith('//') ? `http:${target}` : target
         // This will throw if not a valid URL
         new URL(tryUrl)
       } catch (_e) {
