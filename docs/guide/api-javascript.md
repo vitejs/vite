@@ -114,7 +114,7 @@ interface ViteDevServer {
    */
   watcher: FSWatcher
   /**
-   * Web socket server with `send(payload)` method.
+   * WebSocket server with `send(payload)` method.
    */
   ws: WebSocketServer
   /**
