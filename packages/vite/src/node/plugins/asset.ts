@@ -449,10 +449,11 @@ export async function urlToBuiltUrl(
   if (checkPublicFile(url, topLevelConfig)) {
     return publicFileToBuiltUrl(url, topLevelConfig)
   }
-  const file =
+  const file = normalizePath(
     url[0] === '/'
       ? path.join(topLevelConfig.root, url)
-      : path.join(path.dirname(importer), url)
+      : path.join(path.dirname(importer), url),
+  )
   return fileToBuiltUrl(
     pluginContext,
     file,
