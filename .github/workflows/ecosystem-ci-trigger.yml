@@ -9,7 +9,7 @@ jobs:
     runs-on: ubuntu-latest
     if: github.repository == 'vitejs/vite' && github.event.issue.pull_request && startsWith(github.event.comment.body, '/ecosystem-ci run')
     permissions:
-      issues: write # to add / delete reactions
+      issues: write # to add / delete reactions, post comments
       pull-requests: write # to read PR data, and to add labels
       actions: read # to check workflow status
       contents: read # to clone the repo
@@ -66,6 +66,37 @@ jobs:
               repo: context.repo.repo,
               pull_number: context.issue.number
             })
+
+            const commentCreatedAt = new Date(context.payload.comment.created_at)
+            const commitPushedAt = new Date(pr.head.repo.pushed_at)
+
+            console.log(`Comment created at: ${commentCreatedAt.toISOString()}`)
+            console.log(`PR last pushed at: ${commitPushedAt.toISOString()}`)
+
+            // Check if any commits were pushed after the comment was created
+            if (commitPushedAt > commentCreatedAt) {
+              const errorMsg = [
+                '⚠️ Security warning: PR was updated after the trigger command was posted.',
+                '',
+                `Comment posted at: ${commentCreatedAt.toISOString()}`,
+                `PR last pushed at: ${commitPushedAt.toISOString()}`,
+                '',
+                'This could indicate an attempt to inject code after approval.',
+                'Please review the latest changes and re-run /ecosystem-ci run if they are acceptable.'
+              ].join('\n')
+
+              core.setFailed(errorMsg)
+
+              await github.rest.issues.createComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: context.issue.number,
+                body: errorMsg
+              })
+
+              throw new Error('PR was pushed to after comment was created')
+            }
+
             core.setOutput('head_sha', pr.head.sha)
             return {
               num: context.issue.number,
