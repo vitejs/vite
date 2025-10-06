@@ -230,6 +230,7 @@ export function assetPlugin(config: ResolvedConfig): Plugin {
     generateBundle(_, bundle) {
       // Remove empty entry point file
       let importedFiles: Set<string> | undefined
+      const importedCssAssets = new Set<string>()
       for (const file in bundle) {
         const chunk = bundle[file]
         if (
@@ -254,6 +255,24 @@ export function assetPlugin(config: ResolvedConfig): Plugin {
             }
           }
           if (!importedFiles.has(file)) {
+            delete bundle[file]
+          }
+        }
+        if (chunk.type === 'chunk' && chunk.viteMetadata) {
+          for (const importedAsset of chunk.viteMetadata.importedAssets) {
+            importedCssAssets.add(importedAsset)
+          }
+          for (const importedCss of chunk.viteMetadata.importedCss) {
+            importedCssAssets.add(importedCss)
+          }
+        }
+      }
+
+      // Remove CSS and assets that were not imported by any chunk
+      for (const file in bundle) {
+        const chunk = bundle[file]
+        if (chunk.type === 'asset' && importedCssAssets) {
+          if (!importedCssAssets.has(cleanUrl(chunk.fileName))) {
             delete bundle[file]
           }
         }
