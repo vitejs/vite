@@ -259,7 +259,7 @@ jobs:
                 prNumber: '' + prData.num,
                 branchName: prData.branchName,
                 repo: prData.repo,
-                commit: process.env.COLLISION === 'false' ? prData.commit : '',
+                commit: prData.commit,
                 suite: suite === '' ? '-' : suite
               }
             })
