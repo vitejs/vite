@@ -13,7 +13,7 @@
     "@types/express": "^5.0.3",
     "feed": "^5.1.0",
     "gsap": "^3.13.0",
-    "markdown-it-image-size": "^14.9.0",
+    "markdown-it-image-size": "^15.0.1",
     "vitepress": "^2.0.0-alpha.12",
     "vitepress-plugin-group-icons": "^1.6.3",
     "vitepress-plugin-llms": "^1.8.0",

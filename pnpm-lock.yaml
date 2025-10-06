@@ -136,8 +136,8 @@ importers:
         specifier: ^3.13.0
         version: 3.13.0
       markdown-it-image-size:
-        specifier: ^14.9.0
-        version: 14.9.0(markdown-it@14.1.0)
+        specifier: ^15.0.1
+        version: 15.0.1(markdown-it@14.1.0)
       vitepress:
         specifier: ^2.0.0-alpha.12
         version: 2.0.0-alpha.12(axios@1.12.2)(postcss@8.5.6)(typescript@5.9.2)
@@ -5749,8 +5749,8 @@ packages:
   mark.js@8.11.1:
     resolution: {integrity: sha512-1I+1qpDt4idfgLQG+BNWmrqku+7/2bi5nLf4YwF8y8zXvmfiTBY3PV3ZibfrjBueCByROpuBjLLFCajqkgYoLQ==}
 
-  markdown-it-image-size@14.9.0:
-    resolution: {integrity: sha512-2JHjZKDRNeNeRWBHQ5a5dqSuS96rEkGJaOerecxiH2GzO4LYt4GUuITihDpnL7lkJoUzthciu6XPS6W/RiO3VQ==}
+  markdown-it-image-size@15.0.1:
+    resolution: {integrity: sha512-qnnnYtXXdUsBtNyywsMpgXDGi0X4Judba0+MJFGa2GrKrE9zwWlng+3GWlv2uRRtM0BO/le3G6x1Xw/iCjiT5g==}
     engines: {node: '>= 20'}
     peerDependencies:
       markdown-it: '>= 10 < 15'
@@ -11583,7 +11583,7 @@ snapshots:
 
   mark.js@8.11.1: {}
 
-  markdown-it-image-size@14.9.0(markdown-it@14.1.0):
+  markdown-it-image-size@15.0.1(markdown-it@14.1.0):
     dependencies:
       '@types/markdown-it': 14.1.2
       flat-cache: 6.1.17
