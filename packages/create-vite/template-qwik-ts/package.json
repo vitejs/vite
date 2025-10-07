@@ -12,7 +12,7 @@
     "@types/node": "^24.6.0",
     "serve": "^14.2.5",
     "typescript": "~5.9.3",
-    "vite": "npm:rolldown-vite@^7.1.15"
+    "vite": "npm:rolldown-vite@^7.1.16"
   },
   "dependencies": {
     "@builder.io/qwik": "^1.16.1"

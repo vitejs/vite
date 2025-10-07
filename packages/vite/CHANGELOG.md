@@ -1,3 +1,16 @@
+## <small>[7.1.16](https://github.com/vitejs/rolldown-vite/compare/v7.1.15...v7.1.16) (2025-10-07)</small>
+### Features
+
+* update rolldown ([#443](https://github.com/vitejs/rolldown-vite/issues/443)) ([4eb7418](https://github.com/vitejs/rolldown-vite/commit/4eb7418726d99899b66c95ecb3049055464a6a5f))
+
+### Bug Fixes
+
+* set transform target ([#441](https://github.com/vitejs/rolldown-vite/issues/441)) ([80ec52c](https://github.com/vitejs/rolldown-vite/commit/80ec52cd696352b14dde6e8a4361edb11a9d4e77))
+
+### Reverts
+
+* **server:** drain stdin when not interactive ([#20885](https://github.com/vitejs/rolldown-vite/issues/20885)) ([12d72b0](https://github.com/vitejs/rolldown-vite/commit/12d72b0538ef1540bfb0f1dd8a44b75deaa3464e))
+
 ## <small>[7.1.15](https://github.com/vitejs/rolldown-vite/compare/v7.1.14...v7.1.15) (2025-10-02)</small>
 ### Bug Fixes
 
