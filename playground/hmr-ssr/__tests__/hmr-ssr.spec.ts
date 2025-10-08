@@ -974,6 +974,7 @@ async function untilConsoleLog(
   expectOrder = true,
 ): Promise<string[]> {
   const { promise, resolve, reject } = promiseWithResolvers<void>()
+  let timeoutId: ReturnType<typeof setTimeout>
 
   const logsMessages = []
 
@@ -1024,12 +1025,27 @@ async function untilConsoleLog(
       }
     }
 
+    timeoutId = setTimeout(() => {
+      const nextTarget = Array.isArray(target)
+        ? expectOrder
+          ? target[0]
+          : target.join(', ')
+        : target
+      reject(
+        new Error(
+          `Timeout waiting for console logs. Waiting for: ${nextTarget}`,
+        ),
+      )
+      logsEmitter.off('log', handleMsg)
+    }, 5000)
+
     logsEmitter.on('log', handleMsg)
   } catch (err) {
     reject(err)
   }
 
   await promise
+  clearTimeout(timeoutId)
 
   return logsMessages
 }
