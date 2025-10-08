@@ -1107,4 +1107,27 @@ if (!isBuild) {
       await loadPromise
     }, [/connected/, 'a.js'])
   })
+
+  test('deduplicate server rendered link stylesheet', async () => {
+    await page.goto(viteTestUrl + '/css-link/index.html')
+    await expect.poll(() => getColor('.test-css-link')).toBe('orange')
+
+    // remove color
+    editFile('css-link/styles.css', (code) =>
+      code.replace('color: orange;', '/* removed */'),
+    )
+    await expect.poll(() => getColor('.test-css-link')).toBe('black')
+
+    // add color
+    editFile('css-link/styles.css', (code) =>
+      code.replace('/* removed */', 'color: blue;'),
+    )
+    await expect.poll(() => getColor('.test-css-link')).toBe('blue')
+
+    // // remove css import from js
+    editFile('css-link/main.js', (code) =>
+      code.replace(`import './styles.css'`, ``),
+    )
+    await expect.poll(() => getColor('.test-css-link')).toBe('black')
+  })
 }
