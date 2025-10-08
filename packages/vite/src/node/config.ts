@@ -2111,7 +2111,15 @@ async function loadConfigFromBundledFile(
     try {
       return (await import(pathToFileURL(tempFileName).href)).default
     } finally {
-      fs.unlink(tempFileName, () => {}) // Ignore errors
+      if (nodeModulesDir) {
+        fs.rm(
+          path.resolve(nodeModulesDir, '.vite-temp'),
+          { recursive: true },
+          () => {},
+        ) // Ignore errors
+      } else {
+        fs.unlink(tempFileName, () => {}) // Ignore errors
+      }
     }
   }
   // for cjs, we can register a custom loader via `_require.extensions`
