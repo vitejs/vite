@@ -8,7 +8,7 @@ export type RuntimeLogPayload = {
   }
 }
 
-export function setupRuntimeLog(
+export function setupRuntimeLogHandler(
   transport: NormalizedModuleRunnerTransport,
 ): void {
   function sendError(error: any) {
