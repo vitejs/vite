@@ -6,17 +6,14 @@ import type { DevEnvironment, Plugin } from '..'
 import { normalizePath } from '..'
 import { generateCodeFrame } from '../utils'
 
-export function runtimeLogPlugin(pluginOpts?: {
-  /** @default ["client"] */
-  environments?: string[]
+export function runtimeLogPlugin(pluginOpts: {
+  environments: string[]
 }): Plugin {
-  const environmentNames = pluginOpts?.environments || ['client']
-
   return {
     name: 'vite:runtime-log',
     apply: 'serve',
     configureServer(server) {
-      for (const name of environmentNames) {
+      for (const name of pluginOpts.environments) {
         const environment = server.environments[name]
         environment.hot.on('vite:runtime-log', (payload: RuntimeLogPayload) => {
           const output = formatError(payload.error, environment)
