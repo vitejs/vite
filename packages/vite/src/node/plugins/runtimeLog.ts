@@ -79,7 +79,9 @@ function formatError(error: any, environment: DevEnvironment) {
   const errorName = error.name || 'Unknown Error'
   output += c.red(`[Unhandled error] ${c.bold(errorName)}: ${error.message}\n`)
   for (const stack of stacks) {
-    const file = path.relative(environment.config.root, stack.file)
+    const file = normalizePath(
+      path.relative(environment.config.root, stack.file),
+    )
     output += ` > ${[stack.method, `${file}:${stack.line}:${stack.column}`]
       .filter(Boolean)
       .join(' ')}\n`
