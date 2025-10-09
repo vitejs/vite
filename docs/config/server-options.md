@@ -233,30 +233,19 @@ The error that appears in the Browser when the fallback happens can be ignored. 
 
 Forward unhandled runtime errors from the browser to the Vite server console during development. When enabled, errors like unhandled promise rejections and uncaught exceptions that occur in the browser will be logged in the server terminal with enhanced formatting, for example:
 
-- Source-mapped stack traces
-- Code frames showing the error location
-- Relative file paths for easier navigation
-
-This helps developers quickly identify and debug client-side runtime errors without having to check the browser console.
-
-::: tip
-This feature is particularly useful when:
-
-- Developing applications where browser console access is limited
-- Working with AI coding assistants that can only see terminal output
-- Debugging in headless browser environments
-- You prefer to see all errors in a centralized location
-  :::
-
-Example configuration:
-
-```js
-export default defineConfig({
-  server: {
-    forwardRuntimeLogs: true,
-  },
-})
+```log
+1:18:38 AM [vite] (client) [Unhandled error] Error: this is test error
+ > testError src/main.ts:20:8
+     18|
+     19| function testError() {
+     20|   throw new Error('this is test error')
+       |        ^
+     21| }
+     22|
+ > HTMLButtonElement.<anonymous> src/main.ts:6:2
 ```
+
+This feature is useful when working with AI coding assistants that sees terminal output for the context.
 
 ## server.warmup
 
