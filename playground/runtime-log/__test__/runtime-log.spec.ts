@@ -14,7 +14,6 @@ test.runIf(isServe)('unhandled error', async () => {
      22| 
  > HTMLButtonElement.<anonymous> src/main.ts:6:2
 `)
-  console.log(serverLogs.at(-1))
 })
 
 test.runIf(isServe)('unhandled rejection', async () => {
