@@ -89,7 +89,7 @@ function formatError(error: any, environment: DevEnvironment) {
     if (stack === nearest) {
       const code = fs.readFileSync(stack.file, 'utf-8')
       // TODO: highlight?
-      output += generateCodeFrame(code, stack)
+      output += generateCodeFrame(code, stack).replace(/^/gm, '    ')
       output += '\n'
     }
   }

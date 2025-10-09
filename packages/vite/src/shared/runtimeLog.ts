@@ -1,4 +1,4 @@
-import type { NormalizedModuleRunnerTransport } from '../../shared/moduleRunnerTransport'
+import type { NormalizedModuleRunnerTransport } from './moduleRunnerTransport'
 
 export type RuntimeLogPayload = {
   error: {

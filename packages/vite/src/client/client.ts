@@ -6,7 +6,7 @@ import {
   normalizeModuleRunnerTransport,
 } from '../shared/moduleRunnerTransport'
 import { createHMRHandler } from '../shared/hmrHandler'
-import { setupRuntimeLog } from '../node/plugins/runtimeLog-shared'
+import { setupRuntimeLogHandler } from '../shared/runtimeLog'
 import { ErrorOverlay, cspNonce, overlayId } from './overlay'
 import '@vite/env'
 
@@ -169,7 +169,7 @@ const hmrClient = new HMRClient(
   },
 )
 transport.connect!(createHMRHandler(handleMessage))
-setupRuntimeLog(transport)
+setupRuntimeLogHandler(transport)
 
 async function handleMessage(payload: HotPayload) {
   switch (payload.type) {
