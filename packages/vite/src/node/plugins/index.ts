@@ -74,8 +74,8 @@ export async function resolvePlugins(
     wasmHelperPlugin(),
     webWorkerPlugin(config),
     assetPlugin(config),
-    // TODO: opt-in
-    runtimeLogPlugin({ environments: ['client'] }),
+    config.server.forwardRuntimeLogs &&
+      runtimeLogPlugin({ environments: ['client'] }),
 
     ...normalPlugins,
 

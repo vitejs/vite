@@ -188,6 +188,8 @@ export interface ServerOptions extends CommonServerOptions {
     server: ViteDevServer,
     hmr: (environment: DevEnvironment) => Promise<void>,
   ) => Promise<void>
+
+  forwardRuntimeLogs?: boolean
 }
 
 export interface ResolvedServerOptions
@@ -1103,6 +1105,7 @@ export const serverConfigDefaults = Object.freeze({
   // sourcemapIgnoreList
   perEnvironmentStartEndDuringDev: false,
   // hotUpdateEnvironments
+  forwardRuntimeLogs: false,
 } satisfies ServerOptions)
 
 export function resolveServerOptions(
