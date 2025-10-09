@@ -1,9 +1,11 @@
+import { stripVTControlCharacters } from 'node:util'
 import { expect, test } from 'vitest'
 import { isServe, page, serverLogs } from '~utils'
 
 test.runIf(isServe)('unhandled error', async () => {
   await page.click('#test-error')
-  await expect.poll(() => serverLogs.at(-1)).toEqual(`\
+  await expect.poll(() => stripVTControlCharacters(serverLogs.at(-1)))
+    .toEqual(`\
 [Unhandled error] Error: this is test error
  > testError src/main.ts:20:8
      18| 
@@ -18,7 +20,8 @@ test.runIf(isServe)('unhandled error', async () => {
 
 test.runIf(isServe)('unhandled rejection', async () => {
   await page.click('#test-unhandledrejection')
-  await expect.poll(() => serverLogs.at(-1)).toEqual(`\
+  await expect.poll(() => stripVTControlCharacters(serverLogs.at(-1)))
+    .toEqual(`\
 [Unhandled error] Error: this is test unhandledrejection
  > testUnhandledRejection src/main.ts:24:8
      22| 
