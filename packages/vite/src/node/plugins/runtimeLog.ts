@@ -2,6 +2,7 @@ import path from 'node:path'
 import fs from 'node:fs'
 import { stripVTControlCharacters } from 'node:util'
 import { parseErrorStacktrace } from '@vitest/utils/source-map'
+import c from 'picocolors'
 import type { DevEnvironment, Plugin } from '..'
 import { normalizePath } from '..'
 
@@ -19,7 +20,7 @@ export function runtimeLogPlugin(pluginOpts?: {
         const environment = server.environments[name]
         environment.hot.on('vite:runtime-log', (payload: RuntimeLogPayload) => {
           const output = formatError(payload.error, environment)
-          environment.config.logger.error('[RUNTIME] ' + output, {
+          environment.config.logger.error(output, {
             timestamp: true,
           })
         })
@@ -78,7 +79,8 @@ function formatError(error: any, environment: DevEnvironment) {
   })
 
   let output = ''
-  output += `${error.name}: ${error.message}\n`
+  const errorName = error.name || 'Unknown Error'
+  output += c.red(`[Unhandled error] ${c.bold(errorName)}: ${error.message}\n`)
   for (const stack of stacks) {
     const file = path.relative(environment.config.root, stack.file)
     output += ` > ${[stack.method, `${file}:${stack.line}:${stack.column}`]
@@ -86,16 +88,12 @@ function formatError(error: any, environment: DevEnvironment) {
       .join(' ')}\n`
     if (stack === nearest) {
       const code = fs.readFileSync(stack.file, 'utf-8')
+      // TODO: highlight
       output += generateCodeFrame(code, 4, stack)
       output += '\n'
     }
   }
   return output
-}
-
-const c = {
-  gray: (s: string) => s,
-  red: (s: string) => s,
 }
 
 function generateCodeFrame(

@@ -17,9 +17,9 @@ export type AnotherPadding = {
 }
 
 function testError() {
-  throw new Error('testError')
+  throw new Error('this is test error')
 }
 
 async function testUnhandledRejection() {
-  throw new Error('testUnhandledRejection')
+  throw new Error('this is test unhandledrejection')
 }
