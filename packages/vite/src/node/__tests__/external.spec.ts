@@ -7,12 +7,12 @@ import { PartialEnvironment } from '../baseEnvironment'
 describe('createIsConfiguredAsExternal', () => {
   test('default', async () => {
     const isExternal = await createIsExternal()
-    expect(isExternal('@vitejs/cjs-ssr-dep')).toBe(false)
+    expect(await isExternal('@vitejs/cjs-ssr-dep')).toBe(false)
   })
 
   test('force external', async () => {
     const isExternal = await createIsExternal(true)
-    expect(isExternal('@vitejs/cjs-ssr-dep')).toBe(true)
+    expect(await isExternal('@vitejs/cjs-ssr-dep')).toBe(true)
   })
 })
 
