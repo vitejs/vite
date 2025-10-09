@@ -245,7 +245,7 @@ Forward unhandled runtime errors from the browser to the Vite server console dur
  > HTMLButtonElement.<anonymous> src/main.ts:6:2
 ```
 
-This feature is useful when working with AI coding assistants that sees terminal output for the context.
+This feature is useful when working with AI coding assistants that can only see terminal output for context.
 
 ## server.warmup
 
