@@ -28,6 +28,7 @@ import {
   createFilterForTransform,
   createIdFilter,
 } from './pluginFilter'
+import { runtimeLogPlugin } from './runtimeLog'
 
 export async function resolvePlugins(
   config: ResolvedConfig,
@@ -73,6 +74,8 @@ export async function resolvePlugins(
     wasmHelperPlugin(),
     webWorkerPlugin(config),
     assetPlugin(config),
+    // TODO: opt-in
+    runtimeLogPlugin({ environments: ['client'] }),
 
     ...normalPlugins,
 
