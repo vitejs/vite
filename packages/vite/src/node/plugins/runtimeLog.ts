@@ -15,7 +15,7 @@ export function runtimeLogPlugin(pluginOpts: {
     configureServer(server) {
       for (const name of pluginOpts.environments) {
         const environment = server.environments[name]
-        environment.hot.on('vite:runtime-log', (payload: RuntimeLogPayload) => {
+        environment.hot.on('vite:runtime-log', (payload) => {
           const output = formatError(payload.error, environment)
           environment.config.logger.error(output, {
             timestamp: true,
@@ -23,14 +23,6 @@ export function runtimeLogPlugin(pluginOpts: {
         })
       }
     },
-  }
-}
-
-type RuntimeLogPayload = {
-  error: {
-    name: string
-    message: string
-    stack?: string
   }
 }
 
@@ -64,7 +56,7 @@ function formatError(error: any, environment: DevEnvironment) {
         return environment.moduleGraph.getModuleById(id)?.transformResult?.map
       }
     },
-    // Vitest uses to skip internal files
+    // Vitest uses this option to skip internal files
     // https://github.com/vitejs/vitest/blob/4783137cd8d766cf998bdf2d638890eaa51e08d9/packages/utils/src/source-map.ts#L17
     ignoreStackEntries: [],
   })

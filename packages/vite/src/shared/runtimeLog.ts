@@ -1,12 +1,5 @@
+import type { RuntimeLogPayload } from 'types/customEvent'
 import type { NormalizedModuleRunnerTransport } from './moduleRunnerTransport'
-
-export type RuntimeLogPayload = {
-  error: {
-    name: string
-    message: string
-    stack?: string
-  }
-}
 
 export function setupRuntimeLogHandler(
   transport: NormalizedModuleRunnerTransport,
@@ -18,9 +11,9 @@ export function setupRuntimeLogHandler(
       event: 'vite:runtime-log',
       data: {
         error: {
-          name: error.name,
-          message: error.message,
-          stack: error.stack,
+          name: error?.name || 'Error',
+          message: error?.message || String(error),
+          stack: error?.stack,
         },
       } satisfies RuntimeLogPayload,
     })

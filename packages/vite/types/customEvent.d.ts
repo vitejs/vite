@@ -12,6 +12,7 @@ export interface CustomEventMap {
   'vite:beforeFullReload': FullReloadPayload
   'vite:error': ErrorPayload
   'vite:invalidate': InvalidatePayload
+  'vite:runtime-log': RuntimeLogPayload
   'vite:ws:connect': WebSocketConnectionPayload
   'vite:ws:disconnect': WebSocketConnectionPayload
 }
@@ -31,6 +32,14 @@ export interface InvalidatePayload {
   path: string
   message: string | undefined
   firstInvalidatedBy: string
+}
+
+export interface RuntimeLogPayload {
+  error: {
+    name: string
+    message: string
+    stack?: string
+  }
 }
 
 /**
