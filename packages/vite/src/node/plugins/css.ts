@@ -1,7 +1,6 @@
 import fs from 'node:fs'
 import fsp from 'node:fs/promises'
 import path from 'node:path'
-import { createRequire } from 'node:module'
 import { fileURLToPath, pathToFileURL } from 'node:url'
 import postcssrc from 'postcss-load-config'
 import type {
@@ -79,15 +78,17 @@ import {
   processSrcSet,
   removeDirectQuery,
   removeUrlQuery,
-  requireResolveFromRootWithFallback,
   stripBomTag,
   urlRE,
 } from '../utils'
 import type { Logger } from '../logger'
 import { cleanUrl, isWindows, slash } from '../../shared/utils'
 import { NULL_BYTE_PLACEHOLDER } from '../../shared/constants'
-import { createBackCompatIdResolver } from '../idResolver'
-import type { ResolveIdFn } from '../idResolver'
+import {
+  createBackCompatIdResolver,
+  createNodeResolverWithVite,
+} from '../idResolver'
+import type { NodeResolveWithViteFn, ResolveIdFn } from '../idResolver'
 import { PartialEnvironment } from '../baseEnvironment'
 import type { TransformPluginContext } from '../server/pluginContainer'
 import { searchForWorkspaceRoot } from '../server/searchRoot'
@@ -1562,7 +1563,7 @@ async function compilePostCSS(
 
   const postcssOptions = postcssConfig?.options ?? {}
   const postcssParser =
-    lang === 'sss' ? loadSss(config.root) : postcssOptions.parser
+    lang === 'sss' ? await loadSss(config.root) : postcssOptions.parser
 
   if (!postcssPlugins.length && !postcssParser) {
     return
@@ -1588,11 +1589,12 @@ async function transformSugarSS(
   const { config } = environment
   const { devSourcemap } = config.css
 
+  const sssParser = await loadSss(config.root)
   const result = await runPostCSS(
     id,
     code,
     [],
-    { parser: loadSss(config.root) },
+    { parser: sssParser },
     undefined,
     environment.logger,
     devSourcemap,
@@ -2312,47 +2314,46 @@ export interface StylePreprocessorResults {
 }
 
 const loadedPreprocessorPath: Partial<
-  Record<PreprocessLang | PostCssDialectLang | 'sass-embedded', string>
+  Record<
+    PreprocessLang | PostCssDialectLang | 'sass-embedded',
+    string | Promise<string>
+  >
 > = {}
+let nodeResolveWithVite: NodeResolveWithViteFn | undefined
 
-function loadPreprocessorPath(
+async function loadPreprocessorPath(
   lang: PreprocessLang | PostCssDialectLang | 'sass-embedded',
   root: string,
-): string {
+): Promise<string> {
   const cached = loadedPreprocessorPath[lang]
   if (cached) {
     return cached
   }
-  try {
-    const resolved = requireResolveFromRootWithFallback(root, lang)
-    return (loadedPreprocessorPath[lang] = resolved)
-  } catch (e) {
-    if (e.code === 'MODULE_NOT_FOUND') {
-      const installCommand = getPackageManagerCommand('install')
-      throw new Error(
-        `Preprocessor dependency "${lang}" not found. Did you install it? Try \`${installCommand} -D ${lang}\`.`,
-      )
-    } else {
-      const message = new Error(
-        `Preprocessor dependency "${lang}" failed to load:\n${e.message}`,
-      )
-      message.stack = e.stack + '\n' + message.stack
-      throw message
-    }
-  }
+  loadedPreprocessorPath[lang] = (async () => {
+    nodeResolveWithVite ??= await createNodeResolverWithVite(root)
+
+    const resolved = nodeResolveWithVite(lang, path.join(root, '*'))
+    if (resolved) return (loadedPreprocessorPath[lang] = resolved)
+
+    const installCommand = getPackageManagerCommand('install')
+    throw new Error(
+      `Preprocessor dependency "${lang}" not found. Did you install it? Try \`${installCommand} -D ${lang}\`.`,
+    )
+  })()
+  return loadedPreprocessorPath[lang]
 }
 
-function loadSassPackage(root: string): {
+async function loadSassPackage(root: string): Promise<{
   name: 'sass' | 'sass-embedded'
   path: string
-} {
+}> {
   // try sass-embedded before sass
   try {
-    const path = loadPreprocessorPath('sass-embedded', root)
+    const path = await loadPreprocessorPath('sass-embedded', root)
     return { name: 'sass-embedded', path }
   } catch (e1) {
     try {
-      const path = loadPreprocessorPath(PreprocessLang.sass, root)
+      const path = await loadPreprocessorPath(PreprocessLang.sass, root)
       return { name: 'sass', path }
     } catch {
       throw e1
@@ -2360,12 +2361,15 @@ function loadSassPackage(root: string): {
   }
 }
 
-let cachedSss: PostCSS.Syntax
-function loadSss(root: string): PostCSS.Syntax {
-  if (cachedSss) return cachedSss
-
-  const sssPath = loadPreprocessorPath(PostCssDialectLang.sss, root)
-  cachedSss = createRequire(/** #__KEEP__ */ import.meta.url)(sssPath)
+let cachedSss: PostCSS.Syntax | Promise<PostCSS.Syntax>
+async function loadSss(root: string): Promise<PostCSS.Syntax> {
+  if (!cachedSss) {
+    cachedSss = (async () => {
+      const sssPath = await loadPreprocessorPath(PostCssDialectLang.sss, root)
+      const resolved = await import(pathToFileURL(sssPath).href)
+      return (cachedSss = resolved)
+    })()
+  }
   return cachedSss
 }
 
@@ -2415,10 +2419,7 @@ const makeScssWorker = (
 
   const worker: WorkerType = {
     async run(sassPath, data, options) {
-      // need pathToFileURL for windows since import("D:...") fails
-      // https://github.com/nodejs/node/issues/31710
-      const sass: typeof Sass = (await import(pathToFileURL(sassPath).href))
-        .default
+      const sass: typeof Sass = (await import(sassPath)).default
       compilerPromise ??= sass.initAsyncCompiler()
       const compiler = await compilerPromise
 
@@ -2519,7 +2520,7 @@ const scssProcessor = (
       worker?.stop()
     },
     async process(environment, source, root, options, resolvers) {
-      const sassPackage = loadSassPackage(root)
+      const sassPackage = await loadSassPackage(root)
       worker ??= makeScssWorker(environment, resolvers, maxWorkers)
 
       const { content: data, map: additionalMap } = await getSource(
@@ -2535,7 +2536,7 @@ const scssProcessor = (
       }
       try {
         const result = await worker.run(
-          sassPackage.path,
+          pathToFileURL(sassPackage.path).href,
           data,
           optionsWithoutAdditionalData,
         )
@@ -2796,9 +2797,7 @@ const lessProcessor = (
       worker?.stop()
     },
     async process(environment, source, root, options, resolvers) {
-      const lessPath = pathToFileURL(
-        loadPreprocessorPath(PreprocessLang.less, root),
-      ).href
+      const lessPath = await loadPreprocessorPath(PreprocessLang.less, root)
       worker ??= makeLessWorker(environment, resolvers, maxWorkers)
 
       const { content, map: additionalMap } = await getSource(
@@ -2815,7 +2814,7 @@ const lessProcessor = (
       }
       try {
         result = await worker.run(
-          lessPath,
+          pathToFileURL(lessPath).href,
           content,
           optionsWithoutAdditionalData,
         )
@@ -2917,9 +2916,7 @@ const stylProcessor = (
       worker?.stop()
     },
     async process(_environment, source, root, options, _resolvers) {
-      const stylusPath = pathToFileURL(
-        loadPreprocessorPath(PreprocessLang.stylus, root),
-      ).href
+      const stylusPath = await loadPreprocessorPath(PreprocessLang.stylus, root)
       worker ??= makeStylWorker(maxWorkers)
 
       // Get source with preprocessor options.additionalData. Make sure a new line separator
@@ -2942,7 +2939,7 @@ const stylProcessor = (
       }
       try {
         const { code, map, deps } = await worker.run(
-          stylusPath,
+          pathToFileURL(stylusPath).href,
           content,
           root,
           optionsWithoutAdditionalData,

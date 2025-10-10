@@ -1,4 +1,5 @@
 import { pathToFileURL } from 'node:url'
+import path from 'node:path'
 import type {
   TerserMinifyOptions,
   TerserMinifyOutput,
@@ -6,7 +7,8 @@ import type {
 import { WorkerWithFallback } from 'artichokie'
 import type { Plugin } from '../plugin'
 import type { ResolvedConfig } from '..'
-import { generateCodeFrame, requireResolveFromRootWithFallback } from '../utils'
+import { generateCodeFrame } from '../utils'
+import { createNodeResolverWithVite } from '../idResolver'
 
 export interface TerserOptions extends TerserMinifyOptions {
   /**
@@ -18,21 +20,18 @@ export interface TerserOptions extends TerserMinifyOptions {
   maxWorkers?: number
 }
 
-let terserPath: string | undefined
+let terserPath: string | Promise<string> | undefined
 const loadTerserPath = (root: string) => {
-  if (terserPath) return terserPath
-  try {
-    terserPath = requireResolveFromRootWithFallback(root, 'terser')
-  } catch (e) {
-    if (e.code === 'MODULE_NOT_FOUND') {
+  if (!terserPath) {
+    terserPath = (async () => {
+      const nodeResolveWithVite = await createNodeResolverWithVite(root)
+      const resolved = nodeResolveWithVite('terser', path.join(root, '*'))
+      if (resolved) return (terserPath = resolved)
+
       throw new Error(
         'terser not found. Since Vite v3, terser has become an optional dependency. You need to install it.',
       )
-    } else {
-      const message = new Error(`terser failed to load:\n${e.message}`)
-      message.stack = e.stack + '\n' + message.stack
-      throw message
-    }
+    })()
   }
   return terserPath
 }
@@ -106,7 +105,7 @@ export function terserPlugin(config: ResolvedConfig): Plugin {
       // Lazy load worker.
       worker ||= makeWorker()
 
-      const terserPath = pathToFileURL(loadTerserPath(config.root)).href
+      const terserPath = pathToFileURL(await loadTerserPath(config.root)).href
       try {
         const res = await worker.run(terserPath, code, {
           safari10: true,
