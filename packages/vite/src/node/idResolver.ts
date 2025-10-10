@@ -1,12 +1,13 @@
 import type { PartialResolvedId } from 'rollup'
 import aliasPlugin from '@rollup/plugin-alias'
-import type { ResolvedConfig } from './config'
+import { type ResolvedConfig, configDefaults } from './config'
 import type { EnvironmentPluginContainer } from './server/pluginContainer'
 import { createEnvironmentPluginContainer } from './server/pluginContainer'
-import { resolvePlugin } from './plugins/resolve'
+import { resolvePlugin, tryNodeResolve } from './plugins/resolve'
 import type { InternalResolveOptions } from './plugins/resolve'
 import type { Environment } from './environment'
 import type { PartialEnvironment } from './baseEnvironment'
+import { nodeLikeBuiltins } from './utils'
 
 export type ResolveIdFn = (
   environment: PartialEnvironment,
@@ -108,5 +109,43 @@ export function createIdResolver(
     // we cast it as PluginEnvironment to be able to use the pluginContainer
     const resolved = await resolveFn(environment, id, importer)
     return resolved?.id
+  }
+}
+
+export type NodeResolveWithViteFn = (
+  id: string,
+  importer?: string,
+  isRequire?: boolean,
+) => string | undefined
+
+export async function createNodeResolverWithVite(
+  root: string,
+): Promise<NodeResolveWithViteFn> {
+  const isModuleSyncConditionEnabled = (await import('#module-sync-enabled'))
+    .default
+
+  return (id, importer, isRequire) => {
+    return tryNodeResolve(id, importer, {
+      root,
+      isBuild: true,
+      isProduction: true,
+      preferRelative: false,
+      tryIndex: true,
+      mainFields: [],
+      conditions: [
+        'node',
+        ...(isModuleSyncConditionEnabled ? ['module-sync'] : []),
+      ],
+      externalConditions: [],
+      external: [],
+      noExternal: [],
+      dedupe: [],
+      extensions: configDefaults.resolve.extensions,
+      preserveSymlinks: false,
+      // Intentionally disable package cache for now as consumers don't need it
+      packageCache: undefined,
+      isRequire,
+      builtins: nodeLikeBuiltins,
+    })?.id
   }
 }

@@ -6,7 +6,7 @@ import { exec } from 'node:child_process'
 import crypto from 'node:crypto'
 import { fileURLToPath } from 'node:url'
 import type { ServerOptions as HttpsServerOptions } from 'node:https'
-import { builtinModules, createRequire } from 'node:module'
+import { builtinModules } from 'node:module'
 import { promises as dns } from 'node:dns'
 import { performance } from 'node:perf_hooks'
 import type { AddressInfo, Server } from 'node:net'
@@ -172,9 +172,6 @@ export function isOptimizable(
 
 export const bareImportRE = /^(?![a-zA-Z]:)[\w@](?!.*:\/\/)/
 export const deepImportRE = /^([^@][^/]*)\/|^(@[^/]+\/[^/]+)\//
-
-// TODO: use import()
-const _require = createRequire(/** #__KEEP__ */ import.meta.url)
 
 const _dirname = path.dirname(fileURLToPath(/** #__KEEP__ */ import.meta.url))
 
@@ -1119,25 +1116,6 @@ export function getHash(text: Buffer | string, length = 8): string {
   const h = crypto.hash('sha256', text, 'hex').substring(0, length)
   if (length <= 64) return h
   return h.padEnd(length, '_')
-}
-
-export const requireResolveFromRootWithFallback = (
-  root: string,
-  id: string,
-): string => {
-  // check existence first, so if the package is not found,
-  // it won't be cached by nodejs, since there isn't a way to invalidate them:
-  // https://github.com/nodejs/node/issues/44663
-  const found = resolvePackageData(id, root) || resolvePackageData(id, _dirname)
-  if (!found) {
-    const error = new Error(`${JSON.stringify(id)} not found.`)
-    ;(error as any).code = 'MODULE_NOT_FOUND'
-    throw error
-  }
-
-  // actually resolve
-  // Search in the root directory first, and fallback to the default require paths.
-  return _require.resolve(id, { paths: [root, _dirname] })
 }
 
 export function emptyCssComments(raw: string): string {
