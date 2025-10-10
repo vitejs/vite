@@ -21,6 +21,7 @@ declare const __HMR_BASE__: string
 declare const __HMR_TIMEOUT__: number
 declare const __HMR_ENABLE_OVERLAY__: boolean
 declare const __WS_TOKEN__: string
+declare const __SERVER_FORWARD_RUNTIME_LOGS__: boolean
 
 console.debug('[vite] connecting...')
 
@@ -169,7 +170,10 @@ const hmrClient = new HMRClient(
   },
 )
 transport.connect!(createHMRHandler(handleMessage))
-setupRuntimeLogHandler(transport)
+
+if (__SERVER_FORWARD_RUNTIME_LOGS__) {
+  setupRuntimeLogHandler(transport)
+}
 
 async function handleMessage(payload: HotPayload) {
   switch (payload.type) {
