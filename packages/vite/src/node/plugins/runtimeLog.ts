@@ -64,6 +64,9 @@ function formatError(error: any, environment: DevEnvironment) {
         return environment.moduleGraph.getModuleById(id)?.transformResult?.map
       }
     },
+    // Vitest uses to skip internal files
+    // https://github.com/vitejs/vitest/blob/4783137cd8d766cf998bdf2d638890eaa51e08d9/packages/utils/src/source-map.ts#L17
+    ignoreStackEntries: [],
   })
 
   // https://github.com/vitest-dev/vitest/blob/4783137cd8d766cf998bdf2d638890eaa51e08d9/packages/vitest/src/node/printError.ts#L64
