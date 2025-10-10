@@ -6,7 +6,7 @@ import { exec } from 'node:child_process'
 import crypto from 'node:crypto'
 import { fileURLToPath } from 'node:url'
 import type { ServerOptions as HttpsServerOptions } from 'node:https'
-import { builtinModules, createRequire } from 'node:module'
+import { builtinModules } from 'node:module'
 import { promises as dns } from 'node:dns'
 import { performance } from 'node:perf_hooks'
 import type { AddressInfo, Server } from 'node:net'
@@ -172,9 +172,6 @@ export function isOptimizable(
 
 export const bareImportRE = /^(?![a-zA-Z]:)[\w@](?!.*:\/\/)/
 export const deepImportRE = /^([^@][^/]*)\/|^(@[^/]+\/[^/]+)\//
-
-// TODO: use import()
-const _require = createRequire(/** #__KEEP__ */ import.meta.url)
 
 const _dirname = path.dirname(fileURLToPath(/** #__KEEP__ */ import.meta.url))
 
