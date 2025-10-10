@@ -2,6 +2,7 @@ import path from 'node:path'
 import fs from 'node:fs'
 import { parseErrorStacktrace } from '@vitest/utils/source-map'
 import c from 'picocolors'
+import type { RuntimeLogPayload } from 'types/customEvent'
 import type { DevEnvironment, Plugin } from '..'
 import { normalizePath } from '..'
 import { generateCodeFrame } from '../utils'
@@ -16,17 +17,22 @@ export function runtimeLogPlugin(pluginOpts: {
       for (const name of pluginOpts.environments) {
         const environment = server.environments[name]
         environment.hot.on('vite:runtime-log', (payload) => {
-          const output = formatError(payload.error, environment)
-          environment.config.logger.error(output, {
-            timestamp: true,
-          })
+          if (payload.error) {
+            const output = formatError(payload.error, environment)
+            environment.config.logger.error(output, {
+              timestamp: true,
+            })
+          }
         })
       }
     },
   }
 }
 
-function formatError(error: any, environment: DevEnvironment) {
+function formatError(
+  error: NonNullable<RuntimeLogPayload['error']>,
+  environment: DevEnvironment,
+) {
   // https://github.com/vitest-dev/vitest/blob/4783137cd8d766cf998bdf2d638890eaa51e08d9/packages/browser/src/node/projectParent.ts#L58
   const stacks = parseErrorStacktrace(error, {
     getUrlId(id) {
@@ -71,8 +77,7 @@ function formatError(error: any, environment: DevEnvironment) {
   })
 
   let output = ''
-  const errorName = error.name || 'Unknown Error'
-  output += c.red(`[Unhandled error] ${c.bold(errorName)}: ${error.message}\n`)
+  output += c.red(`[Unhandled error] ${c.bold(error.name)}: ${error.message}\n`)
   for (const stack of stacks) {
     const file = normalizePath(
       path.relative(environment.config.root, stack.file),

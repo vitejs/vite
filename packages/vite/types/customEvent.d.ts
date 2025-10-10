@@ -35,7 +35,8 @@ export interface InvalidatePayload {
 }
 
 export interface RuntimeLogPayload {
-  error: {
+  // make it optional for future extension?
+  error?: {
     name: string
     message: string
     stack?: string
