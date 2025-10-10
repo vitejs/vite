@@ -2331,20 +2331,24 @@ async function loadPreprocessorPath(
   }
   loadedPreprocessorPath[lang] = (async () => {
     nodeResolveWithVite ??= await createNodeResolverWithVite(root)
-    // Even if undefined, we set it so we're able to resolve again if the
-    // dependency is installed later on the fly
-    loadedPreprocessorPath[lang] = nodeResolveWithVite(
-      lang,
-      path.join(root, '*'),
-    )
-
-    if (loadedPreprocessorPath[lang]) return loadedPreprocessorPath[lang]
+    const resolved = nodeResolveWithVite(lang, path.join(root, '*'))
+    if (resolved) return resolved
 
     const installCommand = getPackageManagerCommand('install')
     throw new Error(
       `Preprocessor dependency "${lang}" not found. Did you install it? Try \`${installCommand} -D ${lang}\`.`,
     )
   })()
+
+  // Sets the result directly to avoid needing to resolve the promise again
+  loadedPreprocessorPath[lang]
+    .then((p) => (loadedPreprocessorPath[lang] = p))
+    .catch((e) => {
+      // Set undefined so next retry work if the package is installed later
+      loadedPreprocessorPath[lang] = undefined
+      throw e
+    })
+
   return loadedPreprocessorPath[lang]
 }
 
