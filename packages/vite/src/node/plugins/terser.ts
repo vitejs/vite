@@ -25,8 +25,11 @@ const loadTerserPath = (root: string) => {
   if (!terserPath) {
     terserPath = (async () => {
       const nodeResolveWithVite = await createNodeResolverWithVite(root)
-      const resolved = nodeResolveWithVite('terser', path.join(root, '*'))
-      if (resolved) return (terserPath = resolved)
+      // Even if undefined, we set it so we're able to resolve again if terser
+      // is installed later on the fly
+      terserPath = nodeResolveWithVite('terser', path.join(root, '*'))
+
+      if (terserPath) return terserPath
 
       throw new Error(
         'terser not found. Since Vite v3, terser has become an optional dependency. You need to install it.',
