@@ -2371,7 +2371,7 @@ async function loadSss(root: string): Promise<PostCSS.Syntax> {
   if (!cachedSss) {
     cachedSss = (async () => {
       const sssPath = await loadPreprocessorPath(PostCssDialectLang.sss, root)
-      const resolved = await import(pathToFileURL(sssPath).href)
+      const resolved = (await import(pathToFileURL(sssPath).href)).default
       return (cachedSss = resolved)
     })()
   }
