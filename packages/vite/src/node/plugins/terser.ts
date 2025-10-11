@@ -33,14 +33,11 @@ const loadTerserPath = (root: string) => {
       )
     })()
 
-    // Sets the result directly to avoid needing to resolve the promise again
     terserPath
+      // Set the result directly to avoid needing to resolve the promise again
       .then((p) => (terserPath = p))
-      .catch((e) => {
-        // Set undefined so next retry work if the package is installed later
-        terserPath = undefined
-        throw e
-      })
+      // Set undefined so next retry work if the package is installed later
+      .catch(() => (terserPath = undefined))
   }
   return terserPath
 }
@@ -56,8 +53,7 @@ export function terserPlugin(config: ResolvedConfig): Plugin {
           code: string,
           options: TerserMinifyOptions,
         ) => {
-          const terser: typeof import('terser') = (await import(terserPath))
-            .default
+          const terser: typeof import('terser') = await import(terserPath)
           try {
             return (await terser.minify(code, options)) as TerserMinifyOutput
           } catch (e) {

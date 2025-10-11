@@ -2340,14 +2340,11 @@ async function loadPreprocessorPath(
     )
   })()
 
-  // Sets the result directly to avoid needing to resolve the promise again
   loadedPreprocessorPath[lang]
+    // Set the result directly to avoid needing to resolve the promise again
     .then((p) => (loadedPreprocessorPath[lang] = p))
-    .catch((e) => {
-      // Set undefined so next retry work if the package is installed later
-      loadedPreprocessorPath[lang] = undefined
-      throw e
-    })
+    // Set undefined so next retry work if the package is installed later
+    .catch(() => (loadedPreprocessorPath[lang] = undefined))
 
   return loadedPreprocessorPath[lang]
 }
@@ -2428,7 +2425,7 @@ const makeScssWorker = (
 
   const worker: WorkerType = {
     async run(sassPath, data, options) {
-      const sass: typeof Sass = (await import(sassPath)).default
+      const sass: typeof Sass = await import(sassPath)
       compilerPromise ??= sass.initAsyncCompiler()
       const compiler = await compilerPromise
 
@@ -2872,9 +2869,9 @@ const makeStylWorker = (maxWorkers: number | undefined) => {
           additionalData: undefined
         },
       ) => {
-        const nodeStylus: typeof Stylus = (await import(stylusPath)).default
+        const stylus: typeof Stylus = (await import(stylusPath)).default
 
-        const ref = nodeStylus(content, {
+        const ref = stylus(content, {
           // support @import from node dependencies by default
           paths: ['node_modules'],
           ...options,
