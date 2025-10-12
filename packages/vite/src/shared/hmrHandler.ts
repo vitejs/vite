@@ -1,4 +1,4 @@
-import type { HotPayload } from 'types/hmrPayload'
+import type { HotPayload } from '#types/hmrPayload'
 
 // updates to HMR should go one after another. It is possible to trigger another update during the invalidation for example.
 export function createHMRHandler(
