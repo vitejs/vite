@@ -453,9 +453,9 @@ function dismiss() {
       <a
         target="_blank"
         class="vt-primary-action"
-        href="https://viteplus.dev/?utm_source=vite&utm_content=top_banner"
+        href="https://voidzero.dev/posts/announcing-vite-plus?utm_source=vite&utm_content=top_banner"
       >
-        Read more
+        Learn more
       </a>
     </div>
     <button aria-label="close" @click="dismiss">
