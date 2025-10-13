@@ -81,13 +81,13 @@
       "prettier --write --cache --ignore-unknown"
     ],
     "packages/*/{src,types}/**/*.ts": [
-      "eslint --cache --fix"
+      "eslint --cache --fix --concurrency auto"
     ],
     "packages/**/*.d.ts": [
-      "eslint --cache --fix"
+      "eslint --cache --fix --concurrency auto"
     ],
     "playground/**/__tests__/**/*.ts": [
-      "eslint --cache --fix"
+      "eslint --cache --fix --concurrency auto"
     ]
   },
   "packageManager": "pnpm@10.18.0",
