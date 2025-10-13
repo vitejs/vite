@@ -4,14 +4,14 @@ Unless noted, the options in this section are applied to both dev and build.
 
 ## ssr.external
 
-- **Type:** `string[] | true`
+- **Type:** `string | RegExp | (string | RegExp)[] | true`
 - **Related:** [SSR Externals](/guide/ssr#ssr-externals)
 
 Externalize the given dependencies and their transitive dependencies for SSR. By default, all dependencies are externalized except for linked dependencies (for HMR). If you prefer to externalize the linked dependency, you can pass its name to this option.
 
 If `true`, all dependencies including linked dependencies are externalized.
 
-Note that the explicitly listed dependencies (using `string[]` type) will always take priority if they're also listed in `ssr.noExternal` (using any type).
+Note that explicitly listed dependencies (strings or regular expressions) will always take priority if they're also listed in `ssr.noExternal` (using any type).
 
 ## ssr.noExternal
 
@@ -20,7 +20,7 @@ Note that the explicitly listed dependencies (using `string[]` type) will always
 
 Prevent listed dependencies from being externalized for SSR, which they will get bundled in build. By default, only linked dependencies are not externalized (for HMR). If you prefer to externalize the linked dependency, you can pass its name to the `ssr.external` option.
 
-If `true`, no dependencies are externalized. However, dependencies explicitly listed in `ssr.external` (using `string[]` type) can take priority and still be externalized. If `ssr.target: 'node'` is set, Node.js built-ins will also be externalized by default.
+If `true`, no dependencies are externalized. However, dependencies explicitly listed in `ssr.external` (strings or regular expressions) can take priority and still be externalized. If `ssr.target: 'node'` is set, Node.js built-ins will also be externalized by default.
 
 Note that if both `ssr.noExternal: true` and `ssr.external: true` are configured, `ssr.noExternal` takes priority and no dependencies are externalized.
 

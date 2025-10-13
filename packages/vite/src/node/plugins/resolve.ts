@@ -37,7 +37,11 @@ import {
 import { optimizedDepInfoFromFile, optimizedDepInfoFromId } from '../optimizer'
 import type { DepsOptimizer } from '../optimizer'
 import type { PackageCache, PackageData } from '../packages'
-import { canExternalizeFile, shouldExternalize } from '../external'
+import {
+  canExternalizeFile,
+  isIdExplicitlyExternal,
+  shouldExternalize,
+} from '../external'
 import {
   findNearestMainPackageData,
   findNearestPackageData,
@@ -72,6 +76,18 @@ const debug = createDebugger('vite:resolve-details', {
   onlyWhenFocused: true,
 })
 
+export function normalizeExternalOption(
+  external: string | RegExp | (string | RegExp)[] | true | undefined,
+): true | (string | RegExp)[] {
+  if (external === true) {
+    return true
+  }
+  if (!external) {
+    return []
+  }
+  return Array.isArray(external) ? external : [external]
+}
+
 export interface EnvironmentResolveOptions {
   /**
    * @default ['browser', 'module', 'jsnext:main', 'jsnext']
@@ -96,7 +112,7 @@ export interface EnvironmentResolveOptions {
    * Only works in server environments for now. Previously this was `ssr.external`.
    * @experimental
    */
-  external?: string[] | true
+  external?: string | RegExp | (string | RegExp)[] | true
   /**
    * Array of strings or regular expressions that indicate what modules are builtin for the environment.
    */
@@ -150,8 +166,10 @@ interface ResolvePluginOptions {
 }
 
 export interface InternalResolveOptions
-  extends Required<ResolveOptions>,
-    ResolvePluginOptions {}
+  extends Required<Omit<ResolveOptions, 'external'>>,
+    ResolvePluginOptions {
+  external: true | (string | RegExp)[]
+}
 
 // Defined ResolveOptions are used to overwrite the values for all environments
 // It is used when creating custom resolvers (for CSS, scanning, etc)
@@ -162,6 +180,8 @@ export interface ResolvePluginOptionsWithOverrides
 export function resolvePlugin(
   resolveOptions: ResolvePluginOptionsWithOverrides,
 ): Plugin {
+  const { external: pluginExternal, ...resolveOptionsWithoutExternal } =
+    resolveOptions
   const { root, isProduction, asSrc, preferRelative = false } = resolveOptions
 
   // In unix systems, absolute paths inside root first needs to be checked as an
@@ -201,8 +221,12 @@ export function resolvePlugin(
         const options: InternalResolveOptions = {
           isRequire,
           ...currentEnvironmentOptions.resolve,
-          ...resolveOptions, // plugin options + resolve options overrides
+          ...resolveOptionsWithoutExternal, // plugin options + resolve options overrides
           scan: resolveOpts.scan ?? resolveOptions.scan,
+          external:
+            pluginExternal === undefined
+              ? currentEnvironmentOptions.resolve.external
+              : normalizeExternalOption(pluginExternal),
         }
 
         const resolvedImports = resolveSubpathImports(id, importer, options)
@@ -390,6 +414,17 @@ export function resolvePlugin(
             return res
           }
 
+          // For modules that should be externalized but couldn't be resolved by tryNodeResolve,
+          // we externalize them directly. However, we need to let built-ins go through their
+          // dedicated handling below to ensure proper moduleSideEffects setting.
+          if (
+            external &&
+            !isBuiltin(options.builtins, id) &&
+            !isNodeLikeBuiltin(id)
+          ) {
+            return options.idOnly ? id : { id, external: true }
+          }
+
           // built-ins
           // externalize if building for a server environment, otherwise redirect to an empty module
           if (
@@ -403,7 +438,7 @@ export function resolvePlugin(
             currentEnvironmentOptions.consumer === 'server' &&
             isNodeLikeBuiltin(id)
           ) {
-            if (!(options.external === true || options.external.includes(id))) {
+            if (!isIdExplicitlyExternal(options.external, id)) {
               let message = `Automatically externalized node built-in module "${id}"`
               if (importer) {
                 message += ` imported from "${path.relative(
@@ -426,7 +461,7 @@ export function resolvePlugin(
               options.noExternal === true &&
               // if both noExternal and external are true, noExternal will take the higher priority and bundle it.
               // only if the id is explicitly listed in external, we will externalize it and skip this error.
-              (options.external === true || !options.external.includes(id))
+              !isIdExplicitlyExternal(options.external, id)
             ) {
               let message = `Cannot bundle built-in module "${id}"`
               if (importer) {
