@@ -277,13 +277,10 @@ const cssModulesCache = new WeakMap<
   Map<string, Record<string, string>>
 >()
 
-export const removedPureCssFilesCache: WeakMap<ResolvedConfig, Map<string, RenderedChunk>> = new WeakMap<
-  ResolvedConfig,
-  Map<string, RenderedChunk>
->()
+export const removedPureCssFilesCache: WeakMap<ResolvedConfig, Map<string, RenderedChunk>> = new WeakMap()
 
 // Used only if the config doesn't code-split CSS (builds a single CSS file)
-export const cssBundleNameCache: WeakMap<ResolvedConfig, string> = new WeakMap<ResolvedConfig, string>()
+export const cssBundleNameCache: WeakMap<ResolvedConfig, string> = new WeakMap()
 
 const postcssConfigCache = new WeakMap<
   ResolvedConfig,

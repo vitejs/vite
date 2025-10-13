@@ -87,15 +87,12 @@ export const isHTMLRequest = (request: string): boolean =>
 export const htmlProxyMap: WeakMap<ResolvedConfig, Map<string, {
     code: string
     map?: SourceMapInput
-}[]>> = new WeakMap<
-  ResolvedConfig,
-  Map<string, Array<{ code: string; map?: SourceMapInput }>>
->()
+}[]>> = new WeakMap()
 
 // HTML Proxy Transform result are stored by config
 // `${hash(importer)}_${query.index}` -> transformed css code
 // PS: key like `hash(/vite/playground/assets/index.html)_1`)
-export const htmlProxyResult: Map<string, string> = new Map<string, string>()
+export const htmlProxyResult: Map<string, string> = new Map()
 
 export function htmlInlineProxyPlugin(config: ResolvedConfig): Plugin {
   // Should do this when `constructor` rather than when `buildStart`,
@@ -166,10 +163,7 @@ const noInlineLinkRels = new Set([
   'manifest',
 ])
 
-export const isAsyncScriptMap: WeakMap<ResolvedConfig, Map<string, boolean>> = new WeakMap<
-  ResolvedConfig,
-  Map<string, boolean>
->()
+export const isAsyncScriptMap: WeakMap<ResolvedConfig, Map<string, boolean>> = new WeakMap()
 
 export function nodeIsElement(
   node: DefaultTreeAdapterMap['node'],

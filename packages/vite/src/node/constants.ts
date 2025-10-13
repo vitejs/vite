@@ -7,7 +7,7 @@ const { version } = JSON.parse(
   readFileSync(new URL('../../package.json', import.meta.url)).toString(),
 )
 
-export const ROLLUP_HOOKS: ("augmentChunkHash" | "generateBundle" | "outputOptions" | "renderChunk" | "renderDynamicImport" | "renderError" | "renderStart" | "resolveFileUrl" | "resolveImportMeta" | "writeBundle" | "banner" | "footer" | "intro" | "outro" | "buildEnd" | "buildStart" | "closeBundle" | "closeWatcher" | "load" | "moduleParsed" | "onLog" | "options" | "resolveDynamicImport" | "resolveId" | "shouldTransformCachedModule" | "transform" | "watchChange")[] = [
+export const ROLLUP_HOOKS: RollupPluginHooks[] = [
   'options',
   'buildStart',
   'buildEnd',
@@ -35,7 +35,7 @@ export const ROLLUP_HOOKS: ("augmentChunkHash" | "generateBundle" | "outputOptio
   'shouldTransformCachedModule',
   'transform',
   'onLog',
-] satisfies RollupPluginHooks[]
+] 
 
 export const VERSION = version as string
 

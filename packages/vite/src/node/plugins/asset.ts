@@ -342,11 +342,8 @@ export function getPublicAssetFilename(
   return publicAssetUrlCache.get(config)?.get(hash)
 }
 
-export const publicAssetUrlCache: WeakMap<ResolvedConfig, Map<string, string>> = new WeakMap<
-  ResolvedConfig,
-  // hash -> url
-  Map<string, string>
->()
+// inner map: hash -> url
+export const publicAssetUrlCache: WeakMap<ResolvedConfig, Map<string, string>> = new WeakMap()
 
 export const publicAssetUrlRE: RegExp = /__VITE_PUBLIC_ASSET__([a-z\d]{8})__/g
 

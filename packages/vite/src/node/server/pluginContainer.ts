@@ -185,7 +185,7 @@ class EnvironmentPluginContainer<Env extends Environment = Environment> {
   getSortedPlugins: PluginHookUtils['getSortedPlugins']
 
   moduleGraph: EnvironmentModuleGraph | undefined
-  watchFiles: Set<string> = new Set<string>()
+  watchFiles: Set<string> = new Set()
   minimalContext: MinimalPluginContext<Env>
 
   private _started = false

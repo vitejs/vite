@@ -25,11 +25,11 @@ export class EnvironmentModuleNode {
   type: 'js' | 'css' | 'asset'
   info?: ModuleInfo
   meta?: Record<string, any>
-  importers: Set<EnvironmentModuleNode> = new Set<EnvironmentModuleNode>()
+  importers: Set<EnvironmentModuleNode> = new Set()
 
-  importedModules: Set<EnvironmentModuleNode> = new Set<EnvironmentModuleNode>()
+  importedModules: Set<EnvironmentModuleNode> = new Set()
 
-  acceptedHmrDeps: Set<EnvironmentModuleNode> = new Set<EnvironmentModuleNode>()
+  acceptedHmrDeps: Set<EnvironmentModuleNode> = new Set()
   acceptedHmrExports: Set<string> | null = null
   importedBindings: Map<string, Set<string>> | null = null
   isSelfAccepting?: boolean
@@ -90,19 +90,16 @@ export type ResolvedUrl = [
 export class EnvironmentModuleGraph {
   environment: string
 
-  urlToModuleMap: Map<string, EnvironmentModuleNode> = new Map<string, EnvironmentModuleNode>()
-  idToModuleMap: Map<string, EnvironmentModuleNode> = new Map<string, EnvironmentModuleNode>()
-  etagToModuleMap: Map<string, EnvironmentModuleNode> = new Map<string, EnvironmentModuleNode>()
+  urlToModuleMap: Map<string, EnvironmentModuleNode> = new Map()
+  idToModuleMap: Map<string, EnvironmentModuleNode> = new Map()
+  etagToModuleMap: Map<string, EnvironmentModuleNode> = new Map()
   // a single file may corresponds to multiple modules with different queries
-  fileToModulesMap: Map<string, Set<EnvironmentModuleNode>> = new Map<string, Set<EnvironmentModuleNode>>()
+  fileToModulesMap: Map<string, Set<EnvironmentModuleNode>> = new Map()
 
   /**
    * @internal
    */
-  _unresolvedUrlToModuleMap: Map<string, EnvironmentModuleNode | Promise<EnvironmentModuleNode>> = new Map<
-    string,
-    Promise<EnvironmentModuleNode> | EnvironmentModuleNode
-  >()
+  _unresolvedUrlToModuleMap: Map<string, EnvironmentModuleNode | Promise<EnvironmentModuleNode>> = new Map()
 
   /**
    * @internal
@@ -110,7 +107,7 @@ export class EnvironmentModuleGraph {
   _resolveId: (url: string) => Promise<PartialResolvedId | null>
 
   /** @internal */
-  _hasResolveFailedErrorModules: Set<EnvironmentModuleNode> = new Set<EnvironmentModuleNode>()
+  _hasResolveFailedErrorModules: Set<EnvironmentModuleNode> = new Set()
 
   constructor(
     environment: string,
@@ -165,7 +162,7 @@ export class EnvironmentModuleGraph {
 
   invalidateModule(
     mod: EnvironmentModuleNode,
-    seen: Set<EnvironmentModuleNode> = new Set<EnvironmentModuleNode>(),
+    seen: Set<EnvironmentModuleNode> = new Set(),
     timestamp: number = monotonicDateNow(),
     isHmr: boolean = false,
     /** @internal */
