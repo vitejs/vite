@@ -603,8 +603,9 @@ button {
 }
 
 @media (max-width: 1280px) {
-  .banner .vt-banner-text {
-    font-size: 14px;
+  .banner .vt-banner-text,
+  .banner .vt-primary-action {
+    font-size: 10px;
   }
 
   .vt-tagline {
