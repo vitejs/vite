@@ -354,42 +354,7 @@ export interface ResolvedBuildOptions
   modulePreload: false | ResolvedModulePreloadOptions
 }
 
-export const buildEnvironmentOptionsDefaults: Readonly<{
-  target: 'baseline-widely-available'
-  /** @deprecated */
-  polyfillModulePreload: true
-  modulePreload: true
-  outDir: 'dist'
-  assetsDir: 'assets'
-  assetsInlineLimit: 4096
-  // cssCodeSplit
-  // cssTarget
-  // cssMinify
-  sourcemap: false
-  // minify
-  terserOptions: {}
-  rollupOptions: {}
-  commonjsOptions: {
-    include: RegExp[]
-    extensions: string[]
-  }
-  dynamicImportVarsOptions: {
-    warnOnError: boolean
-    exclude: RegExp[]
-  }
-  write: true
-  emptyOutDir: null
-  copyPublicDir: true
-  manifest: false
-  lib: false
-  // ssr
-  ssrManifest: false
-  ssrEmitAssets: false
-  // emitAssets
-  reportCompressedSize: true
-  chunkSizeWarningLimit: 500
-  watch: null
-}> = Object.freeze({
+const _buildEnvironmentOptionsDefaults = Object.freeze({
   target: 'baseline-widely-available',
   /** @deprecated */
   polyfillModulePreload: true,
@@ -425,7 +390,10 @@ export const buildEnvironmentOptionsDefaults: Readonly<{
   chunkSizeWarningLimit: 500,
   watch: null,
   // createEnvironment
-})
+} satisfies BuildEnvironmentOptions)
+export const buildEnvironmentOptionsDefaults: Readonly<
+  Partial<BuildEnvironmentOptions>
+> = _buildEnvironmentOptionsDefaults
 
 export function resolveBuildEnvironmentOptions(
   raw: BuildEnvironmentOptions,
@@ -449,7 +417,7 @@ export function resolveBuildEnvironmentOptions(
 
   const merged = mergeWithDefaults(
     {
-      ...buildEnvironmentOptionsDefaults,
+      ..._buildEnvironmentOptionsDefaults,
       cssCodeSplit: !raw.lib,
       minify: consumer === 'server' ? false : 'esbuild',
       ssr: consumer === 'server',
@@ -1542,21 +1510,20 @@ export interface BuilderOptions {
   buildApp?: (builder: ViteBuilder) => Promise<void>
 }
 
-export const builderOptionsDefaults: Readonly<{
-  sharedConfigBuild: false
-  sharedPlugins: false
-}> = Object.freeze({
+const _builderOptionsDefaults = Object.freeze({
   sharedConfigBuild: false,
   sharedPlugins: false,
   // buildApp
-})
+} satisfies BuilderOptions)
+export const builderOptionsDefaults: Readonly<Partial<BuilderOptions>> =
+  _builderOptionsDefaults
 
 export function resolveBuilderOptions(
   options: BuilderOptions | undefined,
 ): ResolvedBuilderOptions | undefined {
   if (!options) return
   return mergeWithDefaults(
-    { ...builderOptionsDefaults, buildApp: async () => {} },
+    { ..._builderOptionsDefaults, buildApp: async () => {} },
     options,
   )
 }

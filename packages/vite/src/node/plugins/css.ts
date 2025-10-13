@@ -191,16 +191,7 @@ export interface CSSModulesOptions {
       ) => string)
 }
 
-export const cssConfigDefaults: Readonly<{
-  /** @experimental */
-  transformer: 'postcss'
-  // modules
-  // preprocessorOptions
-  preprocessorMaxWorkers: true
-  // postcss
-  /** @experimental */
-  devSourcemap: false
-}> = Object.freeze({
+const _cssConfigDefaults = Object.freeze({
   /** @experimental */
   transformer: 'postcss',
   // modules
@@ -211,6 +202,8 @@ export const cssConfigDefaults: Readonly<{
   devSourcemap: false,
   // lightningcss
 } satisfies CSSOptions)
+export const cssConfigDefaults: Readonly<Partial<CSSOptions>> =
+  _cssConfigDefaults
 
 export type ResolvedCSSOptions = Omit<CSSOptions, 'lightningcss'> &
   Required<Pick<CSSOptions, 'transformer' | 'devSourcemap'>> & {
@@ -220,7 +213,7 @@ export type ResolvedCSSOptions = Omit<CSSOptions, 'lightningcss'> &
 export function resolveCSSOptions(
   options: CSSOptions | undefined,
 ): ResolvedCSSOptions {
-  const resolved = mergeWithDefaults(cssConfigDefaults, options ?? {})
+  const resolved = mergeWithDefaults(_cssConfigDefaults, options ?? {})
   if (resolved.transformer === 'lightningcss') {
     resolved.lightningcss ??= {}
     resolved.lightningcss.targets ??= convertTargets(
