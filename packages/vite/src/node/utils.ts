@@ -690,7 +690,9 @@ export async function recursiveReaddir(dir: string): Promise<string[]> {
 // `fs.realpathSync.native` resolves differently in Windows network drive,
 // causing file read errors. skip for now.
 // https://github.com/nodejs/node/issues/37737
-export let safeRealpathSync: typeof windowsSafeRealPathSync | typeof fs.realpathSync.native = isWindows
+export let safeRealpathSync:
+  | typeof windowsSafeRealPathSync
+  | typeof fs.realpathSync.native = isWindows
   ? windowsSafeRealPathSync
   : fs.realpathSync.native
 

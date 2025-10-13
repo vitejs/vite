@@ -45,7 +45,8 @@ interface WorkerCache {
 
 export type WorkerType = 'classic' | 'module' | 'ignore'
 
-export const workerOrSharedWorkerRE: RegExp = /(?:\?|&)(worker|sharedworker)(?:&|$)/
+export const workerOrSharedWorkerRE: RegExp =
+  /(?:\?|&)(worker|sharedworker)(?:&|$)/
 const workerFileRE = /(?:\?|&)worker_file&type=(\w+)(?:&|$)/
 const inlineRE = /[?&]inline\b/
 

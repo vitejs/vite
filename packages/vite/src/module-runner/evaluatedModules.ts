@@ -28,7 +28,8 @@ export class EvaluatedModuleNode {
 
 export class EvaluatedModules {
   public readonly idToModuleMap: Map<string, EvaluatedModuleNode> = new Map()
-  public readonly fileToModulesMap: Map<string, Set<EvaluatedModuleNode>> = new Map()
+  public readonly fileToModulesMap: Map<string, Set<EvaluatedModuleNode>> =
+    new Map()
   public readonly urlToIdModuleMap: Map<string, EvaluatedModuleNode> = new Map()
 
   /**

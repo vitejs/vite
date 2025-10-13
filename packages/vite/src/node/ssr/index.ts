@@ -54,10 +54,10 @@ export interface ResolvedSSROptions extends SSROptions {
 }
 
 export const ssrConfigDefaults: Readonly<{
-    // noExternal
-    // external
-    target: "node"
-    optimizeDeps: {}
+  // noExternal
+  // external
+  target: 'node'
+  optimizeDeps: {}
 }> = Object.freeze({
   // noExternal
   // external

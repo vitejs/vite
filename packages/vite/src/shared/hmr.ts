@@ -169,7 +169,8 @@ export class HMRContext implements ViteHotContext {
 
 export class HMRClient {
   public hotModulesMap: Map<string, HotModule> = new Map()
-  public disposeMap: Map<string, (data: any) => void | Promise<void>> = new Map()
+  public disposeMap: Map<string, (data: any) => void | Promise<void>> =
+    new Map()
   public pruneMap: Map<string, (data: any) => void | Promise<void>> = new Map()
   public dataMap: Map<string, any> = new Map()
   public customListenersMap: CustomListenersMap = new Map()

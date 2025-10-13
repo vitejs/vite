@@ -84,10 +84,16 @@ export const isHTMLRequest = (request: string): boolean =>
   htmlLangRE.test(request)
 
 // HTML Proxy Caches are stored by config -> filePath -> index
-export const htmlProxyMap: WeakMap<ResolvedConfig, Map<string, {
-    code: string
-    map?: SourceMapInput
-}[]>> = new WeakMap()
+export const htmlProxyMap: WeakMap<
+  ResolvedConfig,
+  Map<
+    string,
+    {
+      code: string
+      map?: SourceMapInput
+    }[]
+  >
+> = new WeakMap()
 
 // HTML Proxy Transform result are stored by config
 // `${hash(importer)}_${query.index}` -> transformed css code
@@ -163,7 +169,10 @@ const noInlineLinkRels = new Set([
   'manifest',
 ])
 
-export const isAsyncScriptMap: WeakMap<ResolvedConfig, Map<string, boolean>> = new WeakMap()
+export const isAsyncScriptMap: WeakMap<
+  ResolvedConfig,
+  Map<string, boolean>
+> = new WeakMap()
 
 export function nodeIsElement(
   node: DefaultTreeAdapterMap['node'],

@@ -192,14 +192,14 @@ export interface CSSModulesOptions {
 }
 
 export const cssConfigDefaults: Readonly<{
-    /** @experimental */
-    transformer: "postcss"
-    // modules
-    // preprocessorOptions
-    preprocessorMaxWorkers: true
-    // postcss
-    /** @experimental */
-    devSourcemap: false
+  /** @experimental */
+  transformer: 'postcss'
+  // modules
+  // preprocessorOptions
+  preprocessorMaxWorkers: true
+  // postcss
+  /** @experimental */
+  devSourcemap: false
 }> = Object.freeze({
   /** @experimental */
   transformer: 'postcss',
@@ -277,7 +277,10 @@ const cssModulesCache = new WeakMap<
   Map<string, Record<string, string>>
 >()
 
-export const removedPureCssFilesCache: WeakMap<ResolvedConfig, Map<string, RenderedChunk>> = new WeakMap()
+export const removedPureCssFilesCache: WeakMap<
+  ResolvedConfig,
+  Map<string, RenderedChunk>
+> = new WeakMap()
 
 // Used only if the config doesn't code-split CSS (builds a single CSS file)
 export const cssBundleNameCache: WeakMap<ResolvedConfig, string> = new WeakMap()

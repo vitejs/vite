@@ -355,40 +355,40 @@ export interface ResolvedBuildOptions
 }
 
 export const buildEnvironmentOptionsDefaults: Readonly<{
-    target: "baseline-widely-available"
-    /** @deprecated */
-    polyfillModulePreload: true
-    modulePreload: true
-    outDir: "dist"
-    assetsDir: "assets"
-    assetsInlineLimit: 4096
-    // cssCodeSplit
-    // cssTarget
-    // cssMinify
-    sourcemap: false
-    // minify
-    terserOptions: {}
-    rollupOptions: {}
-    commonjsOptions: {
-        include: RegExp[]
-        extensions: string[]
-    }
-    dynamicImportVarsOptions: {
-        warnOnError: boolean
-        exclude: RegExp[]
-    }
-    write: true
-    emptyOutDir: null
-    copyPublicDir: true
-    manifest: false
-    lib: false
-    // ssr
-    ssrManifest: false
-    ssrEmitAssets: false
-    // emitAssets
-    reportCompressedSize: true
-    chunkSizeWarningLimit: 500
-    watch: null
+  target: 'baseline-widely-available'
+  /** @deprecated */
+  polyfillModulePreload: true
+  modulePreload: true
+  outDir: 'dist'
+  assetsDir: 'assets'
+  assetsInlineLimit: 4096
+  // cssCodeSplit
+  // cssTarget
+  // cssMinify
+  sourcemap: false
+  // minify
+  terserOptions: {}
+  rollupOptions: {}
+  commonjsOptions: {
+    include: RegExp[]
+    extensions: string[]
+  }
+  dynamicImportVarsOptions: {
+    warnOnError: boolean
+    exclude: RegExp[]
+  }
+  write: true
+  emptyOutDir: null
+  copyPublicDir: true
+  manifest: false
+  lib: false
+  // ssr
+  ssrManifest: false
+  ssrEmitAssets: false
+  // emitAssets
+  reportCompressedSize: true
+  chunkSizeWarningLimit: 500
+  watch: null
 }> = Object.freeze({
   target: 'baseline-widely-available',
   /** @deprecated */
@@ -1478,8 +1478,10 @@ export function toOutputFilePathWithoutRuntime(
   }
 }
 
-export const toOutputFilePathInCss: typeof toOutputFilePathWithoutRuntime = toOutputFilePathWithoutRuntime
-export const toOutputFilePathInHtml: typeof toOutputFilePathWithoutRuntime = toOutputFilePathWithoutRuntime
+export const toOutputFilePathInCss: typeof toOutputFilePathWithoutRuntime =
+  toOutputFilePathWithoutRuntime
+export const toOutputFilePathInHtml: typeof toOutputFilePathWithoutRuntime =
+  toOutputFilePathWithoutRuntime
 
 export class BuildEnvironment extends BaseEnvironment {
   mode = 'build' as const
@@ -1541,8 +1543,8 @@ export interface BuilderOptions {
 }
 
 export const builderOptionsDefaults: Readonly<{
-    sharedConfigBuild: false
-    sharedPlugins: false
+  sharedConfigBuild: false
+  sharedPlugins: false
 }> = Object.freeze({
   sharedConfigBuild: false,
   sharedPlugins: false,

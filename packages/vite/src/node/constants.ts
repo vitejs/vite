@@ -35,7 +35,7 @@ export const ROLLUP_HOOKS: RollupPluginHooks[] = [
   'shouldTransformCachedModule',
   'transform',
   'onLog',
-] 
+]
 
 export const VERSION = version as string
 
@@ -45,7 +45,8 @@ const DEFAULT_MAIN_FIELDS = [
   'jsnext:main', // moment still uses this...
   'jsnext',
 ]
-export const DEFAULT_CLIENT_MAIN_FIELDS: readonly string[] = Object.freeze(DEFAULT_MAIN_FIELDS)
+export const DEFAULT_CLIENT_MAIN_FIELDS: readonly string[] =
+  Object.freeze(DEFAULT_MAIN_FIELDS)
 export const DEFAULT_SERVER_MAIN_FIELDS: readonly string[] = Object.freeze(
   DEFAULT_MAIN_FIELDS.filter((f) => f !== 'browser'),
 )
@@ -113,8 +114,14 @@ export const VITE_PACKAGE_DIR: string = resolve(
   '../../..',
 )
 
-export const CLIENT_ENTRY: string = resolve(VITE_PACKAGE_DIR, 'dist/client/client.mjs')
-export const ENV_ENTRY: string = resolve(VITE_PACKAGE_DIR, 'dist/client/env.mjs')
+export const CLIENT_ENTRY: string = resolve(
+  VITE_PACKAGE_DIR,
+  'dist/client/client.mjs',
+)
+export const ENV_ENTRY: string = resolve(
+  VITE_PACKAGE_DIR,
+  'dist/client/env.mjs',
+)
 export const CLIENT_DIR: string = path.dirname(CLIENT_ENTRY)
 
 // ** READ THIS ** before editing `KNOWN_ASSET_TYPES`.
