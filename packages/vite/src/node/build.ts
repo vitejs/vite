@@ -354,7 +354,42 @@ export interface ResolvedBuildOptions
   modulePreload: false | ResolvedModulePreloadOptions
 }
 
-export const buildEnvironmentOptionsDefaults = Object.freeze({
+export const buildEnvironmentOptionsDefaults: Readonly<{
+    target: "baseline-widely-available"
+    /** @deprecated */
+    polyfillModulePreload: true
+    modulePreload: true
+    outDir: "dist"
+    assetsDir: "assets"
+    assetsInlineLimit: 4096
+    // cssCodeSplit
+    // cssTarget
+    // cssMinify
+    sourcemap: false
+    // minify
+    terserOptions: {}
+    rollupOptions: {}
+    commonjsOptions: {
+        include: RegExp[]
+        extensions: string[]
+    }
+    dynamicImportVarsOptions: {
+        warnOnError: boolean
+        exclude: RegExp[]
+    }
+    write: true
+    emptyOutDir: null
+    copyPublicDir: true
+    manifest: false
+    lib: false
+    // ssr
+    ssrManifest: false
+    ssrEmitAssets: false
+    // emitAssets
+    reportCompressedSize: true
+    chunkSizeWarningLimit: 500
+    watch: null
+}> = Object.freeze({
   target: 'baseline-widely-available',
   /** @deprecated */
   polyfillModulePreload: true,
@@ -1443,8 +1478,8 @@ export function toOutputFilePathWithoutRuntime(
   }
 }
 
-export const toOutputFilePathInCss = toOutputFilePathWithoutRuntime
-export const toOutputFilePathInHtml = toOutputFilePathWithoutRuntime
+export const toOutputFilePathInCss: typeof toOutputFilePathWithoutRuntime = toOutputFilePathWithoutRuntime
+export const toOutputFilePathInHtml: typeof toOutputFilePathWithoutRuntime = toOutputFilePathWithoutRuntime
 
 export class BuildEnvironment extends BaseEnvironment {
   mode = 'build' as const
@@ -1505,7 +1540,10 @@ export interface BuilderOptions {
   buildApp?: (builder: ViteBuilder) => Promise<void>
 }
 
-export const builderOptionsDefaults = Object.freeze({
+export const builderOptionsDefaults: Readonly<{
+    sharedConfigBuild: false
+    sharedPlugins: false
+}> = Object.freeze({
   sharedConfigBuild: false,
   sharedPlugins: false,
   // buildApp

@@ -53,7 +53,12 @@ export interface ResolvedSSROptions extends SSROptions {
   optimizeDeps: SsrDepOptimizationConfig
 }
 
-export const ssrConfigDefaults = Object.freeze({
+export const ssrConfigDefaults: Readonly<{
+    // noExternal
+    // external
+    target: "node"
+    optimizeDeps: {}
+}> = Object.freeze({
   // noExternal
   // external
   target: 'node',

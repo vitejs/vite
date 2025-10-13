@@ -427,7 +427,7 @@ export function createServer(
 }
 
 export async function _createServer(
-  inlineConfig: InlineConfig | ResolvedConfig = {},
+  inlineConfig: ResolvedConfig | InlineConfig | undefined = {},
   options: {
     listen: boolean
     previousEnvironments?: Record<string, DevEnvironment>
@@ -1075,7 +1075,36 @@ function resolvedAllowDir(root: string, dir: string): string {
   return normalizePath(path.resolve(root, dir))
 }
 
-export const serverConfigDefaults = Object.freeze({
+export const serverConfigDefaults: Readonly<{
+    port: number
+    strictPort: false
+    host: string
+    allowedHosts: never[]
+    https: undefined
+    open: false
+    proxy: undefined
+    cors: {
+        origin: RegExp
+    }
+    headers: {}
+    // hmr
+    // ws
+    warmup: {
+        clientFiles: never[]
+        ssrFiles: never[]
+    }
+    // watch
+    middlewareMode: false
+    fs: {
+        strict: true
+        // allow
+        deny: string[]
+    }
+    // origin
+    preTransformRequests: true
+    // sourcemapIgnoreList
+    perEnvironmentStartEndDuringDev: false
+}> = Object.freeze({
   port: DEFAULT_DEV_PORT,
   strictPort: false,
   host: 'localhost',

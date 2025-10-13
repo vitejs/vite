@@ -113,7 +113,7 @@ import {
 
 const debug = createDebugger('vite:config', { depth: 10 })
 const promisifiedRealpath = promisify(fs.realpath)
-const SYMBOL_RESOLVED_CONFIG = Symbol('vite:resolved-config')
+const SYMBOL_RESOLVED_CONFIG: unique symbol = Symbol('vite:resolved-config')
 
 export interface ConfigEnv {
   /**
@@ -641,7 +641,160 @@ export interface ResolvedConfig
   > {}
 
 // inferred ones are omitted
-export const configDefaults = Object.freeze({
+export const configDefaults: Readonly<{
+    define: {}
+    dev: {
+        warmup: never[]
+        // preTransformRequests
+        /** @experimental */
+        sourcemap: {
+            js: true
+        }
+        sourcemapIgnoreList: undefined
+    }
+    build: Readonly<{
+        target: "baseline-widely-available"
+        polyfillModulePreload: true
+        modulePreload: true
+        outDir: "dist"
+        assetsDir: "assets"
+        assetsInlineLimit: 4096
+        sourcemap: false
+        terserOptions: {}
+        rollupOptions: {}
+        commonjsOptions: {
+            include: RegExp[]
+            extensions: string[]
+        }
+        dynamicImportVarsOptions: {
+            warnOnError: boolean
+            exclude: RegExp[]
+        }
+        write: true
+        emptyOutDir: null
+        copyPublicDir: true
+        manifest: false
+        lib: false
+        ssrManifest: false
+        ssrEmitAssets: false
+        reportCompressedSize: true
+        chunkSizeWarningLimit: 500
+        watch: null
+    }>
+    resolve: {
+        // mainFields
+        // conditions
+        externalConditions: string[]
+        extensions: string[]
+        dedupe: never[]
+        /** @experimental */
+        noExternal: never[]
+        external: never[]
+        preserveSymlinks: false
+        alias: never[]
+    }
+    // root
+    base: string
+    publicDir: string
+    // cacheDir
+    // mode
+    plugins: never[]
+    html: {
+        cspNonce: undefined
+    }
+    css: Readonly<{
+        transformer: "postcss"
+        preprocessorMaxWorkers: true
+        devSourcemap: false
+    }>
+    json: {
+        namedExports: true
+        stringify: "auto"
+    }
+    // esbuild
+    assetsInclude: undefined
+    /** @experimental */
+    builder: Readonly<{
+        sharedConfigBuild: false
+        sharedPlugins: false
+    }>
+    server: Readonly<{
+        port: number
+        strictPort: false
+        host: string
+        allowedHosts: never[]
+        https: undefined
+        open: false
+        proxy: undefined
+        cors: {
+            origin: RegExp
+        }
+        headers: {}
+        warmup: {
+            clientFiles: never[]
+            ssrFiles: never[]
+        }
+        middlewareMode: false
+        fs: {
+            strict: true
+            deny: string[]
+        }
+        preTransformRequests: true
+        perEnvironmentStartEndDuringDev: false
+    }>
+    preview: {
+        port: number
+    }
+    /** @experimental */
+    experimental: {
+        importGlobRestoreExtension: false
+        renderBuiltUrl: undefined
+        hmrPartialAccept: false
+    }
+    future: {
+        removePluginHookHandleHotUpdate: undefined
+        removePluginHookSsrArgument: undefined
+        removeServerModuleGraph: undefined
+        removeServerHot: undefined
+        removeServerTransformRequest: undefined
+        removeServerWarmupRequest: undefined
+        removeSsrLoadModule: undefined
+    }
+    legacy: {
+        skipWebSocketTokenCheck: false
+    }
+    logLevel: "info"
+    customLogger: undefined
+    clearScreen: true
+    envDir: undefined
+    envPrefix: string
+    worker: {
+        format: "iife"
+        plugins: () => never[]
+    }
+    optimizeDeps: {
+        include: never[]
+        exclude: never[]
+        needsInterop: never[]
+        // esbuildOptions
+        /** @experimental */
+        extensions: never[]
+        /** @deprecated @experimental */
+        disabled: "build"
+        // noDiscovery
+        /** @experimental */
+        holdUntilCrawlEnd: true
+        // entries
+        /** @experimental */
+        force: false
+    }
+    ssr: Readonly<{
+        target: "node"
+        optimizeDeps: {}
+    }>
+    environments: {}
+    appType: "spa"
+}> = Object.freeze({
   define: {},
   dev: {
     warmup: [],
@@ -721,7 +874,7 @@ export const configDefaults = Object.freeze({
   envPrefix: 'VITE_',
   worker: {
     format: 'iife',
-    plugins: () => [],
+    plugins: (): never[] => [],
     // rollupOptions
   },
   optimizeDeps: {

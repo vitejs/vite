@@ -25,11 +25,11 @@ export class EnvironmentModuleNode {
   type: 'js' | 'css' | 'asset'
   info?: ModuleInfo
   meta?: Record<string, any>
-  importers = new Set<EnvironmentModuleNode>()
+  importers: Set<EnvironmentModuleNode> = new Set<EnvironmentModuleNode>()
 
-  importedModules = new Set<EnvironmentModuleNode>()
+  importedModules: Set<EnvironmentModuleNode> = new Set<EnvironmentModuleNode>()
 
-  acceptedHmrDeps = new Set<EnvironmentModuleNode>()
+  acceptedHmrDeps: Set<EnvironmentModuleNode> = new Set<EnvironmentModuleNode>()
   acceptedHmrExports: Set<string> | null = null
   importedBindings: Map<string, Set<string>> | null = null
   isSelfAccepting?: boolean
@@ -90,16 +90,16 @@ export type ResolvedUrl = [
 export class EnvironmentModuleGraph {
   environment: string
 
-  urlToModuleMap = new Map<string, EnvironmentModuleNode>()
-  idToModuleMap = new Map<string, EnvironmentModuleNode>()
-  etagToModuleMap = new Map<string, EnvironmentModuleNode>()
+  urlToModuleMap: Map<string, EnvironmentModuleNode> = new Map<string, EnvironmentModuleNode>()
+  idToModuleMap: Map<string, EnvironmentModuleNode> = new Map<string, EnvironmentModuleNode>()
+  etagToModuleMap: Map<string, EnvironmentModuleNode> = new Map<string, EnvironmentModuleNode>()
   // a single file may corresponds to multiple modules with different queries
-  fileToModulesMap = new Map<string, Set<EnvironmentModuleNode>>()
+  fileToModulesMap: Map<string, Set<EnvironmentModuleNode>> = new Map<string, Set<EnvironmentModuleNode>>()
 
   /**
    * @internal
    */
-  _unresolvedUrlToModuleMap = new Map<
+  _unresolvedUrlToModuleMap: Map<string, EnvironmentModuleNode | Promise<EnvironmentModuleNode>> = new Map<
     string,
     Promise<EnvironmentModuleNode> | EnvironmentModuleNode
   >()
@@ -110,7 +110,7 @@ export class EnvironmentModuleGraph {
   _resolveId: (url: string) => Promise<PartialResolvedId | null>
 
   /** @internal */
-  _hasResolveFailedErrorModules = new Set<EnvironmentModuleNode>()
+  _hasResolveFailedErrorModules: Set<EnvironmentModuleNode> = new Set<EnvironmentModuleNode>()
 
   constructor(
     environment: string,
@@ -165,7 +165,7 @@ export class EnvironmentModuleGraph {
 
   invalidateModule(
     mod: EnvironmentModuleNode,
-    seen = new Set<EnvironmentModuleNode>(),
+    seen: Set<EnvironmentModuleNode> = new Set<EnvironmentModuleNode>(),
     timestamp: number = monotonicDateNow(),
     isHmr: boolean = false,
     /** @internal */

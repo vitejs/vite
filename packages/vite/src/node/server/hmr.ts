@@ -33,7 +33,7 @@ import {
 import type { HttpServer } from '.'
 import { restartServerWithUrls } from '.'
 
-export const debugHmr = createDebugger('vite:hmr')
+export const debugHmr: ((...args: any[]) => any) | undefined = createDebugger('vite:hmr')
 
 const whitespaceRE = /\s/
 

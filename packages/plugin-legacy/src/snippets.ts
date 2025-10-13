@@ -4,11 +4,11 @@ export const safari10NoModuleFix = `!function(){var e=document,t=e.createElement
 
 export const legacyPolyfillId = 'vite-legacy-polyfill'
 export const legacyEntryId = 'vite-legacy-entry'
-export const systemJSInlineCode = `System.import(document.getElementById('${legacyEntryId}').getAttribute('data-src'))`
+export const systemJSInlineCode: "System.import(document.getElementById('vite-legacy-entry').getAttribute('data-src'))" = `System.import(document.getElementById('${legacyEntryId}').getAttribute('data-src'))`
 
 const detectModernBrowserVarName = '__vite_is_modern_browser'
 export const detectModernBrowserDetector = `import.meta.url;import("_").catch(()=>1);(async function*(){})().next()`
-export const detectModernBrowserCode = `${detectModernBrowserDetector};window.${detectModernBrowserVarName}=true`
-export const dynamicFallbackInlineCode = `!function(){if(window.${detectModernBrowserVarName})return;console.warn("vite: loading legacy chunks, syntax error above and the same error below should be ignored");var e=document.getElementById("${legacyPolyfillId}"),n=document.createElement("script");n.src=e.src,n.onload=function(){${systemJSInlineCode}},document.body.appendChild(n)}();`
+export const detectModernBrowserCode: "import.meta.url;import(\"_\").catch(()=>1);(async function*(){})().next();window.__vite_is_modern_browser=true" = `${detectModernBrowserDetector};window.${detectModernBrowserVarName}=true`
+export const dynamicFallbackInlineCode: "!function(){if(window.__vite_is_modern_browser)return;console.warn(\"vite: loading legacy chunks, syntax error above and the same error below should be ignored\");var e=document.getElementById(\"vite-legacy-polyfill\"),n=document.createElement(\"script\");n.src=e.src,n.onload=function(){System.import(document.getElementById('vite-legacy-entry').getAttribute('data-src'))},document.body.appendChild(n)}();" = `!function(){if(window.${detectModernBrowserVarName})return;console.warn("vite: loading legacy chunks, syntax error above and the same error below should be ignored");var e=document.getElementById("${legacyPolyfillId}"),n=document.createElement("script");n.src=e.src,n.onload=function(){${systemJSInlineCode}},document.body.appendChild(n)}();`
 
-export const modernChunkLegacyGuard = `export function __vite_legacy_guard(){${detectModernBrowserDetector}};`
+export const modernChunkLegacyGuard: "export function __vite_legacy_guard(){import.meta.url;import(\"_\").catch(()=>1);(async function*(){})().next()};" = `export function __vite_legacy_guard(){${detectModernBrowserDetector}};`

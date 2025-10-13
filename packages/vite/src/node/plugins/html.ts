@@ -84,7 +84,10 @@ export const isHTMLRequest = (request: string): boolean =>
   htmlLangRE.test(request)
 
 // HTML Proxy Caches are stored by config -> filePath -> index
-export const htmlProxyMap = new WeakMap<
+export const htmlProxyMap: WeakMap<ResolvedConfig, Map<string, {
+    code: string
+    map?: SourceMapInput
+}[]>> = new WeakMap<
   ResolvedConfig,
   Map<string, Array<{ code: string; map?: SourceMapInput }>>
 >()
@@ -92,7 +95,7 @@ export const htmlProxyMap = new WeakMap<
 // HTML Proxy Transform result are stored by config
 // `${hash(importer)}_${query.index}` -> transformed css code
 // PS: key like `hash(/vite/playground/assets/index.html)_1`)
-export const htmlProxyResult = new Map<string, string>()
+export const htmlProxyResult: Map<string, string> = new Map<string, string>()
 
 export function htmlInlineProxyPlugin(config: ResolvedConfig): Plugin {
   // Should do this when `constructor` rather than when `buildStart`,
@@ -163,7 +166,7 @@ const noInlineLinkRels = new Set([
   'manifest',
 ])
 
-export const isAsyncScriptMap = new WeakMap<
+export const isAsyncScriptMap: WeakMap<ResolvedConfig, Map<string, boolean>> = new WeakMap<
   ResolvedConfig,
   Map<string, boolean>
 >()

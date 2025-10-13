@@ -191,7 +191,16 @@ export interface CSSModulesOptions {
       ) => string)
 }
 
-export const cssConfigDefaults = Object.freeze({
+export const cssConfigDefaults: Readonly<{
+    /** @experimental */
+    transformer: "postcss"
+    // modules
+    // preprocessorOptions
+    preprocessorMaxWorkers: true
+    // postcss
+    /** @experimental */
+    devSourcemap: false
+}> = Object.freeze({
   /** @experimental */
   transformer: 'postcss',
   // modules
@@ -268,13 +277,13 @@ const cssModulesCache = new WeakMap<
   Map<string, Record<string, string>>
 >()
 
-export const removedPureCssFilesCache = new WeakMap<
+export const removedPureCssFilesCache: WeakMap<ResolvedConfig, Map<string, RenderedChunk>> = new WeakMap<
   ResolvedConfig,
   Map<string, RenderedChunk>
 >()
 
 // Used only if the config doesn't code-split CSS (builds a single CSS file)
-export const cssBundleNameCache = new WeakMap<ResolvedConfig, string>()
+export const cssBundleNameCache: WeakMap<ResolvedConfig, string> = new WeakMap<ResolvedConfig, string>()
 
 const postcssConfigCache = new WeakMap<
   ResolvedConfig,
@@ -1905,11 +1914,11 @@ type CssUrlReplacer = (
   rawUrl: string,
 ) => string | false | Promise<string | false>
 // https://drafts.csswg.org/css-syntax-3/#identifier-code-point
-export const cssUrlRE =
+export const cssUrlRE: RegExp =
   /(?<!@import\s+)(?<=^|[^\w\-\u0080-\uffff])url\((\s*('[^']+'|"[^"]+")\s*|(?:\\.|[^'")\\])+)\)/
-export const cssDataUriRE =
+export const cssDataUriRE: RegExp =
   /(?<=^|[^\w\-\u0080-\uffff])data-uri\((\s*('[^']+'|"[^"]+")\s*|[^'")]+)\)/
-export const importCssRE =
+export const importCssRE: RegExp =
   /@import\s+(?:url\()?('[^']+\.css'|"[^"]+\.css"|[^'"\s)]+\.css)/
 // Assuming a function name won't be longer than 256 chars
 // eslint-disable-next-line regexp/no-unused-capturing-group -- doesn't detect asyncReplace usage

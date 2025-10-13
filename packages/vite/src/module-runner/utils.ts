@@ -1,7 +1,7 @@
 import * as pathe from 'pathe'
 import { isWindows } from '../shared/utils'
 
-export const decodeBase64 =
+export const decodeBase64: typeof atob =
   typeof atob !== 'undefined'
     ? atob
     : (str: string) => Buffer.from(str, 'base64').toString('utf-8')
@@ -32,8 +32,8 @@ function encodePathChars(filepath: string) {
   return filepath
 }
 
-export const posixDirname = pathe.dirname
-export const posixResolve = pathe.resolve
+export const posixDirname: (path: string) => string = pathe.dirname
+export const posixResolve: (...paths: string[]) => string = pathe.resolve
 
 export function posixPathToFileHref(posixPath: string): string {
   let resolved = posixResolve(posixPath)
