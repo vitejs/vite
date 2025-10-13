@@ -15,7 +15,12 @@ import type {
   ResolvedResult,
   SSRImportMetadata,
 } from './types'
-import { posixDirname, posixPathToFileHref, posixResolve } from './utils'
+import {
+  createIsBuiltin,
+  posixDirname,
+  posixPathToFileHref,
+  posixResolve,
+} from './utils'
 import {
   ssrDynamicImportKey,
   ssrExportAllKey,
@@ -44,6 +49,7 @@ export class ModuleRunner {
     string,
     Promise<EvaluatedModuleNode>
   >()
+  private readonly isBuiltin?: (id: string) => boolean
 
   private closed = false
 
@@ -54,6 +60,9 @@ export class ModuleRunner {
   ) {
     this.evaluatedModules = options.evaluatedModules ?? new EvaluatedModules()
     this.transport = normalizeModuleRunnerTransport(options.transport)
+    if (options.builtins) {
+      this.isBuiltin = createIsBuiltin(options.builtins)
+    }
     if (options.hmr !== false) {
       const optionsHmr = options.hmr ?? true
       const resolvedHmrLogger: HMRLogger =
@@ -255,14 +264,16 @@ export class ModuleRunner {
       (
         url.startsWith('data:')
           ? { externalize: url, type: 'builtin' }
-          : await this.transport.invoke('fetchModule', [
-              url,
-              importer,
-              {
-                cached: isCached,
-                startOffset: this.evaluator.startOffset,
-              },
-            ])
+          : this.isBuiltin?.(url)
+            ? { externalize: url, type: 'builtin' }
+            : await this.transport.invoke('fetchModule', [
+                url,
+                importer,
+                {
+                  cached: isCached,
+                  startOffset: this.evaluator.startOffset,
+                },
+              ])
       ) as ResolvedResult
 
     if ('cache' in fetchedModule) {

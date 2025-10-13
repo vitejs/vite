@@ -130,6 +130,7 @@ export function createServerModuleRunner(
         channel: environment.hot as NormalizedServerHotChannel,
       }),
       hmr,
+      builtins: environment.config.resolve.builtins,
       createImportMeta: createNodeImportMeta,
       sourcemapInterceptor: resolveSourceMapOptions(options),
     },
