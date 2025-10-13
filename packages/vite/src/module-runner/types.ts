@@ -117,6 +117,10 @@ export interface ModuleRunnerOptions {
    * Custom module cache. If not provided, creates a separate module cache for each ModuleRunner instance.
    */
   evaluatedModules?: EvaluatedModules
+  /**
+   * List of builtin modules to check on the client side.
+   */
+  builtins?: (string | RegExp)[]
 }
 
 export interface ImportMetaEnv {
