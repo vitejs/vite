@@ -1592,6 +1592,8 @@ importers:
 
   playground/ssr-deps/ts-transpiled-exports: {}
 
+  playground/ssr-external-regex: {}
+
   playground/ssr-html:
     devDependencies:
       express:
