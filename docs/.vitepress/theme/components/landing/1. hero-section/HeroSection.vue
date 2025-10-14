@@ -7,7 +7,7 @@ import HeroDiagram from './HeroDiagram.vue'
     <div class="container">
       <!-- ViteConf 2025 Button -->
       <a
-        href="https://viteconf.org/?utm=vite"
+        href="https://www.youtube.com/playlist?list=PLqGQbXn_GDmkJaoykvHCUmXUPjhgH2bVr"
         class="hero__pill"
         target="_blank"
       >
@@ -17,7 +17,7 @@ import HeroDiagram from './HeroDiagram.vue'
           width="20"
           height="20"
         />
-        <span>ViteConf 2025</span>
+        <span>ViteConf 2025 Replay</span>
       </a>
 
       <!-- Heading -->

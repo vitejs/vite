@@ -45,9 +45,9 @@
     "@babel/preset-env": "^7.28.3",
     "babel-plugin-polyfill-corejs3": "^0.13.0",
     "babel-plugin-polyfill-regenerator": "^0.6.5",
-    "browserslist": "^4.26.2",
+    "browserslist": "^4.26.3",
     "browserslist-to-esbuild": "^2.1.1",
-    "core-js": "^3.45.1",
+    "core-js": "^3.46.0",
     "magic-string": "^0.30.19",
     "regenerator-runtime": "^0.14.1",
     "systemjs": "^6.15.1"
@@ -61,7 +61,7 @@
     "acorn": "^8.15.0",
     "fdir": "^6.5.0",
     "picocolors": "^1.1.1",
-    "tsdown": "^0.15.5",
+    "tsdown": "^0.15.7",
     "vite": "workspace:*"
   }
 }
