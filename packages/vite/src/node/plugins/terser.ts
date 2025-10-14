@@ -1,5 +1,4 @@
 import { pathToFileURL } from 'node:url'
-import path from 'node:path'
 import type {
   TerserMinifyOptions,
   TerserMinifyOutput,
@@ -7,7 +6,7 @@ import type {
 import { WorkerWithFallback } from 'artichokie'
 import type { Plugin } from '../plugin'
 import type { ResolvedConfig } from '..'
-import { generateCodeFrame } from '../utils'
+import { _dirname, generateCodeFrame } from '../utils'
 import { createNodeResolverWithVite } from '../idResolver'
 
 export interface TerserOptions extends TerserMinifyOptions {
@@ -25,7 +24,9 @@ const loadTerserPath = (root: string) => {
   if (!terserPath) {
     terserPath = (async () => {
       const nodeResolveWithVite = await createNodeResolverWithVite(root)
-      const resolved = nodeResolveWithVite('terser', path.join(root, '*'))
+      // Try resolve from project root first, then the current vite installation path
+      const resolved =
+        nodeResolveWithVite('terser') ?? nodeResolveWithVite('terser', _dirname)
       if (resolved) return resolved
 
       throw new Error(

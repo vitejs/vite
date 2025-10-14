@@ -56,6 +56,7 @@ import type { ResolvedConfig } from '../config'
 import type { Plugin } from '../plugin'
 import { checkPublicFile } from '../publicDir'
 import {
+  _dirname,
   arraify,
   asyncReplace,
   combineSourcemaps,
@@ -2331,7 +2332,9 @@ async function loadPreprocessorPath(
   }
   loadedPreprocessorPath[lang] = (async () => {
     nodeResolveWithVite ??= await createNodeResolverWithVite(root)
-    const resolved = nodeResolveWithVite(lang, path.join(root, '*'))
+    // Try resolve from project root first, then the current vite installation path
+    const resolved =
+      nodeResolveWithVite(lang) ?? nodeResolveWithVite(lang, _dirname)
     if (resolved) return resolved
 
     const installCommand = getPackageManagerCommand('install')

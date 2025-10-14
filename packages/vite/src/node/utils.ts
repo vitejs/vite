@@ -173,7 +173,9 @@ export function isOptimizable(
 export const bareImportRE = /^(?![a-zA-Z]:)[\w@](?!.*:\/\/)/
 export const deepImportRE = /^([^@][^/]*)\/|^(@[^/]+\/[^/]+)\//
 
-const _dirname = path.dirname(fileURLToPath(/** #__KEEP__ */ import.meta.url))
+export const _dirname = path.dirname(
+  fileURLToPath(/** #__KEEP__ */ import.meta.url),
+)
 
 // NOTE: we don't use VERSION variable exported from rollup to avoid importing rollup in dev
 export const rollupVersion =
