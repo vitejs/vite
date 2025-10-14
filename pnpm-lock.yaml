@@ -277,8 +277,8 @@ importers:
         specifier: ^1.0.0-next.25
         version: 1.0.0-next.25
       '@rolldown/pluginutils':
-        specifier: ^1.0.0-beta.42
-        version: 1.0.0-beta.42
+        specifier: ^1.0.0-beta.43
+        version: 1.0.0-beta.43
       '@rollup/plugin-alias':
         specifier: ^5.1.1
         version: 5.1.1(rollup@4.43.0)
@@ -3188,9 +3188,6 @@ packages:
 
   '@rolldown/pluginutils@1.0.0-beta.29':
     resolution: {integrity: sha512-NIJgOsMjbxAXvoGq/X0gD7VPMQ8j9g0BiDaNjVNVjvl+iKXxL3Jre0v31RmBYeLEmkbj2s02v8vFTbUXi5XS2Q==}
-
-  '@rolldown/pluginutils@1.0.0-beta.42':
-    resolution: {integrity: sha512-N7pQzk9CyE7q0bBN/q0J8s6Db279r5kUZc6d7/wWRe9/zXqC52HQovVyu6iXPIDY4BEzzgbVLhVFXrOuGJ22ZQ==}
 
   '@rolldown/pluginutils@1.0.0-beta.43':
     resolution: {integrity: sha512-5Uxg7fQUCmfhax7FJke2+8B6cqgeUJUD9o2uXIKXhD+mG0mL6NObmVoi9wXEU1tY89mZKgAYA6fTbftx3q2ZPQ==}
@@ -9041,8 +9038,6 @@ snapshots:
     optional: true
 
   '@rolldown/pluginutils@1.0.0-beta.29': {}
-
-  '@rolldown/pluginutils@1.0.0-beta.42': {}
 
   '@rolldown/pluginutils@1.0.0-beta.43': {}
 
