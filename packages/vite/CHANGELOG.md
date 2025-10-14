@@ -1,3 +1,9 @@
+## <small>6.3.7 (2025-10-14)</small>
+
+* fix(esbuild): inject esbuild helpers correctly for esbuild 0.25.9+ (#20940) ([c59a222](https://github.com/vitejs/vite/commit/c59a222aa584c087cfe710173de1b9ecb597a3ff)), closes [#20940](https://github.com/vitejs/vite/issues/20940)
+
+
+
 ## <small>6.3.6 (2025-09-08)</small>
 
 * fix: apply `fs.strict` check to HTML files (#20736) ([0ab19ea](https://github.com/vitejs/vite/commit/0ab19ea9fcb66f544328f442cf6e70f7c0528d5f)), closes [#20736](https://github.com/vitejs/vite/issues/20736)
