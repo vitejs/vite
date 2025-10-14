@@ -4,6 +4,7 @@
   "labels": ["dependencies"],
   "ignorePaths": ["**/__tests__/**"],
   "rangeStrategy": "bump",
+  "postUpdateOptions": ["pnpmDedupe"],
   "packageRules": [
     {
       "matchDepTypes": ["peerDependencies"],

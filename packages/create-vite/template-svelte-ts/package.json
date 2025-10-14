@@ -12,9 +12,9 @@
   "devDependencies": {
     "@sveltejs/vite-plugin-svelte": "^6.2.1",
     "@tsconfig/svelte": "^5.0.5",
-    "@types/node": "^24.6.0",
-    "svelte": "^5.39.6",
-    "svelte-check": "^4.3.2",
+    "@types/node": "^24.7.2",
+    "svelte": "^5.39.12",
+    "svelte-check": "^4.3.3",
     "typescript": "~5.9.3",
     "vite": "npm:rolldown-vite@^7.1.16"
   }
