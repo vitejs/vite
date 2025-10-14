@@ -1,4 +1,5 @@
-// NOTE: Cannot use subpath imports for some reason
+// NOTE: `#types/importMeta` does not work as `src/node/__tests__/package.json` shadows the root
+// `package.json` and does not declare the subpath import.
 import '../../../../../../types/importMeta'
 
 export interface ModuleType {
