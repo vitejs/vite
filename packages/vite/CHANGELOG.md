@@ -1,3 +1,29 @@
+## <small>[7.1.17](https://github.com/vitejs/rolldown-vite/compare/v7.1.16...v7.1.17) (2025-10-14)</small>
+### Features
+
+* update rolldown ([08ea49e](https://github.com/vitejs/rolldown-vite/commit/08ea49e0b68f7a74d4c945e01f57a23cb810cd9d))
+
+### Bug Fixes
+
+* **css:** avoid duplicate style for server rendered stylesheet link and client inline style during dev ([#20767](https://github.com/vitejs/rolldown-vite/issues/20767)) ([3a92bc7](https://github.com/vitejs/rolldown-vite/commit/3a92bc79b306a01b8aaf37f80b2239eaf6e488e7))
+* **css:** respect emitAssets when cssCodeSplit=false ([#20883](https://github.com/vitejs/rolldown-vite/issues/20883)) ([d3e7eee](https://github.com/vitejs/rolldown-vite/commit/d3e7eeefa91e1992f47694d16fe4dbe708c4d80e))
+* **deps:** update all non-major dependencies ([879de86](https://github.com/vitejs/rolldown-vite/commit/879de86935a31b4e47ab907ddd859366518ce268))
+* **deps:** update all non-major dependencies ([#20894](https://github.com/vitejs/rolldown-vite/issues/20894)) ([3213f90](https://github.com/vitejs/rolldown-vite/commit/3213f90ff0d8f274bcec65f40aac6dfcff1ac244))
+* **dev:** allow aliases starting with `//` ([#20760](https://github.com/vitejs/rolldown-vite/issues/20760)) ([b95fa2a](https://github.com/vitejs/rolldown-vite/commit/b95fa2aa7564eda4c9f05ee7616a2dbada35e463))
+* **dev:** remove timestamp query consistently ([#20887](https://github.com/vitejs/rolldown-vite/issues/20887)) ([6537d15](https://github.com/vitejs/rolldown-vite/commit/6537d15591619d7e1cfc1e50599bec16cd88340f))
+* **esbuild:** inject esbuild helpers correctly for esbuild 0.25.9+ ([#20906](https://github.com/vitejs/rolldown-vite/issues/20906)) ([446eb38](https://github.com/vitejs/rolldown-vite/commit/446eb386329ef682d614c77958a542f2dc222880))
+* normalize path before calling `fileToBuiltUrl` ([#20898](https://github.com/vitejs/rolldown-vite/issues/20898)) ([73b6d24](https://github.com/vitejs/rolldown-vite/commit/73b6d243e0398ee5d8d44c7d24162f4a0f4b1cf1))
+* preserve original sourcemap file field when combining sourcemaps ([#20926](https://github.com/vitejs/rolldown-vite/issues/20926)) ([c714776](https://github.com/vitejs/rolldown-vite/commit/c714776aa1dcc24299a81c1495cbcbb1b1ef1dd3))
+
+### Documentation
+
+* correct `WebSocket` spelling ([#20890](https://github.com/vitejs/rolldown-vite/issues/20890)) ([29e98dc](https://github.com/vitejs/rolldown-vite/commit/29e98dc3efe35efbd978523367c05db7d2e7a278))
+
+### Miscellaneous Chores
+
+* **deps:** update rolldown-related dependencies ([#20923](https://github.com/vitejs/rolldown-vite/issues/20923)) ([a5e3b06](https://github.com/vitejs/rolldown-vite/commit/a5e3b064fa7ca981cb6f15f8e88806b36a99b8bf))
+* fix type error ([2ac79ea](https://github.com/vitejs/rolldown-vite/commit/2ac79ea3e11184b3db0a6ceb14eb45f2604f999c))
+
 ## <small>[7.1.16](https://github.com/vitejs/rolldown-vite/compare/v7.1.15...v7.1.16) (2025-10-07)</small>
 ### Features
 
