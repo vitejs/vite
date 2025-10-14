@@ -274,6 +274,7 @@ async function untilBrowserLog(
   expectOrder = true,
 ): Promise<string[]> {
   const { promise, resolve, reject } = promiseWithResolvers<void>()
+  let timeoutId: ReturnType<typeof setTimeout>
 
   const logs = []
 
@@ -322,12 +323,27 @@ async function untilBrowserLog(
       }
     }
 
+    timeoutId = setTimeout(() => {
+      const nextTarget = Array.isArray(target)
+        ? expectOrder
+          ? target[0]
+          : target.join(', ')
+        : target
+      reject(
+        new Error(
+          `Timeout waiting for browser logs. Waiting for: ${nextTarget}`,
+        ),
+      )
+      page.off('console', handleMsg)
+    }, 5000)
+
     page.on('console', handleMsg)
   } catch (err) {
     reject(err)
   }
 
   await promise
+  clearTimeout(timeoutId)
 
   return logs
 }
