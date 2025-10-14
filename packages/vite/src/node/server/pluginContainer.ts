@@ -595,7 +595,7 @@ class EnvironmentPluginContainer<Env extends Environment = Environment> {
       )
       if (isObject(result)) {
         if (result.code !== undefined) {
-          code = result.code
+          code = result.code as string
           if (result.map) {
             if (debugSourcemapCombine) {
               // @ts-expect-error inject plugin name for debug purpose
