@@ -115,7 +115,6 @@ export interface CorsOptions {
 export type CorsOrigin = boolean | string | RegExp | (string | RegExp)[]
 
 export async function resolveHttpServer(
-  { proxy }: CommonServerOptions,
   app: Connect.Server,
   httpsOptions?: HttpsServerOptions,
 ): Promise<HttpServer> {
