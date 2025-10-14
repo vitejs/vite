@@ -182,6 +182,23 @@ describe.runIf(isBuild)('build tests', () => {
     )
   })
 
+  test('sourcemap file field is consistent (#20853)', async () => {
+    const assets = listAssets()
+    const mapAssets = assets.filter((asset) => asset.endsWith('.js.map'))
+
+    for (const mapAsset of mapAssets) {
+      const mapContent = readFile(`dist/assets/${mapAsset}`)
+      const mapObj = JSON.parse(mapContent)
+
+      if (mapObj.file) {
+        expect(
+          mapObj.file,
+          `Sourcemap file field for ${mapAsset} should be just the filename`,
+        ).toMatch(/^[^/]+\.js$/)
+      }
+    }
+  })
+
   test('__vite__mapDeps injected after banner', async () => {
     const js = findAssetFile(/after-preload-dynamic-hashbang-[-\w]{8}\.js$/)
     expect(js.split('\n').slice(0, 2)).toEqual([
