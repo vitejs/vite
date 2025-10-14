@@ -193,10 +193,6 @@ describe.runIf(isBuild)('build tests', () => {
       if (mapObj.file) {
         expect(
           mapObj.file,
-          `Sourcemap file field for ${mapAsset} should not include directory prefix`,
-        ).not.toMatch(/^assets\//)
-        expect(
-          mapObj.file,
           `Sourcemap file field for ${mapAsset} should be just the filename`,
         ).toMatch(/^[^/]+\.js$/)
       }
