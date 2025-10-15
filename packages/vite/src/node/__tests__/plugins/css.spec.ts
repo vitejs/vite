@@ -458,3 +458,105 @@ describe('resolveLibCssFilename', () => {
     expect(filename).toBe('custom-name.css')
   })
 })
+
+describe('scopeBehaviour and auto option', () => {
+  const css = `.foo { color: red; }`
+  test('scopeBehaviour: local treats plain css as module', async () => {
+    const { transform } = await createCssPluginTransform({
+      css: { modules: { scopeBehaviour: 'local' } },
+    })
+    const result = await transform(css, '/style.css')
+    expect(result.code).toMatch(/\._foo_.*? \{/)
+  })
+
+  test('default does not treat plain css as module', async () => {
+    const { transform } = await createCssPluginTransform()
+    const result = await transform(css, '/style.css')
+    expect(result.code).toContain('.foo {')
+  })
+
+  test('auto: RegExp matches as module', async () => {
+    const { transform } = await createCssPluginTransform({
+      css: { modules: { auto: /\.m\.css$/ } },
+    })
+    const result = await transform(css, '/style.m.css')
+    expect(result.code).toMatch(/\._foo_.*? \{/)
+  })
+
+  test('auto: RegExp does not match as module', async () => {
+    const { transform } = await createCssPluginTransform({
+      css: { modules: { auto: /\.m\.css$/ } },
+    })
+    const result = await transform(css, '/style.css')
+    expect(result.code).toContain('.foo {')
+  })
+
+  test('auto: function matches as module', async () => {
+    const { transform } = await createCssPluginTransform({
+      css: {
+        modules: {
+          auto: (path) => path.includes('/components/'),
+        },
+      },
+    })
+    const result = await transform(css, '/components/style.css')
+    expect(result.code).toMatch(/\._foo_.*? \{/)
+  })
+
+  test('auto: function does not match as module', async () => {
+    const { transform } = await createCssPluginTransform({
+      css: {
+        modules: {
+          auto: (path) => path.includes('/components/'),
+        },
+      },
+    })
+    const result = await transform(css, '/other/style.css')
+    expect(result.code).toContain('.foo {')
+  })
+
+  test('auto: true follows .module convention', async () => {
+    const { transform } = await createCssPluginTransform({
+      css: { modules: { auto: true } },
+    })
+    const result1 = await transform(css, '/style.css')
+    expect(result1.code).toContain('.foo {')
+    const result2 = await transform(css, '/style.module.css')
+    expect(result2.code).toMatch(/\._foo_.*? \{/)
+  })
+
+  test('auto: false treats all files as global', async () => {
+    const { transform } = await createCssPluginTransform({
+      css: { modules: { auto: false } },
+    })
+    const result = await transform(css, '/style.module.css')
+    expect(result.code).toContain('.foo {')
+  })
+
+  test('globalModulePaths has precedence', async () => {
+    const { transform } = await createCssPluginTransform({
+      css: {
+        modules: {
+          auto: true,
+          scopeBehaviour: 'local',
+          globalModulePaths: [/global\.module\.css$/],
+        },
+      },
+    })
+    const result = await transform(css, '/styles/global.module.css')
+    expect(result.code).toContain('.foo {')
+  })
+
+  test('auto has precedence over scopeBehaviour', async () => {
+    const { transform } = await createCssPluginTransform({
+      css: {
+        modules: {
+          auto: false,
+          scopeBehaviour: 'local',
+        },
+      },
+    })
+    const result = await transform(css, '/style.css')
+    expect(result.code).toContain('.foo {')
+  })
+})
