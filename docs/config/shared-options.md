@@ -183,6 +183,7 @@ A nonce value placeholder that will be used when generating script / style tags.
     ) => void
     scopeBehaviour?: 'global' | 'local'
     globalModulePaths?: RegExp[]
+    auto?: boolean | RegExp | ((path: string) => boolean)
     exportGlobals?: boolean
     generateScopedName?:
       | string

@@ -274,7 +274,8 @@ Note that CSS minification will run after PostCSS and will use [`build.cssTarget
 
 ### CSS Modules
 
-Any CSS file ending with `.module.css` is considered a [CSS modules file](https://github.com/css-modules/css-modules). Importing such a file will return the corresponding module object:
+By default, Vite treats all CSS files ending with **`.module.css`** as [CSS Modules](https://github.com/css-modules/css-modules).
+Importing these files returns a corresponding module object.
 
 ```css [example.module.css]
 .red {
@@ -282,14 +283,48 @@ Any CSS file ending with `.module.css` is considered a [CSS modules file](https:
 }
 ```
 
-```js twoslash
-import 'vite/client'
-// ---cut---
+```js
 import classes from './example.module.css'
 document.getElementById('foo').className = classes.red
 ```
 
 CSS modules behavior can be configured via the [`css.modules` option](/config/shared-options.md#css-modules).
+
+#### CSS Module Matching Configuration Options
+
+All options are configured in the `css.modules` object.
+Vite's internal CSS plugin matches files according to the priority order: `globalModulePaths`, `auto`, and `scopeBehaviour`, and stops at the first matching rule.
+
+| Option                  | Type                            | Description                                                                                                                                                                                                           |
+| :---------------------- | :------------------------------ | :-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **`globalModulePaths`** | `RegExp[]`                      | Highest priority. Files matching any regex in this array will never be treated as modules.                                                                                                                            |
+| **`auto`**              | `boolean \| RegExp \| Function` | If set, determines module matching completely, overriding `scopeBehaviour`. Can be a boolean, a regular expression, or a custom function, e.g., `auto: /\.m\.css$/` or `auto: path => path.includes('/components/')`. |
+| **`scopeBehaviour`**    | `'local' \| 'global'`           | Used if `auto` is not defined. `'local'` treats all unmatched files as modules; `'global'` falls back to the default `.module.css` file naming convention.                                                            |
+
+#### Example Configuration
+
+```js
+// vite.config.js
+export default {
+  css: {
+    modules: {
+      globalModulePaths: [/global\.css$/],
+      auto: /\.m\.css$/,
+      scopeBehaviour: 'local',
+    },
+  },
+}
+```
+
+### Usage Notes
+
+- **Priority Exclusion**: Files matching `globalModulePaths` are never treated as modules
+
+- **Custom Rules**: If `auto` is defined, it fully controls module matching behavior
+
+- **Default Behavior**: If `auto` is not used, `scopeBehaviour` determines module matching
+
+- **Fallback Rule**: If none of the above match, the system falls back to checking whether the file name contains `.module.`
 
 If `css.modules.localsConvention` is set to enable camelCase locals (e.g. `localsConvention: 'camelCaseOnly'`), you can also use named imports:
 
