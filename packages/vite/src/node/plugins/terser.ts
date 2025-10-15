@@ -19,28 +19,20 @@ export interface TerserOptions extends TerserMinifyOptions {
   maxWorkers?: number
 }
 
-let terserPath: string | Promise<string> | undefined
-const loadTerserPath = (root: string) => {
-  if (!terserPath) {
-    terserPath = (async () => {
-      // Try resolve from project root first, then the current vite installation path
-      const resolved =
-        nodeResolveWithVite('terser', undefined, { root }) ??
-        nodeResolveWithVite('terser', _dirname, { root })
-      if (resolved) return resolved
+let terserPath: string | undefined
+function loadTerserPath(root: string) {
+  if (terserPath) return terserPath
 
-      throw new Error(
-        'terser not found. Since Vite v3, terser has become an optional dependency. You need to install it.',
-      )
-    })()
+  // Try resolve from project root first, then the current vite installation path
+  const resolved =
+    nodeResolveWithVite('terser', undefined, { root }) ??
+    nodeResolveWithVite('terser', _dirname, { root })
+  if (resolved) return (terserPath = resolved)
 
-    terserPath
-      // Set the result directly to avoid needing to resolve the promise again
-      .then((p) => (terserPath = p))
-      // Set undefined so next retry work if the package is installed later
-      .catch(() => (terserPath = undefined))
-  }
-  return terserPath
+  // Error if we can't find the package
+  throw new Error(
+    'terser not found. Since Vite v3, terser has become an optional dependency. You need to install it.',
+  )
 }
 
 export function terserPlugin(config: ResolvedConfig): Plugin {
@@ -111,7 +103,7 @@ export function terserPlugin(config: ResolvedConfig): Plugin {
       // Lazy load worker.
       worker ||= makeWorker()
 
-      const terserPath = pathToFileURL(await loadTerserPath(config.root)).href
+      const terserPath = pathToFileURL(loadTerserPath(config.root)).href
       try {
         const res = await worker.run(terserPath, code, {
           safari10: true,

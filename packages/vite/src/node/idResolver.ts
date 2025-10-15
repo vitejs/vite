@@ -1,6 +1,6 @@
 import type { PartialResolvedId } from 'rollup'
 import aliasPlugin from '@rollup/plugin-alias'
-import { type ResolvedConfig } from './config'
+import type { ResolvedConfig } from './config'
 import type { EnvironmentPluginContainer } from './server/pluginContainer'
 import { createEnvironmentPluginContainer } from './server/pluginContainer'
 import { resolvePlugin } from './plugins/resolve'

@@ -2360,7 +2360,7 @@ let cachedSss: PostCSS.Syntax | Promise<PostCSS.Syntax>
 async function loadSss(root: string): Promise<PostCSS.Syntax> {
   if (!cachedSss) {
     cachedSss = (async () => {
-      const sssPath = await loadPreprocessorPath(PostCssDialectLang.sss, root)
+      const sssPath = loadPreprocessorPath(PostCssDialectLang.sss, root)
       const resolved = (await import(pathToFileURL(sssPath).href)).default
       return (cachedSss = resolved)
     })()
@@ -2792,7 +2792,7 @@ const lessProcessor = (
       worker?.stop()
     },
     async process(environment, source, root, options, resolvers) {
-      const lessPath = await loadPreprocessorPath(PreprocessLang.less, root)
+      const lessPath = loadPreprocessorPath(PreprocessLang.less, root)
       worker ??= makeLessWorker(environment, resolvers, maxWorkers)
 
       const { content, map: additionalMap } = await getSource(
@@ -2911,7 +2911,7 @@ const stylProcessor = (
       worker?.stop()
     },
     async process(_environment, source, root, options, _resolvers) {
-      const stylusPath = await loadPreprocessorPath(PreprocessLang.stylus, root)
+      const stylusPath = loadPreprocessorPath(PreprocessLang.stylus, root)
       worker ??= makeStylWorker(maxWorkers)
 
       // Get source with preprocessor options.additionalData. Make sure a new line separator
