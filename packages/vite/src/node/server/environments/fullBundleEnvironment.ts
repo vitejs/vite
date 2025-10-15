@@ -15,6 +15,7 @@ import type { ViteDevServer } from '../../server'
 import { createDebugger } from '../../utils'
 import { getShortName } from '../hmr'
 import type { WebSocketClient } from '../ws'
+import { prepareError } from '../middlewares/error'
 
 const debug = createDebugger('vite:full-bundle-mode')
 
@@ -121,7 +122,13 @@ export class FullBundleDevEnvironment extends DevEnvironment {
     this.devEngine = await dev(rollupOptions, outputOptions, {
       onHmrUpdates: (result) => {
         if (result instanceof Error) {
-          // TODO: handle error
+          // TODO: send to the specific client
+          for (const client of this.clients.getAll()) {
+            client.send({
+              type: 'error',
+              err: prepareError(result),
+            })
+          }
           return
         }
         const { updates, changedFiles } = result
@@ -136,6 +143,33 @@ export class FullBundleDevEnvironment extends DevEnvironment {
           this.invalidateCalledModules.get(clientId)?.clear()
           const client = this.clients.get(clientId)!
           this.handleHmrOutput(client, changedFiles, update)
+        }
+      },
+      onOutput: (result) => {
+        if (result instanceof Error) {
+          // TODO: handle error
+          return
+        }
+
+        // TODO: make the API a bit more JS friendly
+        // NOTE: don't clear memoryFiles here as incremental build re-uses the files
+        for (const asset of result.assets) {
+          this.memoryFiles.set(asset.fileName, () => {
+            const source = asset.source.inner
+            return {
+              source,
+              etag: getEtag(Buffer.from(source), { weak: true }),
+            }
+          })
+        }
+        for (const chunk of result.chunks) {
+          this.memoryFiles.set(chunk.fileName, () => {
+            const source = chunk.code
+            return {
+              source,
+              etag: getEtag(Buffer.from(source), { weak: true }),
+            }
+          })
         }
       },
       watch: {
@@ -248,31 +282,6 @@ export class FullBundleDevEnvironment extends DevEnvironment {
     rolldownOptions.experimental.hmr = {
       implement: await getHmrImplementation(this.getTopLevelConfig()),
     }
-
-    rolldownOptions.plugins = [
-      rolldownOptions.plugins,
-      {
-        name: 'vite:full-bundle-mode:save-output',
-        generateBundle: {
-          order: 'post',
-          handler: (_, bundle) => {
-            // NOTE: don't clear memoryFiles here as incremental build re-uses the files
-            for (const outputFile of Object.values(bundle)) {
-              this.memoryFiles.set(outputFile.fileName, () => {
-                const source =
-                  outputFile.type === 'chunk'
-                    ? outputFile.code
-                    : outputFile.source
-                return {
-                  source,
-                  etag: getEtag(Buffer.from(source), { weak: true }),
-                }
-              })
-            }
-          },
-        },
-      },
-    ]
 
     // set filenames to make output paths predictable so that `renderChunk` hook does not need to be used
     if (Array.isArray(rolldownOptions.output)) {
@@ -387,6 +396,10 @@ class Clients {
 
   getId(client: WebSocketClient): string | undefined {
     return this.clientToId.get(client)
+  }
+
+  getAll(): WebSocketClient[] {
+    return Array.from(this.idToClient.values())
   }
 
   delete(client: WebSocketClient): void {
