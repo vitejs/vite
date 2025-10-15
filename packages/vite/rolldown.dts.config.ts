@@ -39,6 +39,7 @@ export default defineConfig({
   },
   output: {
     dir: './dist/node',
+    chunkFileNames: 'chunks/[name].d.ts',
     format: 'esm',
   },
   treeshake: {
@@ -138,8 +139,8 @@ function patchTypes(): Plugin {
           const importBindings = getAllImportBindings(ast)
           if (
             chunk.fileName.startsWith('module-runner') ||
-            // index and moduleRunner have a common chunk "moduleRunnerTransport"
-            chunk.fileName.startsWith('moduleRunnerTransport') ||
+            // index and moduleRunner have a common chunk
+            chunk.fileName.startsWith('chunks/') ||
             chunk.fileName.startsWith('types.d-')
           ) {
             validateRunnerChunk.call(this, chunk, importBindings)
@@ -211,8 +212,8 @@ function validateRunnerChunk(
       !id.startsWith('./') &&
       !id.startsWith('../') &&
       !id.startsWith('#') &&
-      // index and moduleRunner have a common chunk "moduleRunnerTransport"
-      !id.startsWith('moduleRunnerTransport.d') &&
+      // index and moduleRunner have a common chunk
+      !id.startsWith('chunks/') &&
       !id.startsWith('types.d')
     ) {
       this.warn(
@@ -240,8 +241,8 @@ function validateChunkImports(
       !id.startsWith('node:') &&
       !id.startsWith('types.d') &&
       !id.startsWith('vite/') &&
-      // index and moduleRunner have a common chunk "moduleRunnerTransport"
-      !id.startsWith('moduleRunnerTransport.d') &&
+      // index and moduleRunner have a common chunk
+      !id.startsWith('chunks/') &&
       !deps.includes(id) &&
       !deps.some((name) => id.startsWith(name + '/'))
     ) {
