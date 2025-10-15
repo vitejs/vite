@@ -20,7 +20,7 @@
   "scripts": {
     "preinstall": "npx only-allow pnpm",
     "postinstall": "simple-git-hooks",
-    "format": "prettier --write --cache .",
+    "format": "prettier --write --cache . --experimental-cli",
     "lint": "eslint --cache . --concurrency auto",
     "typecheck": "tsc -p scripts && pnpm -r --parallel run typecheck",
     "test": "pnpm test-unit && pnpm test-serve && pnpm test-build",
@@ -78,7 +78,7 @@
   },
   "lint-staged": {
     "*": [
-      "prettier --write --cache --ignore-unknown"
+      "prettier --write --cache --ignore-unknown --experimental-cli"
     ],
     "packages/*/{src,types}/**/*.ts": [
       "eslint --cache --fix --concurrency auto"
