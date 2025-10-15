@@ -119,24 +119,23 @@ export class FullBundleDevEnvironment extends DevEnvironment {
     })
 
     this.devEngine = await dev(rollupOptions, outputOptions, {
-      onHmrUpdates: (updates, files) => {
-        if (files.length === 0) {
+      onHmrUpdates: (result) => {
+        if (result instanceof Error) {
+          // TODO: handle error
           return
         }
-        // TODO: fix the need to clone
-        const clonedUpdates = updates.map((u) => ({
-          clientId: u.clientId,
-          update: { ...u.update },
-        }))
-        if (clonedUpdates.every((update) => update.update.type === 'Noop')) {
-          debug?.(`ignored file change for ${files.join(', ')}`)
+        const { updates, changedFiles } = result
+        if (changedFiles.length === 0) {
           return
         }
-        // TODO: how to handle errors?
-        for (const { clientId, update } of clonedUpdates) {
+        if (updates.every((update) => update.update.type === 'Noop')) {
+          debug?.(`ignored file change for ${changedFiles.join(', ')}`)
+          return
+        }
+        for (const { clientId, update } of updates) {
           this.invalidateCalledModules.get(clientId)?.clear()
           const client = this.clients.get(clientId)!
-          this.handleHmrOutput(client, files, update)
+          this.handleHmrOutput(client, changedFiles, update)
         }
       },
       watch: {
