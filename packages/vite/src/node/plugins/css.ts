@@ -171,6 +171,7 @@ export interface CSSModulesOptions {
   ) => void
   scopeBehaviour?: 'global' | 'local'
   globalModulePaths?: RegExp[]
+  auto?: boolean | RegExp | ((path: string) => boolean)
   exportGlobals?: boolean
   generateScopedName?:
     | string
@@ -1423,7 +1424,41 @@ async function compilePostCSS(
 > {
   const { config } = environment
   const { modules: modulesOptions, devSourcemap } = config.css
-  const isModule = modulesOptions !== false && cssModuleRE.test(id)
+  let isModule: boolean
+
+  // First, handle modules: false
+  if (modulesOptions === false) {
+    isModule = false
+  } else {
+    // Use || {} to ensure safe destructuring
+    const {
+      scopeBehaviour,
+      globalModulePaths = [],
+      auto,
+    } = modulesOptions || {}
+
+    if (globalModulePaths.some((re) => re.test(id))) {
+      // Excluded paths have the highest priority
+      isModule = false
+    } else if (auto !== undefined) {
+      // If 'auto' is defined, it determines the module status
+      if (typeof auto === 'function') {
+        isModule = auto(id)
+      } else if (auto instanceof RegExp) {
+        isModule = auto.test(id)
+      } else {
+        // auto: true follows the .module. convention, auto: false disables it
+        isModule = auto ? cssModuleRE.test(id) : false
+      }
+    } else if (scopeBehaviour === 'local') {
+      // 'scopeBehaviour' is only effective when 'auto' is not defined
+      isModule = true
+    } else {
+      // Fallback for when all configurations are missed, check for .module. suffix
+      isModule = cssModuleRE.test(id)
+    }
+  }
+
   // although at serve time it can work without processing, we do need to
   // crawl them in order to register watch dependencies.
   const needInlineImport = code.includes('@import')
@@ -1528,18 +1563,19 @@ async function compilePostCSS(
   let modules: Record<string, string> | undefined
 
   if (isModule) {
+    const postcssModulesOptions = modulesOptions || {}
     postcssPlugins.unshift(
       (await importPostcssModules()).default({
-        ...modulesOptions,
-        localsConvention: modulesOptions?.localsConvention,
+        ...postcssModulesOptions,
+        localsConvention: postcssModulesOptions.localsConvention,
         getJSON(
           cssFileName: string,
           _modules: Record<string, string>,
           outputFileName: string,
         ) {
           modules = _modules
-          if (modulesOptions && typeof modulesOptions.getJSON === 'function') {
-            modulesOptions.getJSON(cssFileName, _modules, outputFileName)
+          if (typeof postcssModulesOptions.getJSON === 'function') {
+            postcssModulesOptions.getJSON(cssFileName, _modules, outputFileName)
           }
         },
         async resolve(id: string, importer: string) {
