@@ -133,6 +133,9 @@ export class DevEnvironment extends BaseEnvironment {
       fetchModule: (id, importer, options) => {
         return this.fetchModule(id, importer, options)
       },
+      getBuiltins: () => {
+        return Promise.resolve(this.config.resolve.builtins)
+      },
     })
 
     this.hot.on(

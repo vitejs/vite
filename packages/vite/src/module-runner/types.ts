@@ -119,6 +119,8 @@ export interface ModuleRunnerOptions {
   evaluatedModules?: EvaluatedModules
   /**
    * List of builtin modules to check on the client side.
+   * If not provided, will be automatically fetched from the server via transport.invoke('getBuiltins').
+   * This option is primarily for backward compatibility or when you need to override server configuration.
    */
   builtins?: (string | RegExp)[]
 }

@@ -49,7 +49,8 @@ export class ModuleRunner {
     string,
     Promise<EvaluatedModuleNode>
   >()
-  private readonly isBuiltin?: (id: string) => boolean
+  private isBuiltin?: (id: string) => boolean
+  private builtinsPromise?: Promise<void>
 
   private closed = false
 
@@ -247,6 +248,26 @@ export class ModuleRunner {
     return cached
   }
 
+  private async ensureBuiltins(): Promise<void> {
+    if (this.isBuiltin) return
+
+    if (this.builtinsPromise) return this.builtinsPromise
+
+    this.builtinsPromise = (async () => {
+      try {
+        this.debug?.('[module runner] fetching builtins from server')
+        const builtins = await this.transport.invoke('getBuiltins', [])
+        this.isBuiltin = createIsBuiltin(builtins)
+        this.debug?.('[module runner] builtins loaded:', builtins)
+      } catch (error) {
+        this.debug?.('[module runner] failed to load builtins:', error)
+        this.isBuiltin = () => false
+      }
+    })()
+
+    return this.builtinsPromise
+  }
+
   private async getModuleInformation(
     url: string,
     importer: string | undefined,
@@ -255,6 +276,8 @@ export class ModuleRunner {
     if (this.closed) {
       throw new Error(`Vite module runner has been closed.`)
     }
+
+    await this.ensureBuiltins()
 
     this.debug?.('[module runner] fetching', url)
 
