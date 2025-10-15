@@ -64,8 +64,8 @@ import type {
 import type { RawSourceMap } from '@jridgewell/remapping'
 import { TraceMap, originalPositionFor } from '@jridgewell/trace-mapping'
 import MagicString from 'magic-string'
-import type { FSWatcher } from 'dep-types/chokidar'
 import colors from 'picocolors'
+import type { FSWatcher } from '#dep-types/chokidar'
 import type { Plugin } from '../plugin'
 import {
   combineSourcemaps,

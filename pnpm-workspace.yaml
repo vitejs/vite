@@ -12,6 +12,7 @@ shellEmulator: true
 autoInstallPeers: false
 dedupeInjectedDeps: false
 overrides:
+  rolldown: $rolldown
   vite: 'workspace:*'
 patchedDependencies:
   "sirv@3.0.2": "patches/sirv@3.0.2.patch"

@@ -1,9 +1,9 @@
 import { pathToFileURL } from 'node:url'
+import { WorkerWithFallback } from 'artichokie'
 import type {
   TerserMinifyOptions,
   TerserMinifyOutput,
-} from 'types/internal/terserOptions'
-import { WorkerWithFallback } from 'artichokie'
+} from '#types/internal/terserOptions'
 import type { Plugin } from '../plugin'
 import type { ResolvedConfig } from '..'
 import { generateCodeFrame, requireResolveFromRootWithFallback } from '../utils'
