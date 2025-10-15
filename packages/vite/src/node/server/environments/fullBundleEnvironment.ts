@@ -237,13 +237,8 @@ export class FullBundleDevEnvironment extends DevEnvironment {
   }
 
   override async close(): Promise<void> {
-    await Promise.all([
-      super.close(),
-      (async () => {
-        this.memoryFiles.clear()
-        // TODO: do we need close?
-      })(),
-    ])
+    this.memoryFiles.clear()
+    await Promise.all([super.close(), this.devEngine.close()])
   }
 
   private async getRolldownOptions() {
