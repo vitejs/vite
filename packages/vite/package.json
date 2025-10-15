@@ -51,8 +51,6 @@
     "dist",
     "misc/**/*.js",
     "client.d.ts",
-    "index.cjs",
-    "index.d.cts",
     "types"
   ],
   "engines": {
