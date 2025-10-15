@@ -3,8 +3,8 @@ import path from 'node:path'
 import sirv from 'sirv'
 import compression from '@polka/compression'
 import connect from 'connect'
-import type { Connect } from 'dep-types/connect'
 import corsMiddleware from 'cors'
+import type { Connect } from '#dep-types/connect'
 import type {
   HttpServer,
   ResolvedServerOptions,
