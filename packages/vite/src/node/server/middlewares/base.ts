@@ -1,4 +1,4 @@
-import type { Connect } from 'dep-types/connect'
+import type { Connect } from '#dep-types/connect'
 import { joinUrlSegments, stripBase } from '../../utils'
 import { cleanUrl, withTrailingSlash } from '../../../shared/utils'
 

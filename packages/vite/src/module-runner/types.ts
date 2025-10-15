@@ -1,4 +1,4 @@
-import type { ViteHotContext } from 'types/hot'
+import type { ViteHotContext } from '#types/hot'
 import type { HMRLogger } from '../shared/hmr'
 import type {
   DefineImportMetadata,

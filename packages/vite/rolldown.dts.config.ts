@@ -1,5 +1,4 @@
 import { readFileSync } from 'node:fs'
-import { fileURLToPath } from 'node:url'
 import { builtinModules } from 'node:module'
 import { defineConfig } from 'rolldown'
 import type {
@@ -20,15 +19,15 @@ import type {
   Statement,
 } from '@oxc-project/types'
 
-const depTypesDir = new URL('./src/types/', import.meta.url)
 const pkg = JSON.parse(
   readFileSync(new URL('./package.json', import.meta.url)).toString(),
 )
 
 const external = [
-  /^node:*/,
+  /^node:/,
   /^vite\//,
   'rollup/parseAst',
+  /^#types\//,
   ...Object.keys(pkg.dependencies),
   ...Object.keys(pkg.peerDependencies),
 ]
@@ -99,14 +98,14 @@ const identifierReplacements: Record<string, Record<string, string>> = {
   'vite/module-runner': {
     FetchResult$1: 'moduleRunner_FetchResult',
   },
-  '../../types/hmrPayload.js': {
+  '#types/hmrPayload': {
     CustomPayload$1: 'hmrPayload_CustomPayload',
     HotPayload$1: 'hmrPayload_HotPayload',
   },
-  '../../types/customEvent.js': {
+  '#types/customEvent': {
     InferCustomEventPayload$1: 'hmrPayload_InferCustomEventPayload',
   },
-  '../../types/internal/lightningcssOptions.js': {
+  '#types/internal/lightningcssOptions': {
     LightningCSSOptions$1: 'lightningcssOptions_LightningCSSOptions',
   },
 }
@@ -121,38 +120,14 @@ const ignoreConfusingTypeNames = [
 
 /**
  * Patch the types files before passing to dts plugin
- * 1. Resolve `dep-types/*` and `types/*` imports
- * 2. Validate unallowed dependency imports
- * 3. Replace confusing type names
- * 4. Strip leftover internal types
- * 5. Clean unnecessary comments
+ * 1. Validate unallowed dependency imports
+ * 2. Replace confusing type names
+ * 3. Strip leftover internal types
+ * 4. Clean unnecessary comments
  */
 function patchTypes(): Plugin {
   return {
     name: 'patch-types',
-    resolveId: {
-      order: 'pre',
-      filter: {
-        id: /^(dep-)?types\//,
-      },
-      handler(id) {
-        // Dep types should be bundled
-        if (id.startsWith('dep-types/')) {
-          const fileUrl = new URL(
-            `./${id.slice('dep-types/'.length)}.d.ts`,
-            depTypesDir,
-          )
-          return fileURLToPath(fileUrl)
-        }
-        // Ambient types are unbundled and externalized
-        if (id.startsWith('types/')) {
-          return {
-            id: '../../' + (id.endsWith('.js') ? id : id + '.js'),
-            external: true,
-          }
-        }
-      },
-    },
     generateBundle: {
       order: 'post',
       handler(_opts, bundle) {
@@ -235,6 +210,7 @@ function validateRunnerChunk(
     if (
       !id.startsWith('./') &&
       !id.startsWith('../') &&
+      !id.startsWith('#') &&
       // index and moduleRunner have a common chunk "moduleRunnerTransport"
       !id.startsWith('moduleRunnerTransport.d') &&
       !id.startsWith('types.d')
@@ -260,6 +236,7 @@ function validateChunkImports(
     if (
       !id.startsWith('./') &&
       !id.startsWith('../') &&
+      !id.startsWith('#') &&
       !id.startsWith('node:') &&
       !id.startsWith('types.d') &&
       !id.startsWith('vite/') &&

@@ -318,9 +318,6 @@ importers:
       debug:
         specifier: ^4.4.3
         version: 4.4.3
-      dep-types:
-        specifier: link:./src/types
-        version: link:src/types
       dotenv:
         specifier: ^17.2.3
         version: 17.2.3
@@ -420,9 +417,6 @@ importers:
       tsconfck:
         specifier: ^3.1.6
         version: 3.1.6(typescript@5.9.2)
-      types:
-        specifier: link:./types
-        version: link:types
       ufo:
         specifier: ^1.6.1
         version: 1.6.1

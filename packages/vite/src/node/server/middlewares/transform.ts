@@ -1,8 +1,8 @@
 import path from 'node:path'
 import fsp from 'node:fs/promises'
-import type { Connect } from 'dep-types/connect'
 import colors from 'picocolors'
 import type { ExistingRawSourceMap } from 'rollup'
+import type { Connect } from '#dep-types/connect'
 import type { ViteDevServer } from '..'
 import {
   createDebugger,

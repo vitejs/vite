@@ -1,6 +1,6 @@
-import type { HotPayload, Update } from 'types/hmrPayload'
-import type { ModuleNamespace, ViteHotContext } from 'types/hot'
-import type { InferCustomEventPayload } from 'types/customEvent'
+import type { HotPayload, Update } from '#types/hmrPayload'
+import type { ModuleNamespace, ViteHotContext } from '#types/hot'
+import type { InferCustomEventPayload } from '#types/customEvent'
 import type { NormalizedModuleRunnerTransport } from './moduleRunnerTransport'
 
 type CustomListenersMap = Map<string, ((data: any) => void)[]>
