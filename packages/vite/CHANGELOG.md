@@ -1,3 +1,9 @@
+## 6.4.0 (2025-10-15)
+
+* feat: allow passing down resolved config to vite's createServer (#20932) ([ca6455e](https://github.com/vitejs/vite/commit/ca6455ee9eb6111a9caa9810506a1b9ac96a520a)), closes [#20932](https://github.com/vitejs/vite/issues/20932)
+
+
+
 ## <small>6.3.7 (2025-10-14)</small>
 
 * fix(esbuild): inject esbuild helpers correctly for esbuild 0.25.9+ (#20940) ([c59a222](https://github.com/vitejs/vite/commit/c59a222aa584c087cfe710173de1b9ecb597a3ff)), closes [#20940](https://github.com/vitejs/vite/issues/20940)
