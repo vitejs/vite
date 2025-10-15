@@ -56,7 +56,7 @@ const sharedNodeOptions = defineConfig({
   output: {
     dir: './dist',
     entryFileNames: `node/[name].js`,
-    chunkFileNames: 'node/chunks/dep-[hash].js',
+    chunkFileNames: 'node/chunks/[name].js',
     exports: 'named',
     format: 'esm',
     externalLiveBindings: false,
