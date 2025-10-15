@@ -74,6 +74,20 @@ In addition, environment variables that already exist when Vite is executed have
 
 :::
 
+:::warning Bun users
+
+When using [Bun](https://bun.sh), be aware that Bun automatically loads `.env` files before your script runs. This built-in behavior loads environment variables directly into `process.env` and can interfere with Vite's `loadEnv()` function, as it respects existing `process.env` values.
+
+For example, if you have both `.env.development` and `.env.production` files, and you call `loadEnv('production', ...)` in your script, Bun may have already loaded `.env.development` into `process.env`, preventing Vite from loading the correct file.
+
+**Workarounds:**
+
+- Use the `--env-file` flag to explicitly specify which env file Bun should load: `bun --env-file=.env.production script.js`
+- Disable Bun's automatic env loading with the `--no-env` flag: `bun --no-env script.js`
+- Use the `dotenv` package directly instead of `loadEnv()` if you need full control over when env files are loaded
+
+:::
+
 Also, Vite uses [dotenv-expand](https://github.com/motdotla/dotenv-expand) to expand variables written in env files out of the box. To learn more about the syntax, check out [their docs](https://github.com/motdotla/dotenv-expand#what-rules-does-the-expansion-engine-follow).
 
 Note that if you want to use `$` inside your environment value, you have to escape it with `\`.
