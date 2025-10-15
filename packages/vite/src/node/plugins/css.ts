@@ -85,17 +85,15 @@ import {
 import type { Logger } from '../logger'
 import { cleanUrl, isWindows, slash } from '../../shared/utils'
 import { NULL_BYTE_PLACEHOLDER } from '../../shared/constants'
-import {
-  createBackCompatIdResolver,
-  createNodeResolverWithVite,
-} from '../idResolver'
-import type { NodeResolveWithViteFn, ResolveIdFn } from '../idResolver'
+import { createBackCompatIdResolver } from '../idResolver'
+import type { ResolveIdFn } from '../idResolver'
 import { PartialEnvironment } from '../baseEnvironment'
 import type { TransformPluginContext } from '../server/pluginContainer'
 import { searchForWorkspaceRoot } from '../server/searchRoot'
 import { type DevEnvironment } from '..'
 import type { PackageCache } from '../packages'
 import { findNearestMainPackageData } from '../packages'
+import { nodeResolveWithVite } from '../nodeResolve'
 import { addToHTMLProxyTransformResult } from './html'
 import {
   assetUrlRE,
@@ -2315,54 +2313,42 @@ export interface StylePreprocessorResults {
 }
 
 const loadedPreprocessorPath: Partial<
-  Record<
-    PreprocessLang | PostCssDialectLang | 'sass-embedded',
-    string | Promise<string>
-  >
+  Record<PreprocessLang | PostCssDialectLang | 'sass-embedded', string>
 > = {}
-let nodeResolveWithVite: NodeResolveWithViteFn | undefined
 
-async function loadPreprocessorPath(
+function loadPreprocessorPath(
   lang: PreprocessLang | PostCssDialectLang | 'sass-embedded',
   root: string,
-): Promise<string> {
+): string {
   const cached = loadedPreprocessorPath[lang]
   if (cached) {
     return cached
   }
-  loadedPreprocessorPath[lang] = (async () => {
-    nodeResolveWithVite ??= await createNodeResolverWithVite(root)
-    // Try resolve from project root first, then the current vite installation path
-    const resolved =
-      nodeResolveWithVite(lang) ?? nodeResolveWithVite(lang, _dirname)
-    if (resolved) return resolved
 
-    const installCommand = getPackageManagerCommand('install')
-    throw new Error(
-      `Preprocessor dependency "${lang}" not found. Did you install it? Try \`${installCommand} -D ${lang}\`.`,
-    )
-  })()
+  // Try resolve from project root first, then the current vite installation path
+  const resolved =
+    nodeResolveWithVite(lang, undefined, { root }) ??
+    nodeResolveWithVite(lang, _dirname, { root })
+  if (resolved) return (loadedPreprocessorPath[lang] = resolved)
 
-  loadedPreprocessorPath[lang]
-    // Set the result directly to avoid needing to resolve the promise again
-    .then((p) => (loadedPreprocessorPath[lang] = p))
-    // Set undefined so next retry work if the package is installed later
-    .catch(() => (loadedPreprocessorPath[lang] = undefined))
-
-  return loadedPreprocessorPath[lang]
+  // Error if we can't find the preprocessor
+  const installCommand = getPackageManagerCommand('install')
+  throw new Error(
+    `Preprocessor dependency "${lang}" not found. Did you install it? Try \`${installCommand} -D ${lang}\`.`,
+  )
 }
 
-async function loadSassPackage(root: string): Promise<{
+function loadSassPackage(root: string): {
   name: 'sass' | 'sass-embedded'
   path: string
-}> {
+} {
   // try sass-embedded before sass
   try {
-    const path = await loadPreprocessorPath('sass-embedded', root)
+    const path = loadPreprocessorPath('sass-embedded', root)
     return { name: 'sass-embedded', path }
   } catch (e1) {
     try {
-      const path = await loadPreprocessorPath(PreprocessLang.sass, root)
+      const path = loadPreprocessorPath(PreprocessLang.sass, root)
       return { name: 'sass', path }
     } catch {
       throw e1
@@ -2529,7 +2515,7 @@ const scssProcessor = (
       worker?.stop()
     },
     async process(environment, source, root, options, resolvers) {
-      const sassPackage = await loadSassPackage(root)
+      const sassPackage = loadSassPackage(root)
       worker ??= makeScssWorker(environment, resolvers, maxWorkers)
 
       const { content: data, map: additionalMap } = await getSource(

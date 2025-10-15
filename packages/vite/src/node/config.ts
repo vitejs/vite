@@ -101,7 +101,7 @@ import { loadEnv, resolveEnvPrefix } from './env'
 import type { ResolvedSSROptions, SSROptions } from './ssr'
 import { resolveSSROptions, ssrConfigDefaults } from './ssr'
 import { PartialEnvironment } from './baseEnvironment'
-import { createIdResolver, createNodeResolverWithVite } from './idResolver'
+import { createIdResolver } from './idResolver'
 import { runnerImport } from './ssr/runnerImport'
 import { getAdditionalAllowedHosts } from './server/middlewares/hostCheck'
 import type { RequiredExceptFor } from './typeUtils'
@@ -109,6 +109,7 @@ import {
   BasicMinimalPluginContext,
   basePluginContextMeta,
 } from './server/pluginContainer'
+import { nodeResolveWithVite } from './nodeResolve'
 
 const debug = createDebugger('vite:config', { depth: 10 })
 const promisifiedRealpath = promisify(fs.realpath)
@@ -1920,13 +1921,10 @@ async function bundleConfigFile(
   fileName: string,
   isESM: boolean,
 ): Promise<{ code: string; dependencies: string[] }> {
+  const root = path.dirname(fileName)
   const dirnameVarName = '__vite_injected_original_dirname'
   const filenameVarName = '__vite_injected_original_filename'
   const importMetaUrlVarName = '__vite_injected_original_import_meta_url'
-
-  const nodeResolveWithVite = await createNodeResolverWithVite(
-    path.dirname(fileName),
-  )
 
   const result = await build({
     absWorkingDir: process.cwd(),
@@ -1975,16 +1973,18 @@ async function bundleConfigFile(
               const isImport = isESM || kind === 'dynamic-import'
               let idFsPath: string | undefined
               try {
-                idFsPath = nodeResolveWithVite(id, importer, !isImport)
+                idFsPath = nodeResolveWithVite(id, importer, {
+                  root,
+                  isRequire: !isImport,
+                })
               } catch (e) {
                 if (!isImport) {
                   let canResolveWithImport = false
                   try {
-                    canResolveWithImport = !!nodeResolveWithVite(
-                      id,
-                      importer,
-                      false,
-                    )
+                    canResolveWithImport = !!nodeResolveWithVite(id, importer, {
+                      root,
+                      isRequire: !isImport,
+                    })
                   } catch {}
                   if (canResolveWithImport) {
                     throw new Error(
