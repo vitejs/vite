@@ -74,6 +74,12 @@ In addition, environment variables that already exist when Vite is executed have
 
 :::
 
+:::warning Bun users
+
+When using [Bun](https://bun.sh), be aware that Bun automatically loads `.env` files before your script runs. This built-in behavior loads environment variables directly into `process.env` and can interfere with Vite's feature, as it respects existing `process.env` values. See [oven-sh/bun#5515](https://github.com/oven-sh/bun/issues/5515) for workarounds.
+
+:::
+
 Also, Vite uses [dotenv-expand](https://github.com/motdotla/dotenv-expand) to expand variables written in env files out of the box. To learn more about the syntax, check out [their docs](https://github.com/motdotla/dotenv-expand#what-rules-does-the-expansion-engine-follow).
 
 Note that if you want to use `$` inside your environment value, you have to escape it with `\`.
