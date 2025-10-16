@@ -151,20 +151,11 @@ export class FullBundleDevEnvironment extends DevEnvironment {
           return
         }
 
-        // TODO: make the API a bit more JS friendly
         // NOTE: don't clear memoryFiles here as incremental build re-uses the files
-        for (const asset of result.assets) {
-          this.memoryFiles.set(asset.fileName, () => {
-            const source = asset.source.inner
-            return {
-              source,
-              etag: getEtag(Buffer.from(source), { weak: true }),
-            }
-          })
-        }
-        for (const chunk of result.chunks) {
-          this.memoryFiles.set(chunk.fileName, () => {
-            const source = chunk.code
+        for (const outputFile of result.output) {
+          this.memoryFiles.set(outputFile.fileName, () => {
+            const source =
+              outputFile.type === 'chunk' ? outputFile.code : outputFile.source
             return {
               source,
               etag: getEtag(Buffer.from(source), { weak: true }),
