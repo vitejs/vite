@@ -1983,7 +1983,6 @@ async function bundleConfigFile(
                   try {
                     canResolveWithImport = !!nodeResolveWithVite(id, importer, {
                       root,
-                      isRequire: !isImport,
                     })
                   } catch {}
                   if (canResolveWithImport) {
