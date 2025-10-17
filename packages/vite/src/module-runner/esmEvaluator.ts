@@ -13,7 +13,8 @@ import {
 import type { ModuleEvaluator, ModuleRunnerContext } from './types'
 
 export class ESModulesEvaluator implements ModuleEvaluator {
-  public readonly startOffset = getAsyncFunctionDeclarationPaddingLineCount()
+  public readonly startOffset: number =
+    getAsyncFunctionDeclarationPaddingLineCount()
 
   async runInlinedModule(
     context: ModuleRunnerContext,

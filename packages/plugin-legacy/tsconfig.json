@@ -1,13 +1,14 @@
 {
-  "include": ["tsdown.config.ts", "src"],
+  "include": ["src"],
   "exclude": ["**/*.spec.ts"],
   "compilerOptions": {
     "outDir": "dist",
     "target": "ES2023",
     "module": "Preserve",
     "moduleResolution": "bundler",
-    "strict": true,
+    "isolatedDeclarations": true,
     "declaration": true,
+    "strict": true,
     "sourceMap": true,
     "noUnusedLocals": true,
     "esModuleInterop": true,

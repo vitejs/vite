@@ -427,7 +427,7 @@ export function createServer(
 }
 
 export async function _createServer(
-  inlineConfig: InlineConfig | ResolvedConfig = {},
+  inlineConfig: ResolvedConfig | InlineConfig | undefined = {},
   options: {
     listen: boolean
     previousEnvironments?: Record<string, DevEnvironment>
@@ -1075,7 +1075,7 @@ function resolvedAllowDir(root: string, dir: string): string {
   return normalizePath(path.resolve(root, dir))
 }
 
-export const serverConfigDefaults = Object.freeze({
+const _serverConfigDefaults = Object.freeze({
   port: DEFAULT_DEV_PORT,
   strictPort: false,
   host: 'localhost',
@@ -1104,6 +1104,8 @@ export const serverConfigDefaults = Object.freeze({
   perEnvironmentStartEndDuringDev: false,
   // hotUpdateEnvironments
 } satisfies ServerOptions)
+export const serverConfigDefaults: Readonly<Partial<ServerOptions>> =
+  _serverConfigDefaults
 
 export function resolveServerOptions(
   root: string,
@@ -1112,7 +1114,7 @@ export function resolveServerOptions(
 ): ResolvedServerOptions {
   const _server = mergeWithDefaults(
     {
-      ...serverConfigDefaults,
+      ..._serverConfigDefaults,
       host: undefined, // do not set here to detect whether host is set or not
       sourcemapIgnoreList: isInNodeModules,
     },

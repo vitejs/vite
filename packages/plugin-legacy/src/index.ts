@@ -1004,7 +1004,7 @@ function wrapIIFEBabelPlugin(): BabelPlugin {
   }
 }
 
-export const cspHashes = [
+export const cspHashes: string[] = [
   safari10NoModuleFix,
   systemJSInlineCode,
   detectModernBrowserCode,
