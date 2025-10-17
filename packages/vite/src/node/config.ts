@@ -90,6 +90,7 @@ import {
   type EnvironmentResolveOptions,
   type InternalResolveOptions,
   type ResolveOptions,
+  normalizeExternalOption,
   tryNodeResolve,
 } from './plugins/resolve'
 import type { LogLevel, Logger } from './logger'
@@ -247,7 +248,13 @@ type AllResolveOptions = ResolveOptions & {
   alias?: AliasOptions
 }
 
-type ResolvedAllResolveOptions = Required<ResolveOptions> & { alias: Alias[] }
+export type ResolvedResolveOptions = Required<
+  Omit<ResolveOptions, 'external'>
+> & {
+  external: true | (string | RegExp)[]
+}
+
+type ResolvedAllResolveOptions = ResolvedResolveOptions & { alias: Alias[] }
 
 export interface SharedEnvironmentOptions {
   /**
@@ -285,8 +292,6 @@ export interface EnvironmentOptions extends SharedEnvironmentOptions {
    */
   build?: BuildEnvironmentOptions
 }
-
-export type ResolvedResolveOptions = Required<ResolveOptions>
 
 export type ResolvedEnvironmentOptions = {
   define?: Record<string, any>
@@ -585,7 +590,7 @@ export interface ResolvedConfig
       isProduction: boolean
       envDir: string | false
       env: Record<string, any>
-      resolve: Required<ResolveOptions> & {
+      resolve: ResolvedResolveOptions & {
         alias: Alias[]
       }
       plugins: readonly Plugin[]
@@ -662,7 +667,7 @@ export const configDefaults = Object.freeze({
     dedupe: [],
     /** @experimental */
     noExternal: [],
-    external: [],
+    external: [] as (string | RegExp)[],
     preserveSymlinks: false,
     alias: [],
   },
@@ -940,33 +945,42 @@ function resolveEnvironmentResolveOptions(
   // Backward compatibility
   isSsrTargetWebworkerEnvironment?: boolean,
 ): ResolvedAllResolveOptions {
-  const resolvedResolve: ResolvedAllResolveOptions = mergeWithDefaults(
-    {
-      ...configDefaults.resolve,
-      mainFields:
-        consumer === undefined ||
-        consumer === 'client' ||
-        isSsrTargetWebworkerEnvironment
-          ? DEFAULT_CLIENT_MAIN_FIELDS
-          : DEFAULT_SERVER_MAIN_FIELDS,
-      conditions:
-        consumer === undefined ||
-        consumer === 'client' ||
-        isSsrTargetWebworkerEnvironment
-          ? DEFAULT_CLIENT_CONDITIONS
-          : DEFAULT_SERVER_CONDITIONS.filter((c) => c !== 'browser'),
-      builtins:
-        resolve?.builtins ??
-        (consumer === 'server'
-          ? isSsrTargetWebworkerEnvironment && resolve?.noExternal === true
-            ? []
-            : nodeLikeBuiltins
-          : []),
-    },
-    resolve ?? {},
-  )
-  resolvedResolve.preserveSymlinks = preserveSymlinks
-  resolvedResolve.alias = alias
+  const defaults: ResolvedResolveOptions = {
+    ...configDefaults.resolve,
+    mainFields:
+      consumer === undefined ||
+      consumer === 'client' ||
+      isSsrTargetWebworkerEnvironment
+        ? Array.from(DEFAULT_CLIENT_MAIN_FIELDS)
+        : Array.from(DEFAULT_SERVER_MAIN_FIELDS),
+    conditions:
+      consumer === undefined ||
+      consumer === 'client' ||
+      isSsrTargetWebworkerEnvironment
+        ? Array.from(DEFAULT_CLIENT_CONDITIONS)
+        : DEFAULT_SERVER_CONDITIONS.filter((c) => c !== 'browser'),
+    builtins:
+      resolve?.builtins ??
+      (consumer === 'server'
+        ? isSsrTargetWebworkerEnvironment && resolve?.noExternal === true
+          ? []
+          : nodeLikeBuiltins
+        : []),
+    preserveSymlinks,
+    external: normalizeExternalOption(configDefaults.resolve.external),
+  }
+
+  const mergedResolve = mergeWithDefaults<
+    ResolvedResolveOptions,
+    EnvironmentResolveOptions
+  >(defaults, resolve ?? {})
+
+  const resolvedResolve: ResolvedAllResolveOptions = {
+    ...mergedResolve,
+    external: normalizeExternalOption(mergedResolve.external),
+    preserveSymlinks,
+    alias,
+  }
 
   if (
     // @ts-expect-error removed field

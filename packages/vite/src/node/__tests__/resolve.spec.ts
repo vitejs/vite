@@ -2,8 +2,10 @@ import { join } from 'node:path'
 import { describe, expect, onTestFinished, test, vi } from 'vitest'
 import { createServer } from '../server'
 import { createServerModuleRunner } from '../ssr/runtime/serverModuleRunner'
+import { configDefaults } from '../config'
 import type { EnvironmentOptions, InlineConfig } from '../config'
 import { build } from '../build'
+import { normalizeExternalOption } from '../plugins/resolve'
 
 describe('import and resolveId', () => {
   async function createTestServer() {
@@ -52,6 +54,34 @@ describe('import and resolveId', () => {
       'dir/index.default.js',
       expect.stringContaining('dir/index.module.js'),
     ])
+  })
+})
+
+describe('normalizeExternalOption', () => {
+  test('string to array', () => {
+    expect(normalizeExternalOption('pkg')).toEqual(['pkg'])
+  })
+
+  test('regex to array', () => {
+    const regexp = /^pkg$/
+    expect(normalizeExternalOption(regexp)).toEqual([regexp])
+  })
+
+  test('array untouched', () => {
+    const value = ['pkg', /^pkg$/]
+    expect(normalizeExternalOption(value)).toBe(value)
+  })
+
+  test('true passthrough', () => {
+    expect(normalizeExternalOption(true)).toBe(true)
+  })
+
+  test('undefined becomes empty array', () => {
+    expect(normalizeExternalOption(undefined)).toEqual([])
+  })
+
+  test('config default external normalized', () => {
+    expect(normalizeExternalOption(configDefaults.resolve.external)).toEqual([])
   })
 })
 
