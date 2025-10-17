@@ -115,7 +115,6 @@ export interface CorsOptions {
 export type CorsOrigin = boolean | string | RegExp | (string | RegExp)[]
 
 export async function resolveHttpServer(
-  { proxy }: CommonServerOptions,
   app: Connect.Server,
   httpsOptions?: HttpsServerOptions,
 ): Promise<HttpServer> {
@@ -124,24 +123,18 @@ export async function resolveHttpServer(
     return createServer(app)
   }
 
-  // #484 fallback to http1 when proxy is needed.
-  if (proxy) {
-    const { createServer } = await import('node:https')
-    return createServer(httpsOptions, app)
-  } else {
-    const { createSecureServer } = await import('node:http2')
-    return createSecureServer(
-      {
-        // Manually increase the session memory to prevent 502 ENHANCE_YOUR_CALM
-        // errors on large numbers of requests
-        maxSessionMemory: 1000,
-        ...httpsOptions,
-        allowHTTP1: true,
-      },
-      // @ts-expect-error TODO: is this correct?
-      app,
-    )
-  }
+  const { createSecureServer } = await import('node:http2')
+  return createSecureServer(
+    {
+      // Manually increase the session memory to prevent 502 ENHANCE_YOUR_CALM
+      // errors on large numbers of requests
+      maxSessionMemory: 1000,
+      ...httpsOptions,
+      allowHTTP1: true,
+    },
+    // @ts-expect-error TODO: is this correct?
+    app,
+  )
 }
 
 export async function resolveHttpsConfig(
