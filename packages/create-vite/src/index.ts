@@ -799,7 +799,7 @@ function setupReactSwc(root: string, isTs: boolean) {
 
 function setupReactCompiler(root: string, isTs: boolean) {
   // renovate: datasource=npm depName=babel-plugin-react-compiler
-  const reactCompilerPluginVersion = '19.1.0-rc.3'
+  const reactCompilerPluginVersion = '1.0.0'
 
   editFile(path.resolve(root, 'package.json'), (content) => {
     const asObject = JSON.parse(content)
