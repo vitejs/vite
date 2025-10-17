@@ -291,6 +291,9 @@ importers:
       '@types/pnpapi':
         specifier: ^0.0.5
         version: 0.0.5
+      '@vitest/utils':
+        specifier: ^3.2.4
+        version: 3.2.4
       artichokie:
         specifier: ^0.4.2
         version: 0.4.2
@@ -1396,6 +1399,8 @@ importers:
   playground/resolve/side-effects-glob: {}
 
   playground/resolve/utf8-bom-package: {}
+
+  playground/runtime-log: {}
 
   playground/self-referencing: {}
 
