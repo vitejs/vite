@@ -6,7 +6,8 @@ import type {
 } from '#types/internal/terserOptions'
 import type { Plugin } from '../plugin'
 import type { ResolvedConfig } from '..'
-import { generateCodeFrame, requireResolveFromRootWithFallback } from '../utils'
+import { _dirname, generateCodeFrame } from '../utils'
+import { nodeResolveWithVite } from '../nodeResolve'
 
 export interface TerserOptions extends TerserMinifyOptions {
   /**
@@ -19,22 +20,19 @@ export interface TerserOptions extends TerserMinifyOptions {
 }
 
 let terserPath: string | undefined
-const loadTerserPath = (root: string) => {
+function loadTerserPath(root: string) {
   if (terserPath) return terserPath
-  try {
-    terserPath = requireResolveFromRootWithFallback(root, 'terser')
-  } catch (e) {
-    if (e.code === 'MODULE_NOT_FOUND') {
-      throw new Error(
-        'terser not found. Since Vite v3, terser has become an optional dependency. You need to install it.',
-      )
-    } else {
-      const message = new Error(`terser failed to load:\n${e.message}`)
-      message.stack = e.stack + '\n' + message.stack
-      throw message
-    }
-  }
-  return terserPath
+
+  // Try resolve from project root first, then the current vite installation path
+  const resolved =
+    nodeResolveWithVite('terser', undefined, { root }) ??
+    nodeResolveWithVite('terser', _dirname, { root })
+  if (resolved) return (terserPath = resolved)
+
+  // Error if we can't find the package
+  throw new Error(
+    'terser not found. Since Vite v3, terser has become an optional dependency. You need to install it.',
+  )
 }
 
 export function terserPlugin(config: ResolvedConfig): Plugin {
@@ -48,8 +46,7 @@ export function terserPlugin(config: ResolvedConfig): Plugin {
           code: string,
           options: TerserMinifyOptions,
         ) => {
-          const terser: typeof import('terser') = (await import(terserPath))
-            .default
+          const terser: typeof import('terser') = await import(terserPath)
           try {
             return (await terser.minify(code, options)) as TerserMinifyOutput
           } catch (e) {
