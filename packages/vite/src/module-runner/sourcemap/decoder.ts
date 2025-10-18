@@ -34,8 +34,9 @@ export class DecodedMap {
     this._encoded = mappings || ''
     this._decodedMemo = memoizedState()
     this.url = from
+    const originDir = posixDirname(from)
     this.resolvedSources = (sources || []).map((s) =>
-      posixResolve(posixDirname(from), s || ''),
+      posixResolve(originDir, s || ''),
     )
   }
 }
