@@ -1,6 +1,6 @@
 import type { OriginalMapping } from '@jridgewell/trace-mapping'
 import { originalPositionFor } from '@jridgewell/trace-mapping'
-import { posixResolve } from '../utils'
+import { posixDirname, posixResolve } from '../utils'
 
 interface SourceMapLike {
   version: number
@@ -35,7 +35,7 @@ export class DecodedMap {
     this._decodedMemo = memoizedState()
     this.url = from
     this.resolvedSources = (sources || []).map((s) =>
-      posixResolve(s || '', from),
+      posixResolve(posixDirname(from), s || ''),
     )
   }
 }
