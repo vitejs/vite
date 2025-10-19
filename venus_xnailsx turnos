@@ -1,0 +1,111 @@
+import { useState } from 'react';
+import { Card } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Calendar } from "@/components/ui/calendar";
+import { motion } from "framer-motion";
+
+export default function App() {
+  const [selectedDate, setSelectedDate] = useState(null);
+  const [selectedTime, setSelectedTime] = useState(null);
+  const [step, setStep] = useState(1);
+
+  const times = [
+    "09:00","09:30","10:00","10:30","11:00","11:30","12:00","13:00","13:30",
+    "14:00","14:30","15:00","15:30","16:00","16:30","17:00","17:30",
+    "18:00","18:30","19:00","19:30","20:00","20:30","21:00"
+  ];
+
+  const handleReserve = () => {
+    if (selectedDate && selectedTime) {
+      alert(`Tu turno fue reservado para el ${selectedDate.toLocaleDateString()} a las ${selectedTime}. ¡Gracias por elegir Venus Nails! 💅`);
+      setSelectedDate(null);
+      setSelectedTime(null);
+      setStep(1);
+    } else {
+      alert("Por favor seleccioná una fecha y hora.");
+    }
+  };
+
+  return (
+    <div>
+      {/* Header */}
+      <header className="text-center py-6 bg-pink-100">
+        <h1 className="text-4xl font-bold text-pink-700">Venus Nails 💅</h1>
+        <p className="text-gray-700 mt-2">Belleza y elegancia en cada detalle</p>
+      </header>
+
+      {/* Navigation */}
+      <nav className="flex justify-center gap-6 py-4 text-lg font-semibold">
+        <a href="#inicio" className="hover:text-pink-600">Inicio</a>
+        <a href="#galeria" className="hover:text-pink-600">Galería</a>
+        <a href="#turnos" className="hover:text-pink-600">Turnos</a>
+      </nav>
+
+      {/* Inicio */}
+      <section id="inicio" className="text-center py-16 px-4">
+        <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 1 }}>
+          <h2 className="text-3xl font-bold mb-4 text-pink-700">Bienvenida a Venus Nails</h2>
+          <p className="text-gray-700 max-w-2xl mx-auto">
+            Tu espacio de belleza donde cada detalle importa. Agenda tu turno y descubrí el arte de unas uñas únicas, hechas con amor y estilo.
+          </p>
+          <div className="flex justify-center gap-4 mt-6">
+            <a href="https://www.instagram.com/venus_xnailsx" target="_blank" className="bg-pink-400 text-white px-4 py-2 rounded-2xl shadow hover:bg-pink-500 transition">Instagram</a>
+            <a href="https://wa.me/2320672025" target="_blank" className="bg-green-400 text-white px-4 py-2 rounded-2xl shadow hover:bg-green-500 transition">WhatsApp</a>
+          </div>
+        </motion.div>
+      </section>
+
+      {/* Galería */}
+      <section id="galeria" className="bg-white py-16 px-4">
+        <h2 className="text-3xl text-center font-bold text-pink-700 mb-8">Galería de trabajos</h2>
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6 max-w-5xl mx-auto">
+          {[1,2,3,4,5,6].map((i) => (
+            <Card key={i} className="overflow-hidden shadow-md hover:shadow-xl transition">
+              <img src={`https://source.unsplash.com/400x400/?nails,${i}`} alt="uñas" className="w-full h-64 object-cover" />
+            </Card>
+          ))}
+        </div>
+      </section>
+
+      {/* Turnos */}
+      <section id="turnos" className="bg-pink-50 py-16 px-4 text-center">
+        <h2 className="text-3xl font-bold text-pink-700 mb-6">Reservá tu turno</h2>
+        <div className="max-w-xl mx-auto bg-white rounded-2xl p-6 shadow-md">
+          {step === 1 && (
+            <>
+              <p className="mb-4 text-gray-700">Seleccioná el día de tu turno:</p>
+              <Calendar mode="single" selected={selectedDate} onSelect={setSelectedDate} className="mx-auto" />
+              <Button className="mt-6 bg-pink-400 hover:bg-pink-500" onClick={() => setStep(2)}>Siguiente</Button>
+            </>
+          )}
+          {step === 2 && (
+            <>
+              <p className="mb-4 text-gray-700">Elegí un horario:</p>
+              <div className="grid grid-cols-3 gap-2 max-h-64 overflow-y-auto">
+                {times.map((time) => (
+                  <Button
+                    key={time}
+                    variant={selectedTime === time ? "default" : "outline"}
+                    className={`rounded-xl ${selectedTime === time ? 'bg-pink-400 text-white' : 'bg-white'}`}
+                    onClick={() => setSelectedTime(time)}
+                  >
+                    {time}
+                  </Button>
+                ))}
+              </div>
+              <div className="flex justify-center gap-4 mt-6">
+                <Button variant="outline" onClick={() => setStep(1)}>Atrás</Button>
+                <Button className="bg-green-400 hover:bg-green-500" onClick={handleReserve}>Reservar</Button>
+              </div>
+            </>
+          )}
+        </div>
+      </section>
+
+      {/* Footer */}
+      <footer className="bg-black text-white text-center py-6 mt-16">
+        <p>© 2025 Venus Nails | Hecho con 💅 por Vanina</p>
+      </footer>
+    </div>
+  );
+}
