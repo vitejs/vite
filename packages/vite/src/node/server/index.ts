@@ -197,14 +197,14 @@ export interface ResolvedServerOptions
       | 'host'
       | 'https'
       | 'proxy'
-      | 'hmr'
       | 'ws'
       | 'watch'
       | 'origin'
       | 'hotUpdateEnvironments'
     >,
-    'fs' | 'middlewareMode' | 'sourcemapIgnoreList'
+    'hmr' | 'fs' | 'middlewareMode' | 'sourcemapIgnoreList'
   > {
+  hmr: HmrOptions & Required<Pick<HmrOptions, 'update'>>
   fs: Required<FileSystemServeOptions>
   middlewareMode: NonNullable<ServerOptions['middlewareMode']>
   sourcemapIgnoreList: Exclude<
@@ -640,7 +640,7 @@ export async function _createServer(
     },
     async reloadModule(module) {
       warnFutureDeprecation(config, 'removeServerReloadModule')
-      if (serverConfig.hmr !== false && module.file) {
+      if (serverConfig.hmr.update && module.file) {
         // TODO: Should we also update the node moduleGraph for backward compatibility?
         const environmentModule = (module._clientModule ?? module._ssrModule)!
         updateModules(
@@ -791,7 +791,7 @@ export async function _createServer(
     type: 'create' | 'delete' | 'update',
     file: string,
   ) => {
-    if (serverConfig.hmr !== false) {
+    if (serverConfig.hmr.update) {
       await handleHMRUpdate(type, file, server)
     }
   }
@@ -1085,7 +1085,7 @@ export const serverConfigDefaults = Object.freeze({
   proxy: undefined,
   cors: { origin: defaultAllowedOrigins },
   headers: {},
-  // hmr
+  hmr: { update: true },
   // ws
   warmup: {
     clientFiles: [],
@@ -1110,13 +1110,35 @@ export function resolveServerOptions(
   raw: ServerOptions | undefined,
   logger: Logger,
 ): ResolvedServerOptions {
+  if (raw?.hmr === true) {
+    logger.warn(
+      colors.yellow(
+        `server.hmr is set to true. This is deprecated and will not work in the future. Please use \`server.hmr: {}\` instead.`,
+      ),
+    )
+  } else if (raw?.hmr === false) {
+    logger.warn(
+      colors.yellow(
+        `server.hmr is set to false. This is deprecated and will not work in the future. Please use \`server.hmr: { update: false }\` instead.`,
+      ),
+    )
+  }
+
   const _server = mergeWithDefaults(
     {
       ...serverConfigDefaults,
       host: undefined, // do not set here to detect whether host is set or not
       sourcemapIgnoreList: isInNodeModules,
     },
-    raw ?? {},
+    {
+      ...raw,
+      hmr:
+        raw?.hmr === true
+          ? {}
+          : raw?.hmr === false
+            ? { update: false }
+            : raw?.hmr,
+    },
   )
 
   const server: ResolvedServerOptions = {

@@ -14,7 +14,6 @@ import type { WebSocket as WebSocketTypes } from '#dep-types/ws'
 import type { ErrorPayload, HotPayload } from '#types/hmrPayload'
 import type { InferCustomEventPayload } from '#types/customEvent'
 import type { ResolvedConfig } from '..'
-import { isObject } from '../utils'
 import type { NormalizedHotChannel, NormalizedHotChannelClient } from './hmr'
 import { normalizeHotChannel } from './hmr'
 import type { HttpServer } from '.'
@@ -143,12 +142,11 @@ export function createWebSocketServer(
 
   let wsHttpServer: Server | undefined = undefined
 
-  const hmr = isObject(config.server.hmr) && config.server.hmr
-  const hmrServer = hmr && hmr.server
-  const hmrPort = hmr && hmr.port
+  const hmr = config.server.hmr
+  const hmrPort = hmr.port
   // TODO: the main server port may not have been chosen yet as it may use the next available
   const portsAreCompatible = !hmrPort || hmrPort === config.server.port
-  const wsServer = hmrServer || (portsAreCompatible && server)
+  const wsServer = hmr.server || (portsAreCompatible && server)
   let hmrServerWsListener: (
     req: InstanceType<typeof IncomingMessage>,
     socket: Duplex,
@@ -411,7 +409,7 @@ export function createWebSocketServer(
         })
       },
     },
-    config.server.hmr !== false,
+    config.server.hmr.update,
     // Don't normalize client as we already handles the send, and to keep `.socket`
     false,
   )

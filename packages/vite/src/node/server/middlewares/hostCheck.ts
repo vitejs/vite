@@ -16,10 +16,7 @@ export function getAdditionalAllowedHosts(
   ) {
     list.push(resolvedServerOptions.host)
   }
-  if (
-    typeof resolvedServerOptions.hmr === 'object' &&
-    resolvedServerOptions.hmr.host
-  ) {
+  if (resolvedServerOptions.hmr.host) {
     list.push(resolvedServerOptions.hmr.host)
   }
   if (

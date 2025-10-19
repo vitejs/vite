@@ -2,7 +2,7 @@ import path from 'node:path'
 import type { Plugin } from '../plugin'
 import type { ResolvedConfig } from '../config'
 import { CLIENT_ENTRY, ENV_ENTRY } from '../constants'
-import { isObject, normalizePath, resolveHostname } from '../utils'
+import { normalizePath, resolveHostname } from '../utils'
 import { perEnvironmentState } from '../environment'
 import { replaceDefine, serializeDefine } from './define'
 
@@ -40,13 +40,12 @@ export function clientInjectionsPlugin(config: ResolvedConfig): Plugin {
 
       const serverHost = `${resolvedServerHostname}:${resolvedServerPort}${devBase}`
 
-      let hmrConfig = config.server.hmr
-      hmrConfig = isObject(hmrConfig) ? hmrConfig : undefined
-      const host = hmrConfig?.host || null
-      const protocol = hmrConfig?.protocol || null
-      const timeout = hmrConfig?.timeout || 30000
-      const overlay = hmrConfig?.overlay !== false
-      const isHmrServerSpecified = !!hmrConfig?.server
+      const hmrConfig = config.server.hmr
+      const host = hmrConfig.host || null
+      const protocol = hmrConfig.protocol || null
+      const timeout = hmrConfig.timeout || 30000
+      const overlay = hmrConfig.overlay !== false
+      const isHmrServerSpecified = !!hmrConfig.server
       const hmrConfigName = path.basename(config.configFile || 'vite.config.js')
 
       // hmr.clientPort -> hmr.port
