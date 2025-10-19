@@ -116,9 +116,9 @@ describe('module runner initialization', async () => {
   }) => {
     const mod = await runner.import('/fixtures/pre-source-mapped-file.js')
     const error = await getError(() => mod.default())
-    // the file is mentioned in the source maps, but doesn't exist because we removed it
-    // Vite still prefers it because it is specified in inlined base64 map under "sources" field
-    // if something breaks, it the stack trace will use "transpiled-inline.js" file instead
+    // The error stack shows "transpiled-inline.ts" because it is specified in the source map's "sources" field.
+    // The file itself does not exist on the file system, but we should still respect "sources".
+    // If source maps handling breaks, the stack trace will point to "transpiled-inline.js" instead, which would be a bug.
     expect(serializeStackDeep(server, error).slice(0, 3))
       .toMatchInlineSnapshot(`
       [
