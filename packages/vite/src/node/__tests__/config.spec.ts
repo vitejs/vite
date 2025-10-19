@@ -839,7 +839,7 @@ describe('loadConfigFromFile', () => {
       `)
   })
 
-  test('import.meta.main is correctly set', async () => {
+  test('import.meta properties are supported', async () => {
     const { config } = (await loadConfigFromFile(
       {} as any,
       path.resolve(fixtures, './import-meta/vite.config.ts'),
@@ -851,6 +851,7 @@ describe('loadConfigFromFile', () => {
     expect(c.url).toContain('file://')
     expect(c.dirname).toContain('import-meta')
     expect(c.filename).toContain('vite.config.ts')
+    expect(c.resolved).toBe(c.url)
   })
 
   describe('loadConfigFromFile with configLoader: native', () => {

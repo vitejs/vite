@@ -14,6 +14,10 @@ import type { Alias, AliasOptions } from '#dep-types/alias'
 import type { AnymatchFn } from '../types/anymatch'
 import { withTrailingSlash } from '../shared/utils'
 import {
+  createImportMetaResolver,
+  importMetaResolveWithCustomHookString,
+} from '../module-runner/importMetaResolver'
+import {
   CLIENT_ENTRY,
   DEFAULT_ASSETS_RE,
   DEFAULT_CLIENT_CONDITIONS,
@@ -1924,9 +1928,13 @@ async function bundleConfigFile(
   const isModuleSyncConditionEnabled = (await import('#module-sync-enabled'))
     .default
 
+  let importMetaResolverRegistered = false
+
   const dirnameVarName = '__vite_injected_original_dirname'
   const filenameVarName = '__vite_injected_original_filename'
   const importMetaUrlVarName = '__vite_injected_original_import_meta_url'
+  const importMetaResolveVarName =
+    '__vite_injected_original_import_meta_resolve'
   const result = await build({
     absWorkingDir: process.cwd(),
     entryPoints: [fileName],
@@ -1946,6 +1954,7 @@ async function bundleConfigFile(
       'import.meta.url': importMetaUrlVarName,
       'import.meta.dirname': dirnameVarName,
       'import.meta.filename': filenameVarName,
+      'import.meta.resolve': importMetaResolveVarName,
       'import.meta.main': 'false',
     },
     plugins: [
@@ -2040,7 +2049,7 @@ async function bundleConfigFile(
         setup(build) {
           build.onLoad({ filter: /\.[cm]?[jt]s$/ }, async (args) => {
             const contents = await fsp.readFile(args.path, 'utf-8')
-            const injectValues =
+            let injectValues =
               `const ${dirnameVarName} = ${JSON.stringify(
                 path.dirname(args.path),
               )};` +
@@ -2048,6 +2057,17 @@ async function bundleConfigFile(
               `const ${importMetaUrlVarName} = ${JSON.stringify(
                 pathToFileURL(args.path).href,
               )};`
+            if (contents.includes('import.meta.resolve')) {
+              if (isESM) {
+                if (!importMetaResolverRegistered) {
+                  importMetaResolverRegistered = true
+                  await createImportMetaResolver()
+                }
+                injectValues += `const ${importMetaResolveVarName} = (specifier, importer = ${importMetaUrlVarName}) => (${importMetaResolveWithCustomHookString})(specifier, importer);`
+              } else {
+                injectValues += `const ${importMetaResolveVarName} = (specifier, importer = ${importMetaUrlVarName}) => { throw new Error('import.meta.resolve is not supported in CJS config files') };`
+              }
+            }
 
             return {
               loader: args.path.endsWith('ts') ? 'ts' : 'js',
