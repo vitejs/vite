@@ -191,7 +191,7 @@ export interface CSSModulesOptions {
       ) => string)
 }
 
-export const cssConfigDefaults = Object.freeze({
+const _cssConfigDefaults = Object.freeze({
   /** @experimental */
   transformer: 'postcss',
   // modules
@@ -202,6 +202,8 @@ export const cssConfigDefaults = Object.freeze({
   devSourcemap: false,
   // lightningcss
 } satisfies CSSOptions)
+export const cssConfigDefaults: Readonly<Partial<CSSOptions>> =
+  _cssConfigDefaults
 
 export type ResolvedCSSOptions = Omit<CSSOptions, 'lightningcss'> &
   Required<Pick<CSSOptions, 'transformer' | 'devSourcemap'>> & {
@@ -211,7 +213,7 @@ export type ResolvedCSSOptions = Omit<CSSOptions, 'lightningcss'> &
 export function resolveCSSOptions(
   options: CSSOptions | undefined,
 ): ResolvedCSSOptions {
-  const resolved = mergeWithDefaults(cssConfigDefaults, options ?? {})
+  const resolved = mergeWithDefaults(_cssConfigDefaults, options ?? {})
   if (resolved.transformer === 'lightningcss') {
     resolved.lightningcss ??= {}
     resolved.lightningcss.targets ??= convertTargets(
@@ -268,13 +270,13 @@ const cssModulesCache = new WeakMap<
   Map<string, Record<string, string>>
 >()
 
-export const removedPureCssFilesCache = new WeakMap<
+export const removedPureCssFilesCache: WeakMap<
   ResolvedConfig,
   Map<string, RenderedChunk>
->()
+> = new WeakMap()
 
 // Used only if the config doesn't code-split CSS (builds a single CSS file)
-export const cssBundleNameCache = new WeakMap<ResolvedConfig, string>()
+export const cssBundleNameCache: WeakMap<ResolvedConfig, string> = new WeakMap()
 
 const postcssConfigCache = new WeakMap<
   ResolvedConfig,
@@ -1905,11 +1907,11 @@ type CssUrlReplacer = (
   rawUrl: string,
 ) => string | false | Promise<string | false>
 // https://drafts.csswg.org/css-syntax-3/#identifier-code-point
-export const cssUrlRE =
+export const cssUrlRE: RegExp =
   /(?<!@import\s+)(?<=^|[^\w\-\u0080-\uffff])url\((\s*('[^']+'|"[^"]+")\s*|(?:\\.|[^'")\\])+)\)/
-export const cssDataUriRE =
+export const cssDataUriRE: RegExp =
   /(?<=^|[^\w\-\u0080-\uffff])data-uri\((\s*('[^']+'|"[^"]+")\s*|[^'")]+)\)/
-export const importCssRE =
+export const importCssRE: RegExp =
   /@import\s+(?:url\()?('[^']+\.css'|"[^"]+\.css"|[^'"\s)]+\.css)/
 // Assuming a function name won't be longer than 256 chars
 // eslint-disable-next-line regexp/no-unused-capturing-group -- doesn't detect asyncReplace usage

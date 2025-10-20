@@ -35,7 +35,7 @@ export type WebSocketCustomListener<T> = (
   invoke?: 'send' | `send:${string}`,
 ) => void
 
-export const isWebSocketServer = Symbol('isWebSocketServer')
+export const isWebSocketServer: unique symbol = Symbol('isWebSocketServer')
 
 export interface WebSocketServer extends NormalizedHotChannel {
   /**

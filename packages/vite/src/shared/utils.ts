@@ -1,6 +1,6 @@
 import { NULL_BYTE_PLACEHOLDER, VALID_ID_PREFIX } from './constants'
 
-export const isWindows =
+export const isWindows: boolean =
   typeof process !== 'undefined' && process.platform === 'win32'
 
 /**

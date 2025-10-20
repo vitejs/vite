@@ -50,7 +50,7 @@ export class ModuleRunner {
   constructor(
     public options: ModuleRunnerOptions,
     public evaluator: ModuleEvaluator = new ESModulesEvaluator(),
-    private debug?: ModuleRunnerDebugger,
+    private debug?: ModuleRunnerDebugger | undefined,
   ) {
     this.evaluatedModules = options.evaluatedModules ?? new EvaluatedModules()
     this.transport = normalizeModuleRunnerTransport(options.transport)
