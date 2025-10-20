@@ -1,3 +1,10 @@
+## <small>5.4.21 (2025-10-20)</small>
+
+* fix(dev): trim trailing slash before `server.fs.deny` check (#20968) (#20970) ([cad1d31](https://github.com/vitejs/vite/commit/cad1d31d0635dd8fd4ddfe6e5a92eb9ff13cd06c)), closes [#20968](https://github.com/vitejs/vite/issues/20968) [#20970](https://github.com/vitejs/vite/issues/20970)
+* chore: update CHANGELOG ([ca88ed7](https://github.com/vitejs/vite/commit/ca88ed7398288ce0c60176ac9a6392f10654c67c))
+
+
+
 ## <small>5.4.20 (2025-09-08)</small>
 
 * fix: apply `fs.strict` check to HTML files (#20736) ([482000f](https://github.com/vitejs/vite/commit/482000f57f56fe6ff2e905305100cfe03043ddea)), closes [#20736](https://github.com/vitejs/vite/issues/20736)
