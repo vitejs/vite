@@ -106,7 +106,7 @@ const htmlTypesRE = /\.(?:html|vue|svelte|astro|imba)$/
 // use Acorn because it's slow. Luckily this doesn't have to be bullet proof
 // since even missed imports can be caught at runtime, and false positives will
 // simply be ignored.
-export const importsRE =
+export const importsRE: RegExp =
   /(?<!\/\/.*)(?<=^|;|\*\/)\s*import(?!\s+type)(?:[\w*{}\n\r\t, ]+from)?\s*("[^"]+"|'[^']+')\s*(?=$|;|\/\/|\/\*)/gm
 
 export function scanImports(environment: ScanEnvironment): {
@@ -334,9 +334,9 @@ async function globEntries(
 
 type Loader = 'js' | 'ts' | 'jsx' | 'tsx'
 
-export const scriptRE =
+export const scriptRE: RegExp =
   /(<script(?:\s+[a-z_:][-\w:]*(?:\s*=\s*(?:"[^"]*"|'[^']*'|[^"'<>=\s]+))?)*\s*>)(.*?)<\/script>/gis
-export const commentRE = /<!--.*?-->/gs
+export const commentRE: RegExp = /<!--.*?-->/gs
 const srcRE = /\bsrc\s*=\s*(?:"([^"]+)"|'([^']+)'|([^\s'">]+))/i
 const typeRE = /\btype\s*=\s*(?:"([^"]+)"|'([^']+)'|([^\s'">]+))/i
 const langRE = /\blang\s*=\s*(?:"([^"]+)"|'([^']+)'|([^\s'">]+))/i

@@ -48,7 +48,8 @@ interface WorkerCache {
 
 export type WorkerType = 'classic' | 'module' | 'ignore'
 
-export const workerOrSharedWorkerRE = /(?:\?|&)(worker|sharedworker)(?:&|$)/
+export const workerOrSharedWorkerRE: RegExp =
+  /(?:\?|&)(worker|sharedworker)(?:&|$)/
 const workerFileRE = /(?:\?|&)worker_file&type=(\w+)(?:&|$)/
 const inlineRE = /[?&]inline\b/
 
@@ -199,7 +200,7 @@ function emitSourcemapForWorkerEntry(
   return chunk
 }
 
-export const workerAssetUrlRE = /__VITE_WORKER_ASSET__([a-z\d]{8})__/g
+export const workerAssetUrlRE: RegExp = /__VITE_WORKER_ASSET__([a-z\d]{8})__/g
 
 function encodeWorkerAssetFileName(
   fileName: string,
