@@ -113,7 +113,7 @@ import {
 
 const debug = createDebugger('vite:config', { depth: 10 })
 const promisifiedRealpath = promisify(fs.realpath)
-const SYMBOL_RESOLVED_CONFIG = Symbol('vite:resolved-config')
+const SYMBOL_RESOLVED_CONFIG: unique symbol = Symbol('vite:resolved-config')
 
 export interface ConfigEnv {
   /**
@@ -641,7 +641,7 @@ export interface ResolvedConfig
   > {}
 
 // inferred ones are omitted
-export const configDefaults = Object.freeze({
+const configDefaults = Object.freeze({
   define: {},
   dev: {
     warmup: [],
@@ -721,7 +721,7 @@ export const configDefaults = Object.freeze({
   envPrefix: 'VITE_',
   worker: {
     format: 'iife',
-    plugins: () => [],
+    plugins: (): never[] => [],
     // rollupOptions
   },
   optimizeDeps: {

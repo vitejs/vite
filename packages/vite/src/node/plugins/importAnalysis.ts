@@ -85,7 +85,7 @@ export const canSkipImportAnalysis = (id: string): boolean =>
 const optimizedDepChunkRE = /\/chunk-[A-Z\d]{8}\.js/
 const optimizedDepDynamicRE = /-[A-Z\d]{8}\.js/
 
-export const hasViteIgnoreRE = /\/\*\s*@vite-ignore\s*\*\//
+export const hasViteIgnoreRE: RegExp = /\/\*\s*@vite-ignore\s*\*\//
 
 const urlIsStringRE = /^(?:'.*'|".*"|`.*`)$/
 
