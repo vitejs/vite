@@ -13,7 +13,14 @@ import {
 import type { Page } from 'playwright-chromium'
 import WebSocket from 'ws'
 import testJSON from '../safe.json'
-import { browser, isServe, page, viteServer, viteTestUrl } from '~utils'
+import {
+  browser,
+  isServe,
+  isWindows,
+  page,
+  viteServer,
+  viteTestUrl,
+} from '~utils'
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
 
@@ -540,7 +547,9 @@ describe.runIf(isServe)('invalid request', () => {
 
   test('should deny request to denied file when a request ends with \\', async () => {
     const response = await sendRawRequest(viteTestUrl, '/src/.env\\')
-    expect(response).toContain('HTTP/1.1 403 Forbidden')
+    expect(response).toContain(
+      isWindows ? 'HTTP/1.1 403 Forbidden' : 'HTTP/1.1 404 Not Found',
+    )
   })
 
   test('should deny request to denied file when a request ends with \\ with /@fs/', async () => {
@@ -548,7 +557,9 @@ describe.runIf(isServe)('invalid request', () => {
       viteTestUrl,
       path.posix.join('/@fs/', root, 'root/src/.env') + '\\',
     )
-    expect(response).toContain('HTTP/1.1 403 Forbidden')
+    expect(response).toContain(
+      isWindows ? 'HTTP/1.1 403 Forbidden' : 'HTTP/1.1 404 Not Found',
+    )
   })
 
   test('should deny request with /@fs/ to denied file when a request has /.', async () => {
