@@ -1,3 +1,8 @@
+## <small>[7.0.8](https://github.com/vitejs/vite/compare/v7.0.7...v7.0.8) (2025-10-20)</small>
+### Bug Fixes
+
+* **dev:** trim trailing slash before `server.fs.deny` check ([#20968](https://github.com/vitejs/vite/issues/20968)) ([6a6db37](https://github.com/vitejs/vite/commit/6a6db37d3bb9dfcc9fa42dbd8fcfdba4c5911cb8))
+
 ## <small>[7.0.7](https://github.com/vitejs/vite/compare/v7.0.6...v7.0.7) (2025-09-08)</small>
 ### Bug Fixes
 
