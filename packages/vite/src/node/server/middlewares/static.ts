@@ -259,7 +259,12 @@ export function isFileLoadingAllowed(
 
   if (!fs.strict) return true
 
-  if (server._fsDenyGlob(filePath)) return false
+  // NOTE: `fs.readFile('/foo.png/')` tries to load `'/foo.png'`
+  // so we should check the path without trailing slash
+  const filePathWithoutTrailingSlash = filePath.endsWith('/')
+    ? filePath.slice(0, -1)
+    : filePath
+  if (server._fsDenyGlob(filePathWithoutTrailingSlash)) return false
 
   if (server.moduleGraph.safeModulesPath.has(filePath)) return true
 
