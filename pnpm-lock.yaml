@@ -497,9 +497,9 @@ importers:
 
   packages/vite/src/node/__tests__/plugins/fixtures/license/dep-license-mit:
     dependencies:
-      '@vitejs/test-dep-nested-licence-isc':
+      '@vitejs/test-dep-nested-license-isc':
         specifier: file:../dep-nested-license-isc
-        version: '@vitejs/test-dep-nested-license-isc@file:packages/vite/src/node/__tests__/plugins/fixtures/license/dep-nested-license-isc'
+        version: file:packages/vite/src/node/__tests__/plugins/fixtures/license/dep-nested-license-isc
 
   packages/vite/src/node/__tests__/plugins/fixtures/license/dep-nested-license-isc: {}
 
@@ -9359,7 +9359,7 @@ snapshots:
 
   '@vitejs/test-dep-license-mit@file:packages/vite/src/node/__tests__/plugins/fixtures/license/dep-license-mit':
     dependencies:
-      '@vitejs/test-dep-nested-licence-isc': '@vitejs/test-dep-nested-license-isc@file:packages/vite/src/node/__tests__/plugins/fixtures/license/dep-nested-license-isc'
+      '@vitejs/test-dep-nested-license-isc': file:packages/vite/src/node/__tests__/plugins/fixtures/license/dep-nested-license-isc
 
   '@vitejs/test-dep-nested-license-isc@file:packages/vite/src/node/__tests__/plugins/fixtures/license/dep-nested-license-isc': {}
 

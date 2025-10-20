@@ -1,3 +1,3 @@
-import nestedDep from '@vitejs/test-dep-nested-licence-isc'
+import nestedDep from '@vitejs/test-dep-nested-license-isc'
 
 export default 'ok' + nestedDep

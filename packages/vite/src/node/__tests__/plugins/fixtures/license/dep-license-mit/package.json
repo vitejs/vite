@@ -5,6 +5,6 @@
   "type": "module",
   "license": "MIT",
   "dependencies": {
-    "@vitejs/test-dep-nested-licence-isc": "file:../dep-nested-license-isc"
+    "@vitejs/test-dep-nested-license-isc": "file:../dep-nested-license-isc"
   }
 }
