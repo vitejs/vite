@@ -252,9 +252,8 @@ export class ModuleRunner {
         const builtins = await this.transport.invoke('getBuiltins', [])
         this.isBuiltin = createIsBuiltin(builtins)
         this.debug?.('[module runner] builtins loaded:', builtins)
-      } catch (error) {
-        this.debug?.('[module runner] failed to load builtins:', error)
-        this.isBuiltin = () => false
+      } finally {
+        this.builtinsPromise = undefined
       }
     })()
 
