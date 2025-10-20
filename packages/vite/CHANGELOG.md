@@ -1,3 +1,9 @@
+## <small>6.4.1 (2025-10-20)</small>
+
+* fix(dev): trim trailing slash before `server.fs.deny` check (#20968) (#20969) ([1114b5d](https://github.com/vitejs/vite/commit/1114b5d7ea03e26572708715343bec69db4536e8)), closes [#20968](https://github.com/vitejs/vite/issues/20968) [#20969](https://github.com/vitejs/vite/issues/20969)
+
+
+
 ## 6.4.0 (2025-10-15)
 
 * feat: allow passing down resolved config to vite's createServer (#20932) ([ca6455e](https://github.com/vitejs/vite/commit/ca6455ee9eb6111a9caa9810506a1b9ac96a520a)), closes [#20932](https://github.com/vitejs/vite/issues/20932)
