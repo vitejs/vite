@@ -241,12 +241,10 @@ export class ModuleRunner {
     return cached
   }
 
-  private async ensureBuiltins(): Promise<void> {
+  private ensureBuiltins(): Promise<void> | undefined {
     if (this.isBuiltin) return
 
-    if (this.builtinsPromise) return this.builtinsPromise
-
-    this.builtinsPromise = (async () => {
+    this.builtinsPromise ??= (async () => {
       try {
         this.debug?.('[module runner] fetching builtins from server')
         const builtins = await this.transport.invoke('getBuiltins', [])
