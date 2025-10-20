@@ -8,8 +8,6 @@ import {
   isBuild,
   page,
   removeFile,
-  untilUpdated,
-  withRetry,
 } from '~utils'
 
 const filteredResult = {
@@ -83,19 +81,24 @@ const relativeRawResult = {
   },
 }
 
+const baseRawResult = {
+  './baz.json': {
+    msg: 'baz',
+  },
+}
+
 test('should work', async () => {
-  await withRetry(async () => {
-    const actual = await page.textContent('.result')
-    expect(JSON.parse(actual)).toStrictEqual(allResult)
-  }, true)
-  await withRetry(async () => {
-    const actualEager = await page.textContent('.result-eager')
-    expect(JSON.parse(actualEager)).toStrictEqual(allResult)
-  }, true)
-  await withRetry(async () => {
-    const actualNodeModules = await page.textContent('.result-node_modules')
-    expect(JSON.parse(actualNodeModules)).toStrictEqual(nodeModulesResult)
-  }, true)
+  await expect
+    .poll(async () => JSON.parse(await page.textContent('.result')))
+    .toStrictEqual(allResult)
+  await expect
+    .poll(async () => JSON.parse(await page.textContent('.result-eager')))
+    .toStrictEqual(allResult)
+  await expect
+    .poll(async () =>
+      JSON.parse(await page.textContent('.result-node_modules')),
+    )
+    .toStrictEqual(nodeModulesResult)
 })
 
 test('import glob raw', async () => {
@@ -133,9 +136,12 @@ if (!isBuild) {
     const resultElement = page.locator('.result')
 
     addFile('dir/a.js', '')
-    await withRetry(async () => {
-      const actualAdd = await resultElement.textContent()
-      expect(JSON.parse(actualAdd)).toStrictEqual({
+    await expect
+      .poll(async () => {
+        const actualAdd = await resultElement.textContent()
+        return JSON.parse(actualAdd)
+      })
+      .toStrictEqual({
         '/dir/a.js': {},
         ...allResult,
         '/dir/index.js': {
@@ -146,13 +152,15 @@ if (!isBuild) {
           },
         },
       })
-    })
 
     // edit the added file
     editFile('dir/a.js', () => 'export const msg ="a"')
-    await withRetry(async () => {
-      const actualEdit = await resultElement.textContent()
-      expect(JSON.parse(actualEdit)).toStrictEqual({
+    await expect
+      .poll(async () => {
+        const actualEdit = await resultElement.textContent()
+        return JSON.parse(actualEdit)
+      })
+      .toStrictEqual({
         '/dir/a.js': {
           msg: 'a',
         },
@@ -167,13 +175,14 @@ if (!isBuild) {
           },
         },
       })
-    })
 
     removeFile('dir/a.js')
-    await withRetry(async () => {
-      const actualRemove = await resultElement.textContent()
-      expect(JSON.parse(actualRemove)).toStrictEqual(allResult)
-    })
+    await expect
+      .poll(async () => {
+        const actualRemove = await resultElement.textContent()
+        return JSON.parse(actualRemove)
+      })
+      .toStrictEqual(allResult)
   })
 
   test('no hmr for adding/removing files', async () => {
@@ -192,18 +201,48 @@ if (!isBuild) {
     const resultElement = page.locator('.in-package')
 
     addFile('pkg-pages/bar.js', '// empty')
-    await untilUpdated(
-      () => resultElement.textContent(),
-      JSON.stringify(['/pkg-pages/foo.js', '/pkg-pages/bar.js'].sort()),
-    )
+    await expect
+      .poll(async () => JSON.parse(await resultElement.textContent()))
+      .toStrictEqual(['/pkg-pages/foo.js', '/pkg-pages/bar.js'].sort())
 
     removeFile('pkg-pages/bar.js')
-    await untilUpdated(
-      () => resultElement.textContent(),
-      JSON.stringify(['/pkg-pages/foo.js']),
-    )
+    await expect
+      .poll(async () => JSON.parse(await resultElement.textContent()))
+      .toStrictEqual(['/pkg-pages/foo.js'])
+  })
+
+  test('hmr for adding/removing files with array patterns and exclusions', async () => {
+    const resultElement = page.locator('.array-result')
+    await expect
+      .poll(async () => JSON.parse(await resultElement.textContent()))
+      .toStrictEqual({
+        './array-test-dir/included.js': 'included',
+      })
+
+    addFile('array-test-dir/new-file.js', 'export default "new"')
+    await expect
+      .poll(async () => JSON.parse(await resultElement.textContent()))
+      .toStrictEqual({
+        './array-test-dir/included.js': 'included',
+        './array-test-dir/new-file.js': 'new',
+      })
+
+    removeFile('array-test-dir/new-file.js')
+    await expect
+      .poll(async () => JSON.parse(await resultElement.textContent()))
+      .toStrictEqual({
+        './array-test-dir/included.js': 'included',
+      })
   })
 }
+
+test('array pattern with exclusions', async () => {
+  await expect
+    .poll(async () => JSON.parse(await page.textContent('.array-result')))
+    .toStrictEqual({
+      './array-test-dir/included.js': 'included',
+    })
+})
 
 test('tree-shake eager css', async () => {
   expect(await page.textContent('.no-tree-shake-eager-css-result')).toMatch(
@@ -230,20 +269,34 @@ test('escapes special chars in globs without mangling user supplied glob suffix'
     .filter((f) => f.isDirectory())
     .map((f) => `/escape/${f.name}/glob.js`)
     .sort()
-  const foundRelativeNames = (await page.textContent('.escape-relative'))
-    .split('\n')
-    .sort()
-  expect(expectedNames).toEqual(foundRelativeNames)
-  const foundAliasNames = (await page.textContent('.escape-alias'))
-    .split('\n')
-    .sort()
-  expect(expectedNames).toEqual(foundAliasNames)
+  await expect
+    .poll(async () => {
+      const text = await page.textContent('.escape-relative')
+      return text.split('\n').sort()
+    })
+    .toEqual(expectedNames)
+  await expect
+    .poll(async () => {
+      const text = await page.textContent('.escape-alias')
+      return text.split('\n').sort()
+    })
+    .toEqual(expectedNames)
 })
 
 test('subpath imports', async () => {
-  expect(await page.textContent('.subpath-imports')).toMatch('bar foo')
+  await expect
+    .poll(async () => await page.textContent('.subpath-imports'))
+    .toMatch('bar foo')
 })
 
 test('#alias imports', async () => {
-  expect(await page.textContent('.hash-alias-imports')).toMatch('bar foo')
+  await expect
+    .poll(async () => await page.textContent('.hash-alias-imports'))
+    .toMatch('bar foo')
+})
+
+test('import base glob raw', async () => {
+  await expect
+    .poll(async () => await page.textContent('.result-base'))
+    .toBe(JSON.stringify(baseRawResult, null, 2))
 })

@@ -1,21 +1,31 @@
 // this file should re-export only things that don't rely on Node.js or other runner features
 
-export { EvaluatedModules, type EvaluatedModuleNode } from './evaluatedModules'
+export {
+  EvaluatedModules,
+  normalizeModuleId,
+  type EvaluatedModuleNode,
+} from './evaluatedModules'
 export { ModuleRunner } from './runner'
 export { ESModulesEvaluator } from './esmEvaluator'
-export { RemoteRunnerTransport } from './runnerTransport'
+export {
+  createDefaultImportMeta,
+  createNodeImportMeta,
+} from './createImportMeta'
 
-export type { RunnerTransport } from './runnerTransport'
-export type { HMRLogger, HMRConnection } from '../shared/hmr'
+export { createWebSocketModuleRunnerTransport } from '../shared/moduleRunnerTransport'
+
+export type { FetchFunctionOptions, FetchResult } from '../shared/invokeMethods'
+export type {
+  ModuleRunnerTransportHandlers,
+  ModuleRunnerTransport,
+} from '../shared/moduleRunnerTransport'
+export type { HMRLogger } from '../shared/hmr'
 export type {
   ModuleEvaluator,
   ModuleRunnerContext,
-  FetchResult,
   FetchFunction,
-  FetchFunctionOptions,
   ResolvedResult,
   SSRImportMetadata,
-  ModuleRunnerHMRConnection,
   ModuleRunnerImportMeta,
   ModuleRunnerOptions,
   ModuleRunnerHmr,
@@ -23,7 +33,9 @@ export type {
 export {
   ssrDynamicImportKey,
   ssrExportAllKey,
+  ssrExportNameKey,
   ssrImportKey,
   ssrImportMetaKey,
   ssrModuleExportsKey,
 } from './constants'
+export type { InterceptorOptions } from './sourcemap/interceptor'

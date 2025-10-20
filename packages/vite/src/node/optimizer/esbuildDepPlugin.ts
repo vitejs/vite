@@ -6,12 +6,14 @@ import {
   escapeRegex,
   flattenId,
   isBuiltin,
+  isCSSRequest,
   isExternalUrl,
+  isNodeBuiltin,
   moduleListContains,
   normalizePath,
 } from '../utils'
 import { browserExternalId, optionalPeerDepId } from '../plugins/resolve'
-import { isCSSRequest, isModuleCSSRequest } from '../plugins/css'
+import { isModuleCSSRequest } from '../plugins/css'
 import type { Environment } from '../environment'
 import { createBackCompatIdResolver } from '../idResolver'
 
@@ -57,7 +59,7 @@ export function esbuildDepPlugin(
 
   // remove optimizable extensions from `externalTypes` list
   const allExternalTypes = extensions
-    ? externalTypes.filter((type) => !extensions?.includes('.' + type))
+    ? externalTypes.filter((type) => !extensions.includes('.' + type))
     : externalTypes
 
   // use separate package cache for optimizer as it caches paths around node_modules
@@ -115,7 +117,7 @@ export function esbuildDepPlugin(
         namespace: 'optional-peer-dep',
       }
     }
-    if (environment.config.consumer === 'server' && isBuiltin(resolved)) {
+    if (isBuiltin(environment.config.resolve.builtins, resolved)) {
       return
     }
     if (isExternalUrl(resolved)) {
@@ -282,15 +284,11 @@ module.exports = Object.create(new Proxy({}, {
       build.onLoad(
         { filter: /.*/, namespace: 'optional-peer-dep' },
         ({ path }) => {
-          if (isProduction) {
-            return {
-              contents: 'module.exports = {}',
-            }
-          } else {
-            const [, peerDep, parentDep] = path.split(':')
-            return {
-              contents: `throw new Error(\`Could not resolve "${peerDep}" imported by "${parentDep}". Is it installed?\`)`,
-            }
+          const [, peerDep, parentDep] = path.split(':')
+          return {
+            contents:
+              'module.exports = {};' +
+              `throw new Error(\`Could not resolve "${peerDep}" imported by "${parentDep}".${isProduction ? '' : ' Is it installed?'}\`)`,
           }
         },
       )
@@ -304,7 +302,7 @@ const matchesEntireLine = (text: string) => `^${escapeRegex(text)}$`
 // https://github.com/evanw/esbuild/issues/566#issuecomment-735551834
 export function esbuildCjsExternalPlugin(
   externals: string[],
-  platform: 'node' | 'browser',
+  platform: 'node' | 'browser' | 'neutral',
 ): Plugin {
   return {
     name: 'cjs-external',
@@ -336,10 +334,10 @@ export function esbuildCjsExternalPlugin(
       build.onLoad(
         { filter: /.*/, namespace: cjsExternalFacadeNamespace },
         (args) => ({
-          contents:
-            `import * as m from ${JSON.stringify(
-              nonFacadePrefix + args.path,
-            )};` + `module.exports = m;`,
+          contents: `\
+import * as m from ${JSON.stringify(nonFacadePrefix + args.path)};
+module.exports = ${isNodeBuiltin(args.path) ? 'm.default' : '{ ...m }'};
+`,
         }),
       )
     },

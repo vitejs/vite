@@ -30,9 +30,14 @@ test('can extract json error position', () => {
 })
 
 describe('transform', () => {
-  const transform = (input: string, opts: JsonOptions, isBuild: boolean) => {
+  const transform = (
+    input: string,
+    opts: Required<JsonOptions>,
+    isBuild: boolean,
+  ) => {
     const plugin = jsonPlugin(opts, isBuild)
-    return (plugin.transform! as Function)(input, 'test.json').code
+    // @ts-expect-error transform.handler should exist
+    return plugin.transform.handler(input, 'test.json').code
   }
 
   test("namedExports: true, stringify: 'auto' should not transformed an array input", () => {
@@ -58,7 +63,7 @@ describe('transform', () => {
       false,
     )
     expect(actualSmall).toMatchInlineSnapshot(
-      `"export default JSON.parse("[{\\"a\\":1,\\"b\\":2}]")"`,
+      `"export default /* #__PURE__ */ JSON.parse("[{\\"a\\":1,\\"b\\":2}]")"`,
     )
   })
 
@@ -118,7 +123,7 @@ describe('transform', () => {
       false,
     )
     expect(actualDev).toMatchInlineSnapshot(
-      `"export default JSON.parse("{\\"a\\":1,\\n\\"🫠\\": \\"\\",\\n\\"const\\": false}")"`,
+      `"export default /* #__PURE__ */ JSON.parse("{\\"a\\":1,\\n\\"🫠\\": \\"\\",\\n\\"const\\": false}")"`,
     )
 
     const actualBuild = transform(
@@ -127,7 +132,7 @@ describe('transform', () => {
       true,
     )
     expect(actualBuild).toMatchInlineSnapshot(
-      `"export default JSON.parse("{\\"a\\":1,\\"🫠\\":\\"\\",\\"const\\":false}")"`,
+      `"export default /* #__PURE__ */ JSON.parse("{\\"a\\":1,\\"🫠\\":\\"\\",\\"const\\":false}")"`,
     )
   })
 

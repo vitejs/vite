@@ -6,7 +6,7 @@ import type { OutputBundle } from 'rollup'
 import type { Plugin } from '../plugin'
 import type { ResolvedConfig } from '../config'
 import type { Environment } from '../environment'
-import { usePerEnvironmentState } from '../environment'
+import { perEnvironmentState } from '../environment'
 import { isDefined, isInNodeModules, normalizePath } from '../utils'
 import { LogLevels } from '../logger'
 import { withTrailingSlash } from '../../shared/utils'
@@ -24,7 +24,7 @@ type LogEntry = {
   mapSize: number | null
 }
 
-const COMPRESSIBLE_ASSETS_RE = /\.(?:html|json|svg|txt|xml|xhtml)$/
+const COMPRESSIBLE_ASSETS_RE = /\.(?:html|json|svg|txt|xml|xhtml|wasm)$/
 
 export function buildReporterPlugin(config: ResolvedConfig): Plugin {
   const compress = promisify(gzip)
@@ -40,50 +40,48 @@ export function buildReporterPlugin(config: ResolvedConfig): Plugin {
   const tty = process.stdout.isTTY && !process.env.CI
   const shouldLogInfo = LogLevels[config.logLevel || 'info'] >= LogLevels.info
 
-  const modulesReporter = usePerEnvironmentState((environment: Environment) => {
-    let hasTransformed = false
-    let transformedCount = 0
+  const modulesReporter = shouldLogInfo
+    ? perEnvironmentState((environment: Environment) => {
+        let hasTransformed = false
+        let transformedCount = 0
 
-    const logTransform = throttle((id: string) => {
-      writeLine(
-        `transforming (${transformedCount}) ${colors.dim(
-          path.relative(config.root, id),
-        )}`,
-      )
-    })
-
-    return {
-      reset() {
-        transformedCount = 0
-      },
-      register(id: string) {
-        transformedCount++
-        if (shouldLogInfo) {
-          if (!tty) {
-            if (!hasTransformed) {
-              config.logger.info(`transforming...`)
-            }
-          } else {
-            if (id.includes(`?`)) return
-            logTransform(id)
-          }
-          hasTransformed = true
-        }
-      },
-      log() {
-        if (shouldLogInfo) {
-          if (tty) {
-            clearLine()
-          }
-          environment.logger.info(
-            `${colors.green(`✓`)} ${transformedCount} modules transformed.`,
+        const logTransform = throttle((id: string) => {
+          writeLine(
+            `transforming (${transformedCount}) ${colors.dim(
+              path.relative(config.root, id),
+            )}`,
           )
-        }
-      },
-    }
-  })
+        })
 
-  const chunksReporter = usePerEnvironmentState((environment: Environment) => {
+        return {
+          reset() {
+            transformedCount = 0
+          },
+          register(id: string) {
+            transformedCount++
+            if (!tty) {
+              if (!hasTransformed) {
+                config.logger.info(`transforming...`)
+              }
+            } else {
+              if (id.includes(`?`)) return
+              logTransform(id)
+            }
+            hasTransformed = true
+          },
+          log() {
+            if (tty) {
+              clearLine()
+            }
+            environment.logger.info(
+              `${colors.green(`✓`)} ${transformedCount} modules transformed.`,
+            )
+          },
+        }
+      })
+    : undefined
+
+  const chunksReporter = perEnvironmentState((environment: Environment) => {
     let hasRenderedChunk = false
     let hasCompressChunk = false
     let chunkCount = 0
@@ -148,9 +146,11 @@ export function buildReporterPlugin(config: ResolvedConfig): Plugin {
                     return {
                       name: chunk.fileName,
                       group: 'JS',
-                      size: chunk.code.length,
+                      size: Buffer.byteLength(chunk.code),
                       compressedSize: await getCompressedSize(chunk.code),
-                      mapSize: chunk.map ? chunk.map.toString().length : null,
+                      mapSize: chunk.map
+                        ? Buffer.byteLength(chunk.map.toString())
+                        : null,
                     }
                   } else {
                     if (chunk.fileName.endsWith('.map')) return null
@@ -160,7 +160,7 @@ export function buildReporterPlugin(config: ResolvedConfig): Plugin {
                     return {
                       name: chunk.fileName,
                       group: isCSS ? 'CSS' : 'Assets',
-                      size: chunk.source.length,
+                      size: Buffer.byteLength(chunk.source),
                       mapSize: null, // Rollup doesn't support CSS maps?
                       compressedSize: isCompressible
                         ? await getCompressedSize(chunk.source)
@@ -275,17 +275,21 @@ export function buildReporterPlugin(config: ResolvedConfig): Plugin {
     sharedDuringBuild: true,
     perEnvironmentStartEndDuringDev: true,
 
-    transform(_, id) {
-      modulesReporter(this).register(id)
-    },
+    ...(modulesReporter
+      ? {
+          transform(_, id) {
+            modulesReporter(this).register(id)
+          },
 
-    buildStart() {
-      modulesReporter(this).reset()
-    },
+          buildStart() {
+            modulesReporter(this).reset()
+          },
 
-    buildEnd() {
-      modulesReporter(this).log()
-    },
+          buildEnd() {
+            modulesReporter(this).log()
+          },
+        }
+      : {}),
 
     renderStart() {
       chunksReporter(this).reset()

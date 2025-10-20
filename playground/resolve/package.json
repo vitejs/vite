@@ -19,7 +19,7 @@
     "#query": "./imports-path/query.json"
   },
   "dependencies": {
-    "@babel/runtime": "^7.26.0",
+    "@babel/runtime": "^7.28.4",
     "es5-ext": "0.10.64",
     "normalize.css": "^8.0.1",
     "@vitejs/test-require-pkg-with-module-field": "link:./require-pkg-with-module-field",
@@ -40,6 +40,8 @@
     "@vitejs/test-resolve-exports-with-module-condition-required": "link:./exports-with-module-condition-required",
     "@vitejs/test-resolve-linked": "workspace:*",
     "@vitejs/test-resolve-imports-pkg": "link:./imports-path/other-pkg",
-    "@vitejs/test-resolve-sharp-dir": "link:./sharp-dir"
+    "@vitejs/test-resolve-sharp-dir": "link:./sharp-dir",
+    "@vitejs/test-resolve-side-effects-glob": "link:./side-effects-glob",
+    "@vitejs/test-utf8-bom-package": "link:./utf8-bom-package"
   }
 }

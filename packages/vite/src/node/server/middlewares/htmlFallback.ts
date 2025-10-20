@@ -1,6 +1,6 @@
 import path from 'node:path'
 import fs from 'node:fs'
-import type { Connect } from 'dep-types/connect'
+import type { Connect } from '#dep-types/connect'
 import { createDebugger } from '../../utils'
 import { cleanUrl } from '../../../shared/utils'
 
@@ -29,7 +29,13 @@ export function htmlFallbackMiddleware(
     }
 
     const url = cleanUrl(req.url!)
-    const pathname = decodeURIComponent(url)
+    let pathname
+    try {
+      pathname = decodeURIComponent(url)
+    } catch {
+      // ignore malformed URI
+      return next()
+    }
 
     // .html files are not handled by serveStaticMiddleware
     // so we need to check if the file exists
@@ -42,7 +48,7 @@ export function htmlFallbackMiddleware(
       }
     }
     // trailing slash should check for fallback index.html
-    else if (pathname[pathname.length - 1] === '/') {
+    else if (pathname.endsWith('/')) {
       const filePath = path.join(root, pathname, 'index.html')
       if (fs.existsSync(filePath)) {
         const newUrl = url + 'index.html'

@@ -7,11 +7,11 @@ import type {
   TransformResult,
 } from 'esbuild'
 import { transform } from 'esbuild'
-import type { RawSourceMap } from '@ampproject/remapping'
+import type { RawSourceMap } from '@jridgewell/remapping'
 import type { InternalModuleFormat, SourceMap } from 'rollup'
 import type { TSConfckParseResult } from 'tsconfck'
 import { TSConfckCache, TSConfckParseError, parse } from 'tsconfck'
-import type { FSWatcher } from 'dep-types/chokidar'
+import type { FSWatcher } from '#dep-types/chokidar'
 import {
   combineSourcemaps,
   createDebugger,
@@ -29,7 +29,7 @@ const debug = createDebugger('vite:esbuild')
 // IIFE content looks like `var MyLib = function() {`.
 // Spaces are removed and parameters are mangled when minified
 const IIFE_BEGIN_RE =
-  /(?:const|var)\s+\S+\s*=\s*function\([^()]*\)\s*\{\s*"use strict";/
+  /(?:const|var)\s+\S+\s*=\s*\(?function\([^()]*\)\s*\{\s*"use strict";/
 
 const validExtensionRE = /\.\w+$/
 const jsxExtensionsRE = /\.(?:j|t)sx\b/
@@ -37,14 +37,15 @@ const jsxExtensionsRE = /\.(?:j|t)sx\b/
 // the final build should always support dynamic import and import.meta.
 // if they need to be polyfilled, plugin-legacy should be used.
 // plugin-legacy detects these two features when checking for modern code.
+// Browser support: https://caniuse.com/es6-module-dynamic-import,mdn-javascript_operators_import_meta#:~:text=Feature%20summary
 export const defaultEsbuildSupported = {
   'dynamic-import': true,
   'import-meta': true,
 }
 
 export interface ESBuildOptions extends TransformOptions {
-  include?: string | RegExp | string[] | RegExp[]
-  exclude?: string | RegExp | string[] | RegExp[]
+  include?: string | RegExp | ReadonlyArray<string | RegExp>
+  exclude?: string | RegExp | ReadonlyArray<string | RegExp>
   jsxInject?: string
   /**
    * This option is not respected. Use `build.minify` instead.
@@ -264,7 +265,7 @@ export function esbuildPlugin(config: ResolvedConfig): Plugin {
     },
   }
 
-  let server: ViteDevServer
+  let server: ViteDevServer | undefined
 
   return {
     name: 'vite:esbuild',
@@ -316,15 +317,50 @@ const rollupToEsbuildFormatMap: Record<
   iife: undefined,
 }
 
-export const buildEsbuildPlugin = (config: ResolvedConfig): Plugin => {
+// #7188, esbuild adds helpers out of the UMD and IIFE wrappers, and the
+// names are minified potentially causing collision with other globals.
+// We inject the helpers inside the wrappers.
+// e.g. turn:
+//    <esbuild helpers> (function(){ /*actual content/* })()
+// into:
+//    (function(){ <esbuild helpers> /*actual content/* })()
+// Not using regex because it's too hard to rule out performance issues like #8738 #8099 #10900 #14065
+// Instead, using plain string index manipulation (indexOf, slice) which is simple and performant
+// We don't need to create a MagicString here because both the helpers and
+// the headers don't modify the sourcemap
+export const injectEsbuildHelpers = (
+  esbuildCode: string,
+  format: string,
+): string => {
+  const contentIndex =
+    format === 'iife'
+      ? Math.max(esbuildCode.search(IIFE_BEGIN_RE), 0)
+      : format === 'umd'
+        ? esbuildCode.indexOf(`(function(`) // same for minified or not
+        : 0
+
+  if (contentIndex > 0) {
+    const esbuildHelpers = esbuildCode.slice(0, contentIndex)
+    return esbuildCode
+      .slice(contentIndex)
+      .replace('"use strict";', (m: string) => m + esbuildHelpers)
+  }
+  return esbuildCode
+}
+
+export const buildEsbuildPlugin = (): Plugin => {
   return {
     name: 'vite:esbuild-transpile',
+    applyToEnvironment(environment) {
+      return environment.config.esbuild !== false
+    },
     async renderChunk(code, chunk, opts) {
       // @ts-expect-error injected by @vitejs/plugin-legacy
       if (opts.__vite_skip_esbuild__) {
         return null
       }
 
+      const config = this.environment.config
       const options = resolveEsbuildTranspileOptions(config, opts.format)
 
       if (!options) {
@@ -340,30 +376,7 @@ export const buildEsbuildPlugin = (config: ResolvedConfig): Plugin => {
       )
 
       if (config.build.lib) {
-        // #7188, esbuild adds helpers out of the UMD and IIFE wrappers, and the
-        // names are minified potentially causing collision with other globals.
-        // We inject the helpers inside the wrappers.
-        // e.g. turn:
-        //    <esbuild helpers> (function(){ /*actual content/* })()
-        // into:
-        //    (function(){ <esbuild helpers> /*actual content/* })()
-        // Not using regex because it's too hard to rule out performance issues like #8738 #8099 #10900 #14065
-        // Instead, using plain string index manipulation (indexOf, slice) which is simple and performant
-        // We don't need to create a MagicString here because both the helpers and
-        // the headers don't modify the sourcemap
-        const esbuildCode = res.code
-        const contentIndex =
-          opts.format === 'iife'
-            ? Math.max(esbuildCode.search(IIFE_BEGIN_RE), 0)
-            : opts.format === 'umd'
-              ? esbuildCode.indexOf(`(function(`) // same for minified or not
-              : 0
-        if (contentIndex > 0) {
-          const esbuildHelpers = esbuildCode.slice(0, contentIndex)
-          res.code = esbuildCode
-            .slice(contentIndex)
-            .replace(`"use strict";`, `"use strict";` + esbuildHelpers)
-        }
+        res.code = injectEsbuildHelpers(res.code, opts.format)
       }
 
       return res

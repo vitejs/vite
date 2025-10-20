@@ -8,10 +8,13 @@ jobs:
   reply-labeled:
     if: github.repository == 'vitejs/vite'
     runs-on: ubuntu-latest
+    permissions:
+      issues: write # for actions-cool/issues-helper to update issues
+      pull-requests: write # for actions-cool/issues-helper to update PRs
     steps:
       - name: contribution welcome
         if: github.event.label.name == 'contribution welcome' || github.event.label.name == 'help wanted'
-        uses: actions-cool/issues-helper@v3
+        uses: actions-cool/issues-helper@45d75b6cf72bf4f254be6230cb887ad002702491 # v3
         with:
           actions: "remove-labels"
           token: ${{ secrets.GITHUB_TOKEN }}
@@ -19,26 +22,17 @@ jobs:
           labels: "pending triage, needs reproduction"
 
       - name: remove pending
-        if: contains(github.event.label.description, '(priority)') && contains(github.event.issue.labels.*.name, 'pending triage')
-        uses: actions-cool/issues-helper@v3
+        if: (github.event.label.name == 'enhancement' || contains(github.event.label.description, '(priority)')) && contains(github.event.issue.labels.*.name, 'pending triage')
+        uses: actions-cool/issues-helper@45d75b6cf72bf4f254be6230cb887ad002702491 # v3
         with:
           actions: "remove-labels"
           token: ${{ secrets.GITHUB_TOKEN }}
           issue-number: ${{ github.event.issue.number }}
           labels: "pending triage"
 
-      - name: remove enhancement pending
-        if: "(github.event.label.name == 'enhancement' || contains(github.event.label.description, '(priority)')) && contains(github.event.issue.labels.*.name, 'enhancement: pending triage')"
-        uses: actions-cool/issues-helper@v3
-        with:
-          actions: "remove-labels"
-          token: ${{ secrets.GITHUB_TOKEN }}
-          issue-number: ${{ github.event.issue.number }}
-          labels: "enhancement: pending triage"
-
       - name: needs reproduction
         if: github.event.label.name == 'needs reproduction'
-        uses: actions-cool/issues-helper@v3
+        uses: actions-cool/issues-helper@45d75b6cf72bf4f254be6230cb887ad002702491 # v3
         with:
           actions: "create-comment, remove-labels"
           token: ${{ secrets.GITHUB_TOKEN }}

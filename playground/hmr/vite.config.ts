@@ -2,10 +2,18 @@ import fs from 'node:fs/promises'
 import path from 'node:path'
 import { defineConfig } from 'vite'
 import type { Plugin } from 'vite'
+import { TestCssLinkPlugin } from './css-link/plugin'
 
 export default defineConfig({
   experimental: {
     hmrPartialAccept: true,
+  },
+  build: {
+    assetsInlineLimit(filePath) {
+      if (filePath.endsWith('logo-no-inline.svg')) {
+        return false
+      }
+    },
   },
   plugins: [
     {
@@ -30,6 +38,7 @@ export default defineConfig({
     virtualPlugin(),
     transformCountPlugin(),
     watchCssDepsPlugin(),
+    TestCssLinkPlugin(),
   ],
 })
 
@@ -38,23 +47,22 @@ function virtualPlugin(): Plugin {
   return {
     name: 'virtual-file',
     resolveId(id) {
-      if (id === 'virtual:file') {
-        return '\0virtual:file'
+      if (id.startsWith('virtual:file')) {
+        return '\0' + id
       }
     },
     load(id) {
-      if (id === '\0virtual:file') {
+      if (id.startsWith('\0virtual:file')) {
         return `\
 import { virtual as _virtual } from "/importedVirtual.js";
 export const virtual = _virtual + '${num}';`
       }
     },
     configureServer(server) {
-      server.environments.client.hot.on('virtual:increment', async () => {
-        const mod =
-          await server.environments.client.moduleGraph.getModuleByUrl(
-            '\0virtual:file',
-          )
+      server.environments.client.hot.on('virtual:increment', async (suffix) => {
+        const mod = await server.environments.client.moduleGraph.getModuleById(
+          '\0virtual:file' + (suffix || ''),
+        )
         if (mod) {
           num++
           server.environments.client.reloadModule(mod)

@@ -1,12 +1,12 @@
 import fs from 'node:fs/promises'
 import path from 'node:path'
-import type { GlobalSetupContext } from 'vitest/node'
+import type { TestProject } from 'vitest/node'
 import type { BrowserServer } from 'playwright-chromium'
 import { chromium } from 'playwright-chromium'
 
 let browserServer: BrowserServer | undefined
 
-export async function setup({ provide }: GlobalSetupContext): Promise<void> {
+export async function setup({ provide }: TestProject): Promise<void> {
   process.env.NODE_ENV = process.env.VITE_TEST_BUILD
     ? 'production'
     : 'development'
@@ -43,8 +43,9 @@ export async function setup({ provide }: GlobalSetupContext): Promise<void> {
     })
   // also setup dedicated copy for "variant" tests
   for (const [original, variants] of [
-    ['css', ['sass-modern', 'sass-modern-compiler']],
-    ['css-sourcemap', ['sass-modern', 'sass-modern-compiler']],
+    ['assets', ['encoded-base', 'relative-base', 'runtime-base', 'url-base']],
+    ['css', ['lightningcss']],
+    ['transform-plugin', ['base']],
   ] as const) {
     for (const variant of variants) {
       await fs.cp(

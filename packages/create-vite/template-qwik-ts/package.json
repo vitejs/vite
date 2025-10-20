@@ -9,11 +9,12 @@
     "preview": "serve dist"
   },
   "devDependencies": {
-    "serve": "^14.2.4",
-    "typescript": "~5.6.2",
-    "vite": "^5.4.10"
+    "@types/node": "^24.7.2",
+    "serve": "^14.2.5",
+    "typescript": "~5.9.3",
+    "vite": "^7.1.9"
   },
   "dependencies": {
-    "@builder.io/qwik": "^1.9.1"
+    "@builder.io/qwik": "^1.17.0"
   }
 }

@@ -2,14 +2,18 @@ import path from 'node:path'
 import fsp from 'node:fs/promises'
 import { Buffer } from 'node:buffer'
 import * as mrmime from 'mrmime'
-import type { NormalizedOutputOptions, RenderedChunk } from 'rollup'
+import type {
+  NormalizedOutputOptions,
+  PluginContext,
+  RenderedChunk,
+} from 'rollup'
 import MagicString from 'magic-string'
 import colors from 'picocolors'
 import {
   createToImportMetaURLBasedRelativeRuntime,
   toOutputFilePathInJS,
 } from '../build'
-import type { Plugin, PluginContext } from '../plugin'
+import type { Plugin } from '../plugin'
 import type { ResolvedConfig } from '../config'
 import { checkPublicFile } from '../publicDir'
 import {
@@ -36,6 +40,9 @@ export const assetUrlRE = /__VITE_ASSET__([\w$]+)__(?:\$_(.*?)__)?/g
 
 const jsSourceMapRE = /\.[cm]?js\.map$/
 
+export const noInlineRE = /[?&]no-inline\b/
+export const inlineRE = /[?&]inline\b/
+
 const assetCache = new WeakMap<Environment, Map<string, string>>()
 
 /** a set of referenceId for entry CSS assets for each environment */
@@ -44,7 +51,11 @@ export const cssEntriesMap = new WeakMap<Environment, Set<string>>()
 // add own dictionary entry by directly assigning mrmime
 export function registerCustomMime(): void {
   // https://github.com/lukeed/mrmime/issues/3
+  // instead of `image/vnd.microsoft.icon` which is registered on IANA Media Types DB
+  // image/x-icon should be used instead for better compatibility (https://github.com/h5bp/html5-boilerplate/issues/219)
   mrmime.mimes['ico'] = 'image/x-icon'
+  // https://mimesniff.spec.whatwg.org/#matching-an-image-type-pattern
+  mrmime.mimes['cur'] = 'image/x-icon'
   // https://developer.mozilla.org/en-US/docs/Web/Media/Formats/Containers#flac
   mrmime.mimes['flac'] = 'audio/flac'
   // https://developer.mozilla.org/en-US/docs/Web/HTTP/Basics_of_HTTP/MIME_types/Common_types
@@ -140,60 +151,65 @@ export function assetPlugin(config: ResolvedConfig): Plugin {
       cssEntriesMap.set(this.environment, new Set())
     },
 
-    resolveId(id) {
-      if (!config.assetsInclude(cleanUrl(id)) && !urlRE.test(id)) {
-        return
-      }
-      // imports to absolute urls pointing to files in /public
-      // will fail to resolve in the main resolver. handle them here.
-      const publicFile = checkPublicFile(id, config)
-      if (publicFile) {
-        return id
-      }
+    resolveId: {
+      handler(id) {
+        if (!config.assetsInclude(cleanUrl(id)) && !urlRE.test(id)) {
+          return
+        }
+        // imports to absolute urls pointing to files in /public
+        // will fail to resolve in the main resolver. handle them here.
+        const publicFile = checkPublicFile(id, config)
+        if (publicFile) {
+          return id
+        }
+      },
     },
 
-    async load(id) {
-      if (id[0] === '\0') {
-        // Rollup convention, this id should be handled by the
-        // plugin that marked it with \0
-        return
-      }
+    load: {
+      filter: {
+        id: {
+          // Rollup convention, this id should be handled by the
+          // plugin that marked it with \0
+          exclude: /^\0/,
+        },
+      },
+      async handler(id) {
+        // raw requests, read from disk
+        if (rawRE.test(id)) {
+          const file = checkPublicFile(id, config) || cleanUrl(id)
+          this.addWatchFile(file)
+          // raw query, read file and return as string
+          return `export default ${JSON.stringify(
+            await fsp.readFile(file, 'utf-8'),
+          )}`
+        }
 
-      // raw requests, read from disk
-      if (rawRE.test(id)) {
-        const file = checkPublicFile(id, config) || cleanUrl(id)
-        this.addWatchFile(file)
-        // raw query, read file and return as string
-        return `export default ${JSON.stringify(
-          await fsp.readFile(file, 'utf-8'),
-        )}`
-      }
+        if (!urlRE.test(id) && !config.assetsInclude(cleanUrl(id))) {
+          return
+        }
 
-      if (!urlRE.test(id) && !config.assetsInclude(cleanUrl(id))) {
-        return
-      }
+        id = removeUrlQuery(id)
+        let url = await fileToUrl(this, id)
 
-      id = removeUrlQuery(id)
-      let url = await fileToUrl(this, id)
+        // Inherit HMR timestamp if this asset was invalidated
+        if (!url.startsWith('data:') && this.environment.mode === 'dev') {
+          const mod = this.environment.moduleGraph.getModuleById(id)
+          if (mod && mod.lastHMRTimestamp > 0) {
+            url = injectQuery(url, `t=${mod.lastHMRTimestamp}`)
+          }
+        }
 
-      // Inherit HMR timestamp if this asset was invalidated
-      const environment = this.environment
-      const mod =
-        environment.mode === 'dev' && environment.moduleGraph.getModuleById(id)
-      if (mod && mod.lastHMRTimestamp > 0) {
-        url = injectQuery(url, `t=${mod.lastHMRTimestamp}`)
-      }
-
-      return {
-        code: `export default ${JSON.stringify(encodeURIPath(url))}`,
-        // Force rollup to keep this module from being shared between other entry points if it's an entrypoint.
-        // If the resulting chunk is empty, it will be removed in generateBundle.
-        moduleSideEffects:
-          config.command === 'build' && this.getModuleInfo(id)?.isEntry
-            ? 'no-treeshake'
-            : false,
-        meta: config.command === 'build' ? { 'vite:asset': true } : undefined,
-      }
+        return {
+          code: `export default ${JSON.stringify(encodeURIPath(url))}`,
+          // Force rollup to keep this module from being shared between other entry points if it's an entrypoint.
+          // If the resulting chunk is empty, it will be removed in generateBundle.
+          moduleSideEffects:
+            config.command === 'build' && this.getModuleInfo(id)?.isEntry
+              ? 'no-treeshake'
+              : false,
+          meta: config.command === 'build' ? { 'vite:asset': true } : undefined,
+        }
+      },
     },
 
     renderChunk(code, chunk, opts) {
@@ -213,6 +229,7 @@ export function assetPlugin(config: ResolvedConfig): Plugin {
 
     generateBundle(_, bundle) {
       // Remove empty entry point file
+      let importedFiles: Set<string> | undefined
       for (const file in bundle) {
         const chunk = bundle[file]
         if (
@@ -222,7 +239,23 @@ export function assetPlugin(config: ResolvedConfig): Plugin {
           config.assetsInclude(chunk.moduleIds[0]) &&
           this.getModuleInfo(chunk.moduleIds[0])?.meta['vite:asset']
         ) {
-          delete bundle[file]
+          if (!importedFiles) {
+            importedFiles = new Set()
+            for (const file in bundle) {
+              const chunk = bundle[file]
+              if (chunk.type === 'chunk') {
+                for (const importedFile of chunk.imports) {
+                  importedFiles.add(importedFile)
+                }
+                for (const importedFile of chunk.dynamicImports) {
+                  importedFiles.add(importedFile)
+                }
+              }
+            }
+          }
+          if (!importedFiles.has(file)) {
+            delete bundle[file]
+          }
         }
       }
 
@@ -251,19 +284,40 @@ export async function fileToUrl(
 ): Promise<string> {
   const { environment } = pluginContext
   if (environment.config.command === 'serve') {
-    return fileToDevUrl(id, environment.getTopLevelConfig())
+    return fileToDevUrl(environment, id)
   } else {
     return fileToBuiltUrl(pluginContext, id)
   }
 }
 
-export function fileToDevUrl(
+export async function fileToDevUrl(
+  environment: Environment,
   id: string,
-  config: ResolvedConfig,
   skipBase = false,
-): string {
+): Promise<string> {
+  const config = environment.getTopLevelConfig()
+  const publicFile = checkPublicFile(id, config)
+
+  // If has inline query, unconditionally inline the asset
+  if (inlineRE.test(id)) {
+    const file = publicFile || cleanUrl(id)
+    const content = await fsp.readFile(file)
+    return assetToDataURL(environment, file, content)
+  }
+
+  // If is svg and it's inlined in build, also inline it in dev to match
+  // the behaviour in build due to quote handling differences.
+  const cleanedId = cleanUrl(id)
+  if (cleanedId.endsWith('.svg')) {
+    const file = publicFile || cleanedId
+    const content = await fsp.readFile(file)
+    if (shouldInline(environment, file, id, content, undefined, undefined)) {
+      return assetToDataURL(environment, file, content)
+    }
+  }
+
   let rtn: string
-  if (checkPublicFile(id, config)) {
+  if (publicFile) {
     // in public dir during dev, keep the url as-is
     rtn = id
   } else if (id.startsWith(withTrailingSlash(config.root))) {
@@ -277,7 +331,7 @@ export function fileToDevUrl(
   if (skipBase) {
     return rtn
   }
-  const base = joinUrlSegments(config.server?.origin ?? '', config.decodedBase)
+  const base = joinUrlSegments(config.server.origin ?? '', config.decodedBase)
   return joinUrlSegments(base, removeLeadingSlash(rtn))
 }
 
@@ -335,8 +389,16 @@ async function fileToBuiltUrl(
 ): Promise<string> {
   const environment = pluginContext.environment
   const topLevelConfig = environment.getTopLevelConfig()
-  if (!skipPublicCheck && checkPublicFile(id, topLevelConfig)) {
-    return publicFileToBuiltUrl(id, topLevelConfig)
+  if (!skipPublicCheck) {
+    const publicFile = checkPublicFile(id, topLevelConfig)
+    if (publicFile) {
+      if (inlineRE.test(id)) {
+        // If inline via query, re-assign the id so it can be read by the fs and inlined
+        id = publicFile
+      } else {
+        return publicFileToBuiltUrl(id, topLevelConfig)
+      }
+    }
   }
 
   const cache = assetCache.get(environment)!
@@ -345,24 +407,14 @@ async function fileToBuiltUrl(
     return cached
   }
 
-  const { file, postfix } = splitFileAndPostfix(id)
+  let { file, postfix } = splitFileAndPostfix(id)
   const content = await fsp.readFile(file)
 
   let url: string
-  if (shouldInline(pluginContext, file, id, content, forceInline)) {
-    if (environment.config.build.lib && isGitLfsPlaceholder(content)) {
-      environment.logger.warn(
-        colors.yellow(`Inlined file ${id} was not downloaded via Git LFS`),
-      )
-    }
-
-    if (file.endsWith('.svg')) {
-      url = svgToDataURL(content)
-    } else {
-      const mimeType = mrmime.lookup(file) ?? 'application/octet-stream'
-      // base64 inlined as a string
-      url = `data:${mimeType};base64,${content.toString('base64')}`
-    }
+  if (
+    shouldInline(environment, file, id, content, pluginContext, forceInline)
+  ) {
+    url = assetToDataURL(environment, file, content)
   } else {
     // emit as asset
     const originalFileName = normalizePath(
@@ -375,6 +427,11 @@ async function fileToBuiltUrl(
       originalFileName,
       source: content,
     })
+
+    if (environment.config.command === 'build' && noInlineRE.test(postfix)) {
+      postfix = postfix.replace(noInlineRE, '').replace(/^&/, '?')
+    }
+
     url = `__VITE_ASSET__${referenceId}__${postfix ? `$_${postfix}__` : ``}`
   }
 
@@ -392,10 +449,11 @@ export async function urlToBuiltUrl(
   if (checkPublicFile(url, topLevelConfig)) {
     return publicFileToBuiltUrl(url, topLevelConfig)
   }
-  const file =
+  const file = normalizePath(
     url[0] === '/'
       ? path.join(topLevelConfig.root, url)
-      : path.join(path.dirname(importer), url)
+      : path.join(path.dirname(importer), url),
+  )
   return fileToBuiltUrl(
     pluginContext,
     file,
@@ -405,19 +463,28 @@ export async function urlToBuiltUrl(
   )
 }
 
-const shouldInline = (
-  pluginContext: PluginContext,
+function shouldInline(
+  environment: Environment,
   file: string,
   id: string,
   content: Buffer,
+  /** Should be passed only in build */
+  buildPluginContext: PluginContext | undefined,
   forceInline: boolean | undefined,
-): boolean => {
-  const environment = pluginContext.environment
-  const { assetsInlineLimit } = environment.config.build
-  if (environment.config.build.lib) return true
-  if (pluginContext.getModuleInfo(id)?.isEntry) return false
+): boolean {
+  if (noInlineRE.test(id)) return false
+  if (inlineRE.test(id)) return true
+  // Do build only checks if passed the plugin context during build
+  if (buildPluginContext) {
+    if (environment.config.build.lib) return true
+    if (buildPluginContext.getModuleInfo(id)?.isEntry) return false
+  }
   if (forceInline !== undefined) return forceInline
+  if (file.endsWith('.html')) return false
+  // Don't inline SVG with fragments, as they are meant to be reused
+  if (file.endsWith('.svg') && id.includes('#')) return false
   let limit: number
+  const { assetsInlineLimit } = environment.config.build
   if (typeof assetsInlineLimit === 'function') {
     const userShouldInline = assetsInlineLimit(file, content)
     if (userShouldInline != null) return userShouldInline
@@ -425,10 +492,27 @@ const shouldInline = (
   } else {
     limit = Number(assetsInlineLimit)
   }
-  if (file.endsWith('.html')) return false
-  // Don't inline SVG with fragments, as they are meant to be reused
-  if (file.endsWith('.svg') && id.includes('#')) return false
   return content.length < limit && !isGitLfsPlaceholder(content)
+}
+
+function assetToDataURL(
+  environment: Environment,
+  file: string,
+  content: Buffer,
+) {
+  if (environment.config.build.lib && isGitLfsPlaceholder(content)) {
+    environment.logger.warn(
+      colors.yellow(`Inlined file ${file} was not downloaded via Git LFS`),
+    )
+  }
+
+  if (file.endsWith('.svg')) {
+    return svgToDataURL(content)
+  } else {
+    const mimeType = mrmime.lookup(file) ?? 'application/octet-stream'
+    // base64 inlined as a string
+    return `data:${mimeType};base64,${content.toString('base64')}`
+  }
 }
 
 const nestedQuotesRE = /"[^"']*'[^"]*"|'[^'"]*"[^']*'/

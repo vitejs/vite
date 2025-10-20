@@ -1,33 +1,39 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 import { VPDocAsideSponsors } from 'vitepress/theme'
-import { useSponsor } from '../composables/sponsor'
+import { useSponsor, voidZero } from '../composables/sponsor'
 
 const { data } = useSponsor()
 
 const sponsors = computed(() => {
-  return (
-    data?.value.map((sponsor) => {
+  return [
+    { size: 'small', items: [voidZero] },
+    ...(data.value?.map((sponsor) => {
       return {
         size: sponsor.size === 'big' ? 'mini' : 'xmini',
         items: sponsor.items,
       }
-    }) ?? []
-  )
+    }) ?? []),
+  ]
 })
 </script>
 
 <template>
   <a
     class="viteconf"
-    href="https://viteconf.org/24/replay?utm=vite-sidebar"
+    href="https://www.youtube.com/playlist?list=PLqGQbXn_GDmkJaoykvHCUmXUPjhgH2bVr"
     target="_blank"
   >
-    <img width="22" height="22" src="/viteconf.svg" alt="ViteConf Logo" />
+    <img
+      width="22"
+      height="22"
+      src="../../../images/viteconf.svg"
+      alt="ViteConf Logo"
+    />
     <span>
       <p class="extra-info">Building Together</p>
-      <p class="heading">ViteConf 2024</p>
-      <p class="extra-info">Watch the replay!</p>
+      <p class="heading">ViteConf 2025</p>
+      <p class="extra-info">View the replays</p>
     </span>
   </a>
   <VPDocAsideSponsors v-if="data" :data="sponsors" />

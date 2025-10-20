@@ -72,6 +72,8 @@ export function createIdResolver(
             idOnly: true,
           }),
         ],
+        undefined,
+        false,
       )
       pluginContainerMap.set(environment, pluginContainer)
     }
@@ -92,6 +94,8 @@ export function createIdResolver(
       pluginContainer = await createEnvironmentPluginContainer(
         environment as Environment,
         [aliasPlugin({ entries: environment.config.resolve.alias })],
+        undefined,
+        false,
       )
       aliasOnlyPluginContainerMap.set(environment, pluginContainer)
     }

@@ -1,6 +1,7 @@
 import path from 'node:path'
 import MagicString from 'magic-string'
 import { stripLiteral } from 'strip-literal'
+import { exactRegex } from '@rolldown/pluginutils'
 import type { Plugin } from '../plugin'
 import type { ResolvedConfig } from '../config'
 import {
@@ -8,6 +9,7 @@ import {
   isDataUrl,
   isParentDirectory,
   transformStableResult,
+  tryStatSync,
 } from '../utils'
 import { CLIENT_ENTRY } from '../constants'
 import { slash } from '../../shared/utils'
@@ -44,15 +46,19 @@ export function assetImportMetaUrlPlugin(config: ResolvedConfig): Plugin {
 
   return {
     name: 'vite:asset-import-meta-url',
-    async transform(code, id) {
-      const { environment } = this
-      if (
-        environment.config.consumer === 'client' &&
-        id !== preloadHelperId &&
-        id !== CLIENT_ENTRY &&
-        code.includes('new URL') &&
-        code.includes(`import.meta.url`)
-      ) {
+
+    applyToEnvironment(environment) {
+      return environment.config.consumer === 'client'
+    },
+
+    transform: {
+      filter: {
+        id: {
+          exclude: [exactRegex(preloadHelperId), exactRegex(CLIENT_ENTRY)],
+        },
+        code: /new\s+URL.+import\.meta\.url/s,
+      },
+      async handler(code, id) {
         let s: MagicString | undefined
         const assetImportMetaUrlRE =
           /\bnew\s+URL\s*\(\s*('[^']+'|"[^"]+"|`[^`]+`)\s*,\s*import\.meta\.url\s*(?:,\s*)?\)/dg
@@ -81,7 +87,7 @@ export function assetImportMetaUrlPlugin(config: ResolvedConfig): Plugin {
             const templateLiteral = (ast as any).body[0].expression
             if (templateLiteral.expressions.length) {
               const pattern = buildGlobPattern(templateLiteral)
-              if (pattern.startsWith('*')) {
+              if (pattern[0] === '*') {
                 // don't transform for patterns like this
                 // because users won't intend to do that in most cases
                 continue
@@ -121,7 +127,7 @@ export function assetImportMetaUrlPlugin(config: ResolvedConfig): Plugin {
               tryIndex: false,
               preferRelative: true,
             })
-            file = await assetResolver(environment, url, id)
+            file = await assetResolver(this.environment, url, id)
             file ??=
               url[0] === '/'
                 ? slash(path.join(publicDir, url))
@@ -138,6 +144,10 @@ export function assetImportMetaUrlPlugin(config: ResolvedConfig): Plugin {
                 builtUrl = await fileToUrl(this, publicPath)
               } else {
                 builtUrl = await fileToUrl(this, file)
+                // during dev, builtUrl may point to a directory or a non-existing file
+                if (tryStatSync(file)?.isFile()) {
+                  this.addWatchFile(file)
+                }
               }
             } catch {
               // do nothing, we'll log a warning after this
@@ -160,8 +170,7 @@ export function assetImportMetaUrlPlugin(config: ResolvedConfig): Plugin {
         if (s) {
           return transformStableResult(s, id, config)
         }
-      }
-      return null
+      },
     },
   }
 }

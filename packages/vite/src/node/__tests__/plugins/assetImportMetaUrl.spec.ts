@@ -10,8 +10,8 @@ async function createAssetImportMetaurlPluginTransform() {
   const environment = new PartialEnvironment('client', config)
 
   return async (code: string) => {
-    // @ts-expect-error transform should exist
-    const result = await instance.transform.call(
+    // @ts-expect-error transform.handler should exist
+    const result = await instance.transform.handler.call(
       { environment, parse: parseAst },
       code,
       'foo.ts',

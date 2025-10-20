@@ -1,17 +1,19 @@
 # Environment API for Plugins
 
-:::warning Experimental
-Initial work for this API was introduced in Vite 5.1 with the name "Vite Runtime API". This guide describes a revised API, renamed to Environment API. This API will be released in Vite 6 as experimental. You can already test it in the latest `vite@6.0.0-beta.x` version.
+:::info Release Candidate
+The Environment API is generally in the release candidate phase. We'll maintain stability in the APIs between major releases to allow the ecosystem to experiment and build upon them. However, note that [some specific APIs](/changes/#considering) are still considered experimental.
+
+We plan to stabilize these new APIs (with potential breaking changes) in a future major release once downstream projects have had time to experiment with the new features and validate them.
 
 Resources:
 
 - [Feedback discussion](https://github.com/vitejs/vite/discussions/16358) where we are gathering feedback about the new APIs.
 - [Environment API PR](https://github.com/vitejs/vite/pull/16471) where the new API were implemented and reviewed.
 
-Please share with us your feedback as you test the proposal.
+Please share your feedback with us.
 :::
 
-## Accessing the current environment in hooks
+## Accessing the Current Environment in Hooks
 
 Given that there were only two Environments until Vite 6 (`client` and `ssr`), a `ssr` boolean was enough to identify the current environment in Vite APIs. Plugin Hooks received a `ssr` boolean in the last options parameter, and several APIs expected an optional last `ssr` parameter to properly associate modules to the correct environment (for example `server.moduleGraph.getModuleByUrl(url, { ssr })`).
 
@@ -27,38 +29,54 @@ A plugin could use the `environment` instance to change how a module is processe
   }
 ```
 
-## Registering new environments using hooks
+## Registering New Environments Using Hooks
 
-Plugins can add new environments in the `config` hook (for example to have a separate module graph for [RSC](https://react.dev/blog/2023/03/22/react-labs-what-we-have-been-working-on-march-2023#react-server-components)):
+Plugins can add new environments in the `config` hook. For example, [RSC support](/plugins/#vitejs-plugin-rsc) uses an additional environment to have a separate module graph with the `react-server` condition:
 
 ```ts
   config(config: UserConfig) {
-    config.environments.rsc ??= {}
+    return {
+      environments: {
+        rsc: {
+          resolve: {
+            conditions: ['react-server', ...defaultServerConditions],
+          },
+        },
+      },
+    }
   }
 ```
 
 An empty object is enough to register the environment, default values from the root level environment config.
 
-## Configuring environment using hooks
+## Configuring Environment Using Hooks
 
 While the `config` hook is running, the complete list of environments isn't yet known and the environments can be affected by both the default values from the root level environment config or explicitly through the `config.environments` record.
 Plugins should set default values using the `config` hook. To configure each environment, they can use the new `configEnvironment` hook. This hook is called for each environment with its partially resolved config including resolution of final defaults.
 
 ```ts
   configEnvironment(name: string, options: EnvironmentOptions) {
+    // add "workerd" condition to the rsc environment
     if (name === 'rsc') {
-      options.resolve.conditions = // ...
+      return {
+        resolve: {
+          conditions: ['workerd'],
+        },
+      }
+    }
+  }
 ```
 
-## The `hotUpdate` hook
+## The `hotUpdate` Hook
 
 - **Type:** `(this: { environment: DevEnvironment }, options: HotUpdateOptions) => Array<EnvironmentModuleNode> | void | Promise<Array<EnvironmentModuleNode> | void>`
+- **Kind:** `async`, `sequential`
 - **See also:** [HMR API](./api-hmr)
 
 The `hotUpdate` hook allows plugins to perform custom HMR update handling for a given environment. When a file changes, the HMR algorithm is run for each environment in series according to the order in `server.environments`, so the `hotUpdate` hook will be called multiple times. The hook receives a context object with the following signature:
 
 ```ts
-interface HotUpdateContext {
+interface HotUpdateOptions {
   type: 'create' | 'update' | 'delete'
   file: string
   timestamp: number
@@ -126,6 +144,29 @@ The hook can choose to:
   }
   ```
 
+## Per-environment State in Plugins
+
+Given that the same plugin instance is used for different environments, the plugin state needs to be keyed with `this.environment`. This is the same pattern the ecosystem has already been using to keep state about modules using the `ssr` boolean as key to avoid mixing client and ssr modules state. A `Map<Environment, State>` can be used to keep the state for each environment separately. Note that for backward compatibility, `buildStart` and `buildEnd` are only called for the client environment without the `perEnvironmentStartEndDuringDev: true` flag.
+
+```js
+function PerEnvironmentCountTransformedModulesPlugin() {
+  const state = new Map<Environment, { count: number }>()
+  return {
+    name: 'count-transformed-modules',
+    perEnvironmentStartEndDuringDev: true,
+    buildStart() {
+      state.set(this.environment, { count: 0 })
+    },
+    transform(id) {
+      state.get(this.environment).count++
+    },
+    buildEnd() {
+      console.log(this.environment.name, state.get(this.environment).count)
+    }
+  }
+}
+```
+
 ## Per-environment Plugins
 
 A plugin can define what are the environments it should apply to with the `applyToEnvironment` function.
@@ -135,14 +176,16 @@ const UnoCssPlugin = () => {
   // shared global state
   return {
     buildStart() {
-      // init per environment state with WeakMap<Environment,Data>, this.environment
+      // init per-environment state with WeakMap<Environment,Data>
+      // using this.environment
     },
     configureServer() {
       // use global hooks normally
     },
     applyToEnvironment(environment) {
-      // return true if this plugin should be active in this environment
-      // if the function isn't provided, the plugin is active in all environments
+      // return true if this plugin should be active in this environment,
+      // or return a new plugin to replace it.
+      // if the hook is not used, the plugin is active in all environments
     },
     resolveId(id, importer) {
       // only called for environments this plugin apply to
@@ -151,12 +194,45 @@ const UnoCssPlugin = () => {
 }
 ```
 
-## Environment in build hooks
+If a plugin isn't environment aware and has state that isn't keyed on the current environment, the `applyToEnvironment` hook allows to easily make it per-environment.
+
+```js
+import { nonShareablePlugin } from 'non-shareable-plugin'
+
+export default defineConfig({
+  plugins: [
+    {
+      name: 'per-environment-plugin',
+      applyToEnvironment(environment) {
+        return nonShareablePlugin({ outputName: environment.name })
+      },
+    },
+  ],
+})
+```
+
+Vite exports a `perEnvironmentPlugin` helper to simplify these cases where no other hooks are required:
+
+```js
+import { nonShareablePlugin } from 'non-shareable-plugin'
+
+export default defineConfig({
+  plugins: [
+    perEnvironmentPlugin('per-environment-plugin', (environment) =>
+      nonShareablePlugin({ outputName: environment.name }),
+    ),
+  ],
+})
+```
+
+The `applyToEnvironment` hook is called at config time, currently after `configResolved` due to projects in the ecosystem modifying the plugins in it. Environment plugins resolution may be moved before `configResolved` in the future.
+
+## Environment in Build Hooks
 
 In the same way as during dev, plugin hooks also receive the environment instance during build, replacing the `ssr` boolean.
 This also works for `renderChunk`, `generateBundle`, and other build only hooks.
 
-## Shared plugins during build
+## Shared Plugins During Build
 
 Before Vite 6, the plugins pipelines worked in a different way during dev and build:
 
@@ -165,13 +241,13 @@ Before Vite 6, the plugins pipelines worked in a different way during dev and bu
 
 This forced frameworks to share state between the `client` build and the `ssr` build through manifest files written to the file system. In Vite 6, we are now building all environments in a single process so the way the plugins pipeline and inter-environment communication can be aligned with dev.
 
-In a future major (Vite 7 or 8), we aim to have complete alignment:
+In a future major, we could have complete alignment:
 
 - **During both dev and build:** plugins are shared, with [per-environment filtering](#per-environment-plugins)
 
 There will also be a single `ResolvedConfig` instance shared during build, allowing for caching at entire app build process level in the same way as we have been doing with `WeakMap<ResolvedConfig, CachedData>` during dev.
 
-For Vite 6, we need to do a smaller step to keep backward compatibility. Ecosystem plugins are currently using `config.build` instead of `environment.config.build` to access configuration, so we need to create a new `ResolvedConfig` per environment by default. A project can opt-in into sharing the full config and plugins pipeline setting `builder.sharedConfigBuild` to `true`.
+For Vite 6, we need to do a smaller step to keep backward compatibility. Ecosystem plugins are currently using `config.build` instead of `environment.config.build` to access configuration, so we need to create a new `ResolvedConfig` per-environment by default. A project can opt-in into sharing the full config and plugins pipeline setting `builder.sharedConfigBuild` to `true`.
 
 This option would only work of a small subset of projects at first, so plugin authors can opt-in for a particular plugin to be shared by setting the `sharedDuringBuild` flag to `true`. This allows for easily sharing state both for regular plugins:
 

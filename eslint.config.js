@@ -1,14 +1,14 @@
 // @ts-check
-import { builtinModules, createRequire } from 'node:module'
+import { createRequire } from 'node:module'
 import eslint from '@eslint/js'
 import pluginN from 'eslint-plugin-n'
 import pluginImportX from 'eslint-plugin-import-x'
 import pluginRegExp from 'eslint-plugin-regexp'
 import tseslint from 'typescript-eslint'
+import { defineConfig } from 'eslint/config'
 import globals from 'globals'
 
 const require = createRequire(import.meta.url)
-const pkg = require('./package.json')
 const pkgVite = require('./packages/vite/package.json')
 
 // Some rules work better with typechecking enabled, but as enabling it is slow,
@@ -16,7 +16,7 @@ const pkgVite = require('./packages/vite/package.json')
 // explicitly, set this to `true` manually.
 const shouldTypeCheck = typeof process.env.VSCODE_PID === 'string'
 
-export default tseslint.config(
+export default defineConfig(
   {
     ignores: [
       'packages/create-vite/template-*',
@@ -51,6 +51,11 @@ export default tseslint.config(
         ...globals.node,
       },
     },
+    settings: {
+      node: {
+        version: '^20.19.0 || >=22.12.0',
+      },
+    },
     plugins: {
       n: pluginN,
       'import-x': pluginImportX,
@@ -59,7 +64,13 @@ export default tseslint.config(
       'n/no-exports-assign': 'error',
       'n/no-unpublished-bin': 'error',
       'n/no-unsupported-features/es-builtins': 'error',
-      'n/no-unsupported-features/node-builtins': 'error',
+      'n/no-unsupported-features/node-builtins': [
+        'error',
+        {
+          // TODO: remove this when we don't support Node 20 anymore
+          ignores: ['Response', 'Request', 'fetch'],
+        },
+      ],
       'n/process-exit-as-throw': 'error',
       'n/hashbang': 'error',
 
@@ -90,6 +101,7 @@ export default tseslint.config(
             'less',
             'sass',
             'sass-embedded',
+            'terser',
             'lightningcss',
             'vitest',
             'unbuild',
@@ -102,6 +114,7 @@ export default tseslint.config(
           allowModules: ['vite'],
         },
       ],
+      'n/prefer-node-protocol': 'error',
 
       '@typescript-eslint/ban-ts-comment': 'error',
       '@typescript-eslint/no-unsafe-function-type': 'off',
@@ -146,20 +159,24 @@ export default tseslint.config(
       '@typescript-eslint/prefer-for-of': 'off',
       '@typescript-eslint/prefer-function-type': 'off',
 
-      'import-x/no-nodejs-modules': [
-        'error',
-        { allow: builtinModules.map((mod) => `node:${mod}`) },
-      ],
       'import-x/no-duplicates': 'error',
-      'import-x/order': 'error',
+      'import-x/order': [
+        'error',
+        {
+          groups: [
+            'builtin',
+            'external',
+            'internal',
+            'parent',
+            'sibling',
+            'index',
+          ],
+        },
+      ],
       'sort-imports': [
         'error',
         {
-          ignoreCase: false,
           ignoreDeclarationSort: true,
-          ignoreMemberSort: false,
-          memberSyntaxSortOrder: ['none', 'all', 'multiple', 'single'],
-          allowSeparatedGroups: false,
         },
       ],
 
@@ -188,7 +205,7 @@ export default tseslint.config(
           name: d,
           message:
             `devDependencies can only be imported using ESM syntax so ` +
-            `that they are included in the rollup bundle. If you are trying to ` +
+            `that they are included in the rolldown bundle. If you are trying to ` +
             `lazy load a dependency, use (await import('dependency')).default instead.`,
         })),
       ],
@@ -210,23 +227,32 @@ export default tseslint.config(
     },
   },
   {
-    name: 'playground/test',
-    files: ['playground/**/__tests__/**/*.?([cm])[jt]s?(x)'],
+    name: 'tests',
+    files: ['**/__tests__/**/*.?([cm])[jt]s?(x)'],
     rules: {
-      // engine field doesn't exist in playgrounds
-      'n/no-unsupported-features/es-builtins': [
-        'error',
-        {
-          version: pkg.engines.node,
-        },
-      ],
       'n/no-unsupported-features/node-builtins': [
         'error',
         {
-          version: pkg.engines.node,
           // ideally we would like to allow all experimental features
           // https://github.com/eslint-community/eslint-plugin-n/issues/199
-          ignores: ['fetch'],
+          ignores: ['fetch', 'import.meta.dirname'],
+        },
+      ],
+    },
+  },
+  {
+    name: 'configs',
+    files: [
+      'packages/create-vite/tsdown.config.ts',
+      'packages/plugin-legacy/tsdown.config.ts',
+    ],
+    rules: {
+      'n/no-unsupported-features/node-builtins': [
+        'error',
+        {
+          // ideally we would like to allow all experimental features
+          // https://github.com/eslint-community/eslint-plugin-n/issues/199
+          ignores: ['fetch', 'import.meta.dirname'],
         },
       ],
     },

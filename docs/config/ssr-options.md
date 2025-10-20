@@ -34,7 +34,7 @@ Build target for the SSR server.
 ## ssr.resolve.conditions
 
 - **Type:** `string[]`
-- **Default:** `['module', 'node', 'development|production']` (`['module', 'browser', 'development|production']` for `ssr.target === 'webworker'`)
+- **Default:** `['module', 'node', 'development|production']` (`defaultServerConditions`) (`['module', 'browser', 'development|production']` (`defaultClientConditions`) for `ssr.target === 'webworker'`)
 - **Related:** [Resolve Conditions](./shared-options.md#resolve-conditions)
 
 These conditions are used in the plugin pipeline, and only affect non-externalized dependencies during the SSR build. Use `ssr.resolve.externalConditions` to affect externalized imports.
@@ -44,4 +44,19 @@ These conditions are used in the plugin pipeline, and only affect non-externaliz
 - **Type:** `string[]`
 - **Default:** `['node']`
 
-Conditions that are used during ssr import (including `ssrLoadModule`) of externalized dependencies.
+Conditions that are used during ssr import (including `ssrLoadModule`) of externalized direct dependencies (external dependencies imported by Vite).
+
+:::tip
+
+When using this option, make sure to run Node with [`--conditions` flag](https://nodejs.org/docs/latest/api/cli.html#-c-condition---conditionscondition) with the same values in both dev and build to get a consistent behavior.
+
+For example, when setting `['node', 'custom']`, you should run `NODE_OPTIONS='--conditions custom' vite` in dev and `NODE_OPTIONS="--conditions custom" node ./dist/server.js` after build.
+
+:::
+
+## ssr.resolve.mainFields
+
+- **Type:** `string[]`
+- **Default:** `['module', 'jsnext:main', 'jsnext']`
+
+List of fields in `package.json` to try when resolving a package's entry point. Note this takes lower precedence than conditional exports resolved from the `exports` field: if an entry point is successfully resolved from `exports`, the main field will be ignored. This setting only affects non-externalized dependencies.

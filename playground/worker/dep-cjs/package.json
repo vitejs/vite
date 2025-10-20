@@ -1,0 +1,5 @@
+{
+  "name": "@vitejs/test-worker-dep-cjs",
+  "type": "commonjs",
+  "exports": "./index.cjs"
+}

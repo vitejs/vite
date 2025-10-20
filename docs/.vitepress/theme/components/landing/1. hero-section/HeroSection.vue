@@ -1,18 +1,23 @@
-<script setup>
+<script setup lang="ts">
 import HeroDiagram from './HeroDiagram.vue'
 </script>
 
 <template>
   <div class="hero">
     <div class="container">
-      <!-- ViteConf Replay Button -->
+      <!-- ViteConf 2025 Button -->
       <a
-        href="https://viteconf.org/24/replay?utm=vite"
+        href="https://www.youtube.com/playlist?list=PLqGQbXn_GDmkJaoykvHCUmXUPjhgH2bVr"
         class="hero__pill"
         target="_blank"
       >
-        <img src="/viteconf.svg" alt="Viteconf logo" width="20" height="20" />
-        <span>ViteConf 2024 Talks</span>
+        <img
+          src="../../../../../images/viteconf.svg"
+          alt="Viteconf logo"
+          width="20"
+          height="20"
+        />
+        <span>ViteConf 2025 Replay</span>
       </a>
 
       <!-- Heading -->
@@ -31,7 +36,7 @@ import HeroDiagram from './HeroDiagram.vue'
           target="_blank"
           class="btn btn--outline"
         >
-          <img src="/github.svg" alt="GitHub logo" width="20" height="20" />
+          <img src="./github.svg" alt="GitHub logo" width="20" height="20" />
           GitHub
         </a>
       </div>

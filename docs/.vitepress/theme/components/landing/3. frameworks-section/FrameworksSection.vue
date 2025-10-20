@@ -1,6 +1,13 @@
 <script setup lang="ts">
-import { computed, ComputedRef, onMounted, onUnmounted, Ref, ref } from 'vue'
-import FrameworkCard, { Framework } from './FrameworkCard.vue'
+import {
+  computed,
+  type ComputedRef,
+  onMounted,
+  onUnmounted,
+  type Ref,
+  ref,
+} from 'vue'
+import FrameworkCard, { type Framework } from './FrameworkCard.vue'
 import { gsap } from 'gsap'
 import { ScrollTrigger } from 'gsap/dist/ScrollTrigger'
 
@@ -26,6 +33,7 @@ import logoLaravel from './images/laravel.svg'
 import logoAdonis from './images/adonis.svg'
 import logoEmber from './images/ember.svg'
 import logoPreact from './images/preact.svg'
+import logoHono from './images/hono.svg'
 
 /**
  * The frameworks and tools to display in this section.
@@ -162,6 +170,13 @@ const frameworks: Framework[] = [
     logo: logoEmber,
     color: '#e04e39',
     url: 'https://emberjs.com/',
+    visible: ref(false),
+  },
+  {
+    name: 'Hono',
+    logo: logoHono,
+    color: '#ff5c13',
+    url: 'https://hono.dev/',
     visible: ref(false),
   },
 ]
@@ -310,7 +325,7 @@ const rowStyle: ComputedRef<{ transform: string }> = computed(() => {
     <div class="frameworks-container">
       <!-- Top Row -->
       <div class="framework-row" :style="rowStyle">
-        <FrameworkCard v-for="i in numBlocksPerRow + 2" />
+        <FrameworkCard v-for="_ in numBlocksPerRow + 2" />
       </div>
 
       <!-- Logo Rows -->
@@ -342,7 +357,7 @@ const rowStyle: ComputedRef<{ transform: string }> = computed(() => {
 
       <!-- Bottom Row -->
       <div class="framework-row" :style="rowStyle">
-        <FrameworkCard v-for="i in numBlocksPerRow + 2" />
+        <FrameworkCard v-for="_ in numBlocksPerRow + 2" />
       </div>
     </div>
   </section>

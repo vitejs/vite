@@ -21,3 +21,5 @@ SOURCEMAPPING_URL += 'ppingURL'
 
 export const MODULE_RUNNER_SOURCEMAPPING_SOURCE =
   '//# sourceMappingSource=vite-generated'
+
+export const ERR_OUTDATED_OPTIMIZED_DEP = 'ERR_OUTDATED_OPTIMIZED_DEP'

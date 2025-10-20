@@ -70,7 +70,7 @@ You can further customize esbuild too with the [`optimizeDeps.esbuildOptions` op
 
 Vite caches the pre-bundled dependencies in `node_modules/.vite`. It determines whether it needs to re-run the pre-bundling step based on a few sources:
 
-- Package manager lockfile content, e.g. `package-lock.json`, `yarn.lock`, `pnpm-lock.yaml` or `bun.lockb`.
+- Package manager lockfile content, e.g. `package-lock.json`, `yarn.lock`, `pnpm-lock.yaml` or `bun.lock`.
 - Patches folder modification time.
 - Relevant fields in your `vite.config.js`, if present.
 - `NODE_ENV` value.
@@ -83,6 +83,6 @@ If for some reason you want to force Vite to re-bundle deps, you can either star
 
 Resolved dependency requests are strongly cached with HTTP headers `max-age=31536000,immutable` to improve page reload performance during dev. Once cached, these requests will never hit the dev server again. They are auto invalidated by the appended version query if a different version is installed (as reflected in your package manager lockfile). If you want to debug your dependencies by making local edits, you can:
 
-1. Temporarily disable cache via the Network tab of your browser devtools;
-2. Restart Vite dev server with the `--force` flag to re-bundle the deps;
+1. Temporarily disable cache via the Network tab of your browser devtools.
+2. Restart Vite dev server with the `--force` flag to re-bundle the deps.
 3. Reload the page.

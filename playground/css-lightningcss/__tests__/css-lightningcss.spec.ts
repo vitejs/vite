@@ -6,7 +6,6 @@ import {
   getColor,
   isBuild,
   page,
-  untilUpdated,
   viteTestUrl,
 } from '~utils'
 
@@ -19,13 +18,14 @@ test('linked css', async () => {
   expect(await getColor(linked)).toBe('blue')
   expect(await getColor(atImport)).toBe('red')
 
+  if (isBuild) return
   editFile('linked.css', (code) => code.replace('color: blue', 'color: red'))
-  await untilUpdated(() => getColor(linked), 'red')
+  await expect.poll(() => getColor(linked)).toBe('red')
 
   editFile('linked-at-import.css', (code) =>
     code.replace('color: red', 'color: blue'),
   )
-  await untilUpdated(() => getColor(atImport), 'blue')
+  await expect.poll(() => getColor(atImport)).toBe('blue')
 })
 
 test('css import from js', async () => {
@@ -35,13 +35,14 @@ test('css import from js', async () => {
   expect(await getColor(imported)).toBe('green')
   expect(await getColor(atImport)).toBe('purple')
 
+  if (isBuild) return
   editFile('imported.css', (code) => code.replace('color: green', 'color: red'))
-  await untilUpdated(() => getColor(imported), 'red')
+  await expect.poll(() => getColor(imported)).toBe('red')
 
   editFile('imported-at-import.css', (code) =>
     code.replace('color: purple', 'color: blue'),
   )
-  await untilUpdated(() => getColor(atImport), 'blue')
+  await expect.poll(() => getColor(atImport)).toBe('blue')
 })
 
 test('css modules', async () => {
@@ -50,15 +51,16 @@ test('css modules', async () => {
 
   expect(await imported.getAttribute('class')).toMatch(/\w{6}_apply-color/)
 
+  if (isBuild) return
   editFile('mod.module.css', (code) =>
     code.replace('color: turquoise', 'color: red'),
   )
-  await untilUpdated(() => getColor(imported), 'red')
+  await expect.poll(() => getColor(imported)).toBe('red')
 })
 
 test('inline css modules', async () => {
   const css = await page.textContent('.modules-inline')
-  expect(css).toMatch(/\.\w{6}_apply-color-inline/)
+  expect(css).toMatch(/\._?\w{6}_apply-color-inline/)
 })
 
 test.runIf(isBuild)('minify css', async () => {
@@ -77,5 +79,16 @@ test('nested css with relative asset', async () => {
   const css = await page.$('.nested-css-relative-asset')
   expect(await getBg(css)).toMatch(
     isBuild ? /ok-[-\w]+\.png/ : `${viteTestUrl}/ok.png`,
+  )
+})
+
+test('aliased asset', async () => {
+  const bg = await getBg('.css-url-aliased')
+  expect(bg).toMatch('data:image/svg+xml,')
+})
+
+test('preinlined SVG', async () => {
+  expect(await getBg('.css-url-preinlined-svg')).toMatch(
+    /data:image\/svg\+xml,.+/,
   )
 })

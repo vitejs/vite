@@ -1,8 +1,8 @@
 import { join } from 'node:path'
-import { describe, expect, onTestFinished, test } from 'vitest'
+import { describe, expect, onTestFinished, test, vi } from 'vitest'
 import { createServer } from '../server'
 import { createServerModuleRunner } from '../ssr/runtime/serverModuleRunner'
-import type { InlineConfig } from '../config'
+import type { EnvironmentOptions, InlineConfig } from '../config'
 import { build } from '../build'
 
 describe('import and resolveId', () => {
@@ -13,6 +13,7 @@ describe('import and resolveId', () => {
       logLevel: 'error',
       server: {
         middlewareMode: true,
+        ws: false,
       },
     })
     onTestFinished(() => server.close())
@@ -80,9 +81,21 @@ describe('file url', () => {
                 export default dep;
               `
             }
+            if (id === '\0virtual:test-dep/static-postfix') {
+              return `
+                import * as dep from ${JSON.stringify(fileUrl.href + '?query=test')};
+                export default dep;
+              `
+            }
             if (id === '\0virtual:test-dep/non-static') {
               return `
                 const dep = await import(/* @vite-ignore */ String(${JSON.stringify(fileUrl.href)}));
+                export default dep;
+              `
+            }
+            if (id === '\0virtual:test-dep/non-static-postfix') {
+              return `
+                const dep = await import(/* @vite-ignore */ String(${JSON.stringify(fileUrl.href + '?query=test')}));
                 export default dep;
               `
             }
@@ -114,6 +127,156 @@ describe('file url', () => {
 
     const mod4 = await runner.import('virtual:test-dep/non-static')
     expect(mod4.default).toBe(mod)
+
+    const mod5 = await runner.import(fileUrl.href + '?query=test')
+    expect(mod5).toEqual(mod)
+    expect(mod5).not.toBe(mod)
+
+    const mod6 = await runner.import('virtual:test-dep/static-postfix')
+    expect(mod6.default).toEqual(mod)
+    expect(mod6.default).not.toBe(mod)
+    expect(mod6.default).toBe(mod5)
+
+    const mod7 = await runner.import('virtual:test-dep/non-static-postfix')
+    expect(mod7.default).toEqual(mod)
+    expect(mod7.default).not.toBe(mod)
+    expect(mod7.default).toBe(mod5)
+  })
+
+  describe('environment builtins', () => {
+    function getConfig(
+      targetEnv: 'client' | 'ssr' | string,
+      builtins: NonNullable<EnvironmentOptions['resolve']>['builtins'],
+    ): InlineConfig {
+      return {
+        configFile: false,
+        root: join(import.meta.dirname, 'fixtures/file-url'),
+        logLevel: 'error',
+        server: {
+          middlewareMode: true,
+        },
+        environments: {
+          [targetEnv]: {
+            resolve: {
+              builtins,
+            },
+          },
+        },
+      }
+    }
+
+    async function run({
+      builtins,
+      targetEnv = 'custom',
+      testEnv = 'custom',
+      idToResolve,
+    }: {
+      builtins?: NonNullable<EnvironmentOptions['resolve']>['builtins']
+      targetEnv?: 'client' | 'ssr' | string
+      testEnv?: 'client' | 'ssr' | string
+      idToResolve: string
+    }) {
+      const server = await createServer(getConfig(targetEnv, builtins))
+      vi.spyOn(server.config.logger, 'warn').mockImplementationOnce(
+        (message) => {
+          throw new Error(message)
+        },
+      )
+      onTestFinished(() => server.close())
+
+      return server.environments[testEnv]?.pluginContainer.resolveId(
+        idToResolve,
+      )
+    }
+
+    test('declared builtin string', async () => {
+      const resolved = await run({
+        builtins: ['my-env:custom-builtin'],
+        idToResolve: 'my-env:custom-builtin',
+      })
+      expect(resolved?.external).toBe(true)
+    })
+
+    test('declared builtin regexp', async () => {
+      const resolved = await run({
+        builtins: [/^my-env:\w/],
+        idToResolve: 'my-env:custom-builtin',
+      })
+      expect(resolved?.external).toBe(true)
+    })
+
+    test('non declared builtin', async () => {
+      const resolved = await run({
+        builtins: [
+          /* empty */
+        ],
+        idToResolve: 'my-env:custom-builtin',
+      })
+      expect(resolved).toBeNull()
+    })
+
+    test('non declared node builtin', async () => {
+      await expect(
+        run({
+          builtins: [
+            /* empty */
+          ],
+          idToResolve: 'node:fs',
+        }),
+      ).rejects.toThrowError(
+        /warning: Automatically externalized node built-in module "node:fs"/,
+      )
+    })
+
+    test('default to node-like builtins', async () => {
+      const resolved = await run({
+        idToResolve: 'node:fs',
+      })
+      expect(resolved?.external).toBe(true)
+    })
+
+    test('default to node-like builtins for ssr environment', async () => {
+      const resolved = await run({
+        idToResolve: 'node:fs',
+        testEnv: 'ssr',
+      })
+      expect(resolved?.external).toBe(true)
+    })
+
+    test('no default to node-like builtins for client environment', async () => {
+      const resolved = await run({
+        idToResolve: 'node:fs',
+        testEnv: 'client',
+      })
+      expect(resolved?.id).toEqual('__vite-browser-external:node:fs')
+    })
+
+    test('no builtins overriding for client environment', async () => {
+      const resolved = await run({
+        idToResolve: 'node:fs',
+        testEnv: 'client',
+        targetEnv: 'client',
+      })
+      expect(resolved?.id).toEqual('__vite-browser-external:node:fs')
+    })
+
+    test('declared node builtin', async () => {
+      const resolved = await run({
+        builtins: [/^node:/],
+        idToResolve: 'node:fs',
+      })
+      expect(resolved?.external).toBe(true)
+    })
+
+    test('declared builtin string in different environment', async () => {
+      const resolved = await run({
+        builtins: ['my-env:custom-builtin'],
+        idToResolve: 'my-env:custom-builtin',
+        targetEnv: 'custom',
+        testEnv: 'ssr',
+      })
+      expect(resolved).toBe(null)
+    })
   })
 
   test('build', async () => {

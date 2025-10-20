@@ -1,10 +1,14 @@
-import type { Terser } from 'dep-types/terser'
-import { Worker } from 'artichokie'
+import { pathToFileURL } from 'node:url'
+import { WorkerWithFallback } from 'artichokie'
+import type {
+  TerserMinifyOptions,
+  TerserMinifyOutput,
+} from '#types/internal/terserOptions'
 import type { Plugin } from '../plugin'
 import type { ResolvedConfig } from '..'
-import { requireResolveFromRootWithFallback } from '../utils'
+import { generateCodeFrame, requireResolveFromRootWithFallback } from '../utils'
 
-export interface TerserOptions extends Terser.MinifyOptions {
+export interface TerserOptions extends TerserMinifyOptions {
   /**
    * Vite-specific option to specify the max number of workers to spawn
    * when minifying files with terser.
@@ -37,19 +41,35 @@ export function terserPlugin(config: ResolvedConfig): Plugin {
   const { maxWorkers, ...terserOptions } = config.build.terserOptions
 
   const makeWorker = () =>
-    new Worker(
+    new WorkerWithFallback(
       () =>
         async (
           terserPath: string,
           code: string,
-          options: Terser.MinifyOptions,
+          options: TerserMinifyOptions,
         ) => {
-          // test fails when using `import`. maybe related: https://github.com/nodejs/node/issues/43205
-          // eslint-disable-next-line no-restricted-globals -- this function runs inside cjs
-          const terser = require(terserPath)
-          return terser.minify(code, options) as Terser.MinifyOutput
+          const terser: typeof import('terser') = (await import(terserPath))
+            .default
+          try {
+            return (await terser.minify(code, options)) as TerserMinifyOutput
+          } catch (e) {
+            // convert to a plain object as additional properties of Error instances are not
+            // sent back to the main thread
+            throw { stack: e.stack /* stack is non-enumerable */, ...e }
+          }
         },
       {
+        shouldUseFake(_terserPath, _code, options) {
+          return !!(
+            (typeof options.mangle === 'object' &&
+              (options.mangle.nth_identifier?.get ||
+                (typeof options.mangle.properties === 'object' &&
+                  options.mangle.properties.nth_identifier?.get))) ||
+            typeof options.format?.comments === 'function' ||
+            typeof options.output?.comments === 'function' ||
+            options.nameCache
+          )
+        },
         max: maxWorkers,
       },
     )
@@ -65,7 +85,7 @@ export function terserPlugin(config: ResolvedConfig): Plugin {
       return !!environment.config.build.minify
     },
 
-    async renderChunk(code, _chunk, outputOptions) {
+    async renderChunk(code, chunk, outputOptions) {
       // This plugin is included for any non-false value of config.build.minify,
       // so that normal chunks can use the preferred minifier, and legacy chunks
       // can use terser.
@@ -86,17 +106,31 @@ export function terserPlugin(config: ResolvedConfig): Plugin {
       // Lazy load worker.
       worker ||= makeWorker()
 
-      const terserPath = loadTerserPath(config.root)
-      const res = await worker.run(terserPath, code, {
-        safari10: true,
-        ...terserOptions,
-        sourceMap: !!outputOptions.sourcemap,
-        module: outputOptions.format.startsWith('es'),
-        toplevel: outputOptions.format === 'cjs',
-      })
-      return {
-        code: res.code!,
-        map: res.map as any,
+      const terserPath = pathToFileURL(loadTerserPath(config.root)).href
+      try {
+        const res = await worker.run(terserPath, code, {
+          safari10: true,
+          ...terserOptions,
+          sourceMap: !!outputOptions.sourcemap,
+          module: outputOptions.format.startsWith('es'),
+          toplevel: outputOptions.format === 'cjs',
+        })
+        return {
+          code: res.code!,
+          map: res.map as any,
+        }
+      } catch (e) {
+        if (e.line !== undefined && e.col !== undefined) {
+          e.loc = {
+            file: chunk.fileName,
+            line: e.line,
+            column: e.col,
+          }
+        }
+        if (e.pos !== undefined) {
+          e.frame = generateCodeFrame(code, e.pos)
+        }
+        throw e
       }
     },
 

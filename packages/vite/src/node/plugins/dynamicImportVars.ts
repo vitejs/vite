@@ -4,6 +4,7 @@ import { init, parse as parseImports } from 'es-module-lexer'
 import type { ImportSpecifier } from 'es-module-lexer'
 import { parseAst } from 'rollup/parseAst'
 import { dynamicImportToGlob } from '@rollup/plugin-dynamic-import-vars'
+import { exactRegex } from '@rolldown/pluginutils'
 import type { Plugin } from '../plugin'
 import type { ResolvedConfig } from '../config'
 import { CLIENT_ENTRY } from '../constants'
@@ -18,7 +19,7 @@ import {
   urlRE,
 } from '../utils'
 import type { Environment } from '../environment'
-import { usePerEnvironmentState } from '../environment'
+import { perEnvironmentState } from '../environment'
 import { hasViteIgnoreRE } from './importAnalysis'
 import { workerOrSharedWorkerRE } from './worker'
 
@@ -171,7 +172,7 @@ export function dynamicImportVarsPlugin(config: ResolvedConfig): Plugin {
     extensions: [],
   })
 
-  const getFilter = usePerEnvironmentState((environment: Environment) => {
+  const getFilter = perEnvironmentState((environment: Environment) => {
     const { include, exclude } =
       environment.config.build.dynamicImportVarsOptions
     return createFilter(include, exclude)
@@ -180,101 +181,105 @@ export function dynamicImportVarsPlugin(config: ResolvedConfig): Plugin {
   return {
     name: 'vite:dynamic-import-vars',
 
-    resolveId(id) {
-      if (id === dynamicImportHelperId) {
+    resolveId: {
+      filter: { id: exactRegex(dynamicImportHelperId) },
+      handler(id) {
         return id
-      }
+      },
     },
 
-    load(id) {
-      if (id === dynamicImportHelperId) {
-        return 'export default ' + dynamicImportHelper.toString()
-      }
+    load: {
+      filter: { id: exactRegex(dynamicImportHelperId) },
+      handler(_id) {
+        return `export default ${dynamicImportHelper.toString()}`
+      },
     },
 
-    async transform(source, importer) {
-      const { environment } = this
-      if (
-        !getFilter(this)(importer) ||
-        importer === CLIENT_ENTRY ||
-        !hasDynamicImportRE.test(source)
-      ) {
-        return
-      }
-
-      await init
-
-      let imports: readonly ImportSpecifier[] = []
-      try {
-        imports = parseImports(source)[0]
-      } catch {
-        // ignore as it might not be a JS file, the subsequent plugins will catch the error
-        return null
-      }
-
-      if (!imports.length) {
-        return null
-      }
-
-      let s: MagicString | undefined
-      let needDynamicImportHelper = false
-
-      for (let index = 0; index < imports.length; index++) {
-        const {
-          s: start,
-          e: end,
-          ss: expStart,
-          se: expEnd,
-          d: dynamicIndex,
-        } = imports[index]
-
-        if (dynamicIndex === -1 || source[start] !== '`') {
-          continue
+    transform: {
+      filter: {
+        id: { exclude: exactRegex(CLIENT_ENTRY) },
+        code: hasDynamicImportRE,
+      },
+      async handler(source, importer) {
+        const { environment } = this
+        if (!getFilter(this)(importer)) {
+          return
         }
 
-        if (hasViteIgnoreRE.test(source.slice(expStart, expEnd))) {
-          continue
-        }
+        await init
 
-        s ||= new MagicString(source)
-        let result
+        let imports: readonly ImportSpecifier[] = []
         try {
-          result = await transformDynamicImport(
-            source.slice(start, end),
-            importer,
-            (id, importer) => resolve(environment, id, importer),
-            config.root,
-          )
-        } catch (error) {
-          if (environment.config.build.dynamicImportVarsOptions.warnOnError) {
-            this.warn(error)
-          } else {
-            this.error(error)
+          imports = parseImports(source)[0]
+        } catch {
+          // ignore as it might not be a JS file, the subsequent plugins will catch the error
+          return null
+        }
+
+        if (!imports.length) {
+          return null
+        }
+
+        let s: MagicString | undefined
+        let needDynamicImportHelper = false
+
+        for (let index = 0; index < imports.length; index++) {
+          const {
+            s: start,
+            e: end,
+            ss: expStart,
+            se: expEnd,
+            d: dynamicIndex,
+          } = imports[index]
+
+          if (dynamicIndex === -1 || source[start] !== '`') {
+            continue
           }
-        }
 
-        if (!result) {
-          continue
-        }
+          if (hasViteIgnoreRE.test(source.slice(expStart, expEnd))) {
+            continue
+          }
 
-        const { rawPattern, glob } = result
+          s ||= new MagicString(source)
+          let result
+          try {
+            result = await transformDynamicImport(
+              source.slice(start, end),
+              importer,
+              (id, importer) => resolve(environment, id, importer),
+              config.root,
+            )
+          } catch (error) {
+            if (environment.config.build.dynamicImportVarsOptions.warnOnError) {
+              this.warn(error)
+            } else {
+              this.error(error)
+            }
+          }
 
-        needDynamicImportHelper = true
-        s.overwrite(
-          expStart,
-          expEnd,
-          `__variableDynamicImportRuntimeHelper(${glob}, \`${rawPattern}\`, ${rawPattern.split('/').length})`,
-        )
-      }
+          if (!result) {
+            continue
+          }
 
-      if (s) {
-        if (needDynamicImportHelper) {
-          s.prepend(
-            `import __variableDynamicImportRuntimeHelper from "${dynamicImportHelperId}";`,
+          const { rawPattern, glob } = result
+
+          needDynamicImportHelper = true
+          s.overwrite(
+            expStart,
+            expEnd,
+            `__variableDynamicImportRuntimeHelper(${glob}, \`${rawPattern}\`, ${rawPattern.split('/').length})`,
           )
         }
-        return transformStableResult(s, importer, config)
-      }
+
+        if (s) {
+          if (needDynamicImportHelper) {
+            s.prepend(
+              `import __variableDynamicImportRuntimeHelper from "${dynamicImportHelperId}";`,
+            )
+          }
+          return transformStableResult(s, importer, config)
+        }
+      },
     },
   }
 }

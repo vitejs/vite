@@ -1,7 +1,10 @@
+import { exactRegex } from '@rolldown/pluginutils'
 import type { Plugin } from '../plugin'
 import { fileToUrl } from './asset'
 
 const wasmHelperId = '\0vite/wasm-helper.js'
+
+const wasmInitRE = /(?<![?#].*)\.wasm\?init/
 
 const wasmHelper = async (opts = {}, url: string) => {
   let result
@@ -28,7 +31,6 @@ const wasmHelper = async (opts = {}, url: string) => {
     // correct MIME type for .wasm files, which unfortunately doesn't work for
     // a lot of static file servers, so we just work around it by getting the
     // raw buffer.
-    // eslint-disable-next-line n/no-unsupported-features/node-builtins -- this function runs in browsers
     const response = await fetch(url)
     const contentType = response.headers.get('Content-Type') || ''
     if (
@@ -50,27 +52,27 @@ export const wasmHelperPlugin = (): Plugin => {
   return {
     name: 'vite:wasm-helper',
 
-    resolveId(id) {
-      if (id === wasmHelperId) {
+    resolveId: {
+      filter: { id: exactRegex(wasmHelperId) },
+      handler(id) {
         return id
-      }
+      },
     },
 
-    async load(id) {
-      if (id === wasmHelperId) {
-        return `export default ${wasmHelperCode}`
-      }
+    load: {
+      filter: { id: [exactRegex(wasmHelperId), wasmInitRE] },
+      async handler(id) {
+        if (id === wasmHelperId) {
+          return `export default ${wasmHelperCode}`
+        }
 
-      if (!id.endsWith('.wasm?init')) {
-        return
-      }
+        const url = await fileToUrl(this, id)
 
-      const url = await fileToUrl(this, id)
-
-      return `
-import initWasm from "${wasmHelperId}"
-export default opts => initWasm(opts, ${JSON.stringify(url)})
-`
+        return `
+  import initWasm from "${wasmHelperId}"
+  export default opts => initWasm(opts, ${JSON.stringify(url)})
+  `
+      },
     },
   }
 }
@@ -79,17 +81,16 @@ export const wasmFallbackPlugin = (): Plugin => {
   return {
     name: 'vite:wasm-fallback',
 
-    async load(id) {
-      if (!id.endsWith('.wasm')) {
-        return
-      }
-
-      throw new Error(
-        '"ESM integration proposal for Wasm" is not supported currently. ' +
-          'Use vite-plugin-wasm or other community plugins to handle this. ' +
-          'Alternatively, you can use `.wasm?init` or `.wasm?url`. ' +
-          'See https://vite.dev/guide/features.html#webassembly for more details.',
-      )
+    load: {
+      filter: { id: /\.wasm$/ },
+      handler(_id) {
+        throw new Error(
+          '"ESM integration proposal for Wasm" is not supported currently. ' +
+            'Use vite-plugin-wasm or other community plugins to handle this. ' +
+            'Alternatively, you can use `.wasm?init` or `.wasm?url`. ' +
+            'See https://vite.dev/guide/features.html#webassembly for more details.',
+        )
+      },
     },
   }
 }

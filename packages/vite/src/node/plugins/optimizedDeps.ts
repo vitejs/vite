@@ -6,17 +6,24 @@ import {
   DEP_VERSION_RE,
   ERR_FILE_NOT_FOUND_IN_OPTIMIZED_DEP_DIR,
   ERR_OPTIMIZE_DEPS_PROCESSING_ERROR,
-  ERR_OUTDATED_OPTIMIZED_DEP,
 } from '../constants'
 import { createDebugger } from '../utils'
-import { optimizedDepInfoFromFile } from '../optimizer'
+import {
+  isDepOptimizationDisabled,
+  optimizedDepInfoFromFile,
+} from '../optimizer'
 import { cleanUrl } from '../../shared/utils'
+import { ERR_OUTDATED_OPTIMIZED_DEP } from '../../shared/constants'
 
 const debug = createDebugger('vite:optimize-deps')
 
 export function optimizedDepsPlugin(): Plugin {
   return {
     name: 'vite:optimized-deps',
+
+    applyToEnvironment(environment) {
+      return !isDepOptimizationDisabled(environment.config.optimizeDeps)
+    },
 
     resolveId(id) {
       const environment = this.environment as DevEnvironment
@@ -35,7 +42,7 @@ export function optimizedDepsPlugin(): Plugin {
       if (depsOptimizer?.isOptimizedDepFile(id)) {
         const metadata = depsOptimizer.metadata
         const file = cleanUrl(id)
-        const versionMatch = DEP_VERSION_RE.exec(file)
+        const versionMatch = DEP_VERSION_RE.exec(id)
         const browserHash = versionMatch
           ? versionMatch[1].split('=')[1]
           : undefined
@@ -70,9 +77,8 @@ export function optimizedDepsPlugin(): Plugin {
         try {
           return await fsp.readFile(file, 'utf-8')
         } catch {
-          const newMetadata = depsOptimizer.metadata
-          if (optimizedDepInfoFromFile(newMetadata, file)) {
-            // Outdated non-entry points (CHUNK), loaded after a rerun
+          if (browserHash) {
+            // Outdated optimized files loaded after a rerun
             throwOutdatedRequest(id)
           }
           throwFileNotFoundInOptimizedDep(id)

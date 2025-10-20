@@ -11,9 +11,43 @@ globalThis.window = {}
 globalThis.location = new URL('http://localhost/')
 
 export default defineConfig({
+  plugins: [
+    {
+      // Emulate a UI framework component where a framework module would import
+      // scoped CSS files that should treeshake if the default export is not used.
+      name: 'treeshake-scoped-css',
+      enforce: 'pre',
+      async resolveId(id, importer) {
+        if (!importer || !id.endsWith('-scoped.css')) return
+
+        const resolved = await this.resolve(id, importer)
+        if (!resolved) return
+
+        return {
+          ...resolved,
+          meta: {
+            vite: {
+              cssScopeTo: [
+                importer,
+                resolved.id.includes('barrel') ? undefined : 'default',
+              ],
+            },
+          },
+        }
+      },
+    },
+  ],
   build: {
     cssTarget: 'chrome61',
     rollupOptions: {
+      input: {
+        index: path.resolve(__dirname, './index.html'),
+        treeshakeScoped: path.resolve(
+          __dirname,
+          './treeshake-scoped/index.html',
+        ),
+        empty: path.resolve(__dirname, './empty.css'),
+      },
       output: {
         manualChunks(id) {
           if (id.includes('manual-chunk.css')) {
@@ -29,13 +63,20 @@ export default defineConfig({
     },
   },
   resolve: {
-    alias: {
-      '=': __dirname,
-      spacefolder: __dirname + '/folder with space',
-      '#alias': __dirname + '/aliased/foo.css',
-      '#alias?inline': __dirname + '/aliased/foo.css?inline',
-      '#alias-module': __dirname + '/aliased/bar.module.css',
-    },
+    alias: [
+      { find: '=', replacement: __dirname },
+      { find: /^=replace\/(.*)/, replacement: `${__dirname}/$1` },
+      { find: 'spacefolder', replacement: __dirname + '/folder with space' },
+      { find: '#alias', replacement: __dirname + '/aliased/foo.css' },
+      {
+        find: '#alias?inline',
+        replacement: __dirname + '/aliased/foo.css?inline',
+      },
+      {
+        find: '#alias-module',
+        replacement: __dirname + '/aliased/bar.module.css',
+      },
+    ],
   },
   css: {
     modules: {
@@ -61,24 +102,35 @@ export default defineConfig({
     },
     preprocessorOptions: {
       scss: {
-        api: 'legacy',
         additionalData: `$injectedColor: orange;`,
-        importer: [
-          function (url) {
-            return url === 'virtual-dep' ? { contents: '' } : null
+        importers: [
+          {
+            canonicalize(url) {
+              return url === 'virtual-dep' || url.endsWith('.wxss')
+                ? new URL('custom-importer:virtual-dep')
+                : null
+            },
+            load() {
+              return {
+                contents: ``,
+                syntax: 'scss',
+              }
+            },
           },
-          function (url) {
-            return url === 'virtual-file-absolute'
-              ? {
-                  contents: `@use "${pathToFileURL(path.join(import.meta.dirname, 'file-absolute.scss')).href}"`,
-                }
-              : null
-          },
-          function (url) {
-            return url.endsWith('.wxss') ? { contents: '' } : null
+          {
+            canonicalize(url) {
+              return url === 'virtual-file-absolute'
+                ? new URL('custom-importer:virtual-file-absolute')
+                : null
+            },
+            load() {
+              return {
+                contents: `@use "${pathToFileURL(path.join(import.meta.dirname, 'file-absolute.scss')).href}"`,
+                syntax: 'scss',
+              }
+            },
           },
         ],
-        silenceDeprecations: ['legacy-js-api', 'import'],
       },
       styl: {
         additionalData: `$injectedColor ?= orange`,

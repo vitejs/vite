@@ -9,10 +9,10 @@
     "preview": "serve dist"
   },
   "devDependencies": {
-    "serve": "^14.2.4",
-    "vite": "^5.4.10"
+    "serve": "^14.2.5",
+    "vite": "^7.1.9"
   },
   "dependencies": {
-    "@builder.io/qwik": "^1.9.1"
+    "@builder.io/qwik": "^1.17.0"
   }
 }

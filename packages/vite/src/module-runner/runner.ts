@@ -1,35 +1,34 @@
-import type { ViteHotContext } from 'types/hot'
-import { HMRClient, HMRContext } from '../shared/hmr'
-import { cleanUrl, isPrimitive, isWindows } from '../shared/utils'
+import type { ViteHotContext } from '#types/hot'
+import { HMRClient, HMRContext, type HMRLogger } from '../shared/hmr'
+import { cleanUrl, isPrimitive } from '../shared/utils'
 import { analyzeImportedModDifference } from '../shared/ssrTransform'
+import {
+  type NormalizedModuleRunnerTransport,
+  normalizeModuleRunnerTransport,
+} from '../shared/moduleRunnerTransport'
 import type { EvaluatedModuleNode } from './evaluatedModules'
 import { EvaluatedModules } from './evaluatedModules'
 import type {
   ModuleEvaluator,
   ModuleRunnerContext,
-  ModuleRunnerImportMeta,
   ModuleRunnerOptions,
   ResolvedResult,
   SSRImportMetadata,
 } from './types'
-import {
-  normalizeAbsoluteUrl,
-  posixDirname,
-  posixPathToFileHref,
-  posixResolve,
-  toWindowsPath,
-} from './utils'
+import { posixDirname, posixPathToFileHref, posixResolve } from './utils'
 import {
   ssrDynamicImportKey,
   ssrExportAllKey,
+  ssrExportNameKey,
   ssrImportKey,
   ssrImportMetaKey,
   ssrModuleExportsKey,
 } from './constants'
 import { hmrLogger, silentConsole } from './hmrLogger'
-import { createHMRHandler } from './hmrHandler'
+import { createHMRHandlerForRunner } from './hmrHandler'
 import { enableSourceMapSupport } from './sourcemap/index'
-import type { RunnerTransport } from './runnerTransport'
+import { ESModulesEvaluator } from './esmEvaluator'
+import { createDefaultImportMeta } from './createImportMeta'
 
 interface ModuleRunnerDebugger {
   (formatter: unknown, ...args: unknown[]): void
@@ -39,16 +38,8 @@ export class ModuleRunner {
   public evaluatedModules: EvaluatedModules
   public hmrClient?: HMRClient
 
-  private readonly envProxy = new Proxy({} as any, {
-    get(_, p) {
-      throw new Error(
-        `[module runner] Dynamic access of "import.meta.env" is not supported. Please, use "import.meta.env.${String(p)}" instead.`,
-      )
-    },
-  })
-  private readonly transport: RunnerTransport
+  private readonly transport: NormalizedModuleRunnerTransport
   private readonly resetSourceMapSupport?: () => void
-  private readonly root: string
   private readonly concurrentModuleNodePromises = new Map<
     string,
     Promise<EvaluatedModuleNode>
@@ -58,22 +49,32 @@ export class ModuleRunner {
 
   constructor(
     public options: ModuleRunnerOptions,
-    public evaluator: ModuleEvaluator,
+    public evaluator: ModuleEvaluator = new ESModulesEvaluator(),
     private debug?: ModuleRunnerDebugger,
   ) {
-    const root = this.options.root
-    this.root = root[root.length - 1] === '/' ? root : `${root}/`
     this.evaluatedModules = options.evaluatedModules ?? new EvaluatedModules()
-    this.transport = options.transport
-    if (typeof options.hmr === 'object') {
+    this.transport = normalizeModuleRunnerTransport(options.transport)
+    if (options.hmr !== false) {
+      const optionsHmr = options.hmr ?? true
+      const resolvedHmrLogger: HMRLogger =
+        optionsHmr === true || optionsHmr.logger === undefined
+          ? hmrLogger
+          : optionsHmr.logger === false
+            ? silentConsole
+            : optionsHmr.logger
       this.hmrClient = new HMRClient(
-        options.hmr.logger === false
-          ? silentConsole
-          : options.hmr.logger || hmrLogger,
-        options.hmr.connection,
+        resolvedHmrLogger,
+        this.transport,
         ({ acceptedPath }) => this.import(acceptedPath),
       )
-      options.hmr.connection.onUpdate(createHMRHandler(this))
+      if (!this.transport.connect) {
+        throw new Error(
+          'HMR is not supported by this runner transport, but `hmr` option was set to true',
+        )
+      }
+      this.transport.connect(createHMRHandlerForRunner(this))
+    } else {
+      this.transport.connect?.()
     }
     if (options.sourcemapInterceptor !== false) {
       this.resetSourceMapSupport = enableSourceMapSupport(this)
@@ -105,6 +106,7 @@ export class ModuleRunner {
     this.clearCache()
     this.hmrClient = undefined
     this.closed = true
+    await this.transport.disconnect?.()
   }
 
   /**
@@ -220,8 +222,6 @@ export class ModuleRunner {
     url: string,
     importer?: string,
   ): Promise<EvaluatedModuleNode> {
-    url = normalizeAbsoluteUrl(url, this.root)
-
     let cached = this.concurrentModuleNodePromises.get(url)
     if (!cached) {
       const cachedModule = this.evaluatedModules.getModuleByUrl(url)
@@ -255,10 +255,14 @@ export class ModuleRunner {
       (
         url.startsWith('data:')
           ? { externalize: url, type: 'builtin' }
-          : await this.transport.fetchModule(url, importer, {
-              cached: isCached,
-              startOffset: this.evaluator.startOffset,
-            })
+          : await this.transport.invoke('fetchModule', [
+              url,
+              importer,
+              {
+                cached: isCached,
+                startOffset: this.evaluator.startOffset,
+              },
+            ])
       ) as ResolvedResult
 
     if ('cache' in fetchedModule) {
@@ -335,29 +339,13 @@ export class ModuleRunner {
       )
     }
 
+    const createImportMeta =
+      this.options.createImportMeta ?? createDefaultImportMeta
+
     const modulePath = cleanUrl(file || moduleId)
     // disambiguate the `<UNIT>:/` on windows: see nodejs/node#31710
     const href = posixPathToFileHref(modulePath)
-    const filename = modulePath
-    const dirname = posixDirname(modulePath)
-    const meta: ModuleRunnerImportMeta = {
-      filename: isWindows ? toWindowsPath(filename) : filename,
-      dirname: isWindows ? toWindowsPath(dirname) : dirname,
-      url: href,
-      env: this.envProxy,
-      resolve(_id, _parent?) {
-        throw new Error(
-          '[module runner] "import.meta.resolve" is not supported.',
-        )
-      },
-      // should be replaced during transformation
-      glob() {
-        throw new Error(
-          `[module runner] "import.meta.glob" is statically replaced during ` +
-            `file transformation. Make sure to reference it by the full name.`,
-        )
-      },
-    }
+    const meta = await createImportMeta(modulePath)
     const exports = Object.create(null)
     Object.defineProperty(exports, Symbol.toStringTag, {
       value: 'Module',
@@ -390,6 +378,12 @@ export class ModuleRunner {
       [ssrDynamicImportKey]: dynamicRequest,
       [ssrModuleExportsKey]: exports,
       [ssrExportAllKey]: (obj: any) => exportAll(exports, obj),
+      [ssrExportNameKey]: (name, getter) =>
+        Object.defineProperty(exports, name, {
+          enumerable: true,
+          configurable: true,
+          get: getter,
+        }),
       [ssrImportMetaKey]: meta,
     }
 
@@ -414,7 +408,7 @@ function exportAll(exports: any, sourceModule: any) {
     return
 
   for (const key in sourceModule) {
-    if (key !== 'default' && key !== '__esModule') {
+    if (key !== 'default' && key !== '__esModule' && !(key in exports)) {
       try {
         Object.defineProperty(exports, key, {
           enumerable: true,

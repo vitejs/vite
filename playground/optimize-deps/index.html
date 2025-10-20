@@ -6,6 +6,10 @@
 <div class="cjs-phoenix">fail</div>
 <h2>CommonJS w/ default export (clipboard)</h2>
 <div class="cjs-clipboard">fail</div>
+<h2>CommonJS import default (dep-cjs-compiled-from-esm)</h2>
+<div class="cjs-dep-cjs-compiled-from-esm"></div>
+<h2>CommonJS import default (dep-cjs-compiled-from-cjs)</h2>
+<div class="cjs-dep-cjs-compiled-from-cjs"></div>
 
 <script type="module" src="./cjs.js"></script>
 
@@ -64,9 +68,15 @@
 
 <h2>Import from dependency with optional peer dep</h2>
 <div class="dep-with-optional-peer-dep"></div>
+<div class="dep-with-optional-peer-dep-error"></div>
 
 <h2>Import from dependency with optional peer dep submodule</h2>
 <div class="dep-with-optional-peer-dep-submodule"></div>
+<div class="dep-with-optional-peer-dep-submodule-error"></div>
+
+<h2>Import from dependency with optional peer dep (cjs)</h2>
+<div class="dep-with-optional-peer-dep-cjs"></div>
+<div class="dep-with-optional-peer-dep-cjs-error"></div>
 
 <h2>Externalize known non-js files in optimize included dep</h2>
 <div class="externalize-known-non-js"></div>
@@ -228,8 +238,20 @@
     callPeerDep,
   } from '@vitejs/test-dep-with-optional-peer-dep'
   text('.dep-with-optional-peer-dep', callItself())
+
   // expect error as optional peer dep not installed
-  callPeerDep()
+  callPeerDep().catch((e) => {
+    text(
+      '.dep-with-optional-peer-dep-error',
+      e &&
+        typeof e.message === 'string' &&
+        e.message.includes(
+          'Could not resolve "foobar" imported by "@vitejs/test-dep-with-optional-peer-dep".',
+        )
+        ? '[success]'
+        : `[failed]: ${e.message}`,
+    )
+  })
 </script>
 
 <script type="module">
@@ -238,8 +260,34 @@
     callPeerDepSubmodule,
   } from '@vitejs/test-dep-with-optional-peer-dep-submodule'
   text('.dep-with-optional-peer-dep-submodule', callItself())
+
   // expect error as optional peer dep not installed
-  callPeerDepSubmodule()
+  callPeerDepSubmodule().catch((e) => {
+    text(
+      '.dep-with-optional-peer-dep-submodule-error',
+      e &&
+        typeof e.message === 'string' &&
+        e.message.includes(
+          'Could not resolve "foobar/baz" imported by "@vitejs/test-dep-with-optional-peer-dep-submodule".',
+        )
+        ? '[success]'
+        : `[failed]: ${e.message}`,
+    )
+  })
+</script>
+
+<script type="module">
+  import {
+    callItself,
+    callPeerDep,
+  } from '@vitejs/test-dep-with-optional-peer-dep-cjs'
+  text('.dep-with-optional-peer-dep-cjs', callItself())
+
+  // expect fallback as optional peer dep not installed
+  text(
+    '.dep-with-optional-peer-dep-cjs-error',
+    callPeerDep() === 'fallback' ? '[success]' : `[failed]: did not fallback`,
+  )
 </script>
 
 <script type="module">
@@ -298,4 +346,30 @@
   import reexport from '@vitejs/test-dep-with-asset-ext2.pdf'
   text('.dep-with-asset-ext-prebundled', isPreBundled)
   text('.dep-with-asset-ext-no-dual-package', original === reexport)
+</script>
+
+<script type="module">
+  // manually check Firefox doesn't show warning in devtool debugger
+  import * as sub from '@vitejs/test-dep-source-map-no-sources/sub.js'
+  import * as all from '@vitejs/test-dep-source-map-no-sources/all.js'
+</script>
+
+<h2>Pre-bundle dependency with external sub-dependencies</h2>
+<div>
+  require('some-external-sub-dependency') returns a plain object rather than a
+  module namespace object:
+  <span class="dep-cjs-with-external-deps-object">???</span>
+</div>
+<div>
+  require('some-external-sub-dependency') returns the default export if the
+  dependency is a Node builtin:
+  <span class="dep-cjs-with-external-deps-node-builtin">???</span>
+</div>
+<script type="module">
+  import * as optimized from '@vitejs/test-dep-cjs-with-external-deps'
+  text('.dep-cjs-with-external-deps-object', optimized.externalResult)
+  text(
+    '.dep-cjs-with-external-deps-node-builtin',
+    optimized.externalDummyNodeBuiltinResult,
+  )
 </script>

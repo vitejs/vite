@@ -1,5 +1,6 @@
 import path from 'node:path'
 import { defineConfig } from 'vite'
+import svgVirtualModulePlugin from './svgVirtualModulePlugin'
 
 export default defineConfig({
   build: {
@@ -19,4 +20,5 @@ export default defineConfig({
   define: {
     ROOT: JSON.stringify(path.dirname(__dirname).replace(/\\/g, '/')),
   },
+  plugins: [svgVirtualModulePlugin()],
 })

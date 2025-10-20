@@ -1,14 +1,6 @@
 import { describe, expect, test } from 'vitest'
 import { clearServeError, serveError } from './serve'
-import {
-  browserLogs,
-  editFile,
-  isBuild,
-  isServe,
-  page,
-  readFile,
-  untilUpdated,
-} from '~utils'
+import { browserLogs, editFile, isBuild, isServe, page, readFile } from '~utils'
 
 const unexpectedTokenSyntaxErrorRE =
   /(\[vite:esbuild\] )*parsing .* failed: SyntaxError: Unexpected token.*\}.*/
@@ -34,7 +26,7 @@ describe.runIf(isBuild)('build', () => {
 
 describe.runIf(isServe)('server', () => {
   test('should log 500 error in browser for malformed tsconfig', () => {
-    // don't test for actual complete message as this might be locale dependant. chrome does log 500 consistently though
+    // don't test for actual complete message as this might be locale dependent. chrome does log 500 consistently though
     expect(browserLogs.find((x) => x.includes('500'))).toBeTruthy()
     expect(browserLogs).not.toContain('tsconfig error fixed, file loaded')
   })
@@ -50,11 +42,11 @@ describe.runIf(isServe)('server', () => {
   })
 
   test('should reload when tsconfig is changed', async () => {
-    await editFile('has-error/tsconfig.json', (content) => {
+    editFile('has-error/tsconfig.json', (content) => {
       return content.replace('"compilerOptions":', '"compilerOptions":{}')
     })
-    await untilUpdated(() => {
-      return browserLogs.find((x) => x === 'tsconfig error fixed, file loaded')
-    }, 'tsconfig error fixed, file loaded')
+    await expect
+      .poll(() => browserLogs)
+      .toContain('tsconfig error fixed, file loaded')
   })
 })

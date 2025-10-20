@@ -13,9 +13,9 @@ import type {
 import type { CustomPluginOptions, RollupAstNode, RollupError } from 'rollup'
 import MagicString from 'magic-string'
 import { stringifyQuery } from 'ufo'
-import type { GeneralImportGlobOptions } from 'types/importGlob'
 import { parseAstAsync } from 'rollup/parseAst'
 import { escapePath, glob } from 'tinyglobby'
+import type { GeneralImportGlobOptions } from '#types/importGlob'
 import type { Plugin } from '../plugin'
 import type { EnvironmentModuleNode } from '../server/moduleGraph'
 import type { ResolvedConfig } from '../config'
@@ -32,6 +32,8 @@ export interface ParsedImportGlob {
   options: ParsedGeneralImportGlobOptions
   start: number
   end: number
+  onlyKeys: boolean
+  onlyValues: boolean
 }
 
 interface ParsedGeneralImportGlobOptions extends GeneralImportGlobOptions {
@@ -49,44 +51,50 @@ export function importGlobPlugin(config: ResolvedConfig): Plugin {
     buildStart() {
       importGlobMaps.clear()
     },
-    async transform(code, id) {
-      if (!code.includes('import.meta.glob')) return
-      const result = await transformGlobImport(
-        code,
-        id,
-        config.root,
-        (im, _, options) =>
-          this.resolve(im, id, options).then((i) => i?.id || im),
-        config.experimental.importGlobRestoreExtension,
-        config.logger,
-      )
-      if (result) {
-        const allGlobs = result.matches.map((i) => i.globsResolved)
-        if (!importGlobMaps.has(this.environment)) {
-          importGlobMaps.set(this.environment, new Map())
+    transform: {
+      filter: { code: 'import.meta.glob' },
+      async handler(code, id) {
+        const result = await transformGlobImport(
+          code,
+          id,
+          config.root,
+          (im, _, options) =>
+            this.resolve(im, id, options).then((i) => i?.id || im),
+          config.experimental.importGlobRestoreExtension,
+          config.logger,
+        )
+        if (result) {
+          const allGlobs = result.matches.map((i) => i.globsResolved)
+          if (!importGlobMaps.has(this.environment)) {
+            importGlobMaps.set(this.environment, new Map())
+          }
+
+          const globMatchers = allGlobs.map((globs) => {
+            const affirmed: string[] = []
+            const negated: string[] = []
+            for (const glob of globs) {
+              if (glob[0] === '!') {
+                negated.push(glob.slice(1))
+              } else {
+                affirmed.push(glob)
+              }
+            }
+            const affirmedMatcher = picomatch(affirmed)
+            const negatedMatcher = picomatch(negated)
+
+            return (file: string) => {
+              // (glob1 || glob2) && !(glob3 || glob4)...
+              return (
+                (affirmed.length === 0 || affirmedMatcher(file)) &&
+                !(negated.length > 0 && negatedMatcher(file))
+              )
+            }
+          })
+          importGlobMaps.get(this.environment)!.set(id, globMatchers)
+
+          return transformStableResult(result.s, id, config)
         }
-
-        const globMatchers = allGlobs.map((globs) => {
-          const affirmed: string[] = []
-          const negated: string[] = []
-          for (const glob of globs) {
-            ;(glob[0] === '!' ? negated : affirmed).push(glob)
-          }
-          const affirmedMatcher = picomatch(affirmed)
-          const negatedMatcher = picomatch(negated)
-
-          return (file: string) => {
-            // (glob1 || glob2) && !(glob3 || glob4)...
-            return (
-              (affirmed.length === 0 || affirmedMatcher(file)) &&
-              !(negated.length > 0 && negatedMatcher(file))
-            )
-          }
-        })
-        importGlobMaps.get(this.environment)!.set(id, globMatchers)
-
-        return transformStableResult(result.s, id, config)
-      }
+      },
     },
     hotUpdate({ type, file, modules: oldModules }) {
       if (type === 'update') return
@@ -107,6 +115,8 @@ export function importGlobPlugin(config: ResolvedConfig): Plugin {
 }
 
 const importGlobRE = /\bimport\.meta\.glob(?:<\w+>)?\s*\(/g
+const objectKeysRE = /\bObject\.keys\(\s*$/
+const objectValuesRE = /\bObject\.values\(\s*$/
 
 const knownOptions = {
   as: ['string'],
@@ -114,6 +124,7 @@ const knownOptions = {
   import: ['string'],
   exhaustive: ['boolean'],
   query: ['object', 'string'],
+  base: ['string'],
 }
 
 const forceDefaultAs = ['raw', 'url']
@@ -154,6 +165,21 @@ function parseGlobOptions(
         `Expected glob option "${key}" to be of type ${allowedTypes.join(
           ' or ',
         )}, but got ${valueType}`,
+        optsStartIndex,
+      )
+    }
+  }
+
+  if (opts.base) {
+    if (opts.base[0] === '!') {
+      throw err('Option "base" cannot start with "!"', optsStartIndex)
+    } else if (
+      opts.base[0] !== '/' &&
+      !opts.base.startsWith('./') &&
+      !opts.base.startsWith('../')
+    ) {
+      throw err(
+        `Option "base" must start with '/', './' or '../', but got "${opts.base}"`,
         optsStartIndex,
       )
     }
@@ -303,9 +329,17 @@ export async function parseImportGlob(
     }
 
     const globsResolved = await Promise.all(
-      globs.map((glob) => toAbsoluteGlob(glob, root, importer, resolveId)),
+      globs.map((glob) =>
+        toAbsoluteGlob(glob, root, importer, resolveId, options.base),
+      ),
     )
     const isRelative = globs.every((i) => '.!'.includes(i[0]))
+    const sliceCode = cleanCode.slice(0, start)
+    const onlyKeys = objectKeysRE.test(sliceCode)
+    let onlyValues = false
+    if (!onlyKeys) {
+      onlyValues = objectValuesRE.test(sliceCode)
+    }
 
     return {
       index,
@@ -315,6 +349,8 @@ export async function parseImportGlob(
       options,
       start,
       end,
+      onlyKeys,
+      onlyValues,
     }
   })
 
@@ -390,7 +426,16 @@ export async function transformGlobImport(
   const staticImports = (
     await Promise.all(
       matches.map(
-        async ({ globsResolved, isRelative, options, index, start, end }) => {
+        async ({
+          globsResolved,
+          isRelative,
+          options,
+          index,
+          start,
+          end,
+          onlyKeys,
+          onlyValues,
+        }) => {
           const cwd = getCommonBase(globsResolved) ?? root
           const files = (
             await glob(globsResolved, {
@@ -409,23 +454,49 @@ export async function transformGlobImport(
 
           const resolvePaths = (file: string) => {
             if (!dir) {
-              if (isRelative)
+              if (!options.base && isRelative)
                 throw new Error(
                   "In virtual modules, all globs must start with '/'",
                 )
-              const filePath = `/${relative(root, file)}`
-              return { filePath, importPath: filePath }
+              const importPath = `/${relative(root, file)}`
+              let filePath = options.base
+                ? `${relative(posix.join(root, options.base), file)}`
+                : importPath
+              if (
+                options.base &&
+                !filePath.startsWith('./') &&
+                !filePath.startsWith('../')
+              ) {
+                filePath = `./${filePath}`
+              }
+              return { filePath, importPath }
             }
 
             let importPath = relative(dir, file)
-            if (importPath[0] !== '.') importPath = `./${importPath}`
+            if (!importPath.startsWith('./') && !importPath.startsWith('../')) {
+              importPath = `./${importPath}`
+            }
 
             let filePath: string
-            if (isRelative) {
+            if (options.base) {
+              const resolvedBasePath = options.base[0] === '/' ? root : dir
+              filePath = relative(
+                posix.join(resolvedBasePath, options.base),
+                file,
+              )
+              if (!filePath.startsWith('./') && !filePath.startsWith('../')) {
+                filePath = `./${filePath}`
+              }
+              if (options.base[0] === '/') {
+                importPath = `/${relative(root, file)}`
+              }
+            } else if (isRelative) {
               filePath = importPath
             } else {
               filePath = relative(root, file)
-              if (filePath[0] !== '.') filePath = `/${filePath}`
+              if (!filePath.startsWith('./') && !filePath.startsWith('../')) {
+                filePath = `/${filePath}`
+              }
             }
 
             return { filePath, importPath }
@@ -436,6 +507,11 @@ export async function transformGlobImport(
             const filePath = paths.filePath
             let importPath = paths.importPath
             let importQuery = options.query ?? ''
+
+            if (onlyKeys) {
+              objectProps.push(`${JSON.stringify(filePath)}: 0`)
+              return
+            }
 
             if (importQuery && importQuery !== '?raw') {
               const fileExtension = basename(file).split('.').slice(-1)[0]
@@ -458,13 +534,19 @@ export async function transformGlobImport(
               staticImports.push(
                 `import ${expression} from ${JSON.stringify(importPath)}`,
               )
-              objectProps.push(`${JSON.stringify(filePath)}: ${variableName}`)
+              objectProps.push(
+                onlyValues
+                  ? `${variableName}`
+                  : `${JSON.stringify(filePath)}: ${variableName}`,
+              )
             } else {
               let importStatement = `import(${JSON.stringify(importPath)})`
               if (importKey)
                 importStatement += `.then(m => m[${JSON.stringify(importKey)}])`
               objectProps.push(
-                `${JSON.stringify(filePath)}: () => ${importStatement}`,
+                onlyValues
+                  ? `() => ${importStatement}`
+                  : `${JSON.stringify(filePath)}: () => ${importStatement}`,
               )
             }
           })
@@ -477,10 +559,17 @@ export async function transformGlobImport(
             originalLineBreakCount > 0
               ? '\n'.repeat(originalLineBreakCount)
               : ''
+          let replacement = ''
+          if (onlyKeys) {
+            replacement = `{${objectProps.join(',')}${lineBreaks}}`
+          } else if (onlyValues) {
+            replacement = `[${objectProps.join(',')}${lineBreaks}]`
+          } else {
+            replacement = `/* #__PURE__ */ Object.assign({${objectProps.join(
+              ',',
+            )}${lineBreaks}})`
+          }
 
-          const replacement = `/* #__PURE__ */ Object.assign({${objectProps.join(
-            ',',
-          )}${lineBreaks}})`
           s.overwrite(start, end, replacement)
 
           return staticImports
@@ -541,6 +630,7 @@ export async function toAbsoluteGlob(
   root: string,
   importer: string | undefined,
   resolveId: IdResolver,
+  base?: string,
 ): Promise<string> {
   let pre = ''
   if (glob[0] === '!') {
@@ -548,7 +638,20 @@ export async function toAbsoluteGlob(
     glob = glob.slice(1)
   }
   root = globSafePath(root)
-  const dir = importer ? globSafePath(dirname(importer)) : root
+  let dir
+  if (base) {
+    if (base[0] === '/') {
+      dir = posix.join(root, base)
+    } else {
+      dir = posix.resolve(
+        importer ? globSafePath(dirname(importer)) : root,
+        base,
+      )
+    }
+  } else {
+    dir = importer ? globSafePath(dirname(importer)) : root
+  }
+
   if (glob[0] === '/') return pre + posix.join(root, glob.slice(1))
   if (glob.startsWith('./')) return pre + posix.join(dir, glob.slice(2))
   if (glob.startsWith('../')) return pre + posix.join(dir, glob)

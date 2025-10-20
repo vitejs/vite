@@ -1,16 +1,18 @@
 import colors from 'picocolors'
 import type { FutureOptions, ResolvedConfig } from './config'
 
-// TODO: switch to production docs URL
-const docsURL = 'https://main.vite.dev'
+const docsURL = 'https://vite.dev'
 
 const deprecationCode = {
   removePluginHookSsrArgument: 'changes/this-environment-in-hooks',
   removePluginHookHandleHotUpdate: 'changes/hotupdate-hook',
 
   removeServerModuleGraph: 'changes/per-environment-apis',
+  removeServerReloadModule: 'changes/per-environment-apis',
+  removeServerPluginContainer: 'changes/per-environment-apis',
   removeServerHot: 'changes/per-environment-apis',
   removeServerTransformRequest: 'changes/per-environment-apis',
+  removeServerWarmupRequest: 'changes/per-environment-apis',
 
   removeSsrLoadModule: 'changes/ssr-using-modulerunner',
 } satisfies Record<keyof FutureOptions, string>
@@ -23,15 +25,28 @@ const deprecationMessages = {
 
   removeServerModuleGraph:
     'The `server.moduleGraph` is replaced with `this.environment.moduleGraph`.',
+  removeServerReloadModule:
+    'The `server.reloadModule` is replaced with `environment.reloadModule`.',
+  removeServerPluginContainer:
+    'The `server.pluginContainer` is replaced with `this.environment.pluginContainer`.',
   removeServerHot: 'The `server.hot` is replaced with `this.environment.hot`.',
   removeServerTransformRequest:
     'The `server.transformRequest` is replaced with `this.environment.transformRequest`.',
+  removeServerWarmupRequest:
+    'The `server.warmupRequest` is replaced with `this.environment.warmupRequest`.',
 
   removeSsrLoadModule:
     'The `server.ssrLoadModule` is replaced with Environment Runner.',
 } satisfies Record<keyof FutureOptions, string>
 
 let _ignoreDeprecationWarnings = false
+
+export function isFutureDeprecationEnabled(
+  config: ResolvedConfig,
+  type: keyof FutureOptions,
+): boolean {
+  return !!config.future?.[type]
+}
 
 // Later we could have a `warnDeprecation` utils when the deprecation is landed
 /**

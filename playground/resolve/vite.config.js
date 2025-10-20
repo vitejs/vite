@@ -1,5 +1,5 @@
 import path from 'node:path'
-import { defineConfig, normalizePath } from 'vite'
+import { defaultClientConditions, defineConfig, normalizePath } from 'vite'
 import { a } from './config-dep.cjs'
 
 const virtualFile = '@virtual-file'
@@ -9,6 +9,9 @@ const virtualFile9036 = 'virtual:file-9036.js'
 const virtualId9036 = '\0' + virtualFile9036
 
 const customVirtualFile = '@custom-virtual-file'
+
+const virtualFileWithScheme = 'virtual-with-scheme'
+const virtualIdWithScheme = '\0https://example.com/virtual.js'
 
 const generatedContentVirtualFile = '@generated-content-virtual-file'
 const generatedContentImports = [
@@ -32,7 +35,7 @@ export default defineConfig({
   resolve: {
     extensions: ['.mjs', '.js', '.es', '.ts'],
     mainFields: ['browser', 'custom', 'module'],
-    conditions: ['module', 'browser', 'development|production', 'custom'],
+    conditions: [...defaultClientConditions, 'custom'],
   },
   define: {
     VITE_CONFIG_DEP_TEST: a,
@@ -74,6 +77,19 @@ export default defineConfig({
       load(id) {
         if (id === customVirtualFile) {
           return `export const msg = "[success] from custom virtual file"`
+        }
+      },
+    },
+    {
+      name: 'virtual-url-scheme-test',
+      resolveId(id) {
+        if (id === virtualFileWithScheme) {
+          return virtualIdWithScheme
+        }
+      },
+      load(id) {
+        if (id === virtualIdWithScheme) {
+          return `export const msg = "[success] from virtual file with URL scheme"`
         }
       },
     },

@@ -77,7 +77,6 @@ parentServer.use(vite.middlewares)
 The `InlineConfig` interface extends `UserConfig` with additional properties:
 
 - `configFile`: specify config file to use. If not set, Vite will try to automatically resolve one from project root. Set to `false` to disable auto resolving.
-- `envFile`: Set to `false` to disable `.env` files.
 
 ## `ResolvedConfig`
 
@@ -110,12 +109,12 @@ interface ViteDevServer {
   httpServer: http.Server | null
   /**
    * Chokidar watcher instance. If `config.server.watch` is set to `null`,
-   * it will not watch any files and calling `add` will have no effect.
-   * https://github.com/paulmillr/chokidar#getting-started
+   * it will not watch any files and calling `add` or `unwatch` will have no effect.
+   * https://github.com/paulmillr/chokidar/tree/3.6.0#api
    */
   watcher: FSWatcher
   /**
-   * Web socket server with `send(payload)` method.
+   * WebSocket server with `send(payload)` method.
    */
   ws: WebSocketServer
   /**

@@ -9,8 +9,27 @@ import type { ServerOptions } from './server'
 import type { CLIShortcut } from './shortcuts'
 import type { LogLevel } from './logger'
 import { createLogger } from './logger'
-import { resolveConfig } from './config'
 import type { InlineConfig } from './config'
+
+function checkNodeVersion(nodeVersion: string): boolean {
+  const currentVersion = nodeVersion.split('.')
+  const major = parseInt(currentVersion[0], 10)
+  const minor = parseInt(currentVersion[1], 10)
+  const isSupported =
+    (major === 20 && minor >= 19) || (major === 22 && minor >= 12) || major > 22
+  return isSupported
+}
+
+if (!checkNodeVersion(process.versions.node)) {
+  // eslint-disable-next-line no-console
+  console.warn(
+    colors.yellow(
+      `You are using Node.js ${process.versions.node}. ` +
+        `Vite requires Node.js version 20.19+ or 22.12+. ` +
+        `Please upgrade your Node.js version.`,
+    ),
+  )
+}
 
 const cli = cac('vite')
 
@@ -23,6 +42,7 @@ interface GlobalCLIOptions {
   l?: LogLevel
   logLevel?: LogLevel
   clearScreen?: boolean
+  configLoader?: 'bundle' | 'runner' | 'native'
   d?: boolean | string
   debug?: boolean | string
   f?: string
@@ -87,12 +107,14 @@ function cleanGlobalCLIOptions<Options extends GlobalCLIOptions>(
   delete ret.l
   delete ret.logLevel
   delete ret.clearScreen
+  delete ret.configLoader
   delete ret.d
   delete ret.debug
   delete ret.f
   delete ret.filter
   delete ret.m
   delete ret.mode
+  delete ret.force
   delete ret.w
 
   // convert the sourcemap option to a boolean if necessary
@@ -151,6 +173,10 @@ cli
   })
   .option('-l, --logLevel <level>', `[string] info | warn | error | silent`)
   .option('--clearScreen', `[boolean] allow/disable clear screen when logging`)
+  .option(
+    '--configLoader <loader>',
+    `[string] use 'bundle' to bundle the config with esbuild, or 'runner' (experimental) to process it on the fly, or 'native' (experimental) to load using the native runtime (default: bundle)`,
+  )
   .option('-d, --debug [feat]', `[string | boolean] show debug logs`)
   .option('-f, --filter <filter>', `[string] filter debug logs`)
   .option('-m, --mode <mode>', `[string] set env mode`)
@@ -180,10 +206,11 @@ cli
         base: options.base,
         mode: options.mode,
         configFile: options.config,
+        configLoader: options.configLoader,
         logLevel: options.logLevel,
         clearScreen: options.clearScreen,
-        optimizeDeps: { force: options.force },
         server: cleanGlobalCLIOptions(options),
+        forceOptimizeDeps: options.force,
       })
 
       if (!server.httpServer) {
@@ -194,6 +221,10 @@ cli
 
       const info = server.config.logger.info
 
+      const modeString =
+        options.mode && options.mode !== 'development'
+          ? `  ${colors.bgGreen(` ${colors.bold(options.mode)} `)}`
+          : ''
       const viteStartTime = global.__vite_start_time ?? false
       const startupDurationString = viteStartTime
         ? colors.dim(
@@ -208,7 +239,7 @@ cli
       info(
         `\n  ${colors.green(
           `${colors.bold('VITE')} v${VERSION}`,
-        )}  ${startupDurationString}\n`,
+        )}${modeString}  ${startupDurationString}\n`,
         {
           clear: !hasExistingLogs,
         },
@@ -247,7 +278,7 @@ cli
       logger.error(colors.red(`error when starting dev server:\n${e.stack}`), {
         error: e,
       })
-      stopProfiler(logger.info)
+      await stopProfiler(logger.info)
       process.exit(1)
     }
   })
@@ -255,7 +286,10 @@ cli
 // build
 cli
   .command('build [root]', 'build for production')
-  .option('--target <target>', `[string] transpile target (default: 'modules')`)
+  .option(
+    '--target <target>',
+    `[string] transpile target (default: 'baseline-widely-available')`,
+  )
   .option('--outDir <dir>', `[string] output directory (default: dist)`)
   .option(
     '--assetsDir <dir>',
@@ -304,6 +338,7 @@ cli
           base: options.base,
           mode: options.mode,
           configFile: options.config,
+          configLoader: options.configLoader,
           logLevel: options.logLevel,
           clearScreen: options.clearScreen,
           build: buildOptions,
@@ -318,14 +353,19 @@ cli
         )
         process.exit(1)
       } finally {
-        stopProfiler((message) => createLogger(options.logLevel).info(message))
+        await stopProfiler((message) =>
+          createLogger(options.logLevel).info(message),
+        )
       }
     },
   )
 
 // optimize
 cli
-  .command('optimize [root]', 'pre-bundle dependencies')
+  .command(
+    'optimize [root]',
+    'pre-bundle dependencies (deprecated, the pre-bundle process runs automatically and does not need to be called)',
+  )
   .option(
     '--force',
     `[boolean] force the optimizer to ignore the cache and re-bundle`,
@@ -333,6 +373,7 @@ cli
   .action(
     async (root: string, options: { force?: boolean } & GlobalCLIOptions) => {
       filterDuplicateOptions(options)
+      const { resolveConfig } = await import('./config')
       const { optimizeDeps } = await import('./optimizer')
       try {
         const config = await resolveConfig(
@@ -340,6 +381,7 @@ cli
             root,
             base: options.base,
             configFile: options.config,
+            configLoader: options.configLoader,
             logLevel: options.logLevel,
             mode: options.mode,
           },
@@ -382,6 +424,7 @@ cli
           root,
           base: options.base,
           configFile: options.config,
+          configLoader: options.configLoader,
           logLevel: options.logLevel,
           mode: options.mode,
           build: {
@@ -403,7 +446,9 @@ cli
         )
         process.exit(1)
       } finally {
-        stopProfiler((message) => createLogger(options.logLevel).info(message))
+        await stopProfiler((message) =>
+          createLogger(options.logLevel).info(message),
+        )
       }
     },
   )

@@ -56,6 +56,12 @@ describe('search css url function', () => {
       ),
     ).toBe(true)
   })
+
+  test('should capture the full url with escaped parentheses', () => {
+    const css = 'background-image: url(public/awkward-name\\)2.png);'
+    const match = cssUrlRE.exec(css)
+    expect(match?.[1].trim()).toBe('public/awkward-name\\)2.png')
+  })
 })
 
 describe('css modules', () => {
@@ -104,6 +110,25 @@ composes: bar from '@/css/bar.module.css';
         modules: {
           generateScopedName: 'custom__[hash:base64:5]',
         },
+      },
+    })
+    const css = `\
+.foo {
+  color: red;
+}`
+    const result1 = await transform(css, '/foo.module.css') // server
+    const result2 = await transform(css, '/foo.module.css?direct') // client
+    expect(result1.code).toBe(result2.code)
+  })
+
+  test('custom generateScopedName with lightningcss', async () => {
+    const { transform } = await createCssPluginTransform({
+      configFile: false,
+      css: {
+        modules: {
+          generateScopedName: 'custom__[hash:base64:5]',
+        },
+        transformer: 'lightningcss',
       },
     })
     const css = `\
@@ -217,8 +242,8 @@ async function createCssPluginTransform(inlineConfig: InlineConfig = {}) {
 
   return {
     async transform(code: string, id: string) {
-      // @ts-expect-error transform is function
-      return await transform.call(
+      // @ts-expect-error transform.handler is function
+      return await transform.handler.call(
         {
           addWatchFile() {
             return
@@ -309,10 +334,22 @@ require("other-module");`
 
     const replacer = getEmptyChunkReplacer(['pure_css_chunk.js'], 'cjs')
     const newCode = replacer(code)
+    expect(newCode.length).toBe(code.length)
     expect(newCode).toMatchInlineSnapshot(
       `"require("some-module"),/* empty css               */require("other-module");"`,
     )
     // So there should be no pure css chunk anymore
+    expect(newCode).not.toContain('pure_css_chunk.js')
+  })
+
+  test('replaces require call in minified code that uses comma operator 2', () => {
+    const code = 'require("pure_css_chunk.js"),console.log();'
+    const replacer = getEmptyChunkReplacer(['pure_css_chunk.js'], 'cjs')
+    const newCode = replacer(code)
+    expect(newCode.length).toBe(code.length)
+    expect(newCode).toMatchInlineSnapshot(
+      `"/* empty css               */console.log();"`,
+    )
     expect(newCode).not.toContain('pure_css_chunk.js')
   })
 
@@ -321,9 +358,12 @@ require("other-module");`
       'require("some-module"),require("pure_css_chunk.js");const v=require("other-module");'
 
     const replacer = getEmptyChunkReplacer(['pure_css_chunk.js'], 'cjs')
-    expect(replacer(code)).toMatchInlineSnapshot(
+    const newCode = replacer(code)
+    expect(newCode.length).toBe(code.length)
+    expect(newCode).toMatchInlineSnapshot(
       `"require("some-module");/* empty css               */const v=require("other-module");"`,
     )
+    expect(newCode).not.toContain('pure_css_chunk.js')
   })
 })
 

@@ -4,8 +4,10 @@ const pathRenderers = {
   '/': renderRoot,
   '/circular-dep': renderCircularDep,
   '/circular-import': renderCircularImport,
+  '/circular-import2': renderCircularImport2,
   '/forked-deadlock-static-imports': renderForkedDeadlockStaticImports,
   '/forked-deadlock-dynamic-imports': renderForkedDeadlockDynamicImports,
+  '/import-meta': renderImportMeta,
 }
 
 export async function render(url, rootDir) {
@@ -41,6 +43,11 @@ async function renderCircularImport(rootDir) {
   return `<div class="circ-import">${escapeHtml(logA())}</div>`
 }
 
+async function renderCircularImport2(rootDir) {
+  const { logA } = await import('./circular-import2/index.js')
+  return `<div class="circ-import">${escapeHtml(logA())}</div>`
+}
+
 async function renderForkedDeadlockStaticImports(rootDir) {
   const { commonModuleExport } = await import('./forked-deadlock/common-module')
   commonModuleExport()
@@ -53,4 +60,15 @@ async function renderForkedDeadlockDynamicImports(rootDir) {
   )
   await commonModuleExport()
   return `<div class="forked-deadlock-dynamic-imports">rendered</div>`
+}
+
+async function renderImportMeta(rootDir) {
+  const metaUrl = import.meta.url
+  const resolveResult = import.meta.resolve('./app.js')
+  const metaMain = import.meta.main
+  return (
+    `<div class="import-meta-url">${escapeHtml(metaUrl)}</div>` +
+    `<div class="import-meta-resolve">${escapeHtml(resolveResult)}</div>` +
+    `<div class="import-meta-main">${escapeHtml(String(metaMain))}</div>`
+  )
 }

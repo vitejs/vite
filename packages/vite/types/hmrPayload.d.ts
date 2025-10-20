@@ -2,6 +2,7 @@
 export type HMRPayload = HotPayload
 export type HotPayload =
   | ConnectedPayload
+  | PingPayload
   | UpdatePayload
   | FullReloadPayload
   | CustomPayload
@@ -10,6 +11,10 @@ export type HotPayload =
 
 export interface ConnectedPayload {
   type: 'connected'
+}
+
+export interface PingPayload {
+  type: 'ping'
 }
 
 export interface UpdatePayload {
@@ -26,6 +31,8 @@ export interface Update {
   explicitImportRequired?: boolean
   /** @internal */
   isWithinCircularImport?: boolean
+  /** @internal */
+  firstInvalidatedBy?: string
   /** @internal */
   invalidates?: string[]
 }

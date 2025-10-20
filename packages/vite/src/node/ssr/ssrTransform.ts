@@ -16,10 +16,15 @@ import type {
 } from 'estree'
 import { extract_names as extractNames } from 'periscopic'
 import { walk as eswalk } from 'estree-walker'
-import type { RawSourceMap } from '@ampproject/remapping'
+import type { RawSourceMap } from '@jridgewell/remapping'
 import { parseAstAsync as rollupParseAstAsync } from 'rollup/parseAst'
 import type { TransformResult } from '../server/transformRequest'
-import { combineSourcemaps, isDefined } from '../utils'
+import {
+  combineSourcemaps,
+  generateCodeFrame,
+  isDefined,
+  numberToPos,
+} from '../utils'
 import { isJSONRequest } from '../plugins/json'
 import type { DefineImportMetadata } from '../../shared/ssrTransform'
 
@@ -38,8 +43,8 @@ export const ssrModuleExportsKey = `__vite_ssr_exports__`
 export const ssrImportKey = `__vite_ssr_import__`
 export const ssrDynamicImportKey = `__vite_ssr_dynamic_import__`
 export const ssrExportAllKey = `__vite_ssr_exportAll__`
+export const ssrExportNameKey = `__vite_ssr_exportName__`
 export const ssrImportMetaKey = `__vite_ssr_import_meta__`
-const ssrIdentityFunction = `__vite_ssr_identity__`
 
 const hashbangRE = /^#!.*\n/
 
@@ -81,15 +86,21 @@ async function ssrTransformScript(
   try {
     ast = await rollupParseAstAsync(code)
   } catch (err) {
-    if (!err.loc || !err.loc.line) throw err
-    const line = err.loc.line
-    throw new Error(
-      `Parse failure: ${
-        err.message
-      }\nAt file: ${url}\nContents of line ${line}: ${
-        code.split('\n')[line - 1]
-      }`,
-    )
+    // enhance known rollup errors
+    // https://github.com/rollup/rollup/blob/42e587e0e37bc0661aa39fe7ad6f1d7fd33f825c/src/utils/bufferToAst.ts#L17-L22
+    if (err.code === 'PARSE_ERROR') {
+      err.message = `Parse failure: ${err.message}\n`
+      err.id = url
+      if (typeof err.pos === 'number') {
+        err.loc = numberToPos(code, err.pos)
+        err.loc.file = url
+        err.frame = generateCodeFrame(code, err.pos)
+        err.message += `At file: ${url}:${err.loc.line}:${err.loc.column}`
+      } else {
+        err.message += `At file: ${url}`
+      }
+    }
+    throw err
   }
 
   let uid = 0
@@ -116,24 +127,19 @@ async function ssrTransformScript(
   ) {
     const source = importNode.source.value as string
     deps.add(source)
-    const importId = `__vite_ssr_import_${uid++}__`
 
     // Reduce metadata to undefined if it's all default values
-    if (
-      metadata &&
-      (metadata.importedNames == null || metadata.importedNames.length === 0)
-    ) {
-      metadata = undefined
-    }
-    const metadataStr = metadata ? `, ${JSON.stringify(metadata)}` : ''
+    const metadataArg =
+      (metadata?.importedNames?.length ?? 0) > 0
+        ? `, ${JSON.stringify(metadata)}`
+        : ''
 
-    s.update(
-      importNode.start,
-      importNode.end,
-      `const ${importId} = await ${ssrImportKey}(${JSON.stringify(
-        source,
-      )}${metadataStr});\n`,
-    )
+    const importId = `__vite_ssr_import_${uid++}__`
+    const transformedImport = `const ${importId} = await ${ssrImportKey}(${JSON.stringify(
+      source,
+    )}${metadataArg});\n`
+
+    s.update(importNode.start, importNode.end, transformedImport)
 
     if (importNode.start === index) {
       // no need to hoist, but update hoistIndex to keep the order
@@ -147,35 +153,71 @@ async function ssrTransformScript(
     return importId
   }
 
-  function defineExport(position: number, name: string, local = name) {
+  function defineExport(name: string, local = name) {
+    // wrap with try/catch to fallback to `undefined` for backward compat.
     s.appendLeft(
-      position,
-      `\nObject.defineProperty(${ssrModuleExportsKey}, ${JSON.stringify(name)}, ` +
-        `{ enumerable: true, configurable: true, get(){ return ${local} }});`,
+      fileStartIndex,
+      `${ssrExportNameKey}(${JSON.stringify(name)}, () => { try { return ${local} } catch {} });\n`,
     )
   }
 
-  const imports: RollupAstNode<ImportDeclaration>[] = []
+  const imports: (
+    | RollupAstNode<ImportDeclaration>
+    | RollupAstNode<ExportNamedDeclaration>
+    | RollupAstNode<ExportAllDeclaration>
+  )[] = []
   const exports: (
     | RollupAstNode<ExportNamedDeclaration>
     | RollupAstNode<ExportDefaultDeclaration>
     | RollupAstNode<ExportAllDeclaration>
   )[] = []
+  const reExportImportIdMap = new Map<
+    RollupAstNode<ExportNamedDeclaration> | RollupAstNode<ExportAllDeclaration>,
+    string
+  >()
 
   for (const node of ast.body as Node[]) {
     if (node.type === 'ImportDeclaration') {
       imports.push(node)
+    } else if (node.type === 'ExportDefaultDeclaration') {
+      exports.push(node)
     } else if (
       node.type === 'ExportNamedDeclaration' ||
-      node.type === 'ExportDefaultDeclaration' ||
       node.type === 'ExportAllDeclaration'
     ) {
+      imports.push(node)
       exports.push(node)
     }
   }
 
-  // 1. check all import statements and record id -> importName map
+  // 1. check all import statements, hoist imports, and record id -> importName map
   for (const node of imports) {
+    // hoist re-export's import at the same time as normal imports to preserve execution order
+    if (node.type === 'ExportNamedDeclaration') {
+      if (node.source) {
+        // export { foo, bar } from './foo'
+        const importId = defineImport(
+          hoistIndex,
+          node as RollupAstNode<ExportNamedDeclaration & { source: Literal }>,
+          {
+            importedNames: node.specifiers.map(
+              (s) => getIdentifierNameOrLiteralValue(s.local) as string,
+            ),
+          },
+        )
+        reExportImportIdMap.set(node, importId)
+      }
+      continue
+    }
+    if (node.type === 'ExportAllDeclaration') {
+      if (node.source) {
+        // export * from './foo'
+        const importId = defineImport(hoistIndex, node)
+        reExportImportIdMap.set(node, importId)
+      }
+      continue
+    }
+
     // import foo from 'foo' --> foo -> __import_foo__.default
     // import { baz } from 'foo' --> baz -> __import_foo__.baz
     // import * as ok from 'foo' --> ok -> __import_foo__
@@ -220,50 +262,37 @@ async function ssrTransformScript(
           node.declaration.type === 'ClassDeclaration'
         ) {
           // export function foo() {}
-          defineExport(node.end, node.declaration.id!.name)
+          defineExport(node.declaration.id!.name)
         } else {
           // export const foo = 1, bar = 2
           for (const declaration of node.declaration.declarations) {
             const names = extractNames(declaration.id as any)
             for (const name of names) {
-              defineExport(node.end, name)
+              defineExport(name)
             }
           }
         }
         s.remove(node.start, (node.declaration as Node).start)
       } else {
-        s.remove(node.start, node.end)
         if (node.source) {
           // export { foo, bar } from './foo'
-          const importId = defineImport(
-            node.start,
-            node as RollupAstNode<ExportNamedDeclaration & { source: Literal }>,
-            {
-              importedNames: node.specifiers.map(
-                (s) => getIdentifierNameOrLiteralValue(s.local) as string,
-              ),
-            },
-          )
+          const importId = reExportImportIdMap.get(node)!
           for (const spec of node.specifiers) {
             const exportedAs = getIdentifierNameOrLiteralValue(
               spec.exported,
             ) as string
 
             if (spec.local.type === 'Identifier') {
-              defineExport(
-                node.end,
-                exportedAs,
-                `${importId}.${spec.local.name}`,
-              )
+              defineExport(exportedAs, `${importId}.${spec.local.name}`)
             } else {
               defineExport(
-                node.end,
                 exportedAs,
                 `${importId}[${JSON.stringify(spec.local.value as string)}]`,
               )
             }
           }
         } else {
+          s.remove(node.start, node.end)
           // export { foo, bar }
           for (const spec of node.specifiers) {
             // spec.local can be Literal only when it has "from 'something'"
@@ -273,7 +302,7 @@ async function ssrTransformScript(
               spec.exported,
             ) as string
 
-            defineExport(node.end, exportedAs, binding || local)
+            defineExport(exportedAs, binding || local)
           }
         }
       }
@@ -292,37 +321,50 @@ async function ssrTransformScript(
         // export default class A {}
         const { name } = node.declaration.id
         s.remove(node.start, node.start + 15 /* 'export default '.length */)
-        s.append(
-          `\nObject.defineProperty(${ssrModuleExportsKey}, "default", ` +
-            `{ enumerable: true, configurable: true, value: ${name} });`,
-        )
+        defineExport('default', name)
       } else {
         // anonymous default exports
+        const name = `__vite_ssr_export_default__`
         s.update(
           node.start,
           node.start + 14 /* 'export default'.length */,
-          `${ssrModuleExportsKey}.default =`,
+          `const ${name} =`,
         )
+        defineExport('default', name)
       }
     }
 
     // export * from './foo'
     if (node.type === 'ExportAllDeclaration') {
-      const importId = defineImport(node.start, node)
+      const importId = reExportImportIdMap.get(node)!
       if (node.exported) {
         const exportedAs = getIdentifierNameOrLiteralValue(
           node.exported,
         ) as string
-        defineExport(node.end, exportedAs, `${importId}`)
+        defineExport(exportedAs, `${importId}`)
       } else {
         s.appendLeft(node.end, `${ssrExportAllKey}(${importId});\n`)
       }
     }
   }
 
-  let injectIdentityFunction = false
   // 3. convert references to import bindings & import.meta references
   walk(ast, {
+    onStatements(statements) {
+      // ensure ";" between statements
+      for (let i = 0; i < statements.length - 1; i++) {
+        const stmt = statements[i]
+        if (
+          code[stmt.end - 1] !== ';' &&
+          stmt.type !== 'FunctionDeclaration' &&
+          stmt.type !== 'ClassDeclaration' &&
+          stmt.type !== 'BlockStatement' &&
+          stmt.type !== 'ImportDeclaration'
+        ) {
+          s.appendLeft(stmt.end, ';')
+        }
+      }
+    },
     onIdentifier(id, parent, parentStack) {
       const grandparent = parentStack[1]
       const binding = idToImportMap.get(id.name)
@@ -352,11 +394,10 @@ async function ssrTransformScript(
         }
       } else if (parent.type === 'CallExpression') {
         s.update(id.start, id.end, binding)
-        // wrap with identity function to avoid method binding `this`
+        // wrap with (0, ...) to avoid method binding `this`
         // https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Operators/Property_accessors#method_binding
-        s.prependRight(id.start, `${ssrIdentityFunction}(`)
+        s.prependRight(id.start, `(0,`)
         s.appendLeft(id.end, `)`)
-        injectIdentityFunction = true
       } else if (
         // don't transform class name identifier
         !(parent.type === 'ClassExpression' && id === parent.id)
@@ -375,25 +416,26 @@ async function ssrTransformScript(
     },
   })
 
-  if (injectIdentityFunction) {
-    s.prependLeft(fileStartIndex, `const ${ssrIdentityFunction} = v => v;\n`)
-  }
-
-  let map = s.generateMap({ hires: 'boundary' })
-  map.sources = [path.basename(url)]
-  // needs to use originalCode instead of code
-  // because code might be already transformed even if map is null
-  map.sourcesContent = [originalCode]
-  if (
-    inMap &&
-    inMap.mappings &&
-    'sources' in inMap &&
-    inMap.sources.length > 0
-  ) {
-    map = combineSourcemaps(url, [
-      map as RawSourceMap,
-      inMap as RawSourceMap,
-    ]) as SourceMap
+  let map: TransformResult['map']
+  if (inMap?.mappings === '') {
+    map = inMap
+  } else {
+    map = s.generateMap({ hires: 'boundary' })
+    map.sources = [path.basename(url)]
+    // needs to use originalCode instead of code
+    // because code might be already transformed even if map is null
+    map.sourcesContent = [originalCode]
+    if (
+      inMap &&
+      inMap.mappings &&
+      'sources' in inMap &&
+      inMap.sources.length > 0
+    ) {
+      map = combineSourcemaps(url, [
+        map as RawSourceMap,
+        inMap as RawSourceMap,
+      ]) as SourceMap
+    }
   }
 
   return {
@@ -420,6 +462,7 @@ interface Visitors {
   ) => void
   onImportMeta: (node: Node) => void
   onDynamicImport: (node: Node) => void
+  onStatements: (statements: Node[]) => void
 }
 
 const isNodeInPatternWeakSet = new WeakSet<_Node>()
@@ -433,7 +476,7 @@ const isNodeInPattern = (node: _Node): node is Property =>
  */
 function walk(
   root: Node,
-  { onIdentifier, onImportMeta, onDynamicImport }: Visitors,
+  { onIdentifier, onImportMeta, onDynamicImport, onStatements }: Visitors,
 ) {
   const parentStack: Node[] = []
   const varKindStack: VariableDeclaration['kind'][] = []
@@ -453,7 +496,7 @@ function walk(
   }
 
   function isInScope(name: string, parents: Node[]) {
-    return parents.some((node) => node && scopeMap.get(node)?.has(name))
+    return parents.some((node) => scopeMap.get(node)?.has(name))
   }
   function handlePattern(p: Pattern, parentScope: _Node) {
     if (p.type === 'Identifier') {
@@ -485,6 +528,17 @@ function walk(
     enter(node: Node, parent: Node | null) {
       if (node.type === 'ImportDeclaration') {
         return this.skip()
+      }
+
+      // for nodes that can contain multiple statements
+      if (
+        node.type === 'Program' ||
+        node.type === 'BlockStatement' ||
+        node.type === 'StaticBlock'
+      ) {
+        onStatements(node.body as Node[])
+      } else if (node.type === 'SwitchCase') {
+        onStatements(node.consequent as Node[])
       }
 
       // track parent stack, skip for "else-if"/"else" branches as acorn nests
@@ -537,11 +591,11 @@ function walk(
             return
           }
           ;(eswalk as any)(p.type === 'AssignmentPattern' ? p.left : p, {
-            enter(child: Node, parent: Node) {
+            enter(child: Node, parent: Node | undefined) {
               // skip params default value of destructure
               if (
                 parent?.type === 'AssignmentPattern' &&
-                parent?.right === child
+                parent.right === child
               ) {
                 return this.skip()
               }
@@ -552,8 +606,8 @@ function walk(
               // assignment of a destructuring variable
               if (
                 (parent?.type === 'TemplateLiteral' &&
-                  parent?.expressions.includes(child)) ||
-                (parent?.type === 'CallExpression' && parent?.callee === child)
+                  parent.expressions.includes(child)) ||
+                (parent?.type === 'CallExpression' && parent.callee === child)
               ) {
                 return
               }
@@ -662,7 +716,12 @@ function isRefIdentifier(id: Identifier, parent: _Node, parentStack: _Node[]) {
     return false
   }
 
-  if (parent.type === 'ExportSpecifier') {
+  // export { id } from "lib"
+  // export * as id from "lib"
+  if (
+    parent.type === 'ExportSpecifier' ||
+    parent.type === 'ExportAllDeclaration'
+  ) {
     return false
   }
 
@@ -675,10 +734,10 @@ function isRefIdentifier(id: Identifier, parent: _Node, parentStack: _Node[]) {
 }
 
 const isStaticProperty = (node: _Node): node is Property =>
-  node && node.type === 'Property' && !node.computed
+  node.type === 'Property' && !node.computed
 
-const isStaticPropertyKey = (node: _Node, parent: _Node) =>
-  isStaticProperty(parent) && parent.key === node
+const isStaticPropertyKey = (node: _Node, parent: _Node | undefined) =>
+  parent && isStaticProperty(parent) && parent.key === node
 
 const functionNodeTypeRE = /Function(?:Expression|Declaration)$|Method$/
 function isFunction(node: _Node): node is FunctionNode {
@@ -701,10 +760,7 @@ function isInDestructuringAssignment(
   parent: _Node,
   parentStack: _Node[],
 ): boolean {
-  if (
-    parent &&
-    (parent.type === 'Property' || parent.type === 'ArrayPattern')
-  ) {
+  if (parent.type === 'Property' || parent.type === 'ArrayPattern') {
     return parentStack.some((i) => i.type === 'AssignmentExpression')
   }
   return false

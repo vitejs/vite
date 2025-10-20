@@ -5,15 +5,18 @@ import type { ServerOptions as HttpsServerOptions } from 'node:https'
 import { createServer as createHttpsServer } from 'node:https'
 import type { Socket } from 'node:net'
 import type { Duplex } from 'node:stream'
+import crypto from 'node:crypto'
 import colors from 'picocolors'
 import type { WebSocket as WebSocketRaw } from 'ws'
 import { WebSocketServer as WebSocketServerRaw_ } from 'ws'
-import type { WebSocket as WebSocketTypes } from 'dep-types/ws'
-import type { ErrorPayload, HotPayload } from 'types/hmrPayload'
-import type { InferCustomEventPayload } from 'types/customEvent'
-import type { HotChannelClient, ResolvedConfig } from '..'
+import { isHostAllowed } from 'host-validation-middleware'
+import type { WebSocket as WebSocketTypes } from '#dep-types/ws'
+import type { ErrorPayload, HotPayload } from '#types/hmrPayload'
+import type { InferCustomEventPayload } from '#types/customEvent'
+import type { ResolvedConfig } from '..'
 import { isObject } from '../utils'
-import type { HotChannel } from './hmr'
+import type { NormalizedHotChannel, NormalizedHotChannelClient } from './hmr'
+import { normalizeHotChannel } from './hmr'
 import type { HttpServer } from '.'
 
 /* In Bun, the `ws` module is overridden to hook into the native code. Using the bundled `js` version
@@ -29,24 +32,12 @@ export const HMR_HEADER = 'vite-hmr'
 export type WebSocketCustomListener<T> = (
   data: T,
   client: WebSocketClient,
+  invoke?: 'send' | `send:${string}`,
 ) => void
 
 export const isWebSocketServer = Symbol('isWebSocketServer')
 
-export interface WebSocketServer extends HotChannel {
-  [isWebSocketServer]: true
-  /**
-   * Listen on port and host
-   */
-  listen(): void
-  /**
-   * Get all connected clients.
-   */
-  clients: Set<WebSocketClient>
-  /**
-   * Disconnect all clients and terminate the server.
-   */
-  close(): Promise<void>
+export interface WebSocketServer extends NormalizedHotChannel {
   /**
    * Handle custom event emitted by `import.meta.hot.send`
    */
@@ -62,9 +53,23 @@ export interface WebSocketServer extends HotChannel {
   off: WebSocketTypes.Server['off'] & {
     (event: string, listener: Function): void
   }
+  /**
+   * Listen on port and host
+   */
+  listen(): void
+  /**
+   * Disconnect all clients and terminate the server.
+   */
+  close(): Promise<void>
+
+  [isWebSocketServer]: true
+  /**
+   * Get all connected clients.
+   */
+  clients: Set<WebSocketClient>
 }
 
-export interface WebSocketClient extends HotChannelClient {
+export interface WebSocketClient extends NormalizedHotChannelClient {
   /**
    * The raw WebSocket instance
    * @advanced
@@ -84,6 +89,29 @@ function noop() {
   // noop
 }
 
+// we only allow websockets to be connected if it has a valid token
+// this is to prevent untrusted origins to connect to the server
+// for example, Cross-site WebSocket hijacking
+//
+// we should check the token before calling wss.handleUpgrade
+// otherwise untrusted ws clients will be included in wss.clients
+//
+// using the query params means the token might be logged out in server or middleware logs
+// but we assume that is not an issue since the token is regenerated for each process
+function hasValidToken(config: ResolvedConfig, url: URL) {
+  const token = url.searchParams.get('token')
+  if (!token) return false
+
+  try {
+    const isValidToken = crypto.timingSafeEqual(
+      Buffer.from(token),
+      Buffer.from(config.webSocketToken),
+    )
+    return isValidToken
+  } catch {} // an error is thrown when the length is incorrect
+  return false
+}
+
 export function createWebSocketServer(
   server: HttpServer | null,
   config: ResolvedConfig,
@@ -100,12 +128,19 @@ export function createWebSocketServer(
       },
       on: noop as any as WebSocketServer['on'],
       off: noop as any as WebSocketServer['off'],
+      setInvokeHandler: noop,
+      handleInvoke: async () => ({
+        error: {
+          name: 'TransportError',
+          message: 'handleInvoke not implemented',
+          stack: new Error().stack,
+        },
+      }),
       listen: noop,
       send: noop,
     }
   }
 
-  let wss: WebSocketServerRaw_
   let wsHttpServer: Server | undefined = undefined
 
   const hmr = isObject(config.server.hmr) && config.server.hmr
@@ -123,6 +158,61 @@ export function createWebSocketServer(
   const clientsMap = new WeakMap<WebSocketRaw, WebSocketClient>()
   const port = hmrPort || 24678
   const host = (hmr && hmr.host) || undefined
+  const allowedHosts =
+    config.server.allowedHosts === true
+      ? config.server.allowedHosts
+      : Object.freeze([...config.server.allowedHosts]) // Freeze the array to allow caching
+
+  const shouldHandle = (req: IncomingMessage) => {
+    const protocol = req.headers['sec-websocket-protocol']!
+    // vite-ping is allowed to connect from anywhere
+    // because it needs to be connected before the client fetches the new `/@vite/client`
+    // this is fine because vite-ping does not receive / send any meaningful data
+    if (protocol === 'vite-ping') return true
+
+    if (
+      allowedHosts !== true &&
+      !isHostAllowed(req.headers.host, allowedHosts)
+    ) {
+      return false
+    }
+
+    if (config.legacy?.skipWebSocketTokenCheck) {
+      return true
+    }
+
+    // If the Origin header is set, this request might be coming from a browser.
+    // Browsers always sets the Origin header for WebSocket connections.
+    if (req.headers.origin) {
+      const parsedUrl = new URL(`http://example.com${req.url!}`)
+      return hasValidToken(config, parsedUrl)
+    }
+
+    // We allow non-browser requests to connect without a token
+    // for backward compat and convenience
+    // This is fine because if you can sent a request without the SOP limitation,
+    // you can also send a normal HTTP request to the server.
+    return true
+  }
+  const handleUpgrade = (
+    req: IncomingMessage,
+    socket: Duplex,
+    head: Buffer,
+    isPing: boolean,
+  ) => {
+    wss.handleUpgrade(req, socket as Socket, head, (ws) => {
+      // vite-ping is allowed to connect from anywhere
+      // we close the connection immediately without connection event
+      // so that the client does not get included in `wss.clients`
+      if (isPing) {
+        ws.close(/* Normal Closure */ 1000)
+        return
+      }
+      wss.emit('connection', ws, req)
+    })
+  }
+  const wss: WebSocketServerRaw_ = new WebSocketServerRaw({ noServer: true })
+  wss.shouldHandle = shouldHandle
 
   if (wsServer) {
     let hmrBase = config.base
@@ -130,17 +220,14 @@ export function createWebSocketServer(
     if (hmrPath) {
       hmrBase = path.posix.join(hmrBase, hmrPath)
     }
-    wss = new WebSocketServerRaw({ noServer: true })
     hmrServerWsListener = (req, socket, head) => {
+      const protocol = req.headers['sec-websocket-protocol']!
+      const parsedUrl = new URL(`http://example.com${req.url!}`)
       if (
-        [HMR_HEADER, 'vite-ping'].includes(
-          req.headers['sec-websocket-protocol']!,
-        ) &&
-        req.url === hmrBase
+        [HMR_HEADER, 'vite-ping'].includes(protocol) &&
+        parsedUrl.pathname === hmrBase
       ) {
-        wss.handleUpgrade(req, socket as Socket, head, (ws) => {
-          wss.emit('connection', ws, req)
-        })
+        handleUpgrade(req, socket as Socket, head, protocol === 'vite-ping')
       }
     }
     wsServer.on('upgrade', hmrServerWsListener)
@@ -166,7 +253,6 @@ export function createWebSocketServer(
     } else {
       wsHttpServer = createHttpServer(route)
     }
-    wss = new WebSocketServerRaw({ noServer: true })
     wsHttpServer.on('upgrade', (req, socket, head) => {
       const protocol = req.headers['sec-websocket-protocol']!
       if (protocol === 'vite-ping' && server && !server.listening) {
@@ -176,14 +262,14 @@ export function createWebSocketServer(
         req.destroy()
         return
       }
-      wss.handleUpgrade(req, socket as Socket, head, (ws) => {
-        wss.emit('connection', ws, req)
-      })
+      handleUpgrade(req, socket as Socket, head, protocol === 'vite-ping')
     })
-    wsHttpServer.on('error', (e: Error & { code: string }) => {
+    wsHttpServer.on('error', (e: Error & { code: string; port: number }) => {
       if (e.code === 'EADDRINUSE') {
         config.logger.error(
-          colors.red(`WebSocket server error: Port is already in use`),
+          colors.red(
+            `WebSocket server error: Port ${e.port} is already in use`,
+          ),
           { error: e },
         )
       } else {
@@ -196,9 +282,6 @@ export function createWebSocketServer(
   }
 
   wss.on('connection', (socket) => {
-    if (socket.protocol === 'vite-ping') {
-      return
-    }
     socket.on('message', (raw) => {
       if (!customListeners.size) return
       let parsed: any
@@ -209,7 +292,9 @@ export function createWebSocketServer(
       const listeners = customListeners.get(parsed.event)
       if (!listeners?.size) return
       const client = getSocketClient(socket)
-      listeners.forEach((listener) => listener(parsed.data, client))
+      listeners.forEach((listener) =>
+        listener(parsed.data, client, parsed.invoke),
+      )
     })
     socket.on('error', (err) => {
       config.logger.error(`${colors.red(`ws error:`)}\n${err.stack}`, {
@@ -224,10 +309,10 @@ export function createWebSocketServer(
     }
   })
 
-  wss.on('error', (e: Error & { code: string }) => {
+  wss.on('error', (e: Error & { code: string; port: number }) => {
     if (e.code === 'EADDRINUSE') {
       config.logger.error(
-        colors.red(`WebSocket server error: Port is already in use`),
+        colors.red(`WebSocket server error: Port ${e.port} is already in use`),
         { error: e },
       )
     } else {
@@ -243,7 +328,7 @@ export function createWebSocketServer(
   function getSocketClient(socket: WebSocketRaw) {
     if (!clientsMap.has(socket)) {
       clientsMap.set(socket, {
-        send: (...args) => {
+        send: (...args: any[]) => {
           let payload: HotPayload
           if (typeof args[0] === 'string') {
             payload = {
@@ -268,86 +353,92 @@ export function createWebSocketServer(
   // connected client.
   let bufferedError: ErrorPayload | null = null
 
-  return {
-    [isWebSocketServer]: true,
-    listen: () => {
-      wsHttpServer?.listen(port, host)
-    },
-    on: ((event: string, fn: () => void) => {
-      if (wsServerEvents.includes(event)) wss.on(event, fn)
-      else {
+  const normalizedHotChannel = normalizeHotChannel(
+    {
+      send(payload) {
+        if (payload.type === 'error' && !wss.clients.size) {
+          bufferedError = payload
+          return
+        }
+
+        const stringified = JSON.stringify(payload)
+        wss.clients.forEach((client) => {
+          // readyState 1 means the connection is open
+          if (client.readyState === 1) {
+            client.send(stringified)
+          }
+        })
+      },
+      on(event: string, fn: any) {
         if (!customListeners.has(event)) {
           customListeners.set(event, new Set())
         }
         customListeners.get(event)!.add(fn)
-      }
-    }) as WebSocketServer['on'],
-    off: ((event: string, fn: () => void) => {
-      if (wsServerEvents.includes(event)) {
-        wss.off(event, fn)
-      } else {
+      },
+      off(event: string, fn: any) {
         customListeners.get(event)?.delete(fn)
-      }
-    }) as WebSocketServer['off'],
-
-    get clients() {
-      return new Set(Array.from(wss.clients).map(getSocketClient))
-    },
-
-    send(...args: any[]) {
-      let payload: HotPayload
-      if (typeof args[0] === 'string') {
-        payload = {
-          type: 'custom',
-          event: args[0],
-          data: args[1],
+      },
+      listen() {
+        wsHttpServer?.listen(port, host)
+      },
+      close() {
+        // should remove listener if hmr.server is set
+        // otherwise the old listener swallows all WebSocket connections
+        if (hmrServerWsListener && wsServer) {
+          wsServer.off('upgrade', hmrServerWsListener)
         }
-      } else {
-        payload = args[0]
-      }
+        return new Promise<void>((resolve, reject) => {
+          wss.clients.forEach((client) => {
+            client.terminate()
+          })
+          wss.close((err) => {
+            if (err) {
+              reject(err)
+            } else {
+              if (wsHttpServer) {
+                wsHttpServer.close((err) => {
+                  if (err) {
+                    reject(err)
+                  } else {
+                    resolve()
+                  }
+                })
+              } else {
+                resolve()
+              }
+            }
+          })
+        })
+      },
+    },
+    config.server.hmr !== false,
+    // Don't normalize client as we already handles the send, and to keep `.socket`
+    false,
+  )
+  return {
+    ...normalizedHotChannel,
 
-      if (payload.type === 'error' && !wss.clients.size) {
-        bufferedError = payload
+    on: ((event: string, fn: any) => {
+      if (wsServerEvents.includes(event)) {
+        wss.on(event, fn)
         return
       }
-
-      const stringified = JSON.stringify(payload)
-      wss.clients.forEach((client) => {
-        // readyState 1 means the connection is open
-        if (client.readyState === 1) {
-          client.send(stringified)
-        }
-      })
+      normalizedHotChannel.on(event, fn)
+    }) as WebSocketServer['on'],
+    off: ((event: string, fn: any) => {
+      if (wsServerEvents.includes(event)) {
+        wss.off(event, fn)
+        return
+      }
+      normalizedHotChannel.off(event, fn)
+    }) as WebSocketServer['off'],
+    async close() {
+      await normalizedHotChannel.close()
     },
 
-    close() {
-      // should remove listener if hmr.server is set
-      // otherwise the old listener swallows all WebSocket connections
-      if (hmrServerWsListener && wsServer) {
-        wsServer.off('upgrade', hmrServerWsListener)
-      }
-      return new Promise((resolve, reject) => {
-        wss.clients.forEach((client) => {
-          client.terminate()
-        })
-        wss.close((err) => {
-          if (err) {
-            reject(err)
-          } else {
-            if (wsHttpServer) {
-              wsHttpServer.close((err) => {
-                if (err) {
-                  reject(err)
-                } else {
-                  resolve()
-                }
-              })
-            } else {
-              resolve()
-            }
-          }
-        })
-      })
+    [isWebSocketServer]: true,
+    get clients() {
+      return new Set(Array.from(wss.clients).map(getSocketClient))
     },
   }
 }

@@ -12,6 +12,7 @@ import {
   ensureWatchedFile,
   injectQuery,
   isObject,
+  monotonicDateNow,
   prettifyUrl,
   removeImportQuery,
   removeTimestampQuery,
@@ -20,7 +21,7 @@ import {
 } from '../utils'
 import { ssrTransform } from '../ssr/ssrTransform'
 import { checkPublicFile } from '../publicDir'
-import { cleanUrl, unwrapId } from '../../shared/utils'
+import { cleanUrl, slash, unwrapId } from '../../shared/utils'
 import {
   applySourcemapIgnoreList,
   extractSourcemapFromFile,
@@ -32,6 +33,7 @@ import type { DevEnvironment } from './environment'
 
 export const ERR_LOAD_URL = 'ERR_LOAD_URL'
 export const ERR_LOAD_PUBLIC_URL = 'ERR_LOAD_PUBLIC_URL'
+export const ERR_DENIED_ID = 'ERR_DENIED_ID'
 
 const debugLoad = createDebugger('vite:load')
 const debugTransform = createDebugger('vite:transform')
@@ -51,10 +53,13 @@ export interface TransformOptions {
    * @deprecated inferred from environment
    */
   ssr?: boolean
+}
+
+export interface TransformOptionsInternal {
   /**
    * @internal
    */
-  html?: boolean
+  allowId?: (id: string) => boolean
 }
 
 // TODO: This function could be moved to the DevEnvironment class.
@@ -67,18 +72,10 @@ export interface TransformOptions {
 export function transformRequest(
   environment: DevEnvironment,
   url: string,
-  options: TransformOptions = {},
+  options: TransformOptionsInternal = {},
 ): Promise<TransformResult | null> {
-  // Backward compatibility when only `ssr` is passed
-  if (!options?.ssr) {
-    // Backward compatibility
-    options = { ...options, ssr: environment.config.consumer === 'server' }
-  }
-
   if (environment._closing && environment.config.dev.recoverable)
     throwClosedServerError()
-
-  const cacheKey = `${options.html ? 'html:' : ''}${url}`
 
   // This module may get invalidated while we are processing it. For example
   // when a full page reload is needed after the re-processing of pre-bundled
@@ -100,27 +97,27 @@ export function transformRequest(
   //
   // We save the timestamp when we start processing and compare it with the
   // last time this module is invalidated
-  const timestamp = Date.now()
+  const timestamp = monotonicDateNow()
 
-  const pending = environment._pendingRequests.get(cacheKey)
+  url = removeTimestampQuery(url)
+
+  const pending = environment._pendingRequests.get(url)
   if (pending) {
-    return environment.moduleGraph
-      .getModuleByUrl(removeTimestampQuery(url))
-      .then((module) => {
-        if (!module || pending.timestamp > module.lastInvalidationTimestamp) {
-          // The pending request is still valid, we can safely reuse its result
-          return pending.request
-        } else {
-          // Request 1 for module A     (pending.timestamp)
-          // Invalidate module A        (module.lastInvalidationTimestamp)
-          // Request 2 for module A     (timestamp)
+    return environment.moduleGraph.getModuleByUrl(url).then((module) => {
+      if (!module || pending.timestamp > module.lastInvalidationTimestamp) {
+        // The pending request is still valid, we can safely reuse its result
+        return pending.request
+      } else {
+        // Request 1 for module A     (pending.timestamp)
+        // Invalidate module A        (module.lastInvalidationTimestamp)
+        // Request 2 for module A     (timestamp)
 
-          // First request has been invalidated, abort it to clear the cache,
-          // then perform a new doTransform.
-          pending.abort()
-          return transformRequest(environment, url, options)
-        }
-      })
+        // First request has been invalidated, abort it to clear the cache,
+        // then perform a new doTransform.
+        pending.abort()
+        return transformRequest(environment, url, options)
+      }
+    })
   }
 
   const request = doTransform(environment, url, options, timestamp)
@@ -129,13 +126,13 @@ export function transformRequest(
   let cleared = false
   const clearCache = () => {
     if (!cleared) {
-      environment._pendingRequests.delete(cacheKey)
+      environment._pendingRequests.delete(url)
       cleared = true
     }
   }
 
   // Cache the request and clear it once processing is done
-  environment._pendingRequests.set(cacheKey, {
+  environment._pendingRequests.set(url, {
     request,
     timestamp,
     abort: clearCache,
@@ -147,11 +144,9 @@ export function transformRequest(
 async function doTransform(
   environment: DevEnvironment,
   url: string,
-  options: TransformOptions,
+  options: TransformOptionsInternal,
   timestamp: number,
 ) {
-  url = removeTimestampQuery(url)
-
   const { pluginContainer } = environment
 
   let module = await environment.moduleGraph.getModuleByUrl(url)
@@ -215,16 +210,18 @@ async function getCachedTransformResult(
 
   // tries to handle soft invalidation of the module if available,
   // returns a boolean true is successful, or false if no handling is needed
-  const softInvalidatedTransformResult =
-    module &&
-    (await handleModuleSoftInvalidation(environment, module, timestamp))
+  const softInvalidatedTransformResult = await handleModuleSoftInvalidation(
+    environment,
+    module,
+    timestamp,
+  )
   if (softInvalidatedTransformResult) {
     debugCache?.(`[memory-hmr] ${prettyUrl}`)
     return softInvalidatedTransformResult
   }
 
   // check if we have a fresh cache
-  const cached = module?.transformResult
+  const cached = module.transformResult
   if (cached) {
     debugCache?.(`[memory] ${prettyUrl}`)
     return cached
@@ -235,7 +232,7 @@ async function loadAndTransform(
   environment: DevEnvironment,
   id: string,
   url: string,
-  options: TransformOptions,
+  options: TransformOptionsInternal,
   timestamp: number,
   mod?: EnvironmentModuleNode,
   resolved?: PartialResolvedId,
@@ -245,6 +242,13 @@ async function loadAndTransform(
     debugLoad || debugTransform ? prettifyUrl(url, config.root) : ''
 
   const moduleGraph = environment.moduleGraph
+
+  if (options.allowId && !options.allowId(id)) {
+    const err: any = new Error(`Denied ID ${id}`)
+    err.code = ERR_DENIED_ID
+    err.id = id
+    throw err
+  }
 
   let code: string | null = null
   let map: SourceDescription['map'] = null
@@ -256,11 +260,6 @@ async function loadAndTransform(
   if (loadResult == null) {
     const file = cleanUrl(id)
 
-    // if this is an html request and there is no load result, skip ahead to
-    // SPA fallback.
-    if (options.html && !id.endsWith('.html')) {
-      return null
-    }
     // try fallback loading it from fs as string
     // if the file is a binary, there should be a plugin that already loaded it
     // as string
@@ -268,16 +267,13 @@ async function loadAndTransform(
     // like /service-worker.js or /api/users
     if (
       environment.config.consumer === 'server' ||
-      isFileLoadingAllowed(environment.getTopLevelConfig(), file)
+      isFileLoadingAllowed(environment.getTopLevelConfig(), slash(file))
     ) {
       try {
         code = await fsp.readFile(file, 'utf-8')
         debugLoad?.(`${timeFrom(loadStart)} [fs] ${prettyUrl}`)
       } catch (e) {
-        if (e.code !== 'ENOENT') {
-          if (e.code === 'EISDIR') {
-            e.message = `${e.message} ${file}`
-          }
+        if (e.code !== 'ENOENT' && e.code !== 'EISDIR') {
           throw e
         }
       }
@@ -345,10 +341,7 @@ async function loadAndTransform(
     inMap: map,
   })
   const originalCode = code
-  if (
-    transformResult == null ||
-    (isObject(transformResult) && transformResult.code == null)
-  ) {
+  if (transformResult.code === originalCode) {
     // no transform applied, keep code as-is
     debugTransform?.(
       timeFrom(transformStart) + colors.dim(` [skipped] ${prettyUrl}`),
@@ -413,7 +406,7 @@ async function loadAndTransform(
     ? await ssrTransform(code, normalizedMap, url, originalCode, {
         json: {
           stringify:
-            topLevelConfig.json?.stringify === true &&
+            topLevelConfig.json.stringify === true &&
             topLevelConfig.json.namedExports !== true,
         },
       })

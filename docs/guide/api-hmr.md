@@ -10,7 +10,10 @@ Vite exposes its manual HMR API via the special `import.meta.hot` object:
 
 ```ts twoslash
 import type { ModuleNamespace } from 'vite/types/hot.d.ts'
-import type { InferCustomEventPayload } from 'vite/types/customEvent.d.ts'
+import type {
+  CustomEventName,
+  InferCustomEventPayload,
+} from 'vite/types/customEvent.d.ts'
 
 // ---cut---
 interface ImportMeta {
@@ -32,15 +35,18 @@ interface ViteHotContext {
   prune(cb: (data: any) => void): void
   invalidate(message?: string): void
 
-  on<T extends string>(
+  on<T extends CustomEventName>(
     event: T,
     cb: (payload: InferCustomEventPayload<T>) => void,
   ): void
-  off<T extends string>(
+  off<T extends CustomEventName>(
     event: T,
     cb: (payload: InferCustomEventPayload<T>) => void,
   ): void
-  send<T extends string>(event: T, data?: InferCustomEventPayload<T>): void
+  send<T extends CustomEventName>(
+    event: T,
+    data?: InferCustomEventPayload<T>,
+  ): void
 }
 ```
 
@@ -56,10 +62,14 @@ if (import.meta.hot) {
 
 ## IntelliSense for TypeScript
 
-Vite provides type definitions for `import.meta.hot` in [`vite/client.d.ts`](https://github.com/vitejs/vite/blob/main/packages/vite/client.d.ts). You can create an `env.d.ts` in the `src` directory so TypeScript picks up the type definitions:
+Vite provides type definitions for `import.meta.hot` in [`vite/client.d.ts`](https://github.com/vitejs/vite/blob/main/packages/vite/client.d.ts). You can add "vite/client" in the `tsconfig.json` so TypeScript picks up the type definitions:
 
-```ts
-/// <reference types="vite/client" />
+```json [tsconfig.json]
+{
+  "compilerOptions": {
+    "types": ["vite/client"]
+  }
+}
 ```
 
 ## `hot.accept(cb)`
