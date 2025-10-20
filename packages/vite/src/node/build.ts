@@ -365,7 +365,7 @@ export interface ResolvedBuildOptions
   modulePreload: false | ResolvedModulePreloadOptions
 }
 
-export const buildEnvironmentOptionsDefaults = Object.freeze({
+const _buildEnvironmentOptionsDefaults = Object.freeze({
   target: 'baseline-widely-available',
   /** @deprecated */
   polyfillModulePreload: true,
@@ -401,7 +401,10 @@ export const buildEnvironmentOptionsDefaults = Object.freeze({
   chunkSizeWarningLimit: 500,
   watch: null,
   // createEnvironment
-})
+} satisfies BuildEnvironmentOptions)
+export const buildEnvironmentOptionsDefaults: Readonly<
+  Partial<BuildEnvironmentOptions>
+> = _buildEnvironmentOptionsDefaults
 
 export function resolveBuildEnvironmentOptions(
   raw: BuildEnvironmentOptions,
@@ -425,7 +428,7 @@ export function resolveBuildEnvironmentOptions(
 
   const merged = mergeWithDefaults(
     {
-      ...buildEnvironmentOptionsDefaults,
+      ..._buildEnvironmentOptionsDefaults,
       cssCodeSplit: !raw.lib,
       minify: consumer === 'server' ? false : 'oxc',
       rollupOptions: {},
@@ -1621,8 +1624,10 @@ export function toOutputFilePathWithoutRuntime(
   }
 }
 
-export const toOutputFilePathInCss = toOutputFilePathWithoutRuntime
-export const toOutputFilePathInHtml = toOutputFilePathWithoutRuntime
+export const toOutputFilePathInCss: typeof toOutputFilePathWithoutRuntime =
+  toOutputFilePathWithoutRuntime
+export const toOutputFilePathInHtml: typeof toOutputFilePathWithoutRuntime =
+  toOutputFilePathWithoutRuntime
 
 export class BuildEnvironment extends BaseEnvironment {
   mode = 'build' as const
@@ -1683,18 +1688,20 @@ export interface BuilderOptions {
   buildApp?: (builder: ViteBuilder) => Promise<void>
 }
 
-export const builderOptionsDefaults = Object.freeze({
+const _builderOptionsDefaults = Object.freeze({
   sharedConfigBuild: false,
   sharedPlugins: false,
   // buildApp
-})
+} satisfies BuilderOptions)
+export const builderOptionsDefaults: Readonly<Partial<BuilderOptions>> =
+  _builderOptionsDefaults
 
 export function resolveBuilderOptions(
   options: BuilderOptions | undefined,
 ): ResolvedBuilderOptions | undefined {
   if (!options) return
   return mergeWithDefaults(
-    { ...builderOptionsDefaults, buildApp: async () => {} },
+    { ..._builderOptionsDefaults, buildApp: async () => {} },
     options,
   )
 }

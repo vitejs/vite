@@ -188,7 +188,7 @@ class EnvironmentPluginContainer<Env extends Environment = Environment> {
   getSortedPlugins: PluginHookUtils['getSortedPlugins']
 
   moduleGraph: EnvironmentModuleGraph | undefined
-  watchFiles = new Set<string>()
+  watchFiles: Set<string> = new Set()
   minimalContext: MinimalPluginContext<Env>
 
   private _started = false
@@ -201,7 +201,7 @@ class EnvironmentPluginContainer<Env extends Environment = Environment> {
   constructor(
     public environment: Env,
     public plugins: readonly Plugin[],
-    public watcher?: FSWatcher,
+    public watcher?: FSWatcher | undefined,
     autoStart = true,
   ) {
     this._started = !autoStart
@@ -652,7 +652,10 @@ class EnvironmentPluginContainer<Env extends Environment = Environment> {
   }
 }
 
-export const basePluginContextMeta = {
+export const basePluginContextMeta: {
+  viteVersion: string
+  rollupVersion: string
+} = {
   viteVersion,
   rollupVersion,
   rolldownVersion,
@@ -743,7 +746,7 @@ class PluginContext
   _resolveSkips?: Set<Plugin>
   _resolveSkipCalls?: readonly SkipInformation[]
 
-  override get pluginName() {
+  override get pluginName(): string {
     return this._plugin.name
   }
 
@@ -754,7 +757,7 @@ class PluginContext
     super(_container.minimalContext.meta, _container.environment)
   }
 
-  fs = fsModule
+  fs: RollupFsModule = fsModule
 
   parse(code: string, opts: any): Program {
     return rolldownParseAst(code, opts)
@@ -769,7 +772,7 @@ class PluginContext
       isEntry?: boolean
       skipSelf?: boolean
     },
-  ) {
+  ): Promise<ResolvedId | null> {
     let skipCalls: readonly SkipInformation[] | undefined
     if (options?.skipSelf === false) {
       skipCalls = this._resolveSkipCalls
@@ -834,7 +837,7 @@ class PluginContext
     return this._container.getModuleInfo(id)
   }
 
-  _updateModuleInfo(id: string, { meta }: { meta?: object | null }) {
+  _updateModuleInfo(id: string, { meta }: { meta?: object | null }): void {
     if (meta) {
       const moduleInfo = this.getModuleInfo(id)
       if (moduleInfo) {

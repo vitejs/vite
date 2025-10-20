@@ -47,7 +47,10 @@ function hasPackageJSON(root: string) {
 /**
  * Search up for the nearest `package.json`
  */
-export function searchForPackageRoot(current: string, root = current): string {
+export function searchForPackageRoot(
+  current: string,
+  root: string = current,
+): string {
   if (hasPackageJSON(current)) return current
 
   const dir = dirname(current)
@@ -62,7 +65,7 @@ export function searchForPackageRoot(current: string, root = current): string {
  */
 export function searchForWorkspaceRoot(
   current: string,
-  root = searchForPackageRoot(current),
+  root: string = searchForPackageRoot(current),
 ): string {
   if (hasRootFile(current)) return current
   if (hasWorkspacePackageJSON(current)) return current
