@@ -1,3 +1,28 @@
+## <small>[7.1.19](https://github.com/vitejs/rolldown-vite/compare/v7.1.18...v7.1.19) (2025-10-20)</small>
+### Features
+
+* update rolldown ([#456](https://github.com/vitejs/rolldown-vite/issues/456)) ([f9d348e](https://github.com/vitejs/rolldown-vite/commit/f9d348e78a0e148a2e31c4e6d014a145abcba932))
+
+### Bug Fixes
+
+* **module-runner:** resolve `resolvedSources` correctly ([#20959](https://github.com/vitejs/rolldown-vite/issues/20959)) ([c4f6039](https://github.com/vitejs/rolldown-vite/commit/c4f6039436657db50c610aa17eaf821dbd4ad57d))
+* resolve default export consistently ([#444](https://github.com/vitejs/rolldown-vite/issues/444)) ([46e89c0](https://github.com/vitejs/rolldown-vite/commit/46e89c0932c1ff9abb4fce590f83d9da58e62afc))
+
+### Miscellaneous Chores
+
+* **deps:** update rolldown-related dependencies ([#20965](https://github.com/vitejs/rolldown-vite/issues/20965)) ([6ad5424](https://github.com/vitejs/rolldown-vite/commit/6ad5424f0bcabd8943c34d341cf9ed2e64b3d53c))
+* fix type ([8455590](https://github.com/vitejs/rolldown-vite/commit/84555907d137d81b2e125c535cea74de344dfb68))
+* fix types ([db4d46d](https://github.com/vitejs/rolldown-vite/commit/db4d46d91cc87e06db9f9d7661150834d28cb5aa))
+
+### Code Refactoring
+
+* avoid deprecated rolldown options (e.g. top level `define`) ([61f4caa](https://github.com/vitejs/rolldown-vite/commit/61f4caa9ea8ce3c2f38d21dca14e5b68f3bdd8ef))
+* revert [#322](https://github.com/vitejs/rolldown-vite/issues/322) ([b8970d0](https://github.com/vitejs/rolldown-vite/commit/b8970d0a0dd33df2cb63080d709c768b1187b9c4))
+
+### Build System
+
+* use isolated declarations ([#20928](https://github.com/vitejs/rolldown-vite/issues/20928)) ([dad7643](https://github.com/vitejs/rolldown-vite/commit/dad76436e96e1bac2baa805a0a3c1861e88e050c))
+
 ## <small>[7.1.18](https://github.com/vitejs/rolldown-vite/compare/v7.1.17...v7.1.18) (2025-10-20)</small>
 ### Bug Fixes
 
