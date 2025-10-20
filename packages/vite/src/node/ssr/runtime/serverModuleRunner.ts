@@ -1,5 +1,5 @@
 import { existsSync, readFileSync } from 'node:fs'
-import type { HotPayload } from 'types/hmrPayload'
+import type { HotPayload } from '#types/hmrPayload'
 import { ModuleRunner, createNodeImportMeta } from 'vite/module-runner'
 import type {
   ModuleEvaluator,
