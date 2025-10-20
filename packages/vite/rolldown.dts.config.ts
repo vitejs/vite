@@ -94,7 +94,7 @@ const identifierReplacements: Record<string, Record<string, string>> = {
     FetchResult$1: 'moduleRunner_FetchResult',
   },
   rolldown: {
-    Plugin$2: 'Rolldown.Plugin',
+    Plugin$1: 'Rolldown.Plugin',
     TransformResult$1: 'Rolldown.TransformResult',
   },
   'rolldown/experimental': {
