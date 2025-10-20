@@ -40,6 +40,7 @@ import {
   isDataUrl,
   isDefined,
   isExternalUrl,
+  isFilePathESM,
   isInNodeModules,
   isJSRequest,
   joinUrlSegments,
@@ -440,6 +441,12 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
         imports.length,
       )
 
+      let _isNodeModeResult: boolean | undefined
+      const isNodeMode = () => {
+        _isNodeModeResult ??= isFilePathESM(importer, config.packageCache)
+        return _isNodeModeResult
+      }
+
       await Promise.all(
         imports.map(async (importSpecifier, index) => {
           const {
@@ -605,6 +612,7 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
                     url,
                     index,
                     importer,
+                    isNodeMode(),
                     config,
                   )
                   rewriteDone = true
@@ -623,6 +631,7 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
                   url,
                   index,
                   importer,
+                  isNodeMode(),
                   config,
                 )
                 rewriteDone = true
@@ -906,16 +915,16 @@ export function createParseErrorInfo(
   }
 }
 
-const interopHelper = (m: any) =>
-  m?.__esModule
-    ? m
-    : {
+const interopHelper = (m: any, n: boolean) =>
+  n || !m?.__esModule
+    ? {
         ...((typeof m === 'object' && !Array.isArray(m)) ||
         typeof m === 'function'
           ? m
           : {}),
         default: m,
       }
+    : m
 const interopHelperStr = interopHelper.toString().replaceAll('\n', '')
 
 export function interopNamedImports(
@@ -924,6 +933,7 @@ export function interopNamedImports(
   rewrittenUrl: string,
   importIndex: number,
   importer: string,
+  isNodeMode: boolean,
   config: ResolvedConfig,
 ): void {
   const source = str.original
@@ -940,7 +950,7 @@ export function interopNamedImports(
     str.overwrite(
       expStart,
       expEnd,
-      `import('${rewrittenUrl}').then(m => (${interopHelperStr})(m.default))` +
+      `import('${rewrittenUrl}').then(m => (${interopHelperStr})(m.default, 1))` +
         getLineBreaks(exp),
       { contentOnly: true },
     )
@@ -952,6 +962,7 @@ export function interopNamedImports(
       rawUrl,
       importIndex,
       importer,
+      isNodeMode,
       config,
     )
     if (rewritten) {
@@ -998,6 +1009,7 @@ export function transformCjsImport(
   rawUrl: string,
   importIndex: number,
   importer: string,
+  isNodeMode: boolean,
   config: ResolvedConfig,
 ): string | undefined {
   const node = (parseAst(importExp) as Program).body[0]
@@ -1076,12 +1088,16 @@ export function transformCjsImport(
     importNames.forEach(({ importedName, localName }) => {
       if (importedName === '*') {
         lines.push(
-          `const ${localName} = (${interopHelperStr})(${cjsModuleName})`,
+          `const ${localName} = (${interopHelperStr})(${cjsModuleName}, ${+isNodeMode})`,
         )
       } else if (importedName === 'default') {
-        lines.push(
-          `const ${localName} = ${cjsModuleName}.__esModule ? ${cjsModuleName}.default : ${cjsModuleName}`,
-        )
+        if (isNodeMode) {
+          lines.push(`const ${localName} = ${cjsModuleName}`)
+        } else {
+          lines.push(
+            `const ${localName} = !${cjsModuleName}.__esModule ? ${cjsModuleName} : ${cjsModuleName}.default`,
+          )
+        }
       } else {
         lines.push(`const ${localName} = ${cjsModuleName}["${importedName}"]`)
       }

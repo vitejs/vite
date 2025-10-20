@@ -549,7 +549,14 @@ export function resolvePlugin(
           // always return here even if res doesn't exist since /@fs/ is explicit
           // if the file doesn't exist it should be a 404.
           debug?.(`[@fs] ${colors.cyan(id)} -> ${colors.dim(res)}`)
-          return ensureVersionQuery(res, id, options, depsOptimizer)
+          return {
+            id: ensureVersionQuery(res, id, options, depsOptimizer),
+            packageJsonPath: findNearestPackagePath(
+              res,
+              options.packageCache,
+              isBuild,
+            ),
+          }
         }
 
         // URL
@@ -562,7 +569,14 @@ export function resolvePlugin(
           const fsPath = path.resolve(root, id.slice(1))
           if ((res = tryFsResolve(fsPath, options))) {
             debug?.(`[url] ${colors.cyan(id)} -> ${colors.dim(res)}`)
-            return ensureVersionQuery(res, id, options, depsOptimizer)
+            return {
+              id: ensureVersionQuery(res, id, options, depsOptimizer),
+              packageJsonPath: findNearestPackagePath(
+                res,
+                options.packageCache,
+                isBuild,
+              ),
+            }
           }
         }
 
@@ -615,6 +629,7 @@ export function resolvePlugin(
                 return {
                   id: res,
                   moduleSideEffects: resPkg.hasSideEffects(res),
+                  packageJsonPath: path.join(resPkg.dir, 'package.json'),
                 }
               }
             }
@@ -634,7 +649,14 @@ export function resolvePlugin(
           const fsPath = path.resolve(basedir, id)
           if ((res = tryFsResolve(fsPath, options))) {
             debug?.(`[drive-relative] ${colors.cyan(id)} -> ${colors.dim(res)}`)
-            return ensureVersionQuery(res, id, options, depsOptimizer)
+            return {
+              id: ensureVersionQuery(res, id, options, depsOptimizer),
+              packageJsonPath: findNearestPackagePath(
+                res,
+                options.packageCache,
+                isBuild,
+              ),
+            }
           }
         }
 
@@ -644,7 +666,14 @@ export function resolvePlugin(
           (res = tryFsResolve(id, options))
         ) {
           debug?.(`[fs] ${colors.cyan(id)} -> ${colors.dim(res)}`)
-          return ensureVersionQuery(res, id, options, depsOptimizer)
+          return {
+            id: ensureVersionQuery(res, id, options, depsOptimizer),
+            packageJsonPath: findNearestPackagePath(
+              res,
+              options.packageCache,
+              isBuild,
+            ),
+          }
         }
 
         // external
@@ -1138,6 +1167,11 @@ export function tryNodeResolve(
     return processResult({
       id: resolved,
       moduleSideEffects: pkg.hasSideEffects(resolved),
+      packageJsonPath: findNearestPackagePath(
+        resolved,
+        options.packageCache,
+        isBuild,
+      ),
     })
   }
 
@@ -1484,6 +1518,7 @@ function tryResolveBrowserMapping(
             result = {
               id: res,
               moduleSideEffects: resPkg.hasSideEffects(res),
+              packageJsonPath: path.join(resPkg.dir, 'package.json'),
             }
           }
         }
@@ -1615,4 +1650,14 @@ function getRealPath(resolved: string, preserveSymlinks?: boolean): string {
 function isDirectory(path: string): boolean {
   const stat = tryStatSync(path)
   return stat?.isDirectory() ?? false
+}
+
+function findNearestPackagePath(
+  file: string,
+  packageCache: PackageCache | undefined,
+  isBuild: boolean,
+) {
+  if (!isBuild) return
+  const pkgData = findNearestPackageData(file, packageCache)
+  return pkgData ? path.join(pkgData.dir, 'package.json') : null
 }
