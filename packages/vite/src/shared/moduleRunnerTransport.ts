@@ -1,5 +1,5 @@
 import { nanoid } from 'nanoid/non-secure'
-import type { CustomPayload, HotPayload } from 'types/hmrPayload'
+import type { CustomPayload, HotPayload } from '#types/hmrPayload'
 import { promiseWithResolvers } from './utils'
 import type {
   InvokeMethods,

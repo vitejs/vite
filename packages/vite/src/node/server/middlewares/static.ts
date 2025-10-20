@@ -2,8 +2,8 @@ import path from 'node:path'
 import type { OutgoingHttpHeaders, ServerResponse } from 'node:http'
 import type { Options } from 'sirv'
 import sirv from 'sirv'
-import type { Connect } from 'dep-types/connect'
 import escapeHtml from 'escape-html'
+import type { Connect } from '#dep-types/connect'
 import type { ViteDevServer } from '../../server'
 import type { ResolvedConfig } from '../../config'
 import { FS_PREFIX } from '../../constants'
@@ -297,7 +297,12 @@ export function isFileLoadingAllowed(
 
   if (!fs.strict) return true
 
-  if (config.fsDenyGlob(filePath)) return false
+  // NOTE: `fs.readFile('/foo.png/')` tries to load `'/foo.png'`
+  // so we should check the path without trailing slash
+  const filePathWithoutTrailingSlash = filePath.endsWith('/')
+    ? filePath.slice(0, -1)
+    : filePath
+  if (config.fsDenyGlob(filePathWithoutTrailingSlash)) return false
 
   if (config.safeModulePaths.has(filePath)) return true
 

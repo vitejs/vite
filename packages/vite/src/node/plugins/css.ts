@@ -21,21 +21,21 @@ import type * as PostCSS from 'postcss'
 import type Sass from 'sass'
 import type Stylus from 'stylus'
 import type Less from 'less'
-import type { LightningCSSOptions } from 'types/internal/lightningcssOptions'
 import type { RawSourceMap } from '@jridgewell/remapping'
 import { WorkerWithFallback } from 'artichokie'
 import { globSync } from 'tinyglobby'
 import type {
-  LessPreprocessorBaseOptions,
-  SassModernPreprocessBaseOptions,
-  StylusPreprocessorBaseOptions,
-} from 'types/internal/cssPreprocessorOptions'
-import type {
   TransformAttributeResult as LightningCssTransformAttributeResult,
   TransformResult as LightningCssTransformResult,
 } from 'lightningcss'
-import type { CustomPluginOptionsVite } from 'types/metadata.mjs'
-import type { EsbuildTransformOptions } from 'types/internal/esbuildOptions'
+import type { LightningCSSOptions } from '#types/internal/lightningcssOptions'
+import type {
+  LessPreprocessorBaseOptions,
+  SassModernPreprocessBaseOptions,
+  StylusPreprocessorBaseOptions,
+} from '#types/internal/cssPreprocessorOptions'
+import type { EsbuildTransformOptions } from '#types/internal/esbuildOptions'
+import type { CustomPluginOptionsVite } from '#types/metadata'
 import { getCodeWithSourcemap, injectSourcesContent } from '../server/sourcemap'
 import type { EnvironmentModuleNode } from '../server/moduleGraph'
 import {

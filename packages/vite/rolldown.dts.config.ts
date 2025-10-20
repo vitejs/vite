@@ -1,5 +1,4 @@
 import { readFileSync } from 'node:fs'
-import { fileURLToPath } from 'node:url'
 import { builtinModules } from 'node:module'
 import { defineConfig } from 'rolldown'
 import type {
@@ -20,7 +19,6 @@ import type {
   Statement,
 } from '@oxc-project/types'
 
-const depTypesDir = new URL('./src/types/', import.meta.url)
 const pkg = JSON.parse(
   readFileSync(new URL('./package.json', import.meta.url)).toString(),
 )
@@ -28,6 +26,7 @@ const pkg = JSON.parse(
 const external = [
   /^node:*/,
   /^rolldown\//,
+  /^#types\//,
   ...Object.keys(pkg.dependencies),
   ...Object.keys(pkg.peerDependencies),
 ]
@@ -40,6 +39,7 @@ export default defineConfig({
   },
   output: {
     dir: './dist/node',
+    chunkFileNames: 'chunks/[name].d.ts',
     format: 'esm',
   },
   treeshake: {
@@ -112,17 +112,17 @@ const identifierReplacements: Record<string, Record<string, string>> = {
   'node:url': {
     URL$1: 'url_URL',
   },
-  '../../types/hmrPayload.js': {
+  '#types/hmrPayload': {
     CustomPayload$1: 'hmrPayload_CustomPayload',
     HotPayload$1: 'hmrPayload_HotPayload',
   },
-  '../../types/customEvent.js': {
+  '#types/customEvent': {
     InferCustomEventPayload$1: 'hmrPayload_InferCustomEventPayload',
   },
-  '../../types/internal/esbuildOptions.js': {
+  '#types/internal/esbuildOptions': {
     EsbuildTransformOptions$1: 'esbuildOptions_EsbuildTransformOptions',
   },
-  '../../types/internal/lightningcssOptions.js': {
+  '#types/internal/lightningcssOptions': {
     LightningCSSOptions$1: 'lightningcssOptions_LightningCSSOptions',
   },
 }
@@ -137,41 +137,14 @@ const ignoreConfusingTypeNames = [
 
 /**
  * Patch the types files before passing to dts plugin
- * 1. Resolve `dep-types/*` and `types/*` imports
- * 2. Validate unallowed dependency imports
- * 3. Replace confusing type names
- * 4. Strip leftover internal types
- * 5. Clean unnecessary comments
+ * 1. Validate unallowed dependency imports
+ * 2. Replace confusing type names
+ * 3. Strip leftover internal types
+ * 4. Clean unnecessary comments
  */
 function patchTypes(): Plugin {
   return {
     name: 'patch-types',
-    resolveId: {
-      order: 'pre',
-      filter: {
-        id: /^(dep-)?types\//,
-      },
-      handler(id) {
-        // Dep types should be bundled
-        if (id.startsWith('dep-types/')) {
-          const fileUrl = new URL(
-            `./${id.slice('dep-types/'.length)}.d.ts`,
-            depTypesDir,
-          )
-          return fileURLToPath(fileUrl)
-        }
-        // Ambient types are unbundled and externalized
-        if (id.startsWith('types/')) {
-          const filename = id.replace(/(\.m?js)?$/, (_m, ext) =>
-            ext ? ext : '.js',
-          )
-          return {
-            id: '../../' + filename,
-            external: true,
-          }
-        }
-      },
-    },
     generateBundle: {
       order: 'post',
       handler(_opts, bundle) {
@@ -182,8 +155,8 @@ function patchTypes(): Plugin {
           const importBindings = getAllImportBindings(ast)
           if (
             chunk.fileName.startsWith('module-runner') ||
-            // index and moduleRunner have a common chunk "moduleRunnerTransport-"
-            chunk.fileName.startsWith('moduleRunnerTransport-') ||
+            // index and moduleRunner have a common chunk
+            chunk.fileName.startsWith('chunks/') ||
             chunk.fileName.startsWith('types.d-')
           ) {
             validateRunnerChunk.call(this, chunk, importBindings)
@@ -254,8 +227,9 @@ function validateRunnerChunk(
     if (
       !id.startsWith('./') &&
       !id.startsWith('../') &&
-      // index and moduleRunner have a common chunk "moduleRunnerTransport"
-      !id.startsWith('moduleRunnerTransport-') &&
+      !id.startsWith('#') &&
+      // index and moduleRunner have a common chunk
+      !id.startsWith('chunks/') &&
       !id.startsWith('types.d')
     ) {
       this.warn(
@@ -279,11 +253,12 @@ function validateChunkImports(
     if (
       !id.startsWith('./') &&
       !id.startsWith('../') &&
+      !id.startsWith('#') &&
       !id.startsWith('node:') &&
       !id.startsWith('types.d') &&
       !id.startsWith('rolldown-vite/') &&
-      // index and moduleRunner have a common chunk "moduleRunnerTransport"
-      !id.startsWith('moduleRunnerTransport.d') &&
+      // index and moduleRunner have a common chunk
+      !id.startsWith('chunks/') &&
       !deps.includes(id) &&
       !deps.some((name) => id.startsWith(name + '/'))
     ) {
