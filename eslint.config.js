@@ -39,6 +39,7 @@ export default defineConfig(
       parserOptions: {
         sourceType: 'module',
         ecmaVersion: 2022,
+        isolatedDeclarations: true,
         project: shouldTypeCheck
           ? [
               './packages/*/tsconfig.json',
@@ -117,7 +118,6 @@ export default defineConfig(
       'n/prefer-node-protocol': 'error',
 
       '@typescript-eslint/ban-ts-comment': 'error',
-      '@typescript-eslint/consistent-generic-constructors': 'off',
       '@typescript-eslint/no-unsafe-function-type': 'off',
       '@typescript-eslint/explicit-module-boundary-types': [
         'error',
