@@ -520,7 +520,7 @@ function resolveSubpathImports(
   if (importsPath?.[0] === '.') {
     importsPath = path.relative(basedir, path.join(pkgData.dir, importsPath))
 
-    if (importsPath[0] !== '.') {
+    if (!relativePrefixRE.test(importsPath)) {
       importsPath = `./${importsPath}`
     }
   }
