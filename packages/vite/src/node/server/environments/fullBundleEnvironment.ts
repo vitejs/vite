@@ -1,4 +1,5 @@
 import { randomUUID } from 'node:crypto'
+import { setTimeout } from 'node:timers/promises'
 import {
   type BindingClientHmrUpdate,
   type DevEngine,
@@ -148,6 +149,9 @@ export class FullBundleDevEnvironment extends DevEnvironment {
       onOutput: (result) => {
         if (result instanceof Error) {
           // TODO: handle error
+          this.logger.error(colors.red(`✘ Build error: ${result.message}`), {
+            error: result,
+          })
           return
         }
 
@@ -185,7 +189,7 @@ export class FullBundleDevEnvironment extends DevEnvironment {
   private async waitForInitialBuildFinish(): Promise<void> {
     await this.devEngine.ensureCurrentBuildFinish()
     while (this.memoryFiles.size === 0) {
-      await new Promise((resolve) => setTimeout(resolve, 10))
+      await setTimeout(10)
       await this.devEngine.ensureCurrentBuildFinish()
     }
   }
@@ -323,7 +327,7 @@ export class FullBundleDevEnvironment extends DevEnvironment {
         colors.green(`trigger page reload `) + colors.dim(shortFile) + reason,
         { clear: !invalidateInformation, timestamp: true },
       )
-      this.devEngine.ensureCurrentBuildFinish().then(() => {
+      this.devEngine.ensureLatestBuildOutput().then(() => {
         this.debouncedFullReload()
       })
       return
@@ -403,12 +407,12 @@ class Clients {
 }
 
 function debounce(time: number, cb: () => void) {
-  let timer: ReturnType<typeof setTimeout> | null
+  let timer: ReturnType<typeof globalThis.setTimeout> | null
   return () => {
     if (timer) {
-      clearTimeout(timer)
+      globalThis.clearTimeout(timer)
       timer = null
     }
-    timer = setTimeout(cb, time)
+    timer = globalThis.setTimeout(cb, time)
   }
 }
