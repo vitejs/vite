@@ -275,18 +275,16 @@ export class ModuleRunner {
 
     const fetchedModule = // fast return for established externalized pattern
       (
-        url.startsWith('data:')
+        url.startsWith('data:') || this.isBuiltin?.(url)
           ? { externalize: url, type: 'builtin' }
-          : this.isBuiltin?.(url)
-            ? { externalize: url, type: 'builtin' }
-            : await this.transport.invoke('fetchModule', [
-                url,
-                importer,
-                {
-                  cached: isCached,
-                  startOffset: this.evaluator.startOffset,
-                },
-              ])
+          : await this.transport.invoke('fetchModule', [
+              url,
+              importer,
+              {
+                cached: isCached,
+                startOffset: this.evaluator.startOffset,
+              },
+            ])
       ) as ResolvedResult
 
     if ('cache' in fetchedModule) {
