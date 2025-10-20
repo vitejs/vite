@@ -117,12 +117,6 @@ export interface ModuleRunnerOptions {
    * Custom module cache. If not provided, creates a separate module cache for each ModuleRunner instance.
    */
   evaluatedModules?: EvaluatedModules
-  /**
-   * List of builtin modules to check on the client side.
-   * If not provided, will be automatically fetched from the server via transport.invoke('getBuiltins').
-   * This option is primarily for backward compatibility or when you need to override server configuration.
-   */
-  builtins?: (string | RegExp)[]
 }
 
 export interface ImportMetaEnv {

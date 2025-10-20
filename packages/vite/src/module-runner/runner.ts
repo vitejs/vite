@@ -61,9 +61,6 @@ export class ModuleRunner {
   ) {
     this.evaluatedModules = options.evaluatedModules ?? new EvaluatedModules()
     this.transport = normalizeModuleRunnerTransport(options.transport)
-    if (options.builtins) {
-      this.isBuiltin = createIsBuiltin(options.builtins)
-    }
     if (options.hmr !== false) {
       const optionsHmr = options.hmr ?? true
       const resolvedHmrLogger: HMRLogger =
