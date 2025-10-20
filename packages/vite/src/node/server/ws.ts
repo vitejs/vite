@@ -9,14 +9,14 @@ import crypto from 'node:crypto'
 import colors from 'picocolors'
 import type { WebSocket as WebSocketRaw } from 'ws'
 import { WebSocketServer as WebSocketServerRaw_ } from 'ws'
-import type { WebSocket as WebSocketTypes } from 'dep-types/ws'
+import { isHostAllowed } from 'host-validation-middleware'
+import type { WebSocket as WebSocketTypes } from '#dep-types/ws'
 import type {
   ErrorPayload,
   FullReloadPayload,
   HotPayload,
-} from 'types/hmrPayload'
-import type { InferCustomEventPayload } from 'types/customEvent'
-import { isHostAllowed } from 'host-validation-middleware'
+} from '#types/hmrPayload'
+import type { InferCustomEventPayload } from '#types/customEvent'
 import type { ResolvedConfig } from '..'
 import { isObject } from '../utils'
 import type { NormalizedHotChannel, NormalizedHotChannelClient } from './hmr'

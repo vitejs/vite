@@ -11,10 +11,10 @@ import {
 import type { RawSourceMap } from '@jridgewell/remapping'
 import type { InternalModuleFormat, RollupError, SourceMap } from 'rolldown'
 import { rolldown } from 'rolldown'
-import type { FSWatcher } from 'dep-types/chokidar'
 import { TSConfckParseError } from 'tsconfck'
 import colors from 'picocolors'
 import { exactRegex, prefixRegex } from '@rolldown/pluginutils'
+import type { FSWatcher } from '#dep-types/chokidar'
 import {
   combineSourcemaps,
   createFilter,

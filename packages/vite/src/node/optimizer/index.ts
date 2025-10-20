@@ -4,7 +4,6 @@ import path from 'node:path'
 import { promisify } from 'node:util'
 import { performance } from 'node:perf_hooks'
 import colors from 'picocolors'
-import type { DepsOptimizerEsbuildOptions } from 'types/internal/esbuildOptions'
 import { init, parse } from 'es-module-lexer'
 import { isDynamicPattern } from 'tinyglobby'
 import {
@@ -13,6 +12,7 @@ import {
   type OutputOptions as RolldownOutputOptions,
   rolldown,
 } from 'rolldown'
+import type { DepsOptimizerEsbuildOptions } from '#types/internal/esbuildOptions'
 import type { ResolvedConfig } from '../config'
 import {
   arraify,

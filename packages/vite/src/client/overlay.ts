@@ -1,4 +1,4 @@
-import type { ErrorPayload } from 'types/hmrPayload'
+import type { ErrorPayload } from '#types/hmrPayload'
 
 // injected by the hmr plugin when served
 declare const __BASE__: string

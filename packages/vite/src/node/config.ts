@@ -7,7 +7,6 @@ import { performance } from 'node:perf_hooks'
 import { createRequire } from 'node:module'
 import crypto from 'node:crypto'
 import colors from 'picocolors'
-import type { Alias, AliasOptions } from 'dep-types/alias'
 import picomatch from 'picomatch'
 import {
   type NormalizedOutputOptions,
@@ -16,6 +15,7 @@ import {
   type RolldownOptions,
   rolldown,
 } from 'rolldown'
+import type { Alias, AliasOptions } from '#dep-types/alias'
 import type { AnymatchFn } from '../types/anymatch'
 import { withTrailingSlash } from '../shared/utils'
 import {

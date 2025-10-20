@@ -1,4 +1,4 @@
-import type { HotPayload } from 'types/hmrPayload'
+import type { HotPayload } from '#types/hmrPayload'
 import { slash, unwrapId } from '../shared/utils'
 import { ERR_OUTDATED_OPTIMIZED_DEP } from '../shared/constants'
 import { createHMRHandler } from '../shared/hmrHandler'

@@ -1,16 +1,16 @@
 import path from 'node:path'
 import colors from 'picocolors'
+import type { RawSourceMap } from '@jridgewell/remapping'
+import type { InternalModuleFormat, SourceMap } from 'rolldown'
+import type { TSConfckParseResult } from 'tsconfck'
+import { TSConfckCache, TSConfckParseError, parse } from 'tsconfck'
 import type {
   EsbuildLoader,
   EsbuildMessage,
   EsbuildTransformOptions,
   EsbuildTransformResult as RawEsbuildTransformResult,
-} from 'types/internal/esbuildOptions'
-import type { RawSourceMap } from '@jridgewell/remapping'
-import type { InternalModuleFormat, SourceMap } from 'rolldown'
-import type { TSConfckParseResult } from 'tsconfck'
-import { TSConfckCache, TSConfckParseError, parse } from 'tsconfck'
-import type { FSWatcher } from 'dep-types/chokidar'
+} from '#types/internal/esbuildOptions'
+import type { FSWatcher } from '#dep-types/chokidar'
 import {
   combineSourcemaps,
   createDebugger,

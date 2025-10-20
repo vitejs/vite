@@ -18,7 +18,7 @@ export default defineConfig({
       validateAllDepsForRolldownViteIsIncluded()
 
       const files = new fdir()
-        .glob('!**/*.d.ts')
+        .glob('!**/{*.d.ts,vendor/rolldown-vite/**/*}')
         .withRelativePaths()
         .crawl(path.join(pluginLegacyForRolldownVitePackagePath, 'dist'))
         .sync()

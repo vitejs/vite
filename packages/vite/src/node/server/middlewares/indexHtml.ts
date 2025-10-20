@@ -3,8 +3,8 @@ import fsp from 'node:fs/promises'
 import path from 'node:path'
 import MagicString from 'magic-string'
 import type { SourceMapInput } from 'rolldown'
-import type { Connect } from 'dep-types/connect'
 import type { DefaultTreeAdapterMap, Token } from 'parse5'
+import type { Connect } from '#dep-types/connect'
 import type { IndexHtmlTransformHook } from '../../plugins/html'
 import {
   addToHTMLProxyCache,

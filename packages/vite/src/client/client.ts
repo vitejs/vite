@@ -1,5 +1,5 @@
-import type { ErrorPayload, HotPayload } from 'types/hmrPayload'
-import type { ViteHotContext } from 'types/hot'
+import type { ErrorPayload, HotPayload } from '#types/hmrPayload'
+import type { ViteHotContext } from '#types/hot'
 import { HMRClient, HMRContext } from '../shared/hmr'
 import {
   createWebSocketModuleRunnerTransport,

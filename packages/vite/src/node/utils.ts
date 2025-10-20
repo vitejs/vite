@@ -11,17 +11,17 @@ import { promises as dns } from 'node:dns'
 import { performance } from 'node:perf_hooks'
 import type { AddressInfo, Server } from 'node:net'
 import fsp from 'node:fs/promises'
-import type { FSWatcher } from 'dep-types/chokidar'
 import remapping from '@jridgewell/remapping'
 import type { DecodedSourceMap, RawSourceMap } from '@jridgewell/remapping'
 import colors from 'picocolors'
 import debug from 'debug'
-import type { Alias, AliasOptions } from 'dep-types/alias'
 import type MagicString from 'magic-string'
 import type { Equal } from '@type-challenges/utils'
 
 import type { TransformResult } from 'rolldown'
 import { createFilter as _createFilter } from '@rollup/pluginutils'
+import type { Alias, AliasOptions } from '#dep-types/alias'
+import type { FSWatcher } from '#dep-types/chokidar'
 import {
   cleanUrl,
   isWindows,

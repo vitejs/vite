@@ -23,10 +23,10 @@ import type {
   WatcherOptions,
 } from 'rolldown'
 import { loadFallbackPlugin as nativeLoadFallbackPlugin } from 'rolldown/experimental'
-import type { RollupCommonJSOptions } from 'dep-types/commonjs'
-import type { RollupDynamicImportVarsOptions } from 'dep-types/dynamicImportVars'
-import type { EsbuildTarget } from 'types/internal/esbuildOptions'
-import type { ChunkMetadata } from 'types/metadata.mjs'
+import type { EsbuildTarget } from '#types/internal/esbuildOptions'
+import type { RollupCommonJSOptions } from '#dep-types/commonjs'
+import type { RollupDynamicImportVarsOptions } from '#dep-types/dynamicImportVars'
+import type { ChunkMetadata } from '#types/metadata'
 import {
   DEFAULT_ASSETS_INLINE_LIMIT,
   ESBUILD_BASELINE_WIDELY_AVAILABLE_TARGET,
