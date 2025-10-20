@@ -1,3 +1,22 @@
+## <small>[7.1.18](https://github.com/vitejs/rolldown-vite/compare/v7.1.17...v7.1.18) (2025-10-20)</small>
+### Bug Fixes
+
+* **dev:** trim trailing slash before `server.fs.deny` check ([#20968](https://github.com/vitejs/rolldown-vite/issues/20968)) ([f479cc5](https://github.com/vitejs/rolldown-vite/commit/f479cc57c425ed41ceb434fecebd63931b1ed4ed))
+
+### Miscellaneous Chores
+
+* **deps:** update all non-major dependencies ([#20966](https://github.com/vitejs/rolldown-vite/issues/20966)) ([6fb41a2](https://github.com/vitejs/rolldown-vite/commit/6fb41a260bda443685e719ea4765d3faca3db944))
+
+### Code Refactoring
+
+* revert [#313](https://github.com/vitejs/rolldown-vite/issues/313) ([5305fc7](https://github.com/vitejs/rolldown-vite/commit/5305fc7839830a4dce0ab471260637b481199043))
+* use subpath imports for types module reference ([#20921](https://github.com/vitejs/rolldown-vite/issues/20921)) ([d0094af](https://github.com/vitejs/rolldown-vite/commit/d0094af639d9ebbb51d4e00910b74f23eb8fe131))
+
+### Build System
+
+* remove cjs reference in files field ([#20945](https://github.com/vitejs/rolldown-vite/issues/20945)) ([ef411ce](https://github.com/vitejs/rolldown-vite/commit/ef411cee2696af3ba791879fdae9aad165f178b2))
+* remove hash from built filenames ([#20946](https://github.com/vitejs/rolldown-vite/issues/20946)) ([a817307](https://github.com/vitejs/rolldown-vite/commit/a81730754d655d1371ce0f4354af1c84e12f9f2d))
+
 ## <small>[7.1.17](https://github.com/vitejs/rolldown-vite/compare/v7.1.16...v7.1.17) (2025-10-14)</small>
 ### Features
 

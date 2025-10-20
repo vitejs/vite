@@ -25,6 +25,6 @@
     "globals": "^16.4.0",
     "typescript": "~5.9.3",
     "typescript-eslint": "^8.46.1",
-    "vite": "npm:rolldown-vite@^7.1.17"
+    "vite": "npm:rolldown-vite@^7.1.18"
   }
 }
