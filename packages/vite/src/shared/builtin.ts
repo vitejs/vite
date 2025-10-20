@@ -2,12 +2,10 @@ export function createIsBuiltin(
   builtins: (string | RegExp)[],
 ): (id: string) => boolean {
   const plainBuiltinsSet = new Set(
-    builtins.filter(
-      (builtin): builtin is string => typeof builtin === 'string',
-    ),
+    builtins.filter((builtin) => typeof builtin === 'string'),
   )
   const regexBuiltins = builtins.filter(
-    (builtin): builtin is RegExp => builtin instanceof RegExp,
+    (builtin) => typeof builtin !== 'string',
   )
 
   return (id: string) =>
