@@ -6,6 +6,7 @@ import {
   type NormalizedModuleRunnerTransport,
   normalizeModuleRunnerTransport,
 } from '../shared/moduleRunnerTransport'
+import { createIsBuiltin } from '../shared/builtin'
 import type { EvaluatedModuleNode } from './evaluatedModules'
 import { EvaluatedModules } from './evaluatedModules'
 import type {
@@ -15,12 +16,7 @@ import type {
   ResolvedResult,
   SSRImportMetadata,
 } from './types'
-import {
-  createIsBuiltin,
-  posixDirname,
-  posixPathToFileHref,
-  posixResolve,
-} from './utils'
+import { posixDirname, posixPathToFileHref, posixResolve } from './utils'
 import {
   ssrDynamicImportKey,
   ssrExportAllKey,
