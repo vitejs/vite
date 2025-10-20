@@ -30,8 +30,10 @@ export default defineConfig({
     minify: false,
     rollupOptions: {
       external: ['vue', 'slash3', 'slash5'],
-      inject: {
-        require: path.resolve(__dirname, 'src/require-polyfill.js'),
+      transform: {
+        inject: {
+          require: path.resolve(__dirname, 'src/require-polyfill.js'),
+        },
       },
     },
     commonjsOptions: {

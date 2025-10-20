@@ -1160,9 +1160,10 @@ function resolveDepOptimizationOptions(
     setResolveOptions('conditionNames', optimizeDeps.esbuildOptions.conditions)
     if (
       optimizeDeps.esbuildOptions.keepNames !== undefined &&
-      optimizeDeps.rollupOptions.keepNames === undefined
+      optimizeDeps.rollupOptions.keepNames === undefined &&
+      optimizeDeps.rollupOptions.output.keepNames === undefined
     ) {
-      optimizeDeps.rollupOptions.keepNames =
+      optimizeDeps.rollupOptions.output.keepNames =
         optimizeDeps.esbuildOptions.keepNames
     }
 
@@ -2259,13 +2260,15 @@ async function bundleConfigFile(
     resolve: {
       mainFields: ['main'],
     },
-    define: {
-      __dirname: dirnameVarName,
-      __filename: filenameVarName,
-      'import.meta.url': importMetaUrlVarName,
-      'import.meta.dirname': dirnameVarName,
-      'import.meta.filename': filenameVarName,
-      'import.meta.main': 'false',
+    transform: {
+      define: {
+        __dirname: dirnameVarName,
+        __filename: filenameVarName,
+        'import.meta.url': importMetaUrlVarName,
+        'import.meta.dirname': dirnameVarName,
+        'import.meta.filename': filenameVarName,
+        'import.meta.main': 'false',
+      },
     },
     // disable treeshake to include files that is not sideeffectful to `moduleIds`
     treeshake: false,
