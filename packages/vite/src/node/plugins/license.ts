@@ -24,24 +24,26 @@ export interface LicenseEntry {
   text?: string
 }
 
+export interface LicenseOptions {
+  /**
+   * The output file name of the license file relative to the output directory.
+   * Specify a path that ends with `.json` to output the raw JSON metadata.
+   *
+   * @default '.vite/license.md'
+   */
+  fileName: string
+}
+
+const licenseConfigDefaults = Object.freeze({
+  fileName: '.vite/license.md',
+} satisfies LicenseOptions)
+
 // https://github.com/npm/npm-packlist/blob/53b2a4f42b7fef0f63e8f26a3ea4692e23a58fed/lib/index.js#L284-L286
 const licenseFiles = [/^license/i, /^licence/i, /^copying/i]
 
-export interface ManifestChunk {
-  src?: string
-  file: string
-  css?: string[]
-  assets?: string[]
-  isEntry?: boolean
-  name?: string
-  isDynamicEntry?: boolean
-  imports?: string[]
-  dynamicImports?: string[]
-}
-
 export function licensePlugin(): Plugin {
   return {
-    name: 'vite:manifest',
+    name: 'vite:license',
 
     async generateBundle(_, bundle) {
       const licenseOption = this.environment.config.build.license
@@ -85,14 +87,15 @@ export function licensePlugin(): Plugin {
       }
 
       const licenseEntries = Object.values(sortObjectKeys(licenses))
+      const licenseOutputFileName =
+        typeof licenseOption === 'object'
+          ? licenseOption.fileName
+          : licenseConfigDefaults.fileName
 
       // Emit as a JSON file
-      if (
-        typeof licenseOption === 'string' &&
-        licenseOption.endsWith('.json')
-      ) {
+      if (licenseOutputFileName.endsWith('.json')) {
         this.emitFile({
-          fileName: licenseOption,
+          fileName: licenseOutputFileName,
           type: 'asset',
           source: JSON.stringify(licenseEntries, null, 2),
         })
@@ -102,10 +105,7 @@ export function licensePlugin(): Plugin {
       // Emit a license file as markdown
       const markdown = licenseEntryToMarkdown(licenseEntries)
       this.emitFile({
-        fileName:
-          typeof licenseOption === 'string'
-            ? licenseOption
-            : '.vite/license.md',
+        fileName: licenseOutputFileName,
         type: 'asset',
         source: markdown,
       })
@@ -125,7 +125,7 @@ The app does not bundle any dependencies with licenses.
   let text = `\
 # Licenses
 
-The app bundles dependencies which contains the following licenses:
+The app bundles dependencies which contain the following licenses:
 `
   for (const license of licenses) {
     const nameAndVersionText = `${license.name} - ${license.version}`

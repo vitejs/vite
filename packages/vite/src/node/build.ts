@@ -71,7 +71,7 @@ import { getHookHandler } from './plugins'
 import { BaseEnvironment } from './baseEnvironment'
 import type { MinimalPluginContextWithoutEnvironment, Plugin } from './plugin'
 import type { RollupPluginHooks } from './typeUtils'
-import { licensePlugin } from './plugins/license'
+import { type LicenseOptions, licensePlugin } from './plugins/license'
 import {
   BasicMinimalPluginContext,
   basePluginContextMeta,
@@ -212,10 +212,10 @@ export interface BuildEnvironmentOptions {
   copyPublicDir?: boolean
   /**
    * Whether to emit a `.vite/license.md` file that includes all bundled dependencies'
-   * licenses. Specify a path that ends with `.json` to generate a raw JSON entry.
+   * licenses. Pass an object to customize the output file name.
    * @default false
    */
-  license?: boolean | string
+  license?: boolean | LicenseOptions
   /**
    * Whether to emit a .vite/manifest.json in the output dir to map hash-less filenames
    * to their hashed versions. Useful when you want to generate your own HTML

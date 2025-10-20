@@ -26,7 +26,7 @@ exports[`json 1`] = `
 exports[`markdown 1`] = `
 "# Licenses
 
-The app bundles dependencies which contains the following licenses:
+The app bundles dependencies which contain the following licenses:
 
 ## @vitejs/test-dep-licence-cc0 - 0.0.0 (CC0-1.0)
 

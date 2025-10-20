@@ -25,7 +25,9 @@ test('json', async () => {
     logLevel: 'silent',
     build: {
       write: false,
-      license: '.vite/license.json',
+      license: {
+        fileName: '.vite/license.json',
+      },
     },
   })) as RollupOutput
   const licenseAsset = result.output.find(
