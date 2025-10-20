@@ -655,6 +655,7 @@ class EnvironmentPluginContainer<Env extends Environment = Environment> {
 export const basePluginContextMeta: {
   viteVersion: string
   rollupVersion: string
+  rolldownVersion: string
 } = {
   viteVersion,
   rollupVersion,
