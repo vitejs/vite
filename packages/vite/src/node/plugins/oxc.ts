@@ -54,13 +54,42 @@ export interface OxcOptions
   jsxRefreshExclude?: string | RegExp | ReadonlyArray<string | RegExp>
 }
 
+function getRollupJsxPresets(preset: 'react' | 'react-jsx'): OxcJsxOptions {
+  switch (preset) {
+    case 'react':
+      return {
+        runtime: 'classic',
+        pragma: 'React.createElement',
+        pragmaFrag: 'React.Fragment',
+        importSource: 'react',
+      }
+    case 'react-jsx':
+      return {
+        runtime: 'automatic',
+        pragma: 'React.createElement',
+        importSource: 'react',
+      }
+  }
+  preset satisfies never
+}
+
 export function setOxcTransformOptionsFromTsconfigOptions(
-  oxcOptions: OxcTransformOptions,
+  oxcOptions: Omit<OxcTransformOptions, 'jsx'> & {
+    jsx?:
+      | OxcTransformOptions['jsx']
+      | 'react'
+      | 'react-jsx'
+      | 'preserve-react'
+      | false
+  },
   tsCompilerOptions: Readonly<TSCompilerOptions> | undefined = {},
   warnings: string[],
 ): void {
   // when both the normal options and tsconfig is set,
   // we want to prioritize the normal options
+  if (oxcOptions.jsx === 'preserve-react') {
+    oxcOptions.jsx = 'preserve'
+  }
   if (
     tsCompilerOptions.jsx === 'preserve' &&
     (oxcOptions.jsx === undefined ||
@@ -69,8 +98,11 @@ export function setOxcTransformOptionsFromTsconfigOptions(
   ) {
     oxcOptions.jsx = 'preserve'
   }
-  if (oxcOptions.jsx !== 'preserve') {
-    const jsxOptions: OxcJsxOptions = { ...oxcOptions.jsx }
+  if (oxcOptions.jsx !== 'preserve' && oxcOptions.jsx !== false) {
+    const jsxOptions: OxcJsxOptions =
+      typeof oxcOptions.jsx === 'string'
+        ? getRollupJsxPresets(oxcOptions.jsx)
+        : { ...oxcOptions.jsx }
     const typescriptOptions = { ...oxcOptions.typescript }
 
     if (tsCompilerOptions.jsxFactory) {
