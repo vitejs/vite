@@ -174,6 +174,10 @@ export const normalizeHotChannel = (
     (data: any, client: NormalizedHotChannelClient) => void | Promise<void>,
     (data: any, client: HotChannelClient) => void | Promise<void>
   >()
+  const normalizedClients = new WeakMap<
+    HotChannelClient,
+    NormalizedHotChannelClient
+  >()
 
   let invokeHandlers: InvokeMethods | undefined
   let listenerForInvokeHandler:
@@ -226,22 +230,24 @@ export const normalizeHotChannel = (
         data: any,
         client: HotChannelClient,
       ) => {
-        const normalizedClient: NormalizedHotChannelClient = {
-          send: (...args) => {
-            let payload: HotPayload
-            if (typeof args[0] === 'string') {
-              payload = {
-                type: 'custom',
-                event: args[0],
-                data: args[1],
+        if (!normalizedClients.has(client)) {
+          normalizedClients.set(client, {
+            send: (...args) => {
+              let payload: HotPayload
+              if (typeof args[0] === 'string') {
+                payload = {
+                  type: 'custom',
+                  event: args[0],
+                  data: args[1],
+                }
+              } else {
+                payload = args[0]
               }
-            } else {
-              payload = args[0]
-            }
-            client.send(payload)
-          },
+              client.send(payload)
+            },
+          })
         }
-        fn(data, normalizedClient)
+        fn(data, normalizedClients.get(client)!)
       }
       normalizedListenerMap.set(fn, listenerWithNormalizedClient)
 
