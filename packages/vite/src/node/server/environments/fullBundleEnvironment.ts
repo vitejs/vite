@@ -14,8 +14,7 @@ import { DevEnvironment, type DevEnvironmentContext } from '../environment'
 import type { ResolvedConfig } from '../../config'
 import type { ViteDevServer } from '../../server'
 import { createDebugger } from '../../utils'
-import { getShortName } from '../hmr'
-import type { WebSocketClient } from '../ws'
+import { type NormalizedHotChannelClient, getShortName } from '../hmr'
 import { prepareError } from '../middlewares/error'
 
 const debug = createDebugger('vite:full-bundle-mode')
@@ -64,7 +63,7 @@ export class FullBundleDevEnvironment extends DevEnvironment {
   private devEngine!: DevEngine
   private clients = new Clients()
   private invalidateCalledModules = new Map<
-    /* clientId */ string,
+    NormalizedHotChannelClient,
     Set<string>
   >()
   private debouncedFullReload = debounce(20, () => {
@@ -88,7 +87,7 @@ export class FullBundleDevEnvironment extends DevEnvironment {
     super(name, config, { ...context, disableDepsOptimizer: true })
   }
 
-  override async listen(server: ViteDevServer): Promise<void> {
+  override async listen(_server: ViteDevServer): Promise<void> {
     this.hot.listen()
 
     debug?.('INITIAL: setup bundle options')
@@ -106,17 +105,17 @@ export class FullBundleDevEnvironment extends DevEnvironment {
         : rollupOptions.output
     )!
 
-    // TODO: use hot API
-    server.ws.on(
-      'vite:module-loaded',
-      (payload: { modules: string[] }, client: WebSocketClient) => {
-        const clientId = this.clients.setupIfNeeded(client, () => {
-          this.devEngine.removeClient(clientId)
-        })
-        this.devEngine.registerModules(clientId, payload.modules)
-      },
-    )
-    server.ws.on('vite:invalidate', (payload, client: WebSocketClient) => {
+    this.hot.on('vite:module-loaded', (payload, client) => {
+      const clientId = this.clients.setupIfNeeded(client)
+      this.devEngine.registerModules(clientId, payload.modules)
+    })
+    this.hot.on('vite:client-disconnect', (_payload, client) => {
+      const clientId = this.clients.delete(client)
+      if (clientId) {
+        this.devEngine.removeClient(clientId)
+      }
+    })
+    this.hot.on('vite:invalidate', (payload, client) => {
       this.handleInvalidateModule(client, payload)
     })
 
@@ -141,9 +140,11 @@ export class FullBundleDevEnvironment extends DevEnvironment {
           return
         }
         for (const { clientId, update } of updates) {
-          this.invalidateCalledModules.get(clientId)?.clear()
-          const client = this.clients.get(clientId)!
-          this.handleHmrOutput(client, changedFiles, update)
+          const client = this.clients.get(clientId)
+          if (client) {
+            this.invalidateCalledModules.get(client)?.clear()
+            this.handleHmrOutput(client, changedFiles, update)
+          }
         }
       },
       onOutput: (result) => {
@@ -203,7 +204,7 @@ export class FullBundleDevEnvironment extends DevEnvironment {
   }
 
   private handleInvalidateModule(
-    client: WebSocketClient,
+    client: NormalizedHotChannelClient,
     m: {
       path: string
       message?: string
@@ -211,10 +212,7 @@ export class FullBundleDevEnvironment extends DevEnvironment {
     },
   ): void {
     ;(async () => {
-      const clientId = this.clients.getId(client)
-      if (!clientId) return
-
-      const invalidateCalledModules = this.invalidateCalledModules.get(clientId)
+      const invalidateCalledModules = this.invalidateCalledModules.get(client)
       if (invalidateCalledModules?.has(m.path)) {
         debug?.(
           `INVALIDATE: invalidate received from ${m.path}, but ignored because it was already invalidated`,
@@ -226,16 +224,18 @@ export class FullBundleDevEnvironment extends DevEnvironment {
         `INVALIDATE: invalidate received from ${m.path}, re-triggering HMR`,
       )
       if (!invalidateCalledModules) {
-        this.invalidateCalledModules.set(clientId, new Set([]))
+        this.invalidateCalledModules.set(client, new Set([]))
       }
-      this.invalidateCalledModules.get(clientId)!.add(m.path)
+      this.invalidateCalledModules.get(client)!.add(m.path)
 
       // TODO: how to handle errors?
       const _update = await this.devEngine.invalidate(
         m.path,
         m.firstInvalidatedBy,
       )
-      const update = _update.find((u) => u.clientId === clientId)?.update
+      const update = _update.find(
+        (u) => this.clients.get(u.clientId) === client,
+      )?.update
       if (!update) return
 
       if (update.type === 'Patch') {
@@ -299,7 +299,7 @@ export class FullBundleDevEnvironment extends DevEnvironment {
   }
 
   private handleHmrOutput(
-    client: WebSocketClient,
+    client: NormalizedHotChannelClient,
     files: string[],
     hmrOutput: HmrOutput,
     invalidateInformation?: { firstInvalidatedBy: string },
@@ -357,41 +357,33 @@ export class FullBundleDevEnvironment extends DevEnvironment {
 }
 
 class Clients {
-  private clientToId = new Map<WebSocketClient, string>()
-  private idToClient = new Map<string, WebSocketClient>()
+  private clientToId = new Map<NormalizedHotChannelClient, string>()
+  private idToClient = new Map<string, NormalizedHotChannelClient>()
 
-  setupIfNeeded(client: WebSocketClient, onClose?: () => void): string {
+  setupIfNeeded(client: NormalizedHotChannelClient): string {
     const id = this.clientToId.get(client)
     if (id) return id
 
     const newId = randomUUID()
     this.clientToId.set(client, newId)
     this.idToClient.set(newId, client)
-    client.socket.once('close', () => {
-      this.clientToId.delete(client)
-      this.idToClient.delete(newId)
-      onClose?.()
-    })
     return newId
   }
 
-  get(id: string): WebSocketClient | undefined {
+  get(id: string): NormalizedHotChannelClient | undefined {
     return this.idToClient.get(id)
   }
 
-  getId(client: WebSocketClient): string | undefined {
-    return this.clientToId.get(client)
-  }
-
-  getAll(): WebSocketClient[] {
+  getAll(): NormalizedHotChannelClient[] {
     return Array.from(this.idToClient.values())
   }
 
-  delete(client: WebSocketClient): void {
+  delete(client: NormalizedHotChannelClient): string | undefined {
     const id = this.clientToId.get(client)
     if (id) {
       this.clientToId.delete(client)
       this.idToClient.delete(id)
+      return id
     }
   }
 }
