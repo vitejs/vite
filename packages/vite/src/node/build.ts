@@ -65,6 +65,7 @@ import {
   resolveChokidarOptions,
   resolveEmptyOutDir,
 } from './watch'
+import { completeAmdWrapPlugin } from './plugins/completeAmdWrap'
 import { completeSystemWrapPlugin } from './plugins/completeSystemWrap'
 import { webWorkerPostPlugin } from './plugins/worker'
 import { getHookHandler } from './plugins'
@@ -466,6 +467,7 @@ export async function resolveBuildPlugins(config: ResolvedConfig): Promise<{
 }> {
   return {
     pre: [
+      completeAmdWrapPlugin(),
       completeSystemWrapPlugin(),
       ...(!config.isWorker ? [prepareOutDirPlugin()] : []),
       perEnvironmentPlugin('commonjs', (environment) => {
@@ -1338,13 +1340,6 @@ const relativeUrlMechanisms: Record<
 
 const customRelativeUrlMechanisms = {
   ...relativeUrlMechanisms,
-  // override amd to use module.uri instead of document.baseURI
-  amd: (relativePath) => {
-    if (relativePath[0] !== '.') relativePath = './' + relativePath
-    return getResolveUrl(
-      `require.toUrl('${escapeId(relativePath)}'), new URL(module.uri, document.baseURI).href`,
-    )
-  },
   'worker-iife': (relativePath) =>
     getResolveUrl(
       `'${escapeId(partialEncodeURIPath(relativePath))}', self.location.href`,
