@@ -565,10 +565,26 @@ async function generateFallbackHtml(server: ViteDevServer) {
     ${hmrRuntime.replaceAll('</script>', '<\\/script>')}
   </script>
   <style>
+    :root {
+      --page-bg: #ffffff;
+      --text-color: #1d1d1f;
+      --spinner-track: #f5f5f7;
+      --spinner-accent: #0071e3;
+    }
+    @media (prefers-color-scheme: dark) {
+      :root {
+        --page-bg: #1e1e1e;
+        --text-color: #f5f5f5;
+        --spinner-track: #424242;
+      }
+    }
+
     body {
       margin: 0;
       min-height: 100vh;
       display: flex;
+      background-color: var(--page-bg);
+      color: var(--text-color);
     }
 
     .container {
@@ -582,8 +598,8 @@ async function generateFallbackHtml(server: ViteDevServer) {
       width: 3rem;
       height: 3rem;
       margin: 2rem auto;
-      border: 3px solid #f5f5f7;
-      border-top-color: #0071e3;
+      border: 3px solid var(--spinner-track);
+      border-top-color: var(--spinner-accent);
       border-radius: 50%;
       animation: spin 1s linear infinite;
     }

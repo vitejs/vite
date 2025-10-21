@@ -140,7 +140,7 @@ export async function getHmrImplementation(
   const replacer = await createClientConfigValueReplacer(config)
   return (
     replacer(content)
-      // the rolldown runtime shouldn't be importer a module
+      // the rolldown runtime cannot import a module
       .replace(/import\s*['"]@vite\/env['"]/, '')
   )
 }

@@ -247,7 +247,6 @@ export class FullBundleDevEnvironment extends DevEnvironment {
         )
       }
 
-      // TODO: need to check if this is enough
       this.handleHmrOutput(client, [m.path], update, {
         firstInvalidatedBy: m.firstInvalidatedBy,
       })
@@ -286,10 +285,6 @@ export class FullBundleDevEnvironment extends DevEnvironment {
         output.assetFileNames = 'assets/[name]-[hash][extname]'
         output.minify = false
         output.sourcemap = true
-        // output.advancedChunks ||= {}
-        // output.advancedChunks.groups = [
-        //   { name: 'chunk', maxSize: 1024 * 1024 },
-        // ]
       }
     } else {
       rolldownOptions.output ??= {}
@@ -298,12 +293,7 @@ export class FullBundleDevEnvironment extends DevEnvironment {
       rolldownOptions.output.assetFileNames = 'assets/[name]-[hash][extname]'
       rolldownOptions.output.minify = false
       rolldownOptions.output.sourcemap = true
-      // rolldownOptions.output.advancedChunks ||= {}
-      // rolldownOptions.output.advancedChunks.groups = [
-      //   { name: 'chunk', maxSize: 1024 * 1024 },
-      // ]
     }
-    // rolldownOptions.experimental.strictExecutionOrder = true
 
     return rolldownOptions
   }

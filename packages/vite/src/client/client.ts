@@ -1,4 +1,3 @@
-/// <reference types="rolldown/experimental/runtime-types" />
 import type { ErrorPayload, HotPayload } from '#types/hmrPayload'
 import type { ViteHotContext } from '#types/hot'
 import { HMRClient, HMRContext } from '../shared/hmr'
@@ -618,24 +617,19 @@ export function injectQuery(url: string, queryToInject: string): string {
 
 export { ErrorOverlay }
 
+// TODO: proper types
+declare let DevRuntime: { new (socket: any): any } | undefined
+
 if (isFullBundleMode && typeof DevRuntime !== 'undefined') {
   class ViteDevRuntime extends DevRuntime {
-    override createModuleHotContext(moduleId: string) {
+    createModuleHotContext(moduleId: string) {
       const ctx = createHotContext(moduleId)
-      // @ts-expect-error TODO: support CSS
-      ctx._internal = {
-        updateStyle,
-        removeStyle,
-      }
-      // @ts-expect-error TODO: support this function (used by plugin-react)
-      ctx.getExports = async () =>
-        // @ts-expect-error __rolldown_runtime__ / ctx.ownerPath
-        __rolldown_runtime__.loadExports(ctx.ownerPath)
+      // @ts-expect-error TODO: support CSS properly
+      ctx._internal = { updateStyle, removeStyle }
       return ctx
     }
 
-    override applyUpdates(_boundaries: string[]): void {
-      // TODO: how should this be handled?
+    applyUpdates(_boundaries: string[]): void {
       // noop, handled in the HMR client
     }
   }
