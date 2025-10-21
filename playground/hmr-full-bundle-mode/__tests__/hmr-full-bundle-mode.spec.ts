@@ -21,8 +21,7 @@ if (isBuild) {
   })
 
   // BUNDLED -> GENERATE_HMR_PATCH -> BUNDLING -> BUNDLE_ERROR -> BUNDLING -> BUNDLED
-  // FIXME: https://github.com/rolldown/rolldown/issues/6319
-  test.skip('handle bundle error', async () => {
+  test('handle bundle error', async () => {
     editFile('main.js', (code) =>
       code.replace("text('.app', 'hello')", "text('.app', 'hello'); text("),
     )
@@ -71,8 +70,7 @@ if (isBuild) {
   })
 
   // BUNDLED -> GENERATING_HMR_PATCH -> BUNDLED
-  // FIXME: https://github.com/rolldown/rolldown/issues/6319
-  test.skip('handle generate hmr patch error', async () => {
+  test('handle generate hmr patch error', async () => {
     await expect.poll(() => page.textContent('.hmr')).toBe('hello')
     editFile('hmr.js', (code) =>
       code.replace("const foo = 'hello'", "const foo = 'hello"),
@@ -101,7 +99,8 @@ if (isBuild) {
   })
 
   // BUNDLED -> GENERATING_HMR_PATCH -> GENERATING_HMR_PATCH -> BUNDLED
-  test('continuous generate hmr patch', async () => {
+  // FIXME: https://github.com/rolldown/rolldown/issues/6648
+  test.skip('continuous generate hmr patch', async () => {
     editFile('hmr.js', (code) =>
       code.replace(
         "const foo = 'hello'",
