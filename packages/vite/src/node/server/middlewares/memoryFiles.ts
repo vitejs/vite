@@ -1,5 +1,5 @@
-import type { Connect } from 'dep-types/connect'
 import * as mrmime from 'mrmime'
+import type { Connect } from '#dep-types/connect'
 import { cleanUrl } from '../../../shared/utils'
 import type { ViteDevServer } from '..'
 import { FullBundleDevEnvironment } from '../environments/fullBundleEnvironment'

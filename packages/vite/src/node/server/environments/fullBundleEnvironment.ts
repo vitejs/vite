@@ -5,9 +5,9 @@ import {
   type DevEngine,
   dev,
 } from 'rolldown/experimental'
-import type { Update } from 'types/hmrPayload'
 import colors from 'picocolors'
 import getEtag from 'etag'
+import type { Update } from '#types/hmrPayload'
 import { ChunkMetadataMap, resolveRolldownOptions } from '../../build'
 import { getHmrImplementation } from '../../plugins/clientInjections'
 import { DevEnvironment, type DevEnvironmentContext } from '../environment'
@@ -72,7 +72,7 @@ export class FullBundleDevEnvironment extends DevEnvironment {
     this.logger.info(colors.green(`page reload`), { timestamp: true })
   })
 
-  memoryFiles = new MemoryFiles()
+  memoryFiles: MemoryFiles = new MemoryFiles()
 
   constructor(
     name: string,

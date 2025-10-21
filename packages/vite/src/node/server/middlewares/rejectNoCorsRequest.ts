@@ -1,4 +1,4 @@
-import type { Connect } from 'dep-types/connect'
+import type { Connect } from '#dep-types/connect'
 
 /**
  * A middleware that rejects no-cors mode requests that are not same-origin.
