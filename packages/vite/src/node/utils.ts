@@ -995,6 +995,29 @@ export async function resolveHostname(
   return { host, name }
 }
 
+export function extractHostnamesFromCerts(
+  certs: HttpsServerOptions['cert'] | undefined,
+): string[] {
+  const certList = certs ? arraify(certs) : []
+  if (certList.length === 0) return []
+
+  const hostnames = certList
+    .map((cert) => {
+      try {
+        return new crypto.X509Certificate(cert)
+      } catch {
+        return null
+      }
+    })
+    .flatMap((cert) =>
+      cert?.subjectAltName
+        ? extractHostnamesFromSubjectAltName(cert.subjectAltName)
+        : [],
+    )
+
+  return unique(hostnames)
+}
+
 export function resolveServerUrls(
   server: Server,
   options: CommonServerOptions,
@@ -1047,19 +1070,12 @@ export function resolveServerUrls(
       })
   }
 
-  const cert =
-    httpsOptions?.cert && !Array.isArray(httpsOptions.cert)
-      ? new crypto.X509Certificate(httpsOptions.cert)
-      : undefined
-  const hostnameFromCert = cert?.subjectAltName
-    ? extractHostnamesFromSubjectAltName(cert.subjectAltName)
-    : []
-
-  if (hostnameFromCert.length > 0) {
+  const hostnamesFromCert = extractHostnamesFromCerts(httpsOptions?.cert)
+  if (hostnamesFromCert.length > 0) {
     const existings = new Set([...local, ...network])
     local.push(
-      ...hostnameFromCert
-        .map((hostname) => `https://${hostname}:${port}${base}`)
+      ...hostnamesFromCert
+        .map((hostname) => `${protocol}://${hostname}:${port}${base}`)
         .filter((url) => !existings.has(url)),
     )
   }
