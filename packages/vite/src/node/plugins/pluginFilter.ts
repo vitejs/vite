@@ -98,7 +98,7 @@ function normalizeFilter(filter: StringFilter): NormalizedStringFilter {
 
 export function createIdFilter(
   filter: StringFilter | undefined,
-  cwd = process.cwd(),
+  cwd: string = process.cwd(),
 ): PluginFilter | undefined {
   if (!filter) return
   const { exclude, include } = normalizeFilter(filter)

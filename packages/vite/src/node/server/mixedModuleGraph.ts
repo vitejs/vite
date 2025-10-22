@@ -387,7 +387,7 @@ export class ModuleGraph {
 
   invalidateModule(
     mod: ModuleNode,
-    seen = new Set<ModuleNode>(),
+    seen: Set<ModuleNode> = new Set(),
     timestamp: number = monotonicDateNow(),
     isHmr: boolean = false,
     /** @internal */

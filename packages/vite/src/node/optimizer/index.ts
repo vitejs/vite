@@ -254,7 +254,7 @@ export interface DepOptimizationMetadata {
 
 export async function optimizeDeps(
   config: ResolvedConfig,
-  force = config.optimizeDeps.force,
+  force: boolean | undefined = config.optimizeDeps.force,
   asCommand = false,
 ): Promise<DepOptimizationMetadata> {
   const log = asCommand ? config.logger.info : debug
@@ -353,7 +353,7 @@ let firstLoadCachedDepOptimizationMetadata = true
  */
 export async function loadCachedDepOptimizationMetadata(
   environment: Environment,
-  force = environment.config.optimizeDeps.force ?? false,
+  force: boolean = environment.config.optimizeDeps.force ?? false,
   asCommand = false,
 ): Promise<DepOptimizationMetadata | undefined> {
   const log = asCommand ? environment.logger.info : debug
@@ -1236,6 +1236,12 @@ const lockfileFormats = [
   },
   {
     path: 'node_modules/.pnpm/lock.yaml',
+    // Included in lockfile
+    checkPatchesDir: false,
+    manager: 'pnpm',
+  },
+  {
+    path: '.rush/temp/shrinkwrap-deps.json',
     // Included in lockfile
     checkPatchesDir: false,
     manager: 'pnpm',

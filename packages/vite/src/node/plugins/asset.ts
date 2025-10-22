@@ -36,17 +36,17 @@ import {
 import type { Environment } from '../environment'
 
 // referenceId is base64url but replaces - with $
-export const assetUrlRE = /__VITE_ASSET__([\w$]+)__(?:\$_(.*?)__)?/g
+export const assetUrlRE: RegExp = /__VITE_ASSET__([\w$]+)__(?:\$_(.*?)__)?/g
 
 const jsSourceMapRE = /\.[cm]?js\.map$/
 
-export const noInlineRE = /[?&]no-inline\b/
-export const inlineRE = /[?&]inline\b/
+export const noInlineRE: RegExp = /[?&]no-inline\b/
+export const inlineRE: RegExp = /[?&]inline\b/
 
 const assetCache = new WeakMap<Environment, Map<string, string>>()
 
 /** a set of referenceId for entry CSS assets for each environment */
-export const cssEntriesMap = new WeakMap<Environment, Set<string>>()
+export const cssEntriesMap: WeakMap<Environment, Set<string>> = new WeakMap()
 
 // add own dictionary entry by directly assigning mrmime
 export function registerCustomMime(): void {
@@ -342,13 +342,13 @@ export function getPublicAssetFilename(
   return publicAssetUrlCache.get(config)?.get(hash)
 }
 
-export const publicAssetUrlCache = new WeakMap<
+// inner map: hash -> url
+export const publicAssetUrlCache: WeakMap<
   ResolvedConfig,
-  // hash -> url
   Map<string, string>
->()
+> = new WeakMap()
 
-export const publicAssetUrlRE = /__VITE_PUBLIC_ASSET__([a-z\d]{8})__/g
+export const publicAssetUrlRE: RegExp = /__VITE_PUBLIC_ASSET__([a-z\d]{8})__/g
 
 export function publicFileToBuiltUrl(
   url: string,
