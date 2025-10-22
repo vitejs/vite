@@ -71,6 +71,7 @@ import { getHookHandler } from './plugins'
 import { BaseEnvironment } from './baseEnvironment'
 import type { MinimalPluginContextWithoutEnvironment, Plugin } from './plugin'
 import type { RollupPluginHooks } from './typeUtils'
+import { type LicenseOptions, licensePlugin } from './plugins/license'
 import {
   BasicMinimalPluginContext,
   basePluginContextMeta,
@@ -209,6 +210,12 @@ export interface BuildEnvironmentOptions {
    * @default true
    */
   copyPublicDir?: boolean
+  /**
+   * Whether to emit a `.vite/license.md` file that includes all bundled dependencies'
+   * licenses. Pass an object to customize the output file name.
+   * @default false
+   */
+  license?: boolean | LicenseOptions
   /**
    * Whether to emit a .vite/manifest.json in the output dir to map hash-less filenames
    * to their hashed versions. Useful when you want to generate your own HTML
@@ -380,6 +387,7 @@ const _buildEnvironmentOptionsDefaults = Object.freeze({
   write: true,
   emptyOutDir: null,
   copyPublicDir: true,
+  license: false,
   manifest: false,
   lib: false,
   // ssr
@@ -495,7 +503,12 @@ export async function resolveBuildPlugins(config: ResolvedConfig): Promise<{
       buildEsbuildPlugin(),
       terserPlugin(config),
       ...(!config.isWorker
-        ? [manifestPlugin(), ssrManifestPlugin(), buildReporterPlugin(config)]
+        ? [
+            licensePlugin(),
+            manifestPlugin(),
+            ssrManifestPlugin(),
+            buildReporterPlugin(config),
+          ]
         : []),
       buildLoadFallbackPlugin(),
     ],

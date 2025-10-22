@@ -2194,7 +2194,7 @@ function resolveMinifyCssEsbuildOptions(
   options: ESBuildOptions,
 ): TransformOptions {
   const base: TransformOptions = {
-    charset: options.charset ?? 'utf8',
+    charset: options.charset,
     logLevel: options.logLevel,
     logLimit: options.logLimit,
     logOverride: options.logOverride,

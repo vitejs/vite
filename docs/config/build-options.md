@@ -185,6 +185,71 @@ export default defineConfig({
 })
 ```
 
+## build.license
+
+- **Type:** `boolean | { fileName?: string }`
+- **Default:** `false`
+
+When set to `true`, the build will generate a `.vite/license.md` file that includes all bundled dependencies' licenses. It can be hosted to display and acknowledge the dependencies used by the app. When `fileName` is passed, it will be used as the license file name relative to the `outDir`. An example output may look like this:
+
+```md
+# Licenses
+
+The app bundles dependencies which contain the following licenses:
+
+## dep-1 - 1.2.3 (CC0-1.0)
+
+CC0 1.0 Universal
+
+...
+
+## dep-2 - 4.5.6 (MIT)
+
+MIT License
+
+...
+```
+
+If the `fileName` ends with `.json`, the raw JSON metadata will be generated instead and can be used for further processing. For example:
+
+```json
+[
+  {
+    "name": "dep-1",
+    "version": "1.2.3",
+    "identifier": "CC0-1.0",
+    "text": "CC0 1.0 Universal\n\n..."
+  },
+  {
+    "name": "dep-2",
+    "version": "4.5.6",
+    "identifier": "MIT",
+    "text": "MIT License\n\n..."
+  }
+]
+```
+
+::: tip
+If you'd like to reference the license file in the built code, you can use `build.rollupOptions.output.banner` to inject a comment at the top of the files. For example:
+
+```js twoslash [vite.config.js]
+import { defineConfig } from 'vite'
+
+export default defineConfig({
+  build: {
+    license: true,
+    rollupOptions: {
+      output: {
+        banner:
+          '/* See licenses of bundled dependencies at https://example.com/license.md */',
+      },
+    },
+  },
+})
+```
+
+:::
+
 ## build.manifest
 
 - **Type:** `boolean | string`
