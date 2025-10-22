@@ -23,7 +23,7 @@ export function completeAmdWrapPlugin(): Plugin {
 
           return `define([${newDeps}], (function(${newParams}) {`
         }),
-        map: null,
+        map: null, // no need to generate sourcemap as no mapping exists for the wrapper
       }
     },
   }
