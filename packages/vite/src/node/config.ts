@@ -1518,6 +1518,9 @@ export async function resolveConfig(
         ? false
         : {
             jsxDev: !isProduction,
+            // change defaults that fit better for vite
+            charset: 'utf8',
+            legalComments: 'none',
             ...config.esbuild,
           },
     server,

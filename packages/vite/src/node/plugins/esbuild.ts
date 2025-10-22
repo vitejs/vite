@@ -249,7 +249,6 @@ export function esbuildPlugin(config: ResolvedConfig): Plugin {
   // and for build as the final optimization is in `buildEsbuildPlugin`
   const transformOptions: TransformOptions = {
     target: 'esnext',
-    charset: 'utf8',
     ...esbuildTransformOptions,
     minify: false,
     minifyIdentifiers: false,
@@ -403,7 +402,6 @@ export function resolveEsbuildTranspileOptions(
   const esbuildOptions = config.esbuild || {}
 
   const options: TransformOptions = {
-    charset: 'utf8',
     ...esbuildOptions,
     loader: 'js',
     target: target || undefined,

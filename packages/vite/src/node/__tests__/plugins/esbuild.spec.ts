@@ -23,7 +23,6 @@ describe('resolveEsbuildTranspileOptions', () => {
       'es',
     )
     expect(options).toEqual({
-      charset: 'utf8',
       loader: 'js',
       target: 'es2020',
       format: 'esm',
@@ -67,7 +66,6 @@ describe('resolveEsbuildTranspileOptions', () => {
       'es',
     )
     expect(options).toEqual({
-      charset: 'utf8',
       loader: 'js',
       target: undefined,
       format: 'esm',
@@ -98,7 +96,6 @@ describe('resolveEsbuildTranspileOptions', () => {
       'es',
     )
     expect(options).toEqual({
-      charset: 'utf8',
       loader: 'js',
       target: 'es2020',
       format: 'esm',
@@ -131,7 +128,6 @@ describe('resolveEsbuildTranspileOptions', () => {
       'es',
     )
     expect(options).toEqual({
-      charset: 'utf8',
       loader: 'js',
       target: undefined,
       format: 'esm',
@@ -164,7 +160,6 @@ describe('resolveEsbuildTranspileOptions', () => {
       'cjs',
     )
     expect(options).toEqual({
-      charset: 'utf8',
       loader: 'js',
       target: undefined,
       format: 'cjs',
@@ -196,7 +191,6 @@ describe('resolveEsbuildTranspileOptions', () => {
       'es',
     )
     expect(options).toEqual({
-      charset: 'utf8',
       loader: 'js',
       target: undefined,
       format: 'esm',
@@ -232,7 +226,6 @@ describe('resolveEsbuildTranspileOptions', () => {
       'cjs',
     )
     expect(options).toEqual({
-      charset: 'utf8',
       loader: 'js',
       target: undefined,
       format: 'cjs',
