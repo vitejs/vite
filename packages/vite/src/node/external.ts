@@ -19,6 +19,33 @@ const isExternalCache = new WeakMap<
   (id: string, importer?: string) => boolean
 >()
 
+type ExternalList = Exclude<InternalResolveOptions['external'], true>
+
+function resetAndTestRegExp(regexp: RegExp, value: string): boolean {
+  regexp.lastIndex = 0
+  return regexp.test(value)
+}
+
+function matchesExternalList(list: ExternalList, value: string): boolean {
+  for (const pattern of list) {
+    if (typeof pattern === 'string') {
+      if (pattern === value) {
+        return true
+      }
+    } else if (resetAndTestRegExp(pattern, value)) {
+      return true
+    }
+  }
+  return false
+}
+
+export function isIdExplicitlyExternal(
+  external: InternalResolveOptions['external'],
+  id: string,
+): boolean {
+  return external === true ? true : matchesExternalList(external, id)
+}
+
 export function shouldExternalize(
   environment: Environment,
   id: string,
@@ -38,6 +65,8 @@ export function createIsConfiguredAsExternal(
   const { config } = environment
   const { root, resolve } = config
   const { external, noExternal } = resolve
+  const externalList: ExternalList | undefined =
+    external === true ? undefined : external
   const noExternalFilter =
     typeof noExternal !== 'boolean' &&
     !(Array.isArray(noExternal) && noExternal.length === 0) &&
@@ -92,25 +121,38 @@ export function createIsConfiguredAsExternal(
   // Returns true if it is configured as external, false if it is filtered
   // by noExternal and undefined if it isn't affected by the explicit config
   return (id: string, importer?: string) => {
-    if (
-      // If this id is defined as external, force it as external
-      // Note that individual package entries are allowed in `external`
-      external !== true &&
-      external.includes(id)
-    ) {
+    const explicitIdMatch =
+      externalList && matchesExternalList(externalList, id)
+    if (explicitIdMatch) {
+      const canExternalize = isExternalizable(id, importer, true)
+      if (!canExternalize) {
+        debug?.(
+          `Configured ${JSON.stringify(
+            id,
+          )} as external but failed to statically resolve it. ` +
+            `Falling back to honoring the explicit configuration.`,
+        )
+      }
       return true
     }
     const pkgName = getNpmPackageName(id)
     if (!pkgName) {
       return isExternalizable(id, importer, false)
     }
-    if (
-      // A package name in ssr.external externalizes every
-      // externalizable package entry
-      external !== true &&
-      external.includes(pkgName)
-    ) {
-      return isExternalizable(id, importer, true)
+    const explicitPackageMatch =
+      externalList && matchesExternalList(externalList, pkgName)
+    if (explicitPackageMatch) {
+      const canExternalize = isExternalizable(id, importer, true)
+      if (!canExternalize) {
+        debug?.(
+          `Configured package ${JSON.stringify(
+            pkgName,
+          )} as external but failed to statically resolve ${JSON.stringify(
+            id,
+          )}. Falling back to honoring the explicit configuration.`,
+        )
+      }
+      return true
     }
     if (typeof noExternal === 'boolean') {
       return !noExternal
