@@ -48,7 +48,7 @@ export async function fetchModule(
     const { externalConditions, dedupe, preserveSymlinks } =
       environment.config.resolve
 
-    const resolved = tryNodeResolve(url, importer, {
+    const resolved = await tryNodeResolve(url, importer, {
       mainFields: ['main'],
       conditions: externalConditions,
       externalConditions,

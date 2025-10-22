@@ -331,6 +331,8 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
           depsOptimizer &&
           moduleListContains(depsOptimizer.options.exclude, url)
         ) {
+          // Wait for scanning to complete to ensure stable browserHash and metadata
+          // This prevents inconsistent hashes between in-memory and persisted metadata
           await depsOptimizer.scanProcessing
 
           // if the dependency encountered in the optimized file was excluded from the optimization
@@ -520,7 +522,7 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
             }
             // skip ssr externals and builtins
             if (ssr && !matchAlias(specifier)) {
-              if (shouldExternalize(environment, specifier, importer)) {
+              if (await shouldExternalize(environment, specifier, importer)) {
                 return
               }
               if (isBuiltin(environment.config.resolve.builtins, specifier)) {

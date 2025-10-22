@@ -214,7 +214,11 @@ export function resolvePlugin(
           }
         }
 
-        let res: string | PartialResolvedId | undefined
+        let res:
+          | string
+          | PartialResolvedId
+          | undefined
+          | Promise<PartialResolvedId | undefined>
 
         // resolve pre-bundled deps requests, these could be resolved by
         // tryFileResolve or /fs/ resolution but these files may not yet
@@ -233,7 +237,7 @@ export function resolvePlugin(
           // always return here even if res doesn't exist since /@fs/ is explicit
           // if the file doesn't exist it should be a 404.
           debug?.(`[@fs] ${colors.cyan(id)} -> ${colors.dim(res)}`)
-          return ensureVersionQuery(res, id, options, depsOptimizer)
+          return await ensureVersionQuery(res, id, options, depsOptimizer)
         }
 
         // URL
@@ -246,7 +250,7 @@ export function resolvePlugin(
           const fsPath = path.resolve(root, id.slice(1))
           if ((res = tryFsResolve(fsPath, options))) {
             debug?.(`[url] ${colors.cyan(id)} -> ${colors.dim(res)}`)
-            return ensureVersionQuery(res, id, options, depsOptimizer)
+            return await ensureVersionQuery(res, id, options, depsOptimizer)
           }
         }
 
@@ -268,6 +272,9 @@ export function resolvePlugin(
             // Optimized files could not yet exist in disk, resolve to the full path
             // Inject the current browserHash version if the path doesn't have one
             if (!options.isBuild && !DEP_VERSION_RE.test(normalizedFsPath)) {
+              // Wait for scanning to complete to ensure stable browserHash
+              // This prevents inconsistent hashes between in-memory and persisted metadata
+              await depsOptimizer.scanProcessing
               const browserHash = optimizedDepInfoFromFile(
                 depsOptimizer.metadata,
                 normalizedFsPath,
@@ -281,13 +288,18 @@ export function resolvePlugin(
 
           if (
             options.mainFields.includes('browser') &&
-            (res = tryResolveBrowserMapping(fsPath, importer, options, true))
+            (res = await tryResolveBrowserMapping(
+              fsPath,
+              importer,
+              options,
+              true,
+            ))
           ) {
             return res
           }
 
           if ((res = tryFsResolve(fsPath, options))) {
-            res = ensureVersionQuery(res, id, options, depsOptimizer)
+            res = await ensureVersionQuery(res, id, options, depsOptimizer)
             debug?.(`[relative] ${colors.cyan(id)} -> ${colors.dim(res)}`)
 
             if (!options.idOnly && !options.scan && options.isBuild) {
@@ -318,7 +330,7 @@ export function resolvePlugin(
           const fsPath = path.resolve(basedir, id)
           if ((res = tryFsResolve(fsPath, options))) {
             debug?.(`[drive-relative] ${colors.cyan(id)} -> ${colors.dim(res)}`)
-            return ensureVersionQuery(res, id, options, depsOptimizer)
+            return await ensureVersionQuery(res, id, options, depsOptimizer)
           }
         }
 
@@ -328,7 +340,7 @@ export function resolvePlugin(
           (res = tryFsResolve(id, options))
         ) {
           debug?.(`[fs] ${colors.cyan(id)} -> ${colors.dim(res)}`)
-          return ensureVersionQuery(res, id, options, depsOptimizer)
+          return await ensureVersionQuery(res, id, options, depsOptimizer)
         }
 
         // external
@@ -348,7 +360,7 @@ export function resolvePlugin(
             options.externalize &&
             options.isBuild &&
             currentEnvironmentOptions.consumer === 'server' &&
-            shouldExternalize(this.environment, id, importer)
+            (await shouldExternalize(this.environment, id, importer))
           if (
             !external &&
             asSrc &&
@@ -367,7 +379,7 @@ export function resolvePlugin(
 
           if (
             options.mainFields.includes('browser') &&
-            (res = tryResolveBrowserMapping(
+            (res = await tryResolveBrowserMapping(
               id,
               importer,
               options,
@@ -378,16 +390,17 @@ export function resolvePlugin(
             return res
           }
 
-          if (
-            (res = tryNodeResolve(
-              id,
-              importer,
-              options,
-              depsOptimizer,
-              external,
-            ))
-          ) {
-            return res
+          res = tryNodeResolve(id, importer, options, depsOptimizer, external)
+          if (res) {
+            // Handle both sync and async returns
+            if (res instanceof Promise) {
+              const resolvedRes = await res
+              if (resolvedRes) {
+                return resolvedRes
+              }
+            } else {
+              return res
+            }
           }
 
           // built-ins
@@ -528,18 +541,21 @@ function resolveSubpathImports(
   return importsPath + postfix
 }
 
-function ensureVersionQuery(
+async function ensureVersionQuery(
   resolved: string,
   id: string,
   options: InternalResolveOptions,
   depsOptimizer?: DepsOptimizer,
-): string {
+): Promise<string> {
   if (
     !options.isBuild &&
     !options.scan &&
     depsOptimizer &&
     !(resolved === normalizedClientEntry || resolved === normalizedEnvEntry)
   ) {
+    // Wait for scanning to complete to ensure stable browserHash
+    // This prevents inconsistent hashes between in-memory and persisted metadata
+    await depsOptimizer.scanProcessing
     // Ensure that direct imports of node_modules have the same version query
     // as if they would have been imported through a bare import
     // Use the original id to do the check as the resolved id may be the real
@@ -693,13 +709,13 @@ function tryCleanFsResolve(
   }
 }
 
-export function tryNodeResolve(
+export async function tryNodeResolve(
   id: string,
   importer: string | null | undefined,
   options: InternalResolveOptions,
   depsOptimizer?: DepsOptimizer,
   externalize?: boolean,
-): PartialResolvedId | undefined {
+): Promise<PartialResolvedId | undefined> {
   const { root, dedupe, isBuild, preserveSymlinks, packageCache } = options
 
   // check for deep import, e.g. "my-lib/foo"
@@ -833,6 +849,20 @@ export function tryNodeResolve(
     // can cache it without re-validation, but only do so for known js types.
     // otherwise we may introduce duplicated modules for externalized files
     // from pre-bundled deps.
+
+    // If we need to access browserHash, we must wait for scanning to complete
+    // to ensure stable browserHash and prevent inconsistent hashes between
+    // in-memory and persisted metadata
+    if (depsOptimizer.scanProcessing) {
+      await depsOptimizer.scanProcessing
+
+      const versionHash = depsOptimizer.metadata.browserHash
+      if (versionHash && isJsType && resolved) {
+        resolved = injectQuery(resolved, `v=${versionHash}`)
+      }
+      return processResult({ id: resolved! })
+    }
+
     const versionHash = depsOptimizer.metadata.browserHash
     if (versionHash && isJsType) {
       resolved = injectQuery(resolved, `v=${versionHash}`)
@@ -854,8 +884,8 @@ export async function tryOptimizedResolve(
   preserveSymlinks?: boolean,
   packageCache?: PackageCache,
 ): Promise<string | undefined> {
-  // TODO: we need to wait until scanning is done here as this function
-  // is used in the preAliasPlugin to decide if an aliased dep is optimized,
+  // Wait for scanning to complete to ensure stable browserHash and metadata
+  // This function is used in the preAliasPlugin to decide if an aliased dep is optimized,
   // and avoid replacing the bare import with the resolved path.
   // We should be able to remove this in the future
   await depsOptimizer.scanProcessing
@@ -1099,7 +1129,7 @@ function resolveDeepImport(
   }
 }
 
-function tryResolveBrowserMapping(
+async function tryResolveBrowserMapping(
   id: string,
   importer: string | undefined,
   options: InternalResolveOptions,
@@ -1116,12 +1146,14 @@ function tryResolveBrowserMapping(
     if (browserMappedPath) {
       if (
         (res = bareImportRE.test(browserMappedPath)
-          ? tryNodeResolve(
-              browserMappedPath,
-              importer,
-              options,
-              undefined,
-              undefined,
+          ? (
+              (await tryNodeResolve(
+                browserMappedPath,
+                importer,
+                options,
+                undefined,
+                undefined,
+              )) as PartialResolvedId | undefined
             )?.id
           : tryFsResolve(path.join(pkg.dir, browserMappedPath), options))
       ) {
