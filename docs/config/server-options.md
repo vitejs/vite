@@ -92,8 +92,6 @@ Set to `true` to exit if port is already in use, instead of automatically trying
 
 Enable TLS + HTTP/2. The value is an [options object](https://nodejs.org/api/https.html#https_https_createserver_options_requestlistener) passed to `https.createServer()`.
 
-Note that this downgrades to TLS only when the [`server.proxy` option](#server-proxy) is also used.
-
 A valid certificate is needed. For a basic setup, you can add [@vitejs/plugin-basic-ssl](https://github.com/vitejs/vite-plugin-basic-ssl) to the project plugins, which will automatically create and cache a self-signed certificate. But we recommend creating your own certificates.
 
 ## server.open

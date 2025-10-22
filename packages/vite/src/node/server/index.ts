@@ -478,7 +478,7 @@ export async function _createServer(
   const middlewares = connect() as Connect.Server
   const httpServer = middlewareMode
     ? null
-    : await resolveHttpServer(serverConfig, middlewares, httpsOptions)
+    : await resolveHttpServer(middlewares, httpsOptions)
 
   const ws = createWebSocketServer(httpServer, config, httpsOptions)
 
