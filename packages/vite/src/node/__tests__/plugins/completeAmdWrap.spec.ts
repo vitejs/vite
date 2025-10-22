@@ -37,6 +37,10 @@ describe('completeAmdWrapPlugin', async () => {
       expect(
         await renderChunk('define(["require"], function(require) { } ))'),
       ).toMatchInlineSnapshot(`"define(["require"], (function(require) { } ))"`)
+
+      expect(
+        await renderChunk(`define(['require'], function(require) { } ))`),
+      ).toMatchInlineSnapshot(`"define(['require'], (function(require) { } ))"`)
     })
   })
 })
