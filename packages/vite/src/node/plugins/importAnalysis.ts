@@ -85,7 +85,7 @@ export const canSkipImportAnalysis = (id: string): boolean =>
 const optimizedDepChunkRE = /\/chunk-[A-Z\d]{8}\.js/
 const optimizedDepDynamicRE = /-[A-Z\d]{8}\.js/
 
-export const hasViteIgnoreRE = /\/\*\s*@vite-ignore\s*\*\//
+export const hasViteIgnoreRE: RegExp = /\/\*\s*@vite-ignore\s*\*\//
 
 const urlIsStringRE = /^(?:'.*'|".*"|`.*`)$/
 
@@ -519,8 +519,9 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
           if (specifier !== undefined) {
             // skip external / data uri
             if (
-              (isExternalUrl(specifier) && !specifier.startsWith('file://')) ||
-              isDataUrl(specifier)
+              ((isExternalUrl(specifier) && !specifier.startsWith('file://')) ||
+                isDataUrl(specifier)) &&
+              !matchAlias(specifier)
             ) {
               return
             }
@@ -842,7 +843,7 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
           isSelfAccepting,
           staticImportedUrls,
         )
-        if (hasHMR && prunedImports) {
+        if (prunedImports) {
           handlePrunedModules(prunedImports, environment)
         }
       }

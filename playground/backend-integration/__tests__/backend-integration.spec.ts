@@ -54,6 +54,7 @@ describe.runIf(isBuild)('build', () => {
     const scssAssetEntry = manifest['nested/blue.scss']
     const imgAssetEntry = manifest['../images/logo.png']
     const dirFooAssetEntry = manifest['../../dir/foo.css']
+    const customNameAssetEntry = manifest['../../dir/custom.css']
     const iconEntrypointEntry = manifest['icon.png']
     const waterContainerEntry = manifest['water-container.svg']
     expect(htmlEntry.css.length).toEqual(1)
@@ -74,7 +75,8 @@ describe.runIf(isBuild)('build', () => {
     expect(dirFooAssetEntry).not.toBeUndefined() // '\\' should not be used even on windows
     // use the entry name
     expect(dirFooAssetEntry.file).toMatch('assets/bar-')
-    expect(dirFooAssetEntry.names).toStrictEqual(['bar.css'])
+    expect(dirFooAssetEntry.name).toStrictEqual('bar.css')
+    expect(customNameAssetEntry.name).toStrictEqual('bar.custom')
     expect(iconEntrypointEntry?.file).not.toBeUndefined()
     expect(waterContainerEntry?.file).not.toBeUndefined()
   })

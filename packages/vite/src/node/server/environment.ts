@@ -1,5 +1,5 @@
-import type { FSWatcher } from 'dep-types/chokidar'
 import colors from 'picocolors'
+import type { FSWatcher } from '#dep-types/chokidar'
 import type { FetchFunctionOptions, FetchResult } from 'vite/module-runner'
 import { BaseEnvironment } from '../baseEnvironment'
 import type {
@@ -132,6 +132,9 @@ export class DevEnvironment extends BaseEnvironment {
     this.hot.setInvokeHandler({
       fetchModule: (id, importer, options) => {
         return this.fetchModule(id, importer, options)
+      },
+      getBuiltins: async () => {
+        return this.config.resolve.builtins
       },
     })
 
