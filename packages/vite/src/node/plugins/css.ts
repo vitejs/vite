@@ -2340,22 +2340,31 @@ function loadPreprocessorPath(
   )
 }
 
-function loadSassPackage(root: string): {
+function loadSassPackage(
+  root: string,
+  skipEmbedded = false,
+): {
   name: 'sass' | 'sass-embedded'
   path: string
 } {
-  // try sass-embedded before sass
-  try {
-    const path = loadPreprocessorPath('sass-embedded', root)
-    return { name: 'sass-embedded', path }
-  } catch (e1) {
+  // try sass-embedded before sass, unless skipEmbedded is true
+  if (!skipEmbedded) {
     try {
-      const path = loadPreprocessorPath(PreprocessLang.sass, root)
-      return { name: 'sass', path }
-    } catch {
-      throw e1
+      const path = loadPreprocessorPath('sass-embedded', root)
+      return { name: 'sass-embedded', path }
+    } catch (e1) {
+      try {
+        const path = loadPreprocessorPath(PreprocessLang.sass, root)
+        return { name: 'sass', path }
+      } catch {
+        throw e1
+      }
     }
   }
+
+  // skip sass-embedded and try sass directly
+  const path = loadPreprocessorPath(PreprocessLang.sass, root)
+  return { name: 'sass', path }
 }
 
 let cachedSss: PostCSS.Syntax | Promise<PostCSS.Syntax>
@@ -2511,13 +2520,14 @@ const scssProcessor = (
   maxWorkers: number | undefined,
 ): StylePreprocessor<SassStylePreprocessorInternalOptions> => {
   let worker: ReturnType<typeof makeScssWorker> | undefined
+  let failedSassEmbedded = false
 
   return {
     close() {
       worker?.stop()
     },
     async process(environment, source, root, options, resolvers) {
-      const sassPackage = loadSassPackage(root)
+      const sassPackage = loadSassPackage(root, failedSassEmbedded)
       worker ??= makeScssWorker(environment, resolvers, maxWorkers)
 
       const { content: data, map: additionalMap } = await getSource(
@@ -2555,6 +2565,58 @@ const scssProcessor = (
           deps,
         }
       } catch (e) {
+        // check if this is a sass-embedded platform binary error
+        if (
+          !failedSassEmbedded &&
+          /sass-embedded-[a-z0-9]+-[a-z0-9]+/i.test(e.message)
+        ) {
+          // log warning and fallback to sass
+          environment.logger.warn(
+            colors.yellow(
+              `sass-embedded failed to load on this platform. ` +
+                `Falling back to sass package. ` +
+                `Consider installing sass directly: npm install -D sass`,
+            ),
+          )
+
+          // mark sass-embedded as failed and stop the current worker
+          failedSassEmbedded = true
+          worker.stop()
+          worker = undefined
+
+          // reload sass package (will now use sass instead of sass-embedded)
+          const fallbackSassPackage = loadSassPackage(root, true)
+          worker = makeScssWorker(environment, resolvers, maxWorkers)
+
+          // retry the compilation with sass
+          const retryResult = await worker.run(
+            pathToFileURL(fallbackSassPackage.path).href,
+            data,
+            optionsWithoutAdditionalData,
+          )
+          const retryDeps = retryResult.stats.includedFiles.map((f) =>
+            cleanScssBugUrl(f),
+          )
+          const retryMap: ExistingRawSourceMap | undefined = retryResult.map
+            ? JSON.parse(retryResult.map.toString())
+            : undefined
+
+          if (retryMap) {
+            retryMap.sources = retryMap.sources.map((url) =>
+              url.startsWith('file://')
+                ? normalizePath(fileURLToPath(url))
+                : url,
+            )
+          }
+
+          return {
+            code: retryResult.css.toString(),
+            map: retryMap,
+            additionalMap,
+            deps: retryDeps,
+          }
+        }
+
         // normalize SASS error
         e.message = `[sass] ${e.message}`
         e.id = e.file
