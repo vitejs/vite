@@ -14,7 +14,7 @@ export function completeAmdWrapPlugin(): Plugin {
 
       return {
         code: code.replace(AmdWrapRE, (_, deps, params) => {
-          if (deps && /"require"/.test(deps)) {
+          if (deps?.includes('"require"')) {
             return `define([${deps}], (function(${params}) {`
           }
 
