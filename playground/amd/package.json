@@ -1,0 +1,5 @@
+{
+  "dependencies": {
+    "requirejs": "^2.3.7"
+  }
+}
