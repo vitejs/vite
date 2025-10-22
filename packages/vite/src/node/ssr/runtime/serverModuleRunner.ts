@@ -91,7 +91,11 @@ export const createServerModuleRunnerTransport = (options: {
   return {
     connect({ onMessage }) {
       options.channel.api!.outsideEmitter.on('send', onMessage)
-      options.channel.api!.innerEmitter.emit('vite:client-connect', hmrClient)
+      options.channel.api!.innerEmitter.emit(
+        'vite:client-connect',
+        undefined,
+        hmrClient,
+      )
       onMessage({ type: 'connected' })
       handler = onMessage
     },
@@ -101,6 +105,7 @@ export const createServerModuleRunnerTransport = (options: {
       }
       options.channel.api!.innerEmitter.emit(
         'vite:client-disconnect',
+        undefined,
         hmrClient,
       )
     },
