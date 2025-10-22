@@ -48,7 +48,7 @@ export async function createImportMetaResolver(): Promise<
 }
 
 // NOTE: use computed string to avoid `define` replacing `import.meta.resolve` when bundled
-export const importMetaResolveWithCustomHookString = /* js */ `
+export const importMetaResolveWithCustomHookString: string = /* js */ `
 
   (() => {
     const resolve = 'resolve'
