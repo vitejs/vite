@@ -30,6 +30,7 @@ import {
   withTrailingSlash,
 } from '../shared/utils'
 import { VALID_ID_PREFIX } from '../shared/constants'
+import { createIsBuiltin } from '../shared/builtin'
 import {
   CLIENT_ENTRY,
   CLIENT_PUBLIC_PATH,
@@ -115,20 +116,6 @@ export function isBuiltin(builtins: (string | RegExp)[], id: string): boolean {
     isBuiltinCache.set(builtins, isBuiltin)
   }
   return isBuiltin(id)
-}
-
-export function createIsBuiltin(
-  builtins: (string | RegExp)[],
-): (id: string) => boolean {
-  const plainBuiltinsSet = new Set(
-    builtins.filter((builtin) => typeof builtin === 'string'),
-  )
-  const regexBuiltins = builtins.filter(
-    (builtin) => typeof builtin !== 'string',
-  )
-
-  return (id) =>
-    plainBuiltinsSet.has(id) || regexBuiltins.some((regexp) => regexp.test(id))
 }
 
 export const nodeLikeBuiltins: (string | RegExp)[] = [
