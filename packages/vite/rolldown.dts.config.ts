@@ -77,7 +77,7 @@ const identifierWithTrailingDollarRE = /\b(\w+)\$\d+\b/g
  */
 const identifierReplacements: Record<string, Record<string, string>> = {
   rollup: {
-    Plugin$2: 'Rollup.Plugin',
+    Plugin$1: 'Rollup.Plugin',
     TransformResult$1: 'Rollup.TransformResult',
   },
   esbuild: {
@@ -111,12 +111,15 @@ const identifierReplacements: Record<string, Record<string, string>> = {
   },
 }
 
-// type names that are declared
 const ignoreConfusingTypeNames = [
-  'Plugin$1',
+  // type names that are declared
   'MinimalPluginContext$1',
   'ServerOptions$1',
   'ServerOptions$3',
+  // type parameters
+  'T$1',
+  'K$1',
+  'Server$3',
 ]
 
 /**

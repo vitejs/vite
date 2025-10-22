@@ -6,7 +6,7 @@ import { exec } from 'node:child_process'
 import crypto from 'node:crypto'
 import { fileURLToPath } from 'node:url'
 import type { ServerOptions as HttpsServerOptions } from 'node:https'
-import { builtinModules, createRequire } from 'node:module'
+import { builtinModules } from 'node:module'
 import { promises as dns } from 'node:dns'
 import { performance } from 'node:perf_hooks'
 import type { AddressInfo, Server } from 'node:net'
@@ -118,7 +118,7 @@ export function isBuiltin(builtins: (string | RegExp)[], id: string): boolean {
   return isBuiltin(id)
 }
 
-export const nodeLikeBuiltins = [
+export const nodeLikeBuiltins: (string | RegExp)[] = [
   ...nodeBuiltins,
   new RegExp(`^${NODE_BUILTIN_NAMESPACE}`),
   new RegExp(`^${BUN_BUILTIN_NAMESPACE}`),
@@ -157,16 +157,15 @@ export function isOptimizable(
   )
 }
 
-export const bareImportRE = /^(?![a-zA-Z]:)[\w@](?!.*:\/\/)/
-export const deepImportRE = /^([^@][^/]*)\/|^(@[^/]+\/[^/]+)\//
+export const bareImportRE: RegExp = /^(?![a-zA-Z]:)[\w@](?!.*:\/\/)/
+export const deepImportRE: RegExp = /^([^@][^/]*)\/|^(@[^/]+\/[^/]+)\//
 
-// TODO: use import()
-const _require = createRequire(/** #__KEEP__ */ import.meta.url)
-
-const _dirname = path.dirname(fileURLToPath(/** #__KEEP__ */ import.meta.url))
+export const _dirname: string = path.dirname(
+  fileURLToPath(/** #__KEEP__ */ import.meta.url),
+)
 
 // NOTE: we don't use VERSION variable exported from rollup to avoid importing rollup in dev
-export const rollupVersion =
+export const rollupVersion: string =
   resolvePackageData('rollup', _dirname, true)?.data.version ?? ''
 
 // set in bin/vite.js
@@ -224,7 +223,7 @@ function testCaseInsensitiveFS() {
   return fs.existsSync(CLIENT_ENTRY.replace('client.mjs', 'cLiEnT.mjs'))
 }
 
-export const isCaseInsensitiveFS = testCaseInsensitiveFS()
+export const isCaseInsensitiveFS: boolean = testCaseInsensitiveFS()
 
 const VOLUME_RE = /^[A-Z]:/i
 
@@ -276,13 +275,13 @@ export function isSameFilePath(file1: string, file2: string): boolean {
   )
 }
 
-export const externalRE = /^([a-z]+:)?\/\//
+export const externalRE: RegExp = /^([a-z]+:)?\/\//
 export const isExternalUrl = (url: string): boolean => externalRE.test(url)
 
-export const dataUrlRE = /^\s*data:/i
+export const dataUrlRE: RegExp = /^\s*data:/i
 export const isDataUrl = (url: string): boolean => dataUrlRE.test(url)
 
-export const virtualModuleRE = /^virtual-module:.*/
+export const virtualModuleRE: RegExp = /^virtual-module:.*/
 export const virtualModulePrefix = 'virtual-module:'
 
 // NOTE: We should start relying on the "Sec-Fetch-Dest" header instead of this
@@ -325,8 +324,8 @@ export function removeDirectQuery(url: string): string {
   return url.replace(directRequestRE, '$1').replace(trailingSeparatorRE, '')
 }
 
-export const urlRE = /(\?|&)url(?:&|$)/
-export const rawRE = /(\?|&)raw(?:&|$)/
+export const urlRE: RegExp = /(\?|&)url(?:&|$)/
+export const rawRE: RegExp = /(\?|&)raw(?:&|$)/
 export function removeUrlQuery(url: string): string {
   return url.replace(urlRE, '$1').replace(trailingSeparatorRE, '')
 }
@@ -443,7 +442,7 @@ export function isFilePathESM(
   }
 }
 
-export const splitRE = /\r?\n/g
+export const splitRE: RegExp = /\r?\n/g
 
 const range: number = 2
 
@@ -677,7 +676,9 @@ export async function recursiveReaddir(dir: string): Promise<string[]> {
 // `fs.realpathSync.native` resolves differently in Windows network drive,
 // causing file read errors. skip for now.
 // https://github.com/nodejs/node/issues/37737
-export let safeRealpathSync = isWindows
+export let safeRealpathSync:
+  | typeof windowsSafeRealPathSync
+  | typeof fs.realpathSync.native = isWindows
   ? windowsSafeRealPathSync
   : fs.realpathSync.native
 
@@ -980,6 +981,29 @@ export async function resolveHostname(
   return { host, name }
 }
 
+export function extractHostnamesFromCerts(
+  certs: HttpsServerOptions['cert'] | undefined,
+): string[] {
+  const certList = certs ? arraify(certs) : []
+  if (certList.length === 0) return []
+
+  const hostnames = certList
+    .map((cert) => {
+      try {
+        return new crypto.X509Certificate(cert)
+      } catch {
+        return null
+      }
+    })
+    .flatMap((cert) =>
+      cert?.subjectAltName
+        ? extractHostnamesFromSubjectAltName(cert.subjectAltName)
+        : [],
+    )
+
+  return unique(hostnames)
+}
+
 export function resolveServerUrls(
   server: Server,
   options: CommonServerOptions,
@@ -1032,19 +1056,12 @@ export function resolveServerUrls(
       })
   }
 
-  const cert =
-    httpsOptions?.cert && !Array.isArray(httpsOptions.cert)
-      ? new crypto.X509Certificate(httpsOptions.cert)
-      : undefined
-  const hostnameFromCert = cert?.subjectAltName
-    ? extractHostnamesFromSubjectAltName(cert.subjectAltName)
-    : []
-
-  if (hostnameFromCert.length > 0) {
+  const hostnamesFromCert = extractHostnamesFromCerts(httpsOptions?.cert)
+  if (hostnamesFromCert.length > 0) {
     const existings = new Set([...local, ...network])
     local.push(
-      ...hostnameFromCert
-        .map((hostname) => `https://${hostname}:${port}${base}`)
+      ...hostnamesFromCert
+        .map((hostname) => `${protocol}://${hostname}:${port}${base}`)
         .filter((url) => !existings.has(url)),
     )
   }
@@ -1095,10 +1112,10 @@ export function arraify<T>(target: T | T[]): T[] {
 }
 
 // Taken from https://stackoverflow.com/a/36328890
-export const multilineCommentsRE = /\/\*[^*]*\*+(?:[^/*][^*]*\*+)*\//g
-export const singlelineCommentsRE = /\/\/.*/g
-export const requestQuerySplitRE = /\?(?!.*[/|}])/
-export const requestQueryMaybeEscapedSplitRE = /\\?\?(?!.*[/|}])/
+export const multilineCommentsRE: RegExp = /\/\*[^*]*\*+(?:[^/*][^*]*\*+)*\//g
+export const singlelineCommentsRE: RegExp = /\/\/.*/g
+export const requestQuerySplitRE: RegExp = /\?(?!.*[/|}])/
+export const requestQueryMaybeEscapedSplitRE: RegExp = /\\?\?(?!.*[/|}])/
 
 export const blankReplacer = (match: string): string => ' '.repeat(match.length)
 
@@ -1106,25 +1123,6 @@ export function getHash(text: Buffer | string, length = 8): string {
   const h = crypto.hash('sha256', text, 'hex').substring(0, length)
   if (length <= 64) return h
   return h.padEnd(length, '_')
-}
-
-export const requireResolveFromRootWithFallback = (
-  root: string,
-  id: string,
-): string => {
-  // check existence first, so if the package is not found,
-  // it won't be cached by nodejs, since there isn't a way to invalidate them:
-  // https://github.com/nodejs/node/issues/44663
-  const found = resolvePackageData(id, root) || resolvePackageData(id, _dirname)
-  if (!found) {
-    const error = new Error(`${JSON.stringify(id)} not found.`)
-    ;(error as any).code = 'MODULE_NOT_FOUND'
-    throw error
-  }
-
-  // actually resolve
-  // Search in the root directory first, and fallback to the default require paths.
-  return _require.resolve(id, { paths: [root, _dirname] })
 }
 
 export function emptyCssComments(raw: string): string {

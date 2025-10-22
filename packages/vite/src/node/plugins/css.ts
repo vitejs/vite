@@ -1,7 +1,6 @@
 import fs from 'node:fs'
 import fsp from 'node:fs/promises'
 import path from 'node:path'
-import { createRequire } from 'node:module'
 import { fileURLToPath, pathToFileURL } from 'node:url'
 import postcssrc from 'postcss-load-config'
 import type {
@@ -57,6 +56,7 @@ import type { ResolvedConfig } from '../config'
 import type { Plugin } from '../plugin'
 import { checkPublicFile } from '../publicDir'
 import {
+  _dirname,
   arraify,
   asyncReplace,
   combineSourcemaps,
@@ -79,7 +79,6 @@ import {
   processSrcSet,
   removeDirectQuery,
   removeUrlQuery,
-  requireResolveFromRootWithFallback,
   stripBomTag,
   urlRE,
 } from '../utils'
@@ -94,6 +93,7 @@ import { searchForWorkspaceRoot } from '../server/searchRoot'
 import { type DevEnvironment } from '..'
 import type { PackageCache } from '../packages'
 import { findNearestMainPackageData } from '../packages'
+import { nodeResolveWithVite } from '../nodeResolve'
 import { addToHTMLProxyTransformResult } from './html'
 import {
   assetUrlRE,
@@ -191,7 +191,7 @@ export interface CSSModulesOptions {
       ) => string)
 }
 
-export const cssConfigDefaults = Object.freeze({
+const _cssConfigDefaults = Object.freeze({
   /** @experimental */
   transformer: 'postcss',
   // modules
@@ -202,6 +202,8 @@ export const cssConfigDefaults = Object.freeze({
   devSourcemap: false,
   // lightningcss
 } satisfies CSSOptions)
+export const cssConfigDefaults: Readonly<Partial<CSSOptions>> =
+  _cssConfigDefaults
 
 export type ResolvedCSSOptions = Omit<CSSOptions, 'lightningcss'> &
   Required<Pick<CSSOptions, 'transformer' | 'devSourcemap'>> & {
@@ -211,7 +213,7 @@ export type ResolvedCSSOptions = Omit<CSSOptions, 'lightningcss'> &
 export function resolveCSSOptions(
   options: CSSOptions | undefined,
 ): ResolvedCSSOptions {
-  const resolved = mergeWithDefaults(cssConfigDefaults, options ?? {})
+  const resolved = mergeWithDefaults(_cssConfigDefaults, options ?? {})
   if (resolved.transformer === 'lightningcss') {
     resolved.lightningcss ??= {}
     resolved.lightningcss.targets ??= convertTargets(
@@ -268,13 +270,13 @@ const cssModulesCache = new WeakMap<
   Map<string, Record<string, string>>
 >()
 
-export const removedPureCssFilesCache = new WeakMap<
+export const removedPureCssFilesCache: WeakMap<
   ResolvedConfig,
   Map<string, RenderedChunk>
->()
+> = new WeakMap()
 
 // Used only if the config doesn't code-split CSS (builds a single CSS file)
-export const cssBundleNameCache = new WeakMap<ResolvedConfig, string>()
+export const cssBundleNameCache: WeakMap<ResolvedConfig, string> = new WeakMap()
 
 const postcssConfigCache = new WeakMap<
   ResolvedConfig,
@@ -1562,7 +1564,7 @@ async function compilePostCSS(
 
   const postcssOptions = postcssConfig?.options ?? {}
   const postcssParser =
-    lang === 'sss' ? loadSss(config.root) : postcssOptions.parser
+    lang === 'sss' ? await loadSss(config.root) : postcssOptions.parser
 
   if (!postcssPlugins.length && !postcssParser) {
     return
@@ -1588,11 +1590,12 @@ async function transformSugarSS(
   const { config } = environment
   const { devSourcemap } = config.css
 
+  const sssParser = await loadSss(config.root)
   const result = await runPostCSS(
     id,
     code,
     [],
-    { parser: loadSss(config.root) },
+    { parser: sssParser },
     undefined,
     environment.logger,
     devSourcemap,
@@ -1905,11 +1908,11 @@ type CssUrlReplacer = (
   rawUrl: string,
 ) => string | false | Promise<string | false>
 // https://drafts.csswg.org/css-syntax-3/#identifier-code-point
-export const cssUrlRE =
+export const cssUrlRE: RegExp =
   /(?<!@import\s+)(?<=^|[^\w\-\u0080-\uffff])url\((\s*('[^']+'|"[^"]+")\s*|(?:\\.|[^'")\\])+)\)/
-export const cssDataUriRE =
+export const cssDataUriRE: RegExp =
   /(?<=^|[^\w\-\u0080-\uffff])data-uri\((\s*('[^']+'|"[^"]+")\s*|[^'")]+)\)/
-export const importCssRE =
+export const importCssRE: RegExp =
   /@import\s+(?:url\()?('[^']+\.css'|"[^"]+\.css"|[^'"\s)]+\.css)/
 // Assuming a function name won't be longer than 256 chars
 // eslint-disable-next-line regexp/no-unused-capturing-group -- doesn't detect asyncReplace usage
@@ -2323,23 +2326,18 @@ function loadPreprocessorPath(
   if (cached) {
     return cached
   }
-  try {
-    const resolved = requireResolveFromRootWithFallback(root, lang)
-    return (loadedPreprocessorPath[lang] = resolved)
-  } catch (e) {
-    if (e.code === 'MODULE_NOT_FOUND') {
-      const installCommand = getPackageManagerCommand('install')
-      throw new Error(
-        `Preprocessor dependency "${lang}" not found. Did you install it? Try \`${installCommand} -D ${lang}\`.`,
-      )
-    } else {
-      const message = new Error(
-        `Preprocessor dependency "${lang}" failed to load:\n${e.message}`,
-      )
-      message.stack = e.stack + '\n' + message.stack
-      throw message
-    }
-  }
+
+  // Try resolve from project root first, then the current vite installation path
+  const resolved =
+    nodeResolveWithVite(lang, undefined, { root }) ??
+    nodeResolveWithVite(lang, _dirname, { root })
+  if (resolved) return (loadedPreprocessorPath[lang] = resolved)
+
+  // Error if we can't find the preprocessor
+  const installCommand = getPackageManagerCommand('install')
+  throw new Error(
+    `Preprocessor dependency "${lang}" not found. Did you install it? Try \`${installCommand} -D ${lang}\`.`,
+  )
 }
 
 function loadSassPackage(root: string): {
@@ -2360,12 +2358,15 @@ function loadSassPackage(root: string): {
   }
 }
 
-let cachedSss: PostCSS.Syntax
-function loadSss(root: string): PostCSS.Syntax {
-  if (cachedSss) return cachedSss
-
-  const sssPath = loadPreprocessorPath(PostCssDialectLang.sss, root)
-  cachedSss = createRequire(/** #__KEEP__ */ import.meta.url)(sssPath)
+let cachedSss: PostCSS.Syntax | Promise<PostCSS.Syntax>
+async function loadSss(root: string): Promise<PostCSS.Syntax> {
+  if (!cachedSss) {
+    cachedSss = (async () => {
+      const sssPath = loadPreprocessorPath(PostCssDialectLang.sss, root)
+      const resolved = (await import(pathToFileURL(sssPath).href)).default
+      return (cachedSss = resolved)
+    })()
+  }
   return cachedSss
 }
 
@@ -2415,10 +2416,7 @@ const makeScssWorker = (
 
   const worker: WorkerType = {
     async run(sassPath, data, options) {
-      // need pathToFileURL for windows since import("D:...") fails
-      // https://github.com/nodejs/node/issues/31710
-      const sass: typeof Sass = (await import(pathToFileURL(sassPath).href))
-        .default
+      const sass: typeof Sass = await import(sassPath)
       compilerPromise ??= sass.initAsyncCompiler()
       const compiler = await compilerPromise
 
@@ -2535,7 +2533,7 @@ const scssProcessor = (
       }
       try {
         const result = await worker.run(
-          sassPackage.path,
+          pathToFileURL(sassPackage.path).href,
           data,
           optionsWithoutAdditionalData,
         )
@@ -2796,9 +2794,7 @@ const lessProcessor = (
       worker?.stop()
     },
     async process(environment, source, root, options, resolvers) {
-      const lessPath = pathToFileURL(
-        loadPreprocessorPath(PreprocessLang.less, root),
-      ).href
+      const lessPath = loadPreprocessorPath(PreprocessLang.less, root)
       worker ??= makeLessWorker(environment, resolvers, maxWorkers)
 
       const { content, map: additionalMap } = await getSource(
@@ -2815,7 +2811,7 @@ const lessProcessor = (
       }
       try {
         result = await worker.run(
-          lessPath,
+          pathToFileURL(lessPath).href,
           content,
           optionsWithoutAdditionalData,
         )
@@ -2864,9 +2860,9 @@ const makeStylWorker = (maxWorkers: number | undefined) => {
           additionalData: undefined
         },
       ) => {
-        const nodeStylus: typeof Stylus = (await import(stylusPath)).default
+        const stylus: typeof Stylus = (await import(stylusPath)).default
 
-        const ref = nodeStylus(content, {
+        const ref = stylus(content, {
           // support @import from node dependencies by default
           paths: ['node_modules'],
           ...options,
@@ -2917,9 +2913,7 @@ const stylProcessor = (
       worker?.stop()
     },
     async process(_environment, source, root, options, _resolvers) {
-      const stylusPath = pathToFileURL(
-        loadPreprocessorPath(PreprocessLang.stylus, root),
-      ).href
+      const stylusPath = loadPreprocessorPath(PreprocessLang.stylus, root)
       worker ??= makeStylWorker(maxWorkers)
 
       // Get source with preprocessor options.additionalData. Make sure a new line separator
@@ -2942,7 +2936,7 @@ const stylProcessor = (
       }
       try {
         const { code, map, deps } = await worker.run(
-          stylusPath,
+          pathToFileURL(stylusPath).href,
           content,
           root,
           optionsWithoutAdditionalData,

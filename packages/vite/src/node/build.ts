@@ -354,7 +354,7 @@ export interface ResolvedBuildOptions
   modulePreload: false | ResolvedModulePreloadOptions
 }
 
-export const buildEnvironmentOptionsDefaults = Object.freeze({
+const _buildEnvironmentOptionsDefaults = Object.freeze({
   target: 'baseline-widely-available',
   /** @deprecated */
   polyfillModulePreload: true,
@@ -390,7 +390,10 @@ export const buildEnvironmentOptionsDefaults = Object.freeze({
   chunkSizeWarningLimit: 500,
   watch: null,
   // createEnvironment
-})
+} satisfies BuildEnvironmentOptions)
+export const buildEnvironmentOptionsDefaults: Readonly<
+  Partial<BuildEnvironmentOptions>
+> = _buildEnvironmentOptionsDefaults
 
 export function resolveBuildEnvironmentOptions(
   raw: BuildEnvironmentOptions,
@@ -414,7 +417,7 @@ export function resolveBuildEnvironmentOptions(
 
   const merged = mergeWithDefaults(
     {
-      ...buildEnvironmentOptionsDefaults,
+      ..._buildEnvironmentOptionsDefaults,
       cssCodeSplit: !raw.lib,
       minify: consumer === 'server' ? false : 'esbuild',
       ssr: consumer === 'server',
@@ -1443,8 +1446,10 @@ export function toOutputFilePathWithoutRuntime(
   }
 }
 
-export const toOutputFilePathInCss = toOutputFilePathWithoutRuntime
-export const toOutputFilePathInHtml = toOutputFilePathWithoutRuntime
+export const toOutputFilePathInCss: typeof toOutputFilePathWithoutRuntime =
+  toOutputFilePathWithoutRuntime
+export const toOutputFilePathInHtml: typeof toOutputFilePathWithoutRuntime =
+  toOutputFilePathWithoutRuntime
 
 export class BuildEnvironment extends BaseEnvironment {
   mode = 'build' as const
@@ -1505,18 +1510,20 @@ export interface BuilderOptions {
   buildApp?: (builder: ViteBuilder) => Promise<void>
 }
 
-export const builderOptionsDefaults = Object.freeze({
+const _builderOptionsDefaults = Object.freeze({
   sharedConfigBuild: false,
   sharedPlugins: false,
   // buildApp
-})
+} satisfies BuilderOptions)
+export const builderOptionsDefaults: Readonly<Partial<BuilderOptions>> =
+  _builderOptionsDefaults
 
 export function resolveBuilderOptions(
   options: BuilderOptions | undefined,
 ): ResolvedBuilderOptions | undefined {
   if (!options) return
   return mergeWithDefaults(
-    { ...builderOptionsDefaults, buildApp: async () => {} },
+    { ..._builderOptionsDefaults, buildApp: async () => {} },
     options,
   )
 }
@@ -1605,6 +1612,7 @@ export async function createBuilder(
   if (useLegacyBuilder) {
     await setupEnvironment(config.build.ssr ? 'ssr' : 'client', config)
   } else {
+    const environmentConfigs: [string, ResolvedConfig][] = []
     for (const environmentName of Object.keys(config.environments)) {
       // We need to resolve the config again so we can properly merge options
       // and get a new set of plugins for each build environment. The ecosystem
@@ -1647,9 +1655,14 @@ export async function createBuilder(
           patchPlugins,
         )
       }
-
-      await setupEnvironment(environmentName, environmentConfig)
+      environmentConfigs.push([environmentName, environmentConfig])
     }
+    await Promise.all(
+      environmentConfigs.map(
+        async ([environmentName, environmentConfig]) =>
+          await setupEnvironment(environmentName, environmentConfig),
+      ),
+    )
   }
 
   return builder
