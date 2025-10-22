@@ -168,12 +168,13 @@ export class HMRContext implements ViteHotContext {
 }
 
 export class HMRClient {
-  public hotModulesMap = new Map<string, HotModule>()
-  public disposeMap = new Map<string, (data: any) => void | Promise<void>>()
-  public pruneMap = new Map<string, (data: any) => void | Promise<void>>()
-  public dataMap = new Map<string, any>()
+  public hotModulesMap: Map<string, HotModule> = new Map()
+  public disposeMap: Map<string, (data: any) => void | Promise<void>> =
+    new Map()
+  public pruneMap: Map<string, (data: any) => void | Promise<void>> = new Map()
+  public dataMap: Map<string, any> = new Map()
   public customListenersMap: CustomListenersMap = new Map()
-  public ctxToListenersMap = new Map<string, CustomListenersMap>()
+  public ctxToListenersMap: Map<string, CustomListenersMap> = new Map()
   public currentFirstInvalidatedBy: string | undefined
 
   constructor(

@@ -23,6 +23,10 @@ function BackendIntegrationExample() {
 
       entrypoints.push(['tailwindcss-colors', 'tailwindcss/colors.js'])
       entrypoints.push(['bar.css', path.resolve(__dirname, './dir/foo.css')])
+      entrypoints.push([
+        'bar.custom',
+        path.resolve(__dirname, './dir/custom.css'),
+      ])
 
       return {
         server: {

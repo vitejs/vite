@@ -33,7 +33,8 @@ import {
 import type { HttpServer } from '.'
 import { restartServerWithUrls } from '.'
 
-export const debugHmr = createDebugger('vite:hmr')
+export const debugHmr: ((...args: any[]) => any) | undefined =
+  createDebugger('vite:hmr')
 
 const whitespaceRE = /\s/
 
@@ -173,10 +174,6 @@ export const normalizeHotChannel = (
     (data: any, client: NormalizedHotChannelClient) => void | Promise<void>,
     (data: any, client: HotChannelClient) => void | Promise<void>
   >()
-  const listenersForEvents = new Map<
-    string,
-    Set<(data: any, client: HotChannelClient) => void | Promise<void>>
-  >()
 
   let invokeHandlers: InvokeMethods | undefined
   let listenerForInvokeHandler:
@@ -249,10 +246,6 @@ export const normalizeHotChannel = (
       normalizedListenerMap.set(fn, listenerWithNormalizedClient)
 
       channel.on?.(event, listenerWithNormalizedClient)
-      if (!listenersForEvents.has(event)) {
-        listenersForEvents.set(event, new Set())
-      }
-      listenersForEvents.get(event)!.add(listenerWithNormalizedClient)
     },
     off: (event: string, fn: () => void) => {
       if (event === 'connection' || !normalizeClient) {
@@ -263,7 +256,6 @@ export const normalizeHotChannel = (
       const normalizedListener = normalizedListenerMap.get(fn)
       if (normalizedListener) {
         channel.off?.(event, normalizedListener)
-        listenersForEvents.get(event)?.delete(normalizedListener)
       }
     },
     setInvokeHandler(_invokeHandlers) {
