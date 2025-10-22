@@ -142,28 +142,42 @@ export class ModuleRunner {
     return false
   }
 
-  private isCircularImport(
-    importers: Set<string>,
-    moduleUrl: string,
-    visited = new Set<string>(),
-  ) {
-    for (const importer of importers) {
-      if (visited.has(importer)) {
-        continue
+  private isCircularImport(importers: Set<string>, moduleUrl: string) {
+    // 0 = unvisited, 1 = visiting (on-stack), 2 = done (no cycle below)
+    const color = new Map<string, 0 | 1 | 2>()
+    color.set(moduleUrl, 1)
+
+    const dfs = (id: string): boolean => {
+      const mod = this.evaluatedModules.getModuleById(id)
+      if (!mod) {
+        color.set(id, 2)
+        return false
       }
-      visited.add(importer)
-      if (importer === moduleUrl) {
-        return true
+
+      for (const imp of mod.importers) {
+        const c = color.get(imp) ?? 0
+        if (c === 1) return true
+
+        if (c === 0) {
+          color.set(imp, 1)
+          if (dfs(imp)) return true
+        }
       }
-      const mod = this.evaluatedModules.getModuleById(importer)
-      if (
-        mod &&
-        mod.importers.size &&
-        this.isCircularImport(mod.importers, moduleUrl, visited)
-      ) {
-        return true
+
+      color.set(id, 2)
+      return false
+    }
+
+    for (const imp of importers) {
+      if ((color.get(imp) ?? 0) === 0) {
+        color.set(imp, 1)
+
+        if (dfs(imp)) {
+          return true
+        }
       }
     }
+
     return false
   }
 
