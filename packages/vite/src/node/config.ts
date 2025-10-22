@@ -19,6 +19,7 @@ import {
   DEFAULT_CLIENT_CONDITIONS,
   DEFAULT_CLIENT_MAIN_FIELDS,
   DEFAULT_CONFIG_FILES,
+  DEFAULT_EXTENSIONS,
   DEFAULT_EXTERNAL_CONDITIONS,
   DEFAULT_PREVIEW_PORT,
   DEFAULT_SERVER_CONDITIONS,
@@ -658,7 +659,7 @@ const configDefaults = Object.freeze({
     // mainFields
     // conditions
     externalConditions: [...DEFAULT_EXTERNAL_CONDITIONS],
-    extensions: ['.mjs', '.js', '.mts', '.ts', '.jsx', '.tsx', '.json'],
+    extensions: DEFAULT_EXTENSIONS,
     dedupe: [],
     /** @experimental */
     noExternal: [],

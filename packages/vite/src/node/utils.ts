@@ -173,7 +173,7 @@ export function isOptimizable(
 export const bareImportRE: RegExp = /^(?![a-zA-Z]:)[\w@](?!.*:\/\/)/
 export const deepImportRE: RegExp = /^([^@][^/]*)\/|^(@[^/]+\/[^/]+)\//
 
-export const _dirname = path.dirname(
+export const _dirname: string = path.dirname(
   fileURLToPath(/** #__KEEP__ */ import.meta.url),
 )
 

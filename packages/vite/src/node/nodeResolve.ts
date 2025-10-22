@@ -1,5 +1,5 @@
 import isModuleSyncConditionEnabled from '#module-sync-enabled'
-import { configDefaults } from './config'
+import { DEFAULT_EXTENSIONS } from './constants'
 import { tryNodeResolve } from './plugins/resolve'
 import { nodeLikeBuiltins } from './utils'
 
@@ -31,7 +31,7 @@ export function nodeResolveWithVite(
     external: [],
     noExternal: [],
     dedupe: [],
-    extensions: configDefaults.resolve.extensions,
+    extensions: DEFAULT_EXTENSIONS,
     preserveSymlinks: false,
     // Intentionally disable package cache for now as consumers don't need it
     packageCache: undefined,
