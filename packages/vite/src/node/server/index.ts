@@ -509,22 +509,24 @@ export async function _createServer(
 
   const environments: Record<string, DevEnvironment> = {}
 
-  for (const [name, environmentOptions] of Object.entries(
-    config.environments,
-  )) {
-    environments[name] = await environmentOptions.dev.createEnvironment(
-      name,
-      config,
-      {
-        ws,
-      },
-    )
-  }
+  await Promise.all(
+    Object.entries(config.environments).map(
+      async ([name, environmentOptions]) => {
+        const environment = await environmentOptions.dev.createEnvironment(
+          name,
+          config,
+          {
+            ws,
+          },
+        )
+        environments[name] = environment
 
-  for (const environment of Object.values(environments)) {
-    const previousInstance = options.previousEnvironments?.[environment.name]
-    await environment.init({ watcher, previousInstance })
-  }
+        const previousInstance =
+          options.previousEnvironments?.[environment.name]
+        await environment.init({ watcher, previousInstance })
+      },
+    ),
+  )
 
   // Backward compatibility
 
