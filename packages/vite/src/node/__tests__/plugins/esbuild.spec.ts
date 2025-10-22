@@ -2,6 +2,7 @@ import path from 'node:path'
 import { describe, expect, test } from 'vitest'
 import type { ResolvedConfig, UserConfig } from '../../config'
 import {
+  injectEsbuildHelpers,
   resolveEsbuildTranspileOptions,
   transformWithEsbuild,
 } from '../../plugins/esbuild'
@@ -394,6 +395,42 @@ describe('transformWithEsbuild', () => {
       })
       expect(actual).toBe(defineForClassFieldsFalseTransformedCode)
     })
+  })
+})
+
+describe('injectEsbuildHelpers', () => {
+  test('injects helpers in IIFE format', () => {
+    const esbuildCode =
+      'var $=function(){};var MyLib=(function(){"use strict";return 42;})()'
+    const result = injectEsbuildHelpers(esbuildCode, 'iife')
+    expect(result).toBe(
+      'var MyLib=(function(){"use strict";var $=function(){};return 42;})()',
+    )
+  })
+
+  test('injects helpers in IIFE format (pre esbuild 0.25.9)', () => {
+    const esbuildCode =
+      'var $=function(){};var MyLib=function(){"use strict";return 42;}()'
+    const result = injectEsbuildHelpers(esbuildCode, 'iife')
+    expect(result).toBe(
+      'var MyLib=function(){"use strict";var $=function(){};return 42;}()',
+    )
+  })
+
+  test('injects helpers in UMD format', () => {
+    const esbuildCode =
+      'var $=function(){};(function(global){"use strict";return 42;})'
+    const result = injectEsbuildHelpers(esbuildCode, 'umd')
+    expect(result).toBe(
+      '(function(global){"use strict";var $=function(){};return 42;})',
+    )
+  })
+
+  test('handles helpers with special characters', () => {
+    const esbuildCode =
+      'var $$=function(){};var MyLib=(function(){"use strict";return 42;})()'
+    const result = injectEsbuildHelpers(esbuildCode, 'iife')
+    expect(result).toContain('"use strict";var $$=function(){};')
   })
 })
 

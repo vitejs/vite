@@ -3,8 +3,8 @@ import path from 'node:path'
 import sirv from 'sirv'
 import compression from '@polka/compression'
 import connect from 'connect'
-import type { Connect } from 'dep-types/connect'
 import corsMiddleware from 'cors'
+import type { Connect } from '#dep-types/connect'
 import type {
   HttpServer,
   ResolvedServerOptions,
@@ -26,6 +26,7 @@ import { notFoundMiddleware } from './server/middlewares/notFound'
 import { proxyMiddleware } from './server/middlewares/proxy'
 import {
   getServerUrlByHost,
+  normalizePath,
   resolveHostname,
   resolveServerUrls,
   setupSIGTERMListener,
@@ -263,7 +264,8 @@ export async function preview(
 
   if (config.appType === 'spa' || config.appType === 'mpa') {
     // transform index.html
-    app.use(indexHtmlMiddleware(distDir, server))
+    const normalizedDistDir = normalizePath(distDir)
+    app.use(indexHtmlMiddleware(normalizedDistDir, server))
 
     // handle 404s
     app.use(notFoundMiddleware())

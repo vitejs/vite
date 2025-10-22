@@ -1,8 +1,8 @@
 import path from 'node:path'
 import fsp from 'node:fs/promises'
-import type { Connect } from 'dep-types/connect'
 import colors from 'picocolors'
 import type { ExistingRawSourceMap } from 'rollup'
+import type { Connect } from '#dep-types/connect'
 import type { ViteDevServer } from '..'
 import {
   createDebugger,
@@ -40,6 +40,17 @@ const debugCache = createDebugger('vite:cache')
 
 const knownIgnoreList = new Set(['/', '/favicon.ico'])
 
+const documentFetchDests = new Set([
+  'document',
+  'iframe',
+  'frame',
+  'fencedframe',
+])
+function isDocumentFetchDest(req: Connect.IncomingMessage) {
+  const fetchDest = req.headers['sec-fetch-dest']
+  return fetchDest !== undefined && documentFetchDests.has(fetchDest)
+}
+
 // TODO: consolidate this regex pattern with the url, raw, and inline checks in plugins
 const urlRE = /[?&]url\b/
 const rawRE = /[?&]raw\b/
@@ -62,6 +73,11 @@ export function cachedTransformMiddleware(
   // Keep the named function. The name is visible in debug logs via `DEBUG=connect:dispatcher ...`
   return function viteCachedTransformMiddleware(req, res, next) {
     const environment = server.environments.client
+
+    if (isDocumentFetchDest(req)) {
+      res.appendHeader('Vary', 'Sec-Fetch-Dest')
+      return next()
+    }
 
     // check if we can return 304 early
     const ifNoneMatch = req.headers['if-none-match']
@@ -102,7 +118,8 @@ export function transformMiddleware(
 
     if (
       (req.method !== 'GET' && req.method !== 'HEAD') ||
-      knownIgnoreList.has(req.url!)
+      knownIgnoreList.has(req.url!) ||
+      isDocumentFetchDest(req)
     ) {
       return next()
     }
@@ -116,7 +133,9 @@ export function transformMiddleware(
     } catch (e) {
       if (e instanceof URIError) {
         server.config.logger.warn(
-          colors.yellow('Malformed URI sequence in request URL'),
+          colors.yellow(
+            `Malformed URI sequence in request URL: ${removeTimestampQuery(req.url!)}`,
+          ),
         )
         return next()
       }
@@ -228,7 +247,7 @@ export function transformMiddleware(
         const result = await environment.transformRequest(url, {
           allowId(id) {
             return (
-              id.startsWith('\0') ||
+              id[0] === '\0' ||
               !isServerAccessDeniedForTransform(server.config, id)
             )
           },

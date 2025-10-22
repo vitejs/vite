@@ -7,10 +7,10 @@ import { performance } from 'node:perf_hooks'
 import { createRequire } from 'node:module'
 import crypto from 'node:crypto'
 import colors from 'picocolors'
-import type { Alias, AliasOptions } from 'dep-types/alias'
 import type { PluginContextMeta, RollupOptions } from 'rollup'
 import picomatch from 'picomatch'
 import { build } from 'esbuild'
+import type { Alias, AliasOptions } from '#dep-types/alias'
 import type { AnymatchFn } from '../types/anymatch'
 import { withTrailingSlash } from '../shared/utils'
 import {
@@ -113,7 +113,7 @@ import {
 
 const debug = createDebugger('vite:config', { depth: 10 })
 const promisifiedRealpath = promisify(fs.realpath)
-const SYMBOL_RESOLVED_CONFIG = Symbol('vite:resolved-config')
+const SYMBOL_RESOLVED_CONFIG: unique symbol = Symbol('vite:resolved-config')
 
 export interface ConfigEnv {
   /**
@@ -641,7 +641,7 @@ export interface ResolvedConfig
   > {}
 
 // inferred ones are omitted
-export const configDefaults = Object.freeze({
+const configDefaults = Object.freeze({
   define: {},
   dev: {
     warmup: [],
@@ -721,7 +721,7 @@ export const configDefaults = Object.freeze({
   envPrefix: 'VITE_',
   worker: {
     format: 'iife',
-    plugins: () => [],
+    plugins: (): never[] => [],
     // rollupOptions
   },
   optimizeDeps: {
@@ -1658,7 +1658,7 @@ export async function resolveConfig(
 
   // For backward compat, set ssr environment build.emitAssets with the same value as build.ssrEmitAssets that might be changed in configResolved hook
   // https://github.com/vikejs/vike/blob/953614cea7b418fcc0309b5c918491889fdec90a/vike/node/plugin/plugins/buildConfig.ts#L67
-  if (resolved.environments.ssr) {
+  if (!resolved.builder?.sharedConfigBuild && resolved.environments.ssr) {
     resolved.environments.ssr.build.emitAssets =
       resolved.build.ssrEmitAssets || resolved.build.emitAssets
   }
@@ -1938,7 +1938,7 @@ async function bundleConfigFile(
     mainFields: ['main'],
     sourcemap: 'inline',
     // the last slash is needed to make the path correct
-    sourceRoot: path.dirname(fileName) + path.sep,
+    sourceRoot: pathToFileURL(path.dirname(fileName)).href + '/',
     metafile: true,
     define: {
       __dirname: dirnameVarName,

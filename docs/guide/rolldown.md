@@ -22,7 +22,7 @@ Rolldown focuses on three key principles:
 
 3. **Additional Features**: Rolldown introduces features that are not available in Rollup or esbuild, such as advanced chunk splitting control, built-in HMR, and Module Federation.
 
-For additional insights on the motivations behind Rolldown, see the [reasons why Rolldown is being built](https://rolldown.rs/guide/#why-rolldown).
+For additional insights on the motivations behind Rolldown, see the [reasons why Rolldown is being built](https://rolldown.rs/guide/introduction#why-rolldown).
 
 ## Benefits of Trying `rolldown-vite`
 
@@ -42,6 +42,12 @@ The rolldown-powered version of Vite is currently available as a separate packag
   }
 }
 ```
+
+::: tip Please pin the version!
+
+While these examples use `@latest`, we recommend using a specific version number to avoid unexpected breaking changes as [`rolldown-vite` is considered experimental](#versioning-policy).
+
+:::
 
 If you use a Vitepress or a meta framework that has Vite as peer dependency, you have to override the `vite` dependency in your `package.json`, which works slightly different depending on your package manager:
 
@@ -84,6 +90,8 @@ If you use a Vitepress or a meta framework that has Vite as peer dependency, you
 :::
 
 After adding these overrides, reinstall your dependencies and start your development server or build your project as usual. No further configuration changes are required.
+
+If you are starting a new project, you can use `create-vite` as normal for rolldown-vite, too. The latest version will ask you whether to use `rolldown-vite` or not.
 
 ## Known Limitations
 
@@ -141,9 +149,9 @@ export default {
 
 ### Enabling Native Plugins
 
-Thanks to Rolldown and Oxc, various internal Vite plugins, such as the alias or resolve plugin, have been converted to Rust. At the time of writing, using these plugins is not enabled by default, as their behavior may differ from the JavaScript versions.
+Thanks to Rolldown and Oxc, various internal Vite plugins, such as the alias or resolve plugin, have been converted to Rust. Native plugins are now enabled by default, with the default value set to `'v1'`.
 
-To test them, you can set the `experimental.enableNativePlugin` option to `true` in your Vite config.
+If you encounter any issues, you can change the `experimental.enableNativePlugin` option in your Vite config to `'resolver'` or `false` as a workaround. Note that this option will be removed in the future.
 
 ### Utilizing Oxc's React refresh transform
 
@@ -314,14 +322,9 @@ const plugin = {
 
 ### Hook filter feature
 
-Rolldown introduced a [hook filter feature](https://rolldown.rs/guide/plugin-development#plugin-hook-filters) to reduce the communication overhead the between Rust and JavaScript runtimes. By using this feature you can make your plugin more performant.
-This is also supported by Rollup 4.38.0+ and Vite 6.3.0+. To make your plugin backward compatible with the older versions, make sure to also run the filter inside the hook handlers.
+Rolldown introduced a [hook filter feature](https://rolldown.rs/apis/plugin-hook-filters) to reduce the communication overhead between the Rust and JavaScript runtimes. This feature allows plugins to specify patterns that determine when hooks should be called, improving performance by avoiding unnecessary hook invocations.
 
-::: tip
-
-[`@rolldown/pluginutils`](https://www.npmjs.com/package/@rolldown/pluginutils) exports some utilities for hook filters like `exactRegex` and `prefixRegex`.
-
-:::
+See the [Hook Filters guide](/guide/api-plugin#hook-filters) for more information.
 
 ### Converting content to JavaScript in `load` or `transform` hooks
 

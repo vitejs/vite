@@ -21,22 +21,22 @@ import type * as PostCSS from 'postcss'
 import type Sass from 'sass'
 import type Stylus from 'stylus'
 import type Less from 'less'
-import type { LightningCSSOptions } from 'types/internal/lightningcssOptions'
 import type { TransformOptions } from 'esbuild'
 import { formatMessages, transform } from 'esbuild'
 import type { RawSourceMap } from '@jridgewell/remapping'
 import { WorkerWithFallback } from 'artichokie'
 import { globSync } from 'tinyglobby'
 import type {
-  LessPreprocessorBaseOptions,
-  SassModernPreprocessBaseOptions,
-  StylusPreprocessorBaseOptions,
-} from 'types/internal/cssPreprocessorOptions'
-import type {
   TransformAttributeResult as LightningCssTransformAttributeResult,
   TransformResult as LightningCssTransformResult,
 } from 'lightningcss'
-import type { CustomPluginOptionsVite } from 'types/metadata'
+import type {
+  LessPreprocessorBaseOptions,
+  SassModernPreprocessBaseOptions,
+  StylusPreprocessorBaseOptions,
+} from '#types/internal/cssPreprocessorOptions'
+import type { LightningCSSOptions } from '#types/internal/lightningcssOptions'
+import type { CustomPluginOptionsVite } from '#types/metadata'
 import { getCodeWithSourcemap, injectSourcesContent } from '../server/sourcemap'
 import type { EnvironmentModuleNode } from '../server/moduleGraph'
 import {
@@ -191,7 +191,7 @@ export interface CSSModulesOptions {
       ) => string)
 }
 
-export const cssConfigDefaults = Object.freeze({
+const _cssConfigDefaults = Object.freeze({
   /** @experimental */
   transformer: 'postcss',
   // modules
@@ -202,6 +202,8 @@ export const cssConfigDefaults = Object.freeze({
   devSourcemap: false,
   // lightningcss
 } satisfies CSSOptions)
+export const cssConfigDefaults: Readonly<Partial<CSSOptions>> =
+  _cssConfigDefaults
 
 export type ResolvedCSSOptions = Omit<CSSOptions, 'lightningcss'> &
   Required<Pick<CSSOptions, 'transformer' | 'devSourcemap'>> & {
@@ -211,7 +213,7 @@ export type ResolvedCSSOptions = Omit<CSSOptions, 'lightningcss'> &
 export function resolveCSSOptions(
   options: CSSOptions | undefined,
 ): ResolvedCSSOptions {
-  const resolved = mergeWithDefaults(cssConfigDefaults, options ?? {})
+  const resolved = mergeWithDefaults(_cssConfigDefaults, options ?? {})
   if (resolved.transformer === 'lightningcss') {
     resolved.lightningcss ??= {}
     resolved.lightningcss.targets ??= convertTargets(
@@ -268,13 +270,13 @@ const cssModulesCache = new WeakMap<
   Map<string, Record<string, string>>
 >()
 
-export const removedPureCssFilesCache = new WeakMap<
+export const removedPureCssFilesCache: WeakMap<
   ResolvedConfig,
   Map<string, RenderedChunk>
->()
+> = new WeakMap()
 
 // Used only if the config doesn't code-split CSS (builds a single CSS file)
-export const cssBundleNameCache = new WeakMap<ResolvedConfig, string>()
+export const cssBundleNameCache: WeakMap<ResolvedConfig, string> = new WeakMap()
 
 const postcssConfigCache = new WeakMap<
   ResolvedConfig,
@@ -385,7 +387,18 @@ export function cssPlugin(config: ResolvedConfig): Plugin {
           let resolved = await resolveUrl(id, importer)
           if (resolved) {
             if (fragment) resolved += '#' + fragment
-            return [await fileToUrl(this, resolved), resolved]
+            let url = await fileToUrl(this, resolved)
+            // Inherit HMR timestamp if this asset was invalidated
+            if (!url.startsWith('data:') && this.environment.mode === 'dev') {
+              const mod = [
+                ...(this.environment.moduleGraph.getModulesByFile(resolved) ??
+                  []),
+              ].find((mod) => mod.type === 'asset')
+              if (mod?.lastHMRTimestamp) {
+                url = injectQuery(url, `t=${mod.lastHMRTimestamp}`)
+              }
+            }
+            return [url, resolved]
           }
           if (config.command === 'build') {
             const isExternal = config.build.rollupOptions.external
@@ -781,7 +794,7 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
       await urlEmitQueue.run(async () =>
         Promise.all(
           urlEmitTasks.map(async (info) => {
-            info.content = await finalizeCss(info.content, true, config)
+            info.content = await finalizeCss(info.content, config)
           }),
         ),
       )
@@ -852,7 +865,7 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
 
             // wait for previous tasks as well
             chunkCSS = await codeSplitEmitQueue.run(async () => {
-              return finalizeCss(chunkCSS!, true, config)
+              return finalizeCss(chunkCSS!, config)
             })
 
             // emit corresponding css file
@@ -875,7 +888,7 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
             // But because entry chunk can be imported by dynamic import,
             // we shouldn't remove the inlined CSS. (#10285)
 
-            chunkCSS = await finalizeCss(chunkCSS, true, config)
+            chunkCSS = await finalizeCss(chunkCSS, config)
             let cssString = JSON.stringify(chunkCSS)
             cssString =
               renderAssetUrlInJS(this, chunk, opts, cssString)?.toString() ||
@@ -942,8 +955,18 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
         return
       }
 
+      // vite:asset cleans up earlier assets of 'renderChunk',
+      // but with cssCodeSplit=false we may still emit CSS here.
+      // So is our responsibility to respect emitAssets
+      const canEmitAssets =
+        config.command !== 'build' || this.environment.config.build.emitAssets
+
       // extract as single css bundle if no codesplit
-      if (!this.environment.config.build.cssCodeSplit && !hasEmitted) {
+      if (
+        canEmitAssets &&
+        !this.environment.config.build.cssCodeSplit &&
+        !hasEmitted
+      ) {
         let extractedCss = ''
         const collected = new Set<OutputChunk>()
         // will be populated in order they are used by entry points
@@ -978,7 +1001,7 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
         // Finally, if there's any extracted CSS, we emit the asset
         if (extractedCss) {
           hasEmitted = true
-          extractedCss = await finalizeCss(extractedCss, true, config)
+          extractedCss = await finalizeCss(extractedCss, config)
           this.emitFile({
             name: getCssBundleName(),
             type: 'asset',
@@ -1791,16 +1814,12 @@ function combineSourcemapsIfExists(
 const viteHashUpdateMarker = '/*$vite$:1*/'
 const viteHashUpdateMarkerRE = /\/\*\$vite\$:\d+\*\//
 
-async function finalizeCss(
-  css: string,
-  minify: boolean,
-  config: ResolvedConfig,
-) {
+async function finalizeCss(css: string, config: ResolvedConfig) {
   // hoist external @imports and @charset to the top of the CSS chunk per spec (#1845 and #6333)
   if (css.includes('@import') || css.includes('@charset')) {
     css = await hoistAtRules(css)
   }
-  if (minify && config.build.cssMinify) {
+  if (config.build.cssMinify) {
     css = await minifyCSS(css, config, false)
   }
   // inject an additional string to generate a different hash for https://github.com/vitejs/vite/issues/18038
@@ -1888,11 +1907,11 @@ type CssUrlReplacer = (
   rawUrl: string,
 ) => string | false | Promise<string | false>
 // https://drafts.csswg.org/css-syntax-3/#identifier-code-point
-export const cssUrlRE =
-  /(?<!@import\s+)(?<=^|[^\w\-\u0080-\uffff])url\((\s*('[^']+'|"[^"]+")\s*|[^'")]+)\)/
-export const cssDataUriRE =
+export const cssUrlRE: RegExp =
+  /(?<!@import\s+)(?<=^|[^\w\-\u0080-\uffff])url\((\s*('[^']+'|"[^"]+")\s*|(?:\\.|[^'")\\])+)\)/
+export const cssDataUriRE: RegExp =
   /(?<=^|[^\w\-\u0080-\uffff])data-uri\((\s*('[^']+'|"[^"]+")\s*|[^'")]+)\)/
-export const importCssRE =
+export const importCssRE: RegExp =
   /@import\s+(?:url\()?('[^']+\.css'|"[^"]+\.css"|[^'"\s)]+\.css)/
 // Assuming a function name won't be longer than 256 chars
 // eslint-disable-next-line regexp/no-unused-capturing-group -- doesn't detect asyncReplace usage
@@ -1926,8 +1945,7 @@ const UrlRewritePostcssPlugin: PostCSS.PluginCreator<{
         if (isCssUrl || isCssImageSet) {
           const replacerForDeclaration = async (rawUrl: string) => {
             const [newUrl, resolvedId] = await opts.resolver(rawUrl, importer)
-            // only register inlined assets to avoid frequent full refresh (#18979)
-            if (newUrl.startsWith('data:') && resolvedId) {
+            if (resolvedId) {
               opts.deps.add(resolvedId)
             }
             return newUrl
@@ -2043,14 +2061,17 @@ async function doUrlReplace(
   if (skipUrlReplacer(unquotedUrl)) {
     return matched
   }
+  //  Remove escape sequences to get the actual file name before resolving.
+  unquotedUrl = unquotedUrl.replace(/\\(\W)/g, '$1')
 
   let newUrl = await replacer(unquotedUrl, rawUrl)
   if (newUrl === false) {
     return matched
   }
 
-  // The new url might need wrapping even if the original did not have it, e.g. if a space was added during replacement
-  if (wrap === '' && newUrl !== encodeURI(newUrl)) {
+  // The new url might need wrapping even if the original did not have it, e.g.
+  // if a space was added during replacement or the URL contains ")"
+  if (wrap === '' && (newUrl !== encodeURI(newUrl) || newUrl.includes(')'))) {
     wrap = '"'
   }
   // If wrapping in single quotes and newUrl also contains single quotes, switch to double quotes.
@@ -2475,7 +2496,8 @@ const makeScssWorker = (
       } satisfies ScssWorkerResult
     },
     async stop() {
-      ;(await compilerPromise)?.dispose()
+      const compiler = await compilerPromise
+      await compiler?.dispose()
       compilerPromise = undefined
     },
   }
@@ -2666,11 +2688,11 @@ const makeLessWorker = (
   }
 
   const worker = new WorkerWithFallback(
-    () => {
-      // eslint-disable-next-line no-restricted-globals -- this function runs inside a cjs worker
-      const fsp = require('node:fs/promises')
-      // eslint-disable-next-line no-restricted-globals
-      const path = require('node:path')
+    async () => {
+      const [fsp, path] = await Promise.all([
+        import('node:fs/promises'),
+        import('node:path'),
+      ])
 
       let ViteLessManager: any
       const createViteLessPlugin = (
@@ -2731,8 +2753,7 @@ const makeLessWorker = (
           additionalData: undefined
         },
       ) => {
-        // eslint-disable-next-line no-restricted-globals -- this function runs inside a cjs worker
-        const nodeLess: typeof Less = require(lessPath)
+        const nodeLess: typeof Less = (await import(lessPath)).default
         const viteResolverPlugin = createViteLessPlugin(
           nodeLess,
           options.filename,
@@ -2777,7 +2798,9 @@ const lessProcessor = (
       worker?.stop()
     },
     async process(environment, source, root, options, resolvers) {
-      const lessPath = loadPreprocessorPath(PreprocessLang.less, root)
+      const lessPath = pathToFileURL(
+        loadPreprocessorPath(PreprocessLang.less, root),
+      ).href
       worker ??= makeLessWorker(environment, resolvers, maxWorkers)
 
       const { content, map: additionalMap } = await getSource(
@@ -2843,8 +2866,7 @@ const makeStylWorker = (maxWorkers: number | undefined) => {
           additionalData: undefined
         },
       ) => {
-        // eslint-disable-next-line no-restricted-globals -- this function runs inside a cjs worker
-        const nodeStylus: typeof Stylus = require(stylusPath)
+        const nodeStylus: typeof Stylus = (await import(stylusPath)).default
 
         const ref = nodeStylus(content, {
           // support @import from node dependencies by default
@@ -2897,7 +2919,9 @@ const stylProcessor = (
       worker?.stop()
     },
     async process(_environment, source, root, options, _resolvers) {
-      const stylusPath = loadPreprocessorPath(PreprocessLang.stylus, root)
+      const stylusPath = pathToFileURL(
+        loadPreprocessorPath(PreprocessLang.stylus, root),
+      ).href
       worker ??= makeStylWorker(maxWorkers)
 
       // Get source with preprocessor options.additionalData. Make sure a new line separator
@@ -3205,8 +3229,7 @@ async function compileLightningCSS(
             dep.url,
             dep.loc.filePath.replace(NULL_BYTE_PLACEHOLDER, '\0'),
           )
-          // only register inlined assets to avoid frequent full refresh (#18979)
-          if (newUrl.startsWith('data:') && resolvedId) {
+          if (resolvedId) {
             deps.add(resolvedId)
           }
           replaceUrl = newUrl

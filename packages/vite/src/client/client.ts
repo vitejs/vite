@@ -1,12 +1,12 @@
-import type { ErrorPayload, HotPayload } from 'types/hmrPayload'
-import type { ViteHotContext } from 'types/hot'
+import type { ErrorPayload, HotPayload } from '#types/hmrPayload'
+import type { ViteHotContext } from '#types/hot'
 import { HMRClient, HMRContext } from '../shared/hmr'
 import {
   createWebSocketModuleRunnerTransport,
   normalizeModuleRunnerTransport,
 } from '../shared/moduleRunnerTransport'
 import { createHMRHandler } from '../shared/hmrHandler'
-import { ErrorOverlay, overlayId } from './overlay'
+import { ErrorOverlay, cspNonce, overlayId } from './overlay'
 import '@vite/env'
 
 // injected by the hmr plugin when served
@@ -402,17 +402,17 @@ function pingWorkerContentMain(socketUrl: string) {
     port.addEventListener('message', (event) => {
       const { visibility } = event.data
       visibilityManager.currentState = visibility
-      console.debug('new window visibility', visibility)
+      console.debug('[vite] new window visibility', visibility)
       for (const listener of visibilityManager.listeners) {
         listener(visibility)
       }
     })
     port.start()
 
-    console.debug('connected from window')
+    console.debug('[vite] connected from window')
     waitForSuccessfulPingInternal(socketUrl, visibilityManager).then(
       () => {
-        console.debug('ping successful')
+        console.debug('[vite] ping successful')
         try {
           port.postMessage({ type: 'success' })
         } catch (error) {
@@ -420,7 +420,7 @@ function pingWorkerContentMain(socketUrl: string) {
         }
       },
       (error) => {
-        console.debug('error happened', error)
+        console.debug('[vite] error happened', error)
         try {
           port.postMessage({ type: 'error', error })
         } catch (error) {
@@ -495,6 +495,7 @@ async function waitForSuccessfulPingInternal(
 }
 
 const sheetsMap = new Map<string, HTMLStyleElement>()
+const linkSheetsMap = new Map<string, HTMLLinkElement>()
 
 // collect existing style elements that may have been inserted during SSR
 // to avoid FOUC or duplicate styles
@@ -504,18 +505,22 @@ if ('document' in globalThis) {
     .forEach((el) => {
       sheetsMap.set(el.getAttribute('data-vite-dev-id')!, el)
     })
+  document
+    .querySelectorAll<HTMLLinkElement>(
+      'link[rel="stylesheet"][data-vite-dev-id]',
+    )
+    .forEach((el) => {
+      linkSheetsMap.set(el.getAttribute('data-vite-dev-id')!, el)
+    })
 }
-
-const cspNonce =
-  'document' in globalThis
-    ? document.querySelector<HTMLMetaElement>('meta[property=csp-nonce]')?.nonce
-    : undefined
 
 // all css imports should be inserted at the same position
 // because after build it will be a single css file
 let lastInsertedStyle: HTMLStyleElement | undefined
 
 export function updateStyle(id: string, content: string): void {
+  if (linkSheetsMap.has(id)) return
+
   let style = sheetsMap.get(id)
   if (!style) {
     style = document.createElement('style')
@@ -545,6 +550,19 @@ export function updateStyle(id: string, content: string): void {
 }
 
 export function removeStyle(id: string): void {
+  if (linkSheetsMap.has(id)) {
+    // re-select elements since HMR can replace links
+    document
+      .querySelectorAll<HTMLLinkElement>(
+        `link[rel="stylesheet"][data-vite-dev-id]`,
+      )
+      .forEach((el) => {
+        if (el.getAttribute('data-vite-dev-id') === id) {
+          el.remove()
+        }
+      })
+    linkSheetsMap.delete(id)
+  }
   const style = sheetsMap.get(id)
   if (style) {
     document.head.removeChild(style)
