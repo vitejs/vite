@@ -26,7 +26,7 @@ export default defineConfig({
       },
     },
     env: {
-      NODE_ENV: 'development',
+      NODE_ENV: process.env.VITE_TEST_BUILD ? 'production' : 'development',
     },
   },
   esbuild: {
