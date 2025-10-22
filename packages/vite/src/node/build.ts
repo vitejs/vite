@@ -1612,6 +1612,7 @@ export async function createBuilder(
   if (useLegacyBuilder) {
     await setupEnvironment(config.build.ssr ? 'ssr' : 'client', config)
   } else {
+    const environmentConfigs: [string, ResolvedConfig][] = []
     for (const environmentName of Object.keys(config.environments)) {
       // We need to resolve the config again so we can properly merge options
       // and get a new set of plugins for each build environment. The ecosystem
@@ -1654,9 +1655,14 @@ export async function createBuilder(
           patchPlugins,
         )
       }
-
-      await setupEnvironment(environmentName, environmentConfig)
+      environmentConfigs.push([environmentName, environmentConfig])
     }
+    await Promise.all(
+      environmentConfigs.map(
+        async ([environmentName, environmentConfig]) =>
+          await setupEnvironment(environmentName, environmentConfig),
+      ),
+    )
   }
 
   return builder
