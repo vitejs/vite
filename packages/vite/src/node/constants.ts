@@ -70,6 +70,16 @@ export const DEFAULT_EXTERNAL_CONDITIONS: readonly string[] = Object.freeze([
   'module-sync',
 ])
 
+export const DEFAULT_EXTENSIONS: string[] = [
+  '.mjs',
+  '.js',
+  '.mts',
+  '.ts',
+  '.jsx',
+  '.tsx',
+  '.json',
+]
+
 /**
  * The browser versions that are included in the Baseline Widely Available on 2025-05-01.
  *

@@ -71,6 +71,7 @@ import { getHookHandler } from './plugins'
 import { BaseEnvironment } from './baseEnvironment'
 import type { MinimalPluginContextWithoutEnvironment, Plugin } from './plugin'
 import type { RollupPluginHooks } from './typeUtils'
+import { type LicenseOptions, licensePlugin } from './plugins/license'
 import {
   BasicMinimalPluginContext,
   basePluginContextMeta,
@@ -209,6 +210,12 @@ export interface BuildEnvironmentOptions {
    * @default true
    */
   copyPublicDir?: boolean
+  /**
+   * Whether to emit a `.vite/license.md` file that includes all bundled dependencies'
+   * licenses. Pass an object to customize the output file name.
+   * @default false
+   */
+  license?: boolean | LicenseOptions
   /**
    * Whether to emit a .vite/manifest.json in the output dir to map hash-less filenames
    * to their hashed versions. Useful when you want to generate your own HTML
@@ -380,6 +387,7 @@ const _buildEnvironmentOptionsDefaults = Object.freeze({
   write: true,
   emptyOutDir: null,
   copyPublicDir: true,
+  license: false,
   manifest: false,
   lib: false,
   // ssr
@@ -495,7 +503,12 @@ export async function resolveBuildPlugins(config: ResolvedConfig): Promise<{
       buildEsbuildPlugin(),
       terserPlugin(config),
       ...(!config.isWorker
-        ? [manifestPlugin(), ssrManifestPlugin(), buildReporterPlugin(config)]
+        ? [
+            licensePlugin(),
+            manifestPlugin(),
+            ssrManifestPlugin(),
+            buildReporterPlugin(config),
+          ]
         : []),
       buildLoadFallbackPlugin(),
     ],
@@ -698,12 +711,11 @@ async function buildEnvironment(
 ): Promise<RollupOutput | RollupOutput[] | RollupWatcher> {
   const { logger, config } = environment
   const { root, build: options } = config
-  const ssr = config.consumer === 'server'
 
   logger.info(
     colors.cyan(
       `vite v${VERSION} ${colors.green(
-        `building ${ssr ? `SSR bundle ` : ``}for ${environment.config.mode}...`,
+        `building ${environment.name} environment for ${environment.config.mode}...`,
       )}`,
     ),
   )
@@ -1612,6 +1624,7 @@ export async function createBuilder(
   if (useLegacyBuilder) {
     await setupEnvironment(config.build.ssr ? 'ssr' : 'client', config)
   } else {
+    const environmentConfigs: [string, ResolvedConfig][] = []
     for (const environmentName of Object.keys(config.environments)) {
       // We need to resolve the config again so we can properly merge options
       // and get a new set of plugins for each build environment. The ecosystem
@@ -1654,9 +1667,14 @@ export async function createBuilder(
           patchPlugins,
         )
       }
-
-      await setupEnvironment(environmentName, environmentConfig)
+      environmentConfigs.push([environmentName, environmentConfig])
     }
+    await Promise.all(
+      environmentConfigs.map(
+        async ([environmentName, environmentConfig]) =>
+          await setupEnvironment(environmentName, environmentConfig),
+      ),
+    )
   }
 
   return builder

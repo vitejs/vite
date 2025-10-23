@@ -277,8 +277,8 @@ importers:
         specifier: ^5.1.1
         version: 5.1.1(rollup@4.43.0)
       '@rollup/plugin-commonjs':
-        specifier: ^28.0.8
-        version: 28.0.8(rollup@4.43.0)
+        specifier: 28.0.6
+        version: 28.0.6(rollup@4.43.0)
       '@rollup/plugin-dynamic-import-vars':
         specifier: 2.1.4
         version: 2.1.4(rollup@4.43.0)
@@ -483,6 +483,25 @@ importers:
       '@vitejs/child':
         specifier: link:../child
         version: link:../child
+
+  packages/vite/src/node/__tests__/plugins/fixtures/license:
+    dependencies:
+      '@vitejs/test-dep-licence-cc0':
+        specifier: file:./dep-licence-cc0
+        version: file:packages/vite/src/node/__tests__/plugins/fixtures/license/dep-licence-cc0
+      '@vitejs/test-dep-license-mit':
+        specifier: file:./dep-license-mit
+        version: file:packages/vite/src/node/__tests__/plugins/fixtures/license/dep-license-mit
+
+  packages/vite/src/node/__tests__/plugins/fixtures/license/dep-licence-cc0: {}
+
+  packages/vite/src/node/__tests__/plugins/fixtures/license/dep-license-mit:
+    dependencies:
+      '@vitejs/test-dep-nested-license-isc':
+        specifier: file:../dep-nested-license-isc
+        version: file:packages/vite/src/node/__tests__/plugins/fixtures/license/dep-nested-license-isc
+
+  packages/vite/src/node/__tests__/plugins/fixtures/license/dep-nested-license-isc: {}
 
   packages/vite/src/node/server/__tests__/fixtures/lerna/nested: {}
 
@@ -3018,8 +3037,8 @@ packages:
       rollup:
         optional: true
 
-  '@rollup/plugin-commonjs@28.0.8':
-    resolution: {integrity: sha512-o1Ug9PxYsF61R7/NXO/GgMZZproLd/WH2XA53Tp9ppf6bU1lMlTtC/gUM6zM3mesi2E0rypk+PNtVrELREyWEQ==}
+  '@rollup/plugin-commonjs@28.0.6':
+    resolution: {integrity: sha512-XSQB1K7FUU5QP+3lOQmVCE3I0FcbbNvmNT4VJSj93iUjayaARrTQeoRdiYQoftAJBLrR9t2agwAd3ekaTgHNlw==}
     engines: {node: '>=16.0.0 || 14 >= 14.17'}
     peerDependencies:
       rollup: ^2.68.0||^3.0.0||^4.0.0
@@ -3704,6 +3723,15 @@ packages:
 
   '@vitejs/test-dep-incompatible@file:playground/optimize-deps/dep-incompatible':
     resolution: {directory: playground/optimize-deps/dep-incompatible, type: directory}
+
+  '@vitejs/test-dep-licence-cc0@file:packages/vite/src/node/__tests__/plugins/fixtures/license/dep-licence-cc0':
+    resolution: {directory: packages/vite/src/node/__tests__/plugins/fixtures/license/dep-licence-cc0, type: directory}
+
+  '@vitejs/test-dep-license-mit@file:packages/vite/src/node/__tests__/plugins/fixtures/license/dep-license-mit':
+    resolution: {directory: packages/vite/src/node/__tests__/plugins/fixtures/license/dep-license-mit, type: directory}
+
+  '@vitejs/test-dep-nested-license-isc@file:packages/vite/src/node/__tests__/plugins/fixtures/license/dep-nested-license-isc':
+    resolution: {directory: packages/vite/src/node/__tests__/plugins/fixtures/license/dep-nested-license-isc, type: directory}
 
   '@vitejs/test-dep-no-discovery@file:playground/optimize-deps-no-discovery/dep-no-discovery':
     resolution: {directory: playground/optimize-deps-no-discovery/dep-no-discovery, type: directory}
@@ -8634,7 +8662,7 @@ snapshots:
     optionalDependencies:
       rollup: 4.43.0
 
-  '@rollup/plugin-commonjs@28.0.8(rollup@4.43.0)':
+  '@rollup/plugin-commonjs@28.0.6(rollup@4.43.0)':
     dependencies:
       '@rollup/pluginutils': 5.3.0(rollup@4.43.0)
       commondir: 1.0.1
@@ -9321,6 +9349,14 @@ snapshots:
       '@vitejs/test-dep-a': file:playground/preload/dep-a
 
   '@vitejs/test-dep-incompatible@file:playground/optimize-deps/dep-incompatible': {}
+
+  '@vitejs/test-dep-licence-cc0@file:packages/vite/src/node/__tests__/plugins/fixtures/license/dep-licence-cc0': {}
+
+  '@vitejs/test-dep-license-mit@file:packages/vite/src/node/__tests__/plugins/fixtures/license/dep-license-mit':
+    dependencies:
+      '@vitejs/test-dep-nested-license-isc': file:packages/vite/src/node/__tests__/plugins/fixtures/license/dep-nested-license-isc
+
+  '@vitejs/test-dep-nested-license-isc@file:packages/vite/src/node/__tests__/plugins/fixtures/license/dep-nested-license-isc': {}
 
   '@vitejs/test-dep-no-discovery@file:playground/optimize-deps-no-discovery/dep-no-discovery': {}
 

@@ -32,7 +32,6 @@ export const HMR_HEADER = 'vite-hmr'
 export type WebSocketCustomListener<T> = (
   data: T,
   client: WebSocketClient,
-  invoke?: 'send' | `send:${string}`,
 ) => void
 
 export const isWebSocketServer: unique symbol = Symbol('isWebSocketServer')
@@ -285,14 +284,13 @@ export function createWebSocketServer(
     event: T,
     data: InferCustomEventPayload<T>,
     socket: WebSocketRaw,
-    invoke?: 'send' | `send:${string}`,
   ) => {
     const listeners = customListeners.get(event)
     if (!listeners?.size) return
 
     const client = getSocketClient(socket)
     for (const listener of listeners) {
-      listener(data, client, invoke)
+      listener(data, client)
     }
   }
 
@@ -304,7 +302,7 @@ export function createWebSocketServer(
         parsed = JSON.parse(String(raw))
       } catch {}
       if (!parsed || parsed.type !== 'custom' || !parsed.event) return
-      emitCustomEvent(parsed.event, parsed.data, socket, parsed.invoke)
+      emitCustomEvent(parsed.event, parsed.data, socket)
     })
     socket.on('error', (err) => {
       config.logger.error(`${colors.red(`ws error:`)}\n${err.stack}`, {

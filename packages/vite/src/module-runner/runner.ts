@@ -6,6 +6,7 @@ import {
   type NormalizedModuleRunnerTransport,
   normalizeModuleRunnerTransport,
 } from '../shared/moduleRunnerTransport'
+import { createIsBuiltin } from '../shared/builtin'
 import type { EvaluatedModuleNode } from './evaluatedModules'
 import { EvaluatedModules } from './evaluatedModules'
 import type {
@@ -44,6 +45,8 @@ export class ModuleRunner {
     string,
     Promise<EvaluatedModuleNode>
   >()
+  private isBuiltin?: (id: string) => boolean
+  private builtinsPromise?: Promise<void>
 
   private closed = false
 
@@ -238,6 +241,23 @@ export class ModuleRunner {
     return cached
   }
 
+  private ensureBuiltins(): Promise<void> | undefined {
+    if (this.isBuiltin) return
+
+    this.builtinsPromise ??= (async () => {
+      try {
+        this.debug?.('[module runner] fetching builtins from server')
+        const builtins = await this.transport.invoke('getBuiltins', [])
+        this.isBuiltin = createIsBuiltin(builtins)
+        this.debug?.('[module runner] builtins loaded:', builtins)
+      } finally {
+        this.builtinsPromise = undefined
+      }
+    })()
+
+    return this.builtinsPromise
+  }
+
   private async getModuleInformation(
     url: string,
     importer: string | undefined,
@@ -247,13 +267,15 @@ export class ModuleRunner {
       throw new Error(`Vite module runner has been closed.`)
     }
 
+    await this.ensureBuiltins()
+
     this.debug?.('[module runner] fetching', url)
 
     const isCached = !!(typeof cachedModule === 'object' && cachedModule.meta)
 
     const fetchedModule = // fast return for established externalized pattern
       (
-        url.startsWith('data:')
+        url.startsWith('data:') || this.isBuiltin?.(url)
           ? { externalize: url, type: 'builtin' }
           : await this.transport.invoke('fetchModule', [
               url,

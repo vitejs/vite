@@ -19,6 +19,7 @@ import {
   DEFAULT_CLIENT_CONDITIONS,
   DEFAULT_CLIENT_MAIN_FIELDS,
   DEFAULT_CONFIG_FILES,
+  DEFAULT_EXTENSIONS,
   DEFAULT_EXTERNAL_CONDITIONS,
   DEFAULT_PREVIEW_PORT,
   DEFAULT_SERVER_CONDITIONS,
@@ -90,7 +91,6 @@ import {
   type EnvironmentResolveOptions,
   type InternalResolveOptions,
   type ResolveOptions,
-  tryNodeResolve,
 } from './plugins/resolve'
 import type { LogLevel, Logger } from './logger'
 import { createLogger } from './logger'
@@ -110,6 +110,7 @@ import {
   BasicMinimalPluginContext,
   basePluginContextMeta,
 } from './server/pluginContainer'
+import { nodeResolveWithVite } from './nodeResolve'
 
 const debug = createDebugger('vite:config', { depth: 10 })
 const promisifiedRealpath = promisify(fs.realpath)
@@ -658,7 +659,7 @@ const configDefaults = Object.freeze({
     // mainFields
     // conditions
     externalConditions: [...DEFAULT_EXTERNAL_CONDITIONS],
-    extensions: ['.mjs', '.js', '.mts', '.ts', '.jsx', '.tsx', '.json'],
+    extensions: DEFAULT_EXTENSIONS,
     dedupe: [],
     /** @experimental */
     noExternal: [],
@@ -1517,6 +1518,9 @@ export async function resolveConfig(
         ? false
         : {
             jsxDev: !isProduction,
+            // change defaults that fit better for vite
+            charset: 'utf8',
+            legalComments: 'none',
             ...config.esbuild,
           },
     server,
@@ -1921,12 +1925,11 @@ async function bundleConfigFile(
   fileName: string,
   isESM: boolean,
 ): Promise<{ code: string; dependencies: string[] }> {
-  const isModuleSyncConditionEnabled = (await import('#module-sync-enabled'))
-    .default
-
+  const root = path.dirname(fileName)
   const dirnameVarName = '__vite_injected_original_dirname'
   const filenameVarName = '__vite_injected_original_filename'
   const importMetaUrlVarName = '__vite_injected_original_import_meta_url'
+
   const result = await build({
     absWorkingDir: process.cwd(),
     entryPoints: [fileName],
@@ -1952,35 +1955,6 @@ async function bundleConfigFile(
       {
         name: 'externalize-deps',
         setup(build) {
-          const packageCache = new Map()
-          const resolveByViteResolver = (
-            id: string,
-            importer: string,
-            isRequire: boolean,
-          ) => {
-            return tryNodeResolve(id, importer, {
-              root: path.dirname(fileName),
-              isBuild: true,
-              isProduction: true,
-              preferRelative: false,
-              tryIndex: true,
-              mainFields: [],
-              conditions: [
-                'node',
-                ...(isModuleSyncConditionEnabled ? ['module-sync'] : []),
-              ],
-              externalConditions: [],
-              external: [],
-              noExternal: [],
-              dedupe: [],
-              extensions: configDefaults.resolve.extensions,
-              preserveSymlinks: false,
-              packageCache,
-              isRequire,
-              builtins: nodeLikeBuiltins,
-            })?.id
-          }
-
           // externalize bare imports
           build.onResolve(
             { filter: /^[^.#].*/ },
@@ -2003,16 +1977,17 @@ async function bundleConfigFile(
               const isImport = isESM || kind === 'dynamic-import'
               let idFsPath: string | undefined
               try {
-                idFsPath = resolveByViteResolver(id, importer, !isImport)
+                idFsPath = nodeResolveWithVite(id, importer, {
+                  root,
+                  isRequire: !isImport,
+                })
               } catch (e) {
                 if (!isImport) {
                   let canResolveWithImport = false
                   try {
-                    canResolveWithImport = !!resolveByViteResolver(
-                      id,
-                      importer,
-                      false,
-                    )
+                    canResolveWithImport = !!nodeResolveWithVite(id, importer, {
+                      root,
+                    })
                   } catch {}
                   if (canResolveWithImport) {
                     throw new Error(
