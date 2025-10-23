@@ -15,6 +15,7 @@ overrides:
   rolldown: $rolldown
   vite: 'workspace:*'
 patchedDependencies:
+  "@rollup/plugin-commonjs": "patches/@rollup__plugin-commonjs.patch"
   "sirv@3.0.2": "patches/sirv@3.0.2.patch"
   "chokidar@3.6.0": "patches/chokidar@3.6.0.patch"
   "dotenv-expand@12.0.3": "patches/dotenv-expand@12.0.3.patch"

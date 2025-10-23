@@ -11,6 +11,9 @@ overrides:
 packageExtensionsChecksum: sha256-BLDZCgUIohvBXMHo3XFOlGLzGXRyK3sDU0nMBRk9APY=
 
 patchedDependencies:
+  '@rollup/plugin-commonjs':
+    hash: 5f72160244e3886121d40a530312adfd655e68f32c0438decc444a5fdd9de36d
+    path: patches/@rollup__plugin-commonjs.patch
   chokidar@3.6.0:
     hash: 8a4f9e2b397e6034b91a0508faae3cecb97f222313faa129d7cb0eb71e9d0e84
     path: patches/chokidar@3.6.0.patch
@@ -278,7 +281,7 @@ importers:
         version: 5.1.1(rollup@4.43.0)
       '@rollup/plugin-commonjs':
         specifier: ^28.0.8
-        version: 28.0.8(rollup@4.43.0)
+        version: 28.0.8(patch_hash=5f72160244e3886121d40a530312adfd655e68f32c0438decc444a5fdd9de36d)(rollup@4.43.0)
       '@rollup/plugin-dynamic-import-vars':
         specifier: 2.1.4
         version: 2.1.4(rollup@4.43.0)
@@ -8662,7 +8665,7 @@ snapshots:
     optionalDependencies:
       rollup: 4.43.0
 
-  '@rollup/plugin-commonjs@28.0.8(rollup@4.43.0)':
+  '@rollup/plugin-commonjs@28.0.8(patch_hash=5f72160244e3886121d40a530312adfd655e68f32c0438decc444a5fdd9de36d)(rollup@4.43.0)':
     dependencies:
       '@rollup/pluginutils': 5.3.0(rollup@4.43.0)
       commondir: 1.0.1
