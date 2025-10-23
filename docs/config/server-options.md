@@ -92,8 +92,6 @@ Set to `true` to exit if port is already in use, instead of automatically trying
 
 Enable TLS + HTTP/2. The value is an [options object](https://nodejs.org/api/https.html#https_https_createserver_options_requestlistener) passed to `https.createServer()`.
 
-Note that this downgrades to TLS only when the [`server.proxy` option](#server-proxy) is also used.
-
 A valid certificate is needed. For a basic setup, you can add [@vitejs/plugin-basic-ssl](https://github.com/vitejs/vite-plugin-basic-ssl) to the project plugins, which will automatically create and cache a self-signed certificate. But we recommend creating your own certificates.
 
 ## server.open
@@ -233,7 +231,7 @@ The error that appears in the Browser when the fallback happens can be ignored. 
 
 Warm up files to transform and cache the results in advance. This improves the initial page load during server starts and prevents transform waterfalls.
 
-`clientFiles` are files that are used in the client only, while `ssrFiles` are files that are used in SSR only. They accept an array of file paths or [`tinyglobby`](https://github.com/SuperchupuDev/tinyglobby) patterns relative to the `root`.
+`clientFiles` are files that are used in the client only, while `ssrFiles` are files that are used in SSR only. They accept an array of file paths or [`tinyglobby` patterns](https://superchupu.dev/tinyglobby/comparison) relative to the `root`.
 
 Make sure to only add files that are frequently used to not overload the Vite dev server on startup.
 

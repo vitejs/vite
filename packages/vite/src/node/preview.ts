@@ -3,8 +3,8 @@ import path from 'node:path'
 import sirv from 'sirv'
 import compression from '@polka/compression'
 import connect from 'connect'
-import type { Connect } from 'dep-types/connect'
 import corsMiddleware from 'cors'
+import type { Connect } from '#dep-types/connect'
 import type {
   HttpServer,
   ResolvedServerOptions,
@@ -146,7 +146,7 @@ export async function preview(
 
   const httpsOptions = await resolveHttpsConfig(config.preview.https)
   const app = connect() as Connect.Server
-  const httpServer = await resolveHttpServer(config.preview, app, httpsOptions)
+  const httpServer = await resolveHttpServer(app, httpsOptions)
   setClientErrorHandler(httpServer, config.logger)
 
   const options = config.preview

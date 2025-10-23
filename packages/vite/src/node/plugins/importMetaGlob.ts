@@ -13,9 +13,9 @@ import type {
 import type { CustomPluginOptions, RollupAstNode, RollupError } from 'rollup'
 import MagicString from 'magic-string'
 import { stringifyQuery } from 'ufo'
-import type { GeneralImportGlobOptions } from 'types/importGlob'
 import { parseAstAsync } from 'rollup/parseAst'
 import { escapePath, glob } from 'tinyglobby'
+import type { GeneralImportGlobOptions } from '#types/importGlob'
 import type { Plugin } from '../plugin'
 import type { EnvironmentModuleNode } from '../server/moduleGraph'
 import type { ResolvedConfig } from '../config'
@@ -73,7 +73,11 @@ export function importGlobPlugin(config: ResolvedConfig): Plugin {
             const affirmed: string[] = []
             const negated: string[] = []
             for (const glob of globs) {
-              ;(glob[0] === '!' ? negated : affirmed).push(glob)
+              if (glob[0] === '!') {
+                negated.push(glob.slice(1))
+              } else {
+                affirmed.push(glob)
+              }
             }
             const affirmedMatcher = picomatch(affirmed)
             const negatedMatcher = picomatch(negated)

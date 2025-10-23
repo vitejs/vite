@@ -49,6 +49,7 @@ import type {
   PartialNull,
   PartialResolvedId,
   PluginContextMeta,
+  ProgramNode,
   ResolvedId,
   RollupError,
   RollupFsModule,
@@ -63,8 +64,8 @@ import type {
 import type { RawSourceMap } from '@jridgewell/remapping'
 import { TraceMap, originalPositionFor } from '@jridgewell/trace-mapping'
 import MagicString from 'magic-string'
-import type { FSWatcher } from 'dep-types/chokidar'
 import colors from 'picocolors'
+import type { FSWatcher } from '#dep-types/chokidar'
 import type { Plugin } from '../plugin'
 import {
   combineSourcemaps,
@@ -184,7 +185,7 @@ class EnvironmentPluginContainer<Env extends Environment = Environment> {
   getSortedPlugins: PluginHookUtils['getSortedPlugins']
 
   moduleGraph: EnvironmentModuleGraph | undefined
-  watchFiles = new Set<string>()
+  watchFiles: Set<string> = new Set()
   minimalContext: MinimalPluginContext<Env>
 
   private _started = false
@@ -197,7 +198,7 @@ class EnvironmentPluginContainer<Env extends Environment = Environment> {
   constructor(
     public environment: Env,
     public plugins: readonly Plugin[],
-    public watcher?: FSWatcher,
+    public watcher?: FSWatcher | undefined,
     autoStart = true,
   ) {
     this._started = !autoStart
@@ -462,7 +463,7 @@ class EnvironmentPluginContainer<Env extends Environment = Environment> {
     }
 
     if (id) {
-      partial.id = isExternalUrl(id) ? id : normalizePath(id)
+      partial.id = isExternalUrl(id) || id[0] === '\0' ? id : normalizePath(id)
       return partial as PartialResolvedId
     } else {
       return null
@@ -635,7 +636,10 @@ class EnvironmentPluginContainer<Env extends Environment = Environment> {
   }
 }
 
-export const basePluginContextMeta = {
+export const basePluginContextMeta: {
+  viteVersion: string
+  rollupVersion: string
+} = {
   viteVersion,
   rollupVersion,
 }
@@ -726,9 +730,9 @@ class PluginContext
     super(_container.minimalContext.meta, _container.environment)
   }
 
-  fs = fsModule
+  fs: RollupFsModule = fsModule
 
-  parse(code: string, opts: any) {
+  parse(code: string, opts: any): ProgramNode {
     return rollupParseAst(code, opts)
   }
 
@@ -741,7 +745,7 @@ class PluginContext
       isEntry?: boolean
       skipSelf?: boolean
     },
-  ) {
+  ): Promise<ResolvedId | null> {
     let skipCalls: readonly SkipInformation[] | undefined
     if (options?.skipSelf === false) {
       skipCalls = this._resolveSkipCalls
@@ -806,7 +810,7 @@ class PluginContext
     return this._container.getModuleInfo(id)
   }
 
-  _updateModuleInfo(id: string, { meta }: { meta?: object | null }) {
+  _updateModuleInfo(id: string, { meta }: { meta?: object | null }): void {
     if (meta) {
       const moduleInfo = this.getModuleInfo(id)
       if (moduleInfo) {

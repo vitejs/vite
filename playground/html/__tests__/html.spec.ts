@@ -273,6 +273,16 @@ describe('link with props', () => {
   })
 })
 
+describe.runIf(isServe)('SPA fallback', () => {
+  test('should serve index.html via page navigation even when path matches file basename', async () => {
+    const response = await page.goto(viteTestUrl + '/test')
+    expect(response.status()).toBe(200)
+    const content = await page.content()
+    expect(content).toContain('Transformed')
+    expect(content).not.toContain('This is test.js')
+  })
+})
+
 describe.runIf(isServe)('invalid', () => {
   test('should be 500 with overlay', async () => {
     const response = await page.goto(viteTestUrl + '/invalid.html')
