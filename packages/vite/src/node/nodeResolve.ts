@@ -37,5 +37,6 @@ export function nodeResolveWithVite(
     packageCache: undefined,
     isRequire: options.isRequire,
     builtins: nodeLikeBuiltins,
+    disableOptionalPeerDepHandling: true,
   })?.id
 }

@@ -147,6 +147,12 @@ interface ResolvePluginOptions {
    * @internal
    */
   idOnly?: boolean
+
+  /**
+   * Set by `nodeResolveWithVite`, disables optional peer dependency handling.
+   * @internal
+   */
+  disableOptionalPeerDepHandling?: boolean
 }
 
 export interface InternalResolveOptions
@@ -741,6 +747,7 @@ export function tryNodeResolve(
     // if import can't be found, check if it's an optional peer dep.
     // if so, we can resolve to a special id that errors only when imported.
     if (
+      !options.disableOptionalPeerDepHandling &&
       basedir !== root && // root has no peer dep
       !isModuleBuiltin(id) &&
       !id.includes('\0') &&
