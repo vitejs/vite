@@ -60,11 +60,11 @@ if (!isBuild) {
           name: 'hot-events',
           configureServer(server) {
             server.environments.ssr.hot.on(
-              'vite:client-connect',
+              'vite:client:connect',
               () => hotEventCounts.connect++,
             )
             server.environments.ssr.hot.on(
-              'vite:client-disconnect',
+              'vite:client:disconnect',
               () => hotEventCounts.disconnect++,
             )
           },

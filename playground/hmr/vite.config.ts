@@ -109,8 +109,8 @@ function hotEventsPlugin(): Plugin {
       let connectCount = 0
       let disconnectCount = 0
       const clientEnv = server.environments.client
-      clientEnv.hot.on('vite:client-connect', () => connectCount++)
-      clientEnv.hot.on('vite:client-disconnect', () => disconnectCount++)
+      clientEnv.hot.on('vite:client:connect', () => connectCount++)
+      clientEnv.hot.on('vite:client:disconnect', () => disconnectCount++)
 
       server.middlewares.use((req, res, next) => {
         if (req.url === '/hot-events-counts') {

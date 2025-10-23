@@ -311,10 +311,10 @@ export function createWebSocketServer(
       })
     })
     socket.on('close', () => {
-      emitCustomEvent('vite:client-disconnect', undefined, socket)
+      emitCustomEvent('vite:client:disconnect', undefined, socket)
     })
 
-    emitCustomEvent('vite:client-connect', undefined, socket)
+    emitCustomEvent('vite:client:connect', undefined, socket)
 
     socket.send(JSON.stringify({ type: 'connected' }))
     if (bufferedError) {

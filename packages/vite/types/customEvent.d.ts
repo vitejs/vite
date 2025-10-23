@@ -17,8 +17,8 @@ export interface CustomEventMap {
   'vite:ws:disconnect': WebSocketConnectionPayload
 
   // server events
-  'vite:client-connect': undefined
-  'vite:client-disconnect': undefined
+  'vite:client:connect': undefined
+  'vite:client:disconnect': undefined
 }
 
 export interface WebSocketConnectionPayload {
