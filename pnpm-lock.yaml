@@ -553,6 +553,12 @@ importers:
 
   playground/alias/dir/module: {}
 
+  playground/amd:
+    dependencies:
+      requirejs:
+        specifier: ^2.3.7
+        version: 2.3.7
+
   playground/assets: {}
 
   playground/assets-sanitize: {}
