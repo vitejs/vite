@@ -316,11 +316,25 @@ import { createServer, RemoteEnvironmentTransport, DevEnvironment } from 'vite'
 function createWorkerEnvironment(name, config, context) {
   const worker = new Worker('./worker.js')
   const handlerToWorkerListener = new WeakMap()
+  const client = {
+    send(payload: HotPayload) {
+      w.postMessage(payload)
+    },
+  }
 
   const workerHotChannel = {
     send: (data) => worker.postMessage(data),
     on: (event, handler) => {
-      if (event === 'connection') return
+      // client is already connected
+      if (event === 'connection' || event === 'vite:client:connect') return
+      if (event === 'vite:client:disconnect') {
+        const listener = () => {
+          handler(undefined, client)
+        }
+        handlerToWorkerListener.set(handler, listener)
+        w.on('exit', listener)
+        return
+      }
 
       const listener = (value) => {
         if (value.type === 'custom' && value.event === event) {
@@ -336,7 +350,16 @@ function createWorkerEnvironment(name, config, context) {
       worker.on('message', listener)
     },
     off: (event, handler) => {
-      if (event === 'connection') return
+      if (event === 'connection' || event === 'vite:client:connect') return
+      if (event === 'vite:client:disconnect') {
+        const listener = handlerToWorkerListener.get(handler)
+        if (listener) {
+          w.off('exit', listener)
+          handlerToWorkerListener.delete(handler)
+        }
+        return
+      }
+
       const listener = handlerToWorkerListener.get(handler)
       if (listener) {
         worker.off('message', listener)
@@ -362,6 +385,8 @@ await createServer({
 ```
 
 :::
+
+Make sure to implement the `connection` / `vite:client:connect` / `vite:client:disconnect` events in the `on` / `off` methods when those methods exist. `connection` event and `vite:client:connect` event should be emitted when the connection is established, and `vite:client:disconnect` event should be emitted when the connection is closed. The `HotChannelClient` object passed to the event handler must have the same reference for the same connection.
 
 A different example using an HTTP request to communicate between the runner and the server:
 
