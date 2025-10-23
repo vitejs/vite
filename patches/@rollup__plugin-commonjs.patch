@@ -1,15 +1,11 @@
 diff --git a/dist/cjs/index.js b/dist/cjs/index.js
-index 91d0dae6ae94c70ca876867a67fd8e71a13fb3a1..a70485b41b03ac5e766eb5360351b11ca107a95d 100644
+index 91d0dae6ae94c70ca876867a67fd8e71a13fb3a1..c89f07ee58bc40c5c258cfbd17843a4df97c438d 100644
 --- a/dist/cjs/index.js
 +++ b/dist/cjs/index.js
-@@ -838,20 +838,21 @@ function getRequireResolver(extensions, detectCyclesAndConditional, currentlyRes
-           // eslint-disable-next-line no-multi-assign
-           let isCommonJS = (parentMeta.isRequiredCommonJS[dependencyId] =
-             getTypeForFullyAnalyzedModule(dependencyId));
-+          // NOTE: revert #1909 for https://github.com/vitejs/vite/issues/20983
+@@ -841,17 +841,18 @@ function getRequireResolver(extensions, detectCyclesAndConditional, currentlyRes
            // Special-case external Node built-ins to be handled via a lazy __require
            // helper instead of hoisted ESM imports when strict wrapping is used.
--          const isExternalWrapped = isWrappedId(dependencyId, EXTERNAL_SUFFIX);
+           const isExternalWrapped = isWrappedId(dependencyId, EXTERNAL_SUFFIX);
 -          if (
 -            parentMeta.initialCommonJSType === IS_WRAPPED_COMMONJS &&
 -            !allowProxy &&
@@ -21,7 +17,7 @@ index 91d0dae6ae94c70ca876867a67fd8e71a13fb3a1..a70485b41b03ac5e766eb5360351b11c
 -              parentMeta.isRequiredCommonJS[dependencyId] = isCommonJS;
 -            }
 -          }
-+          // const isExternalWrapped = isWrappedId(dependencyId, EXTERNAL_SUFFIX);
++          // NOTE: revert #1909 for https://github.com/vitejs/vite/issues/20983
 +          // if (
 +          //   parentMeta.initialCommonJSType === IS_WRAPPED_COMMONJS &&
 +          //   !allowProxy &&
@@ -51,17 +47,13 @@ index 91d0dae6ae94c70ca876867a67fd8e71a13fb3a1..a70485b41b03ac5e766eb5360351b11c
            actualId,
            isEsmExternal(actualId) ? getRequireReturnsDefault(actualId) : true
 diff --git a/dist/es/index.js b/dist/es/index.js
-index 633c983bb68764714e03aa969443640428885052..5af6a592234445ed03f380c5ad83478726653890 100644
+index 633c983bb68764714e03aa969443640428885052..f05b8a929349e3776eb03cc600d9f6309550414d 100644
 --- a/dist/es/index.js
 +++ b/dist/es/index.js
-@@ -834,20 +834,21 @@ function getRequireResolver(extensions, detectCyclesAndConditional, currentlyRes
-           // eslint-disable-next-line no-multi-assign
-           let isCommonJS = (parentMeta.isRequiredCommonJS[dependencyId] =
-             getTypeForFullyAnalyzedModule(dependencyId));
-+          // NOTE: revert #1909 for https://github.com/vitejs/vite/issues/20983
+@@ -837,17 +837,18 @@ function getRequireResolver(extensions, detectCyclesAndConditional, currentlyRes
            // Special-case external Node built-ins to be handled via a lazy __require
            // helper instead of hoisted ESM imports when strict wrapping is used.
--          const isExternalWrapped = isWrappedId(dependencyId, EXTERNAL_SUFFIX);
+           const isExternalWrapped = isWrappedId(dependencyId, EXTERNAL_SUFFIX);
 -          if (
 -            parentMeta.initialCommonJSType === IS_WRAPPED_COMMONJS &&
 -            !allowProxy &&
@@ -73,7 +65,7 @@ index 633c983bb68764714e03aa969443640428885052..5af6a592234445ed03f380c5ad834787
 -              parentMeta.isRequiredCommonJS[dependencyId] = isCommonJS;
 -            }
 -          }
-+          // const isExternalWrapped = isWrappedId(dependencyId, EXTERNAL_SUFFIX);
++          // NOTE: revert #1909 for https://github.com/vitejs/vite/issues/20983
 +          // if (
 +          //   parentMeta.initialCommonJSType === IS_WRAPPED_COMMONJS &&
 +          //   !allowProxy &&
