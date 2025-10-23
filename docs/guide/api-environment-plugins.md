@@ -251,7 +251,7 @@ The plugin side:
 
 ```js
 configureServer(server) {
-  server.environments.ssr.hot.on('my:greetings', (data) => {
+  server.environments.ssr.hot.on('my:greetings', (data, client) => {
     // do something with the data,
     // and optionally send a response to that application instance
     client.send('my:foo:reply', `Hello from server! You said: ${data}`)

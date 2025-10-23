@@ -318,7 +318,7 @@ function createWorkerEnvironment(name, config, context) {
   const handlerToWorkerListener = new WeakMap()
   const client = {
     send(payload: HotPayload) {
-      w.postMessage(payload)
+      worker.postMessage(payload)
     },
   }
 
@@ -332,17 +332,12 @@ function createWorkerEnvironment(name, config, context) {
           handler(undefined, client)
         }
         handlerToWorkerListener.set(handler, listener)
-        w.on('exit', listener)
+        worker.on('exit', listener)
         return
       }
 
       const listener = (value) => {
         if (value.type === 'custom' && value.event === event) {
-          const client = {
-            send(payload) {
-              worker.postMessage(payload)
-            },
-          }
           handler(value.data, client)
         }
       }
@@ -354,7 +349,7 @@ function createWorkerEnvironment(name, config, context) {
       if (event === 'vite:client:disconnect') {
         const listener = handlerToWorkerListener.get(handler)
         if (listener) {
-          w.off('exit', listener)
+          worker.off('exit', listener)
           handlerToWorkerListener.delete(handler)
         }
         return
