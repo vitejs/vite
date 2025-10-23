@@ -1,3 +1,8 @@
+## <small>[7.1.12](https://github.com/vitejs/vite/compare/v7.1.11...v7.1.12) (2025-10-23)</small>
+### Bug Fixes
+
+* **deps:** downgrade commonjs plugin to 28.0.6 to avoid rollup/plugins[#1909](https://github.com/vitejs/vite/issues/1909) ([#20990](https://github.com/vitejs/vite/issues/20990)) ([56fd722](https://github.com/vitejs/vite/commit/56fd7224aa3163fffe1924738aff33f778245901))
+
 ## <small>[7.1.11](https://github.com/vitejs/vite/compare/v7.1.10...v7.1.11) (2025-10-20)</small>
 ### Bug Fixes
 
