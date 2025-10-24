@@ -607,10 +607,15 @@ class EnvironmentPluginContainer<Env extends Environment = Environment> {
     id: string,
     change: { event: 'create' | 'update' | 'delete' },
   ): Promise<void> {
+    const config = this.environment.getTopLevelConfig()
     await this.hookParallel(
       'watchChange',
       (plugin) => this._getPluginContext(plugin),
       () => [id, change],
+      (plugin) =>
+        this.environment.name === 'client' ||
+        config.server.perEnvironmentWatchChangeDuringDev ||
+        plugin.perEnvironmentWatchChangeDuringDev,
     )
   }
 
@@ -1211,7 +1216,8 @@ class PluginContainer {
   }
 
   // For backward compatibility, buildStart and watchChange are called only for the client environment
-  // buildStart is called per environment for a plugin with the perEnvironmentStartEndDuring dev flag
+  // buildStart is called per environment for a plugin with the perEnvironmentStartEndDuringDev flag
+  // watchChange is called per environment for a plugin with the perEnvironmentWatchChangeDuringDev flag
 
   async buildStart(_options?: InputOptions): Promise<void> {
     return (
