@@ -1,6 +1,36 @@
 import { defineConfig } from 'vite'
 
+/**
+ * Plugin to test that env imports with query parameters work correctly
+ * This only runs in dev mode to verify the fix for issue #20997
+ */
+function testEnvQueryParamsPlugin() {
+  return {
+    name: 'test-env-query-params',
+    apply: 'serve',
+    transform(code, id) {
+      // Add the test import to index.html's inline script
+      if (id.includes('index.html') && code.includes('.env-with-query')) {
+        return code.replace(
+          "text('.optional-env', optionalEnv)",
+          `text('.optional-env', optionalEnv)
+
+  // Test importing env with query parameters
+  import('/@vite/env?foo')
+    .then(() => {
+      text('.env-with-query', 'success')
+    })
+    .catch((err) => {
+      text('.env-with-query', \`error: \${err.message}\`)
+    })`,
+        )
+      }
+    },
+  }
+}
+
 export default defineConfig({
+  plugins: [testEnvQueryParamsPlugin()],
   define: {
     __EXP__: 'false',
     __STRING__: '"hello"',

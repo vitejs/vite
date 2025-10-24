@@ -169,15 +169,6 @@
 
   import optionalEnv from './optional-env.js'
   text('.optional-env', optionalEnv)
-
-  // Test importing env with query parameters
-  import('/@vite/env?foo')
-    .then(() => {
-      text('.env-with-query', 'success')
-    })
-    .catch((err) => {
-      text('.env-with-query', `error: ${err.message}`)
-    })
 </script>
 
 <style>
