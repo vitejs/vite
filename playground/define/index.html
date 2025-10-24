@@ -78,6 +78,12 @@
   <code class="optional-env"></code>
 </p>
 
+<h2>Env import with query parameters works correctly</h2>
+<p>
+  /@vite/env?foo should not throw ReferenceError
+  <code class="env-with-query"></code>
+</p>
+
 <script>
   // inject __VITE_SOME_IDENTIFIER__ to test if it's replaced
   window.__VITE_SOME_IDENTIFIER__ = true
@@ -163,6 +169,15 @@
 
   import optionalEnv from './optional-env.js'
   text('.optional-env', optionalEnv)
+
+  // Test importing env with query parameters
+  import('/@vite/env?foo')
+    .then(() => {
+      text('.env-with-query', 'success')
+    })
+    .catch((err) => {
+      text('.env-with-query', `error: ${err.message}`)
+    })
 </script>
 
 <style>

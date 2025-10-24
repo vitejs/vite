@@ -115,3 +115,7 @@ test('optional values are detected by pattern properly', async () => {
     JSON.parse(defines['process.env.SOMEVAR']),
   )
 })
+
+test('env import with query parameters works correctly', async () => {
+  expect(await page.textContent('.env-with-query')).toBe('success')
+})
