@@ -224,6 +224,27 @@ The error that appears in the Browser when the fallback happens can be ignored. 
 
 :::
 
+## server.forwardRuntimeLogs
+
+- **Type:** `boolean`
+- **Default:** `false`
+
+Forward unhandled runtime errors from the browser to the Vite server console during development. When enabled, errors like unhandled promise rejections and uncaught exceptions that occur in the browser will be logged in the server terminal with enhanced formatting, for example:
+
+```log
+1:18:38 AM [vite] (client) [Unhandled error] Error: this is test error
+ > testError src/main.ts:20:8
+     18|
+     19| function testError() {
+     20|   throw new Error('this is test error')
+       |        ^
+     21| }
+     22|
+ > HTMLButtonElement.<anonymous> src/main.ts:6:2
+```
+
+This feature is useful when working with AI coding assistants that can only see terminal output for context.
+
 ## server.warmup
 
 - **Type:** `{ clientFiles?: string[], ssrFiles?: string[] }`
