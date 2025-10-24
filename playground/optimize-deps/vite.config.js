@@ -68,6 +68,7 @@ export default defineConfig({
   plugins: [
     testVue(),
     notjs(),
+    virtualModulePlugin(),
     // for axios request test
     {
       name: 'mock',
@@ -168,6 +169,26 @@ function notjs() {
       if (id.endsWith('.notjs')) {
         code = code.replace('<notjs>', '').replace('</notjs>', '')
         return { code }
+      }
+    },
+  }
+}
+
+// Test virtual module with .vue extension (issue #14151)
+function virtualModulePlugin() {
+  const virtualModuleId = 'virtual:test-virtual-file/Foo.vue'
+  const resolvedVirtualModuleId = '\0' + virtualModuleId
+
+  return {
+    name: 'test-virtual-module',
+    resolveId(id) {
+      if (id === virtualModuleId) {
+        return resolvedVirtualModuleId
+      }
+    },
+    load(id) {
+      if (id === resolvedVirtualModuleId) {
+        return `export default { name: 'VirtualComponent' }`
       }
     },
   }

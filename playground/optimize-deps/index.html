@@ -373,3 +373,9 @@
     optimized.externalDummyNodeBuiltinResult,
   )
 </script>
+
+<h2>Virtual module with .vue extension (issue #14151)</h2>
+<div>
+  This should not error during dep scan: <span class="virtual-module"></span>
+</div>
+<script type="module" src="./virtual-module.js"></script>
