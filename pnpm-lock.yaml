@@ -570,6 +570,12 @@ importers:
 
   playground/alias/dir/module: {}
 
+  playground/amd:
+    dependencies:
+      requirejs:
+        specifier: ^2.3.7
+        version: 2.3.7
+
   playground/assets: {}
 
   playground/assets-sanitize: {}
@@ -6387,6 +6393,11 @@ packages:
     resolution: {integrity: sha512-fGxEI7+wsG9xrvdjsrlmL22OMTTiHRwAMroiEeMgq8gzoLC/PQr7RsRDSTLUg/bZAZtF+TVIkHc6/4RIKrui+Q==}
     engines: {node: '>=0.10.0'}
 
+  requirejs@2.3.7:
+    resolution: {integrity: sha512-DouTG8T1WanGok6Qjg2SXuCMzszOo0eHeH9hDZ5Y4x8Je+9JB38HdTLT4/VA8OaUhBa0JPVHJ0pyBkM1z+pDsw==}
+    engines: {node: '>=0.4.0'}
+    hasBin: true
+
   resolve-from@4.0.0:
     resolution: {integrity: sha512-pb/MYmXstAkysRFx8piNI1tGFNQIFA3vkE3Gq4EuA1dF6gHp/+vgZqsCGJapvy8N3Q+4o7FwvquPJcnZ7RYy4g==}
     engines: {node: '>=4'}
@@ -12134,6 +12145,8 @@ snapshots:
       - supports-color
 
   require-directory@2.1.1: {}
+
+  requirejs@2.3.7: {}
 
   resolve-from@4.0.0: {}
 
