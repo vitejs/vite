@@ -181,6 +181,13 @@ export interface ServerOptions extends CommonServerOptions {
    */
   perEnvironmentStartEndDuringDev?: boolean
   /**
+   * Backward compatibility. The watchChange hook was called only once for all environments.
+   * This option enables per-environment watchChange hooks.
+   * @default false
+   * @experimental
+   */
+  perEnvironmentWatchChangeDuringDev?: boolean
+  /**
    * Run HMR tasks, by default the HMR propagation is done in parallel for all environments
    * @experimental
    */
@@ -802,9 +809,13 @@ export async function _createServer(
     file = normalizePath(file)
     reloadOnTsconfigChange(server, file)
 
-    await pluginContainer.watchChange(file, {
-      event: isUnlink ? 'delete' : 'create',
-    })
+    await Promise.all(
+      Object.values(server.environments).map((environment) =>
+        environment.pluginContainer.watchChange(file, {
+          event: isUnlink ? 'delete' : 'create',
+        }),
+      ),
+    )
 
     if (publicDir && publicFiles) {
       if (file.startsWith(publicDir)) {
@@ -836,7 +847,11 @@ export async function _createServer(
     file = normalizePath(file)
     reloadOnTsconfigChange(server, file)
 
-    await pluginContainer.watchChange(file, { event: 'update' })
+    await Promise.all(
+      Object.values(server.environments).map((environment) =>
+        environment.pluginContainer.watchChange(file, { event: 'update' }),
+      ),
+    )
     // invalidate module graph cache on file change
     for (const environment of Object.values(server.environments)) {
       environment.moduleGraph.onFileChange(file)
@@ -1104,6 +1119,7 @@ const _serverConfigDefaults = Object.freeze({
   preTransformRequests: true,
   // sourcemapIgnoreList
   perEnvironmentStartEndDuringDev: false,
+  perEnvironmentWatchChangeDuringDev: false,
   // hotUpdateEnvironments
 } satisfies ServerOptions)
 export const serverConfigDefaults: Readonly<Partial<ServerOptions>> =
