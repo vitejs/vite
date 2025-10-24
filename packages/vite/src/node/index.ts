@@ -227,19 +227,19 @@ export type {
   CustomPayload,
   PrunePayload,
   ErrorPayload,
-} from 'types/hmrPayload'
+} from '#types/hmrPayload'
 export type {
   CustomEventMap,
   InferCustomEventPayload,
   InvalidatePayload,
-} from 'types/customEvent'
+} from '#types/customEvent'
 export type {
   ImportGlobFunction,
   ImportGlobOptions,
   GeneralImportGlobOptions,
   KnownAsTypeMap,
-} from 'types/importGlob'
-export type { ChunkMetadata, CustomPluginOptionsVite } from 'types/metadata'
+} from '#types/importGlob'
+export type { ChunkMetadata, CustomPluginOptionsVite } from '#types/metadata'
 
 // dep types
 export type {
@@ -248,16 +248,16 @@ export type {
   ResolverFunction,
   ResolverObject,
   Alias,
-} from 'dep-types/alias'
-export type { Connect } from 'dep-types/connect'
-export type { WebSocket, WebSocketAlias } from 'dep-types/ws'
+} from '#dep-types/alias'
+export type { Connect } from '#dep-types/connect'
+export type { WebSocket, WebSocketAlias } from '#dep-types/ws'
 export type * as HttpProxy from 'http-proxy-3'
-export type { FSWatcher, WatchOptions } from 'dep-types/chokidar'
-export type { Terser } from 'types/internal/terserOptions'
-export type { RollupCommonJSOptions } from 'dep-types/commonjs'
-export type { RollupDynamicImportVarsOptions } from 'dep-types/dynamicImportVars'
-export type { Matcher, AnymatchPattern, AnymatchFn } from 'dep-types/anymatch'
-export type { LightningCSSOptions } from 'types/internal/lightningcssOptions'
+export type { FSWatcher, WatchOptions } from '#dep-types/chokidar'
+export type { Terser } from '#types/internal/terserOptions'
+export type { RollupCommonJSOptions } from '#dep-types/commonjs'
+export type { RollupDynamicImportVarsOptions } from '#dep-types/dynamicImportVars'
+export type { Matcher, AnymatchPattern, AnymatchFn } from '#dep-types/anymatch'
+export type { LightningCSSOptions } from '#types/internal/lightningcssOptions'
 
 // Backward compatibility
 export type { ModuleGraph, ModuleNode } from './server/mixedModuleGraph'

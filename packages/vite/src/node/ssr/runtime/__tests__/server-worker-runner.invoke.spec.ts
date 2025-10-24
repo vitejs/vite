@@ -98,4 +98,13 @@ describe('running module runner inside a worker and using the ModuleRunnerTransp
     expect(output).not.toHaveProperty('result')
     expect(output.error).toContain('Error: Unknown invoke error')
   })
+
+  it('resolves builtin module without server round-trip', async () => {
+    handleInvoke = (data: any) => server.environments.ssr.hot.handleInvoke(data)
+
+    const output = await run('./fixtures/builtin-import.ts')
+    expect(output).toHaveProperty('result')
+    expect(output.result).toBe('baz.txt')
+    expect(output.error).toBeUndefined()
+  })
 })

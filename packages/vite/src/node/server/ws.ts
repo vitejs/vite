@@ -9,10 +9,10 @@ import crypto from 'node:crypto'
 import colors from 'picocolors'
 import type { WebSocket as WebSocketRaw } from 'ws'
 import { WebSocketServer as WebSocketServerRaw_ } from 'ws'
-import type { WebSocket as WebSocketTypes } from 'dep-types/ws'
-import type { ErrorPayload, HotPayload } from 'types/hmrPayload'
-import type { InferCustomEventPayload } from 'types/customEvent'
 import { isHostAllowed } from 'host-validation-middleware'
+import type { WebSocket as WebSocketTypes } from '#dep-types/ws'
+import type { ErrorPayload, HotPayload } from '#types/hmrPayload'
+import type { InferCustomEventPayload } from '#types/customEvent'
 import type { ResolvedConfig } from '..'
 import { isObject } from '../utils'
 import type { NormalizedHotChannel, NormalizedHotChannelClient } from './hmr'
@@ -32,10 +32,9 @@ export const HMR_HEADER = 'vite-hmr'
 export type WebSocketCustomListener<T> = (
   data: T,
   client: WebSocketClient,
-  invoke?: 'send' | `send:${string}`,
 ) => void
 
-export const isWebSocketServer = Symbol('isWebSocketServer')
+export const isWebSocketServer: unique symbol = Symbol('isWebSocketServer')
 
 export interface WebSocketServer extends NormalizedHotChannel {
   /**
@@ -292,9 +291,7 @@ export function createWebSocketServer(
       const listeners = customListeners.get(parsed.event)
       if (!listeners?.size) return
       const client = getSocketClient(socket)
-      listeners.forEach((listener) =>
-        listener(parsed.data, client, parsed.invoke),
-      )
+      listeners.forEach((listener) => listener(parsed.data, client))
     })
     socket.on('error', (err) => {
       config.logger.error(`${colors.red(`ws error:`)}\n${err.stack}`, {

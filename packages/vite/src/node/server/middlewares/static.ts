@@ -2,12 +2,13 @@ import path from 'node:path'
 import type { OutgoingHttpHeaders, ServerResponse } from 'node:http'
 import type { Options } from 'sirv'
 import sirv from 'sirv'
-import type { Connect } from 'dep-types/connect'
 import escapeHtml from 'escape-html'
+import type { Connect } from '#dep-types/connect'
 import type { ViteDevServer } from '../../server'
 import type { ResolvedConfig } from '../../config'
 import { FS_PREFIX } from '../../constants'
 import {
+  decodeURIIfPossible,
   fsPathFromUrl,
   isFileReadable,
   isImportRequest,
@@ -151,7 +152,10 @@ export function serveStaticMiddleware(
     }
 
     const url = new URL(req.url!, 'http://example.com')
-    const pathname = decodeURI(url.pathname)
+    const pathname = decodeURIIfPossible(url.pathname)
+    if (pathname === undefined) {
+      return next()
+    }
 
     // apply aliases to static requests as well
     let redirectedPathname: string | undefined
@@ -213,7 +217,11 @@ export function serveRawFsMiddleware(
     // searching based from fs root.
     if (req.url!.startsWith(FS_PREFIX)) {
       const url = new URL(req.url!, 'http://example.com')
-      const pathname = decodeURI(url.pathname)
+      const pathname = decodeURIIfPossible(url.pathname)
+      if (pathname === undefined) {
+        return next()
+      }
+
       let newPathname = pathname.slice(FS_PREFIX.length)
       if (isWindows) newPathname = newPathname.replace(/^[A-Z]:/i, '')
       url.pathname = encodeURI(newPathname)
@@ -289,7 +297,12 @@ export function isFileLoadingAllowed(
 
   if (!fs.strict) return true
 
-  if (config.fsDenyGlob(filePath)) return false
+  // NOTE: `fs.readFile('/foo.png/')` tries to load `'/foo.png'`
+  // so we should check the path without trailing slash
+  const filePathWithoutTrailingSlash = filePath.endsWith('/')
+    ? filePath.slice(0, -1)
+    : filePath
+  if (config.fsDenyGlob(filePathWithoutTrailingSlash)) return false
 
   if (config.safeModulePaths.has(filePath)) return true
 
