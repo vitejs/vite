@@ -47,6 +47,10 @@ export interface HmrOptions {
   clientPort?: number
   path?: string
   timeout?: number
+  /**
+   * @default true
+   */
+  update?: boolean
   overlay?: boolean
   server?: HttpServer
 }

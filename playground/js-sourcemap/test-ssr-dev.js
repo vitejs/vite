@@ -11,7 +11,7 @@ async function runTest() {
     },
     server: {
       middlewareMode: true,
-      hmr: false,
+      hmr: { update: false },
       ws: false,
     },
     define: {

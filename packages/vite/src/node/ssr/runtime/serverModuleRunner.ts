@@ -39,7 +39,7 @@ function createHMROptions(
   environment: DevEnvironment,
   options: ServerModuleRunnerOptions,
 ) {
-  if (environment.config.server.hmr === false || options.hmr === false) {
+  if (!environment.config.server.hmr.update || options.hmr === false) {
     return false
   }
   if (!('api' in environment.hot)) return false

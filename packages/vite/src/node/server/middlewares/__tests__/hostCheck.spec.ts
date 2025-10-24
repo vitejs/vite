@@ -7,6 +7,7 @@ test('getAdditionalAllowedHosts', async () => {
       host: 'vite.host.example.com',
       hmr: {
         host: 'vite.hmr-host.example.com',
+        update: true,
       },
       origin: 'http://vite.origin.example.com:5173',
     },
