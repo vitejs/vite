@@ -326,7 +326,7 @@ function createWorkerEnvironment(name, config, context) {
     send: (data) => worker.postMessage(data),
     on: (event, handler) => {
       // client is already connected
-      if (event === 'connection' || event === 'vite:client:connect') return
+      if (event === 'vite:client:connect') return
       if (event === 'vite:client:disconnect') {
         const listener = () => {
           handler(undefined, client)
@@ -345,7 +345,7 @@ function createWorkerEnvironment(name, config, context) {
       worker.on('message', listener)
     },
     off: (event, handler) => {
-      if (event === 'connection' || event === 'vite:client:connect') return
+      if (event === 'vite:client:connect') return
       if (event === 'vite:client:disconnect') {
         const listener = handlerToWorkerListener.get(handler)
         if (listener) {
@@ -381,7 +381,7 @@ await createServer({
 
 :::
 
-Make sure to implement the `connection` / `vite:client:connect` / `vite:client:disconnect` events in the `on` / `off` methods when those methods exist. `connection` event and `vite:client:connect` event should be emitted when the connection is established, and `vite:client:disconnect` event should be emitted when the connection is closed. The `HotChannelClient` object passed to the event handler must have the same reference for the same connection.
+Make sure to implement the `vite:client:connect` / `vite:client:disconnect` events in the `on` / `off` methods when those methods exist. `vite:client:connect` event should be emitted when the connection is established, and `vite:client:disconnect` event should be emitted when the connection is closed. The `HotChannelClient` object passed to the event handler must have the same reference for the same connection.
 
 A different example using an HTTP request to communicate between the runner and the server:
 

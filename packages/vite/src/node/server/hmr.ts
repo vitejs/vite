@@ -145,6 +145,9 @@ export interface NormalizedHotChannel<Api = any> {
       client: NormalizedHotChannelClient,
     ) => void,
   ): void
+  /**
+   * @deprecated use `vite:client:connect` event instead
+   */
   on(event: 'connection', listener: () => void): void
   /**
    * Unregister event listener

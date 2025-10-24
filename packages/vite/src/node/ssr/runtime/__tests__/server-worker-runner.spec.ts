@@ -19,7 +19,7 @@ const createWorkerTransport = (worker: Worker): HotChannel => {
     send: (data) => worker.postMessage(data),
     on: (event: string, handler: HotChannelListener) => {
       // client is already connected
-      if (event === 'connection' || event === 'vite:client:connect') return
+      if (event === 'vite:client:connect') return
       if (event === 'vite:client:disconnect') {
         const listener = () => {
           handler(undefined, client)
@@ -38,7 +38,7 @@ const createWorkerTransport = (worker: Worker): HotChannel => {
       worker.on('message', listener)
     },
     off: (event, handler: HotChannelListener) => {
-      if (event === 'connection' || event === 'vite:client:connect') return
+      if (event === 'vite:client:connect') return
       if (event === 'vite:client:disconnect') {
         const listener = handlerToWorkerListener.get(handler)
         if (listener) {
