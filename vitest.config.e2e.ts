@@ -25,6 +25,9 @@ export default defineConfig({
         timeout: 50 * (process.env.CI ? 200 : 50),
       },
     },
+    env: {
+      NODE_ENV: process.env.VITE_TEST_BUILD ? 'production' : 'development',
+    },
   },
   esbuild: {
     target: 'node20',
