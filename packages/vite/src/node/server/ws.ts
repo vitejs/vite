@@ -280,6 +280,20 @@ export function createWebSocketServer(
     })
   }
 
+  const emitCustomEvent = <T extends string>(
+    event: T,
+    data: InferCustomEventPayload<T>,
+    socket: WebSocketRaw,
+  ) => {
+    const listeners = customListeners.get(event)
+    if (!listeners?.size) return
+
+    const client = getSocketClient(socket)
+    for (const listener of listeners) {
+      listener(data, client)
+    }
+  }
+
   wss.on('connection', (socket) => {
     socket.on('message', (raw) => {
       if (!customListeners.size) return
@@ -288,10 +302,7 @@ export function createWebSocketServer(
         parsed = JSON.parse(String(raw))
       } catch {}
       if (!parsed || parsed.type !== 'custom' || !parsed.event) return
-      const listeners = customListeners.get(parsed.event)
-      if (!listeners?.size) return
-      const client = getSocketClient(socket)
-      listeners.forEach((listener) => listener(parsed.data, client))
+      emitCustomEvent(parsed.event, parsed.data, socket)
     })
     socket.on('error', (err) => {
       config.logger.error(`${colors.red(`ws error:`)}\n${err.stack}`, {
@@ -299,6 +310,12 @@ export function createWebSocketServer(
         error: err,
       })
     })
+    socket.on('close', () => {
+      emitCustomEvent('vite:client:disconnect', undefined, socket)
+    })
+
+    emitCustomEvent('vite:client:connect', undefined, socket)
+
     socket.send(JSON.stringify({ type: 'connected' }))
     if (bufferedError) {
       socket.send(JSON.stringify(bufferedError))
