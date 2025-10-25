@@ -354,3 +354,22 @@ test('dependency with external sub-dependencies', async () => {
     .poll(() => page.textContent('.dep-cjs-with-external-deps-node-builtin'))
     .toBe('foo bar')
 })
+
+test('virtual module with .vue extension does not error during scan (issue #14151)', async () => {
+  await expect
+    .poll(() => page.textContent('.virtual-module'))
+    .toMatch('Virtual module imported: VirtualComponent')
+})
+
+test.runIf(isServe)(
+  'no dep scan error for virtual modules with html-like extensions',
+  () => {
+    // Check that there are no errors related to virtual modules during dep scan
+    const scanErrors = serverLogs.filter(
+      (log) =>
+        log.includes('Failed to scan for dependencies') &&
+        log.includes('virtual:'),
+    )
+    expect(scanErrors).toHaveLength(0)
+  },
+)
