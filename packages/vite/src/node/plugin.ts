@@ -128,25 +128,25 @@ export interface Plugin<A = any> extends RollupPlugin<A> {
       options: {
         attributes: Record<string, string>
         custom?: CustomPluginOptions
-        ssr?: boolean
+        ssr?: boolean | undefined
         /**
          * @internal
          */
-        scan?: boolean
+        scan?: boolean | undefined
         isEntry: boolean
       },
     ) => Promise<ResolveIdResult> | ResolveIdResult,
-    { filter?: { id?: StringFilter<RegExp> } }
+    { filter?: { id?: StringFilter<RegExp> | undefined } }
   >
   load?: ObjectHook<
     (
       this: PluginContext,
       id: string,
       options?: {
-        ssr?: boolean
+        ssr?: boolean | undefined
       },
     ) => Promise<LoadResult> | LoadResult,
-    { filter?: { id?: StringFilter } }
+    { filter?: { id?: StringFilter | undefined } }
   >
   transform?: ObjectHook<
     (
@@ -154,10 +154,15 @@ export interface Plugin<A = any> extends RollupPlugin<A> {
       code: string,
       id: string,
       options?: {
-        ssr?: boolean
+        ssr?: boolean | undefined
       },
     ) => Promise<TransformResult> | TransformResult,
-    { filter?: { id?: StringFilter; code?: StringFilter } }
+    {
+      filter?: {
+        id?: StringFilter | undefined
+        code?: StringFilter | undefined
+      }
+    }
   >
   /**
    * Opt-in this plugin into the shared plugins pipeline.
