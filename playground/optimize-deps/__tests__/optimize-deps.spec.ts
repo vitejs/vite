@@ -355,10 +355,8 @@ test('dependency with external sub-dependencies', async () => {
     .toBe('foo bar')
 })
 
-test('virtual module with .vue extension does not error during scan (issue #14151)', async () => {
-  await expect
-    .poll(() => page.textContent('.virtual-module'))
-    .toMatch('Virtual module imported: VirtualComponent')
+test('virtual module with .vue extension does not error during scan', async () => {
+  await expect.poll(() => page.textContent('.virtual-module-vue')).toBe('ok')
 })
 
 test.runIf(isServe)(

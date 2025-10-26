@@ -502,7 +502,6 @@ function esbuildScanPlugin(
           isOptimizable(resolved, optimizeDepsOptions)
         )
           return
-        // Check if this is a virtual module that should be externalized
         if (shouldExternalizeDep(resolved, path)) {
           return externalUnlessEntry({ path })
         }

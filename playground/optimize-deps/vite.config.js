@@ -131,7 +131,7 @@ export default defineComponent({
       }
 
       // fallback to empty module for other vue files
-      if (id.endsWith('.vue')) {
+      if (!id.startsWith('\0') && id.endsWith('.vue')) {
         return { code: `export default {}` }
       }
     },
@@ -174,7 +174,6 @@ function notjs() {
   }
 }
 
-// Test virtual module with .vue extension (issue #14151)
 function virtualModulePlugin() {
   const virtualModuleId = 'virtual:test-virtual-file/Foo.vue'
   const resolvedVirtualModuleId = '\0' + virtualModuleId
