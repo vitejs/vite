@@ -146,10 +146,10 @@ export interface CSSOptions {
    */
   preprocessorMaxWorkers?: number | true
   postcss?:
-    | string
-    | (PostCSS.ProcessOptions & {
-        plugins?: PostCSS.AcceptedPlugin[]
-      })
+  | string
+  | (PostCSS.ProcessOptions & {
+    plugins?: PostCSS.AcceptedPlugin[]
+  })
   /**
    * Enables css sourcemaps during dev
    * @default false
@@ -173,22 +173,22 @@ export interface CSSModulesOptions {
   globalModulePaths?: RegExp[]
   exportGlobals?: boolean
   generateScopedName?:
-    | string
-    | ((name: string, filename: string, css: string) => string)
+  | string
+  | ((name: string, filename: string, css: string) => string)
   hashPrefix?: string
   /**
    * default: undefined
    */
   localsConvention?:
-    | 'camelCase'
-    | 'camelCaseOnly'
-    | 'dashes'
-    | 'dashesOnly'
-    | ((
-        originalClassName: string,
-        generatedClassName: string,
-        inputFile: string,
-      ) => string)
+  | 'camelCase'
+  | 'camelCaseOnly'
+  | 'dashes'
+  | 'dashesOnly'
+  | ((
+    originalClassName: string,
+    generatedClassName: string,
+    inputFile: string,
+  ) => string)
 }
 
 const _cssConfigDefaults = Object.freeze({
@@ -403,11 +403,11 @@ export function cssPlugin(config: ResolvedConfig): Plugin {
           if (config.command === 'build') {
             const isExternal = config.build.rollupOptions.external
               ? resolveUserExternal(
-                  config.build.rollupOptions.external,
-                  decodedUrl, // use URL as id since id could not be resolved
-                  id,
-                  false,
-                )
+                config.build.rollupOptions.external,
+                decodedUrl, // use URL as id since id could not be resolved
+                id,
+                false,
+              )
               : false
 
             if (!isExternal) {
@@ -499,10 +499,10 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
 
     const cssBundleName = config.build.lib
       ? resolveLibCssFilename(
-          config.build.lib,
-          config.root,
-          config.packageCache,
-        )
+        config.build.lib,
+        config.root,
+        config.packageCache,
+      )
       : defaultCssBundleName
     cssBundleNameCache.set(config, cssBundleName)
     return cssBundleName
@@ -852,7 +852,7 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
             // in this case, only use the filename for the CSS chunk name like JS chunks.
             const cssAssetName =
               chunk.isEntry &&
-              (!chunk.facadeModuleId || !isCSSRequest(chunk.facadeModuleId))
+                (!chunk.facadeModuleId || !isCSSRequest(chunk.facadeModuleId))
                 ? path.basename(cssFullAssetName)
                 : cssFullAssetName
             const originalFileName = getChunkOriginalFileName(
@@ -1367,22 +1367,22 @@ async function compileCSS(
 
   const transformResult = await (config.css.transformer === 'lightningcss'
     ? compileLightningCSS(
-        environment,
-        id,
-        code,
-        deps,
-        workerController,
-        urlResolver,
-      )
+      environment,
+      id,
+      code,
+      deps,
+      workerController,
+      urlResolver,
+    )
     : compilePostCSS(
-        environment,
-        id,
-        code,
-        deps,
-        lang,
-        workerController,
-        urlResolver,
-      ))
+      environment,
+      id,
+      code,
+      deps,
+      lang,
+      workerController,
+      urlResolver,
+    ))
 
   if (!transformResult) {
     return {
@@ -1396,12 +1396,12 @@ async function compileCSS(
     ...transformResult,
     map: config.css.devSourcemap
       ? combineSourcemapsIfExists(
-          cleanUrl(id),
-          typeof transformResult.map === 'string'
-            ? JSON.parse(transformResult.map)
-            : transformResult.map,
-          preprocessorMap,
-        )
+        cleanUrl(id),
+        typeof transformResult.map === 'string'
+          ? JSON.parse(transformResult.map)
+          : transformResult.map,
+        preprocessorMap,
+      )
       : { mappings: '' },
     deps,
   }
@@ -1417,10 +1417,10 @@ async function compilePostCSS(
   urlResolver?: CssUrlResolver,
 ): Promise<
   | {
-      code: string
-      map?: Exclude<SourceMapInput, string>
-      modules?: Record<string, string>
-    }
+    code: string
+    map?: Exclude<SourceMapInput, string>
+    modules?: Record<string, string>
+  }
   | undefined
 > {
   const { config } = environment
@@ -1624,16 +1624,16 @@ async function runPostCSS(
       from: source,
       ...(enableSourcemap
         ? {
-            map: {
-              inline: false,
-              annotation: false,
-              // postcss may return virtual files
-              // we cannot obtain content of them, so this needs to be enabled
-              sourcesContent: true,
-              // when "prev: preprocessorMap", the result map may include duplicate filename in `postcssResult.map.sources`
-              // prev: preprocessorMap,
-            },
-          }
+          map: {
+            inline: false,
+            annotation: false,
+            // postcss may return virtual files
+            // we cannot obtain content of them, so this needs to be enabled
+            sourcesContent: true,
+            // when "prev: preprocessorMap", the result map may include duplicate filename in `postcssResult.map.sources`
+            // prev: preprocessorMap,
+          },
+        }
         : {}),
     })
 
@@ -1664,9 +1664,9 @@ async function runPostCSS(
           },
           warning.endLine !== undefined && warning.endColumn !== undefined
             ? {
-                line: warning.endLine,
-                column: warning.endColumn - 1, // 1-based
-              }
+              line: warning.endLine,
+              column: warning.endColumn - 1, // 1-based
+            }
             : undefined,
         )}`
         logger.warn(colors.yellow(msg))
@@ -1936,9 +1936,9 @@ const UrlRewritePostcssPlugin: PostCSS.PluginCreator<{
         if (!importer) {
           opts.logger.warnOnce(
             '\nA PostCSS plugin did not pass the `from` option to `postcss.parse`. ' +
-              'This may cause imported assets to be incorrectly transformed. ' +
-              "If you've recently added a PostCSS plugin that raised this warning, " +
-              'please contact the package author to fix the issue.',
+            'This may cause imported assets to be incorrectly transformed. ' +
+            "If you've recently added a PostCSS plugin that raised this warning, " +
+            'please contact the package author to fix the issue.',
           )
         }
         const isCssUrl = cssUrlRE.test(declaration.value)
@@ -2262,11 +2262,11 @@ type PreprocessorAdditionalDataResult =
 type PreprocessorAdditionalData =
   | string
   | ((
-      source: string,
-      filename: string,
-    ) =>
-      | PreprocessorAdditionalDataResult
-      | Promise<PreprocessorAdditionalDataResult>)
+    source: string,
+    filename: string,
+  ) =>
+    | PreprocessorAdditionalDataResult
+    | Promise<PreprocessorAdditionalDataResult>)
 
 export type SassPreprocessorOptions = {
   additionalData?: PreprocessorAdditionalData
@@ -2761,11 +2761,11 @@ const makeLessWorker = (
           plugins: [viteResolverPlugin, ...(options.plugins || [])],
           ...(options.enableSourcemap
             ? {
-                sourceMap: {
-                  outputSourceFiles: true,
-                  sourceMapFileInline: false,
-                },
-              }
+              sourceMap: {
+                outputSourceFiles: true,
+                sourceMapFileInline: false,
+              },
+            }
             : {}),
         })
         return result
@@ -2773,7 +2773,7 @@ const makeLessWorker = (
     },
     {
       parentFunctions: { viteLessResolve },
-      shouldUseFake(_lessPath, _content, options) {
+      shouldUseFake(_lessPath, _content, _options) {
         // plugins are a function and is not serializable
         // ViteLessManager uses viteLessResolve which has closures that can't be serialized
         // Always use main thread to avoid timeout issues with @import resolution
@@ -3084,101 +3084,101 @@ async function compileLightningCSS(
   try {
     res = styleAttrRE.test(id)
       ? (await importLightningCSS()).transformStyleAttribute({
-          filename,
-          code: Buffer.from(src),
-          targets: config.css.lightningcss?.targets,
-          minify: config.isProduction && !!config.build.cssMinify,
-          analyzeDependencies: true,
-        })
+        filename,
+        code: Buffer.from(src),
+        targets: config.css.lightningcss?.targets,
+        minify: config.isProduction && !!config.build.cssMinify,
+        analyzeDependencies: true,
+      })
       : await (
-          await importLightningCSS()
-        ).bundleAsync({
-          ...config.css.lightningcss,
-          filename,
-          // projectRoot is needed to get stable hash when using CSS modules
-          projectRoot: config.root,
-          resolver: {
-            async read(filePath) {
-              if (filePath === filename) {
-                return src
-              }
+        await importLightningCSS()
+      ).bundleAsync({
+        ...config.css.lightningcss,
+        filename,
+        // projectRoot is needed to get stable hash when using CSS modules
+        projectRoot: config.root,
+        resolver: {
+          async read(filePath) {
+            if (filePath === filename) {
+              return src
+            }
 
-              const code = fs.readFileSync(filePath, 'utf-8')
-              const lang = CSS_LANGS_RE.exec(filePath)?.[1] as
-                | CssLang
-                | undefined
-              if (isPreProcessor(lang)) {
-                const result = await compileCSSPreprocessors(
-                  environment,
-                  id,
-                  lang,
-                  code,
-                  workerController,
-                )
-                result.deps?.forEach((dep) => deps.add(dep))
-                // TODO: support source map
-                return result.code
-              } else if (lang === 'sss') {
-                const sssResult = await transformSugarSS(environment, id, code)
-                // TODO: support source map
-                return sssResult.code
-              }
-              return code
-            },
-            async resolve(id, from) {
-              const publicFile = checkPublicFile(
+            const code = fs.readFileSync(filePath, 'utf-8')
+            const lang = CSS_LANGS_RE.exec(filePath)?.[1] as
+              | CssLang
+              | undefined
+            if (isPreProcessor(lang)) {
+              const result = await compileCSSPreprocessors(
+                environment,
                 id,
-                environment.getTopLevelConfig(),
+                lang,
+                code,
+                workerController,
               )
-              if (publicFile) {
-                return publicFile
-              }
-
-              // NOTE: with `transformer: 'postcss'`, CSS modules `composes` tried to resolve with
-              //       all resolvers, but in `transformer: 'lightningcss'`, only the one for the
-              //       current file type is used.
-              const atImportResolvers = getAtImportResolvers(
-                environment.getTopLevelConfig(),
-              )
-              const lang = CSS_LANGS_RE.exec(from)?.[1] as CssLang | undefined
-              let resolver: ResolveIdFn
-              switch (lang) {
-                case 'css':
-                case 'sss':
-                case 'styl':
-                case 'stylus':
-                case undefined:
-                  resolver = atImportResolvers.css
-                  break
-                case 'sass':
-                case 'scss':
-                  resolver = atImportResolvers.sass
-                  break
-                case 'less':
-                  resolver = atImportResolvers.less
-                  break
-                default:
-                  throw new Error(`Unknown lang: ${lang satisfies never}`)
-              }
-
-              const resolved = await resolver(environment, id, from)
-              if (resolved) {
-                deps.add(resolved)
-                return resolved
-              }
-              return id
-            },
+              result.deps?.forEach((dep) => deps.add(dep))
+              // TODO: support source map
+              return result.code
+            } else if (lang === 'sss') {
+              const sssResult = await transformSugarSS(environment, id, code)
+              // TODO: support source map
+              return sssResult.code
+            }
+            return code
           },
-          minify: config.isProduction && !!config.build.cssMinify,
-          sourceMap:
-            config.command === 'build'
-              ? !!config.build.sourcemap
-              : config.css.devSourcemap,
-          analyzeDependencies: true,
-          cssModules: cssModuleRE.test(id)
-            ? (config.css.lightningcss?.cssModules ?? true)
-            : undefined,
-        })
+          async resolve(id, from) {
+            const publicFile = checkPublicFile(
+              id,
+              environment.getTopLevelConfig(),
+            )
+            if (publicFile) {
+              return publicFile
+            }
+
+            // NOTE: with `transformer: 'postcss'`, CSS modules `composes` tried to resolve with
+            //       all resolvers, but in `transformer: 'lightningcss'`, only the one for the
+            //       current file type is used.
+            const atImportResolvers = getAtImportResolvers(
+              environment.getTopLevelConfig(),
+            )
+            const lang = CSS_LANGS_RE.exec(from)?.[1] as CssLang | undefined
+            let resolver: ResolveIdFn
+            switch (lang) {
+              case 'css':
+              case 'sss':
+              case 'styl':
+              case 'stylus':
+              case undefined:
+                resolver = atImportResolvers.css
+                break
+              case 'sass':
+              case 'scss':
+                resolver = atImportResolvers.sass
+                break
+              case 'less':
+                resolver = atImportResolvers.less
+                break
+              default:
+                throw new Error(`Unknown lang: ${lang satisfies never}`)
+            }
+
+            const resolved = await resolver(environment, id, from)
+            if (resolved) {
+              deps.add(resolved)
+              return resolved
+            }
+            return id
+          },
+        },
+        minify: config.isProduction && !!config.build.cssMinify,
+        sourceMap:
+          config.command === 'build'
+            ? !!config.build.sourcemap
+            : config.css.devSourcemap,
+        analyzeDependencies: true,
+        cssModules: cssModuleRE.test(id)
+          ? (config.css.lightningcss?.cssModules ?? true)
+          : undefined,
+      })
   } catch (e) {
     e.message = `[lightningcss] ${e.message}`
     if (e.loc) {
@@ -3193,7 +3193,7 @@ async function compileLightningCSS(
         if (friendlyMessage) {
           e.message += friendlyMessage
         }
-      } catch {}
+      } catch { }
     }
     throw e
   }
