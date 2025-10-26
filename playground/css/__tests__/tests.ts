@@ -128,6 +128,12 @@ export const tests = (isLightningCSS: boolean) => {
     await expect.poll(() => getColor(atImport)).toBe('blue')
   })
 
+  test('less @import in HTML style block', async () => {
+    const atImportLessStyle = await page.$('.at-import-less-style')
+    expect(await getColor(atImportLessStyle)).toBe('green')
+    expect(await getBg(atImportLessStyle)).toMatch(/yellow/)
+  })
+
   test('less-plugin', async () => {
     const body = await page.$('.less-js-plugin')
     expect(await getBg(body)).toBe(

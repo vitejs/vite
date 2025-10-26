@@ -2775,8 +2775,9 @@ const makeLessWorker = (
       parentFunctions: { viteLessResolve },
       shouldUseFake(_lessPath, _content, options) {
         // plugins are a function and is not serializable
-        // in that case, fallback to running in main thread
-        return !!options.plugins && options.plugins.length > 0
+        // ViteLessManager uses viteLessResolve which has closures that can't be serialized
+        // Always use main thread to avoid timeout issues with @import resolution
+        return true
       },
       max: maxWorkers,
     },
