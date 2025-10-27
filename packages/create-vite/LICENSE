@@ -152,7 +152,7 @@ ISC, MIT
 ## @clack/core, @clack/prompts
 License: MIT
 By: Nate Moore
-Repositories: git+https://github.com/bombshell-dev/clack.git, git+https://github.com/bombshell-dev/clack.git
+Repositories: https://github.com/bombshell-dev/clack, https://github.com/bombshell-dev/clack
 
 > MIT License
 > 
@@ -169,7 +169,7 @@ Repositories: git+https://github.com/bombshell-dev/clack.git, git+https://github
 ## cross-spawn
 License: MIT
 By: André Cruz
-Repository: git@github.com:moxystudio/node-cross-spawn.git
+Repository: https://github.com/git@github.com:moxystudio/node-cross-spawn
 
 > The MIT License (MIT)
 > 
@@ -198,7 +198,7 @@ Repository: git@github.com:moxystudio/node-cross-spawn.git
 ## isexe, which
 License: ISC
 By: Isaac Z. Schlueter
-Repositories: git+https://github.com/isaacs/isexe.git, git://github.com/isaacs/node-which.git
+Repositories: https://github.com/isaacs/isexe, https://github.com/isaacs/node-which
 
 > The ISC License
 > 
@@ -221,7 +221,7 @@ Repositories: git+https://github.com/isaacs/isexe.git, git://github.com/isaacs/n
 ## mri
 License: MIT
 By: Luke Edwards
-Repository: lukeed/mri
+Repository: https://github.com/lukeed/mri
 
 > The MIT License (MIT)
 > 
@@ -250,7 +250,7 @@ Repository: lukeed/mri
 ## path-key, shebang-regex
 License: MIT
 By: Sindre Sorhus
-Repositories: sindresorhus/path-key, sindresorhus/shebang-regex
+Repositories: https://github.com/sindresorhus/path-key, https://github.com/sindresorhus/shebang-regex
 
 > MIT License
 > 
@@ -267,7 +267,7 @@ Repositories: sindresorhus/path-key, sindresorhus/shebang-regex
 ## picocolors
 License: ISC
 By: Alexey Raspopov
-Repository: alexeyraspopov/picocolors
+Repository: https://github.com/alexeyraspopov/picocolors
 
 > ISC License
 > 
@@ -290,7 +290,7 @@ Repository: alexeyraspopov/picocolors
 ## shebang-command
 License: MIT
 By: Kevin Mårtensson
-Repository: kevva/shebang-command
+Repository: https://github.com/kevva/shebang-command
 
 > MIT License
 > 
