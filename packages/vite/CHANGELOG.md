@@ -1,3 +1,18 @@
+## <small>[7.1.20](https://github.com/vitejs/rolldown-vite/compare/v7.1.19...v7.1.20) (2025-10-27)</small>
+### Features
+
+* add legacy inconsistent cjs interop ([#464](https://github.com/vitejs/rolldown-vite/issues/464)) ([10aa992](https://github.com/vitejs/rolldown-vite/commit/10aa99287ed936cf80bfaafa122db90498bd32f0))
+* update rolldown ([#467](https://github.com/vitejs/rolldown-vite/issues/467)) ([e373d76](https://github.com/vitejs/rolldown-vite/commit/e373d7673230db638c9177c111a76544fb28bdf5))
+
+### Bug Fixes
+
+* **deps:** downgrade commonjs plugin to 28.0.6 to avoid rollup/plugins[#1909](https://github.com/vitejs/rolldown-vite/issues/1909) ([#20988](https://github.com/vitejs/rolldown-vite/issues/20988)) ([d5bd5bf](https://github.com/vitejs/rolldown-vite/commit/d5bd5bf64423f08d0beacace0c23aaebdafcd9ab))
+* **optimizer:** pass target to optimizer ([4406b5c](https://github.com/vitejs/rolldown-vite/commit/4406b5c117feb6990850ccb4c12300cf3c980e3c))
+
+### Tests
+
+* enable temporary disabled tests ([946b447](https://github.com/vitejs/rolldown-vite/commit/946b4473be440bde494e1d9a90d38e360b7a5c5f))
+
 ## <small>[7.1.19](https://github.com/vitejs/rolldown-vite/compare/v7.1.18...v7.1.19) (2025-10-20)</small>
 ### Features
 
