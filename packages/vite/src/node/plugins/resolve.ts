@@ -351,9 +351,11 @@ export function oxcResolvePlugin(
                 return newResolvedId === resolvedId ? undefined : newResolvedId
               },
           resolveSubpathImports(id, importer, isRequire, scan) {
-            options.isRequire = resolveOptions.isRequire ?? isRequire
-            options.scan = scan
-            return resolveSubpathImports(id, importer, options)
+            return resolveSubpathImports(id, importer, {
+              ...options,
+              isRequire: resolveOptions.isRequire ?? isRequire,
+              scan,
+            })
           },
 
           ...(partialEnv.config.command === 'serve'
