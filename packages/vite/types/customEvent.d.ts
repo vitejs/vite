@@ -6,6 +6,7 @@ import type {
 } from './hmrPayload'
 
 export interface CustomEventMap {
+  // client events
   'vite:beforeUpdate': UpdatePayload
   'vite:afterUpdate': UpdatePayload
   'vite:beforePrune': PrunePayload
@@ -14,6 +15,10 @@ export interface CustomEventMap {
   'vite:invalidate': InvalidatePayload
   'vite:ws:connect': WebSocketConnectionPayload
   'vite:ws:disconnect': WebSocketConnectionPayload
+
+  // server events
+  'vite:client:connect': undefined
+  'vite:client:disconnect': undefined
 }
 
 export interface WebSocketConnectionPayload {

@@ -29,6 +29,25 @@ if (!isBuild) {
     browserLogs.length = 0
   })
 
+  const fetchHotEvents = async (): Promise<{
+    connectCount: number
+    disconnectCount: number
+  }> => {
+    const res = await fetch(viteTestUrl + '/hot-events-counts')
+    return res.json()
+  }
+  test('hot events', async () => {
+    expect(await fetchHotEvents()).toStrictEqual({
+      connectCount: 1,
+      disconnectCount: 0,
+    })
+    await untilBrowserLogAfter(() => page.reload(), [/connected/])
+    expect(await fetchHotEvents()).toStrictEqual({
+      connectCount: 2,
+      disconnectCount: 1,
+    })
+  })
+
   test('self accept', async () => {
     const el = await page.$('.app')
     await untilBrowserLogAfter(

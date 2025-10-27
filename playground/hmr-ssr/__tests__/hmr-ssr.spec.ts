@@ -10,7 +10,12 @@ import {
   test,
   vi,
 } from 'vitest'
-import type { InlineConfig, RunnableDevEnvironment, ViteDevServer } from 'vite'
+import type {
+  InlineConfig,
+  Plugin,
+  RunnableDevEnvironment,
+  ViteDevServer,
+} from 'vite'
 import { createRunnableDevEnvironment, createServer } from 'vite'
 import type { ModuleRunner } from 'vite/module-runner'
 import {
@@ -47,12 +52,31 @@ const updated = (file: string, via?: string) => {
 
 if (!isBuild) {
   describe('hmr works correctly', () => {
+    const hotEventCounts = { connect: 0, disconnect: 0 }
+
     beforeAll(async () => {
-      await setupModuleRunner('/hmr.ts')
+      function hotEventsPlugin(): Plugin {
+        return {
+          name: 'hot-events',
+          configureServer(server) {
+            server.environments.ssr.hot.on(
+              'vite:client:connect',
+              () => hotEventCounts.connect++,
+            )
+            server.environments.ssr.hot.on(
+              'vite:client:disconnect',
+              () => hotEventCounts.disconnect++,
+            )
+          },
+        }
+      }
+
+      await setupModuleRunner('/hmr.ts', { plugins: [hotEventsPlugin()] })
     })
 
     test('should connect', async () => {
       expect(clientLogs).toContain('[vite] connected.')
+      expect(hotEventCounts).toStrictEqual({ connect: 1, disconnect: 0 })
     })
 
     test('self accept', async () => {
