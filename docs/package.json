@@ -9,15 +9,15 @@
     "docs-serve": "vitepress serve"
   },
   "devDependencies": {
-    "@shikijs/vitepress-twoslash": "^3.13.0",
-    "@types/express": "^5.0.3",
+    "@shikijs/vitepress-twoslash": "^3.14.0",
+    "@types/express": "^5.0.4",
     "feed": "^5.1.0",
     "gsap": "^3.13.0",
     "markdown-it-image-size": "^15.0.1",
     "vitepress": "^2.0.0-alpha.12",
-    "vitepress-plugin-group-icons": "^1.6.4",
-    "vitepress-plugin-llms": "^1.8.0",
+    "vitepress-plugin-group-icons": "^1.6.5",
+    "vitepress-plugin-llms": "^1.8.1",
     "vue": "^3.5.22",
-    "vue-tsc": "^3.1.1"
+    "vue-tsc": "^3.1.2"
   }
 }
