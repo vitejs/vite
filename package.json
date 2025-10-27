@@ -72,7 +72,7 @@
     "typescript": "~5.9.2",
     "typescript-eslint": "^8.46.1",
     "vite": "workspace:*",
-    "vitest": "^3.2.4"
+    "vitest": "^4.0.3"
   },
   "simple-git-hooks": {
     "pre-commit": "pnpm exec lint-staged --concurrent false"
