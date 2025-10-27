@@ -177,6 +177,14 @@ export interface Plugin<A = any> extends RollupPlugin<A> {
    */
   perEnvironmentStartEndDuringDev?: boolean
   /**
+   * Opt-in this plugin into per-environment watchChange during dev.
+   * For backward-compatibility, the watchChange hook is called only once during
+   * dev, for the client environment. Plugins can opt-in to be called
+   * per-environment, aligning with the watchChange hook behavior.
+   * @experimental
+   */
+  perEnvironmentWatchChangeDuringDev?: boolean
+  /**
    * Enforce plugin invocation tier similar to webpack loaders. Hooks ordering
    * is still subject to the `order` property in the hook object.
    *
