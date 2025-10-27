@@ -174,14 +174,14 @@ export interface ServerOptions extends CommonServerOptions {
     | false
     | ((sourcePath: string, sourcemapPath: string) => boolean)
   /**
-   * Backward compatibility. The buildStart and buildEnd hooks were called only once for all
-   * environments. This option enables per-environment buildStart and buildEnd hooks.
+   * Backward compatibility. The buildStart and buildEnd hooks were called only once for
+   * the client environment. This option enables per-environment buildStart and buildEnd hooks.
    * @default false
    * @experimental
    */
   perEnvironmentStartEndDuringDev?: boolean
   /**
-   * Backward compatibility. The watchChange hook was called only once for all environments.
+   * Backward compatibility. The watchChange hook was called only once for the client environment.
    * This option enables per-environment watchChange hooks.
    * @default false
    * @experimental
