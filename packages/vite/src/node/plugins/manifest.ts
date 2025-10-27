@@ -82,7 +82,9 @@ export function manifestPlugin(config: ResolvedConfig): Plugin {
             ? () => isLegacySet.has(environment.name)
             : undefined,
           cssEntries() {
-            return cssEntriesMap.get(envs[environment.name])!
+            return Object.fromEntries(
+              cssEntriesMap.get(envs[environment.name])!.entries(),
+            )
           },
         }),
         {
@@ -229,7 +231,7 @@ export function manifestPlugin(config: ResolvedConfig): Plugin {
 
       const entryCssReferenceIds = cssEntriesMap.get(this.environment)!
       const entryCssAssetFileNames = new Set()
-      for (const id of entryCssReferenceIds) {
+      for (const [_name, id] of entryCssReferenceIds) {
         try {
           const fileName = this.getFileName(id)
           entryCssAssetFileNames.add(fileName)

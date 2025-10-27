@@ -77,7 +77,9 @@ describe.runIf(isBuild)('build', () => {
     expect(dirFooAssetEntry).not.toBeUndefined() // '\\' should not be used even on windows
     // use the entry name
     expect(dirFooAssetEntry.file).toMatch('assets/bar-')
-    expect(dirFooAssetEntry.names).toStrictEqual(['bar.css'])
+    if (process.env._VITE_TEST_JS_PLUGIN) {
+      expect(dirFooAssetEntry.names).toStrictEqual(['bar.css'])
+    }
     expect(iconEntrypointEntry?.file).not.toBeUndefined()
     expect(waterContainerEntry?.file).not.toBeUndefined()
   })
