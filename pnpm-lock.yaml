@@ -277,8 +277,8 @@ importers:
         specifier: ^5.1.1
         version: 5.1.1(rollup@4.43.0)
       '@rollup/plugin-commonjs':
-        specifier: 28.0.9
-        version: 28.0.9(rollup@4.43.0)
+        specifier: 28.0.6
+        version: 28.0.6(rollup@4.43.0)
       '@rollup/plugin-dynamic-import-vars':
         specifier: 2.1.4
         version: 2.1.4(rollup@4.43.0)
@@ -3047,8 +3047,8 @@ packages:
       rollup:
         optional: true
 
-  '@rollup/plugin-commonjs@28.0.9':
-    resolution: {integrity: sha512-PIR4/OHZ79romx0BVVll/PkwWpJ7e5lsqFa3gFfcrFPWwLXLV39JVUzQV9RKjWerE7B845Hqjj9VYlQeieZ2dA==}
+  '@rollup/plugin-commonjs@28.0.6':
+    resolution: {integrity: sha512-XSQB1K7FUU5QP+3lOQmVCE3I0FcbbNvmNT4VJSj93iUjayaARrTQeoRdiYQoftAJBLrR9t2agwAd3ekaTgHNlw==}
     engines: {node: '>=16.0.0 || 14 >= 14.17'}
     peerDependencies:
       rollup: ^2.68.0||^3.0.0||^4.0.0
@@ -8608,7 +8608,7 @@ snapshots:
     optionalDependencies:
       rollup: 4.43.0
 
-  '@rollup/plugin-commonjs@28.0.9(rollup@4.43.0)':
+  '@rollup/plugin-commonjs@28.0.6(rollup@4.43.0)':
     dependencies:
       '@rollup/pluginutils': 5.3.0(rollup@4.43.0)
       commondir: 1.0.1
