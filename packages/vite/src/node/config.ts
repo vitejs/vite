@@ -566,6 +566,17 @@ export interface LegacyOptions {
    * that security weakness.**
    */
   skipWebSocketTokenCheck?: boolean
+  /**
+   * Opt-in to the pre-Vite 8 CJS interop behavior, which was inconsistent.
+   *
+   * In pre-Vite 8 versions, Vite had inconsistent CJS interop behavior. This was due to
+   * the different behavior of esbuild and the Rollup commonjs plugin.
+   * Vite 8+ uses Rolldown for both the dependency optimization in dev and the production build,
+   * which aligns the behavior to esbuild.
+   *
+   * See the Vite 8 migration guide for more details.
+   */
+  inconsistentCjsInterop?: boolean
 }
 
 export interface ResolvedWorkerOptions {

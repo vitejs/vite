@@ -85,6 +85,7 @@ export async function resolvePlugins(
             asSrc: true,
             optimizeDeps: true,
             externalize: true,
+            legacyInconsistentCjsInterop: config.legacy?.inconsistentCjsInterop,
           },
           isWorker
             ? { ...config, consumer: 'client', optimizeDepsPluginNames: [] }
