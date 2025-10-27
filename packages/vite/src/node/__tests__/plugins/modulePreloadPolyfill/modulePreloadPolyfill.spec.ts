@@ -37,23 +37,17 @@ const buildProject = ({ format = 'es' as ModuleFormat } = {}) =>
   }) as Promise<RolldownOutput>
 
 describe('load', () => {
-  // FIXME: https://github.com/oxc-project/oxc/issues/13176
-  it.skipIf(process.env._VITE_TEST_JS_PLUGIN)(
-    'loads modulepreload polyfill',
-    async ({ expect }) => {
-      const { output } = await buildProject()
-      expect(output).toHaveLength(1)
-      expect(output[0].code).toMatchSnapshot()
-    },
-  )
+  it('loads modulepreload polyfill', async ({ expect }) => {
+    const { output } = await buildProject()
+    expect(output).toHaveLength(1)
+    expect(output[0].code).toMatchSnapshot()
+  })
 
-  // FIXME: https://github.com/oxc-project/oxc/issues/13176
-  it.skipIf(process.env._VITE_TEST_JS_PLUGIN)(
-    "doesn't load modulepreload polyfill when format is cjs",
-    async ({ expect }) => {
-      const { output } = await buildProject({ format: 'cjs' })
-      expect(output).toHaveLength(1)
-      expect(output[0].code).toMatchSnapshot()
-    },
-  )
+  it("doesn't load modulepreload polyfill when format is cjs", async ({
+    expect,
+  }) => {
+    const { output } = await buildProject({ format: 'cjs' })
+    expect(output).toHaveLength(1)
+    expect(output[0].code).toMatchSnapshot()
+  })
 })
