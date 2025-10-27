@@ -480,7 +480,7 @@ Repository: https://github.com/expressjs/cors
 ## cross-spawn
 License: MIT
 By: André Cruz
-Repository: https://github.com/git@github.com:moxystudio/node-cross-spawn
+Repository: https://github.com/moxystudio/node-cross-spawn
 
 > The MIT License (MIT)
 > 
@@ -827,7 +827,7 @@ Repository: https://github.com/pillarjs/finalhandler
 ## follow-redirects
 License: MIT
 By: Ruben Verborgh, Olivier Lalonde, James Talmage
-Repository: ssh://git@github.com/follow-redirects/follow-redirects
+Repository: https://github.com/follow-redirects/follow-redirects
 
 > Copyright 2014–present Olivier Lalonde <olalonde@gmail.com>, James Talmage <james@talmage.io>, Ruben Verborgh
 > 
