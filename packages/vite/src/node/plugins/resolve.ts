@@ -167,6 +167,11 @@ interface ResolvePluginOptions {
    * @internal
    */
   idOnly?: boolean
+
+  /**
+   * Enable when `legacy.inconsistentCjsInterop` is true. See that option for more details.
+   */
+  legacyInconsistentCjsInterop?: boolean
 }
 
 export interface InternalResolveOptions
@@ -283,6 +288,7 @@ export function oxcResolvePlugin(
           external: options.external,
           noExternal: noExternal,
           dedupe: options.dedupe,
+          legacyInconsistentCjsInterop: options.legacyInconsistentCjsInterop,
           finalizeBareSpecifier: !depsOptimizerEnabled
             ? undefined
             : (resolvedId, rawId, importer) => {
@@ -553,6 +559,7 @@ export function resolvePlugin(
             id: ensureVersionQuery(res, id, options, depsOptimizer),
             packageJsonPath: findNearestPackagePath(
               res,
+              options.legacyInconsistentCjsInterop,
               options.packageCache,
               isBuild,
             ),
@@ -573,6 +580,7 @@ export function resolvePlugin(
               id: ensureVersionQuery(res, id, options, depsOptimizer),
               packageJsonPath: findNearestPackagePath(
                 res,
+                options.legacyInconsistentCjsInterop,
                 options.packageCache,
                 isBuild,
               ),
@@ -629,7 +637,9 @@ export function resolvePlugin(
                 return {
                   id: res,
                   moduleSideEffects: resPkg.hasSideEffects(res),
-                  packageJsonPath: path.join(resPkg.dir, 'package.json'),
+                  packageJsonPath: options.legacyInconsistentCjsInterop
+                    ? undefined
+                    : path.join(resPkg.dir, 'package.json'),
                 }
               }
             }
@@ -653,6 +663,7 @@ export function resolvePlugin(
               id: ensureVersionQuery(res, id, options, depsOptimizer),
               packageJsonPath: findNearestPackagePath(
                 res,
+                options.legacyInconsistentCjsInterop,
                 options.packageCache,
                 isBuild,
               ),
@@ -670,6 +681,7 @@ export function resolvePlugin(
             id: ensureVersionQuery(res, id, options, depsOptimizer),
             packageJsonPath: findNearestPackagePath(
               res,
+              options.legacyInconsistentCjsInterop,
               options.packageCache,
               isBuild,
             ),
@@ -1169,6 +1181,7 @@ export function tryNodeResolve(
       moduleSideEffects: pkg.hasSideEffects(resolved),
       packageJsonPath: findNearestPackagePath(
         resolved,
+        options.legacyInconsistentCjsInterop,
         options.packageCache,
         isBuild,
       ),
@@ -1518,7 +1531,9 @@ function tryResolveBrowserMapping(
             result = {
               id: res,
               moduleSideEffects: resPkg.hasSideEffects(res),
-              packageJsonPath: path.join(resPkg.dir, 'package.json'),
+              packageJsonPath: options.legacyInconsistentCjsInterop
+                ? undefined
+                : path.join(resPkg.dir, 'package.json'),
             }
           }
         }
@@ -1654,10 +1669,11 @@ function isDirectory(path: string): boolean {
 
 function findNearestPackagePath(
   file: string,
+  legacyInconsistentCjsInterop: boolean | undefined,
   packageCache: PackageCache | undefined,
   isBuild: boolean,
 ) {
-  if (!isBuild) return
+  if (!isBuild || legacyInconsistentCjsInterop) return
   const pkgData = findNearestPackageData(file, packageCache)
   return pkgData ? path.join(pkgData.dir, 'package.json') : null
 }

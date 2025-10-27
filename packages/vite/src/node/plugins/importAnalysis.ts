@@ -441,7 +441,9 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
         imports.length,
       )
 
-      let _isNodeModeResult: boolean | undefined
+      let _isNodeModeResult = config.legacy?.inconsistentCjsInterop
+        ? false
+        : undefined
       const isNodeMode = () => {
         _isNodeModeResult ??= isFilePathESM(importer, config.packageCache)
         return _isNodeModeResult
