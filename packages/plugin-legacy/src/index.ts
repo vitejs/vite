@@ -867,7 +867,7 @@ async function buildPolyfillChunk(
           format,
           hashCharacters: rollupOutputOptions.hashCharacters,
           entryFileNames: rollupOutputOptions.entryFileNames,
-          // sourcemapBaseUrl: rollupOutputOptions.sourcemapBaseUrl,
+          sourcemapBaseUrl: rollupOutputOptions.sourcemapBaseUrl,
         },
       },
     },
