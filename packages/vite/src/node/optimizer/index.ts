@@ -28,7 +28,10 @@ import {
   tryStatSync,
   unique,
 } from '../utils'
-import { METADATA_FILENAME } from '../constants'
+import {
+  ESBUILD_BASELINE_WIDELY_AVAILABLE_TARGET,
+  METADATA_FILENAME,
+} from '../constants'
 import { isWindows } from '../../shared/utils'
 import type { Environment } from '../environment'
 import { transformWithOxc } from '../plugins/oxc'
@@ -810,12 +813,14 @@ async function prepareRolldownOptimizerRun(
   async function build() {
     const bundle = await rolldown({
       ...rollupOptions,
-      // TODO: pass target
       input: flatIdDeps,
       logLevel: 'silent',
       plugins,
       define,
       platform,
+      transform: {
+        target: ESBUILD_BASELINE_WIDELY_AVAILABLE_TARGET,
+      },
       resolve: {
         extensions: ['.tsx', '.ts', '.jsx', '.js', '.css', '.json'],
         ...rollupOptions.resolve,
