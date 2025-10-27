@@ -10,13 +10,6 @@ export default defineConfig({
   build: {
     sourcemap: true,
     rollupOptions: {
-      experimental: {
-        // set this to keep the previous chunking behavior to make tests pass easier
-        // as some tests relies on the chunking behavior
-        // (using advancedChunks enable this)
-        // related: https://github.com/vitejs/vite/pull/18652
-        strictExecutionOrder: false,
-      },
       output: {
         // manualChunks(name) {
         //   if (name.endsWith('after-preload-dynamic.js')) {
