@@ -1,3 +1,51 @@
+## [7.2.0-beta.0](https://github.com/vitejs/rolldown-vite/compare/v7.1.20...v7.2.0-beta.0) (2025-10-28)
+### Features
+
+* add `import.meta.resolve` support for ESM config (bundle config loader) ([#20962](https://github.com/vitejs/rolldown-vite/issues/20962)) ([f86789a](https://github.com/vitejs/rolldown-vite/commit/f86789a6e237bd0e31cde3a3f09bdef45bfa7d1c))
+* add `perEnvironmentWatchChangeDuringDev` ([#20996](https://github.com/vitejs/rolldown-vite/issues/20996)) ([a5e98e6](https://github.com/vitejs/rolldown-vite/commit/a5e98e695ee4152127977abb506029dc8f7544fb))
+* add vite client connect events ([#20978](https://github.com/vitejs/rolldown-vite/issues/20978)) ([543d87c](https://github.com/vitejs/rolldown-vite/commit/543d87c2cd1ec629f19de56a903a15185f20db1f))
+* **build:** emit license ([#18546](https://github.com/vitejs/rolldown-vite/issues/18546)) ([b42c3fb](https://github.com/vitejs/rolldown-vite/commit/b42c3fb2cb75bb4fdf7557cb35946564d6dc4384))
+* **dev:** support HTTP2 even if proxy feature is used ([#20869](https://github.com/vitejs/rolldown-vite/issues/20869)) ([fc21af7](https://github.com/vitejs/rolldown-vite/commit/fc21af7a42dd559a95f54b6165d34f36883eaa7f))
+* **lib:** enable minification but keep pure annotations for es output with terser ([#20522](https://github.com/vitejs/rolldown-vite/issues/20522)) ([df997d0](https://github.com/vitejs/rolldown-vite/commit/df997d0cfca8e1dad04ac1bf8119caa2d2e4c1fc))
+* **optimizer:** add rush lockfile support ([#20833](https://github.com/vitejs/rolldown-vite/issues/20833)) ([718ca2d](https://github.com/vitejs/rolldown-vite/commit/718ca2d708dbeb393839932437a6b161851ca24c))
+* **utils:** support multiple certificates in resolveServerUrls ([#20707](https://github.com/vitejs/rolldown-vite/issues/20707)) ([24513e5](https://github.com/vitejs/rolldown-vite/commit/24513e567c643d5f6fb61af6298aa3fc2b166b90))
+
+### Bug Fixes
+
+* **build:** ensure amd bundles request `require` to be injected ([#20861](https://github.com/vitejs/rolldown-vite/issues/20861)) ([bb85bd7](https://github.com/vitejs/rolldown-vite/commit/bb85bd751e4568c707612b708deaba67f8af4ca3))
+* **build:** replace `names` in the manifest with unmangled `name` for CSS assets ([#20585](https://github.com/vitejs/rolldown-vite/issues/20585)) ([4abf056](https://github.com/vitejs/rolldown-vite/commit/4abf0566024a70c38a0eb5bf614f72189038247d))
+* **deps:** downgrade commonjs plugin to 28.0.6 to avoid rollup/plugins[#1909](https://github.com/vitejs/rolldown-vite/issues/1909) ([#20988](https://github.com/vitejs/rolldown-vite/issues/20988)) ([856e683](https://github.com/vitejs/rolldown-vite/commit/856e683885ed53ec6044897451608bc6518baef6))
+* **deps:** update all non-major dependencies ([#21008](https://github.com/vitejs/rolldown-vite/issues/21008)) ([185641e](https://github.com/vitejs/rolldown-vite/commit/185641e3cdae29277c41eb8028f6eac542215f01))
+* disable optional peer dep handling for `nodeResolveWithVite` ([#20989](https://github.com/vitejs/rolldown-vite/issues/20989)) ([ca18b23](https://github.com/vitejs/rolldown-vite/commit/ca18b233d43a8f31883726ca565940ad1dc85f38))
+* handle query parameters for `/@vite/*` modules ([#20998](https://github.com/vitejs/rolldown-vite/issues/20998)) ([6843a6a](https://github.com/vitejs/rolldown-vite/commit/6843a6ae49df8ca523104a8ccfb9a8f9602b3881))
+* **resolve:** don't modify resolve options ([#468](https://github.com/vitejs/rolldown-vite/issues/468)) ([2b87665](https://github.com/vitejs/rolldown-vite/commit/2b876659af6931fe30c149359adbdb83ded360c5))
+* **resolve:** match resolved subpath import path's relative prefix with regex (fix [#20972](https://github.com/vitejs/rolldown-vite/issues/20972)) ([#20973](https://github.com/vitejs/rolldown-vite/issues/20973)) ([ff2d83e](https://github.com/vitejs/rolldown-vite/commit/ff2d83e2e7a3f7eba72f41b40686912f1e4b6843))
+* update build log to include environment name ([#20987](https://github.com/vitejs/rolldown-vite/issues/20987)) ([77c25c1](https://github.com/vitejs/rolldown-vite/commit/77c25c16ba9f3568e55fd4135f57c70f984d3fdd))
+* use esm entrypoint for css preprocessors and terser ([#20918](https://github.com/vitejs/rolldown-vite/issues/20918)) ([1460824](https://github.com/vitejs/rolldown-vite/commit/14608241cc4c821e7a392f6d92ef291a926bd94d))
+
+### Performance Improvements
+
+* **module-runner:** add client-side builtin module check ([#20924](https://github.com/vitejs/rolldown-vite/issues/20924)) ([ccffead](https://github.com/vitejs/rolldown-vite/commit/ccffead5f8340bf9e7d88fed4b3c0ac5a74f5926))
+* **module-runner:** use `module.registerHooks` when available ([#20980](https://github.com/vitejs/rolldown-vite/issues/20980)) ([9c8a780](https://github.com/vitejs/rolldown-vite/commit/9c8a7801c5ad29da4c3822c414223593c526e855))
+* run `dev.createEnvironment` and `build.createEnvironment` concurrently ([#20699](https://github.com/vitejs/rolldown-vite/issues/20699)) ([d636220](https://github.com/vitejs/rolldown-vite/commit/d6362207ba817a210cbcea1253a174542a6c8c68))
+* **worker:** rebuild only when affected ([#20559](https://github.com/vitejs/rolldown-vite/issues/20559)) ([5cd3890](https://github.com/vitejs/rolldown-vite/commit/5cd38906afe1fab4ec967b18b21c05a80ac49c92))
+
+### Miscellaneous Chores
+
+* **deps:** update rolldown-related dependencies ([#21009](https://github.com/vitejs/rolldown-vite/issues/21009)) ([7cec1ad](https://github.com/vitejs/rolldown-vite/commit/7cec1addc257eb5bd0856adbe1e4306f0bb83e22))
+* fix merge error ([d79ee4e](https://github.com/vitejs/rolldown-vite/commit/d79ee4e056650e2bd7908f9fe30274c9d1122219))
+* fix merge error ([075caa0](https://github.com/vitejs/rolldown-vite/commit/075caa065bab659f45411cfe9b3b02e23ebe5406))
+* fix typecheck ([37a5392](https://github.com/vitejs/rolldown-vite/commit/37a53924995607766c11f5a002e30e45f313599b))
+
+### Code Refactoring
+
+* remove `listenersForEvents` variable ([#20977](https://github.com/vitejs/rolldown-vite/issues/20977)) ([4d01112](https://github.com/vitejs/rolldown-vite/commit/4d01112415a9c3d06f2fe143a9987e50c4d47f36))
+* remove unused `invoke` parameter ([#20991](https://github.com/vitejs/rolldown-vite/issues/20991)) ([29cdb39](https://github.com/vitejs/rolldown-vite/commit/29cdb390374689e4dec9017b21fefe88b6ce4203))
+
+### Build System
+
+* normalize license repo url ([#21010](https://github.com/vitejs/rolldown-vite/issues/21010)) ([bb65468](https://github.com/vitejs/rolldown-vite/commit/bb65468f3c6213fdd870c085610ec575af66b03c))
+
 ## <small>[7.1.20](https://github.com/vitejs/rolldown-vite/compare/v7.1.19...v7.1.20) (2025-10-27)</small>
 ### Features
 
