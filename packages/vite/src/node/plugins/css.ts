@@ -1069,7 +1069,6 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
         const removedPureCssFiles = removedPureCssFilesCache.get(config)!
         pureCssChunkNames.forEach((fileName) => {
           const emptyJsPlaceholder = bundle[fileName] as RenderedChunk
-
           if (emptyJsPlaceholder.isEntry) {
             const { importedAssets, importedCss } =
               emptyJsPlaceholder.viteMetadata!

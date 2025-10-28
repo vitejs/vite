@@ -141,7 +141,6 @@ export function manifestPlugin(): Plugin {
             manifestChunk.assets = [...asset.viteMetadata.importedAssets]
           }
         }
-
         return manifestChunk
       }
 
