@@ -4,7 +4,7 @@ import colors from 'picocolors'
 import type { Plugin } from '../plugin'
 import { getResolvedOutDirs, resolveEmptyOutDir } from '../watch'
 import type { Environment } from '../environment'
-import { copyDir, emptyDir, normalizePath } from '../utils'
+import { emptyDir, normalizePath } from '../utils'
 import { withTrailingSlash } from '../../shared/utils'
 
 export function prepareOutDirPlugin(): Plugin {
@@ -86,7 +86,11 @@ function prepareOutDir(
           ),
         )
       }
-      copyDir(publicDir, outDir)
+      // eslint-disable-next-line n/no-unsupported-features/node-builtins -- it is not experimental in Node 22.3+
+      fs.cpSync(publicDir, outDir, {
+        recursive: true,
+        mode: fs.constants.COPYFILE_FICLONE,
+      })
     }
   }
 }
