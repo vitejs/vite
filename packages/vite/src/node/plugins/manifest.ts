@@ -133,7 +133,15 @@ export function manifestPlugin(): Plugin {
           manifestChunk.name = name
           // @ts-expect-error keep names field for backward compatibility
           manifestChunk.names = asset.names
+
+          if (asset.viteMetadata?.importedCss.size) {
+            manifestChunk.css = [...asset.viteMetadata.importedCss]
+          }
+          if (asset.viteMetadata?.importedAssets.size) {
+            manifestChunk.assets = [...asset.viteMetadata.importedAssets]
+          }
         }
+
         return manifestChunk
       }
 
