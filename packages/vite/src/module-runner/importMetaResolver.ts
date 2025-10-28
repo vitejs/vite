@@ -79,3 +79,16 @@ function importMetaResolveWithCustomHook(
     `${customizationHookNamespace}${JSON.stringify([specifier, importer])}`,
   )
 }
+
+// NOTE: use computed string to avoid `define` replacing `import.meta.resolve` when bundled
+export const importMetaResolveWithCustomHookString: string = /* js */ `
+
+  (() => {
+    const resolve = 'resolve'
+    return (specifier, importer) =>
+      import.meta[resolve](
+        \`${customizationHookNamespace}\${JSON.stringify([specifier, importer])}\`,
+      )
+  })()
+
+`
