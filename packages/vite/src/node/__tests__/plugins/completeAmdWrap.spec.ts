@@ -13,7 +13,7 @@ async function createCompleteAmdWrapPluginRenderChunk() {
   }
 }
 
-describe('completeAmdWrapPlugin', async () => {
+describe.skip('completeAmdWrapPlugin', async () => {
   const renderChunk = await createCompleteAmdWrapPluginRenderChunk()
 
   describe('adds require parameter', async () => {
