@@ -1,0 +1,30 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <title>amd</title>
+  </head>
+  <body>
+    <h1>AMD</h1>
+    <p>An image should be shown below</p>
+    <div
+      class="assets"
+      style="background-size: cover; height: 100px; width: 100px"
+    ></div>
+
+    <script src="/npm/requirejs.js"></script>
+    <script type="text/javascript">
+      requirejs(
+        ['assets/plugin.js'],
+        (plugin) => {
+          const url = plugin()
+          document.querySelector('.assets').style.backgroundImage =
+            `url(${url})`
+        },
+        (err) => {
+          console.error('Error loading plugin', err)
+        },
+      )
+    </script>
+  </body>
+</html>

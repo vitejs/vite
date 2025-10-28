@@ -169,6 +169,12 @@ interface ResolvePluginOptions {
   idOnly?: boolean
 
   /**
+   * Set by `nodeResolveWithVite`, disables optional peer dependency handling.
+   * @internal
+   */
+  disableOptionalPeerDepHandling?: boolean
+
+  /**
    * Enable when `legacy.inconsistentCjsInterop` is true. See that option for more details.
    */
   legacyInconsistentCjsInterop?: boolean
@@ -897,7 +903,7 @@ function resolveSubpathImports(
   if (importsPath?.[0] === '.') {
     importsPath = path.relative(basedir, path.join(pkgData.dir, importsPath))
 
-    if (importsPath[0] !== '.') {
+    if (!relativePrefixRE.test(importsPath)) {
       importsPath = `./${importsPath}`
     }
   }
@@ -1118,6 +1124,7 @@ export function tryNodeResolve(
     // if import can't be found, check if it's an optional peer dep.
     // if so, we can resolve to a special id that errors only when imported.
     if (
+      !options.disableOptionalPeerDepHandling &&
       basedir !== root && // root has no peer dep
       !isModuleBuiltin(id) &&
       !id.includes('\0') &&

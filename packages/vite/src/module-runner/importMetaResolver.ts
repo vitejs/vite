@@ -1,3 +1,5 @@
+import type { ResolveFnOutput, ResolveHookContext } from 'node:module'
+
 export type ImportMetaResolver = (specifier: string, importer: string) => string
 
 const customizationHookNamespace = 'vite-module-runner:import-meta-resolve/v1/'
@@ -10,11 +12,26 @@ export async function resolve(specifier, context, nextResolve) {
     specifier = parsedSpecifier
     context.parentURL = parsedImporter
   }
-
   return nextResolve(specifier, context)
 }
 
 `
+function customizationHookResolve(
+  specifier: string,
+  context: ResolveHookContext,
+  nextResolve: (
+    specifier: string,
+    context: ResolveHookContext,
+  ) => ResolveFnOutput,
+): ResolveFnOutput {
+  if (specifier.startsWith(customizationHookNamespace)) {
+    const data = specifier.slice(customizationHookNamespace.length)
+    const [parsedSpecifier, parsedImporter] = JSON.parse(data)
+    specifier = parsedSpecifier
+    context.parentURL = parsedImporter
+  }
+  return nextResolve(specifier, context)
+}
 
 export async function createImportMetaResolver(): Promise<
   ImportMetaResolver | undefined
@@ -26,7 +43,17 @@ export async function createImportMetaResolver(): Promise<
     return
   }
   // `module.Module` may be `undefined` when `node:module` is mocked
-  if (!module?.register) {
+  if (!module) {
+    return
+  }
+
+  // Use registerHooks if available as it's more performant
+  if (module.registerHooks) {
+    module.registerHooks({ resolve: customizationHookResolve })
+    return importMetaResolveWithCustomHook
+  }
+
+  if (!module.register) {
     return
   }
 
@@ -41,8 +68,27 @@ export async function createImportMetaResolver(): Promise<
     throw e
   }
 
-  return (specifier: string, importer: string) =>
-    import.meta.resolve(
-      `${customizationHookNamespace}${JSON.stringify([specifier, importer])}`,
-    )
+  return importMetaResolveWithCustomHook
 }
+
+function importMetaResolveWithCustomHook(
+  specifier: string,
+  importer: string,
+): string {
+  return import.meta.resolve(
+    `${customizationHookNamespace}${JSON.stringify([specifier, importer])}`,
+  )
+}
+
+// NOTE: use computed string to avoid `define` replacing `import.meta.resolve` when bundled
+export const importMetaResolveWithCustomHookString: string = /* js */ `
+
+  (() => {
+    const resolve = 'resolve'
+    return (specifier, importer) =>
+      import.meta[resolve](
+        \`${customizationHookNamespace}\${JSON.stringify([specifier, importer])}\`,
+      )
+  })()
+
+`

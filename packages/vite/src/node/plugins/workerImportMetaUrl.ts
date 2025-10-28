@@ -203,12 +203,6 @@ export function workerImportMetaUrlPlugin(config: ResolvedConfig): Plugin {
       return environment.config.consumer === 'client'
     },
 
-    shouldTransformCachedModule({ code }) {
-      if (isBuild && config.build.watch && workerImportMetaUrlRE.test(code)) {
-        return true
-      }
-    },
-
     transform: {
       filter: { code: workerImportMetaUrlRE },
       async handler(code, id) {
@@ -261,7 +255,11 @@ export function workerImportMetaUrlPlugin(config: ResolvedConfig): Plugin {
           } else {
             let builtUrl: string
             if (isBuild) {
-              builtUrl = await workerFileToUrl(config, file)
+              const result = await workerFileToUrl(config, file)
+              builtUrl = result.entryUrlPlaceholder
+              for (const file of result.watchedFiles) {
+                this.addWatchFile(file)
+              }
             } else {
               builtUrl = await fileToUrl(this, cleanUrl(file))
               builtUrl = injectQuery(

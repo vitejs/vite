@@ -174,12 +174,19 @@ export interface ServerOptions extends CommonServerOptions {
     | false
     | ((sourcePath: string, sourcemapPath: string) => boolean)
   /**
-   * Backward compatibility. The buildStart and buildEnd hooks were called only once for all
-   * environments. This option enables per-environment buildStart and buildEnd hooks.
+   * Backward compatibility. The buildStart and buildEnd hooks were called only once for
+   * the client environment. This option enables per-environment buildStart and buildEnd hooks.
    * @default false
    * @experimental
    */
   perEnvironmentStartEndDuringDev?: boolean
+  /**
+   * Backward compatibility. The watchChange hook was called only once for the client environment.
+   * This option enables per-environment watchChange hooks.
+   * @default false
+   * @experimental
+   */
+  perEnvironmentWatchChangeDuringDev?: boolean
   /**
    * Run HMR tasks, by default the HMR propagation is done in parallel for all environments
    * @experimental
@@ -478,7 +485,7 @@ export async function _createServer(
   const middlewares = connect() as Connect.Server
   const httpServer = middlewareMode
     ? null
-    : await resolveHttpServer(serverConfig, middlewares, httpsOptions)
+    : await resolveHttpServer(middlewares, httpsOptions)
 
   const ws = createWebSocketServer(httpServer, config, httpsOptions)
 
@@ -509,22 +516,24 @@ export async function _createServer(
 
   const environments: Record<string, DevEnvironment> = {}
 
-  for (const [name, environmentOptions] of Object.entries(
-    config.environments,
-  )) {
-    environments[name] = await environmentOptions.dev.createEnvironment(
-      name,
-      config,
-      {
-        ws,
-      },
-    )
-  }
+  await Promise.all(
+    Object.entries(config.environments).map(
+      async ([name, environmentOptions]) => {
+        const environment = await environmentOptions.dev.createEnvironment(
+          name,
+          config,
+          {
+            ws,
+          },
+        )
+        environments[name] = environment
 
-  for (const environment of Object.values(environments)) {
-    const previousInstance = options.previousEnvironments?.[environment.name]
-    await environment.init({ watcher, previousInstance })
-  }
+        const previousInstance =
+          options.previousEnvironments?.[environment.name]
+        await environment.init({ watcher, previousInstance })
+      },
+    ),
+  )
 
   // Backward compatibility
 
@@ -800,9 +809,13 @@ export async function _createServer(
     file = normalizePath(file)
     reloadOnTsconfigChange(server, file)
 
-    await pluginContainer.watchChange(file, {
-      event: isUnlink ? 'delete' : 'create',
-    })
+    await Promise.all(
+      Object.values(server.environments).map((environment) =>
+        environment.pluginContainer.watchChange(file, {
+          event: isUnlink ? 'delete' : 'create',
+        }),
+      ),
+    )
 
     if (publicDir && publicFiles) {
       if (file.startsWith(publicDir)) {
@@ -834,7 +847,11 @@ export async function _createServer(
     file = normalizePath(file)
     reloadOnTsconfigChange(server, file)
 
-    await pluginContainer.watchChange(file, { event: 'update' })
+    await Promise.all(
+      Object.values(server.environments).map((environment) =>
+        environment.pluginContainer.watchChange(file, { event: 'update' }),
+      ),
+    )
     // invalidate module graph cache on file change
     for (const environment of Object.values(server.environments)) {
       environment.moduleGraph.onFileChange(file)
@@ -1102,6 +1119,7 @@ const _serverConfigDefaults = Object.freeze({
   preTransformRequests: true,
   // sourcemapIgnoreList
   perEnvironmentStartEndDuringDev: false,
+  perEnvironmentWatchChangeDuringDev: false,
   // hotUpdateEnvironments
 } satisfies ServerOptions)
 export const serverConfigDefaults: Readonly<Partial<ServerOptions>> =

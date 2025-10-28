@@ -82,4 +82,6 @@ export type InvokeMethods = {
     importer?: string,
     options?: FetchFunctionOptions,
   ) => Promise<FetchResult>
+
+  getBuiltins: () => Promise<(string | RegExp)[]>
 }
