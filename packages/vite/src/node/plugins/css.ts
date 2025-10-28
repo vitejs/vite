@@ -1,7 +1,6 @@
 import fs from 'node:fs'
 import fsp from 'node:fs/promises'
 import path from 'node:path'
-import { createRequire } from 'node:module'
 import { fileURLToPath, pathToFileURL } from 'node:url'
 import postcssrc from 'postcss-load-config'
 import type {
@@ -56,6 +55,7 @@ import type { ResolvedConfig } from '../config'
 import type { Plugin } from '../plugin'
 import { checkPublicFile } from '../publicDir'
 import {
+  _dirname,
   arraify,
   asyncReplace,
   combineSourcemaps,
@@ -78,7 +78,6 @@ import {
   processSrcSet,
   removeDirectQuery,
   removeUrlQuery,
-  requireResolveFromRootWithFallback,
   stripBomTag,
   urlRE,
 } from '../utils'
@@ -93,6 +92,7 @@ import { searchForWorkspaceRoot } from '../server/searchRoot'
 import { type DevEnvironment } from '..'
 import type { PackageCache } from '../packages'
 import { findNearestMainPackageData } from '../packages'
+import { nodeResolveWithVite } from '../nodeResolve'
 import { addToHTMLProxyTransformResult } from './html'
 import {
   assetUrlRE,
@@ -1579,7 +1579,7 @@ async function compilePostCSS(
 
   const postcssOptions = postcssConfig?.options ?? {}
   const postcssParser =
-    lang === 'sss' ? loadSss(config.root) : postcssOptions.parser
+    lang === 'sss' ? await loadSss(config.root) : postcssOptions.parser
 
   if (!postcssPlugins.length && !postcssParser) {
     return
@@ -1605,11 +1605,12 @@ async function transformSugarSS(
   const { config } = environment
   const { devSourcemap } = config.css
 
+  const sssParser = await loadSss(config.root)
   const result = await runPostCSS(
     id,
     code,
     [],
-    { parser: loadSss(config.root) },
+    { parser: sssParser },
     undefined,
     environment.logger,
     devSourcemap,
@@ -2211,7 +2212,7 @@ function resolveMinifyCssEsbuildOptions(
   options: ESBuildOptions,
 ): EsbuildTransformOptions {
   const base: EsbuildTransformOptions = {
-    charset: options.charset ?? 'utf8',
+    charset: options.charset,
     logLevel: options.logLevel,
     logLimit: options.logLimit,
     logOverride: options.logOverride,
@@ -2343,23 +2344,18 @@ function loadPreprocessorPath(
   if (cached) {
     return cached
   }
-  try {
-    const resolved = requireResolveFromRootWithFallback(root, lang)
-    return (loadedPreprocessorPath[lang] = resolved)
-  } catch (e) {
-    if (e.code === 'MODULE_NOT_FOUND') {
-      const installCommand = getPackageManagerCommand('install')
-      throw new Error(
-        `Preprocessor dependency "${lang}" not found. Did you install it? Try \`${installCommand} -D ${lang}\`.`,
-      )
-    } else {
-      const message = new Error(
-        `Preprocessor dependency "${lang}" failed to load:\n${e.message}`,
-      )
-      message.stack = e.stack + '\n' + message.stack
-      throw message
-    }
-  }
+
+  // Try resolve from project root first, then the current vite installation path
+  const resolved =
+    nodeResolveWithVite(lang, undefined, { root }) ??
+    nodeResolveWithVite(lang, _dirname, { root })
+  if (resolved) return (loadedPreprocessorPath[lang] = resolved)
+
+  // Error if we can't find the preprocessor
+  const installCommand = getPackageManagerCommand('install')
+  throw new Error(
+    `Preprocessor dependency "${lang}" not found. Did you install it? Try \`${installCommand} -D ${lang}\`.`,
+  )
 }
 
 function loadSassPackage(root: string): {
@@ -2380,12 +2376,15 @@ function loadSassPackage(root: string): {
   }
 }
 
-let cachedSss: PostCSS.Syntax
-function loadSss(root: string): PostCSS.Syntax {
-  if (cachedSss) return cachedSss
-
-  const sssPath = loadPreprocessorPath(PostCssDialectLang.sss, root)
-  cachedSss = createRequire(/** #__KEEP__ */ import.meta.url)(sssPath)
+let cachedSss: PostCSS.Syntax | Promise<PostCSS.Syntax>
+async function loadSss(root: string): Promise<PostCSS.Syntax> {
+  if (!cachedSss) {
+    cachedSss = (async () => {
+      const sssPath = loadPreprocessorPath(PostCssDialectLang.sss, root)
+      const resolved = (await import(pathToFileURL(sssPath).href)).default
+      return (cachedSss = resolved)
+    })()
+  }
   return cachedSss
 }
 
@@ -2435,10 +2434,7 @@ const makeScssWorker = (
 
   const worker: WorkerType = {
     async run(sassPath, data, options) {
-      // need pathToFileURL for windows since import("D:...") fails
-      // https://github.com/nodejs/node/issues/31710
-      const sass: typeof Sass = (await import(pathToFileURL(sassPath).href))
-        .default
+      const sass: typeof Sass = await import(sassPath)
       compilerPromise ??= sass.initAsyncCompiler()
       const compiler = await compilerPromise
 
@@ -2555,7 +2551,7 @@ const scssProcessor = (
       }
       try {
         const result = await worker.run(
-          sassPackage.path,
+          pathToFileURL(sassPackage.path).href,
           data,
           optionsWithoutAdditionalData,
         )
@@ -2819,9 +2815,7 @@ const lessProcessor = (
       worker?.stop()
     },
     async process(environment, source, root, options, resolvers) {
-      const lessPath = pathToFileURL(
-        loadPreprocessorPath(PreprocessLang.less, root),
-      ).href
+      const lessPath = loadPreprocessorPath(PreprocessLang.less, root)
       worker ??= makeLessWorker(environment, resolvers, maxWorkers)
 
       const { content, map: additionalMap } = await getSource(
@@ -2838,7 +2832,7 @@ const lessProcessor = (
       }
       try {
         result = await worker.run(
-          lessPath,
+          pathToFileURL(lessPath).href,
           content,
           optionsWithoutAdditionalData,
         )
@@ -2887,9 +2881,9 @@ const makeStylWorker = (maxWorkers: number | undefined) => {
           additionalData: undefined
         },
       ) => {
-        const nodeStylus: typeof Stylus = (await import(stylusPath)).default
+        const stylus: typeof Stylus = (await import(stylusPath)).default
 
-        const ref = nodeStylus(content, {
+        const ref = stylus(content, {
           // support @import from node dependencies by default
           paths: ['node_modules'],
           ...options,
@@ -2940,9 +2934,7 @@ const stylProcessor = (
       worker?.stop()
     },
     async process(_environment, source, root, options, _resolvers) {
-      const stylusPath = pathToFileURL(
-        loadPreprocessorPath(PreprocessLang.stylus, root),
-      ).href
+      const stylusPath = loadPreprocessorPath(PreprocessLang.stylus, root)
       worker ??= makeStylWorker(maxWorkers)
 
       // Get source with preprocessor options.additionalData. Make sure a new line separator
@@ -2965,7 +2957,7 @@ const stylProcessor = (
       }
       try {
         const { code, map, deps } = await worker.run(
-          stylusPath,
+          pathToFileURL(stylusPath).href,
           content,
           root,
           optionsWithoutAdditionalData,

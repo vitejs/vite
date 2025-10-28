@@ -145,6 +145,9 @@ export interface NormalizedHotChannel<Api = any> {
       client: NormalizedHotChannelClient,
     ) => void,
   ): void
+  /**
+   * @deprecated use `vite:client:connect` event instead
+   */
   on(event: 'connection', listener: () => void): void
   /**
    * Unregister event listener
@@ -174,9 +177,9 @@ export const normalizeHotChannel = (
     (data: any, client: NormalizedHotChannelClient) => void | Promise<void>,
     (data: any, client: HotChannelClient) => void | Promise<void>
   >()
-  const listenersForEvents = new Map<
-    string,
-    Set<(data: any, client: HotChannelClient) => void | Promise<void>>
+  const normalizedClients = new WeakMap<
+    HotChannelClient,
+    NormalizedHotChannelClient
   >()
 
   let invokeHandlers: InvokeMethods | undefined
@@ -230,30 +233,28 @@ export const normalizeHotChannel = (
         data: any,
         client: HotChannelClient,
       ) => {
-        const normalizedClient: NormalizedHotChannelClient = {
-          send: (...args) => {
-            let payload: HotPayload
-            if (typeof args[0] === 'string') {
-              payload = {
-                type: 'custom',
-                event: args[0],
-                data: args[1],
+        if (!normalizedClients.has(client)) {
+          normalizedClients.set(client, {
+            send: (...args) => {
+              let payload: HotPayload
+              if (typeof args[0] === 'string') {
+                payload = {
+                  type: 'custom',
+                  event: args[0],
+                  data: args[1],
+                }
+              } else {
+                payload = args[0]
               }
-            } else {
-              payload = args[0]
-            }
-            client.send(payload)
-          },
+              client.send(payload)
+            },
+          })
         }
-        fn(data, normalizedClient)
+        fn(data, normalizedClients.get(client)!)
       }
       normalizedListenerMap.set(fn, listenerWithNormalizedClient)
 
       channel.on?.(event, listenerWithNormalizedClient)
-      if (!listenersForEvents.has(event)) {
-        listenersForEvents.set(event, new Set())
-      }
-      listenersForEvents.get(event)!.add(listenerWithNormalizedClient)
     },
     off: (event: string, fn: () => void) => {
       if (event === 'connection' || !normalizeClient) {
@@ -264,7 +265,6 @@ export const normalizeHotChannel = (
       const normalizedListener = normalizedListenerMap.get(fn)
       if (normalizedListener) {
         channel.off?.(event, normalizedListener)
-        listenersForEvents.get(event)?.delete(normalizedListener)
       }
     },
     setInvokeHandler(_invokeHandlers) {

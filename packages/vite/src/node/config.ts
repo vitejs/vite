@@ -19,11 +19,16 @@ import type { Alias, AliasOptions } from '#dep-types/alias'
 import type { AnymatchFn } from '../types/anymatch'
 import { withTrailingSlash } from '../shared/utils'
 import {
+  createImportMetaResolver,
+  importMetaResolveWithCustomHookString,
+} from '../module-runner/importMetaResolver'
+import {
   CLIENT_ENTRY,
   DEFAULT_ASSETS_RE,
   DEFAULT_CLIENT_CONDITIONS,
   DEFAULT_CLIENT_MAIN_FIELDS,
   DEFAULT_CONFIG_FILES,
+  DEFAULT_EXTENSIONS,
   DEFAULT_EXTERNAL_CONDITIONS,
   DEFAULT_PREVIEW_PORT,
   DEFAULT_SERVER_CONDITIONS,
@@ -98,7 +103,6 @@ import {
   type EnvironmentResolveOptions,
   type InternalResolveOptions,
   type ResolveOptions,
-  tryNodeResolve,
 } from './plugins/resolve'
 import type { LogLevel, Logger } from './logger'
 import { createLogger } from './logger'
@@ -120,6 +124,7 @@ import {
   BasicMinimalPluginContext,
   basePluginContextMeta,
 } from './server/pluginContainer'
+import { nodeResolveWithVite } from './nodeResolve'
 
 const debug = createDebugger('vite:config', { depth: 10 })
 const promisifiedRealpath = promisify(fs.realpath)
@@ -720,7 +725,7 @@ const configDefaults = Object.freeze({
     // mainFields
     // conditions
     externalConditions: [...DEFAULT_EXTERNAL_CONDITIONS],
-    extensions: ['.mjs', '.js', '.mts', '.ts', '.jsx', '.tsx', '.json'],
+    extensions: DEFAULT_EXTENSIONS,
     dedupe: [],
     /** @experimental */
     noExternal: [],
@@ -1805,6 +1810,9 @@ export async function resolveConfig(
         ? false
         : {
             jsxDev: !isProduction,
+            // change defaults that fit better for vite
+            charset: 'utf8',
+            legalComments: 'none',
             ...config.esbuild,
           },
     oxc:
@@ -2257,12 +2265,14 @@ async function bundleConfigFile(
   fileName: string,
   isESM: boolean,
 ): Promise<{ code: string; dependencies: string[] }> {
-  const isModuleSyncConditionEnabled = (await import('#module-sync-enabled'))
-    .default
+  let importMetaResolverRegistered = false
 
+  const root = path.dirname(fileName)
   const dirnameVarName = '__vite_injected_original_dirname'
   const filenameVarName = '__vite_injected_original_filename'
   const importMetaUrlVarName = '__vite_injected_original_import_meta_url'
+  const importMetaResolveVarName =
+    '__vite_injected_original_import_meta_resolve'
 
   const bundle = await rolldown({
     input: fileName,
@@ -2278,108 +2288,89 @@ async function bundleConfigFile(
         'import.meta.url': importMetaUrlVarName,
         'import.meta.dirname': dirnameVarName,
         'import.meta.filename': filenameVarName,
+        'import.meta.resolve': importMetaResolveVarName,
         'import.meta.main': 'false',
       },
     },
     // disable treeshake to include files that is not sideeffectful to `moduleIds`
     treeshake: false,
     plugins: [
-      (() => {
-        const packageCache = new Map()
-        const resolveByViteResolver = (
-          id: string,
-          importer: string,
-          isRequire: boolean,
-        ) => {
-          return tryNodeResolve(id, importer, {
-            root: path.dirname(fileName),
-            isBuild: true,
-            isProduction: true,
-            preferRelative: false,
-            tryIndex: true,
-            mainFields: [],
-            conditions: [
-              'node',
-              ...(isModuleSyncConditionEnabled ? ['module-sync'] : []),
-            ],
-            externalConditions: [],
-            external: [],
-            noExternal: [],
-            dedupe: [],
-            extensions: configDefaults.resolve.extensions,
-            preserveSymlinks: false,
-            tsconfigPaths: false,
-            packageCache,
-            isRequire,
-            builtins: nodeLikeBuiltins,
-          })?.id
-        }
+      {
+        name: 'externalize-deps',
+        resolveId: {
+          filter: { id: /^[^.#].*/ },
+          async handler(id, importer, { kind }) {
+            if (!importer || path.isAbsolute(id) || isNodeBuiltin(id)) {
+              return
+            }
 
-        return {
-          name: 'externalize-deps',
-          resolveId: {
-            filter: { id: /^[^.#].*/ },
-            async handler(id, importer, { kind }) {
-              if (!importer || path.isAbsolute(id) || isNodeBuiltin(id)) {
-                return
-              }
+            // With the `isNodeBuiltin` check above, this check captures if the builtin is a
+            // non-node built-in, which esbuild doesn't know how to handle. In that case, we
+            // externalize it so the non-node runtime handles it instead.
+            if (isNodeLikeBuiltin(id) || id.startsWith('npm:')) {
+              return { id, external: true }
+            }
 
-              // With the `isNodeBuiltin` check above, this check captures if the builtin is a
-              // non-node built-in, which esbuild doesn't know how to handle. In that case, we
-              // externalize it so the non-node runtime handles it instead.
-              if (isNodeLikeBuiltin(id) || id.startsWith('npm:')) {
-                return { id, external: true }
-              }
-
-              const isImport = isESM || kind === 'dynamic-import'
-              let idFsPath: string | undefined
-              try {
-                idFsPath = resolveByViteResolver(id, importer, !isImport)
-              } catch (e) {
-                if (!isImport) {
-                  let canResolveWithImport = false
-                  try {
-                    canResolveWithImport = !!resolveByViteResolver(
+            const isImport = isESM || kind === 'dynamic-import'
+            let idFsPath: string | undefined
+            try {
+              idFsPath = nodeResolveWithVite(id, importer, {
+                root,
+                isRequire: !isImport,
+              })
+            } catch (e) {
+              if (!isImport) {
+                let canResolveWithImport = false
+                try {
+                  canResolveWithImport = !!nodeResolveWithVite(id, importer, {
+                    root,
+                  })
+                } catch {}
+                if (canResolveWithImport) {
+                  throw new Error(
+                    `Failed to resolve ${JSON.stringify(
                       id,
-                      importer,
-                      false,
-                    )
-                  } catch {}
-                  if (canResolveWithImport) {
-                    throw new Error(
-                      `Failed to resolve ${JSON.stringify(
-                        id,
-                      )}. This package is ESM only but it was tried to load by \`require\`. See https://vite.dev/guide/troubleshooting.html#this-package-is-esm-only for more details.`,
-                    )
-                  }
+                    )}. This package is ESM only but it was tried to load by \`require\`. See https://vite.dev/guide/troubleshooting.html#this-package-is-esm-only for more details.`,
+                  )
                 }
-                throw e
               }
-              if (!idFsPath) return
-              // always no-externalize json files as rolldown does not support import attributes
-              if (idFsPath.endsWith('.json')) {
-                return idFsPath
-              }
+              throw e
+            }
+            if (!idFsPath) return
+            // always no-externalize json files as rolldown does not support import attributes
+            if (idFsPath.endsWith('.json')) {
+              return idFsPath
+            }
 
-              if (idFsPath && isImport) {
-                idFsPath = pathToFileURL(idFsPath).href
-              }
-              return { id: idFsPath, external: true }
-            },
+            if (idFsPath && isImport) {
+              idFsPath = pathToFileURL(idFsPath).href
+            }
+            return { id: idFsPath, external: true }
           },
-        }
-      })(),
+        },
+      },
       {
         name: 'inject-file-scope-variables',
         transform: {
           filter: { id: /\.[cm]?[jt]s$/ },
           async handler(code, id) {
-            const injectValues =
+            let injectValues =
               `const ${dirnameVarName} = ${JSON.stringify(path.dirname(id))};` +
               `const ${filenameVarName} = ${JSON.stringify(id)};` +
               `const ${importMetaUrlVarName} = ${JSON.stringify(
                 pathToFileURL(id).href,
               )};`
+            if (code.includes('import.meta.resolve')) {
+              if (isESM) {
+                if (!importMetaResolverRegistered) {
+                  importMetaResolverRegistered = true
+                  await createImportMetaResolver()
+                }
+                injectValues += `const ${importMetaResolveVarName} = (specifier, importer = ${importMetaUrlVarName}) => (${importMetaResolveWithCustomHookString})(specifier, importer);`
+              } else {
+                injectValues += `const ${importMetaResolveVarName} = (specifier, importer = ${importMetaUrlVarName}) => { throw new Error('import.meta.resolve is not supported in CJS config files') };`
+              }
+            }
             return { code: injectValues + code, map: null }
           },
         },

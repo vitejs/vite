@@ -64,6 +64,9 @@
 <h2>Resolving with query with imports field</h2>
 <p class="imports-query">fail</p>
 
+<h2>Resolving dot-prefixed directory with imports field</h2>
+<p class="imports-dot-prefixed">fail</p>
+
 <h2>Resolve /index.*</h2>
 <p class="index">fail</p>
 
@@ -271,6 +274,9 @@
 
   import importsQuery from '#query?url'
   text('.imports-query', importsQuery)
+
+  import { msg as importsDotPrefixed } from './imports-path/importer.js'
+  text('.imports-dot-prefixed', importsDotPrefixed)
 
   // implicit index resolving
   import { foo } from './util'

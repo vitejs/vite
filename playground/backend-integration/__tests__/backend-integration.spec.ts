@@ -54,6 +54,7 @@ describe.runIf(isBuild)('build', () => {
     const scssAssetEntry = manifest['nested/blue.scss']
     const imgAssetEntry = manifest['../images/logo.png']
     const dirFooAssetEntry = manifest['../../dir/foo.css']
+    const customNameAssetEntry = manifest['../../dir/custom.css']
     const iconEntrypointEntry = manifest['icon.png']
     const waterContainerEntry = manifest['water-container.svg']
     expect(htmlEntry.css.length).toEqual(2)
@@ -80,6 +81,7 @@ describe.runIf(isBuild)('build', () => {
     if (process.env._VITE_TEST_JS_PLUGIN) {
       expect(dirFooAssetEntry.names).toStrictEqual(['bar.css'])
     }
+    expect(customNameAssetEntry.name).toStrictEqual('bar.custom')
     expect(iconEntrypointEntry?.file).not.toBeUndefined()
     expect(waterContainerEntry?.file).not.toBeUndefined()
   })

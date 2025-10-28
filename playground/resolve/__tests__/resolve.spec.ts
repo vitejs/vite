@@ -230,6 +230,10 @@ test('Resolving with query with imports field', async () => {
   )
 })
 
+test('Resolving dot-prefixed directory with imports field', async () => {
+  expect(await page.textContent('.imports-dot-prefixed')).toMatch('[success]')
+})
+
 test("Resolve doesn't interrupt page request with trailing query and .css", async () => {
   await page.goto(viteTestUrl + '/?test.css')
   expect(await page.locator('vite-error-overlay').count()).toBe(0)

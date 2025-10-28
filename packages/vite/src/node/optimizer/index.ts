@@ -837,6 +837,7 @@ async function prepareRolldownOptimizerRun(
       throw new Error('The build was canceled')
     }
     const result = await bundle.write({
+      legalComments: 'none',
       ...rollupOptions.output,
       format: 'esm',
       sourcemap: true,
@@ -1226,6 +1227,12 @@ const lockfileFormats = [
   },
   {
     path: 'node_modules/.pnpm/lock.yaml',
+    // Included in lockfile
+    checkPatchesDir: false,
+    manager: 'pnpm',
+  },
+  {
+    path: '.rush/temp/shrinkwrap-deps.json',
     // Included in lockfile
     checkPatchesDir: false,
     manager: 'pnpm',
