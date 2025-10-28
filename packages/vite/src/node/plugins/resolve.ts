@@ -267,7 +267,7 @@ export function oxcResolvePlugin(
             ? options.noExternal
             : [options.noExternal]
 
-        return viteResolvePlugin({
+        const plugin = viteResolvePlugin({
           resolveOptions: {
             isBuild: options.isBuild,
             isProduction: options.isProduction,
@@ -382,6 +382,8 @@ export function oxcResolvePlugin(
               }
             : {}),
         })
+        ;(plugin as Plugin).perEnvironmentWatchChangeDuringDev = true
+        return plugin
       },
     ),
   ]
