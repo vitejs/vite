@@ -303,11 +303,6 @@ async function loadAndTransform(
           timestamp: true,
         })
       }
-
-      const guessedModuleType = getModuleTypeFromId(id)
-      if (guessedModuleType && guessedModuleType !== 'js') {
-        moduleType = guessedModuleType
-      }
     }
   } else {
     debugLoad?.(`${timeFrom(loadStart)} [plugin] ${prettyUrl}`)
@@ -339,6 +334,12 @@ async function loadAndTransform(
     )
     err.code = isPublicFile ? ERR_LOAD_PUBLIC_URL : ERR_LOAD_URL
     throw err
+  }
+  if (moduleType === undefined) {
+    const guessedModuleType = getModuleTypeFromId(id)
+    if (guessedModuleType && guessedModuleType !== 'js') {
+      moduleType = guessedModuleType
+    }
   }
 
   if (environment._closing && environment.config.dev.recoverable)
