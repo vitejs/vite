@@ -12,6 +12,7 @@ export default defineConfig({
         plugin: path.resolve(import.meta.dirname, './index.ts'),
       },
       output: {
+        // @ts-expect-error AMD is not supported (https://github.com/rolldown/rolldown/issues/2528)
         format: 'amd',
         entryFileNames: 'assets/[name].js',
       },
