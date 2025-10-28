@@ -1,5 +1,5 @@
 {
-  "name": "vite-vue-starter",
+  "name": "@vitejs/test-amd",
   "private": true,
   "version": "0.0.0",
   "type": "module",
@@ -9,10 +9,6 @@
     "preview": "vite preview"
   },
   "dependencies": {
-    "vue": "^3.5.22"
-  },
-  "devDependencies": {
-    "@vitejs/plugin-vue": "^6.0.1",
-    "vite": "^7.1.12"
+    "requirejs": "^2.3.7"
   }
 }

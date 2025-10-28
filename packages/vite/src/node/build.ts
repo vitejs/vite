@@ -65,6 +65,7 @@ import {
   resolveChokidarOptions,
   resolveEmptyOutDir,
 } from './watch'
+import { completeAmdWrapPlugin } from './plugins/completeAmdWrap'
 import { completeSystemWrapPlugin } from './plugins/completeSystemWrap'
 import { webWorkerPostPlugin } from './plugins/worker'
 import { getHookHandler } from './plugins'
@@ -477,6 +478,7 @@ export async function resolveBuildPlugins(config: ResolvedConfig): Promise<{
 }> {
   return {
     pre: [
+      completeAmdWrapPlugin(),
       completeSystemWrapPlugin(),
       ...(!config.isWorker ? [prepareOutDirPlugin()] : []),
       perEnvironmentPlugin('commonjs', (environment) => {
@@ -711,12 +713,11 @@ async function buildEnvironment(
 ): Promise<RollupOutput | RollupOutput[] | RollupWatcher> {
   const { logger, config } = environment
   const { root, build: options } = config
-  const ssr = config.consumer === 'server'
 
   logger.info(
     colors.cyan(
       `vite v${VERSION} ${colors.green(
-        `building ${ssr ? `SSR bundle ` : ``}for ${environment.config.mode}...`,
+        `building ${environment.name} environment for ${environment.config.mode}...`,
       )}`,
     ),
   )

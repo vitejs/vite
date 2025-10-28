@@ -39,6 +39,7 @@ export default defineConfig({
     transformCountPlugin(),
     watchCssDepsPlugin(),
     TestCssLinkPlugin(),
+    hotEventsPlugin(),
   ],
 })
 
@@ -97,6 +98,28 @@ function watchCssDepsPlugin(): Plugin {
         this.addWatchFile(depPath)
         return code.replace('replaced', color)
       }
+    },
+  }
+}
+
+function hotEventsPlugin(): Plugin {
+  return {
+    name: 'hot-events',
+    configureServer(server) {
+      let connectCount = 0
+      let disconnectCount = 0
+      const clientEnv = server.environments.client
+      clientEnv.hot.on('vite:client:connect', () => connectCount++)
+      clientEnv.hot.on('vite:client:disconnect', () => disconnectCount++)
+
+      server.middlewares.use((req, res, next) => {
+        if (req.url === '/hot-events-counts') {
+          res.setHeader('Content-Type', 'application/json')
+          res.end(JSON.stringify({ connectCount, disconnectCount }))
+          return
+        }
+        next()
+      })
     },
   }
 }
