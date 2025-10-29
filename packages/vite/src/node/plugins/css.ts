@@ -2520,14 +2520,27 @@ const scssProcessor = (
   maxWorkers: number | undefined,
 ): StylePreprocessor<SassStylePreprocessorInternalOptions> => {
   let worker: ReturnType<typeof makeScssWorker> | undefined
-  let failedSassEmbedded = false
 
   return {
     close() {
       worker?.stop()
     },
     async process(environment, source, root, options, resolvers) {
-      const sassPackage = loadSassPackage(root, failedSassEmbedded)
+      let failedSassEmbedded: boolean | undefined
+      let sassPackage = loadSassPackage(root, failedSassEmbedded ?? false)
+
+      if (failedSassEmbedded === undefined) {
+        // failedSassEmbedded is undefined for the first time
+        try {
+          await import(sassPackage.path)
+        } catch (e) {
+          if (/sass-embedded-[a-z0-9]+-[a-z0-9]+/i.test(e.message)) {
+            failedSassEmbedded = true
+            sassPackage = loadSassPackage(root, failedSassEmbedded)
+          }
+        }
+      }
+
       worker ??= makeScssWorker(environment, resolvers, maxWorkers)
 
       const { content: data, map: additionalMap } = await getSource(
@@ -2565,58 +2578,6 @@ const scssProcessor = (
           deps,
         }
       } catch (e) {
-        // check if this is a sass-embedded platform binary error
-        if (
-          !failedSassEmbedded &&
-          /sass-embedded-[a-z0-9]+-[a-z0-9]+/i.test(e.message)
-        ) {
-          // log warning and fallback to sass
-          environment.logger.warn(
-            colors.yellow(
-              `sass-embedded failed to load on this platform. ` +
-                `Falling back to sass package. ` +
-                `Consider installing sass directly: npm install -D sass`,
-            ),
-          )
-
-          // mark sass-embedded as failed and stop the current worker
-          failedSassEmbedded = true
-          worker.stop()
-          worker = undefined
-
-          // reload sass package (will now use sass instead of sass-embedded)
-          const fallbackSassPackage = loadSassPackage(root, true)
-          worker = makeScssWorker(environment, resolvers, maxWorkers)
-
-          // retry the compilation with sass
-          const retryResult = await worker.run(
-            pathToFileURL(fallbackSassPackage.path).href,
-            data,
-            optionsWithoutAdditionalData,
-          )
-          const retryDeps = retryResult.stats.includedFiles.map((f) =>
-            cleanScssBugUrl(f),
-          )
-          const retryMap: ExistingRawSourceMap | undefined = retryResult.map
-            ? JSON.parse(retryResult.map.toString())
-            : undefined
-
-          if (retryMap) {
-            retryMap.sources = retryMap.sources.map((url) =>
-              url.startsWith('file://')
-                ? normalizePath(fileURLToPath(url))
-                : url,
-            )
-          }
-
-          return {
-            code: retryResult.css.toString(),
-            map: retryMap,
-            additionalMap,
-            deps: retryDeps,
-          }
-        }
-
         // normalize SASS error
         e.message = `[sass] ${e.message}`
         e.id = e.file
