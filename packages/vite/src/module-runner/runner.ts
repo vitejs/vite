@@ -247,7 +247,18 @@ export class ModuleRunner {
     this.builtinsPromise ??= (async () => {
       try {
         this.debug?.('[module runner] fetching builtins from server')
-        const builtins = await this.transport.invoke('getBuiltins', [])
+        const serializedBuiltins = await this.transport.invoke(
+          'getBuiltins',
+          [],
+        )
+        const builtins = serializedBuiltins.map((builtin) =>
+          typeof builtin === 'object' && builtin && 'type' in builtin
+            ? builtin.type === 'string'
+              ? builtin.value
+              : new RegExp(builtin.source, builtin.flags)
+            : // NOTE: Vitest returns raw values instead of serialized ones
+              builtin,
+        )
         this.isBuiltin = createIsBuiltin(builtins)
         this.debug?.('[module runner] builtins loaded:', builtins)
       } finally {
