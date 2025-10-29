@@ -502,6 +502,9 @@ function esbuildScanPlugin(
           isOptimizable(resolved, optimizeDepsOptions)
         )
           return
+        if (shouldExternalizeDep(resolved, path)) {
+          return externalUnlessEntry({ path })
+        }
         return {
           path: resolved,
           namespace: 'html',
