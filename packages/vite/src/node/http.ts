@@ -129,6 +129,10 @@ export async function resolveHttpServer(
       // Manually increase the session memory to prevent 502 ENHANCE_YOUR_CALM
       // errors on large numbers of requests
       maxSessionMemory: 1000,
+      // Increase the stream reset rate limit to prevent net::ERR_HTTP2_PROTOCOL_ERROR
+      // errors on large numbers of requests
+      streamResetBurst: 100000,
+      streamResetRate: 33,
       ...httpsOptions,
       allowHTTP1: true,
     },
