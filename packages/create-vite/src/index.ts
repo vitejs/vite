@@ -999,7 +999,8 @@ function setupTailwind(root: string, pkgManager: string, isTs: boolean) {
   if (fs.existsSync(viteConfigPath)) {
     editFile(viteConfigPath, (content) => {
       // Add import for @tailwindcss/vite
-      const importRegex = /import(?:\s+\S.*(?:[\n\r\u2028\u2029]\s*|[\t\v\f \xa0\u1680\u2000-\u200a\u202f\u205f\u3000\ufeff])|\s{2,})from\s+['"]vite['"]/
+      const importRegex =
+        /import(?:\s+\S.*(?:[\n\r\u2028\u2029]\s*|[\t\v\f \xa0\u1680\u2000-\u200a\u202f\u205f\u3000\ufeff])|\s{2,})from\s+['"]vite['"]/
       if (importRegex.test(content)) {
         content = content.replace(
           importRegex,
