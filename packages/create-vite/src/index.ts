@@ -296,14 +296,14 @@ const FRAMEWORKS: Framework[] = [
         display: 'Production-ready App ↗',
         color: redBright,
         customCommand:
-          'npx ember-cli@latest new TARGET_DIR --blueprint @ember/app-blueprint',
+          'npx ember-cli@latest new TARGET_DIR',
       },
       {
         name: 'ember-app-ts',
         display: 'Production-ready App (TypeScript)',
         color: blueBright,
         customCommand:
-          'npx ember-cli@latest new TARGET_DIR --blueprint @ember/app-blueprint --pnpm --lang en --typescript',
+          'npx ember-cli@latest new TARGET_DIR --typescript',
       },
       {
         name: 'ember-library',
