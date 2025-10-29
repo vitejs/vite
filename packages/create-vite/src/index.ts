@@ -553,6 +553,33 @@ async function init() {
     }
   }
 
+  // Ask about Tailwind CSS
+  let addTailwind = false
+  if (interactive && template && !template.startsWith('custom-')) {
+    const tailwindResult = await prompts.confirm({
+      message: 'Add Tailwind CSS?',
+      initialValue: false,
+    })
+    if (prompts.isCancel(tailwindResult)) return cancel()
+    addTailwind = tailwindResult
+  }
+
+  // Ask about linter
+  let linterChoice: 'none' | 'eslint' | 'eslint-prettier' = 'none'
+  if (interactive && template && !template.startsWith('custom-')) {
+    const linterResult = await prompts.select({
+      message: 'Add a linter?',
+      options: [
+        { label: 'None', value: 'none' as const },
+        { label: 'ESLint', value: 'eslint' as const },
+        { label: 'ESLint + Prettier', value: 'eslint-prettier' as const },
+      ],
+      initialValue: 'none' as const,
+    })
+    if (prompts.isCancel(linterResult)) return cancel()
+    linterChoice = linterResult
+  }
+
   let useRolldownVite = argRolldown
   if (useRolldownVite === undefined) {
     if (interactive) {
@@ -690,6 +717,16 @@ async function init() {
     setupReactSwc(root, template.endsWith('-ts'))
   } else if (isReactCompiler) {
     setupReactCompiler(root, template.endsWith('-ts'))
+  }
+
+  // Setup Tailwind CSS if requested
+  if (addTailwind) {
+    setupTailwind(root, pkgManager, template.endsWith('-ts'))
+  }
+
+  // Setup ESLint if requested
+  if (linterChoice !== 'none') {
+    setupESLint(root, pkgManager, linterChoice === 'eslint-prettier')
   }
 
   if (immediate) {
@@ -905,6 +942,154 @@ function getRunCommand(agent: string, script: string) {
       return [agent, 'task', script]
     default:
       return [agent, 'run', script]
+  }
+}
+
+function addTailwindToCss(projectDir: string) {
+  const cssFiles = [
+    'src/index.css',
+    'src/styles.css',
+    'src/main.css',
+    'src/App.css',
+  ]
+  const cssFile = cssFiles
+    .map((f) => path.join(projectDir, f))
+    .find((p) => fs.existsSync(p))
+
+  if (!cssFile) {
+    // Create src/index.css if no CSS file exists
+    const cssPath = path.join(projectDir, 'src', 'index.css')
+    fs.mkdirSync(path.dirname(cssPath), { recursive: true })
+    fs.writeFileSync(cssPath, '@import "tailwindcss";\n', 'utf8')
+    return
+  }
+
+  // Add Tailwind import to existing CSS file if not already present
+  const content = fs.readFileSync(cssFile, 'utf8')
+  if (
+    !content.includes('@import "tailwindcss"') &&
+    !content.includes("@import 'tailwindcss'")
+  ) {
+    const newContent = '@import "tailwindcss";\n\n' + content
+    fs.writeFileSync(cssFile, newContent, 'utf8')
+  }
+}
+
+function setupTailwind(root: string, pkgManager: string, isTs: boolean) {
+  if (process.env._VITE_TEST_CLI) {
+    prompts.log.step('Setting up Tailwind CSS... (skipped in test)')
+    return
+  }
+
+  prompts.log.step('Setting up Tailwind CSS v4...')
+
+  // Install Tailwind CSS v4 with Vite plugin
+  const installCmd =
+    pkgManager === 'yarn'
+      ? [pkgManager, 'add', '-D', 'tailwindcss', '@tailwindcss/vite']
+      : [pkgManager, 'install', '-D', 'tailwindcss', '@tailwindcss/vite']
+
+  run(installCmd, {
+    stdio: 'inherit',
+    cwd: root,
+  })
+
+  // Update vite.config to include Tailwind plugin
+  const viteConfigPath = path.join(root, `vite.config.${isTs ? 'ts' : 'js'}`)
+  if (fs.existsSync(viteConfigPath)) {
+    editFile(viteConfigPath, (content) => {
+      // Add import for @tailwindcss/vite
+      const importRegex = /import(?:\s+\S.*(?:[\n\r\u2028\u2029]\s*|[\t\v\f \xa0\u1680\u2000-\u200a\u202f\u205f\u3000\ufeff])|\s{2,})from\s+['"]vite['"]/
+      if (importRegex.test(content)) {
+        content = content.replace(
+          importRegex,
+          (match) => `${match}\nimport tailwindcss from '@tailwindcss/vite'`,
+        )
+      }
+
+      // Add tailwindcss() to plugins array
+      const pluginsRegex = /plugins:\s*\[([^\]]*)\]/
+      if (pluginsRegex.test(content)) {
+        content = content.replace(pluginsRegex, (_match, pluginsContent) => {
+          // Check if plugins array is empty or has content
+          const trimmed = pluginsContent.trim()
+          if (trimmed === '') {
+            return `plugins: [tailwindcss()]`
+          } else {
+            return `plugins: [tailwindcss(), ${pluginsContent}]`
+          }
+        })
+      }
+
+      return content
+    })
+  }
+
+  // Add Tailwind import to CSS
+  addTailwindToCss(root)
+}
+
+function setupESLint(root: string, pkgManager: string, withPrettier: boolean) {
+  if (process.env._VITE_TEST_CLI) {
+    prompts.log.step(
+      `Setting up ESLint${withPrettier ? ' + Prettier' : ''}... (skipped in test)`,
+    )
+    return
+  }
+
+  prompts.log.step(`Setting up ESLint${withPrettier ? ' + Prettier' : ''}...`)
+
+  const packages = ['eslint']
+  if (withPrettier) {
+    packages.push(
+      'prettier',
+      'eslint-config-prettier',
+      'eslint-plugin-prettier',
+    )
+  }
+
+  const installCmd =
+    pkgManager === 'yarn'
+      ? [pkgManager, 'add', '-D', ...packages]
+      : [pkgManager, 'install', '-D', ...packages]
+
+  run(installCmd, {
+    stdio: 'inherit',
+    cwd: root,
+  })
+
+  // Create basic .eslintrc.json
+  const eslintConfig = {
+    extends: withPrettier
+      ? ['eslint:recommended', 'plugin:prettier/recommended']
+      : ['eslint:recommended'],
+    env: {
+      browser: true,
+      es2021: true,
+      node: true,
+    },
+    parserOptions: {
+      ecmaVersion: 'latest',
+      sourceType: 'module',
+    },
+  }
+
+  fs.writeFileSync(
+    path.join(root, '.eslintrc.json'),
+    JSON.stringify(eslintConfig, null, 2) + '\n',
+  )
+
+  if (withPrettier) {
+    // Create basic .prettierrc
+    const prettierConfig = {
+      semi: false,
+      singleQuote: true,
+      trailingComma: 'all',
+    }
+    fs.writeFileSync(
+      path.join(root, '.prettierrc'),
+      JSON.stringify(prettierConfig, null, 2) + '\n',
+    )
   }
 }
 

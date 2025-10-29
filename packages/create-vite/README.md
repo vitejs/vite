@@ -37,6 +37,23 @@ deno init --npm vite
 
 Then follow the prompts!
 
+### Interactive Options
+
+When running in interactive mode (TTY), `create-vite` will prompt you with additional setup options after selecting a framework and variant:
+
+- **Add Tailwind CSS?** - Automatically install and configure Tailwind CSS v4 with the `@tailwindcss/vite` plugin
+- **Add a linter?** - Choose between:
+  - None
+  - ESLint
+  - ESLint + Prettier
+
+These options help you quickly set up a production-ready project with common tools and configurations. The tool will:
+
+- Install the necessary dependencies
+- Add the Tailwind CSS Vite plugin to your `vite.config` (if Tailwind is selected)
+- Add `@import "tailwindcss";` to your CSS file (if Tailwind is selected)
+- Create basic ESLint and Prettier configs (if linter is selected)
+
 You can also directly specify the project name and the template you want to use via additional command line options. For example, to scaffold a Vite + Vue project, run:
 
 ```bash
