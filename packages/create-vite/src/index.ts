@@ -293,7 +293,7 @@ const FRAMEWORKS: Framework[] = [
     variants: [
       {
         name: 'ember-app',
-        display: 'Production-ready App',
+        display: 'Production-ready App ↗',
         color: redBright,
         customCommand:
           'npx ember-cli@latest new TARGET_DIR --blueprint @ember/app-blueprint --pnpm --lang en',
