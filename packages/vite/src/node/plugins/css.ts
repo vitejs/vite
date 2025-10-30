@@ -2520,17 +2520,18 @@ const scssProcessor = (
   maxWorkers: number | undefined,
 ): StylePreprocessor<SassStylePreprocessorInternalOptions> => {
   let worker: ReturnType<typeof makeScssWorker> | undefined
+  let failedSassEmbedded: boolean | undefined
 
   return {
     close() {
       worker?.stop()
     },
     async process(environment, source, root, options, resolvers) {
-      let failedSassEmbedded: boolean | undefined
       let sassPackage = loadSassPackage(root, failedSassEmbedded ?? false)
 
       if (failedSassEmbedded === undefined) {
-        // failedSassEmbedded is undefined for the first time
+        failedSassEmbedded = false
+
         try {
           await import(sassPackage.path)
         } catch (e) {
