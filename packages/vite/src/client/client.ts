@@ -6,14 +6,15 @@ import {
   normalizeModuleRunnerTransport,
 } from '../shared/moduleRunnerTransport'
 import { createHMRHandler } from '../shared/hmrHandler'
-
+import type {
+  RuntimeErrorsToast} from './overlay';
 import {
-  cspNonce,
   ErrorOverlay,
+  cspNonce,
   overlayId,
-  RuntimeErrorsToast,
   runtimeErrorsToastId,
 } from './overlay'
+import '@vite/env'
 
 // injected by the hmr plugin when served
 declare const __BASE__: string
