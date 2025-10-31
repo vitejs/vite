@@ -2528,10 +2528,8 @@ const scssProcessor = (
     },
     async process(environment, source, root, options, resolvers) {
       let sassPackage = loadSassPackage(root, failedSassEmbedded ?? false)
-
       if (failedSassEmbedded === undefined) {
         failedSassEmbedded = false
-
         try {
           await import(sassPackage.path)
         } catch (e) {
