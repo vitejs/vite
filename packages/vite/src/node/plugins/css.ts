@@ -2340,22 +2340,31 @@ function loadPreprocessorPath(
   )
 }
 
-function loadSassPackage(root: string): {
+function loadSassPackage(
+  root: string,
+  skipEmbedded = false,
+): {
   name: 'sass' | 'sass-embedded'
   path: string
 } {
-  // try sass-embedded before sass
-  try {
-    const path = loadPreprocessorPath('sass-embedded', root)
-    return { name: 'sass-embedded', path }
-  } catch (e1) {
+  // try sass-embedded before sass, unless skipEmbedded is true
+  if (!skipEmbedded) {
     try {
-      const path = loadPreprocessorPath(PreprocessLang.sass, root)
-      return { name: 'sass', path }
-    } catch {
-      throw e1
+      const path = loadPreprocessorPath('sass-embedded', root)
+      return { name: 'sass-embedded', path }
+    } catch (e1) {
+      try {
+        const path = loadPreprocessorPath(PreprocessLang.sass, root)
+        return { name: 'sass', path }
+      } catch {
+        throw e1
+      }
     }
   }
+
+  // skip sass-embedded and try sass directly
+  const path = loadPreprocessorPath(PreprocessLang.sass, root)
+  return { name: 'sass', path }
 }
 
 let cachedSss: PostCSS.Syntax | Promise<PostCSS.Syntax>
@@ -2511,13 +2520,26 @@ const scssProcessor = (
   maxWorkers: number | undefined,
 ): StylePreprocessor<SassStylePreprocessorInternalOptions> => {
   let worker: ReturnType<typeof makeScssWorker> | undefined
+  let failedSassEmbedded: boolean | undefined
 
   return {
     close() {
       worker?.stop()
     },
     async process(environment, source, root, options, resolvers) {
-      const sassPackage = loadSassPackage(root)
+      let sassPackage = loadSassPackage(root, failedSassEmbedded ?? false)
+      if (failedSassEmbedded === undefined) {
+        failedSassEmbedded = false
+        try {
+          await import(sassPackage.path)
+        } catch (e) {
+          if (/sass-embedded-[a-z0-9]+-[a-z0-9]+/i.test(e.message)) {
+            failedSassEmbedded = true
+            sassPackage = loadSassPackage(root, failedSassEmbedded)
+          }
+        }
+      }
+
       worker ??= makeScssWorker(environment, resolvers, maxWorkers)
 
       const { content: data, map: additionalMap } = await getSource(
