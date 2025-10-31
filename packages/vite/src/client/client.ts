@@ -6,8 +6,7 @@ import {
   normalizeModuleRunnerTransport,
 } from '../shared/moduleRunnerTransport'
 import { createHMRHandler } from '../shared/hmrHandler'
-import type {
-  RuntimeErrorsToast} from './overlay';
+import type { RuntimeErrorsToast } from './overlay'
 import {
   ErrorOverlay,
   cspNonce,
