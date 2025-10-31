@@ -10,10 +10,10 @@ import connect from 'connect'
 import corsMiddleware from 'cors'
 import colors from 'picocolors'
 import chokidar from 'chokidar'
-import type { FSWatcher, WatchOptions } from 'dep-types/chokidar'
-import type { Connect } from 'dep-types/connect'
 import launchEditorMiddleware from 'launch-editor-middleware'
 import type { SourceMap } from 'rollup'
+import type { FSWatcher, WatchOptions } from '#dep-types/chokidar'
+import type { Connect } from '#dep-types/connect'
 import type { ModuleRunner } from 'vite/module-runner'
 import type { CommonServerOptions } from '../http'
 import {
@@ -24,8 +24,8 @@ import {
 } from '../http'
 import type { InlineConfig, ResolvedConfig } from '../config'
 import { isResolvedConfig, resolveConfig } from '../config'
-import type { Hostname } from '../utils'
 import {
+  type Hostname,
   diffDnsOrderChange,
   getServerUrlByHost,
   isInNodeModules,
@@ -174,12 +174,19 @@ export interface ServerOptions extends CommonServerOptions {
     | false
     | ((sourcePath: string, sourcemapPath: string) => boolean)
   /**
-   * Backward compatibility. The buildStart and buildEnd hooks were called only once for all
-   * environments. This option enables per-environment buildStart and buildEnd hooks.
+   * Backward compatibility. The buildStart and buildEnd hooks were called only once for
+   * the client environment. This option enables per-environment buildStart and buildEnd hooks.
    * @default false
    * @experimental
    */
   perEnvironmentStartEndDuringDev?: boolean
+  /**
+   * Backward compatibility. The watchChange hook was called only once for the client environment.
+   * This option enables per-environment watchChange hooks.
+   * @default false
+   * @experimental
+   */
+  perEnvironmentWatchChangeDuringDev?: boolean
   /**
    * Run HMR tasks, by default the HMR propagation is done in parallel for all environments
    * @experimental
@@ -207,8 +214,6 @@ export interface ResolvedServerOptions
   > {
   fs: Required<FileSystemServeOptions>
   middlewareMode: NonNullable<ServerOptions['middlewareMode']>
-  /** @internal */
-  hostname: Hostname
   sourcemapIgnoreList: Exclude<
     ServerOptions['sourcemapIgnoreList'],
     false | undefined
@@ -277,7 +282,7 @@ export interface ViteDevServer {
    */
   watcher: FSWatcher
   /**
-   * web socket server with `send(payload)` method
+   * WebSocket server with `send(payload)` method
    */
   ws: WebSocketServer
   /**
@@ -429,7 +434,7 @@ export function createServer(
 }
 
 export async function _createServer(
-  inlineConfig: InlineConfig | ResolvedConfig = {},
+  inlineConfig: ResolvedConfig | InlineConfig | undefined = {},
   options: {
     listen: boolean
     previousEnvironments?: Record<string, DevEnvironment>
@@ -480,7 +485,7 @@ export async function _createServer(
   const middlewares = connect() as Connect.Server
   const httpServer = middlewareMode
     ? null
-    : await resolveHttpServer(serverConfig, middlewares, httpsOptions)
+    : await resolveHttpServer(middlewares, httpsOptions)
 
   const ws = createWebSocketServer(httpServer, config, httpsOptions)
 
@@ -511,22 +516,24 @@ export async function _createServer(
 
   const environments: Record<string, DevEnvironment> = {}
 
-  for (const [name, environmentOptions] of Object.entries(
-    config.environments,
-  )) {
-    environments[name] = await environmentOptions.dev.createEnvironment(
-      name,
-      config,
-      {
-        ws,
-      },
-    )
-  }
+  await Promise.all(
+    Object.entries(config.environments).map(
+      async ([name, environmentOptions]) => {
+        const environment = await environmentOptions.dev.createEnvironment(
+          name,
+          config,
+          {
+            ws,
+          },
+        )
+        environments[name] = environment
 
-  for (const environment of Object.values(environments)) {
-    const previousInstance = options.previousEnvironments?.[environment.name]
-    await environment.init({ watcher, previousInstance })
-  }
+        const previousInstance =
+          options.previousEnvironments?.[environment.name]
+        await environment.init({ watcher, previousInstance })
+      },
+    ),
+  )
 
   // Backward compatibility
 
@@ -654,17 +661,19 @@ export async function _createServer(
       }
     },
     async listen(port?: number, isRestart?: boolean) {
+      const hostname = await resolveHostname(config.server.host)
       if (httpServer) {
         httpServer.prependListener('listening', () => {
           server.resolvedUrls = resolveServerUrls(
             httpServer,
             config.server,
+            hostname,
             httpsOptions,
             config,
           )
         })
       }
-      await startServer(server, port)
+      await startServer(server, hostname, port)
       if (httpServer) {
         if (!isRestart && config.server.open) server.openBrowser()
       }
@@ -800,9 +809,13 @@ export async function _createServer(
     file = normalizePath(file)
     reloadOnTsconfigChange(server, file)
 
-    await pluginContainer.watchChange(file, {
-      event: isUnlink ? 'delete' : 'create',
-    })
+    await Promise.all(
+      Object.values(server.environments).map((environment) =>
+        environment.pluginContainer.watchChange(file, {
+          event: isUnlink ? 'delete' : 'create',
+        }),
+      ),
+    )
 
     if (publicDir && publicFiles) {
       if (file.startsWith(publicDir)) {
@@ -834,7 +847,11 @@ export async function _createServer(
     file = normalizePath(file)
     reloadOnTsconfigChange(server, file)
 
-    await pluginContainer.watchChange(file, { event: 'update' })
+    await Promise.all(
+      Object.values(server.environments).map((environment) =>
+        environment.pluginContainer.watchChange(file, { event: 'update' }),
+      ),
+    )
     // invalidate module graph cache on file change
     for (const environment of Object.values(server.environments)) {
       environment.moduleGraph.onFileChange(file)
@@ -1005,6 +1022,7 @@ export async function _createServer(
 
 async function startServer(
   server: ViteDevServer,
+  hostname: Hostname,
   inlinePort?: number,
 ): Promise<void> {
   const httpServer = server.httpServer
@@ -1026,7 +1044,7 @@ async function startServer(
   const serverPort = await httpServerStart(httpServer, {
     port,
     strictPort: options.strictPort,
-    host: options.hostname.host,
+    host: hostname.host,
     logger: server.config.logger,
   })
   server._currentServerPort = serverPort
@@ -1074,7 +1092,7 @@ function resolvedAllowDir(root: string, dir: string): string {
   return normalizePath(path.resolve(root, dir))
 }
 
-export const serverConfigDefaults = Object.freeze({
+const _serverConfigDefaults = Object.freeze({
   port: DEFAULT_DEV_PORT,
   strictPort: false,
   host: 'localhost',
@@ -1101,17 +1119,20 @@ export const serverConfigDefaults = Object.freeze({
   preTransformRequests: true,
   // sourcemapIgnoreList
   perEnvironmentStartEndDuringDev: false,
+  perEnvironmentWatchChangeDuringDev: false,
   // hotUpdateEnvironments
 } satisfies ServerOptions)
+export const serverConfigDefaults: Readonly<Partial<ServerOptions>> =
+  _serverConfigDefaults
 
-export async function resolveServerOptions(
+export function resolveServerOptions(
   root: string,
   raw: ServerOptions | undefined,
   logger: Logger,
-): Promise<ResolvedServerOptions> {
+): ResolvedServerOptions {
   const _server = mergeWithDefaults(
     {
-      ...serverConfigDefaults,
+      ..._serverConfigDefaults,
       host: undefined, // do not set here to detect whether host is set or not
       sourcemapIgnoreList: isInNodeModules,
     },
@@ -1120,7 +1141,6 @@ export async function resolveServerOptions(
 
   const server: ResolvedServerOptions = {
     ..._server,
-    hostname: await resolveHostname(_server.host),
     fs: {
       ..._server.fs,
       // run searchForWorkspaceRoot only if needed

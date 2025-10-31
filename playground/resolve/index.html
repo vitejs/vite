@@ -64,6 +64,9 @@
 <h2>Resolving with query with imports field</h2>
 <p class="imports-query">fail</p>
 
+<h2>Resolving dot-prefixed directory with imports field</h2>
+<p class="imports-dot-prefixed">fail</p>
+
 <h2>Resolve /index.*</h2>
 <p class="index">fail</p>
 
@@ -157,6 +160,9 @@
 
 <h2>Plugin resolved custom virtual file</h2>
 <p class="custom-virtual"></p>
+
+<h2>Virtual file with URL scheme</h2>
+<p class="virtual-url-scheme"></p>
 
 <h2>Inline package</h2>
 <p class="inline-pkg"></p>
@@ -268,6 +274,9 @@
 
   import importsQuery from '#query?url'
   text('.imports-query', importsQuery)
+
+  import { msg as importsDotPrefixed } from './imports-path/importer.js'
+  text('.imports-dot-prefixed', importsDotPrefixed)
 
   // implicit index resolving
   import { foo } from './util'
@@ -393,6 +402,9 @@
 
   import { msg as customVirtualMsg } from '@custom-virtual-file'
   text('.custom-virtual', customVirtualMsg)
+
+  import { msg as virtualUrlSchemeMsg } from 'virtual-with-scheme'
+  text('.virtual-url-scheme', virtualUrlSchemeMsg)
 
   import { msg as inlineMsg } from './inline-package'
   text('.inline-pkg', inlineMsg)

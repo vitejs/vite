@@ -1,9 +1,8 @@
 import path from 'node:path'
 import fsp from 'node:fs/promises'
-import type { ServerResponse } from 'node:http'
-import type { Connect } from 'dep-types/connect'
 import colors from 'picocolors'
 import type { ExistingRawSourceMap } from 'rollup'
+import type { Connect } from '#dep-types/connect'
 import type { ViteDevServer } from '..'
 import {
   createDebugger,
@@ -34,12 +33,23 @@ import {
   ERR_OUTDATED_OPTIMIZED_DEP,
   NULL_BYTE_PLACEHOLDER,
 } from '../../../shared/constants'
-import { checkServingAccess, respondWithAccessDenied } from './static'
+import type { ResolvedConfig } from '../../config'
+import { checkLoadingAccess, respondWithAccessDenied } from './static'
 
 const debugCache = createDebugger('vite:cache')
 
 const knownIgnoreList = new Set(['/', '/favicon.ico'])
-const trailingQuerySeparatorsRE = /[?&]+$/
+
+const documentFetchDests = new Set([
+  'document',
+  'iframe',
+  'frame',
+  'fencedframe',
+])
+function isDocumentFetchDest(req: Connect.IncomingMessage) {
+  const fetchDest = req.headers['sec-fetch-dest']
+  return fetchDest !== undefined && documentFetchDests.has(fetchDest)
+}
 
 // TODO: consolidate this regex pattern with the url, raw, and inline checks in plugins
 const urlRE = /[?&]url\b/
@@ -47,28 +57,9 @@ const rawRE = /[?&]raw\b/
 const inlineRE = /[?&]inline\b/
 const svgRE = /\.svg\b/
 
-function deniedServingAccessForTransform(
-  url: string,
-  server: ViteDevServer,
-  res: ServerResponse,
-  next: Connect.NextFunction,
-) {
-  if (
-    rawRE.test(url) ||
-    urlRE.test(url) ||
-    inlineRE.test(url) ||
-    svgRE.test(url)
-  ) {
-    const servingAccessResult = checkServingAccess(url, server)
-    if (servingAccessResult === 'denied') {
-      respondWithAccessDenied(url, server, res)
-      return true
-    }
-    if (servingAccessResult === 'fallback') {
-      next()
-      return true
-    }
-    servingAccessResult satisfies 'allowed'
+function isServerAccessDeniedForTransform(config: ResolvedConfig, id: string) {
+  if (rawRE.test(id) || urlRE.test(id) || inlineRE.test(id) || svgRE.test(id)) {
+    return checkLoadingAccess(config, id) !== 'allowed'
   }
   return false
 }
@@ -82,6 +73,11 @@ export function cachedTransformMiddleware(
   // Keep the named function. The name is visible in debug logs via `DEBUG=connect:dispatcher ...`
   return function viteCachedTransformMiddleware(req, res, next) {
     const environment = server.environments.client
+
+    if (isDocumentFetchDest(req)) {
+      res.appendHeader('Vary', 'Sec-Fetch-Dest')
+      return next()
+    }
 
     // check if we can return 304 early
     const ifNoneMatch = req.headers['if-none-match']
@@ -122,7 +118,8 @@ export function transformMiddleware(
 
     if (
       (req.method !== 'GET' && req.method !== 'HEAD') ||
-      knownIgnoreList.has(req.url!)
+      knownIgnoreList.has(req.url!) ||
+      isDocumentFetchDest(req)
     ) {
       return next()
     }
@@ -136,7 +133,9 @@ export function transformMiddleware(
     } catch (e) {
       if (e instanceof URIError) {
         server.config.logger.warn(
-          colors.yellow('Malformed URI sequence in request URL'),
+          colors.yellow(
+            `Malformed URI sequence in request URL: ${removeTimestampQuery(req.url!)}`,
+          ),
         )
         return next()
       }
@@ -207,22 +206,6 @@ export function transformMiddleware(
         warnAboutExplicitPublicPathInUrl(url)
       }
 
-      const urlWithoutTrailingQuerySeparators = url.replace(
-        trailingQuerySeparatorsRE,
-        '',
-      )
-      if (
-        !url.startsWith('/@id/\0') &&
-        deniedServingAccessForTransform(
-          urlWithoutTrailingQuerySeparators,
-          server,
-          res,
-          next,
-        )
-      ) {
-        return
-      }
-
       if (
         req.headers['sec-fetch-dest'] === 'script' ||
         isJSRequest(url) ||
@@ -264,8 +247,8 @@ export function transformMiddleware(
         const result = await environment.transformRequest(url, {
           allowId(id) {
             return (
-              id.startsWith('\0') ||
-              !deniedServingAccessForTransform(id, server, res, next)
+              id[0] === '\0' ||
+              !isServerAccessDeniedForTransform(server.config, id)
             )
           },
         })
@@ -339,8 +322,18 @@ export function transformMiddleware(
         return next()
       }
       if (e?.code === ERR_DENIED_ID) {
-        // next() is called in ensureServingAccess
-        return
+        const id: string = e.id
+        const servingAccessResult = checkLoadingAccess(server.config, id)
+        if (servingAccessResult === 'denied') {
+          respondWithAccessDenied(id, server, res)
+          return true
+        }
+        if (servingAccessResult === 'fallback') {
+          next()
+          return true
+        }
+        servingAccessResult satisfies 'allowed'
+        throw new Error(`Unexpected access result for id ${id}`)
       }
       return next(e)
     }

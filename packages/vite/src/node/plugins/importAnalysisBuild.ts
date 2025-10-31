@@ -6,7 +6,7 @@ import type {
 } from 'es-module-lexer'
 import { init, parse as parseImports } from 'es-module-lexer'
 import type { SourceMap } from 'rollup'
-import type { RawSourceMap } from '@ampproject/remapping'
+import type { RawSourceMap } from '@jridgewell/remapping'
 import convertSourceMap from 'convert-source-map'
 import { exactRegex } from '@rolldown/pluginutils'
 import { combineSourcemaps, generateCodeFrame, numberToPos } from '../utils'
@@ -711,11 +711,15 @@ export function buildImportAnalysisPlugin(config: ResolvedConfig): Plugin {
                 source: chunk.fileName,
                 hires: 'boundary',
               })
+              const originalFile = chunk.map.file
               const map = combineSourcemaps(chunk.fileName, [
                 nextMap as RawSourceMap,
                 chunk.map as RawSourceMap,
               ]) as SourceMap
               map.toUrl = () => genSourceMapUrl(map)
+              if (originalFile) {
+                map.file = originalFile
+              }
 
               const originalDebugId = chunk.map.debugId
               chunk.map = map

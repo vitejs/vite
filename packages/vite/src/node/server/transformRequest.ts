@@ -21,7 +21,7 @@ import {
 } from '../utils'
 import { ssrTransform } from '../ssr/ssrTransform'
 import { checkPublicFile } from '../publicDir'
-import { cleanUrl, unwrapId } from '../../shared/utils'
+import { cleanUrl, slash, unwrapId } from '../../shared/utils'
 import {
   applySourcemapIgnoreList,
   extractSourcemapFromFile,
@@ -99,25 +99,25 @@ export function transformRequest(
   // last time this module is invalidated
   const timestamp = monotonicDateNow()
 
+  url = removeTimestampQuery(url)
+
   const pending = environment._pendingRequests.get(url)
   if (pending) {
-    return environment.moduleGraph
-      .getModuleByUrl(removeTimestampQuery(url))
-      .then((module) => {
-        if (!module || pending.timestamp > module.lastInvalidationTimestamp) {
-          // The pending request is still valid, we can safely reuse its result
-          return pending.request
-        } else {
-          // Request 1 for module A     (pending.timestamp)
-          // Invalidate module A        (module.lastInvalidationTimestamp)
-          // Request 2 for module A     (timestamp)
+    return environment.moduleGraph.getModuleByUrl(url).then((module) => {
+      if (!module || pending.timestamp > module.lastInvalidationTimestamp) {
+        // The pending request is still valid, we can safely reuse its result
+        return pending.request
+      } else {
+        // Request 1 for module A     (pending.timestamp)
+        // Invalidate module A        (module.lastInvalidationTimestamp)
+        // Request 2 for module A     (timestamp)
 
-          // First request has been invalidated, abort it to clear the cache,
-          // then perform a new doTransform.
-          pending.abort()
-          return transformRequest(environment, url, options)
-        }
-      })
+        // First request has been invalidated, abort it to clear the cache,
+        // then perform a new doTransform.
+        pending.abort()
+        return transformRequest(environment, url, options)
+      }
+    })
   }
 
   const request = doTransform(environment, url, options, timestamp)
@@ -147,8 +147,6 @@ async function doTransform(
   options: TransformOptionsInternal,
   timestamp: number,
 ) {
-  url = removeTimestampQuery(url)
-
   const { pluginContainer } = environment
 
   let module = await environment.moduleGraph.getModuleByUrl(url)
@@ -248,6 +246,7 @@ async function loadAndTransform(
   if (options.allowId && !options.allowId(id)) {
     const err: any = new Error(`Denied ID ${id}`)
     err.code = ERR_DENIED_ID
+    err.id = id
     throw err
   }
 
@@ -268,7 +267,7 @@ async function loadAndTransform(
     // like /service-worker.js or /api/users
     if (
       environment.config.consumer === 'server' ||
-      isFileLoadingAllowed(environment.getTopLevelConfig(), file)
+      isFileLoadingAllowed(environment.getTopLevelConfig(), slash(file))
     ) {
       try {
         code = await fsp.readFile(file, 'utf-8')

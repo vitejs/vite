@@ -170,6 +170,10 @@
   <span style="background: #fff">CSS SVG background with image-set</span>
 </div>
 
+<div class="css-url-non-inline-hmr">
+  <span style="background: #fff">CSS non-inlined background HMR</span>
+</div>
+
 <h2>Unicode URL</h2>
 <div>
   <code class="unicode-url"></code>
@@ -265,6 +269,7 @@
 
 <h2>?raw import</h2>
 <code class="raw"></code>
+<code class="raw-html"></code>
 
 <h2>?no-inline svg import</h2>
 <code class="no-inline-svg"></code>
@@ -371,6 +376,9 @@
 <p>
   <code class="dynamic-import-meta-url-all"></code>
 </p>
+
+<h2>Multiline new URL(..., import.meta.url)</h2>
+<code class="import-meta-url-multiline"></code>
 
 <h2>simple script tag import-expression</h2>
 <code class="import-expression"></code>
@@ -484,6 +492,7 @@
   import './css/css-url.css'
   import './css/icons.css'
   import './css/manual-chunks.css'
+  import { multilineUrl } from './multiline-import-meta-url.js'
 
   text('.base', `import.meta.${``}env.BASE_URL: ${import.meta.env.BASE_URL}`)
 
@@ -545,6 +554,12 @@
 
   import rawSvg from './nested/fragment.svg?raw'
   text('.raw', rawSvg)
+
+  import rawHtml from './nested/partial.html?raw'
+  text('.raw-html', rawHtml)
+  import.meta.hot?.accept('./nested/partial.html?raw', (m) => {
+    text('.raw-html', m.default)
+  })
 
   import noInlineSvg from './nested/fragment.svg?no-inline'
   text('.no-inline-svg', noInlineSvg)
@@ -697,6 +712,8 @@
     const metaUrl = new URL(`${name}.png`, import.meta.url)
     text(`.dynamic-import-meta-url-all`, metaUrl)
   }
+
+  text('.import-meta-url-multiline', multilineUrl)
 
   function text(el, text) {
     document.querySelector(el).textContent = text

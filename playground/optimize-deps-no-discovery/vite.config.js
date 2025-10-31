@@ -4,6 +4,9 @@ import { defineConfig } from 'vite'
 process.env.NODE_ENV = ''
 
 export default defineConfig({
+  define: {
+    __VUE_PROD_HYDRATION_MISMATCH_DETAILS__: false,
+  },
   optimizeDeps: {
     noDiscovery: true,
     include: ['@vitejs/test-dep-no-discovery'],

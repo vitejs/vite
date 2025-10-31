@@ -10,7 +10,12 @@ import {
   test,
   vi,
 } from 'vitest'
-import type { InlineConfig, RunnableDevEnvironment, ViteDevServer } from 'vite'
+import type {
+  InlineConfig,
+  Plugin,
+  RunnableDevEnvironment,
+  ViteDevServer,
+} from 'vite'
 import { createRunnableDevEnvironment, createServer } from 'vite'
 import type { ModuleRunner } from 'vite/module-runner'
 import {
@@ -47,12 +52,31 @@ const updated = (file: string, via?: string) => {
 
 if (!isBuild) {
   describe('hmr works correctly', () => {
+    const hotEventCounts = { connect: 0, disconnect: 0 }
+
     beforeAll(async () => {
-      await setupModuleRunner('/hmr.ts')
+      function hotEventsPlugin(): Plugin {
+        return {
+          name: 'hot-events',
+          configureServer(server) {
+            server.environments.ssr.hot.on(
+              'vite:client:connect',
+              () => hotEventCounts.connect++,
+            )
+            server.environments.ssr.hot.on(
+              'vite:client:disconnect',
+              () => hotEventCounts.disconnect++,
+            )
+          },
+        }
+      }
+
+      await setupModuleRunner('/hmr.ts', { plugins: [hotEventsPlugin()] })
     })
 
     test('should connect', async () => {
       expect(clientLogs).toContain('[vite] connected.')
+      expect(hotEventCounts).toStrictEqual({ connect: 1, disconnect: 0 })
     })
 
     test('self accept', async () => {
@@ -974,6 +998,7 @@ async function untilConsoleLog(
   expectOrder = true,
 ): Promise<string[]> {
   const { promise, resolve, reject } = promiseWithResolvers<void>()
+  let timeoutId: ReturnType<typeof setTimeout>
 
   const logsMessages = []
 
@@ -1024,12 +1049,27 @@ async function untilConsoleLog(
       }
     }
 
+    timeoutId = setTimeout(() => {
+      const nextTarget = Array.isArray(target)
+        ? expectOrder
+          ? target[0]
+          : target.join(', ')
+        : target
+      reject(
+        new Error(
+          `Timeout waiting for console logs. Waiting for: ${nextTarget}`,
+        ),
+      )
+      logsEmitter.off('log', handleMsg)
+    }, 5000)
+
     logsEmitter.on('log', handleMsg)
   } catch (err) {
     reject(err)
   }
 
   await promise
+  clearTimeout(timeoutId)
 
   return logsMessages
 }

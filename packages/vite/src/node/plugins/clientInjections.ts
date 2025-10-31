@@ -3,6 +3,7 @@ import type { Plugin } from '../plugin'
 import type { ResolvedConfig } from '../config'
 import { CLIENT_ENTRY, ENV_ENTRY } from '../constants'
 import { isObject, normalizePath, resolveHostname } from '../utils'
+import { cleanUrl } from '../../shared/utils'
 import { perEnvironmentState } from '../environment'
 import { replaceDefine, serializeDefine } from './define'
 
@@ -102,7 +103,8 @@ export function clientInjectionsPlugin(config: ResolvedConfig): Plugin {
     },
     async transform(code, id) {
       const ssr = this.environment.config.consumer === 'server'
-      if (id === normalizedClientEntry || id === normalizedEnvEntry) {
+      const cleanId = cleanUrl(id)
+      if (cleanId === normalizedClientEntry || cleanId === normalizedEnvEntry) {
         const defineReplacer = getDefineReplacer(this)
         return defineReplacer(injectConfigValues(code))
       } else if (!ssr && code.includes('process.env.NODE_ENV')) {

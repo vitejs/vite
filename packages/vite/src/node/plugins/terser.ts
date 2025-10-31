@@ -1,11 +1,13 @@
+import { pathToFileURL } from 'node:url'
+import { WorkerWithFallback } from 'artichokie'
 import type {
   TerserMinifyOptions,
   TerserMinifyOutput,
-} from 'types/internal/terserOptions'
-import { WorkerWithFallback } from 'artichokie'
+} from '#types/internal/terserOptions'
 import type { Plugin } from '../plugin'
 import type { ResolvedConfig } from '..'
-import { requireResolveFromRootWithFallback } from '../utils'
+import { _dirname, generateCodeFrame } from '../utils'
+import { nodeResolveWithVite } from '../nodeResolve'
 
 export interface TerserOptions extends TerserMinifyOptions {
   /**
@@ -18,22 +20,19 @@ export interface TerserOptions extends TerserMinifyOptions {
 }
 
 let terserPath: string | undefined
-const loadTerserPath = (root: string) => {
+function loadTerserPath(root: string) {
   if (terserPath) return terserPath
-  try {
-    terserPath = requireResolveFromRootWithFallback(root, 'terser')
-  } catch (e) {
-    if (e.code === 'MODULE_NOT_FOUND') {
-      throw new Error(
-        'terser not found. Since Vite v3, terser has become an optional dependency. You need to install it.',
-      )
-    } else {
-      const message = new Error(`terser failed to load:\n${e.message}`)
-      message.stack = e.stack + '\n' + message.stack
-      throw message
-    }
-  }
-  return terserPath
+
+  // Try resolve from project root first, then the current vite installation path
+  const resolved =
+    nodeResolveWithVite('terser', undefined, { root }) ??
+    nodeResolveWithVite('terser', _dirname, { root })
+  if (resolved) return (terserPath = resolved)
+
+  // Error if we can't find the package
+  throw new Error(
+    'terser not found. Since Vite v3, terser has become an optional dependency. You need to install it.',
+  )
 }
 
 export function terserPlugin(config: ResolvedConfig): Plugin {
@@ -47,10 +46,14 @@ export function terserPlugin(config: ResolvedConfig): Plugin {
           code: string,
           options: TerserMinifyOptions,
         ) => {
-          // test fails when using `import`. maybe related: https://github.com/nodejs/node/issues/43205
-          // eslint-disable-next-line no-restricted-globals -- this function runs inside cjs
-          const terser = require(terserPath)
-          return terser.minify(code, options) as TerserMinifyOutput
+          const terser: typeof import('terser') = await import(terserPath)
+          try {
+            return (await terser.minify(code, options)) as TerserMinifyOutput
+          } catch (e) {
+            // convert to a plain object as additional properties of Error instances are not
+            // sent back to the main thread
+            throw { stack: e.stack /* stack is non-enumerable */, ...e }
+          }
         },
       {
         shouldUseFake(_terserPath, _code, options) {
@@ -60,7 +63,8 @@ export function terserPlugin(config: ResolvedConfig): Plugin {
                 (typeof options.mangle.properties === 'object' &&
                   options.mangle.properties.nth_identifier?.get))) ||
             typeof options.format?.comments === 'function' ||
-            typeof options.output?.comments === 'function'
+            typeof options.output?.comments === 'function' ||
+            options.nameCache
           )
         },
         max: maxWorkers,
@@ -78,7 +82,7 @@ export function terserPlugin(config: ResolvedConfig): Plugin {
       return !!environment.config.build.minify
     },
 
-    async renderChunk(code, _chunk, outputOptions) {
+    async renderChunk(code, chunk, outputOptions) {
       // This plugin is included for any non-false value of config.build.minify,
       // so that normal chunks can use the preferred minifier, and legacy chunks
       // can use terser.
@@ -90,26 +94,42 @@ export function terserPlugin(config: ResolvedConfig): Plugin {
         return null
       }
 
-      // Do not minify ES lib output since that would remove pure annotations
-      // and break tree-shaking.
-      if (config.build.lib && outputOptions.format === 'es') {
-        return null
-      }
-
       // Lazy load worker.
       worker ||= makeWorker()
 
-      const terserPath = loadTerserPath(config.root)
-      const res = await worker.run(terserPath, code, {
-        safari10: true,
-        ...terserOptions,
-        sourceMap: !!outputOptions.sourcemap,
-        module: outputOptions.format.startsWith('es'),
-        toplevel: outputOptions.format === 'cjs',
-      })
-      return {
-        code: res.code!,
-        map: res.map as any,
+      const terserPath = pathToFileURL(loadTerserPath(config.root)).href
+      try {
+        const res = await worker.run(terserPath, code, {
+          safari10: true,
+          ...terserOptions,
+          format: {
+            ...terserOptions.format,
+            // For ES lib mode, preserve comments to keep pure annotations for tree-shaking
+            preserve_annotations:
+              config.build.lib && outputOptions.format === 'es'
+                ? true
+                : terserOptions.format?.preserve_annotations,
+          },
+          sourceMap: !!outputOptions.sourcemap,
+          module: outputOptions.format.startsWith('es'),
+          toplevel: outputOptions.format === 'cjs',
+        })
+        return {
+          code: res.code!,
+          map: res.map as any,
+        }
+      } catch (e) {
+        if (e.line !== undefined && e.col !== undefined) {
+          e.loc = {
+            file: chunk.fileName,
+            line: e.line,
+            column: e.col,
+          }
+        }
+        if (e.pos !== undefined) {
+          e.frame = generateCodeFrame(code, e.pos)
+        }
+        throw e
       }
     },
 

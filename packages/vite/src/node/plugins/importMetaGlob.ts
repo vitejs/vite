@@ -13,9 +13,9 @@ import type {
 import type { CustomPluginOptions, RollupAstNode, RollupError } from 'rollup'
 import MagicString from 'magic-string'
 import { stringifyQuery } from 'ufo'
-import type { GeneralImportGlobOptions } from 'types/importGlob'
 import { parseAstAsync } from 'rollup/parseAst'
 import { escapePath, glob } from 'tinyglobby'
+import type { GeneralImportGlobOptions } from '#types/importGlob'
 import type { Plugin } from '../plugin'
 import type { EnvironmentModuleNode } from '../server/moduleGraph'
 import type { ResolvedConfig } from '../config'
@@ -73,7 +73,11 @@ export function importGlobPlugin(config: ResolvedConfig): Plugin {
             const affirmed: string[] = []
             const negated: string[] = []
             for (const glob of globs) {
-              ;(glob[0] === '!' ? negated : affirmed).push(glob)
+              if (glob[0] === '!') {
+                negated.push(glob.slice(1))
+              } else {
+                affirmed.push(glob)
+              }
             }
             const affirmedMatcher = picomatch(affirmed)
             const negatedMatcher = picomatch(negated)
@@ -458,14 +462,20 @@ export async function transformGlobImport(
               let filePath = options.base
                 ? `${relative(posix.join(root, options.base), file)}`
                 : importPath
-              if (options.base && filePath[0] !== '.') {
+              if (
+                options.base &&
+                !filePath.startsWith('./') &&
+                !filePath.startsWith('../')
+              ) {
                 filePath = `./${filePath}`
               }
               return { filePath, importPath }
             }
 
             let importPath = relative(dir, file)
-            if (importPath[0] !== '.') importPath = `./${importPath}`
+            if (!importPath.startsWith('./') && !importPath.startsWith('../')) {
+              importPath = `./${importPath}`
+            }
 
             let filePath: string
             if (options.base) {
@@ -474,7 +484,9 @@ export async function transformGlobImport(
                 posix.join(resolvedBasePath, options.base),
                 file,
               )
-              if (filePath[0] !== '.') filePath = `./${filePath}`
+              if (!filePath.startsWith('./') && !filePath.startsWith('../')) {
+                filePath = `./${filePath}`
+              }
               if (options.base[0] === '/') {
                 importPath = `/${relative(root, file)}`
               }
@@ -482,7 +494,9 @@ export async function transformGlobImport(
               filePath = importPath
             } else {
               filePath = relative(root, file)
-              if (filePath[0] !== '.') filePath = `/${filePath}`
+              if (!filePath.startsWith('./') && !filePath.startsWith('../')) {
+                filePath = `/${filePath}`
+              }
             }
 
             return { filePath, importPath }
@@ -626,7 +640,7 @@ export async function toAbsoluteGlob(
   root = globSafePath(root)
   let dir
   if (base) {
-    if (base.startsWith('/')) {
+    if (base[0] === '/') {
       dir = posix.join(root, base)
     } else {
       dir = posix.resolve(

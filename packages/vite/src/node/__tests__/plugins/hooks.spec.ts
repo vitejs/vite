@@ -41,6 +41,7 @@ const createServerWithPlugin = async (plugin: Plugin) => {
     logLevel: 'error',
     server: {
       middlewareMode: true,
+      ws: false,
     },
   })
   onTestFinished(() => server.close())

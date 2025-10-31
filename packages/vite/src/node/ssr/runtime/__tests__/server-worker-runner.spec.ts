@@ -4,35 +4,53 @@ import type { HotChannel, HotChannelListener, HotPayload } from 'vite'
 import { DevEnvironment } from '../../..'
 import { createServer } from '../../../server'
 
-const createWorkerTransport = (w: Worker): HotChannel => {
+const createWorkerTransport = (worker: Worker): HotChannel => {
   const handlerToWorkerListener = new WeakMap<
     HotChannelListener,
     (value: HotPayload) => void
   >()
+  const client = {
+    send(payload: HotPayload) {
+      worker.postMessage(payload)
+    },
+  }
 
   return {
-    send: (data) => w.postMessage(data),
+    send: (data) => worker.postMessage(data),
     on: (event: string, handler: HotChannelListener) => {
-      if (event === 'connection') return
+      // client is already connected
+      if (event === 'vite:client:connect') return
+      if (event === 'vite:client:disconnect') {
+        const listener = () => {
+          handler(undefined, client)
+        }
+        handlerToWorkerListener.set(handler, listener)
+        worker.on('exit', listener)
+        return
+      }
 
       const listener = (value: HotPayload) => {
         if (value.type === 'custom' && value.event === event) {
-          const client = {
-            send(payload: HotPayload) {
-              w.postMessage(payload)
-            },
-          }
           handler(value.data, client)
         }
       }
       handlerToWorkerListener.set(handler, listener)
-      w.on('message', listener)
+      worker.on('message', listener)
     },
     off: (event, handler: HotChannelListener) => {
-      if (event === 'connection') return
+      if (event === 'vite:client:connect') return
+      if (event === 'vite:client:disconnect') {
+        const listener = handlerToWorkerListener.get(handler)
+        if (listener) {
+          worker.off('exit', listener)
+          handlerToWorkerListener.delete(handler)
+        }
+        return
+      }
+
       const listener = handlerToWorkerListener.get(handler)
       if (listener) {
-        w.off('message', listener)
+        worker.off('message', listener)
         handlerToWorkerListener.delete(handler)
       }
     },
@@ -75,15 +93,14 @@ describe('running module runner inside a worker', () => {
         },
       },
     })
-    onTestFinished(() => {
-      server.close()
-      worker.terminate()
+    onTestFinished(async () => {
+      await Promise.allSettled([server.close(), worker.terminate()])
     })
     const channel = new BroadcastChannel('vite-worker')
     return new Promise<void>((resolve, reject) => {
       channel.onmessage = (event) => {
         try {
-          expect((event as MessageEvent).data).toEqual({
+          expect(event.data).toEqual({
             result: 'hello world',
           })
         } catch (e) {

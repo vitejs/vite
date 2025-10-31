@@ -6,22 +6,22 @@ import { exec } from 'node:child_process'
 import crypto from 'node:crypto'
 import { fileURLToPath } from 'node:url'
 import type { ServerOptions as HttpsServerOptions } from 'node:https'
-import { builtinModules, createRequire } from 'node:module'
+import { builtinModules } from 'node:module'
 import { promises as dns } from 'node:dns'
 import { performance } from 'node:perf_hooks'
 import type { AddressInfo, Server } from 'node:net'
 import fsp from 'node:fs/promises'
-import type { FSWatcher } from 'dep-types/chokidar'
-import remapping from '@ampproject/remapping'
-import type { DecodedSourceMap, RawSourceMap } from '@ampproject/remapping'
+import remapping from '@jridgewell/remapping'
+import type { DecodedSourceMap, RawSourceMap } from '@jridgewell/remapping'
 import colors from 'picocolors'
 import debug from 'debug'
-import type { Alias, AliasOptions } from 'dep-types/alias'
 import type MagicString from 'magic-string'
 import type { Equal } from '@type-challenges/utils'
 
 import type { TransformResult } from 'rollup'
 import { createFilter as _createFilter } from '@rollup/pluginutils'
+import type { Alias, AliasOptions } from '#dep-types/alias'
+import type { FSWatcher } from '#dep-types/chokidar'
 import {
   cleanUrl,
   isWindows,
@@ -30,6 +30,7 @@ import {
   withTrailingSlash,
 } from '../shared/utils'
 import { VALID_ID_PREFIX } from '../shared/constants'
+import { createIsBuiltin } from '../shared/builtin'
 import {
   CLIENT_ENTRY,
   CLIENT_PUBLIC_PATH,
@@ -98,8 +99,6 @@ export const normalizeId = (id: string): string =>
 
 // Supported by Node, Deno, Bun
 const NODE_BUILTIN_NAMESPACE = 'node:'
-// Supported by Deno
-const NPM_BUILTIN_NAMESPACE = 'npm:'
 // Supported by Bun
 const BUN_BUILTIN_NAMESPACE = 'bun:'
 // Some runtimes like Bun injects namespaced modules here, which is not a node builtin
@@ -119,24 +118,9 @@ export function isBuiltin(builtins: (string | RegExp)[], id: string): boolean {
   return isBuiltin(id)
 }
 
-export function createIsBuiltin(
-  builtins: (string | RegExp)[],
-): (id: string) => boolean {
-  const plainBuiltinsSet = new Set(
-    builtins.filter((builtin) => typeof builtin === 'string'),
-  )
-  const regexBuiltins = builtins.filter(
-    (builtin) => typeof builtin !== 'string',
-  )
-
-  return (id) =>
-    plainBuiltinsSet.has(id) || regexBuiltins.some((regexp) => regexp.test(id))
-}
-
-export const nodeLikeBuiltins = [
+export const nodeLikeBuiltins: (string | RegExp)[] = [
   ...nodeBuiltins,
   new RegExp(`^${NODE_BUILTIN_NAMESPACE}`),
-  new RegExp(`^${NPM_BUILTIN_NAMESPACE}`),
   new RegExp(`^${BUN_BUILTIN_NAMESPACE}`),
 ]
 
@@ -173,16 +157,15 @@ export function isOptimizable(
   )
 }
 
-export const bareImportRE = /^(?![a-zA-Z]:)[\w@](?!.*:\/\/)/
-export const deepImportRE = /^([^@][^/]*)\/|^(@[^/]+\/[^/]+)\//
+export const bareImportRE: RegExp = /^(?![a-zA-Z]:)[\w@](?!.*:\/\/)/
+export const deepImportRE: RegExp = /^([^@][^/]*)\/|^(@[^/]+\/[^/]+)\//
 
-// TODO: use import()
-const _require = createRequire(/** #__KEEP__ */ import.meta.url)
-
-const _dirname = path.dirname(fileURLToPath(/** #__KEEP__ */ import.meta.url))
+export const _dirname: string = path.dirname(
+  fileURLToPath(/** #__KEEP__ */ import.meta.url),
+)
 
 // NOTE: we don't use VERSION variable exported from rollup to avoid importing rollup in dev
-export const rollupVersion =
+export const rollupVersion: string =
   resolvePackageData('rollup', _dirname, true)?.data.version ?? ''
 
 // set in bin/vite.js
@@ -240,7 +223,7 @@ function testCaseInsensitiveFS() {
   return fs.existsSync(CLIENT_ENTRY.replace('client.mjs', 'cLiEnT.mjs'))
 }
 
-export const isCaseInsensitiveFS = testCaseInsensitiveFS()
+export const isCaseInsensitiveFS: boolean = testCaseInsensitiveFS()
 
 const VOLUME_RE = /^[A-Z]:/i
 
@@ -285,20 +268,20 @@ export function isParentDirectory(dir: string, file: string): boolean {
  * @param file2 - normalized absolute path
  * @returns true if both files url are identical
  */
-export function isSameFileUri(file1: string, file2: string): boolean {
+export function isSameFilePath(file1: string, file2: string): boolean {
   return (
     file1 === file2 ||
     (isCaseInsensitiveFS && file1.toLowerCase() === file2.toLowerCase())
   )
 }
 
-export const externalRE = /^([a-z]+:)?\/\//
+export const externalRE: RegExp = /^([a-z]+:)?\/\//
 export const isExternalUrl = (url: string): boolean => externalRE.test(url)
 
-export const dataUrlRE = /^\s*data:/i
+export const dataUrlRE: RegExp = /^\s*data:/i
 export const isDataUrl = (url: string): boolean => dataUrlRE.test(url)
 
-export const virtualModuleRE = /^virtual-module:.*/
+export const virtualModuleRE: RegExp = /^virtual-module:.*/
 export const virtualModulePrefix = 'virtual-module:'
 
 // NOTE: We should start relying on the "Sec-Fetch-Dest" header instead of this
@@ -341,8 +324,8 @@ export function removeDirectQuery(url: string): string {
   return url.replace(directRequestRE, '$1').replace(trailingSeparatorRE, '')
 }
 
-export const urlRE = /(\?|&)url(?:&|$)/
-export const rawRE = /(\?|&)raw(?:&|$)/
+export const urlRE: RegExp = /(\?|&)url(?:&|$)/
+export const rawRE: RegExp = /(\?|&)raw(?:&|$)/
 export function removeUrlQuery(url: string): string {
   return url.replace(urlRE, '$1').replace(trailingSeparatorRE, '')
 }
@@ -459,7 +442,7 @@ export function isFilePathESM(
   }
 }
 
-export const splitRE = /\r?\n/g
+export const splitRE: RegExp = /\r?\n/g
 
 const range: number = 2
 
@@ -501,6 +484,9 @@ export function numberToPos(source: string, offset: number | Pos): Pos {
   }
 }
 
+const MAX_DISPLAY_LEN = 120
+const ELLIPSIS = '...'
+
 export function generateCodeFrame(
   source: string,
   start: number | Pos = 0,
@@ -511,6 +497,11 @@ export function generateCodeFrame(
     end !== undefined ? posToNumber(source, end) : start,
     source.length,
   )
+  const lastPosLine =
+    end !== undefined
+      ? numberToPos(source, end).line
+      : numberToPos(source, start).line + range
+  const lineNumberWidth = Math.max(3, String(lastPosLine).length + 1)
   const lines = source.split(splitRE)
   let count = 0
   const res: string[] = []
@@ -520,24 +511,51 @@ export function generateCodeFrame(
       for (let j = i - range; j <= i + range || end > count; j++) {
         if (j < 0 || j >= lines.length) continue
         const line = j + 1
-        res.push(
-          `${line}${' '.repeat(Math.max(3 - String(line).length, 0))}|  ${
-            lines[j]
-          }`,
-        )
         const lineLength = lines[j].length
+        const pad = Math.max(start - (count - lineLength), 0)
+        const underlineLength = Math.max(
+          1,
+          end > count ? lineLength - pad : end - start,
+        )
+
+        let displayLine = lines[j]
+        let underlinePad = pad
+        if (lineLength > MAX_DISPLAY_LEN) {
+          let startIdx = 0
+          if (j === i) {
+            if (underlineLength > MAX_DISPLAY_LEN) {
+              startIdx = pad
+            } else {
+              const center = pad + Math.floor(underlineLength / 2)
+              startIdx = Math.max(0, center - Math.floor(MAX_DISPLAY_LEN / 2))
+            }
+            underlinePad =
+              Math.max(0, pad - startIdx) + (startIdx > 0 ? ELLIPSIS.length : 0)
+          }
+          const prefix = startIdx > 0 ? ELLIPSIS : ''
+          const suffix = lineLength - startIdx > MAX_DISPLAY_LEN ? ELLIPSIS : ''
+          const sliceLen = MAX_DISPLAY_LEN - prefix.length - suffix.length
+          displayLine =
+            prefix + displayLine.slice(startIdx, startIdx + sliceLen) + suffix
+        }
+        res.push(
+          `${line}${' '.repeat(lineNumberWidth - String(line).length)}|  ${displayLine}`,
+        )
         if (j === i) {
           // push underline
-          const pad = Math.max(start - (count - lineLength), 0)
-          const length = Math.max(
-            1,
-            end > count ? lineLength - pad : end - start,
+          const underline = '^'.repeat(
+            Math.min(underlineLength, MAX_DISPLAY_LEN),
           )
-          res.push(`   |  ` + ' '.repeat(pad) + '^'.repeat(length))
+          res.push(
+            `${' '.repeat(lineNumberWidth)}|  ` +
+              ' '.repeat(underlinePad) +
+              underline,
+          )
         } else if (j > i) {
           if (end > count) {
             const length = Math.max(Math.min(end - count, lineLength), 1)
-            res.push(`   |  ` + '^'.repeat(length))
+            const underline = '^'.repeat(Math.min(length, MAX_DISPLAY_LEN))
+            res.push(`${' '.repeat(lineNumberWidth)}|  ` + underline)
           }
           count += lineLength + 1
         }
@@ -606,23 +624,6 @@ export function emptyDir(dir: string, skip?: string[]): void {
   }
 }
 
-export function copyDir(srcDir: string, destDir: string): void {
-  fs.mkdirSync(destDir, { recursive: true })
-  for (const file of fs.readdirSync(srcDir)) {
-    const srcFile = path.resolve(srcDir, file)
-    if (srcFile === destDir) {
-      continue
-    }
-    const destFile = path.resolve(destDir, file)
-    const stat = fs.statSync(srcFile)
-    if (stat.isDirectory()) {
-      copyDir(srcFile, destFile)
-    } else {
-      fs.copyFileSync(srcFile, destFile)
-    }
-  }
-}
-
 export const ERR_SYMLINK_IN_RECURSIVE_READDIR =
   'ERR_SYMLINK_IN_RECURSIVE_READDIR'
 export async function recursiveReaddir(dir: string): Promise<string[]> {
@@ -658,7 +659,9 @@ export async function recursiveReaddir(dir: string): Promise<string[]> {
 // `fs.realpathSync.native` resolves differently in Windows network drive,
 // causing file read errors. skip for now.
 // https://github.com/nodejs/node/issues/37737
-export let safeRealpathSync = isWindows
+export let safeRealpathSync:
+  | typeof windowsSafeRealPathSync
+  | typeof fs.realpathSync.native = isWindows
   ? windowsSafeRealPathSync
   : fs.realpathSync.native
 
@@ -961,9 +964,33 @@ export async function resolveHostname(
   return { host, name }
 }
 
+export function extractHostnamesFromCerts(
+  certs: HttpsServerOptions['cert'] | undefined,
+): string[] {
+  const certList = certs ? arraify(certs) : []
+  if (certList.length === 0) return []
+
+  const hostnames = certList
+    .map((cert) => {
+      try {
+        return new crypto.X509Certificate(cert)
+      } catch {
+        return null
+      }
+    })
+    .flatMap((cert) =>
+      cert?.subjectAltName
+        ? extractHostnamesFromSubjectAltName(cert.subjectAltName)
+        : [],
+    )
+
+  return unique(hostnames)
+}
+
 export function resolveServerUrls(
   server: Server,
   options: CommonServerOptions,
+  hostname: Hostname,
   httpsOptions: HttpsServerOptions | undefined,
   config: ResolvedConfig,
 ): ResolvedServerUrls {
@@ -976,7 +1003,6 @@ export function resolveServerUrls(
 
   const local: string[] = []
   const network: string[] = []
-  const hostname = config.server.hostname
   const protocol = options.https ? 'https' : 'http'
   const port = address.port
   const base =
@@ -1013,19 +1039,12 @@ export function resolveServerUrls(
       })
   }
 
-  const cert =
-    httpsOptions?.cert && !Array.isArray(httpsOptions.cert)
-      ? new crypto.X509Certificate(httpsOptions.cert)
-      : undefined
-  const hostnameFromCert = cert?.subjectAltName
-    ? extractHostnamesFromSubjectAltName(cert.subjectAltName)
-    : []
-
-  if (hostnameFromCert.length > 0) {
+  const hostnamesFromCert = extractHostnamesFromCerts(httpsOptions?.cert)
+  if (hostnamesFromCert.length > 0) {
     const existings = new Set([...local, ...network])
     local.push(
-      ...hostnameFromCert
-        .map((hostname) => `https://${hostname}:${port}${base}`)
+      ...hostnamesFromCert
+        .map((hostname) => `${protocol}://${hostname}:${port}${base}`)
         .filter((url) => !existings.has(url)),
     )
   }
@@ -1076,10 +1095,10 @@ export function arraify<T>(target: T | T[]): T[] {
 }
 
 // Taken from https://stackoverflow.com/a/36328890
-export const multilineCommentsRE = /\/\*[^*]*\*+(?:[^/*][^*]*\*+)*\//g
-export const singlelineCommentsRE = /\/\/.*/g
-export const requestQuerySplitRE = /\?(?!.*[/|}])/
-export const requestQueryMaybeEscapedSplitRE = /\\?\?(?!.*[/|}])/
+export const multilineCommentsRE: RegExp = /\/\*[^*]*\*+(?:[^/*][^*]*\*+)*\//g
+export const singlelineCommentsRE: RegExp = /\/\/.*/g
+export const requestQuerySplitRE: RegExp = /\?(?!.*[/|}])/
+export const requestQueryMaybeEscapedSplitRE: RegExp = /\\?\?(?!.*[/|}])/
 
 export const blankReplacer = (match: string): string => ' '.repeat(match.length)
 
@@ -1087,25 +1106,6 @@ export function getHash(text: Buffer | string, length = 8): string {
   const h = crypto.hash('sha256', text, 'hex').substring(0, length)
   if (length <= 64) return h
   return h.padEnd(length, '_')
-}
-
-export const requireResolveFromRootWithFallback = (
-  root: string,
-  id: string,
-): string => {
-  // check existence first, so if the package is not found,
-  // it won't be cached by nodejs, since there isn't a way to invalidate them:
-  // https://github.com/nodejs/node/issues/44663
-  const found = resolvePackageData(id, root) || resolvePackageData(id, _dirname)
-  if (!found) {
-    const error = new Error(`${JSON.stringify(id)} not found.`)
-    ;(error as any).code = 'MODULE_NOT_FOUND'
-    throw error
-  }
-
-  // actually resolve
-  // Search in the root directory first, and fallback to the default require paths.
-  return _require.resolve(id, { paths: [root, _dirname] })
 }
 
 export function emptyCssComments(raw: string): string {
@@ -1592,6 +1592,15 @@ export function partialEncodeURIPath(uri: string): string {
   const filePath = cleanUrl(uri)
   const postfix = filePath !== uri ? uri.slice(filePath.length) : ''
   return filePath.replaceAll('%', '%25') + postfix
+}
+
+export function decodeURIIfPossible(input: string): string | undefined {
+  try {
+    return decodeURI(input)
+  } catch {
+    // url is malformed, probably a interpolate syntax of template engines
+    return
+  }
 }
 
 type SigtermCallback = (signal?: 'SIGTERM', exitCode?: number) => Promise<void>

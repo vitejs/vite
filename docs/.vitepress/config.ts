@@ -204,6 +204,10 @@ export default defineConfig({
           { text: 'Blog', link: '/blog' },
           { text: 'Releases', link: '/releases' },
           {
+            text: 'The Documentary',
+            link: 'https://www.youtube.com/watch?v=bmWQqAKLgT4',
+          },
+          {
             items: [
               {
                 text: 'Bluesky',
@@ -482,7 +486,11 @@ export default defineConfig({
     languages: ['ts', 'js', 'json'],
     codeTransformers: [transformerTwoslash()],
     config(md) {
-      md.use(groupIconMdPlugin)
+      md.use(groupIconMdPlugin, {
+        titleBar: {
+          includeSnippet: true,
+        },
+      })
       md.use(markdownItImageSize, {
         publicDir: path.resolve(import.meta.dirname, '../public'),
       })

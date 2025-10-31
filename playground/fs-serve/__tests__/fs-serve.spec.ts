@@ -13,7 +13,14 @@ import {
 import type { Page } from 'playwright-chromium'
 import WebSocket from 'ws'
 import testJSON from '../safe.json'
-import { browser, isServe, page, viteServer, viteTestUrl } from '~utils'
+import {
+  browser,
+  isServe,
+  isWindows,
+  page,
+  viteServer,
+  viteTestUrl,
+} from '~utils'
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
 
@@ -73,6 +80,15 @@ describe.runIf(isServe)('main', () => {
       .toMatch('403 Restricted')
     await expect
       .poll(() => page.textContent('.unsafe-fetch-status'))
+      .toBe('403')
+  })
+
+  test('unsafe HTML fetch', async () => {
+    await expect
+      .poll(() => page.textContent('.unsafe-fetch-html'))
+      .toMatch('403 Restricted')
+    await expect
+      .poll(() => page.textContent('.unsafe-fetch-html-status'))
       .toBe('403')
   })
 
@@ -208,7 +224,7 @@ describe.runIf(isServe)('main', () => {
       .poll(() =>
         page.textContent('.unsafe-fs-fetch-relative-path-after-query-status'),
       )
-      .toBe('403')
+      .toBe('404')
   })
 
   test('nested entry', async () => {
@@ -529,11 +545,42 @@ describe.runIf(isServe)('invalid request', () => {
     expect(response).toContain('HTTP/1.1 403 Forbidden')
   })
 
+  test('should deny request to denied file when a request ends with \\', async () => {
+    const response = await sendRawRequest(viteTestUrl, '/src/.env\\')
+    expect(response).toContain(
+      isWindows ? 'HTTP/1.1 403 Forbidden' : 'HTTP/1.1 404 Not Found',
+    )
+  })
+
+  test('should deny request to denied file when a request ends with \\ with /@fs/', async () => {
+    const response = await sendRawRequest(
+      viteTestUrl,
+      path.posix.join('/@fs/', root, 'root/src/.env') + '\\',
+    )
+    expect(response).toContain(
+      isWindows ? 'HTTP/1.1 403 Forbidden' : 'HTTP/1.1 404 Not Found',
+    )
+  })
+
   test('should deny request with /@fs/ to denied file when a request has /.', async () => {
     const response = await sendRawRequest(
       viteTestUrl,
       path.posix.join('/@fs/', root, 'root/src/dummy.crt/') + '.',
     )
     expect(response).toContain('HTTP/1.1 403 Forbidden')
+  })
+
+  test('should deny request to HTML file outside root by default with relative path', async () => {
+    const response = await sendRawRequest(viteTestUrl, '/../unsafe.html')
+    expect(response).toContain('HTTP/1.1 403 Forbidden')
+  })
+})
+
+describe.runIf(!isServe)('preview HTML', () => {
+  test('unsafe HTML fetch', async () => {
+    await expect.poll(() => page.textContent('.unsafe-fetch-html')).toBe('')
+    await expect
+      .poll(() => page.textContent('.unsafe-fetch-html-status'))
+      .toBe('404')
   })
 })

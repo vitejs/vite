@@ -9,12 +9,18 @@ import type {
 } from 'rollup'
 import MagicString from 'magic-string'
 import colors from 'picocolors'
-import type { DefaultTreeAdapterMap, ParserError, Token } from 'parse5'
+import type {
+  DefaultTreeAdapterMap,
+  ErrorCodes,
+  ParserError,
+  Token,
+} from 'parse5'
 import { stripLiteral } from 'strip-literal'
 import escapeHtml from 'escape-html'
 import type { MinimalPluginContextWithoutEnvironment, Plugin } from '../plugin'
 import type { ViteDevServer } from '../server'
 import {
+  decodeURIIfPossible,
   encodeURIPath,
   generateCodeFrame,
   getHash,
@@ -34,6 +40,7 @@ import { resolveEnvPrefix } from '../env'
 import { cleanUrl } from '../../shared/utils'
 import { perEnvironmentState } from '../environment'
 import { getNodeAssetAttributes } from '../assetSource'
+import type { Logger } from '../logger'
 import {
   assetUrlRE,
   getPublicAssetFilename,
@@ -77,15 +84,21 @@ export const isHTMLRequest = (request: string): boolean =>
   htmlLangRE.test(request)
 
 // HTML Proxy Caches are stored by config -> filePath -> index
-export const htmlProxyMap = new WeakMap<
+export const htmlProxyMap: WeakMap<
   ResolvedConfig,
-  Map<string, Array<{ code: string; map?: SourceMapInput }>>
->()
+  Map<
+    string,
+    {
+      code: string
+      map?: SourceMapInput
+    }[]
+  >
+> = new WeakMap()
 
 // HTML Proxy Transform result are stored by config
 // `${hash(importer)}_${query.index}` -> transformed css code
 // PS: key like `hash(/vite/playground/assets/index.html)_1`)
-export const htmlProxyResult = new Map<string, string>()
+export const htmlProxyResult: Map<string, string> = new Map()
 
 export function htmlInlineProxyPlugin(config: ResolvedConfig): Plugin {
   // Should do this when `constructor` rather than when `buildStart`,
@@ -156,10 +169,10 @@ const noInlineLinkRels = new Set([
   'manifest',
 ])
 
-export const isAsyncScriptMap = new WeakMap<
+export const isAsyncScriptMap: WeakMap<
   ResolvedConfig,
   Map<string, boolean>
->()
+> = new WeakMap()
 
 export function nodeIsElement(
   node: DefaultTreeAdapterMap['node'],
@@ -184,21 +197,29 @@ function traverseNodes(
   }
 }
 
+type ParseWarnings = Partial<Record<ErrorCodes, string>>
+
 export async function traverseHtml(
   html: string,
   filePath: string,
+  warn: Logger['warn'],
   visitor: (node: DefaultTreeAdapterMap['node']) => void,
 ): Promise<void> {
   // lazy load compiler
   const { parse } = await import('parse5')
+  const warnings: ParseWarnings = {}
   const ast = parse(html, {
     scriptingEnabled: false, // parse inside <noscript>
     sourceCodeLocationInfo: true,
     onParseError: (e: ParserError) => {
-      handleParseError(e, html, filePath)
+      handleParseError(e, html, filePath, warnings)
     },
   })
   traverseNodes(ast, visitor)
+
+  for (const message of Object.values(warnings)) {
+    warn(colors.yellow(`\n${message}`))
+  }
 }
 
 export function getScriptInfo(node: DefaultTreeAdapterMap['element']): {
@@ -297,6 +318,7 @@ function handleParseError(
   parserError: ParserError,
   html: string,
   filePath: string,
+  warnings: ParseWarnings,
 ) {
   switch (parserError.code) {
     case 'missing-doctype':
@@ -318,11 +340,10 @@ function handleParseError(
       return
   }
   const parseError = formatParseError(parserError, filePath, html)
-  throw new Error(
+  warnings[parseError.code] ??=
     `Unable to parse HTML; ${parseError.message}\n` +
-      ` at ${parseError.loc.file}:${parseError.loc.line}:${parseError.loc.column}\n` +
-      `${parseError.frame}`,
-  )
+    ` at ${parseError.loc.file}:${parseError.loc.line}:${parseError.loc.column}\n` +
+    parseError.frame
 }
 
 /**
@@ -442,7 +463,7 @@ export function buildHtmlPlugin(config: ResolvedConfig): Plugin {
         }
 
         const setModuleSideEffectPromises: Promise<void>[] = []
-        await traverseHtml(html, id, (node) => {
+        await traverseHtml(html, id, config.logger.warn, (node) => {
           if (!nodeIsElement(node)) {
             return
           }
@@ -1067,6 +1088,9 @@ export function extractImportExpressionFromClassicScript(
 
 export interface HtmlTagDescriptor {
   tag: string
+  /**
+   * attribute values will be escaped automatically if needed
+   */
   attrs?: Record<string, string | boolean | undefined>
   children?: string | HtmlTagDescriptor[]
   /**
@@ -1238,7 +1262,7 @@ export function injectNonceAttributeTagHook(
 
     const s = new MagicString(html)
 
-    await traverseHtml(html, filename, (node) => {
+    await traverseHtml(html, filename, config.logger.warn, (node) => {
       if (!nodeIsElement(node)) {
         return
       }
@@ -1553,13 +1577,4 @@ function serializeAttrs(attrs: HtmlTagDescriptor['attrs']): string {
 
 function incrementIndent(indent: string = '') {
   return `${indent}${indent[0] === '\t' ? '\t' : '  '}`
-}
-
-function decodeURIIfPossible(input: string): string | undefined {
-  try {
-    return decodeURI(input)
-  } catch {
-    // url is malformed, probably a interpolate syntax of template engines
-    return
-  }
 }

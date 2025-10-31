@@ -29,6 +29,25 @@ if (!isBuild) {
     browserLogs.length = 0
   })
 
+  const fetchHotEvents = async (): Promise<{
+    connectCount: number
+    disconnectCount: number
+  }> => {
+    const res = await fetch(viteTestUrl + '/hot-events-counts')
+    return res.json()
+  }
+  test('hot events', async () => {
+    expect(await fetchHotEvents()).toStrictEqual({
+      connectCount: 1,
+      disconnectCount: 0,
+    })
+    await untilBrowserLogAfter(() => page.reload(), [/connected/])
+    expect(await fetchHotEvents()).toStrictEqual({
+      connectCount: 2,
+      disconnectCount: 1,
+    })
+  })
+
   test('self accept', async () => {
     const el = await page.$('.app')
     await untilBrowserLogAfter(
@@ -997,6 +1016,17 @@ if (!isBuild) {
       .toMatch('parent:child')
   })
 
+  test('deleting import from non-self-accepting module can trigger prune event', async () => {
+    await page.goto(viteTestUrl)
+    await expect.poll(() => page.textContent('.prune')).toMatch('prune-init')
+    editFile('prune/dep1.js', (code) =>
+      code.replace(`import './dep2.js'`, `// import './dep2.js'`),
+    )
+    await expect
+      .poll(() => page.textContent('.prune'))
+      .toMatch('prune-init|dep2-disposed|dep2-pruned')
+  })
+
   test('import.meta.hot?.accept', async () => {
     await page.goto(viteTestUrl)
 
@@ -1095,5 +1125,28 @@ if (!isBuild) {
       addFile(file, code)
       await loadPromise
     }, [/connected/, 'a.js'])
+  })
+
+  test('deduplicate server rendered link stylesheet', async () => {
+    await page.goto(viteTestUrl + '/css-link/index.html')
+    await expect.poll(() => getColor('.test-css-link')).toBe('orange')
+
+    // remove color
+    editFile('css-link/styles.css', (code) =>
+      code.replace('color: orange;', '/* removed */'),
+    )
+    await expect.poll(() => getColor('.test-css-link')).toBe('black')
+
+    // add color
+    editFile('css-link/styles.css', (code) =>
+      code.replace('/* removed */', 'color: blue;'),
+    )
+    await expect.poll(() => getColor('.test-css-link')).toBe('blue')
+
+    // // remove css import from js
+    editFile('css-link/main.js', (code) =>
+      code.replace(`import './styles.css'`, ``),
+    )
+    await expect.poll(() => getColor('.test-css-link')).toBe('black')
   })
 }
