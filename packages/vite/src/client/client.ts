@@ -12,7 +12,8 @@ import {
 } from '../shared/moduleRunnerTransport'
 import { createHMRHandler } from '../shared/hmrHandler'
 import { setupForwardConsoleHandler } from '../shared/forwardConsole'
-import { ErrorOverlay, cspNonce, overlayId } from './overlay'
+import type { RuntimeErrorsToast } from './overlay'
+import { ErrorOverlay, cspNonce, overlayId, runtimeErrorsToastId } from './overlay'
 // @ts-expect-error internal virtual module
 import '@vite/env'
 
@@ -52,6 +53,7 @@ const forwardConsole = __SERVER_FORWARD_CONSOLE__
 const runtimeErrors = __HMR_RUNTIME_ERRORS__
 const enableOverlay = __HMR_ENABLE_OVERLAY__
 
+const runtimeErrorList: Error[] = []
 const transport = normalizeModuleRunnerTransport(
   (() => {
     let wsTransport = createWebSocketModuleRunnerTransport({
@@ -126,14 +128,9 @@ if (typeof window !== 'undefined') {
 
   if (enableOverlay && runtimeErrors) {
     if (typeof runtimeErrors === 'function') {
-      window.addEventListener('error', runtimeErrors)
+      window.addEventListener?.('error', runtimeErrors)
     } else {
-      window.addEventListener('error', (err: ErrorEvent) => {
-        const { error, message } = err
-        const errorObject =
-          error instanceof Error ? error : new Error(error || message)
-        createErrorOverlay(errorObject)
-      })
+      window.addEventListener?.('error', handlerRuntimeError)
     }
   }
 }
@@ -355,12 +352,17 @@ async function handleMessage(payload: HotPayload) {
 
 const hasDocument = 'document' in globalThis
 
-function createErrorOverlay(err: ErrorPayload['err'] | Error) {
+function createErrorOverlay(
+  err: ErrorPayload['err'] | Error,
+  runtimeErrors: boolean = false,
+) {
   clearErrorOverlay()
   const { customElements } = globalThis
   if (customElements) {
     const ErrorOverlayConstructor = customElements.get(overlayId)!
-    document.body.appendChild(new ErrorOverlayConstructor(err))
+    document.body.appendChild(
+      new ErrorOverlayConstructor(err, true, runtimeErrors),
+    )
   }
 }
 
@@ -370,6 +372,56 @@ function clearErrorOverlay() {
 
 function hasErrorOverlay() {
   return document.querySelectorAll(overlayId).length
+}
+
+function createRuntimeToast(errs: Error[], toggleDetail: () => void) {
+  clearRuntimeToast()
+  const { customElements } = globalThis
+  if (customElements) {
+    const RuntimeErrorsToastConstructor =
+      customElements.get(runtimeErrorsToastId)!
+    document.body.appendChild(
+      new RuntimeErrorsToastConstructor(errs, toggleDetail),
+    )
+  }
+}
+
+function clearRuntimeToast() {
+  document
+    .querySelectorAll<RuntimeErrorsToast>(runtimeErrorsToastId)
+    .forEach((n) => n.close())
+}
+
+function hasRuntimeToast() {
+  return document.querySelectorAll(runtimeErrorsToastId).length
+}
+
+function updateRuntimeToast() {
+  const toast = document.querySelector<RuntimeErrorsToast>(runtimeErrorsToastId)
+  if (toast) {
+    if (runtimeErrorList.length === 0) {
+      toast.close()
+    } else {
+      toast.updateErrorList(runtimeErrorList)
+    }
+  }
+}
+
+function handlerRuntimeError(err: ErrorEvent) {
+  const { error, message } = err
+  const errorObject =
+    error instanceof Error ? error : new Error(error || message, { cause: err })
+  runtimeErrorList.push(errorObject)
+  if (hasRuntimeToast()) {
+    const toast =
+      document.querySelector<RuntimeErrorsToast>(runtimeErrorsToastId)!
+    toast.updateErrorList(runtimeErrorList)
+    return
+  }
+  createRuntimeToast(runtimeErrorList, () => {
+    createErrorOverlay(runtimeErrorList.shift()!, true)
+    updateRuntimeToast()
+  })
 }
 
 function waitForSuccessfulPing(socketUrl: string) {
