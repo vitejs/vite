@@ -926,7 +926,8 @@ export function buildHtmlPlugin(config: ResolvedConfig): Plugin {
             )
           } else {
             const { modulePreload } = this.environment.config.build
-            assetTags = [toScriptTag(chunk, toOutputAssetFilePath, isAsync)]
+            const scriptTag = toScriptTag(chunk, toOutputAssetFilePath, isAsync)
+            assetTags = []
             if (modulePreload !== false) {
               const resolveDependencies =
                 typeof modulePreload === 'object' &&
@@ -946,6 +947,7 @@ export function buildHtmlPlugin(config: ResolvedConfig): Plugin {
                 ),
               )
             }
+            assetTags.push(scriptTag)
           }
           assetTags.push(...getCssTagsForChunk(chunk, toOutputAssetFilePath))
 
