@@ -163,9 +163,53 @@ kbd {
   border-image: initial;
 }
 `
+const ToastTemplateStyle = `
+:host {
+  position: fixed;
+  right: 20px;
+  bottom: 20px;
+  z-index: 99999;
+  --monospace: 'SFMono-Regular', Consolas,
+  'Liberation Mono', Menlo, Courier, monospace;
+  --toast-red: #fc0606;
+  --toast-yellow: #e2aa53;
+  --toast-purple: #cfa4ff;
+  --toast-cyan: #2dd9da;
+  --toast-dim: #c9c9c9;
+
+  --window-background: #181818;
+  --window-color: #d8d8d8;
+}
+.runtime-toast {
+  padding: 10px 20px;
+  background: var(--toast-red);
+  color: #fff;
+  border-radius: 20px;
+  cursor: pointer;
+}
+.error-info {
+  font-family: var(--monospace);
+  font-size: 14px;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+}
+.close-icon {
+  margin-left: 10px;
+  display: inline-flex;
+  width: 20px;
+  height: 20px;
+  justify-content: center;
+  align-items: center;
+  border-radius: 50%;
+}
+.close-icon:hover {
+  background: rgba(255, 255, 255, 0.4);
+}
+`
 
 // Error Template
-const createTemplate = () =>
+const createTemplate = (runtimeErrors: boolean) =>
   h(
     'div',
     { class: 'backdrop', part: 'backdrop' },
@@ -197,7 +241,30 @@ const createTemplate = () =>
         '.',
       ),
     ),
-    h('style', {}, templateStyle),
+    h(
+      'style',
+      {},
+      runtimeErrors
+        ? templateStyle.replace(
+            'border-top: 8px solid var(--red);',
+            'border-top: 8px solid var(--yellow);',
+          )
+        : templateStyle,
+    ),
+  )
+
+// Runtime Errors Template
+export const createRuntimeToastTemplate = (): HTMLElement =>
+  h(
+    'div',
+    { class: 'runtime-toast', part: 'runtime-toast' },
+    h(
+      'div',
+      { class: 'error-info', part: 'error-info' },
+      h('span', { class: 'issue-text', part: 'issue-text' }),
+      h('span', { class: 'close-icon', part: 'close-icon' }, '✕'),
+    ),
+    h('style', {}, ToastTemplateStyle),
   )
 
 const fileRE = /(?:file:\/\/)?(?:[a-zA-Z]:\\|\/).*?:\d+:\d+/g
@@ -210,10 +277,10 @@ export class ErrorOverlay extends HTMLElement {
   root: ShadowRoot
   closeOnEsc: (e: KeyboardEvent) => void
 
-  constructor(err: ErrorPayload['err'], links = true) {
+  constructor(err: ErrorPayload['err'], links = true, runtimeError = false) {
     super()
     this.root = this.attachShadow({ mode: 'open' })
-    this.root.appendChild(createTemplate())
+    this.root.appendChild(createTemplate(runtimeError))
 
     codeframeRE.lastIndex = 0
     const hasFrame = err.frame && codeframeRE.test(err.frame)
@@ -292,7 +359,41 @@ export class ErrorOverlay extends HTMLElement {
 }
 
 export const overlayId = 'vite-error-overlay'
+
+export class RuntimeErrorsToast extends HTMLElement {
+  root: ShadowRoot
+
+  constructor(errs: Error[], toggleDetail: () => void) {
+    super()
+    this.root = this.attachShadow({ mode: 'open' })
+    this.root.appendChild(createRuntimeToastTemplate())
+    const toast = this.root.querySelector('.runtime-toast')!
+    toast.addEventListener('click', toggleDetail)
+
+    const issueText = this.root.querySelector('.issue-text')!
+    issueText.textContent = `${errs.length} Issue${errs.length > 1 ? 's' : ''}`
+
+    const closeIcon = this.root.querySelector('.close-icon')!
+    closeIcon.addEventListener('click', (e) => {
+      e.stopPropagation()
+      this.close()
+    })
+  }
+  updateErrorList(errs: Error[]): void {
+    const issueText = this.root.querySelector('.issue-text')!
+    issueText.textContent = `${errs.length} Issue${errs.length > 1 ? 's' : ''}`
+  }
+  close(): void {
+    this.parentNode?.removeChild(this)
+  }
+}
+
+export const runtimeErrorsToastId = 'vite-runtime-errors-toast'
+
 const { customElements } = globalThis // Ensure `customElements` is defined before the next line.
 if (customElements && !customElements.get(overlayId)) {
   customElements.define(overlayId, ErrorOverlay)
+}
+if (customElements && !customElements.get(runtimeErrorsToastId)) {
+  customElements.define(runtimeErrorsToastId, RuntimeErrorsToast)
 }
