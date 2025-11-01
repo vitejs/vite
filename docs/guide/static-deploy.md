@@ -242,9 +242,9 @@ You can also deploy to a [custom domain](http://surge.sh/help/adding-a-custom-do
 
 ## Azure Static Web Apps
 
-You can quickly deploy your Vite app with Microsoft Azure [Static Web Apps](https://aka.ms/staticwebapps) service. You need:
+You can quickly deploy your Vite app with Microsoft Azure [Static Web Apps](https://azure.microsoft.com/en-us/products/app-service/static/) service. You need:
 
-- An Azure account and a subscription key. You can create a [free Azure account here](https://azure.microsoft.com/free).
+- An Azure account and a subscription key. You can create a [free Azure account here](https://azure.microsoft.com/en-us/pricing/purchase-options/azure-account).
 - Your app code pushed to [GitHub](https://github.com).
 - The [SWA Extension](https://marketplace.visualstudio.com/items?itemName=ms-azuretools.vscode-azurestaticwebapps) in [Visual Studio Code](https://code.visualstudio.com).
 
@@ -296,7 +296,7 @@ Deploy your static site using [Flightcontrol](https://www.flightcontrol.dev/?ref
 
 ## Kinsta Static Site Hosting
 
-Deploy your static site using [Kinsta](https://kinsta.com/static-site-hosting/) by following these [instructions](https://kinsta.com/docs/react-vite-example/).
+Deploy your static site using [Kinsta](https://kinsta.com/static-site-hosting/) by following these [instructions](https://kinsta.com/docs/static-site-hosting/static-site-quick-start/react-static-site-examples/#react-with-vite).
 
 ## xmit Static Site Hosting
 
@@ -308,4 +308,4 @@ Deploy your static site using [xmit](https://xmit.co) by following this [guide](
 
 Zephyr follows a different approach than other cloud providers. It integrates directly with Vite build process, so every time you build or run the dev server for your application, it will be automatically deployed with Zephyr Cloud.
 
-Follow the steps in [the Vite deployment guide](https://docs.zephyr-cloud.io/recipes/react-vite) to get started.
+Follow the steps in [the Vite deployment guide](https://docs.zephyr-cloud.io/bundlers/vite) to get started.
