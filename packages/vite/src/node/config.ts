@@ -1120,6 +1120,11 @@ export async function resolveConfig(
 
   const isBuild = command === 'build'
 
+  // Plugins can specify different `base` value in config
+  // but user-specific value has higher priority
+  // Save this value for correct value of import.meta.env.BASE_URL
+  const originalConfigBase = config.base
+
   // run config hooks
   const userPlugins = [...prePlugins, ...normalPlugins, ...postPlugins]
   config = await runConfigHook(config, userPlugins, configEnv)
@@ -1382,7 +1387,12 @@ export async function resolveConfig(
 
   const builder = resolveBuilderOptions(config.builder)
 
-  const BASE_URL = resolvedBase
+  // Base value can be provided from internal/external Vitest plugins for module resolution.
+  // To overcome, we need to utilize the original `base` value that user specifies.
+  const BASE_URL =
+    resolvedBase === '/' && originalConfigBase
+      ? resolveBaseUrl(originalConfigBase, isBuild, logger)
+      : resolvedBase
 
   const resolvedConfigContext = new BasicMinimalPluginContext(
     {

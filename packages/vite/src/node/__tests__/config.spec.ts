@@ -449,6 +449,28 @@ describe('resolveConfig', () => {
 
     await resolveConfig({ root: './inc?ud#s*', customLogger: logger }, 'build')
   })
+
+  test('resolveConfig with user-configured base should be translated to import.meta.env.BASE_URL', async () => {
+    expect.assertions(2)
+
+    const baseOverriddenPlugin = (): PluginOption => ({
+      name: 'vite-plugin-base-overriding-plugin',
+      config() {
+        return { base: '/' }
+      },
+    })
+
+    for (const mode of ['build', 'serve']) {
+      const results = await resolveConfig(
+        {
+          base: '/some/base/url',
+          plugins: [baseOverriddenPlugin()],
+        },
+        mode as Parameters<typeof resolveConfig>[1],
+      )
+      expect(results.env['BASE_URL']).toEqual('/some/base/url')
+    }
+  })
 })
 
 test('config compat 1', async () => {
