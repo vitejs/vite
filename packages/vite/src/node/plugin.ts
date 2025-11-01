@@ -136,7 +136,7 @@ export interface Plugin<A = any> extends RollupPlugin<A> {
         isEntry: boolean
       },
     ) => Promise<ResolveIdResult> | ResolveIdResult,
-    { filter?: { id?: StringFilter<RegExp> | undefined } } | undefined
+    { filter?: { id?: StringFilter<RegExp> } }
   >
   load?: ObjectHook<
     (
@@ -146,7 +146,7 @@ export interface Plugin<A = any> extends RollupPlugin<A> {
         ssr?: boolean | undefined
       },
     ) => Promise<LoadResult> | LoadResult,
-    { filter?: { id?: StringFilter | undefined } | undefined }
+    { filter?: { id?: StringFilter } }
   >
   transform?: ObjectHook<
     (
@@ -157,14 +157,7 @@ export interface Plugin<A = any> extends RollupPlugin<A> {
         ssr?: boolean | undefined
       },
     ) => Promise<TransformResult> | TransformResult,
-    {
-      filter?:
-        | {
-            id?: StringFilter | undefined
-            code?: StringFilter | undefined
-          }
-        | undefined
-    }
+    { filter?: { id?: StringFilter; code?: StringFilter } }
   >
   /**
    * Opt-in this plugin into the shared plugins pipeline.
