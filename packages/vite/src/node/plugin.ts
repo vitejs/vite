@@ -128,11 +128,11 @@ export interface Plugin<A = any> extends RollupPlugin<A> {
       options: {
         attributes: Record<string, string>
         custom?: CustomPluginOptions
-        ssr?: boolean
+        ssr?: boolean | undefined
         /**
          * @internal
          */
-        scan?: boolean
+        scan?: boolean | undefined
         isEntry: boolean
       },
     ) => Promise<ResolveIdResult> | ResolveIdResult,
@@ -143,7 +143,7 @@ export interface Plugin<A = any> extends RollupPlugin<A> {
       this: PluginContext,
       id: string,
       options?: {
-        ssr?: boolean
+        ssr?: boolean | undefined
       },
     ) => Promise<LoadResult> | LoadResult,
     { filter?: { id?: StringFilter } }
@@ -154,7 +154,7 @@ export interface Plugin<A = any> extends RollupPlugin<A> {
       code: string,
       id: string,
       options?: {
-        ssr?: boolean
+        ssr?: boolean | undefined
       },
     ) => Promise<TransformResult> | TransformResult,
     { filter?: { id?: StringFilter; code?: StringFilter } }
