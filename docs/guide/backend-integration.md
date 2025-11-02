@@ -220,4 +220,8 @@ If you need a custom integration, you can follow the steps in this guide to conf
    }
    ```
 
+   **Note:** This function only processes JS chunks because only JS chunks have an `imports` field.
+   CSS files and other assets in the manifest do not have imports and will never be returned by this function.
+   CSS dependencies are accessed via the `css` field of JS chunks.
+
    :::
