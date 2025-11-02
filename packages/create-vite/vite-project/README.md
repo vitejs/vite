@@ -9,4 +9,8 @@ Currently, two official plugins are available:
 
 ## React Compiler
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation). Additionally, you may want to switch linting to ESLint to use [lint rules powered by the React Compiler](https://react.dev/reference/eslint-plugin-react-hooks).
+The React Compiler is enabled on this template. See [this documentation](https://react.dev/learn/react-compiler) for more information.
+
+Note: This will impact Vite dev & build performances.
+
+Additionally, you may want to switch linting to ESLint to use [lint rules powered by the React Compiler](https://react.dev/reference/eslint-plugin-react-hooks).

@@ -6,7 +6,7 @@
   "scripts": {
     "dev": "vite",
     "build": "tsc -b && vite build",
-    "lint": "eslint .",
+    "lint": "oxlint --max-warnings 0",
     "preview": "vite preview"
   },
   "dependencies": {
@@ -14,17 +14,12 @@
     "react-dom": "^19.2.0"
   },
   "devDependencies": {
-    "@eslint/js": "^9.38.0",
     "@types/node": "^24.9.1",
     "@types/react": "^19.2.2",
     "@types/react-dom": "^19.2.2",
     "@vitejs/plugin-react": "^5.1.0",
-    "eslint": "^9.38.0",
-    "eslint-plugin-react-hooks": "^5.2.0",
-    "eslint-plugin-react-refresh": "^0.4.24",
-    "globals": "^16.4.0",
     "typescript": "~5.9.3",
-    "typescript-eslint": "^8.46.2",
+    "oxlint": "^1.25.0",
     "vite": "^7.1.12"
   }
 }

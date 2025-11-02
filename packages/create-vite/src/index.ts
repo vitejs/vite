@@ -815,7 +815,11 @@ function setupReactCompiler(root: string, isTs: boolean) {
   )
   updateReactCompilerReadme(
     root,
-    'The React Compiler is enabled on this template. See [this documentation](https://react.dev/learn/react-compiler) for more information.\n\nNote: This will impact Vite dev & build performances.',
+    `The React Compiler is enabled on this template. See [this documentation](https://react.dev/learn/react-compiler) for more information.
+    
+Note: This will impact Vite dev & build performances.
+
+Additionally, you may want to switch linting to ESLint to use [lint rules powered by the React Compiler](https://react.dev/reference/eslint-plugin-react-hooks).`,
   )
 }
 
@@ -824,12 +828,15 @@ function updateReactCompilerReadme(root: string, newBody: string) {
     const h2Start = content.indexOf('## React Compiler')
     const bodyStart = content.indexOf('\n\n', h2Start)
     const compilerSectionEnd = content.indexOf('\n## ', bodyStart)
-    if (h2Start === -1 || bodyStart === -1 || compilerSectionEnd === -1) {
+    if (h2Start === -1 || bodyStart === -1) {
       console.warn('Could not update compiler section in README.md')
       return content
     }
     return content.replace(
-      content.slice(bodyStart + 2, compilerSectionEnd - 1),
+      content.slice(
+        bodyStart + 2,
+        compilerSectionEnd === -1 ? undefined : compilerSectionEnd - 1,
+      ),
       newBody,
     )
   })
