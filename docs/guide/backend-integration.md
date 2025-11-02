@@ -264,3 +264,11 @@ When a JavaScript chunk imports CSS, the CSS file paths appear in the chunk's `c
   }
 }
 ```
+
+### How should parsers handle these fields?
+
+When implementing a manifest parser:
+
+1. **For the `imports` field**: Only exists on JS chunks. Each import references another JS chunk's manifest key. Recursively process these to build the dependency tree.
+2. **For the `css` field**: Contains direct file paths (not manifest keys) to CSS files that should be loaded for this chunk. Do not attempt to look these up in the manifest or process them recursively—they are final file paths.
+3. **For CSS and asset entries**: These only have `file`, `src`, and optionally `isEntry`/`name`. They never have `imports`, `dynamicImports`, `css`, or `assets` fields.
