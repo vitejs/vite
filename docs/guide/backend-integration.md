@@ -162,6 +162,7 @@ If you need a custom integration, you can follow the steps in this guide to conf
    1. A `<link rel="stylesheet">` tag for each file in the entry point chunk's `css` list (if it exists)
    2. Recursively follow all chunks in the entry point's `imports` list and include a
       `<link rel="stylesheet">` tag for each CSS file of each imported chunk's `css` list (if it exists).
+      Note: Only JS chunks have an `imports` field. CSS files and assets in the manifest do not have imports.
    3. A tag for the `file` key of the entry point chunk. This can be `<script type="module">` for JavaScript, `<link rel="stylesheet">` for CSS.
    4. Optionally, `<link rel="modulepreload">` tag for the `file` of each imported JavaScript
       chunk, again recursively following the imports starting from the entry point chunk.
@@ -207,6 +208,7 @@ If you need a custom integration, you can follow the steps in this guide to conf
          }
          seen.add(file)
 
+         // Recursively get imports from the imported chunk
          chunks.push(...getImportedChunks(importee))
          chunks.push(importee)
        }
