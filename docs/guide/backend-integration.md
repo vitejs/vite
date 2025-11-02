@@ -243,3 +243,24 @@ For example, this manifest structure is **invalid**:
   }
 }
 ```
+
+### How are CSS dependencies represented?
+
+When a JavaScript chunk imports CSS, the CSS file paths appear in the chunk's `css` array, not in its `imports` array:
+
+```json
+{
+  "views/foo.js": {
+    "file": "assets/foo-BRBmoGS9.js",
+    "src": "views/foo.js",
+    "isEntry": true,
+    "imports": ["_shared-B7PI925R.js"], // ✅ Only JS chunks
+    "css": ["assets/foo-5UjPuW-k.css", "assets/shared-ChJ_j-JJ.css"] // ✅ CSS files
+  },
+  "_shared-B7PI925R.js": {
+    "file": "assets/shared-B7PI925R.js",
+    "name": "shared",
+    "css": ["assets/shared-ChJ_j-JJ.css"]
+  }
+}
+```
