@@ -225,3 +225,21 @@ If you need a custom integration, you can follow the steps in this guide to conf
    CSS dependencies are accessed via the `css` field of JS chunks.
 
    :::
+
+## Common Questions
+
+### Can CSS files have imports in the manifest?
+
+No. In the manifest, only JavaScript chunks (entries with `type === 'chunk'` in the Rollup bundle) can have `imports` or `dynamicImports` fields. CSS files are assets and only have `file`, `src`, and optionally `isEntry` and `name` fields.
+
+For example, this manifest structure is **invalid**:
+
+```json
+{
+  "_test-ABCdeFG9.css": {
+    "file": "assets/test-ABCdeFG9.css",
+    "imports": ["logo.svg"], // ❌ Invalid: CSS cannot have imports
+    "css": ["assets/test2-ABCdeFG0.css"] // ❌ Invalid: CSS cannot have nested CSS
+  }
+}
+```
