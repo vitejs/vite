@@ -1,145 +1,272 @@
----
-title: Configuring Vite
----
+// DUNDGOVI ZEV CLUB - React + Tailwind сайт
+// Хэрхэн ашиглах вэ:
+// 1️⃣ Tailwind болон react-router-dom суулгасан байх
+// 2️⃣ Энэхүү файлыг src/App.jsx болгож хуулна
+// 3️⃣ npm run dev командыг ажиллуулна
 
-# Configuring Vite
+import React from "react";
+import { BrowserRouter as Router, Routes, Route, Link } from "react-router-dom";
 
-When running `vite` from the command line, Vite will automatically try to resolve a config file named `vite.config.js` inside [project root](/guide/#index-html-and-project-root) (other JS and TS extensions are also supported).
-
-The most basic config file looks like this:
-
-```js [vite.config.js]
-export default {
-  // config options
+// --- Навигаци ---
+function Navbar() {
+  return (
+    <header className="bg-white shadow-sm">
+      <div className="max-w-6xl mx-auto px-4 sm:px-6">
+        <div className="flex justify-between items-center py-4">
+          <div className="flex items-center gap-3">
+            <div className="w-12 h-12 bg-blue-500 rounded flex items-center justify-center text-white font-bold">
+              ЗЭВ
+            </div>
+            <div>
+              <h1 className="text-xl font-semibold text-blue-700">
+                Дундговь аймгийн Зэв клуб
+              </h1>
+              <p className="text-sm text-gray-500">
+                Таеквондо — бэлтгэл, ур чадвар, нэгдэл
+              </p>
+            </div>
+          </div>
+          <nav className="hidden md:flex gap-4 items-center">
+            <NavLink to="/">Нүүр</NavLink>
+            <NavLink to="/about">Бидний тухай</NavLink>
+            <NavLink to="/players">Тамирчид</NavLink>
+            <NavLink to="/schedule">Хуваарь</NavLink>
+            <NavLink to="/attendance">Ирц</NavLink>
+            <NavLink to="/contact">Холбоо</NavLink>
+          </nav>
+        </div>
+      </div>
+    </header>
+  );
 }
-```
 
-Note Vite supports using ES modules syntax in the config file even if the project is not using native Node ESM, e.g. `"type": "module"` in `package.json`. In this case, the config file is auto pre-processed before load.
-
-You can also explicitly specify a config file to use with the `--config` CLI option (resolved relative to `cwd`):
-
-```bash
-vite --config my-config.js
-```
-
-::: tip CONFIG LOADING
-By default, Vite uses `esbuild` to bundle the config into a temporary file and load it. This may cause issues when importing TypeScript files in a monorepo. If you encounter any issues with this approach, you can specify `--configLoader runner` to use the [module runner](/guide/api-environment-runtimes.html#modulerunner) instead, which will not create a temporary config and will transform any files on the fly. Note that module runner doesn't support CJS in config files, but external CJS packages should work as usual.
-
-Alternatively, if you're using an environment that supports TypeScript (e.g. `node --experimental-strip-types`), or if you're only writing plain JavaScript, you can specify `--configLoader native` to use the environment's native runtime to load the config file. Note that updates to modules imported by the config file are not detected and hence would not auto-restart the Vite server.
-:::
-
-## Config Intellisense
-
-Since Vite ships with TypeScript typings, you can leverage your IDE's intellisense with jsdoc type hints:
-
-```js
-/** @type {import('vite').UserConfig} */
-export default {
-  // ...
+function NavLink({ to, children }) {
+  return (
+    <Link
+      to={to}
+      className="text-blue-600 hover:text-blue-800 px-3 py-2 rounded-md font-medium"
+    >
+      {children}
+    </Link>
+  );
 }
-```
 
-Alternatively, you can use the `defineConfig` helper which should provide intellisense without the need for jsdoc annotations:
-
-```js
-import { defineConfig } from 'vite'
-
-export default defineConfig({
-  // ...
-})
-```
-
-Vite also supports TypeScript config files. You can use `vite.config.ts` with the `defineConfig` helper function above, or with the `satisfies` operator:
-
-```ts
-import type { UserConfig } from 'vite'
-
-export default {
-  // ...
-} satisfies UserConfig
-```
-
-## Conditional Config
-
-If the config needs to conditionally determine options based on the command (`serve` or `build`), the [mode](/guide/env-and-mode#modes) being used, if it's an SSR build (`isSsrBuild`), or is previewing the build (`isPreview`), it can export a function instead:
-
-```js twoslash
-import { defineConfig } from 'vite'
-// ---cut---
-export default defineConfig(({ command, mode, isSsrBuild, isPreview }) => {
-  if (command === 'serve') {
-    return {
-      // dev specific config
-    }
-  } else {
-    // command === 'build'
-    return {
-      // build specific config
-    }
-  }
-})
-```
-
-It is important to note that in Vite's API the `command` value is `serve` during dev (in the cli [`vite`](/guide/cli#vite), `vite dev`, and `vite serve` are aliases), and `build` when building for production ([`vite build`](/guide/cli#vite-build)).
-
-`isSsrBuild` and `isPreview` are additional optional flags to differentiate the kind of `build` and `serve` commands respectively. Some tools that load the Vite config may not support these flags and will pass `undefined` instead. Hence, it's recommended to use explicit comparison against `true` and `false`.
-
-## Async Config
-
-If the config needs to call async functions, it can export an async function instead. And this async function can also be passed through `defineConfig` for improved intellisense support:
-
-```js twoslash
-import { defineConfig } from 'vite'
-// ---cut---
-export default defineConfig(async ({ command, mode }) => {
-  const data = await asyncFunction()
-  return {
-    // vite config
-  }
-})
-```
-
-## Using Environment Variables in Config
-
-Environment variables available while the config itself is being evaluated are only those that already exist in the current process environment (`process.env`). Vite deliberately defers loading any `.env*` files until _after_ the user config has been resolved because the set of files to load depends on config options like [`root`](/guide/#index-html-and-project-root) and [`envDir`](/config/shared-options.md#envdir), and also on the final `mode`.
-
-This means: variables defined in `.env`, `.env.local`, `.env.[mode]`, or `.env.[mode].local` are **not** automatically injected into `process.env` while your `vite.config.*` is running. They _are_ automatically loaded later and exposed to application code via `import.meta.env` (with the default `VITE_` prefix filter) exactly as documented in [Env Variables and Modes](/guide/env-and-mode.html). So if you only need to pass values from `.env*` files to the app, you don't need to call anything in the config.
-
-If, however, values from `.env*` files must influence the config itself (for example to set `server.port`, conditionally enable plugins, or compute `define` replacements), you can load them manually using the exported [`loadEnv`](/guide/api-javascript.html#loadenv) helper.
-
-```js twoslash
-import { defineConfig, loadEnv } from 'vite'
-
-export default defineConfig(({ mode }) => {
-  // Load env file based on `mode` in the current working directory.
-  // Set the third parameter to '' to load all env regardless of the
-  // `VITE_` prefix.
-  const env = loadEnv(mode, process.cwd(), '')
-  return {
-    define: {
-      // Provide an explicit app-level constant derived from an env var.
-      __APP_ENV__: JSON.stringify(env.APP_ENV),
-    },
-    // Example: use an env var to set the dev server port conditionally.
-    server: {
-      port: env.APP_PORT ? Number(env.APP_PORT) : 5173,
-    },
-  }
-})
-```
-
-## Debugging the Config File on VS Code
-
-With the default `--configLoader bundle` behavior, Vite writes the generated temporary configuration file to the `node_modules/.vite-temp` folder and a file not found error will occur when setting breakpoint debugging in the Vite config file. To fix the issue, add the following configuration to `.vscode/settings.json`:
-
-```json
-{
-  "debug.javascript.terminalOptions": {
-    "resolveSourceMapLocations": [
-      "${workspaceFolder}/**",
-      "!**/node_modules/**",
-      "**/node_modules/.vite-temp/**"
-    ]
-  }
+// --- Нүүр хуудас ---
+function Home() {
+  return (
+    <main>
+      <section className="bg-gradient-to-r from-blue-50 to-white text-center py-12">
+        <h2 className="text-3xl md:text-4xl font-extrabold text-blue-800">
+          Дундговь аймгийн Зэв клуб
+        </h2>
+        <p className="mt-4 text-gray-700 max-w-2xl mx-auto">
+          Таеквондог сонирхогчид болон тэмцээнд бэлдэхэд зориулсан сургалт.
+          Насанд хүрэгчид, хүүхдүүдэд тохирсон хөтөлбөр.
+        </p>
+        <div className="mt-6 flex justify-center gap-3">
+          <Link
+            to="/contact"
+            className="px-5 py-3 bg-blue-600 text-white rounded-md font-medium"
+          >
+            Бүртгүүлэх
+          </Link>
+          <Link
+            to="/schedule"
+            className="px-5 py-3 border border-blue-600 text-blue-600 rounded-md font-medium"
+          >
+            Хичээлийн хуваарь
+          </Link>
+        </div>
+      </section>
+    </main>
+  );
 }
-```
+
+// --- Бидний тухай ---
+function About() {
+  return (
+    <section className="max-w-4xl mx-auto px-4 py-12">
+      <h2 className="text-2xl font-bold text-blue-800">Бидний тухай</h2>
+      <p className="mt-4 text-gray-700">
+        Дундговь аймгийн Зэв клуб нь залууст спортын мэдлэг, өөртөө итгэх
+        итгэлийг нэмэгдүүлэх зорилготой. Хичээлийг нас, чадварт нийцүүлэн
+        явуулдаг ба аюулгүй, эерэг орчин бүрдүүлнэ.
+      </p>
+      <ul className="mt-4 space-y-2 text-gray-600">
+        <li>• Бэлтгэл: долоо хоногт 3 удаа</li>
+        <li>• Сургагч багш: улсын зэрэгтэй</li>
+        <li>• Байршил: Дундговь аймаг (зохих хаягийг нэмнэ үү)</li>
+      </ul>
+    </section>
+  );
+}
+
+// --- Тамирчид ---
+function Players() {
+  const players = [
+    { id: 1, name: "Н. Бат-Очир", age: 14, belt: "Шаварт" },
+    { id: 2, name: "Б. Энхтуяа", age: 17, belt: "Шар" },
+    { id: 3, name: "Д. Сэргэлэн", age: 20, belt: "Цагаан" },
+  ];
+
+  return (
+    <section className="max-w-6xl mx-auto px-4 py-12">
+      <h2 className="text-2xl font-bold text-blue-800">Тамирчид</h2>
+      <div className="mt-6 grid md:grid-cols-3 gap-4">
+        {players.map((p) => (
+          <div key={p.id} className="bg-white shadow rounded p-4">
+            <div className="h-36 bg-blue-50 rounded flex items-center justify-center text-blue-400">
+              Зураг
+            </div>
+            <h3 className="mt-3 font-semibold text-gray-800">{p.name}</h3>
+            <p className="text-sm text-gray-600">
+              Нас: {p.age} • Хамар: {p.belt}
+            </p>
+          </div>
+        ))}
+      </div>
+    </section>
+  );
+}
+
+// --- Хичээлийн хуваарь ---
+function Schedule() {
+  const schedule = [
+    { day: "Даваа", time: "18:00 - 19:30", level: "Хүүхдүүд" },
+    { day: "Мягмар", time: "18:00 - 20:00", level: "Залуучууд" },
+    { day: "Пүрэв", time: "18:00 - 19:30", level: "Анхан шат" },
+    { day: "Бямба", time: "10:00 - 12:00", level: "Томчууд" },
+  ];
+
+  return (
+    <section className="max-w-4xl mx-auto px-4 py-12">
+      <h2 className="text-2xl font-bold text-blue-800">Хичээлийн хуваарь</h2>
+      <div className="mt-6 bg-white rounded shadow overflow-hidden">
+        <table className="min-w-full divide-y">
+          <thead className="bg-blue-50">
+            <tr>
+              <th className="px-4 py-3 text-left text-sm font-medium text-blue-700">
+                Өдөр
+              </th>
+              <th className="px-4 py-3 text-left text-sm font-medium text-blue-700">
+                Цаг
+              </th>
+              <th className="px-4 py-3 text-left text-sm font-medium text-blue-700">
+                Түвшин
+              </th>
+            </tr>
+          </thead>
+          <tbody className="divide-y">
+            {schedule.map((s, i) => (
+              <tr key={i}>
+                <td className="px-4 py-3 text-gray-700">{s.day}</td>
+                <td className="px-4 py-3 text-gray-700">{s.time}</td>
+                <td className="px-4 py-3 text-gray-700">{s.level}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    </section>
+  );
+}
+
+// --- Ирц ---
+function Attendance() {
+  const [records] = React.useState([
+    { date: "2025-10-27", present: 12, total: 15 },
+    { date: "2025-10-29", present: 14, total: 16 },
+    { date: "2025-11-02", present: 10, total: 13 },
+  ]);
+
+  return (
+    <section className="max-w-4xl mx-auto px-4 py-12">
+      <h2 className="text-2xl font-bold text-blue-800">Ирц</h2>
+      <div className="mt-6 bg-white rounded shadow p-4">
+        <ul className="space-y-3">
+          {records.map((r, i) => (
+            <li key={i} className="flex justify-between">
+              <span className="text-gray-700">{r.date}</span>
+              <span className="font-medium text-blue-700">
+                {r.present}/{r.total} ирсэн
+              </span>
+            </li>
+          ))}
+        </ul>
+      </div>
+    </section>
+  );
+}
+
+// --- Холбоо барих ---
+function Contact() {
+  return (
+    <section className="max-w-3xl mx-auto px-4 py-12">
+      <h2 className="text-2xl font-bold text-blue-800">Холбоо барих</h2>
+      <div className="mt-6 bg-white rounded shadow p-6">
+        <form
+          className="space-y-4"
+          onSubmit={(e) => {
+            e.preventDefault();
+            alert("Мэдээлэл илгээгдлээ!");
+          }}
+        >
+          <div>
+            <label className="block text-sm text-gray-600">Нэр</label>
+            <input
+              className="w-full mt-1 px-3 py-2 border rounded"
+              placeholder="Таны нэр"
+            />
+          </div>
+          <div>
+            <label className="block text-sm text-gray-600">Утас</label>
+            <input
+              className="w-full mt-1 px-3 py-2 border rounded"
+              placeholder="Утасны дугаар"
+            />
+          </div>
+          <div>
+            <label className="block text-sm text-gray-600">Мессеж</label>
+            <textarea
+              className="w-full mt-1 px-3 py-2 border rounded"
+              placeholder="Хүсэлт, асуулт"
+            />
+          </div>
+          <button
+            type="submit"
+            className="px-4 py-2 bg-blue-600 text-white rounded-md"
+          >
+            Илгээх
+          </button>
+        </form>
+      </div>
+    </section>
+  );
+}
+
+// --- Footer ---
+function Footer() {
+  return (
+    <footer className="bg-blue-50 mt-8 py-6 text-center text-gray-600 text-sm">
+      © {new Date().getFullYear()} Дундговь аймгийн Зэв клуб
+    </footer>
+  );
+}
+
+// --- App ---
+export default function App() {
+  return (
+    <Router>
+      <Navbar />
+      <Routes>
+        <Route path="/" element={<Home />} />
+        <Route path="/about" element={<About />} />
+        <Route path="/players" element={<Players />} />
+        <Route path="/schedule" element={<Schedule />} />
+        <Route path="/attendance" element={<Attendance />} />
+        <Route path="/contact" element={<Contact />} />
+      </Routes>
+      <Footer />
+    </Router>
+  );
+}
