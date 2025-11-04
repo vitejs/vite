@@ -1,3 +1,8 @@
+## [7.2.0-beta.2](https://github.com/vitejs/rolldown-vite/compare/v7.2.0-beta.1...v7.2.0-beta.2) (2025-11-04)
+### Features
+
+* update rolldown ([#481](https://github.com/vitejs/rolldown-vite/issues/481)) ([f4cfdf4](https://github.com/vitejs/rolldown-vite/commit/f4cfdf490fa0843243875d7b6a7938461d225b50))
+
 ## [7.2.0-beta.1](https://github.com/vitejs/rolldown-vite/compare/v7.2.0-beta.0...v7.2.0-beta.1) (2025-11-04)
 ### Bug Fixes
 
