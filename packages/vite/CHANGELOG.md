@@ -1,3 +1,22 @@
+## [7.2.0-beta.1](https://github.com/vitejs/rolldown-vite/compare/v7.2.0-beta.0...v7.2.0-beta.1) (2025-11-04)
+### Bug Fixes
+
+* **css:** fallback to sass when sass-embedded platform binary is missing ([#21002](https://github.com/vitejs/rolldown-vite/issues/21002)) ([b1fd616](https://github.com/vitejs/rolldown-vite/commit/b1fd6161886caeb31ac646d6544116d37efe46d0))
+* increase stream reset rate limit for HTTP2 ([#21024](https://github.com/vitejs/rolldown-vite/issues/21024)) ([4f44f22](https://github.com/vitejs/rolldown-vite/commit/4f44f22f7f4595d74c76778bd522387138775055))
+* **module-runner:** make `getBuiltins` response JSON serializable ([#21029](https://github.com/vitejs/rolldown-vite/issues/21029)) ([ad5b3bf](https://github.com/vitejs/rolldown-vite/commit/ad5b3bf6f3ad7b24886718c5f5de32eee923ae11))
+* **optimizer:** externalize virtual modules for html like files ([#21001](https://github.com/vitejs/rolldown-vite/issues/21001)) ([e5af352](https://github.com/vitejs/rolldown-vite/commit/e5af352d8e1a9f187159137f836db5bedbd68a66))
+* **optimizer:** support `namespace: 'file'` filter in esbuild plugin compat ([#479](https://github.com/vitejs/rolldown-vite/issues/479)) ([cc36605](https://github.com/vitejs/rolldown-vite/commit/cc3660552e186ceeee9ccc0d2ef2875d1f5e0942))
+* set inferred moduleType for virtual modules ([#470](https://github.com/vitejs/rolldown-vite/issues/470)) ([744ba3e](https://github.com/vitejs/rolldown-vite/commit/744ba3e66392e01d6028b482f8289ce8c5106282))
+* trigger watchChange hook for all environments for native resolver ([#463](https://github.com/vitejs/rolldown-vite/issues/463)) ([4139f2b](https://github.com/vitejs/rolldown-vite/commit/4139f2b17bb0e7edfea66d20d156a3a89cb263a5))
+
+### Documentation
+
+* clarify the values are escaped automatically ([#21017](https://github.com/vitejs/rolldown-vite/issues/21017)) ([246df13](https://github.com/vitejs/rolldown-vite/commit/246df134dd58441e1e40dd361cf42419d05ea7a5))
+
+### Code Refactoring
+
+* use `fs.cpSync` ([#21019](https://github.com/vitejs/rolldown-vite/issues/21019)) ([a2df778](https://github.com/vitejs/rolldown-vite/commit/a2df77812814b927880bc4d68aafa8c8fa47daf0))
+
 ## [7.2.0-beta.0](https://github.com/vitejs/rolldown-vite/compare/v7.1.20...v7.2.0-beta.0) (2025-10-28)
 ### Features
 
