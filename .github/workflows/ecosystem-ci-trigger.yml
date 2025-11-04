@@ -12,7 +12,6 @@ jobs:
       issues: write # to add / delete reactions, post comments
       pull-requests: write # to read PR data, and to add labels
       actions: read # to check workflow status
-      contents: read # to clone the repo
     steps:
       - name: Check User Permissions
         uses: actions/github-script@v8
@@ -229,12 +228,6 @@ jobs:
               })
               console.log('Removed "rocket" reaction.')
             }
-
-      - name: Checkout
-        uses: actions/checkout@v5
-        with:
-          ref: refs/pull/${{ fromJSON(steps.get-pr-data.outputs.result).num }}/head
-          fetch-depth: 0
 
       - name: Trigger Downstream Workflow
         uses: actions/github-script@v8

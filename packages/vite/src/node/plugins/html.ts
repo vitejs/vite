@@ -1089,6 +1089,9 @@ export function extractImportExpressionFromClassicScript(
 
 export interface HtmlTagDescriptor {
   tag: string
+  /**
+   * attribute values will be escaped automatically if needed
+   */
   attrs?: Record<string, string | boolean | undefined>
   children?: string | HtmlTagDescriptor[]
   /**

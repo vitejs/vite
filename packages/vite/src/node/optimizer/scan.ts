@@ -582,6 +582,9 @@ function rolldownScanPlugin(
             isOptimizable(resolved, optimizeDepsOptions)
           )
             return
+          if (shouldExternalizeDep(resolved, id)) {
+            return externalUnlessEntry({ path: id })
+          }
           return resolved
         }
 

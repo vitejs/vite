@@ -134,7 +134,11 @@ export class DevEnvironment extends BaseEnvironment {
         return this.fetchModule(id, importer, options)
       },
       getBuiltins: async () => {
-        return this.config.resolve.builtins
+        return this.config.resolve.builtins.map((builtin) =>
+          typeof builtin === 'string'
+            ? { type: 'string', value: builtin }
+            : { type: 'RegExp', source: builtin.source, flags: builtin.flags },
+        )
       },
     })
 
