@@ -1094,10 +1094,23 @@ function resolveDepOptimizationOptions(
   consumer: 'client' | 'server' | undefined,
   logger: Logger,
 ): DepOptimizationOptions {
-  if (
-    optimizeDeps?.esbuildOptions &&
-    Object.keys(optimizeDeps.esbuildOptions).length > 0
-  ) {
+  const merged = mergeWithDefaults(
+    {
+      ...configDefaults.optimizeDeps,
+      disabled: undefined, // do not set here to avoid deprecation warning
+      noDiscovery: consumer !== 'client',
+      force: forceOptimizeDeps ?? configDefaults.optimizeDeps.force,
+    },
+    optimizeDeps ?? {},
+  )
+  setupRollupOptionCompat(merged)
+
+  const rollupOptions = merged.rollupOptions as Exclude<
+    DepOptimizationOptions['rollupOptions'],
+    undefined
+  >
+
+  if (merged.esbuildOptions && Object.keys(merged.esbuildOptions).length > 0) {
     logger.warn(
       colors.yellow(
         `You or a plugin you are using have set \`optimizeDeps.esbuildOptions\` ` +
@@ -1107,9 +1120,8 @@ function resolveDepOptimizationOptions(
       ),
     )
 
-    optimizeDeps.rollupOptions ??= {}
-    optimizeDeps.rollupOptions.resolve ??= {}
-    optimizeDeps.rollupOptions.output ??= {}
+    rollupOptions.resolve ??= {}
+    rollupOptions.output ??= {}
 
     const setResolveOptions = <
       T extends keyof Exclude<RolldownOptions['resolve'], undefined>,
@@ -1117,77 +1129,67 @@ function resolveDepOptimizationOptions(
       key: T,
       value: Exclude<RolldownOptions['resolve'], undefined>[T],
     ) => {
-      if (
-        value !== undefined &&
-        optimizeDeps.rollupOptions!.resolve![key] === undefined
-      ) {
-        optimizeDeps.rollupOptions!.resolve![key] = value
+      if (value !== undefined && rollupOptions.resolve![key] === undefined) {
+        rollupOptions.resolve![key] = value
       }
     }
 
     if (
-      optimizeDeps.esbuildOptions.minify !== undefined &&
-      optimizeDeps.rollupOptions.output.minify === undefined
+      merged.esbuildOptions.minify !== undefined &&
+      rollupOptions.output.minify === undefined
     ) {
-      optimizeDeps.rollupOptions.output.minify =
-        optimizeDeps.esbuildOptions.minify
+      rollupOptions.output.minify = merged.esbuildOptions.minify
     }
     if (
-      optimizeDeps.esbuildOptions.treeShaking !== undefined &&
-      optimizeDeps.rollupOptions.treeshake === undefined
+      merged.esbuildOptions.treeShaking !== undefined &&
+      rollupOptions.treeshake === undefined
     ) {
-      optimizeDeps.rollupOptions.treeshake =
-        optimizeDeps.esbuildOptions.treeShaking
+      rollupOptions.treeshake = merged.esbuildOptions.treeShaking
     }
     if (
-      optimizeDeps.esbuildOptions.define !== undefined &&
-      optimizeDeps.rollupOptions.define === undefined
+      merged.esbuildOptions.define !== undefined &&
+      rollupOptions.define === undefined
     ) {
-      optimizeDeps.rollupOptions.define = optimizeDeps.esbuildOptions.define
+      rollupOptions.define = merged.esbuildOptions.define
     }
-    if (optimizeDeps.esbuildOptions.loader !== undefined) {
-      const loader = optimizeDeps.esbuildOptions.loader
-      optimizeDeps.rollupOptions.moduleTypes ??= {}
+    if (merged.esbuildOptions.loader !== undefined) {
+      const loader = merged.esbuildOptions.loader
+      rollupOptions.moduleTypes ??= {}
       for (const [key, value] of Object.entries(loader)) {
         if (
-          optimizeDeps.rollupOptions.moduleTypes[key] === undefined &&
+          rollupOptions.moduleTypes[key] === undefined &&
           value !== 'copy' &&
           value !== 'css' &&
           value !== 'default' &&
           value !== 'file' &&
           value !== 'local-css'
         ) {
-          optimizeDeps.rollupOptions.moduleTypes[key] = value
+          rollupOptions.moduleTypes[key] = value
         }
       }
     }
     if (
-      optimizeDeps.esbuildOptions.preserveSymlinks !== undefined &&
-      optimizeDeps.rollupOptions.resolve.symlinks === undefined
+      merged.esbuildOptions.preserveSymlinks !== undefined &&
+      rollupOptions.resolve.symlinks === undefined
     ) {
-      optimizeDeps.rollupOptions.resolve.symlinks =
-        !optimizeDeps.esbuildOptions.preserveSymlinks
+      rollupOptions.resolve.symlinks = !merged.esbuildOptions.preserveSymlinks
     }
-    setResolveOptions(
-      'extensions',
-      optimizeDeps.esbuildOptions.resolveExtensions,
-    )
-    setResolveOptions('mainFields', optimizeDeps.esbuildOptions.mainFields)
-    setResolveOptions('conditionNames', optimizeDeps.esbuildOptions.conditions)
+    setResolveOptions('extensions', merged.esbuildOptions.resolveExtensions)
+    setResolveOptions('mainFields', merged.esbuildOptions.mainFields)
+    setResolveOptions('conditionNames', merged.esbuildOptions.conditions)
     if (
-      optimizeDeps.esbuildOptions.keepNames !== undefined &&
-      optimizeDeps.rollupOptions.keepNames === undefined &&
-      optimizeDeps.rollupOptions.output.keepNames === undefined
+      merged.esbuildOptions.keepNames !== undefined &&
+      rollupOptions.keepNames === undefined &&
+      rollupOptions.output.keepNames === undefined
     ) {
-      optimizeDeps.rollupOptions.output.keepNames =
-        optimizeDeps.esbuildOptions.keepNames
+      rollupOptions.output.keepNames = merged.esbuildOptions.keepNames
     }
 
     if (
-      optimizeDeps.esbuildOptions.platform !== undefined &&
-      optimizeDeps.rollupOptions.platform === undefined
+      merged.esbuildOptions.platform !== undefined &&
+      rollupOptions.platform === undefined
     ) {
-      optimizeDeps.rollupOptions.platform = optimizeDeps.esbuildOptions.platform
+      rollupOptions.platform = merged.esbuildOptions.platform
     }
 
     // NOTE: the following options cannot be converted
@@ -1227,26 +1229,15 @@ function resolveDepOptimizationOptions(
     // - absWorkingDir
   }
 
-  return mergeWithDefaults(
-    {
-      ...configDefaults.optimizeDeps,
-      disabled: undefined, // do not set here to avoid deprecation warning
-      noDiscovery: consumer !== 'client',
-      esbuildOptions: {
-        preserveSymlinks,
-      },
-      rollupOptions: {
-        resolve: {
-          symlinks: !preserveSymlinks,
-        },
-        output: {
-          topLevelVar: true,
-        },
-      },
-      force: forceOptimizeDeps ?? configDefaults.optimizeDeps.force,
-    },
-    optimizeDeps ?? {},
-  )
+  merged.esbuildOptions ??= {}
+  merged.esbuildOptions.preserveSymlinks ??= preserveSymlinks
+
+  rollupOptions.resolve ??= {}
+  rollupOptions.resolve.symlinks ??= !preserveSymlinks
+  rollupOptions.output ??= {}
+  rollupOptions.output.topLevelVar ??= true
+
+  return merged
 }
 
 async function setOptimizeDepsPluginNames(resolvedConfig: ResolvedConfig) {
