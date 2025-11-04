@@ -754,6 +754,19 @@ describe('resolveConfig', () => {
 
     await resolveConfig({ root: './inc?ud#s*', customLogger: logger }, 'build')
   })
+
+  test('syncs `build.rollupOptions` and `build.rolldownOptions`', async () => {
+    const resolved = await resolveConfig({}, 'build')
+    expect(resolved.build!.rollupOptions).toStrictEqual(
+      resolved.build!.rolldownOptions,
+    )
+    expect(resolved.worker!.rollupOptions).toStrictEqual(
+      resolved.worker!.rolldownOptions,
+    )
+    expect(resolved.optimizeDeps!.rollupOptions).toStrictEqual(
+      resolved.optimizeDeps!.rolldownOptions,
+    )
+  })
 })
 
 test('config compat 1', async () => {
