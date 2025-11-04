@@ -250,7 +250,11 @@ function createLoadHandler(
   const textDecoder = new TextDecoder()
   return async function (id) {
     const [idWithoutNamespace, idNamespace] = idToPathAndNamespace(id)
-    if (options.namespace !== undefined && options.namespace !== idNamespace) {
+    if (
+      options.namespace !== undefined &&
+      options.namespace !== 'file' &&
+      options.namespace !== idNamespace
+    ) {
       return
     }
     if (options.filter !== undefined && !options.filter.test(id)) {
