@@ -2,6 +2,7 @@ import path from 'node:path'
 import fsp from 'node:fs/promises'
 import { Buffer } from 'node:buffer'
 import * as mrmime from 'mrmime'
+import { assetPlugin as nativeAssetPlugin } from 'rolldown/experimental'
 import type {
   NormalizedOutputOptions,
   PluginContext,
@@ -15,7 +16,7 @@ import {
   createToImportMetaURLBasedRelativeRuntime,
   toOutputFilePathInJS,
 } from '../build'
-import type { Plugin } from '../plugin'
+import { type Plugin, perEnvironmentPlugin } from '../plugin'
 import type { ResolvedConfig } from '../config'
 import { checkPublicFile } from '../publicDir'
 import {
@@ -148,6 +149,22 @@ export function renderAssetUrlInJS(
  * Also supports loading plain strings with import text from './foo.txt?raw'
  */
 export function assetPlugin(config: ResolvedConfig): Plugin {
+  if (config.command === 'build' && config.nativePluginEnabledLevel >= 1) {
+    return perEnvironmentPlugin('native:asset', () => {
+      return nativeAssetPlugin({
+        isLib: !!config.build.lib,
+        isSsr: !!config.build.ssr,
+        isWorker: config.isWorker,
+        urlBase: config.base,
+        publicDir: config.publicDir,
+        decodedBase: config.decodedBase,
+        isSkipAssets: !config.build.emitAssets,
+        assetInlineLimit: config.build.assetsInlineLimit,
+        assetsInclude: config.rawAssetsInclude,
+      })
+    })
+  }
+
   registerCustomMime()
 
   return {

@@ -17,7 +17,12 @@ import type {
 } from 'parse5'
 import { stripLiteral } from 'strip-literal'
 import escapeHtml from 'escape-html'
-import type { MinimalPluginContextWithoutEnvironment, Plugin } from '../plugin'
+import { viteHtmlPlugin } from 'rolldown/experimental'
+import {
+  type MinimalPluginContextWithoutEnvironment,
+  type Plugin,
+  perEnvironmentPlugin,
+} from '../plugin'
 import type { ViteDevServer } from '../server'
 import {
   decodeURIIfPossible,
@@ -365,6 +370,21 @@ export function buildHtmlPlugin(config: ResolvedConfig): Plugin {
 
   // Same reason with `htmlInlineProxyPlugin`
   isAsyncScriptMap.set(config, new Map())
+
+  if (config.command === 'build' && config.nativePluginEnabledLevel >= 1) {
+    return perEnvironmentPlugin('native:vite-html', (env) => {
+      return viteHtmlPlugin({
+        isLib: !!config.build.lib,
+        isSsr: !!config.build.ssr,
+        urlBase: config.base,
+        publicDir: config.publicDir,
+        decodedBase: config.decodedBase,
+        modulePreload: config.build.modulePreload,
+        cssCodeSplit: env.config.build.cssCodeSplit,
+        assetInlineLimit: config.build.assetsInlineLimit,
+      })
+    })
+  }
 
   return {
     name: 'vite:build-html',

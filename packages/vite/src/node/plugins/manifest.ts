@@ -1,10 +1,9 @@
 import path from 'node:path'
 import type { OutputAsset, OutputChunk, RenderedChunk } from 'rolldown'
-import { manifestPlugin as nativeManifestPlugin } from 'rolldown/experimental'
 import type { Plugin } from '../plugin'
 import { normalizePath, sortObjectKeys } from '../utils'
 import { perEnvironmentState } from '../environment'
-import { type Environment, type ResolvedConfig, perEnvironmentPlugin } from '..'
+import { type ResolvedConfig } from '..'
 import { cssEntriesMap } from './asset'
 
 const endsWithJSRE = /\.[cm]?js$/
@@ -24,7 +23,7 @@ export interface ManifestChunk {
   dynamicImports?: string[]
 }
 
-export function manifestPlugin(config: ResolvedConfig): Plugin {
+export function manifestPlugin(_config: ResolvedConfig): Plugin {
   const getState = perEnvironmentState(() => {
     return {
       manifest: {} as Manifest,
@@ -35,106 +34,104 @@ export function manifestPlugin(config: ResolvedConfig): Plugin {
       },
     }
   })
-  if (config.build.manifest && config.nativePluginEnabledLevel >= 1) {
-    return perEnvironmentPlugin('native:manifest', (environment) => {
-      if (!environment.config.build.manifest) return false
+  // if (config.build.manifest && config.nativePluginEnabledLevel >= 1) {
+  //   return perEnvironmentPlugin('native:manifest', (environment) => {
+  //     if (!environment.config.build.manifest) return false
 
-      const root = environment.config.root
-      const outPath =
-        environment.config.build.manifest === true
-          ? '.vite/manifest.json'
-          : environment.config.build.manifest
+  //     const root = environment.config.root
+  //     const outPath =
+  //       environment.config.build.manifest === true
+  //         ? '.vite/manifest.json'
+  //         : environment.config.build.manifest
 
-      const isLegacySet = new Set<string>()
-      const envs: Record<string, Environment> = {}
-      function getChunkName(chunk: OutputChunk) {
-        return (
-          getChunkOriginalFileName(chunk, root, false) ??
-          `_${path.basename(chunk.fileName)}`
-        )
-      }
+  //     const isLegacySet = new Set<string>()
+  //     const envs: Record<string, Environment> = {}
+  //     function getChunkName(chunk: OutputChunk) {
+  //       return (
+  //         getChunkOriginalFileName(chunk, root, false) ??
+  //         `_${path.basename(chunk.fileName)}`
+  //       )
+  //     }
 
-      return [
-        {
-          name: 'native:manifest-envs',
-          buildStart() {
-            envs[environment.name] = this.environment
-          },
-          ...(config.isOutputOptionsForLegacyChunks
-            ? {
-                generateBundle(opts) {
-                  const isLegacy =
-                    environment.config.isOutputOptionsForLegacyChunks?.(opts) ??
-                    false
-                  if (isLegacy) {
-                    isLegacySet.add(environment.name)
-                  } else {
-                    isLegacySet.delete(environment.name)
-                  }
-                },
-              }
-            : {}),
-        },
-        nativeManifestPlugin({
-          root,
-          outPath,
-          isLegacy: config.isOutputOptionsForLegacyChunks
-            ? () => isLegacySet.has(environment.name)
-            : undefined,
-          cssEntries() {
-            return Object.fromEntries(
-              cssEntriesMap.get(envs[environment.name])!.entries(),
-            )
-          },
-        }),
-        {
-          name: 'native:manifest-compatible',
-          generateBundle(_, bundle) {
-            const asset = bundle[outPath]
-            if (asset.type === 'asset') {
-              let manifest: Manifest | undefined
-              for (const chunk of Object.values(bundle)) {
-                if (chunk.type !== 'chunk') continue
-                const importedCss = chunk.viteMetadata?.importedCss
-                const importedAssets = chunk.viteMetadata?.importedAssets
-                if (!importedCss?.size && !importedAssets?.size) continue
-                manifest ??= JSON.parse(asset.source.toString()) as Manifest
-                const name = getChunkName(chunk)
-                const item = manifest[name]
-                if (!item) continue
-                if (importedCss?.size) {
-                  item.css = [...importedCss]
-                }
-                if (importedAssets?.size) {
-                  item.assets = [...importedAssets]
-                }
-              }
-              const output =
-                this.environment.config.build.rolldownOptions.output
-              const outputLength = Array.isArray(output) ? output.length : 1
-              if (manifest && outputLength === 1) {
-                asset.source = JSON.stringify(manifest, undefined, 2)
-                return
-              }
+  //     return [
+  //       {
+  //         name: 'native:manifest-envs',
+  //         buildStart() {
+  //           envs[environment.name] = this.environment
+  //         },
+  //         ...(config.isOutputOptionsForLegacyChunks
+  //           ? {
+  //               generateBundle(opts) {
+  //                 const isLegacy =
+  //                   environment.config.isOutputOptionsForLegacyChunks?.(opts) ??
+  //                   false
+  //                 if (isLegacy) {
+  //                   isLegacySet.add(environment.name)
+  //                 } else {
+  //                   isLegacySet.delete(environment.name)
+  //                 }
+  //               },
+  //             }
+  //           : {}),
+  //       },
+  //       nativeManifestPlugin({
+  //         root,
+  //         outPath,
+  //         isLegacy: config.isOutputOptionsForLegacyChunks
+  //           ? () => isLegacySet.has(environment.name)
+  //           : undefined,
+  //         cssEntries() {
+  //           return cssEntriesMap.get(envs[environment.name])!
+  //         },
+  //       }),
+  //       {
+  //         name: 'native:manifest-compatible',
+  //         generateBundle(_, bundle) {
+  //           const asset = bundle[outPath]
+  //           if (asset.type === 'asset') {
+  //             let manifest: Manifest | undefined
+  //             for (const chunk of Object.values(bundle)) {
+  //               if (chunk.type !== 'chunk') continue
+  //               const importedCss = chunk.viteMetadata?.importedCss
+  //               const importedAssets = chunk.viteMetadata?.importedAssets
+  //               if (!importedCss?.size && !importedAssets?.size) continue
+  //               manifest ??= JSON.parse(asset.source.toString()) as Manifest
+  //               const name = getChunkName(chunk)
+  //               const item = manifest[name]
+  //               if (!item) continue
+  //               if (importedCss?.size) {
+  //                 item.css = [...importedCss]
+  //               }
+  //               if (importedAssets?.size) {
+  //                 item.assets = [...importedAssets]
+  //               }
+  //             }
+  //             const output =
+  //               this.environment.config.build.rolldownOptions.output
+  //             const outputLength = Array.isArray(output) ? output.length : 1
+  //             if (manifest && outputLength === 1) {
+  //               asset.source = JSON.stringify(manifest, undefined, 2)
+  //               return
+  //             }
 
-              const state = getState(this)
-              state.outputCount++
-              state.manifest = Object.assign(
-                state.manifest,
-                manifest ?? JSON.parse(asset.source.toString()),
-              )
-              if (state.outputCount >= outputLength) {
-                asset.source = JSON.stringify(state.manifest, undefined, 2)
-                state.reset()
-              } else {
-                delete bundle[outPath]
-              }
-            }
-          },
-        },
-      ]
-    })
-  }
+  //             const state = getState(this)
+  //             state.outputCount++
+  //             state.manifest = Object.assign(
+  //               state.manifest,
+  //               manifest ?? JSON.parse(asset.source.toString()),
+  //             )
+  //             if (state.outputCount >= outputLength) {
+  //               asset.source = JSON.stringify(state.manifest, undefined, 2)
+  //               state.reset()
+  //             } else {
+  //               delete bundle[outPath]
+  //             }
+  //           }
+  //         },
+  //       },
+  //     ]
+  //   })
+  // }
   return {
     name: 'vite:manifest',
 
