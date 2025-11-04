@@ -116,7 +116,8 @@ export function createWebSocketServer(
   config: ResolvedConfig,
   httpsOptions?: HttpsServerOptions,
 ): WebSocketServer {
-  if (config.server.ws === false) {
+  // Don't create WebSocket server if ws or hmr are explicitly disabled
+  if (config.server.ws === false || config.server.hmr === false) {
     return {
       [isWebSocketServer]: true,
       get clients() {

@@ -289,12 +289,31 @@ export const virtualModulePrefix = 'virtual-module:'
 // of browsers we support in dev all support this header.
 const knownJsSrcRE =
   /\.(?:[jt]sx?|m[jt]s|vue|marko|svelte|astro|imba|mdx)(?:$|\?)/
+
+/**
+ * Check if a URL path has a real file extension (not from package name).
+ * Package names like '@my-org/ng.my-lib' should not be treated as having extensions.
+ */
+function hasFileExtension(url: string): boolean {
+  const ext = path.extname(url)
+  if (!ext) return false
+
+  // If there's a slash after the extension, it's part of a package/folder name, not a file
+  const lastSlashIndex = url.lastIndexOf('/')
+  const lastDotIndex = url.lastIndexOf('.')
+
+  // Extension is only real if the dot comes after the last slash
+  return lastDotIndex > lastSlashIndex
+}
+
 export const isJSRequest = (url: string): boolean => {
   url = cleanUrl(url)
   if (knownJsSrcRE.test(url)) {
     return true
   }
-  if (!path.extname(url) && url[url.length - 1] !== '/') {
+  // Treat URLs without file extensions as potential JS requests
+  // This handles bare imports like '@my-org/package' or '@my-org/ng.my-lib'
+  if (!hasFileExtension(url) && url[url.length - 1] !== '/') {
     return true
   }
   return false
