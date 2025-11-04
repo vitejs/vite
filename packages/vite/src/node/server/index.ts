@@ -107,6 +107,7 @@ const usedConfigs = new WeakSet<ResolvedConfig>()
 export interface ServerOptions extends CommonServerOptions {
   /**
    * Configure HMR-specific options (port, host, path & protocol)
+   * Set to `false` to disable HMR and WebSocket server
    */
   hmr?: HmrOptions | boolean
   /**

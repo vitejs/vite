@@ -15,7 +15,11 @@ import type { ErrorPayload, HotPayload } from '#types/hmrPayload'
 import type { InferCustomEventPayload } from '#types/customEvent'
 import type { ResolvedConfig } from '..'
 import { isObject } from '../utils'
-import type { NormalizedHotChannel, NormalizedHotChannelClient } from './hmr'
+import type {
+  HmrOptions,
+  NormalizedHotChannel,
+  NormalizedHotChannelClient,
+} from './hmr'
 import { normalizeHotChannel } from './hmr'
 import type { HttpServer } from '.'
 
@@ -368,6 +372,11 @@ export function createWebSocketServer(
   // connected client.
   let bufferedError: ErrorPayload | null = null
 
+  // Determine if HMR is enabled (true unless explicitly set to false)
+  // TypeScript doesn't infer that boolean includes false, so we use type assertion
+  const enableHmr =
+    (config.server.hmr as boolean | HmrOptions | undefined) !== false
+
   const normalizedHotChannel = normalizeHotChannel(
     {
       send(payload) {
@@ -426,7 +435,8 @@ export function createWebSocketServer(
         })
       },
     },
-    config.server.hmr !== false,
+    // Enable HMR unless explicitly set to false
+    enableHmr,
     // Don't normalize client as we already handles the send, and to keep `.socket`
     false,
   )
