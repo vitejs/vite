@@ -186,6 +186,9 @@ export interface BuildEnvironmentOptions {
   /**
    * Will be merged with internal rollup options.
    * https://rollupjs.org/configuration-options/
+   *
+   * Note: `preserveEntrySignatures` at the output level is not supported.
+   * Use `rollupOptions.preserveEntrySignatures` (input-level) instead.
    */
   rollupOptions?: RollupOptions
   /**
@@ -596,18 +599,45 @@ function resolveRollupOptions(environment: Environment) {
     injectEnvironmentToHooks(environment, p),
   )
 
+  // Determine the appropriate preserveEntrySignatures strategy
+  // Based on build mode and Rolldown beta.46+ defaults
+  const defaultPreserveEntrySignatures = ssr
+    ? 'allow-extension' // SSR needs flexibility for entry extensions
+    : libOptions
+      ? 'strict' // Libraries must preserve all exports
+      : 'exports-only' // Standard apps: balance tree-shaking with exports (Rolldown beta.46 default)
+
+  const userRollupOptions = options.rollupOptions
+
+  // Validate user config: preserveEntrySignatures must be at input level (Rolldown beta.14+)
+  if (userRollupOptions.output) {
+    const outputs = Array.isArray(userRollupOptions.output)
+      ? userRollupOptions.output
+      : [userRollupOptions.output]
+    for (const output of outputs) {
+      if ('preserveEntrySignatures' in output) {
+        logger.error(
+          colors.red(
+            `[vite] "build.rollupOptions.output.preserveEntrySignatures" is not supported.\n` +
+              `Use "build.rollupOptions.preserveEntrySignatures" instead (input-level option since Rolldown beta.14).`,
+          ),
+        )
+        throw new Error('Invalid Rollup configuration')
+      }
+    }
+  }
+
   const rollupOptions: RollupOptions = {
-    preserveEntrySignatures: ssr
-      ? 'allow-extension'
-      : libOptions
-        ? 'strict'
-        : false,
     cache: options.watch ? undefined : false,
-    ...options.rollupOptions,
-    output: options.rollupOptions.output,
+    ...userRollupOptions,
+    // Apply default after user options, but only if user didn't specify
+    preserveEntrySignatures:
+      userRollupOptions.preserveEntrySignatures ??
+      defaultPreserveEntrySignatures,
+    output: userRollupOptions.output,
     input,
     plugins,
-    external: options.rollupOptions.external,
+    external: userRollupOptions.external,
     onLog(level, log) {
       onRollupLog(level, log, environment)
     },
