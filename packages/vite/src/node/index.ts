@@ -3,7 +3,13 @@ import type * as Rollup from '#types/internal/rollupTypeCompat'
 
 export type { Rollup, Rolldown }
 export { parseAst, parseAstAsync } from 'rolldown/parseAst'
-export { esmExternalRequirePlugin } from 'rolldown/experimental'
+export {
+  esmExternalRequirePlugin,
+  minify,
+  type MinifyOptions,
+  type MinifyResult,
+} from 'rolldown/experimental'
+
 export {
   defineConfig,
   loadConfigFromFile,
