@@ -65,14 +65,13 @@ Now the `preview` command will launch the server at `http://localhost:8080`.
 
 2. **Enable GitHub Pages**
 
-   In your repository, go to **Settings → Pages**.
-   Under **Build and deployment**, open the **Source** dropdown, and select **GitHub Actions**.
+   In your repository, go to **Settings → Pages**. Under **Build and deployment**, open the **Source** dropdown, and select **GitHub Actions**.
 
    GitHub will now deploy your site using a GitHub Actions [workflow](https://docs.github.com/en/actions/concepts/workflows-and-actions/workflows), which is necessary since Vite requires a build step for deployment.
 
 3. **Create a Workflow**
 
-   Open a new file in your repository at `.github/workflows/deploy.yml`. You can also click on **“create your own”**, which will generate a starter workflow file for you.
+   Create a new file in your repository at `.github/workflows/deploy.yml`. You can also click on **“create your own”** from the previous step, which will generate a starter workflow file for you.
 
    Here’s a sample workflow that installs dependencies with npm, builds the site, and deploys it whenever you push changes to the `main` branch:
 
