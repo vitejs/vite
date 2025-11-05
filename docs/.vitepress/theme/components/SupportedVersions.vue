@@ -40,13 +40,13 @@ const checkedResult = computed(() => {
       parsedVersion.minor >= compared.minor
     )
   }
-  const satisifiesOneSupportedVersion =
+  const satisfiesOneSupportedVersion =
     parsedVersion.major >= parsedViteVersion.major || // Treat future major versions as supported
     supportInfo.regularPatches.some(satisfies) ||
     supportInfo.importantFixes.some(satisfies) ||
     supportInfo.securityPatches.some(satisfies)
 
-  return satisifiesOneSupportedVersion
+  return satisfiesOneSupportedVersion
     ? supportedVersionMessage
     : notSupportedVersionMessage
 })
