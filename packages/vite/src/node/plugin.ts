@@ -131,11 +131,11 @@ export interface Plugin<A = any> extends RolldownPlugin<A> {
       options: {
         kind?: ImportKind
         custom?: CustomPluginOptions
-        ssr?: boolean
+        ssr?: boolean | undefined
         /**
          * @internal
          */
-        scan?: boolean
+        scan?: boolean | undefined
         isEntry: boolean
       },
     ) => Promise<ResolveIdResult> | ResolveIdResult,
@@ -146,7 +146,7 @@ export interface Plugin<A = any> extends RolldownPlugin<A> {
       this: PluginContext,
       id: string,
       options?: {
-        ssr?: boolean
+        ssr?: boolean | undefined
       },
     ) => Promise<LoadResult> | LoadResult,
     { filter?: { id?: StringFilter } }
@@ -158,7 +158,7 @@ export interface Plugin<A = any> extends RolldownPlugin<A> {
       id: string,
       options?: {
         moduleType: ModuleType
-        ssr?: boolean
+        ssr?: boolean | undefined
       },
     ) => Promise<TransformResult> | TransformResult,
     {
