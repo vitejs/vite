@@ -10,7 +10,11 @@ import {
 import llmstxt from 'vitepress-plugin-llms'
 import type { PluginOption } from 'vite'
 import { markdownItImageSize } from 'markdown-it-image-size'
+import packageJson from '../../packages/vite/package.json' with { type: 'json' }
 import { buildEnd } from './buildEnd.config'
+
+const viteVersion = packageJson.version
+const viteMajorVersion = +viteVersion.split('.')[0]
 
 const ogDescription = 'Next Generation Frontend Tooling'
 const ogImage = 'https://vite.dev/og-image.jpg'
@@ -42,42 +46,31 @@ const additionalTitle = ((): string => {
   }
 })()
 const versionLinks = ((): DefaultTheme.NavItemWithLink[] => {
-  const oldVersions: DefaultTheme.NavItemWithLink[] = [
-    {
-      text: 'Vite 6 Docs',
-      link: 'https://v6.vite.dev',
-    },
-    {
-      text: 'Vite 5 Docs',
-      link: 'https://v5.vite.dev',
-    },
-    {
-      text: 'Vite 4 Docs',
-      link: 'https://v4.vite.dev',
-    },
-    {
-      text: 'Vite 3 Docs',
-      link: 'https://v3.vite.dev',
-    },
-    {
-      text: 'Vite 2 Docs',
-      link: 'https://v2.vite.dev',
-    },
-  ]
+  const links: DefaultTheme.NavItemWithLink[] = []
 
-  switch (deployType) {
-    case 'main':
-    case 'local':
-      return [
-        {
-          text: 'Vite 7 Docs (release)',
-          link: 'https://vite.dev',
-        },
-        ...oldVersions,
-      ]
-    case 'release':
-      return oldVersions
+  if (deployType !== 'main') {
+    links.push({
+      text: 'Unreleased Docs',
+      link: 'https://main.vite.dev',
+    })
   }
+
+  if (deployType === 'main' || deployType === 'local') {
+    links.push({
+      text: `Vite ${viteMajorVersion} Docs (release)`,
+      link: 'https://vite.dev',
+    })
+  }
+
+  // Create version links from v2 onwards
+  for (let i = viteMajorVersion - 1; i >= 2; i--) {
+    links.push({
+      text: `Vite ${i} Docs`,
+      link: `https://v${i}.vite.dev`,
+    })
+  }
+
+  return links
 })()
 
 function inlineScript(file: string): HeadConfig {
@@ -237,21 +230,25 @@ export default defineConfig({
                 text: 'DEV Community',
                 link: 'https://dev.to/t/vite',
               },
-              {
-                text: 'Changelog',
-                link: 'https://github.com/vitejs/vite/blob/main/packages/vite/CHANGELOG.md',
-              },
-              {
-                text: 'Contributing',
-                link: 'https://github.com/vitejs/vite/blob/main/CONTRIBUTING.md',
-              },
             ],
           },
         ],
       },
       {
-        text: 'Version',
-        items: versionLinks,
+        text: `v${viteVersion}`,
+        items: [
+          {
+            text: 'Changelog',
+            link: 'https://github.com/vitejs/vite/blob/main/packages/vite/CHANGELOG.md',
+          },
+          {
+            text: 'Contributing',
+            link: 'https://github.com/vitejs/vite/blob/main/CONTRIBUTING.md',
+          },
+          {
+            items: versionLinks,
+          },
+        ],
       },
     ],
 
@@ -330,7 +327,7 @@ export default defineConfig({
               link: '/guide/rolldown',
             },
             {
-              text: 'Migration from v6',
+              text: `Migration from v${viteMajorVersion - 1}`,
               link: '/guide/migration',
             },
             {
