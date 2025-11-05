@@ -22,6 +22,5 @@ test('runtime style precedence matches import order', async () => {
   // lib.css sets .box { color: green }, base.css sets .box { color: red }
   // If lib.css is loaded before index.css, final color should be red
   const color = await page.$eval('#app', (el) => getComputedStyle(el).color)
-  // smoke check page loaded
   expect(color).toBe('rgb(255, 0, 0)')
 })
