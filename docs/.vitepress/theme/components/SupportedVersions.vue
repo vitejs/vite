@@ -3,6 +3,7 @@ import { ref, computed } from 'vue'
 
 declare const __VITE_VERSION__: string
 
+// Constants
 const supportedVersionMessage = {
   color: 'var(--vp-c-brand-1)',
   text: 'supported',
@@ -19,33 +20,28 @@ const previousMajorLatestMinors: Record<string, string> = {
   '6': '6.4',
 }
 
-const parsedViteVersion = parseVersion(__VITE_VERSION__)
-if (!parsedViteVersion) {
-  throw new Error(`Invalid Vite version: ${__VITE_VERSION__}`)
-}
+// Current latest Vite version and support info
+const parsedViteVersion = parseVersion(__VITE_VERSION__)!
 const supportInfo = computeSupportInfo(parsedViteVersion)
 
+// Check supported version input
 const checkedVersion = ref(`${Math.max(parsedViteVersion.major - 3, 2)}.0.0`)
 const checkedResult = computed(() => {
-  const v = parseVersion(checkedVersion.value)
-  if (!v) return notSupportedVersionMessage
+  const version = checkedVersion.value
+  if (!isValidViteVersion(version)) return notSupportedVersionMessage
+
+  const parsedVersion = parseVersion(checkedVersion.value)
+  if (!parsedVersion) return notSupportedVersionMessage
 
   const satisfies = (targetVersion: string) => {
-    const compared = parseVersion(targetVersion)
-    if (!compared) {
-      throw new Error(
-        `Unexpected invalid version from computeSupportInfo: ${targetVersion}`,
-      )
-    }
+    const compared = parseVersion(targetVersion)!
     return (
-      v.major > compared.major ||
-      (v.major === compared.major && v.minor > compared.minor) ||
-      (v.major === compared.major &&
-        v.minor === compared.minor &&
-        v.patch >= compared.patch)
+      parsedVersion.major === compared.major &&
+      parsedVersion.minor >= compared.minor
     )
   }
   const satisifiesOneSupportedVersion =
+    parsedVersion.major >= parsedViteVersion.major || // Treat future major versions as supported
     supportInfo.regularPatches.some(satisfies) ||
     supportInfo.importantFixes.some(satisfies) ||
     supportInfo.securityPatches.some(satisfies)
