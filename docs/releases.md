@@ -1,3 +1,7 @@
+<script setup>
+import SupportedVersions from './.vitepress/theme/components/SupportedVersions.vue';
+</script>
+
 # Releases
 
 Vite releases follow [Semantic Versioning](https://semver.org/). You can see the latest stable version of Vite in the [Vite npm package page](https://www.npmjs.com/package/vite).
@@ -12,19 +16,20 @@ Vite does not have a fixed release cycle.
 - **Minor** releases always contain new features and are released as needed. Minor releases always have a beta pre-release phase (usually every two months).
 - **Major** releases generally align with [Node.js EOL schedule](https://endoflife.date/nodejs), and will be announced ahead of time. These releases will go through long-term discussions with the ecosystem, and have alpha and beta pre-release phases (usually every year).
 
-The Vite version ranges that are supported by the Vite team are automatically determined by:
+## Supported Versions
+
+In summary, the current supported Vite versions are:
+
+<SupportedVersions />
+
+<br>
+
+The supported version ranges are are automatically determined by:
 
 - **Current Minor** gets regular fixes.
 - **Previous Major** (only for its latest minor) and **Previous Minor** receives important fixes and security patches.
 - **Second-to-last Major** (only for its latest minor) and **Second-to-last Minor** receives security patches.
 - All versions before these are no longer supported.
-
-As an example, if the Vite latest is at 5.3.10:
-
-- Regular patches are released for `vite@5.3`.
-- Important fixes and security patches are backported to `vite@4` and `vite@5.2`.
-- Security patches are also backported to `vite@3`, and `vite@5.1`.
-- `vite@2` and `vite@5.0` are no longer supported. Users should upgrade to receive updates.
 
 We recommend updating Vite regularly. Check out the [Migration Guides](https://vite.dev/guide/migration.html) when you update to each Major. The Vite team works closely with the main projects in the ecosystem to ensure the quality of new versions. We test new Vite versions before releasing them through the [vite-ecosystem-ci project](https://github.com/vitejs/vite-ecosystem-ci). Most projects using Vite should be able to quickly offer support or migrate to new versions as soon as they are released.
 
