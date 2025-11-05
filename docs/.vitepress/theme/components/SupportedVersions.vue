@@ -86,7 +86,7 @@ function computeSupportInfo(
 }
 
 function versionsToText(versions: string[]) {
-  versions = versions.map((v) => (/^\d/.test(v) ? `<code>vite@${v}</code>` : v))
+  versions = versions.map((v) => `<code>vite@${v}</code>`)
   if (versions.length === 0) return ''
   if (versions.length === 1) return versions[0]
   return (
