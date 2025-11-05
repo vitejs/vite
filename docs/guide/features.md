@@ -26,6 +26,28 @@ Vite provides an [HMR API](./api-hmr) over native ESM. Frameworks with HMR capab
 
 Note you don't need to manually set these up - when you [create an app via `create-vite`](./), the selected templates would have these pre-configured for you already.
 
+### Disabling HMR
+
+You can disable HMR by setting `server.hmr: false` or `server.ws: false` in your Vite config. When HMR is disabled:
+
+- **WebSocket server is not started** - No WebSocket connection is established between the browser and the dev server
+- **No hot module updates** - Changes to your source files will not trigger automatic updates in the browser
+- **Manual page reload required** - You must manually refresh the browser to see changes
+- **Error overlay disabled** - The error overlay will not be displayed when compilation errors occur
+- **Dev server still functions** - The development server continues to serve files, handle requests, and transform modules on demand
+
+This configuration can be useful in scenarios where:
+
+- You're running Vite in an environment where WebSocket connections are restricted
+- You want to reduce resource usage during development
+- You're debugging issues related to HMR behavior
+
+::: tip
+When HMR is disabled, the development experience is similar to using a traditional static file server with manual browser refreshes. For the full Vite development experience, keep HMR enabled (the default behavior).
+:::
+
+See the [server.hmr configuration](/config/server-options#server-hmr) for more details on customizing HMR behavior.
+
 ## TypeScript
 
 Vite supports importing `.ts` files out of the box.

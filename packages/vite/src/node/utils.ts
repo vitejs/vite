@@ -293,16 +293,31 @@ const knownJsSrcRE =
 /**
  * Check if a URL path has a real file extension (not from package name).
  * Package names like '@my-org/ng.my-lib' should not be treated as having extensions.
+ *
+ * Edge cases handled:
+ * - Hidden files (e.g., `.env`, `/.config`) are NOT treated as having extensions
+ * - Windows paths with backslashes are normalized to forward slashes
+ * - Paths like `C:` or `D:` (Windows drive letters) are handled correctly
  */
 function hasFileExtension(url: string): boolean {
   const ext = path.extname(url)
   if (!ext) return false
 
-  // If there's a slash after the extension, it's part of a package/folder name, not a file
-  const lastSlashIndex = url.lastIndexOf('/')
-  const lastDotIndex = url.lastIndexOf('.')
+  // Normalize path separators to forward slashes for consistent handling across platforms.
+  // This ensures Windows paths (C:\foo\bar.txt) work the same as Unix paths (/foo/bar.txt).
+  const normalizedUrl = url.replace(/\\/g, '/')
 
-  // Extension is only real if the dot comes after the last slash
+  const lastSlashIndex = normalizedUrl.lastIndexOf('/')
+  const lastDotIndex = normalizedUrl.lastIndexOf('.')
+
+  // Handle hidden files: if the dot is at the start of the last segment (e.g., `.env`, `/.config`),
+  // it's not a file extension but the beginning of a hidden file name.
+  if (lastDotIndex === lastSlashIndex + 1) {
+    return false
+  }
+
+  // Extension is only real if the dot comes after the last slash.
+  // This distinguishes file extensions from dots in directory/package names.
   return lastDotIndex > lastSlashIndex
 }
 

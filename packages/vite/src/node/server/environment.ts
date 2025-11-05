@@ -21,7 +21,12 @@ import type { ViteDevServer } from '../server'
 import { EnvironmentModuleGraph } from './moduleGraph'
 import type { EnvironmentModuleNode } from './moduleGraph'
 import type { HotChannel, NormalizedHotChannel } from './hmr'
-import { getShortName, normalizeHotChannel, updateModules } from './hmr'
+import {
+  getShortName,
+  isHmrEnabled,
+  normalizeHotChannel,
+  updateModules,
+} from './hmr'
 import type {
   TransformOptionsInternal,
   TransformResult,
@@ -211,7 +216,7 @@ export class DevEnvironment extends BaseEnvironment {
   }
 
   async reloadModule(module: EnvironmentModuleNode): Promise<void> {
-    if (this.config.server.hmr !== false && module.file) {
+    if (isHmrEnabled(this.config.server.hmr) && module.file) {
       updateModules(this, module.file, [module], monotonicDateNow())
     }
   }

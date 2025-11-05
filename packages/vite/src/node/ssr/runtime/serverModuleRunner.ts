@@ -11,6 +11,7 @@ import type {
   HotChannelClient,
   NormalizedServerHotChannel,
 } from '../../server/hmr'
+import { isHmrEnabled } from '../../server/hmr'
 import type { ModuleRunnerTransport } from '../../../shared/moduleRunnerTransport'
 
 /**
@@ -39,7 +40,7 @@ function createHMROptions(
   environment: DevEnvironment,
   options: ServerModuleRunnerOptions,
 ) {
-  if (environment.config.server.hmr === false || options.hmr === false) {
+  if (!isHmrEnabled(environment.config.server.hmr) || options.hmr === false) {
     return false
   }
   if (!('api' in environment.hot)) return false
