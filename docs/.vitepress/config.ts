@@ -529,6 +529,9 @@ In addition, Vite is highly extensible via its [Plugin API](https://vite.dev/gui
         'gsap/dist/MotionPathPlugin',
       ],
     },
+    define: {
+      __VITE_VERSION__: JSON.stringify(viteVersion),
+    },
   },
   buildEnd,
 })
