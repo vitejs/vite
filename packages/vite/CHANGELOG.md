@@ -1,3 +1,12 @@
+## [7.2.0](https://github.com/vitejs/rolldown-vite/compare/v7.2.0-beta.3...v7.2.0) (2025-11-05)
+### Bug Fixes
+
+* **types:** add undefined to optional properties for exactOptionalProperties type compatibility ([#21040](https://github.com/vitejs/rolldown-vite/issues/21040)) ([2833c55](https://github.com/vitejs/rolldown-vite/commit/2833c5576a87be2db450c195ccf64dfc8925a15b))
+
+### Miscellaneous Chores
+
+* **deps:** update rolldown-related dependencies ([#21047](https://github.com/vitejs/rolldown-vite/issues/21047)) ([e3a6a83](https://github.com/vitejs/rolldown-vite/commit/e3a6a83406943bc59a9916cae3f25ab33c2b5802))
+
 ## [7.2.0-beta.3](https://github.com/vitejs/rolldown-vite/compare/v7.2.0-beta.2...v7.2.0-beta.3) (2025-11-05)
 ### Features
 
