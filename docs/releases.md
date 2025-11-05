@@ -1,5 +1,5 @@
 <script setup>
-import ReleaseCalculator from './.vitepress/theme/components/ReleaseCalculator.vue';
+import SupportedVersions from './.vitepress/theme/components/SupportedVersions.vue';
 </script>
 
 # Releases
@@ -16,18 +16,20 @@ Vite does not have a fixed release cycle.
 - **Minor** releases always contain new features and are released as needed. Minor releases always have a beta pre-release phase (usually every two months).
 - **Major** releases generally align with [Node.js EOL schedule](https://endoflife.date/nodejs), and will be announced ahead of time. These releases will go through long-term discussions with the ecosystem, and have alpha and beta pre-release phases (usually every year).
 
-The Vite version ranges that are supported by the Vite team are automatically determined by:
+## Supported Versions
+
+In summary, the current supported versions are:
+
+<SupportedVersions />
+
+<br>
+
+The supported version ranges are are automatically determined by:
 
 - **Current Minor** gets regular fixes.
 - **Previous Major** (only for its latest minor) and **Previous Minor** receives important fixes and security patches.
 - **Second-to-last Major** (only for its latest minor) and **Second-to-last Minor** receives security patches.
 - All versions before these are no longer supported.
-
-::: tip Interactive Example
-
-<ReleaseCalculator />
-
-:::
 
 We recommend updating Vite regularly. Check out the [Migration Guides](https://vite.dev/guide/migration.html) when you update to each Major. The Vite team works closely with the main projects in the ecosystem to ensure the quality of new versions. We test new Vite versions before releasing them through the [vite-ecosystem-ci project](https://github.com/vitejs/vite-ecosystem-ci). Most projects using Vite should be able to quickly offer support or migrate to new versions as soon as they are released.
 

@@ -3,6 +3,14 @@ import { ref, computed } from 'vue'
 
 declare const __VITE_VERSION__: string
 
+const supportedVersionMessage = {
+  color: 'var(--vp-c-brand-1)',
+  text: 'supported',
+}
+const notSupportedVersionMessage = {
+  color: 'var(--vp-c-danger-1)',
+  text: 'not supported',
+}
 const previousMajorLatestMinors: Record<string, string> = {
   '2': '2.9',
   '3': '3.2',
@@ -11,12 +19,44 @@ const previousMajorLatestMinors: Record<string, string> = {
   '6': '6.4',
 }
 
-const viteVersion = ref(__VITE_VERSION__)
+const parsedViteVersion = parseVersion(__VITE_VERSION__)
+if (!parsedViteVersion) {
+  throw new Error(`Invalid Vite version: ${__VITE_VERSION__}`)
+}
+const supportInfo = computeSupportInfo(parsedViteVersion)
 
-const parsedVersion = computed(() => {
-  if (!isValidViteVersion(viteVersion.value)) return null
+const checkedVersion = ref(`${Math.max(parsedViteVersion.major - 3, 2)}.0.0`)
+const checkedResult = computed(() => {
+  const v = parseVersion(checkedVersion.value)
+  if (!v) return notSupportedVersionMessage
 
-  let [major, minor, patch] = viteVersion.value.split('.').map((v) => {
+  const satisfies = (targetVersion: string) => {
+    const compared = parseVersion(targetVersion)
+    if (!compared) {
+      throw new Error(
+        `Unexpected invalid version from computeSupportInfo: ${targetVersion}`,
+      )
+    }
+    return (
+      v.major > compared.major ||
+      (v.major === compared.major && v.minor > compared.minor) ||
+      (v.major === compared.major &&
+        v.minor === compared.minor &&
+        v.patch >= compared.patch)
+    )
+  }
+  const satisifiesOneSupportedVersion =
+    supportInfo.regularPatches.some(satisfies) ||
+    supportInfo.importantFixes.some(satisfies) ||
+    supportInfo.securityPatches.some(satisfies)
+
+  return satisifiesOneSupportedVersion
+    ? supportedVersionMessage
+    : notSupportedVersionMessage
+})
+
+function parseVersion(version: string) {
+  let [major, minor, patch] = version.split('.').map((v) => {
     const num = /^\d+$/.exec(v)?.[0]
     return num ? parseInt(num) : null
   })
@@ -25,12 +65,12 @@ const parsedVersion = computed(() => {
   patch ??= 0
 
   return { major, minor, patch }
-})
+}
 
-const supportInfo = computed(() => {
-  if (!parsedVersion.value) return null
-
-  const { major, minor } = parsedVersion.value
+function computeSupportInfo(
+  version: NonNullable<ReturnType<typeof parseVersion>>,
+) {
+  const { major, minor } = version
   const f = (versions: string[]) => {
     return versions
       .map((v) => previousMajorLatestMinors[v] ?? v)
@@ -48,7 +88,7 @@ const supportInfo = computed(() => {
     securityPatches: f([`${major - 2}`, `${major}.${minor - 2}`]),
     unsupported: f([`${major - 3}`, `${major}.${minor - 3}`]),
   }
-})
+}
 
 function versionsToText(versions: string[]) {
   versions = versions.map((v) => (/^\d/.test(v) ? `<code>vite@${v}</code>` : v))
@@ -65,29 +105,11 @@ function isValidViteVersion(version: string) {
   if (version.startsWith('0.') || version.startsWith('1.')) return false
   return true
 }
-
-function invalidReason(version: string) {
-  let str = `"${version}" is not a valid version.`
-  if (!isValidViteVersion(version)) {
-    str += ' Vite version should be 2.x or higher.'
-  }
-  return str
-}
 </script>
 
 <template>
   <div>
-    <p class="version-text">
-      <label for="version-input">If the latest Vite version is</label>
-      <input
-        id="version-input"
-        type="text"
-        v-model="viteVersion"
-        :placeholder="viteVersion"
-      />
-    </p>
-
-    <ul v-if="supportInfo" class="support-info">
+    <ul>
       <li v-if="supportInfo.regularPatches.length">
         Regular patches are released for
         <span v-html="versionsToText(supportInfo.regularPatches)"></span>.
@@ -108,38 +130,38 @@ function invalidReason(version: string) {
         >. Users should upgrade to receive updates.
       </li>
     </ul>
-    <p v-else class="invalid">{{ invalidReason(viteVersion) }}</p>
+    <p>
+      If you're using Vite
+      <input
+        class="checked-input"
+        type="text"
+        v-model="checkedVersion"
+        placeholder="0.0.0"
+      />, it is
+      <strong :style="{ color: checkedResult.color }">{{
+        checkedResult.text
+      }}</strong
+      >.
+    </p>
   </div>
 </template>
 
 <style scoped>
-.version-text {
-  margin-bottom: -16px;
-}
-
-#version-input {
-  padding: 2px 8px;
-  margin: 2px 0 2px 6px;
-  font-size: inherit;
-  border: 1px solid var(--vp-c-divider);
-  border-radius: 4px;
-  font-family: var(--vp-font-family-mono);
-  background: var(--vp-c-bg-soft);
+.checked-input {
+  display: inline-block;
+  padding: 0px 5px;
+  width: 100px;
   color: var(--vp-c-text-1);
+  background: var(--vp-c-bg-soft);
+  font-size: var(--vp-code-font-size);
+  font-family: var(--vp-font-family-mono);
+  border: 1px solid var(--vp-c-divider);
+  border-radius: 5px;
   transition: border-color 0.1s;
 }
 
-#version-input:focus,
-#version-input:hover {
+.checked-input:focus,
+.checked-input:hover {
   border-color: var(--vp-c-brand);
-}
-
-.invalid {
-  color: var(--vp-c-danger-1);
-}
-
-.support-info {
-  margin-top: 4px;
-  margin-bottom: 8px;
 }
 </style>
