@@ -1,3 +1,14 @@
+## [7.2.0](https://github.com/vitejs/vite/compare/v7.2.0-beta.1...v7.2.0) (2025-11-05)
+### Bug Fixes
+
+* **css:** fallback to sass when sass-embedded platform binary is missing ([#21002](https://github.com/vitejs/vite/issues/21002)) ([b1fd616](https://github.com/vitejs/vite/commit/b1fd6161886caeb31ac646d6544116d37efe46d0))
+* **module-runner:** make `getBuiltins` response JSON serializable ([#21029](https://github.com/vitejs/vite/issues/21029)) ([ad5b3bf](https://github.com/vitejs/vite/commit/ad5b3bf6f3ad7b24886718c5f5de32eee923ae11))
+* **types:** add undefined to optional properties for exactOptionalProperties type compatibility ([#21040](https://github.com/vitejs/vite/issues/21040)) ([2833c55](https://github.com/vitejs/vite/commit/2833c5576a87be2db450c195ccf64dfc8925a15b))
+
+### Miscellaneous Chores
+
+* **deps:** update rolldown-related dependencies ([#21047](https://github.com/vitejs/vite/issues/21047)) ([e3a6a83](https://github.com/vitejs/vite/commit/e3a6a83406943bc59a9916cae3f25ab33c2b5802))
+
 ## [7.2.0-beta.1](https://github.com/vitejs/vite/compare/v7.2.0-beta.0...v7.2.0-beta.1) (2025-10-29)
 ### Bug Fixes
 
