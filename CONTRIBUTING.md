@@ -352,3 +352,5 @@ If you have publish access, the steps below explain how to cut a release for a p
 3. Click on the "Review deployments" button in the yellow box, a popup will appear.
 4. Check "Release" and click "Approve and deploy".
 5. The package will start publishing to npm.
+
+To learn more about how and when Vite does releases, check out the [Releases](https://vite.dev/releases) documentation.
