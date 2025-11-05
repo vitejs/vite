@@ -86,7 +86,6 @@ function computeSupportInfo(
     regularPatches: f([`${major}.${minor}`]),
     importantFixes: f([`${major - 1}`, `${major}.${minor - 1}`]),
     securityPatches: f([`${major - 2}`, `${major}.${minor - 2}`]),
-    unsupported: f([`${major - 3}`, `${major}.${minor - 3}`]),
   }
 }
 
@@ -122,12 +121,9 @@ function isValidViteVersion(version: string) {
         Security patches are also backported to
         <span v-html="versionsToText(supportInfo.securityPatches)"></span>.
       </li>
-      <li v-if="supportInfo.unsupported.length">
-        No longer supported versions include
-        <span
-          v-html="versionsToText(supportInfo.unsupported.concat('below'))"
-        ></span
-        >. Users should upgrade to receive updates.
+      <li>
+        All versions before these are no longer supported. Users should upgrade
+        to receive updates.
       </li>
     </ul>
     <p>

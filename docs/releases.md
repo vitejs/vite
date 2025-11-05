@@ -18,7 +18,7 @@ Vite does not have a fixed release cycle.
 
 ## Supported Versions
 
-In summary, the current supported versions are:
+In summary, the current supported Vite versions are:
 
 <SupportedVersions />
 
