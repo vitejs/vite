@@ -1,3 +1,13 @@
+## [7.2.0-beta.3](https://github.com/vitejs/rolldown-vite/compare/v7.2.0-beta.2...v7.2.0-beta.3) (2025-11-05)
+### Features
+
+* expose `minify` function ([#489](https://github.com/vitejs/rolldown-vite/issues/489)) ([7568ceb](https://github.com/vitejs/rolldown-vite/commit/7568cebffacf38ea223f1d53addaad60f62aaf58))
+* update rolldown ([#488](https://github.com/vitejs/rolldown-vite/issues/488)) ([b2554c1](https://github.com/vitejs/rolldown-vite/commit/b2554c147444924ced5cdd5629f65577c8522a7f))
+
+### Bug Fixes
+
+* **optimizer:** sync `optimizeDeps.rollupOptions` and `optimizeDeps.rolldownOptions` ([#482](https://github.com/vitejs/rolldown-vite/issues/482)) ([23711ec](https://github.com/vitejs/rolldown-vite/commit/23711ec094ac4600010b5c6a9cde465db7cf77b4))
+
 ## [7.2.0-beta.2](https://github.com/vitejs/rolldown-vite/compare/v7.2.0-beta.1...v7.2.0-beta.2) (2025-11-04)
 ### Features
 
