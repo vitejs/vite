@@ -193,7 +193,7 @@ export default defineConfig({
 
 When set to `true`, the build will generate a `.vite/license.md` file that includes all bundled dependencies' licenses.
 
-If `fileName` is passed, it will be used as the license file name relative to the `outDir`. If the it ends with `.json`, the raw JSON metadata will be generated instead and can be used for further processing. For example:
+If `fileName` is passed, it will be used as the license file name relative to the `outDir`. If it ends with `.json`, the raw JSON metadata will be generated instead and can be used for further processing. For example:
 
 ```json
 [
