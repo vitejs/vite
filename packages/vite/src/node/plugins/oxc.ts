@@ -702,6 +702,9 @@ export function convertEsbuildConfigToOxcConfig(
     if (esbuildTransformOptions.jsxDev !== undefined) {
       jsxOptions.development = esbuildTransformOptions.jsxDev
     }
+    if (esbuildTransformOptions.jsxSideEffects !== undefined) {
+      jsxOptions.pure = esbuildTransformOptions.jsxSideEffects
+    }
 
     oxcOptions.jsx = jsxOptions
   }
