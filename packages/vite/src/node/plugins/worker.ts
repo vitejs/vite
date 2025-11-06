@@ -613,7 +613,7 @@ export function webWorkerPlugin(config: ResolvedConfig): Plugin {
               : duplicateAsset.code
           // don't emit if the file name and the content is same
           if (isSameContent(content, asset.source)) {
-            return
+            continue
           }
         }
 
