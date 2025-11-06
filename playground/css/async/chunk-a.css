@@ -1,0 +1,5 @@
+/* Chunk A depends on shared-base */
+/* This should come AFTER shared-base.css */
+.diamond-test {
+  color: blue;
+}

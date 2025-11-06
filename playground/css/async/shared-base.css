@@ -1,0 +1,6 @@
+/* This CSS is imported by both chunk-a and chunk-b */
+/* In correct order, chunk-b's CSS should override this */
+.diamond-test {
+  color: red;
+  background: black;
+}

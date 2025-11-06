@@ -512,6 +512,15 @@ export const tests = (isLightningCSS: boolean) => {
     await expect.poll(() => getColor('.modules-pink')).toBe('pink')
   })
 
+  // Test for issue #3924: CSS injection order with diamond dependencies
+  test('async css order with diamond dependencies', async () => {
+    // Diamond dependency: main -> [chunk-a, chunk-b] -> shared-base
+    // Expected order: shared-base.css, chunk-a.css, chunk-b.css
+    // chunk-b.css should win (.diamond-test { color: green; background: yellow })
+    await expect.poll(() => getColor('.diamond-test')).toBe('green')
+    await expect.poll(() => getBgColor('.diamond-test')).toBe('yellow')
+  })
+
   test('@import scss', async () => {
     expect(await getColor('.at-import-scss')).toBe('red')
   })

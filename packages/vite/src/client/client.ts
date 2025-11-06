@@ -514,14 +514,77 @@ if ('document' in globalThis) {
     })
 }
 
-// all css imports should be inserted at the same position
-// because after build it will be a single css file
-let lastInsertedStyle: HTMLStyleElement | undefined
+// Track which CSS files have been successfully inserted
+const insertedCSS = new Set<string>()
+// Queue for CSS files waiting for their dependencies
+const pendingCSS = new Map<
+  string,
+  { css: string; deps: string[]; element?: HTMLStyleElement }
+>()
 
-export function updateStyle(id: string, content: string): void {
+/**
+ * Track the last inserted Vite CSS for maintaining arrival order.
+ * Reset via setTimeout to separate chunks loaded at different times.
+ */
+let lastInsertedViteCSS: HTMLStyleElement | null = null
+
+/**
+ * Update or insert a CSS style element with dependency-aware ordering.
+ *
+ * In dev mode, CSS files may load in arbitrary order due to parallel dynamic imports.
+ * This function ensures CSS is inserted in dependency order (dependencies before dependents)
+ * to match the build mode behavior.
+ *
+ * Algorithm:
+ * 1. Check if all dependencies have been inserted
+ * 2. If not ready, queue this CSS and wait
+ * 3. If ready, insert CSS after its dependencies in the DOM
+ * 4. Mark as inserted and process any pending CSS that was waiting for this one
+ *
+ * @param id - Unique identifier for the CSS module
+ * @param content - The CSS content to insert
+ * @param deps - Array of CSS module IDs this CSS depends on (should load before this)
+ */
+export function updateStyle(
+  id: string,
+  content: string,
+  deps: string[] = [],
+): void {
   if (linkSheetsMap.has(id)) return
 
   let style = sheetsMap.get(id)
+
+  // Check if we're updating existing style (HMR)
+  const isUpdate = !!style
+
+  if (isUpdate) {
+    // For HMR updates, just update content and keep position
+    style!.textContent = content
+    sheetsMap.set(id, style!)
+    return
+  }
+
+  // New CSS insertion - check dependencies
+  const depsReady = deps.every((depId) => insertedCSS.has(depId))
+
+  if (!depsReady) {
+    // Dependencies not ready - queue this CSS for later
+    // Create the element but don't insert it yet
+    if (!style) {
+      style = document.createElement('style')
+      style.setAttribute('type', 'text/css')
+      style.setAttribute('data-vite-dev-id', id)
+      style.textContent = content
+      if (cspNonce) {
+        style.setAttribute('nonce', cspNonce)
+      }
+    }
+
+    pendingCSS.set(id, { css: content, deps, element: style })
+    return
+  }
+
+  // Dependencies are ready - insert CSS
   if (!style) {
     style = document.createElement('style')
     style.setAttribute('type', 'text/css')
@@ -530,23 +593,104 @@ export function updateStyle(id: string, content: string): void {
     if (cspNonce) {
       style.setAttribute('nonce', cspNonce)
     }
-
-    if (!lastInsertedStyle) {
-      document.head.appendChild(style)
-
-      // reset lastInsertedStyle after async
-      // because dynamically imported css will be split into a different file
-      setTimeout(() => {
-        lastInsertedStyle = undefined
-      }, 0)
-    } else {
-      lastInsertedStyle.insertAdjacentElement('afterend', style)
-    }
-    lastInsertedStyle = style
-  } else {
-    style.textContent = content
   }
+
+  // Find the insertion point - after the last dependency
+  let insertAfter: HTMLStyleElement | null = null
+
+  for (const depId of deps) {
+    const depStyle = sheetsMap.get(depId)
+    if (depStyle) {
+      // Find the last dependency in DOM order
+      if (
+        !insertAfter ||
+        depStyle.compareDocumentPosition(insertAfter) &
+          Node.DOCUMENT_POSITION_FOLLOWING
+      ) {
+        insertAfter = depStyle
+      }
+    }
+  }
+
+  // Insert the style element based on dependencies
+  if (insertAfter) {
+    // Has dependencies - insert right after the last dependency
+    // For static imports, this maintains proper cascade
+    // For dynamic imports, dependencies are likely at the end, so this puts it at end too
+    insertAfter.insertAdjacentElement('afterend', style)
+  } else if (deps.length > 0) {
+    // Has dependencies but none found - append to end as fallback
+    document.head.appendChild(style)
+  } else if (lastInsertedViteCSS && lastInsertedViteCSS.parentNode) {
+    // No dependencies - use arrival order
+    lastInsertedViteCSS.insertAdjacentElement('afterend', style)
+  } else {
+    // First CSS or reset - append to end
+    // This ensures it can override any existing styles
+    document.head.appendChild(style)
+  }
+
   sheetsMap.set(id, style)
+  insertedCSS.add(id)
+
+  // Track for arrival-order insertion
+  lastInsertedViteCSS = style
+
+  // Reset tracking after async to prevent cross-chunk chaining
+  if (deps.length === 0) {
+    setTimeout(() => {
+      if (lastInsertedViteCSS === style) {
+        lastInsertedViteCSS = null
+      }
+    }, 0)
+  }
+
+  // Process any pending CSS that was waiting for this one
+  processPendingCSS()
+}
+
+/**
+ * Process pending CSS that may now be ready to insert.
+ * Called after a CSS file is successfully inserted.
+ * 
+ * This uses a loop to handle transitive dependencies - CSS that becomes ready
+ * after we insert CSS that was itself waiting. Without this, we could have
+ * deadlocks where CSS is stuck waiting forever.
+ * 
+/**
+ * Process pending CSS that may now be ready to insert.
+ * Called after a CSS file is successfully inserted.
+ * 
+ * This uses a loop to handle transitive dependencies - CSS that becomes ready
+ * after we insert CSS that was itself waiting. Without this, we could have
+ * deadlocks where CSS is stuck waiting forever.
+ */
+function processPendingCSS(): void {
+  // Keep processing until no more CSS becomes ready
+  // This handles chains: A waits for B, B waits for C, C just loaded
+  let processedAny = true
+
+  while (processedAny) {
+    processedAny = false
+    const toProcess: Array<
+      [string, { css: string; deps: string[]; element?: HTMLStyleElement }]
+    > = []
+
+    // Find all pending CSS whose dependencies are now satisfied
+    for (const [id, { css, deps, element }] of pendingCSS.entries()) {
+      const allDepsReady = deps.every((depId) => insertedCSS.has(depId))
+      if (allDepsReady) {
+        toProcess.push([id, { css, deps, element }])
+        processedAny = true
+      }
+    }
+
+    // Insert all CSS that became ready in this iteration
+    for (const [id, { css, deps }] of toProcess) {
+      pendingCSS.delete(id)
+      updateStyle(id, css, deps)
+    }
+  }
 }
 
 export function removeStyle(id: string): void {
@@ -565,9 +709,15 @@ export function removeStyle(id: string): void {
   }
   const style = sheetsMap.get(id)
   if (style) {
+    // If we're removing the last inserted CSS, clear the tracker
+    if (style === lastInsertedViteCSS) {
+      lastInsertedViteCSS = null
+    }
     document.head.removeChild(style)
     sheetsMap.delete(id)
+    insertedCSS.delete(id)
   }
+  pendingCSS.delete(id)
 }
 
 export function createHotContext(ownerPath: string): ViteHotContext {
