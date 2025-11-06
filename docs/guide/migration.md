@@ -19,11 +19,15 @@ In Vite 5, the default target was named `'modules'`, but this is no longer avail
 
 ## General Changes
 
+### Explicit emitting of CSS when not CSS code-splitting
+
+In Vite 6 (and Vite [before v7.1.10](https://github.com/vitejs/vite/blob/v7.1.12/packages/vite/CHANGELOG.md#7110-2025-10-14)) when not CSS code-splitting with `build.cssCodeSplit`, an unsplit CSS file (e.g. `style.css` or `<package-name>.css`) would be emitted by default. This default [has been changed](https://github.com/vitejs/vite/pull/20883) and as such, to preserve this behaviour, the `build.emitAssets` and/or `build.ssrEmitAssets` options should now be explicitly set to `true`.
+
 ### Removed Sass legacy API support
 
 As planned, support for the Sass legacy API is removed. Vite now only supports the modern API. You can remove the `css.preprocessorOptions.sass.api` / `css.preprocessorOptions.scss.api` option.
 
-## Removed deprecated features
+### Removed deprecated features
 
 - `splitVendorChunkPlugin` (deprecated in v5.2.7)
   - This plugin was originally provided to ease migration to Vite v2.9.
@@ -32,9 +36,9 @@ As planned, support for the Sass legacy API is removed. Vite now only supports t
   - It was changed to align the interface with [Rollup's object hooks](https://rollupjs.org/plugin-development/#build-hooks:~:text=Instead%20of%20a%20function%2C%20hooks%20can%20also%20be%20objects.).
   - `order` should be used instead of `enforce`, and `handler` should be used instead of `transform`.
 
-## Advanced
+### Advanced
 
-There are other breaking changes which only affect few users.
+There are other breaking changes which only affect a few users.
 
 - [[#19979] chore: declare version range for peer dependencies](https://github.com/vitejs/vite/pull/19979)
   - Specified the peer dependencies version range for CSS preprocessors.
