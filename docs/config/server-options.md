@@ -224,6 +224,73 @@ The error that appears in the Browser when the fallback happens can be ignored. 
 
 :::
 
+### HMR and WebSocket Configuration Precedence
+
+When configuring HMR and WebSocket behavior, the following precedence rules apply:
+
+1. **`server.ws: false` takes precedence** over all HMR configuration. When set, the WebSocket server will not be created, and all `server.hmr` options are ignored.
+
+2. **`server.hmr: false` disables both HMR and WebSocket**. This has the same effect as `server.ws: false`.
+
+3. **`server.hmr` configuration** is only applied when `server.ws` is not explicitly set to `false`.
+
+**When HMR is disabled (`server.hmr: false` or `server.ws: false`):**
+
+- The WebSocket server is not started
+- Hot module updates do not occur
+- The error overlay is not displayed
+- Full page reloads are required for any changes
+- The dev server still functions for serving files and handling other requests
+
+**Middleware mode considerations:**
+
+In middleware mode, the WebSocket server behavior differs:
+
+```js
+// Middleware mode with custom server
+export default {
+  server: {
+    middlewareMode: true,
+    hmr: {
+      // Attach HMR to your own server
+      server: customHttpServer,
+    },
+  },
+}
+```
+
+When `middlewareMode: true`, you're responsible for managing the WebSocket server's network exposure. Consider using `server.hmr.server` to attach the WebSocket server to your existing HTTP server instead of creating a separate server.
+
+::: warning Security in Middleware Mode
+When using middleware mode, ensure your WebSocket server is not publicly exposed in production environments. See the [Security Guide](/guide/security#middleware-mode-websocket-exposure) for best practices.
+:::
+
+## server.ws
+
+- **Type:** `false`
+- **Default:** `undefined`
+- **Experimental**
+
+Disable the WebSocket server. Setting this to `false` will prevent the WebSocket server from being created, regardless of `server.hmr` configuration.
+
+This option is useful when:
+
+- You want to completely disable HMR and WebSocket functionality
+- You're running Vite in an environment where WebSocket connections are not possible
+- You need precise control over network services
+
+```js
+export default {
+  server: {
+    ws: false, // Disables WebSocket server entirely
+  },
+}
+```
+
+::: tip
+In most cases, using `server.hmr: false` is sufficient to disable HMR. Only use `server.ws: false` if you specifically need to prevent WebSocket server creation.
+:::
+
 ## server.warmup
 
 - **Type:** `{ clientFiles?: string[], ssrFiles?: string[] }`

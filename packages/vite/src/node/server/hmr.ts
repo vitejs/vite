@@ -51,6 +51,17 @@ export interface HmrOptions {
   server?: HttpServer
 }
 
+/**
+ * Check if HMR is enabled given the HMR configuration value.
+ * Returns false only if explicitly set to false, true otherwise (including when set to HmrOptions object).
+ *
+ * @param hmr - The HMR configuration value (boolean, HmrOptions, or undefined)
+ * @returns true if HMR is enabled, false if explicitly disabled
+ */
+export function isHmrEnabled(hmr: boolean | HmrOptions | undefined): boolean {
+  return (hmr as boolean | HmrOptions | undefined) !== false
+}
+
 export interface HotUpdateOptions {
   type: 'create' | 'update' | 'delete'
   file: string

@@ -16,6 +16,7 @@ import {
   getServerUrlByHost,
   injectQuery,
   isFileReadable,
+  isJSRequest,
   isParentDirectory,
   mergeWithDefaults,
   normalizePath,
@@ -77,6 +78,47 @@ describe('bareImportRE', () => {
   test('should work with relative path', () => {
     expect(bareImportRE.test('./foo')).toBe(false)
     expect(bareImportRE.test('.\\foo')).toBe(false)
+  })
+})
+
+describe('isJSRequest', () => {
+  test('should identify scoped packages without extension as JS', () => {
+    expect(isJSRequest('@scope/pkg')).toBe(true)
+  })
+
+  test('should handle scoped packages with dots in name', () => {
+    // Package names with dots after the slash have a file extension
+    // '@scope/ng.my-lib' -> hasFileExtension returns true -> NOT a JS request
+    expect(isJSRequest('@scope/ng.my-lib')).toBe(false)
+  })
+
+  test('should handle package names with dots and subpaths', () => {
+    // foo.bar/baz - the dot is before the slash, so no extension
+    // This is treated as a JS request
+    expect(isJSRequest('foo.bar/baz')).toBe(true)
+  })
+
+  test('should handle package names with dots and trailing slash', () => {
+    // foo.bar/ ends with '/', which is explicitly excluded in isJSRequest
+    expect(isJSRequest('foo.bar/')).toBe(false)
+  })
+
+  test('should handle package names with dots and query params', () => {
+    // foo.bar?direct - query is stripped by cleanUrl(), becomes foo.bar
+    // which has an extension, so NOT a JS request
+    expect(isJSRequest('foo.bar?direct')).toBe(false)
+  })
+
+  test('should handle relative paths with dots correctly', () => {
+    // ./foo.bar is a relative path with extension -> NOT a JS request
+    expect(isJSRequest('./foo.bar')).toBe(false)
+  })
+
+  test('should handle hidden files as JS requests', () => {
+    // .env has no extension (dot is at the beginning) -> IS a JS request
+    expect(isJSRequest('.env')).toBe(true)
+    // /.config also has no extension -> IS a JS request
+    expect(isJSRequest('/.config')).toBe(true)
   })
 })
 
@@ -335,7 +377,9 @@ foo()
       expect('\n' + value + '\n').toMatchSnapshot()
     } catch (e) {
       // don't include this function in stacktrace
-      Error.captureStackTrace(e, expectSnapshot)
+      if (e instanceof Error) {
+        Error.captureStackTrace(e, expectSnapshot)
+      }
       throw e
     }
   }

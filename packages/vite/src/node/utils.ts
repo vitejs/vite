@@ -289,12 +289,46 @@ export const virtualModulePrefix = 'virtual-module:'
 // of browsers we support in dev all support this header.
 const knownJsSrcRE =
   /\.(?:[jt]sx?|m[jt]s|vue|marko|svelte|astro|imba|mdx)(?:$|\?)/
+
+/**
+ * Check if a URL path has a real file extension (not from package name).
+ * Package names like '@my-org/ng.my-lib' should not be treated as having extensions.
+ *
+ * Edge cases handled:
+ * - Hidden files (e.g., `.env`, `/.config`) are NOT treated as having extensions
+ * - Windows paths with backslashes are normalized to forward slashes
+ * - Paths like `C:` or `D:` (Windows drive letters) are handled correctly
+ */
+function hasFileExtension(url: string): boolean {
+  const ext = path.extname(url)
+  if (!ext) return false
+
+  // Normalize path separators to forward slashes for consistent handling across platforms.
+  // This ensures Windows paths (C:\foo\bar.txt) work the same as Unix paths (/foo/bar.txt).
+  const normalizedUrl = url.replace(/\\/g, '/')
+
+  const lastSlashIndex = normalizedUrl.lastIndexOf('/')
+  const lastDotIndex = normalizedUrl.lastIndexOf('.')
+
+  // Handle hidden files: if the dot is at the start of the last segment (e.g., `.env`, `/.config`),
+  // it's not a file extension but the beginning of a hidden file name.
+  if (lastDotIndex === lastSlashIndex + 1) {
+    return false
+  }
+
+  // Extension is only real if the dot comes after the last slash.
+  // This distinguishes file extensions from dots in directory/package names.
+  return lastDotIndex > lastSlashIndex
+}
+
 export const isJSRequest = (url: string): boolean => {
   url = cleanUrl(url)
   if (knownJsSrcRE.test(url)) {
     return true
   }
-  if (!path.extname(url) && url[url.length - 1] !== '/') {
+  // Treat URLs without file extensions as potential JS requests
+  // This handles bare imports like '@my-org/package' or '@my-org/ng.my-lib'
+  if (!hasFileExtension(url) && url[url.length - 1] !== '/') {
     return true
   }
   return false

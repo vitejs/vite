@@ -16,7 +16,7 @@ import type { InferCustomEventPayload } from '#types/customEvent'
 import type { ResolvedConfig } from '..'
 import { isObject } from '../utils'
 import type { NormalizedHotChannel, NormalizedHotChannelClient } from './hmr'
-import { normalizeHotChannel } from './hmr'
+import { isHmrEnabled, normalizeHotChannel } from './hmr'
 import type { HttpServer } from '.'
 
 /* In Bun, the `ws` module is overridden to hook into the native code. Using the bundled `js` version
@@ -116,7 +116,11 @@ export function createWebSocketServer(
   config: ResolvedConfig,
   httpsOptions?: HttpsServerOptions,
 ): WebSocketServer {
-  if (config.server.ws === false) {
+  // Don't create WebSocket server if ws or hmr are explicitly disabled
+  if (config.server.ws === false || config.server.hmr === false) {
+    // Return a no-op WebSocketServer implementation that satisfies the interface contract.
+    // All methods are implemented as no-ops to prevent errors when consumers call them,
+    // but no actual WebSocket functionality is provided.
     return {
       [isWebSocketServer]: true,
       get clients() {
@@ -157,10 +161,13 @@ export function createWebSocketServer(
   const clientsMap = new WeakMap<WebSocketRaw, WebSocketClient>()
   const port = hmrPort || 24678
   const host = (hmr && hmr.host) || undefined
+  // Freeze the allowedHosts array to enable caching in isHostAllowed() from host-validation-middleware.
+  // The middleware caches frozen arrays for better performance across multiple requests.
+  // This is safe because config.server.allowedHosts is not modified after server creation.
   const allowedHosts =
     config.server.allowedHosts === true
       ? config.server.allowedHosts
-      : Object.freeze([...config.server.allowedHosts]) // Freeze the array to allow caching
+      : Object.freeze([...config.server.allowedHosts])
 
   const shouldHandle = (req: IncomingMessage) => {
     const protocol = req.headers['sec-websocket-protocol']!
@@ -254,6 +261,12 @@ export function createWebSocketServer(
     }
     wsHttpServer.on('upgrade', (req, socket, head) => {
       const protocol = req.headers['sec-websocket-protocol']!
+      // Handle race condition during server startup: the WebSocket server may be listening
+      // before the HTTP server is ready to accept connections. This can happen because
+      // wsHttpServer.listen() is called before server.listen() completes.
+      // When a vite-ping connection arrives in this state, we reject it by destroying the request.
+      // The client will retry the connection, allowing it to succeed once the HTTP server is ready.
+      // TODO: See client retry logic in packages/vite/src/client/client.ts
       if (protocol === 'vite-ping' && server && !server.listening) {
         // reject connection to tell the vite/client that the server is not ready
         // if the http server is not listening
@@ -367,6 +380,9 @@ export function createWebSocketServer(
   // connected client.
   let bufferedError: ErrorPayload | null = null
 
+  // Determine if HMR is enabled (true unless explicitly set to false)
+  const enableHmr = isHmrEnabled(config.server.hmr)
+
   const normalizedHotChannel = normalizeHotChannel(
     {
       send(payload) {
@@ -425,7 +441,8 @@ export function createWebSocketServer(
         })
       },
     },
-    config.server.hmr !== false,
+    // Enable HMR unless explicitly set to false
+    enableHmr,
     // Don't normalize client as we already handles the send, and to keep `.socket`
     false,
   )

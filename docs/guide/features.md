@@ -26,6 +26,28 @@ Vite provides an [HMR API](./api-hmr) over native ESM. Frameworks with HMR capab
 
 Note you don't need to manually set these up - when you [create an app via `create-vite`](./), the selected templates would have these pre-configured for you already.
 
+### Disabling HMR
+
+You can disable HMR by setting `server.hmr: false` or `server.ws: false` in your Vite config. When HMR is disabled:
+
+- **WebSocket server is not started** - No WebSocket connection is established between the browser and the dev server
+- **No hot module updates** - Changes to your source files will not trigger automatic updates in the browser
+- **Manual page reload required** - You must manually refresh the browser to see changes
+- **Error overlay disabled** - The error overlay will not be displayed when compilation errors occur
+- **Dev server still functions** - The development server continues to serve files, handle requests, and transform modules on demand
+
+This configuration can be useful in scenarios where:
+
+- You're running Vite in an environment where WebSocket connections are restricted
+- You want to reduce resource usage during development
+- You're debugging issues related to HMR behavior
+
+::: tip
+When HMR is disabled, the development experience is similar to using a traditional static file server with manual browser refreshes. For the full Vite development experience, keep HMR enabled (the default behavior).
+:::
+
+See the [server.hmr configuration](/config/server-options#server-hmr) for more details on customizing HMR behavior.
+
 ## TypeScript
 
 Vite supports importing `.ts` files out of the box.
@@ -788,42 +810,6 @@ By default, during build, Vite inlines small assets as data URIs. Allowing `data
 :::warning
 Do not allow `data:` for [`script-src`](https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Content-Security-Policy/script-src). It will allow injection of arbitrary scripts.
 :::
-
-## License
-
-Vite can generate a file of all the dependencies' licenses used in the build with the [`build.license`](/config/build-options.md#build-license) option. It can be hosted to display and acknowledge the dependencies used by the app.
-
-```js twoslash [vite.config.js]
-import { defineConfig } from 'vite'
-
-export default defineConfig({
-  build: {
-    license: true,
-  },
-})
-```
-
-This will generate a `.vite/license.md` file with an output that may look like this:
-
-```md
-# Licenses
-
-The app bundles dependencies which contain the following licenses:
-
-## dep-1 - 1.2.3 (CC0-1.0)
-
-CC0 1.0 Universal
-
-...
-
-## dep-2 - 4.5.6 (MIT)
-
-MIT License
-
-...
-```
-
-To serve the file at a different path, you can pass `{ fileName: 'license.md' }` for example, so that it's served at `https://example.com/license.md`. See the [`build.license`](/config/build-options.md#build-license) docs for more information.
 
 ## Build Optimizations
 

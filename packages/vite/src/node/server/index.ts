@@ -107,10 +107,17 @@ const usedConfigs = new WeakSet<ResolvedConfig>()
 export interface ServerOptions extends CommonServerOptions {
   /**
    * Configure HMR-specific options (port, host, path & protocol)
+   * Set to `false` to disable HMR and WebSocket server.
+   *
+   * Note: If `ws` is set to `false`, the WebSocket server will not be created regardless of this setting.
    */
   hmr?: HmrOptions | boolean
   /**
    * Do not start the websocket connection.
+   *
+   * When set to `false`, the WebSocket server will not be created,
+   * and `hmr` configuration will be ignored. This takes precedence over `hmr` option.
+   *
    * @experimental
    */
   ws?: false
@@ -282,7 +289,10 @@ export interface ViteDevServer {
    */
   watcher: FSWatcher
   /**
-   * WebSocket server with `send(payload)` method
+   * WebSocket server with `send(payload)` method.
+   *
+   * When `config.server.ws` is set to `false` or `config.server.hmr` is set to `false`,
+   * this will be a no-op server where all methods are implemented but have no effect.
    */
   ws: WebSocketServer
   /**
