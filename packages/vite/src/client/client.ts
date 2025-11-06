@@ -652,15 +652,7 @@ export function updateStyle(
 /**
  * Process pending CSS that may now be ready to insert.
  * Called after a CSS file is successfully inserted.
- * 
- * This uses a loop to handle transitive dependencies - CSS that becomes ready
- * after we insert CSS that was itself waiting. Without this, we could have
- * deadlocks where CSS is stuck waiting forever.
- * 
-/**
- * Process pending CSS that may now be ready to insert.
- * Called after a CSS file is successfully inserted.
- * 
+ *
  * This uses a loop to handle transitive dependencies - CSS that becomes ready
  * after we insert CSS that was itself waiting. Without this, we could have
  * deadlocks where CSS is stuck waiting forever.
