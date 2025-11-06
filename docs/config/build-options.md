@@ -224,7 +224,7 @@ export default defineConfig({
     rollupOptions: {
       output: {
         banner:
-          '/* See licenses of bundled dependencies at https://example.com/license.md */',
+          '/* See licenses of bundled dependencies at https://example.com/.vite/license.md */',
       },
     },
   },
