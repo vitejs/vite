@@ -517,10 +517,7 @@ if ('document' in globalThis) {
 // Track which CSS files have been successfully inserted
 const insertedCSS = new Set<string>()
 // Queue for CSS files waiting for their dependencies
-const pendingCSS = new Map<
-  string,
-  { css: string; deps: string[]; element?: HTMLStyleElement }
->()
+const pendingCSS = new Map<string, { css: string; deps: string[] }>()
 
 /**
  * Track the last inserted Vite CSS for maintaining arrival order.
@@ -569,18 +566,8 @@ export function updateStyle(
 
   if (!depsReady) {
     // Dependencies not ready - queue this CSS for later
-    // Create the element but don't insert it yet
-    if (!style) {
-      style = document.createElement('style')
-      style.setAttribute('type', 'text/css')
-      style.setAttribute('data-vite-dev-id', id)
-      style.textContent = content
-      if (cspNonce) {
-        style.setAttribute('nonce', cspNonce)
-      }
-    }
-
-    pendingCSS.set(id, { css: content, deps, element: style })
+    // Don't create element yet - it will be created when dependencies are ready
+    pendingCSS.set(id, { css: content, deps })
     return
   }
 
@@ -664,15 +651,13 @@ function processPendingCSS(): void {
 
   while (processedAny) {
     processedAny = false
-    const toProcess: Array<
-      [string, { css: string; deps: string[]; element?: HTMLStyleElement }]
-    > = []
+    const toProcess: Array<[string, { css: string; deps: string[] }]> = []
 
     // Find all pending CSS whose dependencies are now satisfied
-    for (const [id, { css, deps, element }] of pendingCSS.entries()) {
+    for (const [id, { css, deps }] of pendingCSS.entries()) {
       const allDepsReady = deps.every((depId) => insertedCSS.has(depId))
       if (allDepsReady) {
-        toProcess.push([id, { css, deps, element }])
+        toProcess.push([id, { css, deps }])
         processedAny = true
       }
     }
