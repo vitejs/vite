@@ -24,7 +24,7 @@ In summary, the current supported Vite versions are:
 
 <br>
 
-The supported version ranges are are automatically determined by:
+The supported version ranges are automatically determined by:
 
 - **Current Minor** gets regular fixes.
 - **Previous Major** (only for its latest minor) and **Previous Minor** receives important fixes and security patches.
