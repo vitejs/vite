@@ -1122,6 +1122,7 @@ function resolveDepOptimizationOptions(
 
     rollupOptions.resolve ??= {}
     rollupOptions.output ??= {}
+    rollupOptions.transform ??= {}
 
     const setResolveOptions = <
       T extends keyof Exclude<RolldownOptions['resolve'], undefined>,
@@ -1148,9 +1149,9 @@ function resolveDepOptimizationOptions(
     }
     if (
       merged.esbuildOptions.define !== undefined &&
-      rollupOptions.define === undefined
+      rollupOptions.transform.define === undefined
     ) {
-      rollupOptions.define = merged.esbuildOptions.define
+      rollupOptions.transform.define = merged.esbuildOptions.define
     }
     if (merged.esbuildOptions.loader !== undefined) {
       const loader = merged.esbuildOptions.loader
