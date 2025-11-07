@@ -36,7 +36,7 @@ The rolldown-powered version of Vite is currently available as a separate packag
 
 ```json
 {
-  "dependencies": {
+  "devDependencies": {
     "vite": "^7.0.0" // [!code --]
     "vite": "npm:rolldown-vite@latest" // [!code ++]
   }
