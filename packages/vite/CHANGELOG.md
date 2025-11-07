@@ -1,3 +1,8 @@
+## <small>[7.2.2](https://github.com/vitejs/vite/compare/v7.2.1...v7.2.2) (2025-11-07)</small>
+### Bug Fixes
+
+* revert "refactor: use fs.cpSync ([#21019](https://github.com/vitejs/vite/issues/21019))" ([#21081](https://github.com/vitejs/vite/issues/21081)) ([728c8ee](https://github.com/vitejs/vite/commit/728c8eeebc0ad7ba48e680f46bbdb55020b2e152))
+
 ## <small>[7.2.1](https://github.com/vitejs/vite/compare/v7.2.0...v7.2.1) (2025-11-06)</small>
 ### Bug Fixes
 
