@@ -644,11 +644,7 @@ async function init() {
       )
       fs.writeFileSync(targetPath, updatedContent)
     } else {
-      // eslint-disable-next-line n/no-unsupported-features/node-builtins -- it is not experimental in Node 22.3+
-      fs.cpSync(path.join(templateDir, file), targetPath, {
-        recursive: true,
-        mode: fs.constants.COPYFILE_FICLONE,
-      })
+      copy(path.join(templateDir, file), targetPath)
     }
   }
 
@@ -714,6 +710,15 @@ function formatTargetDir(targetDir: string) {
   return targetDir.trim().replace(/\/+$/g, '')
 }
 
+function copy(src: string, dest: string) {
+  const stat = fs.statSync(src)
+  if (stat.isDirectory()) {
+    copyDir(src, dest)
+  } else {
+    fs.copyFileSync(src, dest)
+  }
+}
+
 function isValidPackageName(projectName: string) {
   return /^(?:@[a-z\d\-*~][a-z\d\-*._~]*\/)?[a-z\d\-~][a-z\d\-._~]*$/.test(
     projectName,
@@ -727,6 +732,15 @@ function toValidPackageName(projectName: string) {
     .replace(/\s+/g, '-')
     .replace(/^[._]/, '')
     .replace(/[^a-z\d\-~]+/g, '-')
+}
+
+function copyDir(srcDir: string, destDir: string) {
+  fs.mkdirSync(destDir, { recursive: true })
+  for (const file of fs.readdirSync(srcDir)) {
+    const srcFile = path.resolve(srcDir, file)
+    const destFile = path.resolve(destDir, file)
+    copy(srcFile, destFile)
+  }
 }
 
 function isEmpty(path: string) {
