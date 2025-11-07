@@ -1,3 +1,14 @@
+## <small>[7.2.2](https://github.com/vitejs/rolldown-vite/compare/v7.2.1...v7.2.2) (2025-11-07)</small>
+### Features
+
+* convert `esbuild.jsxSideEffects` to `oxc.jsx.pure` ([#493](https://github.com/vitejs/rolldown-vite/issues/493)) ([feac3af](https://github.com/vitejs/rolldown-vite/commit/feac3afb6091e00b22af1adbc307ca4ad3ad328f))
+
+### Bug Fixes
+
+* **optimizer:** convert to `optimizeDeps.rolldownOptions.transform.define` from `optimizeDeps.esbuildOptions.define` ([#494](https://github.com/vitejs/rolldown-vite/issues/494)) ([e8feb9f](https://github.com/vitejs/rolldown-vite/commit/e8feb9f014c4bd5a22bbee2210ff2bb385309a4d))
+* revert "refactor: use fs.cpSync ([#21019](https://github.com/vitejs/rolldown-vite/issues/21019))" ([#21081](https://github.com/vitejs/rolldown-vite/issues/21081)) ([728c8ee](https://github.com/vitejs/rolldown-vite/commit/728c8eeebc0ad7ba48e680f46bbdb55020b2e152))
+* set `legalComments: 'none'` to align with Vite ([#497](https://github.com/vitejs/rolldown-vite/issues/497)) ([3b8bc55](https://github.com/vitejs/rolldown-vite/commit/3b8bc554d83e9b4aab6876ac91b94ae20ce40080))
+
 ## <small>[7.2.1](https://github.com/vitejs/rolldown-vite/compare/v7.2.0...v7.2.1) (2025-11-06)</small>
 ### Bug Fixes
 
