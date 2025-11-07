@@ -70,6 +70,9 @@ importers:
       '@vitejs/release-scripts':
         specifier: ^1.6.0
         version: 1.6.0(conventional-commits-filter@5.0.0)
+      '@voidzero-dev/vitepress-theme':
+        specifier: link:../vitepress-theme
+        version: link:../vitepress-theme
       eslint:
         specifier: ^9.38.0
         version: 9.38.0(jiti@2.6.1)

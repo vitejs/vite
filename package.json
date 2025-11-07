@@ -55,6 +55,7 @@
     "@types/stylus": "^0.48.43",
     "@types/ws": "^8.18.1",
     "@vitejs/release-scripts": "^1.6.0",
+    "@voidzero-dev/vitepress-theme": "link:../vitepress-theme",
     "eslint": "^9.38.0",
     "eslint-plugin-import-x": "^4.16.1",
     "eslint-plugin-n": "^17.23.1",

@@ -1,4 +1,4 @@
-import path from 'node:path'
+import path, { resolve } from 'node:path'
 import fs from 'node:fs'
 import type { DefaultTheme, HeadConfig } from 'vitepress'
 import { defineConfig } from 'vitepress'
@@ -495,6 +495,18 @@ export default defineConfig({
     },
   },
   vite: {
+    server: {
+      fs: {
+        // Allow serving files from the linked theme package (parent directory)
+        allow: [resolve(__dirname, '..', '..', '..')],
+      },
+      watch: {
+        ignored: ['!**/node_modules/@voidzero-dev/**'],
+      },
+    },
+    ssr: {
+      noExternal: ['@voidzero-dev/vitepress-theme'],
+    },
     plugins: [
       groupIconVitePlugin({
         customIcon: {
