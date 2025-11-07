@@ -625,7 +625,7 @@ export function emptyDir(dir: string, skip?: string[]): void {
 }
 
 // NOTE: we cannot use `fs.cpSync` because of a bug in Node.js (https://github.com/nodejs/node/issues/58768, https://github.com/nodejs/node/issues/59168)
-//       also note that we should set `deference: true` when we use `fs.cpSync`
+//       also note that we should set `dereference: true` when we use `fs.cpSync`
 export function copyDir(srcDir: string, destDir: string): void {
   fs.mkdirSync(destDir, { recursive: true })
   for (const file of fs.readdirSync(srcDir)) {
