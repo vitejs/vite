@@ -735,6 +735,7 @@ function resolveRolldownOptions(
         output.format === 'iife' ||
         (isSsrTargetWebworkerEnvironment &&
           (typeof input === 'string' || Object.keys(input).length === 1)),
+      legalComments: 'none',
       minify:
         options.minify === 'oxc'
           ? libOptions && (format === 'es' || format === 'esm')
