@@ -2008,6 +2008,10 @@ async function bundleConfigFile(
                 }
                 throw e
               }
+              // not nod_modules dependency, compile it #5370
+              if (idFsPath && !isInNodeModules(idFsPath)) {
+                return
+              }
               if (idFsPath && isImport) {
                 idFsPath = pathToFileURL(idFsPath).href
               }
