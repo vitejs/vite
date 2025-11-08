@@ -59,6 +59,7 @@
     <code class="globalThis-process-env-NODE_ENV"></code>
   </p>
   <p>import.meta.hot <code class="import-meta-hot"></code></p>
+  <p>import.meta.DEBUG <code class="import-meta-DEBUG"></code></p>
 </section>
 
 <h2>Define undefined constants on import.meta.env when it's a invalid json</h2>
@@ -156,6 +157,10 @@
   text(
     '.replaces-constants-in-template-literal-expressions .process-env-NODE_ENV',
     `${process.env.NODE_ENV}`,
+  )
+  text(
+    '.replaces-constants-in-template-literal-expressions .import-meta-DEBUG',
+    `${import.meta.DEBUG}`,
   )
 
   text(
