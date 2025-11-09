@@ -212,8 +212,6 @@ If `fileName` is passed, it will be used as the license file name relative to th
 ]
 ```
 
-:::
-
 ## build.manifest
 
 - **Type:** `boolean | string`
