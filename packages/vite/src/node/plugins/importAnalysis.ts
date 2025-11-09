@@ -296,7 +296,17 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
         !imports.length &&
         !(this as unknown as TransformPluginContext)._addedImports
       ) {
-        importerModule.isSelfAccepting = false
+        const prunedImports = await moduleGraph.updateModuleInfo(
+          importerModule,
+          new Set(),
+          null,
+          new Set(),
+          null,
+          false,
+        )
+        if (prunedImports) {
+          handlePrunedModules(prunedImports, environment)
+        }
         debug?.(
           `${timeFrom(msAtStart)} ${colors.dim(
             `[no imports] ${prettifyUrl(importer, root)}`,
