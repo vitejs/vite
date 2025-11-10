@@ -13,6 +13,7 @@ export default defineConfig({
   target: 'node20',
   tsconfig: false, // disable tsconfig `paths` when bundling
   dts: true,
+  fixedExtension: false,
   hooks: {
     async 'build:done'() {
       validateAllDepsForRolldownViteIsIncluded()
