@@ -30,6 +30,9 @@ const wasmHelper = async (opts = {}, url: string) => {
       const fs = await import('node:fs/promises')
       if (url.startsWith('/@fs/')) {
         url = url.slice(5)
+        if (!/^[A-Z]:/i.test(url)) {
+          url = `/${url}`
+        }
       } else if (url.startsWith('/')) {
         url = url.slice(1)
       }
