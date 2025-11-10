@@ -29,7 +29,7 @@ const wasmHelper = async (opts = {}, url: string) => {
     if (typeof process !== 'undefined' && process.versions?.node) {
       const fs = await import('node:fs/promises')
       if (url.startsWith('/@fs/')) {
-        url = url.slice(4)
+        url = url.slice(5)
       } else if (url.startsWith('/')) {
         url = url.slice(1)
       }
