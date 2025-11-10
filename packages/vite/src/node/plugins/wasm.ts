@@ -1,5 +1,6 @@
 import { exactRegex } from '@rolldown/pluginutils'
 import type { Plugin } from '../plugin'
+import { fsPathFromId } from '../utils'
 import { fileToUrl } from './asset'
 
 const wasmHelperId = '\0vite/wasm-helper.js'
@@ -26,45 +27,44 @@ const wasmHelper = async (opts = {}, url: string) => {
     }
     result = await WebAssembly.instantiate(bytes, opts)
   } else {
-    if (
-      typeof process !== 'undefined' &&
-      process.versions &&
-      process.versions.node
-    ) {
-      const fs = await import('node:fs/promises')
-      if (url.startsWith('/@fs/')) {
-        url = url.slice(5)
-        if (!/^[A-Z]:/i.test(url)) {
-          url = `/${url}`
-        }
-      } else if (url.startsWith('/')) {
-        url = url.slice(1)
-      }
-      const buffer = await fs.readFile(url)
-      result = await WebAssembly.instantiate(buffer, opts)
-    } else {
-      // https://github.com/mdn/webassembly-examples/issues/5
-      // WebAssembly.instantiateStreaming requires the server to provide the
-      // correct MIME type for .wasm files, which unfortunately doesn't work for
-      // a lot of static file servers, so we just work around it by getting the
-      // raw buffer.
-      const response = await fetch(url)
-      const contentType = response.headers.get('Content-Type') || ''
-      if (
-        'instantiateStreaming' in WebAssembly &&
-        contentType.startsWith('application/wasm')
-      ) {
-        result = await WebAssembly.instantiateStreaming(response, opts)
-      } else {
-        const buffer = await response.arrayBuffer()
-        result = await WebAssembly.instantiate(buffer, opts)
-      }
-    }
+    result = await instantiateFromUrl(url, opts)
   }
   return result.instance
 }
 
 const wasmHelperCode = wasmHelper.toString()
+
+const instantiateFromUrl = async (url: string, opts?: WebAssembly.Imports) => {
+  // https://github.com/mdn/webassembly-examples/issues/5
+  // WebAssembly.instantiateStreaming requires the server to provide the
+  // correct MIME type for .wasm files, which unfortunately doesn't work for
+  // a lot of static file servers, so we just work around it by getting the
+  // raw buffer.
+  const response = await fetch(url)
+  const contentType = response.headers.get('Content-Type') || ''
+  if (
+    'instantiateStreaming' in WebAssembly &&
+    contentType.startsWith('application/wasm')
+  ) {
+    return WebAssembly.instantiateStreaming(response, opts)
+  } else {
+    const buffer = await response.arrayBuffer()
+    return WebAssembly.instantiate(buffer, opts)
+  }
+}
+
+const instantiateFromUrlCode = instantiateFromUrl.toString()
+
+const instantiateFromFile = async (
+  fsPath: string,
+  opts?: WebAssembly.Imports,
+) => {
+  const fs = await import('node:fs/promises')
+  const buffer = await fs.readFile(fsPath)
+  return WebAssembly.instantiate(buffer, opts)
+}
+
+const instantiateFromFileCode = instantiateFromFile.toString()
 
 export const wasmHelperPlugin = (): Plugin => {
   return {
@@ -80,11 +80,20 @@ export const wasmHelperPlugin = (): Plugin => {
     load: {
       filter: { id: [exactRegex(wasmHelperId), wasmInitRE] },
       async handler(id) {
+        const isServer = this.environment.config.consumer === 'server'
+
         if (id === wasmHelperId) {
-          return `export default ${wasmHelperCode}`
+          const instantiateFromUrl = isServer
+            ? instantiateFromFileCode
+            : instantiateFromUrlCode
+          return `
+const instantiateFromUrl = ${instantiateFromUrl}
+export default ${wasmHelperCode}
+`
         }
 
-        const url = (await fileToUrl(this, id)).split('?')[0]
+        id = id.split('?')[0]
+        const url = isServer ? fsPathFromId(id) : await fileToUrl(this, id)
 
         return `
   import initWasm from "${wasmHelperId}"
