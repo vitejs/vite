@@ -1675,6 +1675,12 @@ importers:
 
   playground/ssr-resolve/pkg-module-sync: {}
 
+  playground/ssr-wasm:
+    devDependencies:
+      express:
+        specifier: ^5.1.0
+        version: 5.1.0
+
   playground/ssr-webworker:
     dependencies:
       '@vitejs/test-browser-exports':

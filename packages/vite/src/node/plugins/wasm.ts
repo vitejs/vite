@@ -26,21 +26,32 @@ const wasmHelper = async (opts = {}, url: string) => {
     }
     result = await WebAssembly.instantiate(bytes, opts)
   } else {
-    // https://github.com/mdn/webassembly-examples/issues/5
-    // WebAssembly.instantiateStreaming requires the server to provide the
-    // correct MIME type for .wasm files, which unfortunately doesn't work for
-    // a lot of static file servers, so we just work around it by getting the
-    // raw buffer.
-    const response = await fetch(url)
-    const contentType = response.headers.get('Content-Type') || ''
-    if (
-      'instantiateStreaming' in WebAssembly &&
-      contentType.startsWith('application/wasm')
-    ) {
-      result = await WebAssembly.instantiateStreaming(response, opts)
-    } else {
-      const buffer = await response.arrayBuffer()
+    if (typeof process !== 'undefined' && process.versions?.node) {
+      const fs = await import('node:fs/promises')
+      if (url.startsWith('/@fs/')) {
+        url = url.slice(4)
+      } else if (url.startsWith('/')) {
+        url = url.slice(1)
+      }
+      const buffer = await fs.readFile(url)
       result = await WebAssembly.instantiate(buffer, opts)
+    } else {
+      // https://github.com/mdn/webassembly-examples/issues/5
+      // WebAssembly.instantiateStreaming requires the server to provide the
+      // correct MIME type for .wasm files, which unfortunately doesn't work for
+      // a lot of static file servers, so we just work around it by getting the
+      // raw buffer.
+      const response = await fetch(url)
+      const contentType = response.headers.get('Content-Type') || ''
+      if (
+        'instantiateStreaming' in WebAssembly &&
+        contentType.startsWith('application/wasm')
+      ) {
+        result = await WebAssembly.instantiateStreaming(response, opts)
+      } else {
+        const buffer = await response.arrayBuffer()
+        result = await WebAssembly.instantiate(buffer, opts)
+      }
     }
   }
   return result.instance
@@ -66,7 +77,7 @@ export const wasmHelperPlugin = (): Plugin => {
           return `export default ${wasmHelperCode}`
         }
 
-        const url = await fileToUrl(this, id)
+        const url = (await fileToUrl(this, id)).split('?')[0]
 
         return `
   import initWasm from "${wasmHelperId}"
