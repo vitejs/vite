@@ -35,8 +35,26 @@ export function bindCLIShortcuts<Server extends ViteDevServer | PreviewServer>(
 
   const isDev = isDevServer(server)
 
+  let customShortcuts = opts?.customShortcuts ?? []
+
   if (isDev) {
-    server._shortcutsOptions = opts as BindCLIShortcutsOptions<ViteDevServer>
+    const shortcutsOptions = opts as
+      | BindCLIShortcutsOptions<ViteDevServer>
+      | undefined
+
+    server._shortcutsOptions = {
+      ...shortcutsOptions,
+      // Merge custom shortcuts from both new opts and existing options
+      // with new shortcuts taking priority
+      customShortcuts: [
+        ...(shortcutsOptions?.customShortcuts ?? []),
+        ...(server._shortcutsOptions?.customShortcuts ?? []),
+      ],
+    }
+
+    // Use merged custom shortcuts
+    customShortcuts = server._shortcutsOptions
+      .customShortcuts as CLIShortcut<Server>[]
   }
 
   if (opts?.print) {
@@ -48,7 +66,7 @@ export function bindCLIShortcuts<Server extends ViteDevServer | PreviewServer>(
     )
   }
 
-  const shortcuts = (opts?.customShortcuts ?? []).concat(
+  const shortcuts = customShortcuts.concat(
     (isDev
       ? BASE_DEV_SHORTCUTS
       : BASE_PREVIEW_SHORTCUTS) as CLIShortcut<Server>[],
@@ -88,6 +106,12 @@ export function bindCLIShortcuts<Server extends ViteDevServer | PreviewServer>(
   }
 
   const rl = readline.createInterface({ input: process.stdin })
+
+  if (isDev) {
+    server._rl?.close()
+    server._rl = rl
+  }
+
   rl.on('line', onInput)
   server.httpServer.on('close', () => rl.close())
 }
