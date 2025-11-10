@@ -26,7 +26,11 @@ const wasmHelper = async (opts = {}, url: string) => {
     }
     result = await WebAssembly.instantiate(bytes, opts)
   } else {
-    if (typeof process !== 'undefined' && process.versions?.node) {
+    if (
+      typeof process !== 'undefined' &&
+      process.versions &&
+      process.versions.node
+    ) {
       const fs = await import('node:fs/promises')
       if (url.startsWith('/@fs/')) {
         url = url.slice(5)
