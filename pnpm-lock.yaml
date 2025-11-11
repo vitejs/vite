@@ -43,9 +43,6 @@ importers:
       '@types/cross-spawn':
         specifier: ^6.0.6
         version: 6.0.6
-      '@types/debug':
-        specifier: ^4.1.12
-        version: 4.1.12
       '@types/estree':
         specifier: ^1.0.8
         version: 1.0.8
@@ -315,9 +312,6 @@ importers:
       cross-spawn:
         specifier: ^7.0.6
         version: 7.0.6
-      debug:
-        specifier: ^4.4.3
-        version: 4.4.3
       dotenv:
         specifier: ^17.2.3
         version: 17.2.3
@@ -360,6 +354,9 @@ importers:
       nanoid:
         specifier: ^5.1.6
         version: 5.1.6
+      obug:
+        specifier: ^0.1.1
+        version: 0.1.1(ms@2.1.3)
       open:
         specifier: ^10.2.0
         version: 10.2.0
@@ -5924,6 +5921,14 @@ packages:
   object-inspect@1.13.4:
     resolution: {integrity: sha512-W67iLl4J2EXEGTbfeHCffrjDfitvLANg0UlX3wFUUSTx92KXRFegMHUVgSqE+wvhAbi4WqjGg9czysTV2Epbew==}
     engines: {node: '>= 0.4'}
+
+  obug@0.1.1:
+    resolution: {integrity: sha512-idmtuvNcQDncavr1pJDd9oCsU+2HWDlg+M/LquTUoi8HTEvm5PtY/dws7whAP1iu3vbrigdTVE/iUvMeKILBDg==}
+    peerDependencies:
+      ms: ^2.0.0
+    peerDependenciesMeta:
+      ms:
+        optional: true
 
   obug@2.0.0:
     resolution: {integrity: sha512-dpSQuPXoKUjulinHmXjZV1YIRhOLEqBl1J6PYi9mRQR2dYcSK+OULRr+GuT1vufk2f40mtIOqmSL/aTikjmq5Q==}
@@ -11592,6 +11597,10 @@ snapshots:
   object-hash@3.0.0: {}
 
   object-inspect@1.13.4: {}
+
+  obug@0.1.1(ms@2.1.3):
+    optionalDependencies:
+      ms: 2.1.3
 
   obug@2.0.0(ms@2.1.3):
     optionalDependencies:
