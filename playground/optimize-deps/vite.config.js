@@ -34,7 +34,7 @@ export default defineConfig({
       '@vitejs/test-dep-esm-external',
       'stream',
     ],
-    rollupOptions: {
+    rolldownOptions: {
       plugins: [
         {
           name: 'replace-a-file',
@@ -122,7 +122,7 @@ function notjs() {
       return {
         optimizeDeps: {
           extensions: ['.notjs'],
-          rollupOptions: {
+          rolldownOptions: {
             plugins: [
               {
                 name: 'esbuild-notjs',

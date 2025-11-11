@@ -760,8 +760,8 @@ async function prepareRolldownOptimizerRun(
 
   const { optimizeDeps } = environment.config
 
-  const { plugins: pluginsFromConfig = [], ...rollupOptions } =
-    optimizeDeps.rollupOptions ?? {}
+  const { plugins: pluginsFromConfig = [], ...rolldownOptions } =
+    optimizeDeps.rolldownOptions ?? {}
 
   let jsxLoader = false
   await Promise.all(
@@ -788,11 +788,11 @@ async function prepareRolldownOptimizerRun(
         // as esbuild will replace it automatically when `platform` is `'browser'`
         'process.env.NODE_ENV'
       : JSON.stringify(process.env.NODE_ENV || environment.config.mode),
-    ...rollupOptions.transform?.define,
+    ...rolldownOptions.transform?.define,
   }
 
   const platform =
-    optimizeDeps.rollupOptions?.platform ??
+    optimizeDeps.rolldownOptions?.platform ??
     // We generally don't want to use platform 'neutral', as esbuild has custom handling
     // when the platform is 'node' or 'browser' that can't be emulated by using mainFields
     // and conditions
@@ -812,24 +812,24 @@ async function prepareRolldownOptimizerRun(
   let canceled = false
   async function build() {
     const bundle = await rolldown({
-      ...rollupOptions,
+      ...rolldownOptions,
       input: flatIdDeps,
       logLevel: 'silent',
       plugins,
       platform,
       transform: {
-        ...rollupOptions.transform,
+        ...rolldownOptions.transform,
         target: ESBUILD_BASELINE_WIDELY_AVAILABLE_TARGET,
         define,
       },
       resolve: {
         extensions: ['.tsx', '.ts', '.jsx', '.js', '.css', '.json'],
-        ...rollupOptions.resolve,
+        ...rolldownOptions.resolve,
       },
       // TODO: remove this and enable rolldown's CSS support later
       moduleTypes: {
         '.css': 'js',
-        ...rollupOptions.moduleTypes,
+        ...rolldownOptions.moduleTypes,
         ...(jsxLoader ? { '.js': 'jsx' } : {}),
       },
     })
@@ -839,7 +839,7 @@ async function prepareRolldownOptimizerRun(
     }
     const result = await bundle.write({
       legalComments: 'none',
-      ...rollupOptions.output,
+      ...rolldownOptions.output,
       format: 'esm',
       sourcemap: true,
       dir: processingCacheDir,
@@ -1089,13 +1089,13 @@ export async function extractExportsData(
 
   const { optimizeDeps } = environment.config
 
-  const rollupOptions = optimizeDeps.rollupOptions ?? {}
+  const rolldownOptions = optimizeDeps.rolldownOptions ?? {}
   if (optimizeDeps.extensions?.some((ext) => filePath.endsWith(ext))) {
     // For custom supported extensions, build the entry file to transform it into JS,
     // and then parse with es-module-lexer. Note that the `bundle` option is not `true`,
     // so only the entry file is being transformed.
-    const { plugins: pluginsFromConfig = [], ...remainingRollupOptions } =
-      rollupOptions
+    const { plugins: pluginsFromConfig = [], ...remainingRolldownOptions } =
+      rolldownOptions
     const plugins = await asyncFlatten(arraify(pluginsFromConfig))
     plugins.unshift({
       name: 'externalize',
@@ -1106,17 +1106,17 @@ export async function extractExportsData(
       },
     })
     const build = await rolldown({
-      ...remainingRollupOptions,
+      ...remainingRolldownOptions,
       plugins,
       input: [filePath],
       // TODO: remove this and enable rolldown's CSS support later
       moduleTypes: {
         '.css': 'js',
-        ...remainingRollupOptions.moduleTypes,
+        ...remainingRolldownOptions.moduleTypes,
       },
     })
     const result = await build.generate({
-      ...rollupOptions.output,
+      ...rolldownOptions.output,
       format: 'esm',
       sourcemap: false,
     })
@@ -1134,7 +1134,7 @@ export async function extractExportsData(
   try {
     parseResult = parse(entryContent)
   } catch {
-    const lang = rollupOptions.moduleTypes?.[path.extname(filePath)] || 'jsx'
+    const lang = rolldownOptions.moduleTypes?.[path.extname(filePath)] || 'jsx'
     debug?.(
       `Unable to parse: ${filePath}.\n Trying again with a ${lang} transform.`,
     )
@@ -1274,14 +1274,14 @@ function getConfigHash(environment: Environment): string {
         exclude: optimizeDeps.exclude
           ? unique(optimizeDeps.exclude).sort()
           : undefined,
-        rollupOptions: {
-          ...optimizeDeps.rollupOptions,
+        rolldownOptions: {
+          ...optimizeDeps.rolldownOptions,
           plugins: undefined, // included in optimizeDepsPluginNames
           onLog: undefined,
           onwarn: undefined,
           checks: undefined,
           output: {
-            ...optimizeDeps.rollupOptions?.output,
+            ...optimizeDeps.rolldownOptions?.output,
             plugins: undefined, // included in optimizeDepsPluginNames
           },
         },
