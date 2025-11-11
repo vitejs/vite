@@ -1,14 +1,22 @@
 import type * as Rolldown from 'rolldown'
+import {
+  type MinifyOptions,
+  type MinifyResult,
+  minify as minifySync,
+} from 'rolldown/experimental'
 import type * as Rollup from '#types/internal/rollupTypeCompat'
 
 export type { Rollup, Rolldown }
 export { parseAst, parseAstAsync } from 'rolldown/parseAst'
 export { esmExternalRequirePlugin } from 'rolldown/plugins'
-export {
-  minify,
-  type MinifyOptions,
-  type MinifyResult,
-} from 'rolldown/experimental'
+export async function minify(
+  filename: string,
+  sourceText: string,
+  options?: MinifyOptions | undefined | null,
+): Promise<MinifyResult> {
+  return minifySync(filename, sourceText, options)
+}
+export { minifySync, type MinifyOptions, type MinifyResult }
 
 export {
   defineConfig,
