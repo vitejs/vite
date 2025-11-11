@@ -1,21 +1,9 @@
-import { afterEach, beforeEach, describe, expect, test, vi } from 'vitest'
+import { describe, expect, test, vi } from 'vitest'
 import { createServer } from '../server'
 import { preview } from '../preview'
 import { bindCLIShortcuts } from '../shortcuts'
 
 describe('bindCLIShortcuts', () => {
-  const originalIsTTY = process.stdin.isTTY
-
-  beforeEach(() => {
-    process.stdin.isTTY = true
-    vi.stubEnv('CI', '')
-  })
-
-  afterEach(() => {
-    process.stdin.isTTY = originalIsTTY
-    vi.unstubAllEnvs()
-  })
-
   test.each([
     ['dev server', () => createServer()],
     ['preview server', () => preview()],
@@ -26,12 +14,16 @@ describe('bindCLIShortcuts', () => {
       const xAction = vi.fn()
       const yAction = vi.fn()
 
-      bindCLIShortcuts(server, {
-        customShortcuts: [
-          { key: 'x', description: 'test x', action: xAction },
-          { key: 'y', description: 'test y', action: yAction },
-        ],
-      })
+      bindCLIShortcuts(
+        server,
+        {
+          customShortcuts: [
+            { key: 'x', description: 'test x', action: xAction },
+            { key: 'y', description: 'test y', action: yAction },
+          ],
+        },
+        true,
+      )
 
       expect.assert(
         server._rl,
@@ -46,12 +38,16 @@ describe('bindCLIShortcuts', () => {
       const zAction = vi.fn()
 
       xAction.mockClear()
-      bindCLIShortcuts(server, {
-        customShortcuts: [
-          { key: 'x', description: 'test x updated', action: xUpdatedAction },
-          { key: 'z', description: 'test z', action: zAction },
-        ],
-      })
+      bindCLIShortcuts(
+        server,
+        {
+          customShortcuts: [
+            { key: 'x', description: 'test x updated', action: xUpdatedAction },
+            { key: 'z', description: 'test z', action: zAction },
+          ],
+        },
+        true,
+      )
 
       expect(xUpdatedAction).not.toHaveBeenCalled()
       server._rl.emit('line', 'x')

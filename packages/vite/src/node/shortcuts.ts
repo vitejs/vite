@@ -28,8 +28,9 @@ export type CLIShortcut<Server = ViteDevServer | PreviewServer> = {
 export function bindCLIShortcuts<Server extends ViteDevServer | PreviewServer>(
   server: Server,
   opts?: BindCLIShortcutsOptions<Server>,
+  enabled: boolean = process.stdin.isTTY && !process.env.CI,
 ): void {
-  if (!server.httpServer || !process.stdin.isTTY || process.env.CI) {
+  if (!server.httpServer || !enabled) {
     return
   }
 
