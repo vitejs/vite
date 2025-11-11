@@ -21,7 +21,6 @@ import {
 } from 'vite'
 import type { Browser, Page } from 'playwright-chromium'
 import type { RollupError, RollupWatcher, RollupWatcherEvent } from 'rollup'
-import type { RunnerTestFile } from 'vitest'
 import { beforeAll, expect, inject } from 'vitest'
 
 // #region serializer
@@ -125,22 +124,16 @@ function throwHtmlParseError() {
 }
 // #endregion
 
-beforeAll(async (s) => {
-  const suite = s as RunnerTestFile
-
-  testPath = suite.filepath!
+beforeAll(async (suite) => {
+  testPath = suite.file.filepath!
   testName = slash(testPath).match(/playground\/([\w-]+)\//)?.[1]
   testDir = path.dirname(testPath)
   if (testName) {
     testDir = path.resolve(workspaceRoot, 'playground-temp', testName)
   }
 
-  // skip browser setup for non-playground tests
-  // TODO: ssr playground?
-  if (
-    !suite.filepath.includes('playground') ||
-    suite.filepath.includes('hmr-ssr')
-  ) {
+  // skip browser setup for hmr-ssr playground
+  if (testName === 'hmr-ssr') {
     return
   }
 
