@@ -788,7 +788,7 @@ async function prepareRolldownOptimizerRun(
         // as esbuild will replace it automatically when `platform` is `'browser'`
         'process.env.NODE_ENV'
       : JSON.stringify(process.env.NODE_ENV || environment.config.mode),
-    ...rollupOptions.define,
+    ...rollupOptions.transform?.define,
   }
 
   const platform =
@@ -816,10 +816,11 @@ async function prepareRolldownOptimizerRun(
       input: flatIdDeps,
       logLevel: 'silent',
       plugins,
-      define,
       platform,
       transform: {
+        ...rollupOptions.transform,
         target: ESBUILD_BASELINE_WIDELY_AVAILABLE_TARGET,
+        define,
       },
       resolve: {
         extensions: ['.tsx', '.ts', '.jsx', '.js', '.css', '.json'],
