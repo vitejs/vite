@@ -42,7 +42,7 @@ export function bindCLIShortcuts<Server extends ViteDevServer | PreviewServer>(
   // Merge custom shortcuts from existing options
   // with new shortcuts taking priority
   for (const shortcut of server._shortcutsOptions?.customShortcuts ?? []) {
-    if (!customShortcuts.find((s) => s.key === shortcut.key)) {
+    if (!customShortcuts.some((s) => s.key === shortcut.key)) {
       customShortcuts.push(shortcut)
     }
   }
