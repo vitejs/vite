@@ -1,3 +1,21 @@
+## <small>[7.2.4](https://github.com/vitejs/rolldown-vite/compare/v7.2.3...v7.2.4) (2025-11-11)</small>
+### ⚠ BREAKING CHANGES
+
+* change `minify` to be async (#505)
+
+### Features
+
+* change `minify` to be async ([#505](https://github.com/vitejs/rolldown-vite/issues/505)) ([ec441fc](https://github.com/vitejs/rolldown-vite/commit/ec441fc2135d450ba724b0fc4d68c1cd6984a918))
+* expose `parse` / `parseAsync` ([#503](https://github.com/vitejs/rolldown-vite/issues/503)) ([1ffb4ea](https://github.com/vitejs/rolldown-vite/commit/1ffb4ead4d855d1bfa6a218101cfba226d51a887))
+
+### Bug Fixes
+
+* don't set `ssr.optimizeDeps.rollupOptions` compat if `ssr` option is not set ([#506](https://github.com/vitejs/rolldown-vite/issues/506)) ([8e32f61](https://github.com/vitejs/rolldown-vite/commit/8e32f61cbed914bf75e945e4b2af96fdd0e49222))
+
+### Code Refactoring
+
+* runtime deprecate `optimizeDeps.rollupOptions` ([#507](https://github.com/vitejs/rolldown-vite/issues/507)) ([46a6777](https://github.com/vitejs/rolldown-vite/commit/46a6777607968644cee79434bd465cfeb6c285b9))
+
 ## <small>[7.2.3](https://github.com/vitejs/rolldown-vite/compare/v7.2.2...v7.2.3) (2025-11-11)</small>
 ### Features
 
