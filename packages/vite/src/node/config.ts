@@ -1180,7 +1180,6 @@ function resolveDepOptimizationOptions(
     setResolveOptions('conditionNames', merged.esbuildOptions.conditions)
     if (
       merged.esbuildOptions.keepNames !== undefined &&
-      rollupOptions.keepNames === undefined &&
       rollupOptions.output.keepNames === undefined
     ) {
       rollupOptions.output.keepNames = merged.esbuildOptions.keepNames
