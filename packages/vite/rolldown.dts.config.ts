@@ -136,6 +136,9 @@ const ignoreConfusingTypeNames = [
   'T$1',
   'K$1',
   'Server$3',
+  // temporary variables for types
+  'parseAst$1',
+  'parseAstAsync$1',
 ]
 
 /**
