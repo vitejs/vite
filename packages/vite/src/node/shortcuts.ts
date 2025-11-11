@@ -95,11 +95,9 @@ export function bindCLIShortcuts<Server extends ViteDevServer | PreviewServer>(
     actionRunning = false
   }
 
-  const rl = readline.createInterface({ input: process.stdin })
-
-  server._rl?.close()
-  server._rl = rl
-
+  server._rl ??= readline.createInterface({ input: process.stdin })
+  const rl = server._rl
+  rl.removeAllListeners('line')
   rl.on('line', onInput)
   server.httpServer.on('close', () => rl.close())
 }
