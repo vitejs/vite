@@ -249,8 +249,8 @@ async function prepareRolldownScanner(
   deps: Record<string, string>,
   missing: Record<string, string>,
 ): Promise<{ build: () => Promise<void> }> {
-  const { plugins: pluginsFromConfig = [], ...rollupOptions } =
-    environment.config.optimizeDeps.rollupOptions ?? {}
+  const { plugins: pluginsFromConfig = [], ...rolldownOptions } =
+    environment.config.optimizeDeps.rolldownOptions ?? {}
 
   const plugins = await asyncFlatten(arraify(pluginsFromConfig))
 
@@ -264,7 +264,7 @@ async function prepareRolldownScanner(
   const { tsconfig } = await loadTsconfigJsonForFile(
     path.join(environment.config.root, '_dummy.js'),
   )
-  const transformOptions = deepClone(rollupOptions.transform) ?? {}
+  const transformOptions = deepClone(rolldownOptions.transform) ?? {}
   setOxcTransformOptionsFromTsconfigOptions(
     transformOptions,
     tsconfig.compilerOptions,
@@ -276,7 +276,7 @@ async function prepareRolldownScanner(
 
   async function build() {
     await scan({
-      ...rollupOptions,
+      ...rolldownOptions,
       transform: transformOptions,
       input: entries,
       logLevel: 'silent',

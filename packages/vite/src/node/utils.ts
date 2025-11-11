@@ -1233,16 +1233,39 @@ export function mergeWithDefaults<
   return mergeWithDefaultsRecursively(clonedDefaults, values)
 }
 
+const runtimeDeprecatedPath = new Set(['optimizeDeps', 'ssr.optimizeDeps'])
+const rollupOptionsDeprecationCall = (() => {
+  return () => {
+    const method = process.env.VITE_DEPRECATION_TRACE ? 'trace' : 'warn'
+    // eslint-disable-next-line no-console
+    console[method](
+      '`optimizeDeps.rollupOptions` / `ssr.optimizeDeps.rollupOptions` is deprecated. ' +
+        'Use `optimizeDeps.rolldownOptions` instead. Note that this option may be set by a plugin. ' +
+        (method === 'trace'
+          ? 'Showing trace because VITE_DEPRECATION_TRACE is set.'
+          : 'Set VITE_DEPRECATION_TRACE=1 to see where it is called.'),
+    )
+  }
+})()
+
 export function setupRollupOptionCompat<
   T extends Pick<BuildEnvironmentOptions, 'rollupOptions' | 'rolldownOptions'>,
 >(
   buildConfig: T,
+  path: string,
 ): asserts buildConfig is T & {
   rolldownOptions: Exclude<T['rolldownOptions'], undefined>
 } {
   // if both rollupOptions and rolldownOptions are present,
   // ignore rollupOptions and use rolldownOptions
   buildConfig.rolldownOptions ??= buildConfig.rollupOptions
+  if (
+    runtimeDeprecatedPath.has(path) &&
+    buildConfig.rollupOptions &&
+    buildConfig.rolldownOptions !== buildConfig.rollupOptions
+  ) {
+    rollupOptionsDeprecationCall()
+  }
 
   // proxy rolldownOptions to rollupOptions
   Object.defineProperty(buildConfig, 'rollupOptions', {
@@ -1250,6 +1273,9 @@ export function setupRollupOptionCompat<
       return buildConfig.rolldownOptions
     },
     set(newValue) {
+      if (runtimeDeprecatedPath.has(path)) {
+        rollupOptionsDeprecationCall()
+      }
       buildConfig.rolldownOptions = newValue
     },
     configurable: true,
@@ -1291,7 +1317,7 @@ function mergeConfigRecursively(
 ) {
   const merged: Record<string, any> = { ...defaults }
   if (rollupOptionsRootPaths.has(rootPath)) {
-    setupRollupOptionCompat(merged)
+    setupRollupOptionCompat(merged, rootPath)
   }
 
   for (const key in overrides) {

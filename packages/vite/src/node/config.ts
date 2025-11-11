@@ -798,7 +798,7 @@ const configDefaults = Object.freeze({
     exclude: [],
     needsInterop: [],
     // esbuildOptions
-    rollupOptions: {},
+    rolldownOptions: {},
     /** @experimental */
     extensions: [],
     /** @deprecated @experimental */
@@ -1094,6 +1094,12 @@ function resolveDepOptimizationOptions(
   consumer: 'client' | 'server' | undefined,
   logger: Logger,
 ): DepOptimizationOptions {
+  if (
+    optimizeDeps?.rolldownOptions &&
+    optimizeDeps?.rolldownOptions === optimizeDeps?.rollupOptions
+  ) {
+    delete optimizeDeps?.rollupOptions
+  }
   const merged = mergeWithDefaults(
     {
       ...configDefaults.optimizeDeps,
@@ -1103,10 +1109,10 @@ function resolveDepOptimizationOptions(
     },
     optimizeDeps ?? {},
   )
-  setupRollupOptionCompat(merged)
+  setupRollupOptionCompat(merged, 'optimizeDeps')
 
-  const rollupOptions = merged.rollupOptions as Exclude<
-    DepOptimizationOptions['rollupOptions'],
+  const rolldownOptions = merged.rolldownOptions as Exclude<
+    DepOptimizationOptions['rolldownOptions'],
     undefined
   >
 
@@ -1116,13 +1122,13 @@ function resolveDepOptimizationOptions(
         `You or a plugin you are using have set \`optimizeDeps.esbuildOptions\` ` +
           `but this option is now deprecated. ` +
           `Vite now uses Rolldown to optimize the dependencies. ` +
-          `Please use \`optimizeDeps.rollupOptions\` instead.`,
+          `Please use \`optimizeDeps.rolldownOptions\` instead.`,
       ),
     )
 
-    rollupOptions.resolve ??= {}
-    rollupOptions.output ??= {}
-    rollupOptions.transform ??= {}
+    rolldownOptions.resolve ??= {}
+    rolldownOptions.output ??= {}
+    rolldownOptions.transform ??= {}
 
     const setResolveOptions = <
       T extends keyof Exclude<RolldownOptions['resolve'], undefined>,
@@ -1130,66 +1136,66 @@ function resolveDepOptimizationOptions(
       key: T,
       value: Exclude<RolldownOptions['resolve'], undefined>[T],
     ) => {
-      if (value !== undefined && rollupOptions.resolve![key] === undefined) {
-        rollupOptions.resolve![key] = value
+      if (value !== undefined && rolldownOptions.resolve![key] === undefined) {
+        rolldownOptions.resolve![key] = value
       }
     }
 
     if (
       merged.esbuildOptions.minify !== undefined &&
-      rollupOptions.output.minify === undefined
+      rolldownOptions.output.minify === undefined
     ) {
-      rollupOptions.output.minify = merged.esbuildOptions.minify
+      rolldownOptions.output.minify = merged.esbuildOptions.minify
     }
     if (
       merged.esbuildOptions.treeShaking !== undefined &&
-      rollupOptions.treeshake === undefined
+      rolldownOptions.treeshake === undefined
     ) {
-      rollupOptions.treeshake = merged.esbuildOptions.treeShaking
+      rolldownOptions.treeshake = merged.esbuildOptions.treeShaking
     }
     if (
       merged.esbuildOptions.define !== undefined &&
-      rollupOptions.transform.define === undefined
+      rolldownOptions.transform.define === undefined
     ) {
-      rollupOptions.transform.define = merged.esbuildOptions.define
+      rolldownOptions.transform.define = merged.esbuildOptions.define
     }
     if (merged.esbuildOptions.loader !== undefined) {
       const loader = merged.esbuildOptions.loader
-      rollupOptions.moduleTypes ??= {}
+      rolldownOptions.moduleTypes ??= {}
       for (const [key, value] of Object.entries(loader)) {
         if (
-          rollupOptions.moduleTypes[key] === undefined &&
+          rolldownOptions.moduleTypes[key] === undefined &&
           value !== 'copy' &&
           value !== 'css' &&
           value !== 'default' &&
           value !== 'file' &&
           value !== 'local-css'
         ) {
-          rollupOptions.moduleTypes[key] = value
+          rolldownOptions.moduleTypes[key] = value
         }
       }
     }
     if (
       merged.esbuildOptions.preserveSymlinks !== undefined &&
-      rollupOptions.resolve.symlinks === undefined
+      rolldownOptions.resolve.symlinks === undefined
     ) {
-      rollupOptions.resolve.symlinks = !merged.esbuildOptions.preserveSymlinks
+      rolldownOptions.resolve.symlinks = !merged.esbuildOptions.preserveSymlinks
     }
     setResolveOptions('extensions', merged.esbuildOptions.resolveExtensions)
     setResolveOptions('mainFields', merged.esbuildOptions.mainFields)
     setResolveOptions('conditionNames', merged.esbuildOptions.conditions)
     if (
       merged.esbuildOptions.keepNames !== undefined &&
-      rollupOptions.output.keepNames === undefined
+      rolldownOptions.output.keepNames === undefined
     ) {
-      rollupOptions.output.keepNames = merged.esbuildOptions.keepNames
+      rolldownOptions.output.keepNames = merged.esbuildOptions.keepNames
     }
 
     if (
       merged.esbuildOptions.platform !== undefined &&
-      rollupOptions.platform === undefined
+      rolldownOptions.platform === undefined
     ) {
-      rollupOptions.platform = merged.esbuildOptions.platform
+      rolldownOptions.platform = merged.esbuildOptions.platform
     }
 
     // NOTE: the following options cannot be converted
@@ -1232,10 +1238,10 @@ function resolveDepOptimizationOptions(
   merged.esbuildOptions ??= {}
   merged.esbuildOptions.preserveSymlinks ??= preserveSymlinks
 
-  rollupOptions.resolve ??= {}
-  rollupOptions.resolve.symlinks ??= !preserveSymlinks
-  rollupOptions.output ??= {}
-  rollupOptions.output.topLevelVar ??= true
+  rolldownOptions.resolve ??= {}
+  rolldownOptions.resolve.symlinks ??= !preserveSymlinks
+  rolldownOptions.output ??= {}
+  rolldownOptions.output.topLevelVar ??= true
 
   return merged
 }
@@ -1243,9 +1249,9 @@ function resolveDepOptimizationOptions(
 async function setOptimizeDepsPluginNames(resolvedConfig: ResolvedConfig) {
   await Promise.all(
     Object.values(resolvedConfig.environments).map(async (environment) => {
-      const plugins = environment.optimizeDeps.rollupOptions?.plugins ?? []
+      const plugins = environment.optimizeDeps.rolldownOptions?.plugins ?? []
       const outputPlugins =
-        environment.optimizeDeps.rollupOptions?.output?.plugins ?? []
+        environment.optimizeDeps.rolldownOptions?.output?.plugins ?? []
       const flattenedPlugins = await asyncFlatten([plugins, outputPlugins])
 
       const pluginNames = []
@@ -1264,9 +1270,9 @@ function applyDepOptimizationOptionCompat(resolvedConfig: ResolvedConfig) {
     resolvedConfig.optimizeDeps.esbuildOptions?.plugins &&
     resolvedConfig.optimizeDeps.esbuildOptions.plugins.length > 0
   ) {
-    resolvedConfig.optimizeDeps.rollupOptions ??= {}
-    resolvedConfig.optimizeDeps.rollupOptions.plugins ||= []
-    ;(resolvedConfig.optimizeDeps.rollupOptions.plugins as any[]).push(
+    resolvedConfig.optimizeDeps.rolldownOptions ??= {}
+    resolvedConfig.optimizeDeps.rolldownOptions.plugins ||= []
+    ;(resolvedConfig.optimizeDeps.rolldownOptions.plugins as any[]).push(
       ...resolvedConfig.optimizeDeps.esbuildOptions.plugins.map((plugin) =>
         convertEsbuildPluginToRolldownPlugin(plugin),
       ),
@@ -1296,14 +1302,14 @@ export async function resolveConfig(
 ): Promise<ResolvedConfig> {
   let config = inlineConfig
   config.build ??= {}
-  setupRollupOptionCompat(config.build)
+  setupRollupOptionCompat(config.build, 'build')
   config.worker ??= {}
-  setupRollupOptionCompat(config.worker)
+  setupRollupOptionCompat(config.worker, 'worker')
   config.optimizeDeps ??= {}
-  setupRollupOptionCompat(config.optimizeDeps)
+  setupRollupOptionCompat(config.optimizeDeps, 'optimizeDeps')
   if (config.ssr) {
     config.ssr.optimizeDeps ??= {}
-    setupRollupOptionCompat(config.ssr.optimizeDeps)
+    setupRollupOptionCompat(config.ssr.optimizeDeps, 'ssr.optimizeDeps')
   }
 
   let configFileDependencies: string[] = []
@@ -1735,7 +1741,7 @@ export async function resolveConfig(
     rollupOptions: config.worker?.rollupOptions || {},
     rolldownOptions: config.worker?.rolldownOptions, // will be set by setupRollupOptionCompat if undefined
   }
-  setupRollupOptionCompat(resolvedWorkerOptions)
+  setupRollupOptionCompat(resolvedWorkerOptions, 'worker')
 
   const base = withTrailingSlash(resolvedBase)
 

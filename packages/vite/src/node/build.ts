@@ -448,7 +448,7 @@ export function resolveBuildEnvironmentOptions(
     } satisfies BuildEnvironmentOptions,
     raw,
   )
-  setupRollupOptionCompat(merged)
+  setupRollupOptionCompat(merged, 'build')
   merged.rolldownOptions = {
     platform: consumer === 'server' ? 'node' : 'browser',
     ...merged.rolldownOptions,
