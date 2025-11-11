@@ -1301,9 +1301,10 @@ export async function resolveConfig(
   setupRollupOptionCompat(config.worker)
   config.optimizeDeps ??= {}
   setupRollupOptionCompat(config.optimizeDeps)
-  config.ssr ??= {}
-  config.ssr.optimizeDeps ??= {}
-  setupRollupOptionCompat(config.ssr.optimizeDeps)
+  if (config.ssr) {
+    config.ssr.optimizeDeps ??= {}
+    setupRollupOptionCompat(config.ssr.optimizeDeps)
+  }
 
   let configFileDependencies: string[] = []
   let mode = inlineConfig.mode || defaultMode
