@@ -96,11 +96,15 @@ export function bindCLIShortcuts<Server extends ViteDevServer | PreviewServer>(
     actionRunning = false
   }
 
-  server._rl ??= readline.createInterface({ input: process.stdin })
-  const rl = server._rl
-  rl.removeAllListeners('line')
-  rl.on('line', onInput)
-  server.httpServer.on('close', () => rl.close())
+  if (!server._rl) {
+    const rl = readline.createInterface({ input: process.stdin })
+    server._rl = rl
+    server.httpServer.on('close', () => rl.close())
+  } else {
+    server._rl.removeAllListeners('line')
+  }
+
+  server._rl.on('line', onInput)
 }
 
 const BASE_DEV_SHORTCUTS: CLIShortcut<ViteDevServer>[] = [
