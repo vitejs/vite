@@ -1,5 +1,9 @@
 import type * as Rolldown from 'rolldown'
 import {
+  parseAst as _parseAst,
+  parseAstAsync as _parseAstAsync,
+} from 'rolldown/parseAst'
+import {
   type MinifyOptions,
   type MinifyResult,
   minify as minifySync,
@@ -7,7 +11,6 @@ import {
 import type * as Rollup from '#types/internal/rollupTypeCompat'
 
 export type { Rollup, Rolldown }
-export { parseAst, parseAstAsync } from 'rolldown/parseAst'
 export { esmExternalRequirePlugin } from 'rolldown/plugins'
 export async function minify(
   filename: string,
@@ -17,6 +20,17 @@ export async function minify(
   return minifySync(filename, sourceText, options)
 }
 export { minifySync, type MinifyOptions, type MinifyResult }
+export {
+  parseAsync as parse,
+  parseSync,
+  type ParserOptions,
+  type ParseResult,
+} from 'rolldown/experimental'
+
+/** @deprecated - use `parse` instead */
+export const parseAst: typeof _parseAst = _parseAst
+/** @deprecated - use `parseAsync` instead */
+export const parseAstAsync: typeof _parseAstAsync = _parseAstAsync
 
 export {
   defineConfig,
