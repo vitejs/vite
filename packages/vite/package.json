@@ -112,7 +112,7 @@
     "convert-source-map": "^2.0.0",
     "cors": "^2.8.5",
     "cross-spawn": "^7.0.6",
-    "obug": "^0.1.1",
+    "obug": "^0.1.3",
     "dotenv": "^17.2.3",
     "dotenv-expand": "^12.0.3",
     "es-module-lexer": "^1.7.0",
