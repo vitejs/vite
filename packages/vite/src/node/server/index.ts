@@ -6,6 +6,7 @@ import { get as httpsGet } from 'node:https'
 import type * as http from 'node:http'
 import { performance } from 'node:perf_hooks'
 import type { Http2SecureServer } from 'node:http2'
+import type readline from 'node:readline'
 import connect from 'connect'
 import corsMiddleware from 'cors'
 import colors from 'picocolors'
@@ -408,6 +409,10 @@ export interface ViteDevServer {
    * @internal
    */
   _shortcutsOptions?: BindCLIShortcutsOptions<ViteDevServer>
+  /**
+   * @internal
+   */
+  _rl?: readline.Interface | undefined
   /**
    * @internal
    */
