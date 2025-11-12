@@ -172,8 +172,7 @@ const FRAMEWORKS: Framework[] = [
         name: 'redwoodsdk-standard',
         display: 'RedwoodSDK ↗',
         color: red,
-        customCommand:
-          'npm exec degit redwoodjs/sdk/starters/standard TARGET_DIR',
+        customCommand: 'npm create rwsdk@latest TARGET_DIR',
       },
       {
         name: 'rsc',
@@ -661,7 +660,7 @@ async function init() {
 
   if (useRolldownVite) {
     // renovate: datasource=npm depName=rolldown-vite
-    const rolldownViteVersion = '7.1.19'
+    const rolldownViteVersion = '7.2.2'
     const pkgVersion = `npm:rolldown-vite@${rolldownViteVersion}`
     pkg.devDependencies.vite = pkgVersion
     switch (pkgManager) {
@@ -777,7 +776,7 @@ function pkgFromUserAgent(userAgent: string | undefined): PkgInfo | undefined {
 
 function setupReactSwc(root: string, isTs: boolean) {
   // renovate: datasource=npm depName=@vitejs/plugin-react-swc
-  const reactSwcPluginVersion = '4.2.0'
+  const reactSwcPluginVersion = '4.2.1'
 
   editFile(path.resolve(root, 'package.json'), (content) => {
     return content.replace(
