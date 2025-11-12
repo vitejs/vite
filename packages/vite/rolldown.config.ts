@@ -75,12 +75,6 @@ const nodeConfig = defineConfig({
     index: path.resolve(__dirname, 'src/node/index.ts'),
     cli: path.resolve(__dirname, 'src/node/cli.ts'),
   },
-  resolve: {
-    alias: {
-      // we can always use node version (the default entry point has browser support)
-      debug: 'debug/src/node.js',
-    },
-  },
   external: [
     /^vite\//,
     'fsevents',
@@ -136,6 +130,7 @@ const nodeConfig = defineConfig({
     writeTypesPlugin(),
     enableSourceMapsInWatchModePlugin(),
     externalizeDepsInWatchPlugin(),
+    rewriteRequireObug(),
   ],
 })
 
@@ -289,6 +284,23 @@ function shimDepsPlugin(deps: Record<string, ShimOptions[]>): Plugin {
           }
         }
       }
+    },
+  }
+}
+
+// FIXME: https://github.com/rolldown/rolldown/issues/4997
+function rewriteRequireObug(): Plugin {
+  return {
+    name: 'rewrite-require-obug',
+    renderChunk: {
+      filter: { code: '__toCommonJS(node_exports)' },
+      handler(code, { fileName }) {
+        console.log(`fixed require obug: ${fileName}`)
+        return code.replaceAll(
+          '__toCommonJS(node_exports)',
+          `__toCommonJS(node_exports)['module.exports']`,
+        )
+      },
     },
   }
 }
