@@ -1,5 +1,6 @@
 import fs from 'node:fs'
 import path from 'node:path'
+import type readline from 'node:readline'
 import sirv from 'sirv'
 import compression from '@polka/compression'
 import connect from 'connect'
@@ -107,6 +108,14 @@ export interface PreviewServer {
    * Bind CLI shortcuts
    */
   bindCLIShortcuts(options?: BindCLIShortcutsOptions<PreviewServer>): void
+  /**
+   * @internal
+   */
+  _shortcutsOptions?: BindCLIShortcutsOptions<PreviewServer>
+  /**
+   * @internal
+   */
+  _rl?: readline.Interface | undefined
 }
 
 export type PreviewServerHook = (
