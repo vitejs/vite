@@ -128,7 +128,12 @@ If you need a custom integration, you can follow the steps in this guide to conf
    - **Asset chunks**: Generated from imported assets like images, fonts. Their key is the relative src path from project root.
    - **CSS files**: When [`build.cssCodeSplit`](/config/build-options.md#build-csscodesplit) is `false`, a single CSS file is generated with the key `style.css`. When `build.cssCodeSplit` is not `false`, the key is generated similar to JS chunks (i.e. entry chunks will not have `_` prefix and non-entry chunks will have `_` prefix).
 
-   Chunks will contain information on their static and dynamic imports (both are keys that map to the corresponding chunk in the manifest), and also their corresponding CSS and asset files (if any).
+   **Important notes about chunk types:**
+   - **JS chunks** (entry, dynamic entry, and non-entry chunks) can contain `imports`, `dynamicImports`, `css`, and `assets` fields. The `imports` and `dynamicImports` fields reference other **JS chunks only** by their manifest keys.
+   - **CSS files and asset chunks** only have `file`, `src`, and optionally `isEntry` and `name` fields. They do not have `imports`, `dynamicImports`, `css`, or `assets` fields.
+   - When a JS chunk imports CSS, the CSS file path is listed in the chunk's `css` array, not in its `imports` array.
+
+   Chunks will contain information on their static and dynamic imports (both are keys that map to the corresponding **JS** chunk in the manifest), and also their corresponding CSS and asset files (if any).
 
 4. You can use this file to render links or preload directives with hashed filenames.
 
@@ -157,6 +162,7 @@ If you need a custom integration, you can follow the steps in this guide to conf
    1. A `<link rel="stylesheet">` tag for each file in the entry point chunk's `css` list (if it exists)
    2. Recursively follow all chunks in the entry point's `imports` list and include a
       `<link rel="stylesheet">` tag for each CSS file of each imported chunk's `css` list (if it exists).
+      Note: Only JS chunks have an `imports` field. CSS files and assets in the manifest do not have imports.
    3. A tag for the `file` key of the entry point chunk. This can be `<script type="module">` for JavaScript, `<link rel="stylesheet">` for CSS.
    4. Optionally, `<link rel="modulepreload">` tag for the `file` of each imported JavaScript
       chunk, again recursively following the imports starting from the entry point chunk.
@@ -202,6 +208,7 @@ If you need a custom integration, you can follow the steps in this guide to conf
          }
          seen.add(file)
 
+         // Recursively get imports from the imported chunk
          chunks.push(...getImportedChunks(importee))
          chunks.push(importee)
        }
@@ -213,4 +220,55 @@ If you need a custom integration, you can follow the steps in this guide to conf
    }
    ```
 
+   **Note:** This function only processes JS chunks because only JS chunks have an `imports` field.
+   CSS files and other assets in the manifest do not have imports and will never be returned by this function.
+   CSS dependencies are accessed via the `css` field of JS chunks.
+
    :::
+
+## Common Questions
+
+### Can CSS files have imports in the manifest?
+
+No. In the manifest, only JavaScript chunks (entries with `type === 'chunk'` in the Rollup bundle) can have `imports` or `dynamicImports` fields. CSS files are assets and only have `file`, `src`, and optionally `isEntry` and `name` fields.
+
+For example, this manifest structure is **invalid**:
+
+```json
+{
+  "_test-ABCdeFG9.css": {
+    "file": "assets/test-ABCdeFG9.css",
+    "imports": ["logo.svg"], // ❌ Invalid: CSS cannot have imports
+    "css": ["assets/test2-ABCdeFG0.css"] // ❌ Invalid: CSS cannot have nested CSS
+  }
+}
+```
+
+### How are CSS dependencies represented?
+
+When a JavaScript chunk imports CSS, the CSS file paths appear in the chunk's `css` array, not in its `imports` array:
+
+```json
+{
+  "views/foo.js": {
+    "file": "assets/foo-BRBmoGS9.js",
+    "src": "views/foo.js",
+    "isEntry": true,
+    "imports": ["_shared-B7PI925R.js"], // ✅ Only JS chunks
+    "css": ["assets/foo-5UjPuW-k.css", "assets/shared-ChJ_j-JJ.css"] // ✅ CSS files
+  },
+  "_shared-B7PI925R.js": {
+    "file": "assets/shared-B7PI925R.js",
+    "name": "shared",
+    "css": ["assets/shared-ChJ_j-JJ.css"]
+  }
+}
+```
+
+### How should parsers handle these fields?
+
+When implementing a manifest parser:
+
+1. **For the `imports` field**: Only exists on JS chunks. Each import references another JS chunk's manifest key. Recursively process these to build the dependency tree.
+2. **For the `css` field**: Contains direct file paths (not manifest keys) to CSS files that should be loaded for this chunk. Do not attempt to look these up in the manifest or process them recursively—they are final file paths.
+3. **For CSS and asset entries**: These only have `file`, `src`, and optionally `isEntry`/`name`. They never have `imports`, `dynamicImports`, `css`, or `assets` fields.
