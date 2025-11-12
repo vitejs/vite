@@ -87,7 +87,9 @@ export default defineConfig({
   title: `Vite${additionalTitle}`,
   description: 'Next Generation Frontend Tooling',
   cleanUrls: true,
-
+  sitemap: {
+    hostname: 'https://vite.dev',
+  },
   head: [
     ['link', { rel: 'icon', type: 'image/svg+xml', href: '/logo.svg' }],
     [
@@ -150,6 +152,7 @@ export default defineConfig({
       searchParameters: {
         facetFilters: ['tags:en'],
       },
+      insights: true,
     },
 
     carbonAds: {
