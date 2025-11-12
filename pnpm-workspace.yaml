@@ -40,3 +40,5 @@ onlyBuiltDependencies:
   - "simple-git-hooks"
   - "unrs-resolver"
   - "workerd"
+
+trustPolicy: no-downgrade
