@@ -1,6 +1,9 @@
+import { fileURLToPath, pathToFileURL } from 'node:url'
+import { readFile } from 'node:fs/promises'
 import { exactRegex } from '@rolldown/pluginutils'
 import type { Plugin } from '../plugin'
 import { fsPathFromId } from '../utils'
+import { FS_PREFIX } from '../constants'
 import { fileToUrl } from './asset'
 
 const wasmHelperId = '\0vite/wasm-helper.js'
@@ -55,12 +58,14 @@ const instantiateFromUrl = async (url: string, opts?: WebAssembly.Imports) => {
 
 const instantiateFromUrlCode = instantiateFromUrl.toString()
 
-const instantiateFromFile = async (
-  fsPath: string,
-  opts?: WebAssembly.Imports,
-) => {
-  const fs = await import('node:fs/promises')
-  const buffer = await fs.readFile(fsPath)
+const instantiateFromFile = async (url: string, opts?: WebAssembly.Imports) => {
+  let fsPath = url
+  if (url.startsWith('file:')) {
+    fsPath = fileURLToPath(url)
+  } else if (url.startsWith('/')) {
+    fsPath = url.slice(1)
+  }
+  const buffer = await readFile(fsPath)
   return WebAssembly.instantiate(buffer, opts)
 }
 
@@ -83,18 +88,26 @@ export const wasmHelperPlugin = (): Plugin => {
         const isServer = this.environment.config.consumer === 'server'
 
         if (id === wasmHelperId) {
-          const instantiateFromUrl = isServer
-            ? instantiateFromFileCode
-            : instantiateFromUrlCode
-          return `
-const instantiateFromUrl = ${instantiateFromUrl}
+          if (isServer) {
+            return `
+import { readFile } from 'node:fs/promises'
+import { fileURLToPath } from 'node:url'
+const instantiateFromUrl = ${instantiateFromFileCode}
 export default ${wasmHelperCode}
 `
+          } else {
+            return `
+const instantiateFromUrl = ${instantiateFromUrlCode}
+export default ${wasmHelperCode}
+`
+          }
         }
 
         id = id.split('?')[0]
-        const url = isServer ? fsPathFromId(id) : await fileToUrl(this, id)
-
+        let url = await fileToUrl(this, id)
+        if (isServer && url.startsWith(FS_PREFIX)) {
+          url = pathToFileURL(fsPathFromId(id)).href
+        }
         return `
   import initWasm from "${wasmHelperId}"
   export default opts => initWasm(opts, ${JSON.stringify(url)})

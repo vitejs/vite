@@ -3,9 +3,16 @@
 
 import path from 'node:path'
 import kill from 'kill-port'
-import { hmrPorts, ports, rootDir } from '~utils'
+import { build } from 'vite'
+import { hmrPorts, isBuild, ports, rootDir } from '~utils'
 
 export const port = ports['ssr-wasm']
+
+export async function preServe() {
+  if (isBuild) {
+    await build({ root: rootDir })
+  }
+}
 
 export async function serve(): Promise<{ close(): Promise<void> }> {
   await kill(port)

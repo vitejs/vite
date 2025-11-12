@@ -5,8 +5,8 @@
   "type": "module",
   "scripts": {
     "dev": "node server",
-    "serve": "NODE_ENV=production node server",
-    "debug": "node --inspect-brk server"
+    "build": "vite build",
+    "preview": "NODE_ENV=production node server"
   },
   "dependencies": {},
   "devDependencies": {
