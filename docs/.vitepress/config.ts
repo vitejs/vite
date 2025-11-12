@@ -8,9 +8,12 @@ import {
   groupIconVitePlugin,
 } from 'vitepress-plugin-group-icons'
 import llmstxt from 'vitepress-plugin-llms'
-import type { PluginOption } from 'vite'
 import { markdownItImageSize } from 'markdown-it-image-size'
+import packageJson from '../../packages/vite/package.json' with { type: 'json' }
 import { buildEnd } from './buildEnd.config'
+
+const viteVersion = packageJson.version
+const viteMajorVersion = +viteVersion.split('.')[0]
 
 const ogDescription = 'Next Generation Frontend Tooling'
 const ogImage = 'https://vite.dev/og-image.jpg'
@@ -42,42 +45,31 @@ const additionalTitle = ((): string => {
   }
 })()
 const versionLinks = ((): DefaultTheme.NavItemWithLink[] => {
-  const oldVersions: DefaultTheme.NavItemWithLink[] = [
-    {
-      text: 'Vite 6 Docs',
-      link: 'https://v6.vite.dev',
-    },
-    {
-      text: 'Vite 5 Docs',
-      link: 'https://v5.vite.dev',
-    },
-    {
-      text: 'Vite 4 Docs',
-      link: 'https://v4.vite.dev',
-    },
-    {
-      text: 'Vite 3 Docs',
-      link: 'https://v3.vite.dev',
-    },
-    {
-      text: 'Vite 2 Docs',
-      link: 'https://v2.vite.dev',
-    },
-  ]
+  const links: DefaultTheme.NavItemWithLink[] = []
 
-  switch (deployType) {
-    case 'main':
-    case 'local':
-      return [
-        {
-          text: 'Vite 7 Docs (release)',
-          link: 'https://vite.dev',
-        },
-        ...oldVersions,
-      ]
-    case 'release':
-      return oldVersions
+  if (deployType !== 'main') {
+    links.push({
+      text: 'Unreleased Docs',
+      link: 'https://main.vite.dev',
+    })
   }
+
+  if (deployType === 'main' || deployType === 'local') {
+    links.push({
+      text: `Vite ${viteMajorVersion} Docs (release)`,
+      link: 'https://vite.dev',
+    })
+  }
+
+  // Create version links from v2 onwards
+  for (let i = viteMajorVersion - 1; i >= 2; i--) {
+    links.push({
+      text: `Vite ${i} Docs`,
+      link: `https://v${i}.vite.dev`,
+    })
+  }
+
+  return links
 })()
 
 function inlineScript(file: string): HeadConfig {
@@ -94,36 +86,13 @@ function inlineScript(file: string): HeadConfig {
 export default defineConfig({
   title: `Vite${additionalTitle}`,
   description: 'Next Generation Frontend Tooling',
+  cleanUrls: true,
 
   head: [
     ['link', { rel: 'icon', type: 'image/svg+xml', href: '/logo.svg' }],
     [
       'link',
       { rel: 'alternate', type: 'application/rss+xml', href: '/blog.rss' },
-    ],
-    ['link', { rel: 'preconnect', href: 'https://fonts.googleapis.com' }],
-    [
-      'link',
-      {
-        rel: 'preconnect',
-        href: 'https://fonts.gstatic.com',
-        crossorigin: 'true',
-      },
-    ],
-    [
-      'link',
-      {
-        rel: 'preload',
-        href: 'https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Manrope:wght@600&family=IBM+Plex+Mono:wght@400&display=swap',
-        as: 'style',
-      },
-    ],
-    [
-      'link',
-      {
-        rel: 'stylesheet',
-        href: 'https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Manrope:wght@600&family=IBM+Plex+Mono:wght@400&display=swap',
-      },
     ],
     inlineScript('banner.js'),
     ['link', { rel: 'me', href: 'https://m.webtoo.ls/@vite' }],
@@ -237,21 +206,25 @@ export default defineConfig({
                 text: 'DEV Community',
                 link: 'https://dev.to/t/vite',
               },
-              {
-                text: 'Changelog',
-                link: 'https://github.com/vitejs/vite/blob/main/packages/vite/CHANGELOG.md',
-              },
-              {
-                text: 'Contributing',
-                link: 'https://github.com/vitejs/vite/blob/main/CONTRIBUTING.md',
-              },
             ],
           },
         ],
       },
       {
-        text: 'Version',
-        items: versionLinks,
+        text: `v${viteVersion}`,
+        items: [
+          {
+            text: 'Changelog',
+            link: 'https://github.com/vitejs/vite/blob/main/packages/vite/CHANGELOG.md',
+          },
+          {
+            text: 'Contributing',
+            link: 'https://github.com/vitejs/vite/blob/main/CONTRIBUTING.md',
+          },
+          {
+            items: versionLinks,
+          },
+        ],
       },
     ],
 
@@ -330,7 +303,7 @@ export default defineConfig({
               link: '/guide/rolldown',
             },
             {
-              text: 'Migration from v6',
+              text: `Migration from v${viteMajorVersion - 1}`,
               link: '/guide/migration',
             },
             {
@@ -470,16 +443,34 @@ export default defineConfig({
       level: [2, 3],
     },
   },
-  transformPageData(pageData) {
-    const canonicalUrl = `${ogUrl}/${pageData.relativePath}`
-      .replace(/\/index\.md$/, '/')
-      .replace(/\.md$/, '')
-    pageData.frontmatter.head ??= []
-    pageData.frontmatter.head.unshift(
-      ['link', { rel: 'canonical', href: canonicalUrl }],
-      ['meta', { property: 'og:title', content: pageData.title }],
-    )
-    return pageData
+  transformHead(ctx) {
+    const path = ctx.page.replace(/(^|\/)index\.md$/, '$1').replace(/\.md$/, '')
+
+    if (path !== '404') {
+      const canonicalUrl = path ? `${ogUrl}/${path}` : ogUrl
+      ctx.head.push(
+        ['link', { rel: 'canonical', href: canonicalUrl }],
+        ['meta', { property: 'og:title', content: ctx.pageData.title }],
+      )
+    }
+
+    // For the landing page, move the google font links to the top for better performance
+    if (path === '') {
+      const googleFontLinks: HeadConfig[] = []
+      for (let i = 0; i < ctx.head.length; i++) {
+        const tag = ctx.head[i]
+        if (
+          tag[0] === 'link' &&
+          (tag[1]?.href?.includes('fonts.googleapis.com') ||
+            tag[1]?.href?.includes('fonts.gstatic.com'))
+        ) {
+          ctx.head.splice(i, 1)
+          googleFontLinks.push(tag)
+          i--
+        }
+      }
+      ctx.head.unshift(...googleFontLinks)
+    }
   },
   markdown: {
     // languages used for twoslash and jsdocs in twoslash
@@ -522,7 +513,7 @@ Vite is a new breed of frontend build tooling that significantly improves the fr
 - A [build command](https://vite.dev/guide/build.md) that bundles your code with [Rollup](https://rollupjs.org), pre-configured to output highly optimized static assets for production.
 
 In addition, Vite is highly extensible via its [Plugin API](https://vite.dev/guide/api-plugin.md) and [JavaScript API](https://vite.dev/guide/api-javascript.md) with full typing support.`,
-      }) as PluginOption,
+      }),
     ],
     optimizeDeps: {
       include: [
@@ -531,6 +522,9 @@ In addition, Vite is highly extensible via its [Plugin API](https://vite.dev/gui
         'gsap/dist/ScrollTrigger',
         'gsap/dist/MotionPathPlugin',
       ],
+    },
+    define: {
+      __VITE_VERSION__: JSON.stringify(viteVersion),
     },
   },
   buildEnd,
