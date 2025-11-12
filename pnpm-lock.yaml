@@ -356,8 +356,8 @@ importers:
         specifier: ^5.1.6
         version: 5.1.6
       obug:
-        specifier: ^0.1.3
-        version: 0.1.3(ms@2.1.3)
+        specifier: ^1.0.0
+        version: 1.0.0(ms@2.1.3)
       open:
         specifier: ^10.2.0
         version: 10.2.0
@@ -392,8 +392,8 @@ importers:
         specifier: ^1.0.0-beta.47
         version: 1.0.0-beta.47
       rolldown-plugin-dts:
-        specifier: ^0.17.6
-        version: 0.17.6(ms@2.1.3)(rolldown@1.0.0-beta.47)(typescript@5.9.2)(vue-tsc@3.1.3(typescript@5.9.2))
+        specifier: ^0.17.7
+        version: 0.17.7(ms@2.1.3)(rolldown@1.0.0-beta.47)(typescript@5.9.2)(vue-tsc@3.1.3(typescript@5.9.2))
       rollup-plugin-license:
         specifier: ^3.6.0
         version: 3.6.0(picomatch@4.0.3)(rollup@4.43.0)
@@ -4715,15 +4715,6 @@ packages:
     resolution: {integrity: sha512-JVUnt+DUIzu87TABbhPmNfVdBDt18BLOWjMUFJMSi/Qqg7NTYtabbvSNJGOJ7afbRuv9D/lngizHtP7QyLQ+9w==}
     engines: {node: '>=12'}
 
-  dts-resolver@2.1.2:
-    resolution: {integrity: sha512-xeXHBQkn2ISSXxbJWD828PFjtyg+/UrMDo7W4Ffcs7+YWCquxU8YjV1KoxuiL+eJ5pg3ll+bC6flVv61L3LKZg==}
-    engines: {node: '>=20.18.0'}
-    peerDependencies:
-      oxc-resolver: '>=11.0.0'
-    peerDependenciesMeta:
-      oxc-resolver:
-        optional: true
-
   dts-resolver@2.1.3:
     resolution: {integrity: sha512-bihc7jPC90VrosXNzK0LTE2cuLP6jr0Ro8jk+kMugHReJVLIpHz/xadeq3MhuwyO4TD4OA3L1Q8pBBFRc08Tsw==}
     engines: {node: '>=20.19.0'}
@@ -5974,8 +5965,8 @@ packages:
     resolution: {integrity: sha512-W67iLl4J2EXEGTbfeHCffrjDfitvLANg0UlX3wFUUSTx92KXRFegMHUVgSqE+wvhAbi4WqjGg9czysTV2Epbew==}
     engines: {node: '>= 0.4'}
 
-  obug@0.1.3:
-    resolution: {integrity: sha512-9fwkQ1jsVEqi3I3so5QA4yLPW2QVtekrIpiVUWyw8c/BApPHYj0gohWby3qzK30X58lyksSqcbfvO0vOwKFWqQ==}
+  obug@1.0.0:
+    resolution: {integrity: sha512-WKcS43Yl6YPJekid7KiRdT6CHMSmYWVfJiSFbTaGxWQlC+cEBPxHa9jR1uS2cMiQmXd8Hsa2ipAKErQ/GLhSpg==}
     peerDependencies:
       ms: ^2.0.0
     peerDependenciesMeta:
@@ -6446,27 +6437,8 @@ packages:
   rfdc@1.4.1:
     resolution: {integrity: sha512-q1b3N5QkRUWUl7iyylaaj3kOpIT0N2i9MqIEQXP73GVsN9cw3fdx8X63cEmWhJGi2PPCF23Ijp7ktmd39rawIA==}
 
-  rolldown-plugin-dts@0.17.4:
-    resolution: {integrity: sha512-eWno7CR/Da2jA+5mTHxeMx78p4AmoUocEKDQT8XKwhq9Oroyf67ZfBOE82d4EvDjktiQTePpKdIKc69pND88Og==}
-    engines: {node: '>=20.18.0'}
-    peerDependencies:
-      '@ts-macro/tsc': ^0.3.6
-      '@typescript/native-preview': '>=7.0.0-dev.20250601.1'
-      rolldown: ^1.0.0-beta.47
-      typescript: ^5.0.0
-      vue-tsc: ~3.1.0
-    peerDependenciesMeta:
-      '@ts-macro/tsc':
-        optional: true
-      '@typescript/native-preview':
-        optional: true
-      typescript:
-        optional: true
-      vue-tsc:
-        optional: true
-
-  rolldown-plugin-dts@0.17.6:
-    resolution: {integrity: sha512-yX7kDS7Pm9HyVdKKtgfLiRS4wwu+dA4c7KUmOTWKgheu3he4pcT6Wk0Ht59Xm+1pHuoWYv3DvFPqxeF1AyW82A==}
+  rolldown-plugin-dts@0.17.7:
+    resolution: {integrity: sha512-ZGgXMhzCItmznNzbJlTcC/KdM6bIwcZoYUykJ2q14HOGvnMhnl2RXU+XrIrdjA2Hyzq3nWqDH7qWaM5a4uCVnw==}
     engines: {node: '>=20.18.0'}
     peerDependencies:
       '@ts-macro/tsc': ^0.3.6
@@ -7498,7 +7470,7 @@ snapshots:
       '@babel/types': 7.28.5
       '@jridgewell/remapping': 2.3.5
       convert-source-map: 2.0.0
-      debug: obug@0.1.3(ms@2.1.3)
+      debug: obug@1.0.0(ms@2.1.3)
       gensync: 1.0.0-beta.2
       json5: 2.2.3
       semver: 6.3.1
@@ -7550,7 +7522,7 @@ snapshots:
       '@babel/core': 7.28.5(ms@2.1.3)
       '@babel/helper-compilation-targets': 7.27.2
       '@babel/helper-plugin-utils': 7.27.1
-      debug: obug@0.1.3(ms@2.1.3)
+      debug: obug@1.0.0(ms@2.1.3)
       lodash.debounce: 4.0.8
       resolve: 1.22.10
     transitivePeerDependencies:
@@ -8122,7 +8094,7 @@ snapshots:
       '@babel/parser': 7.28.5
       '@babel/template': 7.27.2
       '@babel/types': 7.28.5
-      debug: obug@0.1.3(ms@2.1.3)
+      debug: obug@1.0.0(ms@2.1.3)
     transitivePeerDependencies:
       - ms
 
@@ -8291,7 +8263,7 @@ snapshots:
   '@eslint/config-array@0.21.1(ms@2.1.3)':
     dependencies:
       '@eslint/object-schema': 2.1.7
-      debug: obug@0.1.3(ms@2.1.3)
+      debug: obug@1.0.0(ms@2.1.3)
       minimatch: 3.1.2
     transitivePeerDependencies:
       - ms
@@ -8307,7 +8279,7 @@ snapshots:
   '@eslint/eslintrc@3.3.1(ms@2.1.3)':
     dependencies:
       ajv: 6.12.6
-      debug: obug@0.1.3(ms@2.1.3)
+      debug: obug@1.0.0(ms@2.1.3)
       espree: 10.4.0
       globals: 14.0.0
       ignore: 5.3.2
@@ -8369,7 +8341,7 @@ snapshots:
       '@antfu/install-pkg': 1.1.0
       '@antfu/utils': 9.2.0
       '@iconify/types': 2.0.0
-      debug: obug@0.1.3(ms@2.1.3)
+      debug: obug@1.0.0(ms@2.1.3)
       globals: 15.15.0
       kolorist: 1.8.0
       local-pkg: 1.1.1
@@ -9208,7 +9180,7 @@ snapshots:
       '@typescript-eslint/types': 8.46.3
       '@typescript-eslint/typescript-estree': 8.46.3(ms@2.1.3)(typescript@5.9.2)
       '@typescript-eslint/visitor-keys': 8.46.3
-      debug: obug@0.1.3(ms@2.1.3)
+      debug: obug@1.0.0(ms@2.1.3)
       eslint: 9.39.1(jiti@2.6.1)(ms@2.1.3)
       typescript: 5.9.2
     transitivePeerDependencies:
@@ -9218,7 +9190,7 @@ snapshots:
     dependencies:
       '@typescript-eslint/tsconfig-utils': 8.46.3(typescript@5.9.2)
       '@typescript-eslint/types': 8.46.3
-      debug: obug@0.1.3(ms@2.1.3)
+      debug: obug@1.0.0(ms@2.1.3)
       typescript: 5.9.2
     transitivePeerDependencies:
       - ms
@@ -9237,7 +9209,7 @@ snapshots:
       '@typescript-eslint/types': 8.46.3
       '@typescript-eslint/typescript-estree': 8.46.3(ms@2.1.3)(typescript@5.9.2)
       '@typescript-eslint/utils': 8.46.3(eslint@9.39.1(jiti@2.6.1)(ms@2.1.3))(ms@2.1.3)(typescript@5.9.2)
-      debug: obug@0.1.3(ms@2.1.3)
+      debug: obug@1.0.0(ms@2.1.3)
       eslint: 9.39.1(jiti@2.6.1)(ms@2.1.3)
       ts-api-utils: 2.1.0(typescript@5.9.2)
       typescript: 5.9.2
@@ -9254,7 +9226,7 @@ snapshots:
       '@typescript-eslint/tsconfig-utils': 8.46.3(typescript@5.9.2)
       '@typescript-eslint/types': 8.46.3
       '@typescript-eslint/visitor-keys': 8.46.3
-      debug: obug@0.1.3(ms@2.1.3)
+      debug: obug@1.0.0(ms@2.1.3)
       fast-glob: 3.3.3
       is-glob: 4.0.3
       minimatch: 9.0.5
@@ -9282,7 +9254,7 @@ snapshots:
 
   '@typescript/vfs@1.6.1(ms@2.1.3)(typescript@5.9.2)':
     dependencies:
-      debug: obug@0.1.3(ms@2.1.3)
+      debug: obug@1.0.0(ms@2.1.3)
       typescript: 5.9.2
     transitivePeerDependencies:
       - ms
@@ -9980,7 +9952,7 @@ snapshots:
 
   axios@1.13.2:
     dependencies:
-      follow-redirects: 1.15.11(obug@0.1.3(ms@2.1.3))
+      follow-redirects: 1.15.11(obug@1.0.0(ms@2.1.3))
       form-data: 4.0.4
       proxy-from-env: 1.1.0
     transitivePeerDependencies:
@@ -10032,7 +10004,7 @@ snapshots:
     dependencies:
       bytes: 3.1.2
       content-type: 1.0.5
-      debug: obug@0.1.3(ms@2.1.3)
+      debug: obug@1.0.0(ms@2.1.3)
       http-errors: 2.0.0
       iconv-lite: 0.6.3
       on-finished: 2.4.1
@@ -10211,7 +10183,7 @@ snapshots:
 
   connect@3.7.0(ms@2.1.3):
     dependencies:
-      debug: obug@0.1.3(ms@2.1.3)
+      debug: obug@1.0.0(ms@2.1.3)
       finalhandler: 1.1.2(ms@2.1.3)
       parseurl: 1.3.3
       utils-merge: 1.0.1
@@ -10357,8 +10329,6 @@ snapshots:
 
   dotenv@17.2.3: {}
 
-  dts-resolver@2.1.2: {}
-
   dts-resolver@2.1.3: {}
 
   dunder-proto@1.0.1:
@@ -10497,7 +10467,7 @@ snapshots:
     dependencies:
       '@typescript-eslint/types': 8.46.2
       comment-parser: 1.4.1
-      debug: obug@0.1.3(ms@2.1.3)
+      debug: obug@1.0.0(ms@2.1.3)
       eslint: 9.39.1(jiti@2.6.1)(ms@2.1.3)
       eslint-import-context: 0.1.9(unrs-resolver@1.9.2)
       is-glob: 4.0.3
@@ -10562,7 +10532,7 @@ snapshots:
       ajv: 6.12.6
       chalk: 4.1.2
       cross-spawn: 7.0.6
-      debug: obug@0.1.3(ms@2.1.3)
+      debug: obug@1.0.0(ms@2.1.3)
       escape-string-regexp: 4.0.0
       eslint-scope: 8.4.0
       eslint-visitor-keys: 4.2.1
@@ -10667,7 +10637,7 @@ snapshots:
       content-type: 1.0.5
       cookie: 0.7.1
       cookie-signature: 1.2.2
-      debug: obug@0.1.3(ms@2.1.3)
+      debug: obug@1.0.0(ms@2.1.3)
       encodeurl: 2.0.0
       escape-html: 1.0.3
       etag: 1.8.1
@@ -10751,7 +10721,7 @@ snapshots:
 
   finalhandler@1.1.2(ms@2.1.3):
     dependencies:
-      debug: obug@0.1.3(ms@2.1.3)
+      debug: obug@1.0.0(ms@2.1.3)
       encodeurl: 1.0.2
       escape-html: 1.0.3
       on-finished: 2.3.0
@@ -10763,7 +10733,7 @@ snapshots:
 
   finalhandler@2.1.0(ms@2.1.3):
     dependencies:
-      debug: obug@0.1.3(ms@2.1.3)
+      debug: obug@1.0.0(ms@2.1.3)
       encodeurl: 2.0.0
       escape-html: 1.0.3
       on-finished: 2.4.1
@@ -10800,9 +10770,9 @@ snapshots:
     dependencies:
       tabbable: 6.2.0
 
-  follow-redirects@1.15.11(obug@0.1.3(ms@2.1.3)):
+  follow-redirects@1.15.11(obug@1.0.0(ms@2.1.3)):
     optionalDependencies:
-      debug: obug@0.1.3(ms@2.1.3)
+      debug: obug@1.0.0(ms@2.1.3)
 
   foreground-child@3.3.0:
     dependencies:
@@ -10978,8 +10948,8 @@ snapshots:
 
   http-proxy-3@1.22.0(ms@2.1.3):
     dependencies:
-      debug: obug@0.1.3(ms@2.1.3)
-      follow-redirects: 1.15.11(obug@0.1.3(ms@2.1.3))
+      debug: obug@1.0.0(ms@2.1.3)
+      follow-redirects: 1.15.11(obug@1.0.0(ms@2.1.3))
     transitivePeerDependencies:
       - ms
 
@@ -11600,7 +11570,7 @@ snapshots:
   micromark@4.0.1(ms@2.1.3):
     dependencies:
       '@types/debug': 4.1.12
-      debug: obug@0.1.3(ms@2.1.3)
+      debug: obug@1.0.0(ms@2.1.3)
       decode-named-character-reference: 1.0.2
       devlop: 1.1.0
       micromark-core-commonmark: 2.0.2
@@ -11766,7 +11736,7 @@ snapshots:
 
   object-inspect@1.13.4: {}
 
-  obug@0.1.3(ms@2.1.3):
+  obug@1.0.0(ms@2.1.3):
     optionalDependencies:
       ms: 2.1.3
 
@@ -12251,26 +12221,7 @@ snapshots:
 
   rfdc@1.4.1: {}
 
-  rolldown-plugin-dts@0.17.4(ms@2.1.3)(rolldown@1.0.0-beta.47)(typescript@5.9.2)(vue-tsc@3.1.3(typescript@5.9.2)):
-    dependencies:
-      '@babel/generator': 7.28.5
-      '@babel/parser': 7.28.5
-      '@babel/types': 7.28.5
-      ast-kit: 2.2.0
-      birpc: 2.8.0
-      debug: obug@0.1.3(ms@2.1.3)
-      dts-resolver: 2.1.2
-      get-tsconfig: 4.13.0
-      magic-string: 0.30.21
-      rolldown: 1.0.0-beta.47
-    optionalDependencies:
-      typescript: 5.9.2
-      vue-tsc: 3.1.3(typescript@5.9.2)
-    transitivePeerDependencies:
-      - ms
-      - oxc-resolver
-
-  rolldown-plugin-dts@0.17.6(ms@2.1.3)(rolldown@1.0.0-beta.47)(typescript@5.9.2)(vue-tsc@3.1.3(typescript@5.9.2)):
+  rolldown-plugin-dts@0.17.7(ms@2.1.3)(rolldown@1.0.0-beta.47)(typescript@5.9.2)(vue-tsc@3.1.3(typescript@5.9.2)):
     dependencies:
       '@babel/generator': 7.28.5
       '@babel/parser': 7.28.5
@@ -12280,7 +12231,7 @@ snapshots:
       dts-resolver: 2.1.3
       get-tsconfig: 4.13.0
       magic-string: 0.30.21
-      obug: 0.1.3(ms@2.1.3)
+      obug: 1.0.0(ms@2.1.3)
       rolldown: 1.0.0-beta.47
     optionalDependencies:
       typescript: 5.9.2
@@ -12351,7 +12302,7 @@ snapshots:
 
   router@2.2.0(ms@2.1.3):
     dependencies:
-      debug: obug@0.1.3(ms@2.1.3)
+      debug: obug@1.0.0(ms@2.1.3)
       depd: 2.0.0
       is-promise: 4.0.0
       parseurl: 1.3.3
@@ -12500,7 +12451,7 @@ snapshots:
 
   send@1.2.0:
     dependencies:
-      debug: obug@0.1.3(ms@2.1.3)
+      debug: obug@1.0.0(ms@2.1.3)
       encodeurl: 2.0.0
       escape-html: 1.0.3
       etag: 1.8.1
@@ -12750,7 +12701,7 @@ snapshots:
   stylus@0.64.0(ms@2.1.3):
     dependencies:
       '@adobe/css-tools': 4.3.3
-      debug: obug@0.1.3(ms@2.1.3)
+      debug: obug@1.0.0(ms@2.1.3)
       glob: 10.4.5
       sax: 1.4.1
       source-map: 0.7.4
@@ -12907,12 +12858,12 @@ snapshots:
       ansis: 4.2.0
       cac: 6.7.14
       chokidar: 4.0.3
-      debug: obug@0.1.3(ms@2.1.3)
+      debug: obug@1.0.0(ms@2.1.3)
       diff: 8.0.2
       empathic: 2.0.0
       hookable: 5.5.3
       rolldown: 1.0.0-beta.47
-      rolldown-plugin-dts: 0.17.4(ms@2.1.3)(rolldown@1.0.0-beta.47)(typescript@5.9.2)(vue-tsc@3.1.3(typescript@5.9.2))
+      rolldown-plugin-dts: 0.17.7(ms@2.1.3)(rolldown@1.0.0-beta.47)(typescript@5.9.2)(vue-tsc@3.1.3(typescript@5.9.2))
       semver: 7.7.3
       tinyexec: 1.0.2
       tinyglobby: 0.2.15
@@ -13194,7 +13145,7 @@ snapshots:
       '@vitest/snapshot': 4.0.8
       '@vitest/spy': 4.0.8
       '@vitest/utils': 4.0.8
-      debug: obug@0.1.3(ms@2.1.3)
+      debug: obug@1.0.0(ms@2.1.3)
       es-module-lexer: 1.7.0
       expect-type: 1.2.2
       magic-string: 0.30.21
