@@ -34,6 +34,7 @@
   "funding": "https://github.com/vitejs/vite?sponsor=1",
   "devDependencies": {
     "@clack/prompts": "^0.11.0",
+    "@vercel/detect-agent": "^1.0.0",
     "cross-spawn": "^7.0.6",
     "mri": "^1.2.0",
     "picocolors": "^1.1.1",
