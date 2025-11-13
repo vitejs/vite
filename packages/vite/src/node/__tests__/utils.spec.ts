@@ -20,6 +20,7 @@ import {
   mergeWithDefaults,
   normalizePath,
   numberToPos,
+  pad,
   posToNumber,
   processSrcSetSync,
   resolveHostname,
@@ -456,6 +457,25 @@ describe('getHash', () => {
   test('8-digit hex', () => {
     const hash = getHash(Buffer.alloc(0))
     expect(hash).toMatch(/^[\da-f]{8}$/)
+  })
+})
+
+describe('pad', () => {
+  test('should pad single line with default 2 spaces', () => {
+    expect(pad('hello')).toBe('  hello')
+  })
+
+  test('should pad multiple lines with default 2 spaces', () => {
+    expect(pad('line1\nline2\nline3')).toBe('  line1\n  line2\n  line3')
+  })
+
+  test('should pad with custom number of spaces', () => {
+    expect(pad('hello', 4)).toBe('    hello')
+    expect(pad('line1\nline2', 3)).toBe('   line1\n   line2')
+  })
+
+  test('should normalize CRLF line endings to LF', () => {
+    expect(pad('line1\r\nline2')).toBe('  line1\n  line2')
   })
 })
 
