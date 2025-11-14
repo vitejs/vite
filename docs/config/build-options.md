@@ -129,10 +129,10 @@ In this case, you need to set `build.cssTarget` to `chrome61` to prevent vite fr
 
 ## build.cssMinify
 
-- **Type:** `boolean | 'esbuild' | 'lightningcss'`
-- **Default:** the same as [`build.minify`](#build-minify) for client, `'esbuild'` for SSR
+- **Type:** `boolean | 'lightningcss' | 'esbuild'`
+- **Default:** the same as [`build.minify`](#build-minify) for client, `'lightningcss'` for SSR
 
-This option allows users to override CSS minification specifically instead of defaulting to `build.minify`, so you can configure minification for JS and CSS separately. Vite uses `esbuild` by default to minify CSS. Set the option to `'lightningcss'` to use [Lightning CSS](https://lightningcss.dev/minification.html) instead. If selected, it can be configured using [`css.lightningcss`](./shared-options.md#css-lightningcss).
+This option allows users to override CSS minification specifically instead of defaulting to `build.minify`, so you can configure minification for JS and CSS separately. Vite uses [Lightning CSS](https://lightningcss.dev/minification.html) by default to minify CSS. It can be configured using [`css.lightningcss`](./shared-options.md#css-lightningcss). Set the option to `'esbuild'` to use esbuild instead.
 
 ## build.sourcemap
 
@@ -277,16 +277,19 @@ During the SSR build, static assets aren't emitted as it is assumed they would b
 
 ## build.minify
 
-- **Type:** `boolean | 'terser' | 'esbuild'`
-- **Default:** `'esbuild'` for client build, `false` for SSR build
+- **Type:** `boolean | 'oxc' | 'terser' | 'esbuild'`
+- **Default:** `'oxc'` for client build, `false` for SSR build
 
-Set to `false` to disable minification, or specify the minifier to use. The default is [esbuild](https://github.com/evanw/esbuild) which is 20 ~ 40x faster than terser and only 1 ~ 2% worse compression. [Benchmarks](https://github.com/privatenumber/minification-benchmarks)
+Set to `false` to disable minification, or specify the minifier to use. The default is [Oxc Minifier](https://oxc.rs/docs/guide/usage/minifier) which is 30 ~ 90x faster than terser and only 0.5 ~ 2% worse compression. [Benchmarks](https://github.com/privatenumber/minification-benchmarks)
+
+`build.minify: 'esbuild'` is deprecated and will be removed in the future.
 
 Note the `build.minify` option does not minify whitespaces when using the `'es'` format in lib mode, as it removes pure annotations and breaks tree-shaking.
 
-Terser must be installed when it is set to `'terser'`.
+esbuild or Terser must be installed when it is set to `'esbuild'` or `'terser'` respectively.
 
 ```sh
+npm add -D esbuild
 npm add -D terser
 ```
 

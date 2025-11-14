@@ -51,6 +51,23 @@ export default defineConfig({
 })
 ```
 
+## optimizeDeps.rolldownOptions <NonInheritBadge />
+
+- **Type:** [`Omit`](https://www.typescriptlang.org/docs/handbook/utility-types.html#omittype-keys)`<``RolldownOptions`, `'input' | 'logLevel' | 'output'> & {
+  output?: [`Omit`](https://www.typescriptlang.org/docs/handbook/utility-types.html#omittype-keys)`<`
+    `RolldownOutputOptions`,
+    `'format' | 'sourcemap' | 'dir' | 'banner'>`
+`}`
+
+<!-- TODO: add link to RolldownOptions -->
+<!-- TODO: add link to RolldownOutputOptions -->
+
+Options to pass to Rolldown during the dep scanning and optimization.
+
+Certain options are omitted since changing them would not be compatible with Vite's dep optimization.
+
+- `plugins` are merged with Vite's dep plugin
+
 ## optimizeDeps.esbuildOptions <NonInheritBadge />
 
 - **Type:** [`Omit`](https://www.typescriptlang.org/docs/handbook/utility-types.html#omittype-keys)`<`[`EsbuildBuildOptions`](https://esbuild.github.io/api/#general-options)`,
@@ -64,13 +81,9 @@ export default defineConfig({
 | 'outbase'
 | 'outExtension'
 | 'metafile'>`
+- **Deprecated**
 
-Options to pass to esbuild during the dep scanning and optimization.
-
-Certain options are omitted since changing them would not be compatible with Vite's dep optimization.
-
-- `external` is also omitted, use Vite's `optimizeDeps.exclude` option
-- `plugins` are merged with Vite's dep plugin
+This option is converted to `optimizeDeps.rolldownOptions` internally. Use `optimizeDeps.rolldownOptions` instead.
 
 ## optimizeDeps.force <NonInheritBadge />
 
