@@ -202,3 +202,25 @@ import(`../nested/static.js`).then((mod) => {
 })
 
 console.log('index.js')
+;(async function () {
+  const result1 = await import('./treeshaken/treeshaken.js').then(
+    (m) => m.usedWithThen,
+  )
+  result1()
+
+  const result2 = await import('./treeshaken/treeshaken.js').then(
+    (m) => m.usedWithThen,
+  )
+  result2()
+
+  const result3 = await import('./treeshaken/treeshaken.js').then(function (m) {
+    return m.usedWithThen
+  })
+  result3()
+
+  function loadModule() {
+    return import('./treeshaken/treeshaken.js').then((m) => m.usedWithThen)
+  }
+  const result4 = await loadModule()
+  result4()
+})()

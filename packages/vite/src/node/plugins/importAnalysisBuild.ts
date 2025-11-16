@@ -41,7 +41,7 @@ const preloadMarkerRE = new RegExp(preloadMarker, 'g')
 const dynamicImportPrefixRE = /import\s*\(/
 
 const dynamicImportTreeshakenRE =
-  /((?:\bconst\s+|\blet\s+|\bvar\s+|,\s*)(\{[^{}.=]+\})\s*=\s*await\s+import\([^)]+\))(?=\s*(?:$|[^[.]))|(\(\s*await\s+import\([^)]+\)\s*\)(\??\.[\w$]+))|\bimport\([^)]+\)(\s*\.then\(\s*(?:function\s*)?\(\s*\{([^{}.=]+)\}\))/g
+  /((?:\bconst\s+|\blet\s+|\bvar\s+|,\s*)(\{[^{}.=]+\})\s*=\s*await\s+import\([^)]+\))(?=\s*(?:$|[^[.]))|(\(\s*await\s+import\([^)]+\)\s*\)(\??\.[\w$]+))|\bimport\([^)]+\)(\s*\.then\(\s*(?:function\s*)?\(\s*\{([^{}.=]+)\}\))|\bimport\([^)]+\)((\s*\.then\(\s*\(\w+\)\s*=>\s*\w+\.(\w+))|(\s*\.then\(\s*\w+\s*=>\s*\w+\.(\w+))|(\s*\.then\(\s*function\s*\(\s*\w+\s*\)\s*\{\s*return\s+\w+\.(\w+)))/g
 
 function toRelativePath(filename: string, importer: string) {
   const relPath = path.posix.relative(path.posix.dirname(importer), filename)
@@ -311,10 +311,51 @@ export function buildImportAnalysisPlugin(config: ResolvedConfig): Plugin {
              * import end: `import('foo').`
              *                           ^
              */
-            const names = match[6]?.trim()
-            dynamicImports[
-              dynamicImportTreeshakenRE.lastIndex - match[5]?.length
-            ] = { declaration: `const {${names}}`, names: `{ ${names} }` }
+            if (match[6]) {
+              const names = match[6]?.trim()
+              dynamicImports[
+                dynamicImportTreeshakenRE.lastIndex - match[5]?.length
+              ] = { declaration: `const {${names}}`, names: `{ ${names} }` }
+              continue
+            }
+
+            /* handle `import('foo').then((m) => m.bar)` or `import('foo').then(m => m.bar)` or `import('foo').then(function(m) { return m.bar })`
+             *
+             * match[7]: entire pattern match
+             * match[8]: `.then((m) => m.bar` (with parens)
+             * match[9]: `bar`
+             * match[10]: `.then(m => m.bar` (without parens)
+             * match[11]: `bar`
+             * match[12]: `.then(function(m) { return m.bar` (function)
+             * match[13]: `bar`
+             * import end: `import('foo').then((m) => m.bar`
+             *                           ^
+             */
+            if (match[7]) {
+              let names: string | undefined
+              let matchLength: number | undefined
+
+              if (match[8]) {
+                names = match[9]?.trim()
+                matchLength = match[8].length
+              } else if (match[10]) {
+                names = match[11]?.trim()
+                matchLength = match[10].length
+              } else if (match[12]) {
+                names = match[13]?.trim()
+                matchLength = match[12].length
+              }
+
+              if (names && matchLength !== undefined) {
+                if (names === 'default') {
+                  names = 'default: __vite_default__'
+                }
+                dynamicImports[
+                  dynamicImportTreeshakenRE.lastIndex - matchLength
+                ] = { declaration: `const {${names}}`, names: `{ ${names} }` }
+              }
+              continue
+            }
           }
         }
 

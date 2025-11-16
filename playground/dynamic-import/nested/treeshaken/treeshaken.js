@@ -26,8 +26,14 @@ export const baz5 = () => {
 export const baz6 = () => {
   console.log('treeshaken baz6')
 }
+export const usedWithThen = () => {
+  console.log('treeshaken usedWithThen')
+}
 export const removed = () => {
   console.log('treeshaken removed')
+}
+export const removedWithThen = () => {
+  console.log('treeshaken removedWithThen')
 }
 export default () => {
   console.log('treeshaken default')

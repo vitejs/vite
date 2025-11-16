@@ -192,3 +192,37 @@ test.runIf(isBuild)('should not preload for non-analyzable urls', () => {
   // should match e.g. await import(e.jss);o(".view",p===i)
   expect(js).to.match(/\.jss\);/)
 })
+
+test('dynamic import treeshaken log', async () => {
+  const log = browserLogs.join('\n')
+  expect(log).toContain('treeshaken foo')
+  expect(log).toContain('treeshaken bar')
+  expect(log).toContain('treeshaken baz1')
+  expect(log).toContain('treeshaken baz2')
+  expect(log).toContain('treeshaken baz3')
+  expect(log).toContain('treeshaken baz4')
+  expect(log).toContain('treeshaken baz5')
+  expect(log).toContain('treeshaken baz6')
+  expect(log).toContain('treeshaken usedWithThen')
+  expect(log).toContain('treeshaken default')
+
+  expect(log).not.toContain('treeshaken removed')
+  expect(log).not.toContain('treeshaken removedWithThen')
+})
+
+test('dynamic import syntax parsing', async () => {
+  const log = browserLogs.join('\n')
+  expect(log).toContain('treeshaken syntax foo')
+  expect(log).toContain('treeshaken syntax default')
+})
+
+test.runIf(isBuild)('dynamic import treeshaken file', async () => {
+  const content = findAssetFile(/treeshaken.+\.js$/)
+  expect(content).not.toContain('treeshaken removed')
+  expect(content).not.toContain('treeshaken removedWithThen')
+})
+
+test.runIf(isBuild)('should not preload for non-analyzable urls', () => {
+  const js = findAssetFile(/index-[-\w]{8}\.js$/)
+  expect(js).to.match(/\.jss\);/)
+})
