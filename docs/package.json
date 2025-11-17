@@ -14,10 +14,10 @@
     "feed": "^5.1.0",
     "gsap": "^3.13.0",
     "markdown-it-image-size": "^15.0.1",
-    "vitepress": "^2.0.0-alpha.12",
+    "vitepress": "^2.0.0-alpha.13",
     "vitepress-plugin-group-icons": "^1.6.5",
-    "vitepress-plugin-llms": "^1.9.1",
+    "vitepress-plugin-llms": "^1.9.2",
     "vue": "^3.5.24",
-    "vue-tsc": "^3.1.3"
+    "vue-tsc": "^3.1.4"
   }
 }
