@@ -1,3 +1,28 @@
+## <small>[7.2.2](https://github.com/vitejs/vite/compare/v7.2.1...v7.2.2) (2025-11-07)</small>
+### Bug Fixes
+
+* revert "refactor: use fs.cpSync ([#21019](https://github.com/vitejs/vite/issues/21019))" ([#21081](https://github.com/vitejs/vite/issues/21081)) ([728c8ee](https://github.com/vitejs/vite/commit/728c8eeebc0ad7ba48e680f46bbdb55020b2e152))
+
+## <small>[7.2.1](https://github.com/vitejs/vite/compare/v7.2.0...v7.2.1) (2025-11-06)</small>
+### Bug Fixes
+
+* **worker:** some worker asset was missing ([#21074](https://github.com/vitejs/vite/issues/21074)) ([82d2d6c](https://github.com/vitejs/vite/commit/82d2d6ccf5a69c3d67e44e3704a0c3eb34db2236))
+
+### Code Refactoring
+
+* **build:** rename `indexOfMatchInSlice` to `findPreloadMarker` ([#21054](https://github.com/vitejs/vite/issues/21054)) ([f83264f](https://github.com/vitejs/vite/commit/f83264f5d97caa8ba80276a9ee9e82cb0e69c4ca))
+
+## [7.2.0](https://github.com/vitejs/vite/compare/v7.2.0-beta.1...v7.2.0) (2025-11-05)
+### Bug Fixes
+
+* **css:** fallback to sass when sass-embedded platform binary is missing ([#21002](https://github.com/vitejs/vite/issues/21002)) ([b1fd616](https://github.com/vitejs/vite/commit/b1fd6161886caeb31ac646d6544116d37efe46d0))
+* **module-runner:** make `getBuiltins` response JSON serializable ([#21029](https://github.com/vitejs/vite/issues/21029)) ([ad5b3bf](https://github.com/vitejs/vite/commit/ad5b3bf6f3ad7b24886718c5f5de32eee923ae11))
+* **types:** add undefined to optional properties for exactOptionalProperties type compatibility ([#21040](https://github.com/vitejs/vite/issues/21040)) ([2833c55](https://github.com/vitejs/vite/commit/2833c5576a87be2db450c195ccf64dfc8925a15b))
+
+### Miscellaneous Chores
+
+* **deps:** update rolldown-related dependencies ([#21047](https://github.com/vitejs/vite/issues/21047)) ([e3a6a83](https://github.com/vitejs/vite/commit/e3a6a83406943bc59a9916cae3f25ab33c2b5802))
+
 ## [7.2.0-beta.1](https://github.com/vitejs/vite/compare/v7.2.0-beta.0...v7.2.0-beta.1) (2025-10-29)
 ### Bug Fixes
 

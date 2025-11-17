@@ -172,8 +172,7 @@ const FRAMEWORKS: Framework[] = [
         name: 'redwoodsdk-standard',
         display: 'RedwoodSDK ↗',
         color: red,
-        customCommand:
-          'npm exec degit redwoodjs/sdk/starters/standard TARGET_DIR',
+        customCommand: 'npm create rwsdk@latest TARGET_DIR',
       },
       {
         name: 'rsc',
@@ -644,11 +643,7 @@ async function init() {
       )
       fs.writeFileSync(targetPath, updatedContent)
     } else {
-      // eslint-disable-next-line n/no-unsupported-features/node-builtins -- it is not experimental in Node 22.3+
-      fs.cpSync(path.join(templateDir, file), targetPath, {
-        recursive: true,
-        mode: fs.constants.COPYFILE_FICLONE,
-      })
+      copy(path.join(templateDir, file), targetPath)
     }
   }
 
@@ -665,7 +660,7 @@ async function init() {
 
   if (useRolldownVite) {
     // renovate: datasource=npm depName=rolldown-vite
-    const rolldownViteVersion = '7.1.19'
+    const rolldownViteVersion = '7.2.2'
     const pkgVersion = `npm:rolldown-vite@${rolldownViteVersion}`
     pkg.devDependencies.vite = pkgVersion
     switch (pkgManager) {
@@ -714,6 +709,15 @@ function formatTargetDir(targetDir: string) {
   return targetDir.trim().replace(/\/+$/g, '')
 }
 
+function copy(src: string, dest: string) {
+  const stat = fs.statSync(src)
+  if (stat.isDirectory()) {
+    copyDir(src, dest)
+  } else {
+    fs.copyFileSync(src, dest)
+  }
+}
+
 function isValidPackageName(projectName: string) {
   return /^(?:@[a-z\d\-*~][a-z\d\-*._~]*\/)?[a-z\d\-~][a-z\d\-._~]*$/.test(
     projectName,
@@ -727,6 +731,15 @@ function toValidPackageName(projectName: string) {
     .replace(/\s+/g, '-')
     .replace(/^[._]/, '')
     .replace(/[^a-z\d\-~]+/g, '-')
+}
+
+function copyDir(srcDir: string, destDir: string) {
+  fs.mkdirSync(destDir, { recursive: true })
+  for (const file of fs.readdirSync(srcDir)) {
+    const srcFile = path.resolve(srcDir, file)
+    const destFile = path.resolve(destDir, file)
+    copy(srcFile, destFile)
+  }
 }
 
 function isEmpty(path: string) {
@@ -763,7 +776,7 @@ function pkgFromUserAgent(userAgent: string | undefined): PkgInfo | undefined {
 
 function setupReactSwc(root: string, isTs: boolean) {
   // renovate: datasource=npm depName=@vitejs/plugin-react-swc
-  const reactSwcPluginVersion = '4.2.0'
+  const reactSwcPluginVersion = '4.2.1'
 
   editFile(path.resolve(root, 'package.json'), (content) => {
     return content.replace(
@@ -785,7 +798,7 @@ function setupReactSwc(root: string, isTs: boolean) {
 
 function setupReactCompiler(root: string, isTs: boolean) {
   // renovate: datasource=npm depName=babel-plugin-react-compiler
-  const reactCompilerPluginVersion = '19.1.0-rc.3'
+  const reactCompilerPluginVersion = '1.0.0'
 
   editFile(path.resolve(root, 'package.json'), (content) => {
     const asObject = JSON.parse(content)
