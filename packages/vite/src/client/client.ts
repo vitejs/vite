@@ -644,7 +644,8 @@ if (isFullBundleMode && typeof DevRuntime !== 'undefined') {
           transport.send({
             type: 'custom',
             event: 'vite:module-loaded',
-            data: { modules: message.modules },
+            // clone array as the runtime reuses the array instance
+            data: { modules: message.modules.slice() },
           })
           break
         }
