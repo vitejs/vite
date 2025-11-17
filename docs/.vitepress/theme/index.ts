@@ -2,8 +2,6 @@ import { h } from 'vue'
 import DefaultTheme from 'vitepress/theme'
 
 import type { Theme } from 'vitepress'
-import type { DefaultTheme as VPDefaultTheme } from 'vitepress/theme'
-
 import TwoslashFloatingVue from '@shikijs/vitepress-twoslash/client'
 import '@shikijs/vitepress-twoslash/style.css'
 
@@ -19,26 +17,6 @@ import 'virtual:group-icons.css'
 
 export default {
   extends: DefaultTheme,
-
-  themeConfig: {
-    transformNavLink(link: VPDefaultTheme.NavItemWithLink) {
-      try {
-        const url =
-          typeof link.link === 'string' ? link.link : (link.link as any)?.url
-
-        if (!url) return link
-
-        const host = new URL(url).hostname
-
-        if (host === 'vite.dev' || host.endsWith('.vite.dev')) {
-          return { ...link, target: '_self' }
-        }
-      } catch {
-        // Ignore invalid URLs
-      }
-      return link
-    },
-  },
 
   Layout() {
     return h(DefaultTheme.Layout, null, {
