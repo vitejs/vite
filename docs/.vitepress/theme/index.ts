@@ -10,6 +10,7 @@ import SvgImage from './components/SvgImage.vue'
 import YouTubeVideo from './components/YouTubeVideo.vue'
 import SponsorBanner from './components/SponsorBanner.vue'
 import NonInheritBadge from './components/NonInheritBadge.vue'
+import VPNavBarTranslations from './components/VPNavBarTranslations.vue'
 import 'virtual:group-icons.css'
 
 export default {
@@ -24,6 +25,7 @@ export default {
     app.component('SvgImage', SvgImage)
     app.component('YouTubeVideo', YouTubeVideo)
     app.component('NonInheritBadge', NonInheritBadge)
+    app.component('VPNavBarTranslations', VPNavBarTranslations)
     app.use(TwoslashFloatingVue)
   },
 } satisfies Theme
