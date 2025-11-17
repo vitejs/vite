@@ -1,15 +1,15 @@
 <script lang="ts" setup>
 import { computed } from 'vue'
-import type { DefaultTheme } from 'vitepress/theme'
+import type { DefaultTheme, PageData } from 'vitepress/theme'
 
-// ✅ Use official theme component paths (safe, typed)
+// Theme components (safe, typed)
 import VPFlyout from 'vitepress/theme/components/VPFlyout.vue'
 import VPMenuLink from 'vitepress/theme/components/VPMenuLink.vue'
 
-// ✅ Public VitePress composables
+// Must use internal paths for this VitePress version
+import { useLangs } from 'vitepress/dist/client/theme-default/composables/langs'
+import { isExternal } from 'vitepress/dist/client/shared'
 import { useData } from 'vitepress'
-import { useLangs } from 'vitepress/theme/composables/langs'
-import { isExternal } from 'vitepress/shared'
 
 const { theme } = useData()
 const { localeLinks, currentLang } = useLangs({ correspondingLink: true })
@@ -17,10 +17,18 @@ const { localeLinks, currentLang } = useLangs({ correspondingLink: true })
 const normalizedLocaleLinks = computed<DefaultTheme.NavItemWithLink[]>(() =>
   localeLinks.value.map((locale: DefaultTheme.NavItemWithLink) => ({
     ...locale,
-    target: resolveTarget(locale.link),
-    rel: resolveRel(locale.link),
+    target: resolveTarget(resolveLink(locale.link)),
+    rel: resolveRel(resolveLink(locale.link)),
   })),
 )
+
+// Support function-based links
+function resolveLink(
+  link?: string | ((payload: PageData) => string),
+): string | undefined {
+  if (!link) return undefined
+  return typeof link === 'function' ? link({} as PageData) : link
+}
 
 function resolveTarget(url?: string) {
   if (!url) return undefined
