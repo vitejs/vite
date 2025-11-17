@@ -1,11 +1,8 @@
 <script lang="ts" setup>
 import { computed } from 'vue'
 import type { DefaultTheme } from 'vitepress/theme'
-import VPFlyout from 'vitepress/dist/client/theme-default/components/VPFlyout.vue'
-import VPMenuLink from 'vitepress/dist/client/theme-default/components/VPMenuLink.vue'
-import { useData } from 'vitepress'
-import { useLangs } from 'vitepress/dist/client/theme-default/composables/langs'
-import { isExternal } from 'vitepress/dist/client/shared'
+import { VPFlyout, VPMenuLink } from 'vitepress/theme'
+import { useData, useLangs, isExternal } from 'vitepress'
 
 const { theme } = useData()
 const { localeLinks, currentLang } = useLangs({ correspondingLink: true })
