@@ -1,3 +1,7 @@
+import type {
+  DevRuntime as DevRuntimeType,
+  Messenger,
+} from 'rolldown/experimental/runtime-types'
 import type { ErrorPayload, HotPayload } from '#types/hmrPayload'
 import type { ViteHotContext } from '#types/hot'
 import { HMRClient, HMRContext } from '../shared/hmr'
@@ -617,33 +621,36 @@ export function injectQuery(url: string, queryToInject: string): string {
 
 export { ErrorOverlay }
 
-// TODO: proper types
-declare let DevRuntime: { new (socket: any): any } | undefined
+declare const DevRuntime: typeof DevRuntimeType
 
 if (isFullBundleMode && typeof DevRuntime !== 'undefined') {
   class ViteDevRuntime extends DevRuntime {
-    createModuleHotContext(moduleId: string) {
+    override createModuleHotContext(moduleId: string) {
       const ctx = createHotContext(moduleId)
       // @ts-expect-error TODO: support CSS properly
       ctx._internal = { updateStyle, removeStyle }
       return ctx
     }
 
-    applyUpdates(_boundaries: string[]): void {
+    override applyUpdates(_boundaries: [string, string][]): void {
       // noop, handled in the HMR client
     }
   }
 
-  // TODO: make this more performant
-  const wrappedSocket = {
-    readyState: WebSocket.OPEN,
-    send(data: string) {
-      const d = JSON.parse(data)
-      transport.send({
-        type: 'custom',
-        event: 'vite:module-loaded',
-        data: { modules: d.modules },
-      })
+  const wrappedSocket: Messenger = {
+    send(message) {
+      switch (message.type) {
+        case 'hmr:module-registered': {
+          transport.send({
+            type: 'custom',
+            event: 'vite:module-loaded',
+            data: { modules: message.modules },
+          })
+          break
+        }
+        default:
+          throw new Error(`Unknown message type: ${JSON.stringify(message)}`)
+      }
     },
   }
   ;(globalThis as any).__rolldown_runtime__ ??= new ViteDevRuntime(
