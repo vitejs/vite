@@ -1,14 +1,21 @@
 <script lang="ts" setup>
 import { computed } from 'vue'
 import type { DefaultTheme } from 'vitepress/theme'
-import { VPFlyout, VPMenuLink } from 'vitepress/theme'
-import { useData, useLangs, isExternal } from 'vitepress'
+
+// ✅ Use official theme component paths (safe, typed)
+import VPFlyout from 'vitepress/theme/components/VPFlyout.vue'
+import VPMenuLink from 'vitepress/theme/components/VPMenuLink.vue'
+
+// ✅ Public VitePress composables
+import { useData } from 'vitepress'
+import { useLangs } from 'vitepress/theme/composables/langs'
+import { isExternal } from 'vitepress/shared'
 
 const { theme } = useData()
 const { localeLinks, currentLang } = useLangs({ correspondingLink: true })
 
 const normalizedLocaleLinks = computed<DefaultTheme.NavItemWithLink[]>(() =>
-  localeLinks.value.map((locale) => ({
+  localeLinks.value.map((locale: DefaultTheme.NavItemWithLink) => ({
     ...locale,
     target: resolveTarget(locale.link),
     rel: resolveRel(locale.link),
