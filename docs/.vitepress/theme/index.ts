@@ -26,10 +26,12 @@ export default {
     app.component('NonInheritBadge', NonInheritBadge)
     app.use(TwoslashFloatingVue)
     // Fix locale links opening in new tab
+    // Fix locale links opening in new tab
     if (typeof window !== 'undefined') {
       const fixLocaleLinks = () => {
         const siteDomain = 'vite.dev'
-        const links = document.querySelectorAll('a[target="_blank"]')
+        const links =
+          document.querySelectorAll<HTMLAnchorElement>('a[target="_blank"]')
 
         links.forEach((a) => {
           if (!a.href) return
