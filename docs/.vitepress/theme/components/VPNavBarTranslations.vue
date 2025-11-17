@@ -1,38 +1,15 @@
 <script lang="ts" setup>
-import { computed } from 'vue'
-import type { DefaultTheme } from 'vitepress/theme'
+import { useData } from 'vitepress'
 
-// Typed theme components
-import VPFlyout from 'vitepress/theme/components/VPFlyout.vue'
-import VPMenuLink from 'vitepress/theme/components/VPMenuLink.vue'
-
-// MUST use dist paths inside Vite's monorepo
+// real API for alpha.12
 import { useLangs } from 'vitepress/dist/client/theme-default/composables/langs.js'
 import { isExternal } from 'vitepress/dist/client/shared.js'
-import { useData } from 'vitepress'
+
+// real existing component in alpha.12
+import VPLocaleSwitch from 'vitepress/dist/client/theme-default/components/VPLocaleSwitch.vue'
 
 const { theme } = useData()
 const { localeLinks, currentLang } = useLangs({ correspondingLink: true })
-
-const normalizedLocaleLinks = computed<DefaultTheme.NavItemWithLink[]>(() =>
-  localeLinks.value.map((locale: DefaultTheme.NavItemWithLink) => {
-    const finalLink = resolveLink(locale.link)
-    return {
-      ...locale,
-      link: finalLink,
-      target: resolveTarget(finalLink),
-      rel: resolveRel(finalLink),
-    }
-  }),
-)
-
-// Support function-based links
-function resolveLink(
-  link?: string | ((...args: any[]) => string),
-): string | undefined {
-  if (!link) return undefined
-  return typeof link === 'function' ? link({}) : link
-}
 
 function resolveTarget(url?: string) {
   if (!url) return undefined
@@ -56,20 +33,14 @@ function isLangSubdomain(url?: string) {
 </script>
 
 <template>
-  <VPFlyout
-    v-if="normalizedLocaleLinks.length && currentLang.label"
+  <VPLocaleSwitch
     class="VPNavBarTranslations"
-    icon="vpi-languages"
     :label="theme.langMenuLabel || 'Change language'"
-  >
-    <div class="items">
-      <p class="title">{{ currentLang.label }}</p>
-
-      <template v-for="locale in normalizedLocaleLinks" :key="locale.link">
-        <VPMenuLink :item="locale" />
-      </template>
-    </div>
-  </VPFlyout>
+    :localeLinks="localeLinks"
+    :currentLang="currentLang"
+    :resolveTarget="resolveTarget"
+    :resolveRel="resolveRel"
+  />
 </template>
 
 <style scoped>
@@ -82,13 +53,5 @@ function isLangSubdomain(url?: string) {
     display: flex;
     align-items: center;
   }
-}
-
-.title {
-  padding: 0 24px 0 12px;
-  line-height: 32px;
-  font-size: 14px;
-  font-weight: 700;
-  color: var(--vp-c-text-1);
 }
 </style>

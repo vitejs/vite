@@ -11,15 +11,11 @@ declare module '*.vue' {
   export default component
 }
 
-declare module 'vitepress/dist/client/theme-default/components/VPFlyout.vue' {
+declare module 'vitepress/dist/client/theme-default/components/VPLocaleSwitch.vue' {
   const component: any
   export default component
 }
 
-declare module 'vitepress/dist/client/theme-default/components/VPMenuLink.vue' {
-  const component: any
-  export default component
-}
 declare module 'vitepress/dist/client/theme-default/composables/langs.js' {
   export function useLangs(options?: any): any
 }
