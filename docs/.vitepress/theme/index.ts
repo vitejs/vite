@@ -1,5 +1,5 @@
 import { h } from 'vue'
-import type { Theme } from 'vitepress'
+import type { Theme, NavItemWithLink } from 'vitepress'
 import DefaultTheme from 'vitepress/theme'
 import TwoslashFloatingVue from '@shikijs/vitepress-twoslash/client'
 import '@shikijs/vitepress-twoslash/style.css'
@@ -14,48 +14,40 @@ import 'virtual:group-icons.css'
 
 export default {
   extends: DefaultTheme,
+
+  transformNavLink(link: NavItemWithLink) {
+    try {
+      const url =
+        typeof link.link === 'string' ? link.link : (link.link as any)?.url
+      if (!url || typeof url !== 'string') return link
+
+      const host = new URL(url).hostname
+      if (host === 'vite.dev' || host.endsWith('.vite.dev')) {
+        return {
+          ...link,
+          // set target to _self — VitePress will use this when rendering the <a>
+          target: '_self',
+        }
+      }
+    } catch {
+      // ignore parse errors and return original link
+    }
+    return link
+  },
+
   Layout() {
+    // keep the existing layout slots
     return h(DefaultTheme.Layout, null, {
       'layout-top': () => h(SponsorBanner),
       'aside-ads-before': () => h(AsideSponsors),
     })
   },
+
   enhanceApp({ app }) {
+    // register components / plugins exactly as before
     app.component('SvgImage', SvgImage)
     app.component('YouTubeVideo', YouTubeVideo)
     app.component('NonInheritBadge', NonInheritBadge)
     app.use(TwoslashFloatingVue)
-    // Fix locale links opening in new tab
-    // Fix locale links opening in new tab
-    if (typeof window !== 'undefined') {
-      const fixLocaleLinks = () => {
-        const siteDomain = 'vite.dev'
-        const links =
-          document.querySelectorAll<HTMLAnchorElement>('a[target="_blank"]')
-
-        links.forEach((a) => {
-          if (!a.href) return
-
-          let url
-          try {
-            url = new URL(a.href)
-          } catch {
-            return
-          }
-
-          // remove target for subdomains of vite.dev
-          if (
-            url.hostname === siteDomain ||
-            url.hostname.endsWith(`.${siteDomain}`)
-          ) {
-            a.removeAttribute('target')
-          }
-        })
-      }
-
-      window.addEventListener('DOMContentLoaded', fixLocaleLinks)
-      const observer = new MutationObserver(fixLocaleLinks)
-      observer.observe(document.body, { childList: true, subtree: true })
-    }
   },
 } satisfies Theme
