@@ -118,6 +118,12 @@ const FRAMEWORKS: Framework[] = [
         color: greenBright,
         customCommand: 'npm exec nuxi init TARGET_DIR',
       },
+      {
+        name: 'custom-vike-vue',
+        display: 'Vike ↗',
+        color: greenBright,
+        customCommand: 'npm create -- vike@latest --vue TARGET_DIR',
+      },
     ],
   },
   {
@@ -180,6 +186,12 @@ const FRAMEWORKS: Framework[] = [
         color: magenta,
         customCommand:
           'npm exec degit vitejs/vite-plugin-react/packages/plugin-rsc/examples/starter TARGET_DIR',
+      },
+      {
+        name: 'custom-vike-react',
+        display: 'Vike ↗',
+        color: cyan,
+        customCommand: 'npm create -- vike@latest --react TARGET_DIR',
       },
     ],
   },
@@ -267,6 +279,12 @@ const FRAMEWORKS: Framework[] = [
         color: cyan,
         customCommand:
           'npm create -- tsrouter-app@latest TARGET_DIR --framework Solid --interactive',
+      },
+      {
+        name: 'custom-vike-solid',
+        display: 'Vike ↗',
+        color: cyan,
+        customCommand: 'npm create -- vike@latest --solid TARGET_DIR',
       },
     ],
   },
