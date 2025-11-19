@@ -109,7 +109,7 @@ export class FullBundleDevEnvironment extends DevEnvironment {
       const clientId = this.clients.setupIfNeeded(client)
       this.devEngine.registerModules(clientId, payload.modules)
     })
-    this.hot.on('vite:client-disconnect', (_payload, client) => {
+    this.hot.on('vite:client:disconnect', (_payload, client) => {
       const clientId = this.clients.delete(client)
       if (clientId) {
         this.devEngine.removeClient(clientId)
