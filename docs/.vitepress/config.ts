@@ -478,7 +478,27 @@ export default defineConfig({
   markdown: {
     // languages used for twoslash and jsdocs in twoslash
     languages: ['ts', 'js', 'json'],
-    codeTransformers: [transformerTwoslash()],
+    codeTransformers: [
+      transformerTwoslash(),
+      // add `style:*` support
+      {
+        root(hast) {
+          const meta = this.options.meta?.__raw
+            ?.split(' ')
+            .find((m) => m.startsWith('style:'))
+          if (meta) {
+            const style = meta.slice('style:'.length)
+            const rootPre = hast.children.find(
+              (n): n is typeof n & { type: 'element'; tagName: 'pre' } =>
+                n.type === 'element' && n.tagName === 'pre',
+            )
+            if (rootPre) {
+              rootPre.properties.style += '; ' + style
+            }
+          }
+        },
+      },
+    ],
     config(md) {
       md.use(groupIconMdPlugin, {
         titleBar: {
