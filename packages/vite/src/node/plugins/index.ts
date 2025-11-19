@@ -1,6 +1,6 @@
 import aliasPlugin, { type ResolverFunction } from '@rollup/plugin-alias'
 import type { ObjectHook } from 'rolldown'
-import { aliasPlugin as nativeAliasPlugin } from 'rolldown/experimental'
+import { viteAliasPlugin as nativeAliasPlugin } from 'rolldown/experimental'
 import type { PluginHookUtils, ResolvedConfig } from '../config'
 import {
   type HookHandler,

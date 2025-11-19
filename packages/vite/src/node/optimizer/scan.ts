@@ -2,7 +2,7 @@ import fs from 'node:fs'
 import fsp from 'node:fs/promises'
 import path from 'node:path'
 import { performance } from 'node:perf_hooks'
-import { scan, transform } from 'rolldown/experimental'
+import { scan, transformSync } from 'rolldown/experimental'
 import type { PartialResolvedId, Plugin } from 'rolldown'
 import colors from 'picocolors'
 import { glob } from 'tinyglobby'
@@ -393,7 +393,7 @@ function rolldownScanPlugin(
     let transpiledContents: string
     // transpile because `transformGlobImport` only expects js
     if (loader !== 'js') {
-      const result = transform(id, contents, { lang: loader })
+      const result = transformSync(id, contents, { lang: loader })
       if (result.errors.length > 0) {
         throw new AggregateError(result.errors, 'oxc transform error')
       }

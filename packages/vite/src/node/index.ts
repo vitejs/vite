@@ -3,28 +3,19 @@ import {
   parseAst as _parseAst,
   parseAstAsync as _parseAstAsync,
 } from 'rolldown/parseAst'
-import {
-  type MinifyOptions,
-  type MinifyResult,
-  minify as minifySync,
-} from 'rolldown/experimental'
 import type * as Rollup from '#types/internal/rollupTypeCompat'
 
 export type { Rollup, Rolldown }
 export { esmExternalRequirePlugin } from 'rolldown/plugins'
-export async function minify(
-  filename: string,
-  sourceText: string,
-  options?: MinifyOptions | undefined | null,
-): Promise<MinifyResult> {
-  return minifySync(filename, sourceText, options)
-}
-export { minifySync, type MinifyOptions, type MinifyResult }
 export {
-  parseAsync as parse,
+  parse,
   parseSync,
   type ParserOptions,
   type ParseResult,
+  minify,
+  minifySync,
+  type MinifyOptions,
+  type MinifyResult,
 } from 'rolldown/experimental'
 
 /** @deprecated - use `parse` instead */

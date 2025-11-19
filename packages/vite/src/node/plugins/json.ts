@@ -7,7 +7,7 @@
  */
 
 import { dataToEsm, makeLegalIdentifier } from '@rollup/pluginutils'
-import { jsonPlugin as nativeJsonPlugin } from 'rolldown/experimental'
+import { viteJsonPlugin as nativeJsonPlugin } from 'rolldown/experimental'
 import { SPECIAL_QUERY_RE } from '../constants'
 import type { Plugin } from '../plugin'
 import { stripBomTag } from '../utils'

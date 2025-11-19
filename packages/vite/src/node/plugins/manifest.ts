@@ -1,6 +1,6 @@
 import path from 'node:path'
 import type { OutputAsset, OutputChunk, RenderedChunk } from 'rolldown'
-import { manifestPlugin as nativeManifestPlugin } from 'rolldown/experimental'
+import { viteManifestPlugin as nativeManifestPlugin } from 'rolldown/experimental'
 import type { Plugin } from '../plugin'
 import { normalizePath, sortObjectKeys } from '../utils'
 import { perEnvironmentState } from '../environment'

@@ -1,5 +1,5 @@
 import { exactRegex } from '@rolldown/pluginutils'
-import { modulePreloadPolyfillPlugin as nativeModulePreloadPolyfillPlugin } from 'rolldown/experimental'
+import { viteModulePreloadPolyfillPlugin as nativeModulePreloadPolyfillPlugin } from 'rolldown/experimental'
 import { type ResolvedConfig, perEnvironmentPlugin } from '..'
 import type { Plugin } from '../plugin'
 import { isModernFlag } from './importAnalysisBuild'

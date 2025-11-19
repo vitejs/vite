@@ -1,7 +1,7 @@
 import { exactRegex } from '@rolldown/pluginutils'
 import {
-  wasmFallbackPlugin as nativeWasmFallbackPlugin,
-  wasmHelperPlugin as nativeWasmHelperPlugin,
+  viteWasmFallbackPlugin as nativeWasmFallbackPlugin,
+  viteWasmHelperPlugin as nativeWasmHelperPlugin,
 } from 'rolldown/experimental'
 import type { Plugin } from '../plugin'
 import type { ResolvedConfig } from '..'
