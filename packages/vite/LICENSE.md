@@ -1361,6 +1361,8 @@ Repository: https://github.com/sxzz/obug
 > The MIT License (MIT)
 > 
 > Copyright © 2025-PRESENT Kevin Deng (https://github.com/sxzz)
+> Copyright (c) 2014-2017 TJ Holowaychuk <tj@vision-media.ca>
+> Copyright (c) 2018-2021 Josh Junon
 > 
 > Permission is hereby granted, free of charge, to any person obtaining a copy
 > of this software and associated documentation files (the "Software"), to deal
