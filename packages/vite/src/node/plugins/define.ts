@@ -1,4 +1,4 @@
-import { transform } from 'rolldown/experimental'
+import { transformSync } from 'rolldown/experimental'
 import type { ResolvedConfig } from '../config'
 import type { Plugin } from '../plugin'
 import { escapeRegex, isCSSRequest } from '../utils'
@@ -206,8 +206,11 @@ export async function replaceDefine(
   code: string,
   id: string,
   define: Record<string, string>,
-): Promise<{ code: string; map: ReturnType<typeof transform>['map'] | null }> {
-  const result = transform(id, code, {
+): Promise<{
+  code: string
+  map: ReturnType<typeof transformSync>['map'] | null
+}> {
+  const result = transformSync(id, code, {
     lang: 'js',
     sourceType: 'module',
     define,

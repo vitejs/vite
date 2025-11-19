@@ -3,7 +3,7 @@ import { gzip } from 'node:zlib'
 import { promisify } from 'node:util'
 import colors from 'picocolors'
 import type { OutputBundle } from 'rolldown'
-import { reporterPlugin as nativeReporterPlugin } from 'rolldown/experimental'
+import { viteReporterPlugin as nativeReporterPlugin } from 'rolldown/experimental'
 import { type Plugin, perEnvironmentPlugin } from '../plugin'
 import type { ResolvedConfig } from '../config'
 import type { Environment } from '../environment'
@@ -35,6 +35,7 @@ export function buildReporterPlugin(config: ResolvedConfig): Plugin {
         LogLevels[config.logLevel || 'info'] >= LogLevels.info
       const assetsDir = path.join(env.config.build.assetsDir, '/')
       return nativeReporterPlugin({
+        root: env.config.root,
         isTty: !!tty,
         isLib: !!env.config.build.lib,
         assetsDir,

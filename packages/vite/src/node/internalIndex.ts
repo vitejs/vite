@@ -1,1 +1,1 @@
-export { reactRefreshWrapperPlugin } from 'rolldown/experimental'
+export { viteReactRefreshWrapperPlugin as reactRefreshWrapperPlugin } from 'rolldown/experimental'

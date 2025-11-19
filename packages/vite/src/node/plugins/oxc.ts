@@ -5,8 +5,8 @@ import type {
   TransformResult as OxcTransformResult,
 } from 'rolldown/experimental'
 import {
-  transformPlugin as nativeTransformPlugin,
-  transform,
+  viteTransformPlugin as nativeTransformPlugin,
+  transformSync,
 } from 'rolldown/experimental'
 import type { RawSourceMap } from '@jridgewell/remapping'
 import type { InternalModuleFormat, RollupError, SourceMap } from 'rolldown'
@@ -270,7 +270,7 @@ export async function transformWithOxc(
     }
   }
 
-  const result = transform(filename, code, resolvedOptions)
+  const result = transformSync(filename, code, resolvedOptions)
 
   if (result.errors.length > 0) {
     const firstError = result.errors[0]
@@ -338,6 +338,7 @@ export function oxcPlugin(config: ResolvedConfig): Plugin {
         !!environment.config.build.sourcemap
 
       return nativeTransformPlugin({
+        root: environment.config.root,
         include,
         exclude,
         jsxRefreshInclude,
