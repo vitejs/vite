@@ -75,6 +75,12 @@ const nodeConfig = defineConfig({
     index: path.resolve(__dirname, 'src/node/index.ts'),
     cli: path.resolve(__dirname, 'src/node/cli.ts'),
   },
+  resolve: {
+    alias: {
+      // we can always use node version (the default entry point has browser support)
+      debug: 'debug/src/node.js',
+    },
+  },
   external: [
     /^vite\//,
     'fsevents',

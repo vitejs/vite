@@ -14,8 +14,7 @@ import fsp from 'node:fs/promises'
 import remapping from '@jridgewell/remapping'
 import type { DecodedSourceMap, RawSourceMap } from '@jridgewell/remapping'
 import colors from 'picocolors'
-import type { Debugger } from 'obug'
-import debug from 'obug'
+import debug from 'debug'
 import type MagicString from 'magic-string'
 import type { Equal } from '@type-challenges/utils'
 
@@ -184,11 +183,13 @@ export type ViteDebugScope = `vite:${string}`
 export function createDebugger(
   namespace: ViteDebugScope,
   options: DebuggerOptions = {},
-): Debugger['log'] | undefined {
+): debug.Debugger['log'] | undefined {
   const log = debug(namespace)
   const { onlyWhenFocused, depth } = options
 
+  // @ts-expect-error - The log function is bound to inspectOpts, but the type is not reflected
   if (depth && log.inspectOpts && log.inspectOpts.depth == null) {
+    // @ts-expect-error - The log function is bound to inspectOpts, but the type is not reflected
     log.inspectOpts.depth = options.depth
   }
 
