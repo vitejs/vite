@@ -64,7 +64,7 @@ If you need a custom integration, you can follow the steps in this guide to conf
 
 3. For production, after running `vite build`, a `.vite/manifest.json` file will be generated alongside other asset files. An example manifest file looks like this:
 
-   ```json [.vite/manifest.json]
+   ```json [.vite/manifest.json] style:max-height:400px
    {
      "_shared-B7PI925R.js": {
        "file": "assets/shared-B7PI925R.js",
@@ -106,17 +106,53 @@ If you need a custom integration, you can follow the steps in this guide to conf
 
    The manifest has a `Record<name, chunk>` structure where each chunk follows the `ManifestChunk` interface:
 
-   ```ts
+   ```ts style:max-height:400px
    interface ManifestChunk {
+     /**
+      * The input file name of this chunk / asset if known
+      */
      src?: string
+     /**
+      * The output file name of this chunk / asset
+      */
      file: string
+     /**
+      * The list of CSS files imported by this chunk
+      *
+      * This field is only present in JS chunks.
+      */
      css?: string[]
+     /**
+      * The list of asset files imported by this chunk, excluding CSS files
+      *
+      * This field is only present in JS chunks.
+      */
      assets?: string[]
+     /**
+      * Whether this chunk or asset is an entry point
+      */
      isEntry?: boolean
+     /**
+      * The name of this chunk / asset if known
+      */
      name?: string
-     names?: string[]
+     /**
+      * Whether this chunk is a dynamic entry point
+      *
+      * This field is only present in JS chunks.
+      */
      isDynamicEntry?: boolean
+     /**
+      * The list of statically imported chunks by this chunk
+      *
+      * The values are the keys of the manifest. This field is only present in JS chunks.
+      */
      imports?: string[]
+     /**
+      * The list of dynamically imported chunks by this chunk
+      *
+      * The values are the keys of the manifest. This field is only present in JS chunks.
+      */
      dynamicImports?: string[]
    }
    ```
@@ -128,7 +164,7 @@ If you need a custom integration, you can follow the steps in this guide to conf
    - **Asset chunks**: Generated from imported assets like images, fonts. Their key is the relative src path from project root.
    - **CSS files**: When [`build.cssCodeSplit`](/config/build-options.md#build-csscodesplit) is `false`, a single CSS file is generated with the key `style.css`. When `build.cssCodeSplit` is not `false`, the key is generated similar to JS chunks (i.e. entry chunks will not have `_` prefix and non-entry chunks will have `_` prefix).
 
-   Chunks will contain information on their static and dynamic imports (both are keys that map to the corresponding chunk in the manifest), and also their corresponding CSS and asset files (if any).
+   JS chunks (chunks other than assets or CSS) will contain information on their static and dynamic imports (both are keys that map to the corresponding chunk in the manifest), and also their corresponding CSS and asset files (if any).
 
 4. You can use this file to render links or preload directives with hashed filenames.
 
