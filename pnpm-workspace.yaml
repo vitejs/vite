@@ -40,3 +40,10 @@ onlyBuiltDependencies:
   - "simple-git-hooks"
   - "unrs-resolver"
   - "workerd"
+
+trustPolicy: no-downgrade
+trustPolicyExclude:
+  - chokidar@4.0.3 # https://github.com/paulmillr/chokidar/issues/1440
+  - semver@5.7.2 || 6.3.1
+  - tailwindcss@3.4.18
+  - undici-types@6.21.0 # https://github.com/nodejs/undici/issues/4666
