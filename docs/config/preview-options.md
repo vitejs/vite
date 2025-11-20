@@ -96,3 +96,10 @@ See [`server.cors`](./server-options#server-cors) for more details.
 - **Type:** `OutgoingHttpHeaders`
 
 Specify server response headers.
+
+## preview.compression
+
+- **Type:** `CompressionOptions`
+- Default: `{ threshold: 1024, level: -1, brotli: false, gzip: true, mimes: /text|javascript|\/json|xml/i }`
+
+Configure compression for files served by the preview server. See [`@polka/compression`](https://www.npmjs.com/package/@polka/compression#options) for more details.

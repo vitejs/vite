@@ -2,7 +2,9 @@ import fs from 'node:fs'
 import path from 'node:path'
 import type readline from 'node:readline'
 import sirv from 'sirv'
-import compression from '@polka/compression'
+import compression, {
+  type Options as CompressionOptions,
+} from '@polka/compression'
 import connect from 'connect'
 import corsMiddleware from 'cors'
 import type { Connect } from '#dep-types/connect'
@@ -48,10 +50,17 @@ import {
 } from './server/pluginContainer'
 import type { MinimalPluginContextWithoutEnvironment } from './plugin'
 
-export interface PreviewOptions extends CommonServerOptions {}
+export { type Options as CompressionOptions } from '@polka/compression'
+
+export interface PreviewOptions extends CommonServerOptions {
+  compression?: CompressionOptions
+}
 
 export interface ResolvedPreviewOptions
-  extends RequiredExceptFor<PreviewOptions, 'host' | 'https' | 'proxy'> {}
+  extends RequiredExceptFor<
+    PreviewOptions,
+    'host' | 'https' | 'proxy' | 'compression'
+  > {}
 
 export function resolvePreviewOptions(
   preview: PreviewOptions | undefined,
@@ -70,6 +79,7 @@ export function resolvePreviewOptions(
     proxy: preview?.proxy ?? server.proxy,
     cors: preview?.cors ?? server.cors,
     headers: preview?.headers ?? server.headers,
+    compression: preview?.compression,
   }
 }
 
@@ -234,7 +244,7 @@ export async function preview(
     app.use(proxyMiddleware(httpServer, proxy, config))
   }
 
-  app.use(compression())
+  app.use(compression(config.preview.compression))
 
   // base
   if (config.base !== '/') {
