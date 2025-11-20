@@ -1,3 +1,53 @@
+## [8.2.0](https://github.com/vitejs/vite/compare/create-vite@8.1.0...create-vite@8.2.0) (2025-11-20)
+### Features
+
+* **create-vite:** add Vike ([#21132](https://github.com/vitejs/vite/issues/21132)) ([0a86262](https://github.com/vitejs/vite/commit/0a86262cb253a6a38bb02d72a39805fe552b944b))
+
+### Bug Fixes
+
+* **deps:** update all non-major dependencies ([#21128](https://github.com/vitejs/vite/issues/21128)) ([4f8171e](https://github.com/vitejs/vite/commit/4f8171eb3046bd70c83964689897dab4c6b58bc0))
+
+### Miscellaneous Chores
+
+* **deps:** update rolldown-related dependencies ([#21127](https://github.com/vitejs/vite/issues/21127)) ([5029720](https://github.com/vitejs/vite/commit/50297208452241061cb44d09a4bbdf77a11ac01e))
+
+## [8.1.0](https://github.com/vitejs/vite/compare/create-vite@8.0.3...create-vite@8.1.0) (2025-11-12)
+### Features
+
+* **create-vite:** update React Compiler dep to 1.0.0 ([#20911](https://github.com/vitejs/vite/issues/20911)) ([6cf3304](https://github.com/vitejs/vite/commit/6cf3304c83586cf547d0b706d2e58ae647b93218))
+* **create-vite:** updated eslint-plugin-react-hooks to v7 and updated the config ([#20914](https://github.com/vitejs/vite/issues/20914)) ([0ec8aeb](https://github.com/vitejs/vite/commit/0ec8aeba479bb42d37521cf8d256286abc06c129))
+
+### Miscellaneous Chores
+
+* **deps:** update rolldown-related dependencies ([#21095](https://github.com/vitejs/vite/issues/21095)) ([39a0a15](https://github.com/vitejs/vite/commit/39a0a15fd24ed37257c48b795097a3794e54d255))
+
+## <small>[8.0.3](https://github.com/vitejs/vite/compare/create-vite@8.0.2...create-vite@8.0.3) (2025-11-10)</small>
+### Bug Fixes
+
+* **create-vite:** use `create-rwsdk` for redwood template ([#21091](https://github.com/vitejs/vite/issues/21091)) ([9aefcb6](https://github.com/vitejs/vite/commit/9aefcb6b9138942068eee074afb4c9dec71c4735))
+* **deps:** update all non-major dependencies ([879de86](https://github.com/vitejs/vite/commit/879de86935a31b4e47ab907ddd859366518ce268))
+* **deps:** update all non-major dependencies ([#20894](https://github.com/vitejs/vite/issues/20894)) ([3213f90](https://github.com/vitejs/vite/commit/3213f90ff0d8f274bcec65f40aac6dfcff1ac244))
+* **deps:** update all non-major dependencies ([#21008](https://github.com/vitejs/vite/issues/21008)) ([185641e](https://github.com/vitejs/vite/commit/185641e3cdae29277c41eb8028f6eac542215f01))
+* **deps:** update all non-major dependencies ([#21096](https://github.com/vitejs/vite/issues/21096)) ([6a34ac3](https://github.com/vitejs/vite/commit/6a34ac3422686e7cf7cc9a25d299cb8e5a8d92a0))
+* revert "refactor: use fs.cpSync ([#21019](https://github.com/vitejs/vite/issues/21019))" ([#21081](https://github.com/vitejs/vite/issues/21081)) ([728c8ee](https://github.com/vitejs/vite/commit/728c8eeebc0ad7ba48e680f46bbdb55020b2e152))
+
+### Miscellaneous Chores
+
+* **deps:** update all non-major dependencies ([#20966](https://github.com/vitejs/vite/issues/20966)) ([6fb41a2](https://github.com/vitejs/vite/commit/6fb41a260bda443685e719ea4765d3faca3db944))
+* **deps:** update dependency tsdown to ^0.15.6 ([#20893](https://github.com/vitejs/vite/issues/20893)) ([3dfe8a1](https://github.com/vitejs/vite/commit/3dfe8a1572ae8ad247814c3d041f0421906eaaf7))
+* **deps:** update rolldown-related dependencies ([#20923](https://github.com/vitejs/vite/issues/20923)) ([a5e3b06](https://github.com/vitejs/vite/commit/a5e3b064fa7ca981cb6f15f8e88806b36a99b8bf))
+* **deps:** update rolldown-related dependencies ([#20965](https://github.com/vitejs/vite/issues/20965)) ([6ad5424](https://github.com/vitejs/vite/commit/6ad5424f0bcabd8943c34d341cf9ed2e64b3d53c))
+* **deps:** update rolldown-related dependencies ([#21009](https://github.com/vitejs/vite/issues/21009)) ([7cec1ad](https://github.com/vitejs/vite/commit/7cec1addc257eb5bd0856adbe1e4306f0bb83e22))
+* **deps:** update rolldown-related dependencies ([#21047](https://github.com/vitejs/vite/issues/21047)) ([e3a6a83](https://github.com/vitejs/vite/commit/e3a6a83406943bc59a9916cae3f25ab33c2b5802))
+
+### Code Refactoring
+
+* use `fs.cpSync` ([#21019](https://github.com/vitejs/vite/issues/21019)) ([a2df778](https://github.com/vitejs/vite/commit/a2df77812814b927880bc4d68aafa8c8fa47daf0))
+
+### Build System
+
+* normalize license repo url ([#21010](https://github.com/vitejs/vite/issues/21010)) ([bb65468](https://github.com/vitejs/vite/commit/bb65468f3c6213fdd870c085610ec575af66b03c))
+
 ## <small>[8.0.2](https://github.com/vitejs/vite/compare/create-vite@8.0.1...create-vite@8.0.2) (2025-10-02)</small>
 ### Features
 
