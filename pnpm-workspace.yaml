@@ -14,6 +14,7 @@ dedupeInjectedDeps: false
 overrides:
   rolldown: $rolldown
   vite: 'workspace:*'
+  debug: 'npm:obug@^1.0.2'
 patchedDependencies:
   "sirv@3.0.2": "patches/sirv@3.0.2.patch"
   "chokidar@3.6.0": "patches/chokidar@3.6.0.patch"
