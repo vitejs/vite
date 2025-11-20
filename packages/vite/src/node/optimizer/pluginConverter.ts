@@ -275,7 +275,7 @@ function createLoadHandler(
     if (
       (result.warnings && result.warnings.length > 0) ||
       (result.watchDirs && result.watchDirs.length > 0) ||
-      !result.contents
+      result.contents == null
     ) {
       throw new Error('not implemented')
     }
