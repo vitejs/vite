@@ -1,3 +1,16 @@
+## [8.2.0](https://github.com/vitejs/vite/compare/create-vite@8.1.0...create-vite@8.2.0) (2025-11-20)
+### Features
+
+* **create-vite:** add Vike ([#21132](https://github.com/vitejs/vite/issues/21132)) ([0a86262](https://github.com/vitejs/vite/commit/0a86262cb253a6a38bb02d72a39805fe552b944b))
+
+### Bug Fixes
+
+* **deps:** update all non-major dependencies ([#21128](https://github.com/vitejs/vite/issues/21128)) ([4f8171e](https://github.com/vitejs/vite/commit/4f8171eb3046bd70c83964689897dab4c6b58bc0))
+
+### Miscellaneous Chores
+
+* **deps:** update rolldown-related dependencies ([#21127](https://github.com/vitejs/vite/issues/21127)) ([5029720](https://github.com/vitejs/vite/commit/50297208452241061cb44d09a4bbdf77a11ac01e))
+
 ## [8.1.0](https://github.com/vitejs/vite/compare/create-vite@8.0.3...create-vite@8.1.0) (2025-11-12)
 ### Features
 

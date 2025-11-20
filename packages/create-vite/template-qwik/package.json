@@ -10,7 +10,7 @@
   },
   "devDependencies": {
     "serve": "^14.2.5",
-    "vite": "^7.2.2"
+    "vite": "^7.2.4"
   },
   "dependencies": {
     "@builder.io/qwik": "^1.17.2"
