@@ -85,6 +85,10 @@ export interface CommonServerOptions {
    * Specify server response headers.
    */
   headers?: HttpServerHeaders
+  /**
+   * Watch stdin and exit on EOF
+   */
+  watchStdin?: boolean
 }
 
 /**

@@ -1630,24 +1630,28 @@ const parentSigtermCallback: SigtermCallback = async (signal, exitCode) => {
 }
 
 export const setupSIGTERMListener = (
+  watchStdin: boolean,
   callback: (signal?: 'SIGTERM', exitCode?: number) => Promise<void>,
 ): void => {
   if (sigtermCallbacks.size === 0) {
     process.once('SIGTERM', parentSigtermCallback)
-    if (process.env.CI !== 'true') {
+    if (watchStdin) {
       process.stdin.on('end', parentSigtermCallback)
+      // resume stdin to allow the server to exit on EOF
+      process.stdin.resume()
     }
   }
   sigtermCallbacks.add(callback)
 }
 
 export const teardownSIGTERMListener = (
-  callback: Parameters<typeof setupSIGTERMListener>[0],
+  watchStdin: boolean,
+  callback: Parameters<typeof setupSIGTERMListener>[1],
 ): void => {
   sigtermCallbacks.delete(callback)
   if (sigtermCallbacks.size === 0) {
     process.off('SIGTERM', parentSigtermCallback)
-    if (process.env.CI !== 'true') {
+    if (watchStdin) {
       process.stdin.off('end', parentSigtermCallback)
     }
   }
