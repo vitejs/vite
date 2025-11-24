@@ -153,6 +153,7 @@ export default defineConfig({
   },
 
   themeConfig: {
+    variant: 'vite',
     logo: '/logo.svg',
 
     editLink: {
