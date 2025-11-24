@@ -1,4 +1,4 @@
-import { describe, expect, test } from 'vitest'
+import { afterEach, beforeEach, describe, expect, test } from 'vitest'
 import { definePlugin } from '../../plugins/define'
 import { resolveConfig } from '../../config'
 import { PartialEnvironment } from '../../baseEnvironment'
@@ -54,6 +54,53 @@ describe('definePlugin', () => {
     expect(await transform('const isSSR = import.meta.env.SSR;')).toBe(
       'const isSSR = false;\n',
     )
+  })
+
+  function describeNodeEnv(
+    nodeEnv: 'development' | 'production',
+    cb: () => void,
+  ) {
+    describe(`with NODE_ENV=${nodeEnv}`, () => {
+      let originalNodeEnv: typeof process.env.NODE_ENV
+
+      beforeEach(() => {
+        originalNodeEnv = process.env.NODE_ENV
+        process.env.NODE_ENV = nodeEnv
+      })
+
+      afterEach(() => {
+        process.env.NODE_ENV = originalNodeEnv
+      })
+
+      cb()
+    })
+  }
+
+  test('preserves import.meta.DEBUG with override', async () => {
+    const transform = await createDefinePluginTransform({
+      'import.meta.DEBUG': 'import.meta.DEBUG',
+    })
+    expect(await transform('const isDebug = import.meta.DEBUG;')).toBe(
+      'const isDebug = import.meta.DEBUG;\n',
+    )
+  })
+
+  describeNodeEnv('production', () => {
+    test('replaces import.meta.DEBUG with false', async () => {
+      const transform = await createDefinePluginTransform()
+      expect(await transform('const isDebug = import.meta.DEBUG;')).toBe(
+        'const isDebug = false;\n',
+      )
+    })
+  })
+
+  describeNodeEnv('development', () => {
+    test('replaces import.meta.DEBUG with true', async () => {
+      const transform = await createDefinePluginTransform()
+      expect(await transform('const isDebug = import.meta.DEBUG;')).toBe(
+        'const isDebug = true;\n',
+      )
+    })
   })
 
   test('preserve import.meta.hot with override', async () => {
