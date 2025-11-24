@@ -1,6 +1,6 @@
 import colors from 'picocolors'
-import type { FSWatcher } from '#dep-types/chokidar'
 import type { FetchFunctionOptions, FetchResult } from 'vite/module-runner'
+import type { FSWatcher } from '#dep-types/chokidar'
 import { BaseEnvironment } from '../baseEnvironment'
 import type {
   EnvironmentOptions,

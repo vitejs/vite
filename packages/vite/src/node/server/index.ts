@@ -13,9 +13,9 @@ import colors from 'picocolors'
 import chokidar from 'chokidar'
 import launchEditorMiddleware from 'launch-editor-middleware'
 import type { SourceMap } from 'rollup'
+import type { ModuleRunner } from 'vite/module-runner'
 import type { FSWatcher, WatchOptions } from '#dep-types/chokidar'
 import type { Connect } from '#dep-types/connect'
-import type { ModuleRunner } from 'vite/module-runner'
 import type { CommonServerOptions } from '../http'
 import {
   httpServerStart,
