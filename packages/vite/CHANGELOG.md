@@ -1,3 +1,25 @@
+## <small>[7.2.4](https://github.com/vitejs/vite/compare/v7.2.3...v7.2.4) (2025-11-20)</small>
+### Bug Fixes
+
+* revert "perf(deps): replace debug with obug ([#21107](https://github.com/vitejs/vite/issues/21107))" ([2d66b7b](https://github.com/vitejs/vite/commit/2d66b7b14aa6dfd62f3d6a59ee8382ed5ca6fd32))
+
+## <small>[7.2.3](https://github.com/vitejs/vite/compare/v7.2.2...v7.2.3) (2025-11-20)</small>
+### Bug Fixes
+
+* allow multiple `bindCLIShortcuts` calls with shortcut merging ([#21103](https://github.com/vitejs/vite/issues/21103)) ([5909efd](https://github.com/vitejs/vite/commit/5909efd8fbfd1bf1eab65427aea0613124b2797a))
+* **deps:** update all non-major dependencies ([#21096](https://github.com/vitejs/vite/issues/21096)) ([6a34ac3](https://github.com/vitejs/vite/commit/6a34ac3422686e7cf7cc9a25d299cb8e5a8d92a0))
+* **deps:** update all non-major dependencies ([#21128](https://github.com/vitejs/vite/issues/21128)) ([4f8171e](https://github.com/vitejs/vite/commit/4f8171eb3046bd70c83964689897dab4c6b58bc0))
+
+### Performance Improvements
+
+* **deps:** replace debug with obug ([#21107](https://github.com/vitejs/vite/issues/21107)) ([acfe939](https://github.com/vitejs/vite/commit/acfe939e1f7c303c34b0b39b883cc302da767fa2))
+
+### Miscellaneous Chores
+
+* **deps:** update dependency @rollup/plugin-commonjs to v29 ([#21099](https://github.com/vitejs/vite/issues/21099)) ([02ceaec](https://github.com/vitejs/vite/commit/02ceaec45e17bef19159188a28d9196fed1761be))
+* **deps:** update rolldown-related dependencies ([#21095](https://github.com/vitejs/vite/issues/21095)) ([39a0a15](https://github.com/vitejs/vite/commit/39a0a15fd24ed37257c48b795097a3794e54d255))
+* **deps:** update rolldown-related dependencies ([#21127](https://github.com/vitejs/vite/issues/21127)) ([5029720](https://github.com/vitejs/vite/commit/50297208452241061cb44d09a4bbdf77a11ac01e))
+
 ## <small>[7.2.2](https://github.com/vitejs/vite/compare/v7.2.1...v7.2.2) (2025-11-07)</small>
 ### Bug Fixes
 

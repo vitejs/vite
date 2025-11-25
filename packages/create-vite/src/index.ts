@@ -118,6 +118,12 @@ const FRAMEWORKS: Framework[] = [
         color: greenBright,
         customCommand: 'npm exec nuxi init TARGET_DIR',
       },
+      {
+        name: 'custom-vike-vue',
+        display: 'Vike ↗',
+        color: greenBright,
+        customCommand: 'npm create -- vike@latest --vue TARGET_DIR',
+      },
     ],
   },
   {
@@ -180,6 +186,12 @@ const FRAMEWORKS: Framework[] = [
         color: magenta,
         customCommand:
           'npm exec degit vitejs/vite-plugin-react/packages/plugin-rsc/examples/starter TARGET_DIR',
+      },
+      {
+        name: 'custom-vike-react',
+        display: 'Vike ↗',
+        color: cyan,
+        customCommand: 'npm create -- vike@latest --react TARGET_DIR',
       },
     ],
   },
@@ -267,6 +279,12 @@ const FRAMEWORKS: Framework[] = [
         color: cyan,
         customCommand:
           'npm create -- tsrouter-app@latest TARGET_DIR --framework Solid --interactive',
+      },
+      {
+        name: 'custom-vike-solid',
+        display: 'Vike ↗',
+        color: cyan,
+        customCommand: 'npm create -- vike@latest --solid TARGET_DIR',
       },
     ],
   },
@@ -660,7 +678,7 @@ async function init() {
 
   if (useRolldownVite) {
     // renovate: datasource=npm depName=rolldown-vite
-    const rolldownViteVersion = '7.2.2'
+    const rolldownViteVersion = '7.2.5'
     const pkgVersion = `npm:rolldown-vite@${rolldownViteVersion}`
     pkg.devDependencies.vite = pkgVersion
     switch (pkgManager) {
@@ -776,7 +794,7 @@ function pkgFromUserAgent(userAgent: string | undefined): PkgInfo | undefined {
 
 function setupReactSwc(root: string, isTs: boolean) {
   // renovate: datasource=npm depName=@vitejs/plugin-react-swc
-  const reactSwcPluginVersion = '4.2.1'
+  const reactSwcPluginVersion = '4.2.2'
 
   editFile(path.resolve(root, 'package.json'), (content) => {
     return content.replace(
@@ -798,7 +816,7 @@ function setupReactSwc(root: string, isTs: boolean) {
 
 function setupReactCompiler(root: string, isTs: boolean) {
   // renovate: datasource=npm depName=babel-plugin-react-compiler
-  const reactCompilerPluginVersion = '19.1.0-rc.3'
+  const reactCompilerPluginVersion = '1.0.0'
 
   editFile(path.resolve(root, 'package.json'), (content) => {
     const asObject = JSON.parse(content)
