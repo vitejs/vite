@@ -1404,7 +1404,7 @@ export function toOutputFilePathInJS(
       return result
     }
   }
-  if (relative || ssr) {
+  if (relative && !ssr) {
     return toRelative(filename, hostId)
   }
   return joinUrlSegments(decodedBase, filename)

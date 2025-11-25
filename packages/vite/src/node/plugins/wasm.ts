@@ -1,14 +1,19 @@
 import { fileURLToPath, pathToFileURL } from 'node:url'
 import { readFile } from 'node:fs/promises'
+import MagicString from 'magic-string'
 import { exactRegex } from '@rolldown/pluginutils'
+import { createToImportMetaURLBasedRelativeRuntime } from '../build'
 import type { Plugin } from '../plugin'
 import { fsPathFromId } from '../utils'
 import { FS_PREFIX } from '../constants'
-import { fileToUrl } from './asset'
+import { cleanUrl } from '../../shared/utils'
+import { assetUrlRE, fileToUrl } from './asset'
 
 const wasmHelperId = '\0vite/wasm-helper.js'
 
 const wasmInitRE = /(?<![?#].*)\.wasm\?init/
+
+const wasmInitUrlRE: RegExp = /__VITE_WASM_INIT__([\w$]+)__/g
 
 const wasmHelper = async (opts = {}, url: string) => {
   let result
@@ -105,14 +110,53 @@ export default ${wasmHelperCode}
 
         id = id.split('?')[0]
         let url = await fileToUrl(this, id)
-        if (isServer && url.startsWith(FS_PREFIX)) {
-          url = pathToFileURL(fsPathFromId(id)).href
+        if (isServer) {
+          if (url.startsWith(FS_PREFIX)) {
+            url = pathToFileURL(fsPathFromId(id)).href
+          } else if (assetUrlRE.test(url)) {
+            url = url.replace('__VITE_ASSET__', '__VITE_WASM_INIT__')
+          }
         }
         return `
   import initWasm from "${wasmHelperId}"
   export default opts => initWasm(opts, ${JSON.stringify(url)})
   `
       },
+    },
+
+    renderChunk(code, chunk, opts) {
+      if (this.environment.config.consumer !== 'server') {
+        return null
+      }
+
+      const toRelativeRuntime = createToImportMetaURLBasedRelativeRuntime(
+        opts.format,
+        this.environment.config.isWorker,
+      )
+
+      let match: RegExpExecArray | null
+      let s: MagicString | undefined
+
+      wasmInitUrlRE.lastIndex = 0
+      while ((match = wasmInitUrlRE.exec(code))) {
+        const [full, referenceId] = match
+        const file = this.getFileName(referenceId)
+        chunk.viteMetadata!.importedAssets.add(cleanUrl(file))
+        const { runtime } = toRelativeRuntime(file, chunk.fileName)
+        s ||= new MagicString(code)
+        s.update(match.index, match.index + full.length, `"+${runtime}+"`)
+      }
+
+      if (s) {
+        return {
+          code: s.toString(),
+          map: this.environment.config.build.sourcemap
+            ? s.generateMap({ hires: 'boundary' })
+            : null,
+        }
+      } else {
+        return null
+      }
     },
   }
 }
