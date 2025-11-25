@@ -175,7 +175,12 @@ export function getCachedFilterForPlugin<
   H extends 'resolveId' | 'load' | 'transform',
 >(plugin: Plugin, hookName: H): FilterForPluginValue[H] | undefined {
   let filters = filterForPlugin.get(plugin)
-  if (filters && hookName in filters) {
+
+  // Fix: correctly detect cached values (including undefined)
+  if (
+    filters &&
+    Object.prototype.hasOwnProperty.call(filters, hookName)
+  ) {
     return filters[hookName]
   }
 
@@ -185,29 +190,34 @@ export function getCachedFilterForPlugin<
   }
 
   let filter: PluginFilter | TransformHookFilter | undefined
+
   switch (hookName) {
     case 'resolveId': {
       const rawFilter = extractFilter(plugin.resolveId)?.id
-      filters.resolveId = createIdFilter(rawFilter)
-      filter = filters.resolveId
+      const computed = createIdFilter(rawFilter)
+      filters.resolveId = computed
+      filter = computed
       break
     }
     case 'load': {
       const rawFilter = extractFilter(plugin.load)?.id
-      filters.load = createIdFilter(rawFilter)
-      filter = filters.load
+      const computed = createIdFilter(rawFilter)
+      filters.load = computed
+      filter = computed
       break
     }
     case 'transform': {
       const rawFilters = extractFilter(plugin.transform)
-      filters.transform = createFilterForTransform(
+      const computed = createFilterForTransform(
         rawFilters?.id,
         rawFilters?.code,
       )
-      filter = filters.transform
+      filters.transform = computed
+      filter = computed
       break
     }
   }
+
   return filter as FilterForPluginValue[H] | undefined
 }
 
