@@ -106,6 +106,12 @@ See [create-vite](https://github.com/vitejs/vite/tree/main/packages/create-vite)
 
 You can use `.` for the project name to scaffold in the current directory.
 
+To create a project without interactive prompts, you can use the `--no-interactive` flag:
+
+```bash
+npm create vite@latest my-vue-app -- --template vue --no-interactive
+```
+
 ::::
 
 ## Community Templates
