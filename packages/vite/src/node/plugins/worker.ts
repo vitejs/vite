@@ -208,18 +208,22 @@ async function bundleWorkerEntry(
   })
 
   const userExternal = rollupOptions?.external
-  const resolvedExternal =
-    typeof userExternal === 'function'
-      ? (id: string, ...rest: any[]) =>
-          nodeBuiltinIds.has(id) || (userExternal as any)(id, ...rest)
-      : [
-          ...(Array.isArray(userExternal)
-            ? userExternal
-            : userExternal
-              ? [userExternal]
-              : []),
-          ...nodeBuiltinIds,
-        ]
+  const isNodeWorker = options.format === 'cjs' || 
+    (options.format === 'es' && options.cacheKey?.includes('nodeworker'))
+  
+  const resolvedExternal = isNodeWorker
+    ? (typeof userExternal === 'function'
+        ? (id: string, ...rest: any[]) =>
+            nodeBuiltinIds.has(id) || (userExternal as any)(id, ...rest)
+        : [
+            ...(Array.isArray(userExternal)
+              ? userExternal
+              : userExternal
+                ? [userExternal]
+                : []),
+            ...nodeBuiltinIds,
+          ])
+    : userExternal
 
   const bundle = await rollup({
     ...rollupOptions,
