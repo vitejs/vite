@@ -770,11 +770,13 @@ import MyWorker from './worker?worker&url'
 When targeting Node.js worker threads, append the `?nodeWorker` query. The default export is a factory that returns a [`Worker`](https://nodejs.org/api/worker_threads.html#class-worker) from `node:worker_threads`, so it can be used directly in server-side code during development and after build:
 
 ```ts twoslash
+import 'vite/client'
+
 import createNodeWorker from './worker?nodeWorker'
 
 const worker = createNodeWorker()
 worker.postMessage('ping')
-worker.on('message', (value) => {
+worker.on('message', (value: string) => {
   console.log(value)
   worker.terminate()
 })
