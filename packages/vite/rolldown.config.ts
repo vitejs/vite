@@ -76,12 +76,6 @@ const nodeConfig = defineConfig({
     cli: path.resolve(__dirname, 'src/node/cli.ts'),
     internal: path.resolve(__dirname, 'src/node/internalIndex.ts'),
   },
-  resolve: {
-    alias: {
-      // we can always use node version (the default entry point has browser support)
-      debug: 'debug/src/node.js',
-    },
-  },
   external: [
     'fsevents',
     /^rolldown\//,
