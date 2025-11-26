@@ -765,6 +765,23 @@ import 'vite/client'
 import MyWorker from './worker?worker&url'
 ```
 
+#### Node Worker Imports
+
+When targeting Node.js worker threads, append the `?nodeWorker` query. The default export is a factory that returns a [`Worker`](https://nodejs.org/api/worker_threads.html#class-worker) from `node:worker_threads`, so it can be used directly in server-side code during development and after build:
+
+```ts twoslash
+import createNodeWorker from './worker?nodeWorker'
+
+const worker = createNodeWorker()
+worker.postMessage('ping')
+worker.on('message', (value) => {
+  console.log(value)
+  worker.terminate()
+})
+```
+
+The same modifiers as web workers are supported. For example, `?nodeWorker&inline` inlines the worker source and runs it with `eval: true`. Node workers currently support `worker.format` values of `'es'` and `'cjs'`; when another format is configured Vite will fall back to `'cjs'`.
+
 See [Worker Options](/config/worker-options.md) for details on configuring the bundling of all workers.
 
 ## Content Security Policy (CSP)

@@ -257,6 +257,9 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
       const environment = this.environment as DevEnvironment
       const ssr = environment.config.consumer === 'server'
       const moduleGraph = environment.moduleGraph
+      if (!moduleGraph) {
+        return source
+      }
 
       if (canSkipImportAnalysis(importer)) {
         debug?.(colors.dim(`[skipped] ${prettifyUrl(importer, root)}`))

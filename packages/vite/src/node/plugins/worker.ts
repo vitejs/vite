@@ -1,6 +1,13 @@
 import path from 'node:path'
+import { builtinModules } from 'node:module'
 import MagicString from 'magic-string'
-import type { RollupError, RollupOutput } from 'rollup'
+import type {
+  InternalModuleFormat,
+  PluginContext,
+  RollupError,
+  RollupOutput,
+  SourceMapInput,
+} from 'rollup'
 import colors from 'picocolors'
 import type { ResolvedConfig } from '../config'
 import type { Plugin } from '../plugin'
@@ -32,6 +39,11 @@ type WorkerBundle = {
   watchedFiles: string[]
 }
 
+interface BundleWorkerEntryOptions {
+  cacheKey?: string
+  format?: InternalModuleFormat
+}
+
 type WorkerBundleAsset = {
   fileName: string
   /** @deprecated */
@@ -55,7 +67,7 @@ class WorkerOutputCache {
   private invalidatedBundles = new Set</* inputId */ string>()
 
   saveWorkerBundle(
-    file: string,
+    cacheKey: string,
     watchedFiles: string[],
     outputEntryFilename: string,
     outputEntryCode: string,
@@ -73,7 +85,7 @@ class WorkerOutputCache {
       referencedAssets: new Set(outputAssets.map((asset) => asset.fileName)),
       watchedFiles,
     }
-    this.bundles.set(file, bundle)
+    this.bundles.set(cacheKey, bundle)
     return bundle
   }
 
@@ -100,18 +112,18 @@ class WorkerOutputCache {
     }
   }
 
-  removeBundleIfInvalidated(file: string) {
-    if (this.invalidatedBundles.has(file)) {
-      this.invalidatedBundles.delete(file)
-      this.removeBundle(file)
+  removeBundleIfInvalidated(cacheKey: string) {
+    if (this.invalidatedBundles.has(cacheKey)) {
+      this.invalidatedBundles.delete(cacheKey)
+      this.removeBundle(cacheKey)
     }
   }
 
-  private removeBundle(file: string) {
-    const bundle = this.bundles.get(file)
+  private removeBundle(cacheKey: string) {
+    const bundle = this.bundles.get(cacheKey)
     if (!bundle) return
 
-    this.bundles.delete(file)
+    this.bundles.delete(cacheKey)
     this.fileNameHash.delete(getHash(bundle.entryFilename))
 
     this.assets.delete(bundle.entryFilename)
@@ -125,8 +137,8 @@ class WorkerOutputCache {
     }
   }
 
-  getWorkerBundle(file: string) {
-    return this.bundles.get(file)
+  getWorkerBundle(cacheKey: string) {
+    return this.bundles.get(cacheKey)
   }
 
   getAssets() {
@@ -149,23 +161,29 @@ class WorkerOutputCache {
 export type WorkerType = 'classic' | 'module' | 'ignore'
 
 export const workerOrSharedWorkerRE: RegExp =
-  /(?:\?|&)(worker|sharedworker)(?:&|$)/
+  /(?:\?|&)(worker|sharedworker|nodeworker)(?:&|$)/i
 const workerFileRE = /(?:\?|&)worker_file&type=(\w+)(?:&|$)/
 const inlineRE = /[?&]inline\b/
 
 export const WORKER_FILE_ID = 'worker_file'
 const workerOutputCaches = new WeakMap<ResolvedConfig, WorkerOutputCache>()
+const nodeBuiltinIds = new Set<string>([
+  ...builtinModules,
+  ...builtinModules.map((name) => `node:${name}`),
+])
 
 async function bundleWorkerEntry(
   config: ResolvedConfig,
   id: string,
+  options: BundleWorkerEntryOptions = {},
 ): Promise<WorkerBundle> {
   const input = cleanUrl(id)
+  const cacheKey = options.cacheKey ?? input
 
   const workerOutput = workerOutputCaches.get(config.mainConfig || config)!
-  workerOutput.removeBundleIfInvalidated(input)
+  workerOutput.removeBundleIfInvalidated(cacheKey)
 
-  const bundleInfo = workerOutput.getWorkerBundle(input)
+  const bundleInfo = workerOutput.getWorkerBundle(cacheKey)
   if (bundleInfo) {
     return bundleInfo
   }
@@ -181,16 +199,35 @@ async function bundleWorkerEntry(
   // bundle the file as entry to support imports
   const { rollup } = await import('rollup')
   const { plugins, rollupOptions, format } = config.worker
+  const targetFormat = options.format ?? format
   const workerConfig = await plugins(newBundleChain)
   const workerEnvironment = new BuildEnvironment('client', workerConfig) // TODO: should this be 'worker'?
   await workerEnvironment.init()
+  const workerPlugins = workerEnvironment.plugins.filter((plugin) => {
+    return !plugin.name?.includes('import-analysis')
+  })
+
+  const userExternal = rollupOptions?.external
+  const resolvedExternal =
+    typeof userExternal === 'function'
+      ? (id: string, ...rest: any[]) =>
+          nodeBuiltinIds.has(id) || (userExternal as any)(id, ...rest)
+      : [
+          ...(Array.isArray(userExternal)
+            ? userExternal
+            : userExternal
+              ? [userExternal]
+              : []),
+          ...nodeBuiltinIds,
+        ]
 
   const bundle = await rollup({
     ...rollupOptions,
     input,
-    plugins: workerEnvironment.plugins.map((p) =>
+    plugins: workerPlugins.map((p) =>
       injectEnvironmentToHooks(workerEnvironment, p),
     ),
+    external: resolvedExternal,
     onLog(level, log) {
       onRollupLog(level, log, workerEnvironment)
     },
@@ -219,7 +256,7 @@ async function bundleWorkerEntry(
         '[name]-[hash].[ext]',
       ),
       ...workerConfig,
-      format,
+      format: targetFormat,
       sourcemap: config.build.sourcemap,
     })
     watchedFiles = bundle.watchFiles.map((f) => normalizePath(f))
@@ -266,7 +303,7 @@ async function bundleWorkerEntry(
   const newBundleInfo = workerOutputCaches
     .get(config.mainConfig || config)!
     .saveWorkerBundle(
-      input,
+      cacheKey,
       watchedFiles,
       outputChunk.fileName,
       outputChunk.code,
@@ -281,9 +318,10 @@ export const workerAssetUrlRE: RegExp = /__VITE_WORKER_ASSET__([a-z\d]{8})__/g
 export async function workerFileToUrl(
   config: ResolvedConfig,
   id: string,
+  options?: BundleWorkerEntryOptions,
 ): Promise<WorkerBundle> {
   const workerOutput = workerOutputCaches.get(config.mainConfig || config)!
-  const bundle = await bundleWorkerEntry(config, id)
+  const bundle = await bundleWorkerEntry(config, id, options)
   workerOutput.saveAsset(
     {
       fileName: bundle.entryFilename,
@@ -342,9 +380,16 @@ export function webWorkerPlugin(config: ResolvedConfig): Plugin {
         const workerMatch = workerOrSharedWorkerRE.exec(id)
         if (!workerMatch) return
 
+        const queryType = workerMatch[1].toLowerCase()
+        const inline = inlineRE.test(id)
+
+        if (queryType === 'nodeworker') {
+          return loadNodeWorkerModule.call(this, config, id, inline)
+        }
+
         const { format } = config.worker
         const workerConstructor =
-          workerMatch[1] === 'sharedworker' ? 'SharedWorker' : 'Worker'
+          queryType === 'sharedworker' ? 'SharedWorker' : 'Worker'
         const workerType = isBuild
           ? format === 'es'
             ? 'module'
@@ -359,7 +404,7 @@ export function webWorkerPlugin(config: ResolvedConfig): Plugin {
         if (isBuild) {
           if (isWorker && config.bundleChain.at(-1) === cleanUrl(id)) {
             urlCode = 'self.location.href'
-          } else if (inlineRE.test(id)) {
+          } else if (inline) {
             const result = await bundleWorkerEntry(config, id)
             for (const file of result.watchedFiles) {
               this.addWatchFile(file)
@@ -575,6 +620,125 @@ export function webWorkerPlugin(config: ResolvedConfig): Plugin {
         .invalidateAffectedBundles(normalizePath(file))
     },
   }
+}
+
+let didWarnUnsupportedNodeWorkerFormat = false
+
+async function loadNodeWorkerModule(
+  this: PluginContext,
+  config: ResolvedConfig,
+  id: string,
+  inline: boolean,
+) {
+  const nodeFormat = resolveNodeWorkerFormat(config)
+  const workerType: Exclude<WorkerType, 'ignore'> =
+    nodeFormat === 'es' ? 'module' : 'classic'
+  const isBuild = config.command === 'build'
+  const cacheKey = `${cleanUrl(id)}?nodeworker&variant=${
+    inline ? 'inline' : 'chunk'
+  }&format=${nodeFormat}`
+  const bundleOptions: BundleWorkerEntryOptions = {
+    cacheKey,
+    format: nodeFormat,
+  }
+
+  const bundle =
+    isBuild && !inline
+      ? await workerFileToUrl(config, id, bundleOptions)
+      : await bundleWorkerEntry(config, id, bundleOptions)
+
+  for (const file of bundle.watchedFiles || []) {
+    this.addWatchFile(file)
+  }
+
+  if (isBuild && !inline) {
+    const urlExpression = JSON.stringify(bundle.entryUrlPlaceholder)
+    return {
+      code: createNodeWorkerChunkModule(urlExpression, workerType),
+      map: { mappings: '' } as SourceMapInput,
+    }
+  }
+
+  const sourceLiteral = JSON.stringify(bundle.entryCode)
+  return {
+    code: createNodeWorkerInlineModule(sourceLiteral, workerType),
+    map: { mappings: '' } as SourceMapInput,
+  }
+}
+
+function resolveNodeWorkerFormat(config: ResolvedConfig): InternalModuleFormat {
+  const format = config.worker?.format ?? 'iife'
+  if (format === 'es' || format === 'cjs') {
+    return format
+  }
+  if (!didWarnUnsupportedNodeWorkerFormat) {
+    config.logger.warn(
+      colors.yellow(
+        `?nodeWorker currently supports only worker.format "es" or "cjs". Falling back to "cjs".`,
+      ),
+    )
+    didWarnUnsupportedNodeWorkerFormat = true
+  }
+  return 'cjs'
+}
+
+function createNodeWorkerChunkModule(
+  urlExpression: string,
+  workerType: Exclude<WorkerType, 'ignore'>,
+) {
+  const lines = [
+    "import { Worker } from 'node:worker_threads'",
+    "import path from 'node:path'",
+    "import { fileURLToPath, pathToFileURL } from 'node:url'",
+    '',
+    `const workerReference = ${urlExpression}`,
+    'export default function WorkerWrapper(options) {',
+    '  const workerOptions = options ? { ...options } : {}',
+  ]
+  if (workerType === 'module') {
+    lines.push(
+      '  if (workerOptions.type == null) workerOptions.type = "module"',
+    )
+  }
+  lines.push(
+    '  const workerPath =',
+    "    typeof workerReference === 'string' && workerReference.startsWith('/')",
+    '      ? workerReference.slice(1)',
+    '      : workerReference',
+    '  const workerUrl =',
+    "    typeof workerReference === 'string'",
+    '      ? pathToFileURL(',
+    '          path.resolve(',
+    '            path.dirname(fileURLToPath(import.meta.url)),',
+    '            workerPath,',
+    '          ),',
+    '        )',
+    '      : workerReference',
+    '  return new Worker(workerUrl, workerOptions)',
+    '}',
+  )
+  return lines.join('\n')
+}
+
+function createNodeWorkerInlineModule(
+  sourceLiteral: string,
+  workerType: Exclude<WorkerType, 'ignore'>,
+) {
+  const lines = [
+    "import { Worker } from 'node:worker_threads'",
+    '',
+    `const workerSource = ${sourceLiteral}`,
+    'export default function WorkerWrapper(options) {',
+    '  const workerOptions = options ? { ...options } : {}',
+  ]
+  if (workerType === 'module') {
+    lines.push(
+      '  if (workerOptions.type == null) workerOptions.type = "module"',
+    )
+  }
+  lines.push('  if (workerOptions.eval == null) workerOptions.eval = true')
+  lines.push('  return new Worker(workerSource, workerOptions)', '}')
+  return lines.join('\n')
 }
 
 function isSameContent(a: string | Uint8Array, b: string | Uint8Array) {
