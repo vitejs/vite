@@ -2047,7 +2047,8 @@ async function bundleConfigFile(
             let injectedContents: string
             if (contents.startsWith('#!')) {
               // hashbang
-              const firstLineEndIndex = contents.indexOf('\n')
+              let firstLineEndIndex = contents.indexOf('\n')
+              if (firstLineEndIndex < 0) firstLineEndIndex = contents.length
               injectedContents =
                 contents.slice(0, firstLineEndIndex + 1) +
                 injectValues +
