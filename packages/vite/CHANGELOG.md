@@ -1,3 +1,21 @@
+## <small>[7.2.8](https://github.com/vitejs/rolldown-vite/compare/v7.2.7...v7.2.8) (2025-11-26)</small>
+### Features
+
+* update rolldown to 1.0.0-beta.52 ([#522](https://github.com/vitejs/rolldown-vite/issues/522)) ([a64ade3](https://github.com/vitejs/rolldown-vite/commit/a64ade3027b21f149d3e7e9e3784337b236d6373))
+
+### Bug Fixes
+
+* `inconsistentCjsInterop: true` should affect dynamic imports as well ([#521](https://github.com/vitejs/rolldown-vite/issues/521)) ([38a8609](https://github.com/vitejs/rolldown-vite/commit/38a86096ff71426b044e985dba8db5b3abcf5782))
+* **deps:** update all non-major dependencies ([#21146](https://github.com/vitejs/rolldown-vite/issues/21146)) ([a3cd262](https://github.com/vitejs/rolldown-vite/commit/a3cd262f37228967e455617e982b35fccc49ffe9))
+
+### Performance Improvements
+
+* **deps:** replace debug with obug ([#21137](https://github.com/vitejs/rolldown-vite/issues/21137)) ([203a551](https://github.com/vitejs/rolldown-vite/commit/203a5512a42a1031f685993f5d9cbae5f328354f))
+
+### Documentation
+
+* clarify manifest.json `imports` field is JS chunks only ([#21136](https://github.com/vitejs/rolldown-vite/issues/21136)) ([46d3077](https://github.com/vitejs/rolldown-vite/commit/46d3077f2b63771cc50230bc907c48f5773c00fb))
+
 ## <small>[7.2.7](https://github.com/vitejs/rolldown-vite/compare/v7.2.6...v7.2.7) (2025-11-20)</small>
 ### Bug Fixes
 
