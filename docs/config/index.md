@@ -1,3 +1,266 @@
+// main.jsx
+import React from 'react'
+import { BrowserRouter as Router, Routes, Route, Link } from 'react-router-dom'
+import ReactDOM from 'react-dom/client'
+import App from './App'
+import './index.css'
+
+ReactDOM.createRoot(document.getElementById('root')).render(
+  <React.StrictMode>
+    <App />
+  </React.StrictMode>,
+)
+
+// App.jsx
+import { useState } from 'react'
+
+export default function App() {
+  return (
+    <Router>
+      <div className="min-h-screen bg-gray-100">
+        <Navbar />
+        <main className="p-6">
+          <Routes>
+            <Route path="/" element={<Home />} />
+            <Route path="/profil" element={<Profile />} />
+            <Route path="/bank-soal" element={<BankSoal />} />
+            <Route path="/nilai" element={<DashboardNilai />} />
+          </Routes>
+        </main>
+      </div>
+    </Router>
+  )
+}
+
+function Navbar() {
+  return (
+    <nav className="w-full bg-white shadow p-4 flex justify-between items-center mb-6 rounded-2xl">
+      <h1 className="text-2xl font-bold">Website Sekolah</h1>
+      <ul className="flex gap-6 text-lg">
+        <li><Link to="/" className="hover:underline">Beranda</Link></li>
+        <li><Link to="/profil" className="hover:underline">Profil</Link></li>
+        <li><Link to="/bank-soal" className="hover:underline">Bank Soal</Link></li>
+        <li><Link to="/nilai" className="hover:underline">Nilai</Link></li>
+      </ul>
+    </nav>
+  )
+}
+
+function Home() {
+  return (
+    <section className="mb-10 p-6 bg-white rounded-2xl shadow">
+      <h2 className="text-xl font-bold mb-2">Beranda</h2>
+      <p>Selamat datang di website sekolah modern.</p>
+    </section>
+  )
+}
+
+function Profile() {
+  return (
+    <section className="mb-10 p-6 bg-white rounded-2xl shadow">
+      <h2 className="text-xl font-bold mb-2">Profil Sekolah</h2>
+      <p>Isi profil sekolah bisa ditampilkan di sini.</p>
+    </section>
+  )
+}
+
+function BankSoal() {
+  return (
+    <section className="mb-10 p-6 bg-white rounded-2xl shadow">
+      <h2 className="text-xl font-bold mb-2">Bank Soal</h2>
+      <p>Koleksi soal-soal bisa diupload atau ditampilkan di sini.</p>
+    </section>
+  )
+}
+
+function DashboardNilai() {
+  return (
+    <section className="mb-10 p-6 bg-white rounded-2xl shadow">
+      <h2 className="text-xl font-bold mb-4">Dashboard Nilai</h2>
+      <FormNilai />
+      <TabelNilai />
+    </section>
+  )
+}
+
+function FormNilai() {
+  return (
+    <div className="mb-6">
+      <h3 className="font-semibold mb-2">Input Nilai Siswa</h3>
+      <form className="grid grid-cols-1 md:grid-cols-3 gap-3">
+        <input className="p-3 border rounded-xl" placeholder="Nama Siswa" />
+        <input className="p-3 border rounded-xl" placeholder="Mata Pelajaran" />
+        <input className="p-3 border rounded-xl" placeholder="Nilai" type="number" />
+        <button className="col-span-full bg-blue-600 text-white p-3 rounded-xl hover:bg-blue-700 transition">Simpan</button>
+      </form>
+    </div>
+  )
+}
+
+function TabelNilai() {
+  return (
+    <div className="overflow-x-auto">
+      <h3 className="font-semibold mb-2">Daftar Nilai</h3>
+      <table className="w-full bg-white border rounded-xl">
+        <thead>
+          <tr className="bg-gray-200">
+            <th className="p-3 border">Nama</th>
+            <th className="p-3 border">Mapel</th>
+            <th className="p-3 border">Nilai</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td className="p-3 border">contoh siswa</td>
+            <td className="p-3 border">Matematika</td>
+            <td className="p-3 border">90</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  )
+}
+function Navbar() {
+  return (
+    <nav className="w-full bg-white shadow p-4 flex justify-between items-center mb-6 rounded-2xl">
+      <h1 className="text-2xl font-bold">Website Sekolah</h1>
+      <ul className="flex gap-6 text-lg">
+        <li className="hover:underline cursor-pointer">Beranda</li>
+        <li className="hover:underline cursor-pointer">Profil</li>
+        <li className="hover:underline cursor-pointer">Bank Soal</li>
+        <li className="hover:underline cursor-pointer">Nilai</li>
+      </ul>
+    </nav>
+  )
+}
+
+function Home() {
+  return (
+    <section className="mb-10 p-6 bg-white rounded-2xl shadow">
+      <h2 className="text-xl font-bold mb-2">Beranda</h2>
+      <p>Selamat datang di website sekolah modern.</p>
+    </section>
+  )
+}
+
+function Profile() {
+  return (
+    <section className="mb-10 p-6 bg-white rounded-2xl shadow">
+      <h2 className="text-xl font-bold mb-2">Profil Sekolah</h2>
+      <p>Isi profil sekolah bisa ditampilkan di sini.</p>
+    </section>
+  )
+}
+
+function BankSoal() {
+  return (
+    <section className="mb-10 p-6 bg-white rounded-2xl shadow">
+      <h2 className="text-xl font-bold mb-2">Bank Soal</h2>
+      <p>Koleksi soal-soal bisa diupload atau ditampilkan di sini.</p>
+    </section>
+  )
+}
+
+function DashboardNilai() {
+  return (
+    <section className="mb-10 p-6 bg-white rounded-2xl shadow">
+      <h2 className="text-xl font-bold mb-2">Dashboard Nilai</h2>
+      <p>Data nilai siswa akan muncul di bagian ini.</p>
+    </section>
+  )
+}
+        className="px-6 py-3 rounded-2xl shadow bg-white hover:shadow-lg transition"
+      >
+        Klik: {count}
+      </button>
+    </div>
+  )
+}
+
+// index.css
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+
+// === LOCAL DATABASE (IndexedDB via idb) ===
+// Note: This is a simple local DB to store nilai offline.
+import { openDB } from 'idb';
+
+const dbPromise = openDB('sekolahDB', 1, {
+  upgrade(db) {
+    db.createObjectStore('nilai', { keyPath: 'id', autoIncrement: true });
+  },
+});
+
+async function simpanNilaiDB(data) {
+  const db = await dbPromise;
+  await db.add('nilai', data);
+}
+
+async function ambilNilaiDB() {
+  const db = await dbPromise;
+  return await db.getAll('nilai');
+}
+
+// === LOGIN SISTEM ===
+function Login() {
+  return (
+    <div className="min-h-screen flex flex-col items-center justify-center p-6">
+      <div className="bg-white p-6 rounded-2xl shadow max-w-sm w-full">
+        <h2 className="text-2xl font-bold mb-4 text-center">Login Pengguna</h2>
+        <input className="w-full p-3 border rounded-xl mb-3" placeholder="Username" />
+        <input type="password" className="w-full p-3 border rounded-xl mb-3" placeholder="Password" />
+        <button className="w-full bg-blue-600 text-white p-3 rounded-xl hover:bg-blue-700 transition">Masuk</button>
+      </div>
+    </div>
+  );
+}
+
+// === HERO BANNER ===
+function Hero() {
+  return (
+    <div className="bg-gradient-to-r from-blue-600 to-indigo-700 text-white p-10 rounded-2xl mb-10 shadow-xl">
+      <h1 className="text-4xl font-bold mb-2">SDN 03 Kejene</h1>
+      <p className="text-lg">Semangat • Aktif • Jujur • Agamis</p>
+    </div>
+  );
+}
+
+// === UPLOAD BANK SOAL ===
+function UploadSoal() {
+  return (
+    <section className="mb-10 p-6 bg-white rounded-2xl shadow">
+      <h2 className="text-xl font-bold mb-4">Upload Bank Soal</h2>
+      <input type="file" className="p-3 border rounded-xl mb-3 w-full" />
+      <button className="bg-green-600 text-white p-3 rounded-xl hover:bg-green-700 transition w-full">Upload</button>
+    </section>
+  );
+}
+
+// === GRAFIK NILAI (Recharts) ===
+import { LineChart, Line, CartesianGrid, XAxis, YAxis, Tooltip } from 'recharts';
+
+function GrafikNilai() {
+  const data = [
+    { nama: 'Ani', nilai: 90 },
+    { nama: 'Budi', nilai: 85 },
+    { nama: 'Cici', nilai: 95 },
+  ];
+
+  return (
+    <section className="mb-10 p-6 bg-white rounded-2xl shadow">
+      <h2 className="text-xl font-bold mb-4">Grafik Nilai Siswa</h2>
+      <LineChart width={600} height={300} data={data}>
+        <Line type="monotone" dataKey="nilai" stroke="#000" />
+        <CartesianGrid stroke="#ccc" />
+        <XAxis dataKey="nama" />
+        <YAxis />
+        <Tooltip />
+      </LineChart>
+    </section>
+  );
+}
 ---
 title: Configuring Vite
 ---
