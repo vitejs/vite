@@ -2045,9 +2045,22 @@ async function bundleConfigFile(
               }
             }
 
+            let injectedContents: string
+            if (contents.startsWith('#!')) {
+              // hashbang
+              let firstLineEndIndex = contents.indexOf('\n')
+              if (firstLineEndIndex < 0) firstLineEndIndex = contents.length
+              injectedContents =
+                contents.slice(0, firstLineEndIndex + 1) +
+                injectValues +
+                contents.slice(firstLineEndIndex + 1)
+            } else {
+              injectedContents = injectValues + contents
+            }
+
             return {
               loader: args.path.endsWith('ts') ? 'ts' : 'js',
-              contents: injectValues + contents,
+              contents: injectedContents,
             }
           })
         },
