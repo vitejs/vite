@@ -891,11 +891,24 @@ export function createParseErrorInfo(
           importer,
         )}" to \`assetsInclude\` in your configuration.`
 
+  const htmlScriptNote =
+    `\n\nNote: If this code is inside an inline <script> in an HTML file, ` +
+    `the literal sequence \`</script>\` (even inside a string or template literal)` +
+    ` will terminate the script early due to HTML parsing rules. This results in ` +
+    `truncated/invalid JS being passed to import analysis. To fix, escape the slash ` +
+    `like \`<\\/script>\` in the HTML source, break the sequence (e.g. \`"</" + "script>"\`), ` +
+    `or move the code to an external .js/.ts module.`
+
+  const isHtmlImporter = !!importer && /\.html?$/i.test(importer)
+
+  const finalMessage =
+    `Failed to parse source for import analysis because the content ` +
+    `contains invalid JS syntax. ` +
+    msg +
+    (isHtmlImporter ? htmlScriptNote : '')
+
   return {
-    message:
-      `Failed to parse source for import analysis because the content ` +
-      `contains invalid JS syntax. ` +
-      msg,
+    message: finalMessage,
     showCodeFrame: !probablyBinary,
   }
 }
