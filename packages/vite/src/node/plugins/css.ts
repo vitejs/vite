@@ -452,6 +452,79 @@ export function cssPlugin(config: ResolvedConfig): Plugin {
 }
 
 /**
+ * Calculate CSS dependencies for a given CSS module in dev mode.
+ *
+ * This function traverses the module graph to find all CSS files that should
+ * be loaded before the given CSS file, based on the dependency chain of JS modules.
+ *
+ * Algorithm:
+ * 1. Start with the CSS module
+ * 2. Find all JS modules that import this CSS (importers)
+ * 3. For each JS importer, look at what other modules it imports
+ * 4. Collect all CSS files from those imports (these are dependencies)
+ * 5. Recursively process JS modules to handle transitive dependencies
+ * 6. Track visited JS modules to prevent infinite loops (circular dependencies)
+ * 7. Return deduplicated list of CSS dependency IDs in deterministic order
+ *
+ * Example:
+ *   async-1.css is imported by async-1.js
+ *   async-1.js also imports base.js
+ *   base.js imports base.css
+ *   → Result: async-1.css depends on base.css
+ *
+ * @param cssModuleId - The ID of the CSS module to find dependencies for
+ * @param moduleGraph - The dev environment module graph
+ * @returns Array of CSS module IDs that should load before this CSS
+ */
+function getCssDependencies(
+  cssModuleId: string,
+  moduleGraph: import('../server/moduleGraph').EnvironmentModuleGraph,
+): string[] {
+  const cssModule = moduleGraph.getModuleById(cssModuleId)
+  if (!cssModule) {
+    return []
+  }
+
+  const cssDeps = new Set<string>()
+  const visitedJsModules = new Set<EnvironmentModuleNode>()
+
+  /**
+   * Recursively collect CSS dependencies from a JS module's imports
+   */
+  function collectDepsFromJsModule(jsModule: EnvironmentModuleNode) {
+    // Prevent infinite loops from circular JS dependencies
+    if (visitedJsModules.has(jsModule)) {
+      return
+    }
+    visitedJsModules.add(jsModule)
+
+    // Look at what this JS module imports
+    for (const imported of jsModule.importedModules) {
+      if (imported.type === 'css') {
+        // Found a CSS dependency (but not the original CSS file itself)
+        if (imported.id && imported.id !== cssModuleId) {
+          cssDeps.add(imported.id)
+        }
+      } else if (imported.type === 'js') {
+        // Recursively check what this JS module imports
+        collectDepsFromJsModule(imported)
+      }
+    }
+  }
+
+  // Start from all JS modules that import this CSS file
+  for (const importer of cssModule.importers) {
+    if (importer.type === 'js') {
+      collectDepsFromJsModule(importer)
+    }
+  }
+
+  // Convert Set to Array for deterministic ordering
+  // Sets preserve insertion order in ES2015+
+  return Array.from(cssDeps)
+}
+
+/**
  * Plugin applied after user plugins
  */
 export function cssPostPlugin(config: ResolvedConfig): Plugin {
@@ -587,13 +660,20 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
           }
 
           const cssContent = await getContentWithSourcemap(css)
+
+          // Calculate CSS dependencies for proper ordering in dev mode
+          // This ensures CSS loads in the same order as build mode
+          const { moduleGraph } = this.environment as DevEnvironment
+          const cssDeps = getCssDependencies(id, moduleGraph)
+
           const code = [
             `import { updateStyle as __vite__updateStyle, removeStyle as __vite__removeStyle } from ${JSON.stringify(
               path.posix.join(config.base, CLIENT_PUBLIC_PATH),
             )}`,
             `const __vite__id = ${JSON.stringify(id)}`,
             `const __vite__css = ${JSON.stringify(cssContent)}`,
-            `__vite__updateStyle(__vite__id, __vite__css)`,
+            `const __vite__deps = ${JSON.stringify(cssDeps)}`,
+            `__vite__updateStyle(__vite__id, __vite__css, __vite__deps)`,
             // css modules exports change on edit so it can't self accept
             `${modulesCode || 'import.meta.hot.accept()'}`,
             `import.meta.hot.prune(() => __vite__removeStyle(__vite__id))`,
