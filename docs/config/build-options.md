@@ -185,6 +185,33 @@ export default defineConfig({
 })
 ```
 
+## build.license
+
+- **Type:** `boolean | { fileName?: string }`
+- **Default:** `false`
+- **Related:** [License](/guide/features#license)
+
+When set to `true`, the build will generate a `.vite/license.md` file that includes all bundled dependencies' licenses.
+
+If `fileName` is passed, it will be used as the license file name relative to the `outDir`. If it ends with `.json`, the raw JSON metadata will be generated instead and can be used for further processing. For example:
+
+```json
+[
+  {
+    "name": "dep-1",
+    "version": "1.2.3",
+    "identifier": "CC0-1.0",
+    "text": "CC0 1.0 Universal\n\n..."
+  },
+  {
+    "name": "dep-2",
+    "version": "4.5.6",
+    "identifier": "MIT",
+    "text": "MIT License\n\n..."
+  }
+]
+```
+
 ## build.manifest
 
 - **Type:** `boolean | string`

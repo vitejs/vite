@@ -4,9 +4,8 @@ import { loadConfigFromFile } from 'vite'
 import { runnerImport } from '../ssr/runnerImport'
 import { slash } from '../../shared/utils'
 
-const [nvMajor, nvMinor] = process.versions.node.split('.').map(Number)
-const isTypeStrippingSupported =
-  (nvMajor === 23 && nvMinor >= 6) || nvMajor >= 24
+// eslint-disable-next-line n/no-unsupported-features/node-builtins
+const isTypeStrippingSupported = !!process.features.typescript
 
 describe('importing files using inlined environment', () => {
   const fixture = (name: string) =>

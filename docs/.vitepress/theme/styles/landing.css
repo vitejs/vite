@@ -4,17 +4,11 @@
 
 html:has(.landing) {
   --vp-c-bg: #101010;
-
   background-color: #101010;
-
-  body {
-    background-color: #101010;
-  }
 }
 
 .landing {
   overflow-x: hidden;
-  background-color: #101010;
 
   * {
     -webkit-font-smoothing: antialiased !important;

@@ -2,18 +2,19 @@ import path from 'node:path'
 import type { OutgoingHttpHeaders, ServerResponse } from 'node:http'
 import type { Options } from 'sirv'
 import sirv from 'sirv'
-import type { Connect } from 'dep-types/connect'
 import escapeHtml from 'escape-html'
+import type { Connect } from '#dep-types/connect'
 import type { ViteDevServer } from '../../server'
 import type { ResolvedConfig } from '../../config'
 import { FS_PREFIX } from '../../constants'
 import {
+  decodeURIIfPossible,
   fsPathFromUrl,
   isFileReadable,
   isImportRequest,
   isInternalRequest,
   isParentDirectory,
-  isSameFileUri,
+  isSameFilePath,
   normalizePath,
   removeLeadingSlash,
   urlRE,
@@ -151,7 +152,10 @@ export function serveStaticMiddleware(
     }
 
     const url = new URL(req.url!, 'http://example.com')
-    const pathname = decodeURI(url.pathname)
+    const pathname = decodeURIIfPossible(url.pathname)
+    if (pathname === undefined) {
+      return next()
+    }
 
     // apply aliases to static requests as well
     let redirectedPathname: string | undefined
@@ -213,7 +217,11 @@ export function serveRawFsMiddleware(
     // searching based from fs root.
     if (req.url!.startsWith(FS_PREFIX)) {
       const url = new URL(req.url!, 'http://example.com')
-      const pathname = decodeURI(url.pathname)
+      const pathname = decodeURIIfPossible(url.pathname)
+      if (pathname === undefined) {
+        return next()
+      }
+
       let newPathname = pathname.slice(FS_PREFIX.length)
       if (isWindows) newPathname = newPathname.replace(/^[A-Z]:/i, '')
       url.pathname = encodeURI(newPathname)
@@ -262,10 +270,25 @@ export function isFileServingAllowed(
   return isFileLoadingAllowed(config, filePath)
 }
 
-function isUriInFilePath(uri: string, filePath: string) {
-  return isSameFileUri(uri, filePath) || isParentDirectory(uri, filePath)
+/**
+ * Warning: parameters are not validated, only works with normalized absolute paths
+ *
+ * @param targetPath - normalized absolute path
+ * @param filePath - normalized absolute path
+ */
+export function isFileInTargetPath(
+  targetPath: string,
+  filePath: string,
+): boolean {
+  return (
+    isSameFilePath(targetPath, filePath) ||
+    isParentDirectory(targetPath, filePath)
+  )
 }
 
+/**
+ * Warning: parameters are not validated, only works with normalized absolute paths
+ */
 export function isFileLoadingAllowed(
   config: ResolvedConfig,
   filePath: string,
@@ -274,11 +297,16 @@ export function isFileLoadingAllowed(
 
   if (!fs.strict) return true
 
-  if (config.fsDenyGlob(filePath)) return false
+  // NOTE: `fs.readFile('/foo.png/')` tries to load `'/foo.png'`
+  // so we should check the path without trailing slash
+  const filePathWithoutTrailingSlash = filePath.endsWith('/')
+    ? filePath.slice(0, -1)
+    : filePath
+  if (config.fsDenyGlob(filePathWithoutTrailingSlash)) return false
 
   if (config.safeModulePaths.has(filePath)) return true
 
-  if (fs.allow.some((uri) => isUriInFilePath(uri, filePath))) return true
+  if (fs.allow.some((uri) => isFileInTargetPath(uri, filePath))) return true
 
   return false
 }
@@ -298,27 +326,12 @@ export function checkLoadingAccess(
   return 'fallback'
 }
 
-export function checkServingAccess(
-  url: string,
-  server: ViteDevServer,
-): 'allowed' | 'denied' | 'fallback' {
-  if (isFileServingAllowed(url, server)) {
-    return 'allowed'
-  }
-  if (isFileReadable(cleanUrl(url))) {
-    return 'denied'
-  }
-  // if the file doesn't exist, we shouldn't restrict this path as it can
-  // be an API call. Middlewares would issue a 404 if the file isn't handled
-  return 'fallback'
-}
-
 export function respondWithAccessDenied(
-  url: string,
+  id: string,
   server: ViteDevServer,
   res: ServerResponse,
 ): void {
-  const urlMessage = `The request url "${url}" is outside of Vite serving allow list.`
+  const urlMessage = `The request id "${id}" is outside of Vite serving allow list.`
   const hintMessage = `
 ${server.config.server.fs.allow.map((i) => `- ${i}`).join('\n')}
 

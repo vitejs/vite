@@ -1,6 +1,6 @@
 import { expect, test } from 'vitest'
 import { port, serverLogs } from './serve'
-import { browserLogs, editFile, isServe, page, withRetry } from '~utils'
+import { browserLogs, editFile, isServe, page } from '~utils'
 
 const url = `http://localhost:${port}`
 
@@ -44,6 +44,20 @@ test(`deadlock doesn't happen for dynamic imports`, async () => {
   )
 })
 
+test(`import.meta.resolve is supported`, async () => {
+  await page.goto(`${url}/import-meta`)
+
+  const metaUrl = await page.textContent('.import-meta-url')
+  expect(metaUrl).not.toBe('')
+  expect(await page.textContent('.import-meta-resolve')).toBe(metaUrl)
+})
+
+test(`import.meta.main is supported`, async () => {
+  await page.goto(`${url}/import-meta`)
+
+  expect(await page.textContent('.import-meta-main')).toBe('false')
+})
+
 test.runIf(isServe)('html proxy is encoded', async () => {
   await page.goto(
     `${url}?%22%3E%3C/script%3E%3Cscript%3Econsole.log(%27html%20proxy%20is%20not%20encoded%27)%3C/script%3E`,
@@ -55,12 +69,14 @@ test.runIf(isServe)('html proxy is encoded', async () => {
 // run this at the end to reduce flakiness
 test.runIf(isServe)('should restart ssr', async () => {
   editFile('./vite.config.ts', (content) => content)
-  await withRetry(async () => {
-    expect(serverLogs).toEqual(
-      expect.arrayContaining([expect.stringMatching('server restarted')]),
-    )
-    expect(serverLogs).not.toEqual(
-      expect.arrayContaining([expect.stringMatching('error')]),
-    )
-  })
+  await expect
+    .poll(() => {
+      expect(serverLogs).toEqual(
+        expect.arrayContaining([expect.stringMatching('server restarted')]),
+      )
+      expect(serverLogs).not.toEqual(
+        expect.arrayContaining([expect.stringMatching('error')]),
+      )
+    })
+    .toSatisfy(() => true)
 })

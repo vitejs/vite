@@ -1,5 +1,5 @@
 import { expect, test } from 'vitest'
-import { editFile, isBuild, page, untilUpdated } from '~utils'
+import { editFile, isBuild, page } from '~utils'
 
 export const tests = () => {
   test('should re-run transform when dependencies are edited', async () => {
@@ -7,9 +7,9 @@ export const tests = () => {
 
     if (isBuild) return
     editFile('plugin-dep.js', (str) => str)
-    await untilUpdated(() => page.textContent('#transform-count'), '2')
+    await expect.poll(() => page.textContent('#transform-count')).toBe('2')
 
     editFile('plugin-dep-load.js', (str) => str)
-    await untilUpdated(() => page.textContent('#transform-count'), '3')
+    await expect.poll(() => page.textContent('#transform-count')).toBe('3')
   })
 }

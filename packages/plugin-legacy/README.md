@@ -40,7 +40,7 @@ npm add -D terser
 - **Type:** `string | string[] | { [key: string]: string }`
 - **Default:** [`'last 2 versions and not dead, > 0.3%, Firefox ESR'`](https://browsersl.ist/#q=last+2+versions+and+not+dead%2C+%3E+0.3%25%2C+Firefox+ESR)
 
-  If explicitly set, it's passed on to [`@babel/preset-env`](https://babeljs.io/docs/en/babel-preset-env#targets) when rendering **legacy chunks**.
+  It's passed on to [`@babel/preset-env`](https://babeljs.io/docs/en/babel-preset-env#targets) when rendering **legacy chunks**.
 
   The query is also [Browserslist compatible](https://github.com/browserslist/browserslist). See [Browserslist Best Practices](https://github.com/browserslist/browserslist#best-practices) for more details.
 
@@ -51,11 +51,13 @@ npm add -D terser
 - **Type:** `string | string[]`
 - **Default:** [`'edge>=79, firefox>=67, chrome>=64, safari>=12, chromeAndroid>=64, iOS>=12'`](https://browsersl.ist/#q=edge%3E%3D79%2C+firefox%3E%3D67%2C+chrome%3E%3D64%2C+safari%3E%3D12%2C+chromeAndroid%3E%3D64%2C+iOS%3E%3D12)
 
-  If explicitly set, it's passed on to [`@babel/preset-env`](https://babeljs.io/docs/en/babel-preset-env#targets) when rendering **modern chunks**.
+  It's passed on to [`@babel/preset-env`](https://babeljs.io/docs/en/babel-preset-env#targets) when collecting polyfills for **modern chunks**. The value set here will override the `build.target` option.
 
   The query is also [Browserslist compatible](https://github.com/browserslist/browserslist). See [Browserslist Best Practices](https://github.com/browserslist/browserslist#best-practices) for more details.
 
   If it's not set, plugin-legacy will fallback to the default value.
+
+  Note that this options should not be set unless `renderLegacyChunks` is set to `false`.
 
 ### `polyfills`
 
@@ -129,6 +131,8 @@ npm add -D terser
 
   Set to `false` to only output the legacy bundles that support all target browsers.
 
+  This is also useful when running the project locally using `file:` protocol, as loading modern chunks with `type="module"` may trigger CORS restrictions. To avoid this issue, simply set `renderModernChunks` to `false` to exclusively use legacy chunks instead.
+
 ## Browsers that supports ESM but does not support widely-available features
 
 The legacy plugin offers a way to use widely-available features natively in the modern build, while falling back to the legacy build in browsers with native ESM but without those features supported (e.g. Legacy Edge). This feature works by injecting a runtime check and loading the legacy bundle with SystemJs runtime if needed. There are the following drawbacks:
@@ -179,7 +183,7 @@ The current values are:
 
 - `sha256-MS6/3FCg4WjP9gwgaBGwLpRCY6fZBgwmhVCdrPrNf3E=`
 - `sha256-tQjf8gvb2ROOMapIxFvFAYBeUJ0v1HCbOcSmDNXGtDo=`
-- `sha256-VA8O2hAdooB288EpSTrGLl7z3QikbWU9wwoebO/QaYk=`
+- `sha256-ZxAi3a7m9Mzbc+Z1LGuCCK5Xee6reDkEPRas66H9KSo=`
 - `sha256-+5XkZFazzJo8n0iOP4ti/cLCMUudTf//Mzkb7xNPXIc=`
 
 <!--

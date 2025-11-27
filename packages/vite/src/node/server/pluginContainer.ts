@@ -30,6 +30,7 @@ SOFTWARE.
 */
 
 import fs from 'node:fs'
+import fsp from 'node:fs/promises'
 import { join } from 'node:path'
 import { performance } from 'node:perf_hooks'
 import { parseAst as rollupParseAst } from 'rollup/parseAst'
@@ -48,8 +49,10 @@ import type {
   PartialNull,
   PartialResolvedId,
   PluginContextMeta,
+  ProgramNode,
   ResolvedId,
   RollupError,
+  RollupFsModule,
   RollupLog,
   MinimalPluginContext as RollupMinimalPluginContext,
   PluginContext as RollupPluginContext,
@@ -58,11 +61,11 @@ import type {
   SourceMap,
   TransformResult,
 } from 'rollup'
-import type { RawSourceMap } from '@ampproject/remapping'
+import type { RawSourceMap } from '@jridgewell/remapping'
 import { TraceMap, originalPositionFor } from '@jridgewell/trace-mapping'
 import MagicString from 'magic-string'
-import type { FSWatcher } from 'dep-types/chokidar'
 import colors from 'picocolors'
+import type { FSWatcher } from '#dep-types/chokidar'
 import type { Plugin } from '../plugin'
 import {
   combineSourcemaps,
@@ -87,6 +90,10 @@ import { cleanUrl, unwrapId } from '../../shared/utils'
 import type { PluginHookUtils } from '../config'
 import type { Environment } from '../environment'
 import type { Logger } from '../logger'
+import {
+  isFutureDeprecationEnabled,
+  warnFutureDeprecation,
+} from '../deprecations'
 import type { DevEnvironment } from './environment'
 import { buildErrorMessage } from './middlewares/error'
 import type {
@@ -178,7 +185,7 @@ class EnvironmentPluginContainer<Env extends Environment = Environment> {
   getSortedPlugins: PluginHookUtils['getSortedPlugins']
 
   moduleGraph: EnvironmentModuleGraph | undefined
-  watchFiles = new Set<string>()
+  watchFiles: Set<string> = new Set()
   minimalContext: MinimalPluginContext<Env>
 
   private _started = false
@@ -191,7 +198,7 @@ class EnvironmentPluginContainer<Env extends Environment = Environment> {
   constructor(
     public environment: Env,
     public plugins: readonly Plugin[],
-    public watcher?: FSWatcher,
+    public watcher?: FSWatcher | undefined,
     autoStart = true,
   ) {
     this._started = !autoStart
@@ -367,6 +374,7 @@ class EnvironmentPluginContainer<Env extends Environment = Environment> {
     const scan = !!options?.scan
     const ssr = this.environment.config.consumer === 'server'
     const ctx = new ResolveIdContext(this, skip, skipCalls, scan)
+    const topLevelConfig = this.environment.getTopLevelConfig()
 
     const mergedSkip = new Set<Plugin>(skip)
     for (const call of skipCalls ?? []) {
@@ -388,16 +396,39 @@ class EnvironmentPluginContainer<Env extends Environment = Environment> {
 
       ctx._plugin = plugin
 
+      const normalizedOptions = {
+        attributes: options?.attributes ?? {},
+        custom: options?.custom,
+        isEntry: !!options?.isEntry,
+        ssr,
+        scan,
+      }
+      if (
+        isFutureDeprecationEnabled(
+          topLevelConfig,
+          'removePluginHookSsrArgument',
+        )
+      ) {
+        let ssrTemp = ssr
+        Object.defineProperty(normalizedOptions, 'ssr', {
+          get() {
+            warnFutureDeprecation(
+              topLevelConfig,
+              'removePluginHookSsrArgument',
+              `Used in plugin "${plugin.name}".`,
+            )
+            return ssrTemp
+          },
+          set(v) {
+            ssrTemp = v
+          },
+        })
+      }
+
       const pluginResolveStart = debugPluginResolve ? performance.now() : 0
       const handler = getHookHandler(plugin.resolveId)
       const result = await this.handleHookPromise(
-        handler.call(ctx as any, rawId, importer, {
-          attributes: options?.attributes ?? {},
-          custom: options?.custom,
-          isEntry: !!options?.isEntry,
-          ssr,
-          scan,
-        }),
+        handler.call(ctx as any, rawId, importer, normalizedOptions),
       )
       if (!result) continue
 
@@ -432,7 +463,7 @@ class EnvironmentPluginContainer<Env extends Environment = Environment> {
     }
 
     if (id) {
-      partial.id = isExternalUrl(id) ? id : normalizePath(id)
+      partial.id = isExternalUrl(id) || id[0] === '\0' ? id : normalizePath(id)
       return partial as PartialResolvedId
     } else {
       return null
@@ -440,7 +471,8 @@ class EnvironmentPluginContainer<Env extends Environment = Environment> {
   }
 
   async load(id: string): Promise<LoadResult | null> {
-    const ssr = this.environment.config.consumer === 'server'
+    let ssr = this.environment.config.consumer === 'server'
+    const topLevelConfig = this.environment.getTopLevelConfig()
     const options = { ssr }
     const ctx = new LoadPluginContext(this)
     for (const plugin of this.getSortedPlugins('load')) {
@@ -451,6 +483,28 @@ class EnvironmentPluginContainer<Env extends Environment = Environment> {
       if (filter && !filter(id)) continue
 
       ctx._plugin = plugin
+
+      if (
+        isFutureDeprecationEnabled(
+          topLevelConfig,
+          'removePluginHookSsrArgument',
+        )
+      ) {
+        Object.defineProperty(options, 'ssr', {
+          get() {
+            warnFutureDeprecation(
+              topLevelConfig,
+              'removePluginHookSsrArgument',
+              `Used in plugin "${plugin.name}".`,
+            )
+            return ssr
+          },
+          set(v) {
+            ssr = v
+          },
+        })
+      }
+
       const handler = getHookHandler(plugin.load)
       const result = await this.handleHookPromise(
         handler.call(ctx as any, id, options),
@@ -474,7 +528,8 @@ class EnvironmentPluginContainer<Env extends Environment = Environment> {
       inMap?: SourceDescription['map']
     },
   ): Promise<{ code: string; map: SourceMap | { mappings: '' } | null }> {
-    const ssr = this.environment.config.consumer === 'server'
+    let ssr = this.environment.config.consumer === 'server'
+    const topLevelConfig = this.environment.getTopLevelConfig()
     const optionsWithSSR = options ? { ...options, ssr } : { ssr }
     const inMap = options?.inMap
 
@@ -487,6 +542,27 @@ class EnvironmentPluginContainer<Env extends Environment = Environment> {
 
       const filter = getCachedFilterForPlugin(plugin, 'transform')
       if (filter && !filter(id, code)) continue
+
+      if (
+        isFutureDeprecationEnabled(
+          topLevelConfig,
+          'removePluginHookSsrArgument',
+        )
+      ) {
+        Object.defineProperty(optionsWithSSR, 'ssr', {
+          get() {
+            warnFutureDeprecation(
+              topLevelConfig,
+              'removePluginHookSsrArgument',
+              `Used in plugin "${plugin.name}".`,
+            )
+            return ssr
+          },
+          set(v) {
+            ssr = v
+          },
+        })
+      }
 
       ctx._updateActiveInfo(plugin, id, code)
       const start = debugPluginTransform ? performance.now() : 0
@@ -531,10 +607,15 @@ class EnvironmentPluginContainer<Env extends Environment = Environment> {
     id: string,
     change: { event: 'create' | 'update' | 'delete' },
   ): Promise<void> {
+    const config = this.environment.getTopLevelConfig()
     await this.hookParallel(
       'watchChange',
       (plugin) => this._getPluginContext(plugin),
       () => [id, change],
+      (plugin) =>
+        this.environment.name === 'client' ||
+        config.server.perEnvironmentWatchChangeDuringDev ||
+        plugin.perEnvironmentWatchChangeDuringDev,
     )
   }
 
@@ -560,7 +641,10 @@ class EnvironmentPluginContainer<Env extends Environment = Environment> {
   }
 }
 
-export const basePluginContextMeta = {
+export const basePluginContextMeta: {
+  viteVersion: string
+  rollupVersion: string
+} = {
   viteVersion,
   rollupVersion,
 }
@@ -617,6 +701,22 @@ class MinimalPluginContext<T extends Environment = Environment>
   }
 }
 
+const fsModule: RollupFsModule = {
+  appendFile: fsp.appendFile,
+  copyFile: fsp.copyFile,
+  mkdir: fsp.mkdir as RollupFsModule['mkdir'],
+  mkdtemp: fsp.mkdtemp,
+  readdir: fsp.readdir,
+  readFile: fsp.readFile as RollupFsModule['readFile'],
+  realpath: fsp.realpath,
+  rename: fsp.rename,
+  rmdir: fsp.rmdir,
+  stat: fsp.stat,
+  lstat: fsp.lstat,
+  unlink: fsp.unlink,
+  writeFile: fsp.writeFile,
+}
+
 class PluginContext
   extends MinimalPluginContext
   implements Omit<RollupPluginContext, 'cache'>
@@ -635,7 +735,9 @@ class PluginContext
     super(_container.minimalContext.meta, _container.environment)
   }
 
-  parse(code: string, opts: any) {
+  fs: RollupFsModule = fsModule
+
+  parse(code: string, opts: any): ProgramNode {
     return rollupParseAst(code, opts)
   }
 
@@ -648,7 +750,7 @@ class PluginContext
       isEntry?: boolean
       skipSelf?: boolean
     },
-  ) {
+  ): Promise<ResolvedId | null> {
     let skipCalls: readonly SkipInformation[] | undefined
     if (options?.skipSelf === false) {
       skipCalls = this._resolveSkipCalls
@@ -713,7 +815,7 @@ class PluginContext
     return this._container.getModuleInfo(id)
   }
 
-  _updateModuleInfo(id: string, { meta }: { meta?: object | null }) {
+  _updateModuleInfo(id: string, { meta }: { meta?: object | null }): void {
     if (meta) {
       const moduleInfo = this.getModuleInfo(id)
       if (moduleInfo) {
@@ -1114,7 +1216,8 @@ class PluginContainer {
   }
 
   // For backward compatibility, buildStart and watchChange are called only for the client environment
-  // buildStart is called per environment for a plugin with the perEnvironmentStartEndDuring dev flag
+  // buildStart is called per environment for a plugin with the perEnvironmentStartEndDuringDev flag
+  // watchChange is called per environment for a plugin with the perEnvironmentWatchChangeDuringDev flag
 
   async buildStart(_options?: InputOptions): Promise<void> {
     return (

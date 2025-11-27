@@ -93,4 +93,39 @@ describe('module runner initialization', async () => {
       '    at Module.main (<root>/fixtures/has-error-deep.ts:6:3)',
     ])
   })
+
+  it('should not crash when sourceMappingURL pattern appears in string literals', async ({
+    runner,
+    server,
+  }) => {
+    const mod = await runner.import('/fixtures/string-literal-sourcemap.ts')
+    expect(mod.getMessage()).toBe(
+      '//# sourceMappingURL=data:application/json;base64,invalidbase64',
+    )
+    const error = await getError(() => mod.throwError())
+    expect(error.message).toBe('Test error for stacktrace')
+    expect(serializeStackDeep(server, error).slice(0, 2)).toEqual([
+      'Error: Test error for stacktrace',
+      '    at Module.throwError (<root>/fixtures/string-literal-sourcemap.ts:11:9)',
+    ])
+  })
+
+  it('should correctly pickup the url from sources', async ({
+    server,
+    runner,
+  }) => {
+    const mod = await runner.import('/fixtures/pre-source-mapped-file.js')
+    const error = await getError(() => mod.default())
+    // The error stack shows "transpiled-inline.ts" because it is specified in the source map's "sources" field.
+    // The file itself does not exist on the file system, but we should still respect "sources".
+    // If source maps handling breaks, the stack trace will point to "transpiled-inline.js" instead, which would be a bug.
+    expect(serializeStackDeep(server, error).slice(0, 3))
+      .toMatchInlineSnapshot(`
+      [
+        "Error: __TEST_STACK_TRANSPILED_INLINE__",
+        "    at innerTestStack (<root>/fixtures/transpiled-inline.ts:22:9)",
+        "    at Module.testStack (<root>/fixtures/transpiled-inline.ts:12:3)",
+      ]
+    `)
+  })
 })

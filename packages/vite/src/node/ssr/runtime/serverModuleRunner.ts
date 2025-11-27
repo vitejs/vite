@@ -1,6 +1,6 @@
 import { existsSync, readFileSync } from 'node:fs'
-import type { HotPayload } from 'types/hmrPayload'
-import { ModuleRunner } from 'vite/module-runner'
+import type { HotPayload } from '#types/hmrPayload'
+import { ModuleRunner, createNodeImportMeta } from 'vite/module-runner'
 import type {
   ModuleEvaluator,
   ModuleRunnerHmr,
@@ -91,6 +91,11 @@ export const createServerModuleRunnerTransport = (options: {
   return {
     connect({ onMessage }) {
       options.channel.api!.outsideEmitter.on('send', onMessage)
+      options.channel.api!.innerEmitter.emit(
+        'vite:client:connect',
+        undefined,
+        hmrClient,
+      )
       onMessage({ type: 'connected' })
       handler = onMessage
     },
@@ -98,6 +103,11 @@ export const createServerModuleRunnerTransport = (options: {
       if (handler) {
         options.channel.api!.outsideEmitter.off('send', handler)
       }
+      options.channel.api!.innerEmitter.emit(
+        'vite:client:disconnect',
+        undefined,
+        hmrClient,
+      )
     },
     send(payload) {
       if (payload.type !== 'custom') {
@@ -130,6 +140,7 @@ export function createServerModuleRunner(
         channel: environment.hot as NormalizedServerHotChannel,
       }),
       hmr,
+      createImportMeta: createNodeImportMeta,
       sourcemapInterceptor: resolveSourceMapOptions(options),
     },
     options.evaluator,

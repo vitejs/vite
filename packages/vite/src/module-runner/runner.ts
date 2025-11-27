@@ -1,27 +1,22 @@
-import type { ViteHotContext } from 'types/hot'
+import type { ViteHotContext } from '#types/hot'
 import { HMRClient, HMRContext, type HMRLogger } from '../shared/hmr'
-import { cleanUrl, isPrimitive, isWindows } from '../shared/utils'
+import { cleanUrl, isPrimitive } from '../shared/utils'
 import { analyzeImportedModDifference } from '../shared/ssrTransform'
 import {
   type NormalizedModuleRunnerTransport,
   normalizeModuleRunnerTransport,
 } from '../shared/moduleRunnerTransport'
+import { createIsBuiltin } from '../shared/builtin'
 import type { EvaluatedModuleNode } from './evaluatedModules'
 import { EvaluatedModules } from './evaluatedModules'
 import type {
   ModuleEvaluator,
   ModuleRunnerContext,
-  ModuleRunnerImportMeta,
   ModuleRunnerOptions,
   ResolvedResult,
   SSRImportMetadata,
 } from './types'
-import {
-  posixDirname,
-  posixPathToFileHref,
-  posixResolve,
-  toWindowsPath,
-} from './utils'
+import { posixDirname, posixPathToFileHref, posixResolve } from './utils'
 import {
   ssrDynamicImportKey,
   ssrExportAllKey,
@@ -34,6 +29,7 @@ import { hmrLogger, silentConsole } from './hmrLogger'
 import { createHMRHandlerForRunner } from './hmrHandler'
 import { enableSourceMapSupport } from './sourcemap/index'
 import { ESModulesEvaluator } from './esmEvaluator'
+import { createDefaultImportMeta } from './createImportMeta'
 
 interface ModuleRunnerDebugger {
   (formatter: unknown, ...args: unknown[]): void
@@ -43,26 +39,21 @@ export class ModuleRunner {
   public evaluatedModules: EvaluatedModules
   public hmrClient?: HMRClient
 
-  private readonly envProxy = new Proxy({} as any, {
-    get(_, p) {
-      throw new Error(
-        `[module runner] Dynamic access of "import.meta.env" is not supported. Please, use "import.meta.env.${String(p)}" instead.`,
-      )
-    },
-  })
   private readonly transport: NormalizedModuleRunnerTransport
   private readonly resetSourceMapSupport?: () => void
   private readonly concurrentModuleNodePromises = new Map<
     string,
     Promise<EvaluatedModuleNode>
   >()
+  private isBuiltin?: (id: string) => boolean
+  private builtinsPromise?: Promise<void>
 
   private closed = false
 
   constructor(
     public options: ModuleRunnerOptions,
     public evaluator: ModuleEvaluator = new ESModulesEvaluator(),
-    private debug?: ModuleRunnerDebugger,
+    private debug?: ModuleRunnerDebugger | undefined,
   ) {
     this.evaluatedModules = options.evaluatedModules ?? new EvaluatedModules()
     this.transport = normalizeModuleRunnerTransport(options.transport)
@@ -250,6 +241,34 @@ export class ModuleRunner {
     return cached
   }
 
+  private ensureBuiltins(): Promise<void> | undefined {
+    if (this.isBuiltin) return
+
+    this.builtinsPromise ??= (async () => {
+      try {
+        this.debug?.('[module runner] fetching builtins from server')
+        const serializedBuiltins = await this.transport.invoke(
+          'getBuiltins',
+          [],
+        )
+        const builtins = serializedBuiltins.map((builtin) =>
+          typeof builtin === 'object' && builtin && 'type' in builtin
+            ? builtin.type === 'string'
+              ? builtin.value
+              : new RegExp(builtin.source, builtin.flags)
+            : // NOTE: Vitest returns raw values instead of serialized ones
+              builtin,
+        )
+        this.isBuiltin = createIsBuiltin(builtins)
+        this.debug?.('[module runner] builtins loaded:', builtins)
+      } finally {
+        this.builtinsPromise = undefined
+      }
+    })()
+
+    return this.builtinsPromise
+  }
+
   private async getModuleInformation(
     url: string,
     importer: string | undefined,
@@ -259,13 +278,15 @@ export class ModuleRunner {
       throw new Error(`Vite module runner has been closed.`)
     }
 
+    await this.ensureBuiltins()
+
     this.debug?.('[module runner] fetching', url)
 
     const isCached = !!(typeof cachedModule === 'object' && cachedModule.meta)
 
     const fetchedModule = // fast return for established externalized pattern
       (
-        url.startsWith('data:')
+        url.startsWith('data:') || this.isBuiltin?.(url)
           ? { externalize: url, type: 'builtin' }
           : await this.transport.invoke('fetchModule', [
               url,
@@ -351,29 +372,13 @@ export class ModuleRunner {
       )
     }
 
+    const createImportMeta =
+      this.options.createImportMeta ?? createDefaultImportMeta
+
     const modulePath = cleanUrl(file || moduleId)
     // disambiguate the `<UNIT>:/` on windows: see nodejs/node#31710
     const href = posixPathToFileHref(modulePath)
-    const filename = modulePath
-    const dirname = posixDirname(modulePath)
-    const meta: ModuleRunnerImportMeta = {
-      filename: isWindows ? toWindowsPath(filename) : filename,
-      dirname: isWindows ? toWindowsPath(dirname) : dirname,
-      url: href,
-      env: this.envProxy,
-      resolve(_id, _parent?) {
-        throw new Error(
-          '[module runner] "import.meta.resolve" is not supported.',
-        )
-      },
-      // should be replaced during transformation
-      glob() {
-        throw new Error(
-          `[module runner] "import.meta.glob" is statically replaced during ` +
-            `file transformation. Make sure to reference it by the full name.`,
-        )
-      },
-    }
+    const meta = await createImportMeta(modulePath)
     const exports = Object.create(null)
     Object.defineProperty(exports, Symbol.toStringTag, {
       value: 'Module',

@@ -4,6 +4,7 @@
   "labels": ["dependencies"],
   "ignorePaths": ["**/__tests__/**"],
   "rangeStrategy": "bump",
+  "postUpdateOptions": ["pnpmDedupe"],
   "packageRules": [
     {
       "matchDepTypes": ["peerDependencies"],
@@ -26,7 +27,6 @@
     "node",
     "typescript",
     "@rollup/plugin-dynamic-import-vars", // prefer version using tinyglobby
-    "@oxc-project/runtime", // align version with rolldown
     "@oxc-project/types", // align version with rolldown
 
     // pinned
@@ -36,6 +36,9 @@
 
     // breaking changes
     "kill-port", // `kill-port:^2.0.0 has perf issues (#8392)
+
+    // v1 is a drop-in replacement for debug, while v2 introduces breaking changes
+    "obug",
   ],
   "github-actions": {
     "managerFilePatterns": [

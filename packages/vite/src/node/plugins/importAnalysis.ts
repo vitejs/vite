@@ -85,7 +85,7 @@ export const canSkipImportAnalysis = (id: string): boolean =>
 const optimizedDepChunkRE = /\/chunk-[A-Z\d]{8}\.js/
 const optimizedDepDynamicRE = /-[A-Z\d]{8}\.js/
 
-export const hasViteIgnoreRE = /\/\*\s*@vite-ignore\s*\*\//
+export const hasViteIgnoreRE: RegExp = /\/\*\s*@vite-ignore\s*\*\//
 
 const urlIsStringRE = /^(?:'.*'|".*"|`.*`)$/
 
@@ -373,31 +373,7 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
           return [resolved.id, resolved.id]
         }
 
-        const isRelative = url[0] === '.'
-        const isSelfImport = !isRelative && cleanUrl(url) === cleanUrl(importer)
-
         url = normalizeResolvedIdToUrl(environment, url, resolved)
-
-        // make the URL browser-valid
-        if (environment.config.consumer === 'client') {
-          // mark non-js/css imports with `?import`
-          if (isExplicitImportRequired(url)) {
-            url = injectQuery(url, 'import')
-          } else if (
-            (isRelative || isSelfImport) &&
-            !DEP_VERSION_RE.test(url)
-          ) {
-            // If the url isn't a request for a pre-bundled common chunk,
-            // for relative js/css imports, or self-module virtual imports
-            // (e.g. vue blocks), inherit importer's version query
-            // do not do this for unknown type imports, otherwise the appended
-            // query can break 3rd party plugin's extension checks.
-            const versionMatch = DEP_VERSION_RE.exec(importer)
-            if (versionMatch) {
-              url = injectQuery(url, versionMatch[1])
-            }
-          }
-        }
 
         try {
           // delay setting `isSelfAccepting` until the file is actually used (#7870)
@@ -421,6 +397,31 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
           // attach location to the missing import
           e.pos = pos
           throw e
+        }
+
+        // make the URL browser-valid
+        if (environment.config.consumer === 'client') {
+          const isRelative = url[0] === '.'
+          const isSelfImport =
+            !isRelative && cleanUrl(url) === cleanUrl(importer)
+
+          // mark non-js/css imports with `?import`
+          if (isExplicitImportRequired(url)) {
+            url = injectQuery(url, 'import')
+          } else if (
+            (isRelative || isSelfImport) &&
+            !DEP_VERSION_RE.test(url)
+          ) {
+            // If the url isn't a request for a pre-bundled common chunk,
+            // for relative js/css imports, or self-module virtual imports
+            // (e.g. vue blocks), inherit importer's version query
+            // do not do this for unknown type imports, otherwise the appended
+            // query can break 3rd party plugin's extension checks.
+            const versionMatch = DEP_VERSION_RE.exec(importer)
+            if (versionMatch) {
+              url = injectQuery(url, versionMatch[1])
+            }
+          }
         }
 
         // prepend base
@@ -511,8 +512,9 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
           if (specifier !== undefined) {
             // skip external / data uri
             if (
-              (isExternalUrl(specifier) && !specifier.startsWith('file://')) ||
-              isDataUrl(specifier)
+              ((isExternalUrl(specifier) && !specifier.startsWith('file://')) ||
+                isDataUrl(specifier)) &&
+              !matchAlias(specifier)
             ) {
               return
             }
@@ -834,7 +836,7 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
           isSelfAccepting,
           staticImportedUrls,
         )
-        if (hasHMR && prunedImports) {
+        if (prunedImports) {
           handlePrunedModules(prunedImports, environment)
         }
       }
@@ -897,8 +899,18 @@ export function createParseErrorInfo(
     showCodeFrame: !probablyBinary,
   }
 }
-// prettier-ignore
-const interopHelper = (m: any) => m?.__esModule ? m : { ...(typeof m === 'object' && !Array.isArray(m) || typeof m === 'function' ? m : {}), default: m }
+
+const interopHelper = (m: any) =>
+  m?.__esModule
+    ? m
+    : {
+        ...((typeof m === 'object' && !Array.isArray(m)) ||
+        typeof m === 'function'
+          ? m
+          : {}),
+        default: m,
+      }
+const interopHelperStr = interopHelper.toString().replaceAll('\n', '')
 
 export function interopNamedImports(
   str: MagicString,
@@ -922,7 +934,7 @@ export function interopNamedImports(
     str.overwrite(
       expStart,
       expEnd,
-      `import('${rewrittenUrl}').then(m => (${interopHelper.toString()})(m.default))` +
+      `import('${rewrittenUrl}').then(m => (${interopHelperStr})(m.default))` +
         getLineBreaks(exp),
       { contentOnly: true },
     )
@@ -1058,7 +1070,7 @@ export function transformCjsImport(
     importNames.forEach(({ importedName, localName }) => {
       if (importedName === '*') {
         lines.push(
-          `const ${localName} = (${interopHelper.toString()})(${cjsModuleName})`,
+          `const ${localName} = (${interopHelperStr})(${cjsModuleName})`,
         )
       } else if (importedName === 'default') {
         lines.push(

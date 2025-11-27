@@ -9,8 +9,8 @@ const MODULE_RUNNER_SOURCEMAPPING_REGEXP = new RegExp(
 )
 
 export class EvaluatedModuleNode {
-  public importers = new Set<string>()
-  public imports = new Set<string>()
+  public importers: Set<string> = new Set()
+  public imports: Set<string> = new Set()
   public evaluated = false
   public meta: ResolvedResult | undefined
   public promise: Promise<any> | undefined
@@ -27,9 +27,10 @@ export class EvaluatedModuleNode {
 }
 
 export class EvaluatedModules {
-  public readonly idToModuleMap = new Map<string, EvaluatedModuleNode>()
-  public readonly fileToModulesMap = new Map<string, Set<EvaluatedModuleNode>>()
-  public readonly urlToIdModuleMap = new Map<string, EvaluatedModuleNode>()
+  public readonly idToModuleMap: Map<string, EvaluatedModuleNode> = new Map()
+  public readonly fileToModulesMap: Map<string, Set<EvaluatedModuleNode>> =
+    new Map()
+  public readonly urlToIdModuleMap: Map<string, EvaluatedModuleNode> = new Map()
 
   /**
    * Returns the module node by the resolved module ID. Usually, module ID is
@@ -108,8 +109,13 @@ export class EvaluatedModules {
     if (!mod) return null
     if (mod.map) return mod.map
     if (!mod.meta || !('code' in mod.meta)) return null
+
+    const pattern = `//# ${SOURCEMAPPING_URL}=data:application/json;base64,`
+    const lastIndex = mod.meta.code.lastIndexOf(pattern)
+    if (lastIndex === -1) return null
+
     const mapString = MODULE_RUNNER_SOURCEMAPPING_REGEXP.exec(
-      mod.meta.code,
+      mod.meta.code.slice(lastIndex),
     )?.[1]
     if (!mapString) return null
     mod.map = new DecodedMap(JSON.parse(decodeBase64(mapString)), mod.file)
@@ -135,11 +141,10 @@ const prefixedBuiltins = new Set([
 // transform file url to id
 // virtual:custom -> virtual:custom
 // \0custom -> \0custom
-// /root/id -> /id
-// /root/id.js -> /id.js
-// C:/root/id.js -> /id.js
-// C:\root\id.js -> /id.js
-function normalizeModuleId(file: string): string {
+// node:fs -> fs
+// /@fs/C:/root/id.js => C:/root/id.js
+// file:///C:/root/id.js -> C:/root/id.js
+export function normalizeModuleId(file: string): string {
   if (prefixedBuiltins.has(file)) return file
 
   // unix style, but Windows path still starts with the drive letter to check the root
@@ -149,5 +154,5 @@ function normalizeModuleId(file: string): string {
     .replace(/^\/+/, '/')
 
   // if it's not in the root, keep it as a path, not a URL
-  return unixFile.replace(/^file:\//, '/')
+  return unixFile.replace(/^file:\/+/, isWindows ? '' : '/')
 }

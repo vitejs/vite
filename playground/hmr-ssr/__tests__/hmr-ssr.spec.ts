@@ -10,7 +10,12 @@ import {
   test,
   vi,
 } from 'vitest'
-import type { InlineConfig, RunnableDevEnvironment, ViteDevServer } from 'vite'
+import type {
+  InlineConfig,
+  Plugin,
+  RunnableDevEnvironment,
+  ViteDevServer,
+} from 'vite'
 import { createRunnableDevEnvironment, createServer } from 'vite'
 import type { ModuleRunner } from 'vite/module-runner'
 import {
@@ -23,7 +28,6 @@ import {
   removeFile,
   slash,
   testDir,
-  untilUpdated,
 } from '~utils'
 
 let server: ViteDevServer
@@ -48,12 +52,31 @@ const updated = (file: string, via?: string) => {
 
 if (!isBuild) {
   describe('hmr works correctly', () => {
+    const hotEventCounts = { connect: 0, disconnect: 0 }
+
     beforeAll(async () => {
-      await setupModuleRunner('/hmr.ts')
+      function hotEventsPlugin(): Plugin {
+        return {
+          name: 'hot-events',
+          configureServer(server) {
+            server.environments.ssr.hot.on(
+              'vite:client:connect',
+              () => hotEventCounts.connect++,
+            )
+            server.environments.ssr.hot.on(
+              'vite:client:disconnect',
+              () => hotEventCounts.disconnect++,
+            )
+          },
+        }
+      }
+
+      await setupModuleRunner('/hmr.ts', { plugins: [hotEventsPlugin()] })
     })
 
     test('should connect', async () => {
       expect(clientLogs).toContain('[vite] connected.')
+      expect(hotEventCounts).toStrictEqual({ connect: 1, disconnect: 0 })
     })
 
     test('self accept', async () => {
@@ -73,7 +96,7 @@ if (!isBuild) {
         ],
         true,
       )
-      await untilUpdated(() => el(), '2')
+      await expect.poll(() => el()).toMatch('2')
 
       await untilConsoleLogAfter(
         () =>
@@ -90,7 +113,7 @@ if (!isBuild) {
         ],
         true,
       )
-      await untilUpdated(() => el(), '3')
+      await expect.poll(() => el()).toMatch('3')
     })
 
     test('accept dep', async () => {
@@ -113,7 +136,7 @@ if (!isBuild) {
         ],
         true,
       )
-      await untilUpdated(() => el(), '2')
+      await expect.poll(() => el()).toMatch('2')
 
       await untilConsoleLogAfter(
         () =>
@@ -133,7 +156,7 @@ if (!isBuild) {
         ],
         true,
       )
-      await untilUpdated(() => el(), '3')
+      await expect.poll(() => el()).toMatch('3')
     })
 
     test('nested dep propagation', async () => {
@@ -156,7 +179,7 @@ if (!isBuild) {
         ],
         true,
       )
-      await untilUpdated(() => el(), '2')
+      await expect.poll(() => el()).toMatch('2')
 
       await untilConsoleLogAfter(
         () =>
@@ -176,7 +199,7 @@ if (!isBuild) {
         ],
         true,
       )
-      await untilUpdated(() => el(), '3')
+      await expect.poll(() => el()).toMatch('3')
     })
 
     test('invalidate', async () => {
@@ -199,7 +222,7 @@ if (!isBuild) {
         ],
         true,
       )
-      await untilUpdated(() => el(), 'child updated')
+      await expect.poll(() => el()).toMatch('child updated')
     })
 
     test('soft invalidate', async () => {
@@ -210,49 +233,50 @@ if (!isBuild) {
       editFile('soft-invalidation/child.js', (code) =>
         code.replace('bar', 'updated'),
       )
-      await untilUpdated(
-        () => el(),
-        'soft-invalidation/index.js is transformed 1 times. child is updated',
-      )
+      await expect
+        .poll(() => el())
+        .toBe(
+          'soft-invalidation/index.js is transformed 1 times. child is updated',
+        )
     })
 
     test('invalidate in circular dep should not trigger infinite HMR', async () => {
       const el = () => hmr('.invalidation-circular-deps')
-      await untilUpdated(() => el(), 'child')
+      await expect.poll(() => el()).toMatch('child')
       editFile(
         'invalidation-circular-deps/circular-invalidate/child.js',
         (code) => code.replace('child', 'child updated'),
       )
-      await untilUpdated(() => el(), 'child updated')
+      await expect.poll(() => el()).toMatch('child updated')
     })
 
     test('invalidate in circular dep should be hot updated if possible', async () => {
       const el = () => hmr('.invalidation-circular-deps-handled')
-      await untilUpdated(() => el(), 'child')
+      await expect.poll(() => el()).toMatch('child')
       editFile(
         'invalidation-circular-deps/invalidate-handled-in-circle/child.js',
         (code) => code.replace('child', 'child updated'),
       )
-      await untilUpdated(() => el(), 'child updated')
+      await expect.poll(() => el()).toMatch('child updated')
     })
 
     test('plugin hmr handler + custom event', async () => {
       const el = () => hmr('.custom')
       editFile('customFile.js', (code) => code.replace('custom', 'edited'))
-      await untilUpdated(() => el(), 'edited')
+      await expect.poll(() => el()).toMatch('edited')
     })
 
     test('plugin hmr remove custom events', async () => {
       const el = () => hmr('.toRemove')
       editFile('customFile.js', (code) => code.replace('custom', 'edited'))
-      await untilUpdated(() => el(), 'edited')
+      await expect.poll(() => el()).toMatch('edited')
       editFile('customFile.js', (code) => code.replace('edited', 'custom'))
-      await untilUpdated(() => el(), 'edited')
+      await expect.poll(() => el()).toMatch('edited')
     })
 
     test('plugin client-server communication', async () => {
       const el = () => hmr('.custom-communication')
-      await untilUpdated(() => el(), '3')
+      await expect.poll(() => el()).toMatch('3')
     })
 
     test('queries are correctly resolved', async () => {
@@ -263,8 +287,8 @@ if (!isBuild) {
       expect(query2()).toBe('query2')
 
       editFile('queries/multi-query.js', (code) => code + '//comment')
-      await untilUpdated(() => query1(), '//commentquery1')
-      await untilUpdated(() => query2(), '//commentquery2')
+      await expect.poll(() => query1()).toBe('//commentquery1')
+      await expect.poll(() => query2()).toBe('//commentquery2')
     })
   })
 
@@ -294,7 +318,7 @@ if (!isBuild) {
           ],
           true,
         )
-        await untilUpdated(() => el(), '2')
+        await expect.poll(() => el()).toMatch('2')
 
         await untilConsoleLogAfter(
           () =>
@@ -309,7 +333,7 @@ if (!isBuild) {
           ],
           true,
         )
-        await untilUpdated(() => el(), '3')
+        await expect.poll(() => el()).toMatch('3')
       },
     )
   })
@@ -508,7 +532,7 @@ if (!isBuild) {
         })
       })
 
-      describe("doesn't reload if files not in the the entrypoint importers chain is changed", async () => {
+      describe("doesn't reload if files not in the entrypoint importers chain is changed", async () => {
         const testFile = 'non-tested/index.js'
 
         beforeAll(async () => {
@@ -721,7 +745,7 @@ if (!isBuild) {
     const el = () => hmr('.virtual')
     expect(el()).toBe('[success]0')
     editFile('importedVirtual.js', (code) => code.replace('[success]', '[wow]'))
-    await untilUpdated(el, '[wow]')
+    await expect.poll(el).toBe('[wow]0')
   })
 
   test('invalidate virtual module', async () => {
@@ -729,7 +753,7 @@ if (!isBuild) {
     const el = () => hmr('.virtual')
     expect(el()).toBe('[wow]0')
     globalThis.__HMR__['virtual:increment']()
-    await untilUpdated(el, '[wow]1')
+    await expect.poll(el).toBe('[wow]1')
   })
 
   test('should hmr when file is deleted and restored', async () => {
@@ -738,12 +762,14 @@ if (!isBuild) {
     const parentFile = 'file-delete-restore/parent.js'
     const childFile = 'file-delete-restore/child.js'
 
-    await untilUpdated(() => hmr('.file-delete-restore'), 'parent:child')
+    await expect.poll(() => hmr('.file-delete-restore')).toMatch('parent:child')
 
     editFile(childFile, (code) =>
       code.replace("value = 'child'", "value = 'child1'"),
     )
-    await untilUpdated(() => hmr('.file-delete-restore'), 'parent:child1')
+    await expect
+      .poll(() => hmr('.file-delete-restore'))
+      .toMatch('parent:child1')
 
     // delete the file
     editFile(parentFile, (code) =>
@@ -754,7 +780,9 @@ if (!isBuild) {
     )
     const originalChildFileCode = readFile(childFile)
     removeFile(childFile)
-    await untilUpdated(() => hmr('.file-delete-restore'), 'parent:not-child')
+    await expect
+      .poll(() => hmr('.file-delete-restore'))
+      .toMatch('parent:not-child')
 
     // restore the file
     addFile(childFile, originalChildFileCode)
@@ -764,7 +792,7 @@ if (!isBuild) {
         "export { value as childValue } from './child'",
       ),
     )
-    await untilUpdated(() => hmr('.file-delete-restore'), 'parent:child')
+    await expect.poll(() => hmr('.file-delete-restore')).toMatch('parent:child')
   })
 
   test('delete file should not break hmr', async () => {
@@ -772,17 +800,15 @@ if (!isBuild) {
       '.intermediate-file-delete-increment': '1',
     })
 
-    await untilUpdated(
-      () => hmr('.intermediate-file-delete-display'),
-      'count is 1',
-    )
+    await expect
+      .poll(() => hmr('.intermediate-file-delete-display'))
+      .toMatch('count is 1')
 
     // add state
     globalThis.__HMR__['.delete-intermediate-file']()
-    await untilUpdated(
-      () => hmr('.intermediate-file-delete-display'),
-      'count is 2',
-    )
+    await expect
+      .poll(() => hmr('.intermediate-file-delete-display'))
+      .toMatch('count is 2')
 
     // update import, hmr works
     editFile('intermediate-file-delete/index.js', (code) =>
@@ -791,34 +817,30 @@ if (!isBuild) {
     editFile('intermediate-file-delete/display.js', (code) =>
       code.replace('count is ${count}', 'count is ${count}!'),
     )
-    await untilUpdated(
-      () => hmr('.intermediate-file-delete-display'),
-      'count is 2!',
-    )
+    await expect
+      .poll(() => hmr('.intermediate-file-delete-display'))
+      .toMatch('count is 2!')
 
     // remove unused file
     removeFile('intermediate-file-delete/re-export.js')
     __HMR__['.intermediate-file-delete-increment'] = '1' // reset state
-    await untilUpdated(
-      () => hmr('.intermediate-file-delete-display'),
-      'count is 1!',
-    )
+    await expect
+      .poll(() => hmr('.intermediate-file-delete-display'))
+      .toMatch('count is 1!')
 
     // re-add state
     globalThis.__HMR__['.delete-intermediate-file']()
-    await untilUpdated(
-      () => hmr('.intermediate-file-delete-display'),
-      'count is 2!',
-    )
+    await expect
+      .poll(() => hmr('.intermediate-file-delete-display'))
+      .toMatch('count is 2!')
 
     // hmr works after file deletion
     editFile('intermediate-file-delete/display.js', (code) =>
       code.replace('count is ${count}!', 'count is ${count}'),
     )
-    await untilUpdated(
-      () => hmr('.intermediate-file-delete-display'),
-      'count is 2',
-    )
+    await expect
+      .poll(() => hmr('.intermediate-file-delete-display'))
+      .toMatch('count is 2')
   })
 
   test('deleted file should trigger dispose and prune callbacks', async () => {
@@ -826,20 +848,29 @@ if (!isBuild) {
 
     const parentFile = 'file-delete-restore/parent.js'
     const childFile = 'file-delete-restore/child.js'
-
-    // delete the file
-    editFile(parentFile, (code) =>
-      code.replace(
-        "export { value as childValue } from './child'",
-        "export const childValue = 'not-child'",
-      ),
-    )
     const originalChildFileCode = readFile(childFile)
-    removeFile(childFile)
 
-    await untilUpdated(() => hmr('.file-delete-restore'), 'parent:not-child')
-    expect(clientLogs).to.include('file-delete-restore/child.js is disposed')
-    expect(clientLogs).to.include('file-delete-restore/child.js is pruned')
+    await untilConsoleLogAfter(
+      () => {
+        // delete the file
+        editFile(parentFile, (code) =>
+          code.replace(
+            "export { value as childValue } from './child'",
+            "export const childValue = 'not-child'",
+          ),
+        )
+        removeFile(childFile)
+      },
+      [
+        'file-delete-restore/child.js is disposed',
+        'file-delete-restore/child.js is pruned',
+      ],
+      false,
+    )
+
+    await expect
+      .poll(() => hmr('.file-delete-restore'))
+      .toMatch('parent:not-child')
 
     // restore the file
     addFile(childFile, originalChildFileCode)
@@ -849,7 +880,7 @@ if (!isBuild) {
         "export { value as childValue } from './child'",
       ),
     )
-    await untilUpdated(() => hmr('.file-delete-restore'), 'parent:child')
+    await expect.poll(() => hmr('.file-delete-restore')).toMatch('parent:child')
   })
 
   test('import.meta.hot?.accept', async () => {
@@ -861,7 +892,7 @@ if (!isBuild) {
         ),
       '(optional-chaining) child update',
     )
-    await untilUpdated(() => hmr('.optional-chaining')?.toString(), '2')
+    await expect.poll(() => hmr('.optional-chaining')?.toString()).toMatch('2')
   })
 
   test('hmr works for self-accepted module within circular imported files', async () => {
@@ -873,12 +904,11 @@ if (!isBuild) {
     )
     // it throws a same error as browser case,
     // but it doesn't auto reload and it calls `hot.accept(nextExports)` with `nextExports = undefined`
-    await untilUpdated(() => el(), '')
 
     // test reloading manually for now
     server.moduleGraph.invalidateAll() // TODO: why is `runner.clearCache()` not enough?
     await runner.import('/self-accept-within-circular/index')
-    await untilUpdated(() => el(), 'cc')
+    await expect.poll(() => el()).toBe('cc')
   })
 
   test('hmr should not reload if no accepted within circular imported files', async () => {
@@ -891,10 +921,9 @@ if (!isBuild) {
     editFile('circular/mod-b.js', (code) =>
       code.replace(`mod-b ->`, `mod-b (edited) ->`),
     )
-    await untilUpdated(
-      () => el(),
-      'mod-a -> mod-b (edited) -> mod-c -> undefined (expected no error)',
-    )
+    await expect
+      .poll(() => el())
+      .toBe('mod-a -> mod-b (edited) -> mod-c -> undefined (expected no error)')
   })
 
   test('not inlined assets HMR', async () => {
@@ -969,6 +998,7 @@ async function untilConsoleLog(
   expectOrder = true,
 ): Promise<string[]> {
   const { promise, resolve, reject } = promiseWithResolvers<void>()
+  let timeoutId: ReturnType<typeof setTimeout>
 
   const logsMessages = []
 
@@ -1019,12 +1049,27 @@ async function untilConsoleLog(
       }
     }
 
+    timeoutId = setTimeout(() => {
+      const nextTarget = Array.isArray(target)
+        ? expectOrder
+          ? target[0]
+          : target.join(', ')
+        : target
+      reject(
+        new Error(
+          `Timeout waiting for console logs. Waiting for: ${nextTarget}`,
+        ),
+      )
+      logsEmitter.off('log', handleMsg)
+    }, 5000)
+
     logsEmitter.on('log', handleMsg)
   } catch (err) {
     reject(err)
   }
 
   await promise
+  clearTimeout(timeoutId)
 
   return logsMessages
 }

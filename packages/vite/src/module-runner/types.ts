@@ -1,4 +1,4 @@
-import type { ViteHotContext } from 'types/hot'
+import type { ViteHotContext } from '#types/hot'
 import type { HMRLogger } from '../shared/hmr'
 import type {
   DefineImportMetadata,
@@ -105,6 +105,14 @@ export interface ModuleRunnerOptions {
    * @default true
    */
   hmr?: boolean | ModuleRunnerHmr
+  /**
+   * Create import.meta object for the module.
+   *
+   * @default createDefaultImportMeta
+   */
+  createImportMeta?: (
+    modulePath: string,
+  ) => ModuleRunnerImportMeta | Promise<ModuleRunnerImportMeta>
   /**
    * Custom module cache. If not provided, creates a separate module cache for each ModuleRunner instance.
    */

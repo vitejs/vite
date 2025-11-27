@@ -7,18 +7,24 @@ import { performance } from 'node:perf_hooks'
 import { createRequire } from 'node:module'
 import crypto from 'node:crypto'
 import colors from 'picocolors'
-import type { Alias, AliasOptions } from 'dep-types/alias'
 import type { PluginContextMeta, RollupOptions } from 'rollup'
 import picomatch from 'picomatch'
 import { build } from 'esbuild'
+import type { Alias, AliasOptions } from '#dep-types/alias'
 import type { AnymatchFn } from '../types/anymatch'
 import { withTrailingSlash } from '../shared/utils'
+import {
+  createImportMetaResolver,
+  importMetaResolveWithCustomHookString,
+} from '../module-runner/importMetaResolver'
 import {
   CLIENT_ENTRY,
   DEFAULT_ASSETS_RE,
   DEFAULT_CLIENT_CONDITIONS,
   DEFAULT_CLIENT_MAIN_FIELDS,
   DEFAULT_CONFIG_FILES,
+  DEFAULT_EXTENSIONS,
+  DEFAULT_EXTERNAL_CONDITIONS,
   DEFAULT_PREVIEW_PORT,
   DEFAULT_SERVER_CONDITIONS,
   DEFAULT_SERVER_MAIN_FIELDS,
@@ -89,7 +95,6 @@ import {
   type EnvironmentResolveOptions,
   type InternalResolveOptions,
   type ResolveOptions,
-  tryNodeResolve,
 } from './plugins/resolve'
 import type { LogLevel, Logger } from './logger'
 import { createLogger } from './logger'
@@ -109,10 +114,11 @@ import {
   BasicMinimalPluginContext,
   basePluginContextMeta,
 } from './server/pluginContainer'
+import { nodeResolveWithVite } from './nodeResolve'
 
 const debug = createDebugger('vite:config', { depth: 10 })
 const promisifiedRealpath = promisify(fs.realpath)
-const SYMBOL_RESOLVED_CONFIG = Symbol('vite:resolved-config')
+const SYMBOL_RESOLVED_CONFIG: unique symbol = Symbol('vite:resolved-config')
 
 export interface ConfigEnv {
   /**
@@ -390,7 +396,7 @@ export interface UserConfig extends DefaultEnvironmentOptions {
   /**
    * Options to opt-in to future behavior
    */
-  future?: FutureOptions
+  future?: FutureOptions | 'warn'
   /**
    * Legacy options
    *
@@ -482,8 +488,11 @@ export interface FutureOptions {
   removePluginHookSsrArgument?: 'warn'
 
   removeServerModuleGraph?: 'warn'
+  removeServerReloadModule?: 'warn'
+  removeServerPluginContainer?: 'warn'
   removeServerHot?: 'warn'
   removeServerTransformRequest?: 'warn'
+  removeServerWarmupRequest?: 'warn'
 
   removeSsrLoadModule?: 'warn'
 }
@@ -555,6 +564,7 @@ export interface ResolvedConfig
       | 'dev'
       | 'environments'
       | 'experimental'
+      | 'future'
       | 'server'
       | 'preview'
     > & {
@@ -613,6 +623,7 @@ export interface ResolvedConfig
       worker: ResolvedWorkerOptions
       appType: AppType
       experimental: RequiredExceptFor<ExperimentalOptions, 'renderBuiltUrl'>
+      future: FutureOptions | undefined
       environments: Record<string, ResolvedEnvironmentOptions>
       /**
        * The token to connect to the WebSocket server from browsers.
@@ -635,7 +646,7 @@ export interface ResolvedConfig
   > {}
 
 // inferred ones are omitted
-export const configDefaults = Object.freeze({
+const configDefaults = Object.freeze({
   define: {},
   dev: {
     warmup: [],
@@ -651,8 +662,8 @@ export const configDefaults = Object.freeze({
   resolve: {
     // mainFields
     // conditions
-    externalConditions: ['node'],
-    extensions: ['.mjs', '.js', '.mts', '.ts', '.jsx', '.tsx', '.json'],
+    externalConditions: [...DEFAULT_EXTERNAL_CONDITIONS],
+    extensions: DEFAULT_EXTENSIONS,
     dedupe: [],
     /** @experimental */
     noExternal: [],
@@ -702,6 +713,7 @@ export const configDefaults = Object.freeze({
     removeServerModuleGraph: undefined,
     removeServerHot: undefined,
     removeServerTransformRequest: undefined,
+    removeServerWarmupRequest: undefined,
     removeSsrLoadModule: undefined,
   },
   legacy: {
@@ -714,7 +726,7 @@ export const configDefaults = Object.freeze({
   envPrefix: 'VITE_',
   worker: {
     format: 'iife',
-    plugins: () => [],
+    plugins: (): never[] => [],
     // rollupOptions
   },
   optimizeDeps: {
@@ -1168,16 +1180,21 @@ export async function resolveConfig(
       configEnvironmentsSsr.optimizeDeps ?? {},
     )
 
+    // merge with `resolve` as the root to merge `noExternal` correctly
     configEnvironmentsSsr.resolve = mergeConfig(
       {
-        conditions: config.ssr?.resolve?.conditions,
-        externalConditions: config.ssr?.resolve?.externalConditions,
-        mainFields: config.ssr?.resolve?.mainFields,
-        external: config.ssr?.external,
-        noExternal: config.ssr?.noExternal,
-      } satisfies EnvironmentResolveOptions,
-      configEnvironmentsSsr.resolve ?? {},
-    )
+        resolve: {
+          conditions: config.ssr?.resolve?.conditions,
+          externalConditions: config.ssr?.resolve?.externalConditions,
+          mainFields: config.ssr?.resolve?.mainFields,
+          external: config.ssr?.external,
+          noExternal: config.ssr?.noExternal,
+        },
+      } satisfies EnvironmentOptions,
+      {
+        resolve: configEnvironmentsSsr.resolve ?? {},
+      },
+    ).resolve
   }
 
   if (config.build?.ssrEmitAssets !== undefined) {
@@ -1505,6 +1522,9 @@ export async function resolveConfig(
         ? false
         : {
             jsxDev: !isProduction,
+            // change defaults that fit better for vite
+            charset: 'utf8',
+            legalComments: 'none',
             ...config.esbuild,
           },
     server,
@@ -1529,7 +1549,20 @@ export async function resolveConfig(
       configDefaults.experimental,
       config.experimental ?? {},
     ),
-    future: config.future,
+    future:
+      config.future === 'warn'
+        ? ({
+            removePluginHookHandleHotUpdate: 'warn',
+            removePluginHookSsrArgument: 'warn',
+            removeServerModuleGraph: 'warn',
+            removeServerReloadModule: 'warn',
+            removeServerPluginContainer: 'warn',
+            removeServerHot: 'warn',
+            removeServerTransformRequest: 'warn',
+            removeServerWarmupRequest: 'warn',
+            removeSsrLoadModule: 'warn',
+          } satisfies Required<FutureOptions>)
+        : config.future,
 
     ssr,
 
@@ -1633,7 +1666,7 @@ export async function resolveConfig(
 
   // For backward compat, set ssr environment build.emitAssets with the same value as build.ssrEmitAssets that might be changed in configResolved hook
   // https://github.com/vikejs/vike/blob/953614cea7b418fcc0309b5c918491889fdec90a/vike/node/plugin/plugins/buildConfig.ts#L67
-  if (resolved.environments.ssr) {
+  if (!resolved.builder?.sharedConfigBuild && resolved.environments.ssr) {
     resolved.environments.ssr.build.emitAssets =
       resolved.build.ssrEmitAssets || resolved.build.emitAssets
   }
@@ -1896,12 +1929,15 @@ async function bundleConfigFile(
   fileName: string,
   isESM: boolean,
 ): Promise<{ code: string; dependencies: string[] }> {
-  const isModuleSyncConditionEnabled = (await import('#module-sync-enabled'))
-    .default
+  let importMetaResolverRegistered = false
 
+  const root = path.dirname(fileName)
   const dirnameVarName = '__vite_injected_original_dirname'
   const filenameVarName = '__vite_injected_original_filename'
   const importMetaUrlVarName = '__vite_injected_original_import_meta_url'
+  const importMetaResolveVarName =
+    '__vite_injected_original_import_meta_resolve'
+
   const result = await build({
     absWorkingDir: process.cwd(),
     entryPoints: [fileName],
@@ -1913,7 +1949,7 @@ async function bundleConfigFile(
     mainFields: ['main'],
     sourcemap: 'inline',
     // the last slash is needed to make the path correct
-    sourceRoot: path.dirname(fileName) + path.sep,
+    sourceRoot: pathToFileURL(path.dirname(fileName)).href + '/',
     metafile: true,
     define: {
       __dirname: dirnameVarName,
@@ -1921,40 +1957,13 @@ async function bundleConfigFile(
       'import.meta.url': importMetaUrlVarName,
       'import.meta.dirname': dirnameVarName,
       'import.meta.filename': filenameVarName,
+      'import.meta.resolve': importMetaResolveVarName,
+      'import.meta.main': 'false',
     },
     plugins: [
       {
         name: 'externalize-deps',
         setup(build) {
-          const packageCache = new Map()
-          const resolveByViteResolver = (
-            id: string,
-            importer: string,
-            isRequire: boolean,
-          ) => {
-            return tryNodeResolve(id, importer, {
-              root: path.dirname(fileName),
-              isBuild: true,
-              isProduction: true,
-              preferRelative: false,
-              tryIndex: true,
-              mainFields: [],
-              conditions: [
-                'node',
-                ...(isModuleSyncConditionEnabled ? ['module-sync'] : []),
-              ],
-              externalConditions: [],
-              external: [],
-              noExternal: [],
-              dedupe: [],
-              extensions: configDefaults.resolve.extensions,
-              preserveSymlinks: false,
-              packageCache,
-              isRequire,
-              builtins: nodeLikeBuiltins,
-            })?.id
-          }
-
           // externalize bare imports
           build.onResolve(
             { filter: /^[^.#].*/ },
@@ -1970,23 +1979,24 @@ async function bundleConfigFile(
               // With the `isNodeBuiltin` check above, this check captures if the builtin is a
               // non-node built-in, which esbuild doesn't know how to handle. In that case, we
               // externalize it so the non-node runtime handles it instead.
-              if (isNodeLikeBuiltin(id)) {
+              if (isNodeLikeBuiltin(id) || id.startsWith('npm:')) {
                 return { external: true }
               }
 
               const isImport = isESM || kind === 'dynamic-import'
               let idFsPath: string | undefined
               try {
-                idFsPath = resolveByViteResolver(id, importer, !isImport)
+                idFsPath = nodeResolveWithVite(id, importer, {
+                  root,
+                  isRequire: !isImport,
+                })
               } catch (e) {
                 if (!isImport) {
                   let canResolveWithImport = false
                   try {
-                    canResolveWithImport = !!resolveByViteResolver(
-                      id,
-                      importer,
-                      false,
-                    )
+                    canResolveWithImport = !!nodeResolveWithVite(id, importer, {
+                      root,
+                    })
                   } catch {}
                   if (canResolveWithImport) {
                     throw new Error(
@@ -2014,7 +2024,7 @@ async function bundleConfigFile(
         setup(build) {
           build.onLoad({ filter: /\.[cm]?[jt]s$/ }, async (args) => {
             const contents = await fsp.readFile(args.path, 'utf-8')
-            const injectValues =
+            let injectValues =
               `const ${dirnameVarName} = ${JSON.stringify(
                 path.dirname(args.path),
               )};` +
@@ -2022,6 +2032,17 @@ async function bundleConfigFile(
               `const ${importMetaUrlVarName} = ${JSON.stringify(
                 pathToFileURL(args.path).href,
               )};`
+            if (contents.includes('import.meta.resolve')) {
+              if (isESM) {
+                if (!importMetaResolverRegistered) {
+                  importMetaResolverRegistered = true
+                  await createImportMetaResolver()
+                }
+                injectValues += `const ${importMetaResolveVarName} = (specifier, importer = ${importMetaUrlVarName}) => (${importMetaResolveWithCustomHookString})(specifier, importer);`
+              } else {
+                injectValues += `const ${importMetaResolveVarName} = (specifier, importer = ${importMetaUrlVarName}) => { throw new Error('import.meta.resolve is not supported in CJS config files') };`
+              }
+            }
 
             return {
               loader: args.path.endsWith('ts') ? 'ts' : 'js',

@@ -109,3 +109,13 @@ test('replace constants on import.meta.env when it is a invalid json', async () 
     ),
   ).toBe('true')
 })
+
+test('optional values are detected by pattern properly', async () => {
+  expect(await page.textContent('.optional-env')).toBe(
+    JSON.parse(defines['process.env.SOMEVAR']),
+  )
+})
+
+test('env import with query parameters works correctly', async () => {
+  expect(await page.textContent('.env-with-query')).toBe('success')
+})

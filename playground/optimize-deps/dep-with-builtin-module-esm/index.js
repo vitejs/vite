@@ -1,7 +1,7 @@
 // no node: protocol intentionally
-// eslint-disable-next-line import-x/no-nodejs-modules
+// eslint-disable-next-line n/prefer-node-protocol
 import { readFileSync } from 'fs'
-// eslint-disable-next-line import-x/no-nodejs-modules
+// eslint-disable-next-line n/prefer-node-protocol
 import path from 'path'
 
 // access from named import

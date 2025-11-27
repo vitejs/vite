@@ -110,7 +110,7 @@ const htmlTypesRE = /\.(html|vue|svelte|astro|imba)$/
 // use Acorn because it's slow. Luckily this doesn't have to be bullet proof
 // since even missed imports can be caught at runtime, and false positives will
 // simply be ignored.
-export const importsRE =
+export const importsRE: RegExp =
   /(?<!\/\/.*)(?<=^|;|\*\/)\s*import(?!\s+type)(?:[\w*{}\n\r\t, ]+from)?\s*("[^"]+"|'[^']+')\s*(?=$|;|\/\/|\/\*)/gm
 
 export function scanImports(environment: ScanEnvironment): {
@@ -237,6 +237,7 @@ async function computeEntries(environment: ScanEnvironment) {
           p,
           path.join(process.cwd(), '*'),
           {
+            isEntry: true,
             scan: true,
           },
         )
@@ -293,8 +294,31 @@ async function prepareEsbuildScanner(
     const { tsconfig } = await loadTsconfigJsonForFile(
       path.join(environment.config.root, '_dummy.js'),
     )
-    if (tsconfig.compilerOptions?.experimentalDecorators) {
-      tsconfigRaw = { compilerOptions: { experimentalDecorators: true } }
+    if (
+      tsconfig.compilerOptions?.experimentalDecorators ||
+      tsconfig.compilerOptions?.jsx ||
+      tsconfig.compilerOptions?.jsxFactory ||
+      tsconfig.compilerOptions?.jsxFragmentFactory ||
+      tsconfig.compilerOptions?.jsxImportSource
+    ) {
+      tsconfigRaw = {
+        compilerOptions: {
+          experimentalDecorators:
+            tsconfig.compilerOptions?.experimentalDecorators,
+          // esbuild uses tsconfig fields when both the normal options and tsconfig was set
+          // but we want to prioritize the normal options
+          jsx: esbuildOptions.jsx ? undefined : tsconfig.compilerOptions?.jsx,
+          jsxFactory: esbuildOptions.jsxFactory
+            ? undefined
+            : tsconfig.compilerOptions?.jsxFactory,
+          jsxFragmentFactory: esbuildOptions.jsxFragment
+            ? undefined
+            : tsconfig.compilerOptions?.jsxFragmentFactory,
+          jsxImportSource: esbuildOptions.jsxImportSource
+            ? undefined
+            : tsconfig.compilerOptions?.jsxImportSource,
+        },
+      }
     }
   }
 
@@ -309,6 +333,7 @@ async function prepareEsbuildScanner(
     format: 'esm',
     logLevel: 'silent',
     plugins: [...plugins, plugin],
+    jsxDev: !environment.config.isProduction,
     ...esbuildOptions,
     tsconfigRaw,
   })
@@ -359,9 +384,9 @@ async function globEntries(
   return results.flat()
 }
 
-export const scriptRE =
+export const scriptRE: RegExp =
   /(<script(?:\s+[a-z_:][-\w:]*(?:\s*=\s*(?:"[^"]*"|'[^']*'|[^"'<>=\s]+))?)*\s*>)(.*?)<\/script>/gis
-export const commentRE = /<!--.*?-->/gs
+export const commentRE: RegExp = /<!--.*?-->/gs
 const srcRE = /\bsrc\s*=\s*(?:"([^"]+)"|'([^']+)'|([^\s'">]+))/i
 const typeRE = /\btype\s*=\s*(?:"([^"]+)"|'([^']+)'|([^\s'">]+))/i
 const langRE = /\blang\s*=\s*(?:"([^"]+)"|'([^']+)'|([^\s'">]+))/i
@@ -477,6 +502,9 @@ function esbuildScanPlugin(
           isOptimizable(resolved, optimizeDepsOptions)
         )
           return
+        if (shouldExternalizeDep(resolved, path)) {
+          return externalUnlessEntry({ path })
+        }
         return {
           path: resolved,
           namespace: 'html',

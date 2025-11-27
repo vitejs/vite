@@ -1,13 +1,5 @@
 import { expect, test } from 'vitest'
-import {
-  editFile,
-  getBg,
-  getColor,
-  isBuild,
-  page,
-  untilUpdated,
-  viteTestUrl,
-} from '~utils'
+import { editFile, getBg, getColor, isBuild, page, viteTestUrl } from '~utils'
 
 export const sassTest = () => {
   test('sass', async () => {
@@ -15,6 +7,9 @@ export const sassTest = () => {
     const atImport = await page.$('.sass-at-import')
     const atImportAlias = await page.$('.sass-at-import-alias')
     const atImportRelative = await page.$('.sass-at-import-relative')
+    const atImportReplacementAlias = await page.$(
+      '.sass-at-import-replacement-alias',
+    )
     const urlStartsWithVariable = await page.$('.sass-url-starts-with-variable')
     const urlStartsWithVariableInterpolation1 = await page.$(
       '.sass-url-starts-with-interpolation1',
@@ -43,6 +38,7 @@ export const sassTest = () => {
     expect(await getBg(atImportRelative)).toMatch(
       isBuild ? /base64/ : '/nested/icon.png',
     )
+    expect(await getColor(atImportReplacementAlias)).toBe('olive')
     expect(await getBg(urlStartsWithVariable)).toMatch(
       isBuild ? /ok-[-\w]+\.png/ : `${viteTestUrl}/ok.png`,
     )
@@ -68,17 +64,17 @@ export const sassTest = () => {
     editFile('sass.scss', (code) =>
       code.replace('color: $injectedColor', 'color: red'),
     )
-    await untilUpdated(() => getColor(imported), 'red')
+    await expect.poll(() => getColor(imported)).toBe('red')
 
     editFile('nested/_index.scss', (code) =>
       code.replace('color: olive', 'color: blue'),
     )
-    await untilUpdated(() => getColor(atImport), 'blue')
+    await expect.poll(() => getColor(atImport)).toBe('blue')
 
     editFile('nested/_partial.scss', (code) =>
       code.replace('color: orchid', 'color: green'),
     )
-    await untilUpdated(() => getColor(partialImport), 'green')
+    await expect.poll(() => getColor(partialImport)).toBe('green')
   })
 }
 
@@ -101,7 +97,7 @@ export const sassModuleTests = (enableHmrTests = false) => {
     // editFile('composed.module.scss', (code) =>
     //   code.replace('color: orangered', 'color: red')
     // )
-    // await untilUpdated(() => getColor(imported), 'red')
+    // await expect.poll(() => getColor(imported)).toMatch('red')
   })
 
   test('css modules w/ sass', async () => {
@@ -116,7 +112,7 @@ export const sassModuleTests = (enableHmrTests = false) => {
     editFile('mod.module.scss', (code) =>
       code.replace('color: orangered', 'color: blue'),
     )
-    await untilUpdated(() => getColor(imported), 'blue')
+    await expect.poll(() => getColor(imported)).toBe('blue')
   })
 }
 
@@ -127,6 +123,10 @@ export const sassOtherTests = () => {
 
   test('@import dependency w/ sass export mapping', async () => {
     expect(await getColor('.css-dep-exports-sass')).toBe('orange')
+  })
+
+  test('@import dependency w/ sass export mapping (deep)', async () => {
+    expect(await getColor('.css-dep-exports-deep-sass')).toBe('orange')
   })
 
   test('@import dependency w/out package scss', async () => {

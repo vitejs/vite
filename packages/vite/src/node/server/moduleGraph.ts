@@ -22,14 +22,14 @@ export class EnvironmentModuleNode {
    */
   id: string | null = null
   file: string | null = null
-  type: 'js' | 'css'
+  type: 'js' | 'css' | 'asset'
   info?: ModuleInfo
   meta?: Record<string, any>
-  importers = new Set<EnvironmentModuleNode>()
+  importers: Set<EnvironmentModuleNode> = new Set()
 
-  importedModules = new Set<EnvironmentModuleNode>()
+  importedModules: Set<EnvironmentModuleNode> = new Set()
 
-  acceptedHmrDeps = new Set<EnvironmentModuleNode>()
+  acceptedHmrDeps: Set<EnvironmentModuleNode> = new Set()
   acceptedHmrExports: Set<string> | null = null
   importedBindings: Map<string, Set<string>> | null = null
   isSelfAccepting?: boolean
@@ -90,19 +90,19 @@ export type ResolvedUrl = [
 export class EnvironmentModuleGraph {
   environment: string
 
-  urlToModuleMap = new Map<string, EnvironmentModuleNode>()
-  idToModuleMap = new Map<string, EnvironmentModuleNode>()
-  etagToModuleMap = new Map<string, EnvironmentModuleNode>()
+  urlToModuleMap: Map<string, EnvironmentModuleNode> = new Map()
+  idToModuleMap: Map<string, EnvironmentModuleNode> = new Map()
+  etagToModuleMap: Map<string, EnvironmentModuleNode> = new Map()
   // a single file may corresponds to multiple modules with different queries
-  fileToModulesMap = new Map<string, Set<EnvironmentModuleNode>>()
+  fileToModulesMap: Map<string, Set<EnvironmentModuleNode>> = new Map()
 
   /**
    * @internal
    */
-  _unresolvedUrlToModuleMap = new Map<
+  _unresolvedUrlToModuleMap: Map<
     string,
-    Promise<EnvironmentModuleNode> | EnvironmentModuleNode
-  >()
+    EnvironmentModuleNode | Promise<EnvironmentModuleNode>
+  > = new Map()
 
   /**
    * @internal
@@ -110,7 +110,7 @@ export class EnvironmentModuleGraph {
   _resolveId: (url: string) => Promise<PartialResolvedId | null>
 
   /** @internal */
-  _hasResolveFailedErrorModules = new Set<EnvironmentModuleNode>()
+  _hasResolveFailedErrorModules: Set<EnvironmentModuleNode> = new Set()
 
   constructor(
     environment: string,
@@ -165,7 +165,7 @@ export class EnvironmentModuleGraph {
 
   invalidateModule(
     mod: EnvironmentModuleNode,
-    seen = new Set<EnvironmentModuleNode>(),
+    seen: Set<EnvironmentModuleNode> = new Set(),
     timestamp: number = monotonicDateNow(),
     isHmr: boolean = false,
     /** @internal */
@@ -219,7 +219,7 @@ export class EnvironmentModuleGraph {
         // But we exclude direct CSS files as those cannot be soft invalidated.
         const shouldSoftInvalidateImporter =
           (importer.staticImportedUrls?.has(mod.url) || softInvalidate) &&
-          importer.type !== 'css'
+          importer.type === 'js'
         this.invalidateModule(
           importer,
           seen,
@@ -402,12 +402,13 @@ export class EnvironmentModuleGraph {
 
     const url = `${FS_PREFIX}${file}`
     for (const m of fileMappedModules) {
-      if (m.url === url || m.id === file) {
+      if ((m.url === url || m.id === file) && m.type === 'asset') {
         return m
       }
     }
 
     const mod = new EnvironmentModuleNode(url, this.environment)
+    mod.type = 'asset'
     mod.file = file
     fileMappedModules.add(mod)
     return mod

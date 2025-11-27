@@ -1,16 +1,25 @@
 import { expect, test } from 'vitest'
-import {
-  editFile,
-  getColor,
-  isServe,
-  page,
-  untilBrowserLogAfter,
-  untilUpdated,
-} from '~utils'
+import { editFile, getColor, isServe, page, untilBrowserLogAfter } from '~utils'
 
 test('should render', async () => {
   expect(await page.textContent('#pagetitle')).toBe('Page title')
 })
+
+test.runIf(isServe)(
+  'full reload happens when the HTML is changed',
+  async () => {
+    await expect
+      .poll(() => getColor('.html'))
+      .toBe('oklch(0.623 0.214 259.815)')
+
+    editFile('index.html', (code) =>
+      code.replace('"html text-blue-500"', '"html text-green-500"'),
+    )
+    await expect
+      .poll(() => getColor('.html'))
+      .toBe('oklch(0.723 0.219 149.579)')
+  },
+)
 
 test.runIf(isServe)('regenerate CSS and HMR (glob pattern)', async () => {
   const el = page.locator('#view1-text')
@@ -27,7 +36,7 @@ test.runIf(isServe)('regenerate CSS and HMR (glob pattern)', async () => {
     ],
     false,
   )
-  await untilUpdated(() => el.textContent(), '|view1 updated|')
+  await expect.poll(() => el.textContent()).toMatch('|view1 updated|')
 
   await untilBrowserLogAfter(
     () =>
@@ -40,7 +49,7 @@ test.runIf(isServe)('regenerate CSS and HMR (glob pattern)', async () => {
     ],
     false,
   )
-  await untilUpdated(async () => getColor(el), 'oklch(0.646 0.222 41.116)')
+  await expect.poll(() => getColor(el)).toBe('oklch(0.646 0.222 41.116)')
 })
 
 test.runIf(isServe)(
@@ -61,7 +70,7 @@ test.runIf(isServe)(
       ],
       false,
     )
-    await untilUpdated(() => getColor(el), 'oklch(0.546 0.245 262.881)')
+    await expect.poll(() => getColor(el)).toBe('oklch(0.546 0.245 262.881)')
   },
 )
 
@@ -77,5 +86,5 @@ test.runIf(isServe)('regenerate CSS and HMR (relative path)', async () => {
     ['[vite] css hot updated: /index.css', '[vite] hot updated: /src/main.js'],
     false,
   )
-  await untilUpdated(() => getColor(el), 'oklch(0.609 0.126 221.723)')
+  await expect.poll(() => getColor(el)).toBe('oklch(0.609 0.126 221.723)')
 })

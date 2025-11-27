@@ -373,3 +373,16 @@
     optimized.externalDummyNodeBuiltinResult,
   )
 </script>
+
+<h2>Virtual module with .vue extension</h2>
+<div>
+  This should not error during dep scan:
+  <span class="virtual-module-vue"></span>
+</div>
+<script type="module">
+  import VirtualComponent from 'virtual:test-virtual-file/Foo.vue'
+  text(
+    '.virtual-module-vue',
+    `${VirtualComponent.name === 'VirtualComponent' ? 'ok' : 'ng'}`,
+  )
+</script>

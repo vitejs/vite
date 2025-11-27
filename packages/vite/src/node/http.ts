@@ -2,8 +2,8 @@ import fsp from 'node:fs/promises'
 import path from 'node:path'
 import type { OutgoingHttpHeaders as HttpServerHeaders } from 'node:http'
 import type { ServerOptions as HttpsServerOptions } from 'node:https'
-import type { Connect } from 'dep-types/connect'
 import colors from 'picocolors'
+import type { Connect } from '#dep-types/connect'
 import type { ProxyOptions } from './server/middlewares/proxy'
 import type { Logger } from './logger'
 import type { HttpServer } from './server'
@@ -48,8 +48,8 @@ export interface CommonServerOptions {
   /**
    * Configure custom proxy rules for the dev server. Expects an object
    * of `{ key: options }` pairs.
-   * Uses [`http-proxy`](https://github.com/http-party/node-http-proxy).
-   * Full options [here](https://github.com/http-party/node-http-proxy#options).
+   * Uses [`http-proxy-3`](https://github.com/sagemathinc/http-proxy-3).
+   * Full options [here](https://github.com/sagemathinc/http-proxy-3#options).
    *
    * Example `vite.config.js`:
    * ``` js
@@ -115,7 +115,6 @@ export interface CorsOptions {
 export type CorsOrigin = boolean | string | RegExp | (string | RegExp)[]
 
 export async function resolveHttpServer(
-  { proxy }: CommonServerOptions,
   app: Connect.Server,
   httpsOptions?: HttpsServerOptions,
 ): Promise<HttpServer> {
@@ -124,24 +123,22 @@ export async function resolveHttpServer(
     return createServer(app)
   }
 
-  // #484 fallback to http1 when proxy is needed.
-  if (proxy) {
-    const { createServer } = await import('node:https')
-    return createServer(httpsOptions, app)
-  } else {
-    const { createSecureServer } = await import('node:http2')
-    return createSecureServer(
-      {
-        // Manually increase the session memory to prevent 502 ENHANCE_YOUR_CALM
-        // errors on large numbers of requests
-        maxSessionMemory: 1000,
-        ...httpsOptions,
-        allowHTTP1: true,
-      },
-      // @ts-expect-error TODO: is this correct?
-      app,
-    )
-  }
+  const { createSecureServer } = await import('node:http2')
+  return createSecureServer(
+    {
+      // Manually increase the session memory to prevent 502 ENHANCE_YOUR_CALM
+      // errors on large numbers of requests
+      maxSessionMemory: 1000,
+      // Increase the stream reset rate limit to prevent net::ERR_HTTP2_PROTOCOL_ERROR
+      // errors on large numbers of requests
+      streamResetBurst: 100000,
+      streamResetRate: 33,
+      ...httpsOptions,
+      allowHTTP1: true,
+    },
+    // @ts-expect-error TODO: is this correct?
+    app,
+  )
 }
 
 export async function resolveHttpsConfig(

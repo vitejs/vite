@@ -1,2 +1,2 @@
-const Object = "my-object";
-export { Object };
+const Object = 'my-object'
+export { Object }

@@ -7,10 +7,6 @@ import { chromium } from 'playwright-chromium'
 let browserServer: BrowserServer | undefined
 
 export async function setup({ provide }: TestProject): Promise<void> {
-  process.env.NODE_ENV = process.env.VITE_TEST_BUILD
-    ? 'production'
-    : 'development'
-
   browserServer = await chromium.launchServer({
     headless: !process.env.VITE_DEBUG_SERVE,
     args: process.env.CI
@@ -43,6 +39,7 @@ export async function setup({ provide }: TestProject): Promise<void> {
     })
   // also setup dedicated copy for "variant" tests
   for (const [original, variants] of [
+    ['assets', ['encoded-base', 'relative-base', 'runtime-base', 'url-base']],
     ['css', ['lightningcss']],
     ['transform-plugin', ['base']],
   ] as const) {

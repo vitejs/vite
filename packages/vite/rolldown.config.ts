@@ -51,13 +51,12 @@ const sharedNodeOptions = defineConfig({
         sideEffects: false,
       },
     ],
-    // TODO: not supported yet
-    // propertyReadSideEffects: false,
+    propertyReadSideEffects: false,
   },
   output: {
     dir: './dist',
     entryFileNames: `node/[name].js`,
-    chunkFileNames: 'node/chunks/dep-[hash].js',
+    chunkFileNames: 'node/chunks/[name].js',
     exports: 'named',
     format: 'esm',
     externalLiveBindings: false,
@@ -75,24 +74,6 @@ const nodeConfig = defineConfig({
   input: {
     index: path.resolve(__dirname, 'src/node/index.ts'),
     cli: path.resolve(__dirname, 'src/node/cli.ts'),
-    constants: path.resolve(__dirname, 'src/node/constants.ts'),
-  },
-  resolve: {
-    alias: {
-      // we can always use node version (the default entry point has browser support)
-      debug: 'debug/src/node.js',
-    },
-  },
-  output: {
-    ...sharedNodeOptions.output,
-    // When polyfillRequire is enabled, `require` gets renamed by rolldown.
-    // But the current usage of require() inside inlined workers expects `require`
-    // to not be renamed. To workaround, polyfillRequire is disabled and
-    // the banner is used instead.
-    // Ideally we should move workers to ESM
-    polyfillRequire: false,
-    banner:
-      "import { createRequire as ___createRequire } from 'module'; const require = ___createRequire(import.meta.url);",
   },
   external: [
     /^vite\//,
@@ -145,7 +126,7 @@ const nodeConfig = defineConfig({
       path.resolve(__dirname, 'LICENSE.md'),
       'Vite core license',
       'Vite',
-    ) as Plugin,
+    ),
     writeTypesPlugin(),
     enableSourceMapsInWatchModePlugin(),
     externalizeDepsInWatchPlugin(),
@@ -169,7 +150,7 @@ const moduleRunnerConfig = defineConfig({
     minify: {
       compress: true,
       mangle: false,
-      removeWhitespace: false,
+      codegen: false,
     },
   },
 })
@@ -241,12 +222,7 @@ function shimDepsPlugin(deps: Record<string, ShimOptions[]>): Plugin {
     name: 'shim-deps',
     transform: {
       filter: {
-        id: new RegExp(
-          `(?:${Object.keys(deps)
-            // escape is needed for Windows (https://github.com/rolldown/rolldown/issues/4609)
-            .map((k) => k.replace(/\//g, '[\\\\/]'))
-            .join('|')})$`,
-        ),
+        id: new RegExp(`(?:${Object.keys(deps).join('|')})$`),
       },
       handler(code, id) {
         const file = Object.keys(deps).find((file) =>
@@ -344,7 +320,7 @@ function buildTimeImportMetaUrlPlugin(): Plugin {
         for (const { t, ss, se } of imports) {
           if (t === 3 && code.slice(se, se + 4) === '.url') {
             // ignore import.meta.url with /** #__KEEP__ */ comment
-            if (keepCommentRE.test(code.slice(0, se))) {
+            if (keepCommentRE.test(code.slice(0, ss))) {
               keepCommentRE.lastIndex = 0
               continue
             }
