@@ -78,6 +78,9 @@ export function clientInjectionsPlugin(config: ResolvedConfig): Plugin {
       const hmrEnableOverlayReplacement = escapeReplacement(overlay)
       const hmrConfigNameReplacement = escapeReplacement(hmrConfigName)
       const wsTokenReplacement = escapeReplacement(config.webSocketToken)
+      const serverForwardRuntimeLogsReplacement = escapeReplacement(
+        config.server.forwardRuntimeLogs,
+      )
 
       injectConfigValues = (code: string) => {
         return code
@@ -93,6 +96,10 @@ export function clientInjectionsPlugin(config: ResolvedConfig): Plugin {
           .replace(`__HMR_ENABLE_OVERLAY__`, hmrEnableOverlayReplacement)
           .replace(`__HMR_CONFIG_NAME__`, hmrConfigNameReplacement)
           .replace(`__WS_TOKEN__`, wsTokenReplacement)
+          .replace(
+            `__SERVER_FORWARD_RUNTIME_LOGS__`,
+            serverForwardRuntimeLogsReplacement,
+          )
       }
     },
     async transform(code, id) {
