@@ -854,6 +854,17 @@ describe('loadConfigFromFile', () => {
     expect(c.resolved).toBe(c.url)
   })
 
+  test('shebang is preserved at the top of the file', async () => {
+    const { config } = (await loadConfigFromFile(
+      {} as any,
+      path.resolve(fixtures, './shebang/vite.config.ts'),
+      path.resolve(fixtures, './shebang'),
+    ))!
+
+    const c = config as any
+    expect(c.dirname).toContain('shebang')
+  })
+
   describe('loadConfigFromFile with configLoader: native', () => {
     const fixtureRoot = path.resolve(fixtures, './native-import')
 
