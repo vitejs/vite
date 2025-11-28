@@ -616,6 +616,15 @@ export function runOptimizeDeps(
 
   const start = performance.now()
 
+  // Show progress for non-debug mode
+  const depCount = qualifiedIds.length
+  environment.logger.info(
+    colors.green(
+      `Pre-bundling ${depCount} ${depCount === 1 ? 'dependency' : 'dependencies'}...`,
+    ),
+    { timestamp: true },
+  )
+
   const preparedRun = prepareEsbuildOptimizerRun(
     environment,
     depsInfo,
@@ -717,8 +726,12 @@ export function runOptimizeDeps(
           }
         }
 
-        debug?.(
-          `Dependencies bundled in ${(performance.now() - start).toFixed(2)}ms`,
+        const durationMs = (performance.now() - start).toFixed(2)
+        const durationS = (parseInt(durationMs) / 1000).toFixed(2)
+        debug?.(`Dependencies bundled in ${durationMs}ms`)
+        environment.logger.info(
+          colors.green(`✨ Dependencies optimized in ${durationS}s`),
+          { timestamp: true },
         )
 
         return successfulResult
