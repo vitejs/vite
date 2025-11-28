@@ -622,7 +622,9 @@ export function runOptimizeDeps(
     colors.green(
       `Pre-bundling ${depCount} ${depCount === 1 ? 'dependency' : 'dependencies'}...`,
     ),
-    { timestamp: true },
+    {
+      timestamp: true,
+    },
   )
 
   const preparedRun = prepareEsbuildOptimizerRun(
@@ -731,7 +733,9 @@ export function runOptimizeDeps(
         debug?.(`Dependencies bundled in ${durationMs}ms`)
         environment.logger.info(
           colors.green(`✨ Dependencies optimized in ${durationS}s`),
-          { timestamp: true },
+          {
+            timestamp: true,
+          },
         )
 
         return successfulResult
