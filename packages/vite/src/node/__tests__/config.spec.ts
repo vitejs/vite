@@ -166,21 +166,24 @@ describe('mergeConfig', () => {
   })
 
   test('handles ssr.noExternal', () => {
-    const baseConfig = {
+    const baseConfig: UserConfig = {
       ssr: {
         noExternal: true,
+        external: true,
       },
     }
 
-    const newConfig = {
+    const newConfig: UserConfig = {
       ssr: {
         noExternal: ['foo'],
+        external: ['bar'],
       },
     }
 
-    const mergedConfig = {
+    const mergedConfig: UserConfig = {
       ssr: {
         noExternal: true,
+        external: true,
       },
     }
 
