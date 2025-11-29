@@ -728,8 +728,9 @@ export function runOptimizeDeps(
           }
         }
 
-        const durationMs = (performance.now() - start).toFixed(2)
-        const durationS = (parseInt(durationMs) / 1000).toFixed(2)
+        const duration = performance.now() - start
+        const durationMs = duration.toFixed(2)
+        const durationS = (duration / 1000).toFixed(2)
         debug?.(`Dependencies bundled in ${durationMs}ms`)
         environment.logger.info(
           colors.green(`✨ Dependencies optimized in ${durationS}s`),
