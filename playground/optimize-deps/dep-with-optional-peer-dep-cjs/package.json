@@ -4,7 +4,7 @@
   "version": "0.0.0",
   "main": "index.js",
   "peerDependencies": {
-    "foobar": "0.0.0"
+    "foobar": "1.1.0"
   },
   "peerDependenciesMeta": {
     "foobar": {

@@ -434,11 +434,22 @@ export async function handleHMRUpdate(
 
   for (const environment of Object.values(server.environments)) {
     const mods = new Set(environment.moduleGraph.getModulesByFile(file))
+
     if (type === 'create') {
       for (const mod of environment.moduleGraph._hasResolveFailedErrorModules) {
         mods.add(mod)
       }
     }
+
+    if (type === 'delete') {
+      mods.forEach((mod) => {
+        const importers = mod.importers
+        importers.forEach((importer) => {
+          environment.moduleGraph.invalidateModule(importer)
+        })
+      })
+    }
+
     const options = {
       ...contextMeta,
       modules: [...mods],
