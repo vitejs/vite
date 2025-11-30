@@ -33,7 +33,7 @@ test.runIf(isBuild)('correctly resolve entrypoints', async () => {
 })
 
 test.runIf(isBuild)(
-  'node builtins should not be bundled if not used',
+  'node built-ins should not be bundled if not used',
   async () => {
     const contents = readFile('dist/main.mjs')
     expect(contents).not.include(`node:url`)
