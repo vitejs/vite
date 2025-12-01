@@ -198,21 +198,20 @@ export interface ServerOptions extends CommonServerOptions {
   ) => Promise<void>
 }
 
-export interface ResolvedServerOptions
-  extends Omit<
-    RequiredExceptFor<
-      ServerOptions,
-      | 'host'
-      | 'https'
-      | 'proxy'
-      | 'hmr'
-      | 'ws'
-      | 'watch'
-      | 'origin'
-      | 'hotUpdateEnvironments'
-    >,
-    'fs' | 'middlewareMode' | 'sourcemapIgnoreList'
-  > {
+export interface ResolvedServerOptions extends Omit<
+  RequiredExceptFor<
+    ServerOptions,
+    | 'host'
+    | 'https'
+    | 'proxy'
+    | 'hmr'
+    | 'ws'
+    | 'watch'
+    | 'origin'
+    | 'hotUpdateEnvironments'
+  >,
+  'fs' | 'middlewareMode' | 'sourcemapIgnoreList'
+> {
   fs: Required<FileSystemServeOptions>
   middlewareMode: NonNullable<ServerOptions['middlewareMode']>
   sourcemapIgnoreList: Exclude<

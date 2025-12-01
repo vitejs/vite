@@ -156,14 +156,12 @@ interface ResolvePluginOptions {
 }
 
 export interface InternalResolveOptions
-  extends Required<ResolveOptions>,
-    ResolvePluginOptions {}
+  extends Required<ResolveOptions>, ResolvePluginOptions {}
 
 // Defined ResolveOptions are used to overwrite the values for all environments
 // It is used when creating custom resolvers (for CSS, scanning, etc)
 export interface ResolvePluginOptionsWithOverrides
-  extends ResolveOptions,
-    ResolvePluginOptions {}
+  extends ResolveOptions, ResolvePluginOptions {}
 
 export function resolvePlugin(
   resolveOptions: ResolvePluginOptionsWithOverrides,
