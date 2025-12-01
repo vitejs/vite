@@ -1280,8 +1280,12 @@ async function restartServer(server: ViteDevServer) {
 
   if (shortcutsOptions) {
     shortcutsOptions.print = false
-    // Skip environment checks since shortcuts were bound before restart
-    bindCLIShortcuts(server, shortcutsOptions, true)
+    bindCLIShortcuts(
+      server,
+      shortcutsOptions,
+      // Skip environment checks since shortcuts were bound before restart
+      true,
+    )
   }
 }
 
