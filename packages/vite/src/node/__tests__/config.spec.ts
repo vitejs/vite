@@ -166,21 +166,24 @@ describe('mergeConfig', () => {
   })
 
   test('handles ssr.noExternal', () => {
-    const baseConfig = {
+    const baseConfig: UserConfig = {
       ssr: {
         noExternal: true,
+        external: true,
       },
     }
 
-    const newConfig = {
+    const newConfig: UserConfig = {
       ssr: {
         noExternal: ['foo'],
+        external: ['bar'],
       },
     }
 
-    const mergedConfig = {
+    const mergedConfig: UserConfig = {
       ssr: {
         noExternal: true,
+        external: true,
       },
     }
 
@@ -1170,6 +1173,17 @@ describe('loadConfigFromFile', () => {
     expect(c.dirname).toContain('import-meta')
     expect(c.filename).toContain('vite.config.ts')
     expect(c.resolved).toBe(c.url)
+  })
+
+  test('shebang is preserved at the top of the file', async () => {
+    const { config } = (await loadConfigFromFile(
+      {} as any,
+      path.resolve(fixtures, './shebang/vite.config.ts'),
+      path.resolve(fixtures, './shebang'),
+    ))!
+
+    const c = config as any
+    expect(c.dirname).toContain('shebang')
   })
 
   describe('loadConfigFromFile with configLoader: native', () => {

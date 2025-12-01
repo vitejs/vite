@@ -234,9 +234,8 @@ function viteLegacyPlugin(options: Options = {}): Plugin[] {
 
         if (options.modernTargets) {
           // Package is ESM only
-          const { default: browserslistToEsbuild } = await import(
-            'browserslist-to-esbuild'
-          )
+          const { default: browserslistToEsbuild } =
+            await import('browserslist-to-esbuild')
           config.build.target = browserslistToEsbuild(options.modernTargets)
         } else {
           config.build.target = modernTargetsEsbuild

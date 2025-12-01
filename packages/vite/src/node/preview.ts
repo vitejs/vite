@@ -50,8 +50,10 @@ import type { MinimalPluginContextWithoutEnvironment } from './plugin'
 
 export interface PreviewOptions extends CommonServerOptions {}
 
-export interface ResolvedPreviewOptions
-  extends RequiredExceptFor<PreviewOptions, 'host' | 'https' | 'proxy'> {}
+export interface ResolvedPreviewOptions extends RequiredExceptFor<
+  PreviewOptions,
+  'host' | 'https' | 'proxy'
+> {}
 
 export function resolvePreviewOptions(
   preview: PreviewOptions | undefined,

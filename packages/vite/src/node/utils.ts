@@ -1346,7 +1346,7 @@ function mergeConfigRecursively(
       merged[key] = [].concat(existing, value)
       continue
     } else if (
-      ((key === 'noExternal' &&
+      (((key === 'noExternal' || key === 'external') &&
         (rootPath === 'ssr' || rootPath === 'resolve')) ||
         (key === 'allowedHosts' && rootPath === 'server')) &&
       (existing === true || value === true)

@@ -11,9 +11,8 @@ export default defineConfig({
     dedupe: ['react'],
     alias: {
       'node:url': 'url',
-      '@vitejs/test-dep-alias-using-absolute-path': require.resolve(
-        '@vitejs/test-dep-alias-using-absolute-path',
-      ),
+      '@vitejs/test-dep-alias-using-absolute-path':
+        require.resolve('@vitejs/test-dep-alias-using-absolute-path'),
     },
   },
   optimizeDeps: {
