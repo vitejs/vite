@@ -9,7 +9,7 @@
     "docs-serve": "vitepress serve"
   },
   "devDependencies": {
-    "@shikijs/vitepress-twoslash": "^3.15.0",
+    "@shikijs/vitepress-twoslash": "^3.17.0",
     "@types/express": "^5.0.5",
     "feed": "^5.1.0",
     "gsap": "^3.13.0",
