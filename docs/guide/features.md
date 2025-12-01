@@ -53,6 +53,10 @@ export type { T }
 
 ### TypeScript Compiler Options
 
+Vite respects some of the options in `tsconfig.json` and sets the corresponding esbuild options. The `tsconfig.json` in the closest parent directory for each file is used. If a [`references`](https://www.typescriptlang.org/tsconfig/#references) field is present in the `tsconfig.json`, those config files are also used. If the config file has [`include`](https://www.typescriptlang.org/tsconfig/#include) or [`exclude`](https://www.typescriptlang.org/tsconfig/#exclude) fields, they are respected.
+
+When the options are set in both the normal config and the `tsconfig.json`, the value in the config file takes precedence.
+
 Some configuration fields under `compilerOptions` in `tsconfig.json` require special attention.
 
 #### `isolatedModules`
