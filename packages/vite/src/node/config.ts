@@ -550,100 +550,99 @@ export interface InlineConfig extends UserConfig {
   forceOptimizeDeps?: boolean
 }
 
-export interface ResolvedConfig
-  extends Readonly<
-    Omit<
-      UserConfig,
-      | 'plugins'
-      | 'css'
-      | 'json'
-      | 'assetsInclude'
-      | 'optimizeDeps'
-      | 'worker'
-      | 'build'
-      | 'dev'
-      | 'environments'
-      | 'experimental'
-      | 'future'
-      | 'server'
-      | 'preview'
-    > & {
-      configFile: string | undefined
-      configFileDependencies: string[]
-      inlineConfig: InlineConfig
-      root: string
-      base: string
-      /** @internal */
-      decodedBase: string
-      /** @internal */
-      rawBase: string
-      publicDir: string
-      cacheDir: string
-      command: 'build' | 'serve'
-      mode: string
-      isWorker: boolean
-      // in nested worker bundle to find the main config
-      /** @internal */
-      mainConfig: ResolvedConfig | null
-      /** @internal list of bundle entry id. used to detect recursive worker bundle. */
-      bundleChain: string[]
-      isProduction: boolean
-      envDir: string | false
-      env: Record<string, any>
-      resolve: Required<ResolveOptions> & {
-        alias: Alias[]
-      }
-      plugins: readonly Plugin[]
-      css: ResolvedCSSOptions
-      json: Required<JsonOptions>
-      esbuild: ESBuildOptions | false
-      server: ResolvedServerOptions
-      dev: ResolvedDevEnvironmentOptions
-      /** @experimental */
-      builder: ResolvedBuilderOptions | undefined
-      build: ResolvedBuildOptions
-      preview: ResolvedPreviewOptions
-      ssr: ResolvedSSROptions
-      assetsInclude: (file: string) => boolean
-      logger: Logger
-      /**
-       * Create an internal resolver to be used in special scenarios, e.g.
-       * optimizer & handling css `@imports`.
-       *
-       * This API is deprecated. It only works for the client and ssr
-       * environments. The `aliasOnly` option is also not being used anymore.
-       * Plugins should move to `createIdResolver(environment.config)` instead.
-       *
-       * @deprecated Use `createIdResolver` from `vite` instead.
-       */
-      createResolver: (options?: Partial<InternalResolveOptions>) => ResolveFn
-      optimizeDeps: DepOptimizationOptions
-      /** @internal */
-      packageCache: PackageCache
-      worker: ResolvedWorkerOptions
-      appType: AppType
-      experimental: RequiredExceptFor<ExperimentalOptions, 'renderBuiltUrl'>
-      future: FutureOptions | undefined
-      environments: Record<string, ResolvedEnvironmentOptions>
-      /**
-       * The token to connect to the WebSocket server from browsers.
-       *
-       * We recommend using `import.meta.hot` rather than connecting
-       * to the WebSocket server directly.
-       * If you have a usecase that requires connecting to the WebSocket
-       * server, please create an issue so that we can discuss.
-       *
-       * @deprecated
-       */
-      webSocketToken: string
-      /** @internal */
-      fsDenyGlob: AnymatchFn
-      /** @internal */
-      safeModulePaths: Set<string>
-      /** @internal */
-      [SYMBOL_RESOLVED_CONFIG]: true
-    } & PluginHookUtils
-  > {}
+export interface ResolvedConfig extends Readonly<
+  Omit<
+    UserConfig,
+    | 'plugins'
+    | 'css'
+    | 'json'
+    | 'assetsInclude'
+    | 'optimizeDeps'
+    | 'worker'
+    | 'build'
+    | 'dev'
+    | 'environments'
+    | 'experimental'
+    | 'future'
+    | 'server'
+    | 'preview'
+  > & {
+    configFile: string | undefined
+    configFileDependencies: string[]
+    inlineConfig: InlineConfig
+    root: string
+    base: string
+    /** @internal */
+    decodedBase: string
+    /** @internal */
+    rawBase: string
+    publicDir: string
+    cacheDir: string
+    command: 'build' | 'serve'
+    mode: string
+    isWorker: boolean
+    // in nested worker bundle to find the main config
+    /** @internal */
+    mainConfig: ResolvedConfig | null
+    /** @internal list of bundle entry id. used to detect recursive worker bundle. */
+    bundleChain: string[]
+    isProduction: boolean
+    envDir: string | false
+    env: Record<string, any>
+    resolve: Required<ResolveOptions> & {
+      alias: Alias[]
+    }
+    plugins: readonly Plugin[]
+    css: ResolvedCSSOptions
+    json: Required<JsonOptions>
+    esbuild: ESBuildOptions | false
+    server: ResolvedServerOptions
+    dev: ResolvedDevEnvironmentOptions
+    /** @experimental */
+    builder: ResolvedBuilderOptions | undefined
+    build: ResolvedBuildOptions
+    preview: ResolvedPreviewOptions
+    ssr: ResolvedSSROptions
+    assetsInclude: (file: string) => boolean
+    logger: Logger
+    /**
+     * Create an internal resolver to be used in special scenarios, e.g.
+     * optimizer & handling css `@imports`.
+     *
+     * This API is deprecated. It only works for the client and ssr
+     * environments. The `aliasOnly` option is also not being used anymore.
+     * Plugins should move to `createIdResolver(environment.config)` instead.
+     *
+     * @deprecated Use `createIdResolver` from `vite` instead.
+     */
+    createResolver: (options?: Partial<InternalResolveOptions>) => ResolveFn
+    optimizeDeps: DepOptimizationOptions
+    /** @internal */
+    packageCache: PackageCache
+    worker: ResolvedWorkerOptions
+    appType: AppType
+    experimental: RequiredExceptFor<ExperimentalOptions, 'renderBuiltUrl'>
+    future: FutureOptions | undefined
+    environments: Record<string, ResolvedEnvironmentOptions>
+    /**
+     * The token to connect to the WebSocket server from browsers.
+     *
+     * We recommend using `import.meta.hot` rather than connecting
+     * to the WebSocket server directly.
+     * If you have a usecase that requires connecting to the WebSocket
+     * server, please create an issue so that we can discuss.
+     *
+     * @deprecated
+     */
+    webSocketToken: string
+    /** @internal */
+    fsDenyGlob: AnymatchFn
+    /** @internal */
+    safeModulePaths: Set<string>
+    /** @internal */
+    [SYMBOL_RESOLVED_CONFIG]: true
+  } & PluginHookUtils
+> {}
 
 // inferred ones are omitted
 const configDefaults = Object.freeze({
