@@ -568,6 +568,9 @@ class EnvironmentPluginContainer<Env extends Environment = Environment> {
       const start = debugPluginTransform ? performance.now() : 0
       let result: TransformResult | string | undefined
       const handler = getHookHandler(plugin.transform)
+      if (!handler) {
+        continue
+      }
       try {
         result = await this.handleHookPromise(
           handler.call(ctx as any, code, id, optionsWithSSR),
