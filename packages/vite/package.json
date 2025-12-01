@@ -105,7 +105,7 @@
     "@types/escape-html": "^1.0.4",
     "@types/pnpapi": "^0.0.5",
     "artichokie": "^0.4.2",
-    "baseline-browser-mapping": "^2.8.31",
+    "baseline-browser-mapping": "^2.8.32",
     "cac": "^6.7.14",
     "chokidar": "^3.6.0",
     "connect": "^3.7.0",
