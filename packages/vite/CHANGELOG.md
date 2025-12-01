@@ -1,3 +1,15 @@
+## <small>[7.2.9](https://github.com/vitejs/rolldown-vite/compare/v7.2.8...v7.2.9) (2025-12-01)</small>
+### Bug Fixes
+
+* **config:** handle shebang properly ([#21158](https://github.com/vitejs/rolldown-vite/issues/21158)) ([df5a30d](https://github.com/vitejs/rolldown-vite/commit/df5a30d2690a2ebc4824a79becdcef30538dc602))
+* **deps:** update all non-major dependencies ([#21175](https://github.com/vitejs/rolldown-vite/issues/21175)) ([72e398a](https://github.com/vitejs/rolldown-vite/commit/72e398a46d8d2f54fbcbeb9ff0dceab346aeb642))
+* fix `external: true` merging ([#21164](https://github.com/vitejs/rolldown-vite/issues/21164)) ([5ef557a](https://github.com/vitejs/rolldown-vite/commit/5ef557a96c4a1f2b3a3aa25c12df3ee87b4a03f5))
+* shortcuts not rebound after server restart ([#21166](https://github.com/vitejs/rolldown-vite/issues/21166)) ([3765f7b](https://github.com/vitejs/rolldown-vite/commit/3765f7baea36234bf3816eeed38776d27bfd3649))
+
+### Miscellaneous Chores
+
+* **deps:** update rolldown-related dependencies ([#21174](https://github.com/vitejs/rolldown-vite/issues/21174)) ([74559c9](https://github.com/vitejs/rolldown-vite/commit/74559c947483a8ee24da052ac2d9568f7cb3546a))
+
 ## <small>[7.2.8](https://github.com/vitejs/rolldown-vite/compare/v7.2.7...v7.2.8) (2025-11-26)</small>
 ### Features
 
