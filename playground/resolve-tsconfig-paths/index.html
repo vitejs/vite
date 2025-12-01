@@ -9,6 +9,10 @@
 <h2>Fallback works</h2>
 <p class="fallback"></p>
 
+<h2>Nested tsconfig.json & references / include works</h2>
+<p class="nested-a"></p>
+<p class="nested-b"></p>
+
 <script type="module">
   function text(selector, text) {
     document.querySelector(selector).textContent = text
@@ -22,4 +26,8 @@
 
   import fallback from '@fallback/fallback'
   text('.fallback', fallback)
+
+  import { valueA, valueB } from './src/nested/index.ts'
+  text('.nested-a', valueA)
+  text('.nested-b', valueB)
 </script>
