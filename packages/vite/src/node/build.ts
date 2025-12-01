@@ -352,13 +352,15 @@ export type ResolveModulePreloadDependenciesFn = (
   },
 ) => string[]
 
-export interface ResolvedBuildEnvironmentOptions
-  extends Required<Omit<BuildEnvironmentOptions, 'polyfillModulePreload'>> {
+export interface ResolvedBuildEnvironmentOptions extends Required<
+  Omit<BuildEnvironmentOptions, 'polyfillModulePreload'>
+> {
   modulePreload: false | ResolvedModulePreloadOptions
 }
 
-export interface ResolvedBuildOptions
-  extends Required<Omit<BuildOptions, 'polyfillModulePreload'>> {
+export interface ResolvedBuildOptions extends Required<
+  Omit<BuildOptions, 'polyfillModulePreload'>
+> {
   modulePreload: false | ResolvedModulePreloadOptions
 }
 
