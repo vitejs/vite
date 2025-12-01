@@ -5,6 +5,20 @@ layout: home
 theme: dark
 ---
 
-<Spacer />
-<Terminal />
-<Spacer />
+<Hero/>
+<TrustedBy />
+<HeadingSection
+    heading="Redefining developer experience"
+    subheading="Vite makes web development simple again"
+  />
+<ViteFeaturePanel1 />
+<ViteFeaturePanel2 />
+<ViteFeaturePanel3 />
+<ViteFeaturePanel4 />
+<HeadingSection
+heading="A shared foundation to build upon"
+/>
+<ViteFeatureGrid />
+<HeadingSection
+heading="Powering your favorite frameworks and tools"
+/>
