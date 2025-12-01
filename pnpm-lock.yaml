@@ -338,8 +338,8 @@ importers:
         specifier: ^0.1.2
         version: 0.1.2
       http-proxy-3:
-        specifier: ^1.23.1
-        version: 1.23.1(patch_hash=d89dff5a0afc2cb277080ad056a3baf7feeeeac19144878abc17f4c91ad89095)(ms@2.1.3)
+        specifier: ^1.22.0
+        version: 1.22.0(patch_hash=d89dff5a0afc2cb277080ad056a3baf7feeeeac19144878abc17f4c91ad89095)(ms@2.1.3)
       launch-editor-middleware:
         specifier: ^2.12.0
         version: 2.12.0
@@ -5345,8 +5345,8 @@ packages:
     resolution: {integrity: sha512-FtwrG/euBzaEjYeRqOgly7G0qviiXoJWnvEH2Z1plBdXgbyjv34pHTSb9zoeHMyDy33+DWy5Wt9Wo+TURtOYSQ==}
     engines: {node: '>= 0.8'}
 
-  http-proxy-3@1.23.1:
-    resolution: {integrity: sha512-F276ei2r75WYk0/tqZkfGO5Ja7oleXfKZjuhjQWrb3QkLaGT7B+ogTemTi0LkXijXyNoTE1j5sdQwBC52cEsXA==}
+  http-proxy-3@1.22.0:
+    resolution: {integrity: sha512-qyYYKjmPW7kDiRBGzydmD5f5ckuniL9fY45EWP05YVDoR/02JjrVMGqdrO5O+OURU7imhF3WyiKwp++4A3KEbw==}
     engines: {node: '>=18'}
 
   human-signals@5.0.0:
@@ -11074,7 +11074,7 @@ snapshots:
       statuses: 2.0.1
       toidentifier: 1.0.1
 
-  http-proxy-3@1.23.1(patch_hash=d89dff5a0afc2cb277080ad056a3baf7feeeeac19144878abc17f4c91ad89095)(ms@2.1.3):
+  http-proxy-3@1.22.0(patch_hash=d89dff5a0afc2cb277080ad056a3baf7feeeeac19144878abc17f4c91ad89095)(ms@2.1.3):
     dependencies:
       debug: obug@1.0.2(ms@2.1.3)
       follow-redirects: 1.15.11(obug@1.0.2(ms@2.1.3))
