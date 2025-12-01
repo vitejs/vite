@@ -198,21 +198,20 @@ export interface ServerOptions extends CommonServerOptions {
   ) => Promise<void>
 }
 
-export interface ResolvedServerOptions
-  extends Omit<
-    RequiredExceptFor<
-      ServerOptions,
-      | 'host'
-      | 'https'
-      | 'proxy'
-      | 'hmr'
-      | 'ws'
-      | 'watch'
-      | 'origin'
-      | 'hotUpdateEnvironments'
-    >,
-    'fs' | 'middlewareMode' | 'sourcemapIgnoreList'
-  > {
+export interface ResolvedServerOptions extends Omit<
+  RequiredExceptFor<
+    ServerOptions,
+    | 'host'
+    | 'https'
+    | 'proxy'
+    | 'hmr'
+    | 'ws'
+    | 'watch'
+    | 'origin'
+    | 'hotUpdateEnvironments'
+  >,
+  'fs' | 'middlewareMode' | 'sourcemapIgnoreList'
+> {
   fs: Required<FileSystemServeOptions>
   middlewareMode: NonNullable<ServerOptions['middlewareMode']>
   sourcemapIgnoreList: Exclude<
@@ -1252,6 +1251,8 @@ async function restartServer(server: ViteDevServer) {
     const middlewares = server.middlewares
     newServer._configServerPort = server._configServerPort
     newServer._currentServerPort = server._currentServerPort
+    // Ensure the new server has no stale readline reference
+    newServer._rl = undefined
     Object.assign(server, newServer)
 
     // Keep the same connect instance so app.use(vite.middlewares) works
@@ -1278,7 +1279,12 @@ async function restartServer(server: ViteDevServer) {
 
   if (shortcutsOptions) {
     shortcutsOptions.print = false
-    bindCLIShortcuts(server, shortcutsOptions)
+    bindCLIShortcuts(
+      server,
+      shortcutsOptions,
+      // Skip environment checks since shortcuts were bound before restart
+      true,
+    )
   }
 }
 

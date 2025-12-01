@@ -42,11 +42,10 @@ export const UMD_BEGIN_RE: RegExp =
 const jsxExtensionsRE = /\.(?:j|t)sx\b/
 const validExtensionRE = /\.\w+$/
 
-export interface OxcOptions
-  extends Omit<
-    OxcTransformOptions,
-    'cwd' | 'sourceType' | 'lang' | 'sourcemap' | 'helpers'
-  > {
+export interface OxcOptions extends Omit<
+  OxcTransformOptions,
+  'cwd' | 'sourceType' | 'lang' | 'sourcemap' | 'helpers'
+> {
   include?: string | RegExp | ReadonlyArray<string | RegExp>
   exclude?: string | RegExp | ReadonlyArray<string | RegExp>
   jsxInject?: string

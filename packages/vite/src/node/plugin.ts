@@ -70,13 +70,17 @@ export interface PluginContextMetaExtension {
   viteVersion: string
 }
 
-export interface ConfigPluginContext
-  extends Omit<MinimalPluginContext, 'meta' | 'environment'> {
+export interface ConfigPluginContext extends Omit<
+  MinimalPluginContext,
+  'meta' | 'environment'
+> {
   meta: Omit<PluginContextMeta, 'watchMode'>
 }
 
-export interface MinimalPluginContextWithoutEnvironment
-  extends Omit<MinimalPluginContext, 'environment'> {}
+export interface MinimalPluginContextWithoutEnvironment extends Omit<
+  MinimalPluginContext,
+  'environment'
+> {}
 
 // Augment Rolldown types to have the PluginContextExtension
 declare module 'rolldown' {
