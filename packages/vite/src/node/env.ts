@@ -43,13 +43,30 @@ export function loadEnv(
 
   debug?.(`loading env files: %O`, envFiles)
 
-  const parsed = Object.fromEntries(
+  let parsed = Object.fromEntries(
     envFiles.flatMap((filePath) => {
       if (!tryStatSync(filePath)?.isFile()) return []
 
       return Object.entries(parse(fs.readFileSync(filePath)))
     }),
   )
+
+  const noVariableKeys: string[] = []
+
+  Object.entries(parsed).forEach(([key, value]) => {
+    // eslint-disable-next-line regexp/no-unused-capturing-group, regexp/prefer-w, regexp/no-useless-flag, regexp/strict
+    const regex = /(?<!\\)\${([^{}]+)}|(?<!\\)\$([A-Za-z_][A-Za-z0-9_]*)/g
+    const match = regex.exec(value)
+    if (!match) {
+      noVariableKeys.push(key)
+    }
+  })
+
+  const helper: Record<string, any> = {}
+  noVariableKeys.forEach((k) => {
+    helper[k] = null
+  })
+  parsed = { ...helper, ...parsed }
 
   debug?.(`env files loaded in ${getTime()}`)
 
@@ -86,7 +103,6 @@ export function loadEnv(
   }
 
   debug?.(`using resolved env: %O`, env)
-
   return env
 }
 
