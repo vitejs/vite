@@ -10,7 +10,7 @@ on:
 jobs:
   publish:
     # prevents this action from running on forks
-    if: github.repository == 'vitejs/rolldown-vite'
+    if: github.repository == 'vitejs/vite'
     runs-on: ubuntu-latest
     permissions:
       contents: read

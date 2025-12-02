@@ -12,6 +12,6 @@
     "lit": "^3.3.1"
   },
   "devDependencies": {
-    "vite": "npm:rolldown-vite@^7.2.10"
+    "vite": "^7.2.4"
   }
 }

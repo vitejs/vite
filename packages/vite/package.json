@@ -1,10 +1,10 @@
 {
-  "name": "rolldown-vite",
-  "version": "7.2.10",
+  "name": "vite",
+  "version": "7.2.6",
   "type": "module",
   "license": "MIT",
   "author": "Evan You",
-  "description": "Vite on Rolldown preview",
+  "description": "Native-ESM powered web dev build tool",
   "bin": {
     "vite": "bin/vite.js"
   },
@@ -59,11 +59,11 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/vitejs/rolldown-vite.git",
+    "url": "git+https://github.com/vitejs/vite.git",
     "directory": "packages/vite"
   },
   "bugs": {
-    "url": "https://github.com/vitejs/rolldown-vite/issues"
+    "url": "https://github.com/vitejs/vite/issues"
   },
   "homepage": "https://vite.dev",
   "funding": "https://github.com/vitejs/vite?sponsor=1",

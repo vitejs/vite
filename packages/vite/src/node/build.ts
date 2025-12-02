@@ -781,7 +781,7 @@ async function buildEnvironment(
 
   logger.info(
     colors.cyan(
-      `rolldown-vite v${VERSION} ${colors.green(
+      `vite v${VERSION} ${colors.green(
         `building ${environment.name} environment for ${environment.config.mode}...`,
       )}`,
     ),
