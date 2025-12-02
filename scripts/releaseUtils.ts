@@ -64,7 +64,7 @@ export async function updateTemplateVersions(): Promise<void> {
   for (const template of templates) {
     const pkgPath = path.join(dir, template, `package.json`)
     const pkg = JSON.parse(await fs.readFile(pkgPath, 'utf-8'))
-    pkg.devDependencies.vite = `npm:rolldown-vite@^` + viteVersion
+    pkg.devDependencies.vite = `^` + viteVersion
     await fs.writeFile(pkgPath, JSON.stringify(pkg, null, 2) + '\n')
   }
 }

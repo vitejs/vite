@@ -1,5 +1,5 @@
-name: "\U0001F41E General Bug report"
-description: Report an issue with `rolldown-vite`
+name: "\U0001F41E Bug report"
+description: Report an issue with Vite
 labels: [pending triage]
 type: Bug
 body:
@@ -19,7 +19,7 @@ body:
     id: reproduction
     attributes:
       label: Reproduction
-      description: Please provide a link via [StackBlitz](https://stackblitz.com/fork/github/vitejs/rolldown-vite/tree/rolldown-vite/packages/create-vite/template-vanilla) or a link to a repo that can reproduce the problem you ran into. `npm create vite@latest` and `npm create vite-extra@latest` (for SSR or library repros) can be used as a starter template (don't forget to alias `vite` to `rolldown-vite`). A [minimal reproduction](https://stackoverflow.com/help/minimal-reproducible-example) is required ([Why?](https://antfu.me/posts/why-reproductions-are-required)). If a report is vague (e.g. just a generic error message) and has no reproduction, it will receive a "needs reproduction" label. If no reproduction is provided after 3 days, it will be auto-closed.
+      description: Please provide a link via [vite.new](https://vite.new/) or a link to a repo that can reproduce the problem you ran into. `npm create vite@latest` and `npm create vite-extra@latest` (for SSR or library repros) can be used as a starter template. A [minimal reproduction](https://stackoverflow.com/help/minimal-reproducible-example) is required ([Why?](https://antfu.me/posts/why-reproductions-are-required)). If a report is vague (e.g. just a generic error message) and has no reproduction, it will receive a "needs reproduction" label. If no reproduction is provided after 3 days, it will be auto-closed.
       placeholder: Reproduction URL
     validations:
       required: true
@@ -33,7 +33,7 @@ body:
     id: system-info
     attributes:
       label: System Info
-      description: Output of `npx envinfo --system --npmPackages '{vite,rolldown-vite,@vitejs/*,rollup,rolldown}' --binaries --browsers`
+      description: Output of `npx envinfo --system --npmPackages '{vite,@vitejs/*,rollup,rolldown}' --binaries --browsers`
       render: shell
       placeholder: System, Binaries, Browsers
     validations:
@@ -75,15 +75,17 @@ body:
       label: Validations
       description: Before submitting the issue, please make sure you do the following
       options:
-        - label: Follow our [Code of Conduct](https://github.com/vitejs/rolldown-vite/blob/main/CODE_OF_CONDUCT.md)
+        - label: Follow our [Code of Conduct](https://github.com/vitejs/vite/blob/main/CODE_OF_CONDUCT.md)
           required: true
-        - label: Read the [Contributing Guidelines](https://github.com/vitejs/rolldown-vite/blob/main/CONTRIBUTING.md).
+        - label: Read the [Contributing Guidelines](https://github.com/vitejs/vite/blob/main/CONTRIBUTING.md).
           required: true
-        - label: Read the [docs](https://vite.dev/guide) and the [Rolldown-related guide](https://main.vite.dev/guide/rolldown.html).
+        - label: Read the [docs](https://vite.dev/guide).
           required: true
-        - label: Check that there isn't [already an issue](https://github.com/vitejs/rolldown-vite/issues) that reports the same bug to avoid creating a duplicate.
+        - label: Check that there isn't [already an issue](https://github.com/vitejs/vite/issues) that reports the same bug to avoid creating a duplicate.
           required: true
-        - label: Check that this is a concrete bug. For Q&A open a [GitHub Discussion](https://github.com/vitejs/rolldown-vite/discussions) or join our [Discord Chat Server](https://chat.vite.dev/).
+        - label: Make sure this is a Vite issue and not a framework-specific issue. For example, if it's a Vue SFC related bug, it should likely be reported to [vuejs/core](https://github.com/vuejs/core) instead.
+          required: true
+        - label: Check that this is a concrete bug. For Q&A open a [GitHub Discussion](https://github.com/vitejs/vite/discussions) or join our [Discord Chat Server](https://chat.vite.dev/).
           required: true
         - label: The provided reproduction is a [minimal reproducible example](https://stackoverflow.com/help/minimal-reproducible-example) of the bug.
           required: true

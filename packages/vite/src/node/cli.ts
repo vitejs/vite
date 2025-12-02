@@ -238,7 +238,7 @@ cli
 
       info(
         `\n  ${colors.green(
-          `${colors.bold('ROLLDOWN-VITE')} v${VERSION}`,
+          `${colors.bold('VITE')} v${VERSION}`,
         )}${modeString}  ${startupDurationString}\n`,
         {
           clear: !hasExistingLogs,

@@ -77,6 +77,7 @@ const nodeConfig = defineConfig({
     internal: path.resolve(__dirname, 'src/node/internalIndex.ts'),
   },
   external: [
+    /^vite\//,
     'fsevents',
     /^rolldown\//,
     /^tsx\//,
@@ -89,14 +90,6 @@ const nodeConfig = defineConfig({
     ...Object.keys(pkg.peerDependencies),
   ],
   plugins: [
-    {
-      name: 'externalize-vite',
-      resolveId(id) {
-        if (id.startsWith('vite/')) {
-          return { id: id.replace(/^vite\//, 'rolldown-vite/'), external: true }
-        }
-      },
-    },
     shimDepsPlugin({
       'postcss-load-config/src/req.js': [
         {
