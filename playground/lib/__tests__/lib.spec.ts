@@ -34,7 +34,7 @@ describe.runIf(isBuild)('build', () => {
       /^var MyLib\s*=\s*\(function\(\)\s*\{\s*"use strict";/,
     )
     expect(namedCode).toMatch(
-      /^var MyLibNamed=function\([^()]+\)\{\s*"use strict";/,
+      /^var MyLibNamed=\(function\([^()]+\)\{\s*"use strict";/,
     )
   })
 
