@@ -548,8 +548,8 @@ export interface ExperimentalOptions {
   /**
    * Enable builtin plugin that written by rust, which is faster than js plugin.
    *
-   * - 'resolver': Enable only the native resolver plugin.
-   * - 'v1': Enable the first stable set of native plugins (including resolver).
+   * - 'resolver' (deprecated, will be removed in v8 stable): Enable only the native resolver plugin.
+   * - 'v1' (will be deprecated, will be removed in v8 stable): Enable the first stable set of native plugins (including resolver).
    * - true: Enable all native plugins (currently an alias of 'v1', it will map to a newer one in the future versions).
    *
    * @experimental
