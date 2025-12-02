@@ -582,12 +582,6 @@ importers:
 
   playground/alias/dir/module: {}
 
-  playground/amd:
-    dependencies:
-      requirejs:
-        specifier: ^2.3.8
-        version: 2.3.8
-
   playground/assets: {}
 
   playground/assets-sanitize: {}
@@ -1300,12 +1294,6 @@ importers:
       '@vitejs/test-resolve-browser-module-field1':
         specifier: link:./browser-module-field1
         version: link:browser-module-field1
-      '@vitejs/test-resolve-browser-module-field2':
-        specifier: link:./browser-module-field2
-        version: link:browser-module-field2
-      '@vitejs/test-resolve-browser-module-field3':
-        specifier: link:./browser-module-field3
-        version: link:browser-module-field3
       '@vitejs/test-resolve-custom-browser-main-field':
         specifier: link:./custom-browser-main-field
         version: link:custom-browser-main-field
@@ -1379,10 +1367,6 @@ importers:
   playground/resolve/browser-field-bare-import-success: {}
 
   playground/resolve/browser-module-field1: {}
-
-  playground/resolve/browser-module-field2: {}
-
-  playground/resolve/browser-module-field3: {}
 
   playground/resolve/custom-browser-main-field: {}
 
@@ -6742,11 +6726,6 @@ packages:
   require-directory@2.1.1:
     resolution: {integrity: sha512-fGxEI7+wsG9xrvdjsrlmL22OMTTiHRwAMroiEeMgq8gzoLC/PQr7RsRDSTLUg/bZAZtF+TVIkHc6/4RIKrui+Q==}
     engines: {node: '>=0.10.0'}
-
-  requirejs@2.3.8:
-    resolution: {integrity: sha512-7/cTSLOdYkNBNJcDMWf+luFvMriVm7eYxp4BcFCsAX0wF421Vyce5SXP17c+Jd5otXKGNehIonFlyQXSowL6Mw==}
-    engines: {node: '>=0.4.0'}
-    hasBin: true
 
   resolve-from@4.0.0:
     resolution: {integrity: sha512-pb/MYmXstAkysRFx8piNI1tGFNQIFA3vkE3Gq4EuA1dF6gHp/+vgZqsCGJapvy8N3Q+4o7FwvquPJcnZ7RYy4g==}
@@ -12756,8 +12735,6 @@ snapshots:
       - ms
 
   require-directory@2.1.1: {}
-
-  requirejs@2.3.8: {}
 
   resolve-from@4.0.0: {}
 

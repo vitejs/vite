@@ -70,8 +70,6 @@ import {
   resolveChokidarOptions,
   resolveEmptyOutDir,
 } from './watch'
-import { completeAmdWrapPlugin } from './plugins/completeAmdWrap'
-import { completeSystemWrapPlugin } from './plugins/completeSystemWrap'
 import { webWorkerPostPlugin } from './plugins/worker'
 import { getHookHandler } from './plugins'
 import { BaseEnvironment } from './baseEnvironment'
@@ -505,8 +503,6 @@ export async function resolveBuildPlugins(config: ResolvedConfig): Promise<{
 }> {
   return {
     pre: [
-      completeAmdWrapPlugin(),
-      completeSystemWrapPlugin(),
       ...(!config.isWorker ? [prepareOutDirPlugin()] : []),
       perEnvironmentPlugin(
         'vite:rollup-options-plugins',

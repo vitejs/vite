@@ -16,7 +16,6 @@ export default defineConfig({
     exclude: [
       ...(isBuild
         ? [
-            './playground/amd/**/*.spec.[tj]s', // amd output
             './playground/object-hooks/**/*.spec.[tj]s', // object hook sequential
           ]
         : []),
