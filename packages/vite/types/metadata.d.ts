@@ -23,6 +23,10 @@ export interface CustomPluginOptionsVite {
 }
 
 declare module 'rollup' {
+  export interface OutputAsset {
+    viteMetadata?: ChunkMetadata
+  }
+
   export interface RenderedChunk {
     viteMetadata?: ChunkMetadata
   }
