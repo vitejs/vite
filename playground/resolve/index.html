@@ -137,12 +137,6 @@
 <h2>Resolve browser field even if module field exists</h2>
 <p class="browser-module1">fail</p>
 
-<h2>Resolve module field if browser field is likely UMD or CJS</h2>
-<p class="browser-module2">fail</p>
-
-<h2>Resolve module field if browser field is likely IIFE</h2>
-<p class="browser-module3">fail</p>
-
 <h2>Don't resolve to the `module` field if the importer is a `require` call</h2>
 <p class="require-pkg-with-module-field">fail</p>
 
@@ -358,14 +352,6 @@
 
   import browserModule1 from '@vitejs/test-resolve-browser-module-field1'
   text('.browser-module1', browserModule1)
-
-  // should not fallback
-  // import browserModule2 from '@vitejs/test-resolve-browser-module-field2'
-  // text('.browser-module2', browserModule2)
-
-  // should not fallback
-  // import browserModule3 from '@vitejs/test-resolve-browser-module-field3'
-  // text('.browser-module3', browserModule3)
 
   import { msg as requireButWithModuleFieldMsg } from '@vitejs/test-require-pkg-with-module-field'
   text('.require-pkg-with-module-field', requireButWithModuleFieldMsg)
