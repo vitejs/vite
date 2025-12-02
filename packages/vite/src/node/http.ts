@@ -124,6 +124,8 @@ export async function resolveHttpServer(
   }
 
   const { createSecureServer } = await import('node:http2')
+  // Note: The Connect app is compatible with HTTP/1.1 handler signature,
+  // and with allowHTTP1: true, the HTTP/2 server can handle both HTTP/1.1 and HTTP/2 requests
   return createSecureServer(
     {
       // Manually increase the session memory to prevent 502 ENHANCE_YOUR_CALM
@@ -136,8 +138,7 @@ export async function resolveHttpServer(
       ...httpsOptions,
       allowHTTP1: true,
     },
-    // @ts-expect-error TODO: is this correct?
-    app,
+    app as any,
   )
 }
 
