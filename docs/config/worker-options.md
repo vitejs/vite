@@ -4,10 +4,10 @@ Unless noted, the options in this section are applied to all dev, build, and pre
 
 ## worker.format
 
-- **Type:** `'es' | 'iife'`
+- **Type:** `'es' | 'iife' | 'cjs'`
 - **Default:** `'iife'`
 
-Output format for worker bundle.
+Output format for worker bundle. When using [`?nodeWorker`](/guide/features#node-worker-imports), prefer `'es'` or `'cjs'`. Other formats will be coerced to `'cjs'` for Node worker builds.
 
 ## worker.plugins
 

@@ -980,6 +980,8 @@ importers:
 
   playground/nested-deps/test-package-f: {}
 
+  playground/node-worker: {}
+
   playground/object-hooks: {}
 
   playground/optimize-deps:

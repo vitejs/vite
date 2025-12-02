@@ -221,6 +221,20 @@ declare module '*?worker&url' {
   export default src
 }
 
+declare module '*?nodeWorker' {
+  const workerFactory: (
+    options?: import('node:worker_threads').WorkerOptions,
+  ) => import('node:worker_threads').Worker
+  export default workerFactory
+}
+
+declare module '*?nodeWorker&inline' {
+  const workerFactory: (
+    options?: import('node:worker_threads').WorkerOptions,
+  ) => import('node:worker_threads').Worker
+  export default workerFactory
+}
+
 declare module '*?sharedworker' {
   const sharedWorkerConstructor: {
     new (options?: { name?: string }): SharedWorker

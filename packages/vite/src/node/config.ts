@@ -436,7 +436,7 @@ export interface UserConfig extends DefaultEnvironmentOptions {
      * Output format for worker bundle
      * @default 'iife'
      */
-    format?: 'es' | 'iife'
+    format?: 'es' | 'iife' | 'cjs'
     /**
      * Vite plugins that apply to worker bundle. The plugins returned by this function
      * should be new instances every time it is called, because they are used for each
@@ -536,7 +536,7 @@ export interface LegacyOptions {
 }
 
 export interface ResolvedWorkerOptions {
-  format: 'es' | 'iife'
+  format: 'es' | 'iife' | 'cjs'
   plugins: (bundleChain: string[]) => Promise<ResolvedConfig>
   rollupOptions: RollupOptions
 }
@@ -1436,6 +1436,7 @@ export async function resolveConfig(
     const workerResolved: ResolvedConfig = {
       ...workerConfig,
       ...resolved,
+      command: 'build',
       isWorker: true,
       mainConfig: resolved,
       bundleChain,
