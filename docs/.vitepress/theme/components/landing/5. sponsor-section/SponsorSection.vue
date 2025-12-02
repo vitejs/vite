@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { useSponsor, voidZero } from '../../../composables/sponsor'
-import { VPSponsors } from 'vitepress/theme'
+import { VPSponsors } from '@voidzero-dev/vitepress-theme'
 
 const { data } = useSponsor()
 </script>

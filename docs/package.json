@@ -19,5 +19,9 @@
     "vitepress-plugin-llms": "^1.8.1",
     "vue": "^3.5.22",
     "vue-tsc": "^3.1.2"
+  },
+  "dependencies": {
+    "@docsearch/css": "^4.3.2",
+    "@docsearch/js": "^4.3.2"
   }
 }
