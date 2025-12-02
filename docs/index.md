@@ -30,3 +30,4 @@ heading="Powering your favorite frameworks and tools"
 <ViteCommunity />
 <ViteSponsors :sponsors="sponsors" />
 <Spacer />
+<Footer/>
