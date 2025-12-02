@@ -201,6 +201,7 @@ export interface BuildEnvironmentOptions {
   rolldownOptions?: RolldownOptions
   /**
    * Options to pass on to `@rollup/plugin-commonjs`
+   * @deprecated This option is no-op and will be removed in future versions.
    */
   commonjsOptions?: RollupCommonJSOptions
   /**
