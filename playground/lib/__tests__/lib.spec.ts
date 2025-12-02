@@ -29,7 +29,7 @@ describe.runIf(isBuild)('build', () => {
     )
     const namedCode = readFile('dist/named/my-lib-named.iife.js')
     // esbuild helpers are injected inside of the IIFE wrapper
-    expect(code).toMatch(/^var MyLib=function\(\)\{\s*"use strict";/)
+    expect(code).toMatch(/^var MyLib=\(function\(\)\{\s*"use strict";/)
     expect(noMinifyCode).toMatch(
       /^var MyLib\s*=\s*function\(\)\s*\{\s*"use strict";/,
     )
