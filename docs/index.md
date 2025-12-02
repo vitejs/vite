@@ -5,6 +5,10 @@ layout: home
 theme: dark
 ---
 
+<script setup>
+import { sponsors } from './_data/sponsors.js'
+</script>
+
 <Hero/>
 <TrustedBy />
 <HeadingSection
@@ -22,3 +26,7 @@ heading="A shared foundation to build upon"
 <HeadingSection
 heading="Powering your favorite frameworks and tools"
 />
+<ViteFrameworks />
+<ViteCommunity />
+<ViteSponsors :sponsors="sponsors" />
+<Spacer />
