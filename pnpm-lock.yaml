@@ -1679,8 +1679,8 @@ importers:
   playground/ssr-wasm:
     devDependencies:
       express:
-        specifier: ^5.1.0
-        version: 5.1.0(ms@2.1.3)
+        specifier: ^5.2.0
+        version: 5.2.0(ms@2.1.3)
 
   playground/ssr-webworker:
     dependencies:
