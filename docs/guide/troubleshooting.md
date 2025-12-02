@@ -187,7 +187,7 @@ Note that you cannot retry the dynamic import due to browser limitations ([whatw
 
 The error may also occur if the browser extensions (like ad-blockers) are blocking that request.
 
-It might be possible to work around by selecting a different chunk name by [`build.rollupOptions.output.chunkFileNames`](../config/build-options.md#build-rollupoptions), as these extensions often block requests based on file names (e.g. names containing `ad`, `track`).
+It might be possible to work around by selecting a different chunk name by [`build.rolldownOptions.output.chunkFileNames`](../config/build-options.md#build-rolldownoptions), as these extensions often block requests based on file names (e.g. names containing `ad`, `track`).
 
 ## Optimized Dependencies
 

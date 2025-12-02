@@ -12,7 +12,7 @@ This section will be moved to the release post before the stable release.
 
 Vite 8 now has built-in tsconfig `paths` support, thanks to [Oxc Resolver](https://oxc.rs/docs/guide/usage/resolver). This is not enabled by default, because it has a performance cost and is [discouraged by the TypeScript team to use this option to change the behavior of the external tools](https://www.typescriptlang.org/tsconfig/#paths:~:text=Note%20that%20this%20feature%20does%20not%20change%20how%20import%20paths%20are%20emitted%20by%20tsc%2C%20so%20paths%20should%20only%20be%20used%20to%20inform%20TypeScript%20that%20another%20tool%20has%20this%20mapping%20and%20will%20use%20it%20at%20runtime%20or%20when%20bundling.). While having that caveat, you can enable it by setting `resolve.tsconfigPaths` to `true`.
 
-**_[TODO: fix before stable release] currently this feature only supports basic cases. If the tsconfig.json uses references/include/exclude, it won't work as expected._**
+The tsconfig.json in the closest parent directory will be used. For more details about what tsconfig.json is used, see [the Features page](/guide/features#typescript-compiler-options).
 
 ### `emitDecoratorMetadata` Support
 
@@ -22,7 +22,7 @@ Note that this transformation has some limitations as the full support requires 
 
 ## Default Browser Target change
 
-**_TODO: implement this change later_**
+**_TODO: This change is not implemented yet, but will be implemented before stable release._**
 
 The default browser value of `build.target`, `'baseline-widely-available'`, is updated to a newer browser.
 
@@ -281,6 +281,29 @@ See Rolldown's document about this problem for more details: [Ambiguous `default
 
 This change may break some existing code importing CJS modules. You can use the `legacy.inconsistentCjsInterop: true` option to temporary restore the previous behavior. Note that this option will be removed in the future. If you find a package that is affected by this change, please report it to the package author. Make sure to link to the Rolldown document above so that the author can understand the context.
 
+### Module Type Support and Auto Detection
+
+This change only affects plugin authors.
+
+Rolldown has an experimental [Module type support](https://rolldown.rs/guide/notable-features#module-types), which is similar to [esbuild's `loader` option](https://esbuild.github.io/api/#loader). Due to this, Rolldown automatically sets a module type based on the extension of the resolved id.
+
+If you are converting the content to JavaScript from other types in `load` or `transform` hooks, you may need to add `moduleType: 'js'` to the returned value.
+
+```js
+const plugin = {
+  name: 'txt-loader',
+  load(id) {
+    if (id.endsWith('.txt')) {
+      const content = fs.readFile(id, 'utf-8')
+      return {
+        code: `export default ${JSON.stringify(content)}`,
+        moduleType: 'js', // [!code ++]
+      }
+    }
+  },
+}
+```
+
 ### Removed Module Resolution Using Format Sniffing
 
 When both `browser` and `module` fields are present in `package.json`, Vite used to resolve the field based on the content of the file, trying to pick the ESM file for browsers. This was introduced because some packages were using the `module` field to point to ESM files for Node.js and some other packages were using the `browser` field to point to UMD files for browsers. Given that the modern `exports` field solved this problem and is now adopted by many packages, Vite no longer uses this heuristic and always respects the order of the [`resolve.mainFields`](/config/shared-options#resolve-mainfields) option. If you were relying on this behavior, you can use the [`resolve.alias`](/config/shared-options#resolve-alias) option to map the field to the desired file or apply a patch with your package manager (e.g. `patch-package`, `pnpm patch`).
@@ -328,33 +351,33 @@ The following options are deprecated and will be removed in the future:
 
 - `build.rollupOptions`: renamed to `build.rolldownOptions`
 - `worker.rollupOptions`: renamed to `worker.rolldownOptions`
+- `build.commonjsOptions`: it is now no-op
 
 ## General Changes
 
 ## Removed deprecated features
 
-**_TODO: implement these changes later_**
+**_TODO: This change is not implemented yet, but will be implemented before stable release._**
 
 ## Advanced
 
 There are other breaking changes which only affect few users.
 
-- **[TODO: fix before stable release (better if it's fixed before first beta)]** https://github.com/rolldown/rolldown/issues/5867
-- **[TODO: fix before stable release]** https://github.com/rolldown/rolldown/issues/5726 (affects nuxt, qwik)
-- **[TODO: fix before stable release]** https://github.com/rolldown/rolldown/issues/3403 (affects sveltekit)
-- **[TODO: fix before stable release]** Legacy chunks are emitted as an asset file instead of a chunk file due to the lack of prebuilt chunk emit feature ([rolldown#4304](https://github.com/rolldown/rolldown/issues/4034)). This means the chunk related options does not apply to legacy chunks and the manifest file will not include legacy chunks as a chunk file.
-- **[TODO: fix before stable release]** resolver cache breaks minor cases in Vitest ([rolldown-vite#466](https://github.com/vitejs/rolldown-vite/issues/466), [vitest#8754](https://github.com/vitest-dev/vitest/issues/8754#issuecomment-3441115032))
-- **[TODO: fix before stable release]** The resolver does not work with yarn pnp ([rolldown-vite#324](https://github.com/vitejs/rolldown-vite/issues/324), [rolldown-vite#392](https://github.com/vitejs/rolldown-vite/issues/392))
-- **[TODO: fix before stable release]** native plugin ordering issue ([rolldown-vite#373](https://github.com/vitejs/rolldown-vite/issues/373))
-- **[TODO: fix before stable release]** `@vite-ignore` comment edge case ([rolldown-vite#426](https://github.com/vitejs/rolldown-vite/issues/426))
-- **[TODO: fix before stable release]** https://github.com/rolldown/rolldown/issues/3403
-- **[TODO: clarify this here a bit more]** ext glob support ([rolldown-vite#365](https://github.com/vitejs/rolldown-vite/issues/365))
+- **[TODO: this will be fixed before stable release]** https://github.com/rolldown/rolldown/issues/5726 (affects nuxt, qwik)
+- **[TODO: this will be fixed before stable release]** https://github.com/rolldown/rolldown/issues/3403 (affects sveltekit)
+- **[TODO: this will be fixed before stable release]** Legacy chunks are emitted as an asset file instead of a chunk file due to the lack of prebuilt chunk emit feature ([rolldown#4304](https://github.com/rolldown/rolldown/issues/4034)). This means the chunk related options does not apply to legacy chunks and the manifest file will not include legacy chunks as a chunk file.
+- **[TODO: this will be fixed before stable release]** resolver cache breaks minor cases in Vitest ([rolldown-vite#466](https://github.com/vitejs/rolldown-vite/issues/466), [vitest#8754](https://github.com/vitest-dev/vitest/issues/8754#issuecomment-3441115032))
+- **[TODO: this will be fixed before stable release]** The resolver does not work with yarn pnp ([rolldown-vite#324](https://github.com/vitejs/rolldown-vite/issues/324), [rolldown-vite#392](https://github.com/vitejs/rolldown-vite/issues/392))
+- **[TODO: this will be fixed before stable release]** native plugin ordering issue ([rolldown-vite#373](https://github.com/vitejs/rolldown-vite/issues/373))
+- **[TODO: this will be fixed before stable release]** `@vite-ignore` comment edge case ([rolldown-vite#426](https://github.com/vitejs/rolldown-vite/issues/426))
+- **[TODO: this will be fixed before stable release]** https://github.com/rolldown/rolldown/issues/3403
+- [Extglobs](https://github.com/micromatch/picomatch/blob/master/README.md#extglobs) are not supported yet ([rolldown-vite#365](https://github.com/vitejs/rolldown-vite/issues/365))
 - `define` does not share reference for objects: When you pass an object as a value to `define`, each variable will have a separate copy of the object. See [Oxc Transformer document](https://oxc.rs/docs/guide/usage/transformer/global-variable-replacement#define) for more details.
 - `bundle` object changes (`bundle` is an object passed in `generateBundle` / `writeBundle` hooks, returned by `build` function):
   - Assigning to `bundle[foo]` is not supported. This is discouraged by Rollup as well. Please use `this.emitFile()` instead.
   - the reference is not shared across the hooks ([rolldown-vite#410](https://github.com/vitejs/rolldown-vite/issues/410))
   - `structuredClone(bundle)` errors with `DataCloneError: #<Object> could not be cloned`. This is not supported anymore. Please clone it with `structuredClone({ ...bundle })`. ([rolldown-vite#128](https://github.com/vitejs/rolldown-vite/issues/128))
-- **[TODO: clarify this in Rolldown's docs and link it from here]** All parallel hooks in Rollup works as sequential hooks.
+- All parallel hooks in Rollup works as sequential hooks. See [Rolldown's documentation](https://rolldown.rs/apis/plugin-api#sequential-hook-execution) for more details.
 - `"use strict";` is not injected sometimes. See [Rolldown's documentation](https://rolldown.rs/in-depth/directives) for more details.
 - Transforming to lower than ES5 with plugin-legacy is not supported ([rolldown-vite#452](https://github.com/vitejs/rolldown-vite/issues/452))
 - Passing the same browser with multiple versions of it to `build.target` option now errors: esbuild selects the latest version of it, which was probably not what you intended.
