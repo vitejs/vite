@@ -31,7 +31,7 @@ describe.runIf(isBuild)('build', () => {
     // esbuild helpers are injected inside of the IIFE wrapper
     expect(code).toMatch(/^var MyLib=\(function\(\)\{\s*"use strict";/)
     expect(noMinifyCode).toMatch(
-      /^var MyLib\s*=\s*function\(\)\s*\{\s*"use strict";/,
+      /^var MyLib\s*=\s*\(function\(\)\s*\{\s*"use strict";/,
     )
     expect(namedCode).toMatch(
       /^var MyLibNamed=function\([^()]+\)\{\s*"use strict";/,
