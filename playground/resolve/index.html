@@ -152,6 +152,9 @@
 <h2>Plugin resolved virtual file (#9036)</h2>
 <p class="virtual-9036"></p>
 
+<h2>Plugin resolved virtual file that has import</h2>
+<p class="virtual-has-import"></p>
+
 <h2>Plugin resolved custom virtual file</h2>
 <p class="custom-virtual"></p>
 
@@ -387,6 +390,9 @@
 
   import { msg as virtualMsg9036 } from 'virtual:file-9036.js'
   text('.virtual-9036', virtualMsg9036)
+
+  import { msg as virtualMsgHasImport } from 'virtual:file-has-import.js'
+  text('.virtual-has-import', virtualMsgHasImport)
 
   import { msg as customVirtualMsg } from '@custom-virtual-file'
   text('.custom-virtual', customVirtualMsg)

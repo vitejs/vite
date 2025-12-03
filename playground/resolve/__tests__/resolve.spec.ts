@@ -151,6 +151,10 @@ test('plugin resolved virtual file', async () => {
   expect(await page.textContent('.virtual')).toMatch('[success]')
 })
 
+test('plugin resolved virtual file that has import', async () => {
+  expect(await page.textContent('.virtual-has-import')).toMatch('[success]')
+})
+
 test('plugin resolved custom virtual file', async () => {
   expect(await page.textContent('.custom-virtual')).toMatch('[success]')
 })
