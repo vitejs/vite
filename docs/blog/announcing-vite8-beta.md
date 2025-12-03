@@ -135,8 +135,8 @@ After adding these overrides, reinstall your dependencies and start your develop
 
 In addition to shipping with Rolldown, Vite 8 comes with:
 
-- **Built-in tsconfig `paths` support:** Developers can enable it by setting [`resolve.tsconfigPaths`](https://main.vite.dev/config/shared-options.md#resolve-tsconfigpaths) to `true`. This feature has a small performance cost and is not enabled by default.
-- **`emitDecoratorMetadata` support:** Vite 8 now has built-in automatic support for TypeScript's [`emitDecoratorMetadata` option](https://www.typescriptlang.org/tsconfig/#emitDecoratorMetadata). See the [Features](https://main.vite.dev/guide/features.md#emitdecoratormetadata) page for more details.
+- **Built-in tsconfig `paths` support:** Developers can enable it by setting [`resolve.tsconfigPaths`](https://main.vite.dev/config/shared-options#resolve-tsconfigpaths) to `true`. This feature has a small performance cost and is not enabled by default.
+- **`emitDecoratorMetadata` support:** Vite 8 now has built-in automatic support for TypeScript's [`emitDecoratorMetadata` option](https://www.typescriptlang.org/tsconfig/#emitDecoratorMetadata). See the [Features](https://main.vite.dev/guide/features#emitdecoratormetadata) page for more details.
 
 ## Looking Ahead
 
