@@ -130,7 +130,7 @@ export function scanImports(environment: ScanEnvironment): {
       if (!config.optimizeDeps.entries && !config.optimizeDeps.include) {
         environment.logger.warn(
           colors.yellow(
-            '(!) Could not auto-determine entry point from rollupOptions or html files ' +
+            '(!) Could not auto-determine entry point from rolldownOptions or html files ' +
               'and there are no explicit optimizeDeps.include patterns. ' +
               'Skipping dependency pre-bundling.',
           ),

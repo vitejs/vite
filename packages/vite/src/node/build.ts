@@ -256,7 +256,7 @@ export interface BuildEnvironmentOptions {
   lib?: LibraryOptions | false
   /**
    * Produce SSR oriented build. Note this requires specifying SSR entry via
-   * `rollupOptions.input`.
+   * `rolldownOptions.input`.
    * @default false
    */
   ssr?: boolean | string
@@ -362,15 +362,13 @@ export type ResolveModulePreloadDependenciesFn = (
   },
 ) => string[]
 
-export interface ResolvedBuildEnvironmentOptions extends Required<
-  Omit<BuildEnvironmentOptions, 'polyfillModulePreload'>
-> {
+export interface ResolvedBuildEnvironmentOptions
+  extends Required<Omit<BuildEnvironmentOptions, 'polyfillModulePreload'>> {
   modulePreload: false | ResolvedModulePreloadOptions
 }
 
-export interface ResolvedBuildOptions extends Required<
-  Omit<BuildOptions, 'polyfillModulePreload'>
-> {
+export interface ResolvedBuildOptions
+  extends Required<Omit<BuildOptions, 'polyfillModulePreload'>> {
   modulePreload: false | ResolvedModulePreloadOptions
 }
 
@@ -590,7 +588,7 @@ function resolveRolldownOptions(
 
   if (ssr && typeof input === 'string' && input.endsWith('.html')) {
     throw new Error(
-      `rollupOptions.input should not be an html file when building for SSR. ` +
+      `rolldownOptions.input should not be an html file when building for SSR. ` +
         `Please specify a dedicated SSR entry.`,
     )
   }
@@ -603,7 +601,7 @@ function resolveRolldownOptions(
           : Object.values(input)
     if (inputs.some((input) => input.endsWith('.css'))) {
       throw new Error(
-        `When "build.cssCodeSplit: false" is set, "rollupOptions.input" should not include CSS files.`,
+        `When "build.cssCodeSplit: false" is set, "rolldownOptions.input" should not include CSS files.`,
       )
     }
   }
@@ -668,21 +666,21 @@ function resolveRolldownOptions(
     // @ts-expect-error See https://github.com/vitejs/vite/issues/5812#issuecomment-984345618
     if (output.output) {
       logger.warn(
-        `You've set "rollupOptions.output.output" in your config. ` +
+        `You've set "rolldownOptions.output.output" in your config. ` +
           `This is deprecated and will override all Vite.js default output options. ` +
-          `Please use "rollupOptions.output" instead.`,
+          `Please use "rolldownOptions.output" instead.`,
       )
     }
     if (output.file) {
       throw new Error(
-        `Vite does not support "rollupOptions.output.file". ` +
-          `Please use "rollupOptions.output.dir" and "rollupOptions.output.entryFileNames" instead.`,
+        `Vite does not support "rolldownOptions.output.file". ` +
+          `Please use "rolldownOptions.output.dir" and "rolldownOptions.output.entryFileNames" instead.`,
       )
     }
     if (output.sourcemap) {
       logger.warnOnce(
         colors.yellow(
-          `Vite does not support "rollupOptions.output.sourcemap". ` +
+          `Vite does not support "rolldownOptions.output.sourcemap". ` +
             `Please use "build.sourcemap" instead.`,
         ),
       )
@@ -1023,7 +1021,7 @@ export function resolveBuildOutputs(
     if (libOptions.formats) {
       logger.warn(
         colors.yellow(
-          '"build.lib.formats" will be ignored because "build.rollupOptions.output" is already an array format.',
+          '"build.lib.formats" will be ignored because "build.rolldownOptions.output" is already an array format.',
         ),
       )
     }
@@ -1034,7 +1032,7 @@ export function resolveBuildOutputs(
         !output.name
       ) {
         throw new Error(
-          'Entries in "build.rollupOptions.output" must specify "name" when the format is "umd" or "iife".',
+          'Entries in "build.rolldownOptions.output" must specify "name" when the format is "umd" or "iife".',
         )
       }
     })

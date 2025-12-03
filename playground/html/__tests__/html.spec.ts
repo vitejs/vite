@@ -123,7 +123,7 @@ describe('main', () => {
   })
 
   test.runIf(isBuild)(
-    'external paths by rollupOptions.external works',
+    'external paths by rolldownOptions.external works',
     async () => {
       expect(await page.textContent('.external-path-by-rollup-options')).toBe(
         'works',
@@ -426,7 +426,7 @@ describe('relative input', () => {
     await page.goto(viteTestUrl + '/relative-input.html')
   })
 
-  test('passing relative path to rollupOptions.input works', async () => {
+  test('passing relative path to rolldownOptions.input works', async () => {
     await expect.poll(() => page.textContent('.relative-input')).toBe('OK')
   })
 })
