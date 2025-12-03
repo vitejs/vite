@@ -166,21 +166,24 @@ describe('mergeConfig', () => {
   })
 
   test('handles ssr.noExternal', () => {
-    const baseConfig = {
+    const baseConfig: UserConfig = {
       ssr: {
         noExternal: true,
+        external: true,
       },
     }
 
-    const newConfig = {
+    const newConfig: UserConfig = {
       ssr: {
         noExternal: ['foo'],
+        external: ['bar'],
       },
     }
 
-    const mergedConfig = {
+    const mergedConfig: UserConfig = {
       ssr: {
         noExternal: true,
+        external: true,
       },
     }
 
@@ -308,6 +311,311 @@ describe('mergeConfig', () => {
         newConfig,
       ),
     ).toThrowError('Cannot merge config in form of callback')
+  })
+
+  test('handles `rollupOptions`', () => {
+    const baseConfig = defineConfig({
+      build: {
+        rollupOptions: {
+          treeshake: false,
+        },
+      },
+      worker: {
+        rollupOptions: {
+          treeshake: false,
+        },
+      },
+      optimizeDeps: {
+        rollupOptions: {
+          treeshake: false,
+        },
+      },
+      ssr: {
+        optimizeDeps: {
+          rollupOptions: {
+            treeshake: false,
+          },
+        },
+      },
+    })
+
+    const newConfig = defineConfig({
+      build: {
+        rollupOptions: {
+          output: {
+            minifyInternalExports: true,
+          },
+        },
+      },
+      worker: {
+        rollupOptions: {
+          output: {
+            minifyInternalExports: true,
+          },
+        },
+      },
+      optimizeDeps: {
+        rollupOptions: {
+          output: {
+            minifyInternalExports: true,
+          },
+        },
+      },
+      ssr: {
+        optimizeDeps: {
+          rollupOptions: {
+            output: {
+              minifyInternalExports: true,
+            },
+          },
+        },
+      },
+    })
+
+    const mergedConfig = mergeConfig(baseConfig, newConfig)
+
+    const expected = {
+      treeshake: false,
+      output: {
+        minifyInternalExports: true,
+      },
+    }
+    expect(mergedConfig.build.rollupOptions).toStrictEqual(expected)
+    expect(mergedConfig.build.rolldownOptions).toStrictEqual(expected)
+    expect(mergedConfig.worker.rollupOptions).toStrictEqual(expected)
+    expect(mergedConfig.worker.rolldownOptions).toStrictEqual(expected)
+    expect(mergedConfig.optimizeDeps.rollupOptions).toStrictEqual(expected)
+    expect(mergedConfig.optimizeDeps.rolldownOptions).toStrictEqual(expected)
+    expect(mergedConfig.ssr.optimizeDeps.rollupOptions).toStrictEqual(expected)
+    expect(mergedConfig.ssr.optimizeDeps.rolldownOptions).toStrictEqual(
+      expected,
+    )
+  })
+
+  test('handles `build.rolldownOptions`', () => {
+    const baseConfig = defineConfig({
+      build: {
+        rolldownOptions: {
+          treeshake: false,
+        },
+      },
+      worker: {
+        rolldownOptions: {
+          treeshake: false,
+        },
+      },
+      optimizeDeps: {
+        rolldownOptions: {
+          treeshake: false,
+        },
+      },
+      ssr: {
+        optimizeDeps: {
+          rolldownOptions: {
+            treeshake: false,
+          },
+        },
+      },
+    })
+
+    const newConfig = defineConfig({
+      build: {
+        rolldownOptions: {
+          output: {
+            minifyInternalExports: true,
+          },
+        },
+      },
+      worker: {
+        rolldownOptions: {
+          output: {
+            minifyInternalExports: true,
+          },
+        },
+      },
+      optimizeDeps: {
+        rolldownOptions: {
+          output: {
+            minifyInternalExports: true,
+          },
+        },
+      },
+      ssr: {
+        optimizeDeps: {
+          rolldownOptions: {
+            output: {
+              minifyInternalExports: true,
+            },
+          },
+        },
+      },
+    })
+
+    const mergedConfig = mergeConfig(baseConfig, newConfig)
+
+    const expected = {
+      treeshake: false,
+      output: {
+        minifyInternalExports: true,
+      },
+    }
+    expect(mergedConfig.build.rollupOptions).toStrictEqual(expected)
+    expect(mergedConfig.build.rolldownOptions).toStrictEqual(expected)
+    expect(mergedConfig.worker.rollupOptions).toStrictEqual(expected)
+    expect(mergedConfig.worker.rolldownOptions).toStrictEqual(expected)
+    expect(mergedConfig.optimizeDeps.rollupOptions).toStrictEqual(expected)
+    expect(mergedConfig.optimizeDeps.rolldownOptions).toStrictEqual(expected)
+    expect(mergedConfig.ssr.optimizeDeps.rollupOptions).toStrictEqual(expected)
+    expect(mergedConfig.ssr.optimizeDeps.rolldownOptions).toStrictEqual(
+      expected,
+    )
+  })
+
+  test('syncs `build.rollupOptions` and `build.rolldownOptions`', () => {
+    const baseConfig = defineConfig({
+      build: {
+        rollupOptions: {
+          treeshake: false,
+        },
+      },
+      worker: {
+        rollupOptions: {
+          treeshake: false,
+        },
+      },
+      optimizeDeps: {
+        rollupOptions: {
+          treeshake: false,
+        },
+      },
+      ssr: {
+        optimizeDeps: {
+          rollupOptions: {
+            treeshake: false,
+          },
+        },
+      },
+    })
+
+    const newConfig = defineConfig({
+      build: {
+        rolldownOptions: {
+          output: {
+            minifyInternalExports: true,
+          },
+        },
+      },
+      worker: {
+        rolldownOptions: {
+          output: {
+            minifyInternalExports: true,
+          },
+        },
+      },
+      optimizeDeps: {
+        rolldownOptions: {
+          output: {
+            minifyInternalExports: true,
+          },
+        },
+      },
+      ssr: {
+        optimizeDeps: {
+          rollupOptions: {
+            output: {
+              minifyInternalExports: true,
+            },
+          },
+        },
+      },
+    })
+
+    const mergedConfig = mergeConfig(baseConfig, newConfig) as UserConfig
+
+    const expected = {
+      treeshake: false,
+      output: {
+        minifyInternalExports: true,
+      },
+    }
+    expect(mergedConfig.build!.rollupOptions).toStrictEqual(expected)
+    expect(mergedConfig.build!.rolldownOptions).toStrictEqual(expected)
+    expect(mergedConfig.worker!.rollupOptions).toStrictEqual(expected)
+    expect(mergedConfig.worker!.rolldownOptions).toStrictEqual(expected)
+    expect(mergedConfig.optimizeDeps!.rollupOptions).toStrictEqual(expected)
+    expect(mergedConfig.optimizeDeps!.rolldownOptions).toStrictEqual(expected)
+    expect(mergedConfig.ssr!.optimizeDeps!.rollupOptions).toStrictEqual(
+      expected,
+    )
+    expect(mergedConfig.ssr!.optimizeDeps!.rolldownOptions).toStrictEqual(
+      expected,
+    )
+
+    const upOutput = mergedConfig.build!.rollupOptions!.output!
+    if (Array.isArray(upOutput)) throw new Error()
+    const downOutput = mergedConfig.build!.rolldownOptions!.output!
+    if (Array.isArray(downOutput)) throw new Error()
+    upOutput.hashCharacters = 'base36'
+    expect(upOutput.hashCharacters).toBe('base36')
+    expect(downOutput.hashCharacters).toBe('base36')
+  })
+
+  test('rollupOptions/rolldownOptions.platform', async () => {
+    const testRollupOptions = await resolveConfig(
+      {
+        plugins: [
+          {
+            name: 'set-rollupOptions-platform',
+            configEnvironment(name) {
+              if (name === 'ssr') {
+                return {
+                  build: {
+                    rollupOptions: {
+                      platform: 'neutral',
+                    },
+                  },
+                }
+              }
+            },
+          },
+        ],
+      },
+      'serve',
+    )
+    expect(
+      testRollupOptions.environments.ssr.build.rolldownOptions.platform,
+    ).toBe('neutral')
+    expect(
+      testRollupOptions.environments.client.build.rolldownOptions.platform,
+    ).toBe('browser')
+
+    const testRolldownOptions = await resolveConfig(
+      {
+        plugins: [
+          {
+            name: 'set-rollupOptions-platform',
+            configEnvironment(name) {
+              if (name === 'ssr') {
+                return {
+                  build: {
+                    rolldownOptions: {
+                      platform: 'neutral',
+                    },
+                  },
+                }
+              }
+            },
+          },
+        ],
+      },
+      'serve',
+    )
+    expect(
+      testRolldownOptions.environments.ssr.build.rolldownOptions.platform,
+    ).toBe('neutral')
+    expect(
+      testRolldownOptions.environments.client.build.rolldownOptions.platform,
+    ).toBe('browser')
   })
 })
 
@@ -448,6 +756,19 @@ describe('resolveConfig', () => {
     }
 
     await resolveConfig({ root: './inc?ud#s*', customLogger: logger }, 'build')
+  })
+
+  test('syncs `build.rollupOptions` and `build.rolldownOptions`', async () => {
+    const resolved = await resolveConfig({}, 'build')
+    expect(resolved.build!.rollupOptions).toStrictEqual(
+      resolved.build!.rolldownOptions,
+    )
+    expect(resolved.worker!.rollupOptions).toStrictEqual(
+      resolved.worker!.rolldownOptions,
+    )
+    expect(resolved.optimizeDeps!.rollupOptions).toStrictEqual(
+      resolved.optimizeDeps!.rolldownOptions,
+    )
   })
 })
 
