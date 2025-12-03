@@ -1,3 +1,21 @@
+## <small>[7.2.10](https://github.com/vitejs/rolldown-vite/compare/v7.2.9...v7.2.10) (2025-12-03)</small>
+### Features
+
+* deprecate `build.commonjsOptions` ([#530](https://github.com/vitejs/rolldown-vite/issues/530)) ([9cb6db9](https://github.com/vitejs/rolldown-vite/commit/9cb6db963b946f7b19e7fcd51c313f1a9dbbba4e))
+* update rolldown to 1.0.0-beta.53 ([#537](https://github.com/vitejs/rolldown-vite/issues/537)) ([d488ed4](https://github.com/vitejs/rolldown-vite/commit/d488ed49a0ef2d0df73aeda2f07c6de012e1b5ba))
+
+### Bug Fixes
+
+* disable resolver cache when watcher is disabled ([#471](https://github.com/vitejs/rolldown-vite/issues/471)) ([7d8436c](https://github.com/vitejs/rolldown-vite/commit/7d8436c6ec72f440166101aa91a0dcc2c3af7573))
+
+### Documentation
+
+* update content for beta ([#529](https://github.com/vitejs/rolldown-vite/issues/529)) ([0e6179b](https://github.com/vitejs/rolldown-vite/commit/0e6179b167ce70475121b852ca5d23555f621c61))
+
+### Tests
+
+* remove failure expected cases ([#536](https://github.com/vitejs/rolldown-vite/issues/536)) ([308fcf6](https://github.com/vitejs/rolldown-vite/commit/308fcf659a9bb60a3df0f2e36d59bfeb8bfc5cdb))
+
 ## <small>[7.2.9](https://github.com/vitejs/rolldown-vite/compare/v7.2.8...v7.2.9) (2025-12-01)</small>
 ### Bug Fixes
 
