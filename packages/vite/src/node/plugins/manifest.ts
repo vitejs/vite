@@ -82,7 +82,6 @@ export function manifestPlugin(config: ResolvedConfig): Plugin {
           ? '.vite/manifest.json'
           : environment.config.build.manifest
 
-      const isLegacySet = new Set<string>()
       const envs: Record<string, Environment> = {}
       function getChunkName(chunk: OutputChunk) {
         return (
@@ -97,27 +96,12 @@ export function manifestPlugin(config: ResolvedConfig): Plugin {
           buildStart() {
             envs[environment.name] = this.environment
           },
-          ...(config.isOutputOptionsForLegacyChunks
-            ? {
-                generateBundle(opts) {
-                  const isLegacy =
-                    environment.config.isOutputOptionsForLegacyChunks?.(opts) ??
-                    false
-                  if (isLegacy) {
-                    isLegacySet.add(environment.name)
-                  } else {
-                    isLegacySet.delete(environment.name)
-                  }
-                },
-              }
-            : {}),
         },
         nativeManifestPlugin({
           root,
           outPath,
-          isLegacy: config.isOutputOptionsForLegacyChunks
-            ? () => isLegacySet.has(environment.name)
-            : undefined,
+          isOutputOptionsForLegacyChunks:
+            environment.config.isOutputOptionsForLegacyChunks,
           cssEntries() {
             return Object.fromEntries(
               cssEntriesMap.get(envs[environment.name])!.entries(),
