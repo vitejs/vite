@@ -8,21 +8,25 @@ import type {
   LogOrStringHandler,
   MinimalPluginContext,
   ModuleFormat,
+  OutputBundle,
+  OutputChunk,
   OutputOptions,
   PluginContext,
-  RollupBuild,
+  RenderedChunk,
+  RolldownBuild,
+  RolldownOptions,
+  RolldownOutput,
+  RolldownWatcher,
   RollupError,
   RollupLog,
-  RollupOptions,
-  RollupOutput,
-  RollupWatcher,
   WarningHandlerWithDefault,
   WatcherOptions,
-} from 'rollup'
-import commonjsPlugin from '@rollup/plugin-commonjs'
-import type { TransformOptions } from 'esbuild'
+} from 'rolldown'
+import { viteLoadFallbackPlugin as nativeLoadFallbackPlugin } from 'rolldown/experimental'
+import type { EsbuildTarget } from '#types/internal/esbuildOptions'
 import type { RollupCommonJSOptions } from '#dep-types/commonjs'
 import type { RollupDynamicImportVarsOptions } from '#dep-types/dynamicImportVars'
+import type { ChunkMetadata } from '#types/metadata'
 import {
   DEFAULT_ASSETS_INLINE_LIMIT,
   ESBUILD_BASELINE_WIDELY_AVAILABLE_TARGET,
@@ -50,28 +54,28 @@ import {
   mergeConfig,
   mergeWithDefaults,
   partialEncodeURIPath,
+  setupRollupOptionCompat,
+  unique,
 } from './utils'
 import { perEnvironmentPlugin } from './plugin'
 import { manifestPlugin } from './plugins/manifest'
-import type { Logger } from './logger'
-import { dataURIPlugin } from './plugins/dataUri'
+import { type Logger } from './logger'
 import { buildImportAnalysisPlugin } from './plugins/importAnalysisBuild'
 import { ssrManifestPlugin } from './ssr/ssrManifestPlugin'
-import { buildLoadFallbackPlugin } from './plugins/loadFallback'
 import { findNearestMainPackageData, findNearestPackageData } from './packages'
 import type { PackageCache } from './packages'
 import {
+  convertToNotifyOptions,
   getResolvedOutDirs,
   resolveChokidarOptions,
   resolveEmptyOutDir,
 } from './watch'
-import { completeAmdWrapPlugin } from './plugins/completeAmdWrap'
-import { completeSystemWrapPlugin } from './plugins/completeSystemWrap'
 import { webWorkerPostPlugin } from './plugins/worker'
 import { getHookHandler } from './plugins'
 import { BaseEnvironment } from './baseEnvironment'
 import type { MinimalPluginContextWithoutEnvironment, Plugin } from './plugin'
 import type { RollupPluginHooks } from './typeUtils'
+import { buildOxcPlugin } from './plugins/oxc'
 import { type LicenseOptions, licensePlugin } from './plugins/license'
 import {
   BasicMinimalPluginContext,
@@ -101,7 +105,7 @@ export interface BuildEnvironmentOptions {
    * https://esbuild.github.io/content-types/#javascript for more details.
    * @default 'baseline-widely-available'
    */
-  target?: 'baseline-widely-available' | TransformOptions['target'] | false
+  target?: 'baseline-widely-available' | EsbuildTarget | false
   /**
    * whether to inject module preload polyfill.
    * Note: does not apply to library mode.
@@ -154,13 +158,13 @@ export interface BuildEnvironmentOptions {
    * doesn't support the #RGBA syntax.
    * @default target
    */
-  cssTarget?: TransformOptions['target'] | false
+  cssTarget?: EsbuildTarget | false
   /**
    * Override CSS minification specifically instead of defaulting to `build.minify`,
    * so you can configure minification for JS and CSS separately.
-   * @default 'esbuild'
+   * @default 'lightningcss'
    */
-  cssMinify?: boolean | 'esbuild' | 'lightningcss'
+  cssMinify?: boolean | 'lightningcss' | 'esbuild'
   /**
    * If `true`, a separate sourcemap file will be created. If 'inline', the
    * sourcemap will be appended to the resulting output file as data URI.
@@ -171,10 +175,10 @@ export interface BuildEnvironmentOptions {
   sourcemap?: boolean | 'inline' | 'hidden'
   /**
    * Set to `false` to disable minification, or specify the minifier to use.
-   * Available options are 'terser' or 'esbuild'.
-   * @default 'esbuild'
+   * Available options are 'oxc' or 'terser' or 'esbuild'.
+   * @default 'oxc'
    */
-  minify?: boolean | 'terser' | 'esbuild'
+  minify?: boolean | 'oxc' | 'terser' | 'esbuild'
   /**
    * Options for terser
    * https://terser.org/docs/api-reference#minify-options
@@ -184,12 +188,18 @@ export interface BuildEnvironmentOptions {
    */
   terserOptions?: TerserOptions
   /**
-   * Will be merged with internal rollup options.
-   * https://rollupjs.org/configuration-options/
+   * Alias to `rolldownOptions`
+   * @deprecated Use `rolldownOptions` instead.
    */
-  rollupOptions?: RollupOptions
+  rollupOptions?: RolldownOptions
+  /**
+   * Will be merged with internal rolldown options.
+   * https://rolldown.rs/reference/config-options
+   */
+  rolldownOptions?: RolldownOptions
   /**
    * Options to pass on to `@rollup/plugin-commonjs`
+   * @deprecated This option is no-op and will be removed in future versions.
    */
   commonjsOptions?: RollupCommonJSOptions
   /**
@@ -323,7 +333,7 @@ export interface LibraryOptions {
   cssFileName?: string
 }
 
-export type LibraryFormats = 'es' | 'cjs' | 'umd' | 'iife' | 'system'
+export type LibraryFormats = 'es' | 'cjs' | 'umd' | 'iife' // | 'system'
 
 export interface ModulePreloadOptions {
   /**
@@ -378,7 +388,7 @@ const _buildEnvironmentOptionsDefaults = Object.freeze({
   sourcemap: false,
   // minify
   terserOptions: {},
-  rollupOptions: {},
+  rolldownOptions: {},
   commonjsOptions: {
     include: [/node_modules/],
     extensions: ['.js', '.cjs'],
@@ -430,24 +440,36 @@ export function resolveBuildEnvironmentOptions(
     {
       ..._buildEnvironmentOptionsDefaults,
       cssCodeSplit: !raw.lib,
-      minify: consumer === 'server' ? false : 'esbuild',
+      minify: consumer === 'server' ? false : 'oxc',
+      rollupOptions: {},
+      rolldownOptions: undefined,
       ssr: consumer === 'server',
       emitAssets: consumer === 'client',
       createEnvironment: (name, config) => new BuildEnvironment(name, config),
     } satisfies BuildEnvironmentOptions,
     raw,
   )
+  setupRollupOptionCompat(merged, 'build')
+  merged.rolldownOptions = {
+    platform: consumer === 'server' ? 'node' : 'browser',
+    ...merged.rolldownOptions,
+  }
 
   // handle special build targets
   if (merged.target === 'baseline-widely-available') {
     merged.target = ESBUILD_BASELINE_WIDELY_AVAILABLE_TARGET
+  }
+  // dedupe target
+  if (Array.isArray(merged.target)) {
+    // esbuild allowed duplicate targets but oxc does not
+    merged.target = unique(merged.target)
   }
 
   // normalize false string into actual false
   if ((merged.minify as string) === 'false') {
     merged.minify = false
   } else if (merged.minify === true) {
-    merged.minify = 'esbuild'
+    merged.minify = 'oxc'
   }
 
   const defaultModulePreload = {
@@ -458,7 +480,8 @@ export function resolveBuildEnvironmentOptions(
     ...merged,
     cssTarget: merged.cssTarget ?? merged.target,
     cssMinify:
-      merged.cssMinify ?? (consumer === 'server' ? 'esbuild' : !!merged.minify),
+      merged.cssMinify ??
+      (consumer === 'server' ? 'lightningcss' : !!merged.minify),
     // Resolve to false | object
     modulePreload:
       merged.modulePreload === false
@@ -480,17 +503,7 @@ export async function resolveBuildPlugins(config: ResolvedConfig): Promise<{
 }> {
   return {
     pre: [
-      completeAmdWrapPlugin(),
-      completeSystemWrapPlugin(),
       ...(!config.isWorker ? [prepareOutDirPlugin()] : []),
-      perEnvironmentPlugin('commonjs', (environment) => {
-        const { commonjsOptions } = environment.config.build
-        const usePluginCommonjs =
-          !Array.isArray(commonjsOptions.include) ||
-          commonjsOptions.include.length !== 0
-        return usePluginCommonjs ? commonjsPlugin(commonjsOptions) : false
-      }),
-      dataURIPlugin(),
       perEnvironmentPlugin(
         'vite:rollup-options-plugins',
         async (environment) =>
@@ -500,21 +513,22 @@ export async function resolveBuildPlugins(config: ResolvedConfig): Promise<{
             )
           ).filter(Boolean) as Plugin[],
       ),
-      ...(config.isWorker ? [webWorkerPostPlugin()] : []),
+      ...(config.isWorker ? [webWorkerPostPlugin(config)] : []),
     ],
     post: [
-      buildImportAnalysisPlugin(config),
-      buildEsbuildPlugin(),
+      ...buildImportAnalysisPlugin(config),
+      ...(config.nativePluginEnabledLevel >= 1 ? [] : [buildOxcPlugin()]),
+      ...(config.build.minify === 'esbuild' ? [buildEsbuildPlugin()] : []),
       terserPlugin(config),
       ...(!config.isWorker
         ? [
             licensePlugin(),
-            manifestPlugin(),
+            manifestPlugin(config),
             ssrManifestPlugin(),
             buildReporterPlugin(config),
           ]
         : []),
-      buildLoadFallbackPlugin(),
+      nativeLoadFallbackPlugin(),
     ],
   }
 }
@@ -525,7 +539,7 @@ export async function resolveBuildPlugins(config: ResolvedConfig): Promise<{
  */
 export async function build(
   inlineConfig: InlineConfig = {},
-): Promise<RollupOutput | RollupOutput[] | RollupWatcher> {
+): Promise<RolldownOutput | RolldownOutput[] | RolldownWatcher> {
   const builder = await createBuilder(inlineConfig, true)
   const environment = Object.values(builder.environments)[0]
   if (!environment) throw new Error('No environment found')
@@ -548,7 +562,10 @@ function resolveConfigToBuild(
   )
 }
 
-function resolveRollupOptions(environment: Environment) {
+function resolveRolldownOptions(
+  environment: Environment,
+  chunkMetadataMap: ChunkMetadataMap,
+) {
   const { root, packageCache, build: options } = environment.config
   const libOptions = options.lib
   const { logger } = environment
@@ -595,16 +612,16 @@ function resolveRollupOptions(environment: Environment) {
 
   // inject environment and ssr arg to plugin load/transform hooks
   const plugins = environment.plugins.map((p) =>
-    injectEnvironmentToHooks(environment, p),
+    injectEnvironmentToHooks(environment, chunkMetadataMap, p),
   )
 
-  const rollupOptions: RollupOptions = {
+  const rollupOptions: RolldownOptions = {
     preserveEntrySignatures: ssr
       ? 'allow-extension'
       : libOptions
         ? 'strict'
         : false,
-    cache: options.watch ? undefined : false,
+    // cache: options.watch ? undefined : false,
     ...options.rollupOptions,
     output: options.rollupOptions.output,
     input,
@@ -612,6 +629,34 @@ function resolveRollupOptions(environment: Environment) {
     external: options.rollupOptions.external,
     onLog(level, log) {
       onRollupLog(level, log, environment)
+    },
+    transform: {
+      target: options.target === false ? undefined : options.target,
+      ...options.rollupOptions.transform,
+      define: {
+        ...options.rollupOptions.transform?.define,
+        // disable builtin process.env.NODE_ENV replacement as it is handled by the define plugin
+        'process.env.NODE_ENV': 'process.env.NODE_ENV',
+      },
+    },
+    // TODO: remove this and enable rolldown's CSS support later
+    moduleTypes: {
+      ...options.rollupOptions.moduleTypes,
+      '.css': 'js',
+    },
+    experimental: {
+      ...options.rollupOptions.experimental,
+      viteMode: true,
+    },
+    optimization: {
+      inlineConst:
+        typeof options.rollupOptions.optimization?.inlineConst === 'boolean'
+          ? options.rollupOptions.optimization.inlineConst
+          : {
+              mode: 'smart',
+              ...options.rollupOptions.optimization?.inlineConst,
+            },
+      ...options.rollupOptions.optimization,
     },
   }
 
@@ -658,11 +703,13 @@ function resolveRollupOptions(environment: Environment) {
       exports: 'auto',
       sourcemap: options.sourcemap,
       name: libOptions ? libOptions.name : undefined,
-      hoistTransitiveImports: libOptions ? false : undefined,
+      // hoistTransitiveImports: libOptions ? false : undefined,
       // es2015 enables `generatedCode.symbols`
       // - #764 add `Symbol.toStringTag` when build es module into cjs chunk
       // - #1048 add `Symbol.toStringTag` for module default export
-      generatedCode: 'es2015',
+      generatedCode: {
+        preset: 'es2015',
+      },
       entryFileNames: ssr
         ? `[name].${jsExt}`
         : libOptions
@@ -687,6 +734,22 @@ function resolveRollupOptions(environment: Environment) {
         output.format === 'iife' ||
         (isSsrTargetWebworkerEnvironment &&
           (typeof input === 'string' || Object.keys(input).length === 1)),
+      legalComments: 'none',
+      minify:
+        options.minify === 'oxc'
+          ? libOptions && (format === 'es' || format === 'esm')
+            ? {
+                compress: true,
+                mangle: true,
+                // Do not minify whitespace for ES lib output since that would remove
+                // pure annotations and break tree-shaking
+                codegen: false,
+              }
+            : true
+          : options.minify === false
+            ? 'dce-only'
+            : false,
+      topLevelVar: true,
       ...output,
     }
   }
@@ -712,7 +775,7 @@ function resolveRollupOptions(environment: Environment) {
  **/
 async function buildEnvironment(
   environment: BuildEnvironment,
-): Promise<RollupOutput | RollupOutput[] | RollupWatcher> {
+): Promise<RolldownOutput | RolldownOutput[] | RolldownWatcher> {
   const { logger, config } = environment
   const { root, build: options } = config
 
@@ -724,10 +787,11 @@ async function buildEnvironment(
     ),
   )
 
-  let bundle: RollupBuild | undefined
+  let bundle: RolldownBuild | undefined
   let startTime: number | undefined
   try {
-    const rollupOptions = resolveRollupOptions(environment)
+    const chunkMetadataMap = new ChunkMetadataMap()
+    const rollupOptions = resolveRolldownOptions(environment, chunkMetadataMap)
 
     // watch file changes with rollup
     if (options.watch) {
@@ -746,7 +810,9 @@ async function buildEnvironment(
       )
       const resolvedChokidarOptions = resolveChokidarOptions(
         {
+          // @ts-expect-error chokidar option does not exist in rolldown but used for backward compat
           ...(rollupOptions.watch || {}).chokidar,
+          // @ts-expect-error chokidar option does not exist in rolldown but used for backward compat
           ...options.watch.chokidar,
         },
         resolvedOutDirs,
@@ -754,19 +820,20 @@ async function buildEnvironment(
         environment.config.cacheDir,
       )
 
-      const { watch } = await import('rollup')
+      const { watch } = await import('rolldown')
       const watcher = watch({
         ...rollupOptions,
         watch: {
           ...rollupOptions.watch,
           ...options.watch,
-          chokidar: resolvedChokidarOptions,
+          notify: convertToNotifyOptions(resolvedChokidarOptions),
         },
       })
 
       watcher.on('event', (event) => {
         if (event.code === 'BUNDLE_START') {
           logger.info(colors.cyan(`\nbuild started...`))
+          chunkMetadataMap.clearResetChunks()
         } else if (event.code === 'BUNDLE_END') {
           event.result.close()
           logger.info(colors.cyan(`built in ${event.duration}ms.`))
@@ -781,14 +848,21 @@ async function buildEnvironment(
       return watcher
     }
 
-    // write or generate files with rollup
-    const { rollup } = await import('rollup')
+    // write or generate files with rolldown
+    const { rolldown } = await import('rolldown')
     startTime = Date.now()
-    bundle = await rollup(rollupOptions)
+    bundle = await rolldown(rollupOptions)
 
-    const res: RollupOutput[] = []
+    const res: RolldownOutput[] = []
     for (const output of arraify(rollupOptions.output!)) {
       res.push(await bundle[options.write ? 'write' : 'generate'](output))
+    }
+    for (const output of res) {
+      for (const chunk of output.output) {
+        if (chunk.type === 'chunk') {
+          injectChunkMetadata(chunkMetadataMap, chunk)
+        }
+      }
     }
     logger.info(
       `${colors.green(`✓ built in ${displayTime(Date.now() - startTime)}`)}`,
@@ -999,7 +1073,7 @@ export function onRollupLog(
       // throw unless it's commonjs external...
       if (!id || !id.endsWith('?commonjs-external')) {
         throw new Error(
-          `[vite]: Rollup failed to resolve import "${exporter}" from "${id}".\n` +
+          `[vite]: Rolldown failed to resolve import "${exporter}" from "${id}".\n` +
             `This is most likely unintended because it can break your application at runtime.\n` +
             `If you do want to externalize this module explicitly add it to\n` +
             `\`build.rollupOptions.external\``,
@@ -1022,23 +1096,29 @@ export function onRollupLog(
       }
     }
 
+    // append plugin name to align with Rollup's behavior
+    let message = logging.message
+    if (logging.plugin) {
+      message = `[plugin ${logging.plugin}] ${message}`
+    }
+
     switch (logLeveling) {
       case 'info':
-        environment.logger.info(logging.message)
+        environment.logger.info(message)
         return
       case 'warn':
-        environment.logger.warn(colors.yellow(logging.message))
+        environment.logger.warn(colors.yellow(message))
         return
       case 'error':
-        environment.logger.error(colors.red(logging.message))
+        environment.logger.error(colors.red(message))
         return
       case 'debug':
-        debugLogger?.(logging.message)
+        debugLogger?.(message)
         return
       default:
         logLeveling satisfies never
         // fallback to info if a unknown log level is passed
-        environment.logger.info(logging.message)
+        environment.logger.info(message)
         return
     }
   }
@@ -1102,13 +1182,60 @@ function isExternal(id: string, test: string | RegExp) {
   }
 }
 
+export class ChunkMetadataMap {
+  private _inner = new Map<string, ChunkMetadata>()
+  private _resetChunks = new Set<string>()
+
+  private _getKey(chunk: RenderedChunk | OutputChunk): string {
+    return 'preliminaryFileName' in chunk
+      ? chunk.preliminaryFileName
+      : chunk.fileName
+  }
+
+  private _getDefaultValue(chunk: RenderedChunk | OutputChunk): ChunkMetadata {
+    return {
+      importedAssets: new Set(),
+      importedCss: new Set(),
+      // NOTE: adding this as a workaround for now ideally we'd want to remove this workaround
+      // use shared `chunk.modules` object to allow mutation on js side plugins
+      __modules: chunk.modules,
+    }
+  }
+
+  get(chunk: RenderedChunk | OutputChunk): ChunkMetadata {
+    const key = this._getKey(chunk)
+    if (!this._inner.has(key)) {
+      this._inner.set(key, this._getDefaultValue(chunk))
+    }
+    return this._inner.get(key)!
+  }
+
+  // reset chunk metadata on the first RenderChunk call for watch mode
+  reset(chunk: RenderedChunk | OutputChunk): void {
+    const key = this._getKey(chunk)
+    if (this._resetChunks.has(key)) return
+
+    this._resetChunks.add(key)
+    this._inner.set(key, this._getDefaultValue(chunk))
+  }
+
+  clearResetChunks(): void {
+    this._resetChunks.clear()
+  }
+}
+
 export function injectEnvironmentToHooks(
   environment: Environment,
+  chunkMetadataMap: ChunkMetadataMap,
   plugin: Plugin,
 ): Plugin {
   const { resolveId, load, transform } = plugin
 
-  const clone = { ...plugin }
+  // the plugin can be a class instance (e.g. native plugins)
+  const clone: Plugin = Object.assign(
+    Object.create(Object.getPrototypeOf(plugin)),
+    plugin,
+  )
 
   for (const hook of Object.keys(clone) as RollupPluginHooks[]) {
     switch (hook) {
@@ -1131,7 +1258,12 @@ export function injectEnvironmentToHooks(
         break
       default:
         if (ROLLUP_HOOKS.includes(hook)) {
-          ;(clone as any)[hook] = wrapEnvironmentHook(environment, clone[hook])
+          ;(clone as any)[hook] = wrapEnvironmentHook(
+            environment,
+            chunkMetadataMap,
+            plugin,
+            hook,
+          )
         }
         break
     }
@@ -1222,8 +1354,11 @@ function wrapEnvironmentTransform(
 
 function wrapEnvironmentHook<HookName extends keyof Plugin>(
   environment: Environment,
-  hook?: Plugin[HookName],
+  chunkMetadataMap: ChunkMetadataMap,
+  plugin: Plugin,
+  hookName: HookName,
 ): Plugin[HookName] {
+  const hook = plugin[hookName]
   if (!hook) return
 
   const fn = getHookHandler(hook)
@@ -1233,6 +1368,20 @@ function wrapEnvironmentHook<HookName extends keyof Plugin>(
     this: PluginContext,
     ...args: any[]
   ) {
+    if (hookName === 'renderChunk') {
+      injectChunkMetadata(chunkMetadataMap, args[1], true)
+    }
+    if (hookName === 'augmentChunkHash') {
+      injectChunkMetadata(chunkMetadataMap, args[0])
+    }
+    if (hookName === 'generateBundle' || hookName === 'writeBundle') {
+      const bundle = args[1] as OutputBundle
+      for (const chunk of Object.values(bundle)) {
+        if (chunk.type === 'chunk') {
+          injectChunkMetadata(chunkMetadataMap, chunk)
+        }
+      }
+    }
     return fn.call(injectEnvironmentInContext(this, environment), ...args)
   }
 
@@ -1244,6 +1393,28 @@ function wrapEnvironmentHook<HookName extends keyof Plugin>(
   } else {
     return handler
   }
+}
+
+function injectChunkMetadata(
+  chunkMetadataMap: ChunkMetadataMap,
+  chunk: RenderedChunk | OutputChunk,
+  resetChunkMetadata = false,
+) {
+  if (resetChunkMetadata) {
+    chunkMetadataMap.reset(chunk)
+  }
+  // define instead of assign to avoid detected as a change
+  // https://github.com/rolldown/rolldown/blob/f4c5ff27799f2b0152c689c398e61bc7d30429ff/packages/rolldown/src/utils/transform-to-rollup-output.ts#L87
+  Object.defineProperty(chunk, 'viteMetadata', {
+    value: chunkMetadataMap.get(chunk),
+    enumerable: true,
+  })
+  Object.defineProperty(chunk, 'modules', {
+    get() {
+      return chunk.viteMetadata!.__modules
+    },
+    enumerable: true,
+  })
 }
 
 function injectEnvironmentInContext<Context extends MinimalPluginContext>(
@@ -1328,12 +1499,12 @@ const relativeUrlMechanisms: Record<
   InternalModuleFormat,
   (relativePath: string) => string
 > = {
-  amd: (relativePath) => {
-    if (relativePath[0] !== '.') relativePath = './' + relativePath
-    return getResolveUrl(
-      `require.toUrl('${escapeId(relativePath)}'), document.baseURI`,
-    )
-  },
+  // amd: (relativePath) => {
+  //   if (relativePath[0] !== '.') relativePath = './' + relativePath
+  //   return getResolveUrl(
+  //     `require.toUrl('${escapeId(relativePath)}'), document.baseURI`,
+  //   )
+  // },
   cjs: (relativePath) =>
     `(typeof document === 'undefined' ? ${getFileUrlFromRelativePath(
       relativePath,
@@ -1344,10 +1515,10 @@ const relativeUrlMechanisms: Record<
     ),
   iife: (relativePath) => getRelativeUrlFromDocument(relativePath),
   // NOTE: make sure rollup generate `module` params
-  system: (relativePath) =>
-    getResolveUrl(
-      `'${escapeId(partialEncodeURIPath(relativePath))}', module.meta.url`,
-    ),
+  // system: (relativePath) =>
+  //   getResolveUrl(
+  //     `'${escapeId(partialEncodeURIPath(relativePath))}', module.meta.url`,
+  //   ),
   umd: (relativePath) =>
     `(typeof document === 'undefined' && typeof location === 'undefined' ? ${getFileUrlFromRelativePath(
       relativePath,
@@ -1505,7 +1676,7 @@ export interface ViteBuilder {
   buildApp(): Promise<void>
   build(
     environment: BuildEnvironment,
-  ): Promise<RollupOutput | RollupOutput[] | RollupWatcher>
+  ): Promise<RolldownOutput | RolldownOutput[] | RolldownWatcher>
 }
 
 export interface BuilderOptions {
@@ -1612,7 +1783,7 @@ export async function createBuilder(
     },
     async build(
       environment: BuildEnvironment,
-    ): Promise<RollupOutput | RollupOutput[] | RollupWatcher> {
+    ): Promise<RolldownOutput | RolldownOutput[] | RolldownWatcher> {
       const output = await buildEnvironment(environment)
       environment.isBuilt = true
       return output

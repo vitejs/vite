@@ -26,8 +26,6 @@
     "@vitejs/test-require-pkg-with-module-field": "link:./require-pkg-with-module-field",
     "@vitejs/test-resolve-browser-field": "link:./browser-field",
     "@vitejs/test-resolve-browser-module-field1": "link:./browser-module-field1",
-    "@vitejs/test-resolve-browser-module-field2": "link:./browser-module-field2",
-    "@vitejs/test-resolve-browser-module-field3": "link:./browser-module-field3",
     "@vitejs/test-resolve-custom-condition": "link:./custom-condition",
     "@vitejs/test-resolve-custom-main-field": "link:./custom-main-field",
     "@vitejs/test-resolve-custom-browser-main-field": "link:./custom-browser-main-field",
