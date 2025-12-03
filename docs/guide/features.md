@@ -98,6 +98,12 @@ If `target` in `tsconfig.json` is not `ESNext` or `ES2022` or newer, or if there
 As such, it is recommended to set `target` to `ESNext` or `ES2022` or newer, or set `useDefineForClassFields` to `true` explicitly when configuring `tsconfig.json`.
 :::
 
+#### `emitDecoratorMetadata`
+
+- [TypeScript documentation](https://www.typescriptlang.org/tsconfig#emitDecoratorMetadata)
+
+This option is only partially supported. Full support requires type inference by the TypeScript compiler, which is not supported. See [Oxc Transformer's documentation](https://oxc.rs/docs/guide/usage/transformer/typescript#decorators) for details.
+
 #### `paths`
 
 - [TypeScript documentation](https://www.typescriptlang.org/tsconfig/#paths)
