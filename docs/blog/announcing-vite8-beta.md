@@ -31,7 +31,7 @@ _December 3, 2025_
 
 ![Vite 8 Beta Announcement Cover Image](/og-image-announcing-vite8-beta.webp)
 
-TL;DR: The first beta of Vite 8, powered by [Rolldown](https://rolldown.rs/), is now available. Vite 8 ships significantly faster production builds and unlocks future improvement possibilities. You can try the new release by upgrading `vite` to version `8.0.0-beta.0` and reading the [migration guide](/guide/migration).
+TL;DR: The first beta of Vite 8, powered by [Rolldown](https://rolldown.rs/), is now available. Vite 8 ships significantly faster production builds and unlocks future improvement possibilities. You can try the new release by upgrading `vite` to version `8.0.0-beta.0` and reading the [migration guide](https://main.vite.dev/guide/migration).
 
 ---
 
@@ -78,7 +78,7 @@ As a result, there is a smooth migration path to Vite 8 for everyone.
 
 ## Migrating to Vite 8 Beta
 
-Since Vite 8 touches the core build behavior, we focused on keeping the configuration API and plugin hooks unchanged. We created a [migration guide](/guide/migration) to help you upgrade.
+Since Vite 8 touches the core build behavior, we focused on keeping the configuration API and plugin hooks unchanged. We created a [migration guide](https://main.vite.dev/guide/migration) to help you upgrade.
 
 There are two available upgrade paths:
 
@@ -86,7 +86,7 @@ There are two available upgrade paths:
 2. **Gradual Migration:** Migrate from Vite 7 to the `rolldown-vite` package, and then to Vite 8. This allows you to identify incompatibilities or issues isolated to Rolldown without other changes to Vite. (Recommended for larger or complex projects)
 
 > [!IMPORTANT]
-> If you are relying on specific Rollup or esbuild options, you might need to make some adjustments to your Vite config. Please refer to the [migration guide](/guide/migration) for detailed instructions and examples.
+> If you are relying on specific Rollup or esbuild options, you might need to make some adjustments to your Vite config. Please refer to the [migration guide](https://main.vite.dev/guide/migration) for detailed instructions and examples.
 > As with all non-stable, major releases, thorough testing is recommended after upgrading to ensure everything works as expected. Please make sure to report any [issues](https://github.com/vitejs/rolldown-vite/issues).
 
 If you use a metaframework or Vitest, in order to use Vite 8 beta, you have to override the `vite` dependency in your `package.json`, which works slightly different depending on your package manager:
@@ -135,8 +135,8 @@ After adding these overrides, reinstall your dependencies and start your develop
 
 In addition to shipping with Rolldown, Vite 8 comes with:
 
-- **Built-in tsconfig `paths` support:** Developers can enable it by setting [`resolve.tsconfigPaths`](/config/shared-options.md#resolve-tsconfigpaths) to `true`. This feature has a small performance cost and is not enabled by default.
-- **`emitDecoratorMetadata` support:** Vite 8 now has built-in automatic support for TypeScript's [`emitDecoratorMetadata` option](https://www.typescriptlang.org/tsconfig/#emitDecoratorMetadata). See the [Features](/guide/features.md#emitdecoratormetadata) page for more details.
+- **Built-in tsconfig `paths` support:** Developers can enable it by setting [`resolve.tsconfigPaths`](https://main.vite.dev/config/shared-options.md#resolve-tsconfigpaths) to `true`. This feature has a small performance cost and is not enabled by default.
+- **`emitDecoratorMetadata` support:** Vite 8 now has built-in automatic support for TypeScript's [`emitDecoratorMetadata` option](https://www.typescriptlang.org/tsconfig/#emitDecoratorMetadata). See the [Features](https://main.vite.dev/guide/features.md#emitdecoratormetadata) page for more details.
 
 ## Looking Ahead
 
