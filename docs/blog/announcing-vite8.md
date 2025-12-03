@@ -35,7 +35,7 @@ TL;DR: The first beta of Vite 8, powered by [Rolldown](https://rolldown.rs/), is
 
 ---
 
-We're excited to release the first beta of Vite 8. This release marks a major milestone towards [our goal of a unified JavaScript toolchain](https://voidzero.dev/posts/announcing-vite-plus). Vite now uses [Rolldown](https://rolldown.rs/) as its bundler, replacing the previous combination of esbuild and Rollup.
+We're excited to release the first beta of Vite 8. This release unifies the underlying toolchain and brings better consistent behaviors, alongside significant build performance improvements. Vite now uses [Rolldown](https://rolldown.rs/) as its bundler, replacing the previous combination of esbuild and Rollup.
 
 ## A new bundler for the web
 
@@ -46,9 +46,9 @@ Vite previously relied on two bundlers to meet differing requirements for develo
 
 This approach lets Vite focus on developer experience and orchestration instead of reinventing parsing and bundling. However, maintaining two separate bundling pipelines introduced inconsistencies: separate transformation pipelines, different plugin systems and a growing amount of glue code to keep bundling behavior aligned between development and production.
 
-To solve this, we built **Rolldown**, our next-generation bundler designed for:
+To solve this, [VoidZero team](https://voidzero.dev) has built **Rolldown**, the next-generation bundler with the goal to be used in Vite. It is designed for:
 
-- **Performance**: Rolldown is written in Rust and operates at native speed. It matches esbuild’s performance level and is [**10–30× faster than Rollup**](https://github.com/rolldown/benchmarks).
+- **Performance**: Rolldown is written in Rust and operates at native speed. It matches esbuild’s performance level and is [**10–30× faster than Rollup**](https://github.com/rolldown/benchmarks).
 - **Compatibility**: Rolldown supports the same plugin API as Rollup and Vite. Most Vite plugins work out of the box with Vite 8.
 - **More Features**: Rolldown unlocks more advanced features for Vite, including full bundle mode, more flexible chunk split control, module-level persistent cache, Module Federation, and more.
 
@@ -93,8 +93,11 @@ There are two available upgrade paths:
 
 In addition to shipping with Rolldown, Vite 8 comes with:
 
-- **Built-in tsconfig `paths` support:** Developers can enable it by setting `resolve.tsconfigPaths` to `true`. This feature has a small performance cost and is not enabled by default.
-- **`emitDecoratorMetadata` support:** Vite 8 now has built-in automatic support for TypeScript's [`emitDecoratorMetadata` option](https://www.typescriptlang.org/tsconfig/#emitDecoratorMetadata).
+<!-- TODO: add `resolve.tsconfigPaths` docs -->
+<!-- TODO: add `emitDecoratorMetadata` docs to features page -->
+
+- **Built-in tsconfig `paths` support:** Developers can enable it by setting [`resolve.tsconfigPaths`](/config/shared-options.md#resolve-tsconfigpaths) to `true`. This feature has a small performance cost and is not enabled by default.
+- **`emitDecoratorMetadata` support:** Vite 8 now has built-in automatic support for TypeScript's [`emitDecoratorMetadata` option](https://www.typescriptlang.org/tsconfig/#emitDecoratorMetadata). See the [Features](/config/features.md#emitdecoratormetadata) page for more details.
 
 ## Looking Ahead
 
@@ -102,7 +105,7 @@ Speed has always been a defining feature for Vite. The integration with Rolldown
 
 We are also excited to ship Vite’s Full Bundle Mode soon, which drastically improves Vite’s dev server speed for large projects. Preliminary results show 3× faster dev server startup, 40% faster full reloads, and 10× fewer network requests.
 
-Another defining Vite feature is the plugin ecosystem. We want JavaScript developers to continue extending and customizing Vite in JavaScript, the language they’re familiar with, while benefiting from Rust’s performance gains. Our team is working to accelerate JavaScript plugin usage in these Rust-based systems.
+Another defining Vite feature is the plugin ecosystem. We want JavaScript developers to continue extending and customizing Vite in JavaScript, the language they’re familiar with, while benefiting from Rust’s performance gains. Our team is collaborating with VoidZero team to accelerate JavaScript plugin usage in these Rust-based systems.
 
 Upcoming optimizations that are currently experimental:
 
@@ -113,8 +116,8 @@ Upcoming optimizations that are currently experimental:
 
 If you've tried Vite 8 beta, then we'd love to hear your feedback! Please report any issues or share your experience:
 
-- **Discord**: Join our [community server](https://chat.vite.dev/) for real-time discussions
-- **GitHub**: Share feedback on [GitHub discussions](https://github.com/vitejs/vite/discussions)
+- **Discord**: Join our [community server](https://chat.vite.dev/) for real-time discussions
+- **GitHub**: Share feedback on [GitHub discussions](https://github.com/vitejs/vite/discussions)
 - **Issues**: Report issues on the [rolldown-vite repository](https://github.com/vitejs/rolldown-vite/issues) for bugs and regressions
 - **Wins**: Share your improved build times in the [rolldown-vite-perf-wins repository](https://github.com/vitejs/rolldown-vite-perf-wins)
 
