@@ -13,7 +13,7 @@ head:
       content: Announcing Vite 8 Beta
   - - meta
     - property: og:image
-      content: https://vite.dev/og-image-announcing-vite8-beta.jpg
+      content: https://vite.dev/og-image-announcing-vite8-beta.webp
   - - meta
     - property: og:url
       content: https://vite.dev/blog/announcing-vite8-beta
@@ -29,7 +29,7 @@ head:
 
 _December 3, 2025_
 
-![Vite 8 Beta Announcement Cover Image](/og-image-announcing-vite8-beta.jpg)
+![Vite 8 Beta Announcement Cover Image](/og-image-announcing-vite8-beta.webp)
 
 TL;DR: The first beta of Vite 8, powered by [Rolldown](https://rolldown.rs/), is now available. Vite 8 ships significantly faster production builds and unlocks future improvement possibilities. You can try the new release by upgrading `vite` to version `8.0.0-beta.0` and reading the [migration guide](/guide/migration).
 
