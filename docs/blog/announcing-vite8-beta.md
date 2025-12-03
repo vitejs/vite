@@ -119,4 +119,4 @@ If you've tried Vite 8 beta, then we'd love to hear your feedback! Please report
 - **Issues**: Report issue on the [rolldown-vite repository](https://github.com/vitejs/rolldown-vite/issues) for bugs and regressions
 - **Wins**: Share your improved build times in the [rolldown-vite-perf-wins repository](https://github.com/vitejs/rolldown-vite-perf-wins)
 
-We appreciate all reports and reproduction cases. They help guide us the release for a stable 8.0.0.
+We appreciate all reports and reproduction cases. They help guide us towards the release of a stable 8.0.0.
