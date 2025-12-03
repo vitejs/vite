@@ -1,5 +1,5 @@
 ---
-title: Vite 8 Beta- The Rolldown-powered Vite
+title: 'Vite 8 Beta: The Rolldown-powered Vite'
 author:
   name: The Vite Team
 date: 2025-12-03
