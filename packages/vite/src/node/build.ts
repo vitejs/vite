@@ -91,8 +91,8 @@ export interface BuildEnvironmentOptions {
    * syntax transformation and does not cover polyfills
    *
    * Default: 'baseline-widely-available' - transpile targeting browsers that
-   * are included in the Baseline Widely Available on 2025-05-01.
-   * (Chrome 107+, Edge 107+, Firefox 104+, Safari 16+).
+   * are included in the Baseline Widely Available on 2026-01-01.
+   * (Chrome 111+, Edge 111+, Firefox 114+, Safari 16.4+).
    *
    * Another special value is 'esnext' - which only performs minimal transpiling
    * (for minification compat).
