@@ -8,7 +8,7 @@ const buildProject = ({ format = 'es' as ModuleFormat } = {}) =>
     logLevel: 'silent',
     build: {
       write: false,
-      rollupOptions: {
+      rolldownOptions: {
         input: 'main.js',
         output: {
           format,

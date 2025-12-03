@@ -4,7 +4,7 @@ import { defineConfig } from 'vite'
 export default defineConfig({
   build: {
     manifest: true,
-    rollupOptions: {
+    rolldownOptions: {
       input: {
         main: resolve(__dirname, './index.html'),
         other: resolve(__dirname, './other.js'),

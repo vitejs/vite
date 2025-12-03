@@ -195,7 +195,7 @@ async function computeEntries(environment: ScanEnvironment) {
   let entries: string[] = []
 
   const explicitEntryPatterns = environment.config.optimizeDeps.entries
-  const buildInput = environment.config.build.rollupOptions.input
+  const buildInput = environment.config.build.rolldownOptions.input
 
   if (explicitEntryPatterns) {
     entries = await globEntries(explicitEntryPatterns, environment)
@@ -214,7 +214,7 @@ async function computeEntries(environment: ScanEnvironment) {
       )?.id
       if (id === undefined) {
         throw new Error(
-          `failed to resolve rollupOptions.input value: ${JSON.stringify(p)}.`,
+          `failed to resolve rolldownOptions.input value: ${JSON.stringify(p)}.`,
         )
       }
       return id
@@ -226,7 +226,7 @@ async function computeEntries(environment: ScanEnvironment) {
     } else if (isObject(buildInput)) {
       entries = await Promise.all(Object.values(buildInput).map(resolvePath))
     } else {
-      throw new Error('invalid rollupOptions.input value.')
+      throw new Error('invalid rolldownOptions.input value.')
     }
   } else {
     entries = await globEntries('**/*.html', environment)

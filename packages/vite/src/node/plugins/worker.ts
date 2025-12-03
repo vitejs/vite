@@ -183,14 +183,14 @@ async function bundleWorkerEntry(
 
   // bundle the file as entry to support imports
   const { rolldown } = await import('rolldown')
-  const { plugins, rollupOptions, format } = config.worker
+  const { plugins, rolldownOptions, format } = config.worker
   const workerConfig = await plugins(newBundleChain)
   const workerEnvironment = new BuildEnvironment('client', workerConfig) // TODO: should this be 'worker'?
   await workerEnvironment.init()
 
   const chunkMetadataMap = new ChunkMetadataMap()
   const bundle = await rolldown({
-    ...rollupOptions,
+    ...rolldownOptions,
     input,
     plugins: workerEnvironment.plugins.map((p) =>
       injectEnvironmentToHooks(workerEnvironment, chunkMetadataMap, p),
@@ -201,14 +201,14 @@ async function bundleWorkerEntry(
     // TODO: remove this and enable rolldown's CSS support later
     moduleTypes: {
       '.css': 'js',
-      ...rollupOptions.moduleTypes,
+      ...rolldownOptions.moduleTypes,
     },
     preserveEntrySignatures: false,
   })
   let result: RolldownOutput
   let watchedFiles: string[] | undefined
   try {
-    const workerOutputConfig = config.worker.rollupOptions.output
+    const workerOutputConfig = config.worker.rolldownOptions.output
     const workerConfig = workerOutputConfig
       ? Array.isArray(workerOutputConfig)
         ? workerOutputConfig[0] || {}

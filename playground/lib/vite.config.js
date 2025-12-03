@@ -15,7 +15,7 @@ export default defineConfig({
     // - object rest spread
     // - optional chaining
     target: 'chrome46',
-    rollupOptions: {
+    rolldownOptions: {
       output: {
         legalComments: 'inline',
         banner: `/*!\nMayLib\n*/`,
