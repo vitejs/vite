@@ -362,13 +362,15 @@ export type ResolveModulePreloadDependenciesFn = (
   },
 ) => string[]
 
-export interface ResolvedBuildEnvironmentOptions
-  extends Required<Omit<BuildEnvironmentOptions, 'polyfillModulePreload'>> {
+export interface ResolvedBuildEnvironmentOptions extends Required<
+  Omit<BuildEnvironmentOptions, 'polyfillModulePreload'>
+> {
   modulePreload: false | ResolvedModulePreloadOptions
 }
 
-export interface ResolvedBuildOptions
-  extends Required<Omit<BuildOptions, 'polyfillModulePreload'>> {
+export interface ResolvedBuildOptions extends Required<
+  Omit<BuildOptions, 'polyfillModulePreload'>
+> {
   modulePreload: false | ResolvedModulePreloadOptions
 }
 
@@ -1074,7 +1076,7 @@ export function onRollupLog(
           `[vite]: Rolldown failed to resolve import "${exporter}" from "${id}".\n` +
             `This is most likely unintended because it can break your application at runtime.\n` +
             `If you do want to externalize this module explicitly add it to\n` +
-            `\`build.rollupOptions.external\``,
+            `\`build.rolldownOptions.external\``,
         )
       }
     }
