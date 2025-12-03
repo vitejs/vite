@@ -8,10 +8,10 @@ By default, the production bundle assumes a modern browser that is included in t
 
 <!-- Search for the `ESBUILD_BASELINE_WIDELY_AVAILABLE_TARGET` constant for more information -->
 
-- Chrome >=107
-- Edge >=107
-- Firefox >=104
-- Safari >=16
+- Chrome >=111
+- Edge >=111
+- Firefox >=114
+- Safari >=16.4
 
 You can specify custom targets via the [`build.target` config option](/config/build-options.md#build-target), where the lowest target is `es2015`. If a lower target is set, Vite will still require these minimum browser support ranges as it relies on [native ESM dynamic import](https://caniuse.com/es6-module-dynamic-import), and [`import.meta`](https://caniuse.com/mdn-javascript_operators_import_meta):
 
