@@ -13,7 +13,7 @@ export default defineConfig({
       treeshake: false,
       output: {
         format: 'cjs',
-        freeze: false,
+        // freeze: false,
         externalLiveBindings: false,
       },
     },

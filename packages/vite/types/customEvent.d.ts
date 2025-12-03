@@ -3,7 +3,7 @@ import type {
   FullReloadPayload,
   PrunePayload,
   UpdatePayload,
-} from './hmrPayload'
+} from './hmrPayload.js'
 
 export interface CustomEventMap {
   // client events

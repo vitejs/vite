@@ -27,6 +27,38 @@ const transformPlugin = {
   },
 }
 
+const moduleTypePlugins = [
+  /** @type {const} */ ...['pre', 'post'].map((enforce) => ({
+    name: `module-type-${enforce}`,
+    enforce,
+    transform(code, id, opts) {
+      if (id.endsWith('/foo.json') || id.endsWith('\0/bar.json')) {
+        code = code.replace(
+          `MODULE_TYPE_${enforce.toUpperCase()}`,
+          opts.moduleType,
+        )
+        return code
+      }
+    },
+  })),
+  {
+    name: `module-type-load`,
+    resolveId(id) {
+      if (id === 'virtual:/bar.json') {
+        return '\0/bar.json'
+      }
+    },
+    load(id) {
+      if (id.endsWith('\0/bar.json')) {
+        return JSON.stringify({
+          moduleTypePre: 'MODULE_TYPE_PRE',
+          moduleTypePost: 'MODULE_TYPE_POST',
+        })
+      }
+    },
+  },
+]
+
 export default defineConfig({
-  plugins: [transformPlugin],
+  plugins: [transformPlugin, moduleTypePlugins],
 })

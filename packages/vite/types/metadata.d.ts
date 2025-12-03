@@ -1,6 +1,8 @@
 export interface ChunkMetadata {
   importedAssets: Set<string>
   importedCss: Set<string>
+  /** @internal */
+  __modules: any
 }
 
 export interface CustomPluginOptionsVite {
@@ -22,8 +24,11 @@ export interface CustomPluginOptionsVite {
   lang?: string
 }
 
-declare module 'rollup' {
+declare module 'rolldown' {
   export interface RenderedChunk {
+    viteMetadata?: ChunkMetadata
+  }
+  export interface OutputChunk {
     viteMetadata?: ChunkMetadata
   }
 

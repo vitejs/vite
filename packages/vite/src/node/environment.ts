@@ -1,4 +1,4 @@
-import type { PluginContext } from 'rollup'
+import type { PluginContext } from 'rolldown'
 import type { DevEnvironment } from './server/environment'
 import type { BuildEnvironment } from './build'
 import type { ScanEnvironment } from './optimizer/scan'

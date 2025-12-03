@@ -99,6 +99,8 @@ export default defineConfig(
         {
           allowModules: [
             'vite',
+            'esbuild',
+            'rolldown',
             'less',
             'sass',
             'sass-embedded',

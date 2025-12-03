@@ -18,6 +18,15 @@ The function should return new plugin instances as they are used in parallel rol
 
 ## worker.rollupOptions
 
-- **Type:** [`RollupOptions`](https://rollupjs.org/configuration-options/)
+<!-- TODO: update the link below to Rolldown's documentation -->
+
+- **Type:** [`RolldownOptions`](https://rollupjs.org/configuration-options/)
 
 Rollup options to build worker bundle.
+
+## worker.rollupOptions
+
+- **Type:** `RolldownOptions`
+- **Deprecated**
+
+This option is an alias of `worker.rolldownOptions` option. Use `build.rolldownOptions` option instead.

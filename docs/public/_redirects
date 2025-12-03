@@ -7,6 +7,8 @@ https://vitejs.dev/* https://vite.dev/:splat 301!
 /guide/api-vite-environment.html /guide/api-environment 301
 /guide/comparisons /guide/why#how-vite-relates-to-other-unbundled-build-tools 301
 /guide/comparisons.html /guide/why#how-vite-relates-to-other-unbundled-build-tools 301
+/guide/rolldown https://v7.vite.dev/guide/rolldown 301
+/guide/rolldown.html https://v7.vite.dev/guide/rolldown 301
 
 # llms.txt
 /*.txt           /:splat.md 301

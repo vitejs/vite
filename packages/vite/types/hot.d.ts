@@ -1,4 +1,4 @@
-import type { CustomEventName, InferCustomEventPayload } from './customEvent'
+import type { CustomEventName, InferCustomEventPayload } from './customEvent.js'
 
 export type ModuleNamespace = Record<string, any> & {
   [Symbol.toStringTag]: 'Module'

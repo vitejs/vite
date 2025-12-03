@@ -1,12 +1,16 @@
 import aliasPlugin, { type ResolverFunction } from '@rollup/plugin-alias'
-import type { ObjectHook } from 'rollup'
+import type { ObjectHook } from 'rolldown'
+import { viteAliasPlugin as nativeAliasPlugin } from 'rolldown/experimental'
 import type { PluginHookUtils, ResolvedConfig } from '../config'
-import type { HookHandler, Plugin, PluginWithRequiredHook } from '../plugin'
+import {
+  type HookHandler,
+  type Plugin,
+  type PluginWithRequiredHook,
+} from '../plugin'
 import { watchPackageDataPlugin } from '../packages'
 import { jsonPlugin } from './json'
-import { resolvePlugin } from './resolve'
+import { oxcResolvePlugin, resolvePlugin } from './resolve'
 import { optimizedDepsPlugin } from './optimizedDeps'
-import { esbuildPlugin } from './esbuild'
 import { importAnalysisPlugin } from './importAnalysis'
 import { cssAnalysisPlugin, cssPlugin, cssPostPlugin } from './css'
 import { assetPlugin } from './asset'
@@ -19,7 +23,6 @@ import { preAliasPlugin } from './preAlias'
 import { definePlugin } from './define'
 import { workerImportMetaUrlPlugin } from './workerImportMetaUrl'
 import { assetImportMetaUrlPlugin } from './assetImportMetaUrl'
-import { metadataPlugin } from './metadata'
 import { dynamicImportVarsPlugin } from './dynamicImportVars'
 import { importGlobPlugin } from './importMetaGlob'
 import {
@@ -28,6 +31,8 @@ import {
   createFilterForTransform,
   createIdFilter,
 } from './pluginFilter'
+import { oxcPlugin } from './oxc'
+import { esbuildBannerFooterCompatPlugin } from './esbuildBannerFooterCompatPlugin'
 
 export async function resolvePlugins(
   config: ResolvedConfig,
@@ -41,42 +46,74 @@ export async function resolvePlugins(
     ? await (await import('../build')).resolveBuildPlugins(config)
     : { pre: [], post: [] }
   const { modulePreload } = config.build
+  const enableNativePlugin = config.nativePluginEnabledLevel >= 0
+  const enableNativePluginV1 = config.nativePluginEnabledLevel >= 1
 
   return [
     !isBuild ? optimizedDepsPlugin() : null,
-    isBuild ? metadataPlugin() : null,
     !isWorker ? watchPackageDataPlugin(config.packageCache) : null,
     !isBuild ? preAliasPlugin(config) : null,
-    aliasPlugin({
-      entries: config.resolve.alias,
-      customResolver: viteAliasCustomResolver,
-    }),
+    isBuild &&
+    enableNativePluginV1 &&
+    !config.resolve.alias.some((v) => v.customResolver)
+      ? nativeAliasPlugin({
+          entries: config.resolve.alias.map((item) => {
+            return {
+              find: item.find,
+              replacement: item.replacement,
+            }
+          }),
+        })
+      : aliasPlugin({
+          // @ts-expect-error aliasPlugin receives rollup types
+          entries: config.resolve.alias,
+          customResolver: viteAliasCustomResolver,
+        }),
 
     ...prePlugins,
 
     modulePreload !== false && modulePreload.polyfill
       ? modulePreloadPolyfillPlugin(config)
       : null,
-    resolvePlugin({
-      root: config.root,
-      isProduction: config.isProduction,
-      isBuild,
-      packageCache: config.packageCache,
-      asSrc: true,
-      optimizeDeps: true,
-      externalize: true,
-    }),
+    ...(enableNativePlugin
+      ? oxcResolvePlugin(
+          {
+            root: config.root,
+            isProduction: config.isProduction,
+            isBuild,
+            packageCache: config.packageCache,
+            asSrc: true,
+            optimizeDeps: true,
+            externalize: true,
+            legacyInconsistentCjsInterop: config.legacy?.inconsistentCjsInterop,
+          },
+          isWorker
+            ? { ...config, consumer: 'client', optimizeDepsPluginNames: [] }
+            : undefined,
+        )
+      : [
+          resolvePlugin({
+            root: config.root,
+            isProduction: config.isProduction,
+            isBuild,
+            packageCache: config.packageCache,
+            asSrc: true,
+            optimizeDeps: true,
+            externalize: true,
+          }),
+        ]),
     htmlInlineProxyPlugin(config),
     cssPlugin(config),
-    config.esbuild !== false ? esbuildPlugin(config) : null,
-    jsonPlugin(config.json, isBuild),
-    wasmHelperPlugin(),
+    esbuildBannerFooterCompatPlugin(config),
+    config.oxc !== false ? oxcPlugin(config) : null,
+    jsonPlugin(config.json, isBuild, enableNativePluginV1),
+    wasmHelperPlugin(config),
     webWorkerPlugin(config),
     assetPlugin(config),
 
     ...normalPlugins,
 
-    wasmFallbackPlugin(),
+    wasmFallbackPlugin(config),
     definePlugin(config),
     cssPostPlugin(config),
     isBuild && buildHtmlPlugin(config),
@@ -203,6 +240,7 @@ export function getCachedFilterForPlugin<
       filters.transform = createFilterForTransform(
         rawFilters?.id,
         rawFilters?.code,
+        rawFilters?.moduleType,
       )
       filter = filters.transform
       break

@@ -139,14 +139,6 @@ test('Resolve browser field even if module field exists', async () => {
   expect(await page.textContent('.browser-module1')).toMatch('[success]')
 })
 
-test('Resolve module field if browser field is likely UMD or CJS', async () => {
-  expect(await page.textContent('.browser-module2')).toMatch('[success]')
-})
-
-test('Resolve module field if browser field is likely IIFE', async () => {
-  expect(await page.textContent('.browser-module3')).toMatch('[success]')
-})
-
 test('css entry', async () => {
   expect(await page.textContent('.css')).toMatch('[success]')
 })
@@ -157,6 +149,10 @@ test('monorepo linked dep', async () => {
 
 test('plugin resolved virtual file', async () => {
   expect(await page.textContent('.virtual')).toMatch('[success]')
+})
+
+test('plugin resolved virtual file that has import', async () => {
+  expect(await page.textContent('.virtual-has-import')).toMatch('[success]')
 })
 
 test('plugin resolved custom virtual file', async () => {

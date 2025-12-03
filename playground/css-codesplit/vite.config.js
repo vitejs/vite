@@ -13,11 +13,20 @@ export default defineConfig({
         'shared-css-no-js': resolve(__dirname, 'shared-css-no-js.html'),
       },
       output: {
-        manualChunks(id) {
-          // make `chunk.css` it's own chunk for easier testing of pure css chunks
-          if (id.includes('chunk.css')) {
-            return 'chunk'
-          }
+        // manualChunks(id) {
+        //   // make `chunk.css` it's own chunk for easier testing of pure css chunks
+        //   if (id.includes('chunk.css')) {
+        //     return 'chunk'
+        //   }
+        // },
+        advancedChunks: {
+          groups: [
+            // make `chunk.css` it's own chunk for easier testing of pure css chunks
+            {
+              name: 'chunk',
+              test: 'chunk.css',
+            },
+          ],
         },
       },
     },

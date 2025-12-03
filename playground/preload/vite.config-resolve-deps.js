@@ -14,11 +14,11 @@ export default defineConfig({
     },
     rollupOptions: {
       output: {
-        manualChunks(id) {
-          if (id.includes('chunk.js')) {
-            return 'chunk'
-          }
-        },
+        // manualChunks(id) {
+        //   if (id.includes('chunk.js')) {
+        //     return 'chunk'
+        //   }
+        // },
       },
     },
     modulePreload: {

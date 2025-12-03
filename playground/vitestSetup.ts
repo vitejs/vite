@@ -20,7 +20,11 @@ import {
   preview,
 } from 'vite'
 import type { Browser, Page } from 'playwright-chromium'
-import type { RollupError, RollupWatcher, RollupWatcherEvent } from 'rollup'
+import type {
+  RolldownWatcher,
+  RolldownWatcherEvent,
+  RollupError,
+} from 'rolldown'
 import { beforeAll, expect, inject } from 'vitest'
 
 // #region serializer
@@ -101,7 +105,7 @@ export const browserErrors: Error[] = []
 export let page: Page = undefined!
 export let browser: Browser = undefined!
 export let viteTestUrl: string = ''
-export let watcher: RollupWatcher | undefined = undefined
+export let watcher: RolldownWatcher | undefined = undefined
 
 export function setViteUrl(url: string): void {
   viteTestUrl = url
@@ -305,7 +309,7 @@ export async function startDefaultServe(): Promise<void> {
       const isWatch = !!resolvedConfig!.build.watch
       // in build watch,call startStaticServer after the build is complete
       if (isWatch) {
-        watcher = rollupOutput as RollupWatcher
+        watcher = rollupOutput as RolldownWatcher
         await notifyRebuildComplete(watcher)
       }
       if (buildConfig.__test__) {
@@ -334,10 +338,10 @@ export async function startDefaultServe(): Promise<void> {
  * Send the rebuild complete message in build watch
  */
 export async function notifyRebuildComplete(
-  watcher: RollupWatcher,
-): Promise<RollupWatcher> {
+  watcher: RolldownWatcher,
+): Promise<RolldownWatcher> {
   let resolveFn: undefined | (() => void)
-  const callback = (event: RollupWatcherEvent): void => {
+  const callback = (event: RolldownWatcherEvent): void => {
     if (event.code === 'END') {
       resolveFn?.()
     }
@@ -346,6 +350,7 @@ export async function notifyRebuildComplete(
   await new Promise<void>((resolve) => {
     resolveFn = resolve
   })
+
   return watcher.off('event', callback)
 }
 

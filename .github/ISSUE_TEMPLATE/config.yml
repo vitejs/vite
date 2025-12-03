@@ -1,5 +1,8 @@
 blank_issues_enabled: false
 contact_links:
+  - name: Rolldown-Vite & Vite 8 beta Issues
+    url: https://github.com/vitejs/rolldown-vite/issues/new/choose
+    about: Rolldown-Vite related issues should be reported on the rolldown-vite repository.
   - name: Vite Plugin React Issues
     url: https://github.com/vitejs/vite-plugin-react/issues/new/choose
     about: React related issues should be reported on the vite-plugin-react repository.
