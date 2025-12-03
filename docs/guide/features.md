@@ -53,6 +53,10 @@ export type { T }
 
 ### TypeScript Compiler Options
 
+Vite respects some of the options in `tsconfig.json` and sets the corresponding esbuild options. For each file, Vite uses the `tsconfig.json` in the closest parent directory. If that `tsconfig.json` contains a [`references`](https://www.typescriptlang.org/tsconfig/#references) field, Vite will use the referenced config file that satisfies the [`include`](https://www.typescriptlang.org/tsconfig/#include) and [`exclude`](https://www.typescriptlang.org/tsconfig/#exclude) fields.
+
+When the options are set in both the Vite config and the `tsconfig.json`, the value in the Vite config takes precedence.
+
 Some configuration fields under `compilerOptions` in `tsconfig.json` require special attention.
 
 #### `isolatedModules`
@@ -94,6 +98,20 @@ If `target` in `tsconfig.json` is not `ESNext` or `ES2022` or newer, or if there
 As such, it is recommended to set `target` to `ESNext` or `ES2022` or newer, or set `useDefineForClassFields` to `true` explicitly when configuring `tsconfig.json`.
 :::
 
+#### `emitDecoratorMetadata`
+
+- [TypeScript documentation](https://www.typescriptlang.org/tsconfig#emitDecoratorMetadata)
+
+This option is only partially supported. Full support requires type inference by the TypeScript compiler, which is not supported. See [Oxc Transformer's documentation](https://oxc.rs/docs/guide/usage/transformer/typescript#decorators) for details.
+
+#### `paths`
+
+- [TypeScript documentation](https://www.typescriptlang.org/tsconfig/#paths)
+
+`resolve.tsconfigPaths: true` can be specified to tell Vite to use the `paths` option in `tsconfig.json` to resolve imports.
+
+Note that this feature has a performance cost and is [discouraged by the TypeScript team to use this option to change the behavior of the external tools](https://www.typescriptlang.org/tsconfig/#paths:~:text=Note%20that%20this%20feature%20does%20not%20change%20how%20import%20paths%20are%20emitted%20by%20tsc%2C%20so%20paths%20should%20only%20be%20used%20to%20inform%20TypeScript%20that%20another%20tool%20has%20this%20mapping%20and%20will%20use%20it%20at%20runtime%20or%20when%20bundling.).
+
 #### Other Compiler Options Affecting the Build Result
 
 - [`extends`](https://www.typescriptlang.org/tsconfig#extends)
@@ -105,7 +123,6 @@ As such, it is recommended to set `target` to `ESNext` or `ES2022` or newer, or 
 - [`jsxFragmentFactory`](https://www.typescriptlang.org/tsconfig#jsxFragmentFactory)
 - [`jsxImportSource`](https://www.typescriptlang.org/tsconfig#jsxImportSource)
 - [`experimentalDecorators`](https://www.typescriptlang.org/tsconfig#experimentalDecorators)
-- [`alwaysStrict`](https://www.typescriptlang.org/tsconfig#alwaysStrict)
 
 ::: tip `skipLibCheck`
 Vite starter templates have `"skipLibCheck": "true"` by default to avoid typechecking dependencies, as they may choose to only support specific versions and configurations of TypeScript. You can learn more at [vuejs/vue-cli#5688](https://github.com/vuejs/vue-cli/pull/5688).

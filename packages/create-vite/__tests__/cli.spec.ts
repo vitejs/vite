@@ -172,25 +172,6 @@ test('successfully scaffolds a project based on react-compiler-ts starter templa
   expect(readmeFile).toContain('The React Compiler is enabled on this template')
 })
 
-test('successfully scaffolds a project with subfolder based on react starter template with rolldown flag', () => {
-  const { stdout } = run(
-    [`subfolder/${projectName}`, '--template', 'react', '--rolldown'],
-    {
-      cwd: __dirname,
-    },
-  )
-  const generatedFiles = fs.readdirSync(genPathWithSubfolder).sort()
-
-  // Assertions
-  expect(stdout).toContain(`Scaffolding project in ${genPathWithSubfolder}`)
-  expect(templateFilesReact).toEqual(generatedFiles)
-  const generatedPackageJson = fs.readFileSync(
-    path.join(genPathWithSubfolder, 'package.json'),
-    'utf-8',
-  )
-  expect(generatedPackageJson).toContain('rolldown-vite')
-})
-
 test('works with the -t alias', () => {
   const { stdout } = run(
     [

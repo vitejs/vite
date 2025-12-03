@@ -5,12 +5,6 @@
   "engines": {
     "node": "^20.19.0 || >=22.12.0"
   },
-  "devEngines": {
-    "packageManager": {
-      "name": "pnpm",
-      "onFail": "error"
-    }
-  },
   "homepage": "https://vite.dev/",
   "repository": {
     "type": "git",
@@ -24,6 +18,7 @@
     "vite"
   ],
   "scripts": {
+    "preinstall": "npx only-allow pnpm",
     "postinstall": "simple-git-hooks",
     "format": "prettier --write --cache .",
     "lint": "eslint --cache .",
@@ -69,11 +64,11 @@
     "picocolors": "^1.1.1",
     "playwright-chromium": "^1.57.0",
     "prettier": "3.7.3",
-    "rolldown": "^1.0.0-beta.52",
+    "rolldown": "1.0.0-beta.53",
     "rollup": "^4.43.0",
     "simple-git-hooks": "^2.13.1",
     "tsx": "^4.21.0",
-    "typescript": "~5.9.2",
+    "typescript": "~5.9.3",
     "typescript-eslint": "^8.48.0",
     "vite": "workspace:*",
     "vitest": "^4.0.14"

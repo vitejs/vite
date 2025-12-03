@@ -17,7 +17,7 @@
   }
 
   const cjsFromESM = await import('@vitejs/test-dep-cjs-compiled-from-esm')
-  if (typeof cjsFromESM.default === 'function') {
+  if (typeof cjsFromESM.default.default === 'function') {
     text('.cjs-dynamic-dep-cjs-compiled-from-esm', 'ok')
   }
 
