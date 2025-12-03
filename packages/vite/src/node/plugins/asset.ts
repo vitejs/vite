@@ -6,9 +6,11 @@ import type {
   NormalizedOutputOptions,
   PluginContext,
   RenderedChunk,
-} from 'rollup'
+} from 'rolldown'
 import MagicString from 'magic-string'
 import colors from 'picocolors'
+import picomatch from 'picomatch'
+import { makeIdFiltersToMatchWithQuery } from '@rolldown/pluginutils'
 import {
   createToImportMetaURLBasedRelativeRuntime,
   toOutputFilePathInJS,
@@ -27,7 +29,11 @@ import {
   removeUrlQuery,
   urlRE,
 } from '../utils'
-import { DEFAULT_ASSETS_INLINE_LIMIT, FS_PREFIX } from '../constants'
+import {
+  DEFAULT_ASSETS_INLINE_LIMIT,
+  DEFAULT_ASSETS_RE,
+  FS_PREFIX,
+} from '../constants'
 import {
   cleanUrl,
   splitFileAndPostfix,
@@ -155,6 +161,15 @@ export function assetPlugin(config: ResolvedConfig): Plugin {
     },
 
     resolveId: {
+      filter: {
+        id: [
+          urlRE,
+          DEFAULT_ASSETS_RE,
+          ...makeIdFiltersToMatchWithQuery(config.rawAssetsInclude).map((v) =>
+            typeof v === 'string' ? picomatch.makeRe(v, { dot: true }) : v,
+          ),
+        ],
+      },
       handler(id) {
         if (!config.assetsInclude(cleanUrl(id)) && !urlRE.test(id)) {
           return
@@ -171,6 +186,12 @@ export function assetPlugin(config: ResolvedConfig): Plugin {
     load: {
       filter: {
         id: {
+          include: [
+            rawRE,
+            urlRE,
+            DEFAULT_ASSETS_RE,
+            ...makeIdFiltersToMatchWithQuery(config.rawAssetsInclude),
+          ],
           // Rollup convention, this id should be handled by the
           // plugin that marked it with \0
           exclude: /^\0/,
@@ -182,9 +203,12 @@ export function assetPlugin(config: ResolvedConfig): Plugin {
           const file = checkPublicFile(id, config) || cleanUrl(id)
           this.addWatchFile(file)
           // raw query, read file and return as string
-          return `export default ${JSON.stringify(
-            await fsp.readFile(file, 'utf-8'),
-          )}`
+          return {
+            code: `export default ${JSON.stringify(
+              await fsp.readFile(file, 'utf-8'),
+            )}`,
+            moduleType: 'js', // NOTE: needs to be set to avoid double `export default` in `?raw&.txt`s
+          }
         }
 
         if (!urlRE.test(id) && !config.assetsInclude(cleanUrl(id))) {
@@ -211,6 +235,7 @@ export function assetPlugin(config: ResolvedConfig): Plugin {
               ? 'no-treeshake'
               : false,
           meta: config.command === 'build' ? { 'vite:asset': true } : undefined,
+          moduleType: 'js', // NOTE: needs to be set to avoid double `export default` in `.txt`s
         }
       },
     },
