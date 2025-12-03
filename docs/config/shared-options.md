@@ -166,6 +166,13 @@ Enabling this setting causes vite to determine file identity by the original fil
 - **Related:** [esbuild#preserve-symlinks](https://esbuild.github.io/api/#preserve-symlinks), [webpack#resolve.symlinks
   ](https://webpack.js.org/configuration/resolve/#resolvesymlinks)
 
+## resolve.tsconfigPaths
+
+- **Type:** `boolean`
+- **Default:** `false`
+
+Enables the tsconfig paths resolution feature. `paths` option in `tsconfig.json` will be used to resolve imports. See [Features](/guide/features.md#paths) for more details.
+
 ## html.cspNonce
 
 - **Type:** `string`
