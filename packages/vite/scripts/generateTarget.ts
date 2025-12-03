@@ -1,7 +1,7 @@
 import { getCompatibleVersions } from 'baseline-browser-mapping'
 
 // Update on each major release
-const targetDate = '2025-05-01'
+const targetDate = '2026-01-01'
 
 // https://esbuild.github.io/api/#target
 const esbuildSupportedBrowsers = new Set([
