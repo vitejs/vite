@@ -89,7 +89,7 @@ There are two available upgrade paths:
 > If you are relying on specific Rollup or esbuild options, you might need to make some adjustments to your Vite config. Please refer to the [migration guide](/guide/migration) for detailed instructions and examples.
 > As with all non-stable, major releases, thorough testing is recommended after upgrading to ensure everything works as expected. Please make sure to report any [issues](https://github.com/vitejs/rolldown-vite/issues).
 
-If you use a metaframework or Vitest, in order to use Vite 8 beta, you have to override the `vite` dependency in your `package.json`, which works slightly different depending on your package manager:
+If you use a framework or tool that uses Vite as dependency, for example Astro, Nuxt, or Vitest, you have to override the `vite` dependency in your `package.json`, which works slightly different depending on your package manager:
 
 :::code-group
 
