@@ -93,9 +93,6 @@ There are two available upgrade paths:
 
 In addition to shipping with Rolldown, Vite 8 comes with:
 
-<!-- TODO: add `resolve.tsconfigPaths` docs -->
-<!-- TODO: add `emitDecoratorMetadata` docs to features page -->
-
 - **Built-in tsconfig `paths` support:** Developers can enable it by setting [`resolve.tsconfigPaths`](/config/shared-options.md#resolve-tsconfigpaths) to `true`. This feature has a small performance cost and is not enabled by default.
 - **`emitDecoratorMetadata` support:** Vite 8 now has built-in automatic support for TypeScript's [`emitDecoratorMetadata` option](https://www.typescriptlang.org/tsconfig/#emitDecoratorMetadata). See the [Features](/config/features.md#emitdecoratormetadata) page for more details.
 
