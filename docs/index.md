@@ -30,4 +30,9 @@ heading="Powering your favorite frameworks and tools"
 <ViteCommunity />
 <ViteSponsors :sponsors="sponsors" />
 <Spacer />
-<Footer/>
+ <Footer
+    heading="Start building with Vite"
+    subheading="Prepare for a development environment that can finally keep pace with the speed of your mind."
+    button-text="Get Started"
+    button-link="/guide/"
+  />

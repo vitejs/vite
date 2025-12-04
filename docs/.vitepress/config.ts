@@ -161,8 +161,51 @@ export default defineConfig({
     },
 
     footer: {
-      message: `Released under the MIT License. (${commitRef})`,
-      copyright: 'Copyright © 2019-present VoidZero Inc. & Vite Contributors',
+      nav: [
+        {
+          title: 'Vite',
+          items: [
+            { text: 'Guide', link: '/guide/' },
+            { text: 'Config', link: '/config/' },
+            { text: 'Plugins', link: '/plugins/' },
+          ],
+        },
+        {
+          title: 'Resources',
+          items: [
+            { text: 'Team', link: '/team' },
+            { text: 'Blog', link: '/blog' },
+            {
+              text: 'Releases',
+              link: 'https://github.com/vitejs/vite/releases',
+            },
+          ],
+        },
+        {
+          title: 'Versions',
+          items: [
+            { text: 'Vite 6 Docs', link: 'https://v6.vite.dev' },
+            { text: 'Vite 5 Docs', link: 'https://v5.vite.dev' },
+            { text: 'Vite 4 Docs', link: 'https://v4.vite.dev' },
+            { text: 'Vite 3 Docs', link: 'https://v3.vite.dev' },
+            { text: 'Vite 2 Docs', link: 'https://v2.vite.dev' },
+          ],
+        },
+        /*{
+          title: 'Legal',
+          items: [
+            { text: 'Terms & Conditions', link: 'https://voidzero.dev/terms' },
+            { text: 'Privacy Policy', link: 'https://voidzero.dev/privacy' },
+            { text: 'Cookie Policy', link: 'https://voidzero.dev/cookies' },
+          ]
+        },*/
+      ],
+      social: [
+        { icon: 'github', link: 'https://github.com/vitejs/vite' },
+        { icon: 'discord', link: 'https://chat.vite.dev' },
+        { icon: 'bluesky', link: 'https://bsky.app/profile/vite.dev' },
+        { icon: 'x', link: 'https://x.com/vite_js' },
+      ],
     },
 
     nav: [
