@@ -8,10 +8,10 @@ By default, the production bundle assumes a modern browser that is included in t
 
 <!-- Search for the `ESBUILD_BASELINE_WIDELY_AVAILABLE_TARGET` constant for more information -->
 
-- Chrome >=107
-- Edge >=107
-- Firefox >=104
-- Safari >=16
+- Chrome >=111
+- Edge >=111
+- Firefox >=114
+- Safari >=16.4
 
 You can specify custom targets via the [`build.target` config option](/config/build-options.md#build-target), where the lowest target is `es2015`. If a lower target is set, Vite will still require these minimum browser support ranges as it relies on [native ESM dynamic import](https://caniuse.com/es6-module-dynamic-import), and [`import.meta`](https://caniuse.com/mdn-javascript_operators_import_meta):
 
@@ -50,23 +50,25 @@ If you don't know the base path in advance, you may set a relative base path wit
 
 ## Customizing the Build
 
-The build can be customized via various [build config options](/config/build-options.md). Specifically, you can directly adjust the underlying [Rollup options](https://rollupjs.org/configuration-options/) via `build.rollupOptions`:
+The build can be customized via various [build config options](/config/build-options.md). Specifically, you can directly adjust the underlying [Rolldown options](https://rollupjs.org/configuration-options/) via `build.rolldownOptions`:
+
+<!-- TODO: update the link above and below to Rolldown's documentation -->
 
 ```js [vite.config.js]
 export default defineConfig({
   build: {
-    rollupOptions: {
+    rolldownOptions: {
       // https://rollupjs.org/configuration-options/
     },
   },
 })
 ```
 
-For example, you can specify multiple Rollup outputs with plugins that are only applied during build.
+For example, you can specify multiple Rolldown outputs with plugins that are only applied during build.
 
 ## Chunking Strategy
 
-You can configure how chunks are split using `build.rollupOptions.output.manualChunks` (see [Rollup docs](https://rollupjs.org/configuration-options/#output-manualchunks)). If you use a framework, refer to their documentation for configuring how chunks are split.
+You can configure how chunks are split using `build.rolldownOptions.output.advancedChunks` (see [Rolldown docs](https://rolldown.rs/in-depth/advanced-chunks)). If you use a framework, refer to their documentation for configuring how chunks are split.
 
 ## Load Error Handling
 
@@ -83,6 +85,8 @@ When a new deployment occurs, the hosting service may delete the assets from pre
 ## Rebuild on Files Changes
 
 You can enable rollup watcher with `vite build --watch`. Or, you can directly adjust the underlying [`WatcherOptions`](https://rollupjs.org/configuration-options/#watch) via `build.watch`:
+
+<!-- TODO: update the link above to Rolldown's documentation -->
 
 ```js [vite.config.js]
 export default defineConfig({
@@ -123,7 +127,7 @@ const __dirname = dirname(fileURLToPath(import.meta.url))
 
 export default defineConfig({
   build: {
-    rollupOptions: {
+    rolldownOptions: {
       input: {
         main: resolve(__dirname, 'index.html'),
         nested: resolve(__dirname, 'nested/index.html'),
@@ -135,7 +139,7 @@ export default defineConfig({
 
 If you specify a different root, remember that `__dirname` will still be the folder of your vite.config.js file when resolving the input paths. Therefore, you will need to add your `root` entry to the arguments for `resolve`.
 
-Note that for HTML files, Vite ignores the name given to the entry in the `rollupOptions.input` object and instead respects the resolved id of the file when generating the HTML asset in the dist folder. This ensures a consistent structure with the way the dev server works.
+Note that for HTML files, Vite ignores the name given to the entry in the `rolldownOptions.input` object and instead respects the resolved id of the file when generating the HTML asset in the dist folder. This ensures a consistent structure with the way the dev server works.
 
 ## Library Mode
 
@@ -160,7 +164,7 @@ export default defineConfig({
       // the proper extensions will be added
       fileName: 'my-lib',
     },
-    rollupOptions: {
+    rolldownOptions: {
       // make sure to externalize deps that shouldn't be bundled
       // into your library
       external: ['vue'],
@@ -306,7 +310,7 @@ In library mode, all [`import.meta.env.*`](./env-and-mode.md) usage are statical
 :::
 
 ::: warning Advanced Usage
-Library mode includes a simple and opinionated configuration for browser-oriented and JS framework libraries. If you are building non-browser libraries, or require advanced build flows, you can use [Rollup](https://rollupjs.org) or [esbuild](https://esbuild.github.io) directly.
+Library mode includes a simple and opinionated configuration for browser-oriented and JS framework libraries. If you are building non-browser libraries, or require advanced build flows, you can use [tsdown](https://tsdown.dev/) or [Rolldown](https://rolldown.rs/) directly.
 :::
 
 ## Advanced Base Options
