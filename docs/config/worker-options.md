@@ -24,7 +24,7 @@ The function should return new plugin instances as they are used in parallel rol
 
 Rollup options to build worker bundle.
 
-## worker.rollupOptions
+## worker.rolldownOptions
 
 - **Type:** `RolldownOptions`
 - **Deprecated**
