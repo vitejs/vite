@@ -101,9 +101,11 @@ export function bindCLIShortcuts<Server extends ViteDevServer | PreviewServer>(
   }
 
   if (!server._rl) {
-    const rl = readline.createInterface({ input: process.stdin })
-    server._rl = rl
-    server.httpServer.on('close', () => rl.close())
+    server._rl = readline.createInterface({ input: process.stdin })
+    server.httpServer.on('close', () => {
+      // Skip if detached during restart (readline is reused)
+      if (server._rl) server._rl.close()
+    })
   } else {
     server._rl.removeAllListeners('line')
   }
