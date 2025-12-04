@@ -38,7 +38,6 @@ describe('bindCLIShortcuts', () => {
       const xUpdatedAction = vi.fn()
       const zAction = vi.fn()
 
-      xAction.mockClear()
       bindCLIShortcuts(
         server,
         {
@@ -55,7 +54,7 @@ describe('bindCLIShortcuts', () => {
       await vi.waitFor(() => expect(xUpdatedAction).toHaveBeenCalledOnce())
 
       // Ensure original xAction is not called again
-      expect(xAction).not.toBeCalled()
+      expect(xAction).toHaveBeenCalledOnce()
 
       expect(yAction).not.toHaveBeenCalled()
       server._rl.emit('line', 'y')
