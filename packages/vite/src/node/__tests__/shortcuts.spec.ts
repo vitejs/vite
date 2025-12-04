@@ -137,8 +137,18 @@ describe('bindCLIShortcuts', () => {
         expect(manualShortcutAction).toHaveBeenCalledOnce(),
       )
 
+      // Check the order of shortcuts before restart
+      expect(
+        server._shortcutsOptions?.customShortcuts?.map((s) => s.key),
+      ).toEqual(['x', 'y'])
+
       // Restart the server
       await server.restart()
+
+      // Shortcut orders should be preserved after restart
+      expect(
+        server._shortcutsOptions?.customShortcuts?.map((s) => s.key),
+      ).toEqual(['x', 'y'])
 
       expect.assert(
         server._rl === readline,
