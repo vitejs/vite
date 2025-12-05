@@ -2,7 +2,7 @@ import fs from 'node:fs'
 import path from 'node:path'
 import fsp from 'node:fs/promises'
 import { pathToFileURL } from 'node:url'
-import { promisify } from 'node:util'
+import { inspect, promisify } from 'node:util'
 import { performance } from 'node:perf_hooks'
 import { createRequire } from 'node:module'
 import crypto from 'node:crypto'
@@ -1760,7 +1760,8 @@ export async function resolveConfig(
       logger.warn(
         colors.yellow(
           `Both esbuild and oxc options were set. oxc options will be used and esbuild options will be ignored.`,
-        ),
+        ) +
+          ` The following esbuild options were set: \`${inspect(config.esbuild)}\``,
       )
     } else {
       oxc = convertEsbuildConfigToOxcConfig(config.esbuild, logger)
