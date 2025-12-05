@@ -326,8 +326,6 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
         pos: number,
         forceSkipImportAnalysis: boolean = false,
       ): Promise<[string, string | null]> => {
-        url = stripBase(url, base)
-
         let importerFile = importer
 
         if (
