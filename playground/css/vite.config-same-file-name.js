@@ -6,7 +6,7 @@ export default defineConfig({
   build: {
     ...baseConfig.build,
     outDir: 'dist/same-file-name',
-    rollupOptions: {
+    rolldownOptions: {
       output: {
         entryFileNames: '[name].js',
         chunkFileNames: '[name].[hash].js',

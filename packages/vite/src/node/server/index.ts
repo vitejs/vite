@@ -469,7 +469,7 @@ export async function _createServer(
   const resolvedOutDirs = getResolvedOutDirs(
     config.root,
     config.build.outDir,
-    config.build.rollupOptions.output,
+    config.build.rolldownOptions.output,
   )
   const emptyOutDir = resolveEmptyOutDir(
     config.build.emptyOutDir,

@@ -28,7 +28,7 @@ export function prepareOutDirPlugin(): Plugin {
           const resolvedOutDirs = getResolvedOutDirs(
             root,
             options.outDir,
-            options.rollupOptions.output,
+            options.rolldownOptions.output,
           )
           const emptyOutDir = resolveEmptyOutDir(
             options.emptyOutDir,
