@@ -16,7 +16,7 @@ Output format for worker bundle.
 Vite plugins that apply to the worker bundles. Note that [config.plugins](./shared-options#plugins) only applies to workers in dev, it should be configured here instead for build.
 The function should return new plugin instances as they are used in parallel rollup worker builds. As such, modifying `config.worker` options in the `config` hook will be ignored.
 
-## worker.rollupOptions
+## worker.rolldownOptions
 
 <!-- TODO: update the link below to Rolldown's documentation -->
 
@@ -29,4 +29,4 @@ Rollup options to build worker bundle.
 - **Type:** `RolldownOptions`
 - **Deprecated**
 
-This option is an alias of `worker.rolldownOptions` option. Use `build.rolldownOptions` option instead.
+This option is an alias of `worker.rolldownOptions` option. Use `worker.rolldownOptions` option instead.
