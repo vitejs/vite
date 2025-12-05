@@ -67,6 +67,7 @@ The migration to a Rolldown-powered Vite is a foundational change. Therefore, ou
 First, a separate `rolldown-vite` package was [released as a technical preview](https://voidzero.dev/posts/announcing-rolldown-vite). This allowed us to work with early adopters without affecting the stable version of Vite. Early adopters benefited from Rolldown’s performance gains while providing valuable feedback. Highlights:
 
 - Linear's production build times were reduced from 46s to 6s
+- Ramp reduced their build time by 57%
 - Mercedes-Benz.io cut their build time down by up to 38%
 - Beehiiv reduced their build time by 64%
 
