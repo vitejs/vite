@@ -1,5 +1,6 @@
 import path from 'node:path'
 import { defaultClientConditions, defineConfig, normalizePath } from 'vite'
+// @ts-expect-error -- https://github.com/microsoft/typescript-go/issues/1954
 import { a } from './config-dep.cjs'
 
 const virtualFile = '@virtual-file'
