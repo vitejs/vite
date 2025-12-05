@@ -6,7 +6,6 @@ import { get as httpsGet } from 'node:https'
 import type * as http from 'node:http'
 import { performance } from 'node:perf_hooks'
 import type { Http2SecureServer } from 'node:http2'
-import type readline from 'node:readline'
 import connect from 'connect'
 import corsMiddleware from 'cors'
 import colors from 'picocolors'
@@ -46,7 +45,7 @@ import { ssrFixStacktrace, ssrRewriteStacktrace } from '../ssr/ssrStacktrace'
 import { ssrTransform } from '../ssr/ssrTransform'
 import { reloadOnTsconfigChange } from '../plugins/esbuild'
 import { bindCLIShortcuts } from '../shortcuts'
-import type { BindCLIShortcutsOptions } from '../shortcuts'
+import type { BindCLIShortcutsOptions, ShortcutsState } from '../shortcuts'
 import {
   CLIENT_DIR,
   DEFAULT_DEV_PORT,
@@ -407,11 +406,7 @@ export interface ViteDevServer {
   /**
    * @internal
    */
-  _shortcutsOptions?: BindCLIShortcutsOptions<ViteDevServer>
-  /**
-   * @internal
-   */
-  _rl?: readline.Interface | undefined
+  _shortcutsState?: ShortcutsState<ViteDevServer>
   /**
    * @internal
    */
@@ -442,8 +437,7 @@ export async function _createServer(
   options: {
     listen: boolean
     previousEnvironments?: Record<string, DevEnvironment>
-    previousReadline?: readline.Interface
-    previousShortcutsOptions?: BindCLIShortcutsOptions<ViteDevServer>
+    previousShortcutsState?: ShortcutsState<ViteDevServer>
   },
 ): Promise<ViteDevServer> {
   const config = isResolvedConfig(inlineConfig)
@@ -775,15 +769,7 @@ export async function _createServer(
     },
     _restartPromise: null,
     _forceOptimizeOnRestart: false,
-    _shortcutsOptions: undefined,
-  }
-
-  if (options.previousReadline) {
-    server._rl = options.previousReadline
-  }
-
-  if (options.previousShortcutsOptions) {
-    server._shortcutsOptions = options.previousShortcutsOptions
+    _shortcutsState: options.previousShortcutsState,
   }
 
   // maintain consistency with the server instance after restarting.
@@ -1245,8 +1231,7 @@ async function restartServer(server: ViteDevServer) {
       newServer = await _createServer(inlineConfig, {
         listen: false,
         previousEnvironments: server.environments,
-        previousReadline: server._rl,
-        previousShortcutsOptions: server._shortcutsOptions,
+        previousShortcutsState: server._shortcutsState,
       })
     } catch (err: any) {
       server.config.logger.error(err.message, {
@@ -1257,7 +1242,7 @@ async function restartServer(server: ViteDevServer) {
     }
 
     // Detach readline so close handler skips it. Reused to avoid stdin issues
-    server._rl = undefined
+    server._shortcutsState = undefined
 
     await server.close()
 
@@ -1289,7 +1274,10 @@ async function restartServer(server: ViteDevServer) {
   }
   logger.info('server restarted.', { timestamp: true })
 
-  if (server._shortcutsOptions) {
+  if (
+    (server._shortcutsState as ShortcutsState<ViteDevServer> | undefined)
+      ?.options
+  ) {
     bindCLIShortcuts(
       server,
       { print: false },

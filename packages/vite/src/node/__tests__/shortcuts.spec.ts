@@ -27,12 +27,12 @@ describe('bindCLIShortcuts', () => {
       )
 
       expect.assert(
-        server._rl,
+        server._shortcutsState?.rl,
         'The readline interface should be defined after binding shortcuts.',
       )
       expect(xAction).not.toHaveBeenCalled()
 
-      server._rl.emit('line', 'x')
+      server._shortcutsState.rl.emit('line', 'x')
       await vi.waitFor(() => expect(xAction).toHaveBeenCalledOnce())
 
       const xUpdatedAction = vi.fn()
@@ -50,18 +50,18 @@ describe('bindCLIShortcuts', () => {
       )
 
       expect(xUpdatedAction).not.toHaveBeenCalled()
-      server._rl.emit('line', 'x')
+      server._shortcutsState.rl.emit('line', 'x')
       await vi.waitFor(() => expect(xUpdatedAction).toHaveBeenCalledOnce())
 
       // Ensure original xAction is not called again
       expect(xAction).toHaveBeenCalledOnce()
 
       expect(yAction).not.toHaveBeenCalled()
-      server._rl.emit('line', 'y')
+      server._shortcutsState.rl.emit('line', 'y')
       await vi.waitFor(() => expect(yAction).toHaveBeenCalledOnce())
 
       expect(zAction).not.toHaveBeenCalled()
-      server._rl.emit('line', 'z')
+      server._shortcutsState.rl.emit('line', 'z')
       await vi.waitFor(() => expect(zAction).toHaveBeenCalledOnce())
     } finally {
       await server.close()
@@ -103,7 +103,7 @@ describe('bindCLIShortcuts', () => {
     })
 
     try {
-      const readline = server._rl
+      const readline = server._shortcutsState?.rl
 
       expect.assert(
         readline,
@@ -138,7 +138,7 @@ describe('bindCLIShortcuts', () => {
 
       // Check the order of shortcuts before restart
       expect(
-        server._shortcutsOptions?.customShortcuts?.map((s) => s.key),
+        server._shortcutsState?.options.customShortcuts?.map((s) => s.key),
       ).toEqual(['x', 'y'])
 
       // Restart the server
@@ -146,11 +146,11 @@ describe('bindCLIShortcuts', () => {
 
       // Shortcut orders should be preserved after restart
       expect(
-        server._shortcutsOptions?.customShortcuts?.map((s) => s.key),
+        server._shortcutsState?.options.customShortcuts?.map((s) => s.key),
       ).toEqual(['x', 'y'])
 
       expect.assert(
-        server._rl === readline,
+        server._shortcutsState?.rl === readline,
         'The readline interface should be preserved.',
       )
 

@@ -6,6 +6,11 @@ import { isDevServer } from './utils'
 import type { PreviewServer } from './preview'
 import { openBrowser } from './server/openBrowser'
 
+export type ShortcutsState<Server = ViteDevServer | PreviewServer> = {
+  rl: readline.Interface
+  options: BindCLIShortcutsOptions<Server>
+}
+
 export type BindCLIShortcutsOptions<Server = ViteDevServer | PreviewServer> = {
   /**
    * Print a one-line shortcuts "help" hint to the terminal
@@ -37,7 +42,8 @@ export function bindCLIShortcuts<Server extends ViteDevServer | PreviewServer>(
   const isDev = isDevServer(server)
 
   // Merge shortcuts: new at top, existing updated in place (keeps manual > plugin order)
-  const previousShortcuts = server._shortcutsOptions?.customShortcuts ?? []
+  const previousShortcuts =
+    server._shortcutsState?.options.customShortcuts ?? []
   const newShortcuts = opts?.customShortcuts ?? []
   const previousKeys = new Set(previousShortcuts.map((s) => s.key))
   const customShortcuts: CLIShortcut<ViteDevServer | PreviewServer>[] = [
@@ -47,7 +53,7 @@ export function bindCLIShortcuts<Server extends ViteDevServer | PreviewServer>(
     ),
   ]
 
-  server._shortcutsOptions = {
+  const newOptions: BindCLIShortcutsOptions<Server> = {
     ...opts,
     customShortcuts,
   }
@@ -100,17 +106,22 @@ export function bindCLIShortcuts<Server extends ViteDevServer | PreviewServer>(
     actionRunning = false
   }
 
-  if (!server._rl) {
-    server._rl = readline.createInterface({ input: process.stdin })
+  if (!server._shortcutsState) {
+    ;(server._shortcutsState as unknown as ShortcutsState<Server>) = {
+      rl: readline.createInterface({ input: process.stdin }),
+      options: newOptions,
+    }
     server.httpServer.on('close', () => {
       // Skip if detached during restart (readline is reused)
-      if (server._rl) server._rl.close()
+      if (server._shortcutsState) server._shortcutsState.rl.close()
     })
   } else {
-    server._rl.removeAllListeners('line')
+    server._shortcutsState.rl.removeAllListeners('line')
+    ;(server._shortcutsState.options as BindCLIShortcutsOptions<Server>) =
+      newOptions
   }
 
-  server._rl.on('line', onInput)
+  server._shortcutsState!.rl.on('line', onInput)
 }
 
 const BASE_DEV_SHORTCUTS: CLIShortcut<ViteDevServer>[] = [
