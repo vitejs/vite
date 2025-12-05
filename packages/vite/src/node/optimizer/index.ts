@@ -384,7 +384,7 @@ export async function loadCachedDepOptimizationMetadata(
     setTimeout(
       () => cleanupDepsCacheStaleDirs(environment.getTopLevelConfig()),
       0,
-    )
+    ).unref()
   }
 
   const depsCacheDir = getDepsCacheDir(environment)
