@@ -2542,6 +2542,18 @@ async function runConfigHook(
             `\`rollupOptions\` specified by that plugin will be ignored.`,
         )
       }
+      if (res.esbuild) {
+        context.warn(
+          `\`esbuild\` option was specified by ${JSON.stringify(p.name)} plugin. ` +
+            `This option is deprecated, please use \`oxc\` instead.`,
+        )
+      }
+      if (res.optimizeDeps?.esbuildOptions) {
+        context.warn(
+          `\`optimizeDeps.esbuildOptions\` option was specified by ${JSON.stringify(p.name)} plugin. ` +
+            `This option is deprecated, please use \`optimizeDeps.rolldownOptions\` instead.`,
+        )
+      }
       conf = mergeConfig(conf, res)
     }
   }
