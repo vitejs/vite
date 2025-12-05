@@ -15,7 +15,7 @@ export interface CustomEventMap {
   'vite:invalidate': InvalidatePayload
   'vite:ws:connect': WebSocketConnectionPayload
   'vite:ws:disconnect': WebSocketConnectionPayload
-  // TODO: polish this
+  /** @internal */
   'vite:module-loaded': { modules: string[] }
 
   // server events

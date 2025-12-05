@@ -587,8 +587,7 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
           const cssContent = await getContentWithSourcemap(css)
           const code = [
             config.isBundled
-              ? // TODO: support CSS
-                `const { updateStyle: __vite__updateStyle, removeStyle: __vite__removeStyle } = import.meta.hot._internal`
+              ? `const { updateStyle: __vite__updateStyle, removeStyle: __vite__removeStyle } = import.meta.hot._internal`
               : `import { updateStyle as __vite__updateStyle, removeStyle as __vite__removeStyle } from ${JSON.stringify(
                   path.posix.join(config.base, CLIENT_PUBLIC_PATH),
                 )}`,

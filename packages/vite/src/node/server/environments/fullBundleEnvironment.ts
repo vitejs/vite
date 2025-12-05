@@ -149,9 +149,12 @@ export class FullBundleDevEnvironment extends DevEnvironment {
       },
       onOutput: (result) => {
         if (result instanceof Error) {
-          // TODO: handle error
           this.logger.error(colors.red(`✘ Build error: ${result.message}`), {
             error: result,
+          })
+          this.hot.send({
+            type: 'error',
+            err: prepareError(result),
           })
           return
         }
@@ -228,14 +231,22 @@ export class FullBundleDevEnvironment extends DevEnvironment {
       }
       this.invalidateCalledModules.get(client)!.add(m.path)
 
-      // TODO: how to handle errors?
-      const _update = await this.devEngine.invalidate(
-        m.path,
-        m.firstInvalidatedBy,
-      )
-      const update = _update.find(
-        (u) => this.clients.get(u.clientId) === client,
-      )?.update
+      let update: BindingClientHmrUpdate['update'] | undefined
+      try {
+        const _update = await this.devEngine.invalidate(
+          m.path,
+          m.firstInvalidatedBy,
+        )
+        update = _update.find(
+          (u) => this.clients.get(u.clientId) === client,
+        )?.update
+      } catch (e) {
+        client.send({
+          type: 'error',
+          err: prepareError(e as Error),
+        })
+        return
+      }
       if (!update) return
 
       if (update.type === 'Patch') {
