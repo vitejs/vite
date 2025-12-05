@@ -361,11 +361,10 @@ export async function loadCachedDepOptimizationMetadata(
   if (firstLoadCachedDepOptimizationMetadata) {
     firstLoadCachedDepOptimizationMetadata = false
     // Fire up a clean up of stale processing deps dirs if older process exited early
-    const cleanupTimer = setTimeout(
+    setTimeout(
       () => cleanupDepsCacheStaleDirs(environment.getTopLevelConfig()),
       0,
-    )
-    cleanupTimer.unref()
+    ).unref()
   }
 
   const depsCacheDir = getDepsCacheDir(environment)
