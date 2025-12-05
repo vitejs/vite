@@ -39,7 +39,7 @@ export default defineConfig({
       NODE_ENV: process.env.VITE_TEST_BUILD ? 'production' : 'development',
     },
   },
-  esbuild: {
+  oxc: {
     target: 'node20',
   },
   publicDir: false,
