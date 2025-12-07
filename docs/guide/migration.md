@@ -23,7 +23,7 @@ For users migrating from `rolldown-vite` to Vite 8, you can undo the dependency 
 
 ```json
 {
-  "dependencies": {
+  "devDependencies": {
     "vite": "npm:rolldown-vite@7.2.2" // [!code --]
     "vite": "^8.0.0" // [!code ++]
   }
