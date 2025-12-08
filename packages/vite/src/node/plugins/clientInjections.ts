@@ -112,8 +112,8 @@ async function createClientConfigValueReplacer(
   const hmrEnableOverlayReplacement = escapeReplacement(overlay)
   const hmrConfigNameReplacement = escapeReplacement(hmrConfigName)
   const wsTokenReplacement = escapeReplacement(config.webSocketToken)
-  const fullBundleModeReplacement = escapeReplacement(
-    config.experimental.fullBundleMode || false,
+  const bundleDevReplacement = escapeReplacement(
+    config.experimental.bundledDev || false,
   )
 
   return (code) =>
@@ -130,7 +130,7 @@ async function createClientConfigValueReplacer(
       .replace(`__HMR_ENABLE_OVERLAY__`, hmrEnableOverlayReplacement)
       .replace(`__HMR_CONFIG_NAME__`, hmrConfigNameReplacement)
       .replace(`__WS_TOKEN__`, wsTokenReplacement)
-      .replaceAll(`__FULL_BUNDLE_MODE__`, fullBundleModeReplacement)
+      .replaceAll(`__BUNDLED_DEV__`, bundleDevReplacement)
 }
 
 export async function getHmrImplementation(

@@ -24,7 +24,7 @@ declare const __HMR_BASE__: string
 declare const __HMR_TIMEOUT__: number
 declare const __HMR_ENABLE_OVERLAY__: boolean
 declare const __WS_TOKEN__: string
-declare const __FULL_BUNDLE_MODE__: boolean
+declare const __BUNDLED_DEV__: boolean
 
 console.debug('[vite] connecting...')
 
@@ -42,7 +42,7 @@ const directSocketHost = __HMR_DIRECT_TARGET__
 const base = __BASE__ || '/'
 const hmrTimeout = __HMR_TIMEOUT__
 const wsToken = __WS_TOKEN__
-const isFullBundleMode = __FULL_BUNDLE_MODE__
+const isBundleMode = __BUNDLED_DEV__
 
 const transport = normalizeModuleRunnerTransport(
   (() => {
@@ -146,7 +146,7 @@ const hmrClient = new HMRClient(
     debug: (...msg) => console.debug('[vite]', ...msg),
   },
   transport,
-  isFullBundleMode
+  isBundleMode
     ? async function importUpdatedModule({
         url,
         acceptedPath,
@@ -623,7 +623,7 @@ export { ErrorOverlay }
 
 declare const DevRuntime: typeof DevRuntimeType
 
-if (isFullBundleMode && typeof DevRuntime !== 'undefined') {
+if (isBundleMode && typeof DevRuntime !== 'undefined') {
   class ViteDevRuntime extends DevRuntime {
     override createModuleHotContext(moduleId: string) {
       const ctx = createHotContext(moduleId)

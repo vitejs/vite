@@ -2,7 +2,7 @@ import { type Plugin, defineConfig } from 'vite'
 
 export default defineConfig({
   experimental: {
-    fullBundleMode: true,
+    bundledDev: true,
   },
   plugins: [waitBundleCompleteUntilAccess(), delayTransformComment()],
 })

@@ -239,7 +239,7 @@ function defaultCreateClientDevEnvironment(
   config: ResolvedConfig,
   context: CreateDevEnvironmentContext,
 ) {
-  if (config.experimental.fullBundleMode) {
+  if (config.experimental.bundledDev) {
     return new FullBundleDevEnvironment(name, config, {
       hot: true,
       transport: context.ws,
@@ -565,12 +565,14 @@ export interface ExperimentalOptions {
    */
   enableNativePlugin?: boolean | 'resolver' | 'v1'
   /**
-   * Enable full bundle mode in dev.
+   * Enable full bundle mode.
+   *
+   * This is highly experimental.
    *
    * @experimental
    * @default false
    */
-  fullBundleMode?: boolean
+  bundledDev?: boolean
 }
 
 export interface LegacyOptions {
@@ -786,7 +788,7 @@ const configDefaults = Object.freeze({
     renderBuiltUrl: undefined,
     hmrPartialAccept: false,
     enableNativePlugin: process.env._VITE_TEST_JS_PLUGIN ? false : 'v1',
-    fullBundleMode: false,
+    bundledDev: false,
   },
   future: {
     removePluginHookHandleHotUpdate: undefined,
@@ -1520,7 +1522,7 @@ export async function resolveConfig(
   )
 
   const isFullBundledDev =
-    command === 'serve' && !!config.experimental?.fullBundleMode
+    command === 'serve' && !!config.experimental?.bundledDev
 
   // Backward compatibility: merge config.environments.client.resolve back into config.resolve
   config.resolve ??= {}
@@ -1804,7 +1806,7 @@ export async function resolveConfig(
     configDefaults.experimental,
     config.experimental ?? {},
   )
-  if (command === 'serve' && experimental.fullBundleMode) {
+  if (command === 'serve' && experimental.bundledDev) {
     // full bundle mode does not support experimental.renderBuiltUrl
     experimental.renderBuiltUrl = undefined
   }
@@ -1823,7 +1825,7 @@ export async function resolveConfig(
     cacheDir,
     command,
     mode,
-    isBundled: config.experimental?.fullBundleMode || isBuild,
+    isBundled: config.experimental?.bundledDev || isBuild,
     isWorker: false,
     mainConfig: null,
     bundleChain: [],

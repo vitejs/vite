@@ -468,7 +468,7 @@ async function fileToBuiltUrl(
       postfix = postfix.replace(noInlineRE, '').replace(/^&/, '?')
     }
 
-    if (environment.config.experimental.fullBundleMode) {
+    if (environment.config.experimental.bundledDev) {
       const outputFilename = pluginContext.getFileName(referenceId)
       const outputUrl = toOutputFilePathInJS(
         environment,

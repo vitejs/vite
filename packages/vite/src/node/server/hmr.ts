@@ -419,7 +419,7 @@ export async function handleHMRUpdate(
     return
   }
 
-  if (config.experimental.fullBundleMode) {
+  if (config.experimental.bundledDev) {
     // TODO: support handleHotUpdate / hotUpdate
     return
   }

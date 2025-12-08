@@ -508,7 +508,7 @@ export async function _createServer(
     ? (chokidar.watch(
         // config file dependencies and env file might be outside of root
         [
-          ...(config.experimental.fullBundleMode ? [] : [root]),
+          ...(config.experimental.bundledDev ? [] : [root]),
           ...config.configFileDependencies,
           ...getEnvFilesForMode(config.mode, config.envDir),
           // Watch the public directory explicitly because it might be outside
@@ -915,7 +915,7 @@ export async function _createServer(
 
   // Internal middlewares ------------------------------------------------------
 
-  if (!config.experimental.fullBundleMode) {
+  if (!config.experimental.bundledDev) {
     middlewares.use(cachedTransformMiddleware(server))
   }
 
@@ -952,7 +952,7 @@ export async function _createServer(
     middlewares.use(servePublicMiddleware(server, publicFiles))
   }
 
-  if (config.experimental.fullBundleMode) {
+  if (config.experimental.bundledDev) {
     middlewares.use(memoryFilesMiddleware(server))
   } else {
     // main transform middleware
@@ -1001,7 +1001,7 @@ export async function _createServer(
     if (initingServer) return initingServer
 
     initingServer = (async function () {
-      if (!config.experimental.fullBundleMode) {
+      if (!config.experimental.bundledDev) {
         // For backward compatibility, we call buildStart for the client
         // environment when initing the server. For other environments
         // buildStart will be called when the first request is transformed
