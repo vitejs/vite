@@ -78,7 +78,7 @@
   },
   "lint-staged": {
     "*": [
-      "oxfmt --write"
+      "oxfmt --write --config ./.prettierrc.json"
     ],
     "packages/*/{src,types}/**/*.ts": [
       "eslint --cache --fix"
