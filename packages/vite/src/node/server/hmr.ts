@@ -391,7 +391,9 @@ export async function handleHMRUpdate(
     debugHmr?.(`[config change] ${colors.dim(shortFile)}`)
     config.logger.info(
       colors.green(
-        `${normalizePath(path.relative(process.cwd(), file))} changed, restarting server...`,
+        `${normalizePath(
+          path.relative(process.cwd(), file),
+        )} changed, restarting server...`,
       ),
       { clear: true, timestamp: true },
     )
@@ -703,10 +705,7 @@ export function updateModules(
         : ''
     environment.logger.info(
       colors.green(`page reload `) + colors.dim(file) + reason,
-      {
-        clear: !firstInvalidatedBy,
-        timestamp: true,
-      },
+      { clear: !firstInvalidatedBy, timestamp: true },
     )
     hot.send({
       type: 'full-reload',
@@ -765,7 +764,9 @@ function propagateUpdate(
   // been loaded in the browser and we should stop propagation.
   if (node.id && node.isSelfAccepting === undefined) {
     debugHmr?.(
-      `[propagate update] stop propagation because not analyzed: ${colors.dim(node.id)}`,
+      `[propagate update] stop propagation because not analyzed: ${colors.dim(
+        node.id,
+      )}`,
     )
     return false
   }

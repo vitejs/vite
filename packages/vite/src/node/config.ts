@@ -2355,7 +2355,9 @@ async function bundleConfigFile(
             let injectValues =
               `const ${dirnameVarName} = ${JSON.stringify(path.dirname(id))};` +
               `const ${filenameVarName} = ${JSON.stringify(id)};` +
-              `const ${importMetaUrlVarName} = ${JSON.stringify(pathToFileURL(id).href)};`
+              `const ${importMetaUrlVarName} = ${JSON.stringify(
+                pathToFileURL(id).href,
+              )};`
             if (code.includes('import.meta.resolve')) {
               if (isESM) {
                 if (!importMetaResolverRegistered) {

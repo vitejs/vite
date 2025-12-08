@@ -349,9 +349,7 @@ cli
       } catch (e) {
         createLogger(options.logLevel).error(
           colors.red(`error during build:\n${e.stack}`),
-          {
-            error: e,
-          },
+          { error: e },
         )
         process.exit(1)
       } finally {
@@ -393,9 +391,7 @@ cli
       } catch (e) {
         createLogger(options.logLevel).error(
           colors.red(`error when optimizing deps:\n${e.stack}`),
-          {
-            error: e,
-          },
+          { error: e },
         )
         process.exit(1)
       }

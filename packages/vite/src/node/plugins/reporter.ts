@@ -70,7 +70,9 @@ export function buildReporterPlugin(config: ResolvedConfig): Plugin {
 
         const logTransform = throttle((id: string) => {
           writeLine(
-            `transforming (${transformedCount}) ${colors.dim(path.relative(config.root, id))}`,
+            `transforming (${transformedCount}) ${colors.dim(
+              path.relative(config.root, id),
+            )}`,
           )
         })
 
@@ -251,7 +253,9 @@ export function buildReporterPlugin(config: ResolvedConfig): Plugin {
               )
               if (entry.compressedSize) {
                 log += colors.dim(
-                  ` │ gzip: ${displaySize(entry.compressedSize).padStart(compressPad)}`,
+                  ` │ gzip: ${displaySize(entry.compressedSize).padStart(
+                    compressPad,
+                  )}`,
                 )
               }
               if (entry.mapSize) {
@@ -332,7 +336,9 @@ export function buildReporterPlugin(config: ResolvedConfig): Plugin {
               )
             if (detectedIneffectiveDynamicImport) {
               this.warn(
-                `\n(!) ${module.id} is dynamically imported by ${module.dynamicImporters.join(
+                `\n(!) ${
+                  module.id
+                } is dynamically imported by ${module.dynamicImporters.join(
                   ', ',
                 )} but also statically imported by ${module.importers.join(
                   ', ',

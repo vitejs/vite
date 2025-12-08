@@ -455,7 +455,9 @@ export function discoverProjectDependencies(environment: ScanEnvironment): {
           `The following dependencies are imported but could not be resolved:\n\n  ${missingIds
             .map(
               (id) =>
-                `${colors.cyan(id)} ${colors.white(colors.dim(`(imported by ${missing[id]})`))}`,
+                `${colors.cyan(id)} ${colors.white(
+                  colors.dim(`(imported by ${missing[id]})`),
+                )}`,
             )
             .join(`\n  `)}\n\nAre they installed?`,
         )
@@ -941,7 +943,9 @@ function getTempSuffix() {
   return (
     '_temp_' +
     getHash(
-      `${process.pid}:${Date.now().toString()}:${Math.random().toString(16).slice(2)}`,
+      `${process.pid}:${Date.now().toString()}:${Math.random()
+        .toString(16)
+        .slice(2)}`,
     )
   )
 }

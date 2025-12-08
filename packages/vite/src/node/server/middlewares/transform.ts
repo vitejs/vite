@@ -349,7 +349,9 @@ export function transformMiddleware(
       if (urlRE.test(url)) {
         warning =
           `Assets in the public directory are served at the root path.\n` +
-          `Instead of ${colors.cyan(rawUrl)}, use ${colors.cyan(rawUrl.replace(publicPath, '/'))}.`
+          `Instead of ${colors.cyan(rawUrl)}, use ${colors.cyan(
+            rawUrl.replace(publicPath, '/'),
+          )}.`
       } else {
         warning =
           'Assets in public directory cannot be imported from JavaScript.\n' +
@@ -363,7 +365,9 @@ export function transformMiddleware(
     } else {
       warning =
         `Files in the public directory are served at the root path.\n` +
-        `Instead of ${colors.cyan(url)}, use ${colors.cyan(url.replace(publicPath, '/'))}.`
+        `Instead of ${colors.cyan(url)}, use ${colors.cyan(
+          url.replace(publicPath, '/'),
+        )}.`
     }
 
     server.config.logger.warn(colors.yellow(warning))

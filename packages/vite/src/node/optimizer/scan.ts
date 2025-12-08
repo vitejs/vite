@@ -358,9 +358,7 @@ function rolldownScanPlugin(
     return environment.pluginContainer.resolveId(
       id,
       importer && normalizePath(importer),
-      {
-        scan: true,
-      },
+      { scan: true },
     )
   }
   const resolve = async (id: string, importer?: string) => {

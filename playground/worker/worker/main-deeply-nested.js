@@ -1,8 +1,6 @@
 const worker = new Worker(
   new URL('../deeply-nested-worker.js', import.meta.url),
-  {
-    type: 'module',
-  },
+  { type: 'module' },
 )
 
 function text(el, text) {

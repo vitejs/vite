@@ -342,7 +342,9 @@ export function cssPlugin(config: ResolvedConfig): Plugin {
         if (urlRE.test(id)) {
           if (isModuleCSSRequest(id)) {
             throw new Error(
-              `?url is not supported with CSS modules. (tried to import ${JSON.stringify(id)})`,
+              `?url is not supported with CSS modules. (tried to import ${JSON.stringify(
+                id,
+              )})`,
             )
           }
 
@@ -352,7 +354,9 @@ export function cssPlugin(config: ResolvedConfig): Plugin {
             id = injectQuery(removeUrlQuery(id), 'transform-only')
             return (
               `import ${JSON.stringify(id)};` +
-              `export default "__VITE_CSS_URL__${Buffer.from(id).toString('hex')}__"`
+              `export default "__VITE_CSS_URL__${Buffer.from(id).toString(
+                'hex',
+              )}__"`
             )
           }
         }

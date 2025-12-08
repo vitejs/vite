@@ -301,10 +301,7 @@ export function buildImportAnalysisPlugin(config: ResolvedConfig): Plugin[] {
               }
               dynamicImports[
                 dynamicImportTreeshakenRE.lastIndex - match[4]?.length - 1
-              ] = {
-                declaration: `const {${names}}`,
-                names: `{ ${names} }`,
-              }
+              ] = { declaration: `const {${names}}`, names: `{ ${names} }` }
               continue
             }
 
@@ -318,10 +315,7 @@ export function buildImportAnalysisPlugin(config: ResolvedConfig): Plugin[] {
             const names = match[6]?.trim()
             dynamicImports[
               dynamicImportTreeshakenRE.lastIndex - match[5]?.length
-            ] = {
-              declaration: `const {${names}}`,
-              names: `{ ${names} }`,
-            }
+            ] = { declaration: `const {${names}}`, names: `{ ${names} }` }
           }
         }
 

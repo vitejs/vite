@@ -151,7 +151,9 @@ const hmrClient = new HMRClient(
       /* @vite-ignore */
       base +
         acceptedPathWithoutQuery.slice(1) +
-        `?${explicitImportRequired ? 'import&' : ''}t=${timestamp}${query ? `&${query}` : ''}`
+        `?${explicitImportRequired ? 'import&' : ''}t=${timestamp}${
+          query ? `&${query}` : ''
+        }`
     )
     if (isWithinCircularImport) {
       importPromise.catch(() => {
@@ -585,7 +587,9 @@ export function injectQuery(url: string, queryToInject: string): string {
   const pathname = url.replace(/[?#].*$/, '')
   const { search, hash } = new URL(url, 'http://vite.dev')
 
-  return `${pathname}?${queryToInject}${search ? `&` + search.slice(1) : ''}${hash || ''}`
+  return `${pathname}?${queryToInject}${search ? `&` + search.slice(1) : ''}${
+    hash || ''
+  }`
 }
 
 export { ErrorOverlay }

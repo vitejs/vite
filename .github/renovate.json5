@@ -1,26 +1,26 @@
 {
-  $schema: "https://docs.renovatebot.com/renovate-schema.json",
-  extends: ["config:recommended", "schedule:weekly", "group:allNonMajor"],
-  labels: ["dependencies"],
-  ignorePaths: ["**/__tests__/**"],
-  rangeStrategy: "bump",
-  postUpdateOptions: ["pnpmDedupe"],
-  packageRules: [
+  "$schema": "https://docs.renovatebot.com/renovate-schema.json",
+  "extends": ["config:recommended", "schedule:weekly", "group:allNonMajor"],
+  "labels": ["dependencies"],
+  "ignorePaths": ["**/__tests__/**"],
+  "rangeStrategy": "bump",
+  "postUpdateOptions": ["pnpmDedupe"],
+  "packageRules": [
     {
-      matchDepTypes: ["peerDependencies"],
-      enabled: false,
+      "matchDepTypes": ["peerDependencies"],
+      "enabled": false,
     },
     {
-      matchDepTypes: ["action"],
-      pinDigests: true,
-      matchPackageNames: ["!actions/{/,}**", "!github/{/,}**"],
+      "matchDepTypes": ["action"],
+      "pinDigests": true,
+      "matchPackageNames": ["!actions/{/,}**", "!github/{/,}**"],
     },
     {
-      groupName: "rolldown-related dependencies",
-      matchDepNames: ["rolldown", "rolldown-plugin-dts", "tsdown"],
+      "groupName": "rolldown-related dependencies",
+      "matchDepNames": ["rolldown", "rolldown-plugin-dts", "tsdown"],
     },
   ],
-  ignoreDeps: [
+  "ignoreDeps": [
     // manually bumping
     "esbuild",
     "rollup",
@@ -41,7 +41,7 @@
     "obug",
   ],
   "github-actions": {
-    managerFilePatterns: [
+    "managerFilePatterns": [
       // default values
       "/(^|/)(workflow-templates|\\.(?:github|gitea|forgejo)/(?:workflows|actions))/.+\\.ya?ml$/",
       "/(^|/)action\\.ya?ml$/",
@@ -49,11 +49,11 @@
       "/(^|/)docs/guide/static-deploy-github-pages\\.yaml$/",
     ],
   },
-  customManagers: [
+  "customManagers": [
     {
-      customType: "regex",
-      managerFilePatterns: ["/packages/create-vite/src/index\\.ts$/"],
-      matchStrings: [
+      "customType": "regex",
+      "managerFilePatterns": ["/packages/create-vite/src/index\\.ts$/"],
+      "matchStrings": [
         "//\\s*renovate:\\s+datasource=(?<datasource>\\S+)\\s+depName=(?<depName>\\S+)\\s+(?:var|let|const)\\s+\\S+\\s*=\\s*[\"'](?<currentValue>[^\"']+)[\"']",
       ],
     },

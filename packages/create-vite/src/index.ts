@@ -667,7 +667,9 @@ async function init() {
     const cdProjectName = path.relative(cwd, root)
     doneMessage += `Done. Now run:\n`
     if (root !== cwd) {
-      doneMessage += `\n  cd ${cdProjectName.includes(' ') ? `"${cdProjectName}"` : cdProjectName}`
+      doneMessage += `\n  cd ${
+        cdProjectName.includes(' ') ? `"${cdProjectName}"` : cdProjectName
+      }`
     }
     doneMessage += `\n  ${getInstallCommand(pkgManager).join(' ')}`
     doneMessage += `\n  ${getRunCommand(pkgManager, 'dev').join(' ')}`

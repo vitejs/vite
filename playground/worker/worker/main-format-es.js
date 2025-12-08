@@ -34,9 +34,7 @@ dynamicImportWorker.addEventListener('message', (ev) => {
 
 const moduleWorker = new Worker(
   new URL('../module-and-worker.js', import.meta.url),
-  {
-    type: 'module',
-  },
+  { type: 'module' },
 )
 
 moduleWorker.addEventListener('message', (ev) => {

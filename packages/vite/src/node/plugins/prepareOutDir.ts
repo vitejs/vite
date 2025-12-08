@@ -80,7 +80,9 @@ function prepareOutDir(
               `(!)`,
             )} The public directory feature may not work correctly. outDir ${colors.white(
               colors.dim(outDir),
-            )} and publicDir ${colors.white(colors.dim(publicDir))} are not separate folders.\n`,
+            )} and publicDir ${colors.white(
+              colors.dim(publicDir),
+            )} are not separate folders.\n`,
           ),
         )
       }

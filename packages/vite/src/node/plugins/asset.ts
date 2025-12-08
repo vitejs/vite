@@ -204,7 +204,9 @@ export function assetPlugin(config: ResolvedConfig): Plugin {
           this.addWatchFile(file)
           // raw query, read file and return as string
           return {
-            code: `export default ${JSON.stringify(await fsp.readFile(file, 'utf-8'))}`,
+            code: `export default ${JSON.stringify(
+              await fsp.readFile(file, 'utf-8'),
+            )}`,
             moduleType: 'js', // NOTE: needs to be set to avoid double `export default` in `?raw&.txt`s
           }
         }

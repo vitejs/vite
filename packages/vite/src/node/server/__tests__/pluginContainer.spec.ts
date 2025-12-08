@@ -209,7 +209,9 @@ describe('plugin container', () => {
         async transform(code, id) {
           if (id === entryUrl)
             return {
-              code: `${(await this.load({ id: '/secondary.js' })).meta.x || undefined}`,
+              code: `${
+                (await this.load({ id: '/secondary.js' })).meta.x || undefined
+              }`,
             }
           return { code }
         },

@@ -775,7 +775,10 @@ export function resolvePlugin(
             if (!(options.external === true || options.external.includes(id))) {
               let message = `Automatically externalized node built-in module "${id}"`
               if (importer) {
-                message += ` imported from "${path.relative(process.cwd(), importer)}"`
+                message += ` imported from "${path.relative(
+                  process.cwd(),
+                  importer,
+                )}"`
               }
               message += `. Consider adding it to environments.${this.environment.name}.external if it is intended.`
               this.warn(message)
@@ -796,7 +799,10 @@ export function resolvePlugin(
             ) {
               let message = `Cannot bundle built-in module "${id}"`
               if (importer) {
-                message += ` imported from "${path.relative(process.cwd(), importer)}"`
+                message += ` imported from "${path.relative(
+                  process.cwd(),
+                  importer,
+                )}"`
               }
               message += `. Consider disabling environments.${this.environment.name}.noExternal or remove the built-in dependency.`
               this.error(message)

@@ -27,7 +27,9 @@ export default defineConfig({
           if (chunkInfo.name === 'immutable-chunk') {
             return `assets/${chunkInfo.name}.js`
           } else if (/custom\d/.test(chunkInfo.name)) {
-            return `assets/chunk-X${['.', '-', ''][/custom(\d)/.exec(chunkInfo.name)[1]]}[hash].js`
+            return `assets/chunk-X${
+              ['.', '-', ''][/custom(\d)/.exec(chunkInfo.name)[1]]
+            }[hash].js`
           }
           return `assets/chunk-[name].[hash].js`
         },

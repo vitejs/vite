@@ -92,7 +92,9 @@ export function createDepsOptimizer(
     if (discoveredDepsWhileScanning.length) {
       logger.info(
         colors.green(
-          `✨ discovered while scanning: ${depsLogString(discoveredDepsWhileScanning)}`,
+          `✨ discovered while scanning: ${depsLogString(
+            discoveredDepsWhileScanning,
+          )}`,
         ),
         {
           timestamp: true,
@@ -440,7 +442,11 @@ export function createDepsOptimizer(
         } else {
           debug(
             colors.green(
-              `✨ ${!isRerun ? `dependencies optimized` : `optimized dependencies unchanged`}`,
+              `✨ ${
+                !isRerun
+                  ? `dependencies optimized`
+                  : `optimized dependencies unchanged`
+              }`,
             ),
           )
         }
@@ -501,10 +507,7 @@ export function createDepsOptimizer(
     } catch (e) {
       logger.error(
         colors.red(`error while updating dependencies:\n${e.stack}`),
-        {
-          timestamp: true,
-          error: e,
-        },
+        { timestamp: true, error: e },
       )
       resolveEnqueuedProcessingPromises()
 

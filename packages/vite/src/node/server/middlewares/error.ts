@@ -79,7 +79,10 @@ export function errorMiddleware(
             <meta charset="UTF-8" />
             <title>Error</title>
             <script type="module">
-              const error = ${JSON.stringify(prepareError(err)).replace(/</g, '\\u003c')}
+              const error = ${JSON.stringify(prepareError(err)).replace(
+                /</g,
+                '\\u003c',
+              )}
               try {
                 const { ErrorOverlay } = await import(${JSON.stringify(path.posix.join(server.config.base, CLIENT_PUBLIC_PATH))})
                 document.body.appendChild(new ErrorOverlay(error))

@@ -51,7 +51,9 @@ function testSourceInput() {
     AtRule(atRule) {
       if (atRule.name === 'source-input') {
         atRule.after(
-          `.source-input::before { content: ${JSON.stringify(atRule.source.input.from)}; }`,
+          `.source-input::before { content: ${JSON.stringify(
+            atRule.source.input.from,
+          )}; }`,
         )
         atRule.remove()
       }

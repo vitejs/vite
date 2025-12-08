@@ -366,7 +366,9 @@ export class ModuleRunner {
     if (code == null) {
       const importer = callstack[callstack.length - 2]
       throw new Error(
-        `[module runner] Failed to load "${url}"${importer ? ` imported from ${importer}` : ''}`,
+        `[module runner] Failed to load "${url}"${
+          importer ? ` imported from ${importer}` : ''
+        }`,
       )
     }
 

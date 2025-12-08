@@ -328,7 +328,9 @@ async function loadAndTransform(
       moduleGraph.idToModuleMap.get(id)?.importers.values().next().value
     const importer = importerMod?.file || importerMod?.url
     const err: any = new Error(
-      `Failed to load url ${url} (resolved id: ${id})${importer ? ` in ${importer}` : ''}. ${msg}`,
+      `Failed to load url ${url} (resolved id: ${id})${
+        importer ? ` in ${importer}` : ''
+      }. ${msg}`,
     )
     err.code = isPublicFile ? ERR_LOAD_PUBLIC_URL : ERR_LOAD_URL
     throw err
