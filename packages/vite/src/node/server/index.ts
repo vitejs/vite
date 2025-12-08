@@ -6,7 +6,6 @@ import { get as httpsGet } from 'node:https'
 import type * as http from 'node:http'
 import { performance } from 'node:perf_hooks'
 import type { Http2SecureServer } from 'node:http2'
-import type readline from 'node:readline'
 import connect from 'connect'
 import corsMiddleware from 'cors'
 import colors from 'picocolors'
@@ -46,7 +45,7 @@ import { ssrFixStacktrace, ssrRewriteStacktrace } from '../ssr/ssrStacktrace'
 import { ssrTransform } from '../ssr/ssrTransform'
 import { reloadOnTsconfigChange } from '../plugins/esbuild'
 import { bindCLIShortcuts } from '../shortcuts'
-import type { BindCLIShortcutsOptions } from '../shortcuts'
+import type { BindCLIShortcutsOptions, ShortcutsState } from '../shortcuts'
 import {
   CLIENT_DIR,
   DEFAULT_DEV_PORT,
@@ -407,11 +406,7 @@ export interface ViteDevServer {
   /**
    * @internal
    */
-  _shortcutsOptions?: BindCLIShortcutsOptions<ViteDevServer>
-  /**
-   * @internal
-   */
-  _rl?: readline.Interface | undefined
+  _shortcutsState?: ShortcutsState<ViteDevServer>
   /**
    * @internal
    */
@@ -442,6 +437,7 @@ export async function _createServer(
   options: {
     listen: boolean
     previousEnvironments?: Record<string, DevEnvironment>
+    previousShortcutsState?: ShortcutsState<ViteDevServer>
   },
 ): Promise<ViteDevServer> {
   const config = isResolvedConfig(inlineConfig)
@@ -773,7 +769,7 @@ export async function _createServer(
     },
     _restartPromise: null,
     _forceOptimizeOnRestart: false,
-    _shortcutsOptions: undefined,
+    _shortcutsState: options.previousShortcutsState,
   }
 
   // maintain consistency with the server instance after restarting.
@@ -1215,7 +1211,6 @@ export function resolveServerOptions(
 
 async function restartServer(server: ViteDevServer) {
   global.__vite_start_time = performance.now()
-  const shortcutsOptions = server._shortcutsOptions
 
   let inlineConfig = server.config.inlineConfig
   if (server._forceOptimizeOnRestart) {
@@ -1236,6 +1231,7 @@ async function restartServer(server: ViteDevServer) {
       newServer = await _createServer(inlineConfig, {
         listen: false,
         previousEnvironments: server.environments,
+        previousShortcutsState: server._shortcutsState,
       })
     } catch (err: any) {
       server.config.logger.error(err.message, {
@@ -1245,14 +1241,15 @@ async function restartServer(server: ViteDevServer) {
       return
     }
 
+    // Detach readline so close handler skips it. Reused to avoid stdin issues
+    server._shortcutsState = undefined
+
     await server.close()
 
     // Assign new server props to existing server instance
     const middlewares = server.middlewares
     newServer._configServerPort = server._configServerPort
     newServer._currentServerPort = server._currentServerPort
-    // Ensure the new server has no stale readline reference
-    newServer._rl = undefined
     Object.assign(server, newServer)
 
     // Keep the same connect instance so app.use(vite.middlewares) works
@@ -1277,11 +1274,13 @@ async function restartServer(server: ViteDevServer) {
   }
   logger.info('server restarted.', { timestamp: true })
 
-  if (shortcutsOptions) {
-    shortcutsOptions.print = false
+  if (
+    (server._shortcutsState as ShortcutsState<ViteDevServer> | undefined)
+      ?.options
+  ) {
     bindCLIShortcuts(
       server,
-      shortcutsOptions,
+      { print: false },
       // Skip environment checks since shortcuts were bound before restart
       true,
     )
