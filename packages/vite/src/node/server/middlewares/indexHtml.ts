@@ -361,13 +361,13 @@ const devHtmlHook: IndexHtmlTransformHook = async (
   })
 
   // invalidate the module so the newly cached contents will be served
-  const clientModuelGraph = server?.environments.client.moduleGraph
-  if (clientModuelGraph) {
+  const clientModuleGraph = server?.environments.client.moduleGraph
+  if (clientModuleGraph) {
     await Promise.all(
       inlineModulePaths.map(async (url) => {
-        const module = await clientModuelGraph.getModuleByUrl(url)
+        const module = await clientModuleGraph.getModuleByUrl(url)
         if (module) {
-          clientModuelGraph.invalidateModule(module)
+          clientModuleGraph.invalidateModule(module)
         }
       }),
     )
