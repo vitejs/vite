@@ -11,6 +11,6 @@
     "esModuleInterop": true,
     "erasableSyntaxOnly": true,
     "skipLibCheck": true,
-    "noUnusedLocals": true,
-  },
+    "noUnusedLocals": true
+  }
 }

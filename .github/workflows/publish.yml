@@ -3,9 +3,9 @@ name: Publish Package
 on:
   push:
     tags:
-      - 'v*' # Push events to matching v*, i.e. v1.0, v20.15.10
-      - 'plugin-*' # Push events to matching plugin-*, i.e. plugin-(vue|vue-jsx|react|legacy)@1.0.0
-      - 'create-vite*' # # Push events to matching create-vite*, i.e. create-vite@1.0.0
+      - "v*" # Push events to matching v*, i.e. v1.0, v20.15.10
+      - "plugin-*" # Push events to matching plugin-*, i.e. plugin-(vue|vue-jsx|react|legacy)@1.0.0
+      - "create-vite*" # # Push events to matching create-vite*, i.e. create-vite@1.0.0
 
 jobs:
   publish:
@@ -37,7 +37,7 @@ jobs:
       - name: Install deps
         run: pnpm install
         env:
-          PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD: '1'
+          PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD: "1"
 
       - name: Publish package
         run: npm i -g npm@^11.5.2 && pnpm run ci-publish "$REF_NAME"

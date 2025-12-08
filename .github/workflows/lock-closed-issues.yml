@@ -2,7 +2,7 @@ name: Lock Closed Issues
 
 on:
   schedule:
-    - cron: '0 0 * * *'
+    - cron: "0 0 * * *"
 
 permissions:
   issues: write
@@ -14,7 +14,7 @@ jobs:
     steps:
       - uses: actions-cool/issues-helper@9861779a695cf1898bd984c727f685f351cfc372 # v3
         with:
-          actions: 'lock-issues'
+          actions: "lock-issues"
           token: ${{ secrets.GITHUB_TOKEN }}
           #body: |
           #  This issue has been locked since it has been closed for more than 14 days.

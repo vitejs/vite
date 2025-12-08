@@ -12,6 +12,6 @@
     "noImplicitOverride": true,
     "noUnusedLocals": true,
     "esModuleInterop": true,
-    "useUnknownInCatchVariables": false,
-  },
+    "useUnknownInCatchVariables": false
+  }
 }
