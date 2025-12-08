@@ -240,20 +240,24 @@ export function assetPlugin(config: ResolvedConfig): Plugin {
       },
     },
 
-    renderChunk(code, chunk, opts) {
-      const s = renderAssetUrlInJS(this, chunk, opts, code)
+    ...(config.command === 'build'
+      ? {
+          renderChunk(code, chunk, opts) {
+            const s = renderAssetUrlInJS(this, chunk, opts, code)
 
-      if (s) {
-        return {
-          code: s.toString(),
-          map: this.environment.config.build.sourcemap
-            ? s.generateMap({ hires: 'boundary' })
-            : null,
+            if (s) {
+              return {
+                code: s.toString(),
+                map: this.environment.config.build.sourcemap
+                  ? s.generateMap({ hires: 'boundary' })
+                  : null,
+              }
+            } else {
+              return null
+            }
+          },
         }
-      } else {
-        return null
-      }
-    },
+      : {}),
 
     generateBundle(_, bundle) {
       // Remove empty entry point file
@@ -303,6 +307,10 @@ export function assetPlugin(config: ResolvedConfig): Plugin {
         }
       }
     },
+
+    watchChange(id) {
+      assetCache.get(this.environment)?.delete(normalizePath(id))
+    },
   }
 }
 
@@ -311,7 +319,7 @@ export async function fileToUrl(
   id: string,
 ): Promise<string> {
   const { environment } = pluginContext
-  if (environment.config.command === 'serve') {
+  if (!environment.config.isBundled) {
     return fileToDevUrl(environment, id)
   } else {
     return fileToBuiltUrl(pluginContext, id)
@@ -460,7 +468,23 @@ async function fileToBuiltUrl(
       postfix = postfix.replace(noInlineRE, '').replace(/^&/, '?')
     }
 
-    url = `__VITE_ASSET__${referenceId}__${postfix ? `$_${postfix}__` : ``}`
+    if (environment.config.experimental.bundledDev) {
+      const outputFilename = pluginContext.getFileName(referenceId)
+      const outputUrl = toOutputFilePathInJS(
+        environment,
+        outputFilename,
+        'asset',
+        'assets/dummy.js',
+        'js',
+        () => {
+          throw new Error('unreachable')
+        },
+      )
+      if (typeof outputUrl === 'object') throw new Error('unreachable')
+      url = outputUrl
+    } else {
+      url = `__VITE_ASSET__${referenceId}__${postfix ? `$_${postfix}__` : ``}`
+    }
   }
 
   cache.set(id, url)
