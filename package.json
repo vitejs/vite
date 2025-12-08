@@ -78,7 +78,7 @@
   },
   "lint-staged": {
     "*": [
-      "prettier --write --cache --ignore-unknown"
+      "oxfmt --write"
     ],
     "packages/*/{src,types}/**/*.ts": [
       "eslint --cache --fix"

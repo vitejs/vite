@@ -19,7 +19,7 @@
     "noUnusedParameters": true,
     "erasableSyntaxOnly": true,
     "noFallthroughCasesInSwitch": true,
-    "noUncheckedSideEffectImports": true
+    "noUncheckedSideEffectImports": true,
   },
-  "include": ["**/*.ts", ".vitepress/**/*.ts", ".vitepress/**/*.vue"]
+  "include": ["**/*.ts", ".vitepress/**/*.ts", ".vitepress/**/*.vue"],
 }
