@@ -9,8 +9,7 @@ release({
     pkg === 'vite' ? `v${version}` : `${pkg}@${version}`,
   logChangelog: (pkg) => logRecentCommits(pkg),
   generateChangelog: async (pkgName) => {
-    if (pkgName === 'create-vite' || pkgName === 'vite')
-      await updateTemplateVersions()
+    if (pkgName === 'create-vite') await updateTemplateVersions()
 
     console.log(colors.cyan('\nGenerating changelog...'))
 

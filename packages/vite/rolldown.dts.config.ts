@@ -25,6 +25,7 @@ const pkg = JSON.parse(
 
 const external = [
   /^node:*/,
+  /^vite\//,
   /^rolldown\//,
   /^#types\//,
   ...Object.keys(pkg.dependencies),
@@ -47,20 +48,6 @@ export default defineConfig({
   },
   external,
   plugins: [
-    {
-      name: 'externalize-vite',
-      resolveId: {
-        order: 'pre',
-        handler(id) {
-          if (id.startsWith('vite/')) {
-            return {
-              id: id.replace(/^vite\//, 'rolldown-vite/'),
-              external: true,
-            }
-          }
-        },
-      },
-    },
     patchTypes(),
     addNodePrefix(),
     dts({
@@ -90,7 +77,7 @@ const identifierWithTrailingDollarRE = /\b(\w+)\$\d+\b/g
  * the module that imports the identifier as a named import alias
  */
 const identifierReplacements: Record<string, Record<string, string>> = {
-  'rolldown-vite/module-runner': {
+  'vite/module-runner': {
     FetchResult$1: 'moduleRunner_FetchResult',
   },
   rolldown: {
@@ -262,7 +249,7 @@ function validateChunkImports(
       !id.startsWith('#') &&
       !id.startsWith('node:') &&
       !id.startsWith('types.d') &&
-      !id.startsWith('rolldown-vite/') &&
+      !id.startsWith('vite/') &&
       // index and moduleRunner have a common chunk
       !id.startsWith('chunks/') &&
       !deps.includes(id) &&

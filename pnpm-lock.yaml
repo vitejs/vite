@@ -6,7 +6,7 @@ settings:
 
 overrides:
   rolldown: 1.0.0-beta.53
-  vite: workspace:rolldown-vite@*
+  vite: workspace:*
   debug: npm:obug@^1.0.2
 
 packageExtensionsChecksum: sha256-BLDZCgUIohvBXMHo3XFOlGLzGXRyK3sDU0nMBRk9APY=
@@ -120,7 +120,7 @@ importers:
         specifier: ^8.48.0
         version: 8.48.0(eslint@9.39.1(jiti@2.6.1)(ms@2.1.3))(ms@2.1.3)(typescript@5.9.3)
       vite:
-        specifier: workspace:rolldown-vite@*
+        specifier: workspace:*
         version: link:packages/vite
       vitest:
         specifier: ^4.0.14
@@ -219,15 +219,9 @@ importers:
         specifier: ^6.15.1
         version: 6.15.1
     devDependencies:
-      '@vitejs/plugin-legacy-for-rolldown-vite':
-        specifier: https://pkg.pr.new/vitejs/rolldown-vite/@vitejs/plugin-legacy@a2594ec
-        version: '@vitejs/plugin-legacy@https://pkg.pr.new/vitejs/rolldown-vite/@vitejs/plugin-legacy@a2594ec(ms@2.1.3)(terser@5.44.1)(vite@packages+vite)'
       acorn:
         specifier: ^8.15.0
         version: 8.15.0
-      fdir:
-        specifier: ^6.5.0
-        version: 6.5.0(picomatch@4.0.3)
       picocolors:
         specifier: ^1.1.1
         version: 1.1.1
@@ -235,7 +229,7 @@ importers:
         specifier: ^0.16.8
         version: 0.16.8(publint@0.3.12)(typescript@5.9.3)(vue-tsc@3.1.5(typescript@5.9.3))
       vite:
-        specifier: workspace:rolldown-vite@*
+        specifier: workspace:*
         version: link:../vite
 
   packages/vite:
@@ -799,7 +793,7 @@ importers:
         specifier: npm:slash@^5.1.0
         version: slash@5.1.0
       vite:
-        specifier: workspace:rolldown-vite@*
+        specifier: workspace:*
         version: link:../../packages/vite
       vue:
         specifier: ^3.5.25
@@ -903,7 +897,7 @@ importers:
         specifier: ^5.44.1
         version: 5.44.1
       vite:
-        specifier: workspace:rolldown-vite@*
+        specifier: workspace:*
         version: link:../../packages/vite
 
   playground/lib:
@@ -3657,7 +3651,7 @@ packages:
   '@tailwindcss/vite@4.1.17':
     resolution: {integrity: sha512-4+9w8ZHOiGnpcGI6z1TVVfWaX/koK7fKeSYF3qlYg2xpBtbteP2ddBxiarL+HVgfSJGeK5RIxRQmKm4rTJJAwA==}
     peerDependencies:
-      vite: workspace:rolldown-vite@*
+      vite: workspace:*
 
   '@tybys/wasm-util@0.10.1':
     resolution: {integrity: sha512-9tTaPJLSiejZKx+Bmog4uSubteqTvFrVrURwkmHixBo0G4seD0zUxp98E1DzUBJxLQ3NPwXrGKDiVjwx/DpPsg==}
@@ -3979,19 +3973,11 @@ packages:
   '@vitejs/longfilename-aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa@file:playground/optimize-deps/longfilename':
     resolution: {directory: playground/optimize-deps/longfilename, type: directory}
 
-  '@vitejs/plugin-legacy@https://pkg.pr.new/vitejs/rolldown-vite/@vitejs/plugin-legacy@a2594ec':
-    resolution: {tarball: https://pkg.pr.new/vitejs/rolldown-vite/@vitejs/plugin-legacy@a2594ec}
-    version: 7.2.0
-    engines: {node: ^20.19.0 || >=22.12.0}
-    peerDependencies:
-      terser: ^5.16.0
-      vite: workspace:rolldown-vite@*
-
   '@vitejs/plugin-vue@6.0.1':
     resolution: {integrity: sha512-+MaE752hU0wfPFJEUAIxqw18+20euHHdxVtMvbFcOEpjEyfqXH/5DCoTHiVJ0J29EhTJdoTkjEv5YBKU9dnoTw==}
     engines: {node: ^20.19.0 || >=22.12.0}
     peerDependencies:
-      vite: workspace:rolldown-vite@*
+      vite: workspace:*
       vue: ^3.2.25
 
   '@vitejs/release-scripts@1.6.0':
@@ -4295,7 +4281,7 @@ packages:
     resolution: {integrity: sha512-RzS5NujlCzeRPF1MK7MXLiEFpkIXeMdQ+rN3Kk3tDI9j0mtbr7Nmuq67tpkOJQpgyClbOltCXMjLZicJHsH5Cg==}
     peerDependencies:
       msw: ^2.4.9
-      vite: workspace:rolldown-vite@*
+      vite: workspace:*
     peerDependenciesMeta:
       msw:
         optional: true
@@ -7527,7 +7513,7 @@ packages:
   vitepress-plugin-group-icons@1.6.5:
     resolution: {integrity: sha512-+pg4+GKDq2fLqKb1Sat5p1p4SuIZ5tEPxu8HjpwoeecZ/VaXKy6Bdf0wyjedjaTAyZQzXbvyavJegqAcQ+B0VA==}
     peerDependencies:
-      vite: workspace:rolldown-vite@*
+      vite: workspace:*
     peerDependenciesMeta:
       vite:
         optional: true
@@ -9787,25 +9773,6 @@ snapshots:
     optional: true
 
   '@vitejs/longfilename-aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa@file:playground/optimize-deps/longfilename': {}
-
-  '@vitejs/plugin-legacy@https://pkg.pr.new/vitejs/rolldown-vite/@vitejs/plugin-legacy@a2594ec(ms@2.1.3)(terser@5.44.1)(vite@packages+vite)':
-    dependencies:
-      '@babel/core': 7.28.5(ms@2.1.3)
-      '@babel/plugin-transform-dynamic-import': 7.27.1(@babel/core@7.28.5(ms@2.1.3))
-      '@babel/plugin-transform-modules-systemjs': 7.28.5(@babel/core@7.28.5(ms@2.1.3))(ms@2.1.3)
-      '@babel/preset-env': 7.28.5(@babel/core@7.28.5(ms@2.1.3))(ms@2.1.3)
-      babel-plugin-polyfill-corejs3: 0.13.0(@babel/core@7.28.5(ms@2.1.3))(ms@2.1.3)
-      babel-plugin-polyfill-regenerator: 0.6.5(@babel/core@7.28.5(ms@2.1.3))(ms@2.1.3)
-      browserslist: 4.28.0
-      browserslist-to-esbuild: 2.1.1(browserslist@4.28.0)
-      core-js: 3.47.0
-      magic-string: 0.30.21
-      regenerator-runtime: 0.14.1
-      systemjs: 6.15.1
-      terser: 5.44.1
-      vite: link:packages/vite
-    transitivePeerDependencies:
-      - ms
 
   '@vitejs/plugin-vue@6.0.1(vite@packages+vite)(vue@3.5.25(typescript@5.9.3))':
     dependencies:
