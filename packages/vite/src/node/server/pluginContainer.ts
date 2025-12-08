@@ -460,9 +460,7 @@ class EnvironmentPluginContainer<Env extends Environment = Environment> {
       if (!this._seenResolves[key]) {
         this._seenResolves[key] = true
         debugResolve(
-          `${timeFrom(resolveStart)} ${colors.cyan(rawId)} -> ${colors.dim(
-            id,
-          )}`,
+          `${timeFrom(resolveStart)} ${colors.cyan(rawId)} -> ${colors.dim(id)}`,
         )
       }
     }

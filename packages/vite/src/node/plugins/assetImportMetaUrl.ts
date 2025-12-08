@@ -102,9 +102,7 @@ export function assetImportMetaUrlPlugin(config: ResolvedConfig): Plugin {
               s.update(
                 startIndex,
                 endIndex,
-                `new URL((import.meta.glob(${JSON.stringify(
-                  pattern,
-                )}, ${JSON.stringify(
+                `new URL((import.meta.glob(${JSON.stringify(pattern)}, ${JSON.stringify(
                   globOptions,
                 )}))[${pureUrl}], import.meta.url)`,
               )

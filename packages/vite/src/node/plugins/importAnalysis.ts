@@ -301,9 +301,7 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
       ) {
         importerModule.isSelfAccepting = false
         debug?.(
-          `${timeFrom(msAtStart)} ${colors.dim(
-            `[no imports] ${prettifyUrl(importer, root)}`,
-          )}`,
+          `${timeFrom(msAtStart)} ${colors.dim(`[no imports] ${prettifyUrl(importer, root)}`)}`,
         )
         return source
       }
@@ -713,7 +711,9 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
                   start,
                   end,
                   `__vite__injectQuery(${rawUrl}, 'import')`,
-                  { contentOnly: true },
+                  {
+                    contentOnly: true,
+                  },
                 )
               }
             }
@@ -861,10 +861,7 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
 
       debug?.(
         `${timeFrom(msAtStart)} ${colors.dim(
-          `[${importedUrls.size} imports rewritten] ${prettifyUrl(
-            importer,
-            root,
-          )}`,
+          `[${importedUrls.size} imports rewritten] ${prettifyUrl(importer, root)}`,
         )}`,
       )
 
@@ -1132,7 +1129,5 @@ function __vite__injectQuery(url: string, queryToInject: string): string {
   const pathname = url.replace(/[?#].*$/, '')
   const { search, hash } = new URL(url, 'http://vite.dev')
 
-  return `${pathname}?${queryToInject}${search ? `&` + search.slice(1) : ''}${
-    hash || ''
-  }`
+  return `${pathname}?${queryToInject}${search ? `&` + search.slice(1) : ''}${hash || ''}`
 }

@@ -893,9 +893,7 @@ function enhanceRollupError(e: RollupError) {
         (e.id ? ` (${e.id})` : ''),
     )}`
   } else if (e.id) {
-    msg += `\nfile: ${colors.cyan(
-      e.id + (e.loc ? `:${e.loc.line}:${e.loc.column}` : ''),
-    )}`
+    msg += `\nfile: ${colors.cyan(e.id + (e.loc ? `:${e.loc.line}:${e.loc.column}` : ''))}`
   }
   if (e.frame) {
     msg += `\n` + colors.yellow(normalizeCodeFrame(e.frame))

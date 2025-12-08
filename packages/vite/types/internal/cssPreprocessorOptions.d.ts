@@ -34,7 +34,9 @@ export type LessPreprocessorBaseOptions = Omit<
 export type StylusPreprocessorBaseOptions = Omit<
   Stylus.RenderOptions,
   'filename'
-> & { define?: Record<string, any> }
+> & {
+  define?: Record<string, any>
+}
 
 declare global {
   // LESS' types somewhat references this which doesn't make sense in Node,

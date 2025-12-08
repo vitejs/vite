@@ -12,9 +12,8 @@ const render = () => {
 render()
 
 globalThis.__HMR__['.delete-intermediate-file'] = () => {
-  globalThis.__HMR__['.intermediate-file-delete-increment'] = `${
-    Number(incrementValue()) + 1
-  }`
+  globalThis.__HMR__['.intermediate-file-delete-increment'] =
+    `${Number(incrementValue()) + 1}`
   render()
 }
 

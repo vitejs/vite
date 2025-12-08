@@ -67,12 +67,19 @@ export const namedDefaultWithObjectValues = Object.values(
 
 export const eagerAs = import.meta.glob<ModuleType>(
   ['./modules/*.ts', '!**/index.ts'],
-  { eager: true, query: '?raw', import: 'default' },
+  {
+    eager: true,
+    query: '?raw',
+    import: 'default',
+  },
 )
 
 export const rawImportModule = import.meta.glob(
   ['./modules/*.ts', '!**/index.ts'],
-  { query: '?raw', import: '*' },
+  {
+    query: '?raw',
+    import: '*',
+  },
 )
 
 export const excludeSelf = import.meta.glob(
@@ -100,7 +107,10 @@ export const parent = import.meta.glob('../../playground/src/*.ts', {
 
 export const rootMixedRelative = import.meta.glob(
   ['/*.ts', '../fixture-b/*.ts'],
-  { query: '?url', import: 'default' },
+  {
+    query: '?url',
+    import: 'default',
+  },
 )
 
 export const cleverCwd1 = import.meta.glob(

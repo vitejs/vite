@@ -575,9 +575,7 @@ export async function transformGlobImport(
           } else if (onlyValues) {
             replacement = `[${objectProps.join(',')}${lineBreaks}]`
           } else {
-            replacement = `/* #__PURE__ */ Object.assign({${objectProps.join(
-              ',',
-            )}${lineBreaks}})`
+            replacement = `/* #__PURE__ */ Object.assign({${objectProps.join(',')}${lineBreaks}})`
           }
 
           s.overwrite(start, end, replacement)

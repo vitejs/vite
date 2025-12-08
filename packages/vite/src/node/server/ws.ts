@@ -278,7 +278,9 @@ export function createWebSocketServer(
       } else {
         config.logger.error(
           colors.red(`WebSocket server error:\n${e.stack || e.message}`),
-          { error: e },
+          {
+            error: e,
+          },
         )
       }
     })
@@ -331,12 +333,16 @@ export function createWebSocketServer(
     if (e.code === 'EADDRINUSE') {
       config.logger.error(
         colors.red(`WebSocket server error: Port ${e.port} is already in use`),
-        { error: e },
+        {
+          error: e,
+        },
       )
     } else {
       config.logger.error(
         colors.red(`WebSocket server error:\n${e.stack || e.message}`),
-        { error: e },
+        {
+          error: e,
+        },
       )
     }
   })
