@@ -120,7 +120,6 @@ const ignoreConfusingTypeNames = [
   'ServerOptions$1',
   'ServerOptions$3',
   // type parameters
-  'T$1',
   'K$1',
   'Server$3',
   // temporary variables for types
