@@ -115,9 +115,6 @@ export class FullBundleDevEnvironment extends DevEnvironment {
         this.devEngine.removeClient(clientId)
       }
     })
-    this.hot.on('vite:invalidate', (payload, client) => {
-      this.handleInvalidateModule(client, payload)
-    })
 
     this.devEngine = await dev(rollupOptions, outputOptions, {
       onHmrUpdates: (result) => {
@@ -202,17 +199,13 @@ export class FullBundleDevEnvironment extends DevEnvironment {
     // no-op
   }
 
-  protected override invalidateModule(_m: unknown): void {
-    // no-op, handled via `server.ws` instead
-  }
-
-  private handleInvalidateModule(
-    client: NormalizedHotChannelClient,
+  protected override invalidateModule(
     m: {
       path: string
       message?: string
       firstInvalidatedBy: string
     },
+    client: NormalizedHotChannelClient,
   ): void {
     ;(async () => {
       const invalidateCalledModules = this.invalidateCalledModules.get(client)

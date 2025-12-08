@@ -20,7 +20,11 @@ import { promiseWithResolvers } from '../../shared/utils'
 import type { ViteDevServer } from '../server'
 import { EnvironmentModuleGraph } from './moduleGraph'
 import type { EnvironmentModuleNode } from './moduleGraph'
-import type { HotChannel, NormalizedHotChannel } from './hmr'
+import type {
+  HotChannel,
+  NormalizedHotChannel,
+  NormalizedHotChannelClient,
+} from './hmr'
 import { getShortName, normalizeHotChannel, updateModules } from './hmr'
 import type {
   TransformOptionsInternal,
@@ -146,12 +150,15 @@ export class DevEnvironment extends BaseEnvironment {
 
     this.hot.on(
       'vite:invalidate',
-      async ({ path, message, firstInvalidatedBy }) => {
-        this.invalidateModule({
-          path,
-          message,
-          firstInvalidatedBy,
-        })
+      async ({ path, message, firstInvalidatedBy }, client) => {
+        this.invalidateModule(
+          {
+            path,
+            message,
+            firstInvalidatedBy,
+          },
+          client,
+        )
       },
     )
 
@@ -250,11 +257,14 @@ export class DevEnvironment extends BaseEnvironment {
     }
   }
 
-  protected invalidateModule(m: {
-    path: string
-    message?: string
-    firstInvalidatedBy: string
-  }): void {
+  protected invalidateModule(
+    m: {
+      path: string
+      message?: string
+      firstInvalidatedBy: string
+    },
+    _client: NormalizedHotChannelClient,
+  ): void {
     const mod = this.moduleGraph.urlToModuleMap.get(m.path)
     if (
       mod &&
