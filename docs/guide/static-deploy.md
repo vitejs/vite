@@ -321,3 +321,19 @@ Deploy your static site using [xmit](https://xmit.co) by following this [guide](
 Zephyr follows a different approach than other cloud providers. It integrates directly with Vite build process, so every time you build or run the dev server for your application, it will be automatically deployed with Zephyr Cloud.
 
 Follow the steps in [the Vite deployment guide](https://docs.zephyr-cloud.io/bundlers/vite) to get started.
+
+## EdgeOne Pages
+
+You can quickly deploy your Vite app as a Static Site on [EdgeOne Pages](https://edgeone.ai/products/pages). You need:
+
+1. Creat a [EdgeOne Account](https://edgeone.ai/register?s_url=https%3A%2F%2Fconsole.tencentcloud.com%2Fedgeone%2Fpages), Log in to the EdgeOne Pages [Dashboard](https://console.tencentcloud.com/edgeone/pages).
+2. Connect your GitHub/Gitee/Coding account or use an offcial template, or drop your code ZIP directly.
+3. Specify a product name, acceleration region, production branch, build settings, environment variables and other related configuration information.
+4. Click **Start Deployment**.
+5. Once deployed successfully, you can access your project via the preview link.
+
+Note: All commits to the specified production branch (default is "main") will automatically trigger a new deployment.
+
+You can also add [custom domain](https://pages.edgeone.ai/document/custom-domain) to your project.
+
+Learn more about EdgeOne Pages’s [Git Integration](https://edgeone.ai/document/171937194382536704?source=github).
