@@ -1,6 +1,8 @@
 # Migration from v7
 
-## Default Browser Target change
+If you are migrating from `rolldown-vite`, the technical preview release for Rolldown integrated Vite for v6 & v7, only the sections with <Badge text="non-rolldown-vite" type="warning" /> in the title are applicable.
+
+## Default Browser Target change <Badge text="non-rolldown-vite" type="warning" />
 
 The default browser value of `build.target` and `'baseline-widely-available'`, is updated to newer browser version:
 
@@ -334,9 +336,9 @@ The following options are deprecated and will be removed in the future:
 - `worker.rollupOptions`: renamed to `worker.rolldownOptions`
 - `build.commonjsOptions`: it is now no-op
 
-## General Changes
+## General Changes <Badge text="non-rolldown-vite" type="warning" />
 
-## Removed deprecated features
+## Removed deprecated features <Badge text="non-rolldown-vite" type="warning" />
 
 **_TODO: This change is not implemented yet, but will be implemented before stable release._**
 
