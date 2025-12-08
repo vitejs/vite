@@ -41,8 +41,9 @@ export async function resolvePlugins(
   postPlugins: Plugin[],
 ): Promise<Plugin[]> {
   const isBuild = config.command === 'build'
+  const isBundled = config.isBundled
   const isWorker = config.isWorker
-  const buildPlugins = isBuild
+  const buildPlugins = isBundled
     ? await (await import('../build')).resolveBuildPlugins(config)
     : { pre: [], post: [] }
   const { modulePreload } = config.build
@@ -50,10 +51,10 @@ export async function resolvePlugins(
   const enableNativePluginV1 = config.nativePluginEnabledLevel >= 1
 
   return [
-    !isBuild ? optimizedDepsPlugin() : null,
+    !isBundled ? optimizedDepsPlugin() : null,
     !isWorker ? watchPackageDataPlugin(config.packageCache) : null,
-    !isBuild ? preAliasPlugin(config) : null,
-    isBuild &&
+    !isBundled ? preAliasPlugin(config) : null,
+    isBundled &&
     enableNativePluginV1 &&
     !config.resolve.alias.some((v) => v.customResolver)
       ? nativeAliasPlugin({
@@ -116,7 +117,7 @@ export async function resolvePlugins(
     wasmFallbackPlugin(config),
     definePlugin(config),
     cssPostPlugin(config),
-    isBuild && buildHtmlPlugin(config),
+    isBundled && buildHtmlPlugin(config),
     workerImportMetaUrlPlugin(config),
     assetImportMetaUrlPlugin(config),
     ...buildPlugins.pre,
@@ -128,7 +129,7 @@ export async function resolvePlugins(
     ...buildPlugins.post,
 
     // internal server-only plugins are always applied after everything else
-    ...(isBuild
+    ...(isBundled
       ? []
       : [
           clientInjectionsPlugin(config),

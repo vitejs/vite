@@ -101,6 +101,8 @@ import { searchForPackageRoot, searchForWorkspaceRoot } from './searchRoot'
 import type { DevEnvironment } from './environment'
 import { hostValidationMiddleware } from './middlewares/hostCheck'
 import { rejectInvalidRequestMiddleware } from './middlewares/rejectInvalidRequest'
+import { memoryFilesMiddleware } from './middlewares/memoryFiles'
+import { rejectNoCorsRequestMiddleware } from './middlewares/rejectNoCorsRequest'
 
 const usedConfigs = new WeakSet<ResolvedConfig>()
 
@@ -502,7 +504,7 @@ export async function _createServer(
     ? (chokidar.watch(
         // config file dependencies and env file might be outside of root
         [
-          root,
+          ...(config.experimental.bundledDev ? [] : [root]),
           ...config.configFileDependencies,
           ...getEnvFilesForMode(config.mode, config.envDir),
           // Watch the public directory explicitly because it might be outside
@@ -880,8 +882,8 @@ export async function _createServer(
     middlewares.use(timeMiddleware(root))
   }
 
-  // disallows request that contains `#` in the URL
   middlewares.use(rejectInvalidRequestMiddleware())
+  middlewares.use(rejectNoCorsRequestMiddleware())
 
   // cors
   const { cors } = serverConfig
@@ -909,7 +911,9 @@ export async function _createServer(
 
   // Internal middlewares ------------------------------------------------------
 
-  middlewares.use(cachedTransformMiddleware(server))
+  if (!config.experimental.bundledDev) {
+    middlewares.use(cachedTransformMiddleware(server))
+  }
 
   // proxy
   const { proxy } = serverConfig
@@ -944,16 +948,26 @@ export async function _createServer(
     middlewares.use(servePublicMiddleware(server, publicFiles))
   }
 
-  // main transform middleware
-  middlewares.use(transformMiddleware(server))
+  if (config.experimental.bundledDev) {
+    middlewares.use(memoryFilesMiddleware(server))
+  } else {
+    // main transform middleware
+    middlewares.use(transformMiddleware(server))
 
-  // serve static files
-  middlewares.use(serveRawFsMiddleware(server))
-  middlewares.use(serveStaticMiddleware(server))
+    // serve static files
+    middlewares.use(serveRawFsMiddleware(server))
+    middlewares.use(serveStaticMiddleware(server))
+  }
 
   // html fallback
   if (config.appType === 'spa' || config.appType === 'mpa') {
-    middlewares.use(htmlFallbackMiddleware(root, config.appType === 'spa'))
+    middlewares.use(
+      htmlFallbackMiddleware(
+        root,
+        config.appType === 'spa',
+        server.environments.client,
+      ),
+    )
   }
 
   // apply configureServer post hooks ------------------------------------------
@@ -983,10 +997,12 @@ export async function _createServer(
     if (initingServer) return initingServer
 
     initingServer = (async function () {
-      // For backward compatibility, we call buildStart for the client
-      // environment when initing the server. For other environments
-      // buildStart will be called when the first request is transformed
-      await environments.client.pluginContainer.buildStart()
+      if (!config.experimental.bundledDev) {
+        // For backward compatibility, we call buildStart for the client
+        // environment when initing the server. For other environments
+        // buildStart will be called when the first request is transformed
+        await environments.client.pluginContainer.buildStart()
+      }
 
       // ensure ws server started
       if (onListen || options.listen) {

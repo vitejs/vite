@@ -54,7 +54,7 @@ const wasmHelper = async (opts = {}, url: string) => {
 const wasmHelperCode = wasmHelper.toString()
 
 export const wasmHelperPlugin = (config: ResolvedConfig): Plugin => {
-  if (config.command === 'build' && config.nativePluginEnabledLevel >= 1) {
+  if (config.isBundled && config.nativePluginEnabledLevel >= 1) {
     return nativeWasmHelperPlugin({
       decodedBase: config.decodedBase,
     })

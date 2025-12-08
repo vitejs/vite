@@ -1,15 +1,31 @@
 import path from 'node:path'
 import fs from 'node:fs'
 import type { Connect } from '#dep-types/connect'
-import { createDebugger } from '../../utils'
+import { createDebugger, joinUrlSegments } from '../../utils'
 import { cleanUrl } from '../../../shared/utils'
+import type { DevEnvironment } from '../environment'
+import { FullBundleDevEnvironment } from '../environments/fullBundleEnvironment'
 
 const debug = createDebugger('vite:html-fallback')
 
 export function htmlFallbackMiddleware(
   root: string,
   spaFallback: boolean,
+  clientEnvironment?: DevEnvironment,
 ): Connect.NextHandleFunction {
+  const memoryFiles =
+    clientEnvironment instanceof FullBundleDevEnvironment
+      ? clientEnvironment.memoryFiles
+      : undefined
+
+  function checkFileExists(relativePath: string) {
+    return (
+      memoryFiles?.has(
+        relativePath.slice(1), // remove first /
+      ) ?? fs.existsSync(path.join(root, relativePath))
+    )
+  }
+
   // Keep the named function. The name is visible in debug logs via `DEBUG=connect:dispatcher ...`
   return function viteHtmlFallbackMiddleware(req, _res, next) {
     if (
@@ -40,8 +56,7 @@ export function htmlFallbackMiddleware(
     // .html files are not handled by serveStaticMiddleware
     // so we need to check if the file exists
     if (pathname.endsWith('.html')) {
-      const filePath = path.join(root, pathname)
-      if (fs.existsSync(filePath)) {
+      if (checkFileExists(pathname)) {
         debug?.(`Rewriting ${req.method} ${req.url} to ${url}`)
         req.url = url
         return next()
@@ -49,8 +64,7 @@ export function htmlFallbackMiddleware(
     }
     // trailing slash should check for fallback index.html
     else if (pathname.endsWith('/')) {
-      const filePath = path.join(root, pathname, 'index.html')
-      if (fs.existsSync(filePath)) {
+      if (checkFileExists(joinUrlSegments(pathname, 'index.html'))) {
         const newUrl = url + 'index.html'
         debug?.(`Rewriting ${req.method} ${req.url} to ${newUrl}`)
         req.url = newUrl
@@ -59,8 +73,7 @@ export function htmlFallbackMiddleware(
     }
     // non-trailing slash should check for fallback .html
     else {
-      const filePath = path.join(root, pathname + '.html')
-      if (fs.existsSync(filePath)) {
+      if (checkFileExists(pathname + '.html')) {
         const newUrl = url + '.html'
         debug?.(`Rewriting ${req.method} ${req.url} to ${newUrl}`)
         req.url = newUrl

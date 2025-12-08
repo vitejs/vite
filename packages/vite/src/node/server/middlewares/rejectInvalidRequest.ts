@@ -1,5 +1,8 @@
 import type { Connect } from '#dep-types/connect'
 
+/**
+ * disallows request that contains `#` in the URL
+ */
 export function rejectInvalidRequestMiddleware(): Connect.NextHandleFunction {
   // Keep the named function. The name is visible in debug logs via `DEBUG=connect:dispatcher ...`
   return function viteRejectInvalidRequestMiddleware(req, res, next) {
