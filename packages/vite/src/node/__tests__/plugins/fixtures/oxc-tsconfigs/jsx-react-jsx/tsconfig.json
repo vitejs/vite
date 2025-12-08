@@ -2,6 +2,6 @@
   "compilerOptions": {
     "jsxFactory": "g",
     "jsxFragmentFactory": "foo",
-    "jsxImportSource": "baz"
-  }
+    "jsxImportSource": "baz",
+  },
 }

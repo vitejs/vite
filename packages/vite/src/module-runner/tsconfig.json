@@ -4,6 +4,6 @@
   "exclude": ["../**/__tests__", "../**/__tests_dts__"],
   "compilerOptions": {
     "lib": ["ESNext", "DOM"],
-    "stripInternal": true
-  }
+    "stripInternal": true,
+  },
 }

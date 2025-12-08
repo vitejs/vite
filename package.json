@@ -61,6 +61,7 @@
     "execa": "^9.6.1",
     "globals": "^16.5.0",
     "lint-staged": "^16.2.7",
+    "oxfmt": "^0.17.0",
     "picocolors": "^1.1.1",
     "playwright-chromium": "^1.57.0",
     "prettier": "3.7.3",
@@ -78,7 +79,7 @@
   },
   "lint-staged": {
     "*": [
-      "prettier --write --cache --ignore-unknown"
+      "oxfmt --write --config ./.prettierrc.json"
     ],
     "packages/*/{src,types}/**/*.ts": [
       "eslint --cache --fix"

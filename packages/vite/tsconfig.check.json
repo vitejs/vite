@@ -8,11 +8,11 @@
     "noEmit": true,
     "strict": true,
     "noUncheckedSideEffectImports": true,
-    "exactOptionalPropertyTypes": true
+    "exactOptionalPropertyTypes": true,
   },
   "include": [
     // dist
     "dist/**/*",
-    "types/**/*"
-  ]
+    "types/**/*",
+  ],
 }
