@@ -67,7 +67,7 @@ export interface ImportGlobFunction {
     options?: ImportGlobOptions<Eager, As>,
   ): (Eager extends true ? true : false) extends true
     ? Record<string, T>
-    : Record<string, () => Promise<T>>
+    : Record<string, () => Promise<T>>;
   /**
    * Import a list of files with a glob pattern.
    *
@@ -76,7 +76,7 @@ export interface ImportGlobFunction {
   <M>(
     glob: string | string[],
     options?: ImportGlobOptions<false, string>,
-  ): Record<string, () => Promise<M>>
+  ): Record<string, () => Promise<M>>;
   /**
    * Import a list of files with a glob pattern.
    *

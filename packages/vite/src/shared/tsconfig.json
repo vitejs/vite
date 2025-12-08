@@ -3,6 +3,6 @@
   "include": ["./", "../types"],
   "compilerOptions": {
     "lib": ["ESNext", "DOM"],
-    "stripInternal": true
-  }
+    "stripInternal": true,
+  },
 }

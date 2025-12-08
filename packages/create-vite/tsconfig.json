@@ -11,6 +11,6 @@
     "skipLibCheck": true,
     "noUnusedLocals": true,
     "esModuleInterop": true,
-    "noEmit": true
-  }
+    "noEmit": true,
+  },
 }

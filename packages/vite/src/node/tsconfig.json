@@ -9,7 +9,7 @@
     "skipLibCheck": true, // lib check is done on final types
     "stripInternal": true,
     "paths": {
-      "vite/module-runner": ["../module-runner"]
-    }
-  }
+      "vite/module-runner": ["../module-runner"],
+    },
+  },
 }

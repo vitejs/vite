@@ -2,7 +2,7 @@
   "include": ["./b.ts"],
   "compilerOptions": {
     "paths": {
-      "@imported": ["./b-imported.ts"]
-    }
-  }
+      "@imported": ["./b-imported.ts"],
+    },
+  },
 }

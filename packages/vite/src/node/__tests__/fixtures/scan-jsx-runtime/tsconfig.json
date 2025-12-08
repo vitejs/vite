@@ -8,6 +8,6 @@
     "moduleResolution": "Bundler",
     "module": "ESNext",
     "target": "ESNext",
-    "lib": ["ESNext", "DOM", "DOM.Iterable"]
-  }
+    "lib": ["ESNext", "DOM", "DOM.Iterable"],
+  },
 }

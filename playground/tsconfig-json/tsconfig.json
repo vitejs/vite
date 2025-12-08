@@ -15,7 +15,7 @@
 
     "useDefineForClassFields": true,
     "verbatimModuleSyntax": true,
-    "experimentalDecorators": true
+    "experimentalDecorators": true,
   },
-  "include": ["./src"]
+  "include": ["./src"],
 }

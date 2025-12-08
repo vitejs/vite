@@ -1,5 +1,5 @@
 {
   "compilerOptions": {
-    "useDefineForClassFields": true
-  }
+    "useDefineForClassFields": true,
+  },
 }

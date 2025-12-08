@@ -2,7 +2,7 @@ name: Preview release
 
 env:
   # install playwright binary manually (because pnpm only runs install script once)
-  PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD: "1"
+  PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD: '1'
 
 permissions:
   pull-requests: write
@@ -42,7 +42,7 @@ jobs:
       - name: Install deps
         run: pnpm install
         env:
-          PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD: "1"
+          PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD: '1'
 
       - name: Build Vite core
         working-directory: ./packages/vite
