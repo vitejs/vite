@@ -17,7 +17,13 @@
     },
     {
       "groupName": "rolldown-related dependencies",
-      "matchDepNames": ["rolldown", "rolldown-plugin-dts", "tsdown"],
+      "matchDepNames": [
+        "rolldown",
+        "rolldown-plugin-dts",
+        "tsdown",
+        "@oxc-project/*",
+        "oxc-*",
+      ],
     },
   ],
   "ignoreDeps": [
