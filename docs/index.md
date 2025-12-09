@@ -9,6 +9,22 @@ layout: home
 aside: false
 editLink: false
 markdownStyles: false
+
+head:
+  - - link
+    - rel: preconnect
+      href: https://fonts.googleapis.com
+  - - link
+    - rel: preconnect
+      href: https://fonts.gstatic.com
+      crossorigin: ''
+  - - link
+    - rel: preload
+      href: https://fonts.googleapis.com/css2?family=Manrope:wght@600&family=IBM+Plex+Mono:wght@400&display=swap
+      as: style
+  - - link
+    - rel: stylesheet
+      href: https://fonts.googleapis.com/css2?family=Manrope:wght@600&family=IBM+Plex+Mono:wght@400&display=swap
 ---
 
 <script setup>

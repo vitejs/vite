@@ -7,10 +7,6 @@ import { chromium } from 'playwright-chromium'
 let browserServer: BrowserServer | undefined
 
 export async function setup({ provide }: TestProject): Promise<void> {
-  process.env.NODE_ENV = process.env.VITE_TEST_BUILD
-    ? 'production'
-    : 'development'
-
   browserServer = await chromium.launchServer({
     headless: !process.env.VITE_DEBUG_SERVE,
     args: process.env.CI

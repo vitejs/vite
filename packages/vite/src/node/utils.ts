@@ -14,7 +14,8 @@ import fsp from 'node:fs/promises'
 import remapping from '@jridgewell/remapping'
 import type { DecodedSourceMap, RawSourceMap } from '@jridgewell/remapping'
 import colors from 'picocolors'
-import debug from 'debug'
+import type { Debugger } from 'obug'
+import debug from 'obug'
 import type MagicString from 'magic-string'
 import type { Equal } from '@type-challenges/utils'
 
@@ -183,13 +184,11 @@ export type ViteDebugScope = `vite:${string}`
 export function createDebugger(
   namespace: ViteDebugScope,
   options: DebuggerOptions = {},
-): debug.Debugger['log'] | undefined {
+): Debugger['log'] | undefined {
   const log = debug(namespace)
   const { onlyWhenFocused, depth } = options
 
-  // @ts-expect-error - The log function is bound to inspectOpts, but the type is not reflected
   if (depth && log.inspectOpts && log.inspectOpts.depth == null) {
-    // @ts-expect-error - The log function is bound to inspectOpts, but the type is not reflected
     log.inspectOpts.depth = options.depth
   }
 
@@ -624,6 +623,8 @@ export function emptyDir(dir: string, skip?: string[]): void {
   }
 }
 
+// NOTE: we cannot use `fs.cpSync` because of a bug in Node.js (https://github.com/nodejs/node/issues/58768, https://github.com/nodejs/node/issues/59168)
+//       also note that we should set `dereference: true` when we use `fs.cpSync`
 export function copyDir(srcDir: string, destDir: string): void {
   fs.mkdirSync(destDir, { recursive: true })
   for (const file of fs.readdirSync(srcDir)) {

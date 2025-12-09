@@ -3,4 +3,5 @@ export default {
   url: import.meta.url,
   dirname: import.meta.dirname,
   filename: import.meta.filename,
+  resolved: import.meta.resolve('../import-meta/vite.config.ts'),
 }
