@@ -2,7 +2,7 @@ import fsp from 'node:fs/promises'
 import path from 'node:path'
 import { EventEmitter } from 'node:events'
 import colors from 'picocolors'
-import type { RollupError } from 'rollup'
+import type { RollupError } from 'rolldown'
 import type { CustomPayload, HotPayload, Update } from '#types/hmrPayload'
 import type {
   InvokeMethods,
@@ -416,6 +416,11 @@ export async function handleHMRUpdate(
         triggeredBy: path.resolve(config.root, file),
       }),
     )
+    return
+  }
+
+  if (config.experimental.bundledDev) {
+    // TODO: support handleHotUpdate / hotUpdate
     return
   }
 

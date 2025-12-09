@@ -44,8 +44,12 @@ jobs:
         env:
           PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD: "1"
 
-      - name: Build
+      - name: Build Vite core
         working-directory: ./packages/vite
         run: pnpm build
 
-      - run: pnpm dlx pkg-pr-new@0.0 publish --compact --pnpm ./packages/vite
+      - name: Build plugin-legacy
+        working-directory: ./packages/plugin-legacy
+        run: pnpm build
+
+      - run: pnpm dlx pkg-pr-new@0.0 publish --pnpm './packages/vite' './packages/plugin-legacy' --packageManager=pnpm,npm,yarn
