@@ -1,9 +1,11 @@
 import path from 'node:path'
 import MagicString from 'magic-string'
-import type { RollupError, RollupOutput } from 'rollup'
+import type { RolldownOutput, RollupError } from 'rolldown'
 import colors from 'picocolors'
+import { type ImportSpecifier, init, parse } from 'es-module-lexer'
+import { viteWebWorkerPostPlugin as nativeWebWorkerPostPlugin } from 'rolldown/experimental'
 import type { ResolvedConfig } from '../config'
-import type { Plugin } from '../plugin'
+import { type Plugin, perEnvironmentPlugin } from '../plugin'
 import { ENV_ENTRY, ENV_PUBLIC_PATH } from '../constants'
 import {
   encodeURIPath,
@@ -15,6 +17,7 @@ import {
 } from '../utils'
 import {
   BuildEnvironment,
+  ChunkMetadataMap,
   createToImportMetaURLBasedRelativeRuntime,
   injectEnvironmentToHooks,
   onRollupLog,
@@ -179,24 +182,30 @@ async function bundleWorkerEntry(
   }
 
   // bundle the file as entry to support imports
-  const { rollup } = await import('rollup')
+  const { rolldown } = await import('rolldown')
   const { plugins, rollupOptions, format } = config.worker
   const workerConfig = await plugins(newBundleChain)
   const workerEnvironment = new BuildEnvironment('client', workerConfig) // TODO: should this be 'worker'?
   await workerEnvironment.init()
 
-  const bundle = await rollup({
+  const chunkMetadataMap = new ChunkMetadataMap()
+  const bundle = await rolldown({
     ...rollupOptions,
     input,
     plugins: workerEnvironment.plugins.map((p) =>
-      injectEnvironmentToHooks(workerEnvironment, p),
+      injectEnvironmentToHooks(workerEnvironment, chunkMetadataMap, p),
     ),
     onLog(level, log) {
       onRollupLog(level, log, workerEnvironment)
     },
+    // TODO: remove this and enable rolldown's CSS support later
+    moduleTypes: {
+      '.css': 'js',
+      ...rollupOptions.moduleTypes,
+    },
     preserveEntrySignatures: false,
   })
-  let result: RollupOutput
+  let result: RolldownOutput
   let watchedFiles: string[] | undefined
   try {
     const workerOutputConfig = config.worker.rollupOptions.output
@@ -218,11 +227,17 @@ async function bundleWorkerEntry(
         config.build.assetsDir,
         '[name]-[hash].[ext]',
       ),
+      minify:
+        config.build.minify === 'oxc'
+          ? true
+          : config.build.minify === false
+            ? 'dce-only'
+            : undefined,
       ...workerConfig,
       format,
       sourcemap: config.build.sourcemap,
     })
-    watchedFiles = bundle.watchFiles.map((f) => normalizePath(f))
+    watchedFiles = (await bundle.watchFiles).map((f) => normalizePath(f))
   } catch (e) {
     // adjust rollup format error
     if (
@@ -296,27 +311,68 @@ export async function workerFileToUrl(
   return bundle
 }
 
-export function webWorkerPostPlugin(): Plugin {
+export function webWorkerPostPlugin(config: ResolvedConfig): Plugin {
+  if (config.isBundled && config.nativePluginEnabledLevel >= 1) {
+    return perEnvironmentPlugin(
+      'native:web-worker-post-plugin',
+      (environment) => {
+        if (environment.config.worker.format === 'iife') {
+          return nativeWebWorkerPostPlugin()
+        }
+      },
+    )
+  }
+
   return {
     name: 'vite:worker-post',
-    resolveImportMeta(property, { format }) {
-      // document is undefined in the worker, so we need to avoid it in iife
-      if (format === 'iife') {
-        // compiling import.meta
-        if (!property) {
-          // rollup only supports `url` property. we only support `url` property as well.
-          // https://github.com/rollup/rollup/blob/62b648e1cc6a1f00260bb85aa2050097bb4afd2b/src/ast/nodes/MetaProperty.ts#L164-L173
-          return `{
-            url: self.location.href
-          }`
-        }
-        // compiling import.meta.url
-        if (property === 'url') {
-          return 'self.location.href'
-        }
-      }
+    transform: {
+      filter: {
+        code: 'import.meta',
+      },
+      order: 'post',
+      async handler(code, id) {
+        // import.meta is unavailable in the IIFE worker, so we need to replace it
+        if (this.environment.config.worker.format === 'iife') {
+          await init
 
-      return null
+          let imports: readonly ImportSpecifier[]
+          try {
+            imports = parse(code)[0]
+          } catch {
+            // ignore if parse fails
+            return
+          }
+
+          let injectedImportMeta = false
+          let s: MagicString | undefined
+          for (const { s: start, e: end, d: dynamicIndex } of imports) {
+            // is import.meta
+            if (dynamicIndex === -2) {
+              const prop = code.slice(end, end + 4)
+              if (prop === '.url') {
+                s ||= new MagicString(code)
+                s.overwrite(start, end + 4, 'self.location.href')
+              } else {
+                s ||= new MagicString(code)
+                if (!injectedImportMeta) {
+                  s.prepend(
+                    'const _vite_importMeta = { url: self.location.href };\n',
+                  )
+                  injectedImportMeta = true
+                }
+                s.overwrite(start, end, '_vite_importMeta')
+              }
+            }
+          }
+
+          if (!s) return
+
+          return {
+            code: s.toString(),
+            map: s.generateMap({ hires: 'boundary', source: id }),
+          }
+        }
+      },
     },
   }
 }
@@ -484,62 +540,75 @@ export function webWorkerPlugin(config: ResolvedConfig): Plugin {
       },
     },
 
-    renderChunk(code, chunk, outputOptions) {
-      let s: MagicString
-      const result = () => {
-        return (
-          s && {
-            code: s.toString(),
-            map: this.environment.config.build.sourcemap
-              ? s.generateMap({ hires: 'boundary' })
-              : null,
-          }
-        )
-      }
-      workerAssetUrlRE.lastIndex = 0
-      if (workerAssetUrlRE.test(code)) {
-        const toRelativeRuntime = createToImportMetaURLBasedRelativeRuntime(
-          outputOptions.format,
-          this.environment.config.isWorker,
-        )
+    ...(isBuild
+      ? {
+          renderChunk(code, chunk, outputOptions) {
+            let s: MagicString
+            const result = () => {
+              return (
+                s && {
+                  code: s.toString(),
+                  map: this.environment.config.build.sourcemap
+                    ? s.generateMap({ hires: 'boundary' })
+                    : null,
+                }
+              )
+            }
+            workerAssetUrlRE.lastIndex = 0
+            if (workerAssetUrlRE.test(code)) {
+              const toRelativeRuntime =
+                createToImportMetaURLBasedRelativeRuntime(
+                  outputOptions.format,
+                  this.environment.config.isWorker,
+                )
 
-        let match: RegExpExecArray | null
-        s = new MagicString(code)
-        workerAssetUrlRE.lastIndex = 0
+              let match: RegExpExecArray | null
+              s = new MagicString(code)
+              workerAssetUrlRE.lastIndex = 0
 
-        // Replace "__VITE_WORKER_ASSET__5aa0ddc0__" using relative paths
-        const workerOutputCache = workerOutputCaches.get(
-          config.mainConfig || config,
-        )!
+              // Replace "__VITE_WORKER_ASSET__5aa0ddc0__" using relative paths
+              const workerOutputCache = workerOutputCaches.get(
+                config.mainConfig || config,
+              )!
 
-        while ((match = workerAssetUrlRE.exec(code))) {
-          const [full, hash] = match
-          const filename = workerOutputCache.getEntryFilenameFromHash(hash)
-          if (!filename) {
-            this.warn(`Could not find worker asset for hash: ${hash}`)
-            continue
-          }
-          const replacement = toOutputFilePathInJS(
-            this.environment,
-            filename,
-            'asset',
-            chunk.fileName,
-            'js',
-            toRelativeRuntime,
-          )
-          const replacementString =
-            typeof replacement === 'string'
-              ? JSON.stringify(encodeURIPath(replacement)).slice(1, -1)
-              : `"+${replacement.runtime}+"`
-          s.update(match.index, match.index + full.length, replacementString)
+              while ((match = workerAssetUrlRE.exec(code))) {
+                const [full, hash] = match
+                const filename =
+                  workerOutputCache.getEntryFilenameFromHash(hash)
+                if (!filename) {
+                  this.warn(`Could not find worker asset for hash: ${hash}`)
+                  continue
+                }
+                const replacement = toOutputFilePathInJS(
+                  this.environment,
+                  filename,
+                  'asset',
+                  chunk.fileName,
+                  'js',
+                  toRelativeRuntime,
+                )
+                const replacementString =
+                  typeof replacement === 'string'
+                    ? JSON.stringify(encodeURIPath(replacement)).slice(1, -1)
+                    : `"+${replacement.runtime}+"`
+                s.update(
+                  match.index,
+                  match.index + full.length,
+                  replacementString,
+                )
+              }
+            }
+            return result()
+          },
         }
-      }
-      return result()
-    },
+      : {}),
 
     generateBundle(opts, bundle) {
-      // @ts-expect-error asset emits are skipped in legacy bundle
-      if (opts.__vite_skip_asset_emit__ || isWorker) {
+      // to avoid emitting duplicate assets for modern build and legacy build
+      if (
+        this.environment.config.isOutputOptionsForLegacyChunks?.(opts) ||
+        isWorker
+      ) {
         return
       }
       for (const asset of workerOutputCaches.get(config)!.getAssets()) {

@@ -25,7 +25,6 @@ const argv = mri<{
   help?: boolean
   overwrite?: boolean
   immediate?: boolean
-  rolldown?: boolean
   interactive?: boolean
 }>(process.argv.slice(2), {
   boolean: ['help', 'overwrite', 'immediate', 'rolldown', 'interactive'],
@@ -44,7 +43,6 @@ When running in TTY, the CLI will start in interactive mode.
 Options:
   -t, --template NAME                   use a specific template
   -i, --immediate                       install dependencies and start dev
-  --rolldown / --no-rolldown            use / do not use rolldown-vite (Experimental)
   --interactive / --no-interactive      force interactive / non-interactive mode
 
 Available templates:
@@ -421,7 +419,6 @@ async function init() {
   const argTemplate = argv.template
   const argOverwrite = argv.overwrite
   const argImmediate = argv.immediate
-  const argRolldown = argv.rolldown
   const argInteractive = argv.interactive
 
   const help = argv.help
@@ -570,28 +567,6 @@ async function init() {
     }
   }
 
-  let useRolldownVite = argRolldown
-  if (useRolldownVite === undefined) {
-    if (interactive) {
-      const rolldownViteValue = await prompts.select({
-        message: 'Use rolldown-vite (Experimental)?:',
-        options: [
-          {
-            label: 'Yes',
-            value: true,
-            hint: 'The future default Vite, which is powered by Rolldown',
-          },
-          { label: 'No', value: false },
-        ],
-        initialValue: false,
-      })
-      if (prompts.isCancel(rolldownViteValue)) return cancel()
-      useRolldownVite = rolldownViteValue
-    } else {
-      useRolldownVite = false
-    }
-  }
-
   const pkgManager = pkgInfo ? pkgInfo.name : 'npm'
 
   // 5. Ask about immediate install and package manager
@@ -675,27 +650,6 @@ async function init() {
   )
 
   pkg.name = packageName
-
-  if (useRolldownVite) {
-    // renovate: datasource=npm depName=rolldown-vite
-    const rolldownViteVersion = '7.2.5'
-    const pkgVersion = `npm:rolldown-vite@${rolldownViteVersion}`
-    pkg.devDependencies.vite = pkgVersion
-    switch (pkgManager) {
-      case 'pnpm':
-        pkg.pnpm ??= {}
-        pkg.pnpm.overrides ??= {}
-        pkg.pnpm.overrides.vite = pkgVersion
-        break
-      case 'yarn':
-        pkg.resolutions ??= {}
-        pkg.resolutions.vite = pkgVersion
-        break
-      default:
-        pkg.overrides ??= {}
-        pkg.overrides.vite = pkgVersion
-    }
-  }
 
   write('package.json', JSON.stringify(pkg, null, 2) + '\n')
 
