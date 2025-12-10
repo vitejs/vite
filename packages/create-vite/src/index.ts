@@ -6,6 +6,7 @@ import spawn from 'cross-spawn'
 import mri from 'mri'
 import * as prompts from '@clack/prompts'
 import colors from 'picocolors'
+import { determineAgent } from '@vercel/detect-agent'
 
 const {
   blue,
@@ -431,6 +432,14 @@ async function init() {
   }
 
   const interactive = argInteractive ?? process.stdin.isTTY
+
+  // Detect AI agent environment for better agent experience (AX)
+  const { isAgent } = await determineAgent()
+  if (isAgent && interactive) {
+    console.log(
+      '\nTo create in one go, run: create-vite <DIRECTORY> --no-interactive --template <TEMPLATE>\n',
+    )
+  }
 
   const pkgInfo = pkgFromUserAgent(process.env.npm_config_user_agent)
   const cancel = () => prompts.cancel('Operation cancelled')
