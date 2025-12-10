@@ -336,4 +336,4 @@ Note: All commits to the specified production branch (default is "main") will au
 
 You can also add custom domain to your project.
 
-Learn more about EdgeOne Pages’s [guide](https://edgeone.ai/document/171937194382536704?source=github).
+Learn more about EdgeOne Pages’s [guide](https://pages.edgeone.ai/document/build-guide).
