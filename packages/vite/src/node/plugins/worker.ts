@@ -507,14 +507,13 @@ export function webWorkerPlugin(config: ResolvedConfig): Plugin {
           const workerType = workerFileMatch[1] as WorkerType
           let injectEnv = ''
 
+          const scriptPath = JSON.stringify(
+            path.posix.join(config.base, ENV_PUBLIC_PATH),
+          )
+
           if (workerType === 'classic') {
-            // base needs to be joined as the base is not injected to `importScripts` automatically
-            const scriptPath = JSON.stringify(
-              path.posix.join(config.base, ENV_PUBLIC_PATH),
-            )
             injectEnv = `importScripts(${scriptPath})\n`
           } else if (workerType === 'module') {
-            const scriptPath = JSON.stringify(ENV_PUBLIC_PATH)
             injectEnv = `import ${scriptPath}\n`
           } else if (workerType === 'ignore') {
             if (isBuild) {
