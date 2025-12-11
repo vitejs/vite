@@ -295,7 +295,8 @@ const FRAMEWORKS: Framework[] = [
         name: 'ember-app-ts',
         display: 'TypeScript ↗',
         color: blueBright,
-        customCommand: 'npm exec -- ember-cli@latest new TARGET_DIR --typescript',
+        customCommand:
+          'npm exec -- ember-cli@latest new TARGET_DIR --typescript',
       },
       {
         name: 'ember-app',
