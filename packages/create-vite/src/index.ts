@@ -288,6 +288,26 @@ const FRAMEWORKS: Framework[] = [
     ],
   },
   {
+    name: 'ember',
+    display: 'Ember',
+    color: redBright,
+    variants: [
+      {
+        name: 'ember-app-ts',
+        display: 'TypeScript ↗',
+        color: blueBright,
+        customCommand:
+          'npm exec -- ember-cli@latest new TARGET_DIR --typescript',
+      },
+      {
+        name: 'ember-app',
+        display: 'JavaScript ↗',
+        color: redBright,
+        customCommand: 'npm exec -- ember-cli@latest new TARGET_DIR',
+      },
+    ],
+  },
+  {
     name: 'qwik',
     display: 'Qwik',
     color: blueBright,
