@@ -303,20 +303,6 @@ const FRAMEWORKS: Framework[] = [
         color: redBright,
         customCommand: 'npx ember-cli@latest new TARGET_DIR',
       },
-      {
-        name: 'ember-library',
-        display: 'Production and OSS ready Library',
-        color: redBright,
-        customCommand:
-          'npx ember-cli@latest addon TARGET_DIR --blueprint @ember/addon-blueprint --pnpm',
-      },
-      {
-        name: 'ember-library-ts',
-        display: 'Production and OSS ready Library (TypeScript)',
-        color: blueBright,
-        customCommand:
-          'npx ember-cli@latest addon TARGET_DIR --blueprint @ember/addon-blueprint --pnpm --typescript',
-      },
     ],
   },
   {
