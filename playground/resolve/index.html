@@ -67,6 +67,9 @@
 <h2>Resolving dot-prefixed directory with imports field</h2>
 <p class="imports-dot-prefixed">fail</p>
 
+<h2>Resolving #/ root alias pattern with imports field</h2>
+<p class="imports-root-slash">fail</p>
+
 <h2>Resolve /index.*</h2>
 <p class="index">fail</p>
 
@@ -274,6 +277,9 @@
 
   import { msg as importsDotPrefixed } from './imports-path/importer.js'
   text('.imports-dot-prefixed', importsDotPrefixed)
+
+  import { msg as importsRootSlash } from '#/index.js'
+  text('.imports-root-slash', importsRootSlash)
 
   // implicit index resolving
   import { foo } from './util'
