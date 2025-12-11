@@ -188,13 +188,13 @@ describe('hoist @ rules', () => {
     )
   })
 
-  test('dont hoist @import in comments', async () => {
+  test("don't hoist @import in comments", async () => {
     const css = `.foo{color:red;}/* @import "bla"; */@import "bar";`
     const result = await hoistAtRules(css)
     expect(result).toBe(`@import "bar";.foo{color:red;}/* @import "bla"; */`)
   })
 
-  test('dont hoist @charset in comments', async () => {
+  test("don't hoist @charset in comments", async () => {
     const css = `.foo{color:red;}/* @charset "utf-8"; */@charset "utf-8";`
     const result = await hoistAtRules(css)
     expect(result).toBe(
@@ -202,7 +202,7 @@ describe('hoist @ rules', () => {
     )
   })
 
-  test('dont hoist @import and @charset in comments', async () => {
+  test("don't hoist @import and @charset in comments", async () => {
     const css = `
 .foo{color:red;}
 /*
