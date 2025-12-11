@@ -29,7 +29,7 @@
     "@glimmer/component": "^2.0.0",
     "@glint/ember-tsc": "^1.0.4",
     "@glint/template": "^1.6.2",
-    "@glint/tsserver-plugin": "^2.0.4"
+    "@glint/tsserver-plugin": "^2.0.4",
     "@rollup/plugin-babel": "^5.3.1",
     "@types/rsvp": "^4.0.9",
     "babel-plugin-ember-template-compilation": "^2.3.0",
