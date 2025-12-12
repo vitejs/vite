@@ -19,7 +19,7 @@ function toTableHtml(flags: FlagData[]): string {
 <table>
   <thead>
     <tr>
-      <th>Options</th>
+      <th>Option</th>
       <th>Description</th>
     </tr>
   </thead>
