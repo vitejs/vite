@@ -11,6 +11,7 @@ import llmstxt from 'vitepress-plugin-llms'
 import { markdownItImageSize } from 'markdown-it-image-size'
 import packageJson from '../../packages/vite/package.json' with { type: 'json' }
 import { buildEnd } from './buildEnd.config'
+import { updateData } from './updateData.config'
 
 const viteVersion = packageJson.version
 const viteMajorVersion = +viteVersion.split('.')[0]
@@ -23,6 +24,9 @@ const ogUrl = 'https://vite.dev'
 // netlify envs
 const deployURL = process.env.DEPLOY_PRIME_URL || ''
 const commitRef = process.env.COMMIT_REF?.slice(0, 8) || 'dev'
+
+// update data on config load
+await updateData()
 
 const deployType = (() => {
   switch (deployURL) {

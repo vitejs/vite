@@ -21,7 +21,7 @@ vite [root]
 ### Options
 
 <!-- render as html -->
-<div v-html="data.viteFlags"></div>
+<div v-html="data.viteDevFlags"></div>
 
 ## `vite build`
 
