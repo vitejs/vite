@@ -1,134 +1,76 @@
+---
+outline: 2
+---
+
+<script setup>
+import { data } from '../_data/cli.data'
+</script>
+
 # Command Line Interface
 
-## Dev server
+## `vite`
 
-### `vite`
+Start the Vite dev server in the current directory. `vite dev` and `vite serve` are aliases for `vite`.
 
-Start Vite dev server in the current directory. `vite dev` and `vite serve` are aliases for `vite`.
-
-#### Usage
+### Usage
 
 ```bash
 vite [root]
 ```
 
-#### Options
+### Options
 
-| Options                   |                                                                                                                                                                                       |
-| ------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `--host [host]`           | Specify hostname (`string`)                                                                                                                                                           |
-| `--port <port>`           | Specify port (`number`)                                                                                                                                                               |
-| `--open [path]`           | Open browser on startup (`boolean \| string`)                                                                                                                                         |
-| `--cors`                  | Enable CORS (`boolean`)                                                                                                                                                               |
-| `--strictPort`            | Exit if specified port is already in use (`boolean`)                                                                                                                                  |
-| `--force`                 | Force the optimizer to ignore the cache and re-bundle (`boolean`)                                                                                                                     |
-| `-c, --config <file>`     | Use specified config file (`string`)                                                                                                                                                  |
-| `--base <path>`           | Public base path (default: `/`) (`string`)                                                                                                                                            |
-| `-l, --logLevel <level>`  | info \| warn \| error \| silent (`string`)                                                                                                                                            |
-| `--clearScreen`           | Allow/disable clear screen when logging (`boolean`)                                                                                                                                   |
-| `--configLoader <loader>` | Use `bundle` to bundle the config with Rolldown, or `runner` (experimental) to process it on the fly, or `native` (experimental) to load using the native runtime (default: `bundle`) |
-| `--profile`               | Start built-in Node.js inspector (check [Performance bottlenecks](/guide/troubleshooting#performance-bottlenecks))                                                                    |
-| `-d, --debug [feat]`      | Show debug logs (`string \| boolean`)                                                                                                                                                 |
-| `-f, --filter <filter>`   | Filter debug logs (`string`)                                                                                                                                                          |
-| `-m, --mode <mode>`       | Set env mode (`string`)                                                                                                                                                               |
-| `-h, --help`              | Display available CLI options                                                                                                                                                         |
-| `-v, --version`           | Display version number                                                                                                                                                                |
+<!-- render as html -->
+<div v-html="data.viteFlags"></div>
 
-## Build
-
-### `vite build`
+## `vite build`
 
 Build for production.
 
-#### Usage
+### Usage
 
 ```bash
 vite build [root]
 ```
 
-#### Options
+### Options
 
-| Options                        |                                                                                                                         |
-| ------------------------------ | ----------------------------------------------------------------------------------------------------------------------- |
-| `--target <target>`            | Transpile target (default: `"modules"`) (`string`)                                                                      |
-| `--outDir <dir>`               | Output directory (default: `dist`) (`string`)                                                                           |
-| `--assetsDir <dir>`            | Directory under outDir to place assets in (default: `"assets"`) (`string`)                                              |
-| `--assetsInlineLimit <number>` | Static asset base64 inline threshold in bytes (default: `4096`) (`number`)                                              |
-| `--ssr [entry]`                | Build specified entry for server-side rendering (`string`)                                                              |
-| `--sourcemap [output]`         | Output source maps for build (default: `false`) (`boolean \| "inline" \| "hidden"`)                                     |
-| `--minify [minifier]`          | Enable/disable minification, or specify minifier to use (default: `"esbuild"`) (`boolean \| "terser" \| "esbuild"`)     |
-| `--manifest [name]`            | Emit build manifest json (`boolean \| string`)                                                                          |
-| `--ssrManifest [name]`         | Emit ssr manifest json (`boolean \| string`)                                                                            |
-| `--emptyOutDir`                | Force empty outDir when it's outside of root (`boolean`)                                                                |
-| `-w, --watch`                  | Rebuilds when modules have changed on disk (`boolean`)                                                                  |
-| `-c, --config <file>`          | Use specified config file (`string`)                                                                                    |
-| `--base <path>`                | Public base path (default: `/`) (`string`)                                                                              |
-| `-l, --logLevel <level>`       | Info \| warn \| error \| silent (`string`)                                                                              |
-| `--clearScreen`                | Allow/disable clear screen when logging (`boolean`)                                                                     |
-| `--configLoader <loader>`      | Use `bundle` to bundle the config with Rolldown or `runner` (experimental) to process it on the fly (default: `bundle`) |
-| `--profile`                    | Start built-in Node.js inspector (check [Performance bottlenecks](/guide/troubleshooting#performance-bottlenecks))      |
-| `-d, --debug [feat]`           | Show debug logs (`string \| boolean`)                                                                                   |
-| `-f, --filter <filter>`        | Filter debug logs (`string`)                                                                                            |
-| `-m, --mode <mode>`            | Set env mode (`string`)                                                                                                 |
-| `-h, --help`                   | Display available CLI options                                                                                           |
-| `--app`                        | Build all environments, same as `builder: {}` (`boolean`, experimental)                                                 |
+<div v-html="data.viteBuildFlags"></div>
 
-## Others
-
-### `vite optimize`
+## `vite optimize`
 
 Pre-bundle dependencies.
 
 **Deprecated**: the pre-bundle process runs automatically and does not need to be called.
 
-#### Usage
+### Usage
 
 ```bash
 vite optimize [root]
 ```
 
-#### Options
+### Options
 
-| Options                   |                                                                                                                         |
-| ------------------------- | ----------------------------------------------------------------------------------------------------------------------- |
-| `--force`                 | Force the optimizer to ignore the cache and re-bundle (`boolean`)                                                       |
-| `-c, --config <file>`     | Use specified config file (`string`)                                                                                    |
-| `--base <path>`           | Public base path (default: `/`) (`string`)                                                                              |
-| `-l, --logLevel <level>`  | Info \| warn \| error \| silent (`string`)                                                                              |
-| `--clearScreen`           | Allow/disable clear screen when logging (`boolean`)                                                                     |
-| `--configLoader <loader>` | Use `bundle` to bundle the config with Rolldown or `runner` (experimental) to process it on the fly (default: `bundle`) |
-| `-d, --debug [feat]`      | Show debug logs (`string \| boolean`)                                                                                   |
-| `-f, --filter <filter>`   | Filter debug logs (`string`)                                                                                            |
-| `-m, --mode <mode>`       | Set env mode (`string`)                                                                                                 |
-| `-h, --help`              | Display available CLI options                                                                                           |
+<div v-html="data.viteOptimizeFlags"></div>
 
-### `vite preview`
+## `vite preview`
 
 Locally preview the production build. Do not use this as a production server as it's not designed for it.
 
 This command starts a server in the build directory (by default `dist`). Run `vite build` beforehand to ensure that the build directory is up-to-date. Depending on the project's configured [`appType`](/config/shared-options.html#apptype), it makes use of certain middleware.
 
-#### Usage
+### Usage
 
 ```bash
 vite preview [root]
 ```
 
-#### Options
+### Options
 
-| Options                   |                                                                                                                         |
-| ------------------------- | ----------------------------------------------------------------------------------------------------------------------- |
-| `--host [host]`           | Specify hostname (`string`)                                                                                             |
-| `--port <port>`           | Specify port (`number`)                                                                                                 |
-| `--strictPort`            | Exit if specified port is already in use (`boolean`)                                                                    |
-| `--open [path]`           | Open browser on startup (`boolean \| string`)                                                                           |
-| `--outDir <dir>`          | Output directory (default: `dist`)(`string`)                                                                            |
-| `-c, --config <file>`     | Use specified config file (`string`)                                                                                    |
-| `--base <path>`           | Public base path (default: `/`) (`string`)                                                                              |
-| `-l, --logLevel <level>`  | Info \| warn \| error \| silent (`string`)                                                                              |
-| `--clearScreen`           | Allow/disable clear screen when logging (`boolean`)                                                                     |
-| `--configLoader <loader>` | Use `bundle` to bundle the config with Rolldown or `runner` (experimental) to process it on the fly (default: `bundle`) |
-| `-d, --debug [feat]`      | Show debug logs (`string \| boolean`)                                                                                   |
-| `-f, --filter <filter>`   | Filter debug logs (`string`)                                                                                            |
-| `-m, --mode <mode>`       | Set env mode (`string`)                                                                                                 |
-| `-h, --help`              | Display available CLI options                                                                                           |
+<div v-html="data.vitePreviewFlags"></div>
+
+## Shared Options
+
+These options are available for all commands.
+
+<div v-html="data.globalFlags"></div>
