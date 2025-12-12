@@ -3,7 +3,7 @@ outline: 2
 ---
 
 <script setup>
-import { data } from '../_data/cli.data'
+import { data } from '../_data/cli-core.data'
 </script>
 
 # Command Line Interface
