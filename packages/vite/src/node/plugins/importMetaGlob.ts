@@ -46,6 +46,12 @@ export function importGlobPlugin(config: ResolvedConfig): Plugin {
     return nativeImportGlobPlugin({
       root: config.root,
       restoreQueryExtension: config.experimental.importGlobRestoreExtension,
+      isV2:
+        config.nativePluginEnabledLevel >= 2
+          ? {
+              sourcemap: !!config.build.sourcemap,
+            }
+          : undefined,
     })
   }
 
