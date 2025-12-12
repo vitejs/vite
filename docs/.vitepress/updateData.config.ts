@@ -17,8 +17,6 @@ async function updateCliCoreData() {
   let cli: CAC
 
   try {
-    // Set env var to prevent the CLI from executing
-    process.env.__VITE_DOCS__ = 'true'
     // @ts-expect-error -- not typed
     const mod = await import('../../packages/vite/dist/node/cli.js')
     cli = mod.cli

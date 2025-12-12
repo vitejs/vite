@@ -476,9 +476,4 @@ cli
 cli.help()
 cli.version(VERSION)
 
-// Don't run the CLI if we're only generating the CLI docs
-if (!process.env.__VITE_DOCS__) {
-  cli.parse()
-}
-
 export { cli }
