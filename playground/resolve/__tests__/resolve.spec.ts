@@ -228,6 +228,12 @@ test('Resolving dot-prefixed directory with imports field', async () => {
   expect(await page.textContent('.imports-dot-prefixed')).toMatch('[success]')
 })
 
+test('Resolving #/ root alias pattern with imports field', async () => {
+  // This tests the new Node.js behavior from https://github.com/nodejs/node/pull/60864
+  // which allows "#/*" patterns (slash immediately after #) in package.json imports
+  expect(await page.textContent('.imports-root-slash')).toMatch('[success]')
+})
+
 test("Resolve doesn't interrupt page request with trailing query and .css", async () => {
   await page.goto(viteTestUrl + '/?test.css')
   expect(await page.locator('vite-error-overlay').count()).toBe(0)
