@@ -27,6 +27,11 @@
       "description": "Use 'bundle' to bundle the config with Rolldown, or 'runner' (experimental) to process it on the fly, or 'native' (experimental) to load using the native runtime (default: bundle)"
     },
     {
+      "name": "--profile",
+      "type": "boolean",
+      "description": "Start built-in Node.js inspector"
+    },
+    {
       "name": "-d, --debug [feat]",
       "type": "string | boolean",
       "description": "Show debug logs"

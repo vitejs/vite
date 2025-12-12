@@ -1,7 +1,7 @@
 import path from 'node:path'
 import fs from 'node:fs'
 import { performance } from 'node:perf_hooks'
-import { cac } from 'cac'
+import { type CAC, cac } from 'cac'
 import colors from 'picocolors'
 import { VERSION } from './constants'
 import type { BuildEnvironmentOptions } from './build'
@@ -31,7 +31,7 @@ if (!checkNodeVersion(process.versions.node)) {
   )
 }
 
-const cli = cac('vite')
+const cli: CAC = cac('vite')
 
 // global options
 interface GlobalCLIOptions {
@@ -181,6 +181,7 @@ cli
     '--configLoader <loader>',
     `[string] use 'bundle' to bundle the config with Rolldown, or 'runner' (experimental) to process it on the fly, or 'native' (experimental) to load using the native runtime (default: bundle)`,
   )
+  .option('--profile', `[boolean] start built-in Node.js inspector`)
   .option('-d, --debug [feat]', `[string | boolean] show debug logs`)
   .option('-f, --filter <filter>', `[string] filter debug logs`)
   .option('-m, --mode <mode>', `[string] set env mode`)

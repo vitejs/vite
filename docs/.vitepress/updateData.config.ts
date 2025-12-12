@@ -46,7 +46,7 @@ async function updateCliCoreData() {
 
   await fs.writeFile(
     new URL('../_data/cli-core.json', import.meta.url),
-    JSON.stringify(data, null, 2),
+    JSON.stringify(data, null, 2) + '\n',
   )
 }
 
