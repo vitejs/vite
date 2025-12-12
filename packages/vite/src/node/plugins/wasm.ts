@@ -3,10 +3,15 @@ import { readFile } from 'node:fs/promises'
 import MagicString from 'magic-string'
 import { exactRegex } from '@rolldown/pluginutils'
 import { createToImportMetaURLBasedRelativeRuntime } from '../build'
+import {
+  viteWasmFallbackPlugin as nativeWasmFallbackPlugin,
+  viteWasmHelperPlugin as nativeWasmHelperPlugin,
+} from 'rolldown/experimental'
 import type { Plugin } from '../plugin'
 import { fsPathFromId } from '../utils'
 import { FS_PREFIX } from '../constants'
 import { cleanUrl } from '../../shared/utils'
+import type { ResolvedConfig } from '..'
 import { assetUrlRE, fileToUrl } from './asset'
 
 const wasmHelperId = '\0vite/wasm-helper.js'
@@ -76,7 +81,13 @@ const instantiateFromFile = async (url: string, opts?: WebAssembly.Imports) => {
 
 const instantiateFromFileCode = instantiateFromFile.toString()
 
-export const wasmHelperPlugin = (): Plugin => {
+export const wasmHelperPlugin = (config: ResolvedConfig): Plugin => {
+  if (config.isBundled && config.nativePluginEnabledLevel >= 1) {
+    return nativeWasmHelperPlugin({
+      decodedBase: config.decodedBase,
+    })
+  }
+
   return {
     name: 'vite:wasm-helper',
 
@@ -161,7 +172,11 @@ export default ${wasmHelperCode}
   }
 }
 
-export const wasmFallbackPlugin = (): Plugin => {
+export const wasmFallbackPlugin = (config: ResolvedConfig): Plugin => {
+  if (config.nativePluginEnabledLevel >= 1) {
+    return nativeWasmFallbackPlugin()
+  }
+
   return {
     name: 'vite:wasm-fallback',
 

@@ -88,12 +88,15 @@ const baseRawResult = {
 }
 
 test('should work', async () => {
-  await expect
-    .poll(async () => JSON.parse(await page.textContent('.result')))
-    .toStrictEqual(allResult)
-  await expect
-    .poll(async () => JSON.parse(await page.textContent('.result-eager')))
-    .toStrictEqual(allResult)
+  // TODO: extglobs are not supported yet: https://github.com/vitejs/rolldown-vite/issues/365
+  if (process.env._VITE_TEST_JS_PLUGIN) {
+    await expect
+      .poll(async () => JSON.parse(await page.textContent('.result')))
+      .toStrictEqual(allResult)
+    await expect
+      .poll(async () => JSON.parse(await page.textContent('.result-eager')))
+      .toStrictEqual(allResult)
+  }
   await expect
     .poll(async () =>
       JSON.parse(await page.textContent('.result-node_modules')),
@@ -299,4 +302,12 @@ test('import base glob raw', async () => {
   await expect
     .poll(async () => await page.textContent('.result-base'))
     .toBe(JSON.stringify(baseRawResult, null, 2))
+})
+
+test('import.meta.glob and dynamic import vars transformations should be visible to post transform plugins', async () => {
+  await expect
+    .poll(async () => await page.textContent('.transform-visibility'))
+    .toBe(
+      JSON.stringify({ globTransformed: true, dynamicImportTransformed: true }),
+    )
 })
