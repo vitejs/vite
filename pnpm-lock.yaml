@@ -1054,6 +1054,9 @@ importers:
       '@vitejs/test-dep-source-map-no-sources':
         specifier: file:./dep-source-map-no-sources
         version: file:playground/optimize-deps/dep-source-map-no-sources
+      '@vitejs/test-dep-ts-enum':
+        specifier: file:./dep-ts-enum
+        version: dep-ts-enum@file:playground/optimize-deps/dep-ts-enum
       '@vitejs/test-dep-with-asset-ext1.pdf':
         specifier: file:./dep-with-asset-ext/dep1
         version: file:playground/optimize-deps/dep-with-asset-ext/dep1
@@ -1196,6 +1199,8 @@ importers:
   playground/optimize-deps/dep-relative-to-main: {}
 
   playground/optimize-deps/dep-source-map-no-sources: {}
+
+  playground/optimize-deps/dep-ts-enum: {}
 
   playground/optimize-deps/dep-with-asset-ext/dep1: {}
 
@@ -4850,6 +4855,9 @@ packages:
 
   delegate@3.2.0:
     resolution: {integrity: sha512-IofjkYBZaZivn0V8nnsMJGBr4jVLxHDheKSW88PyxS5QC4Vo9ZbZVvhzlSxY87fVq3STR6r+4cGepyHkcWOQSw==}
+
+  dep-ts-enum@file:playground/optimize-deps/dep-ts-enum:
+    resolution: {directory: playground/optimize-deps/dep-ts-enum, type: directory}
 
   depd@2.0.0:
     resolution: {integrity: sha512-g7nH6P6dyDioJogAAGprGpCtVImJhpPk/roCzdb3fIh61/s/nPsfR6onyMwkCAR/OlC3yBC0lESvUoQEAssIrw==}
@@ -10479,6 +10487,8 @@ snapshots:
   delayed-stream@1.0.0: {}
 
   delegate@3.2.0: {}
+
+  dep-ts-enum@file:playground/optimize-deps/dep-ts-enum: {}
 
   depd@2.0.0: {}
 
