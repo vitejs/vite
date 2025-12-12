@@ -1,6 +1,6 @@
 import escapeHtml from 'escape-html'
 import type { FlagData } from '../.vitepress/updateData.config'
-import data from './cli-core.json'
+import data from './cli-vite.json'
 
 export default {
   async load() {

@@ -10,10 +10,10 @@ export interface FlagData {
 }
 
 export async function updateData() {
-  await updateCliCoreData()
+  await updateCliViteData()
 }
 
-async function updateCliCoreData() {
+async function updateCliViteData() {
   let cli: CAC
 
   try {
@@ -43,7 +43,7 @@ async function updateCliCoreData() {
   }
 
   await fs.writeFile(
-    new URL('../_data/cli-core.json', import.meta.url),
+    new URL('../_data/cli-vite.json', import.meta.url),
     JSON.stringify(data, null, 2) + '\n',
   )
 }
