@@ -10,7 +10,10 @@
   },
   "devDependencies": {
     "@shikijs/vitepress-twoslash": "^3.19.0",
+    "@types/escape-html": "^1.0.4",
     "@types/express": "^5.0.6",
+    "cac": "^6.7.14",
+    "escape-html": "^1.0.3",
     "feed": "^5.1.0",
     "gsap": "^3.14.1",
     "markdown-it-image-size": "^15.0.1",
