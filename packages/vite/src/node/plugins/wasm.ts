@@ -2,11 +2,11 @@ import { fileURLToPath, pathToFileURL } from 'node:url'
 import { readFile } from 'node:fs/promises'
 import MagicString from 'magic-string'
 import { exactRegex } from '@rolldown/pluginutils'
-import { createToImportMetaURLBasedRelativeRuntime } from '../build'
 import {
   viteWasmFallbackPlugin as nativeWasmFallbackPlugin,
   viteWasmHelperPlugin as nativeWasmHelperPlugin,
 } from 'rolldown/experimental'
+import { createToImportMetaURLBasedRelativeRuntime } from '../build'
 import type { Plugin } from '../plugin'
 import { fsPathFromId } from '../utils'
 import { FS_PREFIX } from '../constants'
