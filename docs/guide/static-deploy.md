@@ -324,16 +324,5 @@ Follow the steps in [the Vite deployment guide](https://docs.zephyr-cloud.io/bun
 
 ## EdgeOne Pages
 
-You can quickly deploy your Vite app as a Static Site on [EdgeOne Pages](https://edgeone.ai/products/pages). You need:
+Deploy your static site using [EdgeOne Pages](https://edgeone.ai/products/pages) by following these [instructions](https://pages.edgeone.ai/document/vite).
 
-1. Creat a EdgeOne Account, Log in to the EdgeOne Pages Dashboard.
-2. Connect your GitHub/Gitee/Coding account or use an offcial template, or drop your code ZIP directly.
-3. Specify a product name, acceleration region, production branch, build settings, environment variables and other related configuration information.
-4. Click **Start Deployment**.
-5. Once deployed successfully, you can access your project via the preview link.
-
-Note: All commits to the specified production branch (default is "main") will automatically trigger a new deployment.
-
-You can also add custom domain to your project.
-
-Learn more about EdgeOne Pages’s [guide](https://pages.edgeone.ai/document/build-guide).
