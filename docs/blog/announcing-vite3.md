@@ -41,7 +41,7 @@ Quick links:
 - [Migration Guide](https://v3.vite.dev/guide/migration.html)
 - [Changelog](https://github.com/vitejs/vite/blob/main/packages/vite/CHANGELOG.md#300-2022-07-13)
 
-If you are new to Vite, we recommend reading the [Why Vite Guide](https://vite.dev/guide/why.html). Then check out [the Getting Started](https://vite.dev/guide/) and [Features guide](https://vite.dev/guide/features) to see what Vite provides out of the box. As usual, contributions are welcome at [GitHub](https://github.com/vitejs/vite). More than [600 collaborators](https://github.com/vitejs/vite/graphs/contributors) have helped improve Vite so far. Follow the updates on [Twitter](https://twitter.com/vite_js), or join discussions with other Vite users on our [Discord chat server](http://chat.vite.dev/).
+If you are new to Vite, we recommend reading the [Why Vite Guide](https://vite.dev/guide/why.html). Then check out [the Getting Started](https://vite.dev/guide/) and [Features guide](https://vite.dev/guide/features) to see what Vite provides out of the box. As usual, contributions are welcome at [GitHub](https://github.com/vitejs/vite). More than [600 collaborators](https://github.com/vitejs/vite/graphs/contributors) have helped improve Vite so far. Follow the updates on [Twitter](https://twitter.com/vite_js), or join discussions with other Vite users on our [Discord chat server](https://chat.vite.dev).
 
 ## New Documentation
 
