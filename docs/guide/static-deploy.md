@@ -250,7 +250,7 @@ You can also add custom domains and handle custom build settings on Pages. Learn
 
 3. Deploy to surge by typing `surge dist`.
 
-You can also deploy to a [custom domain](http://surge.sh/help/adding-a-custom-domain) by adding `surge dist yourdomain.com`.
+You can also deploy to a [custom domain](https://surge.sh/help/adding-a-custom-domain) by adding `surge dist yourdomain.com`.
 
 ## Azure Static Web Apps
 
