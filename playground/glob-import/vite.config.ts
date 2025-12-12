@@ -14,7 +14,22 @@ const escapeAliases = fs
     return aliases
   }, {})
 
+const transformVisibilityPlugin = {
+  name: 'test:transform-visibility',
+  enforce: 'post',
+  transform(code: string, id: string) {
+    if (id.endsWith('transform-visibility.js')) {
+      const globTransformed = !code.includes('import.meta.glob')
+      const dynamicImportTransformed = code.includes(
+        '__variableDynamicImportRuntimeHelper',
+      )
+      return `export default ${JSON.stringify({ globTransformed, dynamicImportTransformed })}`
+    }
+  },
+}
+
 export default defineConfig({
+  plugins: [transformVisibilityPlugin],
   resolve: {
     alias: {
       ...escapeAliases,
