@@ -1,3 +1,8 @@
+## <small>[7.2.11](https://github.com/vitejs/rolldown-vite/compare/v7.2.10...v7.2.11) (2025-12-12)</small>
+### Bug Fixes
+
+* plugin shortcut support ([#21211](https://github.com/vitejs/rolldown-vite/issues/21211)) ([da0c1f5](https://github.com/vitejs/rolldown-vite/commit/da0c1f57c5ac9d33d606082dc03b8cdd720f5bcd))
+
 ## <small>[7.2.10](https://github.com/vitejs/rolldown-vite/compare/v7.2.9...v7.2.10) (2025-12-03)</small>
 ### Features
 
