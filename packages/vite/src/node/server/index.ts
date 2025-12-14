@@ -895,7 +895,9 @@ export async function _createServer(
   const { allowedHosts } = serverConfig
   // no need to check for HTTPS as HTTPS is not vulnerable to DNS rebinding attacks
   if (allowedHosts !== true && !serverConfig.https) {
-    middlewares.use(hostValidationMiddleware(allowedHosts, false))
+    middlewares.use(
+      hostValidationMiddleware(allowedHosts, false, serverConfig.trustProxy),
+    )
   }
 
   // apply configureServer hooks ------------------------------------------------
@@ -1113,6 +1115,7 @@ const _serverConfigDefaults = Object.freeze({
   strictPort: false,
   host: 'localhost',
   allowedHosts: [],
+  trustProxy: false,
   https: undefined,
   open: false,
   proxy: undefined,

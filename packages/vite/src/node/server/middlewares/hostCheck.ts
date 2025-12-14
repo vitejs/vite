@@ -1,6 +1,7 @@
 import { hostValidationMiddleware as originalHostValidationMiddleware } from 'host-validation-middleware'
 import type { Connect } from '#dep-types/connect'
 import type { ResolvedPreviewOptions, ResolvedServerOptions } from '../..'
+import { getEffectiveHost } from '../forwardedHeaders'
 
 export function getAdditionalAllowedHosts(
   resolvedServerOptions: Pick<ResolvedServerOptions, 'host' | 'hmr' | 'origin'>,
@@ -46,8 +47,9 @@ export function getAdditionalAllowedHosts(
 export function hostValidationMiddleware(
   allowedHosts: string[],
   isPreview: boolean,
+  trustProxy: boolean = false,
 ): Connect.NextHandleFunction {
-  return originalHostValidationMiddleware({
+  const validateHost = originalHostValidationMiddleware({
     // Freeze the array to allow caching
     allowedHosts: Object.freeze([...allowedHosts]),
     generateErrorMessage(hostname) {
@@ -59,4 +61,28 @@ export function hostValidationMiddleware(
       )
     },
   })
+
+  // If trustProxy is not enabled, use the original middleware directly
+  if (!trustProxy) {
+    return validateHost
+  }
+
+  // Wrap middleware to use forwarded host for validation
+  return (req, res, next) => {
+    const effectiveHost = getEffectiveHost(req, true)
+    const originalHost = req.headers.host
+
+    // Temporarily set the effective host for validation
+    if (effectiveHost && effectiveHost !== originalHost) {
+      req.headers.host = effectiveHost
+    }
+
+    validateHost(req, res, (err) => {
+      // Restore original host header
+      if (effectiveHost && effectiveHost !== originalHost) {
+        req.headers.host = originalHost
+      }
+      next(err)
+    })
+  }
 }
