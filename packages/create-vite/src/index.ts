@@ -328,7 +328,7 @@ const FRAMEWORKS: Framework[] = [
         name: 'custom-qwik-city',
         display: 'QwikCity ↗',
         color: blueBright,
-        customCommand: 'npm create qwik@latest basic TARGET_DIR',
+        customCommand: 'npm create qwik@latest empty TARGET_DIR',
       },
     ],
   },
