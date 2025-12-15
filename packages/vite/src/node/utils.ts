@@ -36,6 +36,7 @@ import {
   CLIENT_ENTRY,
   CLIENT_PUBLIC_PATH,
   CSS_LANGS_RE,
+  DEFAULT_ASSETS_RE,
   ENV_PUBLIC_PATH,
   FS_PREFIX,
   OPTIMIZABLE_ENTRY_RE,
@@ -292,7 +293,36 @@ export const isJSRequest = (url: string): boolean => {
   if (knownJsSrcRE.test(url)) {
     return true
   }
-  if (!path.extname(url) && url[url.length - 1] !== '/') {
+  const ext = path.extname(url)
+  // Check if it's a bare module specifier (package name) with dots in the name.
+  // Package names with dots (e.g., @my-org/ng.my-lib) should be treated as JS requests
+  // even though path.extname() would incorrectly identify them as having an extension.
+  // Scoped packages (starting with @) are always treated as bare module specifiers.
+  // For non-scoped packages, we check if it matches bareImportRE and doesn't have
+  // a recognized non-JS extension (CSS, assets, etc.)
+  if (url.startsWith('@')) {
+    // Scoped packages are always bare module specifiers, treat as JS requests
+    return true
+  }
+  if (bareImportRE.test(url)) {
+    // If it has an extension, check if it's a known non-JS extension
+    if (ext) {
+      // If it's a CSS or asset file, it's not a JS request
+      if (CSS_LANGS_RE.test(url) || DEFAULT_ASSETS_RE.test(url)) {
+        return false
+      }
+      // Check for other known non-JS extensions like .json
+      if (ext === '.json') {
+        return false
+      }
+      // For bare module specifiers with extensions that aren't known JS extensions,
+      // treat them as JS requests (e.g., my-package.name where .name is not a known extension)
+      return true
+    }
+    // No extension and matches bareImportRE - treat as JS request
+    return true
+  }
+  if (!ext && url[url.length - 1] !== '/') {
     return true
   }
   return false

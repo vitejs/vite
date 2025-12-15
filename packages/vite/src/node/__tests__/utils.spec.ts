@@ -16,6 +16,7 @@ import {
   getServerUrlByHost,
   injectQuery,
   isFileReadable,
+  isJSRequest,
   isParentDirectory,
   mergeWithDefaults,
   normalizePath,
@@ -77,6 +78,52 @@ describe('bareImportRE', () => {
   test('should work with relative path', () => {
     expect(bareImportRE.test('./foo')).toBe(false)
     expect(bareImportRE.test('.\\foo')).toBe(false)
+  })
+})
+
+describe('isJSRequest', () => {
+  test('should return true for known JS extensions', () => {
+    expect(isJSRequest('foo.js')).toBe(true)
+    expect(isJSRequest('foo.ts')).toBe(true)
+    expect(isJSRequest('foo.jsx')).toBe(true)
+    expect(isJSRequest('foo.tsx')).toBe(true)
+    expect(isJSRequest('foo.mjs')).toBe(true)
+    expect(isJSRequest('foo.mts')).toBe(true)
+    expect(isJSRequest('foo.vue')).toBe(true)
+  })
+
+  test('should return true for bare module specifiers', () => {
+    expect(isJSRequest('vite')).toBe(true)
+    expect(isJSRequest('@vitejs/plugin-vue')).toBe(true)
+  })
+
+  test('should return true for bare module specifiers with dots in name', () => {
+    // This is the fix for issue #21036
+    expect(isJSRequest('@my-org/ng.my-lib')).toBe(true)
+    expect(isJSRequest('@my-org/package.name')).toBe(true)
+    expect(isJSRequest('my.package.name')).toBe(true)
+  })
+
+  test('should return true for paths without extension', () => {
+    expect(isJSRequest('/foo/bar')).toBe(true)
+    expect(isJSRequest('./foo/bar')).toBe(true)
+  })
+
+  test('should return false for paths with non-JS extensions', () => {
+    expect(isJSRequest('foo.css')).toBe(false)
+    expect(isJSRequest('foo.png')).toBe(false)
+    expect(isJSRequest('foo.json')).toBe(false)
+  })
+
+  test('should return false for directory paths (ending with /)', () => {
+    expect(isJSRequest('/foo/bar/')).toBe(false)
+    expect(isJSRequest('./foo/bar/')).toBe(false)
+  })
+
+  test('should handle URLs with query parameters', () => {
+    expect(isJSRequest('foo.js?v=123')).toBe(true)
+    expect(isJSRequest('@my-org/ng.my-lib?v=123')).toBe(true)
+    expect(isJSRequest('foo.css?v=123')).toBe(false)
   })
 })
 
