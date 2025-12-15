@@ -27,6 +27,7 @@ export default defineConfig({
         linkProps: resolve(__dirname, 'link-props/index.html'),
         valid: resolve(__dirname, 'valid.html'),
         importmapOrder: resolve(__dirname, 'importmapOrder.html'),
+        importmapBody: resolve(__dirname, 'importmapBody.html'),
         env: resolve(__dirname, 'env.html'),
         sideEffects: resolve(__dirname, 'side-effects/index.html'),
         'a á': resolve(__dirname, 'a á.html'),
@@ -261,6 +262,39 @@ ${
             '{{ id }}',
             Math.random().toString(36).slice(2),
           )
+        },
+      },
+    },
+    {
+      name: 'move-module-to-body',
+      transformIndexHtml: {
+        order: 'pre',
+        handler(html, ctx) {
+          if (!ctx.filename.endsWith('html/importmapBody.html')) return
+          // Move module script to body
+          return html.replace(
+            /<script[^>]*type\s*=\s*["']module["'][^>]*src\s*=\s*["']\/main\.js["'][^>]*><\/script>/i,
+            '',
+          )
+        },
+      },
+    },
+    {
+      name: 'inject-module-to-body',
+      transformIndexHtml: {
+        order: 'pre',
+        handler(_, ctx) {
+          if (!ctx.filename.endsWith('html/importmapBody.html')) return
+          return [
+            {
+              tag: 'script',
+              attrs: {
+                type: 'module',
+                src: '/main.js',
+              },
+              injectTo: 'body',
+            },
+          ]
         },
       },
     },

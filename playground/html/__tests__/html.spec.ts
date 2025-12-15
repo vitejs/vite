@@ -401,6 +401,53 @@ describe('importmap', () => {
   })
 })
 
+describe.runIf(isBuild)('importmap with module in body', () => {
+  beforeAll(async () => {
+    await page.goto(viteTestUrl + '/importmapBody.html')
+  })
+
+  test('importmap should be in head before modulepreload links', async () => {
+    // Check that importmap is in head
+    const importMapInHead = await page
+      .$eval('head script[type="importmap"]', () => true)
+      .catch(() => false)
+    expect(importMapInHead).toBe(true)
+
+    // Check that there are no errors about import map being added after module script load
+    expect(browserLogs).not.toContain(
+      'An import map is added after module script load was triggered.',
+    )
+
+    // Verify the order: importmap should come before modulepreload links in head
+    const headContent = await page.evaluate(() => {
+      const head = document.head
+      const scripts = Array.from(
+        head.querySelectorAll('script[type="importmap"]'),
+      )
+      const preloadLinks = Array.from(
+        head.querySelectorAll('link[rel="modulepreload"]'),
+      )
+
+      if (scripts.length === 0 || preloadLinks.length === 0) {
+        return { importMapIndex: -1, firstPreloadIndex: -1 }
+      }
+
+      const allHeadChildren = Array.from(head.children)
+      const importMapIndex = allHeadChildren.indexOf(scripts[0])
+      const firstPreloadIndex = allHeadChildren.indexOf(preloadLinks[0])
+
+      return { importMapIndex, firstPreloadIndex }
+    })
+
+    // If both exist in head, importmap should come before modulepreload
+    if (headContent.importMapIndex >= 0 && headContent.firstPreloadIndex >= 0) {
+      expect(headContent.importMapIndex).toBeLessThan(
+        headContent.firstPreloadIndex,
+      )
+    }
+  })
+})
+
 describe('side-effects', () => {
   beforeAll(async () => {
     await page.goto(viteTestUrl + '/side-effects/')
