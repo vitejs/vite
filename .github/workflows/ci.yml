@@ -104,7 +104,7 @@ jobs:
           echo "PLAYWRIGHT_VERSION=$env:PLAYWRIGHT_VERSION" >> $env:GITHUB_ENV
 
       - name: Cache Playwright's binary
-        uses: actions/cache@v4
+        uses: actions/cache@v5
         with:
           key: ${{ runner.os }}-playwright-bin-v1-${{ env.PLAYWRIGHT_VERSION }}
           path: ${{ env.PLAYWRIGHT_BROWSERS_PATH }}
@@ -186,7 +186,7 @@ jobs:
           echo "PLAYWRIGHT_VERSION=$env:PLAYWRIGHT_VERSION" >> $env:GITHUB_ENV
 
       - name: Cache Playwright's binary
-        uses: actions/cache@v4
+        uses: actions/cache@v5
         with:
           key: ${{ runner.os }}-playwright-bin-v1-${{ env.PLAYWRIGHT_VERSION }}
           path: ${{ env.PLAYWRIGHT_BROWSERS_PATH }}
