@@ -100,7 +100,7 @@
     "artichokie": "^0.4.2",
     "baseline-browser-mapping": "^2.9.5",
     "cac": "^6.7.14",
-    "chokidar": "^3.6.0",
+    "chokidar": "^5.0.0",
     "connect": "^3.7.0",
     "convert-source-map": "^2.0.0",
     "cors": "^2.8.5",
