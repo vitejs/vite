@@ -51,6 +51,11 @@
     <code class="public-mts-import-content"></code> Content-Type:
     <code class="public-mts-import-content-type"></code>
   </li>
+  <li>
+    From publicDir (?url&raw):
+    <code class="public-redirects-url"></code> Content:
+    <code class="public-redirects-url-content"></code>
+  </li>
 </ul>
 
 <h2>CSS url references</h2>
@@ -575,6 +580,13 @@
 
   import inlinePublicJson from '/foo.json?url&inline'
   text('.inline-public-json', inlinePublicJson)
+
+  import publicRedirectsUrl from '/_redirects?url&raw'
+  text('.public-redirects-url', publicRedirectsUrl)
+  ;(async () => {
+    const res = await fetch(publicRedirectsUrl)
+    text('.public-redirects-url-content', await res.text())
+  })()
 
   import fooUrl from './foo.js?url'
   text('.url', fooUrl)

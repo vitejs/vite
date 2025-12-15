@@ -205,6 +205,19 @@ describe('asset imports from js', () => {
       )
     }
   })
+
+  test('from /public (?url&raw)', async () => {
+    expect(await page.textContent('.public-redirects-url')).toMatch(
+      '/foo/bar/_redirects',
+    )
+    expect(await page.textContent('.public-redirects-url-content'))
+      .toMatchInlineSnapshot(`
+      "/old-path /new-path 301
+      /test /test-new 302
+      
+      "
+    `)
+  })
 })
 
 describe('css url() references', () => {
