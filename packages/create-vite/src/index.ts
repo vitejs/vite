@@ -186,7 +186,7 @@ const FRAMEWORKS: Framework[] = [
         display: 'RSC ↗',
         color: magenta,
         customCommand:
-          'npm exec degit vitejs/vite-plugin-react/packages/plugin-rsc/examples/starter TARGET_DIR',
+          'npm exec tiged vitejs/vite-plugin-react/packages/plugin-rsc/examples/starter TARGET_DIR',
       },
       {
         name: 'custom-vike-react',
