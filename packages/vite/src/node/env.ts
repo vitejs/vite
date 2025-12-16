@@ -93,7 +93,7 @@ export function loadEnv(
 export function resolveEnvPrefix({
   envPrefix = 'VITE_',
 }: UserConfig): string[] {
-  envPrefix = arraify(envPrefix)
+  envPrefix = arraify(envPrefix).map((prefix) => prefix.trim())
   if (envPrefix.includes('')) {
     throw new Error(
       `envPrefix option contains value '', which could lead unexpected exposure of sensitive information.`,
