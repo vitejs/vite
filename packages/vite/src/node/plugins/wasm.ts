@@ -1,5 +1,3 @@
-import { fileURLToPath, pathToFileURL } from 'node:url'
-import { readFile } from 'node:fs/promises'
 import MagicString from 'magic-string'
 import { exactRegex } from '@rolldown/pluginutils'
 import {
@@ -8,8 +6,6 @@ import {
 } from 'rolldown/experimental'
 import { createToImportMetaURLBasedRelativeRuntime } from '../build'
 import type { Plugin } from '../plugin'
-import { fsPathFromId } from '../utils'
-import { FS_PREFIX } from '../constants'
 import { cleanUrl } from '../../shared/utils'
 import type { ResolvedConfig } from '..'
 import { assetUrlRE, fileToUrl } from './asset'
@@ -68,14 +64,13 @@ const instantiateFromUrl = async (url: string, opts?: WebAssembly.Imports) => {
 
 const instantiateFromUrlCode = instantiateFromUrl.toString()
 
-const instantiateFromFile = async (url: string, opts?: WebAssembly.Imports) => {
-  let fsPath = url
-  if (url.startsWith('file:')) {
-    fsPath = fileURLToPath(url)
-  } else if (url.startsWith('/')) {
-    fsPath = url.slice(1)
-  }
-  const buffer = await readFile(fsPath)
+const instantiateFromFile = async (
+  fileUrlString: string,
+  opts?: WebAssembly.Imports,
+) => {
+  const { readFile } = await import('node:fs/promises')
+  const fileUrl = new URL(fileUrlString, /** #__KEEP__ */ import.meta.url)
+  const buffer = await readFile(fileUrl)
   return WebAssembly.instantiate(buffer, opts)
 }
 
@@ -101,32 +96,19 @@ export const wasmHelperPlugin = (config: ResolvedConfig): Plugin => {
     load: {
       filter: { id: [exactRegex(wasmHelperId), wasmInitRE] },
       async handler(id) {
-        const isServer = this.environment.config.consumer === 'server'
+        const ssr = this.environment.config.consumer === 'server'
 
         if (id === wasmHelperId) {
-          if (isServer) {
-            return `
-import { readFile } from 'node:fs/promises'
-import { fileURLToPath } from 'node:url'
-const instantiateFromUrl = ${instantiateFromFileCode}
+          return `
+const instantiateFromUrl = ${ssr ? instantiateFromFileCode : instantiateFromUrlCode}
 export default ${wasmHelperCode}
 `
-          } else {
-            return `
-const instantiateFromUrl = ${instantiateFromUrlCode}
-export default ${wasmHelperCode}
-`
-          }
         }
 
         id = id.split('?')[0]
-        let url = await fileToUrl(this, id)
-        if (isServer) {
-          if (url.startsWith(FS_PREFIX)) {
-            url = pathToFileURL(fsPathFromId(id)).href
-          } else if (assetUrlRE.test(url)) {
-            url = url.replace('__VITE_ASSET__', '__VITE_WASM_INIT__')
-          }
+        let url = await fileToUrl(this, id, ssr)
+        if (ssr && assetUrlRE.test(url)) {
+          url = url.replace('__VITE_ASSET__', '__VITE_WASM_INIT__')
         }
         return `
   import initWasm from "${wasmHelperId}"
