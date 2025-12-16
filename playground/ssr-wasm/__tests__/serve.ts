@@ -10,7 +10,7 @@ export const port = ports['ssr-wasm']
 
 export async function preServe() {
   if (isBuild) {
-    await build({ root: rootDir })
+    await build({ root: rootDir, logLevel: 'silent' })
   }
 }
 
