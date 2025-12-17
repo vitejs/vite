@@ -7,26 +7,23 @@ description: Vite is built upon the shoulders of giants. Thank you to all the pr
 import { computed } from 'vue'
 import { data } from './_data/acknowledgements.data'
 import { useSponsor, voidZero } from './.vitepress/theme/composables/sponsor'
+import { VPSponsors } from 'vitepress/theme'
 
 const { data: sponsorData } = useSponsor()
 
-const partnerSponsors = computed(() => {
-  const tier = sponsorData.value?.find(tier => tier.tier === 'in partnership with')
-  return tier?.items ?? []
+const allSponsors = computed(() => {
+  if (!sponsorData.value) return null
+  return [
+    {
+      tier: 'Brought to you by',
+      size: 'big',
+      items: [voidZero],
+    },
+    ...sponsorData.value,
+  ]
 })
 
-const platinumSponsors = computed(() => {
-  const tier = sponsorData.value?.find(tier => tier.tier === 'Platinum Sponsors')
-  return tier?.items ?? []
-})
-
-const goldSponsors = computed(() => {
-  const tier = sponsorData.value?.find(tier => tier.tier === 'Gold Sponsors')
-  return tier?.items ?? []
-})
-
-const notable = data.dependencies
-  .concat(data.devDependencies)
+const notable = data.bundledDependencies
   .filter(dep => data.notableDependencies.includes(dep.name))
   .sort((a, b) => data.notableDependencies.indexOf(a.name) - data.notableDependencies.indexOf(b.name))
 
@@ -49,27 +46,13 @@ We also thank all the [contributors on GitHub](https://github.com/vitejs/vite/gr
 
 Vite's development is supported by generous sponsors. You can support Vite through [GitHub Sponsors](https://github.com/sponsors/vitejs) or [Open Collective](https://opencollective.com/vite).
 
-### Company Partners
+<div class="sponsors-container">
+  <VPSponsors v-if="allSponsors" :data="allSponsors" />
+</div>
 
-<p class="sponsor-list">
-  <a :href="voidZero.url" target="_blank" rel="noopener">{{ voidZero.name }}</a><template v-for="(sponsor, index) in partnerSponsors" :key="sponsor.name">, <a :href="sponsor.url" target="_blank" rel="noopener">{{ sponsor.name }}</a></template>
-</p>
+## Bundled Dependencies
 
-### Platinum Sponsors
-
-<p v-if="platinumSponsors.length" class="sponsor-list">
-  <template v-for="(sponsor, index) in platinumSponsors" :key="sponsor.name"><a :href="sponsor.url" target="_blank" rel="noopener">{{ sponsor.name }}</a><template v-if="index < platinumSponsors.length - 1">, </template></template>
-</p>
-
-### Gold Sponsors
-
-<p v-if="goldSponsors.length" class="sponsor-list">
-  <template v-for="(sponsor, index) in goldSponsors" :key="sponsor.name"><a :href="sponsor.url" target="_blank" rel="noopener">{{ sponsor.name }}</a><template v-if="index < goldSponsors.length - 1">, </template></template>
-</p>
-
-## Dependencies
-
-Vite relies on these amazing open source projects:
+Vite bundles these amazing open source projects:
 
 ### Notable Dependencies
 
@@ -89,7 +72,7 @@ Vite relies on these amazing open source projects:
   </div>
 </div>
 
-### Dependency Authors
+### Bundled Dependency Authors
 
 <table class="authors-table">
   <thead>
@@ -118,36 +101,25 @@ Vite relies on these amazing open source projects:
 This section is automatically generated from the `author` and `funding` fields in each package's `package.json`. If you'd like to update how your package appears here, you can update these fields in your package.
 :::
 
-### Transitive Dependency Authors
+## Development Tools
 
-These are the authors of the dependencies of our direct dependencies. We thank all of them as well.
+Vite's development workflow is powered by these tools:
 
-::: details Table
-
-<table class="authors-table">
-  <thead>
-    <tr>
-      <th>Author</th>
-      <th>Packages</th>
-    </tr>
-  </thead>
-  <tbody>
-    <tr v-for="author in data.transitiveAuthors" :key="author.name">
-      <td>
-        <a v-if="author.url" :href="author.url" target="_blank" rel="noopener">{{ author.name }}</a>
-        <template v-else>{{ author.name }}</template>
-        <a v-if="author.funding" :href="author.funding" target="_blank" rel="noopener" class="sponsor-link">Sponsor</a>
-      </td>
-      <td>
-        <template v-for="(pkg, index) in author.packages" :key="pkg.name">
-          <span class="pkg-item"><a :href="npmUrl(pkg.name)" target="_blank" rel="noopener"><code>{{ pkg.name }}</code></a><a v-if="pkg.funding" :href="pkg.funding" target="_blank" rel="noopener" class="sponsor-link">Sponsor</a></span><template v-if="index < author.packages.length - 1">, </template>
-        </template>
-      </td>
-    </tr>
-  </tbody>
-</table>
-
-:::
+<div class="deps-list notable">
+  <div v-for="dep in data.devTools" :key="dep.name" class="dep-item">
+    <div class="dep-header">
+      <a :href="npmUrl(dep.name)" target="_blank" rel="noopener"><code>{{ dep.name }}</code></a>
+      <span class="dep-links">
+        <a v-if="dep.repository" :href="dep.repository" target="_blank" rel="noopener" class="dep-link">Repo</a>
+        <a v-if="dep.funding" :href="dep.funding" target="_blank" rel="noopener" class="dep-link sponsor">Sponsor</a>
+      </span>
+    </div>
+    <p v-if="dep.author" class="dep-author">
+      by <a v-if="dep.authorUrl" :href="dep.authorUrl" target="_blank" rel="noopener">{{ dep.author }}</a><template v-else>{{ dep.author }}</template>
+    </p>
+    <p v-if="dep.description">{{ dep.description }}</p>
+  </div>
+</div>
 
 ## Past Notable Dependencies
 
@@ -246,16 +218,31 @@ We also thank the maintainers of these projects that Vite used in previous versi
   text-decoration: underline;
 }
 
-.sponsor-list {
-  line-height: 1.8;
+.sponsors-container {
+  margin: 0.5rem 0;
 }
 
-.sponsor-list a {
-  color: var(--vp-c-brand-1);
-  text-decoration: none;
+.sponsors-container :deep(.vp-sponsor-grid + .vp-sponsor-tier) {
+  margin-top: 0.5rem;
 }
 
-.sponsor-list a:hover {
-  text-decoration: underline;
+.sponsors-container :deep(.vp-sponsor-grid[data-vp-grid="xsmall"] .vp-sponsor-grid-image) {
+  max-width: 112px;
+  max-height: 28px;
+}
+
+.sponsors-container :deep(.vp-sponsor-grid[data-vp-grid="small"] .vp-sponsor-grid-image) {
+  max-width: 140px;
+  max-height: 35px;
+}
+
+.sponsors-container :deep(.vp-sponsor-grid[data-vp-grid="medium"] .vp-sponsor-grid-image) {
+  max-width: 168px;
+  max-height: 42px;
+}
+
+.sponsors-container :deep(.vp-sponsor-grid[data-vp-grid="big"] .vp-sponsor-grid-image) {
+  max-width: 224px;
+  max-height: 56px;
 }
 </style>
