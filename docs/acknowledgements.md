@@ -23,10 +23,6 @@ const allSponsors = computed(() => {
   ]
 })
 
-const notable = data.bundledDependencies
-  .filter(dep => data.notableDependencies.includes(dep.name))
-  .sort((a, b) => data.notableDependencies.indexOf(a.name) - data.notableDependencies.indexOf(b.name))
-
 function npmUrl(name) {
   return `https://www.npmjs.com/package/${name}`
 }
@@ -57,7 +53,7 @@ Vite bundles these amazing open source projects:
 ### Notable Dependencies
 
 <div class="deps-list notable">
-  <div v-for="dep in notable" :key="dep.name" class="dep-item">
+  <div v-for="dep in data.notableDependencies" :key="dep.name" class="dep-item">
     <div class="dep-header">
       <a :href="npmUrl(dep.name)" target="_blank" rel="noopener"><code>{{ dep.name }}</code></a>
       <span class="dep-links">

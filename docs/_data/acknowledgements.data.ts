@@ -50,16 +50,15 @@ export interface Author {
 
 export interface AcknowledgementsData {
   bundledDependencies: Dependency[]
+  notableDependencies: Dependency[]
   devTools: Dependency[]
-  notableDependencies: string[]
   pastNotableDependencies: PastDependency[]
   authors: Author[]
 }
 
 // Notable dependencies to highlight (by package name)
 const notableDependencies = [
-  'esbuild',
-  'rollup',
+  'rolldown',
   'postcss',
   'lightningcss',
   'chokidar',
@@ -101,6 +100,17 @@ function parseBundledDependenciesFromLicense(licensePath: string): string[] {
 
 // Past notable dependencies that Vite used previously
 const pastNotableDependencies: PastDependency[] = [
+  {
+    name: 'esbuild',
+    description:
+      'JavaScript/TypeScript bundler and minifier (now using Rolldown, Oxc, and LightningCSS)',
+    repository: 'https://github.com/evanw/esbuild',
+  },
+  {
+    name: 'rollup',
+    description: 'ES module bundler (now using Rolldown)',
+    repository: 'https://github.com/rollup/rollup',
+  },
   {
     name: 'http-proxy',
     description: 'HTTP proxying (now using http-proxy-3)',
@@ -291,14 +301,23 @@ function loadData(): AcknowledgementsData {
     .filter((dep) => dep != null)
     .sort((a, b) => a.name.localeCompare(b.name))
 
+  // Load package info for notable dependencies (may be peer deps, not bundled)
+  const notableDeps = notableDependencies
+    .map(
+      (name) =>
+        readPackageInfo(name, nodeModulesDir) ||
+        readPackageInfo(name, rootNodeModulesDir),
+    )
+    .filter((dep) => dep != null)
+
   const nonNotableDeps = bundledDependencies.filter(
     (d) => !notableDependencies.includes(d.name),
   )
 
   return {
     bundledDependencies,
+    notableDependencies: notableDeps,
     devTools,
-    notableDependencies,
     pastNotableDependencies,
     authors: groupByAuthor(nonNotableDeps),
   }
