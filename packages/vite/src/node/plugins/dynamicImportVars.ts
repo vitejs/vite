@@ -2,10 +2,11 @@ import { posix } from 'node:path'
 import MagicString from 'magic-string'
 import { init, parse as parseImports } from 'es-module-lexer'
 import type { ImportSpecifier } from 'es-module-lexer'
-import { parseAst } from 'rollup/parseAst'
+import { parseAst } from 'rolldown/parseAst'
 import { dynamicImportToGlob } from '@rollup/plugin-dynamic-import-vars'
+import { viteDynamicImportVarsPlugin as nativeDynamicImportVarsPlugin } from 'rolldown/experimental'
 import { exactRegex } from '@rolldown/pluginutils'
-import type { Plugin } from '../plugin'
+import { type Plugin, perEnvironmentPlugin } from '../plugin'
 import type { ResolvedConfig } from '../config'
 import { CLIENT_ENTRY } from '../constants'
 import { createBackCompatIdResolver } from '../idResolver'
@@ -171,6 +172,27 @@ export function dynamicImportVarsPlugin(config: ResolvedConfig): Plugin {
     tryIndex: false,
     extensions: [],
   })
+
+  if (config.isBundled && config.nativePluginEnabledLevel >= 1) {
+    return perEnvironmentPlugin('native:dynamic-import-vars', (environment) => {
+      const { include, exclude } =
+        environment.config.build.dynamicImportVarsOptions
+
+      return nativeDynamicImportVarsPlugin({
+        include,
+        exclude,
+        resolver(id, importer) {
+          return resolve(environment, id, importer)
+        },
+        isV2:
+          config.nativePluginEnabledLevel >= 2
+            ? {
+                sourcemap: !!environment.config.build.sourcemap,
+              }
+            : undefined,
+      })
+    })
+  }
 
   const getFilter = perEnvironmentState((environment: Environment) => {
     const { include, exclude } =
