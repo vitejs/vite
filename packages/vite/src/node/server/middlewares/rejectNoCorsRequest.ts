@@ -21,10 +21,14 @@ export function rejectNoCorsRequestMiddleware(): Connect.NextHandleFunction {
     // we choose to reject the request to be safer in case the request handler has any side-effects.
     if (
       req.headers['sec-fetch-mode'] === 'no-cors' &&
-      req.headers['sec-fetch-site'] !== 'same-origin'
+      req.headers['sec-fetch-site'] !== 'same-origin' &&
+      // we only need to block classic script requests
+      req.headers['sec-fetch-dest'] === 'script'
     ) {
       res.statusCode = 403
-      res.end('Cross-origin requests must be made with CORS mode enabled.')
+      res.end(
+        'Cross-origin requests for classic scripts must be made with CORS mode enabled. Make sure to set the "crossorigin" attribute on your <script> tag.',
+      )
       return
     }
     return next()
