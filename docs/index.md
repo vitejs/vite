@@ -1,78 +1,38 @@
 ---
 title: Vite
 titleTemplate: Next Generation Frontend Tooling
-# add `dark` here to apply dark mode on initial load,
-# since `onMounted` doesn't run during SSR
-pageClass: landing dark
-
 layout: home
-aside: false
-editLink: false
-markdownStyles: false
-
-head:
-  - - link
-    - rel: preconnect
-      href: https://fonts.googleapis.com
-  - - link
-    - rel: preconnect
-      href: https://fonts.gstatic.com
-      crossorigin: ''
-  - - link
-    - rel: preload
-      href: https://fonts.googleapis.com/css2?family=Manrope:wght@600&family=IBM+Plex+Mono:wght@400&display=swap
-      as: style
-  - - link
-    - rel: stylesheet
-      href: https://fonts.googleapis.com/css2?family=Manrope:wght@600&family=IBM+Plex+Mono:wght@400&display=swap
+theme: dark
 ---
 
 <script setup>
-import { useData } from 'vitepress'
-import { onBeforeUnmount, onMounted, ref } from 'vue'
-
-import Hero from './.vitepress/theme/components/landing/1. hero-section/HeroSection.vue'
-import FeatureSection from './.vitepress/theme/components/landing/2. feature-section/FeatureSection.vue'
-import FrameworksSection from './.vitepress/theme/components/landing/3. frameworks-section/FrameworksSection.vue'
-import CommunitySection from './.vitepress/theme/components/landing/4. community-section/CommunitySection.vue'
-import SponsorSection from './.vitepress/theme/components/landing/5. sponsor-section/SponsorSection.vue'
-import GetStartedSection from './.vitepress/theme/components/landing/6. get-started-section/GetStartedSection.vue'
-import FeatureInstantServerStart from './.vitepress/theme/components/landing/2. feature-section/FeatureInstantServerStart.vue'
-import FeatureHMR from './.vitepress/theme/components/landing/2. feature-section/FeatureHMR.vue'
-import FeatureRichFeatures from './.vitepress/theme/components/landing/2. feature-section/FeatureRichFeatures.vue'
-import FeatureOptimizedBuild from './.vitepress/theme/components/landing/2. feature-section/FeatureOptimizedBuild.vue'
-import FeatureFlexiblePlugins from './.vitepress/theme/components/landing/2. feature-section/FeatureFlexiblePlugins.vue'
-import FeatureTypedAPI from './.vitepress/theme/components/landing/2. feature-section/FeatureTypedAPI.vue'
-import FeatureSSRSupport from './.vitepress/theme/components/landing/2. feature-section/FeatureSSRSupport.vue'
-import FeatureCI from './.vitepress/theme/components/landing/2. feature-section/FeatureCI.vue'
-
-const { isDark } = useData()
-
-onMounted(() => {
-  document.documentElement.classList.add('dark')
-})
-
-onBeforeUnmount(() => {
-  document.documentElement.classList.toggle('dark', isDark.value)
-})
+import { sponsors } from './_data/sponsors.js'
 </script>
 
-<div class="VPHome">
-  <Hero/>
-  <FeatureSection title="Redefining developer experience" description="Vite makes web development simple again" type="blue">
-    <FeatureInstantServerStart />
-    <FeatureHMR />
-    <FeatureRichFeatures />
-    <FeatureOptimizedBuild />
-  </FeatureSection>
-  <FeatureSection title="A shared foundation to build upon" type="pink" class="feature-section--flip">
-    <FeatureFlexiblePlugins />
-    <FeatureTypedAPI />
-    <FeatureSSRSupport />
-    <FeatureCI />
-  </FeatureSection>
-  <FrameworksSection />
-  <CommunitySection />
-  <SponsorSection />
-  <GetStartedSection />
-</div>
+<Hero/>
+<TrustedBy />
+<HeadingSection
+    heading="Redefining developer experience"
+    subheading="Vite makes web development simple again"
+  />
+<ViteFeaturePanel1 />
+<ViteFeaturePanel2 />
+<ViteFeaturePanel3 />
+<ViteFeaturePanel4 />
+<HeadingSection
+heading="A shared foundation to build upon"
+/>
+<ViteFeatureGrid />
+<HeadingSection
+heading="Powering your favorite frameworks and tools"
+/>
+<ViteFrameworks />
+<ViteCommunity />
+<ViteSponsors :sponsors="sponsors" />
+<Spacer />
+ <Footer
+    heading="Start building with Vite"
+    subheading="Prepare for a development environment that can finally keep pace with the speed of your mind."
+    button-text="Get Started"
+    button-link="/guide/"
+  />
