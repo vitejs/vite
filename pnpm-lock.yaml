@@ -130,13 +130,14 @@ importers:
         version: 4.0.15(@types/node@22.19.3)
 
   docs:
-    devDependencies:
+    dependencies:
       '@docsearch/css':
         specifier: ^4.3.2
         version: 4.3.2
       '@docsearch/js':
         specifier: ^4.3.2
         version: 4.3.2
+    devDependencies:
       '@shikijs/vitepress-twoslash':
         specifier: ^3.20.0
         version: 3.20.0(ms@2.1.3)(typescript@5.9.3)
