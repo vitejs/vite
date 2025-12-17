@@ -36,7 +36,7 @@ Vite is built upon the shoulders of giants. We would like to express our gratitu
 
 Vite is developed by an international team of contributors. See the [Team page](/team) to meet the core team members.
 
-We also thank all the [contributors on GitHub](https://github.com/vitejs/vite/graphs/contributors) who have helped improve Vite through code contributions, bug reports, and documentation.
+We also thank all the [contributors on GitHub](https://github.com/vitejs/vite/graphs/contributors) who have helped improve Vite through code contributions, bug reports, documentation, and documentation translation.
 
 ## Sponsors
 
