@@ -1,0 +1,27 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Modulepreload Test</title>
+    <script type="importmap">
+      {
+        "imports": {
+          "test-pkg": "/main.js"
+        }
+      }
+    </script>
+    <!-- Non-self-closing link tag (this was not matched by the old regex) -->
+    <link rel="modulepreload" crossorigin href="/assets/vendor.js" />
+    <!-- Self-closing link tag (this was matched by the old regex) -->
+    <link rel="modulepreload" href="/shared.js" />
+    <script type="module" src="/main.js"></script>
+  </head>
+  <body>
+    <h1>Modulepreload Regex Test</h1>
+    <p>
+      This page tests that modulepreload links work correctly regardless of
+      whether they are self-closing or not.
+    </p>
+  </body>
+</html>

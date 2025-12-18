@@ -401,6 +401,18 @@ describe('importmap', () => {
   })
 })
 
+describe('modulepreload', () => {
+  beforeAll(async () => {
+    await page.goto(viteTestUrl + '/modulepreload.html')
+  })
+
+  test('importmap should be prepended before non-self-closing modulepreload links', async () => {
+    expect(browserLogs).not.toContain(
+      'An import map is added after module script load was triggered.',
+    )
+  })
+})
+
 describe('side-effects', () => {
   beforeAll(async () => {
     await page.goto(viteTestUrl + '/side-effects/')
