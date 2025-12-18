@@ -279,7 +279,7 @@ export class FullBundleDevEnvironment extends DevEnvironment {
     const chunkMetadataMap = new ChunkMetadataMap()
     const rolldownOptions = resolveRolldownOptions(this, chunkMetadataMap)
     rolldownOptions.experimental ??= {}
-    rolldownOptions.experimental.hmr = {
+    rolldownOptions.experimental.devMode = {
       implement: await getHmrImplementation(this.getTopLevelConfig()),
     }
 
