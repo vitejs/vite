@@ -400,8 +400,8 @@ describe('importmap', () => {
   })
 
   test('importmap should be used in module scripts', async () => {
-    expect(browserLogs).toContain('importmap is correctly defined')
-    expect(await page.textContent('#importmap-test')).toBe('importmap present')
+    expect(browserLogs).toContain('importmap worked')
+    expect(await page.textContent('#importmap-test')).toBe('importmap worked')
   })
 })
 
