@@ -393,11 +393,15 @@ describe('importmap', () => {
     await page.goto(viteTestUrl + '/importmapOrder.html')
   })
 
-  // Should put this test at the end to get all browser logs above
   test('importmap should be prepended', async () => {
     expect(browserLogs).not.toContain(
       'An import map is added after module script load was triggered.',
     )
+  })
+
+  test('importmap should be used in module scripts', async () => {
+    expect(browserLogs).toContain('importmap is correctly defined')
+    expect(await page.textContent('#importmap-test')).toBe('importmap present')
   })
 })
 
