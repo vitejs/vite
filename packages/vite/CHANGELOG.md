@@ -1,3 +1,13 @@
+## [7.3.0](https://github.com/vitejs/rolldown-vite/compare/v7.2.11...v7.3.0) (2025-12-18)
+### Features
+
+* **deps:** update esbuild from ^0.25.0 to ^0.27.0 ([#21183](https://github.com/vitejs/rolldown-vite/issues/21183)) ([cff26ec](https://github.com/vitejs/rolldown-vite/commit/cff26ec0fc13373d7125a5eac6cb01fe63fee4b1))
+
+### Bug Fixes
+
+* plugin shortcut support ([#21211](https://github.com/vitejs/rolldown-vite/issues/21211)) ([721f163](https://github.com/vitejs/rolldown-vite/commit/721f16343d9555ae8fc71a2e5354b22e12ff0dc3))
+* revert "fix: disable resolver cache when watcher is disabled ([#471](https://github.com/vitejs/rolldown-vite/issues/471))" ([7dbbad2](https://github.com/vitejs/rolldown-vite/commit/7dbbad2f9f89bc6f49f17c73609a7b8867325c84))
+
 ## <small>[7.2.11](https://github.com/vitejs/rolldown-vite/compare/v7.2.10...v7.2.11) (2025-12-12)</small>
 ### Bug Fixes
 
