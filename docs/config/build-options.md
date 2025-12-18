@@ -235,7 +235,7 @@ import { defineConfig } from 'vite'
 export default defineConfig({
   build: {
     license: true,
-    rollupOptions: {
+    rolldownOptions: {
       output: {
         postBanner:
           '/* See licenses of bundled dependencies at https://example.com/license.md */',
