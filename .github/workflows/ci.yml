@@ -17,6 +17,7 @@ on:
   push:
     branches:
       - main
+      - rolldown-vite
       - release/*
       - feat/*
       - fix/*
