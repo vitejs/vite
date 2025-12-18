@@ -12,7 +12,7 @@ import { someMethod } from 'my-dep'
 
 The above will throw an error in the browser. Vite will detect such bare module imports in all served source files and perform the following:
 
-1. [Pre-bundle](./dep-pre-bundling) them to improve page loading speed and convert CommonJS / UMD modules to ESM. The pre-bundling step is performed with [esbuild](http://esbuild.github.io/) and makes Vite's cold start time significantly faster than any JavaScript-based bundler.
+1. [Pre-bundle](./dep-pre-bundling) them to improve page loading speed and convert CommonJS / UMD modules to ESM. The pre-bundling step is performed with [esbuild](https://esbuild.github.io/) and makes Vite's cold start time significantly faster than any JavaScript-based bundler.
 
 2. Rewrite the imports to valid URLs like `/node_modules/.vite/deps/my-dep.js?v=f3sf2ebd` so that the browser can import them properly.
 
@@ -90,13 +90,6 @@ While most libraries expect `"useDefineForClassFields": true`, you can explicitl
 Vite ignores the `target` value in the `tsconfig.json`, following the same behavior as `esbuild`.
 
 To specify the target in dev, the [`esbuild.target`](/config/shared-options.html#esbuild) option can be used, which defaults to `esnext` for minimal transpilation. In builds, the [`build.target`](/config/build-options.html#build-target) option takes higher priority over `esbuild.target` and can also be set if needed.
-
-::: warning `useDefineForClassFields`
-
-If `target` in `tsconfig.json` is not `ESNext` or `ES2022` or newer, or if there's no `tsconfig.json` file, `useDefineForClassFields` will default to `false` which can be problematic with the default `esbuild.target` value of `esnext`. It may transpile to [static initialization blocks](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Classes/Static_initialization_blocks#browser_compatibility) which may not be supported in your browser.
-
-As such, it is recommended to set `target` to `ESNext` or `ES2022` or newer, or set `useDefineForClassFields` to `true` explicitly when configuring `tsconfig.json`.
-:::
 
 #### `emitDecoratorMetadata`
 

@@ -420,6 +420,7 @@ export function resolveBuildEnvironmentOptions(
   raw: BuildEnvironmentOptions,
   logger: Logger,
   consumer: 'client' | 'server' | undefined,
+  isBundledDev: boolean,
 ): ResolvedBuildEnvironmentOptions {
   const deprecatedPolyfillModulePreload = raw.polyfillModulePreload
   const { polyfillModulePreload, ...rest } = raw
@@ -440,7 +441,7 @@ export function resolveBuildEnvironmentOptions(
     {
       ..._buildEnvironmentOptionsDefaults,
       cssCodeSplit: !raw.lib,
-      minify: consumer === 'server' ? false : 'oxc',
+      minify: consumer === 'server' || isBundledDev ? false : 'oxc',
       rollupOptions: {},
       rolldownOptions: undefined,
       ssr: consumer === 'server',
@@ -501,9 +502,10 @@ export async function resolveBuildPlugins(config: ResolvedConfig): Promise<{
   pre: Plugin[]
   post: Plugin[]
 }> {
+  const isBuild = config.command === 'build'
   return {
     pre: [
-      ...(!config.isWorker ? [prepareOutDirPlugin()] : []),
+      ...(isBuild && !config.isWorker ? [prepareOutDirPlugin()] : []),
       perEnvironmentPlugin(
         'vite:rollup-options-plugins',
         async (environment) =>
@@ -516,11 +518,11 @@ export async function resolveBuildPlugins(config: ResolvedConfig): Promise<{
       ...(config.isWorker ? [webWorkerPostPlugin(config)] : []),
     ],
     post: [
-      ...buildImportAnalysisPlugin(config),
+      ...(isBuild ? buildImportAnalysisPlugin(config) : []),
       ...(config.nativePluginEnabledLevel >= 1 ? [] : [buildOxcPlugin()]),
       ...(config.build.minify === 'esbuild' ? [buildEsbuildPlugin()] : []),
-      terserPlugin(config),
-      ...(!config.isWorker
+      ...(isBuild ? [terserPlugin(config)] : []),
+      ...(isBuild && !config.isWorker
         ? [
             licensePlugin(),
             manifestPlugin(config),
@@ -562,10 +564,10 @@ function resolveConfigToBuild(
   )
 }
 
-function resolveRolldownOptions(
+export function resolveRolldownOptions(
   environment: Environment,
   chunkMetadataMap: ChunkMetadataMap,
-) {
+): RolldownOptions {
   const { root, packageCache, build: options } = environment.config
   const libOptions = options.lib
   const { logger } = environment
@@ -886,7 +888,7 @@ async function buildEnvironment(
   }
 }
 
-function enhanceRollupError(e: RollupError) {
+export function enhanceRollupError(e: RollupError): void {
   const stackOnly = extractStack(e)
 
   let msg = colors.red((e.plugin ? `[${e.plugin}] ` : '') + e.message)
@@ -1052,7 +1054,7 @@ const dynamicImportWarningIgnoreList = [
   `statically analyzed`,
 ]
 
-function clearLine() {
+export function clearLine(): void {
   const tty = process.stdout.isTTY && !process.env.CI
   if (tty) {
     process.stdout.clearLine(0)

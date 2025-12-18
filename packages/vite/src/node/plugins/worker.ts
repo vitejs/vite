@@ -312,7 +312,7 @@ export async function workerFileToUrl(
 }
 
 export function webWorkerPostPlugin(config: ResolvedConfig): Plugin {
-  if (config.command === 'build' && config.nativePluginEnabledLevel >= 1) {
+  if (config.isBundled && config.nativePluginEnabledLevel >= 1) {
     return perEnvironmentPlugin(
       'native:web-worker-post-plugin',
       (environment) => {
@@ -507,13 +507,14 @@ export function webWorkerPlugin(config: ResolvedConfig): Plugin {
           const workerType = workerFileMatch[1] as WorkerType
           let injectEnv = ''
 
-          const scriptPath = JSON.stringify(
-            path.posix.join(config.base, ENV_PUBLIC_PATH),
-          )
-
           if (workerType === 'classic') {
+            // base needs to be joined as the base is not injected to `importScripts` automatically
+            const scriptPath = JSON.stringify(
+              path.posix.join(config.base, ENV_PUBLIC_PATH),
+            )
             injectEnv = `importScripts(${scriptPath})\n`
           } else if (workerType === 'module') {
+            const scriptPath = JSON.stringify(ENV_PUBLIC_PATH)
             injectEnv = `import ${scriptPath}\n`
           } else if (workerType === 'ignore') {
             if (isBuild) {
@@ -540,58 +541,68 @@ export function webWorkerPlugin(config: ResolvedConfig): Plugin {
       },
     },
 
-    renderChunk(code, chunk, outputOptions) {
-      let s: MagicString
-      const result = () => {
-        return (
-          s && {
-            code: s.toString(),
-            map: this.environment.config.build.sourcemap
-              ? s.generateMap({ hires: 'boundary' })
-              : null,
-          }
-        )
-      }
-      workerAssetUrlRE.lastIndex = 0
-      if (workerAssetUrlRE.test(code)) {
-        const toRelativeRuntime = createToImportMetaURLBasedRelativeRuntime(
-          outputOptions.format,
-          this.environment.config.isWorker,
-        )
+    ...(isBuild
+      ? {
+          renderChunk(code, chunk, outputOptions) {
+            let s: MagicString
+            const result = () => {
+              return (
+                s && {
+                  code: s.toString(),
+                  map: this.environment.config.build.sourcemap
+                    ? s.generateMap({ hires: 'boundary' })
+                    : null,
+                }
+              )
+            }
+            workerAssetUrlRE.lastIndex = 0
+            if (workerAssetUrlRE.test(code)) {
+              const toRelativeRuntime =
+                createToImportMetaURLBasedRelativeRuntime(
+                  outputOptions.format,
+                  this.environment.config.isWorker,
+                )
 
-        let match: RegExpExecArray | null
-        s = new MagicString(code)
-        workerAssetUrlRE.lastIndex = 0
+              let match: RegExpExecArray | null
+              s = new MagicString(code)
+              workerAssetUrlRE.lastIndex = 0
 
-        // Replace "__VITE_WORKER_ASSET__5aa0ddc0__" using relative paths
-        const workerOutputCache = workerOutputCaches.get(
-          config.mainConfig || config,
-        )!
+              // Replace "__VITE_WORKER_ASSET__5aa0ddc0__" using relative paths
+              const workerOutputCache = workerOutputCaches.get(
+                config.mainConfig || config,
+              )!
 
-        while ((match = workerAssetUrlRE.exec(code))) {
-          const [full, hash] = match
-          const filename = workerOutputCache.getEntryFilenameFromHash(hash)
-          if (!filename) {
-            this.warn(`Could not find worker asset for hash: ${hash}`)
-            continue
-          }
-          const replacement = toOutputFilePathInJS(
-            this.environment,
-            filename,
-            'asset',
-            chunk.fileName,
-            'js',
-            toRelativeRuntime,
-          )
-          const replacementString =
-            typeof replacement === 'string'
-              ? JSON.stringify(encodeURIPath(replacement)).slice(1, -1)
-              : `"+${replacement.runtime}+"`
-          s.update(match.index, match.index + full.length, replacementString)
+              while ((match = workerAssetUrlRE.exec(code))) {
+                const [full, hash] = match
+                const filename =
+                  workerOutputCache.getEntryFilenameFromHash(hash)
+                if (!filename) {
+                  this.warn(`Could not find worker asset for hash: ${hash}`)
+                  continue
+                }
+                const replacement = toOutputFilePathInJS(
+                  this.environment,
+                  filename,
+                  'asset',
+                  chunk.fileName,
+                  'js',
+                  toRelativeRuntime,
+                )
+                const replacementString =
+                  typeof replacement === 'string'
+                    ? JSON.stringify(encodeURIPath(replacement)).slice(1, -1)
+                    : `"+${replacement.runtime}+"`
+                s.update(
+                  match.index,
+                  match.index + full.length,
+                  replacementString,
+                )
+              }
+            }
+            return result()
+          },
         }
-      }
-      return result()
-    },
+      : {}),
 
     generateBundle(opts, bundle) {
       // to avoid emitting duplicate assets for modern build and legacy build

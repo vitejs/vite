@@ -2,7 +2,7 @@ import fs from 'node:fs'
 import path from 'node:path'
 import fsp from 'node:fs/promises'
 import { pathToFileURL } from 'node:url'
-import { promisify } from 'node:util'
+import { inspect, promisify } from 'node:util'
 import { performance } from 'node:perf_hooks'
 import { createRequire } from 'node:module'
 import crypto from 'node:crypto'
@@ -125,6 +125,7 @@ import {
   basePluginContextMeta,
 } from './server/pluginContainer'
 import { nodeResolveWithVite } from './nodeResolve'
+import { FullBundleDevEnvironment } from './server/environments/fullBundleEnvironment'
 
 const debug = createDebugger('vite:config', { depth: 10 })
 const promisifiedRealpath = promisify(fs.realpath)
@@ -238,6 +239,13 @@ function defaultCreateClientDevEnvironment(
   config: ResolvedConfig,
   context: CreateDevEnvironmentContext,
 ) {
+  if (config.experimental.bundledDev) {
+    return new FullBundleDevEnvironment(name, config, {
+      hot: true,
+      transport: context.ws,
+    })
+  }
+
   return new DevEnvironment(name, config, {
     hot: true,
     transport: context.ws,
@@ -550,12 +558,22 @@ export interface ExperimentalOptions {
    *
    * - 'resolver' (deprecated, will be removed in v8 stable): Enable only the native resolver plugin.
    * - 'v1' (will be deprecated, will be removed in v8 stable): Enable the first stable set of native plugins (including resolver).
-   * - true: Enable all native plugins (currently an alias of 'v1', it will map to a newer one in the future versions).
+   * - 'v2' (will be deprecated, will be removed in v8 stable): Enable the improved dynamicImportVarsPlugin and importGlobPlugin.
+   * - true: Enable all native plugins (currently an alias of 'v2', it will map to a newer one in the future versions).
    *
    * @experimental
-   * @default 'v1'
+   * @default 'v2'
    */
-  enableNativePlugin?: boolean | 'resolver' | 'v1'
+  enableNativePlugin?: boolean | 'resolver' | 'v1' | 'v2'
+  /**
+   * Enable full bundle mode.
+   *
+   * This is highly experimental.
+   *
+   * @experimental
+   * @default false
+   */
+  bundledDev?: boolean
 }
 
 export interface LegacyOptions {
@@ -633,6 +651,8 @@ export interface ResolvedConfig extends Readonly<
     cacheDir: string
     command: 'build' | 'serve'
     mode: string
+    /** `true` when build or full-bundle mode dev */
+    isBundled: boolean
     isWorker: boolean
     // in nested worker bundle to find the main config
     /** @internal */
@@ -768,7 +788,8 @@ const configDefaults = Object.freeze({
     importGlobRestoreExtension: false,
     renderBuiltUrl: undefined,
     hmrPartialAccept: false,
-    enableNativePlugin: process.env._VITE_TEST_JS_PLUGIN ? false : 'v1',
+    enableNativePlugin: process.env._VITE_TEST_JS_PLUGIN ? false : 'v2',
+    bundledDev: false,
   },
   future: {
     removePluginHookHandleHotUpdate: undefined,
@@ -851,6 +872,7 @@ function resolveEnvironmentOptions(
   forceOptimizeDeps: boolean | undefined,
   logger: Logger,
   environmentName: string,
+  isBundledDev: boolean,
   // Backward compatibility
   isSsrTargetWebworkerSet?: boolean,
   preTransformRequests?: boolean,
@@ -913,6 +935,7 @@ function resolveEnvironmentOptions(
       options.build ?? {},
       logger,
       consumer,
+      isBundledDev,
     ),
     plugins: undefined!, // to be resolved later
     // will be set by `setOptimizeDepsPluginNames` later
@@ -1499,6 +1522,8 @@ export async function resolveConfig(
     config.ssr?.target === 'webworker',
   )
 
+  const isBundledDev = command === 'serve' && !!config.experimental?.bundledDev
+
   // Backward compatibility: merge config.environments.client.resolve back into config.resolve
   config.resolve ??= {}
   config.resolve.conditions = config.environments.client.resolve?.conditions
@@ -1515,6 +1540,7 @@ export async function resolveConfig(
       inlineConfig.forceOptimizeDeps,
       logger,
       environmentName,
+      isBundledDev,
       config.ssr?.target === 'webworker',
       config.server?.preTransformRequests,
     )
@@ -1538,6 +1564,7 @@ export async function resolveConfig(
     config.build ?? {},
     logger,
     undefined,
+    isBundledDev,
   )
 
   // Backward compatibility: merge config.environments.ssr back into config.ssr
@@ -1760,7 +1787,8 @@ export async function resolveConfig(
       logger.warn(
         colors.yellow(
           `Both esbuild and oxc options were set. oxc options will be used and esbuild options will be ignored.`,
-        ),
+        ) +
+          ` The following esbuild options were set: \`${inspect(config.esbuild)}\``,
       )
     } else {
       oxc = convertEsbuildConfigToOxcConfig(config.esbuild, logger)
@@ -1779,6 +1807,10 @@ export async function resolveConfig(
     configDefaults.experimental,
     config.experimental ?? {},
   )
+  if (command === 'serve' && experimental.bundledDev) {
+    // full bundle mode does not support experimental.renderBuiltUrl
+    experimental.renderBuiltUrl = undefined
+  }
 
   resolved = {
     configFile: configFile ? normalizePath(configFile) : undefined,
@@ -1794,6 +1826,7 @@ export async function resolveConfig(
     cacheDir,
     command,
     mode,
+    isBundled: config.experimental?.bundledDev || isBuild,
     isWorker: false,
     mainConfig: null,
     bundleChain: [],
@@ -2060,8 +2093,10 @@ function resolveNativePluginEnabledLevel(
     case 'resolver':
       return 0
     case 'v1':
-    case true:
       return 1
+    case 'v2':
+    case true:
+      return 2
     case false:
       return -1
     default:
@@ -2539,6 +2574,18 @@ async function runConfigHook(
         context.warn(
           `Both \`rollupOptions\` and \`rolldownOptions\` were specified by ${JSON.stringify(p.name)} plugin. ` +
             `\`rollupOptions\` specified by that plugin will be ignored.`,
+        )
+      }
+      if (res.esbuild) {
+        context.warn(
+          `\`esbuild\` option was specified by ${JSON.stringify(p.name)} plugin. ` +
+            `This option is deprecated, please use \`oxc\` instead.`,
+        )
+      }
+      if (res.optimizeDeps?.esbuildOptions) {
+        context.warn(
+          `\`optimizeDeps.esbuildOptions\` option was specified by ${JSON.stringify(p.name)} plugin. ` +
+            `This option is deprecated, please use \`optimizeDeps.rolldownOptions\` instead.`,
         )
       }
       conf = mergeConfig(conf, res)

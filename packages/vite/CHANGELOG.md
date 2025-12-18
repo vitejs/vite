@@ -1,3 +1,49 @@
+## [8.0.0-beta.3](https://github.com/vitejs/vite/compare/v8.0.0-beta.2...v8.0.0-beta.3) (2025-12-18)
+### Features
+
+* introduce v2 native plugins and enable it by default ([#21268](https://github.com/vitejs/vite/issues/21268)) ([42f2ab3](https://github.com/vitejs/vite/commit/42f2ab3aec7cd0e03e195611b1e1ddabbedc9d61))
+* **ssr:** avoid errors when rewriting already rewritten stacktrace ([#21269](https://github.com/vitejs/vite/issues/21269)) ([98d9a33](https://github.com/vitejs/vite/commit/98d9a33274d9ac90780786afa612d916feddf2e3))
+* update rolldown to 1.0.0-beta.55 ([#21300](https://github.com/vitejs/vite/issues/21300)) ([2c8db85](https://github.com/vitejs/vite/commit/2c8db858d7081e898f63ce9569c3f19a91a10956))
+
+### Bug Fixes
+
+* allow no-cors requests for non-script tag requests ([#21299](https://github.com/vitejs/vite/issues/21299)) ([ef3d596](https://github.com/vitejs/vite/commit/ef3d59648fd9dd3f9b3118d09d216dc0afcb8c33))
+* **deps:** update all non-major dependencies ([#21285](https://github.com/vitejs/vite/issues/21285)) ([4635b2e](https://github.com/vitejs/vite/commit/4635b2e90f833d1048d76381e20208c0e0841e97))
+* unreachable error when building with `experimental.bundledDev` is enabled ([#21296](https://github.com/vitejs/vite/issues/21296)) ([e81c183](https://github.com/vitejs/vite/commit/e81c183f8c8ccaf7774ef0d0ee125bf63dbf30b4))
+
+## [8.0.0-beta.2](https://github.com/vitejs/vite/compare/v8.0.0-beta.1...v8.0.0-beta.2) (2025-12-12)
+### Features
+
+* update rolldown to 1.0.0-beta.54 ([#21267](https://github.com/vitejs/vite/issues/21267)) ([c751172](https://github.com/vitejs/vite/commit/c75117213cb1d2d13554fbc26a75e8df191c27eb))
+
+### Bug Fixes
+
+* **deps:** update all non-major dependencies ([#21231](https://github.com/vitejs/vite/issues/21231)) ([859789c](https://github.com/vitejs/vite/commit/859789c856412dfa67969232ddda1df754febf40))
+* don't strip base from imports ([#21221](https://github.com/vitejs/vite/issues/21221)) ([7da742b](https://github.com/vitejs/vite/commit/7da742b478d2309c7d8de4cb55614a6476f350b4))
+
+### Documentation
+
+* clarify the pronunciation of `vite` in IPA symbols ([#21238](https://github.com/vitejs/vite/issues/21238)) ([9b1d4d6](https://github.com/vitejs/vite/commit/9b1d4d6f348c8899bd7651bd802f583e99b901ee))
+* ensure https links ([#21266](https://github.com/vitejs/vite/issues/21266)) ([2eb259a](https://github.com/vitejs/vite/commit/2eb259a84859c7656718258afed08eb80670f530))
+
+## [8.0.0-beta.1](https://github.com/vitejs/vite/compare/v8.0.0-beta.0...v8.0.0-beta.1) (2025-12-08)
+### Features
+
+* add a warning that is output when a plugin sets esbuild related options ([#21218](https://github.com/vitejs/vite/issues/21218)) ([200646b](https://github.com/vitejs/vite/commit/200646b14397bfb80e9b29d2e4b33fcfc72d6b2c))
+* highly experimental full bundle mode ([#21235](https://github.com/vitejs/vite/issues/21235)) ([83d8c99](https://github.com/vitejs/vite/commit/83d8c99753d8bd5c1ea9b7a00e6998c865dad4e2))
+* print esbuild options when both esbuild and oxc options are set ([#21216](https://github.com/vitejs/vite/issues/21216)) ([08ae87b](https://github.com/vitejs/vite/commit/08ae87b14a3ce5f7cb3f1a382f497d36d0c2e01b))
+
+### Bug Fixes
+
+* allow exiting process before optimizer cleanup is done ([#21170](https://github.com/vitejs/vite/issues/21170)) ([55ceffc](https://github.com/vitejs/vite/commit/55ceffc8976b8bb8c819f5b47419f8499ba3f843))
+* plugin shortcut support ([#21211](https://github.com/vitejs/vite/issues/21211)) ([6a3aca0](https://github.com/vitejs/vite/commit/6a3aca084356316811ff62cbedb5a410a249e789))
+
+### Miscellaneous Chores
+
+* cleanup changelog ([#21202](https://github.com/vitejs/vite/issues/21202)) ([8c8c56e](https://github.com/vitejs/vite/commit/8c8c56e1eb465e6dcd0c1b40f187228edc0e2be4))
+* **deps:** update rolldown-related dependencies ([#21230](https://github.com/vitejs/vite/issues/21230)) ([9349446](https://github.com/vitejs/vite/commit/9349446e9344bd81ccfb37af482f479cd1b59bbc))
+* fix spelling error ([#21223](https://github.com/vitejs/vite/issues/21223)) ([cc10e20](https://github.com/vitejs/vite/commit/cc10e207ae87ac122fc1efbb5ab01b516eb9cce8))
+
 ## [8.0.0-beta.0](https://github.com/vitejs/vite/compare/v7.2.6...v8.0.0-beta.0) (2025-12-03)
 ### ⚠ BREAKING CHANGES
 

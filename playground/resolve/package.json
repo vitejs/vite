@@ -17,7 +17,8 @@
     "#slash/": "./imports-path/slash/",
     "#other-pkg-slash/": "@vitejs/test-resolve-imports-pkg/nest/",
     "#query": "./imports-path/query.json",
-    "#dot-prefixed": "./imports-path/.dot-prefixed/index.js"
+    "#dot-prefixed": "./imports-path/.dot-prefixed/index.js",
+    "#/*": "./imports-path/root-slash/*"
   },
   "dependencies": {
     "@babel/runtime": "^7.28.4",

@@ -6,6 +6,7 @@ import spawn from 'cross-spawn'
 import mri from 'mri'
 import * as prompts from '@clack/prompts'
 import colors from 'picocolors'
+import { determineAgent } from '@vercel/detect-agent'
 
 const {
   blue,
@@ -183,7 +184,7 @@ const FRAMEWORKS: Framework[] = [
         display: 'RSC ↗',
         color: magenta,
         customCommand:
-          'npm exec degit vitejs/vite-plugin-react/packages/plugin-rsc/examples/starter TARGET_DIR',
+          'npm exec tiged vitejs/vite-plugin-react/packages/plugin-rsc/examples/starter TARGET_DIR',
       },
       {
         name: 'custom-vike-react',
@@ -287,6 +288,26 @@ const FRAMEWORKS: Framework[] = [
     ],
   },
   {
+    name: 'ember',
+    display: 'Ember',
+    color: redBright,
+    variants: [
+      {
+        name: 'ember-app-ts',
+        display: 'TypeScript ↗',
+        color: blueBright,
+        customCommand:
+          'npm exec -- ember-cli@latest new TARGET_DIR --typescript',
+      },
+      {
+        name: 'ember-app',
+        display: 'JavaScript ↗',
+        color: redBright,
+        customCommand: 'npm exec -- ember-cli@latest new TARGET_DIR',
+      },
+    ],
+  },
+  {
     name: 'qwik',
     display: 'Qwik',
     color: blueBright,
@@ -305,7 +326,7 @@ const FRAMEWORKS: Framework[] = [
         name: 'custom-qwik-city',
         display: 'QwikCity ↗',
         color: blueBright,
-        customCommand: 'npm create qwik@latest basic TARGET_DIR',
+        customCommand: 'npm create qwik@latest empty TARGET_DIR',
       },
     ],
   },
@@ -428,6 +449,14 @@ async function init() {
   }
 
   const interactive = argInteractive ?? process.stdin.isTTY
+
+  // Detect AI agent environment for better agent experience (AX)
+  const { isAgent } = await determineAgent()
+  if (isAgent && interactive) {
+    console.log(
+      '\nTo create in one go, run: create-vite <DIRECTORY> --no-interactive --template <TEMPLATE>\n',
+    )
+  }
 
   const pkgInfo = pkgFromUserAgent(process.env.npm_config_user_agent)
   const cancel = () => prompts.cancel('Operation cancelled')

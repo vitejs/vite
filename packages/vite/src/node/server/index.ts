@@ -6,7 +6,6 @@ import { get as httpsGet } from 'node:https'
 import type * as http from 'node:http'
 import { performance } from 'node:perf_hooks'
 import type { Http2SecureServer } from 'node:http2'
-import type readline from 'node:readline'
 import connect from 'connect'
 import corsMiddleware from 'cors'
 import colors from 'picocolors'
@@ -46,7 +45,7 @@ import { ssrFixStacktrace, ssrRewriteStacktrace } from '../ssr/ssrStacktrace'
 import { ssrTransform } from '../ssr/ssrTransform'
 import { reloadOnTsconfigChange } from '../plugins/esbuild'
 import { bindCLIShortcuts } from '../shortcuts'
-import type { BindCLIShortcutsOptions } from '../shortcuts'
+import type { BindCLIShortcutsOptions, ShortcutsState } from '../shortcuts'
 import {
   CLIENT_DIR,
   DEFAULT_DEV_PORT,
@@ -102,6 +101,8 @@ import { searchForPackageRoot, searchForWorkspaceRoot } from './searchRoot'
 import type { DevEnvironment } from './environment'
 import { hostValidationMiddleware } from './middlewares/hostCheck'
 import { rejectInvalidRequestMiddleware } from './middlewares/rejectInvalidRequest'
+import { memoryFilesMiddleware } from './middlewares/memoryFiles'
+import { rejectNoCorsRequestMiddleware } from './middlewares/rejectNoCorsRequest'
 
 const usedConfigs = new WeakSet<ResolvedConfig>()
 
@@ -407,11 +408,7 @@ export interface ViteDevServer {
   /**
    * @internal
    */
-  _shortcutsOptions?: BindCLIShortcutsOptions<ViteDevServer>
-  /**
-   * @internal
-   */
-  _rl?: readline.Interface | undefined
+  _shortcutsState?: ShortcutsState<ViteDevServer>
   /**
    * @internal
    */
@@ -442,6 +439,7 @@ export async function _createServer(
   options: {
     listen: boolean
     previousEnvironments?: Record<string, DevEnvironment>
+    previousShortcutsState?: ShortcutsState<ViteDevServer>
   },
 ): Promise<ViteDevServer> {
   const config = isResolvedConfig(inlineConfig)
@@ -506,7 +504,7 @@ export async function _createServer(
     ? (chokidar.watch(
         // config file dependencies and env file might be outside of root
         [
-          root,
+          ...(config.experimental.bundledDev ? [] : [root]),
           ...config.configFileDependencies,
           ...getEnvFilesForMode(config.mode, config.envDir),
           // Watch the public directory explicitly because it might be outside
@@ -650,6 +648,7 @@ export async function _createServer(
         "ssrRewriteStacktrace doesn't need to be used for Environment Module Runners.",
       )
       return ssrRewriteStacktrace(stack, server.environments.ssr.moduleGraph)
+        .result
     },
     async reloadModule(module) {
       warnFutureDeprecation(config, 'removeServerReloadModule')
@@ -773,7 +772,7 @@ export async function _createServer(
     },
     _restartPromise: null,
     _forceOptimizeOnRestart: false,
-    _shortcutsOptions: undefined,
+    _shortcutsState: options.previousShortcutsState,
   }
 
   // maintain consistency with the server instance after restarting.
@@ -884,8 +883,8 @@ export async function _createServer(
     middlewares.use(timeMiddleware(root))
   }
 
-  // disallows request that contains `#` in the URL
   middlewares.use(rejectInvalidRequestMiddleware())
+  middlewares.use(rejectNoCorsRequestMiddleware())
 
   // cors
   const { cors } = serverConfig
@@ -913,7 +912,9 @@ export async function _createServer(
 
   // Internal middlewares ------------------------------------------------------
 
-  middlewares.use(cachedTransformMiddleware(server))
+  if (!config.experimental.bundledDev) {
+    middlewares.use(cachedTransformMiddleware(server))
+  }
 
   // proxy
   const { proxy } = serverConfig
@@ -948,16 +949,26 @@ export async function _createServer(
     middlewares.use(servePublicMiddleware(server, publicFiles))
   }
 
-  // main transform middleware
-  middlewares.use(transformMiddleware(server))
+  if (config.experimental.bundledDev) {
+    middlewares.use(memoryFilesMiddleware(server))
+  } else {
+    // main transform middleware
+    middlewares.use(transformMiddleware(server))
 
-  // serve static files
-  middlewares.use(serveRawFsMiddleware(server))
-  middlewares.use(serveStaticMiddleware(server))
+    // serve static files
+    middlewares.use(serveRawFsMiddleware(server))
+    middlewares.use(serveStaticMiddleware(server))
+  }
 
   // html fallback
   if (config.appType === 'spa' || config.appType === 'mpa') {
-    middlewares.use(htmlFallbackMiddleware(root, config.appType === 'spa'))
+    middlewares.use(
+      htmlFallbackMiddleware(
+        root,
+        config.appType === 'spa',
+        server.environments.client,
+      ),
+    )
   }
 
   // apply configureServer post hooks ------------------------------------------
@@ -987,10 +998,12 @@ export async function _createServer(
     if (initingServer) return initingServer
 
     initingServer = (async function () {
-      // For backward compatibility, we call buildStart for the client
-      // environment when initing the server. For other environments
-      // buildStart will be called when the first request is transformed
-      await environments.client.pluginContainer.buildStart()
+      if (!config.experimental.bundledDev) {
+        // For backward compatibility, we call buildStart for the client
+        // environment when initing the server. For other environments
+        // buildStart will be called when the first request is transformed
+        await environments.client.pluginContainer.buildStart()
+      }
 
       // ensure ws server started
       if (onListen || options.listen) {
@@ -1215,7 +1228,6 @@ export function resolveServerOptions(
 
 async function restartServer(server: ViteDevServer) {
   global.__vite_start_time = performance.now()
-  const shortcutsOptions = server._shortcutsOptions
 
   let inlineConfig = server.config.inlineConfig
   if (server._forceOptimizeOnRestart) {
@@ -1236,6 +1248,7 @@ async function restartServer(server: ViteDevServer) {
       newServer = await _createServer(inlineConfig, {
         listen: false,
         previousEnvironments: server.environments,
+        previousShortcutsState: server._shortcutsState,
       })
     } catch (err: any) {
       server.config.logger.error(err.message, {
@@ -1245,14 +1258,15 @@ async function restartServer(server: ViteDevServer) {
       return
     }
 
+    // Detach readline so close handler skips it. Reused to avoid stdin issues
+    server._shortcutsState = undefined
+
     await server.close()
 
     // Assign new server props to existing server instance
     const middlewares = server.middlewares
     newServer._configServerPort = server._configServerPort
     newServer._currentServerPort = server._currentServerPort
-    // Ensure the new server has no stale readline reference
-    newServer._rl = undefined
     Object.assign(server, newServer)
 
     // Keep the same connect instance so app.use(vite.middlewares) works
@@ -1277,11 +1291,13 @@ async function restartServer(server: ViteDevServer) {
   }
   logger.info('server restarted.', { timestamp: true })
 
-  if (shortcutsOptions) {
-    shortcutsOptions.print = false
+  if (
+    (server._shortcutsState as ShortcutsState<ViteDevServer> | undefined)
+      ?.options
+  ) {
     bindCLIShortcuts(
       server,
-      shortcutsOptions,
+      { print: false },
       // Skip environment checks since shortcuts were bound before restart
       true,
     )
