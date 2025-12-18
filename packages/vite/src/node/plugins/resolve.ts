@@ -292,10 +292,6 @@ export function oxcResolvePlugin(
           external: options.external,
           noExternal: noExternal,
           dedupe: options.dedupe,
-          disableCache:
-            partialEnv.config.command === 'serve' &&
-            // eslint-disable-next-line eqeqeq
-            partialEnv.config.server.watch === null,
           legacyInconsistentCjsInterop: options.legacyInconsistentCjsInterop,
           finalizeBareSpecifier: !depsOptimizerEnabled
             ? undefined
