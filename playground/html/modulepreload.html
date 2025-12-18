@@ -11,9 +11,8 @@
         }
       }
     </script>
-    <!-- Non-self-closing link tag (this was not matched by the old regex) -->
+    <!-- Modulepreload links (both formats should work with the fixed regex) -->
     <link rel="modulepreload" crossorigin href="/assets/vendor.js" />
-    <!-- Self-closing link tag (this was matched by the old regex) -->
     <link rel="modulepreload" href="/shared.js" />
     <script type="module" src="/main.js"></script>
   </head>
