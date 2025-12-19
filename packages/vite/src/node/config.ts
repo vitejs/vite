@@ -2392,7 +2392,7 @@ async function bundleConfigFile(
               `const ${importMetaUrlVarName} = ${JSON.stringify(
                 pathToFileURL(id).href,
               )};`
-            if (code.includes('import.meta.resolve')) {
+            if (/import\.meta\s*\.\s*resolve/.test(code)) {
               if (isESM) {
                 if (!importMetaResolverRegistered) {
                   importMetaResolverRegistered = true
