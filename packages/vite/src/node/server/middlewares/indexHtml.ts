@@ -455,11 +455,22 @@ export function indexHtmlMiddleware(
       return next()
     }
 
+    const decodePath = (input: string): string | undefined => {
+      try {
+        return decodeURIComponent(input)
+      } catch {
+        return
+      }
+    }
+
     const url = req.url && cleanUrl(req.url)
     // htmlFallbackMiddleware appends '.html' to URLs
     if (url?.endsWith('.html') && req.headers['sec-fetch-dest'] !== 'script') {
       if (fullBundleEnv) {
-        const pathname = decodeURIComponent(url)
+        const pathname = decodePath(url)
+        if (pathname === undefined) {
+          return next()
+        }
         const filePath = pathname.slice(1) // remove first /
 
         let file = fullBundleEnv.memoryFiles.get(filePath)
@@ -497,11 +508,17 @@ export function indexHtmlMiddleware(
 
       let filePath: string
       if (isDev && url.startsWith(FS_PREFIX)) {
-        filePath = decodeURIComponent(fsPathFromId(url))
+        const decodedPath = decodePath(fsPathFromId(url))
+        if (decodedPath === undefined) {
+          return next()
+        }
+        filePath = decodedPath
       } else {
-        filePath = normalizePath(
-          path.resolve(path.join(root, decodeURIComponent(url))),
-        )
+        const decodedUrl = decodePath(url)
+        if (decodedUrl === undefined) {
+          return next()
+        }
+        filePath = normalizePath(path.resolve(path.join(root, decodedUrl)))
       }
 
       if (isDev) {
