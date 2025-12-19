@@ -10,7 +10,7 @@ import { sponsors } from './_data/sponsors.js'
 </script>
 
 <Hero/>
-<TrustedBy />
+<TrustedBy :logos="['openai', 'shopify', 'framer', 'linear', 'mercedes']" />
 <HeadingSection
     heading="Redefining developer experience"
     subheading="Vite makes web development simple again"
