@@ -614,9 +614,40 @@ test.runIf(isServe)(
     })
     expect(res.statusCode).toBe(403)
     const body = Buffer.concat(await ArrayFromAsync(res)).toString()
-    expect(body).toBe(
-      'Cross-origin requests must be made with CORS mode enabled.',
+    expect(body).toContain(
+      'Cross-origin requests for classic scripts must be made with CORS mode enabled.',
     )
+  },
+)
+
+test.runIf(isServe)(
+  'load image with no-cors mode from a different origin should be allowed',
+  async () => {
+    const viteTestUrlUrl = new URL(viteTestUrl)
+
+    // NOTE: fetch cannot be used here as `fetch` sets some headers automatically
+    const res = await new Promise<http.IncomingMessage>((resolve, reject) => {
+      http
+        .get(
+          viteTestUrl + '/src/code.js',
+          {
+            headers: {
+              'Sec-Fetch-Dest': 'image',
+              'Sec-Fetch-Mode': 'no-cors',
+              'Sec-Fetch-Site': 'same-site',
+              Origin: 'http://vite.dev',
+              Host: viteTestUrlUrl.host,
+            },
+          },
+          (res) => {
+            resolve(res)
+          },
+        )
+        .on('error', (e) => {
+          reject(e)
+        })
+    })
+    expect(res.statusCode).not.toBe(403)
   },
 )
 

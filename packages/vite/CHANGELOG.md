@@ -1,3 +1,16 @@
+## [8.0.0-beta.3](https://github.com/vitejs/vite/compare/v8.0.0-beta.2...v8.0.0-beta.3) (2025-12-18)
+### Features
+
+* introduce v2 native plugins and enable it by default ([#21268](https://github.com/vitejs/vite/issues/21268)) ([42f2ab3](https://github.com/vitejs/vite/commit/42f2ab3aec7cd0e03e195611b1e1ddabbedc9d61))
+* **ssr:** avoid errors when rewriting already rewritten stacktrace ([#21269](https://github.com/vitejs/vite/issues/21269)) ([98d9a33](https://github.com/vitejs/vite/commit/98d9a33274d9ac90780786afa612d916feddf2e3))
+* update rolldown to 1.0.0-beta.55 ([#21300](https://github.com/vitejs/vite/issues/21300)) ([2c8db85](https://github.com/vitejs/vite/commit/2c8db858d7081e898f63ce9569c3f19a91a10956))
+
+### Bug Fixes
+
+* allow no-cors requests for non-script tag requests ([#21299](https://github.com/vitejs/vite/issues/21299)) ([ef3d596](https://github.com/vitejs/vite/commit/ef3d59648fd9dd3f9b3118d09d216dc0afcb8c33))
+* **deps:** update all non-major dependencies ([#21285](https://github.com/vitejs/vite/issues/21285)) ([4635b2e](https://github.com/vitejs/vite/commit/4635b2e90f833d1048d76381e20208c0e0841e97))
+* unreachable error when building with `experimental.bundledDev` is enabled ([#21296](https://github.com/vitejs/vite/issues/21296)) ([e81c183](https://github.com/vitejs/vite/commit/e81c183f8c8ccaf7774ef0d0ee125bf63dbf30b4))
+
 ## [8.0.0-beta.2](https://github.com/vitejs/vite/compare/v8.0.0-beta.1...v8.0.0-beta.2) (2025-12-12)
 ### Features
 

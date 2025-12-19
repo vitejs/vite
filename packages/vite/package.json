@@ -1,6 +1,6 @@
 {
   "name": "vite",
-  "version": "8.0.0-beta.2",
+  "version": "8.0.0-beta.3",
   "type": "module",
   "license": "MIT",
   "author": "Evan You",
@@ -73,12 +73,12 @@
   },
   "//": "READ CONTRIBUTING.md to understand what to put under deps vs. devDeps!",
   "dependencies": {
-    "@oxc-project/runtime": "0.102.0",
+    "@oxc-project/runtime": "0.103.0",
     "fdir": "^6.5.0",
     "lightningcss": "^1.30.2",
     "picomatch": "^4.0.3",
     "postcss": "^8.5.6",
-    "rolldown": "1.0.0-beta.54",
+    "rolldown": "1.0.0-beta.55",
     "tinyglobby": "^0.2.15"
   },
   "optionalDependencies": {
@@ -88,9 +88,9 @@
     "@babel/parser": "^7.28.5",
     "@jridgewell/remapping": "^2.3.5",
     "@jridgewell/trace-mapping": "^0.3.31",
-    "@oxc-project/types": "0.102.0",
+    "@oxc-project/types": "0.103.0",
     "@polka/compression": "^1.0.0-next.25",
-    "@rolldown/pluginutils": "1.0.0-beta.54",
+    "@rolldown/pluginutils": "1.0.0-beta.55",
     "@rollup/plugin-alias": "^5.1.1",
     "@rollup/plugin-commonjs": "^29.0.0",
     "@rollup/plugin-dynamic-import-vars": "2.1.4",
