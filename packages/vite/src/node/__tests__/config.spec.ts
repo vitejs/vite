@@ -1173,21 +1173,7 @@ describe('loadConfigFromFile', () => {
     expect(c.dirname).toContain('import-meta')
     expect(c.filename).toContain('vite.config.ts')
     expect(c.resolved).toBe(c.url)
-  })
-
-  test('import.meta.resolve works when formatted across multiple lines', async () => {
-    const { config } = (await loadConfigFromFile(
-      {} as any,
-      path.resolve(fixtures, './import-meta-multiline/vite.config.ts'),
-      path.resolve(fixtures, './import-meta-multiline'),
-    ))!
-
-    const c = config as any
-    expect(c.isMain).toBe(false)
-    expect(c.url).toContain('file://')
-    expect(c.dirname).toContain('import-meta-multiline')
-    expect(c.filename).toContain('vite.config.ts')
-    expect(c.resolved).toBe(c.url)
+    expect(c.resolvedMultiline).toBe(c.url)
   })
 
   test('shebang is preserved at the top of the file', async () => {

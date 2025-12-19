@@ -457,6 +457,8 @@ importers:
 
   packages/vite/src/node/__tests__/fixtures/config/import-meta: {}
 
+  packages/vite/src/node/__tests__/fixtures/config/import-meta-multiline: {}
+
   packages/vite/src/node/__tests__/fixtures/config/plugin-module-condition: {}
 
   packages/vite/src/node/__tests__/fixtures/config/siblings:
