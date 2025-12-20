@@ -133,6 +133,12 @@ test('module worker', async () => {
     .toMatch('A string')
 })
 
+test('new URL(..., import.meta.url) (multiline with trailing comma)', async () => {
+  await expect
+    .poll(() => page.textContent('.worker-import-meta-url-multiline'))
+    .toMatch(/A\sstring.*\/iife\/.+url-worker\.js.+url-worker\.js/)
+})
+
 test('classic worker', async () => {
   await expect
     .poll(() => page.textContent('.classic-worker'))
