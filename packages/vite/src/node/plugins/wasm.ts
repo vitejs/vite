@@ -1,5 +1,10 @@
 import { exactRegex } from '@rolldown/pluginutils'
+import {
+  viteWasmFallbackPlugin as nativeWasmFallbackPlugin,
+  viteWasmHelperPlugin as nativeWasmHelperPlugin,
+} from 'rolldown/experimental'
 import type { Plugin } from '../plugin'
+import type { ResolvedConfig } from '..'
 import { fileToUrl } from './asset'
 
 const wasmHelperId = '\0vite/wasm-helper.js'
@@ -48,7 +53,13 @@ const wasmHelper = async (opts = {}, url: string) => {
 
 const wasmHelperCode = wasmHelper.toString()
 
-export const wasmHelperPlugin = (): Plugin => {
+export const wasmHelperPlugin = (config: ResolvedConfig): Plugin => {
+  if (config.isBundled && config.nativePluginEnabledLevel >= 1) {
+    return nativeWasmHelperPlugin({
+      decodedBase: config.decodedBase,
+    })
+  }
+
   return {
     name: 'vite:wasm-helper',
 
@@ -77,7 +88,11 @@ export const wasmHelperPlugin = (): Plugin => {
   }
 }
 
-export const wasmFallbackPlugin = (): Plugin => {
+export const wasmFallbackPlugin = (config: ResolvedConfig): Plugin => {
+  if (config.nativePluginEnabledLevel >= 1) {
+    return nativeWasmFallbackPlugin()
+  }
+
   return {
     name: 'vite:wasm-fallback',
 

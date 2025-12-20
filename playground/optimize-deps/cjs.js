@@ -22,7 +22,7 @@ if (typeof Socket === 'function') {
   text('.cjs-phoenix', 'ok')
 }
 
-if (typeof cjsFromESM === 'function') {
+if (typeof cjsFromESM.default === 'function') {
   text('.cjs-dep-cjs-compiled-from-esm', 'ok')
 }
 
