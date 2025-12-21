@@ -234,7 +234,10 @@ export function createWebSocketServer(
       }
     }
     wsServer.on('upgrade', hmrServerWsListener)
-  } else {
+  } else if (hmr !== false) {
+    // Only create standalone WebSocket server when HMR is enabled.
+    // When hmr === false (e.g., SSR environment in Nuxt), skip WebSocket creation
+    // to avoid port conflicts when running multiple Vite-based apps simultaneously.
     // http server request handler keeps the same with
     // https://github.com/websockets/ws/blob/45e17acea791d865df6b255a55182e9c42e5877a/lib/websocket-server.js#L88-L96
     const route = ((_, res) => {
