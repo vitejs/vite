@@ -73,7 +73,7 @@ importers:
         version: 1.6.0(conventional-commits-filter@5.0.0)
       '@voidzero-dev/vitepress-theme':
         specifier: latest
-        version: 1.1.54(@docsearch/css@4.3.2)(@docsearch/js@4.3.2)(axios@1.13.2)(embla-carousel@8.6.0)(react-dom@19.2.3(react@19.2.3))(react@19.2.3)(typescript@5.9.3)(vite@packages+vite)(vitepress@2.0.0-alpha.15(axios@1.13.2)(oxc-minify@0.102.0)(postcss@8.5.6)(typescript@5.9.3))(vue@3.5.25(typescript@5.9.3))
+        version: 1.1.55(@docsearch/css@4.3.2)(@docsearch/js@4.3.2)(axios@1.13.2)(embla-carousel@8.6.0)(react-dom@19.2.3(react@19.2.3))(react@19.2.3)(typescript@5.9.3)(vite@packages+vite)(vitepress@2.0.0-alpha.15(axios@1.13.2)(oxc-minify@0.102.0)(postcss@8.5.6)(typescript@5.9.3))(vue@3.5.25(typescript@5.9.3))
       eslint:
         specifier: ^9.39.2
         version: 9.39.2(jiti@2.6.1)(ms@2.1.3)
@@ -4313,8 +4313,8 @@ packages:
   '@vitest/utils@4.0.15':
     resolution: {integrity: sha512-HXjPW2w5dxhTD0dLwtYHDnelK3j8sR8cWIaLxr22evTyY6q8pRCjZSmhRWVjBaOVXChQd6AwMzi9pucorXCPZA==}
 
-  '@voidzero-dev/vitepress-theme@1.1.54':
-    resolution: {integrity: sha512-6KfKgl3Y+6hYKeH84Xv1oFcHYH397j+SprDPgdslwS0EhmOOyWoPpwmICYBU2yyyEkyZustbHLQrn4UEBMaRAw==}
+  '@voidzero-dev/vitepress-theme@1.1.55':
+    resolution: {integrity: sha512-WGgfs8FKm/5U5dzE4kjGzbPHnhWiFfikSvNH6OiV8f/VkYQ+xu4MRpkT9ky+y+AUA4/Ca/EeXap1FDW4tvLPdQ==}
     peerDependencies:
       '@docsearch/css': ^4.3.2
       '@docsearch/js': ^4.3.2
@@ -7351,6 +7351,7 @@ packages:
   tsdown@0.17.4:
     resolution: {integrity: sha512-z+kNuv1rwM1POQIufDUVrdNc/uGy0ueRVafCyDH39IdHxin4JXgB8DNGSPoqdIpcOpqUoRbNreK8NxENFmlhKw==}
     engines: {node: '>=20.19.0'}
+    deprecated: Including an unexpected breaking change (copy behavior)
     hasBin: true
     peerDependencies:
       '@arethetypeswrong/core': ^0.18.1
@@ -10089,7 +10090,7 @@ snapshots:
       '@vitest/pretty-format': 4.0.15
       tinyrainbow: 3.0.3
 
-  '@voidzero-dev/vitepress-theme@1.1.54(@docsearch/css@4.3.2)(@docsearch/js@4.3.2)(axios@1.13.2)(embla-carousel@8.6.0)(react-dom@19.2.3(react@19.2.3))(react@19.2.3)(typescript@5.9.3)(vite@packages+vite)(vitepress@2.0.0-alpha.15(axios@1.13.2)(oxc-minify@0.102.0)(postcss@8.5.6)(typescript@5.9.3))(vue@3.5.25(typescript@5.9.3))':
+  '@voidzero-dev/vitepress-theme@1.1.55(@docsearch/css@4.3.2)(@docsearch/js@4.3.2)(axios@1.13.2)(embla-carousel@8.6.0)(react-dom@19.2.3(react@19.2.3))(react@19.2.3)(typescript@5.9.3)(vite@packages+vite)(vitepress@2.0.0-alpha.15(axios@1.13.2)(oxc-minify@0.102.0)(postcss@8.5.6)(typescript@5.9.3))(vue@3.5.25(typescript@5.9.3))':
     dependencies:
       '@number-flow/vue': 0.4.8(vue@3.5.25(typescript@5.9.3))
       '@rive-app/canvas': 2.33.0
