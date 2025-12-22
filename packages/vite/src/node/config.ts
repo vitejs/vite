@@ -558,12 +558,13 @@ export interface ExperimentalOptions {
    *
    * - 'resolver' (deprecated, will be removed in v8 stable): Enable only the native resolver plugin.
    * - 'v1' (will be deprecated, will be removed in v8 stable): Enable the first stable set of native plugins (including resolver).
-   * - true: Enable all native plugins (currently an alias of 'v1', it will map to a newer one in the future versions).
+   * - 'v2' (will be deprecated, will be removed in v8 stable): Enable the improved dynamicImportVarsPlugin and importGlobPlugin.
+   * - true: Enable all native plugins (currently an alias of 'v2', it will map to a newer one in the future versions).
    *
    * @experimental
-   * @default 'v1'
+   * @default 'v2'
    */
-  enableNativePlugin?: boolean | 'resolver' | 'v1'
+  enableNativePlugin?: boolean | 'resolver' | 'v1' | 'v2'
   /**
    * Enable full bundle mode.
    *
@@ -787,7 +788,7 @@ const configDefaults = Object.freeze({
     importGlobRestoreExtension: false,
     renderBuiltUrl: undefined,
     hmrPartialAccept: false,
-    enableNativePlugin: process.env._VITE_TEST_JS_PLUGIN ? false : 'v1',
+    enableNativePlugin: process.env._VITE_TEST_JS_PLUGIN ? false : 'v2',
     bundledDev: false,
   },
   future: {
@@ -2092,8 +2093,10 @@ function resolveNativePluginEnabledLevel(
     case 'resolver':
       return 0
     case 'v1':
-    case true:
       return 1
+    case 'v2':
+    case true:
+      return 2
     case false:
       return -1
     default:
@@ -2302,6 +2305,7 @@ async function bundleConfigFile(
   const importMetaUrlVarName = '__vite_injected_original_import_meta_url'
   const importMetaResolveVarName =
     '__vite_injected_original_import_meta_resolve'
+  const importMetaResolveRegex = /import\.meta\s*\.\s*resolve/
 
   const bundle = await rolldown({
     input: fileName,
@@ -2389,7 +2393,7 @@ async function bundleConfigFile(
               `const ${importMetaUrlVarName} = ${JSON.stringify(
                 pathToFileURL(id).href,
               )};`
-            if (code.includes('import.meta.resolve')) {
+            if (importMetaResolveRegex.test(code)) {
               if (isESM) {
                 if (!importMetaResolverRegistered) {
                   importMetaResolverRegistered = true

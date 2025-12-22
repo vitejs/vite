@@ -303,3 +303,11 @@ test('import base glob raw', async () => {
     .poll(async () => await page.textContent('.result-base'))
     .toBe(JSON.stringify(baseRawResult, null, 2))
 })
+
+test('import.meta.glob and dynamic import vars transformations should be visible to post transform plugins', async () => {
+  await expect
+    .poll(async () => await page.textContent('.transform-visibility'))
+    .toBe(
+      JSON.stringify({ globTransformed: true, dynamicImportTransformed: true }),
+    )
+})

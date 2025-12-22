@@ -2832,8 +2832,10 @@ const makeLessWorker = (
             ? {
                 sourceMap: {
                   outputSourceFiles: true,
+                  // does not exist in types, but exists
+                  disableSourcemapAnnotation: true,
                   sourceMapFileInline: false,
-                },
+                } as Less.SourceMapOption,
               }
             : {}),
         })
