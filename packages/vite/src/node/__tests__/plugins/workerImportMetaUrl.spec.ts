@@ -241,14 +241,14 @@ new Worker(
     expect(
       await transform(`const worker = new Worker(
   new URL(
-    "../some-loooooooooooooooooong-file-path-of-module-name.js",
+    "./worker.js",
     import.meta.url,
   ),
   { type: "module" },
 )`),
     ).toMatchInlineSnapshot(`
       "const worker = new Worker(
-        new URL(/* @vite-ignore */ "/@fs/home/runner/work/vite/some-loooooooooooooooooong-file-path-of-module-name.js?worker_file&type=module", '' + import.meta.url),
+        new URL(/* @vite-ignore */ "/worker.js?worker_file&type=module", '' + import.meta.url),
         { type: "module" },
       )"
     `)
