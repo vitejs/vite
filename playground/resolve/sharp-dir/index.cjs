@@ -1,3 +1,3 @@
 module.exports = {
-  last: require('es5-ext/string/#/last.js'),
+  test: require('@vitejs/test-resolve-sharp-dir-nested/#/index.cjs').test,
 }

@@ -184,7 +184,7 @@ const FRAMEWORKS: Framework[] = [
         display: 'RSC ↗',
         color: magenta,
         customCommand:
-          'npm exec degit vitejs/vite-plugin-react/packages/plugin-rsc/examples/starter TARGET_DIR',
+          'npm exec tiged vitejs/vite-plugin-react/packages/plugin-rsc/examples/starter TARGET_DIR',
       },
       {
         name: 'custom-vike-react',
@@ -326,7 +326,7 @@ const FRAMEWORKS: Framework[] = [
         name: 'custom-qwik-city',
         display: 'QwikCity ↗',
         color: blueBright,
-        customCommand: 'npm create qwik@latest basic TARGET_DIR',
+        customCommand: 'npm create qwik@latest empty TARGET_DIR',
       },
     ],
   },

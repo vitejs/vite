@@ -648,6 +648,7 @@ export async function _createServer(
         "ssrRewriteStacktrace doesn't need to be used for Environment Module Runners.",
       )
       return ssrRewriteStacktrace(stack, server.environments.ssr.moduleGraph)
+        .result
     },
     async reloadModule(module) {
       warnFutureDeprecation(config, 'removeServerReloadModule')
