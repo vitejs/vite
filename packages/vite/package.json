@@ -97,6 +97,7 @@
     "@rollup/pluginutils": "^5.3.0",
     "@types/escape-html": "^1.0.4",
     "@types/pnpapi": "^0.0.5",
+    "@vitejs/devtools": "0.0.0-alpha.20",
     "artichokie": "^0.4.2",
     "baseline-browser-mapping": "^2.9.7",
     "cac": "^6.7.14",
