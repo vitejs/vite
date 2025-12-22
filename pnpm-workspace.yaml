@@ -32,7 +32,6 @@ packageExtensions:
         optional: true
 ignoredBuiltDependencies:
   - core-js
-  - es5-ext
 onlyBuiltDependencies:
   - "@parcel/watcher"
   - "@tailwindcss/oxide"
