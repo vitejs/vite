@@ -166,7 +166,7 @@ export default defineConfig({
     },
 
     footer: {
-      message: `© 2025 VoidZero Inc. and Vite contributors. (${commitRef})`,
+      copyright: `© 2025 VoidZero Inc. and Vite contributors. (${commitRef})`,
       nav: [
         {
           title: 'Vite',
