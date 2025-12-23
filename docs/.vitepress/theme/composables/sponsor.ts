@@ -23,7 +23,8 @@ interface Sponsor {
 }
 
 // shared data across instances so we load only once.
-const data = ref<{ tier: string; size: string; items: Sponsor[] }[]>()
+const data =
+  ref<{ tier: string; size: 'big' | 'medium' | 'small'; items: Sponsor[] }[]>()
 
 const dataHost = 'https://sponsors.vuejs.org'
 const dataUrl = `${dataHost}/vite.json`
@@ -103,17 +104,17 @@ function mapSponsors(sponsors: Sponsors) {
   return [
     {
       tier: 'in partnership with',
-      size: 'big',
+      size: 'big' as const,
       items: viteSponsors['special'],
     },
     {
       tier: 'Platinum Sponsors',
-      size: 'big',
+      size: 'big' as const,
       items: mapImgPath(sponsors['platinum']),
     },
     {
       tier: 'Gold Sponsors',
-      size: 'medium',
+      size: 'medium' as const,
       items: [...mapImgPath(sponsors['gold']), ...viteSponsors['gold']],
     },
   ]
