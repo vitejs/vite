@@ -1798,7 +1798,10 @@ export async function createBuilder(
           const { start } = await import(`@vitejs/devtools/cli-commands`)
           await start(devtoolsConfig.config)
         } catch (e) {
-          config.logger.error(`Failed to run Vite DevTools.`, { error: e })
+          config.logger.error(
+            colors.red(`Failed to run Vite DevTools: ${e.message || e.stack}`),
+            { error: e },
+          )
         }
       }
     },
