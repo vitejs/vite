@@ -511,7 +511,8 @@ export interface UserConfig extends DefaultEnvironmentOptions {
    */
   appType?: AppType
   /**
-   * Enable devtools integration. `@vitejs/devtools` must be installed as a dependency.
+   * Enable devtools integration. Ensure that `@vitejs/devtools` is installed as a dependency.
+   * This feature is currently supported only in build mode.
    * Defaults to true, if `@vitejs/devtools` is installed.
    * @experimental
    */
