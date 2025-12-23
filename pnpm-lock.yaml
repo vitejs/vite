@@ -744,6 +744,16 @@ importers:
 
   playground/define/commonjs-dep: {}
 
+  playground/devtools:
+    dependencies:
+      vue:
+        specifier: ^3.5.25
+        version: 3.5.25(typescript@5.9.3)
+    devDependencies:
+      vite:
+        specifier: workspace:*
+        version: link:../../packages/vite
+
   playground/dynamic-import:
     dependencies:
       '@vitejs/test-pkg':

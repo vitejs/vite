@@ -85,6 +85,7 @@ import {
   isNodeLikeBuiltin,
   isObject,
   isParentDirectory,
+  isPkgInstalled,
   mergeAlias,
   mergeConfig,
   mergeWithDefaults,
@@ -749,17 +750,11 @@ export async function resolveDevToolsConfig(
   const isEnabled =
     config.devtools === true || !!(config.devtools && config.devtools.enabled)
 
-  function isDevToolsInstalled(): boolean {
-    try {
-      import.meta.resolve(`@vitejs/devtools/cli-commands`)
-      return true
-    } catch {}
-    return false
-  }
-
   return {
     enabled:
-      config.devtools === false ? false : isEnabled || isDevToolsInstalled(),
+      config.devtools === false
+        ? false
+        : isEnabled || isPkgInstalled('@vitejs/devtools/cli-commands'),
     config: {
       ...(isObject(config.devtools) ? config.devtools : {}),
       host: isObject(config.devtools)
