@@ -137,6 +137,11 @@ export default defineConfig({
     variant: 'vite',
     logo: '/logo.svg',
 
+    banner: {
+      text: 'Announcing Vite+ | The Unified Toolchain for the Web',
+      url: 'https://voidzero.dev/posts/announcing-vite-plus?utm_source=vite&utm_content=top_banner',
+    },
+
     editLink: {
       pattern: 'https://github.com/vitejs/vite/edit/main/docs/:path',
       text: 'Suggest changes to this page',
