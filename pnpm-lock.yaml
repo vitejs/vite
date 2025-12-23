@@ -73,7 +73,7 @@ importers:
         version: 1.6.0(conventional-commits-filter@5.0.0)
       '@voidzero-dev/vitepress-theme':
         specifier: latest
-        version: 1.1.59(@docsearch/css@4.3.2)(@docsearch/js@4.3.2)(axios@1.13.2)(embla-carousel@8.6.0)(react-dom@19.2.3(react@19.2.3))(react@19.2.3)(typescript@5.9.3)(vite@packages+vite)(vitepress@2.0.0-alpha.15(axios@1.13.2)(oxc-minify@0.103.0)(postcss@8.5.6)(typescript@5.9.3))(vue@3.5.25(typescript@5.9.3))
+        version: 1.1.61(@docsearch/css@4.3.2)(@docsearch/js@4.3.2)(axios@1.13.2)(embla-carousel@8.6.0)(react-dom@19.2.3(react@19.2.3))(react@19.2.3)(typescript@5.9.3)(vite@packages+vite)(vitepress@2.0.0-alpha.15(axios@1.13.2)(oxc-minify@0.103.0)(postcss@8.5.6)(typescript@5.9.3))(vue@3.5.25(typescript@5.9.3))
       eslint:
         specifier: ^9.39.2
         version: 9.39.2(jiti@2.6.1)(ms@2.1.3)
@@ -4318,8 +4318,8 @@ packages:
   '@vitest/utils@4.0.15':
     resolution: {integrity: sha512-HXjPW2w5dxhTD0dLwtYHDnelK3j8sR8cWIaLxr22evTyY6q8pRCjZSmhRWVjBaOVXChQd6AwMzi9pucorXCPZA==}
 
-  '@voidzero-dev/vitepress-theme@1.1.59':
-    resolution: {integrity: sha512-CxAVYub2FJu01U/QR3APDav8sAReUP+w9FVY0eNjvQqYDGhkqPx5KOVYKujRGpRjpdXhmbpy4D5AFEhrHGqc6g==}
+  '@voidzero-dev/vitepress-theme@1.1.61':
+    resolution: {integrity: sha512-FdhAFxx3oXCICO2UTLWhqBJUlSy64j45kkxeIU3rgzUbqgnfFkWn9AfLdVUB/uYfhnnOfOYm2FZQVIEoYFdEww==}
     peerDependencies:
       '@docsearch/css': ^4.3.2
       '@docsearch/js': ^4.3.2
@@ -10066,7 +10066,7 @@ snapshots:
       '@vitest/pretty-format': 4.0.15
       tinyrainbow: 3.0.3
 
-  '@voidzero-dev/vitepress-theme@1.1.59(@docsearch/css@4.3.2)(@docsearch/js@4.3.2)(axios@1.13.2)(embla-carousel@8.6.0)(react-dom@19.2.3(react@19.2.3))(react@19.2.3)(typescript@5.9.3)(vite@packages+vite)(vitepress@2.0.0-alpha.15(axios@1.13.2)(oxc-minify@0.103.0)(postcss@8.5.6)(typescript@5.9.3))(vue@3.5.25(typescript@5.9.3))':
+  '@voidzero-dev/vitepress-theme@1.1.61(@docsearch/css@4.3.2)(@docsearch/js@4.3.2)(axios@1.13.2)(embla-carousel@8.6.0)(react-dom@19.2.3(react@19.2.3))(react@19.2.3)(typescript@5.9.3)(vite@packages+vite)(vitepress@2.0.0-alpha.15(axios@1.13.2)(oxc-minify@0.103.0)(postcss@8.5.6)(typescript@5.9.3))(vue@3.5.25(typescript@5.9.3))':
     dependencies:
       '@number-flow/vue': 0.4.8(vue@3.5.25(typescript@5.9.3))
       '@rive-app/canvas': 2.33.0
