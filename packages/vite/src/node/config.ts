@@ -85,7 +85,6 @@ import {
   isNodeLikeBuiltin,
   isObject,
   isParentDirectory,
-  isPkgInstalled,
   mergeAlias,
   mergeConfig,
   mergeWithDefaults,
@@ -513,8 +512,8 @@ export interface UserConfig extends DefaultEnvironmentOptions {
   /**
    * Enable devtools integration. Ensure that `@vitejs/devtools` is installed as a dependency.
    * This feature is currently supported only in build mode.
-   * Defaults to true, if `@vitejs/devtools` is installed.
    * @experimental
+   * @default false
    */
   devtools?: boolean | DevToolsConfig
 }
@@ -748,14 +747,11 @@ export async function resolveDevToolsConfig(
 }> {
   const resolvedHostname = await resolveHostname(config.server?.host)
   const fallbackHostname = resolvedHostname.host ?? 'localhost'
-  const isEnabled =
-    config.devtools === true || !!(config.devtools && config.devtools.enabled)
 
   return {
     enabled:
-      config.devtools === false
-        ? false
-        : isEnabled || isPkgInstalled('@vitejs/devtools/cli-commands'),
+      config.devtools === true ||
+      !!(config.devtools && config.devtools.enabled),
     config: {
       ...(isObject(config.devtools) ? config.devtools : {}),
       host: isObject(config.devtools)

@@ -3,7 +3,7 @@ import { defineConfig } from 'vite'
 export default defineConfig({
   base: '/',
   devtools: {
-    enabled: true,
+    enabled: false,
     port: 5173,
   },
 })

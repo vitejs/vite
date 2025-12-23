@@ -1774,11 +1774,3 @@ export function monotonicDateNow(): number {
   lastDateNow++
   return lastDateNow
 }
-
-export function isPkgInstalled(moduleName: string): boolean {
-  try {
-    import.meta.resolve(moduleName)
-    return true
-  } catch {}
-  return false
-}

@@ -515,7 +515,7 @@ Learn more in Vite's [SSR guide](/guide/ssr#vite-cli). Related: [`server.middlew
 
 - **Experimental:** [Give Feedback](https://github.com/vitejs/devtools/discussions)
 - **Type:** `boolean` | `DevToolsConfig`
-- **Default:** `false` (`true` if `@vitejs/devtools` is installed)
+- **Default:** `false`
 
 Enable devtools integration for visualizing the internal state and build analysis.
 Ensure that `@vitejs/devtools` is installed as a dependency. This feature is currently supported only in build mode.
