@@ -15,7 +15,7 @@ import Footer from '@components/oss/Footer.vue'
 
 <template>
   <Hero />
-  <TrustedBy :logos="['openai', 'shopify', 'framer', 'linear', 'mercedes']" />
+  <TrustedBy :logos="['openai', 'shopify', 'stripe', 'linear', 'clickup']" />
   <HeadingSection
     heading="Redefining developer experience"
     subheading="Vite makes web development enjoyable again"

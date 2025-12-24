@@ -71,9 +71,6 @@ importers:
       '@vitejs/release-scripts':
         specifier: ^1.6.0
         version: 1.6.0(conventional-commits-filter@5.0.0)
-      '@voidzero-dev/vitepress-theme':
-        specifier: latest
-        version: 1.1.64(@docsearch/css@4.3.2)(@docsearch/js@4.3.2)(axios@1.13.2)(embla-carousel@8.6.0)(react-dom@19.2.3(react@19.2.3))(react@19.2.3)(typescript@5.9.3)(vite@packages+vite)(vitepress@2.0.0-alpha.15(axios@1.13.2)(oxc-minify@0.103.0)(postcss@8.5.6)(typescript@5.9.3))(vue@3.5.25(typescript@5.9.3))
       eslint:
         specifier: ^9.39.2
         version: 9.39.2(jiti@2.6.1)(ms@2.1.3)
@@ -138,24 +135,33 @@ importers:
         specifier: ^4.3.2
         version: 4.3.2
     devDependencies:
+      '@rive-app/canvas':
+        specifier: ^2.33.1
+        version: 2.33.1
       '@shikijs/vitepress-twoslash':
         specifier: ^3.20.0
         version: 3.20.0(ms@2.1.3)(typescript@5.9.3)
+      '@tailwindcss/vite':
+        specifier: ^4.1.18
+        version: 4.1.18(vite@packages+vite)
       '@types/express':
         specifier: ^5.0.6
         version: 5.0.6
+      '@voidzero-dev/vitepress-theme':
+        specifier: ^2.1.0
+        version: 2.1.0(@docsearch/css@4.3.2)(@docsearch/js@4.3.2)(axios@1.13.2)(embla-carousel@8.6.0)(react-dom@19.2.3(react@19.2.3))(react@19.2.3)(typescript@5.9.3)(vite@packages+vite)(vitepress@2.0.0-alpha.15(axios@1.13.2)(oxc-minify@0.103.0)(postcss@8.5.6)(typescript@5.9.3))(vue@3.5.25(typescript@5.9.3))
       feed:
         specifier: ^5.1.0
         version: 5.1.0
-      gsap:
-        specifier: ^3.14.2
-        version: 3.14.2
       markdown-it-image-size:
         specifier: ^15.0.1
         version: 15.0.1(markdown-it@14.1.0)
       oxc-minify:
         specifier: ^0.103.0
         version: 0.103.0
+      tailwindcss:
+        specifier: ^4.1.18
+        version: 4.1.18
       vitepress:
         specifier: ^2.0.0-alpha.15
         version: 2.0.0-alpha.15(axios@1.13.2)(oxc-minify@0.103.0)(postcss@8.5.6)(typescript@5.9.3)
@@ -3255,8 +3261,8 @@ packages:
   '@quansync/fs@1.0.0':
     resolution: {integrity: sha512-4TJ3DFtlf1L5LDMaM6CanJ/0lckGNtJcMjQ1NAV6zDmA0tEHKZtxNKin8EgPaVX1YzljbxckyT2tJrpQKAtngQ==}
 
-  '@rive-app/canvas@2.33.0':
-    resolution: {integrity: sha512-LwM8Ue97PQpccRv9dzrwVahDzFXCSzLkBPIZM4PqjQQOrrwCJ3rxHo6uAwqcUkMrIUAKaJsRktIPdA8EYLFJDw==}
+  '@rive-app/canvas@2.33.1':
+    resolution: {integrity: sha512-bMGWdRLwKT1ZsddgJS2uMtFQVMFk4Rc1LzdhnRfSC43DpwJ/GFaa8ocPYdhfTees7t9eY9QCtt3PIozNf/u93A==}
 
   '@rolldown/binding-android-arm64@1.0.0-beta.56':
     resolution: {integrity: sha512-GFsly+vPnl1Sa61sC2LwK4Hrz48W+YBqBmLSxBEj9IJW6nHNsWof1wwh1gwnxMIm/yN5F9M0B/cRAwn6rTINyg==}
@@ -4318,8 +4324,8 @@ packages:
   '@vitest/utils@4.0.15':
     resolution: {integrity: sha512-HXjPW2w5dxhTD0dLwtYHDnelK3j8sR8cWIaLxr22evTyY6q8pRCjZSmhRWVjBaOVXChQd6AwMzi9pucorXCPZA==}
 
-  '@voidzero-dev/vitepress-theme@1.1.64':
-    resolution: {integrity: sha512-aKYNMKXM8XAd0kg9WvwxOMCImI+J/3RO0Jf9yuAdfa8NsjxXRSOJL2TRvg225xwrDhzwzovATPeKKE9LduY7pg==}
+  '@voidzero-dev/vitepress-theme@2.1.0':
+    resolution: {integrity: sha512-YT1yVbVq+pHs927uh+BHOQR5NhDdD4AKLO5jPMvFl7GD3P+5EQDdlCw3L3pX285CqERYOfFguR9L9zG2HoCZCw==}
     peerDependencies:
       '@docsearch/css': ^4.3.2
       '@docsearch/js': ^4.3.2
@@ -5455,9 +5461,6 @@ packages:
   gray-matter@4.0.3:
     resolution: {integrity: sha512-5v6yZd4JK3eMI3FqqCouswVqwugaA9r4dNZB1wwcmrD02QkV5H0y7XBQW8QwQqEaZY1pM9aqORSORhJRdNK44Q==}
     engines: {node: '>=6.0'}
-
-  gsap@3.14.2:
-    resolution: {integrity: sha512-P8/mMxVLU7o4+55+1TCnQrPmgjPKnwkzkXOK1asnR9Jg2lna4tEY5qBJjMmAaOBDDZWtlRjBXjLa0w53G/uBLA==}
 
   handlebars@4.7.8:
     resolution: {integrity: sha512-vafaFqs8MZkRrSX7sFVUdo3ap/eNiLnb4IakshzvP56X5Nr1iGKAIqdX6tMlm6HcNRIkr6AxO5jFEoJzzpT8aQ==}
@@ -6700,8 +6703,8 @@ packages:
     resolution: {integrity: sha512-cnE+y8bz4NhMjISKbgeVJtqNbtf5QpjZP+Bslo+UqkIt9QPnX9q095eiRRASJG1/tz6dlNr6Z5NsBiWYokp6EQ==}
     hasBin: true
 
-  reka-ui@2.6.1:
-    resolution: {integrity: sha512-XK7cJDQoNuGXfCNzBBo/81Yg/OgjPwvbabnlzXG2VsdSgNsT6iIkuPBPr+C0Shs+3bb0x0lbPvgQAhMSCKm5Ww==}
+  reka-ui@2.7.0:
+    resolution: {integrity: sha512-m+XmxQN2xtFzBP3OAdIafKq7C8OETo2fqfxcIIxYmNN2Ch3r5oAf6yEYCIJg5tL/yJU2mHqF70dCCekUkrAnXA==}
     peerDependencies:
       vue: '>= 3.2.0'
 
@@ -9131,7 +9134,7 @@ snapshots:
     dependencies:
       quansync: 1.0.0
 
-  '@rive-app/canvas@2.33.0': {}
+  '@rive-app/canvas@2.33.1': {}
 
   '@rolldown/binding-android-arm64@1.0.0-beta.56':
     optional: true
@@ -10066,10 +10069,10 @@ snapshots:
       '@vitest/pretty-format': 4.0.15
       tinyrainbow: 3.0.3
 
-  '@voidzero-dev/vitepress-theme@1.1.64(@docsearch/css@4.3.2)(@docsearch/js@4.3.2)(axios@1.13.2)(embla-carousel@8.6.0)(react-dom@19.2.3(react@19.2.3))(react@19.2.3)(typescript@5.9.3)(vite@packages+vite)(vitepress@2.0.0-alpha.15(axios@1.13.2)(oxc-minify@0.103.0)(postcss@8.5.6)(typescript@5.9.3))(vue@3.5.25(typescript@5.9.3))':
+  '@voidzero-dev/vitepress-theme@2.1.0(@docsearch/css@4.3.2)(@docsearch/js@4.3.2)(axios@1.13.2)(embla-carousel@8.6.0)(react-dom@19.2.3(react@19.2.3))(react@19.2.3)(typescript@5.9.3)(vite@packages+vite)(vitepress@2.0.0-alpha.15(axios@1.13.2)(oxc-minify@0.103.0)(postcss@8.5.6)(typescript@5.9.3))(vue@3.5.25(typescript@5.9.3))':
     dependencies:
       '@number-flow/vue': 0.4.8(vue@3.5.25(typescript@5.9.3))
-      '@rive-app/canvas': 2.33.0
+      '@rive-app/canvas': 2.33.1
       '@tailwindcss/typography': 0.5.19(tailwindcss@4.1.18)
       '@tailwindcss/vite': 4.1.18(vite@packages+vite)
       '@vue/devtools-api': 8.0.5
@@ -10085,7 +10088,7 @@ snapshots:
       mark.js: 8.11.1
       minisearch: 7.2.0
       moment: 2.30.1
-      reka-ui: 2.6.1(typescript@5.9.3)(vue@3.5.25(typescript@5.9.3))
+      reka-ui: 2.7.0(typescript@5.9.3)(vue@3.5.25(typescript@5.9.3))
       shaders: 2.2.24
       tailwindcss: 4.1.18
       typewriter-effect: 2.22.0(react-dom@19.2.3(react@19.2.3))(react@19.2.3)
@@ -11344,8 +11347,6 @@ snapshots:
       kind-of: 6.0.3
       section-matter: 1.0.0
       strip-bom-string: 1.0.0
-
-  gsap@3.14.2: {}
 
   handlebars@4.7.8:
     dependencies:
@@ -12677,7 +12678,7 @@ snapshots:
     dependencies:
       jsesc: 3.0.2
 
-  reka-ui@2.6.1(typescript@5.9.3)(vue@3.5.25(typescript@5.9.3)):
+  reka-ui@2.7.0(typescript@5.9.3)(vue@3.5.25(typescript@5.9.3)):
     dependencies:
       '@floating-ui/dom': 1.7.4
       '@floating-ui/vue': 1.1.9(vue@3.5.25(typescript@5.9.3))

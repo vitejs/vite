@@ -616,12 +616,8 @@ In addition, Vite is highly extensible via its [Plugin API](https://vite.dev/gui
       }),
     ],
     optimizeDeps: {
-      include: [
-        '@shikijs/vitepress-twoslash/client',
-        'gsap',
-        'gsap/dist/ScrollTrigger',
-        'gsap/dist/MotionPathPlugin',
-      ],
+      include: ['@shikijs/vitepress-twoslash/client'],
+      exclude: ['@voidzero-dev/vitepress-theme'],
     },
     define: {
       __VITE_VERSION__: JSON.stringify(viteVersion),
