@@ -11,7 +11,6 @@ import {
   isExternalUrl,
   isNodeBuiltin,
   moduleListContains,
-  normalizePath,
 } from '../utils'
 import { browserExternalId, optionalPeerDepId } from '../plugins/resolve'
 import { isModuleCSSRequest } from '../plugins/css'
@@ -94,17 +93,10 @@ export function rolldownDepPlugin(
     id: string,
     importer: string | undefined,
     kind: ImportKind,
-    resolveDir?: string,
   ): Promise<string | undefined> => {
-    let _importer: string | undefined
-    // explicit resolveDir - this is passed only during yarn pnp resolve for
-    // entries
-    if (resolveDir) {
-      _importer = normalizePath(path.join(resolveDir, '*'))
-    } else if (importer) {
-      // map importer ids to file paths for correct resolution
-      _importer = importer in qualified ? qualified[importer] : importer
-    }
+    // map importer ids to file paths for correct resolution
+    const _importer =
+      importer && importer in qualified ? qualified[importer] : importer
     const resolver = kind.startsWith('require') ? _resolveRequire : _resolve
     return resolver(environment, id, _importer)
   }
