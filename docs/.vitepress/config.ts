@@ -10,6 +10,7 @@ import {
 import llmstxt from 'vitepress-plugin-llms'
 import { markdownItImageSize } from 'markdown-it-image-size'
 import tailwindcss from '@tailwindcss/vite'
+// @ts-ignore
 import aliases from '@voidzero-dev/vitepress-theme/src/aliases'
 
 import packageJson from '../../packages/vite/package.json' with { type: 'json' }

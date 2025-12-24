@@ -2,9 +2,7 @@ import { h } from 'vue'
 import TwoslashFloatingVue from '@shikijs/vitepress-twoslash/client'
 import '@shikijs/vitepress-twoslash/style.css'
 import 'virtual:group-icons.css'
-import VoidZeroTheme, {
-  themeContextKey,
-} from '@voidzero-dev/vitepress-theme/src/index'
+import VoidZeroTheme, { themeContextKey } from '@voidzero-dev/vitepress-theme'
 import '@voidzero-dev/vitepress-theme/src/vitepress/styles/index.css'
 
 // inject project variant assets

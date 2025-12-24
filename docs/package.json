@@ -3,7 +3,6 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "typecheck": "vue-tsc",
     "docs": "vitepress dev",
     "docs-build": "vitepress build",
     "docs-serve": "vitepress serve"

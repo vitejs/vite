@@ -1,4 +1,4 @@
-<script setup lang="ts">
+<script setup>
 import { sponsors } from '../../_data/sponsors.js'
 // these components live in @voidzero-dev/vitepress-theme
 import Hero from '@components/vite/Hero.vue'
