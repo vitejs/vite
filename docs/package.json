@@ -9,12 +9,16 @@
     "docs-serve": "vitepress serve"
   },
   "devDependencies": {
+    "@rive-app/canvas": "^2.33.1",
     "@shikijs/vitepress-twoslash": "^3.20.0",
+    "@tailwindcss/vite": "^4.1.18",
     "@types/express": "^5.0.6",
+    "@voidzero-dev/vitepress-theme": "link:../../../voidzero/vitepress-theme-voidzero",
     "feed": "^5.1.0",
     "gsap": "^3.14.2",
     "markdown-it-image-size": "^15.0.1",
     "oxc-minify": "^0.103.0",
+    "tailwindcss": "^4.1.18",
     "vitepress": "^2.0.0-alpha.15",
     "vitepress-plugin-group-icons": "^1.6.5",
     "vitepress-plugin-llms": "^1.9.3",
