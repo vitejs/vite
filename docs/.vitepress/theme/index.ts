@@ -1,11 +1,7 @@
 import { h } from 'vue'
 import TwoslashFloatingVue from '@shikijs/vitepress-twoslash/client'
 import '@shikijs/vitepress-twoslash/style.css'
-import SvgImage from './components/SvgImage.vue'
-import YouTubeVideo from './components/YouTubeVideo.vue'
-import NonInheritBadge from './components/NonInheritBadge.vue'
 import 'virtual:group-icons.css'
-import AsideSponsors from './components/AsideSponsors.vue'
 import VoidZeroTheme, {
   themeContextKey,
 } from '@voidzero-dev/vitepress-theme/src/index'
@@ -16,6 +12,12 @@ import logoDark from '@assets/logos/vite-dark.svg'
 import logoLight from '@assets/logos/vite-light.svg'
 import footerBg from '@assets/vite/footer-background.jpg'
 import monoIcon from '@assets/icons/vite-mono.svg'
+
+// components
+import SvgImage from './components/SvgImage.vue'
+import YouTubeVideo from './components/YouTubeVideo.vue'
+import NonInheritBadge from './components/NonInheritBadge.vue'
+import AsideSponsors from './components/AsideSponsors.vue'
 
 export default {
   Layout() {
