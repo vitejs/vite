@@ -570,9 +570,6 @@ export default defineConfig({
         // Allow serving files from the linked theme package (parent directory)
         allow: [resolve(__dirname, '..', '..', '..', '..', 'voidzero')],
       },
-      watch: {
-        ignored: ['!**/node_modules/@voidzero-dev/**'],
-      },
     },
     ssr: {
       noExternal: ['@voidzero-dev/vitepress-theme'],
