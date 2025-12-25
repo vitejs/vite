@@ -1,4 +1,4 @@
-import path, { resolve } from 'node:path'
+import path from 'node:path'
 import fs from 'node:fs'
 import type { DefaultTheme, HeadConfig } from 'vitepress'
 import { defineConfig } from 'vitepress'
@@ -9,9 +9,7 @@ import {
 } from 'vitepress-plugin-group-icons'
 import llmstxt from 'vitepress-plugin-llms'
 import { markdownItImageSize } from 'markdown-it-image-size'
-import tailwindcss from '@tailwindcss/vite'
-// @ts-expect-error types will be added later
-import aliases from '@voidzero-dev/vitepress-theme/src/aliases'
+import { extendConfig } from '@voidzero-dev/vitepress-theme/config'
 
 import packageJson from '../../packages/vite/package.json' with { type: 'json' }
 import { buildEnd } from './buildEnd.config'
@@ -87,7 +85,7 @@ function inlineScript(file: string): HeadConfig {
   ]
 }
 
-export default defineConfig({
+const config = defineConfig({
   title: `Vite${additionalTitle}`,
   description: 'Next Generation Frontend Tooling',
   cleanUrls: true,
@@ -142,6 +140,7 @@ export default defineConfig({
     logo: '/logo.svg',
 
     banner: {
+      id: 'vite+',
       text: 'Announcing Vite+ | The Unified Toolchain for the Web',
       url: 'https://voidzero.dev/posts/announcing-vite-plus?utm_source=vite&utm_content=top_banner',
     },
@@ -565,29 +564,7 @@ export default defineConfig({
     },
   },
   vite: {
-    server: {
-      fs: {
-        // Allow serving files from the linked theme package (parent directory)
-        allow: [resolve(__dirname, '..', '..', '..', '..', 'voidzero')],
-      },
-    },
-    ssr: {
-      noExternal: ['@voidzero-dev/vitepress-theme'],
-    },
-    assetsInclude: ['**/*.riv'],
-    resolve: {
-      alias: {
-        ...aliases,
-        // force components in dep theme to use the version of rive installed
-        // here so it doesn't break during dev
-        '@rive-app/canvas': resolve(
-          __dirname,
-          '../node_modules/@rive-app/canvas',
-        ),
-      },
-    },
     plugins: [
-      tailwindcss(),
       groupIconVitePlugin({
         customIcon: {
           firebase: 'vscode-icons:file-type-firebase',
@@ -616,7 +593,6 @@ In addition, Vite is highly extensible via its [Plugin API](https://vite.dev/gui
     ],
     optimizeDeps: {
       include: ['@shikijs/vitepress-twoslash/client'],
-      exclude: ['@voidzero-dev/vitepress-theme'],
     },
     define: {
       __VITE_VERSION__: JSON.stringify(viteVersion),
@@ -624,3 +600,5 @@ In addition, Vite is highly extensible via its [Plugin API](https://vite.dev/gui
   },
   buildEnd,
 })
+
+export default extendConfig(config)
