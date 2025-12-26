@@ -1,4 +1,8 @@
 import { onMounted, onUnmounted, ref } from 'vue'
+import type {
+  Sponsor,
+  SponsorTier,
+} from '@voidzero-dev/vitepress-theme/src/types/sponsors'
 import voidZeroSvg from './images/voidzero.svg'
 import boltSvg from './images/bolt.svg'
 import nuxtLabsSvg from './images/nuxtlabs.svg'
@@ -12,19 +16,8 @@ interface Sponsors {
   bronze: Sponsor[]
 }
 
-interface Sponsor {
-  name: string
-  img: string
-  url: string
-  /**
-   * Expects to also have an **inversed** image with `-dark` postfix.
-   */
-  hasDark?: true
-}
-
 // shared data across instances so we load only once.
-const data =
-  ref<{ tier: string; size: 'big' | 'medium' | 'small'; items: Sponsor[] }[]>()
+const data = ref<SponsorTier[]>()
 
 const dataHost = 'https://sponsors.vuejs.org'
 const dataUrl = `${dataHost}/vite.json`
@@ -100,7 +93,7 @@ export function useSponsor() {
   }
 }
 
-function mapSponsors(sponsors: Sponsors) {
+function mapSponsors(sponsors: Sponsors): SponsorTier[] {
   return [
     {
       tier: 'in partnership with',

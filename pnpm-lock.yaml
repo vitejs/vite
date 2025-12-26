@@ -127,13 +127,6 @@ importers:
         version: 4.0.15(@types/node@22.19.3)
 
   docs:
-    dependencies:
-      '@docsearch/css':
-        specifier: ^4.3.2
-        version: 4.3.2
-      '@docsearch/js':
-        specifier: ^4.3.2
-        version: 4.3.2
     devDependencies:
       '@shikijs/vitepress-twoslash':
         specifier: ^3.20.0
@@ -142,8 +135,8 @@ importers:
         specifier: ^5.0.6
         version: 5.0.6
       '@voidzero-dev/vitepress-theme':
-        specifier: ^3.0.2
-        version: 3.0.2(@docsearch/css@4.3.2)(@docsearch/js@4.3.2)(axios@1.13.2)(focus-trap@7.6.6)(typescript@5.9.3)(vite@packages+vite)(vitepress@2.0.0-alpha.15(axios@1.13.2)(oxc-minify@0.103.0)(postcss@8.5.6)(typescript@5.9.3))(vue@3.5.25(typescript@5.9.3))
+        specifier: ^3.2.1
+        version: 3.2.1(axios@1.13.2)(focus-trap@7.6.6)(typescript@5.9.3)(vite@packages+vite)(vitepress@2.0.0-alpha.15(axios@1.13.2)(oxc-minify@0.103.0)(postcss@8.5.6)(typescript@5.9.3))(vue@3.5.25(typescript@5.9.3))
       feed:
         specifier: ^5.1.0
         version: 5.1.0
@@ -3544,8 +3537,8 @@ packages:
   '@standard-schema/spec@1.0.0':
     resolution: {integrity: sha512-m2bOd0f2RT9k8QJx1JN85cZYyH1RqFBdlwtkSlf4tBDYLCiiZnv1fIIwacK6cqwXavOydf0NPToMQgpKq+dVlA==}
 
-  '@swc/helpers@0.5.17':
-    resolution: {integrity: sha512-5IKx/Y13RsYd+sauPb2x+U/xZikHjolzfuDgTAl/Tdf3Q8rslRvC19NKDLgAJQ6wsqADk10ntlv08nPFw/gO/A==}
+  '@swc/helpers@0.5.18':
+    resolution: {integrity: sha512-TXTnIcNJQEKwThMMqBXsZ4VGAza6bvN4pa41Rkqoio6QBKMvo+5lexeTMScGCIxtzgQJzElcvIltani+adC5PQ==}
 
   '@tailwindcss/node@4.1.18':
     resolution: {integrity: sha512-DoR7U1P7iYhw16qJ49fgXUlry1t4CpXeErJHnQ44JgTSKMaZUdf17cfn5mHchfJ4KRBZRFA/Coo+MUF5+gOaCQ==}
@@ -4307,18 +4300,11 @@ packages:
   '@vitest/utils@4.0.15':
     resolution: {integrity: sha512-HXjPW2w5dxhTD0dLwtYHDnelK3j8sR8cWIaLxr22evTyY6q8pRCjZSmhRWVjBaOVXChQd6AwMzi9pucorXCPZA==}
 
-  '@voidzero-dev/vitepress-theme@3.0.2':
-    resolution: {integrity: sha512-uAoKqtdMURxD71YAdNVlXME2TN+6sPTkiMWBGyx3s0OLSfbgmqqIWWNOYl50GR9I9jxbSxoc+nhi5Mse72oG3g==}
+  '@voidzero-dev/vitepress-theme@3.2.1':
+    resolution: {integrity: sha512-aa67pg5sPFASQBNcWSiz7YxizKnXjVMutuK2D96OvseNgCT/HZ061hNxCtrB4xdQSSLF18VvncbAfF+ZYpC4QQ==}
     peerDependencies:
-      '@docsearch/css': ^4.3.2
-      '@docsearch/js': ^4.3.2
       vitepress: ^2.0.0-alpha.12
       vue: ^3.5.0
-    peerDependenciesMeta:
-      '@docsearch/css':
-        optional: true
-      '@docsearch/js':
-        optional: true
 
   '@volar/language-core@2.4.26':
     resolution: {integrity: sha512-hH0SMitMxnB43OZpyF1IFPS9bgb2I3bpCh76m2WEK7BE0A0EzpYsRp0CCH2xNKshr7kacU5TQBLYn4zj7CG60A==}
@@ -8765,11 +8751,11 @@ snapshots:
 
   '@internationalized/date@3.10.1':
     dependencies:
-      '@swc/helpers': 0.5.17
+      '@swc/helpers': 0.5.18
 
   '@internationalized/number@3.6.5':
     dependencies:
-      '@swc/helpers': 0.5.17
+      '@swc/helpers': 0.5.18
 
   '@isaacs/balanced-match@4.0.1': {}
 
@@ -9284,7 +9270,7 @@ snapshots:
 
   '@standard-schema/spec@1.0.0': {}
 
-  '@swc/helpers@0.5.17':
+  '@swc/helpers@0.5.18':
     dependencies:
       tslib: 2.8.1
 
@@ -9980,8 +9966,10 @@ snapshots:
       '@vitest/pretty-format': 4.0.15
       tinyrainbow: 3.0.3
 
-  '@voidzero-dev/vitepress-theme@3.0.2(@docsearch/css@4.3.2)(@docsearch/js@4.3.2)(axios@1.13.2)(focus-trap@7.6.6)(typescript@5.9.3)(vite@packages+vite)(vitepress@2.0.0-alpha.15(axios@1.13.2)(oxc-minify@0.103.0)(postcss@8.5.6)(typescript@5.9.3))(vue@3.5.25(typescript@5.9.3))':
+  '@voidzero-dev/vitepress-theme@3.2.1(axios@1.13.2)(focus-trap@7.6.6)(typescript@5.9.3)(vite@packages+vite)(vitepress@2.0.0-alpha.15(axios@1.13.2)(oxc-minify@0.103.0)(postcss@8.5.6)(typescript@5.9.3))(vue@3.5.25(typescript@5.9.3))':
     dependencies:
+      '@docsearch/css': 4.3.2
+      '@docsearch/js': 4.3.2
       '@rive-app/canvas': 2.33.1
       '@tailwindcss/typography': 0.5.19(tailwindcss@4.1.18)
       '@tailwindcss/vite': 4.1.18(vite@packages+vite)
@@ -9995,9 +9983,6 @@ snapshots:
       tailwindcss: 4.1.18
       vitepress: 2.0.0-alpha.15(axios@1.13.2)(oxc-minify@0.103.0)(postcss@8.5.6)(typescript@5.9.3)
       vue: 3.5.25(typescript@5.9.3)
-    optionalDependencies:
-      '@docsearch/css': 4.3.2
-      '@docsearch/js': 4.3.2
     transitivePeerDependencies:
       - '@vue/composition-api'
       - async-validator

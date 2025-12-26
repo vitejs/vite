@@ -1,5 +1,4 @@
 <script setup>
-import { sponsors } from '../../_data/sponsors.js'
 // these components live in @voidzero-dev/vitepress-theme
 import Hero from '@components/vite/Hero.vue'
 import ViteFeatureGrid1 from '@components/vite/FeatureGrid1.vue'
@@ -11,11 +10,16 @@ import HeadingSection from '@components/oss/HeadingSection.vue'
 import Sponsors from '@components/oss/Sponsors.vue'
 import Spacer from '@components/shared/Spacer.vue'
 import Footer from '@components/oss/Footer.vue'
+import { useSponsor } from './composables/sponsor'
+
+const { data: sponsors } = useSponsor()
 </script>
 
 <template>
   <Hero />
-  <TrustedBy :logos="['openai', 'shopify', 'stripe', 'linear', 'clickup']" />
+  <TrustedBy
+    :logos="['openai', 'shopify', 'stripe', 'linear', 'clickup', 'wiz']"
+  />
   <HeadingSection
     heading="Redefining developer experience"
     subheading="Vite makes web development enjoyable again"
