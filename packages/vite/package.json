@@ -1,6 +1,6 @@
 {
   "name": "vite",
-  "version": "8.0.0-beta.4",
+  "version": "8.0.0-beta.5",
   "type": "module",
   "license": "MIT",
   "author": "Evan You",
@@ -78,7 +78,7 @@
     "lightningcss": "^1.30.2",
     "picomatch": "^4.0.3",
     "postcss": "^8.5.6",
-    "rolldown": "1.0.0-beta.56",
+    "rolldown": "1.0.0-beta.57",
     "tinyglobby": "^0.2.15"
   },
   "optionalDependencies": {
@@ -90,7 +90,7 @@
     "@jridgewell/trace-mapping": "^0.3.31",
     "@oxc-project/types": "0.103.0",
     "@polka/compression": "^1.0.0-next.25",
-    "@rolldown/pluginutils": "1.0.0-beta.56",
+    "@rolldown/pluginutils": "1.0.0-beta.57",
     "@rollup/plugin-alias": "^5.1.1",
     "@rollup/plugin-commonjs": "^29.0.0",
     "@rollup/plugin-dynamic-import-vars": "2.1.4",
@@ -130,7 +130,7 @@
     "postcss-modules": "^6.0.1",
     "premove": "^4.0.0",
     "resolve.exports": "^2.0.3",
-    "rolldown-plugin-dts": "^0.18.3",
+    "rolldown-plugin-dts": "^0.20.0",
     "rollup": "^4.43.0",
     "rollup-plugin-license": "^3.6.0",
     "sass": "^1.96.0",
