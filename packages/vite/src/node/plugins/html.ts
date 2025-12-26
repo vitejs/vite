@@ -1175,10 +1175,29 @@ export function postImportMapHook(): IndexHtmlTransformHook {
     })
 
     if (importMap) {
-      html = html.replace(
-        importMapAppendRE,
-        (match) => `${importMap}\n${match}`,
-      )
+      // Check if there are modulepreload links in the head
+      // Extract head section to check for modulepreload links
+      const headMatch = html.match(/<head[^>]*>([\s\S]*?)<\/head>/i)
+      const hasModulePreloadInHead =
+        headMatch && modulePreloadLinkRE.test(headMatch[1])
+
+      if (hasModulePreloadInHead) {
+        // Place importmap in head before the first modulepreload link
+        // This ensures importmap is processed before modulepreload links
+        html = html.replace(
+          /(<head[^>]*>[\s\S]*?)(<link[^>]*rel\s*=\s*(?:"modulepreload"|'modulepreload'|modulepreload)[\s\S]*?\/>)/i,
+          (_match, headStart, firstPreload) => {
+            return `${headStart}${importMap}\n${firstPreload}`
+          },
+        )
+      } else {
+        // No modulepreload links in head, place importmap before the first
+        // module script or modulepreload link (could be in body)
+        html = html.replace(
+          importMapAppendRE,
+          (match) => `${importMap}\n${match}`,
+        )
+      }
     }
 
     return html
