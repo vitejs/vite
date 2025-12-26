@@ -1,6 +1,6 @@
 import path from 'node:path'
 import fs from 'node:fs'
-import type { DefaultTheme, HeadConfig } from 'vitepress'
+import type { HeadConfig } from 'vitepress'
 import { defineConfig } from 'vitepress'
 import { transformerTwoslash } from '@shikijs/vitepress-twoslash'
 import {
@@ -10,7 +10,7 @@ import {
 import llmstxt from 'vitepress-plugin-llms'
 import { markdownItImageSize } from 'markdown-it-image-size'
 import { extendConfig } from '@voidzero-dev/vitepress-theme/config'
-
+import type { FooterLink } from '@voidzero-dev/vitepress-theme'
 import packageJson from '../../packages/vite/package.json' with { type: 'json' }
 import { buildEnd } from './buildEnd.config'
 
@@ -46,8 +46,8 @@ const additionalTitle = ((): string => {
       return ''
   }
 })()
-const versionLinks = ((): DefaultTheme.NavItemWithLink[] => {
-  const links: DefaultTheme.NavItemWithLink[] = []
+const versionLinks = (() => {
+  const links: FooterLink[] = []
 
   if (deployType !== 'main') {
     links.push({
@@ -197,13 +197,7 @@ const config = defineConfig({
         },
         {
           title: 'Versions',
-          items: [
-            { text: 'Vite 6 Docs', link: 'https://v6.vite.dev' },
-            { text: 'Vite 5 Docs', link: 'https://v5.vite.dev' },
-            { text: 'Vite 4 Docs', link: 'https://v4.vite.dev' },
-            { text: 'Vite 3 Docs', link: 'https://v3.vite.dev' },
-            { text: 'Vite 2 Docs', link: 'https://v2.vite.dev' },
-          ],
+          items: versionLinks,
         },
         /*{
           title: 'Legal',
