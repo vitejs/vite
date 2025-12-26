@@ -19,6 +19,7 @@ import type {
 import type { InferCustomEventPayload } from '#types/customEvent'
 import type { ResolvedConfig } from '..'
 import { isObject } from '../utils'
+import { getEffectiveHost } from './forwardedHeaders'
 import type { NormalizedHotChannel, NormalizedHotChannelClient } from './hmr'
 import { normalizeHotChannel } from './hmr'
 import type { HttpServer } from '.'
@@ -165,6 +166,7 @@ export function createWebSocketServer(
     config.server.allowedHosts === true
       ? config.server.allowedHosts
       : Object.freeze([...config.server.allowedHosts]) // Freeze the array to allow caching
+  const trustProxy = config.server.trustProxy ?? false
 
   const shouldHandle = (req: IncomingMessage) => {
     const protocol = req.headers['sec-websocket-protocol']!
@@ -175,7 +177,7 @@ export function createWebSocketServer(
 
     if (
       allowedHosts !== true &&
-      !isHostAllowed(req.headers.host, allowedHosts)
+      !isHostAllowed(getEffectiveHost(req, trustProxy), allowedHosts)
     ) {
       return false
     }
