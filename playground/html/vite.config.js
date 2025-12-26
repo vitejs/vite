@@ -3,6 +3,14 @@ import { defineConfig } from 'vite'
 
 export default defineConfig({
   base: './',
+  resolve: {
+    alias: {
+      'some-pkg': resolve(__dirname, 'public/importmap-pkg.js'),
+    },
+  },
+  optimizeDeps: {
+    exclude: ['some-pkg'],
+  },
   build: {
     rollupOptions: {
       input: {
@@ -42,7 +50,7 @@ export default defineConfig({
         ),
         malformedUrl: resolve(__dirname, 'malformed-url.html'),
       },
-      external: ['/external-path-by-rollup-options.js'],
+      external: ['/external-path-by-rollup-options.js', 'some-pkg'],
     },
   },
 
