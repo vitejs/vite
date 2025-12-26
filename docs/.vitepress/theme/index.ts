@@ -3,6 +3,7 @@ import TwoslashFloatingVue from '@shikijs/vitepress-twoslash/client'
 import '@shikijs/vitepress-twoslash/style.css'
 import 'virtual:group-icons.css'
 import Theme from '@voidzero-dev/vitepress-theme/src/vite'
+import './styles.css'
 
 // components
 import SvgImage from './components/SvgImage.vue'
