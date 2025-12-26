@@ -372,7 +372,7 @@ These breaking changes are expected to only affect a minority of use cases:
   - `resolveImportMeta` hook ([rolldown#1010](https://github.com/rolldown/rolldown/issues/1010))
   - `renderDynamicImport` hook ([rolldown#4532](https://github.com/rolldown/rolldown/issues/4532))
   - `resolveFileUrl` hook
-- `parseAst` / `parseAstAsync` functions are now deprecated in favor of `parse` / `parseAsync` functions which has more features.
+- `parseAst` / `parseAstAsync` functions are now deprecated in favor of `parseSync` / `parse` functions which has more features.
 
 ## Migration from v6
 
