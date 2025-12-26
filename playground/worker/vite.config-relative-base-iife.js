@@ -11,7 +11,7 @@ export default defineConfig(({ isPreview }) => ({
   worker: {
     format: 'iife',
     plugins: () => [workerPluginTestPlugin()],
-    rollupOptions: {
+    rolldownOptions: {
       output: {
         assetFileNames: 'worker-assets/worker_asset-[name]-[hash].[ext]',
         chunkFileNames: 'worker-chunks/worker_chunk-[name]-[hash].js',
@@ -23,7 +23,7 @@ export default defineConfig(({ isPreview }) => ({
     outDir: 'dist/relative-base-iife',
     assetsInlineLimit: (filePath) =>
       filePath.endsWith('.svg') ? false : undefined,
-    rollupOptions: {
+    rolldownOptions: {
       output: {
         assetFileNames: 'other-assets/[name]-[hash].[ext]',
         chunkFileNames: 'chunks/[name]-[hash].js',
