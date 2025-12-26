@@ -26,6 +26,7 @@ import {
   normalizePath,
   rawRE,
   removeLeadingSlash,
+  removeRawQuery,
   removeUrlQuery,
   urlRE,
 } from '../utils'
@@ -198,8 +199,12 @@ export function assetPlugin(config: ResolvedConfig): Plugin {
         },
       },
       async handler(id) {
-        // raw requests, read from disk
-        if (rawRE.test(id)) {
+        // When both url and raw are present, prioritize url (return URL, not content)
+        const hasUrl = urlRE.test(id)
+        const hasRaw = rawRE.test(id)
+
+        // raw requests, read from disk (but skip if url is also present)
+        if (hasRaw && !hasUrl) {
           const file = checkPublicFile(id, config) || cleanUrl(id)
           this.addWatchFile(file)
           // raw query, read file and return as string
@@ -211,11 +216,15 @@ export function assetPlugin(config: ResolvedConfig): Plugin {
           }
         }
 
-        if (!urlRE.test(id) && !config.assetsInclude(cleanUrl(id))) {
+        if (!hasUrl && !config.assetsInclude(cleanUrl(id))) {
           return
         }
 
+        // Remove both url and raw query parameters before getting the file URL
         id = removeUrlQuery(id)
+        if (hasRaw) {
+          id = removeRawQuery(id)
+        }
         let url = await fileToUrl(this, id)
 
         // Inherit HMR timestamp if this asset was invalidated
