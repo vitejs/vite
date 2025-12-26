@@ -118,6 +118,18 @@ w.addEventListener('message', (ev) =>
   text('.worker-import-meta-url', JSON.stringify(ev.data)),
 )
 
+// url import worker (multiline with trailing comma - formatted by prettier)
+const wMultiline = new Worker(
+  new URL(
+    '../url-worker.js',
+    import.meta.url,
+  ),
+  { type: 'module' },
+)
+wMultiline.addEventListener('message', (ev) =>
+  text('.worker-import-meta-url-multiline', JSON.stringify(ev.data)),
+)
+
 // url import worker with alias path
 const wResolve = new Worker(
   new URL('@/url-worker.js', import.meta.url),
