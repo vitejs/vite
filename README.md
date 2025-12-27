@@ -56,3 +56,8 @@ See [Contributing Guide](CONTRIBUTING.md).
     <img alt="sponsors" src="https://sponsors.vuejs.org/vite.svg?v2">
   </a>
 </p>
+
+
+## Contributing
+
+Contributions are welcome! Please feel free to submit a Pull Request.
