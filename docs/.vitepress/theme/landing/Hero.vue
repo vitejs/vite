@@ -60,7 +60,7 @@ const installTabs = [
       </div>
       <CodeGroup
         :tabs="installTabs"
-        class="hidden md:block w-full"
+        class="hidden md:block w-full -mb-[16px]"
         style="
           --vp-code-tab-bg: var(--color-slate);
           --vp-code-block-bg: var(--color-slate);
@@ -68,9 +68,9 @@ const installTabs = [
         "
       />
     </div>
-    <div class="flex flex-col min-h-[22rem] sm:min-h-[30rem]">
+    <div class="flex flex-col sm:min-h-[30rem]">
       <div
-        class="relative px-10 h-full flex flex-col justify-center overflow-clip py-10 sm:py-0"
+        class="relative px-10 pb-10 md:pt-10 h-full flex flex-col justify-center overflow-clip"
       >
         <RiveAnimation
           :desktop-src="viteAnimation"
