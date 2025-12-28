@@ -3454,6 +3454,8 @@ export const convertTargets = (
     throw new Error(`Unsupported target "${entry}"`)
   }
 
+  targets.ios_saf ??= targets.safari
+
   convertTargetsCache.set(esbuildTarget, targets)
   return targets
 }
