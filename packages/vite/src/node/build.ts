@@ -288,6 +288,11 @@ export interface BuildEnvironmentOptions {
    */
   chunkSizeWarningLimit?: number
   /**
+   * List of chunk size warnings to ignore.
+   * @default []
+   */
+  chunkSizeWarningIgnoreList?: ReadonlyArray<string>
+  /**
    * Rollup watch options
    * https://rollupjs.org/configuration-options/#watch
    * @default null
