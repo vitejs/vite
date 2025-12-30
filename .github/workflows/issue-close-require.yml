@@ -13,7 +13,7 @@ jobs:
       pull-requests: write # for actions-cool/issues-helper to update PRs
     steps:
       - name: needs reproduction
-        uses: actions-cool/issues-helper@d1d51fccf39469b5458203b1369060db0ff0c0db # v3
+        uses: actions-cool/issues-helper@e2ff99831a4f13625d35064e2b3dfe65c07a0396 # v3
         with:
           actions: "close-issues"
           token: ${{ secrets.GITHUB_TOKEN }}
