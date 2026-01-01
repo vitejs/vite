@@ -3411,7 +3411,7 @@ const esMap: Record<number, string[]> = {
     'firefox146',
     'opera96',
   ],
-  // https://caniuse.com/?feats=mdn-javascript_builtins_object_groupby,wf-array-group,wf-promise-withresolvers,mdn-javascript_builtins_arraybuffer_transfer,mdn-javascript_builtins_string_iswellformed,mdn-javascript_builtins_string_towellformed,wf-atomics-wait-async,mdn-javascript_builtins_arraybuffer_resize,mdn-javascript_builtins_sharedarraybuffer_grow
+  // https://caniuse.com/sr-es15
   2024: [
     'chrome119',
     'edge119',
