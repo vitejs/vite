@@ -281,7 +281,10 @@ export function esbuildPlugin(config: ResolvedConfig): Plugin {
   const options = config.esbuild as ESBuildOptions
   const { jsxInject, include, exclude, ...esbuildTransformOptions } = options
 
-  const filter = createFilter(include || /\.(m?ts|[jt]sx)$/, exclude || /\.js$/)
+  const filter = createFilter(
+    include || /\.([cm]?ts|[jt]sx)$/,
+    exclude || /\.js$/,
+  )
 
   // Remove optimization options for dev as we only need to transpile them,
   // and for build as the final optimization is in `buildEsbuildPlugin`
