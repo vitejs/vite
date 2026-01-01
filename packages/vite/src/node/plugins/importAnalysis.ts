@@ -623,7 +623,7 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
               // would fail as it's `export default` only. Apply interop for builtin modules to
               // correctly throw the error message.
               else if (
-                url.includes(browserExternalId) &&
+                url.startsWith(wrapId(browserExternalId)) &&
                 source.slice(expStart, start).includes('{')
               ) {
                 interopNamedImports(
