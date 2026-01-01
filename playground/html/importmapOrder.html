@@ -4,11 +4,14 @@
     <script type="importmap">
       {
         "imports": {
-          "some-pkg": "url-of-pkg"
+          "some-pkg": "/importmap-pkg.js"
         }
       }
     </script>
-    <link rel="modulepreload" href="url-of-pkg" />
-    <script type="module" src="/main.js"></script>
+    <link rel="modulepreload" href="/importmap-pkg.js" />
+    <script type="module" src="/importmap-verify.js"></script>
   </head>
+  <body>
+    <div id="importmap-test"></div>
+  </body>
 </html>
