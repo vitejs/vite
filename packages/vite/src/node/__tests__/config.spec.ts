@@ -632,9 +632,16 @@ describe('resolveEnvPrefix', () => {
     expect(() => resolveEnvPrefix(config)).toThrow()
   })
 
+  test(`throw error if envPrefix contains whitespace`, () => {
+    let config: UserConfig = { envPrefix: 'WITH SPACE' }
+    expect(() => resolveEnvPrefix(config)).toThrow()
+    config = { envPrefix: ['CUSTOM_', 'ANOTHER SPACE'] }
+    expect(() => resolveEnvPrefix(config)).toThrow()
+  })
+
   test('should work correctly for valid envPrefix value', () => {
-    const config: UserConfig = { envPrefix: [' ', 'CUSTOM_'] }
-    expect(resolveEnvPrefix(config)).toMatchObject([' ', 'CUSTOM_'])
+    const config: UserConfig = { envPrefix: ['CUSTOM_'] }
+    expect(resolveEnvPrefix(config)).toMatchObject(['CUSTOM_'])
   })
 })
 
