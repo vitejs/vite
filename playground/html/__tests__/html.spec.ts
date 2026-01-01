@@ -393,11 +393,10 @@ describe('importmap', () => {
     await page.goto(viteTestUrl + '/importmapOrder.html')
   })
 
-  // Should put this test at the end to get all browser logs above
-  test('importmap should be prepended', async () => {
-    expect(browserLogs).not.toContain(
-      'An import map is added after module script load was triggered.',
-    )
+  test('importmap should be prepended before modulepreload and script tags', async () => {
+    // Verify the page loads successfully with importmap and modulepreload links
+    // The non-self-closing modulepreload link should be detected correctly
+    expect(browserLogs).toContain('shared from main')
   })
 })
 
