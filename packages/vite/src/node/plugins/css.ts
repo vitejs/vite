@@ -3418,7 +3418,9 @@ const esMap: Record<number, string[]> = {
   // https://caniuse.com/?search=es2022
   2022: ['chrome94', 'edge94', 'safari16.4', 'firefox93', 'opera80'],
   // https://caniuse.com/?search=es2023
-  2023: ['chrome110', 'edge110', 'safari16.4', 'opera96'],
+  2023: ['chrome110', 'edge110', 'safari16.4', 'firefox146', 'opera96'],
+  // https://caniuse.com/?feats=mdn-javascript_builtins_object_groupby,wf-array-group,wf-promise-withresolvers,mdn-javascript_builtins_arraybuffer_transfer,mdn-javascript_builtins_string_iswellformed,mdn-javascript_builtins_string_towellformed,wf-atomics-wait-async,mdn-javascript_builtins_arraybuffer_resize,mdn-javascript_builtins_sharedarraybuffer_grow
+  2024: ['chrome119', 'edge119', 'safari17.4', 'firefox145', 'opera105'],
 }
 
 const esRE = /es(\d{4})/
