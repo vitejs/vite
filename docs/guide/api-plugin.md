@@ -444,7 +444,7 @@ Vite plugins can also provide hooks that serve Vite-specific purposes. These hoo
           true
         )
       }
-      server.ws.send({ type: 'full-reload' })
+      server.hot.send({ type: 'full-reload' })
       return []
     }
     ```
@@ -453,7 +453,7 @@ Vite plugins can also provide hooks that serve Vite-specific purposes. These hoo
 
     ```js
     handleHotUpdate({ server }) {
-      server.ws.send({
+      server.hot.send({
         type: 'custom',
         event: 'special-update',
         data: {}
