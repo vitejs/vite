@@ -820,41 +820,164 @@ export function buildHtmlPlugin(config: ResolvedConfig): Plugin {
         },
       })
 
-      const getCssFilesForChunk = (
+      const createGetCssFilesForChunk = (): ((
         chunk: OutputChunk,
-        seenChunks: Set<string> = new Set(),
-        seenCss: Set<string> = new Set(),
-      ): string[] => {
-        if (seenChunks.has(chunk.fileName)) {
-          return []
-        }
-        seenChunks.add(chunk.fileName)
+      ) => string[]) => {
+        const dirtyChunks = new Map<OutputChunk, Set<string>>()
 
-        if (analyzedImportedCssFiles.has(chunk)) {
-          const files = analyzedImportedCssFiles.get(chunk)!
-          const additionals = files.filter((file) => !seenCss.has(file))
-          additionals.forEach((file) => seenCss.add(file))
-          return additionals
-        }
-
-        const files: string[] = []
-        chunk.imports.forEach((file) => {
-          const importee = bundle[file]
-          if (importee?.type === 'chunk') {
-            files.push(...getCssFilesForChunk(importee, seenChunks, seenCss))
+        const getCssFilesForUncheckedDirtyChunk = (
+          chunk: OutputChunk,
+          seenChunks: Set<string> = new Set(),
+          seenCss: Set<string> = new Set(),
+        ): string[] => {
+          if (seenChunks.has(chunk.fileName)) {
+            return []
           }
-        })
-        analyzedImportedCssFiles.set(chunk, files)
+          seenChunks.add(chunk.fileName)
 
-        chunk.viteMetadata!.importedCss.forEach((file) => {
-          if (!seenCss.has(file)) {
-            seenCss.add(file)
-            files.push(file)
+          if (analyzedImportedCssFiles.has(chunk)) {
+            const files = analyzedImportedCssFiles.get(chunk)!
+            const additionals = files.filter((file) => !seenCss.has(file))
+            additionals.forEach((file) => seenCss.add(file))
+            return additionals
           }
-        })
 
-        return files
+          const additionalFiles: string[] = []
+          chunk.imports.forEach((file) => {
+            const importee = bundle[file]
+            if (importee?.type === 'chunk') {
+              additionalFiles.push(
+                ...getCssFilesForUncheckedDirtyChunk(
+                  importee,
+                  seenChunks,
+                  seenCss,
+                ),
+              )
+            }
+          })
+          analyzedImportedCssFiles.set(chunk, additionalFiles)
+
+          chunk.viteMetadata!.importedCss.forEach((file) => {
+            if (!seenCss.has(file)) {
+              seenCss.add(file)
+              additionalFiles.push(file)
+            } else {
+              let dirtyChunkUnverifiedCss = dirtyChunks.get(chunk)
+              if (!dirtyChunkUnverifiedCss) {
+                dirtyChunks.set(chunk, (dirtyChunkUnverifiedCss = new Set()))
+              }
+              dirtyChunkUnverifiedCss.add(file)
+            }
+          })
+
+          return additionalFiles
+        }
+
+        const isImportChainHasDirtyChunk = (
+          chunk: OutputChunk,
+          seenCleanChunks: Set<OutputChunk>,
+          seenChunks = new Set<OutputChunk>(),
+        ): boolean => {
+          if (seenChunks.has(chunk) || seenCleanChunks.has(chunk)) {
+            return false
+          }
+          const importChainHasDirtyChunk = chunk.imports.some((file) => {
+            const importee = bundle[file]
+            if (importee?.type === 'chunk') {
+              return isImportChainHasDirtyChunk(
+                importee,
+                seenCleanChunks,
+                seenChunks,
+              )
+            }
+            return false
+          })
+          if (!importChainHasDirtyChunk) {
+            seenCleanChunks.add(chunk)
+          }
+          return importChainHasDirtyChunk
+        }
+
+        const getCssFilesForCheckedDirtyChunk = (
+          chunk: OutputChunk,
+          seenChunks: Set<string> = new Set(),
+          seenCss: Set<string> = new Set(),
+          seenCleanChunks = new Set<OutputChunk>(),
+        ): string[] => {
+          if (seenChunks.has(chunk.fileName)) {
+            return []
+          }
+          seenChunks.add(chunk.fileName)
+          let isNeedToRebuildCache = false
+          let additionalFiles: string[] = []
+          if (analyzedImportedCssFiles.has(chunk)) {
+            isNeedToRebuildCache = isImportChainHasDirtyChunk(
+              chunk,
+              seenCleanChunks,
+            )
+            if (!isNeedToRebuildCache) {
+              const files = analyzedImportedCssFiles.get(chunk)!
+              const additionals = files.filter((file) => !seenCss.has(file))
+              additionals.forEach((file) => seenCss.add(file))
+              if (!dirtyChunks.has(chunk)) {
+                return additionals
+              } else {
+                additionalFiles = additionals
+              }
+            }
+          } else {
+            isNeedToRebuildCache = true
+          }
+          if (isNeedToRebuildCache) {
+            chunk.imports.forEach((file) => {
+              const importee = bundle[file]
+              if (importee?.type === 'chunk') {
+                additionalFiles.push(
+                  ...getCssFilesForCheckedDirtyChunk(
+                    importee,
+                    seenChunks,
+                    seenCss,
+                    seenCleanChunks,
+                  ),
+                )
+              }
+            })
+          }
+          analyzedImportedCssFiles.set(chunk, additionalFiles)
+
+          const chunkUnverifiedCss = dirtyChunks.get(chunk) ?? new Set()
+          chunk.viteMetadata!.importedCss.forEach((file) => {
+            if (!seenCss.has(file)) {
+              seenCss.add(file)
+              additionalFiles.push(file)
+              chunkUnverifiedCss.delete(file)
+            } else {
+              let dirtyChunkUnverifiedCss = dirtyChunks.get(chunk)
+              if (!dirtyChunkUnverifiedCss) {
+                dirtyChunks.set(
+                  chunk,
+                  (dirtyChunkUnverifiedCss = chunkUnverifiedCss),
+                )
+              }
+              dirtyChunkUnverifiedCss.add(file)
+            }
+          })
+          if (chunkUnverifiedCss.size === 0 && dirtyChunks.has(chunk)) {
+            dirtyChunks.delete(chunk)
+          }
+          return additionalFiles
+        }
+
+        const getCssFilesForChunk = (chunk: OutputChunk): string[] => {
+          if (!dirtyChunks.size) {
+            return getCssFilesForUncheckedDirtyChunk(chunk)
+          }
+          return getCssFilesForCheckedDirtyChunk(chunk)
+        }
+        return getCssFilesForChunk
       }
+
+      const getCssFilesForChunk = createGetCssFilesForChunk()
 
       const getCssTagsForChunk = (
         chunk: OutputChunk,
