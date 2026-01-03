@@ -1,0 +1,271 @@
+<!DOCTYPE html>
+<html lang="pt-pt">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Nexura AI | Gerador de Arte Digital</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap');
+        
+        :root {
+            --accent: #6366f1;
+            --secondary: #ec4899;
+            --dark: #020617;
+        }
+
+        body {
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            background-color: var(--dark);
+            color: #f8fafc;
+            overflow-x: hidden;
+        }
+
+        .glass {
+            background: rgba(30, 41, 59, 0.4);
+            backdrop-filter: blur(16px);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+        }
+
+        .btn-gradient {
+            background: linear-gradient(135deg, var(--accent), var(--secondary));
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .btn-gradient:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 30px rgba(99, 102, 241, 0.4);
+            filter: brightness(1.1);
+        }
+
+        .modal-enter {
+            animation: modalFadeIn 0.3s ease-out;
+        }
+
+        @keyframes modalFadeIn {
+            from { opacity: 0; transform: scale(0.95); }
+            to { opacity: 1; transform: scale(1); }
+        }
+
+        .bg-glow {
+            position: fixed;
+            top: 0;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 100vw;
+            height: 100vh;
+            background: radial-gradient(circle at 50% -20%, rgba(99, 102, 241, 0.15) 0%, transparent 60%);
+            z-index: -1;
+        }
+
+        /* Animação de carregamento */
+        .spinner {
+            width: 40px;
+            height: 40px;
+            border: 4px solid rgba(99, 102, 241, 0.1);
+            border-top: 4px solid var(--accent);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body class="min-h-screen flex flex-col">
+
+    <div class="bg-glow"></div>
+
+    <!-- Barra Superior -->
+    <header class="border-b border-white/5 py-5 px-8 backdrop-blur-xl sticky top-0 z-50">
+        <div class="container mx-auto flex justify-between items-center">
+            <div class="flex items-center space-x-3 group cursor-pointer" onclick="window.location.reload()">
+                <div class="w-10 h-10 bg-gradient-to-tr from-indigo-500 to-pink-500 rounded-xl flex items-center justify-center shadow-lg group-hover:rotate-6 transition-transform">
+                    <i class="fas fa-brain text-white text-sm"></i>
+                </div>
+                <span class="font-black tracking-tighter text-2xl uppercase">NEXURA <span class="text-indigo-500 italic">AI</span></span>
+            </div>
+            
+            <div class="flex items-center space-x-6">
+                <div class="hidden md:flex flex-col items-end">
+                    <span class="text-[9px] font-black text-slate-500 uppercase tracking-[0.2em]">Créditos</span>
+                    <span id="credit-count" class="text-sm font-black text-white">3</span>
+                </div>
+                <button onclick="openCheckout()" class="btn-gradient px-6 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest shadow-xl flex items-center">
+                    <i class="fas fa-crown mr-2"></i>Upgrade Pro
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <!-- Conteúdo Principal -->
+    <main class="flex-1 container mx-auto px-6 py-12 flex flex-col items-center">
+        <div class="max-w-3xl w-full text-center mb-12">
+            <div class="inline-block px-4 py-1.5 rounded-full bg-indigo-500/10 border border-indigo-500/20 text-indigo-400 text-[9px] font-black uppercase tracking-[0.3em] mb-6">
+                AI Engine v2.0 • Ultra HD
+            </div>
+            <h1 class="text-5xl md:text-7xl font-black tracking-tighter mb-6 leading-tight">
+                Cria Branding <span class="text-transparent bg-clip-text bg-gradient-to-r from-indigo-400 to-pink-500 italic">Futurista.</span>
+            </h1>
+            <p class="text-slate-400 text-lg max-w-xl mx-auto">
+                Transforma simples palavras em logótipos e artes visuais dignas de uma marca de luxo.
+            </p>
+        </div>
+
+        <div class="w-full max-w-5xl grid grid-cols-1 lg:grid-cols-2 gap-10">
+            <!-- Painel de Controlo -->
+            <div class="glass p-8 md:p-10 rounded-[40px] space-y-8 relative overflow-hidden">
+                <div>
+                    <label class="text-[10px] font-black uppercase text-slate-400 tracking-widest block mb-4">O que queres criar?</label>
+                    <textarea id="prompt-input" rows="4" class="w-full bg-black/40 border border-white/10 rounded-2xl p-5 text-sm focus:outline-none focus:border-indigo-500 transition-all placeholder:text-slate-600" placeholder="Ex: Logótipo de um dragão neon, estilo minimalista futurista, fundo preto, ultra detalhado..."></textarea>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div>
+                        <label class="text-[10px] font-black uppercase text-slate-400 tracking-widest block mb-4">Estilo Visual</label>
+                        <select id="style-select" class="w-full bg-black/40 border border-white/10 rounded-xl p-4 text-xs font-bold focus:outline-none focus:border-indigo-500 cursor-pointer">
+                            <option value="cyber">Cyber-Luxury</option>
+                            <option value="minimal">Minimalista Apple</option>
+                            <option value="3d">Renderização 3D</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="text-[10px] font-black uppercase text-slate-400 tracking-widest block mb-4">Resolução</label>
+                        <select class="w-full bg-black/40 border border-white/10 rounded-xl p-4 text-xs font-bold focus:outline-none">
+                            <option>Standard (1024px)</option>
+                            <option disabled>HD 4K (Apenas PRO)</option>
+                        </select>
+                    </div>
+                </div>
+
+                <button onclick="generateImage()" id="gen-btn" class="w-full btn-gradient py-6 rounded-2xl font-black uppercase tracking-[0.2em] flex items-center justify-center space-x-3 text-sm">
+                    <i class="fas fa-magic"></i>
+                    <span>Gerar Agora</span>
+                </button>
+            </div>
+
+            <!-- Visualização -->
+            <div class="flex flex-col space-y-6">
+                <div id="image-preview" class="w-full aspect-square glass rounded-[40px] flex items-center justify-center overflow-hidden border border-white/10 shadow-2xl relative">
+                    <div id="placeholder-content" class="text-center p-10 opacity-30">
+                        <i class="fas fa-sparkles text-3xl mb-4 block"></i>
+                        <p class="text-[9px] font-black uppercase tracking-widest leading-relaxed">A tua criação <br> aparecerá aqui</p>
+                    </div>
+                    <img id="result-image" class="hidden w-full h-full object-cover">
+                    
+                    <div id="loader" class="hidden absolute inset-0 bg-black/80 backdrop-blur-sm flex flex-col items-center justify-center space-y-4">
+                        <div class="spinner"></div>
+                        <p class="text-[9px] font-black uppercase tracking-[0.4em] animate-pulse">A Processar Arte...</p>
+                    </div>
+                </div>
+                
+                <div id="action-buttons" class="hidden grid grid-cols-2 gap-4">
+                    <button class="bg-white/5 py-4 rounded-2xl text-[10px] font-black uppercase border border-white/10 hover:bg-white/10 transition">Download PNG</button>
+                    <button class="bg-indigo-500/10 py-4 rounded-2xl text-[10px] font-black uppercase border border-indigo-500/20 text-indigo-400 hover:bg-indigo-500/20 transition">Partilhar</button>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- Modal de Checkout -->
+    <div id="checkout-modal" class="fixed inset-0 bg-black/95 backdrop-blur-xl z-[100] hidden flex items-center justify-center p-6">
+        <div class="max-w-4xl w-full glass rounded-[40px] overflow-hidden modal-enter flex flex-col md:flex-row shadow-2xl">
+            <!-- Texto -->
+            <div class="flex-1 p-10 md:p-16">
+                <button onclick="closeCheckout()" class="text-slate-500 hover:text-white mb-8 text-xs font-bold transition uppercase tracking-widest"><i class="fas fa-arrow-left mr-2"></i> Voltar</button>
+                <h3 class="text-4xl font-black tracking-tighter mb-4 italic leading-none">TORNA-TE <br><span class="text-indigo-500">PREMIUM</span></h3>
+                <p class="text-slate-400 text-sm mb-8 leading-relaxed">Liberta gerações ilimitadas e exporta em qualidade máxima sem marcas de água.</p>
+                
+                <div class="space-y-4">
+                    <div class="flex items-center space-x-3 text-xs font-bold uppercase tracking-wider">
+                        <i class="fas fa-check text-green-500"></i> <span>Gerações Ilimitadas</span>
+                    </div>
+                    <div class="flex items-center space-x-3 text-xs font-bold uppercase tracking-wider">
+                        <i class="fas fa-check text-green-500"></i> <span>Suporte Prioritário 24/7</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Checkout -->
+            <div class="w-full md:w-[380px] bg-white/[0.03] p-10 md:p-16 flex flex-col justify-center border-l border-white/5 text-center">
+                <div class="mb-8">
+                    <span class="text-[10px] font-black text-indigo-400 uppercase tracking-widest block mb-2">Plano Pro Mensal</span>
+                    <div class="text-6xl font-black tracking-tighter leading-none">9.99€</div>
+                </div>
+                
+                <button onclick="goToStripe()" class="w-full btn-gradient py-6 rounded-2xl font-black uppercase tracking-widest text-xs">Pagar com Stripe</button>
+                <p class="text-[8px] text-slate-600 mt-6 font-bold uppercase tracking-widest">🔒 Checkout Seguro e Encriptado</p>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let credits = 3;
+
+        async function generateImage() {
+            const prompt = document.getElementById('prompt-input').value;
+            if (prompt.length < 5) return alert("Por favor, descreve o que queres gerar!");
+            
+            if (credits <= 0) {
+                openCheckout();
+                return;
+            }
+
+            const btn = document.getElementById('gen-btn');
+            const loader = document.getElementById('loader');
+            const resultImg = document.getElementById('result-image');
+            const placeholder = document.getElementById('placeholder-content');
+            const actionBtns = document.getElementById('action-buttons');
+
+            // Iniciar animação
+            btn.disabled = true;
+            btn.style.opacity = "0.5";
+            loader.classList.remove('hidden');
+            placeholder.classList.add('hidden');
+            resultImg.classList.add('hidden');
+            actionBtns.classList.add('hidden');
+
+            try {
+                // Simulação de IA (4 segundos)
+                await new Promise(r => setTimeout(r, 4000));
+                
+                // Gerar URL de imagem fictícia mas realista (Unsplash)
+                const randomId = Math.floor(Math.random() * 1000);
+                resultImg.src = `https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?auto=format&fit=crop&q=80&w=800&sig=${randomId}`;
+                
+                resultImg.onload = () => {
+                    loader.classList.add('hidden');
+                    resultImg.classList.remove('hidden');
+                    actionBtns.classList.remove('hidden');
+                    credits--;
+                    document.getElementById('credit-count').innerText = credits;
+                    btn.disabled = false;
+                    btn.style.opacity = "1";
+                };
+            } catch (e) {
+                alert("Erro ao conectar à IA. Tenta novamente.");
+                btn.disabled = false;
+            }
+        }
+
+        function openCheckout() {
+            document.getElementById('checkout-modal').classList.remove('hidden');
+            document.getElementById('checkout-modal').classList.add('flex');
+        }
+
+        function closeCheckout() {
+            document.getElementById('checkout-modal').classList.add('hidden');
+            document.getElementById('checkout-modal').classList.remove('flex');
+        }
+
+        function goToStripe() {
+            // Substituir pelo teu link real do Stripe quando o tiveres
+            alert("A redirecionar para o Checkout Seguro do Stripe...");
+            // window.location.href = "https://buy.stripe.com/teu-link-aqui";
+        }
+    </script>
+</body>
+</html>
