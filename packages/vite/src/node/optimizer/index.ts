@@ -163,6 +163,13 @@ export interface DepOptimizationConfig {
    * @experimental
    */
   holdUntilCrawlEnd?: boolean
+  /**
+   * When enabled, Vite will not throw an error when an outdated optimized
+   * dependency is requested.
+   * @default false
+   * @experimental
+   */
+  ignoreOutdatedRequests?: boolean
 }
 
 export type DepOptimizationOptions = DepOptimizationConfig & {
