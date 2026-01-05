@@ -76,7 +76,7 @@ describe.runIf(isBuild)('build', () => {
     // use the entry name
     expect(dirFooAssetEntry.file).toMatch('assets/bar-')
     expect(dirFooAssetEntry.name).toStrictEqual('bar.css')
-    if (false) {
+    if (process.env._VITE_TEST_JS_PLUGIN) {
       expect(dirFooAssetEntry.assets.length).toEqual(1)
     }
     expect(customNameAssetEntry.name).toStrictEqual('bar.custom')

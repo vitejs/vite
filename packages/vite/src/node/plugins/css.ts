@@ -1118,8 +1118,11 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
             const realCssEntryName = this.getFileName(cssReferenceId)
             const realCssEntry = bundle[realCssEntryName]!
             importedCss.delete(realCssEntryName)
-            if (importedAssets.size || importedCss.size) {
-              realCssEntry.viteMetadata = { importedAssets, importedCss }
+            if (importedAssets.size) {
+              realCssEntry.viteMetadata!.importedAssets = importedAssets
+            }
+            if (importedCss.size) {
+              realCssEntry.viteMetadata!.importedCss = importedCss
             }
           }
 
