@@ -1,4 +1,4 @@
-# Using `Environment` Instances
+npx create-next-app@latest# Using `Environment` Instances
 
 :::info Release Candidate
 The Environment API is generally in the release candidate phase. We'll maintain stability in the APIs between major releases to allow the ecosystem to experiment and build upon them. However, note that [some specific APIs](/changes/#considering) are still considered experimental.
