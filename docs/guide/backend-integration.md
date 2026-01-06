@@ -3,7 +3,7 @@
 :::tip Note
 If you want to serve the HTML using a traditional backend (e.g. Rails, Laravel) but use Vite for serving assets, check for existing integrations listed in [Awesome Vite](https://github.com/vitejs/awesome-vite#integrations-with-backends).
 
-If you need a custom integration, you can follow the steps in this guide to configure it manually
+If you need a custom integration, you can follow the steps in this guide to configure it manually.
 :::
 
 1. In your Vite config, configure the entry and enable build manifest:

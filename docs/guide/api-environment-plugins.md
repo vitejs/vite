@@ -8,7 +8,7 @@ We plan to stabilize these new APIs (with potential breaking changes) in a futur
 Resources:
 
 - [Feedback discussion](https://github.com/vitejs/vite/discussions/16358) where we are gathering feedback about the new APIs.
-- [Environment API PR](https://github.com/vitejs/vite/pull/16471) where the new API were implemented and reviewed.
+- [Environment API PR](https://github.com/vitejs/vite/pull/16471) where the new APIs were implemented and reviewed.
 
 Please share your feedback with us.
 :::
@@ -47,7 +47,7 @@ Plugins can add new environments in the `config` hook. For example, [RSC support
   }
 ```
 
-An empty object is enough to register the environment, default values from the root level environment config.
+An empty object is enough to register the environment, using default values from the root level environment config.
 
 ## Configuring Environment Using Hooks
 
@@ -233,13 +233,13 @@ The `applyToEnvironment` hook is called at config time, currently after `configR
 
 :::warning Note
 
-Note that this feature is only available for environments that supports HMR.
+Note that this feature is only available for environments that support HMR.
 
 :::
 
 ### Managing the Application Instances
 
-Be aware that there might be multiple application instances running in the same environment. For example, if you multiple tabs open in the browser, each tab is a separate application instance and have a separate connection to the server.
+Be aware that there might be multiple application instances running in the same environment. For example, if you have multiple tabs open in the browser, each tab is a separate application instance and has a separate connection to the server.
 
 When a new connection is established, a `vite:client:connect` event is emitted on the environment's `hot` instance. When the connection is closed, a `vite:client:disconnect` event is emitted.
 
