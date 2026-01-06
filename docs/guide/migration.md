@@ -2,7 +2,7 @@
 
 If you are migrating from `rolldown-vite`, the technical preview release for Rolldown integrated Vite for v6 & v7, only the sections with <Badge text="NRV" type="warning" /> in the title are applicable.
 
-## Default Browser Target change [<Badge text="NRV" type="warning" />](#migration-from-v7)
+## Default Browser Target Change [<Badge text="NRV" type="warning" />](#migration-from-v7)
 
 The default browser value of `build.target` and `'baseline-widely-available'`, is updated to newer browser version:
 
@@ -32,7 +32,7 @@ For users migrating from `rolldown-vite` to Vite 8, you can undo the dependency 
 }
 ```
 
-### Dependency Optimizer now uses Rolldown
+### Dependency Optimizer Now Uses Rolldown
 
 Rolldown is now used for dependency optimization instead of esbuild. Vite still supports [`optimizeDeps.esbuildOptions`](/config/dep-optimization-options#optimizedeps-esbuildoptions) for backward compatibility by converting it to [`optimizeDeps.rolldownOptions`](/config/dep-optimization-options#optimizedeps-rolldownoptions) automatically. `optimizeDeps.esbuildOptions` is now deprecated and will be removed in the future and we encourage you to migrate to `optimizeDeps.rolldownOptions`.
 
@@ -338,7 +338,7 @@ The following options are deprecated and will be removed in the future:
 
 ## General Changes [<Badge text="NRV" type="warning" />](#migration-from-v7)
 
-## Removed deprecated features [<Badge text="NRV" type="warning" />](#migration-from-v7)
+## Removed Deprecated Features [<Badge text="NRV" type="warning" />](#migration-from-v7)
 
 **_TODO: This change is not implemented yet, but will be implemented before stable release._**
 
