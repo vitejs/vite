@@ -613,7 +613,8 @@ async function init() {
   }
 
   const root = path.join(cwd, targetDir)
-  fs.mkdirSync(root, { recursive: true })
+  // create target directory
+  // fs.mkdirSync(root, { recursive: true })
 
   // determine template
   let isReactSwc = false
@@ -643,7 +644,8 @@ async function init() {
     })
     process.exit(status ?? 0)
   }
-
+  // Only create directory for built-in templates, not for customCommand
+  fs.mkdirSync(root, { recursive: true })
   prompts.log.step(`Scaffolding project in ${root}...`)
 
   const templateDir = path.resolve(
