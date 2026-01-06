@@ -613,9 +613,6 @@ async function init() {
   }
 
   const root = path.join(cwd, targetDir)
-  // create target directory
-  // fs.mkdirSync(root, { recursive: true })
-
   // determine template
   let isReactSwc = false
   if (template.includes('-swc')) {
