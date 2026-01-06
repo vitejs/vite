@@ -612,9 +612,6 @@ async function init() {
     }
   }
 
-  const root = path.join(cwd, targetDir)
-  fs.mkdirSync(root, { recursive: true })
-
   // determine template
   let isReactSwc = false
   if (template.includes('-swc')) {
@@ -643,6 +640,10 @@ async function init() {
     })
     process.exit(status ?? 0)
   }
+
+  // Create the project folder
+  const root = path.join(cwd, targetDir)
+  fs.mkdirSync(root, { recursive: true })
 
   prompts.log.step(`Scaffolding project in ${root}...`)
 
