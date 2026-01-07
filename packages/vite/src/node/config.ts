@@ -743,6 +743,8 @@ const configDefaults = Object.freeze({
     // entries
     /** @experimental */
     force: false,
+    /** @experimental */
+    ignoreOutdatedRequests: false,
   },
   ssr: ssrConfigDefaults,
   environments: {},
