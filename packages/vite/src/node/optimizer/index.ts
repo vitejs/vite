@@ -163,6 +163,14 @@ export interface DepOptimizationConfig {
    * @experimental
    */
   holdUntilCrawlEnd?: boolean
+  /**
+   * When enabled, Vite will not throw an error when an outdated optimized
+   * dependency is requested. Enabling this option may cause a single module
+   * to have a multiple reference.
+   * @default false
+   * @experimental
+   */
+  ignoreOutdatedRequests?: boolean
 }
 
 export type DepOptimizationOptions = DepOptimizationConfig & {
