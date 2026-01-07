@@ -1,3 +1,8 @@
+## <small>[7.3.1](https://github.com/vitejs/vite/compare/v7.3.0...v7.3.1) (2026-01-07)</small>
+### Features
+
+* add `ignoreOutdatedRequests` option to `optimizeDeps` ([#21364](https://github.com/vitejs/vite/issues/21364)) ([9d39d37](https://github.com/vitejs/vite/commit/9d39d373a7b4e0a93322b70b9dbeb202af06af3e))
+
 ## [7.3.0](https://github.com/vitejs/vite/compare/v7.2.7...v7.3.0) (2025-12-15)
 ### Features
 
