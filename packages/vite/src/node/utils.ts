@@ -1481,10 +1481,6 @@ export function mergeConfig<
   }
 
   return mergeConfigRecursively(defaults, overrides, isRoot ? '' : '.')
-  // if (isRoot && merged.server) {
-  //   setupHmrWsOptionCompat(merged.server)
-  // }
-  // return merged
 }
 
 export function mergeAlias(
