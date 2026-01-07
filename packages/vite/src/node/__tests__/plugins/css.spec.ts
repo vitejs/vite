@@ -264,6 +264,7 @@ describe('convertTargets', () => {
       edge: 5177344,
       firefox: 3801088,
       safari: 786432,
+      ios_saf: 786432,
       opera: 3276800,
     })
     expect(convertTargets(['safari13.1', 'ios13', 'node14'])).toStrictEqual({
