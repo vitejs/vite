@@ -3397,9 +3397,9 @@ const esMap: Record<number, string[]> = {
   // https://caniuse.com/?search=es2019
   2019: ['chrome73', 'edge79', 'safari12.1', 'ios12.1', 'firefox64', 'opera60'],
   // https://caniuse.com/?search=es2020
-  2020: ['chrome80', 'edge80', 'safari14.1', 'ios14.1', 'firefox80', 'opera67'],
+  2020: ['chrome80', 'edge80', 'safari14.1', 'ios14.5', 'firefox80', 'opera67'],
   // https://caniuse.com/?search=es2021
-  2021: ['chrome85', 'edge85', 'safari14.1', 'ios14.1', 'firefox80', 'opera71'],
+  2021: ['chrome85', 'edge85', 'safari14.1', 'ios14.5', 'firefox80', 'opera71'],
   // https://caniuse.com/?search=es2022
   2022: ['chrome94', 'edge94', 'safari16.4', 'ios16.4', 'firefox93', 'opera80'],
   // https://caniuse.com/?search=es2023
