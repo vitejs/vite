@@ -64,14 +64,14 @@
     "picocolors": "^1.1.1",
     "playwright-chromium": "^1.57.0",
     "prettier": "3.7.4",
-    "rolldown": "1.0.0-beta.57",
+    "rolldown": "1.0.0-beta.58",
     "rollup": "^4.43.0",
     "simple-git-hooks": "^2.13.1",
     "tsx": "^4.21.0",
     "typescript": "~5.9.3",
-    "typescript-eslint": "^8.49.0",
+    "typescript-eslint": "^8.52.0",
     "vite": "workspace:*",
-    "vitest": "^4.0.15"
+    "vitest": "^4.0.16"
   },
   "simple-git-hooks": {
     "pre-commit": "pnpm exec lint-staged --concurrent false"
@@ -90,7 +90,7 @@
       "eslint --cache --fix"
     ]
   },
-  "packageManager": "pnpm@10.25.0",
+  "packageManager": "pnpm@10.27.0",
   "stackblitz": {
     "startCommand": "pnpm --filter='./packages/vite' run dev"
   }
