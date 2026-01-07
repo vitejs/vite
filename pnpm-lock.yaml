@@ -3820,6 +3820,11 @@ packages:
     peerDependencies:
       typescript: '*'
 
+  '@typescript/vfs@1.6.2':
+    resolution: {integrity: sha512-hoBwJwcbKHmvd2QVebiytN1aELvpk9B74B4L1mFm/XT1Q/VOYAWl2vQ9AWRFtQq8zmz6enTpfTV8WRc4ATjW/g==}
+    peerDependencies:
+      typescript: '*'
+
   '@ungap/structured-clone@1.3.0':
     resolution: {integrity: sha512-WmoN8qaIAo7WTYWbAZuG8PYEhn5fkz7dZrqTBZ7dtt//lL2Gwms1IcnQ5yHqjDfX8Ft5j4YzDM23f87zBfDe9g==}
 
@@ -7246,13 +7251,21 @@ packages:
   twoslash-protocol@0.3.4:
     resolution: {integrity: sha512-HHd7lzZNLUvjPzG/IE6js502gEzLC1x7HaO1up/f72d8G8ScWAs9Yfa97igelQRDl5h9tGcdFsRp+lNVre1EeQ==}
 
-  twoslash-vue@0.3.4:
-    resolution: {integrity: sha512-R9hHbmfQMAiHG2UjB0tVFanEzz0SHDa9ZSxowAQFQMPPZSUSuP0meVG2BW2O+q7NAWzya8aJh/eXtPIMX3qsxA==}
+  twoslash-protocol@0.3.6:
+    resolution: {integrity: sha512-FHGsJ9Q+EsNr5bEbgG3hnbkvEBdW5STgPU824AHUjB4kw0Dn4p8tABT7Ncg1Ie6V0+mDg3Qpy41VafZXcQhWMA==}
+
+  twoslash-vue@0.3.6:
+    resolution: {integrity: sha512-HXYxU+Y7jZiMXJN4980fQNMYflLD8uqKey1qVW5ri8bqYTm2t5ILmOoCOli7esdCHlMq4/No3iQUWBWDhZNs9w==}
     peerDependencies:
       typescript: ^5.5.0
 
   twoslash@0.3.4:
     resolution: {integrity: sha512-RtJURJlGRxrkJmTcZMjpr7jdYly1rfgpujJr1sBM9ch7SKVht/SjFk23IOAyvwT1NLCk+SJiMrvW4rIAUM2Wug==}
+    peerDependencies:
+      typescript: ^5.5.0
+
+  twoslash@0.3.6:
+    resolution: {integrity: sha512-VuI5OKl+MaUO9UIW3rXKoPgHI3X40ZgB/j12VY6h98Ae1mCBihjPvhOPeJWlxCYcmSbmeZt5ZKkK0dsVtp+6pA==}
     peerDependencies:
       typescript: ^5.5.0
 
@@ -9170,7 +9183,7 @@ snapshots:
       ohash: 2.0.11
       shiki: 3.20.0
       twoslash: 0.3.4(ms@2.1.3)(typescript@5.9.3)
-      twoslash-vue: 0.3.4(ms@2.1.3)(typescript@5.9.3)
+      twoslash-vue: 0.3.6(ms@2.1.3)(typescript@5.9.3)
       vue: 3.5.26(typescript@5.9.3)
     transitivePeerDependencies:
       - '@nuxt/kit'
@@ -9520,6 +9533,13 @@ snapshots:
       eslint-visitor-keys: 4.2.1
 
   '@typescript/vfs@1.6.1(ms@2.1.3)(typescript@5.9.3)':
+    dependencies:
+      debug: obug@1.0.2(ms@2.1.3)
+      typescript: 5.9.3
+    transitivePeerDependencies:
+      - ms
+
+  '@typescript/vfs@1.6.2(ms@2.1.3)(typescript@5.9.3)':
     dependencies:
       debug: obug@1.0.2(ms@2.1.3)
       typescript: 5.9.3
@@ -13093,11 +13113,13 @@ snapshots:
 
   twoslash-protocol@0.3.4: {}
 
-  twoslash-vue@0.3.4(ms@2.1.3)(typescript@5.9.3):
+  twoslash-protocol@0.3.6: {}
+
+  twoslash-vue@0.3.6(ms@2.1.3)(typescript@5.9.3):
     dependencies:
       '@vue/language-core': 3.2.2
-      twoslash: 0.3.4(ms@2.1.3)(typescript@5.9.3)
-      twoslash-protocol: 0.3.4
+      twoslash: 0.3.6(ms@2.1.3)(typescript@5.9.3)
+      twoslash-protocol: 0.3.6
       typescript: 5.9.3
     transitivePeerDependencies:
       - ms
@@ -13106,6 +13128,14 @@ snapshots:
     dependencies:
       '@typescript/vfs': 1.6.1(ms@2.1.3)(typescript@5.9.3)
       twoslash-protocol: 0.3.4
+      typescript: 5.9.3
+    transitivePeerDependencies:
+      - ms
+
+  twoslash@0.3.6(ms@2.1.3)(typescript@5.9.3):
+    dependencies:
+      '@typescript/vfs': 1.6.2(ms@2.1.3)(typescript@5.9.3)
+      twoslash-protocol: 0.3.6
       typescript: 5.9.3
     transitivePeerDependencies:
       - ms
