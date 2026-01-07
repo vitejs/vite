@@ -2040,10 +2040,10 @@ export async function resolveConfig(
       resolved.build.ssrEmitAssets || resolved.build.emitAssets
   }
 
-  // Enbale `rolldownOptions.debug` if devtools is enabled
+  // Enbale `rolldownOptions.devtools` if devtools is enabled
   if ((await resolveDevToolsConfig(config)).enabled) {
-    if (!resolved.build.rolldownOptions.debug) {
-      resolved.build.rolldownOptions.debug = {}
+    if (!resolved.build.rolldownOptions.devtools) {
+      resolved.build.rolldownOptions.devtools = {}
     }
   }
 
