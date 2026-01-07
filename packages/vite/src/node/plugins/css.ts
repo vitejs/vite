@@ -2962,10 +2962,14 @@ const makeStylWorker = (maxWorkers: number | undefined) => {
     {
       shouldUseFake(_stylusPath, _content, _root, options) {
         // define can include functions and those are not serializable
-        // in that case, fallback to running in main thread
+        // Evaluator is always a function
+        // in those cases, fallback to running in main thread
         return !!(
-          options.define &&
-          Object.values(options.define).some((d) => typeof d === 'function')
+          (options.define &&
+            Object.values(options.define).some(
+              (d) => typeof d === 'function',
+            )) ||
+          options.Evaluator
         )
       },
       max: maxWorkers,
