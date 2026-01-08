@@ -22,7 +22,12 @@ export function memoryFilesMiddleware(
       return next()
     }
 
-    const pathname = decodeURIComponent(cleanedUrl)
+    let pathname: string
+    try {
+      pathname = decodeURIComponent(cleanedUrl)
+    } catch {
+      return next()
+    }
     const filePath = pathname.slice(1) // remove first /
 
     const file = memoryFiles.get(filePath)
