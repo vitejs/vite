@@ -512,6 +512,28 @@ export const tests = (isLightningCSS: boolean) => {
     await expect.poll(() => getColor('.modules-pink')).toBe('pink')
   })
 
+  // Test for issue #3924: CSS injection order with diamond dependencies
+  test('async css order with diamond dependencies', async () => {
+    // Diamond dependency: main -> [chunk-a, chunk-b] -> shared-base
+    // Expected order: shared-base.css, chunk-a.css, chunk-b.css
+    // chunk-b.css should win (.diamond-test { color: green; background: yellow })
+    await expect.poll(() => getColor('.diamond-test')).toBe('green')
+    await expect.poll(() => getBgColor('.diamond-test')).toBe('yellow')
+  })
+
+  // Test for issue #9278: Shared function with global CSS before module CSS
+  test('async css order with shared dependency and global CSS', async () => {
+    // Both blue.js and black.js import make-text.js (shared dependency)
+    // Both import hotpink.css before their own module CSS
+    // Expected: hotpink.css should load first, then blue/black module CSS should win
+    // The elements have both .hotpink and their module class
+    const blueEl = await page.locator('text=async blue').first()
+    const blackEl = await page.locator('text=async black').first()
+
+    await expect.poll(() => getColor(blueEl)).toBe('blue')
+    await expect.poll(() => getColor(blackEl)).toBe('black')
+  })
+
   test('@import scss', async () => {
     expect(await getColor('.at-import-scss')).toBe('red')
   })
