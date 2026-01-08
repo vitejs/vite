@@ -99,5 +99,10 @@ export function resolveEnvPrefix({
       `envPrefix option contains value '', which could lead unexpected exposure of sensitive information.`,
     )
   }
+  if (envPrefix.some((prefix) => /\s/.test(prefix))) {
+    throw new Error(
+      `envPrefix option contains values with whitespace, which could lead to unexpected behavior.`,
+    )
+  }
   return envPrefix
 }
