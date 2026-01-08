@@ -1,3 +1,28 @@
+## [8.0.0-beta.7](https://github.com/vitejs/vite/compare/v8.0.0-beta.6...v8.0.0-beta.7) (2026-01-08)
+### Features
+
+* update rolldown to 1.0.0-beta.59 ([#21374](https://github.com/vitejs/vite/issues/21374)) ([0037943](https://github.com/vitejs/vite/commit/00379439fa62383460b056d587d0366597c19ab4))
+
+### Bug Fixes
+
+* **css:** stylus Evaluator support ([#21376](https://github.com/vitejs/vite/issues/21376)) ([cf9ace1](https://github.com/vitejs/vite/commit/cf9ace1b40b2767b9b9cbbabb084fe2e32afc535))
+
+## [8.0.0-beta.6](https://github.com/vitejs/vite/compare/v8.0.0-beta.5...v8.0.0-beta.6) (2026-01-07)
+### Features
+
+* add `ignoreOutdatedRequests` option to `optimizeDeps` ([#21364](https://github.com/vitejs/vite/issues/21364)) ([b2e75aa](https://github.com/vitejs/vite/commit/b2e75aabe93e3219f40fa5ad8755d53cdd2439b5))
+* add ios to default esbuild targets ([#21342](https://github.com/vitejs/vite/issues/21342)) ([daae6e9](https://github.com/vitejs/vite/commit/daae6e9f5dd223258a9e7a9a7fa22c8a4564902f))
+* update rolldown to 1.0.0-beta.58 ([#21354](https://github.com/vitejs/vite/issues/21354)) ([ba40cef](https://github.com/vitejs/vite/commit/ba40cef16d20590f7115d4d628d9b79fa0783473))
+
+### Bug Fixes
+
+* **deps:** update all non-major dependencies ([#21321](https://github.com/vitejs/vite/issues/21321)) ([9bc7c2e](https://github.com/vitejs/vite/commit/9bc7c2ed4f387fb982b84d1988a26af8990096f7))
+* **import-analysis:** avoid cjs interop for built browser external module ([#21333](https://github.com/vitejs/vite/issues/21333)) ([dc5a2fb](https://github.com/vitejs/vite/commit/dc5a2fb86f10c69b0ba6bc1831d9a29c79754ba2))
+
+### Miscellaneous Chores
+
+* replace caniuse link for ES2024 ([#21355](https://github.com/vitejs/vite/issues/21355)) ([2ba4e99](https://github.com/vitejs/vite/commit/2ba4e990192845e01c733aa186c9599cdb5bb8fe))
+
 ## [8.0.0-beta.5](https://github.com/vitejs/vite/compare/v8.0.0-beta.4...v8.0.0-beta.5) (2025-12-25)
 ### Features
 

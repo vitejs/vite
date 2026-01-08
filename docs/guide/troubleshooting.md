@@ -19,7 +19,7 @@ You will need to either:
 
 ### This package is ESM only
 
-When importing a ESM only package by `require`, the following error happens.
+When importing an ESM only package by `require`, the following error happens.
 
 > Failed to resolve "foo". This package is ESM only but it was tried to load by `require`.
 
