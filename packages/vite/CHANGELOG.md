@@ -1,3 +1,12 @@
+## [8.0.0-beta.7](https://github.com/vitejs/vite/compare/v8.0.0-beta.6...v8.0.0-beta.7) (2026-01-08)
+### Features
+
+* update rolldown to 1.0.0-beta.59 ([#21374](https://github.com/vitejs/vite/issues/21374)) ([0037943](https://github.com/vitejs/vite/commit/00379439fa62383460b056d587d0366597c19ab4))
+
+### Bug Fixes
+
+* **css:** stylus Evaluator support ([#21376](https://github.com/vitejs/vite/issues/21376)) ([cf9ace1](https://github.com/vitejs/vite/commit/cf9ace1b40b2767b9b9cbbabb084fe2e32afc535))
+
 ## [8.0.0-beta.6](https://github.com/vitejs/vite/compare/v8.0.0-beta.5...v8.0.0-beta.6) (2026-01-07)
 ### Features
 
