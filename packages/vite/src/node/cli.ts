@@ -365,6 +365,7 @@ cli
         }
         const builder = await createBuilder(inlineConfig, null)
         await builder.buildApp()
+        await builder.runDevTools()
       } catch (e) {
         createLogger(options.logLevel).error(
           colors.red(`error during build:\n${e.stack}`),

@@ -15,6 +15,7 @@ import {
   type RolldownOptions,
   rolldown,
 } from 'rolldown'
+import type { StartOptions } from '@vitejs/devtools/cli-commands'
 import type { Alias, AliasOptions } from '#dep-types/alias'
 import type { AnymatchFn } from '../types/anymatch'
 import { withTrailingSlash } from '../shared/utils'
@@ -90,6 +91,7 @@ import {
   nodeLikeBuiltins,
   normalizeAlias,
   normalizePath,
+  resolveHostname,
   setupRollupOptionCompat,
 } from './utils'
 import {
@@ -507,6 +509,13 @@ export interface UserConfig extends DefaultEnvironmentOptions {
    * @default 'spa'
    */
   appType?: AppType
+  /**
+   * Enable devtools integration. Ensure that `@vitejs/devtools` is installed as a dependency.
+   * This feature is currently supported only in build mode.
+   * @experimental
+   * @default false
+   */
+  devtools?: boolean | DevToolsConfig
 }
 
 export interface HTMLOptions {
@@ -610,6 +619,10 @@ export interface ResolvedWorkerOptions {
    */
   rollupOptions: RolldownOptions
   rolldownOptions: RolldownOptions
+}
+
+export interface DevToolsConfig extends Partial<StartOptions> {
+  enabled: boolean
 }
 
 export interface InlineConfig extends UserConfig {
@@ -725,6 +738,28 @@ export interface ResolvedConfig extends Readonly<
     [SYMBOL_RESOLVED_CONFIG]: true
   } & PluginHookUtils
 > {}
+
+export async function resolveDevToolsConfig(
+  config: InlineConfig | ResolvedConfig,
+): Promise<{
+  config: Omit<DevToolsConfig, 'enabled'> & { host: string }
+  enabled: boolean
+}> {
+  const resolvedHostname = await resolveHostname(config.server?.host)
+  const fallbackHostname = resolvedHostname.host ?? 'localhost'
+
+  return {
+    enabled:
+      config.devtools === true ||
+      !!(config.devtools && config.devtools.enabled),
+    config: {
+      ...(isObject(config.devtools) ? config.devtools : {}),
+      host: isObject(config.devtools)
+        ? (config.devtools?.host ?? fallbackHostname)
+        : fallbackHostname,
+    },
+  }
+}
 
 // inferred ones are omitted
 const configDefaults = Object.freeze({
@@ -2003,6 +2038,13 @@ export async function resolveConfig(
   if (!resolved.builder?.sharedConfigBuild && resolved.environments.ssr) {
     resolved.environments.ssr.build.emitAssets =
       resolved.build.ssrEmitAssets || resolved.build.emitAssets
+  }
+
+  // Enable `rolldownOptions.devtools` if devtools is enabled
+  if ((await resolveDevToolsConfig(config)).enabled) {
+    if (!resolved.build.rolldownOptions.devtools) {
+      resolved.build.rolldownOptions.devtools = {}
+    }
   }
 
   applyDepOptimizationOptionCompat(resolved)

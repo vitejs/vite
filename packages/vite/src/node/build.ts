@@ -39,7 +39,7 @@ import type {
   ResolvedConfig,
   ResolvedEnvironmentOptions,
 } from './config'
-import { resolveConfig } from './config'
+import { resolveConfig, resolveDevToolsConfig } from './config'
 import type { PartialEnvironment } from './baseEnvironment'
 import { buildReporterPlugin } from './plugins/reporter'
 import { buildEsbuildPlugin } from './plugins/esbuild'
@@ -1679,6 +1679,7 @@ export interface ViteBuilder {
   build(
     environment: BuildEnvironment,
   ): Promise<RolldownOutput | RolldownOutput[] | RolldownWatcher>
+  runDevTools(): Promise<void>
 }
 
 export interface BuilderOptions {
@@ -1789,6 +1790,20 @@ export async function createBuilder(
       const output = await buildEnvironment(environment)
       environment.isBuilt = true
       return output
+    },
+    async runDevTools() {
+      const devtoolsConfig = await resolveDevToolsConfig(config)
+      if (devtoolsConfig.enabled) {
+        try {
+          const { start } = await import(`@vitejs/devtools/cli-commands`)
+          await start(devtoolsConfig.config)
+        } catch (e) {
+          config.logger.error(
+            colors.red(`Failed to run Vite DevTools: ${e.message || e.stack}`),
+            { error: e },
+          )
+        }
+      }
     },
   }
 
