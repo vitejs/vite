@@ -45,7 +45,9 @@ export function loadEnv(
 
   const parsed = Object.fromEntries(
     envFiles.flatMap((filePath) => {
-      if (!tryStatSync(filePath)?.isFile()) return []
+      const stat = tryStatSync(filePath)
+      // Support both regular files and FIFOs (named pipes)
+      if (!stat || (!stat.isFile() && !stat.isFIFO())) return []
 
       return Object.entries(parse(fs.readFileSync(filePath)))
     }),
