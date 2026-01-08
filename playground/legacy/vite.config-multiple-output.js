@@ -6,7 +6,7 @@ export default defineConfig({
   build: {
     manifest: true,
     minify: false,
-    rollupOptions: {
+    rolldownOptions: {
       output: [
         {
           assetFileNames() {

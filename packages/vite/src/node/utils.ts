@@ -1238,7 +1238,7 @@ const rollupOptionsDeprecationCall = (() => {
     const method = process.env.VITE_DEPRECATION_TRACE ? 'trace' : 'warn'
     // eslint-disable-next-line no-console
     console[method](
-      '`optimizeDeps.rollupOptions` / `ssr.optimizeDeps.rollupOptions` is deprecated. ' +
+      '`optimizeDeps.rolldownOptions` / `ssr.optimizeDeps.rollupOptions` is deprecated. ' +
         'Use `optimizeDeps.rolldownOptions` instead. Note that this option may be set by a plugin. ' +
         (method === 'trace'
           ? 'Showing trace because VITE_DEPRECATION_TRACE is set.'

@@ -5,7 +5,7 @@ export default defineConfig({
   build: {
     outDir: './dist',
     manifest: true,
-    rollupOptions: {
+    rolldownOptions: {
       input: {
         main: resolve(__dirname, './index.html'),
         other: resolve(__dirname, './other.js'),

@@ -17,7 +17,7 @@ export default defineConfig({
     manifest: true,
     sourcemap: true,
     assetsInlineLimit: 100, // keep SVG as assets URL
-    rollupOptions: {
+    rolldownOptions: {
       input: {
         index: path.resolve(__dirname, 'index.html'),
         nested: path.resolve(__dirname, 'nested/index.html'),
