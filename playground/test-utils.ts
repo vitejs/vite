@@ -34,6 +34,7 @@ export const ports = {
   'ssr-html': 9602,
   'ssr-noexternal': 9603,
   'ssr-pug': 9604,
+  'ssr-wasm': 9608,
   'ssr-webworker': 9605,
   'proxy-bypass': 9606, // not imported but used in `proxy-hmr/vite.config.js`
   'proxy-bypass/non-existent-app': 9607, // not imported but used in `proxy-hmr/other-app/vite.config.js`
@@ -57,6 +58,7 @@ export const hmrPorts = {
   'ssr-html': 24683,
   'ssr-noexternal': 24684,
   'ssr-pug': 24685,
+  'ssr-wasm': 24691,
   'css/lightningcss-proxy': 24686,
   json: 24687,
   'ssr-conditions': 24688,
