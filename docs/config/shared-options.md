@@ -285,6 +285,10 @@ export default defineConfig({
 })
 ```
 
+::: warning Importing files
+Since the same code is prepended to files in different directories, relative paths won't resolve correctly. Use [aliases](#resolve-alias) instead.
+:::
+
 ## css.preprocessorMaxWorkers
 
 - **Type:** `number | true`
