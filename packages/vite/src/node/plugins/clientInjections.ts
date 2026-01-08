@@ -75,29 +75,30 @@ async function createClientConfigValueReplacer(
 
   const serverHost = `${resolvedServerHostname}:${resolvedServerPort}${devBase}`
 
-  let hmrConfig = config.server.hmr
-  hmrConfig = isObject(hmrConfig) ? hmrConfig : undefined
-  const host = hmrConfig?.host || null
-  const protocol = hmrConfig?.protocol || null
-  const timeout = hmrConfig?.timeout || 30000
-  const overlay = hmrConfig?.overlay !== false
-  const isHmrServerSpecified = !!hmrConfig?.server
+  const wsConfig = isObject(config.server.ws) ? config.server.ws : undefined
+  const host = wsConfig?.host || null
+  const protocol = wsConfig?.protocol || null
+  const timeout = wsConfig?.timeout || 30000
+  const isWsServerSpecified = !!wsConfig?.server
   const hmrConfigName = path.basename(config.configFile || 'vite.config.js')
 
-  // hmr.clientPort -> hmr.port
-  // -> (24678 if middleware mode and HMR server is not specified) -> new URL(import.meta.url).port
-  let port = hmrConfig?.clientPort || hmrConfig?.port || null
-  if (config.server.middlewareMode && !isHmrServerSpecified) {
+  const hmrConfig = isObject(config.server.hmr) ? config.server.hmr : undefined
+  const overlay = hmrConfig?.overlay !== false
+
+  // ws.clientPort -> ws.port
+  // -> (24678 if middleware mode and WS server is not specified) -> new URL(import.meta.url).port
+  let port = wsConfig?.clientPort || wsConfig?.port || null
+  if (config.server.middlewareMode && !isWsServerSpecified) {
     port ||= 24678
   }
 
-  let directTarget = hmrConfig?.host || resolvedServerHostname
-  directTarget += `:${hmrConfig?.port || resolvedServerPort}`
+  let directTarget = wsConfig?.host || resolvedServerHostname
+  directTarget += `:${wsConfig?.port || resolvedServerPort}`
   directTarget += devBase
 
   let hmrBase = devBase
-  if (hmrConfig?.path) {
-    hmrBase = path.posix.join(hmrBase, hmrConfig.path)
+  if (wsConfig?.path) {
+    hmrBase = path.posix.join(hmrBase, wsConfig.path)
   }
 
   const modeReplacement = escapeReplacement(config.mode)

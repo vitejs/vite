@@ -1,7 +1,7 @@
 import http from 'node:http'
 import path from 'node:path'
 import fs from 'node:fs'
-import { afterEach, describe, expect, test } from 'vitest'
+import { afterEach, assert, describe, expect, test } from 'vitest'
 import type { InlineConfig, PluginOption } from '..'
 import type { UserConfig, UserConfigExport } from '../config'
 import { defineConfig, loadConfigFromFile, resolveConfig } from '../config'
@@ -286,7 +286,11 @@ describe('mergeConfig', () => {
     }
 
     const mergedConfig = {
-      server: { allowedHosts: true },
+      server: {
+        allowedHosts: true,
+        hmr: expect.any(Object),
+        ws: expect.any(Object),
+      },
     }
 
     expect(mergeConfig(baseConfig, newConfig)).toEqual(mergedConfig)
@@ -616,6 +620,114 @@ describe('mergeConfig', () => {
     expect(
       testRolldownOptions.environments.client.build.rolldownOptions.platform,
     ).toBe('browser')
+  })
+
+  test('syncs `server.hmr.*` to `server.ws.*`', () => {
+    const baseConfig = defineConfig({
+      server: {
+        hmr: {
+          protocol: 'wss',
+          host: 'example.com',
+          port: 3001,
+          clientPort: 443,
+          path: '/ws',
+          timeout: 60000,
+        },
+      },
+    })
+
+    const mergedConfig = mergeConfig(
+      {
+        server: { ws: {} },
+      },
+      baseConfig,
+    )
+
+    expect(mergedConfig.server.ws).toStrictEqual({
+      protocol: 'wss',
+      host: 'example.com',
+      port: 3001,
+      clientPort: 443,
+      path: '/ws',
+      timeout: 60000,
+    })
+    expect(mergedConfig.server.hmr).toStrictEqual({
+      protocol: 'wss',
+      host: 'example.com',
+      port: 3001,
+      clientPort: 443,
+      path: '/ws',
+      timeout: 60000,
+      server: undefined,
+    })
+  })
+
+  test('mergeConfig works with `server.ws` and `server.hmr`', () => {
+    const baseConfig = defineConfig({
+      server: {
+        ws: {
+          host: 'old-host.com',
+          port: 3001,
+        },
+      },
+    })
+
+    const newConfig = defineConfig({
+      server: {
+        hmr: {
+          host: 'new-host.com',
+          port: 3002,
+        },
+      },
+    })
+
+    const mergedConfig = mergeConfig(baseConfig, newConfig)
+
+    expect(mergedConfig.server.ws.host).toBe('new-host.com')
+    expect(mergedConfig.server.hmr.host).toBe('new-host.com')
+    expect(mergedConfig.server.ws.port).toBe(3002)
+    expect(mergedConfig.server.hmr.port).toBe(3002)
+  })
+
+  test('`server.hmr.overlay` is not mapped to `server.ws.overlay`', () => {
+    const config = mergeConfig(
+      {},
+      defineConfig({
+        server: {
+          hmr: {
+            overlay: false,
+          },
+        },
+      }),
+    )
+
+    expect(config.server.hmr.overlay).toBe(false)
+    // overlay should not be synced to ws
+    expect(config.server.ws?.overlay).toBeUndefined()
+  })
+
+  test('resolveConfig properly syncs hmr and ws', async () => {
+    const config = await resolveConfig(
+      {
+        server: {
+          hmr: {
+            host: 'test-host.com',
+            port: 4000,
+          },
+        },
+      },
+      'serve',
+    )
+
+    assert(typeof config.server.ws === 'object')
+    expect(config.server.ws.host).toBe('test-host.com')
+    expect(config.server.ws.port).toBe(4000)
+
+    assert(typeof config.server.hmr === 'object')
+    config.server.hmr!.host = 'new-host.com'
+
+    expect(config.server.ws.host).toBe('new-host.com')
+    expect(config.server.hmr.host).toBe('new-host.com')
   })
 })
 
