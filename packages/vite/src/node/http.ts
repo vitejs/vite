@@ -1,4 +1,5 @@
 import fsp from 'node:fs/promises'
+import net from 'node:net'
 import path from 'node:path'
 import type { OutgoingHttpHeaders as HttpServerHeaders } from 'node:http'
 import type { ServerOptions as HttpsServerOptions } from 'node:https'
@@ -7,6 +8,7 @@ import type { Connect } from '#dep-types/connect'
 import type { ProxyOptions } from './server/middlewares/proxy'
 import type { Logger } from './logger'
 import type { HttpServer } from './server'
+import { wildcardHosts } from './constants'
 
 export interface CommonServerOptions {
   /**
@@ -162,6 +164,30 @@ async function readFileIfExists(value?: string | Buffer | any[]) {
   return value
 }
 
+/**
+ * Check if a port is available by testing wildcard addresses.
+ * This catches servers listening on all interfaces (0.0.0.0 or ::).
+ */
+async function isPortAvailable(port: number): Promise<boolean> {
+  for (const host of wildcardHosts) {
+    // Gracefully handle errors (e.g., IPv6 disabled on the system)
+    const available = await tryListen(port, host).catch(() => true)
+    if (!available) return false
+  }
+  return true
+}
+
+function tryListen(port: number, host: string): Promise<boolean> {
+  return new Promise((resolve) => {
+    const server = net.createServer()
+    server.once('error', () => resolve(false))
+    server.once('listening', () => {
+      server.close(() => resolve(true))
+    })
+    server.listen(port, host)
+  })
+}
+
 export async function httpServerStart(
   httpServer: HttpServer,
   serverOptions: {
@@ -172,6 +198,17 @@ export async function httpServerStart(
   },
 ): Promise<number> {
   let { port, strictPort, host, logger } = serverOptions
+
+  // Pre-check port availability on wildcard addresses (0.0.0.0, ::)
+  // This catches servers listening on all interfaces that would otherwise
+  // not trigger EADDRINUSE when binding to a specific host like localhost
+  while (!(await isPortAvailable(port))) {
+    if (strictPort) {
+      throw new Error(`Port ${port} is already in use`)
+    }
+    logger.info(`Port ${port} is in use, trying another one...`)
+    port++
+  }
 
   return new Promise((resolve, reject) => {
     const onError = (e: Error & { code?: string }) => {
