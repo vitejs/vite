@@ -66,6 +66,7 @@ export function resolvePreviewOptions(
     strictPort: preview?.strictPort ?? server.strictPort,
     host: preview?.host ?? server.host,
     allowedHosts: preview?.allowedHosts ?? server.allowedHosts,
+    trustProxy: preview?.trustProxy ?? server.trustProxy,
     https: preview?.https ?? server.https,
     open: preview?.open ?? server.open,
     proxy: preview?.proxy ?? server.proxy,
@@ -212,7 +213,9 @@ export async function preview(
   const { allowedHosts } = config.preview
   // no need to check for HTTPS as HTTPS is not vulnerable to DNS rebinding attacks
   if (allowedHosts !== true && !config.preview.https) {
-    app.use(hostValidationMiddleware(allowedHosts, true))
+    app.use(
+      hostValidationMiddleware(allowedHosts, true, config.preview.trustProxy),
+    )
   }
 
   // apply server hooks from plugins
