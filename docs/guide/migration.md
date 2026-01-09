@@ -340,6 +340,8 @@ The following options are deprecated and will be removed in the future:
 
 ## Removed Deprecated Features [<Badge text="NRV" type="warning" />](#migration-from-v7)
 
+- Passing an URL to `import.meta.hot.accept` is no longer supported. Please pass an id instead. ([#21382](https://github.com/vitejs/vite/pull/21382))
+
 **_TODO: This change is not implemented yet, but will be implemented before stable release._**
 
 ## Advanced
