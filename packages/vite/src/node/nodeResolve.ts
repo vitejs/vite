@@ -33,6 +33,7 @@ export function nodeResolveWithVite(
     dedupe: [],
     extensions: DEFAULT_EXTENSIONS,
     preserveSymlinks: false,
+    tsconfigPaths: false,
     // Intentionally disable package cache for now as consumers don't need it
     packageCache: undefined,
     isRequire: options.isRequire,

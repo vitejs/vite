@@ -9,7 +9,7 @@
     "debug": "node --inspect-brk server"
   },
   "devDependencies": {
-    "express": "^5.1.0",
+    "express": "^5.2.1",
     "pug": "^3.0.3"
   }
 }

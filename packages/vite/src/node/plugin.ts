@@ -1,15 +1,18 @@
 import type {
   CustomPluginOptions,
+  ImportKind,
   LoadResult,
   MinimalPluginContext,
+  ModuleType,
+  ModuleTypeFilter,
   ObjectHook,
   PluginContext,
   PluginContextMeta,
   ResolveIdResult,
-  Plugin as RollupPlugin,
+  Plugin as RolldownPlugin,
   TransformPluginContext,
   TransformResult,
-} from 'rollup'
+} from 'rolldown'
 import type {
   ConfigEnv,
   EnvironmentOptions,
@@ -67,16 +70,20 @@ export interface PluginContextMetaExtension {
   viteVersion: string
 }
 
-export interface ConfigPluginContext
-  extends Omit<MinimalPluginContext, 'meta' | 'environment'> {
+export interface ConfigPluginContext extends Omit<
+  MinimalPluginContext,
+  'meta' | 'environment'
+> {
   meta: Omit<PluginContextMeta, 'watchMode'>
 }
 
-export interface MinimalPluginContextWithoutEnvironment
-  extends Omit<MinimalPluginContext, 'environment'> {}
+export interface MinimalPluginContextWithoutEnvironment extends Omit<
+  MinimalPluginContext,
+  'environment'
+> {}
 
-// Augment Rollup types to have the PluginContextExtension
-declare module 'rollup' {
+// Augment Rolldown types to have the PluginContextExtension
+declare module 'rolldown' {
   export interface MinimalPluginContext extends PluginContextExtension {}
   export interface PluginContextMeta extends PluginContextMetaExtension {}
 }
@@ -91,7 +98,7 @@ declare module 'rollup' {
  * Environment Plugins are closer to regular rollup plugins. They can't define
  * app level hooks (like config, configResolved, configureServer, etc).
  */
-export interface Plugin<A = any> extends RollupPlugin<A> {
+export interface Plugin<A = any> extends RolldownPlugin<A> {
   /**
    * Perform custom handling of HMR updates.
    * The handler receives an options containing changed filename, timestamp, a
@@ -126,7 +133,7 @@ export interface Plugin<A = any> extends RollupPlugin<A> {
       source: string,
       importer: string | undefined,
       options: {
-        attributes: Record<string, string>
+        kind?: ImportKind
         custom?: CustomPluginOptions
         ssr?: boolean | undefined
         /**
@@ -154,10 +161,17 @@ export interface Plugin<A = any> extends RollupPlugin<A> {
       code: string,
       id: string,
       options?: {
+        moduleType: ModuleType
         ssr?: boolean | undefined
       },
     ) => Promise<TransformResult> | TransformResult,
-    { filter?: { id?: StringFilter; code?: StringFilter } }
+    {
+      filter?: {
+        id?: StringFilter
+        code?: StringFilter
+        moduleType?: ModuleTypeFilter
+      }
+    }
   >
   /**
    * Opt-in this plugin into the shared plugins pipeline.
@@ -337,6 +351,23 @@ export interface Plugin<A = any> extends RollupPlugin<A> {
       ctx: HmrContext,
     ) => Array<ModuleNode> | void | Promise<Array<ModuleNode> | void>
   >
+
+  /**
+   * This hook is not supported by Rolldown yet. But the type is declared for compatibility.
+   *
+   * @deprecated This hook is **not** deprecated. It is marked as deprecated just to make it clear that this hook is currently a no-op.
+   */
+  shouldTransformCachedModule?: ObjectHook<
+    (
+      this: PluginContext,
+      options: {
+        code: string
+        id: string
+        meta: CustomPluginOptions
+        moduleSideEffects: boolean | 'no-treeshake'
+      },
+    ) => boolean | null | void
+  >
 }
 
 export type HookHandler<T> = T extends ObjectHook<infer H> ? H : T
@@ -349,7 +380,12 @@ type Thenable<T> = T | Promise<T>
 
 export type FalsyPlugin = false | null | undefined
 
-export type PluginOption = Thenable<Plugin | FalsyPlugin | PluginOption[]>
+export type PluginOption = Thenable<
+  | Plugin
+  | { name: string } // for rollup plugin compatibility
+  | FalsyPlugin
+  | PluginOption[]
+>
 
 export async function resolveEnvironmentPlugins(
   environment: PartialEnvironment,

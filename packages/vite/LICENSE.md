@@ -127,13 +127,9 @@ Repository: https://github.com/rolldown/rolldown
 
 ---------------------------------------
 
-## @rollup/plugin-alias, @rollup/plugin-commonjs, @rollup/plugin-dynamic-import-vars, @rollup/pluginutils
+## @rollup/plugin-alias, @rollup/plugin-dynamic-import-vars, @rollup/pluginutils
 License: MIT
 By: Johannes Stein
-Repository: https://github.com/rollup/plugins
-
-License: MIT
-By: Rich Harris
 Repository: https://github.com/rollup/plugins
 
 License: MIT
@@ -351,38 +347,6 @@ Repository: https://github.com/paulmillr/chokidar
 
 ---------------------------------------
 
-## commondir, shell-quote
-License: MIT
-By: James Halliday
-Repositories: http://github.com/substack/node-commondir, http://github.com/ljharb/shell-quote
-
-> The MIT License
-> 
-> Copyright (c) 2013 James Halliday (mail@substack.net)
-> 
-> Permission is hereby granted, free of charge, 
-> to any person obtaining a copy of this software and 
-> associated documentation files (the "Software"), to 
-> deal in the Software without restriction, including 
-> without limitation the rights to use, copy, modify, 
-> merge, publish, distribute, sublicense, and/or sell 
-> copies of the Software, and to permit persons to whom 
-> the Software is furnished to do so, 
-> subject to the following conditions:
-> 
-> The above copyright notice and this permission notice 
-> shall be included in all copies or substantial portions of the Software.
-> 
-> THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, 
-> EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES 
-> OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. 
-> IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR 
-> ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, 
-> TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE 
-> SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
-
----------------------------------------
-
 ## connect
 License: MIT
 By: TJ Holowaychuk, Douglas Christopher Wilson, Jonathan Ong, Tim Caswell
@@ -531,33 +495,6 @@ Repository: https://github.com/mathiasbynens/cssesc
 > LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION
 > OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION
 > WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
-
----------------------------------------
-
-## debug
-License: MIT
-By: Josh Junon, TJ Holowaychuk, Nathan Rajlich, Andrew Rhyne
-Repository: https://github.com/debug-js/debug
-
-> (The MIT License)
-> 
-> Copyright (c) 2014-2017 TJ Holowaychuk <tj@vision-media.ca>
-> Copyright (c) 2018-2021 Josh Junon
-> 
-> Permission is hereby granted, free of charge, to any person obtaining a copy of this software
-> and associated documentation files (the 'Software'), to deal in the Software without restriction,
-> including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense,
-> and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so,
-> subject to the following conditions:
-> 
-> The above copyright notice and this permission notice shall be included in all copies or substantial
-> portions of the Software.
-> 
-> THE SOFTWARE IS PROVIDED 'AS IS', WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT
-> LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.
-> IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY,
-> WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE
-> SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 ---------------------------------------
 
@@ -1050,13 +987,6 @@ Repository: https://github.com/micromatch/is-glob
 
 ---------------------------------------
 
-## is-reference
-License: MIT
-By: Rich Harris
-Repository: https://github.com/Rich-Harris/is-reference
-
----------------------------------------
-
 ## isexe, which
 License: ISC
 By: Isaac Z. Schlueter
@@ -1322,34 +1252,6 @@ Repository: https://github.com/lukeed/mrmime
 
 ---------------------------------------
 
-## ms
-License: MIT
-Repository: https://github.com/vercel/ms
-
-> The MIT License (MIT)
-> 
-> Copyright (c) 2020 Vercel, Inc.
-> 
-> Permission is hereby granted, free of charge, to any person obtaining a copy
-> of this software and associated documentation files (the "Software"), to deal
-> in the Software without restriction, including without limitation the rights
-> to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-> copies of the Software, and to permit persons to whom the Software is
-> furnished to do so, subject to the following conditions:
-> 
-> The above copyright notice and this permission notice shall be included in all
-> copies or substantial portions of the Software.
-> 
-> THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-> IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-> FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-> AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-> LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-> OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
-> SOFTWARE.
-
----------------------------------------
-
 ## normalize-path
 License: MIT
 By: Jon Schlinkert, Blaine Bublitz
@@ -1405,6 +1307,37 @@ Repository: https://github.com/sindresorhus/object-assign
 > LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 > OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 > THE SOFTWARE.
+
+---------------------------------------
+
+## obug
+License: MIT
+By: Kevin Deng
+Repository: https://github.com/sxzz/obug
+
+> The MIT License (MIT)
+> 
+> Copyright © 2025-PRESENT Kevin Deng (https://github.com/sxzz)
+> Copyright (c) 2014-2017 TJ Holowaychuk <tj@vision-media.ca>
+> Copyright (c) 2018-2021 Josh Junon
+> 
+> Permission is hereby granted, free of charge, to any person obtaining a copy
+> of this software and associated documentation files (the "Software"), to deal
+> in the Software without restriction, including without limitation the rights
+> to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+> copies of the Software, and to permit persons to whom the Software is
+> furnished to do so, subject to the following conditions:
+> 
+> The above copyright notice and this permission notice shall be included in all
+> copies or substantial portions of the Software.
+> 
+> THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+> IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+> FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+> AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+> LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+> OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+> SOFTWARE.
 
 ---------------------------------------
 
@@ -1838,6 +1771,38 @@ Repository: https://github.com/kevva/shebang-command
 > The above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.
 > 
 > THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+
+---------------------------------------
+
+## shell-quote
+License: MIT
+By: James Halliday
+Repository: http://github.com/ljharb/shell-quote
+
+> The MIT License
+> 
+> Copyright (c) 2013 James Halliday (mail@substack.net)
+> 
+> Permission is hereby granted, free of charge, 
+> to any person obtaining a copy of this software and 
+> associated documentation files (the "Software"), to 
+> deal in the Software without restriction, including 
+> without limitation the rights to use, copy, modify, 
+> merge, publish, distribute, sublicense, and/or sell 
+> copies of the Software, and to permit persons to whom 
+> the Software is furnished to do so, 
+> subject to the following conditions:
+> 
+> The above copyright notice and this permission notice 
+> shall be included in all copies or substantial portions of the Software.
+> 
+> THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, 
+> EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES 
+> OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. 
+> IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR 
+> ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, 
+> TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE 
+> SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 ---------------------------------------
 

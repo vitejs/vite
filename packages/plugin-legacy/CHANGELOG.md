@@ -1,3 +1,8 @@
+## [8.0.0-beta.0](https://github.com/vitejs/vite/compare/plugin-legacy@7.2.1...plugin-legacy@8.0.0-beta.0) (2025-12-03)
+### Features
+
+* the epic `rolldown-vite` merge ([#21189](https://github.com/vitejs/vite/issues/21189)) ([4a7f8d4](https://github.com/vitejs/vite/commit/4a7f8d43e6b14b89fef278c3ea86f9e3f64b7fc2))
+
 ## <small>[7.2.1](https://github.com/vitejs/vite/compare/plugin-legacy@7.2.0...plugin-legacy@7.2.1) (2025-08-07)</small>
 ### Features
 

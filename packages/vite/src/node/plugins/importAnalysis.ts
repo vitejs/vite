@@ -9,12 +9,12 @@ import type {
   ImportSpecifier,
 } from 'es-module-lexer'
 import { init, parse as parseImports } from 'es-module-lexer'
-import { parseAst } from 'rollup/parseAst'
+import { parseAst } from 'rolldown/parseAst'
 import type { StaticImport } from 'mlly'
 import { ESM_STATIC_IMPORT_RE, parseStaticImport } from 'mlly'
 import { makeLegalIdentifier } from '@rollup/pluginutils'
-import type { PartialResolvedId, RollupError } from 'rollup'
-import type { Identifier, Literal } from 'estree'
+import type { PartialResolvedId, RollupError } from 'rolldown'
+import type { Identifier, Literal, Program } from 'estree'
 import {
   CLIENT_DIR,
   CLIENT_PUBLIC_PATH,
@@ -40,6 +40,7 @@ import {
   isDataUrl,
   isDefined,
   isExternalUrl,
+  isFilePathESM,
   isInNodeModules,
   isJSRequest,
   joinUrlSegments,
@@ -59,7 +60,10 @@ import type { ResolvedConfig } from '../config'
 import type { Plugin } from '../plugin'
 import type { DevEnvironment } from '../server/environment'
 import { shouldExternalize } from '../external'
-import { optimizedDepNeedsInterop } from '../optimizer'
+import {
+  optimizedDepInfoFromFile,
+  optimizedDepNeedsInterop,
+} from '../optimizer'
 import {
   cleanUrl,
   unwrapId,
@@ -83,7 +87,6 @@ export const canSkipImportAnalysis = (id: string): boolean =>
   skipRE.test(id) || isDirectCSSRequest(id)
 
 const optimizedDepChunkRE = /\/chunk-[A-Z\d]{8}\.js/
-const optimizedDepDynamicRE = /-[A-Z\d]{8}\.js/
 
 export const hasViteIgnoreRE: RegExp = /\/\*\s*@vite-ignore\s*\*\//
 
@@ -333,8 +336,6 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
         pos: number,
         forceSkipImportAnalysis: boolean = false,
       ): Promise<[string, string | null]> => {
-        url = stripBase(url, base)
-
         let importerFile = importer
 
         if (
@@ -447,6 +448,14 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
       const orderedAcceptedExports = new Array<Set<string> | undefined>(
         imports.length,
       )
+
+      let _isNodeModeResult = config.legacy?.inconsistentCjsInterop
+        ? false
+        : undefined
+      const isNodeMode = () => {
+        _isNodeModeResult ??= isFilePathESM(importer, config.packageCache)
+        return _isNodeModeResult
+      }
 
       await Promise.all(
         imports.map(async (importSpecifier, index) => {
@@ -574,6 +583,7 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
             if (url !== specifier) {
               let rewriteDone = false
               if (
+                !depsOptimizer?.isOptimizedDepFile(importer) &&
                 depsOptimizer?.isOptimizedDepFile(resolvedId) &&
                 !optimizedDepChunkRE.test(resolvedId)
               ) {
@@ -584,6 +594,10 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
                 // page reload. We could return a 404 in that case but it is safe to return the request
                 const file = cleanUrl(resolvedId) // Remove ?v={hash}
 
+                const depInfo = optimizedDepInfoFromFile(
+                  depsOptimizer.metadata,
+                  file,
+                )
                 const needsInterop = await optimizedDepNeedsInterop(
                   environment,
                   depsOptimizer.metadata,
@@ -594,7 +608,7 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
                   // Non-entry dynamic imports from dependencies will reach here as there isn't
                   // optimize info for them, but they don't need es interop. If the request isn't
                   // a dynamic import, then it is an internal Vite error
-                  if (!optimizedDepDynamicRE.test(file)) {
+                  if (depInfo?.isDynamicEntry) {
                     config.logger.error(
                       colors.red(
                         `Vite Error, ${url} optimized info should be defined`,
@@ -609,6 +623,7 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
                     url,
                     index,
                     importer,
+                    isNodeMode(),
                     config,
                   )
                   rewriteDone = true
@@ -618,7 +633,7 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
               // would fail as it's `export default` only. Apply interop for builtin modules to
               // correctly throw the error message.
               else if (
-                url.includes(browserExternalId) &&
+                url.startsWith(wrapId(browserExternalId)) &&
                 source.slice(expStart, start).includes('{')
               ) {
                 interopNamedImports(
@@ -627,6 +642,7 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
                   url,
                   index,
                   importer,
+                  isNodeMode(),
                   config,
                 )
                 rewriteDone = true
@@ -910,16 +926,16 @@ export function createParseErrorInfo(
   }
 }
 
-const interopHelper = (m: any) =>
-  m?.__esModule
-    ? m
-    : {
+const interopHelper = (m: any, n: boolean) =>
+  n || !m?.__esModule
+    ? {
         ...((typeof m === 'object' && !Array.isArray(m)) ||
         typeof m === 'function'
           ? m
           : {}),
         default: m,
       }
+    : m
 const interopHelperStr = interopHelper.toString().replaceAll('\n', '')
 
 export function interopNamedImports(
@@ -928,6 +944,7 @@ export function interopNamedImports(
   rewrittenUrl: string,
   importIndex: number,
   importer: string,
+  isNodeMode: boolean,
   config: ResolvedConfig,
 ): void {
   const source = str.original
@@ -940,11 +957,12 @@ export function interopNamedImports(
   } = importSpecifier
   const exp = source.slice(expStart, expEnd)
   if (dynamicIndex > -1) {
+    const inconsistentCjsInterop = !!config.legacy?.inconsistentCjsInterop
     // rewrite `import('package')` to expose the default directly
     str.overwrite(
       expStart,
       expEnd,
-      `import('${rewrittenUrl}').then(m => (${interopHelperStr})(m.default))` +
+      `import('${rewrittenUrl}').then(m => (${interopHelperStr})(m.default, ${inconsistentCjsInterop ? 0 : 1}))` +
         getLineBreaks(exp),
       { contentOnly: true },
     )
@@ -956,6 +974,7 @@ export function interopNamedImports(
       rawUrl,
       importIndex,
       importer,
+      isNodeMode,
       config,
     )
     if (rewritten) {
@@ -1002,9 +1021,10 @@ export function transformCjsImport(
   rawUrl: string,
   importIndex: number,
   importer: string,
+  isNodeMode: boolean,
   config: ResolvedConfig,
 ): string | undefined {
-  const node = parseAst(importExp).body[0]
+  const node = (parseAst(importExp) as Program).body[0]
 
   // `export * from '...'` may cause unexpected problem, so give it a warning
   if (
@@ -1080,12 +1100,16 @@ export function transformCjsImport(
     importNames.forEach(({ importedName, localName }) => {
       if (importedName === '*') {
         lines.push(
-          `const ${localName} = (${interopHelperStr})(${cjsModuleName})`,
+          `const ${localName} = (${interopHelperStr})(${cjsModuleName}, ${+isNodeMode})`,
         )
       } else if (importedName === 'default') {
-        lines.push(
-          `const ${localName} = ${cjsModuleName}.__esModule ? ${cjsModuleName}.default : ${cjsModuleName}`,
-        )
+        if (isNodeMode) {
+          lines.push(`const ${localName} = ${cjsModuleName}`)
+        } else {
+          lines.push(
+            `const ${localName} = !${cjsModuleName}.__esModule ? ${cjsModuleName} : ${cjsModuleName}.default`,
+          )
+        }
       } else {
         lines.push(`const ${localName} = ${cjsModuleName}["${importedName}"]`)
       }
