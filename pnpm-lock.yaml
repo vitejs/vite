@@ -135,8 +135,8 @@ importers:
         specifier: ^5.0.6
         version: 5.0.6
       '@voidzero-dev/vitepress-theme':
-        specifier: ^4.0.0
-        version: 4.0.0(axios@1.13.2)(focus-trap@7.6.6)(typescript@5.9.3)(vite@packages+vite)(vitepress@2.0.0-alpha.15(axios@1.13.2)(oxc-minify@0.107.0)(postcss@8.5.6)(typescript@5.9.3))(vue@3.5.26(typescript@5.9.3))
+        specifier: ^4.0.3
+        version: 4.0.3(axios@1.13.2)(focus-trap@7.6.6)(typescript@5.9.3)(vite@packages+vite)(vitepress@2.0.0-alpha.15(axios@1.13.2)(oxc-minify@0.107.0)(postcss@8.5.6)(typescript@5.9.3))(vue@3.5.26(typescript@5.9.3))
       feed:
         specifier: ^5.1.0
         version: 5.1.0
@@ -4337,10 +4337,10 @@ packages:
   '@vitest/utils@4.0.16':
     resolution: {integrity: sha512-h8z9yYhV3e1LEfaQ3zdypIrnAg/9hguReGZoS7Gl0aBG5xgA410zBqECqmaF/+RkTggRsfnzc1XaAHA6bmUufA==}
 
-  '@voidzero-dev/vitepress-theme@4.0.0':
-    resolution: {integrity: sha512-9EZH/mp/Jwhs0al/9BIMDX3n6oDb3cvvL4MQSOJSIXCYccPGSaiQ9dApyBWiPpaVdBaXNFde8I46GpBMhBdeFA==}
+  '@voidzero-dev/vitepress-theme@4.0.3':
+    resolution: {integrity: sha512-/6lhlA4/d6UoDjsbbvJHyzyQ+NrKuOtZkF50e7yAcvx0YzwzPnHGgZqM9hu8GwGHIqOr4xA1hbTMZGPhFORlXw==}
     peerDependencies:
-      vitepress: ^2.0.0-alpha.12
+      vitepress: ^2.0.0-alpha.15
       vue: ^3.5.0
 
   '@volar/language-core@2.4.27':
@@ -10057,7 +10057,7 @@ snapshots:
       '@vitest/pretty-format': 4.0.16
       tinyrainbow: 3.0.3
 
-  '@voidzero-dev/vitepress-theme@4.0.0(axios@1.13.2)(focus-trap@7.6.6)(typescript@5.9.3)(vite@packages+vite)(vitepress@2.0.0-alpha.15(axios@1.13.2)(oxc-minify@0.107.0)(postcss@8.5.6)(typescript@5.9.3))(vue@3.5.26(typescript@5.9.3))':
+  '@voidzero-dev/vitepress-theme@4.0.3(axios@1.13.2)(focus-trap@7.6.6)(typescript@5.9.3)(vite@packages+vite)(vitepress@2.0.0-alpha.15(axios@1.13.2)(oxc-minify@0.107.0)(postcss@8.5.6)(typescript@5.9.3))(vue@3.5.26(typescript@5.9.3))':
     dependencies:
       '@docsearch/css': 4.3.2
       '@docsearch/js': 4.3.2
