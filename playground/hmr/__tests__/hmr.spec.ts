@@ -1022,9 +1022,17 @@ if (!isBuild) {
     editFile('prune/dep1.js', (code) =>
       code.replace(`import './dep2.js'`, `// import './dep2.js'`),
     )
+    // Prune is triggered when there are other dependencies.
     await expect
       .poll(() => page.textContent('.prune'))
       .toMatch('prune-init|dep2-disposed|dep2-pruned')
+    editFile('prune/dep1.js', (code) =>
+      code.replace(`import './dep3.js'`, `// import './dep3.js'`),
+    )
+    // Prune is triggered when there are no more dependencies.
+    await expect
+      .poll(() => page.textContent('.prune'))
+      .toMatch('prune-init|dep2-disposed|dep2-pruned|dep3-disposed|dep3-pruned')
   })
 
   test('import.meta.hot?.accept', async () => {
