@@ -1,3 +1,8 @@
+## <small>[7.3.1](https://github.com/vitejs/rolldown-vite/compare/v7.3.0...v7.3.1) (2026-01-09)</small>
+### Features
+
+* add `ignoreOutdatedRequests` option to `optimizeDeps` ([#21364](https://github.com/vitejs/rolldown-vite/issues/21364)) ([cc591f4](https://github.com/vitejs/rolldown-vite/commit/cc591f4d0cee66caeea620f0432ccb98496c029f))
+
 ## [7.3.0](https://github.com/vitejs/rolldown-vite/compare/v7.2.11...v7.3.0) (2025-12-18)
 ### Features
 
