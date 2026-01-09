@@ -1,3 +1,26 @@
+## [8.2.0](https://github.com/vitejs/vite/compare/create-vite@8.1.0...create-vite@8.2.0) (2025-11-20)
+### Features
+
+* **create-vite:** add Vike ([#21132](https://github.com/vitejs/vite/issues/21132)) ([0a86262](https://github.com/vitejs/vite/commit/0a86262cb253a6a38bb02d72a39805fe552b944b))
+
+### Bug Fixes
+
+* **deps:** update all non-major dependencies ([#21128](https://github.com/vitejs/vite/issues/21128)) ([4f8171e](https://github.com/vitejs/vite/commit/4f8171eb3046bd70c83964689897dab4c6b58bc0))
+
+### Miscellaneous Chores
+
+* **deps:** update rolldown-related dependencies ([#21127](https://github.com/vitejs/vite/issues/21127)) ([5029720](https://github.com/vitejs/vite/commit/50297208452241061cb44d09a4bbdf77a11ac01e))
+
+## [8.1.0](https://github.com/vitejs/vite/compare/create-vite@8.0.3...create-vite@8.1.0) (2025-11-12)
+### Features
+
+* **create-vite:** update React Compiler dep to 1.0.0 ([#20911](https://github.com/vitejs/vite/issues/20911)) ([6cf3304](https://github.com/vitejs/vite/commit/6cf3304c83586cf547d0b706d2e58ae647b93218))
+* **create-vite:** updated eslint-plugin-react-hooks to v7 and updated the config ([#20914](https://github.com/vitejs/vite/issues/20914)) ([0ec8aeb](https://github.com/vitejs/vite/commit/0ec8aeba479bb42d37521cf8d256286abc06c129))
+
+### Miscellaneous Chores
+
+* **deps:** update rolldown-related dependencies ([#21095](https://github.com/vitejs/vite/issues/21095)) ([39a0a15](https://github.com/vitejs/vite/commit/39a0a15fd24ed37257c48b795097a3794e54d255))
+
 ## <small>[8.0.3](https://github.com/vitejs/vite/compare/create-vite@8.0.2...create-vite@8.0.3) (2025-11-10)</small>
 ### Bug Fixes
 

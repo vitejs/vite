@@ -40,39 +40,38 @@
     "ci-docs": "pnpm build && pnpm docs-build"
   },
   "devDependencies": {
-    "@eslint/js": "^9.39.1",
+    "@eslint/js": "^9.39.2",
     "@type-challenges/utils": "^0.1.1",
     "@types/babel__core": "^7.20.5",
     "@types/babel__preset-env": "^7.10.0",
     "@types/convert-source-map": "^2.0.3",
     "@types/cross-spawn": "^6.0.6",
-    "@types/debug": "^4.1.12",
     "@types/estree": "^1.0.8",
     "@types/etag": "^1.8.4",
     "@types/less": "^3.0.8",
-    "@types/node": "^22.19.0",
+    "@types/node": "^22.19.3",
     "@types/picomatch": "^4.0.2",
     "@types/stylus": "^0.48.43",
     "@types/ws": "^8.18.1",
     "@vitejs/release-scripts": "^1.6.0",
-    "eslint": "^9.39.1",
+    "eslint": "^9.39.2",
     "eslint-plugin-import-x": "^4.16.1",
     "eslint-plugin-n": "^17.23.1",
     "eslint-plugin-regexp": "^2.10.0",
-    "execa": "^9.6.0",
+    "execa": "^9.6.1",
     "globals": "^16.5.0",
-    "lint-staged": "^16.2.6",
+    "lint-staged": "^16.2.7",
     "picocolors": "^1.1.1",
-    "playwright-chromium": "^1.56.1",
-    "prettier": "3.6.2",
-    "rolldown": "^1.0.0-beta.46",
+    "playwright-chromium": "^1.57.0",
+    "prettier": "3.7.4",
+    "rolldown": "1.0.0-beta.59",
     "rollup": "^4.43.0",
     "simple-git-hooks": "^2.13.1",
-    "tsx": "^4.20.6",
-    "typescript": "~5.9.2",
-    "typescript-eslint": "^8.46.3",
+    "tsx": "^4.21.0",
+    "typescript": "~5.9.3",
+    "typescript-eslint": "^8.52.0",
     "vite": "workspace:*",
-    "vitest": "^4.0.8"
+    "vitest": "^4.0.16"
   },
   "simple-git-hooks": {
     "pre-commit": "pnpm exec lint-staged --concurrent false"
@@ -91,7 +90,7 @@
       "eslint --cache --fix"
     ]
   },
-  "packageManager": "pnpm@10.21.0",
+  "packageManager": "pnpm@10.27.0",
   "stackblitz": {
     "startCommand": "pnpm --filter='./packages/vite' run dev"
   }

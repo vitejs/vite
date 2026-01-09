@@ -87,7 +87,9 @@ export default defineConfig({
   title: `Vite${additionalTitle}`,
   description: 'Next Generation Frontend Tooling',
   cleanUrls: true,
-
+  sitemap: {
+    hostname: 'https://vite.dev',
+  },
   head: [
     ['link', { rel: 'icon', type: 'image/svg+xml', href: '/logo.svg' }],
     [
@@ -150,6 +152,7 @@ export default defineConfig({
       searchParameters: {
         facetFilters: ['tags:en'],
       },
+      insights: true,
     },
 
     carbonAds: {
@@ -297,10 +300,6 @@ export default defineConfig({
             {
               text: 'Performance',
               link: '/guide/performance',
-            },
-            {
-              text: 'Rolldown',
-              link: '/guide/rolldown',
             },
             {
               text: `Migration from v${viteMajorVersion - 1}`,
@@ -475,7 +474,27 @@ export default defineConfig({
   markdown: {
     // languages used for twoslash and jsdocs in twoslash
     languages: ['ts', 'js', 'json'],
-    codeTransformers: [transformerTwoslash()],
+    codeTransformers: [
+      transformerTwoslash(),
+      // add `style:*` support
+      {
+        root(hast) {
+          const meta = this.options.meta?.__raw
+            ?.split(' ')
+            .find((m) => m.startsWith('style:'))
+          if (meta) {
+            const style = meta.slice('style:'.length)
+            const rootPre = hast.children.find(
+              (n): n is typeof n & { type: 'element'; tagName: 'pre' } =>
+                n.type === 'element' && n.tagName === 'pre',
+            )
+            if (rootPre) {
+              rootPre.properties.style += '; ' + style
+            }
+          }
+        },
+      },
+    ],
     config(md) {
       md.use(groupIconMdPlugin, {
         titleBar: {
