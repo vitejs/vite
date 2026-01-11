@@ -267,6 +267,9 @@
 <h2>Unknown extension assets import</h2>
 <code class="unknown-ext"></code>
 
+<h2>?raw import absolute</h2>
+<code class="raw-import-absolute"></code>
+
 <h2>?raw import</h2>
 <code class="raw"></code>
 <code class="raw-html"></code>
@@ -554,6 +557,9 @@
 
   import rawSvg from './nested/fragment.svg?raw'
   text('.raw', rawSvg)
+
+  import rawText from '/raw.txt?raw'
+  text('.raw-import-absolute', rawText)
 
   import rawHtml from './nested/partial.html?raw'
   text('.raw-html', rawHtml)
