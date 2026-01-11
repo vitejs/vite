@@ -47,6 +47,7 @@ import {
   moduleListContains,
   normalizePath,
   prettifyUrl,
+  rawRE,
   removeImportQuery,
   removeTimestampQuery,
   stripBase,
@@ -546,7 +547,8 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
               specifier[0] === '/' &&
               !(
                 config.assetsInclude(cleanUrl(specifier)) ||
-                urlRE.test(specifier)
+                urlRE.test(specifier) ||
+                rawRE.test(specifier)
               ) &&
               checkPublicFile(specifier, config)
             ) {
