@@ -41,6 +41,49 @@ const preloadMarkerRE = new RegExp(preloadMarker, 'g')
 
 const dynamicImportPrefixRE = /import\s*\(/
 
+/**
+ * Detects if a dynamic import at a given position is unreachable
+ * by checking if there's a return/throw statement before it in the same block.
+ * This helps avoid build failures caused by dynamic imports in dead code paths.
+ */
+export function isUnreachableDynamicImport(
+  source: string,
+  importStart: number,
+): boolean {
+  // Find the start of the current block (function body, if block, etc.)
+  // by looking for the nearest opening brace before the import
+  let braceCount = 0
+  let blockStart = 0
+
+  for (let i = importStart - 1; i >= 0; i--) {
+    const char = source[i]
+    if (char === '}') {
+      braceCount++
+    } else if (char === '{') {
+      if (braceCount === 0) {
+        blockStart = i + 1
+        break
+      }
+      braceCount--
+    }
+  }
+
+  // Get the code between block start and import position
+  const codeBeforeImport = source.slice(blockStart, importStart)
+
+  // Check for return or throw statements followed by only whitespace before import
+  // Pattern: return; or return <value>; or throw <value>; at the end
+  const simpleReturnRE = /return\s*;\s*$/
+  const returnValueRE = /return\s[^;]+;\s*$/
+  const throwRE = /throw\s[^;]+;\s*$/
+
+  return (
+    simpleReturnRE.test(codeBeforeImport) ||
+    returnValueRE.test(codeBeforeImport) ||
+    throwRE.test(codeBeforeImport)
+  )
+}
+
 const dynamicImportTreeshakenRE =
   /((?:\bconst\s+|\blet\s+|\bvar\s+|,\s*)(\{[^{}.=]+\})\s*=\s*await\s+import\([^)]+\))(?=\s*(?:$|[^[.]))|(\(\s*await\s+import\([^)]+\)\s*\)(\??\.[\w$]+))|\bimport\([^)]+\)(\s*\.then\(\s*(?:function\s*)?\(\s*\{([^{}.=]+)\}\))/g
 
@@ -346,7 +389,9 @@ export function buildImportAnalysisPlugin(config: ResolvedConfig): Plugin[] {
             // Only preload static urls
             (source[start] === '"' ||
               source[start] === "'" ||
-              source[start] === '`')
+              source[start] === '`') &&
+            // Skip unreachable dynamic imports (after return/throw statements)
+            !isUnreachableDynamicImport(source, expStart)
           ) {
             needPreloadHelper = true
             const { declaration, names } = dynamicImports[expEnd] || {}

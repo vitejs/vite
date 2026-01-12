@@ -77,6 +77,7 @@ import { browserExternalId } from './resolve'
 import { serializeDefine } from './define'
 import { WORKER_FILE_ID } from './worker'
 import { getAliasPatternMatcher } from './preAlias'
+import { isUnreachableDynamicImport } from './importAnalysisBuild'
 
 const debug = createDebugger('vite:import-analysis')
 
@@ -519,6 +520,24 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
           // static import or valid string in dynamic import
           // If resolvable, let's resolve it
           if (specifier !== undefined) {
+            // warn about unreachable dynamic imports (after return/throw)
+            if (
+              isDynamicImport &&
+              isUnreachableDynamicImport(source, expStart)
+            ) {
+              this.warn(
+                `\n` +
+                  colors.cyan(importerModule.file) +
+                  `\n` +
+                  colors.reset(generateCodeFrame(source, start, end)) +
+                  colors.yellow(
+                    `\nThe above dynamic import appears to be unreachable (after return/throw statement).\n` +
+                      `This may cause build failures. Consider removing the dead code or using ` +
+                      `/* @vite-ignore */ if this is intentional.\n`,
+                  ),
+              )
+            }
+
             // skip external / data uri
             if (
               ((isExternalUrl(specifier) && !specifier.startsWith('file://')) ||
