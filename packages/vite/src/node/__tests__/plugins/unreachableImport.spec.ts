@@ -85,4 +85,56 @@ function test() {
     const importStart = source.indexOf('import(')
     expect(isUnreachableDynamicImport(source, importStart)).toBe(true)
   })
+
+  // Edge cases for strings and comments (Graphite Agent feedback)
+  test('does not flag import when return is inside string literal', () => {
+    const source = `
+function test() {
+  const msg = "return;";
+  import('./module.js')
+}`
+    const importStart = source.indexOf('import(')
+    expect(isUnreachableDynamicImport(source, importStart)).toBe(false)
+  })
+
+  test('does not flag import when brace is inside string literal', () => {
+    const source = `
+function test() {
+  const str = "{ fake brace";
+  return;
+  import('./module.js')
+}`
+    const importStart = source.indexOf('import(')
+    expect(isUnreachableDynamicImport(source, importStart)).toBe(true)
+  })
+
+  test('does not flag import when return is inside comment', () => {
+    const source = `
+function test() {
+  // return;
+  import('./module.js')
+}`
+    const importStart = source.indexOf('import(')
+    expect(isUnreachableDynamicImport(source, importStart)).toBe(false)
+  })
+
+  test('does not flag import when return is inside multi-line comment', () => {
+    const source = `
+function test() {
+  /* return; */
+  import('./module.js')
+}`
+    const importStart = source.indexOf('import(')
+    expect(isUnreachableDynamicImport(source, importStart)).toBe(false)
+  })
+
+  test('does not flag import when return is inside template literal', () => {
+    const source = `
+function test() {
+  const msg = \`return;\`;
+  import('./module.js')
+}`
+    const importStart = source.indexOf('import(')
+    expect(isUnreachableDynamicImport(source, importStart)).toBe(false)
+  })
 })

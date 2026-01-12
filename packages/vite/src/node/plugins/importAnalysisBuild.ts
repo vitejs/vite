@@ -42,6 +42,19 @@ const preloadMarkerRE = new RegExp(preloadMarker, 'g')
 const dynamicImportPrefixRE = /import\s*\(/
 
 /**
+ * Strips comments and string literals from code to avoid false positives
+ * when detecting unreachable code patterns.
+ */
+function stripCommentsAndStrings(code: string): string {
+  return code
+    .replace(/\/\/.*$/gm, '') // Remove single-line comments
+    .replace(/\/\*[\s\S]*?\*\//g, '') // Remove multi-line comments
+    .replace(/'(?:[^'\\]|\\.)*'/g, '""') // Replace single-quote strings
+    .replace(/"(?:[^"\\]|\\.)*"/g, '""') // Replace double-quote strings
+    .replace(/`(?:[^`\\]|\\.)*`/g, '""') // Replace template literals
+}
+
+/**
  * Detects if a dynamic import at a given position is unreachable
  * by checking if there's a return/throw statement before it in the same block.
  * This helps avoid build failures caused by dynamic imports in dead code paths.
@@ -50,13 +63,16 @@ export function isUnreachableDynamicImport(
   source: string,
   importStart: number,
 ): boolean {
+  // Strip comments and strings first to avoid false positives from braces/statements inside them
+  const strippedSource = stripCommentsAndStrings(source.slice(0, importStart))
+
   // Find the start of the current block (function body, if block, etc.)
   // by looking for the nearest opening brace before the import
   let braceCount = 0
   let blockStart = 0
 
-  for (let i = importStart - 1; i >= 0; i--) {
-    const char = source[i]
+  for (let i = strippedSource.length - 1; i >= 0; i--) {
+    const char = strippedSource[i]
     if (char === '}') {
       braceCount++
     } else if (char === '{') {
@@ -69,7 +85,7 @@ export function isUnreachableDynamicImport(
   }
 
   // Get the code between block start and import position
-  const codeBeforeImport = source.slice(blockStart, importStart)
+  const codeBeforeImport = strippedSource.slice(blockStart)
 
   // Check for return or throw statements followed by only whitespace before import
   // Pattern: return; or return <value>; or throw <value>; at the end
