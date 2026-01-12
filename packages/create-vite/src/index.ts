@@ -11,6 +11,7 @@ import { determineAgent } from '@vercel/detect-agent'
 const {
   blue,
   blueBright,
+  bold,
   cyan,
   green,
   greenBright,
@@ -18,8 +19,12 @@ const {
   red,
   redBright,
   reset,
+  underline,
+  white,
   yellow,
 } = colors
+// Using `white` actually dims the text (for @clack/prompts internal reasons)
+const link = (url: `https://${string}`) => white(underline(url))
 
 const argv = mri<{
   template?: string
@@ -68,6 +73,7 @@ type Framework = {
 type FrameworkVariant = {
   name: string
   display: string
+  description?: string
   color: ColorFunc
   customCommand?: string
 }
@@ -114,12 +120,18 @@ const FRAMEWORKS: Framework[] = [
       {
         name: 'custom-nuxt',
         display: 'Nuxt ↗',
+        // Extracted from https://nuxt.com
+        description: `${link('https://nuxt.com')} The Full-Stack Vue Framework — build fast, production-ready web apps with Vue.`,
+        // Don't choose another color — all Vue frameworks must use `greenBright`
         color: greenBright,
         customCommand: 'npm exec nuxi init TARGET_DIR',
       },
       {
         name: 'custom-vike-vue',
         display: 'Vike ↗',
+        // Extracted from https://vike.dev
+        description: `${link('https://vike.dev')} Composable framework to build advanced applications with flexibility and stability.`,
+        // Don't choose another color — all Vue frameworks must use `greenBright`
         color: greenBright,
         customCommand: 'npm create -- vike@latest --vue TARGET_DIR',
       },
@@ -161,14 +173,27 @@ const FRAMEWORKS: Framework[] = [
         color: yellow,
       },
       {
+        name: 'rsc',
+        display: 'RSC',
+        color: magenta,
+        customCommand:
+          'npm exec tiged vitejs/vite-plugin-react/packages/plugin-rsc/examples/starter TARGET_DIR',
+      },
+      {
         name: 'custom-react-router',
         display: 'React Router v7 ↗',
+        // Extracted from https://reactrouter.com
+        description: `${link('https://reactrouter.com')} User‑obsessed, standards‑focused, multi‑strategy router you can deploy anywhere.`,
+        // Don't choose another color — all React frameworks must use `cyan`
         color: cyan,
         customCommand: 'npm create react-router@latest TARGET_DIR',
       },
       {
         name: 'custom-tanstack-router-react',
         display: 'TanStack Router ↗',
+        // Extracted from https://tanstack.com/router/latest
+        description: `${link('https://tanstack.com/router')} Type-safe router for client-side and full-stack applications.`,
+        // Don't choose another color — all React frameworks must use `cyan`
         color: cyan,
         customCommand:
           'npm create -- tsrouter-app@latest TARGET_DIR --framework React --interactive',
@@ -176,19 +201,18 @@ const FRAMEWORKS: Framework[] = [
       {
         name: 'redwoodsdk-standard',
         display: 'RedwoodSDK ↗',
-        color: red,
+        // Extracted from https://rwsdk.com
+        description: `${link('https://rwsdk.com')} Server-first React with zero magic. Built to stay understandable.`,
+        // Don't choose another color — all React frameworks must use `cyan`
+        color: cyan,
         customCommand: 'npm create rwsdk@latest TARGET_DIR',
-      },
-      {
-        name: 'rsc',
-        display: 'RSC ↗',
-        color: magenta,
-        customCommand:
-          'npm exec tiged vitejs/vite-plugin-react/packages/plugin-rsc/examples/starter TARGET_DIR',
       },
       {
         name: 'custom-vike-react',
         display: 'Vike ↗',
+        // Extracted from https://vike.dev
+        description: `${link('https://vike.dev')} Composable framework to build advanced applications with flexibility and stability.`,
+        // Don't choose another color — all React frameworks must use `cyan`
         color: cyan,
         customCommand: 'npm create -- vike@latest --react TARGET_DIR',
       },
@@ -275,6 +299,9 @@ const FRAMEWORKS: Framework[] = [
       {
         name: 'custom-tanstack-router-solid',
         display: 'TanStack Router ↗',
+        // Extracted from https://tanstack.com/router/latest
+        description: `${link('https://tanstack.com/router')} Type-safe router for client-side and full-stack applications.`,
+        // Don't choose another color — all Solid frameworks must use `cyan`
         color: cyan,
         customCommand:
           'npm create -- tsrouter-app@latest TARGET_DIR --framework Solid --interactive',
@@ -282,6 +309,9 @@ const FRAMEWORKS: Framework[] = [
       {
         name: 'custom-vike-solid',
         display: 'Vike ↗',
+        // Extracted from https://vike.dev
+        description: `${link('https://vike.dev')} Composable framework to build advanced applications with flexibility and stability.`,
+        // Don't choose another color — all Solid frameworks must use `cyan`
         color: cyan,
         customCommand: 'npm create -- vike@latest --solid TARGET_DIR',
       },
@@ -572,19 +602,16 @@ async function init() {
       if (prompts.isCancel(framework)) return cancel()
 
       const variant = await prompts.select({
-        message: 'Select a variant:',
+        message: !['react', 'vue', 'solid'].includes(framework.name)
+          ? 'Select a variant:'
+          : `Select ${bold('Vite boilerplate')} (listed first) or ${bold('Vite-based framework')} (listed last):`,
         options: framework.variants.map((variant) => {
           const variantColor = variant.color
-          const command = variant.customCommand
-            ? getFullCustomCommand(variant.customCommand, pkgInfo).replace(
-                / TARGET_DIR$/,
-                '',
-              )
-            : undefined
           return {
-            label: variantColor(variant.display || variant.name),
+            label:
+              variantColor(variant.display || variant.name) +
+              (!variant.description ? '' : ` ${variant.description}`),
             value: variant.name,
-            hint: command,
           }
         }),
       })
