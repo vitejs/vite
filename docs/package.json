@@ -9,9 +9,9 @@
     "docs-serve": "vitepress serve"
   },
   "devDependencies": {
-    "@shikijs/vitepress-twoslash": "^3.20.0",
+    "@shikijs/vitepress-twoslash": "^3.21.0",
     "@types/express": "^5.0.6",
-    "feed": "^5.1.0",
+    "feed": "^5.2.0",
     "gsap": "^3.14.2",
     "markdown-it-image-size": "^15.0.1",
     "oxc-minify": "^0.107.0",
