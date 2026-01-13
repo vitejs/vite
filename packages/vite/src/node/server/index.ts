@@ -870,6 +870,18 @@ export async function _createServer(
   })
 
   if (!middlewareMode && httpServer) {
+    httpServer.on('error', (e: Error & { code: string; port: number }) => {
+      if (e.code === 'EADDRINUSE') {
+        config.logger.error(colors.red(`Port ${e.port} is already in use`), {
+          error: e,
+        })
+      } else {
+        config.logger.error(
+          colors.red(`HTTP server error:\n${e.stack || e.message}`),
+          { error: e },
+        )
+      }
+    })
     httpServer.once('listening', () => {
       // update actual port since this may be different from initial value
       serverConfig.port = (httpServer.address() as net.AddressInfo).port
