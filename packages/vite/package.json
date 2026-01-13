@@ -109,7 +109,7 @@
     "dotenv": "^17.2.3",
     "dotenv-expand": "^12.0.3",
     "es-module-lexer": "^1.7.0",
-    "esbuild": "^0.25.0",
+    "esbuild": "^0.27.2",
     "escape-html": "^1.0.3",
     "estree-walker": "^3.0.3",
     "etag": "^1.8.1",
@@ -144,7 +144,7 @@
   },
   "peerDependencies": {
     "@types/node": "^20.19.0 || >=22.12.0",
-    "esbuild": "^0.25.0",
+    "esbuild": "^0.27.0",
     "jiti": ">=1.21.0",
     "less": "^4.0.0",
     "sass": "^1.70.0",
