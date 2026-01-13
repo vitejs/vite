@@ -200,14 +200,6 @@ const config = defineConfig({
           title: 'Versions',
           items: versionLinks,
         },
-        /*{
-          title: 'Legal',
-          items: [
-            { text: 'Terms & Conditions', link: 'https://voidzero.dev/terms' },
-            { text: 'Privacy Policy', link: 'https://voidzero.dev/privacy' },
-            { text: 'Cookie Policy', link: 'https://voidzero.dev/cookies' },
-          ]
-        },*/
       ],
       social: [
         { icon: 'github', link: 'https://github.com/vitejs/vite' },
