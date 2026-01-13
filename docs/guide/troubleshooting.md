@@ -91,7 +91,7 @@ To solve this, you can:
   $ cat /proc/sys/fs/inotify/max_user_watches
   # Increase limit (temporary)
   $ sudo sysctl fs.inotify.max_user_watches=524288
-  # Make it permanent (add to /etc/sysctl.conf)
+  # Make it permanent - add to /etc/sysctl.conf (or edit if it already exists)
   $ echo "fs.inotify.max_user_watches=524288" | sudo tee -a /etc/sysctl.conf
   $ sudo sysctl -p
   ```
