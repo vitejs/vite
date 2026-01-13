@@ -28,7 +28,6 @@
   ],
   "ignoreDeps": [
     // manually bumping
-    "esbuild",
     "rollup",
     "node",
     "typescript",
