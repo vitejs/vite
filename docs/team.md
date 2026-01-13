@@ -10,7 +10,7 @@ import {
   VPTeamPageTitle,
   VPTeamPageSection,
   VPTeamMembers
-} from 'vitepress/theme'
+} from '@voidzero-dev/vitepress-theme'
 import { core, emeriti } from './_data/team'
 </script>
 
