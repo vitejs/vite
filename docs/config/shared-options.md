@@ -285,7 +285,7 @@ export default defineConfig({
 })
 ```
 
-::: warning Importing files
+::: tip Importing files
 Since the same code is prepended to files in different directories, relative paths won't resolve correctly. Use [aliases](#resolve-alias) instead.
 :::
 
