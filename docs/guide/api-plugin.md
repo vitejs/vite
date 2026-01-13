@@ -8,7 +8,7 @@ Vite plugins extends Rollup's well-designed plugin interface with a few extra Vi
 
 ## Authoring a Plugin
 
-Vite strives to offer established patterns out of the box, so before creating a new plugin make sure that you check the [Features guide](/guide/features) to see if your need is covered. Also review available community plugins, both in the form of a [compatible Rollup plugin](https://github.com/rollup/awesome) and [Vite Specific plugins](https://github.com/vitejs/awesome-vite#plugins)
+Vite strives to offer established patterns out of the box, so before creating a new plugin make sure that you check the [Features guide](/guide/features) to see if your need is covered. Also review available community plugins, both in the form of a [compatible Rollup plugin](https://github.com/rollup/awesome) and [Vite Specific plugins](https://github.com/vitejs/awesome-vite#plugins).
 
 When creating a plugin, you can inline it in your `vite.config.js`. There is no need to create a new package for it. Once you see that a plugin was useful in your projects, consider sharing it to help others [in the ecosystem](https://chat.vite.dev).
 
@@ -24,7 +24,7 @@ If the plugin doesn't use Vite specific hooks and can be implemented as a [Compa
 - Rollup Plugins should have a clear name with `rollup-plugin-` prefix.
 - Include `rollup-plugin` and `vite-plugin` keywords in package.json.
 
-This exposes the plugin to be also used in pure Rollup or WMR based projects
+This exposes the plugin to be also used in pure Rollup or WMR based projects.
 
 For Vite only plugins
 
@@ -32,7 +32,7 @@ For Vite only plugins
 - Include `vite-plugin` keyword in package.json.
 - Include a section in the plugin docs detailing why it is a Vite only plugin (for example, it uses Vite specific plugin hooks).
 
-If your plugin is only going to work for a particular framework, its name should be included as part of the prefix
+If your plugin is only going to work for a particular framework, its name should be included as part of the prefix.
 
 - `vite-plugin-vue-` prefix for Vue Plugins
 - `vite-plugin-react-` prefix for React Plugins

@@ -2,7 +2,7 @@
 
 If you are migrating from `rolldown-vite`, the technical preview release for Rolldown integrated Vite for v6 & v7, only the sections with <Badge text="NRV" type="warning" /> in the title are applicable.
 
-## Default Browser Target change [<Badge text="NRV" type="warning" />](#migration-from-v7)
+## Default Browser Target Change [<Badge text="NRV" type="warning" />](#migration-from-v7)
 
 The default browser value of `build.target` and `'baseline-widely-available'`, is updated to newer browser version:
 
@@ -32,7 +32,7 @@ For users migrating from `rolldown-vite` to Vite 8, you can undo the dependency 
 }
 ```
 
-### Dependency Optimizer now uses Rolldown
+### Dependency Optimizer Now Uses Rolldown
 
 Rolldown is now used for dependency optimization instead of esbuild. Vite still supports [`optimizeDeps.esbuildOptions`](/config/dep-optimization-options#optimizedeps-esbuildoptions) for backward compatibility by converting it to [`optimizeDeps.rolldownOptions`](/config/dep-optimization-options#optimizedeps-rolldownoptions) automatically. `optimizeDeps.esbuildOptions` is now deprecated and will be removed in the future and we encourage you to migrate to `optimizeDeps.rolldownOptions`.
 
@@ -338,7 +338,9 @@ The following options are deprecated and will be removed in the future:
 
 ## General Changes [<Badge text="NRV" type="warning" />](#migration-from-v7)
 
-## Removed deprecated features [<Badge text="NRV" type="warning" />](#migration-from-v7)
+## Removed Deprecated Features [<Badge text="NRV" type="warning" />](#migration-from-v7)
+
+- Passing an URL to `import.meta.hot.accept` is no longer supported. Please pass an id instead. ([#21382](https://github.com/vitejs/vite/pull/21382))
 
 **_TODO: This change is not implemented yet, but will be implemented before stable release._**
 
@@ -347,13 +349,8 @@ The following options are deprecated and will be removed in the future:
 These breaking changes are expected to only affect a minority of use cases:
 
 - **[TODO: this will be fixed before stable release]** https://github.com/rolldown/rolldown/issues/5726 (affects nuxt, qwik)
-- **[TODO: this will be fixed before stable release]** https://github.com/rolldown/rolldown/issues/3403 (affects sveltekit)
 - **[TODO: this will be fixed before stable release]** Legacy chunks are emitted as an asset file instead of a chunk file due to the lack of prebuilt chunk emit feature ([rolldown#4304](https://github.com/rolldown/rolldown/issues/4034)). This means the chunk related options does not apply to legacy chunks and the manifest file will not include legacy chunks as a chunk file.
-- **[TODO: this will be fixed before stable release]** resolver cache breaks minor cases in Vitest ([rolldown-vite#466](https://github.com/vitejs/rolldown-vite/issues/466), [vitest#8754](https://github.com/vitest-dev/vitest/issues/8754#issuecomment-3441115032))
-- **[TODO: this will be fixed before stable release]** The resolver does not work with yarn pnp ([rolldown-vite#324](https://github.com/vitejs/rolldown-vite/issues/324), [rolldown-vite#392](https://github.com/vitejs/rolldown-vite/issues/392))
-- **[TODO: this will be fixed before stable release]** native plugin ordering issue ([rolldown-vite#373](https://github.com/vitejs/rolldown-vite/issues/373))
 - **[TODO: this will be fixed before stable release]** `@vite-ignore` comment edge case ([rolldown-vite#426](https://github.com/vitejs/rolldown-vite/issues/426))
-- **[TODO: this will be fixed before stable release]** https://github.com/rolldown/rolldown/issues/3403
 - [Extglobs](https://github.com/micromatch/picomatch/blob/master/README.md#extglobs) are not supported yet ([rolldown-vite#365](https://github.com/vitejs/rolldown-vite/issues/365))
 - `define` does not share reference for objects: When you pass an object as a value to `define`, each variable will have a separate copy of the object. See [Oxc Transformer document](https://oxc.rs/docs/guide/usage/transformer/global-variable-replacement#define) for more details.
 - `bundle` object changes (`bundle` is an object passed in `generateBundle` / `writeBundle` hooks, returned by `build` function):
@@ -372,7 +369,7 @@ These breaking changes are expected to only affect a minority of use cases:
   - `resolveImportMeta` hook ([rolldown#1010](https://github.com/rolldown/rolldown/issues/1010))
   - `renderDynamicImport` hook ([rolldown#4532](https://github.com/rolldown/rolldown/issues/4532))
   - `resolveFileUrl` hook
-- `parseAst` / `parseAstAsync` functions are now deprecated in favor of `parse` / `parseAsync` functions which has more features.
+- `parseAst` / `parseAstAsync` functions are now deprecated in favor of `parseSync` / `parse` functions which have more features.
 
 ## Migration from v6
 

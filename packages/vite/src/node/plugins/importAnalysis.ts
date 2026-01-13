@@ -318,8 +318,6 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
       const importedBindings = enablePartialAccept
         ? new Map<string, Set<string>>()
         : null
-      const toAbsoluteUrl = (url: string) =>
-        path.posix.resolve(path.posix.dirname(importerModule.url), url)
 
       const normalizeUrl = async (
         url: string,
@@ -623,7 +621,7 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
               // would fail as it's `export default` only. Apply interop for builtin modules to
               // correctly throw the error message.
               else if (
-                url.includes(browserExternalId) &&
+                url.startsWith(wrapId(browserExternalId)) &&
                 source.slice(expStart, start).includes('{')
               ) {
                 interopNamedImports(
@@ -788,22 +786,10 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
           }
           normalized = mod.url
         } else {
-          try {
-            // this fallback is for backward compat and will be removed in Vite 7
-            const [resolved] = await moduleGraph.resolveUrl(toAbsoluteUrl(url))
-            normalized = resolved
-            if (resolved) {
-              this.warn({
-                message:
-                  `Failed to resolve ${JSON.stringify(url)} from ${importer}.` +
-                  ' An id should be written. Did you pass a URL?',
-                pos: start,
-              })
-            }
-          } catch {
-            this.error(`Failed to resolve ${JSON.stringify(url)}`, start)
-            return
-          }
+          this.error({
+            message: `Failed to resolve ${JSON.stringify(url)} from ${importer}.`,
+            pos: start,
+          })
         }
         normalizedAcceptedUrls.add(normalized)
         const hmrAccept = normalizeHmrUrl(normalized)

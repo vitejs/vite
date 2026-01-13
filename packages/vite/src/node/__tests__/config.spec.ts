@@ -1180,6 +1180,7 @@ describe('loadConfigFromFile', () => {
     expect(c.dirname).toContain('import-meta')
     expect(c.filename).toContain('vite.config.ts')
     expect(c.resolved).toBe(c.url)
+    expect(c.resolvedMultiline).toBe(c.url)
   })
 
   test('shebang is preserved at the top of the file', async () => {

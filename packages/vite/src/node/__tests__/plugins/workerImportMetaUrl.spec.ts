@@ -221,4 +221,36 @@ new Worker(
       `"repro(new Worker(new URL(/* @vite-ignore */ "/worker?worker_file&type=classic", '' + import.meta.url)), { type: "module" })"`,
     )
   })
+
+  test('with multi-line new URL and trailing comma', async () => {
+    expect(
+      await transform(`new Worker(
+  new URL(
+    "./worker.js",
+    import.meta.url,
+  )
+)`),
+    ).toMatchInlineSnapshot(`
+      "new Worker(
+        new URL(/* @vite-ignore */ "/worker.js?worker_file&type=classic", '' + import.meta.url)
+      )"
+    `)
+  })
+
+  test('with multi-line new URL, trailing comma, and worker options', async () => {
+    expect(
+      await transform(`const worker = new Worker(
+  new URL(
+    "./worker.js",
+    import.meta.url,
+  ),
+  { type: "module" },
+)`),
+    ).toMatchInlineSnapshot(`
+      "const worker = new Worker(
+        new URL(/* @vite-ignore */ "/worker.js?worker_file&type=module", '' + import.meta.url),
+        { type: "module" },
+      )"
+    `)
+  })
 })

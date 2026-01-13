@@ -829,6 +829,8 @@ const configDefaults = Object.freeze({
     // entries
     /** @experimental */
     force: false,
+    /** @experimental */
+    ignoreOutdatedRequests: false,
   },
   ssr: ssrConfigDefaults,
   environments: {},
@@ -2305,6 +2307,7 @@ async function bundleConfigFile(
   const importMetaUrlVarName = '__vite_injected_original_import_meta_url'
   const importMetaResolveVarName =
     '__vite_injected_original_import_meta_resolve'
+  const importMetaResolveRegex = /import\.meta\s*\.\s*resolve/
 
   const bundle = await rolldown({
     input: fileName,
@@ -2392,7 +2395,7 @@ async function bundleConfigFile(
               `const ${importMetaUrlVarName} = ${JSON.stringify(
                 pathToFileURL(id).href,
               )};`
-            if (code.includes('import.meta.resolve')) {
+            if (importMetaResolveRegex.test(code)) {
               if (isESM) {
                 if (!importMetaResolverRegistered) {
                   importMetaResolverRegistered = true
