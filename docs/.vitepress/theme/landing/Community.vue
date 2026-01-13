@@ -151,6 +151,7 @@ const testimonials: Testimonial[] = [
                 :src="testimonial.avatar"
                 :alt="testimonial.name"
                 class="w-12 h-12 rounded-sm object-cover flex-shrink-0"
+                loading="lazy"
               />
 
               <!-- Author info -->

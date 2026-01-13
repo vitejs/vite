@@ -4,6 +4,15 @@ import CodeGroup from '@components/shared/CodeGroup.vue'
 
 import viteAnimation from '@assets/vite/animations/641_x_629_vite_masthead.riv'
 
+if (typeof document !== 'undefined') {
+  const preloadLink = document.createElement('link')
+  preloadLink.rel = 'preload'
+  preloadLink.href = viteAnimation
+  preloadLink.as = 'fetch'
+  preloadLink.crossOrigin = 'anonymous'
+  document.head.appendChild(preloadLink)
+}
+
 const installTabs = [
   { label: 'npm', code: '$ npm create vite@latest' },
   { label: 'Yarn', code: '$ yarn create vite' },

@@ -28,9 +28,19 @@ import flexiblePluginAnimation from '@assets/vite/animations/640_x_300_flexible_
         <h5 class="text-white">Fully Typed API</h5>
         <p class="max-w-[26rem] text-pretty">Designed to be built on top of.</p>
       </div>
-      <div class="card-bg p-5 sm:p-10 flex justify-center">
+      <div class="relative p-5 sm:p-10 flex justify-center bg-[#370a7f]">
         <img
+          class="absolute inset-0 h-full w-full object-cover"
+          src="@assets/vite/vite-featurepanel-4-background.jpg"
+          alt=""
+          inert
+          loading="lazy"
+        />
+        <img
+          class="z-1"
           src="@assets/vite/vite-typed-api.svg"
+          width="454"
+          height="252"
           inert
           loading="lazy"
           alt="typed api"
@@ -46,6 +56,8 @@ import flexiblePluginAnimation from '@assets/vite/animations/640_x_300_flexible_
       </p>
       <img
         src="@assets/vite/vite-ssr-support.png"
+        width="1008"
+        height="466"
         alt="SSR Support"
         loading="lazy"
         class="w-full px-5"
@@ -63,6 +75,8 @@ import flexiblePluginAnimation from '@assets/vite/animations/640_x_300_flexible_
       <div class="px-5 sm:px-10 flex justify-center">
         <img
           src="@assets/vite/vite-ci.svg"
+          width="476"
+          height="272"
           inert
           loading="lazy"
           alt="continuous ecosystem integration"
@@ -71,11 +85,3 @@ import flexiblePluginAnimation from '@assets/vite/animations/640_x_300_flexible_
     </div>
   </section>
 </template>
-
-<style scoped>
-.card-bg {
-  background-image: url('@assets/vite/vite-featurepanel-4-background.jpg');
-  background-size: cover;
-  background-position: center;
-}
-</style>

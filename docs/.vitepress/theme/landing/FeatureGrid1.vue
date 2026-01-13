@@ -17,9 +17,19 @@ import viteAnimation from '@assets/vite/animations/563_x_420_rich_features.riv'
           dependency pre-bundling.
         </p>
       </div>
-      <div class="card-bg1 p-10 sm:p-15 flex justify-center">
+      <div class="relative p-10 sm:p-15 flex justify-center bg-[#370a7f]">
         <img
+          class="absolute inset-0 h-full w-full object-cover"
+          src="@assets/vite/vite-featurepanel-1-background.jpg"
+          alt=""
+          inert
+          loading="lazy"
+        />
+        <img
+          class="z-1"
           src="@assets/vite/vite-featurepanel-1-terminal.svg"
+          width="493"
+          height="230"
           alt="Terminal"
           inert
           loading="lazy"
@@ -37,6 +47,8 @@ import viteAnimation from '@assets/vite/animations/563_x_420_rich_features.riv'
       <div class="flex justify-end">
         <img
           src="@assets/vite/vite-featurepanel-2-terminal.png"
+          width="1126"
+          height="734"
           class="md:max-w-[80%]"
           inert
           loading="lazy"
@@ -70,9 +82,19 @@ import viteAnimation from '@assets/vite/animations/563_x_420_rich_features.riv'
           control powered by Rolldown.
         </p>
       </div>
-      <div class="card-bg p-10 sm:p-15 flex justify-center">
+      <div class="relative p-10 sm:p-15 flex justify-center bg-[#370a7f]">
         <img
+          class="absolute inset-0 h-full w-full object-cover"
+          src="@assets/vite/vite-featurepanel-4-background.jpg"
+          alt=""
+          inert
+          loading="lazy"
+        />
+        <img
+          class="z-1"
           src="@assets/vite/vite-featurepanel-4-terminal.svg"
+          width="436"
+          height="209"
           inert
           loading="lazy"
           alt="optimized build"
@@ -81,17 +103,3 @@ import viteAnimation from '@assets/vite/animations/563_x_420_rich_features.riv'
     </div>
   </section>
 </template>
-
-<style scoped>
-.card-bg1 {
-  background-image: url('@assets/vite/vite-featurepanel-1-background.jpg');
-  background-size: cover;
-  background-position: center;
-}
-
-.card-bg {
-  background-image: url('@assets/vite/vite-featurepanel-4-background.jpg');
-  background-size: cover;
-  background-position: center;
-}
-</style>
