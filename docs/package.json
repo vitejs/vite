@@ -3,16 +3,15 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "typecheck": "vue-tsc",
     "docs": "vitepress dev",
     "docs-build": "vitepress build",
     "docs-serve": "vitepress serve"
   },
   "devDependencies": {
-    "@shikijs/vitepress-twoslash": "^3.17.0",
-    "@types/express": "^5.0.5",
-    "feed": "^5.1.0",
-    "gsap": "^3.13.0",
+    "@shikijs/vitepress-twoslash": "^3.21.0",
+    "@types/express": "^5.0.6",
+    "@voidzero-dev/vitepress-theme": "^4.0.4",
+    "feed": "^5.2.0",
     "markdown-it-image-size": "^15.0.1",
     "vitepress": "^2.0.0-alpha.15",
     "vitepress-plugin-group-icons": "^1.6.5",
