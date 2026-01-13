@@ -1,3 +1,5 @@
+/* eslint-disable n/no-unsupported-features/node-builtins */
+
 import type { ResolveFnOutput, ResolveHookContext } from 'node:module'
 
 export type ImportMetaResolver = (specifier: string, importer: string) => string
@@ -38,7 +40,10 @@ export async function createImportMetaResolver(): Promise<
 > {
   let module: typeof import('node:module')
   try {
-    module = (await import('node:module')).Module
+    const importUrl = 'node:module'
+    module = process.getBuiltinModule
+      ? process.getBuiltinModule('node:module').Module
+      : (await import(/* @vite-ignore */ importUrl)).Module
   } catch {
     return
   }
