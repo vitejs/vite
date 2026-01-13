@@ -121,8 +121,6 @@ const FRAMEWORKS: Framework[] = [
         name: 'custom-nuxt',
         display: 'Nuxt ↗',
         // Extracted from https://nuxt.com
-        // Tagline 1: The Full-Stack Vue Framework
-        // Tagline 2: Build fast, production-ready web apps with Vue. File-based routing, auto-imports, and server-side rendering — all configured out of the box.
         description: `${link('https://nuxt.com')} The Full-Stack Vue Framework — build fast, production-ready web apps with Vue.`,
         // Don't choose another color — all Vue frameworks must use `greenBright`
         color: greenBright,
@@ -185,7 +183,6 @@ const FRAMEWORKS: Framework[] = [
         name: 'custom-react-router',
         display: 'React Router v7 ↗',
         // Extracted from https://reactrouter.com
-        // Tagline: A user‑obsessed, standards‑focused, multi‑strategy router you can deploy anywhere.
         description: `${link('https://reactrouter.com')} User‑obsessed, standards‑focused, multi‑strategy router you can deploy anywhere.`,
         // Don't choose another color — all React frameworks must use `cyan`
         color: cyan,
@@ -195,8 +192,6 @@ const FRAMEWORKS: Framework[] = [
         name: 'custom-tanstack-router-react',
         display: 'TanStack Router ↗',
         // Extracted from https://tanstack.com/router/latest
-        // Tagline 1: Type-safe Routing for React and Solid applications
-        // Tagline 2: A powerful React router for client-side and full-stack react applications. Fully type-safe APIs, first-class search-params for managing state in the URL and seamless integration with the existing React ecosystem.
         description: `${link('https://tanstack.com/router')} Type-safe router for client-side and full-stack applications.`,
         // Don't choose another color — all React frameworks must use `cyan`
         color: cyan,
@@ -207,8 +202,6 @@ const FRAMEWORKS: Framework[] = [
         name: 'redwoodsdk-standard',
         display: 'RedwoodSDK ↗',
         // Extracted from https://rwsdk.com
-        // Tagline 1: A simple framework for humans
-        // Tagline 2: Server-first React with zero magic. Built to stay understandable.
         description: `${link('https://rwsdk.com')} Server-first React with zero magic. Built to stay understandable.`,
         // Don't choose another color — all React frameworks must use `cyan`
         color: cyan,
