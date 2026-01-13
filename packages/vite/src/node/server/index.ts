@@ -869,19 +869,13 @@ export async function _createServer(
     onFileAddUnlink(file, true)
   })
 
-  if (!middlewareMode && httpServer) {
-    httpServer.on('error', (e: Error & { code: string; port: number }) => {
-      if (e.code === 'EADDRINUSE') {
-        config.logger.error(colors.red(`Port ${e.port} is already in use`), {
-          error: e,
-        })
-      } else {
-        config.logger.error(
-          colors.red(`HTTP server error:\n${e.stack || e.message}`),
-          { error: e },
-        )
-      }
+  watcher.on('error', (e: Error) => {
+    config.logger.error(colors.red(`Watcher error:\n${e.stack || e.message}`), {
+      error: e,
     })
+  })
+
+  if (!middlewareMode && httpServer) {
     httpServer.once('listening', () => {
       // update actual port since this may be different from initial value
       serverConfig.port = (httpServer.address() as net.AddressInfo).port
