@@ -89,9 +89,9 @@ export function isUnreachableDynamicImport(
 
   // Check for return or throw statements followed by only whitespace before import
   // Pattern: return; or return <value>; or throw <value>; at the end
-  const simpleReturnRE = /return\s*;\s*$/
-  const returnValueRE = /return\s[^;]+;\s*$/
-  const throwRE = /throw\s[^;]+;\s*$/
+  const simpleReturnRE = /(?<!\))\s*return\s*;\s*$/
+  const returnValueRE = /(?<!\))\s*return\s[^;]+;\s*$/
+  const throwRE = /(?<!\))\s*throw\s[^;]+;\s*$/
 
   return (
     simpleReturnRE.test(codeBeforeImport) ||
