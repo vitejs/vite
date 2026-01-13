@@ -84,7 +84,7 @@ This happens when you have too many files in your project directory (e.g., many 
 
 To solve this, you can:
 
-- **Increase the system file watcher limit:**
+- Increase the system file watcher limit:
 
   ```shell
   # Check current limit
@@ -96,31 +96,8 @@ To solve this, you can:
   $ sudo sysctl -p
   ```
 
-- **Exclude directories from file watching** using [`server.watch.ignored`](/config/server-options#server-watch):
-
-  ```js
-  export default defineConfig({
-    server: {
-      watch: {
-        ignored: ['**/storage/**', '**/large-asset-folder/**'],
-      },
-    },
-  })
-  ```
-
-- **Use polling instead of file system events** with [`server.watch.usePolling`](/config/server-options#server-watch):
-
-  ```js
-  export default defineConfig({
-    server: {
-      watch: {
-        usePolling: true,
-      },
-    },
-  })
-  ```
-
-  Note that polling uses more CPU resources. See [chokidar documentation](https://github.com/paulmillr/chokidar/tree/3.6.0#performance) for more details.
+- Exclude directories with many files from file watching using [`server.watch.ignored`](/config/server-options#server-watch)
+- Use polling instead of file system events with [`server.watch.usePolling`](/config/server-options#server-watch). Note that polling uses more CPU resources
 
 ### Network requests stop loading
 
