@@ -85,7 +85,7 @@
     "fsevents": "~2.3.3"
   },
   "devDependencies": {
-    "@babel/parser": "^7.28.5",
+    "@babel/parser": "^7.28.6",
     "@jridgewell/remapping": "^2.3.5",
     "@jridgewell/trace-mapping": "^0.3.31",
     "@oxc-project/types": "0.107.0",
@@ -98,7 +98,7 @@
     "@types/escape-html": "^1.0.4",
     "@types/pnpapi": "^0.0.5",
     "artichokie": "^0.4.2",
-    "baseline-browser-mapping": "^2.9.11",
+    "baseline-browser-mapping": "^2.9.14",
     "cac": "^6.7.14",
     "chokidar": "^3.6.0",
     "connect": "^3.7.0",
@@ -109,7 +109,7 @@
     "dotenv": "^17.2.3",
     "dotenv-expand": "^12.0.3",
     "es-module-lexer": "^1.7.0",
-    "esbuild": "^0.25.0",
+    "esbuild": "^0.27.2",
     "escape-html": "^1.0.3",
     "estree-walker": "^3.0.3",
     "etag": "^1.8.1",
@@ -144,7 +144,7 @@
   },
   "peerDependencies": {
     "@types/node": "^20.19.0 || >=22.12.0",
-    "esbuild": "^0.25.0",
+    "esbuild": "^0.27.0",
     "jiti": ">=1.21.0",
     "less": "^4.0.0",
     "sass": "^1.70.0",
