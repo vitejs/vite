@@ -35,15 +35,10 @@ function customizationHookResolve(
   return nextResolve(specifier, context)
 }
 
-export async function createImportMetaResolver(): Promise<
-  ImportMetaResolver | undefined
-> {
+export function createImportMetaResolver(): ImportMetaResolver | undefined {
   let module: typeof import('node:module')
   try {
-    const importUrl = 'node:module'
-    module = process.getBuiltinModule
-      ? process.getBuiltinModule('node:module').Module
-      : (await import(/* @vite-ignore */ importUrl)).Module
+    module = process.getBuiltinModule('node:module').Module
   } catch {
     return
   }
