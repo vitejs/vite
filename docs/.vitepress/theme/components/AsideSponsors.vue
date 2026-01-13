@@ -1,16 +1,16 @@
 <script setup lang="ts">
 import { computed } from 'vue'
-import { VPDocAsideSponsors } from 'vitepress/theme'
+import { VPDocAsideSponsors } from '@voidzero-dev/vitepress-theme'
 import { useSponsor, voidZero } from '../composables/sponsor'
 
 const { data } = useSponsor()
 
 const sponsors = computed(() => {
   return [
-    { size: 'small', items: [voidZero] },
+    { size: 'small' as const, items: [voidZero] },
     ...(data.value?.map((sponsor) => {
       return {
-        size: sponsor.size === 'big' ? 'mini' : 'xmini',
+        size: (sponsor.size === 'big' ? 'mini' : 'xmini') as 'mini' | 'xmini',
         items: sponsor.items,
       }
     }) ?? []),
@@ -39,7 +39,7 @@ const sponsors = computed(() => {
   <VPDocAsideSponsors v-if="data" :data="sponsors" />
 </template>
 
-<style>
+<style scoped>
 .viteconf {
   margin-top: 1rem;
   margin-bottom: 1rem;
@@ -69,20 +69,21 @@ const sponsors = computed(() => {
 .viteconf:hover img {
   transform: scale(1.75);
 }
+.viteconf span {
+  display: block;
+}
+.viteconf p {
+  margin: 0;
+  padding: 0;
+  line-height: 1.1rem;
+  color: var(--vp-c-text-1);
+}
 .viteconf .heading {
-  background-image: linear-gradient(
-    120deg,
-    #b047ff 16%,
-    var(--vp-c-brand-lighter),
-    var(--vp-c-brand-lighter)
-  );
-  background-clip: text;
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
+  color: var(--vp-c-brand-lighter);
 }
 .viteconf .extra-info {
   color: var(--vp-c-text-1);
-  opacity: 0;
+  opacity: 1;
   font-size: 0.7rem;
   padding-left: 0.1rem;
   transition: opacity 0.5s;
