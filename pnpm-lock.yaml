@@ -135,8 +135,8 @@ importers:
         specifier: ^5.0.6
         version: 5.0.6
       '@voidzero-dev/vitepress-theme':
-        specifier: ^4.0.3
-        version: 4.0.3(axios@1.13.2)(focus-trap@7.6.6)(typescript@5.9.3)(vite@packages+vite)(vitepress@2.0.0-alpha.15(axios@1.13.2)(oxc-minify@0.107.0)(postcss@8.5.6)(typescript@5.9.3))(vue@3.5.26(typescript@5.9.3))
+        specifier: ^4.0.4
+        version: 4.0.4(axios@1.13.2)(focus-trap@7.6.6)(typescript@5.9.3)(vite@packages+vite)(vitepress@2.0.0-alpha.15(axios@1.13.2)(oxc-minify@0.107.0)(postcss@8.5.6)(typescript@5.9.3))(vue@3.5.26(typescript@5.9.3))
       feed:
         specifier: ^5.2.0
         version: 5.2.0
@@ -3269,8 +3269,8 @@ packages:
   '@quansync/fs@1.0.0':
     resolution: {integrity: sha512-4TJ3DFtlf1L5LDMaM6CanJ/0lckGNtJcMjQ1NAV6zDmA0tEHKZtxNKin8EgPaVX1YzljbxckyT2tJrpQKAtngQ==}
 
-  '@rive-app/canvas@2.33.1':
-    resolution: {integrity: sha512-bMGWdRLwKT1ZsddgJS2uMtFQVMFk4Rc1LzdhnRfSC43DpwJ/GFaa8ocPYdhfTees7t9eY9QCtt3PIozNf/u93A==}
+  '@rive-app/canvas-lite@2.33.3':
+    resolution: {integrity: sha512-SQ1S10FY4fUVsK0uYKn99hgUuP+BLpYJHeQoRztDPhLqG7W/aUa9fkem0jKA+fBCGFRFFcsBRqE9EFXZxU8crQ==}
 
   '@rolldown/binding-android-arm64@1.0.0-beta.59':
     resolution: {integrity: sha512-6yLLgyswYwiCfls9+hoNFY9F8TQdwo15hpXDHzlAR0X/GojeKF+AuNcXjYNbOJ4zjl/5D6lliE8CbpB5t1OWIQ==}
@@ -4332,8 +4332,8 @@ packages:
   '@vitest/utils@4.0.17':
     resolution: {integrity: sha512-RG6iy+IzQpa9SB8HAFHJ9Y+pTzI+h8553MrciN9eC6TFBErqrQaTas4vG+MVj8S4uKk8uTT2p0vgZPnTdxd96w==}
 
-  '@voidzero-dev/vitepress-theme@4.0.3':
-    resolution: {integrity: sha512-/6lhlA4/d6UoDjsbbvJHyzyQ+NrKuOtZkF50e7yAcvx0YzwzPnHGgZqM9hu8GwGHIqOr4xA1hbTMZGPhFORlXw==}
+  '@voidzero-dev/vitepress-theme@4.0.4':
+    resolution: {integrity: sha512-xDCxo49GD86Z5Y3FEnVKXXtiwiJoKvaBiXuAfFVKrURDZVGnkYP2GNknaqy6TdlFlDIrWww9oBaLEbQ5OPO5DA==}
     peerDependencies:
       vitepress: ^2.0.0-alpha.15
       vue: ^3.5.0
@@ -9077,7 +9077,7 @@ snapshots:
     dependencies:
       quansync: 1.0.0
 
-  '@rive-app/canvas@2.33.1': {}
+  '@rive-app/canvas-lite@2.33.3': {}
 
   '@rolldown/binding-android-arm64@1.0.0-beta.59':
     optional: true
@@ -10012,11 +10012,11 @@ snapshots:
       '@vitest/pretty-format': 4.0.17
       tinyrainbow: 3.0.3
 
-  '@voidzero-dev/vitepress-theme@4.0.3(axios@1.13.2)(focus-trap@7.6.6)(typescript@5.9.3)(vite@packages+vite)(vitepress@2.0.0-alpha.15(axios@1.13.2)(oxc-minify@0.107.0)(postcss@8.5.6)(typescript@5.9.3))(vue@3.5.26(typescript@5.9.3))':
+  '@voidzero-dev/vitepress-theme@4.0.4(axios@1.13.2)(focus-trap@7.6.6)(typescript@5.9.3)(vite@packages+vite)(vitepress@2.0.0-alpha.15(axios@1.13.2)(oxc-minify@0.107.0)(postcss@8.5.6)(typescript@5.9.3))(vue@3.5.26(typescript@5.9.3))':
     dependencies:
       '@docsearch/css': 4.3.2
       '@docsearch/js': 4.3.2
-      '@rive-app/canvas': 2.33.1
+      '@rive-app/canvas-lite': 2.33.3
       '@tailwindcss/typography': 0.5.19(tailwindcss@4.1.18)
       '@tailwindcss/vite': 4.1.18(vite@packages+vite)
       '@vue/shared': 3.5.26
