@@ -621,9 +621,8 @@ async function init() {
           ? 'Select a variant:'
           : `Select ${bold('Vite boilerplate')} (listed first) or ${bold('Vite-based framework')} (listed last):`,
         options: framework.variants.map((variant) => {
-          const label = getLabel(variant)
           return {
-            label,
+            label: getLabel(variant),
             value: variant.name,
           }
         }),
