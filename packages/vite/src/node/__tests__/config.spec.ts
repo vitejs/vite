@@ -1,7 +1,7 @@
 import http from 'node:http'
 import path from 'node:path'
 import fs from 'node:fs'
-import { afterEach, describe, expect, test } from 'vitest'
+import { afterEach, describe, expect, test, vi } from 'vitest'
 import type { InlineConfig, PluginOption } from '..'
 import type { UserConfig, UserConfigExport } from '../config'
 import { defineConfig, loadConfigFromFile, resolveConfig } from '../config'
@@ -632,11 +632,17 @@ describe('resolveEnvPrefix', () => {
     expect(() => resolveEnvPrefix(config)).toThrow()
   })
 
-  test(`throw error if envPrefix contains whitespace`, () => {
+  test(`throw a warning message if envPrefix contains whitespace`, () => {
+    const consoleWarnSpy = vi
+      .spyOn(console, 'warn')
+      .mockImplementation(() => {})
     let config: UserConfig = { envPrefix: 'WITH SPACE' }
-    expect(() => resolveEnvPrefix(config)).toThrow()
+    resolveEnvPrefix(config)
+    expect(consoleWarnSpy).toHaveBeenCalled()
     config = { envPrefix: ['CUSTOM_', 'ANOTHER SPACE'] }
-    expect(() => resolveEnvPrefix(config)).toThrow()
+    resolveEnvPrefix(config)
+    expect(consoleWarnSpy).toHaveBeenCalledTimes(2)
+    consoleWarnSpy.mockRestore()
   })
 
   test('should work correctly for valid envPrefix value', () => {
