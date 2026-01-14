@@ -634,13 +634,14 @@ async function init() {
                 promptBorderWidth -
                 labelText.length -
                 link.length -
-                2 // two whitespaces
+                2, // two whitespaces
             )
             const dots = '...'
             // Worarkound for https://github.com/bombshell-dev/clack/issues/441
             const descriptionTruncated =
-              availableWidth <= dots.length || description.length <= availableWidth
-                ? description.slice(0, Math.max(0, availableWidth))
+              description.length <= availableWidth ||
+              availableWidth <= dots.length
+                ? description.slice(0, availableWidth)
                 : description.slice(0, availableWidth - dots.length) + dots
             label += ` ${gray(underline(link))} ${descriptionTruncated}`
           }
