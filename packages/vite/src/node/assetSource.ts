@@ -1,7 +1,19 @@
 import type { DefaultTreeAdapterMap, Token } from 'parse5'
 
-interface HtmlAssetSource {
+/**
+ * Defines which attributes of an HTML element should be treated as asset sources.
+ * Used in `html.additionalAssetSources` configuration.
+ */
+export interface HtmlAssetSource {
+  /**
+   * Attributes that contain a single asset URL.
+   * @example ['src', 'data-src-dark']
+   */
   srcAttributes?: string[]
+  /**
+   * Attributes that contain srcset-format URLs.
+   * @example ['srcset', 'imagesrcset']
+   */
   srcsetAttributes?: string[]
   /**
    * Called before handling an attribute to determine if it should be processed.
@@ -110,8 +122,14 @@ interface HtmlAssetAttribute {
  */
 export function getNodeAssetAttributes(
   node: DefaultTreeAdapterMap['element'],
+  additionalAssetSources?: Record<string, HtmlAssetSource>,
 ): HtmlAssetAttribute[] {
-  const matched = DEFAULT_HTML_ASSET_SOURCES[node.nodeName]
+  // Merge default sources with additional sources (additional takes precedence)
+  const allAssetSources = additionalAssetSources
+    ? { ...DEFAULT_HTML_ASSET_SOURCES, ...additionalAssetSources }
+    : DEFAULT_HTML_ASSET_SOURCES
+
+  const matched = allAssetSources[node.nodeName]
   if (!matched) return []
 
   const attributes: Record<string, string> = {}

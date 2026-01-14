@@ -549,7 +549,10 @@ export function buildHtmlPlugin(config: ResolvedConfig): Plugin {
 
           // For asset references in index.html, also generate an import
           // statement for each - this will be handled by the asset plugin
-          const assetAttributes = getNodeAssetAttributes(node)
+          const assetAttributes = getNodeAssetAttributes(
+            node,
+            config.html?.additionalAssetSources,
+          )
           for (const attr of assetAttributes) {
             if (attr.type === 'remove') {
               s.remove(attr.location.startOffset, attr.location.endOffset)

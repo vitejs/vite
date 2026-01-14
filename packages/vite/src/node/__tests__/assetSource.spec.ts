@@ -94,4 +94,70 @@ describe('getNodeAssetAttributes', () => {
     const attrs = getNodeAssetAttributes(node)
     expect(attrs).toHaveLength(0)
   })
+
+  describe('with additionalAssetSources', () => {
+    test('handles custom element with additional asset source', () => {
+      const node = getNode('<html-import src="./file.html"></html-import>')
+      expect(getNodeAssetAttributes(node)).toHaveLength(0)
+      const attrs = getNodeAssetAttributes(node, {
+        'html-import': { srcAttributes: ['src'] },
+      })
+      expect(attrs).toHaveLength(1)
+      expect(attrs[0]).toHaveProperty('type', 'src')
+      expect(attrs[0]).toHaveProperty('key', 'src')
+      expect(attrs[0]).toHaveProperty('value', './file.html')
+    })
+
+    test('handles data-* attributes with additional asset source', () => {
+      const node = getNode('<img src="default.png" data-src-dark="dark.png">')
+      const defaultAttrs = getNodeAssetAttributes(node)
+      expect(defaultAttrs).toHaveLength(1)
+      expect(defaultAttrs[0]).toHaveProperty('key', 'src')
+      const attrs = getNodeAssetAttributes(node, {
+        img: { srcAttributes: ['data-src-dark'] },
+      })
+      expect(attrs).toHaveLength(1)
+      expect(attrs[0]).toHaveProperty('key', 'data-src-dark')
+      expect(attrs[0]).toHaveProperty('value', 'dark.png')
+    })
+
+    test('additional source with srcset attribute', () => {
+      const node = getNode(
+        '<my-picture data-srcset="small.jpg 1x, large.jpg 2x">',
+      )
+      const attrs = getNodeAssetAttributes(node, {
+        'my-picture': { srcsetAttributes: ['data-srcset'] },
+      })
+      expect(attrs).toHaveLength(1)
+      expect(attrs[0]).toHaveProperty('type', 'srcset')
+      expect(attrs[0]).toHaveProperty('key', 'data-srcset')
+    })
+
+    test('additional source with filter function', () => {
+      const node = getNode('<my-component type="image" asset="photo.jpg">')
+      const attrs = getNodeAssetAttributes(node, {
+        'my-component': {
+          srcAttributes: ['asset'],
+          filter: ({ attributes }) => attributes.type === 'image',
+        },
+      })
+      expect(attrs).toHaveLength(1)
+      expect(attrs[0]).toHaveProperty('value', 'photo.jpg')
+      const node2 = getNode('<my-component type="text" asset="data.txt">')
+      const attrs2 = getNodeAssetAttributes(node2, {
+        'my-component': {
+          srcAttributes: ['asset'],
+          filter: ({ attributes }) => attributes.type === 'image',
+        },
+      })
+      expect(attrs2).toHaveLength(0)
+    })
+
+    test('works without additionalAssetSources (backward compatibility)', () => {
+      const node = getNode('<img src="foo.jpg">')
+      const attrs = getNodeAssetAttributes(node)
+      expect(attrs).toHaveLength(1)
+      expect(attrs[0]).toHaveProperty('key', 'src')
+    })
+  })
 })
