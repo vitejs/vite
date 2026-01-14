@@ -625,6 +625,11 @@ export interface DevToolsConfig extends Partial<StartOptions> {
   enabled: boolean
 }
 
+export interface ResolvedDevToolsConfig {
+  config: Omit<DevToolsConfig, 'enabled'> & { host: string }
+  enabled: boolean
+}
+
 export interface InlineConfig extends UserConfig {
   configFile?: string | false
   /** @experimental */
@@ -650,6 +655,7 @@ export interface ResolvedConfig extends Readonly<
     | 'future'
     | 'server'
     | 'preview'
+    | 'devtools'
   > & {
     configFile: string | undefined
     configFileDependencies: string[]
@@ -689,6 +695,7 @@ export interface ResolvedConfig extends Readonly<
     /** @experimental */
     builder: ResolvedBuilderOptions | undefined
     build: ResolvedBuildOptions
+    devtools: ResolvedDevToolsConfig
     preview: ResolvedPreviewOptions
     ssr: ResolvedSSROptions
     assetsInclude: (file: string) => boolean
@@ -740,22 +747,18 @@ export interface ResolvedConfig extends Readonly<
 > {}
 
 export async function resolveDevToolsConfig(
-  config: InlineConfig | ResolvedConfig,
-): Promise<{
-  config: Omit<DevToolsConfig, 'enabled'> & { host: string }
-  enabled: boolean
-}> {
-  const resolvedHostname = await resolveHostname(config.server?.host)
+  config: DevToolsConfig | boolean | undefined,
+  host: string | boolean | undefined,
+): Promise<ResolvedDevToolsConfig> {
+  const resolvedHostname = await resolveHostname(host)
   const fallbackHostname = resolvedHostname.host ?? 'localhost'
 
   return {
-    enabled:
-      config.devtools === true ||
-      !!(config.devtools && config.devtools.enabled),
+    enabled: config === true || !!(config && config.enabled),
     config: {
-      ...(isObject(config.devtools) ? config.devtools : {}),
-      host: isObject(config.devtools)
-        ? (config.devtools?.host ?? fallbackHostname)
+      ...(isObject(config) ? config : {}),
+      host: isObject(config)
+        ? (config?.host ?? fallbackHostname)
         : fallbackHostname,
     },
   }
@@ -1849,6 +1852,11 @@ export async function resolveConfig(
     experimental.renderBuiltUrl = undefined
   }
 
+  const resolvedDevToolsConfig = await resolveDevToolsConfig(
+    config.devtools,
+    server.host,
+  )
+
   resolved = {
     configFile: configFile ? normalizePath(configFile) : undefined,
     configFileDependencies: configFileDependencies.map((name) =>
@@ -1936,6 +1944,7 @@ export async function resolveConfig(
     resolve: resolvedDefaultResolve,
     dev: resolvedDevEnvironmentOptions,
     build: resolvedBuildOptions,
+    devtools: resolvedDevToolsConfig,
 
     environments: resolvedEnvironments,
 
@@ -2041,7 +2050,7 @@ export async function resolveConfig(
   }
 
   // Enable `rolldownOptions.devtools` if devtools is enabled
-  if ((await resolveDevToolsConfig(config)).enabled) {
+  if (resolved.devtools.enabled) {
     if (!resolved.build.rolldownOptions.devtools) {
       resolved.build.rolldownOptions.devtools = {}
     }

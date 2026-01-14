@@ -154,7 +154,8 @@
     "sugarss": "^5.0.0",
     "terser": "^5.16.0",
     "tsx": "^4.8.1",
-    "yaml": "^2.4.2"
+    "yaml": "^2.4.2",
+    "@vitejs/devtools": "^0.0.0-alpha.24"
   },
   "peerDependenciesMeta": {
     "@types/node": {
@@ -188,6 +189,9 @@
       "optional": true
     },
     "yaml": {
+      "optional": true
+    },
+    "@vitejs/devtools": {
       "optional": true
     }
   }
