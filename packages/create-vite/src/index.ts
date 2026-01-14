@@ -942,31 +942,40 @@ function getFullCustomCommand(customCommand: string, pkgInfo?: PkgInfo) {
 }
 
 function getLabel(variant: FrameworkVariant) {
-  // Choice name
+  // Choice human name
   const labelText = variant.display || variant.name
   let label = variant.color(labelText)
-  const { description, link } = variant
-  if (!description || !link) return label
 
-  // Add link
+  // Determine available width
   const terminalWidth = process.stdout.columns || 80
   const promptBorderWidth = 5
   const whitespaceWidth = 1
   let availableWidth =
     terminalWidth - promptBorderWidth - labelText.length - whitespaceWidth
-  if (link.length > availableWidth) return label
-  label += ` ${gray(underline(link))}`
 
-  // Add description
-  availableWidth = availableWidth - link.length - whitespaceWidth
+  // Add `link`
+  const { link } = variant
+  if (link && availableWidth >= link.length) {
+    label += ` ${gray(underline(link))}`
+    availableWidth -= whitespaceWidth + link.length
+  }
+
+  // Add `description`
+  const { description } = variant
+  const descriptionTruncatedMinWidth = 4
   const dots = '...'
-  if (availableWidth < dots.length + 5) return label
-  // Work around https://github.com/bombshell-dev/clack/issues/441
-  const descriptionTruncated =
-    description.length <= availableWidth
-      ? description
-      : description.slice(0, availableWidth - dots.length) + dots
-  label += ` ${descriptionTruncated}`
+  if (
+    description &&
+    availableWidth >= descriptionTruncatedMinWidth + dots.length
+  ) {
+    // Work around https://github.com/bombshell-dev/clack/issues/441
+    const descriptionTruncated =
+      description.length <= availableWidth
+        ? description
+        : description.slice(0, availableWidth - dots.length) + dots
+    label += ` ${descriptionTruncated}`
+  }
+
   return label
 }
 
