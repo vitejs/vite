@@ -149,11 +149,9 @@ Generate production source maps. If `true`, a separate sourcemap file will be cr
 
 ## build.rolldownOptions
 
-- **Type:** [`RolldownOptions`](https://rollupjs.org/configuration-options/)
+- **Type:** [`RolldownOptions`](https://rolldown.rs/reference/)
 
-<!-- TODO: update the link above and below to Rolldown's documentation -->
-
-Directly customize the underlying Rolldown bundle. This is the same as options that can be exported from a Rolldown config file and will be merged with Vite's internal Rolldown options. See [Rolldown options docs](https://rollupjs.org/configuration-options/) for more details.
+Directly customize the underlying Rolldown bundle. This is the same as options that can be exported from a Rolldown config file and will be merged with Vite's internal Rolldown options. See [Rolldown options docs](https://rolldown.rs/reference/) for more details.
 
 ## build.rollupOptions
 
@@ -352,9 +350,7 @@ Limit for chunk size warnings (in kB). It is compared against the uncompressed c
 
 ## build.watch
 
-<!-- TODO: update the link below to Rolldown's documentation -->
-
-- **Type:** [`WatcherOptions`](https://rollupjs.org/configuration-options/#watch)`| null`
+- **Type:** [`WatcherOptions`](https://rolldown.rs/reference/InputOptions.watch)`| null`
 - **Default:** `null`
 
 Set to `{}` to enable rollup watcher. This is mostly used in cases that involve build-only plugins or integrations processes.
