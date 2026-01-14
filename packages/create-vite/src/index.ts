@@ -628,17 +628,19 @@ async function init() {
             const promptBorderWidth = 5
             const { description, link } = variant
             if (!link) throw new Error('Invalid variant: link must be defined')
-            const availableWidth =
+            const availableWidth = Math.max(
+              0,
               terminalWidth -
-              promptBorderWidth -
-              labelText.length -
-              link.length -
-              2 // two whitespaces
+                promptBorderWidth -
+                labelText.length -
+                link.length -
+                2 // two whitespaces
+            )
             const dots = '...'
             // Worarkound for https://github.com/bombshell-dev/clack/issues/441
             const descriptionTruncated =
-              description.length <= availableWidth
-                ? description
+              availableWidth <= dots.length || description.length <= availableWidth
+                ? description.slice(0, Math.max(0, availableWidth))
                 : description.slice(0, availableWidth - dots.length) + dots
             label += ` ${gray(underline(link))} ${descriptionTruncated}`
           }
