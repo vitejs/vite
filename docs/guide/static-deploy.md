@@ -176,7 +176,7 @@ Learn more about Vercel’s [Git Integration](https://vercel.com/docs/concepts/g
 
 ### Cloudflare Workers
 
-The [Cloudflare Vite plugin](https://developers.cloudflare.com/workers/vite-plugin/) provides integration with Cloudflare Workers and uses Vite's Environment API to run your code in the Cloudflare Workers runtime during development.
+The [Cloudflare Vite plugin](https://developers.cloudflare.com/workers/vite-plugin/) provides integration with Cloudflare Workers and uses Vite's Environment API to run your server-side code in the Cloudflare Workers runtime during development.
 
 #### Create a new app
 
