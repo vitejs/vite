@@ -1,4 +1,3 @@
-import { randomUUID } from 'node:crypto'
 import { setTimeout } from 'node:timers/promises'
 import {
   type BindingClientHmrUpdate,
@@ -106,8 +105,8 @@ export class FullBundleDevEnvironment extends DevEnvironment {
     )!
 
     this.hot.on('vite:module-loaded', (payload, client) => {
-      const clientId = this.clients.setupIfNeeded(client)
-      this.devEngine.registerModules(clientId, payload.modules)
+      this.clients.setupIfNeeded(client, payload.clientId)
+      this.devEngine.registerModules(payload.clientId, payload.modules)
     })
     this.hot.on('vite:client:disconnect', (_payload, client) => {
       const clientId = this.clients.delete(client)
@@ -270,6 +269,19 @@ export class FullBundleDevEnvironment extends DevEnvironment {
     return shouldTrigger
   }
 
+  async triggerLazyBundling(
+    moduleId: string | null,
+    clientId: string | null,
+  ): Promise<string | undefined> {
+    if (!moduleId || !clientId) {
+      return
+    }
+    debug?.(
+      `TRIGGER-LAZY: trigger lazy bundling for module ${moduleId} for client ${clientId}`,
+    )
+    return await this.devEngine.compileEntry(moduleId, clientId)
+  }
+
   override async close(): Promise<void> {
     this.memoryFiles.clear()
     await Promise.all([super.close(), this.devEngine.close()])
@@ -280,6 +292,9 @@ export class FullBundleDevEnvironment extends DevEnvironment {
     const rolldownOptions = resolveRolldownOptions(this, chunkMetadataMap)
     rolldownOptions.experimental ??= {}
     rolldownOptions.experimental.devMode = {
+      ...(typeof rolldownOptions.experimental.devMode === 'object'
+        ? rolldownOptions.experimental.devMode
+        : {}),
       implement: await getHmrImplementation(this.getTopLevelConfig()),
     }
 
@@ -371,14 +386,15 @@ class Clients {
   private clientToId = new Map<NormalizedHotChannelClient, string>()
   private idToClient = new Map<string, NormalizedHotChannelClient>()
 
-  setupIfNeeded(client: NormalizedHotChannelClient): string {
+  setupIfNeeded(client: NormalizedHotChannelClient, clientId: string) {
     const id = this.clientToId.get(client)
-    if (id) return id
-
-    const newId = randomUUID()
-    this.clientToId.set(client, newId)
-    this.idToClient.set(newId, client)
-    return newId
+    if (id && id !== clientId) {
+      throw new Error(
+        'client ID conflict detected. Please restart the dev server.',
+      )
+    }
+    this.clientToId.set(client, clientId)
+    this.idToClient.set(clientId, client)
   }
 
   get(id: string): NormalizedHotChannelClient | undefined {
