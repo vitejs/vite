@@ -99,8 +99,7 @@ if (isBuild) {
   })
 
   // BUNDLED -> GENERATING_HMR_PATCH -> GENERATING_HMR_PATCH -> BUNDLED
-  // FIXME: https://github.com/rolldown/rolldown/issues/6648
-  test.skip('continuous generate hmr patch', async () => {
+  test('continuous generate hmr patch', async () => {
     editFile('hmr.js', (code) =>
       code.replace(
         "const foo = 'hello'",
