@@ -286,7 +286,7 @@ export default defineConfig({
 ```
 
 ::: tip Importing files
-Since the same code is prepended to files in different directories, relative paths won't resolve correctly. Use [aliases](#resolve-alias) instead.
+Since the same code is prepended to files in different directories, relative paths won't resolve correctly. Use absolute paths or [aliases](#resolve-alias) instead.
 :::
 
 ## css.preprocessorMaxWorkers
