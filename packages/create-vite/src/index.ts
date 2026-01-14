@@ -621,33 +621,7 @@ async function init() {
           ? 'Select a variant:'
           : `Select ${bold('Vite boilerplate')} (listed first) or ${bold('Vite-based framework')} (listed last):`,
         options: framework.variants.map((variant) => {
-          const labelText = variant.display || variant.name
-          let label = variant.color(labelText)
-          if (variant.description) {
-            const terminalWidth = process.stdout.columns || 80
-            const promptBorderWidth = 5
-            const whitespaceWidth = 1
-            const { description, link } = variant
-            if (!link) throw new Error('Invalid variant: link must be defined')
-            let availableWidth =
-              terminalWidth -
-              promptBorderWidth -
-              labelText.length -
-              whitespaceWidth
-            if (link.length <= availableWidth) {
-              label += ` ${gray(underline(link))}`
-              availableWidth = availableWidth - link.length - whitespaceWidth
-              const dots = '...'
-              if (availableWidth > dots.length + 1) {
-                // Worarkound for https://github.com/bombshell-dev/clack/issues/441
-                const descriptionTruncated =
-                  description.length <= availableWidth
-                    ? description
-                    : description.slice(0, availableWidth - dots.length) + dots
-                label += ` ${descriptionTruncated}`
-              }
-            }
-          }
+          const label = getLabel(variant)
           return {
             label,
             value: variant.name,
@@ -966,6 +940,35 @@ function getFullCustomCommand(customCommand: string, pkgInfo?: PkgInfo) {
         return 'npm exec '
       })
   )
+}
+
+function getLabel(variant: FrameworkVariant) {
+  // Choice name
+  const labelText = variant.display || variant.name
+  let label = variant.color(labelText)
+  const { description, link } = variant
+  if (!description || !link) return label
+
+  // Add link
+  const terminalWidth = process.stdout.columns || 80
+  const promptBorderWidth = 5
+  const whitespaceWidth = 1
+  let availableWidth =
+    terminalWidth - promptBorderWidth - labelText.length - whitespaceWidth
+  if (link.length > availableWidth) return label
+  label += ` ${gray(underline(link))}`
+
+  // Add description
+  availableWidth = availableWidth - link.length - whitespaceWidth
+  const dots = '...'
+  if (availableWidth < dots.length + 5) return label
+  // Work around https://github.com/bombshell-dev/clack/issues/441
+  const descriptionTruncated =
+    description.length <= availableWidth
+      ? description
+      : description.slice(0, availableWidth - dots.length) + dots
+  label += ` ${descriptionTruncated}`
+  return label
 }
 
 function getInstallCommand(agent: string) {
