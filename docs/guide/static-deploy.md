@@ -193,7 +193,7 @@ To add Cloudflare Workers support to an existing Vite project:
 1. Install the Cloudflare Vite plugin:
 
    ```bash
-   $ npm install --save-dev @cloudflare/vite-plugin
+   $ npm install --save-dev @cloudflare/vite-plugin wrangler
    ```
 
 2. Add the plugin to your `vite.config.js`:
