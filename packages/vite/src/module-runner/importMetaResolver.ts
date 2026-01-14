@@ -1,5 +1,3 @@
-/* eslint-disable n/no-unsupported-features/node-builtins */
-
 import type { ResolveFnOutput, ResolveHookContext } from 'node:module'
 
 export type ImportMetaResolver = (specifier: string, importer: string) => string
@@ -36,9 +34,12 @@ function customizationHookResolve(
 }
 
 export function createImportMetaResolver(): ImportMetaResolver | undefined {
-  let module: typeof import('node:module')
+  let module: typeof import('node:module') | undefined
   try {
-    module = process.getBuiltinModule('node:module').Module
+    module =
+      typeof process !== 'undefined'
+        ? process.getBuiltinModule('node:module').Module
+        : undefined
   } catch {
     return
   }
@@ -48,17 +49,21 @@ export function createImportMetaResolver(): ImportMetaResolver | undefined {
   }
 
   // Use registerHooks if available as it's more performant
+  // eslint-disable-next-line n/no-unsupported-features/node-builtins -- we check the existence
   if (module.registerHooks) {
+    // eslint-disable-next-line n/no-unsupported-features/node-builtins -- we checked the existence
     module.registerHooks({ resolve: customizationHookResolve })
     return importMetaResolveWithCustomHook
   }
 
+  // eslint-disable-next-line n/no-unsupported-features/node-builtins -- we check the existence
   if (!module.register) {
     return
   }
 
   try {
     const hookModuleContent = `data:text/javascript,${encodeURI(customizationHooksModule)}`
+    // eslint-disable-next-line n/no-unsupported-features/node-builtins -- we checked the existence
     module.register(hookModuleContent)
   } catch (e) {
     // For `--experimental-network-imports` flag that exists in Node before v22
