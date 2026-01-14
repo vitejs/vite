@@ -3,7 +3,7 @@ import type { Connect } from '#dep-types/connect'
 import type { ResolvedPreviewOptions, ResolvedServerOptions } from '../..'
 
 export function getAdditionalAllowedHosts(
-  resolvedServerOptions: Pick<ResolvedServerOptions, 'host' | 'hmr' | 'origin'>,
+  resolvedServerOptions: Pick<ResolvedServerOptions, 'host' | 'ws' | 'origin'>,
   resolvedPreviewOptions: Pick<ResolvedPreviewOptions, 'host'>,
 ): string[] {
   const list = []
@@ -17,10 +17,10 @@ export function getAdditionalAllowedHosts(
     list.push(resolvedServerOptions.host)
   }
   if (
-    typeof resolvedServerOptions.hmr === 'object' &&
-    resolvedServerOptions.hmr.host
+    typeof resolvedServerOptions.ws === 'object' &&
+    resolvedServerOptions.ws.host
   ) {
-    list.push(resolvedServerOptions.hmr.host)
+    list.push(resolvedServerOptions.ws.host)
   }
   if (
     typeof resolvedPreviewOptions.host === 'string' &&

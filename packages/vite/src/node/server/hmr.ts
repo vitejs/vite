@@ -40,14 +40,45 @@ const whitespaceRE = /\s/
 
 const normalizedClientDir = normalizePath(CLIENT_DIR)
 
-export interface HmrOptions {
+export interface WsOptions {
   protocol?: string
   host?: string
   port?: number
   clientPort?: number
   path?: string
   timeout?: number
+  server?: HttpServer
+}
+
+export interface HmrOptions {
+  /**
+   * @deprecated Use `server.ws.protocol` instead.
+   */
+  protocol?: string
+  /**
+   * @deprecated Use `server.ws.host` instead.
+   */
+  host?: string
+  /**
+   * @deprecated Use `server.ws.port` instead.
+   */
+  port?: number
+  /**
+   * @deprecated Use `server.ws.clientPort` instead.
+   */
+  clientPort?: number
+  /**
+   * @deprecated Use `server.ws.path` instead.
+   */
+  path?: string
+  /**
+   * @deprecated Use `server.ws.timeout` instead.
+   */
+  timeout?: number
   overlay?: boolean
+  /**
+   * @deprecated Use `server.ws.server` instead.
+   */
   server?: HttpServer
 }
 

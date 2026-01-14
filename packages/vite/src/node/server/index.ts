@@ -37,6 +37,7 @@ import {
   normalizePath,
   resolveHostname,
   resolveServerUrls,
+  setupHmrWsOptionCompat,
   setupSIGTERMListener,
   teardownSIGTERMListener,
 } from '../utils'
@@ -93,7 +94,7 @@ import { ModuleGraph } from './mixedModuleGraph'
 import type { ModuleNode } from './mixedModuleGraph'
 import { notFoundMiddleware } from './middlewares/notFound'
 import { errorMiddleware } from './middlewares/error'
-import type { HmrOptions, NormalizedHotChannel } from './hmr'
+import type { HmrOptions, NormalizedHotChannel, WsOptions } from './hmr'
 import { handleHMRUpdate, updateModules } from './hmr'
 import { openBrowser as _openBrowser } from './openBrowser'
 import type { TransformOptions, TransformResult } from './transformRequest'
@@ -112,10 +113,10 @@ export interface ServerOptions extends CommonServerOptions {
    */
   hmr?: HmrOptions | boolean
   /**
-   * Do not start the websocket connection.
-   * @experimental
+   * Configure WebSocket connection options.
+   * Set to `false` to disable the WebSocket server and connection.
    */
-  ws?: false
+  ws?: WsOptions | false
   /**
    * Warm-up files to transform and cache the results in advance. This improves the
    * initial page load during server starts and prevents transform waterfalls.
@@ -1155,6 +1156,8 @@ export function resolveServerOptions(
     },
     raw ?? {},
   )
+
+  setupHmrWsOptionCompat(_server)
 
   const server: ResolvedServerOptions = {
     ..._server,

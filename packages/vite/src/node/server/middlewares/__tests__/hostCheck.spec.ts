@@ -5,7 +5,7 @@ test('getAdditionalAllowedHosts', async () => {
   const actual = getAdditionalAllowedHosts(
     {
       host: 'vite.host.example.com',
-      hmr: {
+      ws: {
         host: 'vite.hmr-host.example.com',
       },
       origin: 'http://vite.origin.example.com:5173',
