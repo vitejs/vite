@@ -46,7 +46,7 @@ export function loadEnv(
   const parsed = Object.fromEntries(
     envFiles.flatMap((filePath) => {
       const stat = tryStatSync(filePath)
-      // Support both regular files and FIFOs (named pipes)
+      // Support FIFOs (named pipes) for apps like 1Password
       if (!stat || (!stat.isFile() && !stat.isFIFO())) return []
 
       return Object.entries(parse(fs.readFileSync(filePath)))
