@@ -641,6 +641,7 @@ async function init() {
     })
     process.exit(status ?? 0)
   }
+
   // Only create directory for built-in templates, not for customCommand
   fs.mkdirSync(root, { recursive: true })
   prompts.log.step(`Scaffolding project in ${root}...`)
