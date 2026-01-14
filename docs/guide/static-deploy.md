@@ -212,7 +212,9 @@ To add Cloudflare Workers support to an existing Vite project:
    ```jsonc [wrangler.jsonc]
    {
      "name": "my-vite-app",
-     "compatibility_date": "2025-01-14", // Use a recent date in YYYY-MM-DD format
+	"assets": {
+		"not_found_handling": "single-page-application",
+	},
    }
    ```
 
