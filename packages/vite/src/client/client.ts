@@ -624,7 +624,12 @@ export { ErrorOverlay }
 declare const DevRuntime: typeof DevRuntimeType
 
 if (isBundleMode && typeof DevRuntime !== 'undefined') {
+  const clientId = crypto.randomUUID()
   class ViteDevRuntime extends DevRuntime {
+    constructor(messenger: Messenger) {
+      super(messenger, clientId)
+    }
+
     override createModuleHotContext(moduleId: string) {
       const ctx = createHotContext(moduleId)
       // @ts-expect-error TODO: support CSS properly
@@ -637,6 +642,13 @@ if (isBundleMode && typeof DevRuntime !== 'undefined') {
     }
   }
 
+  // notify client id
+  transport.send({
+    type: 'custom',
+    event: 'vite:module-loaded',
+    data: { modules: [], clientId },
+  })
+
   const wrappedSocket: Messenger = {
     send(message) {
       switch (message.type) {
@@ -645,7 +657,7 @@ if (isBundleMode && typeof DevRuntime !== 'undefined') {
             type: 'custom',
             event: 'vite:module-loaded',
             // clone array as the runtime reuses the array instance
-            data: { modules: message.modules.slice() },
+            data: { modules: message.modules.slice(), clientId },
           })
           break
         }

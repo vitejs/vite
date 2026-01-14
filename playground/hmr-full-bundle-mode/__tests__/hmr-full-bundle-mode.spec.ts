@@ -120,4 +120,9 @@ if (isBuild) {
     )
     await expect.poll(() => page.textContent('.hmr')).toBe('hello')
   })
+
+  test('lazy bundling', async () => {
+    await page.click('#load-dynamic')
+    await expect.poll(() => page.textContent('.dynamic')).toBe('loaded')
+  })
 }

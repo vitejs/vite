@@ -5,6 +5,15 @@ export default defineConfig({
     bundledDev: true,
   },
   plugins: [waitBundleCompleteUntilAccess(), delayTransformComment()],
+  build: {
+    rolldownOptions: {
+      experimental: {
+        devMode: {
+          lazy: true,
+        },
+      },
+    },
+  },
 })
 
 function waitBundleCompleteUntilAccess(): Plugin {
