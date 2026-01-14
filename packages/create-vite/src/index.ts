@@ -12,6 +12,7 @@ const {
   blue,
   blueBright,
   bold,
+  gray,
   cyan,
   green,
   greenBright,
@@ -20,11 +21,8 @@ const {
   redBright,
   reset,
   underline,
-  white,
   yellow,
 } = colors
-// Using `white` actually dims the text (for @clack/prompts internal reasons)
-const link = (url: `https://${string}`) => white(underline(url))
 
 const argv = mri<{
   template?: string
@@ -74,6 +72,7 @@ type FrameworkVariant = {
   name: string
   display: string
   description?: string
+  link?: `https://${string}`
   color: ColorFunc
   customCommand?: string
 }
@@ -120,8 +119,10 @@ const FRAMEWORKS: Framework[] = [
       {
         name: 'custom-nuxt',
         display: 'Nuxt ↗',
+        link: 'https://nuxt.com',
         // Extracted from https://nuxt.com
-        description: `${link('https://nuxt.com')} The Full-Stack Vue Framework — build fast, production-ready web apps with Vue.`,
+        description:
+          'The Full-Stack Vue Framework — build fast, production-ready web apps with Vue.',
         // Don't choose another color — all Vue frameworks must use `greenBright`
         color: greenBright,
         customCommand: 'npm exec nuxi init TARGET_DIR',
@@ -129,8 +130,10 @@ const FRAMEWORKS: Framework[] = [
       {
         name: 'custom-vike-vue',
         display: 'Vike ↗',
+        link: 'https://vike.dev',
         // Extracted from https://vike.dev
-        description: `${link('https://vike.dev')} Composable framework to build advanced applications with flexibility and stability.`,
+        description:
+          'Composable framework to build advanced applications with flexibility and stability.',
         // Don't choose another color — all Vue frameworks must use `greenBright`
         color: greenBright,
         customCommand: 'npm create -- vike@latest --vue TARGET_DIR',
@@ -182,8 +185,10 @@ const FRAMEWORKS: Framework[] = [
       {
         name: 'custom-react-router',
         display: 'React Router v7 ↗',
+        link: 'https://reactrouter.com',
         // Extracted from https://reactrouter.com
-        description: `${link('https://reactrouter.com')} User‑obsessed, standards‑focused, multi‑strategy router you can deploy anywhere.`,
+        description:
+          'User‑obsessed, standards‑focused, multi‑strategy router you can deploy anywhere.',
         // Don't choose another color — all React frameworks must use `cyan`
         color: cyan,
         customCommand: 'npm create react-router@latest TARGET_DIR',
@@ -191,8 +196,10 @@ const FRAMEWORKS: Framework[] = [
       {
         name: 'custom-tanstack-router-react',
         display: 'TanStack Router ↗',
+        link: 'https://tanstack.com/router',
         // Extracted from https://tanstack.com/router/latest
-        description: `${link('https://tanstack.com/router')} Type-safe router for client-side and full-stack applications.`,
+        description:
+          'Type-safe router for client-side and full-stack applications.',
         // Don't choose another color — all React frameworks must use `cyan`
         color: cyan,
         customCommand:
@@ -201,8 +208,10 @@ const FRAMEWORKS: Framework[] = [
       {
         name: 'redwoodsdk-standard',
         display: 'RedwoodSDK ↗',
+        link: 'https://rwsdk.com',
         // Extracted from https://rwsdk.com
-        description: `${link('https://rwsdk.com')} Server-first React with zero magic. Built to stay understandable.`,
+        description:
+          'Server-first React with zero magic. Built to stay understandable.',
         // Don't choose another color — all React frameworks must use `cyan`
         color: cyan,
         customCommand: 'npm create rwsdk@latest TARGET_DIR',
@@ -210,8 +219,10 @@ const FRAMEWORKS: Framework[] = [
       {
         name: 'custom-vike-react',
         display: 'Vike ↗',
+        link: 'https://vike.dev',
         // Extracted from https://vike.dev
-        description: `${link('https://vike.dev')} Composable framework to build advanced applications with flexibility and stability.`,
+        description:
+          'Composable framework to build advanced applications with flexibility and stability.',
         // Don't choose another color — all React frameworks must use `cyan`
         color: cyan,
         customCommand: 'npm create -- vike@latest --react TARGET_DIR',
@@ -299,8 +310,10 @@ const FRAMEWORKS: Framework[] = [
       {
         name: 'custom-tanstack-router-solid',
         display: 'TanStack Router ↗',
+        link: 'https://tanstack.com/router',
         // Extracted from https://tanstack.com/router/latest
-        description: `${link('https://tanstack.com/router')} Type-safe router for client-side and full-stack applications.`,
+        description:
+          'Type-safe router for client-side and full-stack applications.',
         // Don't choose another color — all Solid frameworks must use `cyan`
         color: cyan,
         customCommand:
@@ -309,8 +322,10 @@ const FRAMEWORKS: Framework[] = [
       {
         name: 'custom-vike-solid',
         display: 'Vike ↗',
+        link: 'https://vike.dev',
         // Extracted from https://vike.dev
-        description: `${link('https://vike.dev')} Composable framework to build advanced applications with flexibility and stability.`,
+        description:
+          'Composable framework to build advanced applications with flexibility and stability.',
         // Don't choose another color — all Solid frameworks must use `cyan`
         color: cyan,
         customCommand: 'npm create -- vike@latest --solid TARGET_DIR',
@@ -606,11 +621,29 @@ async function init() {
           ? 'Select a variant:'
           : `Select ${bold('Vite boilerplate')} (listed first) or ${bold('Vite-based framework')} (listed last):`,
         options: framework.variants.map((variant) => {
-          const variantColor = variant.color
+          const labelText = variant.display || variant.name
+          let label = variant.color(labelText)
+          if (variant.description) {
+            const terminalWidth = process.stdout.columns || 80
+            const promptBorderWidth = 5
+            const { description, link } = variant
+            if (!link) throw new Error('Invalid variant: link must be defined')
+            const availableWidth =
+              terminalWidth -
+              promptBorderWidth -
+              labelText.length -
+              link.length -
+              2 // two whitespaces
+            const dots = '...'
+            // Worarkound for https://github.com/bombshell-dev/clack/issues/441
+            const descriptionTruncated =
+              description.length <= availableWidth
+                ? description
+                : description.slice(0, availableWidth - dots.length) + dots
+            label += ` ${gray(underline(link))} ${descriptionTruncated}`
+          }
           return {
-            label:
-              variantColor(variant.display || variant.name) +
-              (!variant.description ? '' : ` ${variant.description}`),
+            label,
             value: variant.name,
           }
         }),
