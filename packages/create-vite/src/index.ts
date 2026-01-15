@@ -470,15 +470,13 @@ async function init() {
         defaultValue: defaultTargetDir,
         placeholder: defaultTargetDir,
         validate: (value) => {
-          return !value ||
-            value.length === 0 ||
-            formatTargetDir(value).length > 0
+          return !value || formatTargetDir(value).length > 0
             ? undefined
             : 'Invalid project name'
         },
       })
       if (prompts.isCancel(projectName)) return cancel()
-      targetDir = formatTargetDir(projectName as string)
+      targetDir = formatTargetDir(projectName!)
     } else {
       targetDir = defaultTargetDir
     }
@@ -544,7 +542,7 @@ async function init() {
         },
       })
       if (prompts.isCancel(packageNameResult)) return cancel()
-      packageName = packageNameResult as string
+      packageName = packageNameResult!
     } else {
       packageName = toValidPackageName(packageName)
     }
