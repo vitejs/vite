@@ -1,8 +1,5 @@
 import { isWindows } from '../shared/utils'
-import {
-  type ImportMetaResolver,
-  createImportMetaResolver,
-} from './importMetaResolver'
+import { createImportMetaResolver } from './importMetaResolver'
 import type { ModuleRunnerImportMeta } from './types'
 import { posixDirname, posixPathToFileHref, toWindowsPath } from './utils'
 
@@ -39,19 +36,16 @@ export function createDefaultImportMeta(
   } satisfies Omit<ModuleRunnerImportMeta, 'main'> as any
 }
 
-let importMetaResolverCache: Promise<ImportMetaResolver | undefined> | undefined
-
 /**
  * Create import.meta object for Node.js.
  */
-export async function createNodeImportMeta(
+export function createNodeImportMeta(
   modulePath: string,
-): Promise<ModuleRunnerImportMeta> {
+): ModuleRunnerImportMeta {
   const defaultMeta = createDefaultImportMeta(modulePath)
   const href = defaultMeta.url
 
-  importMetaResolverCache ??= createImportMetaResolver()
-  const importMetaResolver = await importMetaResolverCache
+  const importMetaResolver = createImportMetaResolver()
 
   return {
     ...defaultMeta,
