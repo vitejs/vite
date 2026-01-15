@@ -178,47 +178,60 @@ Learn more about Vercel’s [Git Integration](https://vercel.com/docs/concepts/g
 
 The [Cloudflare Vite plugin](https://developers.cloudflare.com/workers/vite-plugin/) provides integration with Cloudflare Workers and uses Vite's Environment API to run your server-side code in the Cloudflare Workers runtime during development.
 
-#### Create a new app
-
-You can create a new Vite project configured for Cloudflare Workers using `create-cloudflare`:
+To add Cloudflare Workers to an existing Vite project, install the plugin and add it to your config:
 
 ```bash
-$ npm create cloudflare@latest my-vite-app -- --framework=react
+$ npm install --save-dev @cloudflare/vite-plugin
 ```
 
-#### Update an existing app
+```js [vite.config.js]
+import { defineConfig } from 'vite'
+import { cloudflare } from '@cloudflare/vite-plugin'
 
-To add Cloudflare Workers support to an existing Vite project:
+export default defineConfig({
+  plugins: [cloudflare()],
+})
+```
 
-1. Install the Cloudflare Vite plugin:
-
-   ```bash
-   $ npm install --save-dev @cloudflare/vite-plugin wrangler
-   ```
-
-2. Add the plugin to your `vite.config.js`:
-
-   ```js [vite.config.js]
-   import { defineConfig } from 'vite'
-   import { cloudflare } from '@cloudflare/vite-plugin'
-
-   export default defineConfig({
-     plugins: [cloudflare()],
-   })
-   ```
-
-3. Create a `wrangler.jsonc` configuration file:
-
-   ```jsonc [wrangler.jsonc]
-   {
-     "name": "my-vite-app",
-	"assets": {
-		"not_found_handling": "single-page-application",
-	},
-   }
-   ```
+```jsonc [wrangler.jsonc]
+{
+  "name": "my-vite-app",
+}
+```
 
 Your application can now be developed with `npm run dev`, built with `npm run build`, previewed with `npm run preview`, and deployed with `npx wrangler deploy`.
+
+#### Adding a Backend API
+
+To add a backend API, create a Worker entry file and update your config:
+
+Add a `main` entry point to `wrangler.jsonc`:
+
+```jsonc [wrangler.jsonc]
+{
+  "name": "my-vite-app",
+  "main": "./worker/index.ts",
+  "assets": {
+    "not_found_handling": "single-page-application",
+  },
+}
+```
+
+Create `worker/index.ts`:
+
+```ts [worker/index.ts]
+export default {
+  fetch(request) {
+    const url = new URL(request.url)
+    if (url.pathname.startsWith('/api/')) {
+      return Response.json({ hello: 'world' })
+    }
+    return new Response(null, { status: 404 })
+  },
+} satisfies ExportedHandler
+```
+
+The API runs in the Workers runtime during development and deploys alongside your frontend. See the [Cloudflare Vite plugin tutorial](https://developers.cloudflare.com/workers/vite-plugin/tutorial/) for a complete walkthrough.
 
 The Cloudflare Vite plugin supports the full [Cloudflare Developer Platform](https://developers.cloudflare.com/workers/), including KV, D1, Durable Objects, Workflows, and more. Learn more in the [Cloudflare Vite Plugin documentation](https://developers.cloudflare.com/workers/vite-plugin/).
 
