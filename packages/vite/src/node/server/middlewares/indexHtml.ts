@@ -13,6 +13,7 @@ import {
   findNeedTransformStyleAttribute,
   getScriptInfo,
   htmlEnvHook,
+  htmlLangRE,
   htmlProxyResult,
   injectCspNonceMetaTagHook,
   injectNonceAttributeTagHook,
@@ -456,8 +457,8 @@ export function indexHtmlMiddleware(
     }
 
     const url = req.url && cleanUrl(req.url)
-    // htmlFallbackMiddleware appends '.html' to URLs
-    if (url?.endsWith('.html') && req.headers['sec-fetch-dest'] !== 'script') {
+    // htmlFallbackMiddleware appends '.html' or '.htm' to URLs
+    if (url && htmlLangRE.test(url) && req.headers['sec-fetch-dest'] !== 'script') {
       if (fullBundleEnv) {
         const pathname = decodeURIComponent(url)
         const filePath = pathname.slice(1) // remove first /
