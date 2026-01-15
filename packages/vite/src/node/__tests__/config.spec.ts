@@ -632,7 +632,7 @@ describe('resolveEnvPrefix', () => {
     expect(() => resolveEnvPrefix(config)).toThrow()
   })
 
-  test(`throw a warning message if envPrefix contains whitespace`, () => {
+  test(`show a warning message if envPrefix contains a whitespace`, () => {
     const consoleWarnSpy = vi
       .spyOn(console, 'warn')
       .mockImplementation(() => {})
