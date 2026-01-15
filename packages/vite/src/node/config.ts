@@ -829,6 +829,8 @@ const configDefaults = Object.freeze({
     // entries
     /** @experimental */
     force: false,
+    /** @experimental */
+    ignoreOutdatedRequests: false,
   },
   ssr: ssrConfigDefaults,
   environments: {},
@@ -2386,7 +2388,7 @@ async function bundleConfigFile(
         name: 'inject-file-scope-variables',
         transform: {
           filter: { id: /\.[cm]?[jt]s$/ },
-          async handler(code, id) {
+          handler(code, id) {
             let injectValues =
               `const ${dirnameVarName} = ${JSON.stringify(path.dirname(id))};` +
               `const ${filenameVarName} = ${JSON.stringify(id)};` +
@@ -2397,7 +2399,7 @@ async function bundleConfigFile(
               if (isESM) {
                 if (!importMetaResolverRegistered) {
                   importMetaResolverRegistered = true
-                  await createImportMetaResolver()
+                  createImportMetaResolver()
                 }
                 injectValues += `const ${importMetaResolveVarName} = (specifier, importer = ${importMetaUrlVarName}) => (${importMetaResolveWithCustomHookString})(specifier, importer);`
               } else {

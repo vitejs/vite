@@ -2980,10 +2980,14 @@ const makeStylWorker = (maxWorkers: number | undefined) => {
     {
       shouldUseFake(_stylusPath, _content, _root, options) {
         // define can include functions and those are not serializable
-        // in that case, fallback to running in main thread
+        // Evaluator is always a function
+        // in those cases, fallback to running in main thread
         return !!(
-          options.define &&
-          Object.values(options.define).some((d) => typeof d === 'function')
+          (options.define &&
+            Object.values(options.define).some(
+              (d) => typeof d === 'function',
+            )) ||
+          options.Evaluator
         )
       },
       max: maxWorkers,
@@ -3405,25 +3409,39 @@ const map: Record<
 
 const esMap: Record<number, string[]> = {
   // https://caniuse.com/?search=es2015
-  2015: ['chrome49', 'edge13', 'safari10', 'firefox44', 'opera36'],
+  2015: ['chrome49', 'edge13', 'safari10', 'ios10', 'firefox44', 'opera36'],
   // https://caniuse.com/?search=es2016
-  2016: ['chrome50', 'edge13', 'safari10', 'firefox43', 'opera37'],
+  2016: ['chrome50', 'edge13', 'safari10', 'ios10', 'firefox43', 'opera37'],
   // https://caniuse.com/?search=es2017
-  2017: ['chrome58', 'edge15', 'safari11', 'firefox52', 'opera45'],
+  2017: ['chrome58', 'edge15', 'safari11', 'ios11', 'firefox52', 'opera45'],
   // https://caniuse.com/?search=es2018
-  2018: ['chrome63', 'edge79', 'safari12', 'firefox58', 'opera50'],
+  2018: ['chrome63', 'edge79', 'safari12', 'ios12', 'firefox58', 'opera50'],
   // https://caniuse.com/?search=es2019
-  2019: ['chrome73', 'edge79', 'safari12.1', 'firefox64', 'opera60'],
+  2019: ['chrome73', 'edge79', 'safari12.1', 'ios12.1', 'firefox64', 'opera60'],
   // https://caniuse.com/?search=es2020
-  2020: ['chrome80', 'edge80', 'safari14.1', 'firefox80', 'opera67'],
+  2020: ['chrome80', 'edge80', 'safari14.1', 'ios14.5', 'firefox80', 'opera67'],
   // https://caniuse.com/?search=es2021
-  2021: ['chrome85', 'edge85', 'safari14.1', 'firefox80', 'opera71'],
+  2021: ['chrome85', 'edge85', 'safari14.1', 'ios14.5', 'firefox80', 'opera71'],
   // https://caniuse.com/?search=es2022
-  2022: ['chrome94', 'edge94', 'safari16.4', 'firefox93', 'opera80'],
+  2022: ['chrome94', 'edge94', 'safari16.4', 'ios16.4', 'firefox93', 'opera80'],
   // https://caniuse.com/?search=es2023
-  2023: ['chrome110', 'edge110', 'safari16.4', 'firefox146', 'opera96'],
-  // https://caniuse.com/?feats=mdn-javascript_builtins_object_groupby,wf-array-group,wf-promise-withresolvers,mdn-javascript_builtins_arraybuffer_transfer,mdn-javascript_builtins_string_iswellformed,mdn-javascript_builtins_string_towellformed,wf-atomics-wait-async,mdn-javascript_builtins_arraybuffer_resize,mdn-javascript_builtins_sharedarraybuffer_grow
-  2024: ['chrome119', 'edge119', 'safari17.4', 'firefox145', 'opera105'],
+  2023: [
+    'chrome110',
+    'edge110',
+    'safari16.4',
+    'ios16.4',
+    'firefox146',
+    'opera96',
+  ],
+  // https://caniuse.com/sr-es15
+  2024: [
+    'chrome119',
+    'edge119',
+    'safari17.4',
+    'ios17.4',
+    'firefox145',
+    'opera105',
+  ],
 }
 
 const esRE = /es(\d{4})/
