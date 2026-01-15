@@ -40,6 +40,7 @@ import {
   withTrailingSlash,
 } from '../../shared/utils'
 import type { Environment } from '../environment'
+import type { PartialEnvironment } from '../baseEnvironment'
 
 // referenceId is base64url but replaces - with $
 export const assetUrlRE: RegExp = /__VITE_ASSET__([\w$]+)__(?:\$_(.*?)__)?/g
@@ -473,18 +474,7 @@ async function fileToBuiltUrl(
       environment.config.experimental.bundledDev
     ) {
       const outputFilename = pluginContext.getFileName(referenceId)
-      const outputUrl = toOutputFilePathInJS(
-        environment,
-        outputFilename,
-        'asset',
-        'assets/dummy.js',
-        'js',
-        () => {
-          throw new Error('unreachable')
-        },
-      )
-      if (typeof outputUrl === 'object') throw new Error('unreachable')
-      url = outputUrl
+      url = toOutputFilePathInJSForBundledDev(environment, outputFilename)
     } else {
       url = `__VITE_ASSET__${referenceId}__${postfix ? `$_${postfix}__` : ``}`
     }
@@ -492,6 +482,27 @@ async function fileToBuiltUrl(
 
   cache.set(id, url)
   return url
+}
+
+export function toOutputFilePathInJSForBundledDev(
+  environment: PartialEnvironment,
+  filename: string,
+): string {
+  const outputUrl = toOutputFilePathInJS(
+    environment,
+    filename,
+    'asset',
+    // in bundled dev, the chunks are always emitted to `assets` directory
+    'assets/dummy.js',
+    'js',
+    // relative base is not supported in bundled dev
+    () => {
+      throw new Error('unreachable')
+    },
+  )
+  // renderBuiltUrl is not supported in bundled dev
+  if (typeof outputUrl === 'object') throw new Error('unreachable')
+  return outputUrl
 }
 
 export async function urlToBuiltUrl(
