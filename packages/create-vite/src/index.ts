@@ -133,7 +133,7 @@ const FRAMEWORKS: Framework[] = [
         link: 'https://vike.dev',
         // Extracted from https://vike.dev
         description:
-          'Composable framework to build advanced applications with flexibility and stability.',
+          'Composable framework to build (advanced) applications with flexibility and stability.',
         // Don't choose another color — all Vue frameworks must use `greenBright`
         color: greenBright,
         customCommand: 'npm create -- vike@latest --vue TARGET_DIR',
@@ -222,7 +222,7 @@ const FRAMEWORKS: Framework[] = [
         link: 'https://vike.dev',
         // Extracted from https://vike.dev
         description:
-          'Composable framework to build advanced applications with flexibility and stability.',
+          'Composable framework to build (advanced) applications with flexibility and stability.',
         // Don't choose another color — all React frameworks must use `cyan`
         color: cyan,
         customCommand: 'npm create -- vike@latest --react TARGET_DIR',
@@ -325,7 +325,7 @@ const FRAMEWORKS: Framework[] = [
         link: 'https://vike.dev',
         // Extracted from https://vike.dev
         description:
-          'Composable framework to build advanced applications with flexibility and stability.',
+          'Composable framework to build (advanced) applications with flexibility and stability.',
         // Don't choose another color — all Solid frameworks must use `cyan`
         color: cyan,
         customCommand: 'npm create -- vike@latest --solid TARGET_DIR',
