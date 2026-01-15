@@ -1,6 +1,6 @@
 import { type Plugin, defineConfig } from 'vite'
 
-export default defineConfig({
+export default defineConfig(({ command }) => ({
   experimental: {
     bundledDev: true,
   },
@@ -8,13 +8,17 @@ export default defineConfig({
   build: {
     rolldownOptions: {
       experimental: {
-        devMode: {
-          lazy: true,
-        },
+        ...(command === 'serve'
+          ? {
+              devMode: {
+                lazy: true,
+              },
+            }
+          : {}),
       },
     },
   },
-})
+}))
 
 function waitBundleCompleteUntilAccess(): Plugin {
   let resolvers: PromiseWithResolvers<void>
