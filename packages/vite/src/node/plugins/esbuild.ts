@@ -415,7 +415,7 @@ export const buildEsbuildPlugin = (): Plugin => {
         true,
       )
 
-      if (config.build.lib) {
+      if (opts.format === 'iife' || opts.format === 'umd') {
         res.code = injectEsbuildHelpers(res.code, opts.format)
       }
 
