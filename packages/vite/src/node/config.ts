@@ -2051,9 +2051,7 @@ export async function resolveConfig(
 
   // Enable `rolldownOptions.devtools` if devtools is enabled
   if (resolved.devtools.enabled) {
-    if (!resolved.build.rolldownOptions.devtools) {
-      resolved.build.rolldownOptions.devtools = {}
-    }
+    resolved.build.rolldownOptions.devtools ??= {}
   }
 
   applyDepOptimizationOptionCompat(resolved)
