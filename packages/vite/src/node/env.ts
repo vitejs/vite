@@ -104,7 +104,7 @@ export function resolveEnvPrefix({
     // eslint-disable-next-line no-console
     console.warn(
       colors.yellow(
-        `[vite] Warning: envPrefix option contains values with whitespace, which could lead to unexpected behavior.`,
+        `[vite] Warning: envPrefix option contains values with whitespace, which does not work in practice.`,
       ),
     )
   }
