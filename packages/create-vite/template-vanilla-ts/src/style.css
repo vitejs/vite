@@ -175,13 +175,13 @@ code {
     &.vite {
       height: 2rem;
       &:hover {
-        filter: drop-shadow(0 0 6px rgba(189, 52, 254, 0.5));
+        filter: drop-shadow(0 0 18px #bd34fe);
       }
     }
     &.typescript {
       height: 2.25rem;
       &:hover {
-        filter: drop-shadow(0 0 6px rgba(49, 120, 198, 0.5));
+        filter: drop-shadow(0 0 18px #3178c6);
       }
     }
   }
