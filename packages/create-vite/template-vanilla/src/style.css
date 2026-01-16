@@ -26,9 +26,29 @@
   line-height: 145%;
   letter-spacing: 0.18px;
 
-  color-scheme: light;
+  color-scheme: light dark;
   color: var(--color-text);
   background-color: var(--color-bg);
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --color-text: #9ca3af;
+    --color-text-heading: #f3f4f6;
+    --color-bg: #16171d;
+    --color-border: #2e303a;
+    --color-code-bg: #1f2028;
+    --color-accent: #c084fc;
+    --color-accent-bg: rgba(192, 132, 252, 0.15);
+    --color-accent-border: rgba(192, 132, 252, 0.5);
+    --color-social-bg: rgba(47, 48, 58, 0.5);
+    --shadow-hover:
+      rgba(0, 0, 0, 0.4) 0 10px 15px -3px, rgba(0, 0, 0, 0.25) 0 4px 6px -2px;
+  }
+
+  #social ul li a img {
+    filter: invert(1) brightness(2);
+  }
 }
 
 body {
@@ -128,6 +148,24 @@ code {
     scale(1.4);
 }
 
+.hero-image__vite {
+  position: absolute;
+  z-index: 0;
+  top: 107px;
+  inset-inline: 0;
+  margin: 0 auto;
+  display: flex;
+  justify-content: center;
+  color: white;
+  transform: perspective(2000px) rotateZ(300deg) rotateX(40deg) rotateY(39deg)
+    scale(0.8);
+
+  svg {
+    height: 26px;
+    width: auto;
+  }
+}
+
 #app {
   width: 1126px;
   max-width: 100vw;
@@ -183,8 +221,15 @@ code {
 
     &.vite {
       height: 2rem;
-      &:hover {
+      color: white;
+      &:hover,
+      &:focus-visible {
         filter: drop-shadow(0 0 18px #bd34fe);
+        outline: none;
+      }
+      svg {
+        height: 100%;
+        width: auto;
       }
     }
     &.javascript {
@@ -348,6 +393,14 @@ code {
   .hero-image__framework {
     top: 28px;
     height: 24px;
+  }
+
+  .hero-image__vite {
+    top: 74px;
+
+    svg {
+      height: 24px;
+    }
   }
 
   #next-steps {

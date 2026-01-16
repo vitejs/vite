@@ -1,6 +1,6 @@
 import './style.css'
 import typescriptLogo from './assets/typescript.svg'
-import viteLogo from './assets/vite.svg'
+import viteLogo from './assets/vite.svg?raw'
 import { setupCounter } from './counter.ts'
 import heroImg from './assets/hero.png'
 import documentationIcon from './assets/documentation-icon.svg'
@@ -12,9 +12,7 @@ import xIcon from './assets/x-icon.svg'
 
 document.querySelector<HTMLDivElement>('#app')!.innerHTML = `
 <section id="framework-logos">
-    <a href="https://vite.dev" target="_blank">
-        <img src="${viteLogo}" class="logo vite" alt="Vite logo" height="32"/>
-    </a>
+    <a href="https://vite.dev" target="_blank" class="logo vite" aria-label="Vite logo">${viteLogo}</a>
     <span>+</span>
     <a href="https://www.typescriptlang.org/" target="_blank">
         <img src="${typescriptLogo}" class="logo typescript" alt="TypeScript logo" height="36"/>
@@ -27,6 +25,7 @@ document.querySelector<HTMLDivElement>('#app')!.innerHTML = `
     <div class="hero-image">
         <img src="${heroImg}" alt="Vite" class="hero-image__base">
         <img src="${typescriptLogo}" class="hero-image__framework" alt="TypeScript logo"/>
+        <span class="hero-image__vite" aria-label="Vite logo">${viteLogo}</span>
     </div>
     <div>
         <h1>Get started</h1>

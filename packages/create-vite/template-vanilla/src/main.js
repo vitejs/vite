@@ -1,6 +1,6 @@
 import './style.css'
 import javascriptLogo from './assets/javascript.svg'
-import viteLogo from './assets/vite.svg'
+import viteLogo from './assets/vite.svg?raw'
 import { setupCounter } from './counter.js'
 import heroImg from './assets/hero.png'
 import documentationIcon from './assets/documentation-icon.svg'
@@ -12,9 +12,7 @@ import xIcon from './assets/x-icon.svg'
 
 document.querySelector('#app').innerHTML = `
 <section id="framework-logos">
-    <a href="https://vite.dev" target="_blank">
-        <img src="${viteLogo}" class="logo vite" alt="Vite logo" height="32"/>
-    </a>
+    <a href="https://vite.dev" target="_blank" class="logo vite" aria-label="Vite logo">${viteLogo}</a>
     <span>+</span>
     <a href="https://developer.mozilla.org/en-US/docs/Web/JavaScript" target="_blank">
         <img src="${javascriptLogo}" class="logo javascript" alt="JavaScript logo" height="36"/>
@@ -27,6 +25,7 @@ document.querySelector('#app').innerHTML = `
     <div class="hero-image">
         <img src="${heroImg}" alt="Vite" class="hero-image__base">
         <img src="${javascriptLogo}" class="hero-image__framework" alt="JavaScript logo"/>
+        <span class="hero-image__vite" aria-label="Vite logo">${viteLogo}</span>
     </div>
     <div>
         <h1>Get started</h1>
