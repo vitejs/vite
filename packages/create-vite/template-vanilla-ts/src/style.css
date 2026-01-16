@@ -169,14 +169,24 @@ section#framework-logos {
 
   a {
     line-height: 16px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 6px 8px;
+    border-radius: 10px;
+    transition: transform 200ms ease;
   }
 
-  .vite-logo {
+  .logo {
     height: 16px;
   }
 
-  .typescript-logo {
+  .logo.typescript {
     height: 24px;
+  }
+
+  a:hover {
+    transform: translateY(-2px) scale(1.06);
   }
 }
 

@@ -14,11 +14,11 @@ document.querySelector<HTMLDivElement>('#app')!.innerHTML = `
   
         <section id="framework-logos">
             <a href="https://vite.dev" target="_blank">
-                <img src="${viteLogo}" class="vite-logo" alt="Vite logo"/>
+                <img src="${viteLogo}" class="logo" alt="Vite logo"/>
             </a>
             <span>+</span>
             <a href="https://www.typescriptlang.org/" target="_blank">
-                <img src="${typescriptLogo}" class="typescript-logo" alt="TypeScript logo"/>
+                <img src="${typescriptLogo}" class="logo typescript" alt="TypeScript logo"/>
             </a>
         </section>
 
