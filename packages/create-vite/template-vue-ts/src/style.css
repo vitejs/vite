@@ -8,6 +8,7 @@
   --color-accent-bg: rgba(170, 59, 255, 0.1);
   --color-accent-border: rgba(170, 59, 255, 0.5);
   --color-social-bg: rgba(244, 243, 236, 0.5);
+  --color-vite-logo: #000;
   --shadow-hover:
     rgba(0, 0, 0, 0.1) 0 10px 15px -3px, rgba(0, 0, 0, 0.05) 0 4px 6px -2px;
 
@@ -26,9 +27,30 @@
   line-height: 145%;
   letter-spacing: 0.18px;
 
-  color-scheme: light;
+  color-scheme: light dark;
   color: var(--color-text);
   background-color: var(--color-bg);
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --color-text: #9ca3af;
+    --color-text-heading: #f3f4f6;
+    --color-bg: #16171d;
+    --color-border: #2e303a;
+    --color-code-bg: #1f2028;
+    --color-accent: #c084fc;
+    --color-accent-bg: rgba(192, 132, 252, 0.15);
+    --color-accent-border: rgba(192, 132, 252, 0.5);
+    --color-social-bg: rgba(47, 48, 58, 0.5);
+    --color-vite-logo: white;
+    --shadow-hover:
+      rgba(0, 0, 0, 0.4) 0 10px 15px -3px, rgba(0, 0, 0, 0.25) 0 4px 6px -2px;
+  }
+
+  #social ul li a img {
+    filter: invert(1) brightness(2);
+  }
 }
 
 body {
@@ -125,8 +147,26 @@ code {
   inset-inline: 0;
   margin: 0 auto;
   height: 28px;
-  transform: perspective(2000px) rotateZ(300deg) rotateX(44deg) rotateY(39deg)
+  transform: perspective(2000px) rotateZ(300deg) rotateX(30deg) rotateY(40deg)
     scale(1.4);
+}
+
+.hero-image__vite {
+  position: absolute;
+  z-index: 0;
+  top: 107px;
+  inset-inline: 0;
+  margin: 0 auto;
+  display: flex;
+  justify-content: center;
+  color: var(--color-vite-logo);
+  transform: perspective(2000px) rotateZ(300deg) rotateX(40deg) rotateY(39deg)
+    scale(0.8);
+
+  svg {
+    height: 26px;
+    width: auto;
+  }
 }
 
 #app {
@@ -182,6 +222,16 @@ code {
   .logo {
     &.vite {
       height: 2rem;
+      color: var(--color-vite-logo);
+      &:hover,
+      &:focus-visible {
+        filter: drop-shadow(0 0 18px #bd34fe);
+        outline: none;
+      }
+      svg {
+        height: 100%;
+        width: auto;
+      }
     }
     &.vue {
       height: 2.25rem;
@@ -212,8 +262,15 @@ code {
         margin-top: 32px;
       }
 
-      .button img {
+      .button img,
+      .button-logo {
         height: 18px;
+        color: var(--color-vite-logo);
+      }
+
+      .button-logo svg {
+        height: 100%;
+        width: auto;
       }
     }
 
@@ -347,6 +404,14 @@ code {
   .hero-image__framework {
     top: 28px;
     height: 24px;
+  }
+
+  .hero-image__vite {
+    top: 74px;
+
+    svg {
+      height: 24px;
+    }
   }
 
   #next-steps {

@@ -1,7 +1,8 @@
 import { LitElement, css, html } from 'lit'
 import { customElement, property } from 'lit/decorators.js'
+import { unsafeHTML } from 'lit/directives/unsafe-html.js'
 import litLogo from './assets/lit.svg'
-import viteLogo from './assets/vite.svg'
+import viteLogo from './assets/vite.svg?raw'
 import heroImg from './assets/hero.png'
 import documentationIcon from './assets/documentation-icon.svg'
 import socialIcon from './assets/social-icon.svg'
@@ -27,9 +28,13 @@ export class MyElement extends LitElement {
   render() {
     return html`
       <section id="framework-logos">
-        <a href="https://vite.dev" target="_blank">
-          <img src=${viteLogo} class="logo vite" alt="Vite logo" height="32" />
-        </a>
+        <a
+          href="https://vite.dev"
+          target="_blank"
+          class="logo vite"
+          aria-label="Vite logo"
+          >${unsafeHTML(viteLogo)}</a
+        >
         <span>+</span>
         <a href="https://lit.dev" target="_blank">
           <img src=${litLogo} class="logo lit" alt="Lit logo" height="36" />
@@ -42,6 +47,9 @@ export class MyElement extends LitElement {
         <div class="hero-image">
           <img src=${heroImg} alt="Vite" class="hero-image__base" />
           <img src=${litLogo} class="hero-image__framework" alt="Lit logo" />
+          <span class="hero-image__vite" aria-label="Vite logo"
+            >${unsafeHTML(viteLogo)}</span
+          >
         </div>
         <div>
           <slot></slot>
@@ -66,7 +74,8 @@ export class MyElement extends LitElement {
             <a
               href="https://vite.dev/?ref=vite-starter-learn-more"
               class="button"
-              ><img src=${viteLogo} alt="" />Explore Vite</a
+              ><span class="button-logo">${unsafeHTML(viteLogo)}</span>Explore
+              Vite</a
             >
             <a
               href="https://lit.dev/?ref=vite-starter-learn-more"
@@ -132,6 +141,7 @@ export class MyElement extends LitElement {
       --color-accent-bg: rgba(170, 59, 255, 0.1);
       --color-accent-border: rgba(170, 59, 255, 0.5);
       --color-social-bg: rgba(244, 243, 236, 0.5);
+      --color-vite-logo: #000;
       --shadow-hover:
         rgba(0, 0, 0, 0.1) 0 10px 15px -3px, rgba(0, 0, 0, 0.05) 0 4px 6px -2px;
 
@@ -159,6 +169,28 @@ export class MyElement extends LitElement {
       display: flex;
       flex-direction: column;
       color: var(--color-text);
+    }
+
+    @media (prefers-color-scheme: dark) {
+      :host {
+        --color-text: #9ca3af;
+        --color-text-heading: #f3f4f6;
+        --color-bg: #16171d;
+        --color-border: #2e303a;
+        --color-code-bg: #1f2028;
+        --color-accent: #c084fc;
+        --color-accent-bg: rgba(192, 132, 252, 0.15);
+        --color-accent-border: rgba(192, 132, 252, 0.5);
+        --color-social-bg: rgba(47, 48, 58, 0.5);
+        --color-vite-logo: white;
+        --shadow-hover:
+          rgba(0, 0, 0, 0.4) 0 10px 15px -3px,
+          rgba(0, 0, 0, 0.25) 0 4px 6px -2px;
+      }
+
+      #social ul li > a img {
+        filter: invert(1) brightness(2);
+      }
     }
 
     h1,
@@ -248,6 +280,24 @@ export class MyElement extends LitElement {
         rotateY(39deg) scale(1.4);
     }
 
+    .hero-image__vite {
+      position: absolute;
+      z-index: 0;
+      top: 107px;
+      inset-inline: 0;
+      margin: 0 auto;
+      display: flex;
+      justify-content: center;
+      color: var(--color-vite-logo);
+      transform: perspective(2000px) rotateZ(300deg) rotateX(40deg)
+        rotateY(39deg) scale(0.8);
+    }
+
+    .hero-image__vite svg {
+      height: 26px;
+      width: auto;
+    }
+
     #center {
       display: flex;
       flex-direction: column;
@@ -295,10 +345,18 @@ export class MyElement extends LitElement {
 
     #framework-logos .logo.vite {
       height: 2rem;
+      color: var(--color-vite-logo);
     }
 
-    #framework-logos .logo.vite:hover {
+    #framework-logos .logo.vite:hover,
+    #framework-logos .logo.vite:focus-visible {
       filter: drop-shadow(0 0 18px #bd34fe);
+      outline: none;
+    }
+
+    #framework-logos .logo.vite svg {
+      height: 100%;
+      width: auto;
     }
 
     #framework-logos .logo.lit {
@@ -335,8 +393,15 @@ export class MyElement extends LitElement {
       margin-top: 32px;
     }
 
-    #documentation .button img {
+    #documentation .button img,
+    #documentation .button-logo {
       height: 18px;
+      color: var(--color-vite-logo);
+    }
+
+    #documentation .button-logo svg {
+      height: 100%;
+      width: auto;
     }
 
     #social ul {
@@ -459,6 +524,14 @@ export class MyElement extends LitElement {
 
       .hero-image__framework {
         top: 28px;
+        height: 24px;
+      }
+
+      .hero-image__vite {
+        top: 74px;
+      }
+
+      .hero-image__vite svg {
         height: 24px;
       }
 

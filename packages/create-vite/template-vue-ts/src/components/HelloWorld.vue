@@ -1,8 +1,8 @@
-<script setup lang="ts">
+<script setup>
 import { ref } from 'vue'
 import heroImg from '../assets/hero.png'
 import vueLogo from '../assets/vue.svg'
-import viteLogo from '../assets/vite.svg'
+import viteLogo from '../assets/vite.svg?raw'
 import documentationIcon from '../assets/documentation-icon.svg'
 import socialIcon from '../assets/social-icon.svg'
 import githubIcon from '../assets/github-icon.svg'
@@ -18,6 +18,7 @@ const count = ref(0)
     <div class="hero-image">
       <img :src="heroImg" alt="Vite" class="hero-image__base" />
       <img :src="vueLogo" class="hero-image__framework" alt="Vue logo" />
+      <span class="hero-image__vite" aria-label="Vite logo" v-html="viteLogo" />
     </div>
     <div>
       <h1>Get started</h1>
@@ -35,7 +36,7 @@ const count = ref(0)
       <p>Your questions, answered</p>
       <div class="button-group">
         <a href="https://vite.dev/?ref=vite-starter-learn-more" class="button"
-          ><img :src="viteLogo" alt="" />Explore Vite</a
+          ><span class="button-logo" v-html="viteLogo" />Explore Vite</a
         >
         <a href="https://vuejs.org/?ref=vite-starter-learn-more" class="button"
           ><img :src="vueLogo" alt="" />Learn more</a
