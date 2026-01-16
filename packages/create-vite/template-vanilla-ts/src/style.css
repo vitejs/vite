@@ -89,7 +89,7 @@ code {
 }
 
 .counter {
-  color: #AA3BFF;
+  color: #aa3bff;
   font-family: 'Azeret Mono', monospace;
   font-size: 16px;
   font-weight: 400;
@@ -108,12 +108,13 @@ code {
 
   &:focus,
   &:focus-visible {
-    outline: 2px auto #AA3BFF;
+    outline: 2px auto #aa3bff;
   }
 }
 
 .hero-image {
   position: relative;
+  margin-top: 24px;
 
   .hero-image__base {
     width: 170px;
