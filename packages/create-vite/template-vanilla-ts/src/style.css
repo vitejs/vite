@@ -157,6 +157,8 @@ code {
   align-items: center;
   height: 88px;
   border-bottom: 1px solid var(--color-border);
+  margin-left: -0.5rem;
+  font-size: 1.5rem;
 
   a {
     line-height: 16px;
@@ -173,10 +175,12 @@ code {
   }
 
   .logo {
-    height: 16px;
+    &.vite {
+      height: 2rem;
+    }
 
     &.typescript {
-      height: 24px;
+      height: 2.25rem;
     }
   }
 }
