@@ -31,7 +31,7 @@ document.querySelector<HTMLDivElement>('#app')!.innerHTML = `
             </div>
             <div>
                 <h1>Get started</h1>
-                <p>Edit <code>src/main.ts</code> and save to <code>test HMR</code></p>
+                <p>Edit <code>src/main.ts</code> and save to test <code>HMR</code></p>
             </div>
             <button id="counter" type="button" class="counter"></button>
         </section>
