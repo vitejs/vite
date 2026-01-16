@@ -1,7 +1,7 @@
 <script setup>
 import HelloWorld from './components/HelloWorld.vue'
+import ViteLogo from './components/ViteLogo.vue'
 import vueLogo from './assets/vue.svg'
-import viteLogo from './assets/vite.svg?raw'
 </script>
 
 <template>
@@ -11,8 +11,9 @@ import viteLogo from './assets/vite.svg?raw'
       target="_blank"
       class="logo vite"
       aria-label="Vite logo"
-      v-html="viteLogo"
-    />
+    >
+      <ViteLogo />
+    </a>
     <span>+</span>
     <a href="https://vuejs.org/" target="_blank">
       <img :src="vueLogo" class="logo vue" alt="Vue logo" height="36" />

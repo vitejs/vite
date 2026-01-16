@@ -1,6 +1,6 @@
 <script>
   import svelteLogo from './assets/svelte.svg'
-  import viteLogo from './assets/vite.svg?raw'
+  import ViteLogo from './ViteLogo.svelte'
   import heroImg from './assets/hero.png'
   import documentationIcon from './assets/documentation-icon.svg'
   import socialIcon from './assets/social-icon.svg'
@@ -12,7 +12,7 @@
 </script>
 
 <section id="framework-logos">
-  <a href="https://vite.dev" target="_blank" rel="noreferrer" class="logo vite" aria-label="Vite logo">{@html viteLogo}</a>
+  <a href="https://vite.dev" target="_blank" rel="noreferrer" class="logo vite" aria-label="Vite logo"><ViteLogo /></a>
   <span>+</span>
   <a href="https://svelte.dev" target="_blank" rel="noreferrer">
     <img src={svelteLogo} class="logo svelte" alt="Svelte logo" height="36" />
@@ -25,7 +25,7 @@
   <div class="hero-image">
     <img src={heroImg} alt="Vite" class="hero-image__base" />
     <img src={svelteLogo} class="hero-image__framework" alt="Svelte logo" />
-    <span class="hero-image__vite" aria-label="Vite logo">{@html viteLogo}</span>
+    <span class="hero-image__vite" aria-label="Vite logo"><ViteLogo /></span>
   </div>
   <div>
     <h1>Get started</h1>
@@ -42,7 +42,7 @@
     <h2>Documentation</h2>
     <p>Your questions, answered</p>
     <div class="button-group">
-      <a href="https://vite.dev/?ref=vite-starter-learn-more" class="button"><span class="button-logo">{@html viteLogo}</span>Explore Vite</a>
+      <a href="https://vite.dev/?ref=vite-starter-learn-more" class="button"><span class="button-logo"><ViteLogo /></span>Explore Vite</a>
       <a href="https://svelte.dev/?ref=vite-starter-learn-more" class="button"><img src={svelteLogo} alt="" />Learn more</a>
     </div>
   </div>

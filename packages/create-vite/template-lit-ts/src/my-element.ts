@@ -1,8 +1,7 @@
 import { LitElement, css, html } from 'lit'
 import { customElement, property } from 'lit/decorators.js'
-import { unsafeHTML } from 'lit/directives/unsafe-html.js'
 import litLogo from './assets/lit.svg'
-import viteLogo from './assets/vite.svg?raw'
+import { viteLogo } from './vite-logo'
 import heroImg from './assets/hero.png'
 import documentationIcon from './assets/documentation-icon.svg'
 import socialIcon from './assets/social-icon.svg'
@@ -33,7 +32,7 @@ export class MyElement extends LitElement {
           target="_blank"
           class="logo vite"
           aria-label="Vite logo"
-          >${unsafeHTML(viteLogo)}</a
+          >${viteLogo}</a
         >
         <span>+</span>
         <a href="https://lit.dev" target="_blank">
@@ -48,7 +47,7 @@ export class MyElement extends LitElement {
           <img src=${heroImg} alt="Vite" class="hero-image__base" />
           <img src=${litLogo} class="hero-image__framework" alt="Lit logo" />
           <span class="hero-image__vite" aria-label="Vite logo"
-            >${unsafeHTML(viteLogo)}</span
+            >${viteLogo}</span
           >
         </div>
         <div>
@@ -74,8 +73,7 @@ export class MyElement extends LitElement {
             <a
               href="https://vite.dev/?ref=vite-starter-learn-more"
               class="button"
-              ><span class="button-logo">${unsafeHTML(viteLogo)}</span>Explore
-              Vite</a
+              ><span class="button-logo">${viteLogo}</span>Explore Vite</a
             >
             <a
               href="https://lit.dev/?ref=vite-starter-learn-more"
