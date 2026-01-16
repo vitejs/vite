@@ -89,7 +89,7 @@ code {
 }
 
 .counter {
-  color: #6c3bff;
+  color: #AA3BFF;
   font-family: 'Azeret Mono', monospace;
   font-size: 16px;
   font-weight: 400;
@@ -98,17 +98,17 @@ code {
   justify-content: center;
   align-items: center;
   border-radius: 5px;
-  background: rgba(108, 59, 255, 0.1);
+  background: rgba(170, 59, 255, 0.1);
   border: 2px solid transparent;
   transition: border-color 0.3s ease;
 
   &:hover {
-    border-color: rgba(108, 59, 255, 0.5);
+    border-color: rgba(170, 59, 255, 0.5);
   }
 
   &:focus,
   &:focus-visible {
-    outline: 2px auto #6c3bff;
+    outline: 2px auto #AA3BFF;
   }
 }
 
