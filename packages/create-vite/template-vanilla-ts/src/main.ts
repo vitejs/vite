@@ -13,11 +13,11 @@ import xIcon from './assets/x-icon.svg'
 document.querySelector<HTMLDivElement>('#app')!.innerHTML = `
 <section id="framework-logos">
     <a href="https://vite.dev" target="_blank">
-        <img src="${viteLogo}" class="logo vite" alt="Vite logo"/>
+        <img src="${viteLogo}" class="logo vite" alt="Vite logo" height="32"/>
     </a>
     <span>+</span>
     <a href="https://www.typescriptlang.org/" target="_blank">
-        <img src="${typescriptLogo}" class="logo typescript" alt="TypeScript logo"/>
+        <img src="${typescriptLogo}" class="logo typescript" alt="TypeScript logo" height="36"/>
     </a>
 </section>
 
