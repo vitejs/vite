@@ -1,24 +1,65 @@
 import './style.css'
-import typescriptLogo from './typescript.svg'
-import viteLogo from '/vite.svg'
+import typescriptLogo from './assets/typescript.svg'
+import viteLogo from './assets/vite.svg'
 import { setupCounter } from './counter.ts'
+import heroImg from './assets/hero.png'
+import documentationIcon from './assets/documentation-icon.svg'
+import socialIcon from './assets/social-icon.svg'
+import githubIcon from './assets/github-icon.svg'
+import discordIcon from './assets/discord-icon.svg'
+import blueskyIcon from './assets/bluesky-icon.svg'
+import xIcon from './assets/x-icon.svg'
 
 document.querySelector<HTMLDivElement>('#app')!.innerHTML = `
-  <div>
-    <a href="https://vite.dev" target="_blank">
-      <img src="${viteLogo}" class="logo" alt="Vite logo" />
-    </a>
-    <a href="https://www.typescriptlang.org/" target="_blank">
-      <img src="${typescriptLogo}" class="logo vanilla" alt="TypeScript logo" />
-    </a>
-    <h1>Vite + TypeScript</h1>
-    <div class="card">
-      <button id="counter" type="button"></button>
-    </div>
-    <p class="read-the-docs">
-      Click on the Vite and TypeScript logos to learn more
-    </p>
-  </div>
+  
+        <section id="framework-logos">
+            <a href="https://vite.dev" target="_blank">
+                <img src="${viteLogo}" class="vite-logo" alt="Vite logo"/>
+            </a>
+            <span>+</span>
+            <a href="https://www.typescriptlang.org/" target="_blank">
+                <img src="${typescriptLogo}" class="typescript-logo" alt="TypeScript logo"/>
+            </a>
+        </section>
+
+        <div class="ticks"></div>
+
+        <section id="center">
+            <div class="hero-image">
+                <img src="${heroImg}" alt="Vite" class="hero-image__base">
+                <img src="${typescriptLogo}" class="hero-image__framework" alt="TypeScript logo"/>
+            </div>
+            <div>
+                <h1>Get started</h1>
+                <p>Edit <code>src/main.ts</code> and save to <code>test HMR</code></p>
+            </div>
+            <button id="counter" type="button" class="counter"></button>
+        </section>
+
+        <div class="ticks"></div>
+
+        <section id="next-steps">
+            <div id="documentation">
+                <img class="icon" src="${documentationIcon}" alt="Documentation" inert>
+                <h2>Documentation</h2>
+                <p>Explore our guides and API reference</p>
+                <a href="https://vite.dev/?rel=starter-learn-more" class="button">Learn more</a>
+            </div>
+            <div id="social">
+                <img class="icon" src="${socialIcon}" alt="Connect with us" inert>
+                <h2>Connect with us</h2>
+                <p>Join our community</p>
+                <ul>
+                    <li><a href="https://github.com/vitejs/vite"><img src="${githubIcon}" alt="GitHub">GitHub</a></li>
+                    <li><a href="https://chat.vite.dev/"><img src="${discordIcon}" alt="Discord">Discord</a></li>
+                    <li><a href="https://bsky.app/profile/vite.dev"><img src="${blueskyIcon}" alt="Bluesky">Bluesky</a></li>
+                    <li><a href="https://x.com/vite_js"><img src="${xIcon}" alt="X">X.com</a></li>
+                </ul>
+            </div>
+        </section>
+
+        <div class="ticks"></div>
+        <section id="spacer"></section>
 `
 
 setupCounter(document.querySelector<HTMLButtonElement>('#counter')!)
