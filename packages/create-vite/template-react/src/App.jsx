@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import reactLogo from './assets/react.svg'
-import viteLogo from './assets/vite.svg'
+import viteLogo from './assets/vite.svg?raw'
 import heroImg from './assets/hero.png'
 import documentationIcon from './assets/documentation-icon.svg'
 import socialIcon from './assets/social-icon.svg'
@@ -16,14 +16,13 @@ function App() {
   return (
     <>
       <section id="framework-logos">
-        <a href="https://vite.dev" target="_blank">
-          <img
-            src={viteLogo}
-            className="logo vite"
-            alt="Vite logo"
-            height="32"
-          />
-        </a>
+        <a
+          href="https://vite.dev"
+          target="_blank"
+          className="logo vite"
+          aria-label="Vite logo"
+          dangerouslySetInnerHTML={{ __html: viteLogo }}
+        />
         <span>+</span>
         <a href="https://react.dev" target="_blank">
           <img
@@ -44,6 +43,11 @@ function App() {
             src={reactLogo}
             className="hero-image__framework"
             alt="React logo"
+          />
+          <span
+            className="hero-image__vite"
+            aria-label="Vite logo"
+            dangerouslySetInnerHTML={{ __html: viteLogo }}
           />
         </div>
         <div>
@@ -72,7 +76,10 @@ function App() {
               href="https://vite.dev/?ref=vite-starter-learn-more"
               className="button"
             >
-              <img src={viteLogo} alt="" />
+              <span
+                className="button-logo"
+                dangerouslySetInnerHTML={{ __html: viteLogo }}
+              />
               Explore Vite
             </a>
             <a

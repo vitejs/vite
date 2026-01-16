@@ -1,6 +1,6 @@
 import { useState } from 'preact/hooks'
 import preactLogo from './assets/preact.svg'
-import viteLogo from './assets/vite.svg'
+import viteLogo from './assets/vite.svg?raw'
 import heroImg from './assets/hero.png'
 import documentationIcon from './assets/documentation-icon.svg'
 import socialIcon from './assets/social-icon.svg'
@@ -16,9 +16,13 @@ export function App() {
   return (
     <>
       <section id="framework-logos">
-        <a href="https://vite.dev" target="_blank">
-          <img src={viteLogo} class="logo vite" alt="Vite logo" height="32" />
-        </a>
+        <a
+          href="https://vite.dev"
+          target="_blank"
+          class="logo vite"
+          aria-label="Vite logo"
+          dangerouslySetInnerHTML={{ __html: viteLogo }}
+        />
         <span>+</span>
         <a href="https://preactjs.com" target="_blank">
           <img
@@ -39,6 +43,11 @@ export function App() {
             src={preactLogo}
             class="hero-image__framework"
             alt="Preact logo"
+          />
+          <span
+            class="hero-image__vite"
+            aria-label="Vite logo"
+            dangerouslySetInnerHTML={{ __html: viteLogo }}
           />
         </div>
         <div>
@@ -64,7 +73,10 @@ export function App() {
               href="https://vite.dev/?ref=vite-starter-learn-more"
               class="button"
             >
-              <img src={viteLogo} alt="" />
+              <span
+                class="button-logo"
+                dangerouslySetInnerHTML={{ __html: viteLogo }}
+              />
               Explore Vite
             </a>
             <a

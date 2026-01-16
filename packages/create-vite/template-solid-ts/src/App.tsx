@@ -1,6 +1,6 @@
 import { createSignal } from 'solid-js'
 import solidLogo from './assets/solid.svg'
-import viteLogo from './assets/vite.svg'
+import viteLogo from './assets/vite.svg?raw'
 import heroImg from './assets/hero.png'
 import documentationIcon from './assets/documentation-icon.svg'
 import socialIcon from './assets/social-icon.svg'
@@ -16,9 +16,13 @@ function App() {
   return (
     <>
       <section id="framework-logos">
-        <a href="https://vite.dev" target="_blank">
-          <img src={viteLogo} class="logo vite" alt="Vite logo" height="32" />
-        </a>
+        <a
+          href="https://vite.dev"
+          target="_blank"
+          class="logo vite"
+          aria-label="Vite logo"
+          innerHTML={viteLogo}
+        />
         <span>+</span>
         <a href="https://solidjs.com" target="_blank">
           <img
@@ -36,6 +40,11 @@ function App() {
         <div class="hero-image">
           <img src={heroImg} alt="Vite" class="hero-image__base" />
           <img src={solidLogo} class="hero-image__framework" alt="Solid logo" />
+          <span
+            class="hero-image__vite"
+            aria-label="Vite logo"
+            innerHTML={viteLogo}
+          />
         </div>
         <div>
           <h1>Get started</h1>
@@ -60,7 +69,7 @@ function App() {
               href="https://vite.dev/?ref=vite-starter-learn-more"
               class="button"
             >
-              <img src={viteLogo} alt="" />
+              <span class="button-logo" innerHTML={viteLogo} />
               Explore Vite
             </a>
             <a
