@@ -14,11 +14,11 @@ document.querySelector<HTMLDivElement>('#app')!.innerHTML = `
   
         <section id="framework-logos">
             <a href="https://vite.dev" target="_blank">
-                <img src="${viteLogo}" class="vite-logo" alt="Vite logo"/>
+                <img src="${viteLogo}" class="logo" alt="Vite logo"/>
             </a>
             <span>+</span>
             <a href="https://www.typescriptlang.org/" target="_blank">
-                <img src="${typescriptLogo}" class="typescript-logo" alt="TypeScript logo"/>
+                <img src="${typescriptLogo}" class="logo typescript" alt="TypeScript logo"/>
             </a>
         </section>
 
@@ -31,7 +31,7 @@ document.querySelector<HTMLDivElement>('#app')!.innerHTML = `
             </div>
             <div>
                 <h1>Get started</h1>
-                <p>Edit <code>src/main.ts</code> and save to <code>test HMR</code></p>
+                <p>Edit <code>src/main.ts</code> and save to test <code>HMR</code></p>
             </div>
             <button id="counter" type="button" class="counter"></button>
         </section>
@@ -52,8 +52,7 @@ document.querySelector<HTMLDivElement>('#app')!.innerHTML = `
                 <ul>
                     <li><a href="https://github.com/vitejs/vite"><img src="${githubIcon}" alt="GitHub">GitHub</a></li>
                     <li><a href="https://chat.vite.dev/"><img src="${discordIcon}" alt="Discord">Discord</a></li>
-                    <li><a href="https://bsky.app/profile/vite.dev"><img src="${blueskyIcon}" alt="Bluesky">Bluesky</a></li>
-                    <li><a href="https://x.com/vite_js"><img src="${xIcon}" alt="X">X.com</a></li>
+                    <li><a href="https://x.com/vite_js"><img src="${xIcon}" alt="X">X.com</a></li><li><a href="https://bsky.app/profile/vite.dev"><img src="${blueskyIcon}" alt="Bluesky">Bluesky</a></li>
                 </ul>
             </div>
         </section>
