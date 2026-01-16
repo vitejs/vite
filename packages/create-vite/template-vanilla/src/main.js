@@ -40,18 +40,27 @@ document.querySelector('#app').innerHTML = `
     <div id="documentation">
         <img class="icon" src="${documentationIcon}" alt="Documentation" inert>
         <h2>Documentation</h2>
-        <p>Explore our guides and API reference</p>
-        <a href="https://vite.dev/?ref=vite-starter-learn-more" class="button">Learn more</a>
+        <p>Your questions, answered</p>
+        <div class="button-group">
+            <a href="https://vite.dev/?ref=vite-starter-learn-more" class="button">
+                <span class="button-logo">${viteLogo}</span>
+                Explore Vite
+            </a>
+            <a href="https://developer.mozilla.org/en-US/docs/Web/JavaScript?ref=vite-starter-learn-more" class="button">
+                <img src="${javascriptLogo}" alt="">
+                Learn more
+            </a>
+        </div>
     </div>
     <div id="social">
         <img class="icon" src="${socialIcon}" alt="Connect with us" inert>
         <h2>Connect with us</h2>
         <p>Join the Vite community</p>
         <ul>
-            <li><a href="https://github.com/vitejs/vite" target="_blank"><img src="${githubIcon}" alt="GitHub">GitHub</a></li>
-            <li><a href="https://chat.vite.dev/" target="_blank"><img src="${discordIcon}" alt="Discord">Discord</a></li>
-            <li><a href="https://x.com/vite_js" target="_blank"><img src="${xIcon}" alt="X">X.com</a></li>
-            <li><a href="https://bsky.app/profile/vite.dev" target="_blank"><img src="${blueskyIcon}" alt="Bluesky">Bluesky</a></li>
+            <li><a href="https://github.com/vitejs/vite?ref=vite-starter-icon" target="_blank"><img src="${githubIcon}" alt="GitHub">GitHub</a></li>
+            <li><a href="https://chat.vite.dev/?ref=vite-starter-icon" target="_blank"><img src="${discordIcon}" alt="Discord">Discord</a></li>
+            <li><a href="https://x.com/vite_js?ref=vite-starter-icon" target="_blank"><img src="${xIcon}" alt="X">X.com</a></li>
+            <li><a href="https://bsky.app/profile/vite.dev?ref=vite-starter-icon" target="_blank"><img src="${blueskyIcon}" alt="Bluesky">Bluesky</a></li>
         </ul>
     </div>
 </section>

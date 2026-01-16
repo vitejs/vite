@@ -258,8 +258,20 @@ code {
     &#documentation {
       border-right: 1px solid var(--color-border);
 
-      .button {
+      .button-group {
+        display: flex;
+        gap: 8px;
         margin-top: 32px;
+      }
+
+      .button img,
+      .button-logo {
+        height: 18px;
+      }
+
+      .button-logo svg {
+        height: 100%;
+        width: auto;
       }
     }
 
@@ -433,7 +445,8 @@ code {
     }
 
     .icon,
-    .button {
+    .button,
+    .button-group {
       margin-inline: auto;
     }
   }
