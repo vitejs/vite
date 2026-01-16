@@ -42,12 +42,12 @@ document.querySelector<HTMLDivElement>('#app')!.innerHTML = `
         <img class="icon" src="${documentationIcon}" alt="Documentation" inert>
         <h2>Documentation</h2>
         <p>Explore our guides and API reference</p>
-        <a href="https://vite.dev/?rel=starter-learn-more" class="button">Learn more</a>
+        <a href="https://vite.dev/?ref=vite-starter-learn-more" class="button">Learn more</a>
     </div>
     <div id="social">
         <img class="icon" src="${socialIcon}" alt="Connect with us" inert>
         <h2>Connect with us</h2>
-        <p>Join our community</p>
+        <p>Join the Vite community</p>
         <ul>
             <li><a href="https://github.com/vitejs/vite" target="_blank"><img src="${githubIcon}" alt="GitHub">GitHub</a></li>
             <li><a href="https://chat.vite.dev/" target="_blank"><img src="${discordIcon}" alt="Discord">Discord</a></li>
