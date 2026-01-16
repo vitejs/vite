@@ -1,41 +1,80 @@
 <script setup lang="ts">
 import { ref } from 'vue'
-
-defineProps<{ msg: string }>()
+import heroImg from '../assets/hero.png'
+import vueLogo from '../assets/vue.svg'
+import viteLogo from '../assets/vite.svg'
+import documentationIcon from '../assets/documentation-icon.svg'
+import socialIcon from '../assets/social-icon.svg'
+import githubIcon from '../assets/github-icon.svg'
+import discordIcon from '../assets/discord-icon.svg'
+import blueskyIcon from '../assets/bluesky-icon.svg'
+import xIcon from '../assets/x-icon.svg'
 
 const count = ref(0)
 </script>
 
 <template>
-  <h1>{{ msg }}</h1>
+  <section id="center">
+    <div class="hero-image">
+      <img :src="heroImg" alt="Vite" class="hero-image__base" />
+      <img :src="vueLogo" class="hero-image__framework" alt="Vue logo" />
+    </div>
+    <div>
+      <h1>Get started</h1>
+      <p>Edit <code>src/App.vue</code> and save to test <code>HMR</code></p>
+    </div>
+    <button class="counter" @click="count++">Count is {{ count }}</button>
+  </section>
 
-  <div class="card">
-    <button type="button" @click="count++">count is {{ count }}</button>
-    <p>
-      Edit
-      <code>components/HelloWorld.vue</code> to test HMR
-    </p>
-  </div>
+  <div class="ticks"></div>
 
-  <p>
-    Check out
-    <a href="https://vuejs.org/guide/quick-start.html#local" target="_blank"
-      >create-vue</a
-    >, the official Vue + Vite starter
-  </p>
-  <p>
-    Learn more about IDE Support for Vue in the
-    <a
-      href="https://vuejs.org/guide/scaling-up/tooling.html#ide-support"
-      target="_blank"
-      >Vue Docs Scaling up Guide</a
-    >.
-  </p>
-  <p class="read-the-docs">Click on the Vite and Vue logos to learn more</p>
+  <section id="next-steps">
+    <div id="documentation">
+      <img class="icon" :src="documentationIcon" alt="Documentation" />
+      <h2>Documentation</h2>
+      <p>Your questions, answered</p>
+      <div class="button-group">
+        <a href="https://vite.dev/?ref=vite-starter-learn-more" class="button"
+          ><img :src="viteLogo" alt="" />Explore Vite</a
+        >
+        <a href="https://vuejs.org/?ref=vite-starter-learn-more" class="button"
+          ><img :src="vueLogo" alt="" />Learn more</a
+        >
+      </div>
+    </div>
+    <div id="social">
+      <img class="icon" :src="socialIcon" alt="Connect with us" />
+      <h2>Connect with us</h2>
+      <p>Join the Vite community</p>
+      <ul>
+        <li>
+          <a
+            href="https://github.com/vitejs/vite?ref=vite-starter-icon"
+            target="_blank"
+            ><img :src="githubIcon" alt="GitHub" />GitHub</a
+          >
+        </li>
+        <li>
+          <a href="https://chat.vite.dev/?ref=vite-starter-icon" target="_blank"
+            ><img :src="discordIcon" alt="Discord" />Discord</a
+          >
+        </li>
+        <li>
+          <a href="https://x.com/vite_js?ref=vite-starter-icon" target="_blank"
+            ><img :src="xIcon" alt="X" />X.com</a
+          >
+        </li>
+        <li>
+          <a
+            href="https://bsky.app/profile/vite.dev?ref=vite-starter-icon"
+            target="_blank"
+            ><img :src="blueskyIcon" alt="Bluesky" />Bluesky</a
+          >
+        </li>
+      </ul>
+    </div>
+  </section>
+
+  <div class="ticks"></div>
+  <section id="spacer"></section>
 </template>
-
-<style scoped>
-.read-the-docs {
-  color: #888;
-}
-</style>
