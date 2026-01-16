@@ -157,7 +157,7 @@ code {
   align-items: center;
   height: 88px;
   border-bottom: 1px solid var(--color-border);
-  margin-left: -0.5rem;
+  margin-left: -1rem;
   font-size: 1.5rem;
 
   a {
@@ -167,20 +167,22 @@ code {
     justify-content: center;
     padding: 6px 8px;
     border-radius: 10px;
-    transition: transform 200ms ease;
-
-    &:hover {
-      transform: translateY(-2px) scale(1.06);
-    }
   }
 
   .logo {
+    transition: filter 200ms ease;
+
     &.vite {
       height: 2rem;
+      &:hover {
+        filter: drop-shadow(0 0 6px rgba(189, 52, 254, 0.5));
+      }
     }
-
     &.typescript {
       height: 2.25rem;
+      &:hover {
+        filter: drop-shadow(0 0 6px rgba(49, 120, 198, 0.5));
+      }
     }
   }
 }
