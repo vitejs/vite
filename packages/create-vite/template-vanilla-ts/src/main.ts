@@ -52,8 +52,7 @@ document.querySelector<HTMLDivElement>('#app')!.innerHTML = `
                 <ul>
                     <li><a href="https://github.com/vitejs/vite"><img src="${githubIcon}" alt="GitHub">GitHub</a></li>
                     <li><a href="https://chat.vite.dev/"><img src="${discordIcon}" alt="Discord">Discord</a></li>
-                    <li><a href="https://bsky.app/profile/vite.dev"><img src="${blueskyIcon}" alt="Bluesky">Bluesky</a></li>
-                    <li><a href="https://x.com/vite_js"><img src="${xIcon}" alt="X">X.com</a></li>
+                    <li><a href="https://x.com/vite_js"><img src="${xIcon}" alt="X">X.com</a></li><li><a href="https://bsky.app/profile/vite.dev"><img src="${blueskyIcon}" alt="Bluesky">Bluesky</a></li>
                 </ul>
             </div>
         </section>
