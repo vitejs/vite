@@ -100,7 +100,6 @@ code {
     border-color: var(--color-accent-border);
   }
 
-  &:focus,
   &:focus-visible {
     outline: 2px solid var(--color-accent);
     outline-offset: 2px;
@@ -161,12 +160,22 @@ code {
   font-size: 1.5rem;
 
   a {
-    line-height: 16px;
     display: inline-flex;
     align-items: center;
     justify-content: center;
     padding: 6px 8px;
     border-radius: 10px;
+
+    &:focus-visible {
+      outline: none;
+
+      .logo.vite {
+        filter: drop-shadow(0 0 18px #bd34fe);
+      }
+      .logo.javascript {
+        filter: drop-shadow(0 0 18px #f7df1e);
+      }
+    }
   }
 
   .logo {
