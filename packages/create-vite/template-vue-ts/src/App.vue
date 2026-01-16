@@ -1,30 +1,36 @@
 <script setup lang="ts">
 import HelloWorld from './components/HelloWorld.vue'
+import vueLogo from './assets/vue.svg'
+import viteLogo from './assets/vite.svg'
 </script>
 
 <template>
-  <div>
+  <section id="framework-logos">
     <a href="https://vite.dev" target="_blank">
-      <img src="/vite.svg" class="logo" alt="Vite logo" />
+      <img :src="viteLogo" class="logo vite" alt="Vite logo" height="32" />
     </a>
+    <span>+</span>
     <a href="https://vuejs.org/" target="_blank">
-      <img src="./assets/vue.svg" class="logo vue" alt="Vue logo" />
+      <img :src="vueLogo" class="logo vue" alt="Vue logo" height="36" />
     </a>
-  </div>
-  <HelloWorld msg="Vite + Vue" />
+  </section>
+
+  <div class="ticks"></div>
+
+  <HelloWorld />
 </template>
 
 <style scoped>
-.logo {
-  height: 6em;
-  padding: 1.5em;
-  will-change: filter;
-  transition: filter 300ms;
-}
-.logo:hover {
-  filter: drop-shadow(0 0 2em #646cffaa);
-}
-.logo.vue:hover {
-  filter: drop-shadow(0 0 2em #42b883aa);
+#framework-logos {
+  .logo {
+    transition: filter 200ms ease;
+
+    &.vite:hover {
+      filter: drop-shadow(0 0 18px #bd34fe);
+    }
+    &.vue:hover {
+      filter: drop-shadow(0 0 18px #42b883);
+    }
+  }
 }
 </style>
