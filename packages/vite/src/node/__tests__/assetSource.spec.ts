@@ -116,9 +116,11 @@ describe('getNodeAssetAttributes', () => {
       const attrs = getNodeAssetAttributes(node, {
         img: { srcAttributes: ['data-src-dark'] },
       })
-      expect(attrs).toHaveLength(1)
-      expect(attrs[0]).toHaveProperty('key', 'data-src-dark')
-      expect(attrs[0]).toHaveProperty('value', 'dark.png')
+      expect(attrs).toHaveLength(2)
+      expect(attrs[0]).toHaveProperty('key', 'src')
+      expect(attrs[0]).toHaveProperty('value', 'default.png')
+      expect(attrs[1]).toHaveProperty('key', 'data-src-dark')
+      expect(attrs[1]).toHaveProperty('value', 'dark.png')
     })
 
     test('additional source with srcset attribute', () => {

@@ -124,13 +124,22 @@ export function getNodeAssetAttributes(
   node: DefaultTreeAdapterMap['element'],
   additionalAssetSources?: Record<string, HtmlAssetSource>,
 ): HtmlAssetAttribute[] {
-  // Merge default sources with additional sources (additional takes precedence)
-  const allAssetSources = additionalAssetSources
-    ? { ...DEFAULT_HTML_ASSET_SOURCES, ...additionalAssetSources }
-    : DEFAULT_HTML_ASSET_SOURCES
+  const defaults = DEFAULT_HTML_ASSET_SOURCES[node.nodeName]
+  const additional = additionalAssetSources?.[node.nodeName]
 
-  const matched = allAssetSources[node.nodeName]
-  if (!matched) return []
+  if (!defaults && !additional) return []
+
+  const matched: HtmlAssetSource = {
+    srcAttributes: [
+      ...(defaults?.srcAttributes ?? []),
+      ...(additional?.srcAttributes ?? []),
+    ],
+    srcsetAttributes: [
+      ...(defaults?.srcsetAttributes ?? []),
+      ...(additional?.srcsetAttributes ?? []),
+    ],
+    filter: additional?.filter ?? defaults?.filter,
+  }
 
   const attributes: Record<string, string> = {}
   for (const attr of node.attrs) {
