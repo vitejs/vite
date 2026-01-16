@@ -101,6 +101,7 @@ code {
   background: rgba(170, 59, 255, 0.1);
   border: 2px solid transparent;
   transition: border-color 0.3s ease;
+  margin-bottom: 24px;
 
   &:hover {
     border-color: rgba(170, 59, 255, 0.5);
@@ -114,7 +115,7 @@ code {
 
 .hero-image {
   position: relative;
-  margin-top: 24px;
+  margin-top: 40px;
 
   .hero-image__base {
     width: 170px;
@@ -180,12 +181,13 @@ section#framework-logos {
 }
 
 section#next-steps {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
+  display: flex;
+  flex-direction: row;
   border-top: 1px solid #e5e4e7;
   text-align: left;
 
   & > div {
+    flex: 1 1 0;
     padding: 32px;
 
     .icon {
@@ -299,5 +301,98 @@ div.ticks {
     border-right: 5px solid #e5e4e7;
     border-bottom: 5px solid transparent;
     border-left: 5px solid transparent;
+  }
+}
+
+@media (max-width: 1024px) {
+  :root {
+    font-size: 16px;
+  }
+
+  body {
+    align-items: stretch;
+    padding: 0 16px;
+  }
+
+  h1 {
+    font-size: 36px;
+    margin: 20px 0;
+  }
+
+  h2 {
+    font-size: 20px;
+  }
+
+  #app {
+    width: 100%;
+    max-width: 100%;
+    box-sizing: border-box;
+  }
+
+  section#framework-logos {
+    height: 64px;
+    gap: 10px;
+  }
+
+  section#center {
+    padding: 32px 20px 24px;
+    gap: 18px;
+  }
+
+  .hero-image {
+    margin-top: 12px;
+
+    .hero-image__base {
+      width: 140px;
+    }
+
+    .hero-image__framework {
+      top: 28px;
+      height: 24px;
+    }
+  }
+
+  section#next-steps {
+    flex-direction: column;
+    text-align: center;
+
+    & > div {
+      padding: 24px 20px;
+    }
+
+    & > div#documentation {
+      border-right: none;
+      border-bottom: 1px solid #e5e4e7;
+    }
+  }
+
+  section#next-steps #social ul {
+    margin-top: 20px;
+    flex-wrap: wrap;
+    justify-content: center;
+  }
+
+  section#next-steps #social ul li {
+    flex: 1 1 calc(50% - 8px);
+  }
+
+  section#next-steps #social ul li > a {
+    width: 100%;
+    justify-content: center;
+    box-sizing: border-box;
+  }
+
+  section#next-steps .icon {
+    margin-left: auto;
+    margin-right: auto;
+  }
+
+  section#next-steps .button {
+    margin-left: auto;
+    margin-right: auto;
+  }
+
+  section#spacer {
+    height: 48px;
   }
 }
