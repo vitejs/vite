@@ -8,6 +8,7 @@
   --color-accent-bg: rgba(170, 59, 255, 0.1);
   --color-accent-border: rgba(170, 59, 255, 0.5);
   --color-social-bg: rgba(244, 243, 236, 0.5);
+  --color-vite-logo: #000;
   --shadow-hover:
     rgba(0, 0, 0, 0.1) 0 10px 15px -3px, rgba(0, 0, 0, 0.05) 0 4px 6px -2px;
 
@@ -42,6 +43,7 @@
     --color-accent-bg: rgba(192, 132, 252, 0.15);
     --color-accent-border: rgba(192, 132, 252, 0.5);
     --color-social-bg: rgba(47, 48, 58, 0.5);
+    --color-vite-logo: white;
     --shadow-hover:
       rgba(0, 0, 0, 0.4) 0 10px 15px -3px, rgba(0, 0, 0, 0.25) 0 4px 6px -2px;
   }
@@ -156,7 +158,7 @@ code {
   margin: 0 auto;
   display: flex;
   justify-content: center;
-  color: white;
+  color: var(--color-vite-logo);
   transform: perspective(2000px) rotateZ(300deg) rotateX(40deg) rotateY(39deg)
     scale(0.8);
 
@@ -221,7 +223,7 @@ code {
 
     &.vite {
       height: 2rem;
-      color: white;
+      color: var(--color-vite-logo);
       &:hover,
       &:focus-visible {
         filter: drop-shadow(0 0 18px #bd34fe);
@@ -267,6 +269,10 @@ code {
       .button img,
       .button-logo {
         height: 18px;
+      }
+
+      .button-logo {
+        color: var(--color-vite-logo);
       }
 
       .button-logo svg {
