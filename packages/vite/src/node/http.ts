@@ -1,4 +1,5 @@
 import fsp from 'node:fs/promises'
+import net from 'node:net'
 import path from 'node:path'
 import type { OutgoingHttpHeaders as HttpServerHeaders } from 'node:http'
 import type { ServerOptions as HttpsServerOptions } from 'node:https'
@@ -162,6 +163,61 @@ async function readFileIfExists(value?: string | Buffer | any[]) {
   return value
 }
 
+/**
+ * Check if a port is in use by attempting to connect to it.
+ * This helps detect when another server is listening on 0.0.0.0
+ * even if we're trying to bind to a specific interface.
+ */
+async function isPortInUse(port: number, host: string | undefined): Promise<boolean> {
+  // Hosts to check - always check 0.0.0.0 in addition to the target host
+  // to prevent port hijacking (see #10638)
+  const hostsToCheck = new Set<string>()
+  
+  // Always check the wildcard address
+  hostsToCheck.add('0.0.0.0')
+  
+  // Also check the target host if specified
+  if (host && host !== '0.0.0.0') {
+    hostsToCheck.add(host)
+  }
+  
+  // Check localhost variants if binding to localhost
+  if (!host || host === 'localhost' || host === '127.0.0.1') {
+    hostsToCheck.add('127.0.0.1')
+  }
+
+  for (const checkHost of hostsToCheck) {
+    const inUse = await new Promise<boolean>((resolve) => {
+      const socket = new net.Socket()
+      
+      socket.setTimeout(100)
+      
+      socket.on('connect', () => {
+        socket.destroy()
+        resolve(true)
+      })
+      
+      socket.on('timeout', () => {
+        socket.destroy()
+        resolve(false)
+      })
+      
+      socket.on('error', () => {
+        socket.destroy()
+        resolve(false)
+      })
+      
+      socket.connect(port, checkHost)
+    })
+    
+    if (inUse) {
+      return true
+    }
+  }
+  
+  return false
+}
+
 export async function httpServerStart(
   httpServer: HttpServer,
   serverOptions: {
@@ -172,6 +228,17 @@ export async function httpServerStart(
   },
 ): Promise<number> {
   let { port, strictPort, host, logger } = serverOptions
+
+  // Check if port is in use on any interface before trying to bind
+  // This catches cases where another server is on 0.0.0.0 but we're
+  // trying to bind to localhost (see #10638)
+  while (await isPortInUse(port, host)) {
+    if (strictPort) {
+      throw new Error(`Port ${port} is already in use`)
+    }
+    logger.info(`Port ${port} is in use, trying another one...`)
+    port++
+  }
 
   return new Promise((resolve, reject) => {
     const onError = (e: Error & { code?: string }) => {
