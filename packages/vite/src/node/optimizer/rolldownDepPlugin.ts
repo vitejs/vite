@@ -1,7 +1,7 @@
 import path from 'node:path'
 import type { ImportKind, Plugin, RolldownPlugin } from 'rolldown'
 import { prefixRegex } from '@rolldown/pluginutils'
-import { JS_TYPES_RE, KNOWN_ASSET_TYPES } from '../constants'
+import { FS_PREFIX, JS_TYPES_RE, KNOWN_ASSET_TYPES } from '../constants'
 import type { PackageCache } from '../packages'
 import {
   escapeRegex,
@@ -11,12 +11,14 @@ import {
   isExternalUrl,
   isNodeBuiltin,
   moduleListContains,
+  normalizePath,
 } from '../utils'
 import { browserExternalId, optionalPeerDepId } from '../plugins/resolve'
 import { isModuleCSSRequest } from '../plugins/css'
 import type { Environment } from '../environment'
 import { createBackCompatIdResolver } from '../idResolver'
 import { isWindows } from '../../shared/utils'
+import MagicString from 'magic-string'
 
 const externalWithConversionNamespace =
   'vite:dep-pre-bundle:external-conversion'
@@ -298,6 +300,36 @@ export function rolldownDepPlugin(
           }
         },
       },
+      transform: {
+  filter: { code: /new\s+URL/ },
+  async handler(code, id) {
+    if (!id.includes('library')) return null
+
+    const s = new MagicString(code)
+    // Very simple regex: find the URL and the import.meta.url
+    const workerRE = /new\s+URL\s*\(\s*['"]([^'"]+)['"]\s*,\s*import\.meta\.url\s*\)/g
+
+    let match
+    while ((match = workerRE.exec(code))) {
+      const [fullMatch, url] = match
+      const absolutePath = path.resolve(path.dirname(id), url)
+      const fsUrl = FS_PREFIX + normalizePath(absolutePath)
+
+      // SIMPLE FIX: Break the static analysis by using string concatenation.
+      // Bundlers won't try to bundle a URL that isn't a single string literal.
+      const replacement = `new URL('' + ${JSON.stringify(fsUrl)}, import.meta.url)`
+      
+      s.overwrite(match.index, match.index + fullMatch.length, replacement)
+      
+      // Permission check
+      const assetDir = path.dirname(absolutePath)
+      if (environment.config.server.fs.allow && !environment.config.server.fs.allow.includes(assetDir)) {
+         environment.config.server.fs.allow.push(assetDir)
+      }
+    }
+    return { code: s.toString(), map: s.generateMap({ hires: true }) }
+  }
+}
     },
   ]
 }

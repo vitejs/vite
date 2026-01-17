@@ -6,7 +6,7 @@ import { stripLiteral } from 'strip-literal'
 import type { Expression, ExpressionStatement } from 'estree'
 import type { ResolvedConfig } from '../config'
 import type { Plugin } from '../plugin'
-import { evalValue, injectQuery, transformStableResult } from '../utils'
+import { evalValue, getPkgName, injectQuery, normalizePath, transformStableResult } from '../utils'
 import { createBackCompatIdResolver } from '../idResolver'
 import type { ResolveIdFn } from '../idResolver'
 import { cleanUrl, slash } from '../../shared/utils'
@@ -16,6 +16,7 @@ import { fileToUrl } from './asset'
 import type { InternalResolveOptions } from './resolve'
 import { tryFsResolve } from './resolve'
 import { hasViteIgnoreRE } from './importAnalysis'
+import { FS_PREFIX } from '../constants'
 
 interface WorkerOptions {
   type?: WorkerType
@@ -261,11 +262,31 @@ export function workerImportMetaUrlPlugin(config: ResolvedConfig): Plugin {
                 this.addWatchFile(file)
               }
             } else {
-              builtUrl = await fileToUrl(this, cleanUrl(file))
-              builtUrl = injectQuery(
-                builtUrl,
-                `${WORKER_FILE_ID}&type=${workerType}`,
-              )
+              
+              const devEnvironment = this.environment.config.dev ? this.environment : null
+              const depsOptimizer = (devEnvironment as any)?.depsOptimizer
+              
+              // Use the internal helper to see if this specific ID is an optimized file
+              const isOptimizedDep = depsOptimizer?.isOptimizedDepFile(id)
+
+              if (id.includes('library')) {
+                console.log('DEBUG: Transforming library file:', id)
+                console.log('DEBUG: isOptimizedDep:', isOptimizedDep)
+              }
+
+              if (isOptimizedDep) {
+                builtUrl = FS_PREFIX + normalizePath(file)
+                const assetDir = path.dirname(file)
+                if (config.server.fs.allow && !config.server.fs.allow.includes(assetDir)) {
+                   config.server.fs.allow.push(assetDir)
+                }
+              } else {
+                builtUrl = await fileToUrl(this, cleanUrl(file))
+                builtUrl = injectQuery(
+                  builtUrl,
+                  `${WORKER_FILE_ID}&type=${workerType}`,
+                )
+              }
             }
             s.update(
               expStart,
