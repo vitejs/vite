@@ -1069,6 +1069,15 @@ importers:
       '@vitejs/test-dep-with-dynamic-import':
         specifier: file:./dep-with-dynamic-import
         version: file:playground/optimize-deps/dep-with-dynamic-import
+      '@vitejs/test-dep-with-optional-peer-dep':
+        specifier: file:./dep-with-optional-peer-dep
+        version: file:playground/optimize-deps/dep-with-optional-peer-dep
+      '@vitejs/test-dep-with-optional-peer-dep-cjs':
+        specifier: file:./dep-with-optional-peer-dep-cjs
+        version: file:playground/optimize-deps/dep-with-optional-peer-dep-cjs
+      '@vitejs/test-dep-with-optional-peer-dep-submodule':
+        specifier: file:./dep-with-optional-peer-dep-submodule
+        version: file:playground/optimize-deps/dep-with-optional-peer-dep-submodule
       '@vitejs/test-dep-with-worker-repro':
         specifier: file:./dep-with-worker-repro
         version: file:playground/optimize-deps/dep-with-worker-repro
@@ -1111,16 +1120,6 @@ importers:
       vuex:
         specifier: ^4.1.0
         version: 4.1.0(vue@3.5.26(typescript@5.9.3))
-    optionalDependencies:
-      '@vitejs/test-dep-with-optional-peer-dep':
-        specifier: file:./dep-with-optional-peer-dep
-        version: file:playground/optimize-deps/dep-with-optional-peer-dep
-      '@vitejs/test-dep-with-optional-peer-dep-cjs':
-        specifier: file:./dep-with-optional-peer-dep-cjs
-        version: file:playground/optimize-deps/dep-with-optional-peer-dep-cjs
-      '@vitejs/test-dep-with-optional-peer-dep-submodule':
-        specifier: file:./dep-with-optional-peer-dep-submodule
-        version: file:playground/optimize-deps/dep-with-optional-peer-dep-submodule
 
   playground/optimize-deps-no-discovery:
     dependencies:
@@ -9927,14 +9926,11 @@ snapshots:
 
   '@vitejs/test-dep-with-dynamic-import@file:playground/optimize-deps/dep-with-dynamic-import': {}
 
-  '@vitejs/test-dep-with-optional-peer-dep-cjs@file:playground/optimize-deps/dep-with-optional-peer-dep-cjs':
-    optional: true
+  '@vitejs/test-dep-with-optional-peer-dep-cjs@file:playground/optimize-deps/dep-with-optional-peer-dep-cjs': {}
 
-  '@vitejs/test-dep-with-optional-peer-dep-submodule@file:playground/optimize-deps/dep-with-optional-peer-dep-submodule':
-    optional: true
+  '@vitejs/test-dep-with-optional-peer-dep-submodule@file:playground/optimize-deps/dep-with-optional-peer-dep-submodule': {}
 
-  '@vitejs/test-dep-with-optional-peer-dep@file:playground/optimize-deps/dep-with-optional-peer-dep':
-    optional: true
+  '@vitejs/test-dep-with-optional-peer-dep@file:playground/optimize-deps/dep-with-optional-peer-dep': {}
 
   '@vitejs/test-dep-with-worker-repro@file:playground/optimize-deps/dep-with-worker-repro': {}
 

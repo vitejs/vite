@@ -372,6 +372,10 @@ test.runIf(isServe)(
 )
 
 test('should fix standard web worker URLs in optimized dependencies', async () => {
-  await expect.poll(() => browserLogs.join('\n')).toMatch(/Message from lib: worker-success/)
-  await expect.poll(() => browserLogs.join('\n')).toMatch(/Message from nested: worker-success/)
+  await expect
+    .poll(() => browserLogs.join('\n'))
+    .toMatch(/Message from lib: worker-success/)
+  await expect
+    .poll(() => browserLogs.join('\n'))
+    .toMatch(/Message from nested: worker-success/)
 })
