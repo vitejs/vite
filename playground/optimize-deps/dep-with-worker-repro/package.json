@@ -1,0 +1,9 @@
+{
+  "name": "dep-with-worker-repro",
+  "version": "1.0.0",
+  "type": "module",
+  "exports": {
+    ".": "./index.js",
+    "./nested": "./nested/index.js"
+  }
+}

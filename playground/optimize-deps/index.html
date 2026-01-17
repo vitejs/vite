@@ -386,3 +386,10 @@
     `${VirtualComponent.name === 'VirtualComponent' ? 'ok' : 'ng'}`,
   )
 </script>
+<script type="module">
+  import * as lib from 'dep-with-worker-repro'
+  import * as nested from 'dep-with-worker-repro/nested'
+
+  lib.urlImportWorker().then((m) => console.log('Message from lib:', m))
+  nested.urlImportWorker().then((m) => console.log('Message from nested:', m))
+</script>
