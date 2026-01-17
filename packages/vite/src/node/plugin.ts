@@ -94,7 +94,7 @@ declare module 'rolldown' {
  * once per each environment allowing users to have completely different plugins
  * for each of them. The constructor gets the resolved environment after the server
  * and builder has already been created simplifying config access and cache
- * management for for environment specific plugins.
+ * management for environment specific plugins.
  * Environment Plugins are closer to regular rollup plugins. They can't define
  * app level hooks (like config, configResolved, configureServer, etc).
  */
