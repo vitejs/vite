@@ -1,7 +1,8 @@
 import path from 'node:path'
 import type { ImportKind, Plugin, RolldownPlugin } from 'rolldown'
 import { prefixRegex } from '@rolldown/pluginutils'
-import { JS_TYPES_RE, KNOWN_ASSET_TYPES } from '../constants'
+import MagicString from 'magic-string'
+import { FS_PREFIX, JS_TYPES_RE, KNOWN_ASSET_TYPES } from '../constants'
 import type { PackageCache } from '../packages'
 import {
   escapeRegex,
@@ -11,6 +12,7 @@ import {
   isExternalUrl,
   isNodeBuiltin,
   moduleListContains,
+  normalizePath,
 } from '../utils'
 import { browserExternalId, optionalPeerDepId } from '../plugins/resolve'
 import { isModuleCSSRequest } from '../plugins/css'
@@ -296,6 +298,45 @@ export function rolldownDepPlugin(
                 `throw new Error(\`Could not resolve "${peerDep}" imported by "${parentDep}". Is it installed?\`)`,
             }
           }
+        },
+      },
+      transform: {
+        filter: { code: /new\s+URL/ },
+        async handler(code, id) {
+          if (!id.includes('node_modules')) return null
+
+          const s = new MagicString(code)
+
+          const workerRE =
+            /new\s+URL\s*\(\s*['"]([^'"]+)['"]\s*,\s*import\.meta\.url\s*\)/g
+
+          let match
+          while ((match = workerRE.exec(code))) {
+            const [fullMatch, url] = match
+            const absolutePath = path.resolve(path.dirname(id), url)
+            const fsUrl = FS_PREFIX + normalizePath(absolutePath)
+
+            // NOTE: add `'' +` to opt-out of Rolldown's static asset analysis.
+            // This prevents the optimizer from trying to bundle the absolute path
+            // as a relative asset.
+            const replacement = `new URL('' + ${JSON.stringify(fsUrl)}, import.meta.url)`
+
+            s.overwrite(
+              match.index,
+              match.index + fullMatch.length,
+              replacement,
+            )
+
+            const assetDir = path.dirname(absolutePath)
+
+            if (
+              environment.config.server.fs.allow &&
+              !environment.config.server.fs.allow.includes(assetDir)
+            ) {
+              environment.config.server.fs.allow.push(assetDir)
+            }
+          }
+          return { code: s.toString(), map: s.generateMap({ hires: true }) }
         },
       },
     },

@@ -124,7 +124,7 @@ importers:
         version: link:packages/vite
       vitest:
         specifier: ^4.0.17
-        version: 4.0.17(@types/node@22.19.5)
+        version: 4.0.17(@types/node@22.19.5)(jiti@2.6.1)(less@4.5.1)(lightningcss@1.30.2)(sass-embedded@1.97.2(source-map-js@1.2.1))(sass@1.97.2)(stylus@0.64.0(ms@2.1.3))(sugarss@5.0.1(postcss@8.5.6))(terser@5.44.1)(tsx@4.21.0)(yaml@2.8.1)
 
   docs:
     devDependencies:
@@ -136,7 +136,7 @@ importers:
         version: 5.0.6
       '@voidzero-dev/vitepress-theme':
         specifier: ^4.0.4
-        version: 4.0.4(axios@1.13.2)(focus-trap@7.6.6)(typescript@5.9.3)(vite@packages+vite)(vitepress@2.0.0-alpha.15(axios@1.13.2)(oxc-minify@0.108.0)(postcss@8.5.6)(typescript@5.9.3))(vue@3.5.26(typescript@5.9.3))
+        version: 4.0.4(axios@1.13.2)(focus-trap@7.6.6)(typescript@5.9.3)(vite@packages+vite)(vitepress@2.0.0-alpha.15(@types/node@22.19.5)(axios@1.13.2)(jiti@2.6.1)(less@4.5.1)(lightningcss@1.30.2)(oxc-minify@0.108.0)(postcss@8.5.6)(sass-embedded@1.97.2(source-map-js@1.2.1))(sass@1.97.2)(stylus@0.64.0(ms@2.1.3))(sugarss@5.0.1(postcss@8.5.6))(terser@5.44.1)(tsx@4.21.0)(typescript@5.9.3)(yaml@2.8.1))(vue@3.5.26(typescript@5.9.3))
       feed:
         specifier: ^5.2.0
         version: 5.2.0
@@ -148,7 +148,7 @@ importers:
         version: 0.108.0
       vitepress:
         specifier: ^2.0.0-alpha.15
-        version: 2.0.0-alpha.15(axios@1.13.2)(oxc-minify@0.108.0)(postcss@8.5.6)(typescript@5.9.3)
+        version: 2.0.0-alpha.15(@types/node@22.19.5)(axios@1.13.2)(jiti@2.6.1)(less@4.5.1)(lightningcss@1.30.2)(oxc-minify@0.108.0)(postcss@8.5.6)(sass-embedded@1.97.2(source-map-js@1.2.1))(sass@1.97.2)(stylus@0.64.0(ms@2.1.3))(sugarss@5.0.1(postcss@8.5.6))(terser@5.44.1)(tsx@4.21.0)(typescript@5.9.3)(yaml@2.8.1)
       vitepress-plugin-group-icons:
         specifier: ^1.6.5
         version: 1.6.5(ms@2.1.3)(vite@packages+vite)
@@ -1078,6 +1078,9 @@ importers:
       '@vitejs/test-dep-with-optional-peer-dep-submodule':
         specifier: file:./dep-with-optional-peer-dep-submodule
         version: file:playground/optimize-deps/dep-with-optional-peer-dep-submodule
+      '@vitejs/test-dep-with-worker-repro':
+        specifier: file:./dep-with-worker-repro
+        version: file:playground/optimize-deps/dep-with-worker-repro
       '@vitejs/test-nested-exclude':
         specifier: file:./nested-exclude
         version: file:playground/optimize-deps/nested-exclude
@@ -1216,6 +1219,8 @@ importers:
   playground/optimize-deps/dep-with-optional-peer-dep-cjs: {}
 
   playground/optimize-deps/dep-with-optional-peer-dep-submodule: {}
+
+  playground/optimize-deps/dep-with-worker-repro: {}
 
   playground/optimize-deps/longfilename: {}
 
@@ -4185,6 +4190,9 @@ packages:
     peerDependenciesMeta:
       foobar:
         optional: true
+
+  '@vitejs/test-dep-with-worker-repro@file:playground/optimize-deps/dep-with-worker-repro':
+    resolution: {directory: playground/optimize-deps/dep-with-worker-repro, type: directory}
 
   '@vitejs/test-entries@file:playground/ssr-resolve/entries':
     resolution: {directory: playground/ssr-resolve/entries, type: directory}
@@ -7463,6 +7471,46 @@ packages:
   vfile@6.0.3:
     resolution: {integrity: sha512-KzIbH/9tXat2u30jf+smMwFCsno4wHVdNmzFyL+T/L3UGqqk6JKfVqOFOZEpZSHADH1k40ab6NUIXZq422ov3Q==}
 
+  vite@7.3.1:
+    resolution: {integrity: sha512-w+N7Hifpc3gRjZ63vYBXA56dvvRlNWRczTdmCBBa+CotUzAPf5b7YMdMR/8CQoeYE5LX3W4wj6RYTgonm1b9DA==}
+    engines: {node: ^20.19.0 || >=22.12.0}
+    hasBin: true
+    peerDependencies:
+      '@types/node': ^20.19.0 || >=22.12.0
+      jiti: '>=1.21.0'
+      less: ^4.0.0
+      lightningcss: ^1.21.0
+      sass: ^1.70.0
+      sass-embedded: ^1.70.0
+      stylus: '>=0.54.8'
+      sugarss: ^5.0.0
+      terser: ^5.16.0
+      tsx: ^4.8.1
+      yaml: ^2.4.2
+    peerDependenciesMeta:
+      '@types/node':
+        optional: true
+      jiti:
+        optional: true
+      less:
+        optional: true
+      lightningcss:
+        optional: true
+      sass:
+        optional: true
+      sass-embedded:
+        optional: true
+      stylus:
+        optional: true
+      sugarss:
+        optional: true
+      terser:
+        optional: true
+      tsx:
+        optional: true
+      yaml:
+        optional: true
+
   vitepress-plugin-group-icons@1.6.5:
     resolution: {integrity: sha512-+pg4+GKDq2fLqKb1Sat5p1p4SuIZ5tEPxu8HjpwoeecZ/VaXKy6Bdf0wyjedjaTAyZQzXbvyavJegqAcQ+B0VA==}
     peerDependencies:
@@ -9736,10 +9784,10 @@ snapshots:
 
   '@vitejs/longfilename-aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa@file:playground/optimize-deps/longfilename': {}
 
-  '@vitejs/plugin-vue@6.0.1(vite@packages+vite)(vue@3.5.26(typescript@5.9.3))':
+  '@vitejs/plugin-vue@6.0.1(vite@7.3.1(@types/node@22.19.5)(jiti@2.6.1)(less@4.5.1)(lightningcss@1.30.2)(sass-embedded@1.97.2(source-map-js@1.2.1))(sass@1.97.2)(stylus@0.64.0(ms@2.1.3))(sugarss@5.0.1(postcss@8.5.6))(terser@5.44.1)(tsx@4.21.0)(yaml@2.8.1))(vue@3.5.26(typescript@5.9.3))':
     dependencies:
       '@rolldown/pluginutils': 1.0.0-beta.29
-      vite: link:packages/vite
+      vite: 7.3.1(@types/node@22.19.5)(jiti@2.6.1)(less@4.5.1)(lightningcss@1.30.2)(sass-embedded@1.97.2(source-map-js@1.2.1))(sass@1.97.2)(stylus@0.64.0(ms@2.1.3))(sugarss@5.0.1(postcss@8.5.6))(terser@5.44.1)(tsx@4.21.0)(yaml@2.8.1)
       vue: 3.5.26(typescript@5.9.3)
 
   '@vitejs/release-scripts@1.6.0(conventional-commits-filter@5.0.0)':
@@ -9884,6 +9932,8 @@ snapshots:
 
   '@vitejs/test-dep-with-optional-peer-dep@file:playground/optimize-deps/dep-with-optional-peer-dep': {}
 
+  '@vitejs/test-dep-with-worker-repro@file:playground/optimize-deps/dep-with-worker-repro': {}
+
   '@vitejs/test-entries@file:playground/ssr-resolve/entries': {}
 
   '@vitejs/test-external-cjs@file:playground/ssr-noexternal/external-cjs': {}
@@ -9991,13 +10041,13 @@ snapshots:
       chai: 6.2.1
       tinyrainbow: 3.0.3
 
-  '@vitest/mocker@4.0.17(vite@packages+vite)':
+  '@vitest/mocker@4.0.17(vite@7.3.1(@types/node@22.19.5)(jiti@2.6.1)(less@4.5.1)(lightningcss@1.30.2)(sass-embedded@1.97.2(source-map-js@1.2.1))(sass@1.97.2)(stylus@0.64.0(ms@2.1.3))(sugarss@5.0.1(postcss@8.5.6))(terser@5.44.1)(tsx@4.21.0)(yaml@2.8.1))':
     dependencies:
       '@vitest/spy': 4.0.17
       estree-walker: 3.0.3
       magic-string: 0.30.21
     optionalDependencies:
-      vite: link:packages/vite
+      vite: 7.3.1(@types/node@22.19.5)(jiti@2.6.1)(less@4.5.1)(lightningcss@1.30.2)(sass-embedded@1.97.2(source-map-js@1.2.1))(sass@1.97.2)(stylus@0.64.0(ms@2.1.3))(sugarss@5.0.1(postcss@8.5.6))(terser@5.44.1)(tsx@4.21.0)(yaml@2.8.1)
 
   '@vitest/pretty-format@4.0.17':
     dependencies:
@@ -10021,7 +10071,7 @@ snapshots:
       '@vitest/pretty-format': 4.0.17
       tinyrainbow: 3.0.3
 
-  '@voidzero-dev/vitepress-theme@4.0.4(axios@1.13.2)(focus-trap@7.6.6)(typescript@5.9.3)(vite@packages+vite)(vitepress@2.0.0-alpha.15(axios@1.13.2)(oxc-minify@0.108.0)(postcss@8.5.6)(typescript@5.9.3))(vue@3.5.26(typescript@5.9.3))':
+  '@voidzero-dev/vitepress-theme@4.0.4(axios@1.13.2)(focus-trap@7.6.6)(typescript@5.9.3)(vite@packages+vite)(vitepress@2.0.0-alpha.15(@types/node@22.19.5)(axios@1.13.2)(jiti@2.6.1)(less@4.5.1)(lightningcss@1.30.2)(oxc-minify@0.108.0)(postcss@8.5.6)(sass-embedded@1.97.2(source-map-js@1.2.1))(sass@1.97.2)(stylus@0.64.0(ms@2.1.3))(sugarss@5.0.1(postcss@8.5.6))(terser@5.44.1)(tsx@4.21.0)(typescript@5.9.3)(yaml@2.8.1))(vue@3.5.26(typescript@5.9.3))':
     dependencies:
       '@docsearch/css': 4.3.2
       '@docsearch/js': 4.3.2
@@ -10036,7 +10086,7 @@ snapshots:
       minisearch: 7.2.0
       reka-ui: 2.7.0(typescript@5.9.3)(vue@3.5.26(typescript@5.9.3))
       tailwindcss: 4.1.18
-      vitepress: 2.0.0-alpha.15(axios@1.13.2)(oxc-minify@0.108.0)(postcss@8.5.6)(typescript@5.9.3)
+      vitepress: 2.0.0-alpha.15(@types/node@22.19.5)(axios@1.13.2)(jiti@2.6.1)(less@4.5.1)(lightningcss@1.30.2)(oxc-minify@0.108.0)(postcss@8.5.6)(sass-embedded@1.97.2(source-map-js@1.2.1))(sass@1.97.2)(stylus@0.64.0(ms@2.1.3))(sugarss@5.0.1(postcss@8.5.6))(terser@5.44.1)(tsx@4.21.0)(typescript@5.9.3)(yaml@2.8.1)
       vue: 3.5.26(typescript@5.9.3)
     transitivePeerDependencies:
       - '@vue/composition-api'
@@ -13477,6 +13527,28 @@ snapshots:
       '@types/unist': 3.0.3
       vfile-message: 4.0.2
 
+  vite@7.3.1(@types/node@22.19.5)(jiti@2.6.1)(less@4.5.1)(lightningcss@1.30.2)(sass-embedded@1.97.2(source-map-js@1.2.1))(sass@1.97.2)(stylus@0.64.0(ms@2.1.3))(sugarss@5.0.1(postcss@8.5.6))(terser@5.44.1)(tsx@4.21.0)(yaml@2.8.1):
+    dependencies:
+      esbuild: 0.27.2
+      fdir: 6.5.0(picomatch@4.0.3)
+      picomatch: 4.0.3
+      postcss: 8.5.6
+      rollup: 4.43.0
+      tinyglobby: 0.2.15
+    optionalDependencies:
+      '@types/node': 22.19.5
+      fsevents: 2.3.3
+      jiti: 2.6.1
+      less: 4.5.1
+      lightningcss: 1.30.2
+      sass: 1.97.2
+      sass-embedded: 1.97.2(source-map-js@1.2.1)
+      stylus: 0.64.0(ms@2.1.3)
+      sugarss: 5.0.1(postcss@8.5.6)
+      terser: 5.44.1
+      tsx: 4.21.0
+      yaml: 2.8.1
+
   vitepress-plugin-group-icons@1.6.5(ms@2.1.3)(vite@packages+vite):
     dependencies:
       '@iconify-json/logos': 1.2.9
@@ -13506,7 +13578,7 @@ snapshots:
     transitivePeerDependencies:
       - ms
 
-  vitepress@2.0.0-alpha.15(axios@1.13.2)(oxc-minify@0.108.0)(postcss@8.5.6)(typescript@5.9.3):
+  vitepress@2.0.0-alpha.15(@types/node@22.19.5)(axios@1.13.2)(jiti@2.6.1)(less@4.5.1)(lightningcss@1.30.2)(oxc-minify@0.108.0)(postcss@8.5.6)(sass-embedded@1.97.2(source-map-js@1.2.1))(sass@1.97.2)(stylus@0.64.0(ms@2.1.3))(sugarss@5.0.1(postcss@8.5.6))(terser@5.44.1)(tsx@4.21.0)(typescript@5.9.3)(yaml@2.8.1):
     dependencies:
       '@docsearch/css': 4.3.2
       '@docsearch/js': 4.3.2
@@ -13515,7 +13587,7 @@ snapshots:
       '@shikijs/transformers': 3.15.0
       '@shikijs/types': 3.21.0
       '@types/markdown-it': 14.1.2
-      '@vitejs/plugin-vue': 6.0.1(vite@packages+vite)(vue@3.5.26(typescript@5.9.3))
+      '@vitejs/plugin-vue': 6.0.1(vite@7.3.1(@types/node@22.19.5)(jiti@2.6.1)(less@4.5.1)(lightningcss@1.30.2)(sass-embedded@1.97.2(source-map-js@1.2.1))(sass@1.97.2)(stylus@0.64.0(ms@2.1.3))(sugarss@5.0.1(postcss@8.5.6))(terser@5.44.1)(tsx@4.21.0)(yaml@2.8.1))(vue@3.5.26(typescript@5.9.3))
       '@vue/devtools-api': 8.0.5
       '@vue/shared': 3.5.26
       '@vueuse/core': 14.0.0(vue@3.5.26(typescript@5.9.3))
@@ -13524,29 +13596,40 @@ snapshots:
       mark.js: 8.11.1
       minisearch: 7.2.0
       shiki: 3.21.0
-      vite: link:packages/vite
+      vite: 7.3.1(@types/node@22.19.5)(jiti@2.6.1)(less@4.5.1)(lightningcss@1.30.2)(sass-embedded@1.97.2(source-map-js@1.2.1))(sass@1.97.2)(stylus@0.64.0(ms@2.1.3))(sugarss@5.0.1(postcss@8.5.6))(terser@5.44.1)(tsx@4.21.0)(yaml@2.8.1)
       vue: 3.5.26(typescript@5.9.3)
     optionalDependencies:
       oxc-minify: 0.108.0
       postcss: 8.5.6
     transitivePeerDependencies:
+      - '@types/node'
       - async-validator
       - axios
       - change-case
       - drauu
       - fuse.js
       - idb-keyval
+      - jiti
       - jwt-decode
+      - less
+      - lightningcss
       - nprogress
       - qrcode
+      - sass
+      - sass-embedded
       - sortablejs
+      - stylus
+      - sugarss
+      - terser
+      - tsx
       - typescript
       - universal-cookie
+      - yaml
 
-  vitest@4.0.17(@types/node@22.19.5):
+  vitest@4.0.17(@types/node@22.19.5)(jiti@2.6.1)(less@4.5.1)(lightningcss@1.30.2)(sass-embedded@1.97.2(source-map-js@1.2.1))(sass@1.97.2)(stylus@0.64.0(ms@2.1.3))(sugarss@5.0.1(postcss@8.5.6))(terser@5.44.1)(tsx@4.21.0)(yaml@2.8.1):
     dependencies:
       '@vitest/expect': 4.0.17
-      '@vitest/mocker': 4.0.17(vite@packages+vite)
+      '@vitest/mocker': 4.0.17(vite@7.3.1(@types/node@22.19.5)(jiti@2.6.1)(less@4.5.1)(lightningcss@1.30.2)(sass-embedded@1.97.2(source-map-js@1.2.1))(sass@1.97.2)(stylus@0.64.0(ms@2.1.3))(sugarss@5.0.1(postcss@8.5.6))(terser@5.44.1)(tsx@4.21.0)(yaml@2.8.1))
       '@vitest/pretty-format': 4.0.17
       '@vitest/runner': 4.0.17
       '@vitest/snapshot': 4.0.17
@@ -13563,12 +13646,22 @@ snapshots:
       tinyexec: 1.0.2
       tinyglobby: 0.2.15
       tinyrainbow: 3.0.3
-      vite: link:packages/vite
+      vite: 7.3.1(@types/node@22.19.5)(jiti@2.6.1)(less@4.5.1)(lightningcss@1.30.2)(sass-embedded@1.97.2(source-map-js@1.2.1))(sass@1.97.2)(stylus@0.64.0(ms@2.1.3))(sugarss@5.0.1(postcss@8.5.6))(terser@5.44.1)(tsx@4.21.0)(yaml@2.8.1)
       why-is-node-running: 2.3.0
     optionalDependencies:
       '@types/node': 22.19.5
     transitivePeerDependencies:
+      - jiti
+      - less
+      - lightningcss
       - msw
+      - sass
+      - sass-embedded
+      - stylus
+      - sugarss
+      - terser
+      - tsx
+      - yaml
 
   void-elements@3.1.0: {}
 
