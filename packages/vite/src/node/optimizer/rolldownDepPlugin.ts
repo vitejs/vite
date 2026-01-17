@@ -303,10 +303,12 @@ export function rolldownDepPlugin(
       transform: {
         filter: { code: /new\s+URL/ },
         async handler(code, id) {
-          if (!id.includes('library')) return null
+          if (!id.includes('node_modules')) return null
 
           const s = new MagicString(code)
-          const workerRE = /new\s+URL\s*\(\s*['"]([^'"]+)['"]\s*,\s*import\.meta\.url\s*\)/g
+
+          const workerRE =
+            /new\s+URL\s*\(\s*['"]([^'"]+)['"]\s*,\s*import\.meta\.url\s*\)/g
 
           let match
           while ((match = workerRE.exec(code))) {
@@ -315,17 +317,25 @@ export function rolldownDepPlugin(
             const fsUrl = FS_PREFIX + normalizePath(absolutePath)
 
             const replacement = `new URL('' + ${JSON.stringify(fsUrl)}, import.meta.url)`
-            
-            s.overwrite(match.index, match.index + fullMatch.length, replacement)
-            
+
+            s.overwrite(
+              match.index,
+              match.index + fullMatch.length,
+              replacement,
+            )
+
             const assetDir = path.dirname(absolutePath)
-            if (environment.config.server.fs.allow && !environment.config.server.fs.allow.includes(assetDir)) {
+
+            if (
+              environment.config.server.fs.allow &&
+              !environment.config.server.fs.allow.includes(assetDir)
+            ) {
               environment.config.server.fs.allow.push(assetDir)
             }
           }
           return { code: s.toString(), map: s.generateMap({ hires: true }) }
-        }
-      }
+        },
+      },
     },
   ]
 }
