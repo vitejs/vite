@@ -315,7 +315,10 @@ export function rolldownDepPlugin(
             const [fullMatch, url] = match
             const absolutePath = path.resolve(path.dirname(id), url)
             const fsUrl = FS_PREFIX + normalizePath(absolutePath)
-
+            
+            // NOTE: add `'' +` to opt-out of Rolldown's static asset analysis.
+            // This prevents the optimizer from trying to bundle the absolute path 
+            // as a relative asset.
             const replacement = `new URL('' + ${JSON.stringify(fsUrl)}, import.meta.url)`
 
             s.overwrite(
