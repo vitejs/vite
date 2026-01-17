@@ -9,7 +9,7 @@ on:
 
 jobs:
   copilot-setup-steps:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-slim
     permissions:
       contents: write
     steps:
