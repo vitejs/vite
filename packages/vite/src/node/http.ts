@@ -1,4 +1,5 @@
 import fsp from 'node:fs/promises'
+import net from 'node:net'
 import path from 'node:path'
 import type { OutgoingHttpHeaders as HttpServerHeaders } from 'node:http'
 import type { ServerOptions as HttpsServerOptions } from 'node:https'
@@ -7,6 +8,7 @@ import type { Connect } from '#dep-types/connect'
 import type { ProxyOptions } from './server/middlewares/proxy'
 import type { Logger } from './logger'
 import type { HttpServer } from './server'
+import { wildcardHosts } from './constants'
 
 export interface CommonServerOptions {
   /**
@@ -162,6 +164,56 @@ async function readFileIfExists(value?: string | Buffer | any[]) {
   return value
 }
 
+// Check if a port is available on wildcard addresses (0.0.0.0, ::)
+async function isPortAvailable(port: number): Promise<boolean> {
+  for (const host of wildcardHosts) {
+    // Gracefully handle errors (e.g., IPv6 disabled on the system)
+    const available = await tryListen(port, host).catch(() => true)
+    if (!available) return false
+  }
+  return true
+}
+
+function tryListen(port: number, host: string): Promise<boolean> {
+  return new Promise((resolve) => {
+    const server = net.createServer()
+    server.once('error', () => {
+      // Ensure server is closed even on error to prevent resource leaks
+      server.close(() => resolve(false))
+    })
+    server.once('listening', () => {
+      server.close(() => resolve(true))
+    })
+    server.listen(port, host)
+  })
+}
+
+async function tryBindServer(
+  httpServer: HttpServer,
+  port: number,
+  host: string | undefined,
+): Promise<
+  { success: true } | { success: false; error: Error & { code?: string } }
+> {
+  return new Promise((resolve) => {
+    const onError = (e: Error & { code?: string }) => {
+      httpServer.removeListener('error', onError)
+      resolve({ success: false, error: e })
+    }
+
+    httpServer.on('error', onError)
+
+    // Use callback pattern instead of 'listening' event for compatibility
+    // with mocked servers in tests (mocks call the callback synchronously)
+    httpServer.listen(port, host, () => {
+      httpServer.removeListener('error', onError)
+      resolve({ success: true })
+    })
+  })
+}
+
+const MAX_PORT = 65535
+
 export async function httpServerStart(
   httpServer: HttpServer,
   serverOptions: {
@@ -172,30 +224,52 @@ export async function httpServerStart(
   },
 ): Promise<number> {
   let { port, strictPort, host, logger } = serverOptions
+  const startPort = port
 
-  return new Promise((resolve, reject) => {
-    const onError = (e: Error & { code?: string }) => {
-      if (e.code === 'EADDRINUSE') {
-        if (strictPort) {
-          httpServer.removeListener('error', onError)
-          reject(new Error(`Port ${port} is already in use`))
-        } else {
-          logger.info(`Port ${port} is in use, trying another one...`)
-          httpServer.listen(++port, host)
-        }
-      } else {
-        httpServer.removeListener('error', onError)
-        reject(e)
+  while (true) {
+    // Prevent infinite loop by checking port upper bound
+    if (port > MAX_PORT) {
+      throw new Error(
+        `No available ports found between ${startPort} and ${MAX_PORT}`,
+      )
+    }
+
+    // Phase 1: Pre-check port availability on wildcard addresses (0.0.0.0, ::)
+    // This catches servers listening on all interfaces that would otherwise
+    // not trigger EADDRINUSE when binding to a specific host like localhost
+    while (!(await isPortAvailable(port))) {
+      if (strictPort) {
+        throw new Error(`Port ${port} is already in use`)
+      }
+      logger.info(`Port ${port} is in use, trying another one...`)
+      port++
+      if (port > MAX_PORT) {
+        throw new Error(
+          `No available ports found between ${startPort} and ${MAX_PORT}`,
+        )
       }
     }
 
-    httpServer.on('error', onError)
+    // Phase 2: Attempt to bind the server
+    const result = await tryBindServer(httpServer, port, host)
 
-    httpServer.listen(port, host, () => {
-      httpServer.removeListener('error', onError)
-      resolve(port)
-    })
-  })
+    if (result.success) {
+      return port
+    }
+
+    // Phase 3: Handle bind failure
+    if (result.error.code === 'EADDRINUSE') {
+      if (strictPort) {
+        throw new Error(`Port ${port} is already in use`)
+      }
+      logger.info(`Port ${port} is in use, trying another one...`)
+      port++
+      // Continue outer loop - wildcard check will run for the new port
+    } else {
+      // Non-EADDRINUSE errors (e.g., EACCES) are thrown immediately
+      throw result.error
+    }
+  }
 }
 
 export function setClientErrorHandler(
