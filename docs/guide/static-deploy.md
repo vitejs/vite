@@ -172,9 +172,74 @@ After your project has been imported and deployed, all subsequent pushes to bran
 
 Learn more about Vercel’s [Git Integration](https://vercel.com/docs/concepts/git).
 
-## Cloudflare Pages
+## Cloudflare
 
-### Cloudflare Pages via Wrangler
+### Cloudflare Workers
+
+The [Cloudflare Vite plugin](https://developers.cloudflare.com/workers/vite-plugin/) provides integration with Cloudflare Workers and uses Vite's Environment API to run your server-side code in the Cloudflare Workers runtime during development.
+
+To add Cloudflare Workers to an existing Vite project, install the plugin and add it to your config:
+
+```bash
+$ npm install --save-dev @cloudflare/vite-plugin
+```
+
+```js [vite.config.js]
+import { defineConfig } from 'vite'
+import { cloudflare } from '@cloudflare/vite-plugin'
+
+export default defineConfig({
+  plugins: [cloudflare()],
+})
+```
+
+```jsonc [wrangler.jsonc]
+{
+  "name": "my-vite-app",
+}
+```
+
+Your application can now be developed with `npm run dev`, built with `npm run build`, previewed with `npm run preview`, and deployed with `npx wrangler deploy`.
+
+#### Adding a Backend API
+
+To add a backend API, create a Worker entry file and update your config:
+
+Add a `main` entry point to `wrangler.jsonc`:
+
+```jsonc [wrangler.jsonc]
+{
+  "name": "my-vite-app",
+  "main": "./worker/index.ts",
+  "assets": {
+    "not_found_handling": "single-page-application",
+  },
+}
+```
+
+Create `worker/index.ts`:
+
+```ts [worker/index.ts]
+export default {
+  fetch(request) {
+    const url = new URL(request.url)
+    if (url.pathname.startsWith('/api/')) {
+      return Response.json({ hello: 'world' })
+    }
+    return new Response(null, { status: 404 })
+  },
+} satisfies ExportedHandler
+```
+
+The API runs in the Workers runtime during development and deploys alongside your frontend. See the [Cloudflare Vite plugin tutorial](https://developers.cloudflare.com/workers/vite-plugin/tutorial/) for a complete walkthrough.
+
+The Cloudflare Vite plugin supports the full [Cloudflare Developer Platform](https://developers.cloudflare.com/workers/), including KV, D1, Durable Objects, Workflows, and more. Learn more in the [Cloudflare Vite Plugin documentation](https://developers.cloudflare.com/workers/vite-plugin/).
+
+### Cloudflare Pages
+
+For existing projects using Cloudflare Pages, you can continue to deploy static sites via Wrangler or Git integration:
+
+#### Cloudflare Pages via Wrangler
 
 1. Install [Wrangler CLI](https://developers.cloudflare.com/workers/wrangler/get-started/).
 2. Authenticate Wrangler with your Cloudflare account using `wrangler login`.
@@ -197,7 +262,7 @@ $ npx wrangler pages deploy dist
 
 After your assets are uploaded, Wrangler will give you a preview URL to inspect your site. When you log into the Cloudflare Pages dashboard, you will see your new project.
 
-### Cloudflare Pages with Git
+#### Cloudflare Pages with Git
 
 1. Push your code to your git repository (GitHub, GitLab).
 2. Log in to the Cloudflare dashboard and select your account in **Account Home** > **Pages**.
@@ -207,7 +272,7 @@ After your assets are uploaded, Wrangler will give you a preview URL to inspect 
 6. Then save and deploy!
 7. Your application is deployed! (e.g `https://<PROJECTNAME>.pages.dev/`)
 
-After your project has been imported and deployed, all subsequent pushes to branches will generate [Preview Deployments](https://developers.cloudflare.com/pages/platform/preview-deployments/) unless specified not to in your [branch build controls](https://developers.cloudflare.com/pages/platform/branch-build-controls/). All changes to the Production Branch (commonly “main”) will result in a Production Deployment.
+After your project has been imported and deployed, all subsequent pushes to branches will generate [Preview Deployments](https://developers.cloudflare.com/pages/platform/preview-deployments/) unless specified not to in your [branch build controls](https://developers.cloudflare.com/pages/platform/branch-build-controls/). All changes to the Production Branch (commonly "main") will result in a Production Deployment.
 
 You can also add custom domains and handle custom build settings on Pages. Learn more about [Cloudflare Pages Git Integration](https://developers.cloudflare.com/pages/get-started/#manage-your-site).
 
