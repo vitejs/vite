@@ -11,6 +11,8 @@ import { determineAgent } from '@vercel/detect-agent'
 const {
   blue,
   blueBright,
+  bold,
+  gray,
   cyan,
   green,
   greenBright,
@@ -18,6 +20,7 @@ const {
   red,
   redBright,
   reset,
+  underline,
   yellow,
 } = colors
 
@@ -68,6 +71,8 @@ type Framework = {
 type FrameworkVariant = {
   name: string
   display: string
+  description?: string
+  link?: `https://${string}`
   color: ColorFunc
   customCommand?: string
 }
@@ -114,12 +119,22 @@ const FRAMEWORKS: Framework[] = [
       {
         name: 'custom-nuxt',
         display: 'Nuxt ↗',
+        link: 'https://nuxt.com',
+        // Extracted from https://nuxt.com
+        description:
+          'The Full-Stack Vue Framework — build fast, production-ready web apps with Vue.',
+        // Don't choose another color — all Vue frameworks must use `greenBright`
         color: greenBright,
         customCommand: 'npm exec nuxi init TARGET_DIR',
       },
       {
         name: 'custom-vike-vue',
         display: 'Vike ↗',
+        link: 'https://vike.dev',
+        // Extracted from https://vike.dev
+        description:
+          'Composable framework to build (advanced) applications with flexibility and stability.',
+        // Don't choose another color — all Vue frameworks must use `greenBright`
         color: greenBright,
         customCommand: 'npm create -- vike@latest --vue TARGET_DIR',
       },
@@ -161,14 +176,31 @@ const FRAMEWORKS: Framework[] = [
         color: yellow,
       },
       {
+        name: 'rsc',
+        display: 'RSC',
+        color: magenta,
+        customCommand:
+          'npm exec tiged vitejs/vite-plugin-react/packages/plugin-rsc/examples/starter TARGET_DIR',
+      },
+      {
         name: 'custom-react-router',
         display: 'React Router v7 ↗',
+        link: 'https://reactrouter.com',
+        // Extracted from https://reactrouter.com
+        description:
+          'User‑obsessed, standards‑focused, multi‑strategy router you can deploy anywhere.',
+        // Don't choose another color — all React frameworks must use `cyan`
         color: cyan,
         customCommand: 'npm create react-router@latest TARGET_DIR',
       },
       {
         name: 'custom-tanstack-router-react',
         display: 'TanStack Router ↗',
+        link: 'https://tanstack.com/router',
+        // Extracted from https://tanstack.com/router/latest
+        description:
+          'Type-safe router for client-side and full-stack applications.',
+        // Don't choose another color — all React frameworks must use `cyan`
         color: cyan,
         customCommand:
           'npm create -- tsrouter-app@latest TARGET_DIR --framework React --interactive',
@@ -176,19 +208,22 @@ const FRAMEWORKS: Framework[] = [
       {
         name: 'redwoodsdk-standard',
         display: 'RedwoodSDK ↗',
-        color: red,
+        link: 'https://rwsdk.com',
+        // Extracted from https://rwsdk.com
+        description:
+          'Server-first React with zero magic. Built to stay understandable.',
+        // Don't choose another color — all React frameworks must use `cyan`
+        color: cyan,
         customCommand: 'npm create rwsdk@latest TARGET_DIR',
-      },
-      {
-        name: 'rsc',
-        display: 'RSC ↗',
-        color: magenta,
-        customCommand:
-          'npm exec tiged vitejs/vite-plugin-react/packages/plugin-rsc/examples/starter TARGET_DIR',
       },
       {
         name: 'custom-vike-react',
         display: 'Vike ↗',
+        link: 'https://vike.dev',
+        // Extracted from https://vike.dev
+        description:
+          'Composable framework to build (advanced) applications with flexibility and stability.',
+        // Don't choose another color — all React frameworks must use `cyan`
         color: cyan,
         customCommand: 'npm create -- vike@latest --react TARGET_DIR',
       },
@@ -275,6 +310,11 @@ const FRAMEWORKS: Framework[] = [
       {
         name: 'custom-tanstack-router-solid',
         display: 'TanStack Router ↗',
+        link: 'https://tanstack.com/router',
+        // Extracted from https://tanstack.com/router/latest
+        description:
+          'Type-safe router for client-side and full-stack applications.',
+        // Don't choose another color — all Solid frameworks must use `cyan`
         color: cyan,
         customCommand:
           'npm create -- tsrouter-app@latest TARGET_DIR --framework Solid --interactive',
@@ -282,6 +322,11 @@ const FRAMEWORKS: Framework[] = [
       {
         name: 'custom-vike-solid',
         display: 'Vike ↗',
+        link: 'https://vike.dev',
+        // Extracted from https://vike.dev
+        description:
+          'Composable framework to build (advanced) applications with flexibility and stability.',
+        // Don't choose another color — all Solid frameworks must use `cyan`
         color: cyan,
         customCommand: 'npm create -- vike@latest --solid TARGET_DIR',
       },
@@ -572,19 +617,13 @@ async function init() {
       if (prompts.isCancel(framework)) return cancel()
 
       const variant = await prompts.select({
-        message: 'Select a variant:',
+        message: !['react', 'vue', 'solid'].includes(framework.name)
+          ? 'Select a variant:'
+          : `Select ${bold('Vite boilerplate')} (listed first) or ${bold('Vite-based framework')} (listed last):`,
         options: framework.variants.map((variant) => {
-          const variantColor = variant.color
-          const command = variant.customCommand
-            ? getFullCustomCommand(variant.customCommand, pkgInfo).replace(
-                / TARGET_DIR$/,
-                '',
-              )
-            : undefined
           return {
-            label: variantColor(variant.display || variant.name),
+            label: getLabel(variant),
             value: variant.name,
-            hint: command,
           }
         }),
       })
@@ -900,6 +939,44 @@ function getFullCustomCommand(customCommand: string, pkgInfo?: PkgInfo) {
         return 'npm exec '
       })
   )
+}
+
+function getLabel(variant: FrameworkVariant) {
+  // Choice human name
+  const labelText = variant.display || variant.name
+  let label = variant.color(labelText)
+
+  // Determine available width
+  const terminalWidth = process.stdout.columns || 80
+  const promptBorderWidth = 5
+  const whitespaceWidth = 1
+  let availableWidth =
+    terminalWidth - promptBorderWidth - labelText.length - whitespaceWidth
+
+  // Add `link`
+  const { link } = variant
+  if (link && availableWidth >= link.length) {
+    label += ` ${gray(underline(link))}`
+    availableWidth -= whitespaceWidth + link.length
+  }
+
+  // Add `description`
+  const { description } = variant
+  const descriptionTruncatedMinWidth = 4
+  const dots = '...'
+  if (
+    description &&
+    availableWidth >= descriptionTruncatedMinWidth + dots.length
+  ) {
+    // Work around https://github.com/bombshell-dev/clack/issues/441
+    const descriptionTruncated =
+      description.length <= availableWidth
+        ? description
+        : description.slice(0, availableWidth - dots.length) + dots
+    label += ` ${descriptionTruncated}`
+  }
+
+  return label
 }
 
 function getInstallCommand(agent: string) {
