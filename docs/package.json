@@ -15,7 +15,7 @@
     "markdown-it-image-size": "^15.0.1",
     "oxc-minify": "^0.108.0",
     "vitepress": "^2.0.0-alpha.15",
-    "vitepress-plugin-group-icons": "^1.6.5",
+    "vitepress-plugin-group-icons": "^1.7.0",
     "vitepress-plugin-llms": "^1.10.0",
     "vue": "^3.5.26",
     "vue-tsc": "^3.2.2"
