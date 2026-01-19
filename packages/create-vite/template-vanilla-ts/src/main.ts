@@ -2,13 +2,8 @@ import './style.css'
 import typescriptLogo from './assets/typescript.svg'
 import viteLogo from './assets/vite.svg?raw'
 import { setupCounter } from './counter.ts'
-import heroImg from './assets/hero.png'
-import documentationIcon from './assets/documentation-icon.svg'
-import socialIcon from './assets/social-icon.svg'
-import githubIcon from './assets/github-icon.svg'
-import discordIcon from './assets/discord-icon.svg'
-import blueskyIcon from './assets/bluesky-icon.svg'
-import xIcon from './assets/x-icon.svg'
+
+const starterUrl = 'https://vite.dev/starter'
 
 document.querySelector<HTMLDivElement>('#app')!.innerHTML = `
 <section id="framework-logos">
@@ -23,7 +18,7 @@ document.querySelector<HTMLDivElement>('#app')!.innerHTML = `
 
 <section id="center">
     <div class="hero-image">
-        <img src="${heroImg}" alt="Vite" class="hero-image__base">
+        <img src="${starterUrl}/hero.png" alt="Vite" class="hero-image__base" width="170" height="179">
         <img src="${typescriptLogo}" class="hero-image__framework" alt="TypeScript logo"/>
         <span class="hero-image__vite" aria-label="Vite logo">${viteLogo}</span>
     </div>
@@ -38,29 +33,29 @@ document.querySelector<HTMLDivElement>('#app')!.innerHTML = `
 
 <section id="next-steps">
     <div id="documentation">
-        <img class="icon" src="${documentationIcon}" alt="Documentation" inert>
+        <img class="icon" src="${starterUrl}/documentation-icon.svg" role="presentation" inert>
         <h2>Documentation</h2>
         <p>Your questions, answered</p>
         <div class="button-group">
-            <a href="https://vite.dev/?ref=vite-starter-learn-more" class="button">
+            <a href="https://vite.dev" class="button">
                 <span class="button-logo">${viteLogo}</span>
                 Explore Vite
             </a>
-            <a href="https://www.typescriptlang.org/?ref=vite-starter-learn-more" class="button">
+            <a href="https://www.typescriptlang.org" class="button">
                 <img src="${typescriptLogo}" alt="">
                 Learn more
             </a>
         </div>
     </div>
     <div id="social">
-        <img class="icon" src="${socialIcon}" alt="Connect with us" inert>
+        <img class="icon" src="${starterUrl}/social-icon.svg" role="presentation" inert>
         <h2>Connect with us</h2>
         <p>Join the Vite community</p>
         <ul>
-            <li><a href="https://github.com/vitejs/vite?ref=vite-starter-icon" target="_blank"><img src="${githubIcon}" alt="GitHub">GitHub</a></li>
-            <li><a href="https://chat.vite.dev/?ref=vite-starter-icon" target="_blank"><img src="${discordIcon}" alt="Discord">Discord</a></li>
-            <li><a href="https://x.com/vite_js?ref=vite-starter-icon" target="_blank"><img src="${xIcon}" alt="X">X.com</a></li>
-            <li><a href="https://bsky.app/profile/vite.dev?ref=vite-starter-icon" target="_blank"><img src="${blueskyIcon}" alt="Bluesky">Bluesky</a></li>
+            <li><a href="https://github.com/vitejs/vite" target="_blank"><img src="${starterUrl}/github-icon.svg" role="presentation">GitHub</a></li>
+            <li><a href="https://chat.vite.dev" target="_blank"><img src="${starterUrl}/discord-icon.svg" role="presentation">Discord</a></li>
+            <li><a href="https://x.com/vite_js" target="_blank"><img src="${starterUrl}/x-icon.svg" role="presentation">X.com</a></li>
+            <li><a href="https://bsky.app/profile/vite.dev" target="_blank"><img src="${starterUrl}/bluesky-icon.svg" role="presentation">Bluesky</a></li>
         </ul>
     </div>
 </section>
