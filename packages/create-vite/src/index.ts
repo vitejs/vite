@@ -470,7 +470,7 @@ async function init() {
         defaultValue: defaultTargetDir,
         placeholder: defaultTargetDir,
         validate: (value) => {
-          return value.length === 0 || formatTargetDir(value).length > 0
+          return !value || formatTargetDir(value).length > 0
             ? undefined
             : 'Invalid project name'
         },
@@ -536,7 +536,7 @@ async function init() {
         defaultValue: toValidPackageName(packageName),
         placeholder: toValidPackageName(packageName),
         validate(dir) {
-          if (!isValidPackageName(dir)) {
+          if (dir && !isValidPackageName(dir)) {
             return 'Invalid package.json name'
           }
         },
@@ -598,20 +598,6 @@ async function init() {
 
   const pkgManager = pkgInfo ? pkgInfo.name : 'npm'
 
-  // 5. Ask about immediate install and package manager
-  let immediate = argImmediate
-  if (immediate === undefined) {
-    if (interactive) {
-      const immediateResult = await prompts.confirm({
-        message: `Install with ${pkgManager} and start now?`,
-      })
-      if (prompts.isCancel(immediateResult)) return cancel()
-      immediate = immediateResult
-    } else {
-      immediate = false
-    }
-  }
-
   const root = path.join(cwd, targetDir)
   // determine template
   let isReactSwc = false
@@ -640,6 +626,20 @@ async function init() {
       stdio: 'inherit',
     })
     process.exit(status ?? 0)
+  }
+
+  // 5. Ask about immediate install and package manager
+  let immediate = argImmediate
+  if (immediate === undefined) {
+    if (interactive) {
+      const immediateResult = await prompts.confirm({
+        message: `Install with ${pkgManager} and start now?`,
+      })
+      if (prompts.isCancel(immediateResult)) return cancel()
+      immediate = immediateResult
+    } else {
+      immediate = false
+    }
   }
 
   // Only create directory for built-in templates, not for customCommand
