@@ -3,6 +3,8 @@ import { afterEach, describe, expect, test } from 'vitest'
 import { createServer } from '..'
 import type { ViteDevServer } from '..'
 
+const BASE_PORT = 15181
+
 describe('port detection', () => {
   let blockingServer: http.Server | null = null
   let viteServer: ViteDevServer | null = null
@@ -23,198 +25,152 @@ describe('port detection', () => {
     })
   })
 
-  describe('wildcard host detection', () => {
-    test('wildcard check runs after EADDRINUSE fallback', async () => {
-      // Reviewer scenario: localhost:port occupied, 0.0.0.0:port+1 occupied
-      // Bug: after EADDRINUSE on port, Vite tries port+1 WITHOUT wildcard check
-      const port = 15181
-
-      // localhost:port occupied (will trigger EADDRINUSE when Vite tries to bind)
-      const localhostServer = http.createServer()
-      await new Promise<void>((resolve) => {
-        localhostServer.listen(port, '127.0.0.1', resolve)
-      })
-
-      // 0.0.0.0:port+1 occupied (should be detected by wildcard check after EADDRINUSE)
-      const wildcardServer = http.createServer()
-      await new Promise<void>((resolve) => {
-        wildcardServer.listen(port + 1, '0.0.0.0', resolve)
-      })
-
-      try {
-        viteServer = await createServer({
-          root: __dirname,
-          logLevel: 'silent',
-          server: { port, host: '127.0.0.1', strictPort: false, ws: false },
+  async function createSimpleServer(port: number, host: string) {
+    const server = http.createServer()
+    await new Promise<void>((resolve) => {
+      server.listen(port, host, () => resolve())
+    })
+    return {
+      [Symbol.asyncDispose]() {
+        return new Promise<void>((resolve) => {
+          server.close(() => resolve())
         })
+      },
+    }
+  }
 
-        await viteServer.listen()
+  describe('port fallback', () => {
+    test('detects port conflict', async () => {
+      await using _blockingServer = await createSimpleServer(
+        BASE_PORT,
+        'localhost',
+      )
 
-        // Expected flow:
-        // 1. isPortAvailable(port) → checks 0.0.0.0:port → FREE → passes
-        // 2. httpServer.listen(port, '127.0.0.1') → EADDRINUSE
-        // 3. port++ → now port+1
-        // 4. isPortAvailable(port+1) → checks 0.0.0.0:port+1 → OCCUPIED → fails
-        // 5. port++ → now port+2
-        // 6. isPortAvailable(port+2) → FREE → passes
-        // 7. httpServer.listen(port+2, '127.0.0.1') → SUCCESS
-        const address = viteServer.httpServer?.address()
-        expect(address).toBeTruthy()
-        if (typeof address === 'object' && address) {
-          expect(address.port).toBe(port + 2)
-        }
-      } finally {
-        // Cleanup servers
-        await Promise.all([
-          new Promise<void>((resolve) =>
-            localhostServer.close(() => resolve()),
-          ),
-          new Promise<void>((resolve) => wildcardServer.close(() => resolve())),
-        ])
-      }
+      viteServer = await createServer({
+        root: __dirname,
+        logLevel: 'silent',
+        server: { port: BASE_PORT, strictPort: false, ws: false },
+      })
+      await viteServer.listen()
+
+      const address = viteServer.httpServer!.address()
+      expect(address).toStrictEqual(
+        expect.objectContaining({ port: BASE_PORT + 1 }),
+      )
+    })
+
+    test('detects multiple port conflict', async () => {
+      await using _blockingServer1 = await createSimpleServer(
+        BASE_PORT,
+        'localhost',
+      )
+      await using _blockingServer2 = await createSimpleServer(
+        BASE_PORT + 1,
+        'localhost',
+      )
+
+      viteServer = await createServer({
+        root: __dirname,
+        logLevel: 'silent',
+        server: { port: BASE_PORT, strictPort: false, ws: false },
+      })
+      await viteServer.listen()
+
+      const address = viteServer.httpServer!.address()
+      expect(address).toStrictEqual(
+        expect.objectContaining({ port: BASE_PORT + 2 }),
+      )
     })
 
     test('detects port conflict when server listens on 0.0.0.0', async () => {
-      const port = 15173
-
-      // Simulate another server (e.g., Next.js) listening on all interfaces
-      blockingServer = http.createServer()
-      await new Promise<void>((resolve) => {
-        blockingServer!.listen(port, '0.0.0.0', resolve)
-      })
+      await using _blockingServer = await createSimpleServer(
+        BASE_PORT,
+        '0.0.0.0',
+      )
 
       viteServer = await createServer({
         root: __dirname,
         logLevel: 'silent',
-        server: { port, strictPort: false, ws: false },
+        server: { port: BASE_PORT, strictPort: false, ws: false },
       })
-
       await viteServer.listen()
 
-      // Vite should detect the conflict and use a different port
-      const address = viteServer.httpServer?.address()
-      expect(address).toBeTruthy()
-      if (typeof address === 'object' && address) {
-        expect(address.port).toBe(port + 1)
-      }
+      const address = viteServer.httpServer!.address()
+      expect(address).toStrictEqual(
+        expect.objectContaining({ port: BASE_PORT + 1 }),
+      )
     })
 
-    test('detects port conflict when server listens on :: (IPv6)', async () => {
-      const port = 15174
-
-      blockingServer = http.createServer()
-
-      // Skip test if IPv6 is not available on this system
+    test('detects port conflict when server listens on :: (IPv6)', async (ctx) => {
+      let blockingServer
       try {
-        await new Promise<void>((resolve, reject) => {
-          blockingServer!.once('error', reject)
-          blockingServer!.listen(port, '::', resolve)
-        })
+        blockingServer = await createSimpleServer(BASE_PORT, '::')
       } catch {
+        // Skip test if IPv6 is not available on this system
+        ctx.skip()
         return
       }
+      await using _blockingServer = blockingServer
 
       viteServer = await createServer({
         root: __dirname,
         logLevel: 'silent',
-        server: { port, strictPort: false, ws: false },
+        server: { port: BASE_PORT, strictPort: false, ws: false },
       })
-
       await viteServer.listen()
 
-      const address = viteServer.httpServer?.address()
-      expect(address).toBeTruthy()
-      if (typeof address === 'object' && address) {
-        expect(address.port).toBe(port + 1)
-      }
+      const address = viteServer.httpServer!.address()
+      expect(address).toStrictEqual(
+        expect.objectContaining({ port: BASE_PORT + 1 }),
+      )
     })
-  })
 
-  describe('port selection behavior', () => {
-    test('finds first available port when multiple ports are blocked', async () => {
-      const basePort = 15176
-      const blockedCount = 3
-      const blockingServers: http.Server[] = []
+    test('wildcard check also runs after EADDRINUSE fallback', async () => {
+      // localhost:n occupied
+      // 0.0.0.0:n+1 occupied
+      // => Vite should pick n+2
 
-      // Block 3 consecutive ports
-      for (let i = 0; i < blockedCount; i++) {
-        const server = http.createServer()
-        await new Promise<void>((resolve) => {
-          server.listen(basePort + i, '0.0.0.0', resolve)
-        })
-        blockingServers.push(server)
-      }
+      await using _localhostServer = await createSimpleServer(
+        BASE_PORT,
+        'localhost',
+      )
+      await using _wildcardServer = await createSimpleServer(
+        BASE_PORT + 1,
+        '0.0.0.0',
+      )
 
       viteServer = await createServer({
         root: __dirname,
         logLevel: 'silent',
-        server: { port: basePort, strictPort: false, ws: false },
+        server: {
+          port: BASE_PORT,
+          strictPort: false,
+          ws: false,
+        },
       })
-
       await viteServer.listen()
 
-      const address = viteServer.httpServer?.address()
-      expect(address).toBeTruthy()
-      if (typeof address === 'object' && address) {
-        expect(address.port).toBe(basePort + blockedCount)
-      }
-
-      // Cleanup additional blocking servers
-      await Promise.all(
-        blockingServers.map(
-          (server) =>
-            new Promise<void>((resolve) => server.close(() => resolve())),
-        ),
+      const address = viteServer.httpServer!.address()
+      expect(address).toStrictEqual(
+        expect.objectContaining({ port: BASE_PORT + 2 }),
       )
     })
   })
 
-  describe('strictPort option', () => {
-    test('throws error when port is blocked and strictPort is true', async () => {
-      const port = 15179
+  test('throws error when port is blocked and strictPort is true', async () => {
+    await using _blockingServer = await createSimpleServer(
+      BASE_PORT,
+      'localhost',
+    )
 
-      blockingServer = http.createServer()
-      await new Promise<void>((resolve) => {
-        blockingServer!.listen(port, '0.0.0.0', resolve)
-      })
-
-      viteServer = await createServer({
-        root: __dirname,
-        logLevel: 'silent',
-        server: { port, strictPort: true, ws: false },
-      })
-
-      await expect(viteServer.listen()).rejects.toThrow(
-        `Port ${port} is already in use`,
-      )
+    viteServer = await createServer({
+      root: __dirname,
+      logLevel: 'silent',
+      server: { port: BASE_PORT, strictPort: true, ws: false },
     })
-  })
 
-  describe('backward compatibility', () => {
-    test('EADDRINUSE fallback works for non-wildcard hosts', async () => {
-      const port = 15180
-
-      // Server on localhost only (not detected by wildcard pre-check)
-      blockingServer = http.createServer()
-      await new Promise<void>((resolve) => {
-        blockingServer!.listen(port, '127.0.0.1', resolve)
-      })
-
-      // Force Vite to use the same host to trigger EADDRINUSE
-      viteServer = await createServer({
-        root: __dirname,
-        logLevel: 'silent',
-        server: { port, host: '127.0.0.1', strictPort: false, ws: false },
-      })
-
-      await viteServer.listen()
-
-      // The existing EADDRINUSE handler should catch this
-      const address = viteServer.httpServer?.address()
-      expect(address).toBeTruthy()
-      if (typeof address === 'object' && address) {
-        expect(address.port).toBe(port + 1)
-      }
-    })
+    await expect(viteServer.listen()).rejects.toThrow(
+      `Port ${BASE_PORT} is already in use`,
+    )
   })
 })

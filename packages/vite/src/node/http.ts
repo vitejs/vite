@@ -200,11 +200,7 @@ async function tryBindServer(
       httpServer.removeListener('error', onError)
       resolve({ success: false, error: e })
     }
-
     httpServer.on('error', onError)
-
-    // Use callback pattern instead of 'listening' event for compatibility
-    // with mocked servers in tests (mocks call the callback synchronously)
     httpServer.listen(port, host, () => {
       httpServer.removeListener('error', onError)
       resolve({ success: true })
@@ -223,53 +219,30 @@ export async function httpServerStart(
     logger: Logger
   },
 ): Promise<number> {
-  let { port, strictPort, host, logger } = serverOptions
-  const startPort = port
+  const { port: startPort, strictPort, host, logger } = serverOptions
 
-  while (true) {
-    // Prevent infinite loop by checking port upper bound
-    if (port > MAX_PORT) {
-      throw new Error(
-        `No available ports found between ${startPort} and ${MAX_PORT}`,
-      )
-    }
-
-    // Phase 1: Pre-check port availability on wildcard addresses (0.0.0.0, ::)
-    // This catches servers listening on all interfaces that would otherwise
-    // not trigger EADDRINUSE when binding to a specific host like localhost
-    while (!(await isPortAvailable(port))) {
-      if (strictPort) {
-        throw new Error(`Port ${port} is already in use`)
+  for (let port = startPort; port <= MAX_PORT; port++) {
+    // Pre-check port availability on wildcard addresses (0.0.0.0, ::)
+    // so that we avoid conflicts with other servers listening on all interfaces
+    if (await isPortAvailable(port)) {
+      const result = await tryBindServer(httpServer, port, host)
+      if (result.success) {
+        return port
       }
-      logger.info(`Port ${port} is in use, trying another one...`)
-      port++
-      if (port > MAX_PORT) {
-        throw new Error(
-          `No available ports found between ${startPort} and ${MAX_PORT}`,
-        )
+      if (result.error.code !== 'EADDRINUSE') {
+        throw result.error
       }
     }
 
-    // Phase 2: Attempt to bind the server
-    const result = await tryBindServer(httpServer, port, host)
-
-    if (result.success) {
-      return port
+    if (strictPort) {
+      throw new Error(`Port ${port} is already in use`)
     }
 
-    // Phase 3: Handle bind failure
-    if (result.error.code === 'EADDRINUSE') {
-      if (strictPort) {
-        throw new Error(`Port ${port} is already in use`)
-      }
-      logger.info(`Port ${port} is in use, trying another one...`)
-      port++
-      // Continue outer loop - wildcard check will run for the new port
-    } else {
-      // Non-EADDRINUSE errors (e.g., EACCES) are thrown immediately
-      throw result.error
-    }
+    logger.info(`Port ${port} is in use, trying another one...`)
   }
+  throw new Error(
+    `No available ports found between ${startPort} and ${MAX_PORT}`,
+  )
 }
 
 export function setClientErrorHandler(
