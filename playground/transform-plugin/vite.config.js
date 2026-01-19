@@ -59,6 +59,21 @@ const moduleTypePlugins = [
   },
 ]
 
+const lazyHookFilterPlugin = {
+  name: 'lazy-hook-filter',
+  options() {
+    lazyHookFilterPlugin.transform.filter = { id: '**/index.js' }
+  },
+  transform: {
+    filter: /** @type {import('vite').Rolldown.HookFilter} */ ({
+      id: { exclude: ['**/*.js'] },
+    }),
+    handler(code) {
+      return code.replaceAll('LAZY_HOOK_FILTER_CONTENT', 'success')
+    },
+  },
+}
+
 export default defineConfig({
-  plugins: [transformPlugin, moduleTypePlugins],
+  plugins: [transformPlugin, moduleTypePlugins, lazyHookFilterPlugin],
 })

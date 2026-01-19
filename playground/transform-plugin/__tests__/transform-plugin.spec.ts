@@ -9,4 +9,8 @@ test('module type should be supported', async () => {
   expect(await page.textContent('#module-type-json-virtual-post')).toBe('js')
 })
 
+test('lazy hook filter should be applied', async () => {
+  expect(await page.textContent('#lazy-hook-filter')).toBe('success')
+})
+
 tests()
