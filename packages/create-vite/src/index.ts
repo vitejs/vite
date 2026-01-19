@@ -945,6 +945,7 @@ function getLabel(variant: FrameworkVariant) {
   // Choice human name
   const labelText = variant.display || variant.name
   let label = variant.color(labelText)
+  console.log('labelText', labelText)
 
   // Determine available width
   const terminalWidth = process.stdout.columns || 80
@@ -952,6 +953,7 @@ function getLabel(variant: FrameworkVariant) {
   const whitespaceWidth = 1
   let availableWidth =
     terminalWidth - promptBorderWidth - labelText.length - whitespaceWidth
+  console.log('availableWidth', availableWidth)
 
   // Add `link`
   const { link } = variant
@@ -959,6 +961,7 @@ function getLabel(variant: FrameworkVariant) {
     label += ` ${gray(underline(link))}`
     availableWidth -= whitespaceWidth + link.length
   }
+  console.log('availableWidth', availableWidth)
 
   // Add `description`
   const { description } = variant
