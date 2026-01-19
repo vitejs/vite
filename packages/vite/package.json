@@ -98,7 +98,7 @@
     "@types/escape-html": "^1.0.4",
     "@types/pnpapi": "^0.0.5",
     "artichokie": "^0.4.2",
-    "baseline-browser-mapping": "^2.9.14",
+    "baseline-browser-mapping": "^2.9.15",
     "cac": "^6.7.14",
     "chokidar": "^3.6.0",
     "connect": "^3.7.0",
@@ -137,9 +137,9 @@
     "sass-embedded": "^1.97.2",
     "sirv": "^3.0.2",
     "strip-literal": "^3.1.0",
-    "terser": "^5.44.1",
+    "terser": "^5.46.0",
     "tsconfck": "^3.1.6",
-    "ufo": "^1.6.2",
+    "ufo": "^1.6.3",
     "ws": "^8.19.0"
   },
   "peerDependencies": {
