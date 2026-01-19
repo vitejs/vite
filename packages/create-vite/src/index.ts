@@ -948,7 +948,7 @@ function getLabel(variant: FrameworkVariant) {
 
   // Determine available width
   const terminalWidth = process.stdout.columns || 80
-  const promptBorderWidth = 5
+  const promptBorderWidth = 15
   const whitespaceWidth = 1
   let availableWidth =
     terminalWidth - promptBorderWidth - labelText.length - whitespaceWidth
