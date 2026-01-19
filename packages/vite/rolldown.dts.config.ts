@@ -61,7 +61,6 @@ export default defineConfig({
         },
       },
       emitDtsOnly: true,
-      resolve: true,
     }),
   ],
 })
