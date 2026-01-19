@@ -180,8 +180,8 @@ importers:
         specifier: ^1.1.1
         version: 1.1.1
       tsdown:
-        specifier: ^0.18.4
-        version: 0.18.4(publint@0.3.12)(typescript@5.9.3)(vue-tsc@3.2.2(typescript@5.9.3))
+        specifier: ^0.19.0
+        version: 0.19.0(publint@0.3.12)(typescript@5.9.3)(vue-tsc@3.2.2(typescript@5.9.3))
 
   packages/plugin-legacy:
     dependencies:
@@ -229,8 +229,8 @@ importers:
         specifier: ^1.1.1
         version: 1.1.1
       tsdown:
-        specifier: ^0.18.4
-        version: 0.18.4(publint@0.3.12)(typescript@5.9.3)(vue-tsc@3.2.2(typescript@5.9.3))
+        specifier: ^0.19.0
+        version: 0.19.0(publint@0.3.12)(typescript@5.9.3)(vue-tsc@3.2.2(typescript@5.9.3))
       vite:
         specifier: workspace:*
         version: link:../vite
@@ -395,8 +395,8 @@ importers:
         specifier: ^2.0.3
         version: 2.0.3
       rolldown-plugin-dts:
-        specifier: ^0.20.0
-        version: 0.20.0(rolldown@1.0.0-beta.60)(typescript@5.9.3)(vue-tsc@3.2.2(typescript@5.9.3))
+        specifier: ^0.21.2
+        version: 0.21.2(rolldown@1.0.0-beta.60)(typescript@5.9.3)(vue-tsc@3.2.2(typescript@5.9.3))
       rollup:
         specifier: ^4.43.0
         version: 4.43.0
@@ -6548,6 +6548,25 @@ packages:
       vue-tsc:
         optional: true
 
+  rolldown-plugin-dts@0.21.2:
+    resolution: {integrity: sha512-yFOvVkkxmdGVBH4UwCu/ApQZQXI1kre+aQyOyrmDAwFfALRaX7JlEn+F3HDDj3hEFE/q3+kCSGYGxEZ8W5NsGg==}
+    engines: {node: '>=20.19.0'}
+    peerDependencies:
+      '@ts-macro/tsc': ^0.3.6
+      '@typescript/native-preview': '>=7.0.0-dev.20250601.1'
+      rolldown: 1.0.0-beta.60
+      typescript: ^5.0.0
+      vue-tsc: ~3.2.0
+    peerDependenciesMeta:
+      '@ts-macro/tsc':
+        optional: true
+      '@typescript/native-preview':
+        optional: true
+      typescript:
+        optional: true
+      vue-tsc:
+        optional: true
+
   rolldown@1.0.0-beta.60:
     resolution: {integrity: sha512-YYgpv7MiTp9LdLj1fzGzCtij8Yi2OKEc3HQtfbIxW4yuSgpQz9518I69U72T5ErPA/ATOXqlcisiLrWy+5V9YA==}
     engines: {node: ^20.19.0 || >=22.12.0}
@@ -7096,8 +7115,8 @@ packages:
       typescript:
         optional: true
 
-  tsdown@0.18.4:
-    resolution: {integrity: sha512-J/tRS6hsZTkvqmt4+xdELUCkQYDuUCXgBv0fw3ImV09WPGbEKfsPD65E+WUjSu3E7Z6tji9XZ1iWs8rbGqB/ZA==}
+  tsdown@0.19.0:
+    resolution: {integrity: sha512-uqg8yzlS7GemFWcM6aCp/sptF4bJiJbWUibuHTRLLCBEsGCgJxuqxPhuVTqyHXqoEkh9ohwAdlyDKli5MEWCyQ==}
     engines: {node: '>=20.19.0'}
     hasBin: true
     peerDependencies:
@@ -12333,6 +12352,23 @@ snapshots:
     transitivePeerDependencies:
       - oxc-resolver
 
+  rolldown-plugin-dts@0.21.2(rolldown@1.0.0-beta.60)(typescript@5.9.3)(vue-tsc@3.2.2(typescript@5.9.3)):
+    dependencies:
+      '@babel/generator': 7.28.6
+      '@babel/parser': 7.28.6
+      '@babel/types': 7.28.6
+      ast-kit: 2.2.0
+      birpc: 4.0.0
+      dts-resolver: 2.1.3
+      get-tsconfig: 4.13.0
+      obug: 2.1.1
+      rolldown: 1.0.0-beta.60
+    optionalDependencies:
+      typescript: 5.9.3
+      vue-tsc: 3.2.2(typescript@5.9.3)
+    transitivePeerDependencies:
+      - oxc-resolver
+
   rolldown@1.0.0-beta.60:
     dependencies:
       '@oxc-project/types': 0.108.0
@@ -12929,7 +12965,7 @@ snapshots:
     optionalDependencies:
       typescript: 5.9.3
 
-  tsdown@0.18.4(publint@0.3.12)(typescript@5.9.3)(vue-tsc@3.2.2(typescript@5.9.3)):
+  tsdown@0.19.0(publint@0.3.12)(typescript@5.9.3)(vue-tsc@3.2.2(typescript@5.9.3)):
     dependencies:
       ansis: 4.2.0
       cac: 6.7.14
