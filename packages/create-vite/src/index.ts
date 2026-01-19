@@ -598,20 +598,6 @@ async function init() {
 
   const pkgManager = pkgInfo ? pkgInfo.name : 'npm'
 
-  // 5. Ask about immediate install and package manager
-  let immediate = argImmediate
-  if (immediate === undefined) {
-    if (interactive) {
-      const immediateResult = await prompts.confirm({
-        message: `Install with ${pkgManager} and start now?`,
-      })
-      if (prompts.isCancel(immediateResult)) return cancel()
-      immediate = immediateResult
-    } else {
-      immediate = false
-    }
-  }
-
   const root = path.join(cwd, targetDir)
   // determine template
   let isReactSwc = false
@@ -640,6 +626,20 @@ async function init() {
       stdio: 'inherit',
     })
     process.exit(status ?? 0)
+  }
+
+  // 5. Ask about immediate install and package manager
+  let immediate = argImmediate
+  if (immediate === undefined) {
+    if (interactive) {
+      const immediateResult = await prompts.confirm({
+        message: `Install with ${pkgManager} and start now?`,
+      })
+      if (prompts.isCancel(immediateResult)) return cancel()
+      immediate = immediateResult
+    } else {
+      immediate = false
+    }
   }
 
   // Only create directory for built-in templates, not for customCommand
