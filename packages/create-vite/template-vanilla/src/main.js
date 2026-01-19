@@ -27,11 +27,11 @@ document.querySelector('#app').innerHTML = `
         <h2>Documentation</h2>
         <p>Your questions, answered</p>
         <div class="buttons">
-            <a href="https://vite.dev/?ref=vite-starter-learn-more" class="button">
+            <a href="https://vite.dev/" class="button">
                 <span class="logo">${viteLogo}</span>
                 Explore Vite
             </a>
-            <a href="https://developer.mozilla.org/en-US/docs/Web/JavaScript?ref=vite-starter-learn-more" class="button">
+            <a href="https://developer.mozilla.org/en-US/docs/Web/JavaScript" class="button">
                 <img src="${javascriptLogo}" alt="">
                 Learn more
             </a>
@@ -42,10 +42,10 @@ document.querySelector('#app').innerHTML = `
         <h2>Connect with us</h2>
         <p>Join the Vite community</p>
         <ul>
-            <li><a href="https://github.com/vitejs/vite?ref=vite-starter-icon" target="_blank"><img src="${starterUrl}/github-icon.svg" role="presentation">GitHub</a></li>
-            <li><a href="https://chat.vite.dev/?ref=vite-starter-icon" target="_blank"><img src="${starterUrl}/discord-icon.svg" role="presentation">Discord</a></li>
-            <li><a href="https://x.com/vite_js?ref=vite-starter-icon" target="_blank"><img src="${starterUrl}/x-icon.svg" role="presentation">X.com</a></li>
-            <li><a href="https://bsky.app/profile/vite.dev?ref=vite-starter-icon" target="_blank"><img src="${starterUrl}/bluesky-icon.svg" role="presentation">Bluesky</a></li>
+            <li><a href="https://github.com/vitejs/vite" target="_blank"><img src="${starterUrl}/github-icon.svg" role="presentation">GitHub</a></li>
+            <li><a href="https://chat.vite.dev/" target="_blank"><img src="${starterUrl}/discord-icon.svg" role="presentation">Discord</a></li>
+            <li><a href="https://x.com/vite_js" target="_blank"><img src="${starterUrl}/x-icon.svg" role="presentation">X.com</a></li>
+            <li><a href="https://bsky.app/profile/vite.dev" target="_blank"><img src="${starterUrl}/bluesky-icon.svg" role="presentation">Bluesky</a></li>
         </ul>
     </div>
 </section>
