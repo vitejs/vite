@@ -476,7 +476,7 @@ async function init() {
         },
       })
       if (prompts.isCancel(projectName)) return cancel()
-      targetDir = formatTargetDir(projectName!)
+      targetDir = formatTargetDir(projectName)
     } else {
       targetDir = defaultTargetDir
     }
@@ -542,7 +542,7 @@ async function init() {
         },
       })
       if (prompts.isCancel(packageNameResult)) return cancel()
-      packageName = packageNameResult!
+      packageName = packageNameResult
     } else {
       packageName = toValidPackageName(packageName)
     }
