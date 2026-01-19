@@ -7,10 +7,10 @@ const starterUrl = 'https://vite.dev/starter'
 
 document.querySelector('#app').innerHTML = `
 <section id="center">
-    <div class="hero-image">
-        <img src="${starterUrl}/hero.png" class="hero-image__base" width="170" height="179">
-        <img src="${javascriptLogo}" class="hero-image__framework" alt="JavaScript logo"/>
-        <span class="hero-image__vite" aria-label="Vite logo">${viteLogo}</span>
+    <div class="hero">
+        <img src="${starterUrl}/hero.png" class="base" width="170" height="179">
+        <img src="${javascriptLogo}" class="framework" alt="JavaScript logo"/>
+        <span class="vite" aria-label="Vite logo">${viteLogo}</span>
     </div>
     <div>
         <h1>Get started</h1>
@@ -22,13 +22,13 @@ document.querySelector('#app').innerHTML = `
 <div class="ticks"></div>
 
 <section id="next-steps">
-    <div id="documentation">
+    <div id="docs">
         <img class="icon" src="${starterUrl}/documentation-icon.svg" role="presentation" inert>
         <h2>Documentation</h2>
         <p>Your questions, answered</p>
-        <div class="button-group">
+        <div class="buttons">
             <a href="https://vite.dev/?ref=vite-starter-learn-more" class="button">
-                <span class="button-logo">${viteLogo}</span>
+                <span class="logo">${viteLogo}</span>
                 Explore Vite
             </a>
             <a href="https://developer.mozilla.org/en-US/docs/Web/JavaScript?ref=vite-starter-learn-more" class="button">
