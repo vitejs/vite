@@ -6,21 +6,11 @@ import { setupCounter } from './counter.ts'
 const starterUrl = 'https://vite.dev/starter'
 
 document.querySelector<HTMLDivElement>('#app')!.innerHTML = `
-<section id="framework-logos">
-    <a href="https://vite.dev" target="_blank" class="logo vite" aria-label="Vite logo">${viteLogo}</a>
-    <span>+</span>
-    <a href="https://www.typescriptlang.org/" target="_blank">
-        <img src="${typescriptLogo}" class="logo typescript" alt="TypeScript logo" height="36"/>
-    </a>
-</section>
-
-<div class="ticks"></div>
-
 <section id="center">
-    <div class="hero-image">
-        <img src="${starterUrl}/hero.png" alt="Vite" class="hero-image__base" width="170" height="179">
-        <img src="${typescriptLogo}" class="hero-image__framework" alt="TypeScript logo"/>
-        <span class="hero-image__vite" aria-label="Vite logo">${viteLogo}</span>
+    <div class="hero">
+        <img src="${starterUrl}/hero.png" class="base" width="170" height="179">
+        <img src="${typescriptLogo}" class="framework" alt="TypeScript logo"/>
+        <span class="vite" aria-label="Vite logo">${viteLogo}</span>
     </div>
     <div>
         <h1>Get started</h1>
@@ -32,13 +22,13 @@ document.querySelector<HTMLDivElement>('#app')!.innerHTML = `
 <div class="ticks"></div>
 
 <section id="next-steps">
-    <div id="documentation">
+    <div id="docs">
         <img class="icon" src="${starterUrl}/documentation-icon.svg" role="presentation" inert>
         <h2>Documentation</h2>
         <p>Your questions, answered</p>
-        <div class="button-group">
+        <div class="buttons">
             <a href="https://vite.dev" class="button">
-                <span class="button-logo">${viteLogo}</span>
+                <span class="logo">${viteLogo}</span>
                 Explore Vite
             </a>
             <a href="https://www.typescriptlang.org" class="button">
