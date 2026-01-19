@@ -174,7 +174,7 @@ const config = defineConfig({
     },
 
     footer: {
-      copyright: `© ${new Date().getFullYear()} VoidZero Inc. and Vite contributors. (${commitRef})`,
+      copyright: `© 2019-present VoidZero Inc. and Vite contributors. (${commitRef})`,
       nav: [
         {
           title: 'Vite',
