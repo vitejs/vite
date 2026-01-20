@@ -26,16 +26,20 @@ document.querySelector<HTMLDivElement>('#app')!.innerHTML = `
         <img class="icon" src="${starterUrl}/documentation-icon.svg" role="presentation" inert>
         <h2>Documentation</h2>
         <p>Your questions, answered</p>
-        <div class="buttons">
-            <a href="https://vite.dev" class="button">
-                <span class="logo">${viteLogo}</span>
-                Explore Vite
-            </a>
-            <a href="https://www.typescriptlang.org" class="button">
-                <img src="${typescriptLogo}" alt="">
-                Learn more
-            </a>
-        </div>
+        <ul>
+            <li>
+                <a href="https://vite.dev/" target="_blank">
+                    <span class="logo">${viteLogo}</span>
+                    Explore Vite
+                </a>
+            </li>
+            <li>
+                <a href="https://www.typescriptlang.org" target="_blank">
+                    <img src="${typescriptLogo}" alt="">
+                    Learn more
+                </a>
+            </li>
+        </ul>
     </div>
     <div id="social">
         <img class="icon" src="${starterUrl}/social-icon.svg" role="presentation" inert>
@@ -43,7 +47,7 @@ document.querySelector<HTMLDivElement>('#app')!.innerHTML = `
         <p>Join the Vite community</p>
         <ul>
             <li><a href="https://github.com/vitejs/vite" target="_blank"><img src="${starterUrl}/github-icon.svg" role="presentation">GitHub</a></li>
-            <li><a href="https://chat.vite.dev" target="_blank"><img src="${starterUrl}/discord-icon.svg" role="presentation">Discord</a></li>
+            <li><a href="https://chat.vite.dev/" target="_blank"><img src="${starterUrl}/discord-icon.svg" role="presentation">Discord</a></li>
             <li><a href="https://x.com/vite_js" target="_blank"><img src="${starterUrl}/x-icon.svg" role="presentation">X.com</a></li>
             <li><a href="https://bsky.app/profile/vite.dev" target="_blank"><img src="${starterUrl}/bluesky-icon.svg" role="presentation">Bluesky</a></li>
         </ul>

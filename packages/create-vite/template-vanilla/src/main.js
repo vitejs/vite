@@ -26,16 +26,20 @@ document.querySelector('#app').innerHTML = `
         <img class="icon" src="${starterUrl}/documentation-icon.svg" role="presentation" inert>
         <h2>Documentation</h2>
         <p>Your questions, answered</p>
-        <div class="buttons">
-            <a href="https://vite.dev/" class="button">
-                <span class="logo">${viteLogo}</span>
-                Explore Vite
-            </a>
-            <a href="https://developer.mozilla.org/en-US/docs/Web/JavaScript" class="button">
-                <img src="${javascriptLogo}" alt="">
-                Learn more
-            </a>
-        </div>
+        <ul>
+            <li>
+                <a href="https://vite.dev/" target="_blank">
+                    <span class="logo">${viteLogo}</span>
+                    Explore Vite
+                </a>
+            </li>
+            <li>
+                <a href="https://developer.mozilla.org/en-US/docs/Web/JavaScript" target="_blank">
+                    <img src="${javascriptLogo}" alt="">
+                    Learn more
+                </a>
+            </li>
+        </ul>
     </div>
     <div id="social">
         <img class="icon" src="${starterUrl}/social-icon.svg" role="presentation" inert>
