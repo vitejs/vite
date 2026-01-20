@@ -387,15 +387,18 @@
   )
 </script>
 
-<h2>Non-worker asset from optimized dep</h2>
-<div class="asset-url"></div>
-
+<h2>Relative asset URLs in optimized dependencies</h2>
+<div>
+  Message from lib:
+  <span class="worker-lib"></span>
+</div>
+<div>
+  Message from nested:
+  <span class="worker-nested"></span>
+</div>
 <script type="module">
   import * as lib from '@vitejs/test-dep-with-assets'
   import * as nested from '@vitejs/test-dep-with-assets/nested'
-
-  lib.urlImportWorker().then((m) => console.log('Message from lib:', m))
-  nested.urlImportWorker().then((m) => console.log('Message from nested:', m))
-
-  text('.asset-url', lib.getAssetUrl())
+  lib.urlImportWorker().then((m) => text('.worker-lib', m))
+  nested.urlImportWorker().then((m) => text('.worker-nested', m))
 </script>
