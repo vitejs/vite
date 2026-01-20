@@ -315,10 +315,14 @@ export function rolldownCjsExternalPlugin(
   if (platform === 'node') {
     return undefined
   }
+  // Skip this plugin for `platform: 'neutral'` as we are not sure whether `require` is available
+  if (platform === 'neutral') {
+    return undefined
+  }
 
   // Apply this plugin for `platform: 'browser'` as `require` is not available in browser and
   // converting to `import` would be necessary to make the code work
-  platform satisfies 'browser' | 'neutral'
+  platform satisfies 'browser'
 
   const filter = new RegExp(externals.map(matchesEntireLine).join('|'))
 
