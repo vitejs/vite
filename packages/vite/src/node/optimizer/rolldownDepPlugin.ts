@@ -341,9 +341,9 @@ export function rolldownDepPlugin(
               environment.config.server.fs.allow.push(assetDir)
             }
           }
-          
+
           if (!hasReplacements) return null
-          
+
           return { code: s.toString(), map: s.generateMap({ hires: true }) }
         },
       },

@@ -382,29 +382,31 @@ test('should fix standard web worker URLs in optimized dependencies', async () =
     .toMatch(/Message from nested: worker-success/)
 
   if (isServe) {
-    const cachePath = path.resolve(
-      __dirname,
-      '../node_modules/.vite/deps/@vitejs_test-dep-with-worker-repro.js',
-    )
-    const content = fs.readFileSync(cachePath, 'utf-8')
+    const playgroundDir = path.resolve(__dirname, '..')
+    const depsDir = path.join(playgroundDir, 'node_modules', '.vite', 'deps')
 
-    /**
-     *
-     * This regex detects:
-     * - Unix/Mac absolute paths (starting with /)
-     * - Windows absolute paths (C:\ or \\network\share)
-     * We wrap it in a lookahead to ensure we are specifically checking the
-     * string content of the new URL replacement.
-     */
-    const absolutePathRegex = /(["'])\/|([a-zA-Z]:\\|\\\\)/
+    const files = fs.readdirSync(depsDir)
+    const workerReproFile = files.find(
+      (f) => f.includes('test-dep-with-worker-repro') && f.endsWith('.js'),
+    )
+
+    if (!workerReproFile) {
+      throw new Error(
+        `Could not find optimized bundle for worker repro in ${depsDir}. Available files: ${files.join(', ')}`,
+      )
+    }
+
+    const content = fs.readFileSync(
+      path.join(depsDir, workerReproFile),
+      'utf-8',
+    )
 
     const urlContentMatch = content.match(/new URL\('' \+ "([^"]+)"/)
     const innerUrl = urlContentMatch ? urlContentMatch[1] : ''
 
     expect(innerUrl, `Path "${innerUrl}" should not be absolute`).not.toMatch(
-      absolutePathRegex,
+      /^\/|^[a-zA-Z]:\\|^\\\\/,
     )
-
     expect(innerUrl).toMatch(/^\.\.\//)
   }
 })
