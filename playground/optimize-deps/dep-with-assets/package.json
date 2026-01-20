@@ -1,5 +1,5 @@
 {
-  "name": "@vitejs/test-dep-with-worker-repro",
+  "name": "@vitejs/test-dep-with-assets",
   "version": "1.0.0",
   "type": "module",
   "exports": {

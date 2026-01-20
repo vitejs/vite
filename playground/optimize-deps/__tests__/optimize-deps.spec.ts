@@ -371,11 +371,19 @@ test.runIf(isServe)(
   },
 )
 
-test('should fix standard web worker URLs in optimized dependencies', async () => {
+test('should fix relative asset URLs (worker, images) in optimized dependencies', async () => {
   await expect
     .poll(() => browserLogs.join('\n'))
     .toMatch(/Message from lib: worker-success/)
   await expect
     .poll(() => browserLogs.join('\n'))
     .toMatch(/Message from nested: worker-success/)
+
+  await expect
+    .poll(() => page.textContent('.asset-url'))
+    .toMatch(/\/node_modules\/@vitejs\/test-dep-with-assets\/logo\.png/)
+
+  const url = await page.textContent('.asset-url')
+  const res = await page.request.get(url)
+  expect(res.status()).toBe(200)
 })

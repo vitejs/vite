@@ -1,102 +1,134 @@
-import { describe, expect, it } from 'vitest'
+import { describe, expect, test } from 'vitest'
 import { rolldownDepPlugin } from '../../optimizer/rolldownDepPlugin'
+import { normalizePath } from '../../utils'
 
-describe('rolldownDepPlugin transform', () => {
-  const createMockEnv = (cacheDir: string) =>
-    ({
-      config: {
-        cacheDir,
-        optimizeDeps: { extensions: [] },
-        server: { fs: { allow: [] } },
-        resolve: { builtins: [] },
-      },
-      getTopLevelConfig: () => ({
-        createResolver: () => ({}),
-      }),
-    }) as any
-
-  const getTransformHandler = (env: any) => {
-    const plugins = rolldownDepPlugin(env, {}, [])
-
-    const plugin = plugins.find(
-      (p: any) => p.name === 'vite:dep-pre-bundle',
-    ) as any
-
-    if (!plugin || !plugin.transform) {
-      throw new Error(
-        'Could not find the vite:dep-pre-bundle plugin or its transform hook',
-      )
-    }
-
-    return plugin.transform.handler
+async function createRolldownDepPluginTransform(cacheDir: string) {
+  const baseConfig = {
+    cacheDir: normalizePath(cacheDir),
+    optimizeDeps: { extensions: [] },
+    server: { fs: { allow: [] } },
+    resolve: { builtins: [] },
+    createResolver: () => ({}),
   }
 
-  it('returns null if id is not in node_modules', async () => {
-    const env = createMockEnv('/root/node_modules/.vite')
-    const handler = getTransformHandler(env)
+  const mockEnvironment = {
+    config: baseConfig,
+    getTopLevelConfig: () => baseConfig,
+  } as any
 
-    const id = '/root/src/main.js'
-    const code = `new URL('./worker.js', import.meta.url)`
+  const plugins = rolldownDepPlugin(mockEnvironment, {}, [])
+  const plugin = plugins.find(
+    (p: any) => p.name === 'vite:dep-pre-bundle',
+  ) as any
 
-    const result = await handler.call({}, code, id)
-    expect(result).toBeNull()
-  })
+  if (!plugin || !plugin.transform) {
+    throw new Error('Could not find vite:dep-pre-bundle plugin')
+  }
 
-  it('returns null if code contains new URL but no worker pattern', async () => {
-    const env = createMockEnv('/root/node_modules/.vite')
-    const handler = getTransformHandler(env)
+  const handler = plugin.transform.handler
 
-    const id = '/root/node_modules/my-lib/index.js'
-    const code = `const img = new URL('./logo.png', import.meta.url).href`
+  return async (code: string, id: string) => {
+    const result = await handler.call({}, code, normalizePath(id))
+    return result?.code || result
+  }
+}
 
-    const result = await handler.call({}, code, id)
-    expect(result).toBeNull()
-  })
+describe('rolldownDepPlugin transform', async () => {
+  const transform = await createRolldownDepPluginTransform('/root/.vite')
 
-  it('rebases a single worker URL correctly', async () => {
-    const env = createMockEnv('/root/node_modules/.vite')
-    const handler = getTransformHandler(env)
-
+  test('rewrite various relative asset formats', async () => {
+    const code = `
+      const img = new URL('./logo.png', import.meta.url).href
+      const icon = new URL('./icons/search.svg', import.meta.url)
+      const worker = new URL('./worker.js', import.meta.url)
+      const wasm = new URL('./module.wasm', import.meta.url)
+    `
     const id = '/root/node_modules/my-lib/dist/index.js'
-    const code = `const w = new Worker(new URL('./worker.js', import.meta.url))`
+    const result = await transform(code, id)
 
-    const result = await handler.call({}, code, id)
+    expect(result).toMatchInlineSnapshot(`
+      "
+            const img = new URL('' + "../../node_modules/my-lib/dist/logo.png", import.meta.url).href
+            const icon = new URL('' + "../../node_modules/my-lib/dist/icons/search.svg", import.meta.url)
+            const worker = new URL('' + "../../node_modules/my-lib/dist/worker.js", import.meta.url)
+            const wasm = new URL('' + "../../node_modules/my-lib/dist/module.wasm", import.meta.url)
+          "
+    `)
+  })
 
-    // Path jump from .vite/deps to my-lib/dist/worker.js
-    expect(result.code).toContain(
-      'new URL(\'\' + "../../my-lib/dist/worker.js"',
+  test('respects /* @vite-ignore */', async () => {
+    expect(
+      await transform(
+        "new URL(/* @vite-ignore */ './worker.js', import.meta.url)",
+        '/root/node_modules/my-lib/index.js',
+      ),
+    ).toBeNull()
+  })
+
+  test('skips non-relative URLs (absolute, data, protocols)', async () => {
+    const code = `
+      new URL('/absolute/path.png', import.meta.url)
+      new URL('https://example.com/worker.js', import.meta.url)
+      new URL('data:text/javascript;base64,Y29uc29sZS5sb2coMSk=', import.meta.url)
+    `
+    expect(
+      await transform(code, '/root/node_modules/my-lib/index.js'),
+    ).toBeNull()
+  })
+
+  test('skips dynamic template strings', async () => {
+    expect(
+      await transform(
+        'new URL(`./${name}.js`, import.meta.url)',
+        '/root/node_modules/my-lib/index.js',
+      ),
+    ).toBeNull()
+  })
+
+  test('handles backticks for static relative strings', async () => {
+    expect(
+      await transform(
+        'new URL(`./static.js`, import.meta.url)',
+        '/root/node_modules/my-lib/index.js',
+      ),
+    ).toMatchInlineSnapshot(
+      `"new URL('' + "../../node_modules/my-lib/static.js", import.meta.url)"`,
     )
-    expect(result.map).toBeDefined()
   })
 
-  it('handles multiple workers in a single file', async () => {
-    const env = createMockEnv('/root/node_modules/.vite')
-    const handler = getTransformHandler(env)
-
-    const id = '/root/node_modules/my-lib/dist/index.js'
+  test('handles assets with query parameters and hashes', async () => {
     const code = `
-      const w1 = new Worker(new URL('./w1.js', import.meta.url))
-      const w2 = new Worker(new URL('./nested/w2.js', import.meta.url))
+      const url1 = new URL('./style.css?raw', import.meta.url)
+      const url2 = new URL('./data.json#config', import.meta.url)
     `
-
-    const result = await handler.call({}, code, id)
-
-    expect(result.code).toContain('"../../my-lib/dist/w1.js"')
-    expect(result.code).toContain('"../../my-lib/dist/nested/w2.js"')
+    expect(await transform(code, '/root/node_modules/my-lib/index.js'))
+      .toMatchInlineSnapshot(`
+      "
+            const url1 = new URL('' + "../../node_modules/my-lib/style.css?raw", import.meta.url)
+            const url2 = new URL('' + "../../node_modules/my-lib/data.json#config", import.meta.url)
+          "
+    `)
   })
 
-  it('handles workers with single and double quotes', async () => {
-    const env = createMockEnv('/root/node_modules/.vite')
-    const handler = getTransformHandler(env)
-    const id = '/root/node_modules/my-lib/index.js'
+  test('handles deeply nested relative paths', async () => {
+    expect(
+      await transform(
+        "new URL('../../../assets/file.js', import.meta.url)",
+        '/root/node_modules/my-lib/dist/deep/folder/index.js',
+      ),
+    ).toMatchInlineSnapshot(
+      `"new URL('' + "../../node_modules/my-lib/assets/file.js", import.meta.url)"`,
+    )
+  })
 
-    const code = `
-      new Worker(new URL('./a.js', import.meta.url))
-      new SharedWorker(new URL("./b.js", import.meta.url))
-    `
-    const result = await handler.call({}, code, id)
+  test('rewrite relative URLs even if id is not in node_modules', async () => {
+    const id = '/root/src/local-dep.js'
+    const code = "new URL('./asset.js', import.meta.url)"
 
-    expect(result.code).toContain('"../../my-lib/a.js"')
-    expect(result.code).toContain('"../../my-lib/b.js"')
+    const result = await transform(code, id)
+
+    expect(result).toMatchInlineSnapshot(
+      `"new URL('' + "../../src/asset.js", import.meta.url)"`,
+    )
   })
 })

@@ -386,10 +386,16 @@
     `${VirtualComponent.name === 'VirtualComponent' ? 'ok' : 'ng'}`,
   )
 </script>
+
+<h2>Non-worker asset from optimized dep</h2>
+<div class="asset-url"></div>
+
 <script type="module">
-  import * as lib from '@vitejs/test-dep-with-worker-repro'
-  import * as nested from '@vitejs/test-dep-with-worker-repro/nested'
+  import * as lib from '@vitejs/test-dep-with-assets'
+  import * as nested from '@vitejs/test-dep-with-assets/nested'
 
   lib.urlImportWorker().then((m) => console.log('Message from lib:', m))
   nested.urlImportWorker().then((m) => console.log('Message from nested:', m))
+
+  text('.asset-url', lib.getAssetUrl())
 </script>

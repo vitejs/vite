@@ -1060,6 +1060,9 @@ importers:
       '@vitejs/test-dep-with-asset-ext2.pdf':
         specifier: file:./dep-with-asset-ext/dep2
         version: file:playground/optimize-deps/dep-with-asset-ext/dep2
+      '@vitejs/test-dep-with-assets':
+        specifier: file:./dep-with-assets
+        version: file:playground/optimize-deps/dep-with-assets
       '@vitejs/test-dep-with-builtin-module-cjs':
         specifier: file:./dep-with-builtin-module-cjs
         version: file:playground/optimize-deps/dep-with-builtin-module-cjs
@@ -1078,9 +1081,6 @@ importers:
       '@vitejs/test-dep-with-optional-peer-dep-submodule':
         specifier: file:./dep-with-optional-peer-dep-submodule
         version: file:playground/optimize-deps/dep-with-optional-peer-dep-submodule
-      '@vitejs/test-dep-with-worker-repro':
-        specifier: file:./dep-with-worker-repro
-        version: file:playground/optimize-deps/dep-with-worker-repro
       '@vitejs/test-nested-exclude':
         specifier: file:./nested-exclude
         version: file:playground/optimize-deps/nested-exclude
@@ -1208,6 +1208,8 @@ importers:
         specifier: file:../dep1
         version: file:playground/optimize-deps/dep-with-asset-ext/dep1
 
+  playground/optimize-deps/dep-with-assets: {}
+
   playground/optimize-deps/dep-with-builtin-module-cjs: {}
 
   playground/optimize-deps/dep-with-builtin-module-esm: {}
@@ -1219,8 +1221,6 @@ importers:
   playground/optimize-deps/dep-with-optional-peer-dep-cjs: {}
 
   playground/optimize-deps/dep-with-optional-peer-dep-submodule: {}
-
-  playground/optimize-deps/dep-with-worker-repro: {}
 
   playground/optimize-deps/longfilename: {}
 
@@ -4191,6 +4191,9 @@ packages:
   '@vitejs/test-dep-with-asset-ext2.pdf@file:playground/optimize-deps/dep-with-asset-ext/dep2':
     resolution: {directory: playground/optimize-deps/dep-with-asset-ext/dep2, type: directory}
 
+  '@vitejs/test-dep-with-assets@file:playground/optimize-deps/dep-with-assets':
+    resolution: {directory: playground/optimize-deps/dep-with-assets, type: directory}
+
   '@vitejs/test-dep-with-builtin-module-cjs@file:playground/optimize-deps/dep-with-builtin-module-cjs':
     resolution: {directory: playground/optimize-deps/dep-with-builtin-module-cjs, type: directory}
 
@@ -4223,9 +4226,6 @@ packages:
     peerDependenciesMeta:
       foobar:
         optional: true
-
-  '@vitejs/test-dep-with-worker-repro@file:playground/optimize-deps/dep-with-worker-repro':
-    resolution: {directory: playground/optimize-deps/dep-with-worker-repro, type: directory}
 
   '@vitejs/test-entries@file:playground/ssr-resolve/entries':
     resolution: {directory: playground/ssr-resolve/entries, type: directory}
@@ -9977,6 +9977,8 @@ snapshots:
     dependencies:
       '@vitejs/test-dep-with-asset-ext1.pdf': file:playground/optimize-deps/dep-with-asset-ext/dep1
 
+  '@vitejs/test-dep-with-assets@file:playground/optimize-deps/dep-with-assets': {}
+
   '@vitejs/test-dep-with-builtin-module-cjs@file:playground/optimize-deps/dep-with-builtin-module-cjs': {}
 
   '@vitejs/test-dep-with-builtin-module-esm@file:playground/optimize-deps/dep-with-builtin-module-esm': {}
@@ -9988,8 +9990,6 @@ snapshots:
   '@vitejs/test-dep-with-optional-peer-dep-submodule@file:playground/optimize-deps/dep-with-optional-peer-dep-submodule': {}
 
   '@vitejs/test-dep-with-optional-peer-dep@file:playground/optimize-deps/dep-with-optional-peer-dep': {}
-
-  '@vitejs/test-dep-with-worker-repro@file:playground/optimize-deps/dep-with-worker-repro': {}
 
   '@vitejs/test-entries@file:playground/ssr-resolve/entries': {}
 
