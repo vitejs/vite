@@ -2,7 +2,7 @@ import path from 'node:path'
 import type { ImportKind, Plugin, RolldownPlugin } from 'rolldown'
 import { prefixRegex } from '@rolldown/pluginutils'
 import MagicString from 'magic-string'
-import { FS_PREFIX, JS_TYPES_RE, KNOWN_ASSET_TYPES } from '../constants'
+import { JS_TYPES_RE, KNOWN_ASSET_TYPES } from '../constants'
 import type { PackageCache } from '../packages'
 import {
   escapeRegex,
@@ -310,16 +310,19 @@ export function rolldownDepPlugin(
           const workerRE =
             /new\s+URL\s*\(\s*['"]([^'"]+)['"]\s*,\s*import\.meta\.url\s*\)/g
 
+          // Optimized dependencies are always written to the 'deps' sub-directory
+          // within the configured cache directory.
+          const bundleDir = path.join(environment.config.cacheDir, 'deps')
+
           let match
           while ((match = workerRE.exec(code))) {
             const [fullMatch, url] = match
             const absolutePath = path.resolve(path.dirname(id), url)
-            const fsUrl = FS_PREFIX + normalizePath(absolutePath)
+            const relativePath = path.relative(bundleDir, absolutePath)
+            const normalizedRelativePath = normalizePath(relativePath)
 
-            // NOTE: add `'' +` to opt-out of Rolldown's static asset analysis.
-            // This prevents the optimizer from trying to bundle the absolute path
-            // as a relative asset.
-            const replacement = `new URL('' + ${JSON.stringify(fsUrl)}, import.meta.url)`
+            // NOTE: add `'' +` to opt-out rolldown's transform: https://github.com/rolldown/rolldown/issues/2745
+            const replacement = `new URL('' + ${JSON.stringify(normalizedRelativePath)}, import.meta.url)`
 
             s.overwrite(
               match.index,

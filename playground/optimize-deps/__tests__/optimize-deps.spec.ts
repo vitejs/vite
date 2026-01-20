@@ -1,3 +1,5 @@
+import fs from 'node:fs'
+import path from 'node:path'
 import { describe, expect, test } from 'vitest'
 import {
   browserErrors,
@@ -378,4 +380,31 @@ test('should fix standard web worker URLs in optimized dependencies', async () =
   await expect
     .poll(() => browserLogs.join('\n'))
     .toMatch(/Message from nested: worker-success/)
+
+  if (isServe) {
+    const cachePath = path.resolve(
+      __dirname,
+      '../node_modules/.vite/deps/@vitejs_test-dep-with-worker-repro.js',
+    )
+    const content = fs.readFileSync(cachePath, 'utf-8')
+
+    /**
+     *
+     * This regex detects:
+     * - Unix/Mac absolute paths (starting with /)
+     * - Windows absolute paths (C:\ or \\network\share)
+     * We wrap it in a lookahead to ensure we are specifically checking the
+     * string content of the new URL replacement.
+     */
+    const absolutePathRegex = /(["'])\/|([a-zA-Z]:\\|\\\\)/
+
+    const urlContentMatch = content.match(/new URL\('' \+ "([^"]+)"/)
+    const innerUrl = urlContentMatch ? urlContentMatch[1] : ''
+
+    expect(innerUrl, `Path "${innerUrl}" should not be absolute`).not.toMatch(
+      absolutePathRegex,
+    )
+
+    expect(innerUrl).toMatch(/^\.\.\//)
+  }
 })
