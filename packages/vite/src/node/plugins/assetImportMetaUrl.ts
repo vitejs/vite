@@ -70,15 +70,54 @@ export function assetImportMetaUrlPlugin(config: ResolvedConfig): Plugin {
           if (hasViteIgnoreRE.test(code.slice(startIndex, urlStart))) continue
 
           const rawUrl = code.slice(urlStart, urlEnd)
+
+          if (!s) s = new MagicString(code)
+
+          // potential dynamic template string
+          if (rawUrl[0] === '`' && rawUrl.includes('${')) {
+            const queryDelimiterIndex = getQueryDelimiterIndex(rawUrl)
+            const hasQueryDelimiter = queryDelimiterIndex !== -1
+            const pureUrl = hasQueryDelimiter
+              ? rawUrl.slice(0, queryDelimiterIndex) + '`'
+              : rawUrl
+            const queryString = hasQueryDelimiter
+              ? rawUrl.slice(queryDelimiterIndex, -1)
+              : ''
+            const ast = this.parse(pureUrl)
+            const templateLiteral = (ast as any).body[0].expression
+            if (templateLiteral.expressions.length) {
+              const pattern = buildGlobPattern(templateLiteral)
+              if (pattern[0] === '*') {
+                // don't transform for patterns like this
+                // because users won't intend to do that in most cases
+                continue
+              }
+
+              const globOptions = {
+                eager: true,
+                import: 'default',
+                // A hack to allow 'as' & 'query' exist at the same time
+                query: injectQuery(queryString, 'url'),
+              }
+              s.update(
+                startIndex,
+                endIndex,
+                `new URL((import.meta.glob(${JSON.stringify(
+                  pattern,
+                )}, ${JSON.stringify(
+                  globOptions,
+                )}))[${pureUrl}] || ${rawUrl}, import.meta.url)`,
+              )
+              continue
+            }
+          }
+
           const url = rawUrl.slice(1, -1)
           if (isDataUrl(url)) {
             continue
           }
           let file: string | undefined
-
-          if (!s) s = new MagicString(code)
-
-          if (url.startsWith('.')) {
+          if (url[0] === '.') {
             file = slash(path.resolve(path.dirname(id), url))
             file = tryFsResolve(file, fsResolveOptions) ?? file
           } else {
@@ -122,33 +161,12 @@ export function assetImportMetaUrlPlugin(config: ResolvedConfig): Plugin {
             )
             builtUrl = url
           }
-
-          // potential dynamic template string
-          if (rawUrl[0] === '`' && /\$\{/.test(rawUrl)) {
-            const ast = this.parse(rawUrl)
-            const templateLiteral = (ast as any).body[0].expression
-            if (templateLiteral.expressions.length) {
-              const pattern = JSON.stringify(buildGlobPattern(templateLiteral))
-              // Note: native import.meta.url is not supported in the baseline
-              // target so we use the global location here. It can be
-              // window.location or self.location in case it is used in a Web Worker.
-              // @see https://developer.mozilla.org/en-US/docs/Web/API/Window/self
-              s.update(
-                index,
-                index + exp.length,
-                `new URL(
-                   import.meta.glob(${JSON.stringify(pattern)},
-                   { eager: true, import: 'default', as: 'url' }
-                 )[${rawUrl}] || \`${builtUrl}\`, self.location)`,
-              )
-            }
-          } else {
-            s.update(
-              index,
-              index + exp.length,
-              `new URL(${JSON.stringify(builtUrl)}, self.location)`,
-            )
-          }
+          s.update(
+            startIndex,
+            endIndex,
+            // NOTE: add `'' +` to opt-out rolldown's transform: https://github.com/rolldown/rolldown/issues/2745
+            `new URL(${JSON.stringify(builtUrl)}, '' + import.meta.url)`,
+          )
         }
         if (s) {
           return transformStableResult(s, id, config)

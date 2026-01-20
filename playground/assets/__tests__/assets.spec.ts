@@ -633,9 +633,6 @@ test('new URL(`${dynamic}`, import.meta.url)', async () => {
   expect(await page.textContent('.dynamic-import-meta-url-js')).toMatch(
     isBuild ? 'data:text/javascript;base64' : '/foo/bar/nested/test.js',
   )
-  expect(
-    await page.textContent('.dynamic-import-meta-url-non-existent'),
-  ).toMatch('/nested/non-existent.png')
 })
 
 test('new URL(`./${dynamic}?abc`, import.meta.url)', async () => {
@@ -669,6 +666,20 @@ test("new URL(/* @vite-ignore */ 'non-existent', import.meta.url)", async () => 
   expect(await page.textContent('.non-existent-import-meta-url')).toMatch(
     new URL('non-existent', importMetaUrl).pathname,
   )
+  expect(serverLogs).not.toContainEqual(
+    expect.stringContaining("doesn't exist at build time"),
+  )
+})
+
+test('new URL(`./${nonExistent}?abc`, import.meta.url)', async () => {
+  // the inlined script tag is extracted in a separate file
+  const importMetaUrl = new URL(
+    isBuild ? '/foo/bar/assets/index.js' : '/foo/bar/index.html',
+    page.url(),
+  )
+  expect(
+    await page.textContent('.dynamic-import-meta-url-non-existent'),
+  ).toMatch(new URL('./nested/non-existent.png?abc', importMetaUrl).pathname)
   expect(serverLogs).not.toContainEqual(
     expect.stringContaining("doesn't exist at build time"),
   )
