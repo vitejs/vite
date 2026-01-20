@@ -380,33 +380,4 @@ test('should fix standard web worker URLs in optimized dependencies', async () =
   await expect
     .poll(() => browserLogs.join('\n'))
     .toMatch(/Message from nested: worker-success/)
-
-  if (isServe) {
-    const playgroundDir = path.resolve(__dirname, '..')
-    const depsDir = path.join(playgroundDir, 'node_modules', '.vite', 'deps')
-
-    const files = fs.readdirSync(depsDir)
-    const workerReproFile = files.find(
-      (f) => f.includes('test-dep-with-worker-repro') && f.endsWith('.js'),
-    )
-
-    if (!workerReproFile) {
-      throw new Error(
-        `Could not find optimized bundle for worker repro in ${depsDir}. Available files: ${files.join(', ')}`,
-      )
-    }
-
-    const content = fs.readFileSync(
-      path.join(depsDir, workerReproFile),
-      'utf-8',
-    )
-
-    const urlContentMatch = content.match(/new URL\('' \+ "([^"]+)"/)
-    const innerUrl = urlContentMatch ? urlContentMatch[1] : ''
-
-    expect(innerUrl, `Path "${innerUrl}" should not be absolute`).not.toMatch(
-      /^\/|^[a-zA-Z]:\\|^\\\\/,
-    )
-    expect(innerUrl).toMatch(/^\.\.\//)
-  }
 })

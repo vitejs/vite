@@ -308,7 +308,7 @@ export function rolldownDepPlugin(
           const s = new MagicString(code)
 
           const workerRE =
-            /new\s+URL\s*\(\s*['"]([^'"]+)['"]\s*,\s*import\.meta\.url\s*\)/g
+            /(new\s+(?:Shared)?Worker\s*\(\s*)new\s+URL\s*\(\s*['"]([^'"]+)['"]\s*,\s*import\.meta\.url\s*\)/g
 
           // Optimized dependencies are always written to the 'deps' sub-directory
           // within the configured cache directory.
@@ -318,13 +318,13 @@ export function rolldownDepPlugin(
           let match
           while ((match = workerRE.exec(code))) {
             hasReplacements = true
-            const [fullMatch, url] = match
+            const [fullMatch, prefix, url] = match
             const absolutePath = path.resolve(path.dirname(id), url)
             const relativePath = path.relative(bundleDir, absolutePath)
             const normalizedRelativePath = normalizePath(relativePath)
 
             // NOTE: add `'' +` to opt-out rolldown's transform: https://github.com/rolldown/rolldown/issues/2745
-            const replacement = `new URL('' + ${JSON.stringify(normalizedRelativePath)}, import.meta.url)`
+            const replacement = `${prefix}new URL('' + ${JSON.stringify(normalizedRelativePath)}, import.meta.url)`
 
             s.overwrite(
               match.index,
