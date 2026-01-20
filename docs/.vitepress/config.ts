@@ -6,7 +6,6 @@ import { transformerTwoslash } from '@shikijs/vitepress-twoslash'
 import {
   groupIconMdPlugin,
   groupIconVitePlugin,
-  localIconLoader,
 } from 'vitepress-plugin-group-icons'
 import llmstxt from 'vitepress-plugin-llms'
 import { markdownItImageSize } from 'markdown-it-image-size'
@@ -175,7 +174,7 @@ const config = defineConfig({
     },
 
     footer: {
-      copyright: `© ${new Date().getFullYear()} VoidZero Inc. and Vite contributors. (${commitRef})`,
+      copyright: `© 2019-present VoidZero Inc. and Vite contributors. (${commitRef})`,
       nav: [
         {
           title: 'Vite',
@@ -556,10 +555,6 @@ const config = defineConfig({
         customIcon: {
           firebase: 'vscode-icons:file-type-firebase',
           '.gitlab-ci.yml': 'vscode-icons:file-type-gitlab',
-          'vite.config': localIconLoader(
-            import.meta.url,
-            '../public/logo-without-border.svg',
-          ),
         },
       }),
       llmstxt({
