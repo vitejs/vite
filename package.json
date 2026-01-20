@@ -20,7 +20,7 @@
   "scripts": {
     "preinstall": "npx only-allow pnpm",
     "postinstall": "simple-git-hooks",
-    "format": "prettier --write --cache .",
+    "format": "oxfmt",
     "lint": "eslint --cache .",
     "typecheck": "tsc -p scripts && pnpm -r --parallel run typecheck",
     "test": "pnpm test-unit && pnpm test-serve && pnpm test-build",
@@ -61,9 +61,9 @@
     "execa": "^9.6.1",
     "globals": "^17.3.0",
     "lint-staged": "^16.2.7",
+    "oxfmt": "^0.28.0",
     "picocolors": "^1.1.1",
     "playwright-chromium": "^1.58.1",
-    "prettier": "3.8.1",
     "rolldown": "1.0.0-rc.2",
     "rollup": "^4.43.0",
     "simple-git-hooks": "^2.13.1",
@@ -78,7 +78,7 @@
   },
   "lint-staged": {
     "*": [
-      "prettier --write --cache --ignore-unknown"
+      "oxfmt --no-error-on-unmatched-pattern"
     ],
     "packages/*/{src,types}/**/*.ts": [
       "eslint --cache --fix"
