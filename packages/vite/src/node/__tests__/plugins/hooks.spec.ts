@@ -57,9 +57,9 @@ const createPreviewServerWithPlugin = async (plugin: Plugin) => {
         name: 'mock-preview',
         configurePreviewServer({ httpServer }) {
           // NOTE: make httpServer.listen no-op to avoid starting a server
-          httpServer.listen = (...args: unknown[]) => {
-            const listener = args.at(-1) as () => void
-            listener()
+          httpServer.listen = () => {
+            const lastListener = httpServer.listeners('listening').at(-1)!
+            lastListener.call(httpServer)
             return httpServer as any
           }
         },
