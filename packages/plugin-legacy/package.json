@@ -55,5 +55,16 @@
     "picocolors": "^1.1.1",
     "tsdown": "^0.19.0",
     "vite": "workspace:*"
+  },
+  "compatiblePackages": {
+    "schemaVersion": 1,
+    "rolldown": {
+      "type": "incompatible",
+      "reason": "Only supports Vite"
+    },
+    "rollup": {
+      "type": "incompatible",
+      "reason": "Only supports Vite"
+    }
   }
 }
