@@ -197,14 +197,20 @@ async function tryBindServer(
 > {
   return new Promise((resolve) => {
     const onError = (e: Error & { code?: string }) => {
-      httpServer.removeListener('error', onError)
+      httpServer.off('error', onError)
+      httpServer.off('listening', onListening)
       resolve({ success: false, error: e })
     }
-    httpServer.on('error', onError)
-    httpServer.listen(port, host, () => {
-      httpServer.removeListener('error', onError)
+    const onListening = () => {
+      httpServer.off('error', onError)
+      httpServer.off('listening', onListening)
       resolve({ success: true })
-    })
+    }
+
+    httpServer.on('error', onError)
+    httpServer.on('listening', onListening)
+
+    httpServer.listen(port, host)
   })
 }
 
