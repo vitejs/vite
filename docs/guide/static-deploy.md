@@ -203,37 +203,7 @@ Your application can now be developed with `npm run dev`, built with `npm run bu
 
 #### Adding a Backend API
 
-To add a backend API, create a Worker entry file and update your config:
-
-Add a `main` entry point to `wrangler.jsonc`:
-
-```jsonc [wrangler.jsonc]
-{
-  "name": "my-vite-app",
-  "main": "./worker/index.ts",
-  "assets": {
-    "not_found_handling": "single-page-application",
-  },
-}
-```
-
-Create `worker/index.ts`:
-
-```ts [worker/index.ts]
-export default {
-  fetch(request) {
-    const url = new URL(request.url)
-    if (url.pathname.startsWith('/api/')) {
-      return Response.json({ hello: 'world' })
-    }
-    return new Response(null, { status: 404 })
-  },
-} satisfies ExportedHandler
-```
-
-The API runs in the Workers runtime during development and deploys alongside your frontend. See the [Cloudflare Vite plugin tutorial](https://developers.cloudflare.com/workers/vite-plugin/tutorial/) for a complete walkthrough.
-
-The Cloudflare Vite plugin supports the full [Cloudflare Developer Platform](https://developers.cloudflare.com/workers/), including KV, D1, Durable Objects, Workflows, and more. Learn more in the [Cloudflare Vite Plugin documentation](https://developers.cloudflare.com/workers/vite-plugin/).
+You can also easily add backend APIs to your Vite application to securely communicate with Cloudflare resources. This runs in the Workers runtime during development and deploys alongside your frontend. See the [Cloudflare Vite plugin tutorial](https://developers.cloudflare.com/workers/vite-plugin/tutorial/) for a complete walkthrough.
 
 ### Cloudflare Pages
 
