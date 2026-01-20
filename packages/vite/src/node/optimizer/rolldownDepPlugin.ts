@@ -314,8 +314,10 @@ export function rolldownDepPlugin(
           // within the configured cache directory.
           const bundleDir = path.join(environment.config.cacheDir, 'deps')
 
+          let hasReplacements = false
           let match
           while ((match = workerRE.exec(code))) {
+            hasReplacements = true
             const [fullMatch, url] = match
             const absolutePath = path.resolve(path.dirname(id), url)
             const relativePath = path.relative(bundleDir, absolutePath)
@@ -339,6 +341,9 @@ export function rolldownDepPlugin(
               environment.config.server.fs.allow.push(assetDir)
             }
           }
+          
+          if (!hasReplacements) return null
+          
           return { code: s.toString(), map: s.generateMap({ hires: true }) }
         },
       },
