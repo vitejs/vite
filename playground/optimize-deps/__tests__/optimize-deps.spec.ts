@@ -381,7 +381,7 @@ test('should fix relative asset URLs (worker, images) in optimized dependencies'
 
   await expect
     .poll(() => page.textContent('.asset-url'))
-    .toMatch(/\/node_modules\/@vitejs\/test-dep-with-assets\/logo\.png/)
+    .toMatch(/\/node_modules\/@vitejs\/test-dep-with-assets\/logo\.png(\?url)?/)
 
   const url = await page.textContent('.asset-url')
   const res = await page.request.get(url)
