@@ -47,7 +47,7 @@
       rgba(0, 0, 0, 0.4) 0 10px 15px -3px, rgba(0, 0, 0, 0.25) 0 4px 6px -2px;
   }
 
-  #social img {
+  #social .button-icon {
     filter: invert(1) brightness(2);
   }
 }
@@ -206,6 +206,7 @@ code {
   .icon {
     margin-bottom: 16px;
     width: 22px;
+    height: 22px;
   }
 
   @media (max-width: 1024px) {
@@ -236,6 +237,7 @@ code {
       height: 100%;
       width: auto;
     }
+    height: 18px;
   }
 
   a {
@@ -253,9 +255,9 @@ code {
     &:hover {
       box-shadow: var(--shadow);
     }
-    img,
-    .logo {
+    .button-icon {
       height: 18px;
+      width: 18px;
     }
   }
 

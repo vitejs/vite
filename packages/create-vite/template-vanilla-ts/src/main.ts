@@ -3,12 +3,10 @@ import typescriptLogo from './assets/typescript.svg'
 import viteLogo from './assets/vite.svg?raw'
 import { setupCounter } from './counter.ts'
 
-const starterUrl = 'https://vite.dev/starter'
-
 document.querySelector<HTMLDivElement>('#app')!.innerHTML = `
 <section id="center">
   <div class="hero">
-    <img src="${starterUrl}/hero.png" class="base" width="170" height="179">
+    <img src="/hero.png" class="base" width="170" height="179">
     <img src="${typescriptLogo}" class="framework" alt="TypeScript logo"/>
     <span class="vite" aria-label="Vite logo">${viteLogo}</span>
   </div>
@@ -23,7 +21,7 @@ document.querySelector<HTMLDivElement>('#app')!.innerHTML = `
 
 <section id="next-steps">
   <div id="docs">
-    <img class="icon" src="${starterUrl}/documentation-icon.svg" role="presentation" inert>
+    <svg class="icon" role="presentation" aria-hidden="true"><use href="/icons.svg#documentation-icon"></use></svg>
     <h2>Documentation</h2>
     <p>Your questions, answered</p>
     <ul>
@@ -35,21 +33,21 @@ document.querySelector<HTMLDivElement>('#app')!.innerHTML = `
       </li>
       <li>
         <a href="https://www.typescriptlang.org" target="_blank">
-          <img src="${typescriptLogo}" alt="">
+          <img class="button-icon" src="${typescriptLogo}" alt="">
           Learn more
         </a>
       </li>
     </ul>
   </div>
   <div id="social">
-    <img class="icon" src="${starterUrl}/social-icon.svg" role="presentation" inert>
+    <svg class="icon" role="presentation" aria-hidden="true"><use href="/icons.svg#social-icon"></use></svg>
     <h2>Connect with us</h2>
     <p>Join the Vite community</p>
     <ul>
-      <li><a href="https://github.com/vitejs/vite" target="_blank"><img src="${starterUrl}/github-icon.svg" role="presentation">GitHub</a></li>
-      <li><a href="https://chat.vite.dev/" target="_blank"><img src="${starterUrl}/discord-icon.svg" role="presentation">Discord</a></li>
-      <li><a href="https://x.com/vite_js" target="_blank"><img src="${starterUrl}/x-icon.svg" role="presentation">X.com</a></li>
-      <li><a href="https://bsky.app/profile/vite.dev" target="_blank"><img src="${starterUrl}/bluesky-icon.svg" role="presentation">Bluesky</a></li>
+      <li><a href="https://github.com/vitejs/vite" target="_blank"><svg class="button-icon" role="presentation" aria-hidden="true"><use href="/icons.svg#github-icon"></use></svg>GitHub</a></li>
+      <li><a href="https://chat.vite.dev/" target="_blank"><svg class="button-icon" role="presentation" aria-hidden="true"><use href="/icons.svg#discord-icon"></use></svg>Discord</a></li>
+      <li><a href="https://x.com/vite_js" target="_blank"><svg class="button-icon" role="presentation" aria-hidden="true"><use href="/icons.svg#x-icon"></use></svg>X.com</a></li>
+      <li><a href="https://bsky.app/profile/vite.dev" target="_blank"><svg class="button-icon" role="presentation" aria-hidden="true"><use href="/icons.svg#bluesky-icon"></use></svg>Bluesky</a></li>
     </ul>
   </div>
 </section>
