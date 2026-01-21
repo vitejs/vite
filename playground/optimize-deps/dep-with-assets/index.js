@@ -6,3 +6,7 @@ export function urlImportWorker() {
     worker.onmessage = (e) => res(e.data)
   })
 }
+
+export function getAssetUrl() {
+  return new URL('./logo.png', import.meta.url).href
+}
