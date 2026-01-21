@@ -113,27 +113,11 @@ Now the `preview` command will launch the server at `http://localhost:8080`.
 
 ### Netlify CLI
 
-1. Install the [Netlify CLI](https://cli.netlify.com/).
-2. Create a new site using `ntl init`.
-3. Deploy using `ntl deploy`.
+1. Install the [Netlify CLI](https://docs.netlify.com/api-and-cli-guides/cli-guides/get-started-with-cli/) via `npm install -g netlify-cli`.
+2. Create a new site using `netlify init`.
+3. Deploy using `netlify deploy`.
 
-```bash
-# Install the Netlify CLI
-$ npm install -g netlify-cli
-
-# Create a new site in Netlify
-$ ntl init
-
-# Deploy to a unique preview URL
-$ ntl deploy
-```
-
-The Netlify CLI will share with you a preview URL to inspect. When you are ready to go into production, use the `prod` flag:
-
-```bash
-# Deploy the site into production
-$ ntl deploy --prod
-```
+The Netlify CLI will share with you a preview URL to inspect. When you are ready to go into production, use the `prod` flag: `netlify deploy --prod`.
 
 ### Netlify with Git
 
@@ -149,19 +133,11 @@ After your project has been imported and deployed, all subsequent pushes to bran
 
 ### Vercel CLI
 
-1. Install the [Vercel CLI](https://vercel.com/cli) and run `vercel` to deploy.
+1. Install the [Vercel CLI](https://vercel.com/cli) via `npm i -g vercel` and run `vercel` to deploy.
 2. Vercel will detect that you are using Vite and will enable the correct settings for your deployment.
 3. Your application is deployed! (e.g. [vite-vue-template.vercel.app](https://vite-vue-template.vercel.app/))
 
-```bash
-$ npm i -g vercel
-$ vercel init vite
-Vercel CLI
-> Success! Initialized "vite" example in ~/your-folder.
-- To deploy, `cd vite` and run `vercel`.
-```
-
-### Vercel for Git
+### Vercel with Git
 
 1. Push your code to your git repository (GitHub, GitLab, Bitbucket).
 2. [Import your Vite project](https://vercel.com/new) into Vercel.
@@ -213,9 +189,11 @@ You can also add custom domains and handle custom build settings on Pages. Learn
 
 ## Google Firebase
 
-1. Make sure you have [firebase-tools](https://www.npmjs.com/package/firebase-tools) installed.
+1. Install [firebase-tools](https://www.npmjs.com/package/firebase-tools) via `npm i -g firebase-tools`.
 
-2. Create `firebase.json` and `.firebaserc` at the root of your project with the following content:
+2. Create the following files at the root of your project:
+
+   ::: code-group
 
    ```json [firebase.json]
    {
@@ -240,14 +218,14 @@ You can also add custom domains and handle custom build settings on Pages. Learn
    }
    ```
 
+   :::
+
 3. After running `npm run build`, deploy using the command `firebase deploy`.
 
 ## Surge
 
-1. First install [surge](https://www.npmjs.com/package/surge), if you haven’t already.
-
+1. Install [surge](https://www.npmjs.com/package/surge) via `npm i -g surge`.
 2. Run `npm run build`.
-
 3. Deploy to surge by typing `surge dist`.
 
 You can also deploy to a [custom domain](https://surge.sh/help/adding-a-custom-domain) by adding `surge dist yourdomain.com`.
@@ -280,9 +258,7 @@ You can deploy your Vite app as a Static Site on [Render](https://render.com/).
    - **Build Command**: `npm install && npm run build`
    - **Publish Directory**: `dist`
 
-5. Click **Create Static Site**.
-
-   Your app should be deployed at `https://<PROJECTNAME>.onrender.com/`.
+5. Click **Create Static Site**. Your app should be deployed at `https://<PROJECTNAME>.onrender.com/`.
 
 By default, any new commit pushed to the specified branch will automatically trigger a new deployment. [Auto-Deploy](https://render.com/docs/deploys#toggling-auto-deploy-for-a-service) can be configured in the project settings.
 
