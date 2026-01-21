@@ -223,6 +223,9 @@ async function handleMessage(payload: HotPayload) {
           if (update.type === 'js-update') {
             return hmrClient.queueUpdate(update)
           }
+          if (!hasDocument) {
+            return
+          }
 
           // css-update
           // this is only sent when a css file referenced with <link> is updated
