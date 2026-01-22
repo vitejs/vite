@@ -466,7 +466,7 @@ importers:
         version: 4.17.16
       lodash:
         specifier: ^4.17.21
-        version: 4.17.21
+        version: 4.17.23
 
   packages/vite/src/node/__tests__/fixtures/file-url: {}
 
@@ -1091,8 +1091,8 @@ importers:
         specifier: ^2.0.11
         version: 2.0.11
       lodash:
-        specifier: ^4.17.21
-        version: 4.17.21
+        specifier: ^4.17.23
+        version: 4.17.23
       lodash-es:
         specifier: ^4.17.22
         version: 4.17.22
@@ -1137,8 +1137,8 @@ importers:
   playground/optimize-deps/dep-alias-using-absolute-path:
     dependencies:
       lodash:
-        specifier: ^4.17.21
-        version: 4.17.21
+        specifier: ^4.17.23
+        version: 4.17.23
 
   playground/optimize-deps/dep-cjs-browser-field-bare: {}
 
@@ -5699,6 +5699,9 @@ packages:
   lodash@4.17.21:
     resolution: {integrity: sha512-v2kDEe57lecTulaDIuNTPy3Ry4gLGJ6Z1O3vE1krgXZNrsQ+LFTGHVxVjcXPs17LhbZVGedAJv8XZ1tvj5FvSg==}
 
+  lodash@4.17.23:
+    resolution: {integrity: sha512-LgVTMpQtIopCi79SJeDiP0TfWi5CNEc/L/aRdTh3yIvmZXTnheWpKjSZhnvMl8iXbC1tFg9gdHHDMLoV7CnG+w==}
+
   log-update@6.1.0:
     resolution: {integrity: sha512-9ie8ItPR6tjY5uYJh8K/Zrv/RMZ5VOlOWvtZdEHYSTFKZfIBPQa9tOAEeAWhd+AnIneLJ22w5fjOYtoutpWq5w==}
     engines: {node: '>=18'}
@@ -9548,7 +9551,7 @@ snapshots:
 
   '@vitejs/test-dep-alias-using-absolute-path@file:playground/optimize-deps/dep-alias-using-absolute-path':
     dependencies:
-      lodash: 4.17.21
+      lodash: 4.17.23
 
   '@vitejs/test-dep-cjs-browser-field-bare@file:playground/optimize-deps/dep-cjs-browser-field-bare': {}
 
@@ -11337,6 +11340,8 @@ snapshots:
   lodash.merge@4.6.2: {}
 
   lodash@4.17.21: {}
+
+  lodash@4.17.23: {}
 
   log-update@6.1.0:
     dependencies:
