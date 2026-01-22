@@ -90,7 +90,7 @@
     "@jridgewell/trace-mapping": "^0.3.31",
     "@oxc-project/types": "0.110.0",
     "@polka/compression": "^1.0.0-next.25",
-    "@rolldown/pluginutils": "1.0.0-beta.60",
+    "@rolldown/pluginutils": "1.0.0-rc.1",
     "@rollup/plugin-alias": "^5.1.1",
     "@rollup/plugin-commonjs": "^29.0.0",
     "@rollup/plugin-dynamic-import-vars": "2.1.4",
