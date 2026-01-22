@@ -11,7 +11,6 @@ import { determineAgent } from '@vercel/detect-agent'
 const {
   blue,
   blueBright,
-  bold,
   gray,
   cyan,
   green,
@@ -592,9 +591,7 @@ async function init() {
       if (prompts.isCancel(framework)) return cancel()
 
       const variant = await prompts.select({
-        message: !['react', 'vue', 'solid'].includes(framework.name)
-          ? 'Select a variant:'
-          : `Select ${bold('Vite boilerplate')} (listed first) or ${bold('Vite-based framework')} (listed last):`,
+        message: 'Select a variant:',
         options: framework.variants.map((variant) => {
           return {
             label: getLabel(variant),
