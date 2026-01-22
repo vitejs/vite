@@ -339,7 +339,7 @@ export async function startDefaultServe(): Promise<void> {
  */
 export async function notifyRebuildComplete(
   watcher: RolldownWatcher,
-): Promise<RolldownWatcher> {
+): Promise<void> {
   let resolveFn: undefined | (() => void)
   const callback = (event: RolldownWatcherEvent): void => {
     if (event.code === 'END') {
@@ -351,7 +351,7 @@ export async function notifyRebuildComplete(
     resolveFn = resolve
   })
 
-  return watcher.off('event', callback)
+  watcher.off('event', callback)
 }
 
 export function createInMemoryLogger(logs: string[]): Logger {
