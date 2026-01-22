@@ -917,18 +917,10 @@ function getLabel(variant: FrameworkVariant) {
   const labelText = variant.display || variant.name
   let label = variant.color(labelText)
 
-  // Determine available width
-  const terminalWidth = process.stdout.columns || 80
-  const promptBorderWidth = 15
-  const whitespaceWidth = 1
-  let availableWidth =
-    terminalWidth - promptBorderWidth - labelText.length - whitespaceWidth
-
   // Add `link`
   const { link } = variant
-  if (link && availableWidth >= link.length) {
+  if (link) {
     label += ` ${underline(link)}`
-    availableWidth -= whitespaceWidth + link.length
   }
 
   return label
