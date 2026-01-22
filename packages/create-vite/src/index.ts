@@ -11,7 +11,6 @@ import { determineAgent } from '@vercel/detect-agent'
 const {
   blue,
   blueBright,
-  gray,
   cyan,
   green,
   greenBright,
@@ -928,7 +927,7 @@ function getLabel(variant: FrameworkVariant) {
   // Add `link`
   const { link } = variant
   if (link && availableWidth >= link.length) {
-    label += ` ${gray(underline(link))}`
+    label += ` ${underline(link)}`
     availableWidth -= whitespaceWidth + link.length
   }
 
