@@ -913,7 +913,7 @@ function getFullCustomCommand(customCommand: string, pkgInfo?: PkgInfo) {
 }
 
 function getLabel(variant: FrameworkVariant) {
-  // Choice human name
+  // Choice display name
   const labelText = variant.display || variant.name
   let label = variant.color(labelText)
 
