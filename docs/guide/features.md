@@ -30,6 +30,8 @@ Note you don't need to manually set these up - when you [create an app via `crea
 
 Vite supports importing `.ts` files out of the box.
 
+<ScrimbaLink href="https://scrimba.com/intro-to-vite-c03p6pbbdq/~0t6?via=vite" title="TypeScript in Vite">Watch an interactive lesson on Scrimba</ScrimbaLink>
+
 ### Transpile Only
 
 Note that Vite only performs transpilation on `.ts` files and does **NOT** perform type checking. It assumes type checking is taken care of by your IDE and build process.
@@ -366,6 +368,8 @@ To configure CSS Modules, you'll use [`css.lightningcss.cssModules`](https://lig
 By default, Vite uses esbuild to minify CSS. Lightning CSS can also be used as the CSS minifier with [`build.cssMinify: 'lightningcss'`](../config/build-options.md#build-cssminify).
 
 ## Static Assets
+
+<ScrimbaLink href="https://scrimba.com/intro-to-vite-c03p6pbbdq/~05pq?via=vite" title="Static Assets in Vite">Watch an interactive lesson on Scrimba</ScrimbaLink>
 
 Importing a static asset will return the resolved public URL when it is served:
 
