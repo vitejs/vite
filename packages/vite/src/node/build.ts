@@ -731,11 +731,12 @@ export function resolveRolldownOptions(
       assetFileNames: libOptions
         ? `[name].[ext]`
         : path.posix.join(options.assetsDir, `[name]-[hash].[ext]`),
-      inlineDynamicImports:
+      codeSplitting: !(
         output.format === 'umd' ||
         output.format === 'iife' ||
         (isSsrTargetWebworkerEnvironment &&
-          (typeof input === 'string' || Object.keys(input).length === 1)),
+          (typeof input === 'string' || Object.keys(input).length === 1))
+      ),
       legalComments: 'none',
       minify:
         options.minify === 'oxc'
