@@ -2436,7 +2436,7 @@ async function bundleConfigFile(
       return path.resolve(fileName, relative)
     },
     // we want to generate a single chunk like esbuild does with `splitting: false`
-    inlineDynamicImports: true,
+    codeSplitting: false,
   })
   await bundle.close()
 
