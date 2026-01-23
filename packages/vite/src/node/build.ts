@@ -1292,8 +1292,10 @@ function wrapEnvironmentResolveId(
   }
 
   if ('handler' in hook) {
-    hook.handler = handler
-    return hook
+    return {
+      ...hook,
+      handler,
+    }
   } else {
     return handler
   }
@@ -1316,8 +1318,10 @@ function wrapEnvironmentLoad(
   }
 
   if ('handler' in hook) {
-    hook.handler = handler
-    return hook
+    return {
+      ...hook,
+      handler,
+    }
   } else {
     return handler
   }
@@ -1341,8 +1345,10 @@ function wrapEnvironmentTransform(
   }
 
   if ('handler' in hook) {
-    hook.handler = handler
-    return hook
+    return {
+      ...hook,
+      handler,
+    }
   } else {
     return handler
   }
@@ -1382,8 +1388,10 @@ function wrapEnvironmentHook<HookName extends keyof Plugin>(
   }
 
   if ('handler' in hook) {
-    hook.handler = handler
-    return hook
+    return {
+      ...hook,
+      handler,
+    }
   } else {
     return handler
   }
