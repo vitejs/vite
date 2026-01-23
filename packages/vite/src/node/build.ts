@@ -394,7 +394,6 @@ const _buildEnvironmentOptionsDefaults = Object.freeze({
     extensions: ['.js', '.cjs'],
   },
   dynamicImportVarsOptions: {
-    warnOnError: true,
     exclude: [/node_modules/],
   },
   write: true,
