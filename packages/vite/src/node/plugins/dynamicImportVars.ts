@@ -272,11 +272,7 @@ export function dynamicImportVarsPlugin(config: ResolvedConfig): Plugin {
               config.root,
             )
           } catch (error) {
-            if (environment.config.build.dynamicImportVarsOptions.warnOnError) {
-              this.warn(error)
-            } else {
-              this.error(error)
-            }
+            this.warn(error)
           }
 
           if (!result) {
