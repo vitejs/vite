@@ -1100,6 +1100,15 @@ function resolveResolveOptions(
       ),
     )
   }
+  if (alias.some((a) => a.customResolver)) {
+    logger.warn(
+      colors.yellow(
+        `\`resolve.alias\` contains an alias with \`customResolver\` option. ` +
+          `This is deprecated and will be removed in Vite 9. ` +
+          `Please use a custom plugin instead.`,
+      ),
+    )
+  }
 
   return resolveEnvironmentResolveOptions(
     resolve,

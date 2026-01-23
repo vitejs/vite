@@ -92,7 +92,7 @@ Directory to save cache files. Files in this directory are pre-bundled deps or s
 ## resolve.alias
 
 - **Type:**
-  `Record<string, string> | Array<{ find: string | RegExp, replacement: string, customResolver?: ResolverFunction | ResolverObject }>`
+  `Record<string, string> | Array<{ find: string | RegExp, replacement: string }>`
 
 Defines aliases used to replace values in `import` or `require` statements. This works similar to [`@rollup/plugin-alias`](https://github.com/rollup/plugins/tree/master/packages/alias).
 
@@ -119,7 +119,7 @@ resolve: {
 }
 ```
 
-### Array Format (`Array<{ find: string | RegExp, replacement: string, customResolver?: ResolverFunction | ResolverObject }>`)
+### Array Format (`Array<{ find: string | RegExp, replacement: string }>`)
 
 The Array format allows specifying aliases as objects, which can be useful for complex key/value pairs.
 
@@ -137,8 +137,6 @@ When `find` is a regular expression, the `replacement` can use [replacement patt
 ```js
 { find:/^(.*)\.js$/, replacement: '$1.alias' }
 ```
-
-`customResolver` option can be used to provide separate module resolution for an individual alias.
 
 ## resolve.dedupe
 

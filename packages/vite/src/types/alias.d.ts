@@ -36,6 +36,7 @@ export interface Alias {
    * Instructs the plugin to use an alternative resolving algorithm,
    * rather than the Rollup's resolver.
    * @default null
+   * @deprecated Use a custom plugin instead
    */
   customResolver?: ResolverFunction | ResolverObject | null
 }
