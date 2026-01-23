@@ -221,9 +221,7 @@ If `fileName` is passed, it will be used as the license file name relative to th
 
 ::: tip
 
-If you'd like to reference the license file in the built code, you can use `build.rolldownOptions.output.postBanner` to inject a comment at the top of the files. For example:
-
-<!-- TODO: add a link for output.postBanner above to Rolldown's documentation -->
+If you'd like to reference the license file in the built code, you can use [`build.rolldownOptions.output.postBanner`](https://rolldown.rs/reference/OutputOptions.postBanner#postbanner) to inject a comment at the top of the files. For example:
 
 ```js twoslash [vite.config.js]
 import { defineConfig } from 'vite'
