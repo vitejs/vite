@@ -1,235 +1,186 @@
 .counter {
-  color: var(--color-accent);
-  font-family: var(--font-mono);
   font-size: 16px;
-  display: inline-flex;
   padding: 5px 10px;
-  justify-content: center;
-  align-items: center;
   border-radius: 5px;
-  background: var(--color-accent-bg);
+  color: var(--accent);
+  background: var(--accent-bg);
   border: 2px solid transparent;
-  transition: border-color 0.3s ease;
+  transition: border-color 0.3s;
   margin-bottom: 24px;
-  cursor: pointer;
 
   &:hover {
-    border-color: var(--color-accent-border);
+    border-color: var(--accent-border);
   }
-
   &:focus-visible {
-    outline: 2px solid var(--color-accent);
+    outline: 2px solid var(--accent);
     outline-offset: 2px;
   }
 }
 
-.hero-image {
+.hero {
   position: relative;
-  margin-top: 40px;
-}
 
-.hero-image__base {
-  width: 170px;
-  position: relative;
-  z-index: 0;
-}
+  .base,
+  .framework,
+  .vite {
+    inset-inline: 0;
+    margin: 0 auto;
+  }
 
-.hero-image__framework {
-  position: absolute;
-  z-index: 1;
-  top: 34px;
-  inset-inline: 0;
-  margin: 0 auto;
-  height: 28px;
-  transform: perspective(2000px) rotateZ(300deg) rotateX(34deg) rotateY(44deg)
-    scale(1.4);
-}
+  .base {
+    width: 170px;
+    position: relative;
+    z-index: 0;
+  }
 
-.hero-image__vite {
-  position: absolute;
-  z-index: 0;
-  top: 107px;
-  inset-inline: 0;
-  margin: 0 auto;
-  display: flex;
-  justify-content: center;
-  color: var(--color-vite-logo);
-  transform: perspective(2000px) rotateZ(300deg) rotateX(40deg) rotateY(39deg)
-    scale(0.8);
+  .framework,
+  .vite {
+    position: absolute;
+  }
 
-  svg {
-    height: 26px;
-    width: auto;
+  .framework {
+    z-index: 1;
+    top: 34px;
+    height: 28px;
+    transform: perspective(2000px) rotateZ(300deg) rotateX(44deg) rotateY(39deg)
+      scale(1.4);
+  }
+
+  .vite {
+    z-index: 0;
+    top: 107px;
+    display: flex;
+    justify-content: center;
+    color: var(--vite-logo);
+    transform: perspective(2000px) rotateZ(300deg) rotateX(40deg) rotateY(39deg)
+      scale(0.8);
+
+    svg {
+      height: 26px;
+      width: auto;
+    }
   }
 }
 
-#app {
+#root {
   width: 1126px;
-  max-width: 100vw;
+  max-width: 100%;
   margin: 0 auto;
   text-align: center;
-  border-inline: 1px solid var(--color-border);
+  border-inline: 1px solid var(--border);
   min-height: 100svh;
   display: flex;
   flex-direction: column;
+  box-sizing: border-box;
 }
 
 #center {
   display: flex;
   flex-direction: column;
   gap: 25px;
-  justify-content: center;
-  align-items: center;
+  place-content: center;
+  place-items: center;
   flex-grow: 1;
-}
 
-#framework-logos {
-  color: var(--color-text);
-  display: flex;
-  gap: 14px;
-  justify-content: center;
-  align-items: center;
-  height: 88px;
-  border-bottom: 1px solid var(--color-border);
-  margin-left: -1rem;
-  font-size: 1.5rem;
-
-  a {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    padding: 6px 8px;
-    border-radius: 10px;
-
-    &:focus-visible {
-      outline: none;
-
-      .logo.vite {
-        filter: drop-shadow(0 0 18px #bd34fe);
-      }
-      .logo.qwik {
-        filter: drop-shadow(0 0 18px #18b6f6);
-      }
-    }
-  }
-
-  .logo {
-    transition: filter 200ms ease;
-
-    &.vite {
-      height: 2rem;
-      color: var(--color-vite-logo);
-      &:hover,
-      &:focus-visible {
-        filter: drop-shadow(0 0 18px #bd34fe);
-        outline: none;
-      }
-      svg {
-        height: 100%;
-        width: auto;
-      }
-    }
-    &.qwik {
-      height: 2.25rem;
-      &:hover {
-        filter: drop-shadow(0 0 18px #18b6f6);
-      }
-    }
+  @media (max-width: 1024px) {
+    padding: 32px 20px 24px;
+    gap: 18px;
   }
 }
 
 #next-steps {
   display: flex;
-  border-top: 1px solid var(--color-border);
+  border-top: 1px solid var(--border);
   text-align: left;
 
   & > div {
     flex: 1 1 0;
     padding: 32px;
+    @media (max-width: 1024px) {
+      padding: 24px 20px;
+    }
+  }
 
-    .icon {
-      margin-bottom: 16px;
-      width: 22px;
+  .icon {
+    margin-bottom: 16px;
+    width: 22px;
+    height: 22px;
+  }
+
+  @media (max-width: 1024px) {
+    flex-direction: column;
+    text-align: center;
+  }
+}
+
+#docs {
+  border-right: 1px solid var(--border);
+
+  @media (max-width: 1024px) {
+    border-right: none;
+    border-bottom: 1px solid var(--border);
+  }
+}
+
+#next-steps ul {
+  list-style: none;
+  padding: 0;
+  display: flex;
+  gap: 8px;
+  margin: 32px 0 0;
+
+  .logo {
+    color: var(--vite-logo);
+    svg {
+      height: 100%;
+      width: auto;
+    }
+    height: 18px;
+  }
+
+  a {
+    color: var(--text-h);
+    font-size: 16px;
+    border-radius: 6px;
+    background: var(--social-bg);
+    display: flex;
+    padding: 6px 12px;
+    align-items: center;
+    gap: 8px;
+    text-decoration: none;
+    transition: box-shadow 0.3s;
+
+    &:hover {
+      box-shadow: var(--shadow);
+    }
+    .button-icon {
+      height: 18px;
+      width: 18px;
+    }
+  }
+
+  @media (max-width: 1024px) {
+    margin-top: 20px;
+    flex-wrap: wrap;
+    justify-content: center;
+
+    li {
+      flex: 1 1 calc(50% - 8px);
     }
 
-    &#documentation {
-      border-right: 1px solid var(--color-border);
-
-      .button-group {
-        display: flex;
-        gap: 8px;
-        margin-top: 32px;
-      }
-
-      .button img,
-      .button-logo {
-        height: 18px;
-        color: var(--color-vite-logo);
-      }
-
-      .button-logo svg {
-        height: 100%;
-        width: auto;
-      }
-    }
-
-    &#social {
-      ul {
-        list-style: none;
-        padding: 0;
-        display: flex;
-        gap: 8px;
-        margin: 32px 0 0;
-
-        li > a {
-          color: var(--color-text-heading);
-          font-size: 16px;
-          border-radius: 6px;
-          background: var(--color-social-bg);
-          display: flex;
-          padding: 6px 12px;
-          align-items: center;
-          gap: 8px;
-          text-decoration: none;
-          transition: box-shadow 0.3s ease;
-
-          &:hover {
-            box-shadow: var(--shadow-hover);
-          }
-
-          img {
-            height: 18px;
-          }
-        }
-      }
+    a {
+      width: 100%;
+      justify-content: center;
+      box-sizing: border-box;
     }
   }
 }
 
 #spacer {
   height: 88px;
-  border-top: 1px solid var(--color-border);
-}
-
-.button {
-  display: flex;
-  padding: 10px 12px;
-  justify-content: center;
-  align-items: center;
-  gap: 8px;
-  border-radius: 6px;
-  border: 1px solid var(--color-border);
-  color: var(--color-text-heading);
-  font-size: 15px;
-  font-weight: 500;
-  line-height: 120%;
-  text-decoration: none;
-  width: fit-content;
-  letter-spacing: 0.3px;
-  transition: box-shadow 0.3s ease;
-
-  &:hover {
-    box-shadow: var(--shadow-hover);
+  border-top: 1px solid var(--border);
+  @media (max-width: 1024px) {
+    height: 48px;
   }
 }
 
@@ -241,115 +192,16 @@
   &::after {
     content: '';
     position: absolute;
-    top: -5px;
-    width: 0;
-    height: 0;
+    top: -4.5px;
     border: 5px solid transparent;
   }
 
   &::before {
     left: 0;
-    border-left-color: var(--color-border);
+    border-left-color: var(--border);
   }
-
   &::after {
     right: 0;
-    border-right-color: var(--color-border);
-  }
-}
-
-@media (max-width: 1024px) {
-  :root {
-    font-size: 16px;
-  }
-
-  body {
-    align-items: stretch;
-  }
-
-  h1 {
-    font-size: 36px;
-    margin: 20px 0;
-  }
-
-  h2 {
-    font-size: 20px;
-  }
-
-  #app {
-    width: 100%;
-    max-width: 100%;
-    box-sizing: border-box;
-  }
-
-  #framework-logos {
-    height: 64px;
-    gap: 10px;
-  }
-
-  #center {
-    padding: 32px 20px 24px;
-    gap: 18px;
-  }
-
-  .hero-image {
-    margin-top: 12px;
-  }
-
-  .hero-image__base {
-    width: 140px;
-  }
-
-  .hero-image__framework {
-    top: 28px;
-    height: 24px;
-  }
-
-  .hero-image__vite {
-    top: 74px;
-
-    svg {
-      height: 24px;
-    }
-  }
-
-  #next-steps {
-    flex-direction: column;
-    text-align: center;
-
-    & > div {
-      padding: 24px 20px;
-
-      &#documentation {
-        border-right: none;
-        border-bottom: 1px solid var(--color-border);
-      }
-
-      &#social ul {
-        margin-top: 20px;
-        flex-wrap: wrap;
-        justify-content: center;
-
-        li {
-          flex: 1 1 calc(50% - 8px);
-
-          & > a {
-            width: 100%;
-            justify-content: center;
-            box-sizing: border-box;
-          }
-        }
-      }
-    }
-
-    .icon,
-    .button,
-    .button-group {
-      margin-inline: auto;
-    }
-  }
-
-  #spacer {
-    height: 48px;
+    border-right-color: var(--border);
   }
 }

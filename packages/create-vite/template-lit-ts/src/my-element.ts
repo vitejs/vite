@@ -3,12 +3,6 @@ import { customElement, property } from 'lit/decorators.js'
 import litLogo from './assets/lit.svg'
 import { viteLogo } from './vite-logo'
 import heroImg from './assets/hero.png'
-import documentationIcon from './assets/documentation-icon.svg'
-import socialIcon from './assets/social-icon.svg'
-import githubIcon from './assets/github-icon.svg'
-import discordIcon from './assets/discord-icon.svg'
-import blueskyIcon from './assets/bluesky-icon.svg'
-import xIcon from './assets/x-icon.svg'
 
 /**
  * An example element.
@@ -26,29 +20,11 @@ export class MyElement extends LitElement {
 
   render() {
     return html`
-      <section id="framework-logos">
-        <a
-          href="https://vite.dev"
-          target="_blank"
-          class="logo vite"
-          aria-label="Vite logo"
-          >${viteLogo}</a
-        >
-        <span>+</span>
-        <a href="https://lit.dev" target="_blank">
-          <img src=${litLogo} class="logo lit" alt="Lit logo" height="36" />
-        </a>
-      </section>
-
-      <div class="ticks"></div>
-
       <section id="center">
-        <div class="hero-image">
-          <img src=${heroImg} alt="Vite" class="hero-image__base" />
-          <img src=${litLogo} class="hero-image__framework" alt="Lit logo" />
-          <span class="hero-image__vite" aria-label="Vite logo"
-            >${viteLogo}</span
-          >
+        <div class="hero">
+          <img src=${heroImg} class="base" width="170" height="179" alt="" />
+          <img src=${litLogo} class="framework" alt="Lit logo" />
+          <span class="vite" aria-label="Vite logo">${viteLogo}</span>
         </div>
         <div>
           <slot></slot>
@@ -65,55 +41,65 @@ export class MyElement extends LitElement {
       <div class="ticks"></div>
 
       <section id="next-steps">
-        <div id="documentation">
-          <img class="icon" src=${documentationIcon} alt="Documentation" />
+        <div id="docs">
+          <svg class="icon" role="presentation" aria-hidden="true">
+            <use href="/icons.svg#documentation-icon"></use>
+          </svg>
           <h2>Documentation</h2>
           <p>Your questions, answered</p>
-          <div class="button-group">
-            <a
-              href="https://vite.dev/?ref=vite-starter-learn-more"
-              class="button"
-              ><span class="button-logo">${viteLogo}</span>Explore Vite</a
-            >
-            <a
-              href="https://lit.dev/?ref=vite-starter-learn-more"
-              class="button"
-              ><img src=${litLogo} alt="" />Learn more</a
-            >
-          </div>
+          <ul>
+            <li>
+              <a href="https://vite.dev/" target="_blank">
+                <span class="logo">${viteLogo}</span>
+                Explore Vite
+              </a>
+            </li>
+            <li>
+              <a href="https://lit.dev/" target="_blank">
+                <img class="button-icon" src=${litLogo} alt="" />
+                Learn more
+              </a>
+            </li>
+          </ul>
         </div>
         <div id="social">
-          <img class="icon" src=${socialIcon} alt="Connect with us" />
+          <svg class="icon" role="presentation" aria-hidden="true">
+            <use href="/icons.svg#social-icon"></use>
+          </svg>
           <h2>Connect with us</h2>
           <p>Join the Vite community</p>
           <ul>
             <li>
-              <a
-                href="https://github.com/vitejs/vite?ref=vite-starter-icon"
-                target="_blank"
-                ><img src=${githubIcon} alt="GitHub" />GitHub</a
-              >
+              <a href="https://github.com/vitejs/vite" target="_blank">
+                <svg class="button-icon" role="presentation" aria-hidden="true">
+                  <use href="/icons.svg#github-icon"></use>
+                </svg>
+                GitHub
+              </a>
             </li>
             <li>
-              <a
-                href="https://chat.vite.dev/?ref=vite-starter-icon"
-                target="_blank"
-                ><img src=${discordIcon} alt="Discord" />Discord</a
-              >
+              <a href="https://chat.vite.dev/" target="_blank">
+                <svg class="button-icon" role="presentation" aria-hidden="true">
+                  <use href="/icons.svg#discord-icon"></use>
+                </svg>
+                Discord
+              </a>
             </li>
             <li>
-              <a
-                href="https://x.com/vite_js?ref=vite-starter-icon"
-                target="_blank"
-                ><img src=${xIcon} alt="X" />X.com</a
-              >
+              <a href="https://x.com/vite_js" target="_blank">
+                <svg class="button-icon" role="presentation" aria-hidden="true">
+                  <use href="/icons.svg#x-icon"></use>
+                </svg>
+                X.com
+              </a>
             </li>
             <li>
-              <a
-                href="https://bsky.app/profile/vite.dev?ref=vite-starter-icon"
-                target="_blank"
-                ><img src=${blueskyIcon} alt="Bluesky" />Bluesky</a
-              >
+              <a href="https://bsky.app/profile/vite.dev" target="_blank">
+                <svg class="button-icon" role="presentation" aria-hidden="true">
+                  <use href="/icons.svg#bluesky-icon"></use>
+                </svg>
+                Bluesky
+              </a>
             </li>
           </ul>
         </div>
@@ -130,63 +116,56 @@ export class MyElement extends LitElement {
 
   static styles = css`
     :host {
-      --color-text: #6b6375;
-      --color-text-heading: #08060d;
-      --color-bg: #ffffff;
-      --color-border: #e5e4e7;
-      --color-code-bg: #f4f3ec;
-      --color-accent: #aa3bff;
-      --color-accent-bg: rgba(170, 59, 255, 0.1);
-      --color-accent-border: rgba(170, 59, 255, 0.5);
-      --color-social-bg: rgba(244, 243, 236, 0.5);
-      --color-vite-logo: #000;
-      --shadow-hover:
+      --text: #6b6375;
+      --text-h: #08060d;
+      --bg: #fff;
+      --border: #e5e4e7;
+      --code-bg: #f4f3ec;
+      --accent: #aa3bff;
+      --accent-bg: rgba(170, 59, 255, 0.1);
+      --accent-border: rgba(170, 59, 255, 0.5);
+      --social-bg: rgba(244, 243, 236, 0.5);
+      --vite-logo: #000;
+      --shadow:
         rgba(0, 0, 0, 0.1) 0 10px 15px -3px, rgba(0, 0, 0, 0.05) 0 4px 6px -2px;
 
-      --font-sans:
-        'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI',
-        Roboto, sans-serif;
-      --font-heading:
-        'Zalando Sans', system-ui, -apple-system, BlinkMacSystemFont,
-        'Segoe UI', Roboto, sans-serif;
-      --font-mono:
-        'Azeret Mono', ui-monospace, SFMono-Regular, 'SF Mono', Menlo, Consolas,
-        monospace;
+      --sans: system-ui, 'Segoe UI', Roboto, sans-serif;
+      --heading: system-ui, 'Segoe UI', Roboto, sans-serif;
+      --mono: ui-monospace, Consolas, monospace;
 
-      font-family: var(--font-sans);
-      font-size: 18px;
-      line-height: 145%;
+      font: 18px/145% var(--sans);
       letter-spacing: 0.18px;
 
       width: 1126px;
-      max-width: 100vw;
+      max-width: 100%;
       margin: 0 auto;
       text-align: center;
-      border-inline: 1px solid var(--color-border);
+      border-inline: 1px solid var(--border);
       min-height: 100svh;
       display: flex;
       flex-direction: column;
-      color: var(--color-text);
+      box-sizing: border-box;
+      color: var(--text);
     }
 
     @media (prefers-color-scheme: dark) {
       :host {
-        --color-text: #9ca3af;
-        --color-text-heading: #f3f4f6;
-        --color-bg: #16171d;
-        --color-border: #2e303a;
-        --color-code-bg: #1f2028;
-        --color-accent: #c084fc;
-        --color-accent-bg: rgba(192, 132, 252, 0.15);
-        --color-accent-border: rgba(192, 132, 252, 0.5);
-        --color-social-bg: rgba(47, 48, 58, 0.5);
-        --color-vite-logo: white;
-        --shadow-hover:
+        --text: #9ca3af;
+        --text-h: #f3f4f6;
+        --bg: #16171d;
+        --border: #2e303a;
+        --code-bg: #1f2028;
+        --accent: #c084fc;
+        --accent-bg: rgba(192, 132, 252, 0.15);
+        --accent-border: rgba(192, 132, 252, 0.5);
+        --social-bg: rgba(47, 48, 58, 0.5);
+        --vite-logo: white;
+        --shadow:
           rgba(0, 0, 0, 0.4) 0 10px 15px -3px,
           rgba(0, 0, 0, 0.25) 0 4px 6px -2px;
       }
 
-      #social ul li > a img {
+      #social .button-icon {
         filter: invert(1) brightness(2);
       }
     }
@@ -195,9 +174,9 @@ export class MyElement extends LitElement {
     h2,
     ::slotted(h1),
     ::slotted(h2) {
-      font-family: var(--font-heading);
+      font-family: var(--heading);
       font-weight: 500;
-      color: var(--color-text-heading);
+      color: var(--text-h);
     }
 
     h1,
@@ -219,79 +198,80 @@ export class MyElement extends LitElement {
     }
 
     code {
-      font-family: var(--font-mono);
+      font-family: var(--mono);
       font-size: 15px;
       line-height: 135%;
       display: inline-flex;
       padding: 4px 8px;
-      justify-content: center;
-      align-items: center;
       border-radius: 4px;
-      color: var(--color-text-heading);
-      background: var(--color-code-bg);
+      color: var(--text-h);
+      background: var(--code-bg);
     }
 
     .counter {
-      color: var(--color-accent);
-      font-family: var(--font-mono);
+      font-family: var(--mono);
       font-size: 16px;
       display: inline-flex;
       padding: 5px 10px;
-      justify-content: center;
-      align-items: center;
       border-radius: 5px;
-      background: var(--color-accent-bg);
+      color: var(--accent);
+      background: var(--accent-bg);
       border: 2px solid transparent;
-      transition: border-color 0.3s ease;
+      transition: border-color 0.3s;
       margin-bottom: 24px;
       cursor: pointer;
     }
 
     .counter:hover {
-      border-color: var(--color-accent-border);
+      border-color: var(--accent-border);
     }
 
     .counter:focus-visible {
-      outline: 2px solid var(--color-accent);
+      outline: 2px solid var(--accent);
       outline-offset: 2px;
     }
 
-    .hero-image {
+    .hero {
       position: relative;
-      margin-top: 40px;
     }
 
-    .hero-image__base {
+    .hero .base,
+    .hero .framework,
+    .hero .vite {
+      inset-inline: 0;
+      margin: 0 auto;
+    }
+
+    .hero .base {
       width: 170px;
       position: relative;
       z-index: 0;
     }
 
-    .hero-image__framework {
+    .hero .framework,
+    .hero .vite {
       position: absolute;
+    }
+
+    .hero .framework {
       z-index: 1;
       top: 34px;
-      inset-inline: 0;
-      margin: 0 auto;
       height: 28px;
       transform: perspective(2000px) rotateZ(300deg) rotateX(44deg)
         rotateY(39deg) scale(1.4);
     }
 
-    .hero-image__vite {
-      position: absolute;
+    .hero .vite {
       z-index: 0;
       top: 107px;
-      inset-inline: 0;
-      margin: 0 auto;
       display: flex;
       justify-content: center;
-      color: var(--color-vite-logo);
+      color: var(--vite-logo);
       transform: perspective(2000px) rotateZ(300deg) rotateX(40deg)
         rotateY(39deg) scale(0.8);
     }
 
-    .hero-image__vite svg {
+    .hero .vite svg {
       height: 26px;
       width: auto;
     }
@@ -300,74 +280,14 @@ export class MyElement extends LitElement {
       display: flex;
       flex-direction: column;
       gap: 25px;
-      justify-content: center;
-      align-items: center;
+      place-content: center;
+      place-items: center;
       flex-grow: 1;
-    }
-
-    #framework-logos {
-      color: var(--color-text);
-      display: flex;
-      gap: 14px;
-      justify-content: center;
-      align-items: center;
-      height: 88px;
-      border-bottom: 1px solid var(--color-border);
-      margin-left: -1rem;
-      font-size: 1.5rem;
-    }
-
-    #framework-logos a {
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-      padding: 6px 8px;
-      border-radius: 10px;
-    }
-
-    #framework-logos a:focus-visible {
-      outline: none;
-    }
-
-    #framework-logos a:focus-visible .logo.vite {
-      filter: drop-shadow(0 0 18px #bd34fe);
-    }
-
-    #framework-logos a:focus-visible .logo.lit {
-      filter: drop-shadow(0 0 18px #325cff);
-    }
-
-    #framework-logos .logo {
-      transition: filter 200ms ease;
-    }
-
-    #framework-logos .logo.vite {
-      height: 2rem;
-      color: var(--color-vite-logo);
-    }
-
-    #framework-logos .logo.vite:hover,
-    #framework-logos .logo.vite:focus-visible {
-      filter: drop-shadow(0 0 18px #bd34fe);
-      outline: none;
-    }
-
-    #framework-logos .logo.vite svg {
-      height: 100%;
-      width: auto;
-    }
-
-    #framework-logos .logo.lit {
-      height: 2.25rem;
-    }
-
-    #framework-logos .logo.lit:hover {
-      filter: drop-shadow(0 0 18px #325cff);
     }
 
     #next-steps {
       display: flex;
-      border-top: 1px solid var(--color-border);
+      border-top: 1px solid var(--border);
       text-align: left;
     }
 
@@ -379,30 +299,14 @@ export class MyElement extends LitElement {
     #next-steps .icon {
       margin-bottom: 16px;
       width: 22px;
+      height: 22px;
     }
 
-    #documentation {
-      border-right: 1px solid var(--color-border);
+    #docs {
+      border-right: 1px solid var(--border);
     }
 
-    #documentation .button-group {
-      display: flex;
-      gap: 8px;
-      margin-top: 32px;
-    }
-
-    #documentation .button img,
-    #documentation .button-logo {
-      height: 18px;
-      color: var(--color-vite-logo);
-    }
-
-    #documentation .button-logo svg {
-      height: 100%;
-      width: auto;
-    }
-
-    #social ul {
+    #next-steps ul {
       list-style: none;
       padding: 0;
       display: flex;
@@ -410,52 +314,41 @@ export class MyElement extends LitElement {
       margin: 32px 0 0;
     }
 
-    #social ul li > a {
-      color: var(--color-text-heading);
+    #next-steps ul .logo {
+      color: var(--vite-logo);
+      height: 18px;
+    }
+
+    #next-steps ul .logo svg {
+      height: 100%;
+      width: auto;
+    }
+
+    #next-steps ul a {
+      color: var(--text-h);
       font-size: 16px;
       border-radius: 6px;
-      background: var(--color-social-bg);
+      background: var(--social-bg);
       display: flex;
       padding: 6px 12px;
       align-items: center;
       gap: 8px;
       text-decoration: none;
-      transition: box-shadow 0.3s ease;
+      transition: box-shadow 0.3s;
     }
 
-    #social ul li > a:hover {
-      box-shadow: var(--shadow-hover);
+    #next-steps ul a:hover {
+      box-shadow: var(--shadow);
     }
 
-    #social ul li > a img {
+    #next-steps ul .button-icon {
       height: 18px;
+      width: 18px;
     }
 
     #spacer {
       height: 88px;
-      border-top: 1px solid var(--color-border);
-    }
-
-    .button {
-      display: flex;
-      padding: 10px 12px;
-      justify-content: center;
-      align-items: center;
-      gap: 8px;
-      border-radius: 6px;
-      border: 1px solid var(--color-border);
-      color: var(--color-text-heading);
-      font-size: 15px;
-      font-weight: 500;
-      line-height: 120%;
-      text-decoration: none;
-      width: fit-content;
-      letter-spacing: 0.3px;
-      transition: box-shadow 0.3s ease;
-    }
-
-    .button:hover {
-      box-shadow: var(--shadow-hover);
+      border-top: 1px solid var(--border);
     }
 
     .ticks {
@@ -467,20 +360,18 @@ export class MyElement extends LitElement {
     .ticks::after {
       content: '';
       position: absolute;
-      top: -5px;
-      width: 0;
-      height: 0;
+      top: -4.5px;
       border: 5px solid transparent;
     }
 
     .ticks::before {
       left: 0;
-      border-left-color: var(--color-border);
+      border-left-color: var(--border);
     }
 
     .ticks::after {
       right: 0;
-      border-right-color: var(--color-border);
+      border-right-color: var(--border);
     }
 
     @media (max-width: 1024px) {
@@ -488,7 +379,6 @@ export class MyElement extends LitElement {
         font-size: 16px;
         width: 100%;
         max-width: 100%;
-        box-sizing: border-box;
       }
 
       h1,
@@ -502,35 +392,9 @@ export class MyElement extends LitElement {
         font-size: 20px;
       }
 
-      #framework-logos {
-        height: 64px;
-        gap: 10px;
-      }
-
       #center {
         padding: 32px 20px 24px;
         gap: 18px;
-      }
-
-      .hero-image {
-        margin-top: 12px;
-      }
-
-      .hero-image__base {
-        width: 140px;
-      }
-
-      .hero-image__framework {
-        top: 28px;
-        height: 24px;
-      }
-
-      .hero-image__vite {
-        top: 74px;
-      }
-
-      .hero-image__vite svg {
-        height: 24px;
       }
 
       #next-steps {
@@ -542,31 +406,25 @@ export class MyElement extends LitElement {
         padding: 24px 20px;
       }
 
-      #documentation {
+      #docs {
         border-right: none;
-        border-bottom: 1px solid var(--color-border);
+        border-bottom: 1px solid var(--border);
       }
 
-      #social ul {
+      #next-steps ul {
         margin-top: 20px;
         flex-wrap: wrap;
         justify-content: center;
       }
 
-      #social ul li {
+      #next-steps ul li {
         flex: 1 1 calc(50% - 8px);
       }
 
-      #social ul li > a {
+      #next-steps ul a {
         width: 100%;
         justify-content: center;
         box-sizing: border-box;
-      }
-
-      .icon,
-      .button,
-      .button-group {
-        margin-inline: auto;
       }
 
       #spacer {

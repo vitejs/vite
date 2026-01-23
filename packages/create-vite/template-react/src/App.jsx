@@ -2,12 +2,6 @@ import { useState } from 'react'
 import reactLogo from './assets/react.svg'
 import { ViteLogo } from './ViteLogo'
 import heroImg from './assets/hero.png'
-import documentationIcon from './assets/documentation-icon.svg'
-import socialIcon from './assets/social-icon.svg'
-import githubIcon from './assets/github-icon.svg'
-import discordIcon from './assets/discord-icon.svg'
-import blueskyIcon from './assets/bluesky-icon.svg'
-import xIcon from './assets/x-icon.svg'
 import './App.css'
 
 function App() {
@@ -15,37 +9,11 @@ function App() {
 
   return (
     <>
-      <section id="framework-logos">
-        <a
-          href="https://vite.dev"
-          target="_blank"
-          className="logo vite"
-          aria-label="Vite logo"
-        >
-          <ViteLogo />
-        </a>
-        <span>+</span>
-        <a href="https://react.dev" target="_blank">
-          <img
-            src={reactLogo}
-            className="logo react"
-            alt="React logo"
-            height="36"
-          />
-        </a>
-      </section>
-
-      <div className="ticks"></div>
-
       <section id="center">
-        <div className="hero-image">
-          <img src={heroImg} alt="Vite" className="hero-image__base" />
-          <img
-            src={reactLogo}
-            className="hero-image__framework"
-            alt="React logo"
-          />
-          <span className="hero-image__vite" aria-label="Vite logo">
+        <div className="hero">
+          <img src={heroImg} className="base" width="170" height="179" alt="" />
+          <img src={reactLogo} className="framework" alt="React logo" />
+          <span className="vite" aria-label="Vite logo">
             <ViteLogo />
           </span>
         </div>
@@ -66,67 +34,81 @@ function App() {
       <div className="ticks"></div>
 
       <section id="next-steps">
-        <div id="documentation">
-          <img className="icon" src={documentationIcon} alt="Documentation" />
+        <div id="docs">
+          <svg className="icon" role="presentation" aria-hidden="true">
+            <use href="/icons.svg#documentation-icon"></use>
+          </svg>
           <h2>Documentation</h2>
           <p>Your questions, answered</p>
-          <div className="button-group">
-            <a
-              href="https://vite.dev/?ref=vite-starter-learn-more"
-              className="button"
-            >
-              <span className="button-logo">
-                <ViteLogo />
-              </span>
-              Explore Vite
-            </a>
-            <a
-              href="https://react.dev/?ref=vite-starter-learn-more"
-              className="button"
-            >
-              <img src={reactLogo} alt="" />
-              Learn more
-            </a>
-          </div>
+          <ul>
+            <li>
+              <a href="https://vite.dev/" target="_blank">
+                <span className="logo">
+                  <ViteLogo />
+                </span>
+                Explore Vite
+              </a>
+            </li>
+            <li>
+              <a href="https://react.dev/" target="_blank">
+                <img className="button-icon" src={reactLogo} alt="" />
+                Learn more
+              </a>
+            </li>
+          </ul>
         </div>
         <div id="social">
-          <img className="icon" src={socialIcon} alt="Connect with us" />
+          <svg className="icon" role="presentation" aria-hidden="true">
+            <use href="/icons.svg#social-icon"></use>
+          </svg>
           <h2>Connect with us</h2>
           <p>Join the Vite community</p>
           <ul>
             <li>
-              <a
-                href="https://github.com/vitejs/vite?ref=vite-starter-icon"
-                target="_blank"
-              >
-                <img src={githubIcon} alt="GitHub" />
+              <a href="https://github.com/vitejs/vite" target="_blank">
+                <svg
+                  className="button-icon"
+                  role="presentation"
+                  aria-hidden="true"
+                >
+                  <use href="/icons.svg#github-icon"></use>
+                </svg>
                 GitHub
               </a>
             </li>
             <li>
-              <a
-                href="https://chat.vite.dev/?ref=vite-starter-icon"
-                target="_blank"
-              >
-                <img src={discordIcon} alt="Discord" />
+              <a href="https://chat.vite.dev/" target="_blank">
+                <svg
+                  className="button-icon"
+                  role="presentation"
+                  aria-hidden="true"
+                >
+                  <use href="/icons.svg#discord-icon"></use>
+                </svg>
                 Discord
               </a>
             </li>
             <li>
-              <a
-                href="https://x.com/vite_js?ref=vite-starter-icon"
-                target="_blank"
-              >
-                <img src={xIcon} alt="X" />
+              <a href="https://x.com/vite_js" target="_blank">
+                <svg
+                  className="button-icon"
+                  role="presentation"
+                  aria-hidden="true"
+                >
+                  <use href="/icons.svg#x-icon"></use>
+                </svg>
                 X.com
               </a>
             </li>
             <li>
-              <a
-                href="https://bsky.app/profile/vite.dev?ref=vite-starter-icon"
-                target="_blank"
-              >
-                <img src={blueskyIcon} alt="Bluesky" />
+              <a href="https://bsky.app/profile/vite.dev" target="_blank">
+                <svg
+                  className="button-icon"
+                  role="presentation"
+                  aria-hidden="true"
+                >
+                  <use href="/icons.svg#bluesky-icon"></use>
+                </svg>
                 Bluesky
               </a>
             </li>
