@@ -108,7 +108,7 @@
     "obug": "^1.0.2",
     "dotenv": "^17.2.3",
     "dotenv-expand": "^12.0.3",
-    "es-module-lexer": "^1.7.0",
+    "es-module-lexer": "^2.0.0",
     "esbuild": "^0.27.2",
     "escape-html": "^1.0.3",
     "estree-walker": "^3.0.3",
