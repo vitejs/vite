@@ -1277,6 +1277,52 @@ export function injectEnvironmentToHooks(
   return clone
 }
 
+type AbstractHook<Handler extends Function> = {
+  handler: Handler
+  filter?: unknown
+  order?: unknown
+}
+const wrappedHookMap = new WeakMap<
+  AbstractHook<Function>,
+  Array<AbstractHook<Function>>
+>()
+function wrapHookObject<
+  Handler extends Function,
+  Hook extends AbstractHook<Handler>,
+>(hook: Hook, handler: Handler): Hook {
+  const newHook = {
+    ...hook,
+    handler,
+  }
+
+  if (!wrappedHookMap.has(hook)) {
+    wrappedHookMap.set(hook, [])
+    Object.defineProperty(hook, 'filter', {
+      get() {
+        return wrappedHookMap.get(hook)![0].filter
+      },
+      set(v) {
+        for (const h of wrappedHookMap.get(hook)!) {
+          h.filter = v
+        }
+      },
+    })
+    Object.defineProperty(hook, 'order', {
+      get() {
+        return wrappedHookMap.get(hook)![0].order
+      },
+      set(v) {
+        for (const h of wrappedHookMap.get(hook)!) {
+          h.order = v
+        }
+      },
+    })
+  }
+  wrappedHookMap.get(hook)!.push(newHook)
+
+  return newHook
+}
+
 function wrapEnvironmentResolveId(
   environment: Environment,
   hook: Plugin['resolveId'] | undefined,
@@ -1295,8 +1341,7 @@ function wrapEnvironmentResolveId(
   }
 
   if ('handler' in hook) {
-    hook.handler = handler
-    return hook
+    return wrapHookObject(hook, handler)
   } else {
     return handler
   }
@@ -1319,8 +1364,7 @@ function wrapEnvironmentLoad(
   }
 
   if ('handler' in hook) {
-    hook.handler = handler
-    return hook
+    return wrapHookObject(hook, handler)
   } else {
     return handler
   }
@@ -1344,8 +1388,7 @@ function wrapEnvironmentTransform(
   }
 
   if ('handler' in hook) {
-    hook.handler = handler
-    return hook
+    return wrapHookObject(hook, handler)
   } else {
     return handler
   }
@@ -1385,8 +1428,7 @@ function wrapEnvironmentHook<HookName extends keyof Plugin>(
   }
 
   if ('handler' in hook) {
-    hook.handler = handler
-    return hook
+    return wrapHookObject(hook, handler)
   } else {
     return handler
   }
