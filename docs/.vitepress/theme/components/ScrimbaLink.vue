@@ -18,9 +18,11 @@ defineProps<{
 
 <style scoped>
 .scrimba {
-  margin: 28px 0;
-  background-color: var(--vp-c-bg-soft);
-  padding: 1em 1.25em;
+  margin: 16px 0;
+  color: var(--vp-custom-block-info-text);
+  background-color: var(--vp-custom-block-info-bg);
+  border: 1px solid var(--vp-custom-block-info-border);
+  padding: 16px 20px;
   border-radius: 8px;
   display: flex;
   align-items: center;
