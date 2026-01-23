@@ -25,8 +25,6 @@ Vite provides built-in support for server-side rendering (SSR). [`create-vite-ex
 
 You can also scaffold these projects locally by [running `create-vite`](./index.md#scaffolding-your-first-vite-project) and choose `Others > create-vite-extra` under the framework option.
 
-<ScrimbaLink href="https://scrimba.com/intro-to-vite-c03p6pbbdq/~0yhj?via=vite" title="SSR in Vite">Watch an interactive lesson on Scrimba</ScrimbaLink>
-
 ## Source Structure
 
 A typical SSR application will have the following source file structure:

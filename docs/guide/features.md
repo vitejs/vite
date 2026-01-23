@@ -30,8 +30,6 @@ Note you don't need to manually set these up - when you [create an app via `crea
 
 Vite supports importing `.ts` files out of the box.
 
-<ScrimbaLink href="https://scrimba.com/intro-to-vite-c03p6pbbdq/~0t6?via=vite" title="TypeScript in Vite">Watch an interactive lesson on Scrimba</ScrimbaLink>
-
 ### Transpile Only
 
 Note that Vite only performs transpilation on `.ts` files and does **NOT** perform type checking. It assumes type checking is taken care of by your IDE and build process.
