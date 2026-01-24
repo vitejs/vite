@@ -1,3 +1,13 @@
+## [8.0.0-beta.10](https://github.com/vitejs/vite/compare/v8.0.0-beta.9...v8.0.0-beta.10) (2026-01-24)
+### Bug Fixes
+
+* avoid using deprecated `output.inlineDynamicImport` option ([#21464](https://github.com/vitejs/vite/issues/21464)) ([471ce62](https://github.com/vitejs/vite/commit/471ce6275663f068afa241a55711fd646d482385))
+* use separate hook object for each environment ([#21472](https://github.com/vitejs/vite/issues/21472)) ([66347f6](https://github.com/vitejs/vite/commit/66347f6df0e723d9d03ea31ab41ab5b767ad15ba))
+
+### Documentation
+
+* update `build.dynamicImportVarsOptions` ([#21477](https://github.com/vitejs/vite/issues/21477)) ([54ce2ed](https://github.com/vitejs/vite/commit/54ce2ed15a95619bd18ac6609b7d7b5f42b4965d))
+
 ## [8.0.0-beta.9](https://github.com/vitejs/vite/compare/v8.0.0-beta.8...v8.0.0-beta.9) (2026-01-22)
 ### Features
 
