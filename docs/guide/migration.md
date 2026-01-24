@@ -297,7 +297,7 @@ The `build.rollupOptions.watch.chokidar` option was removed. Please migrate to t
 
 ### Deprecate `build.rollupOptions.output.manualChunks`
 
-The `output.manualChunks` option is deprecated. Rolldown has the more flexible [`advancedChunks`](https://rolldown.rs/reference/OutputOptions.advancedChunks) option. See Rolldown's docs for more details about `advancedChunks`: [Advanced Chunks - Rolldown](https://rolldown.rs/in-depth/advanced-chunks).
+The `output.manualChunks` option is deprecated. Rolldown has the more flexible [`codeSplitting`](https://rolldown.rs/reference/OutputOptions.codeSplitting) option. See Rolldown's docs for more details about `codeSplitting`: [Manual Code Splitting - Rolldown](https://rolldown.rs/in-depth/manual-code-splitting).
 
 ### Module Type Support and Auto Detection
 

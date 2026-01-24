@@ -66,7 +66,7 @@ For example, you can specify multiple Rolldown outputs with plugins that are onl
 
 ## Chunking Strategy
 
-You can configure how chunks are split using `build.rolldownOptions.output.advancedChunks` (see [Rolldown docs](https://rolldown.rs/in-depth/advanced-chunks)). If you use a framework, refer to their documentation for configuring how chunks are split.
+You can configure how chunks are split using [`build.rolldownOptions.output.codeSplitting`](https://rolldown.rs/reference/OutputOptions.codeSplitting) (see [Rolldown docs](https://rolldown.rs/in-depth/manual-code-splitting)). If you use a framework, refer to their documentation for configuring how chunks are split.
 
 ## Load Error Handling
 
