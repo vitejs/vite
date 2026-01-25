@@ -1,0 +1,520 @@
+diff --git a/packages/vite/src/node/build.ts b/packages/vite/src/node/build.ts
+index 9be1e7bfd..425b104f2 100644
+--- a/packages/vite/src/node/build.ts
++++ b/packages/vite/src/node/build.ts
+@@ -106,6 +106,11 @@ export interface BuildEnvironmentOptions {
+    * @default 'baseline-widely-available'
+    */
+   target?: 'baseline-widely-available' | EsbuildTarget | false
++  /**
++   * @internal - Output build statistics as JSON
++   * When true, output to stdout. When string, output to file path.
++   */
++  _jsonStats?: boolean | string
+   /**
+    * whether to inject module preload polyfill.
+    * Note: does not apply to library mode.
+@@ -777,6 +782,7 @@ export function resolveRolldownOptions(
+  **/
+ async function buildEnvironment(
+   environment: BuildEnvironment,
++  buildStats?: import('./buildStats').BuildStatsCollector,
+ ): Promise<RolldownOutput | RolldownOutput[] | RolldownWatcher> {
+   const { logger, config } = environment
+   const { root, build: options } = config
+@@ -869,6 +875,15 @@ async function buildEnvironment(
+     logger.info(
+       `${colors.green(`✓ built in ${displayTime(Date.now() - startTime)}`)}`,
+     )
++
++    // Collect build statistics if enabled
++    if (buildStats) {
++      for (const output of res) {
++        const outDir = path.resolve(root, options.outDir)
++        await buildStats.addOutput(environment.name, output.output, outDir)
++      }
++    }
++
+     return Array.isArray(rollupOptions.output) ? res : res[0]
+   } catch (e) {
+     enhanceRollupError(e)
+@@ -1679,6 +1694,8 @@ export interface ViteBuilder {
+   build(
+     environment: BuildEnvironment,
+   ): Promise<RolldownOutput | RolldownOutput[] | RolldownWatcher>
++  /** @internal - Build statistics collector for JSON output */
++  _buildStats?: import('./buildStats').BuildStatsCollector
+ }
+ 
+ export interface BuilderOptions {
+@@ -1745,10 +1762,22 @@ export async function createBuilder(
+ 
+   const environments: Record<string, BuildEnvironment> = {}
+ 
++  // Create build stats collector if JSON output is requested
++  let buildStats: import('./buildStats').BuildStatsCollector | undefined
++  const jsonStats = (inlineConfig.build as BuildEnvironmentOptions)?._jsonStats
++  if (jsonStats) {
++    const { BuildStatsCollector } = await import('./buildStats')
++    buildStats = new BuildStatsCollector(config.build.reportCompressedSize)
++  }
++
+   const builder: ViteBuilder = {
+     environments,
+     config,
++    _buildStats: buildStats,
+     async buildApp() {
++      // Start collecting stats if enabled
++      buildStats?.start()
++
+       const pluginContext = new BasicMinimalPluginContext(
+         { ...basePluginContextMeta, watchMode: false },
+         config.logger,
+@@ -1786,7 +1815,7 @@ export async function createBuilder(
+     async build(
+       environment: BuildEnvironment,
+     ): Promise<RolldownOutput | RolldownOutput[] | RolldownWatcher> {
+-      const output = await buildEnvironment(environment)
++      const output = await buildEnvironment(environment, buildStats)
+       environment.isBuilt = true
+       return output
+     },
+@@ -1860,4 +1889,4 @@ export async function createBuilder(
+ export type BuildAppHook = (
+   this: MinimalPluginContextWithoutEnvironment,
+   builder: ViteBuilder,
+-) => Promise<void>
++) => Promise<void>
+\ No newline at end of file
+diff --git a/packages/vite/src/node/buildStats.ts b/packages/vite/src/node/buildStats.ts
+new file mode 100644
+index 000000000..c0867e3c5
+--- /dev/null
++++ b/packages/vite/src/node/buildStats.ts
+@@ -0,0 +1,294 @@
++import fs from 'node:fs'
++import fsp from 'node:fs/promises'
++import path from 'node:path'
++import { gzip } from 'node:zlib'
++import { promisify } from 'node:util'
++import type { OutputAsset, OutputBundle, OutputChunk } from 'rolldown'
++import { VERSION } from './constants'
++
++const compress = promisify(gzip)
++
++/**
++ * Statistics for an individual asset in the build output
++ */
++export interface AssetStats {
++  /** File name of the asset */
++  name: string
++  /** Type identifier */
++  type: 'asset'
++  /** Size in bytes */
++  size: number
++  /** Gzip compressed size in bytes (null if not computed) */
++  gzipSize: number | null
++}
++
++/**
++ * Statistics for an individual chunk in the build output
++ */
++export interface ChunkStats {
++  /** File name of the chunk */
++  name: string
++  /** Type identifier */
++  type: 'chunk'
++  /** Size in bytes */
++  size: number
++  /** Gzip compressed size in bytes (null if not computed) */
++  gzipSize: number | null
++  /** Whether this is an entry chunk */
++  isEntry: boolean
++  /** Whether this is a dynamic entry chunk */
++  isDynamicEntry: boolean
++  /** Module IDs included in this chunk */
++  modules: string[]
++  /** Static imports */
++  imports: string[]
++  /** Dynamic imports */
++  dynamicImports: string[]
++}
++
++/**
++ * Aggregated statistics for an environment's build output
++ */
++export interface EnvironmentBuildStats {
++  /** Output directory path */
++  outDir: string
++  /** List of asset statistics */
++  assets: AssetStats[]
++  /** List of chunk statistics */
++  chunks: ChunkStats[]
++  /** Aggregated totals */
++  totals: {
++    /** Total number of assets */
++    assetCount: number
++    /** Total number of chunks */
++    chunkCount: number
++    /** Total size of all outputs in bytes */
++    totalSize: number
++    /** Total gzip size of all outputs in bytes (null if not computed) */
++    totalGzipSize: number | null
++  }
++}
++
++/**
++ * Warning collected during build
++ */
++export interface BuildWarning {
++  /** Warning message */
++  message: string
++  /** Plugin that generated the warning */
++  plugin?: string
++}
++
++/**
++ * Error collected during build
++ */
++export interface BuildError {
++  /** Error message */
++  message: string
++  /** Plugin that generated the error */
++  plugin?: string
++}
++
++/**
++ * Complete build statistics output
++ */
++export interface BuildStatistics {
++  /** Vite version */
++  version: string
++  /** Build timestamp in Unix milliseconds */
++  timestamp: number
++  /** Total build duration in milliseconds */
++  duration: number
++  /** Whether the build succeeded */
++  success: boolean
++  /** Statistics per environment */
++  outputs: Record<string, EnvironmentBuildStats>
++  /** Warnings collected during build */
++  warnings: BuildWarning[]
++  /** Errors collected during build */
++  errors: BuildError[]
++}
++
++/**
++ * Collector for build statistics
++ */
++export class BuildStatsCollector {
++  private startTime: number = 0
++  private outputs: Record<string, EnvironmentBuildStats> = {}
++  private warnings: BuildWarning[] = []
++  private errors: BuildError[] = []
++  private reportCompressedSize: boolean
++
++  constructor(reportCompressedSize: boolean = true) {
++    this.reportCompressedSize = reportCompressedSize
++  }
++
++  /**
++   * Mark the start of the build
++   */
++  start(): void {
++    this.startTime = Date.now()
++    this.outputs = {}
++    this.warnings = []
++    this.errors = []
++  }
++
++  /**
++   * Add a warning to the statistics
++   */
++  addWarning(message: string, plugin?: string): void {
++    this.warnings.push({ message, ...(plugin && { plugin }) })
++  }
++
++  /**
++   * Add an error to the statistics
++   */
++  addError(message: string, plugin?: string): void {
++    this.errors.push({ message, ...(plugin && { plugin }) })
++  }
++
++  /**
++   * Process and add output bundle statistics for an environment
++   */
++  async addOutput(
++    environmentName: string,
++    output: OutputBundle,
++    outDir: string,
++  ): Promise<void> {
++    const assets: AssetStats[] = []
++    const chunks: ChunkStats[] = []
++
++    let totalSize = 0
++    let totalGzipSize: number | null = this.reportCompressedSize ? 0 : null
++
++    for (const [fileName, item] of Object.entries(output)) {
++      // Skip source maps
++      if (fileName.endsWith('.map')) continue
++
++      if (item.type === 'chunk') {
++        const chunk = item as OutputChunk
++        const size = Buffer.byteLength(chunk.code)
++        const gzipSize = this.reportCompressedSize
++          ? await this.getCompressedSize(chunk.code)
++          : null
++
++        chunks.push({
++          name: fileName,
++          type: 'chunk',
++          size,
++          gzipSize,
++          isEntry: chunk.isEntry,
++          isDynamicEntry: chunk.isDynamicEntry,
++          modules: Object.keys(chunk.modules),
++          imports: chunk.imports,
++          dynamicImports: chunk.dynamicImports,
++        })
++
++        totalSize += size
++        if (totalGzipSize !== null && gzipSize !== null) {
++          totalGzipSize += gzipSize
++        }
++      } else {
++        const asset = item as OutputAsset
++        const size = Buffer.byteLength(asset.source)
++        const isCompressible = this.isCompressible(fileName)
++        const gzipSize =
++          this.reportCompressedSize && isCompressible
++            ? await this.getCompressedSize(asset.source)
++            : null
++
++        assets.push({
++          name: fileName,
++          type: 'asset',
++          size,
++          gzipSize,
++        })
++
++        totalSize += size
++        if (totalGzipSize !== null && gzipSize !== null) {
++          totalGzipSize += gzipSize
++        }
++      }
++    }
++
++    // Sort by size descending
++    assets.sort((a, b) => b.size - a.size)
++    chunks.sort((a, b) => b.size - a.size)
++
++    this.outputs[environmentName] = {
++      outDir,
++      assets,
++      chunks,
++      totals: {
++        assetCount: assets.length,
++        chunkCount: chunks.length,
++        totalSize,
++        totalGzipSize,
++      },
++    }
++  }
++
++  /**
++   * Generate the final build statistics
++   */
++  getStats(success: boolean): BuildStatistics {
++    return {
++      version: VERSION,
++      timestamp: this.startTime,
++      duration: Date.now() - this.startTime,
++      success,
++      outputs: this.outputs,
++      warnings: this.warnings,
++      errors: this.errors,
++    }
++  }
++
++  /**
++   * Check if a file should have its gzip size computed
++   */
++  private isCompressible(fileName: string): boolean {
++    return /\.(html|json|svg|txt|xml|xhtml|wasm|js|mjs|cjs|css)$/.test(
++      fileName,
++    )
++  }
++
++  /**
++   * Compute gzip compressed size
++   */
++  private async getCompressedSize(
++    content: string | Uint8Array,
++  ): Promise<number> {
++    const buffer =
++      typeof content === 'string' ? Buffer.from(content) : Buffer.from(content)
++    const compressed = await compress(buffer)
++    return compressed.length
++  }
++}
++
++/**
++ * Write build statistics to a file or stdout
++ * @param stats - The build statistics to write
++ * @param output - File path to write to, or true for stdout
++ */
++export async function writeBuildStats(
++  stats: BuildStatistics,
++  output: string | true,
++): Promise<void> {
++  const json = JSON.stringify(stats, null, 2)
++
++  if (output === true) {
++    // Write to stdout
++    console.log(json)
++  } else {
++    // Write to file
++    const outputPath = path.resolve(output)
++    const outputDir = path.dirname(outputPath)
++
++    // Ensure directory exists
++    if (!fs.existsSync(outputDir)) {
++      await fsp.mkdir(outputDir, { recursive: true })
++    }
++
++    await fsp.writeFile(outputPath, json, 'utf-8')
++  }
++}
+\ No newline at end of file
+diff --git a/packages/vite/src/node/cli.ts b/packages/vite/src/node/cli.ts
+index e0a30ec00..601d687e7 100644
+--- a/packages/vite/src/node/cli.ts
++++ b/packages/vite/src/node/cli.ts
+@@ -339,10 +339,16 @@ cli
+   )
+   .option('-w, --watch', `[boolean] rebuilds when modules have changed on disk`)
+   .option('--app', `[boolean] same as \`builder: {}\``)
++  .option(
++    '--json [filename]',
++    `[boolean | string] output build statistics as JSON (to stdout or file)`,
++  )
+   .action(
+     async (
+       root: string,
+-      options: BuildEnvironmentOptions & BuilderCLIOptions & GlobalCLIOptions,
++      options: BuildEnvironmentOptions &
++        BuilderCLIOptions &
++        GlobalCLIOptions & { json?: boolean | string },
+     ) => {
+       filterDuplicateOptions(options)
+       const { createBuilder } = await import('./build')
+@@ -351,6 +357,12 @@ cli
+         cleanBuilderCLIOptions(options),
+       )
+ 
++      // Determine JSON output target
++      const jsonOutput = options.json
++      // Suppress normal logging when outputting JSON to stdout
++      const effectiveLogLevel =
++        jsonOutput === true ? ('silent' as LogLevel) : options.logLevel
++
+       try {
+         const inlineConfig: InlineConfig = {
+           root,
+@@ -358,23 +370,50 @@ cli
+           mode: options.mode,
+           configFile: options.config,
+           configLoader: options.configLoader,
+-          logLevel: options.logLevel,
++          logLevel: effectiveLogLevel,
+           clearScreen: options.clearScreen,
+-          build: buildOptions,
++          build: {
++            ...buildOptions,
++            // Pass json option through build config
++            ...(jsonOutput ? { _jsonStats: jsonOutput } : {}),
++          },
+           ...(options.app ? { builder: {} } : {}),
+         }
+         const builder = await createBuilder(inlineConfig, null)
+         await builder.buildApp()
++
++        // Output JSON stats if requested
++        if (jsonOutput && builder._buildStats) {
++          const { writeBuildStats } = await import('./buildStats')
++          await writeBuildStats(
++            builder._buildStats.getStats(true),
++            jsonOutput === true ? true : jsonOutput,
++          )
++        }
+       } catch (e) {
+-        createLogger(options.logLevel).error(
+-          colors.red(`error during build:\n${e.stack}`),
+-          { error: e },
+-        )
++        // If JSON output is requested, output error as JSON
++        if (jsonOutput) {
++          const { BuildStatsCollector, writeBuildStats } = await import('./buildStats')
++          const errorCollector = new BuildStatsCollector(false)
++          errorCollector.start()
++          errorCollector.addError(e.message || 'Build failed')
++          await writeBuildStats(
++            errorCollector.getStats(false),
++            jsonOutput === true ? true : jsonOutput,
++          )
++        } else {
++          createLogger(options.logLevel).error(
++            colors.red(`error during build:\n${e.stack}`),
++            { error: e },
++          )
++        }
+         process.exit(1)
+       } finally {
+-        await stopProfiler((message) =>
+-          createLogger(options.logLevel).info(message),
+-        )
++        if (!jsonOutput) {
++          await stopProfiler((message) =>
++            createLogger(options.logLevel).info(message),
++          )
++        }
+       }
+     },
+   )
+@@ -475,4 +514,4 @@ cli
+ cli.help()
+ cli.version(VERSION)
+ 
+-cli.parse()
++cli.parse()
+\ No newline at end of file
+diff --git a/packages/vite/src/node/index.ts b/packages/vite/src/node/index.ts
+index 1a38799e7..677192690 100644
+--- a/packages/vite/src/node/index.ts
++++ b/packages/vite/src/node/index.ts
+@@ -267,6 +267,17 @@ export type {
+ } from '#types/importGlob'
+ export type { ChunkMetadata, CustomPluginOptionsVite } from '#types/metadata'
+ 
++// Build statistics types
++export type {
++  AssetStats,
++  ChunkStats,
++  EnvironmentBuildStats,
++  BuildStatistics,
++  BuildWarning,
++  BuildError,
++} from './buildStats'
++export { BuildStatsCollector, writeBuildStats } from './buildStats'
++
+ // dep types
+ export type {
+   AliasOptions,
+@@ -286,4 +297,4 @@ export type { Matcher, AnymatchPattern, AnymatchFn } from '#dep-types/anymatch'
+ export type { LightningCSSOptions } from '#types/internal/lightningcssOptions'
+ 
+ // Backward compatibility
+-export type { ModuleGraph, ModuleNode } from './server/mixedModuleGraph'
++export type { ModuleGraph, ModuleNode } from './server/mixedModuleGraph'
+\ No newline at end of file

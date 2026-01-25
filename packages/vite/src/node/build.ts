@@ -107,6 +107,11 @@ export interface BuildEnvironmentOptions {
    */
   target?: 'baseline-widely-available' | EsbuildTarget | false
   /**
+   * @internal - Output build statistics as JSON
+   * When true, output to stdout. When string, output to file path.
+   */
+  _jsonStats?: boolean | string
+  /**
    * whether to inject module preload polyfill.
    * Note: does not apply to library mode.
    * @default true
@@ -777,6 +782,7 @@ export function resolveRolldownOptions(
  **/
 async function buildEnvironment(
   environment: BuildEnvironment,
+  buildStats?: import('./buildStats').BuildStatsCollector,
 ): Promise<RolldownOutput | RolldownOutput[] | RolldownWatcher> {
   const { logger, config } = environment
   const { root, build: options } = config
@@ -869,6 +875,15 @@ async function buildEnvironment(
     logger.info(
       `${colors.green(`✓ built in ${displayTime(Date.now() - startTime)}`)}`,
     )
+
+    // Collect build statistics if enabled
+    if (buildStats) {
+      for (const output of res) {
+        const outDir = path.resolve(root, options.outDir)
+        await buildStats.addOutput(environment.name, output.output, outDir)
+      }
+    }
+
     return Array.isArray(rollupOptions.output) ? res : res[0]
   } catch (e) {
     enhanceRollupError(e)
@@ -1679,6 +1694,8 @@ export interface ViteBuilder {
   build(
     environment: BuildEnvironment,
   ): Promise<RolldownOutput | RolldownOutput[] | RolldownWatcher>
+  /** @internal - Build statistics collector for JSON output */
+  _buildStats?: import('./buildStats').BuildStatsCollector
 }
 
 export interface BuilderOptions {
@@ -1745,10 +1762,22 @@ export async function createBuilder(
 
   const environments: Record<string, BuildEnvironment> = {}
 
+  // Create build stats collector if JSON output is requested
+  let buildStats: import('./buildStats').BuildStatsCollector | undefined
+  const jsonStats = (inlineConfig.build as BuildEnvironmentOptions)?._jsonStats
+  if (jsonStats) {
+    const { BuildStatsCollector } = await import('./buildStats')
+    buildStats = new BuildStatsCollector(config.build.reportCompressedSize)
+  }
+
   const builder: ViteBuilder = {
     environments,
     config,
+    _buildStats: buildStats,
     async buildApp() {
+      // Start collecting stats if enabled
+      buildStats?.start()
+
       const pluginContext = new BasicMinimalPluginContext(
         { ...basePluginContextMeta, watchMode: false },
         config.logger,
@@ -1786,7 +1815,7 @@ export async function createBuilder(
     async build(
       environment: BuildEnvironment,
     ): Promise<RolldownOutput | RolldownOutput[] | RolldownWatcher> {
-      const output = await buildEnvironment(environment)
+      const output = await buildEnvironment(environment, buildStats)
       environment.isBuilt = true
       return output
     },

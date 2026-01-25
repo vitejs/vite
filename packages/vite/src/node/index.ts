@@ -267,6 +267,17 @@ export type {
 } from '#types/importGlob'
 export type { ChunkMetadata, CustomPluginOptionsVite } from '#types/metadata'
 
+// Build statistics types
+export type {
+  AssetStats,
+  ChunkStats,
+  EnvironmentBuildStats,
+  BuildStatistics,
+  BuildWarning,
+  BuildError,
+} from './buildStats'
+export { BuildStatsCollector, writeBuildStats } from './buildStats'
+
 // dep types
 export type {
   AliasOptions,

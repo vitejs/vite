@@ -1,0 +1,653 @@
+diff --git a/packages/vite/src/node/__tests__/buildStats.spec.ts b/packages/vite/src/node/__tests__/buildStats.spec.ts
+new file mode 100644
+index 000000000..e4f53cd61
+--- /dev/null
++++ b/packages/vite/src/node/__tests__/buildStats.spec.ts
+@@ -0,0 +1,590 @@
++import { describe, expect, test, beforeAll, afterAll } from 'vitest'
++import { execSync } from 'node:child_process'
++import fs from 'node:fs'
++import path from 'node:path'
++import { fileURLToPath } from 'node:url'
++
++const __dirname = path.dirname(fileURLToPath(import.meta.url))
++const viteRoot = path.resolve(__dirname, '../../../../..') // 5 levels up to repo root
++const testProjectDir = path.join(viteRoot, '.test-json-stats-project')
++const viteBin = path.join(viteRoot, 'packages/vite/bin/vite.js')
++
++describe('vite build --json', () => {
++  beforeAll(() => {
++    if (fs.existsSync(testProjectDir)) {
++      fs.rmSync(testProjectDir, { recursive: true, force: true })
++    }
++    fs.mkdirSync(testProjectDir, { recursive: true })
++    fs.mkdirSync(path.join(testProjectDir, 'src'), { recursive: true })
++    fs.mkdirSync(path.join(testProjectDir, 'public'), { recursive: true })
++
++    fs.writeFileSync(
++      path.join(testProjectDir, 'index.html'),
++      `<!DOCTYPE html>
++<html>
++<head><title>Test</title></head>
++<body>
++  <img src="/logo.png" />
++  <script type="module" src="/src/main.js"></script>
++</body>
++</html>`,
++    )
++
++    fs.writeFileSync(
++      path.join(testProjectDir, 'src/main.js'),
++      `import './style.css'
++import { helper } from './helper.js'
++
++console.log(helper())
++
++const loadAsync = () => import('./async.js')
++
++export { loadAsync }
++`,
++    )
++
++    fs.writeFileSync(
++      path.join(testProjectDir, 'src/helper.js'),
++      `export const helper = () => 'Hello from helper'`,
++    )
++
++    fs.writeFileSync(
++      path.join(testProjectDir, 'src/async.js'),
++      `export const asyncFunc = () => console.log('Async loaded')`,
++    )
++
++    fs.writeFileSync(
++      path.join(testProjectDir, 'src/style.css'),
++      `body { 
++  color: blue; 
++  font-size: 16px; 
++  background: white;
++}`,
++    )
++
++    const pngBuffer = Buffer.from([
++      0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a, 0x00, 0x00, 0x00, 0x0d,
++      0x49, 0x48, 0x44, 0x52, 0x00, 0x00, 0x00, 0x01, 0x00, 0x00, 0x00, 0x01,
++      0x08, 0x06, 0x00, 0x00, 0x00, 0x1f, 0x15, 0xc4, 0x89, 0x00, 0x00, 0x00,
++      0x0a, 0x49, 0x44, 0x41, 0x54, 0x78, 0x9c, 0x63, 0x00, 0x01, 0x00, 0x00,
++      0x05, 0x00, 0x01, 0x0d, 0x0a, 0x2d, 0xb4, 0x00, 0x00, 0x00, 0x00, 0x49,
++      0x45, 0x4e, 0x44, 0xae, 0x42, 0x60, 0x82,
++    ])
++    fs.writeFileSync(path.join(testProjectDir, 'public/logo.png'), pngBuffer)
++
++    fs.writeFileSync(
++      path.join(testProjectDir, 'vite.config.js'),
++      `export default {
++  build: {
++    reportCompressedSize: true,
++    sourcemap: true
++  }
++}`,
++    )
++  })
++
++  afterAll(() => {
++    if (fs.existsSync(testProjectDir)) {
++      fs.rmSync(testProjectDir, { recursive: true, force: true })
++    }
++  })
++
++  test('outputs valid JSON to stdout with all required fields', () => {
++    const result = execSync(`node "${viteBin}" build --json`, {
++      cwd: testProjectDir,
++      encoding: 'utf8',
++      stdio: ['pipe', 'pipe', 'pipe'],
++    })
++
++    const stats = JSON.parse(result)
++
++    expect(stats).toHaveProperty('version')
++    expect(stats).toHaveProperty('timestamp')
++    expect(stats).toHaveProperty('duration')
++    expect(stats).toHaveProperty('success')
++    expect(stats).toHaveProperty('outputs')
++    expect(stats).toHaveProperty('warnings')
++    expect(stats).toHaveProperty('errors')
++
++    expect(typeof stats.version).toBe('string')
++    expect(typeof stats.timestamp).toBe('number')
++    expect(typeof stats.duration).toBe('number')
++    expect(stats.success).toBe(true)
++    expect(typeof stats.outputs).toBe('object')
++    expect(Array.isArray(stats.warnings)).toBe(true)
++    expect(Array.isArray(stats.errors)).toBe(true)
++  })
++
++  test('suppresses normal build logs when outputting to stdout', () => {
++    const result = execSync(`node "${viteBin}" build --json 2>&1`, {
++      cwd: testProjectDir,
++      encoding: 'utf8',
++    })
++
++    // Output should be valid JSON only, no build logs mixed in
++    expect(() => JSON.parse(result)).not.toThrow()
++
++    // Should not contain typical build log patterns
++    expect(result).not.toMatch(/vite v\d+\.\d+\.\d+/i)
++    expect(result).not.toMatch(/building for production/i)
++    expect(result).not.toMatch(/✓ built in/i)
++  })
++
++  test('includes outDir as absolute path in environment output', () => {
++    const result = execSync(`node "${viteBin}" build --json`, {
++      cwd: testProjectDir,
++      encoding: 'utf8',
++      stdio: ['pipe', 'pipe', 'pipe'],
++    })
++
++    const stats = JSON.parse(result)
++    const envNames = Object.keys(stats.outputs)
++    expect(envNames.length).toBeGreaterThan(0)
++
++    const env = stats.outputs[envNames[0]]
++    expect(env).toHaveProperty('outDir')
++    expect(typeof env.outDir).toBe('string')
++    expect(path.isAbsolute(env.outDir)).toBe(true)
++  })
++
++  test('writes JSON to specified file', () => {
++    const statsFile = path.join(testProjectDir, 'stats.json')
++
++    try {
++      execSync(`node "${viteBin}" build --json stats.json`, {
++        cwd: testProjectDir,
++        stdio: 'pipe',
++      })
++
++      expect(fs.existsSync(statsFile)).toBe(true)
++      const stats = JSON.parse(fs.readFileSync(statsFile, 'utf8'))
++      expect(stats.success).toBe(true)
++    } finally {
++      if (fs.existsSync(statsFile)) {
++        fs.unlinkSync(statsFile)
++      }
++    }
++  })
++
++  test('creates nested directories when writing to file', () => {
++    const statsFile = path.join(testProjectDir, 'nested/path/stats.json')
++    const nestedDir = path.join(testProjectDir, 'nested')
++
++    try {
++      execSync(`node "${viteBin}" build --json nested/path/stats.json`, {
++        cwd: testProjectDir,
++        stdio: 'pipe',
++      })
++
++      expect(fs.existsSync(statsFile)).toBe(true)
++    } finally {
++      if (fs.existsSync(nestedDir)) {
++        fs.rmSync(nestedDir, { recursive: true, force: true })
++      }
++    }
++  })
++
++  test('formats JSON with 2-space indentation', () => {
++    const result = execSync(`node "${viteBin}" build --json`, {
++      cwd: testProjectDir,
++      encoding: 'utf8',
++      stdio: ['pipe', 'pipe', 'pipe'],
++    })
++
++    // Verify it's valid JSON
++    const parsed = JSON.parse(result)
++    expect(parsed).toBeDefined()
++
++    // Re-stringify with 2-space indent to get expected format
++    const expectedFormat = JSON.stringify(parsed, null, 2)
++
++    // The actual output should match the expected 2-space format
++    expect(result.trim()).toBe(expectedFormat.trim())
++
++    // Additionally verify no tabs are used
++    expect(result).not.toMatch(/\t/)
++
++    // Verify we have some indented lines (sanity check)
++    const lines = result.split('\n')
++    const indentedLines = lines.filter((line) => line.startsWith('  '))
++    expect(indentedLines.length).toBeGreaterThan(0)
++  })
++
++  test('excludes source map files from output', () => {
++    const result = execSync(`node "${viteBin}" build --json`, {
++      cwd: testProjectDir,
++      encoding: 'utf8',
++      stdio: ['pipe', 'pipe', 'pipe'],
++    })
++
++    const stats = JSON.parse(result)
++    const env = stats.outputs[Object.keys(stats.outputs)[0]]
++
++    const allFiles = [
++      ...env.chunks.map((c: any) => c.name),
++      ...env.assets.map((a: any) => a.name),
++    ]
++
++    const mapFiles = allFiles.filter((f: string) => f.endsWith('.map'))
++    expect(mapFiles).toHaveLength(0)
++  })
++
++  test('sorts chunks by size descending', () => {
++    const result = execSync(`node "${viteBin}" build --json`, {
++      cwd: testProjectDir,
++      encoding: 'utf8',
++      stdio: ['pipe', 'pipe', 'pipe'],
++    })
++
++    const stats = JSON.parse(result)
++    const env = stats.outputs[Object.keys(stats.outputs)[0]]
++
++    if (env.chunks.length > 1) {
++      for (let i = 0; i < env.chunks.length - 1; i++) {
++        expect(env.chunks[i].size).toBeGreaterThanOrEqual(
++          env.chunks[i + 1].size,
++        )
++      }
++    }
++  })
++
++  test('sorts assets by size descending', () => {
++    const result = execSync(`node "${viteBin}" build --json`, {
++      cwd: testProjectDir,
++      encoding: 'utf8',
++      stdio: ['pipe', 'pipe', 'pipe'],
++    })
++
++    const stats = JSON.parse(result)
++    const env = stats.outputs[Object.keys(stats.outputs)[0]]
++
++    if (env.assets.length > 1) {
++      for (let i = 0; i < env.assets.length - 1; i++) {
++        expect(env.assets[i].size).toBeGreaterThanOrEqual(
++          env.assets[i + 1].size,
++        )
++      }
++    }
++  })
++
++  test('includes chunk metadata with modules, imports, and dynamicImports', () => {
++    const result = execSync(`node "${viteBin}" build --json`, {
++      cwd: testProjectDir,
++      encoding: 'utf8',
++      stdio: ['pipe', 'pipe', 'pipe'],
++    })
++
++    const stats = JSON.parse(result)
++    const env = stats.outputs[Object.keys(stats.outputs)[0]]
++
++    expect(env.chunks.length).toBeGreaterThan(0)
++
++    env.chunks.forEach((chunk: any) => {
++      expect(chunk).toHaveProperty('name')
++      expect(chunk).toHaveProperty('type')
++      expect(chunk.type).toBe('chunk')
++      expect(chunk).toHaveProperty('size')
++      expect(chunk).toHaveProperty('gzipSize')
++      expect(chunk).toHaveProperty('isEntry')
++      expect(chunk).toHaveProperty('isDynamicEntry')
++      expect(chunk).toHaveProperty('modules')
++      expect(chunk).toHaveProperty('imports')
++      expect(chunk).toHaveProperty('dynamicImports')
++
++      // Verify boolean types for entry flags
++      expect(typeof chunk.isEntry).toBe('boolean')
++      expect(typeof chunk.isDynamicEntry).toBe('boolean')
++
++      expect(Array.isArray(chunk.modules)).toBe(true)
++      expect(Array.isArray(chunk.imports)).toBe(true)
++      expect(Array.isArray(chunk.dynamicImports)).toBe(true)
++
++      chunk.modules.forEach((m: any) => expect(typeof m).toBe('string'))
++      chunk.imports.forEach((i: any) => expect(typeof i).toBe('string'))
++      chunk.dynamicImports.forEach((d: any) => expect(typeof d).toBe('string'))
++    })
++
++    const chunksWithModules = env.chunks.filter(
++      (c: any) => c.modules.length > 0,
++    )
++    expect(chunksWithModules.length).toBeGreaterThan(0)
++  })
++
++  test('includes asset metadata with correct type', () => {
++    const result = execSync(`node "${viteBin}" build --json`, {
++      cwd: testProjectDir,
++      encoding: 'utf8',
++      stdio: ['pipe', 'pipe', 'pipe'],
++    })
++
++    const stats = JSON.parse(result)
++    const env = stats.outputs[Object.keys(stats.outputs)[0]]
++
++    env.assets.forEach((asset: any) => {
++      expect(asset).toHaveProperty('name')
++      expect(asset).toHaveProperty('type')
++      expect(asset.type).toBe('asset')
++      expect(asset).toHaveProperty('size')
++      expect(asset).toHaveProperty('gzipSize')
++    })
++  })
++
++  test('calculates gzip size for compressible files', () => {
++    const result = execSync(`node "${viteBin}" build --json`, {
++      cwd: testProjectDir,
++      encoding: 'utf8',
++      stdio: ['pipe', 'pipe', 'pipe'],
++    })
++
++    const stats = JSON.parse(result)
++    const env = stats.outputs[Object.keys(stats.outputs)[0]]
++
++    const jsChunks = env.chunks.filter((c: any) =>
++      c.name.match(/\.(js|mjs|cjs)$/),
++    )
++    jsChunks.forEach((chunk: any) => {
++      expect(typeof chunk.gzipSize).toBe('number')
++      expect(chunk.gzipSize).toBeGreaterThan(0)
++    })
++
++    const cssAssets = env.assets.filter((a: any) => a.name.endsWith('.css'))
++    cssAssets.forEach((asset: any) => {
++      expect(typeof asset.gzipSize).toBe('number')
++      expect(asset.gzipSize).toBeGreaterThan(0)
++    })
++  })
++
++  test('sets gzip size to null for non-compressible files', () => {
++    const result = execSync(`node "${viteBin}" build --json`, {
++      cwd: testProjectDir,
++      encoding: 'utf8',
++      stdio: ['pipe', 'pipe', 'pipe'],
++    })
++
++    const stats = JSON.parse(result)
++    const env = stats.outputs[Object.keys(stats.outputs)[0]]
++
++    const pngAssets = env.assets.filter((a: any) => a.name.endsWith('.png'))
++    pngAssets.forEach((asset: any) => {
++      expect(asset.gzipSize).toBeNull()
++    })
++  })
++
++  test('respects reportCompressedSize: false', () => {
++    const configPath = path.join(testProjectDir, 'vite.config.js')
++    const originalConfig = fs.readFileSync(configPath, 'utf8')
++
++    try {
++      fs.writeFileSync(
++        configPath,
++        `export default {
++  build: {
++    reportCompressedSize: false,
++    sourcemap: true
++  }
++}`,
++      )
++
++      const result = execSync(`node "${viteBin}" build --json`, {
++        cwd: testProjectDir,
++        encoding: 'utf8',
++        stdio: ['pipe', 'pipe', 'pipe'],
++      })
++
++      const stats = JSON.parse(result)
++      const env = stats.outputs[Object.keys(stats.outputs)[0]]
++
++      env.chunks.forEach((chunk: any) => {
++        expect(chunk.gzipSize).toBeNull()
++      })
++
++      env.assets.forEach((asset: any) => {
++        expect(asset.gzipSize).toBeNull()
++      })
++
++      expect(env.totals.totalGzipSize).toBeNull()
++    } finally {
++      fs.writeFileSync(configPath, originalConfig)
++    }
++  })
++
++  test('includes totals with totalSize as sum of all sizes', () => {
++    const result = execSync(`node "${viteBin}" build --json`, {
++      cwd: testProjectDir,
++      encoding: 'utf8',
++      stdio: ['pipe', 'pipe', 'pipe'],
++    })
++
++    const stats = JSON.parse(result)
++    const env = stats.outputs[Object.keys(stats.outputs)[0]]
++
++    expect(env.totals).toHaveProperty('chunkCount')
++    expect(env.totals).toHaveProperty('assetCount')
++    expect(env.totals).toHaveProperty('totalSize')
++    expect(env.totals).toHaveProperty('totalGzipSize')
++
++    expect(env.totals.chunkCount).toBe(env.chunks.length)
++    expect(env.totals.assetCount).toBe(env.assets.length)
++
++    const expectedTotalSize = [
++      ...env.chunks.map((c: any) => c.size),
++      ...env.assets.map((a: any) => a.size),
++    ].reduce((sum: number, size: number) => sum + size, 0)
++
++    expect(env.totals.totalSize).toBe(expectedTotalSize)
++  })
++
++  test('includes totalGzipSize as sum of all gzip sizes when enabled', () => {
++    const result = execSync(`node "${viteBin}" build --json`, {
++      cwd: testProjectDir,
++      encoding: 'utf8',
++      stdio: ['pipe', 'pipe', 'pipe'],
++    })
++
++    const stats = JSON.parse(result)
++    const env = stats.outputs[Object.keys(stats.outputs)[0]]
++
++    expect(typeof env.totals.totalGzipSize).toBe('number')
++
++    const chunkGzipSizes = env.chunks
++      .map((c: any) => c.gzipSize)
++      .filter((size: any) => size !== null) as number[]
++
++    const assetGzipSizes = env.assets
++      .map((a: any) => a.gzipSize)
++      .filter((size: any) => size !== null) as number[]
++
++    const expectedTotalGzipSize = [
++      ...chunkGzipSizes,
++      ...assetGzipSizes,
++    ].reduce((sum: number, size: number) => sum + size, 0)
++
++    expect(env.totals.totalGzipSize).toBe(expectedTotalGzipSize)
++  })
++
++    test('formats JSON file output with 2-space indentation', () => {
++    const statsFile = path.join(testProjectDir, 'formatted-stats.json')
++
++    try {
++      execSync(`node "${viteBin}" build --json formatted-stats.json`, {
++        cwd: testProjectDir,
++        stdio: 'pipe',
++      })
++
++      expect(fs.existsSync(statsFile)).toBe(true)
++      
++      // Read the file content
++      const fileContent = fs.readFileSync(statsFile, 'utf8')
++      const parsed = JSON.parse(fileContent)
++      
++      // Re-stringify with 2-space indent to get expected format
++      const expectedFormat = JSON.stringify(parsed, null, 2)
++      
++      // The file content should match the expected 2-space format
++      expect(fileContent.trim()).toBe(expectedFormat.trim())
++      
++      // Additionally verify no tabs are used
++      expect(fileContent).not.toMatch(/\t/)
++    } finally {
++      if (fs.existsSync(statsFile)) {
++        fs.unlinkSync(statsFile)
++      }
++    }
++  })
++
++  test('outputs are keyed by environment name', () => {
++    const result = execSync(`node "${viteBin}" build --json`, {
++      cwd: testProjectDir,
++      encoding: 'utf8',
++      stdio: ['pipe', 'pipe', 'pipe'],
++    })
++
++    const stats = JSON.parse(result)
++    
++    // Check that outputs object exists and has expected environment keys
++    expect(stats.outputs).toBeDefined()
++    expect(typeof stats.outputs).toBe('object')
++    
++    // In Vite, the default environment is 'client'
++    expect(stats.outputs).toHaveProperty('client')
++    
++    // Verify the environment name is used as the key
++    const envKeys = Object.keys(stats.outputs)
++    expect(envKeys.length).toBeGreaterThanOrEqual(1)
++    expect(envKeys[0]).toBe('client')
++  })
++
++  test('includes warnings array with message field', () => {
++    const result = execSync(`node "${viteBin}" build --json`, {
++      cwd: testProjectDir,
++      encoding: 'utf8',
++      stdio: ['pipe', 'pipe', 'pipe'],
++    })
++
++    const stats = JSON.parse(result)
++
++    expect(Array.isArray(stats.warnings)).toBe(true)
++
++    stats.warnings.forEach((warning: any) => {
++      expect(warning).toHaveProperty('message')
++      expect(typeof warning.message).toBe('string')
++    })
++  })
++
++  test('includes errors array with message field', () => {
++    const result = execSync(`node "${viteBin}" build --json`, {
++      cwd: testProjectDir,
++      encoding: 'utf8',
++      stdio: ['pipe', 'pipe', 'pipe'],
++    })
++
++    const stats = JSON.parse(result)
++
++    expect(Array.isArray(stats.errors)).toBe(true)
++
++    stats.errors.forEach((error: any) => {
++      expect(error).toHaveProperty('message')
++      expect(typeof error.message).toBe('string')
++    })
++  })
++
++  test('outputs JSON with success false on build failure', () => {
++    const configPath = path.join(testProjectDir, 'vite.config.js')
++    const originalConfig = fs.readFileSync(configPath, 'utf8')
++
++    try {
++      fs.writeFileSync(
++        configPath,
++        `export default {
++  build: {
++    rollupOptions: {
++      input: 'non-existent-file.js'
++    }
++  }
++}`,
++      )
++
++      let result: string
++      try {
++        result = execSync(`node "${viteBin}" build --json`, {
++          cwd: testProjectDir,
++          encoding: 'utf8',
++          stdio: ['pipe', 'pipe', 'pipe'],
++        })
++      } catch (e: any) {
++        result = e.stdout || ''
++      }
++
++      expect(result).toBeTruthy()
++      expect(result.length).toBeGreaterThan(0)
++
++      const stats = JSON.parse(result)
++      expect(stats.success).toBe(false)
++      expect(Array.isArray(stats.errors)).toBe(true)
++      expect(stats.errors.length).toBeGreaterThan(0)
++      expect(stats.errors[0]).toHaveProperty('message')
++    } finally {
++      fs.writeFileSync(configPath, originalConfig)
++    }
++  })
++})
+\ No newline at end of file
+diff --git a/test.sh b/test.sh
+new file mode 100755
+index 000000000..c99a3a49a
+--- /dev/null
++++ b/test.sh
+@@ -0,0 +1,49 @@
++#!/bin/bash
++
++set -e
++
++MODE=${1:-new}
++
++echo "=============================================="
++echo "Build Statistics JSON Export - Test Runner"
++echo "Mode: $MODE"
++echo "=============================================="
++
++# Build Vite before running tests (required for vitest to work)
++echo "Building Vite..."
++pnpm build
++
++if [ "$MODE" = "base" ]; then
++    echo ""
++    echo "BASE MODE: Running baseline tests (excluding new feature)"
++    echo ""
++    
++    pnpm vitest run packages/vite/src/node/__tests__/build.spec.ts
++    
++    echo ""
++    echo "PASS: Baseline is stable"
++    exit 0
++    
++elif [ "$MODE" = "new" ]; then
++    echo ""
++    echo "NEW MODE: Running new feature tests only"
++    echo ""
++    
++    if [ ! -f "packages/vite/src/node/__tests__/buildStats.spec.ts" ]; then
++        echo "ERROR: buildStats.spec.ts does not exist"
++        exit 1
++    fi
++    
++    pnpm vitest run packages/vite/src/node/__tests__/buildStats.spec.ts
++    
++    echo ""
++    echo "PASS: New feature tests passed"
++    exit 0
++else
++    echo "ERROR: Unknown mode: $MODE"
++    echo ""
++    echo "Usage: ./test.sh [base|new]"
++    echo "  base - Run baseline tests"
++    echo "  new  - Run new feature tests"
++    exit 1
++fi
+\ No newline at end of file
