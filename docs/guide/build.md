@@ -52,8 +52,6 @@ If you don't know the base path in advance, you may set a relative base path wit
 
 The build can be customized via various [build config options](/config/build-options.md). Specifically, you can directly adjust the underlying [Rolldown options](https://rolldown.rs/reference/) via `build.rolldownOptions`:
 
-<!-- TODO: update the link above and below to Rolldown's documentation -->
-
 ```js [vite.config.js]
 export default defineConfig({
   build: {
@@ -68,7 +66,7 @@ For example, you can specify multiple Rolldown outputs with plugins that are onl
 
 ## Chunking Strategy
 
-You can configure how chunks are split using `build.rolldownOptions.output.advancedChunks` (see [Rolldown docs](https://rolldown.rs/in-depth/advanced-chunks)). If you use a framework, refer to their documentation for configuring how chunks are split.
+You can configure how chunks are split using [`build.rolldownOptions.output.codeSplitting`](https://rolldown.rs/reference/OutputOptions.codeSplitting) (see [Rolldown docs](https://rolldown.rs/in-depth/manual-code-splitting)). If you use a framework, refer to their documentation for configuring how chunks are split.
 
 ## Load Error Handling
 
@@ -85,8 +83,6 @@ When a new deployment occurs, the hosting service may delete the assets from pre
 ## Rebuild on Files Changes
 
 You can enable rollup watcher with `vite build --watch`. Or, you can directly adjust the underlying [`WatcherOptions`](https://rolldown.rs/reference/InputOptions.watch) via `build.watch`:
-
-<!-- TODO: update the link above to Rolldown's documentation -->
 
 ```js [vite.config.js]
 export default defineConfig({

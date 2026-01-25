@@ -305,11 +305,25 @@ export function rolldownDepPlugin(
 const matchesEntireLine = (text: string) => `^${escapeRegex(text)}$`
 
 // rolldown (and esbuild) doesn't transpile `require('foo')` into `import` statements if 'foo' is externalized
-// https://github.com/evanw/esbuild/issues/566#issuecomment-735551834
+// https://rolldown.rs/in-depth/bundling-cjs#require-external-modules
 export function rolldownCjsExternalPlugin(
   externals: string[],
   platform: 'node' | 'browser' | 'neutral',
-): Plugin {
+): Plugin | undefined {
+  // Skip this plugin for `platform: 'node'` as `require` is available in Node
+  // and that is more accurate than converting to `import`
+  if (platform === 'node') {
+    return undefined
+  }
+  // Skip this plugin for `platform: 'neutral'` as we are not sure whether `require` is available
+  if (platform === 'neutral') {
+    return undefined
+  }
+
+  // Apply this plugin for `platform: 'browser'` as `require` is not available in browser and
+  // converting to `import` would be necessary to make the code work
+  platform satisfies 'browser'
+
   const filter = new RegExp(externals.map(matchesEntireLine).join('|'))
 
   return {
@@ -323,34 +337,26 @@ export function rolldownCjsExternalPlugin(
             external: 'absolute',
           }
         }
-
-        if (filter.test(id)) {
-          const kind = options.kind
-          // preserve `require` for node because it's more accurate than converting it to import
-          if (kind === 'require-call' && platform !== 'node') {
-            return {
-              id: cjsExternalFacadeNamespace + id,
-            }
-          }
-
+        if (options.kind === 'require-call') {
           return {
-            id,
-            external: 'absolute',
+            id: cjsExternalFacadeNamespace + id,
           }
+        }
+        return {
+          id,
+          external: 'absolute',
         }
       },
     },
     load: {
       filter: { id: prefixRegex(cjsExternalFacadeNamespace) },
       handler(id) {
-        if (id.startsWith(cjsExternalFacadeNamespace)) {
-          const idWithoutNamespace = id.slice(cjsExternalFacadeNamespace.length)
-          return {
-            code: `\
+        const idWithoutNamespace = id.slice(cjsExternalFacadeNamespace.length)
+        return {
+          code: `\
 import * as m from ${JSON.stringify(nonFacadePrefix + idWithoutNamespace)};
 module.exports = ${isNodeBuiltin(idWithoutNamespace) ? 'm.default' : '{ ...m }'};
 `,
-          }
         }
       },
     },

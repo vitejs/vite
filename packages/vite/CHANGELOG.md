@@ -1,3 +1,38 @@
+## [8.0.0-beta.10](https://github.com/vitejs/vite/compare/v8.0.0-beta.9...v8.0.0-beta.10) (2026-01-24)
+### Bug Fixes
+
+* avoid using deprecated `output.inlineDynamicImport` option ([#21464](https://github.com/vitejs/vite/issues/21464)) ([471ce62](https://github.com/vitejs/vite/commit/471ce6275663f068afa241a55711fd646d482385))
+* use separate hook object for each environment ([#21472](https://github.com/vitejs/vite/issues/21472)) ([66347f6](https://github.com/vitejs/vite/commit/66347f6df0e723d9d03ea31ab41ab5b767ad15ba))
+
+### Documentation
+
+* update `build.dynamicImportVarsOptions` ([#21477](https://github.com/vitejs/vite/issues/21477)) ([54ce2ed](https://github.com/vitejs/vite/commit/54ce2ed15a95619bd18ac6609b7d7b5f42b4965d))
+
+## [8.0.0-beta.9](https://github.com/vitejs/vite/compare/v8.0.0-beta.8...v8.0.0-beta.9) (2026-01-22)
+### Features
+
+* **bundled-dev:** support worker in initial bundle ([#21415](https://github.com/vitejs/vite/issues/21415)) ([f3d3149](https://github.com/vitejs/vite/commit/f3d31499c714fe5c5acf8355520624c662f9d79f))
+* **dev:** detect port conflicts on wildcard hosts ([#21381](https://github.com/vitejs/vite/issues/21381)) ([b0dd5a9](https://github.com/vitejs/vite/commit/b0dd5a993fd2f95c8cb2190a3ca4296bc9e06359))
+* shortcuts case insensitive ([#21224](https://github.com/vitejs/vite/issues/21224)) ([7796ade](https://github.com/vitejs/vite/commit/7796aded764bca987abfec8ab0ad0438c5a5e7eb))
+* update rolldown to 1.0.0-rc.1 ([#21463](https://github.com/vitejs/vite/issues/21463)) ([ff9dd7f](https://github.com/vitejs/vite/commit/ff9dd7fef0d3c898e317fca84a629828f3e28936))
+* warn if `envPrefix` contains spaces ([#21292](https://github.com/vitejs/vite/issues/21292)) ([9fcde3c](https://github.com/vitejs/vite/commit/9fcde3c870896a62fbca19be8ee14efab9393f4a))
+
+### Bug Fixes
+
+* **deps:** update all non-major dependencies ([#21440](https://github.com/vitejs/vite/issues/21440)) ([1835995](https://github.com/vitejs/vite/commit/18359959cb2960a2fb2b9a340e5ae27d122a1501))
+* **dev:** avoid event emitter leak caused by `server.listen` callback ([#21451](https://github.com/vitejs/vite/issues/21451)) ([602d786](https://github.com/vitejs/vite/commit/602d7865db2b12835c8225f3e87076bef4e247b9))
+* lazy hook filter should work ([#21443](https://github.com/vitejs/vite/issues/21443)) ([bc0c207](https://github.com/vitejs/vite/commit/bc0c207f537789d10d55caa4ee3697aa923b8426))
+* **optimizer:** skip `rolldownCjsExternalPlugin` for `platform: neutral` ([#21452](https://github.com/vitejs/vite/issues/21452)) ([d2fc4be](https://github.com/vitejs/vite/commit/d2fc4be0447e384e18e557b70f7c345d5bcea941))
+
+### Miscellaneous Chores
+
+* **deps:** update rolldown-related dependencies ([#21390](https://github.com/vitejs/vite/issues/21390)) ([be9dd4e](https://github.com/vitejs/vite/commit/be9dd4e08d899f9ed27f2bdcb81bf27d018377a6))
+* fix typo in plugin.ts comment ([#21435](https://github.com/vitejs/vite/issues/21435)) ([d31fc66](https://github.com/vitejs/vite/commit/d31fc6685b4dde33062bf4dfe46e0502de4e1449))
+
+### Code Refactoring
+
+* **optimizer:** simplify `rolldownCjsExternalPlugin` ([#21450](https://github.com/vitejs/vite/issues/21450)) ([ebda8fd](https://github.com/vitejs/vite/commit/ebda8fd3c14f60e63d13d22102cb3d79a12f47a9))
+
 ## [8.0.0-beta.8](https://github.com/vitejs/vite/compare/v8.0.0-beta.7...v8.0.0-beta.8) (2026-01-15)
 ### ⚠ BREAKING CHANGES
 
