@@ -1,6 +1,6 @@
 <script>
   import svelteLogo from './assets/svelte.svg'
-  import ViteLogo from './ViteLogo.svelte'
+  import viteLogo from './assets/vite.svg'
   import heroImg from './assets/hero.png'
   import Counter from './lib/Counter.svelte'
 </script>
@@ -9,7 +9,7 @@
   <div class="hero">
     <img src={heroImg} class="base" width="170" height="179" alt="" />
     <img src={svelteLogo} class="framework" alt="Svelte logo" />
-    <span class="vite" aria-label="Vite logo"><ViteLogo /></span>
+    <img src={viteLogo} class="vite" alt="Vite logo" />
   </div>
   <div>
     <h1>Get started</h1>
@@ -30,7 +30,7 @@
     <ul>
       <li>
         <a href="https://vite.dev/" target="_blank" rel="noreferrer">
-          <span class="logo"><ViteLogo /></span>
+          <img class="logo" src={viteLogo} alt="" />
           Explore Vite
         </a>
       </li>

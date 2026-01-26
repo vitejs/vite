@@ -1,7 +1,7 @@
 import { LitElement, css, html } from 'lit'
 import { customElement, property } from 'lit/decorators.js'
 import litLogo from './assets/lit.svg'
-import { viteLogo } from './vite-logo'
+import viteLogo from './assets/vite.svg'
 import heroImg from './assets/hero.png'
 
 /**
@@ -24,7 +24,7 @@ export class MyElement extends LitElement {
         <div class="hero">
           <img src=${heroImg} class="base" width="170" height="179" alt="" />
           <img src=${litLogo} class="framework" alt="Lit logo" />
-          <span class="vite" aria-label="Vite logo">${viteLogo}</span>
+          <img src=${viteLogo} class="vite" alt="Vite logo" />
         </div>
         <div>
           <slot></slot>
@@ -50,7 +50,7 @@ export class MyElement extends LitElement {
           <ul>
             <li>
               <a href="https://vite.dev/" target="_blank">
-                <span class="logo">${viteLogo}</span>
+                <img class="logo" src=${viteLogo} alt="" />
                 Explore Vite
               </a>
             </li>
@@ -125,7 +125,6 @@ export class MyElement extends LitElement {
       --accent-bg: rgba(170, 59, 255, 0.1);
       --accent-border: rgba(170, 59, 255, 0.5);
       --social-bg: rgba(244, 243, 236, 0.5);
-      --vite-logo: #000;
       --shadow:
         rgba(0, 0, 0, 0.1) 0 10px 15px -3px, rgba(0, 0, 0, 0.05) 0 4px 6px -2px;
 
@@ -159,7 +158,6 @@ export class MyElement extends LitElement {
         --accent-bg: rgba(192, 132, 252, 0.15);
         --accent-border: rgba(192, 132, 252, 0.5);
         --social-bg: rgba(47, 48, 58, 0.5);
-        --vite-logo: white;
         --shadow:
           rgba(0, 0, 0, 0.4) 0 10px 15px -3px,
           rgba(0, 0, 0, 0.25) 0 4px 6px -2px;
@@ -264,16 +262,11 @@ export class MyElement extends LitElement {
     .hero .vite {
       z-index: 0;
       top: 107px;
-      display: flex;
-      justify-content: center;
+      height: 26px;
+      width: auto;
       color: var(--vite-logo);
       transform: perspective(2000px) rotateZ(300deg) rotateX(40deg)
         rotateY(39deg) scale(0.8);
-    }
-
-    .hero .vite svg {
-      height: 26px;
-      width: auto;
     }
 
     #center {
@@ -315,7 +308,6 @@ export class MyElement extends LitElement {
     }
 
     #next-steps ul .logo {
-      color: var(--vite-logo);
       height: 18px;
     }
 

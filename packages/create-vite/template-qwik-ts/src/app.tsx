@@ -1,7 +1,7 @@
 import { component$, useSignal } from '@builder.io/qwik'
 
 import qwikLogo from './assets/qwik.svg'
-import { ViteLogo } from './ViteLogo'
+import viteLogo from './assets/vite.svg'
 import heroImg from './assets/hero.png'
 import './app.css'
 
@@ -14,9 +14,7 @@ export const App = component$(() => {
         <div class="hero">
           <img src={heroImg} class="base" width="170" height="179" alt="" />
           <img src={qwikLogo} class="framework" alt="Qwik logo" />
-          <span class="vite" aria-label="Vite logo">
-            <ViteLogo />
-          </span>
+          <img src={viteLogo} class="vite" alt="Vite logo" />
         </div>
         <div>
           <h1>Get started</h1>
@@ -41,9 +39,7 @@ export const App = component$(() => {
           <ul>
             <li>
               <a href="https://vite.dev/" target="_blank">
-                <span class="logo">
-                  <ViteLogo />
-                </span>
+                <img class="logo" src={viteLogo} alt="" />
                 Explore Vite
               </a>
             </li>

@@ -49,16 +49,10 @@
   .vite {
     z-index: 0;
     top: 107px;
-    display: flex;
-    justify-content: center;
-    color: var(--vite-logo);
+    height: 26px;
+    width: auto;
     transform: perspective(2000px) rotateZ(300deg) rotateX(40deg) rotateY(39deg)
       scale(0.8);
-
-    svg {
-      height: 26px;
-      width: auto;
-    }
   }
 }
 
@@ -130,11 +124,6 @@
   margin: 32px 0 0;
 
   .logo {
-    color: var(--vite-logo);
-    svg {
-      height: 100%;
-      width: auto;
-    }
     height: 18px;
   }
 
