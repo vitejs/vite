@@ -1916,18 +1916,10 @@ export async function resolveConfig(
 
     createResolver(options) {
       const resolve = createIdResolver(this, options)
-      const clientEnvironment = new PartialEnvironment('client', this)
-      let ssrEnvironment: PartialEnvironment | undefined
+      let environment: PartialEnvironment
       return async (id, importer, aliasOnly, ssr) => {
-        if (ssr) {
-          ssrEnvironment ??= new PartialEnvironment('ssr', this)
-        }
-        return await resolve(
-          ssr ? ssrEnvironment! : clientEnvironment,
-          id,
-          importer,
-          aliasOnly,
-        )
+        environment ??= new PartialEnvironment(ssr ? 'ssr' : 'client', this)!
+        return await resolve(environment, id, importer, aliasOnly)
       }
     },
     fsDenyGlob: picomatch(
