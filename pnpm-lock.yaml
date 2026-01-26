@@ -136,7 +136,7 @@ importers:
         version: 5.0.6
       '@voidzero-dev/vitepress-theme':
         specifier: ^4.2.1
-        version: 4.2.1(axios@1.13.2)(focus-trap@7.6.6)(typescript@5.9.3)(vite@packages+vite)(vitepress@2.0.0-alpha.15(axios@1.13.2)(oxc-minify@0.110.0)(postcss@8.5.6)(typescript@5.9.3))(vue@3.5.27(typescript@5.9.3))
+        version: 4.2.1(focus-trap@7.6.6)(typescript@5.9.3)(vite@packages+vite)(vitepress@2.0.0-alpha.15(oxc-minify@0.110.0)(postcss@8.5.6)(typescript@5.9.3))(vue@3.5.27(typescript@5.9.3))
       feed:
         specifier: ^5.2.0
         version: 5.2.0
@@ -148,7 +148,7 @@ importers:
         version: 0.110.0
       vitepress:
         specifier: ^2.0.0-alpha.15
-        version: 2.0.0-alpha.15(axios@1.13.2)(oxc-minify@0.110.0)(postcss@8.5.6)(typescript@5.9.3)
+        version: 2.0.0-alpha.15(oxc-minify@0.110.0)(postcss@8.5.6)(typescript@5.9.3)
       vitepress-plugin-group-icons:
         specifier: ^1.7.1
         version: 1.7.1(vite@packages+vite)
@@ -997,6 +997,9 @@ importers:
       '@vitejs/test-dep-alias-using-absolute-path':
         specifier: file:./dep-alias-using-absolute-path
         version: file:playground/optimize-deps/dep-alias-using-absolute-path
+      '@vitejs/test-dep-cjs-browser-field':
+        specifier: file:./dep-cjs-browser-field
+        version: file:playground/optimize-deps/dep-cjs-browser-field
       '@vitejs/test-dep-cjs-browser-field-bare':
         specifier: file:./dep-cjs-browser-field-bare
         version: file:playground/optimize-deps/dep-cjs-browser-field-bare
@@ -1084,9 +1087,6 @@ importers:
       '@vitejs/test-resolve-linked':
         specifier: workspace:0.0.0
         version: link:../resolve-linked
-      axios:
-        specifier: ^1.13.2
-        version: 1.13.2
       clipboard:
         specifier: ^2.0.11
         version: 2.0.11
@@ -1139,6 +1139,8 @@ importers:
       lodash:
         specifier: ^4.17.21
         version: 4.17.23
+
+  playground/optimize-deps/dep-cjs-browser-field: {}
 
   playground/optimize-deps/dep-cjs-browser-field-bare: {}
 
@@ -3934,6 +3936,9 @@ packages:
   '@vitejs/test-dep-cjs-browser-field-bare@file:playground/optimize-deps/dep-cjs-browser-field-bare':
     resolution: {directory: playground/optimize-deps/dep-cjs-browser-field-bare, type: directory}
 
+  '@vitejs/test-dep-cjs-browser-field@file:playground/optimize-deps/dep-cjs-browser-field':
+    resolution: {directory: playground/optimize-deps/dep-cjs-browser-field, type: directory}
+
   '@vitejs/test-dep-cjs-compiled-from-cjs@file:playground/optimize-deps/dep-cjs-compiled-from-cjs':
     resolution: {directory: playground/optimize-deps/dep-cjs-compiled-from-cjs, type: directory}
 
@@ -4455,18 +4460,12 @@ packages:
     resolution: {integrity: sha512-LElXdjswlqjWrPpJFg1Fx4wpkOCxj1TDHlSV4PlaRxHGWko024xICaa97ZkMfs6DRKlCguiAI+rbXv5GWwXIkg==}
     hasBin: true
 
-  asynckit@0.4.0:
-    resolution: {integrity: sha512-Oei9OH4tRh0YqU3GxhX79dM/mwVgvbZJaSNaRk+bshkj0S5cfHcgYakreBjrHwatXKbz+IoIdYLxrKim2MjW0Q==}
-
   autoprefixer@10.4.23:
     resolution: {integrity: sha512-YYTXSFulfwytnjAPlw8QHncHJmlvFKtczb8InXaAx9Q0LbfDnfEYDE55omerIJKihhmU61Ft+cAOSzQVaBUmeA==}
     engines: {node: ^10 || ^12 || >=14}
     hasBin: true
     peerDependencies:
       postcss: ^8.1.0
-
-  axios@1.13.2:
-    resolution: {integrity: sha512-VPk9ebNqPcy5lRGuSlKx752IlDatOjT9paPlm8A7yOuW2Fbvp4X3JznJtT4f0GzGLLiWE9W8onz51SqLYwzGaA==}
 
   babel-plugin-polyfill-corejs2@0.4.14:
     resolution: {integrity: sha512-Co2Y9wX854ts6U8gAAPXfn0GmAyctHuK8n0Yhfjd6t30g7yvKjspvvOo9yG+z52PZRgFErt7Ka2pYnXCjLKEpg==}
@@ -4638,10 +4637,6 @@ packages:
   colorjs.io@0.5.2:
     resolution: {integrity: sha512-twmVoizEW7ylZSN32OgKdXRmo1qg+wT5/6C3xu5b9QsWzSFAhHLn2xd8ro0diCsKfCj1RdaTP/nrcW+vAoQPIw==}
 
-  combined-stream@1.0.8:
-    resolution: {integrity: sha512-FQN4MRfuJeHf7cBbBMJFXhKSDq+2kAArBlmRBvcvFE5BB1HZKXtSFASDhdlz9zOYwxh8lDdnvmMOe/+5cdoEdg==}
-    engines: {node: '>= 0.8'}
-
   comma-separated-tokens@2.0.3:
     resolution: {integrity: sha512-Fu4hJdvzeylCfQPp9SGWidpzrMs7tTrlu6Vb8XGaRGck8QSNZJJp538Wrb60Lax4fPwR64ViY468OIUTbRlGZg==}
 
@@ -4785,10 +4780,6 @@ packages:
   defu@6.1.4:
     resolution: {integrity: sha512-mEQCMmwJu317oSz8CwdIOdwf3xMif1ttiM8LTufzc3g6kR+9Pe236twL8j3IYT1F7GfRgGcW6MWxzZjLIkuHIg==}
 
-  delayed-stream@1.0.0:
-    resolution: {integrity: sha512-ZySD7Nf91aLB0RxL4KGrKHBXl7Eds1DAmEdcoVawXnLD7SDhpNgtuII2aAkg7a7QS41jxPSZ17p4VdGnMHk3MQ==}
-    engines: {node: '>=0.4.0'}
-
   delegate@3.2.0:
     resolution: {integrity: sha512-IofjkYBZaZivn0V8nnsMJGBr4jVLxHDheKSW88PyxS5QC4Vo9ZbZVvhzlSxY87fVq3STR6r+4cGepyHkcWOQSw==}
 
@@ -4920,10 +4911,6 @@ packages:
 
   es-object-atoms@1.1.1:
     resolution: {integrity: sha512-FGgH2h8zKNim9ljj7dankFPcICIK9Cp5bm+c2gQSYePhpaG5+esrLODihIorn+Pe6FGJzWhXQotPv73jTaldXA==}
-    engines: {node: '>= 0.4'}
-
-  es-set-tostringtag@2.1.0:
-    resolution: {integrity: sha512-j6vWzfrGVfyXxge+O0x5sh6cvxAog0a/4Rdd2K36zCMV5eJ+/+tOAngRO8cODMNWbVRdVlmGZQL2YS3yR8bIUA==}
     engines: {node: '>= 0.4'}
 
   esbuild@0.27.2:
@@ -5168,10 +5155,6 @@ packages:
   foreground-child@3.3.0:
     resolution: {integrity: sha512-Ld2g8rrAyMYFXBhEqMz8ZAHBi4J4uS1i/CxGMDnjyFWddMXLVcDp051DZfu+t7+ab7Wv6SMqpWmyFIj5UbfFvg==}
     engines: {node: '>=14'}
-
-  form-data@4.0.4:
-    resolution: {integrity: sha512-KrGhL9Q4zjj0kiUt5OO4Mr/A/jlI2jDYs5eHBpYHPcBEVSiipAvn2Ko2HnPe20rmcuuvMHNdZFp+4IlGTMF0Ow==}
-    engines: {node: '>= 6'}
 
   format@0.2.2:
     resolution: {integrity: sha512-wzsgA6WOq+09wrU1tsJ09udeR/YZRaeArL9e1wPbFg3GG2yDnC2ldKpxs4xunpFF9DgqCqOIra3bc1HWrJ37Ww==}
@@ -5885,16 +5868,8 @@ packages:
     resolution: {integrity: sha512-H/E3J6t+DQs/F2YgfDhxUVZz/dF8JXPPKTLHL/yHCcLZLtCXJDUaqvhJXQwqOVBvbyNn4T0WjLpIHd7PAw7fBA==}
     hasBin: true
 
-  mime-db@1.52.0:
-    resolution: {integrity: sha512-sPU4uV7dYlvtWJxwwxHD0PuihVNiE7TyAbQ5SWxDCB9mUYvOgroQOwYQQOKPJ8CIbE+1ETVlOoK1UC2nU3gYvg==}
-    engines: {node: '>= 0.6'}
-
   mime-db@1.54.0:
     resolution: {integrity: sha512-aU5EJuIN2WDemCcAp2vFBfp/m4EAhWJnUNSSw0ixs7/kXbd6Pg64EmwJkNdFhB8aWt1sH2CTXrLxo/iAGV3oPQ==}
-    engines: {node: '>= 0.6'}
-
-  mime-types@2.1.35:
-    resolution: {integrity: sha512-ZDY+bPm5zTTF+YpCrAU9nK0UgICYPT0QtT1NZWFv4s++TNkcgVaT0g6+4R2uI4MjQjzysHB1zxuWL50hzaeXiw==}
     engines: {node: '>= 0.6'}
 
   mime-types@3.0.1:
@@ -6346,9 +6321,6 @@ packages:
   proxy-addr@2.0.7:
     resolution: {integrity: sha512-llQsMLSUDUPT44jdrU/O37qlnifitDP+ZwrmmZcoSKyLKvtZxpyV0n2/bD/N4tBAAZ/gJEdZU7KMraoK1+XYAg==}
     engines: {node: '>= 0.10'}
-
-  proxy-from-env@1.1.0:
-    resolution: {integrity: sha512-D+zkORCbA9f1tdWRK0RaCR3GPv50cMxcrz4X8k5LTSUD1Dkw47mKJEZQNunItRTkWwgtaUSo1RVFRIG9ZXiFYg==}
 
   prr@1.0.1:
     resolution: {integrity: sha512-yPw4Sng1gWghHQWj0B3ZggWUm4qVbPwPFcRG8KyxiU7J2OHFSoEHKS+EZ3fv5l1t9CyCiop6l/ZYeWbrgoQejw==}
@@ -9552,6 +9524,8 @@ snapshots:
 
   '@vitejs/test-dep-cjs-browser-field-bare@file:playground/optimize-deps/dep-cjs-browser-field-bare': {}
 
+  '@vitejs/test-dep-cjs-browser-field@file:playground/optimize-deps/dep-cjs-browser-field': {}
+
   '@vitejs/test-dep-cjs-compiled-from-cjs@file:playground/optimize-deps/dep-cjs-compiled-from-cjs': {}
 
   '@vitejs/test-dep-cjs-compiled-from-esm@file:playground/optimize-deps/dep-cjs-compiled-from-esm': {}
@@ -9782,7 +9756,7 @@ snapshots:
       '@vitest/pretty-format': 4.0.17
       tinyrainbow: 3.0.3
 
-  '@voidzero-dev/vitepress-theme@4.2.1(axios@1.13.2)(focus-trap@7.6.6)(typescript@5.9.3)(vite@packages+vite)(vitepress@2.0.0-alpha.15(axios@1.13.2)(oxc-minify@0.110.0)(postcss@8.5.6)(typescript@5.9.3))(vue@3.5.27(typescript@5.9.3))':
+  '@voidzero-dev/vitepress-theme@4.2.1(focus-trap@7.6.6)(typescript@5.9.3)(vite@packages+vite)(vitepress@2.0.0-alpha.15(oxc-minify@0.110.0)(postcss@8.5.6)(typescript@5.9.3))(vue@3.5.27(typescript@5.9.3))':
     dependencies:
       '@docsearch/css': 4.3.2
       '@docsearch/js': 4.3.2
@@ -9791,13 +9765,13 @@ snapshots:
       '@tailwindcss/vite': 4.1.18(vite@packages+vite)
       '@vue/shared': 3.5.27
       '@vueuse/core': 14.0.0(vue@3.5.27(typescript@5.9.3))
-      '@vueuse/integrations': 14.0.0(axios@1.13.2)(focus-trap@7.6.6)(vue@3.5.27(typescript@5.9.3))
+      '@vueuse/integrations': 14.0.0(focus-trap@7.6.6)(vue@3.5.27(typescript@5.9.3))
       '@vueuse/shared': 14.0.0(vue@3.5.27(typescript@5.9.3))
       mark.js: 8.11.1
       minisearch: 7.2.0
       reka-ui: 2.7.0(typescript@5.9.3)(vue@3.5.27(typescript@5.9.3))
       tailwindcss: 4.1.18
-      vitepress: 2.0.0-alpha.15(axios@1.13.2)(oxc-minify@0.110.0)(postcss@8.5.6)(typescript@5.9.3)
+      vitepress: 2.0.0-alpha.15(oxc-minify@0.110.0)(postcss@8.5.6)(typescript@5.9.3)
       vue: 3.5.27(typescript@5.9.3)
     transitivePeerDependencies:
       - '@vue/composition-api'
@@ -9982,13 +9956,12 @@ snapshots:
       '@vueuse/shared': 14.0.0(vue@3.5.27(typescript@5.9.3))
       vue: 3.5.27(typescript@5.9.3)
 
-  '@vueuse/integrations@14.0.0(axios@1.13.2)(focus-trap@7.6.6)(vue@3.5.27(typescript@5.9.3))':
+  '@vueuse/integrations@14.0.0(focus-trap@7.6.6)(vue@3.5.27(typescript@5.9.3))':
     dependencies:
       '@vueuse/core': 14.0.0(vue@3.5.27(typescript@5.9.3))
       '@vueuse/shared': 14.0.0(vue@3.5.27(typescript@5.9.3))
       vue: 3.5.27(typescript@5.9.3)
     optionalDependencies:
-      axios: 1.13.2
       focus-trap: 7.6.6
 
   '@vueuse/metadata@12.8.2': {}
@@ -10079,8 +10052,6 @@ snapshots:
 
   astring@1.9.0: {}
 
-  asynckit@0.4.0: {}
-
   autoprefixer@10.4.23(postcss@8.5.6):
     dependencies:
       browserslist: 4.28.1
@@ -10089,14 +10060,6 @@ snapshots:
       picocolors: 1.1.1
       postcss: 8.5.6
       postcss-value-parser: 4.2.0
-
-  axios@1.13.2:
-    dependencies:
-      follow-redirects: 1.15.9(obug@1.0.2(ms@2.1.3))
-      form-data: 4.0.4
-      proxy-from-env: 1.1.0
-    transitivePeerDependencies:
-      - debug
 
   babel-plugin-polyfill-corejs2@0.4.14(@babel/core@7.28.6(ms@2.1.3))(ms@2.1.3):
     dependencies:
@@ -10284,10 +10247,6 @@ snapshots:
 
   colorjs.io@0.5.2: {}
 
-  combined-stream@1.0.8:
-    dependencies:
-      delayed-stream: 1.0.0
-
   comma-separated-tokens@2.0.3: {}
 
   commander@14.0.2: {}
@@ -10417,8 +10376,6 @@ snapshots:
 
   defu@6.1.4: {}
 
-  delayed-stream@1.0.0: {}
-
   delegate@3.2.0: {}
 
   depd@2.0.0: {}
@@ -10507,13 +10464,6 @@ snapshots:
   es-object-atoms@1.1.1:
     dependencies:
       es-errors: 1.3.0
-
-  es-set-tostringtag@2.1.0:
-    dependencies:
-      es-errors: 1.3.0
-      get-intrinsic: 1.2.7
-      has-tostringtag: 1.0.2
-      hasown: 2.0.2
 
   esbuild@0.27.2:
     optionalDependencies:
@@ -10867,14 +10817,6 @@ snapshots:
     dependencies:
       cross-spawn: 7.0.6
       signal-exit: 4.1.0
-
-  form-data@4.0.4:
-    dependencies:
-      asynckit: 0.4.0
-      combined-stream: 1.0.8
-      es-set-tostringtag: 2.1.0
-      hasown: 2.0.2
-      mime-types: 2.1.35
 
   format@0.2.2: {}
 
@@ -11680,13 +11622,7 @@ snapshots:
     dependencies:
       yargs: 17.7.2
 
-  mime-db@1.52.0: {}
-
   mime-db@1.54.0: {}
-
-  mime-types@2.1.35:
-    dependencies:
-      mime-db: 1.52.0
 
   mime-types@3.0.1:
     dependencies:
@@ -12100,8 +12036,6 @@ snapshots:
     dependencies:
       forwarded: 0.2.0
       ipaddr.js: 1.9.1
-
-  proxy-from-env@1.1.0: {}
 
   prr@1.0.1:
     optional: true
@@ -13207,7 +13141,7 @@ snapshots:
     transitivePeerDependencies:
       - ms
 
-  vitepress@2.0.0-alpha.15(axios@1.13.2)(oxc-minify@0.110.0)(postcss@8.5.6)(typescript@5.9.3):
+  vitepress@2.0.0-alpha.15(oxc-minify@0.110.0)(postcss@8.5.6)(typescript@5.9.3):
     dependencies:
       '@docsearch/css': 4.3.2
       '@docsearch/js': 4.3.2
@@ -13220,7 +13154,7 @@ snapshots:
       '@vue/devtools-api': 8.0.5
       '@vue/shared': 3.5.27
       '@vueuse/core': 14.0.0(vue@3.5.27(typescript@5.9.3))
-      '@vueuse/integrations': 14.0.0(axios@1.13.2)(focus-trap@7.6.6)(vue@3.5.27(typescript@5.9.3))
+      '@vueuse/integrations': 14.0.0(focus-trap@7.6.6)(vue@3.5.27(typescript@5.9.3))
       focus-trap: 7.6.6
       mark.js: 8.11.1
       minisearch: 7.2.0

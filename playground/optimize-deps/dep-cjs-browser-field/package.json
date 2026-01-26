@@ -1,0 +1,9 @@
+{
+  "name": "@vitejs/test-dep-cjs-browser-field",
+  "private": true,
+  "version": "0.0.0",
+  "main": "index.js",
+  "browser": {
+    "./lib/adapters/http.js": "./lib/adapters/xhr.js"
+  }
+}
