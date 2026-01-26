@@ -370,3 +370,21 @@ test.runIf(isServe)(
     expect(scanErrors).toHaveLength(0)
   },
 )
+
+test('should fix relative worker paths in optimized dependencies', async () => {
+  await expect
+    .poll(() => page.textContent('.worker-lib'))
+    .toBe('worker-success')
+  await expect
+    .poll(() => page.textContent('.worker-nested'))
+    .toBe('worker-success')
+
+  const assetMatcher = isBuild
+    ? /assets\/logo-[-\w]+\.png/
+    : /\/node_modules\/@vitejs\/test-dep-with-assets\/logo\.png/
+  await expect.poll(() => page.textContent('.asset-url')).toMatch(assetMatcher)
+
+  const url = await page.textContent('.asset-url')
+  const res = await page.request.get(url)
+  expect(res.status()).toBe(200)
+})
