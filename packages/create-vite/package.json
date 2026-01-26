@@ -38,6 +38,6 @@
     "cross-spawn": "^7.0.6",
     "mri": "^1.2.0",
     "picocolors": "^1.1.1",
-    "tsdown": "^0.19.0"
+    "tsdown": "^0.20.1"
   }
 }
