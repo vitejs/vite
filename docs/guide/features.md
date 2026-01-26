@@ -367,6 +367,8 @@ By default, Vite uses esbuild to minify CSS. Lightning CSS can also be used as t
 
 ## Static Assets
 
+<ScrimbaLink href="https://scrimba.com/intro-to-vite-c03p6pbbdq/~05pq?via=vite" title="Static Assets in Vite">Watch an interactive lesson on Scrimba</ScrimbaLink>
+
 Importing a static asset will return the resolved public URL when it is served:
 
 ```js twoslash
