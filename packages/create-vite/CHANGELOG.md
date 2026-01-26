@@ -851,7 +851,7 @@
 
 ### Miscellaneous Chores
 
-* udpate vite and plugins to stable ([#11278](https://github.com/vitejs/vite/issues/11278)) ([026f41e](https://github.com/vitejs/vite/commit/026f41e87e6eb89491c88f62952d7a094f810811))
+* update vite and plugins to stable ([#11278](https://github.com/vitejs/vite/issues/11278)) ([026f41e](https://github.com/vitejs/vite/commit/026f41e87e6eb89491c88f62952d7a094f810811))
 
 ## [4.0.0-beta.0](https://github.com/vitejs/vite/compare/create-vite@3.2.1...create-vite@4.0.0-beta.0) (2022-12-07)
 ### Bug Fixes
