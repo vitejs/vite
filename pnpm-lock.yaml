@@ -855,13 +855,13 @@ importers:
 
   playground/html/side-effects: {}
 
-  playground/import-assertion:
+  playground/import-attributes:
     dependencies:
-      '@vitejs/test-import-assertion-dep':
-        specifier: file:./import-assertion-dep
-        version: file:playground/import-assertion/import-assertion-dep
+      '@vitejs/test-import-attributes-dep':
+        specifier: file:./import-attributes-dep
+        version: file:playground/import-attributes/import-attributes-dep
 
-  playground/import-assertion/import-assertion-dep: {}
+  playground/import-attributes/import-attributes-dep: {}
 
   playground/js-sourcemap:
     dependencies:
@@ -4072,8 +4072,8 @@ packages:
   '@vitejs/test-forwarded-export@file:playground/ssr-deps/forwarded-export':
     resolution: {directory: playground/ssr-deps/forwarded-export, type: directory}
 
-  '@vitejs/test-import-assertion-dep@file:playground/import-assertion/import-assertion-dep':
-    resolution: {directory: playground/import-assertion/import-assertion-dep, type: directory}
+  '@vitejs/test-import-attributes-dep@file:playground/import-attributes/import-attributes-dep':
+    resolution: {directory: playground/import-attributes/import-attributes-dep, type: directory}
 
   '@vitejs/test-import-builtin@file:playground/ssr-deps/import-builtin-cjs':
     resolution: {directory: playground/ssr-deps/import-builtin-cjs, type: directory}
@@ -9662,7 +9662,7 @@ snapshots:
     dependencies:
       object-assigned-exports: '@vitejs/test-object-assigned-exports@file:playground/ssr-deps/object-assigned-exports'
 
-  '@vitejs/test-import-assertion-dep@file:playground/import-assertion/import-assertion-dep': {}
+  '@vitejs/test-import-attributes-dep@file:playground/import-attributes/import-attributes-dep': {}
 
   '@vitejs/test-import-builtin@file:playground/ssr-deps/import-builtin-cjs': {}
 
