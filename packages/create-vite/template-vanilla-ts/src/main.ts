@@ -1,6 +1,6 @@
 import './style.css'
 import typescriptLogo from './assets/typescript.svg'
-import viteLogo from './assets/vite.svg?raw'
+import viteLogo from './assets/vite.svg'
 import heroImg from './assets/hero.png'
 import { setupCounter } from './counter.ts'
 
@@ -9,7 +9,7 @@ document.querySelector<HTMLDivElement>('#app')!.innerHTML = `
   <div class="hero">
     <img src="${heroImg}" class="base" width="170" height="179">
     <img src="${typescriptLogo}" class="framework" alt="TypeScript logo"/>
-    <span class="vite" aria-label="Vite logo">${viteLogo}</span>
+    <img src=${viteLogo} class="vite" alt="Vite logo" />
   </div>
   <div>
     <h1>Get started</h1>
@@ -28,7 +28,7 @@ document.querySelector<HTMLDivElement>('#app')!.innerHTML = `
     <ul>
       <li>
         <a href="https://vite.dev/" target="_blank">
-          <span class="logo">${viteLogo}</span>
+          <img class="logo" src=${viteLogo} alt="" />
           Explore Vite
         </a>
       </li>
