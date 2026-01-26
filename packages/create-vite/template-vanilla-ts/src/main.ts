@@ -1,12 +1,13 @@
 import './style.css'
 import typescriptLogo from './assets/typescript.svg'
 import viteLogo from './assets/vite.svg?raw'
+import heroImg from './assets/hero.png'
 import { setupCounter } from './counter.ts'
 
 document.querySelector<HTMLDivElement>('#app')!.innerHTML = `
 <section id="center">
   <div class="hero">
-    <img src="/hero.png" class="base" width="170" height="179">
+    <img src="${heroImg}" class="base" width="170" height="179">
     <img src="${typescriptLogo}" class="framework" alt="TypeScript logo"/>
     <span class="vite" aria-label="Vite logo">${viteLogo}</span>
   </div>
