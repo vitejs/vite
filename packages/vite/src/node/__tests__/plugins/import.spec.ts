@@ -80,12 +80,12 @@ describe('runTransform', () => {
     expect(runTransformCjsImport('import * as react from "react"', false))
       .toMatchInlineSnapshot(`
         "import __vite__cjsImport0_react from "./node_modules/.vite/deps/react.js";
-         const react = ((m, n) => n || !m?.__esModule ? {  ...typeof m === "object" && !Array.isArray(m) || typeof m === "function" ? m : {},  default: m} : m)(__vite__cjsImport0_react, 0)"
+         const react = ((m, n) => n || !m?.__esModule ? {	...typeof m === "object" && !Array.isArray(m) || typeof m === "function" ? m : {},	default: m} : m)(__vite__cjsImport0_react, 0)"
       `)
     expect(runTransformCjsImport('import * as react from "react"', true))
       .toMatchInlineSnapshot(`
         "import __vite__cjsImport0_react from "./node_modules/.vite/deps/react.js";
-         const react = ((m, n) => n || !m?.__esModule ? {  ...typeof m === "object" && !Array.isArray(m) || typeof m === "function" ? m : {},  default: m} : m)(__vite__cjsImport0_react, 1)"
+         const react = ((m, n) => n || !m?.__esModule ? {	...typeof m === "object" && !Array.isArray(m) || typeof m === "function" ? m : {},	default: m} : m)(__vite__cjsImport0_react, 1)"
       `)
   })
 
