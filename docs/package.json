@@ -10,7 +10,7 @@
   "devDependencies": {
     "@shikijs/vitepress-twoslash": "^3.21.0",
     "@types/express": "^5.0.6",
-    "@voidzero-dev/vitepress-theme": "^4.2.1",
+    "@voidzero-dev/vitepress-theme": "^4.3.0",
     "feed": "^5.2.0",
     "markdown-it-image-size": "^15.0.1",
     "oxc-minify": "^0.110.0",
@@ -18,6 +18,6 @@
     "vitepress-plugin-group-icons": "^1.7.1",
     "vitepress-plugin-llms": "^1.10.0",
     "vue": "^3.5.27",
-    "vue-tsc": "^3.2.2"
+    "vue-tsc": "^3.2.4"
   }
 }
