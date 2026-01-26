@@ -329,10 +329,7 @@ export function rolldownDepPlugin(
             }
 
             const url = rawUrl.slice(1, -1)
-            if (isDataUrl(url)) {
-              continue
-            }
-            if (url[0] !== '.') {
+            if (isDataUrl(url) || isExternalUrl(url) || url.startsWith('/')) {
               continue
             }
 
