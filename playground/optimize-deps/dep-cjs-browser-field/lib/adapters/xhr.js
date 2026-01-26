@@ -69,7 +69,7 @@ module.exports = function xhrAdapter(config) {
     // Add headers to the request
     if ('setRequestHeader' in request) {
       for (var key in requestHeaders) {
-        if (requestHeaders.hasOwnProperty(key)) {
+        if (Object.prototype.hasOwnProperty.call(requestHeaders, key)) {
           request.setRequestHeader(key, requestHeaders[key])
         }
       }
