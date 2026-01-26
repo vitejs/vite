@@ -1,0 +1,13 @@
+{
+  "version": "8.0.0-beta.8",
+  "timestamp": 1768720931124,
+  "duration": 0,
+  "success": false,
+  "outputs": {},
+  "warnings": [],
+  "errors": [
+    {
+      "message": "\u001b[31mBuild failed with 1 error:\n\n\u001b[31m[UNRESOLVED_ENTRY] Error:\u001b[0m Cannot resolve entry module index.html.\n\u001b[39m"
+    }
+  ]
+}

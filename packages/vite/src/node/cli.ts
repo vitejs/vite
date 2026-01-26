@@ -339,10 +339,16 @@ cli
   )
   .option('-w, --watch', `[boolean] rebuilds when modules have changed on disk`)
   .option('--app', `[boolean] same as \`builder: {}\``)
+  .option(
+    '--json [filename]',
+    `[boolean | string] output build statistics as JSON (to stdout or file)`,
+  )
   .action(
     async (
       root: string,
-      options: BuildEnvironmentOptions & BuilderCLIOptions & GlobalCLIOptions,
+      options: BuildEnvironmentOptions &
+        BuilderCLIOptions &
+        GlobalCLIOptions & { json?: boolean | string },
     ) => {
       filterDuplicateOptions(options)
       const { createBuilder } = await import('./build')
@@ -351,6 +357,12 @@ cli
         cleanBuilderCLIOptions(options),
       )
 
+      // Determine JSON output target
+      const jsonOutput = options.json
+      // Suppress normal logging when outputting JSON to stdout
+      const effectiveLogLevel =
+        jsonOutput === true ? ('silent' as LogLevel) : options.logLevel
+
       try {
         const inlineConfig: InlineConfig = {
           root,
@@ -358,23 +370,51 @@ cli
           mode: options.mode,
           configFile: options.config,
           configLoader: options.configLoader,
-          logLevel: options.logLevel,
+          logLevel: effectiveLogLevel,
           clearScreen: options.clearScreen,
-          build: buildOptions,
+          build: {
+            ...buildOptions,
+            // Pass json option through build config
+            ...(jsonOutput ? { _jsonStats: jsonOutput } : {}),
+          },
           ...(options.app ? { builder: {} } : {}),
         }
         const builder = await createBuilder(inlineConfig, null)
         await builder.buildApp()
+
+        // Output JSON stats if requested
+        if (jsonOutput && builder._buildStats) {
+          const { writeBuildStats } = await import('./buildStats')
+          await writeBuildStats(
+            builder._buildStats.getStats(true),
+            jsonOutput === true ? true : jsonOutput,
+          )
+        }
       } catch (e) {
-        createLogger(options.logLevel).error(
-          colors.red(`error during build:\n${e.stack}`),
-          { error: e },
-        )
+        // If JSON output is requested, output error as JSON
+        if (jsonOutput) {
+          const { BuildStatsCollector, writeBuildStats } =
+            await import('./buildStats')
+          const errorCollector = new BuildStatsCollector(false)
+          errorCollector.start()
+          errorCollector.addError(e.message || 'Build failed')
+          await writeBuildStats(
+            errorCollector.getStats(false),
+            jsonOutput === true ? true : jsonOutput,
+          )
+        } else {
+          createLogger(options.logLevel).error(
+            colors.red(`error during build:\n${e.stack}`),
+            { error: e },
+          )
+        }
         process.exit(1)
       } finally {
-        await stopProfiler((message) =>
-          createLogger(options.logLevel).info(message),
-        )
+        if (!jsonOutput) {
+          await stopProfiler((message) =>
+            createLogger(options.logLevel).info(message),
+          )
+        }
       }
     },
   )
