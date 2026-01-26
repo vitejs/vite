@@ -382,7 +382,6 @@ test('should fix relative worker paths in optimized dependencies', async () => {
   const assetMatcher = isBuild
     ? /assets\/logo-[-\w]+\.png/
     : /\/node_modules\/@vitejs\/test-dep-with-assets\/logo\.png/
-
   await expect.poll(() => page.textContent('.asset-url')).toMatch(assetMatcher)
 
   const url = await page.textContent('.asset-url')

@@ -43,10 +43,8 @@ describe('rolldownDepPlugin transform', async () => {
       const worker = new URL('./worker.js', import.meta.url)
       const wasm = new URL('./module.wasm', import.meta.url)
     `
-    const id = '/root/node_modules/my-lib/dist/index.js'
-    const result = await transform(code, id)
-
-    expect(result).toMatchInlineSnapshot(`
+    expect(await transform(code, '/root/node_modules/my-lib/dist/index.js'))
+      .toMatchInlineSnapshot(`
       "
             const img = new URL('' + "../../node_modules/my-lib/dist/logo.png", import.meta.url).href
             const icon = new URL('' + "../../node_modules/my-lib/dist/icons/search.svg", import.meta.url)
@@ -62,7 +60,7 @@ describe('rolldownDepPlugin transform', async () => {
         "new URL(/* @vite-ignore */ './worker.js', import.meta.url)",
         '/root/node_modules/my-lib/index.js',
       ),
-    ).toBeNull()
+    ).toBeUndefined()
   })
 
   test('skips non-relative URLs (absolute, data, protocols)', async () => {
@@ -73,7 +71,7 @@ describe('rolldownDepPlugin transform', async () => {
     `
     expect(
       await transform(code, '/root/node_modules/my-lib/index.js'),
-    ).toBeNull()
+    ).toBeUndefined()
   })
 
   test('skips dynamic template strings', async () => {
@@ -82,7 +80,7 @@ describe('rolldownDepPlugin transform', async () => {
         'new URL(`./${name}.js`, import.meta.url)',
         '/root/node_modules/my-lib/index.js',
       ),
-    ).toBeNull()
+    ).toBeUndefined()
   })
 
   test('handles backticks for static relative strings', async () => {
@@ -122,12 +120,12 @@ describe('rolldownDepPlugin transform', async () => {
   })
 
   test('rewrite relative URLs even if id is not in node_modules', async () => {
-    const id = '/root/src/local-dep.js'
-    const code = "new URL('./asset.js', import.meta.url)"
-
-    const result = await transform(code, id)
-
-    expect(result).toMatchInlineSnapshot(
+    expect(
+      await transform(
+        "new URL('./asset.js', import.meta.url)",
+        '/root/src/local-dep.js',
+      ),
+    ).toMatchInlineSnapshot(
       `"new URL('' + "../../src/asset.js", import.meta.url)"`,
     )
   })

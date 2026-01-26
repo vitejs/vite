@@ -144,6 +144,8 @@ export function rolldownDepPlugin(
     }
   }
 
+  const bundleOutputDir = path.join(environment.config.cacheDir, 'deps')
+
   return [
     {
       name: 'vite:dep-pre-bundle-assets',
@@ -313,8 +315,6 @@ export function rolldownDepPlugin(
             /\bnew\s+URL\s*\(\s*('[^']+'|"[^"]+"|`[^`]+`)\s*,\s*import\.meta\.url\s*(?:,\s*)?\)/dg
           const cleanString = stripLiteral(code)
 
-          const bundleDir = path.join(environment.config.cacheDir, 'deps')
-
           let match: RegExpExecArray | null
           while ((match = assetImportMetaUrlRE.exec(cleanString))) {
             const [[startIndex, endIndex], [urlStart, urlEnd]] = match.indices!
@@ -332,7 +332,6 @@ export function rolldownDepPlugin(
             if (isDataUrl(url)) {
               continue
             }
-
             if (url[0] !== '.') {
               continue
             }
@@ -342,9 +341,8 @@ export function rolldownDepPlugin(
             // we resolve the relative path from the original library file (id) and
             // then rewrite it relative to the bundle (deps) directory.
             const absolutePath = path.resolve(path.dirname(id), url)
-            const relativePath = path.relative(bundleDir, absolutePath)
+            const relativePath = path.relative(bundleOutputDir, absolutePath)
             const normalizedRelativePath = normalizePath(relativePath)
-
             s.update(
               startIndex,
               endIndex,
@@ -355,9 +353,12 @@ export function rolldownDepPlugin(
             )
           }
 
-          if (!s) return null
-
-          return { code: s.toString(), map: s.generateMap({ hires: true }) }
+          if (s) {
+            return {
+              code: s.toString(),
+              map: s.generateMap({ hires: 'boundary' }),
+            }
+          }
         },
       },
     },
