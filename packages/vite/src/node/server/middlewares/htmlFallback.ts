@@ -65,12 +65,11 @@ export function htmlFallbackMiddleware(
     }
     // trailing slash should check for fallback index.html or index.htm
     else if (pathname.endsWith('/')) {
-      const indexFile =
-        checkFileExists(joinUrlSegments(pathname, 'index.html'))
-          ? 'index.html'
-          : checkFileExists(joinUrlSegments(pathname, 'index.htm'))
-            ? 'index.htm'
-            : null
+      const indexFile = checkFileExists(joinUrlSegments(pathname, 'index.html'))
+        ? 'index.html'
+        : checkFileExists(joinUrlSegments(pathname, 'index.htm'))
+          ? 'index.htm'
+          : null
       if (indexFile) {
         const newUrl = url + indexFile
         debug?.(`Rewriting ${req.method} ${req.url} to ${newUrl}`)

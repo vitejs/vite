@@ -458,7 +458,11 @@ export function indexHtmlMiddleware(
 
     const url = req.url && cleanUrl(req.url)
     // htmlFallbackMiddleware appends '.html' or '.htm' to URLs
-    if (url && htmlLangRE.test(url) && req.headers['sec-fetch-dest'] !== 'script') {
+    if (
+      url &&
+      htmlLangRE.test(url) &&
+      req.headers['sec-fetch-dest'] !== 'script'
+    ) {
       if (fullBundleEnv) {
         const pathname = decodeURIComponent(url)
         const filePath = pathname.slice(1) // remove first /
