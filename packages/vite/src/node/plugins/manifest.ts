@@ -258,9 +258,25 @@ export function manifestPlugin(config: ResolvedConfig): Plugin {
         try {
           const fileName = this.getFileName(id)
           entryCssAssetFileNames.set(fileName, name)
-        } catch {
-          // The asset was generated as part of a different output option.
-          // It was already handled during the previous run of this plugin.
+        } catch {}
+      }
+
+      const inputEntries = new Set<string>()
+      const rawInput = buildOptions.rollupOptions.input
+      if (rawInput) {
+        const inputList =
+          typeof rawInput === 'string'
+            ? [rawInput]
+            : Array.isArray(rawInput)
+              ? rawInput
+              : Object.values(rawInput)
+
+        for (const input of inputList) {
+          const absoluteInput = path.resolve(root, input)
+          const relativeInput = normalizePath(
+            path.relative(root, absoluteInput),
+          )
+          inputEntries.add(relativeInput)
         }
       }
 
@@ -274,7 +290,12 @@ export function manifestPlugin(config: ResolvedConfig): Plugin {
             chunk.originalFileNames.length > 0
               ? chunk.originalFileNames[0]
               : `_${path.basename(chunk.fileName)}`
-          const name = entryCssAssetFileNames.get(chunk.fileName)
+          let name = entryCssAssetFileNames.get(chunk.fileName)
+
+          if (!name && inputEntries.has(src)) {
+            name = chunk.names[0]
+          }
+
           const asset = createAsset(chunk, src, name)
 
           // If JS chunk and asset chunk are both generated from the same source file,
