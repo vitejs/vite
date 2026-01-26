@@ -1063,6 +1063,9 @@ importers:
       '@vitejs/test-dep-with-asset-ext2.pdf':
         specifier: file:./dep-with-asset-ext/dep2
         version: file:playground/optimize-deps/dep-with-asset-ext/dep2
+      '@vitejs/test-dep-with-assets':
+        specifier: file:./dep-with-assets
+        version: file:playground/optimize-deps/dep-with-assets
       '@vitejs/test-dep-with-builtin-module-cjs':
         specifier: file:./dep-with-builtin-module-cjs
         version: file:playground/optimize-deps/dep-with-builtin-module-cjs
@@ -1206,6 +1209,8 @@ importers:
       '@vitejs/test-dep-with-asset-ext1.pdf':
         specifier: file:../dep1
         version: file:playground/optimize-deps/dep-with-asset-ext/dep1
+
+  playground/optimize-deps/dep-with-assets: {}
 
   playground/optimize-deps/dep-with-builtin-module-cjs: {}
 
@@ -4052,6 +4057,9 @@ packages:
 
   '@vitejs/test-dep-with-asset-ext2.pdf@file:playground/optimize-deps/dep-with-asset-ext/dep2':
     resolution: {directory: playground/optimize-deps/dep-with-asset-ext/dep2, type: directory}
+
+  '@vitejs/test-dep-with-assets@file:playground/optimize-deps/dep-with-assets':
+    resolution: {directory: playground/optimize-deps/dep-with-assets, type: directory}
 
   '@vitejs/test-dep-with-builtin-module-cjs@file:playground/optimize-deps/dep-with-builtin-module-cjs':
     resolution: {directory: playground/optimize-deps/dep-with-builtin-module-cjs, type: directory}
@@ -9711,6 +9719,8 @@ snapshots:
   '@vitejs/test-dep-with-asset-ext2.pdf@file:playground/optimize-deps/dep-with-asset-ext/dep2':
     dependencies:
       '@vitejs/test-dep-with-asset-ext1.pdf': file:playground/optimize-deps/dep-with-asset-ext/dep1
+
+  '@vitejs/test-dep-with-assets@file:playground/optimize-deps/dep-with-assets': {}
 
   '@vitejs/test-dep-with-builtin-module-cjs@file:playground/optimize-deps/dep-with-builtin-module-cjs': {}
 
