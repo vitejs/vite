@@ -1916,14 +1916,9 @@ export async function resolveConfig(
 
     createResolver(options) {
       const resolve = createIdResolver(this, options)
-      const clientEnvironment = new PartialEnvironment('client', this)
-      let ssrEnvironment: PartialEnvironment | undefined
       return async (id, importer, aliasOnly, ssr) => {
-        if (ssr) {
-          ssrEnvironment ??= new PartialEnvironment('ssr', this)
-        }
         return await resolve(
-          ssr ? ssrEnvironment! : clientEnvironment,
+          new PartialEnvironment(ssr ? 'ssr' : 'client', this)!,
           id,
           importer,
           aliasOnly,
