@@ -13,7 +13,7 @@ function App() {
         <div className="hero">
           <img src={heroImg} className="base" width="170" height="179" alt="" />
           <img src={reactLogo} className="framework" alt="React logo" />
-          <img src={viteLogo} class="vite" alt="Vite logo" />
+          <img src={viteLogo} className="vite" alt="Vite logo" />
         </div>
         <div>
           <h1>Get started</h1>
@@ -41,7 +41,7 @@ function App() {
           <ul>
             <li>
               <a href="https://vite.dev/" target="_blank">
-                <img class="logo" src={viteLogo} alt="" />
+                <img className="logo" src={viteLogo} alt="" />
                 Explore Vite
               </a>
             </li>
