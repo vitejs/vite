@@ -199,7 +199,7 @@ export default defineConfig({
 }
 ```
 
-Your application can now be developed with `npm run dev`, built with `npm run build`, previewed with `npm run preview`, and deployed with `npx wrangler deploy`.
+After running `npm run build`, your application can now be deployed with `npx wrangler deploy`.
 
 #### Adding a Backend API
 
