@@ -162,12 +162,10 @@ This option is an alias of `build.rolldownOptions` option. Use `build.rolldownOp
 
 ## build.dynamicImportVarsOptions
 
-- **Type:** [`RollupDynamicImportVarsOptions`](https://github.com/rollup/plugins/tree/master/packages/dynamic-import-vars#options)
+- **Type:** `{ include?: string | RegExp | (string | RegExp)[], exclude?: string | RegExp | (string | RegExp)[] }`
 - **Related:** [Dynamic Import](/guide/features#dynamic-import)
 
-Options to pass on to [@rollup/plugin-dynamic-import-vars](https://github.com/rollup/plugins/tree/master/packages/dynamic-import-vars).
-
-<!-- TODO: we need to have a more detailed explanation here as we no longer use @rollup/plugin-dynamic-import-vars. we should say it's compatible with it though -->
+Whether to transform dynamic imports with variables.
 
 ## build.lib
 
@@ -223,9 +221,7 @@ If `fileName` is passed, it will be used as the license file name relative to th
 
 ::: tip
 
-If you'd like to reference the license file in the built code, you can use `build.rolldownOptions.output.postBanner` to inject a comment at the top of the files. For example:
-
-<!-- TODO: add a link for output.postBanner above to Rolldown's documentation -->
+If you'd like to reference the license file in the built code, you can use [`build.rolldownOptions.output.postBanner`](https://rolldown.rs/reference/OutputOptions.postBanner#postbanner) to inject a comment at the top of the files. For example:
 
 ```js twoslash [vite.config.js]
 import { defineConfig } from 'vite'

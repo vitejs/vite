@@ -57,22 +57,6 @@ export default defineConfig({
     testVue(),
     notjs(),
     virtualModulePlugin(),
-    // for axios request test
-    {
-      name: 'mock',
-      configureServer({ middlewares }) {
-        middlewares.use('/ping', (_, res) => {
-          res.statusCode = 200
-          res.end('pong')
-        })
-      },
-      configurePreviewServer({ middlewares }) {
-        middlewares.use('/ping', (_, res) => {
-          res.statusCode = 200
-          res.end('pong')
-        })
-      },
-    },
     {
       name: 'test-astro',
       transform(code, id) {

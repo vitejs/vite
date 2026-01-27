@@ -1,14 +1,15 @@
 import './style.css'
 import javascriptLogo from './assets/javascript.svg'
-import viteLogo from './assets/vite.svg?raw'
+import viteLogo from './assets/vite.svg'
+import heroImg from './assets/hero.png'
 import { setupCounter } from './counter.js'
 
 document.querySelector('#app').innerHTML = `
 <section id="center">
   <div class="hero">
-    <img src="/hero.png" class="base" width="170" height="179">
+    <img src="${heroImg}" class="base" width="170" height="179">
     <img src="${javascriptLogo}" class="framework" alt="JavaScript logo"/>
-    <span class="vite" aria-label="Vite logo">${viteLogo}</span>
+    <img src=${viteLogo} class="vite" alt="Vite logo" />
   </div>
   <div>
     <h1>Get started</h1>
@@ -27,7 +28,7 @@ document.querySelector('#app').innerHTML = `
     <ul>
       <li>
         <a href="https://vite.dev/" target="_blank">
-          <span class="logo">${viteLogo}</span>
+          <img class="logo" src=${viteLogo} alt="" />
           Explore Vite
         </a>
       </li>
