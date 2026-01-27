@@ -382,7 +382,14 @@ describe('cross origin', () => {
     let page2: Page
     beforeEach(async () => {
       page2 = await browser.newPage()
-      await page2.goto('http://vite.dev/404')
+      await page2.route(/^http:\/\/example\.com/, async (route) => {
+        await route.fulfill({
+          status: 200,
+          contentType: 'text/html',
+          body: '<html><body>External Origin</body></html>',
+        })
+      })
+      await page2.goto('http://example.com/404')
     })
     afterEach(async () => {
       await page2.close()

@@ -130,6 +130,34 @@ export function manifestPlugin(config: ResolvedConfig): Plugin {
                   item.assets = [...importedAssets]
                 }
               }
+
+              // 2. THE FIX: Fallback check for native plugin
+              const rawInput = environment.config.build.rollupOptions.input
+              if (manifest && rawInput) {
+                const inputList =
+                  typeof rawInput === 'string'
+                    ? [rawInput]
+                    : Array.isArray(rawInput)
+                      ? rawInput
+                      : Object.values(rawInput)
+
+                const inputEntries = new Set<string>()
+                for (const input of inputList) {
+                  const absoluteInput = path.resolve(root, input)
+                  const relativeInput = normalizePath(
+                    path.relative(root, absoluteInput),
+                  )
+                  inputEntries.add(relativeInput)
+                }
+
+                for (const key in manifest) {
+                  const item = manifest[key]
+                  if (!item.isEntry && item.src && inputEntries.has(item.src)) {
+                    item.isEntry = true
+                  }
+                }
+              }
+
               const output =
                 this.environment.config.build.rolldownOptions.output
               const outputLength = Array.isArray(output) ? output.length : 1
@@ -170,6 +198,9 @@ export function manifestPlugin(config: ResolvedConfig): Plugin {
       const { manifest } = state
       const { root } = this.environment.config
       const buildOptions = this.environment.config.build
+
+      // 1. HELPER: Normalize all input paths to a Set of root-relative paths
+      // (Removed as inputEntries is already calculated below)
 
       const isLegacy =
         this.environment.config.isOutputOptionsForLegacyChunks?.(opts) ?? false
@@ -263,6 +294,7 @@ export function manifestPlugin(config: ResolvedConfig): Plugin {
 
       const inputEntries = new Set<string>()
       const rawInput = buildOptions.rollupOptions.input
+
       if (rawInput) {
         const inputList =
           typeof rawInput === 'string'
@@ -290,6 +322,7 @@ export function manifestPlugin(config: ResolvedConfig): Plugin {
             chunk.originalFileNames.length > 0
               ? chunk.originalFileNames[0]
               : `_${path.basename(chunk.fileName)}`
+
           let name = entryCssAssetFileNames.get(chunk.fileName)
 
           if (!name && inputEntries.has(src)) {
@@ -302,6 +335,11 @@ export function manifestPlugin(config: ResolvedConfig): Plugin {
           // prioritize JS chunk as it contains more information
           const file = manifest[src]?.file
           if (!(file && endsWithJSRE.test(file))) {
+            // 2. THE FIX: Fallback check
+            // If isEntry is falsy, check if the original source matches our inputs
+            if (!asset.isEntry && asset.src && inputEntries.has(asset.src)) {
+              asset.isEntry = true
+            }
             manifest[src] = asset
           }
 
