@@ -201,8 +201,6 @@ export default defineConfig({
 
 After running `npm run build`, your application can now be deployed with `npx wrangler deploy`.
 
-#### Adding a Backend API
-
 You can also easily add backend APIs to your Vite application to securely communicate with Cloudflare resources. This runs in the Workers runtime during development and deploys alongside your frontend. See the [Cloudflare Vite plugin tutorial](https://developers.cloudflare.com/workers/vite-plugin/tutorial/) for a complete walkthrough.
 
 ### Cloudflare Pages
