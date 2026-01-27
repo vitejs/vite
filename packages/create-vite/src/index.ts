@@ -117,7 +117,6 @@ const FRAMEWORKS: Framework[] = [
         name: 'custom-nuxt',
         display: 'Nuxt ↗',
         link: 'https://nuxt.com',
-        // Don't choose another color — all Vue frameworks must use `greenBright`
         color: greenBright,
         customCommand: 'npm exec nuxi init TARGET_DIR',
       },
@@ -125,7 +124,6 @@ const FRAMEWORKS: Framework[] = [
         name: 'custom-vike-vue',
         display: 'Vike ↗',
         link: 'https://vike.dev',
-        // Don't choose another color — all Vue frameworks must use `greenBright`
         color: greenBright,
         customCommand: 'npm create -- vike@latest --vue TARGET_DIR',
       },
@@ -177,7 +175,6 @@ const FRAMEWORKS: Framework[] = [
         name: 'custom-react-router',
         display: 'React Router v7 ↗',
         link: 'https://reactrouter.com',
-        // Don't choose another color — all React frameworks must use `cyan`
         color: cyan,
         customCommand: 'npm create react-router@latest TARGET_DIR',
       },
@@ -185,7 +182,6 @@ const FRAMEWORKS: Framework[] = [
         name: 'custom-tanstack-router-react',
         display: 'TanStack Router ↗',
         link: 'https://tanstack.com/router',
-        // Don't choose another color — all React frameworks must use `cyan`
         color: cyan,
         customCommand:
           'npm create -- tsrouter-app@latest TARGET_DIR --framework React --interactive',
@@ -194,7 +190,6 @@ const FRAMEWORKS: Framework[] = [
         name: 'redwoodsdk-standard',
         display: 'RedwoodSDK ↗',
         link: 'https://rwsdk.com',
-        // Don't choose another color — all React frameworks must use `cyan`
         color: cyan,
         customCommand: 'npm create rwsdk@latest TARGET_DIR',
       },
@@ -202,7 +197,6 @@ const FRAMEWORKS: Framework[] = [
         name: 'custom-vike-react',
         display: 'Vike ↗',
         link: 'https://vike.dev',
-        // Don't choose another color — all React frameworks must use `cyan`
         color: cyan,
         customCommand: 'npm create -- vike@latest --react TARGET_DIR',
       },
@@ -290,7 +284,6 @@ const FRAMEWORKS: Framework[] = [
         name: 'custom-tanstack-router-solid',
         display: 'TanStack Router ↗',
         link: 'https://tanstack.com/router',
-        // Don't choose another color — all Solid frameworks must use `cyan`
         color: cyan,
         customCommand:
           'npm create -- tsrouter-app@latest TARGET_DIR --framework Solid --interactive',
@@ -299,7 +292,6 @@ const FRAMEWORKS: Framework[] = [
         name: 'custom-vike-solid',
         display: 'Vike ↗',
         link: 'https://vike.dev',
-        // Don't choose another color — all Solid frameworks must use `cyan`
         color: cyan,
         customCommand: 'npm create -- vike@latest --solid TARGET_DIR',
       },
@@ -592,9 +584,16 @@ async function init() {
       const variant = await prompts.select({
         message: 'Select a variant:',
         options: framework.variants.map((variant) => {
+          const command = variant.customCommand
+            ? getFullCustomCommand(variant.customCommand, pkgInfo).replace(
+                / TARGET_DIR$/,
+                '',
+              )
+            : undefined
           return {
             label: getLabel(variant),
             value: variant.name,
+            hint: command,
           }
         }),
       })
@@ -913,16 +912,12 @@ function getFullCustomCommand(customCommand: string, pkgInfo?: PkgInfo) {
 }
 
 function getLabel(variant: FrameworkVariant) {
-  // Choice display name
   const labelText = variant.display || variant.name
   let label = variant.color(labelText)
-
-  // Add `link`
   const { link } = variant
   if (link) {
     label += ` ${underline(link)}`
   }
-
   return label
 }
 
