@@ -1,4 +1,5 @@
 import path from 'node:path'
+import fs from 'node:fs'
 import type { OutputAsset, OutputChunk, RenderedChunk } from 'rolldown'
 import { viteManifestPlugin as nativeManifestPlugin } from 'rolldown/experimental'
 import type { Plugin } from '../plugin'
@@ -131,9 +132,12 @@ export function manifestPlugin(config: ResolvedConfig): Plugin {
                 }
               }
 
-              // 2. THE FIX: Fallback check for native plugin
+              // Ensure that all input files are marked as entries in the manifest
+              // This is necessary because Rollup may not mark pure css chunks as entries
+              // when using array-based input
               const rawInput = environment.config.build.rollupOptions.input
               if (manifest && rawInput) {
+                const root = environment.config.root
                 const inputList =
                   typeof rawInput === 'string'
                     ? [rawInput]
@@ -180,6 +184,54 @@ export function manifestPlugin(config: ResolvedConfig): Plugin {
               }
             }
           },
+          async writeBundle() {
+            const outDir = environment.config.build.outDir
+            const manifestPath = path.resolve(root, outDir, outPath)
+            if (!fs.existsSync(manifestPath)) return
+
+            let manifest: Manifest
+            try {
+              manifest = JSON.parse(fs.readFileSync(manifestPath, 'utf-8'))
+            } catch (_e) {
+              return
+            }
+
+            const rawInput = environment.config.build.rollupOptions.input
+            if (manifest && rawInput) {
+              const root = environment.config.root
+              const inputList =
+                typeof rawInput === 'string'
+                  ? [rawInput]
+                  : Array.isArray(rawInput)
+                    ? rawInput
+                    : Object.values(rawInput)
+
+              const inputEntries = new Set<string>()
+              for (const input of inputList) {
+                const absoluteInput = path.resolve(root, input)
+                const relativeInput = normalizePath(
+                  path.relative(root, absoluteInput),
+                )
+                inputEntries.add(relativeInput)
+              }
+
+              let changed = false
+              for (const key in manifest) {
+                const item = manifest[key]
+                if (!item.isEntry && item.src && inputEntries.has(item.src)) {
+                  item.isEntry = true
+                  changed = true
+                }
+              }
+
+              if (changed) {
+                fs.writeFileSync(
+                  manifestPath,
+                  JSON.stringify(manifest, null, 2),
+                )
+              }
+            }
+          },
         },
       ]
     })
@@ -198,9 +250,6 @@ export function manifestPlugin(config: ResolvedConfig): Plugin {
       const { manifest } = state
       const { root } = this.environment.config
       const buildOptions = this.environment.config.build
-
-      // 1. HELPER: Normalize all input paths to a Set of root-relative paths
-      // (Removed as inputEntries is already calculated below)
 
       const isLegacy =
         this.environment.config.isOutputOptionsForLegacyChunks?.(opts) ?? false
@@ -289,26 +338,9 @@ export function manifestPlugin(config: ResolvedConfig): Plugin {
         try {
           const fileName = this.getFileName(id)
           entryCssAssetFileNames.set(fileName, name)
-        } catch {}
-      }
-
-      const inputEntries = new Set<string>()
-      const rawInput = buildOptions.rollupOptions.input
-
-      if (rawInput) {
-        const inputList =
-          typeof rawInput === 'string'
-            ? [rawInput]
-            : Array.isArray(rawInput)
-              ? rawInput
-              : Object.values(rawInput)
-
-        for (const input of inputList) {
-          const absoluteInput = path.resolve(root, input)
-          const relativeInput = normalizePath(
-            path.relative(root, absoluteInput),
-          )
-          inputEntries.add(relativeInput)
+        } catch {
+          // The asset was generated as part of a different output option.
+          // It was already handled during the previous run of this plugin.
         }
       }
 
@@ -322,24 +354,13 @@ export function manifestPlugin(config: ResolvedConfig): Plugin {
             chunk.originalFileNames.length > 0
               ? chunk.originalFileNames[0]
               : `_${path.basename(chunk.fileName)}`
-
-          let name = entryCssAssetFileNames.get(chunk.fileName)
-
-          if (!name && inputEntries.has(src)) {
-            name = chunk.names[0]
-          }
-
+          const name = entryCssAssetFileNames.get(chunk.fileName)
           const asset = createAsset(chunk, src, name)
 
           // If JS chunk and asset chunk are both generated from the same source file,
           // prioritize JS chunk as it contains more information
           const file = manifest[src]?.file
           if (!(file && endsWithJSRE.test(file))) {
-            // 2. THE FIX: Fallback check
-            // If isEntry is falsy, check if the original source matches our inputs
-            if (!asset.isEntry && asset.src && inputEntries.has(asset.src)) {
-              asset.isEntry = true
-            }
             manifest[src] = asset
           }
 
@@ -348,6 +369,34 @@ export function manifestPlugin(config: ResolvedConfig): Plugin {
             if (!(file && endsWithJSRE.test(file))) {
               manifest[originalFileName] = asset
             }
+          }
+        }
+      }
+
+      // Ensure that all input files are marked as entries in the manifest
+      // This is necessary because Rollup may not mark pure css chunks as entries
+      // when using array-based input
+      const inputOptions = buildOptions.rollupOptions.input
+      if (inputOptions) {
+        const inputs = new Set<string>()
+        const inputList = Array.isArray(inputOptions)
+          ? inputOptions
+          : typeof inputOptions === 'object'
+            ? Object.values(inputOptions)
+            : [inputOptions]
+
+        for (const input of inputList) {
+          const absoluteInput = path.resolve(root, input)
+          const relativeInput = normalizePath(
+            path.relative(root, absoluteInput),
+          )
+          inputs.add(relativeInput)
+        }
+
+        for (const name in manifest) {
+          const item = manifest[name]
+          if (!item.isEntry && item.src && inputs.has(item.src)) {
+            item.isEntry = true
           }
         }
       }
