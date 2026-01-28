@@ -9,7 +9,7 @@ import {
 } from '../plugin'
 import { watchPackageDataPlugin } from '../packages'
 import { jsonPlugin } from './json'
-import { oxcResolvePlugin, resolvePlugin } from './resolve'
+import { oxcResolvePlugin } from './resolve'
 import { optimizedDepsPlugin } from './optimizedDeps'
 import { importAnalysisPlugin } from './importAnalysis'
 import { cssAnalysisPlugin, cssPlugin, cssPostPlugin } from './css'
@@ -47,7 +47,6 @@ export async function resolvePlugins(
     ? await (await import('../build')).resolveBuildPlugins(config)
     : { pre: [], post: [] }
   const { modulePreload } = config.build
-  const enableNativePlugin = config.nativePluginEnabledLevel >= 0
   const enableNativePluginV1 = config.nativePluginEnabledLevel >= 1
 
   return [
@@ -76,33 +75,21 @@ export async function resolvePlugins(
     modulePreload !== false && modulePreload.polyfill
       ? modulePreloadPolyfillPlugin(config)
       : null,
-    ...(enableNativePlugin
-      ? oxcResolvePlugin(
-          {
-            root: config.root,
-            isProduction: config.isProduction,
-            isBuild,
-            packageCache: config.packageCache,
-            asSrc: true,
-            optimizeDeps: true,
-            externalize: true,
-            legacyInconsistentCjsInterop: config.legacy?.inconsistentCjsInterop,
-          },
-          isWorker
-            ? { ...config, consumer: 'client', optimizeDepsPluginNames: [] }
-            : undefined,
-        )
-      : [
-          resolvePlugin({
-            root: config.root,
-            isProduction: config.isProduction,
-            isBuild,
-            packageCache: config.packageCache,
-            asSrc: true,
-            optimizeDeps: true,
-            externalize: true,
-          }),
-        ]),
+    ...oxcResolvePlugin(
+      {
+        root: config.root,
+        isProduction: config.isProduction,
+        isBuild,
+        packageCache: config.packageCache,
+        asSrc: true,
+        optimizeDeps: true,
+        externalize: true,
+        legacyInconsistentCjsInterop: config.legacy?.inconsistentCjsInterop,
+      },
+      isWorker
+        ? { ...config, consumer: 'client', optimizeDepsPluginNames: [] }
+        : undefined,
+    ),
     htmlInlineProxyPlugin(config),
     cssPlugin(config),
     esbuildBannerFooterCompatPlugin(config),
