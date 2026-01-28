@@ -3,6 +3,7 @@ import type { ObjectHook } from 'rolldown'
 import {
   viteAliasPlugin as nativeAliasPlugin,
   viteJsonPlugin as nativeJsonPlugin,
+  viteWasmFallbackPlugin as nativeWasmFallbackPlugin,
 } from 'rolldown/experimental'
 import type { PluginHookUtils, ResolvedConfig } from '../config'
 import {
@@ -18,7 +19,7 @@ import { cssAnalysisPlugin, cssPlugin, cssPostPlugin } from './css'
 import { assetPlugin } from './asset'
 import { clientInjectionsPlugin } from './clientInjections'
 import { buildHtmlPlugin, htmlInlineProxyPlugin } from './html'
-import { wasmFallbackPlugin, wasmHelperPlugin } from './wasm'
+import { wasmHelperPlugin } from './wasm'
 import { modulePreloadPolyfillPlugin } from './modulePreloadPolyfill'
 import { webWorkerPlugin } from './worker'
 import { preAliasPlugin } from './preAlias'
@@ -103,7 +104,7 @@ export async function resolvePlugins(
 
     ...normalPlugins,
 
-    wasmFallbackPlugin(config),
+    nativeWasmFallbackPlugin(),
     definePlugin(config),
     cssPostPlugin(config),
     isBundled && buildHtmlPlugin(config),
