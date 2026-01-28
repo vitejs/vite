@@ -5,6 +5,7 @@ import { createDebugger, joinUrlSegments } from '../../utils'
 import { cleanUrl } from '../../../shared/utils'
 import type { DevEnvironment } from '../environment'
 import { FullBundleDevEnvironment } from '../environments/fullBundleEnvironment'
+import { htmlLangRE } from '../../plugins/html'
 
 const debug = createDebugger('vite:html-fallback')
 
@@ -53,28 +54,38 @@ export function htmlFallbackMiddleware(
       return next()
     }
 
-    // .html files are not handled by serveStaticMiddleware
+    // .html/.htm files are not handled by serveStaticMiddleware
     // so we need to check if the file exists
-    if (pathname.endsWith('.html')) {
+    if (htmlLangRE.test(pathname)) {
       if (checkFileExists(pathname)) {
         debug?.(`Rewriting ${req.method} ${req.url} to ${url}`)
         req.url = url
         return next()
       }
     }
-    // trailing slash should check for fallback index.html
+    // trailing slash should check for fallback index.html or index.htm
     else if (pathname.endsWith('/')) {
-      if (checkFileExists(joinUrlSegments(pathname, 'index.html'))) {
-        const newUrl = url + 'index.html'
+      const indexFile = checkFileExists(joinUrlSegments(pathname, 'index.html'))
+        ? 'index.html'
+        : checkFileExists(joinUrlSegments(pathname, 'index.htm'))
+          ? 'index.htm'
+          : null
+      if (indexFile) {
+        const newUrl = url + indexFile
         debug?.(`Rewriting ${req.method} ${req.url} to ${newUrl}`)
         req.url = newUrl
         return next()
       }
     }
-    // non-trailing slash should check for fallback .html
+    // non-trailing slash should check for fallback .html or .htm
     else {
-      if (checkFileExists(pathname + '.html')) {
-        const newUrl = url + '.html'
+      const htmlExt = checkFileExists(pathname + '.html')
+        ? '.html'
+        : checkFileExists(pathname + '.htm')
+          ? '.htm'
+          : null
+      if (htmlExt) {
+        const newUrl = url + htmlExt
         debug?.(`Rewriting ${req.method} ${req.url} to ${newUrl}`)
         req.url = newUrl
         return next()
