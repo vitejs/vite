@@ -8,7 +8,8 @@ const timeout = process.env.PWDEBUG ? Infinity : process.env.CI ? 50000 : 30000
 export default defineConfig({
   resolve: {
     alias: {
-      '~utils': resolve(__dirname, './playground/test-utils'),
+      // eslint-disable-next-line n/no-unsupported-features/node-builtins
+      '~utils': resolve(import.meta.dirname, './playground/test-utils'),
     },
   },
   test: {

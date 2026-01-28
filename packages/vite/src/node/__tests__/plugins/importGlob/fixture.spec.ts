@@ -1,18 +1,15 @@
-import { dirname, resolve } from 'node:path'
+import { resolve } from 'node:path'
 import { promises as fs } from 'node:fs'
-import { fileURLToPath } from 'node:url'
 import { describe, expect, it } from 'vitest'
 import { transformGlobImport } from '../../../plugins/importMetaGlob'
 import { transformWithEsbuild } from '../../../plugins/esbuild'
 
-const __dirname = resolve(dirname(fileURLToPath(import.meta.url)))
-
 describe('fixture', async () => {
   const resolveId = (id: string) => id
-  const root = __dirname
+  const root = import.meta.dirname
 
   it('transform', async () => {
-    const id = resolve(__dirname, './fixture-a/index.ts')
+    const id = resolve(import.meta.dirname, './fixture-a/index.ts')
     const code = (
       await transformWithEsbuild(await fs.readFile(id, 'utf-8'), id)
     ).code
@@ -41,7 +38,7 @@ describe('fixture', async () => {
   })
 
   it('virtual modules', async () => {
-    const root = resolve(__dirname, './fixture-a')
+    const root = resolve(import.meta.dirname, './fixture-a')
     const code = [
       "import.meta.glob('/modules/*.ts')",
       "import.meta.glob(['/../fixture-b/*.ts'])",
@@ -69,7 +66,7 @@ describe('fixture', async () => {
   })
 
   it('transform with restoreQueryExtension', async () => {
-    const id = resolve(__dirname, './fixture-a/index.ts')
+    const id = resolve(import.meta.dirname, './fixture-a/index.ts')
     const code = (
       await transformWithEsbuild(await fs.readFile(id, 'utf-8'), id)
     ).code
