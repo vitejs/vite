@@ -1,6 +1,7 @@
 import fs from 'node:fs'
 import fsp from 'node:fs/promises'
 import path from 'node:path'
+import { createHash } from 'node:crypto'
 import { fileURLToPath, pathToFileURL } from 'node:url'
 import postcssrc from 'postcss-load-config'
 import type {
@@ -504,6 +505,16 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
       : defaultCssBundleName
     cssBundleNameCache.set(config, cssBundleName)
     return cssBundleName
+  }
+
+  function getConfigHash() {
+    if (config.experimental?.renderBuiltUrl) {
+      return createHash('sha256')
+        .update(config.experimental.renderBuiltUrl.toString())
+        .digest('hex')
+        .substring(0, 8)
+    }
+    return ''
   }
 
   return {
@@ -1114,6 +1125,7 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
         })
       }
 
+      const configHash = getConfigHash()
       const cssAssets = Object.values(bundle).filter(
         (asset): asset is OutputAsset =>
           asset.type === 'asset' && asset.fileName.endsWith('.css'),
@@ -1121,6 +1133,9 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
       for (const cssAsset of cssAssets) {
         if (typeof cssAsset.source === 'string') {
           cssAsset.source = cssAsset.source.replace(viteHashUpdateMarkerRE, '')
+          if (configHash) {
+            cssAsset.source += `\n/* vite-config-hash: ${configHash} */`
+          }
         }
       }
     },
