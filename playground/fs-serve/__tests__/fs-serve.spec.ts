@@ -1,6 +1,5 @@
 import net from 'node:net'
 import path from 'node:path'
-import { fileURLToPath } from 'node:url'
 import http from 'node:http'
 import {
   afterEach,
