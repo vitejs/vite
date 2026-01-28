@@ -67,7 +67,7 @@ test('should get a 404 when using incorrect case', async () => {
   expect(barResult.status).toBe(200)
 })
 
-test('should fallback to index.html when accessing non-existant html file', async () => {
+test('should fallback to index.html when accessing non-existent html file', async () => {
   expect((await fetchPath('doesnt-exist.html')).status).toBe(200)
 })
 
