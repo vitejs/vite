@@ -1,6 +1,10 @@
 import aliasPlugin, { type ResolverFunction } from '@rollup/plugin-alias'
 import type { ObjectHook } from 'rolldown'
-import { viteAliasPlugin as nativeAliasPlugin } from 'rolldown/experimental'
+import {
+  viteAliasPlugin as nativeAliasPlugin,
+  viteJsonPlugin as nativeJsonPlugin,
+  viteWasmFallbackPlugin as nativeWasmFallbackPlugin,
+} from 'rolldown/experimental'
 import type { PluginHookUtils, ResolvedConfig } from '../config'
 import {
   type HookHandler,
@@ -8,7 +12,6 @@ import {
   type PluginWithRequiredHook,
 } from '../plugin'
 import { watchPackageDataPlugin } from '../packages'
-import { jsonPlugin } from './json'
 import { oxcResolvePlugin } from './resolve'
 import { optimizedDepsPlugin } from './optimizedDeps'
 import { importAnalysisPlugin } from './importAnalysis'
@@ -16,7 +19,7 @@ import { cssAnalysisPlugin, cssPlugin, cssPostPlugin } from './css'
 import { assetPlugin } from './asset'
 import { clientInjectionsPlugin } from './clientInjections'
 import { buildHtmlPlugin, htmlInlineProxyPlugin } from './html'
-import { wasmFallbackPlugin, wasmHelperPlugin } from './wasm'
+import { wasmHelperPlugin } from './wasm'
 import { modulePreloadPolyfillPlugin } from './modulePreloadPolyfill'
 import { webWorkerPlugin } from './worker'
 import { preAliasPlugin } from './preAlias'
@@ -94,14 +97,14 @@ export async function resolvePlugins(
     cssPlugin(config),
     esbuildBannerFooterCompatPlugin(config),
     config.oxc !== false ? oxcPlugin(config) : null,
-    jsonPlugin(config.json, isBuild, enableNativePluginV1),
+    nativeJsonPlugin({ ...config.json, minify: isBuild }),
     wasmHelperPlugin(config),
     webWorkerPlugin(config),
     assetPlugin(config),
 
     ...normalPlugins,
 
-    wasmFallbackPlugin(config),
+    nativeWasmFallbackPlugin(),
     definePlugin(config),
     cssPostPlugin(config),
     isBundled && buildHtmlPlugin(config),
