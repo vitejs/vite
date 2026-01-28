@@ -129,18 +129,6 @@ export function getNodeAssetAttributes(
 
   if (!defaults && !additional) return []
 
-  const matched: HtmlAssetSource = {
-    srcAttributes: [
-      ...(defaults?.srcAttributes ?? []),
-      ...(additional?.srcAttributes ?? []),
-    ],
-    srcsetAttributes: [
-      ...(defaults?.srcsetAttributes ?? []),
-      ...(additional?.srcsetAttributes ?? []),
-    ],
-    filter: additional?.filter ?? defaults?.filter,
-  }
-
   const attributes: Record<string, string> = {}
   for (const attr of node.attrs) {
     attributes[getAttrKey(attr)] = attr.value
@@ -161,15 +149,38 @@ export function getNodeAssetAttributes(
   }
 
   const actions: HtmlAssetAttribute[] = []
-  function handleAttributeKey(key: string, type: 'src' | 'srcset') {
+  function handleAttributeKey(
+    key: string,
+    type: 'src' | 'srcset',
+    filter?: (data: HtmlAssetSourceFilterData) => boolean,
+  ) {
     const value = attributes[key]
     if (!value) return
-    if (matched.filter && !matched.filter({ key, value, attributes })) return
+    if (filter && !filter({ key, value, attributes })) return
     const location = node.sourceCodeLocation!.attrs![key]
     actions.push({ type, key, value, attributes, location })
   }
-  matched.srcAttributes?.forEach((key) => handleAttributeKey(key, 'src'))
-  matched.srcsetAttributes?.forEach((key) => handleAttributeKey(key, 'srcset'))
+
+  // Run matching for default asset sources
+  if (defaults) {
+    defaults.srcAttributes?.forEach((key) =>
+      handleAttributeKey(key, 'src', defaults.filter),
+    )
+    defaults.srcsetAttributes?.forEach((key) =>
+      handleAttributeKey(key, 'srcset', defaults.filter),
+    )
+  }
+
+  // Run matching for additional asset sources
+  if (additional) {
+    additional.srcAttributes?.forEach((key) =>
+      handleAttributeKey(key, 'src', additional.filter),
+    )
+    additional.srcsetAttributes?.forEach((key) =>
+      handleAttributeKey(key, 'srcset', additional.filter),
+    )
+  }
+
   return actions
 }
 

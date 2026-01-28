@@ -155,6 +155,37 @@ describe('getNodeAssetAttributes', () => {
       expect(attrs2).toHaveLength(0)
     })
 
+    test('default filter and additional filter are applied independently', () => {
+      const node = getNode(
+        '<meta name="twitter:image" content="image.jpg" data-fallback="fallback.jpg">',
+      )
+      const attrs = getNodeAssetAttributes(node, {
+        meta: {
+          srcAttributes: ['data-fallback'],
+          filter: ({ key }) => key === 'data-fallback',
+        },
+      })
+      expect(attrs).toHaveLength(2)
+      expect(attrs[0]).toHaveProperty('key', 'content')
+      expect(attrs[0]).toHaveProperty('value', 'image.jpg')
+      expect(attrs[1]).toHaveProperty('key', 'data-fallback')
+      expect(attrs[1]).toHaveProperty('value', 'fallback.jpg')
+    })
+
+    test('additional filter does not affect default filter behavior', () => {
+      const node = getNode('<meta name="unknown" content="image.jpg">')
+      const defaultAttrs = getNodeAssetAttributes(node)
+      expect(defaultAttrs).toHaveLength(0)
+
+      const attrs = getNodeAssetAttributes(node, {
+        meta: {
+          srcAttributes: ['data-custom'],
+          filter: () => true,
+        },
+      })
+      expect(attrs).toHaveLength(0)
+    })
+
     test('works without additionalAssetSources (backward compatibility)', () => {
       const node = getNode('<img src="foo.jpg">')
       const attrs = getNodeAssetAttributes(node)
