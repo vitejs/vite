@@ -1,6 +1,9 @@
 import aliasPlugin, { type ResolverFunction } from '@rollup/plugin-alias'
 import type { ObjectHook } from 'rolldown'
-import { viteAliasPlugin as nativeAliasPlugin } from 'rolldown/experimental'
+import {
+  viteAliasPlugin as nativeAliasPlugin,
+  viteJsonPlugin as nativeJsonPlugin,
+} from 'rolldown/experimental'
 import type { PluginHookUtils, ResolvedConfig } from '../config'
 import {
   type HookHandler,
@@ -8,7 +11,6 @@ import {
   type PluginWithRequiredHook,
 } from '../plugin'
 import { watchPackageDataPlugin } from '../packages'
-import { jsonPlugin } from './json'
 import { oxcResolvePlugin } from './resolve'
 import { optimizedDepsPlugin } from './optimizedDeps'
 import { importAnalysisPlugin } from './importAnalysis'
@@ -94,7 +96,7 @@ export async function resolvePlugins(
     cssPlugin(config),
     esbuildBannerFooterCompatPlugin(config),
     config.oxc !== false ? oxcPlugin(config) : null,
-    jsonPlugin(config.json, isBuild, enableNativePluginV1),
+    nativeJsonPlugin({ ...config.json, minify: isBuild }),
     wasmHelperPlugin(config),
     webWorkerPlugin(config),
     assetPlugin(config),
