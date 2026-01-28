@@ -19,7 +19,7 @@ export default defineConfig({
         //     return 'chunk'
         //   }
         // },
-        advancedChunks: {
+        codeSplitting: {
           groups: [
             // make `chunk.css` it's own chunk for easier testing of pure css chunks
             {
