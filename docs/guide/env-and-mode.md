@@ -192,36 +192,23 @@ And create a `.env.staging` file:
 VITE_APP_TITLE=My App (staging)
 ```
 
-As `vite build` runs a production build by default, you can also change this and run a development build by using a different mode and `.env` file configuration:
+### NODE_ENV
 
-```[.env.testing]
-NODE_ENV=development
-```
+The `NODE_ENV` environment variable determines the value of the `import.meta.env.PROD` and `import.meta.env.DEV` boolean properties.
 
-### NODE_ENV and Modes
+Note that `NODE_ENV` does _not_ affect the Mode. `NODE_ENV` and Modes are completely distinct settings.
 
-It's important to note that `NODE_ENV` (`process.env.NODE_ENV`) and modes are two different concepts. Here's how different commands affect the `NODE_ENV` and mode:
+Example values of `NODE_ENV` and corresponding `import.meta.env` properties:
 
-| Command                                              | NODE_ENV        | Mode            |
-| ---------------------------------------------------- | --------------- | --------------- |
-| `vite build`                                         | `"production"`  | `"production"`  |
-| `vite build --mode development`                      | `"production"`  | `"development"` |
-| `NODE_ENV=development vite build`                    | `"development"` | `"production"`  |
-| `NODE_ENV=development vite build --mode development` | `"development"` | `"development"` |
+| Command                           | `import.meta.env.PROD` | `import.meta.env.DEV` |
+| --------------------------------- | ---------------------- | --------------------- |
+| `NODE_ENV=production vite build`  | `true`                 | `false`               |
+| `NODE_ENV=development vite build` | `false`                | `true`                |
+| `NODE_ENV=other vite build`       | `false`                | `true`                |
 
-The different values of `NODE_ENV` and mode also reflect on its corresponding `import.meta.env` properties:
-
-| Command                | `import.meta.env.PROD` | `import.meta.env.DEV` |
-| ---------------------- | ---------------------- | --------------------- |
-| `NODE_ENV=production`  | `true`                 | `false`               |
-| `NODE_ENV=development` | `false`                | `true`                |
-| `NODE_ENV=other`       | `false`                | `true`                |
-
-| Command              | `import.meta.env.MODE` |
-| -------------------- | ---------------------- |
-| `--mode production`  | `"production"`         |
-| `--mode development` | `"development"`        |
-| `--mode staging`     | `"staging"`            |
+You can use either or both of Modes and `NODE_ENV`.
+If you need help choosing one over the other, we suggest using Modes.
+Modes has the advantage of supporting `.env.[mode]` files, and `NODE_ENV` is considered an antipattern by [some](https://nodejs.org/en/learn/getting-started/nodejs-the-difference-between-development-and-production).
 
 :::tip `NODE_ENV` in `.env` files
 
