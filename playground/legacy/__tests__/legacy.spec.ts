@@ -86,11 +86,10 @@ describe.runIf(isBuild)('build', () => {
   test('should generate correct manifest', async () => {
     const manifest = readManifest()
     // legacy polyfill
-    // FIXME: needs https://github.com/rolldown/rolldown/issues/4034
-    // expect(manifest['../../vite/legacy-polyfills-legacy']).toBeDefined()
-    // expect(manifest['../../vite/legacy-polyfills-legacy'].src).toBe(
-    //   '../../vite/legacy-polyfills-legacy',
-    // )
+    expect(manifest['../../vite/legacy-polyfills-legacy']).toBeDefined()
+    expect(manifest['../../vite/legacy-polyfills-legacy'].src).toBe(
+      '../../vite/legacy-polyfills-legacy',
+    )
     expect(manifest['custom0-legacy.js'].file).toMatch(
       /chunk-X-legacy\.[-\w]{8}.js/,
     )
@@ -101,11 +100,10 @@ describe.runIf(isBuild)('build', () => {
       /chunk-X-legacy[-\w]{8}.js/,
     )
     // modern polyfill
-    // FIXME: needs https://github.com/rolldown/rolldown/issues/4034
-    // expect(manifest['../../vite/legacy-polyfills']).toBeDefined()
-    // expect(manifest['../../vite/legacy-polyfills'].src).toBe(
-    //   '../../vite/legacy-polyfills',
-    // )
+    expect(manifest['../../vite/legacy-polyfills']).toBeDefined()
+    expect(manifest['../../vite/legacy-polyfills'].src).toBe(
+      '../../vite/legacy-polyfills',
+    )
   })
 
   test('should minify legacy chunks with terser', async () => {
