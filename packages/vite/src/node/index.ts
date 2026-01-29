@@ -96,10 +96,7 @@ export { send } from './server/send'
 export { createLogger } from './logger'
 export { searchForWorkspaceRoot } from './server/searchRoot'
 
-export {
-  isFileServingAllowed,
-  isFileLoadingAllowed,
-} from './server/middlewares/static'
+export { isFileLoadingAllowed } from './server/middlewares/static'
 export { loadEnv, resolveEnvPrefix } from './env'
 
 // additional types
