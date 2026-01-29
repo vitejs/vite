@@ -30,6 +30,14 @@
     text('.cjs-dynamic-dep-cjs-compiled-from-cjs', 'ok')
   }
 
+  const cjsWithEsModuleTag =
+    await import('@vitejs/test-dep-cjs-with-es-module-flag')
+  console.log('cjsWithEsModuleTag', cjsWithEsModuleTag)
+  text(
+    '.cjs-dynamic-dep-cjs-with-es-module-flag',
+    cjsWithEsModuleTag.default.info,
+  )
+
   function App() {
     const [count, setCount] = useState(0)
 
