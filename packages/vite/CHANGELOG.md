@@ -163,6 +163,21 @@
 
 See [rolldown-vite changelog](https://github.com/vitejs/rolldown-vite/blob/v7.2.10/packages/vite/CHANGELOG.md)
 
+## <small>[7.3.1](https://github.com/vitejs/vite/compare/v7.3.0...v7.3.1) (2026-01-07)</small>
+### Features
+
+* add `ignoreOutdatedRequests` option to `optimizeDeps` ([#21364](https://github.com/vitejs/vite/issues/21364)) ([9d39d37](https://github.com/vitejs/vite/commit/9d39d373a7b4e0a93322b70b9dbeb202af06af3e))
+
+## [7.3.0](https://github.com/vitejs/vite/compare/v7.2.7...v7.3.0) (2025-12-15)
+### Features
+
+* **deps:** update esbuild from ^0.25.0 to ^0.27.0 ([#21183](https://github.com/vitejs/vite/issues/21183)) ([cff26ec](https://github.com/vitejs/vite/commit/cff26ec0fc13373d7125a5eac6cb01fe63fee4b1))
+
+## <small>[7.2.7](https://github.com/vitejs/vite/compare/v7.2.6...v7.2.7) (2025-12-08)</small>
+### Bug Fixes
+
+* plugin shortcut support ([#21211](https://github.com/vitejs/vite/issues/21211)) ([721f163](https://github.com/vitejs/vite/commit/721f16343d9555ae8fc71a2e5354b22e12ff0dc3))
+
 ## <small>[7.2.6](https://github.com/vitejs/vite/compare/v7.2.5...v7.2.6) (2025-12-01)</small>
 ## <small>[7.2.5](https://github.com/vitejs/vite/compare/v7.2.4...v7.2.5) (2025-12-01)</small>
 ### Bug Fixes
