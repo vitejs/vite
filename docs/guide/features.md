@@ -10,7 +10,7 @@ Native ES imports do not support bare module imports like the following:
 import { someMethod } from 'my-dep'
 ```
 
-The above will throw an error in the browser. Vite will detect such bare module imports in all served source files and perform the following:
+The above import will throw an error in the browser. Vite will detect such bare module imports in all served source files and perform the following:
 
 1. [Pre-bundle](./dep-pre-bundling) them to improve page loading speed and convert CommonJS / UMD modules to ESM. The pre-bundling step is performed with [esbuild](https://esbuild.github.io/) and makes Vite's cold start time significantly faster than any JavaScript-based bundler.
 
