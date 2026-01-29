@@ -1,5 +1,4 @@
 import { basename, resolve } from 'node:path'
-import { fileURLToPath } from 'node:url'
 import { stripVTControlCharacters } from 'node:util'
 import fsp from 'node:fs/promises'
 import colors from 'picocolors'
@@ -24,7 +23,7 @@ import type { Logger } from '../logger'
 import { createLogger } from '../logger'
 import { BuildEnvironment, resolveConfig } from '..'
 
-const __dirname = resolve(fileURLToPath(import.meta.url), '..')
+const dirname = import.meta.dirname
 
 type FormatsToFileNames = [LibraryFormats, string][]
 
@@ -32,7 +31,7 @@ describe('build', () => {
   test('file hash should change when css changes for dynamic entries', async () => {
     const buildProject = async (cssColor: string) => {
       return (await build({
-        root: resolve(__dirname, 'packages/build-project'),
+        root: resolve(dirname, 'packages/build-project'),
         logLevel: 'silent',
         build: {
           write: false,
@@ -85,7 +84,7 @@ describe('build', () => {
   test('file hash should change when pure css chunk changes', async () => {
     const buildProject = async (cssColor: string) => {
       return (await build({
-        root: resolve(__dirname, 'packages/build-project'),
+        root: resolve(dirname, 'packages/build-project'),
         logLevel: 'silent',
         build: {
           write: false,
@@ -157,7 +156,7 @@ describe('build', () => {
     async ([stringify, namedExports]) => {
       const esBundle = (await build({
         mode: 'development',
-        root: resolve(__dirname, 'packages/build-project'),
+        root: resolve(dirname, 'packages/build-project'),
         logLevel: 'silent',
         json: { stringify, namedExports },
         build: {
@@ -363,7 +362,7 @@ describe('resolveLibFilename', () => {
       },
       'es',
       'myLib',
-      resolve(__dirname, 'packages/name'),
+      resolve(dirname, 'packages/name'),
     )
 
     expect(filename).toBe('custom-filename-function.es.js')
@@ -377,7 +376,7 @@ describe('resolveLibFilename', () => {
       },
       'es',
       'myLib',
-      resolve(__dirname, 'packages/name'),
+      resolve(dirname, 'packages/name'),
     )
 
     expect(filename).toBe('custom-filename.mjs')
@@ -390,7 +389,7 @@ describe('resolveLibFilename', () => {
       },
       'es',
       'myLib',
-      resolve(__dirname, 'packages/name'),
+      resolve(dirname, 'packages/name'),
     )
 
     expect(filename).toBe('mylib.mjs')
@@ -404,7 +403,7 @@ describe('resolveLibFilename', () => {
       },
       'es',
       'myLib',
-      resolve(__dirname, 'packages/noname'),
+      resolve(dirname, 'packages/noname'),
     )
 
     expect(filename).toBe('custom-filename.mjs')
@@ -417,7 +416,7 @@ describe('resolveLibFilename', () => {
       },
       'es',
       'myLib',
-      resolve(__dirname, 'packages/noname'),
+      resolve(dirname, 'packages/noname'),
     )
     expect(filename).toBe('named-testing-package.mjs')
   })
@@ -435,7 +434,7 @@ describe('resolveLibFilename', () => {
         baseLibOptions,
         format,
         'myLib',
-        resolve(__dirname, 'packages/noname'),
+        resolve(dirname, 'packages/noname'),
       )
 
       expect(filename).toBe(expectedFilename)
@@ -455,7 +454,7 @@ describe('resolveLibFilename', () => {
         baseLibOptions,
         format,
         'myLib',
-        resolve(__dirname, 'packages/module'),
+        resolve(dirname, 'packages/module'),
       )
 
       expect(expectedFilename).toBe(filename)
@@ -475,7 +474,7 @@ describe('resolveLibFilename', () => {
         libOptions,
         'es',
         entryAlias,
-        resolve(__dirname, 'packages/name'),
+        resolve(dirname, 'packages/name'),
       ),
     )
 
@@ -498,7 +497,7 @@ describe('resolveLibFilename', () => {
         libOptions,
         'es',
         entryAlias,
-        resolve(__dirname, 'packages/name'),
+        resolve(dirname, 'packages/name'),
       ),
     )
 
@@ -520,7 +519,7 @@ describe('resolveLibFilename', () => {
         libOptions,
         'es',
         entryAlias,
-        resolve(__dirname, 'packages/name'),
+        resolve(dirname, 'packages/name'),
       ),
     )
 
@@ -538,7 +537,7 @@ describe('resolveLibFilename', () => {
         libOptions,
         'es',
         entryAlias,
-        resolve(__dirname, 'packages/name'),
+        resolve(dirname, 'packages/name'),
       ),
     )
 
@@ -558,7 +557,7 @@ describe('resolveLibFilename', () => {
         libOptions,
         'es',
         entryAlias,
-        resolve(__dirname, 'packages/name'),
+        resolve(dirname, 'packages/name'),
       ),
     )
 
@@ -577,7 +576,7 @@ describe('resolveLibFilename', () => {
         libOptions,
         'es',
         entryAlias,
-        resolve(__dirname, 'packages/name'),
+        resolve(dirname, 'packages/name'),
       ),
     )
 
@@ -683,7 +682,7 @@ describe('resolveBuildOutputs', () => {
 
   test('ssrEmitAssets', async () => {
     const result = await build({
-      root: resolve(__dirname, 'fixtures/emit-assets'),
+      root: resolve(dirname, 'fixtures/emit-assets'),
       logLevel: 'silent',
       build: {
         ssr: true,
@@ -709,7 +708,7 @@ describe('resolveBuildOutputs', () => {
 
   test('emitAssets', async () => {
     const builder = await createBuilder({
-      root: resolve(__dirname, 'fixtures/emit-assets'),
+      root: resolve(dirname, 'fixtures/emit-assets'),
       logLevel: 'warn',
       environments: {
         ssr: {
@@ -740,7 +739,7 @@ describe('resolveBuildOutputs', () => {
 
   test('ssr builtin', async () => {
     const builder = await createBuilder({
-      root: resolve(__dirname, 'fixtures/dynamic-import'),
+      root: resolve(dirname, 'fixtures/dynamic-import'),
       logLevel: 'warn',
       environments: {
         ssr: {
@@ -761,7 +760,7 @@ describe('resolveBuildOutputs', () => {
 
   test('ssr custom', async () => {
     const builder = await createBuilder({
-      root: resolve(__dirname, 'fixtures/dynamic-import'),
+      root: resolve(dirname, 'fixtures/dynamic-import'),
       logLevel: 'warn',
       environments: {
         custom: {
@@ -784,7 +783,7 @@ describe('resolveBuildOutputs', () => {
 test('default sharedConfigBuild true on build api', async () => {
   let counter = 0
   await build({
-    root: resolve(__dirname, 'fixtures/emit-assets'),
+    root: resolve(dirname, 'fixtures/emit-assets'),
     logLevel: 'warn',
     build: {
       ssr: true,
@@ -809,7 +808,7 @@ test('default sharedConfigBuild true on build api', async () => {
 test.for([true, false])(
   'minify per environment (builder.sharedPlugins: %s)',
   async (sharedPlugins) => {
-    const root = resolve(__dirname, 'fixtures/shared-plugins/minify')
+    const root = resolve(dirname, 'fixtures/shared-plugins/minify')
     const builder = await createBuilder({
       root,
       logLevel: 'warn',
@@ -866,7 +865,7 @@ test.for([true, false])(
 )
 
 test('sharedConfigBuild and emitAssets', async () => {
-  const root = resolve(__dirname, 'fixtures/shared-config-build/emitAssets')
+  const root = resolve(dirname, 'fixtures/shared-config-build/emitAssets')
   const builder = await createBuilder({
     root,
     logLevel: 'warn',
@@ -935,7 +934,7 @@ test('sharedConfigBuild and emitAssets', async () => {
 test.skip('adjust worker build error for worker.format', async () => {
   try {
     await build({
-      root: resolve(__dirname, 'fixtures/worker-dynamic'),
+      root: resolve(dirname, 'fixtures/worker-dynamic'),
       build: {
         rollupOptions: {
           input: {
@@ -964,7 +963,7 @@ describe('onRollupLog', () => {
     options?: Pick<RolldownOptions, 'onLog' | 'onwarn'>,
   ) => {
     await build({
-      root: resolve(__dirname, 'packages/build-project'),
+      root: resolve(dirname, 'packages/build-project'),
       logLevel: 'info',
       build: {
         write: false,
@@ -1108,7 +1107,7 @@ describe('onRollupLog', () => {
 test('watch rebuild manifest', async (ctx) => {
   // this doesn't actually test watch rebuild
   // but it simulates something similar by running two builds for the same environment
-  const root = resolve(__dirname, 'fixtures/watch-rebuild-manifest')
+  const root = resolve(dirname, 'fixtures/watch-rebuild-manifest')
   const builder = await createBuilder({
     root,
     logLevel: 'error',

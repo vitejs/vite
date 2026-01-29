@@ -15,7 +15,7 @@ export default defineConfig({
     outDir: 'dist/terser',
     lib: {
       ...baseConfig.build.lib,
-      entry: path.resolve(__dirname, 'src/main.js'),
+      entry: path.resolve(import.meta.dirname, 'src/main.js'),
       formats: ['es', 'iife'],
     },
   },

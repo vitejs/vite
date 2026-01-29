@@ -5,7 +5,7 @@ export default defineConfig({
   base: '/es/',
   resolve: {
     alias: {
-      '@': __dirname,
+      '@': import.meta.dirname,
     },
   },
   worker: {

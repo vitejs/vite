@@ -19,7 +19,7 @@ export default (sourcemap) => {
     base: `/iife-${typeName}/`,
     resolve: {
       alias: {
-        '@': __dirname,
+        '@': import.meta.dirname,
       },
     },
     worker: {

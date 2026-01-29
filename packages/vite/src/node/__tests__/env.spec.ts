@@ -1,13 +1,12 @@
 import { join } from 'node:path'
-import { fileURLToPath } from 'node:url'
 import { describe, expect, test } from 'vitest'
 import { loadEnv } from '../env'
 
-const __dirname = fileURLToPath(new URL('.', import.meta.url))
+const dirname = import.meta.dirname
 
 describe('loadEnv', () => {
   test('basic', () => {
-    expect(loadEnv('development', join(__dirname, './env')))
+    expect(loadEnv('development', join(dirname, './env')))
       .toMatchInlineSnapshot(`
         {
           "VITE_APP_BASE_ROUTE": "/",
@@ -20,7 +19,7 @@ describe('loadEnv', () => {
   })
 
   test('specific prefix', () => {
-    expect(loadEnv('development', join(__dirname, './env'), 'VVITE'))
+    expect(loadEnv('development', join(dirname, './env'), 'VVITE'))
       .toMatchInlineSnapshot(`
         {
           "VVITE_A": "A",
@@ -30,7 +29,7 @@ describe('loadEnv', () => {
   })
 
   test('override', () => {
-    expect(loadEnv('production', join(__dirname, './env')))
+    expect(loadEnv('production', join(dirname, './env')))
       .toMatchInlineSnapshot(`
         {
           "VITE_APP_BASE_ROUTE": "/app/",
@@ -40,7 +39,7 @@ describe('loadEnv', () => {
   })
 
   test('override 2', () => {
-    expect(loadEnv('development2', join(__dirname, './env')))
+    expect(loadEnv('development2', join(dirname, './env')))
       .toMatchInlineSnapshot(`
         {
           "VITE_APP_BASE_ROUTE": "source",
@@ -51,28 +50,27 @@ describe('loadEnv', () => {
   })
 
   test('VITE_USER_NODE_ENV', () => {
-    loadEnv('development', join(__dirname, './env'))
+    loadEnv('development', join(dirname, './env'))
     expect(process.env.VITE_USER_NODE_ENV).toEqual(undefined)
   })
 
   test('VITE_USER_NODE_ENV for dev behaviour in build', () => {
     const _nodeEnv = process.env.NODE_ENV
     process.env.NODE_ENV = 'production'
-    loadEnv('testing', join(__dirname, './env'))
+    loadEnv('testing', join(dirname, './env'))
     expect(process.env.VITE_USER_NODE_ENV).toEqual('development')
     process.env.NODE_ENV = _nodeEnv
   })
 
   test('Already exists VITE_USER_NODE_ENV', () => {
     process.env.VITE_USER_NODE_ENV = 'test'
-    loadEnv('development', join(__dirname, './env'))
+    loadEnv('development', join(dirname, './env'))
     expect(process.env.VITE_USER_NODE_ENV).toEqual('test')
   })
 
   test('prioritize existing process.env', () => {
     process.env.VITE_ENV_TEST_ENV = 'EXIST'
-    expect(loadEnv('existing', join(__dirname, './env')))
-      .toMatchInlineSnapshot(`
+    expect(loadEnv('existing', join(dirname, './env'))).toMatchInlineSnapshot(`
         {
           "VITE_APP_BASE_ROUTE": "/",
           "VITE_APP_BASE_URL": "/",

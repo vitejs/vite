@@ -4,7 +4,7 @@ import MagicString from 'magic-string'
 export default defineConfig({
   resolve: {
     alias: {
-      '@': __dirname,
+      '@': import.meta.dirname,
     },
   },
   css: {

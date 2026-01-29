@@ -5,7 +5,7 @@ export default defineConfig({
   base: '/iife/',
   resolve: {
     alias: {
-      '@': __dirname,
+      '@': import.meta.dirname,
     },
   },
   worker: {

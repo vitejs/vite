@@ -10,7 +10,7 @@ export default defineConfig({
   },
   build: {
     lib: {
-      entry: path.resolve(__dirname, 'src/main-named.js'),
+      entry: path.resolve(import.meta.dirname, 'src/main-named.js'),
       name: 'MyLibNamed',
       formats: ['umd', 'iife'],
       fileName: 'my-lib-named',
