@@ -650,6 +650,7 @@ async function generateRuntimeHelpers(
   const output = await bundle.generate({
     format: 'cjs',
     minify: true,
+    generatedCode: { symbols: false },
   })
   const outputCode = output.output[0].code
   const exportNames = [...outputCode.matchAll(cjsExportRE)].map((m) => m[1])
