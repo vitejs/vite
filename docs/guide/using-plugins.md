@@ -35,9 +35,7 @@ Falsy plugins will be ignored, which can be used to easily activate or deactivat
 Vite aims to provide out-of-the-box support for common web development patterns. Before searching for a Vite or compatible Rollup plugin, check out the [Features Guide](../guide/features.md). A lot of the cases where a plugin would be needed in a Rollup project are already covered in Vite.
 :::
 
-Check out the [Plugins section](../plugins/) for information about official plugins. Community plugins are listed in [awesome-vite](https://github.com/vitejs/awesome-vite#plugins).
-
-You can also find plugins that follow the [recommended conventions](./api-plugin.md#conventions) using a [npm search for vite-plugin](https://www.npmjs.com/search?q=vite-plugin&ranking=popularity) for Vite plugins or a [npm search for rollup-plugin](https://www.npmjs.com/search?q=rollup-plugin&ranking=popularity) for Rollup plugins.
+Check out the [Plugins section](../plugins/) for information about official plugins. Community plugins that are published to npm are listed in [Vite Plugin Registry](https://registry.vite.dev/plugins).
 
 ## Enforcing Plugin Ordering
 
