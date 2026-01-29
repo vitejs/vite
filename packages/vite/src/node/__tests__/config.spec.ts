@@ -5,6 +5,7 @@ import { afterEach, describe, expect, test, vi } from 'vitest'
 import type { InlineConfig, PluginOption } from '..'
 import type { UserConfig, UserConfigExport } from '../config'
 import { defineConfig, loadConfigFromFile, resolveConfig } from '../config'
+import { resolveServerOptions } from '../server'
 import { resolveEnvPrefix } from '../env'
 import { mergeConfig } from '../utils'
 import { createLogger } from '../logger'
@@ -1219,5 +1220,72 @@ describe('loadConfigFromFile', () => {
       `)
       expect(result.dependencies.length).toBe(0)
     })
+  })
+})
+
+describe('resolveServerOptions', () => {
+  const logger = createLogger()
+
+  afterEach(() => {
+    delete process.env.__VITE_ADDITIONAL_SERVER_ALLOWED_HOSTS
+  })
+
+  test('adds single host from __VITE_ADDITIONAL_SERVER_ALLOWED_HOSTS', () => {
+    process.env.__VITE_ADDITIONAL_SERVER_ALLOWED_HOSTS = 'example.com'
+    const resolved = resolveServerOptions('/root', { allowedHosts: [] }, logger)
+    expect(resolved.allowedHosts).toEqual(['example.com'])
+  })
+
+  test('adds multiple hosts from __VITE_ADDITIONAL_SERVER_ALLOWED_HOSTS', () => {
+    process.env.__VITE_ADDITIONAL_SERVER_ALLOWED_HOSTS =
+      'example.com,test.com,dev.example.org'
+    const resolved = resolveServerOptions('/root', { allowedHosts: [] }, logger)
+    expect(resolved.allowedHosts).toEqual([
+      'example.com',
+      'test.com',
+      'dev.example.org',
+    ])
+  })
+
+  test('trims whitespace from hosts in __VITE_ADDITIONAL_SERVER_ALLOWED_HOSTS', () => {
+    process.env.__VITE_ADDITIONAL_SERVER_ALLOWED_HOSTS =
+      ' example.com , test.com , dev.example.org '
+    const resolved = resolveServerOptions('/root', { allowedHosts: [] }, logger)
+    expect(resolved.allowedHosts).toEqual([
+      'example.com',
+      'test.com',
+      'dev.example.org',
+    ])
+  })
+
+  test('filters empty hosts from __VITE_ADDITIONAL_SERVER_ALLOWED_HOSTS', () => {
+    process.env.__VITE_ADDITIONAL_SERVER_ALLOWED_HOSTS =
+      'example.com,,test.com,,'
+    const resolved = resolveServerOptions('/root', { allowedHosts: [] }, logger)
+    expect(resolved.allowedHosts).toEqual(['example.com', 'test.com'])
+  })
+
+  test('appends to existing allowedHosts', () => {
+    process.env.__VITE_ADDITIONAL_SERVER_ALLOWED_HOSTS = 'new.com,another.com'
+    const resolved = resolveServerOptions(
+      '/root',
+      { allowedHosts: ['existing.com'] },
+      logger,
+    )
+    expect(resolved.allowedHosts).toEqual([
+      'existing.com',
+      'new.com',
+      'another.com',
+    ])
+  })
+
+  test('does not modify allowedHosts when set to true', () => {
+    process.env.__VITE_ADDITIONAL_SERVER_ALLOWED_HOSTS = 'example.com'
+    const resolved = resolveServerOptions(
+      '/root',
+      { allowedHosts: true },
+      logger,
+    )
+    expect(resolved.allowedHosts).toBe(true)
   })
 })
