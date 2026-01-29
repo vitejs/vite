@@ -1,4 +1,4 @@
-<h1>Import assertion</h1>
+<h1>Import attributes</h1>
 
 <h2>From source code</h2>
 <p class="src"></p>
@@ -7,10 +7,10 @@
 <p class="dep"></p>
 
 <script type="module">
-  import * as data from './data.json' assert { type: 'json' }
+  import * as data from './data.json' with { type: 'json' }
   text('.src', data.foo)
 
-  import * as depData from '@vitejs/test-import-assertion-dep'
+  import * as depData from '@vitejs/test-import-attributes-dep'
   text('.dep', depData.hello)
 
   function text(el, text) {

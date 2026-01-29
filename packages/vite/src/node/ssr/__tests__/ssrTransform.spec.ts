@@ -1257,7 +1257,7 @@ const Baz = class extends Foo {}
   `)
 })
 
-test('import assertion attribute', async () => {
+test('import attributes', async () => {
   expect(
     await ssrTransformSimpleCode(`
 import * as foo from './foo.json' with { type: 'json' };
