@@ -1,3 +1,29 @@
+## [8.0.0-beta.11](https://github.com/vitejs/vite/compare/v8.0.0-beta.10...v8.0.0-beta.11) (2026-01-29)
+### Features
+
+* update rolldown to 1.0.0-rc.2 ([#21512](https://github.com/vitejs/vite/issues/21512)) ([fa136a9](https://github.com/vitejs/vite/commit/fa136a9e68921f3ca396e0870193fe805fbfb7b4))
+
+### Bug Fixes
+
+* **deps:** update all non-major dependencies ([#21488](https://github.com/vitejs/vite/issues/21488)) ([2b32ca2](https://github.com/vitejs/vite/commit/2b32ca24fe9d742901c2cb5c88e6b1fd734f8c73))
+* disable `tsconfig` option when loading config ([#21517](https://github.com/vitejs/vite/issues/21517)) ([5025c35](https://github.com/vitejs/vite/commit/5025c358d119aa0b60d0505f9dd705950ad897f6))
+* **optimizer:** map relative `new URL` paths to correct relative file location ([#21434](https://github.com/vitejs/vite/issues/21434)) ([ca96cbc](https://github.com/vitejs/vite/commit/ca96cbc8eff23091c288f9eaf1944af2de3c564f))
+
+### Documentation
+
+* bulk of typo fixes ([#21507](https://github.com/vitejs/vite/issues/21507)) ([80755da](https://github.com/vitejs/vite/commit/80755dacab296cd2083fef29e09280ceb810a943))
+
+### Miscellaneous Chores
+
+* add missing versions to changelog ([#21515](https://github.com/vitejs/vite/issues/21515)) ([4bfb239](https://github.com/vitejs/vite/commit/4bfb239686a17343bc46c0d7c968e28b0d64041f))
+* **deps:** update rolldown-related dependencies ([#21487](https://github.com/vitejs/vite/issues/21487)) ([5863e51](https://github.com/vitejs/vite/commit/5863e513fab6b481cfb42da86202f9db728c077d))
+
+### Code Refactoring
+
+* enable some native plugins even with enable native plugin false ([#21511](https://github.com/vitejs/vite/issues/21511)) ([b40292c](https://github.com/vitejs/vite/commit/b40292ce6a7dbbbbac9c6dae5f126b7f44c3e1b7))
+* remove `experimental.enableNativePlugin: 'resolver'` ([#21510](https://github.com/vitejs/vite/issues/21510)) ([f9d9213](https://github.com/vitejs/vite/commit/f9d92130fa79c638f77a3a8e6e55506f185d5a49))
+* use `import.meta.dirname` everywhere ([#21509](https://github.com/vitejs/vite/issues/21509)) ([7becf5f](https://github.com/vitejs/vite/commit/7becf5f8fe9041cff60f495ef975faaba68f9eb2))
+
 ## [8.0.0-beta.10](https://github.com/vitejs/vite/compare/v8.0.0-beta.9...v8.0.0-beta.10) (2026-01-24)
 ### Bug Fixes
 
