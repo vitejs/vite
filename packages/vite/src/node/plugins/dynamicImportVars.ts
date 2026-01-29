@@ -184,12 +184,7 @@ export function dynamicImportVarsPlugin(config: ResolvedConfig): Plugin {
         resolver(id, importer) {
           return resolve(environment, id, importer)
         },
-        isV2:
-          config.nativePluginEnabledLevel >= 2
-            ? {
-                sourcemap: !!environment.config.build.sourcemap,
-              }
-            : undefined,
+        sourcemap: !!environment.config.build.sourcemap,
       })
     })
   }
