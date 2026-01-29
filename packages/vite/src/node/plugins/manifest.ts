@@ -22,14 +22,10 @@ export interface ManifestChunk {
   file: string
   /**
    * The list of CSS files imported by this chunk
-   *
-   * This field is only present in JS chunks.
    */
   css?: string[]
   /**
    * The list of asset files imported by this chunk, excluding CSS files
-   *
-   * This field is only present in JS chunks.
    */
   assets?: string[]
   /**
@@ -248,6 +244,13 @@ export function manifestPlugin(config: ResolvedConfig): Plugin {
           manifestChunk.name = name
           // @ts-expect-error keep names field for backward compatibility
           manifestChunk.names = asset.names
+
+          if (asset.viteMetadata?.importedCss.size) {
+            manifestChunk.css = [...asset.viteMetadata.importedCss]
+          }
+          if (asset.viteMetadata?.importedAssets.size) {
+            manifestChunk.assets = [...asset.viteMetadata.importedAssets]
+          }
         }
         return manifestChunk
       }
