@@ -417,9 +417,9 @@ export const buildEsbuildPlugin = (): Plugin => {
         true,
       )
 
-      if (config.build.lib) {
-        res.code = injectEsbuildHelpers(res.code, opts.format)
-      }
+      // Inject esbuild helpers inside IIFE/UMD wrappers to prevent
+      // global namespace pollution (#7188, #17608)
+      res.code = injectEsbuildHelpers(res.code, opts.format)
 
       return res
     },
