@@ -1015,6 +1015,9 @@ importers:
       '@vitejs/test-dep-cjs-with-assets':
         specifier: file:./dep-cjs-with-assets
         version: file:playground/optimize-deps/dep-cjs-with-assets
+      '@vitejs/test-dep-cjs-with-es-module-flag':
+        specifier: file:./dep-cjs-with-es-module-flag
+        version: file:playground/optimize-deps/dep-cjs-with-es-module-flag
       '@vitejs/test-dep-cjs-with-external-deps':
         specifier: file:./dep-cjs-with-external-deps
         version: file:playground/optimize-deps/dep-cjs-with-external-deps
@@ -1154,6 +1157,8 @@ importers:
   playground/optimize-deps/dep-cjs-external-package-omit-js-suffix: {}
 
   playground/optimize-deps/dep-cjs-with-assets: {}
+
+  playground/optimize-deps/dep-cjs-with-es-module-flag: {}
 
   playground/optimize-deps/dep-cjs-with-external-deps:
     dependencies:
@@ -3979,6 +3984,9 @@ packages:
 
   '@vitejs/test-dep-cjs-with-assets@file:playground/optimize-deps/dep-cjs-with-assets':
     resolution: {directory: playground/optimize-deps/dep-cjs-with-assets, type: directory}
+
+  '@vitejs/test-dep-cjs-with-es-module-flag@file:playground/optimize-deps/dep-cjs-with-es-module-flag':
+    resolution: {directory: playground/optimize-deps/dep-cjs-with-es-module-flag, type: directory}
 
   '@vitejs/test-dep-cjs-with-external-deps@file:playground/optimize-deps/dep-cjs-with-external-deps':
     resolution: {directory: playground/optimize-deps/dep-cjs-with-external-deps, type: directory}
@@ -9646,6 +9654,8 @@ snapshots:
   '@vitejs/test-dep-cjs-external-package-omit-js-suffix@file:playground/optimize-deps/dep-cjs-external-package-omit-js-suffix': {}
 
   '@vitejs/test-dep-cjs-with-assets@file:playground/optimize-deps/dep-cjs-with-assets': {}
+
+  '@vitejs/test-dep-cjs-with-es-module-flag@file:playground/optimize-deps/dep-cjs-with-es-module-flag': {}
 
   '@vitejs/test-dep-cjs-with-external-deps@file:playground/optimize-deps/dep-cjs-with-external-deps':
     dependencies:
