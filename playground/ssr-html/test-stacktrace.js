@@ -1,5 +1,4 @@
 import path from 'node:path'
-import { fileURLToPath } from 'node:url'
 import { createServer } from 'vite'
 
 const isSourceMapEnabled = process.argv[2] === 'true'
@@ -8,11 +7,10 @@ process.setSourceMapsEnabled(isSourceMapEnabled)
 console.log('# sourcemaps enabled:', isSourceMapEnabled)
 console.log('# source file extension:', ext)
 
-const __dirname = path.dirname(fileURLToPath(import.meta.url))
 const isTest = process.env.VITEST
 
 const vite = await createServer({
-  root: __dirname,
+  root: import.meta.dirname,
   logLevel: isTest ? 'error' : 'info',
   server: {
     middlewareMode: true,
@@ -21,11 +19,9 @@ const vite = await createServer({
   appType: 'custom',
 })
 
-const dir = path.dirname(fileURLToPath(import.meta.url))
-
 const abs1 = await vite.ssrLoadModule(`/src/error-${ext}.${ext}`)
 const abs2 = await vite.ssrLoadModule(
-  path.resolve(dir, `./src/error-${ext}.${ext}`),
+  path.resolve(import.meta.dirname, `./src/error-${ext}.${ext}`),
 )
 const relative = await vite.ssrLoadModule(`./src/error-${ext}.${ext}`)
 
