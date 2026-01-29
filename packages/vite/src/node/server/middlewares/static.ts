@@ -9,7 +9,6 @@ import type { ResolvedConfig } from '../../config'
 import { FS_PREFIX } from '../../constants'
 import {
   decodeURIIfPossible,
-  fsPathFromUrl,
   isFileReadable,
   isImportRequest,
   isInternalRequest,
@@ -240,34 +239,6 @@ export function serveRawFsMiddleware(
       next()
     }
   }
-}
-
-/**
- * Check if the url is allowed to be served, via the `server.fs` config.
- * @deprecated Use the `isFileLoadingAllowed` function instead.
- */
-export function isFileServingAllowed(
-  config: ResolvedConfig,
-  url: string,
-): boolean
-export function isFileServingAllowed(
-  url: string,
-  server: ViteDevServer,
-): boolean
-export function isFileServingAllowed(
-  configOrUrl: ResolvedConfig | string,
-  urlOrServer: string | ViteDevServer,
-): boolean {
-  const config = (
-    typeof urlOrServer === 'string' ? configOrUrl : urlOrServer.config
-  ) as ResolvedConfig
-  const url = (
-    typeof urlOrServer === 'string' ? urlOrServer : configOrUrl
-  ) as string
-
-  if (!config.server.fs.strict) return true
-  const filePath = fsPathFromUrl(url)
-  return isFileLoadingAllowed(config, filePath)
 }
 
 /**
