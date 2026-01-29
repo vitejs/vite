@@ -2315,6 +2315,9 @@ async function bundleConfigFile(
     },
     // disable treeshake to include files that is not sideeffectful to `moduleIds`
     treeshake: false,
+    // disable tsconfig as it's confusing to respect tsconfig options in the config file
+    // this also aligns with other config loader behaviors
+    tsconfig: false,
     plugins: [
       {
         name: 'externalize-deps',
