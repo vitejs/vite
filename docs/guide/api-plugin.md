@@ -695,3 +695,4 @@ import.meta.hot?.on('unknown:event', (payload) => {
   // The type of payload will be any
 })
 ```
+https://github.com/gitme1-ym/vite/blob/copilot%2Ffix-30fb8ddb-e23f-4a2c-ba29-02144fbd2479/.stackblitz%2Fcodeflow.json
