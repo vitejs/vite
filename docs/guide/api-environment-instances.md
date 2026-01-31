@@ -227,6 +227,11 @@ similar to a dynamic `import()`.
 
 **Example**
 ```ts
-const mod = await environment.fetchModule('/src/foo.js')
-console.log(mod.default)
+const result = await environment.fetchModule('/src/foo.js')
+
+if ('default' in result) {
+  console.log(result.default)
+} else {
+  console.log(result)
+}
 ```
