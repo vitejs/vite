@@ -229,9 +229,26 @@ similar to a dynamic `import()`.
 ```ts
 const result = await environment.fetchModule('/src/foo.js')
 
-if ('default' in result) {
-  console.log(result.default)
-} else {
-  console.log(result)
+switch (result.type) {
+  case 'module': {
+    console.log(result.module.default)
+    console.log(result.module.namedExport)
+    break
+  }
+
+  case 'commonjs': {
+    console.log(result.exports)
+    break
+  }
+
+  case 'external': {
+    console.log(`External module: ${result.url}`)
+    break
+  }
+
+  default: {
+    const _exhaustive: never = result
+    throw new Error('Unknown FetchResult variant')
+  }
 }
 ```
