@@ -213,8 +213,8 @@ export class EnvironmentModuleGraph {
 
 `environment.fetchModule`
 
-`fetchModule` is an internal utility available on environmetances in Vite.
-It allows plor custom environments to dynamically load a module by ID,
+`fetchModule` is an internal utility available on environment instances in Vite.
+It allows plugins or custom environments to dynamically load a module by ID,
 similar to a dynamic `import()`.
 
 **Parameters**
