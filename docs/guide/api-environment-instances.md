@@ -210,3 +210,23 @@ export class EnvironmentModuleGraph {
   getModuleByEtag(etag: string): EnvironmentModuleNode | undefined
 }
 ```
+
+`environment.fetchModule`
+
+`fetchModule` is an internal utility available on environmetances in Vite.
+It allows plor custom environments to dynamically load a module by ID,
+similar to a dynamic `import()`.
+
+**Parameters**
+- `id: string` – The module ID or path to fetch.
+- `importer?: string` – Optional ID of the importing module.
+- `options?: FetchFunctionOptions` – Optional fetch configuration.
+
+**Returns**
+- `Promise<FetchResult>` – Resolves with the loaded module's exports and metadata.
+
+**Example**
+```ts
+const mod = await environment.fetchModule('/src/foo.js')
+console.log(mod.default)
+```
