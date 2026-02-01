@@ -47,7 +47,7 @@ describe('port detection', () => {
       )
 
       viteServer = await createServer({
-        root: __dirname,
+        root: import.meta.dirname,
         logLevel: 'silent',
         server: { port: BASE_PORT, strictPort: false, ws: false },
       })
@@ -70,7 +70,7 @@ describe('port detection', () => {
       )
 
       viteServer = await createServer({
-        root: __dirname,
+        root: import.meta.dirname,
         logLevel: 'silent',
         server: { port: BASE_PORT, strictPort: false, ws: false },
       })
@@ -89,7 +89,7 @@ describe('port detection', () => {
       )
 
       viteServer = await createServer({
-        root: __dirname,
+        root: import.meta.dirname,
         logLevel: 'silent',
         server: { port: BASE_PORT, strictPort: false, ws: false },
       })
@@ -113,7 +113,7 @@ describe('port detection', () => {
       await using _blockingServer = blockingServer
 
       viteServer = await createServer({
-        root: __dirname,
+        root: import.meta.dirname,
         logLevel: 'silent',
         server: { port: BASE_PORT, strictPort: false, ws: false },
       })
@@ -140,7 +140,7 @@ describe('port detection', () => {
       )
 
       viteServer = await createServer({
-        root: __dirname,
+        root: import.meta.dirname,
         logLevel: 'silent',
         server: {
           port: BASE_PORT,
@@ -164,7 +164,7 @@ describe('port detection', () => {
     )
 
     viteServer = await createServer({
-      root: __dirname,
+      root: import.meta.dirname,
       logLevel: 'silent',
       server: { port: BASE_PORT, strictPort: true, ws: false },
     })
