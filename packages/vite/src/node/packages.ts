@@ -97,7 +97,8 @@ export function resolvePackageData(
       if (cached) return cached
     }
 
-    const pkg = path.join(basedir, 'node_modules', pkgName, 'package.json')
+    const pkgDir = path.join(basedir, 'node_modules', pkgName)
+    const pkg = path.join(pkgDir, 'package.json')
     try {
       if (fs.existsSync(pkg)) {
         const pkgPath = preserveSymlinks ? pkg : safeRealpathSync(pkg)
@@ -115,6 +116,27 @@ export function resolvePackageData(
         }
 
         return pkgData
+      } else {
+        const stat = tryStatSync(pkgDir)
+        if (stat?.isDirectory() && fs.lstatSync(pkgDir).isSymbolicLink()) {
+          const pkgData = createPackageData(
+            normalizePath(preserveSymlinks ? pkgDir : safeRealpathSync(pkgDir)),
+            { name: pkgName },
+          )
+
+          if (packageCache) {
+            setRpdCache(
+              packageCache,
+              pkgData,
+              pkgName,
+              basedir,
+              originalBasedir,
+              preserveSymlinks,
+            )
+          }
+
+          return pkgData
+        }
       }
     } catch {}
 
@@ -178,22 +200,19 @@ export function findNearestMainPackageData(
 export function loadPackageData(pkgPath: string): PackageData {
   const data = JSON.parse(stripBomTag(fs.readFileSync(pkgPath, 'utf-8')))
   const pkgDir = normalizePath(path.dirname(pkgPath))
+  return createPackageData(pkgDir, data)
+}
+
+function createPackageData(pkgDir: string, data: any): PackageData {
   const { sideEffects } = data
   let hasSideEffects: (id: string) => boolean | null
   if (typeof sideEffects === 'boolean') {
     hasSideEffects = () => sideEffects
   } else if (Array.isArray(sideEffects)) {
     if (sideEffects.length <= 0) {
-      // createFilter always returns true if `includes` is an empty array
-      // but here we want it to always return false
       hasSideEffects = () => false
     } else {
-      const finalPackageSideEffects = sideEffects.map((sideEffect) => {
-        /*
-         * The array accepts simple glob patterns to the relevant files... Patterns like *.css, which do not include a /, will be treated like **\/*.css.
-         * https://webpack.js.org/guides/tree-shaking/
-         * https://github.com/vitejs/vite/pull/11807
-         */
+      const finalPackageSideEffects = sideEffects.map((sideEffect: string) => {
         if (sideEffect.includes('/')) {
           return sideEffect
         }
