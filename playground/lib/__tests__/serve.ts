@@ -14,6 +14,8 @@ import {
   viteTestUrl,
 } from '~utils'
 
+const dirname = import.meta.dirname
+
 export const port = ports.lib
 
 export async function serve(): Promise<{ close(): Promise<void> }> {
@@ -54,64 +56,61 @@ export async function serve(): Promise<{ close(): Promise<void> }> {
     await build({
       root: rootDir,
       logLevel: 'silent',
-      configFile: path.resolve(__dirname, '../vite.config.js'),
+      configFile: path.resolve(dirname, '../vite.config.js'),
     })
 
     await build({
       root: rootDir,
       logLevel: 'warn', // output esbuild warns
-      configFile: path.resolve(__dirname, '../vite.dyimport.config.js'),
+      configFile: path.resolve(dirname, '../vite.dyimport.config.js'),
     })
 
     await build({
       root: rootDir,
       logLevel: 'warn', // output esbuild warns
-      configFile: path.resolve(__dirname, '../vite.multiple-output.config.js'),
+      configFile: path.resolve(dirname, '../vite.multiple-output.config.js'),
     })
 
     await build({
       root: rootDir,
       logLevel: 'warn', // output esbuild warns
-      configFile: path.resolve(__dirname, '../vite.nominify.config.js'),
+      configFile: path.resolve(dirname, '../vite.nominify.config.js'),
     })
 
     await build({
       root: rootDir,
       logLevel: 'warn', // output esbuild warns
-      configFile: path.resolve(
-        __dirname,
-        '../vite.helpers-injection.config.js',
-      ),
+      configFile: path.resolve(dirname, '../vite.helpers-injection.config.js'),
     })
 
     await build({
       root: rootDir,
       logLevel: 'warn', // output esbuild warns
-      configFile: path.resolve(__dirname, '../vite.named-exports.config.js'),
+      configFile: path.resolve(dirname, '../vite.named-exports.config.js'),
     })
 
     await build({
       root: rootDir,
       logLevel: 'warn', // output esbuild warns
-      configFile: path.resolve(__dirname, '../vite.css-single-entry.config.js'),
+      configFile: path.resolve(dirname, '../vite.css-single-entry.config.js'),
     })
 
     await build({
       root: rootDir,
       logLevel: 'warn', // output esbuild warns
-      configFile: path.resolve(__dirname, '../vite.css-multi-entry.config.js'),
+      configFile: path.resolve(dirname, '../vite.css-multi-entry.config.js'),
     })
 
     await build({
       root: rootDir,
       logLevel: 'warn', // output esbuild warns
-      configFile: path.resolve(__dirname, '../vite.css-code-split.config.js'),
+      configFile: path.resolve(dirname, '../vite.css-code-split.config.js'),
     })
 
     await build({
       root: rootDir,
       logLevel: 'warn', // output esbuild warns
-      configFile: path.resolve(__dirname, '../vite.terser.config.js'),
+      configFile: path.resolve(dirname, '../vite.terser.config.js'),
     })
 
     // start static file server

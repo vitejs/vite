@@ -18,6 +18,7 @@ const {
   red,
   redBright,
   reset,
+  underline,
   yellow,
 } = colors
 
@@ -68,6 +69,7 @@ type Framework = {
 type FrameworkVariant = {
   name: string
   display: string
+  link?: `https://${string}`
   color: ColorFunc
   customCommand?: string
 }
@@ -114,12 +116,14 @@ const FRAMEWORKS: Framework[] = [
       {
         name: 'custom-nuxt',
         display: 'Nuxt ↗',
+        link: 'https://nuxt.com',
         color: greenBright,
         customCommand: 'npm exec nuxi init TARGET_DIR',
       },
       {
         name: 'custom-vike-vue',
         display: 'Vike ↗',
+        link: 'https://vike.dev',
         color: greenBright,
         customCommand: 'npm create -- vike@latest --vue TARGET_DIR',
       },
@@ -161,14 +165,23 @@ const FRAMEWORKS: Framework[] = [
         color: yellow,
       },
       {
+        name: 'rsc',
+        display: 'RSC',
+        color: magenta,
+        customCommand:
+          'npm exec tiged vitejs/vite-plugin-react/packages/plugin-rsc/examples/starter TARGET_DIR',
+      },
+      {
         name: 'custom-react-router',
         display: 'React Router v7 ↗',
+        link: 'https://reactrouter.com',
         color: cyan,
         customCommand: 'npm create react-router@latest TARGET_DIR',
       },
       {
         name: 'custom-tanstack-router-react',
         display: 'TanStack Router ↗',
+        link: 'https://tanstack.com/router',
         color: cyan,
         customCommand:
           'npm create -- tsrouter-app@latest TARGET_DIR --framework React --interactive',
@@ -176,19 +189,14 @@ const FRAMEWORKS: Framework[] = [
       {
         name: 'redwoodsdk-standard',
         display: 'RedwoodSDK ↗',
-        color: red,
+        link: 'https://rwsdk.com',
+        color: cyan,
         customCommand: 'npm create rwsdk@latest TARGET_DIR',
-      },
-      {
-        name: 'rsc',
-        display: 'RSC ↗',
-        color: magenta,
-        customCommand:
-          'npm exec tiged vitejs/vite-plugin-react/packages/plugin-rsc/examples/starter TARGET_DIR',
       },
       {
         name: 'custom-vike-react',
         display: 'Vike ↗',
+        link: 'https://vike.dev',
         color: cyan,
         customCommand: 'npm create -- vike@latest --react TARGET_DIR',
       },
@@ -275,6 +283,7 @@ const FRAMEWORKS: Framework[] = [
       {
         name: 'custom-tanstack-router-solid',
         display: 'TanStack Router ↗',
+        link: 'https://tanstack.com/router',
         color: cyan,
         customCommand:
           'npm create -- tsrouter-app@latest TARGET_DIR --framework Solid --interactive',
@@ -282,6 +291,7 @@ const FRAMEWORKS: Framework[] = [
       {
         name: 'custom-vike-solid',
         display: 'Vike ↗',
+        link: 'https://vike.dev',
         color: cyan,
         customCommand: 'npm create -- vike@latest --solid TARGET_DIR',
       },
@@ -470,7 +480,7 @@ async function init() {
         defaultValue: defaultTargetDir,
         placeholder: defaultTargetDir,
         validate: (value) => {
-          return value.length === 0 || formatTargetDir(value).length > 0
+          return !value || formatTargetDir(value).length > 0
             ? undefined
             : 'Invalid project name'
         },
@@ -536,7 +546,7 @@ async function init() {
         defaultValue: toValidPackageName(packageName),
         placeholder: toValidPackageName(packageName),
         validate(dir) {
-          if (!isValidPackageName(dir)) {
+          if (dir && !isValidPackageName(dir)) {
             return 'Invalid package.json name'
           }
         },
@@ -574,7 +584,6 @@ async function init() {
       const variant = await prompts.select({
         message: 'Select a variant:',
         options: framework.variants.map((variant) => {
-          const variantColor = variant.color
           const command = variant.customCommand
             ? getFullCustomCommand(variant.customCommand, pkgInfo).replace(
                 / TARGET_DIR$/,
@@ -582,7 +591,7 @@ async function init() {
               )
             : undefined
           return {
-            label: variantColor(variant.display || variant.name),
+            label: getLabel(variant),
             value: variant.name,
             hint: command,
           }
@@ -598,23 +607,7 @@ async function init() {
 
   const pkgManager = pkgInfo ? pkgInfo.name : 'npm'
 
-  // 5. Ask about immediate install and package manager
-  let immediate = argImmediate
-  if (immediate === undefined) {
-    if (interactive) {
-      const immediateResult = await prompts.confirm({
-        message: `Install with ${pkgManager} and start now?`,
-      })
-      if (prompts.isCancel(immediateResult)) return cancel()
-      immediate = immediateResult
-    } else {
-      immediate = false
-    }
-  }
-
   const root = path.join(cwd, targetDir)
-  fs.mkdirSync(root, { recursive: true })
-
   // determine template
   let isReactSwc = false
   if (template.includes('-swc')) {
@@ -644,6 +637,22 @@ async function init() {
     process.exit(status ?? 0)
   }
 
+  // 5. Ask about immediate install and package manager
+  let immediate = argImmediate
+  if (immediate === undefined) {
+    if (interactive) {
+      const immediateResult = await prompts.confirm({
+        message: `Install with ${pkgManager} and start now?`,
+      })
+      if (prompts.isCancel(immediateResult)) return cancel()
+      immediate = immediateResult
+    } else {
+      immediate = false
+    }
+  }
+
+  // Only create directory for built-in templates, not for customCommand
+  fs.mkdirSync(root, { recursive: true })
   prompts.log.step(`Scaffolding project in ${root}...`)
 
   const templateDir = path.resolve(
@@ -900,6 +909,16 @@ function getFullCustomCommand(customCommand: string, pkgInfo?: PkgInfo) {
         return 'npm exec '
       })
   )
+}
+
+function getLabel(variant: FrameworkVariant) {
+  const labelText = variant.display || variant.name
+  let label = variant.color(labelText)
+  const { link } = variant
+  if (link) {
+    label += ` ${underline(link)}`
+  }
+  return label
 }
 
 function getInstallCommand(agent: string) {

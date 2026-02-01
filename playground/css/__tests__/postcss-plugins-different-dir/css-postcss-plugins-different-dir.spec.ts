@@ -7,7 +7,7 @@ import { getBgColor, getColor, isServe, page, ports } from '~utils'
 test.runIf(isServe)('postcss plugins in different dir', async () => {
   const port = ports['css/postcss-plugins-different-dir']
   const server = await createServer({
-    root: path.join(__dirname, '..', '..', '..', 'tailwind'),
+    root: path.join(import.meta.dirname, '..', '..', '..', 'tailwind'),
     logLevel: 'silent',
     server: {
       port,

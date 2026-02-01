@@ -2,6 +2,8 @@ import { setTimeout } from 'node:timers/promises'
 import { expect, test } from 'vitest'
 import { editFile, isBuild, page } from '~utils'
 
+const assetUrl = /asset-[\w-]+\.png/
+
 if (isBuild) {
   test('should render', async () => {
     expect(await page.textContent('h1')).toContain('HMR Full Bundle Mode')
@@ -18,6 +20,7 @@ if (isBuild) {
     await reloadPromise // page shown after reload
     await expect.poll(() => page.textContent('h1')).toBe('HMR Full Bundle Mode')
     await expect.poll(() => page.textContent('.app')).toBe('hello')
+    await expect.poll(() => page.textContent('.asset')).toMatch(assetUrl)
   })
 
   // BUNDLED -> GENERATE_HMR_PATCH -> BUNDLING -> BUNDLE_ERROR -> BUNDLING -> BUNDLED
@@ -44,6 +47,7 @@ if (isBuild) {
       code.replace("text('.app', 'hello1')", "text('.app', 'hello')"),
     )
     await expect.poll(() => page.textContent('.app')).toBe('hello')
+    await expect.poll(() => page.textContent('.asset')).toMatch(assetUrl)
   })
 
   // BUNDLED -> GENERATE_HMR_PATCH -> BUNDLING -> BUNDLING -> BUNDLED
@@ -96,11 +100,11 @@ if (isBuild) {
       code.replace("const foo = 'hello1'", "const foo = 'hello'"),
     )
     await expect.poll(() => page.textContent('.hmr')).toContain('hello')
+    await expect.poll(() => page.textContent('.asset')).toMatch(assetUrl)
   })
 
   // BUNDLED -> GENERATING_HMR_PATCH -> GENERATING_HMR_PATCH -> BUNDLED
-  // FIXME: https://github.com/rolldown/rolldown/issues/6648
-  test.skip('continuous generate hmr patch', async () => {
+  test('continuous generate hmr patch', async () => {
     editFile('hmr.js', (code) =>
       code.replace(
         "const foo = 'hello'",

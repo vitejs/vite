@@ -149,11 +149,9 @@ Generate production source maps. If `true`, a separate sourcemap file will be cr
 
 ## build.rolldownOptions
 
-- **Type:** [`RolldownOptions`](https://rollupjs.org/configuration-options/)
+- **Type:** [`RolldownOptions`](https://rolldown.rs/reference/)
 
-<!-- TODO: update the link above and below to Rolldown's documentation -->
-
-Directly customize the underlying Rolldown bundle. This is the same as options that can be exported from a Rolldown config file and will be merged with Vite's internal Rolldown options. See [Rolldown options docs](https://rollupjs.org/configuration-options/) for more details.
+Directly customize the underlying Rolldown bundle. This is the same as options that can be exported from a Rolldown config file and will be merged with Vite's internal Rolldown options. See [Rolldown options docs](https://rolldown.rs/reference/) for more details.
 
 ## build.rollupOptions
 
@@ -164,12 +162,10 @@ This option is an alias of `build.rolldownOptions` option. Use `build.rolldownOp
 
 ## build.dynamicImportVarsOptions
 
-- **Type:** [`RollupDynamicImportVarsOptions`](https://github.com/rollup/plugins/tree/master/packages/dynamic-import-vars#options)
+- **Type:** `{ include?: string | RegExp | (string | RegExp)[], exclude?: string | RegExp | (string | RegExp)[] }`
 - **Related:** [Dynamic Import](/guide/features#dynamic-import)
 
-Options to pass on to [@rollup/plugin-dynamic-import-vars](https://github.com/rollup/plugins/tree/master/packages/dynamic-import-vars).
-
-<!-- TODO: we need to have a more detailed explanation here as we no longer use @rollup/plugin-dynamic-import-vars. we should say it's compatible with it though -->
+Whether to transform dynamic imports with variables.
 
 ## build.lib
 
@@ -225,9 +221,7 @@ If `fileName` is passed, it will be used as the license file name relative to th
 
 ::: tip
 
-If you'd like to reference the license file in the built code, you can use `build.rolldownOptions.output.postBanner` to inject a comment at the top of the files. For example:
-
-<!-- TODO: add a link for output.postBanner above to Rolldown's documentation -->
+If you'd like to reference the license file in the built code, you can use [`build.rolldownOptions.output.postBanner`](https://rolldown.rs/reference/OutputOptions.postBanner#postbanner) to inject a comment at the top of the files. For example:
 
 ```js twoslash [vite.config.js]
 import { defineConfig } from 'vite'
@@ -352,9 +346,7 @@ Limit for chunk size warnings (in kB). It is compared against the uncompressed c
 
 ## build.watch
 
-<!-- TODO: update the link below to Rolldown's documentation -->
-
-- **Type:** [`WatcherOptions`](https://rollupjs.org/configuration-options/#watch)`| null`
+- **Type:** [`WatcherOptions`](https://rolldown.rs/reference/InputOptions.watch)`| null`
 - **Default:** `null`
 
 Set to `{}` to enable rollup watcher. This is mostly used in cases that involve build-only plugins or integrations processes.

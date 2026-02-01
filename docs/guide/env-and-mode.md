@@ -13,6 +13,8 @@ if (import.meta.env.DEV) {
 
 :::
 
+<ScrimbaLink href="https://scrimba.com/intro-to-vite-c03p6pbbdq/~05an?via=vite" title="Env Variables in Vite">Watch an interactive lesson on Scrimba</ScrimbaLink>
+
 ## Built-in Constants
 
 Some built-in constants are available in all cases:
@@ -110,7 +112,7 @@ VITE_BAR=bar
 ```
 
 This does not work in shell scripts and other tools like `docker compose`.
-That said, Vite supports this behavior as this has been supported by `dotenv-expand` for a long time and other tools in JavaScript ecosystem uses older versions that supports this behavior.
+That said, Vite supports this behavior as this has been supported by `dotenv-expand` for a long time and other tools in JavaScript ecosystem use older versions that support this behavior.
 
 To avoid interop issues, it is recommended to avoid relying on this behavior. Vite may start emitting warnings for this behavior in the future.
 

@@ -26,7 +26,7 @@ describe('running module runner inside a worker and using the ModuleRunnerTransp
       worker.on('error', reject)
     })
     server = await createServer({
-      root: __dirname,
+      root: import.meta.dirname,
       logLevel: 'error',
       server: {
         middlewareMode: true,
