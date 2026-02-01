@@ -176,6 +176,30 @@ Here, `import` and `require` are "conditions". Conditions can be nested and shou
 
 Note that `import`, `require`, `default` conditions are always applied if the requirements are met.
 
+### Stylesheet Export Conditions
+
+Vite automatically applies additional export conditions when resolving stylesheets from packages:
+
+- CSS files (`@import` in `.css` files) use the `style` condition
+- Sass/SCSS files (`@import` or `@use` in `.scss`/`.sass` files) use the `sass` and `style` conditions
+- Less files (`@import` in `.less` files) use the `less` and `style` conditions
+
+This allows packages to provide different entry points for stylesheets. For example:
+
+```json
+{
+  "exports": {
+    ".": {
+      "sass": "./styles/index.scss",
+      "style": "./dist/index.css",
+      "import": "./dist/index.js"
+    }
+  }
+}
+```
+
+With this configuration, `@use 'package-name'` in a Sass file will resolve to `./styles/index.scss`, while `@import 'package-name'` in a CSS file will resolve to `./dist/index.css`.
+
 ## resolve.mainFields <NonInheritBadge />
 
 - **Type:** `string[]`
