@@ -13,7 +13,7 @@ import { getHmrImplementation } from '../../plugins/clientInjections'
 import { DevEnvironment, type DevEnvironmentContext } from '../environment'
 import type { ResolvedConfig } from '../../config'
 import type { ViteDevServer } from '../../server'
-import { createDebugger } from '../../utils'
+import { createDebugger, formatAndTruncateFileList } from '../../utils'
 import { type NormalizedHotChannelClient, getShortName } from '../hmr'
 import { prepareError } from '../middlewares/error'
 
@@ -361,7 +361,9 @@ export class FullBundleDevEnvironment extends DevEnvironment {
     })
     this.logger.info(
       colors.green(`hmr update `) +
-        colors.dim([...new Set(updates.map((u) => u.path))].join(', ')),
+        colors.dim(
+          formatAndTruncateFileList([...new Set(updates.map((u) => u.path))]),
+        ),
       { clear: !invalidateInformation, timestamp: true },
     )
   }
