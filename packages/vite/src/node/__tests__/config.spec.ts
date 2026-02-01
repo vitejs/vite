@@ -1034,7 +1034,7 @@ test('preTransformRequests', async () => {
 })
 
 describe('loadConfigFromFile', () => {
-  const fixtures = path.resolve(__dirname, './fixtures/config')
+  const fixtures = path.resolve(import.meta.dirname, './fixtures/config')
 
   describe('load default files', () => {
     const root = path.resolve(fixtures, './loadConfigFromFile')

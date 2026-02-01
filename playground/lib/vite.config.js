@@ -22,7 +22,7 @@ export default defineConfig({
       },
     },
     lib: {
-      entry: path.resolve(__dirname, 'src/main.js'),
+      entry: path.resolve(import.meta.dirname, 'src/main.js'),
       name: 'MyLib',
       formats: ['es', 'umd', 'iife'],
       fileName: 'my-lib-custom-filename',
@@ -36,7 +36,7 @@ export default defineConfig({
           type: 'asset',
           fileName: 'index.html',
           source: fs.readFileSync(
-            path.resolve(__dirname, 'index.dist.html'),
+            path.resolve(import.meta.dirname, 'index.dist.html'),
             'utf-8',
           ),
         })

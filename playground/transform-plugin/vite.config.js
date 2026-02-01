@@ -1,7 +1,7 @@
 import { resolve } from 'node:path'
 import { defineConfig, normalizePath } from 'vite'
 
-const file = normalizePath(resolve(__dirname, 'index.js'))
+const file = normalizePath(resolve(import.meta.dirname, 'index.js'))
 let transformCount = 1
 
 const transformPlugin = {

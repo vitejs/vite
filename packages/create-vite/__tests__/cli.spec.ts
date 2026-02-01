@@ -4,11 +4,15 @@ import type { SyncOptions } from 'execa'
 import { execaCommandSync } from 'execa'
 import { afterEach, beforeAll, expect, test } from 'vitest'
 
-const CLI_PATH = path.join(__dirname, '..')
+const CLI_PATH = path.join(import.meta.dirname, '..')
 
 const projectName = 'test-app'
-const genPath = path.join(__dirname, projectName)
-const genPathWithSubfolder = path.join(__dirname, 'subfolder', projectName)
+const genPath = path.join(import.meta.dirname, projectName)
+const genPathWithSubfolder = path.join(
+  import.meta.dirname,
+  'subfolder',
+  projectName,
+)
 
 const run = (args: string[], options?: SyncOptions) => {
   return execaCommandSync(`node ${CLI_PATH} ${args.join(' ')}`, {
@@ -89,14 +93,16 @@ test('prompts for the framework on supplying an invalid template', () => {
 
 test('asks to overwrite non-empty target directory', () => {
   createNonEmptyDir()
-  const { stdout } = run([projectName, '--interactive'], { cwd: __dirname })
+  const { stdout } = run([projectName, '--interactive'], {
+    cwd: import.meta.dirname,
+  })
   expect(stdout).toContain(`Target directory "${projectName}" is not empty.`)
 })
 
 test('asks to overwrite non-empty target directory with subfolder', () => {
   createNonEmptyDir(genPathWithSubfolder)
   const { stdout } = run([`subfolder/${projectName}`, '--interactive'], {
-    cwd: __dirname,
+    cwd: import.meta.dirname,
   })
   expect(stdout).toContain(
     `Target directory "subfolder/${projectName}" is not empty.`,
@@ -120,7 +126,7 @@ test('successfully scaffolds a project based on vue starter template', () => {
       '--no-rolldown',
     ],
     {
-      cwd: __dirname,
+      cwd: import.meta.dirname,
     },
   )
   const generatedFiles = fs.readdirSync(genPath).sort()
@@ -141,7 +147,7 @@ test('successfully scaffolds a project with subfolder based on react starter tem
       '--no-rolldown',
     ],
     {
-      cwd: __dirname,
+      cwd: import.meta.dirname,
     },
   )
   const generatedFiles = fs.readdirSync(genPathWithSubfolder).sort()
@@ -153,7 +159,7 @@ test('successfully scaffolds a project with subfolder based on react starter tem
 
 test('successfully scaffolds a project based on react-compiler-ts starter template', () => {
   const { stdout } = run([projectName, '--template', 'react-compiler-ts'], {
-    cwd: __dirname,
+    cwd: import.meta.dirname,
   })
   const configFile = fs.readFileSync(
     path.join(genPath, 'vite.config.ts'),
@@ -183,7 +189,7 @@ test('works with the -t alias', () => {
       '--no-rolldown',
     ],
     {
-      cwd: __dirname,
+      cwd: import.meta.dirname,
     },
   )
   const generatedFiles = fs.readdirSync(genPath).sort()
@@ -209,20 +215,20 @@ test('skip prompts when --no-interactive is passed', () => {
 })
 
 test('return help usage how to use create-vite', () => {
-  const { stdout } = run(['--help'], { cwd: __dirname })
+  const { stdout } = run(['--help'], { cwd: import.meta.dirname })
   const message = 'Usage: create-vite [OPTION]... [DIRECTORY]'
   expect(stdout).toContain(message)
 })
 
 test('return help usage how to use create-vite with -h alias', () => {
-  const { stdout } = run(['--h'], { cwd: __dirname })
+  const { stdout } = run(['--h'], { cwd: import.meta.dirname })
   const message = 'Usage: create-vite [OPTION]... [DIRECTORY]'
   expect(stdout).toContain(message)
 })
 
 test('sets index.html title to project name', () => {
   const { stdout } = run([projectName, '--template', 'react'], {
-    cwd: __dirname,
+    cwd: import.meta.dirname,
   })
 
   const indexHtmlPath = path.join(genPath, 'index.html')
@@ -234,7 +240,7 @@ test('sets index.html title to project name', () => {
 
 test('accepts immediate flag', () => {
   const { stdout } = run([projectName, '--template', 'vue', '--immediate'], {
-    cwd: __dirname,
+    cwd: import.meta.dirname,
   })
   expect(stdout).not.toContain('Install and start now?')
   expect(stdout).toContain(`Scaffolding project in ${genPath}`)
@@ -243,7 +249,7 @@ test('accepts immediate flag', () => {
 
 test('accepts immediate flag and skips install prompt', () => {
   const { stdout } = run([projectName, '--template', 'vue', '--no-immediate'], {
-    cwd: __dirname,
+    cwd: import.meta.dirname,
   })
   expect(stdout).not.toContain('Install and start now?')
   expect(stdout).not.toContain('Installing dependencies')

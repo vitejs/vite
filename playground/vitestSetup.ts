@@ -61,7 +61,7 @@ ${indentation}}`
 
 // #region env
 
-export const workspaceRoot = path.resolve(__dirname, '../')
+export const workspaceRoot = path.resolve(import.meta.dirname, '../')
 
 export const isBuild = !!process.env.VITE_TEST_BUILD
 export const isServe = !isBuild

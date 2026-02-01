@@ -1,6 +1,5 @@
 import net from 'node:net'
 import path from 'node:path'
-import { fileURLToPath } from 'node:url'
 import http from 'node:http'
 import {
   afterEach,
@@ -21,8 +20,6 @@ import {
   viteServer,
   viteTestUrl,
 } from '~utils'
-
-const __dirname = path.dirname(fileURLToPath(import.meta.url))
 
 const getViteTestIndexHtmlUrl = () => {
   const srcPrefix = viteTestUrl.endsWith('/') ? '' : '/'
@@ -505,7 +502,7 @@ describe.runIf(isServe)('invalid request', () => {
   }
 
   const root = path
-    .resolve(__dirname.replace('playground', 'playground-temp'), '..')
+    .resolve(import.meta.dirname.replace('playground', 'playground-temp'), '..')
     .replace(/\\/g, '/')
 
   test('request with sendRawRequest should work', async () => {

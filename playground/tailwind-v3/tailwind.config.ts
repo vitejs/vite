@@ -1,5 +1,7 @@
 import type { Config } from 'tailwindcss'
 
+// NOTE: tailwind does not seem to support `import.meta.dirname` on Node 20
+
 export default {
   content: [
     // Before editing this section, make sure no paths are matching with `/src/main.js`

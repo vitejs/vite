@@ -71,7 +71,7 @@ describe('running module runner inside a worker', () => {
       worker.on('error', reject)
     })
     const server = await createServer({
-      root: __dirname,
+      root: import.meta.dirname,
       logLevel: 'error',
       server: {
         middlewareMode: true,
