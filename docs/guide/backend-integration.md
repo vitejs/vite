@@ -118,14 +118,10 @@ If you need a custom integration, you can follow the steps in this guide to conf
      file: string
      /**
       * The list of CSS files imported by this chunk
-      *
-      * This field is only present in JS chunks.
       */
      css?: string[]
      /**
       * The list of asset files imported by this chunk, excluding CSS files
-      *
-      * This field is only present in JS chunks.
       */
      assets?: string[]
      /**
@@ -164,7 +160,7 @@ If you need a custom integration, you can follow the steps in this guide to conf
    - **Asset chunks**: Generated from imported assets like images, fonts. Their key is the relative src path from project root.
    - **CSS files**: When [`build.cssCodeSplit`](/config/build-options.md#build-csscodesplit) is `false`, a single CSS file is generated with the key `style.css`. When `build.cssCodeSplit` is not `false`, the key is generated similar to JS chunks (i.e. entry chunks will not have `_` prefix and non-entry chunks will have `_` prefix).
 
-   JS chunks (chunks other than assets or CSS) will contain information on their static and dynamic imports (both are keys that map to the corresponding chunk in the manifest), and also their corresponding CSS and asset files (if any).
+   JS chunks (chunks other than assets or CSS) will contain information on their static and dynamic imports (both are keys that map to the corresponding chunk in the manifest). Chunks also list their corresponding CSS and asset files if they have any.
 
 4. You can use this file to render links or preload directives with hashed filenames.
 

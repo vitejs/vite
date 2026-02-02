@@ -8,6 +8,7 @@ import type {
   LogOrStringHandler,
   MinimalPluginContext,
   ModuleFormat,
+  OutputAsset,
   OutputBundle,
   OutputChunk,
   OutputOptions,
@@ -26,7 +27,7 @@ import { viteLoadFallbackPlugin as nativeLoadFallbackPlugin } from 'rolldown/exp
 import type { EsbuildTarget } from '#types/internal/esbuildOptions'
 import type { RollupCommonJSOptions } from '#dep-types/commonjs'
 import type { RollupDynamicImportVarsOptions } from '#dep-types/dynamicImportVars'
-import type { ChunkMetadata } from '#types/metadata'
+import type { AssetMetadata, ChunkMetadata } from '#types/metadata'
 import {
   DEFAULT_ASSETS_INLINE_LIMIT,
   ESBUILD_BASELINE_WIDELY_AVAILABLE_TARGET,
@@ -863,9 +864,7 @@ async function buildEnvironment(
     }
     for (const output of res) {
       for (const chunk of output.output) {
-        if (chunk.type === 'chunk') {
-          injectChunkMetadata(chunkMetadataMap, chunk)
-        }
+        injectChunkMetadata(chunkMetadataMap, chunk)
       }
     }
     logger.info(
@@ -1187,26 +1186,35 @@ function isExternal(id: string, test: string | RegExp) {
 }
 
 export class ChunkMetadataMap {
-  private _inner = new Map<string, ChunkMetadata>()
+  private _inner = new Map<string, ChunkMetadata | AssetMetadata>()
   private _resetChunks = new Set<string>()
 
-  private _getKey(chunk: RenderedChunk | OutputChunk): string {
+  private _getKey(chunk: RenderedChunk | OutputChunk | OutputAsset): string {
     return 'preliminaryFileName' in chunk
       ? chunk.preliminaryFileName
       : chunk.fileName
   }
 
-  private _getDefaultValue(chunk: RenderedChunk | OutputChunk): ChunkMetadata {
-    return {
-      importedAssets: new Set(),
-      importedCss: new Set(),
-      // NOTE: adding this as a workaround for now ideally we'd want to remove this workaround
-      // use shared `chunk.modules` object to allow mutation on js side plugins
-      __modules: chunk.modules,
-    }
+  private _getDefaultValue(
+    chunk: RenderedChunk | OutputChunk | OutputAsset,
+  ): ChunkMetadata | AssetMetadata {
+    return chunk.type === 'chunk'
+      ? {
+          importedAssets: new Set(),
+          importedCss: new Set(),
+          // NOTE: adding this as a workaround for now ideally we'd want to remove this workaround
+          // use shared `chunk.modules` object to allow mutation on js side plugins
+          __modules: chunk.modules,
+        }
+      : {
+          importedAssets: new Set(),
+          importedCss: new Set(),
+        }
   }
 
-  get(chunk: RenderedChunk | OutputChunk): ChunkMetadata {
+  get(
+    chunk: RenderedChunk | OutputChunk | OutputAsset,
+  ): ChunkMetadata | AssetMetadata {
     const key = this._getKey(chunk)
     if (!this._inner.has(key)) {
       this._inner.set(key, this._getDefaultValue(chunk))
@@ -1215,7 +1223,7 @@ export class ChunkMetadataMap {
   }
 
   // reset chunk metadata on the first RenderChunk call for watch mode
-  reset(chunk: RenderedChunk | OutputChunk): void {
+  reset(chunk: RenderedChunk | OutputChunk | OutputAsset): void {
     const key = this._getKey(chunk)
     if (this._resetChunks.has(key)) return
 
@@ -1418,9 +1426,7 @@ function wrapEnvironmentHook<HookName extends keyof Plugin>(
     if (hookName === 'generateBundle' || hookName === 'writeBundle') {
       const bundle = args[1] as OutputBundle
       for (const chunk of Object.values(bundle)) {
-        if (chunk.type === 'chunk') {
-          injectChunkMetadata(chunkMetadataMap, chunk)
-        }
+        injectChunkMetadata(chunkMetadataMap, chunk)
       }
     }
     return fn.call(injectEnvironmentInContext(this, environment), ...args)
@@ -1435,7 +1441,7 @@ function wrapEnvironmentHook<HookName extends keyof Plugin>(
 
 function injectChunkMetadata(
   chunkMetadataMap: ChunkMetadataMap,
-  chunk: RenderedChunk | OutputChunk,
+  chunk: RenderedChunk | OutputChunk | OutputAsset,
   resetChunkMetadata = false,
 ) {
   if (resetChunkMetadata) {
@@ -1447,12 +1453,14 @@ function injectChunkMetadata(
     value: chunkMetadataMap.get(chunk),
     enumerable: true,
   })
-  Object.defineProperty(chunk, 'modules', {
-    get() {
-      return chunk.viteMetadata!.__modules
-    },
-    enumerable: true,
-  })
+  if (chunk.type === 'chunk') {
+    Object.defineProperty(chunk, 'modules', {
+      get() {
+        return chunk.viteMetadata!.__modules
+      },
+      enumerable: true,
+    })
+  }
 }
 
 function injectEnvironmentInContext<Context extends MinimalPluginContext>(

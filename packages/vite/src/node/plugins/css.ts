@@ -1108,7 +1108,25 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
 
         const removedPureCssFiles = removedPureCssFilesCache.get(config)!
         pureCssChunkNames.forEach((fileName) => {
-          removedPureCssFiles.set(fileName, bundle[fileName] as RenderedChunk)
+          const emptyJsPlaceholder = bundle[fileName] as RenderedChunk
+          if (emptyJsPlaceholder.isEntry) {
+            const { importedAssets, importedCss } =
+              emptyJsPlaceholder.viteMetadata!
+            const cssReferenceId = cssEntriesMap
+              .get(this.environment)!
+              .get(emptyJsPlaceholder.name)!
+            const realCssEntryName = this.getFileName(cssReferenceId)
+            const realCssEntry = bundle[realCssEntryName]!
+            importedCss.delete(realCssEntryName)
+            if (importedAssets.size) {
+              realCssEntry.viteMetadata!.importedAssets = importedAssets
+            }
+            if (importedCss.size) {
+              realCssEntry.viteMetadata!.importedCss = importedCss
+            }
+          }
+
+          removedPureCssFiles.set(fileName, emptyJsPlaceholder)
           delete bundle[fileName]
           delete bundle[`${fileName}.map`]
         })
