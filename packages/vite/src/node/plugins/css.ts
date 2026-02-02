@@ -969,12 +969,12 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
                 }
               } else {
                 // resolve public URL from CSS paths, we need to use absolute paths
-                // Use 'style.css' as originalFileName since this is an aggregated
-                // bundle and will be emitted with originalFileName: 'style.css'
+                // Use defaultCssBundleName as originalFileName since this is an aggregated
+                // bundle and will be emitted with that originalFileName
                 chunkCSS = resolveAssetUrlsInCss(
                   chunkCSS,
                   getCssBundleName(),
-                  'style.css',
+                  defaultCssBundleName,
                 )
                 // finalizeCss is called for the aggregated chunk in generateBundle
 
@@ -1064,9 +1064,9 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
             name: getCssBundleName(),
             type: 'asset',
             source: extractedCss,
-            // this file is an implicit entry point, use `style.css` as the original file name
+            // this file is an implicit entry point, use defaultCssBundleName as the original file name
             // this name is also used as a key in the manifest
-            originalFileName: 'style.css',
+            originalFileName: defaultCssBundleName,
           })
         }
       }
