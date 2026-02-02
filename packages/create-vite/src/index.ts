@@ -286,7 +286,7 @@ const FRAMEWORKS: Framework[] = [
         link: 'https://tanstack.com/router',
         color: cyan,
         customCommand:
-          'npm exec @tanstack/cli@latest -- create TARGET_DIR --template file-router --framework solid',
+          'npm exec @tanstack/cli@latest -- create TARGET_DIR --template file-router --framework solid --interactive',
       },
       {
         name: 'custom-vike-solid',
