@@ -395,8 +395,8 @@ importers:
         specifier: ^2.0.3
         version: 2.0.3
       rolldown-plugin-dts:
-        specifier: ^0.21.6
-        version: 0.21.6(rolldown@1.0.0-rc.2)(typescript@5.9.3)(vue-tsc@3.2.4(typescript@5.9.3))
+        specifier: ^0.21.8
+        version: 0.21.8(rolldown@1.0.0-rc.2)(typescript@5.9.3)(vue-tsc@3.2.4(typescript@5.9.3))
       rollup:
         specifier: ^4.43.0
         version: 4.43.0
@@ -6617,8 +6617,8 @@ packages:
   rfdc@1.4.1:
     resolution: {integrity: sha512-q1b3N5QkRUWUl7iyylaaj3kOpIT0N2i9MqIEQXP73GVsN9cw3fdx8X63cEmWhJGi2PPCF23Ijp7ktmd39rawIA==}
 
-  rolldown-plugin-dts@0.21.6:
-    resolution: {integrity: sha512-gePhzvZJRB0JIb/NyngEsMt3FPQtM4BXCLkxz7u1ggge2PmlZ7uOwmHjeBEsBiBRjOY12SdtEl7BmI3T1779ZA==}
+  rolldown-plugin-dts@0.21.8:
+    resolution: {integrity: sha512-czOQoe6eZpRKCv9P+ijO/v4A2TwQjASAV7qezUxRZSua06Yb2REPIZv/mbfXiZDP1ZfI7Ez7re7qfK9F9u0Epw==}
     engines: {node: '>=20.19.0'}
     peerDependencies:
       '@ts-macro/tsc': ^0.3.6
@@ -12450,7 +12450,7 @@ snapshots:
 
   rfdc@1.4.1: {}
 
-  rolldown-plugin-dts@0.21.6(rolldown@1.0.0-rc.2)(typescript@5.9.3)(vue-tsc@3.2.4(typescript@5.9.3)):
+  rolldown-plugin-dts@0.21.8(rolldown@1.0.0-rc.2)(typescript@5.9.3)(vue-tsc@3.2.4(typescript@5.9.3)):
     dependencies:
       '@babel/generator': 8.0.0-beta.4
       '@babel/parser': 8.0.0-beta.4
@@ -13073,7 +13073,7 @@ snapshots:
       obug: 2.1.1
       picomatch: 4.0.3
       rolldown: 1.0.0-rc.2
-      rolldown-plugin-dts: 0.21.6(rolldown@1.0.0-rc.2)(typescript@5.9.3)(vue-tsc@3.2.4(typescript@5.9.3))
+      rolldown-plugin-dts: 0.21.8(rolldown@1.0.0-rc.2)(typescript@5.9.3)(vue-tsc@3.2.4(typescript@5.9.3))
       semver: 7.7.3
       tinyexec: 1.0.2
       tinyglobby: 0.2.15
