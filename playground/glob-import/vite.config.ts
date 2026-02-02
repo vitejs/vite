@@ -3,12 +3,14 @@ import path from 'node:path'
 import { defineConfig } from 'vite'
 
 const escapeAliases = fs
-  .readdirSync(path.join(__dirname, 'escape'), { withFileTypes: true })
+  .readdirSync(path.join(import.meta.dirname, 'escape'), {
+    withFileTypes: true,
+  })
   .filter((f) => f.isDirectory())
   .map((f) => f.name)
   .reduce((aliases: Record<string, string>, dir) => {
     aliases[`@escape_${dir}_mod`] = path.resolve(
-      __dirname,
+      import.meta.dirname,
       `./escape/${dir}/mod`,
     )
     return aliases
@@ -33,8 +35,8 @@ export default defineConfig({
   resolve: {
     alias: {
       ...escapeAliases,
-      '@dir': path.resolve(__dirname, './dir/'),
-      '#alias': path.resolve(__dirname, './imports-path/'),
+      '@dir': path.resolve(import.meta.dirname, './dir/'),
+      '#alias': path.resolve(import.meta.dirname, './imports-path/'),
     },
   },
   build: {

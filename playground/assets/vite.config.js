@@ -6,8 +6,8 @@ export default defineConfig({
   publicDir: 'static',
   resolve: {
     alias: {
-      '@': path.resolve(__dirname, 'nested'),
-      fragment: path.resolve(__dirname, 'nested/fragment-bg.svg'),
+      '@': path.resolve(import.meta.dirname, 'nested'),
+      fragment: path.resolve(import.meta.dirname, 'nested/fragment-bg.svg'),
     },
   },
   assetsInclude: ['**/*.unknown'],

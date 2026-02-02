@@ -395,7 +395,6 @@ const _buildEnvironmentOptionsDefaults = Object.freeze({
     extensions: ['.js', '.cjs'],
   },
   dynamicImportVarsOptions: {
-    warnOnError: true,
     exclude: [/node_modules/],
   },
   write: true,
@@ -732,11 +731,14 @@ export function resolveRolldownOptions(
       assetFileNames: libOptions
         ? `[name].[ext]`
         : path.posix.join(options.assetsDir, `[name]-[hash].[ext]`),
-      inlineDynamicImports:
-        output.format === 'umd' ||
+      codeSplitting:
+        output.codeSplitting ??
+        (output.format === 'umd' ||
         output.format === 'iife' ||
         (isSsrTargetWebworkerEnvironment &&
-          (typeof input === 'string' || Object.keys(input).length === 1)),
+          (typeof input === 'string' || Object.keys(input).length === 1))
+          ? false
+          : undefined),
       legalComments: 'none',
       minify:
         options.minify === 'oxc'
@@ -1282,6 +1284,52 @@ export function injectEnvironmentToHooks(
   return clone
 }
 
+type AbstractHook<Handler extends Function> = {
+  handler: Handler
+  filter?: unknown
+  order?: unknown
+}
+const wrappedHookMap = new WeakMap<
+  AbstractHook<Function>,
+  Array<AbstractHook<Function>>
+>()
+function wrapHookObject<
+  Handler extends Function,
+  Hook extends AbstractHook<Handler>,
+>(hook: Hook, handler: Handler): Hook {
+  const newHook = {
+    ...hook,
+    handler,
+  }
+
+  if (!wrappedHookMap.has(hook)) {
+    wrappedHookMap.set(hook, [])
+    Object.defineProperty(hook, 'filter', {
+      get() {
+        return wrappedHookMap.get(hook)![0].filter
+      },
+      set(v) {
+        for (const h of wrappedHookMap.get(hook)!) {
+          h.filter = v
+        }
+      },
+    })
+    Object.defineProperty(hook, 'order', {
+      get() {
+        return wrappedHookMap.get(hook)![0].order
+      },
+      set(v) {
+        for (const h of wrappedHookMap.get(hook)!) {
+          h.order = v
+        }
+      },
+    })
+  }
+  wrappedHookMap.get(hook)!.push(newHook)
+
+  return newHook
+}
+
 function wrapEnvironmentResolveId(
   environment: Environment,
   hook: Plugin['resolveId'] | undefined,
@@ -1300,10 +1348,7 @@ function wrapEnvironmentResolveId(
   }
 
   if ('handler' in hook) {
-    return {
-      ...hook,
-      handler,
-    } as Plugin['resolveId']
+    return wrapHookObject(hook, handler)
   } else {
     return handler
   }
@@ -1326,10 +1371,7 @@ function wrapEnvironmentLoad(
   }
 
   if ('handler' in hook) {
-    return {
-      ...hook,
-      handler,
-    } as Plugin['load']
+    return wrapHookObject(hook, handler)
   } else {
     return handler
   }
@@ -1353,10 +1395,7 @@ function wrapEnvironmentTransform(
   }
 
   if ('handler' in hook) {
-    return {
-      ...hook,
-      handler,
-    } as Plugin['transform']
+    return wrapHookObject(hook, handler)
   } else {
     return handler
   }
@@ -1394,10 +1433,7 @@ function wrapEnvironmentHook<HookName extends keyof Plugin>(
   }
 
   if ('handler' in hook) {
-    return {
-      ...hook,
-      handler,
-    } as Plugin[HookName]
+    return wrapHookObject(hook, handler)
   } else {
     return handler
   }

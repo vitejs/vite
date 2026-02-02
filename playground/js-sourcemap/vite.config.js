@@ -25,7 +25,7 @@ export default defineConfig({
         //     return 'with-define-object'
         //   }
         // },
-        advancedChunks: {
+        codeSplitting: {
           groups: [
             { name: 'after-preload-dynamic', test: 'after-preload-dynamic.js' },
             {
