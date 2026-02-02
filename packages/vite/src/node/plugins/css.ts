@@ -969,8 +969,6 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
                 }
               } else {
                 // resolve public URL from CSS paths, we need to use absolute paths
-                // Use defaultCssBundleName as originalFileName since this is an aggregated
-                // bundle and will be emitted with that originalFileName
                 chunkCSS = resolveAssetUrlsInCss(
                   chunkCSS,
                   getCssBundleName(),
