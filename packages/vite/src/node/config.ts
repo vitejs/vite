@@ -2441,7 +2441,8 @@ async function bundleConfigFile(
 
   return {
     code: entryChunk.code,
-    dependencies: [...allModules],
+    // exclude `\x00rolldown/runtime.js`
+    dependencies: [...allModules].filter((m) => !m.startsWith('\0')),
   }
 }
 
