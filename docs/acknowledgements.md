@@ -7,12 +7,12 @@ description: Vite is built upon the shoulders of giants. Thank you to all the pr
 import { computed } from 'vue'
 import { data } from './_data/acknowledgements.data'
 import { useSponsor, voidZero } from './.vitepress/theme/composables/sponsor'
-import { VPSponsors } from 'vitepress/theme'
+import VPSponsors from '@components/vitepress-default/VPSponsors.vue'
 
 const { data: sponsorData } = useSponsor()
 
 const allSponsors = computed(() => {
-  if (!sponsorData.value) return null
+  if (!sponsorData.value) return []
   return [
     {
       tier: 'Brought to you by',
@@ -43,12 +43,12 @@ We also thank all the [contributors on GitHub](https://github.com/vitejs/vite/gr
 Vite's development is supported by generous sponsors. You can support Vite through [GitHub Sponsors](https://github.com/sponsors/vitejs) or [Open Collective](https://opencollective.com/vite).
 
 <div class="sponsors-container">
-  <VPSponsors v-if="allSponsors" :data="allSponsors" />
+  <VPSponsors :data="allSponsors" />
 </div>
 
-## Bundled Dependencies
+## Dependencies
 
-Vite bundles these amazing open source projects:
+Vite depends on these amazing open source projects:
 
 ### Notable Dependencies
 
@@ -212,33 +212,5 @@ We also thank the maintainers of these projects that Vite used in previous versi
 
 .authors-table .sponsor-link:hover {
   text-decoration: underline;
-}
-
-.sponsors-container {
-  margin: 0.5rem 0;
-}
-
-.sponsors-container :deep(.vp-sponsor-grid + .vp-sponsor-tier) {
-  margin-top: 0.5rem;
-}
-
-.sponsors-container :deep(.vp-sponsor-grid[data-vp-grid="xsmall"] .vp-sponsor-grid-image) {
-  max-width: 112px;
-  max-height: 28px;
-}
-
-.sponsors-container :deep(.vp-sponsor-grid[data-vp-grid="small"] .vp-sponsor-grid-image) {
-  max-width: 140px;
-  max-height: 35px;
-}
-
-.sponsors-container :deep(.vp-sponsor-grid[data-vp-grid="medium"] .vp-sponsor-grid-image) {
-  max-width: 168px;
-  max-height: 42px;
-}
-
-.sponsors-container :deep(.vp-sponsor-grid[data-vp-grid="big"] .vp-sponsor-grid-image) {
-  max-width: 224px;
-  max-height: 56px;
 }
 </style>
