@@ -2,6 +2,8 @@
 
 When it is time to deploy your app for production, simply run the `vite build` command. By default, it uses `<root>/index.html` as the build entry point, and produces an application bundle that is suitable to be served over a static hosting service. Check out the [Deploying a Static Site](./static-deploy) for guides about popular services.
 
+<ScrimbaLink href="https://scrimba.com/intro-to-vite-c03p6pbbdq/~037q?via=vite" title="Building for Production">Watch an interactive lesson on Scrimba</ScrimbaLink>
+
 ## Browser Compatibility
 
 By default, the production bundle assumes a modern browser that is included in the [Baseline](https://web-platform-dx.github.io/web-features/) Widely Available targets. The default browser support range is:
@@ -52,8 +54,6 @@ If you don't know the base path in advance, you may set a relative base path wit
 
 The build can be customized via various [build config options](/config/build-options.md). Specifically, you can directly adjust the underlying [Rolldown options](https://rolldown.rs/reference/) via `build.rolldownOptions`:
 
-<!-- TODO: update the link above and below to Rolldown's documentation -->
-
 ```js [vite.config.js]
 export default defineConfig({
   build: {
@@ -68,7 +68,7 @@ For example, you can specify multiple Rolldown outputs with plugins that are onl
 
 ## Chunking Strategy
 
-You can configure how chunks are split using `build.rolldownOptions.output.advancedChunks` (see [Rolldown docs](https://rolldown.rs/in-depth/advanced-chunks)). If you use a framework, refer to their documentation for configuring how chunks are split.
+You can configure how chunks are split using [`build.rolldownOptions.output.codeSplitting`](https://rolldown.rs/reference/OutputOptions.codeSplitting) (see [Rolldown docs](https://rolldown.rs/in-depth/manual-code-splitting)). If you use a framework, refer to their documentation for configuring how chunks are split.
 
 ## Load Error Handling
 
@@ -85,8 +85,6 @@ When a new deployment occurs, the hosting service may delete the assets from pre
 ## Rebuild on Files Changes
 
 You can enable rollup watcher with `vite build --watch`. Or, you can directly adjust the underlying [`WatcherOptions`](https://rolldown.rs/reference/InputOptions.watch) via `build.watch`:
-
-<!-- TODO: update the link above to Rolldown's documentation -->
 
 ```js [vite.config.js]
 export default defineConfig({
@@ -120,24 +118,21 @@ During build, all you need to do is to specify multiple `.html` files as entry p
 
 ```js twoslash [vite.config.js]
 import { dirname, resolve } from 'node:path'
-import { fileURLToPath } from 'node:url'
 import { defineConfig } from 'vite'
-
-const __dirname = dirname(fileURLToPath(import.meta.url))
 
 export default defineConfig({
   build: {
     rolldownOptions: {
       input: {
-        main: resolve(__dirname, 'index.html'),
-        nested: resolve(__dirname, 'nested/index.html'),
+        main: resolve(import.meta.dirname, 'index.html'),
+        nested: resolve(import.meta.dirname, 'nested/index.html'),
       },
     },
   },
 })
 ```
 
-If you specify a different root, remember that `__dirname` will still be the folder of your vite.config.js file when resolving the input paths. Therefore, you will need to add your `root` entry to the arguments for `resolve`.
+If you specify a different root, remember that `import.meta.dirname` will still be the folder of your `vite.config.js` file when resolving the input paths. Therefore, you will need to add your `root` entry to the arguments for `resolve`.
 
 Note that for HTML files, Vite ignores the name given to the entry in the `rolldownOptions.input` object and instead respects the resolved id of the file when generating the HTML asset in the dist folder. This ensures a consistent structure with the way the dev server works.
 
@@ -151,15 +146,12 @@ When it is time to bundle your library for distribution, use the [`build.lib` co
 
 ```js twoslash [vite.config.js (single entry)]
 import { dirname, resolve } from 'node:path'
-import { fileURLToPath } from 'node:url'
 import { defineConfig } from 'vite'
-
-const __dirname = dirname(fileURLToPath(import.meta.url))
 
 export default defineConfig({
   build: {
     lib: {
-      entry: resolve(__dirname, 'lib/main.js'),
+      entry: resolve(import.meta.dirname, 'lib/main.js'),
       name: 'MyLib',
       // the proper extensions will be added
       fileName: 'my-lib',
@@ -182,17 +174,14 @@ export default defineConfig({
 
 ```js twoslash [vite.config.js (multiple entries)]
 import { dirname, resolve } from 'node:path'
-import { fileURLToPath } from 'node:url'
 import { defineConfig } from 'vite'
-
-const __dirname = dirname(fileURLToPath(import.meta.url))
 
 export default defineConfig({
   build: {
     lib: {
       entry: {
-        'my-lib': resolve(__dirname, 'lib/main.js'),
-        secondary: resolve(__dirname, 'lib/secondary.js'),
+        'my-lib': resolve(import.meta.dirname, 'lib/main.js'),
+        secondary: resolve(import.meta.dirname, 'lib/secondary.js'),
       },
       name: 'MyLib',
     },

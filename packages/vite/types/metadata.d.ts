@@ -1,3 +1,8 @@
+export interface AssetMetadata {
+  importedAssets: Set<string>
+  importedCss: Set<string>
+}
+
 export interface ChunkMetadata {
   importedAssets: Set<string>
   importedCss: Set<string>
@@ -25,6 +30,10 @@ export interface CustomPluginOptionsVite {
 }
 
 declare module 'rolldown' {
+  export interface OutputAsset {
+    viteMetadata?: AssetMetadata
+  }
+
   export interface RenderedChunk {
     viteMetadata?: ChunkMetadata
   }

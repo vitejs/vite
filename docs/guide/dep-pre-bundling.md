@@ -57,9 +57,7 @@ A typical use case for `optimizeDeps.include` or `optimizeDeps.exclude` is when 
 
 Both `include` and `exclude` can be used to deal with this. If the dependency is large (with many internal modules) or is CommonJS, then you should include it; If the dependency is small and is already valid ESM, you can exclude it and let the browser load it directly.
 
-You can further customize esbuild too with the [`optimizeDeps.rolldownOptions` option](/config/dep-optimization-options.md#optimizedeps-rolldownoptions). For example, adding a Rolldown plugin to handle special files in dependencies or changing the [build `target`](https://esbuild.github.io/api/#target).
-
-<!-- TODO: update the link above to Rolldown's documentation -->
+You can further customize Rolldown too with the [`optimizeDeps.rolldownOptions` option](/config/dep-optimization-options.md#optimizedeps-rolldownoptions). For example, adding a Rolldown plugin to handle special files in dependencies or changing the [build `target`](https://rolldown.rs/reference/InputOptions.transform#target).
 
 ## Caching
 

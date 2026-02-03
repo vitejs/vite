@@ -1,0 +1,10 @@
+{
+  "name": "@vitejs/test-dep-cjs-browser-field",
+  "private": true,
+  "version": "0.0.0",
+  "//": "real world example: https://github.com/axios/axios/blob/a64050a6cfbcc708a55a7dc8030d85b1c78cdf38/package.json#L71-L73",
+  "main": "index.js",
+  "browser": {
+    "./lib/adapters/http.js": "./lib/adapters/xhr.js"
+  }
+}

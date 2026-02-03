@@ -1491,17 +1491,6 @@ export function stripBomTag(content: string): string {
   return content
 }
 
-const windowsDrivePathPrefixRE = /^[A-Za-z]:[/\\]/
-
-/**
- * path.isAbsolute also returns true for drive relative paths on windows (e.g. /something)
- * this function returns false for them but true for absolute paths (e.g. C:/something)
- */
-export const isNonDriveRelativeAbsolutePath = (p: string): boolean => {
-  if (!isWindows) return p[0] === '/'
-  return windowsDrivePathPrefixRE.test(p)
-}
-
 /**
  * Determine if a file is being requested with the correct case, to ensure
  * consistent behavior between dev and prod and across operating systems.

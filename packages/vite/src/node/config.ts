@@ -556,15 +556,14 @@ export interface ExperimentalOptions {
   /**
    * Enable builtin plugin that written by rust, which is faster than js plugin.
    *
-   * - 'resolver' (deprecated, will be removed in v8 stable): Enable only the native resolver plugin.
-   * - 'v1' (will be deprecated, will be removed in v8 stable): Enable the first stable set of native plugins (including resolver).
+   * - 'v1' (will be deprecated, will be removed in v8 stable): Enable the first stable set of native plugins.
    * - 'v2' (will be deprecated, will be removed in v8 stable): Enable the improved dynamicImportVarsPlugin and importGlobPlugin.
    * - true: Enable all native plugins (currently an alias of 'v2', it will map to a newer one in the future versions).
    *
    * @experimental
    * @default 'v2'
    */
-  enableNativePlugin?: boolean | 'resolver' | 'v1' | 'v2'
+  enableNativePlugin?: boolean | 'v1' | 'v2'
   /**
    * Enable full bundle mode.
    *
@@ -2080,17 +2079,6 @@ assetFileNames isn't equal for every build.rollupOptions.output. A single patter
     )
   }
 
-  if (
-    resolved.resolve.tsconfigPaths &&
-    resolved.experimental.enableNativePlugin === false
-  ) {
-    resolved.logger.warn(
-      colors.yellow(`
-(!) resolve.tsconfigPaths is set to true, but native plugins are disabled. To use resolve.tsconfigPaths, please enable native plugins via experimental.enableNativePlugin.
-`),
-    )
-  }
-
   return resolved
 }
 
@@ -2101,8 +2089,6 @@ function resolveNativePluginEnabledLevel(
   >,
 ) {
   switch (enableNativePlugin) {
-    case 'resolver':
-      return 0
     case 'v1':
       return 1
     case 'v2':
@@ -2338,6 +2324,9 @@ async function bundleConfigFile(
     },
     // disable treeshake to include files that is not sideeffectful to `moduleIds`
     treeshake: false,
+    // disable tsconfig as it's confusing to respect tsconfig options in the config file
+    // this also aligns with other config loader behaviors
+    tsconfig: false,
     plugins: [
       {
         name: 'externalize-deps',
