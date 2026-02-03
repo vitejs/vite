@@ -1,3 +1,19 @@
+## [8.0.0-beta.12](https://github.com/vitejs/vite/compare/v8.0.0-beta.11...v8.0.0-beta.12) (2026-02-03)
+### Features
+
+* **manifest:** add `assets` field for standalone CSS entry points ([#21015](https://github.com/vitejs/vite/issues/21015)) ([f289b9b](https://github.com/vitejs/vite/commit/f289b9b0ce7821b1554b878d083c426e7a695b59))
+
+### Bug Fixes
+
+* avoid registering customization hook for import meta resolver multiple times ([#21518](https://github.com/vitejs/vite/issues/21518)) ([8bb3203](https://github.com/vitejs/vite/commit/8bb32036792a6f522f5c947112f3d688add755a0))
+* **config:** avoid watching rolldown runtime virtual module ([#21545](https://github.com/vitejs/vite/issues/21545)) ([d18b139](https://github.com/vitejs/vite/commit/d18b13957b3bec08eae5a9ff80340488c8150d46))
+* **deps:** update all non-major dependencies ([#21540](https://github.com/vitejs/vite/issues/21540)) ([9ebaeaa](https://github.com/vitejs/vite/commit/9ebaeaac094db996b1d12665052633c20ac8a9cf))
+* populate originalFileNames when resolving CSS asset paths ([#21542](https://github.com/vitejs/vite/issues/21542)) ([8b47ff7](https://github.com/vitejs/vite/commit/8b47ff76d28630b4dc39c77fbd2762b4c36ad23d))
+
+### Miscellaneous Chores
+
+* **deps:** update dependency rolldown-plugin-dts to ^0.21.8 ([#21539](https://github.com/vitejs/vite/issues/21539)) ([33881cb](https://github.com/vitejs/vite/commit/33881cb34f4587919713975d13ce255ef744472d))
+
 ## [8.0.0-beta.11](https://github.com/vitejs/vite/compare/v8.0.0-beta.10...v8.0.0-beta.11) (2026-01-29)
 ### Features
 
