@@ -241,7 +241,7 @@ jobs:
         run: pnpm run lint
 
       - name: Check formatting
-        run: pnpm prettier --write --log-level=warn . && git diff --exit-code
+        run: pnpm oxfmt --check && git diff --exit-code
 
       - name: Typecheck
         run: pnpm run typecheck

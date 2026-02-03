@@ -133,8 +133,7 @@ export class MyElement extends LitElement {
         --accent-border: rgba(170, 59, 255, 0.5);
         --social-bg: rgba(244, 243, 236, 0.5);
         --shadow:
-          rgba(0, 0, 0, 0.1) 0 10px 15px -3px,
-          rgba(0, 0, 0, 0.05) 0 4px 6px -2px;
+          rgba(0, 0, 0, 0.1) 0 10px 15px -3px, rgba(0, 0, 0, 0.05) 0 4px 6px -2px;
 
         --sans: system-ui, 'Segoe UI', Roboto, sans-serif;
         --heading: system-ui, 'Segoe UI', Roboto, sans-serif;
@@ -167,8 +166,7 @@ export class MyElement extends LitElement {
           --accent-border: rgba(192, 132, 252, 0.5);
           --social-bg: rgba(47, 48, 58, 0.5);
           --shadow:
-            rgba(0, 0, 0, 0.4) 0 10px 15px -3px,
-            rgba(0, 0, 0, 0.25) 0 4px 6px -2px;
+            rgba(0, 0, 0, 0.4) 0 10px 15px -3px, rgba(0, 0, 0, 0.25) 0 4px 6px -2px;
         }
 
         #social .button-icon {
@@ -263,8 +261,8 @@ export class MyElement extends LitElement {
         z-index: 1;
         top: 34px;
         height: 28px;
-        transform: perspective(2000px) rotateZ(300deg) rotateX(44deg)
-          rotateY(39deg) scale(1.4);
+        transform: perspective(2000px) rotateZ(300deg) rotateX(44deg) rotateY(39deg)
+          scale(1.4);
       }
 
       .hero .vite {
@@ -272,8 +270,8 @@ export class MyElement extends LitElement {
         top: 107px;
         height: 26px;
         width: auto;
-        transform: perspective(2000px) rotateZ(300deg) rotateX(40deg)
-          rotateY(39deg) scale(0.8);
+        transform: perspective(2000px) rotateZ(300deg) rotateX(40deg) rotateY(39deg)
+          scale(0.8);
       }
 
       #center {
