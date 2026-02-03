@@ -2,6 +2,7 @@ import fs from 'node:fs'
 import path from 'node:path'
 import { parse } from 'dotenv'
 import { type DotenvPopulateInput, expand } from 'dotenv-expand'
+import colors from 'picocolors'
 import { arraify, createDebugger, normalizePath, tryStatSync } from './utils'
 import type { UserConfig } from './config'
 
@@ -45,7 +46,9 @@ export function loadEnv(
 
   const parsed = Object.fromEntries(
     envFiles.flatMap((filePath) => {
-      if (!tryStatSync(filePath)?.isFile()) return []
+      const stat = tryStatSync(filePath)
+      // Support FIFOs (named pipes) for apps like 1Password
+      if (!stat || (!stat.isFile() && !stat.isFIFO())) return []
 
       return Object.entries(parse(fs.readFileSync(filePath)))
     }),
@@ -97,6 +100,14 @@ export function resolveEnvPrefix({
   if (envPrefix.includes('')) {
     throw new Error(
       `envPrefix option contains value '', which could lead unexpected exposure of sensitive information.`,
+    )
+  }
+  if (envPrefix.some((prefix) => /\s/.test(prefix))) {
+    // eslint-disable-next-line no-console
+    console.warn(
+      colors.yellow(
+        `[vite] Warning: envPrefix option contains values with whitespace, which does not work in practice.`,
+      ),
     )
   }
   return envPrefix

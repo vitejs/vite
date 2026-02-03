@@ -8,7 +8,7 @@ We plan to stabilize these new APIs (with potential breaking changes) in a futur
 Resources:
 
 - [Feedback discussion](https://github.com/vitejs/vite/discussions/16358) where we are gathering feedback about the new APIs.
-- [Environment API PR](https://github.com/vitejs/vite/pull/16471) where the new API were implemented and reviewed.
+- [Environment API PR](https://github.com/vitejs/vite/pull/16471) where the new APIs were implemented and reviewed.
 
 Please share your feedback with us.
 :::
@@ -52,10 +52,7 @@ Given a Vite server configured in middleware mode as described by the [SSR setup
 ```js
 import fs from 'node:fs'
 import path from 'node:path'
-import { fileURLToPath } from 'node:url'
 import { createServer } from 'vite'
-
-const __dirname = path.dirname(fileURLToPath(import.meta.url))
 
 const viteServer = await createServer({
   server: { middlewareMode: true },
@@ -75,7 +72,7 @@ app.use('*', async (req, res, next) => {
   const url = req.originalUrl
 
   // 1. Read index.html
-  const indexHtmlPath = path.resolve(__dirname, 'index.html')
+  const indexHtmlPath = path.resolve(import.meta.dirname, 'index.html')
   let template = fs.readFileSync(indexHtmlPath, 'utf-8')
 
   // 2. Apply Vite HTML transforms. This injects the Vite HMR client,
@@ -308,10 +305,12 @@ export function createHandler(input) {
 
 In the CLI, calling `vite build` and `vite build --ssr` will still build the client only and ssr only environments for backward compatibility.
 
-When `builder` is not `undefined` (or when calling `vite build --app`), `vite build` will opt-in into building the entire app instead. This would later on become the default in a future major. A `ViteBuilder` instance will be created (build-time equivalent to a `ViteDevServer`) to build all configured environments for production. By default the build of environments is run in series respecting the order of the `environments` record. A framework or user can further configure how the environments are built using:
+When `builder` option is not `undefined` (or when calling `vite build --app`), `vite build` will opt-in into building the entire app instead. This would later on become the default in a future major. A `ViteBuilder` instance will be created (build-time equivalent to a `ViteDevServer`) to build all configured environments for production. By default the build of environments is run in series respecting the order of the `environments` record. A framework or user can further configure how the environments are built using `builder.buildApp` option:
 
-```js
-export default {
+```js [vite.config.js]
+import { defineConfig } from 'vite'
+
+export default defineConfig({
   builder: {
     buildApp: async (builder) => {
       const environments = Object.values(builder.environments)
@@ -320,7 +319,7 @@ export default {
       )
     },
   },
-}
+})
 ```
 
 Plugins can also define a `buildApp` hook. Order `'pre'` and `null` are executed before the configured `builder.buildApp`, and order `'post'` hooks are executed after it. `environment.isBuilt` can be used to check if an environment has already being build.

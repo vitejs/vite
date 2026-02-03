@@ -319,7 +319,7 @@ export function buildReporterPlugin(config: ResolvedConfig): Plugin {
     },
 
     renderChunk(_, chunk, options) {
-      if (!options.inlineDynamicImports) {
+      if (options.codeSplitting !== false) {
         for (const id of chunk.moduleIds) {
           const module = this.getModuleInfo(id)
           if (!module) continue
