@@ -123,6 +123,9 @@ importers:
         specifier: workspace:*
         version: link:packages/vite
       vitest:
+        specifier: ^4.0.17
+        version: 4.0.17(@types/node@22.19.5)(@vitest/ui@4.0.17)
+        version: 4.0.17(@types/node@22.19.7)
         specifier: ^4.0.18
         version: 4.0.18(@types/node@22.19.7)
 
@@ -445,6 +448,14 @@ importers:
         version: file:packages/vite/src/node/__tests__/fixtures/test-dep-conditions
       vue:
         specifier: ^3.5.18
+        version: 3.5.26(typescript@5.9.3)
+    devDependencies:
+      '@vitest/ui':
+        specifier: ^4.0.17
+        version: 4.0.17(vitest@4.0.17)
+      vitest:
+        specifier: ^4.0.17
+        version: 4.0.17(@types/node@22.19.5)(@vitest/ui@4.0.17)
         version: 3.5.27(typescript@5.9.3)
 
   packages/vite/src/node/__tests__/fixtures/cjs-ssr-dep: {}
@@ -5127,6 +5138,9 @@ packages:
   feed@5.2.0:
     resolution: {integrity: sha512-hgH6CCb+7+0c8PBlakI2KubG6R+Rb1MhpNcdvqUXZTBwBHf32piwY255diAkAmkGZ6AWlywOU88AkOgP9q8Rdw==}
     engines: {node: '>=20', pnpm: '>=10'}
+
+  fflate@0.8.2:
+    resolution: {integrity: sha512-cPJU47OaAoCbg0pBvzsgpTPhmhqI5eJjh/JIu8tPj5q+T7iLvW/JAYUqmE7KOB4R1ZyEhzBaIQpQpardBF5z8A==}
 
   figures@6.1.0:
     resolution: {integrity: sha512-d+l3qxjSesT4V7v2fh+QnmFnUWv9lSpjarhShNTgBOfA0ttejbQUAlHLitbjkoRiDulW0OPoQPYIGhIC8ohejg==}
@@ -9845,7 +9859,18 @@ snapshots:
 
   '@vitest/spy@4.0.18': {}
 
-  '@vitest/utils@4.0.18':
+  '@vitest/ui@4.0.17(vitest@4.0.17)':
+    dependencies:
+      '@vitest/utils': 4.0.17
+      fflate: 0.8.2
+      flatted: 3.3.3
+      pathe: 2.0.3
+      sirv: 3.0.2(patch_hash=c07c56eb72faea34341d465cde2314e89db472106ed378181e3447893af6bf95)
+      tinyglobby: 0.2.15
+      tinyrainbow: 3.0.3
+      vitest: 4.0.17(@types/node@22.19.5)(@vitest/ui@4.0.17)
+
+  '@vitest/utils@4.0.17':
     dependencies:
       '@vitest/pretty-format': 4.0.18
       tinyrainbow: 3.0.3
@@ -10838,6 +10863,8 @@ snapshots:
   feed@5.2.0:
     dependencies:
       xml-js: 1.6.11
+
+  fflate@0.8.2: {}
 
   figures@6.1.0:
     dependencies:
@@ -13299,7 +13326,8 @@ snapshots:
       - typescript
       - universal-cookie
 
-  vitest@4.0.18(@types/node@22.19.7):
+  vitest@4.0.17(@types/node@22.19.5)(@vitest/ui@4.0.17):
+  vitest@4.0.17(@types/node@22.19.7):
     dependencies:
       '@vitest/expect': 4.0.18
       '@vitest/mocker': 4.0.18(vite@packages+vite)
@@ -13322,6 +13350,8 @@ snapshots:
       vite: link:packages/vite
       why-is-node-running: 2.3.0
     optionalDependencies:
+      '@types/node': 22.19.5
+      '@vitest/ui': 4.0.17(vitest@4.0.17)
       '@types/node': 22.19.7
     transitivePeerDependencies:
       - msw
