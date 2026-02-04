@@ -64,7 +64,7 @@
     "picocolors": "^1.1.1",
     "playwright-chromium": "^1.58.1",
     "prettier": "3.8.1",
-    "rolldown": "1.0.0-rc.2",
+    "rolldown": "https://pkg.pr.new/rolldown@main",
     "rollup": "^4.43.0",
     "simple-git-hooks": "^2.13.1",
     "tsx": "^4.21.0",
