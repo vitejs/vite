@@ -13,7 +13,7 @@ import type { InternalModuleFormat, RollupError, SourceMap } from 'rolldown'
 import { rolldown } from 'rolldown'
 import { TSConfckParseError } from 'tsconfck'
 import colors from 'picocolors'
-import { exactRegex, prefixRegex } from '@rolldown/pluginutils'
+import { exactRegex, prefixRegex } from 'rolldown/filter'
 import type { FSWatcher } from '#dep-types/chokidar'
 import {
   combineSourcemaps,
