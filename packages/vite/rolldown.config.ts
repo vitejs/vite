@@ -86,6 +86,7 @@ const nodeConfig = defineConfig({
     'supports-color',
     'utf-8-validate', // ws
     'bufferutil', // ws
+    '@vitejs/devtools/cli-commands',
     ...Object.keys(pkg.dependencies),
     ...Object.keys(pkg.peerDependencies),
   ],
@@ -143,6 +144,7 @@ const moduleRunnerConfig = defineConfig({
     'fsevents',
     'lightningcss',
     /^rolldown\//,
+    '@vitejs/devtools/cli-commands',
     ...Object.keys(pkg.dependencies),
   ],
   plugins: [bundleSizeLimit(54), enableSourceMapsInWatchModePlugin()],

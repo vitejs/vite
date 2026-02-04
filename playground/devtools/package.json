@@ -1,0 +1,19 @@
+{
+  "name": "@vitejs/test-devtools",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "debug": "node --inspect-brk ../../packages/vite/bin/vite",
+    "preview": "vite preview"
+  },
+  "dependencies": {
+    "vue": "^3.5.25"
+  },
+  "devDependencies": {
+    "vite": "workspace:*",
+    "@vitejs/devtools": "^0.0.0-alpha.24"
+  }
+}

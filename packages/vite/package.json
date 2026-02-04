@@ -97,6 +97,7 @@
     "@rollup/pluginutils": "^5.3.0",
     "@types/escape-html": "^1.0.4",
     "@types/pnpapi": "^0.0.5",
+    "@vitejs/devtools": "^0.0.0-alpha.24",
     "artichokie": "^0.4.2",
     "baseline-browser-mapping": "^2.9.19",
     "cac": "^6.7.14",
@@ -144,6 +145,7 @@
   },
   "peerDependencies": {
     "@types/node": "^20.19.0 || >=22.12.0",
+    "@vitejs/devtools": "^0.0.0-alpha.24",
     "esbuild": "^0.27.0",
     "jiti": ">=1.21.0",
     "less": "^4.0.0",
@@ -157,6 +159,9 @@
   },
   "peerDependenciesMeta": {
     "@types/node": {
+      "optional": true
+    },
+    "@vitejs/devtools": {
       "optional": true
     },
     "esbuild": {
