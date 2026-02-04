@@ -1,6 +1,6 @@
 {
   "name": "@vitejs/plugin-legacy",
-  "version": "8.0.0-beta.0",
+  "version": "8.0.0-beta.2",
   "type": "module",
   "license": "MIT",
   "author": "Evan You",
@@ -33,15 +33,15 @@
   "homepage": "https://github.com/vitejs/vite/tree/main/packages/plugin-legacy#readme",
   "funding": "https://github.com/vitejs/vite?sponsor=1",
   "dependencies": {
-    "@babel/core": "^7.28.6",
+    "@babel/core": "^7.29.0",
     "@babel/plugin-transform-dynamic-import": "^7.27.1",
-    "@babel/plugin-transform-modules-systemjs": "^7.28.5",
-    "@babel/preset-env": "^7.28.6",
-    "babel-plugin-polyfill-corejs3": "^0.13.0",
-    "babel-plugin-polyfill-regenerator": "^0.6.5",
+    "@babel/plugin-transform-modules-systemjs": "^7.29.0",
+    "@babel/preset-env": "^7.29.0",
+    "babel-plugin-polyfill-corejs3": "^0.14.0",
+    "babel-plugin-polyfill-regenerator": "^0.6.6",
     "browserslist": "^4.28.1",
     "browserslist-to-esbuild": "^2.1.1",
-    "core-js": "^3.47.0",
+    "core-js": "^3.48.0",
     "magic-string": "^0.30.21",
     "regenerator-runtime": "^0.14.1",
     "systemjs": "^6.15.1"
@@ -53,7 +53,18 @@
   "devDependencies": {
     "acorn": "^8.15.0",
     "picocolors": "^1.1.1",
-    "tsdown": "^0.18.4",
+    "tsdown": "^0.20.1",
     "vite": "workspace:*"
+  },
+  "compatiblePackages": {
+    "schemaVersion": 1,
+    "rolldown": {
+      "type": "incompatible",
+      "reason": "Only supports Vite"
+    },
+    "rollup": {
+      "type": "incompatible",
+      "reason": "Only supports Vite"
+    }
   }
 }

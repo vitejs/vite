@@ -113,27 +113,11 @@ Now the `preview` command will launch the server at `http://localhost:8080`.
 
 ### Netlify CLI
 
-1. Install the [Netlify CLI](https://cli.netlify.com/).
-2. Create a new site using `ntl init`.
-3. Deploy using `ntl deploy`.
+1. Install the [Netlify CLI](https://docs.netlify.com/api-and-cli-guides/cli-guides/get-started-with-cli/) via `npm install -g netlify-cli`.
+2. Create a new site using `netlify init`.
+3. Deploy using `netlify deploy`.
 
-```bash
-# Install the Netlify CLI
-$ npm install -g netlify-cli
-
-# Create a new site in Netlify
-$ ntl init
-
-# Deploy to a unique preview URL
-$ ntl deploy
-```
-
-The Netlify CLI will share with you a preview URL to inspect. When you are ready to go into production, use the `prod` flag:
-
-```bash
-# Deploy the site into production
-$ ntl deploy --prod
-```
+The Netlify CLI will share with you a preview URL to inspect. When you are ready to go into production, use the `prod` flag: `netlify deploy --prod`.
 
 ### Netlify with Git
 
@@ -149,19 +133,11 @@ After your project has been imported and deployed, all subsequent pushes to bran
 
 ### Vercel CLI
 
-1. Install the [Vercel CLI](https://vercel.com/cli) and run `vercel` to deploy.
+1. Install the [Vercel CLI](https://vercel.com/cli) via `npm i -g vercel` and run `vercel` to deploy.
 2. Vercel will detect that you are using Vite and will enable the correct settings for your deployment.
 3. Your application is deployed! (e.g. [vite-vue-template.vercel.app](https://vite-vue-template.vercel.app/))
 
-```bash
-$ npm i -g vercel
-$ vercel init vite
-Vercel CLI
-> Success! Initialized "vite" example in ~/your-folder.
-- To deploy, `cd vite` and run `vercel`.
-```
-
-### Vercel for Git
+### Vercel with Git
 
 1. Push your code to your git repository (GitHub, GitLab, Bitbucket).
 2. [Import your Vite project](https://vercel.com/new) into Vercel.
@@ -172,50 +148,62 @@ After your project has been imported and deployed, all subsequent pushes to bran
 
 Learn more about Vercel’s [Git Integration](https://vercel.com/docs/concepts/git).
 
-## Cloudflare Pages
+## Cloudflare
 
-### Cloudflare Pages via Wrangler
+### Cloudflare Workers
 
-1. Install [Wrangler CLI](https://developers.cloudflare.com/workers/wrangler/get-started/).
-2. Authenticate Wrangler with your Cloudflare account using `wrangler login`.
-3. Run your build command.
-4. Deploy using `npx wrangler pages deploy dist`.
+The [Cloudflare Vite plugin](https://developers.cloudflare.com/workers/vite-plugin/) provides integration with Cloudflare Workers and uses Vite's Environment API to run your server-side code in the Cloudflare Workers runtime during development.
+
+To add Cloudflare Workers to an existing Vite project, install the plugin and add it to your config:
 
 ```bash
-# Install Wrangler CLI
-$ npm install -g wrangler
-
-# Login to Cloudflare account from CLI
-$ wrangler login
-
-# Run your build command
-$ npm run build
-
-# Create new deployment
-$ npx wrangler pages deploy dist
+$ npm install --save-dev @cloudflare/vite-plugin
 ```
 
-After your assets are uploaded, Wrangler will give you a preview URL to inspect your site. When you log into the Cloudflare Pages dashboard, you will see your new project.
+```js [vite.config.js]
+import { defineConfig } from 'vite'
+import { cloudflare } from '@cloudflare/vite-plugin'
 
-### Cloudflare Pages with Git
+export default defineConfig({
+  plugins: [cloudflare()],
+})
+```
+
+```jsonc [wrangler.jsonc]
+{
+  "name": "my-vite-app",
+}
+```
+
+After running `npm run build`, your application can now be deployed with `npx wrangler deploy`.
+
+You can also easily add backend APIs to your Vite application to securely communicate with Cloudflare resources. This runs in the Workers runtime during development and deploys alongside your frontend. See the [Cloudflare Vite plugin tutorial](https://developers.cloudflare.com/workers/vite-plugin/tutorial/) for a complete walkthrough.
+
+### Cloudflare Pages
+
+#### Cloudflare Pages with Git
+
+Cloudflare Pages gives you a way to deploy directly to Cloudflare without having to manage a Wrangler file.
 
 1. Push your code to your git repository (GitHub, GitLab).
-2. Log in to the Cloudflare dashboard and select your account in **Account Home** > **Pages**.
-3. Select **Create a new Project** and the **Connect Git** option.
+2. Log in to the Cloudflare dashboard and select your account in **Account Home** > **Workers & Pages**.
+3. Select **Create a new Project** and the **Pages** option, then select Git.
 4. Select the git project you want to deploy and click **Begin setup**
-5. Select the corresponding framework preset in the build setting depending on the Vite framework you have selected.
+5. Select the corresponding framework preset in the build setting depending on the Vite framework you have selected. Otherwise enter your build commands for your project and your expected output directory.
 6. Then save and deploy!
 7. Your application is deployed! (e.g `https://<PROJECTNAME>.pages.dev/`)
 
-After your project has been imported and deployed, all subsequent pushes to branches will generate [Preview Deployments](https://developers.cloudflare.com/pages/platform/preview-deployments/) unless specified not to in your [branch build controls](https://developers.cloudflare.com/pages/platform/branch-build-controls/). All changes to the Production Branch (commonly “main”) will result in a Production Deployment.
+After your project has been imported and deployed, all subsequent pushes to branches will generate [Preview Deployments](https://developers.cloudflare.com/pages/platform/preview-deployments/) unless specified not to in your [branch build controls](https://developers.cloudflare.com/pages/platform/branch-build-controls/). All changes to the Production Branch (commonly "main") will result in a Production Deployment.
 
 You can also add custom domains and handle custom build settings on Pages. Learn more about [Cloudflare Pages Git Integration](https://developers.cloudflare.com/pages/get-started/#manage-your-site).
 
 ## Google Firebase
 
-1. Make sure you have [firebase-tools](https://www.npmjs.com/package/firebase-tools) installed.
+1. Install [firebase-tools](https://www.npmjs.com/package/firebase-tools) via `npm i -g firebase-tools`.
 
-2. Create `firebase.json` and `.firebaserc` at the root of your project with the following content:
+2. Create the following files at the root of your project:
+
+   ::: code-group
 
    ```json [firebase.json]
    {
@@ -240,14 +228,14 @@ You can also add custom domains and handle custom build settings on Pages. Learn
    }
    ```
 
+   :::
+
 3. After running `npm run build`, deploy using the command `firebase deploy`.
 
 ## Surge
 
-1. First install [surge](https://www.npmjs.com/package/surge), if you haven’t already.
-
+1. Install [surge](https://www.npmjs.com/package/surge) via `npm i -g surge`.
 2. Run `npm run build`.
-
 3. Deploy to surge by typing `surge dist`.
 
 You can also deploy to a [custom domain](https://surge.sh/help/adding-a-custom-domain) by adding `surge dist yourdomain.com`.
@@ -280,9 +268,7 @@ You can deploy your Vite app as a Static Site on [Render](https://render.com/).
    - **Build Command**: `npm install && npm run build`
    - **Publish Directory**: `dist`
 
-5. Click **Create Static Site**.
-
-   Your app should be deployed at `https://<PROJECTNAME>.onrender.com/`.
+5. Click **Create Static Site**. Your app should be deployed at `https://<PROJECTNAME>.onrender.com/`.
 
 By default, any new commit pushed to the specified branch will automatically trigger a new deployment. [Auto-Deploy](https://render.com/docs/deploys#toggling-auto-deploy-for-a-service) can be configured in the project settings.
 
