@@ -21,6 +21,10 @@ if (isBuild) {
     await expect.poll(() => page.textContent('h1')).toBe('HMR Full Bundle Mode')
     await expect.poll(() => page.textContent('.app')).toBe('hello')
     await expect.poll(() => page.textContent('.asset')).toMatch(assetUrl)
+    await expect
+      .poll(() => page.textContent('.worker-query'))
+      .toBe('worker-query')
+    await expect.poll(() => page.textContent('.worker-url')).toBe('worker-url')
   })
 
   // BUNDLED -> GENERATE_HMR_PATCH -> BUNDLING -> BUNDLE_ERROR -> BUNDLING -> BUNDLED
@@ -124,5 +128,51 @@ if (isBuild) {
       ),
     )
     await expect.poll(() => page.textContent('.hmr')).toBe('hello')
+  })
+
+  test('worker with ?worker query', async () => {
+    await expect
+      .poll(() => page.textContent('.worker-query'))
+      .toBe('worker-query')
+    editFile('worker-query.js', (code) =>
+      code.replace(
+        "const msg = 'worker-query'",
+        "const msg = 'worker-query-updated'",
+      ),
+    )
+    await expect
+      .poll(() => page.textContent('.worker-query'))
+      .toBe('worker-query-updated')
+
+    editFile('worker-query.js', (code) =>
+      code.replace(
+        "const msg = 'worker-query-updated'",
+        "const msg = 'worker-query'",
+      ),
+    )
+    await expect
+      .poll(() => page.textContent('.worker-query'))
+      .toBe('worker-query')
+  })
+
+  test('worker with new URL', async () => {
+    await expect.poll(() => page.textContent('.worker-url')).toBe('worker-url')
+    editFile('worker-url.js', (code) =>
+      code.replace(
+        "const msg = 'worker-url'",
+        "const msg = 'worker-url-updated'",
+      ),
+    )
+    await expect
+      .poll(() => page.textContent('.worker-url'))
+      .toBe('worker-url-updated')
+
+    editFile('worker-url.js', (code) =>
+      code.replace(
+        "const msg = 'worker-url-updated'",
+        "const msg = 'worker-url'",
+      ),
+    )
+    await expect.poll(() => page.textContent('.worker-url')).toBe('worker-url')
   })
 }
