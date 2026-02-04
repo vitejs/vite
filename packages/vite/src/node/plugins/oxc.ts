@@ -53,7 +53,9 @@ export interface OxcOptions extends Omit<
   jsxRefreshExclude?: string | RegExp | ReadonlyArray<string | RegExp>
 }
 
-function getRollupJsxPresets(preset: 'react' | 'react-jsx'): OxcJsxOptions {
+export function getRollupJsxPresets(
+  preset: 'react' | 'react-jsx',
+): OxcJsxOptions {
   switch (preset) {
     case 'react':
       return {
@@ -72,7 +74,7 @@ function getRollupJsxPresets(preset: 'react' | 'react-jsx'): OxcJsxOptions {
   preset satisfies never
 }
 
-export function setOxcTransformOptionsFromTsconfigOptions(
+function setOxcTransformOptionsFromTsconfigOptions(
   oxcOptions: Omit<OxcTransformOptions, 'jsx'> & {
     jsx?:
       | OxcTransformOptions['jsx']
