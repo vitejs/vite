@@ -549,6 +549,17 @@ Whether your application is a Single Page Application (SPA), a [Multi Page Appli
 
 Learn more in Vite's [SSR guide](/guide/ssr#vite-cli). Related: [`server.middlewareMode`](./server-options#server-middlewaremode).
 
+## devtools
+
+- **Experimental:** [Give Feedback](https://github.com/vitejs/devtools/discussions)
+- **Type:** `boolean` | `DevToolsConfig`
+- **Default:** `false`
+
+Enable devtools integration for visualizing the internal state and build analysis.
+Ensure that `@vitejs/devtools` is installed as a dependency. This feature is currently supported only in build mode.
+
+See [Vite DevTools](https://github.com/vitejs/devtools) for more details.
+
 ## future
 
 - **Type:** `Record<string, 'warn' | undefined>`
