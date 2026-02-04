@@ -1,7 +1,7 @@
 import path from 'node:path'
 import { defineConfig } from 'vite'
 
-const packageFPath = path.resolve(__dirname, 'test-package-f')
+const packageFPath = path.resolve(import.meta.dirname, 'test-package-f')
 
 export default defineConfig({
   resolve: {

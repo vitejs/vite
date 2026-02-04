@@ -26,6 +26,7 @@ export default defineConfig({
       '@vitejs/test-dep-optimize-exports-with-root-glob/**/*.js',
       '@vitejs/test-dep-optimize-with-glob/**/*.js',
       '@vitejs/test-dep-cjs-with-external-deps',
+      '@vitejs/test-dep-cjs-with-es-module-flag',
     ],
     exclude: [
       '@vitejs/test-nested-exclude',

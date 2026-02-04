@@ -1,6 +1,6 @@
 {
   "name": "vite",
-  "version": "8.0.0-beta.10",
+  "version": "8.0.0-beta.12",
   "type": "module",
   "license": "MIT",
   "author": "Evan You",
@@ -73,32 +73,33 @@
   },
   "//": "READ CONTRIBUTING.md to understand what to put under deps vs. devDeps!",
   "dependencies": {
-    "@oxc-project/runtime": "0.110.0",
+    "@oxc-project/runtime": "0.111.0",
     "fdir": "^6.5.0",
     "lightningcss": "^1.31.1",
     "picomatch": "^4.0.3",
     "postcss": "^8.5.6",
-    "rolldown": "1.0.0-rc.1",
+    "rolldown": "1.0.0-rc.2",
     "tinyglobby": "^0.2.15"
   },
   "optionalDependencies": {
     "fsevents": "~2.3.3"
   },
   "devDependencies": {
-    "@babel/parser": "^7.28.6",
+    "@babel/parser": "^7.29.0",
     "@jridgewell/remapping": "^2.3.5",
     "@jridgewell/trace-mapping": "^0.3.31",
-    "@oxc-project/types": "0.110.0",
+    "@oxc-project/types": "0.111.0",
     "@polka/compression": "^1.0.0-next.25",
-    "@rolldown/pluginutils": "1.0.0-rc.1",
+    "@rolldown/pluginutils": "1.0.0-rc.2",
     "@rollup/plugin-alias": "^5.1.1",
     "@rollup/plugin-commonjs": "^29.0.0",
     "@rollup/plugin-dynamic-import-vars": "2.1.4",
     "@rollup/pluginutils": "^5.3.0",
     "@types/escape-html": "^1.0.4",
     "@types/pnpapi": "^0.0.5",
+    "@vitejs/devtools": "^0.0.0-alpha.24",
     "artichokie": "^0.4.2",
-    "baseline-browser-mapping": "^2.9.18",
+    "baseline-browser-mapping": "^2.9.19",
     "cac": "^6.7.14",
     "chokidar": "^3.6.0",
     "connect": "^3.7.0",
@@ -130,7 +131,7 @@
     "postcss-modules": "^6.0.1",
     "premove": "^4.0.0",
     "resolve.exports": "^2.0.3",
-    "rolldown-plugin-dts": "^0.21.6",
+    "rolldown-plugin-dts": "^0.21.8",
     "rollup": "^4.43.0",
     "rollup-plugin-license": "^3.6.0",
     "sass": "^1.97.3",
@@ -144,6 +145,7 @@
   },
   "peerDependencies": {
     "@types/node": "^20.19.0 || >=22.12.0",
+    "@vitejs/devtools": "^0.0.0-alpha.24",
     "esbuild": "^0.27.0",
     "jiti": ">=1.21.0",
     "less": "^4.0.0",
@@ -157,6 +159,9 @@
   },
   "peerDependenciesMeta": {
     "@types/node": {
+      "optional": true
+    },
+    "@vitejs/devtools": {
       "optional": true
     },
     "esbuild": {

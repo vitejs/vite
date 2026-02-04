@@ -900,9 +900,16 @@ async function buildPolyfillChunk(
 
   // add the chunk to the bundle
   ctx.emitFile({
-    type: 'asset',
+    type: 'prebuilt-chunk',
+    name: polyfillChunk.name,
     fileName: polyfillChunk.fileName,
-    source: polyfillChunk.code,
+    code: polyfillChunk.code,
+    facadeModuleId: polyfillChunk.facadeModuleId ?? undefined,
+    isEntry: polyfillChunk.isEntry,
+    isDynamicEntry: polyfillChunk.isDynamicEntry,
+    exports: [],
+    map: polyfillChunk.map ?? undefined,
+    sourcemapFileName: polyfillChunk.sourcemapFileName ?? undefined,
   })
   if (polyfillChunk.sourcemapFileName) {
     const polyfillChunkMapAsset = _polyfillChunk.output.find(
