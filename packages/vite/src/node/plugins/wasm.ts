@@ -1,4 +1,4 @@
-import { exactRegex } from '@rolldown/pluginutils'
+import { exactRegex } from 'rolldown/filter'
 import { viteWasmHelperPlugin as nativeWasmHelperPlugin } from 'rolldown/experimental'
 import type { Plugin } from '../plugin'
 import type { ResolvedConfig } from '..'

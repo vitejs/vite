@@ -1,7 +1,7 @@
 import path from 'node:path'
 import MagicString from 'magic-string'
 import { stripLiteral } from 'strip-literal'
-import { exactRegex } from '@rolldown/pluginutils'
+import { exactRegex } from 'rolldown/filter'
 import type { Plugin } from '../plugin'
 import type { ResolvedConfig } from '../config'
 import {
