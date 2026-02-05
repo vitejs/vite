@@ -145,11 +145,13 @@ describe('module runner initialization', async () => {
     const innerFrame = stack.find((line) => line.includes('inner'))
     const outerFrame = stack.find((line) => line.includes('outer'))
 
-    // The ESM external module has: "var _padding...; export function outer(fn) { return inner(fn); } function inner(fn) { return fn(); }"
-    // The exact columns depend on how Node.js loads the module.
-    // The important thing is that they should NOT have 62 subtracted (which was the bug).
-    // With the fix, columns should be in a reasonable range (> 60 for both).
-    // Without the fix, columns would be incorrectly reduced by 62.
+    // This test verifies the fix for #21561 where ESM external modules had incorrect
+    // column numbers due to an erroneous 62-character offset being subtracted.
+    // The ESM external module has code on a single line with padding:
+    // "var _padding...; export function outer(fn) { return inner(fn); } function inner(fn) { return fn(); }"
+    //
+    // With the bug (subtracting 62), columns would be around 11 and 52.
+    // With the fix (no subtraction), columns should be in a reasonable range (> 60).
     expect(innerFrame).toBeDefined()
     expect(outerFrame).toBeDefined()
 
