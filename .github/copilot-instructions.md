@@ -27,7 +27,7 @@ This is a TypeScript project that implements a frontend build tooling called Vit
 - Why was this approach chosen? - Implementation rationale
 - If this is a new feature, include a convincing reason.
 - If this adds a new config option, verify problem can't be solved with smarter defaults, existing options, or a plugin
-- If this is a bug fix, what the cause was - Link to relevant code if possible
+- If this is a bug fix, explain what caused the bug - Link to relevant code if possible
 
 ### Code Style & Standards
 
