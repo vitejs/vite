@@ -6,8 +6,8 @@ export default defineConfig({
     cssCodeSplit: false,
     rollupOptions: {
       input: {
-        index: resolve(__dirname, './index.html'),
-        sub: resolve(__dirname, './sub.html'),
+        index: resolve(import.meta.dirname, './index.html'),
+        sub: resolve(import.meta.dirname, './sub.html'),
       },
     },
   },

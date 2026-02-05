@@ -13,7 +13,7 @@ import type { InternalModuleFormat, RollupError, SourceMap } from 'rolldown'
 import { rolldown } from 'rolldown'
 import { TSConfckParseError } from 'tsconfck'
 import colors from 'picocolors'
-import { exactRegex, prefixRegex } from '@rolldown/pluginutils'
+import { exactRegex, prefixRegex } from 'rolldown/filter'
 import type { FSWatcher } from '#dep-types/chokidar'
 import {
   combineSourcemaps,
@@ -53,7 +53,9 @@ export interface OxcOptions extends Omit<
   jsxRefreshExclude?: string | RegExp | ReadonlyArray<string | RegExp>
 }
 
-function getRollupJsxPresets(preset: 'react' | 'react-jsx'): OxcJsxOptions {
+export function getRollupJsxPresets(
+  preset: 'react' | 'react-jsx',
+): OxcJsxOptions {
   switch (preset) {
     case 'react':
       return {
@@ -72,7 +74,7 @@ function getRollupJsxPresets(preset: 'react' | 'react-jsx'): OxcJsxOptions {
   preset satisfies never
 }
 
-export function setOxcTransformOptionsFromTsconfigOptions(
+function setOxcTransformOptionsFromTsconfigOptions(
   oxcOptions: Omit<OxcTransformOptions, 'jsx'> & {
     jsx?:
       | OxcTransformOptions['jsx']
@@ -650,6 +652,7 @@ async function generateRuntimeHelpers(
   const output = await bundle.generate({
     format: 'cjs',
     minify: true,
+    generatedCode: { symbols: false },
   })
   const outputCode = output.output[0].code
   const exportNames = [...outputCode.matchAll(cjsExportRE)].map((m) => m[1])

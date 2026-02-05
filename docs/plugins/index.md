@@ -22,7 +22,7 @@ Uses [Oxc Transformer](https://oxc.rs/docs/guide/usage/transformer) and [Babel](
 
 ### [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/tree/main/packages/plugin-react-swc)
 
-Replaces Babel with [SWC](https://swc.rs/) during development. During production builds, SWC+Oxc Transformer are used when using plugins, and Oxc Transformer only otherwise. For big projects that requires custom plugins, cold start and Hot Module Replacement (HMR) can be significantly faster, if the plugin is also available for SWC.
+Replaces Babel with [SWC](https://swc.rs/) during development. During production builds, SWC+Oxc Transformer are used when using plugins, and Oxc Transformer only otherwise. For big projects that require custom plugins, cold start and Hot Module Replacement (HMR) can be significantly faster, if the plugin is also available for SWC.
 
 ### [@vitejs/plugin-rsc](https://github.com/vitejs/vite-plugin-react/tree/main/packages/plugin-rsc)
 
@@ -40,7 +40,7 @@ Provides legacy browsers support for the production build.
 
 ## Community Plugins
 
-Check out [awesome-vite](https://github.com/vitejs/awesome-vite#plugins) - you can also submit a PR to list your plugins there.
+Check out [Vite Plugin Registry](https://registry.vite.dev/plugins) for the list of plugins published to npm.
 
 ## Rolldown Builtin Plugins
 
@@ -48,6 +48,6 @@ Vite uses [Rolldown](https://rolldown.rs/) under the hood and it provides a few 
 
 Read the [Rolldown Builtin Plugins section](https://rolldown.rs/builtin-plugins/) for more information.
 
-## Rollup Plugins
+## Rolldown / Rollup Plugins
 
-[Vite plugins](../guide/api-plugin) are an extension of Rollup's plugin interface. Check out the [Rollup Plugin Compatibility section](../guide/api-plugin#rollup-plugin-compatibility) for more information.
+[Vite plugins](../guide/api-plugin) are an extension of Rollup's plugin interface. Check out the [Rollup Plugin Compatibility section](../guide/api-plugin#rolldown-plugin-compatibility) for more information.

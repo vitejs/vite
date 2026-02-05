@@ -92,6 +92,7 @@ export const ESBUILD_BASELINE_WIDELY_AVAILABLE_TARGET: string[] = [
   'edge111',
   'firefox114',
   'safari16.4',
+  'ios16.4',
 ]
 
 export const DEFAULT_CONFIG_FILES: string[] = [

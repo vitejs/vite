@@ -6,6 +6,8 @@
 <div class="cjs-phoenix">fail</div>
 <h2>CommonJS w/ default export (clipboard)</h2>
 <div class="cjs-clipboard">fail</div>
+<h2>CommonJS w/ default export (dep-cjs-with-es-module-flag)</h2>
+<div class="cjs-with-es-module-flag">fail</div>
 <h2>CommonJS import default (dep-cjs-compiled-from-esm)</h2>
 <div class="cjs-dep-cjs-compiled-from-esm"></div>
 <h2>CommonJS import default (dep-cjs-compiled-from-cjs)</h2>
@@ -23,6 +25,8 @@
 <div class="cjs-dynamic-dep-cjs-compiled-from-esm"></div>
 <h2>CommonJS dynamic import default (dep-cjs-compiled-from-cjs)</h2>
 <div class="cjs-dynamic-dep-cjs-compiled-from-cjs"></div>
+<h2>CommonJS dynamic import default (dep-cjs-with-es-module-flag)</h2>
+<div class="cjs-dynamic-dep-cjs-with-es-module-flag"></div>
 
 <script type="module" src="./cjs-dynamic.js"></script>
 
@@ -385,4 +389,26 @@
     '.virtual-module-vue',
     `${VirtualComponent.name === 'VirtualComponent' ? 'ok' : 'ng'}`,
   )
+</script>
+
+<h2>Relative asset URLs in optimized dependencies</h2>
+<div>
+  Message from lib worker:
+  <span class="worker-lib"></span>
+</div>
+<div>
+  Message from nested worker:
+  <span class="worker-nested"></span>
+</div>
+<h2>Non-worker asset from optimized dep</h2>
+<div>
+  Asset URL from lib:
+  <span class="asset-url"></span>
+</div>
+<script type="module">
+  import * as lib from '@vitejs/test-dep-with-assets'
+  import * as nested from '@vitejs/test-dep-with-assets/nested'
+  lib.urlImportWorker().then((m) => text('.worker-lib', m))
+  nested.urlImportWorker().then((m) => text('.worker-nested', m))
+  text('.asset-url', lib.getAssetUrl())
 </script>

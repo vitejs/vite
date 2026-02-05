@@ -61,7 +61,6 @@ export default defineConfig({
         },
       },
       emitDtsOnly: true,
-      resolve: true,
     }),
   ],
 })
@@ -119,9 +118,6 @@ const ignoreConfusingTypeNames = [
   'MinimalPluginContext$1',
   'ServerOptions$1',
   'ServerOptions$3',
-  // type parameters
-  'K$1',
-  'Server$3',
   // temporary variables for types
   'parseAst$1',
   'parseAstAsync$1',

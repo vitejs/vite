@@ -1,39 +1,39 @@
 import { readFileSync, writeFileSync } from 'node:fs'
 import path from 'node:path'
-import { fileURLToPath } from 'node:url'
 import MagicString from 'magic-string'
 import type { Plugin } from 'rolldown'
 import { defineConfig } from 'rolldown'
 import { init, parse } from 'es-module-lexer'
 import licensePlugin from './rollupLicensePlugin'
 
+// eslint-disable-next-line n/no-unsupported-features/node-builtins
+const dirname = import.meta.dirname
 const pkg = JSON.parse(
   readFileSync(new URL('./package.json', import.meta.url)).toString(),
 )
-const __dirname = fileURLToPath(new URL('.', import.meta.url))
 const disableSourceMap = !!process.env.DEBUG_DISABLE_SOURCE_MAP
 
 const envConfig = defineConfig({
-  input: path.resolve(__dirname, 'src/client/env.ts'),
+  input: path.resolve(dirname, 'src/client/env.ts'),
   platform: 'browser',
   transform: {
     target: 'es2020',
   },
   output: {
-    dir: path.resolve(__dirname, 'dist'),
+    dir: path.resolve(dirname, 'dist'),
     entryFileNames: 'client/env.mjs',
   },
 })
 
 const clientConfig = defineConfig({
-  input: path.resolve(__dirname, 'src/client/client.ts'),
+  input: path.resolve(dirname, 'src/client/client.ts'),
   platform: 'browser',
   transform: {
     target: 'es2020',
   },
   external: ['@vite/env'],
   output: {
-    dir: path.resolve(__dirname, 'dist'),
+    dir: path.resolve(dirname, 'dist'),
     entryFileNames: 'client/client.mjs',
   },
 })
@@ -72,9 +72,9 @@ const sharedNodeOptions = defineConfig({
 const nodeConfig = defineConfig({
   ...sharedNodeOptions,
   input: {
-    index: path.resolve(__dirname, 'src/node/index.ts'),
-    cli: path.resolve(__dirname, 'src/node/cli.ts'),
-    internal: path.resolve(__dirname, 'src/node/internalIndex.ts'),
+    index: path.resolve(dirname, 'src/node/index.ts'),
+    cli: path.resolve(dirname, 'src/node/cli.ts'),
+    internal: path.resolve(dirname, 'src/node/internalIndex.ts'),
   },
   external: [
     /^vite\//,
@@ -86,6 +86,7 @@ const nodeConfig = defineConfig({
     'supports-color',
     'utf-8-validate', // ws
     'bufferutil', // ws
+    '@vitejs/devtools/cli-commands',
     ...Object.keys(pkg.dependencies),
     ...Object.keys(pkg.peerDependencies),
   ],
@@ -124,7 +125,7 @@ const nodeConfig = defineConfig({
     }),
     buildTimeImportMetaUrlPlugin(),
     licensePlugin(
-      path.resolve(__dirname, 'LICENSE.md'),
+      path.resolve(dirname, 'LICENSE.md'),
       'Vite core license',
       'Vite',
     ),
@@ -137,12 +138,13 @@ const nodeConfig = defineConfig({
 const moduleRunnerConfig = defineConfig({
   ...sharedNodeOptions,
   input: {
-    'module-runner': path.resolve(__dirname, 'src/module-runner/index.ts'),
+    'module-runner': path.resolve(dirname, 'src/module-runner/index.ts'),
   },
   external: [
     'fsevents',
     'lightningcss',
     /^rolldown\//,
+    '@vitejs/devtools/cli-commands',
     ...Object.keys(pkg.dependencies),
   ],
   plugins: [bundleSizeLimit(54), enableSourceMapsInWatchModePlugin()],
@@ -302,7 +304,7 @@ function buildTimeImportMetaUrlPlugin(): Plugin {
         code: 'import.meta.url',
       },
       async handler(code, id) {
-        const relativeId = path.relative(__dirname, id).replaceAll('\\', '/')
+        const relativeId = path.relative(dirname, id).replaceAll('\\', '/')
         // only replace import.meta.url in src/
         if (!relativeId.startsWith('src/')) return
 

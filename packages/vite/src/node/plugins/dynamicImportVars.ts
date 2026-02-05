@@ -5,7 +5,7 @@ import type { ImportSpecifier } from 'es-module-lexer'
 import { parseAst } from 'rolldown/parseAst'
 import { dynamicImportToGlob } from '@rollup/plugin-dynamic-import-vars'
 import { viteDynamicImportVarsPlugin as nativeDynamicImportVarsPlugin } from 'rolldown/experimental'
-import { exactRegex } from '@rolldown/pluginutils'
+import { exactRegex } from 'rolldown/filter'
 import { type Plugin, perEnvironmentPlugin } from '../plugin'
 import type { ResolvedConfig } from '../config'
 import { CLIENT_ENTRY } from '../constants'
@@ -184,12 +184,7 @@ export function dynamicImportVarsPlugin(config: ResolvedConfig): Plugin {
         resolver(id, importer) {
           return resolve(environment, id, importer)
         },
-        isV2:
-          config.nativePluginEnabledLevel >= 2
-            ? {
-                sourcemap: !!environment.config.build.sourcemap,
-              }
-            : undefined,
+        sourcemap: !!environment.config.build.sourcemap,
       })
     })
   }
@@ -272,11 +267,7 @@ export function dynamicImportVarsPlugin(config: ResolvedConfig): Plugin {
               config.root,
             )
           } catch (error) {
-            if (environment.config.build.dynamicImportVarsOptions.warnOnError) {
-              this.warn(error)
-            } else {
-              this.error(error)
-            }
+            this.warn(error)
           }
 
           if (!result) {

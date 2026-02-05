@@ -1,5 +1,4 @@
 import path from 'node:path'
-import { fileURLToPath } from 'node:url'
 import { describe, expect, test } from 'vitest'
 import { resolveConfig } from '../../config'
 import type { InlineConfig } from '../../config'
@@ -14,7 +13,7 @@ import {
 } from '../../plugins/css'
 import { PartialEnvironment } from '../../baseEnvironment'
 
-const __dirname = path.resolve(fileURLToPath(import.meta.url), '..')
+const dirname = import.meta.dirname
 
 describe('search css url function', () => {
   test('some spaces before it', () => {
@@ -264,6 +263,7 @@ describe('convertTargets', () => {
       edge: 5177344,
       firefox: 3801088,
       safari: 786432,
+      ios_saf: 786432,
       opera: 3276800,
     })
     expect(convertTargets(['safari13.1', 'ios13', 'node14'])).toStrictEqual({
@@ -420,7 +420,7 @@ describe('resolveLibCssFilename', () => {
       {
         entry: 'mylib.js',
       },
-      path.resolve(__dirname, '../packages/name'),
+      path.resolve(dirname, '../packages/name'),
     )
     expect(filename).toBe('mylib.css')
   })
@@ -431,7 +431,7 @@ describe('resolveLibCssFilename', () => {
         entry: 'mylib.js',
         cssFileName: 'style',
       },
-      path.resolve(__dirname, '../packages/noname'),
+      path.resolve(dirname, '../packages/noname'),
     )
     expect(filename).toBe('style.css')
   })
@@ -442,7 +442,7 @@ describe('resolveLibCssFilename', () => {
         entry: 'mylib.js',
         fileName: 'custom-name',
       },
-      path.resolve(__dirname, '../packages/name'),
+      path.resolve(dirname, '../packages/name'),
     )
     expect(filename).toBe('custom-name.css')
   })
@@ -453,7 +453,7 @@ describe('resolveLibCssFilename', () => {
         entry: ['mylib.js', 'mylib2.js'],
         fileName: 'custom-name',
       },
-      path.resolve(__dirname, '../packages/name'),
+      path.resolve(dirname, '../packages/name'),
     )
     expect(filename).toBe('custom-name.css')
   })

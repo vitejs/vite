@@ -12,7 +12,7 @@ import type { ResolveIdFn } from '../idResolver'
 import { cleanUrl, slash } from '../../shared/utils'
 import type { WorkerType } from './worker'
 import { WORKER_FILE_ID, workerFileToUrl } from './worker'
-import { fileToUrl } from './asset'
+import { fileToUrl, toOutputFilePathInJSForBundledDev } from './asset'
 import type { InternalResolveOptions } from './resolve'
 import { tryFsResolve } from './resolve'
 import { hasViteIgnoreRE } from './importAnalysis'
@@ -184,7 +184,7 @@ const workerImportMetaUrlRE =
   /new\s+(?:Worker|SharedWorker)\s*\(\s*new\s+URL.+?import\.meta\.url/s
 
 export function workerImportMetaUrlPlugin(config: ResolvedConfig): Plugin {
-  const isBuild = config.command === 'build'
+  const isBundled = config.isBundled
   let workerResolver: ResolveIdFn
 
   const fsResolveOptions: InternalResolveOptions = {
@@ -247,16 +247,26 @@ export function workerImportMetaUrlPlugin(config: ResolvedConfig): Plugin {
           }
 
           if (
-            isBuild &&
+            isBundled &&
             config.isWorker &&
             config.bundleChain.at(-1) === cleanUrl(file)
           ) {
             s.update(expStart, expEnd, 'self.location.href')
           } else {
             let builtUrl: string
-            if (isBuild) {
+            if (isBundled) {
               const result = await workerFileToUrl(config, file)
-              builtUrl = result.entryUrlPlaceholder
+              if (
+                this.environment.config.command === 'serve' &&
+                this.environment.config.experimental.bundledDev
+              ) {
+                builtUrl = toOutputFilePathInJSForBundledDev(
+                  this.environment,
+                  result.entryFilename,
+                )
+              } else {
+                builtUrl = result.entryUrlPlaceholder
+              }
               for (const file of result.watchedFiles) {
                 this.addWatchFile(file)
               }
