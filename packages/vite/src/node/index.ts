@@ -113,6 +113,7 @@ export type {
   PluginHookUtils,
   ResolveFn,
   ResolvedWorkerOptions,
+  JsonOptions,
   ResolvedConfig,
   UserConfig,
   UserConfigExport,
@@ -200,7 +201,6 @@ export type {
   LessPreprocessorOptions,
   StylusPreprocessorOptions,
 } from './plugins/css'
-export type { JsonOptions } from './plugins/json'
 export type { ESBuildOptions } from './plugins/esbuild'
 export type { EsbuildTransformOptions } from '#types/internal/esbuildOptions'
 export type { OxcOptions } from './plugins/oxc'

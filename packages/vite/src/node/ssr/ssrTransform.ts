@@ -23,9 +23,9 @@ import {
   combineSourcemaps,
   generateCodeFrame,
   isDefined,
+  isJSONRequest,
   numberToPos,
 } from '../utils'
-import { isJSONRequest } from '../plugins/json'
 import type { DefineImportMetadata } from '../../shared/ssrTransform'
 
 type Node = _Node & {

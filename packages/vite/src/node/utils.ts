@@ -1763,3 +1763,8 @@ export function monotonicDateNow(): number {
   lastDateNow++
   return lastDateNow
 }
+
+const jsonLangs = `\\.(?:json|json5)(?:$|\\?)`
+const jsonLangRE = new RegExp(jsonLangs)
+export const isJSONRequest = (request: string): boolean =>
+  jsonLangRE.test(request)

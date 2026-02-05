@@ -109,7 +109,6 @@ import {
 import type { LogLevel, Logger } from './logger'
 import { createLogger } from './logger'
 import type { DepOptimizationOptions } from './optimizer'
-import type { JsonOptions } from './plugins/json'
 import type { PackageCache } from './packages'
 import { findNearestNodeModules, findNearestPackageData } from './packages'
 import { loadEnv, resolveEnvPrefix } from './env'
@@ -324,6 +323,21 @@ export type ResolvedEnvironmentOptions = {
   plugins: readonly Plugin[]
   /** @internal */
   optimizeDepsPluginNames: string[]
+}
+
+export interface JsonOptions {
+  /**
+   * Generate a named export for every property of the JSON object
+   * @default true
+   */
+  namedExports?: boolean
+  /**
+   * Generate performant output as JSON.parse("stringified").
+   *
+   * When set to 'auto', the data will be stringified only if the data is bigger than 10kB.
+   * @default 'auto'
+   */
+  stringify?: boolean | 'auto'
 }
 
 export type DefaultEnvironmentOptions = Omit<
