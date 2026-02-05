@@ -98,7 +98,7 @@ export async function resolvePlugins(
     esbuildBannerFooterCompatPlugin(config),
     config.oxc !== false ? oxcPlugin(config) : null,
     nativeJsonPlugin({ ...config.json, minify: isBuild }),
-    wasmHelperPlugin(config),
+    wasmHelperPlugin(),
     webWorkerPlugin(config),
     assetPlugin(config),
 

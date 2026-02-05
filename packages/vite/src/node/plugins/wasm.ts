@@ -1,7 +1,5 @@
 import { exactRegex } from 'rolldown/filter'
-import { viteWasmHelperPlugin as nativeWasmHelperPlugin } from 'rolldown/experimental'
 import type { Plugin } from '../plugin'
-import type { ResolvedConfig } from '..'
 import { fileToUrl } from './asset'
 
 const wasmHelperId = '\0vite/wasm-helper.js'
@@ -50,13 +48,7 @@ const wasmHelper = async (opts = {}, url: string) => {
 
 const wasmHelperCode = wasmHelper.toString()
 
-export const wasmHelperPlugin = (config: ResolvedConfig): Plugin => {
-  if (config.isBundled) {
-    return nativeWasmHelperPlugin({
-      decodedBase: config.decodedBase,
-    })
-  }
-
+export const wasmHelperPlugin = (): Plugin => {
   return {
     name: 'vite:wasm-helper',
 
