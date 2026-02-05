@@ -134,4 +134,38 @@ describe('module runner initialization', async () => {
       ]
     `)
   })
+
+  it('esm external stack traces should have correct column numbers', async ({
+    runner,
+  }) => {
+    const error = await getError(() =>
+      runner.import('/fixtures/esm-external-column-test.js'),
+    )
+    const stack = error.stack!.split('\n')
+    const innerFrame = stack.find((line) => line.includes('inner'))
+    const outerFrame = stack.find((line) => line.includes('outer'))
+
+    // The ESM external module has: "var _padding...; export function outer(fn) { return inner(fn); } function inner(fn) { return fn(); }"
+    // The exact columns depend on how Node.js loads the module.
+    // The important thing is that they should NOT have 62 subtracted (which was the bug).
+    // With the fix, columns should be in a reasonable range (> 60 for both).
+    // Without the fix, columns would be incorrectly reduced by 62.
+    expect(innerFrame).toBeDefined()
+    expect(outerFrame).toBeDefined()
+
+    // Extract column numbers from stack frames like ":1:114)"
+    const innerMatch = innerFrame!.match(/:(\d+):(\d+)\)/)
+    const outerMatch = outerFrame!.match(/:(\d+):(\d+)\)/)
+
+    expect(innerMatch).toBeDefined()
+    expect(outerMatch).toBeDefined()
+
+    const innerCol = parseInt(innerMatch![2])
+    const outerCol = parseInt(outerMatch![2])
+
+    // Both columns should be > 60 (with the old bug, they would be around 11 and 52)
+    // This verifies the 62-character offset is NOT being incorrectly applied
+    expect(innerCol).toBeGreaterThan(60)
+    expect(outerCol).toBeGreaterThan(60)
+  })
 })

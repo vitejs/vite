@@ -44,7 +44,11 @@ export async function createModuleRunnerTester(
         ws: false,
       },
       ssr: {
-        external: ['@vitejs/cjs-external', '@vitejs/esm-external'],
+        external: [
+          '@vitejs/cjs-external',
+          '@vitejs/esm-external',
+          '@vitejs/esm-external-column-test',
+        ],
       },
       optimizeDeps: {
         disabled: true,
