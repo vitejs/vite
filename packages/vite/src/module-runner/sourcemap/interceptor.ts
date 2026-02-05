@@ -359,7 +359,7 @@ function wrapCallSite(frame: CallSite, state: State) {
   const source = frame.getFileName() || frame.getScriptNameOrSourceURL()
   if (source) {
     const line = frame.getLineNumber() as number
-    let column = (frame.getColumnNumber() as number) - 1
+    const column = (frame.getColumnNumber() as number) - 1
 
     const position = mapSourcePosition({
       name: null,
