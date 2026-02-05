@@ -17,12 +17,21 @@
     "vite"
   ],
   "exports": {
-    ".": "./dist/node/index.js",
+    ".": {
+      "types": "./dist/node/index.d.ts",
+      "default": "./dist/node/index.js"
+    },
     "./client": {
       "types": "./client.d.ts"
     },
-    "./module-runner": "./dist/node/module-runner.js",
-    "./internal": "./dist/node/internal.js",
+    "./module-runner": {
+      "types": "./dist/node/module-runner.d.ts",
+      "default": "./dist/node/module-runner.js"
+    },
+    "./internal": {
+      "types": "./dist/node/internal.d.ts",
+      "default": "./dist/node/internal.js"
+    },
     "./dist/client/*": "./dist/client/*",
     "./types/*": {
       "types": "./types/*"
