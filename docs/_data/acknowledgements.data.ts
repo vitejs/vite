@@ -138,19 +138,24 @@ function normalizeRepository(
   } else {
     return undefined
   }
-
+  url = url
+    .replace(/^git\+/, '')
+    .replace(/\.git$/, '')
+    .replace(/(^|\/)[^/]+?@/, '$1') // remove "user@" from "ssh://user@host.com:..."
+    .replace(/(\.[^.]+?):/, '$1/') // change ".com:" to ".com/" from "ssh://user@host.com:..."
+    .replace(/^git:\/\//, 'https://')
+    .replace(/^ssh:\/\//, 'https://')
   if (url.startsWith('github:')) {
     return `https://github.com/${url.slice(7)}`
-  }
-  if (/^[^/]+\/[^/]+$/.test(url) && !url.includes(':')) {
+  } else if (url.startsWith('gitlab:')) {
+    return `https://gitlab.com/${url.slice(7)}`
+  } else if (url.startsWith('bitbucket:')) {
+    return `https://bitbucket.org/${url.slice(10)}`
+  } else if (!url.includes(':') && url.split('/').length === 2) {
     return `https://github.com/${url}`
+  } else {
+    return url.includes('://') ? url : `https://${url}`
   }
-  return url
-    .replace(/^git\+/, '')
-    .replace(/^git:\/\//, 'https://')
-    .replace(/^ssh:\/\/git@github\.com/, 'https://github.com')
-    .replace(/^git@github\.com:/, 'https://github.com/')
-    .replace(/\.git$/, '')
 }
 
 function normalizeFunding(funding: PackageJson['funding']): string | undefined {
