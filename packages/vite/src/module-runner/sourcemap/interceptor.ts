@@ -359,16 +359,7 @@ function wrapCallSite(frame: CallSite, state: State) {
   const source = frame.getFileName() || frame.getScriptNameOrSourceURL()
   if (source) {
     const line = frame.getLineNumber() as number
-    let column = (frame.getColumnNumber() as number) - 1
-
-    // Fix position in Node where some (internal) code is prepended.
-    // See https://github.com/evanw/node-source-map-support/issues/36
-    // Header removed in node at ^10.16 || >=11.11.0
-    // v11 is not an LTS candidate, we can just test the one version with it.
-    // Test node versions for: 10.16-19, 10.20+, 12-19, 20-99, 100+, or 11.11
-    const headerLength = 62
-    if (line === 1 && column > headerLength && !frame.isEval())
-      column -= headerLength
+    const column = (frame.getColumnNumber() as number) - 1
 
     const position = mapSourcePosition({
       name: null,
