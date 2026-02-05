@@ -47,5 +47,4 @@ This is a TypeScript project that implements a frontend build tooling called Vit
 
 ### Other Considerations
 
-- Follow TypeScript best practices
 - No concerning performance impacts
