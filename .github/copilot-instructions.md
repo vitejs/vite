@@ -24,7 +24,7 @@ This is a TypeScript project that implements a frontend build tooling called Vit
 ### PR Description
 
 - What does this PR solve? - Clear problem/feature description
-- Why this is the approach chosen? - Implementation rationale
+- Why was this approach chosen? - Implementation rationale
 - If this is a new feature, include convincing reason.
 - If this adds a new config option, verify problem can't be solved with smarter defaults, existing options, or a plugin
 - If this is a bug fix, what the cause was - Link to relevant code if possible
