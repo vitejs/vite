@@ -531,6 +531,9 @@ importers:
       '@vitejs/esm-external':
         specifier: link:./fixtures/esm-external
         version: link:fixtures/esm-external
+      '@vitejs/esm-external-column-test':
+        specifier: link:./fixtures/esm-external-column-test
+        version: link:fixtures/esm-external-column-test
       birpc:
         specifier: ^0.2.19
         version: 0.2.19
@@ -543,6 +546,8 @@ importers:
   packages/vite/src/node/ssr/runtime/__tests__/fixtures/cyclic2: {}
 
   packages/vite/src/node/ssr/runtime/__tests__/fixtures/esm-external: {}
+
+  packages/vite/src/node/ssr/runtime/__tests__/fixtures/esm-external-column-test: {}
 
   packages/vite/src/node/ssr/runtime/__tests__/fixtures/live-binding: {}
 

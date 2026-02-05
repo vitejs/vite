@@ -8,6 +8,7 @@
   "dependencies": {
     "@vitejs/cjs-external": "link:./fixtures/cjs-external",
     "@vitejs/esm-external": "link:./fixtures/esm-external",
+    "@vitejs/esm-external-column-test": "link:./fixtures/esm-external-column-test",
     "tinyspy": "2.2.0",
     "birpc": "^0.2.19"
   }

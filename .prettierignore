@@ -1,5 +1,6 @@
 packages/*/CHANGELOG.md
 packages/vite/src/node/ssr/__tests__/fixtures/errors/syntax-error.*
+packages/vite/src/node/ssr/runtime/__tests__/fixtures/esm-external-column-test/index.mjs
 playground-temp/
 dist/
 LICENSE.md
