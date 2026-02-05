@@ -131,7 +131,7 @@
     "postcss-modules": "^6.0.1",
     "premove": "^4.0.0",
     "resolve.exports": "^2.0.3",
-    "rolldown-plugin-dts": "^0.21.9",
+    "rolldown-plugin-dts": "^0.22.1",
     "rollup": "^4.43.0",
     "rollup-plugin-license": "^3.6.0",
     "sass": "^1.97.3",
