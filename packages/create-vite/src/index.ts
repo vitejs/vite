@@ -716,7 +716,7 @@ async function init() {
 }
 
 function formatTargetDir(targetDir: string) {
-  return targetDir.trim().replace(/[<>:"/\\|?*]/g, '').replace(/\/+$/g, '')
+  return targetDir.trim().replace(/[<>:"\\|?*]/g, '').replace(/\/+$/g, '')
 }
 
 function copy(src: string, dest: string) {
