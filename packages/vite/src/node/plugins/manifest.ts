@@ -22,14 +22,10 @@ export interface ManifestChunk {
   file: string
   /**
    * The list of CSS files imported by this chunk
-   *
-   * This field is only present in JS chunks.
    */
   css?: string[]
   /**
    * The list of asset files imported by this chunk, excluding CSS files
-   *
-   * This field is only present in JS chunks.
    */
   assets?: string[]
   /**
@@ -114,20 +110,39 @@ export function manifestPlugin(config: ResolvedConfig): Plugin {
             const asset = bundle[outPath]
             if (asset.type === 'asset') {
               let manifest: Manifest | undefined
-              for (const chunk of Object.values(bundle)) {
-                if (chunk.type !== 'chunk') continue
-                const importedCss = chunk.viteMetadata?.importedCss
-                const importedAssets = chunk.viteMetadata?.importedAssets
+              for (const output of Object.values(bundle)) {
+                const importedCss = output.viteMetadata?.importedCss
+                const importedAssets = output.viteMetadata?.importedAssets
                 if (!importedCss?.size && !importedAssets?.size) continue
                 manifest ??= JSON.parse(asset.source.toString()) as Manifest
-                const name = getChunkName(chunk)
-                const item = manifest[name]
-                if (!item) continue
-                if (importedCss?.size) {
-                  item.css = [...importedCss]
-                }
-                if (importedAssets?.size) {
-                  item.assets = [...importedAssets]
+                if (output.type === 'chunk') {
+                  const item = manifest[getChunkName(output)]
+                  if (!item) continue
+                  if (importedCss?.size) {
+                    item.css = [...importedCss]
+                  }
+                  if (importedAssets?.size) {
+                    item.assets = [...importedAssets]
+                  }
+                } else if (output.type === 'asset' && output.names.length > 0) {
+                  // Add every unique asset to the manifest, keyed by its original name
+                  const keys =
+                    output.originalFileNames.length > 0
+                      ? output.originalFileNames
+                      : [`_${path.basename(output.fileName)}`]
+
+                  for (const key of keys) {
+                    const item = manifest[key]
+                    if (!item) continue
+                    if (!(item.file && endsWithJSRE.test(item.file))) {
+                      if (importedCss?.size) {
+                        item.css = [...importedCss]
+                      }
+                      if (importedAssets?.size) {
+                        item.assets = [...importedAssets]
+                      }
+                    }
+                  }
                 }
               }
               const output =
@@ -248,6 +263,13 @@ export function manifestPlugin(config: ResolvedConfig): Plugin {
           manifestChunk.name = name
           // @ts-expect-error keep names field for backward compatibility
           manifestChunk.names = asset.names
+
+          if (asset.viteMetadata?.importedCss.size) {
+            manifestChunk.css = [...asset.viteMetadata.importedCss]
+          }
+          if (asset.viteMetadata?.importedAssets.size) {
+            manifestChunk.assets = [...asset.viteMetadata.importedAssets]
+          }
         }
         return manifestChunk
       }

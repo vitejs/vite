@@ -473,7 +473,10 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
       ? rollupOptionsOutput[0]
       : rollupOptionsOutput
   )?.assetFileNames
-  const getCssAssetDirname = (cssAssetName: string) => {
+  const getCssAssetDirname = (
+    cssAssetName: string,
+    originalFileName?: string,
+  ) => {
     const cssAssetNameDir = path.dirname(cssAssetName)
     if (!assetFileNames) {
       return path.join(config.build.assetsDir, cssAssetNameDir)
@@ -484,7 +487,7 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
         assetFileNames({
           type: 'asset',
           names: [cssAssetName],
-          originalFileNames: [],
+          originalFileNames: originalFileName ? [originalFileName] : [],
           source: '/* vite internal call, ignore */',
         }),
       )
@@ -693,13 +696,14 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
             const resolveAssetUrlsInCss = (
               chunkCSS: string,
               cssAssetName: string,
+              originalFileName?: string,
             ) => {
               const encodedPublicUrls = encodePublicUrlsInCSS(config)
 
               const relative = config.base === './' || config.base === ''
               const cssAssetDirname =
                 encodedPublicUrls || relative
-                  ? slash(getCssAssetDirname(cssAssetName))
+                  ? slash(getCssAssetDirname(cssAssetName, originalFileName))
                   : undefined
 
               const toRelative = (filename: string) => {
@@ -786,7 +790,11 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
 
                 let cssContent = styles.get(id)!
 
-                cssContent = resolveAssetUrlsInCss(cssContent, cssAssetName)
+                cssContent = resolveAssetUrlsInCss(
+                  cssContent,
+                  cssAssetName,
+                  originalFileName,
+                )
 
                 urlEmitTasks.push({
                   cssAssetName,
@@ -880,7 +888,11 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
                     ) ?? false,
                   )
 
-                  chunkCSS = resolveAssetUrlsInCss(chunkCSS, cssAssetName)
+                  chunkCSS = resolveAssetUrlsInCss(
+                    chunkCSS,
+                    cssAssetName,
+                    originalFileName,
+                  )
 
                   // wait for previous tasks as well
                   chunkCSS = await codeSplitEmitQueue.run(async () => {
@@ -957,7 +969,11 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
                 }
               } else {
                 // resolve public URL from CSS paths, we need to use absolute paths
-                chunkCSS = resolveAssetUrlsInCss(chunkCSS, getCssBundleName())
+                chunkCSS = resolveAssetUrlsInCss(
+                  chunkCSS,
+                  getCssBundleName(),
+                  defaultCssBundleName,
+                )
                 // finalizeCss is called for the aggregated chunk in generateBundle
 
                 chunkCSSMap.set(chunk.fileName, chunkCSS)
@@ -1046,9 +1062,9 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
             name: getCssBundleName(),
             type: 'asset',
             source: extractedCss,
-            // this file is an implicit entry point, use `style.css` as the original file name
+            // this file is an implicit entry point, use defaultCssBundleName as the original file name
             // this name is also used as a key in the manifest
-            originalFileName: 'style.css',
+            originalFileName: defaultCssBundleName,
           })
         }
       }
@@ -1108,7 +1124,25 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
 
         const removedPureCssFiles = removedPureCssFilesCache.get(config)!
         pureCssChunkNames.forEach((fileName) => {
-          removedPureCssFiles.set(fileName, bundle[fileName] as RenderedChunk)
+          const emptyJsPlaceholder = bundle[fileName] as RenderedChunk
+          if (emptyJsPlaceholder.isEntry) {
+            const { importedAssets, importedCss } =
+              emptyJsPlaceholder.viteMetadata!
+            const cssReferenceId = cssEntriesMap
+              .get(this.environment)!
+              .get(emptyJsPlaceholder.name)!
+            const realCssEntryName = this.getFileName(cssReferenceId)
+            const realCssEntry = bundle[realCssEntryName]!
+            importedCss.delete(realCssEntryName)
+            if (importedAssets.size) {
+              realCssEntry.viteMetadata!.importedAssets = importedAssets
+            }
+            if (importedCss.size) {
+              realCssEntry.viteMetadata!.importedCss = importedCss
+            }
+          }
+
+          removedPureCssFiles.set(fileName, emptyJsPlaceholder)
           delete bundle[fileName]
           delete bundle[`${fileName}.map`]
         })
@@ -2962,10 +2996,14 @@ const makeStylWorker = (maxWorkers: number | undefined) => {
     {
       shouldUseFake(_stylusPath, _content, _root, options) {
         // define can include functions and those are not serializable
-        // in that case, fallback to running in main thread
+        // Evaluator is always a function
+        // in those cases, fallback to running in main thread
         return !!(
-          options.define &&
-          Object.values(options.define).some((d) => typeof d === 'function')
+          (options.define &&
+            Object.values(options.define).some(
+              (d) => typeof d === 'function',
+            )) ||
+          options.Evaluator
         )
       },
       max: maxWorkers,
@@ -3387,25 +3425,39 @@ const map: Record<
 
 const esMap: Record<number, string[]> = {
   // https://caniuse.com/?search=es2015
-  2015: ['chrome49', 'edge13', 'safari10', 'firefox44', 'opera36'],
+  2015: ['chrome49', 'edge13', 'safari10', 'ios10', 'firefox44', 'opera36'],
   // https://caniuse.com/?search=es2016
-  2016: ['chrome50', 'edge13', 'safari10', 'firefox43', 'opera37'],
+  2016: ['chrome50', 'edge13', 'safari10', 'ios10', 'firefox43', 'opera37'],
   // https://caniuse.com/?search=es2017
-  2017: ['chrome58', 'edge15', 'safari11', 'firefox52', 'opera45'],
+  2017: ['chrome58', 'edge15', 'safari11', 'ios11', 'firefox52', 'opera45'],
   // https://caniuse.com/?search=es2018
-  2018: ['chrome63', 'edge79', 'safari12', 'firefox58', 'opera50'],
+  2018: ['chrome63', 'edge79', 'safari12', 'ios12', 'firefox58', 'opera50'],
   // https://caniuse.com/?search=es2019
-  2019: ['chrome73', 'edge79', 'safari12.1', 'firefox64', 'opera60'],
+  2019: ['chrome73', 'edge79', 'safari12.1', 'ios12.1', 'firefox64', 'opera60'],
   // https://caniuse.com/?search=es2020
-  2020: ['chrome80', 'edge80', 'safari14.1', 'firefox80', 'opera67'],
+  2020: ['chrome80', 'edge80', 'safari14.1', 'ios14.5', 'firefox80', 'opera67'],
   // https://caniuse.com/?search=es2021
-  2021: ['chrome85', 'edge85', 'safari14.1', 'firefox80', 'opera71'],
+  2021: ['chrome85', 'edge85', 'safari14.1', 'ios14.5', 'firefox80', 'opera71'],
   // https://caniuse.com/?search=es2022
-  2022: ['chrome94', 'edge94', 'safari16.4', 'firefox93', 'opera80'],
+  2022: ['chrome94', 'edge94', 'safari16.4', 'ios16.4', 'firefox93', 'opera80'],
   // https://caniuse.com/?search=es2023
-  2023: ['chrome110', 'edge110', 'safari16.4', 'firefox146', 'opera96'],
-  // https://caniuse.com/?feats=mdn-javascript_builtins_object_groupby,wf-array-group,wf-promise-withresolvers,mdn-javascript_builtins_arraybuffer_transfer,mdn-javascript_builtins_string_iswellformed,mdn-javascript_builtins_string_towellformed,wf-atomics-wait-async,mdn-javascript_builtins_arraybuffer_resize,mdn-javascript_builtins_sharedarraybuffer_grow
-  2024: ['chrome119', 'edge119', 'safari17.4', 'firefox145', 'opera105'],
+  2023: [
+    'chrome110',
+    'edge110',
+    'safari16.4',
+    'ios16.4',
+    'firefox146',
+    'opera96',
+  ],
+  // https://caniuse.com/sr-es15
+  2024: [
+    'chrome119',
+    'edge119',
+    'safari17.4',
+    'ios17.4',
+    'firefox145',
+    'opera105',
+  ],
 }
 
 const esRE = /es(\d{4})/

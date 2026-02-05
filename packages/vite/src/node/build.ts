@@ -8,6 +8,7 @@ import type {
   LogOrStringHandler,
   MinimalPluginContext,
   ModuleFormat,
+  OutputAsset,
   OutputBundle,
   OutputChunk,
   OutputOptions,
@@ -26,7 +27,7 @@ import { viteLoadFallbackPlugin as nativeLoadFallbackPlugin } from 'rolldown/exp
 import type { EsbuildTarget } from '#types/internal/esbuildOptions'
 import type { RollupCommonJSOptions } from '#dep-types/commonjs'
 import type { RollupDynamicImportVarsOptions } from '#dep-types/dynamicImportVars'
-import type { ChunkMetadata } from '#types/metadata'
+import type { AssetMetadata, ChunkMetadata } from '#types/metadata'
 import {
   DEFAULT_ASSETS_INLINE_LIMIT,
   ESBUILD_BASELINE_WIDELY_AVAILABLE_TARGET,
@@ -394,7 +395,6 @@ const _buildEnvironmentOptionsDefaults = Object.freeze({
     extensions: ['.js', '.cjs'],
   },
   dynamicImportVarsOptions: {
-    warnOnError: true,
     exclude: [/node_modules/],
   },
   write: true,
@@ -731,11 +731,14 @@ export function resolveRolldownOptions(
       assetFileNames: libOptions
         ? `[name].[ext]`
         : path.posix.join(options.assetsDir, `[name]-[hash].[ext]`),
-      inlineDynamicImports:
-        output.format === 'umd' ||
+      codeSplitting:
+        output.codeSplitting ??
+        (output.format === 'umd' ||
         output.format === 'iife' ||
         (isSsrTargetWebworkerEnvironment &&
-          (typeof input === 'string' || Object.keys(input).length === 1)),
+          (typeof input === 'string' || Object.keys(input).length === 1))
+          ? false
+          : undefined),
       legalComments: 'none',
       minify:
         options.minify === 'oxc'
@@ -861,9 +864,7 @@ async function buildEnvironment(
     }
     for (const output of res) {
       for (const chunk of output.output) {
-        if (chunk.type === 'chunk') {
-          injectChunkMetadata(chunkMetadataMap, chunk)
-        }
+        injectChunkMetadata(chunkMetadataMap, chunk)
       }
     }
     logger.info(
@@ -1185,26 +1186,35 @@ function isExternal(id: string, test: string | RegExp) {
 }
 
 export class ChunkMetadataMap {
-  private _inner = new Map<string, ChunkMetadata>()
+  private _inner = new Map<string, ChunkMetadata | AssetMetadata>()
   private _resetChunks = new Set<string>()
 
-  private _getKey(chunk: RenderedChunk | OutputChunk): string {
+  private _getKey(chunk: RenderedChunk | OutputChunk | OutputAsset): string {
     return 'preliminaryFileName' in chunk
       ? chunk.preliminaryFileName
       : chunk.fileName
   }
 
-  private _getDefaultValue(chunk: RenderedChunk | OutputChunk): ChunkMetadata {
-    return {
-      importedAssets: new Set(),
-      importedCss: new Set(),
-      // NOTE: adding this as a workaround for now ideally we'd want to remove this workaround
-      // use shared `chunk.modules` object to allow mutation on js side plugins
-      __modules: chunk.modules,
-    }
+  private _getDefaultValue(
+    chunk: RenderedChunk | OutputChunk | OutputAsset,
+  ): ChunkMetadata | AssetMetadata {
+    return chunk.type === 'chunk'
+      ? {
+          importedAssets: new Set(),
+          importedCss: new Set(),
+          // NOTE: adding this as a workaround for now ideally we'd want to remove this workaround
+          // use shared `chunk.modules` object to allow mutation on js side plugins
+          __modules: chunk.modules,
+        }
+      : {
+          importedAssets: new Set(),
+          importedCss: new Set(),
+        }
   }
 
-  get(chunk: RenderedChunk | OutputChunk): ChunkMetadata {
+  get(
+    chunk: RenderedChunk | OutputChunk | OutputAsset,
+  ): ChunkMetadata | AssetMetadata {
     const key = this._getKey(chunk)
     if (!this._inner.has(key)) {
       this._inner.set(key, this._getDefaultValue(chunk))
@@ -1213,7 +1223,7 @@ export class ChunkMetadataMap {
   }
 
   // reset chunk metadata on the first RenderChunk call for watch mode
-  reset(chunk: RenderedChunk | OutputChunk): void {
+  reset(chunk: RenderedChunk | OutputChunk | OutputAsset): void {
     const key = this._getKey(chunk)
     if (this._resetChunks.has(key)) return
 
@@ -1274,6 +1284,52 @@ export function injectEnvironmentToHooks(
   return clone
 }
 
+type AbstractHook<Handler extends Function> = {
+  handler: Handler
+  filter?: unknown
+  order?: unknown
+}
+const wrappedHookMap = new WeakMap<
+  AbstractHook<Function>,
+  Array<AbstractHook<Function>>
+>()
+function wrapHookObject<
+  Handler extends Function,
+  Hook extends AbstractHook<Handler>,
+>(hook: Hook, handler: Handler): Hook {
+  const newHook = {
+    ...hook,
+    handler,
+  }
+
+  if (!wrappedHookMap.has(hook)) {
+    wrappedHookMap.set(hook, [])
+    Object.defineProperty(hook, 'filter', {
+      get() {
+        return wrappedHookMap.get(hook)![0].filter
+      },
+      set(v) {
+        for (const h of wrappedHookMap.get(hook)!) {
+          h.filter = v
+        }
+      },
+    })
+    Object.defineProperty(hook, 'order', {
+      get() {
+        return wrappedHookMap.get(hook)![0].order
+      },
+      set(v) {
+        for (const h of wrappedHookMap.get(hook)!) {
+          h.order = v
+        }
+      },
+    })
+  }
+  wrappedHookMap.get(hook)!.push(newHook)
+
+  return newHook
+}
+
 function wrapEnvironmentResolveId(
   environment: Environment,
   hook: Plugin['resolveId'] | undefined,
@@ -1292,10 +1348,7 @@ function wrapEnvironmentResolveId(
   }
 
   if ('handler' in hook) {
-    return {
-      ...hook,
-      handler,
-    } as Plugin['resolveId']
+    return wrapHookObject(hook, handler)
   } else {
     return handler
   }
@@ -1318,10 +1371,7 @@ function wrapEnvironmentLoad(
   }
 
   if ('handler' in hook) {
-    return {
-      ...hook,
-      handler,
-    } as Plugin['load']
+    return wrapHookObject(hook, handler)
   } else {
     return handler
   }
@@ -1345,10 +1395,7 @@ function wrapEnvironmentTransform(
   }
 
   if ('handler' in hook) {
-    return {
-      ...hook,
-      handler,
-    } as Plugin['transform']
+    return wrapHookObject(hook, handler)
   } else {
     return handler
   }
@@ -1379,19 +1426,14 @@ function wrapEnvironmentHook<HookName extends keyof Plugin>(
     if (hookName === 'generateBundle' || hookName === 'writeBundle') {
       const bundle = args[1] as OutputBundle
       for (const chunk of Object.values(bundle)) {
-        if (chunk.type === 'chunk') {
-          injectChunkMetadata(chunkMetadataMap, chunk)
-        }
+        injectChunkMetadata(chunkMetadataMap, chunk)
       }
     }
     return fn.call(injectEnvironmentInContext(this, environment), ...args)
   }
 
   if ('handler' in hook) {
-    return {
-      ...hook,
-      handler,
-    } as Plugin[HookName]
+    return wrapHookObject(hook, handler)
   } else {
     return handler
   }
@@ -1399,7 +1441,7 @@ function wrapEnvironmentHook<HookName extends keyof Plugin>(
 
 function injectChunkMetadata(
   chunkMetadataMap: ChunkMetadataMap,
-  chunk: RenderedChunk | OutputChunk,
+  chunk: RenderedChunk | OutputChunk | OutputAsset,
   resetChunkMetadata = false,
 ) {
   if (resetChunkMetadata) {
@@ -1411,12 +1453,14 @@ function injectChunkMetadata(
     value: chunkMetadataMap.get(chunk),
     enumerable: true,
   })
-  Object.defineProperty(chunk, 'modules', {
-    get() {
-      return chunk.viteMetadata!.__modules
-    },
-    enumerable: true,
-  })
+  if (chunk.type === 'chunk') {
+    Object.defineProperty(chunk, 'modules', {
+      get() {
+        return chunk.viteMetadata!.__modules
+      },
+      enumerable: true,
+    })
+  }
 }
 
 function injectEnvironmentInContext<Context extends MinimalPluginContext>(
@@ -1679,6 +1723,7 @@ export interface ViteBuilder {
   build(
     environment: BuildEnvironment,
   ): Promise<RolldownOutput | RolldownOutput[] | RolldownWatcher>
+  runDevTools(): Promise<void>
 }
 
 export interface BuilderOptions {
@@ -1789,6 +1834,20 @@ export async function createBuilder(
       const output = await buildEnvironment(environment)
       environment.isBuilt = true
       return output
+    },
+    async runDevTools() {
+      const devtoolsConfig = config.devtools
+      if (devtoolsConfig.enabled) {
+        try {
+          const { start } = await import(`@vitejs/devtools/cli-commands`)
+          await start(devtoolsConfig.config)
+        } catch (e) {
+          config.logger.error(
+            colors.red(`Failed to run Vite DevTools: ${e.message || e.stack}`),
+            { error: e },
+          )
+        }
+      }
     },
   }
 

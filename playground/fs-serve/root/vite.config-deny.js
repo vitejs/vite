@@ -6,19 +6,19 @@ export default defineConfig({
   build: {
     rollupOptions: {
       input: {
-        main: path.resolve(__dirname, 'src/index.html'),
+        main: path.resolve(import.meta.dirname, 'src/index.html'),
       },
     },
   },
   server: {
     fs: {
       strict: true,
-      allow: [path.resolve(__dirname, 'src')],
+      allow: [path.resolve(import.meta.dirname, 'src')],
       deny: ['**/deny/**'],
     },
   },
   define: {
-    ROOT: JSON.stringify(path.dirname(__dirname).replace(/\\/g, '/')),
+    ROOT: JSON.stringify(path.dirname(import.meta.dirname).replace(/\\/g, '/')),
   },
   plugins: [svgVirtualModulePlugin()],
 })

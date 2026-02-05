@@ -1,6 +1,8 @@
 import path from 'node:path'
 import type { ImportKind, Plugin, RolldownPlugin } from 'rolldown'
-import { prefixRegex } from '@rolldown/pluginutils'
+import { prefixRegex } from 'rolldown/filter'
+import MagicString from 'magic-string'
+import { stripLiteral } from 'strip-literal'
 import { JS_TYPES_RE, KNOWN_ASSET_TYPES } from '../constants'
 import type { PackageCache } from '../packages'
 import {
@@ -8,6 +10,7 @@ import {
   flattenId,
   isBuiltin,
   isCSSRequest,
+  isDataUrl,
   isExternalUrl,
   isNodeBuiltin,
   moduleListContains,
@@ -18,6 +21,7 @@ import { isModuleCSSRequest } from '../plugins/css'
 import type { Environment } from '../environment'
 import { createBackCompatIdResolver } from '../idResolver'
 import { isWindows } from '../../shared/utils'
+import { hasViteIgnoreRE } from '../plugins/importAnalysis'
 
 const externalWithConversionNamespace =
   'vite:dep-pre-bundle:external-conversion'
@@ -94,17 +98,10 @@ export function rolldownDepPlugin(
     id: string,
     importer: string | undefined,
     kind: ImportKind,
-    resolveDir?: string,
   ): Promise<string | undefined> => {
-    let _importer: string | undefined
-    // explicit resolveDir - this is passed only during yarn pnp resolve for
-    // entries
-    if (resolveDir) {
-      _importer = normalizePath(path.join(resolveDir, '*'))
-    } else if (importer) {
-      // map importer ids to file paths for correct resolution
-      _importer = importer in qualified ? qualified[importer] : importer
-    }
+    // map importer ids to file paths for correct resolution
+    const _importer =
+      importer && importer in qualified ? qualified[importer] : importer
     const resolver = kind.startsWith('require') ? _resolveRequire : _resolve
     return resolver(environment, id, _importer)
   }
@@ -146,6 +143,8 @@ export function rolldownDepPlugin(
       }
     }
   }
+
+  const bundleOutputDir = path.join(environment.config.cacheDir, 'deps')
 
   return [
     {
@@ -306,6 +305,59 @@ export function rolldownDepPlugin(
           }
         },
       },
+      transform: {
+        filter: {
+          code: /new\s+URL.+import\.meta\.url/s,
+        },
+        async handler(code, id) {
+          let s: MagicString | undefined
+          const assetImportMetaUrlRE =
+            /\bnew\s+URL\s*\(\s*('[^']+'|"[^"]+"|`[^`]+`)\s*,\s*import\.meta\.url\s*(?:,\s*)?\)/dg
+          const cleanString = stripLiteral(code)
+
+          let match: RegExpExecArray | null
+          while ((match = assetImportMetaUrlRE.exec(cleanString))) {
+            const [[startIndex, endIndex], [urlStart, urlEnd]] = match.indices!
+            if (hasViteIgnoreRE.test(code.slice(startIndex, urlStart))) continue
+
+            const rawUrl = code.slice(urlStart, urlEnd)
+
+            if (rawUrl[0] === '`' && rawUrl.includes('${')) {
+              // We skip dynamic template strings in the optimizer for now as they
+              // require complex glob transformation that is handled by the main asset plugin.
+              continue
+            }
+
+            const url = rawUrl.slice(1, -1)
+            if (isDataUrl(url) || isExternalUrl(url) || url.startsWith('/')) {
+              continue
+            }
+
+            if (!s) s = new MagicString(code)
+
+            // we resolve the relative path from the original library file (id) and
+            // then rewrite it relative to the bundle (deps) directory.
+            const absolutePath = path.resolve(path.dirname(id), url)
+            const relativePath = path.relative(bundleOutputDir, absolutePath)
+            const normalizedRelativePath = normalizePath(relativePath)
+            s.update(
+              startIndex,
+              endIndex,
+              // NOTE: add `'' +` to opt-out rolldown's transform: https://github.com/rolldown/rolldown/issues/2745
+              `new URL('' + ${JSON.stringify(
+                normalizedRelativePath,
+              )}, import.meta.url)`,
+            )
+          }
+
+          if (s) {
+            return {
+              code: s.toString(),
+              map: s.generateMap({ hires: 'boundary' }),
+            }
+          }
+        },
+      },
     },
   ]
 }
@@ -313,11 +365,25 @@ export function rolldownDepPlugin(
 const matchesEntireLine = (text: string) => `^${escapeRegex(text)}$`
 
 // rolldown (and esbuild) doesn't transpile `require('foo')` into `import` statements if 'foo' is externalized
-// https://github.com/evanw/esbuild/issues/566#issuecomment-735551834
+// https://rolldown.rs/in-depth/bundling-cjs#require-external-modules
 export function rolldownCjsExternalPlugin(
   externals: string[],
   platform: 'node' | 'browser' | 'neutral',
-): Plugin {
+): Plugin | undefined {
+  // Skip this plugin for `platform: 'node'` as `require` is available in Node
+  // and that is more accurate than converting to `import`
+  if (platform === 'node') {
+    return undefined
+  }
+  // Skip this plugin for `platform: 'neutral'` as we are not sure whether `require` is available
+  if (platform === 'neutral') {
+    return undefined
+  }
+
+  // Apply this plugin for `platform: 'browser'` as `require` is not available in browser and
+  // converting to `import` would be necessary to make the code work
+  platform satisfies 'browser'
+
   const filter = new RegExp(externals.map(matchesEntireLine).join('|'))
 
   return {
@@ -331,34 +397,26 @@ export function rolldownCjsExternalPlugin(
             external: 'absolute',
           }
         }
-
-        if (filter.test(id)) {
-          const kind = options.kind
-          // preserve `require` for node because it's more accurate than converting it to import
-          if (kind === 'require-call' && platform !== 'node') {
-            return {
-              id: cjsExternalFacadeNamespace + id,
-            }
-          }
-
+        if (options.kind === 'require-call') {
           return {
-            id,
-            external: 'absolute',
+            id: cjsExternalFacadeNamespace + id,
           }
+        }
+        return {
+          id,
+          external: 'absolute',
         }
       },
     },
     load: {
       filter: { id: prefixRegex(cjsExternalFacadeNamespace) },
       handler(id) {
-        if (id.startsWith(cjsExternalFacadeNamespace)) {
-          const idWithoutNamespace = id.slice(cjsExternalFacadeNamespace.length)
-          return {
-            code: `\
+        const idWithoutNamespace = id.slice(cjsExternalFacadeNamespace.length)
+        return {
+          code: `\
 import * as m from ${JSON.stringify(nonFacadePrefix + idWithoutNamespace)};
 module.exports = ${isNodeBuiltin(idWithoutNamespace) ? 'm.default' : '{ ...m }'};
 `,
-          }
         }
       },
     },

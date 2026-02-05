@@ -25,6 +25,12 @@ test('default import from webpacked cjs (clipboard)', async () => {
   await expect.poll(() => page.textContent('.cjs-clipboard')).toBe('ok')
 })
 
+test('default import from cjs with es-module-flag (dep-cjs-with-es-module-flag)', async () => {
+  await expect
+    .poll(() => page.textContent('.cjs-with-es-module-flag'))
+    .toBe('ok')
+})
+
 test('default import from cjs (cjs-dep-cjs-compiled-from-esm)', async () => {
   await expect
     .poll(() => page.textContent('.cjs-dep-cjs-compiled-from-esm'))
@@ -64,6 +70,12 @@ test('dynamic default import from cjs (cjs-dynamic-dep-cjs-compiled-from-esm)', 
 test('dynamic default import from cjs (cjs-dynamic-dep-cjs-compiled-from-cjs)', async () => {
   await expect
     .poll(() => page.textContent('.cjs-dynamic-dep-cjs-compiled-from-cjs'))
+    .toBe('ok')
+})
+
+test('dynamic default import from cjs with es-module-flag (cjs-dynamic-dep-cjs-with-es-module-flag)', async () => {
+  await expect
+    .poll(() => page.textContent('.cjs-dynamic-dep-cjs-with-es-module-flag'))
     .toBe('ok')
 })
 
@@ -370,3 +382,21 @@ test.runIf(isServe)(
     expect(scanErrors).toHaveLength(0)
   },
 )
+
+test('should fix relative worker paths in optimized dependencies', async () => {
+  await expect
+    .poll(() => page.textContent('.worker-lib'))
+    .toBe('worker-success')
+  await expect
+    .poll(() => page.textContent('.worker-nested'))
+    .toBe('worker-success')
+
+  const assetMatcher = isBuild
+    ? /assets\/logo-[-\w]+\.png/
+    : /\/node_modules\/@vitejs\/test-dep-with-assets\/logo\.png/
+  await expect.poll(() => page.textContent('.asset-url')).toMatch(assetMatcher)
+
+  const url = await page.textContent('.asset-url')
+  const res = await page.request.get(url)
+  expect(res.status()).toBe(200)
+})

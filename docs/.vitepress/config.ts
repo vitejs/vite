@@ -1,6 +1,6 @@
 import path from 'node:path'
 import fs from 'node:fs'
-import type { DefaultTheme, HeadConfig } from 'vitepress'
+import type { HeadConfig } from 'vitepress'
 import { defineConfig } from 'vitepress'
 import { transformerTwoslash } from '@shikijs/vitepress-twoslash'
 import {
@@ -9,6 +9,8 @@ import {
 } from 'vitepress-plugin-group-icons'
 import llmstxt from 'vitepress-plugin-llms'
 import { markdownItImageSize } from 'markdown-it-image-size'
+import { extendConfig } from '@voidzero-dev/vitepress-theme/config'
+import type { FooterLink } from '@voidzero-dev/vitepress-theme'
 import packageJson from '../../packages/vite/package.json' with { type: 'json' }
 import { buildEnd } from './buildEnd.config'
 
@@ -44,8 +46,8 @@ const additionalTitle = ((): string => {
       return ''
   }
 })()
-const versionLinks = ((): DefaultTheme.NavItemWithLink[] => {
-  const links: DefaultTheme.NavItemWithLink[] = []
+const versionLinks = (() => {
+  const links: FooterLink[] = []
 
   if (deployType !== 'main') {
     links.push({
@@ -77,13 +79,13 @@ function inlineScript(file: string): HeadConfig {
     'script',
     {},
     fs.readFileSync(
-      path.resolve(__dirname, `./inlined-scripts/${file}`),
+      path.resolve(import.meta.dirname, `./inlined-scripts/${file}`),
       'utf-8',
     ),
   ]
 }
 
-export default defineConfig({
+const config = defineConfig({
   title: `Vite${additionalTitle}`,
   description: 'Next Generation Frontend Tooling',
   cleanUrls: true,
@@ -91,11 +93,15 @@ export default defineConfig({
     hostname: 'https://vite.dev',
   },
   head: [
-    ['link', { rel: 'icon', type: 'image/svg+xml', href: '/logo.svg' }],
+    [
+      'link',
+      { rel: 'icon', type: 'image/svg+xml', href: '/logo-without-border.svg' },
+    ],
     [
       'link',
       { rel: 'alternate', type: 'application/rss+xml', href: '/blog.rss' },
     ],
+    ['link', { rel: 'preconnect', href: 'https://fonts.googleapis.com' }],
     inlineScript('banner.js'),
     ['link', { rel: 'me', href: 'https://m.webtoo.ls/@vite' }],
     ['meta', { property: 'og:type', content: 'website' }],
@@ -130,7 +136,14 @@ export default defineConfig({
   },
 
   themeConfig: {
+    variant: 'vite',
     logo: '/logo.svg',
+
+    banner: {
+      id: 'vite+',
+      text: 'Announcing Vite+ | The Unified Toolchain for the Web',
+      url: 'https://voidzero.dev/posts/announcing-vite-plus?utm_source=vite&utm_content=top_banner',
+    },
 
     editLink: {
       pattern: 'https://github.com/vitejs/vite/edit/main/docs/:path',
@@ -161,8 +174,38 @@ export default defineConfig({
     },
 
     footer: {
-      message: `Released under the MIT License. (${commitRef})`,
-      copyright: 'Copyright © 2019-present VoidZero Inc. & Vite Contributors',
+      copyright: `© 2019-present VoidZero Inc. and Vite contributors. (${commitRef})`,
+      nav: [
+        {
+          title: 'Vite',
+          items: [
+            { text: 'Guide', link: '/guide/' },
+            { text: 'Config', link: '/config/' },
+            { text: 'Plugins', link: '/plugins/' },
+          ],
+        },
+        {
+          title: 'Resources',
+          items: [
+            { text: 'Team', link: '/team' },
+            { text: 'Blog', link: '/blog' },
+            {
+              text: 'Releases',
+              link: 'https://github.com/vitejs/vite/releases',
+            },
+          ],
+        },
+        {
+          title: 'Versions',
+          items: versionLinks,
+        },
+      ],
+      social: [
+        { icon: 'github', link: 'https://github.com/vitejs/vite' },
+        { icon: 'discord', link: 'https://chat.vite.dev' },
+        { icon: 'bluesky', link: 'https://bsky.app/profile/vite.dev' },
+        { icon: 'x', link: 'https://x.com/vite_js' },
+      ],
     },
 
     nav: [
@@ -175,6 +218,7 @@ export default defineConfig({
           { text: 'Team', link: '/team' },
           { text: 'Blog', link: '/blog' },
           { text: 'Releases', link: '/releases' },
+          { text: 'Acknowledgements', link: '/acknowledgements' },
           {
             text: 'The Documentary',
             link: 'https://www.youtube.com/watch?v=bmWQqAKLgT4',
@@ -535,12 +579,7 @@ In addition, Vite is highly extensible via its [Plugin API](https://vite.dev/gui
       }),
     ],
     optimizeDeps: {
-      include: [
-        '@shikijs/vitepress-twoslash/client',
-        'gsap',
-        'gsap/dist/ScrollTrigger',
-        'gsap/dist/MotionPathPlugin',
-      ],
+      include: ['@shikijs/vitepress-twoslash/client'],
     },
     define: {
       __VITE_VERSION__: JSON.stringify(viteVersion),
@@ -548,3 +587,5 @@ In addition, Vite is highly extensible via its [Plugin API](https://vite.dev/gui
   },
   buildEnd,
 })
+
+export default extendConfig(config)
