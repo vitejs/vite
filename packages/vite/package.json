@@ -16,6 +16,7 @@
     "build-tool",
     "vite"
   ],
+  "types": "./dist/node/index.d.ts",
   "exports": {
     ".": {
       "types": "./dist/node/index.d.ts",
