@@ -1,4 +1,4 @@
-import { exactRegex } from '@rolldown/pluginutils'
+import { exactRegex } from 'rolldown/filter'
 import { viteModulePreloadPolyfillPlugin as nativeModulePreloadPolyfillPlugin } from 'rolldown/experimental'
 import { type ResolvedConfig, perEnvironmentPlugin } from '..'
 import type { Plugin } from '../plugin'

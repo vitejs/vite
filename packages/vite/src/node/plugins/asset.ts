@@ -10,7 +10,7 @@ import type {
 import MagicString from 'magic-string'
 import colors from 'picocolors'
 import picomatch from 'picomatch'
-import { makeIdFiltersToMatchWithQuery } from '@rolldown/pluginutils'
+import { makeIdFiltersToMatchWithQuery } from 'rolldown/filter'
 import {
   createToImportMetaURLBasedRelativeRuntime,
   toOutputFilePathInJS,

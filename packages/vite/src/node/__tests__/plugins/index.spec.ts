@@ -1,5 +1,5 @@
 import { RUNTIME_MODULE_ID } from 'rolldown'
-import { exactRegex } from '@rolldown/pluginutils'
+import { exactRegex } from 'rolldown/filter'
 import { afterAll, describe, expect, test, vi } from 'vitest'
 import { type InlineConfig, type Plugin, build, createServer } from '../..'
 
