@@ -1184,7 +1184,7 @@ export function postImportMapHook(
       }
     }
 
-    if (config.build.chunkImportMap) {
+    if (config.command === 'build' && config.build.chunkImportMap) {
       const importMap = bundle!['importmap.json'] as OutputAsset // TODO: use OutputOptions.experimental.chunkImportMap.fileName
       const importMapHtml = serializeTag({
         tag: 'script',
