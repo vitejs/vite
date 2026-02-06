@@ -1763,3 +1763,8 @@ export function monotonicDateNow(): number {
   lastDateNow++
   return lastDateNow
 }
+
+export function formatAndTruncateFileList(files: string[]): string {
+  if (files.length <= 10) return files.join(', ')
+  return `${files.slice(0, 9).join(', ')} and ${files.length - 9} more`
+}
