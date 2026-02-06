@@ -218,6 +218,7 @@ const config = defineConfig({
           { text: 'Team', link: '/team' },
           { text: 'Blog', link: '/blog' },
           { text: 'Releases', link: '/releases' },
+          { text: 'Acknowledgements', link: '/acknowledgements' },
           {
             text: 'The Documentary',
             link: 'https://www.youtube.com/watch?v=bmWQqAKLgT4',
