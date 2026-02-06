@@ -712,18 +712,18 @@ export function resolveRolldownOptions(
       generatedCode: {
         preset: 'es2015',
       },
-      entryFileNames: ssr
-        ? `[name].${jsExt}`
-        : libOptions
-          ? ({ name }) =>
-              resolveLibFilename(
-                libOptions,
-                format,
-                name,
-                root,
-                jsExt,
-                packageCache,
-              )
+      entryFileNames: libOptions
+        ? ({ name }) =>
+            resolveLibFilename(
+              libOptions,
+              format,
+              name,
+              root,
+              jsExt,
+              packageCache,
+            )
+        : ssr
+          ? `[name].${jsExt}`
           : path.posix.join(options.assetsDir, `[name]-[hash].${jsExt}`),
       chunkFileNames: libOptions
         ? `[name]-[hash].${jsExt}`
