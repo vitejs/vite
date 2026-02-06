@@ -15,7 +15,7 @@ These browser versions align with [Baseline Widely Available](https://web-platfo
 
 ## Rolldown
 
-Vite 8 uses Rolldown and Oxc based tools instead of esbuild and Rollup.
+Vite 8 uses [Rolldown](https://rolldown.rs/) and [Oxc](https://oxc.rs/) based tools instead of [esbuild](https://esbuild.github.io/) and [Rollup](https://rollupjs.org/).
 
 ### Gradual Migration
 
@@ -270,7 +270,7 @@ When both `browser` and `module` fields are present in `package.json`, Vite used
 
 ### Require Calls For Externalized Modules
 
-`require` calls for externalized modules are now preserved as `require` calls and not converted to `import` statements. This is to preserve the semantics of `require` calls. If you want to convert them to `import` statements, you can use Rolldown's built-in `esmExternalRequirePlugin`, which is re-exported from `vite`.
+`require` calls for externalized modules are now preserved as `require` calls and not converted to `import` statements. This is to preserve the semantics of `require` calls. If you want to convert them to `import` statements, you can use [Rolldown's built-in `esmExternalRequirePlugin`](https://rolldown.rs/builtin-plugins/esm-external-require), which is re-exported from `vite`.
 
 ```js
 import { defineConfig, esmExternalRequirePlugin } from 'vite'
@@ -330,8 +330,6 @@ The following options are deprecated and will be removed in the future:
 - `build.dynamicImportVarsOptions.warnOnError`: it is now no-op
 - `resolve.alias[].customResolver`: Use a custom plugin with `resolveId` hook instead
 
-## General Changes [<Badge text="NRV" type="warning" />](#migration-from-v7)
-
 ## Removed Deprecated Features [<Badge text="NRV" type="warning" />](#migration-from-v7)
 
 - Passing an URL to `import.meta.hot.accept` is no longer supported. Please pass an id instead. ([#21382](https://github.com/vitejs/vite/pull/21382))
@@ -340,8 +338,6 @@ The following options are deprecated and will be removed in the future:
 
 These breaking changes are expected to only affect a minority of use cases:
 
-- **[TODO: this will be fixed before stable release]** https://github.com/rolldown/rolldown/issues/5726 (affects nuxt, qwik)
-- **[TODO: this will be fixed before stable release]** `@vite-ignore` comment edge case ([rolldown-vite#426](https://github.com/vitejs/rolldown-vite/issues/426))
 - [Extglobs](https://github.com/micromatch/picomatch/blob/master/README.md#extglobs) are not supported yet ([rolldown-vite#365](https://github.com/vitejs/rolldown-vite/issues/365))
 - TypeScript legacy namespace is only supported partially. See [Oxc Transformer's related documentation](https://oxc.rs/docs/guide/usage/transformer/typescript.html#partial-namespace-support) for more details.
 - `define` does not share reference for objects: When you pass an object as a value to `define`, each variable will have a separate copy of the object. See [Oxc Transformer's related documentation](https://oxc.rs/docs/guide/usage/transformer/global-variable-replacement#define) for more details.
@@ -361,6 +357,7 @@ These breaking changes are expected to only affect a minority of use cases:
   - `renderDynamicImport` hook ([rolldown#4532](https://github.com/rolldown/rolldown/issues/4532))
   - `resolveFileUrl` hook
 - `parseAst` / `parseAstAsync` functions are now deprecated in favor of `parseSync` / `parse` functions which have more features.
+- (bug) `@vite-ignore` comment edge case ([rolldown-vite#426](https://github.com/vitejs/rolldown-vite/issues/426))
 
 ## Migration from v6
 
