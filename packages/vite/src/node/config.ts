@@ -1142,7 +1142,7 @@ function resolveResolveOptions(
       colors.yellow(
         `\`resolve.alias\` contains an alias with \`customResolver\` option. ` +
           `This is deprecated and will be removed in Vite 9. ` +
-          `Please use a custom plugin with a resolveId hook instead.`,
+          `Please use a custom plugin with a resolveId hook and \`enforce: 'pre'\` instead.`,
       ),
     )
   }
