@@ -357,7 +357,7 @@ export function buildHtmlPlugin(config: ResolvedConfig): Plugin {
   preHooks.unshift(preImportMapHook(config))
   preHooks.push(htmlEnvHook(config))
   postHooks.push(injectNonceAttributeTagHook(config))
-  postHooks.push(postImportMapHook())
+  postHooks.push(postImportMapHook(config))
   const processedHtml = perEnvironmentState(() => new Map<string, string>())
 
   const isExcludedUrl = (url: string) =>
@@ -1164,21 +1164,46 @@ export function preImportMapHook(
 /**
  * Move importmap before the first module script and modulepreload link
  */
-export function postImportMapHook(): IndexHtmlTransformHook {
-  return (html) => {
-    if (!importMapAppendRE.test(html)) return
+export function postImportMapHook(
+  config: ResolvedConfig,
+): IndexHtmlTransformHook {
+  const decoder = new TextDecoder()
+  return function (html, { bundle }) {
+    if (importMapAppendRE.test(html)) {
+      let importMap: string | undefined
+      html = html.replace(importMapRE, (match) => {
+        importMap = match
+        return ''
+      })
 
-    let importMap: string | undefined
-    html = html.replace(importMapRE, (match) => {
-      importMap = match
-      return ''
-    })
+      if (importMap) {
+        html = html.replace(
+          importMapAppendRE,
+          (match) => `${importMap}\n${match}`,
+        )
+      }
+    }
 
-    if (importMap) {
-      html = html.replace(
-        importMapAppendRE,
-        (match) => `${importMap}\n${match}`,
-      )
+    if (config.build.chunkImportMap) {
+      const importMap = bundle!['importmap.json'] as OutputAsset // TODO: use OutputOptions.experimental.chunkImportMap.fileName
+      const importMapHtml = serializeTag({
+        tag: 'script',
+        attrs: { type: 'importmap' },
+        children:
+          typeof importMap.source === 'string'
+            ? importMap.source
+            : decoder.decode(importMap.source),
+      })
+      // TODO: should the import map be inserted before the existing one or after?
+      // TODO: do we need to merge multiple import maps? What about the browser support?
+      if (importMapAppendRE.test(html)) {
+        html = html.replace(
+          importMapAppendRE,
+          (match) => `${importMapHtml}\n${match}`,
+        )
+      } else {
+        html = `${importMapHtml}\n${html}`
+      }
     }
 
     return html
