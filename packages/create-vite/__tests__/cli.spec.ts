@@ -255,3 +255,20 @@ test('accepts immediate flag and skips install prompt', () => {
   expect(stdout).not.toContain('Installing dependencies')
   expect(stdout).toContain(`Scaffolding project in ${genPath}`)
 })
+
+test('strips invalid filesystem characters from project name', () => {
+  // Characters < > : " / \ | ? * are invalid on Windows
+  const invalidProjectName = ':test<app>name'
+  const sanitizedPath = path.join(import.meta.dirname, 'testappname')
+
+  const { stdout } = run([invalidProjectName, '--template', 'vue'], {
+    cwd: import.meta.dirname,
+  })
+
+  // Should successfully scaffold with sanitized name
+  expect(stdout).toContain(`Scaffolding project in ${sanitizedPath}`)
+  expect(fs.existsSync(sanitizedPath)).toBe(true)
+
+  // Cleanup
+  fs.rmSync(sanitizedPath, { recursive: true, force: true })
+})
