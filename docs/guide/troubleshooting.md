@@ -255,10 +255,17 @@ Try disabling extensions if you have this issue.
 
 If there's a cross drive links in your project on Windows, Vite may not work.
 
+An example error you may encounter is:
+
+```console
+Error: EISDIR: illegal operation on a directory, watch 'C:/Users/me/project/vite.config.js'
+```
+
 An example of cross drive links are:
 
 - a virtual drive linked to a folder by `subst` command
 - a symlink/junction to a different drive by `mklink` command (e.g. Yarn global cache)
+- A VirtualBox shared folder
 
 Related issue: [#10802](https://github.com/vitejs/vite/issues/10802)
 
