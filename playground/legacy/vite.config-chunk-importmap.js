@@ -7,13 +7,17 @@ export default defineConfig({
   plugins: [legacy()],
 
   build: {
+    outDir: 'dist/chunk-importmap',
     chunkImportMap: true,
   },
 
   // for tests, remove `<script type="module">` tags and remove `nomodule`
   // attrs so that we run the legacy bundle instead.
   __test__() {
-    const indexPath = path.resolve(import.meta.dirname, './dist/index.html')
+    const indexPath = path.resolve(
+      import.meta.dirname,
+      './dist/chunk-importmap/index.html',
+    )
     let index = fs.readFileSync(indexPath, 'utf-8')
     index = index
       .replace(/<script type="module".*?<\/script>/g, '')
