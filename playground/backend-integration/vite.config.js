@@ -41,7 +41,7 @@ function BackendIntegrationExample() {
         build: {
           manifest: true,
           outDir,
-          rollupOptions: {
+          rolldownOptions: {
             input: Object.fromEntries(entrypoints),
           },
         },

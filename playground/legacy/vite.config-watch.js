@@ -6,7 +6,7 @@ export default defineConfig({
   plugins: [legacy()],
   build: {
     manifest: true,
-    rollupOptions: {
+    rolldownOptions: {
       input: {
         'style-only-entry': resolve(
           import.meta.dirname,

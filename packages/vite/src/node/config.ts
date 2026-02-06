@@ -848,7 +848,7 @@ const configDefaults = Object.freeze({
   worker: {
     format: 'iife',
     plugins: (): never[] => [],
-    // rollupOptions
+    // rolldownOptions
   },
   optimizeDeps: {
     include: [],
@@ -1812,8 +1812,8 @@ export async function resolveConfig(
   } = {
     format: config.worker?.format || 'iife',
     plugins: createWorkerPlugins,
-    rollupOptions: config.worker?.rollupOptions || {},
-    rolldownOptions: config.worker?.rolldownOptions, // will be set by setupRollupOptionCompat if undefined
+    rolldownOptions: config.worker?.rolldownOptions || {},
+    rollupOptions: config.worker?.rollupOptions, // will be set by setupRollupOptionCompat if undefined
   }
   setupRollupOptionCompat(resolvedWorkerOptions, 'worker')
 
@@ -2078,7 +2078,7 @@ export async function resolveConfig(
 
   // Check if all assetFileNames have the same reference.
   // If not, display a warn for user.
-  const outputOption = config.build?.rollupOptions?.output ?? []
+  const outputOption = config.build?.rolldownOptions?.output ?? []
   // Use isArray to narrow its type to array
   if (Array.isArray(outputOption)) {
     const assetFileNamesList = outputOption.map(
@@ -2092,7 +2092,7 @@ export async function resolveConfig(
       if (hasDifferentReference) {
         resolved.logger.warn(
           colors.yellow(`
-assetFileNames isn't equal for every build.rollupOptions.output. A single pattern across all outputs is supported by Vite.
+assetFileNames isn't equal for every build.rolldownOptions.output. A single pattern across all outputs is supported by Vite.
 `),
         )
       }

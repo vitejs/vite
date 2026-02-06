@@ -4,7 +4,7 @@ import { defineConfig } from 'vite'
 export default defineConfig({
   build: {
     outDir: 'dist/sass-modern-compiler-build',
-    rollupOptions: {
+    rolldownOptions: {
       input: {
         entry1: path.join(
           import.meta.dirname,

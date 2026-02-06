@@ -41,7 +41,7 @@ export default defineConfig({
   },
   build: {
     sourcemap: true,
-    rollupOptions: {
+    rolldownOptions: {
       output: {
         // manualChunks(id) {
         //   if (id.includes('foo.css')) {
