@@ -328,7 +328,7 @@ The following options are deprecated and will be removed in the future:
 - `worker.rollupOptions`: renamed to `worker.rolldownOptions`
 - `build.commonjsOptions`: it is now no-op
 - `build.dynamicImportVarsOptions.warnOnError`: it is now no-op
-- `resolve.alias[].customResolver`: Use a custom plugin with `resolveId` hook instead
+- `resolve.alias[].customResolver`: Use a custom plugin with `resolveId` hook and `enforce: 'pre'` instead
 
 ## Removed Deprecated Features [<Badge text="NRV" type="warning" />](#migration-from-v7)
 
