@@ -3,6 +3,7 @@ import type { Connect } from '#dep-types/connect'
 import { cleanUrl } from '../../../shared/utils'
 import type { ViteDevServer } from '..'
 import { FullBundleDevEnvironment } from '../environments/fullBundleEnvironment'
+import { htmlLangRE } from '../../plugins/html'
 
 export function memoryFilesMiddleware(
   server: ViteDevServer,
@@ -18,7 +19,7 @@ export function memoryFilesMiddleware(
 
   return function viteMemoryFilesMiddleware(req, res, next) {
     const cleanedUrl = cleanUrl(req.url!)
-    if (cleanedUrl.endsWith('.html')) {
+    if (htmlLangRE.test(cleanedUrl)) {
       return next()
     }
 
