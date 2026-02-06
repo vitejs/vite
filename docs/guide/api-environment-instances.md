@@ -210,3 +210,45 @@ export class EnvironmentModuleGraph {
   getModuleByEtag(etag: string): EnvironmentModuleNode | undefined
 }
 ```
+
+`environment.fetchModule`
+
+`fetchModule` is an internal utility available on environment instances in Vite.
+It allows plugins or custom environments to dynamically load a module by ID,
+similar to a dynamic `import()`.
+
+**Parameters**
+- `id: string` – The module ID or path to fetch.
+- `importer?: string` – Optional ID of the importing module.
+- `options?: FetchFunctionOptions` – Optional fetch configuration.
+
+**Returns**
+- `Promise<FetchResult>` – Resolves with the loaded module's exports and metadata.
+
+**Example**
+```ts
+const result = await environment.fetchModule('/src/foo.js')
+
+switch (result.type) {
+  case 'module': {
+    console.log(result.module.default)
+    console.log(result.module.namedExport)
+    break
+  }
+
+  case 'commonjs': {
+    console.log(result.exports)
+    break
+  }
+
+  case 'external': {
+    console.log(`External module: ${result.url}`)
+    break
+  }
+
+  default: {
+    const _exhaustive: never = result
+    throw new Error('Unknown FetchResult variant')
+  }
+}
+```
