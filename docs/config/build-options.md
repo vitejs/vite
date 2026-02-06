@@ -147,6 +147,15 @@ npm add -D esbuild
 
 Generate production source maps. If `true`, a separate sourcemap file will be created. If `'inline'`, the sourcemap will be appended to the resulting output file as a data URI. `'hidden'` works like `true` except that the corresponding sourcemap comments in the bundled files are suppressed.
 
+## build.chunkImportMap
+
+- **Type:** `boolean`
+- **Default:** `false`
+- **Experimental**
+- **Related:** [Chunk Import Map Optimization](/guide/features#chunk-import-map)
+
+Whether to use import maps feature to optimize chunk caching efficiency.
+
 ## build.rolldownOptions
 
 - **Type:** [`RolldownOptions`](https://rolldown.rs/reference/)
