@@ -1,7 +1,8 @@
 import MagicString from 'magic-string'
 import { exactRegex } from 'rolldown/filter'
+import type { BindingMagicString } from 'rolldown'
 import { createToImportMetaURLBasedRelativeRuntime } from '../build'
-import type { Plugin } from '../plugin'
+import { type Plugin, perEnvironmentPlugin } from '../plugin'
 import { cleanUrl } from '../../shared/utils'
 import { assetUrlRE, fileToUrl } from './asset'
 
@@ -72,73 +73,88 @@ const instantiateFromFile = async (
 const instantiateFromFileCode = instantiateFromFile.toString()
 
 export const wasmHelperPlugin = (): Plugin => {
-  return {
-    name: 'vite:wasm-helper',
+  return perEnvironmentPlugin('vite:wasm-helper', (env) => {
+    return {
+      name: 'vite:wasm-helper',
 
-    resolveId: {
-      filter: { id: exactRegex(wasmHelperId) },
-      handler(id) {
-        return id
+      resolveId: {
+        filter: { id: exactRegex(wasmHelperId) },
+        handler(id) {
+          return id
+        },
       },
-    },
 
-    load: {
-      filter: { id: [exactRegex(wasmHelperId), wasmInitRE] },
-      async handler(id) {
-        const ssr = this.environment.config.consumer === 'server'
+      load: {
+        filter: { id: [exactRegex(wasmHelperId), wasmInitRE] },
+        async handler(id) {
+          const ssr = this.environment.config.consumer === 'server'
 
-        if (id === wasmHelperId) {
-          return `
+          if (id === wasmHelperId) {
+            return `
 const instantiateFromUrl = ${ssr ? instantiateFromFileCode : instantiateFromUrlCode}
 export default ${wasmHelperCode}
 `
-        }
+          }
 
-        id = id.split('?')[0]
-        let url = await fileToUrl(this, id, ssr)
-        if (ssr && assetUrlRE.test(url)) {
-          url = url.replace('__VITE_ASSET__', '__VITE_WASM_INIT__')
-        }
-        return `
+          id = id.split('?')[0]
+          let url = await fileToUrl(this, id, ssr)
+          if (ssr && assetUrlRE.test(url)) {
+            url = url.replace('__VITE_ASSET__', '__VITE_WASM_INIT__')
+          }
+          return `
   import initWasm from "${wasmHelperId}"
   export default opts => initWasm(opts, ${JSON.stringify(url)})
   `
+        },
       },
-    },
 
-    renderChunk(code, chunk, opts) {
-      if (this.environment.config.consumer !== 'server') {
-        return null
-      }
+      renderChunk:
+        env.config.consumer === 'server'
+          ? {
+              filter: { code: wasmInitUrlRE },
+              async handler(code, chunk, opts, meta) {
+                const toRelativeRuntime =
+                  createToImportMetaURLBasedRelativeRuntime(
+                    opts.format,
+                    this.environment.config.isWorker,
+                  )
 
-      const toRelativeRuntime = createToImportMetaURLBasedRelativeRuntime(
-        opts.format,
-        this.environment.config.isWorker,
-      )
+                let match: RegExpExecArray | null
+                let s: BindingMagicString | MagicString | undefined
 
-      let match: RegExpExecArray | null
-      let s: MagicString | undefined
+                wasmInitUrlRE.lastIndex = 0
+                while ((match = wasmInitUrlRE.exec(code))) {
+                  const [full, referenceId] = match
+                  const file = this.getFileName(referenceId)
+                  chunk.viteMetadata!.importedAssets.add(cleanUrl(file))
+                  const { runtime } = toRelativeRuntime(file, chunk.fileName)
 
-      wasmInitUrlRE.lastIndex = 0
-      while ((match = wasmInitUrlRE.exec(code))) {
-        const [full, referenceId] = match
-        const file = this.getFileName(referenceId)
-        chunk.viteMetadata!.importedAssets.add(cleanUrl(file))
-        const { runtime } = toRelativeRuntime(file, chunk.fileName)
-        s ||= new MagicString(code)
-        s.update(match.index, match.index + full.length, `"+${runtime}+"`)
-      }
+                  s ??= meta.magicString ?? new MagicString(code)
 
-      if (s) {
-        return {
-          code: s.toString(),
-          map: this.environment.config.build.sourcemap
-            ? s.generateMap({ hires: 'boundary' })
-            : null,
-        }
-      } else {
-        return null
-      }
-    },
-  }
+                  s.update(
+                    match.index,
+                    match.index + full.length,
+                    `"+${runtime}+"`,
+                  )
+                }
+
+                if (!s) return null
+
+                return meta.magicString
+                  ? {
+                      code: s as BindingMagicString,
+                    }
+                  : {
+                      code: s.toString(),
+                      map: this.environment.config.build.sourcemap
+                        ? (s as MagicString).generateMap({
+                            hires: 'boundary',
+                          })
+                        : null,
+                    }
+              },
+            }
+          : undefined,
+    }
+  })
 }
