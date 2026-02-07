@@ -1,5 +1,11 @@
-import { describe, expect } from 'vitest'
+import { runInThisContext } from 'node:vm'
+// eslint-disable-next-line n/no-unsupported-features/node-builtins
+import { createHook } from 'node:async_hooks'
+import { resolve } from 'node:path'
+import { describe, expect, onTestFinished } from 'vitest'
 import type { ViteDevServer } from '../../..'
+import type { ModuleRunnerContext } from '../../../../module-runner'
+import { ESModulesEvaluator } from '../../../../module-runner'
 import {
   createFixtureEditor,
   createModuleRunnerTester,
@@ -133,5 +139,55 @@ describe('module runner initialization', async () => {
         "    at Module.testStack (<root>/fixtures/transpiled-inline.ts:12:3)",
       ]
     `)
+  })
+})
+
+describe('module runner with node:vm executor', async () => {
+  class Evaluator extends ESModulesEvaluator {
+    async runInlinedModule(_: ModuleRunnerContext, __: string) {
+      const code = `\
+      await new Promise((_resolve) => {})
+      //# sourceMappingURL=data:application/json;base64,eyJ2ZXJzaW9uIjozLCJzb3VyY2VzIjpbInZpcnR1YWwudHMiXSwic291cmNlc0NvbnRlbnQiOlsiYXdhaXQgbmV3IFByb21pc2UoKHJlc29sdmUpID0+IHt9KTsiXSwibmFtZXMiOltdLCJtYXBwaW5ncyI6IkFBQUEifQ==
+      `
+
+      // Mimics VitestModuleEvaluator
+      const codeDefinition = `'use strict';async ()=>{{`
+      const initModule = runInThisContext(`${codeDefinition}${code}\n}}`, {
+        lineOffset: 0,
+        columnOffset: -codeDefinition.length,
+        filename: resolve(import.meta.dirname, 'fixtures/a.ts'),
+      })
+
+      void initModule()
+    }
+  }
+
+  const it = await createModuleRunnerTester(
+    {},
+    {
+      sourcemapInterceptor: 'prepareStackTrace',
+      evaluator: new Evaluator(),
+    },
+  )
+
+  it('should not crash when error stacktrace contains negative column', async ({
+    runner,
+  }) => {
+    const hook = createHook({
+      init(_, type) {
+        if (type === 'PROMISE') {
+          new Error('').stack?.indexOf('Just need .stack access')
+        }
+      },
+    })
+
+    onTestFinished(() => {
+      hook.disable()
+    })
+
+    hook.enable()
+
+    // Without the fix this causes unhandler error that cannot be caught inside the test case
+    await runner.import('/fixtures/a.ts')
   })
 })
