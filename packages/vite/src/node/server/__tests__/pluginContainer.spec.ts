@@ -427,6 +427,436 @@ describe('plugin container', () => {
       })
     })
   })
+
+  describe('transform', () => {
+    describe('plugin hook mutation edge cases', () => {
+      it('should not crash when plugin deletes transform hook in configResolved', async () => {
+        const entryUrl = '/x.js'
+
+        const plugin: Plugin = {
+          name: 'mutable-transform-plugin',
+          resolveId(id) {
+            if (id === entryUrl) return id
+          },
+          load(id) {
+            if (id === entryUrl) return { code: 'export {}' }
+          },
+          transform() {
+            return { code: 'export const modified = true' }
+          },
+          configResolved() {
+            // Simulate vite-plugin-react behavior
+            delete (this as any).transform
+          },
+        }
+
+        const environment = await getDevEnvironment({
+          plugins: [plugin],
+        })
+        await environment.moduleGraph.ensureEntryFromUrl(entryUrl, false)
+        const loadResult: any = await environment.pluginContainer.load(entryUrl)
+
+        // Should not throw - plugin was cached with transform but hook was deleted
+        const result = await environment.pluginContainer.transform(
+          loadResult.code,
+          entryUrl,
+        )
+        expect(result.code).toBeDefined()
+      })
+
+      it('should handle plugin that sets transform to null in configResolved', async () => {
+        const entryUrl = '/x.js'
+
+        const plugin: Plugin = {
+          name: 'null-transform-plugin',
+          resolveId(id) {
+            if (id === entryUrl) return id
+          },
+          load(id) {
+            if (id === entryUrl) return { code: 'export {}' }
+          },
+          transform() {
+            return { code: 'export const modified = true' }
+          },
+          configResolved() {
+            ;(this as any).transform = null
+          },
+        }
+
+        const environment = await getDevEnvironment({
+          plugins: [plugin],
+        })
+        await environment.moduleGraph.ensureEntryFromUrl(entryUrl, false)
+        const loadResult: any = await environment.pluginContainer.load(entryUrl)
+
+        const result = await environment.pluginContainer.transform(
+          loadResult.code,
+          entryUrl,
+        )
+        expect(result.code).toBeDefined()
+      })
+
+      it('should handle plugin that sets transform to undefined in configResolved', async () => {
+        const entryUrl = '/x.js'
+
+        const plugin: Plugin = {
+          name: 'undefined-transform-plugin',
+          resolveId(id) {
+            if (id === entryUrl) return id
+          },
+          load(id) {
+            if (id === entryUrl) return { code: 'export {}' }
+          },
+          transform() {
+            return { code: 'export const modified = true' }
+          },
+          configResolved() {
+            ;(this as any).transform = undefined
+          },
+        }
+
+        const environment = await getDevEnvironment({
+          plugins: [plugin],
+        })
+        await environment.moduleGraph.ensureEntryFromUrl(entryUrl, false)
+        const loadResult: any = await environment.pluginContainer.load(entryUrl)
+
+        const result = await environment.pluginContainer.transform(
+          loadResult.code,
+          entryUrl,
+        )
+        expect(result.code).toBeDefined()
+      })
+
+      it('should skip plugins without transform and continue with others', async () => {
+        const entryUrl = '/x.js'
+        let normalPluginCalled = false
+
+        const pluginThatRemovesTransform: Plugin = {
+          name: 'remover-plugin',
+          resolveId(id) {
+            if (id === entryUrl) return id
+          },
+          load(id) {
+            if (id === entryUrl) return { code: 'export {}' }
+          },
+          transform() {
+            return { code: 'export const modified1 = true' }
+          },
+          configResolved() {
+            delete (this as any).transform
+          },
+        }
+
+        const normalPlugin: Plugin = {
+          name: 'normal-plugin',
+          transform(code) {
+            normalPluginCalled = true
+            return { code: code + '\n// normal plugin' }
+          },
+        }
+
+        const environment = await getDevEnvironment({
+          plugins: [pluginThatRemovesTransform, normalPlugin],
+        })
+        await environment.moduleGraph.ensureEntryFromUrl(entryUrl, false)
+        const loadResult: any = await environment.pluginContainer.load(entryUrl)
+
+        const result = await environment.pluginContainer.transform(
+          loadResult.code,
+          entryUrl,
+        )
+        expect(result.code).toContain('// normal plugin')
+        expect(normalPluginCalled).toBe(true)
+      })
+
+      it('should handle multiple plugins all removing their transform hooks', async () => {
+        const entryUrl = '/x.js'
+
+        const plugin1: Plugin = {
+          name: 'remover-1',
+          resolveId(id) {
+            if (id === entryUrl) return id
+          },
+          load(id) {
+            if (id === entryUrl) return { code: 'export {}' }
+          },
+          transform() {
+            return { code: 'export const p1 = true' }
+          },
+        }
+
+        const plugin2: Plugin = {
+          name: 'remover-2',
+          transform() {
+            return { code: 'export const p2 = true' }
+          },
+        }
+
+        const environment = await getDevEnvironment({
+          plugins: [plugin1, plugin2],
+        })
+        await environment.moduleGraph.ensureEntryFromUrl(entryUrl, false)
+        const loadResult: any = await environment.pluginContainer.load(entryUrl)
+
+        // First transform to populate cache
+        await environment.pluginContainer.transform(loadResult.code, entryUrl)
+
+        // Simulate plugin removing its own transform hook after cache is populated
+        // (this mimics what happens during server restart or plugin mutation)
+        delete (plugin1 as any).transform
+        delete (plugin2 as any).transform
+
+        // Second transform should not crash even though hooks are now undefined
+        const result = await environment.pluginContainer.transform(
+          loadResult.code,
+          entryUrl,
+        )
+        expect(result.code).toBe('export {}')
+      })
+
+      it('should work normally when transform is not deleted', async () => {
+        const entryUrl = '/x.js'
+        let transformCount = 0
+
+        const plugin: Plugin = {
+          name: 'normal-plugin',
+          resolveId(id) {
+            if (id === entryUrl) return id
+          },
+          load(id) {
+            if (id === entryUrl) return { code: 'export const a = 1' }
+          },
+          transform(code) {
+            transformCount++
+            return { code: code + '\nexport const b = 2' }
+          },
+          configResolved() {
+            // Normal configResolved - no deletion
+          },
+        }
+
+        const environment = await getDevEnvironment({
+          plugins: [plugin],
+        })
+        await environment.moduleGraph.ensureEntryFromUrl(entryUrl, false)
+        const loadResult: any = await environment.pluginContainer.load(entryUrl)
+
+        const result = await environment.pluginContainer.transform(
+          loadResult.code,
+          entryUrl,
+        )
+        expect(transformCount).toBe(1)
+        expect(result.code).toContain('export const a = 1')
+        expect(result.code).toContain('export const b = 2')
+      })
+
+      it('should handle transform hooks with object syntax and order', async () => {
+        const entryUrl = '/x.js'
+
+        const plugin: Plugin = {
+          name: 'ordered-plugin',
+          resolveId(id) {
+            if (id === entryUrl) return id
+          },
+          load(id) {
+            if (id === entryUrl) return { code: 'export {}' }
+          },
+          transform: {
+            order: 'pre' as const,
+            handler() {
+              return { code: 'export const pre = true' }
+            },
+          },
+          configResolved() {
+            delete (this as any).transform
+          },
+        }
+
+        const environment = await getDevEnvironment({
+          plugins: [plugin],
+        })
+        await environment.moduleGraph.ensureEntryFromUrl(entryUrl, false)
+        const loadResult: any = await environment.pluginContainer.load(entryUrl)
+
+        const result = await environment.pluginContainer.transform(
+          loadResult.code,
+          entryUrl,
+        )
+        expect(result.code).toBeDefined()
+      })
+
+      it('should handle conditional transform deletion based on config', async () => {
+        const entryUrl = '/x.js'
+
+        const plugin: Plugin = {
+          name: 'conditional-plugin',
+          resolveId(id) {
+            if (id === entryUrl) return id
+          },
+          load(id) {
+            if (id === entryUrl) return { code: 'export {}' }
+          },
+          transform() {
+            return { code: 'export const transformed = true' }
+          },
+          configResolved(config) {
+            // Simulate vite-plugin-react behavior - remove if no need to transform
+            if (config.mode === 'production') {
+              delete (this as any).transform
+            }
+          },
+        }
+
+        const environment = await getDevEnvironment({
+          plugins: [plugin],
+          mode: 'production',
+        })
+        await environment.moduleGraph.ensureEntryFromUrl(entryUrl, false)
+        const loadResult: any = await environment.pluginContainer.load(entryUrl)
+
+        const result = await environment.pluginContainer.transform(
+          loadResult.code,
+          entryUrl,
+        )
+        expect(result.code).toBeDefined()
+      })
+
+      it('should not skip plugin when transform returns null/undefined', async () => {
+        const entryUrl = '/x.js'
+        let secondPluginCalled = false
+
+        const pluginReturningNull: Plugin = {
+          name: 'null-returner',
+          resolveId(id) {
+            if (id === entryUrl) return id
+          },
+          load(id) {
+            if (id === entryUrl) return { code: 'export {}' }
+          },
+          transform() {
+            // Return null - should continue to next plugin
+            return null
+          },
+        }
+
+        const secondPlugin: Plugin = {
+          name: 'second-plugin',
+          transform(code) {
+            secondPluginCalled = true
+            return { code: code + '\n// second' }
+          },
+        }
+
+        const environment = await getDevEnvironment({
+          plugins: [pluginReturningNull, secondPlugin],
+        })
+        await environment.moduleGraph.ensureEntryFromUrl(entryUrl, false)
+        const loadResult: any = await environment.pluginContainer.load(entryUrl)
+
+        const result = await environment.pluginContainer.transform(
+          loadResult.code,
+          entryUrl,
+        )
+        expect(secondPluginCalled).toBe(true)
+        expect(result.code).toContain('// second')
+      })
+
+      it('should handle transform that was an async function but deleted', async () => {
+        const entryUrl = '/x.js'
+
+        const plugin: Plugin = {
+          name: 'async-remover',
+          resolveId(id) {
+            if (id === entryUrl) return id
+          },
+          load(id) {
+            if (id === entryUrl) return { code: 'export {}' }
+          },
+          transform: async function () {
+            return { code: 'export const async = true' }
+          },
+          configResolved() {
+            delete (this as any).transform
+          },
+        }
+
+        const environment = await getDevEnvironment({
+          plugins: [plugin],
+        })
+        await environment.moduleGraph.ensureEntryFromUrl(entryUrl, false)
+        const loadResult: any = await environment.pluginContainer.load(entryUrl)
+
+        const result = await environment.pluginContainer.transform(
+          loadResult.code,
+          entryUrl,
+        )
+        expect(result.code).toBeDefined()
+      })
+
+      it('should handle chained transform with one removing its hook', async () => {
+        const entryUrl = '/x.js'
+        const calls: string[] = []
+
+        const plugin1: Plugin = {
+          name: 'chain-1',
+          resolveId(id) {
+            if (id === entryUrl) return id
+          },
+          load(id) {
+            if (id === entryUrl) return { code: 'export {}' }
+          },
+          transform(code) {
+            calls.push('plugin1')
+            return { code: code + '\n// p1' }
+          },
+        }
+
+        const plugin2: Plugin = {
+          name: 'chain-2',
+          transform(code) {
+            calls.push('plugin2')
+            return { code: code + '\n// p2' }
+          },
+        }
+
+        const plugin3: Plugin = {
+          name: 'chain-3',
+          transform(code) {
+            calls.push('plugin3')
+            return { code: code + '\n// p3' }
+          },
+        }
+
+        const environment = await getDevEnvironment({
+          plugins: [plugin1, plugin2, plugin3],
+        })
+        await environment.moduleGraph.ensureEntryFromUrl(entryUrl, false)
+        const loadResult: any = await environment.pluginContainer.load(entryUrl)
+
+        // First transform to populate cache - all plugins should run
+        await environment.pluginContainer.transform(loadResult.code, entryUrl)
+        expect(calls).toContain('plugin1')
+        expect(calls).toContain('plugin2')
+        expect(calls).toContain('plugin3')
+
+        // Clear calls and simulate plugin1 removing its transform
+        calls.length = 0
+        delete (plugin1 as any).transform
+
+        // Second transform should skip plugin1 but run plugin2 and plugin3
+        const result = await environment.pluginContainer.transform(
+          loadResult.code,
+          entryUrl,
+        )
+        expect(calls).toContain('plugin2')
+        expect(calls).toContain('plugin3')
+        expect(calls).not.toContain('plugin1')
+        expect(result.code).toContain('// p2')
+        expect(result.code).toContain('// p3')
+      })
+    })
+  })
 })
 
 async function getDevEnvironment(

@@ -580,6 +580,8 @@ class EnvironmentPluginContainer<Env extends Environment = Environment> {
       const start = debugPluginTransform ? performance.now() : 0
       let result: TransformResult | string | undefined
       const handler = getHookHandler(plugin.transform)
+      // Skip if plugin removed its transform hook during configResolved (e.g. vite-plugin-react)
+      if (!handler) continue
       try {
         result = await this.handleHookPromise(
           handler.call(ctx as any, code, id, optionsWithSSR),
