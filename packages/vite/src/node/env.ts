@@ -50,7 +50,8 @@ export function loadEnv(
       // Support FIFOs (named pipes) for apps like 1Password
       if (!stat || (!stat.isFile() && !stat.isFIFO())) return []
 
-      return Object.entries(parseEnv(fs.readFileSync(filePath, 'utf-8')))
+      const parsedEnv = parseEnv(fs.readFileSync(filePath, 'utf-8'))
+      return Object.entries(parsedEnv as Record<string, string>)
     }),
   )
 
