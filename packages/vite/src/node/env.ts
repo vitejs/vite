@@ -1,6 +1,6 @@
 import fs from 'node:fs'
 import path from 'node:path'
-import { parse } from 'dotenv'
+import { parseEnv } from 'node:util'
 import { type DotenvPopulateInput, expand } from 'dotenv-expand'
 import colors from 'picocolors'
 import { arraify, createDebugger, normalizePath, tryStatSync } from './utils'
@@ -50,7 +50,7 @@ export function loadEnv(
       // Support FIFOs (named pipes) for apps like 1Password
       if (!stat || (!stat.isFile() && !stat.isFIFO())) return []
 
-      return Object.entries(parse(fs.readFileSync(filePath)))
+      return Object.entries(parseEnv(fs.readFileSync(filePath, 'utf-8')))
     }),
   )
 
