@@ -1,3 +1,8 @@
 <p class="css-dynamic-import">This should be green</p>
 
 <script type="module" src="./index.js"></script>
+
+<!-- CSS ordering test for pure CSS chunks (#3924, #6375) -->
+<script type="module">
+  import('./async-order/page.js').then(({ render }) => render())
+</script>
