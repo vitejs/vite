@@ -1,4 +1,4 @@
-import { transformSync } from 'rolldown/experimental'
+import { transformSync } from 'rolldown/utils'
 import type { ResolvedConfig } from '../config'
 import type { Plugin } from '../plugin'
 import { escapeRegex, isCSSRequest } from '../utils'
@@ -221,6 +221,7 @@ export async function replaceDefine(
       environment.config.command === 'build'
         ? !!environment.config.build.sourcemap
         : true,
+    tsconfig: false,
   })
 
   if (result.errors.length > 0) {
