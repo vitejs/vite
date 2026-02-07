@@ -5,7 +5,7 @@ import type {
   ImportSpecifier,
 } from 'es-module-lexer'
 import { init, parse as parseImports } from 'es-module-lexer'
-import type { SourceMap } from 'rolldown'
+import type { OutputAsset, SourceMap } from 'rolldown'
 import { viteBuildImportAnalysisPlugin as nativeBuildImportAnalysisPlugin } from 'rolldown/experimental'
 import type { RawSourceMap } from '@jridgewell/remapping'
 import convertSourceMap from 'convert-source-map'
@@ -106,28 +106,21 @@ function preload(
       deps.map((dep) => {
         // @ts-expect-error assetsURL is declared before preload.toString()
         dep = assetsURL(dep, importerUrl)
+        // TODO: check browser compatibility
+        dep = import.meta.resolve(dep)
         if (dep in seen) return
         seen[dep] = true
         const isCss = dep.endsWith('.css')
-        const cssSelector = isCss ? '[rel="stylesheet"]' : ''
-        const isBaseRelative = !!importerUrl
 
         // check if the file is already preloaded by SSR markup
-        if (isBaseRelative) {
-          // When isBaseRelative is true then we have `importerUrl` and `dep` is
-          // already converted to an absolute URL by the `assetsURL` function
-          for (let i = links.length - 1; i >= 0; i--) {
-            const link = links[i]
-            // The `links[i].href` is an absolute URL thanks to browser doing the work
-            // for us. See https://html.spec.whatwg.org/multipage/common-dom-interfaces.html#reflecting-content-attributes-in-idl-attributes:idl-domstring-5
-            if (link.href === dep && (!isCss || link.rel === 'stylesheet')) {
-              return
-            }
+        // `dep` is already converted to an absolute URL by the `assetsURL` function
+        for (let i = links.length - 1; i >= 0; i--) {
+          const link = links[i]
+          // The `links[i].href` is an absolute URL thanks to browser doing the work
+          // for us. See https://html.spec.whatwg.org/multipage/common-dom-interfaces.html#reflecting-content-attributes-in-idl-attributes:idl-domstring-5
+          if (link.href === dep && (!isCss || link.rel === 'stylesheet')) {
+            return
           }
-        } else if (
-          document.querySelector(`link[href="${dep}"]${cssSelector}`)
-        ) {
-          return
         }
 
         const link = document.createElement('link')
@@ -414,7 +407,8 @@ export function buildImportAnalysisPlugin(config: ResolvedConfig): Plugin[] {
       return null
     },
 
-    generateBundle({ format }, bundle) {
+    generateBundle(opts, bundle) {
+      const { format } = opts
       if (format !== 'es') {
         return
       }
@@ -482,6 +476,37 @@ export function buildImportAnalysisPlugin(config: ResolvedConfig): Plugin[] {
       }
       const buildSourcemap = this.environment.config.build.sourcemap
       const { modulePreload } = this.environment.config.build
+
+      let importMapMapping: Record<string, string> | undefined
+      let importMapReverseMapping: Record<string, string> | undefined
+      if (config.build.chunkImportMap) {
+        const decoder = new TextDecoder()
+        const importMap = bundle['importmap.json']! as OutputAsset
+        const importMapContent: { imports: Record<string, string> } =
+          JSON.parse(
+            typeof importMap.source === 'string'
+              ? importMap.source
+              : decoder.decode(importMap.source),
+          )
+        importMapMapping = Object.fromEntries(
+          Object.entries(importMapContent.imports).map(([k, v]) => [
+            k.slice(config.base.length),
+            v.slice(config.base.length),
+          ]),
+        )
+        importMapReverseMapping = Object.fromEntries(
+          Object.entries(importMapMapping).map(([k, v]) => [v, k]),
+        )
+
+        if (config.isOutputOptionsForLegacyChunks?.(opts)) {
+          this.emitFile({
+            type: 'asset',
+            fileName: 'importmap.legacy.json',
+            source: importMap.source,
+          })
+          delete bundle['importmap.json']
+        }
+      }
 
       for (const file in bundle) {
         const chunk = bundle[file]
@@ -555,7 +580,9 @@ export function buildImportAnalysisPlugin(config: ResolvedConfig): Plugin[] {
                 const ownerFilename = chunk.fileName
                 // literal import - trace direct imports and add to deps
                 const analyzed: Set<string> = new Set<string>()
-                const addDeps = (filename: string) => {
+                const addDeps = (rawFilename: string) => {
+                  const filename =
+                    importMapMapping?.[rawFilename] ?? rawFilename
                   if (filename === ownerFilename) return
                   if (analyzed.has(filename)) return
                   analyzed.add(filename)
@@ -607,6 +634,12 @@ export function buildImportAnalysisPlugin(config: ResolvedConfig): Plugin[] {
                         [...deps].filter((d) => d.endsWith('.css'))
                       : [...deps]
                     : []
+
+                depsArray = depsArray.map(
+                  (dep) => importMapReverseMapping?.[dep] ?? dep,
+                )
+
+                // TODO: should `modulePreload.resolveDependencies` receive the actual URL or the pre-mapped URL?
 
                 const resolveDependencies = modulePreload
                   ? modulePreload.resolveDependencies
