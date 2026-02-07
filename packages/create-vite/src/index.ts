@@ -716,7 +716,12 @@ async function init() {
 }
 
 function formatTargetDir(targetDir: string) {
-  return targetDir.trim().replace(/\/+$/g, '')
+  // Remove invalid characters for directory names on Windows and Unix
+  // < > : " / \ | ? * are forbidden on Windows, / is forbidden on Unix
+  return targetDir
+    .trim()
+    .replace(/[<>:"/\\|?*]+/g, '')
+    .replace(/\/+$/g, '')
 }
 
 function copy(src: string, dest: string) {
