@@ -14,7 +14,7 @@
 <br/>
 <p align="center">
   <a href="https://npmx.dev/vite"><img src="https://npmx.dev/api/registry/badge/version/vite" alt="npm package"></a>
-  <a href="https://nodejs.org/en/about/previous-releases"><img src="https://npmx.dev/api/registry/badge/engines/vite" alt="node compatibility"></a>
+  <a href="https://nodejs.org/en/about/previous-releases"><img src="https://npmx.dev/api/registry/badge/engines/vite?color=4c1" alt="node compatibility"></a>
   <a href="https://github.com/vitejs/vite/actions/workflows/ci.yml"><img src="https://github.com/vitejs/vite/actions/workflows/ci.yml/badge.svg?branch=main" alt="build status"></a>
   <a href="https://chat.vite.dev"><img src="https://img.shields.io/badge/chat-discord-blue?style=flat&logo=discord" alt="discord chat"></a>
 </p>
