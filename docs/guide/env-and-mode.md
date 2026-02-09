@@ -31,7 +31,13 @@ Some built-in constants are available in all cases:
 
 Vite exposes env variables under `import.meta.env` object as strings automatically.
 
-To prevent accidentally leaking env variables to the client, only variables prefixed with `VITE_` are exposed to your Vite-processed code. e.g. for the following env variables:
+To prevent accidentally leaking env variables to the client, only variables prefixed with `VITE_` are exposed to your Vite-processed code.
+
+:::warning
+`VITE_` variables will be statically replaced in your client source code. Do not store sensitive information in them.
+:::
+
+e.g. for the following env variables:
 
 ```[.env]
 VITE_SOME_KEY=123
@@ -95,7 +101,9 @@ NEW_KEY3=test$KEY   # test123
 
 - `.env.*.local` files are local-only and can contain sensitive variables. You should add `*.local` to your `.gitignore` to avoid them being checked into git.
 
-- Since any variables exposed to your Vite source code will end up in your client bundle, `VITE_*` variables should _not_ contain any sensitive information.
+- `VITE_*` variables should _not_ contain any sensitive information such as API keys or secrets.
+
+- The values of these variables are exposed to the client during build time. Consider a backend server, serverless functions, or backend as a service to properly protect secrets instead.
 
 :::
 
