@@ -531,6 +531,9 @@ importers:
       birpc:
         specifier: ^0.2.19
         version: 0.2.19
+      test-dep-invalid-exports:
+        specifier: file:./fixtures/invalid-package/deps/test-dep-invalid-exports
+        version: file:packages/vite/src/node/ssr/runtime/__tests__/fixtures/invalid-package/deps/test-dep-invalid-exports
       tinyspy:
         specifier: 2.2.0
         version: 2.2.0
@@ -540,6 +543,8 @@ importers:
   packages/vite/src/node/ssr/runtime/__tests__/fixtures/cyclic2: {}
 
   packages/vite/src/node/ssr/runtime/__tests__/fixtures/esm-external: {}
+
+  packages/vite/src/node/ssr/runtime/__tests__/fixtures/invalid-package/deps/test-dep-invalid-exports: {}
 
   packages/vite/src/node/ssr/runtime/__tests__/fixtures/live-binding: {}
 
@@ -7319,6 +7324,9 @@ packages:
     engines: {node: '>=10'}
     hasBin: true
 
+  test-dep-invalid-exports@file:packages/vite/src/node/ssr/runtime/__tests__/fixtures/invalid-package/deps/test-dep-invalid-exports:
+    resolution: {directory: packages/vite/src/node/ssr/runtime/__tests__/fixtures/invalid-package/deps/test-dep-invalid-exports, type: directory}
+
   thenify-all@1.6.0:
     resolution: {integrity: sha512-RNxQH/qI8/t3thXJDwcstUO4zeqo64+Uy/+sNVRBx4Xn2OX+OZ9oP+iJnNFqplFra2ZUVeKCSa2oVWi3T4uVmA==}
     engines: {node: '>=0.8'}
@@ -13589,6 +13597,8 @@ snapshots:
       acorn: 8.15.0
       commander: 2.20.3
       source-map-support: 0.5.21
+
+  test-dep-invalid-exports@file:packages/vite/src/node/ssr/runtime/__tests__/fixtures/invalid-package/deps/test-dep-invalid-exports: {}
 
   thenify-all@1.6.0:
     dependencies:
