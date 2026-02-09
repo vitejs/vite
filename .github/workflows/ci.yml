@@ -11,7 +11,8 @@ env:
 
 # Remove default permissions of GITHUB_TOKEN for security
 # https://docs.github.com/en/actions/using-jobs/assigning-permissions-to-jobs
-permissions: {}
+permissions:
+  pull-requests: read
 
 on:
   push:
@@ -38,16 +39,11 @@ jobs:
       should_skip: ${{ steps.changed-files.outputs.only_changed == 'true' }}
 
     steps:
-      - name: Checkout
-        uses: actions/checkout@v6
-        with:
-          # Assume PRs are less than 50 commits
-          fetch-depth: 50
-
       - name: Get changed files
         id: changed-files
         uses: tj-actions/changed-files@e0021407031f5be11a464abee9a0776171c79891 # v47.0.1
         with:
+          use_rest_api: true
           files: |
             docs/**
             .github/**
