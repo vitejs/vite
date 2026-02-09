@@ -4,17 +4,17 @@ import type { FutureOptions, ResolvedConfig } from './config'
 const docsURL = 'https://vite.dev'
 
 const deprecationCode = {
-  removePluginHookSsrArgument: 'changes/this-environment-in-hooks',
-  removePluginHookHandleHotUpdate: 'changes/hotupdate-hook',
+  removePluginHookSsrArgument: 'this-environment-in-hooks',
+  removePluginHookHandleHotUpdate: 'hotupdate-hook',
 
-  removeServerModuleGraph: 'changes/per-environment-apis',
-  removeServerReloadModule: 'changes/per-environment-apis',
-  removeServerPluginContainer: 'changes/per-environment-apis',
-  removeServerHot: 'changes/per-environment-apis',
-  removeServerTransformRequest: 'changes/per-environment-apis',
-  removeServerWarmupRequest: 'changes/per-environment-apis',
+  removeServerModuleGraph: 'per-environment-apis',
+  removeServerReloadModule: 'per-environment-apis',
+  removeServerPluginContainer: 'per-environment-apis',
+  removeServerHot: 'per-environment-apis',
+  removeServerTransformRequest: 'per-environment-apis',
+  removeServerWarmupRequest: 'per-environment-apis',
 
-  removeSsrLoadModule: 'changes/ssr-using-modulerunner',
+  removeSsrLoadModule: 'ssr-using-modulerunner',
 } satisfies Record<keyof FutureOptions, string>
 
 const deprecationMessages = {
