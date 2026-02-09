@@ -158,14 +158,17 @@ const config = defineConfig({
       { icon: 'github', link: 'https://github.com/vitejs/vite' },
     ],
 
-    algolia: {
-      appId: '7H67QR5P0A',
-      apiKey: '208bb9c14574939326032b937431014b',
-      indexName: 'vitejs',
-      searchParameters: {
-        facetFilters: ['tags:en'],
+    search: {
+      provider: 'algolia',
+      options: {
+        appId: '7H67QR5P0A',
+        apiKey: '208bb9c14574939326032b937431014b',
+        indexName: 'vitejs',
+        searchParameters: {
+          facetFilters: ['tags:en'],
+        },
+        insights: true,
       },
-      insights: true,
     },
 
     carbonAds: {
