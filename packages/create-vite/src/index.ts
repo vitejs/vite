@@ -29,7 +29,7 @@ const argv = mri<{
   immediate?: boolean
   interactive?: boolean
 }>(process.argv.slice(2), {
-  boolean: ['help', 'overwrite', 'immediate', 'rolldown', 'interactive'],
+  boolean: ['help', 'overwrite', 'immediate', 'interactive'],
   alias: { h: 'help', t: 'template', i: 'immediate' },
   string: ['template'],
 })
