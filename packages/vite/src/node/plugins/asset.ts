@@ -1,6 +1,7 @@
 import path from 'node:path'
 import fsp from 'node:fs/promises'
 import { Buffer } from 'node:buffer'
+import { pathToFileURL } from 'node:url'
 import * as mrmime from 'mrmime'
 import type {
   NormalizedOutputOptions,
@@ -318,10 +319,11 @@ export function assetPlugin(config: ResolvedConfig): Plugin {
 export async function fileToUrl(
   pluginContext: PluginContext,
   id: string,
+  asFileUrl = false,
 ): Promise<string> {
   const { environment } = pluginContext
   if (!environment.config.isBundled) {
-    return fileToDevUrl(environment, id)
+    return fileToDevUrl(environment, id, asFileUrl)
   } else {
     return fileToBuiltUrl(pluginContext, id)
   }
@@ -330,7 +332,7 @@ export async function fileToUrl(
 export async function fileToDevUrl(
   environment: Environment,
   id: string,
-  skipBase = false,
+  asFileUrl = false,
 ): Promise<string> {
   const config = environment.getTopLevelConfig()
   const publicFile = checkPublicFile(id, config)
@@ -353,6 +355,10 @@ export async function fileToDevUrl(
     }
   }
 
+  if (asFileUrl) {
+    return pathToFileURL(cleanedId).href
+  }
+
   let rtn: string
   if (publicFile) {
     // in public dir during dev, keep the url as-is
@@ -364,9 +370,6 @@ export async function fileToDevUrl(
     // outside of project root, use absolute fs path
     // (this is special handled by the serve static middleware
     rtn = path.posix.join(FS_PREFIX, id)
-  }
-  if (skipBase) {
-    return rtn
   }
   const base = joinUrlSegments(config.server.origin ?? '', config.decodedBase)
   return joinUrlSegments(base, removeLeadingSlash(rtn))
