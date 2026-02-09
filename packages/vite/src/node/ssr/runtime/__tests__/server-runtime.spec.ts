@@ -515,3 +515,25 @@ describe('virtual module hmr', async () => {
     }
   })
 })
+
+describe('invalid package', async () => {
+  const it = await createModuleRunnerTester({
+    environments: {
+      ssr: {
+        resolve: {
+          noExternal: true,
+        },
+      },
+    },
+  })
+
+  it('can catch resolve error on runtime', async ({ runner }) => {
+    const mod = await runner.import('./fixtures/invalid-package/test.js')
+    expect(await mod.test()).toMatchInlineSnapshot(`
+      {
+        "data": [Error: Failed to resolve entry for package "test-dep-invalid-exports". The package may have incorrect main/module/exports specified in its package.json.],
+        "ok": false,
+      }
+    `)
+  })
+})
