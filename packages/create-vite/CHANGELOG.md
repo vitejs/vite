@@ -1,3 +1,30 @@
+## [8.3.0](https://github.com/vitejs/vite/compare/create-vite@8.2.0...create-vite@8.3.0) (2026-02-09)
+### Features
+
+* **create-vite:** add AI agent experience (AX) support ([#21116](https://github.com/vitejs/vite/issues/21116)) ([5458aeb](https://github.com/vitejs/vite/commit/5458aeb0b712ef101776bc5555dbba3c7b678ff9))
+* **create-vite:** add ember ([#20069](https://github.com/vitejs/vite/issues/20069)) ([5bf8960](https://github.com/vitejs/vite/commit/5bf89600c763b040e202911e0de69ff33ac74beb))
+* **create-vite:** show description for template variants ([#21403](https://github.com/vitejs/vite/issues/21403)) ([206cc63](https://github.com/vitejs/vite/commit/206cc639a596cbbfb3a73d675c7d424f3a77308d))
+* **create-vite:** use Vite 8 beta instead of rolldown-vite ([#21597](https://github.com/vitejs/vite/issues/21597)) ([d93b183](https://github.com/vitejs/vite/commit/d93b183887a9c4436c75c05d7d5bedbf69ff0c77))
+
+### Bug Fixes
+
+* **create-vite:** do not create empty directory for custom commands ([#21367](https://github.com/vitejs/vite/issues/21367)) ([068db29](https://github.com/vitejs/vite/commit/068db2930e118bc834e147b00c5c341139785216))
+* **create-vite:** skip irrelevant "immediate" prompt for external commands ([#21410](https://github.com/vitejs/vite/issues/21410)) ([efeb9d2](https://github.com/vitejs/vite/commit/efeb9d2a5cbb6a38b2adb6a64e3d6371576e4234))
+* **create-vite:** update deprecated tsrouter-app to `@tanstack/cli` ([#21527](https://github.com/vitejs/vite/issues/21527)) ([2d59533](https://github.com/vitejs/vite/commit/2d595339b64acb94ec5f446ba3446b48c01a924e))
+* **create-vite:** update QwikCity custom command to "empty" template ([#21279](https://github.com/vitejs/vite/issues/21279)) ([b354928](https://github.com/vitejs/vite/commit/b3549285fa4cc4e006eda75eb469e8cd629f5d1c))
+* **deps:** update `@clack/prompts` to 1.0.0-alpha.9 ([#21421](https://github.com/vitejs/vite/issues/21421)) ([385b588](https://github.com/vitejs/vite/commit/385b5886a746f15e11070fd9d444e2313ecdcc03))
+* **deps:** update all non-major dependencies ([#21146](https://github.com/vitejs/vite/issues/21146)) ([a3cd262](https://github.com/vitejs/vite/commit/a3cd262f37228967e455617e982b35fccc49ffe9))
+* **deps:** update all non-major dependencies ([#21175](https://github.com/vitejs/vite/issues/21175)) ([72e398a](https://github.com/vitejs/vite/commit/72e398a46d8d2f54fbcbeb9ff0dceab346aeb642))
+
+### Documentation
+
+* **degit:** switch to recommending tiged ([#21148](https://github.com/vitejs/vite/issues/21148)) ([44dd5be](https://github.com/vitejs/vite/commit/44dd5bef0f3ace084595652e8cdc972fda46a3cd))
+
+### Miscellaneous Chores
+
+* **deps:** update dependency tsdown to ^0.16.6 ([#21145](https://github.com/vitejs/vite/issues/21145)) ([d9ac204](https://github.com/vitejs/vite/commit/d9ac20406cca3b32fc37c32a1c081881bf1ee897))
+* **deps:** update rolldown-related dependencies ([#21174](https://github.com/vitejs/vite/issues/21174)) ([74559c9](https://github.com/vitejs/vite/commit/74559c947483a8ee24da052ac2d9568f7cb3546a))
+
 ## [8.2.0](https://github.com/vitejs/vite/compare/create-vite@8.1.0...create-vite@8.2.0) (2025-11-20)
 ### Features
 
