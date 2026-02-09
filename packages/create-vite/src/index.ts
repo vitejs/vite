@@ -608,11 +608,11 @@ async function init() {
     }
   }
 
-  let useRolldownVite = argRolldown
-  if (useRolldownVite === undefined) {
+  let useVite8Beta = argRolldown
+  if (useVite8Beta === undefined) {
     if (interactive) {
-      const rolldownViteValue = await prompts.select({
-        message: 'Use rolldown-vite (Experimental)?:',
+      const vite8BetaValue = await prompts.select({
+        message: 'Use Vite 8 beta (Experimental)?:',
         options: [
           {
             label: 'Yes',
@@ -623,10 +623,10 @@ async function init() {
         ],
         initialValue: false,
       })
-      if (prompts.isCancel(rolldownViteValue)) return cancel()
-      useRolldownVite = rolldownViteValue
+      if (prompts.isCancel(vite8BetaValue)) return cancel()
+      useVite8Beta = vite8BetaValue
     } else {
-      useRolldownVite = false
+      useVite8Beta = false
     }
   }
 
@@ -714,10 +714,8 @@ async function init() {
 
   pkg.name = packageName
 
-  if (useRolldownVite) {
-    // renovate: datasource=npm depName=rolldown-vite
-    const rolldownViteVersion = '7.2.8'
-    const pkgVersion = `npm:rolldown-vite@${rolldownViteVersion}`
+  if (useVite8Beta) {
+    const pkgVersion = `^8.0.0-beta.13`
     pkg.devDependencies.vite = pkgVersion
     switch (pkgManager) {
       case 'pnpm':
