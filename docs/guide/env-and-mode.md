@@ -31,11 +31,7 @@ Some built-in constants are available in all cases:
 
 Vite exposes env variables under `import.meta.env` object as strings automatically.
 
-To prevent accidentally leaking env variables to the client, only variables prefixed with `VITE_` are exposed to your Vite-processed code.
-
-:::warning
-`VITE_` variables will be statically replaced in your client source code. Do not store sensitive information in them.
-:::
+Only variables prefixed with `VITE_` are exposed to your Vite-processed code. To prevent accidentally leaking env variables to the client, do not prefix sensitive variables with `VITE_`.
 
 e.g. for the following env variables:
 
@@ -45,6 +41,8 @@ DB_PASSWORD=foobar
 ```
 
 Only `VITE_SOME_KEY` will be exposed as `import.meta.env.VITE_SOME_KEY` to your client source code, but `DB_PASSWORD` will not.
+
+In this example, the parsed value of `VITE_SOME_KEY` – `"123"` – will be exposed to your source code, but the value of `DB_PASSWORD` will not.
 
 ```js
 console.log(import.meta.env.VITE_SOME_KEY) // "123"
