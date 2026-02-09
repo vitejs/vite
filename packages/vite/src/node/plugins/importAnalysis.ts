@@ -73,7 +73,7 @@ import {
 import type { TransformPluginContext } from '../server/pluginContainer'
 import { throwOutdatedRequest } from './optimizedDeps'
 import { isDirectCSSRequest } from './css'
-import { ERR_RESOLVE_PACKAGE_ENTRY_FAIL, browserExternalId } from './resolve'
+import { browserExternalId } from './resolve'
 import { serializeDefine } from './define'
 import { WORKER_FILE_ID } from './worker'
 import { getAliasPatternMatcher } from './preAlias'
@@ -357,14 +357,6 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
         const resolved = await this.resolve(url, importerFile).catch((e) => {
           if (e instanceof Error) {
             ;(e as RollupError).pos ??= pos
-            // ssr should be able to handle invalid package durnig runtime
-            if (
-              ssr &&
-              'code' in e &&
-              e.code === ERR_RESOLVE_PACKAGE_ENTRY_FAIL
-            ) {
-              return null
-            }
           }
           throw e
         })
