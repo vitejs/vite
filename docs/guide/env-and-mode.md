@@ -13,6 +13,8 @@ if (import.meta.env.DEV) {
 
 :::
 
+<ScrimbaLink href="https://scrimba.com/intro-to-vite-c03p6pbbdq/~05an?via=vite" title="Env Variables in Vite">Watch an interactive lesson on Scrimba</ScrimbaLink>
+
 ## Built-in Constants
 
 Some built-in constants are available in all cases:
