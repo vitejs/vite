@@ -188,7 +188,7 @@ test('successfully scaffolds a project with subfolder based on react starter tem
     path.join(genPathWithSubfolder, 'package.json'),
     'utf-8',
   )
-  expect(generatedPackageJson).toContain('rolldown-vite')
+  expect(generatedPackageJson).toContain('8.0.0-beta')
 })
 
 test('works with the -t alias', () => {
