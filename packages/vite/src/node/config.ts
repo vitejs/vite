@@ -2099,6 +2099,15 @@ assetFileNames isn't equal for every build.rollupOptions.output. A single patter
     }
   }
 
+  if (config.experimental?.renderBuiltUrl && config.build?.chunkImportMap) {
+    resolved.logger.warn(
+      colors.yellow(
+        `The \`build.chunkImportMap\` option and the \`experimental.renderBuiltUrl\` option are both enabled.` +
+          ` The combination of these two options is not supported and may result in unexpected behavior.`,
+      ),
+    )
+  }
+
   // Warn about removal of experimental features
   if (
     // @ts-expect-error Option removed
