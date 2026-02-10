@@ -103,6 +103,7 @@ const config = defineConfig({
     ],
     ['link', { rel: 'preconnect', href: 'https://fonts.googleapis.com' }],
     inlineScript('banner.js'),
+    inlineScript('language-switcher.js'),
     ['link', { rel: 'me', href: 'https://m.webtoo.ls/@vite' }],
     ['meta', { property: 'og:type', content: 'website' }],
     ['meta', { property: 'og:title', content: ogTitle }],
