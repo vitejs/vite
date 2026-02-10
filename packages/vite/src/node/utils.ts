@@ -1289,6 +1289,22 @@ const rollupOptionsRootPaths = new Set([
   'ssr.optimizeDeps',
 ])
 
+/**
+ * Sets up `rollupOptions` compat proxies for any `build` objects
+ * found within an environments config object.
+ */
+function setupRollupOptionCompatForEnvironments(
+  environments: Record<string, any>,
+): void {
+  for (const envName in environments) {
+    const envConfig = environments[envName]
+
+    if (isObject(envConfig) && isObject(envConfig.build)) {
+      setupRollupOptionCompat(envConfig.build, 'build')
+    }
+  }
+}
+
 export function hasBothRollupOptionsAndRolldownOptions(
   options: Record<string, any>,
 ): boolean {
@@ -1334,7 +1350,33 @@ function mergeConfigRecursively(
     }
 
     if (existing == null) {
-      merged[key] = value
+      if (isObject(value)) {
+        // Clone to avoid mutating the original override object
+        merged[key] = { ...value }
+
+        // Calculate what the rootPath would be for this key
+        const newRootPath =
+          rootPath && !environmentPathRE.test(rootPath)
+            ? `${rootPath}.${key}`
+            : key
+
+        if (rollupOptionsRootPaths.has(newRootPath)) {
+          // Direct assignment of a build/worker/optimizeDeps object
+          setupRollupOptionCompat(merged[key], newRootPath)
+        } else if (newRootPath === 'environments') {
+          // Direct assignment of entire environments object
+          // Need to set up proxies for any build objects within each environment
+          setupRollupOptionCompatForEnvironments(merged[key])
+        } else if (environmentPathRE.test(newRootPath)) {
+          // Direct assignment of a single environment
+          // Check if it contains a build object
+          if (isObject(merged[key].build)) {
+            setupRollupOptionCompat(merged[key].build, 'build')
+          }
+        }
+      } else {
+        merged[key] = value
+      }
       continue
     }
 
