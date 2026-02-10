@@ -1169,6 +1169,9 @@ export function postImportMapHook(
 ): IndexHtmlTransformHook {
   const decoder = new TextDecoder()
   return function (html, { bundle }) {
+    const chunkImportMapEnabled =
+      config.command === 'build' && config.build.chunkImportMap
+
     if (importMapAppendRE.test(html)) {
       let importMap: string | undefined
       html = html.replace(importMapRE, (match) => {
@@ -1181,6 +1184,13 @@ export function postImportMapHook(
           importMapAppendRE,
           (match) => `${importMap}\n${match}`,
         )
+        if (chunkImportMapEnabled) {
+          // https://caniuse.com/mdn-html_elements_script_type_importmap_multiple_import_maps
+          this.warn(
+            `The \`build.chunkImportMap\` option is enabled but an import map also exists in the input HTML file.` +
+              ` This leads to multiple import maps generated in the output HTML, which is not supported by older browsers and Firefox.`,
+          )
+        }
       }
     }
 
@@ -1194,9 +1204,8 @@ export function postImportMapHook(
             ? importMap.source
             : decoder.decode(importMap.source),
       })
-      // TODO: should the import map be inserted before the existing one or after?
-      // TODO: do we need to merge multiple import maps? What about the browser support?
       if (importMapAppendRE.test(html)) {
+        // NOTE: insert before the existing import map so that our import map takes precedence
         html = html.replace(
           importMapAppendRE,
           (match) => `${importMapHtml}\n${match}`,

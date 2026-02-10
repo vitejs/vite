@@ -92,12 +92,21 @@ function preload(
       )
     }
 
+    function importMetaResolve(specifier: string): string {
+      // @ts-expect-error import.meta.resolve is not supported by all browsers we support
+      // But `import.meta.resolve` is only needed when build.chunkImportMap is enabled,
+      // and that option requires `import.meta.resolve` support.
+      if (import.meta.resolve) {
+        return import.meta.resolve(specifier)
+      }
+      return new URL(specifier, import.meta.url).href
+    }
+
     promise = allSettled(
       deps.map((dep) => {
         // @ts-expect-error assetsURL is declared before preload.toString()
         dep = assetsURL(dep, importerUrl)
-        // TODO: check browser compatibility
-        dep = import.meta.resolve(dep)
+        dep = importMetaResolve(dep)
         if (dep in seen) return
         seen[dep] = true
         const isCss = dep.endsWith('.css')

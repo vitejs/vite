@@ -19,7 +19,6 @@ import colors from 'picocolors'
 import browserslist from 'browserslist'
 import type { Options } from './types'
 import {
-  detectImportMapResolverModule,
   detectModernBrowserCode,
   dynamicFallbackInlineCode,
   legacyEntryId,
@@ -126,19 +125,20 @@ const _require = createRequire(import.meta.url)
 const nonLeadingHashInFileNameRE = /[^/]+\[hash(?::\d+)?\]/
 const prefixedHashInFileNameRE = /\W?\[hash(?::\d+)?\]/
 
-// browsers supporting ESM + dynamic import + import.meta + async generator
+// browsers supporting dynamic import + import.meta.resolve + async generator
 const modernTargetsEsbuild = [
   'es2020',
-  'edge79',
-  'firefox67',
-  'chrome64',
-  'safari12',
+  'edge105',
+  'firefox106',
+  'chrome105',
+  'safari16.4',
+  'ios16.4',
 ]
 // same with above but by browserslist syntax
 // es2020 = chrome 80+, safari 13.1+, firefox 72+, edge 80+
 // https://github.com/evanw/esbuild/issues/121#issuecomment-646956379
 const modernTargetsBabel =
-  'edge>=79, firefox>=67, chrome>=64, safari>=12, chromeAndroid>=64, iOS>=12'
+  'edge>=105, firefox>=106, chrome>=105, safari>=16.4, chromeAndroid>=105, iOS>=16.4'
 
 const outputOptionsForLegacyChunks =
   new WeakSet<Rollup.NormalizedOutputOptions>()
@@ -694,16 +694,6 @@ function viteLegacyPlugin(options: Options = {}): Plugin[] {
             typeof importMap.source === 'string'
               ? importMap.source
               : decoder.decode(importMap.source),
-          injectTo: 'head',
-        })
-        tags.push({
-          tag: 'script',
-          attrs: { type: 'importmap' },
-          children: JSON.stringify({
-            imports: {
-              [detectImportMapResolverModule]: 'data:text/javascript,',
-            },
-          }),
           injectTo: 'head',
         })
       }

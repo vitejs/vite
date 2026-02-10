@@ -156,6 +156,8 @@ Generate production source maps. If `true`, a separate sourcemap file will be cr
 
 Whether to use import maps feature to optimize chunk caching efficiency.
 
+Note that this option requires [`import.meta.resolve` support](https://caniuse.com/mdn-javascript_operators_import_meta_resolve). If you need to support older browsers, check out [`@vitejs/plugin-legacy`](https://github.com/vitejs/vite/tree/main/packages/plugin-legacy).
+
 ## build.rolldownOptions
 
 - **Type:** [`RolldownOptions`](https://rolldown.rs/reference/)

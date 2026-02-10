@@ -6,11 +6,13 @@ export const legacyPolyfillId: string = 'vite-legacy-polyfill'
 export const legacyEntryId: string = 'vite-legacy-entry'
 export const systemJSInlineCode: string = `System.import(document.getElementById('${legacyEntryId}').getAttribute('data-src'))`
 
-export const detectImportMapResolverModule: string = 'vite:legacy-guard'
-
 const detectModernBrowserVarName = '__vite_is_modern_browser'
-export const detectModernBrowserDetector: string = `import.meta.url;import("_").catch(()=>1);(async function*(){})().next()`
-export const detectModernBrowserCode: string = `import'${detectImportMapResolverModule}';${detectModernBrowserDetector};window.${detectModernBrowserVarName}=true`
+// inline module to execute the code before other imports
+const detectImportMetaResolveSupportModule: string =
+  'data:text/javascript,if(!import.meta.resolve)throw Error("import.meta.resolve not supported")'
+// detect support via syntax errors
+const detectModernBrowserDetector: string = `import.meta.url;import("_").catch(()=>1);(async function*(){})().next()`
+export const detectModernBrowserCode: string = `import'${detectImportMetaResolveSupportModule}';${detectModernBrowserDetector};window.${detectModernBrowserVarName}=true`
 export const dynamicFallbackInlineCode: string = `!function(){if(window.${detectModernBrowserVarName})return;console.warn("vite: loading legacy chunks, syntax error above and the same error below should be ignored");var e=document.getElementById("${legacyPolyfillId}"),n=document.createElement("script");n.src=e.src,n.onload=function(){${systemJSInlineCode}},document.body.appendChild(n)}();`
 
-export const modernChunkLegacyGuard: string = `import'${detectImportMapResolverModule}';export function __vite_legacy_guard(){${detectModernBrowserDetector}};`
+export const modernChunkLegacyGuard: string = `import'${detectImportMetaResolveSupportModule}';export function __vite_legacy_guard(){${detectModernBrowserDetector}};`
