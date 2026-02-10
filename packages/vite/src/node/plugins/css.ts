@@ -6,6 +6,7 @@ import postcssrc from 'postcss-load-config'
 import type {
   ExistingRawSourceMap,
   InternalModuleFormat,
+  MinimalPluginContext,
   OutputAsset,
   OutputChunk,
   RenderedChunk,
@@ -938,34 +939,8 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
                     `${style}.textContent = ${cssString};` +
                     `document.head.appendChild(${style});`
 
-                  let injectionPoint: number
-                  if (opts.format === 'iife' || opts.format === 'umd') {
-                    const m = (
-                      opts.format === 'iife' ? IIFE_BEGIN_RE : UMD_BEGIN_RE
-                    ).exec(code)
-                    if (!m) {
-                      this.error('Injection point for inlined CSS not found')
-                      return
-                    }
-                    injectionPoint = m.index + m[0].length
-                  } else if (opts.format === 'es') {
-                    // legacy build
-                    if (code.startsWith('#!')) {
-                      let secondLinePos = code.indexOf('\n')
-                      if (secondLinePos === -1) {
-                        secondLinePos = 0
-                      }
-                      injectionPoint = secondLinePos
-                    } else {
-                      injectionPoint = 0
-                    }
-                  } else {
-                    this.error('Non supported format')
-                    return
-                  }
-
                   s ||= new MagicString(code)
-                  s.appendRight(injectionPoint, injectCode)
+                  injectInlinedCSS(s, this, code, opts.format, injectCode)
                 }
               } else {
                 // resolve public URL from CSS paths, we need to use absolute paths
@@ -1159,6 +1134,37 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
       }
     },
   }
+}
+
+export function injectInlinedCSS(
+  s: MagicString,
+  ctx: Pick<MinimalPluginContext, 'error'>,
+  code: string,
+  format: InternalModuleFormat,
+  injectCode: string,
+): void {
+  let injectionPoint: number
+  if (format === 'iife' || format === 'umd') {
+    const m = (format === 'iife' ? IIFE_BEGIN_RE : UMD_BEGIN_RE).exec(code)
+    if (!m) {
+      ctx.error('Injection point for inlined CSS not found')
+    }
+    injectionPoint = m.index + m[0].length
+  } else if (format === 'es') {
+    // legacy build
+    if (code.startsWith('#!')) {
+      let secondLinePos = code.indexOf('\n')
+      if (secondLinePos === -1) {
+        secondLinePos = 0
+      }
+      injectionPoint = secondLinePos
+    } else {
+      injectionPoint = 0
+    }
+  } else {
+    ctx.error('Non supported format')
+  }
+  s.appendRight(injectionPoint, injectCode)
 }
 
 export function cssAnalysisPlugin(config: ResolvedConfig): Plugin {

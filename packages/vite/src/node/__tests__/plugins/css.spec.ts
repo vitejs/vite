@@ -1,5 +1,7 @@
 import path from 'node:path'
 import { describe, expect, test } from 'vitest'
+import type { InternalModuleFormat } from 'rolldown'
+import MagicString from 'magic-string'
 import { resolveConfig } from '../../config'
 import type { InlineConfig } from '../../config'
 import {
@@ -8,6 +10,7 @@ import {
   cssUrlRE,
   getEmptyChunkReplacer,
   hoistAtRules,
+  injectInlinedCSS,
   preprocessCSS,
   resolveLibCssFilename,
 } from '../../plugins/css'
@@ -456,5 +459,338 @@ describe('resolveLibCssFilename', () => {
       path.resolve(dirname, '../packages/name'),
     )
     expect(filename).toBe('custom-name.css')
+  })
+})
+
+describe('injectInlinedCSS', () => {
+  function getInlinedCSSInjectedCode(
+    code: string,
+    format: InternalModuleFormat,
+  ) {
+    const s = new MagicString(code)
+    injectInlinedCSS(
+      s,
+      {
+        error(e) {
+          throw e
+        },
+      },
+      code,
+      format,
+      'injectCSS();',
+    )
+    return s.toString()
+  }
+
+  test('should inject CSS for iife without exports from esm', async () => {
+    const result = getInlinedCSSInjectedCode(
+      `(function() {
+
+"use strict";
+
+//#region src/index.js
+(async () => {
+	await new Promise((resolve) => setTimeout(resolve, 1e3));
+	console.log("foo");
+})();
+
+//#endregion
+})();`,
+      'iife',
+    )
+    expect(result).toMatchInlineSnapshot(`
+      "(function() {
+
+      "use strict";injectCSS();
+
+      //#region src/index.js
+      (async () => {
+      	await new Promise((resolve) => setTimeout(resolve, 1e3));
+      	console.log("foo");
+      })();
+
+      //#endregion
+      })();"
+    `)
+  })
+
+  test('should inject helper for iife without exports from cjs', async () => {
+    const result = getInlinedCSSInjectedCode(
+      `(function() {
+
+
+//#region src/index.js
+(async () => {
+	await new Promise((resolve) => setTimeout(resolve, 1e3));
+	console.log("foo");
+})();
+
+//#endregion
+})();`,
+      'iife',
+    )
+    expect(result).toMatchInlineSnapshot(`
+      "(function() {injectCSS();
+
+
+      //#region src/index.js
+      (async () => {
+      	await new Promise((resolve) => setTimeout(resolve, 1e3));
+      	console.log("foo");
+      })();
+
+      //#endregion
+      })();"
+    `)
+  })
+
+  test('should inject helper for iife with exports', async () => {
+    const result = getInlinedCSSInjectedCode(
+      `var lib = (function(exports) {
+
+
+//#region entry.js
+(async () => {
+	await new Promise((resolve) => setTimeout(resolve, 1e3));
+	console.log("foo");
+})();
+const foo = "foo";
+
+//#endregion
+exports.foo = foo;
+return exports;
+})({});`,
+      'iife',
+    )
+    expect(result).toMatchInlineSnapshot(`
+      "var lib = (function(exports) {injectCSS();
+
+
+      //#region entry.js
+      (async () => {
+      	await new Promise((resolve) => setTimeout(resolve, 1e3));
+      	console.log("foo");
+      })();
+      const foo = "foo";
+
+      //#endregion
+      exports.foo = foo;
+      return exports;
+      })({});"
+    `)
+  })
+
+  test('should inject helper for iife with nested name', async () => {
+    const result = getInlinedCSSInjectedCode(
+      `this.nested = this.nested || {};
+this.nested.lib = (function(exports) {
+
+Object.defineProperty(exports, Symbol.toStringTag, { value: 'Module' });
+
+//#region a.ts
+	const foo = "foo";
+
+//#endregion
+exports.foo = foo;
+return exports;
+})({});`,
+      'iife',
+    )
+    expect(result).toMatchInlineSnapshot(`
+      "this.nested = this.nested || {};
+      this.nested.lib = (function(exports) {injectCSS();
+
+      Object.defineProperty(exports, Symbol.toStringTag, { value: 'Module' });
+
+      //#region a.ts
+      	const foo = "foo";
+
+      //#endregion
+      exports.foo = foo;
+      return exports;
+      })({});"
+    `)
+  })
+
+  test('should inject helper for umd without exports', async () => {
+    const result = getInlinedCSSInjectedCode(
+      `(function(factory) {
+
+  typeof define === 'function' && define.amd ? define([], factory) :
+  factory();
+})(function() {
+
+//#region entry.js
+(async () => {
+	await new Promise((resolve) => setTimeout(resolve, 1e3));
+	console.log("foo");
+})();
+
+//#endregion
+});`,
+      'umd',
+    )
+    expect(result).toMatchInlineSnapshot(`
+      "(function(factory) {
+
+        typeof define === 'function' && define.amd ? define([], factory) :
+        factory();
+      })(function() {injectCSS();
+
+      //#region entry.js
+      (async () => {
+      	await new Promise((resolve) => setTimeout(resolve, 1e3));
+      	console.log("foo");
+      })();
+
+      //#endregion
+      });"
+    `)
+  })
+
+  test('should inject helper for umd with exports', async () => {
+    const result = getInlinedCSSInjectedCode(
+      `(function(global, factory) {
+  typeof exports === 'object' && typeof module !== 'undefined' ?  factory(exports) :
+  typeof define === 'function' && define.amd ? define(['exports'], factory) :
+  (global = typeof globalThis !== 'undefined' ? globalThis : global || self, factory((global.lib = {})));
+})(this, function(exports) {
+
+//#region entry.js
+(async () => {
+	await new Promise((resolve) => setTimeout(resolve, 1e3));
+	console.log("foo");
+})();
+const foo = "foo";
+
+//#endregion
+exports.foo = foo;
+});`,
+      'umd',
+    )
+    expect(result).toMatchInlineSnapshot(`
+      "(function(global, factory) {
+        typeof exports === 'object' && typeof module !== 'undefined' ?  factory(exports) :
+        typeof define === 'function' && define.amd ? define(['exports'], factory) :
+        (global = typeof globalThis !== 'undefined' ? globalThis : global || self, factory((global.lib = {})));
+      })(this, function(exports) {injectCSS();
+
+      //#region entry.js
+      (async () => {
+      	await new Promise((resolve) => setTimeout(resolve, 1e3));
+      	console.log("foo");
+      })();
+      const foo = "foo";
+
+      //#endregion
+      exports.foo = foo;
+      });"
+    `)
+  })
+
+  test('should inject helper for umd with only default export', async () => {
+    const result = getInlinedCSSInjectedCode(
+      `(function(global, factory) {
+  typeof exports === 'object' && typeof module !== 'undefined' ? module.exports =  factory() :
+  typeof define === 'function' && define.amd ? define([], factory) :
+  (global = typeof globalThis !== 'undefined' ? globalThis : global || self, (global.lib = factory()));
+})(this, function() {
+
+//#region entry.js
+(async () => {
+	await new Promise((resolve) => setTimeout(resolve, 1e3));
+	console.log("foo");
+})();
+var index_default = "foo";
+
+//#endregion
+return index_default;
+});`,
+      'umd',
+    )
+    expect(result).toMatchInlineSnapshot(`
+      "(function(global, factory) {
+        typeof exports === 'object' && typeof module !== 'undefined' ? module.exports =  factory() :
+        typeof define === 'function' && define.amd ? define([], factory) :
+        (global = typeof globalThis !== 'undefined' ? globalThis : global || self, (global.lib = factory()));
+      })(this, function() {injectCSS();
+
+      //#region entry.js
+      (async () => {
+      	await new Promise((resolve) => setTimeout(resolve, 1e3));
+      	console.log("foo");
+      })();
+      var index_default = "foo";
+
+      //#endregion
+      return index_default;
+      });"
+    `)
+  })
+
+  test('should inject helper for umd with nested name', async () => {
+    const result = getInlinedCSSInjectedCode(
+      `(function(global, factory) {
+  typeof exports === 'object' && typeof module !== 'undefined' ?  factory(exports) :
+  typeof define === 'function' && define.amd ? define(['exports'], factory) :
+  (global = typeof globalThis !== 'undefined' ? globalThis : global || self, factory((global.nested = global.nested || {},global.nested.lib = {})));
+})(this, function(exports) {
+Object.defineProperty(exports, Symbol.toStringTag, { value: 'Module' });
+
+//#region a.ts
+	const foo = "foo";
+
+//#endregion
+exports.foo = foo;
+});`,
+      'umd',
+    )
+    expect(result).toMatchInlineSnapshot(`
+      "(function(global, factory) {
+        typeof exports === 'object' && typeof module !== 'undefined' ?  factory(exports) :
+        typeof define === 'function' && define.amd ? define(['exports'], factory) :
+        (global = typeof globalThis !== 'undefined' ? globalThis : global || self, factory((global.nested = global.nested || {},global.nested.lib = {})));
+      })(this, function(exports) {injectCSS();
+      Object.defineProperty(exports, Symbol.toStringTag, { value: 'Module' });
+
+      //#region a.ts
+      	const foo = "foo";
+
+      //#endregion
+      exports.foo = foo;
+      });"
+    `)
+  })
+
+  test('should inject multiple helpers', async () => {
+    const result = getInlinedCSSInjectedCode(
+      `(function() {
+
+"use strict";
+
+//#region src/index.js
+(async () => {
+	await new Promise((resolve) => setTimeout(resolve, 1e3));
+	console.log("foo", { ..."foo" });
+})();
+
+//#endregion
+})();`,
+      'iife',
+    )
+    expect(result).toMatchInlineSnapshot(`
+      "(function() {
+
+      "use strict";injectCSS();
+
+      //#region src/index.js
+      (async () => {
+      	await new Promise((resolve) => setTimeout(resolve, 1e3));
+      	console.log("foo", { ..."foo" });
+      })();
+
+      //#endregion
+      })();"
+    `)
   })
 })
