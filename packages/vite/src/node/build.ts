@@ -76,7 +76,6 @@ import { getHookHandler } from './plugins'
 import { BaseEnvironment } from './baseEnvironment'
 import type { MinimalPluginContextWithoutEnvironment, Plugin } from './plugin'
 import type { RollupPluginHooks } from './typeUtils'
-import { buildOxcPlugin } from './plugins/oxc'
 import { type LicenseOptions, licensePlugin } from './plugins/license'
 import {
   BasicMinimalPluginContext,
@@ -519,7 +518,6 @@ export async function resolveBuildPlugins(config: ResolvedConfig): Promise<{
     ],
     post: [
       ...(isBuild ? buildImportAnalysisPlugin(config) : []),
-      ...(config.nativePluginEnabledLevel >= 1 ? [] : [buildOxcPlugin()]),
       ...(config.build.minify === 'esbuild' ? [buildEsbuildPlugin()] : []),
       ...(isBuild ? [terserPlugin(config)] : []),
       ...(isBuild && !config.isWorker
