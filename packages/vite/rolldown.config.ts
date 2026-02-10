@@ -81,12 +81,12 @@ const nodeConfig = defineConfig({
     'fsevents',
     /^rolldown\//,
     /^tsx\//,
+    /^@vitejs\/devtools\//,
     /^#/,
     'sugarss', // postcss-import -> sugarss
     'supports-color',
     'utf-8-validate', // ws
     'bufferutil', // ws
-    '@vitejs/devtools/cli-commands',
     ...Object.keys(pkg.dependencies),
     ...Object.keys(pkg.peerDependencies),
   ],
