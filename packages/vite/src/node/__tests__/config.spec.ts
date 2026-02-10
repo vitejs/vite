@@ -617,6 +617,38 @@ describe('mergeConfig', () => {
       testRolldownOptions.environments.client.build.rolldownOptions.platform,
     ).toBe('browser')
   })
+
+  test('later plugin can read top-level rollupOptions set via rolldownOptions by earlier plugin', async () => {
+    let readValue: string | undefined
+    await resolveConfig(
+      {
+        plugins: [
+          {
+            name: 'plugin-a',
+            config() {
+              return {
+                build: {
+                  rolldownOptions: {
+                    input: './from-plugin-a.ts',
+                  },
+                },
+              }
+            },
+          },
+          {
+            name: 'plugin-b',
+            config(config) {
+              readValue = config.build?.rollupOptions?.input as
+                | string
+                | undefined
+            },
+          },
+        ],
+      },
+      'build',
+    )
+    expect(readValue).toBe('./from-plugin-a.ts')
+  })
 })
 
 describe('resolveEnvPrefix', () => {
