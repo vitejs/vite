@@ -279,6 +279,37 @@ return exports;
     `)
   })
 
+  test('should inject helper for iife with nested name', async () => {
+    const renderChunk = await createBuildOxcPluginRenderChunk('es2015')
+    const result = await renderChunk(
+      `this.nested = this.nested || {};
+this.nested.lib = (function(exports) {
+
+Object.defineProperty(exports, Symbol.toStringTag, { value: 'Module' });
+
+//#region a.ts
+	const foo = "foo";
+
+//#endregion
+exports.foo = foo;
+return exports;
+})({});`,
+      'iife',
+    )
+    expect(result).toMatchInlineSnapshot(`
+      "this.nested = this.nested || {};
+      this.nested.lib = (function(exports) {
+      	Object.defineProperty(exports, Symbol.toStringTag, { value: "Module" });
+      	//#region a.ts
+      	const foo = "foo";
+      	//#endregion
+      	exports.foo = foo;
+      	return exports;
+      })({});
+      "
+    `)
+  })
+
   test('should inject helper for umd without exports', async () => {
     const renderChunk = await createBuildOxcPluginRenderChunk('es2015')
     const result = await renderChunk(
@@ -387,6 +418,38 @@ return index_default;
       	var index_default = "foo";
       	//#endregion
       	return index_default;
+      });
+      "
+    `)
+  })
+
+  test('should inject helper for umd with nested name', async () => {
+    const renderChunk = await createBuildOxcPluginRenderChunk('es2015')
+    const result = await renderChunk(
+      `(function(global, factory) {
+  typeof exports === 'object' && typeof module !== 'undefined' ?  factory(exports) :
+  typeof define === 'function' && define.amd ? define(['exports'], factory) :
+  (global = typeof globalThis !== 'undefined' ? globalThis : global || self, factory((global.nested = global.nested || {},global.nested.lib = {})));
+})(this, function(exports) {
+Object.defineProperty(exports, Symbol.toStringTag, { value: 'Module' });
+
+//#region a.ts
+	const foo = "foo";
+
+//#endregion
+exports.foo = foo;
+});`,
+      'umd',
+    )
+    expect(result).toMatchInlineSnapshot(`
+      "(function(global, factory) {
+      	typeof exports === "object" && typeof module !== "undefined" ? factory(exports) : typeof define === "function" && define.amd ? define(["exports"], factory) : (global = typeof globalThis !== "undefined" ? globalThis : global || self, factory((global.nested = global.nested || {}, global.nested.lib = {})));
+      })(this, function(exports) {
+      	Object.defineProperty(exports, Symbol.toStringTag, { value: "Module" });
+      	//#region a.ts
+      	const foo = "foo";
+      	//#endregion
+      	exports.foo = foo;
       });
       "
     `)
