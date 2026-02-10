@@ -118,6 +118,7 @@ function toAssetPathFromHtml(
 }
 
 const legacyEnvVarMarker = `__VITE_IS_LEGACY__`
+const modernEnvVarMarker = `__VITE_IS_MODERN__`
 
 const _require = createRequire(import.meta.url)
 
@@ -590,6 +591,7 @@ function viteLegacyPlugin(options: Options = {}): Plugin[] {
               plugins: [
                 recordAndRemovePolyfillBabelPlugin(polyfillsDiscovered.legacy),
                 replaceLegacyEnvBabelPlugin(),
+                replaceModernEnvBabelPlugin(),
                 wrapIIFEBabelPlugin(),
               ],
             }),
@@ -1008,6 +1010,19 @@ function replaceLegacyEnvBabelPlugin(): BabelPlugin {
       Identifier(path) {
         if (path.node.name === legacyEnvVarMarker) {
           path.replaceWith(t.booleanLiteral(true))
+        }
+      },
+    },
+  })
+}
+
+function replaceModernEnvBabelPlugin(): BabelPlugin {
+  return ({ types: t }): BabelPlugin => ({
+    name: 'vite-replace-env-modern',
+    visitor: {
+      Identifier(path) {
+        if (path.node.name === modernEnvVarMarker) {
+          path.replaceWith(t.booleanLiteral(false))
         }
       },
     },
