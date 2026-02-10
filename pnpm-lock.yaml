@@ -293,8 +293,8 @@ importers:
         specifier: ^0.0.5
         version: 0.0.5
       '@vitejs/devtools':
-        specifier: ^0.0.0-alpha.29
-        version: 0.0.0-alpha.29(typescript@5.9.3)(vite@packages+vite)(vue@3.5.28(typescript@5.9.3))
+        specifier: ^0.0.0-alpha.31
+        version: 0.0.0-alpha.31(typescript@5.9.3)(vite@packages+vite)(vue@3.5.28(typescript@5.9.3))
       artichokie:
         specifier: ^0.4.2
         version: 0.4.2
@@ -750,8 +750,8 @@ importers:
         version: 3.5.28(typescript@5.9.3)
     devDependencies:
       '@vitejs/devtools':
-        specifier: ^0.0.0-alpha.29
-        version: 0.0.0-alpha.29(typescript@5.9.3)(vite@packages+vite)(vue@3.5.28(typescript@5.9.3))
+        specifier: ^0.0.0-alpha.31
+        version: 0.0.0-alpha.31(typescript@5.9.3)(vite@packages+vite)(vue@3.5.28(typescript@5.9.3))
       vite:
         specifier: workspace:*
         version: link:../../packages/vite
@@ -3993,24 +3993,24 @@ packages:
     resolution: {integrity: sha512-Zfq6FbIcYl9gaAmVu6ROsqUiCNwpEj3Ljz/tMX5fl12Z95OFOxzf7vlO03WE5JBU/ri1tBDFHnW41dihMINOPQ==}
     engines: {node: '>=14'}
 
-  '@vitejs/devtools-kit@0.0.0-alpha.29':
-    resolution: {integrity: sha512-Juu5pzB2bkcMdFzzegE7A1L60WnPddUth9dGqS/E4S/cnFOdfhssi06jY0gpc6JJFuDKUZ80GhwIy3RgyL/a/A==}
+  '@vitejs/devtools-kit@0.0.0-alpha.31':
+    resolution: {integrity: sha512-p+dxqSa7PrEuPNrP+hjfMqCshW0CJw6YIrEsR6NsYZH30IlhLMuusOV3Pq6QO2XKYEB6QyXXxteaB6PMqAsemw==}
     peerDependencies:
       vite: workspace:*
 
-  '@vitejs/devtools-rolldown@0.0.0-alpha.29':
-    resolution: {integrity: sha512-PDLu3mWGJMopNMKpnnY+C6DcyvoFq/KL37d6H2pyFKtEBPpYJqWIP3Jrssr3hlPQ+DtBQet1Esb7fOnhxp5nYg==}
+  '@vitejs/devtools-rolldown@0.0.0-alpha.31':
+    resolution: {integrity: sha512-RS6hgfZByyc3hxbqKIlbHLxMYlfkJ2VZ2mFAtWlvPZ+r4wMZc9/JJoXiU789UghPRSdbsBWFfE9Mu76qX/E74w==}
 
-  '@vitejs/devtools-rpc@0.0.0-alpha.29':
-    resolution: {integrity: sha512-/Ic/+7YDR0yb2G0nnzUdsO22gCv4s2axwHE2cE5Ei8J2k46f1KvNJSbP5gEuK1ucbmOG68YHhfUGwyBp3tvtPw==}
+  '@vitejs/devtools-rpc@0.0.0-alpha.31':
+    resolution: {integrity: sha512-Ij86X8O88RZGshubL51wnKdTtbKhKEr2M8AUgQtFev21UQSMDc9O8VQTRWZkzmmC0mWA2hBZtKAPN5FeC1sI1w==}
     peerDependencies:
       ws: '*'
     peerDependenciesMeta:
       ws:
         optional: true
 
-  '@vitejs/devtools@0.0.0-alpha.29':
-    resolution: {integrity: sha512-pSCMFPtciHkwX+hyncvT4igbm8g2+CrgjKkzV/7GFX1EpQiw5DTeicXV0qhob0qsyAloOsG2k8nvf4WuyrXzxQ==}
+  '@vitejs/devtools@0.0.0-alpha.31':
+    resolution: {integrity: sha512-Z3N2duHItwmbv6x4rSbGqdsYy12Tk2xnHha9Hj4U7J6PC/jIgTUhq8846vQPnMjRGTJ4hFNCZDU0k8D3ztim0A==}
     hasBin: true
     peerDependencies:
       vite: workspace:*
@@ -9948,9 +9948,9 @@ snapshots:
 
   '@vercel/detect-agent@1.1.0': {}
 
-  '@vitejs/devtools-kit@0.0.0-alpha.29(typescript@5.9.3)(vite@packages+vite)(ws@8.19.0)':
+  '@vitejs/devtools-kit@0.0.0-alpha.31(typescript@5.9.3)(vite@packages+vite)(ws@8.19.0)':
     dependencies:
-      '@vitejs/devtools-rpc': 0.0.0-alpha.29(typescript@5.9.3)(ws@8.19.0)
+      '@vitejs/devtools-rpc': 0.0.0-alpha.31(typescript@5.9.3)(ws@8.19.0)
       birpc: 4.0.0
       immer: 11.1.3
       vite: link:packages/vite
@@ -9958,13 +9958,13 @@ snapshots:
       - typescript
       - ws
 
-  '@vitejs/devtools-rolldown@0.0.0-alpha.29(typescript@5.9.3)(vite@packages+vite)(vue@3.5.28(typescript@5.9.3))':
+  '@vitejs/devtools-rolldown@0.0.0-alpha.31(typescript@5.9.3)(vite@packages+vite)(vue@3.5.28(typescript@5.9.3))':
     dependencies:
       '@floating-ui/dom': 1.7.5
       '@pnpm/read-project-manifest': 1001.2.4
       '@rolldown/debug': 1.0.0-rc.3
-      '@vitejs/devtools-kit': 0.0.0-alpha.29(typescript@5.9.3)(vite@packages+vite)(ws@8.19.0)
-      '@vitejs/devtools-rpc': 0.0.0-alpha.29(typescript@5.9.3)(ws@8.19.0)
+      '@vitejs/devtools-kit': 0.0.0-alpha.31(typescript@5.9.3)(vite@packages+vite)(ws@8.19.0)
+      '@vitejs/devtools-rpc': 0.0.0-alpha.31(typescript@5.9.3)(ws@8.19.0)
       ansis: 4.2.0
       birpc: 4.0.0
       cac: 6.7.14
@@ -10013,7 +10013,7 @@ snapshots:
       - vite
       - vue
 
-  '@vitejs/devtools-rpc@0.0.0-alpha.29(typescript@5.9.3)(ws@8.19.0)':
+  '@vitejs/devtools-rpc@0.0.0-alpha.31(typescript@5.9.3)(ws@8.19.0)':
     dependencies:
       birpc: 4.0.0
       ohash: 2.0.11
@@ -10025,11 +10025,11 @@ snapshots:
     transitivePeerDependencies:
       - typescript
 
-  '@vitejs/devtools@0.0.0-alpha.29(typescript@5.9.3)(vite@packages+vite)(vue@3.5.28(typescript@5.9.3))':
+  '@vitejs/devtools@0.0.0-alpha.31(typescript@5.9.3)(vite@packages+vite)(vue@3.5.28(typescript@5.9.3))':
     dependencies:
-      '@vitejs/devtools-kit': 0.0.0-alpha.29(typescript@5.9.3)(vite@packages+vite)(ws@8.19.0)
-      '@vitejs/devtools-rolldown': 0.0.0-alpha.29(typescript@5.9.3)(vite@packages+vite)(vue@3.5.28(typescript@5.9.3))
-      '@vitejs/devtools-rpc': 0.0.0-alpha.29(typescript@5.9.3)(ws@8.19.0)
+      '@vitejs/devtools-kit': 0.0.0-alpha.31(typescript@5.9.3)(vite@packages+vite)(ws@8.19.0)
+      '@vitejs/devtools-rolldown': 0.0.0-alpha.31(typescript@5.9.3)(vite@packages+vite)(vue@3.5.28(typescript@5.9.3))
+      '@vitejs/devtools-rpc': 0.0.0-alpha.31(typescript@5.9.3)(ws@8.19.0)
       birpc: 4.0.0
       cac: 6.7.14
       h3: 1.15.5

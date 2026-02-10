@@ -15,7 +15,11 @@ import {
   type RolldownOptions,
   rolldown,
 } from 'rolldown'
-import type { StartOptions } from '@vitejs/devtools/cli-commands'
+import type {
+  DevToolsConfig,
+  ResolvedDevToolsConfig,
+} from '@vitejs/devtools/config'
+import { normalizeDevToolsConfig } from '@vitejs/devtools/config'
 import type { Alias, AliasOptions } from '#dep-types/alias'
 import type { AnymatchFn } from '../types/anymatch'
 import { withTrailingSlash } from '../shared/utils'
@@ -620,15 +624,6 @@ export interface ResolvedWorkerOptions {
   rolldownOptions: RolldownOptions
 }
 
-export interface DevToolsConfig extends Partial<StartOptions> {
-  enabled: boolean
-}
-
-export interface ResolvedDevToolsConfig {
-  config: Omit<DevToolsConfig, 'enabled'> & { host: string }
-  enabled: boolean
-}
-
 export interface InlineConfig extends UserConfig {
   configFile?: string | false
   /** @experimental */
@@ -751,16 +746,7 @@ export async function resolveDevToolsConfig(
 ): Promise<ResolvedDevToolsConfig> {
   const resolvedHostname = await resolveHostname(host)
   const fallbackHostname = resolvedHostname.host ?? 'localhost'
-
-  return {
-    enabled: config === true || !!(config && config.enabled),
-    config: {
-      ...(isObject(config) ? config : {}),
-      host: isObject(config)
-        ? (config?.host ?? fallbackHostname)
-        : fallbackHostname,
-    },
-  }
+  return normalizeDevToolsConfig(config, fallbackHostname)
 }
 
 // inferred ones are omitted
