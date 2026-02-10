@@ -5,6 +5,7 @@ import {
   isBuild,
   listAssets,
   page,
+  readFile,
   readManifest,
 } from '~utils'
 
@@ -160,5 +161,15 @@ describe.runIf(isBuild)('build', () => {
 
     expect(findAssetFile(/chunk-async(?!-legacy)/)).not.toMatch(guard)
     expect(findAssetFile(/index-legacy/)).not.toMatch(guard)
+  })
+
+  test('should not include preload helper in legacy chunks', async () => {
+    expect(
+      listAssets().filter(
+        (filename) =>
+          filename.includes('-legacy') &&
+          readFile(`dist/assets/${filename}`).includes('Unable to preload'),
+      ),
+    ).toStrictEqual([])
   })
 })
