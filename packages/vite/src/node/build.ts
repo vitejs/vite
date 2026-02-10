@@ -656,7 +656,6 @@ export function resolveRolldownOptions(
       viteMode: true,
       chunkImportMap: options.chunkImportMap
         ? {
-            // TODO: how can we support `experimental.renderBuiltUrl`?
             baseUrl: base,
           }
         : options.rollupOptions.experimental?.chunkImportMap,

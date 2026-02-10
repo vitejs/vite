@@ -457,12 +457,6 @@ export function buildImportAnalysisPlugin(config: ResolvedConfig): Plugin[] {
                       : [...deps]
                     : []
 
-                depsArray = depsArray.map(
-                  (dep) => importMapReverseMapping?.[dep] ?? dep,
-                )
-
-                // TODO: should `modulePreload.resolveDependencies` receive the actual URL or the pre-mapped URL?
-
                 const resolveDependencies = modulePreload
                   ? modulePreload.resolveDependencies
                   : undefined
@@ -475,6 +469,7 @@ export function buildImportAnalysisPlugin(config: ResolvedConfig): Plugin[] {
                     ;(dep.endsWith('.css') ? cssDeps : otherDeps).push(dep)
                   }
                   depsArray = [
+                    // NOTE: deps are URLs, not specifiers using the import map mapping
                     ...resolveDependencies(normalizedFile, otherDeps, {
                       hostId: file,
                       hostType: 'js',
@@ -482,6 +477,10 @@ export function buildImportAnalysisPlugin(config: ResolvedConfig): Plugin[] {
                     ...cssDeps,
                   ]
                 }
+
+                depsArray = depsArray.map(
+                  (dep) => importMapReverseMapping?.[dep] ?? dep,
+                )
 
                 let renderedDeps: number[]
                 if (renderBuiltUrl) {
