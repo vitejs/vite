@@ -19,7 +19,6 @@ import type {
   DevToolsConfig,
   ResolvedDevToolsConfig,
 } from '@vitejs/devtools/config'
-import { normalizeDevToolsConfig } from '@vitejs/devtools/config'
 import type { Alias, AliasOptions } from '#dep-types/alias'
 import type { AnymatchFn } from '../types/anymatch'
 import { withTrailingSlash } from '../shared/utils'
@@ -743,10 +742,33 @@ export interface ResolvedConfig extends Readonly<
 export async function resolveDevToolsConfig(
   config: DevToolsConfig | boolean | undefined,
   host: string | boolean | undefined,
+  logger: Logger,
 ): Promise<ResolvedDevToolsConfig> {
+  const isEnabled = config === true || !!(config && config.enabled)
   const resolvedHostname = await resolveHostname(host)
   const fallbackHostname = resolvedHostname.host ?? 'localhost'
-  return normalizeDevToolsConfig(config, fallbackHostname)
+  const fallbackConfig = {
+    config: {
+      host: fallbackHostname,
+    },
+    enabled: false,
+  }
+  if (!isEnabled) {
+    return fallbackConfig
+  }
+
+  try {
+    const { normalizeDevToolsConfig } = await import('@vitejs/devtools/config')
+    return normalizeDevToolsConfig(config, fallbackHostname)
+  } catch (e) {
+    logger.error(
+      colors.red(
+        `Failed to load Vite DevTools config: ${e.message || e.stack}`,
+      ),
+      { error: e },
+    )
+    return fallbackConfig
+  }
 }
 
 // inferred ones are omitted
@@ -1849,6 +1871,7 @@ export async function resolveConfig(
   const resolvedDevToolsConfig = await resolveDevToolsConfig(
     config.devtools,
     server.host,
+    logger,
   )
 
   resolved = {
