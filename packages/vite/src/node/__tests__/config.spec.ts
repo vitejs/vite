@@ -618,36 +618,116 @@ describe('mergeConfig', () => {
     ).toBe('browser')
   })
 
-  test('later plugin can read top-level rollupOptions set via rolldownOptions by earlier plugin', async () => {
-    let readValue: string | undefined
-    await resolveConfig(
-      {
-        plugins: [
-          {
-            name: 'plugin-a',
-            config() {
-              return {
-                build: {
-                  rolldownOptions: {
-                    input: './from-plugin-a.ts',
+  describe('later plugin can read `rollupOptions` set via `rolldownOptions` in earlier plugin', () => {
+    test('top-level config', async () => {
+      let value: string | undefined
+
+      await resolveConfig(
+        {
+          plugins: [
+            {
+              name: 'plugin-a',
+              config() {
+                return {
+                  build: {
+                    rolldownOptions: {
+                      input: './from-plugin-a.ts',
+                    },
                   },
-                },
-              }
+                }
+              },
             },
-          },
-          {
-            name: 'plugin-b',
-            config(config) {
-              readValue = config.build?.rollupOptions?.input as
-                | string
-                | undefined
+            {
+              name: 'plugin-b',
+              config(config) {
+                value = config.build?.rollupOptions?.input as string
+              },
             },
+          ],
+        },
+        'build',
+      )
+
+      expect(value).toBe('./from-plugin-a.ts')
+    })
+
+    test('new `environments` object', async () => {
+      let value: string | undefined
+
+      await resolveConfig(
+        {
+          plugins: [
+            {
+              name: 'plugin-a',
+              config() {
+                return {
+                  environments: {
+                    ssr: {
+                      build: {
+                        rolldownOptions: {
+                          input: './from-plugin-a.ts',
+                        },
+                      },
+                    },
+                  },
+                }
+              },
+            },
+            {
+              name: 'plugin-b',
+              config(config) {
+                value = config.environments?.ssr?.build?.rollupOptions
+                  ?.input as string
+              },
+            },
+          ],
+        },
+        'build',
+      )
+
+      expect(value).toBe('./from-plugin-a.ts')
+    })
+
+    test('new environment on existing `environments` object', async () => {
+      let value: string | undefined
+
+      await resolveConfig(
+        {
+          environments: {
+            // environments exists, but no ssr
+            client: {},
           },
-        ],
-      },
-      'build',
-    )
-    expect(readValue).toBe('./from-plugin-a.ts')
+          plugins: [
+            {
+              name: 'plugin-a',
+              config() {
+                return {
+                  environments: {
+                    ssr: {
+                      build: {
+                        rolldownOptions: {
+                          input: './from-plugin-a.ts',
+                        },
+                      },
+                    },
+                  },
+                }
+              },
+            },
+            {
+              name: 'plugin-b',
+              config(config) {
+                value = config.environments?.ssr?.build?.rollupOptions
+                  ?.input as string
+              },
+            },
+          ],
+        },
+        'build',
+      )
+
+      expect(value).toBe('./from-plugin-a.ts')
+    })
   })
 })
 
