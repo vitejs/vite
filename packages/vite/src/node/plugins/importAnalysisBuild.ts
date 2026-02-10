@@ -13,6 +13,7 @@ import { toOutputFilePathInJS } from '../build'
 import { genSourceMapUrl } from '../server/sourcemap'
 import type { PartialEnvironment } from '../baseEnvironment'
 import { removedPureCssFilesCache } from './css'
+import { getImportMapFilename } from './html'
 
 type FileDep = {
   url: string
@@ -293,7 +294,7 @@ export function buildImportAnalysisPlugin(config: ResolvedConfig): Plugin[] {
       let importMapReverseMapping: Record<string, string> | undefined
       if (config.build.chunkImportMap) {
         const decoder = new TextDecoder()
-        const importMap = bundle['importmap.json']! as OutputAsset
+        const importMap = bundle[getImportMapFilename(config)]! as OutputAsset
         const importMapContent: { imports: Record<string, string> } =
           JSON.parse(
             typeof importMap.source === 'string'
@@ -316,7 +317,7 @@ export function buildImportAnalysisPlugin(config: ResolvedConfig): Plugin[] {
             fileName: 'importmap.legacy.json',
             source: importMap.source,
           })
-          delete bundle['importmap.json']
+          delete bundle[getImportMapFilename(config)]
         }
       }
 

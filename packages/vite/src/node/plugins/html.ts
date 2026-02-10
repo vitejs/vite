@@ -1185,7 +1185,7 @@ export function postImportMapHook(
     }
 
     if (config.command === 'build' && config.build.chunkImportMap) {
-      const importMap = bundle!['importmap.json'] as OutputAsset // TODO: use OutputOptions.experimental.chunkImportMap.fileName
+      const importMap = bundle![getImportMapFilename(config)] as OutputAsset
       const importMapHtml = serializeTag({
         tag: 'script',
         attrs: { type: 'importmap' },
@@ -1603,4 +1603,13 @@ function serializeAttrs(attrs: HtmlTagDescriptor['attrs']): string {
 
 function incrementIndent(indent: string = '') {
   return `${indent}${indent[0] === '\t' ? '\t' : '  '}`
+}
+
+export function getImportMapFilename(config: ResolvedConfig): string {
+  const chunkImportMap =
+    config.build.rolldownOptions.experimental?.chunkImportMap
+  if (typeof chunkImportMap === 'object' && chunkImportMap.fileName) {
+    return chunkImportMap.fileName
+  }
+  return 'importmap.json'
 }

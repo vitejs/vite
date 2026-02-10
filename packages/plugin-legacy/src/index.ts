@@ -639,7 +639,7 @@ function viteLegacyPlugin(options: Options = {}): Plugin[] {
         if (config.build.chunkImportMap) {
           facedeToLegacyImportMap.set(
             chunk.facadeModuleId,
-            bundle!['importmap.json']! as Rollup.OutputAsset,
+            bundle![getImportMapFilename(config)]! as Rollup.OutputAsset,
           )
         }
         if (genModern) {
@@ -801,13 +801,14 @@ function viteLegacyPlugin(options: Options = {}): Plugin[] {
       }
 
       if (isLegacyBundle(bundle) && genModern) {
+        const importMapFilename = getImportMapFilename(config)
         // avoid emitting duplicate assets
         for (const name in bundle) {
           if (
             bundle[name].type === 'asset' &&
             !name.endsWith('.map') &&
             !name.includes('-legacy') && // legacy chunks
-            name !== 'importmap.json' // handled by import analysis build plugin
+            name !== importMapFilename // handled by import analysis build plugin
           ) {
             delete bundle[name]
           }
@@ -817,6 +818,15 @@ function viteLegacyPlugin(options: Options = {}): Plugin[] {
   }
 
   return [legacyConfigPlugin, legacyGenerateBundlePlugin, legacyPostPlugin]
+}
+
+function getImportMapFilename(config: ResolvedConfig): string {
+  const chunkImportMap =
+    config.build.rolldownOptions.experimental?.chunkImportMap
+  if (typeof chunkImportMap === 'object' && chunkImportMap.fileName) {
+    return chunkImportMap.fileName
+  }
+  return 'importmap.json'
 }
 
 export async function detectPolyfills(
