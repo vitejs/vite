@@ -76,7 +76,6 @@ import { getHookHandler } from './plugins'
 import { BaseEnvironment } from './baseEnvironment'
 import type { MinimalPluginContextWithoutEnvironment, Plugin } from './plugin'
 import type { RollupPluginHooks } from './typeUtils'
-import { buildOxcPlugin } from './plugins/oxc'
 import { type LicenseOptions, licensePlugin } from './plugins/license'
 import {
   BasicMinimalPluginContext,
@@ -519,7 +518,6 @@ export async function resolveBuildPlugins(config: ResolvedConfig): Promise<{
     ],
     post: [
       ...(isBuild ? buildImportAnalysisPlugin(config) : []),
-      ...(config.nativePluginEnabledLevel >= 1 ? [] : [buildOxcPlugin()]),
       ...(config.build.minify === 'esbuild' ? [buildEsbuildPlugin()] : []),
       ...(isBuild ? [terserPlugin(config)] : []),
       ...(isBuild && !config.isWorker
@@ -1723,6 +1721,7 @@ export interface ViteBuilder {
   build(
     environment: BuildEnvironment,
   ): Promise<RolldownOutput | RolldownOutput[] | RolldownWatcher>
+  runDevTools(): Promise<void>
 }
 
 export interface BuilderOptions {
@@ -1833,6 +1832,20 @@ export async function createBuilder(
       const output = await buildEnvironment(environment)
       environment.isBuilt = true
       return output
+    },
+    async runDevTools() {
+      const devtoolsConfig = config.devtools
+      if (devtoolsConfig.enabled) {
+        try {
+          const { start } = await import(`@vitejs/devtools/cli-commands`)
+          await start(devtoolsConfig.config)
+        } catch (e) {
+          config.logger.error(
+            colors.red(`Failed to run Vite DevTools: ${e.message || e.stack}`),
+            { error: e },
+          )
+        }
+      }
     },
   }
 

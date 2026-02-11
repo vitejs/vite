@@ -15,6 +15,10 @@ import {
   type RolldownOptions,
   rolldown,
 } from 'rolldown'
+import type {
+  DevToolsConfig,
+  ResolvedDevToolsConfig,
+} from '@vitejs/devtools/config'
 import type { Alias, AliasOptions } from '#dep-types/alias'
 import type { AnymatchFn } from '../types/anymatch'
 import { withTrailingSlash } from '../shared/utils'
@@ -90,6 +94,7 @@ import {
   nodeLikeBuiltins,
   normalizeAlias,
   normalizePath,
+  resolveHostname,
   setupRollupOptionCompat,
 } from './utils'
 import {
@@ -507,6 +512,13 @@ export interface UserConfig extends DefaultEnvironmentOptions {
    * @default 'spa'
    */
   appType?: AppType
+  /**
+   * Enable devtools integration. Ensure that `@vitejs/devtools` is installed as a dependency.
+   * This feature is currently supported only in build mode.
+   * @experimental
+   * @default false
+   */
+  devtools?: boolean | DevToolsConfig
 }
 
 export interface HTMLOptions {
@@ -636,6 +648,7 @@ export interface ResolvedConfig extends Readonly<
     | 'future'
     | 'server'
     | 'preview'
+    | 'devtools'
   > & {
     configFile: string | undefined
     configFileDependencies: string[]
@@ -675,6 +688,7 @@ export interface ResolvedConfig extends Readonly<
     /** @experimental */
     builder: ResolvedBuilderOptions | undefined
     build: ResolvedBuildOptions
+    devtools: ResolvedDevToolsConfig
     preview: ResolvedPreviewOptions
     ssr: ResolvedSSROptions
     assetsInclude: (file: string) => boolean
@@ -724,6 +738,38 @@ export interface ResolvedConfig extends Readonly<
     [SYMBOL_RESOLVED_CONFIG]: true
   } & PluginHookUtils
 > {}
+
+export async function resolveDevToolsConfig(
+  config: DevToolsConfig | boolean | undefined,
+  host: string | boolean | undefined,
+  logger: Logger,
+): Promise<ResolvedDevToolsConfig> {
+  const isEnabled = config === true || !!(config && config.enabled)
+  const resolvedHostname = await resolveHostname(host)
+  const fallbackHostname = resolvedHostname.host ?? 'localhost'
+  const fallbackConfig = {
+    config: {
+      host: fallbackHostname,
+    },
+    enabled: false,
+  }
+  if (!isEnabled) {
+    return fallbackConfig
+  }
+
+  try {
+    const { normalizeDevToolsConfig } = await import('@vitejs/devtools/config')
+    return normalizeDevToolsConfig(config, fallbackHostname)
+  } catch (e) {
+    logger.error(
+      colors.red(
+        `Failed to load Vite DevTools config: ${e.message || e.stack}`,
+      ),
+      { error: e },
+    )
+    return fallbackConfig
+  }
+}
 
 // inferred ones are omitted
 const configDefaults = Object.freeze({
@@ -1096,6 +1142,15 @@ function resolveResolveOptions(
       colors.yellow(
         `\`resolve.alias\` contains an alias that maps \`/\`. ` +
           `This is not recommended as it can cause unexpected behavior when resolving paths.`,
+      ),
+    )
+  }
+  if (alias.some((a) => a.customResolver)) {
+    logger.warn(
+      colors.yellow(
+        `\`resolve.alias\` contains an alias with \`customResolver\` option. ` +
+          `This is deprecated and will be removed in Vite 9. ` +
+          `Please use a custom plugin with a resolveId hook and \`enforce: 'pre'\` instead.`,
       ),
     )
   }
@@ -1813,6 +1868,12 @@ export async function resolveConfig(
     experimental.renderBuiltUrl = undefined
   }
 
+  const resolvedDevToolsConfig = await resolveDevToolsConfig(
+    config.devtools,
+    server.host,
+    logger,
+  )
+
   resolved = {
     configFile: configFile ? normalizePath(configFile) : undefined,
     configFileDependencies: configFileDependencies.map((name) =>
@@ -1900,6 +1961,7 @@ export async function resolveConfig(
     resolve: resolvedDefaultResolve,
     dev: resolvedDevEnvironmentOptions,
     build: resolvedBuildOptions,
+    devtools: resolvedDevToolsConfig,
 
     environments: resolvedEnvironments,
 
@@ -2002,6 +2064,11 @@ export async function resolveConfig(
   if (!resolved.builder?.sharedConfigBuild && resolved.environments.ssr) {
     resolved.environments.ssr.build.emitAssets =
       resolved.build.ssrEmitAssets || resolved.build.emitAssets
+  }
+
+  // Enable `rolldownOptions.devtools` if devtools is enabled
+  if (resolved.devtools.enabled) {
+    resolved.build.rolldownOptions.devtools ??= {}
   }
 
   applyDepOptimizationOptionCompat(resolved)

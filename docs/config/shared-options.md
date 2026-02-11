@@ -92,7 +92,7 @@ Directory to save cache files. Files in this directory are pre-bundled deps or s
 ## resolve.alias
 
 - **Type:**
-  `Record<string, string> | Array<{ find: string | RegExp, replacement: string, customResolver?: ResolverFunction | ResolverObject }>`
+  `Record<string, string> | Array<{ find: string | RegExp, replacement: string }>`
 
 Defines aliases used to replace values in `import` or `require` statements. This works similar to [`@rollup/plugin-alias`](https://github.com/rollup/plugins/tree/master/packages/alias).
 
@@ -119,7 +119,7 @@ resolve: {
 }
 ```
 
-### Array Format (`Array<{ find: string | RegExp, replacement: string, customResolver?: ResolverFunction | ResolverObject }>`)
+### Array Format (`Array<{ find: string | RegExp, replacement: string }>`)
 
 The Array format allows specifying aliases as objects, which can be useful for complex key/value pairs.
 
@@ -137,8 +137,6 @@ When `find` is a regular expression, the `replacement` can use [replacement patt
 ```js
 { find:/^(.*)\.js$/, replacement: '$1.alias' }
 ```
-
-`customResolver` option can be used to provide separate module resolution for an individual alias.
 
 ## resolve.dedupe
 
@@ -175,6 +173,8 @@ Here, `import` and `require` are "conditions". Conditions can be nested and shou
 `development|production` is a special value that is replaced with `production` or `development` depending on the value of `process.env.NODE_ENV`. It is replaced with `production` when `process.env.NODE_ENV === 'production'` and `development` otherwise.
 
 Note that `import`, `require`, `default` conditions are always applied if the requirements are met.
+
+In addition, the `style` condition is applied when resolving style imports, e.g. `@import 'my-library'`. For some CSS pre-processors, their corresponding conditions are also applied, i.e. `sass` for Sass and `less` for Less.
 
 ## resolve.mainFields <NonInheritBadge />
 
@@ -548,6 +548,17 @@ Whether your application is a Single Page Application (SPA), a [Multi Page Appli
 - `'custom'`: don't include HTML middlewares
 
 Learn more in Vite's [SSR guide](/guide/ssr#vite-cli). Related: [`server.middlewareMode`](./server-options#server-middlewaremode).
+
+## devtools
+
+- **Experimental:** [Give Feedback](https://github.com/vitejs/devtools/discussions)
+- **Type:** `boolean` | `DevToolsConfig`
+- **Default:** `false`
+
+Enable devtools integration for visualizing the internal state and build analysis.
+Ensure that `@vitejs/devtools` is installed as a dependency. This feature is currently supported only in build mode.
+
+See [Vite DevTools](https://github.com/vitejs/devtools) for more details.
 
 ## future
 
