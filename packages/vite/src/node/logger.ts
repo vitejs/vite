@@ -51,6 +51,7 @@ export interface LoggerOptions {
   allowClearScreen?: boolean
   customLogger?: Logger
   console?: Console
+  defaultLogOptions?: LogOptions
 }
 
 // Only initialize the timeFormatter when the timestamp option is used, and
@@ -78,6 +79,7 @@ export function createLogger(
     prefix = '[vite]',
     allowClearScreen = true,
     console = globalThis.console,
+    defaultLogOptions = {},
   } = options
   const thresh = LogLevels[level]
   const canClearScreen =
@@ -85,6 +87,7 @@ export function createLogger(
   const clear = canClearScreen ? clearScreen : () => {}
 
   function format(type: LogType, msg: string, options: LogErrorOptions = {}) {
+    options = Object.assign(defaultLogOptions, options)
     if (options.timestamp) {
       let tag = ''
       if (type === 'info') {
