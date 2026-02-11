@@ -2,13 +2,11 @@ import path from 'node:path'
 import type {
   TransformOptions as OxcTransformOptions,
   TransformResult as OxcTransformResult,
-} from 'rolldown/experimental'
-import {
-  viteTransformPlugin as nativeTransformPlugin,
-  transformSync,
-} from 'rolldown/experimental'
+} from 'rolldown/utils'
+import { transformSync } from 'rolldown/utils'
+import { viteTransformPlugin as nativeTransformPlugin } from 'rolldown/experimental'
 import type { RawSourceMap } from '@jridgewell/remapping'
-import type { RollupError, SourceMap } from 'rolldown'
+import type { RolldownError, SourceMap } from 'rolldown'
 import { TSConfckParseError } from 'tsconfck'
 import colors from 'picocolors'
 import { prefixRegex } from 'rolldown/filter'
@@ -17,7 +15,6 @@ import {
   combineSourcemaps,
   createFilter,
   ensureWatchedFile,
-  generateCodeFrame,
   normalizePath,
 } from '../utils'
 import type { ResolvedConfig } from '../config'
@@ -212,6 +209,56 @@ function setOxcTransformOptionsFromTsconfigOptions(
     !useDefineForClassFields
 }
 
+// Copy from rolldown's packages/rolldown/src/utils/errors.ts
+function joinNewLine(s1: string, s2: string): string {
+  // ensure single new line in between
+  return s1.replace(/\n+$/, '') + '\n' + s2.replace(/^\n+/, '')
+}
+
+// Copy from rolldown's packages/rolldown/src/utils/errors.ts
+function getErrorMessage(e: RolldownError): string {
+  // If the `kind` field is present, we assume it represents
+  // a custom error defined by rolldown on the Rust side.
+  if (Object.hasOwn(e, 'kind')) {
+    return e.message
+  }
+
+  let s = ''
+  if (e.plugin) {
+    s += `[plugin ${e.plugin}]`
+  }
+  const id = e.id ?? e.loc?.file
+  if (id) {
+    s += ' ' + id
+    if (e.loc) {
+      s += `:${e.loc.line}:${e.loc.column}`
+    }
+  }
+  if (s) {
+    s += '\n'
+  }
+  const message = `${e.name ?? 'Error'}: ${e.message}`
+  s += message
+  if (e.frame) {
+    s = joinNewLine(s, e.frame)
+  }
+  // copy stack since it's important for js plugin error
+  if (e.stack) {
+    s = joinNewLine(s, e.stack.replace(message, ''))
+  }
+  if (e.cause) {
+    s = joinNewLine(s, 'Caused by:')
+    s = joinNewLine(
+      s,
+      getErrorMessage(e.cause as any)
+        .split('\n')
+        .map((line) => '  ' + line)
+        .join('\n'),
+    )
+  }
+  return s
+}
+
 export async function transformWithOxc(
   code: string,
   filename: string,
@@ -219,7 +266,7 @@ export async function transformWithOxc(
   inMap?: object,
   config?: ResolvedConfig,
   watcher?: FSWatcher,
-): Promise<Omit<OxcTransformResult, 'errors'> & { warnings: string[] }> {
+): Promise<Omit<OxcTransformResult, 'errors'>> {
   const warnings: string[] = []
   let lang = options?.lang
 
@@ -272,23 +319,33 @@ export async function transformWithOxc(
   const result = transformSync(filename, code, resolvedOptions)
 
   if (result.errors.length > 0) {
-    const firstError = result.errors[0]
-    const error: RollupError = new Error(firstError.message)
-    let frame = ''
-    frame += firstError.labels
-      .map(
-        (l) =>
-          (l.message ? `${l.message}\n` : '') +
-          generateCodeFrame(code, l.start, l.end),
-      )
-      .join('\n')
-    if (firstError.helpMessage) {
-      frame += '\n' + firstError.helpMessage
+    // Copy from rolldown's packages/rolldown/src/utils/errors.ts
+    let summary = `Transform failed with ${result.errors.length} error${result.errors.length < 2 ? '' : 's'}:\n`
+    for (let i = 0; i < result.errors.length; i++) {
+      summary += '\n'
+      if (i >= 5) {
+        summary += '...'
+        break
+      }
+      summary += getErrorMessage(result.errors[i])
     }
-    error.frame = frame
-    error.pos =
-      firstError.labels.length > 0 ? firstError.labels[0].start : undefined
-    throw error
+
+    const wrapper = new Error(summary)
+    // expose individual errors as getters so that
+    // `console.error(wrapper)` doesn't expand unnecessary details
+    // when they are already presented in `wrapper.message`
+    Object.defineProperty(wrapper, 'errors', {
+      configurable: true,
+      enumerable: true,
+      get: () => result.errors,
+      set: (value) =>
+        Object.defineProperty(wrapper, 'errors', {
+          configurable: true,
+          enumerable: true,
+          value,
+        }),
+    })
+    throw wrapper
   }
 
   let map: SourceMap
@@ -305,7 +362,6 @@ export async function transformWithOxc(
   return {
     ...result,
     map,
-    warnings,
   }
 }
 
@@ -458,7 +514,7 @@ export function oxcPlugin(config: ResolvedConfig): Plugin {
           result.code = jsxInject + ';' + result.code
         }
         for (const warning of result.warnings) {
-          this.environment.logger.warnOnce(warning)
+          this.environment.logger.warnOnce(warning.message)
         }
         return {
           code: result.code,

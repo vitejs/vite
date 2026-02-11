@@ -1,4 +1,4 @@
-import { transformSync } from 'rolldown/experimental'
+import { transformSync } from 'rolldown/utils'
 import type { ResolvedConfig } from '../config'
 import type { Plugin } from '../plugin'
 import { escapeRegex, isCSSRequest } from '../utils'
