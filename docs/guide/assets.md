@@ -121,18 +121,6 @@ Note that you should always reference `public` assets using root absolute path -
 
 ::: tip Choosing between imports and the `public` directory
 
-Use **imported assets** when:
-
-- The asset is referenced from JavaScript or CSS
-- You want hashed filenames for long-term caching
-- The asset should be processed or optimized by Vite plugins
-
-Use the **`public` directory** when:
-
-- The asset must keep an exact file name
-- The asset is not part of the module graph
-- You need a fixed, predictable URL (for example `/robots.txt` or `/favicon.ico`)
-
 In general, prefer **importing assets** unless you specifically need the guarantees provided by `public/`.
 
 :::
