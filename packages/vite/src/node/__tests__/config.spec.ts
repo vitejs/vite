@@ -617,6 +617,117 @@ describe('mergeConfig', () => {
       testRolldownOptions.environments.client.build.rolldownOptions.platform,
     ).toBe('browser')
   })
+
+  describe('later plugin can read `rollupOptions` set via `rolldownOptions` in earlier plugin', () => {
+    test('top-level config', async () => {
+      expect.assertions(2)
+      await resolveConfig(
+        {
+          plugins: [
+            {
+              name: 'plugin-a',
+              config() {
+                return {
+                  build: {
+                    rolldownOptions: {
+                      platform: 'neutral',
+                    },
+                  },
+                  worker: {
+                    rolldownOptions: {
+                      platform: 'neutral',
+                    },
+                  },
+                }
+              },
+            },
+            {
+              name: 'plugin-b',
+              config(config) {
+                expect(config.build?.rollupOptions?.platform).toBe('neutral')
+                expect(config.worker?.rollupOptions?.platform).toBe('neutral')
+              },
+            },
+          ],
+        },
+        'build',
+      )
+    })
+
+    test('new `environments` object', async () => {
+      expect.assertions(1)
+      await resolveConfig(
+        {
+          plugins: [
+            {
+              name: 'plugin-a',
+              config() {
+                return {
+                  environments: {
+                    ssr: {
+                      build: {
+                        rolldownOptions: {
+                          platform: 'neutral',
+                        },
+                      },
+                    },
+                  },
+                }
+              },
+            },
+            {
+              name: 'plugin-b',
+              config(config) {
+                expect(
+                  config.environments?.ssr?.build?.rollupOptions?.platform,
+                ).toBe('neutral')
+              },
+            },
+          ],
+        },
+        'build',
+      )
+    })
+
+    test('new environment on existing `environments` object', async () => {
+      expect.assertions(1)
+      await resolveConfig(
+        {
+          environments: {
+            // environments exists, but no ssr
+            client: {},
+          },
+          plugins: [
+            {
+              name: 'plugin-a',
+              config() {
+                return {
+                  environments: {
+                    ssr: {
+                      build: {
+                        rolldownOptions: {
+                          platform: 'neutral',
+                        },
+                      },
+                    },
+                  },
+                }
+              },
+            },
+            {
+              name: 'plugin-b',
+              config(config) {
+                expect(
+                  config.environments?.ssr?.build?.rollupOptions?.platform,
+                ).toBe('neutral')
+              },
+            },
+          ],
+        },
+        'build',
+      )
+    })
+  })
 })
 
 describe('resolveEnvPrefix', () => {
