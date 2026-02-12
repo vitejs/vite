@@ -86,12 +86,12 @@ export async function fetchModule(
 
   if (environment instanceof FullBundleDevEnvironment) {
     let fileName: string = url
+    const importerDirectory = importer
+      ? path.posix.dirname(importer)
+      : environment.config.root
     // Browser does this automatically when serving files,
     // But for SSR we have to resolve paths ourselves.
     if (url[0] === '.') {
-      const importerDirectory = importer
-        ? path.posix.dirname(importer)
-        : environment.config.root
       const moduleId = path.posix.resolve(importerDirectory, url)
       fileName = moduleId.slice(environment.config.root.length + 1)
     }
@@ -107,7 +107,7 @@ export async function fetchModule(
     }
 
     const file = importer
-      ? path.posix.resolve(importer, url)
+      ? path.posix.resolve(importerDirectory, url)
       : path.posix.resolve(environment.config.root, url)
     // TODO: map
     const result: ViteFetchResult & { map?: undefined } = {

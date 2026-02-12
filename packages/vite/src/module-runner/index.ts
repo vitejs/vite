@@ -37,5 +37,6 @@ export {
   ssrImportKey,
   ssrImportMetaKey,
   ssrModuleExportsKey,
+  ssrRolldownRuntimeKey,
 } from './constants'
 export type { InterceptorOptions } from './sourcemap/interceptor'

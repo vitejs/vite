@@ -1,3 +1,4 @@
+import type { DevRuntime } from 'rolldown/experimental/runtime-types'
 import type { ViteHotContext } from '#types/hot'
 import { HMRClient, HMRContext, type HMRLogger } from '../shared/hmr'
 import { cleanUrl, isPrimitive } from '../shared/utils'
@@ -24,6 +25,8 @@ import {
   ssrImportKey,
   ssrImportMetaKey,
   ssrModuleExportsKey,
+  ssrRolldownRuntimeDefineMethod,
+  ssrRolldownRuntimeKey,
 } from './constants'
 import { hmrLogger, silentConsole } from './hmrLogger'
 import { createHMRHandlerForRunner } from './hmrHandler'
@@ -47,6 +50,29 @@ export class ModuleRunner {
   >()
   private isBuiltin?: (id: string) => boolean
   private builtinsPromise?: Promise<void>
+  private rolldownDevRuntime?: DevRuntime
+
+  // We need the proxy because the runtime MUST be ready before the first import is processed.
+  // Because `context['__rolldown_runtime__']` is passed down even before the modules are executed.
+  private rolldownDevRuntimeProxy = new Proxy(
+    {},
+    {
+      get: (_, p, receiver) => {
+        // Special `__rolldown_runtime__.__vite_ssr_define__` method only for the module runner
+        if (p === ssrRolldownRuntimeDefineMethod) {
+          return (runtime: DevRuntime) => {
+            this.rolldownDevRuntime = runtime
+          }
+        }
+
+        if (!this.rolldownDevRuntime) {
+          throw new Error(`__rolldown_runtime__ was not initialized.`)
+        }
+
+        return Reflect.get(this.rolldownDevRuntime, p, receiver)
+      },
+    },
+  ) as DevRuntime
 
   private closed = false
 
@@ -418,6 +444,7 @@ export class ModuleRunner {
           get: getter,
         }),
       [ssrImportMetaKey]: meta,
+      [ssrRolldownRuntimeKey]: this.rolldownDevRuntimeProxy,
     }
 
     this.debug?.('[module runner] executing', href)

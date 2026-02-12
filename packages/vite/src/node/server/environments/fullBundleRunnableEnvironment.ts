@@ -1,12 +1,13 @@
 import path, { resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
-import type { ModuleRunner } from 'vite/module-runner'
+import { type ModuleRunner, ssrRolldownRuntimeKey } from 'vite/module-runner'
 import {
   type ResolvedConfig,
   createServerHotChannel,
   createServerModuleRunner,
 } from '../../index'
 import { slash } from '../../../shared/utils'
+import { ssrRolldownRuntimeDefineMethod } from '../../../module-runner/constants'
 import { FullBundleDevEnvironment } from './fullBundleEnvironment'
 
 export class FullBundleRunnableDevEnvironment extends FullBundleDevEnvironment {
@@ -15,7 +16,7 @@ export class FullBundleRunnableDevEnvironment extends FullBundleDevEnvironment {
   constructor(name: string, config: ResolvedConfig) {
     // Since this is not yet exposed, we create hot channel here
     super(name, config, {
-      hot: false, // TODO
+      hot: true,
       transport: createServerHotChannel(),
     })
   }
@@ -26,7 +27,7 @@ export class FullBundleRunnableDevEnvironment extends FullBundleDevEnvironment {
     }
     this._runner = createServerModuleRunner(this)
     // TODO: don't patch
-    const importModule = this.runner.import.bind(this.runner)
+    const importModule = this._runner.import.bind(this._runner)
     this._runner.import = async (url: string) => {
       await this.waitForInitialBuildFinish()
       const fileName = this.resolveEntryFilename(url)
@@ -62,7 +63,7 @@ export class FullBundleRunnableDevEnvironment extends FullBundleDevEnvironment {
   }
 
   protected override async getDevRuntimeImplementation(): Promise<string> {
-    // TODO: this shoult not be in this file
+    // TODO: this should not be in this file
     return `
   class ViteDevRuntime extends DevRuntime {
     override createModuleHotContext(moduleId) {
@@ -96,9 +97,7 @@ export class FullBundleRunnableDevEnvironment extends FullBundleDevEnvironment {
     },
   }
 
-  globalThis.__rolldown_runtime__ ??= new ViteDevRuntime(
-    wrappedSocket,
-  )
+  ;${ssrRolldownRuntimeKey}.${ssrRolldownRuntimeDefineMethod}(new ViteDevRuntime(wrappedSocket))
     `
   }
 
