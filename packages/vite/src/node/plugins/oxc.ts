@@ -6,7 +6,7 @@ import type {
 import { transformSync } from 'rolldown/utils'
 import { viteTransformPlugin as nativeTransformPlugin } from 'rolldown/experimental'
 import type { RawSourceMap } from '@jridgewell/remapping'
-import type { RolldownError, SourceMap } from 'rolldown'
+import type { RolldownError, RolldownLog, SourceMap } from 'rolldown'
 import { TSConfckParseError } from 'tsconfck'
 import colors from 'picocolors'
 import { prefixRegex } from 'rolldown/filter'
@@ -290,6 +290,7 @@ export async function transformWithOxc(
     sourcemap: true,
     ...options,
     lang,
+    tsconfig: false,
   }
 
   if (lang === 'ts' || lang === 'tsx') {
@@ -373,6 +374,15 @@ function resolveTsconfigTarget(target: string | undefined): number | 'next' {
 
   if (targetLowered === 'esnext') return 'next'
   return parseInt(targetLowered.slice(2))
+}
+
+const warnedMessages = new Set<string>()
+function shouldSkipWarning(warning: RolldownLog): boolean {
+  if (warning.code === 'UNSUPPORTED_TSCONFIG_OPTION') {
+    if (warnedMessages.has(warning.message)) return true
+    warnedMessages.add(warning.message)
+  }
+  return false
 }
 
 export function oxcPlugin(config: ResolvedConfig): Plugin {
@@ -514,7 +524,9 @@ export function oxcPlugin(config: ResolvedConfig): Plugin {
           result.code = jsxInject + ';' + result.code
         }
         for (const warning of result.warnings) {
-          this.environment.logger.warnOnce(warning.message)
+          if (!shouldSkipWarning(warning)) {
+            this.warn(warning)
+          }
         }
         return {
           code: result.code,

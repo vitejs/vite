@@ -387,7 +387,10 @@ function rolldownScanPlugin(
     let transpiledContents: string
     // transpile because `transformGlobImport` only expects js
     if (loader !== 'js') {
-      const result = transformSync(id, contents, { lang: loader })
+      const result = transformSync(id, contents, {
+        lang: loader,
+        tsconfig: false,
+      })
       if (result.errors.length > 0) {
         throw new AggregateError(result.errors, 'oxc transform error')
       }

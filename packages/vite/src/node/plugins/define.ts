@@ -221,6 +221,7 @@ export async function replaceDefine(
       environment.config.command === 'build'
         ? !!environment.config.build.sourcemap
         : true,
+    tsconfig: false,
   })
 
   if (result.errors.length > 0) {
