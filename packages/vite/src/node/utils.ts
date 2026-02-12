@@ -1290,19 +1290,17 @@ const rollupOptionsRootPaths = new Set([
 ])
 
 /**
- * Sets up `rollupOptions` compat proxies for any `build` objects
- * found within an environments config object.
+ * Sets up `rollupOptions` compat proxies for an environment.
  */
-function setupRollupOptionCompatForEnvironments(
-  environments: Record<string, any>,
-): void {
-  for (const envName in environments) {
-    const envConfig = environments[envName]
-
-    if (isObject(envConfig) && isObject(envConfig.build)) {
-      setupRollupOptionCompat(envConfig.build, 'build')
-    }
+function setupRollupOptionCompatForEnvironment(environment: any): any {
+  if (!isObject(environment)) {
+    return environment
   }
+  const merged: Record<string, any> = { ...environment }
+  if (isObject(merged.build)) {
+    setupRollupOptionCompat(merged.build, 'build')
+  }
+  return merged
 }
 
 export function hasBothRollupOptionsAndRolldownOptions(
@@ -1350,30 +1348,18 @@ function mergeConfigRecursively(
     }
 
     if (existing == null) {
-      if (isObject(value)) {
+      if (rootPath === '' && key === 'environments' && isObject(value)) {
         // Clone to avoid mutating the original override object
-        merged[key] = { ...value }
-
-        // Calculate what the rootPath would be for this key
-        const newRootPath =
-          rootPath && !environmentPathRE.test(rootPath)
-            ? `${rootPath}.${key}`
-            : key
-
-        if (rollupOptionsRootPaths.has(newRootPath)) {
-          // Direct assignment of a build/worker/optimizeDeps object
-          setupRollupOptionCompat(merged[key], newRootPath)
-        } else if (newRootPath === 'environments') {
-          // Direct assignment of entire environments object
-          // Need to set up proxies for any build objects within each environment
-          setupRollupOptionCompatForEnvironments(merged[key])
-        } else if (environmentPathRE.test(newRootPath)) {
-          // Direct assignment of a single environment
-          // Check if it contains a build object
-          if (isObject(merged[key].build)) {
-            setupRollupOptionCompat(merged[key].build, 'build')
-          }
+        const environments = { ...value }
+        for (const envName in environments) {
+          environments[envName] = setupRollupOptionCompatForEnvironment(
+            environments[envName],
+          )
         }
+        merged[key] = environments
+      } else if (rootPath === 'environments') {
+        // `environments` exists, but a new environment is added
+        merged[key] = setupRollupOptionCompatForEnvironment(value)
       } else {
         merged[key] = value
       }
