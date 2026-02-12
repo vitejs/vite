@@ -55,7 +55,7 @@ As shown above, `VITE_SOME_KEY` is a number but returns a string when parsed. Th
 
 :::warning Protecting secrets
 
-- `VITE_*` variables should _not_ contain sensitive information such as API keys. The values of these variables are bundled into your source code at build time. For production deployments, consider a backend server or serverless/edge functions to properly secure secrets.
+`VITE_*` variables should _not_ contain sensitive information such as API keys. The values of these variables are bundled into your source code at build time. For production deployments, consider a backend server or serverless/edge functions to properly secure secrets.
 
 :::
 
@@ -118,7 +118,7 @@ To avoid interop issues, it is recommended to avoid relying on this behavior. Vi
 
 :::warning Ignoring local `.env` files
 
-- `.env.*.local` files are local-only and can contain sensitive variables. You should add `*.local` to your `.gitignore` to avoid them being checked into git.
+`.env.*.local` files are local-only and can contain sensitive variables. You should add `*.local` to your `.gitignore` to avoid them being checked into git.
 
 :::
 
