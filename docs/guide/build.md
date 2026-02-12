@@ -96,7 +96,7 @@ export default defineConfig({
 })
 ```
 
-With the `--watch` flag enabled, changes to files to be bundled will trigger a rebuild. Changes to `vite.config.*` (or config dependencies) require restarting the build command.
+With the `--watch` flag enabled, changes to files to be bundled will trigger a rebuild. Note that changes to the config and its dependencies require restarting the build command.
 
 ## Multi-Page App
 
