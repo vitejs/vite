@@ -543,7 +543,7 @@ export async function reloadOnTsconfigChange(
   // any json file in the tsconfig cache could have been used to compile ts
   if (changedFile.endsWith('.json')) {
     const cache = getTSConfigResolutionCache(server.config)
-    if (changedFile.endsWith('/tsconfig.json') || cache.size() > 0) {
+    if (changedFile.endsWith('/tsconfig.json') && cache.size() > 0) {
       server.config.logger.info(
         `changed tsconfig file detected: ${changedFile} - Clearing cache and forcing full-reload to ensure TypeScript is compiled with updated config values.`,
         { clear: server.config.clearScreen, timestamp: true },
