@@ -121,7 +121,7 @@ Note that you should always reference `public` assets using root absolute path -
 
 ::: tip Choosing between imports and the `public` directory
 
-In general, prefer **importing assets** unless you specifically need the guarantees provided by `public/`.
+In general, prefer **importing assets** unless you specifically need the guarantees provided by the `public` directory.
 
 :::
 
