@@ -83,9 +83,9 @@ const identifierReplacements: Record<string, Record<string, string>> = {
     Plugin$1: 'Rolldown.Plugin',
     TransformResult$1: 'Rolldown.TransformResult',
   },
-  'rolldown/experimental': {
-    TransformOptions$1: 'rolldown_experimental_TransformOptions',
-    TransformResult$2: 'rolldown_experimental_TransformResult',
+  'rolldown/utils': {
+    TransformOptions$1: 'rolldown_utils_TransformOptions',
+    TransformResult$2: 'rolldown_utils_TransformResult',
   },
   'node:http': {
     Server$1: 'http.Server',
