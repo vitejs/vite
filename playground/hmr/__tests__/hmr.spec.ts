@@ -1078,6 +1078,50 @@ if (!isBuild) {
       .toBe('mod-a -> mod-b (edited) -> mod-c -> mod-a (expected error)')
   })
 
+  test('hmr warns when boundary is skipped due to circular imports and page reloads', async () => {
+    await page.goto(viteTestUrl + '/circular-boundary-no-outer/index.html')
+    const el = await page.$('.circular-boundary-no-outer')
+    await expect.poll(() => el.textContent()).toBe('a:b')
+    serverLogs.length = 0
+    editFile('circular-boundary-no-outer/a.js', (code) =>
+      code.replace(`export const a = 'a:'`, `export const a = 'a2:'`),
+    )
+    await expect
+      .poll(() => page.textContent('.circular-boundary-no-outer'))
+      .toBe('a2:b')
+    await expect
+      .poll(() => serverLogs)
+      .toStrictEqual(
+        expect.arrayContaining([
+          expect.stringMatching(
+            /hmr boundary skipped due to circular imports.*page will reload/,
+          ),
+        ]),
+      )
+  })
+
+  test('hmr warns when boundary is skipped due to circular imports and many modules re-execute', async () => {
+    await page.goto(viteTestUrl + '/circular-boundary-many-modules/index.html')
+    const el = await page.$('.circular-boundary-many-modules')
+    await expect.poll(() => el.textContent()).toBe('a:b')
+    serverLogs.length = 0
+    editFile('circular-boundary-many-modules/a.js', (code) =>
+      code.replace(`export const value = 'a:'`, `export const value = 'a2:'`),
+    )
+    await expect
+      .poll(() => page.textContent('.circular-boundary-many-modules'))
+      .toBe('a2:b')
+    await expect
+      .poll(() => serverLogs)
+      .toStrictEqual(
+        expect.arrayContaining([
+          expect.stringMatching(
+            /hmr boundary skipped due to circular imports.*modules will re-execute/,
+          ),
+        ]),
+      )
+  })
+
   test('not inlined assets HMR', async () => {
     await page.goto(viteTestUrl)
     const el = await page.$('#logo-no-inline')
