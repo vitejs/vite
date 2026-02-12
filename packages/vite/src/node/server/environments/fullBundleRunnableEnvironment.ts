@@ -1,4 +1,4 @@
-import { resolve } from 'node:path'
+import path, { resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import type { ModuleRunner } from 'vite/module-runner'
 import {
@@ -15,7 +15,7 @@ export class FullBundleRunnableDevEnvironment extends FullBundleDevEnvironment {
   constructor(name: string, config: ResolvedConfig) {
     // Since this is not yet exposed, we create hot channel here
     super(name, config, {
-      hot: true,
+      hot: false, // TODO
       transport: createServerHotChannel(),
     })
   }
@@ -52,7 +52,13 @@ export class FullBundleRunnableDevEnvironment extends FullBundleDevEnvironment {
         // NOTE: we don't try to find it if extension is not passed
         // It will throw an error instead
         slash(resolve(this.config.root, url))
-    return this.facadeToChunk.get(moduleId)
+    if (this.facadeToChunk.get(moduleId)) {
+      return this.facadeToChunk.get(moduleId)
+    }
+    if (url[0] === '/') {
+      const tryAbsouteUrl = path.join(this.config.root, url)
+      return this.facadeToChunk.get(tryAbsouteUrl)
+    }
   }
 
   protected override async getDevRuntimeImplementation(): Promise<string> {

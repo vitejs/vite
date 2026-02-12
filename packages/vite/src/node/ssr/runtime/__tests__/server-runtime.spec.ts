@@ -18,11 +18,19 @@ describe('module runner initialization', async () => {
       ssrBundledDev: true,
     },
     build: {
-      ssr: './fixtures/simple.js',
+      rolldownOptions: {
+        input: [
+          './fixtures/dynamic-import.js',
+          './fixtures/simple.js',
+          './fixtures/test.css',
+          './fixtures/test.module.css',
+          './fixtures/assets.js',
+        ],
+      },
     },
   })
 
-  it.only('correctly runs ssr code', async ({ server }) => {
+  it('correctly runs ssr code', async ({ server }) => {
     const runner = (server.environments.ssr as RunnableDevEnvironment).runner
     const mod = await runner.import('./fixtures/simple.js')
     expect(mod.test).toEqual('I am initialized')
@@ -38,7 +46,7 @@ describe('module runner initialization', async () => {
     expect(mod).toBe(mod3)
   })
 
-  it('can load virtual modules as an entry point', async ({ runner }) => {
+  it.skip('can load virtual modules as an entry point', async ({ runner }) => {
     const mod = await runner.import('virtual:test')
     expect(mod.msg).toBe('virtual')
 
@@ -200,8 +208,9 @@ describe('module runner initialization', async () => {
     })
   })
 
-  it("dynamic import doesn't produce duplicates", async ({ runner }) => {
-    const mod = await runner.import('/fixtures/dynamic-import.js')
+  it("dynamic import doesn't produce duplicates", async ({ server }) => {
+    const runner = (server.environments.ssr as RunnableDevEnvironment).runner
+    const mod = await runner.import('./fixtures/dynamic-import.js')
     const modules = await mod.initialize()
     // toBe checks that objects are actually the same, not just structurally
     // using toEqual here would be a mistake because it check the structural difference

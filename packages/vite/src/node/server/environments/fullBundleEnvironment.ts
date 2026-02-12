@@ -71,6 +71,9 @@ export class FullBundleDevEnvironment extends DevEnvironment {
     this.logger.info(colors.green(`page reload`), { timestamp: true })
   })
 
+  // TODO: is needed?
+  public isFullBundle = true
+
   memoryFiles: MemoryFiles = new MemoryFiles()
   facadeToChunk: Map<string, string> = new Map()
 

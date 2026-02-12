@@ -1,10 +1,10 @@
 import { pathToFileURL } from 'node:url'
-import { resolve } from 'node:path'
+import path from 'node:path'
 import type { FetchResult } from 'vite/module-runner'
 import type { TransformResult } from '..'
 import { tryNodeResolve } from '../plugins/resolve'
 import { isBuiltin, isExternalUrl, isFilePathESM } from '../utils'
-import { slash, unwrapId } from '../../shared/utils'
+import { unwrapId } from '../../shared/utils'
 import {
   MODULE_RUNNER_SOURCEMAPPING_SOURCE,
   SOURCEMAPPING_URL,
@@ -85,8 +85,18 @@ export async function fetchModule(
   url = unwrapId(url)
 
   if (environment instanceof FullBundleDevEnvironment) {
-    const memoryFile = environment.memoryFiles.get(url)
-    // TODO: how do you check caching?
+    let fileName: string = url
+    // Browser does this automatically when serving files,
+    // But for SSR we have to resolve paths ourselves.
+    if (url[0] === '.') {
+      const importerDirectory = importer
+        ? path.posix.dirname(importer)
+        : environment.config.root
+      const moduleId = path.posix.resolve(importerDirectory, url)
+      fileName = moduleId.slice(environment.config.root.length + 1)
+    }
+    const memoryFile = environment.memoryFiles.get(fileName)
+    // TODO: how to check caching?
     const code = memoryFile?.source
     if (code == null) {
       throw new Error(
@@ -96,9 +106,9 @@ export async function fetchModule(
       )
     }
 
-    const file = slash(
-      importer ? resolve(importer, url) : resolve(environment.config.root, url),
-    )
+    const file = importer
+      ? path.posix.resolve(importer, url)
+      : path.posix.resolve(environment.config.root, url)
     // TODO: map
     const result: ViteFetchResult & { map?: undefined } = {
       code: code.toString(),

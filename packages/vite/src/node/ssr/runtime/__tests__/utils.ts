@@ -4,12 +4,13 @@ import { fileURLToPath } from 'node:url'
 import type { TestAPI } from 'vitest'
 import { afterEach, beforeEach, onTestFinished, test } from 'vitest'
 import type { ModuleRunner } from 'vite/module-runner'
-import type { ServerModuleRunnerOptions } from '../serverModuleRunner'
+// import type { ServerModuleRunnerOptions } from '../serverModuleRunner'
 import type { ViteDevServer } from '../../../server'
 import type { InlineConfig } from '../../../config'
 import { createServer } from '../../../server'
-import { createServerModuleRunner } from '../serverModuleRunner'
+// import { createServerModuleRunner } from '../serverModuleRunner'
 import type { DevEnvironment } from '../../../server/environment'
+import type { RunnableDevEnvironment } from '../../..'
 
 interface TestClient {
   server: ViteDevServer
@@ -19,7 +20,7 @@ interface TestClient {
 
 export async function createModuleRunnerTester(
   config: InlineConfig = {},
-  runnerConfig: ServerModuleRunnerOptions = {},
+  // runnerConfig: ServerModuleRunnerOptions = {},
 ): Promise<TestAPI<TestClient>> {
   function waitForWatcher(server: ViteDevServer) {
     return new Promise<void>((resolve) => {
@@ -82,14 +83,15 @@ export async function createModuleRunnerTester(
       ...config,
     })
     t.environment = t.server.environments.ssr
-    t.runner = createServerModuleRunner(t.environment, {
-      hmr: {
-        logger: false,
-      },
-      // don't override by default so Vitest source maps are correct
-      sourcemapInterceptor: false,
-      ...runnerConfig,
-    })
+    t.runner = (t.environment as RunnableDevEnvironment).runner
+    //  createServerModuleRunner(t.environment, {
+    //   hmr: {
+    //     logger: false,
+    //   },
+    //   // don't override by default so Vitest source maps are correct
+    //   sourcemapInterceptor: false,
+    //   ...runnerConfig,
+    // })
     if (config.server?.watch) {
       await waitForWatcher(t.server)
     }
