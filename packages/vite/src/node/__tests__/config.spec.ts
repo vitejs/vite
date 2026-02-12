@@ -620,8 +620,7 @@ describe('mergeConfig', () => {
 
   describe('later plugin can read `rollupOptions` set via `rolldownOptions` in earlier plugin', () => {
     test('top-level config', async () => {
-      let value: string | undefined
-
+      expect.assertions(2)
       await resolveConfig(
         {
           plugins: [
@@ -631,7 +630,12 @@ describe('mergeConfig', () => {
                 return {
                   build: {
                     rolldownOptions: {
-                      input: './from-plugin-a.ts',
+                      platform: 'neutral',
+                    },
+                  },
+                  worker: {
+                    rolldownOptions: {
+                      platform: 'neutral',
                     },
                   },
                 }
@@ -640,20 +644,18 @@ describe('mergeConfig', () => {
             {
               name: 'plugin-b',
               config(config) {
-                value = config.build?.rollupOptions?.input as string
+                expect(config.build?.rollupOptions?.platform).toBe('neutral')
+                expect(config.worker?.rollupOptions?.platform).toBe('neutral')
               },
             },
           ],
         },
         'build',
       )
-
-      expect(value).toBe('./from-plugin-a.ts')
     })
 
     test('new `environments` object', async () => {
-      let value: string | undefined
-
+      expect.assertions(1)
       await resolveConfig(
         {
           plugins: [
@@ -665,7 +667,7 @@ describe('mergeConfig', () => {
                     ssr: {
                       build: {
                         rolldownOptions: {
-                          input: './from-plugin-a.ts',
+                          platform: 'neutral',
                         },
                       },
                     },
@@ -676,16 +678,15 @@ describe('mergeConfig', () => {
             {
               name: 'plugin-b',
               config(config) {
-                value = config.environments?.ssr?.build?.rollupOptions
-                  ?.input as string
+                expect(
+                  config.environments?.ssr?.build?.rollupOptions?.platform,
+                ).toBe('neutral')
               },
             },
           ],
         },
         'build',
       )
-
-      expect(value).toBe('./from-plugin-a.ts')
     })
 
     test('new environment on existing `environments` object', async () => {
