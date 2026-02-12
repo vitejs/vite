@@ -119,6 +119,12 @@ The directory defaults to `<root>/public`, but can be configured via the [`publi
 
 Note that you should always reference `public` assets using root absolute path - for example, `public/icon.png` should be referenced in source code as `/icon.png`.
 
+::: tip Choosing between imports and the `public` directory
+
+In general, prefer **importing assets** unless you specifically need the guarantees provided by the `public` directory.
+
+:::
+
 ## new URL(url, import.meta.url)
 
 [import.meta.url](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Statements/import.meta) is a native ESM feature that exposes the current module's URL. Combining it with the native [URL constructor](https://developer.mozilla.org/en-US/docs/Web/API/URL), we can obtain the full, resolved URL of a static asset using relative path from a JavaScript module:
