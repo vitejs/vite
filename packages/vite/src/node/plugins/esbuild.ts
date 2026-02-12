@@ -2,8 +2,8 @@ import path from 'node:path'
 import colors from 'picocolors'
 import type { RawSourceMap } from '@jridgewell/remapping'
 import type { InternalModuleFormat, SourceMap } from 'rolldown'
-import type { TSConfckParseResult } from 'tsconfck'
-import { TSConfckCache, TSConfckParseError, parse } from 'tsconfck'
+import { resolveTsconfig } from 'rolldown/experimental'
+import { TsconfigCache } from 'rolldown/utils'
 import type {
   EsbuildLoader,
   EsbuildMessage,
@@ -145,13 +145,19 @@ export async function transformWithEsbuild(
     ]
     const compilerOptionsForFile: TSCompilerOptions = {}
     if (loader === 'ts' || loader === 'tsx') {
-      try {
-        const { tsconfig: loadedTsconfig, tsconfigFile } =
-          await loadTsconfigJsonForFile(filename, config)
+      const result = resolveTsconfig(
+        filename,
+        getTSConfigResolutionCache(config),
+      )
+      if (result) {
+        const { tsconfig: loadedTsconfig, tsconfigFilePaths } = result
         // tsconfig could be out of root, make sure it is watched on dev
-        if (watcher && tsconfigFile && config) {
-          ensureWatchedFile(watcher, tsconfigFile, config.root)
+        if (watcher && config) {
+          for (const tsconfigFile of tsconfigFilePaths) {
+            ensureWatchedFile(watcher, tsconfigFile, config.root)
+          }
         }
+
         const loadedCompilerOptions = loadedTsconfig.compilerOptions ?? {}
 
         for (const field of meaningfulFields) {
@@ -160,14 +166,6 @@ export async function transformWithEsbuild(
             compilerOptionsForFile[field] = loadedCompilerOptions[field]
           }
         }
-      } catch (e) {
-        if (e instanceof TSConfckParseError) {
-          // tsconfig could be out of root, make sure it is watched on dev
-          if (watcher && e.tsconfigFile && config) {
-            ensureWatchedFile(watcher, e.tsconfigFile, config.root)
-          }
-        }
-        throw e
       }
     }
 
@@ -522,33 +520,19 @@ function prettifyMessage(m: EsbuildMessage, code: string): string {
   return res + `\n`
 }
 
-let globalTSConfckCache: TSConfckCache<TSConfckParseResult> | undefined
-const tsconfckCacheMap = new WeakMap<
-  ResolvedConfig,
-  TSConfckCache<TSConfckParseResult>
->()
+let globalTSConfigResolutionCache: TsconfigCache | undefined
+const tsconfigResolutionCacheMap = new WeakMap<ResolvedConfig, TsconfigCache>()
 
-function getTSConfckCache(config?: ResolvedConfig) {
+function getTSConfigResolutionCache(config?: ResolvedConfig) {
   if (!config) {
-    return (globalTSConfckCache ??= new TSConfckCache<TSConfckParseResult>())
+    return (globalTSConfigResolutionCache ??= new TsconfigCache())
   }
-  let cache = tsconfckCacheMap.get(config)
+  let cache = tsconfigResolutionCacheMap.get(config)
   if (!cache) {
-    cache = new TSConfckCache<TSConfckParseResult>()
-    tsconfckCacheMap.set(config, cache)
+    cache = new TsconfigCache()
+    tsconfigResolutionCacheMap.set(config, cache)
   }
   return cache
-}
-
-export async function loadTsconfigJsonForFile(
-  filename: string,
-  config?: ResolvedConfig,
-): Promise<{ tsconfigFile: string; tsconfig: TSConfigJSON }> {
-  const { tsconfig, tsconfigFile } = await parse(filename, {
-    cache: getTSConfckCache(config),
-    ignoreNodeModules: true,
-  })
-  return { tsconfigFile, tsconfig }
 }
 
 export async function reloadOnTsconfigChange(
@@ -558,11 +542,8 @@ export async function reloadOnTsconfigChange(
   // any tsconfig.json that's added in the workspace could be closer to a code file than a previously cached one
   // any json file in the tsconfig cache could have been used to compile ts
   if (changedFile.endsWith('.json')) {
-    const cache = getTSConfckCache(server.config)
-    if (
-      changedFile.endsWith('/tsconfig.json') ||
-      cache.hasParseResult(changedFile)
-    ) {
+    const cache = getTSConfigResolutionCache(server.config)
+    if (changedFile.endsWith('/tsconfig.json') || cache.size() > 0) {
       server.config.logger.info(
         `changed tsconfig file detected: ${changedFile} - Clearing cache and forcing full-reload to ensure TypeScript is compiled with updated config values.`,
         { clear: server.config.clearScreen, timestamp: true },
@@ -575,7 +556,7 @@ export async function reloadOnTsconfigChange(
         environment.moduleGraph.invalidateAll()
       }
 
-      // reset tsconfck cache so that recompile works with up2date configs
+      // reset the cache so that recompile works with up2date configs
       cache.clear()
 
       // reload environments
