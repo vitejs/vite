@@ -1,3 +1,16 @@
+## [8.0.0-beta.3](https://github.com/vitejs/vite/compare/plugin-legacy@8.0.0-beta.2...plugin-legacy@8.0.0-beta.3) (2026-02-12)
+### Bug Fixes
+
+* **legacy:** skip preload helper in legacy chunks ([#21607](https://github.com/vitejs/vite/issues/21607)) ([0f2b7ae](https://github.com/vitejs/vite/commit/0f2b7aed683657f62bdce4a2fbb2883cd3af7d67))
+
+### Documentation
+
+* **legacy:** update stale description ([#21610](https://github.com/vitejs/vite/issues/21610)) ([9037c29](https://github.com/vitejs/vite/commit/9037c29ec608716fe7c6803cbb5cb0dfe8746e4a))
+
+### Miscellaneous Chores
+
+* **deps:** update dependency tsdown to ^0.20.3 ([#21593](https://github.com/vitejs/vite/issues/21593)) ([e3f6ac9](https://github.com/vitejs/vite/commit/e3f6ac9326bf7c31a916e7c5dd90277de4c262c0))
+
 ## [8.0.0-beta.2](https://github.com/vitejs/vite/compare/plugin-legacy@8.0.0-beta.1...plugin-legacy@8.0.0-beta.2) (2026-02-03)
 ### Bug Fixes
 
