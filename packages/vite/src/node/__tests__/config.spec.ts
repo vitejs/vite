@@ -690,8 +690,7 @@ describe('mergeConfig', () => {
     })
 
     test('new environment on existing `environments` object', async () => {
-      let value: string | undefined
-
+      expect.assertions(1)
       await resolveConfig(
         {
           environments: {
@@ -707,7 +706,7 @@ describe('mergeConfig', () => {
                     ssr: {
                       build: {
                         rolldownOptions: {
-                          input: './from-plugin-a.ts',
+                          platform: 'neutral',
                         },
                       },
                     },
@@ -718,16 +717,15 @@ describe('mergeConfig', () => {
             {
               name: 'plugin-b',
               config(config) {
-                value = config.environments?.ssr?.build?.rollupOptions
-                  ?.input as string
+                expect(
+                  config.environments?.ssr?.build?.rollupOptions?.platform,
+                ).toBe('neutral')
               },
             },
           ],
         },
         'build',
       )
-
-      expect(value).toBe('./from-plugin-a.ts')
     })
   })
 })
