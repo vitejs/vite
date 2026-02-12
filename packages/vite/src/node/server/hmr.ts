@@ -71,7 +71,6 @@ export interface HmrContext {
 interface PropagationBoundary {
   boundary: EnvironmentModuleNode & { type: 'js' | 'css' }
   acceptedVia: EnvironmentModuleNode
-  isWithinCircularImport: boolean
 }
 
 export interface HotChannelClient {
@@ -663,34 +662,18 @@ export function updateModules(
       continue
     }
 
-    // If import.meta.hot.invalidate was called already on that module for the same update,
-    // it means any importer of that module can't hot update. We should fallback to full reload.
-    if (
-      firstInvalidatedBy &&
-      boundaries.some(
-        ({ acceptedVia }) =>
-          normalizeHmrUrl(acceptedVia.url) === firstInvalidatedBy,
-      )
-    ) {
-      needFullReload = 'circular import invalidate'
-      continue
-    }
-
     updates.push(
-      ...boundaries.map(
-        ({ boundary, acceptedVia, isWithinCircularImport }) => ({
-          type: `${boundary.type}-update` as const,
-          timestamp,
-          path: normalizeHmrUrl(boundary.url),
-          acceptedPath: normalizeHmrUrl(acceptedVia.url),
-          explicitImportRequired:
-            boundary.type === 'js'
-              ? isExplicitImportRequired(acceptedVia.url)
-              : false,
-          isWithinCircularImport,
-          firstInvalidatedBy,
-        }),
-      ),
+      ...boundaries.map(({ boundary, acceptedVia }) => ({
+        type: `${boundary.type}-update` as const,
+        timestamp,
+        path: normalizeHmrUrl(boundary.url),
+        acceptedPath: normalizeHmrUrl(acceptedVia.url),
+        explicitImportRequired:
+          boundary.type === 'js'
+            ? isExplicitImportRequired(acceptedVia.url)
+            : false,
+        firstInvalidatedBy,
+      })),
     )
   }
 
@@ -776,13 +759,17 @@ function propagateUpdate(
     return false
   }
 
-  if (node.isSelfAccepting) {
+  const isWithinCircularImports = isNodeWithinCircularImports(
+    node,
+    currentChain,
+  )
+
+  if (node.isSelfAccepting && !isWithinCircularImports) {
     // isSelfAccepting is only true for js and css
     const boundary = node as EnvironmentModuleNode & { type: 'js' | 'css' }
     boundaries.push({
       boundary,
       acceptedVia: boundary,
-      isWithinCircularImport: isNodeWithinCircularImports(node, currentChain),
     })
     return false
   }
@@ -792,13 +779,12 @@ function propagateUpdate(
   // are used outside of me".
   // Also, the imported module (this one) must be updated before the importers,
   // so that they do get the fresh imported module when/if they are reloaded.
-  if (node.acceptedHmrExports) {
+  if (node.acceptedHmrExports && !isWithinCircularImports) {
     // acceptedHmrExports is only true for js and css
     const boundary = node as EnvironmentModuleNode & { type: 'js' | 'css' }
     boundaries.push({
       boundary,
       acceptedVia: boundary,
-      isWithinCircularImport: isNodeWithinCircularImports(node, currentChain),
     })
   } else {
     if (!node.importers.size) {
@@ -809,7 +795,10 @@ function propagateUpdate(
   for (const importer of node.importers) {
     const subChain = currentChain.concat(importer)
 
-    if (importer.acceptedHmrDeps.has(node)) {
+    if (
+      importer.acceptedHmrDeps.has(node) &&
+      !isNodeWithinCircularImports(importer, subChain)
+    ) {
       // acceptedHmrDeps has value only for js and css
       const boundary = importer as EnvironmentModuleNode & {
         type: 'js' | 'css'
@@ -817,7 +806,6 @@ function propagateUpdate(
       boundaries.push({
         boundary,
         acceptedVia: node,
-        isWithinCircularImport: isNodeWithinCircularImports(importer, subChain),
       })
       continue
     }

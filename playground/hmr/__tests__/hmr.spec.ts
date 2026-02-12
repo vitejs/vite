@@ -268,7 +268,7 @@ if (!isBuild) {
       'invalidation-circular-deps/circular-invalidate/child.js',
       (code) => code.replace('child', 'child updated'),
     )
-    await page.waitForEvent('load')
+    // hmr.ts which is outside the circular chain applies the update
     await expect
       .poll(() => page.textContent('.invalidation-circular-deps'))
       .toMatch('child updated')
@@ -1060,8 +1060,7 @@ if (!isBuild) {
       .poll(() => page.textContent('.self-accept-within-circular'))
       .toBe('cc')
     expect(serverLogs.length).greaterThanOrEqual(1)
-    // Should still keep hmr update, but it'll error on the browser-side and will refresh itself.
-    // Match on full log not possible because of color markers
+    // The boundary within the circular chain (c.js) is skipped, but the outer boundary (a.js) handles it
     expect(serverLogs.at(-1)!).toContain('hmr update')
   })
 
