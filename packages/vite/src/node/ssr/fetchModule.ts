@@ -1,15 +1,19 @@
 import { pathToFileURL } from 'node:url'
+import { resolve } from 'node:path'
 import type { FetchResult } from 'vite/module-runner'
-import type { EnvironmentModuleNode, TransformResult } from '..'
+import type { TransformResult } from '..'
 import { tryNodeResolve } from '../plugins/resolve'
 import { isBuiltin, isExternalUrl, isFilePathESM } from '../utils'
-import { unwrapId } from '../../shared/utils'
+import { slash, unwrapId } from '../../shared/utils'
 import {
   MODULE_RUNNER_SOURCEMAPPING_SOURCE,
   SOURCEMAPPING_URL,
 } from '../../shared/constants'
 import { genSourceMapUrl } from '../server/sourcemap'
 import type { DevEnvironment } from '../server/environment'
+import { FullBundleDevEnvironment } from '../server/environments/fullBundleEnvironment'
+import type { ViteFetchResult } from '../../shared/invokeMethods'
+import { ssrTransform } from './ssrTransform'
 
 export interface FetchModuleOptions {
   cached?: boolean
@@ -80,6 +84,43 @@ export async function fetchModule(
 
   url = unwrapId(url)
 
+  if (environment instanceof FullBundleDevEnvironment) {
+    const memoryFile = environment.memoryFiles.get(url)
+    // TODO: how do you check caching?
+    const code = memoryFile?.source
+    if (code == null) {
+      throw new Error(
+        `[vite] the module '${url}'${
+          importer ? ` imported from '${importer}'` : ''
+        } was not bundled. Is server established?`,
+      )
+    }
+
+    const file = slash(
+      importer ? resolve(importer, url) : resolve(environment.config.root, url),
+    )
+    // TODO: map
+    const result: ViteFetchResult & { map?: undefined } = {
+      code: code.toString(),
+      url,
+      id: file,
+      file,
+      // TODO
+      invalidate: false,
+    }
+    const ssrResult = await ssrTransform(result.code, null, url, result.code)
+    if (!ssrResult) {
+      throw new Error(`[vite] cannot apply ssr transform to '${url}'.`)
+    }
+    result.code = ssrResult.code
+
+    // remove shebang
+    if (result.code[0] === '#')
+      result.code = result.code.replace(/^#!.*/, (s) => ' '.repeat(s.length))
+
+    return result
+  }
+
   const mod = await environment.moduleGraph.ensureEntryFromUrl(url)
   const cached = !!mod.transformResult
 
@@ -99,7 +140,7 @@ export async function fetchModule(
   }
 
   if (options.inlineSourceMap !== false) {
-    result = inlineSourceMap(mod, result, options.startOffset)
+    result = inlineSourceMap(mod.id!, result, options.startOffset)
   }
 
   // remove shebang
@@ -121,7 +162,7 @@ const OTHER_SOURCE_MAP_REGEXP = new RegExp(
 )
 
 function inlineSourceMap(
-  mod: EnvironmentModuleNode,
+  id: string,
   result: TransformResult,
   startOffset: number | undefined,
 ) {
@@ -146,7 +187,7 @@ function inlineSourceMap(
       })
     : map
   result.code = `${code.trimEnd()}\n//# sourceURL=${
-    mod.id
+    id
   }\n${MODULE_RUNNER_SOURCEMAPPING_SOURCE}\n//# ${SOURCEMAPPING_URL}=${genSourceMapUrl(sourceMap)}\n`
 
   return result

@@ -72,17 +72,18 @@ export class FullBundleDevEnvironment extends DevEnvironment {
   })
 
   memoryFiles: MemoryFiles = new MemoryFiles()
+  facadeToChunk: Map<string, string> = new Map()
 
   constructor(
     name: string,
     config: ResolvedConfig,
     context: DevEnvironmentContext,
   ) {
-    if (name !== 'client') {
-      throw new Error(
-        'currently full bundle mode is only available for client environment',
-      )
-    }
+    // if (name !== 'client') {
+    //   throw new Error(
+    //     'currently full bundle mode is only available for client environment',
+    //   )
+    // }
 
     super(name, config, { ...context, disableDepsOptimizer: true })
   }
@@ -158,6 +159,12 @@ export class FullBundleDevEnvironment extends DevEnvironment {
 
         // NOTE: don't clear memoryFiles here as incremental build re-uses the files
         for (const outputFile of result.output) {
+          if (outputFile.type === 'chunk' && outputFile.facadeModuleId) {
+            this.facadeToChunk.set(
+              outputFile.facadeModuleId,
+              outputFile.fileName,
+            )
+          }
           this.memoryFiles.set(outputFile.fileName, () => {
             const source =
               outputFile.type === 'chunk' ? outputFile.code : outputFile.source
@@ -187,7 +194,7 @@ export class FullBundleDevEnvironment extends DevEnvironment {
     })
   }
 
-  private async waitForInitialBuildFinish(): Promise<void> {
+  protected async waitForInitialBuildFinish(): Promise<void> {
     await this.devEngine.ensureCurrentBuildFinish()
     while (this.memoryFiles.size === 0) {
       await setTimeout(10)
@@ -275,12 +282,16 @@ export class FullBundleDevEnvironment extends DevEnvironment {
     await Promise.all([super.close(), this.devEngine.close()])
   }
 
+  protected async getDevRuntimeImplementation(): Promise<string> {
+    return await getHmrImplementation(this.getTopLevelConfig())
+  }
+
   private async getRolldownOptions() {
     const chunkMetadataMap = new ChunkMetadataMap()
     const rolldownOptions = resolveRolldownOptions(this, chunkMetadataMap)
     rolldownOptions.experimental ??= {}
     rolldownOptions.experimental.devMode = {
-      implement: await getHmrImplementation(this.getTopLevelConfig()),
+      implement: await this.getDevRuntimeImplementation(),
     }
 
     if (rolldownOptions.optimization) {

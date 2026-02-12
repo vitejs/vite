@@ -4,6 +4,7 @@ import { fileURLToPath } from 'node:url'
 import { describe, expect, vi } from 'vitest'
 import { isWindows } from '../../../../shared/utils'
 import type { ExternalFetchResult } from '../../../../shared/invokeMethods'
+import type { RunnableDevEnvironment } from '../../../server/environments/runnableEnvironment'
 import { createModuleRunnerTester } from './utils'
 
 const _URL = URL
@@ -13,10 +14,17 @@ describe('module runner initialization', async () => {
     resolve: {
       external: ['tinyglobby'],
     },
+    experimental: {
+      ssrBundledDev: true,
+    },
+    build: {
+      ssr: './fixtures/simple.js',
+    },
   })
 
-  it('correctly runs ssr code', async ({ runner }) => {
-    const mod = await runner.import('/fixtures/simple.js')
+  it.only('correctly runs ssr code', async ({ server }) => {
+    const runner = (server.environments.ssr as RunnableDevEnvironment).runner
+    const mod = await runner.import('./fixtures/simple.js')
     expect(mod.test).toEqual('I am initialized')
 
     // loads the same module if id is a file url
