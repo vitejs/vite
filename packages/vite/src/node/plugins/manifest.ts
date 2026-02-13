@@ -316,7 +316,7 @@ export function manifestPlugin(config: ResolvedConfig): Plugin {
       }
 
       state.outputCount++
-      const output = buildOptions.rollupOptions.output
+      const output = buildOptions.rolldownOptions.output
       const outputLength = Array.isArray(output) ? output.length : 1
       if (state.outputCount >= outputLength) {
         this.emitFile({

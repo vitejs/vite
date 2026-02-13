@@ -25,7 +25,7 @@ export default (sourcemap) => {
     worker: {
       format: 'iife',
       plugins: () => [workerPluginTestPlugin()],
-      rollupOptions: {
+      rolldownOptions: {
         output: {
           assetFileNames: 'assets/[name]-worker_asset[hash].[ext]',
           chunkFileNames: 'assets/[name]-worker_chunk[hash].js',
@@ -38,7 +38,7 @@ export default (sourcemap) => {
       assetsInlineLimit: (filePath) =>
         filePath.endsWith('.svg') ? false : undefined,
       sourcemap: sourcemap,
-      rollupOptions: {
+      rolldownOptions: {
         output: {
           assetFileNames: 'assets/[name]-[hash].[ext]',
           chunkFileNames: 'assets/[name]-[hash].js',

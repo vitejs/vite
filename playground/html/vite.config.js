@@ -6,7 +6,7 @@ const dirname = import.meta.dirname
 export default defineConfig({
   base: './',
   build: {
-    rollupOptions: {
+    rolldownOptions: {
       input: {
         main: resolve(dirname, 'index.html'),
         nested: resolve(dirname, 'nested/index.html'),

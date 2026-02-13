@@ -50,7 +50,7 @@ export default defineConfig((env) => ({
       },
       build: {
         outDir: 'dist/server',
-        rollupOptions: {
+        rolldownOptions: {
           input: {
             index: '/src/entry-server',
           },

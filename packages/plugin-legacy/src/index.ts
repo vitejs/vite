@@ -454,15 +454,15 @@ function viteLegacyPlugin(options: Options = {}): Plugin[] {
         }
       }
 
-      const { rollupOptions } = config.build
-      const { output } = rollupOptions
+      const { rolldownOptions } = config.build
+      const { output } = rolldownOptions
       if (Array.isArray(output)) {
-        rollupOptions.output = [
+        rolldownOptions.output = [
           ...output.map(createLegacyOutput),
           ...(genModern ? output : []),
         ]
       } else {
-        rollupOptions.output = [
+        rolldownOptions.output = [
           createLegacyOutput(output),
           ...(genModern ? [output || {}] : []),
         ]
@@ -860,7 +860,7 @@ async function buildPolyfillChunk(
       minify,
       assetsDir,
       sourcemap,
-      rollupOptions: {
+      rolldownOptions: {
         input: {
           polyfills: polyfillId,
         },

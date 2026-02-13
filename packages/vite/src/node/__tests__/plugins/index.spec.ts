@@ -11,7 +11,7 @@ const getConfigWithPlugin = (
     configFile: false,
     server: { middlewareMode: true, ws: false },
     optimizeDeps: { noDiscovery: true, include: [] },
-    build: { rollupOptions: { input }, write: false },
+    build: { rolldownOptions: { input }, write: false },
     plugins,
     logLevel: 'silent',
   }
