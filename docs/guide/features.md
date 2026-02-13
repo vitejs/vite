@@ -828,7 +828,7 @@ To serve the file at a different path, you can pass `{ fileName: 'license.md' }`
 
 ## Build Optimizations
 
-> Features listed below are automatically applied as part of the build process and there is no need for explicit configuration unless you want to disable them.
+> Features listed below are automatically applied (except for the exprimental chunk importmap feature) as part of the build process and there is no need for explicit configuration unless you want to disable them.
 
 ### CSS Code Splitting
 
@@ -862,3 +862,21 @@ Entry ---> (A + C)
 ```
 
 It is possible for `C` to have further imports, which will result in even more roundtrips in the un-optimized scenario. Vite's optimization will trace all the direct imports to completely eliminate the roundtrips regardless of import depth.
+
+### Chunk Import Map Optimization
+
+To improve the cache hit rate of chunks, Vite can create an import map for chunks. This prevents the cascading cache invalidation issue, which is a problem with ES Modules.
+
+For example, consider the following scenario:
+
+```
+Entry --> A ---> C
+```
+
+If `C` is updated, the only chunk that inherently needs to be invalidated is `C`. However, if `A` references `C` via a normal URL in a static import (i.e. the hash of `C` is included in the URL), the content of `A` is changed, thus `A` would also need to be invalidated. The same applies to `Entry`.
+
+By utilizing the import maps feature, this issue can be avoided. When this optimization is enabled, Vite will create an import map that maps each chunk's ID to its URL and uses the chunk ID in the import statements instead of the URL. This way, when a chunk is updated, only the updated chunk needs to be invalidated, while the chunks that reference it will not be invalidated.
+
+Note that this optimization currently does not apply to CSS and assets. If you update an asset, the chunks that reference it will be invalidated. That said, the invalidation would not cascade and the chunk importing the invalidated chunk would not be invalidated.
+
+To enable this feature, set [`build.chunkImportMap`](/config/build-options.md#build-chunkimportmap) to `true`.
