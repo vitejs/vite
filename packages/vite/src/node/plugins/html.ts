@@ -1194,11 +1194,12 @@ export function postImportMapHook(
       }
     }
 
-    if (config.command === 'build' && config.build.chunkImportMap) {
+    if (chunkImportMapEnabled) {
+      const nonce = config.html?.cspNonce
       const importMap = bundle![getImportMapFilename(config)] as OutputAsset
       const importMapHtml = serializeTag({
         tag: 'script',
-        attrs: { type: 'importmap' },
+        attrs: { type: 'importmap', nonce },
         children:
           typeof importMap.source === 'string'
             ? importMap.source
