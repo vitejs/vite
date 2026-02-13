@@ -618,7 +618,7 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
         } else if (inlined) {
           let content = css
           if (config.build.cssMinify) {
-            content = await minifyCSS(content, config, true)
+            content = await minifyCSS(content, config, true, id)
           }
           code = `export default ${JSON.stringify(content)}`
         } else {
@@ -812,7 +812,11 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
             await urlEmitQueue.run(async () =>
               Promise.all(
                 urlEmitTasks.map(async (info) => {
-                  info.content = await finalizeCss(info.content, config)
+                  info.content = await finalizeCss(
+                    info.content,
+                    config,
+                    info.originalFileName,
+                  )
                 }),
               ),
             )
@@ -897,7 +901,7 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
 
                   // wait for previous tasks as well
                   chunkCSS = await codeSplitEmitQueue.run(async () => {
-                    return finalizeCss(chunkCSS!, config)
+                    return finalizeCss(chunkCSS!, config, cssAssetName)
                   })
 
                   // emit corresponding css file
@@ -924,7 +928,7 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
                   // But because entry chunk can be imported by dynamic import,
                   // we shouldn't remove the inlined CSS. (#10285)
 
-                  chunkCSS = await finalizeCss(chunkCSS, config)
+                  chunkCSS = await finalizeCss(chunkCSS, config, chunk.fileName)
                   let cssString = JSON.stringify(chunkCSS)
                   cssString =
                     renderAssetUrlInJS(
@@ -1032,7 +1036,11 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
         // Finally, if there's any extracted CSS, we emit the asset
         if (extractedCss) {
           hasEmitted = true
-          extractedCss = await finalizeCss(extractedCss, config)
+          extractedCss = await finalizeCss(
+            extractedCss,
+            config,
+            getCssBundleName(),
+          )
           this.emitFile({
             name: getCssBundleName(),
             type: 'asset',
@@ -1897,13 +1905,17 @@ function combineSourcemapsIfExists(
 const viteHashUpdateMarker = '/*$vite$:1*/'
 const viteHashUpdateMarkerRE = /\/\*\$vite\$:\d+\*\//
 
-async function finalizeCss(css: string, config: ResolvedConfig) {
+async function finalizeCss(
+  css: string,
+  config: ResolvedConfig,
+  filename?: string,
+) {
   // hoist external @imports and @charset to the top of the CSS chunk per spec (#1845 and #6333)
   if (css.includes('@import') || css.includes('@charset')) {
     css = await hoistAtRules(css)
   }
   if (config.build.cssMinify) {
-    css = await minifyCSS(css, config, false)
+    css = await minifyCSS(css, config, false, filename)
   }
   // inject an additional string to generate a different hash for https://github.com/vitejs/vite/issues/18038
   //
@@ -2198,6 +2210,7 @@ async function minifyCSS(
   css: string,
   config: ResolvedConfig,
   inlined: boolean,
+  filename?: string,
 ) {
   // We want inlined CSS to not end with a linebreak, while ensuring that
   // regular CSS assets do end with a linebreak.
@@ -2209,6 +2222,7 @@ async function minifyCSS(
       const { code, warnings } = await transform(css, {
         loader: 'css',
         target: config.build.cssTarget || undefined,
+        sourcefile: filename,
         ...resolveMinifyCssEsbuildOptions(config.esbuild || {}),
       })
       if (warnings.length) {
@@ -2235,9 +2249,7 @@ async function minifyCSS(
       ...config.css.lightningcss,
       targets: convertTargets(config.build.cssTarget),
       cssModules: undefined,
-      // TODO: Pass actual filename here, which can also be passed to esbuild's
-      // `sourcefile` option below to improve error messages
-      filename: defaultCssBundleName,
+      filename: filename || defaultCssBundleName,
       code: Buffer.from(css),
       minify: true,
     })
