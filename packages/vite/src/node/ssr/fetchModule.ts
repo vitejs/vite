@@ -47,7 +47,13 @@ export async function fetchModule(
 
   // if there is no importer, the file is an entry point
   // entry points are always internalized
-  if (!isFileUrl && importer && url[0] !== '.' && url[0] !== '/') {
+  if (
+    !isFileUrl &&
+    importer &&
+    url[0] !== '.' &&
+    url[0] !== '/' &&
+    !isChunkUrl(environment, url)
+  ) {
     const { isProduction, root } = environment.config
     const { externalConditions, dedupe, preserveSymlinks } =
       environment.config.resolve
@@ -114,15 +120,16 @@ export async function fetchModule(
       )
     }
 
-    // TODO: map
-    const result: ViteFetchResult & { map?: undefined } = {
+    const result: ViteFetchResult = {
       code: code.toString(),
-      url,
+      url: fileName,
       id: fileName,
       file: null,
       // TODO
       invalidate: false,
     }
+    // TODO: this should be done in rolldown, there is already a function for it
+    // output.format = 'module-runner'
     const ssrResult = await ssrTransform(result.code, null, url, result.code)
     if (!ssrResult) {
       throw new Error(`[vite] cannot apply ssr transform to '${url}'.`)
@@ -206,6 +213,13 @@ function inlineSourceMap(
   }\n${MODULE_RUNNER_SOURCEMAPPING_SOURCE}\n//# ${SOURCEMAPPING_URL}=${genSourceMapUrl(sourceMap)}\n`
 
   return result
+}
+
+function isChunkUrl(environment: DevEnvironment, url: string) {
+  return (
+    environment instanceof FullBundleDevEnvironment &&
+    environment.memoryFiles.has(url)
+  )
 }
 
 function resolveEntryFilename(

@@ -47,20 +47,23 @@ describe.only('module runner initialization', async () => {
             './fixtures/native.js',
             './fixtures/installed.js',
             './fixtures/virtual.js',
+            './fixtures/cyclic/entry.js',
+            './fixtures/has-error.js',
+            './fixtures/basic.js',
+            './fixtures/simple.js?raw',
+            './fixtures/simple.js?url',
+            './fixtures/test.css?inline',
+            // TODO: this fails during bundle, not at runtime
+            // at the moment it HANGS the whole process
             // './fixtures/esm-external-non-existing.js',
             // './fixtures/cjs-external-non-existing.js',
-            // TODO?
-            // './fixtures/cyclic/entry',
-            // './fixtures/basic',
-            // './fixtures/simple.js?raw'
           ],
         },
       },
     },
   })
 
-  it('correctly runs ssr code', async ({ server }) => {
-    const runner = (server.environments.ssr as RunnableDevEnvironment).runner
+  it('correctly runs ssr code', async ({ runner }) => {
     const mod = await runner.import('./fixtures/simple.js')
     expect(mod.test).toEqual('I am initialized')
 
@@ -75,7 +78,13 @@ describe.only('module runner initialization', async () => {
     expect(mod).toBe(mod3)
   })
 
-  it.skip('can load virtual modules as an entry point', async ({ runner }) => {
+  it('can load virtual modules as an entry point', async ({
+    runner,
+    skip,
+    config,
+  }) => {
+    skip(!!config.experimental?.ssrBundledDev, 'FBM')
+
     const mod = await runner.import('virtual:test')
     expect(mod.msg).toBe('virtual')
 
@@ -124,17 +133,29 @@ describe.only('module runner initialization', async () => {
     })
   })
 
-  it('assets are loaded correctly', async ({ runner }) => {
+  it('assets are loaded correctly', async ({ runner, config }) => {
     const assets = await runner.import('/fixtures/assets.js')
-    expect(assets).toMatchObject({
-      mov: '/fixtures/assets/placeholder.mov',
-      txt: '/fixtures/assets/placeholder.txt',
-      png: '/fixtures/assets/placeholder.png',
-      webp: '/fixtures/assets/placeholder.webp',
-    })
+    if (config.experimental?.ssrBundledDev) {
+      expect(assets).toMatchObject({
+        mov: 'data:video/quicktime;base64,',
+        txt: 'data:text/plain;base64,',
+        png: 'data:image/png;base64,',
+        webp: 'data:image/webp;base64,',
+      })
+    } else {
+      expect(assets).toMatchObject({
+        mov: '/fixtures/assets/placeholder.mov',
+        txt: '/fixtures/assets/placeholder.txt',
+        png: '/fixtures/assets/placeholder.png',
+        webp: '/fixtures/assets/placeholder.webp',
+      })
+    }
   })
 
-  it('ids with Vite queries are loaded correctly', async ({ runner }) => {
+  it('ids with Vite queries are loaded correctly', async ({
+    runner,
+    config,
+  }) => {
     const raw = await runner.import('/fixtures/simple.js?raw')
     expect(raw.default).toMatchInlineSnapshot(`
       "export const test = 'I am initialized'
@@ -143,7 +164,11 @@ describe.only('module runner initialization', async () => {
       "
     `)
     const url = await runner.import('/fixtures/simple.js?url')
-    expect(url.default).toMatchInlineSnapshot(`"/fixtures/simple.js"`)
+    if (config.experimental?.ssrBundledDev) {
+      expect(url.default).toMatch('__VITE_ASSET__')
+    } else {
+      expect(url.default).toMatchInlineSnapshot(`"/fixtures/simple.js"`)
+    }
     const inline = await runner.import('/fixtures/test.css?inline')
     expect(inline.default).toMatchInlineSnapshot(`
       ".test {
@@ -155,11 +180,16 @@ describe.only('module runner initialization', async () => {
 
   it('modules with query strings are treated as different modules', async ({
     runner,
+    config,
   }) => {
     const modSimple = await runner.import('/fixtures/simple.js')
     const modUrl = await runner.import('/fixtures/simple.js?url')
     expect(modSimple).not.toBe(modUrl)
-    expect(modUrl.default).toBe('/fixtures/simple.js')
+    if (config.experimental?.ssrBundledDev) {
+      expect(modUrl.default).toContain('__VITE_ASSET__')
+    } else {
+      expect(modUrl.default).toBe('/fixtures/simple.js')
+    }
   })
 
   it('exports is not modifiable', async ({ runner }) => {
@@ -192,7 +222,7 @@ describe.only('module runner initialization', async () => {
     const s = Symbol()
     try {
       await runner.import('/fixtures/has-error.js')
-    } catch (e) {
+    } catch (e: any) {
       expect(e[s]).toBeUndefined()
       e[s] = true
       expect(e[s]).toBe(true)
@@ -200,15 +230,19 @@ describe.only('module runner initialization', async () => {
 
     try {
       await runner.import('/fixtures/has-error.js')
-    } catch (e) {
+    } catch (e: any) {
       expect(e[s]).toBe(true)
     }
   })
 
   // if bundle throws an error, we should stopn waiting
-  it.skip('importing external cjs library checks exports', async ({
+  it('importing external cjs library checks exports', async ({
     runner,
+    skip,
+    config,
   }) => {
+    skip(!!config.experimental?.ssrBundledDev, 'FBM')
+
     await expect(() => runner.import('/fixtures/cjs-external-non-existing.js'))
       .rejects.toThrowErrorMatchingInlineSnapshot(`
       [SyntaxError: [vite] Named export 'nonExisting' not found. The requested module '@vitejs/cjs-external' is a CommonJS module, which may not support all module.exports as named exports.
@@ -240,7 +274,13 @@ describe.only('module runner initialization', async () => {
     })
   })
 
-  it("dynamic import doesn't produce duplicates", async ({ server }) => {
+  it("dynamic import doesn't produce duplicates", async ({
+    server,
+    config,
+    skip,
+  }) => {
+    skip(!!config.experimental?.ssrBundledDev, 'FBM')
+
     const runner = (server.environments.ssr as RunnableDevEnvironment).runner
     const mod = await runner.import('./fixtures/dynamic-import.js')
     const modules = await mod.initialize()
@@ -275,8 +315,16 @@ describe.only('module runner initialization', async () => {
     expect(mod.existsSync).toBe(existsSync)
   })
 
-  it('correctly resolves module url', async ({ runner, server }) => {
-    const { meta } = await runner.import('/fixtures/basic')
+  // files are virtual, so url is not defined
+  it('correctly resolves module url', async ({
+    runner,
+    server,
+    config,
+    skip,
+  }) => {
+    skip(!!config.experimental?.ssrBundledDev, 'FBM')
+
+    const { meta } = await runner.import('/fixtures/basic.js')
     const basicUrl = new _URL('./fixtures/basic.js', import.meta.url).toString()
     expect(meta.url).toBe(basicUrl)
 
@@ -303,12 +351,17 @@ describe.only('module runner initialization', async () => {
 
   it(`no maximum call stack error ModuleRunner.isCircularImport`, async ({
     runner,
+    skip,
+    config,
   }) => {
+    skip(!!config.experimental?.ssrBundledDev, 'FBM')
+
     // entry.js ⇔ entry-cyclic.js
     //   ⇓
     // action.js
-    const mod = await runner.import('/fixtures/cyclic/entry')
+    const mod = await runner.import('./fixtures/cyclic/entry.js')
     await mod.setupCyclic()
+    // TODO(FBM): Importing dynamically is not supported yet
     const action = await mod.importAction('/fixtures/cyclic/action')
     expect(action).toBeDefined()
   })
@@ -337,18 +390,30 @@ describe.only('module runner initialization', async () => {
     })
   })
 
-  it(`cyclic invalid 1`, async ({ runner }) => {
+  it(`cyclic invalid 1`, async ({ runner, config }) => {
     // Node also fails but with a different message
     //   $ node packages/vite/src/node/ssr/runtime/__tests__/fixtures/cyclic2/test5/index.js
     //   ReferenceError: Cannot access 'dep1' before initialization
-    await expect(() =>
-      runner.import('/fixtures/cyclic2/test5/index.js'),
-    ).rejects.toMatchInlineSnapshot(
-      `[TypeError: Cannot read properties of undefined (reading 'ok')]`,
-    )
+    if (config.experimental?.ssrBundledDev) {
+      await expect(() =>
+        runner.import('/fixtures/cyclic2/test5/index.js'),
+      ).rejects.toMatchInlineSnapshot(
+        `[ReferenceError: Cannot access 'dep1' before initialization]`,
+      )
+    } else {
+      await expect(() =>
+        runner.import('/fixtures/cyclic2/test5/index.js'),
+      ).rejects.toMatchInlineSnapshot(
+        `[TypeError: Cannot read properties of undefined (reading 'ok')]`,
+      )
+    }
   })
 
-  it(`cyclic invalid 2`, async ({ runner }) => {
+  // rolldown doesn't support this
+  // - Cannot access 'dep1' before initialization
+  it(`cyclic invalid 2`, async ({ runner, skip, config }) => {
+    skip(!!config.experimental?.ssrBundledDev, 'FBM')
+
     // It should be an error but currently `undefined` fallback.
     expect(
       await runner.import('/fixtures/cyclic2/test6/index.js'),

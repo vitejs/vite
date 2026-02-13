@@ -7,6 +7,7 @@ import {
 } from 'rolldown/experimental'
 import colors from 'picocolors'
 import getEtag from 'etag'
+import type { OutputOptions, RolldownOptions } from 'rolldown'
 import type { Update } from '#types/hmrPayload'
 import { ChunkMetadataMap, resolveRolldownOptions } from '../../build'
 import { getHmrImplementation } from '../../plugins/clientInjections'
@@ -76,6 +77,8 @@ export class FullBundleDevEnvironment extends DevEnvironment {
 
   memoryFiles: MemoryFiles = new MemoryFiles()
   facadeToChunk: Map<string, string> = new Map()
+
+  // private buildFinishPromise = promiseWithResolvers<void>()
 
   constructor(
     name: string,
@@ -201,6 +204,8 @@ export class FullBundleDevEnvironment extends DevEnvironment {
    * @internal
    */
   public async _waitForInitialBuildFinish(): Promise<void> {
+    // TODO: need a better way to handle errors from the outside
+    // maybe `await buildFinishPromise.promise`
     await this.devEngine.ensureCurrentBuildFinish()
     while (this.memoryFiles.size === 0) {
       await setTimeout(10)
@@ -292,7 +297,7 @@ export class FullBundleDevEnvironment extends DevEnvironment {
     return await getHmrImplementation(this.getTopLevelConfig())
   }
 
-  private async getRolldownOptions() {
+  protected async getRolldownOptions(): Promise<RolldownOptions> {
     const chunkMetadataMap = new ChunkMetadataMap()
     const rolldownOptions = resolveRolldownOptions(this, chunkMetadataMap)
     rolldownOptions.experimental ??= {}
@@ -308,22 +313,24 @@ export class FullBundleDevEnvironment extends DevEnvironment {
     // set filenames to make output paths predictable so that `renderChunk` hook does not need to be used
     if (Array.isArray(rolldownOptions.output)) {
       for (const output of rolldownOptions.output) {
-        output.entryFileNames = 'assets/[name].js'
-        output.chunkFileNames = 'assets/[name]-[hash].js'
-        output.assetFileNames = 'assets/[name]-[hash][extname]'
-        output.minify = false
-        output.sourcemap = true
+        Object.assign(output, this.getOutputOptions())
       }
     } else {
       rolldownOptions.output ??= {}
-      rolldownOptions.output.entryFileNames = 'assets/[name].js'
-      rolldownOptions.output.chunkFileNames = 'assets/[name]-[hash].js'
-      rolldownOptions.output.assetFileNames = 'assets/[name]-[hash][extname]'
-      rolldownOptions.output.minify = false
-      rolldownOptions.output.sourcemap = true
+      Object.assign(rolldownOptions.output, this.getOutputOptions())
     }
 
     return rolldownOptions
+  }
+
+  protected getOutputOptions(): OutputOptions {
+    return {
+      entryFileNames: 'assets/[name].js',
+      chunkFileNames: 'assets/[name]-[hash].js',
+      assetFileNames: 'assets/[name]-[hash][extname]',
+      minify: false,
+      sourcemap: true,
+    }
   }
 
   private handleHmrOutput(

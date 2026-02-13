@@ -1,3 +1,4 @@
+import type { OutputOptions } from 'rolldown'
 import { type ModuleRunner, ssrRolldownRuntimeKey } from 'vite/module-runner'
 import {
   type ResolvedConfig,
@@ -30,14 +31,14 @@ export class FullBundleRunnableDevEnvironment extends FullBundleDevEnvironment {
     // TODO: this should not be in this file
     return `
   class ViteDevRuntime extends DevRuntime {
-    override createModuleHotContext(moduleId) {
+    createModuleHotContext(moduleId) {
       const ctx = __vite_ssr_import_meta__.hot
       // TODO: what is this?
       // ctx._internal = { updateStyle, removeStyle }
       return ctx
     }
 
-    override applyUpdates() {
+    applyUpdates() {
       // noop, handled in the HMR client
     }
   }
@@ -63,6 +64,13 @@ export class FullBundleRunnableDevEnvironment extends FullBundleDevEnvironment {
 
   ;${ssrRolldownRuntimeKey}.${ssrRolldownRuntimeDefineMethod}(new ViteDevRuntime(wrappedSocket))
     `
+  }
+
+  protected override getOutputOptions(): OutputOptions {
+    return {
+      ...super.getOutputOptions(),
+      sourcemap: 'inline',
+    }
   }
 
   override async close(): Promise<void> {
