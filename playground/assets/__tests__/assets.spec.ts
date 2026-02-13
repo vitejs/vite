@@ -71,6 +71,15 @@ test('should fallback to index.html when accessing non-existent html file', asyn
   expect((await fetchPath('doesnt-exist.html')).status).toBe(200)
 })
 
+test.runIf(isServe)(
+  'public file with reserved URI character (#20799)',
+  async () => {
+    const res = await fetchPath('file%23hash.txt')
+    expect(res.status).toBe(200)
+    expect((await res.text()).trim()).toBe('ok')
+  },
+)
+
 describe.runIf(isServe)('outside base', () => {
   test('should get a 404 with html', async () => {
     const res = await fetch(new URL('/baz', viteTestUrl), {
