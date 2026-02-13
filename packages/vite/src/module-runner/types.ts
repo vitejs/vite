@@ -1,3 +1,4 @@
+import type { DevRuntime } from 'rolldown/experimental/runtime-types'
 import type { ViteHotContext } from '#types/hot'
 import type { HMRLogger } from '../shared/hmr'
 import type {
@@ -19,6 +20,7 @@ import type {
   ssrImportKey,
   ssrImportMetaKey,
   ssrModuleExportsKey,
+  ssrRolldownRuntimeKey,
 } from './constants'
 import type { InterceptorOptions } from './sourcemap/interceptor'
 
@@ -41,6 +43,10 @@ export interface ModuleRunnerContext {
   [ssrExportAllKey]: (obj: any) => void
   [ssrExportNameKey]: (name: string, getter: () => unknown) => void
   [ssrImportMetaKey]: ModuleRunnerImportMeta
+  /**
+   * @internal
+   */
+  [ssrRolldownRuntimeKey]: DevRuntime | undefined
 }
 
 export interface ModuleEvaluator {
