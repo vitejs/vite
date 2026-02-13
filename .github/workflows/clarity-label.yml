@@ -100,9 +100,11 @@ jobs:
             const allClarityLabels = ['clarity: low', 'clarity: medium', 'clarity: high'];
 
             // Remove existing clarity labels
-            const { data: currentLabels } = isPR
-              ? await github.rest.issues.listLabelsOnIssue({ owner: context.repo.owner, repo: context.repo.repo, issue_number: number })
-              : await github.rest.issues.listLabelsOnIssue({ owner: context.repo.owner, repo: context.repo.repo, issue_number: number });
+            const { data: currentLabels } = await github.rest.issues.listLabelsOnIssue({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: number
+            });
 
             for (const label of currentLabels) {
               if (allClarityLabels.includes(label.name) && label.name !== newLabel) {
