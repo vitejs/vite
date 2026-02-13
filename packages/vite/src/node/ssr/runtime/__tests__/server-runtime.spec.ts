@@ -4,7 +4,6 @@ import { fileURLToPath } from 'node:url'
 import { describe, expect, vi } from 'vitest'
 import { isWindows } from '../../../../shared/utils'
 // import type { ExternalFetchResult } from '../../../../shared/invokeMethods'
-import type { RunnableDevEnvironment } from '../../../server/environments/runnableEnvironment'
 import { runnerTest } from './utils'
 
 const _URL = URL
@@ -20,6 +19,13 @@ describe.only('module runner initialization', async () => {
       },
       experimental: {
         ssrBundledDev: true,
+      },
+      environments: {
+        ssr: {
+          dev: {
+            // disable hmr?
+          },
+        },
       },
       build: {
         rolldownOptions: {
@@ -260,7 +266,13 @@ describe.only('module runner initialization', async () => {
     })
   })
 
-  it('importing external esm library checks exports', async ({ runner }) => {
+  it('importing external esm library checks exports', async ({
+    runner,
+    skip,
+    config,
+  }) => {
+    skip(!!config.experimental?.ssrBundledDev, 'FBM')
+
     await expect(() =>
       runner.import('/fixtures/esm-external-non-existing.js'),
     ).rejects.toThrowErrorMatchingInlineSnapshot(
@@ -275,13 +287,13 @@ describe.only('module runner initialization', async () => {
   })
 
   it("dynamic import doesn't produce duplicates", async ({
-    server,
     config,
     skip,
+    runner,
   }) => {
+    // rolldown doesn't return the same reference and doesn't support non-processed dynamic imports
     skip(!!config.experimental?.ssrBundledDev, 'FBM')
 
-    const runner = (server.environments.ssr as RunnableDevEnvironment).runner
     const mod = await runner.import('./fixtures/dynamic-import.js')
     const modules = await mod.initialize()
     // toBe checks that objects are actually the same, not just structurally
@@ -292,6 +304,17 @@ describe.only('module runner initialization', async () => {
     expect(modules.static).toBe(modules.dynamicAbsoluteExtension)
     expect(modules.static).toBe(modules.dynamicAbsoluteFull)
     expect(modules.static).toBe(modules.dynamicFileUrl)
+  })
+
+  it('dynamic imports in FBM', async ({ config, skip, runner }) => {
+    skip(!config.experimental?.ssrBundledDev, 'FBM')
+
+    const mod = await runner.import('./fixtures/dynamic-import.js')
+    const modules = await mod.initialize(true)
+
+    expect(modules.static.test).toBeTypeOf('string')
+    expect(modules.dynamicProcessed.test).toBeTypeOf('string')
+    expect(modules.dynamicProcessed.test).toBe(modules.static.test)
   })
 
   it('correctly imports a virtual module', async ({ runner }) => {
