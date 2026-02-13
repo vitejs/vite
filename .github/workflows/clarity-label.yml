@@ -3,8 +3,6 @@ name: Clarity Label
 on:
   issues:
     types: [opened, edited]
-  pull_request:
-    types: [opened, edited]
 
 jobs:
   label-clarity:
