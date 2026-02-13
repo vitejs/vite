@@ -71,7 +71,6 @@ export interface HmrContext {
 interface PropagationBoundary {
   boundary: EnvironmentModuleNode & { type: 'js' | 'css' }
   acceptedVia: EnvironmentModuleNode
-  isWithinCircularImport: boolean
 }
 
 export interface HotChannelClient {
@@ -643,9 +642,15 @@ export function updateModules(
   // Modules could be empty if a root module is invalidated via import.meta.hot.invalidate()
   let needFullReload: HasDeadEnd = modules.length === 0
 
+  let hasSkippedBoundary = false
+
   for (const mod of modules) {
     const boundaries: PropagationBoundary[] = []
-    const hasDeadEnd = propagateUpdate(mod, traversedModules, boundaries)
+    const [hasDeadEnd, skippedBoundary] = propagateUpdate(
+      mod,
+      traversedModules,
+      boundaries,
+    )
 
     environment.moduleGraph.invalidateModule(
       mod,
@@ -658,40 +663,47 @@ export function updateModules(
       continue
     }
 
+    hasSkippedBoundary ||= skippedBoundary
     if (hasDeadEnd) {
       needFullReload = hasDeadEnd
       continue
     }
 
-    // If import.meta.hot.invalidate was called already on that module for the same update,
-    // it means any importer of that module can't hot update. We should fallback to full reload.
-    if (
-      firstInvalidatedBy &&
-      boundaries.some(
-        ({ acceptedVia }) =>
-          normalizeHmrUrl(acceptedVia.url) === firstInvalidatedBy,
-      )
-    ) {
-      needFullReload = 'circular import invalidate'
-      continue
-    }
-
     updates.push(
-      ...boundaries.map(
-        ({ boundary, acceptedVia, isWithinCircularImport }) => ({
-          type: `${boundary.type}-update` as const,
-          timestamp,
-          path: normalizeHmrUrl(boundary.url),
-          acceptedPath: normalizeHmrUrl(acceptedVia.url),
-          explicitImportRequired:
-            boundary.type === 'js'
-              ? isExplicitImportRequired(acceptedVia.url)
-              : false,
-          isWithinCircularImport,
-          firstInvalidatedBy,
-        }),
-      ),
+      ...boundaries.map(({ boundary, acceptedVia }) => ({
+        type: `${boundary.type}-update` as const,
+        timestamp,
+        path: normalizeHmrUrl(boundary.url),
+        acceptedPath: normalizeHmrUrl(acceptedVia.url),
+        explicitImportRequired:
+          boundary.type === 'js'
+            ? isExplicitImportRequired(acceptedVia.url)
+            : false,
+        firstInvalidatedBy,
+      })),
     )
+  }
+
+  // Warn when circular imports cause HMR boundaries to be skipped
+  if (hasSkippedBoundary) {
+    if (needFullReload) {
+      environment.logger.warn(
+        colors.yellow(
+          `hmr boundary skipped due to circular imports, page will reload. ` +
+            `To debug and break the circular import, use ${colors.dim('`vite --debug hmr`')} to log the circular import path.`,
+        ),
+        { timestamp: true },
+      )
+    } else if (traversedModules.size > 10) {
+      environment.logger.warn(
+        colors.yellow(
+          `hmr boundary skipped due to circular imports, ` +
+            `${traversedModules.size} modules will re-execute. ` +
+            `To debug and break the circular import, use ${colors.dim('`vite --debug hmr`')} to log the circular import path.`,
+        ),
+        { timestamp: true },
+      )
+    }
   }
 
   // html file cannot be hot updated because it may be used as the template for a top-level request response.
@@ -758,9 +770,9 @@ function propagateUpdate(
   traversedModules: Set<EnvironmentModuleNode>,
   boundaries: PropagationBoundary[],
   currentChain: EnvironmentModuleNode[] = [node],
-): HasDeadEnd {
+): [HasDeadEnd, boundarySkipped: boolean] {
   if (traversedModules.has(node)) {
-    return false
+    return [false, false]
   }
   traversedModules.add(node)
 
@@ -773,18 +785,24 @@ function propagateUpdate(
         node.id,
       )}`,
     )
-    return false
+    return [false, false]
   }
 
+  const isWithinCircularImports = isNodeWithinCircularImports(
+    node,
+    currentChain,
+  )
+
+  let boundarySkipped = false
   if (node.isSelfAccepting) {
-    // isSelfAccepting is only true for js and css
-    const boundary = node as EnvironmentModuleNode & { type: 'js' | 'css' }
-    boundaries.push({
-      boundary,
-      acceptedVia: boundary,
-      isWithinCircularImport: isNodeWithinCircularImports(node, currentChain),
-    })
-    return false
+    if (!isWithinCircularImports) {
+      // isSelfAccepting is only true for js and css
+      const boundary = node as EnvironmentModuleNode & { type: 'js' | 'css' }
+      boundaries.push({ boundary, acceptedVia: boundary })
+      return [false, false]
+    } else {
+      boundarySkipped = true
+    }
   }
 
   // A partially accepted module with no importers is considered self accepting,
@@ -792,17 +810,16 @@ function propagateUpdate(
   // are used outside of me".
   // Also, the imported module (this one) must be updated before the importers,
   // so that they do get the fresh imported module when/if they are reloaded.
-  if (node.acceptedHmrExports) {
+  if (node.acceptedHmrExports && !isWithinCircularImports) {
     // acceptedHmrExports is only true for js and css
     const boundary = node as EnvironmentModuleNode & { type: 'js' | 'css' }
-    boundaries.push({
-      boundary,
-      acceptedVia: boundary,
-      isWithinCircularImport: isNodeWithinCircularImports(node, currentChain),
-    })
+    boundaries.push({ boundary, acceptedVia: boundary })
   } else {
+    if (node.acceptedHmrExports && isWithinCircularImports) {
+      boundarySkipped = true
+    }
     if (!node.importers.size) {
-      return true
+      return [true, boundarySkipped]
     }
   }
 
@@ -810,16 +827,16 @@ function propagateUpdate(
     const subChain = currentChain.concat(importer)
 
     if (importer.acceptedHmrDeps.has(node)) {
-      // acceptedHmrDeps has value only for js and css
-      const boundary = importer as EnvironmentModuleNode & {
-        type: 'js' | 'css'
+      if (!isNodeWithinCircularImports(importer, subChain)) {
+        // acceptedHmrDeps has value only for js and css
+        const boundary = importer as EnvironmentModuleNode & {
+          type: 'js' | 'css'
+        }
+        boundaries.push({ boundary, acceptedVia: node })
+        continue
+      } else {
+        boundarySkipped = true
       }
-      boundaries.push({
-        boundary,
-        acceptedVia: node,
-        isWithinCircularImport: isNodeWithinCircularImports(importer, subChain),
-      })
-      continue
     }
 
     if (node.id && node.acceptedHmrExports && importer.importedBindings) {
@@ -832,14 +849,20 @@ function propagateUpdate(
       }
     }
 
-    if (
-      !currentChain.includes(importer) &&
-      propagateUpdate(importer, traversedModules, boundaries, subChain)
-    ) {
-      return true
+    if (!currentChain.includes(importer)) {
+      const [hasDeadEnd, skipped] = propagateUpdate(
+        importer,
+        traversedModules,
+        boundaries,
+        subChain,
+      )
+      boundarySkipped ||= skipped
+      if (hasDeadEnd) {
+        return [true, boundarySkipped]
+      }
     }
   }
-  return false
+  return [false, boundarySkipped]
 }
 
 /**

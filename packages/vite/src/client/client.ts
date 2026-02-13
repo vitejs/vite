@@ -147,34 +147,19 @@ const hmrClient = new HMRClient(
   },
   transport,
   isBundleMode
-    ? async function importUpdatedModule({
-        url,
-        acceptedPath,
-        isWithinCircularImport,
-      }) {
-        const importPromise = import(base + url!).then(() =>
+    ? async function importUpdatedModule({ url, acceptedPath }) {
+        return await import(base + url!).then(() =>
           // @ts-expect-error globalThis.__rolldown_runtime__
           globalThis.__rolldown_runtime__.loadExports(acceptedPath),
         )
-        if (isWithinCircularImport) {
-          importPromise.catch(() => {
-            console.info(
-              `[hmr] ${acceptedPath} failed to apply HMR as it's within a circular import. Reloading page to reset the execution order. ` +
-                `To debug and break the circular import, you can run \`vite --debug hmr\` to log the circular dependency path if a file change triggered it.`,
-            )
-            pageReload()
-          })
-        }
-        return await importPromise
       }
     : async function importUpdatedModule({
         acceptedPath,
         timestamp,
         explicitImportRequired,
-        isWithinCircularImport,
       }) {
         const [acceptedPathWithoutQuery, query] = acceptedPath.split(`?`)
-        const importPromise = import(
+        return await import(
           /* @vite-ignore */
           base +
             acceptedPathWithoutQuery.slice(1) +
@@ -182,16 +167,6 @@ const hmrClient = new HMRClient(
               query ? `&${query}` : ''
             }`
         )
-        if (isWithinCircularImport) {
-          importPromise.catch(() => {
-            console.info(
-              `[hmr] ${acceptedPath} failed to apply HMR as it's within a circular import. Reloading page to reset the execution order. ` +
-                `To debug and break the circular import, you can run \`vite --debug hmr\` to log the circular dependency path if a file change triggered it.`,
-            )
-            pageReload()
-          })
-        }
-        return await importPromise
       },
 )
 transport.connect!(createHMRHandler(handleMessage))
