@@ -152,7 +152,7 @@ Generate production source maps. If `true`, a separate sourcemap file will be cr
 - **Type:** `boolean`
 - **Default:** `false`
 - **Experimental**
-- **Related:** [Chunk Import Map Optimization](/guide/features#chunk-import-map)
+- **Related:** [Chunk Import Map Optimization](/guide/features#chunk-import-map-optimization)
 
 Whether to use import maps feature to optimize chunk caching efficiency.
 

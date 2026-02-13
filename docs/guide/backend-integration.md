@@ -247,4 +247,9 @@ If you need a custom integration, you can follow the steps in this guide to conf
 
    :::
 
-<!-- TODO: document how to use import maps feature -->
+   :::info Chunk Import Maps Support (Experimental)
+
+   If you are using the experimental [`build.chunkImportMap`](/config/build-options#build-chunkimportmap) option, you also need to inject the import map into the HTML.
+
+   The import map is output to `importmap.json` in the output directory. Make sure to inject the `<script type="importmap">` tag before any `<script type="module">` tags or `<link rel="modulepreload">` tags.
+   :::
