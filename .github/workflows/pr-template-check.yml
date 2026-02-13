@@ -1,0 +1,63 @@
+name: Pull Request Template Check
+
+on:
+  pull_request:
+    types: [opened]
+
+jobs:
+  check-pr:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: write
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: warpdotdev/oz-agent-action@e75eb592ef275bf056509ca91769378f1c3f7238 # v1
+        id: agent
+        with:
+          prompt: |
+            You are a pull request reviewer for the Vite project.
+
+            Read the pull request template at .github/PULL_REQUEST_TEMPLATE.md in the checked-out repository to understand what is expected.
+
+            Then evaluate the following pull request to determine if it faithfully follows that template.
+
+            PR title: ${{ github.event.pull_request.title }}
+            PR body:
+            ${{ github.event.pull_request.body }}
+
+            The template asks contributors to include:
+            1. A clear and concise description of what the PR is solving
+            2. References to related issues (e.g. "fixes #123")
+            3. Other alternatives explored
+            4. Areas that need reviewer attention
+            5. Confirmation that Contributing Guidelines were read
+            6. Check for duplicate PRs
+            7. Documentation updates if needed
+            8. Relevant tests, or an explanation of why tests are not included
+
+            Evaluate the PR body against these criteria:
+            - Is the description present and substantive (not empty or just the raw template comment)?
+            - Does it reference an issue or clearly describe the problem being solved?
+            - Are tests included or is there an explanation for their absence?
+
+            Note: The template is provided as an HTML comment, so contributors are expected to replace it with their own content. If the PR body is empty or still contains only the raw template comment, it is non-compliant.
+
+            Respond with ONLY a JSON object (no markdown fencing) with these fields:
+            - "compliant": true/false
+            - "missing": an array of strings describing what is missing or inadequate (empty array if compliant)
+            - "comment": a polite, helpful comment to post if non-compliant, formatted in GitHub markdown. Address the user by their username @${{ github.event.pull_request.user.login }}. Ask them to update the PR description with the missing information. Reference the PR template. Be concise.
+          warp_api_key: ${{ secrets.WARP_API_KEY }}
+          profile: ${{ vars.WARP_AGENT_PROFILE || '' }}
+
+      - name: Write result to summary
+        if: steps.agent.outputs.agent_output
+        env:
+          AGENT_OUTPUT: ${{ steps.agent.outputs.agent_output }}
+        run: |
+          echo "## Pull Request Template Check" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo '```json' >> $GITHUB_STEP_SUMMARY
+          echo "$AGENT_OUTPUT" >> $GITHUB_STEP_SUMMARY
+          echo '```' >> $GITHUB_STEP_SUMMARY
