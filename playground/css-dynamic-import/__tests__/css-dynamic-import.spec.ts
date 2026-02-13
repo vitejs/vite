@@ -8,17 +8,25 @@ const baseOptions = [
   { base: '/', label: 'absolute' },
 ]
 
-const getConfig = (base: string): InlineConfig => ({
+const getConfig = (
+  base: string,
+  extra?: Partial<InlineConfig>,
+): InlineConfig => ({
   base,
   root: rootDir,
   logLevel: 'silent',
   server: { port: ports['css/dynamic-import'] },
   preview: { port: ports['css/dynamic-import'] },
-  build: { assetsInlineLimit: 0 },
+  build: { assetsInlineLimit: 0, ...extra?.build },
+  ...extra,
 })
 
-async function withBuild(base: string, fn: () => Promise<void>) {
-  const config = getConfig(base)
+async function withBuild(
+  base: string,
+  fn: () => Promise<void>,
+  extra?: Partial<InlineConfig>,
+) {
+  const config = getConfig(base, extra)
   await build(config)
   const server = await preview(config)
 
@@ -91,3 +99,42 @@ baseOptions.forEach(({ base, label }) => {
     },
   )
 })
+
+// Test: CSS from pure CSS chunks (via manualChunks) should preserve
+// the original import order. When base.css is in a separate pure CSS
+// chunk that was imported BEFORE page.css, base.css should appear
+// before page.css in the cascade. This means page.css (green) should
+// override base.css (red). (#3924, #6375)
+test.runIf(isBuild)(
+  'css order is preserved when pure css chunks are created via manualChunks',
+  async () => {
+    const path = await import('node:path')
+    await withBuild(
+      '/',
+      async () => {
+        await page.waitForSelector('.async-order-el', { state: 'attached' })
+        // page.css (green) should override base.css (red) because
+        // page.js imports base.js first (which brings in base.css),
+        // then imports page.css — so page.css should come later in cascade
+        expect(await getColor('.async-order-el')).toBe('green')
+      },
+      {
+        build: {
+          assetsInlineLimit: 0,
+          rollupOptions: {
+            output: {
+              // Split base.css into its own chunk, creating a pure CSS chunk.
+              // This reproduces the bug where CSS from pure CSS chunks ends up
+              // after the importing chunk's own CSS in the cascade.
+              manualChunks(id) {
+                if (id.includes('async-order/base.css')) {
+                  return 'async-base'
+                }
+              },
+            },
+          },
+        },
+      },
+    )
+  },
+)
