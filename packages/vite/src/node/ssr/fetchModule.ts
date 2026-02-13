@@ -1,10 +1,10 @@
-import { pathToFileURL } from 'node:url'
-import path from 'node:path'
+import { fileURLToPath, pathToFileURL } from 'node:url'
+import path, { resolve } from 'node:path'
 import type { FetchResult } from 'vite/module-runner'
 import type { TransformResult } from '..'
 import { tryNodeResolve } from '../plugins/resolve'
 import { isBuiltin, isExternalUrl, isFilePathESM } from '../utils'
-import { unwrapId } from '../../shared/utils'
+import { slash, unwrapId } from '../../shared/utils'
 import {
   MODULE_RUNNER_SOURCEMAPPING_SOURCE,
   SOURCEMAPPING_URL,
@@ -85,36 +85,41 @@ export async function fetchModule(
   url = unwrapId(url)
 
   if (environment instanceof FullBundleDevEnvironment) {
-    let fileName: string = url
-    const importerDirectory = importer
-      ? path.posix.dirname(importer)
-      : environment.config.root
-    // Browser does this automatically when serving files,
-    // But for SSR we have to resolve paths ourselves.
-    if (url[0] === '.') {
-      const moduleId = path.posix.resolve(importerDirectory, url)
-      fileName = moduleId.slice(environment.config.root.length + 1)
+    await environment._waitForInitialBuildFinish()
+
+    let fileName: string
+
+    if (!importer) {
+      fileName = resolveEntryFilename(environment, url)!
+
+      if (!fileName) {
+        throw new Error(
+          `[vite] Entrypoint '${url}' was not defined in the config. Available entry points: \n- ${[...environment.facadeToChunk.keys()].join('\n- ')}`,
+        )
+      }
+    } else if (url[0] === '.') {
+      fileName = path.posix.join(path.posix.dirname(importer), url)
+    } else {
+      fileName = url
     }
+
     const memoryFile = environment.memoryFiles.get(fileName)
     // TODO: how to check caching?
     const code = memoryFile?.source
     if (code == null) {
       throw new Error(
-        `[vite] the module '${url}'${
+        `[vite] the module '${url}' (chunk '${fileName}') ${
           importer ? ` imported from '${importer}'` : ''
         } was not bundled. Is server established?`,
       )
     }
 
-    const file = importer
-      ? path.posix.resolve(importerDirectory, url)
-      : path.posix.resolve(environment.config.root, url)
     // TODO: map
     const result: ViteFetchResult & { map?: undefined } = {
       code: code.toString(),
       url,
-      id: file,
-      file,
+      id: fileName,
+      file: null,
       // TODO
       invalidate: false,
     }
@@ -201,4 +206,28 @@ function inlineSourceMap(
   }\n${MODULE_RUNNER_SOURCEMAPPING_SOURCE}\n//# ${SOURCEMAPPING_URL}=${genSourceMapUrl(sourceMap)}\n`
 
   return result
+}
+
+function resolveEntryFilename(
+  environment: FullBundleDevEnvironment,
+  url: string,
+) {
+  // Already resolved by the user to be a url
+  if (environment.facadeToChunk.has(url)) {
+    return environment.facadeToChunk.get(url)
+  }
+  const moduleId = url.startsWith('file://')
+    ? // new URL(path)
+      fileURLToPath(url)
+    : // ./index.js
+      // NOTE: we don't try to find it if extension is not passed
+      // It will throw an error instead
+      slash(resolve(environment.config.root, url))
+  if (environment.facadeToChunk.get(moduleId)) {
+    return environment.facadeToChunk.get(moduleId)
+  }
+  if (url[0] === '/') {
+    const tryAbsouteUrl = path.join(environment.config.root, url)
+    return environment.facadeToChunk.get(tryAbsouteUrl)
+  }
 }

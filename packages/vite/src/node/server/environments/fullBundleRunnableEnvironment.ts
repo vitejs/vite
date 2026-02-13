@@ -1,12 +1,9 @@
-import path, { resolve } from 'node:path'
-import { fileURLToPath } from 'node:url'
 import { type ModuleRunner, ssrRolldownRuntimeKey } from 'vite/module-runner'
 import {
   type ResolvedConfig,
   createServerHotChannel,
   createServerModuleRunner,
 } from '../../index'
-import { slash } from '../../../shared/utils'
 import { ssrRolldownRuntimeDefineMethod } from '../../../module-runner/constants'
 import { FullBundleDevEnvironment } from './fullBundleEnvironment'
 
@@ -26,40 +23,7 @@ export class FullBundleRunnableDevEnvironment extends FullBundleDevEnvironment {
       return this._runner
     }
     this._runner = createServerModuleRunner(this)
-    // TODO: don't patch
-    const importModule = this._runner.import.bind(this._runner)
-    this._runner.import = async (url: string) => {
-      await this.waitForInitialBuildFinish()
-      const fileName = this.resolveEntryFilename(url)
-      if (!fileName) {
-        throw new Error(
-          `[vite] Entrypoint '${url}' was not defined in the config. Available entry points: \n- ${[...this.facadeToChunk.keys()].join('\n- ')}`,
-        )
-      }
-      return importModule(fileName)
-    }
     return this._runner
-  }
-
-  private resolveEntryFilename(url: string) {
-    // Already resolved by the user to be a url
-    if (this.facadeToChunk.has(url)) {
-      return this.facadeToChunk.get(url)
-    }
-    const moduleId = url.startsWith('file://')
-      ? // new URL(path)
-        fileURLToPath(url)
-      : // ./index.js
-        // NOTE: we don't try to find it if extension is not passed
-        // It will throw an error instead
-        slash(resolve(this.config.root, url))
-    if (this.facadeToChunk.get(moduleId)) {
-      return this.facadeToChunk.get(moduleId)
-    }
-    if (url[0] === '/') {
-      const tryAbsouteUrl = path.join(this.config.root, url)
-      return this.facadeToChunk.get(tryAbsouteUrl)
-    }
   }
 
   protected override async getDevRuntimeImplementation(): Promise<string> {

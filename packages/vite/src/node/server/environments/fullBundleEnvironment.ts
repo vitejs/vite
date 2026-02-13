@@ -191,13 +191,16 @@ export class FullBundleDevEnvironment extends DevEnvironment {
         debug?.('INITIAL: run error', e)
       },
     )
-    this.waitForInitialBuildFinish().then(() => {
+    this._waitForInitialBuildFinish().then(() => {
       debug?.('INITIAL: build done')
       this.hot.send({ type: 'full-reload', path: '*' })
     })
   }
 
-  protected async waitForInitialBuildFinish(): Promise<void> {
+  /**
+   * @internal
+   */
+  public async _waitForInitialBuildFinish(): Promise<void> {
     await this.devEngine.ensureCurrentBuildFinish()
     while (this.memoryFiles.size === 0) {
       await setTimeout(10)
