@@ -92,7 +92,7 @@ describe.skipIf(!process.env._VITE_TEST_JS_PLUGIN)('definePlugin', () => {
     // assert that the default behavior is to replace import.meta.hot with undefined
     const transform = await createDefinePluginTransform()
     expect(await transform('export const hot = import.meta.hot;')).toBe(
-      'export const hot = void 0;\n',
+      'export const hot = undefined;\n',
     )
     // assert that we can specify a user define to preserve import.meta.hot
     const overrideTransform = await createDefinePluginTransform({

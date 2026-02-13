@@ -174,6 +174,8 @@ Here, `import` and `require` are "conditions". Conditions can be nested and shou
 
 Note that `import`, `require`, `default` conditions are always applied if the requirements are met.
 
+In addition, the `style` condition is applied when resolving style imports, e.g. `@import 'my-library'`. For some CSS pre-processors, their corresponding conditions are also applied, i.e. `sass` for Sass and `less` for Less.
+
 ## resolve.mainFields <NonInheritBadge />
 
 - **Type:** `string[]`
