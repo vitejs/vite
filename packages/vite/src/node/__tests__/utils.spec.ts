@@ -16,6 +16,7 @@ import {
   getServerUrlByHost,
   injectQuery,
   isFileReadable,
+  isInNodeModules,
   isParentDirectory,
   mergeWithDefaults,
   normalizePath,
@@ -1056,5 +1057,40 @@ describe('resolveServerUrls', () => {
     )
 
     expect(result.local).toContain('https://localhost:3000/')
+  })
+})
+
+describe('isInNodeModules', () => {
+  test('should return true for paths containing /node_modules/ as a directory', () => {
+    expect(isInNodeModules('/path/to/node_modules/package/index.js')).toBe(true)
+    expect(isInNodeModules('/project/node_modules/.vite/dep.js')).toBe(true)
+    expect(
+      isInNodeModules('C:/Users/user/project/node_modules/foo/bar.js'),
+    ).toBe(true)
+  })
+
+  test('should return false for paths containing node_modules as substring of directory name', () => {
+    expect(isInNodeModules('/path/to/node_modules_bug/index.js')).toBe(false)
+    expect(isInNodeModules('/path/to/my_node_modules/index.js')).toBe(false)
+    expect(isInNodeModules('/path/to/node_modules_test/src/main.ts')).toBe(
+      false,
+    )
+  })
+
+  test('should return true for backslash paths on Windows', () => {
+    expect(
+      isInNodeModules('C:\\Users\\user\\project\\node_modules\\foo\\bar.js'),
+    ).toBe(true)
+  })
+
+  test('should return false for backslash paths with node_modules as substring', () => {
+    expect(isInNodeModules('C:\\Users\\user\\node_modules_bug\\index.js')).toBe(
+      false,
+    )
+  })
+
+  test('should return false when node_modules is not present', () => {
+    expect(isInNodeModules('/path/to/project/src/main.ts')).toBe(false)
+    expect(isInNodeModules('/path/to/project/index.html')).toBe(false)
   })
 })
