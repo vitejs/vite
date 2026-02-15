@@ -793,4 +793,26 @@ exports.foo = foo;
       })();"
     `)
   })
+
+  test('should inject helper for cjs format', async () => {
+    const result = getInlinedCSSInjectedCode(
+      `"use strict";
+
+//#region src/index.js
+const foo = "foo";
+
+//#endregion
+exports.foo = foo;`,
+      'cjs',
+    )
+    expect(result).toMatchInlineSnapshot(`
+      "injectCSS();"use strict";
+
+      //#region src/index.js
+      const foo = "foo";
+
+      //#endregion
+      exports.foo = foo;"
+    `)
+  })
 })

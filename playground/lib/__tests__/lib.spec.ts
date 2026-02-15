@@ -120,6 +120,18 @@ describe.runIf(isBuild)('build', () => {
     expect(cjs2).toContain('css-entry-2')
   })
 
+  test('single entry with css inject', () => {
+    const js = readFile('dist/css-inject/test-my-lib.js')
+    const umd = readFile('dist/css-inject/test-my-lib.umd.cjs')
+    // CSS should be injected into JS, not emitted as a separate file
+    expect(js).toMatch('entry-1.css')
+    expect(js).toMatch('createElement')
+    expect(umd).toMatch('entry-1.css')
+    expect(umd).toMatch('createElement')
+    // No separate CSS file should be emitted
+    expect(() => readFile('dist/css-inject/test-my-lib.css')).toThrow()
+  })
+
   test('multi entry with css and code split', () => {
     const css1 = readFile('dist/css-code-split/css-entry-1.css')
     const css2 = readFile('dist/css-code-split/css-entry-2.css')
