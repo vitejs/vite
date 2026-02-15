@@ -1033,14 +1033,33 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
         if (extractedCss) {
           hasEmitted = true
           extractedCss = await finalizeCss(extractedCss, config)
-          this.emitFile({
-            name: getCssBundleName(),
-            type: 'asset',
-            source: extractedCss,
-            // this file is an implicit entry point, use defaultCssBundleName as the original file name
-            // this name is also used as a key in the manifest
-            originalFileName: defaultCssBundleName,
-          })
+
+          const libOptions = config.build.lib
+          if (libOptions && libOptions.cssInject) {
+            // Inject CSS into the JS entry chunk(s) via a styleInject helper
+            extractedCss = extractedCss
+              .replace(viteHashUpdateMarkerRE, '')
+              .trim()
+            const cssString = JSON.stringify(extractedCss)
+            const injectCode = `(function(){try{var d=document,s=d.createElement("style");s.appendChild(d.createTextNode(${cssString}));d.head.appendChild(s)}catch(e){console.error("vite-css-inject",e)}})();
+`
+            for (const file of Object.values(bundle)) {
+              if (file.type === 'chunk' && file.isEntry) {
+                const s = new MagicString(file.code)
+                injectInlinedCSS(s, this, file.code, opts.format, injectCode)
+                file.code = s.toString()
+              }
+            }
+          } else {
+            this.emitFile({
+              name: getCssBundleName(),
+              type: 'asset',
+              source: extractedCss,
+              // this file is an implicit entry point, use defaultCssBundleName as the original file name
+              // this name is also used as a key in the manifest
+              originalFileName: defaultCssBundleName,
+            })
+          }
         }
       }
 
@@ -1150,7 +1169,7 @@ export function injectInlinedCSS(
       ctx.error('Injection point for inlined CSS not found')
     }
     injectionPoint = m.index + m[0].length
-  } else if (format === 'es') {
+  } else if (format === 'es' || format === 'cjs') {
     // legacy build
     if (code.startsWith('#!')) {
       let secondLinePos = code.indexOf('\n')
