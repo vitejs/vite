@@ -240,9 +240,6 @@ importers:
       '@oxc-project/runtime':
         specifier: 0.113.0
         version: 0.113.0
-      fdir:
-        specifier: ^6.5.0
-        version: 6.5.0(picomatch@4.0.3)
       lightningcss:
         specifier: ^1.31.1
         version: 1.31.1
