@@ -177,9 +177,9 @@ async function isPortAvailable(port: number): Promise<boolean> {
 function tryListen(port: number, host: string): Promise<boolean> {
   return new Promise((resolve) => {
     const server = net.createServer()
-    server.once('error', () => {
-      // Ensure server is closed even on error to prevent resource leaks
-      server.close(() => resolve(false))
+    server.once('error', (e: Error & { code?: string }) => {
+      // Only EADDRINUSE means the port is actually in use
+      server.close(() => resolve(e.code !== 'EADDRINUSE'))
     })
     server.once('listening', () => {
       server.close(() => resolve(true))
