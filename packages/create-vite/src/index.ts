@@ -870,7 +870,7 @@ function getFullCustomCommand(customCommand: string, pkgInfo?: PkgInfo) {
   const pkgManager = pkgInfo ? pkgInfo.name : 'npm'
   const isYarn1 = pkgManager === 'yarn' && pkgInfo?.version.startsWith('1.')
 
-  let command = customCommand
+  const command = customCommand
     .replace(/^npm create (?:-- )?/, () => {
       // `bun create` uses it's own set of templates,
       // the closest alternative is using `bun x` directly on the package
@@ -910,11 +910,12 @@ function getFullCustomCommand(customCommand: string, pkgInfo?: PkgInfo) {
       // including Yarn 1.x and other custom npm clients.
       return 'npm exec '
     })
-
-  if (pkgManager === 'pnpm') {
-    // `npm exec <pkg> -- <args>` uses `--` to split npm flags from package args. `pnpm dlx` doesn't need this separator, and keeping it can break CLIs.
-    command = command.replace(/^pnpm dlx (\S+) -- /, 'pnpm dlx $1 ')
-  }
+    .replace(
+      /^pnpm dlx (\S+) -- /,
+      // `npm exec <pkg> -- <args>` uses `--` to split npm flags from package args.
+      // `pnpm dlx` doesn't need this separator, and keeping it can break CLIs.
+      'pnpm dlx $1 ',
+    )
 
   return command
 }
