@@ -1267,6 +1267,8 @@ async function restartServer(server: ViteDevServer) {
     const middlewares = server.middlewares
     newServer._configServerPort = server._configServerPort
     newServer._currentServerPort = server._currentServerPort
+    newServer._restartPromise = server._restartPromise
+    newServer._forceOptimizeOnRestart = server._forceOptimizeOnRestart
     Object.assign(server, newServer)
 
     // Keep the same connect instance so app.use(vite.middlewares) works
