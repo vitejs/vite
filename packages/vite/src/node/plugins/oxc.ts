@@ -17,7 +17,7 @@ import { type Environment, perEnvironmentPlugin } from '..'
 import type { ViteDevServer } from '../server'
 import { JS_TYPES_RE, VITE_PACKAGE_DIR } from '../constants'
 import type { Logger } from '../logger'
-import type { ESBuildOptions } from './esbuild'
+import { type ESBuildOptions, getTSConfigResolutionCache } from './esbuild'
 
 // IIFE content looks like `var MyLib = (function() {` or `this.nested.myLib = (function() {`.
 export const IIFE_BEGIN_RE: RegExp =
@@ -31,7 +31,14 @@ const validExtensionRE = /\.\w+$/
 
 export interface OxcOptions extends Omit<
   OxcTransformOptions,
-  'cwd' | 'sourceType' | 'lang' | 'sourcemap' | 'helpers'
+  | 'cwd'
+  | 'sourceType'
+  | 'lang'
+  | 'sourcemap'
+  | 'helpers'
+  | 'inject'
+  | 'tsconfig'
+  | 'inputMap'
 > {
   include?: string | RegExp | ReadonlyArray<string | RegExp>
   exclude?: string | RegExp | ReadonlyArray<string | RegExp>
@@ -143,7 +150,12 @@ export async function transformWithOxc(
     lang,
   }
 
-  const result = transformSync(filename, code, resolvedOptions)
+  const result = transformSync(
+    filename,
+    code,
+    resolvedOptions,
+    getTSConfigResolutionCache(config),
+  )
   if (
     watcher &&
     config &&
