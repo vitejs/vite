@@ -1,6 +1,6 @@
 {
   "name": "vite",
-  "version": "8.0.0-beta.13",
+  "version": "8.0.0-beta.14",
   "type": "module",
   "license": "MIT",
   "author": "Evan You",
@@ -73,12 +73,11 @@
   },
   "//": "READ CONTRIBUTING.md to understand what to put under deps vs. devDeps!",
   "dependencies": {
-    "@oxc-project/runtime": "0.112.0",
-    "fdir": "^6.5.0",
+    "@oxc-project/runtime": "0.113.0",
     "lightningcss": "^1.31.1",
     "picomatch": "^4.0.3",
     "postcss": "^8.5.6",
-    "rolldown": "1.0.0-rc.3",
+    "rolldown": "1.0.0-rc.4",
     "tinyglobby": "^0.2.15"
   },
   "optionalDependencies": {
@@ -88,10 +87,9 @@
     "@babel/parser": "^7.29.0",
     "@jridgewell/remapping": "^2.3.5",
     "@jridgewell/trace-mapping": "^0.3.31",
-    "@oxc-project/types": "0.112.0",
+    "@oxc-project/types": "0.113.0",
     "@polka/compression": "^1.0.0-next.25",
-    "@rollup/plugin-alias": "^5.1.1",
-    "@rollup/plugin-commonjs": "^29.0.0",
+    "@rollup/plugin-alias": "^6.0.0",
     "@rollup/plugin-dynamic-import-vars": "2.1.4",
     "@rollup/pluginutils": "^5.3.0",
     "@types/escape-html": "^1.0.4",
@@ -137,7 +135,6 @@
     "sirv": "^3.0.2",
     "strip-literal": "^3.1.0",
     "terser": "^5.46.0",
-    "tsconfck": "^3.1.6",
     "ufo": "^1.6.3",
     "ws": "^8.19.0"
   },
