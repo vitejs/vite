@@ -182,7 +182,12 @@ export class ModuleRunner {
 
     if (importee) importers.add(importee)
 
-    // check circular dependency
+    // fast path: already evaluated modules can't deadlock
+    if (mod.evaluated && mod.promise) {
+      return this.processImport(await mod.promise, meta, metadata)
+    }
+
+    // check circular dependency (only for modules still being evaluated)
     if (
       callstack.includes(moduleId) ||
       this.isCircularModule(mod) ||
@@ -207,7 +212,7 @@ export class ModuleRunner {
     }
 
     try {
-      // cached module
+      // cached module (in-progress, not yet evaluated)
       if (mod.promise)
         return this.processImport(await mod.promise, meta, metadata)
 
