@@ -1,12 +1,16 @@
-import { exactRegex } from '@rolldown/pluginutils'
-import { viteWasmHelperPlugin as nativeWasmHelperPlugin } from 'rolldown/experimental'
-import type { Plugin } from '../plugin'
-import type { ResolvedConfig } from '..'
-import { fileToUrl } from './asset'
+import MagicString from 'magic-string'
+import { exactRegex } from 'rolldown/filter'
+import type { BindingMagicString } from 'rolldown'
+import { createToImportMetaURLBasedRelativeRuntime } from '../build'
+import { type Plugin, perEnvironmentPlugin } from '../plugin'
+import { cleanUrl } from '../../shared/utils'
+import { assetUrlRE, fileToUrl } from './asset'
 
 const wasmHelperId = '\0vite/wasm-helper.js'
 
 const wasmInitRE = /(?<![?#].*)\.wasm\?init/
+
+const wasmInitUrlRE: RegExp = /__VITE_WASM_INIT__([\w$]+)__/g
 
 const wasmHelper = async (opts = {}, url: string) => {
   let result
@@ -28,59 +32,129 @@ const wasmHelper = async (opts = {}, url: string) => {
     }
     result = await WebAssembly.instantiate(bytes, opts)
   } else {
-    // https://github.com/mdn/webassembly-examples/issues/5
-    // WebAssembly.instantiateStreaming requires the server to provide the
-    // correct MIME type for .wasm files, which unfortunately doesn't work for
-    // a lot of static file servers, so we just work around it by getting the
-    // raw buffer.
-    const response = await fetch(url)
-    const contentType = response.headers.get('Content-Type') || ''
-    if (
-      'instantiateStreaming' in WebAssembly &&
-      contentType.startsWith('application/wasm')
-    ) {
-      result = await WebAssembly.instantiateStreaming(response, opts)
-    } else {
-      const buffer = await response.arrayBuffer()
-      result = await WebAssembly.instantiate(buffer, opts)
-    }
+    result = await instantiateFromUrl(url, opts)
   }
   return result.instance
 }
 
 const wasmHelperCode = wasmHelper.toString()
 
-export const wasmHelperPlugin = (config: ResolvedConfig): Plugin => {
-  if (config.isBundled) {
-    return nativeWasmHelperPlugin({
-      decodedBase: config.decodedBase,
-    })
+const instantiateFromUrl = async (url: string, opts?: WebAssembly.Imports) => {
+  // https://github.com/mdn/webassembly-examples/issues/5
+  // WebAssembly.instantiateStreaming requires the server to provide the
+  // correct MIME type for .wasm files, which unfortunately doesn't work for
+  // a lot of static file servers, so we just work around it by getting the
+  // raw buffer.
+  const response = await fetch(url)
+  const contentType = response.headers.get('Content-Type') || ''
+  if (
+    'instantiateStreaming' in WebAssembly &&
+    contentType.startsWith('application/wasm')
+  ) {
+    return WebAssembly.instantiateStreaming(response, opts)
+  } else {
+    const buffer = await response.arrayBuffer()
+    return WebAssembly.instantiate(buffer, opts)
   }
+}
 
-  return {
-    name: 'vite:wasm-helper',
+const instantiateFromUrlCode = instantiateFromUrl.toString()
 
-    resolveId: {
-      filter: { id: exactRegex(wasmHelperId) },
-      handler(id) {
-        return id
+const instantiateFromFile = async (
+  fileUrlString: string,
+  opts?: WebAssembly.Imports,
+) => {
+  const { readFile } = await import('node:fs/promises')
+  const fileUrl = new URL(fileUrlString, /** #__KEEP__ */ import.meta.url)
+  const buffer = await readFile(fileUrl)
+  return WebAssembly.instantiate(buffer, opts)
+}
+
+const instantiateFromFileCode = instantiateFromFile.toString()
+
+export const wasmHelperPlugin = (): Plugin => {
+  return perEnvironmentPlugin('vite:wasm-helper', (env) => {
+    return {
+      name: 'vite:wasm-helper',
+
+      resolveId: {
+        filter: { id: exactRegex(wasmHelperId) },
+        handler(id) {
+          return id
+        },
       },
-    },
 
-    load: {
-      filter: { id: [exactRegex(wasmHelperId), wasmInitRE] },
-      async handler(id) {
-        if (id === wasmHelperId) {
-          return `export default ${wasmHelperCode}`
-        }
+      load: {
+        filter: { id: [exactRegex(wasmHelperId), wasmInitRE] },
+        async handler(id) {
+          const ssr = this.environment.config.consumer === 'server'
 
-        const url = await fileToUrl(this, id)
+          if (id === wasmHelperId) {
+            return `
+const instantiateFromUrl = ${ssr ? instantiateFromFileCode : instantiateFromUrlCode}
+export default ${wasmHelperCode}
+`
+          }
 
-        return `
+          id = id.split('?')[0]
+          let url = await fileToUrl(this, id, ssr)
+          if (ssr && assetUrlRE.test(url)) {
+            url = url.replace('__VITE_ASSET__', '__VITE_WASM_INIT__')
+          }
+          return `
   import initWasm from "${wasmHelperId}"
   export default opts => initWasm(opts, ${JSON.stringify(url)})
   `
+        },
       },
-    },
-  }
+
+      renderChunk:
+        env.config.consumer === 'server'
+          ? {
+              filter: { code: wasmInitUrlRE },
+              async handler(code, chunk, opts, meta) {
+                const toRelativeRuntime =
+                  createToImportMetaURLBasedRelativeRuntime(
+                    opts.format,
+                    this.environment.config.isWorker,
+                  )
+
+                let match: RegExpExecArray | null
+                let s: BindingMagicString | MagicString | undefined
+
+                wasmInitUrlRE.lastIndex = 0
+                while ((match = wasmInitUrlRE.exec(code))) {
+                  const [full, referenceId] = match
+                  const file = this.getFileName(referenceId)
+                  chunk.viteMetadata!.importedAssets.add(cleanUrl(file))
+                  const { runtime } = toRelativeRuntime(file, chunk.fileName)
+
+                  s ??= meta.magicString ?? new MagicString(code)
+
+                  s.update(
+                    match.index,
+                    match.index + full.length,
+                    `"+${runtime}+"`,
+                  )
+                }
+
+                if (!s) return null
+
+                return meta.magicString
+                  ? {
+                      code: s as BindingMagicString,
+                    }
+                  : {
+                      code: s.toString(),
+                      map: this.environment.config.build.sourcemap
+                        ? (s as MagicString).generateMap({
+                            hires: 'boundary',
+                          })
+                        : null,
+                    }
+              },
+            }
+          : undefined,
+    }
+  })
 }

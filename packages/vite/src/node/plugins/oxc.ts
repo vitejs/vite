@@ -1,27 +1,15 @@
 import path from 'node:path'
-import url from 'node:url'
 import type {
   TransformOptions as OxcTransformOptions,
   TransformResult as OxcTransformResult,
-} from 'rolldown/experimental'
-import {
-  viteTransformPlugin as nativeTransformPlugin,
-  transformSync,
-} from 'rolldown/experimental'
-import type { RawSourceMap } from '@jridgewell/remapping'
-import type { InternalModuleFormat, RollupError, SourceMap } from 'rolldown'
-import { rolldown } from 'rolldown'
-import { TSConfckParseError } from 'tsconfck'
+} from 'rolldown/utils'
+import { transformSync } from 'rolldown/utils'
+import { viteTransformPlugin as nativeTransformPlugin } from 'rolldown/experimental'
+import type { RolldownError, RolldownLog, SourceMap } from 'rolldown'
 import colors from 'picocolors'
-import { exactRegex, prefixRegex } from '@rolldown/pluginutils'
+import { prefixRegex } from 'rolldown/filter'
 import type { FSWatcher } from '#dep-types/chokidar'
-import {
-  combineSourcemaps,
-  createFilter,
-  ensureWatchedFile,
-  generateCodeFrame,
-  normalizePath,
-} from '../utils'
+import { createFilter, ensureWatchedFile, normalizePath } from '../utils'
 import type { ResolvedConfig } from '../config'
 import type { Plugin } from '../plugin'
 import { cleanUrl } from '../../shared/utils'
@@ -29,12 +17,11 @@ import { type Environment, perEnvironmentPlugin } from '..'
 import type { ViteDevServer } from '../server'
 import { JS_TYPES_RE, VITE_PACKAGE_DIR } from '../constants'
 import type { Logger } from '../logger'
-import type { ESBuildOptions, TSCompilerOptions } from './esbuild'
-import { loadTsconfigJsonForFile } from './esbuild'
+import { type ESBuildOptions, getTSConfigResolutionCache } from './esbuild'
 
-// IIFE content looks like `var MyLib = (function() {`.
+// IIFE content looks like `var MyLib = (function() {` or `this.nested.myLib = (function() {`.
 export const IIFE_BEGIN_RE: RegExp =
-  /(?:(?:const|var)\s+\S+\s*=\s*|^|\n)\(?function\([^()]*\)\s*\{(?:\s*"use strict";)?/
+  /(?:(?:(?:const|var)\s+[^.\s]+|[^.\s]+\.[^.\s]+\.[^.\s]+)\s*=\s*|^|\n)\(?function\([^()]*\)\s*\{(?:\s*"use strict";)?/
 // UMD content looks like `})(this, function(exports, external1, external2) {`.
 export const UMD_BEGIN_RE: RegExp =
   /\}\)\((?:this,\s*)?function\([^()]*\)\s*\{(?:\s*"use strict";)?/
@@ -44,7 +31,14 @@ const validExtensionRE = /\.\w+$/
 
 export interface OxcOptions extends Omit<
   OxcTransformOptions,
-  'cwd' | 'sourceType' | 'lang' | 'sourcemap' | 'helpers'
+  | 'cwd'
+  | 'sourceType'
+  | 'lang'
+  | 'sourcemap'
+  | 'helpers'
+  | 'inject'
+  | 'tsconfig'
+  | 'inputMap'
 > {
   include?: string | RegExp | ReadonlyArray<string | RegExp>
   exclude?: string | RegExp | ReadonlyArray<string | RegExp>
@@ -53,7 +47,9 @@ export interface OxcOptions extends Omit<
   jsxRefreshExclude?: string | RegExp | ReadonlyArray<string | RegExp>
 }
 
-function getRollupJsxPresets(preset: 'react' | 'react-jsx'): OxcJsxOptions {
+export function getRollupJsxPresets(
+  preset: 'react' | 'react-jsx',
+): OxcJsxOptions {
   switch (preset) {
     case 'react':
       return {
@@ -72,144 +68,54 @@ function getRollupJsxPresets(preset: 'react' | 'react-jsx'): OxcJsxOptions {
   preset satisfies never
 }
 
-export function setOxcTransformOptionsFromTsconfigOptions(
-  oxcOptions: Omit<OxcTransformOptions, 'jsx'> & {
-    jsx?:
-      | OxcTransformOptions['jsx']
-      | 'react'
-      | 'react-jsx'
-      | 'preserve-react'
-      | false
-  },
-  tsCompilerOptions: Readonly<TSCompilerOptions> | undefined = {},
-  warnings: string[],
-): void {
-  // when both the normal options and tsconfig is set,
-  // we want to prioritize the normal options
-  if (oxcOptions.jsx === 'preserve-react') {
-    oxcOptions.jsx = 'preserve'
-  }
-  if (
-    tsCompilerOptions.jsx === 'preserve' &&
-    (oxcOptions.jsx === undefined ||
-      (typeof oxcOptions.jsx === 'object' &&
-        oxcOptions.jsx.runtime === undefined))
-  ) {
-    oxcOptions.jsx = 'preserve'
-  }
-  if (oxcOptions.jsx !== 'preserve' && oxcOptions.jsx !== false) {
-    const jsxOptions: OxcJsxOptions =
-      typeof oxcOptions.jsx === 'string'
-        ? getRollupJsxPresets(oxcOptions.jsx)
-        : { ...oxcOptions.jsx }
-    const typescriptOptions = { ...oxcOptions.typescript }
+// Copy from rolldown's packages/rolldown/src/utils/errors.ts
+function joinNewLine(s1: string, s2: string): string {
+  // ensure single new line in between
+  return s1.replace(/\n+$/, '') + '\n' + s2.replace(/^\n+/, '')
+}
 
-    if (tsCompilerOptions.jsxFactory) {
-      jsxOptions.pragma ??= tsCompilerOptions.jsxFactory
-      typescriptOptions.jsxPragma = jsxOptions.pragma
-    }
-    if (tsCompilerOptions.jsxFragmentFactory) {
-      jsxOptions.pragmaFrag ??= tsCompilerOptions.jsxFragmentFactory
-      typescriptOptions.jsxPragmaFrag = jsxOptions.pragmaFrag
-    }
-    if (tsCompilerOptions.jsxImportSource) {
-      jsxOptions.importSource ??= tsCompilerOptions.jsxImportSource
-    }
-
-    if (!jsxOptions.runtime) {
-      switch (tsCompilerOptions.jsx) {
-        case 'react':
-          jsxOptions.runtime = 'classic'
-          // this option should not be set when using classic runtime
-          jsxOptions.importSource = undefined
-          break
-        case 'react-jsxdev':
-          jsxOptions.development = true
-        // eslint-disable-next-line no-fallthrough
-        case 'react-jsx':
-          jsxOptions.runtime = 'automatic'
-          // these options should not be set when using automatic runtime
-          jsxOptions.pragma = undefined
-          typescriptOptions.jsxPragma = undefined
-          jsxOptions.pragmaFrag = undefined
-          typescriptOptions.jsxPragmaFrag = undefined
-          break
-        default:
-          break
-      }
-    }
-
-    oxcOptions.jsx = jsxOptions
-    oxcOptions.typescript = typescriptOptions
+// Copy from rolldown's packages/rolldown/src/utils/errors.ts
+function getErrorMessage(e: RolldownError): string {
+  // If the `kind` field is present, we assume it represents
+  // a custom error defined by rolldown on the Rust side.
+  if (Object.hasOwn(e, 'kind')) {
+    return e.message
   }
 
-  if (oxcOptions.decorator?.legacy === undefined) {
-    const experimentalDecorators = tsCompilerOptions.experimentalDecorators
-    if (experimentalDecorators !== undefined) {
-      oxcOptions.decorator ??= {}
-      oxcOptions.decorator.legacy = experimentalDecorators
-    }
-    const emitDecoratorMetadata = tsCompilerOptions.emitDecoratorMetadata
-    if (emitDecoratorMetadata !== undefined) {
-      oxcOptions.decorator ??= {}
-      oxcOptions.decorator.emitDecoratorMetadata = emitDecoratorMetadata
+  let s = ''
+  if (e.plugin) {
+    s += `[plugin ${e.plugin}]`
+  }
+  const id = e.id ?? e.loc?.file
+  if (id) {
+    s += ' ' + id
+    if (e.loc) {
+      s += `:${e.loc.line}:${e.loc.column}`
     }
   }
-
-  /**
-   * | preserveValueImports | importsNotUsedAsValues | verbatimModuleSyntax | onlyRemoveTypeImports |
-   * | -------------------- | ---------------------- | -------------------- |---------------------- |
-   * | false                | remove                 | false                | false                 |
-   * | false                | preserve, error        | -                    | -                     |
-   * | true                 | remove                 | -                    | -                     |
-   * | true                 | preserve, error        | true                 | true                  |
-   */
-  if (oxcOptions.typescript?.onlyRemoveTypeImports === undefined) {
-    if (tsCompilerOptions.verbatimModuleSyntax !== undefined) {
-      oxcOptions.typescript ??= {}
-      oxcOptions.typescript.onlyRemoveTypeImports =
-        tsCompilerOptions.verbatimModuleSyntax
-    } else if (
-      tsCompilerOptions.preserveValueImports !== undefined ||
-      tsCompilerOptions.importsNotUsedAsValues !== undefined
-    ) {
-      const preserveValueImports =
-        tsCompilerOptions.preserveValueImports ?? false
-      const importsNotUsedAsValues =
-        tsCompilerOptions.importsNotUsedAsValues ?? 'remove'
-      if (
-        preserveValueImports === false &&
-        importsNotUsedAsValues === 'remove'
-      ) {
-        oxcOptions.typescript ??= {}
-        oxcOptions.typescript.onlyRemoveTypeImports = true
-      } else if (
-        preserveValueImports === true &&
-        (importsNotUsedAsValues === 'preserve' ||
-          importsNotUsedAsValues === 'error')
-      ) {
-        oxcOptions.typescript ??= {}
-        oxcOptions.typescript.onlyRemoveTypeImports = false
-      } else {
-        warnings.push(
-          `preserveValueImports=${preserveValueImports} + importsNotUsedAsValues=${importsNotUsedAsValues} is not supported by oxc.` +
-            'Please migrate to the new verbatimModuleSyntax option.',
-        )
-        oxcOptions.typescript ??= {}
-        oxcOptions.typescript.onlyRemoveTypeImports = false
-      }
-    }
+  if (s) {
+    s += '\n'
   }
-
-  const resolvedTsconfigTarget = resolveTsconfigTarget(tsCompilerOptions.target)
-  const useDefineForClassFields =
-    tsCompilerOptions.useDefineForClassFields ??
-    (resolvedTsconfigTarget === 'next' || resolvedTsconfigTarget >= 2022)
-  oxcOptions.assumptions ??= {}
-  oxcOptions.assumptions.setPublicClassFields = !useDefineForClassFields
-  oxcOptions.typescript ??= {}
-  oxcOptions.typescript.removeClassFieldsWithoutInitializer =
-    !useDefineForClassFields
+  const message = `${e.name ?? 'Error'}: ${e.message}`
+  s += message
+  if (e.frame) {
+    s = joinNewLine(s, e.frame)
+  }
+  // copy stack since it's important for js plugin error
+  if (e.stack) {
+    s = joinNewLine(s, e.stack.replace(message, ''))
+  }
+  if (e.cause) {
+    s = joinNewLine(s, 'Caused by:')
+    s = joinNewLine(
+      s,
+      getErrorMessage(e.cause as any)
+        .split('\n')
+        .map((line) => '  ' + line)
+        .join('\n'),
+    )
+  }
+  return s
 }
 
 export async function transformWithOxc(
@@ -219,10 +125,8 @@ export async function transformWithOxc(
   inMap?: object,
   config?: ResolvedConfig,
   watcher?: FSWatcher,
-): Promise<Omit<OxcTransformResult, 'errors'> & { warnings: string[] }> {
-  const warnings: string[] = []
+): Promise<Omit<OxcTransformResult, 'errors'>> {
   let lang = options?.lang
-
   if (!lang) {
     // if the id ends with a valid ext, use it (e.g. vue blocks)
     // otherwise, cleanup the query before checking the ext
@@ -242,81 +146,66 @@ export async function transformWithOxc(
   const resolvedOptions = {
     sourcemap: true,
     ...options,
+    inputMap: inMap as SourceMap | undefined,
     lang,
   }
 
-  if (lang === 'ts' || lang === 'tsx') {
-    try {
-      const { tsconfig: loadedTsconfig, tsconfigFile } =
-        await loadTsconfigJsonForFile(filename, config)
-      // tsconfig could be out of root, make sure it is watched on dev
-      if (watcher && tsconfigFile && config) {
-        ensureWatchedFile(watcher, tsconfigFile, config.root)
-      }
-      setOxcTransformOptionsFromTsconfigOptions(
-        resolvedOptions,
-        loadedTsconfig.compilerOptions,
-        warnings,
-      )
-    } catch (e) {
-      if (e instanceof TSConfckParseError) {
-        // tsconfig could be out of root, make sure it is watched on dev
-        if (watcher && e.tsconfigFile && config) {
-          ensureWatchedFile(watcher, e.tsconfigFile, config.root)
-        }
-      }
-      throw e
+  const result = transformSync(
+    filename,
+    code,
+    resolvedOptions,
+    getTSConfigResolutionCache(config),
+  )
+  if (
+    watcher &&
+    config &&
+    result.tsconfigFilePaths &&
+    result.tsconfigFilePaths.length > 0
+  ) {
+    for (const tsconfigFile of result.tsconfigFilePaths) {
+      ensureWatchedFile(watcher, normalizePath(tsconfigFile), config.root)
     }
   }
-
-  const result = transformSync(filename, code, resolvedOptions)
 
   if (result.errors.length > 0) {
-    const firstError = result.errors[0]
-    const error: RollupError = new Error(firstError.message)
-    let frame = ''
-    frame += firstError.labels
-      .map(
-        (l) =>
-          (l.message ? `${l.message}\n` : '') +
-          generateCodeFrame(code, l.start, l.end),
-      )
-      .join('\n')
-    if (firstError.helpMessage) {
-      frame += '\n' + firstError.helpMessage
+    // Copy from rolldown's packages/rolldown/src/utils/errors.ts
+    let summary = `Transform failed with ${result.errors.length} error${result.errors.length < 2 ? '' : 's'}:\n`
+    for (let i = 0; i < result.errors.length; i++) {
+      summary += '\n'
+      if (i >= 5) {
+        summary += '...'
+        break
+      }
+      summary += getErrorMessage(result.errors[i])
     }
-    error.frame = frame
-    error.pos =
-      firstError.labels.length > 0 ? firstError.labels[0].start : undefined
-    throw error
-  }
 
-  let map: SourceMap
-  if (inMap && result.map) {
-    const nextMap = result.map
-    nextMap.sourcesContent = []
-    map = combineSourcemaps(filename, [
-      nextMap as RawSourceMap,
-      inMap as RawSourceMap,
-    ]) as SourceMap
-  } else {
-    map = result.map as SourceMap
+    const wrapper = new Error(summary)
+    // expose individual errors as getters so that
+    // `console.error(wrapper)` doesn't expand unnecessary details
+    // when they are already presented in `wrapper.message`
+    Object.defineProperty(wrapper, 'errors', {
+      configurable: true,
+      enumerable: true,
+      get: () => result.errors,
+      set: (value) =>
+        Object.defineProperty(wrapper, 'errors', {
+          configurable: true,
+          enumerable: true,
+          value,
+        }),
+    })
+    throw wrapper
   }
-  return {
-    ...result,
-    map,
-    warnings,
-  }
+  return result
 }
 
-function resolveTsconfigTarget(target: string | undefined): number | 'next' {
-  if (!target) return 5
-
-  const targetLowered = target.toLowerCase()
-  if (!targetLowered.startsWith('es')) return 5
-
-  if (targetLowered === 'esnext') return 'next'
-  return parseInt(targetLowered.slice(2))
+const warnedMessages = new Set<string>()
+function shouldSkipWarning(warning: RolldownLog): boolean {
+  if (warning.code === 'UNSUPPORTED_TSCONFIG_OPTION') {
+    if (warnedMessages.has(warning.message)) return true
+    warnedMessages.add(warning.message)
+  }
+  return false
 }
 
 export function oxcPlugin(config: ResolvedConfig): Plugin {
@@ -458,7 +347,9 @@ export function oxcPlugin(config: ResolvedConfig): Plugin {
           result.code = jsxInject + ';' + result.code
         }
         for (const warning of result.warnings) {
-          this.environment.logger.warnOnce(warning)
+          if (!shouldSkipWarning(warning)) {
+            this.warn(warning)
+          }
         }
         return {
           code: result.code,
@@ -468,196 +359,6 @@ export function oxcPlugin(config: ResolvedConfig): Plugin {
       }
     },
   }
-}
-
-export const buildOxcPlugin = (): Plugin => {
-  return {
-    name: 'vite:oxc-transpile',
-    applyToEnvironment(environment) {
-      return environment.config.oxc !== false
-    },
-    async renderChunk(code, chunk, opts) {
-      // avoid on legacy chunks since it produces legacy-unsafe code
-      // e.g. rewriting object properties into shorthands
-      if (this.environment.config.isOutputOptionsForLegacyChunks?.(opts)) {
-        return null
-      }
-
-      const config = this.environment.config
-      const options = resolveOxcTranspileOptions(config, opts.format)
-
-      if (!options) {
-        return null
-      }
-
-      const res = await transformWithOxc(
-        code,
-        chunk.fileName,
-        options,
-        undefined,
-        config,
-      )
-      for (const warning of res.warnings) {
-        this.environment.logger.warnOnce(warning)
-      }
-
-      const runtimeHelpers = Object.entries(res.helpersUsed)
-      if (runtimeHelpers.length > 0) {
-        // The length is kept to avoid sourcemap generation
-        let newCode = res.code.replace(
-          /babelHelpers\.([A-Za-z_$][\w$]*)\b/g,
-          'babelHelpers_$1',
-        )
-
-        const helpersCode = await generateRuntimeHelpers(runtimeHelpers)
-        switch (opts.format) {
-          case 'es': {
-            if (newCode.startsWith('#!')) {
-              let secondLinePos = newCode.indexOf('\n')
-              if (secondLinePos === -1) {
-                secondLinePos = 0
-              }
-              // inject after hashbang
-              newCode =
-                newCode.slice(0, secondLinePos) +
-                helpersCode +
-                newCode.slice(secondLinePos)
-              if (res.map) {
-                res.map.mappings = res.map.mappings.replace(';', ';;')
-              }
-            } else {
-              newCode = helpersCode + newCode
-              if (res.map) {
-                res.map.mappings = ';' + res.map.mappings
-              }
-            }
-            break
-          }
-          case 'cjs': {
-            if (/^\s*['"]use strict['"];/.test(newCode)) {
-              // inject after use strict
-              newCode = newCode.replace(
-                /^\s*['"]use strict['"];/,
-                (m) => m + helpersCode,
-              )
-              // no need to update sourcemap because the runtime helpers are injected in the same line with "use strict"
-            } else {
-              newCode = helpersCode + newCode
-              if (res.map) {
-                res.map.mappings = ';' + res.map.mappings
-              }
-            }
-            break
-          }
-          // runtime helpers needs to be injected inside the UMD and IIFE wrappers
-          // to avoid collision with other globals.
-          // We inject the helpers inside the wrappers.
-          // e.g. turn:
-          //    (function(){ /*actual content/* })()
-          // into:
-          //    (function(){ <runtime helpers> /*actual content/* })()
-          // Not using regex because it's too hard to rule out performance issues like #8738 #8099 #10900 #14065
-          // Instead, using plain string index manipulation (indexOf, slice) which is simple and performant
-          // We don't need to create a MagicString here because both the helpers and
-          // the headers don't modify the sourcemap
-          case 'iife':
-          case 'umd': {
-            const m = (
-              opts.format === 'iife' ? IIFE_BEGIN_RE : UMD_BEGIN_RE
-            ).exec(newCode)
-            if (!m) {
-              this.error(`Unexpected ${opts.format.toUpperCase()} format`)
-              return
-            }
-            const pos = m.index + m[0].length
-            newCode =
-              newCode.slice(0, pos) + helpersCode + '\n' + newCode.slice(pos)
-            break
-          }
-          default: {
-            opts.format satisfies never
-          }
-        }
-        res.code = newCode
-      }
-
-      return res
-    },
-  }
-}
-
-export function resolveOxcTranspileOptions(
-  config: ResolvedConfig,
-  format: InternalModuleFormat,
-): OxcTransformOptions | null {
-  const target = config.build.target
-  if (!target || target === 'esnext') {
-    return null
-  }
-
-  return {
-    ...config.oxc,
-    helpers: { mode: 'External' },
-    lang: 'js',
-    sourceType: format === 'es' ? 'module' : 'script',
-    target: target || undefined,
-    sourcemap: !!config.build.sourcemap,
-  }
-}
-
-async function generateRuntimeHelpers(
-  runtimeHelpers: readonly [string, string][],
-): Promise<string> {
-  const isAsciiOnlyIdentifierRE = /^[A-Za-z_$][\w$]*$/
-  const cjsExportRE = /\bexports\.([A-Za-z_$][\w$]*)\s*=/g
-
-  const bundle = await rolldown({
-    cwd: url.fileURLToPath(/** #__KEEP__ */ import.meta.url),
-    input: 'entrypoint',
-    platform: 'neutral',
-    logLevel: 'silent',
-    plugins: [
-      {
-        name: 'entrypoint',
-        resolveId: {
-          filter: { id: exactRegex('entrypoint') },
-          handler: (id) => id,
-        },
-        load: {
-          filter: { id: exactRegex('entrypoint') },
-          handler() {
-            return runtimeHelpers
-              .map(
-                ([name, helper]) =>
-                  `export { default as ${name} } from ${JSON.stringify(helper)};`,
-              )
-              .join('\n')
-          },
-        },
-      },
-      {
-        name: 'ensure-helper-names',
-        renderChunk(_code, chunk) {
-          if (chunk.exports.some((e) => !isAsciiOnlyIdentifierRE.test(e))) {
-            throw new Error(
-              `Expected all runtime helper export names to be ASCII-only. Got ${chunk.exports.filter((e) => !isAsciiOnlyIdentifierRE.test(e)).join(', ')}`,
-            )
-          }
-        },
-      },
-    ],
-  })
-  const output = await bundle.generate({
-    format: 'cjs',
-    minify: true,
-    generatedCode: { symbols: false },
-  })
-  const outputCode = output.output[0].code
-  const exportNames = [...outputCode.matchAll(cjsExportRE)].map((m) => m[1])
-  return (
-    `var ${exportNames.map((n) => `babelHelpers_${n}`).join(', ')};` +
-    `!(() => {${outputCode.replace(cjsExportRE, 'babelHelpers_$1=')}})();`
-  )
 }
 
 type OxcJsxOptions = Exclude<OxcOptions['jsx'], string | undefined>

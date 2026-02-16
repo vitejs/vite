@@ -29,7 +29,7 @@ const argv = mri<{
   immediate?: boolean
   interactive?: boolean
 }>(process.argv.slice(2), {
-  boolean: ['help', 'overwrite', 'immediate', 'rolldown', 'interactive'],
+  boolean: ['help', 'overwrite', 'immediate', 'interactive'],
   alias: { h: 'help', t: 'template', i: 'immediate' },
   string: ['template'],
 })
@@ -716,7 +716,10 @@ async function init() {
 }
 
 function formatTargetDir(targetDir: string) {
-  return targetDir.trim().replace(/\/+$/g, '')
+  return targetDir
+    .trim()
+    .replace(/[<>:"\\|?*]/g, '')
+    .replace(/\/+$/g, '')
 }
 
 function copy(src: string, dest: string) {
@@ -786,7 +789,7 @@ function pkgFromUserAgent(userAgent: string | undefined): PkgInfo | undefined {
 
 function setupReactSwc(root: string, isTs: boolean) {
   // renovate: datasource=npm depName=@vitejs/plugin-react-swc
-  const reactSwcPluginVersion = '4.2.2'
+  const reactSwcPluginVersion = '4.2.3'
 
   editFile(path.resolve(root, 'package.json'), (content) => {
     return content.replace(

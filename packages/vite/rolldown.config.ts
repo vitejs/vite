@@ -81,6 +81,7 @@ const nodeConfig = defineConfig({
     'fsevents',
     /^rolldown\//,
     /^tsx\//,
+    /^@vitejs\/devtools\//,
     /^#/,
     'sugarss', // postcss-import -> sugarss
     'supports-color',
@@ -143,6 +144,7 @@ const moduleRunnerConfig = defineConfig({
     'fsevents',
     'lightningcss',
     /^rolldown\//,
+    '@vitejs/devtools/cli-commands',
     ...Object.keys(pkg.dependencies),
   ],
   plugins: [bundleSizeLimit(54), enableSourceMapsInWatchModePlugin()],

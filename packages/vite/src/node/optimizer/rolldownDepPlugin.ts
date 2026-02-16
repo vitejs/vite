@@ -1,6 +1,6 @@
 import path from 'node:path'
 import type { ImportKind, Plugin, RolldownPlugin } from 'rolldown'
-import { prefixRegex } from '@rolldown/pluginutils'
+import { prefixRegex } from 'rolldown/filter'
 import MagicString from 'magic-string'
 import { stripLiteral } from 'strip-literal'
 import { JS_TYPES_RE, KNOWN_ASSET_TYPES } from '../constants'
