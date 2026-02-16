@@ -1,5 +1,7 @@
 import http from 'node:http'
-import { afterEach, describe, expect, test } from 'vitest'
+import net from 'node:net'
+import { afterEach, describe, expect, test, vi } from 'vitest'
+import { wildcardHosts } from '../constants'
 import { createServer } from '..'
 import type { ViteDevServer } from '..'
 
@@ -155,6 +157,44 @@ describe('port detection', () => {
         expect.objectContaining({ port: BASE_PORT + 2 }),
       )
     })
+  })
+
+  test('non-EADDRINUSE errors on wildcard do not block port selection', async () => {
+    const originalCreateServer = net.createServer.bind(net)
+    using _ = vi.spyOn(net, 'createServer').mockImplementation(() => {
+      const server = originalCreateServer()
+      const originalListen = server.listen.bind(server)
+      // @ts-expect-error this is the overload used internally
+      server.listen = (
+        port: number,
+        host: string,
+        ...args: unknown[]
+      ): net.Server => {
+        if (wildcardHosts.has(host)) {
+          process.nextTick(() => {
+            const err: NodeJS.ErrnoException = new Error(
+              'listen EACCES: permission denied',
+            )
+            err.code = 'EACCES'
+            server.emit('error', err)
+          })
+          return server
+        }
+        // @ts-expect-error this is the overload used internally
+        return originalListen(port, host, ...args)
+      }
+      return server
+    })
+
+    viteServer = await createServer({
+      root: import.meta.dirname,
+      logLevel: 'silent',
+      server: { port: BASE_PORT, strictPort: false, ws: false },
+    })
+    await viteServer.listen()
+
+    const address = viteServer.httpServer!.address()
+    expect(address).toStrictEqual(expect.objectContaining({ port: BASE_PORT }))
   })
 
   test('throws error when port is blocked and strictPort is true', async () => {
