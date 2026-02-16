@@ -19,6 +19,7 @@ import type {
   PluginItem as BabelPluginItem,
   PluginObject as BabelPluginObject,
   PresetObject as BabelPresetObject,
+  PresetTarget as BabelPresetTarget,
   types as BabelTypes,
 } from '@babel/core'
 import colors from 'picocolors'
@@ -33,9 +34,6 @@ import {
   safari10NoModuleFix,
   systemJSInlineCode,
 } from './snippets'
-
-type BabelPresetItem = Exclude<BabelInputOptions['presets'], undefined>[number]
-type BabelPresetTarget = Extract<BabelPresetItem, Function>
 
 // lazy load babel since it's not used during dev
 let babel: Promise<typeof import('@babel/core')> | undefined
@@ -575,8 +573,7 @@ function viteLegacyPlugin(options: Options = {}): Plugin[] {
         code: false,
         sourceMaps,
         plugins: [
-          (await import('@babel/plugin-transform-dynamic-import'))
-            .default as BabelPluginItem,
+          (await import('@babel/plugin-transform-dynamic-import')).default,
           (await import('@babel/plugin-transform-modules-systemjs'))
             .default as BabelPluginItem,
         ],
