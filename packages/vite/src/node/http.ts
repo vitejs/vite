@@ -177,8 +177,7 @@ async function isPortAvailable(port: number): Promise<boolean> {
 function tryListen(port: number, host: string): Promise<boolean> {
   return new Promise((resolve) => {
     const server = net.createServer()
-    server.once('error', (e: Error & { code?: string }) => {
-      // Only EADDRINUSE means the port is actually in use
+    server.once('error', (e: NodeJS.ErrnoException) => {
       server.close(() => resolve(e.code !== 'EADDRINUSE'))
     })
     server.once('listening', () => {
@@ -193,10 +192,10 @@ async function tryBindServer(
   port: number,
   host: string | undefined,
 ): Promise<
-  { success: true } | { success: false; error: Error & { code?: string } }
+  { success: true } | { success: false; error: NodeJS.ErrnoException }
 > {
   return new Promise((resolve) => {
-    const onError = (e: Error & { code?: string }) => {
+    const onError = (e: NodeJS.ErrnoException) => {
       httpServer.off('error', onError)
       httpServer.off('listening', onListening)
       resolve({ success: false, error: e })

@@ -160,12 +160,11 @@ describe('port detection', () => {
   })
 
   test('non-EADDRINUSE errors on wildcard do not block port selection', async () => {
-    // Non-EADDRINUSE errors (e.g., EACCES) on wildcard addresses
-    // should not prevent the server from starting
     const originalCreateServer = net.createServer.bind(net)
-    const spy = vi.spyOn(net, 'createServer').mockImplementation(() => {
+    using _ = vi.spyOn(net, 'createServer').mockImplementation(() => {
       const server = originalCreateServer()
       const originalListen = server.listen.bind(server)
+      // @ts-expect-error this is the overload used internally
       server.listen = (
         port: number,
         host: string,
@@ -173,32 +172,29 @@ describe('port detection', () => {
       ): net.Server => {
         if (wildcardHosts.has(host)) {
           process.nextTick(() => {
-            const err = new Error('listen EACCES: permission denied')
-            ;(err as NodeJS.ErrnoException).code = 'EACCES'
+            const err: NodeJS.ErrnoException = new Error(
+              'listen EACCES: permission denied',
+            )
+            err.code = 'EACCES'
             server.emit('error', err)
           })
           return server
         }
+        // @ts-expect-error this is the overload used internally
         return originalListen(port, host, ...args)
       }
       return server
     })
 
-    try {
-      viteServer = await createServer({
-        root: import.meta.dirname,
-        logLevel: 'silent',
-        server: { port: BASE_PORT, strictPort: false, ws: false },
-      })
-      await viteServer.listen()
+    viteServer = await createServer({
+      root: import.meta.dirname,
+      logLevel: 'silent',
+      server: { port: BASE_PORT, strictPort: false, ws: false },
+    })
+    await viteServer.listen()
 
-      const address = viteServer.httpServer!.address()
-      expect(address).toStrictEqual(
-        expect.objectContaining({ port: BASE_PORT }),
-      )
-    } finally {
-      spy.mockRestore()
-    }
+    const address = viteServer.httpServer!.address()
+    expect(address).toStrictEqual(expect.objectContaining({ port: BASE_PORT }))
   })
 
   test('throws error when port is blocked and strictPort is true', async () => {
