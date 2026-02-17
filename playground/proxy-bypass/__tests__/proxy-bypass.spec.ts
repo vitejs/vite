@@ -19,8 +19,6 @@ test('async-proxy-bypass-with-error', async () => {
 })
 
 test.runIf(isServe)('proxy error returns 502', async () => {
-  // proxyError tries to proxy to foo.invalid which doesn't exist
-  // This should return 502 Bad Gateway instead of 500 Internal Server Error
   const res = await fetch(viteTestUrl + '/proxyError')
   expect(res.status).toBe(502)
 })
