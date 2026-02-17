@@ -472,14 +472,14 @@ Vite plugins can also provide hooks that serve Vite-specific purposes. These hoo
 
 ## Output Bundle Metadata
 
-During build, Vite augments Rolldown's built-in output objects with a Vite-specific `viteMetadata` field.
+During build, Vite augments Rolldown's build output objects with a Vite-specific `viteMetadata` field.
 
-This extension is available on:
+This is available through:
 
 - `RenderedChunk` (for example in `renderChunk` and `augmentChunkHash`)
 - `OutputChunk` and `OutputAsset` (for example in `generateBundle` and `writeBundle`)
 
-`viteMetadata` includes:
+`viteMetadata` provides:
 
 - `viteMetadata.importedCss: Set<string>`
 - `viteMetadata.importedAssets: Set<string>`
