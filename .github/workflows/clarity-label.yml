@@ -6,6 +6,7 @@ on:
 
 jobs:
   label-clarity:
+    if: github.event.issue.user.login != 'renovate[bot]'
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -67,6 +68,7 @@ jobs:
             Respond with ONLY a JSON object (no markdown fencing) with these fields:
             - "clarity": one of "low", "medium", or "high"
             - "reason": a one-sentence explanation of your rating
+          output_format: json
           warp_api_key: ${{ secrets.WARP_API_KEY }}
           profile: ${{ vars.WARP_AGENT_PROFILE || '' }}
 
