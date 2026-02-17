@@ -23,7 +23,7 @@ jobs:
         with:
           script: |
             const labels = context.payload.issue.labels.map(l => l.name);
-            const issueType = context.payload.issue.type.name;
+            const issueType = context.payload.issue.type?.name;
 
             if (issueType === 'Bug') {
               core.setOutput('template_type', 'bug_report');
@@ -71,7 +71,7 @@ jobs:
 
             **feature_request** required fields:
             1. Description (required) - Clear and concise description of the problem and use cases
-            2. Suggested solution (required) - A proposed implementation or approach
+            2. Suggested solution (required) - A proposed implementation or approach. If it suggests a new option, check against "Think Before Adding Yet Another Option" in the CONTRIBUTING.md
             3. Alternative - Alternative solutions considered (optional)
             4. Additional context - Any other context (optional)
             5. Validations (required) - All checkboxes must be checked
@@ -90,6 +90,7 @@ jobs:
             - "compliant": true/false
             - "missing": an array of strings describing what is missing or inadequate (empty array if compliant)
             - "comment": a polite, helpful comment to post if non-compliant, formatted in GitHub markdown. Address the user by their username @${{ github.event.issue.user.login }}. Ask them to update the issue with the missing information. Reference the specific template they should follow. Be concise.
+          output_format: json
           warp_api_key: ${{ secrets.WARP_API_KEY }}
           profile: ${{ vars.WARP_AGENT_PROFILE || '' }}
 
