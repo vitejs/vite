@@ -12,6 +12,9 @@ export default defineConfig({
           return false
         },
       },
+      '/proxyError': {
+        target: 'http://localhost:9608',
+      },
       '/asyncResponse': {
         bypass: async (_, res) => {
           await timeout(4)

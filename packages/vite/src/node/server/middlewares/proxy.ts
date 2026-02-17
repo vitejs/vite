@@ -106,7 +106,7 @@ export function proxyMiddleware(
         )
         if (!res.headersSent && !res.writableEnded) {
           res
-            .writeHead(500, {
+            .writeHead(502, {
               'Content-Type': 'text/plain',
             })
             .end()
