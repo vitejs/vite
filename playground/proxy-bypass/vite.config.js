@@ -13,7 +13,7 @@ export default defineConfig({
         },
       },
       '/proxyError': {
-        target: 'http://localhost:9608',
+        target: 'http://foo.invalid',
       },
       '/asyncResponse': {
         bypass: async (_, res) => {
