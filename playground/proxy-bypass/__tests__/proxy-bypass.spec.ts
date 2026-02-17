@@ -1,5 +1,5 @@
 import { expect, test, vi } from 'vitest'
-import { browserLogs, page, serverLogs } from '~utils'
+import { browserLogs, isServe, page, serverLogs, viteTestUrl } from '~utils'
 
 test('proxy-bypass', async () => {
   await vi.waitFor(() => {
@@ -16,4 +16,9 @@ test('async-proxy-bypass-with-error', async () => {
   await vi.waitFor(() => {
     expect(serverLogs.join('\n')).toContain('bypass error')
   })
+})
+
+test.runIf(isServe)('proxy error returns 502', async () => {
+  const res = await fetch(viteTestUrl + '/proxyError')
+  expect(res.status).toBe(502)
 })
