@@ -910,6 +910,7 @@ function getFullCustomCommand(customCommand: string, pkgInfo?: PkgInfo) {
       // including Yarn 1.x and other custom npm clients.
       return 'npm exec '
     })
+    // fixed issue #21618
     .replace(
       /^pnpm dlx (\S+) -- /,
       // `npm exec <pkg> -- <args>` uses `--` to split npm flags from package args.
