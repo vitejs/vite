@@ -96,28 +96,35 @@ jobs:
 
       - name: Write result to summary
         if: steps.detect.outputs.skip == 'false' && steps.agent.outputs.agent_output
+        uses: actions/github-script@v7
         env:
           TEMPLATE_TYPE: ${{ steps.detect.outputs.template_type }}
           AGENT_OUTPUT: ${{ steps.agent.outputs.agent_output }}
-        run: |
-          echo "## Issue Template Check ($TEMPLATE_TYPE)" >> $GITHUB_STEP_SUMMARY
-          echo "" >> $GITHUB_STEP_SUMMARY
-          echo '```json' >> $GITHUB_STEP_SUMMARY
-          # Extract the agent response from streaming JSON format
-          # Find the last line with type:"agent" and extract its text field
-          echo "$AGENT_OUTPUT" | node -e "
-            const lines = require('fs').readFileSync(0, 'utf-8').trim().split('\n');
-            let agentText = null;
-            for (const line of lines) {
-              try {
-                const parsed = JSON.parse(line);
-                if (parsed.type === 'agent' && parsed.text) {
-                  agentText = parsed.text;
-                }
-              } catch (e) {}
+        with:
+          script: |
+            const output = process.env.AGENT_OUTPUT;
+            const templateType = process.env.TEMPLATE_TYPE;
+
+            try {
+              // The agent outputs streaming JSON format with multiple lines
+              // We need to extract the last line with type:"agent" and parse its text field
+              const lines = output.trim().split('\n');
+              let agentText = null;
+              for (const line of lines) {
+                try {
+                  const parsed = JSON.parse(line);
+                  if (parsed.type === 'agent' && parsed.text) {
+                    agentText = parsed.text;
+                  }
+                } catch (e) {}
+              }
+              
+              if (agentText) {
+                await core.summary
+                  .addHeading(`Issue Template Check (${templateType})`)
+                  .addCodeBlock(agentText, 'json')
+                  .write();
+              }
+            } catch (e) {
+              core.setFailed(`Failed to write summary: ${e.message}`);
             }
-            if (agentText) {
-              console.log(agentText);
-            }
-          " >> $GITHUB_STEP_SUMMARY
-          echo '```' >> $GITHUB_STEP_SUMMARY
