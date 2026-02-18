@@ -251,6 +251,8 @@ Whether to generate a manifest file that contains a mapping of non-hashed asset 
 
 When the value is a string, it will be used as the manifest file path relative to `build.outDir`. When set to `true`, the path would be `.vite/manifest.json`.
 
+If you are writing a plugin and need to inspect each output chunk or asset's related CSS and static assets during the build, you can also use [`viteMetadata` output bundle metadata API](/guide/api-plugin#output-bundle-metadata).
+
 ## build.ssrManifest
 
 - **Type:** `boolean | string`
