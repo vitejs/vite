@@ -32,7 +32,7 @@ export function createDefaultImportMeta(
           `file transformation. Make sure to reference it by the full name.`,
       )
     },
-    // @types/node adds `main` to `import.meta`, but we don't add that for the defaultImportMeta
+    // @types/node adds `main`, `dirname`, and `filename` to `import.meta`, but we handle those explicitly
   } satisfies Omit<ModuleRunnerImportMeta, 'main'> as any
 }
 
