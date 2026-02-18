@@ -294,7 +294,7 @@ Set to `false` to disable minification, or specify the minifier to use. The defa
 
 `build.minify: 'esbuild'` is deprecated and will be removed in the future.
 
-Note the `build.minify` option does not minify whitespaces when using the `'es'` format in lib mode, as it removes pure annotations and breaks tree-shaking.
+Note the `build.minify` option does not minify whitespaces when using the `'es'` format in lib mode, as it removes pure annotations and breaks tree-shaking. To force whitespace minification for `'es'` format in lib mode, explicitly set `esbuild.minifyWhitespace` to `true`.
 
 esbuild or Terser must be installed when it is set to `'esbuild'` or `'terser'` respectively.
 
