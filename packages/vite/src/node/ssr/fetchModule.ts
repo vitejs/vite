@@ -91,7 +91,7 @@ export async function fetchModule(
   url = unwrapId(url)
 
   if (environment instanceof FullBundleDevEnvironment) {
-    await environment._waitForInitialBuildFinish()
+    await environment._waitForInitialBuildSuccess()
 
     let fileName: string
 
@@ -99,8 +99,12 @@ export async function fetchModule(
       fileName = resolveEntryFilename(environment, url)!
 
       if (!fileName) {
+        const entrypoints = [...environment.facadeToChunk.keys()]
         throw new Error(
-          `[vite] Entrypoint '${url}' was not defined in the config. Available entry points: \n- ${[...environment.facadeToChunk.keys()].join('\n- ')}`,
+          `[vite] Entrypoint '${url}' was not defined in the config. ` +
+            entrypoints.length
+            ? `Available entry points: \n- ${[...environment.facadeToChunk.keys()].join('\n- ')}`
+            : `The build did not produce any chunks. Did it finish successfully? See the logs for more information.`,
         )
       }
     } else if (url[0] === '.') {
@@ -122,10 +126,13 @@ export async function fetchModule(
 
     const result: ViteFetchResult = {
       code: code.toString(),
+      // To make sure dynamic imports resolve assets correctly.
+      // (Dynamic import resolves relative urls with importer url)
       url: fileName,
       id: fileName,
+      // We don't keep assets on the file system.
       file: null,
-      // TODO
+      // TODO: how to know the file was invalidated?
       invalidate: false,
     }
     // TODO: this should be done in rolldown, there is already a function for it

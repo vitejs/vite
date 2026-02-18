@@ -20,12 +20,8 @@ describe.only('module runner initialization', async () => {
       experimental: {
         ssrBundledDev: true,
       },
-      environments: {
-        ssr: {
-          dev: {
-            // disable hmr?
-          },
-        },
+      server: {
+        hmr: false,
       },
       build: {
         rolldownOptions: {

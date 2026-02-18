@@ -28,11 +28,6 @@ export const runnerTest = base.extend<TestClient>({
     const server = await createServer({
       root: import.meta.dirname,
       logLevel: 'error',
-      server: {
-        middlewareMode: true,
-        watch: null,
-        ws: false,
-      },
       ssr: {
         external: ['@vitejs/cjs-external', '@vitejs/esm-external'],
       },
@@ -70,6 +65,12 @@ export const runnerTest = base.extend<TestClient>({
         ...(config.plugins ?? []),
       ],
       ...config,
+      server: {
+        middlewareMode: true,
+        watch: null,
+        ws: false,
+        ...config.server,
+      },
     })
     if (config.server?.watch) {
       await waitForWatcher(server)

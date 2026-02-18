@@ -200,9 +200,17 @@ export class FullBundleDevEnvironment extends DevEnvironment {
   /**
    * @internal
    */
-  public async _waitForInitialBuildFinish(): Promise<void> {
-    // TODO: need a better way to handle errors from the outside
-    // maybe `await buildFinishPromise.promise`
+  public async _waitForInitialBuildSuccess(): Promise<void> {
+    await this.devEngine.ensureCurrentBuildFinish()
+    const bundleState = await this.devEngine.getBundleState()
+    if (bundleState.lastFullBuildFailed) {
+      throw new Error(
+        `The last full bundle mode build has failed. See logs for more information.`,
+      )
+    }
+  }
+
+  private async _waitForInitialBuildFinish(): Promise<void> {
     await this.devEngine.ensureCurrentBuildFinish()
     while (this.memoryFiles.size === 0) {
       await setTimeout(10)
