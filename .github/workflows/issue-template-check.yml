@@ -103,5 +103,21 @@ jobs:
           echo "## Issue Template Check ($TEMPLATE_TYPE)" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
           echo '```json' >> $GITHUB_STEP_SUMMARY
-          echo "$AGENT_OUTPUT" >> $GITHUB_STEP_SUMMARY
+          # Extract the agent response from streaming JSON format
+          # Find the last line with type:"agent" and extract its text field
+          echo "$AGENT_OUTPUT" | node -e "
+            const lines = require('fs').readFileSync(0, 'utf-8').trim().split('\n');
+            let agentText = null;
+            for (const line of lines) {
+              try {
+                const parsed = JSON.parse(line);
+                if (parsed.type === 'agent' && parsed.text) {
+                  agentText = parsed.text;
+                }
+              } catch (e) {}
+            }
+            if (agentText) {
+              console.log(agentText);
+            }
+          " >> $GITHUB_STEP_SUMMARY
           echo '```' >> $GITHUB_STEP_SUMMARY

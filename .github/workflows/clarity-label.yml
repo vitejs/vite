@@ -84,7 +84,21 @@ jobs:
             const output = process.env.AGENT_OUTPUT;
             let result;
             try {
-              result = JSON.parse(output);
+              // The agent outputs streaming JSON format with multiple lines
+              // We need to extract the last line with type:"agent" and parse its text field
+              const lines = output.trim().split('\n');
+              let agentResponse = null;
+              for (const line of lines) {
+                const parsed = JSON.parse(line);
+                if (parsed.type === 'agent') {
+                  agentResponse = parsed.text;
+                }
+              }
+              if (!agentResponse) {
+                core.setFailed('No agent response found in output');
+                return;
+              }
+              result = JSON.parse(agentResponse);
             } catch (e) {
               core.setFailed(`Failed to parse agent output: ${e.message}`);
               return;
@@ -140,5 +154,21 @@ jobs:
           echo "## Clarity Label" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
           echo '```json' >> $GITHUB_STEP_SUMMARY
-          echo "$AGENT_OUTPUT" >> $GITHUB_STEP_SUMMARY
+          # Extract the agent response from streaming JSON format
+          # Find the last line with type:"agent" and extract its text field
+          echo "$AGENT_OUTPUT" | node -e "
+            const lines = require('fs').readFileSync(0, 'utf-8').trim().split('\n');
+            let agentText = null;
+            for (const line of lines) {
+              try {
+                const parsed = JSON.parse(line);
+                if (parsed.type === 'agent' && parsed.text) {
+                  agentText = parsed.text;
+                }
+              } catch (e) {}
+            }
+            if (agentText) {
+              console.log(agentText);
+            }
+          " >> $GITHUB_STEP_SUMMARY
           echo '```' >> $GITHUB_STEP_SUMMARY
