@@ -18,9 +18,6 @@ patchedDependencies:
   dotenv-expand@12.0.3:
     hash: 49330a663821151418e003e822a82a6a61d2f0f8a6e3cab00c1c94815a112889
     path: patches/dotenv-expand@12.0.3.patch
-  http-proxy-3:
-    hash: d89dff5a0afc2cb277080ad056a3baf7feeeeac19144878abc17f4c91ad89095
-    path: patches/http-proxy-3.patch
   sirv@3.0.2:
     hash: c07c56eb72faea34341d465cde2314e89db472106ed378181e3447893af6bf95
     path: patches/sirv@3.0.2.patch
@@ -336,7 +333,7 @@ importers:
         version: 0.1.2
       http-proxy-3:
         specifier: ^1.23.2
-        version: 1.23.2(patch_hash=d89dff5a0afc2cb277080ad056a3baf7feeeeac19144878abc17f4c91ad89095)(ms@2.1.3)
+        version: 1.23.2(ms@2.1.3)
       launch-editor-middleware:
         specifier: ^2.12.0
         version: 2.12.0
@@ -11553,7 +11550,7 @@ snapshots:
       statuses: 2.0.2
       toidentifier: 1.0.1
 
-  http-proxy-3@1.23.2(patch_hash=d89dff5a0afc2cb277080ad056a3baf7feeeeac19144878abc17f4c91ad89095)(ms@2.1.3):
+  http-proxy-3@1.23.2(ms@2.1.3):
     dependencies:
       debug: obug@1.0.2(ms@2.1.3)
       follow-redirects: 1.15.11(obug@1.0.2(ms@2.1.3))
