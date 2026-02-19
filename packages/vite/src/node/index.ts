@@ -16,6 +16,7 @@ export {
   minifySync,
   type MinifyOptions,
   type MinifyResult,
+  Visitor,
 } from 'rolldown/utils'
 
 /** @deprecated - use `parse` instead */
