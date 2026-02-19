@@ -1,3 +1,24 @@
+## [8.0.0-beta.15](https://github.com/vitejs/vite/compare/v8.0.0-beta.14...v8.0.0-beta.15) (2026-02-19)
+### Features
+
+* update rolldown to 1.0.0-rc.5 ([#21660](https://github.com/vitejs/vite/issues/21660)) ([b3ddbc5](https://github.com/vitejs/vite/commit/b3ddbc54ee5b836852b09811c8e920b2b2cde7cb))
+
+### Bug Fixes
+
+* **dev:** only treat EADDRINUSE as port conflict in wildcard pre-check ([#21642](https://github.com/vitejs/vite/issues/21642)) ([e54e25f](https://github.com/vitejs/vite/commit/e54e25fbb9b721b2c655d17e35706e070c92ff70))
+* **dev:** prevent concurrent server restarts ([#21636](https://github.com/vitejs/vite/issues/21636)) ([8ce23a3](https://github.com/vitejs/vite/commit/8ce23a3b6e1eb86eef2b50c1bfbad072bbf9a03a))
+* **dev:** return "502 Bad Gateway" on proxy failures instead of 500 ([#21652](https://github.com/vitejs/vite/issues/21652)) ([e240df2](https://github.com/vitejs/vite/commit/e240df2ea4accd11631aac0f361e846a2e3140b0))
+
+### Performance Improvements
+
+* **ssr:** skip circular import check for already-evaluated modules ([#21632](https://github.com/vitejs/vite/issues/21632)) ([235140b](https://github.com/vitejs/vite/commit/235140b2d519e866fc28f88fe8155a5091630daf))
+* use tsconfig cache for oxc transform in dev ([#21643](https://github.com/vitejs/vite/issues/21643)) ([57ff177](https://github.com/vitejs/vite/commit/57ff177575bef6bee81a250e853d2c99affa0015))
+
+### Miscellaneous Chores
+
+* **deps:** remove `fdir` and `@rollup/plugin-commonjs`  ([#21639](https://github.com/vitejs/vite/issues/21639)) ([5abffd5](https://github.com/vitejs/vite/commit/5abffd5d04bf586a60970588a14d7e3b79445093))
+* **deps:** update dependency @rollup/plugin-alias to v6 ([#21097](https://github.com/vitejs/vite/issues/21097)) ([44b5bdf](https://github.com/vitejs/vite/commit/44b5bdfcf2b2c1b73563ed0526c48584b756360f))
+
 ## [8.0.0-beta.14](https://github.com/vitejs/vite/compare/v8.0.0-beta.13...v8.0.0-beta.14) (2026-02-12)
 ### Features
 
