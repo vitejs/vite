@@ -49,7 +49,7 @@ npm add -D terser
 ### `modernTargets`
 
 - **Type:** `string | string[]`
-- **Default:** [`'edge>=105, firefox>=106, chrome>=105, safari>=16.4, chromeAndroid>=105, iOS>=16.4'`](https://browsersl.ist/#q=edge%3E%3D105%2C+firefox%3E%3D106%2C+chrome%3E%3D105%2C+safari%3E%3D16.4%2C+chromeAndroid%3E%3D105%2C+iOS%3E%3D16.42)
+- **Default:** [`'edge>=105, firefox>=106, chrome>=105, safari>=16.4, chromeAndroid>=105, iOS>=16.4'`](https://browsersl.ist/#q=edge%3E%3D105%2C+firefox%3E%3D106%2C+chrome%3E%3D105%2C+safari%3E%3D16.4%2C+chromeAndroid%3E%3D105%2C+iOS%3E%3D16.4)
 
   It's passed on to [`@babel/preset-env`](https://babeljs.io/docs/en/babel-preset-env#targets) when collecting polyfills for **modern chunks**. The value set here will override the `build.target` option.
 
