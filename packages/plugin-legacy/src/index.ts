@@ -164,6 +164,7 @@ function viteLegacyPlugin(options: Options = {}): Plugin[] {
   const assumptions = options.assumptions || {}
 
   const facadeToLegacyChunkMap = new Map()
+  const facedeToLegacyImportMap = new Map<string | null, Rollup.OutputAsset>()
   const facadeToLegacyPolyfillMap = new Map()
   const facadeToModernPolyfillMap = new Map()
   const modernPolyfills = new Set<string>()
@@ -628,13 +629,19 @@ function viteLegacyPlugin(options: Options = {}): Plugin[] {
       return null
     },
 
-    transformIndexHtml(html, { chunk }) {
+    transformIndexHtml(html, { chunk, bundle }) {
       if (config.build.ssr) return
       if (!chunk) return
       if (chunk.fileName.includes('-legacy')) {
         // The legacy bundle is built first, and its index.html isn't actually emitted if
         // modern bundle will be generated. Here we simply record its corresponding legacy chunk.
         facadeToLegacyChunkMap.set(chunk.facadeModuleId, chunk.fileName)
+        if (config.build.chunkImportMap) {
+          facedeToLegacyImportMap.set(
+            chunk.facadeModuleId,
+            bundle![getImportMapFilename(config)]! as Rollup.OutputAsset,
+          )
+        }
         if (genModern) {
           return
         }
@@ -676,7 +683,22 @@ function viteLegacyPlugin(options: Options = {}): Plugin[] {
         return { html, tags }
       }
 
-      // 2. inject Safari 10 nomodule fix
+      // 2. inject importmaps
+      if (config.build.chunkImportMap) {
+        const importMap = facedeToLegacyImportMap.get(chunk.facadeModuleId)!
+        const decoder = new TextDecoder()
+        tags.push({
+          tag: 'script',
+          attrs: { type: 'systemjs-importmap' },
+          children:
+            typeof importMap.source === 'string'
+              ? importMap.source
+              : decoder.decode(importMap.source),
+          injectTo: 'head',
+        })
+      }
+
+      // 3. inject Safari 10 nomodule fix
       if (genModern) {
         tags.push({
           tag: 'script',
@@ -686,7 +708,7 @@ function viteLegacyPlugin(options: Options = {}): Plugin[] {
         })
       }
 
-      // 3. inject legacy polyfills
+      // 4. inject legacy polyfills
       const legacyPolyfillFilename = facadeToLegacyPolyfillMap.get(
         chunk.facadeModuleId,
       )
@@ -711,7 +733,7 @@ function viteLegacyPlugin(options: Options = {}): Plugin[] {
         )
       }
 
-      // 4. inject legacy entry
+      // 5. inject legacy entry
       const legacyEntryFilename = facadeToLegacyChunkMap.get(
         chunk.facadeModuleId,
       )
@@ -741,7 +763,7 @@ function viteLegacyPlugin(options: Options = {}): Plugin[] {
         )
       }
 
-      // 5. inject dynamic import fallback entry
+      // 6. inject dynamic import fallback entry
       if (legacyPolyfillFilename && legacyEntryFilename && genModern) {
         tags.push({
           tag: 'script',
@@ -769,12 +791,14 @@ function viteLegacyPlugin(options: Options = {}): Plugin[] {
       }
 
       if (isLegacyBundle(bundle) && genModern) {
+        const importMapFilename = getImportMapFilename(config)
         // avoid emitting duplicate assets
         for (const name in bundle) {
           if (
             bundle[name].type === 'asset' &&
             !name.endsWith('.map') &&
-            !name.includes('-legacy') // legacy chunks
+            !name.includes('-legacy') && // legacy chunks
+            name !== importMapFilename // handled by import analysis build plugin
           ) {
             delete bundle[name]
           }
@@ -784,6 +808,15 @@ function viteLegacyPlugin(options: Options = {}): Plugin[] {
   }
 
   return [legacyConfigPlugin, legacyGenerateBundlePlugin, legacyPostPlugin]
+}
+
+function getImportMapFilename(config: ResolvedConfig): string {
+  const chunkImportMap =
+    config.build.rolldownOptions.experimental?.chunkImportMap
+  if (typeof chunkImportMap === 'object' && chunkImportMap.fileName) {
+    return chunkImportMap.fileName
+  }
+  return 'importmap.json'
 }
 
 export async function detectPolyfills(
