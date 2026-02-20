@@ -1,5 +1,6 @@
 import path from 'node:path'
 import fs from 'node:fs'
+import { inspect } from 'node:util'
 import { performance } from 'node:perf_hooks'
 import { cac } from 'cac'
 import colors from 'picocolors'
@@ -291,7 +292,7 @@ cli
       } catch (e) {
         const logger = createLogger(options.logLevel)
         logger.error(
-          colors.red(`error when starting dev server:\n${e.stack}`),
+          colors.red(`error when starting dev server:\n${inspect(e)}`),
           {
             error: e,
           },
@@ -368,7 +369,7 @@ cli
         await builder.runDevTools()
       } catch (e) {
         createLogger(options.logLevel).error(
-          colors.red(`error during build:\n${e.stack}`),
+          colors.red(`error during build:\n${inspect(e)}`),
           { error: e },
         )
         process.exit(1)
@@ -410,7 +411,7 @@ cli
         await optimizeDeps(config, options.force, true)
       } catch (e) {
         createLogger(options.logLevel).error(
-          colors.red(`error when optimizing deps:\n${e.stack}`),
+          colors.red(`error when optimizing deps:\n${inspect(e)}`),
           { error: e },
         )
         process.exit(1)
@@ -461,7 +462,7 @@ cli
         server.bindCLIShortcuts({ print: true })
       } catch (e) {
         createLogger(options.logLevel).error(
-          colors.red(`error when starting preview server:\n${e.stack}`),
+          colors.red(`error when starting preview server:\n${inspect(e)}`),
           { error: e },
         )
         process.exit(1)
