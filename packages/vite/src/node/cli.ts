@@ -368,9 +368,10 @@ cli
         await builder.buildApp()
         await builder.runDevTools()
       } catch (e) {
-        const logger = createLogger(options.logLevel)
-        const buildError = `error during build:\n${inspect(e)}`
-        logger.error(colors.red(buildError), { error: e })
+        createLogger(options.logLevel).error(
+          colors.red(`error during build:\n${inspect(e)}`),
+          { error: e },
+        )
         process.exit(1)
       } finally {
         await stopProfiler((message) =>
