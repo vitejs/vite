@@ -378,6 +378,19 @@
   )
 </script>
 
+<h2>TypeScript Enum Import</h2>
+<div>
+  Named import from TypeScript enum:
+  <span class="ts-enum-named-import"></span>
+</div>
+<script type="module">
+  import { Status, statusMessage } from '@vitejs/test-dep-ts-enum'
+  text(
+    '.ts-enum-named-import',
+    `${Status.GREEN}:${statusMessage(Status.GREEN)}`,
+  )
+</script>
+
 <h2>Virtual module with .vue extension</h2>
 <div>
   This should not error during dep scan:
