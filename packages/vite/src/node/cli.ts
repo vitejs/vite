@@ -1,5 +1,6 @@
 import path from 'node:path'
 import fs from 'node:fs'
+import { inspect } from 'node:util'
 import { performance } from 'node:perf_hooks'
 import { cac } from 'cac'
 import colors from 'picocolors'
@@ -368,12 +369,7 @@ cli
         await builder.runDevTools()
       } catch (e) {
         const logger = createLogger(options.logLevel)
-        let buildError = `error during build:\n${e.stack}`
-        if (e instanceof AggregateError) {
-          for (const error of e.errors) {
-            buildError += `\n${error.stack}`
-          }
-        }
+        const buildError = `error during build:\n${inspect(e)}`
         logger.error(colors.red(buildError), { error: e })
         process.exit(1)
       } finally {
