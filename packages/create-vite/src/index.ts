@@ -792,7 +792,7 @@ function setupReactCompiler(root: string, isTs: boolean) {
         `  plugins: [
     react({
       babel: {
-        plugins: [['babel-plugin-react-compiler']],
+        plugins: ['babel-plugin-react-compiler'],
       },
     }),
   ],`,
