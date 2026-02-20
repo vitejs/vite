@@ -14,12 +14,13 @@ const envProxy = new Proxy({} as any, {
 export function createDefaultImportMeta(
   modulePath: string,
 ): ModuleRunnerImportMeta {
-  const href = posixPathToFileHref(modulePath)
-  const filename = modulePath
-  const dirname = posixDirname(modulePath)
+  const isVirtual = modulePath.startsWith('data:application/javascript,')
+  const href = isVirtual ? modulePath : posixPathToFileHref(modulePath)
+  const filename = isVirtual ? undefined : modulePath
+  const dirname = isVirtual ? undefined : posixDirname(modulePath)
   return {
-    filename: isWindows ? toWindowsPath(filename) : filename,
-    dirname: isWindows ? toWindowsPath(dirname) : dirname,
+    filename: isWindows && filename ? toWindowsPath(filename) : filename,
+    dirname: isWindows && dirname ? toWindowsPath(dirname) : dirname,
     url: href,
     env: envProxy,
     resolve(_id: string, _parent?: string) {

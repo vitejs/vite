@@ -34,6 +34,7 @@ function encodePathChars(filepath: string) {
 
 export const posixDirname: (path: string) => string = pathe.dirname
 export const posixResolve: (...paths: string[]) => string = pathe.resolve
+export const posixJoin: (...paths: string[]) => string = pathe.join
 
 export function posixPathToFileHref(posixPath: string): string {
   let resolved = posixResolve(posixPath)

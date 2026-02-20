@@ -1,15 +1,19 @@
-import { pathToFileURL } from 'node:url'
+import { fileURLToPath, pathToFileURL } from 'node:url'
+import path, { resolve } from 'node:path'
 import type { FetchResult } from 'vite/module-runner'
-import type { EnvironmentModuleNode, TransformResult } from '..'
+import type { TransformResult } from '..'
 import { tryNodeResolve } from '../plugins/resolve'
 import { isBuiltin, isExternalUrl, isFilePathESM } from '../utils'
-import { unwrapId } from '../../shared/utils'
+import { slash, unwrapId } from '../../shared/utils'
 import {
   MODULE_RUNNER_SOURCEMAPPING_SOURCE,
   SOURCEMAPPING_URL,
 } from '../../shared/constants'
 import { genSourceMapUrl } from '../server/sourcemap'
 import type { DevEnvironment } from '../server/environment'
+import { FullBundleDevEnvironment } from '../server/environments/fullBundleEnvironment'
+import type { ViteFetchResult } from '../../shared/invokeMethods'
+import { ssrTransform } from './ssrTransform'
 
 export interface FetchModuleOptions {
   cached?: boolean
@@ -43,7 +47,13 @@ export async function fetchModule(
 
   // if there is no importer, the file is an entry point
   // entry points are always internalized
-  if (!isFileUrl && importer && url[0] !== '.' && url[0] !== '/') {
+  if (
+    !isFileUrl &&
+    importer &&
+    url[0] !== '.' &&
+    url[0] !== '/' &&
+    !isChunkUrl(environment, url)
+  ) {
     const { isProduction, root } = environment.config
     const { externalConditions, dedupe, preserveSymlinks } =
       environment.config.resolve
@@ -80,6 +90,66 @@ export async function fetchModule(
 
   url = unwrapId(url)
 
+  if (environment instanceof FullBundleDevEnvironment) {
+    await environment._waitForInitialBuildSuccess()
+
+    let fileName: string
+
+    if (!importer) {
+      fileName = resolveEntryFilename(environment, url)!
+
+      if (!fileName) {
+        const entrypoints = [...environment.facadeToChunk.keys()]
+        throw new Error(
+          `[vite] Entrypoint '${url}' was not defined in the config. ` +
+            entrypoints.length
+            ? `Available entry points: \n- ${[...environment.facadeToChunk.keys()].join('\n- ')}`
+            : `The build did not produce any chunks. Did it finish successfully? See the logs for more information.`,
+        )
+      }
+    } else if (url[0] === '.') {
+      fileName = path.posix.join(path.posix.dirname(importer), url)
+    } else {
+      fileName = url
+    }
+
+    const memoryFile = environment.memoryFiles.get(fileName)
+    // TODO: how to check caching?
+    const code = memoryFile?.source
+    if (code == null) {
+      throw new Error(
+        `[vite] the module '${url}' (chunk '${fileName}') ${
+          importer ? ` imported from '${importer}'` : ''
+        } was not bundled. Is server established?`,
+      )
+    }
+
+    const result: ViteFetchResult = {
+      code: code.toString(),
+      // To make sure dynamic imports resolve assets correctly.
+      // (Dynamic import resolves relative urls with importer url)
+      url: fileName,
+      id: fileName,
+      // We don't keep assets on the file system.
+      file: null,
+      // TODO: how to know the file was invalidated?
+      invalidate: false,
+    }
+    // TODO: this should be done in rolldown, there is already a function for it
+    // output.format = 'module-runner'
+    const ssrResult = await ssrTransform(result.code, null, url, result.code)
+    if (!ssrResult) {
+      throw new Error(`[vite] cannot apply ssr transform to '${url}'.`)
+    }
+    result.code = ssrResult.code
+
+    // remove shebang
+    if (result.code[0] === '#')
+      result.code = result.code.replace(/^#!.*/, (s) => ' '.repeat(s.length))
+
+    return result
+  }
+
   const mod = await environment.moduleGraph.ensureEntryFromUrl(url)
   const cached = !!mod.transformResult
 
@@ -99,7 +169,7 @@ export async function fetchModule(
   }
 
   if (options.inlineSourceMap !== false) {
-    result = inlineSourceMap(mod, result, options.startOffset)
+    result = inlineSourceMap(mod.id!, result, options.startOffset)
   }
 
   // remove shebang
@@ -121,7 +191,7 @@ const OTHER_SOURCE_MAP_REGEXP = new RegExp(
 )
 
 function inlineSourceMap(
-  mod: EnvironmentModuleNode,
+  id: string,
   result: TransformResult,
   startOffset: number | undefined,
 ) {
@@ -146,8 +216,39 @@ function inlineSourceMap(
       })
     : map
   result.code = `${code.trimEnd()}\n//# sourceURL=${
-    mod.id
+    id
   }\n${MODULE_RUNNER_SOURCEMAPPING_SOURCE}\n//# ${SOURCEMAPPING_URL}=${genSourceMapUrl(sourceMap)}\n`
 
   return result
+}
+
+function isChunkUrl(environment: DevEnvironment, url: string) {
+  return (
+    environment instanceof FullBundleDevEnvironment &&
+    environment.memoryFiles.has(url)
+  )
+}
+
+function resolveEntryFilename(
+  environment: FullBundleDevEnvironment,
+  url: string,
+) {
+  // Already resolved by the user to be a url
+  if (environment.facadeToChunk.has(url)) {
+    return environment.facadeToChunk.get(url)
+  }
+  const moduleId = url.startsWith('file://')
+    ? // new URL(path)
+      fileURLToPath(url)
+    : // ./index.js
+      // NOTE: we don't try to find it if extension is not passed
+      // It will throw an error instead
+      slash(resolve(environment.config.root, url))
+  if (environment.facadeToChunk.get(moduleId)) {
+    return environment.facadeToChunk.get(moduleId)
+  }
+  if (url[0] === '/') {
+    const tryAbsouteUrl = path.join(environment.config.root, url)
+    return environment.facadeToChunk.get(tryAbsouteUrl)
+  }
 }
