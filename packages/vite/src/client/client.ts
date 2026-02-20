@@ -351,7 +351,7 @@ function hasErrorOverlay() {
 }
 
 function waitForSuccessfulPing(socketUrl: string) {
-  if (typeof SharedWorker === 'undefined') {
+  const useMainThreadFallback = () => {
     const visibilityManager: VisibilityManager = {
       currentState: document.visibilityState,
       listeners: new Set(),
@@ -364,6 +364,10 @@ function waitForSuccessfulPing(socketUrl: string) {
     }
     document.addEventListener('visibilitychange', onVisibilityChange)
     return waitForSuccessfulPingInternal(socketUrl, visibilityManager)
+  }
+
+  if (typeof SharedWorker === 'undefined') {
+    return useMainThreadFallback()
   }
 
   // needs to be inlined to
@@ -379,7 +383,29 @@ function waitForSuccessfulPing(socketUrl: string) {
     { type: 'application/javascript' },
   )
   const objURL = URL.createObjectURL(blob)
-  const sharedWorker = new SharedWorker(objURL)
+
+  // Handle TrustedTypes enforcement - create a policy to bless the blob URL
+  let workerURL: string | TrustedScriptURL = objURL
+  if (typeof trustedTypes !== 'undefined') {
+    try {
+      const policy = trustedTypes.createPolicy('vite-hmr', {
+        createScriptURL: (url: string) => {
+          if (url.startsWith('blob:')) {
+            return url
+          }
+          throw new Error('URL not allowed')
+        },
+      })
+      workerURL = policy.createScriptURL(objURL)
+    } catch {
+      // Policy creation blocked (e.g., CSP doesn't allow 'vite-hmr' policy)
+      // Fall back to main thread implementation
+      URL.revokeObjectURL(objURL)
+      return useMainThreadFallback()
+    }
+  }
+
+  const sharedWorker = new SharedWorker(workerURL as string)
   return new Promise<void>((resolve, reject) => {
     const onVisibilityChange = () => {
       sharedWorker.port.postMessage({ visibility: document.visibilityState })
