@@ -6,12 +6,17 @@
 <h2>From dependency</h2>
 <p class="dep"></p>
 
+<h2>Dynamic import with attributes</h2>
+<p class="dynamic"></p>
+
 <script type="module">
   import * as data from './data.json' assert { type: 'json' }
   text('.src', data.foo)
 
   import * as depData from '@vitejs/test-import-assertion-dep'
   text('.dep', depData.hello)
+
+  import('./data.json', { with: { type: 'json' } }).then((m) => text('.dynamic', m.foo))
 
   function text(el, text) {
     document.querySelector(el).textContent = text
