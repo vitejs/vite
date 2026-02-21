@@ -1,6 +1,6 @@
 <script setup>
 import RiveAnimation from '@components/shared/RiveAnimation.vue'
-import CodeGroup from '@components/shared/CodeGroup.vue'
+import CodeGroup from '../components/shared/CodeGroup.vue'
 
 import viteAnimation from '@assets/vite/animations/641_x_629_vite_masthead.riv'
 
