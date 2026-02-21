@@ -16,7 +16,9 @@
   import * as depData from '@vitejs/test-import-assertion-dep'
   text('.dep', depData.hello)
 
-  import('./data.json', { with: { type: 'json' } }).then((m) => text('.dynamic', m.foo))
+  import('./data.json', { with: { type: 'json' } }).then((m) =>
+    text('.dynamic', m.foo),
+  )
 
   function text(el, text) {
     document.querySelector(el).textContent = text
