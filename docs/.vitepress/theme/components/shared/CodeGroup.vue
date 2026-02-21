@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref } from 'vue'
+import { ref, computed } from 'vue'
 
 interface CodeTab {
   label: string
@@ -14,14 +14,15 @@ const props = defineProps<{
 const activeTab = ref(0)
 const groupId = Math.random().toString(36).substring(7)
 
-// Function to split the prompt ($) from the command
-const splitCommand = (code: string) => {
-  const match = code.match(/^(\s*\$\s+)(.*)$/)
-  if (match) {
-    return { prompt: match[1], command: match[2] }
-  }
-  return { prompt: '', command: code }
-}
+// Split the prompt ($) from the command once per tab and cache the result
+const splitCommands = computed(() => {
+  return props.tabs.map((tab) => {
+    const match = tab.code.match(/^(\s*\$\s+)(.*)$/)
+    return match
+      ? { prompt: match[1], command: match[2] }
+      : { prompt: '', command: tab.code }
+  })
+})
 </script>
 
 <template>
@@ -49,7 +50,7 @@ const splitCommand = (code: string) => {
       >
         <button class="copy"></button>
         <span class="lang">{{ tab.language || 'bash' }}</span>
-        <pre><code><span class="prompt" v-if="splitCommand(tab.code).prompt">{{ splitCommand(tab.code).prompt }}</span><span class="command">{{ splitCommand(tab.code).command }}</span></code></pre>
+        <pre><code><span class="prompt" v-if="splitCommands[index].prompt">{{ splitCommands[index].prompt }}</span><span class="command">{{ splitCommands[index].command }}</span></code></pre>
       </div>
     </div>
   </div>
