@@ -520,7 +520,7 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
           const isDynamicImport = dynamicIndex > -1
 
           // strip import attributes as we can process them ourselves
-          if (!isDynamicImport && attributeIndex > -1) {
+          if (attributeIndex > -1) {
             str().remove(end + 1, expEnd)
           }
 
