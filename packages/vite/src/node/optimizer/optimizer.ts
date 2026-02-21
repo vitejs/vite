@@ -199,6 +199,9 @@ export function createDepsOptimizer(
           ;(async () => {
             try {
               debug?.(colors.green(`scanning for dependencies...`))
+              logger.info(colors.green(`Scanning dependencies...`), {
+                timestamp: true,
+              })
 
               let deps: Record<string, string>
               try {
