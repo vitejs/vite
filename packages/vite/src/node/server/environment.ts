@@ -125,7 +125,7 @@ export class DevEnvironment extends BaseEnvironment {
       this.pluginContainer!.resolveId(url, undefined),
     )
 
-    this._crawlEndFinder = setupOnCrawlEnd()
+    this._crawlEndFinder = setupOnCrawlEnd(config)
 
     this._remoteRunnerOptions = context.remoteRunner ?? {}
 
@@ -331,7 +331,7 @@ export class DevEnvironment extends BaseEnvironment {
   }
 }
 
-const callCrawlEndIfIdleAfterMs = 50
+const DEFAULT_CRAWL_END_TIMEOUT = 50
 
 interface CrawlEndFinder {
   registerRequestProcessing: (id: string, done: () => Promise<any>) => void
@@ -339,7 +339,7 @@ interface CrawlEndFinder {
   cancel: () => void
 }
 
-function setupOnCrawlEnd(): CrawlEndFinder {
+function setupOnCrawlEnd(config: ResolvedConfig): CrawlEndFinder {
   const registeredIds = new Set<string>()
   const seenIds = new Set<string>()
   const onCrawlEndPromiseWithResolvers = promiseWithResolvers<void>()
@@ -385,7 +385,7 @@ function setupOnCrawlEnd(): CrawlEndFinder {
     if (timeoutHandle) clearTimeout(timeoutHandle)
     timeoutHandle = setTimeout(
       callOnCrawlEndWhenIdle,
-      callCrawlEndIfIdleAfterMs,
+      config.server.crawlEndTimeout ?? DEFAULT_CRAWL_END_TIMEOUT,
     )
   }
   async function callOnCrawlEndWhenIdle() {
