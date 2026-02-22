@@ -35,7 +35,7 @@ const debug = createDebugger('vite:deps')
  * The amount to wait for requests to register newly found dependencies before triggering
  * a re-bundle + page reload
  */
-const DEFAULT_DEBOUNCE_MS = 100
+const debounceMs = 100
 
 export function createDepsOptimizer(
   environment: DevEnvironment,
@@ -425,8 +425,7 @@ export function createDepsOptimizer(
 
         if (!debug) {
           if (newDepsToLogHandle) clearTimeout(newDepsToLogHandle)
-        newDepsToLogHandle = setTimeout(
-          () => {
+          newDepsToLogHandle = setTimeout(() => {
             newDepsToLogHandle = undefined
             logNewlyDiscoveredDeps()
             if (warnAboutMissedDependencies) {
@@ -439,9 +438,7 @@ export function createDepsOptimizer(
               )
               warnAboutMissedDependencies = false
             }
-          },
-          2 * (options.debounce ?? DEFAULT_DEBOUNCE_MS),
-        )
+          }, 2 * debounceMs)
         } else {
           debug(
             colors.green(
@@ -615,9 +612,7 @@ export function createDepsOptimizer(
     })
   }
 
-  function debouncedProcessing(
-    timeout = options.debounce ?? DEFAULT_DEBOUNCE_MS,
-  ) {
+  function debouncedProcessing(timeout = debounceMs) {
     // Debounced rerun, let other missing dependencies be discovered before
     // the next optimizeDeps run
     enqueuedRerun = undefined

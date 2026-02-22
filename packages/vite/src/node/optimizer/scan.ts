@@ -168,8 +168,6 @@ export function scanImports(environment: ScanEnvironment): {
   Failed to scan for dependencies from entries:
   ${entries.join('\n')}
 
-  If a dependency is missed, you can add it to "optimizeDeps.include" in your vite config.
-
   `)
       e.message = prependMessage + e.message
       throw e

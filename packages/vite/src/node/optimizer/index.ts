@@ -171,12 +171,6 @@ export interface DepOptimizationConfig {
    * @experimental
    */
   ignoreOutdatedRequests?: boolean
-  /**
-   * Debounce delay for dependency optimization
-   * @default 100
-   * @internal
-   */
-  debounce?: number
 }
 
 export type DepOptimizationOptions = DepOptimizationConfig & {
@@ -473,7 +467,7 @@ export function discoverProjectDependencies(environment: ScanEnvironment): {
                   colors.dim(`(imported by ${missing[id]})`),
                 )}`,
             )
-            .join(`\n  `)}\n\nAre they installed? If they are expected to be external, you can add them to "optimizeDeps.exclude" or configure "resolve.alias".`,
+            .join(`\n  `)}\n\nAre they installed?`,
         )
       }
 
