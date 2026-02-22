@@ -49,6 +49,14 @@ export interface HmrOptions {
   timeout?: number
   overlay?: boolean
   server?: HttpServer
+  /**
+   * @internal
+   */
+  readRetries?: number
+  /**
+   * @internal
+   */
+  readRetryDelay?: number
 }
 
 export interface HotUpdateOptions {
@@ -425,11 +433,17 @@ export async function handleHMRUpdate(
   }
 
   const timestamp = monotonicDateNow()
+  const hmrOptions = config.server.hmr
   const contextMeta = {
     type,
     file,
     timestamp,
-    read: () => readModifiedFile(file),
+    read: () =>
+      readModifiedFile(
+        file,
+        typeof hmrOptions === 'object' ? hmrOptions.readRetries : undefined,
+        typeof hmrOptions === 'object' ? hmrOptions.readRetryDelay : undefined,
+      ),
     server,
   }
   const hotMap = new Map<
@@ -672,7 +686,7 @@ export function updateModules(
           normalizeHmrUrl(acceptedVia.url) === firstInvalidatedBy,
       )
     ) {
-      needFullReload = 'circular import invalidate'
+      needFullReload = 'circular import invalidated'
       continue
     }
 
@@ -1087,16 +1101,23 @@ function error(pos: number) {
   throw err
 }
 
+const READ_RETRY_COUNT = 10
+const READ_RETRY_DELAY = 10
+
 // vitejs/vite#610 when hot-reloading Vue files, we read immediately on file
 // change event and sometimes this can be too early and get an empty buffer.
 // Poll until the file's modified time has changed before reading again.
-async function readModifiedFile(file: string): Promise<string> {
+async function readModifiedFile(
+  file: string,
+  retries = READ_RETRY_COUNT,
+  delay = READ_RETRY_DELAY,
+): Promise<string> {
   const content = await fsp.readFile(file, 'utf-8')
   if (!content) {
     const mtime = (await fsp.stat(file)).mtimeMs
 
-    for (let n = 0; n < 10; n++) {
-      await new Promise((r) => setTimeout(r, 10))
+    for (let n = 0; n < retries; n++) {
+      await new Promise((r) => setTimeout(r, delay))
       const newMtime = (await fsp.stat(file)).mtimeMs
       if (newMtime !== mtime) {
         break

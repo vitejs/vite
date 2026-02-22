@@ -423,8 +423,6 @@ export class ModuleGraph {
     this._ssr.invalidateAll()
   }
 
-  /* TODO: It seems there isn't usage of this method in the ecosystem
-     Waiting to check if we really need this for backwards compatibility
   async updateModuleInfo(
     module: ModuleNode,
     importedModules: Set<string | ModuleNode>,
@@ -435,9 +433,49 @@ export class ModuleGraph {
     ssr?: boolean,
     staticImportedUrls?: Set<string>, // internal
   ): Promise<Set<ModuleNode> | undefined> {
-    // Not implemented
+    const environment = ssr ? 'ssr' : 'client'
+    const envModule = ssr ? module._ssrModule : module._clientModule
+    if (!envModule) return
+
+    const toEnvModuleSet = (
+      nodes: Set<string | ModuleNode>,
+    ): Set<string | EnvironmentModuleNode> => {
+      const result = new Set<string | EnvironmentModuleNode>()
+      for (const node of nodes) {
+        if (typeof node === 'string') {
+          result.add(node)
+        } else {
+          const envNode = ssr ? node._ssrModule : node._clientModule
+          if (envNode) {
+            result.add(envNode)
+          } else {
+            result.add(node.id!)
+          }
+        }
+      }
+      return result
+    }
+
+    const noLongerImported = await this._getModuleGraph(
+      environment,
+    ).updateModuleInfo(
+      envModule,
+      toEnvModuleSet(importedModules),
+      importedBindings,
+      toEnvModuleSet(acceptedModules),
+      acceptedExports,
+      isSelfAccepting,
+      staticImportedUrls,
+    )
+
+    if (noLongerImported) {
+      return new Set(
+        [...noLongerImported].map((m) =>
+          this.getBackwardCompatibleModuleNode(m),
+        ),
+      )
+    }
   }
-  */
 
   async ensureEntryFromUrl(
     rawUrl: string,
