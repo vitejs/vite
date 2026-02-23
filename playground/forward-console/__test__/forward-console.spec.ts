@@ -3,11 +3,18 @@ import { expect, test } from 'vitest'
 import { isServe, page, serverLogs } from '~utils'
 
 function normalizeLogs(logs: string[]) {
-  return logs
-    .map((log) => stripVTControlCharacters(log))
-    .join('\n')
-    .replaceAll(/ +\n/g, '\n') // strip trailing spaces
-    .replaceAll(/\?v=[a-z\d]+/g, '')
+  return (
+    logs
+      .map((log) => stripVTControlCharacters(log))
+      .join('\n')
+      // normalize .pnpm path
+      .replaceAll(
+        /node_modules\/\.pnpm\/[^/\n]+\/node_modules\//g,
+        'node_modules/.pnpm/<normalized>/node_modules/',
+      )
+      // strip trailing spaces of code frame
+      .replaceAll(/ +\n/g, '\n')
+  )
 }
 
 test.runIf(isServe)('unhandled error', async () => {
@@ -56,7 +63,7 @@ test.runIf(isServe)('dependency stack uses source map path', async () => {
   await expect.poll(() => normalizeLogs(serverLogs.slice(logIndex)))
     .toContain(`\
 [Unhandled error] Error: this is test dependency error
- > throwDepError ../../node_modules/.pnpm/@vitejs+test-forward-console-throw-dep@file+playground+forward-console+fixtures+throw-dep/node_modules/@vitejs/test-forward-console-throw-dep/index.js:2:8
+ > throwDepError ../../node_modules/.pnpm/<normalized>/node_modules/@vitejs/test-forward-console-throw-dep/index.js:2:8
  > testDepError src/main.ts:42:2
     40 |
     41 |  function testDepError() {
