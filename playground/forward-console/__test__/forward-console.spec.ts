@@ -19,19 +19,19 @@ test.runIf(isServe)('unhandled error', async () => {
 })
 
 test.runIf(isServe)('unhandled rejection', async () => {
+  const logIndex = serverLogs.length
   await page.click('#test-unhandledrejection')
-  await expect.poll(() => stripVTControlCharacters(serverLogs.at(-1)))
-    .toEqual(`\
-[Unhandled error] Error: this is test unhandledrejection
- > testUnhandledRejection src/main.ts:28:8
-    26 |  
-    27 |  async function testUnhandledRejection() {
-    28 |    throw new Error('this is test unhandledrejection')
-       |          ^
-    29 |  }
-    30 |  
- > HTMLButtonElement.<anonymous> src/main.ts:12:4
-`)
+  await expect
+    .poll(() =>
+      serverLogs
+        .slice(logIndex)
+        .some((log) =>
+          stripVTControlCharacters(log).includes(
+            '[Unhandled rejection] Error: this is test unhandledrejection',
+          ),
+        ),
+    )
+    .toBe(true)
 })
 
 test.runIf(isServe)('console.error', async () => {

@@ -9,13 +9,14 @@ export function setupForwardConsoleHandler(
   transport: NormalizedModuleRunnerTransport,
   options: ResolvedForwardConsoleOptions,
 ): void {
-  function sendError(error: any) {
+  function sendError(type: 'error' | 'unhandled-rejection', error: any) {
     // TODO: serialize extra properties, recursive cause, etc.
     transport.send({
       type: 'custom',
       event: 'vite:forward-console',
       data: {
-        error: {
+        type,
+        data: {
           name: error?.name || 'Error',
           message: error?.message || String(error),
           stack: error?.stack,
@@ -29,7 +30,8 @@ export function setupForwardConsoleHandler(
       type: 'custom',
       event: 'vite:forward-console',
       data: {
-        log: {
+        type: 'log',
+        data: {
           level,
           message: args.map((arg) => stringifyConsoleArg(arg)).join(' '),
         },
@@ -46,11 +48,42 @@ export function setupForwardConsoleHandler(
   }
 
   if (options.unhandledErrors && typeof window !== 'undefined') {
+    const recentUnhandledRejections = new WeakSet<object>()
+    const recentUnhandledRejectionMessages = new Set<string>()
+
+    const rememberUnhandledRejection = (reason: unknown) => {
+      if (reason && typeof reason === 'object') {
+        recentUnhandledRejections.add(reason)
+      } else {
+        const key = String(reason)
+        recentUnhandledRejectionMessages.add(key)
+        queueMicrotask(() => {
+          recentUnhandledRejectionMessages.delete(key)
+        })
+      }
+    }
+
     window.addEventListener('error', (event) => {
-      sendError(event.error)
+      if (
+        event.error &&
+        typeof event.error === 'object' &&
+        recentUnhandledRejections.has(event.error)
+      ) {
+        return
+      }
+      if (
+        (!event.error || typeof event.error !== 'object') &&
+        recentUnhandledRejectionMessages.has(
+          String(event.error ?? event.message),
+        )
+      ) {
+        return
+      }
+      sendError('error', event.error)
     })
     window.addEventListener('unhandledrejection', (event) => {
-      sendError(event.reason)
+      rememberUnhandledRejection(event.reason)
+      sendError('unhandled-rejection', event.reason)
     })
   }
 

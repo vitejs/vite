@@ -42,19 +42,30 @@ export interface InvalidatePayload {
   firstInvalidatedBy: string
 }
 
-// TODO: adjust payload structure (type-tag union?)
-export interface ForwardConsolePayload {
-  // make it optional for future extension?
-  error?: {
-    name: string
-    message: string
-    stack?: string
-  }
-  log?: {
-    level: 'error' | 'warn' | 'info' | 'log' | 'debug'
-    message: string
-  }
-}
+export type ForwardConsolePayload =
+  | {
+      type: 'error'
+      data: {
+        name: string
+        message: string
+        stack?: string
+      }
+    }
+  | {
+      type: 'unhandled-rejection'
+      data: {
+        name: string
+        message: string
+        stack?: string
+      }
+    }
+  | {
+      type: 'log'
+      data: {
+        level: 'error' | 'warn' | 'info' | 'log' | 'debug'
+        message: string
+      }
+    }
 
 /**
  * provides types for payloads of built-in Vite events

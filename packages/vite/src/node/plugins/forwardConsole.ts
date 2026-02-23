@@ -17,20 +17,22 @@ export function forwardConsolePlugin(pluginOpts: {
       for (const name of pluginOpts.environments) {
         const environment = server.environments[name]
         environment.hot.on('vite:forward-console', (payload) => {
-          if (payload.error) {
-            const output = formatError(payload.error, environment)
+          if (
+            payload.type === 'error' ||
+            payload.type === 'unhandled-rejection'
+          ) {
+            const output = formatError(payload, environment)
             environment.config.logger.error(output, {
               timestamp: true,
             })
-          }
-          if (payload.log) {
+          } else {
             const output =
-              c.dim(`[Console ${payload.log.level}] `) + payload.log.message
-            if (payload.log.level === 'error') {
+              c.dim(`[Console ${payload.data.level}] `) + payload.data.message
+            if (payload.data.level === 'error') {
               environment.config.logger.error(output, {
                 timestamp: true,
               })
-            } else if (payload.log.level === 'warn') {
+            } else if (payload.data.level === 'warn') {
               environment.config.logger.warn(output, {
                 timestamp: true,
               })
@@ -47,9 +49,13 @@ export function forwardConsolePlugin(pluginOpts: {
 }
 
 function formatError(
-  error: NonNullable<ForwardConsolePayload['error']>,
+  payload: Extract<
+    ForwardConsolePayload,
+    { type: 'error' | 'unhandled-rejection' }
+  >,
   environment: DevEnvironment,
 ) {
+  const error = payload.data
   // https://github.com/vitest-dev/vitest/blob/4783137cd8d766cf998bdf2d638890eaa51e08d9/packages/browser/src/node/projectParent.ts#L58
   const stacks = parseErrorStacktrace(error, {
     getUrlId(id) {
@@ -94,7 +100,11 @@ function formatError(
   })
 
   let output = ''
-  output += c.red(`[Unhandled error] ${c.bold(error.name)}: ${error.message}\n`)
+  const title =
+    payload.type === 'unhandled-rejection'
+      ? '[Unhandled rejection]'
+      : '[Unhandled error]'
+  output += c.red(`${title} ${c.bold(error.name)}: ${error.message}\n`)
   for (const stack of stacks) {
     const file = normalizePath(
       path.relative(environment.config.root, stack.file),
