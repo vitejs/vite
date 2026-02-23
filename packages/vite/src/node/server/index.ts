@@ -269,7 +269,6 @@ export async function resolveForwardConsoleOptions(
   value: boolean | ForwardConsoleOptions | undefined,
 ): Promise<ResolvedForwardConsoleOptions> {
   const { isAgent } = await determineAgent()
-  value ??= true
   value ??= isAgent
 
   if (value === false) {
