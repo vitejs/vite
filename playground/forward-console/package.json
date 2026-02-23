@@ -9,6 +9,8 @@
     "debug": "node --inspect-brk ../../packages/vite/bin/vite",
     "preview": "vite preview"
   },
-  "dependencies": {},
+  "dependencies": {
+    "@vitejs/test-forward-console-throw-dep": "file:./fixtures/throw-dep"
+  },
   "devDependencies": {}
 }

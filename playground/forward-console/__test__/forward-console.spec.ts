@@ -7,14 +7,14 @@ test.runIf(isServe)('unhandled error', async () => {
   await expect.poll(() => stripVTControlCharacters(serverLogs.at(-1)))
     .toEqual(`\
 [Unhandled error] Error: this is test error
- > testError src/main.ts:24:8
-    22 |  
-    23 |  function testError() {
-    24 |    throw new Error('this is test error')
+ > testError src/main.ts:30:8
+    28 |  
+    29 |  function testError() {
+    30 |    throw new Error('this is test error')
        |          ^
-    25 |  }
-    26 |  
- > HTMLButtonElement.<anonymous> src/main.ts:6:2
+    31 |  }
+    32 |  
+ > HTMLButtonElement.<anonymous> src/main.ts:8:2
 `)
 })
 
@@ -48,4 +48,21 @@ test.runIf(isServe)('console.error', async () => {
         ),
     )
     .toBe(true)
+})
+
+test.runIf(isServe)('dependency stack uses source map path', async () => {
+  const logIndex = serverLogs.length
+  await page.click('#test-dep-error')
+  await expect
+    .poll(() =>
+      serverLogs.slice(logIndex).find((log) => {
+        const cleanLog = stripVTControlCharacters(log)
+        return (
+          cleanLog.includes(
+            '[Unhandled error] Error: this is test dependency error',
+          ) && cleanLog.includes('throw-dep/index.js')
+        )
+      }),
+    )
+    .toBeTruthy()
 })

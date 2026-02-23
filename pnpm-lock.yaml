@@ -837,6 +837,14 @@ importers:
         specifier: ^3.5.28
         version: 3.5.28(typescript@5.9.3)
 
+  playground/forward-console:
+    dependencies:
+      '@vitejs/test-forward-console-throw-dep':
+        specifier: file:./fixtures/throw-dep
+        version: file:playground/forward-console/fixtures/throw-dep
+
+  playground/forward-console/fixtures/throw-dep: {}
+
   playground/fs-serve:
     devDependencies:
       ws:
@@ -1440,8 +1448,6 @@ importers:
   playground/resolve/side-effects-glob: {}
 
   playground/resolve/utf8-bom-package: {}
-
-  playground/forward-console: {}
 
   playground/self-referencing: {}
 
@@ -4203,6 +4209,9 @@ packages:
 
   '@vitejs/test-external-using-external-entry@file:playground/ssr-deps/external-using-external-entry':
     resolution: {directory: playground/ssr-deps/external-using-external-entry, type: directory}
+
+  '@vitejs/test-forward-console-throw-dep@file:playground/forward-console/fixtures/throw-dep':
+    resolution: {directory: playground/forward-console/fixtures/throw-dep, type: directory}
 
   '@vitejs/test-forwarded-export@file:playground/ssr-deps/forwarded-export':
     resolution: {directory: playground/ssr-deps/forwarded-export, type: directory}
@@ -10191,6 +10200,8 @@ snapshots:
   '@vitejs/test-external-using-external-entry@file:playground/ssr-deps/external-using-external-entry':
     dependencies:
       external-entry: '@vitejs/test-external-entry@file:playground/ssr-deps/external-entry'
+
+  '@vitejs/test-forward-console-throw-dep@file:playground/forward-console/fixtures/throw-dep': {}
 
   '@vitejs/test-forwarded-export@file:playground/ssr-deps/forwarded-export':
     dependencies:

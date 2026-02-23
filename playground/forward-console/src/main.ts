@@ -1,3 +1,5 @@
+import { throwDepError } from '@vitejs/test-forward-console-throw-dep'
+
 export type SomePadding = {
   here: boolean
 }
@@ -16,6 +18,10 @@ document.getElementById('test-console-error').addEventListener('click', () => {
   testConsoleError()
 })
 
+document.getElementById('test-dep-error').addEventListener('click', () => {
+  testDepError()
+})
+
 export type AnotherPadding = {
   there: boolean
 }
@@ -30,4 +36,8 @@ function testUnhandledRejection() {
 
 function testConsoleError() {
   console.error('this is test console error')
+}
+
+function testDepError() {
+  throwDepError()
 }
