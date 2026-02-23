@@ -12,6 +12,10 @@ document
     testUnhandledRejection()
   })
 
+document.getElementById('test-console-error').addEventListener('click', () => {
+  testConsoleError()
+})
+
 export type AnotherPadding = {
   there: boolean
 }
@@ -22,4 +26,8 @@ function testError() {
 
 async function testUnhandledRejection() {
   throw new Error('this is test unhandledrejection')
+}
+
+function testConsoleError() {
+  console.error('this is test console error')
 }
