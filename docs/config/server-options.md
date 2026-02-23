@@ -235,6 +235,19 @@ Forward browser runtime events to the Vite server console during development.
 - `unhandledErrors` controls forwarding uncaught exceptions and unhandled promise rejections.
 - `logLevels` controls which `console.*` calls are forwarded.
 
+For example:
+
+```js
+export default defineConfig({
+  server: {
+    forwardConsole: {
+      unhandledErrors: true,
+      logLevels: ['warn', 'error'],
+    },
+  },
+})
+```
+
 When unhandled errors are forwarded, they are logged in the server terminal with enhanced formatting, for example:
 
 ```log
@@ -247,19 +260,6 @@ When unhandled errors are forwarded, they are logged in the server terminal with
      21| }
      22|
  > HTMLButtonElement.<anonymous> src/main.ts:6:2
-```
-
-This feature is useful when working with AI coding assistants that can only see terminal output for context.
-
-```js
-export default defineConfig({
-  server: {
-    forwardConsole: {
-      unhandledErrors: true,
-      logLevels: ['warn', 'error'],
-    },
-  },
-})
 ```
 
 ## server.warmup
