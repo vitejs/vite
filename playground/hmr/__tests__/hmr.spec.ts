@@ -1049,7 +1049,9 @@ if (!isBuild) {
     await expect.poll(() => el.textContent()).toMatch('2')
   })
 
-  test('hmr works for self-accepted module within circular imported files', async () => {
+  test('hmr works for self-accepted module within circular imported files', async ({
+    onTestFailed,
+  }) => {
     await page.goto(viteTestUrl + '/self-accept-within-circular/index.html')
     const el = await page.$('.self-accept-within-circular')
     expect(await el.textContent()).toBe('c')
@@ -1060,12 +1062,14 @@ if (!isBuild) {
     await expect
       .poll(() => page.textContent('.self-accept-within-circular'))
       .toBe('cc')
-    const serverLogsAfter = serverLogs.slice(lastServerLogIndex)
+    onTestFailed(() => {
+      console.log('debug:', serverLogs.slice(lastServerLogIndex))
+    })
     // Should still keep hmr update, but it'll error on the browser-side and will refresh itself.
     // Match on full log not possible because of color markers
-    expect(serverLogsAfter).toContain(
-      'hmr update /self-accept-within-circular/c.js',
-    )
+    await expect
+      .poll(() => serverLogs.slice(lastServerLogIndex))
+      .toContain('hmr update /self-accept-within-circular/c.js')
   })
 
   test('hmr should not reload if no accepted within circular imported files', async () => {
