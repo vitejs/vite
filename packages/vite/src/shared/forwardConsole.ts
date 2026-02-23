@@ -76,6 +76,8 @@ export function setupForwardConsoleHandler(
   }
 }
 
+// Zero dep version of Vitest's console formatter
+// https://github.com/vitest-dev/vitest/blob/a2d650e00dbd8220397c5c25aef05c850100e446/packages/utils/src/display.ts#L129
 export function formatConsoleArgs(args: unknown[]): string {
   if (args.length === 0) {
     return ''
