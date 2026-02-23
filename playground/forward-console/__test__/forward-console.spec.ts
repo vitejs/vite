@@ -54,7 +54,9 @@ test.runIf(isServe)('console.error', async () => {
   await page.click('#test-console-error')
   await expect
     .poll(() => normalizeLogs(serverLogs.slice(logIndex)))
-    .toContain(`[console.error] this is test console error`)
+    .toContain(
+      `[console.error] format: string=hello number=12.9 int=42 float=3.5 json={"id":1} object={"enabled":true} object2={"nested":{"deep":1}} style= literal=% trailing done`,
+    )
 })
 
 test.runIf(isServe)('dependency stack uses source map path', async () => {
@@ -64,13 +66,13 @@ test.runIf(isServe)('dependency stack uses source map path', async () => {
     .toContain(`\
 [Unhandled error] Error: this is test dependency error
  > throwDepError ../../node_modules/.pnpm/<normalized>/node_modules/@vitejs/test-forward-console-throw-dep/index.js:2:8
- > testDepError src/main.ts:42:2
-    40 |
-    41 |  function testDepError() {
-    42 |    throwDepError()
+ > testDepError src/main.ts:38:2
+    36 |
+    37 |  function testDepError() {
+    38 |    throwDepError()
        |    ^
-    43 |  }
-    44 |
+    39 |  }
+    40 |
  > HTMLButtonElement.<anonymous> src/main.ts:22:2
 `)
 })

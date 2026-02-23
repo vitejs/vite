@@ -34,10 +34,21 @@ function testUnhandledRejection() {
   Promise.reject(new Error('this is test unhandledrejection'))
 }
 
-function testConsoleError() {
-  console.error('this is test console error')
-}
-
 function testDepError() {
   throwDepError()
+}
+
+function testConsoleError() {
+  console.error(
+    'format: string=%s number=%d int=%i float=%f json=%j object=%o object2=%O style=%c literal=%% trailing',
+    'hello',
+    12.9,
+    '42px',
+    '3.5',
+    { id: 1 },
+    { enabled: true },
+    { nested: { deep: 1 } },
+    'color:red',
+    'done',
+  )
 }

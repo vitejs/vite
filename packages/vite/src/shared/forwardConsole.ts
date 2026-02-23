@@ -45,7 +45,7 @@ export function setupForwardConsoleHandler(
         type: 'log',
         data: {
           level,
-          message: args.map((arg) => stringifyConsoleArg(arg)).join(' '),
+          message: formatConsoleArgs(args),
         },
       } satisfies ForwardConsolePayload,
     })
@@ -76,10 +76,93 @@ export function setupForwardConsoleHandler(
   }
 }
 
-// TODO: adopt vitest utils for stringify?
+function formatConsoleArgs(args: unknown[]): string {
+  if (args.length === 0) {
+    return ''
+  }
+
+  if (typeof args[0] !== 'string') {
+    return args.map((arg) => stringifyConsoleArg(arg)).join(' ')
+  }
+
+  const len = args.length
+  let i = 1
+  let message = args[0].replace(/%[sdjifoOc%]/g, (specifier) => {
+    if (specifier === '%%') {
+      return '%'
+    }
+    if (i >= len) {
+      return specifier
+    }
+
+    const arg = args[i++]
+    switch (specifier) {
+      case '%s':
+        if (typeof arg === 'bigint') {
+          return `${arg.toString()}n`
+        }
+        return typeof arg === 'object' && arg !== null
+          ? stringifyConsoleArg(arg)
+          : String(arg)
+      case '%d':
+        if (typeof arg === 'bigint') {
+          return `${arg.toString()}n`
+        }
+        if (typeof arg === 'symbol') {
+          return 'NaN'
+        }
+        return Number(arg).toString()
+      case '%i':
+        if (typeof arg === 'bigint') {
+          return `${arg.toString()}n`
+        }
+        return Number.parseInt(String(arg), 10).toString()
+      case '%f':
+        return Number.parseFloat(String(arg)).toString()
+      case '%o':
+      case '%O':
+        return stringifyConsoleArg(arg)
+      case '%j':
+        try {
+          const serialized = JSON.stringify(arg)
+          return serialized ?? 'undefined'
+        } catch {
+          return '[Circular]'
+        }
+      case '%c':
+        return ''
+      default:
+        return specifier
+    }
+  })
+
+  for (let arg = args[i]; i < len; arg = args[++i]) {
+    if (arg === null || typeof arg !== 'object') {
+      message += ` ${typeof arg === 'symbol' ? arg.toString() : String(arg)}`
+    } else {
+      message += ` ${stringifyConsoleArg(arg)}`
+    }
+  }
+
+  return message
+}
+
 function stringifyConsoleArg(value: unknown): string {
   if (typeof value === 'string') {
     return value
+  }
+  if (
+    typeof value === 'number' ||
+    typeof value === 'boolean' ||
+    typeof value === 'undefined'
+  ) {
+    return String(value)
+  }
+  if (typeof value === 'symbol') {
+    return value.toString()
+  }
+  if (typeof value === 'function') {
+    return value.name ? `[Function: ${value.name}]` : '[Function]'
   }
   if (value instanceof Error) {
     return value.stack || `${value.name}: ${value.message}`
