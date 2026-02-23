@@ -1,7 +1,13 @@
 import type { ForwardConsolePayload } from '#types/customEvent'
 import type { NormalizedModuleRunnerTransport } from './moduleRunnerTransport'
 
-export type ForwardConsoleLogLevel = 'error' | 'warn' | 'info' | 'log' | 'debug'
+export type ForwardConsoleLogLevel =
+  | 'error'
+  | 'warn'
+  | 'info'
+  | 'log'
+  | 'debug'
+  | (string & {})
 
 export interface ForwardConsoleOptions {
   unhandledErrors?: boolean
@@ -52,8 +58,11 @@ export function setupForwardConsoleHandler(
   }
 
   for (const level of options.logLevels) {
-    const original = console[level].bind(console)
-    console[level] = (...args: unknown[]) => {
+    const original = (console as any)[level]
+    if (typeof original !== 'function') {
+      continue
+    }
+    ;(console as any)[level] = (...args: unknown[]) => {
       original(...args)
       sendLog(level, args)
     }

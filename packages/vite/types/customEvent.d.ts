@@ -62,7 +62,7 @@ export type ForwardConsolePayload =
   | {
       type: 'log'
       data: {
-        level: 'error' | 'warn' | 'info' | 'log' | 'debug'
+        level: string
         message: string
       }
     }
