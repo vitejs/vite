@@ -1,6 +1,14 @@
+import { runInThisContext } from 'node:vm'
+import { resolve } from 'node:path'
 import { describe, expect } from 'vitest'
 import type { ViteDevServer } from '../../..'
-import { createModuleRunnerTester, editFile, resolvePath } from './utils'
+import type { ModuleRunnerContext } from '../../../../module-runner'
+import { ESModulesEvaluator } from '../../../../module-runner'
+import {
+  createFixtureEditor,
+  createModuleRunnerTester,
+  resolvePath,
+} from './utils'
 
 describe('module runner initialization', async () => {
   const it = await createModuleRunnerTester(
@@ -47,8 +55,10 @@ describe('module runner initialization', async () => {
       '    at Module.throwError (<root>/fixtures/throws-error-method.ts:6:9)',
     )
 
+    const fixtureEditor = createFixtureEditor()
+
     // simulate HMR
-    editFile(
+    fixtureEditor.editFile(
       resolvePath(import.meta.url, './fixtures/throws-error-method.ts'),
       (code) => '\n\n\n\n\n' + code + '\n',
     )
@@ -78,7 +88,7 @@ describe('module runner initialization', async () => {
       runner.import('/fixtures/has-error-first-comment.ts'),
     )
     expect(serializeStack(server, topLevelErrorTs)).toBe(
-      '    at <root>/fixtures/has-error-first-comment.ts:2:17',
+      '    at <root>/fixtures/has-error-first-comment.ts:2:7',
     )
   })
 
@@ -108,5 +118,60 @@ describe('module runner initialization', async () => {
       'Error: Test error for stacktrace',
       '    at Module.throwError (<root>/fixtures/string-literal-sourcemap.ts:11:9)',
     ])
+  })
+
+  it('should correctly pickup the url from sources', async ({
+    server,
+    runner,
+  }) => {
+    const mod = await runner.import('/fixtures/pre-source-mapped-file.js')
+    const error = await getError(() => mod.default())
+    // The error stack shows "transpiled-inline.ts" because it is specified in the source map's "sources" field.
+    // The file itself does not exist on the file system, but we should still respect "sources".
+    // If source maps handling breaks, the stack trace will point to "transpiled-inline.js" instead, which would be a bug.
+    expect(serializeStackDeep(server, error).slice(0, 3))
+      .toMatchInlineSnapshot(`
+      [
+        "Error: __TEST_STACK_TRANSPILED_INLINE__",
+        "    at innerTestStack (<root>/fixtures/transpiled-inline.ts:22:9)",
+        "    at Module.testStack (<root>/fixtures/transpiled-inline.ts:12:3)",
+      ]
+    `)
+  })
+})
+
+describe('module runner with node:vm executor', async () => {
+  class Evaluator extends ESModulesEvaluator {
+    async runInlinedModule(_: ModuleRunnerContext, __: string) {
+      // Mimics VitestModuleEvaluator
+      const initModule = runInThisContext(
+        '() => { throw new Error("example")}',
+        {
+          lineOffset: 0,
+          columnOffset: -100,
+          filename: resolve(import.meta.dirname, 'fixtures/a.ts'),
+        },
+      )
+
+      initModule()
+    }
+  }
+
+  const it = await createModuleRunnerTester(
+    {},
+    {
+      sourcemapInterceptor: 'prepareStackTrace',
+      evaluator: new Evaluator(),
+    },
+  )
+
+  it('should not crash when error stacktrace contains negative column', async ({
+    runner,
+  }) => {
+    const error = await runner.import('/fixtures/a.ts').catch((err) => err)
+
+    expect(() =>
+      error.stack.includes('.stack access triggers the bug'),
+    ).not.toThrow()
   })
 })

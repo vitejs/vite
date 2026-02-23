@@ -23,15 +23,15 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
-        uses: actions/checkout@v5
+        uses: actions/checkout@v6
 
       - name: Install pnpm
         uses: pnpm/action-setup@41ff72655975bd51cab0327fa583b6e92b6d3061 # v4.2.0
 
-      - name: Set node version to 22
-        uses: actions/setup-node@v5
+      - name: Set node version to 24
+        uses: actions/setup-node@v6
         with:
-          node-version: 22
+          node-version: 24
           registry-url: https://registry.npmjs.org/
           # disable cache, to avoid cache poisoning (https://docs.zizmor.sh/audits/#cache-poisoning)
           package-manager-cache: false
@@ -44,8 +44,12 @@ jobs:
         env:
           PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD: "1"
 
-      - name: Build
+      - name: Build Vite core
         working-directory: ./packages/vite
         run: pnpm build
 
-      - run: pnpm dlx pkg-pr-new@0.0 publish --compact --pnpm ./packages/vite
+      - name: Build plugin-legacy
+        working-directory: ./packages/plugin-legacy
+        run: pnpm build
+
+      - run: pnpm dlx pkg-pr-new@0.0 publish --pnpm './packages/vite' './packages/plugin-legacy' --packageManager=pnpm,npm,yarn --commentWithDev

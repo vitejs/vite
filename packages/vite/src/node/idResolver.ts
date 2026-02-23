@@ -1,9 +1,9 @@
-import type { PartialResolvedId } from 'rollup'
+import type { PartialResolvedId } from 'rolldown'
 import aliasPlugin from '@rollup/plugin-alias'
 import type { ResolvedConfig } from './config'
 import type { EnvironmentPluginContainer } from './server/pluginContainer'
 import { createEnvironmentPluginContainer } from './server/pluginContainer'
-import { resolvePlugin } from './plugins/resolve'
+import { oxcResolvePlugin } from './plugins/resolve'
 import type { InternalResolveOptions } from './plugins/resolve'
 import type { Environment } from './environment'
 import type { PartialEnvironment } from './baseEnvironment'
@@ -59,18 +59,22 @@ export function createIdResolver(
       pluginContainer = await createEnvironmentPluginContainer(
         environment as Environment,
         [
+          // @ts-expect-error  the aliasPlugin uses rollup types
           aliasPlugin({ entries: environment.config.resolve.alias }),
-          resolvePlugin({
-            root: config.root,
-            isProduction: config.isProduction,
-            isBuild: config.command === 'build',
-            asSrc: true,
-            preferRelative: false,
-            tryIndex: true,
-            ...options,
-            // Ignore sideEffects and other computations as we only need the id
-            idOnly: true,
-          }),
+          ...oxcResolvePlugin(
+            {
+              root: config.root,
+              isProduction: config.isProduction,
+              isBuild: config.command === 'build',
+              asSrc: true,
+              preferRelative: false,
+              tryIndex: true,
+              ...options,
+              // Ignore sideEffects and other computations as we only need the id
+              idOnly: true,
+            },
+            environment.config,
+          ),
         ],
         undefined,
         false,
@@ -93,6 +97,7 @@ export function createIdResolver(
     if (!pluginContainer) {
       pluginContainer = await createEnvironmentPluginContainer(
         environment as Environment,
+        // @ts-expect-error  the aliasPlugin uses rollup types
         [aliasPlugin({ entries: environment.config.resolve.alias })],
         undefined,
         false,

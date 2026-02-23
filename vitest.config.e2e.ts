@@ -1,16 +1,27 @@
 import { resolve } from 'node:path'
-import { defineConfig } from 'vitest/config'
+import { defaultExclude, defineConfig } from 'vitest/config'
+
+const isBuild = !!process.env.VITE_TEST_BUILD
 
 const timeout = process.env.PWDEBUG ? Infinity : process.env.CI ? 50000 : 30000
 
 export default defineConfig({
   resolve: {
     alias: {
-      '~utils': resolve(__dirname, './playground/test-utils'),
+      // eslint-disable-next-line n/no-unsupported-features/node-builtins
+      '~utils': resolve(import.meta.dirname, './playground/test-utils'),
     },
   },
   test: {
     include: ['./playground/**/*.spec.[tj]s'],
+    exclude: [
+      ...(isBuild
+        ? [
+            './playground/object-hooks/**/*.spec.[tj]s', // object hook sequential
+          ]
+        : []),
+      ...defaultExclude,
+    ],
     setupFiles: ['./playground/vitestSetup.ts'],
     globalSetup: ['./playground/vitestGlobalSetup.ts'],
     testTimeout: timeout,
@@ -25,8 +36,11 @@ export default defineConfig({
         timeout: 50 * (process.env.CI ? 200 : 50),
       },
     },
+    env: {
+      NODE_ENV: process.env.VITE_TEST_BUILD ? 'production' : 'development',
+    },
   },
-  esbuild: {
+  oxc: {
     target: 'node20',
   },
   publicDir: false,

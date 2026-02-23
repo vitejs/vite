@@ -1,6 +1,6 @@
 {
   "name": "vite",
-  "version": "7.1.10",
+  "version": "8.0.0-beta.15",
   "type": "module",
   "license": "MIT",
   "author": "Evan You",
@@ -16,27 +16,19 @@
     "build-tool",
     "vite"
   ],
-  "main": "./dist/node/index.js",
-  "types": "./dist/node/index.d.ts",
   "exports": {
     ".": "./dist/node/index.js",
     "./client": {
       "types": "./client.d.ts"
     },
     "./module-runner": "./dist/node/module-runner.js",
+    "./internal": "./dist/node/internal.js",
     "./dist/client/*": "./dist/client/*",
     "./types/*": {
       "types": "./types/*"
     },
     "./types/internal/*": null,
     "./package.json": "./package.json"
-  },
-  "typesVersions": {
-    "*": {
-      "module-runner": [
-        "dist/node/module-runner.d.ts"
-      ]
-    }
   },
   "imports": {
     "#module-sync-enabled": {
@@ -73,7 +65,7 @@
     "build-types": "pnpm build-types-roll && pnpm build-types-check",
     "build-types-roll": "rolldown --config rolldown.dts.config.ts",
     "build-types-check": "tsc --project tsconfig.check.json",
-    "typecheck": "tsc && tsc -p src/node",
+    "typecheck": "tsc && tsc -p src/node && tsc -p src/module-runner && tsc -p src/shared && tsc -p src/node/__tests_dts__",
     "lint": "eslint --cache --ext .ts src/**",
     "format": "prettier --write --cache --parser typescript \"src/**/*.ts\"",
     "generate-target": "tsx scripts/generateTarget.ts",
@@ -81,50 +73,48 @@
   },
   "//": "READ CONTRIBUTING.md to understand what to put under deps vs. devDeps!",
   "dependencies": {
-    "esbuild": "^0.25.0",
-    "fdir": "^6.5.0",
+    "@oxc-project/runtime": "0.114.0",
+    "lightningcss": "^1.31.1",
     "picomatch": "^4.0.3",
     "postcss": "^8.5.6",
-    "rollup": "^4.43.0",
+    "rolldown": "1.0.0-rc.5",
     "tinyglobby": "^0.2.15"
   },
   "optionalDependencies": {
     "fsevents": "~2.3.3"
   },
   "devDependencies": {
-    "@babel/parser": "^7.28.4",
+    "@babel/parser": "^7.29.0",
     "@jridgewell/remapping": "^2.3.5",
     "@jridgewell/trace-mapping": "^0.3.31",
-    "@oxc-project/types": "0.90.0",
+    "@oxc-project/types": "0.114.0",
     "@polka/compression": "^1.0.0-next.25",
-    "@rolldown/pluginutils": "^1.0.0-beta.43",
-    "@rollup/plugin-alias": "^5.1.1",
-    "@rollup/plugin-commonjs": "^28.0.6",
+    "@rollup/plugin-alias": "^6.0.0",
     "@rollup/plugin-dynamic-import-vars": "2.1.4",
     "@rollup/pluginutils": "^5.3.0",
     "@types/escape-html": "^1.0.4",
     "@types/pnpapi": "^0.0.5",
-    "@vitest/utils": "^3.2.4",
+    "@vitest/utils": "^4.0.18",
+    "@vitejs/devtools": "^0.0.0-alpha.31",
     "artichokie": "^0.4.2",
-    "baseline-browser-mapping": "^2.8.16",
+    "baseline-browser-mapping": "^2.9.19",
     "cac": "^6.7.14",
     "chokidar": "^3.6.0",
     "connect": "^3.7.0",
     "convert-source-map": "^2.0.0",
-    "cors": "^2.8.5",
+    "cors": "^2.8.6",
     "cross-spawn": "^7.0.6",
-    "debug": "^4.4.3",
-    "dotenv": "^17.2.3",
+    "obug": "^1.0.2",
     "dotenv-expand": "^12.0.3",
     "es-module-lexer": "^1.7.0",
+    "esbuild": "^0.27.3",
     "escape-html": "^1.0.3",
     "estree-walker": "^3.0.3",
     "etag": "^1.8.1",
     "host-validation-middleware": "^0.1.2",
-    "http-proxy-3": "^1.22.0",
-    "launch-editor-middleware": "^2.11.1",
-    "lightningcss": "^1.30.2",
-    "magic-string": "^0.30.19",
+    "http-proxy-3": "^1.23.2",
+    "launch-editor-middleware": "^2.12.0",
+    "magic-string": "^0.30.21",
     "mlly": "^1.8.0",
     "mrmime": "^2.0.1",
     "nanoid": "^5.1.6",
@@ -138,23 +128,23 @@
     "postcss-modules": "^6.0.1",
     "premove": "^4.0.0",
     "resolve.exports": "^2.0.3",
-    "rolldown": "^1.0.0-beta.43",
-    "rolldown-plugin-dts": "^0.16.11",
+    "rolldown-plugin-dts": "^0.22.1",
+    "rollup": "^4.43.0",
     "rollup-plugin-license": "^3.6.0",
-    "sass": "^1.93.2",
-    "sass-embedded": "^1.93.2",
+    "sass": "^1.97.3",
+    "sass-embedded": "^1.97.3",
     "sirv": "^3.0.2",
     "strip-literal": "^3.1.0",
-    "terser": "^5.44.0",
-    "tsconfck": "^3.1.6",
-    "ufo": "^1.6.1",
-    "ws": "^8.18.3"
+    "terser": "^5.46.0",
+    "ufo": "^1.6.3",
+    "ws": "^8.19.0"
   },
   "peerDependencies": {
     "@types/node": "^20.19.0 || >=22.12.0",
+    "@vitejs/devtools": "^0.0.0-alpha.31",
+    "esbuild": "^0.27.0",
     "jiti": ">=1.21.0",
     "less": "^4.0.0",
-    "lightningcss": "^1.21.0",
     "sass": "^1.70.0",
     "sass-embedded": "^1.70.0",
     "stylus": ">=0.54.8",
@@ -165,6 +155,12 @@
   },
   "peerDependenciesMeta": {
     "@types/node": {
+      "optional": true
+    },
+    "@vitejs/devtools": {
+      "optional": true
+    },
+    "esbuild": {
       "optional": true
     },
     "jiti": {
@@ -183,9 +179,6 @@
       "optional": true
     },
     "sugarss": {
-      "optional": true
-    },
-    "lightningcss": {
       "optional": true
     },
     "terser": {

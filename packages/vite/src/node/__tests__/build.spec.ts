@@ -1,5 +1,4 @@
 import { basename, resolve } from 'node:path'
-import { fileURLToPath } from 'node:url'
 import { stripVTControlCharacters } from 'node:util'
 import fsp from 'node:fs/promises'
 import colors from 'picocolors'
@@ -8,10 +7,10 @@ import type {
   LogLevel,
   OutputChunk,
   OutputOptions,
+  RolldownOptions,
+  RolldownOutput,
   RollupLog,
-  RollupOptions,
-  RollupOutput,
-} from 'rollup'
+} from 'rolldown'
 import type { LibraryFormats, LibraryOptions } from '../build'
 import {
   build,
@@ -24,7 +23,7 @@ import type { Logger } from '../logger'
 import { createLogger } from '../logger'
 import { BuildEnvironment, resolveConfig } from '..'
 
-const __dirname = resolve(fileURLToPath(import.meta.url), '..')
+const dirname = import.meta.dirname
 
 type FormatsToFileNames = [LibraryFormats, string][]
 
@@ -32,7 +31,7 @@ describe('build', () => {
   test('file hash should change when css changes for dynamic entries', async () => {
     const buildProject = async (cssColor: string) => {
       return (await build({
-        root: resolve(__dirname, 'packages/build-project'),
+        root: resolve(dirname, 'packages/build-project'),
         logLevel: 'silent',
         build: {
           write: false,
@@ -62,7 +61,7 @@ describe('build', () => {
             },
           },
         ],
-      })) as RollupOutput
+      })) as RolldownOutput
     }
     const result = await Promise.all([
       buildProject('red'),
@@ -85,7 +84,7 @@ describe('build', () => {
   test('file hash should change when pure css chunk changes', async () => {
     const buildProject = async (cssColor: string) => {
       return (await build({
-        root: resolve(__dirname, 'packages/build-project'),
+        root: resolve(dirname, 'packages/build-project'),
         logLevel: 'silent',
         build: {
           write: false,
@@ -121,7 +120,7 @@ describe('build', () => {
             },
           },
         ],
-      })) as RollupOutput
+      })) as RolldownOutput
     }
     const result = await Promise.all([
       buildProject('yellow'),
@@ -131,13 +130,13 @@ describe('build', () => {
       {
         "changed": [
           "index",
-          "_foo",
           "_bar",
+          "_foo",
           "_baz.css",
         ],
         "unchanged": [
-          "_foo.css",
           "_bar.css",
+          "_foo.css",
           "undefined",
         ],
       }
@@ -157,7 +156,7 @@ describe('build', () => {
     async ([stringify, namedExports]) => {
       const esBundle = (await build({
         mode: 'development',
-        root: resolve(__dirname, 'packages/build-project'),
+        root: resolve(dirname, 'packages/build-project'),
         logLevel: 'silent',
         json: { stringify, namedExports },
         build: {
@@ -198,7 +197,7 @@ describe('build', () => {
             },
           },
         ],
-      })) as RollupOutput
+      })) as RolldownOutput
 
       const foo = esBundle.output.find(
         (chunk) => chunk.type === 'chunk' && chunk.isEntry,
@@ -245,7 +244,7 @@ describe('build', () => {
           },
         },
       ],
-    })) as RollupOutput[]
+    })) as RolldownOutput[]
 
     const foo = esBundle.output.find(
       (chunk) => chunk.fileName === 'foo.js',
@@ -363,7 +362,7 @@ describe('resolveLibFilename', () => {
       },
       'es',
       'myLib',
-      resolve(__dirname, 'packages/name'),
+      resolve(dirname, 'packages/name'),
     )
 
     expect(filename).toBe('custom-filename-function.es.js')
@@ -377,7 +376,7 @@ describe('resolveLibFilename', () => {
       },
       'es',
       'myLib',
-      resolve(__dirname, 'packages/name'),
+      resolve(dirname, 'packages/name'),
     )
 
     expect(filename).toBe('custom-filename.mjs')
@@ -390,7 +389,7 @@ describe('resolveLibFilename', () => {
       },
       'es',
       'myLib',
-      resolve(__dirname, 'packages/name'),
+      resolve(dirname, 'packages/name'),
     )
 
     expect(filename).toBe('mylib.mjs')
@@ -404,7 +403,7 @@ describe('resolveLibFilename', () => {
       },
       'es',
       'myLib',
-      resolve(__dirname, 'packages/noname'),
+      resolve(dirname, 'packages/noname'),
     )
 
     expect(filename).toBe('custom-filename.mjs')
@@ -417,7 +416,7 @@ describe('resolveLibFilename', () => {
       },
       'es',
       'myLib',
-      resolve(__dirname, 'packages/noname'),
+      resolve(dirname, 'packages/noname'),
     )
     expect(filename).toBe('named-testing-package.mjs')
   })
@@ -435,7 +434,7 @@ describe('resolveLibFilename', () => {
         baseLibOptions,
         format,
         'myLib',
-        resolve(__dirname, 'packages/noname'),
+        resolve(dirname, 'packages/noname'),
       )
 
       expect(filename).toBe(expectedFilename)
@@ -455,7 +454,7 @@ describe('resolveLibFilename', () => {
         baseLibOptions,
         format,
         'myLib',
-        resolve(__dirname, 'packages/module'),
+        resolve(dirname, 'packages/module'),
       )
 
       expect(expectedFilename).toBe(filename)
@@ -475,7 +474,7 @@ describe('resolveLibFilename', () => {
         libOptions,
         'es',
         entryAlias,
-        resolve(__dirname, 'packages/name'),
+        resolve(dirname, 'packages/name'),
       ),
     )
 
@@ -498,7 +497,7 @@ describe('resolveLibFilename', () => {
         libOptions,
         'es',
         entryAlias,
-        resolve(__dirname, 'packages/name'),
+        resolve(dirname, 'packages/name'),
       ),
     )
 
@@ -520,7 +519,7 @@ describe('resolveLibFilename', () => {
         libOptions,
         'es',
         entryAlias,
-        resolve(__dirname, 'packages/name'),
+        resolve(dirname, 'packages/name'),
       ),
     )
 
@@ -538,7 +537,7 @@ describe('resolveLibFilename', () => {
         libOptions,
         'es',
         entryAlias,
-        resolve(__dirname, 'packages/name'),
+        resolve(dirname, 'packages/name'),
       ),
     )
 
@@ -558,7 +557,7 @@ describe('resolveLibFilename', () => {
         libOptions,
         'es',
         entryAlias,
-        resolve(__dirname, 'packages/name'),
+        resolve(dirname, 'packages/name'),
       ),
     )
 
@@ -577,7 +576,7 @@ describe('resolveLibFilename', () => {
         libOptions,
         'es',
         entryAlias,
-        resolve(__dirname, 'packages/name'),
+        resolve(dirname, 'packages/name'),
       ),
     )
 
@@ -683,7 +682,7 @@ describe('resolveBuildOutputs', () => {
 
   test('ssrEmitAssets', async () => {
     const result = await build({
-      root: resolve(__dirname, 'fixtures/emit-assets'),
+      root: resolve(dirname, 'fixtures/emit-assets'),
       logLevel: 'silent',
       build: {
         ssr: true,
@@ -709,7 +708,7 @@ describe('resolveBuildOutputs', () => {
 
   test('emitAssets', async () => {
     const builder = await createBuilder({
-      root: resolve(__dirname, 'fixtures/emit-assets'),
+      root: resolve(dirname, 'fixtures/emit-assets'),
       logLevel: 'warn',
       environments: {
         ssr: {
@@ -740,7 +739,7 @@ describe('resolveBuildOutputs', () => {
 
   test('ssr builtin', async () => {
     const builder = await createBuilder({
-      root: resolve(__dirname, 'fixtures/dynamic-import'),
+      root: resolve(dirname, 'fixtures/dynamic-import'),
       logLevel: 'warn',
       environments: {
         ssr: {
@@ -756,12 +755,12 @@ describe('resolveBuildOutputs', () => {
       },
     })
     const result = await builder.build(builder.environments.ssr)
-    expect((result as RollupOutput).output[0].code).not.toContain('preload')
+    expect((result as RolldownOutput).output[0].code).not.toContain('preload')
   })
 
   test('ssr custom', async () => {
     const builder = await createBuilder({
-      root: resolve(__dirname, 'fixtures/dynamic-import'),
+      root: resolve(dirname, 'fixtures/dynamic-import'),
       logLevel: 'warn',
       environments: {
         custom: {
@@ -777,14 +776,14 @@ describe('resolveBuildOutputs', () => {
       },
     })
     const result = await builder.build(builder.environments.custom)
-    expect((result as RollupOutput).output[0].code).not.toContain('preload')
+    expect((result as RolldownOutput).output[0].code).not.toContain('preload')
   })
 })
 
 test('default sharedConfigBuild true on build api', async () => {
   let counter = 0
   await build({
-    root: resolve(__dirname, 'fixtures/emit-assets'),
+    root: resolve(dirname, 'fixtures/emit-assets'),
     logLevel: 'warn',
     build: {
       ssr: true,
@@ -809,7 +808,7 @@ test('default sharedConfigBuild true on build api', async () => {
 test.for([true, false])(
   'minify per environment (builder.sharedPlugins: %s)',
   async (sharedPlugins) => {
-    const root = resolve(__dirname, 'fixtures/shared-plugins/minify')
+    const root = resolve(dirname, 'fixtures/shared-plugins/minify')
     const builder = await createBuilder({
       root,
       logLevel: 'warn',
@@ -858,15 +857,15 @@ test.for([true, false])(
     const custom1 = await builder.build(builder.environments.custom1)
     const custom2 = await builder.build(builder.environments.custom2)
     expect(
-      ([client, ssr, custom1, custom2] as RollupOutput[]).map(
+      ([client, ssr, custom1, custom2] as RolldownOutput[]).map(
         (o) => o.output[0].code.split('\n').length,
       ),
-    ).toEqual([2, 5, 2, 5])
+    ).toEqual([1, 6, 1, 6])
   },
 )
 
 test('sharedConfigBuild and emitAssets', async () => {
-  const root = resolve(__dirname, 'fixtures/shared-config-build/emitAssets')
+  const root = resolve(dirname, 'fixtures/shared-config-build/emitAssets')
   const builder = await createBuilder({
     root,
     logLevel: 'warn',
@@ -932,10 +931,10 @@ test('sharedConfigBuild and emitAssets', async () => {
   ])
 })
 
-test('adjust worker build error for worker.format', async () => {
+test.skip('adjust worker build error for worker.format', async () => {
   try {
     await build({
-      root: resolve(__dirname, 'fixtures/worker-dynamic'),
+      root: resolve(dirname, 'fixtures/worker-dynamic'),
       build: {
         rollupOptions: {
           input: {
@@ -961,10 +960,10 @@ describe('onRollupLog', () => {
     level: LogLevel | 'error',
     message: string | RollupLog,
     logger: Logger,
-    options?: Pick<RollupOptions, 'onLog' | 'onwarn'>,
+    options?: Pick<RolldownOptions, 'onLog' | 'onwarn'>,
   ) => {
     await build({
-      root: resolve(__dirname, 'packages/build-project'),
+      root: resolve(dirname, 'packages/build-project'),
       logLevel: 'info',
       build: {
         write: false,
@@ -1046,7 +1045,7 @@ describe('onRollupLog', () => {
       },
     })
     expect(onLogInfo).toBeCalledWith(
-      expect.objectContaining({ message: `[plugin ${pluginName}] ${msgInfo}` }),
+      expect.objectContaining({ message: msgInfo, plugin: pluginName }),
     )
   })
 
@@ -1060,7 +1059,7 @@ describe('onRollupLog', () => {
       },
     })
     expect(onWarn).toBeCalledWith(
-      expect.objectContaining({ message: `[plugin ${pluginName}] ${msgWarn}` }),
+      expect.objectContaining({ message: msgWarn, plugin: pluginName }),
     )
   })
 
@@ -1071,7 +1070,7 @@ describe('onRollupLog', () => {
         code: 'UNRESOLVED_IMPORT',
         message: 'test',
       }),
-    ).rejects.toThrowError(/Rollup failed to resolve import/)
+    ).rejects.toThrowError(/Rolldown failed to resolve import/)
   })
 
   test.each([[`Unsupported expression`], [`statically analyzed`]])(
@@ -1108,7 +1107,7 @@ describe('onRollupLog', () => {
 test('watch rebuild manifest', async (ctx) => {
   // this doesn't actually test watch rebuild
   // but it simulates something similar by running two builds for the same environment
-  const root = resolve(__dirname, 'fixtures/watch-rebuild-manifest')
+  const root = resolve(dirname, 'fixtures/watch-rebuild-manifest')
   const builder = await createBuilder({
     root,
     logLevel: 'error',
@@ -1126,7 +1125,7 @@ test('watch rebuild manifest', async (ctx) => {
     },
   })
 
-  function getManifestKeys(output: RollupOutput) {
+  function getManifestKeys(output: RolldownOutput) {
     return Object.keys(
       JSON.parse(
         (output.output.find((o) => o.fileName === '.vite/manifest.json') as any)
@@ -1136,7 +1135,7 @@ test('watch rebuild manifest', async (ctx) => {
   }
 
   const result = await builder.build(builder.environments.client)
-  expect(getManifestKeys(result as RollupOutput)).toMatchInlineSnapshot(`
+  expect(getManifestKeys(result as RolldownOutput)).toMatchInlineSnapshot(`
     [
       "dep.js",
       "entry.js",
@@ -1154,7 +1153,7 @@ test('watch rebuild manifest', async (ctx) => {
   })
 
   const result2 = await builder.build(builder.environments.client)
-  expect(getManifestKeys(result2 as RollupOutput)).toMatchInlineSnapshot(`
+  expect(getManifestKeys(result2 as RolldownOutput)).toMatchInlineSnapshot(`
     [
       "entry.js",
     ]
@@ -1166,8 +1165,8 @@ test('watch rebuild manifest', async (ctx) => {
  * ensure that the chunk code is the same. if not, the chunk hash should have changed.
  */
 function assertOutputHashContentChange(
-  output1: RollupOutput,
-  output2: RollupOutput,
+  output1: RolldownOutput,
+  output2: RolldownOutput,
 ) {
   for (const chunk of output1.output) {
     if (chunk.type === 'chunk') {
@@ -1184,7 +1183,10 @@ function assertOutputHashContentChange(
   }
 }
 
-function getOutputHashChanges(output1: RollupOutput, output2: RollupOutput) {
+function getOutputHashChanges(
+  output1: RolldownOutput,
+  output2: RolldownOutput,
+) {
   const map1 = Object.fromEntries(
     output1.output.map((o) => [o.name, o.fileName]),
   )

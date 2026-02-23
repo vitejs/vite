@@ -3,7 +3,7 @@ import { clearServeError, serveError } from './serve'
 import { browserLogs, editFile, isBuild, isServe, page, readFile } from '~utils'
 
 const unexpectedTokenSyntaxErrorRE =
-  /(\[vite:esbuild\] )*parsing .* failed: SyntaxError: Unexpected token.*\}.*/
+  /(\[TSCONFIG_ERROR\] )*Failed to load tsconfig .*: JSON parse error|JSONError/
 
 describe.runIf(isBuild)('build', () => {
   test('should throw an error on build', () => {

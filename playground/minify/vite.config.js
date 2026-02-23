@@ -5,4 +5,13 @@ export default defineConfig({
     legalComments: 'none',
     minifySyntax: false,
   },
+  build: {
+    minify: 'esbuild',
+    cssMinify: 'esbuild',
+    rollupOptions: {
+      output: {
+        legalComments: 'none',
+      },
+    },
+  },
 })

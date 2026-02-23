@@ -7,10 +7,6 @@ import { chromium } from 'playwright-chromium'
 let browserServer: BrowserServer | undefined
 
 export async function setup({ provide }: TestProject): Promise<void> {
-  process.env.NODE_ENV = process.env.VITE_TEST_BUILD
-    ? 'production'
-    : 'development'
-
   browserServer = await chromium.launchServer({
     headless: !process.env.VITE_DEBUG_SERVE,
     args: process.env.CI
@@ -20,11 +16,11 @@ export async function setup({ provide }: TestProject): Promise<void> {
 
   provide('wsEndpoint', browserServer.wsEndpoint())
 
-  const tempDir = path.resolve(__dirname, '../playground-temp')
+  const tempDir = path.resolve(import.meta.dirname, '../playground-temp')
   await fs.rm(tempDir, { recursive: true, force: true })
   await fs.mkdir(tempDir, { recursive: true })
   await fs
-    .cp(path.resolve(__dirname, '../playground'), tempDir, {
+    .cp(path.resolve(import.meta.dirname, '../playground'), tempDir, {
       recursive: true,
       dereference: false,
       filter(file) {
@@ -60,7 +56,7 @@ export async function setup({ provide }: TestProject): Promise<void> {
 export async function teardown(): Promise<void> {
   await browserServer?.close()
   if (!process.env.VITE_PRESERVE_BUILD_ARTIFACTS) {
-    await fs.rm(path.resolve(__dirname, '../playground-temp'), {
+    await fs.rm(path.resolve(import.meta.dirname, '../playground-temp'), {
       recursive: true,
     })
   }

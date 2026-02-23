@@ -1,7 +1,7 @@
 import path from 'node:path'
 import MagicString from 'magic-string'
-import type { RollupAstNode, RollupError } from 'rollup'
-import { parseAstAsync } from 'rollup/parseAst'
+import type { RollupError } from 'rolldown'
+import { parseAstAsync } from 'rolldown/parseAst'
 import { stripLiteral } from 'strip-literal'
 import type { Expression, ExpressionStatement } from 'estree'
 import type { ResolvedConfig } from '../config'
@@ -12,7 +12,7 @@ import type { ResolveIdFn } from '../idResolver'
 import { cleanUrl, slash } from '../../shared/utils'
 import type { WorkerType } from './worker'
 import { WORKER_FILE_ID, workerFileToUrl } from './worker'
-import { fileToUrl } from './asset'
+import { fileToUrl, toOutputFilePathInJSForBundledDev } from './asset'
 import type { InternalResolveOptions } from './resolve'
 import { tryFsResolve } from './resolve'
 import { hasViteIgnoreRE } from './importAnalysis'
@@ -102,8 +102,7 @@ async function parseWorkerOptions(
     opts = evalValue<WorkerOptions>(rawOpts)
   } catch {
     const optsNode = (
-      (await parseAstAsync(`(${rawOpts})`))
-        .body[0] as RollupAstNode<ExpressionStatement>
+      (await parseAstAsync(`(${rawOpts})`)).body[0] as ExpressionStatement
     ).expression
 
     const type = extractWorkerTypeFromAst(optsNode, optsStartIndex)
@@ -185,7 +184,7 @@ const workerImportMetaUrlRE =
   /new\s+(?:Worker|SharedWorker)\s*\(\s*new\s+URL.+?import\.meta\.url/s
 
 export function workerImportMetaUrlPlugin(config: ResolvedConfig): Plugin {
-  const isBuild = config.command === 'build'
+  const isBundled = config.isBundled
   let workerResolver: ResolveIdFn
 
   const fsResolveOptions: InternalResolveOptions = {
@@ -204,19 +203,13 @@ export function workerImportMetaUrlPlugin(config: ResolvedConfig): Plugin {
       return environment.config.consumer === 'client'
     },
 
-    shouldTransformCachedModule({ code }) {
-      if (isBuild && config.build.watch && workerImportMetaUrlRE.test(code)) {
-        return true
-      }
-    },
-
     transform: {
       filter: { code: workerImportMetaUrlRE },
       async handler(code, id) {
         let s: MagicString | undefined
         const cleanString = stripLiteral(code)
         const workerImportMetaUrlRE =
-          /\bnew\s+(?:Worker|SharedWorker)\s*\(\s*(new\s+URL\s*\(\s*('[^']+'|"[^"]+"|`[^`]+`)\s*,\s*import\.meta\.url\s*\))/dg
+          /\bnew\s+(?:Worker|SharedWorker)\s*\(\s*(new\s+URL\s*\(\s*('[^']+'|"[^"]+"|`[^`]+`)\s*,\s*import\.meta\.url\s*(?:,\s*)?\))/dg
 
         let match: RegExpExecArray | null
         while ((match = workerImportMetaUrlRE.exec(cleanString))) {
@@ -254,15 +247,29 @@ export function workerImportMetaUrlPlugin(config: ResolvedConfig): Plugin {
           }
 
           if (
-            isBuild &&
+            isBundled &&
             config.isWorker &&
             config.bundleChain.at(-1) === cleanUrl(file)
           ) {
             s.update(expStart, expEnd, 'self.location.href')
           } else {
             let builtUrl: string
-            if (isBuild) {
-              builtUrl = await workerFileToUrl(config, file)
+            if (isBundled) {
+              const result = await workerFileToUrl(config, file)
+              if (
+                this.environment.config.command === 'serve' &&
+                this.environment.config.experimental.bundledDev
+              ) {
+                builtUrl = toOutputFilePathInJSForBundledDev(
+                  this.environment,
+                  result.entryFilename,
+                )
+              } else {
+                builtUrl = result.entryUrlPlaceholder
+              }
+              for (const file of result.watchedFiles) {
+                this.addWatchFile(file)
+              }
             } else {
               builtUrl = await fileToUrl(this, cleanUrl(file))
               builtUrl = injectQuery(
@@ -273,7 +280,8 @@ export function workerImportMetaUrlPlugin(config: ResolvedConfig): Plugin {
             s.update(
               expStart,
               expEnd,
-              `new URL(/* @vite-ignore */ ${JSON.stringify(builtUrl)}, import.meta.url)`,
+              // NOTE: add `'' +` to opt-out rolldown's transform: https://github.com/rolldown/rolldown/issues/2745
+              `new URL(/* @vite-ignore */ ${JSON.stringify(builtUrl)}, '' + import.meta.url)`,
             )
           }
         }

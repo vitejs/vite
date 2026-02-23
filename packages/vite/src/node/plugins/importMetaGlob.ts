@@ -10,11 +10,12 @@ import type {
   SpreadElement,
   TemplateLiteral,
 } from 'estree'
-import type { CustomPluginOptions, RollupAstNode, RollupError } from 'rollup'
+import type { CustomPluginOptions, RollupError } from 'rolldown'
 import MagicString from 'magic-string'
 import { stringifyQuery } from 'ufo'
-import { parseAstAsync } from 'rollup/parseAst'
+import { parseAstAsync } from 'rolldown/parseAst'
 import { escapePath, glob } from 'tinyglobby'
+import { viteImportGlobPlugin as nativeImportGlobPlugin } from 'rolldown/experimental'
 import type { GeneralImportGlobOptions } from '#types/importGlob'
 import type { Plugin } from '../plugin'
 import type { EnvironmentModuleNode } from '../server/moduleGraph'
@@ -41,6 +42,14 @@ interface ParsedGeneralImportGlobOptions extends GeneralImportGlobOptions {
 }
 
 export function importGlobPlugin(config: ResolvedConfig): Plugin {
+  if (config.isBundled && config.nativePluginEnabledLevel >= 1) {
+    return nativeImportGlobPlugin({
+      root: config.root,
+      sourcemap: !!config.build.sourcemap,
+      restoreQueryExtension: config.experimental.importGlobRestoreExtension,
+    })
+  }
+
   const importGlobMaps = new Map<
     Environment,
     Map<string, Array<(file: string) => boolean>>
@@ -281,7 +290,9 @@ export async function parseImportGlob(
       throw err(`Expected 1-2 arguments, but got ${ast.arguments.length}`)
 
     const arg1 = ast.arguments[0] as ArrayExpression | Literal | TemplateLiteral
-    const arg2 = ast.arguments[1] as RollupAstNode<Node> | undefined
+    const arg2 = ast.arguments[1] as
+      | (Node & { start: number; end: number })
+      | undefined
 
     const globs: string[] = []
 

@@ -1,6 +1,6 @@
 import colors from 'picocolors'
-import type { FSWatcher } from '#dep-types/chokidar'
 import type { FetchFunctionOptions, FetchResult } from 'vite/module-runner'
+import type { FSWatcher } from '#dep-types/chokidar'
 import { BaseEnvironment } from '../baseEnvironment'
 import type {
   EnvironmentOptions,
@@ -20,7 +20,11 @@ import { promiseWithResolvers } from '../../shared/utils'
 import type { ViteDevServer } from '../server'
 import { EnvironmentModuleGraph } from './moduleGraph'
 import type { EnvironmentModuleNode } from './moduleGraph'
-import type { HotChannel, NormalizedHotChannel } from './hmr'
+import type {
+  HotChannel,
+  NormalizedHotChannel,
+  NormalizedHotChannelClient,
+} from './hmr'
 import { getShortName, normalizeHotChannel, updateModules } from './hmr'
 import type {
   TransformOptionsInternal,
@@ -44,6 +48,8 @@ export interface DevEnvironmentContext {
     inlineSourceMap?: boolean
   }
   depsOptimizer?: DepsOptimizer
+  /** @internal used for full bundle mode */
+  disableDepsOptimizer?: boolean
 }
 
 export class DevEnvironment extends BaseEnvironment {
@@ -133,30 +139,42 @@ export class DevEnvironment extends BaseEnvironment {
       fetchModule: (id, importer, options) => {
         return this.fetchModule(id, importer, options)
       },
+      getBuiltins: async () => {
+        return this.config.resolve.builtins.map((builtin) =>
+          typeof builtin === 'string'
+            ? { type: 'string', value: builtin }
+            : { type: 'RegExp', source: builtin.source, flags: builtin.flags },
+        )
+      },
     })
 
     this.hot.on(
       'vite:invalidate',
-      async ({ path, message, firstInvalidatedBy }) => {
-        invalidateModule(this, {
-          path,
-          message,
-          firstInvalidatedBy,
-        })
+      async ({ path, message, firstInvalidatedBy }, client) => {
+        this.invalidateModule(
+          {
+            path,
+            message,
+            firstInvalidatedBy,
+          },
+          client,
+        )
       },
     )
 
-    const { optimizeDeps } = this.config
-    if (context.depsOptimizer) {
-      this.depsOptimizer = context.depsOptimizer
-    } else if (isDepOptimizationDisabled(optimizeDeps)) {
-      this.depsOptimizer = undefined
-    } else {
-      this.depsOptimizer = (
-        optimizeDeps.noDiscovery
-          ? createExplicitDepsOptimizer
-          : createDepsOptimizer
-      )(this)
+    if (!context.disableDepsOptimizer) {
+      const { optimizeDeps } = this.config
+      if (context.depsOptimizer) {
+        this.depsOptimizer = context.depsOptimizer
+      } else if (isDepOptimizationDisabled(optimizeDeps)) {
+        this.depsOptimizer = undefined
+      } else {
+        this.depsOptimizer = (
+          optimizeDeps.noDiscovery
+            ? createExplicitDepsOptimizer
+            : createDepsOptimizer
+        )(this)
+      }
     }
   }
 
@@ -239,6 +257,39 @@ export class DevEnvironment extends BaseEnvironment {
     }
   }
 
+  protected invalidateModule(
+    m: {
+      path: string
+      message?: string
+      firstInvalidatedBy: string
+    },
+    _client: NormalizedHotChannelClient,
+  ): void {
+    const mod = this.moduleGraph.urlToModuleMap.get(m.path)
+    if (
+      mod &&
+      mod.isSelfAccepting &&
+      mod.lastHMRTimestamp > 0 &&
+      !mod.lastHMRInvalidationReceived
+    ) {
+      mod.lastHMRInvalidationReceived = true
+      this.logger.info(
+        colors.yellow(`hmr invalidate `) +
+          colors.dim(m.path) +
+          (m.message ? ` ${m.message}` : ''),
+        { timestamp: true },
+      )
+      const file = getShortName(mod.file!, this.config.root)
+      updateModules(
+        this,
+        file,
+        [...mod.importers].filter((imp) => imp !== mod), // ignore self-imports
+        mod.lastHMRTimestamp,
+        m.firstInvalidatedBy,
+      )
+    }
+  }
+
   async close(): Promise<void> {
     this._closing = true
 
@@ -277,39 +328,6 @@ export class DevEnvironment extends BaseEnvironment {
    */
   _registerRequestProcessing(id: string, done: () => Promise<unknown>): void {
     this._crawlEndFinder.registerRequestProcessing(id, done)
-  }
-}
-
-function invalidateModule(
-  environment: DevEnvironment,
-  m: {
-    path: string
-    message?: string
-    firstInvalidatedBy: string
-  },
-) {
-  const mod = environment.moduleGraph.urlToModuleMap.get(m.path)
-  if (
-    mod &&
-    mod.isSelfAccepting &&
-    mod.lastHMRTimestamp > 0 &&
-    !mod.lastHMRInvalidationReceived
-  ) {
-    mod.lastHMRInvalidationReceived = true
-    environment.logger.info(
-      colors.yellow(`hmr invalidate `) +
-        colors.dim(m.path) +
-        (m.message ? ` ${m.message}` : ''),
-      { timestamp: true },
-    )
-    const file = getShortName(mod.file!, environment.config.root)
-    updateModules(
-      environment,
-      file,
-      [...mod.importers],
-      mod.lastHMRTimestamp,
-      m.firstInvalidatedBy,
-    )
   }
 }
 

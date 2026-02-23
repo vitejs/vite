@@ -6,6 +6,8 @@
     "types": ["node"],
     "noEmit": true,
     "moduleResolution": "bundler",
+    "isolatedDeclarations": true,
+    "declaration": true,
     "strict": true,
     "noImplicitOverride": true,
     "noUnusedLocals": true,

@@ -1,7 +1,28 @@
-import type * as Rollup from 'rollup'
+import type * as Rolldown from 'rolldown'
+import {
+  parseAst as _parseAst,
+  parseAstAsync as _parseAstAsync,
+} from 'rolldown/parseAst'
+import type * as Rollup from '#types/internal/rollupTypeCompat'
 
-export type { Rollup }
-export { parseAst, parseAstAsync } from 'rollup/parseAst'
+export type { Rollup, Rolldown }
+export { esmExternalRequirePlugin } from 'rolldown/plugins'
+export {
+  parse,
+  parseSync,
+  type ParserOptions,
+  type ParseResult,
+  minify,
+  minifySync,
+  type MinifyOptions,
+  type MinifyResult,
+} from 'rolldown/utils'
+
+/** @deprecated - use `parse` instead */
+export const parseAst: typeof _parseAst = _parseAst
+/** @deprecated - use `parseAsync` instead */
+export const parseAstAsync: typeof _parseAstAsync = _parseAstAsync
+
 export {
   defineConfig,
   loadConfigFromFile,
@@ -19,6 +40,7 @@ export { createIdResolver } from './idResolver'
 
 export { formatPostcssSourceMap, preprocessCSS } from './plugins/css'
 export { transformWithEsbuild } from './plugins/esbuild'
+export { transformWithOxc } from './plugins/oxc'
 export { buildErrorMessage } from './server/middlewares/error'
 
 export {
@@ -58,14 +80,17 @@ export {
   DEFAULT_SERVER_MAIN_FIELDS as defaultServerMainFields,
   defaultAllowedOrigins,
 } from './constants'
-export { version as esbuildVersion } from 'esbuild'
+// NOTE: export for backward compat
+export const esbuildVersion = '0.25.0'
 export {
   normalizePath,
   mergeConfig,
   mergeAlias,
   createFilter,
+  withFilter,
   isCSSRequest,
   rollupVersion,
+  rolldownVersion,
 } from './utils'
 export { send } from './server/send'
 export { createLogger } from './logger'
@@ -176,8 +201,9 @@ export type {
   StylusPreprocessorOptions,
 } from './plugins/css'
 export type { JsonOptions } from './plugins/json'
-export type { TransformOptions as EsbuildTransformOptions } from 'esbuild'
-export type { ESBuildOptions, ESBuildTransformResult } from './plugins/esbuild'
+export type { ESBuildOptions } from './plugins/esbuild'
+export type { EsbuildTransformOptions } from '#types/internal/esbuildOptions'
+export type { OxcOptions } from './plugins/oxc'
 export type { Manifest, ManifestChunk } from './plugins/manifest'
 export type { ResolveOptions, InternalResolveOptions } from './plugins/resolve'
 export type { TerserOptions } from './plugins/terser'

@@ -29,6 +29,25 @@ if (!isBuild) {
     browserLogs.length = 0
   })
 
+  const fetchHotEvents = async (): Promise<{
+    connectCount: number
+    disconnectCount: number
+  }> => {
+    const res = await fetch(viteTestUrl + '/hot-events-counts')
+    return res.json()
+  }
+  test('hot events', async () => {
+    expect(await fetchHotEvents()).toStrictEqual({
+      connectCount: 1,
+      disconnectCount: 0,
+    })
+    await untilBrowserLogAfter(() => page.reload(), [/connected/])
+    expect(await fetchHotEvents()).toStrictEqual({
+      connectCount: 2,
+      disconnectCount: 1,
+    })
+  })
+
   test('self accept', async () => {
     const el = await page.$('.app')
     await untilBrowserLogAfter(
@@ -1003,9 +1022,17 @@ if (!isBuild) {
     editFile('prune/dep1.js', (code) =>
       code.replace(`import './dep2.js'`, `// import './dep2.js'`),
     )
+    // Prune is triggered when there are other dependencies.
     await expect
       .poll(() => page.textContent('.prune'))
       .toMatch('prune-init|dep2-disposed|dep2-pruned')
+    editFile('prune/dep1.js', (code) =>
+      code.replace(`import './dep3.js'`, `// import './dep3.js'`),
+    )
+    // Prune is triggered when there are no more dependencies.
+    await expect
+      .poll(() => page.textContent('.prune'))
+      .toMatch('prune-init|dep2-disposed|dep2-pruned|dep3-disposed|dep3-pruned')
   })
 
   test('import.meta.hot?.accept', async () => {

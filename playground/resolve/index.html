@@ -64,6 +64,12 @@
 <h2>Resolving with query with imports field</h2>
 <p class="imports-query">fail</p>
 
+<h2>Resolving dot-prefixed directory with imports field</h2>
+<p class="imports-dot-prefixed">fail</p>
+
+<h2>Resolving #/ root alias pattern with imports field</h2>
+<p class="imports-root-slash">fail</p>
+
 <h2>Resolve /index.*</h2>
 <p class="index">fail</p>
 
@@ -134,12 +140,6 @@
 <h2>Resolve browser field even if module field exists</h2>
 <p class="browser-module1">fail</p>
 
-<h2>Resolve module field if browser field is likely UMD or CJS</h2>
-<p class="browser-module2">fail</p>
-
-<h2>Resolve module field if browser field is likely IIFE</h2>
-<p class="browser-module3">fail</p>
-
 <h2>Don't resolve to the `module` field if the importer is a `require` call</h2>
 <p class="require-pkg-with-module-field">fail</p>
 
@@ -154,6 +154,9 @@
 
 <h2>Plugin resolved virtual file (#9036)</h2>
 <p class="virtual-9036"></p>
+
+<h2>Plugin resolved virtual file that has import</h2>
+<p class="virtual-has-import"></p>
 
 <h2>Plugin resolved custom virtual file</h2>
 <p class="custom-virtual"></p>
@@ -272,6 +275,12 @@
   import importsQuery from '#query?url'
   text('.imports-query', importsQuery)
 
+  import { msg as importsDotPrefixed } from './imports-path/importer.js'
+  text('.imports-dot-prefixed', importsDotPrefixed)
+
+  import { msg as importsRootSlash } from '#/index.js'
+  text('.imports-root-slash', importsRootSlash)
+
   // implicit index resolving
   import { foo } from './util'
   text('.index', foo())
@@ -325,7 +334,8 @@
   import c from '@vitejs/test-resolve-browser-field/ext'
   import d from '@vitejs/test-resolve-browser-field/ext.js'
   import e from '@vitejs/test-resolve-browser-field/ext-index/index.js'
-  import f from '@vitejs/test-resolve-browser-field/ext-index'
+  // webpack does not support this case, so should be fine
+  // import f from '@vitejs/test-resolve-browser-field/ext-index'
   import g from '@vitejs/test-resolve-browser-field/no-ext-index/index.js' // no substitution
   import h from '@vitejs/test-resolve-browser-field/no-ext?query'
   import i from '@vitejs/test-resolve-browser-field/bare-import'
@@ -337,11 +347,10 @@
     rd,
     re,
     rf,
-    rg,
   } from '@vitejs/test-resolve-browser-field/relative'
 
-  const success = [main, a, c, d, e, f, h, i, ra, rc, rd, re, rf]
-  const noSuccess = [b, g, rb, rg]
+  const success = [main, a, c, d, e, h, i, ra, rc, rd, re]
+  const noSuccess = [b, g, rb, rf]
 
   if (
     [...success, ...noSuccess].filter((text) => text.includes('[success]'))
@@ -352,12 +361,6 @@
 
   import browserModule1 from '@vitejs/test-resolve-browser-module-field1'
   text('.browser-module1', browserModule1)
-
-  import browserModule2 from '@vitejs/test-resolve-browser-module-field2'
-  text('.browser-module2', browserModule2)
-
-  import browserModule3 from '@vitejs/test-resolve-browser-module-field3'
-  text('.browser-module3', browserModule3)
 
   import { msg as requireButWithModuleFieldMsg } from '@vitejs/test-require-pkg-with-module-field'
   text('.require-pkg-with-module-field', requireButWithModuleFieldMsg)
@@ -394,6 +397,9 @@
   import { msg as virtualMsg9036 } from 'virtual:file-9036.js'
   text('.virtual-9036', virtualMsg9036)
 
+  import { msg as virtualMsgHasImport } from 'virtual:file-has-import.js'
+  text('.virtual-has-import', virtualMsgHasImport)
+
   import { msg as customVirtualMsg } from '@custom-virtual-file'
   text('.custom-virtual', customVirtualMsg)
 
@@ -403,13 +409,13 @@
   import { msg as inlineMsg } from './inline-package'
   text('.inline-pkg', inlineMsg)
 
-  import es5Ext from 'es5-ext'
-  import contains from 'es5-ext/string/#/contains'
-  import { last } from '@vitejs/test-resolve-sharp-dir'
+  import { test as sharp1 } from '@vitejs/test-resolve-sharp-dir'
+  import { test as sharp2 } from '@vitejs/test-resolve-sharp-dir-nested'
+  import { test as sharp3 } from '@vitejs/test-resolve-sharp-dir-nested/#/index.cjs'
 
   text(
     '.path-contains-sharp-symbol',
-    `[success] ${contains.call('#', '#')} ${last.call('#')}`,
+    `[success] ${sharp1('ok')} ${sharp2('ok')} ${sharp3('ok')}`,
   )
 
   import nonNormalizedAbsolute from '@non-normalized'

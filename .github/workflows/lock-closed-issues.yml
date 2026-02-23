@@ -12,7 +12,7 @@ jobs:
     if: github.repository == 'vitejs/vite'
     runs-on: ubuntu-latest
     steps:
-      - uses: actions-cool/issues-helper@45d75b6cf72bf4f254be6230cb887ad002702491 # v3
+      - uses: actions-cool/issues-helper@e2ff99831a4f13625d35064e2b3dfe65c07a0396 # v3
         with:
           actions: "lock-issues"
           token: ${{ secrets.GITHUB_TOKEN }}

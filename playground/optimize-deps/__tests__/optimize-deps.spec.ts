@@ -25,6 +25,12 @@ test('default import from webpacked cjs (clipboard)', async () => {
   await expect.poll(() => page.textContent('.cjs-clipboard')).toBe('ok')
 })
 
+test('default import from cjs with es-module-flag (dep-cjs-with-es-module-flag)', async () => {
+  await expect
+    .poll(() => page.textContent('.cjs-with-es-module-flag'))
+    .toBe('ok')
+})
+
 test('default import from cjs (cjs-dep-cjs-compiled-from-esm)', async () => {
   await expect
     .poll(() => page.textContent('.cjs-dep-cjs-compiled-from-esm'))
@@ -64,6 +70,12 @@ test('dynamic default import from cjs (cjs-dynamic-dep-cjs-compiled-from-esm)', 
 test('dynamic default import from cjs (cjs-dynamic-dep-cjs-compiled-from-cjs)', async () => {
   await expect
     .poll(() => page.textContent('.cjs-dynamic-dep-cjs-compiled-from-cjs'))
+    .toBe('ok')
+})
+
+test('dynamic default import from cjs with es-module-flag (cjs-dynamic-dep-cjs-with-es-module-flag)', async () => {
+  await expect
+    .poll(() => page.textContent('.cjs-dynamic-dep-cjs-with-es-module-flag'))
     .toBe('ok')
 })
 
@@ -141,10 +153,9 @@ test('dep with optional peer dep (cjs)', async () => {
   await expect
     .poll(() => page.textContent('.dep-with-optional-peer-dep-cjs'))
     .toMatch(`[success]`)
-  // FIXME
-  // await expect
-  //   .poll(() => page.textContent('.dep-with-optional-peer-dep-cjs-error'))
-  //   .toMatch(`[success]`)
+  await expect
+    .poll(() => page.textContent('.dep-with-optional-peer-dep-cjs-error'))
+    .toMatch(`[success]`)
 })
 
 test('dep with css import', async () => {
@@ -353,4 +364,39 @@ test('dependency with external sub-dependencies', async () => {
   await expect
     .poll(() => page.textContent('.dep-cjs-with-external-deps-node-builtin'))
     .toBe('foo bar')
+})
+
+test('virtual module with .vue extension does not error during scan', async () => {
+  await expect.poll(() => page.textContent('.virtual-module-vue')).toBe('ok')
+})
+
+test.runIf(isServe)(
+  'no dep scan error for virtual modules with html-like extensions',
+  () => {
+    // Check that there are no errors related to virtual modules during dep scan
+    const scanErrors = serverLogs.filter(
+      (log) =>
+        log.includes('Failed to scan for dependencies') &&
+        log.includes('virtual:'),
+    )
+    expect(scanErrors).toHaveLength(0)
+  },
+)
+
+test('should fix relative worker paths in optimized dependencies', async () => {
+  await expect
+    .poll(() => page.textContent('.worker-lib'))
+    .toBe('worker-success')
+  await expect
+    .poll(() => page.textContent('.worker-nested'))
+    .toBe('worker-success')
+
+  const assetMatcher = isBuild
+    ? /assets\/logo-[-\w]+\.png/
+    : /\/node_modules\/@vitejs\/test-dep-with-assets\/logo\.png/
+  await expect.poll(() => page.textContent('.asset-url')).toMatch(assetMatcher)
+
+  const url = await page.textContent('.asset-url')
+  const res = await page.request.get(url)
+  expect(res.status()).toBe(200)
 })

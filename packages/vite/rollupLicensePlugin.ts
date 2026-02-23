@@ -173,9 +173,31 @@ function getDependencyInformation(dep: Dependency): DependencyInfo {
   }
 
   if (repository) {
-    info.repository =
-      typeof repository === 'string' ? repository : repository.url
+    info.repository = normalizeGitUrl(
+      typeof repository === 'string' ? repository : repository.url,
+    )
   }
 
   return info
+}
+
+function normalizeGitUrl(url: string): string {
+  url = url
+    .replace(/^git\+/, '')
+    .replace(/\.git$/, '')
+    .replace(/(^|\/)[^/]+?@/, '$1') // remove "user@" from "ssh://user@host.com:..."
+    .replace(/(\.[^.]+?):/, '$1/') // change ".com:" to ".com/" from "ssh://user@host.com:..."
+    .replace(/^git:\/\//, 'https://')
+    .replace(/^ssh:\/\//, 'https://')
+  if (url.startsWith('github:')) {
+    return `https://github.com/${url.slice(7)}`
+  } else if (url.startsWith('gitlab:')) {
+    return `https://gitlab.com/${url.slice(7)}`
+  } else if (url.startsWith('bitbucket:')) {
+    return `https://bitbucket.org/${url.slice(10)}`
+  } else if (!url.includes(':') && url.split('/').length === 2) {
+    return `https://github.com/${url}`
+  } else {
+    return url.includes('://') ? url : `https://${url}`
+  }
 }

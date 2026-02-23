@@ -1,17 +1,16 @@
 import path from 'node:path'
-import url from 'node:url'
 import { defineConfig } from 'tsdown'
 import licensePlugin from '../vite/rollupLicensePlugin.ts'
-
-const __dirname = path.dirname(url.fileURLToPath(import.meta.url))
 
 export default defineConfig(() => ({
   entry: ['src/index.ts'],
   target: 'node20',
   minify: true,
+  inlineOnly: false as const,
+  fixedExtension: false,
   plugins: [
     licensePlugin(
-      path.resolve(__dirname, './LICENSE'),
+      path.resolve(import.meta.dirname, './LICENSE'),
       'create-vite license',
       'create-vite',
       '# License of the files in the directories starting with "template-" in create-vite\n' +

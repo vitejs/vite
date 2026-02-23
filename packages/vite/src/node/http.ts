@@ -1,4 +1,5 @@
 import fsp from 'node:fs/promises'
+import net from 'node:net'
 import path from 'node:path'
 import type { OutgoingHttpHeaders as HttpServerHeaders } from 'node:http'
 import type { ServerOptions as HttpsServerOptions } from 'node:https'
@@ -7,6 +8,7 @@ import type { Connect } from '#dep-types/connect'
 import type { ProxyOptions } from './server/middlewares/proxy'
 import type { Logger } from './logger'
 import type { HttpServer } from './server'
+import { wildcardHosts } from './constants'
 
 export interface CommonServerOptions {
   /**
@@ -115,7 +117,6 @@ export interface CorsOptions {
 export type CorsOrigin = boolean | string | RegExp | (string | RegExp)[]
 
 export async function resolveHttpServer(
-  { proxy }: CommonServerOptions,
   app: Connect.Server,
   httpsOptions?: HttpsServerOptions,
 ): Promise<HttpServer> {
@@ -124,24 +125,22 @@ export async function resolveHttpServer(
     return createServer(app)
   }
 
-  // #484 fallback to http1 when proxy is needed.
-  if (proxy) {
-    const { createServer } = await import('node:https')
-    return createServer(httpsOptions, app)
-  } else {
-    const { createSecureServer } = await import('node:http2')
-    return createSecureServer(
-      {
-        // Manually increase the session memory to prevent 502 ENHANCE_YOUR_CALM
-        // errors on large numbers of requests
-        maxSessionMemory: 1000,
-        ...httpsOptions,
-        allowHTTP1: true,
-      },
-      // @ts-expect-error TODO: is this correct?
-      app,
-    )
-  }
+  const { createSecureServer } = await import('node:http2')
+  return createSecureServer(
+    {
+      // Manually increase the session memory to prevent 502 ENHANCE_YOUR_CALM
+      // errors on large numbers of requests
+      maxSessionMemory: 1000,
+      // Increase the stream reset rate limit to prevent net::ERR_HTTP2_PROTOCOL_ERROR
+      // errors on large numbers of requests
+      streamResetBurst: 100000,
+      streamResetRate: 33,
+      ...httpsOptions,
+      allowHTTP1: true,
+    },
+    // @ts-expect-error TODO: is this correct?
+    app,
+  )
 }
 
 export async function resolveHttpsConfig(
@@ -165,6 +164,57 @@ async function readFileIfExists(value?: string | Buffer | any[]) {
   return value
 }
 
+// Check if a port is available on wildcard addresses (0.0.0.0, ::)
+async function isPortAvailable(port: number): Promise<boolean> {
+  for (const host of wildcardHosts) {
+    // Gracefully handle errors (e.g., IPv6 disabled on the system)
+    const available = await tryListen(port, host).catch(() => true)
+    if (!available) return false
+  }
+  return true
+}
+
+function tryListen(port: number, host: string): Promise<boolean> {
+  return new Promise((resolve) => {
+    const server = net.createServer()
+    server.once('error', (e: NodeJS.ErrnoException) => {
+      server.close(() => resolve(e.code !== 'EADDRINUSE'))
+    })
+    server.once('listening', () => {
+      server.close(() => resolve(true))
+    })
+    server.listen(port, host)
+  })
+}
+
+async function tryBindServer(
+  httpServer: HttpServer,
+  port: number,
+  host: string | undefined,
+): Promise<
+  { success: true } | { success: false; error: NodeJS.ErrnoException }
+> {
+  return new Promise((resolve) => {
+    const onError = (e: NodeJS.ErrnoException) => {
+      httpServer.off('error', onError)
+      httpServer.off('listening', onListening)
+      resolve({ success: false, error: e })
+    }
+    const onListening = () => {
+      httpServer.off('error', onError)
+      httpServer.off('listening', onListening)
+      resolve({ success: true })
+    }
+
+    httpServer.on('error', onError)
+    httpServer.on('listening', onListening)
+
+    httpServer.listen(port, host)
+  })
+}
+
+const MAX_PORT = 65535
+
 export async function httpServerStart(
   httpServer: HttpServer,
   serverOptions: {
@@ -174,31 +224,30 @@ export async function httpServerStart(
     logger: Logger
   },
 ): Promise<number> {
-  let { port, strictPort, host, logger } = serverOptions
+  const { port: startPort, strictPort, host, logger } = serverOptions
 
-  return new Promise((resolve, reject) => {
-    const onError = (e: Error & { code?: string }) => {
-      if (e.code === 'EADDRINUSE') {
-        if (strictPort) {
-          httpServer.removeListener('error', onError)
-          reject(new Error(`Port ${port} is already in use`))
-        } else {
-          logger.info(`Port ${port} is in use, trying another one...`)
-          httpServer.listen(++port, host)
-        }
-      } else {
-        httpServer.removeListener('error', onError)
-        reject(e)
+  for (let port = startPort; port <= MAX_PORT; port++) {
+    // Pre-check port availability on wildcard addresses (0.0.0.0, ::)
+    // so that we avoid conflicts with other servers listening on all interfaces
+    if (await isPortAvailable(port)) {
+      const result = await tryBindServer(httpServer, port, host)
+      if (result.success) {
+        return port
+      }
+      if (result.error.code !== 'EADDRINUSE') {
+        throw result.error
       }
     }
 
-    httpServer.on('error', onError)
+    if (strictPort) {
+      throw new Error(`Port ${port} is already in use`)
+    }
 
-    httpServer.listen(port, host, () => {
-      httpServer.removeListener('error', onError)
-      resolve(port)
-    })
-  })
+    logger.info(`Port ${port} is in use, trying another one...`)
+  }
+  throw new Error(
+    `No available ports found between ${startPort} and ${MAX_PORT}`,
+  )
 }
 
 export function setClientErrorHandler(

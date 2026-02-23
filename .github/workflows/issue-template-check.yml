@@ -1,0 +1,130 @@
+name: Issue Template Check
+
+on:
+  issues:
+    types: [opened]
+
+jobs:
+  check-issue:
+    if: >-
+      (contains(github.event.issue.labels.*.name, 'pending triage') ||
+       contains(github.event.issue.labels.*.name, 'documentation')) &&
+      !github.event.issue.pull_request
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      issues: write
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Detect issue type
+        id: detect
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const labels = context.payload.issue.labels.map(l => l.name);
+            const issueType = context.payload.issue.type?.name;
+
+            if (issueType === 'Bug') {
+              core.setOutput('template_type', 'bug_report');
+              core.setOutput('skip', 'false');
+            } else if (issueType === 'Feature') {
+              core.setOutput('template_type', 'feature_request');
+              core.setOutput('skip', 'false');
+            } else if (labels.includes('documentation')) {
+              core.setOutput('template_type', 'docs');
+              core.setOutput('skip', 'false');
+            } else {
+              core.info('Issue was not created from a recognized template. Skipping.');
+              core.setOutput('template_type', 'unknown');
+              core.setOutput('skip', 'true');
+            }
+
+      - uses: warpdotdev/oz-agent-action@e75eb592ef275bf056509ca91769378f1c3f7238 # v1
+        if: steps.detect.outputs.skip == 'false'
+        id: agent
+        with:
+          prompt: |
+            You are an issue reviewer for the Vite project.
+
+            The issue template type detected is: ${{ steps.detect.outputs.template_type }}
+
+            Read the matching issue template from the checked-out repository at:
+            .github/ISSUE_TEMPLATE/${{ steps.detect.outputs.template_type }}.yml
+
+            Then evaluate the following issue to determine if it faithfully follows that template.
+
+            Issue title: ${{ github.event.issue.title }}
+            Issue body:
+            ${{ github.event.issue.body }}
+
+            Here is a summary of the required fields per template type:
+
+            **bug_report** required fields:
+            1. Describe the bug (required) - A clear and concise description, not vague or just a generic error message
+            2. Reproduction (required) - A valid link to a reproduction (vite.new or GitHub repo URL), not empty or plain text
+            3. Steps to reproduce - Steps needed to reproduce (optional)
+            4. System Info (required) - Output of the envinfo command, must look like actual system/envinfo output
+            5. Used Package Manager (required) - One of: npm, yarn, pnpm, bun
+            6. Logs - Optional error logs
+            7. Validations (required) - All checkboxes must be checked
+
+            **feature_request** required fields:
+            1. Description (required) - Clear and concise description of the problem and use cases
+            2. Suggested solution (required) - A proposed implementation or approach. If it suggests a new option, check against "Think Before Adding Yet Another Option" in the CONTRIBUTING.md
+            3. Alternative - Alternative solutions considered (optional)
+            4. Additional context - Any other context (optional)
+            5. Validations (required) - All checkboxes must be checked
+
+            **docs** required fields:
+            1. Documentation is - Checkboxes indicating the issue type: Missing, Outdated, Confusing, Not sure (optional but at least one should be checked)
+            2. Explain in Detail (required) - A clear description of the documentation issue
+            3. Your Suggestion for Changes (required) - What should be changed
+            4. Reproduction - Optional link via vite.new or GitHub repo
+            5. Steps to reproduce - Optional reproduction steps
+
+            Evaluate the issue against the criteria for its detected template type. Focus on whether the required fields are present and substantive (not empty placeholders or placeholder text).
+
+            Respond with ONLY a JSON object (no markdown fencing) with these fields:
+            - "template": the template type that was checked
+            - "compliant": true/false
+            - "missing": an array of strings describing what is missing or inadequate (empty array if compliant)
+            - "comment": a polite, helpful comment to post if non-compliant, formatted in GitHub markdown. Address the user by their username @${{ github.event.issue.user.login }}. Ask them to update the issue with the missing information. Reference the specific template they should follow. Be concise.
+          output_format: json
+          warp_api_key: ${{ secrets.WARP_API_KEY }}
+          profile: ${{ vars.WARP_AGENT_PROFILE || '' }}
+
+      - name: Write result to summary
+        if: steps.detect.outputs.skip == 'false' && steps.agent.outputs.agent_output
+        uses: actions/github-script@v7
+        env:
+          TEMPLATE_TYPE: ${{ steps.detect.outputs.template_type }}
+          AGENT_OUTPUT: ${{ steps.agent.outputs.agent_output }}
+        with:
+          script: |
+            const output = process.env.AGENT_OUTPUT;
+            const templateType = process.env.TEMPLATE_TYPE;
+
+            try {
+              // The agent outputs streaming JSON format with multiple lines
+              // We need to extract the last line with type:"agent" and parse its text field
+              const lines = output.trim().split('\n');
+              let agentText = null;
+              for (const line of lines) {
+                try {
+                  const parsed = JSON.parse(line);
+                  if (parsed.type === 'agent' && parsed.text) {
+                    agentText = parsed.text;
+                  }
+                } catch (e) {}
+              }
+              
+              if (agentText) {
+                await core.summary
+                  .addHeading(`Issue Template Check (${templateType})`)
+                  .addCodeBlock(agentText, 'json')
+                  .write();
+              }
+            } catch (e) {
+              core.setFailed(`Failed to write summary: ${e.message}`);
+            }

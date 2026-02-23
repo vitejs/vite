@@ -1,7 +1,7 @@
 import path from 'node:path'
 import fsp from 'node:fs/promises'
 import colors from 'picocolors'
-import type { ExistingRawSourceMap } from 'rollup'
+import type { ExistingRawSourceMap } from 'rolldown'
 import type { Connect } from '#dep-types/connect'
 import type { ViteDevServer } from '..'
 import {

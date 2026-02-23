@@ -17,12 +17,17 @@
     },
     {
       "groupName": "rolldown-related dependencies",
-      "matchDepNames": ["rolldown", "rolldown-plugin-dts", "tsdown"],
+      "matchDepNames": [
+        "rolldown",
+        "rolldown-plugin-dts",
+        "tsdown",
+        "@oxc-project/*",
+        "oxc-*",
+      ],
     },
   ],
   "ignoreDeps": [
     // manually bumping
-    "esbuild",
     "rollup",
     "node",
     "typescript",
@@ -36,6 +41,9 @@
 
     // breaking changes
     "kill-port", // `kill-port:^2.0.0 has perf issues (#8392)
+
+    // v1 is a drop-in replacement for debug, while v2 introduces breaking changes
+    "obug",
   ],
   "github-actions": {
     "managerFilePatterns": [

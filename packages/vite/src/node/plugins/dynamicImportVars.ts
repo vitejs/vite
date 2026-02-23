@@ -2,10 +2,11 @@ import { posix } from 'node:path'
 import MagicString from 'magic-string'
 import { init, parse as parseImports } from 'es-module-lexer'
 import type { ImportSpecifier } from 'es-module-lexer'
-import { parseAst } from 'rollup/parseAst'
+import { parseAst } from 'rolldown/parseAst'
 import { dynamicImportToGlob } from '@rollup/plugin-dynamic-import-vars'
-import { exactRegex } from '@rolldown/pluginutils'
-import type { Plugin } from '../plugin'
+import { viteDynamicImportVarsPlugin as nativeDynamicImportVarsPlugin } from 'rolldown/experimental'
+import { exactRegex } from 'rolldown/filter'
+import { type Plugin, perEnvironmentPlugin } from '../plugin'
 import type { ResolvedConfig } from '../config'
 import { CLIENT_ENTRY } from '../constants'
 import { createBackCompatIdResolver } from '../idResolver'
@@ -172,6 +173,22 @@ export function dynamicImportVarsPlugin(config: ResolvedConfig): Plugin {
     extensions: [],
   })
 
+  if (config.isBundled && config.nativePluginEnabledLevel >= 1) {
+    return perEnvironmentPlugin('native:dynamic-import-vars', (environment) => {
+      const { include, exclude } =
+        environment.config.build.dynamicImportVarsOptions
+
+      return nativeDynamicImportVarsPlugin({
+        include,
+        exclude,
+        resolver(id, importer) {
+          return resolve(environment, id, importer)
+        },
+        sourcemap: !!environment.config.build.sourcemap,
+      })
+    })
+  }
+
   const getFilter = perEnvironmentState((environment: Environment) => {
     const { include, exclude } =
       environment.config.build.dynamicImportVarsOptions
@@ -250,11 +267,7 @@ export function dynamicImportVarsPlugin(config: ResolvedConfig): Plugin {
               config.root,
             )
           } catch (error) {
-            if (environment.config.build.dynamicImportVarsOptions.warnOnError) {
-              this.warn(error)
-            } else {
-              this.error(error)
-            }
+            this.warn(error)
           }
 
           if (!result) {

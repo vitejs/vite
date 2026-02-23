@@ -1,6 +1,5 @@
 import net from 'node:net'
 import path from 'node:path'
-import { fileURLToPath } from 'node:url'
 import http from 'node:http'
 import {
   afterEach,
@@ -13,9 +12,14 @@ import {
 import type { Page } from 'playwright-chromium'
 import WebSocket from 'ws'
 import testJSON from '../safe.json'
-import { browser, isServe, page, viteServer, viteTestUrl } from '~utils'
-
-const __dirname = path.dirname(fileURLToPath(import.meta.url))
+import {
+  browser,
+  isServe,
+  isWindows,
+  page,
+  viteServer,
+  viteTestUrl,
+} from '~utils'
 
 const getViteTestIndexHtmlUrl = () => {
   const srcPrefix = viteTestUrl.endsWith('/') ? '' : '/'
@@ -498,7 +502,7 @@ describe.runIf(isServe)('invalid request', () => {
   }
 
   const root = path
-    .resolve(__dirname.replace('playground', 'playground-temp'), '..')
+    .resolve(import.meta.dirname.replace('playground', 'playground-temp'), '..')
     .replace(/\\/g, '/')
 
   test('request with sendRawRequest should work', async () => {
@@ -538,6 +542,23 @@ describe.runIf(isServe)('invalid request', () => {
     expect(response).toContain('HTTP/1.1 403 Forbidden')
   })
 
+  test('should deny request to denied file when a request ends with \\', async () => {
+    const response = await sendRawRequest(viteTestUrl, '/src/.env\\')
+    expect(response).toContain(
+      isWindows ? 'HTTP/1.1 403 Forbidden' : 'HTTP/1.1 404 Not Found',
+    )
+  })
+
+  test('should deny request to denied file when a request ends with \\ with /@fs/', async () => {
+    const response = await sendRawRequest(
+      viteTestUrl,
+      path.posix.join('/@fs/', root, 'root/src/.env') + '\\',
+    )
+    expect(response).toContain(
+      isWindows ? 'HTTP/1.1 403 Forbidden' : 'HTTP/1.1 404 Not Found',
+    )
+  })
+
   test('should deny request with /@fs/ to denied file when a request has /.', async () => {
     const response = await sendRawRequest(
       viteTestUrl,
@@ -560,3 +581,80 @@ describe.runIf(!isServe)('preview HTML', () => {
       .toBe('404')
   })
 })
+
+test.runIf(isServe)(
+  'load script with no-cors mode from a different origin',
+  async () => {
+    const viteTestUrlUrl = new URL(viteTestUrl)
+
+    // NOTE: fetch cannot be used here as `fetch` sets some headers automatically
+    const res = await new Promise<http.IncomingMessage>((resolve, reject) => {
+      http
+        .get(
+          viteTestUrl + '/src/code.js',
+          {
+            headers: {
+              'Sec-Fetch-Dest': 'script',
+              'Sec-Fetch-Mode': 'no-cors',
+              'Sec-Fetch-Site': 'same-site',
+              Origin: 'http://vite.dev',
+              Host: viteTestUrlUrl.host,
+            },
+          },
+          (res) => {
+            resolve(res)
+          },
+        )
+        .on('error', (e) => {
+          reject(e)
+        })
+    })
+    expect(res.statusCode).toBe(403)
+    const body = Buffer.concat(await ArrayFromAsync(res)).toString()
+    expect(body).toContain(
+      'Cross-origin requests for classic scripts must be made with CORS mode enabled.',
+    )
+  },
+)
+
+test.runIf(isServe)(
+  'load image with no-cors mode from a different origin should be allowed',
+  async () => {
+    const viteTestUrlUrl = new URL(viteTestUrl)
+
+    // NOTE: fetch cannot be used here as `fetch` sets some headers automatically
+    const res = await new Promise<http.IncomingMessage>((resolve, reject) => {
+      http
+        .get(
+          viteTestUrl + '/src/code.js',
+          {
+            headers: {
+              'Sec-Fetch-Dest': 'image',
+              'Sec-Fetch-Mode': 'no-cors',
+              'Sec-Fetch-Site': 'same-site',
+              Origin: 'http://vite.dev',
+              Host: viteTestUrlUrl.host,
+            },
+          },
+          (res) => {
+            resolve(res)
+          },
+        )
+        .on('error', (e) => {
+          reject(e)
+        })
+    })
+    expect(res.statusCode).not.toBe(403)
+  },
+)
+
+// Note: Array.fromAsync is only supported in Node.js 22+
+async function ArrayFromAsync<T>(
+  asyncIterable: AsyncIterable<T>,
+): Promise<T[]> {
+  const chunks = []
+  for await (const chunk of asyncIterable) {
+    chunks.push(chunk)
+  }
+  return chunks
+}

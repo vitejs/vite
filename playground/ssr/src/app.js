@@ -55,9 +55,8 @@ async function renderForkedDeadlockStaticImports(rootDir) {
 }
 
 async function renderForkedDeadlockDynamicImports(rootDir) {
-  const { commonModuleExport } = await import(
-    './forked-deadlock/dynamic-imports/common-module'
-  )
+  const { commonModuleExport } =
+    await import('./forked-deadlock/dynamic-imports/common-module')
   await commonModuleExport()
   return `<div class="forked-deadlock-dynamic-imports">rendered</div>`
 }

@@ -3,7 +3,7 @@
 :::tip Note
 If you want to serve the HTML using a traditional backend (e.g. Rails, Laravel) but use Vite for serving assets, check for existing integrations listed in [Awesome Vite](https://github.com/vitejs/awesome-vite#integrations-with-backends).
 
-If you need a custom integration, you can follow the steps in this guide to configure it manually
+If you need a custom integration, you can follow the steps in this guide to configure it manually.
 :::
 
 1. In your Vite config, configure the entry and enable build manifest:
@@ -64,7 +64,7 @@ If you need a custom integration, you can follow the steps in this guide to conf
 
 3. For production, after running `vite build`, a `.vite/manifest.json` file will be generated alongside other asset files. An example manifest file looks like this:
 
-   ```json [.vite/manifest.json]
+   ```json [.vite/manifest.json] style:max-height:400px
    {
      "_shared-B7PI925R.js": {
        "file": "assets/shared-B7PI925R.js",
@@ -106,17 +106,49 @@ If you need a custom integration, you can follow the steps in this guide to conf
 
    The manifest has a `Record<name, chunk>` structure where each chunk follows the `ManifestChunk` interface:
 
-   ```ts
+   ```ts style:max-height:400px
    interface ManifestChunk {
+     /**
+      * The input file name of this chunk / asset if known
+      */
      src?: string
+     /**
+      * The output file name of this chunk / asset
+      */
      file: string
+     /**
+      * The list of CSS files imported by this chunk
+      */
      css?: string[]
+     /**
+      * The list of asset files imported by this chunk, excluding CSS files
+      */
      assets?: string[]
+     /**
+      * Whether this chunk or asset is an entry point
+      */
      isEntry?: boolean
+     /**
+      * The name of this chunk / asset if known
+      */
      name?: string
-     names?: string[]
+     /**
+      * Whether this chunk is a dynamic entry point
+      *
+      * This field is only present in JS chunks.
+      */
      isDynamicEntry?: boolean
+     /**
+      * The list of statically imported chunks by this chunk
+      *
+      * The values are the keys of the manifest. This field is only present in JS chunks.
+      */
      imports?: string[]
+     /**
+      * The list of dynamically imported chunks by this chunk
+      *
+      * The values are the keys of the manifest. This field is only present in JS chunks.
+      */
      dynamicImports?: string[]
    }
    ```
@@ -128,7 +160,7 @@ If you need a custom integration, you can follow the steps in this guide to conf
    - **Asset chunks**: Generated from imported assets like images, fonts. Their key is the relative src path from project root.
    - **CSS files**: When [`build.cssCodeSplit`](/config/build-options.md#build-csscodesplit) is `false`, a single CSS file is generated with the key `style.css`. When `build.cssCodeSplit` is not `false`, the key is generated similar to JS chunks (i.e. entry chunks will not have `_` prefix and non-entry chunks will have `_` prefix).
 
-   Chunks will contain information on their static and dynamic imports (both are keys that map to the corresponding chunk in the manifest), and also their corresponding CSS and asset files (if any).
+   JS chunks (chunks other than assets or CSS) will contain information on their static and dynamic imports (both are keys that map to the corresponding chunk in the manifest). Chunks also list their corresponding CSS and asset files if they have any.
 
 4. You can use this file to render links or preload directives with hashed filenames.
 

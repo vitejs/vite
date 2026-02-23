@@ -1,7 +1,7 @@
 import http from 'node:http'
 import path from 'node:path'
 import fs from 'node:fs'
-import { afterEach, describe, expect, test } from 'vitest'
+import { afterEach, describe, expect, test, vi } from 'vitest'
 import type { InlineConfig, PluginOption } from '..'
 import type { UserConfig, UserConfigExport } from '../config'
 import { defineConfig, loadConfigFromFile, resolveConfig } from '../config'
@@ -166,21 +166,24 @@ describe('mergeConfig', () => {
   })
 
   test('handles ssr.noExternal', () => {
-    const baseConfig = {
+    const baseConfig: UserConfig = {
       ssr: {
         noExternal: true,
+        external: true,
       },
     }
 
-    const newConfig = {
+    const newConfig: UserConfig = {
       ssr: {
         noExternal: ['foo'],
+        external: ['bar'],
       },
     }
 
-    const mergedConfig = {
+    const mergedConfig: UserConfig = {
       ssr: {
         noExternal: true,
+        external: true,
       },
     }
 
@@ -309,6 +312,422 @@ describe('mergeConfig', () => {
       ),
     ).toThrowError('Cannot merge config in form of callback')
   })
+
+  test('handles `rollupOptions`', () => {
+    const baseConfig = defineConfig({
+      build: {
+        rollupOptions: {
+          treeshake: false,
+        },
+      },
+      worker: {
+        rollupOptions: {
+          treeshake: false,
+        },
+      },
+      optimizeDeps: {
+        rollupOptions: {
+          treeshake: false,
+        },
+      },
+      ssr: {
+        optimizeDeps: {
+          rollupOptions: {
+            treeshake: false,
+          },
+        },
+      },
+    })
+
+    const newConfig = defineConfig({
+      build: {
+        rollupOptions: {
+          output: {
+            minifyInternalExports: true,
+          },
+        },
+      },
+      worker: {
+        rollupOptions: {
+          output: {
+            minifyInternalExports: true,
+          },
+        },
+      },
+      optimizeDeps: {
+        rollupOptions: {
+          output: {
+            minifyInternalExports: true,
+          },
+        },
+      },
+      ssr: {
+        optimizeDeps: {
+          rollupOptions: {
+            output: {
+              minifyInternalExports: true,
+            },
+          },
+        },
+      },
+    })
+
+    const mergedConfig = mergeConfig(baseConfig, newConfig)
+
+    const expected = {
+      treeshake: false,
+      output: {
+        minifyInternalExports: true,
+      },
+    }
+    expect(mergedConfig.build.rollupOptions).toStrictEqual(expected)
+    expect(mergedConfig.build.rolldownOptions).toStrictEqual(expected)
+    expect(mergedConfig.worker.rollupOptions).toStrictEqual(expected)
+    expect(mergedConfig.worker.rolldownOptions).toStrictEqual(expected)
+    expect(mergedConfig.optimizeDeps.rollupOptions).toStrictEqual(expected)
+    expect(mergedConfig.optimizeDeps.rolldownOptions).toStrictEqual(expected)
+    expect(mergedConfig.ssr.optimizeDeps.rollupOptions).toStrictEqual(expected)
+    expect(mergedConfig.ssr.optimizeDeps.rolldownOptions).toStrictEqual(
+      expected,
+    )
+  })
+
+  test('handles `build.rolldownOptions`', () => {
+    const baseConfig = defineConfig({
+      build: {
+        rolldownOptions: {
+          treeshake: false,
+        },
+      },
+      worker: {
+        rolldownOptions: {
+          treeshake: false,
+        },
+      },
+      optimizeDeps: {
+        rolldownOptions: {
+          treeshake: false,
+        },
+      },
+      ssr: {
+        optimizeDeps: {
+          rolldownOptions: {
+            treeshake: false,
+          },
+        },
+      },
+    })
+
+    const newConfig = defineConfig({
+      build: {
+        rolldownOptions: {
+          output: {
+            minifyInternalExports: true,
+          },
+        },
+      },
+      worker: {
+        rolldownOptions: {
+          output: {
+            minifyInternalExports: true,
+          },
+        },
+      },
+      optimizeDeps: {
+        rolldownOptions: {
+          output: {
+            minifyInternalExports: true,
+          },
+        },
+      },
+      ssr: {
+        optimizeDeps: {
+          rolldownOptions: {
+            output: {
+              minifyInternalExports: true,
+            },
+          },
+        },
+      },
+    })
+
+    const mergedConfig = mergeConfig(baseConfig, newConfig)
+
+    const expected = {
+      treeshake: false,
+      output: {
+        minifyInternalExports: true,
+      },
+    }
+    expect(mergedConfig.build.rollupOptions).toStrictEqual(expected)
+    expect(mergedConfig.build.rolldownOptions).toStrictEqual(expected)
+    expect(mergedConfig.worker.rollupOptions).toStrictEqual(expected)
+    expect(mergedConfig.worker.rolldownOptions).toStrictEqual(expected)
+    expect(mergedConfig.optimizeDeps.rollupOptions).toStrictEqual(expected)
+    expect(mergedConfig.optimizeDeps.rolldownOptions).toStrictEqual(expected)
+    expect(mergedConfig.ssr.optimizeDeps.rollupOptions).toStrictEqual(expected)
+    expect(mergedConfig.ssr.optimizeDeps.rolldownOptions).toStrictEqual(
+      expected,
+    )
+  })
+
+  test('syncs `build.rollupOptions` and `build.rolldownOptions`', () => {
+    const baseConfig = defineConfig({
+      build: {
+        rollupOptions: {
+          treeshake: false,
+        },
+      },
+      worker: {
+        rollupOptions: {
+          treeshake: false,
+        },
+      },
+      optimizeDeps: {
+        rollupOptions: {
+          treeshake: false,
+        },
+      },
+      ssr: {
+        optimizeDeps: {
+          rollupOptions: {
+            treeshake: false,
+          },
+        },
+      },
+    })
+
+    const newConfig = defineConfig({
+      build: {
+        rolldownOptions: {
+          output: {
+            minifyInternalExports: true,
+          },
+        },
+      },
+      worker: {
+        rolldownOptions: {
+          output: {
+            minifyInternalExports: true,
+          },
+        },
+      },
+      optimizeDeps: {
+        rolldownOptions: {
+          output: {
+            minifyInternalExports: true,
+          },
+        },
+      },
+      ssr: {
+        optimizeDeps: {
+          rollupOptions: {
+            output: {
+              minifyInternalExports: true,
+            },
+          },
+        },
+      },
+    })
+
+    const mergedConfig = mergeConfig(baseConfig, newConfig) as UserConfig
+
+    const expected = {
+      treeshake: false,
+      output: {
+        minifyInternalExports: true,
+      },
+    }
+    expect(mergedConfig.build!.rollupOptions).toStrictEqual(expected)
+    expect(mergedConfig.build!.rolldownOptions).toStrictEqual(expected)
+    expect(mergedConfig.worker!.rollupOptions).toStrictEqual(expected)
+    expect(mergedConfig.worker!.rolldownOptions).toStrictEqual(expected)
+    expect(mergedConfig.optimizeDeps!.rollupOptions).toStrictEqual(expected)
+    expect(mergedConfig.optimizeDeps!.rolldownOptions).toStrictEqual(expected)
+    expect(mergedConfig.ssr!.optimizeDeps!.rollupOptions).toStrictEqual(
+      expected,
+    )
+    expect(mergedConfig.ssr!.optimizeDeps!.rolldownOptions).toStrictEqual(
+      expected,
+    )
+
+    const upOutput = mergedConfig.build!.rollupOptions!.output!
+    if (Array.isArray(upOutput)) throw new Error()
+    const downOutput = mergedConfig.build!.rolldownOptions!.output!
+    if (Array.isArray(downOutput)) throw new Error()
+    upOutput.hashCharacters = 'base36'
+    expect(upOutput.hashCharacters).toBe('base36')
+    expect(downOutput.hashCharacters).toBe('base36')
+  })
+
+  test('rollupOptions/rolldownOptions.platform', async () => {
+    const testRollupOptions = await resolveConfig(
+      {
+        plugins: [
+          {
+            name: 'set-rollupOptions-platform',
+            configEnvironment(name) {
+              if (name === 'ssr') {
+                return {
+                  build: {
+                    rollupOptions: {
+                      platform: 'neutral',
+                    },
+                  },
+                }
+              }
+            },
+          },
+        ],
+      },
+      'serve',
+    )
+    expect(
+      testRollupOptions.environments.ssr.build.rolldownOptions.platform,
+    ).toBe('neutral')
+    expect(
+      testRollupOptions.environments.client.build.rolldownOptions.platform,
+    ).toBe('browser')
+
+    const testRolldownOptions = await resolveConfig(
+      {
+        plugins: [
+          {
+            name: 'set-rollupOptions-platform',
+            configEnvironment(name) {
+              if (name === 'ssr') {
+                return {
+                  build: {
+                    rolldownOptions: {
+                      platform: 'neutral',
+                    },
+                  },
+                }
+              }
+            },
+          },
+        ],
+      },
+      'serve',
+    )
+    expect(
+      testRolldownOptions.environments.ssr.build.rolldownOptions.platform,
+    ).toBe('neutral')
+    expect(
+      testRolldownOptions.environments.client.build.rolldownOptions.platform,
+    ).toBe('browser')
+  })
+
+  describe('later plugin can read `rollupOptions` set via `rolldownOptions` in earlier plugin', () => {
+    test('top-level config', async () => {
+      expect.assertions(2)
+      await resolveConfig(
+        {
+          plugins: [
+            {
+              name: 'plugin-a',
+              config() {
+                return {
+                  build: {
+                    rolldownOptions: {
+                      platform: 'neutral',
+                    },
+                  },
+                  worker: {
+                    rolldownOptions: {
+                      platform: 'neutral',
+                    },
+                  },
+                }
+              },
+            },
+            {
+              name: 'plugin-b',
+              config(config) {
+                expect(config.build?.rollupOptions?.platform).toBe('neutral')
+                expect(config.worker?.rollupOptions?.platform).toBe('neutral')
+              },
+            },
+          ],
+        },
+        'build',
+      )
+    })
+
+    test('new `environments` object', async () => {
+      expect.assertions(1)
+      await resolveConfig(
+        {
+          plugins: [
+            {
+              name: 'plugin-a',
+              config() {
+                return {
+                  environments: {
+                    ssr: {
+                      build: {
+                        rolldownOptions: {
+                          platform: 'neutral',
+                        },
+                      },
+                    },
+                  },
+                }
+              },
+            },
+            {
+              name: 'plugin-b',
+              config(config) {
+                expect(
+                  config.environments?.ssr?.build?.rollupOptions?.platform,
+                ).toBe('neutral')
+              },
+            },
+          ],
+        },
+        'build',
+      )
+    })
+
+    test('new environment on existing `environments` object', async () => {
+      expect.assertions(1)
+      await resolveConfig(
+        {
+          environments: {
+            // environments exists, but no ssr
+            client: {},
+          },
+          plugins: [
+            {
+              name: 'plugin-a',
+              config() {
+                return {
+                  environments: {
+                    ssr: {
+                      build: {
+                        rolldownOptions: {
+                          platform: 'neutral',
+                        },
+                      },
+                    },
+                  },
+                }
+              },
+            },
+            {
+              name: 'plugin-b',
+              config(config) {
+                expect(
+                  config.environments?.ssr?.build?.rollupOptions?.platform,
+                ).toBe('neutral')
+              },
+            },
+          ],
+        },
+        'build',
+      )
+    })
+  })
 })
 
 describe('resolveEnvPrefix', () => {
@@ -324,9 +743,22 @@ describe('resolveEnvPrefix', () => {
     expect(() => resolveEnvPrefix(config)).toThrow()
   })
 
+  test(`show a warning message if envPrefix contains a whitespace`, () => {
+    const consoleWarnSpy = vi
+      .spyOn(console, 'warn')
+      .mockImplementation(() => {})
+    let config: UserConfig = { envPrefix: 'WITH SPACE' }
+    resolveEnvPrefix(config)
+    expect(consoleWarnSpy).toHaveBeenCalled()
+    config = { envPrefix: ['CUSTOM_', 'ANOTHER SPACE'] }
+    resolveEnvPrefix(config)
+    expect(consoleWarnSpy).toHaveBeenCalledTimes(2)
+    consoleWarnSpy.mockRestore()
+  })
+
   test('should work correctly for valid envPrefix value', () => {
-    const config: UserConfig = { envPrefix: [' ', 'CUSTOM_'] }
-    expect(resolveEnvPrefix(config)).toMatchObject([' ', 'CUSTOM_'])
+    const config: UserConfig = { envPrefix: ['CUSTOM_'] }
+    expect(resolveEnvPrefix(config)).toMatchObject(['CUSTOM_'])
   })
 })
 
@@ -448,6 +880,19 @@ describe('resolveConfig', () => {
     }
 
     await resolveConfig({ root: './inc?ud#s*', customLogger: logger }, 'build')
+  })
+
+  test('syncs `build.rollupOptions` and `build.rolldownOptions`', async () => {
+    const resolved = await resolveConfig({}, 'build')
+    expect(resolved.build!.rollupOptions).toStrictEqual(
+      resolved.build!.rolldownOptions,
+    )
+    expect(resolved.worker!.rollupOptions).toStrictEqual(
+      resolved.worker!.rolldownOptions,
+    )
+    expect(resolved.optimizeDeps!.rollupOptions).toStrictEqual(
+      resolved.optimizeDeps!.rolldownOptions,
+    )
   })
 })
 
@@ -700,7 +1145,7 @@ test('preTransformRequests', async () => {
 })
 
 describe('loadConfigFromFile', () => {
-  const fixtures = path.resolve(__dirname, './fixtures/config')
+  const fixtures = path.resolve(import.meta.dirname, './fixtures/config')
 
   describe('load default files', () => {
     const root = path.resolve(fixtures, './loadConfigFromFile')
@@ -839,7 +1284,7 @@ describe('loadConfigFromFile', () => {
       `)
   })
 
-  test('import.meta.main is correctly set', async () => {
+  test('import.meta properties are supported', async () => {
     const { config } = (await loadConfigFromFile(
       {} as any,
       path.resolve(fixtures, './import-meta/vite.config.ts'),
@@ -851,6 +1296,19 @@ describe('loadConfigFromFile', () => {
     expect(c.url).toContain('file://')
     expect(c.dirname).toContain('import-meta')
     expect(c.filename).toContain('vite.config.ts')
+    expect(c.resolved).toBe(c.url)
+    expect(c.resolvedMultiline).toBe(c.url)
+  })
+
+  test('shebang is preserved at the top of the file', async () => {
+    const { config } = (await loadConfigFromFile(
+      {} as any,
+      path.resolve(fixtures, './shebang/vite.config.ts'),
+      path.resolve(fixtures, './shebang'),
+    ))!
+
+    const c = config as any
+    expect(c.dirname).toContain('shebang')
   })
 
   describe('loadConfigFromFile with configLoader: native', () => {

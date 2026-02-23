@@ -34,6 +34,6 @@
     "@vitejs/test-ts-transpiled-exports": "file:./ts-transpiled-exports"
   },
   "devDependencies": {
-    "express": "^5.1.0"
+    "express": "^5.2.1"
   }
 }

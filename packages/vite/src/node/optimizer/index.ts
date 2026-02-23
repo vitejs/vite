@@ -4,12 +4,19 @@ import path from 'node:path'
 import { promisify } from 'node:util'
 import { performance } from 'node:perf_hooks'
 import colors from 'picocolors'
-import type { BuildContext, BuildOptions as EsbuildBuildOptions } from 'esbuild'
-import esbuild, { build, formatMessages } from 'esbuild'
 import { init, parse } from 'es-module-lexer'
 import { isDynamicPattern } from 'tinyglobby'
+import {
+  type RolldownOptions,
+  type RolldownOutput,
+  type OutputOptions as RolldownOutputOptions,
+  rolldown,
+} from 'rolldown'
+import type { DepsOptimizerEsbuildOptions } from '#types/internal/esbuildOptions'
 import type { ResolvedConfig } from '../config'
 import {
+  arraify,
+  asyncFlatten,
   createDebugger,
   flattenId,
   getHash,
@@ -22,23 +29,22 @@ import {
   unique,
 } from '../utils'
 import {
-  defaultEsbuildSupported,
-  transformWithEsbuild,
-} from '../plugins/esbuild'
-import {
   ESBUILD_BASELINE_WIDELY_AVAILABLE_TARGET,
   METADATA_FILENAME,
 } from '../constants'
 import { isWindows } from '../../shared/utils'
 import type { Environment } from '../environment'
-import { esbuildCjsExternalPlugin, esbuildDepPlugin } from './esbuildDepPlugin'
+import { transformWithOxc } from '../plugins/oxc'
 import { ScanEnvironment, scanImports } from './scan'
 import { createOptimizeDepsIncludeResolver, expandGlobIds } from './resolve'
+import {
+  rolldownCjsExternalPlugin,
+  rolldownDepPlugin,
+} from './rolldownDepPlugin'
 
 const debug = createDebugger('vite:deps')
 
 const jsExtensionRE = /\.js$/i
-const jsMapExtensionRE = /\.js\.map$/i
 
 export type ExportsData = {
   hasModuleSyntax: boolean
@@ -92,20 +98,33 @@ export interface DepOptimizationConfig {
    * - `plugins` are merged with Vite's dep plugin
    *
    * https://esbuild.github.io/api
+   *
+   * @deprecated Use `rolldownOptions` instead.
    */
-  esbuildOptions?: Omit<
-    EsbuildBuildOptions,
-    | 'bundle'
-    | 'entryPoints'
-    | 'external'
-    | 'write'
-    | 'watch'
-    | 'outdir'
-    | 'outfile'
-    | 'outbase'
-    | 'outExtension'
-    | 'metafile'
-  >
+  esbuildOptions?: DepsOptimizerEsbuildOptions
+  /**
+   * @deprecated Use `rolldownOptions` instead.
+   */
+  rollupOptions?: Omit<RolldownOptions, 'input' | 'logLevel' | 'output'> & {
+    output?: Omit<
+      RolldownOutputOptions,
+      'format' | 'sourcemap' | 'dir' | 'banner'
+    >
+  }
+  /**
+   * Options to pass to rolldown during the dep scanning and optimization
+   *
+   * Certain options are omitted since changing them would not be compatible
+   * with Vite's dep optimization.
+   *
+   * - `plugins` are merged with Vite's dep plugin
+   */
+  rolldownOptions?: Omit<RolldownOptions, 'input' | 'logLevel' | 'output'> & {
+    output?: Omit<
+      RolldownOutputOptions,
+      'format' | 'sourcemap' | 'dir' | 'banner'
+    >
+  }
   /**
    * List of file extensions that can be optimized. A corresponding esbuild
    * plugin must exist to handle the specific extension.
@@ -144,6 +163,14 @@ export interface DepOptimizationConfig {
    * @experimental
    */
   holdUntilCrawlEnd?: boolean
+  /**
+   * When enabled, Vite will not throw an error when an outdated optimized
+   * dependency is requested. Enabling this option may cause a single module
+   * to have a multiple reference.
+   * @default false
+   * @experimental
+   */
+  ignoreOutdatedRequests?: boolean
 }
 
 export type DepOptimizationOptions = DepOptimizationConfig & {
@@ -203,6 +230,7 @@ export interface OptimizedDepInfo {
    * data used both to define if interop is needed and when pre-bundling
    */
   exportsData?: Promise<ExportsData>
+  isDynamicEntry?: boolean
 }
 
 export interface DepOptimizationMetadata {
@@ -254,7 +282,7 @@ export interface DepOptimizationMetadata {
 
 export async function optimizeDeps(
   config: ResolvedConfig,
-  force = config.optimizeDeps.force,
+  force: boolean | undefined = config.optimizeDeps.force,
   asCommand = false,
 ): Promise<DepOptimizationMetadata> {
   const log = asCommand ? config.logger.info : debug
@@ -353,7 +381,7 @@ let firstLoadCachedDepOptimizationMetadata = true
  */
 export async function loadCachedDepOptimizationMetadata(
   environment: Environment,
-  force = environment.config.optimizeDeps.force ?? false,
+  force: boolean = environment.config.optimizeDeps.force ?? false,
   asCommand = false,
 ): Promise<DepOptimizationMetadata | undefined> {
   const log = asCommand ? environment.logger.info : debug
@@ -364,7 +392,7 @@ export async function loadCachedDepOptimizationMetadata(
     setTimeout(
       () => cleanupDepsCacheStaleDirs(environment.getTopLevelConfig()),
       0,
-    )
+    ).unref()
   }
 
   const depsCacheDir = getDepsCacheDir(environment)
@@ -616,7 +644,7 @@ export function runOptimizeDeps(
 
   const start = performance.now()
 
-  const preparedRun = prepareEsbuildOptimizerRun(
+  const preparedRun = prepareRolldownOptimizerRun(
     environment,
     depsInfo,
     processingCacheDir,
@@ -624,64 +652,49 @@ export function runOptimizeDeps(
   )
 
   const runResult = preparedRun.then(({ context, idToExports }) => {
-    function disposeContext() {
-      return context?.dispose().catch((e) => {
-        environment.logger.error('Failed to dispose esbuild context', {
-          error: e,
-        })
-      })
-    }
     if (!context || optimizerContext.cancelled) {
-      disposeContext()
       return cancelledResult
     }
 
     return context
-      .rebuild()
+      .build()
       .then((result) => {
-        const meta = result.metafile!
-
-        // the paths in `meta.outputs` are relative to `process.cwd()`
-        const processingCacheDirOutputPath = path.relative(
-          process.cwd(),
-          processingCacheDir,
-        )
-
-        for (const id in depsInfo) {
-          const output = esbuildOutputFromId(
-            meta.outputs,
-            id,
-            processingCacheDir,
-          )
-
-          const { exportsData, ...info } = depsInfo[id]
-          addOptimizedDepInfo(metadata, 'optimized', {
-            ...info,
-            // We only need to hash the output.imports in to check for stability, but adding the hash
-            // and file path gives us a unique hash that may be useful for other things in the future
-            fileHash: getHash(
-              metadata.hash +
-                depsInfo[id].file +
-                JSON.stringify(output.imports),
-            ),
-            browserHash: metadata.browserHash,
-            // After bundling we have more information and can warn the user about legacy packages
-            // that require manual configuration
-            needsInterop: needsInterop(
-              environment,
-              id,
-              idToExports[id],
-              output,
-            ),
-          })
+        const depForEntryFileName: Record<string, OptimizedDepInfo> = {}
+        for (const dep of Object.values(depsInfo)) {
+          const entryFileName = flattenId(dep.id) + '.js'
+          depForEntryFileName[entryFileName] = dep
         }
 
-        for (const o of Object.keys(meta.outputs)) {
-          if (!jsMapExtensionRE.test(o)) {
-            const id = path
-              .relative(processingCacheDirOutputPath, o)
-              .replace(jsExtensionRE, '')
-            const file = getOptimizedDepPath(environment, id)
+        for (const chunk of result.output) {
+          if (chunk.type !== 'chunk') continue
+
+          if (chunk.isEntry) {
+            const { exportsData, file, id, ...info } =
+              depForEntryFileName[chunk.fileName]
+            addOptimizedDepInfo(metadata, 'optimized', {
+              id,
+              file,
+              ...info,
+              // We only need to hash the chunk.imports in to check for stability, but adding the hash
+              // and file path gives us a unique hash that may be useful for other things in the future
+              fileHash: getHash(
+                metadata.hash + file + JSON.stringify(chunk.imports),
+              ),
+              browserHash: metadata.browserHash,
+              // After bundling we have more information and can warn the user about legacy packages
+              // that require manual configuration
+              needsInterop: needsInterop(
+                environment,
+                id,
+                idToExports[id],
+                chunk,
+              ),
+            })
+          } else {
+            const id = chunk.fileName.replace(jsExtensionRE, '')
+            const file = normalizePath(
+              path.resolve(getDepsCacheDir(environment), chunk.fileName),
+            )
             if (
               !findOptimizedDepInfoInRecord(
                 metadata.optimized,
@@ -693,26 +706,8 @@ export function runOptimizeDeps(
                 file,
                 needsInterop: false,
                 browserHash: metadata.browserHash,
+                isDynamicEntry: chunk.isDynamicEntry,
               })
-            }
-          } else {
-            // workaround Firefox warning by removing blank source map reference
-            // https://github.com/evanw/esbuild/issues/3945
-            const output = meta.outputs[o]
-            // filter by exact bytes of an empty source map
-            if (output.bytes === 93) {
-              const jsMapPath = path.resolve(o)
-              const jsPath = jsMapPath.slice(0, -4)
-              if (fs.existsSync(jsPath) && fs.existsSync(jsMapPath)) {
-                const map = JSON.parse(fs.readFileSync(jsMapPath, 'utf-8'))
-                if (map.sources.length === 0) {
-                  const js = fs.readFileSync(jsPath, 'utf-8')
-                  fs.writeFileSync(
-                    jsPath,
-                    js.slice(0, js.lastIndexOf('//# sourceMappingURL=')),
-                  )
-                }
-              }
             }
           }
         }
@@ -724,28 +719,17 @@ export function runOptimizeDeps(
         return successfulResult
       })
 
-      .catch(async (e) => {
+      .catch((e) => {
         if (e.errors && e.message.includes('The build was canceled')) {
-          // esbuild logs an error when cancelling, but this is expected so
+          // an error happens when cancelling, but this is expected so
           // return an empty result instead
           return cancelledResult
         }
         const prependMessage = colors.red(
           'Error during dependency optimization:\n\n',
         )
-        if (e.errors) {
-          const msgs = await formatMessages(e.errors, {
-            kind: 'error',
-            color: true,
-          })
-          e.message = prependMessage + msgs.join('\n')
-        } else {
-          e.message = prependMessage + e.message
-        }
+        e.message = prependMessage + e.message
         throw e
-      })
-      .finally(() => {
-        return disposeContext()
       })
   })
 
@@ -757,20 +741,20 @@ export function runOptimizeDeps(
     async cancel() {
       optimizerContext.cancelled = true
       const { context } = await preparedRun
-      await context?.cancel()
+      context?.cancel()
       cleanUp()
     },
     result: runResult,
   }
 }
 
-async function prepareEsbuildOptimizerRun(
+async function prepareRolldownOptimizerRun(
   environment: Environment,
   depsInfo: Record<string, OptimizedDepInfo>,
   processingCacheDir: string,
   optimizerContext: { cancelled: boolean },
 ): Promise<{
-  context?: BuildContext
+  context?: { build: () => Promise<RolldownOutput>; cancel: () => void }
   idToExports: Record<string, ExportsData>
 }> {
   // esbuild generates nested directory output with lowest common ancestor base
@@ -784,21 +768,19 @@ async function prepareEsbuildOptimizerRun(
 
   const { optimizeDeps } = environment.config
 
-  const { plugins: pluginsFromConfig = [], ...esbuildOptions } =
-    optimizeDeps.esbuildOptions ?? {}
+  const { plugins: pluginsFromConfig = [], ...rolldownOptions } =
+    optimizeDeps.rolldownOptions ?? {}
 
+  let jsxLoader = false
   await Promise.all(
     Object.keys(depsInfo).map(async (id) => {
       const src = depsInfo[id].src!
       const exportsData = await (depsInfo[id].exportsData ??
         extractExportsData(environment, src))
-      if (exportsData.jsxLoader && !esbuildOptions.loader?.['.js']) {
+      if (exportsData.jsxLoader) {
         // Ensure that optimization won't fail by defaulting '.js' to the JSX parser.
         // This is useful for packages such as Gatsby.
-        esbuildOptions.loader = {
-          '.js': 'jsx',
-          ...esbuildOptions.loader,
-        }
+        jsxLoader = true
       }
       const flatId = flattenId(id)
       flatIdDeps[flatId] = src
@@ -814,10 +796,11 @@ async function prepareEsbuildOptimizerRun(
         // as esbuild will replace it automatically when `platform` is `'browser'`
         'process.env.NODE_ENV'
       : JSON.stringify(process.env.NODE_ENV || environment.config.mode),
+    ...rolldownOptions.transform?.define,
   }
 
   const platform =
-    optimizeDeps.esbuildOptions?.platform ??
+    optimizeDeps.rolldownOptions?.platform ??
     // We generally don't want to use platform 'neutral', as esbuild has custom handling
     // when the platform is 'node' or 'browser' that can't be emulated by using mainFields
     // and conditions
@@ -828,43 +811,57 @@ async function prepareEsbuildOptimizerRun(
 
   const external = [...(optimizeDeps.exclude ?? [])]
 
-  const plugins = [...pluginsFromConfig]
+  const plugins = await asyncFlatten(arraify(pluginsFromConfig))
   if (external.length) {
-    plugins.push(esbuildCjsExternalPlugin(external, platform))
+    plugins.push(rolldownCjsExternalPlugin(external, platform))
   }
-  plugins.push(esbuildDepPlugin(environment, flatIdDeps, external))
+  plugins.push(...rolldownDepPlugin(environment, flatIdDeps, external))
 
-  const context = await esbuild.context({
-    absWorkingDir: process.cwd(),
-    entryPoints: Object.keys(flatIdDeps),
-    bundle: true,
-    platform,
-    define,
-    format: 'esm',
-    // See https://github.com/evanw/esbuild/issues/1921#issuecomment-1152991694
-    banner:
-      platform === 'node'
-        ? {
-            js: `import { createRequire } from 'module';const require = createRequire(import.meta.url);`,
-          }
-        : undefined,
-    target: ESBUILD_BASELINE_WIDELY_AVAILABLE_TARGET,
-    external,
-    logLevel: 'error',
-    splitting: true,
-    sourcemap: true,
-    outdir: processingCacheDir,
-    ignoreAnnotations: true,
-    metafile: true,
-    plugins,
-    charset: 'utf8',
-    ...esbuildOptions,
-    supported: {
-      ...defaultEsbuildSupported,
-      ...esbuildOptions.supported,
-    },
-  })
-  return { context, idToExports }
+  let canceled = false
+  async function build() {
+    const bundle = await rolldown({
+      ...rolldownOptions,
+      input: flatIdDeps,
+      logLevel: 'silent',
+      plugins,
+      platform,
+      transform: {
+        ...rolldownOptions.transform,
+        target: ESBUILD_BASELINE_WIDELY_AVAILABLE_TARGET,
+        define,
+      },
+      resolve: {
+        extensions: ['.tsx', '.ts', '.jsx', '.js', '.css', '.json'],
+        ...rolldownOptions.resolve,
+      },
+      // TODO: remove this and enable rolldown's CSS support later
+      moduleTypes: {
+        '.css': 'js',
+        ...rolldownOptions.moduleTypes,
+        ...(jsxLoader ? { '.js': 'jsx' } : {}),
+      },
+    })
+    if (canceled) {
+      await bundle.close()
+      throw new Error('The build was canceled')
+    }
+    const result = await bundle.write({
+      legalComments: 'none',
+      ...rolldownOptions.output,
+      format: 'esm',
+      sourcemap: true,
+      dir: processingCacheDir,
+      entryFileNames: '[name].js',
+    })
+    await bundle.close()
+    return result
+  }
+
+  function cancel() {
+    canceled = true
+  }
+
+  return { context: { build, cancel }, idToExports }
 }
 
 export async function addManuallyIncludedOptimizeDeps(
@@ -1061,19 +1058,23 @@ function stringifyDepsOptimizerMetadata(
       browserHash,
       optimized: Object.fromEntries(
         Object.values(optimized).map(
-          ({ id, src, file, fileHash, needsInterop }) => [
+          ({ id, src, file, fileHash, needsInterop, isDynamicEntry }) => [
             id,
             {
               src,
               file,
               fileHash,
               needsInterop,
+              isDynamicEntry,
             },
           ],
         ),
       ),
       chunks: Object.fromEntries(
-        Object.values(chunks).map(({ id, file }) => [id, { file }]),
+        Object.values(chunks).map(({ id, file, isDynamicEntry }) => [
+          id,
+          { file, isDynamicEntry },
+        ]),
       ),
     },
     (key: string, value: string) => {
@@ -1088,29 +1089,6 @@ function stringifyDepsOptimizerMetadata(
   )
 }
 
-function esbuildOutputFromId(
-  outputs: Record<string, any>,
-  id: string,
-  cacheDirOutputPath: string,
-): any {
-  const cwd = process.cwd()
-  const flatId = flattenId(id) + '.js'
-  const normalizedOutputPath = normalizePath(
-    path.relative(cwd, path.join(cacheDirOutputPath, flatId)),
-  )
-  const output = outputs[normalizedOutputPath]
-  if (output) {
-    return output
-  }
-  // If the root dir was symlinked, esbuild could return output keys as `../cwd/`
-  // Normalize keys to support this case too
-  for (const [key, value] of Object.entries(outputs)) {
-    if (normalizePath(path.relative(cwd, key)) === normalizedOutputPath) {
-      return value
-    }
-  }
-}
-
 export async function extractExportsData(
   environment: Environment,
   filePath: string,
@@ -1119,18 +1097,38 @@ export async function extractExportsData(
 
   const { optimizeDeps } = environment.config
 
-  const esbuildOptions = optimizeDeps.esbuildOptions ?? {}
+  const rolldownOptions = optimizeDeps.rolldownOptions ?? {}
   if (optimizeDeps.extensions?.some((ext) => filePath.endsWith(ext))) {
     // For custom supported extensions, build the entry file to transform it into JS,
     // and then parse with es-module-lexer. Note that the `bundle` option is not `true`,
     // so only the entry file is being transformed.
-    const result = await build({
-      ...esbuildOptions,
-      entryPoints: [filePath],
-      write: false,
-      format: 'esm',
+    const { plugins: pluginsFromConfig = [], ...remainingRolldownOptions } =
+      rolldownOptions
+    const plugins = await asyncFlatten(arraify(pluginsFromConfig))
+    plugins.unshift({
+      name: 'externalize',
+      resolveId(id, importer) {
+        if (importer !== undefined) {
+          return { id, external: true }
+        }
+      },
     })
-    const [, exports, , hasModuleSyntax] = parse(result.outputFiles[0].text)
+    const build = await rolldown({
+      ...remainingRolldownOptions,
+      plugins,
+      input: [filePath],
+      // TODO: remove this and enable rolldown's CSS support later
+      moduleTypes: {
+        '.css': 'js',
+        ...remainingRolldownOptions.moduleTypes,
+      },
+    })
+    const result = await build.generate({
+      ...rolldownOptions.output,
+      format: 'esm',
+      sourcemap: false,
+    })
+    const [, exports, , hasModuleSyntax] = parse(result.output[0].code)
     return {
       hasModuleSyntax,
       exports: exports.map((e) => e.n),
@@ -1140,18 +1138,21 @@ export async function extractExportsData(
   let parseResult: ReturnType<typeof parse>
   let usedJsxLoader = false
 
-  const entryContent = await fsp.readFile(filePath, 'utf-8')
+  const entryContent = fs.readFileSync(filePath, 'utf-8')
   try {
     parseResult = parse(entryContent)
   } catch {
-    const loader = esbuildOptions.loader?.[path.extname(filePath)] || 'jsx'
+    const lang = rolldownOptions.moduleTypes?.[path.extname(filePath)] || 'jsx'
     debug?.(
-      `Unable to parse: ${filePath}.\n Trying again with a ${loader} transform.`,
+      `Unable to parse: ${filePath}.\n Trying again with a ${lang} transform.`,
     )
-    const transformed = await transformWithEsbuild(
+    if (lang !== 'jsx' && lang !== 'tsx' && lang !== 'ts') {
+      throw new Error(`Unable to parse : ${filePath}.`)
+    }
+    const transformed = await transformWithOxc(
       entryContent,
       filePath,
-      { loader },
+      { lang },
       undefined,
       environment.config,
     )
@@ -1240,6 +1241,12 @@ const lockfileFormats = [
     manager: 'pnpm',
   },
   {
+    path: '.rush/temp/shrinkwrap-deps.json',
+    // Included in lockfile
+    checkPatchesDir: false,
+    manager: 'pnpm',
+  },
+  {
     path: 'bun.lock',
     checkPatchesDir: 'patches',
     manager: 'bun',
@@ -1275,11 +1282,19 @@ function getConfigHash(environment: Environment): string {
         exclude: optimizeDeps.exclude
           ? unique(optimizeDeps.exclude).sort()
           : undefined,
-        esbuildOptions: {
-          ...optimizeDeps.esbuildOptions,
-          plugins: optimizeDeps.esbuildOptions?.plugins?.map((p) => p.name),
+        rolldownOptions: {
+          ...optimizeDeps.rolldownOptions,
+          plugins: undefined, // included in optimizeDepsPluginNames
+          onLog: undefined,
+          onwarn: undefined,
+          checks: undefined,
+          output: {
+            ...optimizeDeps.rolldownOptions?.output,
+            plugins: undefined, // included in optimizeDepsPluginNames
+          },
         },
       },
+      optimizeDepsPluginNames: config.optimizeDepsPluginNames,
     },
     (_, value) => {
       if (typeof value === 'function' || value instanceof RegExp) {

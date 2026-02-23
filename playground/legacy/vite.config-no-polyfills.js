@@ -20,7 +20,7 @@ export default defineConfig(({ isPreview }) => ({
     outDir: 'dist/no-polyfills',
     rollupOptions: {
       input: {
-        index: path.resolve(__dirname, 'no-polyfills.html'),
+        index: path.resolve(import.meta.dirname, 'no-polyfills.html'),
       },
     },
   },

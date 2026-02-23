@@ -2,8 +2,9 @@ import path from 'node:path'
 import { gzip } from 'node:zlib'
 import { promisify } from 'node:util'
 import colors from 'picocolors'
-import type { OutputBundle } from 'rollup'
-import type { Plugin } from '../plugin'
+import type { OutputBundle } from 'rolldown'
+import { viteReporterPlugin as nativeReporterPlugin } from 'rolldown/experimental'
+import { type Plugin, perEnvironmentPlugin } from '../plugin'
 import type { ResolvedConfig } from '../config'
 import type { Environment } from '../environment'
 import { perEnvironmentState } from '../environment'
@@ -27,6 +28,28 @@ type LogEntry = {
 const COMPRESSIBLE_ASSETS_RE = /\.(?:html|json|svg|txt|xml|xhtml|wasm)$/
 
 export function buildReporterPlugin(config: ResolvedConfig): Plugin {
+  if (config.nativePluginEnabledLevel >= 1) {
+    return perEnvironmentPlugin('native:reporter', (env) => {
+      const tty = process.stdout.isTTY && !process.env.CI
+      const shouldLogInfo =
+        LogLevels[config.logLevel || 'info'] >= LogLevels.info
+      const assetsDir = path.join(env.config.build.assetsDir, '/')
+      return nativeReporterPlugin({
+        root: env.config.root,
+        isTty: !!tty,
+        isLib: !!env.config.build.lib,
+        assetsDir,
+        chunkLimit: env.config.build.chunkSizeWarningLimit,
+        logInfo: shouldLogInfo ? (msg) => env.logger.info(msg) : undefined,
+        reportCompressedSize: env.config.build.reportCompressedSize,
+        warnLargeChunks:
+          env.config.build.minify &&
+          !env.config.build.lib &&
+          env.config.consumer === 'client',
+      })
+    })
+  }
+
   const compress = promisify(gzip)
 
   const numberFormatter = new Intl.NumberFormat('en', {
@@ -296,7 +319,7 @@ export function buildReporterPlugin(config: ResolvedConfig): Plugin {
     },
 
     renderChunk(_, chunk, options) {
-      if (!options.inlineDynamicImports) {
+      if (options.codeSplitting !== false) {
         for (const id of chunk.moduleIds) {
           const module = this.getModuleInfo(id)
           if (!module) continue

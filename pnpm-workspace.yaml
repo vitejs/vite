@@ -14,6 +14,7 @@ dedupeInjectedDeps: false
 overrides:
   rolldown: $rolldown
   vite: 'workspace:*'
+  debug: 'npm:obug@^1.0.2'
 patchedDependencies:
   "sirv@3.0.2": "patches/sirv@3.0.2.patch"
   "chokidar@3.6.0": "patches/chokidar@3.6.0.patch"
@@ -30,7 +31,6 @@ packageExtensions:
         optional: true
 ignoredBuiltDependencies:
   - core-js
-  - es5-ext
 onlyBuiltDependencies:
   - "@parcel/watcher"
   - "@tailwindcss/oxide"
@@ -40,3 +40,10 @@ onlyBuiltDependencies:
   - "simple-git-hooks"
   - "unrs-resolver"
   - "workerd"
+
+trustPolicy: no-downgrade
+trustPolicyExclude:
+  - chokidar@4.0.3 # https://github.com/paulmillr/chokidar/issues/1440
+  - semver@5.7.2 || 6.3.1
+  - tailwindcss@3.4.18
+  - undici-types@6.21.0 # https://github.com/nodejs/undici/issues/4666

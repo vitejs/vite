@@ -1,6 +1,6 @@
 import path from 'node:path'
 import MagicString from 'magic-string'
-import type { RollupAstNode, SourceMap } from 'rollup'
+import type { SourceMap } from 'rolldown'
 import type {
   ExportAllDeclaration,
   ExportDefaultDeclaration,
@@ -17,7 +17,7 @@ import type {
 import { extract_names as extractNames } from 'periscopic'
 import { walk as eswalk } from 'estree-walker'
 import type { RawSourceMap } from '@jridgewell/remapping'
-import { parseAstAsync as rollupParseAstAsync } from 'rollup/parseAst'
+import { parseAstAsync as rolldownParseAstAsync } from 'rolldown/parseAst'
 import type { TransformResult } from '../server/transformRequest'
 import {
   combineSourcemaps,
@@ -29,6 +29,11 @@ import { isJSONRequest } from '../plugins/json'
 import type { DefineImportMetadata } from '../../shared/ssrTransform'
 
 type Node = _Node & {
+  start: number
+  end: number
+}
+
+type OxcAstNode<T extends _Node> = T & {
   start: number
   end: number
 }
@@ -84,7 +89,7 @@ async function ssrTransformScript(
 
   let ast: any
   try {
-    ast = await rollupParseAstAsync(code)
+    ast = await rolldownParseAstAsync(code)
   } catch (err) {
     // enhance known rollup errors
     // https://github.com/rollup/rollup/blob/42e587e0e37bc0661aa39fe7ad6f1d7fd33f825c/src/utils/bufferToAst.ts#L17-L22
@@ -162,17 +167,17 @@ async function ssrTransformScript(
   }
 
   const imports: (
-    | RollupAstNode<ImportDeclaration>
-    | RollupAstNode<ExportNamedDeclaration>
-    | RollupAstNode<ExportAllDeclaration>
+    | OxcAstNode<ImportDeclaration>
+    | OxcAstNode<ExportNamedDeclaration>
+    | OxcAstNode<ExportAllDeclaration>
   )[] = []
   const exports: (
-    | RollupAstNode<ExportNamedDeclaration>
-    | RollupAstNode<ExportDefaultDeclaration>
-    | RollupAstNode<ExportAllDeclaration>
+    | OxcAstNode<ExportNamedDeclaration>
+    | OxcAstNode<ExportDefaultDeclaration>
+    | OxcAstNode<ExportAllDeclaration>
   )[] = []
   const reExportImportIdMap = new Map<
-    RollupAstNode<ExportNamedDeclaration> | RollupAstNode<ExportAllDeclaration>,
+    OxcAstNode<ExportNamedDeclaration> | OxcAstNode<ExportAllDeclaration>,
     string
   >()
 
@@ -198,7 +203,7 @@ async function ssrTransformScript(
         // export { foo, bar } from './foo'
         const importId = defineImport(
           hoistIndex,
-          node as RollupAstNode<ExportNamedDeclaration & { source: Literal }>,
+          node as OxcAstNode<ExportNamedDeclaration & { source: Literal }>,
           {
             importedNames: node.specifiers.map(
               (s) => getIdentifierNameOrLiteralValue(s.local) as string,
@@ -420,7 +425,7 @@ async function ssrTransformScript(
   if (inMap?.mappings === '') {
     map = inMap
   } else {
-    map = s.generateMap({ hires: 'boundary' })
+    map = s.generateMap({ hires: 'boundary' }) as SourceMap
     map.sources = [path.basename(url)]
     // needs to use originalCode instead of code
     // because code might be already transformed even if map is null

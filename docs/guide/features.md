@@ -10,9 +10,9 @@ Native ES imports do not support bare module imports like the following:
 import { someMethod } from 'my-dep'
 ```
 
-The above will throw an error in the browser. Vite will detect such bare module imports in all served source files and perform the following:
+The above import will throw an error in the browser. Vite will detect such bare module imports in all served source files and perform the following:
 
-1. [Pre-bundle](./dep-pre-bundling) them to improve page loading speed and convert CommonJS / UMD modules to ESM. The pre-bundling step is performed with [esbuild](http://esbuild.github.io/) and makes Vite's cold start time significantly faster than any JavaScript-based bundler.
+1. [Pre-bundle](./dep-pre-bundling) them to improve page loading speed and convert CommonJS / UMD modules to ESM. The pre-bundling step is performed with [esbuild](https://esbuild.github.io/) and makes Vite's cold start time significantly faster than any JavaScript-based bundler.
 
 2. Rewrite the imports to valid URLs like `/node_modules/.vite/deps/my-dep.js?v=f3sf2ebd` so that the browser can import them properly.
 
@@ -53,6 +53,10 @@ export type { T }
 
 ### TypeScript Compiler Options
 
+Vite respects some of the options in `tsconfig.json` and sets the corresponding esbuild options. For each file, Vite uses the `tsconfig.json` in the closest parent directory. If that `tsconfig.json` contains a [`references`](https://www.typescriptlang.org/tsconfig/#references) field, Vite will use the referenced config file that satisfies the [`include`](https://www.typescriptlang.org/tsconfig/#include) and [`exclude`](https://www.typescriptlang.org/tsconfig/#exclude) fields.
+
+When the options are set in both the Vite config and the `tsconfig.json`, the value in the Vite config takes precedence.
+
 Some configuration fields under `compilerOptions` in `tsconfig.json` require special attention.
 
 #### `isolatedModules`
@@ -87,12 +91,19 @@ Vite ignores the `target` value in the `tsconfig.json`, following the same behav
 
 To specify the target in dev, the [`esbuild.target`](/config/shared-options.html#esbuild) option can be used, which defaults to `esnext` for minimal transpilation. In builds, the [`build.target`](/config/build-options.html#build-target) option takes higher priority over `esbuild.target` and can also be set if needed.
 
-::: warning `useDefineForClassFields`
+#### `emitDecoratorMetadata`
 
-If `target` in `tsconfig.json` is not `ESNext` or `ES2022` or newer, or if there's no `tsconfig.json` file, `useDefineForClassFields` will default to `false` which can be problematic with the default `esbuild.target` value of `esnext`. It may transpile to [static initialization blocks](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Classes/Static_initialization_blocks#browser_compatibility) which may not be supported in your browser.
+- [TypeScript documentation](https://www.typescriptlang.org/tsconfig#emitDecoratorMetadata)
 
-As such, it is recommended to set `target` to `ESNext` or `ES2022` or newer, or set `useDefineForClassFields` to `true` explicitly when configuring `tsconfig.json`.
-:::
+This option is only partially supported. Full support requires type inference by the TypeScript compiler, which is not supported. See [Oxc Transformer's documentation](https://oxc.rs/docs/guide/usage/transformer/typescript#decorators) for details.
+
+#### `paths`
+
+- [TypeScript documentation](https://www.typescriptlang.org/tsconfig/#paths)
+
+`resolve.tsconfigPaths: true` can be specified to tell Vite to use the `paths` option in `tsconfig.json` to resolve imports.
+
+Note that this feature has a performance cost and is [discouraged by the TypeScript team to use this option to change the behavior of the external tools](https://www.typescriptlang.org/tsconfig/#paths:~:text=Note%20that%20this%20feature%20does%20not%20change%20how%20import%20paths%20are%20emitted%20by%20tsc%2C%20so%20paths%20should%20only%20be%20used%20to%20inform%20TypeScript%20that%20another%20tool%20has%20this%20mapping%20and%20will%20use%20it%20at%20runtime%20or%20when%20bundling.).
 
 #### Other Compiler Options Affecting the Build Result
 
@@ -105,7 +116,6 @@ As such, it is recommended to set `target` to `ESNext` or `ES2022` or newer, or 
 - [`jsxFragmentFactory`](https://www.typescriptlang.org/tsconfig#jsxFragmentFactory)
 - [`jsxImportSource`](https://www.typescriptlang.org/tsconfig#jsxImportSource)
 - [`experimentalDecorators`](https://www.typescriptlang.org/tsconfig#experimentalDecorators)
-- [`alwaysStrict`](https://www.typescriptlang.org/tsconfig#alwaysStrict)
 
 ::: tip `skipLibCheck`
 Vite starter templates have `"skipLibCheck": "true"` by default to avoid typechecking dependencies, as they may choose to only support specific versions and configurations of TypeScript. You can learn more at [vuejs/vue-cli#5688](https://github.com/vuejs/vue-cli/pull/5688).
@@ -320,7 +330,7 @@ npm add -D stylus
 
 If using Vue single file components, this also automatically enables `<style lang="sass">` et al.
 
-Vite improves `@import` resolving for Sass and Less so that Vite aliases are also respected. In addition, relative `url()` references inside imported Sass/Less files that are in different directories from the root file are also automatically rebased to ensure correctness. Rebasing `url()` references that starts with a variable or a interpolation are not supported due to its API constraints.
+Vite improves `@import` resolving for Sass and Less so that Vite aliases are also respected. In addition, relative `url()` references inside imported Sass/Less files that are in different directories from the root file are also automatically rebased to ensure correctness. Rebasing `url()` references that start with a variable or a interpolation are not supported due to its API constraints.
 
 `@import` alias and url rebasing are not supported for Stylus due to its API constraints.
 
@@ -356,6 +366,8 @@ To configure CSS Modules, you'll use [`css.lightningcss.cssModules`](https://lig
 By default, Vite uses esbuild to minify CSS. Lightning CSS can also be used as the CSS minifier with [`build.cssMinify: 'lightningcss'`](../config/build-options.md#build-cssminify).
 
 ## Static Assets
+
+<ScrimbaLink href="https://scrimba.com/intro-to-vite-c03p6pbbdq/~05pq?via=vite" title="Static Assets in Vite">Watch an interactive lesson on Scrimba</ScrimbaLink>
 
 Importing a static asset will return the resolved public URL when it is served:
 
@@ -619,7 +631,7 @@ Note that:
 
 - This is a Vite-only feature and is not a web or ES standard.
 - The glob patterns are treated like import specifiers: they must be either relative (start with `./`) or absolute (start with `/`, resolved relative to project root) or an alias path (see [`resolve.alias` option](/config/shared-options.md#resolve-alias)).
-- The glob matching is done via [`tinyglobby`](https://github.com/SuperchupuDev/tinyglobby).
+- The glob matching is done via [`tinyglobby`](https://github.com/SuperchupuDev/tinyglobby) - check out its documentation for [supported glob patterns](https://superchupu.dev/tinyglobby/comparison).
 - You should also be aware that all the arguments in the `import.meta.glob` must be **passed as literals**. You can NOT use variables or expressions in them.
 
 ## Dynamic Import
@@ -631,6 +643,14 @@ const module = await import(`./dir/${file}.js`)
 ```
 
 Note that variables only represent file names one level deep. If `file` is `'foo/bar'`, the import would fail. For more advanced usage, you can use the [glob import](#glob-import) feature.
+
+Also note that the dynamic import must match the following rules to be bundled:
+
+- Imports must start with `./` or `../`: ``import(`./dir/${foo}.js`)`` is valid, but ``import(`${foo}.js`)`` is not.
+- Imports must end with a file extension: ``import(`./dir/${foo}.js`)`` is valid, but ``import(`./dir/${foo}`)`` is not.
+- Imports to the own directory must specify a file name pattern: ``import(`./prefix-${foo}.js`)`` is valid, but ``import(`./${foo}.js`)`` is not.
+
+These rules are enforced to prevent accidentally importing files that are not intended to be bundled. For example, without these rules, `import(foo)` would bundle everything in the file system.
 
 ## WebAssembly
 
@@ -671,6 +691,12 @@ In the production build, `.wasm` files smaller than `assetInlineLimit` will be i
 Use [`vite-plugin-wasm`](https://github.com/Menci/vite-plugin-wasm) or other community plugins to handle this.
 :::
 
+::: warning For SSR build, Node.js compatible runtimes are only supported
+
+Due to the lack of a universal way to load a file, the internal implementation for `.wasm?init` relies on `node:fs` module. This means that this feature will only work in Node.js compatible runtimes for SSR builds.
+
+:::
+
 ### Accessing the WebAssembly Module
 
 If you need access to the `Module` object, e.g. to instantiate it multiple times, use an [explicit URL import](./assets#explicit-url-imports) to resolve the asset, and then perform the instantiation:
@@ -684,31 +710,6 @@ const main = async () => {
   const responsePromise = fetch(wasmUrl)
   const { module, instance } =
     await WebAssembly.instantiateStreaming(responsePromise)
-  /* ... */
-}
-
-main()
-```
-
-### Fetching the module in Node.js
-
-In SSR, the `fetch()` happening as part of the `?init` import, may fail with `TypeError: Invalid URL`.
-See the issue [Support wasm in SSR](https://github.com/vitejs/vite/issues/8882).
-
-Here is an alternative, assuming the project base is the current directory:
-
-```js twoslash
-import 'vite/client'
-// ---cut---
-import wasmUrl from 'foo.wasm?url'
-import { readFile } from 'node:fs/promises'
-
-const main = async () => {
-  const resolvedUrl = (await import('./test/boot.test.wasm?url')).default
-  const buffer = await readFile('.' + resolvedUrl)
-  const { instance } = await WebAssembly.instantiate(buffer, {
-    /* ... */
-  })
   /* ... */
 }
 
@@ -788,6 +789,42 @@ By default, during build, Vite inlines small assets as data URIs. Allowing `data
 :::warning
 Do not allow `data:` for [`script-src`](https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Content-Security-Policy/script-src). It will allow injection of arbitrary scripts.
 :::
+
+## License
+
+Vite can generate a file of all the dependencies' licenses used in the build with the [`build.license`](/config/build-options.md#build-license) option. It can be hosted to display and acknowledge the dependencies used by the app.
+
+```js twoslash [vite.config.js]
+import { defineConfig } from 'vite'
+
+export default defineConfig({
+  build: {
+    license: true,
+  },
+})
+```
+
+This will generate a `.vite/license.md` file with an output that may look like this:
+
+```md
+# Licenses
+
+The app bundles dependencies which contain the following licenses:
+
+## dep-1 - 1.2.3 (CC0-1.0)
+
+CC0 1.0 Universal
+
+...
+
+## dep-2 - 4.5.6 (MIT)
+
+MIT License
+
+...
+```
+
+To serve the file at a different path, you can pass `{ fileName: 'license.md' }` for example, so that it's served at `https://example.com/license.md`. See the [`build.license`](/config/build-options.md#build-license) docs for more information.
 
 ## Build Optimizations
 

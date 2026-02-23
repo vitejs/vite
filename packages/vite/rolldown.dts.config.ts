@@ -24,9 +24,9 @@ const pkg = JSON.parse(
 )
 
 const external = [
-  /^node:/,
+  /^node:*/,
   /^vite\//,
-  'rollup/parseAst',
+  /^rolldown\//,
   /^#types\//,
   ...Object.keys(pkg.dependencies),
   ...Object.keys(pkg.peerDependencies),
@@ -36,6 +36,7 @@ export default defineConfig({
   input: {
     index: './src/node/index.ts',
     'module-runner': './src/module-runner/index.ts',
+    internal: './src/node/internalIndex.ts',
   },
   output: {
     dir: './dist/node',
@@ -60,7 +61,6 @@ export default defineConfig({
         },
       },
       emitDtsOnly: true,
-      resolve: true,
     }),
   ],
 })
@@ -76,14 +76,16 @@ const identifierWithTrailingDollarRE = /\b(\w+)\$\d+\b/g
  * the module that imports the identifier as a named import alias
  */
 const identifierReplacements: Record<string, Record<string, string>> = {
-  rollup: {
-    Plugin$2: 'Rollup.Plugin',
-    TransformResult$1: 'Rollup.TransformResult',
+  'vite/module-runner': {
+    FetchResult$1: 'moduleRunner_FetchResult',
   },
-  esbuild: {
-    TransformResult$2: 'esbuild_TransformResult',
-    TransformOptions$1: 'esbuild_TransformOptions',
-    BuildOptions$1: 'esbuild_BuildOptions',
+  rolldown: {
+    Plugin$1: 'Rolldown.Plugin',
+    TransformResult$1: 'Rolldown.TransformResult',
+  },
+  'rolldown/utils': {
+    TransformOptions$1: 'rolldown_utils_TransformOptions',
+    TransformResult$2: 'rolldown_utils_TransformResult',
   },
   'node:http': {
     Server$1: 'http.Server',
@@ -96,9 +98,6 @@ const identifierReplacements: Record<string, Record<string, string>> = {
   'node:url': {
     URL$1: 'url_URL',
   },
-  'vite/module-runner': {
-    FetchResult$1: 'moduleRunner_FetchResult',
-  },
   '#types/hmrPayload': {
     CustomPayload$1: 'hmrPayload_CustomPayload',
     HotPayload$1: 'hmrPayload_HotPayload',
@@ -106,17 +105,22 @@ const identifierReplacements: Record<string, Record<string, string>> = {
   '#types/customEvent': {
     InferCustomEventPayload$1: 'hmrPayload_InferCustomEventPayload',
   },
+  '#types/internal/esbuildOptions': {
+    EsbuildTransformOptions$1: 'esbuildOptions_EsbuildTransformOptions',
+  },
   '#types/internal/lightningcssOptions': {
     LightningCSSOptions$1: 'lightningcssOptions_LightningCSSOptions',
   },
 }
 
-// type names that are declared
 const ignoreConfusingTypeNames = [
-  'Plugin$1',
+  // type names that are declared
   'MinimalPluginContext$1',
   'ServerOptions$1',
   'ServerOptions$3',
+  // temporary variables for types
+  'parseAst$1',
+  'parseAstAsync$1',
 ]
 
 /**
@@ -265,43 +269,46 @@ function replaceConfusingTypeNames(
   chunk: OutputChunk,
   importBindings: ImportBindings[],
 ) {
-  for (const modName in identifierReplacements) {
-    const imp = importBindings.filter((imp) => imp.id === modName)
-    // Validate that `identifierReplacements` is not outdated if there's no match
-    if (imp.length === 0) {
-      this.warn(
-        `${chunk.fileName} does not import "${modName}" for replacement`,
-      )
-      process.exitCode = 1
-      continue
-    }
-
-    const replacements = identifierReplacements[modName]
-    for (const id in replacements) {
+  const isInternalEntry = chunk.fileName.startsWith('internal.')
+  if (!isInternalEntry) {
+    for (const modName in identifierReplacements) {
+      const imp = importBindings.filter((imp) => imp.id === modName)
       // Validate that `identifierReplacements` is not outdated if there's no match
-      if (!imp.some((i) => i.locals.includes(id))) {
+      if (imp.length === 0) {
         this.warn(
-          `${chunk.fileName} does not import "${id}" from "${modName}" for replacement`,
+          `${chunk.fileName} does not import "${modName}" for replacement`,
         )
         process.exitCode = 1
         continue
       }
 
-      const betterId = replacements[id]
-      const regexEscapedId = escapeRegex(id)
-      // If the better id accesses a namespace, the existing `Foo as Foo$1`
-      // named import cannot be replaced with `Foo as Namespace.Foo`, so we
-      // pre-emptively remove the whole named import
-      if (betterId.includes('.')) {
+      const replacements = identifierReplacements[modName]
+      for (const id in replacements) {
+        // Validate that `identifierReplacements` is not outdated if there's no match
+        if (!imp.some((i) => i.locals.includes(id))) {
+          this.warn(
+            `${chunk.fileName} does not import "${id}" from "${modName}" for replacement`,
+          )
+          process.exitCode = 1
+          continue
+        }
+
+        const betterId = replacements[id]
+        const regexEscapedId = escapeRegex(id)
+        // If the better id accesses a namespace, the existing `Foo as Foo$1`
+        // named import cannot be replaced with `Foo as Namespace.Foo`, so we
+        // pre-emptively remove the whole named import
+        if (betterId.includes('.')) {
+          chunk.code = chunk.code.replace(
+            new RegExp(`\\b\\w+\\b as ${regexEscapedId},?\\s?`),
+            '',
+          )
+        }
         chunk.code = chunk.code.replace(
-          new RegExp(`\\b\\w+\\b as ${regexEscapedId},?\\s?`),
-          '',
+          new RegExp(`\\b${regexEscapedId}\\b`, 'g'),
+          betterId,
         )
       }
-      chunk.code = chunk.code.replace(
-        new RegExp(`\\b${regexEscapedId}\\b`, 'g'),
-        betterId,
-      )
     }
   }
 
@@ -321,16 +328,21 @@ function replaceConfusingTypeNames(
     )
     process.exitCode = 1
   }
-  const notUsedConfusingTypeNames = ignoreConfusingTypeNames.filter(
-    (id) => !identifiers.includes(id),
-  )
-  // Validate that `identifierReplacements` is not outdated if there's no match
-  if (notUsedConfusingTypeNames.length) {
-    const notUsedStr = notUsedConfusingTypeNames
-      .map((id) => `\n- ${id}`)
-      .join('')
-    this.warn(`${chunk.fileName} contains unused identifier names${notUsedStr}`)
-    process.exitCode = 1
+
+  if (!isInternalEntry) {
+    const notUsedConfusingTypeNames = ignoreConfusingTypeNames.filter(
+      (id) => !identifiers.includes(id),
+    )
+    // Validate that `identifierReplacements` is not outdated if there's no match
+    if (notUsedConfusingTypeNames.length) {
+      const notUsedStr = notUsedConfusingTypeNames
+        .map((id) => `\n- ${id}`)
+        .join('')
+      this.warn(
+        `${chunk.fileName} contains unused identifier names${notUsedStr}`,
+      )
+      process.exitCode = 1
+    }
   }
 }
 

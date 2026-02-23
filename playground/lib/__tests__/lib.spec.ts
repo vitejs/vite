@@ -14,9 +14,9 @@ describe.runIf(isBuild)('build', () => {
     )
     const namedCode = readFile('dist/named/my-lib-named.umd.cjs')
     // esbuild helpers are injected inside of the UMD wrapper
-    expect(code).toMatch(/^\(function\(/)
+    expect(code).toMatch(/^\/\*[^*]*\*\/\s*\(function\(/)
     expect(noMinifyCode).toMatch(
-      /^\(function\(global.+?"use strict";var.+?function\smyLib\(/s,
+      /^\/\*[^*]*\*\/\s*\(function\(global.+?function\smyLib\(/s,
     )
     expect(namedCode).toMatch(/^\(function\(/)
   })
@@ -29,13 +29,11 @@ describe.runIf(isBuild)('build', () => {
     )
     const namedCode = readFile('dist/named/my-lib-named.iife.js')
     // esbuild helpers are injected inside of the IIFE wrapper
-    expect(code).toMatch(/^var MyLib=function\(\)\{\s*"use strict";/)
+    expect(code).toMatch(/^\/\*[^*]*\*\/\s*var MyLib=\(function\(\)\{\s*/)
     expect(noMinifyCode).toMatch(
-      /^var MyLib\s*=\s*function\(\)\s*\{\s*"use strict";/,
+      /^\/\*[^*]*\*\/\s*var MyLib\s*=\s*\(function\(\)\s*\{\s*/,
     )
-    expect(namedCode).toMatch(
-      /^var MyLibNamed=function\([^()]+\)\{\s*"use strict";/,
-    )
+    expect(namedCode).toMatch(/^var MyLibNamed=\(function\([^()]+\)\{\s*/)
   })
 
   test('restrisct-helpers-injection', async () => {
@@ -43,7 +41,7 @@ describe.runIf(isBuild)('build', () => {
       'dist/helpers-injection/my-lib-custom-filename.iife.js',
     )
     expect(code).toMatch(
-      `'"use strict"; return (' + expressionSyntax + ").constructor;"`,
+      `\\"use strict\\"; return (" + expressionSyntax + ").constructor;"`,
     )
   })
 
@@ -62,7 +60,9 @@ describe.runIf(isBuild)('build', () => {
     const code = readFile('dist/lib/dynamic-import-message.es.mjs')
 
     // Does not import pure CSS chunks and replaced by `Promise.resolve({})` instead
-    expect(code).not.toMatch(/await import\("\.\/dynamic-[-\w]{8}.js"\)/)
+    expect(code).not.toMatch(
+      /await import\(['"`]\.\/dynamic-[-\w]{8}.js['"`]\)/,
+    )
     expect(code).toMatch(/await Promise.resolve\(\{.*\}\)/)
   })
 
@@ -80,6 +80,21 @@ describe.runIf(isBuild)('build', () => {
     expect(es).toMatch('process.env.NODE_ENV')
     expect(iife).toMatch('process.env.NODE_ENV')
     expect(umd).toMatch('process.env.NODE_ENV')
+  })
+
+  test('debugger statements are removed by terser for es', () => {
+    const terserEs = readFile('dist/terser/my-lib-custom-filename.js')
+    expect(terserEs).not.toMatch('debugger')
+  })
+
+  test('pure annotations are not removed by terser for es', () => {
+    const terserEs = readFile('dist/terser/my-lib-custom-filename.js')
+    expect(terserEs).toMatch(/[@#]__PURE__/)
+  })
+
+  test('pure annotations are removed by terser for non-es output', () => {
+    const terserIife = readFile('dist/terser/my-lib-custom-filename.iife.js')
+    expect(terserIife).not.toMatch(/[@#]__PURE__/)
   })
 
   test('single entry with css', () => {

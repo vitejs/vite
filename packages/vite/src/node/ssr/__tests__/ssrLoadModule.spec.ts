@@ -181,7 +181,10 @@ test('can access nodejs global', async () => {
   expect(mod.default).toBe(globalThis)
 })
 
-test('parse error', async () => {
+// skip for now as rolldown returns different error message from esbuild
+// related: https://github.com/oxc-project/oxc/issues/7261
+// (rolldown does not set the properties passed from Oxc)
+test.skip('parse error', async () => {
   const server = await createDevServer()
 
   function stripRoot(s?: string) {

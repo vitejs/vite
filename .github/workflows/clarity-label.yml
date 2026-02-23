@@ -1,0 +1,180 @@
+name: Clarity Label
+
+on:
+  issues:
+    types: [opened, edited]
+
+jobs:
+  label-clarity:
+    if: github.event.issue.user.login != 'renovate[bot]'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      issues: write
+      pull-requests: write
+    steps:
+      - name: Get description
+        id: description
+        uses: actions/github-script@v7
+        with:
+          script: |
+            let title, body, number, isPR;
+            if (context.payload.issue) {
+              title = context.payload.issue.title;
+              body = context.payload.issue.body || '';
+              number = context.payload.issue.number;
+              isPR = false;
+            } else {
+              title = context.payload.pull_request.title;
+              body = context.payload.pull_request.body || '';
+              number = context.payload.pull_request.number;
+              isPR = true;
+            }
+            core.setOutput('title', title);
+            core.setOutput('body', body);
+            core.setOutput('number', number);
+            core.setOutput('is_pr', isPR.toString());
+
+      - uses: warpdotdev/oz-agent-action@e75eb592ef275bf056509ca91769378f1c3f7238 # v1
+        id: agent
+        with:
+          prompt: |
+            You are evaluating the clarity and detail level of a GitHub issue or pull request description.
+
+            Title: ${{ steps.description.outputs.title }}
+            Body:
+            ${{ steps.description.outputs.body }}
+
+            Rate the description's clarity as "low", "medium", or "high" based on these criteria:
+
+            **high** - The description is thorough and well-explained. It includes most of the following:
+            - Explains HOW the problem occurs or how the feature would work
+            - Explains WHY it needs to be fixed or why the feature is needed
+            - Explains WHY alternative approaches were not chosen
+            - Provides concrete examples, reproduction steps, or use cases
+            - Gives sufficient context for someone unfamiliar with the issue to understand it
+
+            **medium** - The description is adequate but missing some detail. It covers the basics:
+            - States what the problem or feature is
+            - Provides some context or reasoning
+            - May lack reproduction steps, alternatives considered, or deeper justification
+
+            **low** - The description is vague or minimal:
+            - Very short or generic (e.g. "it doesn't work", "please add X")
+            - No explanation of why or how
+            - Missing context, examples, or reasoning
+            - Difficult to understand without asking follow-up questions
+
+            Respond with ONLY a JSON object (no markdown fencing) with these fields:
+            - "clarity": one of "low", "medium", or "high"
+            - "reason": a one-sentence explanation of your rating
+          output_format: json
+          warp_api_key: ${{ secrets.WARP_API_KEY }}
+          profile: ${{ vars.WARP_AGENT_PROFILE || '' }}
+
+      - name: Apply clarity label
+        if: steps.agent.outputs.agent_output
+        uses: actions/github-script@v7
+        env:
+          AGENT_OUTPUT: ${{ steps.agent.outputs.agent_output }}
+          ISSUE_NUMBER: ${{ steps.description.outputs.number }}
+          IS_PR: ${{ steps.description.outputs.is_pr }}
+        with:
+          script: |
+            const output = process.env.AGENT_OUTPUT;
+            let result;
+            try {
+              // The agent outputs streaming JSON format with multiple lines
+              // We need to extract the last line with type:"agent" and parse its text field
+              const lines = output.trim().split('\n');
+              let agentResponse = null;
+              for (const line of lines) {
+                const parsed = JSON.parse(line);
+                if (parsed.type === 'agent') {
+                  agentResponse = parsed.text;
+                }
+              }
+              if (!agentResponse) {
+                core.setFailed('No agent response found in output');
+                return;
+              }
+              result = JSON.parse(agentResponse);
+            } catch (e) {
+              core.setFailed(`Failed to parse agent output: ${e.message}`);
+              return;
+            }
+
+            const clarity = result.clarity;
+            if (!['low', 'medium', 'high'].includes(clarity)) {
+              core.setFailed(`Invalid clarity value: ${clarity}`);
+              return;
+            }
+
+            const number = parseInt(process.env.ISSUE_NUMBER);
+            const isPR = process.env.IS_PR === 'true';
+            const newLabel = `clarity: ${clarity}`;
+            const allClarityLabels = ['clarity: low', 'clarity: medium', 'clarity: high'];
+
+            // Remove existing clarity labels
+            const { data: currentLabels } = await github.rest.issues.listLabelsOnIssue({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: number
+            });
+
+            for (const label of currentLabels) {
+              if (allClarityLabels.includes(label.name) && label.name !== newLabel) {
+                await github.rest.issues.removeLabel({
+                  owner: context.repo.owner,
+                  repo: context.repo.repo,
+                  issue_number: number,
+                  name: label.name,
+                });
+              }
+            }
+
+            // Add the new clarity label
+            const alreadyHasLabel = currentLabels.some(l => l.name === newLabel);
+            if (!alreadyHasLabel) {
+              await github.rest.issues.addLabels({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: number,
+                labels: [newLabel],
+              });
+            }
+
+            core.info(`Applied label "${newLabel}" — reason: ${result.reason}`);
+
+      - name: Write result to summary
+        if: steps.agent.outputs.agent_output
+        uses: actions/github-script@v7
+        env:
+          AGENT_OUTPUT: ${{ steps.agent.outputs.agent_output }}
+        with:
+          script: |
+            const output = process.env.AGENT_OUTPUT;
+
+            try {
+              // The agent outputs streaming JSON format with multiple lines
+              // We need to extract the last line with type:"agent" and parse its text field
+              const lines = output.trim().split('\n');
+              let agentText = null;
+              for (const line of lines) {
+                try {
+                  const parsed = JSON.parse(line);
+                  if (parsed.type === 'agent' && parsed.text) {
+                    agentText = parsed.text;
+                  }
+                } catch (e) {}
+              }
+              
+              if (agentText) {
+                await core.summary
+                  .addHeading('Clarity Label')
+                  .addCodeBlock(agentText, 'json')
+                  .write();
+              }
+            } catch (e) {
+              core.setFailed(`Failed to write summary: ${e.message}`);
+            }

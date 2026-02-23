@@ -3,9 +3,10 @@ import type {
   FullReloadPayload,
   PrunePayload,
   UpdatePayload,
-} from './hmrPayload'
+} from './hmrPayload.js'
 
 export interface CustomEventMap {
+  // client events
   'vite:beforeUpdate': UpdatePayload
   'vite:afterUpdate': UpdatePayload
   'vite:beforePrune': PrunePayload
@@ -15,6 +16,12 @@ export interface CustomEventMap {
   'vite:runtime-log': RuntimeLogPayload
   'vite:ws:connect': WebSocketConnectionPayload
   'vite:ws:disconnect': WebSocketConnectionPayload
+  /** @internal */
+  'vite:module-loaded': { modules: string[] }
+
+  // server events
+  'vite:client:connect': undefined
+  'vite:client:disconnect': undefined
 }
 
 export interface WebSocketConnectionPayload {

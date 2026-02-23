@@ -10,7 +10,7 @@ Unless noted, the options in this section are only applied to the dependency opt
 
 By default, Vite will crawl all your `.html` files to detect dependencies that need to be pre-bundled (ignoring `node_modules`, `build.outDir`, `__tests__` and `coverage`). If `build.rollupOptions.input` is specified, Vite will crawl those entry points instead.
 
-If neither of these fit your needs, you can specify custom entries using this option - the value should be a [`tinyglobby` pattern](https://github.com/SuperchupuDev/tinyglobby) or array of patterns that are relative from Vite project root. This will overwrite default entries inference. Only `node_modules` and `build.outDir` folders will be ignored by default when `optimizeDeps.entries` is explicitly defined. If other folders need to be ignored, you can use an ignore pattern as part of the entries list, marked with an initial `!`. `node_modules` will not be ignored for patterns that explicitly include the string `node_modules`.
+If neither of these fit your needs, you can specify custom entries using this option - the value should be a [`tinyglobby` pattern](https://superchupu.dev/tinyglobby/comparison) or array of patterns that are relative from Vite project root. This will overwrite default entries inference. Only `node_modules` and `build.outDir` folders will be ignored by default when `optimizeDeps.entries` is explicitly defined. If other folders need to be ignored, you can use an ignore pattern as part of the entries list, marked with an initial `!`. `node_modules` will not be ignored for patterns that explicitly include the string `node_modules`.
 
 ## optimizeDeps.exclude <NonInheritBadge />
 
@@ -51,6 +51,20 @@ export default defineConfig({
 })
 ```
 
+## optimizeDeps.rolldownOptions <NonInheritBadge />
+
+- **Type:** [`Omit`](https://www.typescriptlang.org/docs/handbook/utility-types.html#omittype-keys)`<`[`RolldownOptions`](https://rolldown.rs/reference/), `'input' | 'logLevel' | 'output'> & {
+  output?: [`Omit`](https://www.typescriptlang.org/docs/handbook/utility-types.html#omittype-keys)`<`
+    [`RolldownOutputOptions`](https://rolldown.rs/reference/),
+    `'format' | 'sourcemap' | 'dir' | 'banner'>`
+`}`
+
+Options to pass to Rolldown during the dep scanning and optimization.
+
+Certain options are omitted since changing them would not be compatible with Vite's dep optimization.
+
+- `plugins` are merged with Vite's dep plugin
+
 ## optimizeDeps.esbuildOptions <NonInheritBadge />
 
 - **Type:** [`Omit`](https://www.typescriptlang.org/docs/handbook/utility-types.html#omittype-keys)`<`[`EsbuildBuildOptions`](https://esbuild.github.io/api/#general-options)`,
@@ -64,13 +78,9 @@ export default defineConfig({
 | 'outbase'
 | 'outExtension'
 | 'metafile'>`
+- **Deprecated**
 
-Options to pass to esbuild during the dep scanning and optimization.
-
-Certain options are omitted since changing them would not be compatible with Vite's dep optimization.
-
-- `external` is also omitted, use Vite's `optimizeDeps.exclude` option
-- `plugins` are merged with Vite's dep plugin
+This option is converted to `optimizeDeps.rolldownOptions` internally. Use `optimizeDeps.rolldownOptions` instead.
 
 ## optimizeDeps.force <NonInheritBadge />
 

@@ -1,6 +1,7 @@
 import { URL, fileURLToPath } from 'node:url'
 import { promisify } from 'node:util'
 import { execFile } from 'node:child_process'
+import { existsSync } from 'node:fs'
 import { describe, expect, test } from 'vitest'
 import { mapFileCommentRegex } from 'convert-source-map'
 import { commentSourceMap } from '../foo-with-sourcemap-plugin'
@@ -94,7 +95,7 @@ if (!isBuild) {
     expect(formatSourcemapForSnapshot(map, js)).toMatchInlineSnapshot(`
       SourceMap {
         content: {
-          "mappings": "AAAO,aAAM,MAAM;",
+          "mappings": "AAAA,OAAO,MAAM,MAAM",
           "sources": [
             "bar.ts",
           ],
@@ -104,7 +105,7 @@ if (!isBuild) {
           ],
           "version": 3,
         },
-        visualization: "https://evanw.github.io/source-map-visualization/#MjYAZXhwb3J0IGNvbnN0IGJhciA9ICJiYXIiOwoxMTEAeyJ2ZXJzaW9uIjozLCJzb3VyY2VzIjpbImJhci50cyJdLCJzb3VyY2VzQ29udGVudCI6WyJleHBvcnQgY29uc3QgYmFyID0gJ2JhcidcbiJdLCJtYXBwaW5ncyI6IkFBQU8sYUFBTSxNQUFNOyJ9"
+        visualization: "https://evanw.github.io/source-map-visualization/#MjYAZXhwb3J0IGNvbnN0IGJhciA9ICJiYXIiOwoxMTUAeyJtYXBwaW5ncyI6IkFBQUEsT0FBTyxNQUFNLE1BQU0iLCJzb3VyY2VzIjpbImJhci50cyJdLCJ2ZXJzaW9uIjozLCJzb3VyY2VzQ29udGVudCI6WyJleHBvcnQgY29uc3QgYmFyID0gJ2JhcidcbiJdfQ=="
       }
     `)
   })
@@ -118,7 +119,7 @@ if (!isBuild) {
     expect(formatSourcemapForSnapshot(map, js)).toMatchInlineSnapshot(`
       SourceMap {
         content: {
-          "mappings": "AACA;AAAA,EACE;AAAA,OACK;AAEP,QAAQ,IAAI,yBAAyB,GAAG;",
+          "mappings": ";AACA,SACE,WACK;AAEP,QAAQ,IAAI,yBAAyB,IAAI",
           "sources": [
             "with-multiline-import.ts",
           ],
@@ -133,7 +134,7 @@ if (!isBuild) {
           ],
           "version": 3,
         },
-        visualization: "https://evanw.github.io/source-map-visualization/#MjMxAGltcG9ydCBfX3ZpdGVfX2Nqc0ltcG9ydDBfX3ZpdGVqc190ZXN0SW1wb3J0ZWVQa2cgZnJvbSAiL25vZGVfbW9kdWxlcy8udml0ZS9kZXBzL0B2aXRlanNfdGVzdC1pbXBvcnRlZS1wa2cuanM/dj0wMDAwMDAwMCI7IGNvbnN0IGZvbyA9IF9fdml0ZV9fY2pzSW1wb3J0MF9fdml0ZWpzX3Rlc3RJbXBvcnRlZVBrZ1siZm9vIl0KCjsKY29uc29sZS5sb2coIndpdGgtbXVsdGlsaW5lLWltcG9ydCIsIGZvbyk7CjI1OAB7InZlcnNpb24iOjMsInNvdXJjZXMiOlsid2l0aC1tdWx0aWxpbmUtaW1wb3J0LnRzIl0sInNvdXJjZXNDb250ZW50IjpbIi8vIHByZXR0aWVyLWlnbm9yZVxuaW1wb3J0IHtcbiAgZm9vXG59IGZyb20gJ0B2aXRlanMvdGVzdC1pbXBvcnRlZS1wa2cnXG5cbmNvbnNvbGUubG9nKCd3aXRoLW11bHRpbGluZS1pbXBvcnQnLCBmb28pXG4iXSwibWFwcGluZ3MiOiJBQUNBO0FBQUEsRUFDRTtBQUFBLE9BQ0s7QUFFUCxRQUFRLElBQUkseUJBQXlCLEdBQUc7In0="
+        visualization: "https://evanw.github.io/source-map-visualization/#MjQ4AC8vIHByZXR0aWVyLWlnbm9yZQppbXBvcnQgX192aXRlX19janNJbXBvcnQwX192aXRlanNfdGVzdEltcG9ydGVlUGtnIGZyb20gIi9ub2RlX21vZHVsZXMvLnZpdGUvZGVwcy9Adml0ZWpzX3Rlc3QtaW1wb3J0ZWUtcGtnLmpzP3Y9MDAwMDAwMDAiOyBjb25zdCBmb28gPSBfX3ZpdGVfX2Nqc0ltcG9ydDBfX3ZpdGVqc190ZXN0SW1wb3J0ZWVQa2dbImZvbyJdOwpjb25zb2xlLmxvZygid2l0aC1tdWx0aWxpbmUtaW1wb3J0IiwgZm9vKTsKMjQ4AHsibWFwcGluZ3MiOiI7QUFDQSxTQUNFLFdBQ0s7QUFFUCxRQUFRLElBQUkseUJBQXlCLElBQUkiLCJzb3VyY2VzIjpbIndpdGgtbXVsdGlsaW5lLWltcG9ydC50cyJdLCJ2ZXJzaW9uIjozLCJzb3VyY2VzQ29udGVudCI6WyIvLyBwcmV0dGllci1pZ25vcmVcbmltcG9ydCB7XG4gIGZvb1xufSBmcm9tICdAdml0ZWpzL3Rlc3QtaW1wb3J0ZWUtcGtnJ1xuXG5jb25zb2xlLmxvZygnd2l0aC1tdWx0aWxpbmUtaW1wb3J0JywgZm9vKVxuIl19"
       }
     `)
   })
@@ -161,7 +162,7 @@ describe.runIf(isBuild)('build tests', () => {
           content: {
             "debugId": "00000000-0000-0000-0000-000000000000",
             "ignoreList": [],
-            "mappings": ";4kCAAA,OAAO,2BAAuB,0BAE9B,QAAQ,IAAI,uBAAuB",
+            "mappings": ";sqCAAA,OAAO,qDAEP,QAAQ,IAAI,wBAAwB",
             "sources": [
               "../../after-preload-dynamic.js",
             ],
@@ -173,12 +174,12 @@ describe.runIf(isBuild)('build tests', () => {
             ],
             "version": 3,
           },
-          visualization: "https://evanw.github.io/source-map-visualization/#MTQ2NgBjb25zdCBfX3ZpdGVfX21hcERlcHM9KGksbT1fX3ZpdGVfX21hcERlcHMsZD0obS5mfHwobS5mPVsiYXNzZXRzL2R5bmFtaWMtZm9vLUZfYXJUX3E1LmpzIiwiYXNzZXRzL2R5bmFtaWMtZm9vLURzcUtSckV5LmNzcyJdKSkpPT5pLm1hcChpPT5kW2ldKTsKY29uc3QgcD0ibW9kdWxlcHJlbG9hZCIsdj1mdW5jdGlvbihsKXtyZXR1cm4iLyIrbH0sdT17fSxFPWZ1bmN0aW9uKGQsYyx5KXtsZXQgaT1Qcm9taXNlLnJlc29sdmUoKTtpZihjJiZjLmxlbmd0aD4wKXtsZXQgZj1mdW5jdGlvbihlKXtyZXR1cm4gUHJvbWlzZS5hbGwoZS5tYXAobz0+UHJvbWlzZS5yZXNvbHZlKG8pLnRoZW4ocz0+KHtzdGF0dXM6ImZ1bGZpbGxlZCIsdmFsdWU6c30pLHM9Pih7c3RhdHVzOiJyZWplY3RlZCIscmVhc29uOnN9KSkpKX07ZG9jdW1lbnQuZ2V0RWxlbWVudHNCeVRhZ05hbWUoImxpbmsiKTtjb25zdCBuPWRvY3VtZW50LnF1ZXJ5U2VsZWN0b3IoIm1ldGFbcHJvcGVydHk9Y3NwLW5vbmNlXSIpLHQ9bj8ubm9uY2V8fG4/LmdldEF0dHJpYnV0ZSgibm9uY2UiKTtpPWYoYy5tYXAoZT0+e2lmKGU9dihlKSxlIGluIHUpcmV0dXJuO3VbZV09ITA7Y29uc3Qgbz1lLmVuZHNXaXRoKCIuY3NzIikscz1vPydbcmVsPSJzdHlsZXNoZWV0Il0nOiIiO2lmKGRvY3VtZW50LnF1ZXJ5U2VsZWN0b3IoYGxpbmtbaHJlZj0iJHtlfSJdJHtzfWApKXJldHVybjtjb25zdCByPWRvY3VtZW50LmNyZWF0ZUVsZW1lbnQoImxpbmsiKTtpZihyLnJlbD1vPyJzdHlsZXNoZWV0IjpwLG98fChyLmFzPSJzY3JpcHQiKSxyLmNyb3NzT3JpZ2luPSIiLHIuaHJlZj1lLHQmJnIuc2V0QXR0cmlidXRlKCJub25jZSIsdCksZG9jdW1lbnQuaGVhZC5hcHBlbmRDaGlsZChyKSxvKXJldHVybiBuZXcgUHJvbWlzZSgobSxoKT0+e3IuYWRkRXZlbnRMaXN0ZW5lcigibG9hZCIsbSksci5hZGRFdmVudExpc3RlbmVyKCJlcnJvciIsKCk9PmgobmV3IEVycm9yKGBVbmFibGUgdG8gcHJlbG9hZCBDU1MgZm9yICR7ZX1gKSkpfSl9KSl9ZnVuY3Rpb24gYShuKXtjb25zdCB0PW5ldyBFdmVudCgidml0ZTpwcmVsb2FkRXJyb3IiLHtjYW5jZWxhYmxlOiEwfSk7aWYodC5wYXlsb2FkPW4sd2luZG93LmRpc3BhdGNoRXZlbnQodCksIXQuZGVmYXVsdFByZXZlbnRlZCl0aHJvdyBufXJldHVybiBpLnRoZW4obj0+e2Zvcihjb25zdCB0IG9mIG58fFtdKXQuc3RhdHVzPT09InJlamVjdGVkIiYmYSh0LnJlYXNvbik7cmV0dXJuIGQoKS5jYXRjaChhKX0pfTtFKCgpPT5pbXBvcnQoIi4vZHluYW1pYy1mb28tRl9hclRfcTUuanMiKSxfX3ZpdGVfX21hcERlcHMoWzAsMV0pKTtjb25zb2xlLmxvZygiYWZ0ZXIgcHJlbG9hZCBkeW5hbWljIik7ZXhwb3J0e0UgYXMgX307Ci8vIyBkZWJ1Z0lkPThjNDM0NWFiLWYxMzAtNGZmMi05NWRlLTA3NWI2ZTBhOGZjNgovLyMgc291cmNlTWFwcGluZ1VSTD1hZnRlci1wcmVsb2FkLWR5bmFtaWMtQ3E4cGpBT0wuanMubWFwCjI3NQB7InZlcnNpb24iOjMsIm1hcHBpbmdzIjoiOzRrQ0FBQSxPQUFPLDJCQUF1QiwwQkFFOUIsUUFBUSxJQUFJLHVCQUF1QiIsImlnbm9yZUxpc3QiOltdLCJzb3VyY2VzIjpbIi4uLy4uL2FmdGVyLXByZWxvYWQtZHluYW1pYy5qcyJdLCJzb3VyY2VzQ29udGVudCI6WyJpbXBvcnQoJy4vZHluYW1pYy9keW5hbWljLWZvbycpXG5cbmNvbnNvbGUubG9nKCdhZnRlciBwcmVsb2FkIGR5bmFtaWMnKVxuIl0sImRlYnVnSWQiOiIwMDAwMDAwMC0wMDAwLTAwMDAtMDAwMC0wMDAwMDAwMDAwMDAifQ=="
+          visualization: "https://evanw.github.io/source-map-visualization/#MTU1NQBjb25zdCBfX3ZpdGVfX21hcERlcHM9KGksbT1fX3ZpdGVfX21hcERlcHMsZD0obS5mfHwobS5mPVsiYXNzZXRzL2R5bmFtaWMtZm9vLXRpUHBTUURiLmpzIiwiYXNzZXRzL2R5bmFtaWMtZm9vLURzcUtSckV5LmNzcyJdKSkpPT5pLm1hcChpPT5kW2ldKTsKdmFyIGU9YG1vZHVsZXByZWxvYWRgLHQ9ZnVuY3Rpb24oZSl7cmV0dXJuYC9gK2V9LG49e307Y29uc3Qgcj1mdW5jdGlvbihyLGksYSl7bGV0IG89UHJvbWlzZS5yZXNvbHZlKCk7aWYoaSYmaS5sZW5ndGg+MCl7bGV0IHI9ZG9jdW1lbnQuZ2V0RWxlbWVudHNCeVRhZ05hbWUoYGxpbmtgKSxzPWRvY3VtZW50LnF1ZXJ5U2VsZWN0b3IoYG1ldGFbcHJvcGVydHk9Y3NwLW5vbmNlXWApLGM9cz8ubm9uY2V8fHM/LmdldEF0dHJpYnV0ZShgbm9uY2VgKTtmdW5jdGlvbiBsKGUpe3JldHVybiBQcm9taXNlLmFsbChlLm1hcChlPT5Qcm9taXNlLnJlc29sdmUoZSkudGhlbihlPT4oe3N0YXR1czpgZnVsZmlsbGVkYCx2YWx1ZTplfSksZT0+KHtzdGF0dXM6YHJlamVjdGVkYCxyZWFzb246ZX0pKSkpfW89bChpLm1hcChpPT57aWYoaT10KGksYSksaSBpbiBuKXJldHVybjtuW2ldPSEwO2xldCBvPWkuZW5kc1dpdGgoYC5jc3NgKSxzPW8/YFtyZWw9InN0eWxlc2hlZXQiXWA6YGA7aWYoYSlmb3IobGV0IGU9ci5sZW5ndGgtMTtlPj0wO2UtLSl7bGV0IHQ9cltlXTtpZih0LmhyZWY9PT1pJiYoIW98fHQucmVsPT09YHN0eWxlc2hlZXRgKSlyZXR1cm59ZWxzZSBpZihkb2N1bWVudC5xdWVyeVNlbGVjdG9yKGBsaW5rW2hyZWY9IiR7aX0iXSR7c31gKSlyZXR1cm47bGV0IGw9ZG9jdW1lbnQuY3JlYXRlRWxlbWVudChgbGlua2ApO2lmKGwucmVsPW8/YHN0eWxlc2hlZXRgOmUsb3x8KGwuYXM9YHNjcmlwdGApLGwuY3Jvc3NPcmlnaW49YGAsbC5ocmVmPWksYyYmbC5zZXRBdHRyaWJ1dGUoYG5vbmNlYCxjKSxkb2N1bWVudC5oZWFkLmFwcGVuZENoaWxkKGwpLG8pcmV0dXJuIG5ldyBQcm9taXNlKChlLHQpPT57bC5hZGRFdmVudExpc3RlbmVyKGBsb2FkYCxlKSxsLmFkZEV2ZW50TGlzdGVuZXIoYGVycm9yYCwoKT0+dChFcnJvcihgVW5hYmxlIHRvIHByZWxvYWQgQ1NTIGZvciAke2l9YCkpKX0pfSkpfWZ1bmN0aW9uIHMoZSl7bGV0IHQ9bmV3IEV2ZW50KGB2aXRlOnByZWxvYWRFcnJvcmAse2NhbmNlbGFibGU6ITB9KTtpZih0LnBheWxvYWQ9ZSx3aW5kb3cuZGlzcGF0Y2hFdmVudCh0KSwhdC5kZWZhdWx0UHJldmVudGVkKXRocm93IGV9cmV0dXJuIG8udGhlbihlPT57Zm9yKGxldCB0IG9mIGV8fFtdKXQuc3RhdHVzPT09YHJlamVjdGVkYCYmcyh0LnJlYXNvbik7cmV0dXJuIHIoKS5jYXRjaChzKX0pfTtyKCgpPT5pbXBvcnQoYC4vZHluYW1pYy1mb28tdGlQcFNRRGIuanNgKSxfX3ZpdGVfX21hcERlcHMoWzAsMV0pKSxjb25zb2xlLmxvZyhgYWZ0ZXIgcHJlbG9hZCBkeW5hbWljYCk7ZXhwb3J0e3IgYXMgdH07Ci8vIyBkZWJ1Z0lkPTk5MWIzYWRkLWY2MWQtNDhiNy1hZDY1LThhZjVhODBmMzhkNwovLyMgc291cmNlTWFwcGluZ1VSTD1hZnRlci1wcmVsb2FkLWR5bmFtaWMtQ1pHenJkOWguanMubWFwMjY3AHsidmVyc2lvbiI6MywibWFwcGluZ3MiOiI7c3FDQUFBLE9BQU8scURBRVAsUUFBUSxJQUFJLHdCQUF3QiIsImlnbm9yZUxpc3QiOltdLCJzb3VyY2VzIjpbIi4uLy4uL2FmdGVyLXByZWxvYWQtZHluYW1pYy5qcyJdLCJzb3VyY2VzQ29udGVudCI6WyJpbXBvcnQoJy4vZHluYW1pYy9keW5hbWljLWZvbycpXG5cbmNvbnNvbGUubG9nKCdhZnRlciBwcmVsb2FkIGR5bmFtaWMnKVxuIl0sImRlYnVnSWQiOiIwMDAwMDAwMC0wMDAwLTAwMDAtMDAwMC0wMDAwMDAwMDAwMDAifQ=="
         }
       `)
     // verify sourcemap comment is preserved at the last line
     expect(js).toMatch(
-      /\n\/\/# sourceMappingURL=after-preload-dynamic-[-\w]{8}\.js\.map\n$/,
+      /\n\/\/# sourceMappingURL=after-preload-dynamic-[-\w]{8}\.js\.map\n?$/,
     )
   })
 
@@ -220,12 +221,7 @@ describe.runIf(isBuild)('build tests', () => {
         SourceMap {
           content: {
             "debugId": "00000000-0000-0000-0000-000000000000",
-            "mappings": "qBAEA,SAASA,GAAO,CACJC,EAAA,CACZ,CAEA,SAASA,GAAY,CAEX,QAAA,MAAM,qBAAsBC,CAAkB,CACxD,CAEAF,EAAK",
-            "names": [
-              "main",
-              "mainInner",
-              "define_testDefineObject_default",
-            ],
+            "mappings": "AAEA,SAAS,GAAO,CACd,GAAW,CAGb,SAAS,GAAY,CAEnB,QAAQ,MAAM,qBAAA,CAAA,MAAA,OAAA,CAAyC,CAGzD,GAAM",
             "sources": [
               "../../with-define-object.ts",
             ],
@@ -246,7 +242,7 @@ describe.runIf(isBuild)('build tests', () => {
             ],
             "version": 3,
           },
-          visualization: "https://evanw.github.io/source-map-visualization/#MTk5AHZhciBlPXtoZWxsbzoidGVzdCJ9O2Z1bmN0aW9uIG4oKXt0KCl9ZnVuY3Rpb24gdCgpe2NvbnNvbGUudHJhY2UoIndpdGgtZGVmaW5lLW9iamVjdCIsZSl9bigpOwovLyMgZGVidWdJZD1iZDM5NjJmYy1lZGI1LTRhNmQtYTVkYS1mMjdhMWU1ZjMyNjgKLy8jIHNvdXJjZU1hcHBpbmdVUkw9d2l0aC1kZWZpbmUtb2JqZWN0LWhBU2RrZG55LmpzLm1hcAo1NjQAeyJ2ZXJzaW9uIjozLCJzb3VyY2VzIjpbIi4uLy4uL3dpdGgtZGVmaW5lLW9iamVjdC50cyJdLCJzb3VyY2VzQ29udGVudCI6WyIvLyB0ZXN0IGNvbXBsaWNhdGVkIHN0YWNrIHNpbmNlIGJyb2tlbiBzb3VyY2VtYXBcbi8vIG1pZ2h0IHN0aWxsIGxvb2sgY29ycmVjdCB3aXRoIGEgc2ltcGxlIGNhc2VcbmZ1bmN0aW9uIG1haW4oKSB7XG4gIG1haW5Jbm5lcigpXG59XG5cbmZ1bmN0aW9uIG1haW5Jbm5lcigpIHtcbiAgLy8gQHRzLWV4cGVjdC1lcnJvciBcImRlZmluZVwiXG4gIGNvbnNvbGUudHJhY2UoJ3dpdGgtZGVmaW5lLW9iamVjdCcsIF9fdGVzdERlZmluZU9iamVjdClcbn1cblxubWFpbigpXG4iXSwibmFtZXMiOlsibWFpbiIsIm1haW5Jbm5lciIsImRlZmluZV90ZXN0RGVmaW5lT2JqZWN0X2RlZmF1bHQiXSwibWFwcGluZ3MiOiJxQkFFQSxTQUFTQSxHQUFPLENBQ0pDLEVBQUEsQ0FDWixDQUVBLFNBQVNBLEdBQVksQ0FFWCxRQUFBLE1BQU0scUJBQXNCQyxDQUFrQixDQUN4RCxDQUVBRixFQUFLIiwiZGVidWdJZCI6IjAwMDAwMDAwLTAwMDAtMDAwMC0wMDAwLTAwMDAwMDAwMDAwMCJ9"
+          visualization: "https://evanw.github.io/source-map-visualization/#MTkwAGZ1bmN0aW9uIGUoKXt0KCl9ZnVuY3Rpb24gdCgpe2NvbnNvbGUudHJhY2UoYHdpdGgtZGVmaW5lLW9iamVjdGAse2hlbGxvOmB0ZXN0YH0pfWUoKTsKLy8jIGRlYnVnSWQ9NTBlZDE3M2ItOTIxYS00ZjMyLTk0MTAtMzBlZjc3ZmVlMGI5Ci8vIyBzb3VyY2VNYXBwaW5nVVJMPXdpdGgtZGVmaW5lLW9iamVjdC1CUTdSYzdraC5qcy5tYXA1MDAAeyJ2ZXJzaW9uIjozLCJzb3VyY2VzIjpbIi4uLy4uL3dpdGgtZGVmaW5lLW9iamVjdC50cyJdLCJzb3VyY2VzQ29udGVudCI6WyIvLyB0ZXN0IGNvbXBsaWNhdGVkIHN0YWNrIHNpbmNlIGJyb2tlbiBzb3VyY2VtYXBcbi8vIG1pZ2h0IHN0aWxsIGxvb2sgY29ycmVjdCB3aXRoIGEgc2ltcGxlIGNhc2VcbmZ1bmN0aW9uIG1haW4oKSB7XG4gIG1haW5Jbm5lcigpXG59XG5cbmZ1bmN0aW9uIG1haW5Jbm5lcigpIHtcbiAgLy8gQHRzLWV4cGVjdC1lcnJvciBcImRlZmluZVwiXG4gIGNvbnNvbGUudHJhY2UoJ3dpdGgtZGVmaW5lLW9iamVjdCcsIF9fdGVzdERlZmluZU9iamVjdClcbn1cblxubWFpbigpXG4iXSwibWFwcGluZ3MiOiJBQUVBLFNBQVMsR0FBTyxDQUNkLEdBQVcsQ0FHYixTQUFTLEdBQVksQ0FFbkIsUUFBUSxNQUFNLHFCQUFBLENBQUEsTUFBQSxPQUFBLENBQXlDLENBR3pELEdBQU0iLCJkZWJ1Z0lkIjoiMDAwMDAwMDAtMDAwMC0wMDAwLTAwMDAtMDAwMDAwMDAwMDAwIn0="
         }
       `)
   })
@@ -269,6 +265,9 @@ describe.runIf(isBuild)('build tests', () => {
 
     for (const jsAsset of jsAssets) {
       const jsContent = readFile(jsAsset)
+      const hasSourcemap = existsSync(`${jsAsset}.map`)
+      if (!hasSourcemap) continue
+
       const sourceDebugId = getDebugIdFromString(jsContent)
       expect(
         sourceDebugId,

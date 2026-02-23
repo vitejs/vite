@@ -4,7 +4,7 @@ import type {
   ParseError as EsModuleLexerParseError,
   ImportSpecifier,
 } from 'es-module-lexer'
-import type { OutputChunk } from 'rollup'
+import type { OutputChunk } from 'rolldown'
 import type { Plugin } from '../plugin'
 import { preloadMethod } from '../plugins/importAnalysisBuild'
 import {

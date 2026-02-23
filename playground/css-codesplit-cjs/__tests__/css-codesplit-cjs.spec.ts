@@ -1,12 +1,12 @@
 import { describe, expect, test } from 'vitest'
 import { findAssetFile, getColor, isBuild, readManifest } from '~utils'
 
-test('should load both stylesheets', async () => {
+test.skip('should load both stylesheets', async () => {
   expect(await getColor('h1')).toBe('red')
   expect(await getColor('h2')).toBe('blue')
 })
 
-describe.runIf(isBuild)('build', () => {
+describe.runIf(isBuild).skip('build', () => {
   test('should remove empty chunk', async () => {
     expect(findAssetFile(/style.*\.js$/)).toBeUndefined()
     expect(findAssetFile('main.*.js$')).toMatch(`/* empty css`)

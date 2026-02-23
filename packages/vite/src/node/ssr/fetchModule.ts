@@ -57,6 +57,7 @@ export async function fetchModule(
       extensions: ['.js', '.cjs', '.json'],
       dedupe,
       preserveSymlinks,
+      tsconfigPaths: false,
       isBuild: false,
       isProduction,
       root,

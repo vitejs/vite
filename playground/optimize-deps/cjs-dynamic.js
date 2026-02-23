@@ -17,7 +17,7 @@
   }
 
   const cjsFromESM = await import('@vitejs/test-dep-cjs-compiled-from-esm')
-  if (typeof cjsFromESM.default === 'function') {
+  if (typeof cjsFromESM.default.default === 'function') {
     text('.cjs-dynamic-dep-cjs-compiled-from-esm', 'ok')
   }
 
@@ -29,6 +29,13 @@
   ) {
     text('.cjs-dynamic-dep-cjs-compiled-from-cjs', 'ok')
   }
+
+  const cjsWithEsModuleFlag =
+    await import('@vitejs/test-dep-cjs-with-es-module-flag')
+  text(
+    '.cjs-dynamic-dep-cjs-with-es-module-flag',
+    cjsWithEsModuleFlag.default.info,
+  )
 
   function App() {
     const [count, setCount] = useState(0)

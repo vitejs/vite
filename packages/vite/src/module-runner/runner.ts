@@ -6,6 +6,7 @@ import {
   type NormalizedModuleRunnerTransport,
   normalizeModuleRunnerTransport,
 } from '../shared/moduleRunnerTransport'
+import { createIsBuiltin } from '../shared/builtin'
 import type { EvaluatedModuleNode } from './evaluatedModules'
 import { EvaluatedModules } from './evaluatedModules'
 import type {
@@ -44,13 +45,15 @@ export class ModuleRunner {
     string,
     Promise<EvaluatedModuleNode>
   >()
+  private isBuiltin?: (id: string) => boolean
+  private builtinsPromise?: Promise<void>
 
   private closed = false
 
   constructor(
     public options: ModuleRunnerOptions,
     public evaluator: ModuleEvaluator = new ESModulesEvaluator(),
-    private debug?: ModuleRunnerDebugger,
+    private debug?: ModuleRunnerDebugger | undefined,
   ) {
     this.evaluatedModules = options.evaluatedModules ?? new EvaluatedModules()
     this.transport = normalizeModuleRunnerTransport(options.transport)
@@ -179,7 +182,12 @@ export class ModuleRunner {
 
     if (importee) importers.add(importee)
 
-    // check circular dependency
+    // fast path: already evaluated modules can't deadlock
+    if (mod.evaluated && mod.promise) {
+      return this.processImport(await mod.promise, meta, metadata)
+    }
+
+    // check circular dependency (only for modules still being evaluated)
     if (
       callstack.includes(moduleId) ||
       this.isCircularModule(mod) ||
@@ -204,7 +212,7 @@ export class ModuleRunner {
     }
 
     try {
-      // cached module
+      // cached module (in-progress, not yet evaluated)
       if (mod.promise)
         return this.processImport(await mod.promise, meta, metadata)
 
@@ -238,6 +246,34 @@ export class ModuleRunner {
     return cached
   }
 
+  private ensureBuiltins(): Promise<void> | undefined {
+    if (this.isBuiltin) return
+
+    this.builtinsPromise ??= (async () => {
+      try {
+        this.debug?.('[module runner] fetching builtins from server')
+        const serializedBuiltins = await this.transport.invoke(
+          'getBuiltins',
+          [],
+        )
+        const builtins = serializedBuiltins.map((builtin) =>
+          typeof builtin === 'object' && builtin && 'type' in builtin
+            ? builtin.type === 'string'
+              ? builtin.value
+              : new RegExp(builtin.source, builtin.flags)
+            : // NOTE: Vitest returns raw values instead of serialized ones
+              builtin,
+        )
+        this.isBuiltin = createIsBuiltin(builtins)
+        this.debug?.('[module runner] builtins loaded:', builtins)
+      } finally {
+        this.builtinsPromise = undefined
+      }
+    })()
+
+    return this.builtinsPromise
+  }
+
   private async getModuleInformation(
     url: string,
     importer: string | undefined,
@@ -247,13 +283,15 @@ export class ModuleRunner {
       throw new Error(`Vite module runner has been closed.`)
     }
 
+    await this.ensureBuiltins()
+
     this.debug?.('[module runner] fetching', url)
 
     const isCached = !!(typeof cachedModule === 'object' && cachedModule.meta)
 
     const fetchedModule = // fast return for established externalized pattern
       (
-        url.startsWith('data:')
+        url.startsWith('data:') || this.isBuiltin?.(url)
           ? { externalize: url, type: 'builtin' }
           : await this.transport.invoke('fetchModule', [
               url,
