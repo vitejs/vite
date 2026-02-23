@@ -198,7 +198,7 @@ export interface ServerOptions extends CommonServerOptions {
     hmr: (environment: DevEnvironment) => Promise<void>,
   ) => Promise<void>
 
-  forwardRuntimeLogs?: boolean
+  forwardConsole?: boolean
 }
 
 export interface ResolvedServerOptions extends Omit<
@@ -1140,7 +1140,7 @@ const _serverConfigDefaults = Object.freeze({
   perEnvironmentStartEndDuringDev: false,
   perEnvironmentWatchChangeDuringDev: false,
   // hotUpdateEnvironments
-  forwardRuntimeLogs: false,
+  forwardConsole: false,
 } satisfies ServerOptions)
 export const serverConfigDefaults: Readonly<Partial<ServerOptions>> =
   _serverConfigDefaults

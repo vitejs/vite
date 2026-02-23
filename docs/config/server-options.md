@@ -224,7 +224,7 @@ The error that appears in the Browser when the fallback happens can be ignored. 
 
 :::
 
-## server.forwardRuntimeLogs
+## server.forwardConsole
 
 - **Type:** `boolean`
 - **Default:** `false`

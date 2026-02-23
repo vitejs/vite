@@ -13,7 +13,7 @@ export interface CustomEventMap {
   'vite:beforeFullReload': FullReloadPayload
   'vite:error': ErrorPayload
   'vite:invalidate': InvalidatePayload
-  'vite:runtime-log': RuntimeLogPayload
+  'vite:forward-console': ForwardConsolePayload
   'vite:ws:connect': WebSocketConnectionPayload
   'vite:ws:disconnect': WebSocketConnectionPayload
   /** @internal */
@@ -41,7 +41,7 @@ export interface InvalidatePayload {
   firstInvalidatedBy: string
 }
 
-export interface RuntimeLogPayload {
+export interface ForwardConsolePayload {
   // make it optional for future extension?
   error?: {
     name: string

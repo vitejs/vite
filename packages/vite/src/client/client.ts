@@ -10,7 +10,7 @@ import {
   normalizeModuleRunnerTransport,
 } from '../shared/moduleRunnerTransport'
 import { createHMRHandler } from '../shared/hmrHandler'
-import { setupRuntimeLogHandler } from '../shared/runtimeLog'
+import { setupForwardConsoleHandler } from '../shared/forwardConsole'
 import { ErrorOverlay, cspNonce, overlayId } from './overlay'
 import '@vite/env'
 
@@ -25,7 +25,7 @@ declare const __HMR_BASE__: string
 declare const __HMR_TIMEOUT__: number
 declare const __HMR_ENABLE_OVERLAY__: boolean
 declare const __WS_TOKEN__: string
-declare const __SERVER_FORWARD_RUNTIME_LOGS__: boolean
+declare const __SERVER_FORWARD_CONSOLE__: boolean
 declare const __BUNDLED_DEV__: boolean
 
 console.debug('[vite] connecting...')
@@ -198,8 +198,8 @@ const hmrClient = new HMRClient(
 )
 transport.connect!(createHMRHandler(handleMessage))
 
-if (__SERVER_FORWARD_RUNTIME_LOGS__) {
-  setupRuntimeLogHandler(transport)
+if (__SERVER_FORWARD_CONSOLE__) {
+  setupForwardConsoleHandler(transport)
 }
 
 async function handleMessage(payload: HotPayload) {

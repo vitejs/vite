@@ -34,7 +34,7 @@ import {
   createFilterForTransform,
   createIdFilter,
 } from './pluginFilter'
-import { runtimeLogPlugin } from './runtimeLog'
+import { forwardConsolePlugin } from './forwardConsole'
 import { oxcPlugin } from './oxc'
 import { esbuildBannerFooterCompatPlugin } from './esbuildBannerFooterCompatPlugin'
 
@@ -102,8 +102,8 @@ export async function resolvePlugins(
     wasmHelperPlugin(),
     webWorkerPlugin(config),
     assetPlugin(config),
-    config.server.forwardRuntimeLogs &&
-      runtimeLogPlugin({ environments: ['client'] }),
+    config.server.forwardConsole &&
+      forwardConsolePlugin({ environments: ['client'] }),
 
     ...normalPlugins,
 

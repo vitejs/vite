@@ -2,21 +2,21 @@ import path from 'node:path'
 import fs from 'node:fs'
 import { parseErrorStacktrace } from '@vitest/utils/source-map'
 import c from 'picocolors'
-import type { RuntimeLogPayload } from '#types/customEvent'
+import type { ForwardConsolePayload } from '#types/customEvent'
 import type { DevEnvironment, Plugin } from '..'
 import { normalizePath } from '..'
 import { generateCodeFrame } from '../utils'
 
-export function runtimeLogPlugin(pluginOpts: {
+export function forwardConsolePlugin(pluginOpts: {
   environments: string[]
 }): Plugin {
   return {
-    name: 'vite:runtime-log',
+    name: 'vite:forward-console',
     apply: 'serve',
     configureServer(server) {
       for (const name of pluginOpts.environments) {
         const environment = server.environments[name]
-        environment.hot.on('vite:runtime-log', (payload) => {
+        environment.hot.on('vite:forward-console', (payload) => {
           if (payload.error) {
             const output = formatError(payload.error, environment)
             environment.config.logger.error(output, {
@@ -30,7 +30,7 @@ export function runtimeLogPlugin(pluginOpts: {
 }
 
 function formatError(
-  error: NonNullable<RuntimeLogPayload['error']>,
+  error: NonNullable<ForwardConsolePayload['error']>,
   environment: DevEnvironment,
 ) {
   // https://github.com/vitest-dev/vitest/blob/4783137cd8d766cf998bdf2d638890eaa51e08d9/packages/browser/src/node/projectParent.ts#L58

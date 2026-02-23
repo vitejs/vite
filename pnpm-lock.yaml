@@ -1441,7 +1441,7 @@ importers:
 
   playground/resolve/utf8-bom-package: {}
 
-  playground/runtime-log: {}
+  playground/forward-console: {}
 
   playground/self-referencing: {}
 
