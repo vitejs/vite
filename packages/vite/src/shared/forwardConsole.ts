@@ -112,7 +112,7 @@ export function formatConsoleArgs(args: unknown[]): string {
         if (typeof arg === 'bigint') {
           return `${arg.toString()}n`
         }
-        return typeof arg === 'object' && arg !== null
+        return typeof arg === 'object' && arg != null
           ? stringifyConsoleArg(arg)
           : String(arg)
       case '%d':
@@ -148,7 +148,7 @@ export function formatConsoleArgs(args: unknown[]): string {
   })
 
   for (let arg = args[i]; i < len; arg = args[++i]) {
-    if (arg === null || typeof arg !== 'object') {
+    if (arg == null || typeof arg !== 'object') {
       message += ` ${typeof arg === 'symbol' ? arg.toString() : String(arg)}`
     } else {
       message += ` ${stringifyConsoleArg(arg)}`
