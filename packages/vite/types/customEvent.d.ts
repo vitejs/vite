@@ -13,9 +13,10 @@ export interface CustomEventMap {
   'vite:beforeFullReload': FullReloadPayload
   'vite:error': ErrorPayload
   'vite:invalidate': InvalidatePayload
-  'vite:forward-console': ForwardConsolePayload
   'vite:ws:connect': WebSocketConnectionPayload
   'vite:ws:disconnect': WebSocketConnectionPayload
+  /** @internal */
+  'vite:forward-console': ForwardConsolePayload
   /** @internal */
   'vite:module-loaded': { modules: string[] }
 
