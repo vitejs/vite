@@ -43,7 +43,7 @@ test.runIf(isServe)('console.error', async () => {
         .slice(logIndex)
         .some((log) =>
           stripVTControlCharacters(log).includes(
-            '[Console error] this is test console error',
+            '[console.error] this is test console error',
           ),
         ),
     )

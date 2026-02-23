@@ -27,7 +27,7 @@ export function forwardConsolePlugin(pluginOpts: {
             })
           } else {
             const output =
-              c.dim(`[Console ${payload.data.level}] `) + payload.data.message
+              c.dim(`[console.${payload.data.level}] `) + payload.data.message
             if (payload.data.level === 'error') {
               environment.config.logger.error(output, {
                 timestamp: true,
