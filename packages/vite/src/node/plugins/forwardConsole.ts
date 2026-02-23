@@ -5,6 +5,7 @@ import c from 'picocolors'
 import type { ForwardConsolePayload } from '#types/customEvent'
 import type { DevEnvironment, Plugin } from '..'
 import { normalizePath } from '..'
+import { extractSourcemapFromFile } from '../server/sourcemap'
 import { generateCodeFrame } from '../utils'
 
 export function forwardConsolePlugin(pluginOpts: {
@@ -88,17 +89,17 @@ function formatError(
       }
 
       const result = environment.moduleGraph.getModuleById(id)?.transformResult
-      // this can happen for bundled dependencies in node_modules/.vite
+      // handle non-inline source map such as pre-bundled deps in node_modules/.vite
       if (result && !result.map) {
-        const sourceMapUrl = retrieveSourceMapURL(result.code)
-        if (!sourceMapUrl) {
+        try {
+          const filePath = id.split('?')[0]
+          const extracted = extractSourcemapFromFile(result.code, filePath)
+          sourceMapCache.set(id, extracted?.map)
+          return extracted?.map
+        } catch {
+          sourceMapCache.set(id, null)
           return null
         }
-        const filePath = id.split('?')[0]
-        const sourceMapPath = path.resolve(path.dirname(filePath), sourceMapUrl)
-        const map = JSON.parse(fs.readFileSync(sourceMapPath, 'utf-8'))
-        sourceMapCache.set(id, map)
-        return map
       }
 
       sourceMapCache.set(id, result?.map)
@@ -138,18 +139,4 @@ function formatError(
     }
   }
   return output
-}
-
-function retrieveSourceMapURL(source: string): string | null {
-  const re =
-    /\/\/[@#]\s*sourceMappingURL=([^\s'"]+)\s*$|\/\*[@#]\s*sourceMappingURL=[^\s*'"]+\s*\*\/\s*$/gm
-  let lastMatch, match
-
-  while ((match = re.exec(source))) {
-    lastMatch = match
-  }
-  if (!lastMatch) {
-    return null
-  }
-  return lastMatch[1]
 }
