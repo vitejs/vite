@@ -227,7 +227,7 @@ The error that appears in the Browser when the fallback happens can be ignored. 
 ## server.forwardConsole
 
 - **Type:** `boolean | { unhandledErrors?: boolean, logLevels?: ('error' | 'warn' | 'info' | 'log' | 'debug')[] }`
-- **Default:** `false`
+- **Default:** auto (`true` when an AI coding agent is detected based on [`@vercel/detect-agent`](https://www.npmjs.com/package/@vercel/detect-agent), otherwise `false`)
 
 Forward browser runtime events to the Vite server console during development.
 

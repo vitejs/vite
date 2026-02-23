@@ -283,6 +283,9 @@ importers:
       '@types/pnpapi':
         specifier: ^0.0.5
         version: 0.0.5
+      '@vercel/detect-agent':
+        specifier: ^1.1.0
+        version: 1.1.0
       '@vitejs/devtools':
         specifier: ^0.0.0-alpha.31
         version: 0.0.0-alpha.31(typescript@5.9.3)(vite@packages+vite)(vue@3.5.28(typescript@5.9.3))

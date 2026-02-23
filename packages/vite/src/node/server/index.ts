@@ -11,6 +11,7 @@ import corsMiddleware from 'cors'
 import colors from 'picocolors'
 import chokidar from 'chokidar'
 import launchEditorMiddleware from 'launch-editor-middleware'
+import { determineAgent } from '@vercel/detect-agent'
 import type { SourceMap } from 'rolldown'
 import type { ModuleRunner } from 'vite/module-runner'
 import type { FSWatcher, WatchOptions } from '#dep-types/chokidar'
@@ -264,10 +265,13 @@ export type ServerHook = (
 
 export type HttpServer = http.Server | Http2SecureServer
 
-export function resolveForwardConsoleOptions(
+export async function resolveForwardConsoleOptions(
   value: boolean | ForwardConsoleOptions | undefined,
-): ResolvedForwardConsoleOptions {
-  if (!value) {
+): Promise<ResolvedForwardConsoleOptions> {
+  const { isAgent } = await determineAgent()
+  value ??= isAgent
+
+  if (value === false) {
     return {
       enabled: false,
       unhandledErrors: false,
@@ -1174,16 +1178,16 @@ const _serverConfigDefaults = Object.freeze({
   perEnvironmentStartEndDuringDev: false,
   perEnvironmentWatchChangeDuringDev: false,
   // hotUpdateEnvironments
-  forwardConsole: false,
+  forwardConsole: undefined,
 } satisfies ServerOptions)
 export const serverConfigDefaults: Readonly<Partial<ServerOptions>> =
   _serverConfigDefaults
 
-export function resolveServerOptions(
+export async function resolveServerOptions(
   root: string,
   raw: ServerOptions | undefined,
   logger: Logger,
-): ResolvedServerOptions {
+): Promise<ResolvedServerOptions> {
   const _server = mergeWithDefaults(
     {
       ..._serverConfigDefaults,
@@ -1204,7 +1208,7 @@ export function resolveServerOptions(
       _server.sourcemapIgnoreList === false
         ? () => false
         : _server.sourcemapIgnoreList,
-    forwardConsole: resolveForwardConsoleOptions(_server.forwardConsole),
+    forwardConsole: await resolveForwardConsoleOptions(_server.forwardConsole),
   }
 
   let allowDirs = server.fs.allow
