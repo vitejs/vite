@@ -10,14 +10,13 @@ export function setupForwardConsoleHandler(
   options: ResolvedForwardConsoleOptions,
 ): void {
   function sendError(type: 'error' | 'unhandled-rejection', error: any) {
-    // TODO: serialize extra properties, recursive cause, etc.
     transport.send({
       type: 'custom',
       event: 'vite:forward-console',
       data: {
         type,
         data: {
-          name: error?.name || 'Error',
+          name: error?.name || 'Unknown Error',
           message: error?.message || String(error),
           stack: error?.stack,
         },
@@ -48,47 +47,20 @@ export function setupForwardConsoleHandler(
   }
 
   if (options.unhandledErrors && typeof window !== 'undefined') {
-    const recentUnhandledRejections = new WeakSet<object>()
-    const recentUnhandledRejectionMessages = new Set<string>()
-
-    const rememberUnhandledRejection = (reason: unknown) => {
-      if (reason && typeof reason === 'object') {
-        recentUnhandledRejections.add(reason)
-      } else {
-        const key = String(reason)
-        recentUnhandledRejectionMessages.add(key)
-        queueMicrotask(() => {
-          recentUnhandledRejectionMessages.delete(key)
-        })
-      }
-    }
-
     window.addEventListener('error', (event) => {
-      if (
-        event.error &&
-        typeof event.error === 'object' &&
-        recentUnhandledRejections.has(event.error)
-      ) {
-        return
-      }
-      if (
-        (!event.error || typeof event.error !== 'object') &&
-        recentUnhandledRejectionMessages.has(
-          String(event.error ?? event.message),
-        )
-      ) {
-        return
-      }
-      sendError('error', event.error)
+      // `ErrorEvent` doesn't necessarily have `ErrorEvent.error`.
+      // Use `ErrorEvent.message` as fallback e.g. for ResizeObserver error.
+      // https://developer.mozilla.org/en-US/docs/Web/API/ErrorEvent/error
+      // https://developer.mozilla.org/en-US/docs/Web/API/ResizeObserver#observation_errors
+      const error =
+        event.error ?? (event.message ? new Error(event.message) : event)
+      sendError('error', error)
     })
+
     window.addEventListener('unhandledrejection', (event) => {
-      rememberUnhandledRejection(event.reason)
       sendError('unhandled-rejection', event.reason)
     })
   }
-
-  // TODO: server runtime?
-  // if (typeof process !== 'undefined') {}
 }
 
 // TODO: adopt vitest utils for stringify?
