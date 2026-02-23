@@ -114,7 +114,6 @@ function formatError(
       .join(' ')}\n`
     if (stack === nearest) {
       const code = fs.readFileSync(stack.file, 'utf-8')
-      // TODO: highlight?
       output += generateCodeFrame(code, stack).replace(/^/gm, '    ')
       output += '\n'
     }
