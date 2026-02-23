@@ -76,7 +76,7 @@ export function setupForwardConsoleHandler(
   }
 }
 
-function formatConsoleArgs(args: unknown[]): string {
+export function formatConsoleArgs(args: unknown[]): string {
   if (args.length === 0) {
     return ''
   }
