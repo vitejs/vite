@@ -12,6 +12,7 @@ import {
   type PluginWithRequiredHook,
 } from '../plugin'
 import { watchPackageDataPlugin } from '../packages'
+import { resolveForwardConsoleOptions } from '../../shared/forwardConsoleOptions'
 import { oxcResolvePlugin } from './resolve'
 import { optimizedDepsPlugin } from './optimizedDeps'
 import { importAnalysisPlugin } from './importAnalysis'
@@ -102,7 +103,7 @@ export async function resolvePlugins(
     wasmHelperPlugin(),
     webWorkerPlugin(config),
     assetPlugin(config),
-    config.server.forwardConsole &&
+    resolveForwardConsoleOptions(config.server.forwardConsole).enabled &&
       forwardConsolePlugin({ environments: ['client'] }),
 
     ...normalPlugins,

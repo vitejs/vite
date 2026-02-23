@@ -41,12 +41,17 @@ export interface InvalidatePayload {
   firstInvalidatedBy: string
 }
 
+// TODO: adjust payload structure (type-tag union?)
 export interface ForwardConsolePayload {
   // make it optional for future extension?
   error?: {
     name: string
     message: string
     stack?: string
+  }
+  log?: {
+    level: 'error' | 'warn' | 'info' | 'log' | 'debug'
+    message: string
   }
 }
 

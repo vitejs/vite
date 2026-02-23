@@ -198,7 +198,7 @@ export interface ServerOptions extends CommonServerOptions {
     hmr: (environment: DevEnvironment) => Promise<void>,
   ) => Promise<void>
 
-  forwardConsole?: boolean
+  forwardConsole?: boolean | ForwardConsoleOptions
 }
 
 export interface ResolvedServerOptions extends Omit<
@@ -258,6 +258,13 @@ export type ServerHook = (
 ) => (() => void) | void | Promise<(() => void) | void>
 
 export type HttpServer = http.Server | Http2SecureServer
+
+export type ForwardConsoleLogLevel = 'error' | 'warn' | 'info' | 'log' | 'debug'
+
+export interface ForwardConsoleOptions {
+  unhandledErrors?: boolean
+  logLevels?: ForwardConsoleLogLevel[]
+}
 
 export interface ViteDevServer {
   /**

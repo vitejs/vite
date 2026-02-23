@@ -226,10 +226,16 @@ The error that appears in the Browser when the fallback happens can be ignored. 
 
 ## server.forwardConsole
 
-- **Type:** `boolean`
+- **Type:** `boolean | { unhandledErrors?: boolean, logLevels?: ('error' | 'warn' | 'info' | 'log' | 'debug')[] }`
 - **Default:** `false`
 
-Forward unhandled runtime errors from the browser to the Vite server console during development. When enabled, errors like unhandled promise rejections and uncaught exceptions that occur in the browser will be logged in the server terminal with enhanced formatting, for example:
+Forward browser runtime events to the Vite server console during development.
+
+- `true` enables forwarding unhandled errors and `console.error` / `console.warn` logs.
+- `unhandledErrors` controls forwarding uncaught exceptions and unhandled promise rejections.
+- `logLevels` controls which `console.*` calls are forwarded.
+
+When unhandled errors are forwarded, they are logged in the server terminal with enhanced formatting, for example:
 
 ```log
 1:18:38 AM [vite] (client) [Unhandled error] Error: this is test error
@@ -244,6 +250,17 @@ Forward unhandled runtime errors from the browser to the Vite server console dur
 ```
 
 This feature is useful when working with AI coding assistants that can only see terminal output for context.
+
+```js
+export default defineConfig({
+  server: {
+    forwardConsole: {
+      unhandledErrors: true,
+      logLevels: ['warn', 'error'],
+    },
+  },
+})
+```
 
 ## server.warmup
 

@@ -23,6 +23,23 @@ export function forwardConsolePlugin(pluginOpts: {
               timestamp: true,
             })
           }
+          if (payload.log) {
+            const output =
+              c.dim(`[Console ${payload.log.level}] `) + payload.log.message
+            if (payload.log.level === 'error') {
+              environment.config.logger.error(output, {
+                timestamp: true,
+              })
+            } else if (payload.log.level === 'warn') {
+              environment.config.logger.warn(output, {
+                timestamp: true,
+              })
+            } else {
+              environment.config.logger.info(output, {
+                timestamp: true,
+              })
+            }
+          }
         })
       }
     },
