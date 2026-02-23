@@ -134,11 +134,11 @@ Repository: https://github.com/rollup/plugins
 
 ## @vitest/utils
 License: MIT
-Repository: git+https://github.com/vitest-dev/vitest.git
+Repository: https://github.com/vitest-dev/vitest
 
 > MIT License
 > 
-> Copyright (c) 2021-Present Vitest Team
+> Copyright (c) 2021-Present VoidZero Inc. and Vitest contributors
 > 
 > Permission is hereby granted, free of charge, to any person obtaining a copy
 > of this software and associated documentation files (the "Software"), to deal
