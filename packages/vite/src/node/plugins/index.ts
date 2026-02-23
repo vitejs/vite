@@ -102,6 +102,7 @@ export async function resolvePlugins(
     wasmHelperPlugin(),
     webWorkerPlugin(config),
     assetPlugin(config),
+    // for now client only
     config.server.forwardConsole.enabled &&
       forwardConsolePlugin({ environments: ['client'] }),
 
