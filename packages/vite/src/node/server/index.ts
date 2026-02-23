@@ -16,6 +16,10 @@ import type { ModuleRunner } from 'vite/module-runner'
 import type { FSWatcher, WatchOptions } from '#dep-types/chokidar'
 import type { Connect } from '#dep-types/connect'
 import type { CommonServerOptions } from '../http'
+import type {
+  ForwardConsoleOptions,
+  ResolvedForwardConsoleOptions,
+} from '../../shared/forwardConsole'
 import {
   httpServerStart,
   resolveHttpServer,
@@ -259,19 +263,6 @@ export type ServerHook = (
 ) => (() => void) | void | Promise<(() => void) | void>
 
 export type HttpServer = http.Server | Http2SecureServer
-
-export type ForwardConsoleLogLevel = 'error' | 'warn' | 'info' | 'log' | 'debug'
-
-export interface ForwardConsoleOptions {
-  unhandledErrors?: boolean
-  logLevels?: ForwardConsoleLogLevel[]
-}
-
-export interface ResolvedForwardConsoleOptions {
-  enabled: boolean
-  unhandledErrors: boolean
-  logLevels: ForwardConsoleLogLevel[]
-}
 
 export function resolveForwardConsoleOptions(
   value: boolean | ForwardConsoleOptions | undefined,

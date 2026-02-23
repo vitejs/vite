@@ -1,12 +1,14 @@
 import type { ForwardConsolePayload } from '#types/customEvent'
 import type { NormalizedModuleRunnerTransport } from './moduleRunnerTransport'
 
-type ForwardConsoleLogLevel = Extract<
-  ForwardConsolePayload,
-  { type: 'log' }
->['data']['level']
+export type ForwardConsoleLogLevel = 'error' | 'warn' | 'info' | 'log' | 'debug'
 
-interface ResolvedForwardConsoleOptions {
+export interface ForwardConsoleOptions {
+  unhandledErrors?: boolean
+  logLevels?: ForwardConsoleLogLevel[]
+}
+
+export interface ResolvedForwardConsoleOptions {
   enabled: boolean
   unhandledErrors: boolean
   logLevels: ForwardConsoleLogLevel[]
