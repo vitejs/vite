@@ -60,7 +60,6 @@ function formatError(
   sourceMapCache: Map<string, any>,
 ) {
   const error = payload.data
-  // https://github.com/vitest-dev/vitest/blob/4783137cd8d766cf998bdf2d638890eaa51e08d9/packages/browser/src/node/projectParent.ts#L58
   const stacks = parseErrorStacktrace(error, {
     getUrlId(id) {
       const moduleGraph = environment.moduleGraph
@@ -105,12 +104,11 @@ function formatError(
       sourceMapCache.set(id, result?.map)
       return result?.map
     },
-    // Vitest uses this option to skip internal files
-    // https://github.com/vitejs/vitest/blob/4783137cd8d766cf998bdf2d638890eaa51e08d9/packages/utils/src/source-map.ts#L17
+    // override it to empty since vitest uses this option to skip internal files by default.
+    // https://github.com/vitest-dev/vitest/blob/4783137cd8d766cf998bdf2d638890eaa51e08d9/packages/utils/src/source-map.ts#L17
     ignoreStackEntries: [],
   })
 
-  // https://github.com/vitest-dev/vitest/blob/4783137cd8d766cf998bdf2d638890eaa51e08d9/packages/vitest/src/node/printError.ts#L64
   const nearest = stacks.find((stack) => {
     const modules = environment.moduleGraph.getModulesByFile(stack.file)
     return (
