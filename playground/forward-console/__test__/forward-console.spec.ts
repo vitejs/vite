@@ -7,6 +7,7 @@ function normalizeLogs(logs: string[]) {
     .map((log) => stripVTControlCharacters(log))
     .join('\n')
     .replaceAll(/ +\n/g, '\n') // strip trailing spaces
+    .replaceAll(/\?v=[a-z\d]+/g, '')
 }
 
 test.runIf(isServe)('unhandled error', async () => {
@@ -52,9 +53,18 @@ test.runIf(isServe)('console.error', async () => {
 test.runIf(isServe)('dependency stack uses source map path', async () => {
   const logIndex = serverLogs.length
   await page.click('#test-dep-error')
-  // TODO: test stack
+  // TODO: not working yet
   await expect.poll(() => normalizeLogs(serverLogs.slice(logIndex)))
     .toContain(`\
 [Unhandled error] Error: this is test dependency error
+ > throwDepError node_modules/.vite/deps/@vitejs_test-forward-console-throw-dep.js:2:8
+ > testDepError src/main.ts:42:2
+    40 |
+    41 |  function testDepError() {
+    42 |    throwDepError()
+       |    ^
+    43 |  }
+    44 |
+ > HTMLButtonElement.<anonymous> src/main.ts:22:2
 `)
 })

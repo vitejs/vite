@@ -10,6 +10,8 @@ import { generateCodeFrame } from '../utils'
 export function forwardConsolePlugin(pluginOpts: {
   environments: string[]
 }): Plugin {
+  const sourceMapCache = new Map<string, any>()
+
   return {
     name: 'vite:forward-console',
     apply: 'serve',
@@ -21,7 +23,7 @@ export function forwardConsolePlugin(pluginOpts: {
             payload.type === 'error' ||
             payload.type === 'unhandled-rejection'
           ) {
-            const output = formatError(payload, environment)
+            const output = formatError(payload, environment, sourceMapCache)
             environment.config.logger.error(output, {
               timestamp: true,
             })
@@ -54,6 +56,7 @@ function formatError(
     { type: 'error' | 'unhandled-rejection' }
   >,
   environment: DevEnvironment,
+  sourceMapCache: Map<string, any>,
 ) {
   const error = payload.data
   // https://github.com/vitest-dev/vitest/blob/4783137cd8d766cf998bdf2d638890eaa51e08d9/packages/browser/src/node/projectParent.ts#L58
@@ -80,10 +83,26 @@ function formatError(
       return id
     },
     getSourceMap(id) {
-      // stack is already rewritten on server
-      if (environment.name === 'client') {
-        return environment.moduleGraph.getModuleById(id)?.transformResult?.map
+      if (sourceMapCache.has(id)) {
+        return sourceMapCache.get(id)
       }
+
+      const result = environment.moduleGraph.getModuleById(id)?.transformResult
+      // this can happen for bundled dependencies in node_modules/.vite
+      if (result && !result.map) {
+        const sourceMapUrl = retrieveSourceMapURL(result.code)
+        if (!sourceMapUrl) {
+          return null
+        }
+        const filePath = id.split('?')[0]
+        const sourceMapPath = path.resolve(path.dirname(filePath), sourceMapUrl)
+        const map = JSON.parse(fs.readFileSync(sourceMapPath, 'utf-8'))
+        sourceMapCache.set(id, map)
+        return map
+      }
+
+      sourceMapCache.set(id, result?.map)
+      return result?.map
     },
     // Vitest uses this option to skip internal files
     // https://github.com/vitejs/vitest/blob/4783137cd8d766cf998bdf2d638890eaa51e08d9/packages/utils/src/source-map.ts#L17
@@ -119,4 +138,18 @@ function formatError(
     }
   }
   return output
+}
+
+function retrieveSourceMapURL(source: string): string | null {
+  const re =
+    /\/\/[@#]\s*sourceMappingURL=([^\s'"]+)\s*$|\/\*[@#]\s*sourceMappingURL=[^\s*'"]+\s*\*\/\s*$/gm
+  let lastMatch, match
+   
+  while ((match = re.exec(source))) {
+    lastMatch = match
+  }
+  if (!lastMatch) {
+    return null
+  }
+  return lastMatch[1]
 }
