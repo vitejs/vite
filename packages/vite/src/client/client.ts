@@ -25,12 +25,7 @@ declare const __HMR_BASE__: string
 declare const __HMR_TIMEOUT__: number
 declare const __HMR_ENABLE_OVERLAY__: boolean
 declare const __WS_TOKEN__: string
-// TODO: avoid re-typing?
-declare const __SERVER_FORWARD_CONSOLE__: {
-  enabled: boolean
-  unhandledErrors: boolean
-  logLevels: Array<'error' | 'warn' | 'info' | 'log' | 'debug'>
-}
+declare const __SERVER_FORWARD_CONSOLE__: any
 declare const __BUNDLED_DEV__: boolean
 
 console.debug('[vite] connecting...')
@@ -204,9 +199,7 @@ const hmrClient = new HMRClient(
 )
 transport.connect!(createHMRHandler(handleMessage))
 
-if (forwardConsole.enabled) {
-  setupForwardConsoleHandler(transport, forwardConsole)
-}
+setupForwardConsoleHandler(transport, forwardConsole)
 
 async function handleMessage(payload: HotPayload) {
   switch (payload.type) {

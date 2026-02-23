@@ -16,6 +16,10 @@ export function setupForwardConsoleHandler(
   transport: NormalizedModuleRunnerTransport,
   options: ResolvedForwardConsoleOptions,
 ): void {
+  if (!options.enabled) {
+    return
+  }
+
   function sendError(type: 'error' | 'unhandled-rejection', error: any) {
     transport.send({
       type: 'custom',
