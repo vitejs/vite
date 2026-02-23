@@ -5,7 +5,6 @@ import type { ResolvedConfig } from '../config'
 import { CLIENT_ENTRY, ENV_ENTRY } from '../constants'
 import { isObject, normalizePath, resolveHostname } from '../utils'
 import { cleanUrl } from '../../shared/utils'
-import { resolveForwardConsoleOptions } from '../../shared/forwardConsoleOptions'
 import { perEnvironmentState } from '../environment'
 import { replaceDefine, serializeDefine } from './define'
 
@@ -113,12 +112,8 @@ async function createClientConfigValueReplacer(
   const hmrEnableOverlayReplacement = escapeReplacement(overlay)
   const hmrConfigNameReplacement = escapeReplacement(hmrConfigName)
   const wsTokenReplacement = escapeReplacement(config.webSocketToken)
-  // TODO: should be resolved early
-  const serverForwardConsole = resolveForwardConsoleOptions(
-    config.server.forwardConsole,
-  )
   const serverForwardConsoleReplacement = () =>
-    JSON.stringify(serverForwardConsole)
+    JSON.stringify(config.server.forwardConsole)
   const bundleDevReplacement = escapeReplacement(
     config.experimental.bundledDev || false,
   )
