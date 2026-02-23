@@ -1,3 +1,4 @@
+import { stripVTControlCharacters } from 'node:util'
 import { beforeAll, describe, expect, it, test } from 'vitest'
 import type { Page } from 'playwright-chromium'
 import {
@@ -1066,9 +1067,10 @@ if (!isBuild) {
       console.log('debug:', serverLogs.slice(lastServerLogIndex))
     })
     // Should still keep hmr update, but it'll error on the browser-side and will refresh itself.
-    // Match on full log not possible because of color markers
     await expect
-      .poll(() => serverLogs.slice(lastServerLogIndex))
+      .poll(() =>
+        serverLogs.slice(lastServerLogIndex).map(stripVTControlCharacters),
+      )
       .toContain('hmr update /self-accept-within-circular/c.js')
   })
 
