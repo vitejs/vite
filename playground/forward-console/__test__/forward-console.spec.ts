@@ -53,11 +53,10 @@ test.runIf(isServe)('console.error', async () => {
 test.runIf(isServe)('dependency stack uses source map path', async () => {
   const logIndex = serverLogs.length
   await page.click('#test-dep-error')
-  // TODO: not working yet
   await expect.poll(() => normalizeLogs(serverLogs.slice(logIndex)))
     .toContain(`\
 [Unhandled error] Error: this is test dependency error
- > throwDepError node_modules/.vite/deps/@vitejs_test-forward-console-throw-dep.js:2:8
+ > throwDepError ../../node_modules/.pnpm/@vitejs+test-forward-console-throw-dep@file+playground+forward-console+fixtures+throw-dep/node_modules/@vitejs/test-forward-console-throw-dep/index.js:2:8
  > testDepError src/main.ts:42:2
     40 |
     41 |  function testDepError() {

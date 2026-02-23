@@ -144,7 +144,7 @@ function retrieveSourceMapURL(source: string): string | null {
   const re =
     /\/\/[@#]\s*sourceMappingURL=([^\s'"]+)\s*$|\/\*[@#]\s*sourceMappingURL=[^\s*'"]+\s*\*\/\s*$/gm
   let lastMatch, match
-   
+
   while ((match = re.exec(source))) {
     lastMatch = match
   }

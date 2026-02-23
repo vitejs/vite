@@ -287,8 +287,8 @@ importers:
         specifier: ^0.0.0-alpha.31
         version: 0.0.0-alpha.31(typescript@5.9.3)(vite@packages+vite)(vue@3.5.28(typescript@5.9.3))
       '@vitest/utils':
-        specifier: ^4.0.18
-        version: 4.0.18
+        specifier: 4.1.0-beta.4
+        version: 4.1.0-beta.4
       artichokie:
         specifier: ^0.4.2
         version: 0.4.2
@@ -4341,6 +4341,9 @@ packages:
   '@vitest/pretty-format@4.0.18':
     resolution: {integrity: sha512-P24GK3GulZWC5tz87ux0m8OADrQIUVDPIjjj65vBXYG17ZeU3qD7r+MNZ1RNv4l8CGU2vtTRqixrOi9fYk/yKw==}
 
+  '@vitest/pretty-format@4.1.0-beta.4':
+    resolution: {integrity: sha512-rAJOtUSRzgobQtuW98WV3bSkomdILArhgSc4JQ5G6Et0eaD6DTeMpr+k7B//F/xYG7oVeuabOTx3EWu06ILCgA==}
+
   '@vitest/runner@4.0.18':
     resolution: {integrity: sha512-rpk9y12PGa22Jg6g5M3UVVnTS7+zycIGk9ZNGN+m6tZHKQb7jrP7/77WfZy13Y/EUDd52NDsLRQhYKtv7XfPQw==}
 
@@ -4352,6 +4355,9 @@ packages:
 
   '@vitest/utils@4.0.18':
     resolution: {integrity: sha512-msMRKLMVLWygpK3u2Hybgi4MNjcYJvwTb0Ru09+fOyCXIgT5raYP041DRRdiJiI3k/2U6SEbAETB3YtBrUkCFA==}
+
+  '@vitest/utils@4.1.0-beta.4':
+    resolution: {integrity: sha512-c6oj0FpdLwmOisNpeVwhXqwe9Harehj+n9Pfz4/Iv45dSR32VHDzK2uosqT2ocCZhgzXwX4xpL8thl2Wr/wyrw==}
 
   '@voidzero-dev/vitepress-theme@4.5.0':
     resolution: {integrity: sha512-jY6VprjFeIjBAPWIh0FJUSwU3GwKrHmf8u91HkLxHvzilXbyuu9sJCfF7FnjG2hYH07nF86xnnm+KGZxvFxthg==}
@@ -10312,6 +10318,10 @@ snapshots:
     dependencies:
       tinyrainbow: 3.0.3
 
+  '@vitest/pretty-format@4.1.0-beta.4':
+    dependencies:
+      tinyrainbow: 3.0.3
+
   '@vitest/runner@4.0.18':
     dependencies:
       '@vitest/utils': 4.0.18
@@ -10328,6 +10338,11 @@ snapshots:
   '@vitest/utils@4.0.18':
     dependencies:
       '@vitest/pretty-format': 4.0.18
+      tinyrainbow: 3.0.3
+
+  '@vitest/utils@4.1.0-beta.4':
+    dependencies:
+      '@vitest/pretty-format': 4.1.0-beta.4
       tinyrainbow: 3.0.3
 
   '@voidzero-dev/vitepress-theme@4.5.0(focus-trap@7.8.0)(vite@packages+vite)(vitepress@2.0.0-alpha.16(oxc-minify@0.114.0)(postcss@8.5.6)(typescript@5.9.3))(vue@3.5.28(typescript@5.9.3))':
