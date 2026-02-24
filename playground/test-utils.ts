@@ -121,6 +121,20 @@ export async function getBg(
   return el.evaluate((el) => getComputedStyle(el as Element).backgroundImage)
 }
 
+export async function getCssRuleBg(selector: string): Promise<string> {
+  return page.evaluate((sel) => {
+    for (const sheet of document.styleSheets) {
+      try {
+        for (const rule of sheet.cssRules) {
+          if (rule instanceof CSSStyleRule && rule.selectorText === sel) {
+            return rule.style.backgroundImage
+          }
+        }
+      } catch (_e) {}
+    }
+  }, selector)
+}
+
 export async function getBgColor(
   el: string | ElementHandle | Locator,
 ): Promise<string> {
