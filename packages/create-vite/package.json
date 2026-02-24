@@ -33,7 +33,7 @@
   "homepage": "https://github.com/vitejs/vite/tree/main/packages/create-vite#readme",
   "funding": "https://github.com/vitejs/vite?sponsor=1",
   "devDependencies": {
-    "@clack/prompts": "^1.0.0",
+    "@clack/prompts": "^1.0.1",
     "@vercel/detect-agent": "^1.1.0",
     "cross-spawn": "^7.0.6",
     "mri": "^1.2.0",
