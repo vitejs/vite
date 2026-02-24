@@ -15,7 +15,7 @@ jobs:
     steps:
       - name: Get description
         id: description
-        uses: actions/github-script@v7
+        uses: actions/github-script@v8
         with:
           script: |
             let title, body, number, isPR;
@@ -74,7 +74,7 @@ jobs:
 
       - name: Apply clarity label
         if: steps.agent.outputs.agent_output
-        uses: actions/github-script@v7
+        uses: actions/github-script@v8
         env:
           AGENT_OUTPUT: ${{ steps.agent.outputs.agent_output }}
           ISSUE_NUMBER: ${{ steps.description.outputs.number }}
@@ -148,7 +148,7 @@ jobs:
 
       - name: Write result to summary
         if: steps.agent.outputs.agent_output
-        uses: actions/github-script@v7
+        uses: actions/github-script@v8
         env:
           AGENT_OUTPUT: ${{ steps.agent.outputs.agent_output }}
         with:
