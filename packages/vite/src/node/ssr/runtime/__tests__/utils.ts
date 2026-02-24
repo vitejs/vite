@@ -3,29 +3,35 @@ import { dirname, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { test as base, onTestFinished } from 'vitest'
 import type { ModuleRunner } from 'vite/module-runner'
-// import type { ServerModuleRunnerOptions } from '../serverModuleRunner'
 import type { ViteDevServer } from '../../../server'
 import type { InlineConfig } from '../../../config'
 import { createServer } from '../../../server'
-// import { createServerModuleRunner } from '../serverModuleRunner'
-// import type { DevEnvironment } from '../../../server/environment'
-// import type { RunnableDevEnvironment } from '../../..'
-import type { FullBundleRunnableDevEnvironment } from '../../../server/environments/fullBundleRunnableEnvironment'
+import type { RunnableDevEnvironment } from '../../../server/environments/runnableEnvironment'
+import {
+  type ServerModuleRunnerOptions,
+  createServerModuleRunner,
+} from '../serverModuleRunner'
 
 interface TestClient {
   config: InlineConfig
   server: ViteDevServer
   runner: ModuleRunner
-  environment: FullBundleRunnableDevEnvironment
+  runnerOptions: ServerModuleRunnerOptions | undefined
+  environment: RunnableDevEnvironment
 }
 
 export const runnerTest = base.extend<TestClient>({
+  // eslint-disable-next-line no-empty-pattern
+  runnerOptions: async ({}, use) => {
+    await use(undefined)
+  },
   // eslint-disable-next-line no-empty-pattern
   config: async ({}, use) => {
     await use({})
   },
   server: async ({ config }, use) => {
     const server = await createServer({
+      configFile: false,
       root: import.meta.dirname,
       logLevel: 'error',
       ssr: {
@@ -69,6 +75,7 @@ export const runnerTest = base.extend<TestClient>({
         middlewareMode: true,
         watch: null,
         ws: false,
+        hmr: false,
         ...config.server,
       },
     })
@@ -79,10 +86,16 @@ export const runnerTest = base.extend<TestClient>({
     await server.close()
   },
   environment: async ({ server }, use) => {
-    await use(server.environments.ssr as FullBundleRunnableDevEnvironment)
+    await use(server.environments.ssr as RunnableDevEnvironment)
   },
-  runner: async ({ environment }, use) => {
-    await use(environment.runner)
+  runner: async ({ environment, runnerOptions }, use) => {
+    if (runnerOptions) {
+      const runner = createServerModuleRunner(environment, runnerOptions)
+      await use(runner)
+      await runner.close()
+    } else {
+      await use(environment.runner)
+    }
   },
 })
 

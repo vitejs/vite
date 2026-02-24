@@ -4,25 +4,20 @@ import { describe, expect } from 'vitest'
 import type { ViteDevServer } from '../../..'
 import type { ModuleRunnerContext } from '../../../../module-runner'
 import { ESModulesEvaluator } from '../../../../module-runner'
-import {
-  createFixtureEditor,
-  createModuleRunnerTester,
-  resolvePath,
-} from './utils'
+import { createFixtureEditor, runnerTest as it, resolvePath } from './utils'
 
 describe('module runner initialization', async () => {
-  const it = await createModuleRunnerTester(
-    {},
-    {
+  it.scoped({
+    runnerOptions: {
       sourcemapInterceptor: 'prepareStackTrace',
     },
-  )
+  })
 
   const getError = async (cb: () => void): Promise<Error> => {
     try {
       await cb()
       expect.unreachable()
-    } catch (err) {
+    } catch (err: any) {
       return err
     }
   }
@@ -157,13 +152,12 @@ describe('module runner with node:vm executor', async () => {
     }
   }
 
-  const it = await createModuleRunnerTester(
-    {},
-    {
+  it.scoped({
+    runnerOptions: {
       sourcemapInterceptor: 'prepareStackTrace',
       evaluator: new Evaluator(),
     },
-  )
+  })
 
   it('should not crash when error stacktrace contains negative column', async ({
     runner,

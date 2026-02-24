@@ -3,25 +3,19 @@ import { posix, win32 } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { describe, expect, vi } from 'vitest'
 import { isWindows } from '../../../../shared/utils'
-// import type { ExternalFetchResult } from '../../../../shared/invokeMethods'
-import { runnerTest } from './utils'
+import type { ExternalFetchResult } from '../../../../shared/invokeMethods'
+import { runnerTest as it } from './utils'
 
 const _URL = URL
 
-const it = runnerTest
-
-describe.only('module runner initialization', async () => {
+describe('module runner initialization', async () => {
   it.scoped({
     config: {
-      configFile: false,
       resolve: {
         external: ['tinyglobby'],
       },
       experimental: {
         ssrBundledDev: true,
-      },
-      server: {
-        hmr: false,
       },
       build: {
         rolldownOptions: {
@@ -539,134 +533,145 @@ describe.only('module runner initialization', async () => {
   })
 })
 
-// describe('optimize-deps', async () => {
-//   const it = await createModuleRunnerTester({
-//     cacheDir: 'node_modules/.vite-test',
-//     ssr: {
-//       noExternal: true,
-//       optimizeDeps: {
-//         include: ['@vitejs/cjs-external'],
-//       },
-//     },
-//   })
+describe('optimize-deps', async () => {
+  it.scoped({
+    config: {
+      cacheDir: 'node_modules/.vite-test',
+      ssr: {
+        noExternal: true,
+        optimizeDeps: {
+          include: ['@vitejs/cjs-external'],
+        },
+      },
+    },
+  })
 
-//   it('optimized dep as entry', async ({ runner }) => {
-//     const mod = await runner.import('@vitejs/cjs-external')
-//     expect(mod.default.hello()).toMatchInlineSnapshot(`"world"`)
-//   })
-// })
+  it('optimized dep as entry', async ({ runner }) => {
+    const mod = await runner.import('@vitejs/cjs-external')
+    expect(mod.default.hello()).toMatchInlineSnapshot(`"world"`)
+  })
+})
 
-// describe('resolveId absolute path entry', async () => {
-//   const it = await createModuleRunnerTester({
-//     plugins: [
-//       {
-//         name: 'test-resolevId',
-//         enforce: 'pre',
-//         resolveId(source) {
-//           if (
-//             source ===
-//             posix.join(this.environment.config.root, 'fixtures/basic.js')
-//           ) {
-//             return '\0virtual:basic'
-//           }
-//         },
-//         load(id) {
-//           if (id === '\0virtual:basic') {
-//             return `export const name = "virtual:basic"`
-//           }
-//         },
-//       },
-//     ],
-//   })
+describe('resolveId absolute path entry', async () => {
+  it.scoped({
+    config: {
+      plugins: [
+        {
+          name: 'test-resolevId',
+          enforce: 'pre',
+          resolveId(source) {
+            if (
+              source ===
+              posix.join(this.environment.config.root, 'fixtures/basic.js')
+            ) {
+              return '\0virtual:basic'
+            }
+          },
+          load(id) {
+            if (id === '\0virtual:basic') {
+              return `export const name = "virtual:basic"`
+            }
+          },
+        },
+      ],
+    },
+  })
 
-//   it('ssrLoadModule', async ({ server }) => {
-//     const mod = await server.ssrLoadModule(
-//       posix.join(server.config.root, 'fixtures/basic.js'),
-//     )
-//     expect(mod.name).toMatchInlineSnapshot(`"virtual:basic"`)
-//   })
+  it('ssrLoadModule', async ({ server }) => {
+    const mod = await server.ssrLoadModule(
+      posix.join(server.config.root, 'fixtures/basic.js'),
+    )
+    expect(mod.name).toMatchInlineSnapshot(`"virtual:basic"`)
+  })
 
-//   it('runner', async ({ server, runner }) => {
-//     const mod = await runner.import(
-//       posix.join(server.config.root, 'fixtures/basic.js'),
-//     )
-//     expect(mod.name).toMatchInlineSnapshot(`"virtual:basic"`)
-//   })
-// })
+  it('runner', async ({ server, runner }) => {
+    const mod = await runner.import(
+      posix.join(server.config.root, 'fixtures/basic.js'),
+    )
+    expect(mod.name).toMatchInlineSnapshot(`"virtual:basic"`)
+  })
+})
 
-// describe('virtual module hmr', async () => {
-//   let state = 'init'
+describe('virtual module hmr', async () => {
+  let state = 'init'
 
-//   const it = await createModuleRunnerTester({
-//     plugins: [
-//       {
-//         name: 'test-resolevId',
-//         enforce: 'pre',
-//         resolveId(source) {
-//           if (source === 'virtual:test') {
-//             return '\0' + source
-//           }
-//         },
-//         load(id) {
-//           if (id === '\0virtual:test') {
-//             return `export default ${JSON.stringify(state)}`
-//           }
-//         },
-//       },
-//     ],
-//   })
+  it.scoped({
+    config: {
+      server: {
+        hmr: true,
+      },
+      plugins: [
+        {
+          name: 'test-resolevId',
+          enforce: 'pre',
+          resolveId(source) {
+            if (source === 'virtual:test') {
+              return '\0' + source
+            }
+          },
+          load(id) {
+            if (id === '\0virtual:test') {
+              return `export default ${JSON.stringify(state)}`
+            }
+          },
+        },
+      ],
+    },
+  })
 
-//   it('full reload', async ({ server, runner }) => {
-//     const mod = await runner.import('virtual:test')
-//     expect(mod.default).toBe('init')
-//     state = 'reloaded'
-//     server.environments.ssr.moduleGraph.invalidateAll()
-//     server.environments.ssr.hot.send({ type: 'full-reload' })
-//     await vi.waitFor(() => {
-//       const mod = runner.evaluatedModules.getModuleById('\0virtual:test')
-//       expect(mod?.exports.default).toBe('reloaded')
-//     })
-//   })
+  it('full reload', async ({ environment, runner }) => {
+    const mod = await runner.import('virtual:test')
+    expect(mod.default).toBe('init')
+    state = 'reloaded'
+    environment.moduleGraph.invalidateAll()
+    environment.hot.send({ type: 'full-reload' })
+    await vi.waitFor(() => {
+      const mod = runner.evaluatedModules.getModuleById('\0virtual:test')
+      expect(mod?.exports.default).toBe('reloaded')
+    })
+  })
 
-//   it("the external module's ID and file are resolved correctly", async ({
-//     server,
-//     runner,
-//   }) => {
-//     await runner.import(
-//       posix.join(server.config.root, 'fixtures/import-external.ts'),
-//     )
-//     const moduleNode = runner.evaluatedModules.getModuleByUrl('tinyglobby')!
-//     const meta = moduleNode.meta as ExternalFetchResult
-//     if (process.platform === 'win32') {
-//       expect(meta.externalize).toMatch(/^file:\/\/\/\w:\//) // file:///C:/
-//       expect(moduleNode.id).toMatch(/^\w:\//) // C:/
-//       expect(moduleNode.file).toMatch(/^\w:\//) // C:/
-//     } else {
-//       expect(meta.externalize).toMatch(/^file:\/\/\//) // file:///
-//       expect(moduleNode.id).toMatch(/^\//) // /
-//       expect(moduleNode.file).toMatch(/^\//) // /
-//     }
-//   })
-// })
+  it("the external module's ID and file are resolved correctly", async ({
+    server,
+    runner,
+  }) => {
+    await runner.import(
+      posix.join(server.config.root, 'fixtures/import-external.ts'),
+    )
+    const moduleNode = runner.evaluatedModules.getModuleByUrl('tinyglobby')!
+    const meta = moduleNode.meta as ExternalFetchResult
+    if (process.platform === 'win32') {
+      expect(meta.externalize).toMatch(/^file:\/\/\/\w:\//) // file:///C:/
+      expect(moduleNode.id).toMatch(/^\w:\//) // C:/
+      expect(moduleNode.file).toMatch(/^\w:\//) // C:/
+    } else {
+      expect(meta.externalize).toMatch(/^file:\/\/\//) // file:///
+      expect(moduleNode.id).toMatch(/^\//) // /
+      expect(moduleNode.file).toMatch(/^\//) // /
+    }
+  })
+})
 
-// describe('invalid package', async () => {
-//   const it = await createModuleRunnerTester({
-//     environments: {
-//       ssr: {
-//         resolve: {
-//           noExternal: true,
-//         },
-//       },
-//     },
-//   })
+describe('invalid package', async () => {
+  it.scoped({
+    config: {
+      environments: {
+        ssr: {
+          resolve: {
+            noExternal: true,
+          },
+        },
+      },
+    },
+  })
 
-//   it('can catch resolve error on runtime', async ({ runner }) => {
-//     const mod = await runner.import('./fixtures/invalid-package/test.js')
-//     expect(await mod.test()).toMatchInlineSnapshot(`
-//       {
-//         "data": [Error: Failed to resolve entry for package "test-dep-invalid-exports". The package may have incorrect main/module/exports specified in its package.json.],
-//         "ok": false,
-//       }
-//     `)
-//   })
-// })
+  it('can catch resolve error on runtime', async ({ runner }) => {
+    const mod = await runner.import('./fixtures/invalid-package/test.js')
+    expect(await mod.test()).toMatchInlineSnapshot(`
+      {
+        "data": [Error: Failed to resolve entry for package "test-dep-invalid-exports". The package may have incorrect main/module/exports specified in its package.json.],
+        "ok": false,
+      }
+    `)
+  })
+})
