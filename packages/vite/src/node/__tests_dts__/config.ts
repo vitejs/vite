@@ -33,9 +33,44 @@ export type cases1 = [
 
 defineConfig({
   base: '',
-  // @ts-expect-error
+  build: {
+    minify: 'oxc', // `as const` is not needed
+  },
+  // @ts-expect-error --- invalid option should error
   unknownProperty: 1,
 })
+
+defineConfig(() => ({
+  base: '',
+  build: {
+    minify: 'oxc', // `as const` is not needed
+  },
+  unknownProperty: 1, // we cannot catch invalid option for this case, ideally we should
+}))
+
+// @ts-expect-error --- nested invalid option `build.unknown` should error
+defineConfig(() => ({
+  base: '',
+  build: {
+    unknown: 1,
+  },
+}))
+
+defineConfig(async () => ({
+  base: '',
+  build: {
+    minify: 'oxc', // `as const` is not needed
+  },
+  unknownProperty: 1, // we cannot catch invalid option for this case, ideally we should
+}))
+
+// @ts-expect-error --- nested invalid option `build.unknown` should error
+defineConfig(async () => ({
+  base: '',
+  build: {
+    unknown: 1,
+  },
+}))
 
 mergeConfig(defineConfig({}), defineConfig({}))
 mergeConfig(
