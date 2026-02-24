@@ -46,7 +46,7 @@
     "@vitejs/test-dep-with-assets": "file:./dep-with-assets",
     "lodash-es": "^4.17.23",
     "@vitejs/test-nested-exclude": "file:./nested-exclude",
-    "phoenix": "^1.8.3",
+    "phoenix": "^1.8.4",
     "react": "^19.2.4",
     "react-dom": "^19.2.4",
     "@vitejs/test-resolve-linked": "workspace:0.0.0",
