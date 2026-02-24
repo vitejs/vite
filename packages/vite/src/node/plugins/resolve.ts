@@ -29,6 +29,7 @@ import {
   isOptimizable,
   normalizePath,
   safeRealpathSync,
+  stripBase,
   tryStatSync,
 } from '../utils'
 import {
@@ -226,6 +227,7 @@ export function oxcResolvePlugin(
   overrideEnvConfig: (ResolvedConfig & ResolvedEnvironmentOptions) | undefined,
 ): Plugin[] {
   return [
+    bundledDevBaseResolvePlugin(),
     ...(resolveOptions.optimizeDeps && !resolveOptions.isBuild
       ? [optimizerResolvePlugin(resolveOptions)]
       : []),
@@ -382,6 +384,32 @@ export function oxcResolvePlugin(
       },
     ),
   ]
+}
+
+function bundledDevBaseResolvePlugin(): Plugin {
+  return {
+    name: 'vite:resolve-bundled-dev-base',
+    applyToEnvironment(environment) {
+      return environment.config.command === 'serve'
+    },
+    resolveId: {
+      filter: {
+        id: /^\//,
+      },
+      handler(id) {
+        const { base, experimental } = this.environment.config
+        if (!experimental.bundledDev || base === '/' || !id.startsWith(base)) {
+          return
+        }
+
+        if (!id.startsWith(`${base}@`)) {
+          return
+        }
+
+        return stripBase(id, base)
+      },
+    },
+  }
 }
 
 function optimizerResolvePlugin(

@@ -53,6 +53,35 @@ describe('import and resolveId', () => {
       expect.stringContaining('dir/index.module.js'),
     ])
   })
+
+  test('bundledDev strips base for virtual /@ imports', async () => {
+    const server = await createServer({
+      configFile: false,
+      root: import.meta.dirname,
+      logLevel: 'error',
+      base: '/ui/',
+      experimental: {
+        bundledDev: true,
+      },
+      plugins: [
+        {
+          name: 'test-virtual-react-refresh',
+          resolveId(id) {
+            if (id === '/@react-refresh') {
+              return '\0virtual-react-refresh'
+            }
+          },
+        },
+      ],
+    })
+    onTestFinished(() => server.close())
+
+    const resolved =
+      await server.environments.client.pluginContainer.resolveId(
+        '/ui/@react-refresh',
+      )
+    expect(resolved?.id).toBe('/@react-refresh')
+  })
 })
 
 describe('file url', () => {
