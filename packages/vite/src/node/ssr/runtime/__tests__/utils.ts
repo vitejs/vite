@@ -13,6 +13,7 @@ import {
 } from '../serverModuleRunner'
 
 interface TestClient {
+  fullBundle: string[]
   config: InlineConfig
   server: ViteDevServer
   runner: ModuleRunner
@@ -22,20 +23,29 @@ interface TestClient {
 
 export const runnerTest = base.extend<TestClient>({
   // eslint-disable-next-line no-empty-pattern
-  runnerOptions: async ({}, use) => {
-    await use(undefined)
-  },
+  fullBundle: ({}, use) => use([]),
   // eslint-disable-next-line no-empty-pattern
-  config: async ({}, use) => {
-    await use({})
-  },
-  server: async ({ config }, use) => {
+  runnerOptions: ({}, use) => use(undefined),
+  // eslint-disable-next-line no-empty-pattern
+  config: ({}, use) => use({}),
+  server: async ({ config, fullBundle }, use) => {
     const server = await createServer({
       configFile: false,
       root: import.meta.dirname,
       logLevel: 'error',
       ssr: {
         external: ['@vitejs/cjs-external', '@vitejs/esm-external'],
+      },
+      experimental: {
+        ssrBundledDev: fullBundle.length > 0,
+        ...config.experimental,
+      },
+      build: {
+        rolldownOptions: {
+          input: fullBundle,
+          ...config.build?.rolldownOptions,
+        },
+        ...config.build,
       },
       optimizeDeps: {
         disabled: true,

@@ -10,51 +10,44 @@ const _URL = URL
 
 describe('module runner initialization', async () => {
   it.scoped({
+    fullBundle: [
+      './fixtures/dynamic-import.js',
+      './fixtures/simple.js',
+      './fixtures/test.css',
+      './fixtures/test.module.css',
+      './fixtures/assets.js',
+      './fixtures/top-level-object.js',
+      './fixtures/cyclic2/test9/index.js',
+      './fixtures/live-binding/test4/index.js',
+      './fixtures/live-binding/test3/index.js',
+      './fixtures/live-binding/test2/index.js',
+      './fixtures/live-binding/test1/index.js',
+      './fixtures/execution-order-re-export/index.js',
+      './fixtures/cyclic2/test7/Ion.js',
+      './fixtures/cyclic2/test6/index.js',
+      './fixtures/cyclic2/test5/index.js',
+      './fixtures/cyclic2/test4/index.js',
+      './fixtures/cyclic2/test3/index.js',
+      './fixtures/cyclic2/test2/index.js',
+      './fixtures/cyclic2/test1/index.js',
+      './fixtures/no-this/importer.js',
+      './fixtures/native.js',
+      './fixtures/installed.js',
+      './fixtures/virtual.js',
+      './fixtures/cyclic/entry.js',
+      './fixtures/has-error.js',
+      './fixtures/basic.js',
+      './fixtures/simple.js?raw',
+      './fixtures/simple.js?url',
+      './fixtures/test.css?inline',
+      // TODO: this fails during bundle, not at runtime
+      // at the moment it HANGS the whole process
+      // './fixtures/esm-external-non-existing.js',
+      // './fixtures/cjs-external-non-existing.js',
+    ],
     config: {
       resolve: {
         external: ['tinyglobby'],
-      },
-      experimental: {
-        ssrBundledDev: true,
-      },
-      build: {
-        rolldownOptions: {
-          input: [
-            './fixtures/dynamic-import.js',
-            './fixtures/simple.js',
-            './fixtures/test.css',
-            './fixtures/test.module.css',
-            './fixtures/assets.js',
-            './fixtures/top-level-object.js',
-            './fixtures/cyclic2/test9/index.js',
-            './fixtures/live-binding/test4/index.js',
-            './fixtures/live-binding/test3/index.js',
-            './fixtures/live-binding/test2/index.js',
-            './fixtures/live-binding/test1/index.js',
-            './fixtures/execution-order-re-export/index.js',
-            './fixtures/cyclic2/test7/Ion.js',
-            './fixtures/cyclic2/test6/index.js',
-            './fixtures/cyclic2/test5/index.js',
-            './fixtures/cyclic2/test4/index.js',
-            './fixtures/cyclic2/test3/index.js',
-            './fixtures/cyclic2/test2/index.js',
-            './fixtures/cyclic2/test1/index.js',
-            './fixtures/no-this/importer.js',
-            './fixtures/native.js',
-            './fixtures/installed.js',
-            './fixtures/virtual.js',
-            './fixtures/cyclic/entry.js',
-            './fixtures/has-error.js',
-            './fixtures/basic.js',
-            './fixtures/simple.js?raw',
-            './fixtures/simple.js?url',
-            './fixtures/test.css?inline',
-            // TODO: this fails during bundle, not at runtime
-            // at the moment it HANGS the whole process
-            // './fixtures/esm-external-non-existing.js',
-            // './fixtures/cjs-external-non-existing.js',
-          ],
-        },
       },
     },
   })
@@ -77,9 +70,9 @@ describe('module runner initialization', async () => {
   it('can load virtual modules as an entry point', async ({
     runner,
     skip,
-    config,
+    fullBundle,
   }) => {
-    skip(!!config.experimental?.ssrBundledDev, 'FBM')
+    skip(!!fullBundle.length, 'FBM')
 
     const mod = await runner.import('virtual:test')
     expect(mod.msg).toBe('virtual')
@@ -129,9 +122,9 @@ describe('module runner initialization', async () => {
     })
   })
 
-  it('assets are loaded correctly', async ({ runner, config }) => {
+  it('assets are loaded correctly', async ({ runner, fullBundle }) => {
     const assets = await runner.import('/fixtures/assets.js')
-    if (config.experimental?.ssrBundledDev) {
+    if (fullBundle.length) {
       expect(assets).toMatchObject({
         mov: 'data:video/quicktime;base64,',
         txt: 'data:text/plain;base64,',
@@ -150,7 +143,7 @@ describe('module runner initialization', async () => {
 
   it('ids with Vite queries are loaded correctly', async ({
     runner,
-    config,
+    fullBundle,
   }) => {
     const raw = await runner.import('/fixtures/simple.js?raw')
     expect(raw.default).toMatchInlineSnapshot(`
@@ -160,7 +153,7 @@ describe('module runner initialization', async () => {
       "
     `)
     const url = await runner.import('/fixtures/simple.js?url')
-    if (config.experimental?.ssrBundledDev) {
+    if (fullBundle.length) {
       expect(url.default).toMatch('__VITE_ASSET__')
     } else {
       expect(url.default).toMatchInlineSnapshot(`"/fixtures/simple.js"`)
@@ -176,12 +169,12 @@ describe('module runner initialization', async () => {
 
   it('modules with query strings are treated as different modules', async ({
     runner,
-    config,
+    fullBundle,
   }) => {
     const modSimple = await runner.import('/fixtures/simple.js')
     const modUrl = await runner.import('/fixtures/simple.js?url')
     expect(modSimple).not.toBe(modUrl)
-    if (config.experimental?.ssrBundledDev) {
+    if (fullBundle.length) {
       expect(modUrl.default).toContain('__VITE_ASSET__')
     } else {
       expect(modUrl.default).toBe('/fixtures/simple.js')
@@ -235,9 +228,9 @@ describe('module runner initialization', async () => {
   it('importing external cjs library checks exports', async ({
     runner,
     skip,
-    config,
+    fullBundle,
   }) => {
-    skip(!!config.experimental?.ssrBundledDev, 'FBM')
+    skip(!!fullBundle.length, 'FBM')
 
     await expect(() => runner.import('/fixtures/cjs-external-non-existing.js'))
       .rejects.toThrowErrorMatchingInlineSnapshot(`
@@ -259,9 +252,9 @@ describe('module runner initialization', async () => {
   it('importing external esm library checks exports', async ({
     runner,
     skip,
-    config,
+    fullBundle,
   }) => {
-    skip(!!config.experimental?.ssrBundledDev, 'FBM')
+    skip(!!fullBundle.length, 'FBM')
 
     await expect(() =>
       runner.import('/fixtures/esm-external-non-existing.js'),
@@ -277,12 +270,12 @@ describe('module runner initialization', async () => {
   })
 
   it("dynamic import doesn't produce duplicates", async ({
-    config,
+    fullBundle,
     skip,
     runner,
   }) => {
     // rolldown doesn't return the same reference and doesn't support non-processed dynamic imports
-    skip(!!config.experimental?.ssrBundledDev, 'FBM')
+    skip(!!fullBundle.length, 'FBM')
 
     const mod = await runner.import('./fixtures/dynamic-import.js')
     const modules = await mod.initialize()
@@ -296,8 +289,8 @@ describe('module runner initialization', async () => {
     expect(modules.static).toBe(modules.dynamicFileUrl)
   })
 
-  it('dynamic imports in FBM', async ({ config, skip, runner }) => {
-    skip(!config.experimental?.ssrBundledDev, 'FBM')
+  it('dynamic imports in FBM', async ({ fullBundle, skip, runner }) => {
+    skip(!fullBundle.length, 'FBM')
 
     const mod = await runner.import('./fixtures/dynamic-import.js')
     const modules = await mod.initialize(true)
@@ -332,10 +325,10 @@ describe('module runner initialization', async () => {
   it('correctly resolves module url', async ({
     runner,
     server,
-    config,
+    fullBundle,
     skip,
   }) => {
-    skip(!!config.experimental?.ssrBundledDev, 'FBM')
+    skip(!!fullBundle.length, 'FBM')
 
     const { meta } = await runner.import('/fixtures/basic.js')
     const basicUrl = new _URL('./fixtures/basic.js', import.meta.url).toString()
@@ -365,9 +358,9 @@ describe('module runner initialization', async () => {
   it(`no maximum call stack error ModuleRunner.isCircularImport`, async ({
     runner,
     skip,
-    config,
+    fullBundle,
   }) => {
-    skip(!!config.experimental?.ssrBundledDev, 'FBM')
+    skip(!!fullBundle.length, 'FBM')
 
     // entry.js ⇔ entry-cyclic.js
     //   ⇓
@@ -403,11 +396,11 @@ describe('module runner initialization', async () => {
     })
   })
 
-  it(`cyclic invalid 1`, async ({ runner, config }) => {
+  it(`cyclic invalid 1`, async ({ runner, fullBundle }) => {
     // Node also fails but with a different message
     //   $ node packages/vite/src/node/ssr/runtime/__tests__/fixtures/cyclic2/test5/index.js
     //   ReferenceError: Cannot access 'dep1' before initialization
-    if (config.experimental?.ssrBundledDev) {
+    if (fullBundle.length) {
       await expect(() =>
         runner.import('/fixtures/cyclic2/test5/index.js'),
       ).rejects.toMatchInlineSnapshot(
@@ -424,8 +417,8 @@ describe('module runner initialization', async () => {
 
   // rolldown doesn't support this
   // - Cannot access 'dep1' before initialization
-  it(`cyclic invalid 2`, async ({ runner, skip, config }) => {
-    skip(!!config.experimental?.ssrBundledDev, 'FBM')
+  it(`cyclic invalid 2`, async ({ runner, skip, fullBundle }) => {
+    skip(!!fullBundle.length, 'FBM')
 
     // It should be an error but currently `undefined` fallback.
     expect(
