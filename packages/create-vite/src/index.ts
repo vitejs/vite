@@ -52,7 +52,6 @@ ${yellow    ('vanilla-ts          vanilla'       )}
 ${green     ('vue-ts              vue'           )}
 ${cyan      ('react-ts            react'         )}
 ${cyan      ('react-compiler-ts   react-compiler')}
-${cyan      ('react-swc-ts        react-swc'     )}
 ${magenta   ('preact-ts           preact'        )}
 ${redBright ('lit-ts              lit'           )}
 ${red       ('svelte-ts           svelte'        )}
@@ -145,11 +144,6 @@ const FRAMEWORKS: Framework[] = [
         color: blue,
       },
       {
-        name: 'react-swc-ts',
-        display: 'TypeScript + SWC',
-        color: blue,
-      },
-      {
         name: 'react',
         display: 'JavaScript',
         color: yellow,
@@ -157,11 +151,6 @@ const FRAMEWORKS: Framework[] = [
       {
         name: 'react-compiler',
         display: 'JavaScript + React Compiler',
-        color: yellow,
-      },
-      {
-        name: 'react-swc',
-        display: 'JavaScript + SWC',
         color: yellow,
       },
       {
@@ -609,11 +598,6 @@ async function init() {
 
   const root = path.join(cwd, targetDir)
   // determine template
-  let isReactSwc = false
-  if (template.includes('-swc')) {
-    isReactSwc = true
-    template = template.replace('-swc', '')
-  }
   let isReactCompiler = false
   if (template.includes('react-compiler')) {
     isReactCompiler = true
@@ -691,9 +675,7 @@ async function init() {
 
   write('package.json', JSON.stringify(pkg, null, 2) + '\n')
 
-  if (isReactSwc) {
-    setupReactSwc(root, template.endsWith('-ts'))
-  } else if (isReactCompiler) {
+  if (isReactCompiler) {
     setupReactCompiler(root, template.endsWith('-ts'))
   }
 
@@ -787,28 +769,6 @@ function pkgFromUserAgent(userAgent: string | undefined): PkgInfo | undefined {
   }
 }
 
-function setupReactSwc(root: string, isTs: boolean) {
-  // renovate: datasource=npm depName=@vitejs/plugin-react-swc
-  const reactSwcPluginVersion = '4.2.3'
-
-  editFile(path.resolve(root, 'package.json'), (content) => {
-    return content.replace(
-      /"@vitejs\/plugin-react": ".+?"/,
-      `"@vitejs/plugin-react-swc": "^${reactSwcPluginVersion}"`,
-    )
-  })
-  editFile(
-    path.resolve(root, `vite.config.${isTs ? 'ts' : 'js'}`),
-    (content) => {
-      return content.replace('@vitejs/plugin-react', '@vitejs/plugin-react-swc')
-    },
-  )
-  updateReactCompilerReadme(
-    root,
-    'The React Compiler is currently not compatible with SWC. See [this issue](https://github.com/vitejs/vite-plugin-react/issues/428) for tracking the progress.',
-  )
-}
-
 function setupReactCompiler(root: string, isTs: boolean) {
   // renovate: datasource=npm depName=babel-plugin-react-compiler
   const reactCompilerPluginVersion = '1.0.0'
@@ -832,7 +792,7 @@ function setupReactCompiler(root: string, isTs: boolean) {
         `  plugins: [
     react({
       babel: {
-        plugins: [['babel-plugin-react-compiler']],
+        plugins: ['babel-plugin-react-compiler'],
       },
     }),
   ],`,
@@ -873,7 +833,7 @@ function getFullCustomCommand(customCommand: string, pkgInfo?: PkgInfo) {
   return (
     customCommand
       .replace(/^npm create (?:-- )?/, () => {
-        // `bun create` uses it's own set of templates,
+        // `bun create` uses its own set of templates,
         // the closest alternative is using `bun x` directly on the package
         if (pkgManager === 'bun') {
           return 'bun x create-'
