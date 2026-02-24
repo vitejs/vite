@@ -9,6 +9,7 @@ describe(
         server: {
           // override watch options because it's disabled by default
           watch: {},
+          hmr: true,
         },
       },
     })
