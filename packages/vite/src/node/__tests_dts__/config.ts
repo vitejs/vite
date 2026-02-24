@@ -37,6 +37,28 @@ defineConfig({
   unknownProperty: 1,
 })
 
+defineConfig(() => ({
+  base: '',
+  build: {
+    minify: 'oxc',
+  },
+}))
+
+defineConfig(async () => ({
+  base: '',
+  build: {
+    minify: 'terser',
+  },
+}))
+
+// @ts-expect-error --- nested invalid option `build.unknown` should error
+defineConfig(async () => ({
+  base: '',
+  build: {
+    unknown: 1,
+  },
+}))
+
 mergeConfig(defineConfig({}), defineConfig({}))
 mergeConfig(
   // @ts-expect-error
