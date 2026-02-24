@@ -143,18 +143,25 @@ export async function transformWithOxc(
     }
   }
 
+  const tsconfigOverridden = config?.build?.rolldownOptions?.tsconfig != null
+
   const resolvedOptions = {
     sourcemap: true,
     ...options,
     inputMap: inMap as SourceMap | undefined,
     lang,
+    // When rolldownOptions.tsconfig is explicitly set, disable tsconfig
+    // auto-discovery in the transform to avoid errors in environments
+    // where tsconfig.json is not discoverable by walking parent directories
+    // (e.g. sandboxed builds, containers).
+    ...(tsconfigOverridden ? { tsconfig: false as const } : {}),
   }
 
   const result = transformSync(
     filename,
     code,
     resolvedOptions,
-    getTSConfigResolutionCache(config),
+    tsconfigOverridden ? undefined : getTSConfigResolutionCache(config),
   )
   if (
     watcher &&
@@ -209,7 +216,16 @@ function shouldSkipWarning(warning: RolldownLog): boolean {
 }
 
 export function oxcPlugin(config: ResolvedConfig): Plugin {
-  if (config.isBundled && config.nativePluginEnabledLevel >= 1) {
+  // When rolldownOptions.tsconfig is explicitly set, skip the native transform
+  // plugin which has hardcoded TsconfigDiscovery::Auto that ignores the user's
+  // tsconfig configuration. Fall through to the JS-based vite:oxc plugin which
+  // respects the tsconfig override via transformWithOxc.
+  const tsconfigOverridden = config.build?.rolldownOptions?.tsconfig != null
+  if (
+    config.isBundled &&
+    config.nativePluginEnabledLevel >= 1 &&
+    !tsconfigOverridden
+  ) {
     return perEnvironmentPlugin('native:transform', (environment) => {
       const {
         jsxInject,
