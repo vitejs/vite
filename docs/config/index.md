@@ -101,6 +101,8 @@ export default defineConfig(async ({ command, mode }) => {
 })
 ```
 
+When using TypeScript with callback-based config (`defineConfig(() => ...)` or `defineConfig(async () => ...)`), some nested string literals may be widened to `string` by TypeScript. If you see an overload error for a literal option (for example `build.minify`), add `as const` to that value or annotate the callback return type.
+
 ## Using Environment Variables in Config
 
 Environment variables available while the config itself is being evaluated are only those that already exist in the current process environment (`process.env`). Vite deliberately defers loading any `.env*` files until _after_ the user config has been resolved because the set of files to load depends on config options like [`root`](/guide/#index-html-and-project-root) and [`envDir`](/config/shared-options.md#envdir), and also on the final `mode`.
