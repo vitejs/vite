@@ -36,6 +36,13 @@ defineConfig({
   build: {
     minify: 'oxc', // `as const` is not needed
   },
+  server: {
+    proxy: {
+      '/test': {
+        bypass: () => false,
+      },
+    },
+  },
   // @ts-expect-error --- invalid option should error
   unknownProperty: 1,
 })
@@ -43,7 +50,14 @@ defineConfig({
 defineConfig(() => ({
   base: '',
   build: {
-    minify: 'oxc', // `as const` is not needed
+    minify: 'oxc' as const, // ideally we don't want to require `as const` here
+  },
+  server: {
+    proxy: {
+      '/test': {
+        bypass: () => false as const, // ideally we don't want to require `as const` here
+      },
+    },
   },
   unknownProperty: 1, // we cannot catch invalid option for this case, ideally we should
 }))
@@ -59,7 +73,14 @@ defineConfig(() => ({
 defineConfig(async () => ({
   base: '',
   build: {
-    minify: 'oxc', // `as const` is not needed
+    minify: 'oxc' as const, // ideally we don't want to require `as const` here
+  },
+  server: {
+    proxy: {
+      '/test': {
+        bypass: () => false as const, // ideally we don't want to require `as const` here
+      },
+    },
   },
   unknownProperty: 1, // we cannot catch invalid option for this case, ideally we should
 }))
