@@ -93,6 +93,11 @@ export async function fetchModule(
   if (environment instanceof FullBundleDevEnvironment) {
     await environment._waitForInitialBuildSuccess()
 
+    const outDir = resolve(
+      environment.config.root,
+      environment.config.build.outDir,
+    )
+
     let fileName: string
 
     if (!importer) {
@@ -108,6 +113,12 @@ export async function fetchModule(
         )
       }
     } else if (url[0] === '.') {
+      // Importer is reported as a full path on the file system.
+      // This happens because we provide the `file` attribute.
+      if (importer.startsWith(outDir)) {
+        importer = importer.slice(outDir.length + 1)
+      }
+
       fileName = path.posix.join(path.posix.dirname(importer), url)
     } else {
       fileName = url
@@ -130,8 +141,9 @@ export async function fetchModule(
       // (Dynamic import resolves relative urls with importer url)
       url: fileName,
       id: fileName,
-      // We don't keep assets on the file system.
-      file: null,
+      // The potential position on the file system.
+      // We don't actually keep it there, it's virtual.
+      file: resolve(outDir, fileName),
       // TODO: how to know the file was invalidated?
       invalidate: false,
     }
