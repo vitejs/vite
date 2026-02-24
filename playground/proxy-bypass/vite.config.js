@@ -9,7 +9,7 @@ export default defineConfig({
       '/nonExistentApp': {
         target: 'http://localhost:9607',
         bypass: () => {
-          return false
+          return /** @type {false} */ (false)
         },
       },
       '/proxyError': {
