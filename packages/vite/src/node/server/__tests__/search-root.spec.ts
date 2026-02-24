@@ -19,6 +19,20 @@ describe('searchForWorkspaceRoot', () => {
     expect(resolved).toBe(resolve(dirname, 'fixtures/pnpm'))
   })
 
+  test('pnpm with workspaces outside current root', () => {
+    const resolved = searchForWorkspaceRoot(
+      resolve(dirname, 'fixtures/pnpm-outside/workspace/my-app'),
+    )
+    expect(resolved).toBe(resolve(dirname, 'fixtures/pnpm-outside'))
+  })
+
+  test('package.json workspaces outside current root', () => {
+    const resolved = searchForWorkspaceRoot(
+      resolve(dirname, 'fixtures/npm-outside/workspace/my-app'),
+    )
+    expect(resolved).toBe(resolve(dirname, 'fixtures/npm-outside'))
+  })
+
   test('yarn', () => {
     const resolved = searchForWorkspaceRoot(
       resolve(dirname, 'fixtures/yarn/nested'),
