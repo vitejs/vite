@@ -558,7 +558,7 @@ describe('resolveId absolute path entry', async () => {
       fullBundle: [posix.join(slash(import.meta.dirname), 'fixtures/basic.js')],
     })
 
-    it.only('runner', async ({ runner }) => {
+    it('runner', async ({ runner }) => {
       // Unlike with dev mode, the ID is specified in the build options,
       // And then we HAVE to use the resolved ID here to get the chunk name.
       const mod = await runner.import('\0virtual:basic')
