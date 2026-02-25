@@ -7,7 +7,7 @@ on:
 jobs:
   close-issues:
     if: github.repository == 'vitejs/vite'
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-slim
     permissions:
       issues: write # for actions-cool/issues-helper to update issues
       pull-requests: write # for actions-cool/issues-helper to update PRs

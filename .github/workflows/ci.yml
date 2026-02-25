@@ -33,7 +33,7 @@ concurrency:
 jobs:
   changed:
     name: Get changed files
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-slim
     outputs:
       should_skip: ${{ steps.changed-files.outputs.only_changed == 'true' }}
 
@@ -130,7 +130,7 @@ jobs:
   test-passed:
     if: (!cancelled() && !failure())
     needs: test
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-slim
     name: Build & Test Passed or Skipped
     steps:
       - run: echo "Build & Test Passed or Skipped"
@@ -138,7 +138,7 @@ jobs:
   test-failed:
     if: (!cancelled() && failure())
     needs: test
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-slim
     name: Build & Test Failed
     steps:
       - run: echo "Build & Test Failed"
@@ -217,8 +217,8 @@ jobs:
 
   lint:
     timeout-minutes: 10
-    runs-on: ubuntu-latest
-    name: "Lint: node-24, ubuntu-latest"
+    runs-on: ubuntu-slim
+    name: "Lint: node-24, ubuntu-slim"
     steps:
       - uses: actions/checkout@v6
 

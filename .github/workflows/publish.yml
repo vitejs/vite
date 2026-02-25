@@ -11,7 +11,7 @@ jobs:
   publish:
     # prevents this action from running on forks
     if: github.repository == 'vitejs/vite'
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-slim
     permissions:
       contents: read
       id-token: write

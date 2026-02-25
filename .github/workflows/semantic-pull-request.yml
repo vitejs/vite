@@ -10,7 +10,7 @@ on:
 jobs:
   main:
     if: github.repository == 'vitejs/vite'
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-slim
     name: Semantic Pull Request
     permissions:
       pull-requests: read
