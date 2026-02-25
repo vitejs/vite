@@ -420,9 +420,8 @@ export class ModuleRunner {
     const createImportMeta =
       this.options.createImportMeta ?? createDefaultImportMeta
 
-    const modulePath = file
-      ? cleanUrl(file)
-      : `data:application/javascript,${code};`
+    // TODO: consider using `data:application/javascript` for virtual files instead in the major
+    const modulePath = cleanUrl(file || moduleId)
     // disambiguate the `<UNIT>:/` on windows: see nodejs/node#31710
     const meta = await createImportMeta(modulePath)
     const exports = Object.create(null)
