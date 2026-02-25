@@ -107,9 +107,9 @@ export async function fetchModule(
         const entrypoints = [...environment.facadeToChunk.keys()]
         throw new Error(
           `[vite] Entrypoint '${url}' was not defined in the config. ` +
-            entrypoints.length
-            ? `Available entry points: \n- ${[...environment.facadeToChunk.keys()].join('\n- ')}`
-            : `The build did not produce any chunks. Did it finish successfully? See the logs for more information.`,
+            (entrypoints.length
+              ? `Available entry points: \n- ${[...environment.facadeToChunk.keys()].join('\n- ')}`
+              : `The build did not produce any chunks. Did it finish successfully? See the logs for more information.`),
         )
       }
     } else if (url[0] === '.') {

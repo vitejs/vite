@@ -8,6 +8,7 @@ import {
 import { ssrRolldownRuntimeDefineMethod } from '../../../module-runner/constants'
 import { FullBundleDevEnvironment } from './fullBundleEnvironment'
 
+/** @experimental */
 export class FullBundleRunnableDevEnvironment extends FullBundleDevEnvironment {
   private _runner: ModuleRunner | undefined
 
@@ -79,4 +80,11 @@ export class FullBundleRunnableDevEnvironment extends FullBundleDevEnvironment {
       await this._runner.close()
     }
   }
+}
+
+/** @experimental */
+export function isFullBundleRunnableDevEnvironment(
+  environment: unknown,
+): environment is FullBundleRunnableDevEnvironment {
+  return environment instanceof FullBundleRunnableDevEnvironment
 }

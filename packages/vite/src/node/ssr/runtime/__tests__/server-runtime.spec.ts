@@ -552,6 +552,19 @@ describe('resolveId absolute path entry', async () => {
     )
     expect(mod.name).toMatchInlineSnapshot(`"virtual:basic"`)
   })
+
+  describe('in full bundle mode', async () => {
+    it.scoped({
+      fullBundle: [posix.join(import.meta.dirname, 'fixtures/basic.js')],
+    })
+
+    it('runner', async ({ runner }) => {
+      // Unlike with dev mode, the ID is specified in the build options,
+      // And then we HAVE to use the resolved ID here to get the chunk name.
+      const mod = await runner.import('\0virtual:basic')
+      expect(mod.name).toMatchInlineSnapshot(`"virtual:basic"`)
+    })
+  })
 })
 
 describe('virtual module hmr', async () => {
