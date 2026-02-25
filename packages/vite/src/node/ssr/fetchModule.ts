@@ -254,13 +254,15 @@ function resolveEntryFilename(
   if (environment.facadeToChunk.has(url)) {
     return environment.facadeToChunk.get(url)
   }
-  const moduleId = url.startsWith('file://')
-    ? // new URL(path)
-      normalizePath(fileURLToPath(url))
-    : // ./index.js
-      // NOTE: we don't try to find it if extension is not passed
-      // It will throw an error instead
-      normalizePath(path.resolve(environment.config.root, url))
+  const moduleId = normalizePath(
+    url.startsWith('file://')
+      ? // new URL(path)
+        fileURLToPath(url)
+      : // ./index.js
+        // NOTE: we don't try to find it if extension is not passed
+        // It will throw an error instead
+        path.resolve(environment.config.root, url),
+  )
   if (environment.facadeToChunk.get(moduleId)) {
     return environment.facadeToChunk.get(moduleId)
   }
