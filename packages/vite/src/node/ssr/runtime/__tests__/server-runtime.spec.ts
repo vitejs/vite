@@ -187,17 +187,6 @@ describe.for([
     }
   })
 
-  it('dynamic imports in FBM', async ({ fullBundle, skip, runner }) => {
-    skip(!fullBundle.length, 'FBM')
-
-    const mod = await runner.import('./fixtures/dynamic-import.js')
-    const modules = await mod.initialize(true)
-
-    expect(modules.static.test).toBeTypeOf('string')
-    expect(modules.dynamicProcessed.test).toBeTypeOf('string')
-    expect(modules.dynamicProcessed.test).toBe(modules.static.test)
-  })
-
   it('correctly imports a virtual module', async ({ runner }) => {
     const mod = await runner.import('/fixtures/virtual.js')
     expect(mod.msg0).toBe('virtual0')
@@ -438,6 +427,15 @@ describe('not supported by bundle mode', () => {
         'Failed to load url virtual:normal?abcd=1234',
       ),
     })
+  })
+
+  it('dynamic imports in FBM', async ({ runner }) => {
+    const mod = await runner.import('./fixtures/dynamic-import.js')
+    const modules = await mod.initialize(true)
+
+    expect(modules.static.test).toBeTypeOf('string')
+    expect(modules.dynamicProcessed.test).toBeTypeOf('string')
+    expect(modules.dynamicProcessed.test).toBe(modules.static.test)
   })
 
   // files are virtual, so url is not defined
