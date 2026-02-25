@@ -131,7 +131,7 @@ import {
 } from './server/pluginContainer'
 import { nodeResolveWithVite } from './nodeResolve'
 import { FullBundleDevEnvironment } from './server/environments/fullBundleEnvironment'
-import { FullBundleRunnableDevEnvironment } from './server/environments/fullBundleRunnableEnvironment'
+import { createFullBundleRunnableDevEnvironment } from './server/environments/fullBundleRunnableEnvironment'
 
 const debug = createDebugger('vite:config', { depth: 10 })
 const promisifiedRealpath = promisify(fs.realpath)
@@ -260,7 +260,7 @@ function defaultCreateClientDevEnvironment(
 
 function defaultCreateSSRDevEnvironment(name: string, config: ResolvedConfig) {
   if (config.experimental.ssrBundledDev) {
-    return new FullBundleRunnableDevEnvironment(name, config)
+    return createFullBundleRunnableDevEnvironment(name, config)
   }
   return createRunnableDevEnvironment(name, config)
 }

@@ -50,6 +50,7 @@ export {
   type RunnableDevEnvironmentContext,
 } from './server/environments/runnableEnvironment'
 export {
+  createFullBundleRunnableDevEnvironment,
   isFullBundleRunnableDevEnvironment,
   type FullBundleRunnableDevEnvironment,
 } from './server/environments/fullBundleRunnableEnvironment'

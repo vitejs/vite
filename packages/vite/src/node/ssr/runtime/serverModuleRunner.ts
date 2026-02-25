@@ -145,3 +145,33 @@ export function createServerModuleRunner(
     options.evaluator,
   )
 }
+
+export interface ServerModuleRunnerFactoryOptions<E extends DevEnvironment> {
+  runner?: (environment: E, options?: ServerModuleRunnerOptions) => ModuleRunner
+  runnerOptions?: ServerModuleRunnerOptions
+}
+
+export interface ServerModuleRunnerFactory {
+  create(): ModuleRunner
+  get(): ModuleRunner | undefined
+}
+
+export function defineServerModuleRunnerFactory<E extends DevEnvironment>(
+  environment: E,
+  options: ServerModuleRunnerFactoryOptions<E>,
+): ServerModuleRunnerFactory {
+  let runner: ModuleRunner | undefined
+  return {
+    create() {
+      if (runner) {
+        return runner
+      }
+      const factory = options.runner || createServerModuleRunner
+      runner = factory(environment, options.runnerOptions)
+      return runner
+    },
+    get() {
+      return runner
+    },
+  }
+}
