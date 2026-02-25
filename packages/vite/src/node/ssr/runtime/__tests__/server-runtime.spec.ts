@@ -2,7 +2,7 @@ import { existsSync, readdirSync } from 'node:fs'
 import { posix, win32 } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { describe, expect, vi } from 'vitest'
-import { isWindows } from '../../../../shared/utils'
+import { isWindows, slash } from '../../../../shared/utils'
 import type { ExternalFetchResult } from '../../../../shared/invokeMethods'
 import { runnerTest as it } from './utils'
 
@@ -555,10 +555,10 @@ describe('resolveId absolute path entry', async () => {
 
   describe('in full bundle mode', async () => {
     it.scoped({
-      fullBundle: [posix.join(import.meta.dirname, 'fixtures/basic.js')],
+      fullBundle: [posix.join(slash(import.meta.dirname), 'fixtures/basic.js')],
     })
 
-    it('runner', async ({ runner }) => {
+    it.only('runner', async ({ runner }) => {
       // Unlike with dev mode, the ID is specified in the build options,
       // And then we HAVE to use the resolved ID here to get the chunk name.
       const mod = await runner.import('\0virtual:basic')

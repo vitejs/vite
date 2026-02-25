@@ -3,8 +3,13 @@ import path from 'node:path'
 import type { FetchResult } from 'vite/module-runner'
 import type { TransformResult } from '..'
 import { tryNodeResolve } from '../plugins/resolve'
-import { isBuiltin, isExternalUrl, isFilePathESM } from '../utils'
-import { slash, unwrapId } from '../../shared/utils'
+import {
+  isBuiltin,
+  isExternalUrl,
+  isFilePathESM,
+  normalizePath,
+} from '../utils'
+import { unwrapId } from '../../shared/utils'
 import {
   MODULE_RUNNER_SOURCEMAPPING_SOURCE,
   SOURCEMAPPING_URL,
@@ -93,9 +98,8 @@ export async function fetchModule(
   if (environment instanceof FullBundleDevEnvironment) {
     await environment._waitForInitialBuildSuccess()
 
-    const outDir = path.posix.resolve(
-      environment.config.root,
-      environment.config.build.outDir,
+    const outDir = normalizePath(
+      path.resolve(environment.config.root, environment.config.build.outDir),
     )
 
     let fileName: string
@@ -143,7 +147,7 @@ export async function fetchModule(
       id: fileName,
       // The potential position on the file system.
       // We don't actually keep it there, it's virtual.
-      file: slash(path.posix.resolve(outDir, fileName)),
+      file: normalizePath(path.resolve(outDir, fileName)),
       // TODO: how to know the file was invalidated?
       invalidate: false,
     }
@@ -252,11 +256,11 @@ function resolveEntryFilename(
   }
   const moduleId = url.startsWith('file://')
     ? // new URL(path)
-      fileURLToPath(url)
+      normalizePath(fileURLToPath(url))
     : // ./index.js
       // NOTE: we don't try to find it if extension is not passed
       // It will throw an error instead
-      slash(path.posix.resolve(environment.config.root, url))
+      normalizePath(path.resolve(environment.config.root, url))
   if (environment.facadeToChunk.get(moduleId)) {
     return environment.facadeToChunk.get(moduleId)
   }
