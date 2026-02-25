@@ -93,7 +93,7 @@ export async function fetchModule(
   if (environment instanceof FullBundleDevEnvironment) {
     await environment._waitForInitialBuildSuccess()
 
-    const outDir = path.resolve(
+    const outDir = path.posix.resolve(
       environment.config.root,
       environment.config.build.outDir,
     )
@@ -143,12 +143,13 @@ export async function fetchModule(
       id: fileName,
       // The potential position on the file system.
       // We don't actually keep it there, it's virtual.
-      file: slash(path.resolve(outDir, fileName)),
+      file: slash(path.posix.resolve(outDir, fileName)),
       // TODO: how to know the file was invalidated?
       invalidate: false,
     }
     // TODO: this should be done in rolldown, there is already a function for it
     // output.format = 'module-runner'
+    // See https://github.com/rolldown/rolldown/issues/8376
     const ssrResult = await ssrTransform(result.code, null, url, result.code)
     if (!ssrResult) {
       throw new Error(`[vite] cannot apply ssr transform to '${url}'.`)
@@ -255,12 +256,12 @@ function resolveEntryFilename(
     : // ./index.js
       // NOTE: we don't try to find it if extension is not passed
       // It will throw an error instead
-      slash(path.resolve(environment.config.root, url))
+      slash(path.posix.resolve(environment.config.root, url))
   if (environment.facadeToChunk.get(moduleId)) {
     return environment.facadeToChunk.get(moduleId)
   }
   if (url[0] === '/') {
-    const tryAbsouteUrl = path.join(environment.config.root, url)
+    const tryAbsouteUrl = path.posix.join(environment.config.root, url)
     return environment.facadeToChunk.get(tryAbsouteUrl)
   }
 }
