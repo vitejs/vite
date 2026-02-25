@@ -95,7 +95,7 @@ export function servePublicMiddleware(
     let filePath = cleanUrl(url)
     if (filePath.indexOf('%') !== -1) {
       try {
-        filePath = decodeURI(filePath)
+        filePath = decodeURIComponent(filePath)
       } catch {
         /* malform uri */
       }
