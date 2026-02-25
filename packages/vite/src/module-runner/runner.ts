@@ -1,5 +1,4 @@
 import type { DevRuntime } from 'rolldown/experimental/runtime-types'
-import type { ViteHotContext } from '#types/hot'
 import { HMRClient, HMRContext, type HMRLogger } from '../shared/hmr'
 import { cleanUrl, isPrimitive } from '../shared/utils'
 import { analyzeImportedModDifference } from '../shared/ssrTransform'
@@ -25,8 +24,10 @@ import {
   ssrImportKey,
   ssrImportMetaKey,
   ssrModuleExportsKey,
+  ssrRolldownRuntimeCreateHotContextMethod,
   ssrRolldownRuntimeDefineMethod,
   ssrRolldownRuntimeKey,
+  ssrRolldownRuntimeTransport,
 } from './constants'
 import { hmrLogger, silentConsole } from './hmrLogger'
 import { createHMRHandlerForRunner } from './hmrHandler'
@@ -66,6 +67,16 @@ export class ModuleRunner {
           return (runtime: DevRuntime) => {
             this.rolldownDevRuntime = runtime
           }
+        }
+
+        if (p === ssrRolldownRuntimeCreateHotContextMethod) {
+          return this.closed
+            ? () => {}
+            : (url: string) => this.ensureModuleHotContext(url)
+        }
+
+        if (p === ssrRolldownRuntimeTransport) {
+          return this.closed ? undefined : this.transport
         }
 
         if (!this.rolldownDevRuntime) {
@@ -423,20 +434,19 @@ export class ModuleRunner {
 
     mod.exports = exports
 
-    let hotContext: ViteHotContext | undefined
     if (this.hmrClient) {
       Object.defineProperty(meta, 'hot', {
         enumerable: true,
         get: () => {
           if (!this.hmrClient) {
-            throw new Error(`[module runner] HMR client was closed.`)
+            return
           }
           this.debug?.('[module runner] creating hmr context for', mod.url)
-          hotContext ||= new HMRContext(this.hmrClient, mod.url)
-          return hotContext
+          this.ensureModuleHotContext(mod.url)
+          return this.moduleHotContexts.get(mod.url)
         },
         set: (value) => {
-          hotContext = value
+          this.moduleHotContexts.set(mod.url, value)
         },
       })
     }
@@ -461,6 +471,20 @@ export class ModuleRunner {
     await this.evaluator.runInlinedModule(context, code, mod)
 
     return exports
+  }
+
+  private moduleHotContexts = new Map<string, HMRContext>()
+
+  private ensureModuleHotContext(url: string) {
+    if (!this.hmrClient) {
+      return
+    }
+
+    if (!this.moduleHotContexts.has(url)) {
+      const hotContext = new HMRContext(this.hmrClient, url)
+      this.moduleHotContexts.set(url, hotContext)
+    }
+    return this.moduleHotContexts.get(url)
   }
 }
 

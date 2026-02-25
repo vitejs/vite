@@ -75,19 +75,11 @@ export class FullBundleDevEnvironment extends DevEnvironment {
   memoryFiles: MemoryFiles = new MemoryFiles()
   facadeToChunk: Map<string, string> = new Map()
 
-  // private buildFinishPromise = promiseWithResolvers<void>()
-
   constructor(
     name: string,
     config: ResolvedConfig,
     context: DevEnvironmentContext,
   ) {
-    // if (name !== 'client') {
-    //   throw new Error(
-    //     'currently full bundle mode is only available for client environment',
-    //   )
-    // }
-
     super(name, config, { ...context, disableDepsOptimizer: true })
   }
 
@@ -191,7 +183,7 @@ export class FullBundleDevEnvironment extends DevEnvironment {
         debug?.('INITIAL: run error', e)
       },
     )
-    this._waitForInitialBuildFinish().then(() => {
+    this.waitForInitialBuildFinish().then(() => {
       debug?.('INITIAL: build done')
       this.hot.send({ type: 'full-reload', path: '*' })
     })
@@ -210,7 +202,7 @@ export class FullBundleDevEnvironment extends DevEnvironment {
     }
   }
 
-  private async _waitForInitialBuildFinish(): Promise<void> {
+  private async waitForInitialBuildFinish(): Promise<void> {
     await this.devEngine.ensureCurrentBuildFinish()
     while (this.memoryFiles.size === 0) {
       await setTimeout(10)
