@@ -151,7 +151,7 @@ const server = await createServer({
 // Any consumer of the environment API can now call `dispatchFetch`
 if (isFetchableDevEnvironment(server.environments.custom)) {
   const response: Response = await server.environments.custom.dispatchFetch(
-    new Request('/request-to-handle'),
+    new Request(HOST_NAME + '/request-to-handle'),
   )
 }
 ```
@@ -196,7 +196,7 @@ if (ssrEnvironment instanceof CustomDevEnvironment) {
 // virtual:entrypoint
 const { createHandler } = await import('./entrypoint.js')
 const handler = createHandler(input)
-const response = handler(new Request('/'))
+const response = handler(new Request(HOST_NAME + '/'))
 
 // -------------------------------------
 // ./entrypoint.js
@@ -266,7 +266,7 @@ if (ssrEnvironment instanceof RunnableDevEnvironment) {
   throw new Error(`Unsupported runtime for ${ssrEnvironment.name}`)
 }
 
-const req = new Request('/')
+const req = new Request(HOST_NAME + '/')
 
 const uniqueId = 'a-unique-id'
 ssrEnvironment.send('request', serialize({ req, uniqueId }))
@@ -290,7 +290,7 @@ import.meta.hot.on('request', (data) => {
   import.meta.hot.send('response', serialize({ res: res, uniqueId }))
 })
 
-const response = handler(new Request('/'))
+const response = handler(new Request(HOST_NAME + '/'))
 
 // -------------------------------------
 // ./entrypoint.js
