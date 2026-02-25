@@ -8,8 +8,8 @@ import { runnerTest as it } from './utils'
 
 const _URL = URL
 
-describe('module runner initialization', async () => {
-  it.scoped({
+describe.for([
+  {
     fullBundle: [
       './fixtures/dynamic-import.js',
       './fixtures/simple.js',
@@ -40,11 +40,17 @@ describe('module runner initialization', async () => {
       './fixtures/simple.js?raw',
       './fixtures/simple.js?url',
       './fixtures/test.css?inline',
+
       // TODO: this fails during bundle, not at runtime
-      // at the moment it HANGS the whole process
       // './fixtures/esm-external-non-existing.js',
       // './fixtures/cjs-external-non-existing.js',
     ],
+    title: 'full bundle mode',
+  },
+  { fullBundle: [], title: 'dev mode' },
+])('module runner initialization ($title)', async ({ fullBundle }) => {
+  it.scoped({
+    fullBundle,
     config: {
       resolve: {
         external: ['tinyglobby'],
@@ -65,49 +71,6 @@ describe('module runner initialization', async () => {
     const filePath = fileURLToPath(fileUrl)
     const mod3 = await runner.import(filePath)
     expect(mod).toBe(mod3)
-  })
-
-  it('can load virtual modules as an entry point', async ({
-    runner,
-    skip,
-    fullBundle,
-  }) => {
-    skip(!!fullBundle.length, 'FBM')
-
-    const mod = await runner.import('virtual:test')
-    expect(mod.msg).toBe('virtual')
-
-    // already resolved id works similar to `transformRequest`
-    expect(await runner.import(`\0virtual:normal`)).toMatchInlineSnapshot(`
-      {
-        "default": "ok",
-      }
-    `)
-
-    // escaped virtual module id works
-    expect(await runner.import(`/@id/__x00__virtual:normal`))
-      .toMatchInlineSnapshot(`
-      {
-        "default": "ok",
-      }
-    `)
-
-    // timestamp query works
-    expect(await runner.import(`virtual:normal?t=${Date.now()}`))
-      .toMatchInlineSnapshot(`
-      {
-        "default": "ok",
-      }
-    `)
-
-    // other arbitrary queries don't work
-    await expect(() =>
-      runner.import('virtual:normal?abcd=1234'),
-    ).rejects.toMatchObject({
-      message: expect.stringContaining(
-        'Failed to load url virtual:normal?abcd=1234',
-      ),
-    })
   })
 
   it('css is loaded correctly', async ({ runner }) => {
@@ -224,71 +187,6 @@ describe('module runner initialization', async () => {
     }
   })
 
-  // if bundle throws an error, we should stopn waiting
-  it('importing external cjs library checks exports', async ({
-    runner,
-    skip,
-    fullBundle,
-  }) => {
-    skip(!!fullBundle.length, 'FBM')
-
-    await expect(() => runner.import('/fixtures/cjs-external-non-existing.js'))
-      .rejects.toThrowErrorMatchingInlineSnapshot(`
-      [SyntaxError: [vite] Named export 'nonExisting' not found. The requested module '@vitejs/cjs-external' is a CommonJS module, which may not support all module.exports as named exports.
-      CommonJS modules can always be imported via the default export, for example using:
-
-      import pkg from '@vitejs/cjs-external';
-      const {nonExisting} = pkg;
-      ]
-    `)
-    // subsequent imports of the same external package should not throw if imports are correct
-    await expect(
-      runner.import('/fixtures/cjs-external-existing.js'),
-    ).resolves.toMatchObject({
-      result: 'world',
-    })
-  })
-
-  it('importing external esm library checks exports', async ({
-    runner,
-    skip,
-    fullBundle,
-  }) => {
-    skip(!!fullBundle.length, 'FBM')
-
-    await expect(() =>
-      runner.import('/fixtures/esm-external-non-existing.js'),
-    ).rejects.toThrowErrorMatchingInlineSnapshot(
-      `[SyntaxError: [vite] The requested module '@vitejs/esm-external' does not provide an export named 'nonExisting']`,
-    )
-    // subsequent imports of the same external package should not throw if imports are correct
-    await expect(
-      runner.import('/fixtures/esm-external-existing.js'),
-    ).resolves.toMatchObject({
-      result: 'world',
-    })
-  })
-
-  it("dynamic import doesn't produce duplicates", async ({
-    fullBundle,
-    skip,
-    runner,
-  }) => {
-    // rolldown doesn't return the same reference and doesn't support non-processed dynamic imports
-    skip(!!fullBundle.length, 'FBM')
-
-    const mod = await runner.import('./fixtures/dynamic-import.js')
-    const modules = await mod.initialize()
-    // toBe checks that objects are actually the same, not just structurally
-    // using toEqual here would be a mistake because it check the structural difference
-    expect(modules.static).toBe(modules.dynamicProcessed)
-    expect(modules.static).toBe(modules.dynamicRelative)
-    expect(modules.static).toBe(modules.dynamicAbsolute)
-    expect(modules.static).toBe(modules.dynamicAbsoluteExtension)
-    expect(modules.static).toBe(modules.dynamicAbsoluteFull)
-    expect(modules.static).toBe(modules.dynamicFileUrl)
-  })
-
   it('dynamic imports in FBM', async ({ fullBundle, skip, runner }) => {
     skip(!fullBundle.length, 'FBM')
 
@@ -319,57 +217,6 @@ describe('module runner initialization', async () => {
     const mod = await runner.import('/fixtures/native.js')
     expect(mod.readdirSync).toBe(readdirSync)
     expect(mod.existsSync).toBe(existsSync)
-  })
-
-  // files are virtual, so url is not defined
-  it('correctly resolves module url', async ({
-    runner,
-    server,
-    fullBundle,
-    skip,
-  }) => {
-    skip(!!fullBundle.length, 'FBM')
-
-    const { meta } = await runner.import('/fixtures/basic.js')
-    const basicUrl = new _URL('./fixtures/basic.js', import.meta.url).toString()
-    expect(meta.url).toBe(basicUrl)
-
-    const filename = meta.filename!
-    const dirname = meta.dirname!
-
-    if (isWindows) {
-      const cwd = process.cwd()
-      const drive = `${cwd[0].toUpperCase()}:\\`
-      const root = server.config.root.replace(/\\/g, '/')
-
-      expect(filename.startsWith(drive)).toBe(true)
-      expect(dirname.startsWith(drive)).toBe(true)
-
-      expect(filename).toBe(win32.join(root, '.\\fixtures\\basic.js'))
-      expect(dirname).toBe(win32.join(root, '.\\fixtures'))
-    } else {
-      const root = server.config.root
-
-      expect(posix.join(root, './fixtures/basic.js')).toBe(filename)
-      expect(posix.join(root, './fixtures')).toBe(dirname)
-    }
-  })
-
-  it(`no maximum call stack error ModuleRunner.isCircularImport`, async ({
-    runner,
-    skip,
-    fullBundle,
-  }) => {
-    skip(!!fullBundle.length, 'FBM')
-
-    // entry.js ⇔ entry-cyclic.js
-    //   ⇓
-    // action.js
-    const mod = await runner.import('./fixtures/cyclic/entry.js')
-    await mod.setupCyclic()
-    // TODO(FBM): Importing dynamically is not supported yet
-    const action = await mod.importAction('/fixtures/cyclic/action')
-    expect(action).toBeDefined()
   })
 
   it('this of the exported function should be undefined', async ({
@@ -413,23 +260,6 @@ describe('module runner initialization', async () => {
         `[TypeError: Cannot read properties of undefined (reading 'ok')]`,
       )
     }
-  })
-
-  // rolldown doesn't support this
-  // - Cannot access 'dep1' before initialization
-  it(`cyclic invalid 2`, async ({ runner, skip, fullBundle }) => {
-    skip(!!fullBundle.length, 'FBM')
-
-    // It should be an error but currently `undefined` fallback.
-    expect(
-      await runner.import('/fixtures/cyclic2/test6/index.js'),
-    ).toMatchInlineSnapshot(
-      `
-      {
-        "dep1": "dep1: dep2: undefined",
-      }
-    `,
-    )
   })
 
   it(`cyclic with mixed import and re-export`, async ({ runner }) => {
@@ -523,6 +353,145 @@ describe('module runner initialization', async () => {
         "Object": "my-object",
       }
     `)
+  })
+})
+
+describe('not supported by bundle mode', () => {
+  // if bundle throws an error, we should stopn waiting
+  it('importing external cjs library checks exports', async ({ runner }) => {
+    await expect(() => runner.import('/fixtures/cjs-external-non-existing.js'))
+      .rejects.toThrowErrorMatchingInlineSnapshot(`
+      [SyntaxError: [vite] Named export 'nonExisting' not found. The requested module '@vitejs/cjs-external' is a CommonJS module, which may not support all module.exports as named exports.
+      CommonJS modules can always be imported via the default export, for example using:
+
+      import pkg from '@vitejs/cjs-external';
+      const {nonExisting} = pkg;
+      ]
+    `)
+    // subsequent imports of the same external package should not throw if imports are correct
+    await expect(
+      runner.import('/fixtures/cjs-external-existing.js'),
+    ).resolves.toMatchObject({
+      result: 'world',
+    })
+  })
+
+  it('importing external esm library checks exports', async ({ runner }) => {
+    await expect(() =>
+      runner.import('/fixtures/esm-external-non-existing.js'),
+    ).rejects.toThrowErrorMatchingInlineSnapshot(
+      `[SyntaxError: [vite] The requested module '@vitejs/esm-external' does not provide an export named 'nonExisting']`,
+    )
+    // subsequent imports of the same external package should not throw if imports are correct
+    await expect(
+      runner.import('/fixtures/esm-external-existing.js'),
+    ).resolves.toMatchObject({
+      result: 'world',
+    })
+  })
+
+  it("dynamic import doesn't produce duplicates", async ({ runner }) => {
+    const mod = await runner.import('/fixtures/dynamic-import.js')
+    const modules = await mod.initialize()
+    // toBe checks that objects are actually the same, not just structurally
+    // using toEqual here would be a mistake because it check the structural difference
+    expect(modules.static).toBe(modules.dynamicProcessed)
+    expect(modules.static).toBe(modules.dynamicRelative)
+    expect(modules.static).toBe(modules.dynamicAbsolute)
+    expect(modules.static).toBe(modules.dynamicAbsoluteExtension)
+    expect(modules.static).toBe(modules.dynamicAbsoluteFull)
+    expect(modules.static).toBe(modules.dynamicFileUrl)
+  })
+
+  it('can load virtual modules as an entry point', async ({ runner }) => {
+    const mod = await runner.import('virtual:test')
+    expect(mod.msg).toBe('virtual')
+
+    // already resolved id works similar to `transformRequest`
+    expect(await runner.import(`\0virtual:normal`)).toMatchInlineSnapshot(`
+      {
+        "default": "ok",
+      }
+    `)
+
+    // escaped virtual module id works
+    expect(await runner.import(`/@id/__x00__virtual:normal`))
+      .toMatchInlineSnapshot(`
+      {
+        "default": "ok",
+      }
+    `)
+
+    // timestamp query works
+    expect(await runner.import(`virtual:normal?t=${Date.now()}`))
+      .toMatchInlineSnapshot(`
+      {
+        "default": "ok",
+      }
+    `)
+
+    // other arbitrary queries don't work
+    await expect(() =>
+      runner.import('virtual:normal?abcd=1234'),
+    ).rejects.toMatchObject({
+      message: expect.stringContaining(
+        'Failed to load url virtual:normal?abcd=1234',
+      ),
+    })
+  })
+
+  // files are virtual, so url is not defined
+  it('correctly resolves module url', async ({ runner, server }) => {
+    const { meta } = await runner.import('/fixtures/basic.js')
+    const basicUrl = new _URL('./fixtures/basic.js', import.meta.url).toString()
+    expect(meta.url).toBe(basicUrl)
+
+    const filename = meta.filename!
+    const dirname = meta.dirname!
+
+    if (isWindows) {
+      const cwd = process.cwd()
+      const drive = `${cwd[0].toUpperCase()}:\\`
+      const root = server.config.root.replace(/\\/g, '/')
+
+      expect(filename.startsWith(drive)).toBe(true)
+      expect(dirname.startsWith(drive)).toBe(true)
+
+      expect(filename).toBe(win32.join(root, '.\\fixtures\\basic.js'))
+      expect(dirname).toBe(win32.join(root, '.\\fixtures'))
+    } else {
+      const root = server.config.root
+
+      expect(posix.join(root, './fixtures/basic.js')).toBe(filename)
+      expect(posix.join(root, './fixtures')).toBe(dirname)
+    }
+  })
+
+  it(`no maximum call stack error ModuleRunner.isCircularImport`, async ({
+    runner,
+  }) => {
+    // entry.js ⇔ entry-cyclic.js
+    //   ⇓
+    // action.js
+    const mod = await runner.import('./fixtures/cyclic/entry.js')
+    await mod.setupCyclic()
+    const action = await mod.importAction('/fixtures/cyclic/action')
+    expect(action).toBeDefined()
+  })
+
+  // rolldown doesn't support this
+  // - Cannot access 'dep1' before initialization
+  it(`cyclic invalid 2`, async ({ runner }) => {
+    // It should be an error but currently `undefined` fallback.
+    expect(
+      await runner.import('/fixtures/cyclic2/test6/index.js'),
+    ).toMatchInlineSnapshot(
+      `
+      {
+        "dep1": "dep1: dep2: undefined",
+      }
+    `,
+    )
   })
 })
 

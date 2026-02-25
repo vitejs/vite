@@ -1,5 +1,5 @@
 import { fileURLToPath, pathToFileURL } from 'node:url'
-import path, { resolve } from 'node:path'
+import path from 'node:path'
 import type { FetchResult } from 'vite/module-runner'
 import type { TransformResult } from '..'
 import { tryNodeResolve } from '../plugins/resolve'
@@ -93,7 +93,7 @@ export async function fetchModule(
   if (environment instanceof FullBundleDevEnvironment) {
     await environment._waitForInitialBuildSuccess()
 
-    const outDir = resolve(
+    const outDir = path.resolve(
       environment.config.root,
       environment.config.build.outDir,
     )
@@ -143,7 +143,7 @@ export async function fetchModule(
       id: fileName,
       // The potential position on the file system.
       // We don't actually keep it there, it's virtual.
-      file: resolve(outDir, fileName),
+      file: slash(path.resolve(outDir, fileName)),
       // TODO: how to know the file was invalidated?
       invalidate: false,
     }
@@ -255,7 +255,7 @@ function resolveEntryFilename(
     : // ./index.js
       // NOTE: we don't try to find it if extension is not passed
       // It will throw an error instead
-      slash(resolve(environment.config.root, url))
+      slash(path.resolve(environment.config.root, url))
   if (environment.facadeToChunk.get(moduleId)) {
     return environment.facadeToChunk.get(moduleId)
   }
