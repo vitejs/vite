@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from 'vitest'
-import type { EnvironmentModuleNode } from '../moduleGraph';
+import type { EnvironmentModuleNode } from '../moduleGraph'
 import { EnvironmentModuleGraph } from '../moduleGraph'
 import type { ModuleNode } from '../mixedModuleGraph'
 import { ModuleGraph } from '../mixedModuleGraph'
