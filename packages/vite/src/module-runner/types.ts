@@ -24,10 +24,15 @@ import type { InterceptorOptions } from './sourcemap/interceptor'
 
 export type { DefineImportMetadata, SSRImportMetadata }
 
-export interface ModuleRunnerImportMeta extends ImportMeta {
+export interface ModuleRunnerImportMeta {
   url: string
   env: ImportMetaEnv
   hot?: ViteHotContext
+  dirname: string
+  filename: string
+  glob: (...args: any[]) => any
+  resolve(specifier: string, parent?: string): string
+  main: boolean
   [key: string]: any
 }
 
