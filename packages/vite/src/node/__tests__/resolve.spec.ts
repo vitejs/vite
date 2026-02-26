@@ -285,7 +285,7 @@ describe('file url', () => {
       build: {
         ssr: true,
         outDir: 'dist/basic',
-        rollupOptions: {
+        rolldownOptions: {
           input: { index: fileUrl.href },
         },
       },
@@ -300,7 +300,7 @@ describe('file url', () => {
       build: {
         ssr: true,
         outDir: 'dist/virtual',
-        rollupOptions: {
+        rolldownOptions: {
           input: { index: 'virtual:test-dep/static' },
         },
       },

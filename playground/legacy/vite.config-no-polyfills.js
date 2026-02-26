@@ -18,7 +18,7 @@ export default defineConfig(({ isPreview }) => ({
 
   build: {
     outDir: 'dist/no-polyfills',
-    rollupOptions: {
+    rolldownOptions: {
       input: {
         index: path.resolve(import.meta.dirname, 'no-polyfills.html'),
       },

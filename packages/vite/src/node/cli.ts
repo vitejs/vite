@@ -329,8 +329,8 @@ cli
   )
   .option(
     '--minify [minifier]',
-    `[boolean | "terser" | "esbuild"] enable/disable minification, ` +
-      `or specify minifier to use (default: esbuild)`,
+    `[boolean | "terser" | "oxc" | "esbuild"] enable/disable minification, ` +
+      `or specify minifier to use (default: oxc)`,
   )
   .option('--manifest [name]', `[boolean | string] emit build manifest json`)
   .option('--ssrManifest [name]', `[boolean | string] emit ssr manifest json`)

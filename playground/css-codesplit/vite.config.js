@@ -6,7 +6,7 @@ const dirname = import.meta.dirname
 export default defineConfig({
   build: {
     manifest: true,
-    rollupOptions: {
+    rolldownOptions: {
       input: {
         main: resolve(dirname, './index.html'),
         other: resolve(dirname, './other.js'),

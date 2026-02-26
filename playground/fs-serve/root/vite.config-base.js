@@ -7,7 +7,7 @@ const BASE = '/base/'
 export default defineConfig({
   base: BASE,
   build: {
-    rollupOptions: {
+    rolldownOptions: {
       input: {
         main: path.resolve(import.meta.dirname, 'src/index.html'),
       },

@@ -402,9 +402,9 @@ export function cssPlugin(config: ResolvedConfig): Plugin {
             return [url, cleanUrl(resolved)]
           }
           if (config.command === 'build') {
-            const isExternal = config.build.rollupOptions.external
+            const isExternal = config.build.rolldownOptions.external
               ? resolveUserExternal(
-                  config.build.rollupOptions.external,
+                  config.build.rolldownOptions.external,
                   decodedUrl, // use URL as id since id could not be resolved
                   id,
                   false,
@@ -468,11 +468,11 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
   let hasEmitted = false
   let chunkCSSMap: Map<string, string>
 
-  const rollupOptionsOutput = config.build.rollupOptions.output
+  const rolldownOptionsOutput = config.build.rolldownOptions.output
   const assetFileNames = (
-    Array.isArray(rollupOptionsOutput)
-      ? rollupOptionsOutput[0]
-      : rollupOptionsOutput
+    Array.isArray(rolldownOptionsOutput)
+      ? rolldownOptionsOutput[0]
+      : rolldownOptionsOutput
   )?.assetFileNames
   const getCssAssetDirname = (
     cssAssetName: string,

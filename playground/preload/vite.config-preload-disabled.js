@@ -12,7 +12,7 @@ export default defineConfig({
         passes: 3,
       },
     },
-    rollupOptions: {
+    rolldownOptions: {
       output: {
         // manualChunks(id) {
         //   if (id.includes('chunk.js')) {

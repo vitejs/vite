@@ -16,7 +16,7 @@ export default defineConfig({
       name: 'MyLib',
     },
     outDir: 'dist/multiple-output',
-    rollupOptions: {
+    rolldownOptions: {
       // due to playground-temp, the `dir` needs to be relative to the resolvedRoot
       output: [
         {
