@@ -287,9 +287,6 @@ export class ErrorOverlay extends HTMLElement {
         el.appendChild(link)
         curIndex += frag.length + file.length
       }
-      if (curIndex < text.length) {
-        el.appendChild(document.createTextNode(text.slice(curIndex)))
-      }
     }
   }
   close(): void {
