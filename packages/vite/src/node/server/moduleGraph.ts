@@ -385,6 +385,14 @@ export class EnvironmentModuleGraph {
     // Also register the clean url to the module, so that we can short-circuit
     // resolving the same url twice
     this._setUnresolvedUrlToModule(rawUrl, modPromise)
+    // Clean up the pending promise on failure to avoid a memory leak where rejected
+    // promises accumulate indefinitely in the map. The identity check ensures we
+    // don't remove a newer entry that may have already replaced this one.
+    modPromise.catch(() => {
+      if (this._unresolvedUrlToModuleMap.get(rawUrl) === modPromise) {
+        this._unresolvedUrlToModuleMap.delete(rawUrl)
+      }
+    })
     return modPromise
   }
 

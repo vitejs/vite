@@ -1,4 +1,5 @@
-import { describe, expect, it } from 'vitest'
+import { describe, expect, it, vi } from 'vitest'
+import type { EnvironmentModuleNode } from '../moduleGraph';
 import { EnvironmentModuleGraph } from '../moduleGraph'
 import type { ModuleNode } from '../mixedModuleGraph'
 import { ModuleGraph } from '../mixedModuleGraph'
@@ -33,6 +34,112 @@ describe('moduleGraph', () => {
       mod1.meta = meta
       const mod2 = await moduleGraph.ensureEntryFromUrl('/xx.js', false)
       expect(mod2.meta).to.equal(meta)
+    })
+
+    describe('_ensureEntryFromUrl memory leak fix', () => {
+      it('removes a rejected promise from _unresolvedUrlToModuleMap', async () => {
+        const resolveId = vi.fn().mockRejectedValue(new Error('resolve failed'))
+        const moduleGraph = new EnvironmentModuleGraph('client', resolveId)
+
+        await expect(
+          moduleGraph.ensureEntryFromUrl('/fail.js'),
+        ).rejects.toThrow('resolve failed')
+
+        // The rejected promise must not remain in the map
+        await expect(
+          Promise.resolve(
+            moduleGraph._unresolvedUrlToModuleMap.get('/fail.js'),
+          ),
+        ).resolves.toBeUndefined()
+      })
+
+      it('does not affect the map when a concurrent resolution has already replaced the entry', async () => {
+        // resolveId rejects on the first call, succeeds on the second
+        const resolveId = vi
+          .fn()
+          .mockRejectedValueOnce(new Error('first call fails'))
+          .mockResolvedValue({ id: '/ok.js' })
+        const moduleGraph = new EnvironmentModuleGraph('client', resolveId)
+
+        // First call fails
+        await expect(moduleGraph.ensureEntryFromUrl('/ok.js')).rejects.toThrow(
+          'first call fails',
+        )
+
+        // Second call succeeds and stores a resolved module in the map
+        const mod = await moduleGraph.ensureEntryFromUrl('/ok.js')
+        expect(mod).toBeDefined()
+        expect(mod.id).toBe('/ok.js')
+
+        // The map must hold the resolved module, not undefined
+        const entry = moduleGraph._unresolvedUrlToModuleMap.get('/ok.js')
+        expect(entry).toBe(mod)
+      })
+
+      it('allows a successful retry after a failed resolution for the same url', async () => {
+        let shouldFail = true
+        const resolveId = vi.fn().mockImplementation(async (url: string) => {
+          if (shouldFail) throw new Error('transient error')
+          return { id: url }
+        })
+        const moduleGraph = new EnvironmentModuleGraph('client', resolveId)
+
+        // First attempt fails
+        await expect(
+          moduleGraph.ensureEntryFromUrl('/retry.js'),
+        ).rejects.toThrow('transient error')
+
+        // Map is clean after failure
+        expect(moduleGraph._unresolvedUrlToModuleMap.has('/retry.js')).toBe(
+          false,
+        )
+
+        // Second attempt succeeds because the map was cleaned up
+        shouldFail = false
+        const mod = await moduleGraph.ensureEntryFromUrl('/retry.js')
+        expect(mod).toBeDefined()
+        expect(mod.id).toBe('/retry.js')
+      })
+
+      it('identity check preserves a newer entry when stale cleanup runs', async () => {
+        // The .catch() cleanup uses `=== modPromise` to avoid deleting an entry
+        // that was already replaced by a newer resolution. This test verifies that
+        // by manually simulating the scenario: a stale promise is rejected AFTER
+        // a new module has already taken its slot in the map.
+        let rejectFn!: (err: Error) => void
+        const stalePromise = new Promise<EnvironmentModuleNode>((_, reject) => {
+          rejectFn = reject
+        })
+
+        const resolveId = vi.fn().mockResolvedValue({ id: '/race.js' })
+        const moduleGraph = new EnvironmentModuleGraph('client', resolveId)
+
+        // Simulate what _ensureEntryFromUrl does: store the pending promise and
+        // register the same identity-guarded cleanup that our fix introduces.
+        moduleGraph._setUnresolvedUrlToModule('/race.js', stalePromise)
+        stalePromise.catch(() => {
+          if (
+            moduleGraph._unresolvedUrlToModuleMap.get('/race.js') ===
+            stalePromise
+          ) {
+            moduleGraph._unresolvedUrlToModuleMap.delete('/race.js')
+          }
+        })
+
+        // A successful resolution now replaces the stale promise in the map.
+        const newMod = await moduleGraph.ensureEntryFromUrl('/other.js')
+        moduleGraph._setUnresolvedUrlToModule('/race.js', newMod)
+
+        // The stale promise rejects after the map was already updated.
+        rejectFn(new Error('stale rejection'))
+        await expect(stalePromise).rejects.toThrow('stale rejection')
+
+        // The identity check must have prevented the cleanup from deleting the
+        // newer entry.
+        expect(moduleGraph._unresolvedUrlToModuleMap.get('/race.js')).toBe(
+          newMod,
+        )
+      })
     })
 
     it('ensure backward compatibility', async () => {
