@@ -1075,14 +1075,23 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
             // remove pure css chunk from other chunk's imports,
             // and also register the emitted CSS files under the importer
             // chunks instead.
+            //
+            // We need to preserve the original import order: CSS from pure
+            // CSS chunks should appear at the same position they had in the
+            // imports list, not after the chunk's own CSS.
+            // Save the chunk's own CSS before merging.
+            const ownImportedCss = [...chunk.viteMetadata!.importedCss]
+
+            // Collect CSS from pure CSS chunks in their original import
+            // order position.
+            const pureCssFromImports: string[] = []
+
             chunk.imports = chunk.imports.filter((file) => {
               if (pureCssChunkNames.includes(file)) {
                 const { importedCss, importedAssets } = (
                   bundle[file] as OutputChunk
                 ).viteMetadata!
-                importedCss.forEach((file) =>
-                  chunk.viteMetadata!.importedCss.add(file),
-                )
+                importedCss.forEach((file) => pureCssFromImports.push(file))
                 importedAssets.forEach((file) =>
                   chunk.viteMetadata!.importedAssets.add(file),
                 )
@@ -1092,6 +1101,12 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
               return true
             })
             if (chunkImportsPureCssChunk) {
+              // Rebuild importedCss: pure CSS chunk CSS first (preserving
+              // import order), then the chunk's own CSS.
+              chunk.viteMetadata!.importedCss = new Set([
+                ...pureCssFromImports,
+                ...ownImportedCss,
+              ])
               chunk.code = replaceEmptyChunk(chunk.code)
             }
           }
