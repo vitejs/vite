@@ -274,6 +274,9 @@ importers:
       '@types/escape-html':
         specifier: ^1.0.4
         version: 1.0.4
+      '@types/estree':
+        specifier: ^1.0.8
+        version: 1.0.8
       '@types/pnpapi':
         specifier: ^0.0.5
         version: 0.0.5
