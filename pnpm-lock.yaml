@@ -44,9 +44,6 @@ importers:
       '@types/cross-spawn':
         specifier: ^6.0.6
         version: 6.0.6
-      '@types/estree':
-        specifier: ^1.0.8
-        version: 1.0.8
       '@types/etag':
         specifier: ^1.8.4
         version: 1.8.4
@@ -262,9 +259,6 @@ importers:
       '@jridgewell/trace-mapping':
         specifier: ^0.3.31
         version: 0.3.31
-      '@oxc-project/types':
-        specifier: 0.115.0
-        version: 0.115.0
       '@polka/compression':
         specifier: ^1.0.0-next.25
         version: 1.0.0-next.25
