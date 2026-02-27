@@ -17,6 +17,8 @@ export {
   type MinifyOptions,
   type MinifyResult,
   Visitor,
+  type VisitorObject,
+  type ESTree,
 } from 'rolldown/utils'
 
 /** @deprecated - use `parse` instead */
