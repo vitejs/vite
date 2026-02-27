@@ -25,6 +25,7 @@ import {
   slash,
   withTrailingSlash,
 } from '../../../shared/utils'
+import { htmlLangRE } from '../../plugins/html'
 
 const knownJavascriptExtensionRE = /\.(?:[tj]sx?|[cm][tj]s)$/
 const ERR_DENIED_FILE = 'ERR_DENIED_FILE'
@@ -142,7 +143,7 @@ export function serveStaticMiddleware(
     const cleanedUrl = cleanUrl(req.url!)
     if (
       cleanedUrl.endsWith('/') ||
-      path.extname(cleanedUrl) === '.html' ||
+      htmlLangRE.test(cleanedUrl) ||
       isInternalRequest(req.url!) ||
       // skip url starting with // as these will be interpreted as
       // scheme relative URLs by new URL() and will not be a valid file path
