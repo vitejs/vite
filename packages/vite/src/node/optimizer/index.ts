@@ -846,7 +846,6 @@ async function prepareRolldownOptimizerRun(
       throw new Error('The build was canceled')
     }
     const result = await bundle.write({
-      legalComments: 'none',
       ...rolldownOptions.output,
       format: 'esm',
       sourcemap: true,
