@@ -1,0 +1,20 @@
+<head>
+  <script type="importmap">
+    { "imports": { "/foo": "/bar" } }
+  </script>
+</head>
+
+<body>
+  <script type="module" src="./index.js"></script>
+
+  <p class="js">js: error</p>
+  <pre class="importmap"></pre>
+
+  <p class="static">static</p>
+  <p class="dynamic">dynamic</p>
+
+  <p class="static-js">static-js: error</p>
+  <p class="dynamic-js">dynamic-js: error</p>
+
+  <p class="worker">worker: ping</p>
+</body>
