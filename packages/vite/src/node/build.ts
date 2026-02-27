@@ -737,7 +737,15 @@ export function resolveRolldownOptions(
           (typeof input === 'string' || Object.keys(input).length === 1))
           ? false
           : undefined),
-      legalComments: 'none',
+      comments:
+        typeof output.comments === 'boolean'
+          ? output.comments
+          : {
+              annotation: !options.minify,
+              jsdoc: !options.minify,
+              legal: !options.minify,
+              ...output.comments,
+            },
       minify:
         options.minify === 'oxc'
           ? libOptions && (format === 'es' || format === 'esm')

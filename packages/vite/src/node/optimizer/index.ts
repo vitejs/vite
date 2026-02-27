@@ -783,7 +783,7 @@ async function prepareRolldownOptimizerRun(
         jsxLoader = true
       }
       const flatId = flattenId(id)
-      flatIdDeps[flatId] = src
+      flatIdDeps[flatId] = isWindows ? src.replaceAll('/', '\\') : src
       idToExports[id] = exportsData
     }),
   )
@@ -846,7 +846,6 @@ async function prepareRolldownOptimizerRun(
       throw new Error('The build was canceled')
     }
     const result = await bundle.write({
-      legalComments: 'none',
       ...rolldownOptions.output,
       format: 'esm',
       sourcemap: true,

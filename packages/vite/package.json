@@ -1,6 +1,6 @@
 {
   "name": "vite",
-  "version": "8.0.0-beta.15",
+  "version": "8.0.0-beta.16",
   "type": "module",
   "license": "MIT",
   "author": "Evan You",
@@ -73,11 +73,11 @@
   },
   "//": "READ CONTRIBUTING.md to understand what to put under deps vs. devDeps!",
   "dependencies": {
-    "@oxc-project/runtime": "0.114.0",
+    "@oxc-project/runtime": "0.115.0",
     "lightningcss": "^1.31.1",
     "picomatch": "^4.0.3",
     "postcss": "^8.5.6",
-    "rolldown": "1.0.0-rc.5",
+    "rolldown": "1.0.0-rc.6",
     "tinyglobby": "^0.2.15"
   },
   "optionalDependencies": {
@@ -87,7 +87,6 @@
     "@babel/parser": "^7.29.0",
     "@jridgewell/remapping": "^2.3.5",
     "@jridgewell/trace-mapping": "^0.3.31",
-    "@oxc-project/types": "0.114.0",
     "@polka/compression": "^1.0.0-next.25",
     "@rollup/plugin-alias": "^6.0.0",
     "@rollup/plugin-dynamic-import-vars": "2.1.4",
@@ -105,7 +104,6 @@
     "convert-source-map": "^2.0.0",
     "cors": "^2.8.6",
     "cross-spawn": "^7.0.6",
-    "obug": "^1.0.2",
     "dotenv-expand": "^12.0.3",
     "es-module-lexer": "^1.7.0",
     "esbuild": "^0.27.3",
@@ -119,6 +117,7 @@
     "mlly": "^1.8.0",
     "mrmime": "^2.0.1",
     "nanoid": "^5.1.6",
+    "obug": "^1.0.2",
     "open": "^10.2.0",
     "parse5": "^8.0.0",
     "pathe": "^2.0.3",
