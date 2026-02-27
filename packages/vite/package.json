@@ -94,7 +94,7 @@
     "@vercel/detect-agent": "^1.1.0",
     "@types/escape-html": "^1.0.4",
     "@types/pnpapi": "^0.0.5",
-    "@vitest/utils": "4.1.0-beta.4",
+    "@vitest/utils": "4.1.0-beta.5",
     "@vitejs/devtools": "^0.0.0-alpha.32",
     "artichokie": "^0.4.2",
     "baseline-browser-mapping": "^2.10.0",

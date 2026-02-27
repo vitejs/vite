@@ -284,8 +284,8 @@ importers:
         specifier: ^0.0.0-alpha.32
         version: 0.0.0-alpha.32(typescript@5.9.3)(vite@packages+vite)(vue@3.5.28(typescript@5.9.3))
       '@vitest/utils':
-        specifier: 4.1.0-beta.4
-        version: 4.1.0-beta.4
+        specifier: 4.1.0-beta.5
+        version: 4.1.0-beta.5
       artichokie:
         specifier: ^0.4.2
         version: 0.4.2
@@ -4333,8 +4333,8 @@ packages:
   '@vitest/pretty-format@4.0.18':
     resolution: {integrity: sha512-P24GK3GulZWC5tz87ux0m8OADrQIUVDPIjjj65vBXYG17ZeU3qD7r+MNZ1RNv4l8CGU2vtTRqixrOi9fYk/yKw==}
 
-  '@vitest/pretty-format@4.1.0-beta.4':
-    resolution: {integrity: sha512-rAJOtUSRzgobQtuW98WV3bSkomdILArhgSc4JQ5G6Et0eaD6DTeMpr+k7B//F/xYG7oVeuabOTx3EWu06ILCgA==}
+  '@vitest/pretty-format@4.1.0-beta.5':
+    resolution: {integrity: sha512-QH/FGecnl2uwLveL/n1awB/nm/dJL9M0vMKVwmW0tvLAqTOp5GQQOypRuVvpXNFGhIl2bfpUSjruuDQlCBeFjw==}
 
   '@vitest/runner@4.0.18':
     resolution: {integrity: sha512-rpk9y12PGa22Jg6g5M3UVVnTS7+zycIGk9ZNGN+m6tZHKQb7jrP7/77WfZy13Y/EUDd52NDsLRQhYKtv7XfPQw==}
@@ -4348,8 +4348,8 @@ packages:
   '@vitest/utils@4.0.18':
     resolution: {integrity: sha512-msMRKLMVLWygpK3u2Hybgi4MNjcYJvwTb0Ru09+fOyCXIgT5raYP041DRRdiJiI3k/2U6SEbAETB3YtBrUkCFA==}
 
-  '@vitest/utils@4.1.0-beta.4':
-    resolution: {integrity: sha512-c6oj0FpdLwmOisNpeVwhXqwe9Harehj+n9Pfz4/Iv45dSR32VHDzK2uosqT2ocCZhgzXwX4xpL8thl2Wr/wyrw==}
+  '@vitest/utils@4.1.0-beta.5':
+    resolution: {integrity: sha512-yDobPgmVL/4YhVXsbBcmeUb5CIdZiJkoonPnuJXKOxmnj0XZyu7OgIX3KLOcRStbia3nJZ9VIIBWoSv+HS+wVA==}
 
   '@voidzero-dev/vitepress-theme@4.5.0':
     resolution: {integrity: sha512-jY6VprjFeIjBAPWIh0FJUSwU3GwKrHmf8u91HkLxHvzilXbyuu9sJCfF7FnjG2hYH07nF86xnnm+KGZxvFxthg==}
@@ -10251,7 +10251,7 @@ snapshots:
     dependencies:
       tinyrainbow: 3.0.3
 
-  '@vitest/pretty-format@4.1.0-beta.4':
+  '@vitest/pretty-format@4.1.0-beta.5':
     dependencies:
       tinyrainbow: 3.0.3
 
@@ -10273,9 +10273,10 @@ snapshots:
       '@vitest/pretty-format': 4.0.18
       tinyrainbow: 3.0.3
 
-  '@vitest/utils@4.1.0-beta.4':
+  '@vitest/utils@4.1.0-beta.5':
     dependencies:
-      '@vitest/pretty-format': 4.1.0-beta.4
+      '@vitest/pretty-format': 4.1.0-beta.5
+      convert-source-map: 2.0.0
       tinyrainbow: 3.0.3
 
   '@voidzero-dev/vitepress-theme@4.5.0(focus-trap@7.8.0)(vite@packages+vite)(vitepress@2.0.0-alpha.16(oxc-minify@0.115.0)(postcss@8.5.6)(typescript@5.9.3))(vue@3.5.28(typescript@5.9.3))':
