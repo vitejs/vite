@@ -372,6 +372,11 @@
   <code class="non-existent-import-meta-url"></code>
 </p>
 
+<h2>new URL(`./${nonExistent}?abc`, import.meta.url)</h2>
+<p>
+  <code class="dynamic-import-meta-url-non-existent"></code>
+</p>
+
 <h2>new URL(`${dynamic}`, import.meta.url)</h2>
 <p>
   <code class="dynamic-import-meta-url-all"></code>
@@ -654,6 +659,19 @@
     '' + import.meta.url,
   ).pathname
   text('.non-existent-import-meta-url', metaUrlNonExistent)
+
+  {
+    // use a function to prevent Rolldown from inlining the constant,
+    // keeping the URL dynamic to test the glob fallback behavior
+    function testNonExistentDynamicImportMetaUrl(name) {
+      const metaUrlNonExistentDynamic = new URL(
+        `./nested/${name}.png?abc`,
+        import.meta.url,
+      )
+      text('.dynamic-import-meta-url-non-existent', metaUrlNonExistentDynamic)
+    }
+    testNonExistentDynamicImportMetaUrl('non-existent')
+  }
 
   /**
    * don't process the code in the comment
