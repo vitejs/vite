@@ -230,15 +230,16 @@ export class ModuleRunner {
     url: string,
     importer?: string,
   ): Promise<EvaluatedModuleNode> {
-    let cached = this.concurrentModuleNodePromises.get(url)
+    const key = `${url}:${importer}`
+    let cached = this.concurrentModuleNodePromises.get(key)
     if (!cached) {
       const cachedModule = this.evaluatedModules.getModuleByUrl(url)
       cached = this.getModuleInformation(url, importer, cachedModule).finally(
         () => {
-          this.concurrentModuleNodePromises.delete(url)
+          this.concurrentModuleNodePromises.delete(key)
         },
       )
-      this.concurrentModuleNodePromises.set(url, cached)
+      this.concurrentModuleNodePromises.set(key, cached)
     } else {
       this.debug?.('[module runner] using cached module info for', url)
     }
