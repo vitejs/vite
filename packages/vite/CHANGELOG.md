@@ -1,3 +1,24 @@
+## [8.0.0-beta.16](https://github.com/vitejs/vite/compare/v8.0.0-beta.15...v8.0.0-beta.16) (2026-02-27)
+### Features
+
+* export `Visitor` and `ESTree` from `rolldown/utils` ([#21664](https://github.com/vitejs/vite/issues/21664)) ([45de31e](https://github.com/vitejs/vite/commit/45de31e5ffcc514832aec96fa6e09a189c26d684))
+* update rolldown to 1.0.0-rc.6 ([#21714](https://github.com/vitejs/vite/issues/21714)) ([37a65f8](https://github.com/vitejs/vite/commit/37a65f8c31b5baeb4dadecfd4da98f81bae4202e))
+* use util.inspect for CLI error display ([#21668](https://github.com/vitejs/vite/issues/21668)) ([5f425a9](https://github.com/vitejs/vite/commit/5f425a9126ad1a483f482970bef8c29a0e721a3c))
+
+### Bug Fixes
+
+* **deps:** update all non-major dependencies ([#21691](https://github.com/vitejs/vite/issues/21691)) ([521fdc0](https://github.com/vitejs/vite/commit/521fdc0ced51ddee7f728e6f891f36ebc6c0e1ce))
+* **optimizer:** avoid duplicate modules when `preserveSymlinks` is enabled ([#21720](https://github.com/vitejs/vite/issues/21720)) ([72165e0](https://github.com/vitejs/vite/commit/72165e0f58d49b894a366af25993cbffbd0ee986))
+
+### Code Refactoring
+
+* avoid deprecated `legalComments` option ([#21721](https://github.com/vitejs/vite/issues/21721)) ([e06496e](https://github.com/vitejs/vite/commit/e06496ef259015b5a89f33a9965be25f8bea0624))
+* use `ESTree` types from `rolldown/utils` ([#21719](https://github.com/vitejs/vite/issues/21719)) ([9239750](https://github.com/vitejs/vite/commit/9239750e619afba03243d6d583eaca55b510ddfe))
+
+### Tests
+
+* add more type tests for `defineConfig` ([#21698](https://github.com/vitejs/vite/issues/21698)) ([4fedbbd](https://github.com/vitejs/vite/commit/4fedbbdd9178a3f92e491233f44d49b3ac095c69))
+
 ## [8.0.0-beta.15](https://github.com/vitejs/vite/compare/v8.0.0-beta.14...v8.0.0-beta.15) (2026-02-19)
 ### Features
 
