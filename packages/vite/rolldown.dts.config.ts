@@ -7,17 +7,17 @@ import type {
   PluginContext,
   RenderedChunk,
 } from 'rolldown'
+import type { ESTree } from 'rolldown/utils'
 import { parseAst } from 'rolldown/parseAst'
 import { dts } from 'rolldown-plugin-dts'
 import { parse as parseWithBabel } from '@babel/parser'
 import { walk } from 'estree-walker'
 import MagicString from 'magic-string'
-import type {
-  Directive,
-  ModuleExportName,
-  Program,
-  Statement,
-} from '@oxc-project/types'
+
+type Directive = ESTree.Directive
+type ModuleExportName = ESTree.ModuleExportName
+type Program = ESTree.Program
+type Statement = ESTree.Statement
 
 const pkg = JSON.parse(
   readFileSync(new URL('./package.json', import.meta.url)).toString(),

@@ -40,23 +40,22 @@
     "ci-docs": "pnpm build && pnpm docs-build"
   },
   "devDependencies": {
-    "@eslint/js": "^9.39.2",
+    "@eslint/js": "^9.39.3",
     "@type-challenges/utils": "^0.1.1",
     "@types/babel__core": "^7.20.5",
     "@types/babel__preset-env": "^7.10.0",
     "@types/convert-source-map": "^2.0.3",
     "@types/cross-spawn": "^6.0.6",
-    "@types/estree": "^1.0.8",
     "@types/etag": "^1.8.4",
     "@types/less": "^3.0.8",
-    "@types/node": "^22.19.10",
+    "@types/node": "^24.10.15",
     "@types/picomatch": "^4.0.2",
     "@types/stylus": "^0.48.43",
     "@types/ws": "^8.18.1",
     "@vitejs/release-scripts": "^1.6.0",
-    "eslint": "^9.39.2",
+    "eslint": "^9.39.3",
     "eslint-plugin-import-x": "^4.16.1",
-    "eslint-plugin-n": "^17.23.2",
+    "eslint-plugin-n": "^17.24.0",
     "eslint-plugin-regexp": "^3.0.0",
     "execa": "^9.6.1",
     "globals": "^17.3.0",
@@ -64,12 +63,12 @@
     "picocolors": "^1.1.1",
     "playwright-chromium": "^1.58.2",
     "prettier": "3.8.1",
-    "rolldown": "1.0.0-rc.5",
+    "rolldown": "1.0.0-rc.6",
     "rollup": "^4.43.0",
     "simple-git-hooks": "^2.13.1",
     "tsx": "^4.21.0",
     "typescript": "~5.9.3",
-    "typescript-eslint": "^8.54.0",
+    "typescript-eslint": "^8.56.1",
     "vite": "workspace:*",
     "vitest": "^4.0.18"
   },
@@ -90,7 +89,7 @@
       "eslint --cache --fix"
     ]
   },
-  "packageManager": "pnpm@10.29.2",
+  "packageManager": "pnpm@10.30.2",
   "stackblitz": {
     "startCommand": "pnpm --filter='./packages/vite' run dev"
   }

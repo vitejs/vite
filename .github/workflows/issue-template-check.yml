@@ -15,11 +15,11 @@ jobs:
       contents: read
       issues: write
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
 
       - name: Detect issue type
         id: detect
-        uses: actions/github-script@v7
+        uses: actions/github-script@v8
         with:
           script: |
             const labels = context.payload.issue.labels.map(l => l.name);
@@ -96,7 +96,7 @@ jobs:
 
       - name: Write result to summary
         if: steps.detect.outputs.skip == 'false' && steps.agent.outputs.agent_output
-        uses: actions/github-script@v7
+        uses: actions/github-script@v8
         env:
           TEMPLATE_TYPE: ${{ steps.detect.outputs.template_type }}
           AGENT_OUTPUT: ${{ steps.agent.outputs.agent_output }}
