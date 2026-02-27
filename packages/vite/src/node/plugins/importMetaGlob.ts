@@ -2,14 +2,7 @@ import { isAbsolute, posix } from 'node:path'
 import picomatch from 'picomatch'
 import { stripLiteral } from 'strip-literal'
 import colors from 'picocolors'
-import type {
-  ArrayExpression,
-  Expression,
-  Literal,
-  Node,
-  SpreadElement,
-  TemplateLiteral,
-} from 'estree'
+import type { ESTree } from 'rolldown/utils'
 import type { CustomPluginOptions, RollupError } from 'rolldown'
 import MagicString from 'magic-string'
 import { stringifyQuery } from 'ufo'
@@ -289,14 +282,14 @@ export async function parseImportGlob(
     if (ast.arguments.length < 1 || ast.arguments.length > 2)
       throw err(`Expected 1-2 arguments, but got ${ast.arguments.length}`)
 
-    const arg1 = ast.arguments[0] as ArrayExpression | Literal | TemplateLiteral
-    const arg2 = ast.arguments[1] as
-      | (Node & { start: number; end: number })
-      | undefined
+    const arg1 = ast.arguments[0]
+    const arg2 = ast.arguments[1]
 
     const globs: string[] = []
 
-    const validateLiteral = (element: Expression | SpreadElement | null) => {
+    const validateLiteral = (
+      element: ESTree.Expression | ESTree.SpreadElement | null,
+    ) => {
       if (!element) return
       if (element.type === 'Literal') {
         if (typeof element.value !== 'string')

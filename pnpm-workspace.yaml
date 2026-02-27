@@ -29,6 +29,9 @@ packageExtensions:
     peerDependenciesMeta:
       source-map-js:
         optional: true
+  '@rollup/plugin-dynamic-import-vars':
+    dependencies:
+      '@types/estree': ^1.0.0
 ignoredBuiltDependencies:
   - core-js
 onlyBuiltDependencies:
