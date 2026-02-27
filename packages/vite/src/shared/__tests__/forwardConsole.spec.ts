@@ -1,5 +1,5 @@
 import { describe, expect, test } from 'vitest'
-import { formatConsoleArgs } from '../../shared/forwardConsole'
+import { formatConsoleArgs } from '../forwardConsole'
 
 describe('formatConsoleArgs', () => {
   test('formats placeholders', () => {
