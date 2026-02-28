@@ -70,7 +70,7 @@ Setting `server.allowedHosts` to `true` allows any website to send requests to y
 :::
 
 ::: details Configure via environment variable
-You can set the environment variable `__VITE_ADDITIONAL_SERVER_ALLOWED_HOSTS` to add an additional allowed host.
+You can set the environment variable `__VITE_ADDITIONAL_SERVER_ALLOWED_HOSTS` to add additional allowed hosts. Use commas to separate multiple hosts (e.g., `host1.example.com,host2.example.com`).
 :::
 
 ## server.port
