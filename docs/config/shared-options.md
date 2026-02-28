@@ -214,6 +214,48 @@ Enables the tsconfig paths resolution feature. `paths` option in `tsconfig.json`
 
 A nonce value placeholder that will be used when generating script / style tags. Setting this value will also generate a meta tag with nonce value.
 
+## html.additionalAssetSources
+
+- **Type:** `Record<string, HtmlAssetSource>`
+
+```ts
+interface HtmlAssetSource {
+  srcAttributes?: string[]
+  srcsetAttributes?: string[]
+  filter?: (data: {
+    key: string
+    value: string
+    attributes: Record<string, string>
+  }) => boolean
+}
+```
+
+Define additional HTML elements and attributes to be treated as asset sources. This extends the built-in list that includes standard elements like `<img src>`, `<video src>`, `<link href>`, etc.
+
+This is useful when using custom web components or non-standard attributes (like `data-*`) that reference assets.
+
+**Example:**
+
+```js
+export default defineConfig({
+  html: {
+    additionalAssetSources: {
+      // Custom web component
+      'html-import': { srcAttributes: ['src'] },
+      // Add data-* attributes to existing element
+      img: { srcAttributes: ['data-src-dark', 'data-src-light'] },
+      // With srcset format
+      'my-picture': { srcsetAttributes: ['data-srcset'] },
+      // With filter function
+      'my-component': {
+        srcAttributes: ['asset'],
+        filter: ({ attributes }) => attributes.type === 'image',
+      },
+    },
+  },
+})
+```
+
 ## css.modules
 
 - **Type:**

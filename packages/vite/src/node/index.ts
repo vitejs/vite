@@ -126,6 +126,7 @@ export type {
   DevEnvironmentOptions,
   ResolvedDevEnvironmentOptions,
 } from './config'
+export type { HtmlAssetSource } from './assetSource'
 export type {
   Plugin,
   PluginOption,

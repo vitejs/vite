@@ -343,7 +343,10 @@ const devHtmlHook: IndexHtmlTransformHook = async (
     }
 
     // elements with [href/src] attrs
-    const assetAttributes = getNodeAssetAttributes(node)
+    const assetAttributes = getNodeAssetAttributes(
+      node,
+      config.html?.additionalAssetSources,
+    )
     for (const attr of assetAttributes) {
       if (attr.type === 'remove') {
         s.remove(attr.location.startOffset, attr.location.endOffset)
