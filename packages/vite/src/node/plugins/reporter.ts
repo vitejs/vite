@@ -157,6 +157,8 @@ export function buildReporterPlugin(config: ResolvedConfig): Plugin {
       },
       async log(output: OutputBundle, outDir?: string) {
         const chunkLimit = environment.config.build.chunkSizeWarningLimit
+        const chunkIgnoreList =
+          environment.config.build.chunkSizeWarningIgnoreList
 
         let hasLargeChunks = false
 
@@ -234,7 +236,9 @@ export function buildReporterPlugin(config: ResolvedConfig): Plugin {
             if (!filtered.length) continue
             for (const entry of filtered.sort((a, z) => a.size - z.size)) {
               const isLarge =
-                group.name === 'JS' && entry.size / 1000 > chunkLimit
+                group.name === 'JS' &&
+                entry.size / 1000 > chunkLimit &&
+                !chunkIgnoreList.includes(entry.name)
               if (isLarge) hasLargeChunks = true
               const sizeColor = isLarge ? colors.yellow : colors.dim
               let log = colors.dim(withTrailingSlash(relativeOutDir))
@@ -269,7 +273,9 @@ export function buildReporterPlugin(config: ResolvedConfig): Plugin {
         } else {
           hasLargeChunks = Object.values(output).some((chunk) => {
             return (
-              chunk.type === 'chunk' && chunk.code.length / 1000 > chunkLimit
+              chunk.type === 'chunk' &&
+              chunk.code.length / 1000 > chunkLimit &&
+              !chunkIgnoreList.includes(chunk.fileName)
             )
           })
         }
