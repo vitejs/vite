@@ -1,0 +1,126 @@
+<!doctype html>
+<html>
+  <head>
+    <title>Template Literal Worker Test</title>
+  </head>
+  <body>
+    <h1>Template Literal Worker Path Test</h1>
+    <p>
+      This test demonstrates template literals with import.meta.env in worker
+      URLs.
+    </p>
+    <p>
+      Set <code>VITE_WORKER_DIR=worker</code> in .env file to test (defaults to
+      empty string if not set).
+    </p>
+
+    <div>
+      <p>
+        Test 1 - Single env variable in template (transformed to string
+        concatenation):
+      </p>
+      <pre><code>new URL(`./\${import.meta.env.VITE_WORKER_DIR}/simple-worker.js`, import.meta.url)</code></pre>
+      <div id="test1-result">Waiting...</div>
+    </div>
+
+    <div>
+      <p>
+        Test 2 - Multiple env variables (demonstrating complex template
+        literal):
+      </p>
+      <pre><code>new URL(`./\${import.meta.env.VITE_WORKER_DIR}/\${import.meta.env.VITE_WORKER_FILE}.js`, import.meta.url)</code></pre>
+      <div id="test2-result">Waiting...</div>
+    </div>
+
+    <div>
+      <p>Test 3 - Fallback to simple path when env not set:</p>
+      <div id="test3-result">Waiting...</div>
+    </div>
+
+    <script type="module">
+      // Note: In a real project, set these in your .env file:
+      // VITE_WORKER_DIR=worker
+      // VITE_WORKER_FILE=simple-worker
+
+      // Test 1: Single env variable (transformed to string concatenation)
+      // This template literal: `./${import.meta.env.VITE_WORKER_DIR}/simple-worker.js`
+      // Will be transformed to: './' + import.meta.env.VITE_WORKER_DIR + '/simple-worker.js'
+      try {
+        const worker1 = new Worker(
+          new URL(
+            `./${import.meta.env.VITE_WORKER_DIR}/simple-worker.js`,
+            import.meta.url,
+          ),
+          { type: 'module' },
+        )
+
+        worker1.onmessage = (e) => {
+          document.getElementById('test1-result').textContent =
+            `✅ Success: ${JSON.stringify(e.data)}`
+        }
+
+        worker1.onerror = (e) => {
+          document.getElementById('test1-result').textContent =
+            `❌ Error: ${e.message}`
+        }
+
+        worker1.postMessage('ping from test1')
+      } catch (e) {
+        document.getElementById('test1-result').textContent =
+          `❌ Exception: ${e.message}`
+      }
+
+      // Test 2: Multiple env variables
+      // This demonstrates the feature with multiple import.meta.env expressions
+      // Template: `./${import.meta.env.VITE_WORKER_DIR}/${import.meta.env.VITE_WORKER_FILE}.js`
+      // Will be transformed to: './' + import.meta.env.VITE_WORKER_DIR + '/' + import.meta.env.VITE_WORKER_FILE + '.js'
+      try {
+        const worker2 = new Worker(
+          new URL(
+            `./${import.meta.env.VITE_WORKER_DIR}/${import.meta.env.VITE_WORKER_FILE}.js`,
+            import.meta.url,
+          ),
+          { type: 'module' },
+        )
+
+        worker2.onmessage = (e) => {
+          document.getElementById('test2-result').textContent =
+            `✅ Success: ${JSON.stringify(e.data)}`
+        }
+
+        worker2.onerror = (e) => {
+          document.getElementById('test2-result').textContent =
+            `❌ Error: ${e.message}`
+        }
+
+        worker2.postMessage('ping from test2')
+      } catch (e) {
+        document.getElementById('test2-result').textContent =
+          `❌ Exception: ${e.message}`
+      }
+
+      // Test 3: Regular string (should still work as before)
+      try {
+        const worker3 = new Worker(
+          new URL('./simple-worker.js', import.meta.url),
+          { type: 'module' },
+        )
+
+        worker3.onmessage = (e) => {
+          document.getElementById('test3-result').textContent =
+            `✅ Success: ${JSON.stringify(e.data)}`
+        }
+
+        worker3.onerror = (e) => {
+          document.getElementById('test3-result').textContent =
+            `❌ Error: ${e.message}`
+        }
+
+        worker3.postMessage('ping from test3')
+      } catch (e) {
+        document.getElementById('test3-result').textContent =
+          `❌ Exception: ${e.message}`
+      }
+    </script>
+  </body>
+</html>
