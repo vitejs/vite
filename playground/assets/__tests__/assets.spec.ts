@@ -480,6 +480,10 @@ test('Unknown extension assets import', async () => {
   )
 })
 
+test('?raw import absolute', async () => {
+  expect(await page.textContent('.raw-import-absolute')).toMatch('raw-text')
+})
+
 test('?raw import', async () => {
   expect(await page.textContent('.raw')).toMatch('SVG')
   expect(await page.textContent('.raw-html')).toBe('<div>partial</div>\n')
