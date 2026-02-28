@@ -2578,7 +2578,16 @@ async function loadConfigFromBundledFile(
           `.vite-temp/${path.basename(fileName)}.${hash}.mjs`,
         )
       : `${fileName}.${hash}.mjs`
-    await fsp.writeFile(tempFileName, bundledCode)
+    try {
+      await fsp.writeFile(tempFileName, bundledCode)
+    } catch (e) {
+      if (e.code === 'EACCES') {
+        const url = `data:text/javascript;base64,${Buffer.from(bundledCode).toString('base64')}`
+        return (await import(url)).default
+      } else {
+        throw e
+      }
+    }
     try {
       return (await import(pathToFileURL(tempFileName).href)).default
     } finally {
