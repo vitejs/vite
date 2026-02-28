@@ -21,15 +21,9 @@ describe('buildEsbuildPlugin renderChunk', () => {
 
     const result = await plugin.renderChunk.call(plugin, code, chunk, opts)
     
-    // Without the fix, the helpers would be outside the wrapper or not injected at all 
-    // by this specific plugin logic because config.build.lib is false.
-    // The fix ensures injectEsbuildHelpers is called if format is iife/umd.
-    
-    // Note: injectEsbuildHelpers expects certain patterns to find the wrapper.
-    // Since transformWithEsbuild with iife format will produce a wrapper, 
-    // we check if the result code contains the expected injected pattern.
     expect(result.code).toContain('(function')
-    // esbuild helpers for spread usually look like __assign or similar depending on version
-    // but the point is they should be moved inside if they exist.
+    // Verification that helpers are injected inside the wrapper
+    // injectEsbuildHelpers replaces "use strict"; with "use strict"; + helpers
+    expect(result.code).toMatch(/"use strict";\s*var\s+__/)
   })
 })
