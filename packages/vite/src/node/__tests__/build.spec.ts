@@ -1199,3 +1199,69 @@ function getOutputHashChanges(
     unchanged: names.filter((name) => map1[name] === map2[name]),
   }
 }
+
+test('environments.*.build.lib.fileName should be respected', async () => {
+  const fileNameCalls: Array<{
+    env: string
+    format: string
+    entryName: string
+  }> = []
+
+  const builder = await createBuilder({
+    logLevel: 'silent',
+    build: {
+      lib: {
+        entry: resolve(__dirname, 'fixtures/test-lib-entry.js'),
+        name: 'TestLib',
+        fileName: (format, entryName) => {
+          fileNameCalls.push({ env: 'root', format, entryName })
+          return `root.${format}.js`
+        },
+        formats: ['es'],
+      },
+    },
+    environments: {
+      browser: {
+        build: {
+          lib: {
+            entry: resolve(__dirname, 'fixtures/test-lib-entry.js'),
+            name: 'BrowserLib',
+            fileName: (format, entryName) => {
+              fileNameCalls.push({ env: 'browser', format, entryName })
+              return `browser.${format}.js`
+            },
+            formats: ['es', 'umd'],
+          },
+        },
+      },
+    },
+    plugins: [
+      {
+        name: 'test-lib-entry',
+        resolveId(id) {
+          if (id.includes('test-lib-entry.js')) {
+            return '\0test-lib-entry.js'
+          }
+        },
+        load(id) {
+          if (id === '\0test-lib-entry.js') {
+            return 'export const test = "test"'
+          }
+        },
+      },
+    ],
+  })
+
+  for (const name of Object.keys(builder.environments)) {
+    await builder.build(builder.environments[name])
+  }
+
+  const browserCalls = fileNameCalls.filter((c) => c.env === 'browser')
+  expect(browserCalls.length).toBeGreaterThan(0)
+  expect(browserCalls.some((c) => c.format === 'es')).toBe(true)
+  expect(browserCalls.some((c) => c.format === 'umd')).toBe(true)
+
+  const rootCalls = fileNameCalls.filter((c) => c.env === 'root')
+  expect(rootCalls.length).toBeGreaterThan(0)
+  expect(rootCalls.some((c) => c.format === 'es')).toBe(true)
+})
