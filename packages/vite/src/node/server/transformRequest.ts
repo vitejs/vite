@@ -430,6 +430,8 @@ async function loadAndTransform(
         etag: getEtag(code, { weak: true }),
       } satisfies TransformResult)
 
+  ;(mod as any)._code = code
+
   // Only cache the result if the module wasn't invalidated while it was
   // being processed, so it is re-processed next time if it is stale
   if (timestamp > mod.lastInvalidationTimestamp)
