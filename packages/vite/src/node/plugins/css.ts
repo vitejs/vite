@@ -1080,9 +1080,16 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
                 const { importedCss, importedAssets } = (
                   bundle[file] as OutputChunk
                 ).viteMetadata!
-                importedCss.forEach((file) =>
-                  chunk.viteMetadata!.importedCss.add(file),
-                )
+                // Preserve original import order: ensure CSS coming from imported
+                // pure CSS chunks appears before the parent's existing CSS.
+                if (importedCss.size > 0) {
+                  const parentCss = chunk.viteMetadata!.importedCss
+                  const ordered = new Set<string>([
+                    ...importedCss,
+                    ...parentCss,
+                  ])
+                  chunk.viteMetadata!.importedCss = ordered
+                }
                 importedAssets.forEach((file) =>
                   chunk.viteMetadata!.importedAssets.add(file),
                 )
