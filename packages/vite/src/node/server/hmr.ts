@@ -10,7 +10,12 @@ import type {
   InvokeSendData,
 } from '../../shared/invokeMethods'
 import { CLIENT_DIR } from '../constants'
-import { createDebugger, monotonicDateNow, normalizePath } from '../utils'
+import {
+  createDebugger,
+  formatAndTruncateFileList,
+  monotonicDateNow,
+  normalizePath,
+} from '../utils'
 import type { InferCustomEventPayload, ViteDevServer } from '..'
 import { getHookHandler } from '../plugins'
 import { isExplicitImportRequired } from '../plugins/importAnalysis'
@@ -732,7 +737,9 @@ export function updateModules(
 
   environment.logger.info(
     colors.green(`hmr update `) +
-      colors.dim([...new Set(updates.map((u) => u.path))].join(', ')),
+      colors.dim(
+        formatAndTruncateFileList([...new Set(updates.map((u) => u.path))]),
+      ),
     { clear: !firstInvalidatedBy, timestamp: true },
   )
   hot.send({
