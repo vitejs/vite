@@ -20,8 +20,8 @@
   "scripts": {
     "preinstall": "npx only-allow pnpm",
     "postinstall": "simple-git-hooks",
-    "format": "prettier --write --cache .",
-    "lint": "eslint --cache .",
+    "format": "prettier --write --cache . --experimental-cli",
+    "lint": "eslint --cache . --concurrency auto",
     "typecheck": "tsc -p scripts && pnpm -r --parallel run typecheck",
     "test": "pnpm test-unit && pnpm test-serve && pnpm test-build",
     "test-serve": "vitest run -c vitest.config.e2e.ts",
@@ -77,16 +77,16 @@
   },
   "lint-staged": {
     "*": [
-      "prettier --write --cache --ignore-unknown"
+      "prettier --write --cache --ignore-unknown --experimental-cli"
     ],
     "packages/*/{src,types}/**/*.ts": [
-      "eslint --cache --fix"
+      "eslint --cache --fix --concurrency auto"
     ],
     "packages/**/*.d.ts": [
-      "eslint --cache --fix"
+      "eslint --cache --fix --concurrency auto"
     ],
     "playground/**/__tests__/**/*.ts": [
-      "eslint --cache --fix"
+      "eslint --cache --fix --concurrency auto"
     ]
   },
   "packageManager": "pnpm@10.30.2",
