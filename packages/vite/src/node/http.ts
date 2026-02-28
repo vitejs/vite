@@ -39,6 +39,15 @@ export interface CommonServerOptions {
    */
   allowedHosts?: string[] | true
   /**
+   * Trust X-Forwarded-* headers from reverse proxies.
+   * When enabled, Vite will use X-Forwarded-Host and X-Forwarded-Proto
+   * headers for host validation.
+   *
+   * Only enable this when running behind a trusted reverse proxy.
+   * @default false
+   */
+  trustProxy?: boolean
+  /**
    * Enable TLS + HTTP/2.
    * Note: this downgrades to TLS only when the proxy option is also used.
    */
