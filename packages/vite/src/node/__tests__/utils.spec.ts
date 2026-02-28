@@ -1,12 +1,13 @@
 import fs from 'node:fs'
 import path from 'node:path'
 import crypto from 'node:crypto'
-import { describe, expect, test } from 'vitest'
+import { describe, expect, test, vi } from 'vitest'
 import { fileURLToPath } from 'mlly'
 import {
   asyncFlatten,
   bareImportRE,
   combineSourcemaps,
+  ensureWatchedFile,
   extractHostnamesFromCerts,
   extractHostnamesFromSubjectAltName,
   flattenId,
@@ -1056,5 +1057,119 @@ describe('resolveServerUrls', () => {
     )
 
     expect(result.local).toContain('https://localhost:3000/')
+  })
+})
+
+describe('ensureWatchedFile', () => {
+  test('should normalize Windows paths before comparison', () => {
+    const mockWatcher = {
+      add: vi.fn(),
+    } as any
+
+    // POSIX-normalized root (how Vite stores it internally)
+    const root = '/users/test/project'
+
+    // Simulate a Windows path (backslashes) for a file outside root
+    const windowsFilePath = isWindows
+      ? 'C:\\external\\module\\index.js'
+      : '/external/module/index.js'
+
+    // Mock fs.existsSync to return true for this test file
+    vi.spyOn(fs, 'existsSync').mockReturnValue(true)
+
+    ensureWatchedFile(mockWatcher, windowsFilePath, root)
+
+    // File should be added to watcher since it's outside root
+    expect(mockWatcher.add).toHaveBeenCalledWith(
+      expect.stringContaining('index.js'),
+    )
+
+    // Restore original fs.existsSync
+    vi.mocked(fs.existsSync).mockRestore()
+  })
+
+  test('should not watch files inside root with mixed path separators', () => {
+    const mockWatcher = {
+      add: vi.fn(),
+    } as any
+
+    const root = isWindows ? 'C:/users/test/project' : '/users/test/project'
+
+    // File inside root but with Windows-style backslashes
+    const fileInRoot = isWindows
+      ? 'C:\\users\\test\\project\\src\\main.js'
+      : '/users/test/project/src/main.js'
+
+    vi.spyOn(fs, 'existsSync').mockReturnValue(true)
+
+    ensureWatchedFile(mockWatcher, fileInRoot, root)
+
+    // File should NOT be added since it's inside root
+    expect(mockWatcher.add).not.toHaveBeenCalled()
+
+    vi.mocked(fs.existsSync).mockRestore()
+  })
+
+  test('should handle POSIX paths correctly', () => {
+    const mockWatcher = {
+      add: vi.fn(),
+    } as any
+
+    const root = '/users/test/project'
+    const posixFile = '/external/module/index.js'
+
+    vi.spyOn(fs, 'existsSync').mockReturnValue(true)
+
+    ensureWatchedFile(mockWatcher, posixFile, root)
+
+    expect(mockWatcher.add).toHaveBeenCalled()
+
+    vi.mocked(fs.existsSync).mockRestore()
+  })
+
+  test('should not watch files containing null bytes', () => {
+    const mockWatcher = {
+      add: vi.fn(),
+    } as any
+
+    const root = '/users/test/project'
+    const fileWithNullByte = '/external/\0virtual-module'
+
+    vi.spyOn(fs, 'existsSync').mockReturnValue(true)
+
+    ensureWatchedFile(mockWatcher, fileWithNullByte, root)
+
+    expect(mockWatcher.add).not.toHaveBeenCalled()
+
+    vi.mocked(fs.existsSync).mockRestore()
+  })
+
+  test('should handle null file parameter', () => {
+    const mockWatcher = {
+      add: vi.fn(),
+    } as any
+
+    const root = '/users/test/project'
+
+    ensureWatchedFile(mockWatcher, null, root)
+
+    expect(mockWatcher.add).not.toHaveBeenCalled()
+  })
+
+  test('should not watch non-existent files', () => {
+    const mockWatcher = {
+      add: vi.fn(),
+    } as any
+
+    const root = '/users/test/project'
+    const nonExistentFile = '/external/does-not-exist.js'
+
+    vi.spyOn(fs, 'existsSync').mockReturnValue(false)
+
+    ensureWatchedFile(mockWatcher, nonExistentFile, root)
+
+    expect(mockWatcher.add).not.toHaveBeenCalled()
+
+    vi.mocked(fs.existsSync).mockRestore()
   })
 })
