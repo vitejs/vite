@@ -254,6 +254,16 @@ Follow the wizard started by the extension to give your app a name, choose a fra
 
 The action will work to deploy your app (watch its progress in your repo's Actions tab) and, when successfully completed, you can view your app in the address provided in the extension's progress window by clicking the 'Browse Website' button that appears when the GitHub action has run.
 
+## Railway
+
+Railway will automatically deploy your static site using [Railpack](https://github.com/railwayapp/railpack)
+
+1. Go to dev.new (Sign in with GitHub if needed)
+2. Point Railway to your Vite Repo
+3. Done!
+
+As mentioned, Railway will automatically configure everything required for your Vite deployment based on Railpack's built-in Vite detection logic
+
 ## Render
 
 You can deploy your Vite app as a Static Site on [Render](https://render.com/).
