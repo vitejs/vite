@@ -134,7 +134,7 @@ export function isNodeBuiltin(id: string): boolean {
 }
 
 export function isInNodeModules(id: string): boolean {
-  return id.includes('node_modules')
+  return normalizePath(id).split('/').includes('node_modules')
 }
 
 export function moduleListContains(

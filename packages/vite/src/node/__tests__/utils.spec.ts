@@ -1,7 +1,7 @@
 import fs from 'node:fs'
 import path from 'node:path'
 import crypto from 'node:crypto'
-import { describe, expect, test } from 'vitest'
+import { describe, expect, it, test } from 'vitest'
 import { fileURLToPath } from 'mlly'
 import {
   asyncFlatten,
@@ -16,6 +16,7 @@ import {
   getServerUrlByHost,
   injectQuery,
   isFileReadable,
+  isInNodeModules,
   isParentDirectory,
   mergeWithDefaults,
   normalizePath,
@@ -1056,5 +1057,19 @@ describe('resolveServerUrls', () => {
     )
 
     expect(result.local).toContain('https://localhost:3000/')
+  })
+})
+
+describe('isInNodeModules', () => {
+  it('returns true for paths inside node_modules', () => {
+    expect(isInNodeModules('/project/node_modules/react/index.js')).toBe(true)
+  })
+
+  it('avoids false positives for substring matches', () => {
+    expect(isInNodeModules('/project/node_modules_backup/react/index.js')).toBe(
+      false,
+    )
+
+    expect(isInNodeModules('/src/my-node_modules-utils/file.js')).toBe(false)
   })
 })
