@@ -15,15 +15,16 @@ describe('buildEsbuildPlugin renderChunk', () => {
       },
     }
 
-    const code = 'const a = { ...b }; export default a;'
+    // code contains esbuild helpers followed by the IIFE wrapper
+    const code =
+      'var __defProp = Object.defineProperty; var MyModule = (function() { "use strict"; const a = { ...b }; return a; })();'
     const chunk: any = { fileName: 'test.js' }
     const opts: any = { format: 'iife' }
 
     const result = await plugin.renderChunk.call(plugin, code, chunk, opts)
-    
-    expect(result.code).toContain('(function')
-    // Verification that helpers are injected inside the wrapper
-    // injectEsbuildHelpers replaces "use strict"; with "use strict"; + helpers
-    expect(result.code).toMatch(/"use strict";\s*var\s+__/)
+
+    expect(result.code).toContain('var MyModule = (function()')
+    // Verification that helpers are injected inside the wrapper after "use strict";
+    expect(result.code).toMatch(/"use strict";\s*var\s+__defProp/)
   })
 })
