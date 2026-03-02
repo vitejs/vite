@@ -492,7 +492,17 @@ importers:
 
   packages/vite/src/node/server/__tests__/fixtures/none/nested: {}
 
+  packages/vite/src/node/server/__tests__/fixtures/npm-outside/packages/my-lib: {}
+
+  packages/vite/src/node/server/__tests__/fixtures/npm-outside/workspace: {}
+
+  packages/vite/src/node/server/__tests__/fixtures/npm-outside/workspace/my-app: {}
+
   packages/vite/src/node/server/__tests__/fixtures/pnpm: {}
+
+  packages/vite/src/node/server/__tests__/fixtures/pnpm-outside/packages/my-lib: {}
+
+  packages/vite/src/node/server/__tests__/fixtures/pnpm-outside/workspace/my-app: {}
 
   packages/vite/src/node/server/__tests__/fixtures/pnpm/nested: {}
 
