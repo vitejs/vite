@@ -1,9 +1,11 @@
 import { existsSync, readdirSync } from 'node:fs'
 import { posix, win32 } from 'node:path'
 import { fileURLToPath } from 'node:url'
-import { describe, expect, vi } from 'vitest'
+import { describe, expect, it, vi } from 'vitest'
 import { isWindows } from '../../../../shared/utils'
 import type { ExternalFetchResult } from '../../../../shared/invokeMethods'
+import { createServer } from '../../../server'
+import { createServerModuleRunner } from '../serverModuleRunner'
 import { createModuleRunnerTester } from './utils'
 
 const _URL = URL
@@ -535,5 +537,41 @@ describe('invalid package', async () => {
         "ok": false,
       }
     `)
+  })
+})
+
+describe('css without middlewareMode', () => {
+  it('css is loaded correctly without middlewareMode', async () => {
+    const server = await createServer({
+      root: import.meta.dirname,
+      logLevel: 'error',
+      server: {
+        watch: null,
+        ws: false,
+      },
+      optimizeDeps: {
+        disabled: true,
+        noDiscovery: true,
+        include: [],
+      },
+    })
+    const runner = createServerModuleRunner(server.environments.ssr, {
+      hmr: { logger: false },
+      sourcemapInterceptor: false,
+    })
+    try {
+      const css = await runner.import('/fixtures/test.css')
+      expect(css.default).toBe(undefined)
+      const module = await runner.import('/fixtures/test.module.css')
+      expect(module).toMatchObject({
+        default: {
+          test: expect.stringMatching(/^_test_/),
+        },
+        test: expect.stringMatching(/^_test_/),
+      })
+    } finally {
+      await runner.close()
+      await server.close()
+    }
   })
 })
