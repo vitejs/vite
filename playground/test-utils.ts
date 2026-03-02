@@ -121,6 +121,11 @@ export async function getBg(
   return el.evaluate((el) => getComputedStyle(el as Element).backgroundImage)
 }
 
+/**
+ * Unlike `getBg`, this function returns the raw value of the `background-image` CSS property.
+ *
+ * `getBg` returns the resolved value, which has the hostname and port prepended due to `computedStyle` call.
+ */
 export async function getCssRuleBg(selector: string): Promise<string> {
   return page.evaluate((sel) => {
     for (const sheet of document.styleSheets) {
