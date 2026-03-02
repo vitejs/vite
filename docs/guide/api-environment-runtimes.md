@@ -82,6 +82,46 @@ The transformed source code is called a module, and the relationships between th
 
 A Vite Module Runner allows running any code by processing it with Vite plugins first. It is different from `server.ssrLoadModule` because the runner implementation is decoupled from the server. This allows library and framework authors to implement their layer of communication between the Vite server and the runner. The browser communicates with its corresponding environment using the server WebSocket and through HTTP requests. The Node Module runner can directly do function calls to process modules as it is running in the same process. Other environments could run modules connecting to a JS runtime like workerd, or a Worker Thread as Vitest does.
 
+```dot
+digraph module_runner {
+  rankdir=LR
+  node [shape=box style="rounded,filled" fontname="Arial" fontsize=11 margin="0.2,0.1" fontcolor="${#3c3c43|#ffffff}" color="${#c2c2c4|#3c3f44}"]
+  edge [color="${#67676c|#98989f}" fontname="Arial" fontsize=10 fontcolor="${#67676c|#98989f}"]
+  bgcolor="transparent"
+  compound=true
+
+  subgraph cluster_server {
+    label="Vite Dev Server (Node.js)" labeljust=l fontname="Arial" fontsize=12
+    style="rounded,filled" fillcolor="${#f6f6f7|#1a1a1f}" color="${#c2c2c4|#3c3f44}"
+    fontcolor="${#3c3c43|#ffffff}"
+
+    plugins [label="Plugin\nPipeline" fillcolor="${#e9eaff|#222541}"]
+    mg [label="Module\nGraph" fillcolor="${#e9eaff|#222541}"]
+    env [label="DevEnvironment" fillcolor="${#f2ecfc|#2c273e}"]
+    hot [label="HotChannel" fillcolor="${#fcf4dc|#38301a}"]
+
+    plugins -> mg [dir=both]
+    env -> mg
+    env -> hot
+  }
+
+  subgraph cluster_runtime {
+    label="Target Runtime" labeljust=l fontname="Arial" fontsize=12
+    style="rounded,filled" fillcolor="${#f0fdf4|#131b15}" color="${#c2c2c4|#3c3f44}"
+    fontcolor="${#3c3c43|#ffffff}"
+
+    runner [label="ModuleRunner" fillcolor="${#def5ed|#15312d}"]
+    evaluator [label="ModuleEvaluator\n(ESModulesEvaluator)" fillcolor="${#def5ed|#15312d}"]
+    transport [label="Transport" fillcolor="${#fcf4dc|#38301a}"]
+
+    runner -> evaluator
+    runner -> transport
+  }
+
+  hot -> transport [label="HMR / Module\nfetch & invoke" dir=both style=bold color="${#6f42c1|#c8abfa}"]
+}
+```
+
 One of the goals of this feature is to provide a customizable API to process and run code. Users can create new environment factories using the exposed primitives.
 
 ```ts
