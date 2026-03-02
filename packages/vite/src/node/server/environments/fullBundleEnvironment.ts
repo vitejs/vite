@@ -156,7 +156,7 @@ export class FullBundleDevEnvironment extends DevEnvironment {
           return
         }
 
-        // NOTE: don't clear memoryFiles here as incremental build re-uses the files
+        // NOTE: don't clear memoryFiles here as incremental build reuses the files
         for (const outputFile of result.output) {
           this.memoryFiles.set(outputFile.fileName, () => {
             const source =
