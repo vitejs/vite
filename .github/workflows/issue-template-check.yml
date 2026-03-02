@@ -40,7 +40,7 @@ jobs:
               core.setOutput('skip', 'true');
             }
 
-      - uses: warpdotdev/oz-agent-action@e75eb592ef275bf056509ca91769378f1c3f7238 # v1
+      - uses: warpdotdev/oz-agent-action@d152680b33d595e3be6440f4682852cb0fd7b252 # v1
         if: steps.detect.outputs.skip == 'false'
         id: agent
         with:
