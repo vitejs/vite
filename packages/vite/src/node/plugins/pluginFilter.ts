@@ -15,8 +15,8 @@ export type StringFilter<Value = string | RegExp> =
   | Value
   | Array<Value>
   | {
-      include?: Value | Array<Value>
-      exclude?: Value | Array<Value>
+      include?: Value | Array<Value> | undefined
+      exclude?: Value | Array<Value> | undefined
     }
 
 type NormalizedStringFilter = {
