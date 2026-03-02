@@ -127,6 +127,7 @@ const knownOptions = {
   exhaustive: ['boolean'],
   query: ['object', 'string'],
   base: ['string'],
+  caseSensitiveMatch: ['boolean'],
 }
 
 const forceDefaultAs = ['raw', 'url']
@@ -447,6 +448,7 @@ export async function transformGlobImport(
               cwd,
               dot: !!options.exhaustive,
               expandDirectories: false,
+              caseSensitiveMatch: options.caseSensitiveMatch ?? true,
               ignore: options.exhaustive ? [] : ['**/node_modules/**'],
             })
           )

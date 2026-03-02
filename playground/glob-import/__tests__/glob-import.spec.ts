@@ -311,3 +311,22 @@ test('import.meta.glob and dynamic import vars transformations should be visible
       JSON.stringify({ globTransformed: true, dynamicImportTransformed: true }),
     )
 })
+
+test('caseSensitiveMatch option', async () => {
+  await expect
+    .poll(async () =>
+      JSON.parse(await page.textContent('.case-sensitive-true')),
+    )
+    .toStrictEqual(['./case-sensitive-dir/data-test.js'])
+
+  if (process.env._VITE_TEST_JS_PLUGIN) {
+    await expect
+      .poll(async () =>
+        JSON.parse(await page.textContent('.case-sensitive-false')),
+      )
+      .toStrictEqual([
+        './case-sensitive-dir/DATA-other.js',
+        './case-sensitive-dir/data-test.js',
+      ])
+  }
+})
