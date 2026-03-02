@@ -110,7 +110,7 @@
     "etag": "^1.8.1",
     "host-validation-middleware": "^0.1.2",
     "http-proxy-3": "^1.23.2",
-    "launch-editor-middleware": "^2.13.0",
+    "launch-editor-middleware": "^2.13.1",
     "magic-string": "^0.30.21",
     "mlly": "^1.8.0",
     "mrmime": "^2.0.1",
