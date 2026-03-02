@@ -10,7 +10,7 @@
     "esModuleInterop": true,
     "resolveJsonModule": true,
     "moduleResolution": "bundler",
-    "erasableSyntaxOnly": true,
+    "erasableSyntaxOnly": false,
     "skipLibCheck": true,
     "noUnusedLocals": true,
     "jsx": "preserve",

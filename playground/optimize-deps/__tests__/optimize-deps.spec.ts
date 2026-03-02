@@ -366,6 +366,12 @@ test('dependency with external sub-dependencies', async () => {
     .toBe('foo bar')
 })
 
+test('named import from TypeScript enum', async () => {
+  await expect
+    .poll(() => page.textContent('.ts-enum-named-import'))
+    .toBe('GREEN:All good')
+})
+
 test('virtual module with .vue extension does not error during scan', async () => {
   await expect.poll(() => page.textContent('.virtual-module-vue')).toBe('ok')
 })
