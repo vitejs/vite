@@ -113,6 +113,12 @@ const decoder = new TextDecoder()
 
 export interface CSSOptions {
   /**
+   * Options for modify url() and url-imports in CSS
+   *
+   * @experimental
+   */
+  resolveId?: (id: string, importer?: string) => string
+  /**
    * Using lightningcss is an experimental option to handle CSS modules,
    * assets and imports via Lightning CSS. It requires to install it as a
    * peer dependency.
@@ -372,8 +378,12 @@ export function cssPlugin(config: ResolvedConfig): Plugin {
       },
       async handler(raw, id) {
         const { environment } = this
-        const resolveUrl = (url: string, importer?: string) =>
-          idResolver(environment, url, importer)
+        const resolveUrl = (url: string, importer?: string) => {
+          if (typeof config.css.resolveId === 'function') {
+            url = config.css.resolveId(url, importer)
+          }
+          return idResolver(environment, url, importer)
+        }
 
         const urlResolver: CssUrlResolver = async (url, importer) => {
           const decodedUrl = decodeURI(url)
