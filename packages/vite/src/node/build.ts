@@ -331,6 +331,15 @@ export interface LibraryOptions {
    * back to the name option of the project package.json.
    */
   cssFileName?: string
+  /**
+   * Whether to inject CSS into the JavaScript output by appending it to the
+   * document head at runtime, instead of emitting a separate CSS file.
+   * This is useful when you want consumers to import a single JS file
+   * without needing to separately import CSS.
+   * Note: this makes the library incompatible with SSR environments.
+   * @default false
+   */
+  cssInject?: boolean
 }
 
 export type LibraryFormats = 'es' | 'cjs' | 'umd' | 'iife' // | 'system'
