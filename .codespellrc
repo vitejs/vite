@@ -1,6 +1,7 @@
 [codespell]
 # Ref: https://github.com/codespell-project/codespell#using-a-config-file
-skip = .git*,*.svg,*-lock.yaml,*.css,.codespellrc
+skip = .git*,*.svg,*-lock.yaml,*.css,.codespellrc,.npm,.cache
 check-hidden = true
-# ignore-regex = 
-# ignore-words-list =
+# Ignore URLs and camelCase/PascalCase identifiers (common in code)
+ignore-regex = https?://\S+|\b[a-z]+[A-Z]\w*\b|\b[A-Z][a-z]+[A-Z]\w*\b
+ignore-words-list = additionals
