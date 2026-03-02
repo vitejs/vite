@@ -48,7 +48,7 @@
     "@types/cross-spawn": "^6.0.6",
     "@types/etag": "^1.8.4",
     "@types/less": "^3.0.8",
-    "@types/node": "^24.10.15",
+    "@types/node": "^24.11.0",
     "@types/picomatch": "^4.0.2",
     "@types/stylus": "^0.48.43",
     "@types/ws": "^8.18.1",
@@ -58,8 +58,8 @@
     "eslint-plugin-n": "^17.24.0",
     "eslint-plugin-regexp": "^3.0.0",
     "execa": "^9.6.1",
-    "globals": "^17.3.0",
-    "lint-staged": "^16.2.7",
+    "globals": "^17.4.0",
+    "lint-staged": "^16.3.1",
     "picocolors": "^1.1.1",
     "playwright-chromium": "^1.58.2",
     "prettier": "3.8.1",
@@ -89,7 +89,7 @@
       "eslint --cache --fix"
     ]
   },
-  "packageManager": "pnpm@10.30.2",
+  "packageManager": "pnpm@10.30.3",
   "stackblitz": {
     "startCommand": "pnpm --filter='./packages/vite' run dev"
   }
