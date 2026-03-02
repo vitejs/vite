@@ -143,6 +143,9 @@ importers:
       vitepress:
         specifier: ^2.0.0-alpha.16
         version: 2.0.0-alpha.16(oxc-minify@0.115.0)(postcss@8.5.6)(typescript@5.9.3)
+      vitepress-plugin-graphviz:
+        specifier: ^0.0.1
+        version: 0.0.1(vitepress@2.0.0-alpha.16(oxc-minify@0.115.0)(postcss@8.5.6)(typescript@5.9.3))
       vitepress-plugin-group-icons:
         specifier: ^1.7.1
         version: 1.7.1(vite@packages+vite)
@@ -2592,6 +2595,9 @@ packages:
   '@gwhitney/detect-indent@7.0.1':
     resolution: {integrity: sha512-7bQW+gkKa2kKZPeJf6+c6gFK9ARxQfn+FKy9ScTBppyKRWH2KzsmweXUoklqeEiHiNVWaeP5csIdsNq6w7QhzA==}
     engines: {node: '>=12.20'}
+
+  '@hpcc-js/wasm-graphviz@1.21.0':
+    resolution: {integrity: sha512-BQ06v/foSTxtwUyIdJYRz+S++/fHQuPVsFmX+pI3G66cANi1mQvsgToaN5deZ6ALEDUHsfHVMYlowNiimoET5g==}
 
   '@humanfs/core@0.19.1':
     resolution: {integrity: sha512-5DyQ4+1JEUzejeK1JGICcideyfUbGixgS9jNgex5nqkW+cY7WZhxBigmieN5Qnw9ZosSNVC9KQKyb+GUaGyKUA==}
@@ -7543,6 +7549,11 @@ packages:
   vfile@6.0.3:
     resolution: {integrity: sha512-KzIbH/9tXat2u30jf+smMwFCsno4wHVdNmzFyL+T/L3UGqqk6JKfVqOFOZEpZSHADH1k40ab6NUIXZq422ov3Q==}
 
+  vitepress-plugin-graphviz@0.0.1:
+    resolution: {integrity: sha512-WEbW1674RKHmoeKG2q9dTqemZEAhGnt2pKtuhCNsJx9mJrqoyiZCpmYt7imR0+gnEcS0APsCkwzlzkfDosqubg==}
+    peerDependencies:
+      vitepress: ^1.0.0
+
   vitepress-plugin-group-icons@1.7.1:
     resolution: {integrity: sha512-3ZPcIqwHNBg1btrOOSecOqv8yJxHdu3W2ugxE5LusclDF005LAm60URMEmBQrkgl4JvM32AqJirqghK6lGIk8g==}
     peerDependencies:
@@ -8713,6 +8724,8 @@ snapshots:
       - vue
 
   '@gwhitney/detect-indent@7.0.1': {}
+
+  '@hpcc-js/wasm-graphviz@1.21.0': {}
 
   '@humanfs/core@0.19.1': {}
 
@@ -13702,6 +13715,11 @@ snapshots:
     dependencies:
       '@types/unist': 3.0.3
       vfile-message: 4.0.3
+
+  vitepress-plugin-graphviz@0.0.1(vitepress@2.0.0-alpha.16(oxc-minify@0.115.0)(postcss@8.5.6)(typescript@5.9.3)):
+    dependencies:
+      '@hpcc-js/wasm-graphviz': 1.21.0
+      vitepress: 2.0.0-alpha.16(oxc-minify@0.115.0)(postcss@8.5.6)(typescript@5.9.3)
 
   vitepress-plugin-group-icons@1.7.1(vite@packages+vite):
     dependencies:
