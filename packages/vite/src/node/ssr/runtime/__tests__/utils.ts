@@ -1,50 +1,51 @@
 import fs from 'node:fs'
 import { dirname, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
-import type { TestAPI } from 'vitest'
-import { afterEach, beforeEach, onTestFinished, test } from 'vitest'
+import { test as base, onTestFinished } from 'vitest'
 import type { ModuleRunner } from 'vite/module-runner'
-import type { ServerModuleRunnerOptions } from '../serverModuleRunner'
 import type { ViteDevServer } from '../../../server'
 import type { InlineConfig } from '../../../config'
 import { createServer } from '../../../server'
-import { createServerModuleRunner } from '../serverModuleRunner'
-import type { DevEnvironment } from '../../../server/environment'
+import type { RunnableDevEnvironment } from '../../../server/environments/runnableEnvironment'
+import {
+  type ServerModuleRunnerOptions,
+  createServerModuleRunner,
+} from '../serverModuleRunner'
 
 interface TestClient {
+  fullBundle: string[]
+  config: InlineConfig
   server: ViteDevServer
   runner: ModuleRunner
-  environment: DevEnvironment
+  runnerOptions: ServerModuleRunnerOptions | undefined
+  environment: RunnableDevEnvironment
 }
 
-export async function createModuleRunnerTester(
-  config: InlineConfig = {},
-  runnerConfig: ServerModuleRunnerOptions = {},
-): Promise<TestAPI<TestClient>> {
-  function waitForWatcher(server: ViteDevServer) {
-    return new Promise<void>((resolve) => {
-      if ((server.watcher as any)._readyEmitted) {
-        resolve()
-      } else {
-        server.watcher.once('ready', () => resolve())
-      }
-    })
-  }
-
-  beforeEach<TestClient>(async (t) => {
-    // @ts-ignore
-    globalThis.__HMR__ = {}
-
-    t.server = await createServer({
+export const runnerTest = base.extend<TestClient>({
+  // eslint-disable-next-line no-empty-pattern
+  fullBundle: ({}, use) => use([]),
+  // eslint-disable-next-line no-empty-pattern
+  runnerOptions: ({}, use) => use(undefined),
+  // eslint-disable-next-line no-empty-pattern
+  config: ({}, use) => use({}),
+  server: async ({ config, fullBundle }, use) => {
+    const server = await createServer({
+      configFile: false,
       root: import.meta.dirname,
       logLevel: 'error',
-      server: {
-        middlewareMode: true,
-        watch: null,
-        ws: false,
-      },
       ssr: {
         external: ['@vitejs/cjs-external', '@vitejs/esm-external'],
+      },
+      experimental: {
+        ssrBundledDev: fullBundle.length > 0,
+        ...config.experimental,
+      },
+      build: {
+        rolldownOptions: {
+          input: fullBundle,
+          ...config.build?.rolldownOptions,
+        },
+        ...config.build,
       },
       optimizeDeps: {
         disabled: true,
@@ -80,27 +81,42 @@ export async function createModuleRunnerTester(
         ...(config.plugins ?? []),
       ],
       ...config,
-    })
-    t.environment = t.server.environments.ssr
-    t.runner = createServerModuleRunner(t.environment, {
-      hmr: {
-        logger: false,
+      server: {
+        middlewareMode: true,
+        watch: null,
+        ws: false,
+        hmr: false,
+        ...config.server,
       },
-      // don't override by default so Vitest source maps are correct
-      sourcemapInterceptor: false,
-      ...runnerConfig,
     })
     if (config.server?.watch) {
-      await waitForWatcher(t.server)
+      await waitForWatcher(server)
+    }
+    await use(server)
+    await server.close()
+  },
+  environment: async ({ server }, use) => {
+    await use(server.environments.ssr as RunnableDevEnvironment)
+  },
+  runner: async ({ environment, runnerOptions }, use) => {
+    if (runnerOptions) {
+      const runner = createServerModuleRunner(environment, runnerOptions)
+      await use(runner)
+      await runner.close()
+    } else {
+      await use(environment.runner)
+    }
+  },
+})
+
+function waitForWatcher(server: ViteDevServer) {
+  return new Promise<void>((resolve) => {
+    if ((server.watcher as any)._readyEmitted) {
+      resolve()
+    } else {
+      server.watcher.once('ready', () => resolve())
     }
   })
-
-  afterEach<TestClient>(async (t) => {
-    await t.runner.close()
-    await t.server.close()
-  })
-
-  return test as TestAPI<TestClient>
 }
 
 type FixtureEditor = {

@@ -37,5 +37,9 @@ export {
   ssrImportKey,
   ssrImportMetaKey,
   ssrModuleExportsKey,
+  ssrRolldownRuntimeKey,
+  ssrRolldownRuntimeDefineMethod,
+  ssrRolldownRuntimeCreateHotContextMethod,
+  ssrRolldownRuntimeTransport,
 } from './constants'
 export type { InterceptorOptions } from './sourcemap/interceptor'
