@@ -21,6 +21,22 @@ It is important to note that `vite preview` is intended for previewing the build
 These guides provide instructions for performing a static deployment of your Vite site. Vite also supports Server-Side Rendering. SSR refers to front-end frameworks that support running the same application in Node.js, pre-rendering it to HTML, and finally hydrating it on the client. Check out the [SSR Guide](./ssr) to learn about this feature. On the other hand, if you are looking for integration with traditional server-side frameworks, check out the [Backend Integration guide](./backend-integration) instead.
 :::
 
+## Cache-Control Best Practices
+
+When deploying a Vite application, it is recommended to configure long-term caching for static assets.
+
+Vite generates hashed filenames for build assets (for example `app.abc123.js`). Since these filenames change whenever the content changes, they are safe to cache aggressively.
+
+For example, when using a `_headers` file:
+
+```
+/assets/*
+  cache-control: max-age=31536000
+  cache-control: immutable
+```
+
+This allows browsers to cache static assets for up to one year while ensuring updates are picked up when filenames change.
+
 ## Building the App
 
 You may run `npm run build` command to build the app.
