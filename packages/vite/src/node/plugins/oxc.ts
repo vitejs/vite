@@ -209,7 +209,7 @@ function shouldSkipWarning(warning: RolldownLog): boolean {
 }
 
 export function oxcPlugin(config: ResolvedConfig): Plugin {
-  if (config.isBundled && config.nativePluginEnabledLevel >= 1) {
+  if (config.isBundled) {
     return perEnvironmentPlugin('native:transform', (environment) => {
       const {
         jsxInject,

@@ -50,15 +50,12 @@ export async function resolvePlugins(
     ? await (await import('../build')).resolveBuildPlugins(config)
     : { pre: [], post: [] }
   const { modulePreload } = config.build
-  const enableNativePluginV1 = config.nativePluginEnabledLevel >= 1
 
   return [
     !isBundled ? optimizedDepsPlugin() : null,
     !isWorker ? watchPackageDataPlugin(config.packageCache) : null,
     !isBundled ? preAliasPlugin(config) : null,
-    isBundled &&
-    enableNativePluginV1 &&
-    !config.resolve.alias.some((v) => v.customResolver)
+    isBundled && !config.resolve.alias.some((v) => v.customResolver)
       ? nativeAliasPlugin({
           entries: config.resolve.alias.map((item) => {
             return {
