@@ -566,17 +566,6 @@ export interface ExperimentalOptions {
    */
   hmrPartialAccept?: boolean
   /**
-   * Enable builtin plugin that written by rust, which is faster than js plugin.
-   *
-   * - 'v1' (will be deprecated, will be removed in v8 stable): Enable the first stable set of native plugins.
-   * - 'v2' (will be deprecated, will be removed in v8 stable): Enable the improved dynamicImportVarsPlugin and importGlobPlugin.
-   * - true: Enable all native plugins (currently an alias of 'v2', it will map to a newer one in the future versions).
-   *
-   * @experimental
-   * @default 'v2'
-   */
-  enableNativePlugin?: boolean | 'v1' | 'v2'
-  /**
    * Enable full bundle mode.
    *
    * This is highly experimental.
@@ -733,8 +722,6 @@ export interface ResolvedConfig extends Readonly<
     /** @internal */
     safeModulePaths: Set<string>
     /** @internal */
-    nativePluginEnabledLevel: number
-    /** @internal */
     [SYMBOL_RESOLVED_CONFIG]: true
   } & PluginHookUtils
 > {}
@@ -833,7 +820,6 @@ const configDefaults = Object.freeze({
     importGlobRestoreExtension: false,
     renderBuiltUrl: undefined,
     hmrPartialAccept: false,
-    enableNativePlugin: process.env._VITE_TEST_JS_PLUGIN ? false : 'v2',
     bundledDev: false,
   },
   future: {
@@ -2005,9 +1991,6 @@ export async function resolveConfig(
       },
     ),
     safeModulePaths: new Set<string>(),
-    nativePluginEnabledLevel: resolveNativePluginEnabledLevel(
-      experimental.enableNativePlugin,
-    ),
     [SYMBOL_RESOLVED_CONFIG]: true,
   }
   resolved = {
@@ -2138,26 +2121,6 @@ assetFileNames isn't equal for every build.rollupOptions.output. A single patter
   }
 
   return resolved
-}
-
-function resolveNativePluginEnabledLevel(
-  enableNativePlugin: Exclude<
-    ExperimentalOptions['enableNativePlugin'],
-    undefined
-  >,
-) {
-  switch (enableNativePlugin) {
-    case 'v1':
-      return 1
-    case 'v2':
-    case true:
-      return 2
-    case false:
-      return -1
-    default:
-      enableNativePlugin satisfies never
-      return -1
-  }
 }
 
 /**

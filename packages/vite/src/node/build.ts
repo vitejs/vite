@@ -523,7 +523,7 @@ export async function resolveBuildPlugins(config: ResolvedConfig): Promise<{
       ...(isBuild && !config.isWorker
         ? [
             licensePlugin(),
-            manifestPlugin(config),
+            manifestPlugin(),
             ssrManifestPlugin(),
             buildReporterPlugin(config),
           ]
