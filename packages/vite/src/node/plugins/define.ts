@@ -118,7 +118,7 @@ export function definePlugin(config: ResolvedConfig): Plugin {
     return pattern
   }
 
-  if (isBundled && config.nativePluginEnabledLevel >= 1) {
+  if (isBundled) {
     return {
       name: 'vite:define',
       options(option) {
@@ -138,7 +138,7 @@ export function definePlugin(config: ResolvedConfig): Plugin {
 
     transform: {
       async handler(code, id) {
-        if (this.environment.config.consumer === 'client' && !isBundled) {
+        if (this.environment.config.consumer === 'client') {
           // for dev we inject actual global defines in the vite client to
           // avoid the transform cost. see the `clientInjection` and
           // `importAnalysis` plugin.
