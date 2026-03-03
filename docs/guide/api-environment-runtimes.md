@@ -119,7 +119,7 @@ digraph module_runner {
       style="rounded,filled" fillcolor="${#def5ed|#15312d}" color="${#c2c2c4|#3c3f44}"
       fontcolor="${#3c3c43|#ffffff}"
 
-      evaluator [label="ModuleEvaluator" fillcolor="${#def5ed|#15312d}"]
+      evaluator [label="Module\nEvaluator" fillcolor="${#def5ed|#15312d}"]
       transport [label="Transport" fillcolor="${#fcf4dc|#38301a}"]
     }
   }
