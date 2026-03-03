@@ -448,6 +448,7 @@ export async function transformGlobImport(
               dot: !!options.exhaustive,
               expandDirectories: false,
               ignore: options.exhaustive ? [] : ['**/node_modules/**'],
+              extglob: false,
             })
           )
             .filter((file) => file !== id)
