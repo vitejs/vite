@@ -95,14 +95,18 @@ digraph module_runner {
     style="rounded,filled" fillcolor="${#f6f6f7|#1a1a1f}" color="${#c2c2c4|#3c3f44}"
     fontcolor="${#3c3c43|#ffffff}"
 
-    plugins [label="Plugin\nPipeline" fillcolor="${#e9eaff|#222541}"]
-    mg [label="Module\nGraph" fillcolor="${#e9eaff|#222541}"]
-    env [label="DevEnvironment" fillcolor="${#f2ecfc|#2c273e}"]
-    hot [label="HotChannel" fillcolor="${#fcf4dc|#38301a}"]
+    subgraph cluster_env {
+      label="DevEnvironment" labeljust=l fontname="Arial" fontsize=11
+      style="rounded,filled" fillcolor="${#f2ecfc|#2c273e}" color="${#c2c2c4|#3c3f44}"
+      fontcolor="${#3c3c43|#ffffff}"
 
-    plugins -> mg [dir=both]
-    env -> mg
-    env -> hot
+      plugins [label="Plugin\nPipeline" fillcolor="${#e9eaff|#222541}"]
+      mg [label="Module\nGraph" fillcolor="${#e9eaff|#222541}"]
+      hot [label="HotChannel" fillcolor="${#fcf4dc|#38301a}"]
+
+      plugins -> mg [dir=both]
+      mg -> hot [style=invis]
+    }
   }
 
   subgraph cluster_runtime {
@@ -110,12 +114,14 @@ digraph module_runner {
     style="rounded,filled" fillcolor="${#f0fdf4|#131b15}" color="${#c2c2c4|#3c3f44}"
     fontcolor="${#3c3c43|#ffffff}"
 
-    runner [label="ModuleRunner" fillcolor="${#def5ed|#15312d}"]
-    evaluator [label="ModuleEvaluator\n(ESModulesEvaluator)" fillcolor="${#def5ed|#15312d}"]
-    transport [label="Transport" fillcolor="${#fcf4dc|#38301a}"]
+    subgraph cluster_runner {
+      label="ModuleRunner" labeljust=l fontname="Arial" fontsize=11
+      style="rounded,filled" fillcolor="${#def5ed|#15312d}" color="${#c2c2c4|#3c3f44}"
+      fontcolor="${#3c3c43|#ffffff}"
 
-    runner -> evaluator
-    runner -> transport
+      evaluator [label="ModuleEvaluator" fillcolor="${#def5ed|#15312d}"]
+      transport [label="Transport" fillcolor="${#fcf4dc|#38301a}"]
+    }
   }
 
   hot -> transport [label="HMR / Module\nfetch & invoke" dir=both style=bold color="${#6f42c1|#c8abfa}"]
