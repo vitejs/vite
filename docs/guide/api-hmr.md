@@ -95,7 +95,7 @@ A module that "accepts" hot updates is considered an **HMR boundary**.
 
 ```dot
 digraph hmr_boundary {
-  rankdir=LR
+  rankdir=RL
   ranksep=0.3
   node [shape=box style="rounded,filled" fontname="Arial" fontsize=11 margin="0.2,0.1" fontcolor="${#3c3c43|#ffffff}" color="${#c2c2c4|#3c3f44}"]
   edge [color="${#67676c|#98989f}" fontname="Arial" fontsize=10 fontcolor="${#67676c|#98989f}"]
@@ -106,9 +106,9 @@ digraph hmr_boundary {
   boundary [label="Component.vue\n(HMR boundary)\nhot.accept()" fillcolor="${#def5ed|#15312d}" color="${#18794e|#3dd68c}" penwidth=2]
   edited [label="utils.js\n(edited)" fillcolor="${#fcf4dc|#38301a}" color="${#915930|#f9b44e}" penwidth=2]
 
-  edited -> boundary [label="imports" color="${#915930|#f9b44e}" style=bold]
-  boundary -> parent [label="imports" style=dashed]
-  parent -> root [label="imports" style=dashed]
+  boundary -> edited [label="imports" color="${#915930|#f9b44e}" style=bold]
+  parent -> boundary [label="imports" style=dashed]
+  root -> parent [label="imports" style=dashed]
 }
 ```
 
