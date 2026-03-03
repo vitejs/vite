@@ -96,7 +96,7 @@ describe('definePlugin (SSR dev)', () => {
       ),
     ).toMatchInlineSnapshot(`
       "export const isLegacy = __VITE_IS_LEGACY__;
-      undefined && console.log(undefined);
+      import.meta.env.UNDEFINED && console.log(import.meta.env.UNDEFINED);
       "
     `)
   })
