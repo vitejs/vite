@@ -7,8 +7,8 @@ import { PartialEnvironment } from '../../baseEnvironment'
 async function createDefinePluginTransform(
   define: Record<string, any> = {},
   build = true,
-  ssr = false,
 ) {
+  const ssr = !!process.env._VITE_TEST_JS_PLUGIN
   const config = await resolveConfig(
     { configFile: false, define },
     build ? 'build' : 'serve',
@@ -17,7 +17,7 @@ async function createDefinePluginTransform(
   const environment = new PartialEnvironment(ssr ? 'ssr' : 'client', config)
 
   return async (code: string) => {
-    if (process.env._VITE_TEST_JS_PLUGIN) {
+    if (ssr) {
       // @ts-expect-error transform.handler should exist
       const result = await instance.transform.handler.call(
         { environment },
