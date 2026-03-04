@@ -27,8 +27,8 @@ function obtainLightningCssAst(filename) {
   }
 }
 
-/** @returns {import('lightningcss').Visitor} */
-export function testDirDep() {
+/** @type {import('lightningcss').VisitorFunction<{}>} */
+export function testDirDep({ addDependency }) {
   /** @type {string[]} */
   let currentStyleSheetSources
   return {
@@ -48,6 +48,7 @@ export function testDirDep() {
             expandDirectories: false,
             absolute: true,
           })
+          addDependency({ type: 'glob', glob: pattern })
           return files.flatMap((file) => obtainLightningCssAst(file).rules)
         },
       },
