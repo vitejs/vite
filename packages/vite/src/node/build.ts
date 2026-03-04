@@ -523,7 +523,7 @@ export async function resolveBuildPlugins(config: ResolvedConfig): Promise<{
       ...(isBuild && !config.isWorker
         ? [
             licensePlugin(),
-            manifestPlugin(config),
+            manifestPlugin(),
             ssrManifestPlugin(),
             buildReporterPlugin(config),
           ]
@@ -741,7 +741,11 @@ export function resolveRolldownOptions(
         typeof output.comments === 'boolean'
           ? output.comments
           : {
-              annotation: !options.minify,
+              // Do not minify whitespace for ES lib output since that would remove
+              // pure annotations and break tree-shaking
+              annotation:
+                !options.minify ||
+                (libOptions && (format === 'es' || format === 'esm')),
               jsdoc: !options.minify,
               legal: !options.minify,
               ...output.comments,
