@@ -3353,7 +3353,6 @@ async function compileLightningCSS(
         }
         break
       }
-      // TODO: do we need `'import'`?
       case 'url': {
         let replaceUrl: string
         if (skipUrlReplacer(dep.url)) {
