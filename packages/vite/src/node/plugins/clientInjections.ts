@@ -112,8 +112,9 @@ async function createClientConfigValueReplacer(
   const hmrEnableOverlayReplacement = escapeReplacement(overlay)
   const hmrConfigNameReplacement = escapeReplacement(hmrConfigName)
   const wsTokenReplacement = escapeReplacement(config.webSocketToken)
-  const serverForwardConsoleReplacement = () =>
-    escapeReplacement(config.server.forwardConsole as any)
+  const serverForwardConsoleReplacement = escapeReplacement(
+    config.server.forwardConsole as any,
+  )
   const bundleDevReplacement = escapeReplacement(
     config.experimental.bundledDev || false,
   )
