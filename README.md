@@ -31,6 +31,9 @@
 
 > Vite with Rolldown as bundler. Temporary package.
 
+> [!IMPORTANT]
+> Use this package to migrate from Vite 7 to Vite 8. For the most recent updates, migrate to `vite@beta` once you're ready.
+
 `rolldown-vite` is a fork of Vite that uses [Rolldown](https://github.com/rolldown-rs/rolldown) instead of Rollup & esbuild. Rolldown is a Rust-based JavaScript bundler designed for maximum performance.
 
 It can be used as a drop-in replacement to test out Rolldown with Vite. Eventually, this package is not needed anymore as all changes will be merged into the main Vite repository.
