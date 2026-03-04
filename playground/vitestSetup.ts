@@ -349,21 +349,16 @@ export async function startDefaultServe(): Promise<void> {
 /**
  * Send the rebuild complete message in build watch
  */
-export async function notifyRebuildComplete(
-  watcher: RolldownWatcher,
-): Promise<void> {
-  let resolveFn: undefined | (() => void)
-  const callback = (event: RolldownWatcherEvent): void => {
-    if (event.code === 'END') {
-      resolveFn?.()
+export function notifyRebuildComplete(watcher: RolldownWatcher): Promise<void> {
+  return new Promise<void>((resolve) => {
+    const callback = (event: RolldownWatcherEvent): void => {
+      if (event.code === 'END') {
+        watcher.off('event', callback)
+        resolve()
+      }
     }
-  }
-  watcher.on('event', callback)
-  await new Promise<void>((resolve) => {
-    resolveFn = resolve
+    watcher.on('event', callback)
   })
-
-  watcher.off('event', callback)
 }
 
 export function createInMemoryLogger(logs: string[]): Logger {
