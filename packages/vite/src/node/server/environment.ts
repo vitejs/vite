@@ -26,10 +26,7 @@ import type {
   NormalizedHotChannelClient,
 } from './hmr'
 import { getShortName, normalizeHotChannel, updateModules } from './hmr'
-import type {
-  TransformOptionsInternal,
-  TransformResult,
-} from './transformRequest'
+import type { TransformResult } from './transformRequest'
 import { transformRequest } from './transformRequest'
 import type { EnvironmentPluginContainer } from './pluginContainer'
 import {
@@ -61,6 +58,10 @@ export class DevEnvironment extends BaseEnvironment {
    * @internal
    */
   _remoteRunnerOptions: DevEnvironmentContext['remoteRunner']
+  /**
+   * @internal
+   */
+  _skipFsCheck: boolean
 
   get pluginContainer(): EnvironmentPluginContainer<DevEnvironment> {
     if (!this._pluginContainer)
@@ -128,6 +129,11 @@ export class DevEnvironment extends BaseEnvironment {
     this._crawlEndFinder = setupOnCrawlEnd()
 
     this._remoteRunnerOptions = context.remoteRunner ?? {}
+    this._skipFsCheck = !!(
+      context.transport &&
+      !(isWebSocketServer in context.transport) &&
+      context.transport.skipFsCheck
+    )
 
     this.hot = context.transport
       ? isWebSocketServer in context.transport
@@ -233,12 +239,8 @@ export class DevEnvironment extends BaseEnvironment {
     }
   }
 
-  transformRequest(
-    url: string,
-    /** @internal */
-    options?: TransformOptionsInternal,
-  ): Promise<TransformResult | null> {
-    return transformRequest(this, url, options)
+  transformRequest(url: string): Promise<TransformResult | null> {
+    return transformRequest(this, url, { skipFsCheck: this._skipFsCheck })
   }
 
   async warmupRequest(url: string): Promise<void> {
