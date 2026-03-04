@@ -4,6 +4,7 @@ import fs from 'node:fs'
 import { stripVTControlCharacters } from 'node:util'
 import { expect, onTestFinished, test, vi } from 'vitest'
 import { createServer } from '../../server'
+import { DevEnvironment } from '../../server/environment'
 import { normalizePath } from '../../utils'
 
 const root = fileURLToPath(new URL('./', import.meta.url))
@@ -317,6 +318,32 @@ test('named exports overwrite export all', async () => {
       "d": "dep1-d",
     }
   `)
+})
+
+test('throws when ssr environment is not runnable', async () => {
+  const server = await createServer({
+    configFile: false,
+    root,
+    logLevel: 'silent',
+    optimizeDeps: {
+      noDiscovery: true,
+    },
+    environments: {
+      ssr: {
+        dev: {
+          createEnvironment: (name, config) =>
+            new DevEnvironment(name, config, { hot: false }),
+        },
+      },
+    },
+  })
+  onTestFinished(() => server.close())
+
+  await expect(
+    server.ssrLoadModule('/fixtures/modules/has-invalid-import.js'),
+  ).rejects.toThrow(
+    "ssrLoadModule requires the 'ssr' environment to be a runnable environment.",
+  )
 })
 
 test('buildStart before transform', async () => {
