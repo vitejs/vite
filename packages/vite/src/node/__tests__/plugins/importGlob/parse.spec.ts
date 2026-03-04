@@ -414,4 +414,31 @@ describe('parse negatives', async () => {
       await runError('import.meta.glob("./*.js", { base: "!/foo" })'),
     ).toMatchInlineSnapshot('[Error: Option "base" cannot start with "!"]')
   })
+
+  it('options caseInsensitive', async () => {
+    expect(
+      await run(
+        `import.meta.glob('./assets/*.png', { caseInsensitive: true })`,
+      ),
+    ).toMatchInlineSnapshot(`
+      [
+        {
+          "globs": [
+            "./assets/*.png",
+          ],
+          "options": {
+            "caseInsensitive": true,
+          },
+          "start": 0,
+        },
+      ]
+    `)
+    expect(
+      await runError(
+        `import.meta.glob('./assets/*.png', { caseInsensitive: 'yes' })`,
+      ),
+    ).toMatchInlineSnapshot(
+      `[Error: Expected glob option "caseInsensitive" to be of type boolean, but got string]`,
+    )
+  })
 })

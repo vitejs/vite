@@ -32,6 +32,13 @@ export interface ImportGlobOptions<
    * Base path to resolve relative paths.
    */
   base?: string
+  /**
+   * Perform case-insensitive matching. Useful when file extensions may differ
+   * in casing (e.g. `.png` vs `.PNG`) on case-sensitive file systems (Linux).
+   *
+   * @default false
+   */
+  caseInsensitive?: boolean
 }
 
 export type GeneralImportGlobOptions = ImportGlobOptions<boolean, string>

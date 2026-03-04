@@ -66,32 +66,34 @@ export function importGlobPlugin(config: ResolvedConfig): Plugin {
           config.logger,
         )
         if (result) {
-          const allGlobs = result.matches.map((i) => i.globsResolved)
           if (!importGlobMaps.has(this.environment)) {
             importGlobMaps.set(this.environment, new Map())
           }
 
-          const globMatchers = allGlobs.map((globs) => {
-            const affirmed: string[] = []
-            const negated: string[] = []
-            for (const glob of globs) {
-              if (glob[0] === '!') {
-                negated.push(glob.slice(1))
-              } else {
-                affirmed.push(glob)
+          const globMatchers = result.matches.map(
+            ({ globsResolved: globs, options: matchOpts }) => {
+              const affirmed: string[] = []
+              const negated: string[] = []
+              for (const glob of globs) {
+                if (glob[0] === '!') {
+                  negated.push(glob.slice(1))
+                } else {
+                  affirmed.push(glob)
+                }
               }
-            }
-            const affirmedMatcher = picomatch(affirmed)
-            const negatedMatcher = picomatch(negated)
+              const picoOpts = matchOpts.caseInsensitive ? { nocase: true } : {}
+              const affirmedMatcher = picomatch(affirmed, picoOpts)
+              const negatedMatcher = picomatch(negated, picoOpts)
 
-            return (file: string) => {
-              // (glob1 || glob2) && !(glob3 || glob4)...
-              return (
-                (affirmed.length === 0 || affirmedMatcher(file)) &&
-                !(negated.length > 0 && negatedMatcher(file))
-              )
-            }
-          })
+              return (file: string) => {
+                // (glob1 || glob2) && !(glob3 || glob4)...
+                return (
+                  (affirmed.length === 0 || affirmedMatcher(file)) &&
+                  !(negated.length > 0 && negatedMatcher(file))
+                )
+              }
+            },
+          )
           importGlobMaps.get(this.environment)!.set(id, globMatchers)
 
           return transformStableResult(result.s, id, config)
@@ -127,6 +129,7 @@ const knownOptions = {
   exhaustive: ['boolean'],
   query: ['object', 'string'],
   base: ['string'],
+  caseInsensitive: ['boolean'],
 }
 
 const forceDefaultAs = ['raw', 'url']
@@ -449,6 +452,7 @@ export async function transformGlobImport(
               expandDirectories: false,
               ignore: options.exhaustive ? [] : ['**/node_modules/**'],
               extglob: false,
+              caseSensitiveMatch: !options.caseInsensitive,
             })
           )
             .filter((file) => file !== id)
