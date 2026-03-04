@@ -113,7 +113,7 @@ async function createClientConfigValueReplacer(
   const hmrConfigNameReplacement = escapeReplacement(hmrConfigName)
   const wsTokenReplacement = escapeReplacement(config.webSocketToken)
   const serverForwardConsoleReplacement = () =>
-    JSON.stringify(config.server.forwardConsole)
+    escapeReplacement(config.server.forwardConsole as any)
   const bundleDevReplacement = escapeReplacement(
     config.experimental.bundledDev || false,
   )
