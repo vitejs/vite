@@ -268,8 +268,7 @@ export type HttpServer = http.Server | Http2SecureServer
 export async function resolveForwardConsoleOptions(
   value: boolean | ForwardConsoleOptions | undefined,
 ): Promise<ResolvedForwardConsoleOptions> {
-  const { isAgent } = await determineAgent()
-  value ??= isAgent
+  value ??= (await determineAgent()).isAgent
 
   if (value === false) {
     return {
