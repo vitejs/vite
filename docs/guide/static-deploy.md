@@ -160,7 +160,7 @@ Learn more about Vercel’s [Git Integration](https://vercel.com/docs/concepts/g
 ### Hostinger with Files
 
 1. Format your application files to .ZIP format
-2. Create new application at[Hostinger](https://www.hostinger.com/web-apps-hosting) and upload your application files
+2. Create new application at [Hostinger](https://www.hostinger.com/web-apps-hosting) and upload your application files
 3. Hostinger will automatically detect Vite framework and required deployment settings will be applied
 4. Congratulations, your application is deployed.
 
