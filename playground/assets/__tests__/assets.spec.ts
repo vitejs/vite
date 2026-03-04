@@ -698,8 +698,9 @@ test.runIf(isBuild)('manifest', async () => {
 
 describe.runIf(isBuild)('css and assets in css in build watch', () => {
   test('css will not be lost and css does not contain undefined', async () => {
+    const p1 = notifyRebuildComplete(watcher)
     editFile('index.html', (code) => code.replace('Assets', 'assets'))
-    await notifyRebuildComplete(watcher)
+    await p1
     const cssFile = findAssetFile(/index-[-\w]+\.css$/, 'foo')
     expect(cssFile).not.toBe('')
     expect(cssFile).not.toMatch(/undefined/)
@@ -707,16 +708,18 @@ describe.runIf(isBuild)('css and assets in css in build watch', () => {
 
   test('import module.css', async () => {
     expect(await getColor('#foo')).toBe('red')
+    const p2 = notifyRebuildComplete(watcher)
     editFile('css/foo.module.css', (code) => code.replace('red', 'blue'))
-    await notifyRebuildComplete(watcher)
+    await p2
     await page.reload()
     expect(await getColor('#foo')).toBe('blue')
   })
 
   test('import with raw query', async () => {
     expect(await page.textContent('.raw-query')).toBe('foo')
+    const p3 = notifyRebuildComplete(watcher)
     editFile('static/foo.txt', (code) => code.replace('foo', 'zoo'))
-    await notifyRebuildComplete(watcher)
+    await p3
     await page.reload()
     expect(await page.textContent('.raw-query')).toBe('zoo')
   })
