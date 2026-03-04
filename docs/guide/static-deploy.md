@@ -148,6 +148,24 @@ After your project has been imported and deployed, all subsequent pushes to bran
 
 Learn more about Vercel’s [Git Integration](https://vercel.com/docs/concepts/git).
 
+## Hostinger
+
+### Hostinger with Git
+
+1. Push your code to your git repository using GitHub
+2. Create a new application at [Hostinger](https://www.hostinger.com/web-apps-hosting) and select your repository with Vite framework
+3. Hostinger will automatically detect Vite framework and required deployment settings will be applied
+4. Congratulations, your application is deployed.
+
+### Hostinger with Files
+
+1. Format your application files to .ZIP format
+2. Create new application at[Hostinger](https://www.hostinger.com/web-apps-hosting) and upload your application files
+3. Hostinger will automatically detect Vite framework and required deployment settings will be applied
+4. Congratulations, your application is deployed.
+
+Learn more about [Hostinger](https://www.hostinger.com/support/how-to-deploy-a-nodejs-website-in-hostinger/)
+
 ## Cloudflare
 
 ### Cloudflare Workers
