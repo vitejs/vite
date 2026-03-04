@@ -335,14 +335,22 @@ export async function startDefaultServe(): Promise<void> {
 }
 
 /**
- * Send the rebuild complete message in build watch
+ * Wait for the watcher to complete a rebuild cycle.
+ *
+ * Waits for a START event first (confirming a new build cycle has begun),
+ * then waits for the corresponding END event. This avoids catching stale
+ * END events from spurious rebuilds triggered by duplicate OS file
+ * notifications from a previous test's edit.
  */
 export async function notifyRebuildComplete(
   watcher: RolldownWatcher,
 ): Promise<void> {
+  let phase: 'waiting-for-start' | 'waiting-for-end' = 'waiting-for-start'
   let resolveFn: undefined | (() => void)
   const callback = (event: RolldownWatcherEvent): void => {
-    if (event.code === 'END') {
+    if (phase === 'waiting-for-start' && event.code === 'START') {
+      phase = 'waiting-for-end'
+    } else if (phase === 'waiting-for-end' && event.code === 'END') {
       resolveFn?.()
     }
   }
