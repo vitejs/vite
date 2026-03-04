@@ -43,7 +43,6 @@ export function testDirDep({ addDependency }) {
           const pattern = normalizePath(
             path.resolve(path.dirname(from), './glob-dep/**/*.css'),
           )
-          // FIXME: there's no way to add a dependency
           const files = globSync(pattern, {
             expandDirectories: false,
             absolute: true,
