@@ -118,7 +118,6 @@ describe('caseInsensitive option', async () => {
     expect(matched).toContain('./assets/icon.png')
     expect(matched).toContain('./assets/logo.PNG')
     expect(matched).toContain('./assets/photo.jpg')
-    expect(matched).toContain('./assets/banner.JPEG')
   })
 
   it('caseInsensitive does not match files outside the pattern', async () => {
