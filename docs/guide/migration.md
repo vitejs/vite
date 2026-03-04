@@ -293,7 +293,7 @@ See Rolldown's docs for more details: [`require` external modules - Bundling CJS
 
 ### Removed `build.rollupOptions.watch.chokidar` option
 
-The `build.rollupOptions.watch.chokidar` option was removed. Please migrate to the [`build.rolldownOptions.watch.notify`](https://rolldown.rs/reference/InputOptions.watch#notify) option.
+The `build.rollupOptions.watch.chokidar` option was removed. Please migrate to the [`build.rolldownOptions.watch.watcher`](https://rolldown.rs/reference/InputOptions.watch#watcher) option.
 
 ### Removed object form `build.rollupOptions.output.manualChunks` and deprecate function form one
 
