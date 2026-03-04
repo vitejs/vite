@@ -295,12 +295,24 @@ export async function startDefaultServe(): Promise<void> {
         resolvedConfig = config
       },
     })
-    const buildConfig = mergeConfig(
-      await loadConfig({ command: 'build', mode: 'production' }),
-      {
-        plugins: [resolvedPlugin()],
-      },
-    )
+    const loadedConfig = await loadConfig({
+      command: 'build',
+      mode: 'production',
+    })
+    // During tests we edit the files too fast and sometimes the native file
+    // watcher misses change events, so enforce polling for consistency when
+    // watch mode is enabled (same rationale as server.watch above).
+    if (loadedConfig.build?.watch) {
+      loadedConfig.build.watch = mergeConfig(loadedConfig.build.watch, {
+        chokidar: {
+          usePolling: true,
+          interval: 100,
+        },
+      })
+    }
+    const buildConfig = mergeConfig(loadedConfig, {
+      plugins: [resolvedPlugin()],
+    })
     if (buildConfig.builder) {
       const builder = await createBuilder(buildConfig)
       await builder.buildApp()
