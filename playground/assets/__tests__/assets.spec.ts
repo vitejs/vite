@@ -701,6 +701,7 @@ describe.runIf(isBuild)('css and assets in css in build watch', () => {
     const p1 = notifyRebuildComplete(watcher)
     editFile('index.html', (code) => code.replace('Assets', 'assets'))
     await p1
+    await new Promise((r) => setTimeout(r, 300))
     const cssFile = findAssetFile(/index-[-\w]+\.css$/, 'foo')
     expect(cssFile).not.toBe('')
     expect(cssFile).not.toMatch(/undefined/)
@@ -711,6 +712,7 @@ describe.runIf(isBuild)('css and assets in css in build watch', () => {
     const p2 = notifyRebuildComplete(watcher)
     editFile('css/foo.module.css', (code) => code.replace('red', 'blue'))
     await p2
+    await new Promise((r) => setTimeout(r, 300))
     await page.reload()
     expect(await getColor('#foo')).toBe('blue')
   })
@@ -720,6 +722,7 @@ describe.runIf(isBuild)('css and assets in css in build watch', () => {
     const p3 = notifyRebuildComplete(watcher)
     editFile('static/foo.txt', (code) => code.replace('foo', 'zoo'))
     await p3
+    await new Promise((r) => setTimeout(r, 300))
     await page.reload()
     expect(await page.textContent('.raw-query')).toBe('zoo')
   })

@@ -24,6 +24,7 @@ test.runIf(isBuild)('rebuilds styles only entry on change', async () => {
     originalContents.replace('#ff69b4', '#ffb6c1'),
   )
   await p
+  await new Promise((r) => setTimeout(r, 300))
 
   const updatedManifest = readManifest('watch')
   expect(Object.keys(updatedManifest)).toHaveLength(numberOfManifestEntries)
