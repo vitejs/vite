@@ -126,6 +126,10 @@ async function createClientConfigValueReplacer(
   const bundleDevReplacement = escapeReplacement(
     config.experimental.bundledDev || false,
   )
+  const hmrRuntimeErrorsReplacement =
+    typeof runtimeErrors === 'function'
+      ? () => runtimeErrors.toString()
+      : escapeReplacement(runtimeErrors)
 
   return (code) =>
     code
@@ -144,6 +148,7 @@ async function createClientConfigValueReplacer(
       .replace(`__HMR_RUNTIME_ERRORS__`, hmrRuntimeErrorsReplacement)
       .replace(`__SERVER_FORWARD_CONSOLE__`, serverForwardConsoleReplacement)
       .replaceAll(`__BUNDLED_DEV__`, bundleDevReplacement)
+      .replace(`__HMR_RUNTIME_ERRORS__`, hmrRuntimeErrorsReplacement)
 }
 
 export async function getHmrImplementation(
