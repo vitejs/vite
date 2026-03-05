@@ -5,7 +5,7 @@ on:
     types: [opened]
 
 jobs:
-  check-issue:
+  evaluate-issue:
     if: >-
       (contains(github.event.issue.labels.*.name, 'pending triage') ||
        contains(github.event.issue.labels.*.name, 'documentation')) &&
@@ -13,7 +13,12 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       contents: read
-      issues: write
+      issues: read
+      pull-requests: read
+    outputs:
+      agent_output: ${{ steps.agent.outputs.agent_output }}
+      template_type: ${{ steps.detect.outputs.template_type }}
+      skip: ${{ steps.detect.outputs.skip }}
     steps:
       - uses: actions/checkout@v6
 
@@ -94,12 +99,19 @@ jobs:
           warp_api_key: ${{ secrets.WARP_API_KEY }}
           profile: ${{ vars.WARP_AGENT_PROFILE || '' }}
 
+  post-results:
+    needs: evaluate-issue
+    if: needs.evaluate-issue.outputs.skip == 'false' && needs.evaluate-issue.outputs.agent_output
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      issues: write
+    steps:
       - name: Write result to summary
-        if: steps.detect.outputs.skip == 'false' && steps.agent.outputs.agent_output
         uses: actions/github-script@v8
         env:
-          TEMPLATE_TYPE: ${{ steps.detect.outputs.template_type }}
-          AGENT_OUTPUT: ${{ steps.agent.outputs.agent_output }}
+          TEMPLATE_TYPE: ${{ needs.evaluate-issue.outputs.template_type }}
+          AGENT_OUTPUT: ${{ needs.evaluate-issue.outputs.agent_output }}
         with:
           script: |
             const output = process.env.AGENT_OUTPUT;
@@ -118,7 +130,7 @@ jobs:
                   }
                 } catch (e) {}
               }
-              
+
               if (agentText) {
                 await core.summary
                   .addHeading(`Issue Template Check (${templateType})`)
