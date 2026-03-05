@@ -5,13 +5,17 @@ on:
     types: [opened, edited]
 
 jobs:
-  label-clarity:
+  evaluate-clarity:
     if: github.event.issue.user.login != 'renovate[bot]'
     runs-on: ubuntu-latest
     permissions:
       contents: read
-      issues: write
-      pull-requests: write
+      issues: read
+      pull-requests: read
+    outputs:
+      agent_output: ${{ steps.agent.outputs.agent_output }}
+      number: ${{ steps.description.outputs.number }}
+      is_pr: ${{ steps.description.outputs.is_pr }}
     steps:
       - name: Get description
         id: description
@@ -72,13 +76,20 @@ jobs:
           warp_api_key: ${{ secrets.WARP_API_KEY }}
           profile: ${{ vars.WARP_AGENT_PROFILE || '' }}
 
+  apply-label:
+    needs: evaluate-clarity
+    if: needs.evaluate-clarity.outputs.agent_output
+    runs-on: ubuntu-latest
+    permissions:
+      issues: write
+      pull-requests: write
+    steps:
       - name: Apply clarity label
-        if: steps.agent.outputs.agent_output
         uses: actions/github-script@v8
         env:
-          AGENT_OUTPUT: ${{ steps.agent.outputs.agent_output }}
-          ISSUE_NUMBER: ${{ steps.description.outputs.number }}
-          IS_PR: ${{ steps.description.outputs.is_pr }}
+          AGENT_OUTPUT: ${{ needs.evaluate-clarity.outputs.agent_output }}
+          ISSUE_NUMBER: ${{ needs.evaluate-clarity.outputs.number }}
+          IS_PR: ${{ needs.evaluate-clarity.outputs.is_pr }}
         with:
           script: |
             const output = process.env.AGENT_OUTPUT;
@@ -147,10 +158,9 @@ jobs:
             core.info(`Applied label "${newLabel}" — reason: ${result.reason}`);
 
       - name: Write result to summary
-        if: steps.agent.outputs.agent_output
         uses: actions/github-script@v8
         env:
-          AGENT_OUTPUT: ${{ steps.agent.outputs.agent_output }}
+          AGENT_OUTPUT: ${{ needs.evaluate-clarity.outputs.agent_output }}
         with:
           script: |
             const output = process.env.AGENT_OUTPUT;
@@ -168,7 +178,7 @@ jobs:
                   }
                 } catch (e) {}
               }
-              
+
               if (agentText) {
                 await core.summary
                   .addHeading('Clarity Label')
