@@ -47,7 +47,8 @@ describe('running module runner inside a worker and using the ModuleRunnerTransp
         },
       },
     })
-    handleInvoke = (data: any) => server.environments.ssr.hot.handleInvoke(data)
+    handleInvoke = (data: any) =>
+      server.environments.worker.hot.handleInvoke(data)
     rpc = createBirpc(
       {
         invoke: (data: any) => handleInvoke(data),
@@ -100,7 +101,8 @@ describe('running module runner inside a worker and using the ModuleRunnerTransp
   })
 
   it('resolves builtin module without server round-trip', async () => {
-    handleInvoke = (data: any) => server.environments.ssr.hot.handleInvoke(data)
+    handleInvoke = (data: any) =>
+      server.environments.worker.hot.handleInvoke(data)
 
     const output = await run('./fixtures/builtin-import.ts')
     expect(output).toHaveProperty('result')
