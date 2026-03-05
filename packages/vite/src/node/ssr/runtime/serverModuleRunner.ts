@@ -1,11 +1,11 @@
 import { existsSync, readFileSync } from 'node:fs'
-import type { HotPayload } from '#types/hmrPayload'
 import { ModuleRunner, createNodeImportMeta } from 'vite/module-runner'
 import type {
   ModuleEvaluator,
   ModuleRunnerHmr,
   ModuleRunnerOptions,
 } from 'vite/module-runner'
+import type { HotPayload } from '#types/hmrPayload'
 import type { DevEnvironment } from '../../server/environment'
 import type {
   HotChannelClient,
@@ -16,11 +16,10 @@ import type { ModuleRunnerTransport } from '../../../shared/moduleRunnerTranspor
 /**
  * @experimental
  */
-export interface ServerModuleRunnerOptions
-  extends Omit<
-    ModuleRunnerOptions,
-    'root' | 'fetchModule' | 'hmr' | 'transport'
-  > {
+export interface ServerModuleRunnerOptions extends Omit<
+  ModuleRunnerOptions,
+  'root' | 'fetchModule' | 'hmr' | 'transport'
+> {
   /**
    * Disable HMR or configure HMR logger.
    */

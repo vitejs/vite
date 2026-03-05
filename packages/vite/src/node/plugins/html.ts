@@ -6,7 +6,7 @@ import type {
   OutputChunk,
   RollupError,
   SourceMapInput,
-} from 'rollup'
+} from 'rolldown'
 import MagicString from 'magic-string'
 import colors from 'picocolors'
 import type {
@@ -504,9 +504,10 @@ export function buildHtmlPlugin(config: ResolvedConfig): Plugin {
                       if (moduleInfo) {
                         moduleInfo.moduleSideEffects = true
                       } else if (!resolved.external) {
-                        return this.load(resolved).then((mod) => {
-                          mod.moduleSideEffects = true
-                        })
+                        return this.load({
+                          ...resolved,
+                          moduleSideEffects: true,
+                        }).then(() => {})
                       }
                     }),
                   )
@@ -1419,12 +1420,12 @@ export async function applyHtmlTransforms(
   return html
 }
 
-const importRE = /\bimport\s*(?:"[^"]*[^\\]"|'[^']*[^\\]');*/g
-const commentRE = /\/\*[\s\S]*?\*\/|\/\/.*$/gm
+const entirelyImportRE =
+  /^(?:import\s*(?:"[^"\n]*[^\\\n]"|'[^'\n]*[^\\\n]');*|\/\*[\s\S]*?\*\/|\/\/.*[$\n])*$/
 function isEntirelyImport(code: string) {
   // only consider "side-effect" imports, which match <script type=module> semantics exactly
   // the regexes will remove too little in some exotic cases, but false-negatives are alright
-  return !code.replace(importRE, '').replace(commentRE, '').trim().length
+  return entirelyImportRE.test(code.trim())
 }
 
 function getBaseInHTML(urlRelativePath: string, config: ResolvedConfig) {

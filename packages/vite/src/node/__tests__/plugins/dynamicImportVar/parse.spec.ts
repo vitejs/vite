@@ -1,22 +1,21 @@
 import { resolve } from 'node:path'
-import { fileURLToPath } from 'node:url'
 import { describe, expect, it } from 'vitest'
 import { transformDynamicImport } from '../../../plugins/dynamicImportVars'
 import { normalizePath } from '../../../utils'
 import { isWindows } from '../../../../shared/utils'
 
-const __dirname = resolve(fileURLToPath(import.meta.url), '..')
+const dirname = import.meta.dirname
 
 async function run(input: string) {
   const { glob, rawPattern } =
     (await transformDynamicImport(
       input,
-      normalizePath(resolve(__dirname, 'index.js')),
+      normalizePath(resolve(dirname, 'index.js')),
       (id) =>
         id
-          .replace('@', resolve(__dirname, './mods/'))
-          .replace('#', resolve(__dirname, '../../')),
-      __dirname,
+          .replace('@', resolve(dirname, './mods/'))
+          .replace('#', resolve(dirname, '../../')),
+      dirname,
     )) || {}
   return `__variableDynamicImportRuntimeHelper(${glob}, \`${rawPattern}\`)`
 }

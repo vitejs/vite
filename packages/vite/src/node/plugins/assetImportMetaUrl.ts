@@ -1,7 +1,7 @@
 import path from 'node:path'
 import MagicString from 'magic-string'
 import { stripLiteral } from 'strip-literal'
-import { exactRegex } from '@rolldown/pluginutils'
+import { exactRegex } from 'rolldown/filter'
 import type { Plugin } from '../plugin'
 import type { ResolvedConfig } from '../config'
 import {
@@ -164,7 +164,8 @@ export function assetImportMetaUrlPlugin(config: ResolvedConfig): Plugin {
           s.update(
             startIndex,
             endIndex,
-            `new URL(${JSON.stringify(builtUrl)}, import.meta.url)`,
+            // NOTE: add `'' +` to opt-out rolldown's transform: https://github.com/rolldown/rolldown/issues/2745
+            `new URL(${JSON.stringify(builtUrl)}, '' + import.meta.url)`,
           )
         }
         if (s) {

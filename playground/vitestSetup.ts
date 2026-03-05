@@ -20,8 +20,11 @@ import {
   preview,
 } from 'vite'
 import type { Browser, Page } from 'playwright-chromium'
-import type { RollupError, RollupWatcher, RollupWatcherEvent } from 'rollup'
-import type { RunnerTestFile } from 'vitest'
+import type {
+  RolldownWatcher,
+  RolldownWatcherEvent,
+  RollupError,
+} from 'rolldown'
 import { beforeAll, expect, inject } from 'vitest'
 
 // #region serializer
@@ -58,7 +61,7 @@ ${indentation}}`
 
 // #region env
 
-export const workspaceRoot = path.resolve(__dirname, '../')
+export const workspaceRoot = path.resolve(import.meta.dirname, '../')
 
 export const isBuild = !!process.env.VITE_TEST_BUILD
 export const isServe = !isBuild
@@ -102,7 +105,7 @@ export const browserErrors: Error[] = []
 export let page: Page = undefined!
 export let browser: Browser = undefined!
 export let viteTestUrl: string = ''
-export let watcher: RollupWatcher | undefined = undefined
+export let watcher: RolldownWatcher | undefined = undefined
 
 export function setViteUrl(url: string): void {
   viteTestUrl = url
@@ -125,22 +128,16 @@ function throwHtmlParseError() {
 }
 // #endregion
 
-beforeAll(async (s) => {
-  const suite = s as RunnerTestFile
-
-  testPath = suite.filepath!
+beforeAll(async (suite) => {
+  testPath = suite.file.filepath!
   testName = slash(testPath).match(/playground\/([\w-]+)\//)?.[1]
   testDir = path.dirname(testPath)
   if (testName) {
     testDir = path.resolve(workspaceRoot, 'playground-temp', testName)
   }
 
-  // skip browser setup for non-playground tests
-  // TODO: ssr playground?
-  if (
-    !suite.filepath.includes('playground') ||
-    suite.filepath.includes('hmr-ssr')
-  ) {
+  // skip browser setup for hmr-ssr playground
+  if (testName === 'hmr-ssr') {
     return
   }
 
@@ -312,7 +309,7 @@ export async function startDefaultServe(): Promise<void> {
       const isWatch = !!resolvedConfig!.build.watch
       // in build watch,call startStaticServer after the build is complete
       if (isWatch) {
-        watcher = rollupOutput as RollupWatcher
+        watcher = rollupOutput as RolldownWatcher
         await notifyRebuildComplete(watcher)
       }
       if (buildConfig.__test__) {
@@ -341,10 +338,10 @@ export async function startDefaultServe(): Promise<void> {
  * Send the rebuild complete message in build watch
  */
 export async function notifyRebuildComplete(
-  watcher: RollupWatcher,
-): Promise<RollupWatcher> {
+  watcher: RolldownWatcher,
+): Promise<void> {
   let resolveFn: undefined | (() => void)
-  const callback = (event: RollupWatcherEvent): void => {
+  const callback = (event: RolldownWatcherEvent): void => {
     if (event.code === 'END') {
       resolveFn?.()
     }
@@ -353,7 +350,8 @@ export async function notifyRebuildComplete(
   await new Promise<void>((resolve) => {
     resolveFn = resolve
   })
-  return watcher.off('event', callback)
+
+  watcher.off('event', callback)
 }
 
 export function createInMemoryLogger(logs: string[]): Logger {

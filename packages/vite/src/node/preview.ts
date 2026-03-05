@@ -35,7 +35,7 @@ import {
 } from './utils'
 import { printServerUrls } from './logger'
 import { bindCLIShortcuts } from './shortcuts'
-import type { BindCLIShortcutsOptions } from './shortcuts'
+import type { BindCLIShortcutsOptions, ShortcutsState } from './shortcuts'
 import { resolveConfig } from './config'
 import type { InlineConfig, ResolvedConfig } from './config'
 import { DEFAULT_PREVIEW_PORT } from './constants'
@@ -49,8 +49,10 @@ import type { MinimalPluginContextWithoutEnvironment } from './plugin'
 
 export interface PreviewOptions extends CommonServerOptions {}
 
-export interface ResolvedPreviewOptions
-  extends RequiredExceptFor<PreviewOptions, 'host' | 'https' | 'proxy'> {}
+export interface ResolvedPreviewOptions extends RequiredExceptFor<
+  PreviewOptions,
+  'host' | 'https' | 'proxy'
+> {}
 
 export function resolvePreviewOptions(
   preview: PreviewOptions | undefined,
@@ -107,6 +109,10 @@ export interface PreviewServer {
    * Bind CLI shortcuts
    */
   bindCLIShortcuts(options?: BindCLIShortcutsOptions<PreviewServer>): void
+  /**
+   * @internal
+   */
+  _shortcutsState?: ShortcutsState<PreviewServer>
 }
 
 export type PreviewServerHook = (

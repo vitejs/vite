@@ -7,16 +7,16 @@ const require = module.createRequire(import.meta.url)
 export default defineConfig({
   resolve: {
     alias: [
-      { find: 'fs', replacement: path.resolve(__dirname, 'test.js') },
-      { find: 'fs-dir', replacement: path.resolve(__dirname, 'dir') },
+      { find: 'fs', replacement: path.resolve(import.meta.dirname, 'test.js') },
+      { find: 'fs-dir', replacement: path.resolve(import.meta.dirname, 'dir') },
       { find: 'dep', replacement: '@vitejs/test-resolve-linked' },
       {
         find: /^regex\/(.*)/,
-        replacement: `${path.resolve(__dirname, 'dir')}/$1`,
+        replacement: `${path.resolve(import.meta.dirname, 'dir')}/$1`,
       },
-      { find: '/@', replacement: path.resolve(__dirname, 'dir') },
+      { find: '/@', replacement: path.resolve(import.meta.dirname, 'dir') },
       // aliasing a pattern that conflicts with url schemes
-      { find: /^\/\//, replacement: path.join(__dirname, 'dir/') },
+      { find: /^\/\//, replacement: path.join(import.meta.dirname, 'dir/') },
       // aliasing an optimized dep
       { find: 'vue', replacement: 'vue/dist/vue.esm-bundler.js' },
       // aliasing an optimized dep to absolute URL
@@ -28,7 +28,7 @@ export default defineConfig({
       { find: 'foo', replacement: 'vue' },
       {
         find: 'custom-resolver',
-        replacement: path.resolve(__dirname, 'test.js'),
+        replacement: path.resolve(import.meta.dirname, 'test.js'),
         customResolver(id) {
           return id.replace('test.js', 'customResolver.js')
         },

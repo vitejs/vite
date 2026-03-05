@@ -1,4 +1,5 @@
 import fs from 'node:fs/promises'
+import path from 'node:path'
 import { defineConfig } from 'vite'
 
 const npmDirectServeConfig = {
@@ -29,6 +30,11 @@ export default defineConfig({
     minify: false,
     rollupOptions: {
       external: ['vue', 'slash3', 'slash5'],
+      transform: {
+        inject: {
+          require: path.resolve(import.meta.dirname, 'src/require-polyfill.js'),
+        },
+      },
     },
     commonjsOptions: {
       esmExternals: ['vue', 'slash5'],

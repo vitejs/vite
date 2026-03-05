@@ -2,10 +2,6 @@
 
 Hi! We're really excited that you're interested in contributing to Vite! Before submitting your contribution, please read through the following guide. We also suggest you read the [Project Philosophy](https://vite.dev/guide/philosophy) in our documentation.
 
-You can use [StackBlitz Codeflow](https://stackblitz.com/codeflow) to fix bugs or implement features. You'll see a Codeflow button on issues to start a PR to fix them. A button will also appear on PRs to review them without needing to check out the branch locally. When using Codeflow, the Vite repository will be cloned for you in an online editor, with the Vite package built in watch mode ready to test your changes. If you'd like to learn more, check out the [Codeflow docs](https://developer.stackblitz.com/codeflow/what-is-codeflow).
-
-[![Open in Codeflow](https://developer.stackblitz.com/img/open_in_codeflow.svg)](https://pr.new/vitejs/vite)
-
 ## Repo Setup
 
 To develop locally, fork the Vite repository and clone it in your local machine. The Vite repo is a monorepo using pnpm workspaces. The package manager used to install and link dependencies must be [pnpm](https://pnpm.io/). You can find the required pnpm version in `package.json` under the `packageManager` key.
@@ -229,6 +225,9 @@ For a mock dependency, make sure you add a `@vitejs/test-` prefix to the package
 
 ## Pull Request Guidelines
 
+> [!NOTE]
+> You do not need to ask for permission to work on an open issue. You can start investigating or open a PR directly. If someone else ships a fix first, you can still help by reviewing or validating the solution.
+
 - Checkout a topic branch from a base branch (e.g. `main`), and merge back against that branch.
 
 - If adding a new feature:
@@ -238,7 +237,7 @@ For a mock dependency, make sure you add a `@vitejs/test-` prefix to the package
 - If fixing a bug:
   - If you are resolving a special issue, add `(fix #xxxx[,#xxxx])` (#xxxx is the issue id) in your PR title for a better release log (e.g. `fix: update entities encoding/decoding (fix #3899)`).
   - Provide a detailed description of the bug in the PR. Live demo preferred.
-  - Add appropriate test coverage if applicable.
+  - Add appropriate test coverage. If not applicable, explain in the PR description why tests are not included.
 
 - If it's a chore:
   - For typos and comment changes, try to combine multiple of them into a single PR.
@@ -356,3 +355,5 @@ If you have publish access, the steps below explain how to cut a release for a p
 3. Click on the "Review deployments" button in the yellow box, a popup will appear.
 4. Check "Release" and click "Approve and deploy".
 5. The package will start publishing to npm.
+
+To learn more about how and when Vite does releases, check out the [Releases](https://vite.dev/releases) documentation.
