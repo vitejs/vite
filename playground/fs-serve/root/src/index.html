@@ -1,72 +1,15 @@
 <link rel="icon" href="/src/favicon.ico" />
 
-<h2>Normal Import</h2>
-<pre class="full"></pre>
-<pre class="named"></pre>
+<h1>FS Serve Normal Tests</h1>
+<div>
+  <h2>Normal Import</h2>
+  <pre class="full"></pre>
+  <pre class="named"></pre>
+  <pre class="nested-entry"></pre>
+  <pre class="virtual-svg"></pre>
+</div>
 
-<h2>Safe Fetch</h2>
-<pre class="safe-fetch-status"></pre>
-<pre class="safe-fetch"></pre>
-<pre class="safe-fetch-query-status"></pre>
-<pre class="safe-fetch-query"></pre>
-
-<h2>Safe Fetch Subdirectory</h2>
-<pre class="safe-fetch-subdir-status"></pre>
-<pre class="safe-fetch-subdir"></pre>
-<pre class="safe-fetch-subdir-special-characters-status"></pre>
-<pre class="safe-fetch-subdir-special-characters"></pre>
-
-<h2>Unsafe Fetch</h2>
-<pre class="unsafe-fetch-status"></pre>
-<pre class="unsafe-fetch"></pre>
-<pre class="unsafe-fetch-html-status"></pre>
-<pre class="unsafe-fetch-html"></pre>
-<pre class="unsafe-fetch-8498-status"></pre>
-<pre class="unsafe-fetch-8498"></pre>
-<pre class="unsafe-fetch-8498-2-status"></pre>
-<pre class="unsafe-fetch-8498-2"></pre>
-<pre class="unsafe-fetch-import-inline-status"></pre>
-<pre class="unsafe-fetch-raw-query-import-status"></pre>
-<pre class="unsafe-fetch-query-dot-svg-import-status"></pre>
-<pre class="unsafe-fetch-svg-status"></pre>
-
-<h2>Safe /@fs/ Fetch</h2>
-<pre class="safe-fs-fetch-status"></pre>
-<pre class="safe-fs-fetch"></pre>
-<pre class="safe-fs-fetch-query-status"></pre>
-<pre class="safe-fs-fetch-query"></pre>
-<pre class="safe-fs-fetch-special-characters-status"></pre>
-<pre class="safe-fs-fetch-special-characters"></pre>
-
-<h2>Unsafe /@fs/ Fetch</h2>
-<pre class="unsafe-fs-fetch-status"></pre>
-<pre class="unsafe-fs-fetch"></pre>
-<pre class="unsafe-fs-fetch-html-status"></pre>
-<pre class="unsafe-fs-fetch-html"></pre>
-<pre class="unsafe-fs-fetch-raw-status"></pre>
-<pre class="unsafe-fs-fetch-raw"></pre>
-<pre class="unsafe-fs-fetch-raw-query1-status"></pre>
-<pre class="unsafe-fs-fetch-raw-query1"></pre>
-<pre class="unsafe-fs-fetch-raw-query2-status"></pre>
-<pre class="unsafe-fs-fetch-raw-query2"></pre>
-<pre class="unsafe-fs-fetch-8498-status"></pre>
-<pre class="unsafe-fs-fetch-8498"></pre>
-<pre class="unsafe-fs-fetch-8498-2-status"></pre>
-<pre class="unsafe-fs-fetch-8498-2"></pre>
-<pre class="unsafe-fs-fetch-import-inline-status"></pre>
-<pre class="unsafe-fs-fetch-import-inline-wasm-init-status"></pre>
-<pre class="unsafe-fs-fetch-relative-path-after-query-status"></pre>
-
-<h2>Nested Entry</h2>
-<pre class="nested-entry"></pre>
-
-<h2>Denied</h2>
-<pre class="unsafe-dotenv"></pre>
-<pre class="unsafe-dotEnV-casing"></pre>
-<pre class="unsafe-dotenv-query-dot-svg-wasm-init"></pre>
-
-<d2>Virtual SVG module</d2>
-<pre class="virtual-svg"></pre>
+<!-- REPLACE WITH MATRIX TEST RESULT -->
 
 <script type="module">
   import '../../entry'
@@ -75,6 +18,21 @@
 
   // Check virtual svg module still works
   import fooSvg from 'virtual:foo.svg'
+
+  text('.full', JSON.stringify(json))
+  text('.named', msg)
+  text('.virtual-svg', fooSvg)
+
+  function text(sel, text) {
+    document.querySelector(sel).textContent = text
+  }
+</script>
+
+<script type="module">
+  // matrix tests
+
+  const base = typeof BASE !== 'undefined' ? BASE : ''
+  const fsBase = joinUrlSegments('/@fs/', ROOT)
 
   function joinUrlSegments(a, b) {
     if (!a || !b) {
@@ -89,372 +47,136 @@
     return a + b
   }
 
-  text('.full', JSON.stringify(json))
-  text('.named', msg)
-  text('.virtual-svg', fooSvg)
+  const paths = [
+    // inside allowed dir
+    { testId: 'safe', path: '/root/src/safe.txt' },
+    // inside allowed dir with query
+    { testId: 'safe-query', path: '/root/src/safe.txt?query' },
+    // inside allowed dir
+    { testId: 'safe-subdir', path: '/root/src/subdir/safe.txt' },
+    // inside allowed dir with special characters
+    {
+      testId: 'safe-subdir-special-characters',
+      path: '/root/src/special%20characters%20%C3%A5%C3%A4%C3%B6/safe.txt',
+    },
+    // not imported before but inside allowed dir with special characters
+    {
+      testId: 'safe-subdir-special-characters2',
+      path: '/root/src/special%20characters%20%C3%A5%C3%A4%C3%B6/safe.json',
+    },
+    // imported before
+    { testId: 'safe-imported', path: '/safe.json' },
+    // imported before with query
+    { testId: 'safe-imported-query', path: '/safe.json?query' },
 
-  const base = typeof BASE !== 'undefined' ? BASE : ''
+    // outside of allowed dir
+    { testId: 'unsafe', path: '/root/unsafe.txt' },
+    // outside of allowed dir and root
+    { testId: 'unsafe-json', path: '/unsafe.json' },
+    // outside of allowed dir
+    { testId: 'unsafe-html', path: '/root/unsafe.html' },
+    // outside of allowed dir and root
+    { testId: 'unsafe-html-outside-root', path: '/unsafe.html' },
+    // outside of allowed dir with special characters #8498
+    { testId: 'unsafe-8498', path: '/root/src/%2e%2e%2funsafe%2etxt' },
+    // outside of allowed dir with special characters 2 #8498
+    {
+      testId: 'unsafe-8498-2',
+      path: '/root/src/%252e%252e%252funsafe%252etxt',
+    },
+    // outside of allowed dir with import inline
+    {
+      testId: 'unsafe-import-inline',
+      path: '/root/unsafe.txt?import&inline',
+    },
+    // outside of allowed dir with raw query import
+    {
+      testId: 'unsafe-raw-query-import',
+      path: '/root/unsafe.txt?raw?import',
+    },
+    {
+      testId: 'unsafe-raw-import-raw-outside-root',
+      path: '/unsafe.json?import&raw',
+    },
+    {
+      testId: 'unsafe-raw-import-raw-outside-root1',
+      path: '/unsafe.json?import&raw??',
+    },
+    {
+      testId: 'unsafe-raw-import-raw-outside-root2',
+      path: '/unsafe.json?import&raw?&',
+    },
+    // outside of allowed dir with .svg query import
+    {
+      testId: 'unsafe-query-dot-svg-import',
+      path: '/root/unsafe.txt?import&inline',
+    },
+    // outside of allowed dir, svg
+    {
+      testId: 'unsafe-svg',
+      path: '/root/unsafe.svg?import',
+    },
+    // outside of allowed dir, inline faux wasm?init
+    {
+      testId: 'unsafe-import-inline-wasm-init',
+      path: '/root/unsafe.txt?import&?inline=1.wasm?init',
+    },
+    // outside of allowed dir, relative path after query
+    {
+      testId: 'unsafe-relative-path-after-query',
+      path: '/root/src/?/../../unsafe.txt?import&raw',
+    },
+    // .env, denied by default
+    {
+      testId: 'unsafe-dotenv',
+      path: '/root/src/.env',
+    },
+    // .env, for case insensitive file systems
+    {
+      testId: 'unsafe-dotenv-casing',
+      path: '/root/src/.EnV',
+    },
+    // .env with .svg?.wasm?init
+    {
+      testId: 'unsafe-dotenv-query-dot-svg-wasm-init',
+      path: '/root/src/.env?.svg?.wasm?init',
+    },
+  ]
+  const variants = {
+    '': (path) =>
+      path.startsWith('/root/')
+        ? joinUrlSegments(base, path.replace(/^\/root/, ''))
+        : false,
+    '-fs': (path) => joinUrlSegments(base, fsBase + path),
+  }
 
-  // inside allowed dir, safe fetch
-  fetch(joinUrlSegments(base, '/src/safe.txt'))
-    .then((r) => {
-      text('.safe-fetch-status', r.status)
-      return r.text()
-    })
-    .then((data) => {
-      text('.safe-fetch', JSON.stringify(data))
-    })
+  for (const { testId, path } of paths) {
+    for (const [variantName, transformPath] of Object.entries(variants)) {
+      const baseSelector = `.fetch${variantName}-${testId}`
+      const resolvedPath = transformPath(path)
+      if (resolvedPath === false) {
+        text(`${baseSelector}-path`, '--')
+        document.querySelector(
+          `a[href="#${baseSelector.slice(1)}-content"]`,
+        ).textContent = ''
+        text(`${baseSelector}-content`, '--')
+        continue
+      }
 
-  // inside allowed dir with query, safe fetch
-  fetch(joinUrlSegments(base, '/src/safe.txt?query'))
-    .then((r) => {
-      text('.safe-fetch-query-status', r.status)
-      return r.text()
-    })
-    .then((data) => {
-      text('.safe-fetch-query', JSON.stringify(data))
-    })
-
-  // inside allowed dir, safe fetch
-  fetch(joinUrlSegments(base, '/src/subdir/safe.txt'))
-    .then((r) => {
-      text('.safe-fetch-subdir-status', r.status)
-      return r.text()
-    })
-    .then((data) => {
-      text('.safe-fetch-subdir', JSON.stringify(data))
-    })
-
-  // inside allowed dir, with special characters, safe fetch
-  fetch(
-    joinUrlSegments(
-      base,
-      '/src/special%20characters%20%C3%A5%C3%A4%C3%B6/safe.txt',
-    ),
-  )
-    .then((r) => {
-      text('.safe-fetch-subdir-special-characters-status', r.status)
-      return r.text()
-    })
-    .then((data) => {
-      text('.safe-fetch-subdir-special-characters', JSON.stringify(data))
-    })
-
-  // outside of allowed dir, treated as unsafe
-  fetch(joinUrlSegments(base, '/unsafe.txt'))
-    .then((r) => {
-      text('.unsafe-fetch-status', r.status)
-      return r.text()
-    })
-    .then((data) => {
-      text('.unsafe-fetch', data)
-    })
-    .catch((e) => {
-      console.error(e)
-    })
-
-  // outside of allowed dir, treated as unsafe
-  fetch(joinUrlSegments(base, '/unsafe.html'))
-    .then((r) => {
-      text('.unsafe-fetch-html-status', r.status)
-      return r.text()
-    })
-    .then((data) => {
-      text('.unsafe-fetch-html', data)
-    })
-    .catch((e) => {
-      console.error(e)
-    })
-
-  // outside of allowed dir with special characters #8498
-  fetch(joinUrlSegments(base, '/src/%2e%2e%2funsafe%2etxt'))
-    .then((r) => {
-      text('.unsafe-fetch-8498-status', r.status)
-      return r.text()
-    })
-    .then((data) => {
-      text('.unsafe-fetch-8498', data)
-    })
-    .catch((e) => {
-      console.error(e)
-    })
-
-  // outside of allowed dir with special characters 2 #8498
-  fetch(joinUrlSegments(base, '/src/%252e%252e%252funsafe%252etxt'))
-    .then((r) => {
-      text('.unsafe-fetch-8498-2-status', r.status)
-      return r.text()
-    })
-    .then((data) => {
-      text('.unsafe-fetch-8498-2', data)
-    })
-    .catch((e) => {
-      console.error(e)
-    })
-
-  // outside of allowed dir with import inline
-  fetch(joinUrlSegments(base, '/unsafe.txt?import&inline'))
-    .then((r) => {
-      text('.unsafe-fetch-import-inline-status', r.status)
-    })
-    .catch((e) => {
-      console.error(e)
-    })
-
-  // outside of allowed dir with raw query import
-  fetch(joinUrlSegments(base, '/unsafe.txt?raw?import'))
-    .then((r) => {
-      text('.unsafe-fetch-raw-query-import-status', r.status)
-    })
-    .catch((e) => {
-      console.error(e)
-    })
-
-  // outside of allowed dir with .svg query import
-  fetch(joinUrlSegments(base, '/unsafe.txt?.svg?import'))
-    .then((r) => {
-      text('.unsafe-fetch-query-dot-svg-import-status', r.status)
-    })
-    .catch((e) => {
-      console.error(e)
-    })
-
-  // svg outside of allowed dir, treated as unsafe
-  fetch(joinUrlSegments(base, '/unsafe.svg?import'))
-    .then((r) => {
-      text('.unsafe-fetch-svg-status', r.status)
-    })
-    .catch((e) => {
-      console.error(e)
-    })
-
-  // imported before, should be treated as safe
-  fetch(joinUrlSegments(base, joinUrlSegments('/@fs/', ROOT) + '/safe.json'))
-    .then((r) => {
-      text('.safe-fs-fetch-status', r.status)
-      return r.json()
-    })
-    .then((data) => {
-      text('.safe-fs-fetch', JSON.stringify(data))
-    })
-
-  // imported before with query, should be treated as safe
-  fetch(
-    joinUrlSegments(base, joinUrlSegments('/@fs/', ROOT) + '/safe.json?query'),
-  )
-    .then((r) => {
-      text('.safe-fs-fetch-query-status', r.status)
-      return r.json()
-    })
-    .then((data) => {
-      text('.safe-fs-fetch-query', JSON.stringify(data))
-    })
-
-  // not imported before, outside of root, treated as unsafe
-  fetch(joinUrlSegments(base, joinUrlSegments('/@fs/', ROOT) + '/unsafe.json'))
-    .then((r) => {
-      text('.unsafe-fs-fetch-status', r.status)
-      return r.json()
-    })
-    .then((data) => {
-      text('.unsafe-fs-fetch', JSON.stringify(data))
-    })
-    .catch((e) => {
-      console.error(e)
-    })
-
-  // not imported before, outside of root, treated as unsafe
-  fetch(joinUrlSegments(base, joinUrlSegments('/@fs/', ROOT) + '/unsafe.html'))
-    .then((r) => {
-      text('.unsafe-fs-fetch-html-status', r.status)
-      return r.text()
-    })
-    .then((data) => {
-      text('.unsafe-fs-fetch-html', data)
-    })
-    .catch((e) => {
-      console.error(e)
-    })
-
-  // not imported before, outside of root, treated as unsafe
-  fetch(
-    joinUrlSegments(
-      base,
-      joinUrlSegments('/@fs/', ROOT) + '/unsafe.json?import&raw',
-    ),
-  )
-    .then((r) => {
-      text('.unsafe-fs-fetch-raw-status', r.status)
-      return r.json()
-    })
-    .then((data) => {
-      text('.unsafe-fs-fetch-raw', JSON.stringify(data))
-    })
-    .catch((e) => {
-      console.error(e)
-    })
-
-  fetch(
-    joinUrlSegments(
-      base,
-      joinUrlSegments('/@fs/', ROOT) + '/unsafe.json?import&raw??',
-    ),
-  )
-    .then((r) => {
-      text('.unsafe-fs-fetch-raw-query1-status', r.status)
-      return r.json()
-    })
-    .then((data) => {
-      text('.unsafe-fs-fetch-raw-query1', JSON.stringify(data))
-    })
-    .catch((e) => {
-      console.error(e)
-    })
-
-  fetch(
-    joinUrlSegments(
-      base,
-      joinUrlSegments('/@fs/', ROOT) + '/unsafe.json?import&raw?&',
-    ),
-  )
-    .then((r) => {
-      text('.unsafe-fs-fetch-raw-query2-status', r.status)
-      return r.json()
-    })
-    .then((data) => {
-      text('.unsafe-fs-fetch-raw-query2', JSON.stringify(data))
-    })
-    .catch((e) => {
-      console.error(e)
-    })
-
-  // outside of root inline
-  fetch(
-    joinUrlSegments(
-      base,
-      joinUrlSegments('/@fs/', ROOT) + '/root/unsafe.txt?import&inline',
-    ),
-  )
-    .then((r) => {
-      text('.unsafe-fs-fetch-import-inline-status', r.status)
-    })
-    .catch((e) => {
-      console.error(e)
-    })
-
-  // outside of root inline, faux wasm?init
-  fetch(
-    joinUrlSegments(
-      base,
-      joinUrlSegments('/@fs/', ROOT) +
-        '/root/unsafe.txt?import&?inline=1.wasm?init',
-    ),
-  )
-    .then((r) => {
-      text('.unsafe-fs-fetch-import-inline-wasm-init-status', r.status)
-    })
-    .catch((e) => {
-      console.error(e)
-    })
-
-  // outside of root with relative path after query
-  fetch(
-    joinUrlSegments(
-      base,
-      joinUrlSegments('/@fs/', ROOT) +
-        '/root/src/?/../../unsafe.txt?import&raw',
-    ),
-  )
-    .then((r) => {
-      text('.unsafe-fs-fetch-relative-path-after-query-status', r.status)
-    })
-    .catch((e) => {
-      console.error(e)
-    })
-
-  // outside root with special characters #8498
-  fetch(
-    joinUrlSegments(
-      base,
-      joinUrlSegments('/@fs/', ROOT) +
-        '/root/src/%2e%2e%2f%2e%2e%2funsafe%2ejson',
-    ),
-  )
-    .then((r) => {
-      text('.unsafe-fs-fetch-8498-status', r.status)
-      return r.json()
-    })
-    .then((data) => {
-      text('.unsafe-fs-fetch-8498', JSON.stringify(data))
-    })
-
-  // outside root with special characters 2 #8498
-  fetch(
-    joinUrlSegments(
-      base,
-      joinUrlSegments('/@fs/', ROOT) +
-        '/root/src/%252e%252e%252f%252e%252e%252funsafe%252ejson',
-    ),
-  )
-    .then((r) => {
-      text('.unsafe-fs-fetch-8498-2-status', r.status)
-      return r.json()
-    })
-    .then((data) => {
-      text('.unsafe-fs-fetch-8498-2', JSON.stringify(data))
-    })
-
-  // not imported before, inside root with special characters, treated as safe
-  fetch(
-    joinUrlSegments(
-      base,
-      joinUrlSegments('/@fs/', ROOT) +
-        '/root/src/special%20characters%20%C3%A5%C3%A4%C3%B6/safe.json',
-    ),
-  )
-    .then((r) => {
-      text('.safe-fs-fetch-special-characters-status', r.status)
-      return r.json()
-    })
-    .then((data) => {
-      text('.safe-fs-fetch-special-characters', JSON.stringify(data))
-    })
-
-  // .env, denied by default
-  fetch(
-    joinUrlSegments(base, joinUrlSegments('/@fs/', ROOT) + '/root/src/.env'),
-  )
-    .then((r) => {
-      text('.unsafe-dotenv', r.status)
-    })
-    .catch((e) => {
-      console.error(e)
-    })
-
-  // .env, for case insensitive file systems
-  fetch(
-    joinUrlSegments(base, joinUrlSegments('/@fs/', ROOT) + '/root/src/.EnV'),
-  )
-    .then((r) => {
-      text('.unsafe-dotEnV-casing', r.status)
-    })
-    .catch((e) => {
-      console.error(e)
-    })
-
-  // .env with .svg?.wasm?init
-  fetch(
-    joinUrlSegments(
-      base,
-      joinUrlSegments('/@fs/', ROOT) + '/root/src/.env?.svg?.wasm?init',
-    ),
-  )
-    .then((r) => {
-      text('.unsafe-dotenv-query-dot-svg-wasm-init', r.status)
-    })
-    .catch((e) => {
-      console.error(e)
-    })
+      text(`${baseSelector}-path`, resolvedPath)
+      fetch(resolvedPath)
+        .then((r) => {
+          text(`${baseSelector}-status`, r.status)
+          return r.text()
+        })
+        .then((data) => {
+          text(`${baseSelector}-content`, data)
+        })
+        .catch((e) => {
+          console.error(e)
+        })
+    }
+  }
 
   function text(sel, text) {
     document.querySelector(sel).textContent = text
