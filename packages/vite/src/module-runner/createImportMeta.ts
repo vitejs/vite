@@ -25,6 +25,7 @@ export function createDefaultImportMeta(
     resolve(_id: string, _parent?: string) {
       throw new Error('[module runner] "import.meta.resolve" is not supported.')
     },
+    main: false,
     // should be replaced during transformation
     glob() {
       throw new Error(
@@ -32,8 +33,7 @@ export function createDefaultImportMeta(
           `file transformation. Make sure to reference it by the full name.`,
       )
     },
-    // @types/node adds `main` to `import.meta`, but we don't add that for the defaultImportMeta
-  } satisfies Omit<ModuleRunnerImportMeta, 'main'> as any
+  }
 }
 
 /**
