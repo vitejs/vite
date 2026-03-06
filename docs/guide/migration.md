@@ -138,7 +138,7 @@ $ deno add -D npm:@rolldown/plugin-babel npm:@babel/plugin-proposal-decorators
 :::
 
 ```ts [vite.config.ts]
-import { defineConfig, withFilter } from 'vite'
+import { defineConfig } from 'vite'
 import babel from '@rolldown/plugin-babel'
 
 function decoratorPreset(options: Record<string, unknown>) {
