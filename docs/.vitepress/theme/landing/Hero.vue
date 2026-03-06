@@ -14,11 +14,11 @@ if (typeof document !== 'undefined') {
 }
 
 const installTabs = [
-  { label: 'npm', code: 'npm create vite@latest', prefix: '$' },
-  { label: 'Yarn', code: 'yarn create vite', prefix: '$' },
-  { label: 'pnpm', code: 'pnpm create vite', prefix: '$' },
-  { label: 'Bun', code: 'bun create vite', prefix: '$' },
-  { label: 'Deno', code: 'deno init --npm vite', prefix: '$' },
+  { label: 'npm', code: 'npm create vite@latest', prefix: '$ ' },
+  { label: 'Yarn', code: 'yarn create vite', prefix: '$ ' },
+  { label: 'pnpm', code: 'pnpm create vite', prefix: '$ ' },
+  { label: 'Bun', code: 'bun create vite', prefix: '$ ' },
+  { label: 'Deno', code: 'deno init --npm vite', prefix: '$ ' },
 ]
 </script>
 
