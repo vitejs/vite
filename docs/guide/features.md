@@ -776,10 +776,12 @@ To deploy CSP, certain directives or configs must be set due to Vite's internals
 
 When [`html.cspNonce`](/config/shared-options#html-cspnonce) is set, Vite adds a nonce attribute with the specified value to any `<script>` and `<style>` tags, as well as `<link>` tags for stylesheets and module preloading. Additionally, when this option is set, Vite will inject a meta tag (`<meta property="csp-nonce" nonce="PLACEHOLDER" />`).
 
-The nonce value of a meta tag with `property="csp-nonce"` will be used by Vite whenever necessary during both dev and after build.
+::: tip Runtime nonce guidance
+This value is a placeholder only. Your server must generate a cryptographically strong random nonce per request, place it in the CSP header, and replace the placeholder in the HTML before sending it. See the full guidance, limitations, and static hosting alternatives in the [`html.cspNonce` docs](/config/shared-options#htmlcspnonce).
+:::
 
-:::warning
-Ensure that you replace the placeholder with a unique value for each request. This is important to prevent bypassing a resource's policy, which can otherwise be easily done.
+::: info Static hosting limitations
+If you deploy pure static files (e.g. to an object store/CDN with immutable caching) and cannot mutate HTML per request, a nonce-based CSP is usually incompatible because the HTML would need to vary per request to carry the fresh nonce. In such cases use a hash-based CSP (hashes of inline snippets) or remove inline code. Community plugins like `vite-plugin-csp-guard` illustrate a hash approach. See the additional guidance in [`html.cspNonce` docs](/config/shared-options#htmlcspnonce).
 :::
 
 ### [`data:`](<https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Content-Security-Policy/Sources#scheme-source:~:text=schemes%20(not%20recommended).-,data%3A,-Allows%20data%3A>)
