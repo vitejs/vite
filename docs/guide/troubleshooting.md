@@ -231,6 +231,100 @@ This is because Vite does not automatically polyfill Node.js modules.
 
 We recommend avoiding Node.js modules for browser code to reduce the bundle size, although you can add polyfills manually. If the module is imported from a third-party library (that's meant to be used in the browser), it's advised to report the issue to the respective library.
 
+#### Adding Node.js Polyfills
+
+Some third-party libraries depend on Node.js built-in modules like `buffer`, `process`, or `stream`. If you need to use such libraries in the browser, you can add polyfills using the following approaches.
+
+##### Using `@rolldown/plugin-node-polyfills`
+
+Vite uses [Rolldown](https://rolldown.rs/) under the hood, which provides a dedicated polyfills plugin:
+
+```bash
+npm install --save-dev @rolldown/plugin-node-polyfills
+```
+
+```js [vite.config.js]
+import { defineConfig } from 'vite'
+import nodePolyfills from '@rolldown/plugin-node-polyfills'
+
+export default defineConfig({
+  plugins: [nodePolyfills()],
+})
+```
+
+This plugin provides polyfills for most Node.js built-in modules. The following modules are supported:
+
+| Full Support                                                                                                                     | Partial Support                                                             | Mock Only                                                                              |
+| -------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------- | -------------------------------------------------------------------------------------- |
+| `buffer`, `events`, `path`, `querystring`, `string_decoder`, `punycode`, `url`, `assert`, `constants`, `timers`, `tty`, `domain` | `process`, `stream`, `util`, `http`, `https`, `os`, `console`, `vm`, `zlib` | `dns`, `dgram`, `child_process`, `cluster`, `module`, `net`, `readline`, `repl`, `tls` |
+
+::: tip
+Modules marked as "Partial Support" have some limitations in browser environments. Modules marked as "Mock Only" return empty mocks and should be avoided if possible.
+:::
+
+For more details, see the [plugin documentation](https://github.com/rolldown/rolldown-plugin-node-polyfills).
+
+##### Using `vite-plugin-node-polyfills`
+
+Alternatively, you can use the community-maintained [`vite-plugin-node-polyfills`](https://github.com/davidmyersdev/vite-plugin-node-polyfills):
+
+```bash
+npm install --save-dev vite-plugin-node-polyfills
+```
+
+```js [vite.config.js]
+import { defineConfig } from 'vite'
+import { nodePolyfills } from 'vite-plugin-node-polyfills'
+
+export default defineConfig({
+  plugins: [nodePolyfills()],
+})
+```
+
+##### Manual Polyfills
+
+For finer control, you can polyfill specific modules manually using [`resolve.alias`](/config/shared-options#resolve-alias) and [`define`](/config/shared-options#define):
+
+```js [vite.config.js]
+import { defineConfig } from 'vite'
+
+export default defineConfig({
+  define: {
+    'process.env': {},
+    global: 'globalThis',
+  },
+  resolve: {
+    alias: {
+      buffer: 'buffer/',
+    },
+  },
+  optimizeDeps: {
+    include: ['buffer'],
+  },
+})
+```
+
+You'll also need to install the polyfill packages:
+
+```bash
+npm install --save-dev buffer
+```
+
+Common polyfill packages:
+
+| Node.js Module | Polyfill Package                                                   |
+| -------------- | ------------------------------------------------------------------ |
+| `buffer`       | [`buffer`](https://www.npmjs.com/package/buffer)                   |
+| `process`      | [`process`](https://www.npmjs.com/package/process)                 |
+| `stream`       | [`readable-stream`](https://www.npmjs.com/package/readable-stream) |
+| `util`         | [`util`](https://www.npmjs.com/package/util)                       |
+| `events`       | [`events`](https://www.npmjs.com/package/events)                   |
+| `path`         | [`path-browserify`](https://www.npmjs.com/package/path-browserify) |
+
+::: warning
+Some modules like `fs` and `crypto` have limited browser equivalents. `fs` cannot be fully polyfilled in the browser, and `crypto` should use the [Web Crypto API](https://developer.mozilla.org/en-US/docs/Web/API/Web_Crypto_API) instead of a polyfill when possible.
+:::
+
 ### Syntax Error / Type Error happens
 
 Vite cannot handle and does not support code that only runs on non-strict mode (sloppy mode). This is because Vite uses ESM and it is always [strict mode](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Strict_mode) inside ESM.
