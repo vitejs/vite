@@ -26,6 +26,7 @@ const testIds = [
   'unsafe-relative-path-after-query',
   'unsafe-dotenv',
   'unsafe-dotenv-casing',
+  'unsafe-dotenv-raw',
   'unsafe-dotenv-query-dot-svg-wasm-init',
 ]
 

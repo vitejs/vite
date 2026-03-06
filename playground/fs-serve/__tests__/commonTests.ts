@@ -218,6 +218,12 @@ describe.runIf(isServe)('matrix', () => {
       status: ['403', '404'],
     },
     {
+      name: 'denied .env with raw query',
+      testId: 'unsafe-dotenv-raw',
+      content: /403 Restricted/,
+      status: '403',
+    },
+    {
       name: 'denied env with ?.svg?.wasm?init',
       testId: 'unsafe-dotenv-query-dot-svg-wasm-init',
       content: /403 Restricted/,
