@@ -295,12 +295,24 @@ export async function startDefaultServe(): Promise<void> {
         resolvedConfig = config
       },
     })
-    const buildConfig = mergeConfig(
-      await loadConfig({ command: 'build', mode: 'production' }),
-      {
-        plugins: [resolvedPlugin()],
-      },
-    )
+    const loadedConfig = await loadConfig({
+      command: 'build',
+      mode: 'production',
+    })
+    // During tests we edit the files too fast and sometimes the native file
+    // watcher misses change events, so enforce polling for consistency when
+    // watch mode is enabled (same rationale as server.watch above).
+    if (loadedConfig.build?.watch) {
+      loadedConfig.build.watch = mergeConfig(loadedConfig.build.watch, {
+        chokidar: {
+          usePolling: true,
+          interval: 100,
+        },
+      })
+    }
+    const buildConfig = mergeConfig(loadedConfig, {
+      plugins: [resolvedPlugin()],
+    })
     if (buildConfig.builder) {
       const builder = await createBuilder(buildConfig)
       await builder.buildApp()
@@ -337,21 +349,16 @@ export async function startDefaultServe(): Promise<void> {
 /**
  * Send the rebuild complete message in build watch
  */
-export async function notifyRebuildComplete(
-  watcher: RolldownWatcher,
-): Promise<void> {
-  let resolveFn: undefined | (() => void)
-  const callback = (event: RolldownWatcherEvent): void => {
-    if (event.code === 'END') {
-      resolveFn?.()
+export function notifyRebuildComplete(watcher: RolldownWatcher): Promise<void> {
+  return new Promise<void>((resolve) => {
+    const callback = (event: RolldownWatcherEvent): void => {
+      if (event.code === 'END') {
+        watcher.off('event', callback)
+        resolve()
+      }
     }
-  }
-  watcher.on('event', callback)
-  await new Promise<void>((resolve) => {
-    resolveFn = resolve
+    watcher.on('event', callback)
   })
-
-  watcher.off('event', callback)
 }
 
 export function createInMemoryLogger(logs: string[]): Logger {
