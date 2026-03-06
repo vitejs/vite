@@ -23,7 +23,6 @@ describe('resolveEsbuildTranspileOptions', () => {
       'es',
     )
     expect(options).toEqual({
-      charset: 'utf8',
       loader: 'js',
       target: 'es2020',
       format: 'esm',
@@ -67,7 +66,6 @@ describe('resolveEsbuildTranspileOptions', () => {
       'es',
     )
     expect(options).toEqual({
-      charset: 'utf8',
       loader: 'js',
       target: undefined,
       format: 'esm',
@@ -98,7 +96,6 @@ describe('resolveEsbuildTranspileOptions', () => {
       'es',
     )
     expect(options).toEqual({
-      charset: 'utf8',
       loader: 'js',
       target: 'es2020',
       format: 'esm',
@@ -131,7 +128,6 @@ describe('resolveEsbuildTranspileOptions', () => {
       'es',
     )
     expect(options).toEqual({
-      charset: 'utf8',
       loader: 'js',
       target: undefined,
       format: 'esm',
@@ -164,7 +160,6 @@ describe('resolveEsbuildTranspileOptions', () => {
       'cjs',
     )
     expect(options).toEqual({
-      charset: 'utf8',
       loader: 'js',
       target: undefined,
       format: 'cjs',
@@ -196,7 +191,6 @@ describe('resolveEsbuildTranspileOptions', () => {
       'es',
     )
     expect(options).toEqual({
-      charset: 'utf8',
       loader: 'js',
       target: undefined,
       format: 'esm',
@@ -232,7 +226,6 @@ describe('resolveEsbuildTranspileOptions', () => {
       'cjs',
     )
     expect(options).toEqual({
-      charset: 'utf8',
       loader: 'js',
       target: undefined,
       format: 'cjs',
@@ -401,10 +394,19 @@ describe('transformWithEsbuild', () => {
 describe('injectEsbuildHelpers', () => {
   test('injects helpers in IIFE format', () => {
     const esbuildCode =
-      'var $=function(){};var MyLib=function(){"use strict";return 42;}'
+      'var $=function(){};var MyLib=(function(){"use strict";return 42;})()'
     const result = injectEsbuildHelpers(esbuildCode, 'iife')
     expect(result).toBe(
-      'var MyLib=function(){"use strict";var $=function(){};return 42;}',
+      'var MyLib=(function(){"use strict";var $=function(){};return 42;})()',
+    )
+  })
+
+  test('injects helpers in IIFE format (pre esbuild 0.25.9)', () => {
+    const esbuildCode =
+      'var $=function(){};var MyLib=function(){"use strict";return 42;}()'
+    const result = injectEsbuildHelpers(esbuildCode, 'iife')
+    expect(result).toBe(
+      'var MyLib=function(){"use strict";var $=function(){};return 42;}()',
     )
   })
 
@@ -419,7 +421,7 @@ describe('injectEsbuildHelpers', () => {
 
   test('handles helpers with special characters', () => {
     const esbuildCode =
-      'var $$=function(){};var MyLib=function(){"use strict";return 42;}'
+      'var $$=function(){};var MyLib=(function(){"use strict";return 42;})()'
     const result = injectEsbuildHelpers(esbuildCode, 'iife')
     expect(result).toContain('"use strict";var $$=function(){};')
   })

@@ -1,6 +1,6 @@
 {
   "include": ["**/vite*config*", "**/*.ts"],
-  "exclude": ["**/dist/**"],
+  "exclude": ["**/dist/**", "./legacy/**", "./resolve-tsconfig-paths/**"],
   "compilerOptions": {
     "checkJs": true,
     "target": "ES2023",

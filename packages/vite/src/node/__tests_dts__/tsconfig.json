@@ -1,0 +1,9 @@
+{
+  "extends": "../../../tsconfig.base.json",
+  "compilerOptions": {
+    "isolatedDeclarations": false,
+    "declaration": false
+  },
+  "include": ["../", "../../types"],
+  "exclude": ["../**/__tests__"]
+}

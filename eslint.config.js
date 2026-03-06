@@ -39,6 +39,7 @@ export default defineConfig(
       parserOptions: {
         sourceType: 'module',
         ecmaVersion: 2022,
+        isolatedDeclarations: true,
         project: shouldTypeCheck
           ? [
               './packages/*/tsconfig.json',
@@ -47,7 +48,7 @@ export default defineConfig(
           : undefined,
       },
       globals: {
-        ...globals.es2021,
+        ...globals.es2023,
         ...globals.node,
       },
     },
@@ -98,6 +99,8 @@ export default defineConfig(
         {
           allowModules: [
             'vite',
+            'esbuild',
+            'rolldown',
             'less',
             'sass',
             'sass-embedded',

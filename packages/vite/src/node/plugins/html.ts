@@ -6,7 +6,7 @@ import type {
   OutputChunk,
   RollupError,
   SourceMapInput,
-} from 'rollup'
+} from 'rolldown'
 import MagicString from 'magic-string'
 import colors from 'picocolors'
 import type {
@@ -84,15 +84,21 @@ export const isHTMLRequest = (request: string): boolean =>
   htmlLangRE.test(request)
 
 // HTML Proxy Caches are stored by config -> filePath -> index
-export const htmlProxyMap = new WeakMap<
+export const htmlProxyMap: WeakMap<
   ResolvedConfig,
-  Map<string, Array<{ code: string; map?: SourceMapInput }>>
->()
+  Map<
+    string,
+    {
+      code: string
+      map?: SourceMapInput
+    }[]
+  >
+> = new WeakMap()
 
 // HTML Proxy Transform result are stored by config
 // `${hash(importer)}_${query.index}` -> transformed css code
 // PS: key like `hash(/vite/playground/assets/index.html)_1`)
-export const htmlProxyResult = new Map<string, string>()
+export const htmlProxyResult: Map<string, string> = new Map()
 
 export function htmlInlineProxyPlugin(config: ResolvedConfig): Plugin {
   // Should do this when `constructor` rather than when `buildStart`,
@@ -163,10 +169,10 @@ const noInlineLinkRels = new Set([
   'manifest',
 ])
 
-export const isAsyncScriptMap = new WeakMap<
+export const isAsyncScriptMap: WeakMap<
   ResolvedConfig,
   Map<string, boolean>
->()
+> = new WeakMap()
 
 export function nodeIsElement(
   node: DefaultTreeAdapterMap['node'],
@@ -498,9 +504,10 @@ export function buildHtmlPlugin(config: ResolvedConfig): Plugin {
                       if (moduleInfo) {
                         moduleInfo.moduleSideEffects = true
                       } else if (!resolved.external) {
-                        return this.load(resolved).then((mod) => {
-                          mod.moduleSideEffects = true
-                        })
+                        return this.load({
+                          ...resolved,
+                          moduleSideEffects: true,
+                        }).then(() => {})
                       }
                     }),
                   )
@@ -1082,6 +1089,9 @@ export function extractImportExpressionFromClassicScript(
 
 export interface HtmlTagDescriptor {
   tag: string
+  /**
+   * attribute values will be escaped automatically if needed
+   */
   attrs?: Record<string, string | boolean | undefined>
   children?: string | HtmlTagDescriptor[]
   /**
@@ -1410,12 +1420,12 @@ export async function applyHtmlTransforms(
   return html
 }
 
-const importRE = /\bimport\s*(?:"[^"]*[^\\]"|'[^']*[^\\]');*/g
-const commentRE = /\/\*[\s\S]*?\*\/|\/\/.*$/gm
+const entirelyImportRE =
+  /^(?:import\s*(?:"[^"\n]*[^\\\n]"|'[^'\n]*[^\\\n]');*|\/\*[\s\S]*?\*\/|\/\/.*[$\n])*$/
 function isEntirelyImport(code: string) {
   // only consider "side-effect" imports, which match <script type=module> semantics exactly
   // the regexes will remove too little in some exotic cases, but false-negatives are alright
-  return !code.replace(importRE, '').replace(commentRE, '').trim().length
+  return entirelyImportRE.test(code.trim())
 }
 
 function getBaseInHTML(urlRelativePath: string, config: ResolvedConfig) {

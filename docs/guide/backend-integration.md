@@ -3,7 +3,7 @@
 :::tip Note
 If you want to serve the HTML using a traditional backend (e.g. Rails, Laravel) but use Vite for serving assets, check for existing integrations listed in [Awesome Vite](https://github.com/vitejs/awesome-vite#integrations-with-backends).
 
-If you need a custom integration, you can follow the steps in this guide to configure it manually
+If you need a custom integration, you can follow the steps in this guide to configure it manually.
 :::
 
 1. In your Vite config, configure the entry and enable build manifest:
@@ -64,7 +64,7 @@ If you need a custom integration, you can follow the steps in this guide to conf
 
 3. For production, after running `vite build`, a `.vite/manifest.json` file will be generated alongside other asset files. An example manifest file looks like this:
 
-   ```json [.vite/manifest.json]
+   ```json [.vite/manifest.json] style:max-height:400px
    {
      "_shared-B7PI925R.js": {
        "file": "assets/shared-B7PI925R.js",
@@ -104,19 +104,76 @@ If you need a custom integration, you can follow the steps in this guide to conf
    }
    ```
 
+   The manifest maps source files to their build outputs and dependencies:
+
+   ```dot
+   digraph manifest {
+     rankdir=TB
+     node [shape=box style="rounded,filled" fontname="Arial" fontsize=10 margin="0.2,0.1" fontcolor="${#3c3c43|#ffffff}" color="${#c2c2c4|#3c3f44}"]
+     edge [color="${#67676c|#98989f}" fontname="Arial" fontsize=9 fontcolor="${#67676c|#98989f}"]
+     bgcolor="transparent"
+
+     foo [label="views/foo.js\n(entry)" fillcolor="${#e9eaff|#222541}"]
+     bar [label="views/bar.js\n(entry)" fillcolor="${#e9eaff|#222541}"]
+     shared [label="_shared-B7PI925R.js\n(common chunk)" fillcolor="${#f2ecfc|#2c273e}"]
+     baz [label="baz.js\n(dynamic import)" fillcolor="${#fcf4dc|#38301a}"]
+     foocss [label="foo.css" shape=ellipse fillcolor="${#fde4e8|#3a1d27}"]
+     sharedcss [label="shared.css" shape=ellipse fillcolor="${#fde4e8|#3a1d27}"]
+     logo [label="logo.svg\n(asset)" shape=ellipse fillcolor="${#def5ed|#15312d}"]
+
+     foo -> shared [label="imports"]
+     bar -> shared [label="imports"]
+     bar -> baz [label="dynamicImports" style=dashed]
+     foo -> foocss [label="css"]
+     shared -> sharedcss [label="css"]
+   }
+   ```
+
    The manifest has a `Record<name, chunk>` structure where each chunk follows the `ManifestChunk` interface:
 
-   ```ts
+   ```ts style:max-height:400px
    interface ManifestChunk {
+     /**
+      * The input file name of this chunk / asset if known
+      */
      src?: string
+     /**
+      * The output file name of this chunk / asset
+      */
      file: string
+     /**
+      * The list of CSS files imported by this chunk
+      */
      css?: string[]
+     /**
+      * The list of asset files imported by this chunk, excluding CSS files
+      */
      assets?: string[]
+     /**
+      * Whether this chunk or asset is an entry point
+      */
      isEntry?: boolean
+     /**
+      * The name of this chunk / asset if known
+      */
      name?: string
-     names?: string[]
+     /**
+      * Whether this chunk is a dynamic entry point
+      *
+      * This field is only present in JS chunks.
+      */
      isDynamicEntry?: boolean
+     /**
+      * The list of statically imported chunks by this chunk
+      *
+      * The values are the keys of the manifest. This field is only present in JS chunks.
+      */
      imports?: string[]
+     /**
+      * The list of dynamically imported chunks by this chunk
+      *
+      * The values are the keys of the manifest. This field is only present in JS chunks.
+      */
      dynamicImports?: string[]
    }
    ```
@@ -128,7 +185,7 @@ If you need a custom integration, you can follow the steps in this guide to conf
    - **Asset chunks**: Generated from imported assets like images, fonts. Their key is the relative src path from project root.
    - **CSS files**: When [`build.cssCodeSplit`](/config/build-options.md#build-csscodesplit) is `false`, a single CSS file is generated with the key `style.css`. When `build.cssCodeSplit` is not `false`, the key is generated similar to JS chunks (i.e. entry chunks will not have `_` prefix and non-entry chunks will have `_` prefix).
 
-   Chunks will contain information on their static and dynamic imports (both are keys that map to the corresponding chunk in the manifest), and also their corresponding CSS and asset files (if any).
+   JS chunks (chunks other than assets or CSS) will contain information on their static and dynamic imports (both are keys that map to the corresponding chunk in the manifest). Chunks also list their corresponding CSS and asset files if they have any.
 
 4. You can use this file to render links or preload directives with hashed filenames.
 

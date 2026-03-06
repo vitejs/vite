@@ -4,11 +4,29 @@ import { defineConfig } from 'vite'
 import type { Plugin } from 'vite'
 import { TestCssLinkPlugin } from './css-link/plugin'
 
-export default defineConfig({
+export default defineConfig(({ command }) => ({
   experimental: {
     hmrPartialAccept: true,
   },
   build: {
+    rollupOptions: {
+      input: [
+        path.resolve(import.meta.dirname, './index.html'),
+        ...(command === 'build'
+          ? []
+          : [path.resolve(import.meta.dirname, './missing-import/index.html')]),
+        path.resolve(
+          import.meta.dirname,
+          './unicode-path/中文-にほんご-한글-🌕🌖🌗/index.html',
+        ),
+        path.resolve(import.meta.dirname, './counter/index.html'),
+        path.resolve(
+          import.meta.dirname,
+          './self-accept-within-circular/index.html',
+        ),
+        path.resolve(import.meta.dirname, './css-deps/index.html'),
+      ],
+    },
     assetsInlineLimit(filePath) {
       if (filePath.endsWith('logo-no-inline.svg')) {
         return false
@@ -39,8 +57,9 @@ export default defineConfig({
     transformCountPlugin(),
     watchCssDepsPlugin(),
     TestCssLinkPlugin(),
+    hotEventsPlugin(),
   ],
-})
+}))
 
 function virtualPlugin(): Plugin {
   let num = 0
@@ -91,12 +110,34 @@ function watchCssDepsPlugin(): Plugin {
       // replace the `replaced` identifier in the CSS file with the adjacent
       // `dep.js` file's `color` variable.
       if (id.includes('css-deps/main.css')) {
-        const depPath = path.resolve(__dirname, './css-deps/dep.js')
+        const depPath = path.resolve(import.meta.dirname, './css-deps/dep.js')
         const dep = await fs.readFile(depPath, 'utf-8')
         const color = dep.match(/color = '(.+?)'/)[1]
         this.addWatchFile(depPath)
         return code.replace('replaced', color)
       }
+    },
+  }
+}
+
+function hotEventsPlugin(): Plugin {
+  return {
+    name: 'hot-events',
+    configureServer(server) {
+      let connectCount = 0
+      let disconnectCount = 0
+      const clientEnv = server.environments.client
+      clientEnv.hot.on('vite:client:connect', () => connectCount++)
+      clientEnv.hot.on('vite:client:disconnect', () => disconnectCount++)
+
+      server.middlewares.use((req, res, next) => {
+        if (req.url === '/hot-events-counts') {
+          res.setHeader('Content-Type', 'application/json')
+          res.end(JSON.stringify({ connectCount, disconnectCount }))
+          return
+        }
+        next()
+      })
     },
   }
 }

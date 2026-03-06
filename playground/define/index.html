@@ -78,6 +78,12 @@
   <code class="optional-env"></code>
 </p>
 
+<h2>Env import with query parameters works correctly</h2>
+<p>
+  /@vite/env?foo should be transformed
+  <code class="env-with-query"></code>
+</p>
+
 <script>
   // inject __VITE_SOME_IDENTIFIER__ to test if it's replaced
   window.__VITE_SOME_IDENTIFIER__ = true
@@ -163,6 +169,15 @@
 
   import optionalEnv from './optional-env.js'
   text('.optional-env', optionalEnv)
+
+  // replaced by a plugin
+  import(__VITE_ENV_WITH_QUERY__)
+    .then(() => {
+      text('.env-with-query', 'success')
+    })
+    .catch((err) => {
+      text('.env-with-query', `error: ${err.message}`)
+    })
 </script>
 
 <style>

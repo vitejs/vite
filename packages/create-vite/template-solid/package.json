@@ -9,10 +9,10 @@
     "preview": "vite preview"
   },
   "dependencies": {
-    "solid-js": "^1.9.9"
+    "solid-js": "^1.9.11"
   },
   "devDependencies": {
-    "vite": "^7.1.9",
-    "vite-plugin-solid": "^2.11.9"
+    "vite": "^7.3.1",
+    "vite-plugin-solid": "^2.11.10"
   }
 }

@@ -50,7 +50,11 @@ export function optimizedDepsPlugin(): Plugin {
         // Search in both the currently optimized and newly discovered deps
         const info = optimizedDepInfoFromFile(metadata, file)
         if (info) {
-          if (browserHash && info.browserHash !== browserHash) {
+          if (
+            browserHash &&
+            info.browserHash !== browserHash &&
+            !environment.config.optimizeDeps.ignoreOutdatedRequests
+          ) {
             throwOutdatedRequest(id)
           }
           try {
@@ -65,7 +69,10 @@ export function optimizedDepsPlugin(): Plugin {
           const newMetadata = depsOptimizer.metadata
           if (metadata !== newMetadata) {
             const currentInfo = optimizedDepInfoFromFile(newMetadata!, file)
-            if (info.browserHash !== currentInfo?.browserHash) {
+            if (
+              info.browserHash !== currentInfo?.browserHash &&
+              !environment.config.optimizeDeps.ignoreOutdatedRequests
+            ) {
               throwOutdatedRequest(id)
             }
           }
@@ -77,7 +84,10 @@ export function optimizedDepsPlugin(): Plugin {
         try {
           return await fsp.readFile(file, 'utf-8')
         } catch {
-          if (browserHash) {
+          if (
+            browserHash &&
+            !environment.config.optimizeDeps.ignoreOutdatedRequests
+          ) {
             // Outdated optimized files loaded after a rerun
             throwOutdatedRequest(id)
           }

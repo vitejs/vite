@@ -13,15 +13,12 @@ async function createServer(inlineConfig?: InlineConfig): Promise<ViteDevServer>
 **Example Usage:**
 
 ```ts twoslash
-import { fileURLToPath } from 'node:url'
 import { createServer } from 'vite'
-
-const __dirname = fileURLToPath(new URL('.', import.meta.url))
 
 const server = await createServer({
   // any valid user config options, plus `mode` and `configFile`
   configFile: false,
-  root: __dirname,
+  root: import.meta.dirname,
   server: {
     port: 1337,
   },
@@ -210,13 +207,10 @@ async function build(
 
 ```ts twoslash [vite.config.js]
 import path from 'node:path'
-import { fileURLToPath } from 'node:url'
 import { build } from 'vite'
 
-const __dirname = fileURLToPath(new URL('.', import.meta.url))
-
 await build({
-  root: path.resolve(__dirname, './project'),
+  root: path.resolve(import.meta.dirname, './project'),
   base: '/foo/',
   build: {
     rollupOptions: {
@@ -389,6 +383,21 @@ function normalizePath(id: string): string
 
 Normalizes a path to interoperate between Vite plugins.
 
+## `transformWithOxc`
+
+**Type Signature:**
+
+```ts
+async function transformWithOxc(
+  code: string,
+  filename: string,
+  options?: OxcTransformOptions,
+  inMap?: object,
+): Promise<Omit<OxcTransformResult, 'errors'> & { warnings: string[] }>
+```
+
+Transform JavaScript or TypeScript with [Oxc Transformer](https://oxc.rs/docs/guide/usage/transformer). Useful for plugins that prefer matching Vite's internal Oxc Transformer transform.
+
 ## `transformWithEsbuild`
 
 **Type Signature:**
@@ -401,6 +410,8 @@ async function transformWithEsbuild(
   inMap?: object,
 ): Promise<ESBuildTransformResult>
 ```
+
+**Deprecated:** Use `transformWithOxc` instead.
 
 Transform JavaScript or TypeScript with esbuild. Useful for plugins that prefer matching Vite's internal esbuild transform.
 

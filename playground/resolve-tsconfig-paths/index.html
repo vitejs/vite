@@ -1,0 +1,33 @@
+<h1>Resolve: tsconfig paths</h1>
+
+<h2>Import from .ts</h2>
+<p class="ts"></p>
+
+<h2>Import from .js</h2>
+<p class="js"></p>
+
+<h2>Fallback works</h2>
+<p class="fallback"></p>
+
+<h2>Nested tsconfig.json & references / include works</h2>
+<p class="nested-a"></p>
+<p class="nested-b"></p>
+
+<script type="module">
+  function text(selector, text) {
+    document.querySelector(selector).textContent = text
+  }
+
+  import ts from './src/ts.ts'
+  text('.ts', ts)
+
+  import js from './src/js.js'
+  text('.js', js)
+
+  import fallback from '@fallback/fallback'
+  text('.fallback', fallback)
+
+  import { valueA, valueB } from './src/nested/index.ts'
+  text('.nested-a', valueA)
+  text('.nested-b', valueB)
+</script>

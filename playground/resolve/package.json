@@ -16,17 +16,16 @@
     "#star/*": "./imports-path/star/*",
     "#slash/": "./imports-path/slash/",
     "#other-pkg-slash/": "@vitejs/test-resolve-imports-pkg/nest/",
-    "#query": "./imports-path/query.json"
+    "#query": "./imports-path/query.json",
+    "#dot-prefixed": "./imports-path/.dot-prefixed/index.js",
+    "#/*": "./imports-path/root-slash/*"
   },
   "dependencies": {
-    "@babel/runtime": "^7.28.4",
-    "es5-ext": "0.10.64",
+    "@babel/runtime": "^7.28.6",
     "normalize.css": "^8.0.1",
     "@vitejs/test-require-pkg-with-module-field": "link:./require-pkg-with-module-field",
     "@vitejs/test-resolve-browser-field": "link:./browser-field",
     "@vitejs/test-resolve-browser-module-field1": "link:./browser-module-field1",
-    "@vitejs/test-resolve-browser-module-field2": "link:./browser-module-field2",
-    "@vitejs/test-resolve-browser-module-field3": "link:./browser-module-field3",
     "@vitejs/test-resolve-custom-condition": "link:./custom-condition",
     "@vitejs/test-resolve-custom-main-field": "link:./custom-main-field",
     "@vitejs/test-resolve-custom-browser-main-field": "link:./custom-browser-main-field",
@@ -41,6 +40,7 @@
     "@vitejs/test-resolve-linked": "workspace:*",
     "@vitejs/test-resolve-imports-pkg": "link:./imports-path/other-pkg",
     "@vitejs/test-resolve-sharp-dir": "link:./sharp-dir",
+    "@vitejs/test-resolve-sharp-dir-nested": "file:./sharp-dir-nested",
     "@vitejs/test-resolve-side-effects-glob": "link:./side-effects-glob",
     "@vitejs/test-utf8-bom-package": "link:./utf8-bom-package"
   }

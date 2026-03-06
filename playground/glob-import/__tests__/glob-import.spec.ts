@@ -262,7 +262,7 @@ test('escapes special chars in globs without mangling user supplied glob suffix'
   // index.html has a script that loads all these glob.js files and prints the globs that returned the expected result
   // this test finally compares the printed output of index.js with the list of directories with special chars,
   // expecting that they all work
-  const files = await readdir(path.join(__dirname, '..', 'escape'), {
+  const files = await readdir(path.join(import.meta.dirname, '..', 'escape'), {
     withFileTypes: true,
   })
   const expectedNames = files
@@ -299,4 +299,12 @@ test('import base glob raw', async () => {
   await expect
     .poll(async () => await page.textContent('.result-base'))
     .toBe(JSON.stringify(baseRawResult, null, 2))
+})
+
+test('import.meta.glob and dynamic import vars transformations should be visible to post transform plugins', async () => {
+  await expect
+    .poll(async () => await page.textContent('.transform-visibility'))
+    .toBe(
+      JSON.stringify({ globTransformed: true, dynamicImportTransformed: true }),
+    )
 })

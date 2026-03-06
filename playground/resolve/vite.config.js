@@ -8,6 +8,9 @@ const virtualId = '\0' + virtualFile
 const virtualFile9036 = 'virtual:file-9036.js'
 const virtualId9036 = '\0' + virtualFile9036
 
+const virtualFileHasImport = 'virtual:file-has-import.js'
+const virtualIdHasImport = '/file-has-import.js'
+
 const customVirtualFile = '@custom-virtual-file'
 
 const virtualFileWithScheme = 'virtual-with-scheme'
@@ -17,12 +20,16 @@ const generatedContentVirtualFile = '@generated-content-virtual-file'
 const generatedContentImports = [
   {
     specifier: normalizePath(
-      path.resolve(__dirname, './drive-relative.js').replace(/^[a-zA-Z]:/, ''),
+      path
+        .resolve(import.meta.dirname, './drive-relative.js')
+        .replace(/^[a-zA-Z]:/, ''),
     ),
     elementQuery: '.drive-relative',
   },
   {
-    specifier: normalizePath(path.resolve(__dirname, './absolute.js')),
+    specifier: normalizePath(
+      path.resolve(import.meta.dirname, './absolute.js'),
+    ),
     elementQuery: '.absolute',
   },
   {
@@ -64,6 +71,30 @@ export default defineConfig({
       load(id) {
         if (id === virtualId9036) {
           return `export const msg = "[success] from virtual file #9036"`
+        }
+      },
+    },
+    {
+      name: 'virtual-module-has-import',
+      enforce: 'pre',
+      resolveId(id, _importer, opts) {
+        if (id === virtualFileHasImport) {
+          // make scanner happy
+          // @ts-expect-error -- opts.scan is internal
+          if (opts?.scan) {
+            return normalizePath(
+              path.resolve(import.meta.dirname, './exports-path/main.js'),
+            )
+          }
+          return virtualIdHasImport
+        }
+      },
+      load(id) {
+        if (id === virtualIdHasImport) {
+          return (
+            'import { msg as importedMsg } from "@vitejs/test-resolve-exports-path"\n' +
+            'export const msg = importedMsg.includes("[success]") ? "[success] from virtual file that has import" : "[failure]"'
+          )
         }
       },
     },
@@ -123,7 +154,7 @@ export default defineConfig({
       name: 'resolve to non normalized absolute',
       async resolveId(id) {
         if (id !== '@non-normalized') return
-        return this.resolve(__dirname + '//non-normalized')
+        return this.resolve(import.meta.dirname + '//non-normalized')
       },
     },
   ],

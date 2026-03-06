@@ -1,5 +1,6 @@
 import path from 'node:path'
 import fs from 'node:fs'
+import { inspect } from 'node:util'
 import { performance } from 'node:perf_hooks'
 import { cac } from 'cac'
 import colors from 'picocolors'
@@ -51,6 +52,10 @@ interface GlobalCLIOptions {
   mode?: string
   force?: boolean
   w?: boolean
+}
+
+interface ExperimentalDevOptions {
+  experimentalBundle?: boolean
 }
 
 interface BuilderCLIOptions {
@@ -175,7 +180,7 @@ cli
   .option('--clearScreen', `[boolean] allow/disable clear screen when logging`)
   .option(
     '--configLoader <loader>',
-    `[string] use 'bundle' to bundle the config with esbuild, or 'runner' (experimental) to process it on the fly, or 'native' (experimental) to load using the native runtime (default: bundle)`,
+    `[string] use 'bundle' to bundle the config with Rolldown, or 'runner' (experimental) to process it on the fly, or 'native' (experimental) to load using the native runtime (default: bundle)`,
   )
   .option('-d, --debug [feat]', `[string | boolean] show debug logs`)
   .option('-f, --filter <filter>', `[string] filter debug logs`)
@@ -195,93 +200,108 @@ cli
     '--force',
     `[boolean] force the optimizer to ignore the cache and re-bundle`,
   )
-  .action(async (root: string, options: ServerOptions & GlobalCLIOptions) => {
-    filterDuplicateOptions(options)
-    // output structure is preserved even after bundling so require()
-    // is ok here
-    const { createServer } = await import('./server')
-    try {
-      const server = await createServer({
-        root,
-        base: options.base,
-        mode: options.mode,
-        configFile: options.config,
-        configLoader: options.configLoader,
-        logLevel: options.logLevel,
-        clearScreen: options.clearScreen,
-        server: cleanGlobalCLIOptions(options),
-        forceOptimizeDeps: options.force,
-      })
-
-      if (!server.httpServer) {
-        throw new Error('HTTP server not available')
-      }
-
-      await server.listen()
-
-      const info = server.config.logger.info
-
-      const modeString =
-        options.mode && options.mode !== 'development'
-          ? `  ${colors.bgGreen(` ${colors.bold(options.mode)} `)}`
-          : ''
-      const viteStartTime = global.__vite_start_time ?? false
-      const startupDurationString = viteStartTime
-        ? colors.dim(
-            `ready in ${colors.reset(
-              colors.bold(Math.ceil(performance.now() - viteStartTime)),
-            )} ms`,
-          )
-        : ''
-      const hasExistingLogs =
-        process.stdout.bytesWritten > 0 || process.stderr.bytesWritten > 0
-
-      info(
-        `\n  ${colors.green(
-          `${colors.bold('VITE')} v${VERSION}`,
-        )}${modeString}  ${startupDurationString}\n`,
-        {
-          clear: !hasExistingLogs,
-        },
-      )
-
-      server.printUrls()
-      const customShortcuts: CLIShortcut<typeof server>[] = []
-      if (profileSession) {
-        customShortcuts.push({
-          key: 'p',
-          description: 'start/stop the profiler',
-          async action(server) {
-            if (profileSession) {
-              await stopProfiler(server.config.logger.info)
-            } else {
-              const inspector = await import('node:inspector').then(
-                (r) => r.default,
-              )
-              await new Promise<void>((res) => {
-                profileSession = new inspector.Session()
-                profileSession.connect()
-                profileSession.post('Profiler.enable', () => {
-                  profileSession!.post('Profiler.start', () => {
-                    server.config.logger.info('Profiler started')
-                    res()
-                  })
-                })
-              })
-            }
+  .option(
+    '--experimentalBundle',
+    `[boolean] use experimental full bundle mode (this is highly experimental)`,
+  )
+  .action(
+    async (
+      root: string,
+      options: ServerOptions & ExperimentalDevOptions & GlobalCLIOptions,
+    ) => {
+      filterDuplicateOptions(options)
+      // output structure is preserved even after bundling so require()
+      // is ok here
+      const { createServer } = await import('./server')
+      try {
+        const server = await createServer({
+          root,
+          base: options.base,
+          mode: options.mode,
+          configFile: options.config,
+          configLoader: options.configLoader,
+          logLevel: options.logLevel,
+          clearScreen: options.clearScreen,
+          server: cleanGlobalCLIOptions(options),
+          forceOptimizeDeps: options.force,
+          experimental: {
+            bundledDev: options.experimentalBundle,
           },
         })
+
+        if (!server.httpServer) {
+          throw new Error('HTTP server not available')
+        }
+
+        await server.listen()
+
+        const info = server.config.logger.info
+
+        const modeString =
+          options.mode && options.mode !== 'development'
+            ? `  ${colors.bgGreen(` ${colors.bold(options.mode)} `)}`
+            : ''
+        const viteStartTime = global.__vite_start_time ?? false
+        const startupDurationString = viteStartTime
+          ? colors.dim(
+              `ready in ${colors.reset(
+                colors.bold(Math.ceil(performance.now() - viteStartTime)),
+              )} ms`,
+            )
+          : ''
+        const hasExistingLogs =
+          process.stdout.bytesWritten > 0 || process.stderr.bytesWritten > 0
+
+        info(
+          `\n  ${colors.green(
+            `${colors.bold('VITE')} v${VERSION}`,
+          )}${modeString}  ${startupDurationString}\n`,
+          {
+            clear: !hasExistingLogs,
+          },
+        )
+
+        server.printUrls()
+        const customShortcuts: CLIShortcut<typeof server>[] = []
+        if (profileSession) {
+          customShortcuts.push({
+            key: 'p',
+            description: 'start/stop the profiler',
+            async action(server) {
+              if (profileSession) {
+                await stopProfiler(server.config.logger.info)
+              } else {
+                const inspector = await import('node:inspector').then(
+                  (r) => r.default,
+                )
+                await new Promise<void>((res) => {
+                  profileSession = new inspector.Session()
+                  profileSession.connect()
+                  profileSession.post('Profiler.enable', () => {
+                    profileSession!.post('Profiler.start', () => {
+                      server.config.logger.info('Profiler started')
+                      res()
+                    })
+                  })
+                })
+              }
+            },
+          })
+        }
+        server.bindCLIShortcuts({ print: true, customShortcuts })
+      } catch (e) {
+        const logger = createLogger(options.logLevel)
+        logger.error(
+          colors.red(`error when starting dev server:\n${inspect(e)}`),
+          {
+            error: e,
+          },
+        )
+        await stopProfiler(logger.info)
+        process.exit(1)
       }
-      server.bindCLIShortcuts({ print: true, customShortcuts })
-    } catch (e) {
-      const logger = createLogger(options.logLevel)
-      logger.error(colors.red(`error when starting dev server:\n${e.stack}`), {
-        error: e,
-      })
-      await stopProfiler(logger.info)
-      process.exit(1)
-    }
-  })
+    },
+  )
 
 // build
 cli
@@ -346,9 +366,10 @@ cli
         }
         const builder = await createBuilder(inlineConfig, null)
         await builder.buildApp()
+        await builder.runDevTools()
       } catch (e) {
         createLogger(options.logLevel).error(
-          colors.red(`error during build:\n${e.stack}`),
+          colors.red(`error during build:\n${inspect(e)}`),
           { error: e },
         )
         process.exit(1)
@@ -390,7 +411,7 @@ cli
         await optimizeDeps(config, options.force, true)
       } catch (e) {
         createLogger(options.logLevel).error(
-          colors.red(`error when optimizing deps:\n${e.stack}`),
+          colors.red(`error when optimizing deps:\n${inspect(e)}`),
           { error: e },
         )
         process.exit(1)
@@ -441,7 +462,7 @@ cli
         server.bindCLIShortcuts({ print: true })
       } catch (e) {
         createLogger(options.logLevel).error(
-          colors.red(`error when starting preview server:\n${e.stack}`),
+          colors.red(`error when starting preview server:\n${inspect(e)}`),
           { error: e },
         )
         process.exit(1)

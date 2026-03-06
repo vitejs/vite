@@ -1,5 +1,4 @@
 import { readFileSync } from 'node:fs'
-import { fileURLToPath } from 'node:url'
 import { builtinModules } from 'node:module'
 import { defineConfig } from 'rolldown'
 import type {
@@ -8,19 +7,18 @@ import type {
   PluginContext,
   RenderedChunk,
 } from 'rolldown'
+import type { ESTree } from 'rolldown/utils'
 import { parseAst } from 'rolldown/parseAst'
 import { dts } from 'rolldown-plugin-dts'
 import { parse as parseWithBabel } from '@babel/parser'
 import { walk } from 'estree-walker'
 import MagicString from 'magic-string'
-import type {
-  Directive,
-  ModuleExportName,
-  Program,
-  Statement,
-} from '@oxc-project/types'
 
-const depTypesDir = new URL('./src/types/', import.meta.url)
+type Directive = ESTree.Directive
+type ModuleExportName = ESTree.ModuleExportName
+type Program = ESTree.Program
+type Statement = ESTree.Statement
+
 const pkg = JSON.parse(
   readFileSync(new URL('./package.json', import.meta.url)).toString(),
 )
@@ -28,7 +26,8 @@ const pkg = JSON.parse(
 const external = [
   /^node:*/,
   /^vite\//,
-  'rollup/parseAst',
+  /^rolldown\//,
+  /^#types\//,
   ...Object.keys(pkg.dependencies),
   ...Object.keys(pkg.peerDependencies),
 ]
@@ -37,9 +36,11 @@ export default defineConfig({
   input: {
     index: './src/node/index.ts',
     'module-runner': './src/module-runner/index.ts',
+    internal: './src/node/internalIndex.ts',
   },
   output: {
     dir: './dist/node',
+    chunkFileNames: 'chunks/[name].d.ts',
     format: 'esm',
   },
   treeshake: {
@@ -60,7 +61,6 @@ export default defineConfig({
         },
       },
       emitDtsOnly: true,
-      resolve: true,
     }),
   ],
 })
@@ -76,14 +76,16 @@ const identifierWithTrailingDollarRE = /\b(\w+)\$\d+\b/g
  * the module that imports the identifier as a named import alias
  */
 const identifierReplacements: Record<string, Record<string, string>> = {
-  rollup: {
-    Plugin$2: 'Rollup.Plugin',
-    TransformResult$1: 'Rollup.TransformResult',
+  'vite/module-runner': {
+    FetchResult$1: 'moduleRunner_FetchResult',
   },
-  esbuild: {
-    TransformResult$2: 'esbuild_TransformResult',
-    TransformOptions$1: 'esbuild_TransformOptions',
-    BuildOptions$1: 'esbuild_BuildOptions',
+  rolldown: {
+    Plugin$1: 'Rolldown.Plugin',
+    TransformResult$1: 'Rolldown.TransformResult',
+  },
+  'rolldown/utils': {
+    TransformOptions$1: 'rolldown_utils_TransformOptions',
+    TransformResult$2: 'rolldown_utils_TransformResult',
   },
   'node:http': {
     Server$1: 'http.Server',
@@ -96,63 +98,41 @@ const identifierReplacements: Record<string, Record<string, string>> = {
   'node:url': {
     URL$1: 'url_URL',
   },
-  'vite/module-runner': {
-    FetchResult$1: 'moduleRunner_FetchResult',
-  },
-  '../../types/hmrPayload.js': {
+  '#types/hmrPayload': {
     CustomPayload$1: 'hmrPayload_CustomPayload',
     HotPayload$1: 'hmrPayload_HotPayload',
   },
-  '../../types/customEvent.js': {
+  '#types/customEvent': {
     InferCustomEventPayload$1: 'hmrPayload_InferCustomEventPayload',
   },
-  '../../types/internal/lightningcssOptions.js': {
+  '#types/internal/esbuildOptions': {
+    EsbuildTransformOptions$1: 'esbuildOptions_EsbuildTransformOptions',
+  },
+  '#types/internal/lightningcssOptions': {
     LightningCSSOptions$1: 'lightningcssOptions_LightningCSSOptions',
   },
 }
 
-// type names that are declared
 const ignoreConfusingTypeNames = [
-  'Plugin$1',
+  // type names that are declared
   'MinimalPluginContext$1',
   'ServerOptions$1',
   'ServerOptions$3',
+  // temporary variables for types
+  'parseAst$1',
+  'parseAstAsync$1',
 ]
 
 /**
  * Patch the types files before passing to dts plugin
- * 1. Resolve `dep-types/*` and `types/*` imports
- * 2. Validate unallowed dependency imports
- * 3. Replace confusing type names
- * 4. Strip leftover internal types
- * 5. Clean unnecessary comments
+ * 1. Validate unallowed dependency imports
+ * 2. Replace confusing type names
+ * 3. Strip leftover internal types
+ * 4. Clean unnecessary comments
  */
 function patchTypes(): Plugin {
   return {
     name: 'patch-types',
-    resolveId: {
-      order: 'pre',
-      filter: {
-        id: /^(dep-)?types\//,
-      },
-      handler(id) {
-        // Dep types should be bundled
-        if (id.startsWith('dep-types/')) {
-          const fileUrl = new URL(
-            `./${id.slice('dep-types/'.length)}.d.ts`,
-            depTypesDir,
-          )
-          return fileURLToPath(fileUrl)
-        }
-        // Ambient types are unbundled and externalized
-        if (id.startsWith('types/')) {
-          return {
-            id: '../../' + (id.endsWith('.js') ? id : id + '.js'),
-            external: true,
-          }
-        }
-      },
-    },
     generateBundle: {
       order: 'post',
       handler(_opts, bundle) {
@@ -163,8 +143,8 @@ function patchTypes(): Plugin {
           const importBindings = getAllImportBindings(ast)
           if (
             chunk.fileName.startsWith('module-runner') ||
-            // index and moduleRunner have a common chunk "moduleRunnerTransport"
-            chunk.fileName.startsWith('moduleRunnerTransport') ||
+            // index and moduleRunner have a common chunk
+            chunk.fileName.startsWith('chunks/') ||
             chunk.fileName.startsWith('types.d-')
           ) {
             validateRunnerChunk.call(this, chunk, importBindings)
@@ -235,8 +215,9 @@ function validateRunnerChunk(
     if (
       !id.startsWith('./') &&
       !id.startsWith('../') &&
-      // index and moduleRunner have a common chunk "moduleRunnerTransport"
-      !id.startsWith('moduleRunnerTransport.d') &&
+      !id.startsWith('#') &&
+      // index and moduleRunner have a common chunk
+      !id.startsWith('chunks/') &&
       !id.startsWith('types.d')
     ) {
       this.warn(
@@ -260,11 +241,12 @@ function validateChunkImports(
     if (
       !id.startsWith('./') &&
       !id.startsWith('../') &&
+      !id.startsWith('#') &&
       !id.startsWith('node:') &&
       !id.startsWith('types.d') &&
       !id.startsWith('vite/') &&
-      // index and moduleRunner have a common chunk "moduleRunnerTransport"
-      !id.startsWith('moduleRunnerTransport.d') &&
+      // index and moduleRunner have a common chunk
+      !id.startsWith('chunks/') &&
       !deps.includes(id) &&
       !deps.some((name) => id.startsWith(name + '/'))
     ) {
@@ -287,43 +269,46 @@ function replaceConfusingTypeNames(
   chunk: OutputChunk,
   importBindings: ImportBindings[],
 ) {
-  for (const modName in identifierReplacements) {
-    const imp = importBindings.filter((imp) => imp.id === modName)
-    // Validate that `identifierReplacements` is not outdated if there's no match
-    if (imp.length === 0) {
-      this.warn(
-        `${chunk.fileName} does not import "${modName}" for replacement`,
-      )
-      process.exitCode = 1
-      continue
-    }
-
-    const replacements = identifierReplacements[modName]
-    for (const id in replacements) {
+  const isInternalEntry = chunk.fileName.startsWith('internal.')
+  if (!isInternalEntry) {
+    for (const modName in identifierReplacements) {
+      const imp = importBindings.filter((imp) => imp.id === modName)
       // Validate that `identifierReplacements` is not outdated if there's no match
-      if (!imp.some((i) => i.locals.includes(id))) {
+      if (imp.length === 0) {
         this.warn(
-          `${chunk.fileName} does not import "${id}" from "${modName}" for replacement`,
+          `${chunk.fileName} does not import "${modName}" for replacement`,
         )
         process.exitCode = 1
         continue
       }
 
-      const betterId = replacements[id]
-      const regexEscapedId = escapeRegex(id)
-      // If the better id accesses a namespace, the existing `Foo as Foo$1`
-      // named import cannot be replaced with `Foo as Namespace.Foo`, so we
-      // pre-emptively remove the whole named import
-      if (betterId.includes('.')) {
+      const replacements = identifierReplacements[modName]
+      for (const id in replacements) {
+        // Validate that `identifierReplacements` is not outdated if there's no match
+        if (!imp.some((i) => i.locals.includes(id))) {
+          this.warn(
+            `${chunk.fileName} does not import "${id}" from "${modName}" for replacement`,
+          )
+          process.exitCode = 1
+          continue
+        }
+
+        const betterId = replacements[id]
+        const regexEscapedId = escapeRegex(id)
+        // If the better id accesses a namespace, the existing `Foo as Foo$1`
+        // named import cannot be replaced with `Foo as Namespace.Foo`, so we
+        // pre-emptively remove the whole named import
+        if (betterId.includes('.')) {
+          chunk.code = chunk.code.replace(
+            new RegExp(`\\b\\w+\\b as ${regexEscapedId},?\\s?`),
+            '',
+          )
+        }
         chunk.code = chunk.code.replace(
-          new RegExp(`\\b\\w+\\b as ${regexEscapedId},?\\s?`),
-          '',
+          new RegExp(`\\b${regexEscapedId}\\b`, 'g'),
+          betterId,
         )
       }
-      chunk.code = chunk.code.replace(
-        new RegExp(`\\b${regexEscapedId}\\b`, 'g'),
-        betterId,
-      )
     }
   }
 
@@ -343,16 +328,21 @@ function replaceConfusingTypeNames(
     )
     process.exitCode = 1
   }
-  const notUsedConfusingTypeNames = ignoreConfusingTypeNames.filter(
-    (id) => !identifiers.includes(id),
-  )
-  // Validate that `identifierReplacements` is not outdated if there's no match
-  if (notUsedConfusingTypeNames.length) {
-    const notUsedStr = notUsedConfusingTypeNames
-      .map((id) => `\n- ${id}`)
-      .join('')
-    this.warn(`${chunk.fileName} contains unused identifier names${notUsedStr}`)
-    process.exitCode = 1
+
+  if (!isInternalEntry) {
+    const notUsedConfusingTypeNames = ignoreConfusingTypeNames.filter(
+      (id) => !identifiers.includes(id),
+    )
+    // Validate that `identifierReplacements` is not outdated if there's no match
+    if (notUsedConfusingTypeNames.length) {
+      const notUsedStr = notUsedConfusingTypeNames
+        .map((id) => `\n- ${id}`)
+        .join('')
+      this.warn(
+        `${chunk.fileName} contains unused identifier names${notUsedStr}`,
+      )
+      process.exitCode = 1
+    }
   }
 }
 
