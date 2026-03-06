@@ -217,8 +217,8 @@ jobs:
 
   lint:
     timeout-minutes: 10
-    runs-on: ubuntu-slim
-    name: "Lint: node-24, ubuntu-slim"
+    runs-on: ubuntu-latest
+    name: "Lint: node-24, ubuntu-latest"
     steps:
       - uses: actions/checkout@v6
 
