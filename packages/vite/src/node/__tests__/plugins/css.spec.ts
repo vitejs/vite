@@ -123,6 +123,34 @@ composes: bar from '@/css/bar.module.css';
     expect(result1.code).toBe(result2.code)
   })
 
+  test('modify url', async () => {
+    const { transform } = await createCssPluginTransform({
+      configFile: false,
+      css: {
+        resolveId: (id) => {
+          return `${id}?vitebase=cdn`
+        },
+      },
+    })
+    const result = await transform(
+      `\
+.foo {
+position: fixed;
+background: url('/foo.png');
+}`,
+      '/css/foo.module.css',
+    )
+
+    expect(result.code).toMatchInlineSnapshot(
+      `
+      "._foo_r7h0q_1 {
+      position: fixed;
+      background: url('/foo.png');
+      }"
+    `,
+    )
+  })
+
   test('custom generateScopedName with lightningcss', async () => {
     const { transform } = await createCssPluginTransform({
       configFile: false,
