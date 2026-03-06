@@ -24,8 +24,8 @@ describe('resolveBuildEnvironmentOptions in dev', () => {
 describe('the dev server', () => {
   let server: ViteDevServer
 
-  afterEach(() => {
-    server?.close()
+  afterEach(async () => {
+    await server?.close()
   })
 
   test('resolves the server URLs before the httpServer listening events are called', async () => {
@@ -38,7 +38,7 @@ describe('the dev server', () => {
     const { promise, resolve } =
       promiseWithResolvers<ResolvedServerUrls | null>()
     server = await createServer({
-      root: __dirname,
+      root: import.meta.dirname,
       logLevel: 'error',
       server: {
         strictPort: true,

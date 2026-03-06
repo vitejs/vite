@@ -7,13 +7,13 @@ export default defineConfig({
     manifest: true,
     rollupOptions: {
       input: {
-        main: resolve(__dirname, './index.html'),
-        other: resolve(__dirname, './other.js'),
+        main: resolve(import.meta.dirname, './index.html'),
+        other: resolve(import.meta.dirname, './other.js'),
       },
       treeshake: false,
       output: {
         format: 'cjs',
-        freeze: false,
+        // freeze: false,
         externalLiveBindings: false,
       },
     },

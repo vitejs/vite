@@ -4,7 +4,12 @@ import { performance } from 'node:perf_hooks'
 import getEtag from 'etag'
 import MagicString from 'magic-string'
 import { init, parse as parseImports } from 'es-module-lexer'
-import type { PartialResolvedId, SourceDescription, SourceMap } from 'rollup'
+import type {
+  ModuleType,
+  PartialResolvedId,
+  SourceDescription,
+  SourceMap,
+} from 'rolldown'
 import colors from 'picocolors'
 import type { EnvironmentModuleNode } from '../server/moduleGraph'
 import {
@@ -99,25 +104,25 @@ export function transformRequest(
   // last time this module is invalidated
   const timestamp = monotonicDateNow()
 
+  url = removeTimestampQuery(url)
+
   const pending = environment._pendingRequests.get(url)
   if (pending) {
-    return environment.moduleGraph
-      .getModuleByUrl(removeTimestampQuery(url))
-      .then((module) => {
-        if (!module || pending.timestamp > module.lastInvalidationTimestamp) {
-          // The pending request is still valid, we can safely reuse its result
-          return pending.request
-        } else {
-          // Request 1 for module A     (pending.timestamp)
-          // Invalidate module A        (module.lastInvalidationTimestamp)
-          // Request 2 for module A     (timestamp)
+    return environment.moduleGraph.getModuleByUrl(url).then((module) => {
+      if (!module || pending.timestamp > module.lastInvalidationTimestamp) {
+        // The pending request is still valid, we can safely reuse its result
+        return pending.request
+      } else {
+        // Request 1 for module A     (pending.timestamp)
+        // Invalidate module A        (module.lastInvalidationTimestamp)
+        // Request 2 for module A     (timestamp)
 
-          // First request has been invalidated, abort it to clear the cache,
-          // then perform a new doTransform.
-          pending.abort()
-          return transformRequest(environment, url, options)
-        }
-      })
+        // First request has been invalidated, abort it to clear the cache,
+        // then perform a new doTransform.
+        pending.abort()
+        return transformRequest(environment, url, options)
+      }
+    })
   }
 
   const request = doTransform(environment, url, options, timestamp)
@@ -147,8 +152,6 @@ async function doTransform(
   options: TransformOptionsInternal,
   timestamp: number,
 ) {
-  url = removeTimestampQuery(url)
-
   const { pluginContainer } = environment
 
   let module = await environment.moduleGraph.getModuleByUrl(url)
@@ -254,6 +257,7 @@ async function loadAndTransform(
 
   let code: string | null = null
   let map: SourceDescription['map'] = null
+  let moduleType: ModuleType | undefined
 
   // load
   const loadStart = debugLoad ? performance.now() : 0
@@ -289,7 +293,7 @@ async function loadAndTransform(
     }
     if (code) {
       try {
-        const extracted = await extractSourcemapFromFile(code, file)
+        const extracted = extractSourcemapFromFile(code, file)
         if (extracted) {
           code = extracted.code
           map = extracted.map
@@ -305,6 +309,7 @@ async function loadAndTransform(
     if (isObject(loadResult)) {
       code = loadResult.code
       map = loadResult.map
+      moduleType = loadResult.moduleType
     } else {
       code = loadResult
     }
@@ -330,6 +335,12 @@ async function loadAndTransform(
     err.code = isPublicFile ? ERR_LOAD_PUBLIC_URL : ERR_LOAD_URL
     throw err
   }
+  if (moduleType === undefined) {
+    const guessedModuleType = getModuleTypeFromId(id)
+    if (guessedModuleType && guessedModuleType !== 'js') {
+      moduleType = guessedModuleType
+    }
+  }
 
   if (environment._closing && environment.config.dev.recoverable)
     throwClosedServerError()
@@ -341,6 +352,7 @@ async function loadAndTransform(
   const transformStart = debugTransform ? performance.now() : 0
   const transformResult = await pluginContainer.transform(code, id, {
     inMap: map,
+    moduleType,
   })
   const originalCode = code
   if (transformResult.code === originalCode) {
@@ -518,4 +530,31 @@ async function handleModuleSoftInvalidation(
     environment.moduleGraph.updateModuleTransformResult(mod, result)
 
   return result
+}
+
+// https://github.com/rolldown/rolldown/blob/cc66f4b7189dfb3a248608d02f5962edb09b11f8/crates/rolldown/src/utils/normalize_options.rs#L95-L111
+const defaultModuleTypes: Record<string, ModuleType | undefined> = {
+  js: 'js',
+  mjs: 'js',
+  cjs: 'js',
+  jsx: 'jsx',
+  ts: 'ts',
+  mts: 'ts',
+  cts: 'ts',
+  tsx: 'tsx',
+  json: 'json',
+  txt: 'text',
+  css: 'css',
+}
+
+// https://github.com/rolldown/rolldown/blob/bf53a100edf1780d5a5aa41f0bc0459c5696543e/crates/rolldown/src/utils/load_source.rs#L53-L89
+export function getModuleTypeFromId(id: string): ModuleType | undefined {
+  let pos = -1
+  while ((pos = id.indexOf('.', pos + 1)) >= 0) {
+    const ext = id.slice(pos + 1)
+    const moduleType = defaultModuleTypes[ext]
+    if (moduleType) {
+      return moduleType
+    }
+  }
 }

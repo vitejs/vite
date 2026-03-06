@@ -516,7 +516,8 @@ export const tests = (isLightningCSS: boolean) => {
     expect(await getColor('.at-import-scss')).toBe('red')
   })
 
-  test.runIf(isBuild)('manual chunk path', async () => {
+  // TODO: skipped because of https://github.com/rolldown/rolldown/issues/7315
+  test.runIf(isBuild).skip('manual chunk path', async () => {
     // assert that the manual-chunk css is output in the directory specified in manualChunk (#12072)
     expect(
       findAssetFile(

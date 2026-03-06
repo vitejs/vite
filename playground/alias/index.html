@@ -5,6 +5,7 @@
 <p class="regex"></p>
 <p class="dep"></p>
 <p class="from-script-src"></p>
+<p class="url-conflict"></p>
 <p class="aliased-module"></p>
 <p class="custom-resolver"></p>
 
@@ -17,6 +18,7 @@
   import { msg as regexMsg } from 'regex/test'
   import { msg as depMsg } from 'dep'
   import { msg as moduleMsg } from 'aliased-module/index.js'
+  import { msg as urlConflictMsg } from '//url_conflict.js'
   import { msg as customResolverMsg } from 'custom-resolver'
 
   function text(el, text) {
@@ -28,6 +30,7 @@
   text('.regex', regexMsg + ' via regex')
   text('.dep', depMsg)
   text('.aliased-module', moduleMsg)
+  text('.url-conflict', urlConflictMsg)
   text('.custom-resolver', customResolverMsg)
 
   import { createApp } from 'vue'

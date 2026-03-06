@@ -1,7 +1,7 @@
 import path from 'node:path'
 import MagicString from 'magic-string'
 import { stripLiteral } from 'strip-literal'
-import { exactRegex } from '@rolldown/pluginutils'
+import { exactRegex } from 'rolldown/filter'
 import type { Plugin } from '../plugin'
 import type { ResolvedConfig } from '../config'
 import {
@@ -56,7 +56,7 @@ export function assetImportMetaUrlPlugin(config: ResolvedConfig): Plugin {
         id: {
           exclude: [exactRegex(preloadHelperId), exactRegex(CLIENT_ENTRY)],
         },
-        code: /new\s+URL.+import\.meta\.url/,
+        code: /new\s+URL.+import\.meta\.url/s,
       },
       async handler(code, id) {
         let s: MagicString | undefined
@@ -87,7 +87,7 @@ export function assetImportMetaUrlPlugin(config: ResolvedConfig): Plugin {
             const templateLiteral = (ast as any).body[0].expression
             if (templateLiteral.expressions.length) {
               const pattern = buildGlobPattern(templateLiteral)
-              if (pattern.startsWith('*')) {
+              if (pattern[0] === '*') {
                 // don't transform for patterns like this
                 // because users won't intend to do that in most cases
                 continue
@@ -164,7 +164,8 @@ export function assetImportMetaUrlPlugin(config: ResolvedConfig): Plugin {
           s.update(
             startIndex,
             endIndex,
-            `new URL(${JSON.stringify(builtUrl)}, import.meta.url)`,
+            // NOTE: add `'' +` to opt-out rolldown's transform: https://github.com/rolldown/rolldown/issues/2745
+            `new URL(${JSON.stringify(builtUrl)}, '' + import.meta.url)`,
           )
         }
         if (s) {

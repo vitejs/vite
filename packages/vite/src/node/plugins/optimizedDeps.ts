@@ -42,7 +42,7 @@ export function optimizedDepsPlugin(): Plugin {
       if (depsOptimizer?.isOptimizedDepFile(id)) {
         const metadata = depsOptimizer.metadata
         const file = cleanUrl(id)
-        const versionMatch = DEP_VERSION_RE.exec(file)
+        const versionMatch = DEP_VERSION_RE.exec(id)
         const browserHash = versionMatch
           ? versionMatch[1].split('=')[1]
           : undefined
@@ -50,7 +50,11 @@ export function optimizedDepsPlugin(): Plugin {
         // Search in both the currently optimized and newly discovered deps
         const info = optimizedDepInfoFromFile(metadata, file)
         if (info) {
-          if (browserHash && info.browserHash !== browserHash) {
+          if (
+            browserHash &&
+            info.browserHash !== browserHash &&
+            !environment.config.optimizeDeps.ignoreOutdatedRequests
+          ) {
             throwOutdatedRequest(id)
           }
           try {
@@ -65,7 +69,10 @@ export function optimizedDepsPlugin(): Plugin {
           const newMetadata = depsOptimizer.metadata
           if (metadata !== newMetadata) {
             const currentInfo = optimizedDepInfoFromFile(newMetadata!, file)
-            if (info.browserHash !== currentInfo?.browserHash) {
+            if (
+              info.browserHash !== currentInfo?.browserHash &&
+              !environment.config.optimizeDeps.ignoreOutdatedRequests
+            ) {
               throwOutdatedRequest(id)
             }
           }
@@ -77,9 +84,11 @@ export function optimizedDepsPlugin(): Plugin {
         try {
           return await fsp.readFile(file, 'utf-8')
         } catch {
-          const newMetadata = depsOptimizer.metadata
-          if (optimizedDepInfoFromFile(newMetadata, file)) {
-            // Outdated non-entry points (CHUNK), loaded after a rerun
+          if (
+            browserHash &&
+            !environment.config.optimizeDeps.ignoreOutdatedRequests
+          ) {
+            // Outdated optimized files loaded after a rerun
             throwOutdatedRequest(id)
           }
           throwFileNotFoundInOptimizedDep(id)

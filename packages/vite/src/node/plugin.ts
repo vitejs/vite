@@ -1,15 +1,18 @@
 import type {
   CustomPluginOptions,
+  ImportKind,
   LoadResult,
   MinimalPluginContext,
+  ModuleType,
+  ModuleTypeFilter,
   ObjectHook,
   PluginContext,
   PluginContextMeta,
   ResolveIdResult,
-  Plugin as RollupPlugin,
+  Plugin as RolldownPlugin,
   TransformPluginContext,
   TransformResult,
-} from 'rollup'
+} from 'rolldown'
 import type {
   ConfigEnv,
   EnvironmentOptions,
@@ -67,16 +70,20 @@ export interface PluginContextMetaExtension {
   viteVersion: string
 }
 
-export interface ConfigPluginContext
-  extends Omit<MinimalPluginContext, 'meta' | 'environment'> {
+export interface ConfigPluginContext extends Omit<
+  MinimalPluginContext,
+  'meta' | 'environment'
+> {
   meta: Omit<PluginContextMeta, 'watchMode'>
 }
 
-export interface MinimalPluginContextWithoutEnvironment
-  extends Omit<MinimalPluginContext, 'environment'> {}
+export interface MinimalPluginContextWithoutEnvironment extends Omit<
+  MinimalPluginContext,
+  'environment'
+> {}
 
-// Augment Rollup types to have the PluginContextExtension
-declare module 'rollup' {
+// Augment Rolldown types to have the PluginContextExtension
+declare module 'rolldown' {
   export interface MinimalPluginContext extends PluginContextExtension {}
   export interface PluginContextMeta extends PluginContextMetaExtension {}
 }
@@ -87,11 +94,11 @@ declare module 'rollup' {
  * once per each environment allowing users to have completely different plugins
  * for each of them. The constructor gets the resolved environment after the server
  * and builder has already been created simplifying config access and cache
- * management for for environment specific plugins.
+ * management for environment specific plugins.
  * Environment Plugins are closer to regular rollup plugins. They can't define
  * app level hooks (like config, configResolved, configureServer, etc).
  */
-export interface Plugin<A = any> extends RollupPlugin<A> {
+export interface Plugin<A = any> extends RolldownPlugin<A> {
   /**
    * Perform custom handling of HMR updates.
    * The handler receives an options containing changed filename, timestamp, a
@@ -126,13 +133,13 @@ export interface Plugin<A = any> extends RollupPlugin<A> {
       source: string,
       importer: string | undefined,
       options: {
-        attributes: Record<string, string>
+        kind?: ImportKind
         custom?: CustomPluginOptions
-        ssr?: boolean
+        ssr?: boolean | undefined
         /**
          * @internal
          */
-        scan?: boolean
+        scan?: boolean | undefined
         isEntry: boolean
       },
     ) => Promise<ResolveIdResult> | ResolveIdResult,
@@ -143,7 +150,7 @@ export interface Plugin<A = any> extends RollupPlugin<A> {
       this: PluginContext,
       id: string,
       options?: {
-        ssr?: boolean
+        ssr?: boolean | undefined
       },
     ) => Promise<LoadResult> | LoadResult,
     { filter?: { id?: StringFilter } }
@@ -154,10 +161,17 @@ export interface Plugin<A = any> extends RollupPlugin<A> {
       code: string,
       id: string,
       options?: {
-        ssr?: boolean
+        moduleType: ModuleType
+        ssr?: boolean | undefined
       },
     ) => Promise<TransformResult> | TransformResult,
-    { filter?: { id?: StringFilter; code?: StringFilter } }
+    {
+      filter?: {
+        id?: StringFilter
+        code?: StringFilter
+        moduleType?: ModuleTypeFilter
+      }
+    }
   >
   /**
    * Opt-in this plugin into the shared plugins pipeline.
@@ -176,6 +190,14 @@ export interface Plugin<A = any> extends RollupPlugin<A> {
    * @experimental
    */
   perEnvironmentStartEndDuringDev?: boolean
+  /**
+   * Opt-in this plugin into per-environment watchChange during dev.
+   * For backward-compatibility, the watchChange hook is called only once during
+   * dev, for the client environment. Plugins can opt-in to be called
+   * per-environment, aligning with the watchChange hook behavior.
+   * @experimental
+   */
+  perEnvironmentWatchChangeDuringDev?: boolean
   /**
    * Enforce plugin invocation tier similar to webpack loaders. Hooks ordering
    * is still subject to the `order` property in the hook object.
@@ -329,6 +351,23 @@ export interface Plugin<A = any> extends RollupPlugin<A> {
       ctx: HmrContext,
     ) => Array<ModuleNode> | void | Promise<Array<ModuleNode> | void>
   >
+
+  /**
+   * This hook is not supported by Rolldown yet. But the type is declared for compatibility.
+   *
+   * @deprecated This hook is **not** deprecated. It is marked as deprecated just to make it clear that this hook is currently a no-op.
+   */
+  shouldTransformCachedModule?: ObjectHook<
+    (
+      this: PluginContext,
+      options: {
+        code: string
+        id: string
+        meta: CustomPluginOptions
+        moduleSideEffects: boolean | 'no-treeshake'
+      },
+    ) => boolean | null | void
+  >
 }
 
 export type HookHandler<T> = T extends ObjectHook<infer H> ? H : T
@@ -341,7 +380,12 @@ type Thenable<T> = T | Promise<T>
 
 export type FalsyPlugin = false | null | undefined
 
-export type PluginOption = Thenable<Plugin | FalsyPlugin | PluginOption[]>
+export type PluginOption = Thenable<
+  | Plugin
+  | { name: string } // for rollup plugin compatibility
+  | FalsyPlugin
+  | PluginOption[]
+>
 
 export async function resolveEnvironmentPlugins(
   environment: PartialEnvironment,

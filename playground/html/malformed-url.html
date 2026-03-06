@@ -1,0 +1,16 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Malformed URL Test</title>
+  </head>
+  <body>
+    <h1>Malformed URL Test</h1>
+    <img
+      src="{% if product[0].image_urls[0] %}{{product[0].image_urls[0]}}{% endif %}"
+      class="template-expression"
+    />
+    <p class="status">Page loaded successfully</p>
+  </body>
+</html>

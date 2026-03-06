@@ -4,6 +4,7 @@ import fs from 'node:fs'
 import { stripVTControlCharacters } from 'node:util'
 import { expect, onTestFinished, test, vi } from 'vitest'
 import { createServer } from '../../server'
+import { DevEnvironment } from '../../server/environment'
 import { normalizePath } from '../../utils'
 
 const root = fileURLToPath(new URL('./', import.meta.url))
@@ -17,7 +18,7 @@ async function createDevServer() {
       noDiscovery: true,
     },
   })
-  server.environments.ssr.pluginContainer.buildStart({})
+  await server.environments.ssr.pluginContainer.buildStart({})
   return server
 }
 
@@ -93,7 +94,7 @@ test('virtual module invalidation simple', async () => {
       },
     ],
   })
-  server.environments.ssr.pluginContainer.buildStart({})
+  await server.environments.ssr.pluginContainer.buildStart({})
 
   const mod1 = await server.ssrLoadModule('virtual:test')
   expect(mod1.default).toEqual(1)
@@ -151,7 +152,7 @@ test('virtual module invalidation nested', async () => {
       },
     ],
   })
-  server.environments.ssr.pluginContainer.buildStart({})
+  await server.environments.ssr.pluginContainer.buildStart({})
 
   const mod1 = await server.ssrLoadModule('virtual:test')
   expect(mod1.default).toEqual(1)
@@ -181,7 +182,10 @@ test('can access nodejs global', async () => {
   expect(mod.default).toBe(globalThis)
 })
 
-test('parse error', async () => {
+// skip for now as rolldown returns different error message from esbuild
+// related: https://github.com/oxc-project/oxc/issues/7261
+// (rolldown does not set the properties passed from Oxc)
+test.skip('parse error', async () => {
   const server = await createDevServer()
 
   function stripRoot(s?: string) {
@@ -314,6 +318,32 @@ test('named exports overwrite export all', async () => {
       "d": "dep1-d",
     }
   `)
+})
+
+test('throws when ssr environment is not runnable', async () => {
+  const server = await createServer({
+    configFile: false,
+    root,
+    logLevel: 'silent',
+    optimizeDeps: {
+      noDiscovery: true,
+    },
+    environments: {
+      ssr: {
+        dev: {
+          createEnvironment: (name, config) =>
+            new DevEnvironment(name, config, { hot: false }),
+        },
+      },
+    },
+  })
+  onTestFinished(() => server.close())
+
+  await expect(
+    server.ssrLoadModule('/fixtures/modules/has-invalid-import.js'),
+  ).rejects.toThrow(
+    "ssrLoadModule requires the 'ssr' environment to be a runnable environment.",
+  )
 })
 
 test('buildStart before transform', async () => {

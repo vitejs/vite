@@ -1,3 +1,5 @@
+import { RUNTIME_MODULE_ID } from 'rolldown'
+import { exactRegex } from 'rolldown/filter'
 import { afterAll, describe, expect, test, vi } from 'vitest'
 import { type InlineConfig, type Plugin, build, createServer } from '../..'
 
@@ -105,7 +107,12 @@ describe('hook filter with build', async () => {
           handler: load,
         },
         transform: {
-          filter: { id: '**/*.js' },
+          filter: {
+            id: {
+              include: '**/*.js',
+              exclude: exactRegex(RUNTIME_MODULE_ID),
+            },
+          },
           handler: transformWithId,
         },
       },

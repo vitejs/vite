@@ -2,9 +2,9 @@ import fs from 'node:fs'
 import fsp from 'node:fs/promises'
 import path from 'node:path'
 import MagicString from 'magic-string'
-import type { SourceMapInput } from 'rollup'
-import type { Connect } from 'dep-types/connect'
+import type { SourceMapInput } from 'rolldown'
 import type { DefaultTreeAdapterMap, Token } from 'parse5'
+import type { Connect } from '#dep-types/connect'
 import type { IndexHtmlTransformHook } from '../../plugins/html'
 import {
   addToHTMLProxyCache,
@@ -35,6 +35,7 @@ import {
   isCSSRequest,
   isDevServer,
   isJSRequest,
+  isParentDirectory,
   joinUrlSegments,
   normalizePath,
   processSrcSetSync,
@@ -48,6 +49,9 @@ import {
   BasicMinimalPluginContext,
   basePluginContextMeta,
 } from '../pluginContainer'
+import { FullBundleDevEnvironment } from '../environments/fullBundleEnvironment'
+import { getHmrImplementation } from '../../plugins/clientInjections'
+import { checkLoadingAccess, respondWithAccessDenied } from './static'
 
 interface AssetNode {
   start: number
@@ -359,13 +363,13 @@ const devHtmlHook: IndexHtmlTransformHook = async (
   })
 
   // invalidate the module so the newly cached contents will be served
-  const clientModuelGraph = server?.environments.client.moduleGraph
-  if (clientModuelGraph) {
+  const clientModuleGraph = server?.environments.client.moduleGraph
+  if (clientModuleGraph) {
     await Promise.all(
       inlineModulePaths.map(async (url) => {
-        const module = await clientModuelGraph.getModuleByUrl(url)
+        const module = await clientModuleGraph.getModuleByUrl(url)
         if (module) {
-          clientModuelGraph.invalidateModule(module)
+          clientModuleGraph.invalidateModule(module)
         }
       }),
     )
@@ -440,6 +444,10 @@ export function indexHtmlMiddleware(
   server: ViteDevServer | PreviewServer,
 ): Connect.NextHandleFunction {
   const isDev = isDevServer(server)
+  const fullBundleEnv =
+    isDev && server.environments.client instanceof FullBundleDevEnvironment
+      ? server.environments.client
+      : undefined
 
   // Keep the named function. The name is visible in debug logs via `DEBUG=connect:dispatcher ...`
   return async function viteIndexHtmlMiddleware(req, res, next) {
@@ -450,11 +458,67 @@ export function indexHtmlMiddleware(
     const url = req.url && cleanUrl(req.url)
     // htmlFallbackMiddleware appends '.html' to URLs
     if (url?.endsWith('.html') && req.headers['sec-fetch-dest'] !== 'script') {
+      if (fullBundleEnv) {
+        const pathname = decodeURIComponent(url)
+        const filePath = pathname.slice(1) // remove first /
+
+        let file = fullBundleEnv.memoryFiles.get(filePath)
+        if (!file && fullBundleEnv.memoryFiles.size !== 0) {
+          return next()
+        }
+        const secFetchDest = req.headers['sec-fetch-dest']
+        if (
+          [
+            'document',
+            'iframe',
+            'frame',
+            'fencedframe',
+            '',
+            undefined,
+          ].includes(secFetchDest) &&
+          ((await fullBundleEnv.triggerBundleRegenerationIfStale()) ||
+            file === undefined)
+        ) {
+          file = { source: await generateFallbackHtml(server as ViteDevServer) }
+        }
+        if (!file) {
+          return next()
+        }
+
+        const html =
+          typeof file.source === 'string'
+            ? file.source
+            : Buffer.from(file.source)
+        const headers = isDev
+          ? server.config.server.headers
+          : server.config.preview.headers
+        return send(req, res, html, 'html', { headers, etag: file.etag })
+      }
+
       let filePath: string
       if (isDev && url.startsWith(FS_PREFIX)) {
         filePath = decodeURIComponent(fsPathFromId(url))
       } else {
-        filePath = path.join(root, decodeURIComponent(url))
+        filePath = normalizePath(
+          path.resolve(path.join(root, decodeURIComponent(url))),
+        )
+      }
+
+      if (isDev) {
+        const servingAccessResult = checkLoadingAccess(server.config, filePath)
+        if (servingAccessResult === 'denied') {
+          return respondWithAccessDenied(filePath, server, res)
+        }
+        if (servingAccessResult === 'fallback') {
+          return next()
+        }
+        servingAccessResult satisfies 'allowed'
+      } else {
+        // `server.fs` options does not apply to the preview server.
+        // But we should disallow serving files outside the output directory.
+        if (!isParentDirectory(root, filePath)) {
+          return next()
+        }
       }
 
       if (fs.existsSync(filePath)) {
@@ -489,4 +553,67 @@ function preTransformRequest(
   // transform all url as non-ssr as html includes client-side assets only
   decodedUrl = unwrapId(stripBase(decodedUrl, decodedBase))
   server.warmupRequest(decodedUrl)
+}
+
+async function generateFallbackHtml(server: ViteDevServer) {
+  const hmrRuntime = await getHmrImplementation(server.config)
+  return /* html */ `
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <script type="module">
+    ${hmrRuntime.replaceAll('</script>', '<\\/script>')}
+  </script>
+  <style>
+    :root {
+      --page-bg: #ffffff;
+      --text-color: #1d1d1f;
+      --spinner-track: #f5f5f7;
+      --spinner-accent: #0071e3;
+    }
+    @media (prefers-color-scheme: dark) {
+      :root {
+        --page-bg: #1e1e1e;
+        --text-color: #f5f5f5;
+        --spinner-track: #424242;
+      }
+    }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      display: flex;
+      background-color: var(--page-bg);
+      color: var(--text-color);
+    }
+
+    .container {
+      margin: auto;
+      padding: 2rem;
+      text-align: center;
+      border-radius: 1rem;
+    }
+
+    .spinner {
+      width: 3rem;
+      height: 3rem;
+      margin: 2rem auto;
+      border: 3px solid var(--spinner-track);
+      border-top-color: var(--spinner-accent);
+      border-radius: 50%;
+      animation: spin 1s linear infinite;
+    }
+
+    @keyframes spin { to { transform: rotate(360deg) } }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>Bundling in progress</h1>
+    <p>The page will automatically reload when ready.</p>
+    <div class="spinner"></div>
+  </div>
+</body>
+</html>
+`
 }

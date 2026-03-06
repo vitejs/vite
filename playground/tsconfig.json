@@ -1,6 +1,6 @@
 {
   "include": ["**/vite*config*", "**/*.ts"],
-  "exclude": ["**/dist/**"],
+  "exclude": ["**/dist/**", "./legacy/**", "./resolve-tsconfig-paths/**"],
   "compilerOptions": {
     "checkJs": true,
     "target": "ES2023",
@@ -10,6 +10,7 @@
     "esModuleInterop": true,
     "resolveJsonModule": true,
     "moduleResolution": "bundler",
+    "erasableSyntaxOnly": true,
     "skipLibCheck": true,
     "noUnusedLocals": true,
     "jsx": "preserve",

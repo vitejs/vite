@@ -4,7 +4,7 @@
  *
  * MIT Licensed
  * Copyright (c) 2015-present, Facebook, Inc.
- * https://github.com/facebook/create-react-app/blob/master/LICENSE
+ * https://github.com/facebook/create-react-app/blob/main/LICENSE
  *
  */
 

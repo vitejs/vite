@@ -1,7 +1,7 @@
 import type * as http from 'node:http'
 import * as httpProxy from 'http-proxy-3'
-import type { Connect } from 'dep-types/connect'
 import colors from 'picocolors'
+import type { Connect } from '#dep-types/connect'
 import { createDebugger } from '../../utils'
 import type { CommonServerOptions, ResolvedConfig } from '../..'
 import type { HttpServer } from '..'
@@ -106,7 +106,7 @@ export function proxyMiddleware(
         )
         if (!res.headersSent && !res.writableEnded) {
           res
-            .writeHead(500, {
+            .writeHead(502, {
               'Content-Type': 'text/plain',
             })
             .end()

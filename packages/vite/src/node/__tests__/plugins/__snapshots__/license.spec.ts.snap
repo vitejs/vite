@@ -1,0 +1,47 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`json 1`] = `
+"[
+  {
+    "name": "@vitejs/test-dep-licence-cc0",
+    "version": "0.0.0",
+    "identifier": "CC0-1.0",
+    "text": "CC0 1.0 Universal\\n\\n..."
+  },
+  {
+    "name": "@vitejs/test-dep-license-mit",
+    "version": "0.0.0",
+    "identifier": "MIT",
+    "text": "MIT License\\n\\nCopyright (c) ..."
+  },
+  {
+    "name": "@vitejs/test-dep-nested-license-isc",
+    "version": "0.0.0",
+    "identifier": "ISC",
+    "text": "Copyright (c) ..."
+  }
+]"
+`;
+
+exports[`markdown 1`] = `
+"# Licenses
+
+The app bundles dependencies which contain the following licenses:
+
+## @vitejs/test-dep-licence-cc0 - 0.0.0 (CC0-1.0)
+
+CC0 1.0 Universal
+
+...
+
+## @vitejs/test-dep-license-mit - 0.0.0 (MIT)
+
+MIT License
+
+Copyright (c) ...
+
+## @vitejs/test-dep-nested-license-isc - 0.0.0 (ISC)
+
+Copyright (c) ...
+"
+`;

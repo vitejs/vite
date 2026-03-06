@@ -37,6 +37,12 @@ export default defineConfig((env) => ({
         sourcemap: true,
         outDir: 'dist/client',
       },
+      optimizeDeps: {
+        rolldownOptions: {
+          // manual test for https://github.com/vitejs/rolldown-vite/issues/416
+          transform: {},
+        },
+      },
     },
     ssr: {
       optimizeDeps: {
@@ -44,11 +50,6 @@ export default defineConfig((env) => ({
       },
       build: {
         outDir: 'dist/server',
-        // [feedback]
-        // is this still meant to be used?
-        // for example, `ssr: true` seems to make `minify: false` automatically
-        // and also externalization.
-        ssr: true,
         rollupOptions: {
           input: {
             index: '/src/entry-server',

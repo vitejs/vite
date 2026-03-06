@@ -210,7 +210,39 @@ if (!isBuild) {
       .poll(async () => JSON.parse(await resultElement.textContent()))
       .toStrictEqual(['/pkg-pages/foo.js'])
   })
+
+  test('hmr for adding/removing files with array patterns and exclusions', async () => {
+    const resultElement = page.locator('.array-result')
+    await expect
+      .poll(async () => JSON.parse(await resultElement.textContent()))
+      .toStrictEqual({
+        './array-test-dir/included.js': 'included',
+      })
+
+    addFile('array-test-dir/new-file.js', 'export default "new"')
+    await expect
+      .poll(async () => JSON.parse(await resultElement.textContent()))
+      .toStrictEqual({
+        './array-test-dir/included.js': 'included',
+        './array-test-dir/new-file.js': 'new',
+      })
+
+    removeFile('array-test-dir/new-file.js')
+    await expect
+      .poll(async () => JSON.parse(await resultElement.textContent()))
+      .toStrictEqual({
+        './array-test-dir/included.js': 'included',
+      })
+  })
 }
+
+test('array pattern with exclusions', async () => {
+  await expect
+    .poll(async () => JSON.parse(await page.textContent('.array-result')))
+    .toStrictEqual({
+      './array-test-dir/included.js': 'included',
+    })
+})
 
 test('tree-shake eager css', async () => {
   expect(await page.textContent('.no-tree-shake-eager-css-result')).toMatch(
@@ -230,33 +262,49 @@ test('escapes special chars in globs without mangling user supplied glob suffix'
   // index.html has a script that loads all these glob.js files and prints the globs that returned the expected result
   // this test finally compares the printed output of index.js with the list of directories with special chars,
   // expecting that they all work
-  const files = await readdir(path.join(__dirname, '..', 'escape'), {
+  const files = await readdir(path.join(import.meta.dirname, '..', 'escape'), {
     withFileTypes: true,
   })
   const expectedNames = files
     .filter((f) => f.isDirectory())
     .map((f) => `/escape/${f.name}/glob.js`)
     .sort()
-  const foundRelativeNames = (await page.textContent('.escape-relative'))
-    .split('\n')
-    .sort()
-  expect(expectedNames).toEqual(foundRelativeNames)
-  const foundAliasNames = (await page.textContent('.escape-alias'))
-    .split('\n')
-    .sort()
-  expect(expectedNames).toEqual(foundAliasNames)
+  await expect
+    .poll(async () => {
+      const text = await page.textContent('.escape-relative')
+      return text.split('\n').sort()
+    })
+    .toEqual(expectedNames)
+  await expect
+    .poll(async () => {
+      const text = await page.textContent('.escape-alias')
+      return text.split('\n').sort()
+    })
+    .toEqual(expectedNames)
 })
 
 test('subpath imports', async () => {
-  expect(await page.textContent('.subpath-imports')).toMatch('bar foo')
+  await expect
+    .poll(async () => await page.textContent('.subpath-imports'))
+    .toMatch('bar foo')
 })
 
 test('#alias imports', async () => {
-  expect(await page.textContent('.hash-alias-imports')).toMatch('bar foo')
+  await expect
+    .poll(async () => await page.textContent('.hash-alias-imports'))
+    .toMatch('bar foo')
 })
 
 test('import base glob raw', async () => {
-  expect(await page.textContent('.result-base')).toBe(
-    JSON.stringify(baseRawResult, null, 2),
-  )
+  await expect
+    .poll(async () => await page.textContent('.result-base'))
+    .toBe(JSON.stringify(baseRawResult, null, 2))
+})
+
+test('import.meta.glob and dynamic import vars transformations should be visible to post transform plugins', async () => {
+  await expect
+    .poll(async () => await page.textContent('.transform-visibility'))
+    .toBe(
+      JSON.stringify({ globTransformed: true, dynamicImportTransformed: true }),
+    )
 })

@@ -20,7 +20,7 @@ export default defineConfig({
     testTimeout: 20000,
     isolate: false,
   },
-  esbuild: {
+  oxc: {
     target: 'node20',
   },
   publicDir: false,

@@ -107,7 +107,7 @@ describe('plugin container', () => {
             return this.resolve('foobar', 'notreal', {
               custom: { p1: 'success' },
               isEntry: true,
-            })
+            } as any)
           }
         },
       }

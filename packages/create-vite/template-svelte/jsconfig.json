@@ -17,6 +17,7 @@
      */
     "sourceMap": true,
     "esModuleInterop": true,
+    "types": ["vite/client"],
     "skipLibCheck": true,
     /**
      * Typecheck JS in `.svelte` and `.js` files by default.
