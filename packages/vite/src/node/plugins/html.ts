@@ -66,7 +66,6 @@ const inlineImportRE =
   /(?<!(?<!\.\.)\.)\bimport\s*\(("(?:[^"]|(?<=\\)")*"|'(?:[^']|(?<=\\)')*')\)/dg
 const htmlLangRE = /\.(?:html|htm)$/
 const spaceRe = /[\t\n\f\r ]/
-
 const importMapRE =
   /[ \t]*<script[^>]*type\s*=\s*(?:"importmap"|'importmap'|importmap)[^>]*>.*?<\/script>/is
 const moduleScriptRE =
@@ -1139,12 +1138,37 @@ export type IndexHtmlTransform =
 export function preImportMapHook(
   config: ResolvedConfig,
 ): IndexHtmlTransformHook {
-  return (html, ctx) => {
-    const importMapIndex = html.search(importMapRE)
-    if (importMapIndex < 0) return
+  return async (html, ctx) => {
+    if (!importMapRE.test(html)) return
+    if (!importMapAppendRE.test(html)) return
 
-    const importMapAppendIndex = html.search(importMapAppendRE)
-    if (importMapAppendIndex < 0) return
+    let importMapIndex = -1
+    let importMapAppendIndex = -1
+    await traverseHtml(html, ctx.path, (node) => {
+      if (!nodeIsElement(node)) {
+        return
+      }
+      const { nodeName, attrs } = node
+      if (
+        nodeName === 'script' &&
+        attrs.some((attr) => attr.name === 'type' && attr.value === 'importmap')
+      ) {
+        importMapIndex = node.sourceCodeLocation!.startTag!.startOffset
+      } else if (
+        importMapAppendIndex < 0 &&
+        ((nodeName === 'script' &&
+          attrs.some(
+            (attr) => attr.name === 'type' && attr.value === 'module',
+          )) ||
+          (nodeName === 'link' &&
+            attrs.some(
+              (attr) => attr.name === 'rel' && attr.value === 'modulepreload',
+            )))
+      ) {
+        importMapAppendIndex = node.sourceCodeLocation!.startTag!.startOffset
+      }
+    })
+    if (importMapIndex < 0 || importMapAppendIndex < 0) return
 
     if (importMapAppendIndex < importMapIndex) {
       const relativeHtml = normalizePath(
@@ -1165,23 +1189,42 @@ export function preImportMapHook(
  * Move importmap before the first module script and modulepreload link
  */
 export function postImportMapHook(): IndexHtmlTransformHook {
-  return (html) => {
+  return async (html, { path }) => {
+    if (!importMapRE.test(html)) return
     if (!importMapAppendRE.test(html)) return
+    let importMapAppendIndex = 0
+    const s = new MagicString(html)
+    await traverseHtml(html, path, (node) => {
+      if (!nodeIsElement(node)) {
+        return
+      }
 
-    let importMap: string | undefined
-    html = html.replace(importMapRE, (match) => {
-      importMap = match
-      return ''
+      const { nodeName, attrs, sourceCodeLocation } = node
+      if (
+        importMapAppendIndex &&
+        nodeName === 'script' &&
+        attrs.some((attr) => attr.name === 'type' && attr.value === 'importmap')
+      ) {
+        s.move(
+          sourceCodeLocation!.startTag!.startOffset,
+          sourceCodeLocation!.endOffset,
+          importMapAppendIndex,
+        )
+      } else if (
+        !importMapAppendIndex &&
+        ((nodeName === 'script' &&
+          attrs.some(
+            (attr) => attr.name === 'type' && attr.value === 'module',
+          )) ||
+          (nodeName === 'link' &&
+            attrs.some(
+              (attr) => attr.name === 'rel' && attr.value === 'modulepreload',
+            )))
+      ) {
+        importMapAppendIndex = node.sourceCodeLocation!.startTag!.startOffset
+      }
     })
-
-    if (importMap) {
-      html = html.replace(
-        importMapAppendRE,
-        (match) => `${importMap}\n${match}`,
-      )
-    }
-
-    return html
+    return s.toString()
   }
 }
 
