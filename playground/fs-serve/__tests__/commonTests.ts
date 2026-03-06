@@ -74,7 +74,12 @@ describe.runIf(isServe)('matrix', () => {
       content: /KEY=safe/,
       status: '200',
     },
-    // TODO: missing `fetch-safe-subdir` here
+    {
+      name: 'safe fetch in subdir',
+      testId: 'safe-subdir',
+      content: /KEY=safe/,
+      status: '200',
+    },
     {
       name: 'safe fetch with special characters',
       testId: 'safe-subdir-special-characters',
