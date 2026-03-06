@@ -38,7 +38,7 @@ describe('the dev server', () => {
     const { promise, resolve } =
       promiseWithResolvers<ResolvedServerUrls | null>()
     server = await createServer({
-      root: __dirname,
+      root: import.meta.dirname,
       logLevel: 'error',
       server: {
         strictPort: true,

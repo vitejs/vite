@@ -73,7 +73,7 @@ describe.runIf(isServe)('stacktrace', () => {
         sourcemapsEnabled ? '' : ' not'
       } enabled in Node.js`, async () => {
         const testStacktraceFile = path.resolve(
-          __dirname,
+          import.meta.dirname,
           '../test-stacktrace.js',
         )
 
@@ -88,7 +88,7 @@ describe.runIf(isServe)('stacktrace', () => {
 
         const reg = new RegExp(
           path
-            .resolve(__dirname, '../src', `error-${ext}.${ext}`)
+            .resolve(import.meta.dirname, '../src', `error-${ext}.${ext}`)
             .replace(/\\/g, '\\\\') + ':2:9',
           'i',
         )

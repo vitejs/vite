@@ -10,7 +10,7 @@ Native ES imports do not support bare module imports like the following:
 import { someMethod } from 'my-dep'
 ```
 
-The above will throw an error in the browser. Vite will detect such bare module imports in all served source files and perform the following:
+The above import will throw an error in the browser. Vite will detect such bare module imports in all served source files and perform the following:
 
 1. [Pre-bundle](./dep-pre-bundling) them to improve page loading speed and convert CommonJS / UMD modules to ESM. The pre-bundling step is performed with [esbuild](https://esbuild.github.io/) and makes Vite's cold start time significantly faster than any JavaScript-based bundler.
 
@@ -69,7 +69,7 @@ It is because `esbuild` only performs transpilation without type information, it
 
 You must set `"isolatedModules": true` in your `tsconfig.json` under `compilerOptions`, so that TS will warn you against the features that do not work with isolated transpilation.
 
-If a dependency doesn't work well with `"isolatedModules": true`. You can use `"skipLibCheck": true` to temporarily suppress the errors until it is fixed upstream.
+If a dependency doesn't work well with `"isolatedModules": true`, you can use `"skipLibCheck": true` to temporarily suppress the errors until it is fixed upstream.
 
 #### `useDefineForClassFields`
 
@@ -367,6 +367,8 @@ By default, Vite uses esbuild to minify CSS. Lightning CSS can also be used as t
 
 ## Static Assets
 
+<ScrimbaLink href="https://scrimba.com/intro-to-vite-c03p6pbbdq/~05pq?via=vite" title="Static Assets in Vite">Watch an interactive lesson on Scrimba</ScrimbaLink>
+
 Importing a static asset will return the resolved public URL when it is served:
 
 ```js twoslash
@@ -642,6 +644,14 @@ const module = await import(`./dir/${file}.js`)
 
 Note that variables only represent file names one level deep. If `file` is `'foo/bar'`, the import would fail. For more advanced usage, you can use the [glob import](#glob-import) feature.
 
+Also note that the dynamic import must match the following rules to be bundled:
+
+- Imports must start with `./` or `../`: ``import(`./dir/${foo}.js`)`` is valid, but ``import(`${foo}.js`)`` is not.
+- Imports must end with a file extension: ``import(`./dir/${foo}.js`)`` is valid, but ``import(`./dir/${foo}`)`` is not.
+- Imports to the own directory must specify a file name pattern: ``import(`./prefix-${foo}.js`)`` is valid, but ``import(`./${foo}.js`)`` is not.
+
+These rules are enforced to prevent accidentally importing files that are not intended to be bundled. For example, without these rules, `import(foo)` would bundle everything in the file system.
+
 ## WebAssembly
 
 Pre-compiled `.wasm` files can be imported with `?init`.
@@ -681,6 +691,12 @@ In the production build, `.wasm` files smaller than `assetInlineLimit` will be i
 Use [`vite-plugin-wasm`](https://github.com/Menci/vite-plugin-wasm) or other community plugins to handle this.
 :::
 
+::: warning For SSR build, Node.js compatible runtimes are only supported
+
+Due to the lack of a universal way to load a file, the internal implementation for `.wasm?init` relies on `node:fs` module. This means that this feature will only work in Node.js compatible runtimes for SSR builds.
+
+:::
+
 ### Accessing the WebAssembly Module
 
 If you need access to the `Module` object, e.g. to instantiate it multiple times, use an [explicit URL import](./assets#explicit-url-imports) to resolve the asset, and then perform the instantiation:
@@ -694,31 +710,6 @@ const main = async () => {
   const responsePromise = fetch(wasmUrl)
   const { module, instance } =
     await WebAssembly.instantiateStreaming(responsePromise)
-  /* ... */
-}
-
-main()
-```
-
-### Fetching the module in Node.js
-
-In SSR, the `fetch()` happening as part of the `?init` import, may fail with `TypeError: Invalid URL`.
-See the issue [Support wasm in SSR](https://github.com/vitejs/vite/issues/8882).
-
-Here is an alternative, assuming the project base is the current directory:
-
-```js twoslash
-import 'vite/client'
-// ---cut---
-import wasmUrl from 'foo.wasm?url'
-import { readFile } from 'node:fs/promises'
-
-const main = async () => {
-  const resolvedUrl = (await import('./test/boot.test.wasm?url')).default
-  const buffer = await readFile('.' + resolvedUrl)
-  const { instance } = await WebAssembly.instantiate(buffer, {
-    /* ... */
-  })
   /* ... */
 }
 

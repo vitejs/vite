@@ -1,7 +1,7 @@
 import http from 'node:http'
 import path from 'node:path'
 import fs from 'node:fs'
-import { afterEach, describe, expect, test } from 'vitest'
+import { afterEach, describe, expect, test, vi } from 'vitest'
 import type { InlineConfig, PluginOption } from '..'
 import type { UserConfig, UserConfigExport } from '../config'
 import { defineConfig, loadConfigFromFile, resolveConfig } from '../config'
@@ -617,6 +617,117 @@ describe('mergeConfig', () => {
       testRolldownOptions.environments.client.build.rolldownOptions.platform,
     ).toBe('browser')
   })
+
+  describe('later plugin can read `rollupOptions` set via `rolldownOptions` in earlier plugin', () => {
+    test('top-level config', async () => {
+      expect.assertions(2)
+      await resolveConfig(
+        {
+          plugins: [
+            {
+              name: 'plugin-a',
+              config() {
+                return {
+                  build: {
+                    rolldownOptions: {
+                      platform: 'neutral',
+                    },
+                  },
+                  worker: {
+                    rolldownOptions: {
+                      platform: 'neutral',
+                    },
+                  },
+                }
+              },
+            },
+            {
+              name: 'plugin-b',
+              config(config) {
+                expect(config.build?.rollupOptions?.platform).toBe('neutral')
+                expect(config.worker?.rollupOptions?.platform).toBe('neutral')
+              },
+            },
+          ],
+        },
+        'build',
+      )
+    })
+
+    test('new `environments` object', async () => {
+      expect.assertions(1)
+      await resolveConfig(
+        {
+          plugins: [
+            {
+              name: 'plugin-a',
+              config() {
+                return {
+                  environments: {
+                    ssr: {
+                      build: {
+                        rolldownOptions: {
+                          platform: 'neutral',
+                        },
+                      },
+                    },
+                  },
+                }
+              },
+            },
+            {
+              name: 'plugin-b',
+              config(config) {
+                expect(
+                  config.environments?.ssr?.build?.rollupOptions?.platform,
+                ).toBe('neutral')
+              },
+            },
+          ],
+        },
+        'build',
+      )
+    })
+
+    test('new environment on existing `environments` object', async () => {
+      expect.assertions(1)
+      await resolveConfig(
+        {
+          environments: {
+            // environments exists, but no ssr
+            client: {},
+          },
+          plugins: [
+            {
+              name: 'plugin-a',
+              config() {
+                return {
+                  environments: {
+                    ssr: {
+                      build: {
+                        rolldownOptions: {
+                          platform: 'neutral',
+                        },
+                      },
+                    },
+                  },
+                }
+              },
+            },
+            {
+              name: 'plugin-b',
+              config(config) {
+                expect(
+                  config.environments?.ssr?.build?.rollupOptions?.platform,
+                ).toBe('neutral')
+              },
+            },
+          ],
+        },
+        'build',
+      )
+    })
+  })
 })
 
 describe('resolveEnvPrefix', () => {
@@ -632,9 +743,22 @@ describe('resolveEnvPrefix', () => {
     expect(() => resolveEnvPrefix(config)).toThrow()
   })
 
+  test(`show a warning message if envPrefix contains a whitespace`, () => {
+    const consoleWarnSpy = vi
+      .spyOn(console, 'warn')
+      .mockImplementation(() => {})
+    let config: UserConfig = { envPrefix: 'WITH SPACE' }
+    resolveEnvPrefix(config)
+    expect(consoleWarnSpy).toHaveBeenCalled()
+    config = { envPrefix: ['CUSTOM_', 'ANOTHER SPACE'] }
+    resolveEnvPrefix(config)
+    expect(consoleWarnSpy).toHaveBeenCalledTimes(2)
+    consoleWarnSpy.mockRestore()
+  })
+
   test('should work correctly for valid envPrefix value', () => {
-    const config: UserConfig = { envPrefix: [' ', 'CUSTOM_'] }
-    expect(resolveEnvPrefix(config)).toMatchObject([' ', 'CUSTOM_'])
+    const config: UserConfig = { envPrefix: ['CUSTOM_'] }
+    expect(resolveEnvPrefix(config)).toMatchObject(['CUSTOM_'])
   })
 })
 
@@ -1021,7 +1145,7 @@ test('preTransformRequests', async () => {
 })
 
 describe('loadConfigFromFile', () => {
-  const fixtures = path.resolve(__dirname, './fixtures/config')
+  const fixtures = path.resolve(import.meta.dirname, './fixtures/config')
 
   describe('load default files', () => {
     const root = path.resolve(fixtures, './loadConfigFromFile')

@@ -16,7 +16,10 @@ export {
   minifySync,
   type MinifyOptions,
   type MinifyResult,
-} from 'rolldown/experimental'
+  Visitor,
+  type VisitorObject,
+  type ESTree,
+} from 'rolldown/utils'
 
 /** @deprecated - use `parse` instead */
 export const parseAst: typeof _parseAst = _parseAst

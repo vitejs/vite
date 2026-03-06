@@ -1,5 +1,9 @@
+import { runInThisContext } from 'node:vm'
+import { resolve } from 'node:path'
 import { describe, expect } from 'vitest'
 import type { ViteDevServer } from '../../..'
+import type { ModuleRunnerContext } from '../../../../module-runner'
+import { ESModulesEvaluator } from '../../../../module-runner'
 import {
   createFixtureEditor,
   createModuleRunnerTester,
@@ -133,5 +137,41 @@ describe('module runner initialization', async () => {
         "    at Module.testStack (<root>/fixtures/transpiled-inline.ts:12:3)",
       ]
     `)
+  })
+})
+
+describe('module runner with node:vm executor', async () => {
+  class Evaluator extends ESModulesEvaluator {
+    async runInlinedModule(_: ModuleRunnerContext, __: string) {
+      // Mimics VitestModuleEvaluator
+      const initModule = runInThisContext(
+        '() => { throw new Error("example")}',
+        {
+          lineOffset: 0,
+          columnOffset: -100,
+          filename: resolve(import.meta.dirname, 'fixtures/a.ts'),
+        },
+      )
+
+      initModule()
+    }
+  }
+
+  const it = await createModuleRunnerTester(
+    {},
+    {
+      sourcemapInterceptor: 'prepareStackTrace',
+      evaluator: new Evaluator(),
+    },
+  )
+
+  it('should not crash when error stacktrace contains negative column', async ({
+    runner,
+  }) => {
+    const error = await runner.import('/fixtures/a.ts').catch((err) => err)
+
+    expect(() =>
+      error.stack.includes('.stack access triggers the bug'),
+    ).not.toThrow()
   })
 })

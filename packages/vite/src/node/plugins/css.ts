@@ -6,6 +6,7 @@ import postcssrc from 'postcss-load-config'
 import type {
   ExistingRawSourceMap,
   InternalModuleFormat,
+  MinimalPluginContext,
   OutputAsset,
   OutputChunk,
   RenderedChunk,
@@ -380,7 +381,11 @@ export function cssPlugin(config: ResolvedConfig): Plugin {
             if (encodePublicUrlsInCSS(config)) {
               return [publicFileToBuiltUrl(decodedUrl, config), undefined]
             } else {
-              return [joinUrlSegments(config.base, decodedUrl), undefined]
+              const base = joinUrlSegments(
+                config.server.origin ?? '',
+                config.base,
+              )
+              return [joinUrlSegments(base, decodedUrl), undefined]
             }
           }
           const [id, fragment] = decodedUrl.split('#')
@@ -473,7 +478,10 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
       ? rollupOptionsOutput[0]
       : rollupOptionsOutput
   )?.assetFileNames
-  const getCssAssetDirname = (cssAssetName: string) => {
+  const getCssAssetDirname = (
+    cssAssetName: string,
+    originalFileName?: string,
+  ) => {
     const cssAssetNameDir = path.dirname(cssAssetName)
     if (!assetFileNames) {
       return path.join(config.build.assetsDir, cssAssetNameDir)
@@ -484,7 +492,7 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
         assetFileNames({
           type: 'asset',
           names: [cssAssetName],
-          originalFileNames: [],
+          originalFileNames: originalFileName ? [originalFileName] : [],
           source: '/* vite internal call, ignore */',
         }),
       )
@@ -693,13 +701,14 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
             const resolveAssetUrlsInCss = (
               chunkCSS: string,
               cssAssetName: string,
+              originalFileName?: string,
             ) => {
               const encodedPublicUrls = encodePublicUrlsInCSS(config)
 
               const relative = config.base === './' || config.base === ''
               const cssAssetDirname =
                 encodedPublicUrls || relative
-                  ? slash(getCssAssetDirname(cssAssetName))
+                  ? slash(getCssAssetDirname(cssAssetName, originalFileName))
                   : undefined
 
               const toRelative = (filename: string) => {
@@ -786,7 +795,11 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
 
                 let cssContent = styles.get(id)!
 
-                cssContent = resolveAssetUrlsInCss(cssContent, cssAssetName)
+                cssContent = resolveAssetUrlsInCss(
+                  cssContent,
+                  cssAssetName,
+                  originalFileName,
+                )
 
                 urlEmitTasks.push({
                   cssAssetName,
@@ -880,7 +893,11 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
                     ) ?? false,
                   )
 
-                  chunkCSS = resolveAssetUrlsInCss(chunkCSS, cssAssetName)
+                  chunkCSS = resolveAssetUrlsInCss(
+                    chunkCSS,
+                    cssAssetName,
+                    originalFileName,
+                  )
 
                   // wait for previous tasks as well
                   chunkCSS = await codeSplitEmitQueue.run(async () => {
@@ -926,38 +943,16 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
                     `${style}.textContent = ${cssString};` +
                     `document.head.appendChild(${style});`
 
-                  let injectionPoint: number
-                  if (opts.format === 'iife' || opts.format === 'umd') {
-                    const m = (
-                      opts.format === 'iife' ? IIFE_BEGIN_RE : UMD_BEGIN_RE
-                    ).exec(code)
-                    if (!m) {
-                      this.error('Injection point for inlined CSS not found')
-                      return
-                    }
-                    injectionPoint = m.index + m[0].length
-                  } else if (opts.format === 'es') {
-                    // legacy build
-                    if (code.startsWith('#!')) {
-                      let secondLinePos = code.indexOf('\n')
-                      if (secondLinePos === -1) {
-                        secondLinePos = 0
-                      }
-                      injectionPoint = secondLinePos
-                    } else {
-                      injectionPoint = 0
-                    }
-                  } else {
-                    this.error('Non supported format')
-                    return
-                  }
-
                   s ||= new MagicString(code)
-                  s.appendRight(injectionPoint, injectCode)
+                  injectInlinedCSS(s, this, code, opts.format, injectCode)
                 }
               } else {
                 // resolve public URL from CSS paths, we need to use absolute paths
-                chunkCSS = resolveAssetUrlsInCss(chunkCSS, getCssBundleName())
+                chunkCSS = resolveAssetUrlsInCss(
+                  chunkCSS,
+                  getCssBundleName(),
+                  defaultCssBundleName,
+                )
                 // finalizeCss is called for the aggregated chunk in generateBundle
 
                 chunkCSSMap.set(chunk.fileName, chunkCSS)
@@ -1046,9 +1041,9 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
             name: getCssBundleName(),
             type: 'asset',
             source: extractedCss,
-            // this file is an implicit entry point, use `style.css` as the original file name
+            // this file is an implicit entry point, use defaultCssBundleName as the original file name
             // this name is also used as a key in the manifest
-            originalFileName: 'style.css',
+            originalFileName: defaultCssBundleName,
           })
         }
       }
@@ -1108,7 +1103,25 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
 
         const removedPureCssFiles = removedPureCssFilesCache.get(config)!
         pureCssChunkNames.forEach((fileName) => {
-          removedPureCssFiles.set(fileName, bundle[fileName] as RenderedChunk)
+          const emptyJsPlaceholder = bundle[fileName] as RenderedChunk
+          if (emptyJsPlaceholder.isEntry) {
+            const { importedAssets, importedCss } =
+              emptyJsPlaceholder.viteMetadata!
+            const cssReferenceId = cssEntriesMap
+              .get(this.environment)!
+              .get(emptyJsPlaceholder.name)!
+            const realCssEntryName = this.getFileName(cssReferenceId)
+            const realCssEntry = bundle[realCssEntryName]!
+            importedCss.delete(realCssEntryName)
+            if (importedAssets.size) {
+              realCssEntry.viteMetadata!.importedAssets = importedAssets
+            }
+            if (importedCss.size) {
+              realCssEntry.viteMetadata!.importedCss = importedCss
+            }
+          }
+
+          removedPureCssFiles.set(fileName, emptyJsPlaceholder)
           delete bundle[fileName]
           delete bundle[`${fileName}.map`]
         })
@@ -1125,6 +1138,37 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
       }
     },
   }
+}
+
+export function injectInlinedCSS(
+  s: MagicString,
+  ctx: Pick<MinimalPluginContext, 'error'>,
+  code: string,
+  format: InternalModuleFormat,
+  injectCode: string,
+): void {
+  let injectionPoint: number
+  if (format === 'iife' || format === 'umd') {
+    const m = (format === 'iife' ? IIFE_BEGIN_RE : UMD_BEGIN_RE).exec(code)
+    if (!m) {
+      ctx.error('Injection point for inlined CSS not found')
+    }
+    injectionPoint = m.index + m[0].length
+  } else if (format === 'es') {
+    // legacy build
+    if (code.startsWith('#!')) {
+      let secondLinePos = code.indexOf('\n')
+      if (secondLinePos === -1) {
+        secondLinePos = 0
+      }
+      injectionPoint = secondLinePos
+    } else {
+      injectionPoint = 0
+    }
+  } else {
+    ctx.error('Non supported format')
+  }
+  s.appendRight(injectionPoint, injectCode)
 }
 
 export function cssAnalysisPlugin(config: ResolvedConfig): Plugin {

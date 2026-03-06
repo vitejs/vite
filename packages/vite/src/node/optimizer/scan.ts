@@ -2,7 +2,8 @@ import fs from 'node:fs'
 import fsp from 'node:fs/promises'
 import path from 'node:path'
 import { performance } from 'node:perf_hooks'
-import { scan, transformSync } from 'rolldown/experimental'
+import { scan } from 'rolldown/experimental'
+import { transformSync } from 'rolldown/utils'
 import type { PartialResolvedId, Plugin } from 'rolldown'
 import colors from 'picocolors'
 import { glob } from 'tinyglobby'
@@ -35,8 +36,7 @@ import { BaseEnvironment } from '../baseEnvironment'
 import type { DevEnvironment } from '../server/environment'
 import { transformGlobImport } from '../plugins/importMetaGlob'
 import { cleanUrl } from '../../shared/utils'
-import { loadTsconfigJsonForFile } from '../plugins/esbuild'
-import { setOxcTransformOptionsFromTsconfigOptions } from '../plugins/oxc'
+import { getRollupJsxPresets } from '../plugins/oxc'
 
 export class ScanEnvironment extends BaseEnvironment {
   mode = 'scan' as const
@@ -253,23 +253,17 @@ async function prepareRolldownScanner(
     environment.config.optimizeDeps.rolldownOptions ?? {}
 
   const plugins = await asyncFlatten(arraify(pluginsFromConfig))
-
   plugins.push(...rolldownScanPlugin(environment, deps, missing, entries))
 
-  // The plugin pipeline automatically loads the closest tsconfig.json.
-  // But Rolldown doesn't support reading tsconfig.json (https://github.com/rolldown/rolldown/issues/4968).
-  // Due to syntax incompatibilities between the experimental decorators in TypeScript and TC39 decorators,
-  // we cannot simply set `"experimentalDecorators": true` or `false`. (https://github.com/vitejs/vite/pull/15206#discussion_r1417414715)
-  // Therefore, we use the closest tsconfig.json from the root to make it work in most cases.
-  const { tsconfig } = await loadTsconfigJsonForFile(
-    path.join(environment.config.root, '_dummy.js'),
-  )
   const transformOptions = deepClone(rolldownOptions.transform) ?? {}
-  setOxcTransformOptionsFromTsconfigOptions(
-    transformOptions,
-    tsconfig.compilerOptions,
-    [], // NOTE: ignore warnings as the same warning will be shown by the plugin container
-  )
+  if (transformOptions.jsx === undefined) {
+    transformOptions.jsx = {}
+  } else if (
+    transformOptions.jsx === 'react' ||
+    transformOptions.jsx === 'react-jsx'
+  ) {
+    transformOptions.jsx = getRollupJsxPresets(transformOptions.jsx)
+  }
   if (typeof transformOptions.jsx === 'object') {
     transformOptions.jsx.development ??= !environment.config.isProduction
   }
@@ -393,7 +387,10 @@ function rolldownScanPlugin(
     let transpiledContents: string
     // transpile because `transformGlobImport` only expects js
     if (loader !== 'js') {
-      const result = transformSync(id, contents, { lang: loader })
+      const result = transformSync(id, contents, {
+        lang: loader,
+        tsconfig: false,
+      })
       if (result.errors.length > 0) {
         throw new AggregateError(result.errors, 'oxc transform error')
       }

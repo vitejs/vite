@@ -53,14 +53,11 @@ export default defineConfig({
 
 ## optimizeDeps.rolldownOptions <NonInheritBadge />
 
-- **Type:** [`Omit`](https://www.typescriptlang.org/docs/handbook/utility-types.html#omittype-keys)`<``RolldownOptions`, `'input' | 'logLevel' | 'output'> & {
+- **Type:** [`Omit`](https://www.typescriptlang.org/docs/handbook/utility-types.html#omittype-keys)`<`[`RolldownOptions`](https://rolldown.rs/reference/), `'input' | 'logLevel' | 'output'> & {
   output?: [`Omit`](https://www.typescriptlang.org/docs/handbook/utility-types.html#omittype-keys)`<`
-    `RolldownOutputOptions`,
+    [`RolldownOutputOptions`](https://rolldown.rs/reference/),
     `'format' | 'sourcemap' | 'dir' | 'banner'>`
 `}`
-
-<!-- TODO: add link to RolldownOptions -->
-<!-- TODO: add link to RolldownOutputOptions -->
 
 Options to pass to Rolldown during the dep scanning and optimization.
 

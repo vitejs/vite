@@ -52,10 +52,7 @@ Given a Vite server configured in middleware mode as described by the [SSR setup
 ```js
 import fs from 'node:fs'
 import path from 'node:path'
-import { fileURLToPath } from 'node:url'
 import { createServer } from 'vite'
-
-const __dirname = path.dirname(fileURLToPath(import.meta.url))
 
 const viteServer = await createServer({
   server: { middlewareMode: true },
@@ -75,7 +72,7 @@ app.use('*', async (req, res, next) => {
   const url = req.originalUrl
 
   // 1. Read index.html
-  const indexHtmlPath = path.resolve(__dirname, 'index.html')
+  const indexHtmlPath = path.resolve(import.meta.dirname, 'index.html')
   let template = fs.readFileSync(indexHtmlPath, 'utf-8')
 
   // 2. Apply Vite HTML transforms. This injects the Vite HMR client,
@@ -154,7 +151,7 @@ const server = await createServer({
 // Any consumer of the environment API can now call `dispatchFetch`
 if (isFetchableDevEnvironment(server.environments.custom)) {
   const response: Response = await server.environments.custom.dispatchFetch(
-    new Request('/request-to-handle'),
+    new Request('http://example.com/request-to-handle'),
   )
 }
 ```
@@ -199,7 +196,7 @@ if (ssrEnvironment instanceof CustomDevEnvironment) {
 // virtual:entrypoint
 const { createHandler } = await import('./entrypoint.js')
 const handler = createHandler(input)
-const response = handler(new Request('/'))
+const response = handler(new Request('http://example.com/'))
 
 // -------------------------------------
 // ./entrypoint.js
@@ -269,7 +266,7 @@ if (ssrEnvironment instanceof RunnableDevEnvironment) {
   throw new Error(`Unsupported runtime for ${ssrEnvironment.name}`)
 }
 
-const req = new Request('/')
+const req = new Request('http://example.com/')
 
 const uniqueId = 'a-unique-id'
 ssrEnvironment.send('request', serialize({ req, uniqueId }))
@@ -293,7 +290,7 @@ import.meta.hot.on('request', (data) => {
   import.meta.hot.send('response', serialize({ res: res, uniqueId }))
 })
 
-const response = handler(new Request('/'))
+const response = handler(new Request('http://example.com/'))
 
 // -------------------------------------
 // ./entrypoint.js

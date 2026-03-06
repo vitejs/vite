@@ -3,7 +3,7 @@ import aliasPlugin from '@rollup/plugin-alias'
 import type { ResolvedConfig } from './config'
 import type { EnvironmentPluginContainer } from './server/pluginContainer'
 import { createEnvironmentPluginContainer } from './server/pluginContainer'
-import { oxcResolvePlugin, resolvePlugin } from './plugins/resolve'
+import { oxcResolvePlugin } from './plugins/resolve'
 import type { InternalResolveOptions } from './plugins/resolve'
 import type { Environment } from './environment'
 import type { PartialEnvironment } from './baseEnvironment'
@@ -61,34 +61,20 @@ export function createIdResolver(
         [
           // @ts-expect-error  the aliasPlugin uses rollup types
           aliasPlugin({ entries: environment.config.resolve.alias }),
-          ...(config.experimental.enableNativePlugin
-            ? oxcResolvePlugin(
-                {
-                  root: config.root,
-                  isProduction: config.isProduction,
-                  isBuild: config.command === 'build',
-                  asSrc: true,
-                  preferRelative: false,
-                  tryIndex: true,
-                  ...options,
-                  // Ignore sideEffects and other computations as we only need the id
-                  idOnly: true,
-                },
-                environment.config,
-              )
-            : [
-                resolvePlugin({
-                  root: config.root,
-                  isProduction: config.isProduction,
-                  isBuild: config.command === 'build',
-                  asSrc: true,
-                  preferRelative: false,
-                  tryIndex: true,
-                  ...options,
-                  // Ignore sideEffects and other computations as we only need the id
-                  idOnly: true,
-                }),
-              ]),
+          ...oxcResolvePlugin(
+            {
+              root: config.root,
+              isProduction: config.isProduction,
+              isBuild: config.command === 'build',
+              asSrc: true,
+              preferRelative: false,
+              tryIndex: true,
+              ...options,
+              // Ignore sideEffects and other computations as we only need the id
+              idOnly: true,
+            },
+            environment.config,
+          ),
         ],
         undefined,
         false,

@@ -22,9 +22,9 @@
     "@vitejs/test-css-proxy-dep": "file:./css-proxy-dep",
     "@vitejs/test-scss-proxy-dep": "file:./scss-proxy-dep",
     "less": "^4.5.1",
-    "lightningcss": "^1.30.2",
+    "lightningcss": "^1.31.1",
     "postcss-nested": "^7.0.2",
-    "sass": "^1.97.2",
+    "sass": "^1.97.3",
     "stylus": "^0.64.0",
     "sugarss": "^5.0.1",
     "tinyglobby": "^0.2.15"

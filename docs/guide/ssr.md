@@ -68,11 +68,8 @@ When building an SSR app, you likely want to have full control over your main se
 ```js{15-18} twoslash [server.js]
 import fs from 'node:fs'
 import path from 'node:path'
-import { fileURLToPath } from 'node:url'
 import express from 'express'
 import { createServer as createViteServer } from 'vite'
-
-const __dirname = path.dirname(fileURLToPath(import.meta.url))
 
 async function createServer() {
   const app = express()
@@ -111,7 +108,6 @@ The next step is implementing the `*` handler to serve server-rendered HTML:
 // @noErrors
 import fs from 'node:fs'
 import path from 'node:path'
-import { fileURLToPath } from 'node:url'
 
 /** @type {import('express').Express} */
 var app
@@ -125,7 +121,7 @@ app.use('*all', async (req, res, next) => {
   try {
     // 1. Read index.html
     let template = fs.readFileSync(
-      path.resolve(__dirname, 'index.html'),
+      path.resolve(import.meta.dirname, 'index.html'),
       'utf-8',
     )
 

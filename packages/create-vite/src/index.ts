@@ -18,6 +18,7 @@ const {
   red,
   redBright,
   reset,
+  underline,
   yellow,
 } = colors
 
@@ -28,7 +29,7 @@ const argv = mri<{
   immediate?: boolean
   interactive?: boolean
 }>(process.argv.slice(2), {
-  boolean: ['help', 'overwrite', 'immediate', 'rolldown', 'interactive'],
+  boolean: ['help', 'overwrite', 'immediate', 'interactive'],
   alias: { h: 'help', t: 'template', i: 'immediate' },
   string: ['template'],
 })
@@ -51,7 +52,6 @@ ${yellow    ('vanilla-ts          vanilla'       )}
 ${green     ('vue-ts              vue'           )}
 ${cyan      ('react-ts            react'         )}
 ${cyan      ('react-compiler-ts   react-compiler')}
-${cyan      ('react-swc-ts        react-swc'     )}
 ${magenta   ('preact-ts           preact'        )}
 ${redBright ('lit-ts              lit'           )}
 ${red       ('svelte-ts           svelte'        )}
@@ -68,6 +68,7 @@ type Framework = {
 type FrameworkVariant = {
   name: string
   display: string
+  link?: `https://${string}`
   color: ColorFunc
   customCommand?: string
 }
@@ -114,12 +115,14 @@ const FRAMEWORKS: Framework[] = [
       {
         name: 'custom-nuxt',
         display: 'Nuxt ↗',
+        link: 'https://nuxt.com',
         color: greenBright,
         customCommand: 'npm exec nuxi init TARGET_DIR',
       },
       {
         name: 'custom-vike-vue',
         display: 'Vike ↗',
+        link: 'https://vike.dev',
         color: greenBright,
         customCommand: 'npm create -- vike@latest --vue TARGET_DIR',
       },
@@ -141,11 +144,6 @@ const FRAMEWORKS: Framework[] = [
         color: blue,
       },
       {
-        name: 'react-swc-ts',
-        display: 'TypeScript + SWC',
-        color: blue,
-      },
-      {
         name: 'react',
         display: 'JavaScript',
         color: yellow,
@@ -156,39 +154,38 @@ const FRAMEWORKS: Framework[] = [
         color: yellow,
       },
       {
-        name: 'react-swc',
-        display: 'JavaScript + SWC',
-        color: yellow,
+        name: 'rsc',
+        display: 'RSC',
+        color: magenta,
+        customCommand:
+          'npm exec tiged vitejs/vite-plugin-react/packages/plugin-rsc/examples/starter TARGET_DIR',
       },
       {
         name: 'custom-react-router',
         display: 'React Router v7 ↗',
+        link: 'https://reactrouter.com',
         color: cyan,
         customCommand: 'npm create react-router@latest TARGET_DIR',
       },
       {
         name: 'custom-tanstack-router-react',
         display: 'TanStack Router ↗',
+        link: 'https://tanstack.com/router',
         color: cyan,
         customCommand:
-          'npm create -- tsrouter-app@latest TARGET_DIR --framework React --interactive',
+          'npm exec @tanstack/cli@latest -- create TARGET_DIR --template file-router --interactive',
       },
       {
         name: 'redwoodsdk-standard',
         display: 'RedwoodSDK ↗',
-        color: red,
+        link: 'https://rwsdk.com',
+        color: cyan,
         customCommand: 'npm create rwsdk@latest TARGET_DIR',
-      },
-      {
-        name: 'rsc',
-        display: 'RSC ↗',
-        color: magenta,
-        customCommand:
-          'npm exec tiged vitejs/vite-plugin-react/packages/plugin-rsc/examples/starter TARGET_DIR',
       },
       {
         name: 'custom-vike-react',
         display: 'Vike ↗',
+        link: 'https://vike.dev',
         color: cyan,
         customCommand: 'npm create -- vike@latest --react TARGET_DIR',
       },
@@ -275,13 +272,15 @@ const FRAMEWORKS: Framework[] = [
       {
         name: 'custom-tanstack-router-solid',
         display: 'TanStack Router ↗',
+        link: 'https://tanstack.com/router',
         color: cyan,
         customCommand:
-          'npm create -- tsrouter-app@latest TARGET_DIR --framework Solid --interactive',
+          'npm exec @tanstack/cli@latest -- create TARGET_DIR --template file-router --framework solid --interactive',
       },
       {
         name: 'custom-vike-solid',
         display: 'Vike ↗',
+        link: 'https://vike.dev',
         color: cyan,
         customCommand: 'npm create -- vike@latest --solid TARGET_DIR',
       },
@@ -470,7 +469,7 @@ async function init() {
         defaultValue: defaultTargetDir,
         placeholder: defaultTargetDir,
         validate: (value) => {
-          return value.length === 0 || formatTargetDir(value).length > 0
+          return !value || formatTargetDir(value).length > 0
             ? undefined
             : 'Invalid project name'
         },
@@ -536,7 +535,7 @@ async function init() {
         defaultValue: toValidPackageName(packageName),
         placeholder: toValidPackageName(packageName),
         validate(dir) {
-          if (!isValidPackageName(dir)) {
+          if (dir && !isValidPackageName(dir)) {
             return 'Invalid package.json name'
           }
         },
@@ -574,7 +573,6 @@ async function init() {
       const variant = await prompts.select({
         message: 'Select a variant:',
         options: framework.variants.map((variant) => {
-          const variantColor = variant.color
           const command = variant.customCommand
             ? getFullCustomCommand(variant.customCommand, pkgInfo).replace(
                 / TARGET_DIR$/,
@@ -582,7 +580,7 @@ async function init() {
               )
             : undefined
           return {
-            label: variantColor(variant.display || variant.name),
+            label: getLabel(variant),
             value: variant.name,
             hint: command,
           }
@@ -598,29 +596,8 @@ async function init() {
 
   const pkgManager = pkgInfo ? pkgInfo.name : 'npm'
 
-  // 5. Ask about immediate install and package manager
-  let immediate = argImmediate
-  if (immediate === undefined) {
-    if (interactive) {
-      const immediateResult = await prompts.confirm({
-        message: `Install with ${pkgManager} and start now?`,
-      })
-      if (prompts.isCancel(immediateResult)) return cancel()
-      immediate = immediateResult
-    } else {
-      immediate = false
-    }
-  }
-
   const root = path.join(cwd, targetDir)
-  fs.mkdirSync(root, { recursive: true })
-
   // determine template
-  let isReactSwc = false
-  if (template.includes('-swc')) {
-    isReactSwc = true
-    template = template.replace('-swc', '')
-  }
   let isReactCompiler = false
   if (template.includes('react-compiler')) {
     isReactCompiler = true
@@ -644,6 +621,22 @@ async function init() {
     process.exit(status ?? 0)
   }
 
+  // 5. Ask about immediate install and package manager
+  let immediate = argImmediate
+  if (immediate === undefined) {
+    if (interactive) {
+      const immediateResult = await prompts.confirm({
+        message: `Install with ${pkgManager} and start now?`,
+      })
+      if (prompts.isCancel(immediateResult)) return cancel()
+      immediate = immediateResult
+    } else {
+      immediate = false
+    }
+  }
+
+  // Only create directory for built-in templates, not for customCommand
+  fs.mkdirSync(root, { recursive: true })
   prompts.log.step(`Scaffolding project in ${root}...`)
 
   const templateDir = path.resolve(
@@ -682,9 +675,7 @@ async function init() {
 
   write('package.json', JSON.stringify(pkg, null, 2) + '\n')
 
-  if (isReactSwc) {
-    setupReactSwc(root, template.endsWith('-ts'))
-  } else if (isReactCompiler) {
+  if (isReactCompiler) {
     setupReactCompiler(root, template.endsWith('-ts'))
   }
 
@@ -707,7 +698,10 @@ async function init() {
 }
 
 function formatTargetDir(targetDir: string) {
-  return targetDir.trim().replace(/\/+$/g, '')
+  return targetDir
+    .trim()
+    .replace(/[<>:"\\|?*]/g, '')
+    .replace(/\/+$/g, '')
 }
 
 function copy(src: string, dest: string) {
@@ -775,28 +769,6 @@ function pkgFromUserAgent(userAgent: string | undefined): PkgInfo | undefined {
   }
 }
 
-function setupReactSwc(root: string, isTs: boolean) {
-  // renovate: datasource=npm depName=@vitejs/plugin-react-swc
-  const reactSwcPluginVersion = '4.2.2'
-
-  editFile(path.resolve(root, 'package.json'), (content) => {
-    return content.replace(
-      /"@vitejs\/plugin-react": ".+?"/,
-      `"@vitejs/plugin-react-swc": "^${reactSwcPluginVersion}"`,
-    )
-  })
-  editFile(
-    path.resolve(root, `vite.config.${isTs ? 'ts' : 'js'}`),
-    (content) => {
-      return content.replace('@vitejs/plugin-react', '@vitejs/plugin-react-swc')
-    },
-  )
-  updateReactCompilerReadme(
-    root,
-    'The React Compiler is currently not compatible with SWC. See [this issue](https://github.com/vitejs/vite-plugin-react/issues/428) for tracking the progress.',
-  )
-}
-
 function setupReactCompiler(root: string, isTs: boolean) {
   // renovate: datasource=npm depName=babel-plugin-react-compiler
   const reactCompilerPluginVersion = '1.0.0'
@@ -820,7 +792,7 @@ function setupReactCompiler(root: string, isTs: boolean) {
         `  plugins: [
     react({
       babel: {
-        plugins: [['babel-plugin-react-compiler']],
+        plugins: ['babel-plugin-react-compiler'],
       },
     }),
   ],`,
@@ -861,7 +833,7 @@ function getFullCustomCommand(customCommand: string, pkgInfo?: PkgInfo) {
   return (
     customCommand
       .replace(/^npm create (?:-- )?/, () => {
-        // `bun create` uses it's own set of templates,
+        // `bun create` uses its own set of templates,
         // the closest alternative is using `bun x` directly on the package
         if (pkgManager === 'bun') {
           return 'bun x create-'
@@ -900,6 +872,16 @@ function getFullCustomCommand(customCommand: string, pkgInfo?: PkgInfo) {
         return 'npm exec '
       })
   )
+}
+
+function getLabel(variant: FrameworkVariant) {
+  const labelText = variant.display || variant.name
+  let label = variant.color(labelText)
+  const { link } = variant
+  if (link) {
+    label += ` ${underline(link)}`
+  }
+  return label
 }
 
 function getInstallCommand(agent: string) {

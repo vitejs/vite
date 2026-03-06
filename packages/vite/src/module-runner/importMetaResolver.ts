@@ -33,12 +33,22 @@ function customizationHookResolve(
   return nextResolve(specifier, context)
 }
 
-export async function createImportMetaResolver(): Promise<
-  ImportMetaResolver | undefined
-> {
-  let module: typeof import('node:module')
+// Ensure that we only register the hook once
+// Otherwise, a hook will be registered for each createImportMetaResolver call
+// and eventually cause "Maximum call stack size exceeded" errors
+let isHookRegistered = false
+
+export function createImportMetaResolver(): ImportMetaResolver | undefined {
+  if (isHookRegistered) {
+    return importMetaResolveWithCustomHook
+  }
+
+  let module: typeof import('node:module') | undefined
   try {
-    module = (await import('node:module')).Module
+    module =
+      typeof process !== 'undefined'
+        ? process.getBuiltinModule('node:module').Module
+        : undefined
   } catch {
     return
   }
@@ -48,17 +58,22 @@ export async function createImportMetaResolver(): Promise<
   }
 
   // Use registerHooks if available as it's more performant
+  // eslint-disable-next-line n/no-unsupported-features/node-builtins -- we check the existence
   if (module.registerHooks) {
+    // eslint-disable-next-line n/no-unsupported-features/node-builtins -- we checked the existence
     module.registerHooks({ resolve: customizationHookResolve })
+    isHookRegistered = true
     return importMetaResolveWithCustomHook
   }
 
+  // eslint-disable-next-line n/no-unsupported-features/node-builtins -- we check the existence
   if (!module.register) {
     return
   }
 
   try {
     const hookModuleContent = `data:text/javascript,${encodeURI(customizationHooksModule)}`
+    // eslint-disable-next-line n/no-unsupported-features/node-builtins -- we checked the existence
     module.register(hookModuleContent)
   } catch (e) {
     // For `--experimental-network-imports` flag that exists in Node before v22
@@ -68,6 +83,7 @@ export async function createImportMetaResolver(): Promise<
     throw e
   }
 
+  isHookRegistered = true
   return importMetaResolveWithCustomHook
 }
 
