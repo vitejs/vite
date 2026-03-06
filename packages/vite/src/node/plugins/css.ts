@@ -331,6 +331,15 @@ export function cssPlugin(config: ResolvedConfig): Plugin {
       )
     },
 
+    configureServer() {
+      // Initialize module cache for dev mode in case buildStart is not called
+      // (e.g. when using createServerModuleRunner)
+      if (!cssModulesCache.has(config)) {
+        moduleCache = new Map<string, Record<string, string>>()
+        cssModulesCache.set(config, moduleCache)
+      }
+    },
+
     buildEnd() {
       preprocessorWorkerController?.close()
     },
@@ -556,7 +565,7 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
         }
 
         const inlined = inlineRE.test(id)
-        const modules = cssModulesCache.get(config)!.get(id)
+        const modules = cssModulesCache.get(config)?.get(id)
 
         // #6984, #7552
         // `foo.module.css` => modulesCode
