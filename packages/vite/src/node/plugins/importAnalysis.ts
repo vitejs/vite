@@ -735,8 +735,8 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
       const staticImportedUrls = new Set(
         _orderedImportedUrls.map((url) => removeTimestampQuery(url)),
       )
-      const acceptedUrls = mergeAcceptedUrls(orderedAcceptedUrls)
-      const acceptedExports = mergeAcceptedUrls(orderedAcceptedExports)
+      const acceptedUrls = mergeAcceptedUrls(orderedAcceptedUrls, hasHMR)
+      const acceptedExports = mergeAcceptedUrls(orderedAcceptedExports, hasHMR)
 
       // While we always expect to work with ESM, a classic worker is the only
       // case where it's not ESM and we need to avoid injecting ESM-specific code
@@ -871,12 +871,19 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
   }
 }
 
-function mergeAcceptedUrls<T>(orderedUrls: Array<Set<T> | undefined>) {
+function mergeAcceptedUrls<T>(
+  orderedUrls: Array<Set<T> | undefined>,
+  hasHMR: boolean,
+) {
   const acceptedUrls = new Set<T>()
-  for (const urls of orderedUrls) {
-    if (!urls) continue
-    for (const url of urls) acceptedUrls.add(url)
+
+  if (hasHMR) {
+    for (const urls of orderedUrls) {
+      if (!urls) continue
+      for (const url of urls) acceptedUrls.add(url)
+    }
   }
+
   return acceptedUrls
 }
 
