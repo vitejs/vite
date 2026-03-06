@@ -52,6 +52,9 @@
 <h2>CJS Dep with CSS</h2>
 <div class="cjs-with-assets">This should be blue</div>
 
+<h2>CJS Dep requiring dep with CSS main field</h2>
+<div class="cjs-require-css-main-field">This should be coral</div>
+
 <h2>import * as ...</h2>
 <div class="import-star"></div>
 
@@ -170,6 +173,7 @@
   }
 
   import '@vitejs/test-dep-cjs-with-assets'
+  import '@vitejs/test-dep-cjs-require-css-main-field'
   import '@vitejs/test-dep-css-require'
   import cssModuleRequire from '@vitejs/test-dep-css-require/mod.cjs'
   document
