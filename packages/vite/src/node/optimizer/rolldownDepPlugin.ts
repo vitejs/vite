@@ -76,6 +76,19 @@ export function rolldownDepPlugin(
   const esmPackageCache: PackageCache = new Map()
   const cjsPackageCache: PackageCache = new Map()
 
+  const resolveAssets = (resolved: string, kind: ImportKind) => {
+    if (kind === 'require-call') {
+      // here it is not set to `external: true` to convert `require` to `import`
+      return {
+        id: externalWithConversionNamespace + resolved,
+      }
+    }
+    return {
+      id: resolved,
+      external: 'absolute' as const,
+    }
+  }
+
   // default resolver which prefers ESM
   const _resolve = createBackCompatIdResolver(environment.getTopLevelConfig(), {
     asSrc: false,
@@ -106,7 +119,7 @@ export function rolldownDepPlugin(
     return resolver(environment, id, _importer)
   }
 
-  const resolveResult = (id: string, resolved: string) => {
+  const resolveResult = (id: string, resolved: string, kind: ImportKind) => {
     if (resolved.startsWith(browserExternalId)) {
       return {
         id: browserExternalNamespace + id,
@@ -116,6 +129,9 @@ export function rolldownDepPlugin(
       return {
         id: optionalPeerDepNamespace + resolved,
       }
+    }
+    if (allExternalTypesReg.test(resolved)) {
+      return resolveAssets(resolved, kind)
     }
     if (isBuiltin(environment.config.resolve.builtins, resolved)) {
       return
@@ -175,17 +191,7 @@ export function rolldownDepPlugin(
                 external: false,
               }
             }
-
-            if (kind === 'require-call') {
-              // here it is not set to `external: true` to convert `require` to `import`
-              return {
-                id: externalWithConversionNamespace + resolved,
-              }
-            }
-            return {
-              id: resolved,
-              external: 'absolute',
-            }
+            return resolveAssets(resolved, kind)
           }
         },
       },
@@ -241,7 +247,7 @@ export function rolldownDepPlugin(
           // use vite's own resolver
           const resolved = await resolve(id, importer, kind)
           if (resolved) {
-            return resolveResult(id, resolved)
+            return resolveResult(id, resolved, kind)
           }
         },
       },
