@@ -25,7 +25,6 @@ export function createDefaultImportMeta(
     resolve(_id: string, _parent?: string) {
       throw new Error('[module runner] "import.meta.resolve" is not supported.')
     },
-    main: false,
     // should be replaced during transformation
     glob() {
       throw new Error(

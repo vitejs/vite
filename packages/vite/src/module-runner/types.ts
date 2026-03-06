@@ -32,7 +32,6 @@ export interface ModuleRunnerImportMeta {
   filename: string
   glob: (...args: any[]) => any
   resolve(specifier: string, parent?: string): string
-  main: boolean
   [key: string]: any
 }
 

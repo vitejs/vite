@@ -14,7 +14,7 @@ import type { ModuleRunnerImportMeta } from '../types'
 export type cases = [
   // Ensure ModuleRunnerImportMeta is assignable to ImportMeta
   // (which includes @types/node augmentations: dirname, filename, url, resolve, main)
-  ExpectTrue<ExpectExtends<ImportMeta, ModuleRunnerImportMeta>>,
+  ExpectTrue<ExpectExtends<Omit<ImportMeta, 'main'>, ModuleRunnerImportMeta>>,
 ]
 
 export {}
