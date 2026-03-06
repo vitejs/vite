@@ -3,14 +3,14 @@
   "singleQuote": true,
   "overrides": [
     {
-      "files": ["*.json5"],
+      "files": ["**/*.json5"],
       "options": {
         "singleQuote": false,
         "quoteProps": "preserve"
       }
     },
     {
-      "files": ["*.yml"],
+      "files": ["**/*.yml"],
       "options": {
         "singleQuote": false
       }
