@@ -184,6 +184,94 @@ async function getWorkerType(
 const workerImportMetaUrlRE =
   /new\s+(?:Worker|SharedWorker)\s*\(\s*new\s+URL.+?import\.meta\.url/s
 
+/**
+ * Checks if a template literal only contains safe expressions (import.meta.env.*)
+ * and transforms it to string concatenation if safe.
+ * Returns null if the template contains unsafe dynamic expressions.
+ */
+async function transformSafeTemplateLiteral(
+  rawUrl: string,
+): Promise<string | null> {
+  // Not a template literal
+  if (rawUrl[0] !== '`' || !rawUrl.includes('${')) {
+    return null
+  }
+
+  try {
+    // Parse the template literal as an expression
+    const ast = await parseAstAsync(`(${rawUrl})`)
+    const expression = (ast.body[0] as RollupAstNode<ExpressionStatement>)
+      .expression
+
+    if (expression.type !== 'TemplateLiteral') {
+      return null
+    }
+
+    // Check if all expressions are safe (import.meta.env.*)
+    for (const expr of expression.expressions) {
+      if (!isSafeEnvExpression(expr)) {
+        return null
+      }
+    }
+
+    // Transform to string concatenation
+    const parts: string[] = []
+    for (let i = 0; i < expression.quasis.length; i++) {
+      const quasi = expression.quasis[i]
+      const quasiValue = quasi.value.raw
+
+      if (quasiValue) {
+        parts.push(JSON.stringify(quasiValue))
+      }
+
+      if (i < expression.expressions.length) {
+        const expr = expression.expressions[i]
+        parts.push(generateEnvAccessCode(expr))
+      }
+    }
+
+    return parts.join(' + ')
+  } catch {
+    // If parsing fails, treat as unsafe
+    return null
+  }
+}
+
+/**
+ * Checks if an expression is a safe import.meta.env.* access
+ */
+function isSafeEnvExpression(expr: any): boolean {
+  if (expr.type !== 'MemberExpression') {
+    return false
+  }
+
+  // Check if it's import.meta.env.*
+  if (
+    expr.object.type === 'MemberExpression' &&
+    expr.object.object.type === 'MetaProperty' &&
+    expr.object.object.meta.name === 'import' &&
+    expr.object.object.property.name === 'meta' &&
+    expr.object.property.type === 'Identifier' &&
+    expr.object.property.name === 'env'
+  ) {
+    return true
+  }
+
+  return false
+}
+
+/**
+ * Generates code for accessing import.meta.env property
+ */
+function generateEnvAccessCode(expr: any): string {
+  if (expr.property.type === 'Identifier') {
+    return `import.meta.env.${expr.property.name}`
+  } else if (expr.property.type === 'Literal') {
+    return `import.meta.env[${JSON.stringify(expr.property.value)}]`
+  }
+  return 'import.meta.env'
+}
+
 export function workerImportMetaUrlPlugin(config: ResolvedConfig): Plugin {
   const isBundled = config.isBundled
   let workerResolver: ResolveIdFn
@@ -209,6 +297,42 @@ export function workerImportMetaUrlPlugin(config: ResolvedConfig): Plugin {
       async handler(code, id) {
         let s: MagicString | undefined
         const cleanString = stripLiteral(code)
+
+        // First, check if there are template literals with expressions to transform
+        const templateLiteralRE =
+          /\bnew\s+(?:Worker|SharedWorker)\s*\(\s*new\s+URL\s*\(\s*(`[^`]+`)\s*,\s*import\.meta\.url\s*\)/dg
+
+        let templateMatch: RegExpExecArray | null
+        let hasTransformedTemplates = false
+
+        while ((templateMatch = templateLiteralRE.exec(cleanString))) {
+          const [[,], [urlStart, urlEnd]] = templateMatch.indices!
+          const rawUrl = code.slice(urlStart, urlEnd)
+
+          if (rawUrl.includes('${')) {
+            const transformed = await transformSafeTemplateLiteral(rawUrl)
+            if (transformed) {
+              s ||= new MagicString(code)
+              s.update(urlStart, urlEnd, transformed)
+              hasTransformedTemplates = true
+            } else {
+              // Unsafe dynamic template string
+              this.error(
+                `\`new URL(url, import.meta.url)\` is not supported in dynamic template string.\n` +
+                  `Only template literals with \`import.meta.env.*\` expressions are supported.\n` +
+                  `Use string concatenation instead: new URL('path/' + variable + '/file.ts', import.meta.url)`,
+                urlStart,
+              )
+            }
+          }
+        }
+
+        // If we transformed templates, return and let this run again
+        if (hasTransformedTemplates && s) {
+          return transformStableResult(s, id, config)
+        }
+
+        // Process worker URLs (regular strings and template literals without expressions)
         const workerImportMetaUrlRE =
           /\bnew\s+(?:Worker|SharedWorker)\s*\(\s*(new\s+URL\s*\(\s*('[^']+'|"[^"]+"|`[^`]+`)\s*,\s*import\.meta\.url\s*(?:,\s*)?\))/dg
 
@@ -219,12 +343,9 @@ export function workerImportMetaUrlPlugin(config: ResolvedConfig): Plugin {
 
           const rawUrl = code.slice(urlStart, urlEnd)
 
-          // potential dynamic template string
+          // Skip template literals with expressions (should not happen at this point)
           if (rawUrl[0] === '`' && rawUrl.includes('${')) {
-            this.error(
-              `\`new URL(url, import.meta.url)\` is not supported in dynamic template string.`,
-              expStart,
-            )
+            continue
           }
 
           s ||= new MagicString(code)
