@@ -1,4 +1,5 @@
 import http from 'node:http'
+import os from 'node:os'
 import path from 'node:path'
 import fs from 'node:fs'
 import { afterEach, describe, expect, test, vi } from 'vitest'
@@ -1333,58 +1334,32 @@ describe('loadConfigFromFile', () => {
   })
 
   describe('cacheDir resolution', () => {
-    test('uses node_modules/.vite when node_modules exists without package.json', async () => {
-      // Create a temporary directory structure
-      const tempDir = path.join(__dirname, '.temp-cachedir-test')
-      const nodeModulesDir = path.join(tempDir, 'node_modules')
+    // Use /tmp to avoid findNearestPackageData finding a parent package.json
+    const tmpBase = path.join(os.tmpdir(), 'vite-cachedir-test')
 
-      try {
-        // Create node_modules directory but no package.json
-        fs.mkdirSync(nodeModulesDir, { recursive: true })
-
-        const config = await resolveConfig(
-          {},
-          'serve',
-          undefined,
-          undefined,
-          tempDir,
-        )
-
-        // Should use node_modules/.vite as cacheDir
-        expect(config.cacheDir).toBe(
-          path.resolve(tempDir, 'node_modules/.vite'),
-        )
-      } finally {
-        // Cleanup
-        if (fs.existsSync(tempDir)) {
-          fs.rmSync(tempDir, { recursive: true, force: true })
-        }
+    afterEach(() => {
+      if (fs.existsSync(tmpBase)) {
+        fs.rmSync(tmpBase, { recursive: true, force: true })
       }
     })
 
+    test('uses node_modules/.vite when node_modules exists without package.json', async () => {
+      const tempDir = path.join(tmpBase, 'with-node-modules')
+      const nodeModulesDir = path.join(tempDir, 'node_modules')
+      fs.mkdirSync(nodeModulesDir, { recursive: true })
+
+      const config = await resolveConfig({ root: tempDir }, 'serve')
+
+      expect(config.cacheDir).toBe(path.resolve(tempDir, 'node_modules/.vite'))
+    })
+
     test('uses .vite when neither package.json nor node_modules exist', async () => {
-      // Create a temporary directory with no package.json or node_modules
-      const tempDir = path.join(__dirname, '.temp-cachedir-test-2')
+      const tempDir = path.join(tmpBase, 'empty')
+      fs.mkdirSync(tempDir, { recursive: true })
 
-      try {
-        fs.mkdirSync(tempDir, { recursive: true })
+      const config = await resolveConfig({ root: tempDir }, 'serve')
 
-        const config = await resolveConfig(
-          {},
-          'serve',
-          undefined,
-          undefined,
-          tempDir,
-        )
-
-        // Should use .vite as cacheDir
-        expect(config.cacheDir).toBe(path.resolve(tempDir, '.vite'))
-      } finally {
-        // Cleanup
-        if (fs.existsSync(tempDir)) {
-          fs.rmSync(tempDir, { recursive: true, force: true })
-        }
-      }
+      expect(config.cacheDir).toBe(path.resolve(tempDir, '.vite'))
     })
   })
 })
