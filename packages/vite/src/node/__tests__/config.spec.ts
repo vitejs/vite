@@ -7,7 +7,7 @@ import type { InlineConfig, PluginOption } from '..'
 import type { UserConfig, UserConfigExport } from '../config'
 import { defineConfig, loadConfigFromFile, resolveConfig } from '../config'
 import { resolveEnvPrefix } from '../env'
-import { mergeConfig } from '../utils'
+import { mergeConfig, normalizePath } from '../utils'
 import { createLogger } from '../logger'
 
 describe('mergeConfig', () => {
@@ -1350,7 +1350,9 @@ describe('loadConfigFromFile', () => {
 
       const config = await resolveConfig({ root: tempDir }, 'serve')
 
-      expect(config.cacheDir).toBe(path.resolve(tempDir, 'node_modules/.vite'))
+      expect(config.cacheDir).toBe(
+        normalizePath(path.resolve(tempDir, 'node_modules/.vite')),
+      )
     })
 
     test('uses .vite when neither package.json nor node_modules exist', async () => {
@@ -1359,7 +1361,9 @@ describe('loadConfigFromFile', () => {
 
       const config = await resolveConfig({ root: tempDir }, 'serve')
 
-      expect(config.cacheDir).toBe(path.resolve(tempDir, '.vite'))
+      expect(config.cacheDir).toBe(
+        normalizePath(path.resolve(tempDir, '.vite')),
+      )
     })
   })
 })
