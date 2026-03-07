@@ -1,4 +1,5 @@
 import http from 'node:http'
+import os from 'node:os'
 import path from 'node:path'
 import fs from 'node:fs'
 import { afterEach, describe, expect, test, vi } from 'vitest'
@@ -6,7 +7,7 @@ import type { InlineConfig, PluginOption } from '..'
 import type { UserConfig, UserConfigExport } from '../config'
 import { defineConfig, loadConfigFromFile, resolveConfig } from '../config'
 import { resolveEnvPrefix } from '../env'
-import { mergeConfig } from '../utils'
+import { mergeConfig, normalizePath } from '../utils'
 import { createLogger } from '../logger'
 
 describe('mergeConfig', () => {
@@ -1329,6 +1330,40 @@ describe('loadConfigFromFile', () => {
         }
       `)
       expect(result.dependencies.length).toBe(0)
+    })
+  })
+
+  describe('cacheDir resolution', () => {
+    // Use /tmp to avoid findNearestPackageData finding a parent package.json
+    const tmpBase = path.join(os.tmpdir(), 'vite-cachedir-test')
+
+    afterEach(() => {
+      if (fs.existsSync(tmpBase)) {
+        fs.rmSync(tmpBase, { recursive: true, force: true })
+      }
+    })
+
+    test('uses node_modules/.vite when node_modules exists without package.json', async () => {
+      const tempDir = path.join(tmpBase, 'with-node-modules')
+      const nodeModulesDir = path.join(tempDir, 'node_modules')
+      fs.mkdirSync(nodeModulesDir, { recursive: true })
+
+      const config = await resolveConfig({ root: tempDir }, 'serve')
+
+      expect(config.cacheDir).toBe(
+        normalizePath(path.resolve(tempDir, 'node_modules/.vite')),
+      )
+    })
+
+    test('uses .vite when neither package.json nor node_modules exist', async () => {
+      const tempDir = path.join(tmpBase, 'empty')
+      fs.mkdirSync(tempDir, { recursive: true })
+
+      const config = await resolveConfig({ root: tempDir }, 'serve')
+
+      expect(config.cacheDir).toBe(
+        normalizePath(path.resolve(tempDir, '.vite')),
+      )
     })
   })
 })

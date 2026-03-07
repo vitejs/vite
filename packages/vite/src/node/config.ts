@@ -1670,14 +1670,23 @@ export async function resolveConfig(
     : resolveBaseUrl(config.base, isBuild, logger)
 
   // resolve cache directory
+  // pkgDir may be an ancestor directory (findNearestPackageData walks up).
+  // When no package.json is found but node_modules/ exists in resolvedRoot
+  // (e.g. Deno projects using npm packages), prefer node_modules/.vite
+  // over a bare .vite directory.
   const pkgDir = findNearestPackageData(resolvedRoot, packageCache)?.dir
-  const cacheDir = normalizePath(
-    config.cacheDir
-      ? path.resolve(resolvedRoot, config.cacheDir)
-      : pkgDir
-        ? path.join(pkgDir, `node_modules/.vite`)
-        : path.join(resolvedRoot, `.vite`),
-  )
+  let cacheDir: string
+  if (config.cacheDir) {
+    cacheDir = path.resolve(resolvedRoot, config.cacheDir)
+  } else if (pkgDir) {
+    cacheDir = path.join(pkgDir, `node_modules/.vite`)
+  } else {
+    const nodeModulesDir = path.join(resolvedRoot, 'node_modules')
+    cacheDir = fs.existsSync(nodeModulesDir)
+      ? path.join(nodeModulesDir, `.vite`)
+      : path.join(resolvedRoot, `.vite`)
+  }
+  cacheDir = normalizePath(cacheDir)
 
   const assetsFilter =
     config.assetsInclude &&
