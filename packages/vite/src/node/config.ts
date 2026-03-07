@@ -1671,12 +1671,16 @@ export async function resolveConfig(
 
   // resolve cache directory
   const pkgDir = findNearestPackageData(resolvedRoot, packageCache)?.dir
+  const nodeModulesDir = path.join(resolvedRoot, 'node_modules')
+  const nodeModulesDirExists = fs.existsSync(nodeModulesDir)
   const cacheDir = normalizePath(
     config.cacheDir
       ? path.resolve(resolvedRoot, config.cacheDir)
       : pkgDir
         ? path.join(pkgDir, `node_modules/.vite`)
-        : path.join(resolvedRoot, `.vite`),
+        : nodeModulesDirExists
+          ? path.join(nodeModulesDir, `.vite`)
+          : path.join(resolvedRoot, `.vite`),
   )
 
   const assetsFilter =

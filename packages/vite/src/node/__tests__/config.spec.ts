@@ -1331,4 +1331,60 @@ describe('loadConfigFromFile', () => {
       expect(result.dependencies.length).toBe(0)
     })
   })
+
+  describe('cacheDir resolution', () => {
+    test('uses node_modules/.vite when node_modules exists without package.json', async () => {
+      // Create a temporary directory structure
+      const tempDir = path.join(__dirname, '.temp-cachedir-test')
+      const nodeModulesDir = path.join(tempDir, 'node_modules')
+
+      try {
+        // Create node_modules directory but no package.json
+        fs.mkdirSync(nodeModulesDir, { recursive: true })
+
+        const config = await resolveConfig(
+          {},
+          'serve',
+          undefined,
+          undefined,
+          tempDir,
+        )
+
+        // Should use node_modules/.vite as cacheDir
+        expect(config.cacheDir).toBe(
+          path.resolve(tempDir, 'node_modules/.vite'),
+        )
+      } finally {
+        // Cleanup
+        if (fs.existsSync(tempDir)) {
+          fs.rmSync(tempDir, { recursive: true, force: true })
+        }
+      }
+    })
+
+    test('uses .vite when neither package.json nor node_modules exist', async () => {
+      // Create a temporary directory with no package.json or node_modules
+      const tempDir = path.join(__dirname, '.temp-cachedir-test-2')
+
+      try {
+        fs.mkdirSync(tempDir, { recursive: true })
+
+        const config = await resolveConfig(
+          {},
+          'serve',
+          undefined,
+          undefined,
+          tempDir,
+        )
+
+        // Should use .vite as cacheDir
+        expect(config.cacheDir).toBe(path.resolve(tempDir, '.vite'))
+      } finally {
+        // Cleanup
+        if (fs.existsSync(tempDir)) {
+          fs.rmSync(tempDir, { recursive: true, force: true })
+        }
+      }
+    })
+  })
 })
