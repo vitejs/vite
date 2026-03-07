@@ -1138,16 +1138,17 @@ export async function extractExportsData(
   let usedJsxLoader = false
 
   const entryContent = fs.readFileSync(filePath, 'utf-8')
-  try {
-    parseResult = parse(entryContent)
-  } catch {
-    const lang = rolldownOptions.moduleTypes?.[path.extname(filePath)] || 'jsx'
-    debug?.(
-      `Unable to parse: ${filePath}.\n Trying again with a ${lang} transform.`,
-    )
-    if (lang !== 'jsx' && lang !== 'tsx' && lang !== 'ts') {
-      throw new Error(`Unable to parse : ${filePath}.`)
-    }
+  const ext = path.extname(filePath)
+
+  // TypeScript files need to be transformed before parsing with es-module-lexer
+  // because es-module-lexer expects valid JavaScript and may produce incorrect
+  // results when parsing TypeScript syntax (e.g., enums)
+  const needsTransform =
+    ext === '.ts' || ext === '.tsx' || ext === '.mts' || ext === '.cts'
+
+  if (needsTransform) {
+    const lang =
+      rolldownOptions.moduleTypes?.[ext] || (ext === '.tsx' ? 'tsx' : 'ts')
     const transformed = await transformWithOxc(
       entryContent,
       filePath,
@@ -1157,6 +1158,27 @@ export async function extractExportsData(
     )
     parseResult = parse(transformed.code)
     usedJsxLoader = true
+  } else {
+    try {
+      parseResult = parse(entryContent)
+    } catch {
+      const lang = rolldownOptions.moduleTypes?.[ext] || 'jsx'
+      debug?.(
+        `Unable to parse: ${filePath}.\n Trying again with a ${lang} transform.`,
+      )
+      if (lang !== 'jsx' && lang !== 'tsx' && lang !== 'ts') {
+        throw new Error(`Unable to parse : ${filePath}.`)
+      }
+      const transformed = await transformWithOxc(
+        entryContent,
+        filePath,
+        { lang },
+        undefined,
+        environment.config,
+      )
+      parseResult = parse(transformed.code)
+      usedJsxLoader = true
+    }
   }
 
   const [, exports, , hasModuleSyntax] = parseResult
