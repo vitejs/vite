@@ -16,7 +16,7 @@ test('should work when output', async () => {
 
 test.runIf(isBuild)('should not contain wasm file when inlined', async () => {
   const assets = await listAssets()
-  const lightWasm = assets.find((f) => /light-.+\.wasm$/.test(f))
+  const lightWasm = assets.find((f) => /^light-[^-]+\.wasm$/.test(f))
   expect(lightWasm).toBeUndefined()
 
   const staticLight = await findAssetFile(/^static-light-.+\.js$/)
@@ -35,3 +35,26 @@ test.runIf(isBuild)(
     expect(staticHeavy).not.toContain('data:application/wasm;base64,')
   },
 )
+
+test('direct wasm import', async () => {
+  await page.goto(`${url}/direct-add`)
+  expect(await page.textContent('.direct-add')).toMatch('3')
+})
+
+test.runIf(isBuild)(
+  'direct wasm import should contain and reference wasm file',
+  async () => {
+    const assets = await listAssets()
+    const addWasm = assets.find((f) => /add-.+\.wasm$/.test(f))
+    expect(addWasm).toBeDefined()
+
+    const directAdd = await findAssetFile(/^direct-add-.+\.js$/)
+    expect(directAdd).toContain(addWasm)
+    expect(directAdd).not.toContain('data:application/wasm;base64,')
+  },
+)
+
+test('direct wasm import with wasm imports', async () => {
+  await page.goto(`${url}/direct-light`)
+  expect(await page.textContent('.direct-light')).toMatch('42')
+})
