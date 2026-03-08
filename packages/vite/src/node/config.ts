@@ -1465,6 +1465,22 @@ export async function resolveConfig(
     customLogger: config.customLogger,
   })
 
+  // Warn if vite-tsconfig-paths plugin is detected, as Vite now has built-in support
+  const tsconfigPathsPlugin = userPlugins.find(
+    (p) =>
+      p.name === 'vite-tsconfig-paths' ||
+      p.name === 'vite-plugin-tsconfig-paths',
+  )
+  if (tsconfigPathsPlugin) {
+    logger.warnOnce(
+      colors.yellow(
+        `The plugin ${JSON.stringify(tsconfigPathsPlugin.name)} is no longer needed. ` +
+          `Vite now supports tsconfig paths resolution natively via the ${colors.bold('resolve.tsconfigPaths')} option. ` +
+          `You could remove the plugin and set ${colors.bold('resolve.tsconfigPaths: true')} in your Vite config instead.`,
+      ),
+    )
+  }
+
   // resolve root
   const resolvedRoot = normalizePath(
     config.root ? path.resolve(config.root) : process.cwd(),
