@@ -18,6 +18,10 @@ export interface CustomEventMap {
   /** @internal */
   'vite:forward-console': ForwardConsolePayload
   /** @internal */
+  'vite:runtime-error': RuntimeErrorPayload
+  /** @internal */
+  'vite:runtime-error:response': RuntimeErrorResponsePayload
+  /** @internal */
   'vite:module-loaded': { modules: string[] }
 
   // server events
@@ -66,6 +70,25 @@ export type ForwardConsolePayload =
         message: string
       }
     }
+
+export interface RuntimeErrorPayload {
+  id: string
+  name: string
+  message: string
+  stack?: string
+}
+
+export interface RuntimeErrorResponsePayload {
+  id: string
+  message: string
+  stack: string
+  loc?: {
+    file: string
+    line: number
+    column: number
+  }
+  frame?: string
+}
 
 /**
  * provides types for payloads of built-in Vite events

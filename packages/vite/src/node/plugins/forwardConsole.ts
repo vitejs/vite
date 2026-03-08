@@ -2,7 +2,11 @@ import path from 'node:path'
 import fs from 'node:fs'
 import { parseErrorStacktrace } from '@vitest/utils/source-map'
 import c from 'picocolors'
-import type { ForwardConsolePayload } from '#types/customEvent'
+import type {
+  ForwardConsolePayload,
+  RuntimeErrorPayload,
+  RuntimeErrorResponsePayload,
+} from '#types/customEvent'
 import type { DevEnvironment, Plugin } from '..'
 import { normalizePath } from '..'
 import { extractSourcemapFromFile } from '../server/sourcemap'
@@ -60,8 +64,41 @@ function formatError(
   sourceMapCache: Map<string, any>,
 ) {
   const error = payload.data
+  const { stacks, nearest } = resolveErrorStack(
+    error,
+    environment,
+    sourceMapCache,
+  )
+
+  let output = ''
+  const title =
+    payload.type === 'unhandled-rejection'
+      ? '[Unhandled rejection]'
+      : '[Unhandled error]'
+  output += c.red(`${title} ${c.bold(error.name)}: ${error.message}\n`)
+  for (const stack of stacks) {
+    const file = normalizePath(
+      path.relative(environment.config.root, stack.file),
+    )
+    output += ` > ${[stack.method, `${file}:${stack.line}:${stack.column}`]
+      .filter(Boolean)
+      .join(' ')}\n`
+    if (stack === nearest) {
+      const code = fs.readFileSync(stack.file, 'utf-8')
+      output += generateCodeFrame(code, stack).replace(/^/gm, '    ')
+      output += '\n'
+    }
+  }
+  return output
+}
+
+function resolveErrorStack(
+  error: { name: string; message: string; stack?: string },
+  environment: DevEnvironment,
+  sourceMapCache: Map<string, any>,
+) {
   const stacks = parseErrorStacktrace(error, {
-    getUrlId(id) {
+    getUrlId(id: string) {
       const moduleGraph = environment.moduleGraph
       const mod = moduleGraph.getModuleById(id)
       if (mod) {
@@ -82,7 +119,7 @@ function formatError(
       }
       return id
     },
-    getSourceMap(id) {
+    getSourceMap(id: string) {
       if (sourceMapCache.has(id)) {
         return sourceMapCache.get(id)
       }
@@ -117,24 +154,70 @@ function formatError(
     )
   })
 
-  let output = ''
-  const title =
-    payload.type === 'unhandled-rejection'
-      ? '[Unhandled rejection]'
-      : '[Unhandled error]'
-  output += c.red(`${title} ${c.bold(error.name)}: ${error.message}\n`)
-  for (const stack of stacks) {
-    const file = normalizePath(
-      path.relative(environment.config.root, stack.file),
-    )
-    output += ` > ${[stack.method, `${file}:${stack.line}:${stack.column}`]
-      .filter(Boolean)
-      .join(' ')}\n`
-    if (stack === nearest) {
-      const code = fs.readFileSync(stack.file, 'utf-8')
-      output += generateCodeFrame(code, stack).replace(/^/gm, '    ')
-      output += '\n'
-    }
+  return { stacks, nearest }
+}
+
+export function runtimeErrorsPlugin(): Plugin {
+  const sourceMapCache = new Map<string, any>()
+
+  return {
+    name: 'vite:runtime-errors-overlay',
+    apply: 'serve',
+    configureServer(server) {
+      const environment = server.environments['client']
+      if (!environment) return
+
+      environment.hot.on(
+        'vite:runtime-error',
+        (payload: RuntimeErrorPayload) => {
+          const { id, name, message, stack } = payload
+          const { stacks, nearest } = resolveErrorStack(
+            { name, message, stack },
+            environment,
+            sourceMapCache,
+          )
+
+          const resolvedStack =
+            `${name}: ${message}\n` +
+            stacks
+              .map((s) => {
+                const location = `${s.file}:${s.line}:${s.column}`
+                return s.method
+                  ? `    at ${s.method} (${location})`
+                  : `    at ${location}`
+              })
+              .join('\n')
+
+          let frame: string | undefined
+          let loc: RuntimeErrorResponsePayload['loc']
+
+          if (nearest && fs.existsSync(nearest.file)) {
+            try {
+              const code = fs.readFileSync(nearest.file, 'utf-8')
+              frame = generateCodeFrame(code, nearest)
+              loc = {
+                file: nearest.file,
+                line: nearest.line,
+                column: nearest.column,
+              }
+            } catch {
+              // ignore read errors
+            }
+          }
+
+          environment.hot.send({
+            type: 'custom',
+            event: 'vite:runtime-error:response',
+            data: {
+              id,
+              message,
+              stack: resolvedStack,
+              loc,
+              frame,
+            } satisfies RuntimeErrorResponsePayload,
+          })
+        },
+      )
+    },
   }
-  return output
 }

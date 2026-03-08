@@ -119,10 +119,7 @@ async function createClientConfigValueReplacer(
   const bundleDevReplacement = escapeReplacement(
     config.experimental.bundledDev || false,
   )
-  const hmrRuntimeErrorsReplacement =
-    typeof runtimeErrors === 'function'
-      ? () => runtimeErrors.toString()
-      : escapeReplacement(runtimeErrors)
+  const hmrRuntimeErrorsReplacement = escapeReplacement(runtimeErrors)
 
   return (code) =>
     code

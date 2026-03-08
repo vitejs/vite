@@ -57,6 +57,11 @@ const isBundleMode = __BUNDLED_DEV__
 const forwardConsole = __SERVER_FORWARD_CONSOLE__
 
 const runtimeErrorList: Error[] = []
+const runtimeErrorResolvedList: Promise<ErrorPayload['err']>[] = []
+const pendingRuntimeErrorRequests = new Map<
+  string,
+  (resolved: ErrorPayload['err']) => void
+>()
 const transport = normalizeModuleRunnerTransport(
   (() => {
     let wsTransport = createWebSocketModuleRunnerTransport({
@@ -130,11 +135,10 @@ if (typeof window !== 'undefined') {
   })
 
   if (enableOverlay && runtimeErrors) {
-    if (typeof runtimeErrors === 'function') {
-      window.addEventListener?.('error', runtimeErrors)
-    } else {
-      window.addEventListener?.('error', handlerRuntimeError)
-    }
+    window.addEventListener?.('error', handlerRuntimeError)
+    window.addEventListener?.('unhandledrejection', (event) => {
+      handlerRuntimeError(event.reason)
+    })
   }
 }
 
@@ -293,6 +297,19 @@ async function handleMessage(payload: HotPayload) {
       break
     case 'custom': {
       await hmrClient.notifyListeners(payload.event, payload.data)
+      if (payload.event === 'vite:runtime-error:response') {
+        const response = payload.data
+        const resolve = pendingRuntimeErrorRequests.get(response.id)
+        if (resolve) {
+          pendingRuntimeErrorRequests.delete(response.id)
+          resolve({
+            message: response.message,
+            stack: response.stack,
+            loc: response.loc,
+            frame: response.frame,
+          })
+        }
+      }
       if (payload.event === 'vite:ws:disconnect') {
         if (hasDocument && !willUnload) {
           console.log(`[vite] server connection lost. Polling for restart...`)
@@ -414,16 +431,64 @@ function handlerRuntimeError(err: ErrorEvent) {
   const { error, message } = err
   const errorObject =
     error instanceof Error ? error : new Error(error || message, { cause: err })
+
+  const resolvedPromise = sendForSourcemapResolution(errorObject)
+
   runtimeErrorList.push(errorObject)
+  runtimeErrorResolvedList.push(resolvedPromise)
+
   if (hasRuntimeToast()) {
     const toast =
       document.querySelector<RuntimeErrorsToast>(runtimeErrorsToastId)!
     toast.updateErrorList(runtimeErrorList)
     return
   }
-  createRuntimeToast(runtimeErrorList, () => {
-    createErrorOverlay(runtimeErrorList.shift()!, true)
+  createRuntimeToast(runtimeErrorList, async () => {
+    runtimeErrorList.shift()
+    const resolvedErr = await runtimeErrorResolvedList.shift()!
+    createErrorOverlay(resolvedErr, true)
     updateRuntimeToast()
+  })
+}
+
+/**
+ * Send a runtime error to the dev server for sourcemap resolution.
+ * Falls back to the raw error after a timeout if the server does not respond.
+ */
+function sendForSourcemapResolution(
+  error: Error,
+): Promise<ErrorPayload['err']> {
+  const fallback: ErrorPayload['err'] = {
+    message: error.message,
+    stack: error.stack || `${error.name}: ${error.message}`,
+  }
+  return new Promise((resolve) => {
+    const id = Math.random().toString(36).slice(2)
+    const timeout = setTimeout(() => {
+      if (pendingRuntimeErrorRequests.delete(id)) {
+        resolve(fallback)
+      }
+    }, 5000)
+    pendingRuntimeErrorRequests.set(id, (resolved) => {
+      clearTimeout(timeout)
+      resolve(resolved)
+    })
+    try {
+      transport.send({
+        type: 'custom',
+        event: 'vite:runtime-error',
+        data: {
+          id,
+          name: error.name,
+          message: error.message,
+          stack: error.stack,
+        },
+      })
+    } catch {
+      clearTimeout(timeout)
+      pendingRuntimeErrorRequests.delete(id)
+      resolve(fallback)
+    }
   })
 }
 

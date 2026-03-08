@@ -34,7 +34,7 @@ import {
   createFilterForTransform,
   createIdFilter,
 } from './pluginFilter'
-import { forwardConsolePlugin } from './forwardConsole'
+import { forwardConsolePlugin, runtimeErrorsPlugin } from './forwardConsole'
 import { oxcPlugin } from './oxc'
 import { esbuildBannerFooterCompatPlugin } from './esbuildBannerFooterCompatPlugin'
 
@@ -102,6 +102,11 @@ export async function resolvePlugins(
     // for now client only
     config.server.forwardConsole.enabled &&
       forwardConsolePlugin({ environments: ['client'] }),
+    // handle runtime error sourcemap resolution for the overlay
+    !isBuild &&
+      typeof config.server.hmr === 'object' &&
+      config.server.hmr.runtimeErrors === true &&
+      runtimeErrorsPlugin(),
 
     ...normalPlugins,
 
