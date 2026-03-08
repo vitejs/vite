@@ -10,6 +10,7 @@ import {
   normalizeModuleRunnerTransport,
 } from '../shared/moduleRunnerTransport'
 import { createHMRHandler } from '../shared/hmrHandler'
+import { setupForwardConsoleHandler } from '../shared/forwardConsole'
 import type { RuntimeErrorsToast } from './overlay'
 import {
   ErrorOverlay,
@@ -17,7 +18,6 @@ import {
   overlayId,
   runtimeErrorsToastId,
 } from './overlay'
-import { setupForwardConsoleHandler } from '../shared/forwardConsole'
 import '@vite/env'
 
 // injected by the hmr plugin when served
