@@ -369,9 +369,11 @@ export const overlayId = 'vite-error-overlay'
 
 export class RuntimeErrorsToast extends HTMLElement {
   root: ShadowRoot
+  private onClose: () => void
 
-  constructor(errs: Error[], toggleDetail: () => void) {
+  constructor(errs: Error[], toggleDetail: () => void, onClose: () => void) {
     super()
+    this.onClose = onClose
     this.root = this.attachShadow({ mode: 'open' })
     this.root.appendChild(createRuntimeToastTemplate())
     const toast = this.root.querySelector('.runtime-toast')!
@@ -392,6 +394,7 @@ export class RuntimeErrorsToast extends HTMLElement {
   }
   close(): void {
     this.parentNode?.removeChild(this)
+    this.onClose()
   }
 }
 

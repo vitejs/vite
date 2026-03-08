@@ -409,7 +409,11 @@ function createRuntimeToast(errs: Error[], toggleDetail: () => void) {
     const RuntimeErrorsToastConstructor =
       customElements.get(runtimeErrorsToastId)!
     document.body.appendChild(
-      new RuntimeErrorsToastConstructor(errs, toggleDetail),
+      new RuntimeErrorsToastConstructor(errs, toggleDetail, () => {
+        // Clear both parallel lists when the toast is explicitly dismissed
+        runtimeErrorList.length = 0
+        runtimeErrorResolvedList.length = 0
+      }),
     )
   }
 }
