@@ -1,9 +1,16 @@
 <script setup>
 import { computed, onMounted, onUnmounted, ref } from 'vue'
 
-const TARGET_TIMESTAMP = Date.UTC(2026, 2, 19, 17, 0, 0)
+const props = defineProps({
+  at: {
+    type: String,
+    required: true,
+  },
+})
 
-const getRemainingMs = () => Math.max(0, TARGET_TIMESTAMP - Date.now())
+const targetTimestamp = computed(() => new Date(props.at).getTime())
+
+const getRemainingMs = () => Math.max(0, targetTimestamp.value - Date.now())
 
 const remainingMs = ref(0)
 let intervalId
