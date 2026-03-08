@@ -135,7 +135,15 @@ if (typeof window !== 'undefined') {
   })
 
   if (enableOverlay && runtimeErrors) {
-    window.addEventListener?.('error', handlerRuntimeError)
+    window.addEventListener?.('error', (event) => {
+      // `ErrorEvent` doesn't necessarily have `ErrorEvent.error`.
+      // Use `ErrorEvent.message` as fallback e.g. for ResizeObserver error.
+      // https://developer.mozilla.org/en-US/docs/Web/API/ErrorEvent/error
+      // https://developer.mozilla.org/en-US/docs/Web/API/ResizeObserver#observation_errors
+      const error =
+        event.error ?? (event.message ? new Error(event.message) : event)
+      handlerRuntimeError(error)
+    })
     window.addEventListener?.('unhandledrejection', (event) => {
       handlerRuntimeError(event.reason)
     })
@@ -427,14 +435,10 @@ function updateRuntimeToast() {
   }
 }
 
-function handlerRuntimeError(err: ErrorEvent) {
-  const { error, message } = err
-  const errorObject =
-    error instanceof Error ? error : new Error(error || message, { cause: err })
+function handlerRuntimeError(err: Error) {
+  const resolvedPromise = sendForSourcemapResolution(err)
 
-  const resolvedPromise = sendForSourcemapResolution(errorObject)
-
-  runtimeErrorList.push(errorObject)
+  runtimeErrorList.push(err)
   runtimeErrorResolvedList.push(resolvedPromise)
 
   if (hasRuntimeToast()) {
