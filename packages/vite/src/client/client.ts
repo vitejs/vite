@@ -13,7 +13,12 @@ import {
 import { createHMRHandler } from '../shared/hmrHandler'
 import { setupForwardConsoleHandler } from '../shared/forwardConsole'
 import type { RuntimeErrorsToast } from './overlay'
-import { ErrorOverlay, cspNonce, overlayId, runtimeErrorsToastId } from './overlay'
+import {
+  ErrorOverlay,
+  cspNonce,
+  overlayId,
+  runtimeErrorsToastId,
+} from './overlay'
 // @ts-expect-error internal virtual module
 import '@vite/env'
 
