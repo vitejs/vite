@@ -30,7 +30,7 @@ declare const __HMR_DIRECT_TARGET__: string
 declare const __HMR_BASE__: string
 declare const __HMR_TIMEOUT__: number
 declare const __HMR_ENABLE_OVERLAY__: boolean
-declare const __HMR_RUNTIME_ERRORS__: boolean | ((err: ErrorEvent) => unknown)
+declare const __HMR_RUNTIME_ERRORS__: boolean
 declare const __WS_TOKEN__: string
 declare const __SERVER_FORWARD_CONSOLE__: any
 declare const __BUNDLED_DEV__: boolean
