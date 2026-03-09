@@ -174,6 +174,11 @@ export const isAsyncScriptMap: WeakMap<
   Map<string, boolean>
 > = new WeakMap()
 
+export const scriptExtraAttrsMap: WeakMap<
+  ResolvedConfig,
+  Map<string, Record<string, string | boolean>>
+> = new WeakMap()
+
 export function nodeIsElement(
   node: DefaultTreeAdapterMap['node'],
 ): node is DefaultTreeAdapterMap['element'] {
@@ -222,18 +227,30 @@ export async function traverseHtml(
   }
 }
 
+// Attributes that are handled specially by Vite and should not be
+// forwarded to the output script tag as-is.
+const viteHandledScriptAttrs = new Set([
+  'src',
+  'type',
+  'async',
+  'crossorigin',
+  'vite-ignore',
+])
+
 export function getScriptInfo(node: DefaultTreeAdapterMap['element']): {
   src: Token.Attribute | undefined
   srcSourceCodeLocation: Token.Location | undefined
   isModule: boolean
   isAsync: boolean
   isIgnored: boolean
+  extraAttrs: Record<string, string | boolean>
 } {
   let src: Token.Attribute | undefined
   let srcSourceCodeLocation: Token.Location | undefined
   let isModule = false
   let isAsync = false
   let isIgnored = false
+  const extraAttrs: Record<string, string | boolean> = {}
   for (const p of node.attrs) {
     if (p.prefix !== undefined) continue
     if (p.name === 'src') {
@@ -247,9 +264,18 @@ export function getScriptInfo(node: DefaultTreeAdapterMap['element']): {
       isAsync = true
     } else if (p.name === 'vite-ignore') {
       isIgnored = true
+    } else if (!viteHandledScriptAttrs.has(p.name)) {
+      extraAttrs[p.name] = p.value === '' ? true : p.value
     }
   }
-  return { src, srcSourceCodeLocation, isModule, isAsync, isIgnored }
+  return {
+    src,
+    srcSourceCodeLocation,
+    isModule,
+    isAsync,
+    isIgnored,
+    extraAttrs,
+  }
 }
 
 const attrValueStartRE = /=\s*(.)/
@@ -365,6 +391,7 @@ export function buildHtmlPlugin(config: ResolvedConfig): Plugin {
 
   // Same reason with `htmlInlineProxyPlugin`
   isAsyncScriptMap.set(config, new Map())
+  scriptExtraAttrsMap.set(config, new Map())
 
   return {
     name: 'vite:build-html',
@@ -438,6 +465,7 @@ export function buildHtmlPlugin(config: ResolvedConfig): Plugin {
         let everyScriptIsAsync = true
         let someScriptsAreAsync = false
         let someScriptsAreDefer = false
+        let mergedExtraAttrs: Record<string, string | boolean> = {}
 
         const assetUrlsPromises: Promise<void>[] = []
 
@@ -472,8 +500,14 @@ export function buildHtmlPlugin(config: ResolvedConfig): Plugin {
 
           // script tags
           if (node.nodeName === 'script') {
-            const { src, srcSourceCodeLocation, isModule, isAsync, isIgnored } =
-              getScriptInfo(node)
+            const {
+              src,
+              srcSourceCodeLocation,
+              isModule,
+              isAsync,
+              isIgnored,
+              extraAttrs,
+            } = getScriptInfo(node)
 
             if (isIgnored) {
               removeViteIgnoreAttr(s, node.sourceCodeLocation!)
@@ -531,6 +565,7 @@ export function buildHtmlPlugin(config: ResolvedConfig): Plugin {
                 everyScriptIsAsync &&= isAsync
                 someScriptsAreAsync ||= isAsync
                 someScriptsAreDefer ||= !isAsync
+                mergedExtraAttrs = { ...mergedExtraAttrs, ...extraAttrs }
               } else if (url && !isPublicFile) {
                 if (!isExcludedUrl(url)) {
                   config.logger.warn(
@@ -682,6 +717,7 @@ export function buildHtmlPlugin(config: ResolvedConfig): Plugin {
         })
 
         isAsyncScriptMap.get(config)!.set(id, everyScriptIsAsync)
+        scriptExtraAttrsMap.get(config)!.set(id, mergedExtraAttrs)
 
         if (someScriptsAreAsync && someScriptsAreDefer) {
           config.logger.warn(
@@ -777,6 +813,7 @@ export function buildHtmlPlugin(config: ResolvedConfig): Plugin {
         chunkOrUrl: OutputChunk | string,
         toOutputPath: (filename: string) => string,
         isAsync: boolean,
+        extraAttrs: Record<string, string | boolean> = {},
       ): HtmlTagDescriptor => ({
         tag: 'script',
         attrs: {
@@ -793,6 +830,7 @@ export function buildHtmlPlugin(config: ResolvedConfig): Plugin {
             typeof chunkOrUrl === 'string'
               ? chunkOrUrl
               : toOutputPath(chunkOrUrl.fileName),
+          ...extraAttrs,
         },
       })
 
@@ -894,6 +932,8 @@ export function buildHtmlPlugin(config: ResolvedConfig): Plugin {
           toOutputFilePath(filename, 'public')
 
         const isAsync = isAsyncScriptMap.get(config)!.get(normalizedId)!
+        const extraAttrs =
+          scriptExtraAttrsMap.get(config)!.get(normalizedId) ?? {}
 
         let result = html
 
@@ -923,11 +963,13 @@ export function buildHtmlPlugin(config: ResolvedConfig): Plugin {
           let assetTags: HtmlTagDescriptor[]
           if (canInlineEntry) {
             assetTags = imports.map((chunk) =>
-              toScriptTag(chunk, toOutputAssetFilePath, isAsync),
+              toScriptTag(chunk, toOutputAssetFilePath, isAsync, extraAttrs),
             )
           } else {
             const { modulePreload } = this.environment.config.build
-            assetTags = [toScriptTag(chunk, toOutputAssetFilePath, isAsync)]
+            assetTags = [
+              toScriptTag(chunk, toOutputAssetFilePath, isAsync, extraAttrs),
+            ]
             if (modulePreload !== false) {
               const resolveDependencies =
                 typeof modulePreload === 'object' &&
