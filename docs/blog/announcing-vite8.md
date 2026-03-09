@@ -100,13 +100,13 @@ Vite 8 requires Node.js 20.19+, 22.12+, the same requirements as Vite 7. These r
 
 Beyond the Rolldown integration, Vite 8 includes several notable features:
 
-- **Integrated Devtools:** Vite 8 ships with built-in developer tooling for debugging and analysis. Vite Devtools provide deeper insights into your Vite-powered projects directly from the dev server.
+- **Integrated Devtools:** Vite 8 ships [`devtools`](/config/shared-options#devtools) option to enable [Vite Devtools](https://devtools.vite.dev/), a developer tooling for debugging and analysis. Vite Devtools provide deeper insights into your Vite-powered projects directly from the dev server.
 
 - **Built-in tsconfig `paths` support:** Developers can enable TypeScript path alias resolution by setting [`resolve.tsconfigPaths`](/config/shared-options.md#resolve-tsconfigpaths) to `true`. This has a small performance cost and is not enabled by default.
 
 - **`emitDecoratorMetadata` support:** Vite 8 now has built-in automatic support for TypeScript's `emitDecoratorMetadata` option, removing the need for external plugins. See the [Features](/guide/features.md#emitdecoratormetadata) page for details.
 
-- **Wasm SSR support:** `.wasm?init` imports now work in SSR environments, expanding Vite's WebAssembly feature to server-side rendering.
+- **Wasm SSR support:** [`.wasm?init` imports](/guide/features#webassembly) now work in SSR environments, expanding Vite's WebAssembly feature to server-side rendering.
 
 - **Browser console forwarding:** Vite 8 can forward browser console logs and errors to the dev server terminal. This is especially useful when working with coding agents, as runtime client errors become visible in the CLI output. Enable it with [`server.forwardConsole`](/config/server-options.md#server-forwardconsole), which activates automatically when a coding agent is detected.
 
