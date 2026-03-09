@@ -1,3 +1,12 @@
+## [8.0.0-beta.18](https://github.com/vitejs/vite/compare/v8.0.0-beta.17...v8.0.0-beta.18) (2026-03-09)
+### Bug Fixes
+
+* use `watch.watcher` instead of `watch.notify` ([#21793](https://github.com/vitejs/vite/issues/21793)) ([88953b3](https://github.com/vitejs/vite/commit/88953b331d6b6acf20dc1731745f27712b091fd9))
+
+### Code Refactoring
+
+* don't add `optimization.inlineConst: { mode: 'smart' }` as it's enabled by default ([#21794](https://github.com/vitejs/vite/issues/21794)) ([22b3d11](https://github.com/vitejs/vite/commit/22b3d111c38deb76d3c07010bf9903e3ee1befc1))
+
 ## [8.0.0-beta.17](https://github.com/vitejs/vite/compare/v8.0.0-beta.16...v8.0.0-beta.17) (2026-03-09)
 ### Features
 
