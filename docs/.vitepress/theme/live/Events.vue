@@ -40,7 +40,7 @@ const EVENTS = [
     >
       Previous events
     </h2>
-    <div class="relative grid md:grid-cols-2 lg:grid-cols-3 wrapper--ticks">
+    <div class="relative grid md:grid-cols-2 xl:grid-cols-4 wrapper--ticks">
       <a
         v-for="event in EVENTS"
         :key="event.date"
