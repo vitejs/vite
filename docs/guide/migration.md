@@ -116,44 +116,47 @@ See the [Babel decorators versions guide](https://babeljs.io/docs/babel-plugin-p
 ::: code-group
 
 ```bash [npm]
-$ npm install -D @rollup/plugin-babel @babel/plugin-proposal-decorators
+$ npm install -D @rolldown/plugin-babel @babel/plugin-proposal-decorators
 ```
 
 ```bash [Yarn]
-$ yarn add -D @rollup/plugin-babel @babel/plugin-proposal-decorators
+$ yarn add -D @rolldown/plugin-babel @babel/plugin-proposal-decorators
 ```
 
 ```bash [pnpm]
-$ pnpm add -D @rollup/plugin-babel @babel/plugin-proposal-decorators
+$ pnpm add -D @rolldown/plugin-babel @babel/plugin-proposal-decorators
 ```
 
 ```bash [Bun]
-$ bun add -D @rollup/plugin-babel @babel/plugin-proposal-decorators
+$ bun add -D @rolldown/plugin-babel @babel/plugin-proposal-decorators
 ```
 
 ```bash [Deno]
-$ deno add -D npm:@rollup/plugin-babel npm:@babel/plugin-proposal-decorators
+$ deno add -D npm:@rolldown/plugin-babel npm:@babel/plugin-proposal-decorators
 ```
 
 :::
 
 ```ts [vite.config.ts]
-import { defineConfig, withFilter } from 'vite'
-import { babel } from '@rollup/plugin-babel'
+import { defineConfig } from 'vite'
+import babel from '@rolldown/plugin-babel'
+
+function decoratorPreset(options: Record<string, unknown>) {
+  return {
+    preset: () => ({
+      plugins: [['@babel/plugin-proposal-decorators', options]],
+    }),
+    rolldown: {
+      // Only run this transform if the file contains a decorator.
+      filter: {
+        code: '@',
+      },
+    },
+  }
+}
 
 export default defineConfig({
-  plugins: [
-    withFilter(
-      babel({
-        configFile: false,
-        plugins: [
-          ['@babel/plugin-proposal-decorators', { version: '2023-11' }],
-        ],
-      }),
-      // Only run this transform if the file contains a decorator.
-      { transform: { code: '@' } },
-    ),
-  ],
+  plugins: [babel({ presets: [decoratorPreset({ version: '2023-11' })] })],
 })
 ```
 
