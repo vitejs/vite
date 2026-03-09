@@ -2,7 +2,7 @@
 title: Vite 8.0 is out!
 author:
   name: The Vite Team
-date: 2026-03-XX
+date: 2026-03-12
 sidebar: false
 head:
   - - meta
@@ -28,7 +28,7 @@ head:
 
 # Vite 8.0 is out!
 
-_March XX, 2026_
+_March 12, 2026_
 
 <!-- TODO: update -->
 
