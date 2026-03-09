@@ -648,16 +648,6 @@ export function resolveRolldownOptions(
       ...options.rollupOptions.experimental,
       viteMode: true,
     },
-    optimization: {
-      inlineConst:
-        typeof options.rollupOptions.optimization?.inlineConst === 'boolean'
-          ? options.rollupOptions.optimization.inlineConst
-          : {
-              mode: 'smart',
-              ...options.rollupOptions.optimization?.inlineConst,
-            },
-      ...options.rollupOptions.optimization,
-    },
   }
 
   const isSsrTargetWebworkerEnvironment =
