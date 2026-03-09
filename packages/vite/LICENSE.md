@@ -497,7 +497,7 @@ Repositories: https://github.com/sindresorhus/bundle-name, https://github.com/si
 ## cac
 License: MIT
 By: egoist
-Repository: https://github.com/egoist/cac
+Repository: https://github.com/cacjs/cac
 
 > The MIT License (MIT)
 > 
