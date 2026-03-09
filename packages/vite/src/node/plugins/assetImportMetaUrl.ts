@@ -31,6 +31,9 @@ import { hasViteIgnoreRE } from './importAnalysis'
  * import.meta.glob('./dir/**.png', { eager: true, import: 'default' })[`./dir/${name}.png`]
  * ```
  */
+export const assetImportMetaUrlFilterRE: RegExp =
+  /\bnew\s+URL\s*\(\s*('[^']+'|"[^"]+"|`[^`]+`)\s*,\s*import\.meta\.url/
+
 export function assetImportMetaUrlPlugin(config: ResolvedConfig): Plugin {
   const { publicDir } = config
   let assetResolver: ResolveIdFn
@@ -56,7 +59,7 @@ export function assetImportMetaUrlPlugin(config: ResolvedConfig): Plugin {
         id: {
           exclude: [exactRegex(preloadHelperId), exactRegex(CLIENT_ENTRY)],
         },
-        code: /new\s+URL.+import\.meta\.url/s,
+        code: assetImportMetaUrlFilterRE,
       },
       async handler(code, id) {
         let s: MagicString | undefined

@@ -181,8 +181,8 @@ async function getWorkerType(
   return 'classic'
 }
 
-const workerImportMetaUrlRE =
-  /new\s+(?:Worker|SharedWorker)\s*\(\s*new\s+URL.+?import\.meta\.url/s
+export const workerImportMetaUrlRE: RegExp =
+  /\bnew\s+(?:Worker|SharedWorker)\s*\(\s*new\s+URL\s*\(\s*('[^']+'|"[^"]+"|`[^`]+`)\s*,\s*import\.meta\.url/
 
 export function workerImportMetaUrlPlugin(config: ResolvedConfig): Plugin {
   const isBundled = config.isBundled

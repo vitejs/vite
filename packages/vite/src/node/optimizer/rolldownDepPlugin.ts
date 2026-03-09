@@ -22,6 +22,7 @@ import type { Environment } from '../environment'
 import { createBackCompatIdResolver } from '../idResolver'
 import { isWindows } from '../../shared/utils'
 import { hasViteIgnoreRE } from '../plugins/importAnalysis'
+import { assetImportMetaUrlFilterRE } from '../plugins/assetImportMetaUrl'
 
 const externalWithConversionNamespace =
   'vite:dep-pre-bundle:external-conversion'
@@ -313,7 +314,7 @@ export function rolldownDepPlugin(
       },
       transform: {
         filter: {
-          code: /new\s+URL.+import\.meta\.url/s,
+          code: assetImportMetaUrlFilterRE,
         },
         async handler(code, id) {
           let s: MagicString | undefined
