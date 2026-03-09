@@ -66,7 +66,7 @@ import { ssrManifestPlugin } from './ssr/ssrManifestPlugin'
 import { findNearestMainPackageData, findNearestPackageData } from './packages'
 import type { PackageCache } from './packages'
 import {
-  convertToNotifyOptions,
+  convertToWatcherOptions,
   getResolvedOutDirs,
   resolveChokidarOptions,
   resolveEmptyOutDir,
@@ -841,7 +841,7 @@ async function buildEnvironment(
         watch: {
           ...rollupOptions.watch,
           ...options.watch,
-          notify: convertToNotifyOptions(resolvedChokidarOptions),
+          watcher: convertToWatcherOptions(resolvedChokidarOptions),
         },
       })
 
