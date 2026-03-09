@@ -515,10 +515,10 @@ describe.runIf(isServe)('fetchModule via WebSocket', () => {
     }
   }
 
-  test('should read files inside allowed directories', async () => {
+  test('should not read files inside allowed directories as fetchModule is disabled', async () => {
     const result = await fetchModuleViaWebSocket('root/src/safe.txt?raw')
-    expect(result.result).toBeTruthy()
-    expect(result.error).toBeFalsy()
+    expect(result.result).toBeUndefined()
+    expect(result.error).toBeTruthy()
   })
 
   test('should not read files outside allowed directories', async () => {

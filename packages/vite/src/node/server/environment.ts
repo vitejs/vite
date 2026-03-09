@@ -45,6 +45,8 @@ export interface DevEnvironmentContext {
     inlineSourceMap?: boolean
   }
   depsOptimizer?: DepsOptimizer
+  /** @internal used for client environment */
+  disableFetchModule?: boolean
   /** @internal used for full bundle mode */
   disableDepsOptimizer?: boolean
 }
@@ -143,6 +145,9 @@ export class DevEnvironment extends BaseEnvironment {
 
     this.hot.setInvokeHandler({
       fetchModule: (id, importer, options) => {
+        if (context.disableFetchModule) {
+          throw new Error('fetchModule is disabled in this environment')
+        }
         return this.fetchModule(id, importer, options)
       },
       getBuiltins: async () => {
@@ -245,7 +250,7 @@ export class DevEnvironment extends BaseEnvironment {
 
   async warmupRequest(url: string): Promise<void> {
     try {
-      await this.transformRequest(url)
+      await transformRequest(this, url, { skipFsCheck: true })
     } catch (e) {
       if (
         e?.code === ERR_OUTDATED_OPTIMIZED_DEP ||
