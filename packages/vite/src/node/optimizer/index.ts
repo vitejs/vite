@@ -644,6 +644,13 @@ export function runOptimizeDeps(
 
   const start = performance.now()
 
+  const bundleTimer = setTimeout(() => {
+    environment.logger.info(
+      colors.yellow(`[optimizer] bundling dependencies...`),
+      { timestamp: true },
+    )
+  }, 1000)
+
   const preparedRun = prepareRolldownOptimizerRun(
     environment,
     depsInfo,
@@ -653,6 +660,7 @@ export function runOptimizeDeps(
 
   const runResult = preparedRun.then(({ context, idToExports }) => {
     if (!context || optimizerContext.cancelled) {
+      clearTimeout(bundleTimer)
       return cancelledResult
     }
 
@@ -712,6 +720,8 @@ export function runOptimizeDeps(
           }
         }
 
+        clearTimeout(bundleTimer)
+
         debug?.(
           `Dependencies bundled in ${(performance.now() - start).toFixed(2)}ms`,
         )
@@ -720,6 +730,7 @@ export function runOptimizeDeps(
       })
 
       .catch((e) => {
+        clearTimeout(bundleTimer)
         if (e.errors && e.message.includes('The build was canceled')) {
           // an error happens when cancelling, but this is expected so
           // return an empty result instead

@@ -200,6 +200,13 @@ export function createDepsOptimizer(
             try {
               debug?.(colors.green(`scanning for dependencies...`))
 
+              const scanTimer = setTimeout(() => {
+                logger.info(
+                  colors.yellow(`[optimizer] scanning dependencies...`),
+                  { timestamp: true },
+                )
+              }, 1000)
+
               let deps: Record<string, string>
               try {
                 discover = discoverProjectDependencies(
@@ -216,6 +223,8 @@ export function createDepsOptimizer(
                   ),
                 )
                 return
+              } finally {
+                clearTimeout(scanTimer)
               }
 
               const manuallyIncluded = Object.keys(manuallyIncludedDepsInfo)
