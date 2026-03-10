@@ -1,8 +1,30 @@
 ---
-title: Vite Live
+title: 5th anniversary of the Vite Team Creation
 layout: home
 theme: dark
-description: The development of Vite is guided by an international team.
+description: "We've built something big together, and we've missed you. It's time to talk about who we really are: our ecosystem, our community, our passion, and our past."
+head:
+  - - meta
+    - property: og:type
+      content: website
+  - - meta
+    - property: og:title
+      content: 5th anniversary of the Vite Team Creation
+  - - meta
+    - property: og:description
+      content: "We've built something big together, and we've missed you. It's time to talk about who we really are: our ecosystem, our community, our passion, and our past."
+  - - meta
+    - property: og:type
+      content: website
+  - - meta
+    - property: og:image
+      content: https://deb1-5-151-191-106.ngrok-free.app/og-image-5-anniversary-live.webp
+  - - meta
+    - property: og:url
+      content: https://deb1-5-151-191-106.ngrok-free.app/live
+  - - meta
+    - name: twitter:card
+      content: summary_large_image
 ---
 
 <script setup>

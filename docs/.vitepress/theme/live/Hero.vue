@@ -35,7 +35,7 @@
     </div>
     <div class="flex items-center justify-center p-10 md:min-h-[30rem]">
       <img
-        src="../../../images/vite-community.webp"
+        src="../../../images/vite-live-community.webp"
         width="1832"
         height="1388"
         class="block sm:max-w-[80%] lg:max-w-[70%]"
