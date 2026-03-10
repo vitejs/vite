@@ -34,7 +34,7 @@ _March 12, 2026_
 
 ![Vite 8 Announcement Cover Image](/og-image-announcing-vite7.webp)
 
-We're thrilled to announce the stable release of Vite 8! When Vite first launched, we made a pragmatic bet on two bundlers: esbuild for speed during development, and Rollup for optimized production builds. That bet served us well for years. Today, it resolves into one: Vite 8 ships with [Rolldown](https://rolldown.rs/) as its single, unified, Rust-based bundler, delivering up to 10-30x faster builds while maintaining full plugin compatibility. This is the most significant architectural change since Vite 2.
+We're thrilled to announce the stable release of Vite 8! When Vite first launched, we made a pragmatic bet on two bundlers: esbuild for speed during development, and Rollup for optimized production builds. That bet served us well for years. We're very grateful to the Rollup and esbuild maintainers. Vite wouldn't have succeeded without them. Today, it resolves into one: Vite 8 ships with [Rolldown](https://rolldown.rs/) as its single, unified, Rust-based bundler, delivering up to 10-30x faster builds while maintaining full plugin compatibility. This is the most significant architectural change since Vite 2.
 
 Vite is now being downloaded 65 million times a week, and the ecosystem continues to grow with every release. To help developers navigate the ever-expanding plugin landscape, we also launched [registry.vite.dev](https://registry.vite.dev), a searchable directory of plugins for Vite, Rolldown, and Rollup that collects plugin data from npm daily.
 
