@@ -2,7 +2,7 @@
 title: 5th anniversary of the Vite Team Creation
 layout: home
 theme: dark
-description: "We've built something big together, and we've missed you. It's time to talk about who we really are: our ecosystem, our community, our passion, and our past."
+description: "Vite: The Documentary re-premiere. Join the ecosystem this March 19th at 3 PM UTC to remember the story we wrote together. And participate in the live stage to discuss our past, present, and future. We'll be waiting for you!"
 head:
   - - meta
     - property: og:type
@@ -12,7 +12,7 @@ head:
       content: 5th anniversary of the Vite Team Creation
   - - meta
     - property: og:description
-      content: "We've built something big together, and we've missed you. It's time to talk about who we really are: our ecosystem, our community, our passion, and our past."
+      content: "Vite: The Documentary re-premiere. Join the ecosystem this March 19th at 3 PM UTC to remember the story we wrote together. And participate in the live stage to discuss our past, present, and future. We'll be waiting for you!"
   - - meta
     - property: og:type
       content: website
