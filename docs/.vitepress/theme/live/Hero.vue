@@ -14,22 +14,40 @@
         It's time to talk about who we really are: our ecosystem, our community,
         our passion, and our past.
       </p>
-      <div class="flex items-center gap-5 mt-8">
+      <div class="flex items-start justify-between w-full gap-5 mt-8">
+        <div class="flex items-center gap-5">
+          <a
+            href="https://calendar.google.com/calendar/render?action=TEMPLATE&text=Vite.%20The%20documentary&dates=20260319T180000/20260319T190000&ctz=Europe/Paris&details=5th%20anniversary%20Community%20time%0A%0AJoin%20on%20Discord:%20https%3A%2F%2Fdiscord.gg%2FPsQ3SfhhDQ"
+            target="_blank"
+            rel="noopener noreferrer"
+            class="button button--primary inline-block w-fit"
+          >
+            Add to Calendar
+          </a>
+          <a
+            href="https://chat.vite.dev"
+            target="_blank"
+            rel="noopener noreferrer"
+            class="button inline-block w-fit"
+          >
+            Join Community
+          </a>
+        </div>
         <a
-          href="https://calendar.google.com/calendar/render?action=TEMPLATE&text=Vite.%20The%20documentary&dates=20260319T180000/20260319T190000&ctz=Europe/Paris&details=5th%20anniversary%20Community%20time%0A%0AJoin%20on%20Discord:%20https%3A%2F%2Fdiscord.gg%2FPsQ3SfhhDQ"
+          href="https://www.cultrepo.com/"
           target="_blank"
           rel="noopener noreferrer"
-          class="button button--primary inline-block w-fit"
+          class="inline-block w-fit grayscale hover:grayscale-0 hover:scale-105 transition-all duration-100"
         >
-          Add to Calendar
-        </a>
-        <a
-          href="https://chat.vite.dev"
-          target="_blank"
-          rel="noopener noreferrer"
-          class="button inline-block w-fit"
-        >
-          Join Community
+          <img
+            src="../../../images/cultrepo-tv.svg"
+            width="60"
+            height="44"
+            class="block"
+            inert
+            loading="lazy"
+            alt="Cult.Repo"
+          />
         </a>
       </div>
     </div>
