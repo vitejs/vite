@@ -645,7 +645,7 @@ export function runOptimizeDeps(
   const start = performance.now()
 
   const bundleTimer = setTimeout(() => {
-    environment.logger.info(`[optimizer] bundling dependencies...`, {
+    environment.logger.info('[optimizer] bundling dependencies...', {
       timestamp: true,
     })
   }, 1000)
