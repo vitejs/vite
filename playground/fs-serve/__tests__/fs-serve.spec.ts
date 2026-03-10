@@ -109,7 +109,16 @@ describe.runIf(isServe)('invalid request', () => {
       path.posix.join('/@fs/', root) +
         '/node_modules/.vite/deps/../../../unsafe.map',
     )
-    expect(response).not.toContain('unsafe')
+    expect(response).toContain('HTTP/1.1 403 Forbidden')
+  })
+
+  test('should not allow backslash relative path traversal with optimize deps sourcemap handler', async () => {
+    const response = await sendRawRequest(
+      viteTestUrl,
+      path.posix.join('/@fs/', root) +
+        '/node_modules/.vite/deps/..\\..\\..\\unsafe.map',
+    )
+    expect(response).toContain('HTTP/1.1 403 Forbidden')
   })
 
   test('should deny request to HTML file outside root by default with relative path', async () => {
