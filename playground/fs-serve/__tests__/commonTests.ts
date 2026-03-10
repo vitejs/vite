@@ -179,6 +179,12 @@ describe.runIf(isServe)('matrix', () => {
       skipVariants: [''],
     },
     {
+      name: 'unsafe fetch with ?url query',
+      testId: 'unsafe-url',
+      content: /403 Restricted/,
+      status: '403',
+    },
+    {
       name: 'unsafe fetch ?.svg?import',
       testId: 'unsafe-query-dot-svg-import',
       content: /403 Restricted/,
@@ -224,8 +230,26 @@ describe.runIf(isServe)('matrix', () => {
       status: '403',
     },
     {
+      name: 'denied .env with url query',
+      testId: 'unsafe-dotenv-url',
+      content: /403 Restricted/,
+      status: '403',
+    },
+    {
+      name: 'denied .env with inline query',
+      testId: 'unsafe-dotenv-inline',
+      content: /403 Restricted/,
+      status: '403',
+    },
+    {
       name: 'denied env with ?.svg?.wasm?init',
       testId: 'unsafe-dotenv-query-dot-svg-wasm-init',
+      content: /403 Restricted/,
+      status: '403',
+    },
+    {
+      name: 'denied .env with import and raw query',
+      testId: 'unsafe-dotenv-import-raw',
       content: /403 Restricted/,
       status: '403',
     },

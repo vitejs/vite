@@ -20,6 +20,7 @@ const testIds = [
   'unsafe-raw-import-raw-outside-root',
   'unsafe-raw-import-raw-outside-root1',
   'unsafe-raw-import-raw-outside-root2',
+  'unsafe-url',
   'unsafe-query-dot-svg-import',
   'unsafe-svg',
   'unsafe-import-inline-wasm-init',
@@ -27,7 +28,10 @@ const testIds = [
   'unsafe-dotenv',
   'unsafe-dotenv-casing',
   'unsafe-dotenv-raw',
+  'unsafe-dotenv-url',
+  'unsafe-dotenv-inline',
   'unsafe-dotenv-query-dot-svg-wasm-init',
+  'unsafe-dotenv-import-raw',
 ]
 
 export default function matrixTestResultPlugin(): Plugin {

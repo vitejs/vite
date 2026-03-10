@@ -106,6 +106,8 @@
       testId: 'unsafe-raw-import-raw-outside-root2',
       path: '/unsafe.json?import&raw?&',
     },
+    // outside of allowed dir with ?url
+    { testId: 'unsafe-url', path: '/root/unsafe.txt?import&url' },
     // outside of allowed dir with .svg query import
     {
       testId: 'unsafe-query-dot-svg-import',
@@ -141,11 +143,17 @@
       testId: 'unsafe-dotenv-raw',
       path: '/root/src/.env?raw',
     },
+    // .env, with url query
+    { testId: 'unsafe-dotenv-url', path: '/root/src/.env?url' },
+    // .env with inline query
+    { testId: 'unsafe-dotenv-inline', path: '/root/src/.env?inline' },
     // .env with .svg?.wasm?init
     {
       testId: 'unsafe-dotenv-query-dot-svg-wasm-init',
       path: '/root/src/.env?.svg?.wasm?init',
     },
+    // .env with ?import&raw
+    { testId: 'unsafe-dotenv-import-raw', path: '/root/src/.env?import&raw' },
   ]
   const variants = {
     '': (path) =>
