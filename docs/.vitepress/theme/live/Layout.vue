@@ -8,10 +8,10 @@ import Footer from '@components/oss/Footer.vue'
 </script>
 
 <template>
-  <TimeoutSwitcher at="2026-03-19T17:00:00.000Z">
+  <TimeoutSwitcher at="2026-03-19T15:00:00.000Z">
     <template #default>
       <Hero />
-      <Timer at="2026-03-19T17:00:00.000Z" />
+      <Timer at="2026-03-19T15:00:00.000Z" />
     </template>
     <template #timeout>
       <VideoIframe />
