@@ -8,11 +8,13 @@
       <h1 class="text-white text-pretty max-w-[35rem]">
         5th anniversary of the Vite Team Creation
       </h1>
+      <p class="text-white text-3xl text-pretty max-w-[35rem]">
+        Vite: The Documentary re-premiere
+      </p>
       <p class="text-white/70 md:text-lg max-w-[35rem] text-pretty">
-        We've built something big together, and we've missed you.
-        <br />
-        It's time to talk about who we really are: our ecosystem, our community,
-        our passion, and our past.
+        Join the ecosystem this March 19th at 3 PM UTC to remember the story we
+        wrote together. And participate in the live stage to discuss our past,
+        present, and future. We'll be waiting for you!
       </p>
       <div class="flex items-start justify-between w-full gap-5 mt-8">
         <div class="flex items-center gap-5">
