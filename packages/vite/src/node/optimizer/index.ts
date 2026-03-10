@@ -645,10 +645,9 @@ export function runOptimizeDeps(
   const start = performance.now()
 
   const bundleTimer = setTimeout(() => {
-    environment.logger.info(
-      colors.yellow(`[optimizer] bundling dependencies...`),
-      { timestamp: true },
-    )
+    environment.logger.info(`[optimizer] bundling dependencies...`, {
+      timestamp: true,
+    })
   }, 1000)
 
   const preparedRun = prepareRolldownOptimizerRun(

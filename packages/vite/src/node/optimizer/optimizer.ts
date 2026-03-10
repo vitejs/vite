@@ -201,10 +201,9 @@ export function createDepsOptimizer(
               debug?.(colors.green(`scanning for dependencies...`))
 
               const scanTimer = setTimeout(() => {
-                logger.info(
-                  colors.yellow(`[optimizer] scanning dependencies...`),
-                  { timestamp: true },
-                )
+                logger.info(`[optimizer] scanning dependencies...`, {
+                  timestamp: true,
+                })
               }, 1000)
 
               let deps: Record<string, string>
