@@ -18,10 +18,10 @@ head:
       content: website
   - - meta
     - property: og:image
-      content: https://deb1-5-151-191-106.ngrok-free.app/og-image-5-anniversary-live.webp
+      content: https://vite.dev/og-image-5-anniversary-live.webp
   - - meta
     - property: og:url
-      content: https://deb1-5-151-191-106.ngrok-free.app/live
+      content: https://vite.dev/live
   - - meta
     - name: twitter:card
       content: summary_large_image
