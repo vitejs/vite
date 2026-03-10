@@ -130,6 +130,8 @@ The Rolldown integration opens the door to improvements and optimizations. Here 
 
 - [**Native MagicString transforms**](https://rolldown.rs/in-depth/native-magic-string#native-magicstring): Enables custom transforms where the logic lives in JavaScript but the string manipulation computation runs in Rust.
 
+- **Stabilizing the Environment API**: We are working to make the Environment API stable. The ecosystem has started regular meetings to better collaborate together.
+
 ## Migrating to Vite 8
 
 For most projects, upgrading to Vite 8 should be a smooth process. We built a compatibility layer that auto-converts existing `esbuild` and `rollupOptions` configuration to their Rolldown and Oxc equivalents, so many projects will work without any config changes.
