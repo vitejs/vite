@@ -51,7 +51,7 @@ The result is one consistent pipeline from development to [production](./build.m
 
 Vite's architecture continues to evolve. Several efforts are shaping its future:
 
-- **Full bundle mode**: Vite's dev server currently serves source code unbundled over native ESM. The team is exploring a mode where the dev server bundles code similarly to production, which could reduce network requests and improve startup for large projects.
+- **Full bundle mode**: Unbundled ESM was the right tradeoff when Vite was created because no tool was both fast enough and had the HMR and plugin capabilities needed to bundle during dev. Rolldown changes that. Since exceptionally large codebases can experience slow page loads due to the high number of unbundled network requests, the team is exploring a mode where the dev server bundles code similarly to production, reducing network overhead and bringing closer dev/prod parity.
 
 - **Environment API**: Instead of treating "client" and "SSR" as the only two build targets, the [Environment API](./api-environment-instances.md) lets frameworks define custom environments (edge runtimes, service workers, and other deployment targets), each with their own module resolution and execution rules. As where and how code runs continues to diversify, Vite's model expands with it.
 
