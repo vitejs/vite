@@ -19,7 +19,7 @@
       <div class="flex items-start justify-between w-full gap-5 mt-8">
         <div class="flex items-center gap-5">
           <a
-            href="https://calendar.google.com/calendar/render?action=TEMPLATE&text=Vite.%20The%20documentary&dates=20260319T180000/20260319T190000&ctz=Europe/Paris&details=5th%20anniversary%20Community%20time%0A%0AJoin%20on%20Discord:%20https%3A%2F%2Fdiscord.gg%2FPsQ3SfhhDQ"
+            href="https://calendar.google.com/calendar/render?action=TEMPLATE&text=Vite.%20The%20documentary&dates=20260319T150000/20260319T160000&ctz=Europe/London&details=5th%20anniversary%20Community%20time%0A%0AJoin%20on%20Discord:%20https%3A%2F%2Fdiscord.gg%2FPsQ3SfhhDQ"
             target="_blank"
             rel="noopener noreferrer"
             class="button button--primary inline-block w-fit"
