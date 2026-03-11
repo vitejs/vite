@@ -66,7 +66,7 @@ import { ssrManifestPlugin } from './ssr/ssrManifestPlugin'
 import { findNearestMainPackageData, findNearestPackageData } from './packages'
 import type { PackageCache } from './packages'
 import {
-  convertToNotifyOptions,
+  convertToWatcherOptions,
   getResolvedOutDirs,
   resolveChokidarOptions,
   resolveEmptyOutDir,
@@ -648,16 +648,6 @@ export function resolveRolldownOptions(
       ...options.rollupOptions.experimental,
       viteMode: true,
     },
-    optimization: {
-      inlineConst:
-        typeof options.rollupOptions.optimization?.inlineConst === 'boolean'
-          ? options.rollupOptions.optimization.inlineConst
-          : {
-              mode: 'smart',
-              ...options.rollupOptions.optimization?.inlineConst,
-            },
-      ...options.rollupOptions.optimization,
-    },
   }
 
   const isSsrTargetWebworkerEnvironment =
@@ -841,7 +831,7 @@ async function buildEnvironment(
         watch: {
           ...rollupOptions.watch,
           ...options.watch,
-          notify: convertToNotifyOptions(resolvedChokidarOptions),
+          watcher: convertToWatcherOptions(resolvedChokidarOptions),
         },
       })
 

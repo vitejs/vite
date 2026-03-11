@@ -1,3 +1,44 @@
+## [8.0.0-beta.18](https://github.com/vitejs/vite/compare/v8.0.0-beta.17...v8.0.0-beta.18) (2026-03-09)
+### Bug Fixes
+
+* use `watch.watcher` instead of `watch.notify` ([#21793](https://github.com/vitejs/vite/issues/21793)) ([88953b3](https://github.com/vitejs/vite/commit/88953b331d6b6acf20dc1731745f27712b091fd9))
+
+### Code Refactoring
+
+* don't add `optimization.inlineConst: { mode: 'smart' }` as it's enabled by default ([#21794](https://github.com/vitejs/vite/issues/21794)) ([22b3d11](https://github.com/vitejs/vite/commit/22b3d111c38deb76d3c07010bf9903e3ee1befc1))
+
+## [8.0.0-beta.17](https://github.com/vitejs/vite/compare/v8.0.0-beta.16...v8.0.0-beta.17) (2026-03-09)
+### Features
+
+* **css:** support es2025 build target for lightningcss ([#21769](https://github.com/vitejs/vite/issues/21769)) ([08906e7](https://github.com/vitejs/vite/commit/08906e76f2fc0e55c8aea6243f6203ce0c78f106))
+* forward browser console logs and errors to dev server terminal ([#20916](https://github.com/vitejs/vite/issues/20916)) ([2540ed0](https://github.com/vitejs/vite/commit/2540ed06d0b6f93829d2d764b6a02f7dbfd14923))
+* update rolldown to 1.0.0-rc.8 ([#21790](https://github.com/vitejs/vite/issues/21790)) ([a0c950e](https://github.com/vitejs/vite/commit/a0c950e30945cc97fb2381a2affac086730fa31e))
+
+### Bug Fixes
+
+* **css:** apply `server.origin` to public file URLs in CSS (fix [#18457](https://github.com/vitejs/vite/issues/18457)) ([#21697](https://github.com/vitejs/vite/issues/21697)) ([c967f48](https://github.com/vitejs/vite/commit/c967f48b2e888585e977c3a8d829f7370eb40922))
+* **deps:** update all non-major dependencies ([#21732](https://github.com/vitejs/vite/issues/21732)) ([5c921ca](https://github.com/vitejs/vite/commit/5c921ca9bfe64327df82b04ae34ccfe0a7cfa297))
+* **dev:** disable extglobs for consistency ([#21745](https://github.com/vitejs/vite/issues/21745)) ([1958eeb](https://github.com/vitejs/vite/commit/1958eeb34f9eab93f106b785c1c2ddf97b5c3b3a))
+* **lib:** keep annotation comments for es output ([#21740](https://github.com/vitejs/vite/issues/21740)) ([dd3c4f4](https://github.com/vitejs/vite/commit/dd3c4f4cf0f9e665e56e6d9a9cb7007fc3ac0dc3))
+* **optimizer:** avoid error happening with a package with asset entrypoint ([#21766](https://github.com/vitejs/vite/issues/21766)) ([f7e1d07](https://github.com/vitejs/vite/commit/f7e1d0720e6b9f2ce5d358b6a23ebdb72c51be70))
+* **ssr:** throw friendly error when calling `ssrLoadModule` with non-runnable ssr env ([#21739](https://github.com/vitejs/vite/issues/21739)) ([1fa736e](https://github.com/vitejs/vite/commit/1fa736e802c3f0fa0eacdda1d5d1c976794459bd))
+* **types:** remove extends ImportMeta from ModuleRunnerImportMeta ([#21710](https://github.com/vitejs/vite/issues/21710)) ([0176d45](https://github.com/vitejs/vite/commit/0176d45deb29f5db1f551d20d828598c2130be36))
+* **wasm:** reset assetUrlRE.lastIndex before .test() in SSR builds ([#21780](https://github.com/vitejs/vite/issues/21780)) ([3a0d8d9](https://github.com/vitejs/vite/commit/3a0d8d94a8868f5e118c81bc35a657ef19ff7d82))
+
+### Miscellaneous Chores
+
+* **deps-dev:** bump rollup from 4.57.1 to 4.59.0 ([#21717](https://github.com/vitejs/vite/issues/21717)) ([25227bb](https://github.com/vitejs/vite/commit/25227bbdc7de0ed07cf7bdc9a1a733e3a9a132bc))
+* **deps:** update dependency cac to v7 ([#21788](https://github.com/vitejs/vite/issues/21788)) ([44e33ae](https://github.com/vitejs/vite/commit/44e33ae6a7b64130831f08b2a20d04cbd106898d))
+* **deps:** update dependency rolldown-plugin-dts to ^0.22.2 ([#21731](https://github.com/vitejs/vite/issues/21731)) ([d8ea652](https://github.com/vitejs/vite/commit/d8ea652a8b295d9e012ac7ea607d813c69f77791))
+
+### Code Refactoring
+
+* enable some native plugins even with enable native plugin false ([#21744](https://github.com/vitejs/vite/issues/21744)) ([fc46c79](https://github.com/vitejs/vite/commit/fc46c79797e9ec22a5a4fb1999f6268f72d586f8))
+
+### Tests
+
+* **ssr:** incorrect `handleInvoke` was called in server-worker-runner.invoke test ([#21751](https://github.com/vitejs/vite/issues/21751)) ([b95ca22](https://github.com/vitejs/vite/commit/b95ca22460fe39fc862444f8c642fd6a0794c87c))
+
 ## [8.0.0-beta.16](https://github.com/vitejs/vite/compare/v8.0.0-beta.15...v8.0.0-beta.16) (2026-02-27)
 ### Features
 

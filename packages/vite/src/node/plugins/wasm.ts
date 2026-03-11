@@ -98,6 +98,7 @@ export default ${wasmHelperCode}
 
           id = id.split('?')[0]
           let url = await fileToUrl(this, id, ssr)
+          assetUrlRE.lastIndex = 0
           if (ssr && assetUrlRE.test(url)) {
             url = url.replace('__VITE_ASSET__', '__VITE_WASM_INIT__')
           }
