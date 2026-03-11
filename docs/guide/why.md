@@ -47,7 +47,7 @@ Vite originally relied on two separate tools under the hood: [esbuild](https://e
 
 The result is one consistent pipeline from development to [production](./build.md). The migration was done carefully: a [technical preview](https://voidzero.dev/posts/announcing-rolldown-vite) shipped first so early adopters could validate the change, ecosystem CI caught compatibility issues early, and a compatibility layer preserved existing configurations.
 
-## Where Vite Is Heading
+## Where Vite is Heading
 
 Vite's architecture continues to evolve. Several efforts are shaping its future:
 
