@@ -479,6 +479,8 @@ export async function _createServer(
     listen: boolean
     previousEnvironments?: Record<string, DevEnvironment>
     previousShortcutsState?: ShortcutsState<ViteDevServer>
+    previousRestartPromise?: Promise<void> | null
+    previousForceOptimizeOnRestart?: boolean
   },
 ): Promise<ViteDevServer> {
   const config = isResolvedConfig(inlineConfig)
@@ -809,8 +811,8 @@ export async function _createServer(
       // server instance after a restart
       server = _server
     },
-    _restartPromise: null,
-    _forceOptimizeOnRestart: false,
+    _restartPromise: options.previousRestartPromise ?? null,
+    _forceOptimizeOnRestart: options.previousForceOptimizeOnRestart ?? false,
     _shortcutsState: options.previousShortcutsState,
   }
 
@@ -1290,6 +1292,8 @@ async function restartServer(server: ViteDevServer) {
         listen: false,
         previousEnvironments: server.environments,
         previousShortcutsState: server._shortcutsState,
+        previousRestartPromise: server._restartPromise,
+        previousForceOptimizeOnRestart: server._forceOptimizeOnRestart,
       })
     } catch (err: any) {
       server.config.logger.error(err.message, {
@@ -1308,8 +1312,6 @@ async function restartServer(server: ViteDevServer) {
     const middlewares = server.middlewares
     newServer._configServerPort = server._configServerPort
     newServer._currentServerPort = server._currentServerPort
-    newServer._restartPromise = server._restartPromise
-    newServer._forceOptimizeOnRestart = server._forceOptimizeOnRestart
     Object.assign(server, newServer)
 
     // Keep the same connect instance so app.use(vite.middlewares) works
