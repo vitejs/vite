@@ -182,7 +182,7 @@ async function getWorkerType(
 }
 
 export const workerImportMetaUrlRE: RegExp =
-  /\bnew\s+(?:Worker|SharedWorker)\s*\(\s*new\s+URL\s*\(\s*('[^']+'|"[^"]+"|`[^`]+`)\s*,\s*import\.meta\.url/
+  /\bnew\s+(?:Worker|SharedWorker)\s*\(\s*(new\s+URL\s*\(\s*('[^']+'|"[^"]+"|`[^`]+`)\s*,\s*import\.meta\.url\s*(?:,\s*)?\))/dg
 
 export function workerImportMetaUrlPlugin(config: ResolvedConfig): Plugin {
   const isBundled = config.isBundled
@@ -209,11 +209,10 @@ export function workerImportMetaUrlPlugin(config: ResolvedConfig): Plugin {
       async handler(code, id) {
         let s: MagicString | undefined
         const cleanString = stripLiteral(code)
-        const workerImportMetaUrlRE =
-          /\bnew\s+(?:Worker|SharedWorker)\s*\(\s*(new\s+URL\s*\(\s*('[^']+'|"[^"]+"|`[^`]+`)\s*,\s*import\.meta\.url\s*(?:,\s*)?\))/dg
+        const re = new RegExp(workerImportMetaUrlRE)
 
         let match: RegExpExecArray | null
-        while ((match = workerImportMetaUrlRE.exec(cleanString))) {
+        while ((match = re.exec(cleanString))) {
           const [[, endIndex], [expStart, expEnd], [urlStart, urlEnd]] =
             match.indices!
 

@@ -31,8 +31,8 @@ import { hasViteIgnoreRE } from './importAnalysis'
  * import.meta.glob('./dir/**.png', { eager: true, import: 'default' })[`./dir/${name}.png`]
  * ```
  */
-export const assetImportMetaUrlFilterRE: RegExp =
-  /\bnew\s+URL\s*\(\s*('[^']+'|"[^"]+"|`[^`]+`)\s*,\s*import\.meta\.url/
+export const assetImportMetaUrlRE: RegExp =
+  /\bnew\s+URL\s*\(\s*('[^']+'|"[^"]+"|`[^`]+`)\s*,\s*import\.meta\.url\s*(?:,\s*)?\)/dg
 
 export function assetImportMetaUrlPlugin(config: ResolvedConfig): Plugin {
   const { publicDir } = config
@@ -59,16 +59,15 @@ export function assetImportMetaUrlPlugin(config: ResolvedConfig): Plugin {
         id: {
           exclude: [exactRegex(preloadHelperId), exactRegex(CLIENT_ENTRY)],
         },
-        code: assetImportMetaUrlFilterRE,
+        code: assetImportMetaUrlRE,
       },
       async handler(code, id) {
         let s: MagicString | undefined
-        const assetImportMetaUrlRE =
-          /\bnew\s+URL\s*\(\s*('[^']+'|"[^"]+"|`[^`]+`)\s*,\s*import\.meta\.url\s*(?:,\s*)?\)/dg
+        const re = new RegExp(assetImportMetaUrlRE)
         const cleanString = stripLiteral(code)
 
         let match: RegExpExecArray | null
-        while ((match = assetImportMetaUrlRE.exec(cleanString))) {
+        while ((match = re.exec(cleanString))) {
           const [[startIndex, endIndex], [urlStart, urlEnd]] = match.indices!
           if (hasViteIgnoreRE.test(code.slice(startIndex, urlStart))) continue
 
