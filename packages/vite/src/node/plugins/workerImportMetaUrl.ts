@@ -209,10 +209,10 @@ export function workerImportMetaUrlPlugin(config: ResolvedConfig): Plugin {
       async handler(code, id) {
         let s: MagicString | undefined
         const cleanString = stripLiteral(code)
-        const re = new RegExp(workerImportMetaUrlRE)
+        workerImportMetaUrlRE.lastIndex = 0
 
         let match: RegExpExecArray | null
-        while ((match = re.exec(cleanString))) {
+        while ((match = workerImportMetaUrlRE.exec(cleanString))) {
           const [[, endIndex], [expStart, expEnd], [urlStart, urlEnd]] =
             match.indices!
 

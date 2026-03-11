@@ -318,11 +318,11 @@ export function rolldownDepPlugin(
         },
         async handler(code, id) {
           let s: MagicString | undefined
-          const re = new RegExp(assetImportMetaUrlRE)
+          assetImportMetaUrlRE.lastIndex = 0
           const cleanString = stripLiteral(code)
 
           let match: RegExpExecArray | null
-          while ((match = re.exec(cleanString))) {
+          while ((match = assetImportMetaUrlRE.exec(cleanString))) {
             const [[startIndex, endIndex], [urlStart, urlEnd]] = match.indices!
             if (hasViteIgnoreRE.test(code.slice(startIndex, urlStart))) continue
 
