@@ -1218,7 +1218,10 @@ function tryResolveRealFileOrType(
   return
 }
 
-function getRealPath(resolved: string, preserveSymlinks?: boolean): string {
+export function getRealPath(
+  resolved: string,
+  preserveSymlinks?: boolean,
+): string {
   if (!preserveSymlinks) {
     resolved = safeRealpathSync(resolved)
   }

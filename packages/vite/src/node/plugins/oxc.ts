@@ -18,6 +18,7 @@ import type { ViteDevServer } from '../server'
 import { JS_TYPES_RE, VITE_PACKAGE_DIR } from '../constants'
 import type { Logger } from '../logger'
 import { type ESBuildOptions, getTSConfigResolutionCache } from './esbuild'
+import { getRealPath } from './resolve'
 
 // IIFE content looks like `var MyLib = (function() {` or `this.nested.myLib = (function() {`.
 export const IIFE_BEGIN_RE: RegExp =
@@ -299,8 +300,9 @@ export function oxcPlugin(config: ResolvedConfig): Plugin {
 
     return result
   }
-  const runtimeResolveBase = normalizePath(
-    path.join(VITE_PACKAGE_DIR, 'package.json'),
+  const runtimePackageDir = getRealPath(
+    path.join(VITE_PACKAGE_DIR, 'node_modules', '@oxc-project', 'runtime'),
+    config.resolve.preserveSymlinks,
   )
 
   let server: ViteDevServer
@@ -315,13 +317,22 @@ export function oxcPlugin(config: ResolvedConfig): Plugin {
       ? {
           resolveId: {
             filter: {
-              id: prefixRegex('@oxc-project/runtime/'),
+              id: prefixRegex('@oxc-project/runtime/helpers/'),
             },
-            async handler(id, _importer, opts) {
+            async handler(id, _importer, _opts) {
               // @oxc-project/runtime imports will be injected by Oxc transform
               // since it's injected by the transform, @oxc-project/runtime should be resolved to the one Vite depends on
-              const resolved = await this.resolve(id, runtimeResolveBase, opts)
-              return resolved
+              const helperName = id.slice(
+                '@oxc-project/runtime/helpers/'.length,
+              )
+              // Rolldown always uses the esm version of @oxc-project/runtime
+              // https://github.com/rolldown/rolldown/blob/v1.0.0-rc.9/crates/rolldown_plugin_oxc_runtime/src/lib.rs#L27
+              const helperId = path.posix.join(
+                runtimePackageDir,
+                'src/helpers/esm',
+                helperName + (id.endsWith('.js') ? '' : '.js'),
+              )
+              return helperId
             },
             order: 'pre',
           },
