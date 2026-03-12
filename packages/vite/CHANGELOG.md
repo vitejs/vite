@@ -1,3 +1,13 @@
+## [8.0.0](https://github.com/vitejs/vite/compare/v8.0.0-beta.18...v8.0.0) (2026-03-12)
+### Features
+
+* update rolldown to 1.0.0-rc.9 ([#21813](https://github.com/vitejs/vite/issues/21813)) ([f05be0e](https://github.com/vitejs/vite/commit/f05be0eabf5c045b8892d463081da3c8fbf5a5ae))
+* warn when `vite-tsconfig-paths` plugin is detected ([#21781](https://github.com/vitejs/vite/issues/21781)) ([ada493e](https://github.com/vitejs/vite/commit/ada493e4214ef2028b96583550443a386be2e2ae))
+
+### Bug Fixes
+
+* **deps:** update all non-major dependencies ([#21786](https://github.com/vitejs/vite/issues/21786)) ([eaa4352](https://github.com/vitejs/vite/commit/eaa4352af8f8658e3a10a9945ad9c227fcb2f28a))
+
 ## [8.0.0-beta.18](https://github.com/vitejs/vite/compare/v8.0.0-beta.17...v8.0.0-beta.18) (2026-03-09)
 ### Bug Fixes
 
