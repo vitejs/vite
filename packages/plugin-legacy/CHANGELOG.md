@@ -1,3 +1,21 @@
+## [8.0.0](https://github.com/vitejs/vite/compare/plugin-legacy@8.0.0-beta.3...plugin-legacy@8.0.0) (2026-03-12)
+### ⚠ BREAKING CHANGES
+
+* **legacy:** bump modern browser threshold to `import.meta.resolve` support (#21662)
+
+### Features
+
+* **legacy:** bump modern browser threshold to `import.meta.resolve` support ([#21662](https://github.com/vitejs/vite/issues/21662)) ([cc50822](https://github.com/vitejs/vite/commit/cc50822161f43ac60b932f2b4f63129bdb5590dc))
+
+### Bug Fixes
+
+* **deps:** update all non-major dependencies ([#21691](https://github.com/vitejs/vite/issues/21691)) ([521fdc0](https://github.com/vitejs/vite/commit/521fdc0ced51ddee7f728e6f891f36ebc6c0e1ce))
+* **deps:** update all non-major dependencies ([#21786](https://github.com/vitejs/vite/issues/21786)) ([eaa4352](https://github.com/vitejs/vite/commit/eaa4352af8f8658e3a10a9945ad9c227fcb2f28a))
+
+### Miscellaneous Chores
+
+* **legacy:** update peer dep Vite to 8 ([4595aeb](https://github.com/vitejs/vite/commit/4595aeb5b84126ed855ed5a25cd9959adc2d141c))
+
 ## [8.0.0-beta.3](https://github.com/vitejs/vite/compare/plugin-legacy@8.0.0-beta.2...plugin-legacy@8.0.0-beta.3) (2026-02-12)
 ### Bug Fixes
 
