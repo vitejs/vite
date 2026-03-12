@@ -152,6 +152,6 @@ Without these two projects, Vite would not exist as it does today. Even as we mo
 
 ## Acknowledgments
 
-Vite 8 was crafted by the [Vite Team](/team) with the help of the wide community of contributors, downstream maintainers, and plugin authors. We are especially grateful to everyone who participated in the `rolldown-vite` preview and the Vite 8 beta period. Your testing, bug reports, and feedback made the Rolldown migration possible and shaped this release into something we are proud of.
+Vite 8 was led by [sapphi-red](https://github.com/sapphi-red) and the [Vite Team](/team) with the help of the wide community of contributors, downstream maintainers, and plugin authors. We want to thank the [Rolldown team](https://rolldown.rs/team) for their close collaboration in making the Rolldown-powered Vite 8 possible. We are also especially grateful to everyone who participated in the `rolldown-vite` preview and the Vite 8 beta period. Your testing, bug reports, and feedback made the Rolldown migration possible and shaped this release into something we are proud of.
 
 Vite is brought to you by [VoidZero](https://voidzero.dev), in partnership with [Bolt](https://bolt.new/) and [NuxtLabs](https://nuxtlabs.com/). We also want to thank our sponsors on [Vite's GitHub Sponsors](https://github.com/sponsors/vitejs) and [Vite's Open Collective](https://opencollective.com/vite).
