@@ -224,6 +224,10 @@ const config = defineConfig({
           { text: 'Releases', link: '/releases' },
           { text: 'Acknowledgements', link: '/acknowledgements' },
           {
+            text: 'Plugin Registry',
+            link: 'https://registry.vite.dev/plugins',
+          },
+          {
             text: 'The Documentary',
             link: 'https://www.youtube.com/watch?v=bmWQqAKLgT4',
           },
