@@ -788,7 +788,9 @@ function setupReactCompiler(root: string, isTs: boolean) {
       `^${reactCompilerPluginVersion}`,
     ])
     devDepsEntries.push(['@babel/core', `^${babelCoreVersion}`])
-    devDepsEntries.push(['@types/babel__core', `^${typesBabelCoreVersion}`])
+    if (isTs) {
+      devDepsEntries.push(['@types/babel__core', `^${typesBabelCoreVersion}`])
+    }
     devDepsEntries.sort()
     asObject.devDependencies = Object.fromEntries(devDepsEntries)
     return JSON.stringify(asObject, null, 2) + '\n'
