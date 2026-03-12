@@ -35,7 +35,7 @@ interface ParsedGeneralImportGlobOptions extends GeneralImportGlobOptions {
 }
 
 export function importGlobPlugin(config: ResolvedConfig): Plugin {
-  if (config.isBundled && config.nativePluginEnabledLevel >= 1) {
+  if (config.isBundled) {
     return nativeImportGlobPlugin({
       root: config.root,
       sourcemap: !!config.build.sourcemap,
@@ -448,6 +448,7 @@ export async function transformGlobImport(
               dot: !!options.exhaustive,
               expandDirectories: false,
               ignore: options.exhaustive ? [] : ['**/node_modules/**'],
+              extglob: false,
             })
           )
             .filter((file) => file !== id)

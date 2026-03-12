@@ -173,7 +173,7 @@ const FRAMEWORKS: Framework[] = [
         link: 'https://tanstack.com/router',
         color: cyan,
         customCommand:
-          'npm exec @tanstack/cli@latest -- create TARGET_DIR --template file-router --interactive',
+          'npm exec -- @tanstack/cli@latest create TARGET_DIR --template file-router --interactive',
       },
       {
         name: 'redwoodsdk-standard',
@@ -275,7 +275,7 @@ const FRAMEWORKS: Framework[] = [
         link: 'https://tanstack.com/router',
         color: cyan,
         customCommand:
-          'npm exec @tanstack/cli@latest -- create TARGET_DIR --template file-router --framework solid --interactive',
+          'npm exec -- @tanstack/cli@latest create TARGET_DIR --template file-router --framework solid --interactive',
       },
       {
         name: 'custom-vike-solid',
@@ -859,9 +859,10 @@ function getFullCustomCommand(customCommand: string, pkgInfo?: PkgInfo) {
       })
       // Only Yarn 1.x doesn't support `@version` in the `create` command
       .replace('@latest', () => (isYarn1 ? '' : '@latest'))
-      .replace(/^npm exec /, () => {
+      .replace(/^npm exec (?:-- )?/, () => {
         // Prefer `pnpm dlx`, `yarn dlx`, or `bun x`
         if (pkgManager === 'pnpm') {
+          // pnpm doesn't support the -- syntax
           return 'pnpm dlx '
         }
         if (pkgManager === 'yarn' && !isYarn1) {
@@ -875,7 +876,9 @@ function getFullCustomCommand(customCommand: string, pkgInfo?: PkgInfo) {
         }
         // Use `npm exec` in all other cases,
         // including Yarn 1.x and other custom npm clients.
-        return 'npm exec '
+        return customCommand.startsWith('npm exec -- ')
+          ? 'npm exec -- '
+          : 'npm exec '
       })
   )
 }

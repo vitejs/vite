@@ -7,6 +7,7 @@ import {
   groupIconMdPlugin,
   groupIconVitePlugin,
 } from 'vitepress-plugin-group-icons'
+import { graphvizMarkdownPlugin } from 'vitepress-plugin-graphviz'
 import llmstxt from 'vitepress-plugin-llms'
 import { markdownItImageSize } from 'markdown-it-image-size'
 import { extendConfig } from '@voidzero-dev/vitepress-theme/config'
@@ -222,6 +223,10 @@ const config = defineConfig({
           { text: 'Blog', link: '/blog' },
           { text: 'Releases', link: '/releases' },
           { text: 'Acknowledgements', link: '/acknowledgements' },
+          {
+            text: 'Plugin Registry',
+            link: 'https://registry.vite.dev/plugins',
+          },
           {
             text: 'The Documentary',
             link: 'https://www.youtube.com/watch?v=bmWQqAKLgT4',
@@ -542,7 +547,7 @@ const config = defineConfig({
         },
       },
     ],
-    config(md) {
+    async config(md) {
       md.use(groupIconMdPlugin, {
         titleBar: {
           includeSnippet: true,
@@ -551,6 +556,7 @@ const config = defineConfig({
       md.use(markdownItImageSize, {
         publicDir: path.resolve(import.meta.dirname, '../public'),
       })
+      await graphvizMarkdownPlugin(md)
     },
   },
   vite: {

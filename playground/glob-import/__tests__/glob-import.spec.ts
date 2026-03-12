@@ -88,15 +88,12 @@ const baseRawResult = {
 }
 
 test('should work', async () => {
-  // TODO: extglobs are not supported yet: https://github.com/vitejs/rolldown-vite/issues/365
-  if (process.env._VITE_TEST_JS_PLUGIN) {
-    await expect
-      .poll(async () => JSON.parse(await page.textContent('.result')))
-      .toStrictEqual(allResult)
-    await expect
-      .poll(async () => JSON.parse(await page.textContent('.result-eager')))
-      .toStrictEqual(allResult)
-  }
+  await expect
+    .poll(async () => JSON.parse(await page.textContent('.result')))
+    .toStrictEqual(allResult)
+  await expect
+    .poll(async () => JSON.parse(await page.textContent('.result-eager')))
+    .toStrictEqual(allResult)
   await expect
     .poll(async () =>
       JSON.parse(await page.textContent('.result-node_modules')),
