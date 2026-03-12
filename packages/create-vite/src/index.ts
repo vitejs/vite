@@ -770,12 +770,15 @@ function pkgFromUserAgent(userAgent: string | undefined): PkgInfo | undefined {
 }
 
 function setupReactCompiler(root: string, isTs: boolean) {
+  // renovate: datasource=npm depName=@rolldown/plugin-babel
+  const babelPluginVersion = '0.2.0'
   // renovate: datasource=npm depName=babel-plugin-react-compiler
   const reactCompilerPluginVersion = '1.0.0'
 
   editFile(path.resolve(root, 'package.json'), (content) => {
     const asObject = JSON.parse(content)
     const devDepsEntries = Object.entries(asObject.devDependencies)
+    devDepsEntries.push(['@rolldown/plugin-babel', `^${babelPluginVersion}`])
     devDepsEntries.push([
       'babel-plugin-react-compiler',
       `^${reactCompilerPluginVersion}`,
@@ -787,16 +790,19 @@ function setupReactCompiler(root: string, isTs: boolean) {
   editFile(
     path.resolve(root, `vite.config.${isTs ? 'ts' : 'js'}`),
     (content) => {
-      return content.replace(
-        '  plugins: [react()],',
-        `  plugins: [
-    react({
-      babel: {
-        plugins: ['babel-plugin-react-compiler'],
-      },
-    }),
+      return content
+        .replace(
+          `import react from '@vitejs/plugin-react'`,
+          `import react, { reactCompilerPreset } from '@vitejs/plugin-react'
+import babel from '@rolldown/plugin-babel'`,
+        )
+        .replace(
+          '  plugins: [react()],',
+          `  plugins: [
+    react(),
+    babel({ presets: [reactCompilerPreset()] })
   ],`,
-      )
+        )
     },
   )
   updateReactCompilerReadme(
