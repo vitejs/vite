@@ -399,7 +399,11 @@ describe('module runner initialization', async () => {
 
   it('oxc runtime helpers are loadable', async ({ runner }) => {
     const mod = await runner.import('/fixtures/oxc-runtime-helper.ts')
-    expect(mod.result).toBe("<script>console.log('hi');</script>")
+    expect(mod.result).toMatchInlineSnapshot(`
+      "<script>
+        console.log('hi')
+      </script>"
+    `)
   })
 
   it(`handle Object variable`, async ({ runner }) => {
