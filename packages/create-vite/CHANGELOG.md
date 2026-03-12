@@ -1,3 +1,8 @@
+## <small>[9.0.1](https://github.com/vitejs/vite/compare/create-vite@9.0.0...create-vite@9.0.1) (2026-03-12)</small>
+### Bug Fixes
+
+* **create-vite:** add `@babel/core` and `@types/babel__core` for react compiler template ([#21833](https://github.com/vitejs/vite/issues/21833)) ([e818474](https://github.com/vitejs/vite/commit/e818474496746d9f386f9ed00c93200b083a16ad))
+
 ## [9.0.0](https://github.com/vitejs/vite/compare/create-vite@8.2.0...create-vite@9.0.0) (2026-03-12)
 ### ⚠ BREAKING CHANGES
 
