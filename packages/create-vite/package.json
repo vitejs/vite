@@ -17,7 +17,8 @@
     "dev": "tsdown --watch",
     "build": "tsdown",
     "typecheck": "tsc",
-    "prepublishOnly": "npm run build"
+    "prepublishOnly": "npm run build",
+    "execute": "node index.js"
   },
   "engines": {
     "node": "^20.19.0 || >=22.12.0"
