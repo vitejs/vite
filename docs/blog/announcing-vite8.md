@@ -55,7 +55,7 @@ Stay updated and connect with others building on top of Vite by following us on 
 
 ### The problem
 
-Since its earliest versions, Vite relied on two separate bundlers to serve different needs. [esbuild](https://esbuild.github.io/) handled fast compilation during development -- dependency pre-bundling and TypeScript/JSX transforms that made the dev experience feel instant. [Rollup](https://rollupjs.org/) handled production bundling, chunking, and optimization, with its rich plugin API powering the entire Vite plugin ecosystem.
+Since its earliest versions, Vite relied on two separate bundlers to serve different needs. [esbuild](https://esbuild.github.io/) handled fast compilation during development (dependency pre-bundling and TypeScript/JSX transforms) that made the dev experience feel instant. [Rollup](https://rollupjs.org/) handled production bundling, chunking, and optimization, with its rich plugin API powering the entire Vite plugin ecosystem.
 
 This dual-bundler approach served Vite well for years. It allowed us to focus on developer experience and orchestration rather than reinventing parsing and bundling from scratch. But it came with trade-offs. Two separate transformation pipelines meant two separate plugin systems, and an increasing amount of glue code needed to keep the two pipelines in sync. Edge cases around inconsistent module handling accumulated over time, and every alignment fix in one pipeline risked introducing differences in the other.
 
@@ -69,28 +69,28 @@ This dual-bundler approach served Vite well for years. It allowed us to focus on
 
 ### The journey to stable
 
-The migration to Rolldown was deliberate and community-driven. First, a separate [`rolldown-vite`](https://voidzero.dev/posts/announcing-rolldown-vite) package was released as a technical preview, allowing early adopters to test Rolldown's integration without affecting the stable version of Vite. The feedback from those early adopters was invaluable -- they pushed the integration through real-world codebases of every shape and size, surfacing edge cases and compatibility issues we could address before a wider release. We also set up a dedicated CI suite validating key Vite plugins and frameworks -- including SvelteKit, React Router, and Storybook -- against the new bundler, catching regressions early and building confidence in the migration path.
+The migration to Rolldown was deliberate and community-driven. First, a separate [`rolldown-vite`](https://voidzero.dev/posts/announcing-rolldown-vite) package was released as a technical preview, allowing early adopters to test Rolldown's integration without affecting the stable version of Vite. The feedback from those early adopters was invaluable. They pushed the integration through real-world codebases of every shape and size, surfacing edge cases and compatibility issues we could address before a wider release. We also set up a dedicated CI suite validating key Vite plugins and frameworks against the new bundler, catching regressions early and building confidence in the migration path.
 
 In December 2025, we shipped the [Vite 8 beta](/blog/announcing-vite8-beta) with Rolldown fully integrated. During the beta period, Rolldown itself progressed from beta to a release candidate, with continuous improvements driven by the testing and feedback of the Vite community.
 
 ### Real-world performance
 
-The performance improvements are not theoretical. Companies who adopted `rolldown-vite` during the preview and beta periods reported substantial gains:
+During the preview and beta phases of `rolldown-vite`, several companies reported measurable reductions in production build times:
 
 - **Linear:** Production build times dropped from 46s to 6s
 - **Ramp:** 57% build time reduction
 - **Mercedes-Benz.io:** Up to 38% build time reduction
 - **Beehiiv:** 64% build time reduction
 
-For large projects, the difference is transformative -- and these numbers will continue to improve as Rolldown matures.
+For large projects, the impact can be especially noticeable, and we expect further improvements as Rolldown continues to evolve.
 
 ### A unified toolchain
 
-With Vite 8, Vite becomes the entry point to an end-to-end toolchain with closely collaborating teams: the build tool (Vite), the bundler (Rolldown), and the compiler (Oxc). This alignment ensures consistent behavior across the entire stack -- from parsing and resolving to transforming and minifying. It also means we can rapidly adopt new language specifications as JavaScript evolves. And by integrating deeply across layers, we can pursue optimizations that were previously out of reach, such as leveraging Oxc's semantic analysis for better tree-shaking in Rolldown.
+With Vite 8, Vite becomes the entry point to an end-to-end toolchain with closely collaborating teams: the build tool (Vite), the bundler (Rolldown), and the compiler ([Oxc](https://oxc.rs/)). This alignment ensures consistent behavior across the entire stack, from parsing and resolving to transforming and minifying. It also means we can rapidly adopt new language specifications as JavaScript evolves. And by integrating deeply across layers, we can pursue optimizations that were previously out of reach, such as leveraging Oxc's semantic analysis for better tree-shaking in Rolldown.
 
 ### Thank you to the community
 
-None of this would have been possible without the broader community. We want to extend our deep thanks to the framework teams -- SvelteKit, React Router, Storybook, Astro, Nuxt, and many others -- who tested `rolldown-vite` early, filed detailed bug reports, and worked with us to resolve compatibility issues. We are equally grateful to every developer who tried the beta, shared their build time improvements, and reported the rough edges that helped us polish this release. Your willingness to test an in-progress migration on real projects is what made the transition to Rolldown smooth and reliable.
+None of this would have been possible without the broader community. We want to extend our deep thanks to the framework teams ([SvelteKit](https://svelte.dev/docs/kit/introduction), [React Router](https://reactrouter.com/), [Storybook](https://storybook.js.org/), [Astro](https://astro.build/), [Nuxt](https://nuxt.com/), and many others) who tested `rolldown-vite` early, filed detailed bug reports, and worked with us to resolve compatibility issues. We are equally grateful to every developer who tried the beta, shared their build time improvements, and reported the rough edges that helped us polish this release. Your willingness to test the migration on real projects helped make the transition to Rolldown smoother and more reliable.
 
 ## Node.js Support
 
@@ -114,7 +114,7 @@ Beyond the Rolldown integration, Vite 8 includes several notable features:
 
 Alongside Vite 8, we are releasing `@vitejs/plugin-react` v6. The plugin uses Oxc for React Refresh transform. Babel is no longer a dependency and the installation size is smaller.
 
-For projects that need the React Compiler, v6 provides a `reactCompilerPreset` helper that works with `@rolldown/plugin-babel`, giving you an explicit opt-in path without burdening the default setup.
+For projects that need the [React Compiler](https://react.dev/learn/react-compiler), v6 provides a `reactCompilerPreset` helper that works with `@rolldown/plugin-babel`, giving you an explicit opt-in path without burdening the default setup.
 
 See [the Release Notes](https://github.com/vitejs/vite-plugin-react/releases/tag/plugin-react%406.0.0) for more details.
 
@@ -146,12 +146,12 @@ As Vite moves to Rolldown, we want to take a moment to express our deep gratitud
 
 Rollup has been Vite's production bundler since the very beginning. Its elegant plugin API design proved so well-conceived that Rolldown adopted it as its own, and Vite's entire plugin ecosystem exists because of the foundation Rollup laid. The quality and thoughtfulness of Rollup's architecture shaped how Vite thinks about extensibility. Thank you, [Rich Harris](https://github.com/Rich-Harris) for creating Rollup, and [Lukas Taegert-Atkinson](https://github.com/lukastaegert) and the Rollup team for maintaining and evolving it into something that has had such a lasting impact on the web tooling ecosystem.
 
-esbuild powered Vite's remarkably fast development experience from its early days -- dependency pre-bundling, TypeScript and JSX transforms that completed in milliseconds rather than hundreds. esbuild proved that build tools could be orders of magnitude faster, and its speed set the bar that inspired an entire generation of Rust and Go-based tooling. Thank you, [Evan Wallace](https://github.com/evanw), for showing all of us what was possible.
+esbuild powered Vite's remarkably fast development experience from its early days: dependency pre-bundling, TypeScript and JSX transforms that completed in milliseconds rather than hundreds. esbuild proved that build tools could be orders of magnitude faster, and its speed set the bar that inspired an entire generation of Rust and Go-based tooling. Thank you, [Evan Wallace](https://github.com/evanw), for showing all of us what was possible.
 
 Without these two projects, Vite would not exist as it does today. Even as we move forward with Rolldown, the influence of Rollup and esbuild is deeply embedded in Vite's DNA, and we are grateful for everything they have given to the ecosystem. You can learn more about all the projects and people Vite depends on at our [Acknowledgements](/acknowledgements) page.
 
 ## Acknowledgments
 
-Vite 8 was crafted by the [Vite Team](/team) with the help of the wide community of contributors, downstream maintainers, and plugin authors. We are especially grateful to everyone who participated in the `rolldown-vite` preview and the Vite 8 beta period -- your testing, bug reports, and feedback made the Rolldown migration possible and shaped this release into something we are proud of.
+Vite 8 was crafted by the [Vite Team](/team) with the help of the wide community of contributors, downstream maintainers, and plugin authors. We are especially grateful to everyone who participated in the `rolldown-vite` preview and the Vite 8 beta period. Your testing, bug reports, and feedback made the Rolldown migration possible and shaped this release into something we are proud of.
 
 Vite is brought to you by [VoidZero](https://voidzero.dev), in partnership with [Bolt](https://bolt.new/) and [NuxtLabs](https://nuxtlabs.com/). We also want to thank our sponsors on [Vite's GitHub Sponsors](https://github.com/sponsors/vitejs) and [Vite's Open Collective](https://opencollective.com/vite).
