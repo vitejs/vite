@@ -222,27 +222,27 @@ See [8.0.0-beta.7 changelog](https://github.com/vitejs/vite/blob/v8.0.0-beta.7/p
 
 See [8.0.0-beta.6 changelog](https://github.com/vitejs/vite/blob/v8.0.0-beta.6/packages/vite/CHANGELOG.md)
 
-#### [8.0.0-beta.5](https://github.com/vitejs/vite/compare/v8.0.0-beta.4...v8.0.0-beta.5) (2026-12-25)
+#### [8.0.0-beta.5](https://github.com/vitejs/vite/compare/v8.0.0-beta.4...v8.0.0-beta.5) (2025-12-25)
 
 See [8.0.0-beta.5 changelog](https://github.com/vitejs/vite/blob/v8.0.0-beta.5/packages/vite/CHANGELOG.md)
 
-#### [8.0.0-beta.4](https://github.com/vitejs/vite/compare/v8.0.0-beta.3...v8.0.0-beta.4) (2026-12-22)
+#### [8.0.0-beta.4](https://github.com/vitejs/vite/compare/v8.0.0-beta.3...v8.0.0-beta.4) (2025-12-22)
 
 See [8.0.0-beta.4 changelog](https://github.com/vitejs/vite/blob/v8.0.0-beta.4/packages/vite/CHANGELOG.md)
 
-#### [8.0.0-beta.3](https://github.com/vitejs/vite/compare/v8.0.0-beta.2...v8.0.0-beta.3) (2026-12-18)
+#### [8.0.0-beta.3](https://github.com/vitejs/vite/compare/v8.0.0-beta.2...v8.0.0-beta.3) (2025-12-18)
 
 See [8.0.0-beta.3 changelog](https://github.com/vitejs/vite/blob/v8.0.0-beta.3/packages/vite/CHANGELOG.md)
 
-#### [8.0.0-beta.2](https://github.com/vitejs/vite/compare/v8.0.0-beta.1...v8.0.0-beta.2) (2026-12-12)
+#### [8.0.0-beta.2](https://github.com/vitejs/vite/compare/v8.0.0-beta.1...v8.0.0-beta.2) (2025-12-12)
 
 See [8.0.0-beta.2 changelog](https://github.com/vitejs/vite/blob/v8.0.0-beta.2/packages/vite/CHANGELOG.md)
 
-#### [8.0.0-beta.1](https://github.com/vitejs/vite/compare/v8.0.0-beta.0...v8.0.0-beta.1) (2026-12-08)
+#### [8.0.0-beta.1](https://github.com/vitejs/vite/compare/v8.0.0-beta.0...v8.0.0-beta.1) (2025-12-08)
 
 See [8.0.0-beta.1 changelog](https://github.com/vitejs/vite/blob/v8.0.0-beta.1/packages/vite/CHANGELOG.md)
 
-#### [8.0.0-beta.0](https://github.com/vitejs/vite/compare/v7.2.4...v8.0.0-beta.0) (2026-12-03)
+#### [8.0.0-beta.0](https://github.com/vitejs/vite/compare/v7.2.4...v8.0.0-beta.0) (2025-12-03)
 
 See [8.0.0-beta.0 changelog](https://github.com/vitejs/vite/blob/v8.0.0-beta.0/packages/vite/CHANGELOG.md)
 
