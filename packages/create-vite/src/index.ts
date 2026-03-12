@@ -173,7 +173,7 @@ const FRAMEWORKS: Framework[] = [
         link: 'https://tanstack.com/router',
         color: cyan,
         customCommand:
-          'npm exec -- @tanstack/cli@latest create TARGET_DIR --template file-router --interactive',
+          'npm exec -- @tanstack/cli@latest create TARGET_DIR --interactive',
       },
       {
         name: 'redwoodsdk-standard',
@@ -275,7 +275,7 @@ const FRAMEWORKS: Framework[] = [
         link: 'https://tanstack.com/router',
         color: cyan,
         customCommand:
-          'npm exec -- @tanstack/cli@latest create TARGET_DIR --template file-router --framework solid --interactive',
+          'npm exec -- @tanstack/cli@latest create TARGET_DIR --framework solid --interactive',
       },
       {
         name: 'custom-vike-solid',
