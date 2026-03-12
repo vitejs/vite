@@ -4,6 +4,7 @@ import {
   viteAliasPlugin as nativeAliasPlugin,
   viteJsonPlugin as nativeJsonPlugin,
   viteWasmFallbackPlugin as nativeWasmFallbackPlugin,
+  oxcRuntimePlugin,
 } from 'rolldown/experimental'
 import type { PluginHookUtils, ResolvedConfig } from '../config'
 import {
@@ -94,6 +95,8 @@ export async function resolvePlugins(
     htmlInlineProxyPlugin(config),
     cssPlugin(config),
     esbuildBannerFooterCompatPlugin(config),
+    // @oxc-project/runtime resolution is handled by rolldown in build
+    config.oxc !== false && !isBundled ? oxcRuntimePlugin() : null,
     config.oxc !== false ? oxcPlugin(config) : null,
     nativeJsonPlugin({ ...config.json, minify: isBuild }),
     wasmHelperPlugin(),
