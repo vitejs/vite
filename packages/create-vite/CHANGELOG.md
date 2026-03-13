@@ -1,3 +1,8 @@
+## <small>[9.0.2](https://github.com/vitejs/vite/compare/create-vite@9.0.1...create-vite@9.0.2) (2026-03-13)</small>
+### Bug Fixes
+
+* **create-vue:** add `lang="ts"` to vue files to fix type errors in vue-ts template ([#21838](https://github.com/vitejs/vite/issues/21838)) ([1b8592d](https://github.com/vitejs/vite/commit/1b8592d2754da20e9ca4c4ba39c318b9168da893))
+
 ## <small>[9.0.1](https://github.com/vitejs/vite/compare/create-vite@9.0.0...create-vite@9.0.1) (2026-03-12)</small>
 ### Bug Fixes
 
