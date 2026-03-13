@@ -136,8 +136,6 @@ We want to be transparent about changes to Vite's install size. Vite 8 is approx
 - **~10 MB from lightningcss**: Previously an optional peer dependency, lightningcss is now a normal dependency to provide better CSS minification out of the box.
 - **~5 MB from Rolldown**: The Rolldown binary is larger than esbuild + Rollup mainly due to performance optimizations that favor speed over binary size.
 
-However, looking at a typical React project setup, the total install size has actually decreased. With Vite 7, `vite` + `@vitejs/plugin-react-swc` totaled around 45.7 MB (18 MB + 27.7 MB). With Vite 8, `vite` + `@vitejs/plugin-react` totals around 33.8 MB (33.7 MB + 61.5 kB), a net reduction of about 12 MB.
-
 We will continue monitoring and working to reduce install size as Rolldown matures.
 
 ## Migrating to Vite 8
