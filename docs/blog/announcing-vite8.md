@@ -129,6 +129,15 @@ The Rolldown integration opens the door to improvements and optimizations. Here 
 
 - **Stabilizing the Environment API**: We are working to make the Environment API stable. The ecosystem has started regular meetings to better collaborate together.
 
+## Install Size
+
+We want to be transparent about changes to Vite's install size. Vite 8 is approximately 15 MB larger than Vite 7 on its own. This comes from two main sources:
+
+- **~10 MB from lightningcss**: Previously an optional peer dependency, lightningcss is now a normal dependency to provide better CSS minification out of the box.
+- **~5 MB from Rolldown**: The Rolldown binary is larger than esbuild + Rollup mainly due to performance optimizations that favor speed over binary size.
+
+We will continue monitoring and working to reduce install size as Rolldown matures.
+
 ## Migrating to Vite 8
 
 For most projects, upgrading to Vite 8 should be a smooth process. We built a compatibility layer that auto-converts existing `esbuild` and `rollupOptions` configuration to their Rolldown and Oxc equivalents, so many projects will work without any config changes.
