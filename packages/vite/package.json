@@ -1,6 +1,6 @@
 {
   "name": "vite",
-  "version": "8.0.0-beta.18",
+  "version": "8.0.0",
   "type": "module",
   "license": "MIT",
   "author": "Evan You",
@@ -77,7 +77,7 @@
     "lightningcss": "^1.32.0",
     "picomatch": "^4.0.3",
     "postcss": "^8.5.8",
-    "rolldown": "1.0.0-rc.8",
+    "rolldown": "1.0.0-rc.9",
     "tinyglobby": "^0.2.15"
   },
   "optionalDependencies": {

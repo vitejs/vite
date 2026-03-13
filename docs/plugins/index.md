@@ -18,11 +18,11 @@ Provides Vue 3 JSX support (via [dedicated Babel transform](https://github.com/v
 
 ### [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/tree/main/packages/plugin-react)
 
-Uses [Oxc Transformer](https://oxc.rs/docs/guide/usage/transformer) and [Babel](https://babeljs.io/), achieving fast HMR with a small package footprint and the flexibility of being able to use the Babel transform pipeline. Without additional Babel plugins, only Oxc Transformer is used.
+Provides React Fast Refresh support via [Oxc Transformer](https://oxc.rs/docs/guide/usage/transformer).
 
 ### [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/tree/main/packages/plugin-react-swc)
 
-Replaces Babel with [SWC](https://swc.rs/) during development. During production builds, SWC+Oxc Transformer are used when using plugins, and Oxc Transformer only otherwise. For big projects that require custom plugins, cold start and Hot Module Replacement (HMR) can be significantly faster, if the plugin is also available for SWC.
+Replaces Oxc with [SWC](https://swc.rs/) during development for SWC plugin usage. During production builds, SWC+Oxc Transformer are used when using plugins. For big projects that require custom plugins, cold start and Hot Module Replacement (HMR) can be significantly faster, if the plugin is also available for SWC.
 
 ### [@vitejs/plugin-rsc](https://github.com/vitejs/vite-plugin-react/tree/main/packages/plugin-rsc)
 

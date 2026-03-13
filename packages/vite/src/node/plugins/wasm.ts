@@ -1,6 +1,6 @@
 import MagicString from 'magic-string'
 import { exactRegex } from 'rolldown/filter'
-import type { BindingMagicString } from 'rolldown'
+import type { RolldownMagicString } from 'rolldown'
 import { createToImportMetaURLBasedRelativeRuntime } from '../build'
 import { type Plugin, perEnvironmentPlugin } from '../plugin'
 import { cleanUrl } from '../../shared/utils'
@@ -121,7 +121,7 @@ export default ${wasmHelperCode}
                   )
 
                 let match: RegExpExecArray | null
-                let s: BindingMagicString | MagicString | undefined
+                let s: RolldownMagicString | MagicString | undefined
 
                 wasmInitUrlRE.lastIndex = 0
                 while ((match = wasmInitUrlRE.exec(code))) {
@@ -143,7 +143,7 @@ export default ${wasmHelperCode}
 
                 return meta.magicString
                   ? {
-                      code: s as BindingMagicString,
+                      code: s as RolldownMagicString,
                     }
                   : {
                       code: s.toString(),
