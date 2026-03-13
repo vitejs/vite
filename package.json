@@ -37,7 +37,8 @@
     "dev": "pnpm -r --parallel --filter='./packages/*' run dev",
     "release": "tsx scripts/release.ts",
     "ci-publish": "tsx scripts/publishCI.ts",
-    "ci-docs": "pnpm build && pnpm docs-build"
+    "ci-docs": "pnpm build && pnpm docs-build",
+    "merge-changelog": "tsx scripts/mergeChangelog.ts"
   },
   "devDependencies": {
     "@eslint/js": "^9.39.4",
