@@ -22,6 +22,7 @@ export function rejectNoCorsRequestMiddleware(): Connect.NextHandleFunction {
     if (
       req.headers['sec-fetch-mode'] === 'no-cors' &&
       req.headers['sec-fetch-site'] !== 'same-origin' &&
+      req.headers['sec-fetch-site'] !== 'same-site' &&
       // we only need to block classic script requests
       req.headers['sec-fetch-dest'] === 'script'
     ) {
