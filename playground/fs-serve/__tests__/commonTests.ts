@@ -482,7 +482,7 @@ test.runIf(isServe)(
             headers: {
               'Sec-Fetch-Dest': 'script',
               'Sec-Fetch-Mode': 'no-cors',
-              'Sec-Fetch-Site': 'same-site',
+              'Sec-Fetch-Site': 'cross-site',
               Origin: 'http://vite.dev',
               Host: viteTestUrlUrl.host,
             },
@@ -500,6 +500,36 @@ test.runIf(isServe)(
     expect(body).toContain(
       'Cross-origin requests for classic scripts must be made with CORS mode enabled.',
     )
+  },
+)
+
+test.runIf(isServe)(
+  'load script with no-cors mode from same-site origin should be allowed',
+  async () => {
+    const viteTestUrlUrl = new URL(viteTestUrl)
+
+    const res = await new Promise<http.IncomingMessage>((resolve, reject) => {
+      http
+        .get(
+          viteTestUrl + '/src/code.js',
+          {
+            headers: {
+              'Sec-Fetch-Dest': 'script',
+              'Sec-Fetch-Mode': 'no-cors',
+              'Sec-Fetch-Site': 'same-site',
+              Origin: 'http://vite.dev',
+              Host: viteTestUrlUrl.host,
+            },
+          },
+          (res) => {
+            resolve(res)
+          },
+        )
+        .on('error', (e) => {
+          reject(e)
+        })
+    })
+    expect(res.statusCode).not.toBe(403)
   },
 )
 
