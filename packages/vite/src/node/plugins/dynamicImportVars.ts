@@ -43,6 +43,15 @@ interface DynamicImportPattern {
   rawPattern: string
 }
 
+function hasCommentsBetweenImportAndSource(
+  source: string,
+  expStart: number,
+  start: number,
+): boolean {
+  const between = source.slice(expStart, start)
+  return between.includes('/*') || between.includes('//')
+}
+
 function toWarningMessage(error: unknown): string {
   if (typeof error === 'string') {
     return error
@@ -188,6 +197,7 @@ async function transformDynamicImportVars(
   ) => Promise<string | undefined> | string | undefined,
   config: ResolvedConfig,
   warn: (warning: string) => void,
+  onlyIfCommented = false,
 ) {
   await init
 
@@ -215,6 +225,13 @@ async function transformDynamicImportVars(
     }
 
     if (hasViteIgnoreRE.test(source.slice(expStart, expEnd))) {
+      continue
+    }
+
+    if (
+      onlyIfCommented &&
+      !hasCommentsBetweenImportAndSource(source, expStart, start)
+    ) {
       continue
     }
 
@@ -267,14 +284,48 @@ export function dynamicImportVarsPlugin(config: ResolvedConfig): Plugin {
       const { include, exclude } =
         environment.config.build.dynamicImportVarsOptions
 
-      return nativeDynamicImportVarsPlugin({
-        include,
-        exclude,
-        resolver(id, importer) {
-          return resolve(environment, id, importer)
+      return [
+        {
+          name: 'vite:dynamic-import-vars-comment-fallback',
+          enforce: 'pre',
+          resolveId: {
+            filter: { id: exactRegex(dynamicImportHelperId) },
+            handler(id) {
+              return id
+            },
+          },
+          load: {
+            filter: { id: exactRegex(dynamicImportHelperId) },
+            handler() {
+              return `export default ${dynamicImportHelper.toString()}`
+            },
+          },
+          transform: {
+            filter: {
+              id: { exclude: exactRegex(CLIENT_ENTRY) },
+              code: hasDynamicImportRE,
+            },
+            handler(source, importer) {
+              return transformDynamicImportVars(
+                source,
+                importer,
+                (id, importer) => resolve(environment, id, importer),
+                config,
+                (error) => this.warn(error),
+                true,
+              )
+            },
+          },
         },
-        sourcemap: !!environment.config.build.sourcemap,
-      })
+        nativeDynamicImportVarsPlugin({
+          include,
+          exclude,
+          resolver(id, importer) {
+            return resolve(environment, id, importer)
+          },
+          sourcemap: !!environment.config.build.sourcemap,
+        }),
+      ]
     })
   }
 

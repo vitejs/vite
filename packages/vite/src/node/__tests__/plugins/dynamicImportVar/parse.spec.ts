@@ -1,5 +1,8 @@
+import { mkdir, mkdtemp, rm, writeFile } from 'node:fs/promises'
+import { tmpdir } from 'node:os'
 import { resolve } from 'node:path'
 import { describe, expect, it } from 'vitest'
+import { rolldown } from 'rolldown'
 import {
   dynamicImportVarsPlugin,
   transformDynamicImport,
@@ -43,6 +46,36 @@ async function createPluginTransform() {
       normalizePath(resolve(dirname, 'index.js')),
     )
     return result?.code || result
+  }
+}
+
+async function bundleWithNativePlugin(code: string) {
+  const root = await mkdtemp(resolve(tmpdir(), 'vite-dynamic-import-vars-'))
+
+  try {
+    const entry = resolve(root, 'entry.js')
+    const modsDir = resolve(root, 'mods')
+    await mkdir(modsDir)
+    await writeFile(entry, code)
+    await writeFile(resolve(modsDir, 'hello.js'), 'export default "hello"\n')
+    await writeFile(resolve(modsDir, 'hi.js'), 'export default "hi"\n')
+
+    const config = await resolveConfig({ configFile: false, root }, 'build')
+    const instance = dynamicImportVarsPlugin(config)
+    const environment = new PartialEnvironment('client', config)
+    // @ts-expect-error applyToEnvironment exists on per-environment plugins
+    const nativePlugin = await instance.applyToEnvironment(environment)
+    const bundler = await rolldown({
+      input: entry,
+      plugins: [nativePlugin],
+      experimental: {
+        attachDebugInfo: 'none',
+      },
+    })
+
+    return await bundler.generate()
+  } finally {
+    await rm(root, { force: true, recursive: true })
   }
 }
 
@@ -106,5 +139,19 @@ describe('dynamicImportVarsPlugin', async () => {
 
     expect(result).toContain('__variableDynamicImportRuntimeHelper')
     expect(result).toContain('import.meta.glob("./mods/*.js")')
+  })
+
+  it('transforms bundled template literal imports with leading comments', async () => {
+    const output = await bundleWithNativePlugin(
+      'export async function load(base) { return import(/* strings */ `./mods/${base}.js`) }',
+    )
+    const chunks = output.output.filter((item) => item.type === 'chunk')
+    const entryChunk = chunks.find((item) => item.isEntry)
+
+    expect(entryChunk?.code).toContain('import.meta.glob("./mods/*.js")')
+    expect(entryChunk?.code).toContain('`./mods/${base}.js`')
+    expect(entryChunk?.code).not.toContain(
+      'import(/* strings */ `./mods/${base}.js`)',
+    )
   })
 })
