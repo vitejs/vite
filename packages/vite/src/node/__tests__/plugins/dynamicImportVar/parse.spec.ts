@@ -1,8 +1,13 @@
 import { resolve } from 'node:path'
 import { describe, expect, it } from 'vitest'
-import { transformDynamicImport } from '../../../plugins/dynamicImportVars'
+import {
+  dynamicImportVarsPlugin,
+  transformDynamicImport,
+} from '../../../plugins/dynamicImportVars'
 import { normalizePath } from '../../../utils'
 import { isWindows } from '../../../../shared/utils'
+import { resolveConfig } from '../../../config'
+import { PartialEnvironment } from '../../../baseEnvironment'
 
 const dirname = import.meta.dirname
 
@@ -18,6 +23,27 @@ async function run(input: string) {
       dirname,
     )) || {}
   return `__variableDynamicImportRuntimeHelper(${glob}, \`${rawPattern}\`)`
+}
+
+async function createPluginTransform() {
+  const config = await resolveConfig({ configFile: false }, 'serve')
+  const instance = dynamicImportVarsPlugin(config)
+  const environment = new PartialEnvironment('client', config)
+
+  return async (code: string) => {
+    // @ts-expect-error transform.handler should exist
+    const result = await instance.transform.handler.call(
+      {
+        environment,
+        warn() {
+          return undefined
+        },
+      },
+      code,
+      normalizePath(resolve(dirname, 'index.js')),
+    )
+    return result?.code || result
+  }
 }
 
 describe('parse positives', () => {
@@ -67,5 +93,18 @@ describe('parse positives', () => {
     expect(
       await run('`../../plugins/dynamicImportVar/${name}.js`'),
     ).toMatchSnapshot()
+  })
+})
+
+describe('dynamicImportVarsPlugin', async () => {
+  const transform = await createPluginTransform()
+
+  it('transforms template literal imports with leading comments', async () => {
+    const result = await transform(
+      'const strings = await import(/* strings */ `./mods/${base}.js`)',
+    )
+
+    expect(result).toContain('__variableDynamicImportRuntimeHelper')
+    expect(result).toContain('import.meta.glob("./mods/*.js")')
   })
 })
