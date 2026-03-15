@@ -41,7 +41,6 @@ const sirvOptions = ({
   return {
     dev: true,
     etag: true,
-    extensions: ['.html'],
     setHeaders(res, pathname) {
       // Matches js, jsx, ts, tsx, mts, mjs, cjs, cts, ctx, mtx
       // The reason this is done, is that the .ts and .mts file extensions are
@@ -82,14 +81,14 @@ export function servePublicMiddleware(
   publicFiles?: Set<string>,
 ): Connect.NextHandleFunction {
   const dir = server.config.publicDir
-  const serve = sirv(
-    dir,
-    sirvOptions({
+  const serve = sirv(dir, {
+    ...sirvOptions({
       config: server.config,
       getHeaders: () => server.config.server.headers,
       disableFsServeCheck: true,
     }),
-  )
+    extensions: ['.html'],
+  })
 
   const toFilePath = (url: string) => {
     let filePath = cleanUrl(url)
