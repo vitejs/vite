@@ -41,7 +41,7 @@ const sirvOptions = ({
   return {
     dev: true,
     etag: true,
-    extensions: [],
+    extensions: ['.html'],
     setHeaders(res, pathname) {
       // Matches js, jsx, ts, tsx, mts, mjs, cjs, cts, ctx, mtx
       // The reason this is done, is that the .ts and .mts file extensions are
