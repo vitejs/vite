@@ -186,7 +186,12 @@ export function createDepsOptimizer(
         newDepsDiscovered = true
       }
 
-      environment.waitForRequestsIdle().then(onCrawlEnd)
+      environment.waitForRequestsIdle().then(onCrawlEnd, (e) => {
+        logger.error(
+          colors.red(`error waiting for requests idle:\n${e.stack}`),
+          { timestamp: true, error: e },
+        )
+      })
 
       if (noDiscovery) {
         // We don't need to scan for dependencies or wait for the static crawl to end
@@ -250,7 +255,8 @@ export function createDepsOptimizer(
                 // is discovered while crawling static imports, then there will be a
                 // full-page reload if new common chunks are generated between the old
                 // and new optimized deps.
-                optimizationResult.result.then((result) => {
+                optimizationResult.result
+                .then((result) => {
                   // Check if the crawling of static imports has already finished. In that
                   // case, the result is handled by the onCrawlEnd callback
                   if (!waitingForCrawlEnd) return
@@ -258,6 +264,14 @@ export function createDepsOptimizer(
                   optimizationResult = undefined // signal that we'll be using the result
 
                   runOptimizer(result)
+                })
+                .catch((e) => {
+                  logger.error(
+                    colors.red(
+                      `error resolving optimization result:\n${e.stack}`,
+                    ),
+                    { timestamp: true, error: e },
+                  )
                 })
               }
             } catch (e) {

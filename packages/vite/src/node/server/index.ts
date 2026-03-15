@@ -1118,9 +1118,11 @@ export function createServerCloseFn(
 
   server.on('connection', (socket) => {
     openSockets.add(socket)
-    socket.on('close', () => {
+    const onClose = () => {
       openSockets.delete(socket)
-    })
+    }
+    socket.on('close', onClose)
+    socket.on('error', onClose)
   })
 
   server.once('listening', () => {

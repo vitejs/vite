@@ -2185,9 +2185,10 @@ export function resolveBaseUrl(
 function decodeBase(base: string): string {
   try {
     return decodeURI(base)
-  } catch {
+  } catch (e) {
     throw new Error(
       'The value passed to "base" option was malformed. It should be a valid URL.',
+      { cause: e },
     )
   }
 }
