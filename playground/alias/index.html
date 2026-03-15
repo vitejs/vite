@@ -8,6 +8,7 @@
 <p class="url-conflict"></p>
 <p class="aliased-module"></p>
 <p class="custom-resolver"></p>
+<p class="trailing-slash"></p>
 
 <div class="optimized"></div>
 
@@ -20,6 +21,7 @@
   import { msg as moduleMsg } from 'aliased-module/index.js'
   import { msg as urlConflictMsg } from '//url_conflict.js'
   import { msg as customResolverMsg } from 'custom-resolver'
+  import { msg as trailingSlashMsg } from '#dir/trailing-slash'
 
   function text(el, text) {
     document.querySelector(el).textContent = text
@@ -32,6 +34,7 @@
   text('.aliased-module', moduleMsg)
   text('.url-conflict', urlConflictMsg)
   text('.custom-resolver', customResolverMsg)
+  text('.trailing-slash', trailingSlashMsg)
 
   import { createApp } from 'vue'
   import { ref } from 'foo'

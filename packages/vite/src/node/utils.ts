@@ -1460,12 +1460,10 @@ function normalizeSingleAlias({
   replacement,
   customResolver,
 }: Alias): Alias {
-  if (
-    typeof find === 'string' &&
-    find.endsWith('/') &&
-    replacement.endsWith('/')
-  ) {
-    find = find.slice(0, find.length - 1)
+  if (typeof find === 'string' && replacement.endsWith('/')) {
+    if (find.endsWith('/')) {
+      find = find.slice(0, find.length - 1)
+    }
     replacement = replacement.slice(0, replacement.length - 1)
   }
 

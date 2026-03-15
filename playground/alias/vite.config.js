@@ -33,6 +33,11 @@ export default defineConfig({
           return id.replace('test.js', 'customResolver.js')
         },
       },
+      // trailing slash on replacement only (directory alias without trailing slash on find)
+      {
+        find: '#dir',
+        replacement: path.resolve(import.meta.dirname, 'dir') + '/',
+      },
     ],
   },
   build: {

@@ -57,3 +57,9 @@ test('custom resolver', async () => {
     '[success] alias to custom-resolver path',
   )
 })
+
+test('trailing slash on replacement', async () => {
+  expect(await page.textContent('.trailing-slash')).toMatch(
+    '[success] alias with trailing slash',
+  )
+})
