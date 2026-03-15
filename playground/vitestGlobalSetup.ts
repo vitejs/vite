@@ -19,9 +19,7 @@ export async function setup(project: TestProject): Promise<void> {
   project.provide('wsEndpoint', browserServer.wsEndpoint())
 
   const tempDir = path.resolve(import.meta.dirname, '../playground-temp')
-  const { testFiles } = await project.globTestFiles(
-    project.vitest.filenamePattern,
-  )
+  const testFiles = project.vitest.state.getPaths()
   const playgroundDirs = [
     ...new Set(testFiles.map((file) => file.match(PLAYGROUND_NAME_REGEX)?.[1])),
   ]
