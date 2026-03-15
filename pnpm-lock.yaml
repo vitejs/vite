@@ -947,8 +947,8 @@ importers:
   playground/nested-deps:
     dependencies:
       '@vitejs/self-referencing':
-        specifier: link:../self-referencing
-        version: link:../self-referencing
+        specifier: link:./self-referencing
+        version: link:self-referencing
       '@vitejs/test-package-a':
         specifier: link:./test-package-a
         version: link:test-package-a
@@ -967,6 +967,8 @@ importers:
       '@vitejs/test-package-f':
         specifier: link:./test-package-f
         version: link:test-package-f
+
+  playground/nested-deps/self-referencing: {}
 
   playground/nested-deps/test-package-a: {}
 
@@ -1465,8 +1467,6 @@ importers:
   playground/resolve/side-effects-glob: {}
 
   playground/resolve/utf8-bom-package: {}
-
-  playground/self-referencing: {}
 
   playground/ssr:
     devDependencies:
