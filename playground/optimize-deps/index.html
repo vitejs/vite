@@ -335,7 +335,7 @@
 <script type="module">
   import cloneDeepSlash from 'lodash/cloneDeep'
   import cloneDeepDot from 'lodash.clonedeep'
-  import { msg as plusSubpath } from 'dep-with-plus-subpath/core+feature'
+  import { msg as plusSubpath } from '@vitejs/test-dep-with-plus-subpath/core+feature'
 
   text('.clonedeep-slash', cloneDeepSlash({ name: 'clonedeep-slash' }).name)
   text('.clonedeep-dot', cloneDeepDot({ name: 'clonedeep-dot' }).name)
