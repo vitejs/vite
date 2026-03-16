@@ -302,6 +302,10 @@ The `build.rollupOptions.watch.chokidar` option was removed. Please migrate to t
 
 The object form `output.manualChunks` option is not supported anymore. The function form `output.manualChunks` is deprecated. Rolldown has the more flexible [`codeSplitting`](https://rolldown.rs/reference/OutputOptions.codeSplitting) option. See Rolldown's docs for more details about `codeSplitting`: [Manual Code Splitting - Rolldown](https://rolldown.rs/in-depth/manual-code-splitting).
 
+### Removed `build.rollupOptions.output.experimentalMinChunkSize` option
+
+The `build.rollupOptions.output.experimentalMinChunkSize` option was removed. Please migrate to the [`build.rolldownOptions.output.codeSplitting.minSize`](https://rolldown.rs/reference/OutputOptions.codeSplitting) option.
+
 ### `build()` Throws `BundleError`
 
 _This change only affects JS API users._
