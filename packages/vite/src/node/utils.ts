@@ -70,13 +70,15 @@ const replaceSlashOrColonRE = /[/:]/g
 const replaceDotRE = /\./g
 const replaceNestedIdRE = /\s*>\s*/g
 const replaceHashRE = /#/g
+const replacePlusRE = /\+/g
 export const flattenId = (id: string): string => {
   const flatId = limitFlattenIdLength(
     id
       .replace(replaceSlashOrColonRE, '_')
       .replace(replaceDotRE, '__')
       .replace(replaceNestedIdRE, '___')
-      .replace(replaceHashRE, '____'),
+      .replace(replaceHashRE, '____')
+      .replace(replacePlusRE, '_____'),
   )
   return flatId
 }

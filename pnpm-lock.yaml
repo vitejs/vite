@@ -1110,6 +1110,9 @@ importers:
       '@vitejs/test-dep-with-optional-peer-dep-submodule':
         specifier: file:./dep-with-optional-peer-dep-submodule
         version: file:playground/optimize-deps/dep-with-optional-peer-dep-submodule
+      '@vitejs/test-dep-with-plus-subpath':
+        specifier: file:./dep-with-plus-subpath
+        version: file:playground/optimize-deps/dep-with-plus-subpath
       '@vitejs/test-nested-exclude':
         specifier: file:./nested-exclude
         version: file:playground/optimize-deps/nested-exclude
@@ -1259,6 +1262,8 @@ importers:
   playground/optimize-deps/dep-with-optional-peer-dep-cjs: {}
 
   playground/optimize-deps/dep-with-optional-peer-dep-submodule: {}
+
+  playground/optimize-deps/dep-with-plus-subpath: {}
 
   playground/optimize-deps/longfilename: {}
 
@@ -4261,6 +4266,9 @@ packages:
     peerDependenciesMeta:
       foobar:
         optional: true
+
+  '@vitejs/test-dep-with-plus-subpath@file:playground/optimize-deps/dep-with-plus-subpath':
+    resolution: {directory: playground/optimize-deps/dep-with-plus-subpath, type: directory}
 
   '@vitejs/test-entries@file:playground/ssr-resolve/entries':
     resolution: {directory: playground/ssr-resolve/entries, type: directory}
@@ -10328,6 +10336,8 @@ snapshots:
   '@vitejs/test-dep-with-optional-peer-dep-submodule@file:playground/optimize-deps/dep-with-optional-peer-dep-submodule': {}
 
   '@vitejs/test-dep-with-optional-peer-dep@file:playground/optimize-deps/dep-with-optional-peer-dep': {}
+
+  '@vitejs/test-dep-with-plus-subpath@file:playground/optimize-deps/dep-with-plus-subpath': {}
 
   '@vitejs/test-entries@file:playground/ssr-resolve/entries': {}
 
