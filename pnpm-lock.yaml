@@ -1451,8 +1451,8 @@ importers:
   playground/resolve/require-pkg-with-module-field:
     dependencies:
       bignumber.js:
-        specifier: 9.3.1
-        version: 9.3.1
+        specifier: 10.0.2
+        version: 10.0.2
 
   playground/resolve/sharp-dir:
     dependencies:
@@ -4711,8 +4711,8 @@ packages:
     engines: {node: '>=6.0.0'}
     hasBin: true
 
-  bignumber.js@9.3.1:
-    resolution: {integrity: sha512-Ko0uX15oIUS7wJ3Rb30Fs6SkVbLmPBAKdlm7q9+ak9bbIeFf0MwuBsQV6z7+X768/cHsfg+WlysDWJcmthjsjQ==}
+  bignumber.js@10.0.2:
+    resolution: {integrity: sha512-E8Wp9O06QA6lneJ4aRUXKYf/1GIomqUEmUMwtIOMtDxf1U52ffJY+y7JBk/8wRafA8qOIqLnXQGqonYXZdBnFQ==}
 
   binary-extensions@2.3.0:
     resolution: {integrity: sha512-Ceh+7ox5qe7LJuLHoY0feh3pHuUDHAcRUeyL2VYghZwfpkNIy/+8Ocg0a3UuSoYzavmylwuLWQOf3hl0jjMMIw==}
@@ -10818,7 +10818,7 @@ snapshots:
 
   baseline-browser-mapping@2.10.0: {}
 
-  bignumber.js@9.3.1: {}
+  bignumber.js@10.0.2: {}
 
   binary-extensions@2.3.0: {}
 
