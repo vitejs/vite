@@ -1,2 +1,2 @@
 import workerUrl from './worker?worker&url'
-export { workerUrl }
+console.log(workerUrl)
