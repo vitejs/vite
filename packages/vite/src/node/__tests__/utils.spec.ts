@@ -671,7 +671,6 @@ describe('flattenId', () => {
 
   test('should replace + symbols in package subpath exports', () => {
     // Packages like ravelinjs use + in their subpath exports
-    // e.g. 'ravelinjs/core+track+encrypt+promise'
     const id = 'ravelinjs/core+track+encrypt+promise'
     const result = flattenId(id)
     expect(result).not.toContain('+')
