@@ -771,7 +771,7 @@ function pkgFromUserAgent(userAgent: string | undefined): PkgInfo | undefined {
 
 function setupReactCompiler(root: string, isTs: boolean) {
   // renovate: datasource=npm depName=@rolldown/plugin-babel
-  const babelPluginVersion = '0.2.0'
+  const babelPluginVersion = '0.2.1'
   // renovate: datasource=npm depName=babel-plugin-react-compiler
   const reactCompilerPluginVersion = '1.0.0'
   // renovate: datasource=npm depName=@babel/core

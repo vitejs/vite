@@ -128,7 +128,8 @@ function throwHtmlParseError() {
 }
 // #endregion
 
-beforeAll(async (suite) => {
+// eslint-disable-next-line no-empty-pattern
+beforeAll(async ({}, suite) => {
   testPath = suite.file.filepath!
   testName = slash(testPath).match(/playground\/([\w-]+)\//)?.[1]
   testDir = path.dirname(testPath)
