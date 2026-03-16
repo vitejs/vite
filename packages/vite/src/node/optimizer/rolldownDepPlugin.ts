@@ -22,6 +22,7 @@ import type { Environment } from '../environment'
 import { createBackCompatIdResolver } from '../idResolver'
 import { isWindows } from '../../shared/utils'
 import { hasViteIgnoreRE } from '../plugins/importAnalysis'
+import { assetImportMetaUrlRE } from '../plugins/assetImportMetaUrl'
 
 const externalWithConversionNamespace =
   'vite:dep-pre-bundle:external-conversion'
@@ -313,16 +314,15 @@ export function rolldownDepPlugin(
       },
       transform: {
         filter: {
-          code: /new\s+URL.+import\.meta\.url/s,
+          code: assetImportMetaUrlRE,
         },
         async handler(code, id) {
           let s: MagicString | undefined
-          const assetImportMetaUrlRE =
-            /\bnew\s+URL\s*\(\s*('[^']+'|"[^"]+"|`[^`]+`)\s*,\s*import\.meta\.url\s*(?:,\s*)?\)/dg
+          const re = new RegExp(assetImportMetaUrlRE)
           const cleanString = stripLiteral(code)
 
           let match: RegExpExecArray | null
-          while ((match = assetImportMetaUrlRE.exec(cleanString))) {
+          while ((match = re.exec(cleanString))) {
             const [[startIndex, endIndex], [urlStart, urlEnd]] = match.indices!
             if (hasViteIgnoreRE.test(code.slice(startIndex, urlStart))) continue
 
