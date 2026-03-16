@@ -13,6 +13,6 @@
   },
   "devDependencies": {
     "vite": "^8.0.0",
-    "vite-plugin-solid": "^2.11.10"
+    "vite-plugin-solid": "^2.11.11"
   }
 }
