@@ -98,7 +98,7 @@ function resolveErrorStack(
   sourceMapCache: Map<string, any>,
 ) {
   const stacks = parseErrorStacktrace(error, {
-    getUrlId(id: string) {
+    getUrlId(id) {
       const moduleGraph = environment.moduleGraph
       const mod = moduleGraph.getModuleById(id)
       if (mod) {
@@ -119,7 +119,7 @@ function resolveErrorStack(
       }
       return id
     },
-    getSourceMap(id: string) {
+    getSourceMap(id) {
       if (sourceMapCache.has(id)) {
         return sourceMapCache.get(id)
       }
