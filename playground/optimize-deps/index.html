@@ -112,6 +112,7 @@
 <h2>Flatten Id</h2>
 <div class="clonedeep-slash"></div>
 <div class="clonedeep-dot"></div>
+<div class="dep-with-plus-subpath"></div>
 
 <h2>Non Optimized Module isn't duplicated</h2>
 <div class="non-optimized-module-is-not-duplicated"></div>
@@ -334,9 +335,11 @@
 <script type="module">
   import cloneDeepSlash from 'lodash/cloneDeep'
   import cloneDeepDot from 'lodash.clonedeep'
+  import { msg as plusSubpath } from 'dep-with-plus-subpath/core+feature'
 
   text('.clonedeep-slash', cloneDeepSlash({ name: 'clonedeep-slash' }).name)
   text('.clonedeep-dot', cloneDeepDot({ name: 'clonedeep-dot' }).name)
+  text('.dep-with-plus-subpath', plusSubpath)
 </script>
 
 <script type="module">

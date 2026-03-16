@@ -221,6 +221,9 @@ test('flatten id should generate correctly', async () => {
   await expect
     .poll(() => page.textContent('.clonedeep-dot'))
     .toBe('clonedeep-dot')
+  await expect
+    .poll(() => page.textContent('.dep-with-plus-subpath'))
+    .toBe('plus-subpath')
 })
 
 test('non optimized module is not duplicated', async () => {
