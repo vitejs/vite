@@ -39,7 +39,7 @@ jobs:
             core.setOutput('number', number);
             core.setOutput('is_pr', isPR.toString());
 
-      - uses: warpdotdev/oz-agent-action@4d5b8c4f754ded6b9e56d2cbe08c3adb7ea542c0 # v1
+      - uses: warpdotdev/oz-agent-action@827a9ad5438c195eb9d1d9a7acece3a8000be512 # v1
         id: agent
         with:
           prompt: |

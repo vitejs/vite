@@ -169,6 +169,12 @@ test('import.meta.glob eager in worker', async () => {
     .toMatch('["')
 })
 
+test.runIf(isBuild)('require json in worker', async () => {
+  await expect
+    .poll(() => page.textContent('.worker-require-json'))
+    .toMatch('[{"name":"a"},{"name":"b"}]')
+})
+
 test('self reference worker', async () => {
   await expect
     .poll(() => page.textContent('.self-reference-worker'))
