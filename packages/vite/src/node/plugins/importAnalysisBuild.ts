@@ -553,6 +553,80 @@ export function buildImportAnalysisPlugin(config: ResolvedConfig): Plugin[] {
           }
         }
       }
+
+      // Clean up orphan chunks from DCE'd dynamic imports.
+      // When tree-shaking removes a dynamic import() call (e.g. inside a dead
+      // code branch that depends on a cross-module constant), the target chunk
+      // and dynamicImports metadata remain stale. Reconcile the metadata with
+      // the actual code and remove unreachable chunks.
+      for (const file in bundle) {
+        const chunk = bundle[file]
+        if (chunk.type !== 'chunk' || chunk.dynamicImports.length === 0) {
+          continue
+        }
+
+        const code = chunk.code
+        const actualDynamicImportFiles = new Set<string>()
+        let hasUnresolvableDynamicImport = false
+
+        if (code.includes('import(')) {
+          try {
+            const [parsedImports] = parseImports(code)
+            for (const imp of parsedImports) {
+              if (imp.d < 0) continue
+              let url = imp.n
+              if (!url) {
+                const rawUrl = code.slice(imp.s, imp.e)
+                if (
+                  (rawUrl[0] === `"` && rawUrl[rawUrl.length - 1] === `"`) ||
+                  (rawUrl[0] === '`' && rawUrl[rawUrl.length - 1] === '`')
+                )
+                  url = rawUrl.slice(1, -1)
+              }
+              if (url) {
+                actualDynamicImportFiles.add(
+                  path.posix.join(path.posix.dirname(chunk.fileName), url),
+                )
+              } else {
+                hasUnresolvableDynamicImport = true
+              }
+            }
+          } catch {
+            continue
+          }
+        }
+
+        if (!hasUnresolvableDynamicImport) {
+          chunk.dynamicImports = chunk.dynamicImports.filter((dep) =>
+            actualDynamicImportFiles.has(dep),
+          )
+        }
+      }
+
+      // Remove chunks that are no longer reachable from any entry point
+      const reachable = new Set<string>()
+      const visit = (file: string) => {
+        if (reachable.has(file)) return
+        reachable.add(file)
+        const output = bundle[file]
+        if (!output || output.type !== 'chunk') return
+        for (const imp of output.imports) visit(imp)
+        for (const imp of output.dynamicImports) visit(imp)
+      }
+      for (const file in bundle) {
+        const output = bundle[file]
+        if (
+          output.type === 'asset' ||
+          (output.type === 'chunk' && output.isEntry)
+        ) {
+          visit(file)
+        }
+      }
+      for (const file in bundle) {
+        if (!reachable.has(file)) {
+          delete bundle[file]
+        }
+      }
     },
   }
 

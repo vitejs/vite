@@ -207,6 +207,88 @@ describe('build', () => {
     },
   )
 
+  test("DCE'd dynamic import should not emit orphan chunk (#21894)", async () => {
+    const result = (await build({
+      root: resolve(dirname, 'packages/build-project'),
+      logLevel: 'silent',
+      build: {
+        write: false,
+        minify: false,
+        rolldownOptions: { input: 'entry.js' },
+      },
+      plugins: [
+        {
+          name: 'test',
+          resolveId(id) {
+            if (id === 'entry.js') return id
+            if (id === 'flags')
+              return { id: '\0flags', moduleSideEffects: false }
+            if (id === 'dead-module') return id
+          },
+          load(id) {
+            if (id === 'entry.js')
+              return `
+                import { IS_SERVER } from 'flags';
+                if (IS_SERVER) { import('dead-module'); }
+                export function hello() { return 'hello'; }
+              `
+            if (id === '\0flags') return 'export const IS_SERVER = false;'
+            if (id === 'dead-module') return 'export const x = 1;'
+          },
+        },
+      ],
+    })) as RolldownOutput
+
+    const chunks = result.output.filter((c) => c.type === 'chunk')
+    expect(chunks).toHaveLength(1)
+    expect(chunks[0].isEntry).toBe(true)
+    expect(chunks[0].dynamicImports).toEqual([])
+  })
+
+  test("DCE'd dynamic import should not affect live dynamic imports (#21894)", async () => {
+    const result = (await build({
+      root: resolve(dirname, 'packages/build-project'),
+      logLevel: 'silent',
+      build: {
+        write: false,
+        minify: false,
+        rolldownOptions: { input: 'entry.js' },
+      },
+      plugins: [
+        {
+          name: 'test',
+          resolveId(id) {
+            if (id === 'entry.js') return id
+            if (id === 'flags')
+              return { id: '\0flags', moduleSideEffects: false }
+            if (id === 'dead-module') return id
+            if (id === 'live-module') return id
+          },
+          load(id) {
+            if (id === 'entry.js')
+              return `
+                import { IS_SERVER } from 'flags';
+                if (IS_SERVER) { import('dead-module'); }
+                window.addEventListener('click', () => { import('live-module'); });
+              `
+            if (id === '\0flags') return 'export const IS_SERVER = false;'
+            if (id === 'dead-module') return 'export const dead = 1;'
+            if (id === 'live-module') return 'export const live = 2;'
+          },
+        },
+      ],
+    })) as RolldownOutput
+
+    const chunks = result.output.filter((c) => c.type === 'chunk')
+    const entry = chunks.find((c) => c.isEntry)!
+    // The live dynamic import should be preserved
+    expect(entry.dynamicImports).toHaveLength(1)
+    // The dead-module chunk should not be emitted
+    expect(chunks.every((c) => !c.code.includes('dead'))).toBe(true)
+    // The live-module chunk should be emitted
+    expect(chunks.some((c) => c.code.includes('live'))).toBe(true)
+  })
+
   test('external modules should not be hoisted in library build', async () => {
     const [esBundle] = (await build({
       logLevel: 'silent',
