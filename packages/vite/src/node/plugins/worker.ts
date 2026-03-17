@@ -204,6 +204,10 @@ async function bundleWorkerEntry(
       ...rollupOptions.moduleTypes,
     },
     preserveEntrySignatures: false,
+    experimental: {
+      ...rollupOptions.experimental,
+      viteMode: true,
+    },
   })
   let result: RolldownOutput
   let watchedFiles: string[] | undefined
