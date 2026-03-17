@@ -2,7 +2,7 @@ import path from 'node:path'
 import MagicString from 'magic-string'
 import type { ImportSpecifier } from 'es-module-lexer'
 import { init, parse as parseImports } from 'es-module-lexer'
-import type { OutputChunk, SourceMap } from 'rolldown'
+import type { SourceMap } from 'rolldown'
 import { viteBuildImportAnalysisPlugin as nativeBuildImportAnalysisPlugin } from 'rolldown/experimental'
 import type { RawSourceMap } from '@jridgewell/remapping'
 import convertSourceMap from 'convert-source-map'
@@ -554,13 +554,11 @@ export function buildImportAnalysisPlugin(config: ResolvedConfig): Plugin[] {
         }
       }
 
-      // Clean up orphan chunks from DCE'd dynamic imports.
+      // Clean up stale dynamicImports metadata from DCE'd dynamic imports.
       // When tree-shaking removes a dynamic import() call (e.g. inside a dead
       // code branch that depends on a cross-module constant), the target chunk
       // and dynamicImports metadata remain stale. Reconcile the metadata with
-      // the actual code and remove the orphan chunks.
-      const staleDynamicImportTargets = new Set<string>()
-
+      // the actual import() calls in the final code.
       for (const file in bundle) {
         const chunk = bundle[file]
         if (chunk.type !== 'chunk' || chunk.dynamicImports.length === 0) {
@@ -599,39 +597,9 @@ export function buildImportAnalysisPlugin(config: ResolvedConfig): Plugin[] {
         }
 
         if (!hasUnresolvableDynamicImport) {
-          for (const dep of chunk.dynamicImports) {
-            if (!actualDynamicImportFiles.has(dep)) {
-              staleDynamicImportTargets.add(dep)
-            }
-          }
           chunk.dynamicImports = chunk.dynamicImports.filter((dep) =>
             actualDynamicImportFiles.has(dep),
           )
-        }
-      }
-
-      // Only delete chunks that were specifically dropped from stale
-      // dynamicImports AND are not referenced by any remaining chunk.
-      // We must not do a broad reachability sweep because earlier plugins
-      // (e.g. buildHtmlPlugin) may have already deleted inlined entry
-      // chunks whose dependencies must remain in the bundle.
-      if (staleDynamicImportTargets.size > 0) {
-        const referenced = new Set<string>()
-        for (const file in bundle) {
-          const output = bundle[file]
-          if (output.type !== 'chunk') continue
-          for (const imp of output.imports) referenced.add(imp)
-          for (const imp of output.dynamicImports) referenced.add(imp)
-        }
-        for (const file of staleDynamicImportTargets) {
-          if (
-            bundle[file] &&
-            bundle[file].type === 'chunk' &&
-            !(bundle[file] as OutputChunk).isEntry &&
-            !referenced.has(file)
-          ) {
-            delete bundle[file]
-          }
         }
       }
     },

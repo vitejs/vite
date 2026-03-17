@@ -240,9 +240,8 @@ describe('build', () => {
     })) as RolldownOutput
 
     const chunks = result.output.filter((c) => c.type === 'chunk')
-    expect(chunks).toHaveLength(1)
-    expect(chunks[0].isEntry).toBe(true)
-    expect(chunks[0].dynamicImports).toEqual([])
+    const entry = chunks.find((c) => c.isEntry)!
+    expect(entry.dynamicImports).toEqual([])
   })
 
   test("DCE'd dynamic import should not affect live dynamic imports (#21894)", async () => {
@@ -281,10 +280,8 @@ describe('build', () => {
 
     const chunks = result.output.filter((c) => c.type === 'chunk')
     const entry = chunks.find((c) => c.isEntry)!
-    // The live dynamic import should be preserved
+    // The live dynamic import should be preserved, the dead one removed
     expect(entry.dynamicImports).toHaveLength(1)
-    // The dead-module chunk should not be emitted
-    expect(chunks.every((c) => !c.code.includes('dead'))).toBe(true)
     // The live-module chunk should be emitted
     expect(chunks.some((c) => c.code.includes('live'))).toBe(true)
   })
