@@ -923,7 +923,7 @@ export async function _createServer(
   }
 
   middlewares.use(rejectInvalidRequestMiddleware())
-  middlewares.use(rejectNoCorsRequestMiddleware())
+  middlewares.use(rejectNoCorsRequestMiddleware(serverConfig.cors ?? false))
 
   // cors
   const { cors } = serverConfig
