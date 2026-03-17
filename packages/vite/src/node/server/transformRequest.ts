@@ -32,7 +32,7 @@ import {
   extractSourcemapFromFile,
   injectSourcesContent,
 } from './sourcemap'
-import { isFileLoadingAllowed } from './middlewares/static'
+import { checkLoadingAccess, isFileLoadingAllowed } from './middlewares/static'
 import { throwClosedServerError } from './pluginContainer'
 import type { DevEnvironment } from './environment'
 
@@ -323,7 +323,11 @@ async function loadAndTransform(
         `build without going through the plugin transforms, and therefore ` +
         `should not be imported from source code. It can only be referenced ` +
         `via HTML tags.`
-      : `Does the file exist?`
+      : checkLoadingAccess(environment.getTopLevelConfig(), cleanUrl(id)) ===
+          'denied'
+        ? `The file exists but cannot be served. Is it outside of Vite's ` +
+          `server root? If so, add it to server.fs.allow in your Vite config.`
+        : `Does the file exist?`
     const importerMod: EnvironmentModuleNode | undefined =
       moduleGraph.idToModuleMap.get(id)?.importers.values().next().value
     const importer = importerMod?.file || importerMod?.url

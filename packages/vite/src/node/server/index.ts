@@ -42,6 +42,7 @@ import {
   normalizePath,
   resolveHostname,
   resolveServerUrls,
+  safeRealpathSync,
   setupSIGTERMListener,
   teardownSIGTERMListener,
 } from '../utils'
@@ -1238,6 +1239,27 @@ export async function resolveServerOptions(
   }
 
   allowDirs = allowDirs.map((i) => resolvedAllowDir(root, i))
+
+  // Also add realpath-resolved versions to handle symlinked project roots.
+  // When the project root is a symlink, resolved module IDs point to real paths
+  // which would otherwise fail the fs.allow check.
+  // See https://github.com/vitejs/vite/issues/16440
+  const realpathAllowDirs: string[] = []
+  for (const dir of allowDirs) {
+    try {
+      const realpathDir = normalizePath(safeRealpathSync(dir))
+      if (
+        realpathDir !== dir &&
+        !allowDirs.includes(realpathDir) &&
+        !realpathAllowDirs.includes(realpathDir)
+      ) {
+        realpathAllowDirs.push(realpathDir)
+      }
+    } catch {
+      // ignore if dir doesn't exist (e.g., user manually specified a non-existent path)
+    }
+  }
+  allowDirs = [...allowDirs, ...realpathAllowDirs]
 
   // only push client dir when vite itself is outside-of-root
   const resolvedClientDir = resolvedAllowDir(root, CLIENT_DIR)
