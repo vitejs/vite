@@ -644,7 +644,7 @@ async function init() {
   const write = (file: string, content?: string) => {
     const targetPath = path.join(
       root,
-      file === '_gitignore' ? '.gitignore' : file
+      file === '_gitignore' ? '.gitignore' : file,
     )
     if (content) {
       fs.writeFileSync(targetPath, content)
