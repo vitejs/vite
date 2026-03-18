@@ -6,10 +6,7 @@ on:
 
 jobs:
   evaluate-issue:
-    if: >-
-      (contains(github.event.issue.labels.*.name, 'pending triage') ||
-       contains(github.event.issue.labels.*.name, 'documentation')) &&
-      !github.event.issue.pull_request
+    if: !github.event.issue.pull_request
     runs-on: ubuntu-latest
     permissions:
       contents: read
