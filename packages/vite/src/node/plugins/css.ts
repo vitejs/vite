@@ -3479,7 +3479,7 @@ const esMap: Record<number, string[]> = {
   ],
 }
 
-const esRE = /es(\d{4})/
+const esRE = /es(6|\d{4})/
 const versionRE = /\d/
 
 const convertTargetsCache = new Map<
@@ -3497,7 +3497,7 @@ export const convertTargets = (
   const entriesWithoutES = arraify(esbuildTarget).flatMap((e) => {
     const match = esRE.exec(e)
     if (!match) return e
-    const year = Number(match[1])
+    const year = match[1] === '6' ? 2015 : Number(match[1])
     if (!esMap[year]) throw new Error(`Unsupported target "${e}"`)
     return esMap[year]
   })
