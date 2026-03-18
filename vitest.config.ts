@@ -6,6 +6,7 @@ const _dirname = path.dirname(url.fileURLToPath(import.meta.url))
 
 export default defineConfig({
   test: {
+    includeTaskLocation: true,
     include: ['**/__tests__/**/*.spec.[tj]s'],
     exclude: [
       '**/node_modules/**',

@@ -9,6 +9,7 @@ import {
   ssrImportKey,
   ssrImportMetaKey,
   ssrModuleExportsKey,
+  ssrRolldownRuntimeKey,
 } from './constants'
 import type { ModuleEvaluator, ModuleRunnerContext } from './types'
 
@@ -28,6 +29,7 @@ export class ESModulesEvaluator implements ModuleEvaluator {
       ssrDynamicImportKey,
       ssrExportAllKey,
       ssrExportNameKey,
+      ssrRolldownRuntimeKey,
       // source map should already be inlined by Vite
       '"use strict";' + code,
     )
@@ -39,6 +41,7 @@ export class ESModulesEvaluator implements ModuleEvaluator {
       context[ssrDynamicImportKey],
       context[ssrExportAllKey],
       context[ssrExportNameKey],
+      context[ssrRolldownRuntimeKey],
     )
 
     Object.seal(context[ssrModuleExportsKey])
