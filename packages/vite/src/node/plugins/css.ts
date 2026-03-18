@@ -2261,20 +2261,61 @@ async function minifyCSS(
     // LightningCSS output does not return a linebreak at the end
     return decoder.decode(code) + (inlined ? '' : '\n')
   } catch (e) {
-    e.message = `[lightningcss minify] ${e.message}`
-    const friendlyMessage = getLightningCssErrorMessageForIeSyntaxes(css)
-    if (friendlyMessage) {
-      e.message += friendlyMessage
+    if (config.build.cssMinify === 'lightningcss') {
+      e.message = `[lightningcss minify] ${e.message}`
+      const friendlyMessage = getLightningCssErrorMessageForIeSyntaxes(css)
+      if (friendlyMessage) {
+        e.message += friendlyMessage
+      }
+
+      if (e.loc) {
+        e.loc = {
+          line: e.loc.line,
+          column: e.loc.column - 1, // 1-based
+        }
+        e.frame = generateCodeFrame(css, e.loc)
+      }
+      throw e
     }
 
-    if (e.loc) {
-      e.loc = {
-        line: e.loc.line,
-        column: e.loc.column - 1, // 1-based
+    // Fallback to esbuild if Lightning CSS fails and it's not explicitly requested
+    config.logger.warn(
+      colors.yellow(
+        `[lightningcss minify] ${e.message}\n` +
+          `Falling back to esbuild for CSS minification.`,
+      ),
+    )
+    const { transform, formatMessages } = await importEsbuild()
+    try {
+      const { code, warnings } = await transform(css, {
+        loader: 'css',
+        target: config.build.cssTarget || undefined,
+        ...resolveMinifyCssEsbuildOptions(config.esbuild || {}),
+      })
+      if (warnings.length) {
+        const msgs = await formatMessages(warnings, { kind: 'warning' })
+        config.logger.warn(
+          colors.yellow(`[esbuild css minify fallback]\n${msgs.join('\n')}`),
+        )
       }
-      e.frame = generateCodeFrame(css, e.loc)
+      return inlined ? code.trimEnd() : code
+    } catch (esbuildError) {
+      // If esbuild also fails, throw the original Lightning CSS error
+      e.message = `[lightningcss minify] ${e.message}\n[esbuild css minify fallback] ${esbuildError.message}`
+      const friendlyMessage = getLightningCssErrorMessageForIeSyntaxes(css)
+      if (friendlyMessage) {
+        e.message += friendlyMessage
+      }
+
+      if (e.loc) {
+        e.loc = {
+          line: e.loc.line,
+          column: e.loc.column - 1, // 1-based
+        }
+        e.frame = generateCodeFrame(css, e.loc)
+      }
+      throw e
     }
-    throw e
   }
 }
 
