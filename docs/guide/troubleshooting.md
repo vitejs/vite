@@ -256,6 +256,13 @@ This is because Vite does not automatically polyfill Node.js modules.
 
 We recommend avoiding Node.js modules for browser code to reduce the bundle size, although you can add polyfills manually. If the module is imported from a third-party library (that's meant to be used in the browser), it's advised to report the issue to the respective library.
 
+If you must use a package that relies on Node.js built-ins in the browser, you can add polyfills using community-maintained plugins. Common options for providing these polyfills include:
+
+- [`vite-plugin-node-polyfills`](https://www.npmjs.com/package/vite-plugin-node-polyfills)
+- [`@rolldown/plugin-node-polyfills`](https://github.com/rolldown/rolldown/tree/main/packages/plugin-node-polyfills) (Recommended for upcoming Vite versions utilizing Rolldown)
+
+Alternatively, you can manually polyfill specific modules using Vite's [`resolve.alias`](/config/shared-options.md#resolve-alias) to redirect the Node.js built-in to a browser-compatible package, and [`define`](/config/shared-options.md#define) for globals such as `process`.
+
 ### Syntax Error / Type Error happens
 
 Vite cannot handle and does not support code that only runs on non-strict mode (sloppy mode). This is because Vite uses ESM and it is always [strict mode](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Strict_mode) inside ESM.
