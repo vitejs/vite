@@ -387,10 +387,6 @@ const TEMPLATES = FRAMEWORKS.map((f) => f.variants.map((v) => v.name)).reduce(
   [],
 )
 
-const renameFiles: Record<string, string | undefined> = {
-  _gitignore: '.gitignore',
-}
-
 const defaultTargetDir = 'vite-project'
 
 function run([command, ...args]: string[], options?: SpawnOptions) {
@@ -646,7 +642,10 @@ async function init() {
   )
 
   const write = (file: string, content?: string) => {
-    const targetPath = path.join(root, renameFiles[file] ?? file)
+    const targetPath = path.join(
+      root,
+      file === '_gitignore' ? '.gitignore' : file
+    )
     if (content) {
       fs.writeFileSync(targetPath, content)
     } else if (file === 'index.html') {
