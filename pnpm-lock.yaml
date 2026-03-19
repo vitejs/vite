@@ -237,9 +237,6 @@ importers:
 
   packages/vite:
     dependencies:
-      '@oxc-project/runtime':
-        specifier: 0.120.0
-        version: 0.120.0
       lightningcss:
         specifier: ^1.32.0
         version: 1.32.0
@@ -3092,10 +3089,6 @@ packages:
     cpu: [x64]
     os: [win32]
 
-  '@oxc-project/runtime@0.120.0':
-    resolution: {integrity: sha512-7fvACzS46TkHuzA+Tag8ac40qfwURXRTdc4AtyItF59AoNPOO/QjPMqPyvJH8CaUdGu0ntWDX1CCUNyLMxxX5g==}
-    engines: {node: ^20.19.0 || >=22.12.0}
-
   '@oxc-project/types@0.120.0':
     resolution: {integrity: sha512-k1YNu55DuvAip/MGE1FTsIuU3FUCn6v/ujG9V7Nq5Df/kX2CWb13hhwD0lmJGMGqE+bE1MXvv9SZVnMzEXlWcg==}
 
@@ -3361,8 +3354,8 @@ packages:
     cpu: [x64]
     os: [win32]
 
-  '@rolldown/debug@1.0.0-rc.9':
-    resolution: {integrity: sha512-px7BkEvXpaTIDssYuFiVVZtuVGo0Inb8mYApu003mHrBpncxfmTrdjJMWAey5JdW3hEp0AVZjImcb7PakS6oOw==}
+  '@rolldown/debug@1.0.0-rc.10':
+    resolution: {integrity: sha512-TbFDWwb+6RWEsJBfh/UxaeO/0zEKq79WyL/uqv/nSA/o7ohY45jUUTocpv/lHkmkV86KS/onUISq9HhydK1TQQ==}
 
   '@rolldown/pluginutils@1.0.0-rc.10':
     resolution: {integrity: sha512-UkVDEFk1w3mveXeKgaTuYfKWtPbvgck1dT8TUG3bnccrH0XtLTuAyfCoks4Q/M5ZGToSVJTIQYCzy2g/atAOeg==}
@@ -9222,8 +9215,6 @@ snapshots:
   '@oxc-minify/binding-win32-x64-msvc@0.120.0':
     optional: true
 
-  '@oxc-project/runtime@0.120.0': {}
-
   '@oxc-project/types@0.120.0': {}
 
   '@package-json/types@0.0.12': {}
@@ -9419,7 +9410,7 @@ snapshots:
   '@rolldown/binding-win32-x64-msvc@1.0.0-rc.10':
     optional: true
 
-  '@rolldown/debug@1.0.0-rc.9': {}
+  '@rolldown/debug@1.0.0-rc.10': {}
 
   '@rolldown/pluginutils@1.0.0-rc.10': {}
 
@@ -10067,7 +10058,7 @@ snapshots:
     dependencies:
       '@floating-ui/dom': 1.7.6
       '@pnpm/read-project-manifest': 1001.2.5
-      '@rolldown/debug': 1.0.0-rc.9
+      '@rolldown/debug': 1.0.0-rc.10
       '@vitejs/devtools-kit': 0.1.0(typescript@5.9.3)(vite@packages+vite)(ws@8.19.0)
       '@vitejs/devtools-rpc': 0.1.0(typescript@5.9.3)(ws@8.19.0)
       ansis: 4.2.0
