@@ -140,7 +140,7 @@
   },
   "peerDependencies": {
     "@types/node": "^20.19.0 || >=22.12.0",
-    "@vitejs/devtools": "^0.0.0-alpha.31",
+    "@vitejs/devtools": "^0.1.0",
     "esbuild": "^0.27.0",
     "jiti": ">=1.21.0",
     "less": "^4.0.0",
