@@ -1,3 +1,29 @@
+## <small>[8.0.1](https://github.com/vitejs/vite/compare/v8.0.0...v8.0.1) (2026-03-19)</small>
+### Features
+
+* update rolldown to 1.0.0-rc.10 ([#21932](https://github.com/vitejs/vite/issues/21932)) ([b3c067d](https://github.com/vitejs/vite/commit/b3c067d71a781ca72899d08d095c9acd119361ee))
+
+### Bug Fixes
+
+* **bundled-dev:** properly disable `inlineConst` optimization ([#21865](https://github.com/vitejs/vite/issues/21865)) ([6d97142](https://github.com/vitejs/vite/commit/6d97142abc4805ad53cc732826bb502d6d5dd6ce))
+* **css:** lightningcss minify failed when `build.target: 'es6'` ([#21933](https://github.com/vitejs/vite/issues/21933)) ([5fcce46](https://github.com/vitejs/vite/commit/5fcce46a609bc3e3c600810918626b5fc8f16448))
+* **deps:** update all non-major dependencies ([#21878](https://github.com/vitejs/vite/issues/21878)) ([6dbbd7f](https://github.com/vitejs/vite/commit/6dbbd7f072b1e13abd96489b0016b3d93d937999))
+* **dev:** always use ESM Oxc runtime ([#21829](https://github.com/vitejs/vite/issues/21829)) ([d323ed7](https://github.com/vitejs/vite/commit/d323ed7a824c232597c2b4ef2a4f3494e5231c3d))
+* **dev:** handle concurrent restarts in `_createServer` ([#21810](https://github.com/vitejs/vite/issues/21810)) ([40bc729](https://github.com/vitejs/vite/commit/40bc7293ef574103171f72cc8618f9ef22cc5fa0))
+* handle `+` symbol in package subpath exports during dep optimization ([#21886](https://github.com/vitejs/vite/issues/21886)) ([86db93d](https://github.com/vitejs/vite/commit/86db93d8b1d511e9a56a4ea576741a5350eac99f))
+* improve `no-cors` request block error ([#21902](https://github.com/vitejs/vite/issues/21902)) ([5ba688b](https://github.com/vitejs/vite/commit/5ba688bc422c54944bc6fc563bfe1ba2616a0911))
+* use precise regexes for transform filter to avoid backtracking ([#21800](https://github.com/vitejs/vite/issues/21800)) ([dbe41bd](https://github.com/vitejs/vite/commit/dbe41bddb9db3563c21ae9ce0ebc310e8b8878c9))
+* **worker:** `require(json)` result should not be wrapped ([#21847](https://github.com/vitejs/vite/issues/21847)) ([0672fd2](https://github.com/vitejs/vite/commit/0672fd20aac00e4f78fe8fe886978a9b64f63ba7))
+* **worker:** make worker output consistent with client and SSR ([#21871](https://github.com/vitejs/vite/issues/21871)) ([69454d7](https://github.com/vitejs/vite/commit/69454d7136f18334e9a58862741ec14a5edf6f98))
+
+### Miscellaneous Chores
+
+* add changelog rearrange script ([#21835](https://github.com/vitejs/vite/issues/21835)) ([efef073](https://github.com/vitejs/vite/commit/efef073a6f71be0330bd72784654ed8b8dd60cbf))
+* **deps:** bump required `@vitejs/devtools` version to 0.1+ ([#21925](https://github.com/vitejs/vite/issues/21925)) ([12932f5](https://github.com/vitejs/vite/commit/12932f5a5a36b7b3f55ce5e3b867a08154ba1547))
+* **deps:** update rolldown-related dependencies ([#21787](https://github.com/vitejs/vite/issues/21787)) ([1af1d3a](https://github.com/vitejs/vite/commit/1af1d3a3a4fd62fa581392b2dec9052efe8485b3))
+* rearrange 8.0 changelog ([8e05b61](https://github.com/vitejs/vite/commit/8e05b61d3f2271adb16713835b943e5e13d20499))
+* rearrange 8.0 changelog ([#21834](https://github.com/vitejs/vite/issues/21834)) ([86edeee](https://github.com/vitejs/vite/commit/86edeee31eeacdbfb93c112df088fbd606f9917e))
+
 ## [8.0.0](https://github.com/vitejs/vite/compare/v8.0.0-beta.18...v8.0.0) (2026-03-12)
 
 ![Vite 8 is here!](../../docs/public/og-image-announcing-vite8.webp)
