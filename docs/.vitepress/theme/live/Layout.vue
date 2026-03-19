@@ -5,19 +5,24 @@ import TimeoutSwitcher from './TimeoutSwitcher.vue'
 import VideoIframe from './VideoIframe.vue'
 import Events from './Events.vue'
 import Footer from '@components/oss/Footer.vue'
+const startTime = '2026-03-19T15:00:00.000Z'
 </script>
 
 <template>
-  <TimeoutSwitcher at="2026-03-19T15:00:00.000Z">
+  <TimeoutSwitcher :at="startTime">
     <template #default>
       <Hero />
-      <Timer at="2026-03-19T15:00:00.000Z" />
+      <Timer :at="startTime" />
     </template>
     <template #timeout>
-      <VideoIframe at="2026-03-19T15:00:00.000Z" />
+      <VideoIframe :at="startTime" />
     </template>
   </TimeoutSwitcher>
-  <Events />
+  <TimeoutSwitcher :at="startTime">
+    <template #default>
+      <Events />
+    </template>
+  </TimeoutSwitcher>
   <Footer
     heading="Start building with Vite"
     subheading="Prepare for a development environment that can finally keep pace with the speed of your mind."
