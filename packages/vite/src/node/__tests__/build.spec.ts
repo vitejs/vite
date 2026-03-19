@@ -144,6 +144,51 @@ describe('build', () => {
     assertOutputHashContentChange(result[0], result[1])
   })
 
+  test('file hash should change when renderBuiltUrl changes for JS chunks', async () => {
+    const buildProject = async (renderBuiltUrl: any) => {
+      return (await build({
+        root: resolve(dirname, 'packages/build-project'),
+        logLevel: 'silent',
+        build: {
+          write: false,
+        },
+        experimental: {
+          renderBuiltUrl,
+        },
+        plugins: [
+          {
+            name: 'test',
+            resolveId(id) {
+              if (id === 'entry.js' || id === 'subentry.js') {
+                return '\0' + id
+              }
+            },
+            load(id) {
+              if (id === '\0entry.js') {
+                return `window.addEventListener('click', () => { import('subentry.js') });`
+              }
+              if (id === '\0subentry.js') {
+                return `export default 'sub'`
+              }
+            },
+          },
+        ],
+      })) as RolldownOutput
+    }
+    const result = await Promise.all([
+      buildProject((filename: string) => `/cdn-a/${filename}`),
+      buildProject((filename: string) => `/cdn-b/${filename}`),
+    ])
+    const jsChunks1 = result[0].output
+      .filter((o): o is OutputChunk => o.type === 'chunk')
+      .map((o) => o.fileName)
+    const jsChunks2 = result[1].output
+      .filter((o): o is OutputChunk => o.type === 'chunk')
+      .map((o) => o.fileName)
+    expect(jsChunks1.length).toBeGreaterThan(0)
+    expect(jsChunks1).not.toEqual(jsChunks2)
+  })
+
   test.for([
     [true, true],
     [true, false],

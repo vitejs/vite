@@ -224,6 +224,12 @@ export function buildImportAnalysisPlugin(config: ResolvedConfig): Plugin[] {
       return null
     },
 
+    augmentChunkHash() {
+      if (config.experimental?.renderBuiltUrl) {
+        return config.experimental.renderBuiltUrl.toString()
+      }
+    },
+
     async generateBundle({ format }, bundle) {
       if (format !== 'es') {
         return
