@@ -110,7 +110,7 @@ onBeforeUnmount(() => {
     >
       <div class="absolute top-0 right-0 z-10 flex gap-2 p-4">
         <a
-          href="https://chat.vite.dev"
+          href="https://discord.gg/spmbbvPb9Q"
           target="_blank"
           rel="noopener noreferrer"
           class="button block w-fit backdrop-blur transition-opacity"
