@@ -25,9 +25,15 @@ export function rejectNoCorsRequestMiddleware(): Connect.NextHandleFunction {
       // we only need to block classic script requests
       req.headers['sec-fetch-dest'] === 'script'
     ) {
-      res.statusCode = 403
+      // Send a JavaScript code instead of 403 so that the error is shown in the devtools
+      // If we send 403, the browser will avoid loading the body of the response
+      // and just show "Failed to load" error without the detailed message.
+      res.setHeader('Content-Type', 'text/javascript')
       res.end(
-        'Cross-origin requests for classic scripts must be made with CORS mode enabled. Make sure to set the "crossorigin" attribute on your <script> tag.',
+        `throw new Error(${JSON.stringify(
+          '[Vite] Cross-origin requests for classic scripts must be made with CORS mode enabled.' +
+            ' Make sure to set the "crossorigin" attribute on your <script> tag.',
+        )});`,
       )
       return
     }

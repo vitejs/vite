@@ -6,10 +6,7 @@ on:
 
 jobs:
   evaluate-issue:
-    if: >-
-      (contains(github.event.issue.labels.*.name, 'pending triage') ||
-       contains(github.event.issue.labels.*.name, 'documentation')) &&
-      !github.event.issue.pull_request
+    if: "!github.event.issue.pull_request"
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -45,7 +42,7 @@ jobs:
               core.setOutput('skip', 'true');
             }
 
-      - uses: warpdotdev/oz-agent-action@4d5b8c4f754ded6b9e56d2cbe08c3adb7ea542c0 # v1
+      - uses: warpdotdev/oz-agent-action@827a9ad5438c195eb9d1d9a7acece3a8000be512 # v1
         if: steps.detect.outputs.skip == 'false'
         id: agent
         with:

@@ -14,7 +14,7 @@ import Footer from '@components/oss/Footer.vue'
       <Timer at="2026-03-19T15:00:00.000Z" />
     </template>
     <template #timeout>
-      <VideoIframe />
+      <VideoIframe at="2026-03-19T15:00:00.000Z" />
     </template>
   </TimeoutSwitcher>
   <Events />
