@@ -1,6 +1,7 @@
 <script setup>
 import { computed, onBeforeUnmount, onMounted, ref } from 'vue'
 import Header from '@components/oss/Header.vue'
+import { useYoutubePlayer } from './useYoutubePlayer'
 
 const props = defineProps({
   at: {
@@ -10,9 +11,11 @@ const props = defineProps({
 })
 
 const containerEl = ref(null)
+const iframeEl = ref(null)
 const isFullscreen = ref(false)
 const actionsVisible = ref(false)
 let hideActionsTimeout = null
+const { player, initPlayer, togglePlayback } = useYoutubePlayer(iframeEl)
 
 const iframeSrc = computed(() => {
   const totalLength = 39 * 60 + 15 // 39 minutes and 15 seconds
@@ -28,6 +31,8 @@ const iframeSrc = computed(() => {
     disablekb: '1',
     rel: '0',
     autoplay: '1',
+    enablejsapi: '1',
+    origin: typeof window === 'undefined' ? '' : window.location.origin,
   })
 
   return `https://www.youtube-nocookie.com/embed/bmWQqAKLgT4?${params.toString()}`
@@ -103,25 +108,30 @@ onBeforeUnmount(() => {
       @mouseleave="hideActions"
       @touchstart="showActionsOnTouch"
     >
-      <div
-        class="absolute top-0 right-0 z-10 flex gap-2 p-4 bg-nickel/20 border-l transition-all border-b origin-top-right border-nickel backdrop-blur-sm rounded-bl-2xl"
-        :class="
-          actionsVisible ? 'scale-100' : 'bg-nickel/10 scale-50 delay-100'
-        "
-      >
+      <div class="absolute top-0 right-0 z-10 flex gap-2 p-4">
         <a
           href="https://chat.vite.dev"
           target="_blank"
           rel="noopener noreferrer"
-          class="button block w-fit backdrop-blur transition"
+          class="button block w-fit backdrop-blur transition-opacity"
+          :class="
+            actionsVisible
+              ? 'opacity-100'
+              : 'opacity-0 delay-100 pointer-events-none'
+          "
         >
           Chat with us
         </a>
         <button
           type="button"
-          class="button block py-1.5 px-2.25 backdrop-blur transition"
+          class="button block py-1.5 px-2.25 backdrop-blur transition-opacity"
           @click="toggleFullscreen"
           :aria-label="isFullscreen ? 'Exit fullscreen' : 'Enter fullscreen'"
+          :class="
+            actionsVisible
+              ? 'opacity-100'
+              : 'opacity-0 delay-100 pointer-events-none'
+          "
         >
           <svg
             xmlns="http://www.w3.org/2000/svg"
@@ -151,10 +161,45 @@ onBeforeUnmount(() => {
           </svg>
         </button>
       </div>
+      <button
+        type="button"
+        class="absolute button block left-1/2 -translate-x-1/2 top-1/2 -translate-y-1/2 p-4 backdrop-blur transition"
+        @click="togglePlayback"
+        :aria-label="player.state === 'play' ? 'Pause video' : 'Play video'"
+        :class="
+          actionsVisible
+            ? 'opacity-100'
+            : 'opacity-0 delay-100 pointer-events-none'
+        "
+      >
+        <svg
+          xmlns="http://www.w3.org/2000/svg"
+          width="40"
+          height="40"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="2"
+          stroke-linecap="round"
+          stroke-linejoin="round"
+        >
+          <g v-if="player.state === 'play'">
+            <line x1="10" x2="10" y1="15" y2="9" />
+            <line x1="14" x2="14" y1="15" y2="9" />
+          </g>
+          <path
+            v-else
+            d="M9 9.003a1 1 0 0 1 1.517-.859l4.997 2.997a1 1 0 0 1 0 1.718l-4.997 2.997A1 1 0 0 1 9 14.996z"
+          />
+          <circle cx="12" cy="12" r="10" />
+        </svg>
+      </button>
       <iframe
+        ref="iframeEl"
+        @load="initPlayer"
         width="560"
         height="315"
-        class="w-full h-auto max-h-[calc(100vh-5rem-var(--vp-banner-height,0px))] aspect-video"
+        class="w-full h-auto max-h-[calc(100vh-5rem-var(--vp-banner-height,0px))] aspect-video pointer-events-none"
         :src="iframeSrc"
         title="YouTube video player"
         frameborder="0"
@@ -169,6 +214,7 @@ onBeforeUnmount(() => {
         "
         referrerpolicy="strict-origin-when-cross-origin"
         allowfullscreen
+        tabindex="-1"
       />
     </div>
   </div>
