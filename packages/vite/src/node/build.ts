@@ -24,6 +24,7 @@ import type {
   WatcherOptions,
 } from 'rolldown'
 import { viteLoadFallbackPlugin as nativeLoadFallbackPlugin } from 'rolldown/experimental'
+import { esmExternalRequirePlugin } from 'rolldown/plugins'
 import type { EsbuildTarget } from '#types/internal/esbuildOptions'
 import type { RollupCommonJSOptions } from '#dep-types/commonjs'
 import type { RollupDynamicImportVarsOptions } from '#dep-types/dynamicImportVars'
@@ -420,6 +421,11 @@ export function resolveBuildEnvironmentOptions(
   logger: Logger,
   consumer: 'client' | 'server' | undefined,
   isBundledDev: boolean,
+  // Webworker SSR should not use Node platform — createRequire(import.meta.url)
+  // crashes in worker runtimes where import.meta.url is undefined. We use 'browser'
+  // rather than 'neutral' because it aligns with Vite's resolve conditions for
+  // webworker targets (defaultClientConditions + worker).
+  isSsrTargetWebworkerEnvironment?: boolean,
 ): ResolvedBuildEnvironmentOptions {
   const deprecatedPolyfillModulePreload = raw.polyfillModulePreload
   const { polyfillModulePreload, ...rest } = raw
@@ -451,7 +457,10 @@ export function resolveBuildEnvironmentOptions(
   )
   setupRollupOptionCompat(merged, 'build')
   merged.rolldownOptions = {
-    platform: consumer === 'server' ? 'node' : 'browser',
+    platform:
+      consumer === 'server' && !isSsrTargetWebworkerEnvironment
+        ? 'node'
+        : 'browser',
     ...merged.rolldownOptions,
   }
 
@@ -653,6 +662,13 @@ export function resolveRolldownOptions(
   const isSsrTargetWebworkerEnvironment =
     environment.name === 'ssr' &&
     environment.getTopLevelConfig().ssr?.target === 'webworker'
+
+  // For webworker SSR with platform: 'browser', external CJS require() calls
+  // need to be converted to ESM imports since createRequire is not available.
+  // Rolldown's esmExternalRequirePlugin handles this conversion.
+  if (isSsrTargetWebworkerEnvironment) {
+    plugins.push(esmExternalRequirePlugin())
+  }
 
   const buildOutputOptions = (output: OutputOptions = {}): OutputOptions => {
     // @ts-expect-error See https://github.com/vitejs/vite/issues/5812#issuecomment-984345618
