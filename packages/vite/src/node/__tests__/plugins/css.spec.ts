@@ -274,6 +274,10 @@ describe('convertTargets', () => {
       safari: 852224,
     })
   })
+
+  test('supports es6 as an alias of es2015', () => {
+    expect(convertTargets('es6')).toStrictEqual(convertTargets('es2015'))
+  })
 })
 
 describe('getEmptyChunkReplacer', () => {
