@@ -189,6 +189,58 @@ describe('build', () => {
     expect(jsChunks1).not.toEqual(jsChunks2)
   })
 
+  test('file hash should change when renderBuiltUrl changes for CSS chunks', async () => {
+    const buildProject = async (renderBuiltUrl: any) => {
+      return (await build({
+        root: resolve(dirname, 'packages/build-project'),
+        logLevel: 'silent',
+        build: {
+          write: false,
+        },
+        experimental: {
+          renderBuiltUrl,
+        },
+        plugins: [
+          {
+            name: 'test',
+            resolveId(id) {
+              if (
+                id === 'entry.js' ||
+                id === 'subentry.js' ||
+                id === 'foo.css'
+              ) {
+                return '\0' + id
+              }
+            },
+            load(id) {
+              if (id === '\0entry.js') {
+                return `window.addEventListener('click', () => { import('subentry.js') });`
+              }
+              if (id === '\0subentry.js') {
+                return `import 'foo.css'`
+              }
+              if (id === '\0foo.css') {
+                return `.foo { color: red }`
+              }
+            },
+          },
+        ],
+      })) as RolldownOutput
+    }
+    const result = await Promise.all([
+      buildProject((filename: string) => `/cdn-a/${filename}`),
+      buildProject((filename: string) => `/cdn-b/${filename}`),
+    ])
+    const cssAssets1 = result[0].output
+      .filter((o) => o.type === 'asset' && o.fileName.endsWith('.css'))
+      .map((o) => o.fileName)
+    const cssAssets2 = result[1].output
+      .filter((o) => o.type === 'asset' && o.fileName.endsWith('.css'))
+      .map((o) => o.fileName)
+    expect(cssAssets1.length).toBeGreaterThan(0)
+    expect(cssAssets1).not.toEqual(cssAssets2)
+  })
+
   test.for([
     [true, true],
     [true, false],
