@@ -232,14 +232,14 @@ async function bundleWorkerEntry(
         '[name]-[hash].[ext]',
       ),
       minify:
-        config.build.minify === 'oxc'
+        workerEnvironment.config.build.minify === 'oxc'
           ? true
-          : config.build.minify === false
+          : workerEnvironment.config.build.minify === false
             ? 'dce-only'
             : undefined,
       ...workerConfig,
       format,
-      sourcemap: config.build.sourcemap,
+      sourcemap: workerEnvironment.config.build.sourcemap,
     })
     watchedFiles = (await bundle.watchFiles).map((f) => normalizePath(f))
   } catch (e) {
