@@ -1,5 +1,5 @@
 <script setup>
-import { computed, onBeforeUnmount, onMounted, ref } from 'vue'
+import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import Header from '@components/oss/Header.vue'
 import { useYoutubePlayer } from './useYoutubePlayer'
 
@@ -14,15 +14,23 @@ const containerEl = ref(null)
 const iframeEl = ref(null)
 const isFullscreen = ref(false)
 const actionsVisible = ref(false)
+const playButtonEl = ref(null)
 let hideActionsTimeout = null
-const { player, initPlayer, togglePlayback } = useYoutubePlayer(iframeEl)
 
-const iframeSrc = computed(() => {
+const { player, initPlayer, togglePlayback, seekTo } =
+  useYoutubePlayer(iframeEl)
+
+const checkVideoPassed = (startAt) => {
   const totalLength = 39 * 60 + 15 // 39 minutes and 15 seconds
-  const atTime = new Date(props.at).getTime()
+  const atTime = new Date(startAt).getTime()
   const now = Date.now()
   const elapsedSeconds = Math.max(0, Math.floor((now - atTime) / 1000))
   const isPassed = elapsedSeconds > totalLength
+  return { isPassed, elapsedSeconds }
+}
+
+const iframeSrc = computed(() => {
+  const { isPassed, elapsedSeconds } = checkVideoPassed(props.at)
 
   const params = new URLSearchParams({
     si: 'hhgR4fwkRw9zQ0yx',
@@ -37,6 +45,34 @@ const iframeSrc = computed(() => {
 
   return `https://www.youtube-nocookie.com/embed/bmWQqAKLgT4?${params.toString()}`
 })
+
+const pausedState = ref(true)
+
+watch(
+  () => player.value.state,
+  (newVal, oldVal) => {
+    if (newVal === 'pause') {
+      pausedState.value = true
+    }
+    if (newVal === 'play' && pausedState.value) {
+      const { isPassed, elapsedSeconds } = checkVideoPassed(props.at)
+      if (!isPassed) {
+        pausedState.value = false
+        seekTo(elapsedSeconds)
+      }
+    }
+  },
+)
+
+watch(
+  () => player.value.state,
+  (newVal) => {
+    if (newVal === 'play' || newVal === 'pause') {
+      playButtonEl.value?.focus()
+    }
+  },
+  { immediate: true },
+)
 
 const syncFullscreenState = () => {
   const container = containerEl.value
@@ -108,6 +144,13 @@ onBeforeUnmount(() => {
       @mouseleave="hideActions"
       @touchstart="showActionsOnTouch"
     >
+      <div
+        class="video-iframe-mask absolute inset-0 bg-black/50 backdrop-blur-2xl transition-opacity duration-50"
+        :class="
+          player.state === 'pause' ? 'opacity-100' : 'opacity-0 delay-400'
+        "
+        @click="togglePlayback"
+      />
       <div class="absolute top-0 right-0 z-10 flex gap-2 p-4">
         <a
           href="https://discord.gg/spmbbvPb9Q"
@@ -115,10 +158,11 @@ onBeforeUnmount(() => {
           rel="noopener noreferrer"
           class="button block w-fit backdrop-blur transition-opacity"
           :class="
-            actionsVisible
+            actionsVisible || player.state !== 'play'
               ? 'opacity-100'
               : 'opacity-0 delay-100 pointer-events-none'
           "
+          @focus="showActions"
         >
           Chat with us
         </a>
@@ -128,10 +172,11 @@ onBeforeUnmount(() => {
           @click="toggleFullscreen"
           :aria-label="isFullscreen ? 'Exit fullscreen' : 'Enter fullscreen'"
           :class="
-            actionsVisible
+            actionsVisible || player.state !== 'play'
               ? 'opacity-100'
               : 'opacity-0 delay-100 pointer-events-none'
           "
+          @focus="showActions"
         >
           <svg
             xmlns="http://www.w3.org/2000/svg"
@@ -167,10 +212,12 @@ onBeforeUnmount(() => {
         @click="togglePlayback"
         :aria-label="player.state === 'play' ? 'Pause video' : 'Play video'"
         :class="
-          actionsVisible
+          actionsVisible || player.state !== 'play'
             ? 'opacity-100'
             : 'opacity-0 delay-100 pointer-events-none'
         "
+        @focus="showActions"
+        ref="playButtonEl"
       >
         <svg
           xmlns="http://www.w3.org/2000/svg"
@@ -228,5 +275,15 @@ onBeforeUnmount(() => {
 .video-iframe-header :deep(.wrapper::before),
 .video-iframe-header :deep(.wrapper::after) {
   display: none;
+}
+
+.video-iframe-mask {
+  -webkit-mask-image: linear-gradient(
+    to bottom,
+    #000 0%,
+    #000 72px,
+    transparent 100px
+  );
+  mask-image: linear-gradient(to bottom, #000 0%, #000 72px, transparent 100px);
 }
 </style>

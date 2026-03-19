@@ -81,11 +81,17 @@ export const useYoutubePlayer = (iframeEl: Ref<HTMLIFrameElement | null>) => {
   }
 
   const play = () => {
+    player.value = { state: 'play' }
     postPlayerCommand('playVideo')
   }
 
   const pause = () => {
+    player.value = { state: 'pause' }
     postPlayerCommand('pauseVideo')
+  }
+
+  const seekTo = (seconds: number, allowSeekAhead = true) => {
+    postPlayerCommand('seekTo', [seconds, allowSeekAhead])
   }
 
   const togglePlayback = () => {
@@ -110,6 +116,7 @@ export const useYoutubePlayer = (iframeEl: Ref<HTMLIFrameElement | null>) => {
     initPlayer,
     play,
     pause,
+    seekTo,
     togglePlayback,
   }
 }
