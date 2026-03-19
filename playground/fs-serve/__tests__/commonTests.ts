@@ -495,7 +495,7 @@ test.runIf(isServe)(
           reject(e)
         })
     })
-    expect(res.statusCode).toBe(403)
+    expect(res.statusCode).toBe(200)
     const body = Buffer.concat(await ArrayFromAsync(res)).toString()
     expect(body).toContain(
       'Cross-origin requests for classic scripts must be made with CORS mode enabled.',
@@ -531,6 +531,10 @@ test.runIf(isServe)(
         })
     })
     expect(res.statusCode).not.toBe(403)
+    const body = Buffer.concat(await ArrayFromAsync(res)).toString()
+    expect(body).not.toContain(
+      'Cross-origin requests for classic scripts must be made with CORS mode enabled.',
+    )
   },
 )
 
