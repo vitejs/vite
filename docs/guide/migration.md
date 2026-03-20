@@ -304,7 +304,7 @@ The object form `output.manualChunks` option is not supported anymore. The funct
 
 ### Removed `build.rollupOptions.output.experimentalMinChunkSize` option
 
-The `build.rollupOptions.output.experimentalMinChunkSize` option was removed. Please migrate to the [`build.rolldownOptions.output.codeSplitting.minSize`](https://rolldown.rs/reference/OutputOptions.codeSplitting) option.
+The `build.rollupOptions.output.experimentalMinChunkSize` option was removed. Rolldown has the [`codeSplitting`](https://rolldown.rs/reference/OutputOptions.codeSplitting) option with `groups` and `minSize`, but note that `minSize` only takes effect when `groups` are defined. See Rolldown's docs for more details: [Manual Code Splitting - Rolldown](https://rolldown.rs/in-depth/manual-code-splitting).
 
 ### `build()` Throws `BundleError`
 
