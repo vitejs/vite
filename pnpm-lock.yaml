@@ -12,6 +12,9 @@ overrides:
 packageExtensionsChecksum: sha256-BLDZCgUIohvBXMHo3XFOlGLzGXRyK3sDU0nMBRk9APY=
 
 patchedDependencies:
+  '@voidzero-dev/vitepress-theme':
+    hash: 8dee0e441d1ef918cc64747f6c3fa07b354f5698a137ae9d643619b228a02a9d
+    path: patches/@voidzero-dev__vitepress-theme@4.0.4.patch
   chokidar@3.6.0:
     hash: 8a4f9e2b397e6034b91a0508faae3cecb97f222313faa129d7cb0eb71e9d0e84
     path: patches/chokidar@3.6.0.patch
@@ -136,7 +139,7 @@ importers:
         version: 5.0.6
       '@voidzero-dev/vitepress-theme':
         specifier: ^4.0.4
-        version: 4.0.4(axios@1.13.2)(focus-trap@7.6.6)(typescript@5.9.3)(vite@packages+vite)(vitepress@2.0.0-alpha.15(axios@1.13.2)(postcss@8.5.8)(typescript@5.9.3))(vue@3.5.30(typescript@5.9.3))
+        version: 4.0.4(patch_hash=8dee0e441d1ef918cc64747f6c3fa07b354f5698a137ae9d643619b228a02a9d)(axios@1.13.2)(focus-trap@7.6.6)(typescript@5.9.3)(vite@packages+vite)(vitepress@2.0.0-alpha.15(axios@1.13.2)(postcss@8.5.8)(typescript@5.9.3))(vue@3.5.30(typescript@5.9.3))
       feed:
         specifier: ^5.2.0
         version: 5.2.0
@@ -9961,7 +9964,7 @@ snapshots:
       '@vitest/pretty-format': 4.0.14
       tinyrainbow: 3.0.3
 
-  '@voidzero-dev/vitepress-theme@4.0.4(axios@1.13.2)(focus-trap@7.6.6)(typescript@5.9.3)(vite@packages+vite)(vitepress@2.0.0-alpha.15(axios@1.13.2)(postcss@8.5.8)(typescript@5.9.3))(vue@3.5.30(typescript@5.9.3))':
+  '@voidzero-dev/vitepress-theme@4.0.4(patch_hash=8dee0e441d1ef918cc64747f6c3fa07b354f5698a137ae9d643619b228a02a9d)(axios@1.13.2)(focus-trap@7.6.6)(typescript@5.9.3)(vite@packages+vite)(vitepress@2.0.0-alpha.15(axios@1.13.2)(postcss@8.5.8)(typescript@5.9.3))(vue@3.5.30(typescript@5.9.3))':
     dependencies:
       '@docsearch/css': 4.3.2
       '@docsearch/js': 4.3.2

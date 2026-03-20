@@ -1,0 +1,12 @@
+diff --git a/src/layouts/VPLayout.vue b/src/layouts/VPLayout.vue
+index 9b44852a4f6cceea02b4eb446cdc9174c200c6ae..9ae38afd05b77cbb05ffae757480b6607ae73dbb 100644
+--- a/src/layouts/VPLayout.vue
++++ b/src/layouts/VPLayout.vue
+@@ -44,6 +44,7 @@ const useVPLayout = computed(() => {
+   </div>
+   <div v-else class="marketing-layout" :data-theme="frontmatter.theme" :data-variant="variant">
+     <TopBanner />
++    <slot name="layout-top" />
+     <OSSHeader />
+     <Content />
+   </div>

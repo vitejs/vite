@@ -3,6 +3,7 @@ import TwoslashFloatingVue from '@shikijs/vitepress-twoslash/client'
 import '@shikijs/vitepress-twoslash/style.css'
 import 'virtual:group-icons.css'
 import Theme from '@voidzero-dev/vitepress-theme/src/vite'
+import OldDocument from './components/OldDocument.vue'
 import './styles.css'
 
 // components
@@ -16,6 +17,7 @@ export default {
   Layout() {
     return h((Theme as any).Layout, null, {
       'aside-ads-before': () => h(AsideSponsors),
+      'layout-top': () => h(OldDocument),
     })
   },
   enhanceApp(ctx: any) {
