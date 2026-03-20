@@ -103,7 +103,6 @@ const config = defineConfig({
       { rel: 'alternate', type: 'application/rss+xml', href: '/blog.rss' },
     ],
     ['link', { rel: 'preconnect', href: 'https://fonts.googleapis.com' }],
-    inlineScript('banner.js'),
     ['link', { rel: 'me', href: 'https://m.webtoo.ls/@vite' }],
     ['meta', { property: 'og:type', content: 'website' }],
     ['meta', { property: 'og:title', content: ogTitle }],
@@ -139,12 +138,6 @@ const config = defineConfig({
   themeConfig: {
     variant: 'vite',
     logo: '/logo.svg',
-
-    banner: {
-      id: 'vite+',
-      text: 'Announcing Vite+ | The Unified Toolchain for the Web',
-      url: 'https://voidzero.dev/posts/announcing-vite-plus?utm_source=vite&utm_content=top_banner',
-    },
 
     editLink: {
       pattern: 'https://github.com/vitejs/vite/edit/main/docs/:path',
