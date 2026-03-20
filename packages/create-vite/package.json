@@ -1,6 +1,6 @@
 {
   "name": "create-vite",
-  "version": "9.0.2",
+  "version": "9.0.3",
   "type": "module",
   "license": "MIT",
   "author": "Evan You",
@@ -39,6 +39,6 @@
     "cross-spawn": "^7.0.6",
     "mri": "^1.2.0",
     "picocolors": "^1.1.1",
-    "tsdown": "^0.20.3"
+    "tsdown": "^0.21.4"
   }
 }
