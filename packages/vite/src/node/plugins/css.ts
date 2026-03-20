@@ -2198,6 +2198,22 @@ async function doImportCSSReplace(
   return `@import ${prefix}${wrap}${newUrl}${wrap}`
 }
 
+function formatLightningCssError(error: any, css: string): void {
+  error.message = `[lightningcss minify] ${error.message}`
+  const friendlyMessage = getLightningCssErrorMessageForIeSyntaxes(css)
+  if (friendlyMessage) {
+    error.message += friendlyMessage
+  }
+
+  if (error.loc) {
+    error.loc = {
+      line: error.loc.line,
+      column: error.loc.column - 1, // 1-based
+    }
+    error.frame = generateCodeFrame(css, error.loc)
+  }
+}
+
 async function minifyCSS(
   css: string,
   config: ResolvedConfig,
@@ -2207,12 +2223,14 @@ async function minifyCSS(
   // regular CSS assets do end with a linebreak.
   // See https://github.com/vitejs/vite/pull/13893#issuecomment-1678628198
 
+  const cssTarget = config.build.cssTarget || undefined
+
   if (config.build.cssMinify === 'esbuild') {
     const { transform, formatMessages } = await importEsbuild()
     try {
       const { code, warnings } = await transform(css, {
         loader: 'css',
-        target: config.build.cssTarget || undefined,
+        target: cssTarget,
         ...resolveMinifyCssEsbuildOptions(config.esbuild || {}),
       })
       if (warnings.length) {
@@ -2237,7 +2255,7 @@ async function minifyCSS(
   try {
     const { code, warnings } = (await importLightningCSS()).transform({
       ...config.css.lightningcss,
-      targets: convertTargets(config.build.cssTarget),
+      targets: convertTargets(cssTarget),
       cssModules: undefined,
       // TODO: Pass actual filename here, which can also be passed to esbuild's
       // `sourcefile` option below to improve error messages
@@ -2260,36 +2278,26 @@ async function minifyCSS(
     // For correct decode compiled css need to use TextDecoder
     // LightningCSS output does not return a linebreak at the end
     return decoder.decode(code) + (inlined ? '' : '\n')
-  } catch (e) {
+  } catch (lightningCssError) {
+    // If cssMinify is explicitly set to 'lightningcss', throw the error
     if (config.build.cssMinify === 'lightningcss') {
-      e.message = `[lightningcss minify] ${e.message}`
-      const friendlyMessage = getLightningCssErrorMessageForIeSyntaxes(css)
-      if (friendlyMessage) {
-        e.message += friendlyMessage
-      }
-
-      if (e.loc) {
-        e.loc = {
-          line: e.loc.line,
-          column: e.loc.column - 1, // 1-based
-        }
-        e.frame = generateCodeFrame(css, e.loc)
-      }
-      throw e
+      formatLightningCssError(lightningCssError, css)
+      throw lightningCssError
     }
 
     // Fallback to esbuild if Lightning CSS fails and it's not explicitly requested
     config.logger.warn(
       colors.yellow(
-        `[lightningcss minify] ${e.message}\n` +
+        `[lightningcss minify] ${lightningCssError.message}\n` +
           `Falling back to esbuild for CSS minification.`,
       ),
     )
+
     const { transform, formatMessages } = await importEsbuild()
     try {
       const { code, warnings } = await transform(css, {
         loader: 'css',
-        target: config.build.cssTarget || undefined,
+        target: cssTarget,
         ...resolveMinifyCssEsbuildOptions(config.esbuild || {}),
       })
       if (warnings.length) {
@@ -2300,21 +2308,23 @@ async function minifyCSS(
       }
       return inlined ? code.trimEnd() : code
     } catch (esbuildError) {
-      // If esbuild also fails, throw the original Lightning CSS error
-      e.message = `[lightningcss minify] ${e.message}\n[esbuild css minify fallback] ${esbuildError.message}`
-      const friendlyMessage = getLightningCssErrorMessageForIeSyntaxes(css)
-      if (friendlyMessage) {
-        e.message += friendlyMessage
+      // If esbuild also fails, throw a combined error with both locations
+      formatLightningCssError(lightningCssError, css)
+      if (esbuildError.errors) {
+        esbuildError.message =
+          '[esbuild css minify fallback] ' + esbuildError.message
+        const msgs = await formatMessages(esbuildError.errors, {
+          kind: 'error',
+        })
+        esbuildError.frame = '\n' + msgs.join('\n')
+        esbuildError.loc = esbuildError.errors[0].location
       }
-
-      if (e.loc) {
-        e.loc = {
-          line: e.loc.line,
-          column: e.loc.column - 1, // 1-based
-        }
-        e.frame = generateCodeFrame(css, e.loc)
-      }
-      throw e
+      const combinedError = new Error(
+        `${lightningCssError.message}\n${esbuildError.message}`,
+      )
+      combinedError.frame = `${lightningCssError.frame || ''}\n${esbuildError.frame || ''}`
+      combinedError.loc = lightningCssError.loc
+      throw combinedError
     }
   }
 }

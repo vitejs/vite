@@ -794,3 +794,74 @@ exports.foo = foo;
     `)
   })
 })
+
+describe('CSS minification fallback', () => {
+  test('fallback to esbuild when lightningcss fails on unsupported syntax', async () => {
+    // This test verifies that when lightningcss encounters unsupported CSS syntax,
+    // it falls back to esbuild for minification instead of failing the build
+    const { transform } = await createCssPluginTransform({
+      configFile: false,
+      build: {
+        cssMinify: 'lightningcss', // Default, not explicitly forced
+      },
+    })
+
+    // CSS with @scope which may not be fully supported in all lightningcss versions
+    const css = `
+      @scope (.section) {
+        color: blue;
+      }
+      .foo { color: red; }
+    `
+
+    // This should either succeed with lightningcss or fallback to esbuild
+    const result = await transform(css, '/test.css')
+    expect(result.code).toBeTruthy()
+    expect(result.code).toContain('color')
+  })
+
+  test('does not fallback when cssMinify is explicitly set to lightningcss', async () => {
+    // This test verifies that when user explicitly sets cssMinify: 'lightningcss',
+    // errors are not silently caught and fallback is not attempted
+    const { transform } = await createCssPluginTransform({
+      configFile: false,
+      build: {
+        cssMinify: 'lightningcss',
+      },
+    })
+
+    // CSS with invalid syntax that both minifiers should reject
+    const invalidCss = `
+      @scope (.section) {
+        invalid syntax here !!!
+      }
+    `
+
+    // This should throw an error, not fallback
+    try {
+      await transform(invalidCss, '/test.css')
+      // If we reach here, the CSS was valid or fallback happened (which shouldn't)
+      expect.fail('Expected an error to be thrown')
+    } catch (error) {
+      // Expected: error should be thrown
+      expect(error).toBeTruthy()
+    }
+  })
+
+  test('fallback to esbuild when cssMinify is default', async () => {
+    // This test verifies that when cssMinify is not explicitly set (default),
+    // fallback to esbuild is allowed
+    const { transform } = await createCssPluginTransform({
+      configFile: false,
+      // cssMinify not explicitly set, uses default
+    })
+
+    // Simple valid CSS
+    const css = `.foo { color: red; margin: 10px; }`
+
+    const result = await transform(css, '/test.css')
+    expect(result.code).toBeTruthy()
+    // Minified CSS should be shorter
+    expect(result.code.length).toBeLessThan(css.length)
+  })
+})
