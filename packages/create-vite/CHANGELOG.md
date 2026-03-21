@@ -1,3 +1,12 @@
+## <small>[9.0.3](https://github.com/vitejs/vite/compare/create-vite@9.0.2...create-vite@9.0.3) (2026-03-19)</small>
+### Bug Fixes
+
+* **deps:** update all non-major dependencies ([#21878](https://github.com/vitejs/vite/issues/21878)) ([6dbbd7f](https://github.com/vitejs/vite/commit/6dbbd7f072b1e13abd96489b0016b3d93d937999))
+
+### Miscellaneous Chores
+
+* **deps:** update rolldown-related dependencies ([#21787](https://github.com/vitejs/vite/issues/21787)) ([1af1d3a](https://github.com/vitejs/vite/commit/1af1d3a3a4fd62fa581392b2dec9052efe8485b3))
+
 ## <small>[9.0.2](https://github.com/vitejs/vite/compare/create-vite@9.0.1...create-vite@9.0.2) (2026-03-13)</small>
 ### Bug Fixes
 

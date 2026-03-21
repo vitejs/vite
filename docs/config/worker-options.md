@@ -20,7 +20,7 @@ The function should return new plugin instances as they are used in parallel rol
 
 - **Type:** [`RolldownOptions`](https://rolldown.rs/reference/)
 
-Rollup options to build worker bundle.
+Rolldown options to build worker bundle.
 
 ## worker.rollupOptions
 
