@@ -94,6 +94,11 @@ interface UserConfig extends EnvironmentOptions {
 }
 ```
 
+For server environments, dependency externalization is configured under `resolve`, not `build`.
+Use `environments.<name>.resolve.noExternal` and `environments.<name>.resolve.external`
+for custom environments. The top-level `ssr.noExternal` and `ssr.external` options are the
+backward-compatible aliases for the default `ssr` environment.
+
 Note that the `ssr` top-level property is going to be deprecated once the Environment API is stable. This option has the same role as `environments`, but for the default `ssr` environment and only allowed configuring of a small set of options.
 
 ## Custom Environment Instances
