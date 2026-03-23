@@ -1,3 +1,4 @@
+import path from 'node:path'
 import { beforeAll, describe, expect, test } from 'vitest'
 import {
   browserLogs,
@@ -86,7 +87,13 @@ function testPage(isNested: boolean) {
       await expect.poll(() => getColor('h1')).toBe(isNested ? 'red' : 'blue')
       await expect.poll(() => getColor('p')).toBe('grey')
     } catch (e) {
-      const assets = listAssets().map((a) => [a, readFile(a)])
+      const assets = listAssets().map((a) => {
+        try {
+          return [a, readFile(path.join('dist', 'assets', a))]
+        } catch {
+          return [a, null]
+        }
+      })
       throw new Error(JSON.stringify(assets), { cause: e })
     }
   })
