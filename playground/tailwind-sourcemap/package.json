@@ -10,7 +10,7 @@
     "preview": "vite preview"
   },
   "dependencies": {
-    "@tailwindcss/postcss": "^4.2.1",
-    "tailwindcss": "^4.2.1"
+    "@tailwindcss/postcss": "^4.2.2",
+    "tailwindcss": "^4.2.2"
   }
 }
