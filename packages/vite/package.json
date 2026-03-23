@@ -94,7 +94,7 @@
     "@types/escape-html": "^1.0.4",
     "@types/pnpapi": "^0.0.5",
     "@vitest/utils": "4.1.0",
-    "@vitejs/devtools": "^0.1.3",
+    "@vitejs/devtools": "^0.1.5",
     "artichokie": "^0.4.2",
     "baseline-browser-mapping": "^2.10.10",
     "cac": "^7.0.0",
