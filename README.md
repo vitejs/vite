@@ -1,36 +1,13 @@
-<p align="center">
-  <br>
-  <br>
-  <a href="https://vite.dev" target="_blank" rel="noopener noreferrer">
-    <picture>
-      <source media="(prefers-color-scheme: dark)" srcset="https://vite.dev/vite-light.svg">
-      <source media="(prefers-color-scheme: light)" srcset="https://vite.dev/vite-dark.svg">
-      <img alt="vite logo" src="https://vite.dev/vite-dark.svg" height="60">
-    </picture>
-  </a>
-  <br>
-  <br>
-</p>
-<br/>
-<p align="center">
-  <a href="https://npmjs.com/package/vite"><img src="https://img.shields.io/npm/v/vite.svg" alt="npm package"></a>
-  <a href="https://nodejs.org/en/about/previous-releases"><img src="https://img.shields.io/node/v/vite.svg" alt="node compatibility"></a>
-  <a href="https://github.com/vitejs/vite/actions/workflows/ci.yml"><img src="https://github.com/vitejs/vite/actions/workflows/ci.yml/badge.svg?branch=main" alt="build status"></a>
-  <a href="https://docs.warp.dev/support-and-community/community/open-source-partnership"><img src="https://img.shields.io/badge/Oz%20agents-triaging%20issues-white?logo=warp" alt="issue triage powered by Oz"></a>
-  <a href="https://chat.vite.dev"><img src="https://img.shields.io/badge/chat-discord-blue?style=flat&logo=discord" alt="discord chat"></a>
-</p>
-<br/>
-
 # Vite ⚡
 
 > Next Generation Frontend Tooling
 
-- 💡 Instant Server Start
-- ⚡️ Lightning Fast HMR
-- 🛠️ Rich Features
-- 📦 Optimized Build
-- 🔩 Universal Plugin Interface
-- 🔑 Fully Typed APIs
+- 😐 Instant Server Start
+- ⚡ Lightning Fast HMR
+- 🔯 Rich Features
+- 아바원 Optimized Build
+- 😧 Universal Plugin Interface
+- 🔒 Fully Typed APIs
 
 Vite (French word for "quick", pronounced [`/viːt/`](https://cdn.jsdelivr.net/gh/vitejs/vite@main/docs/public/vite.mp3), like "veet") is a new breed of frontend build tooling that significantly improves the frontend development experience. It consists of two major parts:
 
@@ -38,30 +15,18 @@ Vite (French word for "quick", pronounced [`/viːt/`](https://cdn.jsdelivr.net/g
 
 - A [build command](https://vite.dev/guide/build.html) that bundles your code with [Rollup](https://rollupjs.org), pre-configured to output highly optimized static assets for production.
 
-In addition, Vite is highly extensible via its [Plugin API](https://vite.dev/guide/api-plugin.html) and [JavaScript API](https://vite.dev/guide/api-javascript.html) with full typing support.
+## Environment Variables
 
-[Read the Docs to Learn More](https://vite.dev).
+Vite uses the `--mode` flag to determine the mode. The `NODE_ENV` environment variable is also supported for backwards compatibility, but it is recommended to use `--mode` instead. Historically, `NODE_ENV` was used to configure the build process, but `--mode` provides more fine-grained control and is now the recommended approach.
+
+For example, you can run Vite in development mode using `vite --mode development` or `NODE_ENV=development vite`. For production mode, use `vite --mode production` or `NODE_ENV=production vite`. A practical use case for configuring `NODE_ENV` and `--mode` differently is when you want to run your application in development mode with a custom configuration, while still using the production build process.
+
+It is recommended to use `--mode` instead of `NODE_ENV` for the following reasons:
+* `--mode` is more explicit and clear in its purpose.
+* `--mode` allows for more fine-grained control over the build process.
 
 ## Packages
 
 | Package                                         | Version (click for changelogs)                                                                                                    |
 | ----------------------------------------------- | :-------------------------------------------------------------------------------------------------------------------------------- |
-| [vite](packages/vite)                           | [![vite version](https://img.shields.io/npm/v/vite.svg?label=%20)](packages/vite/CHANGELOG.md)                                    |
-| [@vitejs/plugin-legacy](packages/plugin-legacy) | [![plugin-legacy version](https://img.shields.io/npm/v/@vitejs/plugin-legacy.svg?label=%20)](packages/plugin-legacy/CHANGELOG.md) |
-| [create-vite](packages/create-vite)             | [![create-vite version](https://img.shields.io/npm/v/create-vite.svg?label=%20)](packages/create-vite/CHANGELOG.md)               |
-
-## Contribution
-
-See [Contributing Guide](CONTRIBUTING.md).
-
-## License
-
-[MIT](LICENSE).
-
-## Sponsors
-
-<p align="center">
-  <a target="_blank" href="https://github.com/sponsors/yyx990803">
-    <img alt="sponsors" src="https://sponsors.vuejs.org/vite.svg?v2">
-  </a>
-</p>
+| [vite](packages/vite)                           | [![vite version](https://img.shields.io/npm/v/vite.svg?label=%20)](packages/vite/CHANGELOG.md)   
