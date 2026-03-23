@@ -86,6 +86,7 @@ import {
   warnFutureDeprecation,
 } from './deprecations'
 import { prepareOutDirPlugin } from './plugins/prepareOutDir'
+import { completeUmdCurrentScriptPlugin } from './plugins/completeUmdCurrentScript'
 import type { Environment } from './environment'
 
 export interface BuildEnvironmentOptions {
@@ -504,6 +505,7 @@ export async function resolveBuildPlugins(config: ResolvedConfig): Promise<{
   const isBuild = config.command === 'build'
   return {
     pre: [
+      completeUmdCurrentScriptPlugin(),
       ...(isBuild && !config.isWorker ? [prepareOutDirPlugin()] : []),
       perEnvironmentPlugin(
         'vite:rollup-options-plugins',

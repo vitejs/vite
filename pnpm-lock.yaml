@@ -1780,6 +1780,12 @@ importers:
 
   playground/tsconfig-json-load-error: {}
 
+  playground/umd:
+    dependencies:
+      requirejs:
+        specifier: ^2.3.7
+        version: 2.3.8
+
   playground/wasm: {}
 
   playground/worker:
@@ -6763,6 +6769,11 @@ packages:
   require-directory@2.1.1:
     resolution: {integrity: sha512-fGxEI7+wsG9xrvdjsrlmL22OMTTiHRwAMroiEeMgq8gzoLC/PQr7RsRDSTLUg/bZAZtF+TVIkHc6/4RIKrui+Q==}
     engines: {node: '>=0.10.0'}
+
+  requirejs@2.3.8:
+    resolution: {integrity: sha512-7/cTSLOdYkNBNJcDMWf+luFvMriVm7eYxp4BcFCsAX0wF421Vyce5SXP17c+Jd5otXKGNehIonFlyQXSowL6Mw==}
+    engines: {node: '>=0.4.0'}
+    hasBin: true
 
   resolve-from@4.0.0:
     resolution: {integrity: sha512-pb/MYmXstAkysRFx8piNI1tGFNQIFA3vkE3Gq4EuA1dF6gHp/+vgZqsCGJapvy8N3Q+4o7FwvquPJcnZ7RYy4g==}
@@ -12964,6 +12975,8 @@ snapshots:
       - ms
 
   require-directory@2.1.1: {}
+
+  requirejs@2.3.8: {}
 
   resolve-from@4.0.0: {}
 
