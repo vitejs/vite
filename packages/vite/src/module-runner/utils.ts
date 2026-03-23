@@ -1,21 +1,21 @@
 import * as pathe from 'pathe'
 import { isWindows } from '../shared/utils'
 
-export const decodeBase64: (base64: string) => string =
-  typeof Buffer === 'function' && typeof Buffer.from === 'function'
-    ? (str: string) => Buffer.from(str, 'base64').toString('utf-8')
-    : atou
+const textDecoder =
+  typeof TextDecoder !== 'undefined' ? new TextDecoder() : undefined
 
-function atou(str: string): string {
-  const binary = atob(str)
-
-  if (typeof TextDecoder !== 'undefined') {
-    const bytes = Uint8Array.from(binary, (c) => c.charCodeAt(0))
-    return new TextDecoder().decode(bytes)
+export const decodeBase64: (base64: string) => string = (() => {
+  if (typeof Buffer === 'function' && typeof Buffer.from === 'function') {
+    return (base64: string) => Buffer.from(base64, 'base64').toString('utf-8')
   }
 
-  return decodeURIComponent(escape(binary))
-}
+  if (textDecoder) {
+    return (base64: string) =>
+      textDecoder.decode(Uint8Array.from(atob(base64), (c) => c.charCodeAt(0)))
+  }
+
+  return (base64: string) => decodeURIComponent(escape(atob(base64)))
+})()
 
 const CHAR_FORWARD_SLASH = 47
 const CHAR_BACKWARD_SLASH = 92
