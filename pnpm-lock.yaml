@@ -181,7 +181,7 @@ importers:
         version: 1.1.1
       tsdown:
         specifier: ^0.21.4
-        version: 0.21.4(@vitejs/devtools@0.1.3(typescript@5.9.3)(vite@packages+vite)(vue@3.5.30(typescript@5.9.3)))(publint@0.3.18)(typescript@5.9.3)(vue-tsc@3.2.6(typescript@5.9.3))
+        version: 0.21.4(@vitejs/devtools@0.1.5(typescript@5.9.3)(vite@packages+vite)(vue@3.5.30(typescript@5.9.3)))(publint@0.3.18)(typescript@5.9.3)(vue-tsc@3.2.6(typescript@5.9.3))
 
   packages/plugin-legacy:
     dependencies:
@@ -230,7 +230,7 @@ importers:
         version: 1.1.1
       tsdown:
         specifier: ^0.21.4
-        version: 0.21.4(@vitejs/devtools@0.1.3(typescript@5.9.3)(vite@packages+vite)(vue@3.5.30(typescript@5.9.3)))(publint@0.3.18)(typescript@5.9.3)(vue-tsc@3.2.6(typescript@5.9.3))
+        version: 0.21.4(@vitejs/devtools@0.1.5(typescript@5.9.3)(vite@packages+vite)(vue@3.5.30(typescript@5.9.3)))(publint@0.3.18)(typescript@5.9.3)(vue-tsc@3.2.6(typescript@5.9.3))
       vite:
         specifier: workspace:*
         version: link:../vite
@@ -284,8 +284,8 @@ importers:
         specifier: ^1.2.1
         version: 1.2.1
       '@vitejs/devtools':
-        specifier: ^0.1.3
-        version: 0.1.3(typescript@5.9.3)(vite@packages+vite)(vue@3.5.30(typescript@5.9.3))
+        specifier: ^0.1.5
+        version: 0.1.5(typescript@5.9.3)(vite@packages+vite)(vue@3.5.30(typescript@5.9.3))
       '@vitest/utils':
         specifier: 4.1.0
         version: 4.1.0
@@ -741,8 +741,8 @@ importers:
         version: 3.5.30(typescript@5.9.3)
     devDependencies:
       '@vitejs/devtools':
-        specifier: ^0.1.3
-        version: 0.1.3(typescript@5.9.3)(vite@packages+vite)(vue@3.5.30(typescript@5.9.3))
+        specifier: ^0.1.5
+        version: 0.1.5(typescript@5.9.3)(vite@packages+vite)(vue@3.5.30(typescript@5.9.3))
       vite:
         specifier: workspace:*
         version: link:../../packages/vite
@@ -4039,24 +4039,24 @@ packages:
     resolution: {integrity: sha512-U/BJCltQSTFTHwaiCQQTQG3GonTbRoEewjV+OU2mMjcHLAoPOh6CP1SXA2XNmqiqI3c82nkRNJ7piZ14RqmTXw==}
     engines: {node: '>=14'}
 
-  '@vitejs/devtools-kit@0.1.3':
-    resolution: {integrity: sha512-nqHtYJ/qyo3lh1i9KwWcS1DWFCUkKZ5L0UWfWScSoxtyOIbFe/b4qKILBNViX8rvdJNsfVOU35kWefPQKtjpig==}
+  '@vitejs/devtools-kit@0.1.5':
+    resolution: {integrity: sha512-r44C4ZloCjbtYAnylQP4ImaoBNTunccXw2H1WNHSFcVZoGchlcNQOaDQxiQNBrPKzHhVrcgQMTDK8XzKIMJTxA==}
     peerDependencies:
       vite: workspace:*
 
-  '@vitejs/devtools-rolldown@0.1.3':
-    resolution: {integrity: sha512-Ag614GiPeAU3nQ+4YJWEbftV7CFH1a3dSrAYPCGp0J2NYCka+PXPHikvmRcA7XNP21bYIo2g51zGi7vVdbiqkA==}
+  '@vitejs/devtools-rolldown@0.1.5':
+    resolution: {integrity: sha512-bYDfi9PEOi+b3aP5klibS0nwVsRrb5C68p3CzV+O0ZvLwN77sZ214Q6GkqgliryUGVj6/WAsfyxaFkriw7kNnw==}
 
-  '@vitejs/devtools-rpc@0.1.3':
-    resolution: {integrity: sha512-7Y8IVE4AHOPVdUH2fp+lZHhZN3ts6tUOqrRSXfTko/1nLNlAd9ltKAiP0KunP3LnR+C8OKd/s61xhiQzNAEONA==}
+  '@vitejs/devtools-rpc@0.1.5':
+    resolution: {integrity: sha512-tInsiNSn+hd9ucP6xNC+YU5Z8efin+AhD5hfsLZQTW93+I7L3OMGQ1tP7+1Nsyl2ckyOBNur2CDE56V9cMYTow==}
     peerDependencies:
       ws: '*'
     peerDependenciesMeta:
       ws:
         optional: true
 
-  '@vitejs/devtools@0.1.3':
-    resolution: {integrity: sha512-Zj2JYLzROptlw6PTGNdoA60eHQKwaEBilHMDROP35+EeKseZDb8GZmlJCiIw03mI1qUh8XCrA0p8/LHz4N3Bhw==}
+  '@vitejs/devtools@0.1.5':
+    resolution: {integrity: sha512-awUrqSMIN0UNss4O+pqT4t2oF59sGT/IFdWvUtxxIozEKF7PoRvuwx632+yA6pBUpcX5lfb7GG/xEE7M1pbcyA==}
     hasBin: true
     peerDependencies:
       vite: workspace:*
@@ -5487,8 +5487,8 @@ packages:
     resolution: {integrity: sha512-5v6yZd4JK3eMI3FqqCouswVqwugaA9r4dNZB1wwcmrD02QkV5H0y7XBQW8QwQqEaZY1pM9aqORSORhJRdNK44Q==}
     engines: {node: '>=6.0'}
 
-  h3@1.15.6:
-    resolution: {integrity: sha512-oi15ESLW5LRthZ+qPCi5GNasY/gvynSKUQxgiovrY63bPAtG59wtM+LSrlcwvOHAXzGrXVLnI97brbkdPF9WoQ==}
+  h3@1.15.10:
+    resolution: {integrity: sha512-YzJeWSkDZxAhvmp8dexjRK5hxziRO7I9m0N53WhvYL5NiWfkUkzssVzY9jvGu0HBoLFW6+duYmNSn6MaZBCCtg==}
 
   handlebars@4.7.8:
     resolution: {integrity: sha512-vafaFqs8MZkRrSX7sFVUdo3ap/eNiLnb4IakshzvP56X5Nr1iGKAIqdX6tMlm6HcNRIkr6AxO5jFEoJzzpT8aQ==}
@@ -7219,8 +7219,8 @@ packages:
   strip-literal@3.1.0:
     resolution: {integrity: sha512-8r3mkIM/2+PpjHoOtiAW8Rg3jJLHaV7xPwG+YRGrv6FP0wwk/toTpATxWYOW0BKdWwl82VT2tFYi5DlROa0Mxg==}
 
-  structured-clone-es@1.0.0:
-    resolution: {integrity: sha512-FL8EeKFFyNQv5cMnXI31CIMCsFarSVI2bF0U0ImeNE3g/F1IvJQyqzOXxPBRXiwQfyBTlbNe88jh1jFW0O/jiQ==}
+  structured-clone-es@2.0.0:
+    resolution: {integrity: sha512-5UuAHmBLXYPCl22xWJrFuGmIhBKQzxISPVz6E7nmTmTcAOpUzlbjKJsRrCE4vADmMQ0dzeCnlWn9XufnAGf76Q==}
 
   stylus@0.64.0:
     resolution: {integrity: sha512-ZIdT8eUv8tegmqy1tTIdJv9We2DumkNZFdCF5mz/Kpq3OcTaxSuCAYZge6HKK2CmNC02G1eJig2RV7XTw5hQrA==}
@@ -7609,8 +7609,8 @@ packages:
     resolution: {integrity: sha512-pMZTvIkT1d+TFGvDOqodOclx0QWkkgi6Tdoa8gC8ffGAAqz9pzPTZWAybbsHHoED/ztMtkv/VoYTYyShUn81hA==}
     engines: {node: '>= 0.4.0'}
 
-  valibot@1.2.0:
-    resolution: {integrity: sha512-mm1rxUsmOxzrwnX5arGS+U4T25RdvpPjPN4yR0u9pUBov9+zGVtO84tif1eY4r6zWxVxu3KzIyknJy3rxfRZZg==}
+  valibot@1.3.1:
+    resolution: {integrity: sha512-sfdRir/QFM0JaF22hqTroPc5xy4DimuGQVKFrzF1YfGwaS1nJot3Y8VqMdLO2Lg27fMzat2yD3pY5PbAYO39Gg==}
     peerDependencies:
       typescript: '>=5'
     peerDependenciesMeta:
@@ -9970,30 +9970,30 @@ snapshots:
 
   '@vercel/detect-agent@1.2.1': {}
 
-  '@vitejs/devtools-kit@0.1.3(typescript@5.9.3)(vite@packages+vite)(ws@8.20.0)':
+  '@vitejs/devtools-kit@0.1.5(typescript@5.9.3)(vite@packages+vite)(ws@8.20.0)':
     dependencies:
-      '@vitejs/devtools-rpc': 0.1.3(typescript@5.9.3)(ws@8.20.0)
+      '@vitejs/devtools-rpc': 0.1.5(typescript@5.9.3)(ws@8.20.0)
       birpc: 4.0.0
-      immer: 11.1.4
+      ohash: 2.0.11
       vite: link:packages/vite
     transitivePeerDependencies:
       - typescript
       - ws
 
-  '@vitejs/devtools-rolldown@0.1.3(typescript@5.9.3)(vite@packages+vite)(vue@3.5.30(typescript@5.9.3))':
+  '@vitejs/devtools-rolldown@0.1.5(typescript@5.9.3)(vite@packages+vite)(vue@3.5.30(typescript@5.9.3))':
     dependencies:
       '@floating-ui/dom': 1.7.6
       '@pnpm/read-project-manifest': 1001.2.5
       '@rolldown/debug': 1.0.0-rc.10
-      '@vitejs/devtools-kit': 0.1.3(typescript@5.9.3)(vite@packages+vite)(ws@8.20.0)
-      '@vitejs/devtools-rpc': 0.1.3(typescript@5.9.3)(ws@8.20.0)
+      '@vitejs/devtools-kit': 0.1.5(typescript@5.9.3)(vite@packages+vite)(ws@8.20.0)
+      '@vitejs/devtools-rpc': 0.1.5(typescript@5.9.3)(ws@8.20.0)
       ansis: 4.2.0
       birpc: 4.0.0
       cac: 7.0.0
       d3-shape: 3.2.0
       diff: 8.0.3
       get-port-please: 3.2.0
-      h3: 1.15.6
+      h3: 1.15.10
       mlly: 1.8.2
       mrmime: 2.0.1
       ohash: 2.0.11
@@ -10002,7 +10002,7 @@ snapshots:
       publint: 0.3.18
       sirv: 3.0.2(patch_hash=c07c56eb72faea34341d465cde2314e89db472106ed378181e3447893af6bf95)
       split2: 4.2.0
-      structured-clone-es: 1.0.0
+      structured-clone-es: 2.0.0
       tinyglobby: 0.2.15
       unconfig: 7.5.0
       unstorage: 1.17.4
@@ -10035,26 +10035,26 @@ snapshots:
       - vite
       - vue
 
-  '@vitejs/devtools-rpc@0.1.3(typescript@5.9.3)(ws@8.20.0)':
+  '@vitejs/devtools-rpc@0.1.5(typescript@5.9.3)(ws@8.20.0)':
     dependencies:
       birpc: 4.0.0
       ohash: 2.0.11
       p-limit: 7.3.0
-      structured-clone-es: 1.0.0
-      valibot: 1.2.0(typescript@5.9.3)
+      structured-clone-es: 2.0.0
+      valibot: 1.3.1(typescript@5.9.3)
     optionalDependencies:
       ws: 8.20.0
     transitivePeerDependencies:
       - typescript
 
-  '@vitejs/devtools@0.1.3(typescript@5.9.3)(vite@packages+vite)(vue@3.5.30(typescript@5.9.3))':
+  '@vitejs/devtools@0.1.5(typescript@5.9.3)(vite@packages+vite)(vue@3.5.30(typescript@5.9.3))':
     dependencies:
-      '@vitejs/devtools-kit': 0.1.3(typescript@5.9.3)(vite@packages+vite)(ws@8.20.0)
-      '@vitejs/devtools-rolldown': 0.1.3(typescript@5.9.3)(vite@packages+vite)(vue@3.5.30(typescript@5.9.3))
-      '@vitejs/devtools-rpc': 0.1.3(typescript@5.9.3)(ws@8.20.0)
+      '@vitejs/devtools-kit': 0.1.5(typescript@5.9.3)(vite@packages+vite)(ws@8.20.0)
+      '@vitejs/devtools-rolldown': 0.1.5(typescript@5.9.3)(vite@packages+vite)(vue@3.5.30(typescript@5.9.3))
+      '@vitejs/devtools-rpc': 0.1.5(typescript@5.9.3)(ws@8.20.0)
       birpc: 4.0.0
       cac: 7.0.0
-      h3: 1.15.6
+      h3: 1.15.10
       immer: 11.1.4
       launch-editor: 2.13.2
       mlly: 1.8.2
@@ -11566,7 +11566,7 @@ snapshots:
       section-matter: 1.0.0
       strip-bom-string: 1.0.0
 
-  h3@1.15.6:
+  h3@1.15.10:
     dependencies:
       cookie-es: 1.2.2
       crossws: 0.3.5
@@ -13470,7 +13470,7 @@ snapshots:
     dependencies:
       js-tokens: 9.0.1
 
-  structured-clone-es@1.0.0: {}
+  structured-clone-es@2.0.0: {}
 
   stylus@0.64.0(ms@2.1.3):
     dependencies:
@@ -13623,7 +13623,7 @@ snapshots:
 
   ts-interface-checker@0.1.13: {}
 
-  tsdown@0.21.4(@vitejs/devtools@0.1.3(typescript@5.9.3)(vite@packages+vite)(vue@3.5.30(typescript@5.9.3)))(publint@0.3.18)(typescript@5.9.3)(vue-tsc@3.2.6(typescript@5.9.3)):
+  tsdown@0.21.4(@vitejs/devtools@0.1.5(typescript@5.9.3)(vite@packages+vite)(vue@3.5.30(typescript@5.9.3)))(publint@0.3.18)(typescript@5.9.3)(vue-tsc@3.2.6(typescript@5.9.3)):
     dependencies:
       ansis: 4.2.0
       cac: 7.0.0
@@ -13642,7 +13642,7 @@ snapshots:
       unconfig-core: 7.5.0
       unrun: 0.2.32
     optionalDependencies:
-      '@vitejs/devtools': 0.1.3(typescript@5.9.3)(vite@packages+vite)(vue@3.5.30(typescript@5.9.3))
+      '@vitejs/devtools': 0.1.5(typescript@5.9.3)(vite@packages+vite)(vue@3.5.30(typescript@5.9.3))
       publint: 0.3.18
       typescript: 5.9.3
     transitivePeerDependencies:
@@ -13818,7 +13818,7 @@ snapshots:
       anymatch: 3.1.3
       chokidar: 5.0.0
       destr: 2.0.5
-      h3: 1.15.6
+      h3: 1.15.10
       lru-cache: 11.2.5
       node-fetch-native: 1.6.7
       ofetch: 1.5.1
@@ -13843,7 +13843,7 @@ snapshots:
 
   utils-merge@1.0.1: {}
 
-  valibot@1.2.0(typescript@5.9.3):
+  valibot@1.3.1(typescript@5.9.3):
     optionalDependencies:
       typescript: 5.9.3
 
