@@ -1,3 +1,16 @@
+## <small>[8.0.2](https://github.com/vitejs/vite/compare/v8.0.1...v8.0.2) (2026-03-23)</small>
+### Features
+
+* update rolldown to 1.0.0-rc.11 ([#21998](https://github.com/vitejs/vite/issues/21998)) ([ff91c31](https://github.com/vitejs/vite/commit/ff91c319facd602dc5eea81ed7e7d79ae7dadb95))
+
+### Bug Fixes
+
+* **deps:** update all non-major dependencies ([#21988](https://github.com/vitejs/vite/issues/21988)) ([9b7d150](https://github.com/vitejs/vite/commit/9b7d15002a75474421bc5636238336d88c7fe2f3))
+
+### Miscellaneous Chores
+
+* **deps:** update dependency @vitejs/devtools to ^0.1.5 ([#21992](https://github.com/vitejs/vite/issues/21992)) ([b2dd65b](https://github.com/vitejs/vite/commit/b2dd65bf2f113719b72450f2e19696213fd9e255))
+
 ## <small>[8.0.1](https://github.com/vitejs/vite/compare/v8.0.0...v8.0.1) (2026-03-19)</small>
 ### Features
 
