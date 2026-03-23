@@ -80,14 +80,14 @@ function testPage(isNested: boolean) {
   })
 
   test('css', async () => {
-    expect(await getColor('h1')).toBe(isNested ? 'red' : 'blue')
-    expect(await getColor('p')).toBe('grey')
+    await expect.poll(() => getColor('h1')).toBe(isNested ? 'red' : 'blue')
+    await expect.poll(() => getColor('p')).toBe('grey')
   })
 
   if (isNested) {
     test('relative path in html asset', async () => {
-      expect(await page.textContent('.relative-js')).toMatch('hello')
-      expect(await getColor('.relative-css')).toMatch('red')
+      await expect.poll(() => page.textContent('.relative-js')).toMatch('hello')
+      await expect.poll(() => getColor('.relative-css')).toMatch('red')
     })
   }
 }
@@ -102,9 +102,11 @@ describe('main', () => {
   })
 
   test('external paths works with vite-ignore attribute', async () => {
-    expect(await page.textContent('.external-path')).toBe('works')
-    expect(await page.getAttribute('.external-path', 'vite-ignore')).toBe(null)
-    expect(await getColor('.external-path')).toBe('red')
+    await expect.poll(() => page.textContent('.external-path')).toBe('works')
+    await expect
+      .poll(() => page.getAttribute('.external-path', 'vite-ignore'))
+      .toBe(null)
+    await expect.poll(() => getColor('.external-path')).toBe('red')
     if (isServe) {
       expect(serverLogs).not.toEqual(
         expect.arrayContaining([
@@ -125,9 +127,9 @@ describe('main', () => {
   test.runIf(isBuild)(
     'external paths by rollupOptions.external works',
     async () => {
-      expect(await page.textContent('.external-path-by-rollup-options')).toBe(
-        'works',
-      )
+      await expect
+        .poll(() => page.textContent('.external-path-by-rollup-options'))
+        .toBe('works')
       expect(serverLogs).not.toEqual(
         expect.arrayContaining([expect.stringContaining('Could not load')]),
       )
@@ -205,20 +207,20 @@ describe.runIf(isBuild)('build', () => {
 
     test('execution order when inlined', async () => {
       await page.goto(viteTestUrl + '/inline/shared-1.html?v=1')
-      expect((await page.textContent('#output')).trim()).toBe(
-        'dep1 common dep2 dep3 shared',
-      )
+      await expect
+        .poll(async () => (await page.textContent('#output')).trim())
+        .toBe('dep1 common dep2 dep3 shared')
       await page.goto(viteTestUrl + '/inline/shared-2.html?v=1')
-      expect((await page.textContent('#output')).trim()).toBe(
-        'dep1 common dep2 dep3 shared',
-      )
+      await expect
+        .poll(async () => (await page.textContent('#output')).trim())
+        .toBe('dep1 common dep2 dep3 shared')
     })
 
     test('execution order when not inlined', async () => {
       await page.goto(viteTestUrl + '/inline/unique.html?v=1')
-      expect((await page.textContent('#output')).trim()).toBe(
-        'dep1 common dep2 unique',
-      )
+      await expect
+        .poll(async () => (await page.textContent('#output')).trim())
+        .toBe('dep1 common dep2 unique')
     })
   })
 })
@@ -269,7 +271,7 @@ describe('Unicode path', () => {
 describe('link with props', () => {
   test('separate links with different media props', async () => {
     await page.goto(viteTestUrl + '/link-props/index.html')
-    expect(await getColor('h1')).toBe('red')
+    await expect.poll(() => getColor('h1')).toBe('red')
   })
 })
 
@@ -356,11 +358,11 @@ describe.runIf(isServe)('invalid', () => {
 describe('Valid HTML', () => {
   test('valid HTML is parsed', async () => {
     await page.goto(viteTestUrl + '/valid.html')
-    expect(await page.textContent('#no-quotes-on-attr')).toBe(
-      'No quotes on Attr working',
-    )
+    await expect
+      .poll(() => page.textContent('#no-quotes-on-attr'))
+      .toBe('No quotes on Attr working')
 
-    expect(await getColor('#duplicated-attrs')).toBe('green')
+    await expect.poll(() => getColor('#duplicated-attrs')).toBe('green')
   })
 })
 
@@ -370,16 +372,20 @@ describe('env', () => {
   })
 
   test('env works', async () => {
-    expect(await page.textContent('.env')).toBe('bar')
-    expect(await page.textContent('.env-define')).toBe('5173')
-    expect(await page.textContent('.env-define-string')).toBe('string')
-    expect(await page.textContent('.env-define-object-string')).toBe(
-      '{ "foo": "bar" }',
-    )
-    expect(await page.textContent('.env-define-null-string')).toBe('null')
-    expect(await page.textContent('.env-bar')).toBeTruthy()
-    expect(await page.textContent('.env-prod')).toBe(isBuild + '')
-    expect(await page.textContent('.env-dev')).toBe(isServe + '')
+    await expect.poll(() => page.textContent('.env')).toBe('bar')
+    await expect.poll(() => page.textContent('.env-define')).toBe('5173')
+    await expect
+      .poll(() => page.textContent('.env-define-string'))
+      .toBe('string')
+    await expect
+      .poll(() => page.textContent('.env-define-object-string'))
+      .toBe('{ "foo": "bar" }')
+    await expect
+      .poll(() => page.textContent('.env-define-null-string'))
+      .toBe('null')
+    await expect.poll(() => page.textContent('.env-bar')).toBeTruthy()
+    await expect.poll(() => page.textContent('.env-prod')).toBe(isBuild + '')
+    await expect.poll(() => page.textContent('.env-dev')).toBe(isServe + '')
 
     const iconLink = await page.$('link[rel=icon]')
     expect(await iconLink.getAttribute('href')).toBe(
@@ -521,11 +527,11 @@ test('escape html attribute', async () => {
 
 test('invalidate inline proxy module on reload', async () => {
   await page.goto(`${viteTestUrl}/transform-inline-js`)
-  expect(await page.textContent('.test')).toContain('ok')
+  await expect.poll(() => page.textContent('.test')).toContain('ok')
   await page.reload()
-  expect(await page.textContent('.test')).toContain('ok')
+  await expect.poll(() => page.textContent('.test')).toContain('ok')
   await page.reload()
-  expect(await page.textContent('.test')).toContain('ok')
+  await expect.poll(() => page.textContent('.test')).toContain('ok')
 })
 
 test.runIf(isServe)(
