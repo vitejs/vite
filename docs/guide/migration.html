@@ -1,0 +1,17 @@
+<h2 id="experimental-min-chunk-size">output.experimentalMinChunkSize</h2>
+<p>In Vite v7, the <code>output.experimentalMinChunkSize</code> option was used to set the minimum chunk size. In Vite v8, this option has been <strong>deprecated</strong> in favor of <code>rolldownOptions.output.codeSplitting.minSize</code>.</p>
+<p>Example:</p>
+<pre><code>import { defineConfig } from 'vite';
+
+export default defineConfig({
+  build: {
+    rollupOptions: {
+      output: {
+        codeSplitting: {
+          minSize: 2000
+        }
+      }
+    }
+  }
+});
+</code></pre>
