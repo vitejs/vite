@@ -5,7 +5,9 @@ import {
   getColor,
   isBuild,
   isServe,
+  listAssets,
   page,
+  readFile,
   serverLogs,
   untilBrowserLogAfter,
   viteServer,
@@ -84,7 +86,8 @@ function testPage(isNested: boolean) {
       await expect.poll(() => getColor('h1')).toBe(isNested ? 'red' : 'blue')
       await expect.poll(() => getColor('p')).toBe('grey')
     } catch (e) {
-      throw new Error(await page.innerHTML('html'), { cause: e })
+      const assets = listAssets().map((a) => [a, readFile(a)])
+      throw new Error(JSON.stringify(assets), { cause: e })
     }
   })
 
