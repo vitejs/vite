@@ -4,7 +4,18 @@ import { isWindows } from '../shared/utils'
 export const decodeBase64: (base64: string) => string =
   typeof Buffer === 'function' && typeof Buffer.from === 'function'
     ? (str: string) => Buffer.from(str, 'base64').toString('utf-8')
-    : atob
+    : atou
+
+function atou(str: string): string {
+  const binary = atob(str)
+
+  if (typeof TextDecoder !== 'undefined') {
+    const bytes = Uint8Array.from(binary, (c) => c.charCodeAt(0))
+    return new TextDecoder().decode(bytes)
+  }
+
+  return decodeURIComponent(escape(binary))
+}
 
 const CHAR_FORWARD_SLASH = 47
 const CHAR_BACKWARD_SLASH = 92
