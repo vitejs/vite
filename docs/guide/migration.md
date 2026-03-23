@@ -100,16 +100,7 @@ Currently, the Oxc transformer does not support lowering native decorators as we
 
 :::: details Workaround for lowering native decorators
 
-You can use [Babel](https://babeljs.io/) or [SWC](https://swc.rs/) to lower native decorators for the time being. While SWC is faster than Babel, it does **not support the latest decorator spec** that esbuild supports.
-
-The decorator spec has been updated multiple times since it reached stage 3. The versions supported by each tool are:
-
-- `"2023-11"` (esbuild, TypeScript 5.4+ and Babel support this version)
-- `"2023-05"` (TypeScript 5.2+ supports this version)
-- `"2023-01"` (TypeScript 5.0+ supports this version)
-- `"2022-03"` (SWC supports this version)
-
-See the [Babel decorators versions guide](https://babeljs.io/docs/babel-plugin-proposal-decorators#version) for differences between each version.
+You can use [Babel](https://babeljs.io/) or [SWC](https://swc.rs/) to lower native decorators for the time being.
 
 **Using Babel:**
 
@@ -197,8 +188,7 @@ export default defineConfig({
         swc: {
           jsc: {
             parser: { decorators: true, decoratorsBeforeExport: true },
-            // NOTE: SWC doesn't support the '2023-11' version yet.
-            transform: { decoratorVersion: '2022-03' },
+            transform: { decoratorVersion: '2023-11' },
           },
         },
       }),
