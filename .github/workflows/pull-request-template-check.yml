@@ -92,6 +92,8 @@ jobs:
                   .addHeading('Pull Request Template Check')
                   .addCodeBlock(agentText, 'json')
                   .write();
+              } else {
+                core.setFailed('No agent output found in response');
               }
             } catch (e) {
               core.setFailed(`Failed to write summary: ${e.message}`);

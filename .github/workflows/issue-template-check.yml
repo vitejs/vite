@@ -133,6 +133,8 @@ jobs:
                   .addHeading(`Issue Template Check (${templateType})`)
                   .addCodeBlock(agentText, 'json')
                   .write();
+              } else {
+                core.setFailed('No agent output found in response');
               }
             } catch (e) {
               core.setFailed(`Failed to write summary: ${e.message}`);
