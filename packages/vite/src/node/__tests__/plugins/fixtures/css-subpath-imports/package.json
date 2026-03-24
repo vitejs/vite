@@ -1,0 +1,7 @@
+{
+  "name": "app",
+  "private": true,
+  "imports": {
+    "#src/*": "./app/*"
+  }
+}

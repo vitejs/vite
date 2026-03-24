@@ -1,9 +1,10 @@
 import path from 'node:path'
-import { describe, expect, test } from 'vitest'
+import { describe, expect, onTestFinished, test } from 'vitest'
 import type { InternalModuleFormat } from 'rolldown'
 import MagicString from 'magic-string'
 import { resolveConfig } from '../../config'
 import type { InlineConfig } from '../../config'
+import { createServer } from '../../server'
 import {
   convertTargets,
   cssPlugin,
@@ -418,6 +419,25 @@ describe('preprocessCSS', () => {
       }
       "
     `)
+  })
+
+  test('resolves css url() subpath imports from the nearest package.json', async () => {
+    const root = path.join(dirname, 'fixtures/css-subpath-imports')
+    const server = await createServer({
+      configFile: false,
+      root,
+      logLevel: 'error',
+      server: {
+        middlewareMode: true,
+        ws: false,
+      },
+    })
+    onTestFinished(() => server.close())
+
+    const result = await server.transformRequest('/packages/pkg/src/style.css')
+
+    expect(result?.code).toContain('/packages/pkg/src/logo.png')
+    expect(result?.code).toContain('#fragment')
   })
 })
 

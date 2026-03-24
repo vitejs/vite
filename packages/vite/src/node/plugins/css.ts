@@ -24,6 +24,7 @@ import type Less from 'less'
 import type { RawSourceMap } from '@jridgewell/remapping'
 import { WorkerWithFallback } from 'artichokie'
 import { globSync } from 'tinyglobby'
+import { imports as resolvePackageImports } from 'resolve.exports'
 import type {
   TransformAttributeResult as LightningCssTransformAttributeResult,
   TransformResult as LightningCssTransformResult,
@@ -83,7 +84,7 @@ import {
   urlRE,
 } from '../utils'
 import type { Logger } from '../logger'
-import { cleanUrl, isWindows, slash } from '../../shared/utils'
+import { cleanUrl, isWindows, slash, splitFileAndPostfix } from '../../shared/utils'
 import { NULL_BYTE_PLACEHOLDER } from '../../shared/constants'
 import { createBackCompatIdResolver } from '../idResolver'
 import type { ResolveIdFn } from '../idResolver'
@@ -92,7 +93,7 @@ import type { TransformPluginContext } from '../server/pluginContainer'
 import { searchForWorkspaceRoot } from '../server/searchRoot'
 import { type DevEnvironment } from '..'
 import type { PackageCache } from '../packages'
-import { findNearestMainPackageData } from '../packages'
+import { findNearestMainPackageData, findNearestPackageData } from '../packages'
 import { nodeResolveWithVite } from '../nodeResolve'
 import { addToHTMLProxyTransformResult } from './html'
 import {
@@ -305,6 +306,35 @@ export function cssPlugin(config: ResolvedConfig): Plugin {
 
   let preprocessorWorkerController: PreprocessorWorkerController | undefined
 
+  const resolveCssSubpathImport = (url: string, importer?: string) => {
+    if (!importer || !url.startsWith('#')) return
+
+    const basedir = path.dirname(importer)
+    const pkgData = findNearestPackageData(basedir, config.packageCache)
+    if (!pkgData) return
+
+    let { file: idWithoutPostfix, postfix } = splitFileAndPostfix(url.slice(1))
+    idWithoutPostfix = `#${idWithoutPostfix}`
+
+    let importsPath: string | undefined
+    try {
+      const conditions = config.resolve.conditions
+        .filter((condition) => condition !== DEV_PROD_CONDITION)
+        .concat(config.isProduction ? 'production' : 'development', 'import')
+      importsPath = resolvePackageImports(pkgData.data, idWithoutPostfix, {
+        conditions,
+        unsafe: true,
+      })?.[0]
+    } catch {
+      return
+    }
+
+    if (!importsPath || importsPath[0] !== '.') return
+
+    const absolutePath = path.join(pkgData.dir, importsPath)
+    return fs.existsSync(cleanUrl(absolutePath)) ? absolutePath + postfix : undefined
+  }
+
   // warm up cache for resolved postcss config
   if (config.css.transformer !== 'lightningcss') {
     resolvePostcssConfig(config).catch(() => {
@@ -388,10 +418,15 @@ export function cssPlugin(config: ResolvedConfig): Plugin {
               return [joinUrlSegments(base, decodedUrl), undefined]
             }
           }
-          const [id, fragment] = decodedUrl.split('#')
-          let resolved = await resolveUrl(id, importer)
+          let resolved =
+            decodedUrl[0] === '#'
+              ? resolveCssSubpathImport(decodedUrl, importer)
+              : await (async () => {
+                  const { file, postfix } = splitFileAndPostfix(decodedUrl)
+                  const resolved = await resolveUrl(file, importer)
+                  return resolved ? resolved + postfix : undefined
+                })()
           if (resolved) {
-            if (fragment) resolved += '#' + fragment
             let url = await fileToUrl(this, resolved)
             // Inherit HMR timestamp if this asset was invalidated
             if (!url.startsWith('data:') && this.environment.mode === 'dev') {
@@ -404,6 +439,10 @@ export function cssPlugin(config: ResolvedConfig): Plugin {
               }
             }
             return [url, cleanUrl(resolved)]
+          }
+          if (decodedUrl[0] === '#') {
+            // Unresolved leading `#` values are treated as plain URL fragments.
+            return [url, undefined]
           }
           if (config.command === 'build') {
             const isExternal = config.build.rollupOptions.external
@@ -2125,7 +2164,6 @@ function skipUrlReplacer(unquotedUrl: string) {
   return (
     isExternalUrl(unquotedUrl) ||
     isDataUrl(unquotedUrl) ||
-    unquotedUrl[0] === '#' ||
     functionCallRE.test(unquotedUrl) ||
     // skip if it is already a placeholder
     unquotedUrl.startsWith('__VITE_ASSET__') ||
