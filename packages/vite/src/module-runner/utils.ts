@@ -1,20 +1,15 @@
 import * as pathe from 'pathe'
 import { isWindows } from '../shared/utils'
 
-const textDecoder =
-  typeof TextDecoder !== 'undefined' ? new TextDecoder() : undefined
+const textDecoder = new TextDecoder()
 
 export const decodeBase64: (base64: string) => string = (() => {
   if (typeof Buffer === 'function' && typeof Buffer.from === 'function') {
     return (base64: string) => Buffer.from(base64, 'base64').toString('utf-8')
   }
 
-  if (textDecoder) {
-    return (base64: string) =>
-      textDecoder.decode(Uint8Array.from(atob(base64), (c) => c.charCodeAt(0)))
-  }
-
-  return (base64: string) => decodeURIComponent(escape(atob(base64)))
+  return (base64: string) =>
+    textDecoder.decode(Uint8Array.from(atob(base64), (c) => c.charCodeAt(0)))
 })()
 
 const CHAR_FORWARD_SLASH = 47
