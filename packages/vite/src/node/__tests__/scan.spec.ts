@@ -1,6 +1,12 @@
 import path from 'node:path'
 import { describe, expect, test } from 'vitest'
-import { commentRE, importsRE, scriptRE } from '../optimizer/scan'
+import {
+  commentRE,
+  devToScanEnvironment,
+  importsRE,
+  scanImports,
+  scriptRE,
+} from '../optimizer/scan'
 import { multilineCommentsRE, singlelineCommentsRE } from '../utils'
 import { createServer, createServerModuleRunner } from '..'
 
@@ -167,4 +173,26 @@ test('scan jsx-runtime', async (ctx) => {
   const mod2 = await runner.import('./entry-jsx.js')
   expect((globalThis as any).__test_scan_jsx_runtime).toBe(1)
   expect(mod1).toBe(mod2)
+})
+
+test('scan import.meta.glob package imports patterns', async (ctx) => {
+  const server = await createServer({
+    configFile: false,
+    logLevel: 'error',
+    root: path.join(import.meta.dirname, 'fixtures', 'scan-subpath-import-glob'),
+    optimizeDeps: {
+      entries: ['./index.html'],
+      force: true,
+      noDiscovery: false,
+    },
+  })
+
+  ctx.onTestFinished(() => server.close())
+
+  const { cancel, result } = scanImports(
+    devToScanEnvironment(server.environments.client),
+  )
+  ctx.onTestFinished(cancel)
+
+  await expect(result).resolves.toEqual({ deps: {}, missing: {} })
 })
