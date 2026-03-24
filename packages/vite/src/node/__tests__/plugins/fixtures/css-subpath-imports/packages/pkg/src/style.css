@@ -1,2 +1,6 @@
-.logo { background: url("#src/logo.png"); }
-.mask { mask-image: url("#fragment"); }
+.logo {
+  background: url('#src/logo.png');
+}
+.mask {
+  mask-image: url('#fragment');
+}

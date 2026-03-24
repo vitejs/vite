@@ -84,7 +84,12 @@ import {
   urlRE,
 } from '../utils'
 import type { Logger } from '../logger'
-import { cleanUrl, isWindows, slash, splitFileAndPostfix } from '../../shared/utils'
+import {
+  cleanUrl,
+  isWindows,
+  slash,
+  splitFileAndPostfix,
+} from '../../shared/utils'
 import { NULL_BYTE_PLACEHOLDER } from '../../shared/constants'
 import { createBackCompatIdResolver } from '../idResolver'
 import type { ResolveIdFn } from '../idResolver'
@@ -332,7 +337,9 @@ export function cssPlugin(config: ResolvedConfig): Plugin {
     if (!importsPath || importsPath[0] !== '.') return
 
     const absolutePath = path.join(pkgData.dir, importsPath)
-    return fs.existsSync(cleanUrl(absolutePath)) ? absolutePath + postfix : undefined
+    return fs.existsSync(cleanUrl(absolutePath))
+      ? absolutePath + postfix
+      : undefined
   }
 
   // warm up cache for resolved postcss config

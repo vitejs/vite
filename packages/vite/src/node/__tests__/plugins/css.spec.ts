@@ -435,9 +435,11 @@ describe('preprocessCSS', () => {
     onTestFinished(() => server.close())
 
     const result = await server.transformRequest('/packages/pkg/src/style.css')
+    const normalizedCode = result?.code.replaceAll('\\', '/')
 
-    expect(result?.code).toContain('/packages/pkg/src/logo.png')
-    expect(result?.code).toContain('#fragment')
+    expect(normalizedCode).toContain('/packages/pkg/src/logo.png')
+    expect(normalizedCode).not.toContain('/app/logo.png')
+    expect(normalizedCode).toContain('#fragment')
   })
 })
 
