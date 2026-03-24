@@ -418,7 +418,7 @@ export function cssPlugin(config: ResolvedConfig): Plugin {
               return [joinUrlSegments(base, decodedUrl), undefined]
             }
           }
-          let resolved =
+          const resolved =
             decodedUrl[0] === '#'
               ? resolveCssSubpathImport(decodedUrl, importer)
               : await (async () => {
@@ -1401,7 +1401,7 @@ async function compileCSSPreprocessors(
     environment.getTopLevelConfig(),
   )
   const opts = {
-    ...((preprocessorOptions && preprocessorOptions[lang]) || {}),
+    ...(preprocessorOptions && preprocessorOptions[lang]),
     // important: set this for relative import resolving
     filename: cleanUrl(id),
     enableSourcemap: devSourcemap ?? false,
