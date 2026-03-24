@@ -179,7 +179,11 @@ test('scan import.meta.glob package imports patterns', async (ctx) => {
   const server = await createServer({
     configFile: false,
     logLevel: 'error',
-    root: path.join(import.meta.dirname, 'fixtures', 'scan-subpath-import-glob'),
+    root: path.join(
+      import.meta.dirname,
+      'fixtures',
+      'scan-subpath-import-glob',
+    ),
     optimizeDeps: {
       entries: ['./index.html'],
       force: true,
