@@ -9,6 +9,7 @@ export default defineConfig({
         main: path.resolve(import.meta.dirname, 'src/index.html'),
       },
     },
+    outDir: 'dist/main',
   },
   server: {
     fs: {
