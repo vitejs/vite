@@ -520,8 +520,16 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
           const isDynamicImport = dynamicIndex > -1
 
           // strip import attributes as we can process them ourselves
-          if (!isDynamicImport && attributeIndex > -1) {
-            str().remove(end + 1, expEnd)
+          if (attributeIndex > -1) {
+            if (isDynamicImport) {
+              // For dynamic imports, remove the second argument (import options)
+              // e.g. import('./foo.json', { with: { type: 'json' } })
+              //                         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+              // `end` is after the specifier string, `expEnd` is after the closing `)`
+              str().remove(end, expEnd - 1)
+            } else {
+              str().remove(end + 1, expEnd)
+            }
           }
 
           // static import or valid string in dynamic import

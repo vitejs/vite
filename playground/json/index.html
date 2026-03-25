@@ -9,6 +9,7 @@
 <h2>Dynamic Import</h2>
 <pre class="dynamic"></pre>
 <pre class="dynamic-named"></pre>
+<pre class="dynamic-with-attributes"></pre>
 
 <h2>fetch</h2>
 <pre class="fetch"></pre>
@@ -44,6 +45,10 @@
   import('/test.json').then((mod) => {
     text('.dynamic', JSON.stringify(mod.default))
     text('.dynamic-named', mod.hello)
+  })
+
+  import('/test.json', { with: { type: 'json' } }).then((mod) => {
+    text('.dynamic-with-attributes', JSON.stringify(mod.default))
   })
 
   fetch(import.meta.env.DEV ? '/test.json' : '/public.json')
