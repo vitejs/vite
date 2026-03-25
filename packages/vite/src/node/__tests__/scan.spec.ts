@@ -185,12 +185,11 @@ test('scan import.meta.glob package imports patterns', async (ctx) => {
       'scan-subpath-import-glob',
     ),
     optimizeDeps: {
-      entries: ['./index.html'],
+      entries: ['./entry.ts'],
       force: true,
       noDiscovery: false,
     },
   })
-
   ctx.onTestFinished(() => server.close())
 
   const { cancel, result } = scanImports(
