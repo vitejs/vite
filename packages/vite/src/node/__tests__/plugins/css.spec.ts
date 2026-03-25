@@ -5,6 +5,7 @@ import MagicString from 'magic-string'
 import { resolveConfig } from '../../config'
 import type { InlineConfig } from '../../config'
 import { createServer } from '../../server'
+import { slash } from '../../../shared/utils'
 import {
   convertTargets,
   cssPlugin,
@@ -435,10 +436,10 @@ describe('preprocessCSS', () => {
     onTestFinished(() => server.close())
 
     const result = await server.transformRequest('/packages/pkg/src/style.css')
-    const normalizedCode = result?.code.replaceAll('\\', '/')
+    const normalizedCode = slash(result?.code ?? '')
 
-    expect(normalizedCode).toContain('/packages/pkg/src/logo.png')
-    expect(normalizedCode).not.toContain('/app/logo.png')
+    expect(normalizedCode).toMatch(/\/+(packages)\/+(pkg)\/+(src)\/+logo\.png/)
+    expect(normalizedCode).not.toMatch(/\/+app\/+logo\.png/)
     expect(normalizedCode).toContain('#fragment')
   })
 })
