@@ -607,6 +607,15 @@ function rolldownScanPlugin(
               return externalUnlessEntry({ path: id })
             } else if (isScannable(resolved, optimizeDepsOptions.extensions)) {
               // linked package, keep crawling
+              // If it's a workspace package (not the app itself), add to depImports
+              // for prebundling so users don't need to manually add to optimizeDeps.include
+              if (
+                !entries.some((entry) =>
+                  resolved!.startsWith(path.dirname(entry) + path.sep),
+                )
+              ) {
+                depImports[id] = resolved
+              }
               return path.resolve(resolved)
             } else {
               return externalUnlessEntry({ path: id })

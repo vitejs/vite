@@ -109,7 +109,7 @@ export const JS_TYPES_RE: RegExp = /\.(?:j|t)sx?$|\.mjs$/
 export const CSS_LANGS_RE: RegExp =
   /\.(css|less|sass|scss|styl|stylus|pcss|postcss|sss)(?:$|\?)/
 
-export const OPTIMIZABLE_ENTRY_RE: RegExp = /\.[cm]?[jt]s$/
+export const OPTIMIZABLE_ENTRY_RE: RegExp = /\.[cm]?[jt]sx?$/
 
 export const SPECIAL_QUERY_RE: RegExp = /[?&](?:worker|sharedworker|raw|url)\b/
 
