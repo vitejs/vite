@@ -161,6 +161,74 @@ describe('getCssFilesForChunk', () => {
     ])
   })
 
+  test('cached chunk does not lose CSS that was already in seenCss during first entry (#21298)', () => {
+    // entry  → chunk1 (chunk1.css, chunk-shared.css)
+    //        → chunk2 (chunk2.css, chunk-shared.css)
+    // entry2 → chunk2
+    const chunk1 = createChunk(
+      'chunk1.js',
+      [],
+      ['chunk1.css', 'chunk-shared.css'],
+    )
+    const chunk2 = createChunk(
+      'chunk2.js',
+      [],
+      ['chunk2.css', 'chunk-shared.css'],
+    )
+    const entry = createChunk(
+      'entry.js',
+      ['chunk1.js', 'chunk2.js'],
+      ['entry.css'],
+    )
+    const entry2 = createChunk('entry2.js', ['chunk2.js'], ['entry2.css'])
+    const bundle = createBundle(entry, entry2, chunk1, chunk2)
+    const cache = new Map<OutputChunk, string[]>()
+
+    expect(getCssFilesForChunk(entry, bundle, cache)).toStrictEqual([
+      'chunk1.css',
+      'chunk-shared.css',
+      'chunk2.css',
+      'entry.css',
+    ])
+    expect(getCssFilesForChunk(entry2, bundle, cache)).toStrictEqual([
+      'chunk2.css',
+      'chunk-shared.css',
+      'entry2.css',
+    ])
+  })
+
+  test('dirty leaf chunk CSS is not lost through cached parent (#21298 edge case)', () => {
+    //  entry1 → other (shared.css)
+    //         → mid   → leaf (shared.css, leaf.css)
+    //  entry2 → mid   → leaf (shared.css, leaf.css)
+    const leaf = createChunk('leaf.js', [], ['shared.css', 'leaf.css'])
+    const mid = createChunk('mid.js', ['leaf.js'], ['mid.css'])
+    const other = createChunk('other.js', [], ['shared.css'])
+    const entry1 = createChunk(
+      'entry1.js',
+      ['other.js', 'mid.js'],
+      ['entry1.css'],
+    )
+    const entry2 = createChunk('entry2.js', ['mid.js'], ['entry2.css'])
+    const bundle = createBundle(entry1, entry2, other, mid, leaf)
+    const cache = new Map<OutputChunk, string[]>()
+
+    expect(getCssFilesForChunk(entry1, bundle, cache)).toStrictEqual([
+      'shared.css',
+      'leaf.css',
+      'mid.css',
+      'entry1.css',
+    ])
+    // entry2 must still get shared.css via leaf, even though mid's cache
+    // was built while shared.css was already seen
+    expect(getCssFilesForChunk(entry2, bundle, cache)).toStrictEqual([
+      'shared.css',
+      'leaf.css',
+      'mid.css',
+      'entry2.css',
+    ])
+  })
+
   test('circular imports do not cause infinite loop', () => {
     const a = createChunk('a.js', ['b.js'], ['a.css'])
     const b = createChunk('b.js', ['a.js'], ['b.css'])
