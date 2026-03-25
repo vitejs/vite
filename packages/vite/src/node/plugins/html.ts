@@ -370,31 +370,40 @@ export function getCssFilesForChunk(
     return additionals
   }
 
-  const files: string[] = []
+  // Collect all CSS from imports (unfiltered for caching, filtered for return)
+  const allFiles: string[] = []
+  const filteredFiles: string[] = []
   chunk.imports.forEach((file) => {
     const importee = bundle[file]
     if (importee?.type === 'chunk') {
-      files.push(
-        ...getCssFilesForChunk(
-          importee,
-          bundle,
-          analyzedImportedCssFiles,
-          seenChunks,
-          seenCss,
-        ),
+      const importeeCss = getCssFilesForChunk(
+        importee,
+        bundle,
+        analyzedImportedCssFiles,
+        seenChunks,
+        seenCss,
       )
+      filteredFiles.push(...importeeCss)
+      // For cache: use the importee's full cached list
+      if (analyzedImportedCssFiles.has(importee)) {
+        allFiles.push(...analyzedImportedCssFiles.get(importee)!)
+      } else {
+        allFiles.push(...importeeCss)
+      }
     }
   })
-  analyzedImportedCssFiles.set(chunk, files)
 
   chunk.viteMetadata!.importedCss.forEach((file) => {
+    allFiles.push(file)
     if (!seenCss.has(file)) {
       seenCss.add(file)
-      files.push(file)
+      filteredFiles.push(file)
     }
   })
 
-  return files
+  analyzedImportedCssFiles.set(chunk, unique(allFiles))
+
+  return filteredFiles
 }
 
 /**
