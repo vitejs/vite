@@ -2,7 +2,7 @@
   "semi": false,
   "singleQuote": true,
   "printWidth": 80,
-  "experimentalSortPackageJson": false,
+  "sortPackageJson": false,
   "overrides": [
     {
       "files": ["*.json5"],
