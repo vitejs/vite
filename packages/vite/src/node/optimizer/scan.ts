@@ -364,7 +364,7 @@ function rolldownScanPlugin(
     const key = JSON.stringify([
       id,
       importer && path.dirname(importer),
-      options?.custom ?? null,
+      options,
     ])
     if (seen.has(key)) {
       return seen.get(key)
