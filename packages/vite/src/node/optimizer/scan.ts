@@ -348,19 +348,28 @@ function rolldownScanPlugin(
   async function resolveId(
     id: string,
     importer?: string,
+    options?: Parameters<EnvironmentPluginContainer['resolveId']>[2],
   ): Promise<PartialResolvedId | null> {
     return environment.pluginContainer.resolveId(
       id,
       importer && normalizePath(importer),
-      { scan: true },
+      { scan: true, ...options },
     )
   }
-  const resolve = async (id: string, importer?: string) => {
-    const key = id + (importer && path.dirname(importer))
+  const resolve = async (
+    id: string,
+    importer?: string,
+    options?: Parameters<typeof resolveId>[2],
+  ) => {
+    const key = JSON.stringify([
+      id,
+      importer && path.dirname(importer),
+      options,
+    ])
     if (seen.has(key)) {
       return seen.get(key)
     }
-    const resolved = await resolveId(id, importer)
+    const resolved = await resolveId(id, importer, options)
     const res = resolved?.id
     seen.set(key, res)
     return res
