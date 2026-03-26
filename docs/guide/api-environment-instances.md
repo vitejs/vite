@@ -85,6 +85,18 @@ class DevEnvironment {
    * so the modules are already processed when they are requested.
    */
   async warmupRequest(url: string): Promise<void>
+
+  /**
+   * Called by the module runner to retrieve information about the specified
+   * module. Internally calls `transformRequest` and wraps the result in the
+   * format that the module runner understands.
+   * This method is not meant to be called manually.
+   */
+  async fetchModule(
+    id: string,
+    importer?: string,
+    options?: FetchFunctionOptions,
+  ): Promise<FetchResult>
 }
 ```
 
