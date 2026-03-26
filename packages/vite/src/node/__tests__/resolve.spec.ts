@@ -1,4 +1,6 @@
+import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs'
 import { join } from 'node:path'
+import { tmpdir } from 'node:os'
 import { describe, expect, onTestFinished, test, vi } from 'vitest'
 import { createServer } from '../server'
 import { createServerModuleRunner } from '../ssr/runtime/serverModuleRunner'
@@ -52,6 +54,54 @@ describe('import and resolveId', () => {
       'dir/index.default.js',
       expect.stringContaining('dir/index.module.js'),
     ])
+  })
+})
+
+describe('browser field', () => {
+  test('preserves relative ids for browser:false mappings', async () => {
+    const root = mkdtempSync(join(tmpdir(), 'vite-browser-field-'))
+    const pkgDir = join(root, 'node_modules', 'object-inspect')
+    mkdirSync(pkgDir, { recursive: true })
+    writeFileSync(
+      join(pkgDir, 'package.json'),
+      JSON.stringify(
+        {
+          name: 'object-inspect',
+          version: '1.0.0',
+          main: 'index.js',
+          browser: {
+            './util.inspect.js': false,
+          },
+        },
+        null,
+        2,
+      ),
+    )
+    writeFileSync(
+      join(pkgDir, 'index.js'),
+      "var utilInspect = require('./util.inspect');\nmodule.exports = utilInspect;\n",
+    )
+
+    const server = await createServer({
+      configFile: false,
+      root,
+      logLevel: 'error',
+      server: {
+        middlewareMode: true,
+        ws: false,
+      },
+    })
+    onTestFinished(() => {
+      server.close()
+      rmSync(root, { recursive: true, force: true })
+    })
+
+    const resolved = await server.environments.client.pluginContainer.resolveId(
+      './util.inspect',
+      join(pkgDir, 'index.js'),
+    )
+
+    expect(resolved?.id).toBe('__vite-browser-external:./util.inspect')
   })
 })
 

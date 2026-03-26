@@ -446,6 +446,19 @@ function optimizerResolvePlugin(
             const basedir = importer ? path.dirname(importer) : root
             const fsPath = path.resolve(basedir, id)
             // handle browser field mapping for relative imports
+            if (options.mainFields.includes('browser')) {
+              const pkgData = findNearestPackageData(basedir, options.packageCache)
+              const browserField = pkgData?.data.browser
+              if (pkgData && isObject(browserField)) {
+                const mapped = mapWithBrowserField(
+                  `./${path.relative(pkgData.dir, fsPath)}`,
+                  browserField,
+                )
+                if (mapped === false) {
+                  return `${browserExternalId}:${id}`
+                }
+              }
+            }
 
             const normalizedFsPath = normalizePath(fsPath)
 
@@ -1087,8 +1100,9 @@ function resolveDeepImport(
     if (mapped) {
       relativeId = mapped + postfix
     } else if (mapped === false) {
-      setResolvedCache(id, browserExternalId, options)
-      return browserExternalId
+      const browserExternal = `${browserExternalId}:${id}`
+      setResolvedCache(id, browserExternal, options)
+      return browserExternal
     }
   }
 
