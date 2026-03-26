@@ -9,6 +9,9 @@
 <h2>Fallback works</h2>
 <p class="fallback"></p>
 
+<h2>Import using # prefixed path</h2>
+<p class="hash"></p>
+
 <h2>Nested tsconfig.json & references / include works</h2>
 <p class="nested-a"></p>
 <p class="nested-b"></p>
@@ -26,6 +29,9 @@
 
   import fallback from '@fallback/fallback'
   text('.fallback', fallback)
+
+  import hash from './src/hash.ts'
+  text('.hash', hash)
 
   import { valueA, valueB } from './src/nested/index.ts'
   text('.nested-a', valueA)
