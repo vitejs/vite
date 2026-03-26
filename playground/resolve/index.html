@@ -140,9 +140,6 @@
 <h2>Resolve browser field even if module field exists</h2>
 <p class="browser-module1">fail</p>
 
-<h2>Don't resolve to the `module` field if the importer is a `require` call</h2>
-<p class="require-pkg-with-module-field">fail</p>
-
 <h2>CSS Entry</h2>
 <p class="css"></p>
 
@@ -361,9 +358,6 @@
 
   import browserModule1 from '@vitejs/test-resolve-browser-module-field1'
   text('.browser-module1', browserModule1)
-
-  import { msg as requireButWithModuleFieldMsg } from '@vitejs/test-require-pkg-with-module-field'
-  text('.require-pkg-with-module-field', requireButWithModuleFieldMsg)
 
   import { msg as customExtMsg } from './custom-ext'
   text('.custom-ext', customExtMsg)

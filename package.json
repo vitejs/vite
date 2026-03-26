@@ -37,7 +37,8 @@
     "dev": "pnpm -r --parallel --filter='./packages/*' run dev",
     "release": "tsx scripts/release.ts",
     "ci-publish": "tsx scripts/publishCI.ts",
-    "ci-docs": "pnpm build && pnpm docs-build"
+    "ci-docs": "pnpm build && pnpm docs-build",
+    "merge-changelog": "tsx scripts/mergeChangelog.ts"
   },
   "devDependencies": {
     "@eslint/js": "^9.39.4",
@@ -54,23 +55,23 @@
     "@types/ws": "^8.18.1",
     "@vitejs/release-scripts": "^1.6.0",
     "eslint": "^9.39.4",
-    "eslint-plugin-import-x": "^4.16.1",
+    "eslint-plugin-import-x": "^4.16.2",
     "eslint-plugin-n": "^17.24.0",
     "eslint-plugin-regexp": "^3.1.0",
     "execa": "^9.6.1",
     "globals": "^17.4.0",
-    "lint-staged": "^16.3.2",
+    "lint-staged": "^16.4.0",
     "picocolors": "^1.1.1",
     "playwright-chromium": "^1.58.2",
     "prettier": "3.8.1",
-    "rolldown": "1.0.0-rc.8",
+    "rolldown": "1.0.0-rc.12",
     "rollup": "^4.59.0",
     "simple-git-hooks": "^2.13.1",
     "tsx": "^4.21.0",
     "typescript": "~5.9.3",
-    "typescript-eslint": "^8.56.1",
+    "typescript-eslint": "^8.57.1",
     "vite": "workspace:*",
-    "vitest": "^4.0.18"
+    "vitest": "^4.1.0"
   },
   "simple-git-hooks": {
     "pre-commit": "pnpm exec lint-staged --concurrent false"
@@ -89,7 +90,7 @@
       "eslint --cache --fix --concurrency auto"
     ]
   },
-  "packageManager": "pnpm@10.31.0",
+  "packageManager": "pnpm@10.32.1",
   "stackblitz": {
     "startCommand": "pnpm --filter='./packages/vite' run dev"
   }
