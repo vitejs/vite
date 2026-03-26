@@ -1,6 +1,6 @@
 {
   "name": "vite",
-  "version": "8.0.1",
+  "version": "8.0.3",
   "type": "module",
   "license": "MIT",
   "author": "Evan You",
@@ -74,16 +74,16 @@
   "//": "READ CONTRIBUTING.md to understand what to put under deps vs. devDeps!",
   "dependencies": {
     "lightningcss": "^1.32.0",
-    "picomatch": "^4.0.3",
+    "picomatch": "^4.0.4",
     "postcss": "^8.5.8",
-    "rolldown": "1.0.0-rc.10",
+    "rolldown": "1.0.0-rc.12",
     "tinyglobby": "^0.2.15"
   },
   "optionalDependencies": {
     "fsevents": "~2.3.3"
   },
   "devDependencies": {
-    "@babel/parser": "^7.29.0",
+    "@babel/parser": "^7.29.2",
     "@jridgewell/remapping": "^2.3.5",
     "@jridgewell/trace-mapping": "^0.3.31",
     "@polka/compression": "^1.0.0-next.25",
@@ -94,9 +94,9 @@
     "@types/escape-html": "^1.0.4",
     "@types/pnpapi": "^0.0.5",
     "@vitest/utils": "4.1.0",
-    "@vitejs/devtools": "^0.1.0",
+    "@vitejs/devtools": "^0.1.5",
     "artichokie": "^0.4.2",
-    "baseline-browser-mapping": "^2.10.8",
+    "baseline-browser-mapping": "^2.10.10",
     "cac": "^7.0.0",
     "chokidar": "^3.6.0",
     "connect": "^3.7.0",
@@ -111,9 +111,9 @@
     "etag": "^1.8.1",
     "host-validation-middleware": "^0.1.2",
     "http-proxy-3": "^1.23.2",
-    "launch-editor-middleware": "^2.13.1",
+    "launch-editor-middleware": "^2.13.2",
     "magic-string": "^0.30.21",
-    "mlly": "^1.8.1",
+    "mlly": "^1.8.2",
     "mrmime": "^2.0.1",
     "nanoid": "^5.1.7",
     "obug": "^1.0.2",
@@ -134,9 +134,9 @@
     "sass-embedded": "^1.98.0",
     "sirv": "^3.0.2",
     "strip-literal": "^3.1.0",
-    "terser": "^5.46.0",
+    "terser": "^5.46.1",
     "ufo": "^1.6.3",
-    "ws": "^8.19.0"
+    "ws": "^8.20.0"
   },
   "peerDependencies": {
     "@types/node": "^20.19.0 || >=22.12.0",

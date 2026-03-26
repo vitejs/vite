@@ -42,7 +42,7 @@ jobs:
               core.setOutput('skip', 'true');
             }
 
-      - uses: warpdotdev/oz-agent-action@827a9ad5438c195eb9d1d9a7acece3a8000be512 # v1
+      - uses: warpdotdev/oz-agent-action@1c023d0799f42be182644ced823d372a5ddddb40 # v1
         if: steps.detect.outputs.skip == 'false'
         id: agent
         with:
@@ -133,6 +133,8 @@ jobs:
                   .addHeading(`Issue Template Check (${templateType})`)
                   .addCodeBlock(agentText, 'json')
                   .write();
+              } else {
+                core.setFailed('No agent output found in response');
               }
             } catch (e) {
               core.setFailed(`Failed to write summary: ${e.message}`);

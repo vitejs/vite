@@ -1,3 +1,37 @@
+## <small>[8.0.3](https://github.com/vitejs/vite/compare/v8.0.2...v8.0.3) (2026-03-26)</small>
+### Features
+
+* update rolldown to 1.0.0-rc.12 ([#22024](https://github.com/vitejs/vite/issues/22024)) ([84164ef](https://github.com/vitejs/vite/commit/84164ef47b24b1de114f1c29446a9e650825d4ea))
+
+### Bug Fixes
+
+* **html:** cache unfiltered CSS list to prevent missing styles across entries ([#22017](https://github.com/vitejs/vite/issues/22017)) ([5464190](https://github.com/vitejs/vite/commit/5464190a3ee8f23db20004e7818186fbcc32b0e5))
+* **module-runner:** handle non-ascii characters in base64 sourcemaps ([#21985](https://github.com/vitejs/vite/issues/21985)) ([77c95bf](https://github.com/vitejs/vite/commit/77c95bff834c43f8be9fe513c10b5393805a7487))
+* **module-runner:** skip re-import if the runner is closed ([#22020](https://github.com/vitejs/vite/issues/22020)) ([ee2c2cd](https://github.com/vitejs/vite/commit/ee2c2cd2c2ce3f53088bd2313fa23e9d52a49b4f))
+* **optimizer:** scan is not resolving sub path import if used in a glob import ([#22018](https://github.com/vitejs/vite/issues/22018)) ([ddfe20d](https://github.com/vitejs/vite/commit/ddfe20d19e95a323fa3c8d2c19a02c4e02f93824))
+* **ssr:** ssrTransform incorrectly rewrites `meta` identifier inside `import.meta` when a binding named `meta` exists ([#22019](https://github.com/vitejs/vite/issues/22019)) ([cff5f0c](https://github.com/vitejs/vite/commit/cff5f0cca5f08c2ce50f233441485e10b6e115e9))
+
+### Miscellaneous Chores
+
+* **deps:** bump picomatch from 4.0.3 to 4.0.4 ([#22027](https://github.com/vitejs/vite/issues/22027)) ([7e56003](https://github.com/vitejs/vite/commit/7e56003fec3e1b94a20516a901580198a51da614))
+
+### Tests
+
+* **html:** add tests for `getCssFilesForChunk` ([#22016](https://github.com/vitejs/vite/issues/22016)) ([43fbbf9](https://github.com/vitejs/vite/commit/43fbbf9a09dfd17456ae0611d034c366fcb38998))
+
+## <small>[8.0.2](https://github.com/vitejs/vite/compare/v8.0.1...v8.0.2) (2026-03-23)</small>
+### Features
+
+* update rolldown to 1.0.0-rc.11 ([#21998](https://github.com/vitejs/vite/issues/21998)) ([ff91c31](https://github.com/vitejs/vite/commit/ff91c319facd602dc5eea81ed7e7d79ae7dadb95))
+
+### Bug Fixes
+
+* **deps:** update all non-major dependencies ([#21988](https://github.com/vitejs/vite/issues/21988)) ([9b7d150](https://github.com/vitejs/vite/commit/9b7d15002a75474421bc5636238336d88c7fe2f3))
+
+### Miscellaneous Chores
+
+* **deps:** update dependency @vitejs/devtools to ^0.1.5 ([#21992](https://github.com/vitejs/vite/issues/21992)) ([b2dd65b](https://github.com/vitejs/vite/commit/b2dd65bf2f113719b72450f2e19696213fd9e255))
+
 ## <small>[8.0.1](https://github.com/vitejs/vite/compare/v8.0.0...v8.0.1) (2026-03-19)</small>
 ### Features
 
