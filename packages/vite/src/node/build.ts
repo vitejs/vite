@@ -421,10 +421,6 @@ export function resolveBuildEnvironmentOptions(
   logger: Logger,
   consumer: 'client' | 'server' | undefined,
   isBundledDev: boolean,
-  // Webworker SSR should not use Node platform — createRequire(import.meta.url)
-  // crashes in worker runtimes where import.meta.url is undefined. We use 'browser'
-  // rather than 'neutral' because it aligns with Vite's resolve conditions for
-  // webworker targets (defaultClientConditions + worker).
   isSsrTargetWebworkerEnvironment?: boolean,
 ): ResolvedBuildEnvironmentOptions {
   const deprecatedPolyfillModulePreload = raw.polyfillModulePreload
@@ -458,9 +454,9 @@ export function resolveBuildEnvironmentOptions(
   setupRollupOptionCompat(merged, 'build')
   merged.rolldownOptions = {
     platform:
-      consumer === 'server' && !isSsrTargetWebworkerEnvironment
-        ? 'node'
-        : 'browser',
+      consumer === 'client' || isSsrTargetWebworkerEnvironment
+        ? 'browser'
+        : 'node',
     ...merged.rolldownOptions,
   }
 
@@ -665,7 +661,6 @@ export function resolveRolldownOptions(
 
   // For webworker SSR with platform: 'browser', external CJS require() calls
   // need to be converted to ESM imports since createRequire is not available.
-  // Rolldown's esmExternalRequirePlugin handles this conversion.
   if (isSsrTargetWebworkerEnvironment) {
     plugins.push(esmExternalRequirePlugin())
   }
