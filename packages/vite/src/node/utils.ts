@@ -1317,7 +1317,10 @@ export function hasBothRollupOptionsAndRolldownOptions(
     if (
       opt != null &&
       opt.rollupOptions != null &&
-      opt.rolldownOptions != null
+      opt.rolldownOptions != null &&
+      // Check that they are actually different objects
+      // (not just a proxy relationship created by setupRollupOptionCompat)
+      opt.rollupOptions !== opt.rolldownOptions
     ) {
       return true
     }
