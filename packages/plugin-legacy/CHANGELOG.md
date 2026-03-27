@@ -526,7 +526,7 @@ See [5.0.0-beta.0 changelog](https://github.com/vitejs/vite/blob/plugin-legacy@5
 ## <small>[3.0.1](https://github.com/vitejs/vite/compare/plugin-legacy@3.0.0...plugin-legacy@3.0.1) (2022-12-09)</small>
 ### Miscellaneous Chores
 
-* udpate vite and plugins to stable ([#11278](https://github.com/vitejs/vite/issues/11278)) ([026f41e](https://github.com/vitejs/vite/commit/026f41e87e6eb89491c88f62952d7a094f810811))
+* update vite and plugins to stable ([#11278](https://github.com/vitejs/vite/issues/11278)) ([026f41e](https://github.com/vitejs/vite/commit/026f41e87e6eb89491c88f62952d7a094f810811))
 
 ## [3.0.0](https://github.com/vitejs/vite/compare/plugin-legacy@2.3.1...plugin-legacy@3.0.0) (2022-12-09)
 
