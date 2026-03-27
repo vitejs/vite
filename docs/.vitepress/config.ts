@@ -560,6 +560,18 @@ const config = defineConfig({
     },
   },
   vite: {
+    resolve: {
+      alias: [
+        {
+          // Preserve old-version doc search hits as cross-origin navigations.
+          find: /^.*\/vitepress-default\/VPAlgoliaSearchBox\.vue$/,
+          replacement: path.resolve(
+            import.meta.dirname,
+            './theme/components/ViteDocSearchBox.vue',
+          ),
+        },
+      ],
+    },
     plugins: [
       groupIconVitePlugin({
         customIcon: {
