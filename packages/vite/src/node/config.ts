@@ -2260,7 +2260,8 @@ export async function loadConfigFromFile(
   try {
     const resolver =
       configLoader === 'bundle'
-        ? bundleAndLoadConfigFile
+        ? (resolvedPath: string) =>
+            bundleAndLoadConfigFile(resolvedPath, logLevel)
         : configLoader === 'runner'
           ? runnerImportConfigFile
           : nativeImportConfigFile
@@ -2309,11 +2310,14 @@ async function runnerImportConfigFile(resolvedPath: string) {
   }
 }
 
-async function bundleAndLoadConfigFile(resolvedPath: string) {
+async function bundleAndLoadConfigFile(
+  resolvedPath: string,
+  logLevel?: LogLevel,
+) {
   const isESM =
     typeof process.versions.deno === 'string' || isFilePathESM(resolvedPath)
 
-  const bundled = await bundleConfigFile(resolvedPath, isESM)
+  const bundled = await bundleConfigFile(resolvedPath, isESM, logLevel)
   const userConfig = await loadConfigFromBundledFile(
     resolvedPath,
     bundled.code,
@@ -2329,6 +2333,7 @@ async function bundleAndLoadConfigFile(resolvedPath: string) {
 async function bundleConfigFile(
   fileName: string,
   isESM: boolean,
+  logLevel?: LogLevel,
 ): Promise<{ code: string; dependencies: string[] }> {
   let importMetaResolverRegistered = false
 
@@ -2344,6 +2349,7 @@ async function bundleConfigFile(
     input: fileName,
     // target: [`node${process.versions.node}`],
     platform: 'node',
+    logLevel,
     resolve: {
       mainFields: ['main'],
     },
