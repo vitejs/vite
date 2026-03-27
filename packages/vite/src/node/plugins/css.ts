@@ -98,6 +98,7 @@ import { addToHTMLProxyTransformResult } from './html'
 import {
   assetUrlRE,
   cssEntriesMap,
+  cssEntryReferenceIdsMap,
   fileToUrl,
   publicAssetUrlCache,
   publicAssetUrlRE,
@@ -276,12 +277,32 @@ export const removedPureCssFilesCache: WeakMap<
   Map<string, RenderedChunk>
 > = new WeakMap()
 
-function getCssEntryKey(
+function getCssEntryManifestName(
   chunk: OutputChunk | RenderedChunk,
-  root: string,
+  config: ResolvedConfig,
   isLegacy: boolean,
 ): string {
-  return getChunkOriginalFileName(chunk, root, isLegacy) ?? chunk.name
+  if (chunk.facadeModuleId) {
+    const input = config.build.rollupOptions.input
+    if (input && !Array.isArray(input) && typeof input === 'object') {
+      const normalizedFacadeModuleId = normalizePath(chunk.facadeModuleId)
+      for (const [name, entry] of Object.entries(input)) {
+        const resolvedEntry = normalizePath(
+          path.isAbsolute(entry) ? entry : path.resolve(config.root, entry),
+        )
+        if (resolvedEntry === normalizedFacadeModuleId) {
+          if (isLegacy && !name.includes('-legacy')) {
+            const ext = path.extname(name)
+            const endPos = ext.length !== 0 ? -ext.length : undefined
+            return `${name.slice(0, endPos)}-legacy${ext}`
+          }
+          return name
+        }
+      }
+    }
+  }
+
+  return getChunkOriginalFileName(chunk, config.root, isLegacy) ?? chunk.name
 }
 
 // Used only if the config doesn't code-split CSS (builds a single CSS file)
@@ -925,9 +946,12 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
                     cssEntriesMap
                       .get(this.environment)!
                       .set(
-                        getCssEntryKey(chunk, config.root, isLegacyChunk),
+                        getCssEntryManifestName(chunk, config, isLegacyChunk),
                         referenceId,
                       )
+                    cssEntryReferenceIdsMap
+                      .get(this.environment)!
+                      .set(chunk.preliminaryFileName, referenceId)
                   }
                   chunk.viteMetadata!.importedCss.add(
                     this.getFileName(referenceId),
@@ -1126,9 +1150,18 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
             const cssReferenceId = cssEntriesMap
               .get(this.environment)!
               .get(
-                getCssEntryKey(emptyJsPlaceholder, config.root, isLegacyChunk),
+                getCssEntryManifestName(
+                  emptyJsPlaceholder,
+                  config,
+                  isLegacyChunk,
+                ),
               )!
-            const realCssEntryName = this.getFileName(cssReferenceId)
+            const cssReferenceIdByPlaceholder = cssEntryReferenceIdsMap
+              .get(this.environment)!
+              .get(emptyJsPlaceholder.preliminaryFileName)
+            const realCssEntryName = this.getFileName(
+              cssReferenceIdByPlaceholder ?? cssReferenceId,
+            )
             const realCssEntry = bundle[realCssEntryName]!
             importedCss.delete(realCssEntryName)
             if (importedAssets.size) {

@@ -53,8 +53,14 @@ export const inlineRE: RegExp = /[?&]inline\b/
 
 const assetCache = new WeakMap<Environment, Map<string, string>>()
 
-/** a set of referenceId for entry CSS assets for each environment */
+/** manifest name -> referenceId for entry CSS assets for each environment */
 export const cssEntriesMap: WeakMap<
+  Environment,
+  Map<string, string>
+> = new WeakMap()
+
+/** placeholder preliminary file name -> referenceId for pure CSS entry assets */
+export const cssEntryReferenceIdsMap: WeakMap<
   Environment,
   Map<string, string>
 > = new WeakMap()
@@ -160,6 +166,7 @@ export function assetPlugin(config: ResolvedConfig): Plugin {
     buildStart() {
       assetCache.set(this.environment, new Map())
       cssEntriesMap.set(this.environment, new Map())
+      cssEntryReferenceIdsMap.set(this.environment, new Map())
     },
 
     resolveId: {
