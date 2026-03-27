@@ -384,8 +384,8 @@ export function buildImportAnalysisPlugin(config: ResolvedConfig): Plugin[] {
                     }
                   } else {
                     const removedPureCssFiles =
-                      removedPureCssFilesCache.get(config)!
-                    const chunk = removedPureCssFiles.get(filename)
+                      removedPureCssFilesCache.get(config)
+                    const chunk = removedPureCssFiles?.get(filename)
                     if (chunk) {
                       if (chunk.viteMetadata!.importedCss.size) {
                         chunk.viteMetadata!.importedCss.forEach((file) => {

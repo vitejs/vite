@@ -359,16 +359,16 @@ export function oxcResolvePlugin(
             })
           },
 
-          ...(partialEnv.config.command === 'serve'
-            ? {
-                async onWarn(msg) {
-                  getEnv().logger.warn(`warning: ${msg}`, {
-                    clear: true,
-                    timestamp: true,
-                  })
-                },
-              }
-            : {}),
+          async onWarn(msg) {
+            // Always provide onWarn to avoid Rolldown panic:
+            // builtin:vite-resolve calls warn() on a PluginContext::Napi which
+            // is unimplemented in Rolldown rc.9. Routing it through a JS
+            // callback prevents the native warn() code path from being reached.
+            partialEnv.logger.warn(`warning: ${msg}`, {
+              clear: partialEnv.config.command === 'serve',
+              timestamp: true,
+            })
+          },
           ...(debug
             ? {
                 async onDebug(message) {

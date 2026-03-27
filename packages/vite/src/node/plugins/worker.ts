@@ -593,7 +593,12 @@ export function webWorkerPlugin(config: ResolvedConfig): Plugin {
                 const filename =
                   workerOutputCache.getEntryFilenameFromHash(hash)
                 if (!filename) {
-                  this.warn(`Could not find worker asset for hash: ${hash}`)
+                  // Use console.warn instead of this.warn to avoid triggering
+                  // the unimplemented PluginContext::Napi::warn() in Rolldown,
+                  // which causes a panic (Rolldown issue, not user code).
+                  console.warn(
+                    `[vite:worker] Could not find worker asset for hash: ${hash}`,
+                  )
                   continue
                 }
                 const replacement = toOutputFilePathInJS(
