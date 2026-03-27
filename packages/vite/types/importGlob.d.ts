@@ -1,6 +1,9 @@
+type BaseQueryType = string | Record<string, string | number | boolean>
+
 export interface ImportGlobOptions<
   Eager extends boolean,
   AsType extends string,
+  QueryType extends BaseQueryType,
 > {
   /**
    * Import type for the import url.
@@ -21,7 +24,7 @@ export interface ImportGlobOptions<
   /**
    * Custom queries
    */
-  query?: string | Record<string, string | number | boolean>
+  query?: QueryType
   /**
    * Search files also inside `node_modules/` and hidden directories (e.g. `.git/`). This might have impact on performance.
    *
@@ -34,7 +37,18 @@ export interface ImportGlobOptions<
   base?: string
 }
 
-export type GeneralImportGlobOptions = ImportGlobOptions<boolean, string>
+export type ImportGlobOptionsWithoutAs<
+  Eager extends boolean,
+  QueryType extends BaseQueryType,
+> = Omit<ImportGlobOptions<Eager, string, QueryType>, 'as'> & {
+  as?: never
+}
+
+export type GeneralImportGlobOptions = ImportGlobOptions<
+  boolean,
+  string,
+  BaseQueryType
+>
 
 /**
  * Declare Worker in case DOM is not added to the tsconfig lib causing
@@ -52,11 +66,35 @@ export interface KnownAsTypeMap {
   worker: Worker
 }
 
+export interface KnownQueryTypeMap {
+  '?raw': string
+  '?url': string
+  '?worker': Worker
+}
+
 export interface ImportGlobFunction {
   /**
    * Import a list of files with a glob pattern.
    *
-   * Overload 1: No generic provided, infer the type from `eager` and `as`
+   * Overload 1A: No generic provided, infer the type from `eager` and `query`
+   */
+  <
+    Eager extends boolean,
+    Query extends BaseQueryType,
+    T = Query extends keyof KnownQueryTypeMap
+      ? KnownQueryTypeMap[Query]
+      : unknown,
+  >(
+    glob: string | string[],
+    options?: ImportGlobOptionsWithoutAs<Eager, Query>,
+  ): (Eager extends true ? true : false) extends true
+    ? Record<string, T>
+    : Record<string, () => Promise<T>>
+  /**
+   * Import a list of files with a glob pattern.
+   *
+   * Overload 1B: No generic provided, infer the type from `eager` and `as`
+   * (deprecated, use `query` instead)
    */
   <
     Eager extends boolean,
@@ -64,7 +102,7 @@ export interface ImportGlobFunction {
     T = As extends keyof KnownAsTypeMap ? KnownAsTypeMap[As] : unknown,
   >(
     glob: string | string[],
-    options?: ImportGlobOptions<Eager, As>,
+    options?: ImportGlobOptions<Eager, As, BaseQueryType>,
   ): (Eager extends true ? true : false) extends true
     ? Record<string, T>
     : Record<string, () => Promise<T>>
@@ -75,7 +113,7 @@ export interface ImportGlobFunction {
    */
   <M>(
     glob: string | string[],
-    options?: ImportGlobOptions<false, string>,
+    options?: ImportGlobOptions<false, string, BaseQueryType>,
   ): Record<string, () => Promise<M>>
   /**
    * Import a list of files with a glob pattern.
@@ -84,6 +122,6 @@ export interface ImportGlobFunction {
    */
   <M>(
     glob: string | string[],
-    options: ImportGlobOptions<true, string>,
+    options: ImportGlobOptions<true, string, BaseQueryType>,
   ): Record<string, M>
 }
