@@ -211,8 +211,13 @@ const devHtmlHook: IndexHtmlTransformHook = async (
 
   const trailingSlash = htmlPath.endsWith('/')
   if (!trailingSlash && fs.existsSync(filename)) {
-    proxyModulePath = htmlPath
-    proxyModuleUrl = proxyModulePath
+    // If htmlPath is a /@fs/ URL (e.g. vitest-browser always uses this form
+    // for testerHtmlPath), normalise to an absolute FS path so proxyCacheUrl
+    // is always root-relative.
+    proxyModulePath = htmlPath.startsWith(FS_PREFIX)
+      ? fsPathFromId(htmlPath)
+      : htmlPath
+    proxyModuleUrl = htmlPath
   } else {
     // There are users of vite.transformIndexHtml calling it with url '/'
     // for SSR integrations #7993, filename is root for this case
