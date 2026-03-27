@@ -99,9 +99,13 @@ export function manifestPlugin(): Plugin {
         isOutputOptionsForLegacyChunks:
           environment.config.isOutputOptionsForLegacyChunks,
         cssEntries() {
-          return Object.fromEntries(
-            cssEntriesMap.get(envs[environment.name])!.entries(),
-          )
+          const cssEntries: Record<string, string> = {}
+          for (const [, entry] of cssEntriesMap
+            .get(envs[environment.name])!
+            .entries()) {
+            cssEntries[entry.name] = entry.referenceId
+          }
+          return cssEntries
         },
       }),
       {

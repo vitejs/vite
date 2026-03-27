@@ -914,7 +914,10 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
                   if (isEntry) {
                     cssEntriesMap
                       .get(this.environment)!
-                      .set(chunk.name, referenceId)
+                      .set(originalFileName ?? chunk.name, {
+                        referenceId,
+                        name: chunk.name,
+                      })
                   }
                   chunk.viteMetadata!.importedCss.add(
                     this.getFileName(referenceId),
@@ -1107,9 +1110,15 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
           if (emptyJsPlaceholder.isEntry) {
             const { importedAssets, importedCss } =
               emptyJsPlaceholder.viteMetadata!
+            const entryKey =
+              getChunkOriginalFileName(
+                emptyJsPlaceholder,
+                config.root,
+                false,
+              ) ?? emptyJsPlaceholder.name
             const cssReferenceId = cssEntriesMap
               .get(this.environment)!
-              .get(emptyJsPlaceholder.name)!
+              .get(entryKey)!.referenceId
             const realCssEntryName = this.getFileName(cssReferenceId)
             const realCssEntry = bundle[realCssEntryName]!
             importedCss.delete(realCssEntryName)
