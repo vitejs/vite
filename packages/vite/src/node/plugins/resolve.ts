@@ -447,7 +447,10 @@ function optimizerResolvePlugin(
             const fsPath = path.resolve(basedir, id)
             // handle browser field mapping for relative imports
             if (options.mainFields.includes('browser')) {
-              const pkgData = findNearestPackageData(basedir, options.packageCache)
+              const pkgData = findNearestPackageData(
+                basedir,
+                options.packageCache,
+              )
               const browserField = pkgData?.data.browser
               if (pkgData && isObject(browserField)) {
                 const mapped = mapWithBrowserField(
