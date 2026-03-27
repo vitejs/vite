@@ -560,7 +560,7 @@ describe('mergeConfig', () => {
     expect(downOutput.hashCharacters).toBe('base36')
   })
 
-  test('hasBothRollupOptionsAndRolldownOptions returns false when only rollupOptions is set (proxy case)', () => {
+  test('hasBothRollupOptionsAndRolldownOptions returns false when only rollupOptions is set', () => {
     // When mergeConfig is called with only rollupOptions in the override,
     // setupRollupOptionCompat creates a proxy where rollupOptions === rolldownOptions.
     // hasBothRollupOptionsAndRolldownOptions should return false in this case
@@ -568,7 +568,6 @@ describe('mergeConfig', () => {
     const baseConfig = defineConfig({
       build: {}, // Need existing build object for recursive merge to happen
     })
-
     const newConfig = defineConfig({
       build: {
         rollupOptions: {
@@ -576,25 +575,18 @@ describe('mergeConfig', () => {
         },
       },
     })
+    const mergedConfig: UserConfig = mergeConfig(baseConfig, newConfig)
 
-    const mergedConfig = mergeConfig(baseConfig, newConfig) as UserConfig
-
-    // After merge, both rollupOptions and rolldownOptions exist,
-    // but they point to the same object (proxy relationship)
     expect(mergedConfig.build!.rollupOptions).toBeDefined()
     expect(mergedConfig.build!.rolldownOptions).toBeDefined()
     expect(mergedConfig.build!.rollupOptions).toBe(
       mergedConfig.build!.rolldownOptions,
     )
 
-    // hasBothRollupOptionsAndRolldownOptions should return false
-    // because they are the same object (proxy)
     expect(hasBothRollupOptionsAndRolldownOptions(mergedConfig)).toBe(false)
   })
 
   test('hasBothRollupOptionsAndRolldownOptions returns true when both are explicitly set to different values', () => {
-    // When both rollupOptions and rolldownOptions are explicitly set to different values,
-    // hasBothRollupOptionsAndRolldownOptions should return true
     const config = defineConfig({
       build: {
         rollupOptions: {
@@ -605,7 +597,6 @@ describe('mergeConfig', () => {
         },
       },
     })
-
     expect(hasBothRollupOptionsAndRolldownOptions(config)).toBe(true)
   })
 
