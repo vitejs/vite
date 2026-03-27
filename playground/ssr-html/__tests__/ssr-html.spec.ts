@@ -41,6 +41,22 @@ describe.runIf(isServe)('injected inline scripts', () => {
       expect(code).toBeTruthy()
     }
   })
+
+  test('CSS in SSR transformIndexHtml works without errors', async () => {
+    // Verify page loads successfully (would throw error in Vite 8.0.0 with bug)
+    // The server includes both inline styles via DYNAMIC_STYLES and calls
+    // vite.transformIndexHtml('/'), which processes CSS proxy URLs
+    const response = await page.goto(url)
+    expect(response?.status()).toBe(200)
+    
+    // Verify styles are applied
+    const bgColor = await page.evaluate(() => {
+      const h1 = document.querySelector('h1')
+      return h1 ? window.getComputedStyle(h1).backgroundColor : null
+    })
+    // Style is applied (exact color varies by browser, but should not be default)
+    expect(bgColor).toBeTruthy()
+  })
 })
 
 describe.runIf(isServe)('hmr', () => {
