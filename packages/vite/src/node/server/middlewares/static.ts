@@ -95,7 +95,7 @@ export function servePublicMiddleware(
     let filePath = cleanUrl(url)
     if (filePath.indexOf('%') !== -1) {
       try {
-        filePath = decodeURI(filePath)
+        filePath = decodeURIComponent(filePath)
       } catch {
         /* malform uri */
       }
@@ -117,7 +117,20 @@ export function servePublicMiddleware(
     ) {
       return next()
     }
-    serve(req, res, next)
+
+    const originalUrl = req.url!
+    if (originalUrl.includes('%')) {
+      try {
+        req.url = decodeURIComponent(originalUrl)
+      } catch {
+        /* ignore */
+      }
+    }
+
+    serve(req, res, () => {
+      req.url = originalUrl
+      next()
+    })
   }
 }
 

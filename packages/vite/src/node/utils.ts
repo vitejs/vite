@@ -653,8 +653,8 @@ export async function recursiveReaddir(dir: string): Promise<string[]> {
   try {
     dirents = await fsp.readdir(dir, { withFileTypes: true })
   } catch (e) {
-    if (e.code === 'EACCES') {
-      // Ignore permission errors
+    if (e.code === 'EACCES' || e.code === 'ENOENT' || e.code === 'ENOTDIR') {
+      // Ignore permission errors, directories that do not exist, and paths that are files
       return []
     }
     throw e
