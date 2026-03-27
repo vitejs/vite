@@ -163,11 +163,12 @@ const processNodeUrl = (
       if (url[0] === '/' && url[1] !== '/') {
         preTransformUrl = url
       } else if (url[0] === '.' || isBareRelative(url)) {
-        preTransformUrl = path.posix.join(
-          config.base,
-          path.posix.dirname(htmlPath),
-          url,
-        )
+        // When htmlPath ends with '/', treat it as a directory and use it directly
+        // for dirname calculation, otherwise dirname('/a/b/') returns '/a' instead of '/a/b'
+        const htmlDir = htmlPath.endsWith('/')
+          ? htmlPath.slice(0, -1)
+          : path.posix.dirname(htmlPath)
+        preTransformUrl = path.posix.join(config.base, htmlDir, url)
       }
     }
 
