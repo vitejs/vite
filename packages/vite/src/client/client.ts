@@ -11,7 +11,13 @@ import {
 } from '../shared/moduleRunnerTransport'
 import { createHMRHandler } from '../shared/hmrHandler'
 import { setupForwardConsoleHandler } from '../shared/forwardConsole'
-import { ErrorOverlay, cspNonce, overlayId } from './overlay'
+import type { RuntimeErrorsToast } from './overlay'
+import {
+  ErrorOverlay,
+  cspNonce,
+  overlayId,
+  runtimeErrorsToastId,
+} from './overlay'
 import '@vite/env'
 
 // injected by the hmr plugin when served
@@ -24,6 +30,7 @@ declare const __HMR_DIRECT_TARGET__: string
 declare const __HMR_BASE__: string
 declare const __HMR_TIMEOUT__: number
 declare const __HMR_ENABLE_OVERLAY__: boolean
+declare const __HMR_RUNTIME_ERRORS__: boolean
 declare const __WS_TOKEN__: string
 declare const __SERVER_FORWARD_CONSOLE__: any
 declare const __BUNDLED_DEV__: boolean
@@ -44,9 +51,17 @@ const directSocketHost = __HMR_DIRECT_TARGET__
 const base = __BASE__ || '/'
 const hmrTimeout = __HMR_TIMEOUT__
 const wsToken = __WS_TOKEN__
+const runtimeErrors = __HMR_RUNTIME_ERRORS__
+const enableOverlay = __HMR_ENABLE_OVERLAY__
 const isBundleMode = __BUNDLED_DEV__
 const forwardConsole = __SERVER_FORWARD_CONSOLE__
 
+const runtimeErrorList: Error[] = []
+const runtimeErrorResolvedList: Promise<ErrorPayload['err']>[] = []
+const pendingRuntimeErrorRequests = new Map<
+  string,
+  (resolved: ErrorPayload['err']) => void
+>()
 const transport = normalizeModuleRunnerTransport(
   (() => {
     let wsTransport = createWebSocketModuleRunnerTransport({
@@ -118,6 +133,21 @@ if (typeof window !== 'undefined') {
   window.addEventListener?.('beforeunload', () => {
     willUnload = true
   })
+
+  if (enableOverlay && runtimeErrors) {
+    window.addEventListener?.('error', (event) => {
+      // `ErrorEvent` doesn't necessarily have `ErrorEvent.error`.
+      // Use `ErrorEvent.message` as fallback e.g. for ResizeObserver error.
+      // https://developer.mozilla.org/en-US/docs/Web/API/ErrorEvent/error
+      // https://developer.mozilla.org/en-US/docs/Web/API/ResizeObserver#observation_errors
+      const error =
+        event.error ?? (event.message ? new Error(event.message) : event)
+      handlerRuntimeError(error)
+    })
+    window.addEventListener?.('unhandledrejection', (event) => {
+      handlerRuntimeError(event.reason)
+    })
+  }
 }
 
 function cleanUrl(pathname: string): string {
@@ -275,6 +305,19 @@ async function handleMessage(payload: HotPayload) {
       break
     case 'custom': {
       await hmrClient.notifyListeners(payload.event, payload.data)
+      if (payload.event === 'vite:runtime-error:response') {
+        const response = payload.data
+        const resolve = pendingRuntimeErrorRequests.get(response.id)
+        if (resolve) {
+          pendingRuntimeErrorRequests.delete(response.id)
+          resolve({
+            message: response.message,
+            stack: response.stack,
+            loc: response.loc,
+            frame: response.frame,
+          })
+        }
+      }
       if (payload.event === 'vite:ws:disconnect') {
         if (hasDocument && !willUnload) {
           console.log(`[vite] server connection lost. Polling for restart...`)
@@ -335,15 +378,19 @@ async function handleMessage(payload: HotPayload) {
   }
 }
 
-const enableOverlay = __HMR_ENABLE_OVERLAY__
 const hasDocument = 'document' in globalThis
 
-function createErrorOverlay(err: ErrorPayload['err']) {
+function createErrorOverlay(
+  err: ErrorPayload['err'] | Error,
+  runtimeErrors: boolean = false,
+) {
   clearErrorOverlay()
   const { customElements } = globalThis
   if (customElements) {
     const ErrorOverlayConstructor = customElements.get(overlayId)!
-    document.body.appendChild(new ErrorOverlayConstructor(err))
+    document.body.appendChild(
+      new ErrorOverlayConstructor(err, true, runtimeErrors),
+    )
   }
 }
 
@@ -353,6 +400,104 @@ function clearErrorOverlay() {
 
 function hasErrorOverlay() {
   return document.querySelectorAll(overlayId).length
+}
+
+function createRuntimeToast(errs: Error[], toggleDetail: () => void) {
+  clearRuntimeToast()
+  const { customElements } = globalThis
+  if (customElements) {
+    const RuntimeErrorsToastConstructor =
+      customElements.get(runtimeErrorsToastId)!
+    document.body.appendChild(
+      new RuntimeErrorsToastConstructor(errs, toggleDetail, () => {
+        // Clear both parallel lists when the toast is explicitly dismissed
+        runtimeErrorList.length = 0
+        runtimeErrorResolvedList.length = 0
+      }),
+    )
+  }
+}
+
+function clearRuntimeToast() {
+  document
+    .querySelectorAll<RuntimeErrorsToast>(runtimeErrorsToastId)
+    .forEach((n) => n.close())
+}
+
+function hasRuntimeToast() {
+  return document.querySelectorAll(runtimeErrorsToastId).length
+}
+
+function updateRuntimeToast() {
+  const toast = document.querySelector<RuntimeErrorsToast>(runtimeErrorsToastId)
+  if (toast) {
+    if (runtimeErrorList.length === 0) {
+      toast.close()
+    } else {
+      toast.updateErrorList(runtimeErrorList)
+    }
+  }
+}
+
+function handlerRuntimeError(err: Error) {
+  const resolvedPromise = sendForSourcemapResolution(err)
+
+  runtimeErrorList.push(err)
+  runtimeErrorResolvedList.push(resolvedPromise)
+
+  if (hasRuntimeToast()) {
+    const toast =
+      document.querySelector<RuntimeErrorsToast>(runtimeErrorsToastId)!
+    toast.updateErrorList(runtimeErrorList)
+    return
+  }
+  createRuntimeToast(runtimeErrorList, async () => {
+    runtimeErrorList.shift()
+    const resolvedErr = await runtimeErrorResolvedList.shift()!
+    createErrorOverlay(resolvedErr, true)
+    updateRuntimeToast()
+  })
+}
+
+/**
+ * Send a runtime error to the dev server for sourcemap resolution.
+ * Falls back to the raw error after a timeout if the server does not respond.
+ */
+function sendForSourcemapResolution(
+  error: Error,
+): Promise<ErrorPayload['err']> {
+  const fallback: ErrorPayload['err'] = {
+    message: error.message,
+    stack: error.stack || `${error.name}: ${error.message}`,
+  }
+  return new Promise((resolve) => {
+    const id = Math.random().toString(36).slice(2)
+    const timeout = setTimeout(() => {
+      if (pendingRuntimeErrorRequests.delete(id)) {
+        resolve(fallback)
+      }
+    }, 5000)
+    pendingRuntimeErrorRequests.set(id, (resolved) => {
+      clearTimeout(timeout)
+      resolve(resolved)
+    })
+    try {
+      transport.send({
+        type: 'custom',
+        event: 'vite:runtime-error',
+        data: {
+          id,
+          name: error.name,
+          message: error.message,
+          stack: error.stack,
+        },
+      })
+    } catch {
+      clearTimeout(timeout)
+      pendingRuntimeErrorRequests.delete(id)
+      resolve(fallback)
+    }
+  })
 }
 
 function waitForSuccessfulPing(socketUrl: string) {

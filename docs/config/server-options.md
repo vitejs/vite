@@ -194,11 +194,23 @@ Specify server response headers.
 
 ## server.hmr
 
-- **Type:** `boolean | { protocol?: string, host?: string, port?: number, path?: string, timeout?: number, overlay?: boolean, clientPort?: number, server?: Server }`
+- **Type:** `boolean | { protocol?: string, host?: string, port?: number, path?: string, timeout?: number, overlay?: boolean, clientPort?: number, server?: Server, runtimeErrors?: boolean }`
 
 Disable or configure HMR connection (in cases where the HMR websocket must use a different address from the http server).
 
 Set `server.hmr.overlay` to `false` to disable the server error overlay.
+
+Set `server.hmr.runtimeErrors` to `true` to capture uncaught browser runtime errors (including unhandled promise rejections) and display them in the overlay with sourcemap-resolved stack traces and code frames. The error is sent to the Vite dev server for sourcemap resolution before being shown.
+
+```js
+export default defineConfig({
+  server: {
+    hmr: {
+      runtimeErrors: true,
+    },
+  },
+})
+```
 
 `protocol` sets the WebSocket protocol used for the HMR connection: `ws` (WebSocket) or `wss` (WebSocket Secure).
 
