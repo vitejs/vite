@@ -1317,7 +1317,9 @@ export function hasBothRollupOptionsAndRolldownOptions(
     if (
       opt != null &&
       opt.rollupOptions != null &&
-      opt.rolldownOptions != null
+      opt.rolldownOptions != null &&
+      // Check they are not just proxy values created by setupRollupOptionCompat
+      opt.rollupOptions !== opt.rolldownOptions
     ) {
       return true
     }
