@@ -864,6 +864,34 @@ test.for([true, false])(
   },
 )
 
+test('builder respects runtime rolldownOptions.input mutations', async () => {
+  const root = resolve(dirname, 'fixtures/shared-plugins/minify')
+  const builder = await createBuilder({
+    root,
+    logLevel: 'warn',
+    environments: {
+      client: {
+        build: {
+          write: false,
+          outDir: './dist/client',
+        },
+      },
+    },
+  })
+
+  builder.environments.client.config.build.rolldownOptions = {
+    input: '/entry.js',
+    output: {
+      entryFileNames: '__test__.js',
+    },
+  }
+
+  const result = await builder.build(builder.environments.client)
+  expect((result as RolldownOutput).output[0].fileName).toMatch(
+    /assets\/entry-[-\w]{8}\.js/,
+  )
+})
+
 test('sharedConfigBuild and emitAssets', async () => {
   const root = resolve(dirname, 'fixtures/shared-config-build/emitAssets')
   const builder = await createBuilder({

@@ -570,10 +570,11 @@ export function resolveRolldownOptions(
   const libOptions = options.lib
   const { logger } = environment
   const ssr = environment.config.consumer === 'server'
+  const rolldownInput = options.rolldownOptions.input
 
   const resolve = (p: string) => path.resolve(root, p)
   const input = libOptions
-    ? options.rollupOptions.input ||
+    ? rolldownInput ||
       (typeof libOptions.entry === 'string'
         ? resolve(libOptions.entry)
         : Array.isArray(libOptions.entry)
@@ -586,7 +587,7 @@ export function resolveRolldownOptions(
             ))
     : typeof options.ssr === 'string'
       ? resolve(options.ssr)
-      : options.rollupOptions.input || resolve('index.html')
+      : rolldownInput || resolve('index.html')
 
   if (ssr && typeof input === 'string' && input.endsWith('.html')) {
     throw new Error(
