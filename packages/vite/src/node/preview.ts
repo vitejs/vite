@@ -244,7 +244,7 @@ export async function preview(
     sirv(distDir, {
       etag: true,
       dev: true,
-      extensions: [],
+      extensions: ['.html'],
       ignores: false,
       setHeaders(res) {
         if (headers) {

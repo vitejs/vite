@@ -550,7 +550,7 @@ export async function _createServer(
           ...getEnvFilesForMode(config.mode, config.envDir),
           // Watch the public directory explicitly because it might be outside
           // of the root directory.
-          ...(publicDir && publicFiles ? [publicDir] : []),
+          ...(publicDir && publicFiles?.size ? [publicDir] : []),
         ],
 
         resolvedWatchOptions,
