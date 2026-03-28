@@ -951,7 +951,12 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
                       )
                     cssEntryReferenceIdsMap
                       .get(this.environment)!
-                      .set(chunk.preliminaryFileName, referenceId)
+                      .set(
+                        ('preliminaryFileName' in chunk
+                          ? chunk.preliminaryFileName
+                          : chunk.fileName) as string,
+                        referenceId,
+                      )
                   }
                   chunk.viteMetadata!.importedCss.add(
                     this.getFileName(referenceId),
@@ -1158,7 +1163,11 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
               )!
             const cssReferenceIdByPlaceholder = cssEntryReferenceIdsMap
               .get(this.environment)!
-              .get(emptyJsPlaceholder.preliminaryFileName)
+              .get(
+                ('preliminaryFileName' in emptyJsPlaceholder
+                  ? emptyJsPlaceholder.preliminaryFileName
+                  : emptyJsPlaceholder.fileName) as string,
+              )
             const realCssEntryName = this.getFileName(
               cssReferenceIdByPlaceholder ?? cssReferenceId,
             )
