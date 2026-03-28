@@ -50,6 +50,7 @@ import type {
 } from './plugin'
 import type {
   BuildEnvironmentOptions,
+  BuildRolldownOptions,
   BuilderOptions,
   RenderBuiltAssetUrl,
   ResolvedBuildEnvironmentOptions,
@@ -480,14 +481,14 @@ export interface UserConfig extends DefaultEnvironmentOptions {
      * @deprecated Use `rolldownOptions` instead.
      */
     rollupOptions?: Omit<
-      RolldownOptions,
+      BuildRolldownOptions,
       'plugins' | 'input' | 'onwarn' | 'preserveEntrySignatures'
     >
     /**
      * Rolldown options to build worker bundle
      */
     rolldownOptions?: Omit<
-      RolldownOptions,
+      BuildRolldownOptions,
       'plugins' | 'input' | 'onwarn' | 'preserveEntrySignatures'
     >
   }

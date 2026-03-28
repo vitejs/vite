@@ -93,6 +93,17 @@ defineConfig(async () => ({
   },
 }))
 
+defineConfig({
+  build: {
+    rollupOptions: {
+      // @ts-expect-error --- Rolldown does not support this output option yet
+      output: {
+        sourcemapFileNames: 'maps/[name]-[hash].map',
+      },
+    },
+  },
+})
+
 mergeConfig(defineConfig({}), defineConfig({}))
 mergeConfig(
   // @ts-expect-error
