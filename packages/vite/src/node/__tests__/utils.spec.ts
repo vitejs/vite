@@ -22,8 +22,12 @@ import {
   numberToPos,
   posToNumber,
   processSrcSetSync,
+  rawRE,
+  removeRawQuery,
+  removeUrlQuery,
   resolveHostname,
   resolveServerUrls,
+  urlRE,
 } from '../utils'
 import { isWindows } from '../../shared/utils'
 import type { CommonServerOptions, ResolvedServerUrls } from '..'
@@ -1064,5 +1068,66 @@ describe('resolveServerUrls', () => {
     )
 
     expect(result.local).toContain('https://localhost:3000/')
+  })
+})
+
+describe('rawRE and urlRE handle URL-normalized query params', () => {
+  test('rawRE matches ?raw (no equals)', () => {
+    expect(rawRE.test('/path/file.md?raw')).toBe(true)
+  })
+
+  test('rawRE matches ?raw= (URL-normalized)', () => {
+    expect(rawRE.test('/path/file.md?raw=')).toBe(true)
+  })
+
+  test('rawRE matches &raw in compound query', () => {
+    expect(rawRE.test('/path/file.md?import&raw')).toBe(true)
+  })
+
+  test('rawRE matches &raw= in compound query', () => {
+    expect(rawRE.test('/path/file.md?import&raw=')).toBe(true)
+  })
+
+  test('rawRE matches &raw& in middle of query', () => {
+    expect(rawRE.test('/path/file.md?import&raw&other')).toBe(true)
+  })
+
+  test('rawRE matches &raw=& in middle of query', () => {
+    expect(rawRE.test('/path/file.md?import&raw=&other')).toBe(true)
+  })
+
+  test('rawRE does not match rawdata or other partial matches', () => {
+    expect(rawRE.test('/path/file.md?rawdata')).toBe(false)
+    expect(rawRE.test('/path/file.md?rawdata=1')).toBe(false)
+  })
+
+  test('urlRE matches ?url (no equals)', () => {
+    expect(urlRE.test('/path/file.woff?url')).toBe(true)
+  })
+
+  test('urlRE matches ?url= (URL-normalized)', () => {
+    expect(urlRE.test('/path/file.woff?url=')).toBe(true)
+  })
+
+  test('urlRE does not match urlencoded or other partial matches', () => {
+    expect(urlRE.test('/path/file.woff?urlencoded')).toBe(false)
+  })
+
+  test('removeRawQuery strips ?raw= from URL', () => {
+    expect(removeRawQuery('/path/file.md?raw=')).toBe('/path/file.md')
+  })
+
+  test('removeRawQuery strips ?raw from URL', () => {
+    expect(removeRawQuery('/path/file.md?raw')).toBe('/path/file.md')
+  })
+
+  test('removeRawQuery strips &raw= from compound query', () => {
+    expect(removeRawQuery('/path/file.md?import&raw=')).toBe(
+      '/path/file.md?import',
+    )
+  })
+
+  test('removeUrlQuery strips ?url= from URL', () => {
+    expect(removeUrlQuery('/path/file.woff?url=')).toBe('/path/file.woff')
   })
 })
