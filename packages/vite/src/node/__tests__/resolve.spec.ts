@@ -61,7 +61,9 @@ describe('browser field', () => {
   test('preserves relative ids for browser:false mappings', async () => {
     const root = mkdtempSync(join(tmpdir(), 'vite-browser-field-'))
     const pkgDir = join(root, 'node_modules', 'object-inspect')
+    const nestedDir = join(pkgDir, 'nested')
     mkdirSync(pkgDir, { recursive: true })
+    mkdirSync(nestedDir, { recursive: true })
     writeFileSync(
       join(pkgDir, 'package.json'),
       JSON.stringify(
@@ -71,6 +73,7 @@ describe('browser field', () => {
           main: 'index.js',
           browser: {
             './util.inspect.js': false,
+            './nested/util.inspect.js': false,
           },
         },
         null,
@@ -80,6 +83,10 @@ describe('browser field', () => {
     writeFileSync(
       join(pkgDir, 'index.js'),
       "var utilInspect = require('./util.inspect');\nmodule.exports = utilInspect;\n",
+    )
+    writeFileSync(
+      join(pkgDir, 'nested.js'),
+      "var utilInspect = require('./nested/util.inspect');\nmodule.exports = utilInspect;\n",
     )
 
     const server = await createServer({
@@ -100,8 +107,16 @@ describe('browser field', () => {
       './util.inspect',
       join(pkgDir, 'index.js'),
     )
+    const nestedResolved =
+      await server.environments.client.pluginContainer.resolveId(
+        './nested/util.inspect',
+        join(pkgDir, 'nested.js'),
+      )
 
     expect(resolved?.id).toBe('__vite-browser-external:./util.inspect')
+    expect(nestedResolved?.id).toBe(
+      '__vite-browser-external:./nested/util.inspect',
+    )
   })
 })
 

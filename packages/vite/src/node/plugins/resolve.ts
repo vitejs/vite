@@ -454,7 +454,7 @@ function optimizerResolvePlugin(
               const browserField = pkgData?.data.browser
               if (pkgData && isObject(browserField)) {
                 const mapped = mapWithBrowserField(
-                  `./${path.relative(pkgData.dir, fsPath)}`,
+                  `./${normalizePath(path.relative(pkgData.dir, fsPath))}`,
                   browserField,
                 )
                 if (mapped === false) {
