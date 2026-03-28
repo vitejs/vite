@@ -324,8 +324,8 @@ export function removeDirectQuery(url: string): string {
   return url.replace(directRequestRE, '$1').replace(trailingSeparatorRE, '')
 }
 
-export const urlRE: RegExp = /(\?|&)url(?:&|$)/
-export const rawRE: RegExp = /(\?|&)raw(?:&|$)/
+export const urlRE: RegExp = /(\?|&)url(?:=(?:&|$)|&|$)/
+export const rawRE: RegExp = /(\?|&)raw(?:=(?:&|$)|&|$)/
 export function removeUrlQuery(url: string): string {
   return url.replace(urlRE, '$1').replace(trailingSeparatorRE, '')
 }
