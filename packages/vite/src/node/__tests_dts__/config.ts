@@ -47,6 +47,37 @@ defineConfig({
   unknownProperty: 1,
 })
 
+defineConfig({
+  build: {
+    rollupOptions: {
+      output: {
+        // @ts-expect-error --- unsupported by Vite's Rolldown-backed build
+        sourcemapFileNames: '[name]-[hash].js.map',
+      },
+    },
+    rolldownOptions: {
+      output: {
+        // @ts-expect-error --- unsupported by Vite's Rolldown-backed build
+        sourcemapFileNames: '[name]-[hash].js.map',
+      },
+    },
+  },
+  worker: {
+    rollupOptions: {
+      output: {
+        // @ts-expect-error --- unsupported by Vite's Rolldown-backed worker build
+        sourcemapFileNames: '[name]-[hash].js.map',
+      },
+    },
+    rolldownOptions: {
+      output: {
+        // @ts-expect-error --- unsupported by Vite's Rolldown-backed worker build
+        sourcemapFileNames: '[name]-[hash].js.map',
+      },
+    },
+  },
+})
+
 defineConfig(() => ({
   base: '',
   build: {

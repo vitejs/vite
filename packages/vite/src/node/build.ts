@@ -191,12 +191,12 @@ export interface BuildEnvironmentOptions {
    * Alias to `rolldownOptions`
    * @deprecated Use `rolldownOptions` instead.
    */
-  rollupOptions?: RolldownOptions
+  rollupOptions?: ViteRolldownOptions
   /**
    * Will be merged with internal rolldown options.
    * https://rolldown.rs/reference/config-options
    */
-  rolldownOptions?: RolldownOptions
+  rolldownOptions?: ViteRolldownOptions
   /**
    * Options to pass on to `@rollup/plugin-commonjs`
    * @deprecated This option is no-op and will be removed in future versions.
@@ -303,6 +303,12 @@ export interface BuildEnvironmentOptions {
 }
 
 export type BuildOptions = BuildEnvironmentOptions
+
+export type ViteOutputOptions = Omit<OutputOptions, 'sourcemapFileNames'>
+
+export type ViteRolldownOptions = Omit<RolldownOptions, 'output'> & {
+  output?: ViteOutputOptions | ViteOutputOptions[]
+}
 
 export interface LibraryOptions {
   /**

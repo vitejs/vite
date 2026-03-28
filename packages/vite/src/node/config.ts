@@ -55,6 +55,7 @@ import type {
   ResolvedBuildEnvironmentOptions,
   ResolvedBuildOptions,
   ResolvedBuilderOptions,
+  ViteRolldownOptions,
 } from './build'
 import {
   buildEnvironmentOptionsDefaults,
@@ -480,14 +481,14 @@ export interface UserConfig extends DefaultEnvironmentOptions {
      * @deprecated Use `rolldownOptions` instead.
      */
     rollupOptions?: Omit<
-      RolldownOptions,
+      ViteRolldownOptions,
       'plugins' | 'input' | 'onwarn' | 'preserveEntrySignatures'
     >
     /**
      * Rolldown options to build worker bundle
      */
     rolldownOptions?: Omit<
-      RolldownOptions,
+      ViteRolldownOptions,
       'plugins' | 'input' | 'onwarn' | 'preserveEntrySignatures'
     >
   }
@@ -608,8 +609,8 @@ export interface ResolvedWorkerOptions {
   /**
    * @deprecated Use `rolldownOptions` instead.
    */
-  rollupOptions: RolldownOptions
-  rolldownOptions: RolldownOptions
+  rollupOptions: ViteRolldownOptions
+  rolldownOptions: ViteRolldownOptions
 }
 
 export interface InlineConfig extends UserConfig {
