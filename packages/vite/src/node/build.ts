@@ -191,12 +191,12 @@ export interface BuildEnvironmentOptions {
    * Alias to `rolldownOptions`
    * @deprecated Use `rolldownOptions` instead.
    */
-  rollupOptions?: RolldownOptions
+  rollupOptions?: ViteRolldownOptions
   /**
    * Will be merged with internal rolldown options.
    * https://rolldown.rs/reference/config-options
    */
-  rolldownOptions?: RolldownOptions
+  rolldownOptions?: ViteRolldownOptions
   /**
    * Options to pass on to `@rollup/plugin-commonjs`
    * @deprecated This option is no-op and will be removed in future versions.
@@ -303,6 +303,12 @@ export interface BuildEnvironmentOptions {
 }
 
 export type BuildOptions = BuildEnvironmentOptions
+
+export type ViteOutputOptions = Omit<OutputOptions, 'sourcemapFileNames'>
+
+export type ViteRolldownOptions = Omit<RolldownOptions, 'output'> & {
+  output?: ViteOutputOptions | ViteOutputOptions[]
+}
 
 export interface LibraryOptions {
   /**
@@ -655,21 +661,33 @@ export function resolveRolldownOptions(
     environment.getTopLevelConfig().ssr?.target === 'webworker'
 
   const buildOutputOptions = (output: OutputOptions = {}): OutputOptions => {
+    const { sourcemapFileNames, ...outputOptions } = output as OutputOptions & {
+      sourcemapFileNames?: string
+    }
+    if (sourcemapFileNames !== undefined) {
+      logger.warnOnce(
+        colors.yellow(
+          `Vite does not support "rollupOptions.output.sourcemapFileNames". ` +
+            `Rolldown doesn't support customizing sourcemap filenames yet, so this option is ignored.`,
+        ),
+      )
+    }
+
     // @ts-expect-error See https://github.com/vitejs/vite/issues/5812#issuecomment-984345618
-    if (output.output) {
+    if (outputOptions.output) {
       logger.warn(
         `You've set "rollupOptions.output.output" in your config. ` +
           `This is deprecated and will override all Vite.js default output options. ` +
           `Please use "rollupOptions.output" instead.`,
       )
     }
-    if (output.file) {
+    if (outputOptions.file) {
       throw new Error(
         `Vite does not support "rollupOptions.output.file". ` +
           `Please use "rollupOptions.output.dir" and "rollupOptions.output.entryFileNames" instead.`,
       )
     }
-    if (output.sourcemap) {
+    if (outputOptions.sourcemap) {
       logger.warnOnce(
         colors.yellow(
           `Vite does not support "rollupOptions.output.sourcemap". ` +
@@ -678,7 +696,7 @@ export function resolveRolldownOptions(
       )
     }
 
-    const format = output.format || 'es'
+    const format = outputOptions.format || 'es'
     const jsExt =
       (ssr && !isSsrTargetWebworkerEnvironment) || libOptions
         ? resolveOutputJsExtension(
@@ -720,16 +738,16 @@ export function resolveRolldownOptions(
         ? `[name].[ext]`
         : path.posix.join(options.assetsDir, `[name]-[hash].[ext]`),
       codeSplitting:
-        output.codeSplitting ??
-        (output.format === 'umd' ||
-        output.format === 'iife' ||
+        outputOptions.codeSplitting ??
+        (outputOptions.format === 'umd' ||
+        outputOptions.format === 'iife' ||
         (isSsrTargetWebworkerEnvironment &&
           (typeof input === 'string' || Object.keys(input).length === 1))
           ? false
           : undefined),
       comments:
-        typeof output.comments === 'boolean'
-          ? output.comments
+        typeof outputOptions.comments === 'boolean'
+          ? outputOptions.comments
           : {
               // Do not minify whitespace for ES lib output since that would remove
               // pure annotations and break tree-shaking
@@ -738,7 +756,7 @@ export function resolveRolldownOptions(
                 (libOptions && (format === 'es' || format === 'esm')),
               jsdoc: !options.minify,
               legal: !options.minify,
-              ...output.comments,
+              ...outputOptions.comments,
             },
       minify:
         options.minify === 'oxc'
@@ -755,7 +773,7 @@ export function resolveRolldownOptions(
             ? 'dce-only'
             : false,
       topLevelVar: true,
-      ...output,
+      ...outputOptions,
     }
   }
 
