@@ -251,6 +251,42 @@ describe('build', () => {
     ) as OutputChunk
     expect(foo.code).not.contains('import "external"')
   })
+
+  test('warns when sourcemapFileNames is configured', async () => {
+    const logger = createLogger('silent')
+    const warnSpy = vi.spyOn(logger, 'warnOnce').mockImplementation(() => {})
+
+    await build({
+      root: resolve(dirname, 'fixtures/emit-assets'),
+      logLevel: 'silent',
+      customLogger: logger,
+      build: {
+        write: false,
+        sourcemap: true,
+        rollupOptions: {
+          input: {
+            index: '/entry',
+          },
+          output: {
+            sourcemapFileNames: 'maps/[name]-[hash].map',
+          } as OutputOptions,
+        },
+      },
+    })
+
+    const logs = warnSpy.mock.calls.map((args) =>
+      stripVTControlCharacters(args[0]),
+    )
+
+    expect(logs).toEqual(
+      expect.arrayContaining([
+        expect.stringContaining(
+          'Vite does not support "rollupOptions.output.sourcemapFileNames"',
+        ),
+      ]),
+    )
+    expect(logs.join('\n')).not.toContain('Invalid output options')
+  })
 })
 
 const baseLibOptions: LibraryOptions = {
