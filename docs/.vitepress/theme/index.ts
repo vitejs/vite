@@ -1,33 +1,24 @@
-import { h } from 'vue'
-import TwoslashFloatingVue from '@shikijs/vitepress-twoslash/client'
-import '@shikijs/vitepress-twoslash/style.css'
-import 'virtual:group-icons.css'
-import 'vitepress-plugin-graphviz/style.css'
-import Theme from '@voidzero-dev/vitepress-theme/src/vite'
-import './styles.css'
-
-// components
-import SvgImage from './components/SvgImage.vue'
-import YouTubeVideo from './components/YouTubeVideo.vue'
-import NonInheritBadge from './components/NonInheritBadge.vue'
-import AsideSponsors from './components/AsideSponsors.vue'
-import ScrimbaLink from './components/ScrimbaLink.vue'
+import DefaultTheme from 'vitepress/theme'
+import './custom.css'
 
 export default {
-  Layout() {
-    return h((Theme as any).Layout, null, {
-      'aside-ads-before': () => h(AsideSponsors),
-    })
-  },
-  enhanceApp(ctx: any) {
-    const { app } = ctx
+  extends: DefaultTheme,
+  enhanceApp({ app }) {
+    if (typeof window !== 'undefined') {
+      const updateAriaLabels = () => {
+        const buttons = document.querySelectorAll('button.copy:not([aria-label])');
+        buttons.forEach(btn => {
+          const label = btn.getAttribute('title') || 'Copy code';
+          btn.setAttribute('aria-label', label);
+        });
+      };
 
-    app.component('SvgImage', SvgImage)
-    app.component('YouTubeVideo', YouTubeVideo)
-    app.component('NonInheritBadge', NonInheritBadge)
-    app.component('ScrimbaLink', ScrimbaLink)
-    app.use(TwoslashFloatingVue)
-
-    Theme.enhanceApp(ctx)
-  },
+      // Run on initial load and observe DOM changes for dynamic code blocks
+      window.addEventListener('DOMContentLoaded', updateAriaLabels);
+      const observer = new MutationObserver((mutations) => {
+        mutations.forEach(() => updateAriaLabels());
+      });
+      observer.observe(document.body, { childList: true, subtree: true });
+    }
+  }
 }
