@@ -523,7 +523,9 @@ function prettifyMessage(m: EsbuildMessage, code: string): string {
 let globalTSConfigResolutionCache: TsconfigCache | undefined
 const tsconfigResolutionCacheMap = new WeakMap<ResolvedConfig, TsconfigCache>()
 
-function getTSConfigResolutionCache(config?: ResolvedConfig) {
+export function getTSConfigResolutionCache(
+  config?: ResolvedConfig,
+): TsconfigCache {
   if (!config) {
     return (globalTSConfigResolutionCache ??= new TsconfigCache())
   }

@@ -89,13 +89,16 @@ export default function myPlugin() {
   return {
     name: 'transform-file',
 
-    transform(src, id) {
-      if (fileRegex.test(id)) {
+    transform: {
+      filter: {
+        id: fileRegex,
+      },
+      handler(src, id) {
         return {
           code: compileFileToJS(src),
           map: null, // provide source map if available
         }
-      }
+      },
     },
   }
 }
@@ -110,21 +113,25 @@ See the example in the [next section](#virtual-modules-convention).
 Virtual modules are a useful scheme that allows you to pass build time information to the source files using normal ESM import syntax.
 
 ```js
+import { exactRegex } from '@rolldown/pluginutils'
+
 export default function myPlugin() {
   const virtualModuleId = 'virtual:my-module'
   const resolvedVirtualModuleId = '\0' + virtualModuleId
 
   return {
     name: 'my-plugin', // required, will show up in warnings and errors
-    resolveId(id) {
-      if (id === virtualModuleId) {
+    resolveId: {
+      filter: { id: exactRegex(virtualModuleId) },
+      handler() {
         return resolvedVirtualModuleId
-      }
+      },
     },
-    load(id) {
-      if (id === resolvedVirtualModuleId) {
+    load: {
+      filter: { id: exactRegex(resolvedVirtualModuleId) },
+      handler() {
         return `export const msg = "from virtual module"`
-      }
+      },
     },
   }
 }
@@ -469,6 +476,71 @@ Vite plugins can also provide hooks that serve Vite-specific purposes. These hoo
       })
     }
     ```
+
+## Plugin Context Meta
+
+For plugin hooks that has access to the plugin context, Vite exposes additional properties on `this.meta`:
+
+- `this.meta.viteVersion`: The current Vite version string (e.g. `"8.0.0"`).
+
+::: tip Detecting Rolldown powered Vite
+
+[`this.meta.rolldownVersion`](https://rolldown.rs/reference/Interface.PluginContextMeta#rolldownversion) is only available for Rolldown powered Vite (i.e. Vite 8+). You can use it to detect whether the current Vite instance is powered by Rolldown:
+
+```ts
+function versionCheckPlugin(): Plugin {
+  return {
+    name: 'version-check',
+    buildStart() {
+      if (this.meta.rolldownVersion) {
+        // only do something if running on a Rolldown powered Vite
+      } else {
+        // do something else if running on a Rollup powered Vite
+      }
+    },
+  }
+}
+```
+
+:::
+
+## Output Bundle Metadata
+
+During build, Vite augments Rolldown's build output objects with a Vite-specific `viteMetadata` field.
+
+This is available through:
+
+- `RenderedChunk` (for example in `renderChunk` and `augmentChunkHash`)
+- `OutputChunk` and `OutputAsset` (for example in `generateBundle` and `writeBundle`)
+
+`viteMetadata` provides:
+
+- `viteMetadata.importedCss: Set<string>`
+- `viteMetadata.importedAssets: Set<string>`
+
+This is useful when writing plugins that need to inspect emitted CSS and static assets without relying on [`build.manifest`](/config/build-options#build-manifest).
+
+Example:
+
+```ts [vite.config.ts]
+function outputMetadataPlugin(): Plugin {
+  return {
+    name: 'output-metadata-plugin',
+    generateBundle(_, bundle) {
+      for (const output of Object.values(bundle)) {
+        const css = output.viteMetadata?.importedCss
+        const assets = output.viteMetadata?.importedAssets
+        if (!css?.size && !assets?.size) continue
+
+        console.log(output.fileName, {
+          css: css ? [...css] : [],
+          assets: assets ? [...assets] : [],
+        })
+      }
+    },
+  }
+}
+```
 
 ## Plugin Ordering
 

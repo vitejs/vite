@@ -130,7 +130,7 @@ In this case, you need to set `build.cssTarget` to `chrome61` to prevent vite fr
 ## build.cssMinify
 
 - **Type:** `boolean | 'lightningcss' | 'esbuild'`
-- **Default:** the same as [`build.minify`](#build-minify) for client, `'lightningcss'` for SSR
+- **Default:** `'lightningcss'`, but `false` if [`build.minify`](#build-minify) is disabled for client build
 
 This option allows users to override CSS minification specifically instead of defaulting to `build.minify`, so you can configure minification for JS and CSS separately. Vite uses [Lightning CSS](https://lightningcss.dev/minification.html) by default to minify CSS. It can be configured using [`css.lightningcss`](./shared-options.md#css-lightningcss). Set the option to `'esbuild'` to use esbuild instead.
 
@@ -250,6 +250,8 @@ export default defineConfig({
 Whether to generate a manifest file that contains a mapping of non-hashed asset filenames to their hashed versions, which can then be used by a server framework to render the correct asset links.
 
 When the value is a string, it will be used as the manifest file path relative to `build.outDir`. When set to `true`, the path would be `.vite/manifest.json`.
+
+If you are writing a plugin and need to inspect each output chunk or asset's related CSS and static assets during the build, you can also use [`viteMetadata` output bundle metadata API](/guide/api-plugin#output-bundle-metadata).
 
 ## build.ssrManifest
 

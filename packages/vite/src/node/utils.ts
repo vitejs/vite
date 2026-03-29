@@ -70,13 +70,15 @@ const replaceSlashOrColonRE = /[/:]/g
 const replaceDotRE = /\./g
 const replaceNestedIdRE = /\s*>\s*/g
 const replaceHashRE = /#/g
+const replacePlusRE = /\+/g
 export const flattenId = (id: string): string => {
   const flatId = limitFlattenIdLength(
     id
       .replace(replaceSlashOrColonRE, '_')
       .replace(replaceDotRE, '__')
       .replace(replaceNestedIdRE, '___')
-      .replace(replaceHashRE, '____'),
+      .replace(replaceHashRE, '____')
+      .replace(replacePlusRE, '_____'),
   )
   return flatId
 }
@@ -1315,7 +1317,9 @@ export function hasBothRollupOptionsAndRolldownOptions(
     if (
       opt != null &&
       opt.rollupOptions != null &&
-      opt.rolldownOptions != null
+      opt.rolldownOptions != null &&
+      // Check they are not just proxy values created by setupRollupOptionCompat
+      opt.rollupOptions !== opt.rolldownOptions
     ) {
       return true
     }

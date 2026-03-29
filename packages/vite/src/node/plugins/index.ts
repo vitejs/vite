@@ -4,6 +4,7 @@ import {
   viteAliasPlugin as nativeAliasPlugin,
   viteJsonPlugin as nativeJsonPlugin,
   viteWasmFallbackPlugin as nativeWasmFallbackPlugin,
+  oxcRuntimePlugin,
 } from 'rolldown/experimental'
 import type { PluginHookUtils, ResolvedConfig } from '../config'
 import {
@@ -34,6 +35,7 @@ import {
   createFilterForTransform,
   createIdFilter,
 } from './pluginFilter'
+import { forwardConsolePlugin } from './forwardConsole'
 import { oxcPlugin } from './oxc'
 import { esbuildBannerFooterCompatPlugin } from './esbuildBannerFooterCompatPlugin'
 
@@ -50,15 +52,12 @@ export async function resolvePlugins(
     ? await (await import('../build')).resolveBuildPlugins(config)
     : { pre: [], post: [] }
   const { modulePreload } = config.build
-  const enableNativePluginV1 = config.nativePluginEnabledLevel >= 1
 
   return [
     !isBundled ? optimizedDepsPlugin() : null,
     !isWorker ? watchPackageDataPlugin(config.packageCache) : null,
     !isBundled ? preAliasPlugin(config) : null,
-    isBundled &&
-    enableNativePluginV1 &&
-    !config.resolve.alias.some((v) => v.customResolver)
+    isBundled && !config.resolve.alias.some((v) => v.customResolver)
       ? nativeAliasPlugin({
           entries: config.resolve.alias.map((item) => {
             return {
@@ -96,11 +95,16 @@ export async function resolvePlugins(
     htmlInlineProxyPlugin(config),
     cssPlugin(config),
     esbuildBannerFooterCompatPlugin(config),
+    // @oxc-project/runtime resolution is handled by rolldown in build
+    config.oxc !== false && !isBundled ? oxcRuntimePlugin() : null,
     config.oxc !== false ? oxcPlugin(config) : null,
     nativeJsonPlugin({ ...config.json, minify: isBuild }),
     wasmHelperPlugin(),
     webWorkerPlugin(config),
     assetPlugin(config),
+    // for now client only
+    config.server.forwardConsole.enabled &&
+      forwardConsolePlugin({ environments: ['client'] }),
 
     ...normalPlugins,
 

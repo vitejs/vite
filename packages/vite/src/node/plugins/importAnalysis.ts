@@ -14,7 +14,7 @@ import type { StaticImport } from 'mlly'
 import { ESM_STATIC_IMPORT_RE, parseStaticImport } from 'mlly'
 import { makeLegalIdentifier } from '@rollup/pluginutils'
 import type { PartialResolvedId, RollupError } from 'rolldown'
-import type { Identifier, Literal, Program } from 'estree'
+import type { ESTree } from 'rolldown/utils'
 import {
   CLIENT_DIR,
   CLIENT_PUBLIC_PATH,
@@ -1010,7 +1010,7 @@ export function transformCjsImport(
   isNodeMode: boolean,
   config: ResolvedConfig,
 ): string | undefined {
-  const node = (parseAst(importExp) as Program).body[0]
+  const node = parseAst(importExp).body[0]
 
   // `export * from '...'` may cause unexpected problem, so give it a warning
   if (
@@ -1036,9 +1036,7 @@ export function transformCjsImport(
     let defaultExports: string = ''
     for (const spec of node.specifiers) {
       if (spec.type === 'ImportSpecifier') {
-        const importedName = getIdentifierNameOrLiteralValue(
-          spec.imported,
-        ) as string
+        const importedName = getIdentifierNameOrLiteralValue(spec.imported)
         const localName = spec.local.name
         importNames.push({ importedName, localName })
       } else if (spec.type === 'ImportDefaultSpecifier') {
@@ -1051,13 +1049,9 @@ export function transformCjsImport(
       } else if (spec.type === 'ExportSpecifier') {
         // for ExportSpecifier, local name is same as imported name
         // prefix the variable name to avoid clashing with other local variables
-        const importedName = getIdentifierNameOrLiteralValue(
-          spec.local,
-        ) as string
+        const importedName = getIdentifierNameOrLiteralValue(spec.local)
         // we want to specify exported name as variable and re-export it
-        const exportedName = getIdentifierNameOrLiteralValue(
-          spec.exported,
-        ) as string
+        const exportedName = getIdentifierNameOrLiteralValue(spec.exported)
         if (exportedName === 'default') {
           defaultExports = makeLegalIdentifier(
             `__vite__cjsExportDefault_${importIndex}`,
@@ -1066,7 +1060,7 @@ export function transformCjsImport(
         } else {
           const localName = `__vite__cjsExport${
             spec.exported.type === 'Literal'
-              ? `L_${getHash(spec.exported.value as string)}`
+              ? `L_${getHash(spec.exported.value)}`
               : 'I_' + spec.exported.name
           }`
           importNames.push({ importedName, localName })
@@ -1111,7 +1105,7 @@ export function transformCjsImport(
   }
 }
 
-function getIdentifierNameOrLiteralValue(node: Identifier | Literal) {
+function getIdentifierNameOrLiteralValue(node: ESTree.ModuleExportName) {
   return node.type === 'Identifier' ? node.name : node.value
 }
 

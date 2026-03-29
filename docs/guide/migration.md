@@ -100,60 +100,54 @@ Currently, the Oxc transformer does not support lowering native decorators as we
 
 :::: details Workaround for lowering native decorators
 
-You can use [Babel](https://babeljs.io/) or [SWC](https://swc.rs/) to lower native decorators for the time being. While SWC is faster than Babel, it does **not support the latest decorator spec** that esbuild supports.
-
-The decorator spec has been updated multiple times since it reached stage 3. The versions supported by each tool are:
-
-- `"2023-11"` (esbuild, TypeScript 5.4+ and Babel support this version)
-- `"2023-05"` (TypeScript 5.2+ supports this version)
-- `"2023-01"` (TypeScript 5.0+ supports this version)
-- `"2022-03"` (SWC supports this version)
-
-See the [Babel decorators versions guide](https://babeljs.io/docs/babel-plugin-proposal-decorators#version) for differences between each version.
+You can use [Babel](https://babeljs.io/) or [SWC](https://swc.rs/) to lower native decorators for the time being.
 
 **Using Babel:**
 
 ::: code-group
 
 ```bash [npm]
-$ npm install -D @rollup/plugin-babel @babel/plugin-proposal-decorators
+$ npm install -D @rolldown/plugin-babel @babel/plugin-proposal-decorators
 ```
 
 ```bash [Yarn]
-$ yarn add -D @rollup/plugin-babel @babel/plugin-proposal-decorators
+$ yarn add -D @rolldown/plugin-babel @babel/plugin-proposal-decorators
 ```
 
 ```bash [pnpm]
-$ pnpm add -D @rollup/plugin-babel @babel/plugin-proposal-decorators
+$ pnpm add -D @rolldown/plugin-babel @babel/plugin-proposal-decorators
 ```
 
 ```bash [Bun]
-$ bun add -D @rollup/plugin-babel @babel/plugin-proposal-decorators
+$ bun add -D @rolldown/plugin-babel @babel/plugin-proposal-decorators
 ```
 
 ```bash [Deno]
-$ deno add -D npm:@rollup/plugin-babel npm:@babel/plugin-proposal-decorators
+$ deno add -D npm:@rolldown/plugin-babel npm:@babel/plugin-proposal-decorators
 ```
 
 :::
 
 ```ts [vite.config.ts]
-import { defineConfig, withFilter } from 'vite'
-import { babel } from '@rollup/plugin-babel'
+import { defineConfig } from 'vite'
+import babel from '@rolldown/plugin-babel'
+
+function decoratorPreset(options: Record<string, unknown>) {
+  return {
+    preset: () => ({
+      plugins: [['@babel/plugin-proposal-decorators', options]],
+    }),
+    rolldown: {
+      // Only run this transform if the file contains a decorator.
+      filter: {
+        code: '@',
+      },
+    },
+  }
+}
 
 export default defineConfig({
-  plugins: [
-    withFilter(
-      babel({
-        configFile: false,
-        plugins: [
-          ['@babel/plugin-proposal-decorators', { version: '2023-11' }],
-        ],
-      }),
-      // Only run this transform if the file contains a decorator.
-      { transform: { code: '@' } },
-    ),
-  ],
+  plugins: [babel({ presets: [decoratorPreset({ version: '2023-11' })] })],
 })
 ```
 
@@ -194,8 +188,7 @@ export default defineConfig({
         swc: {
           jsc: {
             parser: { decorators: true, decoratorsBeforeExport: true },
-            // NOTE: SWC doesn't support the '2023-11' version yet.
-            transform: { decoratorVersion: '2022-03' },
+            transform: { decoratorVersion: '2023-11' },
           },
         },
       }),
@@ -293,11 +286,29 @@ See Rolldown's docs for more details: [`require` external modules - Bundling CJS
 
 ### Removed `build.rollupOptions.watch.chokidar` option
 
-The `build.rollupOptions.watch.chokidar` option was removed. Please migrate to the [`build.rolldownOptions.watch.notify`](https://rolldown.rs/reference/InputOptions.watch#notify) option.
+The `build.rollupOptions.watch.chokidar` option was removed. Please migrate to the [`build.rolldownOptions.watch.watcher`](https://rolldown.rs/reference/InputOptions.watch#watcher) option.
 
 ### Removed object form `build.rollupOptions.output.manualChunks` and deprecate function form one
 
 The object form `output.manualChunks` option is not supported anymore. The function form `output.manualChunks` is deprecated. Rolldown has the more flexible [`codeSplitting`](https://rolldown.rs/reference/OutputOptions.codeSplitting) option. See Rolldown's docs for more details about `codeSplitting`: [Manual Code Splitting - Rolldown](https://rolldown.rs/in-depth/manual-code-splitting).
+
+### `build()` Throws `BundleError`
+
+_This change only affects JS API users._
+
+`build()` now throws a [`BundleError`](https://rolldown.rs/reference/TypeAlias.BundleError) instead of the raw error thrown in the plugin. `BundleError` is typed as `Error & { errors?: RolldownError[] }` and it wraps the individual errors in an `errors` array. If you need the individual errors, you need to access `.errors`:
+
+```js
+try {
+  await build()
+} catch (e) {
+  if (e.errors) {
+    for (const error of e.errors) {
+      console.log(error.code) // error code
+    }
+  }
+}
+```
 
 ### Module Type Support and Auto Detection
 
@@ -347,7 +358,7 @@ These breaking changes are expected to only affect a minority of use cases:
   - `structuredClone(bundle)` errors with `DataCloneError: #<Object> could not be cloned`. This is not supported anymore. Please clone it with `structuredClone({ ...bundle })`. ([rolldown-vite#128](https://github.com/vitejs/rolldown-vite/issues/128))
 - All parallel hooks in Rollup works as sequential hooks. See [Rolldown's documentation](https://rolldown.rs/apis/plugin-api#sequential-hook-execution) for more details.
 - `"use strict";` is not injected sometimes. See [Rolldown's documentation](https://rolldown.rs/in-depth/directives) for more details.
-- Transforming to lower than ES5 with plugin-legacy is not supported ([rolldown-vite#452](https://github.com/vitejs/rolldown-vite/issues/452))
+- Transforming to ES5 and below with plugin-legacy is not supported ([rolldown-vite#452](https://github.com/vitejs/rolldown-vite/issues/452))
 - Passing the same browser with multiple versions of it to `build.target` option now errors: esbuild selects the latest version of it, which was probably not what you intended.
 - Missing support by Rolldown: The following features are not supported by Rolldown and is no longer supported by Vite.
   - `build.rollupOptions.output.format: 'system'` ([rolldown#2387](https://github.com/rolldown/rolldown/issues/2387))
@@ -357,7 +368,6 @@ These breaking changes are expected to only affect a minority of use cases:
   - `renderDynamicImport` hook ([rolldown#4532](https://github.com/rolldown/rolldown/issues/4532))
   - `resolveFileUrl` hook
 - `parseAst` / `parseAstAsync` functions are now deprecated in favor of `parseSync` / `parse` functions which have more features.
-- (bug) `@vite-ignore` comment edge case ([rolldown-vite#426](https://github.com/vitejs/rolldown-vite/issues/426))
 
 ## Migration from v6
 

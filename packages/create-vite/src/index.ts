@@ -52,7 +52,6 @@ ${yellow    ('vanilla-ts          vanilla'       )}
 ${green     ('vue-ts              vue'           )}
 ${cyan      ('react-ts            react'         )}
 ${cyan      ('react-compiler-ts   react-compiler')}
-${cyan      ('react-swc-ts        react-swc'     )}
 ${magenta   ('preact-ts           preact'        )}
 ${redBright ('lit-ts              lit'           )}
 ${red       ('svelte-ts           svelte'        )}
@@ -145,11 +144,6 @@ const FRAMEWORKS: Framework[] = [
         color: blue,
       },
       {
-        name: 'react-swc-ts',
-        display: 'TypeScript + SWC',
-        color: blue,
-      },
-      {
         name: 'react',
         display: 'JavaScript',
         color: yellow,
@@ -157,11 +151,6 @@ const FRAMEWORKS: Framework[] = [
       {
         name: 'react-compiler',
         display: 'JavaScript + React Compiler',
-        color: yellow,
-      },
-      {
-        name: 'react-swc',
-        display: 'JavaScript + SWC',
         color: yellow,
       },
       {
@@ -184,7 +173,7 @@ const FRAMEWORKS: Framework[] = [
         link: 'https://tanstack.com/router',
         color: cyan,
         customCommand:
-          'npm exec @tanstack/cli@latest -- create TARGET_DIR --template file-router --interactive',
+          'npm exec -- @tanstack/cli@latest create TARGET_DIR --interactive',
       },
       {
         name: 'redwoodsdk-standard',
@@ -286,7 +275,7 @@ const FRAMEWORKS: Framework[] = [
         link: 'https://tanstack.com/router',
         color: cyan,
         customCommand:
-          'npm exec @tanstack/cli@latest -- create TARGET_DIR --template file-router --framework solid --interactive',
+          'npm exec -- @tanstack/cli@latest create TARGET_DIR --framework solid --interactive',
       },
       {
         name: 'custom-vike-solid',
@@ -609,11 +598,6 @@ async function init() {
 
   const root = path.join(cwd, targetDir)
   // determine template
-  let isReactSwc = false
-  if (template.includes('-swc')) {
-    isReactSwc = true
-    template = template.replace('-swc', '')
-  }
   let isReactCompiler = false
   if (template.includes('react-compiler')) {
     isReactCompiler = true
@@ -691,9 +675,7 @@ async function init() {
 
   write('package.json', JSON.stringify(pkg, null, 2) + '\n')
 
-  if (isReactSwc) {
-    setupReactSwc(root, template.endsWith('-ts'))
-  } else if (isReactCompiler) {
+  if (isReactCompiler) {
     setupReactCompiler(root, template.endsWith('-ts'))
   }
 
@@ -787,39 +769,28 @@ function pkgFromUserAgent(userAgent: string | undefined): PkgInfo | undefined {
   }
 }
 
-function setupReactSwc(root: string, isTs: boolean) {
-  // renovate: datasource=npm depName=@vitejs/plugin-react-swc
-  const reactSwcPluginVersion = '4.2.3'
-
-  editFile(path.resolve(root, 'package.json'), (content) => {
-    return content.replace(
-      /"@vitejs\/plugin-react": ".+?"/,
-      `"@vitejs/plugin-react-swc": "^${reactSwcPluginVersion}"`,
-    )
-  })
-  editFile(
-    path.resolve(root, `vite.config.${isTs ? 'ts' : 'js'}`),
-    (content) => {
-      return content.replace('@vitejs/plugin-react', '@vitejs/plugin-react-swc')
-    },
-  )
-  updateReactCompilerReadme(
-    root,
-    'The React Compiler is currently not compatible with SWC. See [this issue](https://github.com/vitejs/vite-plugin-react/issues/428) for tracking the progress.',
-  )
-}
-
 function setupReactCompiler(root: string, isTs: boolean) {
+  // renovate: datasource=npm depName=@rolldown/plugin-babel
+  const babelPluginVersion = '0.2.2'
   // renovate: datasource=npm depName=babel-plugin-react-compiler
   const reactCompilerPluginVersion = '1.0.0'
+  // renovate: datasource=npm depName=@babel/core
+  const babelCoreVersion = '7.29.0'
+  // renovate: datasource=npm depName=@types/babel__core
+  const typesBabelCoreVersion = '7.20.5'
 
   editFile(path.resolve(root, 'package.json'), (content) => {
     const asObject = JSON.parse(content)
     const devDepsEntries = Object.entries(asObject.devDependencies)
+    devDepsEntries.push(['@rolldown/plugin-babel', `^${babelPluginVersion}`])
     devDepsEntries.push([
       'babel-plugin-react-compiler',
       `^${reactCompilerPluginVersion}`,
     ])
+    devDepsEntries.push(['@babel/core', `^${babelCoreVersion}`])
+    if (isTs) {
+      devDepsEntries.push(['@types/babel__core', `^${typesBabelCoreVersion}`])
+    }
     devDepsEntries.sort()
     asObject.devDependencies = Object.fromEntries(devDepsEntries)
     return JSON.stringify(asObject, null, 2) + '\n'
@@ -827,16 +798,19 @@ function setupReactCompiler(root: string, isTs: boolean) {
   editFile(
     path.resolve(root, `vite.config.${isTs ? 'ts' : 'js'}`),
     (content) => {
-      return content.replace(
-        '  plugins: [react()],',
-        `  plugins: [
-    react({
-      babel: {
-        plugins: [['babel-plugin-react-compiler']],
-      },
-    }),
+      return content
+        .replace(
+          `import react from '@vitejs/plugin-react'`,
+          `import react, { reactCompilerPreset } from '@vitejs/plugin-react'
+import babel from '@rolldown/plugin-babel'`,
+        )
+        .replace(
+          '  plugins: [react()],',
+          `  plugins: [
+    react(),
+    babel({ presets: [reactCompilerPreset()] })
   ],`,
-      )
+        )
     },
   )
   updateReactCompilerReadme(
@@ -873,7 +847,7 @@ function getFullCustomCommand(customCommand: string, pkgInfo?: PkgInfo) {
   return (
     customCommand
       .replace(/^npm create (?:-- )?/, () => {
-        // `bun create` uses it's own set of templates,
+        // `bun create` uses its own set of templates,
         // the closest alternative is using `bun x` directly on the package
         if (pkgManager === 'bun') {
           return 'bun x create-'
@@ -893,9 +867,10 @@ function getFullCustomCommand(customCommand: string, pkgInfo?: PkgInfo) {
       })
       // Only Yarn 1.x doesn't support `@version` in the `create` command
       .replace('@latest', () => (isYarn1 ? '' : '@latest'))
-      .replace(/^npm exec /, () => {
+      .replace(/^npm exec (?:-- )?/, () => {
         // Prefer `pnpm dlx`, `yarn dlx`, or `bun x`
         if (pkgManager === 'pnpm') {
+          // pnpm doesn't support the -- syntax
           return 'pnpm dlx '
         }
         if (pkgManager === 'yarn' && !isYarn1) {
@@ -909,7 +884,9 @@ function getFullCustomCommand(customCommand: string, pkgInfo?: PkgInfo) {
         }
         // Use `npm exec` in all other cases,
         // including Yarn 1.x and other custom npm clients.
-        return 'npm exec '
+        return customCommand.startsWith('npm exec -- ')
+          ? 'npm exec -- '
+          : 'npm exec '
       })
   )
 }
