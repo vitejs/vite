@@ -1796,7 +1796,24 @@ export function monotonicDateNow(): number {
   return lastDateNow
 }
 
-export function formatAndTruncateFileList(files: string[]): string {
-  if (files.length <= 10) return files.join(', ')
-  return `${files.slice(0, 9).join(', ')} and ${files.length - 9} more`
+export function formatAndTruncateFileList(files: string[]): {
+  formatted: string
+  truncated: boolean
+} {
+  const MAX_LOG_LENGTH = 500
+  let log = ''
+  let truncated = false
+  for (let i = 0; i < files.length; i++) {
+    const file = files[i]
+    if (log === '') {
+      log = file
+    } else if (log.length + 2 + file.length < MAX_LOG_LENGTH) {
+      log += ', ' + file
+    } else {
+      log += ` and ${files.length - i} more`
+      truncated = true
+      break
+    }
+  }
+  return { formatted: log, truncated }
 }

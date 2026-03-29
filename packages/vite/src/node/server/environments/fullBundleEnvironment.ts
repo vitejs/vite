@@ -14,7 +14,7 @@ import { DevEnvironment, type DevEnvironmentContext } from '../environment'
 import type { ResolvedConfig } from '../../config'
 import type { ViteDevServer } from '../../server'
 import { createDebugger, formatAndTruncateFileList } from '../../utils'
-import { type NormalizedHotChannelClient, getShortName } from '../hmr'
+import { type NormalizedHotChannelClient, debugHmr, getShortName } from '../hmr'
 import { prepareError } from '../middlewares/error'
 
 const debug = createDebugger('vite:full-bundle-mode')
@@ -359,13 +359,13 @@ export class FullBundleDevEnvironment extends DevEnvironment {
       type: 'update',
       updates,
     })
-    this.logger.info(
-      colors.green(`hmr update `) +
-        colors.dim(
-          formatAndTruncateFileList([...new Set(updates.map((u) => u.path))]),
-        ),
-      { clear: !invalidateInformation, timestamp: true },
-    )
+    const filePaths = [...new Set(updates.map((u) => u.path))]
+    const { formatted, truncated } = formatAndTruncateFileList(filePaths)
+    if (truncated) debugHmr?.(`hmr update ${filePaths.join(', ')}`)
+    this.logger.info(colors.green(`hmr update `) + colors.dim(formatted), {
+      clear: !invalidateInformation,
+      timestamp: true,
+    })
   }
 }
 

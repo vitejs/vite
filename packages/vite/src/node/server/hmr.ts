@@ -735,13 +735,13 @@ export function updateModules(
     return
   }
 
-  environment.logger.info(
-    colors.green(`hmr update `) +
-      colors.dim(
-        formatAndTruncateFileList([...new Set(updates.map((u) => u.path))]),
-      ),
-    { clear: !firstInvalidatedBy, timestamp: true },
-  )
+  const filePaths = [...new Set(updates.map((u) => u.path))]
+  const { formatted, truncated } = formatAndTruncateFileList(filePaths)
+  if (truncated) debugHmr?.(`hmr update ${filePaths.join(', ')}`)
+  environment.logger.info(colors.green(`hmr update `) + colors.dim(formatted), {
+    clear: !firstInvalidatedBy,
+    timestamp: true,
+  })
   hot.send({
     type: 'update',
     updates,
