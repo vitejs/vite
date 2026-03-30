@@ -274,3 +274,122 @@ To replace the Vite version used by dependencies transitively, you should use [n
 ## Community
 
 If you have questions or need help, reach out to the community at [Discord](https://chat.vite.dev) and [GitHub Discussions](https://github.com/vitejs/vite/discussions).
+
+## Common Issues & Troubleshooting
+
+This section covers the most frequently encountered issues when getting started with Vite. If your issue is not listed here, check the [Vite GitHub Discussions](https://github.com/vitejs/vite/discussions) or the [#help channel on Discord](https://chat.vite.dev).
+
+---
+
+### Port Already in Use
+
+**Error:**
+```
+Error: listen EADDRINUSE: address already in use :::5173
+```
+
+**Cause:** Another process is already listening on port 5173 (the default Vite dev server port).
+
+**Solutions:**
+
+Option A — Use a different port for this session:
+```bash
+npx vite --port 3000
+```
+
+Option B — Configure a permanent alternative port in `vite.config.ts`:
+```typescript
+import { defineConfig } from 'vite'
+
+export default defineConfig({
+  server: {
+    port: 3000,
+    strictPort: false,
+  },
+})
+```
+
+Option C — Find and kill the process using port 5173:
+```bash
+# Linux / macOS
+lsof -ti:5173 | xargs kill -9
+
+# Windows (PowerShell)
+Get-Process -Id (Get-NetTCPConnection -LocalPort 5173).OwningProcess | Stop-Process
+```
+
+---
+
+### `ENOENT: no such file or directory` After Scaffolding
+
+**Cause:** You ran `npm run dev` without `cd`-ing into the project folder after scaffolding.
+
+```bash
+npm create vite@latest my-app -- --template react-ts
+cd my-app          # This step is required
+npm install
+npm run dev
+```
+
+---
+
+### Environment Variables Not Loading
+
+Vite only exposes variables prefixed with `VITE_` to client-side code.
+
+```bash
+# WRONG — not accessible in browser code
+API_KEY=my-secret-key
+
+# CORRECT — accessible as import.meta.env.VITE_API_KEY
+VITE_API_KEY=my-secret-key
+```
+
+```typescript
+const apiKey = import.meta.env.VITE_API_KEY
+```
+
+::: warning
+Never put secrets in `VITE_*` variables. They are embedded in the client bundle and visible to all users.
+:::
+
+---
+
+### HMR Not Working in Docker / WSL2
+
+Enable polling in `vite.config.ts`:
+
+```typescript
+export default defineConfig({
+  server: {
+    host: true,
+    watch: {
+      usePolling: true,
+      interval: 100,
+    },
+  },
+})
+```
+
+---
+
+### TypeScript: `Cannot find module 'vite/client'`
+
+Add the triple-slash reference to `src/vite-env.d.ts`:
+
+```typescript
+/// <reference types="vite/client" />
+```
+
+Or add `"types": ["vite/client"]` to your `tsconfig.json` `compilerOptions`.
+
+---
+
+### Cache Issues
+
+If you encounter unexpected behavior, clear the Vite cache and restart:
+
+```bash
+rm -rf node_modules/.vite
+npm run dev
+```
