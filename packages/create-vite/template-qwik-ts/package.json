@@ -12,7 +12,7 @@
     "@types/node": "^24.12.0",
     "serve": "^14.2.6",
     "typescript": "~5.9.3",
-    "vite": "^8.0.1"
+    "vite": "^8.0.3"
   },
   "dependencies": {
     "@builder.io/qwik": "^1.19.2"
