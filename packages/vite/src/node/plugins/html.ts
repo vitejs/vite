@@ -365,9 +365,9 @@ export function getCssFilesForChunk(
 
   if (analyzedImportedCssFiles.has(chunk)) {
     const files = analyzedImportedCssFiles.get(chunk)!
-    const additionals = files.filter((file) => !seenCss.has(file))
-    additionals.forEach((file) => seenCss.add(file))
-    return additionals
+    const additional = files.filter((file) => !seenCss.has(file))
+    additional.forEach((file) => seenCss.add(file))
+    return additional
   }
 
   // Collect all CSS from imports (unfiltered for caching, filtered for return)
