@@ -98,6 +98,7 @@ import { addToHTMLProxyTransformResult } from './html'
 import {
   assetUrlRE,
   cssEntriesMap,
+  cssEntryReferenceIdsMap,
   fileToUrl,
   publicAssetUrlCache,
   publicAssetUrlRE,
@@ -275,6 +276,34 @@ export const removedPureCssFilesCache: WeakMap<
   ResolvedConfig,
   Map<string, RenderedChunk>
 > = new WeakMap()
+
+function getCssEntryManifestName(
+  chunk: OutputChunk | RenderedChunk,
+  config: ResolvedConfig,
+  isLegacy: boolean,
+): string {
+  if (chunk.facadeModuleId) {
+    const input = config.build.rollupOptions.input
+    if (input && !Array.isArray(input) && typeof input === 'object') {
+      const normalizedFacadeModuleId = normalizePath(chunk.facadeModuleId)
+      for (const [name, entry] of Object.entries(input)) {
+        const resolvedEntry = normalizePath(
+          path.isAbsolute(entry) ? entry : path.resolve(config.root, entry),
+        )
+        if (resolvedEntry === normalizedFacadeModuleId) {
+          if (isLegacy && !name.includes('-legacy')) {
+            const ext = path.extname(name)
+            const endPos = ext.length !== 0 ? -ext.length : undefined
+            return `${name.slice(0, endPos)}-legacy${ext}`
+          }
+          return name
+        }
+      }
+    }
+  }
+
+  return getChunkOriginalFileName(chunk, config.root, isLegacy) ?? chunk.name
+}
 
 // Used only if the config doesn't code-split CSS (builds a single CSS file)
 export const cssBundleNameCache: WeakMap<ResolvedConfig, string> = new WeakMap()
@@ -874,6 +903,10 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
                   (opts.format === 'es' || opts.format === 'cjs') &&
                   !chunk.fileName.includes('-legacy')
                 ) {
+                  const isLegacyChunk =
+                    this.environment.config.isOutputOptionsForLegacyChunks?.(
+                      opts,
+                    ) ?? false
                   const isEntry = chunk.isEntry && isPureCssChunk
                   const cssFullAssetName = ensureFileExt(chunk.name, '.css')
                   // if facadeModuleId doesn't exist or doesn't have a CSS extension,
@@ -888,9 +921,7 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
                   const originalFileName = getChunkOriginalFileName(
                     chunk,
                     config.root,
-                    this.environment.config.isOutputOptionsForLegacyChunks?.(
-                      opts,
-                    ) ?? false,
+                    isLegacyChunk,
                   )
 
                   chunkCSS = resolveAssetUrlsInCss(
@@ -914,7 +945,18 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
                   if (isEntry) {
                     cssEntriesMap
                       .get(this.environment)!
-                      .set(chunk.name, referenceId)
+                      .set(
+                        getCssEntryManifestName(chunk, config, isLegacyChunk),
+                        referenceId,
+                      )
+                    cssEntryReferenceIdsMap
+                      .get(this.environment)!
+                      .set(
+                        ('preliminaryFileName' in chunk
+                          ? chunk.preliminaryFileName
+                          : chunk.fileName) as string,
+                        referenceId,
+                      )
                   }
                   chunk.viteMetadata!.importedCss.add(
                     this.getFileName(referenceId),
@@ -1107,10 +1149,28 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
           if (emptyJsPlaceholder.isEntry) {
             const { importedAssets, importedCss } =
               emptyJsPlaceholder.viteMetadata!
+            const isLegacyChunk =
+              this.environment.config.isOutputOptionsForLegacyChunks?.(opts) ??
+              false
             const cssReferenceId = cssEntriesMap
               .get(this.environment)!
-              .get(emptyJsPlaceholder.name)!
-            const realCssEntryName = this.getFileName(cssReferenceId)
+              .get(
+                getCssEntryManifestName(
+                  emptyJsPlaceholder,
+                  config,
+                  isLegacyChunk,
+                ),
+              )!
+            const cssReferenceIdByPlaceholder = cssEntryReferenceIdsMap
+              .get(this.environment)!
+              .get(
+                ('preliminaryFileName' in emptyJsPlaceholder
+                  ? emptyJsPlaceholder.preliminaryFileName
+                  : emptyJsPlaceholder.fileName) as string,
+              )
+            const realCssEntryName = this.getFileName(
+              cssReferenceIdByPlaceholder ?? cssReferenceId,
+            )
             const realCssEntry = bundle[realCssEntryName]!
             importedCss.delete(realCssEntryName)
             if (importedAssets.size) {

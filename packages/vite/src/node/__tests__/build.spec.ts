@@ -1160,6 +1160,118 @@ test('watch rebuild manifest', async (ctx) => {
   `)
 })
 
+test('manifest keeps same-basename css entries independent', async () => {
+  const root = resolve(dirname, 'fixtures/manifest-css-entry-same-basename')
+  const output = (await build({
+    root,
+    logLevel: 'silent',
+    build: {
+      write: false,
+      manifest: true,
+      rollupOptions: {
+        input: [
+          resolve(
+            root,
+            'resources/assets/css/store/skins/store_skin_85535.css',
+          ),
+          resolve(
+            root,
+            'resources/assets/css/store3/skins/store_skin_85535.css',
+          ),
+        ],
+      },
+    },
+  })) as RolldownOutput
+
+  const manifestAsset = output.output.find(
+    (item) => item.fileName === '.vite/manifest.json',
+  )
+  expect(manifestAsset?.type).toBe('asset')
+
+  const manifest = JSON.parse(
+    manifestAsset!.type === 'asset' ? manifestAsset.source.toString() : '{}',
+  ) as Record<
+    string,
+    {
+      css?: string[]
+      file: string
+      isEntry?: boolean
+      name?: string
+      src?: string
+    }
+  >
+
+  const firstKey = 'resources/assets/css/store/skins/store_skin_85535.css'
+  const secondKey = 'resources/assets/css/store3/skins/store_skin_85535.css'
+
+  expect(manifest[firstKey]).toMatchObject({
+    isEntry: true,
+    src: firstKey,
+  })
+  expect(manifest[secondKey]).toMatchObject({
+    isEntry: true,
+    src: secondKey,
+  })
+  expect(manifest[firstKey].file).toMatch(
+    /^assets\/store_skin_85535-[\w-]+\.css$/,
+  )
+  expect(manifest[secondKey].file).toMatch(
+    /^assets\/store_skin_85535-[\w-]+\.css$/,
+  )
+  expect(manifest[firstKey].file).not.toBe(manifest[secondKey].file)
+  expect(manifest[firstKey].css).toBeUndefined()
+  expect(manifest[secondKey].css).toBeUndefined()
+})
+
+test('manifest preserves explicit css entry aliases for same-basename files', async () => {
+  const root = resolve(dirname, 'fixtures/manifest-css-entry-same-basename')
+  const firstKey = 'resources/assets/css/store/skins/store_skin_85535.css'
+  const secondKey = 'resources/assets/css/store3/skins/store_skin_85535.css'
+
+  const output = (await build({
+    root,
+    logLevel: 'silent',
+    build: {
+      write: false,
+      manifest: true,
+      rollupOptions: {
+        input: {
+          'bar.css': resolve(root, firstKey),
+          'bar.custom': resolve(root, secondKey),
+        },
+      },
+    },
+  })) as RolldownOutput
+
+  const manifestAsset = output.output.find(
+    (item) => item.fileName === '.vite/manifest.json',
+  )
+  expect(manifestAsset?.type).toBe('asset')
+
+  const manifest = JSON.parse(
+    manifestAsset!.type === 'asset' ? manifestAsset.source.toString() : '{}',
+  ) as Record<
+    string,
+    {
+      file: string
+      isEntry?: boolean
+      name?: string
+      src?: string
+    }
+  >
+
+  expect(manifest[firstKey]).toMatchObject({
+    isEntry: true,
+    name: 'bar.css',
+    src: firstKey,
+  })
+  expect(manifest[secondKey]).toMatchObject({
+    isEntry: true,
+    name: 'bar.custom',
+    src: secondKey,
+  })
+})
+
 /**
  * for each chunks in output1, if there's a chunk in output2 with the same fileName,
  * ensure that the chunk code is the same. if not, the chunk hash should have changed.
