@@ -1,3 +1,4 @@
+import fs from 'node:fs'
 import { join } from 'node:path'
 import { describe, expect, onTestFinished, test, vi } from 'vitest'
 import { createServer } from '../server'
@@ -309,5 +310,39 @@ describe('file url', () => {
       join(import.meta.dirname, 'fixtures/file-url/dist/virtual/index.js')
     )
     expect(mod2.default.default).toBe('ok')
+  })
+})
+
+describe('browser: false build output', () => {
+  test('build keeps browser-disabled CJS deep imports inert when NODE_ENV=development', async () => {
+    const root = join(import.meta.dirname, 'fixtures/browser-false-cjs')
+    const outDir = 'dist-dev'
+    const previousNodeEnv = process.env.NODE_ENV
+    process.env.NODE_ENV = 'development'
+
+    onTestFinished(() => {
+      process.env.NODE_ENV = previousNodeEnv
+      fs.rmSync(join(root, outDir), { recursive: true, force: true })
+    })
+
+    await build({
+      configFile: false,
+      root,
+      logLevel: 'error',
+      build: {
+        minify: false,
+        outDir,
+      },
+    })
+
+    const bundleDir = join(root, outDir, 'assets')
+    const bundleFile = fs
+      .readdirSync(bundleDir)
+      .find((file) => file.endsWith('.js'))
+    expect(bundleFile).toBeDefined()
+
+    const output = fs.readFileSync(join(bundleDir, bundleFile!), 'utf-8')
+    expect(output).toContain('module.exports = {}')
+    expect(output).not.toContain('externalized for browser compatibility')
   })
 })

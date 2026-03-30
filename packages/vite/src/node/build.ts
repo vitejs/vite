@@ -518,6 +518,9 @@ export async function resolveBuildPlugins(config: ResolvedConfig): Promise<{
     ],
     post: [
       ...(isBuild ? buildImportAnalysisPlugin(config) : []),
+      ...(isBuild && process.env.NODE_ENV !== 'production'
+        ? [buildBrowserExternalRewritePlugin()]
+        : []),
       ...(config.build.minify === 'esbuild' ? [buildEsbuildPlugin()] : []),
       ...(isBuild ? [terserPlugin(config)] : []),
       ...(isBuild && !config.isWorker
@@ -530,6 +533,26 @@ export async function resolveBuildPlugins(config: ResolvedConfig): Promise<{
         : []),
       nativeLoadFallbackPlugin(),
     ],
+  }
+}
+
+const browserExternalWarningStubRE =
+  /module\.exports = Object\.create\(new Proxy\(\{\}, \{ get\(_, key\) \{\s*if \(key !== "__esModule" && key !== "__proto__" && key !== "constructor" && key !== "splice"\) throw new Error\(`Module "[^`]*" has been externalized for browser compatibility\. Cannot access "[^`]*\.\$\{key\}" in client code\.\s+See https:\/\/vite\.dev\/guide\/troubleshooting\.html#module-externalized-for-browser-compatibility for more details\.`\);\s*\} \}\)\);/g
+
+function buildBrowserExternalRewritePlugin(): Plugin {
+  return {
+    name: 'vite:build-browser-external-rewrite',
+    renderChunk(code) {
+      const rewritten = code.replace(
+        browserExternalWarningStubRE,
+        'module.exports = {}',
+      )
+      if (rewritten === code) return null
+      return {
+        code: rewritten,
+        map: null,
+      }
+    },
   }
 }
 
