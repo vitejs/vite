@@ -201,6 +201,9 @@ declare module '*.wasm?init' {
   export default initWasm
 }
 
+// wasm (ESM integration)
+declare module '*.wasm' {}
+
 // web worker
 declare module '*?worker' {
   const workerConstructor: {

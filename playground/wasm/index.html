@@ -28,15 +28,33 @@
   <span class="result"></span>
 </div>
 
+<div class="direct-wasm">
+  <h3>Direct wasm import, result should be 3</h3>
+  <span class="result"></span>
+</div>
+
+<div class="direct-wasm-with-imports">
+  <h3>Direct wasm import with wasm imports, result should be 42</h3>
+  <span class="result"></span>
+</div>
+
 <script type="module">
   import light from './light.wasm?init'
   import heavy from './heavy.wasm?init'
   import myWorker from './worker?worker'
+  import { add } from './add.wasm'
+  import { exported_func } from './light-with-imports.wasm'
+  import { getResult } from './imports.js'
 
   const w = new myWorker()
   w.addEventListener('message', (ev) => {
     text('.worker-wasm .result', ev.data.result)
   })
+
+  text('.direct-wasm .result', add(1, 2))
+
+  exported_func()
+  text('.direct-wasm-with-imports .result', getResult())
 
   async function testWasm(init, resultElement) {
     const { exported_func } = await init({
