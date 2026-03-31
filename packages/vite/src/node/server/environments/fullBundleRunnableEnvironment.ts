@@ -31,7 +31,7 @@ class FullBundleRunnableDevEnvironment extends FullBundleDevEnvironment {
   }
 
   get runner(): ModuleRunner {
-    return this._runner.create()
+    return this._runner.ensure()
   }
 
   protected override async getDevRuntimeImplementation(): Promise<string> {
@@ -77,10 +77,7 @@ class FullBundleRunnableDevEnvironment extends FullBundleDevEnvironment {
 
   override async close(): Promise<void> {
     await super.close()
-    const runner = this._runner.get()
-    if (runner) {
-      await runner.close()
-    }
+    await this._runner.get()?.close()
   }
 }
 

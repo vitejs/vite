@@ -152,7 +152,7 @@ export interface ServerModuleRunnerFactoryOptions<E extends DevEnvironment> {
 }
 
 export interface ServerModuleRunnerFactory {
-  create(): ModuleRunner
+  ensure(): ModuleRunner
   get(): ModuleRunner | undefined
 }
 
@@ -162,7 +162,7 @@ export function defineServerModuleRunnerFactory<E extends DevEnvironment>(
 ): ServerModuleRunnerFactory {
   let runner: ModuleRunner | undefined
   return {
-    create() {
+    ensure() {
       if (runner) {
         return runner
       }

@@ -52,15 +52,12 @@ class RunnableDevEnvironment extends DevEnvironment {
   }
 
   get runner(): ModuleRunner {
-    return this._runner.create()
+    return this._runner.ensure()
   }
 
   override async close(): Promise<void> {
     await super.close()
-    const runner = this._runner.get()
-    if (runner) {
-      await runner.close()
-    }
+    await this._runner.get()?.close()
   }
 }
 

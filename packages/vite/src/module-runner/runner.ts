@@ -437,12 +437,7 @@ export class ModuleRunner {
       Object.defineProperty(meta, 'hot', {
         enumerable: true,
         get: () => {
-          if (!this.hmrClient) {
-            return
-          }
-          this.debug?.('[module runner] creating hmr context for', mod.url)
-          this.ensureModuleHotContext(mod.url)
-          return this.moduleHotContexts.get(mod.url)
+          return this.ensureModuleHotContext(mod.url)
         },
         set: (value) => {
           this.moduleHotContexts.set(mod.url, value)
@@ -480,6 +475,7 @@ export class ModuleRunner {
     }
 
     if (!this.moduleHotContexts.has(url)) {
+      this.debug?.('[module runner] creating hmr context for', url)
       const hotContext = new HMRContext(this.hmrClient, url)
       this.moduleHotContexts.set(url, hotContext)
     }
