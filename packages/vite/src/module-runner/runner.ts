@@ -361,6 +361,7 @@ export class ModuleRunner {
 
     if ('invalidate' in fetchedModule && fetchedModule.invalidate) {
       this.evaluatedModules.invalidateModule(module)
+      this.moduleHotContexts.delete(module.url)
     }
 
     fetchedModule.url = moduleUrl
