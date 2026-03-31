@@ -7,7 +7,10 @@ import { isWindows, slash } from '../../../../shared/utils'
 import type { ExternalFetchResult } from '../../../../shared/invokeMethods'
 import type { HMRLogger } from '../../../../module-runner'
 import { createServer } from '../../../server'
-import { createRunnableDevEnvironment, isRunnableDevEnvironment } from '../../../server/environments/runnableEnvironment'
+import {
+  createRunnableDevEnvironment,
+  isRunnableDevEnvironment,
+} from '../../../server/environments/runnableEnvironment'
 import { runnerTest as it } from './utils'
 
 const _URL = URL
