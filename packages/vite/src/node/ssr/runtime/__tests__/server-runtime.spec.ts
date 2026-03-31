@@ -57,7 +57,8 @@ describe.for([
   },
   { fullBundle: [], title: 'dev mode' },
 ])('module runner initialization ($title)', async ({ fullBundle }) => {
-  it.override('fullBundle', fullBundle).override('config', {
+  it.override('fullBundle', fullBundle)
+  it.override('config', {
     resolve: {
       external: ['tinyglobby'],
       noExternal: ['@oxc-project/runtime'],
