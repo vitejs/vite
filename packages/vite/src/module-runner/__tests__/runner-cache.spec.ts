@@ -1,5 +1,5 @@
 import { describe, expect, test } from 'vitest'
-import type { HotPayload } from '#types/hot'
+import type { HotPayload } from 'vite'
 import type {
   CachedFetchResult,
   ExternalFetchResult,
