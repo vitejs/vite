@@ -55,7 +55,8 @@ export {
 export {
   createFullBundleRunnableDevEnvironment,
   isFullBundleRunnableDevEnvironment,
-  type FullBundleRunnableDevEnvironment,
+  // TODO: should have a unified FBM Dev Environment, not split between client and ssr
+  FullBundleRunnableDevEnvironment,
 } from './server/environments/fullBundleRunnableEnvironment'
 export {
   createFetchableDevEnvironment,
