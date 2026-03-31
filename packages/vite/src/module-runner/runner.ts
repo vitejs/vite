@@ -8,7 +8,7 @@ import {
 } from '../shared/moduleRunnerTransport'
 import { createIsBuiltin } from '../shared/builtin'
 import type { EvaluatedModuleNode } from './evaluatedModules'
-import { EvaluatedModules } from './evaluatedModules'
+import { EvaluatedModules, normalizeModuleId } from './evaluatedModules'
 import type {
   ModuleEvaluator,
   ModuleRunnerContext,
@@ -308,6 +308,25 @@ export class ModuleRunner {
         throw new Error(
           `Module "${url}" was mistakenly invalidated during fetch phase.`,
         )
+      }
+      // Verify the server resolved to the same module we have cached.
+      // When a bare specifier maps to different physical packages for
+      // different importers (e.g. monorepos with duplicate deps), the
+      // urlToIdModuleMap may hold a stale entry. If the server resolved
+      // to a different module, refetch without the cache flag.
+      if (
+        fetchedModule.id &&
+        cachedModule.id !== normalizeModuleId(fetchedModule.id)
+      ) {
+        this.debug?.(
+          '[module runner] cache identity mismatch for',
+          url,
+          '- cached:',
+          cachedModule.id,
+          'server:',
+          fetchedModule.id,
+        )
+        return this.getModuleInformation(url, importer, undefined)
       }
       return cachedModule
     }
