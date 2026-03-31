@@ -47,6 +47,7 @@ describe.for([
       './fixtures/simple.js?raw',
       './fixtures/simple.js?url',
       './fixtures/test.css?inline',
+      './fixtures/oxc-runtime-helper.ts',
 
       // TODO: this fails during bundle, not at runtime
       // './fixtures/esm-external-non-existing.js',
@@ -56,13 +57,10 @@ describe.for([
   },
   { fullBundle: [], title: 'dev mode' },
 ])('module runner initialization ($title)', async ({ fullBundle }) => {
-  it.scoped({
-    fullBundle,
-    config: {
-      resolve: {
-        external: ['tinyglobby'],
-        noExternal: ['@oxc-project/runtime'],
-      },
+  it.override('fullBundle', fullBundle).override('config', {
+    resolve: {
+      external: ['tinyglobby'],
+      noExternal: ['@oxc-project/runtime'],
     },
   })
 
@@ -240,23 +238,15 @@ describe.for([
     })
   })
 
-  it(`cyclic invalid 1`, async ({ runner, fullBundle }) => {
+  it(`cyclic invalid 1`, async ({ runner }) => {
     // Node also fails but with a different message
     //   $ node packages/vite/src/node/ssr/runtime/__tests__/fixtures/cyclic2/test5/index.js
     //   ReferenceError: Cannot access 'dep1' before initialization
-    if (fullBundle.length) {
-      await expect(() =>
-        runner.import('/fixtures/cyclic2/test5/index.js'),
-      ).rejects.toMatchInlineSnapshot(
-        `[ReferenceError: Cannot access 'dep1' before initialization]`,
-      )
-    } else {
-      await expect(() =>
-        runner.import('/fixtures/cyclic2/test5/index.js'),
-      ).rejects.toMatchInlineSnapshot(
-        `[TypeError: Cannot read properties of undefined (reading 'ok')]`,
-      )
-    }
+    await expect(() =>
+      runner.import('/fixtures/cyclic2/test5/index.js'),
+    ).rejects.toMatchInlineSnapshot(
+      `[TypeError: Cannot read properties of undefined (reading 'ok')]`,
+    )
   })
 
   it(`cyclic with mixed import and re-export`, async ({ runner }) => {
@@ -511,14 +501,12 @@ describe('not supported by bundle mode', () => {
 })
 
 describe('optimize-deps', async () => {
-  it.scoped({
-    config: {
-      cacheDir: 'node_modules/.vite-test',
-      ssr: {
-        noExternal: true,
-        optimizeDeps: {
-          include: ['@vitejs/cjs-external'],
-        },
+  it.override('config', {
+    cacheDir: 'node_modules/.vite-test',
+    ssr: {
+      noExternal: true,
+      optimizeDeps: {
+        include: ['@vitejs/cjs-external'],
       },
     },
   })
@@ -530,28 +518,26 @@ describe('optimize-deps', async () => {
 })
 
 describe('resolveId absolute path entry', async () => {
-  it.scoped({
-    config: {
-      plugins: [
-        {
-          name: 'test-resolevId',
-          enforce: 'pre',
-          resolveId(source) {
-            if (
-              source ===
-              posix.join(this.environment.config.root, 'fixtures/basic.js')
-            ) {
-              return '\0virtual:basic'
-            }
-          },
-          load(id) {
-            if (id === '\0virtual:basic') {
-              return `export const name = "virtual:basic"`
-            }
-          },
+  it.override('config', {
+    plugins: [
+      {
+        name: 'test-resolevId',
+        enforce: 'pre',
+        resolveId(source) {
+          if (
+            source ===
+            posix.join(this.environment.config.root, 'fixtures/basic.js')
+          ) {
+            return '\0virtual:basic'
+          }
         },
-      ],
-    },
+        load(id) {
+          if (id === '\0virtual:basic') {
+            return `export const name = "virtual:basic"`
+          }
+        },
+      },
+    ],
   })
 
   it('ssrLoadModule', async ({ server }) => {
@@ -569,9 +555,9 @@ describe('resolveId absolute path entry', async () => {
   })
 
   describe('in full bundle mode', async () => {
-    it.scoped({
-      fullBundle: [posix.join(slash(import.meta.dirname), 'fixtures/basic.js')],
-    })
+    it.override('fullBundle', [
+      posix.join(slash(import.meta.dirname), 'fixtures/basic.js'),
+    ])
 
     it('runner', async ({ runner }) => {
       // Unlike with dev mode, the ID is specified in the build options,
@@ -585,28 +571,26 @@ describe('resolveId absolute path entry', async () => {
 describe('virtual module hmr', async () => {
   let state = 'init'
 
-  it.scoped({
-    config: {
-      server: {
-        hmr: true,
-      },
-      plugins: [
-        {
-          name: 'test-resolevId',
-          enforce: 'pre',
-          resolveId(source) {
-            if (source === 'virtual:test') {
-              return '\0' + source
-            }
-          },
-          load(id) {
-            if (id === '\0virtual:test') {
-              return `export default ${JSON.stringify(state)}`
-            }
-          },
-        },
-      ],
+  it.override('config', {
+    server: {
+      hmr: true,
     },
+    plugins: [
+      {
+        name: 'test-resolevId',
+        enforce: 'pre',
+        resolveId(source) {
+          if (source === 'virtual:test') {
+            return '\0' + source
+          }
+        },
+        load(id) {
+          if (id === '\0virtual:test') {
+            return `export default ${JSON.stringify(state)}`
+          }
+        },
+      },
+    ],
   })
 
   it('full reload', async ({ environment, runner }) => {
@@ -643,13 +627,11 @@ describe('virtual module hmr', async () => {
 })
 
 describe('invalid package', async () => {
-  it.scoped({
-    config: {
-      environments: {
-        ssr: {
-          resolve: {
-            noExternal: true,
-          },
+  it.override('config', {
+    environments: {
+      ssr: {
+        resolve: {
+          noExternal: true,
         },
       },
     },

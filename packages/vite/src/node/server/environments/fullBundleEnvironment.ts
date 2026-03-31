@@ -61,7 +61,7 @@ export class MemoryFiles {
 }
 
 export class FullBundleDevEnvironment extends DevEnvironment {
-  private devEngine!: DevEngine
+  private _devEngine: DevEngine | undefined
   private clients = new Clients()
   private invalidateCalledModules = new Map<
     NormalizedHotChannelClient,
@@ -81,6 +81,13 @@ export class FullBundleDevEnvironment extends DevEnvironment {
     context: DevEnvironmentContext,
   ) {
     super(name, config, { ...context, disableDepsOptimizer: true })
+  }
+
+  private get devEngine(): DevEngine {
+    if (!this._devEngine) {
+      throw new Error(`dev engine was not yet initialized`)
+    }
+    return this._devEngine
   }
 
   override async listen(_server: ViteDevServer): Promise<void> {
@@ -112,7 +119,7 @@ export class FullBundleDevEnvironment extends DevEnvironment {
       }
     })
 
-    this.devEngine = await dev(rollupOptions, outputOptions, {
+    this._devEngine = await dev(rollupOptions, outputOptions, {
       onHmrUpdates: (result) => {
         if (result instanceof Error) {
           // TODO: send to the specific client
@@ -175,7 +182,7 @@ export class FullBundleDevEnvironment extends DevEnvironment {
       },
     })
     debug?.('INITIAL: setup dev engine')
-    this.devEngine.run().then(
+    this._devEngine.run().then(
       () => {
         debug?.('INITIAL: run done')
       },
