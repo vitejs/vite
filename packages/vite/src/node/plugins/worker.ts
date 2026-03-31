@@ -1,6 +1,6 @@
 import path from 'node:path'
 import MagicString from 'magic-string'
-import type { RolldownOutput, RollupError } from 'rolldown'
+import type { RolldownOutput } from 'rolldown'
 import colors from 'picocolors'
 import { type ImportSpecifier, init, parse } from 'es-module-lexer'
 import { viteWebWorkerPostPlugin as nativeWebWorkerPostPlugin } from 'rolldown/experimental'
@@ -242,14 +242,9 @@ async function bundleWorkerEntry(
       sourcemap: workerEnvironment.config.build.sourcemap,
     })
     watchedFiles = (await bundle.watchFiles).map((f) => normalizePath(f))
-  } catch (e) {
-    // adjust rollup format error
-    if (
-      e instanceof Error &&
-      e.name === 'RollupError' &&
-      (e as RollupError).code === 'INVALID_OPTION' &&
-      e.message.includes('"output.format"')
-    ) {
+  } catch (e: any) {
+    // adjust rollup/rolldown format error
+    if (e instanceof Error && e.message.includes('output.format')) {
       e.message = e.message.replace('output.format', 'worker.format')
     }
     throw e

@@ -931,10 +931,13 @@ test('sharedConfigBuild and emitAssets', async () => {
   ])
 })
 
-test.skip('adjust worker build error for worker.format', async () => {
+test('adjust worker build error for worker.format', async () => {
   try {
     await build({
       root: resolve(dirname, 'fixtures/worker-dynamic'),
+      worker: {
+        format: 'invalid' as any,
+      },
       build: {
         rollupOptions: {
           input: {
@@ -944,7 +947,7 @@ test.skip('adjust worker build error for worker.format', async () => {
       },
       logLevel: 'silent',
     })
-  } catch (e) {
+  } catch (e: any) {
     expect(e.message).toContain('worker.format')
     expect(e.message).not.toContain('output.format')
     return
