@@ -16,6 +16,8 @@ export interface CustomEventMap {
   'vite:ws:connect': WebSocketConnectionPayload
   'vite:ws:disconnect': WebSocketConnectionPayload
   /** @internal */
+  'vite:forward-console': ForwardConsolePayload
+  /** @internal */
   'vite:module-loaded': { modules: string[] }
 
   // server events
@@ -39,6 +41,31 @@ export interface InvalidatePayload {
   message: string | undefined
   firstInvalidatedBy: string
 }
+
+export type ForwardConsolePayload =
+  | {
+      type: 'error'
+      data: {
+        name: string
+        message: string
+        stack?: string
+      }
+    }
+  | {
+      type: 'unhandled-rejection'
+      data: {
+        name: string
+        message: string
+        stack?: string
+      }
+    }
+  | {
+      type: 'log'
+      data: {
+        level: string
+        message: string
+      }
+    }
 
 /**
  * provides types for payloads of built-in Vite events

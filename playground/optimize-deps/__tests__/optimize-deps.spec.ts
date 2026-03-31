@@ -166,6 +166,10 @@ test('CJS dep with css import', async () => {
   await expect.poll(() => getColor('.cjs-with-assets')).toBe('blue')
 })
 
+test('CJS dep requiring dep with css main field', async () => {
+  await expect.poll(() => getColor('.cjs-require-css-main-field')).toBe('coral')
+})
+
 test('externalize known non-js files in optimize included dep', async () => {
   await expect
     .poll(() => page.textContent('.externalize-known-non-js'))
@@ -217,6 +221,9 @@ test('flatten id should generate correctly', async () => {
   await expect
     .poll(() => page.textContent('.clonedeep-dot'))
     .toBe('clonedeep-dot')
+  await expect
+    .poll(() => page.textContent('.dep-with-plus-subpath'))
+    .toBe('plus-subpath')
 })
 
 test('non optimized module is not duplicated', async () => {

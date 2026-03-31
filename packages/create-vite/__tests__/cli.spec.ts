@@ -173,7 +173,7 @@ test('successfully scaffolds a project based on react-compiler-ts starter templa
 
   // Assertions
   expect(stdout).toContain(`Scaffolding project in ${genPath}`)
-  expect(configFile).toContain('babel-plugin-react-compiler')
+  expect(configFile).toContain('reactCompilerPreset')
   expect(packageJsonFile).toContain('babel-plugin-react-compiler')
   expect(readmeFile).toContain('The React Compiler is enabled on this template')
 })

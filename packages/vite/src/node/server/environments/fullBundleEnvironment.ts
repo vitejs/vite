@@ -302,10 +302,10 @@ export class FullBundleDevEnvironment extends DevEnvironment {
       implement: await this.getDevRuntimeImplementation(),
     }
 
-    if (rolldownOptions.optimization) {
-      // disable inlineConst optimization due to a bug in Rolldown
-      rolldownOptions.optimization.inlineConst = false
-    }
+    // disable inlineConst optimization due to a bug in Rolldown
+    // https://github.com/vitejs/vite/issues/21843
+    rolldownOptions.optimization ??= {}
+    rolldownOptions.optimization.inlineConst = false
 
     // set filenames to make output paths predictable so that `renderChunk` hook does not need to be used
     if (Array.isArray(rolldownOptions.output)) {

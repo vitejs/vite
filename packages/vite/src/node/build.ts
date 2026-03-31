@@ -66,7 +66,7 @@ import { ssrManifestPlugin } from './ssr/ssrManifestPlugin'
 import { findNearestMainPackageData, findNearestPackageData } from './packages'
 import type { PackageCache } from './packages'
 import {
-  convertToNotifyOptions,
+  convertToWatcherOptions,
   getResolvedOutDirs,
   resolveChokidarOptions,
   resolveEmptyOutDir,
@@ -523,7 +523,7 @@ export async function resolveBuildPlugins(config: ResolvedConfig): Promise<{
       ...(isBuild && !config.isWorker
         ? [
             licensePlugin(),
-            manifestPlugin(config),
+            manifestPlugin(),
             ssrManifestPlugin(),
             buildReporterPlugin(config),
           ]
@@ -648,16 +648,6 @@ export function resolveRolldownOptions(
       ...options.rollupOptions.experimental,
       viteMode: true,
     },
-    optimization: {
-      inlineConst:
-        typeof options.rollupOptions.optimization?.inlineConst === 'boolean'
-          ? options.rollupOptions.optimization.inlineConst
-          : {
-              mode: 'smart',
-              ...options.rollupOptions.optimization?.inlineConst,
-            },
-      ...options.rollupOptions.optimization,
-    },
   }
 
   const isSsrTargetWebworkerEnvironment =
@@ -737,7 +727,19 @@ export function resolveRolldownOptions(
           (typeof input === 'string' || Object.keys(input).length === 1))
           ? false
           : undefined),
-      legalComments: 'none',
+      comments:
+        typeof output.comments === 'boolean'
+          ? output.comments
+          : {
+              // Do not minify whitespace for ES lib output since that would remove
+              // pure annotations and break tree-shaking
+              annotation:
+                !options.minify ||
+                (libOptions && (format === 'es' || format === 'esm')),
+              jsdoc: !options.minify,
+              legal: !options.minify,
+              ...output.comments,
+            },
       minify:
         options.minify === 'oxc'
           ? libOptions && (format === 'es' || format === 'esm')
@@ -829,7 +831,7 @@ async function buildEnvironment(
         watch: {
           ...rollupOptions.watch,
           ...options.watch,
-          notify: convertToNotifyOptions(resolvedChokidarOptions),
+          watcher: convertToWatcherOptions(resolvedChokidarOptions),
         },
       })
 

@@ -3,7 +3,7 @@ import MagicString from 'magic-string'
 import type { RollupError } from 'rolldown'
 import { parseAstAsync } from 'rolldown/parseAst'
 import { stripLiteral } from 'strip-literal'
-import type { Expression, ExpressionStatement } from 'estree'
+import type { ESTree } from 'rolldown/utils'
 import type { ResolvedConfig } from '../config'
 import type { Plugin } from '../plugin'
 import { evalValue, injectQuery, transformStableResult } from '../utils'
@@ -40,7 +40,7 @@ function findClosingParen(input: string, fromIndex: number) {
 }
 
 function extractWorkerTypeFromAst(
-  expression: Expression,
+  expression: ESTree.Expression,
   optsStartIndex: number,
 ): 'classic' | 'module' | undefined {
   if (expression.type !== 'ObjectExpression') {
@@ -102,7 +102,8 @@ async function parseWorkerOptions(
     opts = evalValue<WorkerOptions>(rawOpts)
   } catch {
     const optsNode = (
-      (await parseAstAsync(`(${rawOpts})`)).body[0] as ExpressionStatement
+      (await parseAstAsync(`(${rawOpts})`))
+        .body[0] as ESTree.ExpressionStatement
     ).expression
 
     const type = extractWorkerTypeFromAst(optsNode, optsStartIndex)
@@ -180,8 +181,8 @@ async function getWorkerType(
   return 'classic'
 }
 
-const workerImportMetaUrlRE =
-  /new\s+(?:Worker|SharedWorker)\s*\(\s*new\s+URL.+?import\.meta\.url/s
+export const workerImportMetaUrlRE: RegExp =
+  /\bnew\s+(?:Worker|SharedWorker)\s*\(\s*(new\s+URL\s*\(\s*('[^']+'|"[^"]+"|`[^`]+`)\s*,\s*import\.meta\.url\s*(?:,\s*)?\))/dg
 
 export function workerImportMetaUrlPlugin(config: ResolvedConfig): Plugin {
   const isBundled = config.isBundled
@@ -208,11 +209,10 @@ export function workerImportMetaUrlPlugin(config: ResolvedConfig): Plugin {
       async handler(code, id) {
         let s: MagicString | undefined
         const cleanString = stripLiteral(code)
-        const workerImportMetaUrlRE =
-          /\bnew\s+(?:Worker|SharedWorker)\s*\(\s*(new\s+URL\s*\(\s*('[^']+'|"[^"]+"|`[^`]+`)\s*,\s*import\.meta\.url\s*(?:,\s*)?\))/dg
+        const re = new RegExp(workerImportMetaUrlRE)
 
         let match: RegExpExecArray | null
-        while ((match = workerImportMetaUrlRE.exec(cleanString))) {
+        while ((match = re.exec(cleanString))) {
           const [[, endIndex], [expStart, expEnd], [urlStart, urlEnd]] =
             match.indices!
 

@@ -1,4 +1,5 @@
 import path from 'node:path'
+import fs from 'node:fs'
 import fsp from 'node:fs/promises'
 import convertSourceMap from 'convert-source-map'
 import type { ExistingRawSourceMap, SourceMap } from 'rolldown'
@@ -149,16 +150,16 @@ export function applySourcemapIgnoreList(
   }
 }
 
-export async function extractSourcemapFromFile(
+export function extractSourcemapFromFile(
   code: string,
   filePath: string,
-): Promise<{ code: string; map: SourceMap } | undefined> {
+): { code: string; map: SourceMap } | undefined {
   const map = (
     convertSourceMap.fromSource(code) ||
-    (await convertSourceMap.fromMapFileSource(
+    convertSourceMap.fromMapFileSource(
       code,
       createConvertSourceMapReadMap(filePath),
-    ))
+    )
   )?.toObject()
 
   if (map) {
@@ -171,7 +172,7 @@ export async function extractSourcemapFromFile(
 
 function createConvertSourceMapReadMap(originalFileName: string) {
   return (filename: string) => {
-    return fsp.readFile(
+    return fs.readFileSync(
       path.resolve(path.dirname(originalFileName), filename),
       'utf-8',
     )

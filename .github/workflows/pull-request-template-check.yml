@@ -1,0 +1,100 @@
+name: Pull Request Template Check
+
+# SAFETY: pull_request_target is used here because:
+# - The workflow does NOT check out PR code (actions/checkout checks out the base branch)
+# - Only PR metadata (title, body) from the event payload is read
+# - No PR-supplied code is executed
+on:
+  pull_request_target:
+    types: [opened]
+
+jobs:
+  evaluate-pr:
+    if: github.repository == 'vitejs/vite'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      issues: read
+      pull-requests: read
+    outputs:
+      agent_output: ${{ steps.agent.outputs.agent_output }}
+    steps:
+      - uses: actions/checkout@v6
+
+      - uses: warpdotdev/oz-agent-action@ce1621abf6a8ed8afdd4e4cc994545ede8fe1c6f # v1
+        id: agent
+        with:
+          prompt: |
+            You are a pull request reviewer for the Vite project.
+
+            Read the PR template from the checked-out repository at:
+            .github/PULL_REQUEST_TEMPLATE.md
+
+            Then evaluate the following pull request to determine if it faithfully follows that template's guidelines.
+
+            PR title: ${{ github.event.pull_request.title }}
+            PR body:
+            ${{ github.event.pull_request.body }}
+
+            Based on the PR template, check for the following:
+
+            1. **Description** (required) - A clear and concise description of what the PR solves
+            2. **Issue reference** (required) - References to related issues (e.g. `fixes #123`)
+            3. **Alternatives explored** (optional but encouraged) - Mention of other approaches considered
+            4. **Acknowledgments** (required) - Evidence that the author has:
+               - Read the Contributing Guidelines
+               - Checked for duplicate PRs
+               - Considered documentation updates
+               - Included relevant tests (or explained why not)
+
+            Evaluate the PR against these criteria. Focus on whether the required information is present and substantive (not empty placeholders or placeholder text).
+
+            Respond with ONLY a JSON object (no markdown fencing) with these fields:
+            - "compliant": true/false
+            - "missing": an array of strings describing what is missing or inadequate (empty array if compliant)
+            - "comment": a polite, helpful comment to post if non-compliant, formatted in GitHub markdown. Address the user by their username @${{ github.event.pull_request.user.login }}. Ask them to update the PR with the missing information. Reference the PR template they should follow. Be concise.
+          output_format: json
+          warp_api_key: ${{ secrets.WARP_API_KEY }}
+          profile: ${{ vars.WARP_AGENT_PROFILE || '' }}
+
+  post-results:
+    needs: evaluate-pr
+    if: needs.evaluate-pr.outputs.agent_output
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: write
+    steps:
+      - name: Write result to summary
+        uses: actions/github-script@v8
+        env:
+          AGENT_OUTPUT: ${{ needs.evaluate-pr.outputs.agent_output }}
+        with:
+          script: |
+            const output = process.env.AGENT_OUTPUT;
+
+            try {
+              // The agent outputs streaming JSON format with multiple lines
+              // We need to extract the last line with type:"agent" and parse its text field
+              const lines = output.trim().split('\n');
+              let agentText = null;
+              for (const line of lines) {
+                try {
+                  const parsed = JSON.parse(line);
+                  if (parsed.type === 'agent' && parsed.text) {
+                    agentText = parsed.text;
+                  }
+                } catch (e) {}
+              }
+
+              if (agentText) {
+                await core.summary
+                  .addHeading('Pull Request Template Check')
+                  .addCodeBlock(agentText, 'json')
+                  .write();
+              } else {
+                core.setFailed('No agent output found in response');
+              }
+            } catch (e) {
+              core.setFailed(`Failed to write summary: ${e.message}`);
+            }

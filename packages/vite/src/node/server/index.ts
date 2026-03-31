@@ -11,11 +11,16 @@ import corsMiddleware from 'cors'
 import colors from 'picocolors'
 import chokidar from 'chokidar'
 import launchEditorMiddleware from 'launch-editor-middleware'
+import { determineAgent } from '@vercel/detect-agent'
 import type { SourceMap } from 'rolldown'
 import type { ModuleRunner } from 'vite/module-runner'
 import type { FSWatcher, WatchOptions } from '#dep-types/chokidar'
 import type { Connect } from '#dep-types/connect'
 import type { CommonServerOptions } from '../http'
+import type {
+  ForwardConsoleOptions,
+  ResolvedForwardConsoleOptions,
+} from '../../shared/forwardConsole'
 import {
   httpServerStart,
   resolveHttpServer,
@@ -197,6 +202,8 @@ export interface ServerOptions extends CommonServerOptions {
     server: ViteDevServer,
     hmr: (environment: DevEnvironment) => Promise<void>,
   ) => Promise<void>
+
+  forwardConsole?: boolean | ForwardConsoleOptions
 }
 
 export interface ResolvedServerOptions extends Omit<
@@ -211,7 +218,7 @@ export interface ResolvedServerOptions extends Omit<
     | 'origin'
     | 'hotUpdateEnvironments'
   >,
-  'fs' | 'middlewareMode' | 'sourcemapIgnoreList'
+  'fs' | 'middlewareMode' | 'sourcemapIgnoreList' | 'forwardConsole'
 > {
   fs: Required<FileSystemServeOptions>
   middlewareMode: NonNullable<ServerOptions['middlewareMode']>
@@ -219,6 +226,7 @@ export interface ResolvedServerOptions extends Omit<
     ServerOptions['sourcemapIgnoreList'],
     false | undefined
   >
+  forwardConsole: ResolvedForwardConsoleOptions
 }
 
 export interface FileSystemServeOptions {
@@ -256,6 +264,37 @@ export type ServerHook = (
 ) => (() => void) | void | Promise<(() => void) | void>
 
 export type HttpServer = http.Server | Http2SecureServer
+
+export async function resolveForwardConsoleOptions(
+  value: boolean | ForwardConsoleOptions | undefined,
+): Promise<ResolvedForwardConsoleOptions> {
+  value ??= (await determineAgent()).isAgent
+
+  if (value === false) {
+    return {
+      enabled: false,
+      unhandledErrors: false,
+      logLevels: [],
+    }
+  }
+
+  if (value === true) {
+    return {
+      enabled: true,
+      unhandledErrors: true,
+      logLevels: ['error', 'warn'],
+    }
+  }
+
+  const unhandledErrors = value.unhandledErrors ?? true
+  const logLevels = value.logLevels ?? []
+
+  return {
+    enabled: unhandledErrors || logLevels.length > 0,
+    unhandledErrors,
+    logLevels,
+  }
+}
 
 export interface ViteDevServer {
   /**
@@ -440,6 +479,8 @@ export async function _createServer(
     listen: boolean
     previousEnvironments?: Record<string, DevEnvironment>
     previousShortcutsState?: ShortcutsState<ViteDevServer>
+    previousRestartPromise?: Promise<void> | null
+    previousForceOptimizeOnRestart?: boolean
   },
 ): Promise<ViteDevServer> {
   const config = isResolvedConfig(inlineConfig)
@@ -770,8 +811,8 @@ export async function _createServer(
       // server instance after a restart
       server = _server
     },
-    _restartPromise: null,
-    _forceOptimizeOnRestart: false,
+    _restartPromise: options.previousRestartPromise ?? null,
+    _forceOptimizeOnRestart: options.previousForceOptimizeOnRestart ?? false,
     _shortcutsState: options.previousShortcutsState,
   }
 
@@ -1138,15 +1179,16 @@ const _serverConfigDefaults = Object.freeze({
   perEnvironmentStartEndDuringDev: false,
   perEnvironmentWatchChangeDuringDev: false,
   // hotUpdateEnvironments
+  forwardConsole: undefined,
 } satisfies ServerOptions)
 export const serverConfigDefaults: Readonly<Partial<ServerOptions>> =
   _serverConfigDefaults
 
-export function resolveServerOptions(
+export async function resolveServerOptions(
   root: string,
   raw: ServerOptions | undefined,
   logger: Logger,
-): ResolvedServerOptions {
+): Promise<ResolvedServerOptions> {
   const _server = mergeWithDefaults(
     {
       ..._serverConfigDefaults,
@@ -1167,6 +1209,7 @@ export function resolveServerOptions(
       _server.sourcemapIgnoreList === false
         ? () => false
         : _server.sourcemapIgnoreList,
+    forwardConsole: await resolveForwardConsoleOptions(_server.forwardConsole),
   }
 
   let allowDirs = server.fs.allow
@@ -1249,6 +1292,8 @@ async function restartServer(server: ViteDevServer) {
         listen: false,
         previousEnvironments: server.environments,
         previousShortcutsState: server._shortcutsState,
+        previousRestartPromise: server._restartPromise,
+        previousForceOptimizeOnRestart: server._forceOptimizeOnRestart,
       })
     } catch (err: any) {
       server.config.logger.error(err.message, {
@@ -1267,8 +1312,6 @@ async function restartServer(server: ViteDevServer) {
     const middlewares = server.middlewares
     newServer._configServerPort = server._configServerPort
     newServer._currentServerPort = server._currentServerPort
-    newServer._restartPromise = server._restartPromise
-    newServer._forceOptimizeOnRestart = server._forceOptimizeOnRestart
     Object.assign(server, newServer)
 
     // Keep the same connect instance so app.use(vite.middlewares) works
