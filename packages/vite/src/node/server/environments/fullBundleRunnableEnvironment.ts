@@ -81,7 +81,7 @@ class FullBundleRunnableDevEnvironment extends FullBundleDevEnvironment {
   }
 }
 
-export type { FullBundleRunnableDevEnvironment }
+export { FullBundleRunnableDevEnvironment }
 
 /** @experimental */
 export function createFullBundleRunnableDevEnvironment(
