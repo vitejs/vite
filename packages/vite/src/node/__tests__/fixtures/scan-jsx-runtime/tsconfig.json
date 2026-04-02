@@ -5,9 +5,9 @@
     "strict": true,
     "verbatimModuleSyntax": true,
     "noEmit": true,
-    "moduleResolution": "Bundler",
-    "module": "ESNext",
-    "target": "ESNext",
+    "moduleResolution": "bundler",
+    "module": "esnext",
+    "target": "esnext",
     "lib": ["ESNext", "DOM", "DOM.Iterable"]
   }
 }
