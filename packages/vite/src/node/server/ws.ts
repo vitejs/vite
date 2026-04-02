@@ -294,7 +294,22 @@ export function createWebSocketServer(
 
     const client = getSocketClient(socket)
     for (const listener of listeners) {
-      listener(data, client)
+      const result: unknown = listener(data, client)
+      if (
+        result &&
+        typeof result === 'object' &&
+        'catch' in result &&
+        typeof result.catch === 'function'
+      ) {
+        result.catch((err: unknown) => {
+          config.logger.error(
+            `${colors.red(`ws custom listener error:`)}\n${err}`,
+            {
+              timestamp: true,
+            },
+          )
+        })
+      }
     }
   }
 
