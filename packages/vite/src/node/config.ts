@@ -969,6 +969,7 @@ function resolveEnvironmentOptions(
       logger,
       consumer,
       isBundledDev,
+      isSsrTargetWebworkerEnvironment,
     ),
     plugins: undefined!, // to be resolved later
     // will be set by `setOptimizeDepsPluginNames` later
