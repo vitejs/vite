@@ -8,6 +8,9 @@ Refer to the [Releases](https://vite.dev/releases) page in the documentation for
 
 This section describes what Vite treats as trusted and untrusted. A report is only considered a Vite vulnerability if it does not require compromising a trusted element first.
 
+> [!NOTE]
+> Reports that fall outside the threat model will still be fixed if they represent a real issue, but they will not be treated as security vulnerabilities (e.g., no CVE or advisory will be issued).
+
 ### What Vite Does Not Trust
 
 1. **Network data and untrusted clients**
