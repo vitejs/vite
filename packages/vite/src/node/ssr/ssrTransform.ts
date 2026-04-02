@@ -709,6 +709,11 @@ function isRefIdentifier(
     return false
   }
 
+  // meta property (e.g. import.meta)
+  if (parent.type === 'MetaProperty') {
+    return false
+  }
+
   // export { id } from "lib"
   // export * as id from "lib"
   if (

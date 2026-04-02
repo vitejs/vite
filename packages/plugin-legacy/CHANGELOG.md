@@ -1,3 +1,14 @@
+## <small>[8.0.1](https://github.com/vitejs/vite/compare/plugin-legacy@8.0.0...plugin-legacy@8.0.1) (2026-03-26)</small>
+### Bug Fixes
+
+* **deps:** update all non-major dependencies ([#21988](https://github.com/vitejs/vite/issues/21988)) ([9b7d150](https://github.com/vitejs/vite/commit/9b7d15002a75474421bc5636238336d88c7fe2f3))
+* **legacy:** workaround safari 15 error caching bug ([#22028](https://github.com/vitejs/vite/issues/22028)) ([eb65d63](https://github.com/vitejs/vite/commit/eb65d6351876dfad672fc6a7ebb3eeebe5ba9f23))
+
+### Miscellaneous Chores
+
+* add changelog rearrange script ([#21835](https://github.com/vitejs/vite/issues/21835)) ([efef073](https://github.com/vitejs/vite/commit/efef073a6f71be0330bd72784654ed8b8dd60cbf))
+* **deps:** update rolldown-related dependencies ([#21787](https://github.com/vitejs/vite/issues/21787)) ([1af1d3a](https://github.com/vitejs/vite/commit/1af1d3a3a4fd62fa581392b2dec9052efe8485b3))
+
 ## [8.0.0](https://github.com/vitejs/vite/compare/plugin-legacy@7.2.1...plugin-legacy@8.0.0) (2026-03-12)
 
 ### ⚠ BREAKING CHANGES

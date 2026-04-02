@@ -300,6 +300,18 @@ test('import.meta', async () => {
   ).toMatchInlineSnapshot(`"console.log(__vite_ssr_import_meta__.url)"`)
 })
 
+test('import.meta with imported variable named meta', async () => {
+  expect(
+    await ssrTransformSimpleCode(
+      `import { meta } from './meta';\nconsole.log(import.meta.url, \`Hello, \${meta}!\`)`,
+    ),
+  ).toMatchInlineSnapshot(`
+    "const __vite_ssr_import_0__ = await __vite_ssr_import__("./meta", {"importedNames":["meta"]});
+
+    console.log(__vite_ssr_import_meta__.url, \`Hello, \${__vite_ssr_import_0__.meta}!\`)"
+  `)
+})
+
 test('dynamic import', async () => {
   const result = await ssrTransformSimple(
     `export const i = () => import('./foo')`,
