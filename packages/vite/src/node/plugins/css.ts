@@ -2609,6 +2609,7 @@ const scssProcessor = (
 ): StylePreprocessor<SassStylePreprocessorInternalOptions> => {
   let worker: ReturnType<typeof makeScssWorker> | undefined
   let failedSassEmbedded: boolean | undefined
+  const errorsWithPrefix = new WeakSet<Error>()
 
   return {
     close() {
@@ -2668,19 +2669,24 @@ const scssProcessor = (
           deps,
         }
       } catch (e) {
-        // normalize SASS error
-        e.message = `[sass] ${e.message}`
-        e.id = e.file
-        e.frame = e.formatted
-        // modern api lacks `line` and `column` property. extract from `e.span`.
-        // NOTE: the values are 0-based so +1 is required.
-        if (e.span?.start) {
-          e.line = e.span.start.line + 1
-          e.column = e.span.start.column + 1
-          // it also lacks `e.formatted`, so we shim with the message here since
-          // sass error messages have the frame already in them and we don't want
-          // to re-generate a new frame (same as legacy api)
-          e.frame = e.message
+        if (!errorsWithPrefix.has(e)) {
+          // normalize SASS error
+          e.message = `[sass] ${e.message}`
+          e.id = e.file
+          e.frame = e.formatted
+          // modern api lacks `line` and `column` property. extract from `e.span`.
+          // NOTE: the values are 0-based so +1 is required.
+          if (e.span?.start) {
+            e.line = e.span.start.line + 1
+            e.column = e.span.start.column + 1
+            // it also lacks `e.formatted`, so we shim with the message here since
+            // sass error messages have the frame already in them and we don't want
+            // to re-generate a new frame (same as legacy api)
+            e.frame = e.message
+          }
+          // sass sometimes re-uses the error instance
+          // avoid mutating the same instance multiple times
+          errorsWithPrefix.add(e)
         }
         return { code: '', error: e, deps: [] }
       }
