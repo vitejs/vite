@@ -321,7 +321,7 @@ export const createWebSocketModuleRunnerTransport = (options: {
       ws?.close()
     },
     send(data) {
-      ws!.send(JSON.stringify(data))
+      ws?.send(JSON.stringify(data))
     },
   }
 }
