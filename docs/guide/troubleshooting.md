@@ -157,6 +157,36 @@ If HMR is not handled by Vite or a plugin, a full reload will happen as it's the
 
 If HMR is handled but it is within a circular dependency, a full reload will also happen to recover the execution order. To solve this, try breaking the loop. You can run `vite --debug hmr` to log the circular dependency path if a file change triggered it.
 
+### React Fast Refresh caveats
+
+If you are using React with `@vitejs/plugin-react` or `@vitejs/plugin-react-swc`, be aware of the following [React Fast Refresh](https://github.com/facebook/react/tree/main/packages/react-refresh) limitations that can cause full reloads instead of hot updates:
+
+- **Only export React components from component files.** Fast Refresh works best when a file only exports React components. If a file mixes component exports with non-component exports (constants, utility functions, hooks, etc.), editing it may cause a full reload. Move non-component exports to a separate file.
+
+  ```js
+  // ❌ Mixing exports - may cause full reloads
+  export const API_URL = '/api'
+  export default function App() { /* ... */ }
+
+  // ✅ Separate files
+  // config.js → export const API_URL = '/api'
+  // App.jsx  → export default function App() { /* ... */ }
+  ```
+
+- **Use named components.** Anonymous default exports such as `export default function () {}` or `export default () => {}` will not be picked up by React Fast Refresh. Always give your components a name:
+
+  ```js
+  // ❌ Anonymous - Fast Refresh cannot track this
+  export default () => <div>Hello</div>
+
+  // ✅ Named - Fast Refresh works
+  export default function App() {
+    return <div>Hello</div>
+  }
+  ```
+
+- **Class components always trigger a full reload.** React Fast Refresh only supports function components and hooks. If you are using class components, consider migrating them to function components to take advantage of HMR.
+
 ## Build
 
 ### Built file does not work because of CORS error
