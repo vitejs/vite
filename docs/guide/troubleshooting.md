@@ -166,7 +166,9 @@ If you are using React with `@vitejs/plugin-react` or `@vitejs/plugin-react-swc`
   ```js
   // ❌ Mixing exports - may cause full reloads
   export const API_URL = '/api'
-  export default function App() { /* ... */ }
+  export default function App() {
+    /* ... */
+  }
 
   // ✅ Separate files
   // config.js → export const API_URL = '/api'
