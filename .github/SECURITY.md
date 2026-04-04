@@ -47,7 +47,7 @@ This section describes what Vite treats as trusted and untrusted. A report is on
 - A crafted URL causes the dev server to return file contents outside the `server.fs` boundary.
   - `server.fs.deny` bypassed with a crafted HTTP request ([GHSA-356w-63v5-8wf4](https://github.com/vitejs/vite/security/advisories/GHSA-356w-63v5-8wf4))
 - An unauthenticated WebSocket client injects HMR messages that execute arbitrary JavaScript on the developer's machine.
-- Missing or bypassable origin / host validation allows a cross-origin page to access dev-server endpoints that Vite documents as protected.
+- Missing or bypassable origin / host validation allows a cross-origin page to access dev-server endpoints that can cause confidentiality or integrity issues.
 - A flaw in code that Vite injects into the production bundle, such as the module-preload polyfill, introduces XSS.
   - DOM Clobbering Gadget in `module-preload-polyfill` leading to XSS ([GHSA-64vr-g452-qvp3](https://github.com/vitejs/vite/security/advisories/GHSA-64vr-g452-qvp3))
 
