@@ -13,8 +13,7 @@ import { markdownItImageSize } from 'markdown-it-image-size'
 import { extendConfig } from '@voidzero-dev/vitepress-theme/config'
 import type { FooterLink } from '@voidzero-dev/vitepress-theme'
 import packageJson from 'vite/package.json' with { type: 'json' }
-import { buildEnd } from './buildEnd'
-import { splitIntoSections } from './miniSearch'
+import { buildEnd } from './buildEnd.config'
 
 const viteVersion = packageJson.version
 const viteMajorVersion = +viteVersion.split('.')[0]
@@ -81,7 +80,7 @@ function inlineScript(file: string): HeadConfig {
     'script',
     {},
     fs.readFileSync(
-      path.resolve(import.meta.dirname, `../inlined-scripts/${file}`),
+      path.resolve(import.meta.dirname, `./inlined-scripts/${file}`),
       'utf-8',
     ),
   ]
@@ -164,7 +163,14 @@ const config = defineConfig({
       provider: 'local',
       options: {
         miniSearch: {
-          _splitIntoSections: splitIntoSections,
+          searchOptions: {
+            boostDocument(page) {
+              if (page.startsWith('/guide/')) return 2 // Prefer guide pages
+              if (page.startsWith('/config/')) return 1.5 // Then config pages
+              if (page.startsWith('/blog/')) return 0 // Do not index blog posts
+              return 1
+            },
+          },
         },
       },
     },
@@ -558,7 +564,7 @@ const config = defineConfig({
         },
       })
       md.use(markdownItImageSize, {
-        publicDir: path.resolve(import.meta.dirname, '../../public'),
+        publicDir: path.resolve(import.meta.dirname, '../public'),
       })
       await graphvizMarkdownPlugin(md)
     },
