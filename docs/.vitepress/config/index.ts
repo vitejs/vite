@@ -12,8 +12,9 @@ import llmstxt from 'vitepress-plugin-llms'
 import { markdownItImageSize } from 'markdown-it-image-size'
 import { extendConfig } from '@voidzero-dev/vitepress-theme/config'
 import type { FooterLink } from '@voidzero-dev/vitepress-theme'
-import packageJson from '../../packages/vite/package.json' with { type: 'json' }
-import { buildEnd } from './buildEnd.config'
+import packageJson from 'vite/package.json' with { type: 'json' }
+import { buildEnd } from './buildEnd'
+import { splitIntoSections } from './miniSearch'
 
 const viteVersion = packageJson.version
 const viteMajorVersion = +viteVersion.split('.')[0]
@@ -80,7 +81,7 @@ function inlineScript(file: string): HeadConfig {
     'script',
     {},
     fs.readFileSync(
-      path.resolve(import.meta.dirname, `./inlined-scripts/${file}`),
+      path.resolve(import.meta.dirname, `../inlined-scripts/${file}`),
       'utf-8',
     ),
   ]
@@ -160,15 +161,11 @@ const config = defineConfig({
     ],
 
     search: {
-      provider: 'algolia',
+      provider: 'local',
       options: {
-        appId: '7H67QR5P0A',
-        apiKey: '208bb9c14574939326032b937431014b',
-        indexName: 'vitejs',
-        searchParameters: {
-          facetFilters: ['tags:en'],
+        miniSearch: {
+          _splitIntoSections: splitIntoSections,
         },
-        insights: true,
       },
     },
 
@@ -561,7 +558,7 @@ const config = defineConfig({
         },
       })
       md.use(markdownItImageSize, {
-        publicDir: path.resolve(import.meta.dirname, '../public'),
+        publicDir: path.resolve(import.meta.dirname, '../../public'),
       })
       await graphvizMarkdownPlugin(md)
     },
