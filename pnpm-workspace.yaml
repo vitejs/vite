@@ -34,6 +34,7 @@ packageExtensions:
       '@types/estree': ^1.0.0
 ignoredBuiltDependencies:
   - core-js
+  - vue-demi
 onlyBuiltDependencies:
   - "@parcel/watcher"
   - "@tailwindcss/oxide"

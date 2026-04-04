@@ -1,3 +1,4 @@
+// @ts-expect-error virtual module (TODO: investigate typing this)
 import 'vite/modulepreload-polyfill'
 import cssUrl from '../styles/url.css?url'
 import waterContainer from './water-container.svg'
