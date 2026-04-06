@@ -22,10 +22,7 @@ import { EnvironmentModuleGraph } from './moduleGraph'
 import type { EnvironmentModuleNode } from './moduleGraph'
 import type { HotChannel, NormalizedHotChannel } from './hmr'
 import { getShortName, normalizeHotChannel, updateModules } from './hmr'
-import type {
-  TransformOptionsInternal,
-  TransformResult,
-} from './transformRequest'
+import type { TransformResult } from './transformRequest'
 import { transformRequest } from './transformRequest'
 import type { EnvironmentPluginContainer } from './pluginContainer'
 import {
@@ -44,6 +41,8 @@ export interface DevEnvironmentContext {
     inlineSourceMap?: boolean
   }
   depsOptimizer?: DepsOptimizer
+  /** @internal used for client environment */
+  disableFetchModule?: boolean
 }
 
 export class DevEnvironment extends BaseEnvironment {
@@ -55,6 +54,10 @@ export class DevEnvironment extends BaseEnvironment {
    * @internal
    */
   _remoteRunnerOptions: DevEnvironmentContext['remoteRunner']
+  /**
+   * @internal
+   */
+  _skipFsCheck: boolean
 
   get pluginContainer(): EnvironmentPluginContainer<DevEnvironment> {
     if (!this._pluginContainer)
@@ -122,6 +125,11 @@ export class DevEnvironment extends BaseEnvironment {
     this._crawlEndFinder = setupOnCrawlEnd()
 
     this._remoteRunnerOptions = context.remoteRunner ?? {}
+    this._skipFsCheck = !!(
+      context.transport &&
+      !(isWebSocketServer in context.transport) &&
+      context.transport.skipFsCheck
+    )
 
     this.hot = context.transport
       ? isWebSocketServer in context.transport
@@ -131,6 +139,9 @@ export class DevEnvironment extends BaseEnvironment {
 
     this.hot.setInvokeHandler({
       fetchModule: (id, importer, options) => {
+        if (context.disableFetchModule) {
+          throw new Error('fetchModule is disabled in this environment')
+        }
         return this.fetchModule(id, importer, options)
       },
       getBuiltins: async () => {
@@ -216,17 +227,13 @@ export class DevEnvironment extends BaseEnvironment {
     }
   }
 
-  transformRequest(
-    url: string,
-    /** @internal */
-    options?: TransformOptionsInternal,
-  ): Promise<TransformResult | null> {
-    return transformRequest(this, url, options)
+  transformRequest(url: string): Promise<TransformResult | null> {
+    return transformRequest(this, url, { skipFsCheck: this._skipFsCheck })
   }
 
   async warmupRequest(url: string): Promise<void> {
     try {
-      await this.transformRequest(url)
+      await transformRequest(this, url, { skipFsCheck: true })
     } catch (e) {
       if (
         e?.code === ERR_OUTDATED_OPTIMIZED_DEP ||
