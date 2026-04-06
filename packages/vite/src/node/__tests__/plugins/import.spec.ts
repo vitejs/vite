@@ -20,11 +20,16 @@ describe('runTransform', () => {
       config,
     )
     if (result !== undefined) {
-      expect(result.split('\n').length, 'result line count').toBe(
+      // Combine import and assignments to match old format for snapshots
+      const combined = result.assignments
+        ? `${result.importStatement}; ${result.assignments}`
+        : result.importStatement
+      expect(combined.split('\n').length, 'result line count').toBe(
         importExp.split('\n').length,
       )
+      return combined.replaceAll(';', ';\n')
     }
-    return result?.replaceAll(';', ';\n')
+    return result
   }
 
   beforeEach(() => {

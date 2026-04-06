@@ -455,6 +455,9 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
         return _isNodeModeResult
       }
 
+      // Collect CJS interop assignments to prepend at module start
+      const cjsInteropAssignments: string[] = []
+
       await Promise.all(
         imports.map(async (importSpecifier, index) => {
           const {
@@ -615,7 +618,7 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
                   }
                 } else if (needsInterop) {
                   debug?.(`${url} needs interop`)
-                  interopNamedImports(
+                  const assignments = interopNamedImports(
                     str(),
                     importSpecifier,
                     url,
@@ -624,6 +627,9 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
                     isNodeMode(),
                     config,
                   )
+                  if (assignments) {
+                    cjsInteropAssignments.push(assignments)
+                  }
                   rewriteDone = true
                 }
               }
@@ -634,7 +640,7 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
                 url.startsWith(wrapId(browserExternalId)) &&
                 source.slice(expStart, start).includes('{')
               ) {
-                interopNamedImports(
+                const assignments = interopNamedImports(
                   str(),
                   importSpecifier,
                   url,
@@ -643,6 +649,9 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
                   isNodeMode(),
                   config,
                 )
+                if (assignments) {
+                  cjsInteropAssignments.push(assignments)
+                }
                 rewriteDone = true
               }
               if (!rewriteDone) {
@@ -742,6 +751,13 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
       // case where it's not ESM and we need to avoid injecting ESM-specific code
       const isClassicWorker =
         importer.includes(WORKER_FILE_ID) && importer.includes('type=classic')
+
+      // Prepend CJS interop assignments at the top
+      // These must come after all import statements (which are already hoisted by the browser)
+      // but before any other code that might reference the imported bindings
+      if (cjsInteropAssignments.length > 0) {
+        str().prepend(cjsInteropAssignments.join('; ') + '; ')
+      }
 
       if (hasEnv && !isClassicWorker) {
         // inject import.meta.env
@@ -932,7 +948,7 @@ export function interopNamedImports(
   importer: string,
   isNodeMode: boolean,
   config: ResolvedConfig,
-): void {
+): string | void {
   const source = str.original
   const {
     s: start,
@@ -954,7 +970,7 @@ export function interopNamedImports(
     )
   } else {
     const rawUrl = source.slice(start, end)
-    const rewritten = transformCjsImport(
+    const result = transformCjsImport(
       exp,
       rewrittenUrl,
       rawUrl,
@@ -963,10 +979,14 @@ export function interopNamedImports(
       isNodeMode,
       config,
     )
-    if (rewritten) {
-      str.overwrite(expStart, expEnd, rewritten + getLineBreaks(exp), {
+    if (result) {
+      const { importStatement, assignments } = result
+      // Replace the original import with just the import statement
+      str.overwrite(expStart, expEnd, importStatement + getLineBreaks(exp), {
         contentOnly: true,
       })
+      // Return the assignments to be prepended at the top
+      return assignments
     } else {
       // #1439 export * from '...'
       str.overwrite(
@@ -1009,7 +1029,7 @@ export function transformCjsImport(
   importer: string,
   isNodeMode: boolean,
   config: ResolvedConfig,
-): string | undefined {
+): { importStatement: string; assignments: string } | undefined {
   const node = parseAst(importExp).body[0]
 
   // `export * from '...'` may cause unexpected problem, so give it a warning
@@ -1028,7 +1048,7 @@ export function transformCjsImport(
     node.type === 'ExportNamedDeclaration'
   ) {
     if (!node.specifiers.length) {
-      return `import "${url}"`
+      return { importStatement: `import "${url}"`, assignments: '' }
     }
 
     const importNames: ImportNameSpecifier[] = []
@@ -1076,32 +1096,40 @@ export function transformCjsImport(
     const cjsModuleName = makeLegalIdentifier(
       `__vite__cjsImport${importIndex}_${rawUrl}`,
     )
-    const lines: string[] = [`import ${cjsModuleName} from "${url}"`]
+    const importStatement = `import ${cjsModuleName} from "${url}"`
+    const assignmentLines: string[] = []
+
     importNames.forEach(({ importedName, localName }) => {
       if (importedName === '*') {
-        lines.push(
+        assignmentLines.push(
           `var ${localName} = (${interopHelperStr})(${cjsModuleName}, ${+isNodeMode})`,
         )
       } else if (importedName === 'default') {
         if (isNodeMode) {
-          lines.push(`var ${localName} = ${cjsModuleName}`)
+          assignmentLines.push(`var ${localName} = ${cjsModuleName}`)
         } else {
-          lines.push(
+          assignmentLines.push(
             `var ${localName} = !${cjsModuleName}.__esModule ? ${cjsModuleName} : ${cjsModuleName}.default`,
           )
         }
       } else {
-        lines.push(`var ${localName} = ${cjsModuleName}["${importedName}"]`)
+        assignmentLines.push(
+          `var ${localName} = ${cjsModuleName}["${importedName}"]`,
+        )
       }
     })
+
     if (defaultExports) {
-      lines.push(`export default ${defaultExports}`)
+      assignmentLines.push(`export default ${defaultExports}`)
     }
     if (exportNames.length) {
-      lines.push(`export { ${exportNames.join(', ')} }`)
+      assignmentLines.push(`export { ${exportNames.join(', ')} }`)
     }
 
-    return lines.join('; ')
+    return {
+      importStatement,
+      assignments: assignmentLines.join('; '),
+    }
   }
 }
 
