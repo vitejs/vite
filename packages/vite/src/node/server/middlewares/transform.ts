@@ -148,6 +148,10 @@ export function transformMiddleware(
           const sourcemapPath = url.startsWith(FS_PREFIX)
             ? fsPathFromId(url)
             : normalizePath(path.resolve(server.config.root, url.slice(1)))
+          // url may contain relative path that may resolve outside of the optimized deps directory
+          if (!depsOptimizer.isOptimizedDepFile(sourcemapPath)) {
+            return next()
+          }
           try {
             const map = JSON.parse(
               await fsp.readFile(sourcemapPath, 'utf-8'),

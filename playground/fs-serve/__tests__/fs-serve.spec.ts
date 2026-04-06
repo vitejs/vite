@@ -512,6 +512,29 @@ describe.runIf(isServe)('invalid request', () => {
     expect(response).toContain('HTTP/1.1 403 Forbidden')
   })
 
+  test('should not allow relative path traversal with optimize deps sourcemap handler', async () => {
+    const response = await sendRawRequest(
+      viteTestUrl,
+      path.posix.join('/@fs/', root) +
+        '/node_modules/.vite/deps/../../../unsafe.map',
+    )
+    expect(response).toContain('HTTP/1.1 403 Forbidden')
+  })
+
+  test('should not allow backslash relative path traversal with optimize deps sourcemap handler', async () => {
+    const response = await sendRawRequest(
+      viteTestUrl,
+      path.posix.join('/@fs/', root) +
+        '/node_modules/.vite/deps/..\\..\\..\\unsafe.map',
+    )
+    if (isWindows) {
+      expect(response).toContain('HTTP/1.1 403 Forbidden')
+    } else {
+      // should be 404 fallback
+      expect(response).toContain('Cache-Control: no-cache')
+    }
+  })
+
   test('should deny request to HTML file outside root by default with relative path', async () => {
     const response = await sendRawRequest(viteTestUrl, '/../unsafe.html')
     expect(response).toContain('HTTP/1.1 403 Forbidden')
