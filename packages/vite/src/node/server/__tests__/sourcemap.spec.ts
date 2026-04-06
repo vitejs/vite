@@ -43,13 +43,13 @@ describe('getNodeModulesPackageRoot', () => {
       name: 'Windows-style path',
       input: 'D:\\project\\node_modules\\foo\\dist\\bar.js',
       expected: 'D:/project/node_modules/foo',
-      skip: isWindows,
+      skip: !isWindows,
     },
     {
       name: 'Windows-style path with scoped package',
       input: 'D:\\project\\node_modules\\@scope\\pkg\\index.js',
       expected: 'D:/project/node_modules/@scope/pkg',
-      skip: isWindows,
+      skip: !isWindows,
     },
     {
       name: 'package name without subdirectory',
