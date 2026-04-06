@@ -1,4 +1,5 @@
 import { existsSync, readFileSync } from 'node:fs'
+import colors from 'picocolors'
 import { ModuleRunner, createNodeImportMeta } from 'vite/module-runner'
 import type {
   ModuleEvaluator,
@@ -42,8 +43,21 @@ function createHMROptions(
     return false
   }
   if (!('api' in environment.hot)) return false
+
+  const defaultLogger: ModuleRunnerHmr['logger'] = {
+    debug: (...msg) =>
+      environment.logger.info(colors.green(msg.join(' ')), {
+        timestamp: true,
+      }),
+    error: (err) =>
+      environment.logger.error(
+        err instanceof Error ? err.message : String(err),
+        { timestamp: true },
+      ),
+  }
+
   return {
-    logger: options.hmr?.logger,
+    logger: options.hmr?.logger ?? defaultLogger,
   }
 }
 
