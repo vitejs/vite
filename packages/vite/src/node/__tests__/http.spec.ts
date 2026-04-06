@@ -213,4 +213,56 @@ describe('port detection', () => {
       `Port ${BASE_PORT} is already in use`,
     )
   })
+
+  test('allows binding to specific IP when wildcard port is blocked', async () => {
+    // Block a different loopback IP (127.0.0.2) on the port
+    await using _blockingServer = await createSimpleServer(
+      BASE_PORT,
+      '127.0.0.2',
+    )
+
+    // But allow binding to a different specific IP (127.0.0.1)
+    viteServer = await createServer({
+      root: import.meta.dirname,
+      logLevel: 'silent',
+      server: {
+        host: '127.0.0.1',
+        port: BASE_PORT,
+        strictPort: true,
+        ws: false,
+      },
+    })
+    await viteServer.listen()
+
+    const address = viteServer.httpServer!.address()
+    expect(address).toStrictEqual(
+      expect.objectContaining({ port: BASE_PORT, address: '127.0.0.1' }),
+    )
+  })
+
+  test('allows binding to specific IP when wildcard port is blocked (non-strict)', async () => {
+    // Block a different loopback IP (127.0.0.3) on the port
+    await using _blockingServer = await createSimpleServer(
+      BASE_PORT,
+      '127.0.0.3',
+    )
+
+    // But allow binding to a different specific IP (127.0.0.1)
+    viteServer = await createServer({
+      root: import.meta.dirname,
+      logLevel: 'silent',
+      server: {
+        host: '127.0.0.1',
+        port: BASE_PORT,
+        strictPort: false,
+        ws: false,
+      },
+    })
+    await viteServer.listen()
+
+    const address = viteServer.httpServer!.address()
+    expect(address).toStrictEqual(
+      expect.objectContaining({ port: BASE_PORT, address: '127.0.0.1' }),
+    )
+  })
 })

@@ -227,11 +227,28 @@ export async function httpServerStart(
   const { port: startPort, strictPort, host, logger } = serverOptions
 
   for (let port = startPort; port <= MAX_PORT; port++) {
+    const wildcardPortAvailable = await isPortAvailable(port)
+
     // Pre-check port availability on wildcard addresses (0.0.0.0, ::)
     // so that we avoid conflicts with other servers listening on all interfaces
-    if (await isPortAvailable(port)) {
+    if (wildcardPortAvailable) {
       const result = await tryBindServer(httpServer, port, host)
       if (result.success) {
+        return port
+      }
+      if (result.error.code !== 'EADDRINUSE') {
+        throw result.error
+      }
+    } else if (host && !wildcardHosts.has(host) && host !== 'localhost') {
+      // If wildcard port is not available but we're binding to a specific IP address
+      // (not localhost, not wildcard), try to bind to the specific host+port combination
+      const result = await tryBindServer(httpServer, port, host)
+      if (result.success) {
+        logger.warn(
+          colors.yellow(
+            `Port ${port} is in use on a wildcard address, but successfully bound to ${host}:${port}`,
+          ),
+        )
         return port
       }
       if (result.error.code !== 'EADDRINUSE') {
