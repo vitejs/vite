@@ -7,6 +7,9 @@ export default defineConfig({
     transformFooWithInlineSourceMap(),
     transformZooWithSourcemapPlugin(),
   ],
+  optimizeDeps: {
+    exclude: ['@vitejs/test-dep-malicious-sourcemap'],
+  },
   build: {
     sourcemap: true,
     rollupOptions: {
