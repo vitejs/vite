@@ -268,7 +268,7 @@ describe.runIf(isServe)('matrix', () => {
         continue
       }
 
-      test.concurrent(`${name} (${variantName})`, async () => {
+      test.concurrent(`${name} (${variantName})`, async ({ expect }) => {
         const baseSelector = `.fetch${variantId}-${testId}`
         const actualStatus = expect.poll(() =>
           page.textContent(`${baseSelector}-status`),

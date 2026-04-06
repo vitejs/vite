@@ -2,6 +2,7 @@ import net from 'node:net'
 import path from 'node:path'
 import { describe, expect, test } from 'vitest'
 import { isServe, isWindows, viteTestUrl } from '~utils'
+import './commonTests'
 
 describe.runIf(isServe)('invalid request', () => {
   const sendRawRequest = async (baseUrl: string, requestTarget: string) => {
