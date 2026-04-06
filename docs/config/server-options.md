@@ -16,7 +16,7 @@ This can be set via the CLI using `--host 0.0.0.0` or `--host`.
 
 There are cases when other servers might respond instead of Vite.
 
-The first case is when `localhost` is used. Browsers use DNS to resolve the address and that address might differ from the address which Vite is listening to. Vite prints the resolved address when it differs.
+The first case is when `localhost` is used. Node.js's [`dns.setDefaultResultOrder`](https://nodejs.org/api/dns.html#dnssetdefaultresultorderorder) changes how DNS-resolved addresses are ordered, and browsers may use a different resolved address than the one Vite is listening to. Vite prints the resolved address when it differs.
 
 The second case is when wildcard hosts (e.g. `0.0.0.0`) are used. This is because servers listening on non-wildcard hosts take priority over those listening on wildcard hosts.
 
