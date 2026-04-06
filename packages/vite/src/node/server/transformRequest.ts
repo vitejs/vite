@@ -293,7 +293,7 @@ async function loadAndTransform(
     }
     if (code) {
       try {
-        const extracted = extractSourcemapFromFile(code, file)
+        const extracted = extractSourcemapFromFile(code, file, logger)
         if (extracted) {
           code = extracted.code
           map = extracted.map

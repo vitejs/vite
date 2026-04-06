@@ -92,7 +92,11 @@ function formatError(
       if (result && !result.map) {
         try {
           const filePath = id.split('?')[0]
-          const extracted = extractSourcemapFromFile(result.code, filePath)
+          const extracted = extractSourcemapFromFile(
+            result.code,
+            filePath,
+            environment.config.logger,
+          )
           sourceMapCache.set(id, extracted?.map)
           return extracted?.map
         } catch {

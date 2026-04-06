@@ -16,6 +16,14 @@ import {
   serverLogs,
 } from '~utils'
 
+function createMapFileReader(moduleUrl: string) {
+  return async (filename: string): Promise<string> => {
+    const base = new URL(moduleUrl, page.url())
+    const res = await page.request.get(new URL(filename, base).href)
+    return res.text()
+  }
+}
+
 if (!isBuild) {
   test('js', async () => {
     const res = await page.request.get(new URL('./foo.js', page.url()).href)
@@ -143,6 +151,44 @@ if (!isBuild) {
     serverLogs.forEach((log) => {
       expect(log).not.toMatch(/Sourcemap for .+ points to missing source files/)
     })
+  })
+
+  test('should not leak file contents via sourcemap path traversal in node_modules', async () => {
+    const res = await page.request.get(
+      new URL('./malicious-import.js', page.url()).href,
+    )
+    const js = await res.text()
+    // Find the rewritten import URL for the malicious dep
+    const depUrlMatch = js.match(/from\s+"([^"]*malicious-sourcemap[^"]*)"/)
+    expect(depUrlMatch).toBeTruthy()
+    const depUrl = depUrlMatch![1]
+    const depRes = await page.request.get(new URL(depUrl, page.url()).href)
+    const depJs = await depRes.text()
+    const map = extractSourcemap(depJs)
+    expect(map.sourcesContent).toBeDefined()
+    expect(map.sourcesContent).not.toContainEqual(
+      expect.stringContaining('defineConfig'),
+    )
+  })
+
+  test('should not leak file contents via sourcemap path traversal in optimized deps', async () => {
+    const res = await page.request.get(
+      new URL('./optimized-malicious-import.js', page.url()).href,
+    )
+    const js = await res.text()
+    // Find the rewritten import URL for the optimized malicious dep
+    const depUrlMatch = js.match(/from\s+"([^"]*optimized-malicious[^"]*)"/)
+    expect(depUrlMatch).toBeTruthy()
+    const depUrl = depUrlMatch![1]
+    // Ensure the dep was actually optimized (served from .vite/deps)
+    expect(depUrl).toContain('.vite/deps')
+    const depRes = await page.request.get(new URL(depUrl, page.url()).href)
+    const depJs = await depRes.text()
+    const map = await extractSourcemap(depJs, createMapFileReader(depUrl))
+    expect(map.sourcesContent).toBeDefined()
+    expect(map.sourcesContent).not.toContainEqual(
+      expect.stringContaining('defineConfig'),
+    )
   })
 }
 
