@@ -35,6 +35,7 @@ import {
 import { isFileLoadingAllowed } from './middlewares/static'
 import { throwClosedServerError } from './pluginContainer'
 import type { DevEnvironment } from './environment'
+import { isServerAccessDeniedForTransform } from './middlewares/transform'
 
 export const ERR_LOAD_URL = 'ERR_LOAD_URL'
 export const ERR_LOAD_PUBLIC_URL = 'ERR_LOAD_PUBLIC_URL'
@@ -60,11 +61,11 @@ export interface TransformOptions {
   ssr?: boolean
 }
 
-export interface TransformOptionsInternal {
+interface TransformOptionsInternal {
   /**
-   * @internal
+   * Whether to skip the `server.fs` check.
    */
-  allowId?: (id: string) => boolean
+  skipFsCheck: boolean
 }
 
 // TODO: This function could be moved to the DevEnvironment class.
@@ -77,7 +78,7 @@ export interface TransformOptionsInternal {
 export function transformRequest(
   environment: DevEnvironment,
   url: string,
-  options: TransformOptionsInternal = {},
+  options: TransformOptionsInternal,
 ): Promise<TransformResult | null> {
   if (environment._closing && environment.config.dev.recoverable)
     throwClosedServerError()
@@ -248,7 +249,11 @@ async function loadAndTransform(
 
   const moduleGraph = environment.moduleGraph
 
-  if (options.allowId && !options.allowId(id)) {
+  if (
+    !options.skipFsCheck &&
+    id[0] !== '\0' &&
+    isServerAccessDeniedForTransform(config, id)
+  ) {
     const err: any = new Error(`Denied ID ${id}`)
     err.code = ERR_DENIED_ID
     err.id = id
@@ -272,7 +277,7 @@ async function loadAndTransform(
     // only try the fallback if access is allowed, skip for out of root url
     // like /service-worker.js or /api/users
     if (
-      environment.config.consumer === 'server' ||
+      options.skipFsCheck ||
       isFileLoadingAllowed(environment.getTopLevelConfig(), slash(file))
     ) {
       try {
