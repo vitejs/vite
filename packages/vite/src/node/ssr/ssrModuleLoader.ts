@@ -1,4 +1,6 @@
 import colors from 'picocolors'
+import { ESModulesEvaluator, ModuleRunner } from 'vite/module-runner'
+import type { EvaluatedModuleNode } from 'vite/module-runner'
 import type { ViteDevServer } from '../server'
 import { unwrapId } from '../../shared/utils'
 import type { DevEnvironment } from '../server/environment'
@@ -6,8 +8,6 @@ import type { NormalizedServerHotChannel } from '../server/hmr'
 import { buildErrorMessage } from '../server/middlewares/error'
 import { ssrFixStacktrace } from './ssrStacktrace'
 import { createServerModuleRunnerTransport } from './runtime/serverModuleRunner'
-import { ESModulesEvaluator, ModuleRunner } from 'vite/module-runner'
-import type { EvaluatedModuleNode } from 'vite/module-runner'
 
 type SSRModule = Record<string, any>
 

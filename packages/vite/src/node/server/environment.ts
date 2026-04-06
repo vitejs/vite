@@ -1,5 +1,6 @@
 import type { FSWatcher } from 'dep-types/chokidar'
 import colors from 'picocolors'
+import type { FetchFunctionOptions, FetchResult } from 'vite/module-runner'
 import {
   BaseEnvironment,
   getDefaultResolvedEnvironmentOptions,
@@ -35,7 +36,6 @@ import {
 import { type WebSocketServer, isWebSocketServer } from './ws'
 import { warmupFiles } from './warmup'
 import { buildErrorMessage } from './middlewares/error'
-import type { FetchFunctionOptions, FetchResult } from 'vite/module-runner'
 
 export interface DevEnvironmentContext {
   hot: boolean

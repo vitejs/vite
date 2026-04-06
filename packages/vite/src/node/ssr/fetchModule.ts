@@ -1,4 +1,5 @@
 import { pathToFileURL } from 'node:url'
+import type { FetchResult } from 'vite/module-runner'
 import type { EnvironmentModuleNode, TransformResult } from '..'
 import { tryNodeResolve } from '../plugins/resolve'
 import { isBuiltin, isExternalUrl, isFilePathESM } from '../utils'
@@ -9,7 +10,6 @@ import {
 } from '../../shared/constants'
 import { genSourceMapUrl } from '../server/sourcemap'
 import type { DevEnvironment } from '../server/environment'
-import type { FetchResult } from 'vite/module-runner'
 
 export interface FetchModuleOptions {
   cached?: boolean
