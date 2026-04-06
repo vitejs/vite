@@ -215,7 +215,11 @@ describe('port detection', () => {
   })
 
   test('allows binding to specific host with strictPort when wildcard port is in use', async () => {
-    await using _wildcardServer = await createSimpleServer(BASE_PORT, '::1')
+    await using _wildcardServer4 = await createSimpleServer(
+      BASE_PORT,
+      '0.0.0.0',
+    )
+    await using _wildcardServer6 = await createSimpleServer(BASE_PORT, '::1')
 
     const warnMessages: string[] = []
     viteServer = await createServer({
