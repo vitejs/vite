@@ -58,7 +58,10 @@ export function isServerAccessDeniedForTransform(
   id: string,
 ): boolean {
   if (rawRE.test(id) || urlRE.test(id) || inlineRE.test(id) || svgRE.test(id)) {
-    return checkLoadingAccess(config, id) !== 'allowed'
+    return (
+      checkLoadingAccess(config, cleanUrl(id)) !== 'allowed' ||
+      checkLoadingAccess(config, id) !== 'allowed'
+    )
   }
   return false
 }
