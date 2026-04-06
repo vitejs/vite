@@ -1,3 +1,11 @@
+## <small>[8.0.5](https://github.com/vitejs/vite/compare/v8.0.4...v8.0.5) (2026-04-06)</small>
+### Bug Fixes
+
+* apply server.fs check to env transport ([#22159](https://github.com/vitejs/vite/issues/22159)) ([f02d9fd](https://github.com/vitejs/vite/commit/f02d9fde0b195afe3ea2944414186962fbbe41e0))
+* avoid path traversal with optimize deps sourcemap handler ([#22161](https://github.com/vitejs/vite/issues/22161)) ([79f002f](https://github.com/vitejs/vite/commit/79f002f2286c03c88c7b74c511c7f9fc6dc46694))
+* check `server.fs` after stripping query as well ([#22160](https://github.com/vitejs/vite/issues/22160)) ([a9a3df2](https://github.com/vitejs/vite/commit/a9a3df299378d9cbc5f069e3536a369f8188c8ff))
+* disallow referencing files outside the package from sourcemap ([#22158](https://github.com/vitejs/vite/issues/22158)) ([f05f501](https://github.com/vitejs/vite/commit/f05f50173461789e0f1323fe06b51f18ca41c132))
+
 ## <small>[8.0.4](https://github.com/vitejs/vite/compare/v8.0.3...v8.0.4) (2026-04-06)</small>
 ### Features
 
