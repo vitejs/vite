@@ -226,13 +226,6 @@ export async function httpServerStart(
 ): Promise<number> {
   const { port: startPort, strictPort, host, logger } = serverOptions
 
-  // When the configured host is an explicit IP address (not a hostname like
-  // "localhost" and not a wildcard), allow binding even if the wildcard
-  // pre-check fails. A port may be in use on other interfaces while remaining
-  // free on the specific IP address.
-  const isSpecificIpHost =
-    host !== undefined && net.isIP(host) > 0 && !wildcardHosts.has(host)
-
   for (let port = startPort; port <= MAX_PORT; port++) {
     // Pre-check port availability on wildcard addresses (0.0.0.0, ::)
     // so that we avoid conflicts with other servers listening on all interfaces
@@ -244,15 +237,15 @@ export async function httpServerStart(
       if (result.error.code !== 'EADDRINUSE') {
         throw result.error
       }
-    } else if (isSpecificIpHost) {
-      // Port is not available on a wildcard address, but we have a specific
-      // host configured. The port may still be free on that specific host, so
-      // try binding directly rather than skipping to the next port.
+    } else if (strictPort) {
+      // Port is not available on a wildcard address, but strictPort is set so
+      // we must use this exact port. The port may still be free on the
+      // configured host, so try binding directly before giving up.
       const result = await tryBindServer(httpServer, port, host)
       if (result.success) {
         logger.warn(
           colors.yellow(
-            `Port ${port} is in use on a wildcard address, but ${host}:${port} is available. ` +
+            `Port ${port} is in use on a wildcard address, but ${host ?? 'localhost'}:${port} is available. ` +
               `There may be another server running on a wildcard IP on port ${port}.`,
           ),
         )

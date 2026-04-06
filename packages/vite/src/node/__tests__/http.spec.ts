@@ -243,28 +243,6 @@ describe('port detection', () => {
       })
     }
 
-    test('allows binding to specific host when wildcard port is in use', async () => {
-      using wildcardMock = mockWildcardEADDRINUSE()
-
-      viteServer = await createServer({
-        root: import.meta.dirname,
-        logLevel: 'silent',
-        server: {
-          port: BASE_PORT,
-          host: '127.0.0.1',
-          strictPort: false,
-          ws: false,
-        },
-      })
-      await viteServer.listen()
-
-      const address = viteServer.httpServer!.address()
-      expect(address).toStrictEqual(
-        expect.objectContaining({ port: BASE_PORT }),
-      )
-      expect(wildcardMock).toHaveBeenCalled()
-    })
-
     test('allows binding to specific host with strictPort when wildcard port is in use', async () => {
       using wildcardMock = mockWildcardEADDRINUSE()
 
@@ -287,7 +265,7 @@ describe('port detection', () => {
       expect(wildcardMock).toHaveBeenCalled()
     })
 
-    test('emits warning when specific host binds but wildcard port is in use', async () => {
+    test('emits warning when host binds with strictPort but wildcard port is in use', async () => {
       using _wildcardMock = mockWildcardEADDRINUSE()
 
       const warnMessages: string[] = []
@@ -305,7 +283,7 @@ describe('port detection', () => {
         server: {
           port: BASE_PORT,
           host: '127.0.0.1',
-          strictPort: false,
+          strictPort: true,
           ws: false,
         },
       })
