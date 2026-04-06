@@ -881,12 +881,22 @@ importers:
 
   playground/js-sourcemap:
     dependencies:
+      '@vitejs/test-dep-malicious-sourcemap':
+        specifier: file:dep-malicious-sourcemap
+        version: file:playground/js-sourcemap/dep-malicious-sourcemap
+      '@vitejs/test-dep-optimized-malicious':
+        specifier: file:dep-optimized-malicious
+        version: file:playground/js-sourcemap/dep-optimized-malicious
       '@vitejs/test-importee-pkg':
         specifier: file:importee-pkg
         version: file:playground/js-sourcemap/importee-pkg
       magic-string:
         specifier: ^0.30.21
         version: 0.30.21
+
+  playground/js-sourcemap/dep-malicious-sourcemap: {}
+
+  playground/js-sourcemap/dep-optimized-malicious: {}
 
   playground/js-sourcemap/importee-pkg: {}
 
@@ -4334,6 +4344,9 @@ packages:
   '@vitejs/test-dep-license-mit@file:packages/vite/src/node/__tests__/plugins/fixtures/license/dep-license-mit':
     resolution: {directory: packages/vite/src/node/__tests__/plugins/fixtures/license/dep-license-mit, type: directory}
 
+  '@vitejs/test-dep-malicious-sourcemap@file:playground/js-sourcemap/dep-malicious-sourcemap':
+    resolution: {directory: playground/js-sourcemap/dep-malicious-sourcemap, type: directory}
+
   '@vitejs/test-dep-nested-license-isc@file:packages/vite/src/node/__tests__/plugins/fixtures/license/dep-nested-license-isc':
     resolution: {directory: packages/vite/src/node/__tests__/plugins/fixtures/license/dep-nested-license-isc, type: directory}
 
@@ -4357,6 +4370,9 @@ packages:
 
   '@vitejs/test-dep-optimize-with-glob@file:playground/optimize-deps/dep-optimize-with-glob':
     resolution: {directory: playground/optimize-deps/dep-optimize-with-glob, type: directory}
+
+  '@vitejs/test-dep-optimized-malicious@file:playground/js-sourcemap/dep-optimized-malicious':
+    resolution: {directory: playground/js-sourcemap/dep-optimized-malicious, type: directory}
 
   '@vitejs/test-dep-relative-to-main@file:playground/optimize-deps/dep-relative-to-main':
     resolution: {directory: playground/optimize-deps/dep-relative-to-main, type: directory}
@@ -10447,6 +10463,8 @@ snapshots:
     dependencies:
       '@vitejs/test-dep-nested-license-isc': file:packages/vite/src/node/__tests__/plugins/fixtures/license/dep-nested-license-isc
 
+  '@vitejs/test-dep-malicious-sourcemap@file:playground/js-sourcemap/dep-malicious-sourcemap': {}
+
   '@vitejs/test-dep-nested-license-isc@file:packages/vite/src/node/__tests__/plugins/fixtures/license/dep-nested-license-isc': {}
 
   '@vitejs/test-dep-no-discovery@file:playground/optimize-deps-no-discovery/dep-no-discovery': {}
@@ -10462,6 +10480,8 @@ snapshots:
   '@vitejs/test-dep-optimize-exports-with-root-glob@file:playground/optimize-deps/dep-optimize-exports-with-root-glob': {}
 
   '@vitejs/test-dep-optimize-with-glob@file:playground/optimize-deps/dep-optimize-with-glob': {}
+
+  '@vitejs/test-dep-optimized-malicious@file:playground/js-sourcemap/dep-optimized-malicious': {}
 
   '@vitejs/test-dep-relative-to-main@file:playground/optimize-deps/dep-relative-to-main': {}
 
