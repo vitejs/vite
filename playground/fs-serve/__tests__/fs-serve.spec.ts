@@ -94,6 +94,21 @@ describe.runIf(isServe)('invalid request', () => {
       status: 'HTTP/1.1 403 Forbidden',
     },
     {
+      name: 'denied optimize deps sourcemap handler',
+      target:
+        path.posix.join('/@fs/', root) +
+        '/node_modules/.vite/deps/../../../unsafe.map',
+      status: 'HTTP/1.1 403 Forbidden',
+    },
+    {
+      name: 'denied backslash optimize deps sourcemap handler',
+      target:
+        path.posix.join('/@fs/', root) +
+        '/node_modules/.vite/deps/..\\..\\..\\unsafe.map',
+      status: isWindows ? 'HTTP/1.1 403 Forbidden' : 'HTTP/1.1 200 OK',
+      content: isWindows ? undefined : 'Cache-Control: no-cache',
+    },
+    {
       name: 'HTML outside root with relative path',
       target: '/../unsafe.html',
       status: 'HTTP/1.1 403 Forbidden',
