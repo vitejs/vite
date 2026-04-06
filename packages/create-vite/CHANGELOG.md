@@ -1,3 +1,26 @@
+## <small>[9.0.4](https://github.com/vitejs/vite/compare/create-vite@9.0.3...create-vite@9.0.4) (2026-04-06)</small>
+### Bug Fixes
+
+* **deps:** update all non-major dependencies ([#21988](https://github.com/vitejs/vite/issues/21988)) ([9b7d150](https://github.com/vitejs/vite/commit/9b7d15002a75474421bc5636238336d88c7fe2f3))
+* **deps:** update all non-major dependencies ([#22073](https://github.com/vitejs/vite/issues/22073)) ([6daa10f](https://github.com/vitejs/vite/commit/6daa10ff1e8d15a90f49d8dd909ff208da85d6d8))
+* **deps:** update all non-major dependencies ([#22143](https://github.com/vitejs/vite/issues/22143)) ([22b0166](https://github.com/vitejs/vite/commit/22b016612703320db45c64a2fe44472051ef5ec5))
+
+### Documentation
+
+* **create-vite:** fix qwik template typo ([#21964](https://github.com/vitejs/vite/issues/21964)) ([c2d17bd](https://github.com/vitejs/vite/commit/c2d17bd87998ba828984aa9963586f09ebf2fd9b))
+
+### Miscellaneous Chores
+
+* **deps:** update rolldown-related dependencies ([#21989](https://github.com/vitejs/vite/issues/21989)) ([0ded627](https://github.com/vitejs/vite/commit/0ded6274579e8bda6b22a7ba93b15d15b4c28b78))
+
+### Code Refactoring
+
+* upgrade to typescript 6 ([#22110](https://github.com/vitejs/vite/issues/22110)) ([cc41398](https://github.com/vitejs/vite/commit/cc41398c2cf0bb5061cf0ca5dc3b408ae7e41191))
+
+### Build System
+
+* handle tsdown inlineOnly deprecation ([#22111](https://github.com/vitejs/vite/issues/22111)) ([86cbc6e](https://github.com/vitejs/vite/commit/86cbc6e5571aefd6278d6ecbbfb5ede8d4061940))
+
 ## <small>[9.0.3](https://github.com/vitejs/vite/compare/create-vite@9.0.2...create-vite@9.0.3) (2026-03-19)</small>
 ### Bug Fixes
 
