@@ -238,7 +238,7 @@ export default defineConfig(
         {
           // ideally we would like to allow all experimental features
           // https://github.com/eslint-community/eslint-plugin-n/issues/199
-          ignores: ['fetch', 'import.meta.dirname'],
+          ignores: ['Response', 'Request', 'fetch', 'import.meta.dirname'],
         },
       ],
     },
