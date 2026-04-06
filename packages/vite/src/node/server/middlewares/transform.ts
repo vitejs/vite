@@ -41,7 +41,12 @@ import {
   ERR_OUTDATED_OPTIMIZED_DEP,
   NULL_BYTE_PLACEHOLDER,
 } from '../../../shared/constants'
-import { checkServingAccess, respondWithAccessDenied } from './static'
+import type { ResolvedConfig } from '../../config'
+import {
+  checkLoadingAccess,
+  checkServingAccess,
+  respondWithAccessDenied,
+} from './static'
 
 const debugCache = createDebugger('vite:cache')
 
@@ -76,6 +81,16 @@ function deniedServingAccessForTransform(
       return true
     }
     servingAccessResult satisfies 'allowed'
+  }
+  return false
+}
+
+export function isServerAccessDeniedForTransform(
+  config: ResolvedConfig,
+  id: string,
+): boolean {
+  if (rawRE.test(id) || urlRE.test(id) || inlineRE.test(id) || svgRE.test(id)) {
+    return checkLoadingAccess(config, id) !== 'allowed'
   }
   return false
 }
@@ -266,9 +281,7 @@ export function transformMiddleware(
         // resolve, load and transform using the plugin container
         const result = await transformRequest(environment, url, {
           html: req.headers.accept?.includes('text/html'),
-          allowId(id) {
-            return !deniedServingAccessForTransform(id, server, res, next)
-          },
+          skipFsCheck: environment._skipFsCheck,
         })
         if (result) {
           const depsOptimizer = environment.depsOptimizer
