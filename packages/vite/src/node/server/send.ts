@@ -27,6 +27,7 @@ export interface SendOptions {
   cacheControl?: string
   headers?: OutgoingHttpHeaders
   map?: SourceMap | { mappings: '' } | null
+  skipFallbackSourcemap?: boolean
 }
 
 export function send(
@@ -41,6 +42,7 @@ export function send(
     cacheControl = 'no-cache',
     headers,
     map,
+    skipFallbackSourcemap = false,
   } = options
 
   if (res.writableEnded) {
@@ -71,7 +73,11 @@ export function send(
   }
   // inject fallback sourcemap for js for improved debugging
   // https://github.com/vitejs/vite/pull/13514#issuecomment-1592431496
-  else if (type === 'js' && (!map || map.mappings !== '')) {
+  else if (
+    type === 'js' &&
+    !skipFallbackSourcemap &&
+    (!map || map.mappings !== '')
+  ) {
     const code = content.toString()
     // if the code has existing inline sourcemap, assume it's correct and skip
     if (convertSourceMap.mapFileCommentRegex.test(code)) {

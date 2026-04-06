@@ -266,6 +266,9 @@ export function transformMiddleware(
             cacheControl: isDep ? 'max-age=31536000,immutable' : 'no-cache',
             headers: server.config.server.headers,
             map: result.map,
+            // Raw imports already contain the final source text in the JS payload,
+            // so the fallback inline sourcemap duplicates large content with little value.
+            skipFallbackSourcemap: rawRE.test(url),
           })
         }
       }
