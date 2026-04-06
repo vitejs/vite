@@ -353,8 +353,24 @@ export function transformMiddleware(
         return next()
       }
       if (e?.code === ERR_DENIED_ID) {
-        // next() is called in ensureServingAccess
-        return
+        const id: string = e.id
+        let servingAccessResult = checkLoadingAccess(
+          server.config,
+          cleanUrl(id),
+        )
+        if (servingAccessResult === 'allowed') {
+          servingAccessResult = checkLoadingAccess(server.config, id)
+        }
+        if (servingAccessResult === 'denied') {
+          respondWithAccessDenied(id, server, res)
+          return true
+        }
+        if (servingAccessResult === 'fallback') {
+          next()
+          return true
+        }
+        servingAccessResult satisfies 'allowed'
+        throw new Error(`Unexpected access result for id ${id}`)
       }
       return next(e)
     }

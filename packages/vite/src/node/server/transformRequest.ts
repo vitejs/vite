@@ -261,6 +261,7 @@ async function loadAndTransform(
     isServerAccessDeniedForTransform(config, id)
   ) {
     const err: any = new Error(`Denied ID ${id}`)
+    err.id = id
     err.code = ERR_DENIED_ID
     throw err
   }
