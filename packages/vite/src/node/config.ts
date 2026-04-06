@@ -231,6 +231,7 @@ function defaultCreateClientDevEnvironment(
   return new DevEnvironment(name, config, {
     hot: true,
     transport: context.ws,
+    disableFetchModule: true,
   })
 }
 
