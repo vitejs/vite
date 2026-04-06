@@ -1080,18 +1080,18 @@ export function transformCjsImport(
     importNames.forEach(({ importedName, localName }) => {
       if (importedName === '*') {
         lines.push(
-          `const ${localName} = (${interopHelperStr})(${cjsModuleName}, ${+isNodeMode})`,
+          `var ${localName} = (${interopHelperStr})(${cjsModuleName}, ${+isNodeMode})`,
         )
       } else if (importedName === 'default') {
         if (isNodeMode) {
-          lines.push(`const ${localName} = ${cjsModuleName}`)
+          lines.push(`var ${localName} = ${cjsModuleName}`)
         } else {
           lines.push(
-            `const ${localName} = !${cjsModuleName}.__esModule ? ${cjsModuleName} : ${cjsModuleName}.default`,
+            `var ${localName} = !${cjsModuleName}.__esModule ? ${cjsModuleName} : ${cjsModuleName}.default`,
           )
         }
       } else {
-        lines.push(`const ${localName} = ${cjsModuleName}["${importedName}"]`)
+        lines.push(`var ${localName} = ${cjsModuleName}["${importedName}"]`)
       }
     })
     if (defaultExports) {
