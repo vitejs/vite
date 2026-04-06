@@ -9,7 +9,7 @@
     "preview": "serve dist"
   },
   "devDependencies": {
-    "@types/node": "^24.12.0",
+    "@types/node": "^24.12.2",
     "serve": "^14.2.6",
     "typescript": "~6.0.2",
     "vite": "^8.0.3"
