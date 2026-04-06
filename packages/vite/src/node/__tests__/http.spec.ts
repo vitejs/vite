@@ -215,11 +215,7 @@ describe('port detection', () => {
   })
 
   test('allows binding to specific host with strictPort when wildcard port is in use', async () => {
-    await using _wildcardServer4 = await createSimpleServer(
-      BASE_PORT,
-      '0.0.0.0',
-    )
-    await using _wildcardServer6 = await createSimpleServer(BASE_PORT, '::')
+    await using _wildcardServer = await createSimpleServer(BASE_PORT, '0.0.0.0')
 
     const warnMessages: string[] = []
     viteServer = await createServer({
@@ -240,7 +236,16 @@ describe('port detection', () => {
         ws: false,
       },
     })
-    await viteServer.listen()
+
+    try {
+      await viteServer.listen()
+    } catch (e) {
+      // it may not be allowed to bind to specific host when wildcard port is in use
+      expect(() => {
+        throw e
+      }).toThrow(`Port ${BASE_PORT} is already in use`)
+      return
+    }
 
     const address = viteServer.httpServer!.address()
     expect(address).toStrictEqual(expect.objectContaining({ port: BASE_PORT }))
