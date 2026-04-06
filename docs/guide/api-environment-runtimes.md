@@ -304,6 +304,8 @@ function createWorkerEnvironment(name, config, context) {
   const handlerToWorkerListener = new WeakMap()
 
   const workerHotChannel = {
+    // Worker threads post messages are not exposed over the network, skip server.fs checks
+    skipFsCheck: true,
     send: (data) => worker.postMessage(data),
     on: (event, handler) => {
       if (event === 'connection') return

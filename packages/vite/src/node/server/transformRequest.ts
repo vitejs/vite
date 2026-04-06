@@ -20,7 +20,7 @@ import {
 } from '../utils'
 import { ssrTransform } from '../ssr/ssrTransform'
 import { checkPublicFile } from '../publicDir'
-import { cleanUrl, unwrapId } from '../../shared/utils'
+import { cleanUrl, slash, unwrapId } from '../../shared/utils'
 import {
   applySourcemapIgnoreList,
   extractSourcemapFromFile,
@@ -29,6 +29,7 @@ import {
 import { isFileLoadingAllowed } from './middlewares/static'
 import { throwClosedServerError } from './pluginContainer'
 import type { DevEnvironment } from './environment'
+import { isServerAccessDeniedForTransform } from './middlewares/transform'
 
 export const ERR_LOAD_URL = 'ERR_LOAD_URL'
 export const ERR_LOAD_PUBLIC_URL = 'ERR_LOAD_PUBLIC_URL'
@@ -57,9 +58,10 @@ export interface TransformOptions {
    */
   html?: boolean
   /**
+   * Whether to skip the `server.fs` check.
    * @internal
    */
-  allowId?: (id: string) => boolean
+  skipFsCheck?: boolean
 }
 
 // TODO: This function could be moved to the DevEnvironment class.
@@ -253,8 +255,13 @@ async function loadAndTransform(
 
   const moduleGraph = environment.moduleGraph
 
-  if (options.allowId && !options.allowId(id)) {
+  if (
+    !options.skipFsCheck &&
+    id[0] !== '\0' &&
+    isServerAccessDeniedForTransform(config, id)
+  ) {
     const err: any = new Error(`Denied ID ${id}`)
+    err.id = id
     err.code = ERR_DENIED_ID
     throw err
   }
@@ -280,8 +287,8 @@ async function loadAndTransform(
     // only try the fallback if access is allowed, skip for out of root url
     // like /service-worker.js or /api/users
     if (
-      environment.config.consumer === 'server' ||
-      isFileLoadingAllowed(environment.getTopLevelConfig(), file)
+      options.skipFsCheck ||
+      isFileLoadingAllowed(environment.getTopLevelConfig(), slash(file))
     ) {
       try {
         code = await fsp.readFile(file, 'utf-8')

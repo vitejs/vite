@@ -1,11 +1,11 @@
 import { existsSync, readFileSync } from 'node:fs'
-import { ModuleRunner } from 'vite/module-runner'
+import type { HotPayload } from 'types/hmrPayload'
 import type {
   ModuleEvaluator,
   ModuleRunnerHmr,
   ModuleRunnerOptions,
 } from 'vite/module-runner'
-import type { HotPayload } from 'types/hmrPayload'
+import { ModuleRunner } from 'vite/module-runner'
 import type { DevEnvironment } from '../../server/environment'
 import type {
   HotChannelClient,

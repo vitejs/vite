@@ -1,6 +1,6 @@
 import colors from 'picocolors'
-import type { EvaluatedModuleNode } from 'vite/module-runner'
 import { ESModulesEvaluator, ModuleRunner } from 'vite/module-runner'
+import type { EvaluatedModuleNode } from 'vite/module-runner'
 import type { ViteDevServer } from '../server'
 import { unwrapId } from '../../shared/utils'
 import type { DevEnvironment } from '../server/environment'
