@@ -230,7 +230,7 @@ export async function httpServerStart(
   // "localhost" and not a wildcard), allow binding even if the wildcard
   // pre-check fails. A port may be in use on other interfaces while remaining
   // free on the specific IP address.
-  const isSpecificIp =
+  const isSpecificIpHost =
     host !== undefined && net.isIP(host) > 0 && !wildcardHosts.has(host)
 
   for (let port = startPort; port <= MAX_PORT; port++) {
@@ -244,7 +244,7 @@ export async function httpServerStart(
       if (result.error.code !== 'EADDRINUSE') {
         throw result.error
       }
-    } else if (isSpecificIp) {
+    } else if (isSpecificIpHost) {
       // Port is not available on a wildcard address, but we have a specific
       // host configured. The port may still be free on that specific host, so
       // try binding directly rather than skipping to the next port.

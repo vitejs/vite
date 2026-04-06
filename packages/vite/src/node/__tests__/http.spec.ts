@@ -244,7 +244,7 @@ describe('port detection', () => {
     }
 
     test('allows binding to specific host when wildcard port is in use', async () => {
-      using _ = mockWildcardEADDRINUSE()
+      using wildcardMock = mockWildcardEADDRINUSE()
 
       viteServer = await createServer({
         root: import.meta.dirname,
@@ -262,10 +262,11 @@ describe('port detection', () => {
       expect(address).toStrictEqual(
         expect.objectContaining({ port: BASE_PORT }),
       )
+      expect(wildcardMock).toHaveBeenCalled()
     })
 
     test('allows binding to specific host with strictPort when wildcard port is in use', async () => {
-      using _ = mockWildcardEADDRINUSE()
+      using wildcardMock = mockWildcardEADDRINUSE()
 
       viteServer = await createServer({
         root: import.meta.dirname,
@@ -283,10 +284,11 @@ describe('port detection', () => {
       expect(address).toStrictEqual(
         expect.objectContaining({ port: BASE_PORT }),
       )
+      expect(wildcardMock).toHaveBeenCalled()
     })
 
     test('emits warning when specific host binds but wildcard port is in use', async () => {
-      using _ = mockWildcardEADDRINUSE()
+      using _wildcardMock = mockWildcardEADDRINUSE()
 
       const warnMessages: string[] = []
       viteServer = await createServer({
@@ -317,7 +319,7 @@ describe('port detection', () => {
         BASE_PORT,
         '127.0.0.1',
       )
-      using _ = mockWildcardEADDRINUSE()
+      using _wildcardMock = mockWildcardEADDRINUSE()
 
       viteServer = await createServer({
         root: import.meta.dirname,
