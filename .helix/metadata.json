@@ -1,0 +1,22 @@
+[
+  {
+    "instance_id": "vitejs-vite-16797",
+    "task_title": "Split Environment into PartialEnvironment and BaseEnvironment",
+    "problem_statement": "Vite’s node-side `Environment` class in `packages/vite/src/node/environment.ts` bundles shared fields (name, config, options, logger) together with plugin resolution (`plugins`, internal `_plugins`, init flags). Several code paths—such as plugin transforms invoked with a minimal context, external configuration checks, and the internal id resolver—only need config/options and a per-environment logger, not a fully initialized plugin list. Refactor so that: (1) a `PartialEnvironment` holds name, config, options, and the existing per-environment logger behavior; (2) a `BaseEnvironment` extends it and owns `plugins` and the internal state needed for lazy plugin access; (3) concrete environments (`DevEnvironment`, `BuildEnvironment`, `ScanEnvironment`, and any compatibility shim) extend the appropriate base; (4) the public `Environment` type stays a union of those concrete classes and `cachedByEnvironment` continues to work; (5) call sites that do not need plugins use `PartialEnvironment` (or the correct narrower type) instead of casting or pretending a full environment exists. Preserve existing runtime behavior for dev, build, scan, HMR, and plugin containers.",
+    "hints": "Primary new module: `packages/vite/src/node/baseEnvironment.ts` (`PartialEnvironment`, `BaseEnvironment`, `FutureCompatEnvironment`). Slim `packages/vite/src/node/environment.ts` to the `Environment` union plus `cachedByEnvironment`. Update subclasses in `packages/vite/src/node/server/environment.ts` (`DevEnvironment`), `packages/vite/src/node/build.ts` (`BuildEnvironment`), `packages/vite/src/node/optimizer/scan.ts` (`ScanEnvironment`) to extend `BaseEnvironment` and align `init()` idempotency with the renamed internal initialized flag. Touch `packages/vite/src/node/external.ts` (`createIsConfiguredAsExternal`), `packages/vite/src/node/plugin.ts`, `packages/vite/src/node/plugins/css.ts`, `packages/vite/src/node/plugins/asset.ts`, `packages/vite/src/node/plugins/dynamicImportVars.ts`, `packages/vite/src/node/server/hmr.ts`, `packages/vite/src/node/server/pluginContainer.ts`, `packages/vite/src/node/cli.ts`, `packages/vite/src/node/config.ts`, `packages/vite/src/node/index.ts`, and especially `packages/vite/src/node/idResolver.ts` (`PartialEnvironment` + `createEnvironmentPluginContainer` usage). Logger tag color selection should sum character codes (e.g. with `reduce`), not coerce an array with `Number(...)`. Tests under `packages/vite/src/node/__tests__/` construct `PartialEnvironment` for transforms—match that API.",
+    "repo": "vite",
+    "repo_path_or_url": "https://github.com/vitejs/vite",
+    "FAIL_TO_PASS": "packages/vite/src/node/__tests__/external.spec.ts,packages/vite/src/node/__tests__/plugins/css.spec.ts,packages/vite/src/node/__tests__/plugins/define.spec.ts",
+    "PASS_TO_PASS": "packages/vite/src/node/__tests__/build.spec.ts,packages/vite/src/node/__tests__/config.spec.ts,packages/vite/src/node/__tests__/dev.spec.ts,packages/vite/src/node/__tests__/env.spec.ts,packages/vite/src/node/__tests__/scan.spec.ts,packages/vite/src/node/__tests__/utils.spec.ts,packages/vite/src/node/__tests__/plugins/dynamicImportVar/parse.spec.ts,packages/vite/src/node/__tests__/plugins/esbuild.spec.ts,packages/vite/src/node/__tests__/plugins/import.spec.ts,packages/vite/src/node/__tests__/plugins/json.spec.ts,packages/vite/src/node/__tests__/plugins/importGlob/fixture.spec.ts,packages/vite/src/node/__tests__/plugins/importGlob/parse.spec.ts,packages/vite/src/node/__tests__/plugins/importGlob/utils.spec.ts,packages/vite/src/node/__tests__/plugins/modulePreloadPolyfill/modulePreloadPolyfill.spec.ts",
+    "language": "typescript",
+    "docker_file": ".helix/Dockerfile.helix",
+    "run_script": ".helix/run-tests-eval.sh",
+    "task_type": "refactor",
+    "task_category": "build-tooling",
+    "repo_category": "frontend",
+    "version": "6.0.0-alpha",
+    "container_mem": "8g",
+    "container_memswap": "8g",
+    "container_network_needed": "false"
+  }
+]
