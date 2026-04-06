@@ -61,7 +61,7 @@ import { TraceMap, originalPositionFor } from '@jridgewell/trace-mapping'
 import MagicString from 'magic-string'
 import type { FSWatcher } from 'chokidar'
 import colors from 'picocolors'
-import type { EnvironmentPlugin, Plugin, PluginEnvironment } from '../plugin'
+import type { EnvironmentPlugin, Plugin } from '../plugin'
 import {
   combineSourcemaps,
   createDebugger,
@@ -78,6 +78,7 @@ import {
 import { FS_PREFIX } from '../constants'
 import { createPluginHookUtils, getHookHandler } from '../plugins'
 import { cleanUrl, unwrapId } from '../../shared/utils'
+import type { Environment } from '../environment'
 import type { DevEnvironment } from './environment'
 import { buildErrorMessage } from './middlewares/error'
 import type { EnvironmentModuleNode } from './moduleGraph'
@@ -147,7 +148,7 @@ type PluginContext = Omit<
  * pipelines working with the same environment (used for createIdResolver).
  */
 export async function createEnvironmentPluginContainer(
-  environment: PluginEnvironment,
+  environment: Environment,
   plugins: EnvironmentPlugin[],
   watcher?: FSWatcher,
 ): Promise<EnvironmentPluginContainer> {
@@ -263,7 +264,7 @@ export async function createEnvironmentPluginContainer(
   // active plugin in that pipeline can be tracked in a concurrency-safe manner.
   // using a class to make creating new contexts more efficient
   class Context implements PluginContext {
-    environment: PluginEnvironment // TODO: | ScanEnvironment
+    environment: Environment
     meta = minimalContext.meta
     ssr = false
     _scan = false
@@ -850,7 +851,7 @@ export interface PluginContainer {
       custom?: CustomPluginOptions
       skip?: Set<Plugin>
       ssr?: boolean
-      environment?: PluginEnvironment
+      environment?: Environment
       /**
        * @internal
        */
@@ -864,14 +865,14 @@ export interface PluginContainer {
     options?: {
       inMap?: SourceDescription['map']
       ssr?: boolean
-      environment?: PluginEnvironment
+      environment?: Environment
     },
   ): Promise<{ code: string; map: SourceMap | { mappings: '' } | null }>
   load(
     id: string,
     options?: {
       ssr?: boolean
-      environment?: PluginEnvironment
+      environment?: Environment
     },
   ): Promise<LoadResult | null>
   watchChange(
@@ -892,7 +893,7 @@ export interface PluginContainer {
  **/
 
 export function createPluginContainer(
-  environments: Record<string, PluginEnvironment>,
+  environments: Record<string, Environment>,
 ): PluginContainer {
   // Backward compatibility
   // Users should call pluginContainer.resolveId (and load/transform) passing the environment they want to work with

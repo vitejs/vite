@@ -5,8 +5,6 @@ import type { ImportSpecifier } from 'es-module-lexer'
 import { parse as parseJS } from 'acorn'
 import { dynamicImportToGlob } from '@rollup/plugin-dynamic-import-vars'
 import type { Plugin } from '../plugin'
-import type { Environment } from '../environment'
-import { cachedByEnvironment } from '../environment'
 import type { ResolvedConfig } from '../config'
 import { CLIENT_ENTRY } from '../constants'
 import { createIdResolver } from '../idResolver'
@@ -19,6 +17,7 @@ import {
   transformStableResult,
   urlRE,
 } from '../utils'
+import { type Environment, cachedByEnvironment } from '../environment'
 import { toAbsoluteGlob } from './importMetaGlob'
 import { hasViteIgnoreRE } from './importAnalysis'
 import { workerOrSharedWorkerRE } from './worker'

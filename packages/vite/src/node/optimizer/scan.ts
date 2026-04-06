@@ -38,19 +38,19 @@ import {
 import { resolveEnvironmentPlugins } from '../plugin'
 import type { EnvironmentPluginContainer } from '../server/pluginContainer'
 import { createEnvironmentPluginContainer } from '../server/pluginContainer'
-import { Environment } from '../environment'
+import { BaseEnvironment } from '../baseEnvironment'
 import type { DevEnvironment } from '../server/environment'
 import { transformGlobImport } from '../plugins/importMetaGlob'
 import { cleanUrl } from '../../shared/utils'
 import { loadTsconfigJsonForFile } from '../plugins/esbuild'
 
-export class ScanEnvironment extends Environment {
+export class ScanEnvironment extends BaseEnvironment {
   mode = 'scan' as const
 
   get pluginContainer(): EnvironmentPluginContainer {
     if (!this._pluginContainer)
       throw new Error(
-        `${this.name} environment.pluginContainer called before initialized`,
+        `${this.name} environment.pluginContainer called before initialization`,
       )
     return this._pluginContainer
   }
@@ -60,10 +60,10 @@ export class ScanEnvironment extends Environment {
   _pluginContainer: EnvironmentPluginContainer | undefined
 
   async init(): Promise<void> {
-    if (this._inited) {
+    if (this._initialized) {
       return
     }
-    this._inited = true
+    this._initialized = true
     this._plugins = await resolveEnvironmentPlugins(this)
     this._pluginContainer = await createEnvironmentPluginContainer(
       this,
@@ -73,7 +73,7 @@ export class ScanEnvironment extends Environment {
   }
 }
 
-// Restric access to the module graph and the server while scanning
+// Restrict access to the module graph and the server while scanning
 export function devToScanEnvironment(
   environment: DevEnvironment,
 ): ScanEnvironment {

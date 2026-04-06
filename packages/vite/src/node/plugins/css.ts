@@ -41,7 +41,6 @@ import {
 } from '../constants'
 import type { ResolvedConfig } from '../config'
 import type { Plugin } from '../plugin'
-import { Environment } from '../environment'
 import { checkPublicFile } from '../publicDir'
 import {
   arraify,
@@ -71,6 +70,7 @@ import type { Logger } from '../logger'
 import { cleanUrl, slash } from '../../shared/utils'
 import { createIdResolver } from '../idResolver'
 import type { ResolveIdFn } from '../idResolver'
+import { PartialEnvironment } from '../baseEnvironment'
 import { addToHTMLProxyTransformResult } from './html'
 import {
   assetUrlRE,
@@ -1089,7 +1089,7 @@ function getCssResolversKeys(
 }
 
 async function compileCSSPreprocessors(
-  environment: Environment,
+  environment: PartialEnvironment,
   id: string,
   lang: PreprocessLang,
   code: string,
@@ -1171,7 +1171,7 @@ function getAtImportResolvers(config: ResolvedConfig) {
 }
 
 async function compileCSS(
-  environment: Environment,
+  environment: PartialEnvironment,
   id: string,
   code: string,
   workerController: PreprocessorWorkerController,
@@ -1480,7 +1480,7 @@ export async function preprocessCSS(
   // Backward compatibility, only the name is needed for the alias and resolve plugins used in the resolvers
   // TODO: Should we use environmentName instead of environment for these APIs?
   // Should the signature be preprocessCSS(code, filename, environment) or preprocessCSS(code, filename, config, environmentName)?
-  environment: Environment = new Environment('client', config),
+  environment: PartialEnvironment = new PartialEnvironment('client', config),
 ): Promise<PreprocessCSSResult> {
   let workerController = preprocessorWorkerControllerCache.get(config)
 
@@ -1929,7 +1929,7 @@ type StylusStylePreprocessorOptions = StylePreprocessorOptions & {
 
 type StylePreprocessor = {
   process: (
-    environment: Environment,
+    environment: PartialEnvironment,
     source: string,
     root: string,
     options: StylePreprocessorOptions,
@@ -1940,7 +1940,7 @@ type StylePreprocessor = {
 
 type SassStylePreprocessor = {
   process: (
-    environment: Environment,
+    environment: PartialEnvironment,
     source: string,
     root: string,
     options: SassStylePreprocessorOptions,
@@ -1951,7 +1951,7 @@ type SassStylePreprocessor = {
 
 type StylusStylePreprocessor = {
   process: (
-    environment: Environment,
+    environment: PartialEnvironment,
     source: string,
     root: string,
     options: StylusStylePreprocessorOptions,
@@ -2048,7 +2048,7 @@ function fixScssBugImportValue(
 
 // .scss/.sass processor
 const makeScssWorker = (
-  environment: Environment,
+  environment: PartialEnvironment,
   resolvers: CSSAtImportResolvers,
   alias: Alias[],
   maxWorkers: number | undefined,
@@ -2225,7 +2225,7 @@ const scssProcessor = (
  * root file as base.
  */
 async function rebaseUrls(
-  environment: Environment,
+  environment: PartialEnvironment,
   file: string,
   rootFile: string,
   alias: Alias[],
@@ -2292,7 +2292,7 @@ async function rebaseUrls(
 
 // .less
 const makeLessWorker = (
-  environment: Environment,
+  environment: PartialEnvironment,
   resolvers: CSSAtImportResolvers,
   alias: Alias[],
   maxWorkers: number | undefined,
@@ -2714,7 +2714,7 @@ const importLightningCSS = createCachedImport(() => import('lightningcss'))
 async function compileLightningCSS(
   id: string,
   src: string,
-  environment: Environment,
+  environment: PartialEnvironment,
   urlReplacer?: CssUrlReplacer,
 ): ReturnType<typeof compileCSS> {
   const { config } = environment

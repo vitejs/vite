@@ -23,7 +23,6 @@ import {
 import type {
   HookHandler,
   Plugin,
-  PluginEnvironment,
   PluginOption,
   PluginWithRequiredHook,
 } from './plugin'
@@ -43,7 +42,6 @@ import {
 } from './build'
 import type { ResolvedServerOptions, ServerOptions } from './server'
 import { resolveServerOptions } from './server'
-import { Environment } from './environment'
 import type { DevEnvironment } from './server/environment'
 import type { PreviewOptions, ResolvedPreviewOptions } from './preview'
 import { resolvePreviewOptions } from './preview'
@@ -89,6 +87,7 @@ import { findNearestPackageData } from './packages'
 import { loadEnv, resolveEnvPrefix } from './env'
 import type { ResolvedSSROptions, SSROptions } from './ssr'
 import { resolveSSROptions } from './ssr'
+import { FutureCompatEnvironment } from './baseEnvironment'
 
 const debug = createDebugger('vite:config')
 const promisifiedRealpath = promisify(fs.realpath)
@@ -1223,11 +1222,10 @@ export async function resolveConfig(
         plugins: Plugin[],
       ) => {
         // The used alias and resolve plugins only use configuration options from the
-        // environment so we can safely cast to a base Environment instance to a
-        // PluginEnvironment here
-        const environment = new Environment(environmentName, this)
+        // environment so we can safely just use the FutureCompatEnvironment here
+        const environment = new FutureCompatEnvironment(environmentName, this)
         const pluginContainer = await createEnvironmentPluginContainer(
-          environment as PluginEnvironment,
+          environment,
           plugins,
         )
         await pluginContainer.buildStart({})
