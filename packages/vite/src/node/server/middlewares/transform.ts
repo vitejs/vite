@@ -62,7 +62,10 @@ export function isServerAccessDeniedForTransform(
   id: string,
 ): boolean {
   if (rawRE.test(id) || urlRE.test(id) || inlineRE.test(id) || svgRE.test(id)) {
-    return checkLoadingAccess(config, id) !== 'allowed'
+    return (
+      checkLoadingAccess(config, cleanUrl(id)) !== 'allowed' ||
+      checkLoadingAccess(config, id) !== 'allowed'
+    )
   }
   return false
 }
@@ -319,7 +322,13 @@ export function transformMiddleware(
       }
       if (e?.code === ERR_DENIED_ID) {
         const id: string = e.id
-        const servingAccessResult = checkLoadingAccess(server.config, id)
+        let servingAccessResult = checkLoadingAccess(
+          server.config,
+          cleanUrl(id),
+        )
+        if (servingAccessResult === 'allowed') {
+          servingAccessResult = checkLoadingAccess(server.config, id)
+        }
         if (servingAccessResult === 'denied') {
           respondWithAccessDenied(id, server, res)
           return true

@@ -1,6 +1,7 @@
 import path from 'node:path'
 import { defineConfig } from 'vite'
 import svgVirtualModulePlugin from './svgVirtualModulePlugin'
+import matrixTestResultPlugin from './matrixTestResultPlugin'
 
 export default defineConfig({
   build: {
@@ -31,5 +32,5 @@ export default defineConfig({
   define: {
     ROOT: JSON.stringify(path.dirname(import.meta.dirname).replace(/\\/g, '/')),
   },
-  plugins: [svgVirtualModulePlugin()],
+  plugins: [svgVirtualModulePlugin(), matrixTestResultPlugin()],
 })
