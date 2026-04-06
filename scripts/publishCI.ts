@@ -1,3 +1,3 @@
 import { publish } from '@vitejs/release-scripts'
 
-publish({ defaultPackage: 'vite', provenance: true, packageManager: 'pnpm' })
+publish({ defaultPackage: 'vite', packageManager: 'pnpm' })
