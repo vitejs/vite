@@ -33,6 +33,7 @@ import {
   createDebugger,
   fsPathFromUrl,
   generateCodeFrame,
+  getFileStartIndex,
   getHash,
   injectQuery,
   isBuiltin,
@@ -971,7 +972,10 @@ export function interopNamedImports(
         { contentOnly: true },
       )
       if (rewritten.hoistedAssignments) {
-        str.appendLeft(0, rewritten.hoistedAssignments + ';')
+        str.appendLeft(
+          getFileStartIndex(source),
+          rewritten.hoistedAssignments + ';',
+        )
       }
     } else {
       // #1439 export * from '...'

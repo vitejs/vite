@@ -1817,3 +1817,10 @@ export function formatAndTruncateFileList(files: string[]): {
   }
   return { formatted: log, truncated }
 }
+
+const hashbangRE = /^#!.*\n/
+
+// find the start of the file, after the hashbang
+export function getFileStartIndex(code: string): number {
+  return hashbangRE.exec(code)?.[0].length ?? 0
+}
