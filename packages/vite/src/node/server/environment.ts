@@ -210,6 +210,12 @@ export class DevEnvironment extends BaseEnvironment {
     warmupFiles(server, this)
   }
 
+  /**
+   * Called by the module runner to retrieve information about the specified
+   * module. Internally calls `transformRequest` and wraps the result in the
+   * format that the module runner understands.
+   * This method is not meant to be called manually.
+   */
   fetchModule(
     id: string,
     importer?: string,
