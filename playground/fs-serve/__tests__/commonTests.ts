@@ -1,5 +1,6 @@
 import http from 'node:http'
 import path from 'node:path'
+import fs from 'node:fs'
 import { pathToFileURL } from 'node:url'
 import { setTimeout } from 'node:timers/promises'
 import {
@@ -21,13 +22,17 @@ const getViteTestIndexHtmlUrl = () => {
   return viteTestUrl + srcPrefix + 'src/'
 }
 
+const safeJsonContent = fs.readFileSync(
+  path.resolve(import.meta.dirname, '../safe.json'),
+  'utf-8',
+)
 const stringified = JSON.stringify(testJSON)
 
-describe.runIf(isServe)('main', () => {
-  beforeAll(async () => {
-    await page.goto(getViteTestIndexHtmlUrl())
-  })
+beforeAll(async () => {
+  await page.goto(getViteTestIndexHtmlUrl())
+})
 
+describe.runIf(isServe)('normal', () => {
   test('default import', async () => {
     await expect.poll(() => page.textContent('.full')).toBe(stringified)
   })
@@ -36,208 +41,263 @@ describe.runIf(isServe)('main', () => {
     await expect.poll(() => page.textContent('.named')).toBe(testJSON.msg)
   })
 
-  test('virtual svg module', async () => {
-    await expect.poll(() => page.textContent('.virtual-svg')).toMatch('<svg')
-  })
-
-  test('safe fetch', async () => {
-    await expect.poll(() => page.textContent('.safe-fetch')).toMatch('KEY=safe')
-    await expect.poll(() => page.textContent('.safe-fetch-status')).toBe('200')
-  })
-
-  test('safe fetch with query', async () => {
-    await expect
-      .poll(() => page.textContent('.safe-fetch-query'))
-      .toMatch('KEY=safe')
-    await expect
-      .poll(() => page.textContent('.safe-fetch-query-status'))
-      .toBe('200')
-  })
-
-  test('safe fetch with special characters', async () => {
-    await expect
-      .poll(() => page.textContent('.safe-fetch-subdir-special-characters'))
-      .toMatch('KEY=safe')
-    await expect
-      .poll(() =>
-        page.textContent('.safe-fetch-subdir-special-characters-status'),
-      )
-      .toBe('200')
-  })
-
-  test('unsafe fetch', async () => {
-    await expect
-      .poll(() => page.textContent('.unsafe-fetch'))
-      .toMatch('403 Restricted')
-    await expect
-      .poll(() => page.textContent('.unsafe-fetch-status'))
-      .toBe('403')
-  })
-
-  test('unsafe HTML fetch', async () => {
-    await expect
-      .poll(() => page.textContent('.unsafe-fetch-html'))
-      .toMatch('403 Restricted')
-    await expect
-      .poll(() => page.textContent('.unsafe-fetch-html-status'))
-      .toBe('403')
-  })
-
-  test('unsafe fetch with special characters (#8498)', async () => {
-    await expect.poll(() => page.textContent('.unsafe-fetch-8498')).toBe('')
-    await expect
-      .poll(() => page.textContent('.unsafe-fetch-8498-status'))
-      .toBe('404')
-  })
-
-  test('unsafe fetch with special characters 2 (#8498)', async () => {
-    await expect.poll(() => page.textContent('.unsafe-fetch-8498-2')).toBe('')
-    await expect
-      .poll(() => page.textContent('.unsafe-fetch-8498-2-status'))
-      .toBe('404')
-  })
-
-  test('unsafe fetch import inline', async () => {
-    await expect
-      .poll(() => page.textContent('.unsafe-fetch-import-inline-status'))
-      .toBe('403')
-  })
-
-  test('unsafe fetch raw query import', async () => {
-    await expect
-      .poll(() => page.textContent('.unsafe-fetch-raw-query-import-status'))
-      .toBe('403')
-  })
-
-  test('unsafe fetch ?.svg?import', async () => {
-    await expect
-      .poll(() => page.textContent('.unsafe-fetch-query-dot-svg-import-status'))
-      .toBe('403')
-  })
-
-  test('unsafe fetch .svg?import', async () => {
-    await expect
-      .poll(() => page.textContent('.unsafe-fetch-svg-status'))
-      .toBe('403')
-  })
-
-  test('safe fs fetch', async () => {
-    await expect
-      .poll(() => page.textContent('.safe-fs-fetch'))
-      .toBe(stringified)
-    await expect
-      .poll(() => page.textContent('.safe-fs-fetch-status'))
-      .toBe('200')
-  })
-
-  test('safe fs fetch', async () => {
-    await expect
-      .poll(() => page.textContent('.safe-fs-fetch-query'))
-      .toBe(stringified)
-    await expect
-      .poll(() => page.textContent('.safe-fs-fetch-query-status'))
-      .toBe('200')
-  })
-
-  test('safe fs fetch with special characters', async () => {
-    await expect
-      .poll(() => page.textContent('.safe-fs-fetch-special-characters'))
-      .toBe(stringified)
-    await expect
-      .poll(() => page.textContent('.safe-fs-fetch-special-characters-status'))
-      .toBe('200')
-  })
-
-  test('unsafe fs fetch', async () => {
-    await expect.poll(() => page.textContent('.unsafe-fs-fetch')).toBe('')
-    await expect
-      .poll(() => page.textContent('.unsafe-fs-fetch-status'))
-      .toBe('403')
-  })
-
-  test('unsafe fs fetch', async () => {
-    await expect.poll(() => page.textContent('.unsafe-fs-fetch-raw')).toBe('')
-    await expect
-      .poll(() => page.textContent('.unsafe-fs-fetch-raw-status'))
-      .toBe('403')
-  })
-
-  test('unsafe fs fetch query 1', async () => {
-    await expect
-      .poll(() => page.textContent('.unsafe-fs-fetch-raw-query1'))
-      .toBe('')
-    await expect
-      .poll(() => page.textContent('.unsafe-fs-fetch-raw-query1-status'))
-      .toBe('403')
-  })
-
-  test('unsafe fs fetch query 2', async () => {
-    await expect
-      .poll(() => page.textContent('.unsafe-fs-fetch-raw-query2'))
-      .toBe('')
-    await expect
-      .poll(() => page.textContent('.unsafe-fs-fetch-raw-query2-status'))
-      .toBe('403')
-  })
-
-  test('unsafe fs fetch with special characters (#8498)', async () => {
-    await expect.poll(() => page.textContent('.unsafe-fs-fetch-8498')).toBe('')
-    await expect
-      .poll(() => page.textContent('.unsafe-fs-fetch-8498-status'))
-      .toBe('404')
-  })
-
-  test('unsafe fs fetch with special characters 2 (#8498)', async () => {
-    await expect
-      .poll(() => page.textContent('.unsafe-fs-fetch-8498-2'))
-      .toBe('')
-    await expect
-      .poll(() => page.textContent('.unsafe-fs-fetch-8498-2-status'))
-      .toBe('404')
-  })
-
-  test('unsafe fs fetch import inline', async () => {
-    await expect
-      .poll(() => page.textContent('.unsafe-fs-fetch-import-inline-status'))
-      .toBe('403')
-  })
-
-  test('unsafe fs fetch import inline wasm init', async () => {
-    await expect
-      .poll(() =>
-        page.textContent('.unsafe-fs-fetch-import-inline-wasm-init-status'),
-      )
-      .toBe('403')
-  })
-
-  test('unsafe fs fetch with relative path after query status', async () => {
-    await expect
-      .poll(() =>
-        page.textContent('.unsafe-fs-fetch-relative-path-after-query-status'),
-      )
-      .toBe('404')
-  })
-
   test('nested entry', async () => {
     await expect.poll(() => page.textContent('.nested-entry')).toBe('foobar')
   })
 
-  test('denied', async () => {
-    await expect.poll(() => page.textContent('.unsafe-dotenv')).toBe('403')
+  test('virtual svg module', async () => {
+    await expect.poll(() => page.textContent('.virtual-svg')).toMatch('<svg')
   })
+})
 
-  test('denied EnV casing', async () => {
+describe.runIf(isServe)('matrix', () => {
+  const variants = [
+    { variantId: '', variantName: 'normal' },
+    { variantId: '-fs', variantName: '/@fs/' },
+  ] as const
+  type VariantId = (typeof variants)[number]['variantId']
+  const cases: Array<{
+    name: string
+    testId: string
+    content: string | RegExp
+    status: string | string[]
+    skipVariants?: VariantId[]
+    isSPAFallback?: boolean
+  }> = [
+    {
+      name: 'safe fetch',
+      testId: 'safe',
+      content: /KEY=safe/,
+      status: '200',
+    },
+    {
+      name: 'safe fetch with query',
+      testId: 'safe-query',
+      content: /KEY=safe/,
+      status: '200',
+    },
+    {
+      name: 'safe fetch in subdir',
+      testId: 'safe-subdir',
+      content: /KEY=safe/,
+      status: '200',
+    },
+    {
+      name: 'safe fetch with special characters',
+      testId: 'safe-subdir-special-characters',
+      content: /KEY=safe/,
+      status: '200',
+    },
+    {
+      name: 'safe fetch with special characters 2',
+      testId: 'safe-subdir-special-characters2',
+      content: safeJsonContent,
+      status: '200',
+    },
+    {
+      name: 'safe fetch imported',
+      testId: 'safe-imported',
+      content: safeJsonContent,
+      status: '200',
+      skipVariants: [''],
+    },
+    {
+      name: 'safe fetch imported with query',
+      testId: 'safe-imported-query',
+      content: safeJsonContent,
+      status: '200',
+      skipVariants: [''],
+    },
+
+    {
+      name: 'unsafe fetch',
+      testId: 'unsafe',
+      content: /403 Restricted/,
+      status: '403',
+    },
+    {
+      name: 'unsafe JSON fetch',
+      testId: 'unsafe-json',
+      content: /403 Restricted/,
+      status: '403',
+      skipVariants: [''],
+    },
+    {
+      name: 'unsafe HTML fetch',
+      testId: 'unsafe-html',
+      content: /403 Restricted/,
+      status: '403',
+    },
+    {
+      name: 'unsafe HTML fetch outside root',
+      testId: 'unsafe-html-outside-root',
+      content: /403 Restricted/,
+      status: '403',
+      skipVariants: [''],
+    },
+    {
+      name: 'unsafe fetch with special characters (#8498)',
+      testId: 'unsafe-8498',
+      content: '',
+      status: '404',
+    },
+    {
+      name: 'unsafe fetch with special characters 2 (#8498)',
+      testId: 'unsafe-8498-2',
+      content: '',
+      status: '404',
+    },
+    {
+      name: 'unsafe fetch import inline',
+      testId: 'unsafe-import-inline',
+      content: /403 Restricted/,
+      status: '403',
+    },
+    {
+      name: 'unsafe fetch raw query import',
+      testId: 'unsafe-raw-query-import',
+      content: /403 Restricted/,
+      status: '403',
+    },
+    {
+      name: 'unsafe fetch raw import raw outside root',
+      testId: 'unsafe-raw-import-raw-outside-root',
+      content: /403 Restricted/,
+      status: '403',
+      skipVariants: [''],
+    },
+    {
+      name: 'unsafe fetch raw import raw outside root 1',
+      testId: 'unsafe-raw-import-raw-outside-root1',
+      content: /403 Restricted/,
+      status: '403',
+      skipVariants: [''],
+    },
+    {
+      name: 'unsafe fetch raw import raw outside root 2',
+      testId: 'unsafe-raw-import-raw-outside-root2',
+      content: /403 Restricted/,
+      status: '403',
+      skipVariants: [''],
+    },
+    {
+      name: 'unsafe fetch with ?url query',
+      testId: 'unsafe-url',
+      content: /403 Restricted/,
+      status: '403',
+    },
+    {
+      name: 'unsafe fetch ?.svg?import',
+      testId: 'unsafe-query-dot-svg-import',
+      content: /403 Restricted/,
+      status: '403',
+    },
+    {
+      name: 'unsafe fetch .svg?import',
+      testId: 'unsafe-svg',
+      content: /403 Restricted/,
+      status: '403',
+    },
+    {
+      name: 'unsafe fetch import inline wasm init',
+      testId: 'unsafe-import-inline-wasm-init',
+      content: /403 Restricted/,
+      status: '403',
+    },
+    // It is 404 in `fs-serve/base` test, 403 in `fs-serve` test
+    {
+      name: 'unsafe fetch with relative path after query',
+      testId: 'unsafe-relative-path-after-query',
+      content: /403 Restricted|^$/,
+      status: ['403', '404'],
+    },
+    {
+      name: 'denied .env',
+      testId: 'unsafe-dotenv',
+      content: /403 Restricted/,
+      status: '403',
+    },
     // It is 403 in case insensitive system, 404 in others
-    await expect
-      .poll(() => page.textContent('.unsafe-dotEnV-casing'))
-      .toStrictEqual(expect.toBeOneOf(['403', '404']))
-  })
+    {
+      name: 'denied env casing',
+      testId: 'unsafe-dotenv-casing',
+      content: /403 Restricted|^$/,
+      status: ['403', '404'],
+    },
+    {
+      name: 'denied .env with raw query',
+      testId: 'unsafe-dotenv-raw',
+      content: /403 Restricted/,
+      status: '403',
+    },
+    {
+      name: 'denied .env with url query',
+      testId: 'unsafe-dotenv-url',
+      content: /403 Restricted/,
+      status: '403',
+    },
+    {
+      name: 'denied .env with inline query',
+      testId: 'unsafe-dotenv-inline',
+      content: /403 Restricted/,
+      status: '403',
+    },
+    {
+      name: 'denied env with ?.svg?.wasm?init',
+      testId: 'unsafe-dotenv-query-dot-svg-wasm-init',
+      content: /403 Restricted/,
+      status: '403',
+    },
+    {
+      name: 'denied .env with import and raw query',
+      testId: 'unsafe-dotenv-import-raw',
+      content: /403 Restricted/,
+      status: '403',
+    },
+  ]
 
-  test('denied env with ?.svg?.wasm?init', async () => {
-    await expect
-      .poll(() => page.textContent('.unsafe-dotenv-query-dot-svg-wasm-init'))
-      .toBe('403')
-  })
+  for (const {
+    name,
+    testId,
+    content,
+    status,
+    skipVariants,
+    isSPAFallback,
+  } of cases) {
+    for (const { variantId, variantName } of variants) {
+      if (skipVariants?.includes(variantId)) {
+        continue
+      }
+
+      test.concurrent(`${name} (${variantName})`, async ({ expect }) => {
+        const baseSelector = `.fetch${variantId}-${testId}`
+        const actualStatus = expect.poll(() =>
+          page.textContent(`${baseSelector}-status`),
+        )
+        const actualContent = expect.poll(() =>
+          page.textContent(`${baseSelector}-content`),
+        )
+
+        if (variantName === 'normal' && isSPAFallback) {
+          await actualStatus.toBe('200')
+          await actualContent.toContain('<h1>FS Serve Matrix Test Summary</h1>')
+          return
+        }
+
+        if (typeof status === 'string') {
+          await actualStatus.toBe(status)
+        } else {
+          await actualStatus.toBeOneOf(status)
+        }
+
+        if (typeof content === 'string') {
+          await actualContent.toBe(content)
+        } else {
+          await actualContent.toMatch(content)
+        }
+      })
+    }
+  }
 })
 
 describe('fetch', () => {
@@ -537,9 +597,11 @@ describe.runIf(isServe)('fetchModule via WebSocket', () => {
 
 describe.runIf(!isServe)('preview HTML', () => {
   test('unsafe HTML fetch', async () => {
-    await expect.poll(() => page.textContent('.unsafe-fetch-html')).toBe('')
     await expect
-      .poll(() => page.textContent('.unsafe-fetch-html-status'))
+      .poll(() => page.textContent('.fetch-unsafe-html-status'))
       .toBe('404')
+    await expect
+      .poll(() => page.textContent('.fetch-unsafe-html-content'))
+      .toBe('')
   })
 })

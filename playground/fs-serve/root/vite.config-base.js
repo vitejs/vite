@@ -1,6 +1,7 @@
 import path from 'node:path'
 import { defineConfig } from 'vite'
 import svgVirtualModulePlugin from './svgVirtualModulePlugin'
+import matrixTestResultPlugin from './matrixTestResultPlugin'
 
 const BASE = '/base/'
 
@@ -35,5 +36,5 @@ export default defineConfig({
     ROOT: JSON.stringify(path.dirname(__dirname).replace(/\\/g, '/')),
     BASE: JSON.stringify(BASE),
   },
-  plugins: [svgVirtualModulePlugin()],
+  plugins: [svgVirtualModulePlugin(), matrixTestResultPlugin()],
 })

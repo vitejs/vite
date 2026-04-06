@@ -837,6 +837,12 @@ importers:
 
   playground/fs-serve:
     devDependencies:
+      '@types/escape-html':
+        specifier: ^1.0.4
+        version: 1.0.4
+      escape-html:
+        specifier: ^1.0.3
+        version: 1.0.3
       ws:
         specifier: ^8.18.3
         version: 8.18.3
