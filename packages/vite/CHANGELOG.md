@@ -1,3 +1,10 @@
+## <small>[7.3.2](https://github.com/vitejs/vite/compare/v7.3.1...v7.3.2) (2026-04-06)</small>
+### Bug Fixes
+
+* avoid path traversal with optimize deps sourcemap handler ([#22161](https://github.com/vitejs/vite/issues/22161)) ([09d8c90](https://github.com/vitejs/vite/commit/09d8c903bde12fee2710314d3b42bc789c686df7))
+* backport [#22159](https://github.com/vitejs/vite/issues/22159), apply server.fs check to env transport ([#22162](https://github.com/vitejs/vite/issues/22162)) ([19db0f2](https://github.com/vitejs/vite/commit/19db0f29c3a3ac4e64cc95c270716c77fd223ad1))
+* check `server.fs` after stripping query as well ([#22160](https://github.com/vitejs/vite/issues/22160)) ([f8103cc](https://github.com/vitejs/vite/commit/f8103cc946f137a54e395fe3f5d08e8209231ed6))
+
 ## <small>[7.3.1](https://github.com/vitejs/vite/compare/v7.3.0...v7.3.1) (2026-01-07)</small>
 ### Features
 
