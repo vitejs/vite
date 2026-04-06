@@ -1,3 +1,10 @@
+## <small>6.4.2 (2026-04-06)</small>
+
+* fix: apply server.fs check to env transport (#22159) (#22163) ([fe28e47](https://github.com/vitejs/vite/commit/fe28e47e9463e4c9619f94bfa06d2f8f1411b44b)), closes [#22159](https://github.com/vitejs/vite/issues/22159) [#22163](https://github.com/vitejs/vite/issues/22163)
+* fix: avoid path traversal with optimize deps sourcemap handler (#22161) ([ca4da5d](https://github.com/vitejs/vite/commit/ca4da5d1fb45c9cfdce606aa30825095791b164b)), closes [#22161](https://github.com/vitejs/vite/issues/22161)
+
+
+
 ## <small>6.4.1 (2025-10-20)</small>
 
 * fix(dev): trim trailing slash before `server.fs.deny` check (#20968) (#20969) ([1114b5d](https://github.com/vitejs/vite/commit/1114b5d7ea03e26572708715343bec69db4536e8)), closes [#20968](https://github.com/vitejs/vite/issues/20968) [#20969](https://github.com/vitejs/vite/issues/20969)
