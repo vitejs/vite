@@ -219,7 +219,7 @@ describe('port detection', () => {
       BASE_PORT,
       '0.0.0.0',
     )
-    await using _wildcardServer6 = await createSimpleServer(BASE_PORT, '::1')
+    await using _wildcardServer6 = await createSimpleServer(BASE_PORT, '::')
 
     const warnMessages: string[] = []
     viteServer = await createServer({
