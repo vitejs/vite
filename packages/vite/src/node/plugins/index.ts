@@ -12,6 +12,7 @@ import {
   type Plugin,
   type PluginWithRequiredHook,
 } from '../plugin'
+import { arraify } from '../utils'
 import { watchPackageDataPlugin } from '../packages'
 import { oxcResolvePlugin } from './resolve'
 import { optimizedDepsPlugin } from './optimizedDeps'
@@ -116,7 +117,7 @@ export async function resolvePlugins(
     assetImportMetaUrlPlugin(config),
     ...buildPlugins.pre,
     dynamicImportVarsPlugin(config),
-    importGlobPlugin(config),
+    ...arraify(importGlobPlugin(config)),
 
     ...postPlugins,
 

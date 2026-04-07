@@ -36,45 +36,10 @@ interface ParsedGeneralImportGlobOptions extends GeneralImportGlobOptions {
 
 const arrayGlobRE = /\bimport\.meta\.glob(?:<\w+>)?\s*\(\s*\[/
 
-export function importGlobPlugin(config: ResolvedConfig): Plugin {
-  if (config.isBundled) {
-    const nativePlugin = nativeImportGlobPlugin({
-      root: config.root,
-      sourcemap: !!config.build.sourcemap,
-      restoreQueryExtension: config.experimental.importGlobRestoreExtension,
-    })
-
-    return {
-      ...nativePlugin,
-      transform: {
-        filter: { code: 'import.meta.glob' },
-        async handler(code, id) {
-          if (!arrayGlobRE.test(code)) {
-            const nativeTransform = nativePlugin.transform
-            if (typeof nativeTransform === 'function') {
-              return nativeTransform.call(this, code, id)
-            }
-            return nativeTransform?.handler.call(this, code, id)
-          }
-
-          const result = await transformGlobImport(
-            code,
-            id,
-            config.root,
-            (im, _, options) =>
-              this.resolve(im, id, options).then((i) => i?.id || im),
-            config.experimental.importGlobRestoreExtension,
-            config.logger,
-          )
-
-          if (result) {
-            return transformStableResult(result.s, id, config)
-          }
-        },
-      },
-    }
-  }
-
+function jsImportGlobPlugin(
+  config: ResolvedConfig,
+  filter: { code: string | RegExp } = { code: 'import.meta.glob' },
+): Plugin {
   const importGlobMaps = new Map<
     Environment,
     Map<string, Array<(file: string) => boolean>>
@@ -86,7 +51,7 @@ export function importGlobPlugin(config: ResolvedConfig): Plugin {
       importGlobMaps.clear()
     },
     transform: {
-      filter: { code: 'import.meta.glob' },
+      filter,
       async handler(code, id) {
         const result = await transformGlobImport(
           code,
@@ -146,6 +111,21 @@ export function importGlobPlugin(config: ResolvedConfig): Plugin {
       return modules.length > 0 ? [...oldModules, ...modules] : undefined
     },
   }
+}
+
+export function importGlobPlugin(config: ResolvedConfig): Plugin | Plugin[] {
+  if (config.isBundled) {
+    return [
+      jsImportGlobPlugin(config, { code: arrayGlobRE }),
+      nativeImportGlobPlugin({
+        root: config.root,
+        sourcemap: !!config.build.sourcemap,
+        restoreQueryExtension: config.experimental.importGlobRestoreExtension,
+      }),
+    ]
+  }
+
+  return jsImportGlobPlugin(config)
 }
 
 const importGlobRE = /\bimport\.meta\.glob(?:<\w+>)?\s*\(/g

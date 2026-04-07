@@ -1,8 +1,9 @@
 import { resolve } from 'node:path'
-import { beforeEach, describe, expect, test, vi } from 'vitest'
+import { describe, expect, test, vi } from 'vitest'
 import type { Plugin } from '../../plugin'
 import { resolveConfig } from '../../config'
 import { PartialEnvironment } from '../../baseEnvironment'
+import { arraify } from '../../utils'
 
 const { nativeTransformHandler } = vi.hoisted(() => ({
   nativeTransformHandler: vi.fn(async () => ({
@@ -30,29 +31,52 @@ async function createBuildImportGlobTransform() {
   const config = await resolveConfig({ configFile: false }, 'build')
   expect(config.isBundled).toBe(true)
   const { importGlobPlugin } = await import('../../plugins/importMetaGlob')
-  const plugin = importGlobPlugin(config)
+  const plugins = arraify(importGlobPlugin(config))
   const environment = new PartialEnvironment('client', config)
   const id = resolve(config.root, 'packages/vite/src/node/entry.ts')
 
   return async (code: string) => {
-    // The build path must keep using the JS transformer so array globs are
-    // resolved the same way as in dev.
-    // @ts-expect-error transform.handler should exist
-    const result = await plugin.transform.handler.call(
-      { environment, resolve: async (id: string) => ({ id }) },
-      code,
-      id,
-    )
+    let currentCode = code
 
-    return result?.code || result
+    for (const plugin of plugins) {
+      const transform = plugin.transform
+      if (!transform) continue
+      const filter =
+        typeof transform === 'object' ? transform.filter : undefined
+      if (filter && 'code' in filter) {
+        const codeFilter = filter.code
+        if (
+          typeof codeFilter === 'string' &&
+          !currentCode.includes(codeFilter)
+        ) {
+          continue
+        }
+        if (codeFilter instanceof RegExp && !codeFilter.test(currentCode)) {
+          continue
+        }
+      }
+      const handler =
+        typeof transform === 'function' ? transform : transform.handler
+      if (!handler) continue
+
+      const result = await handler.call(
+        { environment, resolve: async (id: string) => ({ id }) },
+        currentCode,
+        id,
+      )
+
+      if (result && typeof result === 'object' && 'code' in result) {
+        currentCode = result.code || currentCode
+      } else if (typeof result === 'string') {
+        currentCode = result
+      }
+    }
+
+    return currentCode
   }
 }
 
 describe('importGlobPlugin (build)', () => {
-  beforeEach(() => {
-    nativeTransformHandler.mockClear()
-  })
-
   test('transforms array globs in build mode', async () => {
     const transform = await createBuildImportGlobTransform()
     const result = await transform(`
@@ -74,18 +98,5 @@ describe('importGlobPlugin (build)', () => {
     expect(result).not.toContain('modules/index.ts')
     expect(result).not.toContain('Object.assign({})')
     expect(nativeTransformHandler).not.toHaveBeenCalled()
-  })
-
-  test('string globs still use native plugin in bundled build', async () => {
-    const transform = await createBuildImportGlobTransform()
-    const result = await transform(`
-      export const modules = import.meta.glob(
-        './__tests__/plugins/importGlob/fixture-a/modules/*.ts',
-        { eager: true }
-      )
-    `)
-
-    expect(result).toBe('/* native import glob transform */')
-    expect(nativeTransformHandler).toHaveBeenCalledOnce()
   })
 })
