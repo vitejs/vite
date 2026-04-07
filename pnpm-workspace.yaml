@@ -32,18 +32,17 @@ packageExtensions:
   '@rollup/plugin-dynamic-import-vars':
     dependencies:
       '@types/estree': ^1.0.0
-ignoredBuiltDependencies:
-  - core-js
-  - vue-demi
-onlyBuiltDependencies:
-  - "@parcel/watcher"
-  - "@tailwindcss/oxide"
-  - "esbuild"
-  - "playwright-chromium"
-  - "sharp"
-  - "simple-git-hooks"
-  - "unrs-resolver"
-  - "workerd"
+allowBuilds:
+  core-js: false
+  vue-demi: false
+  "@parcel/watcher": true
+  "@tailwindcss/oxide": true
+  esbuild: true
+  playwright-chromium: true
+  sharp: true
+  simple-git-hooks: true
+  unrs-resolver: true
+  workerd: true
 
 trustPolicy: no-downgrade
 trustPolicyExclude:
