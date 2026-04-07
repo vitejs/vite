@@ -904,10 +904,10 @@ export async function _createServer(
   })
 
   watcher.on('add', (file) => {
-    onFileAddUnlink(file, false)
+    onFileAddUnlink(file, false).catch((e) => server.config.logger.error(e))
   })
   watcher.on('unlink', (file) => {
-    onFileAddUnlink(file, true)
+    onFileAddUnlink(file, true).catch((e) => server.config.logger.error(e))
   })
 
   if (!middlewareMode && httpServer) {
