@@ -2609,7 +2609,7 @@ const scssProcessor = (
 ): StylePreprocessor<SassStylePreprocessorInternalOptions> => {
   let worker: ReturnType<typeof makeScssWorker> | undefined
   let failedSassEmbedded: boolean | undefined
-  const errorsWithPrefix = new WeakSet<Error>()
+  const normalizedErrors = new WeakSet<Error>()
 
   return {
     close() {
@@ -2669,7 +2669,7 @@ const scssProcessor = (
           deps,
         }
       } catch (e) {
-        if (!errorsWithPrefix.has(e)) {
+        if (!normalizedErrors.has(e)) {
           // normalize SASS error
           e.message = `[sass] ${e.message}`
           e.id = e.file
@@ -2686,7 +2686,7 @@ const scssProcessor = (
           }
           // sass sometimes re-uses the error instance
           // avoid mutating the same instance multiple times
-          errorsWithPrefix.add(e)
+          normalizedErrors.add(e)
         }
         return { code: '', error: e, deps: [] }
       }
