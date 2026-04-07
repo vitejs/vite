@@ -7,7 +7,7 @@ import crypto from 'node:crypto'
 import { fileURLToPath } from 'node:url'
 import type { ServerOptions as HttpsServerOptions } from 'node:https'
 import { builtinModules } from 'node:module'
-import { promises as dns } from 'node:dns'
+import { promises as dns, getDefaultResultOrder } from 'node:dns'
 import { performance } from 'node:perf_hooks'
 import type { AddressInfo, Server } from 'node:net'
 import fsp from 'node:fs/promises'
@@ -925,7 +925,7 @@ export function unique<T>(arr: T[]): T[] {
 export function getLocalhostAddressIfDiffersFromDNS():
   | Promise<string | undefined>
   | undefined {
-  if (dns.getDefaultResultOrder() === 'verbatim') {
+  if (getDefaultResultOrder() === 'verbatim') {
     return undefined
   }
   return Promise.all([
