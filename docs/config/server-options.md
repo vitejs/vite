@@ -406,6 +406,12 @@ This blocklist does not apply to [the public directory](/guide/assets.md#the-pub
 
 :::
 
+::: tip NOTE
+
+The deny filter is applied against the module id and the id with query parameters stripped. Since a plugin can read files from any files in its load hook (including resolving symlinks to denied paths), Vite cannot guarantee that a denied file is inaccessible through an alternative path. If you have an alternative path, include it in the deny list as well.
+
+:::
+
 ## server.origin
 
 - **Type:** `string`
