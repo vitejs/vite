@@ -1,12 +1,13 @@
 import { resolve } from 'node:path'
 import { beforeEach, describe, expect, test, vi } from 'vitest'
 import type { Plugin } from '../../plugin'
-import { importGlobPlugin } from '../../plugins/importMetaGlob'
 import { resolveConfig } from '../../config'
 import { PartialEnvironment } from '../../baseEnvironment'
 
-const nativeTransformHandler = vi.fn(async () => ({
-  code: '/* native import glob transform */',
+const { nativeTransformHandler } = vi.hoisted(() => ({
+  nativeTransformHandler: vi.fn(async () => ({
+    code: '/* native import glob transform */',
+  })),
 }))
 
 vi.mock('rolldown/experimental', async (importOriginal) => {
@@ -28,6 +29,7 @@ vi.mock('rolldown/experimental', async (importOriginal) => {
 async function createBuildImportGlobTransform() {
   const config = await resolveConfig({ configFile: false }, 'build')
   expect(config.isBundled).toBe(true)
+  const { importGlobPlugin } = await import('../../plugins/importMetaGlob')
   const plugin = importGlobPlugin(config)
   const environment = new PartialEnvironment('client', config)
   const id = resolve(config.root, 'packages/vite/src/node/entry.ts')
