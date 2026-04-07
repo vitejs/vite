@@ -126,7 +126,11 @@ To avoid interop issues, it is recommended to avoid relying on this behavior. Vi
 
 By default, Vite provides type definitions for `import.meta.env` in [`vite/client.d.ts`](https://github.com/vitejs/vite/blob/main/packages/vite/client.d.ts). While you can define more custom env variables in `.env.[mode]` files, you may want to get TypeScript IntelliSense for user-defined env variables that are prefixed with `VITE_`.
 
-To achieve this, you can create an `vite-env.d.ts` in `src` directory, then augment `ImportMetaEnv` like this:
+To achieve this, you can create a `vite-env.d.ts` in `src` directory, then augment `ImportMetaEnv` like this:
+
+:::tip Framework templates already include this file
+If you scaffolded your project with `create-vite` (e.g., the `react-ts` or `vue-ts` templates), `src/vite-env.d.ts` already exists with a `/// <reference types="vite/client" />` directive. You can add your `ImportMetaEnv` augmentation directly to that existing file instead of creating a new one.
+:::
 
 ```typescript [vite-env.d.ts]
 interface ViteTypeOptions {
@@ -145,6 +149,29 @@ interface ImportMeta {
 }
 ```
 
+:::warning Imports will break type augmentation
+
+If the `ImportMetaEnv` augmentation does not work, make sure you do not have any `import` statements in `vite-env.d.ts`. Adding an `import` statement turns the file into a module, which prevents global type augmentation from working. See the [TypeScript documentation](https://www.typescriptlang.org/docs/handbook/2/modules.html#how-javascript-modules-are-defined) for more information.
+
+:::
+
+:::tip Boolean env variable gotcha
+As [noted above](#env-variables), all environment variables are strings. This is a common source of bugs with boolean flags:
+
+```js
+// This is always truthy because it's the string "false", not a boolean
+if (import.meta.env.VITE_FEATURE_FLAG) {
+  /* ... */
+}
+
+// Instead, compare as a string
+if (import.meta.env.VITE_FEATURE_FLAG === 'true') {
+  /* ... */
+}
+```
+
+:::
+
 If your code relies on types from browser environments such as [DOM](https://github.com/microsoft/TypeScript/blob/main/src/lib/dom.generated.d.ts) and [WebWorker](https://github.com/microsoft/TypeScript/blob/main/src/lib/webworker.generated.d.ts), you can update the [lib](https://www.typescriptlang.org/tsconfig#lib) field in `tsconfig.json`.
 
 ```json [tsconfig.json]
@@ -152,12 +179,6 @@ If your code relies on types from browser environments such as [DOM](https://git
   "lib": ["WebWorker"]
 }
 ```
-
-:::warning Imports will break type augmentation
-
-If the `ImportMetaEnv` augmentation does not work, make sure you do not have any `import` statements in `vite-env.d.ts`. See the [TypeScript documentation](https://www.typescriptlang.org/docs/handbook/2/modules.html#how-javascript-modules-are-defined) for more information.
-
-:::
 
 ## HTML Constant Replacement
 

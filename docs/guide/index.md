@@ -106,6 +106,34 @@ $ deno init --npm vite my-vue-app --template vue
 
 :::
 
+Similarly, to scaffold a Vite + React project with TypeScript:
+
+::: code-group
+
+```bash [npm]
+$ npm create vite@latest my-react-app -- --template react-ts
+```
+
+```bash [Yarn]
+$ yarn create vite my-react-app --template react-ts
+```
+
+```bash [pnpm]
+$ pnpm create vite my-react-app --template react-ts
+```
+
+```bash [Bun]
+$ bun create vite my-react-app --template react-ts
+```
+
+```bash [Deno]
+$ deno init --npm vite my-react-app --template react-ts
+```
+
+:::
+
+The React templates include: `react`, `react-ts`, `react-swc`, and `react-swc-ts`. The `react-swc` variants use [SWC](https://swc.rs/) instead of [Oxc Transformer](https://oxc.rs/docs/guide/usage/transformer) for faster compilation, which can be beneficial for large projects. See the [Plugins section](/plugins/#vitejs-plugin-react) for more details.
+
 See [create-vite](https://github.com/vitejs/vite/tree/main/packages/create-vite) for more details on each supported template: `vanilla`, `vanilla-ts`, `vue`, `vue-ts`, `react`, `react-ts`, `react-swc`, `react-swc-ts`, `preact`, `preact-ts`, `lit`, `lit-ts`, `svelte`, `svelte-ts`, `solid`, `solid-ts`, `qwik`, `qwik-ts`.
 
 You can use `.` for the project name to scaffold in the current directory.
