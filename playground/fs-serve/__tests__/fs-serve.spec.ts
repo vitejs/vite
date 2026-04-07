@@ -40,71 +40,84 @@ describe.runIf(isServe)('invalid request', () => {
   const root = path
     .resolve(import.meta.dirname.replace('playground', 'playground-temp'), '..')
     .replace(/\\/g, '/')
-
-  test('request with sendRawRequest should work', async () => {
-    const response = await sendRawRequest(viteTestUrl, '/src/safe.txt')
-    expect(response).toContain('HTTP/1.1 200 OK')
-    expect(response).toContain('KEY=safe')
-  })
-
-  test('request with sendRawRequest should work with /@fs/', async () => {
-    const response = await sendRawRequest(
-      viteTestUrl,
-      path.posix.join('/@fs/', root, 'root/src/safe.txt'),
-    )
-    expect(response).toContain('HTTP/1.1 200 OK')
-    expect(response).toContain('KEY=safe')
-  })
-
-  test('should reject request that has # in request-target', async () => {
-    const response = await sendRawRequest(
-      viteTestUrl,
-      '/src/safe.txt#/../../unsafe.txt',
-    )
-    expect(response).toContain('HTTP/1.1 400 Bad Request')
-  })
-
-  test('should reject request that has # in request-target with /@fs/', async () => {
-    const response = await sendRawRequest(
-      viteTestUrl,
-      path.posix.join('/@fs/', root, 'root/src/safe.txt') +
+  const testCases: Array<{
+    name: string
+    target: string
+    status: string
+    content?: string
+  }> = [
+    {
+      name: 'basic request',
+      target: '/src/safe.txt',
+      status: 'HTTP/1.1 200 OK',
+      content: 'KEY=safe',
+    },
+    {
+      name: 'request with /@fs/',
+      target: path.posix.join('/@fs/', root, 'root/src/safe.txt'),
+      status: 'HTTP/1.1 200 OK',
+      content: 'KEY=safe',
+    },
+    {
+      name: '# in request-target',
+      target: '/src/safe.txt#/../../unsafe.txt',
+      status: 'HTTP/1.1 400 Bad Request',
+    },
+    {
+      name: '# in request-target with /@fs/',
+      target:
+        path.posix.join('/@fs/', root, 'root/src/safe.txt') +
         '#/../../unsafe.txt',
-    )
-    expect(response).toContain('HTTP/1.1 400 Bad Request')
-  })
-
-  test('should deny request to denied file when a request has /.', async () => {
-    const response = await sendRawRequest(viteTestUrl, '/src/dummy.crt/.')
-    expect(response).toContain('HTTP/1.1 403 Forbidden')
-  })
-
-  test('should deny request to denied file when a request ends with \\', async () => {
-    const response = await sendRawRequest(viteTestUrl, '/src/.env\\')
-    expect(response).toContain(
-      isWindows ? 'HTTP/1.1 403 Forbidden' : 'HTTP/1.1 404 Not Found',
-    )
-  })
-
-  test('should deny request to denied file when a request ends with \\ with /@fs/', async () => {
-    const response = await sendRawRequest(
-      viteTestUrl,
-      path.posix.join('/@fs/', root, 'root/src/.env') + '\\',
-    )
-    expect(response).toContain(
-      isWindows ? 'HTTP/1.1 403 Forbidden' : 'HTTP/1.1 404 Not Found',
-    )
-  })
-
-  test('should deny request with /@fs/ to denied file when a request has /.', async () => {
-    const response = await sendRawRequest(
-      viteTestUrl,
-      path.posix.join('/@fs/', root, 'root/src/dummy.crt/') + '.',
-    )
-    expect(response).toContain('HTTP/1.1 403 Forbidden')
-  })
-
-  test('should deny request to HTML file outside root by default with relative path', async () => {
-    const response = await sendRawRequest(viteTestUrl, '/../unsafe.html')
-    expect(response).toContain('HTTP/1.1 403 Forbidden')
-  })
+      status: 'HTTP/1.1 400 Bad Request',
+    },
+    {
+      name: 'denied file with /.',
+      target: '/src/dummy.crt/.',
+      status: 'HTTP/1.1 403 Forbidden',
+    },
+    {
+      name: 'denied file ending with \\',
+      target: '/src/.env\\',
+      status: isWindows ? 'HTTP/1.1 403 Forbidden' : 'HTTP/1.1 404 Not Found',
+    },
+    {
+      name: 'denied file ending with \\ with /@fs/',
+      target: path.posix.join('/@fs/', root, 'root/src/.env') + '\\',
+      status: isWindows ? 'HTTP/1.1 403 Forbidden' : 'HTTP/1.1 404 Not Found',
+    },
+    {
+      name: 'denied file with /. with /@fs/',
+      target: path.posix.join('/@fs/', root, 'root/src/dummy.crt/') + '.',
+      status: 'HTTP/1.1 403 Forbidden',
+    },
+    {
+      name: 'denied optimize deps sourcemap handler',
+      target:
+        path.posix.join('/@fs/', root) +
+        '/node_modules/.vite/deps/../../../unsafe.map',
+      status: 'HTTP/1.1 403 Forbidden',
+    },
+    {
+      name: 'denied backslash optimize deps sourcemap handler',
+      target:
+        path.posix.join('/@fs/', root) +
+        '/node_modules/.vite/deps/..\\..\\..\\unsafe.map',
+      status: isWindows ? 'HTTP/1.1 403 Forbidden' : 'HTTP/1.1 200 OK',
+      content: isWindows ? undefined : 'Cache-Control: no-cache',
+    },
+    {
+      name: 'HTML outside root with relative path',
+      target: '/../unsafe.html',
+      status: 'HTTP/1.1 403 Forbidden',
+    },
+  ]
+  for (const { name, target, status, content } of testCases) {
+    test(name, async () => {
+      const response = await sendRawRequest(viteTestUrl, target)
+      expect(response).toContain(status)
+      if (content !== undefined) {
+        expect(response).toContain(content)
+      }
+    })
+  }
 })

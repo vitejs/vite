@@ -6,8 +6,10 @@ export default defineConfig(() => ({
   entry: ['src/index.ts'],
   target: 'node20',
   minify: true,
-  inlineOnly: false as const,
   fixedExtension: false,
+  deps: {
+    onlyBundle: false as const,
+  },
   plugins: [
     licensePlugin(
       path.resolve(import.meta.dirname, './LICENSE'),

@@ -11,7 +11,11 @@ import type {
 } from 'playwright-chromium'
 import type { DepOptimizationMetadata, Manifest } from 'vite'
 import { normalizePath } from 'vite'
-import { fromComment, removeComments } from 'convert-source-map'
+import {
+  fromComment,
+  fromMapFileComment,
+  removeComments,
+} from 'convert-source-map'
 import { expect } from 'vitest'
 import type { ResultPromise as ExecaResultPromise } from 'execa'
 import { isWindows, page, sourcemapSnapshot, testDir } from './vitestSetup'
@@ -369,9 +373,28 @@ async function untilBrowserLog(
   return logs
 }
 
-export const extractSourcemap = (content: string): any => {
+export function extractSourcemap(content: string): any
+export function extractSourcemap(
+  content: string,
+  read: (filename: string) => Promise<string>,
+): Promise<any>
+export function extractSourcemap(
+  content: string,
+  read?: (filename: string) => Promise<string>,
+): any {
   const lines = content.trim().split('\n')
-  return fromComment(lines[lines.length - 1]).toObject()
+  const lastLine = lines[lines.length - 1]
+  if (read) {
+    const result = fromMapFileComment(lastLine, async (url) => {
+      if (url.startsWith('data:')) {
+        throw new Error(`Omit read argument when sourcemap is inline`)
+      }
+      const content = await read(url)
+      return content
+    })
+    return result.then((r) => r.toObject())
+  }
+  return fromComment(lastLine).toObject()
 }
 
 export const formatSourcemapForSnapshot = (
