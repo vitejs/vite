@@ -347,6 +347,66 @@ function handleParseError(
 }
 
 /**
+ * Collects CSS files for a chunk by traversing its imports depth-first,
+ * using a cache to avoid re-analyzing chunks while still returning the
+ * correct files when the same chunk is reached via different entry points.
+ */
+export function getCssFilesForChunk(
+  chunk: OutputChunk,
+  bundle: OutputBundle,
+  analyzedImportedCssFiles: Map<OutputChunk, string[]>,
+  seenChunks: Set<string> = new Set(),
+  seenCss: Set<string> = new Set(),
+): string[] {
+  if (seenChunks.has(chunk.fileName)) {
+    return []
+  }
+  seenChunks.add(chunk.fileName)
+
+  if (analyzedImportedCssFiles.has(chunk)) {
+    const files = analyzedImportedCssFiles.get(chunk)!
+    const additionals = files.filter((file) => !seenCss.has(file))
+    additionals.forEach((file) => seenCss.add(file))
+    return additionals
+  }
+
+  // Collect all CSS from imports (unfiltered for caching, filtered for return)
+  const allFiles: string[] = []
+  const filteredFiles: string[] = []
+  chunk.imports.forEach((file) => {
+    const importee = bundle[file]
+    if (importee?.type === 'chunk') {
+      const importeeCss = getCssFilesForChunk(
+        importee,
+        bundle,
+        analyzedImportedCssFiles,
+        seenChunks,
+        seenCss,
+      )
+      filteredFiles.push(...importeeCss)
+      // For cache: use the importee's full cached list
+      if (analyzedImportedCssFiles.has(importee)) {
+        allFiles.push(...analyzedImportedCssFiles.get(importee)!)
+      } else {
+        allFiles.push(...importeeCss)
+      }
+    }
+  })
+
+  chunk.viteMetadata!.importedCss.forEach((file) => {
+    allFiles.push(file)
+    if (!seenCss.has(file)) {
+      seenCss.add(file)
+      filteredFiles.push(file)
+    }
+  })
+
+  analyzedImportedCssFiles.set(chunk, unique(allFiles))
+
+  return filteredFiles
+}
+
+/**
  * Compiles index.html into an entry js module
  */
 export function buildHtmlPlugin(config: ResolvedConfig): Plugin {
@@ -820,48 +880,12 @@ export function buildHtmlPlugin(config: ResolvedConfig): Plugin {
         },
       })
 
-      const getCssFilesForChunk = (
-        chunk: OutputChunk,
-        seenChunks: Set<string> = new Set(),
-        seenCss: Set<string> = new Set(),
-      ): string[] => {
-        if (seenChunks.has(chunk.fileName)) {
-          return []
-        }
-        seenChunks.add(chunk.fileName)
-
-        if (analyzedImportedCssFiles.has(chunk)) {
-          const files = analyzedImportedCssFiles.get(chunk)!
-          const additionals = files.filter((file) => !seenCss.has(file))
-          additionals.forEach((file) => seenCss.add(file))
-          return additionals
-        }
-
-        const files: string[] = []
-        chunk.imports.forEach((file) => {
-          const importee = bundle[file]
-          if (importee?.type === 'chunk') {
-            files.push(...getCssFilesForChunk(importee, seenChunks, seenCss))
-          }
-        })
-        analyzedImportedCssFiles.set(chunk, files)
-
-        chunk.viteMetadata!.importedCss.forEach((file) => {
-          if (!seenCss.has(file)) {
-            seenCss.add(file)
-            files.push(file)
-          }
-        })
-
-        return files
-      }
-
       const getCssTagsForChunk = (
         chunk: OutputChunk,
         toOutputPath: (filename: string) => string,
       ) =>
-        getCssFilesForChunk(chunk).map((file) =>
-          toStyleSheetLinkTag(file, toOutputPath),
+        getCssFilesForChunk(chunk, bundle, analyzedImportedCssFiles).map(
+          (file) => toStyleSheetLinkTag(file, toOutputPath),
         )
 
       for (const [normalizedId, html] of processedHtml(this)) {
@@ -1075,7 +1099,7 @@ export function extractImportExpressionFromClassicScript(
   let match: RegExpExecArray | null
   inlineImportRE.lastIndex = 0
   while ((match = inlineImportRE.exec(cleanCode))) {
-    const [, [urlStart, urlEnd]] = match.indices!
+    const [, [urlStart, urlEnd]] = match.indices as Array<[number, number]>
     const start = urlStart + 1
     const end = urlEnd - 1
     scriptUrls.push({
