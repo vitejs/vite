@@ -1,3 +1,8 @@
+## <small>[8.0.7](https://github.com/vitejs/vite/compare/v8.0.6...v8.0.7) (2026-04-07)</small>
+### Bug Fixes
+
+* use sync dns.getDefaultResultOrder instead of dns.promises ([#22185](https://github.com/vitejs/vite/issues/22185)) ([5c05b04](https://github.com/vitejs/vite/commit/5c05b04db6f3f64af60ff6525eb5f04bc330fbb5))
+
 ## <small>[8.0.6](https://github.com/vitejs/vite/compare/v8.0.5...v8.0.6) (2026-04-07)</small>
 ### Features
 
