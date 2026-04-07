@@ -34,13 +34,45 @@ interface ParsedGeneralImportGlobOptions extends GeneralImportGlobOptions {
   query?: string
 }
 
+const arrayGlobRE = /\bimport\.meta\.glob(?:<\w+>)?\s*\(\s*\[/
+
 export function importGlobPlugin(config: ResolvedConfig): Plugin {
   if (config.isBundled) {
-    return nativeImportGlobPlugin({
+    const nativePlugin = nativeImportGlobPlugin({
       root: config.root,
       sourcemap: !!config.build.sourcemap,
       restoreQueryExtension: config.experimental.importGlobRestoreExtension,
     })
+
+    return {
+      ...nativePlugin,
+      transform: {
+        filter: { code: 'import.meta.glob' },
+        async handler(code, id) {
+          if (!arrayGlobRE.test(code)) {
+            const nativeTransform = nativePlugin.transform
+            if (typeof nativeTransform === 'function') {
+              return nativeTransform.call(this, code, id)
+            }
+            return nativeTransform?.handler.call(this, code, id)
+          }
+
+          const result = await transformGlobImport(
+            code,
+            id,
+            config.root,
+            (im, _, options) =>
+              this.resolve(im, id, options).then((i) => i?.id || im),
+            config.experimental.importGlobRestoreExtension,
+            config.logger,
+          )
+
+          if (result) {
+            return transformStableResult(result.s, id, config)
+          }
+        },
+      },
+    }
   }
 
   const importGlobMaps = new Map<
