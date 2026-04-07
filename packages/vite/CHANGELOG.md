@@ -1,3 +1,22 @@
+## <small>[8.0.6](https://github.com/vitejs/vite/compare/v8.0.5...v8.0.6) (2026-04-07)</small>
+### Features
+
+* update rolldown to 1.0.0-rc.13 ([#22097](https://github.com/vitejs/vite/issues/22097)) ([51d3e48](https://github.com/vitejs/vite/commit/51d3e48980bf3e352d31ecde49d1aa56859918e0))
+
+### Bug Fixes
+
+* **css:** avoid mutating sass error multiple times ([#22115](https://github.com/vitejs/vite/issues/22115)) ([d5081c2](https://github.com/vitejs/vite/commit/d5081c2f3e73f3fc06956d8cf5f2cf06463c2325))
+* **optimize-deps:** hoist CJS interop assignment ([#22156](https://github.com/vitejs/vite/issues/22156)) ([17a8f9e](https://github.com/vitejs/vite/commit/17a8f9edfcd3b9344668120a84e3328aeada3c97))
+
+### Performance Improvements
+
+* early return in `getLocalhostAddressIfDiffersFromDNS` when DNS order is `verbatim` ([#22151](https://github.com/vitejs/vite/issues/22151)) ([56ec256](https://github.com/vitejs/vite/commit/56ec25613dba6cc71911f7af6e545ebcb77ec012))
+
+### Miscellaneous Chores
+
+* **create-vite:** remove unnecessary DOM.Iterable ([#22168](https://github.com/vitejs/vite/issues/22168)) ([bdc53ab](https://github.com/vitejs/vite/commit/bdc53ab1e67f7e2e000112eeed9c85413ddb0e9e))
+* replace remaining prettier script ([#22179](https://github.com/vitejs/vite/issues/22179)) ([af71fb2](https://github.com/vitejs/vite/commit/af71fb26dd15098b9523efc3d8ed04f27553174b))
+
 ## <small>[8.0.5](https://github.com/vitejs/vite/compare/v8.0.4...v8.0.5) (2026-04-06)</small>
 ### Bug Fixes
 
