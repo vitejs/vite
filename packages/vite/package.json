@@ -67,7 +67,7 @@
     "build-types-check": "tsc --project tsconfig.check.json",
     "typecheck": "tsc && tsc -p src/node && tsc -p src/module-runner && tsc -p src/shared && tsc -p src/node/__tests_dts__ && tsc -p src/module-runner/__tests_dts__",
     "lint": "eslint --cache --ext .ts src/**",
-    "format": "prettier --write --cache --parser typescript \"src/**/*.ts\"",
+    "format": "oxfmt",
     "generate-target": "tsx scripts/generateTarget.ts",
     "prepublishOnly": "npm run build"
   },
