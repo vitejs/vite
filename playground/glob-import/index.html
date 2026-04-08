@@ -198,6 +198,19 @@
   )
 </script>
 
+<h2>Alias exclusion</h2>
+<pre class="alias-exclusion"></pre>
+
+<script type="module">
+  const aliasExclusionModules = import.meta.glob(
+    ['~dir/*.js', '!~dir/alias.js'],
+    { eager: true },
+  )
+  document.querySelector('.alias-exclusion').textContent = JSON.stringify(
+    Object.keys(aliasExclusionModules).sort(),
+  )
+</script>
+
 <h2>Array Pattern with Exclusions</h2>
 <pre class="array-result"></pre>
 
