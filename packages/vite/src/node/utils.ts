@@ -7,7 +7,7 @@ import crypto from 'node:crypto'
 import { fileURLToPath } from 'node:url'
 import type { ServerOptions as HttpsServerOptions } from 'node:https'
 import { builtinModules } from 'node:module'
-import { promises as dns } from 'node:dns'
+import { promises as dns, getDefaultResultOrder } from 'node:dns'
 import { performance } from 'node:perf_hooks'
 import type { AddressInfo, Server } from 'node:net'
 import fsp from 'node:fs/promises'
@@ -922,17 +922,21 @@ export function unique<T>(arr: T[]): T[] {
  * Even if defaultResultOrder is `ipv4first`, `dns.lookup` result maybe same.
  * For example, when IPv6 is not supported on that machine/network.
  */
-export async function getLocalhostAddressIfDiffersFromDNS(): Promise<
-  string | undefined
-> {
-  const [nodeResult, dnsResult] = await Promise.all([
+export function getLocalhostAddressIfDiffersFromDNS():
+  | Promise<string | undefined>
+  | undefined {
+  if (getDefaultResultOrder() === 'verbatim') {
+    return undefined
+  }
+  return Promise.all([
     dns.lookup('localhost'),
     dns.lookup('localhost', { verbatim: true }),
-  ])
-  const isSame =
-    nodeResult.family === dnsResult.family &&
-    nodeResult.address === dnsResult.address
-  return isSame ? undefined : nodeResult.address
+  ]).then(([nodeResult, dnsResult]) => {
+    const isSame =
+      nodeResult.family === dnsResult.family &&
+      nodeResult.address === dnsResult.address
+    return isSame ? undefined : nodeResult.address
+  })
 }
 
 export function diffDnsOrderChange(
@@ -1794,4 +1798,33 @@ export function monotonicDateNow(): number {
 
   lastDateNow++
   return lastDateNow
+}
+
+export function formatAndTruncateFileList(files: string[]): {
+  formatted: string
+  truncated: boolean
+} {
+  const MAX_LOG_LENGTH = 500
+  let log = ''
+  let truncated = false
+  for (let i = 0; i < files.length; i++) {
+    const file = files[i]
+    if (log === '') {
+      log = file
+    } else if (log.length + 2 + file.length < MAX_LOG_LENGTH) {
+      log += ', ' + file
+    } else {
+      log += ` and ${files.length - i} more`
+      truncated = true
+      break
+    }
+  }
+  return { formatted: log, truncated }
+}
+
+const hashbangRE = /^#!.*\n/
+
+// find the start of the file, after the hashbang
+export function getFileStartIndex(code: string): number {
+  return hashbangRE.exec(code)?.[0].length ?? 0
 }

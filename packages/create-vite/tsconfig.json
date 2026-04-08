@@ -1,16 +1,15 @@
 {
   "include": ["tsdown.config.ts", "src", "__tests__"],
   "compilerOptions": {
+    "rootDir": "..", // imports 'packages/vite/rollupLicensePlugin.ts'
     "outDir": "dist",
-    "target": "ES2023",
-    "module": "Preserve",
-    "moduleResolution": "bundler",
+    "target": "es2023",
+    "module": "preserve",
     "types": [],
+    "noEmit": true,
+    "moduleResolution": "bundler",
     "allowImportingTsExtensions": true,
-    "strict": true,
     "skipLibCheck": true,
-    "noUnusedLocals": true,
-    "esModuleInterop": true,
-    "noEmit": true
+    "noUnusedLocals": true
   }
 }

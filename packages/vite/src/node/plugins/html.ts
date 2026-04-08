@@ -1099,7 +1099,7 @@ export function extractImportExpressionFromClassicScript(
   let match: RegExpExecArray | null
   inlineImportRE.lastIndex = 0
   while ((match = inlineImportRE.exec(cleanCode))) {
-    const [, [urlStart, urlEnd]] = match.indices!
+    const [, [urlStart, urlEnd]] = match.indices as Array<[number, number]>
     const start = urlStart + 1
     const end = urlEnd - 1
     scriptUrls.push({
