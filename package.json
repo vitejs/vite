@@ -20,7 +20,7 @@
   "scripts": {
     "preinstall": "npx only-allow pnpm",
     "postinstall": "simple-git-hooks",
-    "format": "prettier --write --cache . --experimental-cli",
+    "format": "oxfmt",
     "lint": "eslint --cache . --concurrency auto",
     "typecheck": "tsc -p scripts && pnpm -r --parallel run typecheck",
     "test": "pnpm test-unit && pnpm test-serve && pnpm test-build",
@@ -49,8 +49,8 @@
     "@types/cross-spawn": "^6.0.6",
     "@types/etag": "^1.8.4",
     "@types/less": "^3.0.8",
-    "@types/node": "^24.12.0",
-    "@types/picomatch": "^4.0.2",
+    "@types/node": "^24.12.2",
+    "@types/picomatch": "^4.0.3",
     "@types/stylus": "^0.48.43",
     "@types/ws": "^8.18.1",
     "@vitejs/release-scripts": "^1.6.0",
@@ -61,10 +61,10 @@
     "execa": "^9.6.1",
     "globals": "^17.4.0",
     "lint-staged": "^16.4.0",
+    "oxfmt": "^0.42.0",
     "picocolors": "^1.1.1",
-    "playwright-chromium": "^1.58.2",
-    "prettier": "3.8.1",
-    "rolldown": "1.0.0-rc.12",
+    "playwright-chromium": "^1.59.1",
+    "rolldown": "1.0.0-rc.13",
     "rollup": "^4.59.0",
     "simple-git-hooks": "^2.13.1",
     "tsx": "^4.21.0",
@@ -78,7 +78,7 @@
   },
   "lint-staged": {
     "*": [
-      "prettier --write --cache --ignore-unknown --experimental-cli"
+      "oxfmt --no-error-on-unmatched-pattern"
     ],
     "packages/*/{src,types}/**/*.ts": [
       "eslint --cache --fix --concurrency auto"

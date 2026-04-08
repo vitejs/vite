@@ -10,6 +10,7 @@ import type { TransformResult } from '../server/transformRequest'
 import {
   combineSourcemaps,
   generateCodeFrame,
+  getFileStartIndex,
   isDefined,
   numberToPos,
 } from '../utils'
@@ -28,8 +29,6 @@ export const ssrDynamicImportKey = `__vite_ssr_dynamic_import__`
 export const ssrExportAllKey = `__vite_ssr_exportAll__`
 export const ssrExportNameKey = `__vite_ssr_exportName__`
 export const ssrImportMetaKey = `__vite_ssr_import_meta__`
-
-const hashbangRE = /^#!.*\n/
 
 export async function ssrTransform(
   code: string,
@@ -92,8 +91,7 @@ async function ssrTransformScript(
   const idToImportMap = new Map<string, string>()
   const declaredConst = new Set<string>()
 
-  // hoist at the start of the file, after the hashbang
-  const fileStartIndex = hashbangRE.exec(code)?.[0].length ?? 0
+  const fileStartIndex = getFileStartIndex(code)
   let hoistIndex = fileStartIndex
 
   function defineImport(
