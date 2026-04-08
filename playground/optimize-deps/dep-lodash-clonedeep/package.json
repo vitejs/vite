@@ -3,5 +3,6 @@
   "private": true,
   "version": "0.0.0",
   "//": "real world example: https://github.com/lodash/lodash/tree/4.5.0-npm-packages/lodash.clonedeep",
+  "//2": "Added to test flattenId encoding fix for issue #8428 - package names with dots must not collide with slash subpaths",
   "main": "index.js"
 }
