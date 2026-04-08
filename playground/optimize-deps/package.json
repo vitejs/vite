@@ -48,7 +48,7 @@
     "@vitejs/test-dep-cjs-external-package-omit-js-suffix": "file:./dep-cjs-external-package-omit-js-suffix",
     "@vitejs/test-dep-with-assets": "file:./dep-with-assets",
     "@vitejs/test-dep-lodash": "file:./dep-lodash",
-    "@vitejs/test-dep-lodash-clonedeep": "file:./dep-lodash-clonedeep",
+    "@vitejs/test-dep-lodash.clonedeep": "file:./dep-lodash-clonedeep",
     "@vitejs/test-dep-lodash-es": "file:./dep-lodash-es",
     "@vitejs/test-nested-exclude": "file:./nested-exclude",
     "phoenix": "^1.8.5",

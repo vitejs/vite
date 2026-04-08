@@ -2,8 +2,6 @@
   "name": "@vitejs/test-dep-lodash-es",
   "private": true,
   "version": "0.0.0",
-  "//": "real world example: https://github.com/lodash/lodash/blob/4.17.21-es/package.json",
-  "//2": "Tests linked dependency optimization - lodash-es has 600+ modules, perfect for testing pre-bundling of linked package deps",
   "type": "module",
   "main": "index.js"
 }

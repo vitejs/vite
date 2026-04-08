@@ -1,7 +1,7 @@
 'use strict'
 
 // Minimal cloneDeep implementation for testing
-module.exports = function cloneDeep(value) {
+function cloneDeep(value) {
   if (value == null || typeof value !== 'object') {
     return value
   }
@@ -18,3 +18,5 @@ module.exports = function cloneDeep(value) {
   }
   return cloned
 }
+
+module.exports = cloneDeep

@@ -2,7 +2,6 @@
   "name": "@vitejs/test-dep-lodash",
   "private": true,
   "version": "0.0.0",
-  "//": "real world example: https://github.com/lodash/lodash/blob/4.17.21/package.json",
-  "//2": "Added to test flattenId encoding fix for issue #8428 - ensures lodash/cloneDeep and lodash.clonedeep generate different IDs",
+  "//": "To test flattenId encoding fix for issue #8428. Ensures lodash/cloneDeep and lodash.clonedeep generate different IDs",
   "main": "index.js"
 }

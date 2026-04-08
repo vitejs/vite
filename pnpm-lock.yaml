@@ -1080,12 +1080,12 @@ importers:
       '@vitejs/test-dep-lodash':
         specifier: file:./dep-lodash
         version: file:playground/optimize-deps/dep-lodash
-      '@vitejs/test-dep-lodash-clonedeep':
-        specifier: file:./dep-lodash-clonedeep
-        version: file:playground/optimize-deps/dep-lodash-clonedeep
       '@vitejs/test-dep-lodash-es':
         specifier: file:./dep-lodash-es
         version: file:playground/optimize-deps/dep-lodash-es
+      '@vitejs/test-dep-lodash.clonedeep':
+        specifier: file:./dep-lodash-clonedeep
+        version: file:playground/optimize-deps/dep-lodash-clonedeep
       '@vitejs/test-dep-node-env':
         specifier: file:./dep-node-env
         version: file:playground/optimize-deps/dep-node-env
@@ -4494,11 +4494,11 @@ packages:
   '@vitejs/test-dep-license-mit@file:packages/vite/src/node/__tests__/plugins/fixtures/license/dep-license-mit':
     resolution: {directory: packages/vite/src/node/__tests__/plugins/fixtures/license/dep-license-mit, type: directory}
 
-  '@vitejs/test-dep-lodash-clonedeep@file:playground/optimize-deps/dep-lodash-clonedeep':
-    resolution: {directory: playground/optimize-deps/dep-lodash-clonedeep, type: directory}
-
   '@vitejs/test-dep-lodash-es@file:playground/optimize-deps/dep-lodash-es':
     resolution: {directory: playground/optimize-deps/dep-lodash-es, type: directory}
+
+  '@vitejs/test-dep-lodash.clonedeep@file:playground/optimize-deps/dep-lodash-clonedeep':
+    resolution: {directory: playground/optimize-deps/dep-lodash-clonedeep, type: directory}
 
   '@vitejs/test-dep-lodash@file:playground/optimize-deps/dep-lodash':
     resolution: {directory: playground/optimize-deps/dep-lodash, type: directory}
@@ -10702,9 +10702,9 @@ snapshots:
     dependencies:
       '@vitejs/test-dep-nested-license-isc': file:packages/vite/src/node/__tests__/plugins/fixtures/license/dep-nested-license-isc
 
-  '@vitejs/test-dep-lodash-clonedeep@file:playground/optimize-deps/dep-lodash-clonedeep': {}
-
   '@vitejs/test-dep-lodash-es@file:playground/optimize-deps/dep-lodash-es': {}
+
+  '@vitejs/test-dep-lodash.clonedeep@file:playground/optimize-deps/dep-lodash-clonedeep': {}
 
   '@vitejs/test-dep-lodash@file:playground/optimize-deps/dep-lodash': {}
 
