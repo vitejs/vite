@@ -289,6 +289,12 @@ test('subpath imports', async () => {
     .toMatch('bar foo')
 })
 
+test('subpath imports (sub dir)', async () => {
+  await expect
+    .poll(async () => await page.textContent('.subpath-imports-sub-dir'))
+    .toMatch('bar foo')
+})
+
 test('#alias imports', async () => {
   await expect
     .poll(async () => await page.textContent('.hash-alias-imports'))

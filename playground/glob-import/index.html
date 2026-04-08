@@ -23,6 +23,8 @@
 <pre class="escape-alias"></pre>
 <h2>Subpath imports</h2>
 <pre class="subpath-imports"></pre>
+<h2>Subpath imports (sub dir)</h2>
+<pre class="subpath-imports-sub-dir"></pre>
 <h2>#alias imports</h2>
 <pre class="hash-alias-imports"></pre>
 <h2>In package</h2>
@@ -155,6 +157,14 @@
   )
     .map((mod) => mod.default)
     .join(' ')
+</script>
+
+<script type="module">
+  import { globbed } from './subpath-imports-sub/index.js'
+  document.querySelector('.subpath-imports-sub-dir').textContent =
+    Object.values(globbed)
+      .map((mod) => mod.default)
+      .join(' ')
 </script>
 
 <script type="module">
