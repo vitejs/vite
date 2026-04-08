@@ -2,7 +2,7 @@
 
 // Minimal cloneDeep implementation for testing
 module.exports = function cloneDeep(value) {
-  if (value === null || typeof value !== 'object') {
+  if (value == null || typeof value !== 'object') {
     return value
   }
 
@@ -12,7 +12,7 @@ module.exports = function cloneDeep(value) {
 
   const cloned = {}
   for (const key in value) {
-    if (value.hasOwnProperty(key)) {
+    if (Object.hasOwn(value, key)) {
       cloned[key] = cloneDeep(value[key])
     }
   }
