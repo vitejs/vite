@@ -236,6 +236,15 @@ if (!isBuild) {
   })
 }
 
+test('follow symlinks', async () => {
+  await expect
+    .poll(async () => JSON.parse(await page.textContent('.follow-symlinks')))
+    .toStrictEqual({
+      './follow-symlinks/linked/my-lib/components/a.js': 'a',
+      './follow-symlinks/linked/my-lib/components/b.js': 'b',
+    })
+})
+
 test('alias exclusion', async () => {
   await expect
     .poll(async () => JSON.parse(await page.textContent('.alias-exclusion')))

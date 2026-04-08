@@ -198,6 +198,24 @@
   )
 </script>
 
+<h2>Follow symlinks</h2>
+<pre class="follow-symlinks"></pre>
+
+<script type="module">
+  const symlinkModules = import.meta.glob(
+    './follow-symlinks/linked/*/components/*.js',
+    {
+      eager: true,
+      import: 'default',
+    },
+  )
+  document.querySelector('.follow-symlinks').textContent = JSON.stringify(
+    symlinkModules,
+    null,
+    2,
+  )
+</script>
+
 <h2>Alias exclusion</h2>
 <pre class="alias-exclusion"></pre>
 
