@@ -16,6 +16,14 @@ import {
   serverLogs,
 } from '~utils'
 
+function createMapFileReader(moduleUrl: string) {
+  return async (filename: string): Promise<string> => {
+    const base = new URL(moduleUrl, page.url())
+    const res = await page.request.get(new URL(filename, base).href)
+    return res.text()
+  }
+}
+
 if (!isBuild) {
   test('js', async () => {
     const res = await page.request.get(new URL('./foo.js', page.url()).href)
@@ -134,7 +142,7 @@ if (!isBuild) {
           ],
           "version": 3,
         },
-        visualization: "https://evanw.github.io/source-map-visualization/#MjQ4AC8vIHByZXR0aWVyLWlnbm9yZQppbXBvcnQgX192aXRlX19janNJbXBvcnQwX192aXRlanNfdGVzdEltcG9ydGVlUGtnIGZyb20gIi9ub2RlX21vZHVsZXMvLnZpdGUvZGVwcy9Adml0ZWpzX3Rlc3QtaW1wb3J0ZWUtcGtnLmpzP3Y9MDAwMDAwMDAiOyBjb25zdCBmb28gPSBfX3ZpdGVfX2Nqc0ltcG9ydDBfX3ZpdGVqc190ZXN0SW1wb3J0ZWVQa2dbImZvbyJdOwpjb25zb2xlLmxvZygid2l0aC1tdWx0aWxpbmUtaW1wb3J0IiwgZm9vKTsKMjQ4AHsibWFwcGluZ3MiOiI7QUFDQSxTQUNFLFdBQ0s7QUFFUCxRQUFRLElBQUkseUJBQXlCLElBQUkiLCJzb3VyY2VzIjpbIndpdGgtbXVsdGlsaW5lLWltcG9ydC50cyJdLCJ2ZXJzaW9uIjozLCJzb3VyY2VzQ29udGVudCI6WyIvLyBwcmV0dGllci1pZ25vcmVcbmltcG9ydCB7XG4gIGZvb1xufSBmcm9tICdAdml0ZWpzL3Rlc3QtaW1wb3J0ZWUtcGtnJ1xuXG5jb25zb2xlLmxvZygnd2l0aC1tdWx0aWxpbmUtaW1wb3J0JywgZm9vKVxuIl19"
+        visualization: "https://evanw.github.io/source-map-visualization/#MjQ3AGNvbnN0IGZvbyA9IF9fdml0ZV9fY2pzSW1wb3J0MF9fdml0ZWpzX3Rlc3RJbXBvcnRlZVBrZ1siZm9vIl07Ly8gcHJldHRpZXItaWdub3JlCmltcG9ydCBfX3ZpdGVfX2Nqc0ltcG9ydDBfX3ZpdGVqc190ZXN0SW1wb3J0ZWVQa2cgZnJvbSAiL25vZGVfbW9kdWxlcy8udml0ZS9kZXBzL0B2aXRlanNfdGVzdC1pbXBvcnRlZS1wa2cuanM/dj0wMDAwMDAwMCI7CmNvbnNvbGUubG9nKCJ3aXRoLW11bHRpbGluZS1pbXBvcnQiLCBmb28pOwoyNDgAeyJtYXBwaW5ncyI6IjtBQUNBLFNBQ0UsV0FDSztBQUVQLFFBQVEsSUFBSSx5QkFBeUIsSUFBSSIsInNvdXJjZXMiOlsid2l0aC1tdWx0aWxpbmUtaW1wb3J0LnRzIl0sInZlcnNpb24iOjMsInNvdXJjZXNDb250ZW50IjpbIi8vIHByZXR0aWVyLWlnbm9yZVxuaW1wb3J0IHtcbiAgZm9vXG59IGZyb20gJ0B2aXRlanMvdGVzdC1pbXBvcnRlZS1wa2cnXG5cbmNvbnNvbGUubG9nKCd3aXRoLW11bHRpbGluZS1pbXBvcnQnLCBmb28pXG4iXX0="
       }
     `)
   })
@@ -143,6 +151,44 @@ if (!isBuild) {
     serverLogs.forEach((log) => {
       expect(log).not.toMatch(/Sourcemap for .+ points to missing source files/)
     })
+  })
+
+  test('should not leak file contents via sourcemap path traversal in node_modules', async () => {
+    const res = await page.request.get(
+      new URL('./malicious-import.js', page.url()).href,
+    )
+    const js = await res.text()
+    // Find the rewritten import URL for the malicious dep
+    const depUrlMatch = js.match(/from\s+"([^"]*malicious-sourcemap[^"]*)"/)
+    expect(depUrlMatch).toBeTruthy()
+    const depUrl = depUrlMatch![1]
+    const depRes = await page.request.get(new URL(depUrl, page.url()).href)
+    const depJs = await depRes.text()
+    const map = extractSourcemap(depJs)
+    expect(map.sourcesContent).toBeDefined()
+    expect(map.sourcesContent).not.toContainEqual(
+      expect.stringContaining('defineConfig'),
+    )
+  })
+
+  test('should not leak file contents via sourcemap path traversal in optimized deps', async () => {
+    const res = await page.request.get(
+      new URL('./optimized-malicious-import.js', page.url()).href,
+    )
+    const js = await res.text()
+    // Find the rewritten import URL for the optimized malicious dep
+    const depUrlMatch = js.match(/from\s+"([^"]*optimized-malicious[^"]*)"/)
+    expect(depUrlMatch).toBeTruthy()
+    const depUrl = depUrlMatch![1]
+    // Ensure the dep was actually optimized (served from .vite/deps)
+    expect(depUrl).toContain('.vite/deps')
+    const depRes = await page.request.get(new URL(depUrl, page.url()).href)
+    const depJs = await depRes.text()
+    const map = await extractSourcemap(depJs, createMapFileReader(depUrl))
+    expect(map.sourcesContent).toBeDefined()
+    expect(map.sourcesContent).not.toContainEqual(
+      expect.stringContaining('defineConfig'),
+    )
   })
 }
 
