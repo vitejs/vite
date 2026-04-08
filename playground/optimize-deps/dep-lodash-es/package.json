@@ -1,0 +1,8 @@
+{
+  "name": "@vitejs/test-dep-lodash-es",
+  "private": true,
+  "version": "0.0.0",
+  "//": "real world example: https://github.com/lodash/lodash/blob/4.17.21-es/package.json",
+  "type": "module",
+  "main": "index.js"
+}

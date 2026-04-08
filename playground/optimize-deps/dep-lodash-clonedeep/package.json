@@ -1,0 +1,7 @@
+{
+  "name": "@vitejs/test-dep-lodash-clonedeep",
+  "private": true,
+  "version": "0.0.0",
+  "//": "real world example: https://github.com/lodash/lodash/tree/4.5.0-npm-packages/lodash.clonedeep",
+  "main": "index.js"
+}
