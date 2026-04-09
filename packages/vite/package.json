@@ -1,6 +1,6 @@
 {
   "name": "vite",
-  "version": "8.0.5",
+  "version": "8.0.7",
   "type": "module",
   "license": "MIT",
   "author": "Evan You",
@@ -67,7 +67,7 @@
     "build-types-check": "tsc --project tsconfig.check.json",
     "typecheck": "tsc && tsc -p src/node && tsc -p src/module-runner && tsc -p src/shared && tsc -p src/node/__tests_dts__ && tsc -p src/module-runner/__tests_dts__",
     "lint": "eslint --cache --ext .ts src/**",
-    "format": "prettier --write --cache --parser typescript \"src/**/*.ts\"",
+    "format": "oxfmt",
     "generate-target": "tsx scripts/generateTarget.ts",
     "prepublishOnly": "npm run build"
   },
@@ -76,7 +76,7 @@
     "lightningcss": "^1.32.0",
     "picomatch": "^4.0.4",
     "postcss": "^8.5.8",
-    "rolldown": "1.0.0-rc.12",
+    "rolldown": "1.0.0-rc.15",
     "tinyglobby": "^0.2.15"
   },
   "optionalDependencies": {

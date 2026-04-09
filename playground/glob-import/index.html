@@ -23,6 +23,8 @@
 <pre class="escape-alias"></pre>
 <h2>Subpath imports</h2>
 <pre class="subpath-imports"></pre>
+<h2>Subpath imports (sub dir)</h2>
+<pre class="subpath-imports-sub-dir"></pre>
 <h2>#alias imports</h2>
 <pre class="hash-alias-imports"></pre>
 <h2>In package</h2>
@@ -158,6 +160,14 @@
 </script>
 
 <script type="module">
+  import { globbed } from './subpath-imports-sub/index.js'
+  document.querySelector('.subpath-imports-sub-dir').textContent =
+    Object.values(globbed)
+      .map((mod) => mod.default)
+      .join(' ')
+</script>
+
+<script type="module">
   const hashAliasImports = import.meta.glob('#alias/*', { eager: true })
   document.querySelector('.hash-alias-imports').textContent = Object.values(
     hashAliasImports,
@@ -185,6 +195,19 @@
     globBase,
     null,
     2,
+  )
+</script>
+
+<h2>Alias exclusion</h2>
+<pre class="alias-exclusion"></pre>
+
+<script type="module">
+  const aliasExclusionModules = import.meta.glob(
+    ['~dir/*.js', '!~dir/alias.js'],
+    { eager: true },
+  )
+  document.querySelector('.alias-exclusion').textContent = JSON.stringify(
+    Object.keys(aliasExclusionModules).sort(),
   )
 </script>
 
