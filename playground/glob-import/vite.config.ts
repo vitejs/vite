@@ -38,13 +38,9 @@ const linked = path.resolve(
   import.meta.dirname,
   'follow-symlinks/linked/my-lib',
 )
-const target = path.resolve(
-  import.meta.dirname,
-  'follow-symlinks/packages/my-lib',
-)
 if (!fs.existsSync(linked) || !fs.lstatSync(linked).isSymbolicLink()) {
   fs.rmSync(linked, { recursive: true, force: true })
-  fs.symlinkSync(target, linked, 'junction')
+  fs.symlinkSync('../packages/my-lib', linked, 'dir')
 }
 
 export default defineConfig({
