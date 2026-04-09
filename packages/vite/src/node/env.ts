@@ -69,9 +69,19 @@ export function loadEnv(
     process.env.BROWSER_ARGS = parsed.BROWSER_ARGS
   }
 
+  const cachedProcessEnvOnFirstStartup =
+    global.__vite_cached_env_on_startup ?? null
+  if (cachedProcessEnvOnFirstStartup == null) {
+    global.__vite_cached_env_on_startup = process.env
+  }
+  const processEnvOrCachedProcessEnv: NodeJS.ProcessEnv =
+    cachedProcessEnvOnFirstStartup == null
+      ? process.env
+      : cachedProcessEnvOnFirstStartup
+
   // let environment variables use each other. make a copy of `process.env` so that `dotenv-expand`
   // doesn't re-assign the expanded values to the global `process.env`.
-  const processEnv = { ...process.env } as DotenvPopulateInput
+  const processEnv = { ...processEnvOrCachedProcessEnv } as DotenvPopulateInput
   expand({ parsed, processEnv })
 
   // only keys that start with prefix are exposed to client
@@ -83,9 +93,10 @@ export function loadEnv(
 
   // check if there are actual env variables starting with VITE_*
   // these are typically provided inline and should be prioritized
-  for (const key in process.env) {
+  // We do this only first time loadEnv is called.
+  for (const key in processEnvOrCachedProcessEnv) {
     if (prefixes.some((prefix) => key.startsWith(prefix))) {
-      env[key] = process.env[key] as string
+      env[key] = processEnvOrCachedProcessEnv[key] as string
     }
   }
 
