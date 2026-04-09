@@ -344,7 +344,6 @@ async function ssrTransformScript(
       }
     },
     onIdentifier(id, parent, parentStack) {
-      const grandparent = parentStack[1]
       const binding = idToImportMap.get(id.name)
       if (!binding) {
         return
@@ -360,9 +359,8 @@ async function ssrTransformScript(
           s.appendLeft(id.end, `: ${binding}`)
         }
       } else if (
-        (parent.type === 'PropertyDefinition' &&
-          grandparent?.type === 'ClassBody') ||
-        (parent.type === 'ClassDeclaration' && id === parent.superClass)
+        parent.type === 'ClassDeclaration' &&
+        id === parent.superClass
       ) {
         if (!declaredConst.has(id.name)) {
           declaredConst.add(id.name)
@@ -678,6 +676,13 @@ function isRefIdentifier(
   // class method name
   if (parent.type === 'MethodDefinition' && !parent.computed) {
     return false
+  }
+
+  // class property key
+  if (parent.type === 'PropertyDefinition' && !parent.computed) {
+    // values can still contain identifier references,
+    // but keys cannot unless computed.
+    return parent.value === id
   }
 
   // property key
