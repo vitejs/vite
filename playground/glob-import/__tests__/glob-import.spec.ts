@@ -236,6 +236,14 @@ if (!isBuild) {
   })
 }
 
+test('alias exclusion', async () => {
+  await expect
+    .poll(async () => JSON.parse(await page.textContent('.alias-exclusion')))
+    .toSatisfy((keys: string[]) => {
+      return keys.length > 0 && keys.every((k) => !k.includes('alias'))
+    })
+})
+
 test('array pattern with exclusions', async () => {
   await expect
     .poll(async () => JSON.parse(await page.textContent('.array-result')))

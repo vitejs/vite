@@ -36,6 +36,7 @@ export default defineConfig({
     alias: {
       ...escapeAliases,
       '@dir': path.resolve(import.meta.dirname, './dir/'),
+      '~dir': path.resolve(import.meta.dirname, './dir') + '/',
       '#alias': path.resolve(import.meta.dirname, './imports-path/'),
     },
   },
