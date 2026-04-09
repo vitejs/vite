@@ -34,7 +34,6 @@ export async function setup(project: TestProject): Promise<void> {
       const destDir = path.resolve(tempDir, dir)
       await copyWithFriendlyError(srcDir, destDir, {
         recursive: true,
-        verbatimSymlinks: true,
         filter: filterForPlaygroundCopy,
       })
     }),
@@ -56,7 +55,6 @@ export async function setup(project: TestProject): Promise<void> {
       cpPromises.push(
         copyWithFriendlyError(srcDir, destDir, {
           recursive: true,
-          verbatimSymlinks: true,
           filter: filterForPlaygroundCopy,
         }),
       )

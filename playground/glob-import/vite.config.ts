@@ -30,6 +30,23 @@ const transformVisibilityPlugin = {
   },
 }
 
+// Ensure symlink exists before any file processing.
+// We can't rely on git symlinks because they are not portable across platforms
+// (Windows may check them out as plain text files, and fs.cp may lose the
+// directory symlink type when copying to playground-temp).
+const linked = path.resolve(
+  import.meta.dirname,
+  'follow-symlinks/linked/my-lib',
+)
+const target = path.resolve(
+  import.meta.dirname,
+  'follow-symlinks/packages/my-lib',
+)
+if (!fs.existsSync(linked) || !fs.lstatSync(linked).isSymbolicLink()) {
+  fs.rmSync(linked, { recursive: true, force: true })
+  fs.symlinkSync(target, linked, 'junction')
+}
+
 export default defineConfig({
   plugins: [transformVisibilityPlugin],
   resolve: {
