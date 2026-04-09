@@ -31,9 +31,10 @@ const transformVisibilityPlugin = {
 }
 
 // Ensure symlink exists before any file processing.
-// We can't rely on git symlinks because they are not portable across platforms
-// (Windows may check them out as plain text files, and fs.cp may lose the
-// directory symlink type when copying to playground-temp).
+// We create it programmatically instead of storing it in git because
+// `fs.cp` (used to copy playgrounds to playground-temp) has a bug on
+// Windows where it loses the directory symlink type, creating a file
+// symlink instead — which breaks directory traversal.
 const linked = path.resolve(
   import.meta.dirname,
   'follow-symlinks/linked/my-lib',
