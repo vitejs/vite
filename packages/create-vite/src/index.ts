@@ -921,8 +921,7 @@ function getRunCommand(agent: string, script: string) {
   }
 }
 
-type NonArray<T> = T extends any[] ? never : T
-type ColorName = NonArray<Parameters<typeof util.styleText>[0]>
+type ColorName = Exclude<Parameters<typeof util.styleText>[0], any[]>
 
 function createColors() {
   return new Proxy({} as Record<ColorName, ColorFunc>, {
