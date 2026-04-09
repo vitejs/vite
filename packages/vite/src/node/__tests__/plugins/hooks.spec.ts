@@ -1,5 +1,5 @@
 import path from 'node:path'
-import { describe, expect, onTestFinished, test } from 'vitest'
+import { describe, expect, onTestFinished, test, vi } from 'vitest'
 import { build } from '../../build'
 import type { Plugin } from '../../plugin'
 import { resolveConfig } from '../../config'
@@ -344,5 +344,49 @@ describe('supports plugin context', () => {
     })
     await server.transformRequest(ENTRY_ID)
     await server.close()
+  })
+})
+
+describe('watcher add/unlink error handling', () => {
+  test("'add' event logs error when watchChange throws", async () => {
+    const { promise, resolve } = promiseWithResolvers<void>()
+    const error = new Error('async watchChange error')
+
+    const server = await createServerWithPlugin({
+      name: 'test',
+      watchChange() {
+        return Promise.reject(error)
+      },
+    })
+
+    vi.spyOn(server.config.logger, 'error').mockImplementation(() => resolve())
+
+    server.watcher.emit(
+      'add',
+      path.resolve(import.meta.dirname, 'some-file.js'),
+    )
+
+    await promise
+  })
+
+  test("'unlink' event logs error when watchChange throws", async () => {
+    const { promise, resolve } = promiseWithResolvers<void>()
+    const error = new Error('async watchChange error')
+
+    const server = await createServerWithPlugin({
+      name: 'test',
+      watchChange() {
+        return Promise.reject(error)
+      },
+    })
+
+    vi.spyOn(server.config.logger, 'error').mockImplementation(() => resolve())
+
+    server.watcher.emit(
+      'unlink',
+      path.resolve(import.meta.dirname, 'some-file.js'),
+    )
+
+    await promise
   })
 })
