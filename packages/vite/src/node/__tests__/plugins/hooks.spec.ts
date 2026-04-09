@@ -6,6 +6,7 @@ import { resolveConfig } from '../../config'
 import { createServer } from '../../server'
 import { preview } from '../../preview'
 import { promiseWithResolvers } from '../../../shared/utils'
+import { type Logger, createLogger } from '../../logger'
 
 const resolveConfigWithPlugin = (
   plugin: Plugin,
@@ -33,12 +34,16 @@ const resolveEntryPlugin: Plugin = {
   },
 }
 
-const createServerWithPlugin = async (plugin: Plugin) => {
+const createServerWithPlugin = async (
+  plugin: Plugin,
+  customLogger?: Logger,
+) => {
   const server = await createServer({
     configFile: false,
     root: import.meta.dirname,
     plugins: [plugin, resolveEntryPlugin],
     logLevel: 'error',
+    customLogger,
     server: {
       middlewareMode: true,
       ws: false,
@@ -352,14 +357,22 @@ describe('watcher add/unlink error handling', () => {
     const { promise, resolve } = promiseWithResolvers<void>()
     const error = new Error('async watchChange error')
 
-    const server = await createServerWithPlugin({
-      name: 'test',
-      watchChange() {
-        return Promise.reject(error)
-      },
-    })
+    const logError = vi.fn()
+    const logger = createLogger('error')
+    logger.error = (...args) => {
+      logError(...args)
+      resolve()
+    }
 
-    vi.spyOn(server.config.logger, 'error').mockImplementation(() => resolve())
+    const server = await createServerWithPlugin(
+      {
+        name: 'test',
+        watchChange() {
+          return Promise.reject(error)
+        },
+      },
+      logger,
+    )
 
     server.watcher.emit(
       'add',
@@ -367,20 +380,30 @@ describe('watcher add/unlink error handling', () => {
     )
 
     await promise
+    expect(logError).toHaveBeenCalled()
+    expect(logError).toHaveBeenCalledWith(error)
   })
 
   test("'unlink' event logs error when watchChange throws", async () => {
     const { promise, resolve } = promiseWithResolvers<void>()
     const error = new Error('async watchChange error')
 
-    const server = await createServerWithPlugin({
-      name: 'test',
-      watchChange() {
-        return Promise.reject(error)
-      },
-    })
+    const logError = vi.fn()
+    const logger = createLogger('error')
+    logger.error = (...args) => {
+      logError(...args)
+      resolve()
+    }
 
-    vi.spyOn(server.config.logger, 'error').mockImplementation(() => resolve())
+    const server = await createServerWithPlugin(
+      {
+        name: 'test',
+        watchChange() {
+          return Promise.reject(error)
+        },
+      },
+      logger,
+    )
 
     server.watcher.emit(
       'unlink',
@@ -388,5 +411,7 @@ describe('watcher add/unlink error handling', () => {
     )
 
     await promise
+    expect(logError).toHaveBeenCalled()
+    expect(logError).toHaveBeenCalledWith(error)
   })
 })
