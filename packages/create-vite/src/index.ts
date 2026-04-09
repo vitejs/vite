@@ -1,11 +1,11 @@
 import fs from 'node:fs'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
+import util from 'node:util'
 import type { SpawnOptions } from 'node:child_process'
 import spawn from 'cross-spawn'
 import mri from 'mri'
 import * as prompts from '@clack/prompts'
-import colors from 'picocolors'
 import { determineAgent } from '@vercel/detect-agent'
 
 const {
@@ -20,7 +20,7 @@ const {
   reset,
   underline,
   yellow,
-} = colors
+} = createColors()
 
 const argv = mri<{
   template?: string
@@ -58,7 +58,7 @@ ${red       ('svelte-ts           svelte'        )}
 ${blue      ('solid-ts            solid'         )}
 ${blueBright('qwik-ts             qwik'          )}`
 
-type ColorFunc = (str: string | number) => string
+type ColorFunc = (str: string) => string
 type Framework = {
   name: string
   display: string
@@ -919,6 +919,17 @@ function getRunCommand(agent: string, script: string) {
     default:
       return [agent, 'run', script]
   }
+}
+
+type ColorName = Exclude<Parameters<typeof util.styleText>[0], any[]>
+
+function createColors() {
+  return new Proxy({} as Record<ColorName, ColorFunc>, {
+    get(_, prop: ColorName) {
+      // eslint-disable-next-line n/no-unsupported-features/node-builtins -- our supported nodejs range supports `styleText` but in experimental state, which is fine
+      return (str: string) => util.styleText(prop, str)
+    },
+  })
 }
 
 init().catch((e) => {
