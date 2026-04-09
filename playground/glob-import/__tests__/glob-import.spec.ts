@@ -245,6 +245,17 @@ test('follow symlinks', async () => {
     })
 })
 
+test('follow symlinks same reference', async () => {
+  await expect
+    .poll(async () =>
+      JSON.parse(await page.textContent('.follow-symlinks-same-ref')),
+    )
+    .toStrictEqual({
+      a: true,
+      b: true,
+    })
+})
+
 test('alias exclusion', async () => {
   await expect
     .poll(async () => JSON.parse(await page.textContent('.alias-exclusion')))
