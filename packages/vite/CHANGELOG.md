@@ -1,3 +1,13 @@
+## <small>[8.0.8](https://github.com/vitejs/vite/compare/v8.0.7...v8.0.8) (2026-04-09)</small>
+### Features
+
+* update rolldown to 1.0.0-rc.15 ([#22201](https://github.com/vitejs/vite/issues/22201)) ([6baf587](https://github.com/vitejs/vite/commit/6baf587255936e91348cbe624caefd10e8c607ab))
+
+### Bug Fixes
+
+* avoid `dns.getDefaultResultOrder` temporary ([#22202](https://github.com/vitejs/vite/issues/22202)) ([15f1c15](https://github.com/vitejs/vite/commit/15f1c15ac9be343ee4f317fd025c3d67f0c7bd53))
+* **ssr:** class property keys hoisting matching imports ([#22199](https://github.com/vitejs/vite/issues/22199)) ([e137601](https://github.com/vitejs/vite/commit/e1376018cd516d6970534fce495e24f9ee683ce3))
+
 ## <small>[8.0.7](https://github.com/vitejs/vite/compare/v8.0.6...v8.0.7) (2026-04-07)</small>
 ### Bug Fixes
 
