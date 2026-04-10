@@ -265,8 +265,6 @@ async function loadConfig(configEnv: ConfigEnv) {
       // esbuild do not minify ES lib output since that would remove pure annotations and break tree-shaking
       // skip transpilation during tests to make it faster
       target: 'esnext',
-      // tests are flaky when `emptyOutDir` is `true`
-      emptyOutDir: false,
     },
     customLogger: createInMemoryLogger(serverLogs),
     plugins: [throwHtmlParseError()],
