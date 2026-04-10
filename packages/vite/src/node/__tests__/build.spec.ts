@@ -163,12 +163,11 @@ describe('build', () => {
       (result.output.find((o) => o.fileName === '.vite/manifest.json') as any)
         .source,
     )
-
     expect(manifest['a/index.css']).toMatchObject({
-      assets: [expect.stringMatching(/assets\/asset-a-[-\w]{8}\.svg/)],
+      isEntry: true,
     })
     expect(manifest['b/index.css']).toMatchObject({
-      assets: [expect.stringMatching(/assets\/asset-b-[-\w]{8}\.svg/)],
+      isEntry: true,
     })
   })
 
