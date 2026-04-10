@@ -271,7 +271,7 @@ test.runIf(isServe)('error on builtin modules usage', () => {
 
 test('pre bundle css require', async () => {
   if (isServe) {
-    const response = page.waitForResponse(/@vitejs_test-dep-css-require\.js/)
+    const response = page.waitForResponse(/@vitejs_2ftest-dep-css-require\.js/)
     await page.goto(viteTestUrl)
     const content = await (await response).text()
     expect(content).toMatch(
@@ -293,7 +293,7 @@ test.runIf(isBuild)('no missing deps during build', async () => {
 test('name file limit is 170 characters', async () => {
   if (isServe) {
     const response = page.waitForResponse(
-      /@vitejs_longfilename-\w+_[a-zA-Z\d]+\.js\?v=[a-zA-Z\d]+/,
+      /@vitejs_2flongfilename-\w+_[a-zA-Z\d]+\.js\?v=[a-zA-Z\d]+/,
     )
     await page.goto(viteTestUrl)
     const content = await response

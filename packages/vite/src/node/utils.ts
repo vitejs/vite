@@ -66,19 +66,21 @@ export const createFilter = _createFilter as (
 
 export { withFilter } from 'rolldown/filter'
 
-const replaceSlashOrColonRE = /[/:]/g
-const replaceDotRE = /\./g
+// eslint-disable-next-line no-control-regex
+const invalidUrlPathCharRE = /[\u0000-\u001F"#$%&*+,:;<=>?[\]^`{|}\u007F]/g
+const additionalFlattenIdCharRE = /[/.]/g
 const replaceNestedIdRE = /\s*>\s*/g
-const replaceHashRE = /#/g
-const replacePlusRE = /\+/g
 export const flattenId = (id: string): string => {
   const flatId = limitFlattenIdLength(
     id
-      .replace(replaceSlashOrColonRE, '_')
-      .replace(replaceDotRE, '__')
-      .replace(replaceNestedIdRE, '___')
-      .replace(replaceHashRE, '____')
-      .replace(replacePlusRE, '_____'),
+      .replace('_', '__')
+      // replace any characters that will be replaced by sanitizeFileName
+      .replace(invalidUrlPathCharRE, (c) => '_' + c.charCodeAt(0).toString(16))
+      .replace(
+        additionalFlattenIdCharRE,
+        (c) => '_' + c.charCodeAt(0).toString(16),
+      )
+      .replace(replaceNestedIdRE, '__'),
   )
   return flatId
 }
