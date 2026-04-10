@@ -674,7 +674,7 @@ describe('flattenId', () => {
     const id = 'ravelinjs/core+track+encrypt+promise'
     const result = flattenId(id)
     expect(result).not.toContain('+')
-    expect(result).toBe('ravelinjs_core_____track_____encrypt_____promise')
+    expect(result).toBe('ravelinjs_2fcore_2btrack_2bencrypt_2bpromise')
   })
 })
 

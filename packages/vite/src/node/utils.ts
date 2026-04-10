@@ -73,7 +73,7 @@ const replaceNestedIdRE = /\s*>\s*/g
 export const flattenId = (id: string): string => {
   const flatId = limitFlattenIdLength(
     id
-      .replace('_', '__')
+      .replaceAll('_', '__')
       // replace any characters that will be replaced by sanitizeFileName
       .replace(invalidUrlPathCharRE, (c) => '_' + c.charCodeAt(0).toString(16))
       .replace(
