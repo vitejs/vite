@@ -11,7 +11,7 @@ export function prepareOutDirPlugin(): Plugin {
   const rendered = new Set<Environment>()
   return {
     name: 'vite:prepare-out-dir',
-    buildStart() {
+    watchChange() {
       rendered.delete(this.environment)
     },
     renderStart: {
