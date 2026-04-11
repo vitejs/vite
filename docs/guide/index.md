@@ -1,4 +1,46 @@
-# Getting Started
+import React, { useState } from "react"; import { Card, CardContent } from "@/components/ui/card"; import { Button } from "@/components/ui/button"; import { Input } from "@/components/ui/input"; import { Textarea } from "@/components/ui/textarea";
+
+export default function AICreatorApp() { const [name, setName] = useState(""); const [data, setData] = useState(""); const [knowledge, setKnowledge] = useState([]); const [question, setQuestion] = useState(""); const [answer, setAnswer] = useState("");
+
+const trainAI = () => { if (!data) return; setKnowledge([...knowledge, data]); setData(""); };
+
+const askAI = () => { const found = knowledge.find((k) => k.toLowerCase().includes(question.toLowerCase()) ); setAnswer(found || "Я пока не знаю ответа 😅"); };
+
+return ( <div className="p-6 grid gap-6 max-w-2xl mx-auto"> <Card className="shadow-xl rounded-2xl"> <CardContent className="p-4"> <h1 className="text-xl font-bold mb-2">Создай своего ИИ 🤖</h1> <Input placeholder="Имя твоего ИИ" value={name} onChange={(e) => setName(e.target.value)} /> </CardContent> </Card>
+
+<Card className="shadow-xl rounded-2xl">
+    <CardContent className="p-4">
+      <h2 className="font-semibold mb-2">Обучение</h2>
+      <Textarea
+        placeholder="Напиши информацию, которой обучишь ИИ..."
+        value={data}
+        onChange={(e) => setData(e.target.value)}
+      />
+      <Button className="mt-2" onClick={trainAI}>
+        Обучить
+      </Button>
+    </CardContent>
+  </Card>
+
+  <Card className="shadow-xl rounded-2xl">
+    <CardContent className="p-4">
+      <h2 className="font-semibold mb-2">Задать вопрос</h2>
+      <Input
+        placeholder="Спроси ИИ..."
+        value={question}
+        onChange={(e) => setQuestion(e.target.value)}
+      />
+      <Button className="mt-2" onClick={askAI}>
+        Спросить
+      </Button>
+      {answer && (
+        <p className="mt-3 bg-gray-100 p-2 rounded">{answer}</p>
+      )}
+    </CardContent>
+  </Card>
+</div>
+
+); }# Getting Started
 
 <audio id="vite-audio">
   <source src="/vite.mp3" type="audio/mpeg">
