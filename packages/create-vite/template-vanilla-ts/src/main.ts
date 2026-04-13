@@ -28,7 +28,7 @@ document.querySelector<HTMLDivElement>('#app')!.innerHTML = `
     <ul>
       <li>
         <a href="https://vite.dev/" target="_blank">
-          <img class="logo" src=${viteLogo} alt="" />
+          <img class="logo" src="${viteLogo}" alt="" />
           Explore Vite
         </a>
       </li>
