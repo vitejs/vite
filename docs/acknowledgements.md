@@ -31,7 +31,7 @@ We also thank all the [contributors on GitHub](https://github.com/vitejs/vite/gr
 Vite's development is supported by generous sponsors. You can support Vite through [GitHub Sponsors](https://github.com/sponsors/vitejs) or [Open Collective](https://opencollective.com/vite).
 
 <div class="sponsors-container">
-  <VPSponsors :data="sponsors" />
+  <VPSponsors :data="sponsors ?? []" />
 </div>
 
 ## Dependencies
