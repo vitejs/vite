@@ -14,7 +14,7 @@ jobs:
       actions: read # to check workflow status
     steps:
       - name: Check User Permissions
-        uses: actions/github-script@v8
+        uses: actions/github-script@v9
         id: check-permissions
         with:
           script: |
@@ -55,7 +55,7 @@ jobs:
             }
 
       - name: Get PR Data
-        uses: actions/github-script@v8
+        uses: actions/github-script@v9
         id: get-pr-data
         with:
           script: |
@@ -105,7 +105,7 @@ jobs:
             }
 
       - name: Check Package Existence
-        uses: actions/github-script@v8
+        uses: actions/github-script@v9
         id: check-package
         with:
           script: |
@@ -139,7 +139,7 @@ jobs:
 
       - name: Trigger Preview Release (if Package Not Found)
         if: fromJSON(steps.check-package.outputs.result).exists == false
-        uses: actions/github-script@v8
+        uses: actions/github-script@v9
         id: trigger-preview-release
         env:
           PR_DATA: ${{ steps.get-pr-data.outputs.result }}
@@ -160,7 +160,7 @@ jobs:
 
       - name: Wait for Preview Release Completion (if Package Not Found)
         if: fromJSON(steps.check-package.outputs.result).exists == false
-        uses: actions/github-script@v8
+        uses: actions/github-script@v9
         id: wait-preview-release
         env:
           PR_DATA: ${{ steps.get-pr-data.outputs.result }}
@@ -230,7 +230,7 @@ jobs:
             }
 
       - name: Trigger Downstream Workflow
-        uses: actions/github-script@v8
+        uses: actions/github-script@v9
         id: trigger
         env:
           COMMENT: ${{ github.event.comment.body }}
