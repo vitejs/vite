@@ -48,7 +48,7 @@ describe('send', () => {
     expect(res.body?.toString()).toContain('//# sourceMappingURL=')
   })
 
-  test('skips fallback sourcemap when explicitly disabled', () => {
+  test('skips fallback sourcemap when empty mappings are provided', () => {
     const req = {
       headers: {},
       method: 'GET',
@@ -58,7 +58,7 @@ describe('send', () => {
     const code = `export default ${JSON.stringify('x\n'.repeat(600_000))}`
 
     send(req, res as unknown as ServerResponse, code, 'js', {
-      skipFallbackSourcemap: true,
+      map: { mappings: '' },
     })
 
     expect(res.body?.toString()).toBe(code)
