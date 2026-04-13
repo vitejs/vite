@@ -47,7 +47,9 @@
     "@vitejs/test-added-in-entries": "file:./added-in-entries",
     "@vitejs/test-dep-cjs-external-package-omit-js-suffix": "file:./dep-cjs-external-package-omit-js-suffix",
     "@vitejs/test-dep-with-assets": "file:./dep-with-assets",
-    "lodash-es": "^4.18.1",
+    "@vitejs/test-dep-lodash": "file:./dep-lodash",
+    "@vitejs/test-dep-lodash.clonedeep": "file:./dep-lodash-clonedeep",
+    "@vitejs/test-dep-lodash-es": "file:./dep-lodash-es",
     "@vitejs/test-nested-exclude": "file:./nested-exclude",
     "phoenix": "^1.8.5",
     "react": "^19.2.4",
@@ -55,8 +57,6 @@
     "@vitejs/test-resolve-linked": "workspace:0.0.0",
     "url": "^0.11.4",
     "vue": "^3.5.32",
-    "vuex": "^4.1.0",
-    "lodash": "^4.18.1",
-    "lodash.clonedeep": "^4.5.0"
+    "vuex": "^4.1.0"
   }
 }
