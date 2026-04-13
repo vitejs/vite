@@ -89,7 +89,7 @@ Vite 5 also introduces [server.warmup](/guide/performance.html#warm-up-frequentl
 - [Align dev and preview HTML serving behavior](https://v5.vite.dev/guide/migration#align-dev-and-preview-html-serving-behaviour)
 - [Manifest files are now generated in `.vite` directory by default](/guide/migration#manifest-files-are-now-generated-in-vite-directory-by-default)
 - [CLI shortcuts require an additional `Enter` press](/guide/migration#cli-shortcuts-require-an-additional-enter-press)
-- [Update `experimentalDecorators` and `useDefineForClassFields` TypeScript behavior](https://v5.vite.dev/guide/migration.html#update-experimentaldecorators-and-usedefineforclassfields-typescript-behaviour)
+- [Update `experimentalDecorators` and `useDefineForClassFields` TypeScript behavior](https://v5.vite.dev/guide/migration#update-experimentaldecorators-and-usedefineforclassfields-typescript-behaviour)
 - [Remove `--https` flag and `https: true`](/guide/migration#remove-https-flag-and-https-true)
 - [Remove `resolvePackageEntry` and `resolvePackageData` APIs](/guide/migration#remove-resolvepackageentry-and-resolvepackagedata-apis)
 - [Removes previously deprecated APIs](/guide/migration#removed-deprecated-apis)
