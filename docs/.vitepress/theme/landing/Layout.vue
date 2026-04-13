@@ -12,7 +12,7 @@ import Spacer from '@components/shared/Spacer.vue'
 import Footer from '@components/oss/Footer.vue'
 import { useSponsor } from '../composables/sponsor'
 
-const { data: sponsors } = useSponsor()
+const sponsors = useSponsor()
 </script>
 
 <template>
