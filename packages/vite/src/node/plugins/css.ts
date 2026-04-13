@@ -2684,7 +2684,7 @@ const scssProcessor = (
             // to re-generate a new frame (same as legacy api)
             e.frame = e.message
           }
-          // sass sometimes re-uses the error instance
+          // sass sometimes reuses the error instance
           // avoid mutating the same instance multiple times
           normalizedErrors.add(e)
         }
