@@ -1,1 +1,1 @@
-export * from 'lodash-es'
+export * from '@vitejs/test-dep-lodash-es'
