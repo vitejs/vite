@@ -86,7 +86,7 @@ Vite 5 also introduces [server.warmup](/guide/performance.html#warm-up-frequentl
 - [SSR externalized modules value now matches production](/guide/migration#ssr-externalized-modules-value-now-matches-production)
 - [`worker.plugins` is now a function](/guide/migration#worker-plugins-is-now-a-function)
 - [Allow path containing `.` to fallback to index.html](/guide/migration#allow-path-containing-to-fallback-to-index-html)
-- [Align dev and preview HTML serving behavior](https://v5.vite.dev/guide/migration.html#align-dev-and-preview-html-serving-behaviour)
+- [Align dev and preview HTML serving behavior](https://v5.vite.dev/guide/migration#align-dev-and-preview-html-serving-behaviour)
 - [Manifest files are now generated in `.vite` directory by default](/guide/migration#manifest-files-are-now-generated-in-vite-directory-by-default)
 - [CLI shortcuts require an additional `Enter` press](/guide/migration#cli-shortcuts-require-an-additional-enter-press)
 - [Update `experimentalDecorators` and `useDefineForClassFields` TypeScript behavior](https://v5.vite.dev/guide/migration.html#update-experimentaldecorators-and-usedefineforclassfields-typescript-behaviour)
