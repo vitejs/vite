@@ -17,6 +17,7 @@
   "scripts": {
     "dev": "tsdown --watch",
     "build": "tsdown",
+    "typecheck": "tsc",
     "prepublishOnly": "npm run build"
   },
   "engines": {
