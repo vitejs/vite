@@ -61,7 +61,7 @@ See [Contributing Guide](CONTRIBUTING.md).
 ## Sponsors
 
 <p align="center">
-  <a target="_blank" href="https://github.com/sponsors/yyx990803">
-    <img alt="sponsors" src="https://sponsors.vuejs.org/vite.svg?v2">
+  <a target="_blank" href="https://github.com/sponsors/vite">
+    <img alt="sponsors" src="https://sponsors.vite.dev/sponsors.svg">
   </a>
 </p>
