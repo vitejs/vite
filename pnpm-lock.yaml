@@ -497,6 +497,8 @@ importers:
 
   packages/vite/src/node/__tests__/plugins/fixtures/license/dep-nested-license-isc: {}
 
+  packages/vite/src/node/server/__tests__/fixtures/deno/nested: {}
+
   packages/vite/src/node/server/__tests__/fixtures/lerna/nested: {}
 
   packages/vite/src/node/server/__tests__/fixtures/none/nested: {}
