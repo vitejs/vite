@@ -384,6 +384,37 @@ describe('watcher add/unlink error handling', () => {
     expect(logError).toHaveBeenCalledWith(error)
   })
 
+  test("'change' event logs error when watchChange throws", async () => {
+    const { promise, resolve } = promiseWithResolvers<void>()
+    const error = new Error('async watchChange error')
+
+    const logError = vi.fn()
+    const logger = createLogger('error')
+    logger.error = (...args) => {
+      logError(...args)
+      resolve()
+    }
+
+    const server = await createServerWithPlugin(
+      {
+        name: 'test',
+        watchChange() {
+          return Promise.reject(error)
+        },
+      },
+      logger,
+    )
+
+    server.watcher.emit(
+      'change',
+      path.resolve(import.meta.dirname, 'some-file.js'),
+    )
+
+    await promise
+    expect(logError).toHaveBeenCalled()
+    expect(logError).toHaveBeenCalledWith(error)
+  })
+
   test("'unlink' event logs error when watchChange throws", async () => {
     const { promise, resolve } = promiseWithResolvers<void>()
     const error = new Error('async watchChange error')

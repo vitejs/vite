@@ -887,7 +887,7 @@ export async function _createServer(
     await onHMRUpdate(isUnlink ? 'delete' : 'create', file)
   }
 
-  watcher.on('change', async (file) => {
+  const onFileChange = async (file: string) => {
     file = normalizePath(file)
     reloadOnTsconfigChange(server, file)
 
@@ -901,6 +901,10 @@ export async function _createServer(
       environment.moduleGraph.onFileChange(file)
     }
     await onHMRUpdate('update', file)
+  }
+
+  watcher.on('change', (file) => {
+    onFileChange(file).catch((e) => server.config.logger.error(e))
   })
 
   watcher.on('add', (file) => {
