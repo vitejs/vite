@@ -15,9 +15,8 @@ export const core = [
   },
   {
     avatar: 'https://www.github.com/patak-cat.png',
-    name: 'Patak',
-    title: 'A collaborative being',
-    org: 'StackBlitz',
+name: 'Patak',
+title: 'Open Source Adventurer',
     orgLink: 'https://stackblitz.com/',
     desc: 'Core team Vite, Vitest, Elk. Steward npmx.',
     links: [
