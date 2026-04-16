@@ -18,11 +18,15 @@ Provides Vue 3 JSX support (via [dedicated Babel transform](https://github.com/v
 
 ### [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/tree/main/packages/plugin-react)
 
-Provides React Fast Refresh support via [Oxc Transformer](https://oxc.rs/docs/guide/usage/transformer).
+Provides [React Fast Refresh](https://github.com/facebook/react/tree/main/packages/react-refresh) support using [Oxc Transformer](https://oxc.rs/docs/guide/usage/transformer) for JSX and TypeScript compilation. This is the **recommended default** for most React projects.
 
 ### [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/tree/main/packages/plugin-react-swc)
 
-Replaces Oxc with [SWC](https://swc.rs/) during development for SWC plugin usage. During production builds, SWC+Oxc Transformer are used when using plugins. For big projects that require custom plugins, cold start and Hot Module Replacement (HMR) can be significantly faster, if the plugin is also available for SWC.
+Replaces Oxc with [SWC](https://swc.rs/) during development. During production builds, SWC+Oxc Transformer are used when using plugins. This plugin is beneficial when you need SWC-specific plugins (e.g., for styled-components or Emotion), or for large projects where SWC's compilation speed provides measurable improvements in cold start and Hot Module Replacement (HMR) times.
+
+::: tip Choosing between plugin-react and plugin-react-swc
+Use `@vitejs/plugin-react` unless you have a specific need for SWC plugins or have measured a performance benefit from SWC in your project. Both plugins provide React Fast Refresh and can be swapped without changing your application code.
+:::
 
 ### [@vitejs/plugin-rsc](https://github.com/vitejs/vite-plugin-react/tree/main/packages/plugin-rsc)
 
