@@ -21,7 +21,6 @@ export const core = [
     links: [
       { icon: 'github', link: 'https://github.com/patak-cat' },
       { icon: 'bluesky', link: 'https://bsky.app/profile/patak.cat' },
-      { icon: 'mastodon', link: 'https://elk.zone/m.webtoo.ls/@patak' },
     ],
     sponsor: 'https://github.com/sponsors/patak-cat',
   },
