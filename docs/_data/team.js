@@ -14,18 +14,18 @@ export const core = [
     sponsor: 'https://github.com/sponsors/yyx990803',
   },
   {
-    avatar: 'https://www.github.com/patak-dev.png',
+    avatar: 'https://www.github.com/patak-cat.png',
     name: 'Patak',
     title: 'A collaborative being',
     org: 'StackBlitz',
     orgLink: 'https://stackblitz.com/',
     desc: 'Core team member of Vite. Team member of Vue.',
     links: [
-      { icon: 'github', link: 'https://github.com/patak-dev' },
-      { icon: 'bluesky', link: 'https://bsky.app/profile/patak.dev' },
+      { icon: 'github', link: 'https://github.com/patak-cat' },
+      { icon: 'bluesky', link: 'https://bsky.app/profile/patak.cat' },
       { icon: 'mastodon', link: 'https://elk.zone/m.webtoo.ls/@patak' },
     ],
-    sponsor: 'https://github.com/sponsors/patak-dev',
+    sponsor: 'https://github.com/sponsors/patak-cat',
   },
   {
     avatar: 'https://www.github.com/antfu.png',
