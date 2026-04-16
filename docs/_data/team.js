@@ -19,7 +19,7 @@ export const core = [
     title: 'A collaborative being',
     org: 'StackBlitz',
     orgLink: 'https://stackblitz.com/',
-    desc: 'Core team member of Vite. Team member of Vue.',
+    desc: 'Core team Vite, Vitest, Elk. Steward npmx.',
     links: [
       { icon: 'github', link: 'https://github.com/patak-cat' },
       { icon: 'bluesky', link: 'https://bsky.app/profile/patak.cat' },
