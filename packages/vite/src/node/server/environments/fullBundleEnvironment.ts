@@ -13,8 +13,8 @@ import { getHmrImplementation } from '../../plugins/clientInjections'
 import { DevEnvironment, type DevEnvironmentContext } from '../environment'
 import type { ResolvedConfig } from '../../config'
 import type { ViteDevServer } from '../../server'
-import { createDebugger } from '../../utils'
-import { type NormalizedHotChannelClient, getShortName } from '../hmr'
+import { createDebugger, formatAndTruncateFileList } from '../../utils'
+import { type NormalizedHotChannelClient, debugHmr, getShortName } from '../hmr'
 import { prepareError } from '../middlewares/error'
 
 const debug = createDebugger('vite:full-bundle-mode')
@@ -156,7 +156,7 @@ export class FullBundleDevEnvironment extends DevEnvironment {
           return
         }
 
-        // NOTE: don't clear memoryFiles here as incremental build re-uses the files
+        // NOTE: don't clear memoryFiles here as incremental build reuses the files
         for (const outputFile of result.output) {
           this.memoryFiles.set(outputFile.fileName, () => {
             const source =
@@ -359,11 +359,13 @@ export class FullBundleDevEnvironment extends DevEnvironment {
       type: 'update',
       updates,
     })
-    this.logger.info(
-      colors.green(`hmr update `) +
-        colors.dim([...new Set(updates.map((u) => u.path))].join(', ')),
-      { clear: !invalidateInformation, timestamp: true },
-    )
+    const filePaths = [...new Set(updates.map((u) => u.path))]
+    const { formatted, truncated } = formatAndTruncateFileList(filePaths)
+    if (truncated) debugHmr?.(`hmr update ${filePaths.join(', ')}`)
+    this.logger.info(colors.green(`hmr update `) + colors.dim(formatted), {
+      clear: !invalidateInformation,
+      timestamp: true,
+    })
   }
 }
 

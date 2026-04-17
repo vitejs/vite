@@ -1,0 +1,6 @@
+{
+  "name": "@vitejs/test-dep-optimized-malicious",
+  "private": true,
+  "version": "0.0.0",
+  "main": "index.js"
+}

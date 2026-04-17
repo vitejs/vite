@@ -9,6 +9,10 @@ test('import from .js', async () => {
   await expect.poll(() => page.textContent('.js')).toMatch('[success]')
 })
 
+test('import using # prefixed path', async () => {
+  await expect.poll(() => page.textContent('.hash')).toMatch('[success]')
+})
+
 test('fallback works', async () => {
   await expect.poll(() => page.textContent('.fallback')).toMatch('[success]')
 })

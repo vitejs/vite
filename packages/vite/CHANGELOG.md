@@ -1,3 +1,73 @@
+## <small>[8.0.8](https://github.com/vitejs/vite/compare/v8.0.7...v8.0.8) (2026-04-09)</small>
+### Features
+
+* update rolldown to 1.0.0-rc.15 ([#22201](https://github.com/vitejs/vite/issues/22201)) ([6baf587](https://github.com/vitejs/vite/commit/6baf587255936e91348cbe624caefd10e8c607ab))
+
+### Bug Fixes
+
+* avoid `dns.getDefaultResultOrder` temporary ([#22202](https://github.com/vitejs/vite/issues/22202)) ([15f1c15](https://github.com/vitejs/vite/commit/15f1c15ac9be343ee4f317fd025c3d67f0c7bd53))
+* **ssr:** class property keys hoisting matching imports ([#22199](https://github.com/vitejs/vite/issues/22199)) ([e137601](https://github.com/vitejs/vite/commit/e1376018cd516d6970534fce495e24f9ee683ce3))
+
+## <small>[8.0.7](https://github.com/vitejs/vite/compare/v8.0.6...v8.0.7) (2026-04-07)</small>
+### Bug Fixes
+
+* use sync dns.getDefaultResultOrder instead of dns.promises ([#22185](https://github.com/vitejs/vite/issues/22185)) ([5c05b04](https://github.com/vitejs/vite/commit/5c05b04db6f3f64af60ff6525eb5f04bc330fbb5))
+
+## <small>[8.0.6](https://github.com/vitejs/vite/compare/v8.0.5...v8.0.6) (2026-04-07)</small>
+### Features
+
+* update rolldown to 1.0.0-rc.13 ([#22097](https://github.com/vitejs/vite/issues/22097)) ([51d3e48](https://github.com/vitejs/vite/commit/51d3e48980bf3e352d31ecde49d1aa56859918e0))
+
+### Bug Fixes
+
+* **css:** avoid mutating sass error multiple times ([#22115](https://github.com/vitejs/vite/issues/22115)) ([d5081c2](https://github.com/vitejs/vite/commit/d5081c2f3e73f3fc06956d8cf5f2cf06463c2325))
+* **optimize-deps:** hoist CJS interop assignment ([#22156](https://github.com/vitejs/vite/issues/22156)) ([17a8f9e](https://github.com/vitejs/vite/commit/17a8f9edfcd3b9344668120a84e3328aeada3c97))
+
+### Performance Improvements
+
+* early return in `getLocalhostAddressIfDiffersFromDNS` when DNS order is `verbatim` ([#22151](https://github.com/vitejs/vite/issues/22151)) ([56ec256](https://github.com/vitejs/vite/commit/56ec25613dba6cc71911f7af6e545ebcb77ec012))
+
+### Miscellaneous Chores
+
+* **create-vite:** remove unnecessary DOM.Iterable ([#22168](https://github.com/vitejs/vite/issues/22168)) ([bdc53ab](https://github.com/vitejs/vite/commit/bdc53ab1e67f7e2e000112eeed9c85413ddb0e9e))
+* replace remaining prettier script ([#22179](https://github.com/vitejs/vite/issues/22179)) ([af71fb2](https://github.com/vitejs/vite/commit/af71fb26dd15098b9523efc3d8ed04f27553174b))
+
+## <small>[8.0.5](https://github.com/vitejs/vite/compare/v8.0.4...v8.0.5) (2026-04-06)</small>
+### Bug Fixes
+
+* apply server.fs check to env transport ([#22159](https://github.com/vitejs/vite/issues/22159)) ([f02d9fd](https://github.com/vitejs/vite/commit/f02d9fde0b195afe3ea2944414186962fbbe41e0))
+* avoid path traversal with optimize deps sourcemap handler ([#22161](https://github.com/vitejs/vite/issues/22161)) ([79f002f](https://github.com/vitejs/vite/commit/79f002f2286c03c88c7b74c511c7f9fc6dc46694))
+* check `server.fs` after stripping query as well ([#22160](https://github.com/vitejs/vite/issues/22160)) ([a9a3df2](https://github.com/vitejs/vite/commit/a9a3df299378d9cbc5f069e3536a369f8188c8ff))
+* disallow referencing files outside the package from sourcemap ([#22158](https://github.com/vitejs/vite/issues/22158)) ([f05f501](https://github.com/vitejs/vite/commit/f05f50173461789e0f1323fe06b51f18ca41c132))
+
+## <small>[8.0.4](https://github.com/vitejs/vite/compare/v8.0.3...v8.0.4) (2026-04-06)</small>
+### Features
+
+* allow esbuild 0.28 as peer deps ([#22155](https://github.com/vitejs/vite/issues/22155)) ([b0da973](https://github.com/vitejs/vite/commit/b0da97372f5dba73e78035d1cc7680466ff6cf7f))
+* **hmr:** truncate list of files on hmr update ([#21535](https://github.com/vitejs/vite/issues/21535)) ([d00e806](https://github.com/vitejs/vite/commit/d00e806d7be15ebbfe7875e9244963d80ee8b142))
+* **optimizer:** log when dependency scanning or bundling takes over 1s ([#21797](https://github.com/vitejs/vite/issues/21797)) ([f61a1ab](https://github.com/vitejs/vite/commit/f61a1ab33b05dc6f6a7eda6e8bc9c4c5b9aab133))
+
+### Bug Fixes
+
+* `hasBothRollupOptionsAndRolldownOptions` should return `false` for proxy case ([#22043](https://github.com/vitejs/vite/issues/22043)) ([99897d2](https://github.com/vitejs/vite/commit/99897d27b44dd73307fa03e2f11f0baa1a1dc939))
+* add types for `vite/modulepreload-polyfill` ([#22126](https://github.com/vitejs/vite/issues/22126)) ([17330d2](https://github.com/vitejs/vite/commit/17330d2b9e132460f194d6d4b547cfee7e25c788))
+* **deps:** update all non-major dependencies ([#22073](https://github.com/vitejs/vite/issues/22073)) ([6daa10f](https://github.com/vitejs/vite/commit/6daa10ff1e8d15a90f49d8dd909ff208da85d6d8))
+* **deps:** update all non-major dependencies ([#22143](https://github.com/vitejs/vite/issues/22143)) ([22b0166](https://github.com/vitejs/vite/commit/22b016612703320db45c64a2fe44472051ef5ec5))
+* **resolve:** resolve tsconfig paths starting with `#` ([#22038](https://github.com/vitejs/vite/issues/22038)) ([3460fc5](https://github.com/vitejs/vite/commit/3460fc55aa89aef4103d2c05ac2e446032511a6d))
+* **ssr:** use browser platform for webworker SSR builds (fix [#21969](https://github.com/vitejs/vite/issues/21969)) ([#21963](https://github.com/vitejs/vite/issues/21963)) ([364c227](https://github.com/vitejs/vite/commit/364c2273a121dad4d93ec3b9ec87ffbe0d6e860b))
+
+### Documentation
+
+* add `environment.fetchModule` documentation ([#22035](https://github.com/vitejs/vite/issues/22035)) ([54229e7](https://github.com/vitejs/vite/commit/54229e78631ebf10d1db767b51ea85f3cf06718a))
+
+### Miscellaneous Chores
+
+* **deps:** update rolldown-related dependencies ([#21989](https://github.com/vitejs/vite/issues/21989)) ([0ded627](https://github.com/vitejs/vite/commit/0ded6274579e8bda6b22a7ba93b15d15b4c28b78))
+
+### Code Refactoring
+
+* upgrade to typescript 6 ([#22110](https://github.com/vitejs/vite/issues/22110)) ([cc41398](https://github.com/vitejs/vite/commit/cc41398c2cf0bb5061cf0ca5dc3b408ae7e41191))
+
 ## <small>[8.0.3](https://github.com/vitejs/vite/compare/v8.0.2...v8.0.3) (2026-03-26)</small>
 ### Features
 

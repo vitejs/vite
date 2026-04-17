@@ -21,7 +21,7 @@ jobs:
     steps:
       - uses: actions/checkout@v6
 
-      - uses: warpdotdev/oz-agent-action@827a9ad5438c195eb9d1d9a7acece3a8000be512 # v1
+      - uses: warpdotdev/oz-agent-action@ce1621abf6a8ed8afdd4e4cc994545ede8fe1c6f # v1
         id: agent
         with:
           prompt: |
@@ -66,7 +66,7 @@ jobs:
       pull-requests: write
     steps:
       - name: Write result to summary
-        uses: actions/github-script@v8
+        uses: actions/github-script@v9
         env:
           AGENT_OUTPUT: ${{ needs.evaluate-pr.outputs.agent_output }}
         with:
