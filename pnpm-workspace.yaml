@@ -3,46 +3,49 @@ packages:
   - 'playground/**'
   - 'packages/**/__tests__/**'
   - docs
+allowBuilds:
+  "@parcel/watcher": true
+  "@tailwindcss/oxide": true
+  core-js: false
+  esbuild: true
+  playwright-chromium: true
+  sharp: true
+  simple-git-hooks: true
+  unrs-resolver: true
+  vue-demi: false
+  workerd: true
+autoInstallPeers: false
+dedupeInjectedDeps: false
+
+dedupePeers: true
 
 hoistPattern:
   - postcss # package/vite
   - pug # playground/tailwind: @vue/compiler-sfc
   - eslint-import-resolver-* # eslint-plugin-import-x
-shellEmulator: true
-autoInstallPeers: false
-dedupeInjectedDeps: false
 overrides:
+  debug: 'npm:obug@^1.0.2'
   rolldown: $rolldown
   vite: 'workspace:*'
-  debug: 'npm:obug@^1.0.2'
-patchedDependencies:
-  "sirv@3.0.2": "patches/sirv@3.0.2.patch"
-  "chokidar@3.6.0": "patches/chokidar@3.6.0.patch"
-  "dotenv-expand@12.0.3": "patches/dotenv-expand@12.0.3.patch"
-peerDependencyRules:
-  allowedVersions:
-    vite: "*"
 packageExtensions:
+  '@rollup/plugin-dynamic-import-vars':
+    dependencies:
+      '@types/estree': ^1.0.0
   sass-embedded:
     peerDependencies:
       source-map-js: "*"
     peerDependenciesMeta:
       source-map-js:
         optional: true
-  '@rollup/plugin-dynamic-import-vars':
-    dependencies:
-      '@types/estree': ^1.0.0
-allowBuilds:
-  core-js: false
-  vue-demi: false
-  "@parcel/watcher": true
-  "@tailwindcss/oxide": true
-  esbuild: true
-  playwright-chromium: true
-  sharp: true
-  simple-git-hooks: true
-  unrs-resolver: true
-  workerd: true
+patchedDependencies:
+  "chokidar@3.6.0": "patches/chokidar@3.6.0.patch"
+  "dotenv-expand@12.0.3": "patches/dotenv-expand@12.0.3.patch"
+  parseurl@1.3.3: patches/parseurl@1.3.3.patch
+  "sirv@3.0.2": "patches/sirv@3.0.2.patch"
+peerDependencyRules:
+  allowedVersions:
+    vite: "*"
+shellEmulator: true
 
 trustPolicy: no-downgrade
 trustPolicyExclude:
@@ -50,5 +53,3 @@ trustPolicyExclude:
   - semver@5.7.2 || 6.3.1
   - tailwindcss@3.4.18
   - undici-types@6.21.0 # https://github.com/nodejs/undici/issues/4666
-
-dedupePeers: true

@@ -1,0 +1,77 @@
+diff --git a/index.js b/index.js
+index ece722327959f3bd9721488a035947387f1c1db1..9fd14fe1ca996abcf7987e0444661bb93d5ac748 100644
+--- a/index.js
++++ b/index.js
+@@ -7,15 +7,6 @@
+ 
+ 'use strict'
+ 
+-/**
+- * Module dependencies.
+- * @private
+- */
+-
+-var url = require('url')
+-var parse = url.parse
+-var Url = url.Url
+-
+ /**
+  * Module exports.
+  * @public
+@@ -94,7 +85,20 @@ function originalurl (req) {
+ 
+ function fastparse (str) {
+   if (typeof str !== 'string' || str.charCodeAt(0) !== 0x2f /* / */) {
+-    return parse(str)
++    // Full URL (not a relative path) - use WHATWG URL API
++    try {
++      var u = new URL(str)
++      return {
++        href: u.href,
++        path: u.pathname + u.search,
++        pathname: u.pathname,
++        search: u.search || null,
++        query: u.search ? u.search.slice(1) : null
++      }
++    } catch (e) {
++      // Malformed URL - return a minimal object
++      return { href: str, path: str, pathname: str, search: null, query: null }
++    }
+   }
+ 
+   var pathname = str
+@@ -121,13 +125,23 @@ function fastparse (str) {
+       case 0x23: /* #  */
+       case 0xa0:
+       case 0xfeff:
+-        return parse(str)
++        // Contains control characters - use WHATWG URL API with localhost base
++        try {
++          var u2 = new URL(str, 'http://localhost')
++          return {
++            href: str,
++            path: u2.pathname + u2.search,
++            pathname: u2.pathname,
++            search: u2.search || null,
++            query: u2.search ? u2.search.slice(1) : null
++          }
++        } catch (e2) {
++          return { href: str, path: str, pathname: str, search: null, query: null }
++        }
+     }
+   }
+ 
+-  var url = Url !== undefined
+-    ? new Url()
+-    : {}
++  var url = {}
+ 
+   url.path = str
+   url.href = str
+@@ -153,6 +167,5 @@ function fastparse (str) {
+ function fresh (url, parsedUrl) {
+   return typeof parsedUrl === 'object' &&
+     parsedUrl !== null &&
+-    (Url === undefined || parsedUrl instanceof Url) &&
+     parsedUrl._raw === url
+ }
