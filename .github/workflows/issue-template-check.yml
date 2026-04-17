@@ -21,7 +21,7 @@ jobs:
 
       - name: Detect issue type
         id: detect
-        uses: actions/github-script@v8
+        uses: actions/github-script@v9
         with:
           script: |
             const labels = context.payload.issue.labels.map(l => l.name);
@@ -105,7 +105,7 @@ jobs:
       issues: write
     steps:
       - name: Write result to summary
-        uses: actions/github-script@v8
+        uses: actions/github-script@v9
         env:
           TEMPLATE_TYPE: ${{ needs.evaluate-issue.outputs.template_type }}
           AGENT_OUTPUT: ${{ needs.evaluate-issue.outputs.agent_output }}

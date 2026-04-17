@@ -30,6 +30,18 @@ const transformVisibilityPlugin = {
   },
 }
 
+// Ensure symlink exists before any file processing.
+// We create it programmatically instead of storing it in git because
+// of https://github.com/nodejs/node/issues/62653
+const linked = path.resolve(
+  import.meta.dirname,
+  'follow-symlinks/linked/my-lib',
+)
+if (!fs.existsSync(linked) || !fs.lstatSync(linked).isSymbolicLink()) {
+  fs.rmSync(linked, { recursive: true, force: true })
+  fs.symlinkSync('../packages/my-lib', linked, 'dir')
+}
+
 export default defineConfig({
   plugins: [transformVisibilityPlugin],
   resolve: {
