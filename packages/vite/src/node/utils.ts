@@ -68,19 +68,19 @@ export { withFilter } from 'rolldown/filter'
 
 // eslint-disable-next-line no-control-regex
 const invalidUrlPathCharRE = /[\u0000-\u001F"#$%&*+,:;<=>?[\]^`{|}\u007F]/g
-const additionalFlattenIdCharRE = /[/.]/g
 const replaceNestedIdRE = /\s*>\s*/g
 export const flattenId = (id: string): string => {
   const flatId = limitFlattenIdLength(
     id
-      .replaceAll('_', '__')
+      .replaceAll(/_+/g, '$&__')
+      .replaceAll('/', '_')
+      .replaceAll('.', '__')
+      .replace(replaceNestedIdRE, '_n_')
       // replace any characters that will be replaced by sanitizeFileName
-      .replace(invalidUrlPathCharRE, (c) => '_' + c.charCodeAt(0).toString(16))
       .replace(
-        additionalFlattenIdCharRE,
-        (c) => '_' + c.charCodeAt(0).toString(16),
-      )
-      .replace(replaceNestedIdRE, '__'),
+        invalidUrlPathCharRE,
+        (c) => '_0' + c.charCodeAt(0).toString(16) + '_',
+      ),
   )
   return flatId
 }
