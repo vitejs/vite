@@ -19,6 +19,9 @@ patchedDependencies:
   dotenv-expand@12.0.3:
     hash: 49330a663821151418e003e822a82a6a61d2f0f8a6e3cab00c1c94815a112889
     path: patches/dotenv-expand@12.0.3.patch
+  parseurl@1.3.3:
+    hash: 1df193c575ab0f8a6e4464b1a128d71d5daa2627b5ba9037539baf5d4351611a
+    path: patches/parseurl@1.3.3.patch
   sirv@3.0.2:
     hash: c07c56eb72faea34341d465cde2314e89db472106ed378181e3447893af6bf95
     path: patches/sirv@3.0.2.patch
@@ -11395,7 +11398,7 @@ snapshots:
     dependencies:
       debug: obug@1.0.2(ms@2.1.3)
       finalhandler: 1.1.2(ms@2.1.3)
-      parseurl: 1.3.3
+      parseurl: 1.3.3(patch_hash=1df193c575ab0f8a6e4464b1a128d71d5daa2627b5ba9037539baf5d4351611a)
       utils-merge: 1.0.1
     transitivePeerDependencies:
       - ms
@@ -11863,7 +11866,7 @@ snapshots:
       mime-types: 3.0.2
       on-finished: 2.4.1
       once: 1.4.0
-      parseurl: 1.3.3
+      parseurl: 1.3.3(patch_hash=1df193c575ab0f8a6e4464b1a128d71d5daa2627b5ba9037539baf5d4351611a)
       proxy-addr: 2.0.7
       qs: 6.14.1
       range-parser: 1.2.1
@@ -11944,7 +11947,7 @@ snapshots:
       encodeurl: 1.0.2
       escape-html: 1.0.3
       on-finished: 2.3.0
-      parseurl: 1.3.3
+      parseurl: 1.3.3(patch_hash=1df193c575ab0f8a6e4464b1a128d71d5daa2627b5ba9037539baf5d4351611a)
       statuses: 1.5.0
       unpipe: 1.0.0
     transitivePeerDependencies:
@@ -11956,7 +11959,7 @@ snapshots:
       encodeurl: 2.0.0
       escape-html: 1.0.3
       on-finished: 2.4.1
-      parseurl: 1.3.3
+      parseurl: 1.3.3(patch_hash=1df193c575ab0f8a6e4464b1a128d71d5daa2627b5ba9037539baf5d4351611a)
       statuses: 2.0.2
     transitivePeerDependencies:
       - ms
@@ -13102,7 +13105,7 @@ snapshots:
     dependencies:
       entities: 6.0.1
 
-  parseurl@1.3.3: {}
+  parseurl@1.3.3(patch_hash=1df193c575ab0f8a6e4464b1a128d71d5daa2627b5ba9037539baf5d4351611a): {}
 
   path-browserify@1.0.1: {}
 
@@ -13625,7 +13628,7 @@ snapshots:
       debug: obug@1.0.2(ms@2.1.3)
       depd: 2.0.0
       is-promise: 4.0.0
-      parseurl: 1.3.3
+      parseurl: 1.3.3(patch_hash=1df193c575ab0f8a6e4464b1a128d71d5daa2627b5ba9037539baf5d4351611a)
       path-to-regexp: 8.3.0
     transitivePeerDependencies:
       - ms
@@ -13784,7 +13787,7 @@ snapshots:
     dependencies:
       encodeurl: 2.0.0
       escape-html: 1.0.3
-      parseurl: 1.3.3
+      parseurl: 1.3.3(patch_hash=1df193c575ab0f8a6e4464b1a128d71d5daa2627b5ba9037539baf5d4351611a)
       send: 1.2.1
 
   setprototypeof@1.2.0: {}
