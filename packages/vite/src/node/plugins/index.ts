@@ -46,36 +46,50 @@ export async function resolvePlugins(
   postPlugins: Plugin[],
 ): Promise<Plugin[]> {
   const isBuild = config.command === 'build'
-  const isBundled = config.isBundled
   const isWorker = config.isWorker
-  const buildPlugins = isBundled
+  const anyEnvBundled =
+    isBuild || Object.values(config.environments).some((env) => env.isBundled)
+  const buildPlugins = anyEnvBundled
     ? await (await import('../build')).resolveBuildPlugins(config)
     : { pre: [], post: [] }
   const { modulePreload } = config.build
 
+  const hasCustomAliasResolver = config.resolve.alias.some(
+    (v) => v.customResolver,
+  )
+
   return [
-    !isBundled ? optimizedDepsPlugin() : null,
+    onlyWhenUnbundled(optimizedDepsPlugin()),
     !isWorker ? watchPackageDataPlugin(config.packageCache) : null,
-    !isBundled ? preAliasPlugin(config) : null,
-    isBundled && !config.resolve.alias.some((v) => v.customResolver)
-      ? nativeAliasPlugin({
-          entries: config.resolve.alias.map((item) => {
-            return {
+    onlyWhenUnbundled(preAliasPlugin(config)),
+    !hasCustomAliasResolver
+      ? onlyWhenBundled(
+          nativeAliasPlugin({
+            entries: config.resolve.alias.map((item) => ({
               find: item.find,
               replacement: item.replacement,
-            }
+            })),
           }),
-        })
-      : aliasPlugin({
+        )
+      : null,
+    hasCustomAliasResolver
+      ? aliasPlugin({
           // @ts-expect-error aliasPlugin receives rollup types
           entries: config.resolve.alias,
           customResolver: viteAliasCustomResolver,
-        }),
+        })
+      : onlyWhenUnbundled(
+          aliasPlugin({
+            // @ts-expect-error aliasPlugin receives rollup types
+            entries: config.resolve.alias,
+            customResolver: viteAliasCustomResolver,
+          }) as unknown as Plugin,
+        ),
 
     ...prePlugins,
 
     modulePreload !== false && modulePreload.polyfill
-      ? modulePreloadPolyfillPlugin(config)
+      ? modulePreloadPolyfillPlugin()
       : null,
     ...oxcResolvePlugin(
       {
@@ -89,14 +103,19 @@ export async function resolvePlugins(
         legacyInconsistentCjsInterop: config.legacy?.inconsistentCjsInterop,
       },
       isWorker
-        ? { ...config, consumer: 'client', optimizeDepsPluginNames: [] }
+        ? {
+            ...config,
+            consumer: 'client',
+            isBundled: true,
+            optimizeDepsPluginNames: [],
+          }
         : undefined,
     ),
     htmlInlineProxyPlugin(config),
     cssPlugin(config),
     esbuildBannerFooterCompatPlugin(config),
     // @oxc-project/runtime resolution is handled by rolldown in build
-    config.oxc !== false && !isBundled ? oxcRuntimePlugin() : null,
+    config.oxc !== false ? onlyWhenUnbundled(oxcRuntimePlugin()) : null,
     config.oxc !== false ? oxcPlugin(config) : null,
     nativeJsonPlugin({ ...config.json, minify: isBuild }),
     wasmHelperPlugin(),
@@ -111,7 +130,7 @@ export async function resolvePlugins(
     nativeWasmFallbackPlugin(),
     definePlugin(config),
     cssPostPlugin(config),
-    isBundled && buildHtmlPlugin(config),
+    onlyWhenBundled(buildHtmlPlugin(config)),
     workerImportMetaUrlPlugin(config),
     assetImportMetaUrlPlugin(config),
     ...buildPlugins.pre,
@@ -123,14 +142,38 @@ export async function resolvePlugins(
     ...buildPlugins.post,
 
     // internal server-only plugins are always applied after everything else
-    ...(isBundled
-      ? []
-      : [
-          clientInjectionsPlugin(config),
-          cssAnalysisPlugin(config),
-          importAnalysisPlugin(config),
-        ]),
+    onlyWhenUnbundled(clientInjectionsPlugin(config)),
+    onlyWhenUnbundled(cssAnalysisPlugin(config)),
+    onlyWhenUnbundled(importAnalysisPlugin(config)),
   ].filter(Boolean) as Plugin[]
+}
+
+function wrapWithIsBundledCheck(
+  plugin: Plugin | null | undefined | false,
+  expectBundled: boolean,
+): Plugin | null {
+  if (!plugin) return null
+  const originalApply = plugin.applyToEnvironment
+  const applyToEnvironment: Plugin['applyToEnvironment'] = (env) => {
+    if (env.config.isBundled !== expectBundled) return false
+    return originalApply ? originalApply(env) : true
+  }
+  return {
+    ...plugin,
+    applyToEnvironment,
+  }
+}
+
+function onlyWhenUnbundled(
+  plugin: Plugin | null | undefined | false,
+): Plugin | null {
+  return wrapWithIsBundledCheck(plugin, false)
+}
+
+function onlyWhenBundled(
+  plugin: Plugin | null | undefined | false,
+): Plugin | null {
+  return wrapWithIsBundledCheck(plugin, true)
 }
 
 export function createPluginHookUtils(

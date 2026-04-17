@@ -238,7 +238,7 @@ export function oxcResolvePlugin(
         const depsOptimizerEnabled =
           resolveOptions.optimizeDeps &&
           !resolveOptions.isBuild &&
-          !partialEnv.config.experimental.bundledDev &&
+          !partialEnv.config.isBundled &&
           !isDepOptimizationDisabled(partialEnv.config.optimizeDeps)
         const getDepsOptimizer = () => {
           const env = getEnv()
@@ -393,7 +393,7 @@ function optimizerResolvePlugin(
     name: 'vite:resolve-dev',
     applyToEnvironment(environment) {
       return (
-        !environment.config.experimental.bundledDev &&
+        !environment.config.isBundled &&
         !isDepOptimizationDisabled(environment.config.optimizeDeps)
       )
     },
