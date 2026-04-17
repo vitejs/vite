@@ -56,7 +56,7 @@ const assetCache = new WeakMap<Environment, Map<string, string>>()
 /** a set of referenceId for entry CSS assets for each environment */
 export const cssEntriesMap: WeakMap<
   Environment,
-  Map<string, string>
+  Map<string, { referenceId: string; name: string }>
 > = new WeakMap()
 
 // add own dictionary entry by directly assigning mrmime
