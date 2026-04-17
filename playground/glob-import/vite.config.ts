@@ -32,9 +32,7 @@ const transformVisibilityPlugin = {
 
 // Ensure symlink exists before any file processing.
 // We create it programmatically instead of storing it in git because
-// `fs.cp` (used to copy playgrounds to playground-temp) has a bug on
-// Windows where it loses the directory symlink type, creating a file
-// symlink instead — which breaks directory traversal.
+// of https://github.com/nodejs/node/issues/62653
 const linked = path.resolve(
   import.meta.dirname,
   'follow-symlinks/linked/my-lib',
