@@ -1,11 +1,24 @@
 import { type Plugin, defineConfig } from 'vite'
 
-export default defineConfig({
+export default defineConfig(({ command }) => ({
   experimental: {
     bundledDev: true,
   },
   plugins: [waitBundleCompleteUntilAccess(), delayTransformComment()],
-})
+  build: {
+    rolldownOptions: {
+      experimental: {
+        ...(command === 'serve'
+          ? {
+              devMode: {
+                lazy: true,
+              },
+            }
+          : {}),
+      },
+    },
+  },
+}))
 
 function waitBundleCompleteUntilAccess(): Plugin {
   let resolvers: PromiseWithResolvers<void>
