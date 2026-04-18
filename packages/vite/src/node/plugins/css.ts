@@ -226,6 +226,7 @@ export function resolveCSSOptions(
 
 const cssModuleRE = new RegExp(`\\.module${CSS_LANGS_RE.source}`)
 const directRequestRE = /[?&]direct\b/
+const htmlStyleRE = /[?&]html-style\b/
 const htmlProxyRE = /[?&]html-proxy\b/
 const htmlProxyIndexRE = /&index=(\d+)/
 const commonjsProxyRE = /[?&]commonjs-proxy/
@@ -556,6 +557,7 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
         }
 
         const inlined = inlineRE.test(id)
+        const htmlStyle = htmlStyleRE.test(id)
         const modules = cssModulesCache.get(config)!.get(id)
 
         // #6984, #7552
@@ -617,7 +619,9 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
         }
 
         let code: string
-        if (modulesCode) {
+        if (htmlStyle) {
+          code = ''
+        } else if (modulesCode) {
           code = modulesCode
         } else if (inlined) {
           let content = css
@@ -635,7 +639,8 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
           map: { mappings: '' },
           // avoid the css module from being tree-shaken so that we can retrieve
           // it in renderChunk()
-          moduleSideEffects: modulesCode || inlined ? false : 'no-treeshake',
+          moduleSideEffects:
+            htmlStyle || (!modulesCode && !inlined) ? 'no-treeshake' : false,
           moduleType: 'js',
         }
       },
@@ -682,7 +687,7 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
                 }
 
                 // a css module contains JS, so it makes this not a pure css chunk
-                if (cssModuleRE.test(id)) {
+                if (cssModuleRE.test(id) && !htmlStyleRE.test(id)) {
                   isPureCssChunk = false
                 }
 
