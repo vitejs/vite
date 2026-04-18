@@ -381,6 +381,16 @@ describe('parse negatives', async () => {
       '[Error: Expected glob option "query" to be of type object or string, but got number]',
     )
     expect(
+      await runError('import.meta.glob("./*.js", { query: null })'),
+    ).toMatchInlineSnapshot(
+      '[Error: Expected glob option "query" to be of type object or string, but got null]',
+    )
+    expect(
+      await runError('import.meta.glob("./*.js", { query: [] })'),
+    ).toMatchInlineSnapshot(
+      '[Error: Expected glob option "query" to be of type object or string, but got array]',
+    )
+    expect(
       await runError('import.meta.glob("./*.js", { query: { foo: {} } })'),
     ).toMatchInlineSnapshot(
       '[Error: Expected glob option "query.foo" to be of type string, number, or boolean, but got object]',

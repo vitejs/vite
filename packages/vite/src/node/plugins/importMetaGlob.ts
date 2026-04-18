@@ -188,6 +188,14 @@ function parseGlobOptions(
   }
 
   if (typeof opts.query === 'object') {
+    if (opts.query === null || Array.isArray(opts.query)) {
+      throw err(
+        `Expected glob option "query" to be of type object or string, but got ${
+          opts.query === null ? 'null' : 'array'
+        }`,
+        optsStartIndex,
+      )
+    }
     for (const key in opts.query) {
       const value = opts.query[key]
       if (!['string', 'number', 'boolean'].includes(typeof value)) {
