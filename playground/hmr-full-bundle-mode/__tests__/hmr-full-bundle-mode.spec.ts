@@ -95,14 +95,22 @@ if (isBuild) {
   // BUNDLED -> GENERATING_HMR_PATCH -> BUNDLED
   test('generate hmr patch', async () => {
     await expect.poll(() => page.textContent('.hmr')).toBe('hello')
+    const hmrPatchFileRes = page.waitForResponse(/\/hmr_patch_\d\.js$/)
     editFile('hmr.js', (code) =>
       code.replace("const foo = 'hello'", "const foo = 'hello1'"),
     )
-    await expect.poll(() => page.textContent('.hmr')).toBe('hello1')
+    try {
+      await expect.poll(() => page.textContent('.hmr')).toBe('hello1')
 
-    editFile('hmr.js', (code) =>
-      code.replace("const foo = 'hello1'", "const foo = 'hello'"),
-    )
+      // ensure that the generated hmr patch contains ESM syntax
+      // so that it's not possible to load it in a <script> tag without type="module"
+      // which would allow cross origin reads
+      expect(await (await hmrPatchFileRes).text()).toMatch(/export\s*\{\}/)
+    } finally {
+      editFile('hmr.js', (code) =>
+        code.replace("const foo = 'hello1'", "const foo = 'hello'"),
+      )
+    }
     await expect.poll(() => page.textContent('.hmr')).toContain('hello')
     await expect.poll(() => page.textContent('.asset')).toMatch(assetUrl)
   })
