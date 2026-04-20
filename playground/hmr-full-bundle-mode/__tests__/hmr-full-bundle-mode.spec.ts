@@ -105,7 +105,7 @@ if (isBuild) {
       // ensure that the generated hmr patch contains ESM syntax
       // so that it's not possible to load it in a <script> tag without type="module"
       // which would allow cross origin reads
-      expect(await (await hmrPatchFileRes).text()).toContain(/export\s*\{\}/)
+      expect(await (await hmrPatchFileRes).text()).toMatch(/export\s*\{\}/)
     } finally {
       editFile('hmr.js', (code) =>
         code.replace("const foo = 'hello1'", "const foo = 'hello'"),
