@@ -1116,6 +1116,25 @@ test('configEnvironment mutation does not leak between environments', async () =
   expect(resolved.environments.custom2.resolve.noExternal).not.toBe(true)
 })
 
+test('build and environments.client.build has the same reference', async () => {
+  const nameCache = {}
+  const resolved = await resolveConfig(
+    {
+      build: {
+        terserOptions: {
+          nameCache,
+        },
+      },
+    },
+    'serve',
+  )
+
+  expect(resolved.build.terserOptions.nameCache).toBe(nameCache)
+  expect(resolved.environments.client.build.terserOptions.nameCache).toBe(
+    resolved.build.terserOptions.nameCache,
+  )
+})
+
 test('preTransformRequests', async () => {
   async function testConfig(inlineConfig: InlineConfig) {
     return Object.fromEntries(
