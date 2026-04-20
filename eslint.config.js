@@ -157,7 +157,6 @@ export default defineConfig(
       '@typescript-eslint/prefer-function-type': 'off',
       // disable typecheck-specific rules (but worth revisiting again)
       '@typescript-eslint/await-thenable': 'off',
-      '@typescript-eslint/dot-notation': 'off',
       '@typescript-eslint/no-base-to-string': 'off',
       '@typescript-eslint/no-duplicate-type-constituents': 'off',
       '@typescript-eslint/no-implied-eval': 'off',

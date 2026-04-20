@@ -239,7 +239,7 @@ export function getScriptInfo(node: DefaultTreeAdapterMap['element']): {
     if (p.name === 'src') {
       if (!src) {
         src = p
-        srcSourceCodeLocation = node.sourceCodeLocation?.attrs!['src']
+        srcSourceCodeLocation = node.sourceCodeLocation?.attrs!.src
       }
     } else if (p.name === 'type' && p.value === 'module') {
       isModule = true
@@ -1085,7 +1085,7 @@ export function findNeedTransformStyleAttribute(
       (prop.value.includes('url(') || prop.value.includes('image-set(')),
   )
   if (!attr) return undefined
-  const location = node.sourceCodeLocation?.attrs?.['style']
+  const location = node.sourceCodeLocation?.attrs?.style
   return { attr, location }
 }
 
