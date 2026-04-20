@@ -209,6 +209,7 @@ export function assetPlugin(config: ResolvedConfig): Plugin {
             code: `export default ${JSON.stringify(
               await fsp.readFile(file, 'utf-8'),
             )}`,
+            map: { mappings: '' },
             moduleType: 'js', // NOTE: needs to be set to avoid double `export default` in `?raw&.txt`s
           }
         }
