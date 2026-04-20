@@ -56,7 +56,7 @@ const assetCache = new WeakMap<Environment, Map<string, string>>()
 /** a set of referenceId for entry CSS assets for each environment */
 export const cssEntriesMap: WeakMap<
   Environment,
-  Map<string, string>
+  Map<string, { referenceId: string; name: string }>
 > = new WeakMap()
 
 // add own dictionary entry by directly assigning mrmime
@@ -209,6 +209,7 @@ export function assetPlugin(config: ResolvedConfig): Plugin {
             code: `export default ${JSON.stringify(
               await fsp.readFile(file, 'utf-8'),
             )}`,
+            map: { mappings: '' },
             moduleType: 'js', // NOTE: needs to be set to avoid double `export default` in `?raw&.txt`s
           }
         }
