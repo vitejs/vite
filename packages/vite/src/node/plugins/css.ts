@@ -1,6 +1,7 @@
 import fs from 'node:fs'
 import fsp from 'node:fs/promises'
 import path from 'node:path'
+import { createHash } from 'node:crypto'
 import { fileURLToPath, pathToFileURL } from 'node:url'
 import postcssrc from 'postcss-load-config'
 import type {
@@ -1133,7 +1134,9 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
       )
       for (const cssAsset of cssAssets) {
         if (typeof cssAsset.source === 'string') {
-          cssAsset.source = cssAsset.source.replace(viteHashUpdateMarkerRE, '')
+          cssAsset.source = cssAsset.source
+            .replace(viteHashUpdateMarkerRE, '')
+            .replace(viteConfigHashMarkerRE, '')
         }
       }
     },
@@ -1900,6 +1903,7 @@ function combineSourcemapsIfExists(
 
 const viteHashUpdateMarker = '/*$vite$:1*/'
 const viteHashUpdateMarkerRE = /\/\*\$vite\$:\d+\*\//
+const viteConfigHashMarkerRE = /\/\*\$vite-config-hash\$:[0-9a-f]+\*\//
 
 async function finalizeCss(css: string, config: ResolvedConfig) {
   // hoist external @imports and @charset to the top of the CSS chunk per spec (#1845 and #6333)
@@ -1919,6 +1923,15 @@ async function finalizeCss(css: string, config: ResolvedConfig) {
   // to avoid that happening, we inject an additional string so that a different hash is generated
   // for the same CSS content
   css += viteHashUpdateMarker
+  // Include renderBuiltUrl in the CSS content hash so that changing
+  // the function produces different asset filenames
+  if (config.experimental?.renderBuiltUrl) {
+    const hash = createHash('sha256')
+      .update(config.experimental.renderBuiltUrl.toString())
+      .digest('hex')
+      .substring(0, 8)
+    css += `/*$vite-config-hash$:${hash}*/`
+  }
   return css
 }
 
