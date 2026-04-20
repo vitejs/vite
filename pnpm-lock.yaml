@@ -178,8 +178,8 @@ importers:
         specifier: ^1.2.0
         version: 1.2.0
       tsdown:
-        specifier: ^0.21.7
-        version: 0.21.7(@vitejs/devtools@0.1.13)(publint@0.3.18)(typescript@6.0.2)(vue-tsc@3.2.6)
+        specifier: ^0.21.9
+        version: 0.21.9(@vitejs/devtools@0.1.13)(publint@0.3.18)(typescript@6.0.2)(vue-tsc@3.2.6)
 
   packages/plugin-legacy:
     dependencies:
@@ -227,8 +227,8 @@ importers:
         specifier: ^1.1.1
         version: 1.1.1
       tsdown:
-        specifier: ^0.21.7
-        version: 0.21.7(@vitejs/devtools@0.1.13)(publint@0.3.18)(typescript@6.0.2)(vue-tsc@3.2.6)
+        specifier: ^0.21.9
+        version: 0.21.9(@vitejs/devtools@0.1.13)(publint@0.3.18)(typescript@6.0.2)(vue-tsc@3.2.6)
       vite:
         specifier: workspace:*
         version: link:../vite
@@ -5315,8 +5315,8 @@ packages:
     resolution: {integrity: sha512-N+MeXYoqr3pOgn8xfyRPREN7gHakLYjhsHhWGT3fWAiL4IkAt0iDw14QiiEm2bE30c5XX5q0FtAA3CK5f9/BUg==}
     engines: {node: '>=12'}
 
-  defu@6.1.6:
-    resolution: {integrity: sha512-f8mefEW4WIVg4LckePx3mALjQSPQgFlg9U8yaPdlsbdYcHQyj9n2zL2LJEA52smeYxOvmd/nB7TpMtHGMTHcug==}
+  defu@6.1.7:
+    resolution: {integrity: sha512-7z22QmUWiQ/2d0KkdYmANbRUVABpZ9SNYyH5vx6PZ+nE5bcC0l7uFvEfHlyld/HcGBFTL536ClDt3DEcSlEJAQ==}
 
   delegate@3.2.0:
     resolution: {integrity: sha512-IofjkYBZaZivn0V8nnsMJGBr4jVLxHDheKSW88PyxS5QC4Vo9ZbZVvhzlSxY87fVq3STR6r+4cGepyHkcWOQSw==}
@@ -5858,8 +5858,8 @@ packages:
   hookable@5.5.3:
     resolution: {integrity: sha512-Yc+BQe8SvoXH1643Qez1zqLRmbA5rCL+sSmk6TVos0LWVfNIB7PGncdlId77WzLGSIB5KaWgTaNTs2lNVEI6VQ==}
 
-  hookable@6.1.0:
-    resolution: {integrity: sha512-ZoKZSJgu8voGK2geJS+6YtYjvIzu9AOM/KZXsBxr83uhLL++e9pEv/dlgwgy3dvHg06kTz6JOh1hk3C8Ceiymw==}
+  hookable@6.1.1:
+    resolution: {integrity: sha512-U9LYDy1CwhMCnprUfeAZWZGByVbhd54hwepegYTK7Pi5NvqEj63ifz5z+xukznehT7i6NIZRu89Ay1AZmRsLEQ==}
 
   hookified@1.15.1:
     resolution: {integrity: sha512-MvG/clsADq1GPM2KGo2nyfaWVyn9naPiXrqIe4jYjXNZQt238kWyOGrsyc/DmRAQ+Re6yeo6yX/yoNCG5KAEVg==}
@@ -5933,8 +5933,8 @@ packages:
     resolution: {integrity: sha512-TR3KfrTZTYLPB6jUjfx6MF9WcWrHL9su5TObK4ZkYgBdWKPOFoSoQIdEuTuR82pmtxH2spWG9h6etwfr1pLBqQ==}
     engines: {node: '>=6'}
 
-  import-without-cache@0.2.5:
-    resolution: {integrity: sha512-B6Lc2s6yApwnD2/pMzFh/d5AVjdsDXjgkeJ766FmFuJELIGHNycKRj+l3A39yZPM4CchqNCB4RITEAYB1KUM6A==}
+  import-without-cache@0.3.3:
+    resolution: {integrity: sha512-bDxwDdF04gm550DfZHgffvlX+9kUlcz32UD0AeBTmVPFiWkrexF2XVmiuFFbDhiFuP8fQkrkvI2KdSNPYWAXkQ==}
     engines: {node: '>=20.19.0'}
 
   imurmurhash@0.1.4:
@@ -7637,8 +7637,8 @@ packages:
   tinybench@2.9.0:
     resolution: {integrity: sha512-0+DUvqWMValLmha6lr4kD8iAMK1HzV0/aKnCtWb9v9641TnP/MFb7Pc2bxoxQjTXAErryXVgUOfv2YqNllqGeg==}
 
-  tinyexec@1.0.4:
-    resolution: {integrity: sha512-u9r3uZC0bdpGOXtlxUIdwf9pkmvhqJdrVCH9fapQtgy/OeTTMZ1nqH7agtvEfmGui6e1XxjcdrlxvxJvc3sMqw==}
+  tinyexec@1.1.1:
+    resolution: {integrity: sha512-VKS/ZaQhhkKFMANmAOhhXVoIfBXblQxGX1myCQ2faQrfmobMftXeJPcZGp0gS07ocvGJWDLZGyOZDadDBqYIJg==}
     engines: {node: '>=18'}
 
   tinyglobby@0.2.16:
@@ -7702,14 +7702,14 @@ packages:
   ts-interface-checker@0.1.13:
     resolution: {integrity: sha512-Y/arvbn+rrz3JCKl9C4kVNfTfSm2/mEp5FSz5EsZSANGPSlQrpRI5M4PKF+mJnE52jOO90PnPSc3Ur3bTQw0gA==}
 
-  tsdown@0.21.7:
-    resolution: {integrity: sha512-ukKIxKQzngkWvOYJAyptudclkm4VQqbjq+9HF5K5qDO8GJsYtMh8gIRwicbnZEnvFPr6mquFwYAVZ8JKt3rY2g==}
+  tsdown@0.21.9:
+    resolution: {integrity: sha512-tZPv2zMaMnjj9H9h0SDqpSXa9YWVZWHlG46DnSgNTFX6aq001MSI8kuBzJumr/u099nWj+1v5S7rhbnHk5jCHA==}
     engines: {node: '>=20.19.0'}
     hasBin: true
     peerDependencies:
       '@arethetypeswrong/core': ^0.18.1
-      '@tsdown/css': 0.21.7
-      '@tsdown/exe': 0.21.7
+      '@tsdown/css': 0.21.9
+      '@tsdown/exe': 0.21.9
       '@vitejs/devtools': '*'
       publint: ^0.3.0
       typescript: ^5.0.0 || ^6.0.0
@@ -7849,8 +7849,8 @@ packages:
   unrs-resolver@1.11.1:
     resolution: {integrity: sha512-bSjt9pjaEBnNiGgc9rUiHGKv5l4/TGzDmYw3RhnkJGtLhbnnA/5qJj7x3dNDCRx/PJxu774LlH8lCOlB4hEfKg==}
 
-  unrun@0.2.34:
-    resolution: {integrity: sha512-LyaghRBR++r7svhDK6tnDz2XaYHWdneBOA0jbS8wnRsHerI9MFljX4fIiTgbbNbEVzZ0C9P1OjWLLe1OqoaaEw==}
+  unrun@0.2.36:
+    resolution: {integrity: sha512-ICAGv44LHSKjCdI4B4rk99lJLHXBweutO4MUwu3cavMlYtXID0Tn5e1Kwe/Uj6BSAuHHXfi1JheFVCYhcXHfAg==}
     engines: {node: '>=20.19.0'}
     hasBin: true
     peerDependencies:
@@ -8241,7 +8241,7 @@ snapshots:
   '@antfu/install-pkg@1.1.0':
     dependencies:
       package-manager-detector: 1.6.0
-      tinyexec: 1.0.4
+      tinyexec: 1.1.1
 
   '@babel/code-frame@7.29.0':
     dependencies:
@@ -10543,7 +10543,7 @@ snapshots:
       pathe: 2.0.3
       perfect-debounce: 2.1.0
       sirv: 3.0.2(patch_hash=c07c56eb72faea34341d465cde2314e89db472106ed378181e3447893af6bf95)
-      tinyexec: 1.0.4
+      tinyexec: 1.1.1
       vite: link:packages/vite
       vue: 3.5.32(typescript@6.0.2)
       ws: 8.20.0
@@ -11508,7 +11508,7 @@ snapshots:
 
   define-lazy-prop@3.0.0: {}
 
-  defu@6.1.6: {}
+  defu@6.1.7: {}
 
   delegate@3.2.0: {}
 
@@ -12099,7 +12099,7 @@ snapshots:
     dependencies:
       cookie-es: 1.2.3
       crossws: 0.3.5
-      defu: 6.1.6
+      defu: 6.1.7
       destr: 2.0.5
       iron-webcrypto: 1.2.1
       node-mock-http: 1.0.4
@@ -12152,7 +12152,7 @@ snapshots:
 
   hookable@5.5.3: {}
 
-  hookable@6.1.0: {}
+  hookable@6.1.1: {}
 
   hookified@1.15.1: {}
 
@@ -12214,7 +12214,7 @@ snapshots:
       parent-module: 1.0.1
       resolve-from: 4.0.0
 
-  import-without-cache@0.2.5: {}
+  import-without-cache@0.3.3: {}
 
   imurmurhash@0.1.4: {}
 
@@ -12453,7 +12453,7 @@ snapshots:
       listr2: 9.0.5
       picomatch: 4.0.4
       string-argv: 0.3.2
-      tinyexec: 1.0.4
+      tinyexec: 1.1.1
       yaml: 2.8.2
 
   listr2@9.0.5:
@@ -13471,7 +13471,7 @@ snapshots:
       '@vueuse/core': 14.2.0(vue@3.5.32)
       '@vueuse/shared': 14.2.0(vue@3.5.32)
       aria-hidden: 1.2.6
-      defu: 6.1.6
+      defu: 6.1.7
       ohash: 2.0.11
       vue: 3.5.32(typescript@6.0.2)
     transitivePeerDependencies:
@@ -14129,7 +14129,7 @@ snapshots:
 
   tinybench@2.9.0: {}
 
-  tinyexec@1.0.4: {}
+  tinyexec@1.1.1: {}
 
   tinyglobby@0.2.16:
     dependencies:
@@ -14173,24 +14173,24 @@ snapshots:
 
   ts-interface-checker@0.1.13: {}
 
-  tsdown@0.21.7(@vitejs/devtools@0.1.13)(publint@0.3.18)(typescript@6.0.2)(vue-tsc@3.2.6):
+  tsdown@0.21.9(@vitejs/devtools@0.1.13)(publint@0.3.18)(typescript@6.0.2)(vue-tsc@3.2.6):
     dependencies:
       ansis: 4.2.0
       cac: 7.0.0
-      defu: 6.1.6
+      defu: 6.1.7
       empathic: 2.0.0
-      hookable: 6.1.0
-      import-without-cache: 0.2.5
+      hookable: 6.1.1
+      import-without-cache: 0.3.3
       obug: 2.1.1
       picomatch: 4.0.4
       rolldown: 1.0.0-rc.16
       rolldown-plugin-dts: 0.23.2(rolldown@1.0.0-rc.16)(typescript@6.0.2)(vue-tsc@3.2.6)
       semver: 7.7.4
-      tinyexec: 1.0.4
+      tinyexec: 1.1.1
       tinyglobby: 0.2.16
       tree-kill: 1.2.2
       unconfig-core: 7.5.0
-      unrun: 0.2.34
+      unrun: 0.2.36
     optionalDependencies:
       '@vitejs/devtools': 0.1.13(typescript@6.0.2)(vite@packages+vite)
       publint: 0.3.18
@@ -14268,7 +14268,7 @@ snapshots:
   unconfig@7.5.0:
     dependencies:
       '@quansync/fs': 1.0.0
-      defu: 6.1.6
+      defu: 6.1.7
       jiti: 2.6.1
       quansync: 1.0.0
       unconfig-core: 7.5.0
@@ -14359,7 +14359,7 @@ snapshots:
       '@unrs/resolver-binding-win32-ia32-msvc': 1.11.1
       '@unrs/resolver-binding-win32-x64-msvc': 1.11.1
 
-  unrun@0.2.34:
+  unrun@0.2.36:
     dependencies:
       rolldown: 1.0.0-rc.16
 
@@ -14503,7 +14503,7 @@ snapshots:
       picomatch: 4.0.4
       std-env: 4.0.0
       tinybench: 2.9.0
-      tinyexec: 1.0.4
+      tinyexec: 1.1.1
       tinyglobby: 0.2.16
       tinyrainbow: 3.1.0
       vite: link:packages/vite
