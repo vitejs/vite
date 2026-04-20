@@ -168,7 +168,6 @@ export default defineConfig(
       '@typescript-eslint/no-unsafe-call': 'off',
       '@typescript-eslint/no-unsafe-member-access': 'off',
       '@typescript-eslint/no-unsafe-return': 'off',
-      '@typescript-eslint/non-nullable-type-assertion-style': 'off',
       '@typescript-eslint/only-throw-error': 'off',
       '@typescript-eslint/prefer-includes': 'off',
       '@typescript-eslint/prefer-nullish-coalescing': 'off',

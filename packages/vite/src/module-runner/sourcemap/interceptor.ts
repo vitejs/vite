@@ -271,7 +271,7 @@ function CallSiteToString(this: CallSite) {
   } else {
     fileName = this.getScriptNameOrSourceURL()
     if (!fileName && this.isEval()) {
-      fileLocation = this.getEvalOrigin() as string
+      fileLocation = this.getEvalOrigin()!
       fileLocation += ', ' // Expecting source position to follow.
     }
 
@@ -388,7 +388,7 @@ function wrapCallSite(frame: CallSite, state: State) {
       return position.column + 1
     }
     frame.getScriptNameOrSourceURL = function () {
-      return position.source as string
+      return position.source!
     }
     return frame
   }
