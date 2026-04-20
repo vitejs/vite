@@ -1,3 +1,32 @@
+## <small>[8.0.9](https://github.com/vitejs/vite/compare/v8.0.8...v8.0.9) (2026-04-20)</small>
+### Features
+
+* update rolldown to 1.0.0-rc.16 ([#22248](https://github.com/vitejs/vite/issues/22248)) ([2947edd](https://github.com/vitejs/vite/commit/2947edd57ceb64a0b4dc43269743e8e44e68c09b))
+
+### Bug Fixes
+
+* allow binding when strictPort is set but wildcard port is in use ([#22150](https://github.com/vitejs/vite/issues/22150)) ([dfc8aa5](https://github.com/vitejs/vite/commit/dfc8aa5057dd8ec2b1223980d1e2eeb946ac3384))
+* **build:** emptyOutDir should happen for watch rebuilds ([#22207](https://github.com/vitejs/vite/issues/22207)) ([ee52267](https://github.com/vitejs/vite/commit/ee522672bb374c7ff95a347f14732491121b1cd6))
+* **bundled-dev:** reject requests to HMR patch files in non potentially trustworthy origins ([#22269](https://github.com/vitejs/vite/issues/22269)) ([868f141](https://github.com/vitejs/vite/commit/868f1411a6f474baa4417f2d6524692dd452f760))
+* **css:** use unique key for cssEntriesMap to prevent same-basename collision ([#22039](https://github.com/vitejs/vite/issues/22039)) ([374bb5d](https://github.com/vitejs/vite/commit/374bb5d597fcd0485e929565c698d8ed219136f8))
+* **deps:** update all non-major dependencies ([#22219](https://github.com/vitejs/vite/issues/22219)) ([4cd0d67](https://github.com/vitejs/vite/commit/4cd0d6760edd5fb0841abe86538de3c225e880a1))
+* **deps:** update all non-major dependencies ([#22268](https://github.com/vitejs/vite/issues/22268)) ([c28e9c1](https://github.com/vitejs/vite/commit/c28e9c12a849f80e6fdc93f42283ad2863ab9dbc))
+* detect Deno workspace root (fix [#22237](https://github.com/vitejs/vite/issues/22237)) ([#22238](https://github.com/vitejs/vite/issues/22238)) ([1b793c0](https://github.com/vitejs/vite/commit/1b793c0e1726467fffd06ffad9bc81c61a840188))
+* **dev:** handle errors in `watchChange` hook ([#22188](https://github.com/vitejs/vite/issues/22188)) ([fc08bda](https://github.com/vitejs/vite/commit/fc08bdab9bba871b03689f2f6997c3a4ba4351da))
+* **optimizer:** handle more chars that will be sanitized ([#22208](https://github.com/vitejs/vite/issues/22208)) ([3f24533](https://github.com/vitejs/vite/commit/3f24533ac4845ed22547279d1721bd82a35345e3))
+* skip fallback sourcemap generation for `?raw` imports ([#22148](https://github.com/vitejs/vite/issues/22148)) ([3ec9cda](https://github.com/vitejs/vite/commit/3ec9cdaac7936ca32d0956c4cb1eb6e172945996))
+
+### Documentation
+
+* align the descriptions in READMEs ([#22231](https://github.com/vitejs/vite/issues/22231)) ([44c42b9](https://github.com/vitejs/vite/commit/44c42b97639bb6ad777e66d752b2829cccb9a27a))
+* fix reuses wording in dev environment comment ([#22173](https://github.com/vitejs/vite/issues/22173)) ([9163412](https://github.com/vitejs/vite/commit/9163412fdfec7fb1656529713326a5b5c5e986ea))
+* fix wording in sass error comment ([#22214](https://github.com/vitejs/vite/issues/22214)) ([bc5c6a7](https://github.com/vitejs/vite/commit/bc5c6a7a498845dff20dc410c395355b79a4b753))
+* update build CLI defaults ([#22261](https://github.com/vitejs/vite/issues/22261)) ([605bb97](https://github.com/vitejs/vite/commit/605bb97994678a1bb70a8de9a85c29d5f5d48c5a))
+
+### Miscellaneous Chores
+
+* **deps:** update dependency dotenv-expand to v13 ([#22271](https://github.com/vitejs/vite/issues/22271)) ([0a3887d](https://github.com/vitejs/vite/commit/0a3887da18812cacb254c616e4dd35631e776fda))
+
 ## <small>[8.0.8](https://github.com/vitejs/vite/compare/v8.0.7...v8.0.8) (2026-04-09)</small>
 ### Features
 
