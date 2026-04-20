@@ -155,11 +155,10 @@ export default defineConfig(
       '@typescript-eslint/consistent-type-definitions': 'off',
       '@typescript-eslint/prefer-for-of': 'off',
       '@typescript-eslint/prefer-function-type': 'off',
-      // disable typecheck-specific rules (but worth revisiting again)
-      '@typescript-eslint/await-thenable': 'off',
-      '@typescript-eslint/no-base-to-string': 'off',
-      '@typescript-eslint/no-duplicate-type-constituents': 'off',
-      '@typescript-eslint/no-implied-eval': 'off',
+      // disable typecheck-specific rules
+      '@typescript-eslint/await-thenable': 'off', // does not handle `void | Promise<void>` well
+      '@typescript-eslint/no-base-to-string': 'off', // does not matter for us
+      '@typescript-eslint/no-implied-eval': 'off', // we intentionally use `Function()`
       '@typescript-eslint/no-floating-promises': 'off',
       '@typescript-eslint/no-misused-promises': 'off',
       '@typescript-eslint/no-redundant-type-constituents': 'off',
@@ -373,6 +372,13 @@ export default defineConfig(
     rules: {
       'no-console': 'off',
       '@typescript-eslint/ban-ts-comment': 'off',
+    },
+  },
+  {
+    name: 'disables/test-dts',
+    files: ['**/__tests_dts__/**/*.?([cm])[jt]s?(x)'],
+    rules: {
+      '@typescript-eslint/no-duplicate-type-constituents': 'off',
     },
   },
   {
