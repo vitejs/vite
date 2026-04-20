@@ -161,7 +161,7 @@ export default defineConfig(
       '@typescript-eslint/no-implied-eval': 'off', // we intentionally use `Function()`
       '@typescript-eslint/no-floating-promises': 'off',
       '@typescript-eslint/no-misused-promises': 'off',
-      '@typescript-eslint/no-redundant-type-constituents': 'off',
+      '@typescript-eslint/no-redundant-type-constituents': 'off', // hard to handle some cases
       '@typescript-eslint/no-unnecessary-type-assertion': 'off',
       '@typescript-eslint/no-unsafe-argument': 'off',
       '@typescript-eslint/no-unsafe-assignment': 'off',
@@ -378,6 +378,7 @@ export default defineConfig(
     name: 'disables/test-dts',
     files: ['**/__tests_dts__/**/*.?([cm])[jt]s?(x)'],
     rules: {
+      // disable typecheck-specific rules
       '@typescript-eslint/no-duplicate-type-constituents': 'off',
     },
   },
