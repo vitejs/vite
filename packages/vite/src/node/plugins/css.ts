@@ -622,7 +622,7 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
         } else if (inlined) {
           let content = css
           if (config.build.cssMinify) {
-            content = await minifyCSS(content, config, true)
+            content = await minifyCSS(content, config, true, id)
           }
           code = `export default ${JSON.stringify(content)}`
         } else {
@@ -2202,6 +2202,7 @@ async function minifyCSS(
   css: string,
   config: ResolvedConfig,
   inlined: boolean,
+  filename: string = defaultCssBundleName,
 ) {
   // We want inlined CSS to not end with a linebreak, while ensuring that
   // regular CSS assets do end with a linebreak.
@@ -2213,6 +2214,7 @@ async function minifyCSS(
       const { code, warnings } = await transform(css, {
         loader: 'css',
         target: config.build.cssTarget || undefined,
+        sourcefile: filename,
         ...resolveMinifyCssEsbuildOptions(config.esbuild || {}),
       })
       if (warnings.length) {
@@ -2239,9 +2241,7 @@ async function minifyCSS(
       ...config.css.lightningcss,
       targets: convertTargets(config.build.cssTarget),
       cssModules: undefined,
-      // TODO: Pass actual filename here, which can also be passed to esbuild's
-      // `sourcefile` option below to improve error messages
-      filename: defaultCssBundleName,
+      filename,
       code: Buffer.from(css),
       minify: true,
     })
