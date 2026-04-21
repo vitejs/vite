@@ -36,6 +36,9 @@ defineConfig({
   build: {
     minify: 'oxc', // `as const` is not needed
   },
+  html: {
+    cspNonce: '__NONCE__',
+  },
   server: {
     proxy: {
       '/test': {
@@ -69,6 +72,34 @@ defineConfig(() => ({
     unknown: 1,
   },
 }))
+
+defineConfig({
+  html: {
+    cspNonce: {
+      script: '__SCRIPT_NONCE__',
+      style: '__STYLE_NONCE__',
+    },
+  },
+})
+
+defineConfig({
+  html: {
+    // @ts-expect-error --- missing `style`
+    cspNonce: {
+      script: '__SCRIPT_NONCE__',
+    },
+  },
+})
+
+defineConfig({
+  html: {
+    cspNonce: {
+      script: '__SCRIPT_NONCE__',
+      // @ts-expect-error --- invalid `style` type
+      style: 1,
+    },
+  },
+})
 
 defineConfig(async () => ({
   base: '',

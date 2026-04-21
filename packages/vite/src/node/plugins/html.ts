@@ -33,10 +33,14 @@ import {
   removeLeadingSlash,
   unique,
 } from '../utils'
-import type { ResolvedConfig } from '../config'
+import type { CSPNonce, ResolvedConfig } from '../config'
 import { checkPublicFile } from '../publicDir'
 import { toOutputFilePathInHtml } from '../build'
 import { resolveEnvPrefix } from '../env'
+import {
+  type CSPNonceProperty,
+  CSP_NONCE_META_PROPERTIES,
+} from '../../shared/cspNonce'
 import { cleanUrl } from '../../shared/utils'
 import { perEnvironmentState } from '../environment'
 import { getNodeAssetAttributes } from '../assetSource'
@@ -1213,19 +1217,7 @@ export function postImportMapHook(): IndexHtmlTransformHook {
 export function injectCspNonceMetaTagHook(
   config: ResolvedConfig,
 ): IndexHtmlTransformHook {
-  return () => {
-    if (!config.html?.cspNonce) return
-
-    return [
-      {
-        tag: 'meta',
-        injectTo: 'head',
-        // use nonce attribute so that it's hidden
-        // https://developer.mozilla.org/en-US/docs/Web/HTML/Global_attributes/nonce#accessing_nonces_and_nonce_hiding
-        attrs: { property: 'csp-nonce', nonce: config.html.cspNonce },
-      },
-    ]
-  }
+  return () => createCspNonceMetaTags(config.html?.cspNonce)
 }
 
 /**
@@ -1280,11 +1272,9 @@ export function htmlEnvHook(config: ResolvedConfig): IndexHtmlTransformHook {
 export function injectNonceAttributeTagHook(
   config: ResolvedConfig,
 ): IndexHtmlTransformHook {
-  const processRelType = new Set(['stylesheet', 'modulepreload', 'preload'])
-
   return async (html, { filename }) => {
-    const nonce = config.html?.cspNonce
-    if (!nonce) return
+    const cspNonce = config.html?.cspNonce
+    if (!cspNonce) return
 
     const s = new MagicString(html)
 
@@ -1294,17 +1284,9 @@ export function injectNonceAttributeTagHook(
       }
 
       const { nodeName, attrs, sourceCodeLocation } = node
+      const nonce = getCspNonceForElement(cspNonce, nodeName, attrs)
 
-      if (
-        nodeName === 'script' ||
-        nodeName === 'style' ||
-        (nodeName === 'link' &&
-          attrs.some(
-            (attr) =>
-              attr.name === 'rel' &&
-              parseRelAttr(attr.value).some((a) => processRelType.has(a)),
-          ))
-      ) {
+      if (nonce) {
         // If we already have a nonce attribute, we don't need to add another one
         if (attrs.some(({ name }) => name === 'nonce')) {
           return
@@ -1322,6 +1304,80 @@ export function injectNonceAttributeTagHook(
 
     return s.toString()
   }
+}
+
+type CSPNonceDestination = 'script' | 'style'
+
+const createCspNonceMetaTag = (
+  property: CSPNonceProperty,
+  nonce: string,
+): HtmlTagDescriptor => ({
+  tag: 'meta',
+  injectTo: 'head',
+  // use nonce attribute so that it's hidden
+  // https://developer.mozilla.org/en-US/docs/Web/HTML/Global_attributes/nonce#accessing_nonces_and_nonce_hiding
+  attrs: { property, nonce },
+})
+
+const createCspNonceMetaTags = (
+  cspNonce: CSPNonce | undefined,
+): HtmlTagDescriptor[] | undefined => {
+  if (!cspNonce) return
+
+  if (typeof cspNonce === 'string') {
+    return [createCspNonceMetaTag(CSP_NONCE_META_PROPERTIES.shared, cspNonce)]
+  }
+
+  const tags: HtmlTagDescriptor[] = []
+  if (cspNonce.script) {
+    tags.push(
+      createCspNonceMetaTag(CSP_NONCE_META_PROPERTIES.script, cspNonce.script),
+    )
+  }
+  if (cspNonce.style) {
+    tags.push(
+      createCspNonceMetaTag(CSP_NONCE_META_PROPERTIES.style, cspNonce.style),
+    )
+  }
+  return tags.length > 0 ? tags : undefined
+}
+
+const getAttrValue = (
+  attrs: Token.Attribute[],
+  name: string,
+): string | undefined => attrs.find((attr) => attr.name === name)?.value
+
+const getCspNonceDestinationForLink = (
+  attrs: Token.Attribute[],
+): CSPNonceDestination | undefined => {
+  const relAttr = getAttrValue(attrs, 'rel')
+  if (!relAttr) return
+  const rels = parseRelAttr(relAttr)
+  if (rels.includes('stylesheet')) return 'style'
+  if (rels.includes('modulepreload')) return 'script'
+  if (rels.includes('preload')) {
+    const as = getAttrValue(attrs, 'as')?.toLowerCase()
+    if (as === 'style' || as === 'script') return as
+  }
+}
+
+const getCspNonceDestinationForElement = (
+  nodeName: string,
+  attrs: Token.Attribute[],
+): CSPNonceDestination | undefined => {
+  if (nodeName === 'script') return 'script'
+  if (nodeName === 'style') return 'style'
+  if (nodeName === 'link') return getCspNonceDestinationForLink(attrs)
+}
+
+const getCspNonceForElement = (
+  cspNonce: CSPNonce,
+  nodeName: string,
+  attrs: Token.Attribute[],
+): string | undefined => {
+  const destination = getCspNonceDestinationForElement(nodeName, attrs)
+  if (!destination) return
+  return typeof cspNonce === 'string' ? cspNonce : cspNonce[destination]
 }
 
 export function resolveHtmlTransforms(

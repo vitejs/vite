@@ -11,7 +11,7 @@ const getNonce = async (selector: string): Promise<string | null> => {
   )
 }
 
-const getNonces = (selector: string): Promise<string[]> => {
+const getNonces = async (selector: string): Promise<string[]> => {
   return page.$$eval(selector, (nodes) =>
     nodes.map(
       (node) =>
@@ -53,6 +53,25 @@ test('inline js', async () => {
   await expect.poll(() => page.textContent('.inline-js')).toBe('inline-js: ok')
 })
 
+test('split mode injects only split meta tags', async () => {
+  expect((await page.$$('meta[property="csp-nonce"]')).length).toBe(0)
+  expect((await page.$$('meta[property="csp-script-nonce"]')).length).toBe(1)
+  expect((await page.$$('meta[property="csp-style-nonce"]')).length).toBe(1)
+
+  expect(await getNonce('meta[property="csp-script-nonce"]')).not.toBe(
+    await getNonce('meta[property="csp-style-nonce"]'),
+  )
+})
+
+test('split mode routes nonces by destination', async () => {
+  const scriptNonce = await getNonce('meta[property="csp-script-nonce"]')
+  const styleNonce = await getNonce('meta[property="csp-style-nonce"]')
+
+  expect(await getNonce('link[rel="stylesheet"]')).toBe(styleNonce)
+  expect(await getNonce('style')).toBe(styleNonce)
+  expect(await getNonce('script[type="module"]')).toBe(scriptNonce)
+})
+
 test('nonce attributes are not repeated', async () => {
   const htmlSource = await page.content()
   expect(htmlSource).not.toMatch(
@@ -63,46 +82,23 @@ test('nonce attributes are not repeated', async () => {
     .toBe('double-nonce-js: ok')
 })
 
-test('meta[property=csp-nonce] is injected', async () => {
-  const meta = await page.$('meta[property=csp-nonce]')
-  expect(await (await meta.getProperty('nonce')).jsonValue()).not.toBe('')
+test.runIf(isServe)('dev-injected style tags use the style nonce', async () => {
+  const styleNonce = await getNonce('meta[property="csp-style-nonce"]')
+
+  await expect.poll(() => getNonces('style[data-vite-dev-id]')).not.toEqual([])
+
+  expect(
+    (await getNonces('style[data-vite-dev-id]')).every(
+      (nonce) => nonce === styleNonce,
+    ),
+  ).toBe(true)
 })
-
-test('shared mode injects only shared meta tag', async () => {
-  expect((await page.$$('meta[property="csp-nonce"]')).length).toBe(1)
-  expect((await page.$$('meta[property="csp-script-nonce"]')).length).toBe(0)
-  expect((await page.$$('meta[property="csp-style-nonce"]')).length).toBe(0)
-})
-
-test('shared mode applies the shared nonce to static HTML destinations', async () => {
-  const sharedNonce = await getNonce('meta[property="csp-nonce"]')
-
-  expect(await getNonce('link[rel="stylesheet"]')).toBe(sharedNonce)
-  expect(await getNonce('style')).toBe(sharedNonce)
-  expect(await getNonce('script[type="module"]')).toBe(sharedNonce)
-})
-
-test.runIf(isServe)(
-  'dev-injected style tags use the shared nonce',
-  async () => {
-    const sharedNonce = await getNonce('meta[property="csp-nonce"]')
-
-    await expect
-      .poll(() => getNonces('style[data-vite-dev-id]'))
-      .not.toEqual([])
-
-    expect(
-      (await getNonces('style[data-vite-dev-id]')).every(
-        (nonce) => nonce === sharedNonce,
-      ),
-    ).toBe(true)
-  },
-)
 
 test.runIf(isBuild)(
-  'build preloads and stylesheets use the shared nonce',
+  'build preloads and stylesheets use split nonces',
   async () => {
-    const sharedNonce = await getNonce('meta[property="csp-nonce"]')
+    const scriptNonce = await getNonce('meta[property="csp-script-nonce"]')
+    const styleNonce = await getNonce('meta[property="csp-style-nonce"]')
 
     await expect
       .poll(() =>
@@ -119,11 +115,11 @@ test.runIf(isBuild)(
         await getNonces(
           'link[rel="modulepreload"], link[rel="preload"][as="script"]',
         )
-      ).every((nonce) => nonce === sharedNonce),
+      ).every((nonce) => nonce === scriptNonce),
     ).toBe(true)
     expect(
       (await getNonces('link[rel="stylesheet"]')).every(
-        (nonce) => nonce === sharedNonce,
+        (nonce) => nonce === styleNonce,
       ),
     ).toBe(true)
   },
