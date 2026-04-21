@@ -12,6 +12,7 @@ import {
 import { createHMRHandler } from '../shared/hmrHandler'
 import { setupForwardConsoleHandler } from '../shared/forwardConsole'
 import { ErrorOverlay, cspNonce, overlayId } from './overlay'
+// @ts-expect-error internal virtual module
 import '@vite/env'
 
 // injected by the hmr plugin when served
@@ -661,5 +662,6 @@ if (isBundleMode && typeof DevRuntime !== 'undefined') {
   }
   ;(globalThis as any).__rolldown_runtime__ ??= new ViteDevRuntime(
     wrappedSocket,
+    '',
   )
 }
