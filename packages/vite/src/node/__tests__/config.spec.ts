@@ -934,6 +934,112 @@ describe('resolveConfig', () => {
       resolved.optimizeDeps!.rolldownOptions,
     )
   })
+
+  test('normalizes shared `html.cspNonce` string', async () => {
+    const resolved = await resolveConfig(
+      {
+        html: {
+          cspNonce: '__NONCE__',
+        },
+      },
+      'serve',
+    )
+
+    expect(resolved.html?.cspNonce).toBe('__NONCE__')
+  })
+
+  test('normalizes split `html.cspNonce` object', async () => {
+    const resolved = await resolveConfig(
+      {
+        html: {
+          cspNonce: {
+            script: '__SCRIPT_NONCE__',
+            style: '__STYLE_NONCE__',
+          },
+        },
+      },
+      'serve',
+    )
+
+    expect(resolved.html?.cspNonce).toEqual({
+      script: '__SCRIPT_NONCE__',
+      style: '__STYLE_NONCE__',
+    })
+  })
+
+  test('allows empty shared `html.cspNonce` string', async () => {
+    const resolved = await resolveConfig(
+      {
+        html: {
+          cspNonce: '',
+        },
+      },
+      'serve',
+    )
+
+    expect(resolved.html?.cspNonce).toBe('')
+  })
+
+  test('allows empty split `html.cspNonce` values', async () => {
+    const resolved = await resolveConfig(
+      {
+        html: {
+          cspNonce: {
+            script: '',
+            style: '__STYLE_NONCE__',
+          },
+        },
+      },
+      'serve',
+    )
+
+    expect(resolved.html?.cspNonce).toEqual({
+      script: '',
+      style: '__STYLE_NONCE__',
+    })
+  })
+
+  test('collapses all-empty split `html.cspNonce` to undefined', async () => {
+    const resolved = await resolveConfig(
+      {
+        html: {
+          cspNonce: {
+            script: '',
+            style: '',
+          },
+        },
+      },
+      'serve',
+    )
+
+    expect(resolved.html?.cspNonce).toBeUndefined()
+  })
+
+  test('throws for invalid `html.cspNonce` object returned from config hook', async () => {
+    await expect(
+      resolveConfig(
+        {
+          plugins: [
+            {
+              name: 'invalid-csp-nonce',
+              config() {
+                return {
+                  html: {
+                    cspNonce: {
+                      script: '__SCRIPT_NONCE__',
+                    } as any,
+                  },
+                }
+              },
+            },
+          ],
+        },
+        'serve',
+      ),
+    ).rejects.toThrow(
+      'html.cspNonce must be a string or an object with string "script" and "style" properties.',
+    )
+  })
 })
 
 test('config compat 1', async () => {

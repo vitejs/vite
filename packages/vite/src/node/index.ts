@@ -109,6 +109,7 @@ export { loadEnv, resolveEnvPrefix } from './env'
 export type {
   AppType,
   ConfigEnv,
+  CSPNonce,
   ExperimentalOptions,
   HTMLOptions,
   InlineConfig,
@@ -117,6 +118,7 @@ export type {
   ResolveFn,
   ResolvedWorkerOptions,
   ResolvedConfig,
+  SplitCSPNonce,
   UserConfig,
   UserConfigExport,
   UserConfigFn,
