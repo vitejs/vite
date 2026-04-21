@@ -9,7 +9,7 @@ import type { Plugin } from '../plugin'
 import { evalValue, injectQuery, transformStableResult } from '../utils'
 import { createBackCompatIdResolver } from '../idResolver'
 import type { ResolveIdFn } from '../idResolver'
-import { cleanUrl, slash } from '../../shared/utils'
+import { cleanUrl, slash, splitFileAndPostfix } from '../../shared/utils'
 import type { WorkerType } from './worker'
 import { WORKER_FILE_ID, workerFileToUrl } from './worker'
 import { fileToUrl, toOutputFilePathInJSForBundledDev } from './asset'
@@ -229,9 +229,11 @@ export function workerImportMetaUrlPlugin(config: ResolvedConfig): Plugin {
           s ||= new MagicString(code)
           const workerType = await getWorkerType(code, cleanString, endIndex)
           const url = rawUrl.slice(1, -1)
+          const { file: urlWithoutPostfix, postfix } = splitFileAndPostfix(url)
+          const queryPostfix = postfix[0] === '?' ? postfix : ''
           let file: string | undefined
-          if (url[0] === '.') {
-            file = path.resolve(path.dirname(id), url)
+          if (urlWithoutPostfix[0] === '.') {
+            file = path.resolve(path.dirname(id), urlWithoutPostfix)
             file = slash(tryFsResolve(file, fsResolveOptions) ?? file)
           } else {
             workerResolver ??= createBackCompatIdResolver(config, {
@@ -239,11 +241,11 @@ export function workerImportMetaUrlPlugin(config: ResolvedConfig): Plugin {
               tryIndex: false,
               preferRelative: true,
             })
-            file = await workerResolver(this.environment, url, id)
+            file = await workerResolver(this.environment, urlWithoutPostfix, id)
             file ??=
-              url[0] === '/'
-                ? slash(path.join(config.publicDir, url))
-                : slash(path.resolve(path.dirname(id), url))
+              urlWithoutPostfix[0] === '/'
+                ? slash(path.join(config.publicDir, urlWithoutPostfix))
+                : slash(path.resolve(path.dirname(id), urlWithoutPostfix))
           }
 
           if (
@@ -273,7 +275,7 @@ export function workerImportMetaUrlPlugin(config: ResolvedConfig): Plugin {
             } else {
               builtUrl = await fileToUrl(this, cleanUrl(file))
               builtUrl = injectQuery(
-                builtUrl,
+                `${builtUrl}${queryPostfix}`,
                 `${WORKER_FILE_ID}&type=${workerType}`,
               )
             }
