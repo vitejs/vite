@@ -311,6 +311,16 @@ test('escapes special chars in globs without mangling user supplied glob suffix'
     .toEqual(expectedNames)
 })
 
+test('escape literal parenthesis in glob pattern', async () => {
+  // https://github.com/vitejs/vite/issues/22166
+  // Backslash-escaped parens must match literal "(" / ")" in both dev and build.
+  await expect
+    .poll(async () =>
+      JSON.parse(await page.textContent('.escape-literal-parenthesis')),
+    )
+    .toStrictEqual(['/escape/(parenthesis)/mod/index.js'])
+})
+
 test('subpath imports', async () => {
   await expect
     .poll(async () => await page.textContent('.subpath-imports'))
