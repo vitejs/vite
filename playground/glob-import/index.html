@@ -274,6 +274,24 @@
   )
 </script>
 
+<h2>Array Pattern with Sibling Directories Sharing a Prefix</h2>
+<pre class="array-common-base-result"></pre>
+
+<script type="module">
+  const arrayCommonBaseModules = import.meta.glob(
+    [
+      '/array-common-base/pattern1/**/*.js',
+      '/array-common-base/pattern2/**/*.js',
+    ],
+    {
+      eager: true,
+      import: 'default',
+    },
+  )
+  document.querySelector('.array-common-base-result').textContent =
+    JSON.stringify(arrayCommonBaseModules, null, 2)
+</script>
+
 <h2>Transform visibility</h2>
 <pre class="transform-visibility"></pre>
 
