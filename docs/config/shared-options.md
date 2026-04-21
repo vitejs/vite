@@ -209,10 +209,25 @@ Enables the tsconfig paths resolution feature. `paths` option in `tsconfig.json`
 
 ## html.cspNonce
 
-- **Type:** `string`
+- **Type:** `string | { script: string, style: string }`
 - **Related:** [Content Security Policy (CSP)](/guide/features#content-security-policy-csp)
 
-A nonce value placeholder that will be used when generating script / style tags. Setting this value will also generate a meta tag with nonce value.
+A nonce placeholder that will be used when generating script/style related tags. Setting this value will also generate a meta tag with nonce value.
+
+Pass a string to share the same nonce for scripts and styles, or an object to use separate nonces:
+
+```js twoslash [vite.config.js]
+import { defineConfig } from 'vite'
+
+export default defineConfig({
+  html: {
+    cspNonce: '__NONCE__',
+    // or: { script: '__SCRIPT_NONCE__', style: '__STYLE_NONCE__' }
+  },
+})
+```
+
+Make sure that the placeholders are replaced with unique values for each request by the server.
 
 ## css.modules
 
