@@ -171,9 +171,8 @@ export default defineConfig(
       '@typescript-eslint/only-throw-error': 'off',
       '@typescript-eslint/prefer-nullish-coalescing': 'off',
       '@typescript-eslint/prefer-optional-chain': 'off',
-      '@typescript-eslint/prefer-string-starts-ends-with': 'off',
+      '@typescript-eslint/prefer-string-starts-ends-with': 'off', // prefer indexed access for better performance
       '@typescript-eslint/require-await': 'off',
-      '@typescript-eslint/restrict-plus-operands': 'off',
       '@typescript-eslint/restrict-template-expressions': 'off',
       '@typescript-eslint/unbound-method': 'off',
 
