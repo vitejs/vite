@@ -914,7 +914,7 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
                   if (isEntry) {
                     cssEntriesMap
                       .get(this.environment)!
-                      .set(chunk.name, referenceId)
+                      .set(chunk.fileName, { referenceId, name: chunk.name })
                   }
                   chunk.viteMetadata!.importedCss.add(
                     this.getFileName(referenceId),
@@ -1103,13 +1103,13 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
 
         const removedPureCssFiles = removedPureCssFilesCache.get(config)!
         pureCssChunkNames.forEach((fileName) => {
-          const emptyJsPlaceholder = bundle[fileName] as RenderedChunk
+          const emptyJsPlaceholder = bundle[fileName] as OutputChunk
           if (emptyJsPlaceholder.isEntry) {
             const { importedAssets, importedCss } =
               emptyJsPlaceholder.viteMetadata!
             const cssReferenceId = cssEntriesMap
               .get(this.environment)!
-              .get(emptyJsPlaceholder.name)!
+              .get(emptyJsPlaceholder.preliminaryFileName)!.referenceId
             const realCssEntryName = this.getFileName(cssReferenceId)
             const realCssEntry = bundle[realCssEntryName]!
             importedCss.delete(realCssEntryName)
@@ -2684,7 +2684,7 @@ const scssProcessor = (
             // to re-generate a new frame (same as legacy api)
             e.frame = e.message
           }
-          // sass sometimes re-uses the error instance
+          // sass sometimes reuses the error instance
           // avoid mutating the same instance multiple times
           normalizedErrors.add(e)
         }

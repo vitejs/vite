@@ -73,6 +73,7 @@ function toOutputFilePathInHtml(
   if (relative && !config.build.ssr) {
     return toRelative(filename, hostId)
   } else {
+    // @ts-expect-error `decodedBase` is internal
     return joinUrlSegments(config.decodedBase, filename)
   }
 }

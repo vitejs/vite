@@ -17,6 +17,7 @@
   "scripts": {
     "dev": "tsdown --watch",
     "build": "tsdown",
+    "typecheck": "tsc",
     "prepublishOnly": "npm run build"
   },
   "engines": {
@@ -53,7 +54,7 @@
   "devDependencies": {
     "acorn": "^8.16.0",
     "picocolors": "^1.1.1",
-    "tsdown": "^0.21.7",
+    "tsdown": "^0.21.9",
     "vite": "workspace:*"
   },
   "compatiblePackages": {

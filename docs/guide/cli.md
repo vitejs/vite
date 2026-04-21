@@ -48,30 +48,30 @@ vite build [root]
 
 #### Options
 
-| Options                        |                                                                                                                         |
-| ------------------------------ | ----------------------------------------------------------------------------------------------------------------------- |
-| `--target <target>`            | Transpile target (default: `"modules"`) (`string`)                                                                      |
-| `--outDir <dir>`               | Output directory (default: `dist`) (`string`)                                                                           |
-| `--assetsDir <dir>`            | Directory under outDir to place assets in (default: `"assets"`) (`string`)                                              |
-| `--assetsInlineLimit <number>` | Static asset base64 inline threshold in bytes (default: `4096`) (`number`)                                              |
-| `--ssr [entry]`                | Build specified entry for server-side rendering (`string`)                                                              |
-| `--sourcemap [output]`         | Output source maps for build (default: `false`) (`boolean \| "inline" \| "hidden"`)                                     |
-| `--minify [minifier]`          | Enable/disable minification, or specify minifier to use (default: `"esbuild"`) (`boolean \| "terser" \| "esbuild"`)     |
-| `--manifest [name]`            | Emit build manifest json (`boolean \| string`)                                                                          |
-| `--ssrManifest [name]`         | Emit ssr manifest json (`boolean \| string`)                                                                            |
-| `--emptyOutDir`                | Force empty outDir when it's outside of root (`boolean`)                                                                |
-| `-w, --watch`                  | Rebuilds when modules have changed on disk (`boolean`)                                                                  |
-| `-c, --config <file>`          | Use specified config file (`string`)                                                                                    |
-| `--base <path>`                | Public base path (default: `/`) (`string`)                                                                              |
-| `-l, --logLevel <level>`       | Info \| warn \| error \| silent (`string`)                                                                              |
-| `--clearScreen`                | Allow/disable clear screen when logging (`boolean`)                                                                     |
-| `--configLoader <loader>`      | Use `bundle` to bundle the config with Rolldown or `runner` (experimental) to process it on the fly (default: `bundle`) |
-| `--profile`                    | Start built-in Node.js inspector (check [Performance bottlenecks](/guide/troubleshooting#performance-bottlenecks))      |
-| `-d, --debug [feat]`           | Show debug logs (`string \| boolean`)                                                                                   |
-| `-f, --filter <filter>`        | Filter debug logs (`string`)                                                                                            |
-| `-m, --mode <mode>`            | Set env mode (`string`)                                                                                                 |
-| `-h, --help`                   | Display available CLI options                                                                                           |
-| `--app`                        | Build all environments, same as `builder: {}` (`boolean`, experimental)                                                 |
+| Options                        |                                                                                                                          |
+| ------------------------------ | ------------------------------------------------------------------------------------------------------------------------ |
+| `--target <target>`            | Transpile target (default: `"baseline-widely-available"`) (`string`)                                                     |
+| `--outDir <dir>`               | Output directory (default: `dist`) (`string`)                                                                            |
+| `--assetsDir <dir>`            | Directory under outDir to place assets in (default: `"assets"`) (`string`)                                               |
+| `--assetsInlineLimit <number>` | Static asset base64 inline threshold in bytes (default: `4096`) (`number`)                                               |
+| `--ssr [entry]`                | Build specified entry for server-side rendering (`string`)                                                               |
+| `--sourcemap [output]`         | Output source maps for build (default: `false`) (`boolean \| "inline" \| "hidden"`)                                      |
+| `--minify [minifier]`          | Enable/disable minification, or specify minifier to use (default: `"oxc"`) (`boolean \| "oxc" \| "terser" \| "esbuild"`) |
+| `--manifest [name]`            | Emit build manifest json (`boolean \| string`)                                                                           |
+| `--ssrManifest [name]`         | Emit ssr manifest json (`boolean \| string`)                                                                             |
+| `--emptyOutDir`                | Force empty outDir when it's outside of root (`boolean`)                                                                 |
+| `-w, --watch`                  | Rebuilds when modules have changed on disk (`boolean`)                                                                   |
+| `-c, --config <file>`          | Use specified config file (`string`)                                                                                     |
+| `--base <path>`                | Public base path (default: `/`) (`string`)                                                                               |
+| `-l, --logLevel <level>`       | Info \| warn \| error \| silent (`string`)                                                                               |
+| `--clearScreen`                | Allow/disable clear screen when logging (`boolean`)                                                                      |
+| `--configLoader <loader>`      | Use `bundle` to bundle the config with Rolldown or `runner` (experimental) to process it on the fly (default: `bundle`)  |
+| `--profile`                    | Start built-in Node.js inspector (check [Performance bottlenecks](/guide/troubleshooting#performance-bottlenecks))       |
+| `-d, --debug [feat]`           | Show debug logs (`string \| boolean`)                                                                                    |
+| `-f, --filter <filter>`        | Filter debug logs (`string`)                                                                                             |
+| `-m, --mode <mode>`            | Set env mode (`string`)                                                                                                  |
+| `-h, --help`                   | Display available CLI options                                                                                            |
+| `--app`                        | Build all environments, same as `builder: {}` (`boolean`, experimental)                                                  |
 
 ## Others
 
@@ -106,7 +106,7 @@ vite optimize [root]
 
 Locally preview the production build. Do not use this as a production server as it's not designed for it.
 
-This command starts a server in the build directory (by default `dist`). Run `vite build` beforehand to ensure that the build directory is up-to-date. Depending on the project's configured [`appType`](/config/shared-options.html#apptype), it makes use of certain middleware.
+This command starts a server in the build directory (by default `dist`). Run `vite build` beforehand to ensure that the build directory is up-to-date. Depending on the project's configured [`appType`](/config/shared-options#apptype), it makes use of certain middleware.
 
 #### Usage
 

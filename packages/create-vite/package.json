@@ -1,6 +1,6 @@
 {
   "name": "create-vite",
-  "version": "9.0.4",
+  "version": "9.0.5",
   "type": "module",
   "license": "MIT",
   "author": "Evan You",
@@ -35,9 +35,9 @@
   "funding": "https://github.com/vitejs/vite?sponsor=1",
   "devDependencies": {
     "@clack/prompts": "^1.2.0",
-    "@vercel/detect-agent": "^1.2.1",
+    "@vercel/detect-agent": "^1.2.3",
     "cross-spawn": "^7.0.6",
     "mri": "^1.2.0",
-    "tsdown": "^0.21.7"
+    "tsdown": "^0.21.9"
   }
 }
