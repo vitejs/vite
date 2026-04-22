@@ -934,6 +934,12 @@ export function resolvePackageEntry(
         if (typeof data[field] === 'string') {
           entryPoint = data[field]
           break
+        } else if (field === 'browser') {
+          const browser = data[field]
+          if (isObject(browser) && browser['.']) {
+            entryPoint = browser['.']
+            break
+          }
         }
       }
     }
