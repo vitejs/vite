@@ -70,7 +70,7 @@ export const stopProfiler = (
 ): void | Promise<void> => {
   if (!profileSession) return
   return new Promise((res, rej) => {
-    profileSession!.post('Profiler.stop', (err: any, { profile }: any) => {
+    profileSession!.post('Profiler.stop', (err, { profile }) => {
       // Write profile to disk, upload, etc.
       if (!err) {
         const outPath = path.resolve(
