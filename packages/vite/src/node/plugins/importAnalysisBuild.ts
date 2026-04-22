@@ -211,7 +211,7 @@ export function buildImportAnalysisPlugin(config: ResolvedConfig): Plugin[] {
 
     renderChunk(code, _, { format }) {
       // make sure we only perform the preload logic in modern builds.
-      if (code.indexOf(isModernFlag) > -1) {
+      if (code.includes(isModernFlag)) {
         const re = new RegExp(isModernFlag, 'g')
         const isModern = String(format === 'es')
         const isModernWithPadding =
@@ -299,7 +299,7 @@ export function buildImportAnalysisPlugin(config: ResolvedConfig): Plugin[] {
         const chunk = bundle[file]
         // can't use chunk.dynamicImports.length here since some modules e.g.
         // dynamic import to constant json may get inlined.
-        if (chunk.type === 'chunk' && chunk.code.indexOf(preloadMarker) > -1) {
+        if (chunk.type === 'chunk' && chunk.code.includes(preloadMarker)) {
           const code = chunk.code
           let imports!: ImportSpecifier[]
           try {

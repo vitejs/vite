@@ -978,7 +978,7 @@ export async function _createServer(
   // ping request handler
   // Keep the named function. The name is visible in debug logs via `DEBUG=connect:dispatcher ...`
   middlewares.use(function viteHMRPingMiddleware(req, res, next) {
-    if (req.headers['accept'] === 'text/x-vite-ping') {
+    if (req.headers.accept === 'text/x-vite-ping') {
       res.writeHead(204).end()
     } else {
       next()

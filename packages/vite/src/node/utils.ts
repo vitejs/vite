@@ -62,7 +62,7 @@ export const createFilter = _createFilter as (
   include?: FilterPattern,
   exclude?: FilterPattern,
   options?: { resolve?: string | false | null },
-) => (id: string | unknown) => boolean
+) => (id: unknown) => boolean
 
 export { withFilter } from 'rolldown/filter'
 
