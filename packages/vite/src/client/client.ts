@@ -1,3 +1,4 @@
+import { nanoid } from 'nanoid/non-secure'
 import type {
   DevRuntime as DevRuntimeType,
   Messenger,
@@ -12,6 +13,7 @@ import {
 import { createHMRHandler } from '../shared/hmrHandler'
 import { setupForwardConsoleHandler } from '../shared/forwardConsole'
 import { ErrorOverlay, cspNonce, overlayId } from './overlay'
+// @ts-expect-error internal virtual module
 import '@vite/env'
 
 // injected by the hmr plugin when served
@@ -659,7 +661,9 @@ if (isBundleMode && typeof DevRuntime !== 'undefined') {
       }
     },
   }
+  const clientId = nanoid()
   ;(globalThis as any).__rolldown_runtime__ ??= new ViteDevRuntime(
     wrappedSocket,
+    clientId,
   )
 }
