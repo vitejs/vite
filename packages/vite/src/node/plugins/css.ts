@@ -1851,10 +1851,10 @@ export async function preprocessCSS(
   return await compileCSS(environment, filename, code, workerController)
 }
 
-export function formatPostcssSourceMap(
+export async function formatPostcssSourceMap(
   rawMap: ExistingRawSourceMap,
   file: string,
-): ExistingRawSourceMap {
+): Promise<ExistingRawSourceMap> {
   const inputFileDir = path.dirname(file)
 
   // Note: the real `Sourcemap#sources` maybe `null`, but rollup typing is not handle it.
