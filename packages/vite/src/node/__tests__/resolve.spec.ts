@@ -311,3 +311,34 @@ describe('file url', () => {
     expect(mod2.default.default).toBe('ok')
   })
 })
+
+describe('browser/module fallback', () => {
+  test('build falls back from non-esm browser entry to module entry', async () => {
+    let resolvedId: string | undefined
+
+    await build({
+      configFile: false,
+      root: join(import.meta.dirname, 'fixtures/browser-module-fallback'),
+      logLevel: 'error',
+      build: {
+        write: false,
+        rollupOptions: { input: { index: 'index.js' } },
+      },
+      plugins: [
+        {
+          name: 'test-capture-resolved-id',
+          async transform(_, id) {
+            if (!id.endsWith('/fixtures/browser-module-fallback/index.js')) {
+              return
+            }
+            resolvedId = (
+              await this.resolve('test-browser-module-fallback', id)
+            )?.id
+          },
+        },
+      ],
+    })
+
+    expect(resolvedId).toContain('bundled/fallback.esm.js')
+  })
+})

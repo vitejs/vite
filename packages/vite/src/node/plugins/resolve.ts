@@ -226,6 +226,70 @@ export function oxcResolvePlugin(
   overrideEnvConfig: (ResolvedConfig & ResolvedEnvironmentOptions) | undefined,
 ): Plugin[] {
   return [
+    ...perEnvironmentOrWorkerPlugin(
+      'vite:resolve-package-entry-heuristics',
+      overrideEnvConfig,
+      (partialEnv) => {
+        const options: InternalResolveOptions = {
+          ...partialEnv.config.resolve,
+          ...resolveOptions,
+        }
+
+        return {
+          name: 'vite:resolve-package-entry-heuristics',
+          resolveId: {
+            order: 'pre',
+            filter: {
+              id: {
+                exclude: [/^\0/, /^virtual:/, /^\/virtual:/, /^__vite-/],
+              },
+            },
+            handler(id, importer, resolveOpts) {
+              if (resolveOpts.scan || !options.isBuild || options.isRequire) {
+                return
+              }
+
+              if (!bareImportRE.test(id) || deepImportRE.test(id)) {
+                return
+              }
+
+              const pkgId = cleanUrl(id)
+              const basedir =
+                importer && path.isAbsolute(importer)
+                  ? path.dirname(importer)
+                  : options.root
+              const pkg = resolvePackageData(
+                pkgId,
+                basedir,
+                options.preserveSymlinks,
+                options.packageCache,
+              )
+
+              if (!pkg || pkg.data.exports) {
+                return
+              }
+
+              const browserEntry =
+                typeof pkg.data.browser === 'string'
+                  ? pkg.data.browser
+                  : isObject(pkg.data.browser) && pkg.data.browser['.']
+
+              if (
+                !browserEntry ||
+                typeof pkg.data.module !== 'string' ||
+                pkg.data.module === browserEntry ||
+                !options.mainFields.includes('browser') ||
+                !options.mainFields.includes('module')
+              ) {
+                return
+              }
+
+              return tryNodeResolve(id, importer, options, undefined, false)
+            },
+          },
+        }
+      },
+    ),
     ...(resolveOptions.optimizeDeps && !resolveOptions.isBuild
       ? [optimizerResolvePlugin(resolveOptions)]
       : []),
