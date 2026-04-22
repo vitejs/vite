@@ -361,7 +361,7 @@ export function oxcResolvePlugin(
 
           ...(partialEnv.config.command === 'serve'
             ? {
-                async onWarn(msg) {
+                onWarn(msg) {
                   getEnv().logger.warn(`warning: ${msg}`, {
                     clear: true,
                     timestamp: true,
@@ -371,7 +371,7 @@ export function oxcResolvePlugin(
             : {}),
           ...(debug
             ? {
-                async onDebug(message) {
+                onDebug(message) {
                   debug(message)
                 },
               }

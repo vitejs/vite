@@ -502,10 +502,10 @@ export function resolveBuildEnvironmentOptions(
   return resolved
 }
 
-export async function resolveBuildPlugins(config: ResolvedConfig): Promise<{
+export function resolveBuildPlugins(config: ResolvedConfig): {
   pre: Plugin[]
   post: Plugin[]
-}> {
+} {
   const isBuild = config.command === 'build'
   return {
     pre: [

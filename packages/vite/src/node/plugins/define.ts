@@ -132,7 +132,7 @@ export function definePlugin(config: ResolvedConfig): Plugin {
     name: 'vite:define',
 
     transform: {
-      async handler(code, id) {
+      handler(code, id) {
         if (this.environment.config.consumer === 'client') {
           // for dev we inject actual global defines in the vite client to
           // avoid the transform cost. see the `clientInjection` and
@@ -157,14 +157,14 @@ export function definePlugin(config: ResolvedConfig): Plugin {
         pattern.lastIndex = 0
         if (!pattern.test(code)) return
 
-        const result = await replaceDefine(this.environment, code, id, define)
+        const result = replaceDefine(this.environment, code, id, define)
         return result
       },
     },
   }
 }
 
-export async function replaceDefine(
+export function replaceDefine(
   environment: Environment,
   code: string,
   id: string,

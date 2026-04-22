@@ -270,7 +270,7 @@ export const createWebSocketModuleRunnerTransport = (options: {
   return {
     async connect({ onMessage, onDisconnection }) {
       const socket = options.createConnection()
-      socket.addEventListener('message', async ({ data }) => {
+      socket.addEventListener('message', ({ data }) => {
         onMessage(JSON.parse(data))
       })
 
@@ -285,7 +285,7 @@ export const createWebSocketModuleRunnerTransport = (options: {
             },
             { once: true },
           )
-          socket.addEventListener('close', async () => {
+          socket.addEventListener('close', () => {
             if (!isOpened) {
               reject(new Error('WebSocket closed without opened.'))
               return

@@ -172,7 +172,7 @@ export default defineConfig(
       '@typescript-eslint/prefer-nullish-coalescing': 'off',
       '@typescript-eslint/prefer-optional-chain': 'off',
       '@typescript-eslint/prefer-string-starts-ends-with': 'off', // prefer indexed access for better performance
-      '@typescript-eslint/require-await': 'off',
+      '@typescript-eslint/require-await': 'off', // does not handle inferred required async functions well
       '@typescript-eslint/restrict-template-expressions': 'off', // does not matter for us
       '@typescript-eslint/unbound-method': 'off',
 
