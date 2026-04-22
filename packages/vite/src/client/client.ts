@@ -395,7 +395,7 @@ function waitForSuccessfulPing(socketUrl: string) {
       document.removeEventListener('visibilitychange', onVisibilityChange)
       sharedWorker.port.close()
 
-      const data: { type: 'success' } | { type: 'error'; error: unknown } =
+      const data: { type: 'success' } | { type: 'error'; error: Error } =
         event.data
       if (data.type === 'error') {
         reject(data.error)

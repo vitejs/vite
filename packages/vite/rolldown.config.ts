@@ -3,7 +3,7 @@ import path from 'node:path'
 import MagicString from 'magic-string'
 import type { Plugin } from 'rolldown'
 import { defineConfig } from 'rolldown'
-import { init, parse } from 'es-module-lexer'
+import { ImportType, init, parse } from 'es-module-lexer'
 import licensePlugin from './rollupLicensePlugin'
 
 // eslint-disable-next-line n/no-unsupported-features/node-builtins
@@ -321,7 +321,10 @@ function buildTimeImportMetaUrlPlugin(): Plugin {
         const s = new MagicString(code)
         const [imports] = parse(code)
         for (const { t, ss, se } of imports) {
-          if (t === 3 && code.slice(se, se + 4) === '.url') {
+          if (
+            t === ImportType.ImportMeta &&
+            code.slice(se, se + 4) === '.url'
+          ) {
             // ignore import.meta.url with /** #__KEEP__ */ comment
             if (keepCommentRE.test(code.slice(0, ss))) {
               keepCommentRE.lastIndex = 0

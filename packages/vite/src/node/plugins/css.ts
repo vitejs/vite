@@ -2467,7 +2467,7 @@ async function loadSss(root: string): Promise<PostCSS.Syntax> {
   return cachedSss
 }
 
-declare const window: unknown | undefined
+declare const window: unknown
 declare const location: { href: string } | undefined
 
 // in unix, scss might append `location.href` in environments that shim `location`
