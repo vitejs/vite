@@ -1,3 +1,4 @@
+import { nanoid } from 'nanoid/non-secure'
 import type {
   DevRuntime as DevRuntimeType,
   Messenger,
@@ -660,8 +661,9 @@ if (isBundleMode && typeof DevRuntime !== 'undefined') {
       }
     },
   }
+  const clientId = nanoid()
   ;(globalThis as any).__rolldown_runtime__ ??= new ViteDevRuntime(
     wrappedSocket,
-    '',
+    clientId,
   )
 }
