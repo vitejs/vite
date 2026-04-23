@@ -308,6 +308,12 @@ function viteLegacyPlugin(options: Options = {}): Plugin[] {
         for (const { modern } of chunkFileNameToPolyfills.values()) {
           modern.forEach((p) => modernPolyfills.add(p))
         }
+        // Remove explicitly excluded polyfills
+        if (Array.isArray(options.excludeModernPolyfills)) {
+          options.excludeModernPolyfills.forEach((p) =>
+            modernPolyfills.delete(p),
+          )
+        }
         if (!modernPolyfills.size) {
           return
         }
@@ -351,6 +357,11 @@ function viteLegacyPlugin(options: Options = {}): Plugin[] {
           assumptions,
           legacyPolyfills,
         )
+      }
+
+      // Remove explicitly excluded polyfills
+      if (Array.isArray(options.excludeLegacyPolyfills)) {
+        options.excludeLegacyPolyfills.forEach((p) => legacyPolyfills.delete(p))
       }
 
       if (legacyPolyfills.size || !options.externalSystemJS) {
