@@ -272,6 +272,18 @@ test('array pattern with exclusions', async () => {
     })
 })
 
+// https://github.com/vitejs/vite/issues/22170
+test('array pattern with sibling directories sharing a prefix', async () => {
+  await expect
+    .poll(async () =>
+      JSON.parse(await page.textContent('.array-common-base-result')),
+    )
+    .toStrictEqual({
+      '/array-common-base/pattern1/a.js': 'a',
+      '/array-common-base/pattern2/b.js': 'b',
+    })
+})
+
 test('tree-shake eager css', async () => {
   expect(await page.textContent('.no-tree-shake-eager-css-result')).toMatch(
     '.no-tree-shake-eager-css',
