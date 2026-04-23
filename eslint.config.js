@@ -155,32 +155,25 @@ export default defineConfig(
       '@typescript-eslint/consistent-type-definitions': 'off',
       '@typescript-eslint/prefer-for-of': 'off',
       '@typescript-eslint/prefer-function-type': 'off',
-      // disable typecheck-specific rules (but worth revisiting again)
-      '@typescript-eslint/await-thenable': 'off',
-      '@typescript-eslint/dot-notation': 'off',
-      '@typescript-eslint/no-base-to-string': 'off',
-      '@typescript-eslint/no-duplicate-type-constituents': 'off',
-      '@typescript-eslint/no-implied-eval': 'off',
+      // disable typecheck-specific rules
+      '@typescript-eslint/await-thenable': 'off', // does not handle `void | Promise<void>` well
+      '@typescript-eslint/no-base-to-string': 'off', // does not matter for us
+      '@typescript-eslint/no-implied-eval': 'off', // we intentionally use `Function()`
       '@typescript-eslint/no-floating-promises': 'off',
       '@typescript-eslint/no-misused-promises': 'off',
-      '@typescript-eslint/no-redundant-type-constituents': 'off',
+      '@typescript-eslint/no-redundant-type-constituents': 'off', // hard to handle some cases
       '@typescript-eslint/no-unnecessary-type-assertion': 'off',
       '@typescript-eslint/no-unsafe-argument': 'off',
       '@typescript-eslint/no-unsafe-assignment': 'off',
       '@typescript-eslint/no-unsafe-call': 'off',
-      '@typescript-eslint/no-unsafe-enum-comparison': 'off',
       '@typescript-eslint/no-unsafe-member-access': 'off',
       '@typescript-eslint/no-unsafe-return': 'off',
-      '@typescript-eslint/non-nullable-type-assertion-style': 'off',
       '@typescript-eslint/only-throw-error': 'off',
-      '@typescript-eslint/prefer-includes': 'off',
       '@typescript-eslint/prefer-nullish-coalescing': 'off',
       '@typescript-eslint/prefer-optional-chain': 'off',
-      '@typescript-eslint/prefer-promise-reject-errors': 'off',
-      '@typescript-eslint/prefer-string-starts-ends-with': 'off',
+      '@typescript-eslint/prefer-string-starts-ends-with': 'off', // prefer indexed access for better performance
       '@typescript-eslint/require-await': 'off',
-      '@typescript-eslint/restrict-plus-operands': 'off',
-      '@typescript-eslint/restrict-template-expressions': 'off',
+      '@typescript-eslint/restrict-template-expressions': 'off', // does not matter for us
       '@typescript-eslint/unbound-method': 'off',
 
       'import-x/no-duplicates': 'error',
@@ -374,6 +367,14 @@ export default defineConfig(
     rules: {
       'no-console': 'off',
       '@typescript-eslint/ban-ts-comment': 'off',
+    },
+  },
+  {
+    name: 'disables/test-dts',
+    files: ['**/__tests_dts__/**/*.?([cm])[jt]s?(x)'],
+    rules: {
+      // disable typecheck-specific rules
+      '@typescript-eslint/no-duplicate-type-constituents': 'off',
     },
   },
   {

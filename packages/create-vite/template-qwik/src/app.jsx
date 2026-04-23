@@ -22,7 +22,7 @@ export const App = component$(() => {
             Edit <code>src/app.jsx</code> and save to test <code>HMR</code>
           </p>
         </div>
-        <button class="counter" onClick$={() => count.value++}>
+        <button type="button" class="counter" onClick$={() => count.value++}>
           Count is {count.value}
         </button>
       </section>

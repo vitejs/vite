@@ -18,7 +18,9 @@ const count = ref(0)
       <h1>Get started</h1>
       <p>Edit <code>src/App.vue</code> and save to test <code>HMR</code></p>
     </div>
-    <button class="counter" @click="count++">Count is {{ count }}</button>
+    <button type="button" class="counter" @click="count++">
+      Count is {{ count }}
+    </button>
   </section>
 
   <div class="ticks"></div>

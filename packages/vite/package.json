@@ -1,6 +1,6 @@
 {
   "name": "vite",
-  "version": "8.0.9",
+  "version": "8.0.10",
   "type": "module",
   "license": "MIT",
   "author": "Evan You",
@@ -65,7 +65,7 @@
     "build-types": "pnpm build-types-roll && pnpm build-types-check",
     "build-types-roll": "rolldown --config rolldown.dts.config.ts",
     "build-types-check": "tsc --project tsconfig.check.json",
-    "typecheck": "tsc && tsc -p src/node && tsc -p src/module-runner && tsc -p src/shared && tsc -p src/node/__tests_dts__ && tsc -p src/module-runner/__tests_dts__",
+    "typecheck": "tsc && tsc -p src/node && tsc -p src/client && tsc -p src/module-runner && tsc -p src/shared && tsc -p src/node/__tests_dts__ && tsc -p src/module-runner/__tests_dts__",
     "lint": "eslint --cache --ext .ts src/**",
     "format": "oxfmt",
     "generate-target": "tsx scripts/generateTarget.ts",
@@ -76,7 +76,7 @@
     "lightningcss": "^1.32.0",
     "picomatch": "^4.0.4",
     "postcss": "^8.5.10",
-    "rolldown": "1.0.0-rc.16",
+    "rolldown": "1.0.0-rc.17",
     "tinyglobby": "^0.2.16"
   },
   "optionalDependencies": {
