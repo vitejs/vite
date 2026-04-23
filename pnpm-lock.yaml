@@ -179,7 +179,7 @@ importers:
         version: 1.2.0
       tsdown:
         specifier: ^0.21.9
-        version: 0.21.9(@vitejs/devtools@0.1.14)(publint@0.3.18)(typescript@6.0.2)(vue-tsc@3.2.7)
+        version: 0.21.9(@vitejs/devtools@0.1.15)(publint@0.3.18)(typescript@6.0.2)(vue-tsc@3.2.7)
 
   packages/plugin-legacy:
     dependencies:
@@ -228,7 +228,7 @@ importers:
         version: 1.1.1
       tsdown:
         specifier: ^0.21.9
-        version: 0.21.9(@vitejs/devtools@0.1.14)(publint@0.3.18)(typescript@6.0.2)(vue-tsc@3.2.7)
+        version: 0.21.9(@vitejs/devtools@0.1.15)(publint@0.3.18)(typescript@6.0.2)(vue-tsc@3.2.7)
       vite:
         specifier: workspace:*
         version: link:../vite
@@ -282,8 +282,8 @@ importers:
         specifier: ^1.2.3
         version: 1.2.3
       '@vitejs/devtools':
-        specifier: ^0.1.14
-        version: 0.1.14(typescript@6.0.2)(vite@packages+vite)
+        specifier: https://pkg.pr.new/@vitejs/devtools@0cacb1f
+        version: https://pkg.pr.new/@vitejs/devtools@0cacb1f(typescript@6.0.2)(vite@packages+vite)
       '@vitest/utils':
         specifier: 4.1.4
         version: 4.1.4
@@ -743,8 +743,8 @@ importers:
         version: 3.5.32(typescript@6.0.2)
     devDependencies:
       '@vitejs/devtools':
-        specifier: ^0.1.14
-        version: 0.1.14(typescript@6.0.2)(vite@packages+vite)
+        specifier: https://pkg.pr.new/@vitejs/devtools@0cacb1f
+        version: https://pkg.pr.new/@vitejs/devtools@0cacb1f(typescript@6.0.2)(vite@packages+vite)
       vite:
         specifier: workspace:*
         version: link:../../packages/vite
@@ -4480,19 +4480,40 @@ packages:
     resolution: {integrity: sha512-VYNCgUc0nOmC4WJmWw9GkrKdfr8Zl4/rxhC5SvgacBgxiW9W/9NRttUoHHXV8xdII3MaRgkZZVX8Ikzc/Jmjag==}
     engines: {node: '>=14'}
 
-  '@vitejs/devtools-kit@0.1.14':
-    resolution: {integrity: sha512-XvDzZaBigEO2c4EdT9hVRYKqEWU4zW37ao2DmD2W69/nrp+pwVdRNE/tu8fXKnvhCQtoqkI5g3H3Df1VYCUTfA==}
+  '@vitejs/devtools-kit@0.1.15':
+    resolution: {integrity: sha512-6OCgoAW7HeJFMpxiNqIZLoBtG+jGTwXBwNgmxPi2KT77nCFUUvnDHrXSOZ8ErmQ7WdrDPLnUeBq/TWyi9xdAyA==}
     peerDependencies:
       vite: workspace:*
 
-  '@vitejs/devtools-rolldown@0.1.14':
-    resolution: {integrity: sha512-xhuLAhmDmzHCdbmYvn1rTlV1fe7hvaDHN3kp1CtKCiSM86QsDE8pBFCbcGpZeawqZgQ8MtkmUGJm09uCqaqCGg==}
+  '@vitejs/devtools-kit@https://pkg.pr.new/vitejs/devtools/@vitejs/devtools-kit@0cacb1f':
+    resolution: {integrity: sha512-92Hd54VmoM0loO7Z+DkqpctEgRZ5iyG7q88qVSh+Txcx+nZJ1qFMwRZprcX9pOlXp7xZpza/icnq30qSbw/sPw==, tarball: https://pkg.pr.new/vitejs/devtools/@vitejs/devtools-kit@0cacb1f}
+    version: 0.1.15
+    peerDependencies:
+      vite: workspace:*
 
-  '@vitejs/devtools-rpc@0.1.14':
-    resolution: {integrity: sha512-xRxH/tmIXN/IegUebu53pkLb4rA87qwiBkgx7dtj2BmtzLXg88EiG/VtW5PThJh0AcvU6B8vCT/9+2QRQMKmzA==}
+  '@vitejs/devtools-rolldown@0.1.15':
+    resolution: {integrity: sha512-PYojc9gQrd9bszNv+t20ocDG1zcrdryPA9XyxlZOO9EHbz+W50IW+22y+9+u8cat39cHsYuuChF6WqOYrM5hpg==}
 
-  '@vitejs/devtools@0.1.14':
-    resolution: {integrity: sha512-WBpd8R5brzxSWKYsIfPtYxpjBxNhoCUgzk/OhCjPW2XC+MBLOzOXg4rHWY0OSXEw9w2XHtF3eTTgoc/Mcg+IHQ==}
+  '@vitejs/devtools-rolldown@https://pkg.pr.new/vitejs/devtools/@vitejs/devtools-rolldown@0cacb1f':
+    resolution: {integrity: sha512-CGMyzP1hPtpF8zECPRK9fibpUMoCh4KtYt9dLwpOogxVn6SqJrLMAQ1Ebv/7+NQuQQgDd+9GzCH9NvRL7vLLyw==, tarball: https://pkg.pr.new/vitejs/devtools/@vitejs/devtools-rolldown@0cacb1f}
+    version: 0.1.15
+
+  '@vitejs/devtools-rpc@0.1.15':
+    resolution: {integrity: sha512-pHDz3bcK0dlpLzI2ve2Xwnnx6iSASRMuEFJDbe64LAZJPVCBW/Pb0IeEpodI58O9xVpB0EBZykZftz8/oTeVtQ==}
+
+  '@vitejs/devtools-rpc@https://pkg.pr.new/vitejs/devtools/@vitejs/devtools-rpc@0cacb1f':
+    resolution: {integrity: sha512-pHDz3bcK0dlpLzI2ve2Xwnnx6iSASRMuEFJDbe64LAZJPVCBW/Pb0IeEpodI58O9xVpB0EBZykZftz8/oTeVtQ==, tarball: https://pkg.pr.new/vitejs/devtools/@vitejs/devtools-rpc@0cacb1f}
+    version: 0.1.15
+
+  '@vitejs/devtools@0.1.15':
+    resolution: {integrity: sha512-LKE2HgsRMR25ordyXEjXCILO/IOrtHDzBc4Vzfg+ntvR8lF09I0XIX73GS7LQHO+Bzfpb0m3PrgnyThyaa2J0Q==}
+    hasBin: true
+    peerDependencies:
+      vite: workspace:*
+
+  '@vitejs/devtools@https://pkg.pr.new/@vitejs/devtools@0cacb1f':
+    resolution: {integrity: sha512-XLJMIe4gvZ9zza2IPS/jtOPgSOnxpHY4I/1pdYsseXRbxrIOMspVfIBkKSIqSk+9ltJGSftoFqXeH8ojbm3Cjw==, tarball: https://pkg.pr.new/@vitejs/devtools@0cacb1f}
+    version: 0.1.15
     hasBin: true
     peerDependencies:
       vite: workspace:*
@@ -10679,9 +10700,21 @@ snapshots:
 
   '@vercel/detect-agent@1.2.3': {}
 
-  '@vitejs/devtools-kit@0.1.14(typescript@6.0.2)(vite@packages+vite)':
+  '@vitejs/devtools-kit@0.1.15(typescript@6.0.2)(vite@packages+vite)':
     dependencies:
-      '@vitejs/devtools-rpc': 0.1.14(typescript@6.0.2)
+      '@vitejs/devtools-rpc': 0.1.15(typescript@6.0.2)
+      birpc: 4.0.0
+      ohash: 2.0.11
+      vite: link:packages/vite
+    transitivePeerDependencies:
+      - bufferutil
+      - typescript
+      - utf-8-validate
+    optional: true
+
+  '@vitejs/devtools-kit@https://pkg.pr.new/vitejs/devtools/@vitejs/devtools-kit@0cacb1f(typescript@6.0.2)(vite@packages+vite)':
+    dependencies:
+      '@vitejs/devtools-rpc': https://pkg.pr.new/vitejs/devtools/@vitejs/devtools-rpc@0cacb1f(typescript@6.0.2)
       birpc: 4.0.0
       ohash: 2.0.11
       vite: link:packages/vite
@@ -10690,13 +10723,70 @@ snapshots:
       - typescript
       - utf-8-validate
 
-  '@vitejs/devtools-rolldown@0.1.14(typescript@6.0.2)(vite@packages+vite)(vue@3.5.32)':
+  '@vitejs/devtools-rolldown@0.1.15(typescript@6.0.2)(vite@packages+vite)(vue@3.5.32)':
     dependencies:
       '@floating-ui/dom': 1.7.6
       '@pnpm/read-project-manifest': 1001.2.6
       '@rolldown/debug': 1.0.0-rc.16
-      '@vitejs/devtools-kit': 0.1.14(typescript@6.0.2)(vite@packages+vite)
-      '@vitejs/devtools-rpc': 0.1.14(typescript@6.0.2)
+      '@vitejs/devtools-kit': 0.1.15(typescript@6.0.2)(vite@packages+vite)
+      '@vitejs/devtools-rpc': 0.1.15(typescript@6.0.2)
+      ansis: 4.2.0
+      birpc: 4.0.0
+      cac: 7.0.0
+      d3-shape: 3.2.0
+      diff: 9.0.0
+      get-port-please: 3.2.0
+      h3: 1.15.11
+      logs-sdk: 0.0.6
+      mlly: 1.8.2
+      mrmime: 2.0.1
+      ohash: 2.0.11
+      p-limit: 7.3.0
+      pathe: 2.0.3
+      publint: 0.3.18
+      sirv: 3.0.2(patch_hash=c07c56eb72faea34341d465cde2314e89db472106ed378181e3447893af6bf95)
+      split2: 4.2.0
+      structured-clone-es: 2.0.0
+      tinyglobby: 0.2.16
+      unconfig: 7.5.0
+      unstorage: 1.17.5
+      vue-virtual-scroller: 2.0.1(vue@3.5.32)
+      ws: 8.20.0
+    transitivePeerDependencies:
+      - '@azure/app-configuration'
+      - '@azure/cosmos'
+      - '@azure/data-tables'
+      - '@azure/identity'
+      - '@azure/keyvault-secrets'
+      - '@azure/storage-blob'
+      - '@capacitor/preferences'
+      - '@deno/kv'
+      - '@netlify/blobs'
+      - '@planetscale/database'
+      - '@pnpm/logger'
+      - '@upstash/redis'
+      - '@vercel/blob'
+      - '@vercel/functions'
+      - '@vercel/kv'
+      - aws4fetch
+      - bufferutil
+      - db0
+      - idb-keyval
+      - ioredis
+      - typescript
+      - uploadthing
+      - utf-8-validate
+      - vite
+      - vue
+    optional: true
+
+  '@vitejs/devtools-rolldown@https://pkg.pr.new/vitejs/devtools/@vitejs/devtools-rolldown@0cacb1f(typescript@6.0.2)(vite@packages+vite)(vue@3.5.32)':
+    dependencies:
+      '@floating-ui/dom': 1.7.6
+      '@pnpm/read-project-manifest': 1001.2.6
+      '@rolldown/debug': 1.0.0-rc.16
+      '@vitejs/devtools-kit': https://pkg.pr.new/vitejs/devtools/@vitejs/devtools-kit@0cacb1f(typescript@6.0.2)(vite@packages+vite)
+      '@vitejs/devtools-rpc': https://pkg.pr.new/vitejs/devtools/@vitejs/devtools-rpc@0cacb1f(typescript@6.0.2)
       ansis: 4.2.0
       birpc: 4.0.0
       cac: 7.0.0
@@ -10746,7 +10836,22 @@ snapshots:
       - vite
       - vue
 
-  '@vitejs/devtools-rpc@0.1.14(typescript@6.0.2)':
+  '@vitejs/devtools-rpc@0.1.15(typescript@6.0.2)':
+    dependencies:
+      birpc: 4.0.0
+      logs-sdk: 0.0.6
+      ohash: 2.0.11
+      p-limit: 7.3.0
+      structured-clone-es: 2.0.0
+      valibot: 1.3.1(typescript@6.0.2)
+      ws: 8.20.0
+    transitivePeerDependencies:
+      - bufferutil
+      - typescript
+      - utf-8-validate
+    optional: true
+
+  '@vitejs/devtools-rpc@https://pkg.pr.new/vitejs/devtools/@vitejs/devtools-rpc@0cacb1f(typescript@6.0.2)':
     dependencies:
       birpc: 4.0.0
       logs-sdk: 0.0.6
@@ -10760,11 +10865,58 @@ snapshots:
       - typescript
       - utf-8-validate
 
-  '@vitejs/devtools@0.1.14(typescript@6.0.2)(vite@packages+vite)':
+  '@vitejs/devtools@0.1.15(typescript@6.0.2)(vite@packages+vite)':
     dependencies:
-      '@vitejs/devtools-kit': 0.1.14(typescript@6.0.2)(vite@packages+vite)
-      '@vitejs/devtools-rolldown': 0.1.14(typescript@6.0.2)(vite@packages+vite)(vue@3.5.32)
-      '@vitejs/devtools-rpc': 0.1.14(typescript@6.0.2)
+      '@vitejs/devtools-kit': 0.1.15(typescript@6.0.2)(vite@packages+vite)
+      '@vitejs/devtools-rolldown': 0.1.15(typescript@6.0.2)(vite@packages+vite)(vue@3.5.32)
+      '@vitejs/devtools-rpc': 0.1.15(typescript@6.0.2)
+      birpc: 4.0.0
+      cac: 7.0.0
+      h3: 1.15.11
+      immer: 11.1.4
+      launch-editor: 2.13.2
+      logs-sdk: 0.0.6
+      mlly: 1.8.2
+      obug: 2.1.1
+      open: 11.0.0
+      pathe: 2.0.3
+      perfect-debounce: 2.1.0
+      sirv: 3.0.2(patch_hash=c07c56eb72faea34341d465cde2314e89db472106ed378181e3447893af6bf95)
+      tinyexec: 1.1.1
+      vite: link:packages/vite
+      vue: 3.5.32(typescript@6.0.2)
+      ws: 8.20.0
+    transitivePeerDependencies:
+      - '@azure/app-configuration'
+      - '@azure/cosmos'
+      - '@azure/data-tables'
+      - '@azure/identity'
+      - '@azure/keyvault-secrets'
+      - '@azure/storage-blob'
+      - '@capacitor/preferences'
+      - '@deno/kv'
+      - '@netlify/blobs'
+      - '@planetscale/database'
+      - '@pnpm/logger'
+      - '@upstash/redis'
+      - '@vercel/blob'
+      - '@vercel/functions'
+      - '@vercel/kv'
+      - aws4fetch
+      - bufferutil
+      - db0
+      - idb-keyval
+      - ioredis
+      - typescript
+      - uploadthing
+      - utf-8-validate
+    optional: true
+
+  '@vitejs/devtools@https://pkg.pr.new/@vitejs/devtools@0cacb1f(typescript@6.0.2)(vite@packages+vite)':
+    dependencies:
+      '@vitejs/devtools-kit': https://pkg.pr.new/vitejs/devtools/@vitejs/devtools-kit@0cacb1f(typescript@6.0.2)(vite@packages+vite)
+      '@vitejs/devtools-rolldown': https://pkg.pr.new/vitejs/devtools/@vitejs/devtools-rolldown@0cacb1f(typescript@6.0.2)(vite@packages+vite)(vue@3.5.32)
+      '@vitejs/devtools-rpc': https://pkg.pr.new/vitejs/devtools/@vitejs/devtools-rpc@0cacb1f(typescript@6.0.2)
       birpc: 4.0.0
       cac: 7.0.0
       h3: 1.15.11
@@ -14438,7 +14590,7 @@ snapshots:
 
   ts-interface-checker@0.1.13: {}
 
-  tsdown@0.21.9(@vitejs/devtools@0.1.14)(publint@0.3.18)(typescript@6.0.2)(vue-tsc@3.2.7):
+  tsdown@0.21.9(@vitejs/devtools@0.1.15)(publint@0.3.18)(typescript@6.0.2)(vue-tsc@3.2.7):
     dependencies:
       ansis: 4.2.0
       cac: 7.0.0
@@ -14457,7 +14609,7 @@ snapshots:
       unconfig-core: 7.5.0
       unrun: 0.2.36
     optionalDependencies:
-      '@vitejs/devtools': 0.1.14(typescript@6.0.2)(vite@packages+vite)
+      '@vitejs/devtools': 0.1.15(typescript@6.0.2)(vite@packages+vite)
       publint: 0.3.18
       typescript: 6.0.2
     transitivePeerDependencies:
