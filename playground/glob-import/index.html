@@ -21,6 +21,8 @@
 <pre class="escape-relative"></pre>
 <h2>Escape alias glob</h2>
 <pre class="escape-alias"></pre>
+<h2>Escape literal parenthesis</h2>
+<pre class="escape-literal-parenthesis"></pre>
 <h2>Subpath imports</h2>
 <pre class="subpath-imports"></pre>
 <h2>Subpath imports (sub dir)</h2>
@@ -148,6 +150,17 @@
     .filter(([_, mod]) => Object.keys(mod?.alias ?? {}).length === 1)
     .map(([glob]) => glob)
   document.querySelector('.escape-alias').textContent = alias.sort().join('\n')
+</script>
+
+<script type="module">
+  // https://github.com/vitejs/vite/issues/22166
+  // Backslash-escaped glob metachars must match their literal counterparts
+  // consistently in dev and build.
+  const literalParen = import.meta.glob('/escape/\\(parenthesis\\)/mod/*.js', {
+    eager: true,
+  })
+  document.querySelector('.escape-literal-parenthesis').textContent =
+    JSON.stringify(Object.keys(literalParen).sort())
 </script>
 
 <script type="module">
