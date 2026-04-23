@@ -1,5 +1,5 @@
 import { existsSync, readdirSync } from 'node:fs'
-import { posix, win32 } from 'node:path'
+import { posix, resolve, win32 } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { setTimeout } from 'node:timers/promises'
 import { describe, expect, vi } from 'vitest'
@@ -717,5 +717,20 @@ describe('full-reload during close', () => {
     expect(
       errors.some((e) => e.toString().includes('transport was disconnected')),
     ).toBe(false)
+  })
+})
+
+describe('server.fs check', async () => {
+  const it = await createModuleRunnerTester({
+    server: {
+      fs: {
+        allow: [resolve(import.meta.dirname, './fixtures/circular')],
+      },
+    },
+  })
+
+  it('it is not applied to the server module runner', async ({ runner }) => {
+    const mod = await runner.import('/fixtures/basic.js')
+    expect(mod.name).toBe('basic')
   })
 })

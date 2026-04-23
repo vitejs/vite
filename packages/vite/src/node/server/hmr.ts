@@ -10,7 +10,12 @@ import type {
   InvokeSendData,
 } from '../../shared/invokeMethods'
 import { CLIENT_DIR } from '../constants'
-import { createDebugger, monotonicDateNow, normalizePath } from '../utils'
+import {
+  createDebugger,
+  formatAndTruncateFileList,
+  monotonicDateNow,
+  normalizePath,
+} from '../utils'
 import type { InferCustomEventPayload, ViteDevServer } from '..'
 import { getHookHandler } from '../plugins'
 import { isExplicitImportRequired } from '../plugins/importAnalysis'
@@ -84,6 +89,11 @@ export type HotChannelListener<T extends string = string> = (
 ) => void
 
 export interface HotChannel<Api = any> {
+  /**
+   * When true, the fs access check is skipped in fetchModule.
+   * Set this for transports that is not exposed over the network.
+   */
+  skipFsCheck?: boolean
   /**
    * Broadcast events to all clients
    */
@@ -338,7 +348,7 @@ export function getSortedPluginsByHotUpdateHook(
     normal = 0,
     post = 0
   for (const plugin of plugins) {
-    const hook = plugin['hotUpdate'] ?? plugin['handleHotUpdate']
+    const hook = plugin.hotUpdate ?? plugin.handleHotUpdate
     if (hook) {
       if (typeof hook === 'object') {
         if (hook.order === 'pre') {
@@ -730,11 +740,13 @@ export function updateModules(
     return
   }
 
-  environment.logger.info(
-    colors.green(`hmr update `) +
-      colors.dim([...new Set(updates.map((u) => u.path))].join(', ')),
-    { clear: !firstInvalidatedBy, timestamp: true },
-  )
+  const filePaths = [...new Set(updates.map((u) => u.path))]
+  const { formatted, truncated } = formatAndTruncateFileList(filePaths)
+  if (truncated) debugHmr?.(`hmr update ${filePaths.join(', ')}`)
+  environment.logger.info(colors.green(`hmr update `) + colors.dim(formatted), {
+    clear: !firstInvalidatedBy,
+    timestamp: true,
+  })
   hot.send({
     type: 'update',
     updates,
@@ -1123,6 +1135,7 @@ export function createServerHotChannel(): ServerHotChannel {
   const outsideEmitter = new EventEmitter()
 
   return {
+    skipFsCheck: true,
     send(payload: HotPayload) {
       outsideEmitter.emit('send', payload)
     },

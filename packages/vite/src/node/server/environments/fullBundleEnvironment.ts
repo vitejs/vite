@@ -14,8 +14,8 @@ import { getHmrImplementation } from '../../plugins/clientInjections'
 import { DevEnvironment, type DevEnvironmentContext } from '../environment'
 import type { ResolvedConfig } from '../../config'
 import type { ViteDevServer } from '../../server'
-import { createDebugger } from '../../utils'
-import { type NormalizedHotChannelClient, getShortName } from '../hmr'
+import { createDebugger, formatAndTruncateFileList } from '../../utils'
+import { type NormalizedHotChannelClient, debugHmr, getShortName } from '../hmr'
 import { prepareError } from '../middlewares/error'
 
 const debug = createDebugger('vite:full-bundle-mode')
@@ -159,7 +159,7 @@ export class FullBundleDevEnvironment extends DevEnvironment {
           return
         }
 
-        // NOTE: don't clear memoryFiles here as incremental build re-uses the files
+        // NOTE: don't clear memoryFiles here as incremental build reuses the files
         for (const outputFile of result.output) {
           if (outputFile.type === 'chunk' && outputFile.facadeModuleId) {
             this.facadeToChunk.set(
@@ -367,7 +367,16 @@ export class FullBundleDevEnvironment extends DevEnvironment {
       code: typeof hmrOutput.code === 'string' ? '[code]' : hmrOutput.code,
     })
 
-    this.memoryFiles.set(hmrOutput.filename, { source: hmrOutput.code })
+    this.memoryFiles.set(hmrOutput.filename, {
+      // ensure that the generated hmr patch contains ESM syntax
+      // this is to avoid attacks like GHSA-4v9v-hfq4-rm2v
+      // https://github.com/webpack/webpack-dev-server/security/advisories/GHSA-4v9v-hfq4-rm2v
+      // https://green.sapphi.red/blog/local-server-security-best-practices#_2-using-xssi-and-modifying-the-prototype
+      // https://green.sapphi.red/blog/local-server-security-best-practices#properly-check-the-request-origin
+      // we can also use `Cross-Origin Resource Policy` header instead of this
+      // but we cannot use `Sec-Fetch-*` headers as they are only sent to potentially-trustworthy origins
+      source: hmrOutput.code + '\n; export {}',
+    })
     if (hmrOutput.sourcemapFilename && hmrOutput.sourcemap) {
       this.memoryFiles.set(hmrOutput.sourcemapFilename, {
         source: hmrOutput.sourcemap,
@@ -387,11 +396,13 @@ export class FullBundleDevEnvironment extends DevEnvironment {
       type: 'update',
       updates,
     })
-    this.logger.info(
-      colors.green(`hmr update `) +
-        colors.dim([...new Set(updates.map((u) => u.path))].join(', ')),
-      { clear: !invalidateInformation, timestamp: true },
-    )
+    const filePaths = [...new Set(updates.map((u) => u.path))]
+    const { formatted, truncated } = formatAndTruncateFileList(filePaths)
+    if (truncated) debugHmr?.(`hmr update ${filePaths.join(', ')}`)
+    this.logger.info(colors.green(`hmr update `) + colors.dim(formatted), {
+      clear: !invalidateInformation,
+      timestamp: true,
+    })
   }
 }
 

@@ -6,22 +6,10 @@ description: Vite is built upon the shoulders of giants. Thank you to all the pr
 <script setup>
 import { computed } from 'vue'
 import { data } from './_data/acknowledgements.data'
-import { useSponsor, voidZero } from './.vitepress/theme/composables/sponsor'
+import { useSponsor } from './.vitepress/theme/composables/sponsor'
 import VPSponsors from '@components/vitepress-default/VPSponsors.vue'
 
-const { data: sponsorData } = useSponsor()
-
-const allSponsors = computed(() => {
-  if (!sponsorData.value) return []
-  return [
-    {
-      tier: 'Brought to you by',
-      size: 'big',
-      items: [voidZero],
-    },
-    ...sponsorData.value,
-  ]
-})
+const sponsors = useSponsor()
 
 function npmUrl(name) {
   return `https://www.npmjs.com/package/${name}`
@@ -43,7 +31,7 @@ We also thank all the [contributors on GitHub](https://github.com/vitejs/vite/gr
 Vite's development is supported by generous sponsors. You can support Vite through [GitHub Sponsors](https://github.com/sponsors/vitejs) or [Open Collective](https://opencollective.com/vite).
 
 <div class="sponsors-container">
-  <VPSponsors :data="allSponsors" />
+  <VPSponsors :data="sponsors ?? []" />
 </div>
 
 ## Dependencies
