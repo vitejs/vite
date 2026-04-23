@@ -7,7 +7,6 @@
   border: 2px solid transparent;
   transition: border-color 0.3s;
   margin-bottom: 24px;
-  cursor: pointer;
 
   &:hover {
     border-color: var(--accent-border);
