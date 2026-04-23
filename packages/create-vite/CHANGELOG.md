@@ -1,3 +1,12 @@
+## <small>[9.0.6](https://github.com/vitejs/vite/compare/create-vite@9.0.5...create-vite@9.0.6) (2026-04-23)</small>
+### Features
+
+* **create-vite:** use ESLint v10 ([#22266](https://github.com/vitejs/vite/issues/22266)) ([959fee5](https://github.com/vitejs/vite/commit/959fee53fdb8e647a62b11182ff05973d0815018))
+
+### Bug Fixes
+
+* **create-vite:** use `type="button"` to counter button in templates consistently ([#22142](https://github.com/vitejs/vite/issues/22142)) ([1ac46d6](https://github.com/vitejs/vite/commit/1ac46d64b81e0ac12b4df1ed28fd91cee1fd5f0b))
+
 ## <small>[9.0.5](https://github.com/vitejs/vite/compare/create-vite@9.0.4...create-vite@9.0.5) (2026-04-20)</small>
 ### Bug Fixes
 
