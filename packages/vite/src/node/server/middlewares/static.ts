@@ -93,7 +93,7 @@ export function servePublicMiddleware(
 
   const toFilePath = (url: string) => {
     let filePath = cleanUrl(url)
-    if (filePath.indexOf('%') !== -1) {
+    if (filePath.includes('%')) {
       try {
         filePath = decodeURI(filePath)
       } catch {

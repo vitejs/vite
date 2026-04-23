@@ -236,11 +236,51 @@ if (!isBuild) {
   })
 }
 
+test('follow symlinks', async () => {
+  await expect
+    .poll(async () => JSON.parse(await page.textContent('.follow-symlinks')))
+    .toStrictEqual({
+      './follow-symlinks/linked/my-lib/components/a.js': 'a',
+      './follow-symlinks/linked/my-lib/components/b.js': 'b',
+    })
+})
+
+test('follow symlinks same reference', async () => {
+  await expect
+    .poll(async () =>
+      JSON.parse(await page.textContent('.follow-symlinks-same-ref')),
+    )
+    .toStrictEqual({
+      a: true,
+      b: true,
+    })
+})
+
+test('alias exclusion', async () => {
+  await expect
+    .poll(async () => JSON.parse(await page.textContent('.alias-exclusion')))
+    .toSatisfy((keys: string[]) => {
+      return keys.length > 0 && keys.every((k) => !k.includes('alias'))
+    })
+})
+
 test('array pattern with exclusions', async () => {
   await expect
     .poll(async () => JSON.parse(await page.textContent('.array-result')))
     .toStrictEqual({
       './array-test-dir/included.js': 'included',
+    })
+})
+
+// https://github.com/vitejs/vite/issues/22170
+test('array pattern with sibling directories sharing a prefix', async () => {
+  await expect
+    .poll(async () =>
+      JSON.parse(await page.textContent('.array-common-base-result')),
+    )
+    .toStrictEqual({
+      '/array-common-base/pattern1/a.js': 'a',
+      '/array-common-base/pattern2/b.js': 'b',
     })
 })
 
@@ -283,9 +323,25 @@ test('escapes special chars in globs without mangling user supplied glob suffix'
     .toEqual(expectedNames)
 })
 
+test('escape literal parenthesis in glob pattern', async () => {
+  // https://github.com/vitejs/vite/issues/22166
+  // Backslash-escaped parens must match literal "(" / ")" in both dev and build.
+  await expect
+    .poll(async () =>
+      JSON.parse(await page.textContent('.escape-literal-parenthesis')),
+    )
+    .toStrictEqual(['/escape/(parenthesis)/mod/index.js'])
+})
+
 test('subpath imports', async () => {
   await expect
     .poll(async () => await page.textContent('.subpath-imports'))
+    .toMatch('bar foo')
+})
+
+test('subpath imports (sub dir)', async () => {
+  await expect
+    .poll(async () => await page.textContent('.subpath-imports-sub-dir'))
     .toMatch('bar foo')
 })
 

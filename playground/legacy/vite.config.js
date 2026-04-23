@@ -17,6 +17,7 @@ export default defineConfig({
     manifest: true,
     sourcemap: true,
     assetsInlineLimit: 100, // keep SVG as assets URL
+    emptyOutDir: false, // the dist directory is shared with other configs
     rollupOptions: {
       input: {
         index: path.resolve(import.meta.dirname, 'index.html'),

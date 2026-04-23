@@ -62,23 +62,25 @@ export const createFilter = _createFilter as (
   include?: FilterPattern,
   exclude?: FilterPattern,
   options?: { resolve?: string | false | null },
-) => (id: string | unknown) => boolean
+) => (id: unknown) => boolean
 
 export { withFilter } from 'rolldown/filter'
 
-const replaceSlashOrColonRE = /[/:]/g
-const replaceDotRE = /\./g
+// eslint-disable-next-line no-control-regex
+const invalidUrlPathCharRE = /[\u0000-\u001F"#$%&*+,:;<=>?[\]^`{|}\u007F]/g
 const replaceNestedIdRE = /\s*>\s*/g
-const replaceHashRE = /#/g
-const replacePlusRE = /\+/g
 export const flattenId = (id: string): string => {
   const flatId = limitFlattenIdLength(
     id
-      .replace(replaceSlashOrColonRE, '_')
-      .replace(replaceDotRE, '__')
-      .replace(replaceNestedIdRE, '___')
-      .replace(replaceHashRE, '____')
-      .replace(replacePlusRE, '_____'),
+      .replaceAll(/_+/g, '$&__')
+      .replaceAll('/', '_')
+      .replaceAll('.', '__')
+      .replace(replaceNestedIdRE, '_n_')
+      // replace any characters that will be replaced by sanitizeFileName
+      .replace(
+        invalidUrlPathCharRE,
+        (c) => '_0' + c.charCodeAt(0).toString(16) + '_',
+      ),
   )
   return flatId
 }
@@ -922,17 +924,24 @@ export function unique<T>(arr: T[]): T[] {
  * Even if defaultResultOrder is `ipv4first`, `dns.lookup` result maybe same.
  * For example, when IPv6 is not supported on that machine/network.
  */
-export async function getLocalhostAddressIfDiffersFromDNS(): Promise<
-  string | undefined
-> {
-  const [nodeResult, dnsResult] = await Promise.all([
+export function getLocalhostAddressIfDiffersFromDNS():
+  | Promise<string | undefined>
+  | undefined {
+  // dns.getDefaultResultOrder is not available in bun 1.3.11 and deno 2.7.11
+  // while this is a bug in bun and deno, since this function is commonly called,
+  // we give a workaround specially until the API is supported in a few versions
+  if (dns.getDefaultResultOrder && dns.getDefaultResultOrder() === 'verbatim') {
+    return undefined
+  }
+  return Promise.all([
     dns.lookup('localhost'),
     dns.lookup('localhost', { verbatim: true }),
-  ])
-  const isSame =
-    nodeResult.family === dnsResult.family &&
-    nodeResult.address === dnsResult.address
-  return isSame ? undefined : nodeResult.address
+  ]).then(([nodeResult, dnsResult]) => {
+    const isSame =
+      nodeResult.family === dnsResult.family &&
+      nodeResult.address === dnsResult.address
+    return isSame ? undefined : nodeResult.address
+  })
 }
 
 export function diffDnsOrderChange(
@@ -1816,4 +1825,11 @@ export function formatAndTruncateFileList(files: string[]): {
     }
   }
   return { formatted: log, truncated }
+}
+
+const hashbangRE = /^#!.*\n/
+
+// find the start of the file, after the hashbang
+export function getFileStartIndex(code: string): number {
+  return hashbangRE.exec(code)?.[0].length ?? 0
 }

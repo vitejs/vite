@@ -206,13 +206,13 @@ export async function traverseHtml(
   visitor: (node: DefaultTreeAdapterMap['node']) => void,
 ): Promise<void> {
   // lazy load compiler
-  const { parse } = await import('parse5')
+  const { parse, ErrorCodes } = await import('parse5')
   const warnings: ParseWarnings = {}
   const ast = parse(html, {
     scriptingEnabled: false, // parse inside <noscript>
     sourceCodeLocationInfo: true,
     onParseError: (e: ParserError) => {
-      handleParseError(e, html, filePath, warnings)
+      handleParseError(e, ErrorCodes, html, filePath, warnings)
     },
   })
   traverseNodes(ast, visitor)
@@ -239,7 +239,7 @@ export function getScriptInfo(node: DefaultTreeAdapterMap['element']): {
     if (p.name === 'src') {
       if (!src) {
         src = p
-        srcSourceCodeLocation = node.sourceCodeLocation?.attrs!['src']
+        srcSourceCodeLocation = node.sourceCodeLocation?.attrs!.src
       }
     } else if (p.name === 'type' && p.value === 'module') {
       isModule = true
@@ -316,25 +316,26 @@ function formatParseError(parserError: ParserError, id: string, html: string) {
 
 function handleParseError(
   parserError: ParserError,
+  errorCodes: typeof ErrorCodes,
   html: string,
   filePath: string,
   warnings: ParseWarnings,
 ) {
   switch (parserError.code) {
-    case 'missing-doctype':
+    case errorCodes.missingDoctype:
       // ignore missing DOCTYPE
       return
-    case 'abandoned-head-element-child':
+    case errorCodes.abandonedHeadElementChild:
       // Accept elements without closing tag in <head>
       return
-    case 'duplicate-attribute':
+    case errorCodes.duplicateAttribute:
       // Accept duplicate attributes #5966
       // The first attribute is used, browsers silently ignore duplicates
       return
-    case 'non-void-html-element-start-tag-with-trailing-solidus':
+    case errorCodes.nonVoidHtmlElementStartTagWithTrailingSolidus:
       // Allow self closing on non-void elements #10439
       return
-    case 'unexpected-question-mark-instead-of-tag-name':
+    case errorCodes.unexpectedQuestionMarkInsteadOfTagName:
       // Allow <?xml> declaration and <?> empty elements
       // lit generates <?>: https://github.com/lit/lit/issues/2470
       return
@@ -1085,7 +1086,7 @@ export function findNeedTransformStyleAttribute(
       (prop.value.includes('url(') || prop.value.includes('image-set(')),
   )
   if (!attr) return undefined
-  const location = node.sourceCodeLocation?.attrs?.['style']
+  const location = node.sourceCodeLocation?.attrs?.style
   return { attr, location }
 }
 
