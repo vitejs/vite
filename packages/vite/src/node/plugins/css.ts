@@ -3341,6 +3341,24 @@ async function compileLightningCSS(
   let css = decoder.decode(res.code)
   for (const dep of res.dependencies!) {
     switch (dep.type) {
+      case 'file': {
+        deps.add(dep.filePath)
+        break
+      }
+      case 'glob': {
+        for (const file of globSync(dep.glob)) {
+          deps.add(file)
+        }
+        const files = globSync(dep.glob, {
+          absolute: true,
+          expandDirectories: false,
+          ignore: ['**/node_modules/**'],
+        })
+        for (let i = 0; i < files.length; i++) {
+          deps.add(files[i])
+        }
+        break
+      }
       case 'url': {
         let replaceUrl: string
         if (skipUrlReplacer(dep.url)) {
