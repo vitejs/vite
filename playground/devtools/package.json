@@ -14,6 +14,6 @@
   },
   "devDependencies": {
     "vite": "workspace:*",
-    "@vitejs/devtools": "^0.1.14"
+    "@vitejs/devtools": "https://pkg.pr.new/@vitejs/devtools@0cacb1f"
   }
 }
