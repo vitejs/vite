@@ -10,7 +10,10 @@
     "dev": "vite",
     "build": "vite build",
     "debug": "node --inspect-brk ../../packages/vite/bin/vite",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "dev:base": "vite --config ./vite.config-base.js dev",
+    "build:base": "vite --config ./vite.config-base.js build",
+    "preview:base": "vite --config ./vite.config-base.js preview"
   },
   "dependencies": {
     "@vitejs/test-import-meta-glob-pkg": "file:./import-meta-glob-pkg"
