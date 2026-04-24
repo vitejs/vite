@@ -542,29 +542,30 @@ export async function reloadOnTsconfigChange(
   changedFile: string,
 ): Promise<void> {
   // any tsconfig.json that's added in the workspace could be closer to a code file than a previously cached one
-  if (changedFile.endsWith('/tsconfig.json')) {
-    const cache = getTSConfigResolutionCache(server.config)
-    server.config.logger.info(
-      `changed tsconfig file detected: ${changedFile} - Clearing cache and forcing full-reload to ensure TypeScript is compiled with updated config values.`,
-      { clear: server.config.clearScreen, timestamp: true },
-    )
+  if (!changedFile.endsWith('/tsconfig.json')) {
+    return
+  }
 
-    // TODO: more finegrained invalidation than the nuclear option below
+  server.config.logger.info(
+    `changed tsconfig file detected: ${changedFile} - Clearing cache and forcing full-reload to ensure TypeScript is compiled with updated config values.`,
+    { clear: server.config.clearScreen, timestamp: true },
+  )
 
-    // clear module graph to remove code compiled with outdated config
-    for (const environment of Object.values(server.environments)) {
-      environment.moduleGraph.invalidateAll()
-    }
+  // TODO: more finegrained invalidation than the nuclear option below
 
-    // reset the cache so that recompile works with up2date configs
-    cache.clear()
+  // clear module graph to remove code compiled with outdated config
+  for (const environment of Object.values(server.environments)) {
+    environment.moduleGraph.invalidateAll()
+  }
 
-    // reload environments
-    for (const environment of Object.values(server.environments)) {
-      environment.hot.send({
-        type: 'full-reload',
-        path: '*',
-      })
-    }
+  // reset the cache so that recompile works with up2date configs
+  getTSConfigResolutionCache(server.config).clear()
+
+  // reload environments
+  for (const environment of Object.values(server.environments)) {
+    environment.hot.send({
+      type: 'full-reload',
+      path: '*',
+    })
   }
 }
