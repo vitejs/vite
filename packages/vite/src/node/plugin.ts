@@ -143,7 +143,7 @@ export interface Plugin<A = any> extends RolldownPlugin<A> {
         isEntry: boolean
       },
     ) => Promise<ResolveIdResult> | ResolveIdResult,
-    { filter?: { id?: StringFilter<RegExp> } }
+    { filter?: { id?: StringFilter<RegExp> | undefined } | undefined }
   >
   load?: ObjectHook<
     (
@@ -153,7 +153,7 @@ export interface Plugin<A = any> extends RolldownPlugin<A> {
         ssr?: boolean | undefined
       },
     ) => Promise<LoadResult> | LoadResult,
-    { filter?: { id?: StringFilter } }
+    { filter?: { id?: StringFilter | undefined } | undefined }
   >
   transform?: ObjectHook<
     (
@@ -166,11 +166,13 @@ export interface Plugin<A = any> extends RolldownPlugin<A> {
       },
     ) => Promise<TransformResult> | TransformResult,
     {
-      filter?: {
-        id?: StringFilter
-        code?: StringFilter
-        moduleType?: ModuleTypeFilter
-      }
+      filter?:
+        | {
+            id?: StringFilter | undefined
+            code?: StringFilter | undefined
+            moduleType?: ModuleTypeFilter | undefined
+          }
+        | undefined
     }
   >
   /**
