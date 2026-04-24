@@ -33,6 +33,7 @@ const testIds = [
   'unsafe-dotenv-query-dot-svg-wasm-init',
   'unsafe-dotenv-import-raw',
   'unsafe-dotenv-ntfs-ads',
+  'unsafe-dotenv-83-short-name',
 ]
 
 export default function matrixTestResultPlugin(): Plugin {
