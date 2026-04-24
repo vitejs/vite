@@ -22,8 +22,12 @@ import {
   numberToPos,
   posToNumber,
   processSrcSetSync,
+  rawRE,
+  removeRawQuery,
+  removeUrlQuery,
   resolveHostname,
   resolveServerUrls,
+  urlRE,
 } from '../utils'
 import { isWindows } from '../../shared/utils'
 import type { CommonServerOptions, ResolvedServerUrls } from '..'
@@ -190,6 +194,64 @@ describe('injectQuery', () => {
     const src = '/src/module.ts?url=https%3A%2F%2Fusr.vite%2F'
     const expected = '/src/module.ts?t=1234&url=https%3A%2F%2Fusr.vite%2F'
     expect(injectQuery(src, 't=1234')).toEqual(expected)
+  })
+})
+
+describe('rawRE and urlRE', () => {
+  test('rawRE matches ?raw', () => {
+    expect(rawRE.test('file.ts?raw')).toBe(true)
+  })
+
+  test('rawRE matches ?raw= (URL-normalized form)', () => {
+    expect(rawRE.test('file.ts?raw=')).toBe(true)
+  })
+
+  test('rawRE matches &raw= in the middle', () => {
+    expect(rawRE.test('file.ts?foo=bar&raw=&other=1')).toBe(true)
+  })
+
+  test('rawRE does not match ?draw', () => {
+    expect(rawRE.test('file.ts?draw')).toBe(false)
+  })
+
+  test('removeRawQuery removes ?raw', () => {
+    expect(removeRawQuery('file.ts?raw')).toBe('file.ts')
+  })
+
+  test('removeRawQuery removes ?raw= (URL-normalized form)', () => {
+    expect(removeRawQuery('file.ts?raw=')).toBe('file.ts')
+  })
+
+  test('removeRawQuery removes &raw= preserving other params', () => {
+    expect(removeRawQuery('file.ts?foo=bar&raw=')).toBe('file.ts?foo=bar')
+  })
+
+  test('urlRE matches ?url', () => {
+    expect(urlRE.test('file.ts?url')).toBe(true)
+  })
+
+  test('urlRE matches ?url= (URL-normalized form)', () => {
+    expect(urlRE.test('file.ts?url=')).toBe(true)
+  })
+
+  test('urlRE matches &url= in the middle', () => {
+    expect(urlRE.test('file.ts?foo=bar&url=&other=1')).toBe(true)
+  })
+
+  test('urlRE does not match ?durl', () => {
+    expect(urlRE.test('file.ts?durl')).toBe(false)
+  })
+
+  test('removeUrlQuery removes ?url', () => {
+    expect(removeUrlQuery('file.ts?url')).toBe('file.ts')
+  })
+
+  test('removeUrlQuery removes ?url= (URL-normalized form)', () => {
+    expect(removeUrlQuery('file.ts?url=')).toBe('file.ts')
+  })
+
+  test('removeUrlQuery removes &url= preserving other params', () => {
+    expect(removeUrlQuery('file.ts?foo=bar&url=')).toBe('file.ts?foo=bar')
   })
 })
 
