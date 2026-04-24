@@ -33,6 +33,10 @@ test('dynamic import, named', async () => {
   expect(await page.textContent('.dynamic-named')).toBe(testJson.hello)
 })
 
+test.runIf(isServe)('dynamic import with import attributes', async () => {
+  expect(await page.textContent('.dynamic-with-attributes')).toBe(stringified)
+})
+
 test('fetch', async () => {
   expect(await page.textContent('.fetch')).toBe(stringified)
 })
