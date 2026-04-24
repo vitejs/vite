@@ -377,7 +377,7 @@ const devHtmlHook: IndexHtmlTransformHook = async (
 
   await Promise.all([
     ...styleUrl.map(async ({ start, end, code }, index) => {
-      const url = `${proxyModulePath}?html-proxy&direct&index=${index}.css`
+      const url = `${proxyModuleUrl}?html-proxy&direct&index=${index}.css`
 
       // ensure module in graph after successful load
       const mod =
@@ -405,7 +405,7 @@ const devHtmlHook: IndexHtmlTransformHook = async (
     }),
     ...inlineStyles.map(async ({ index, location, code }) => {
       // will transform with css plugin and cache result with css-post plugin
-      const url = `${proxyModulePath}?html-proxy&inline-css&style-attr&index=${index}.css`
+      const url = `${proxyModuleUrl}?html-proxy&inline-css&style-attr&index=${index}.css`
 
       const mod =
         await server!.environments.client.moduleGraph.ensureEntryFromUrl(
