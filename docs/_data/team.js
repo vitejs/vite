@@ -8,7 +8,7 @@ export const core = [
     desc: 'Independent open source developer, creator of Vue.js and Vite.',
     links: [
       { icon: 'github', link: 'https://github.com/yyx990803' },
-      { icon: 'x', link: 'https://x.com/youyuxi' },
+      { icon: 'x', link: 'https://x.com/evanyou' },
       { icon: 'bluesky', link: 'https://bsky.app/profile/evanyou.me' },
     ],
     sponsor: 'https://github.com/sponsors/yyx990803',
