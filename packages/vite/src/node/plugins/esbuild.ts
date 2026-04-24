@@ -542,32 +542,29 @@ export async function reloadOnTsconfigChange(
   changedFile: string,
 ): Promise<void> {
   // any tsconfig.json that's added in the workspace could be closer to a code file than a previously cached one
-  // any json file in the tsconfig cache could have been used to compile ts
-  if (changedFile.endsWith('.json')) {
+  if (changedFile.endsWith('/tsconfig.json')) {
     const cache = getTSConfigResolutionCache(server.config)
-    if (changedFile.endsWith('/tsconfig.json')) {
-      server.config.logger.info(
-        `changed tsconfig file detected: ${changedFile} - Clearing cache and forcing full-reload to ensure TypeScript is compiled with updated config values.`,
-        { clear: server.config.clearScreen, timestamp: true },
-      )
+    server.config.logger.info(
+      `changed tsconfig file detected: ${changedFile} - Clearing cache and forcing full-reload to ensure TypeScript is compiled with updated config values.`,
+      { clear: server.config.clearScreen, timestamp: true },
+    )
 
-      // TODO: more finegrained invalidation than the nuclear option below
+    // TODO: more finegrained invalidation than the nuclear option below
 
-      // clear module graph to remove code compiled with outdated config
-      for (const environment of Object.values(server.environments)) {
-        environment.moduleGraph.invalidateAll()
-      }
+    // clear module graph to remove code compiled with outdated config
+    for (const environment of Object.values(server.environments)) {
+      environment.moduleGraph.invalidateAll()
+    }
 
-      // reset the cache so that recompile works with up2date configs
-      cache.clear()
+    // reset the cache so that recompile works with up2date configs
+    cache.clear()
 
-      // reload environments
-      for (const environment of Object.values(server.environments)) {
-        environment.hot.send({
-          type: 'full-reload',
-          path: '*',
-        })
-      }
+    // reload environments
+    for (const environment of Object.values(server.environments)) {
+      environment.hot.send({
+        type: 'full-reload',
+        path: '*',
+      })
     }
   }
 }
