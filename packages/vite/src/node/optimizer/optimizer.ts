@@ -374,6 +374,7 @@ export function createDepsOptimizer(
         metadata.hash !== newData.hash ||
         Object.keys(metadata.optimized).some((dep) => {
           return (
+            newData.optimized[dep] &&
             metadata.optimized[dep].fileHash !== newData.optimized[dep].fileHash
           )
         })
@@ -396,9 +397,10 @@ export function createDepsOptimizer(
             newData.chunks[dep].browserHash = metadata.browserHash
           }
           for (const dep in newData.optimized) {
-            newData.optimized[dep].browserHash = (
-              metadata.optimized[dep] || metadata.discovered[dep]
-            ).browserHash
+            const prev = metadata.optimized[dep] || metadata.discovered[dep]
+            if (prev) {
+              newData.optimized[dep].browserHash = prev.browserHash
+            }
           }
         }
 
