@@ -789,7 +789,7 @@ See [rolldown-vite changelog](https://github.com/vitejs/rolldown-vite/blob/v7.2.
 * **deps:** update rolldown-related dependencies ([#20536](https://github.com/vitejs/vite/issues/20536)) ([8be2787](https://github.com/vitejs/vite/commit/8be278748a92b128c49a24619d8d537dd2b08ceb))
 * **deps:** update dependency parse5 to v8 ([#20490](https://github.com/vitejs/vite/issues/20490)) ([744582d](https://github.com/vitejs/vite/commit/744582d0187c50045fb6cf229e3fab13093af08e))
 * format ([f20addc](https://github.com/vitejs/vite/commit/f20addc5363058f5fd797e5bc71fab3877ed0a76))
-* stablize `cssScopeTo` ([#19592](https://github.com/vitejs/vite/issues/19592)) ([ced1343](https://github.com/vitejs/vite/commit/ced13433fb71e2101850a4da1b0ef70cbc38b804))
+* stabilize `cssScopeTo` ([#19592](https://github.com/vitejs/vite/issues/19592)) ([ced1343](https://github.com/vitejs/vite/commit/ced13433fb71e2101850a4da1b0ef70cbc38b804))
 
 ### Code Refactoring
 
@@ -978,7 +978,7 @@ Today, we're excited to announce the release of the next Vite major:
 
 ### Miscellaneous Chores
 
-* "indentity" → "identity" in test description ([#20225](https://github.com/vitejs/vite/issues/20225)) ([ea9aed7](https://github.com/vitejs/vite/commit/ea9aed7ebcb7f4be542bd2a384cbcb5a1e7b31bd))
+* "identity" → "identity" in test description ([#20225](https://github.com/vitejs/vite/issues/20225)) ([ea9aed7](https://github.com/vitejs/vite/commit/ea9aed7ebcb7f4be542bd2a384cbcb5a1e7b31bd))
 * **deps:** update rolldown-related dependencies ([#20270](https://github.com/vitejs/vite/issues/20270)) ([f7377c3](https://github.com/vitejs/vite/commit/f7377c3eae6323bd3237ff5de5ae55c879fe7325))
 * typos in comments ([#20259](https://github.com/vitejs/vite/issues/20259)) ([b135918](https://github.com/vitejs/vite/commit/b135918b91e8381c50bd2d076d40e9a65fe68bfe))
 * **deps:** update rolldown-related dependencies ([#20182](https://github.com/vitejs/vite/issues/20182)) ([6172f41](https://github.com/vitejs/vite/commit/6172f410b44cbae8d052997bb1819a6197a4d397))
@@ -1197,7 +1197,7 @@ See [6.3.0-beta.0 changelog](https://github.com/vitejs/vite/blob/v6.3.0-beta.0/p
 
 ### Miscellaneous Chores
 
-* extend commit hash correctly when ambigious with a non-commit object ([#19600](https://github.com/vitejs/vite/issues/19600)) ([89a6287](https://github.com/vitejs/vite/commit/89a62873243805518b672212db7e317989c5c197))
+* extend commit hash correctly when ambiguous with a non-commit object ([#19600](https://github.com/vitejs/vite/issues/19600)) ([89a6287](https://github.com/vitejs/vite/commit/89a62873243805518b672212db7e317989c5c197))
 
 ## <small>[6.2.1](https://github.com/vitejs/vite/compare/v6.2.0...v6.2.1) (2025-03-07)</small>
 ### Features
@@ -1616,7 +1616,7 @@ We want to thank the more than [1K contributors to Vite Core](https://github.com
 * add .git to deny list by default ([#18382](https://github.com/vitejs/vite/issues/18382)) ([105ca12](https://github.com/vitejs/vite/commit/105ca12b34e466dc9de838643954a873ac1ce804))
 * add `environment::listen` ([#18263](https://github.com/vitejs/vite/issues/18263)) ([4d5f51d](https://github.com/vitejs/vite/commit/4d5f51d13f92cc8224a028c27df12834a0667659))
 * enable dependencies discovery and pre-bundling in ssr environments ([#18358](https://github.com/vitejs/vite/issues/18358)) ([9b21f69](https://github.com/vitejs/vite/commit/9b21f69405271f1b864fa934a96adcb0e1a2bc4d))
-* restrict characters useable for environment name ([#18255](https://github.com/vitejs/vite/issues/18255)) ([9ab6180](https://github.com/vitejs/vite/commit/9ab6180d3a20be71eb7aedef000f8c4ae3591c40))
+* restrict characters usable for environment name ([#18255](https://github.com/vitejs/vite/issues/18255)) ([9ab6180](https://github.com/vitejs/vite/commit/9ab6180d3a20be71eb7aedef000f8c4ae3591c40))
 * support arbitrary module namespace identifier imports from cjs deps ([#18236](https://github.com/vitejs/vite/issues/18236)) ([4389a91](https://github.com/vitejs/vite/commit/4389a917f8f5e8e67222809fb7b166bb97f6d02c))
 * introduce RunnableDevEnvironment ([#18190](https://github.com/vitejs/vite/issues/18190)) ([fb292f2](https://github.com/vitejs/vite/commit/fb292f226f988e80fee4f4aea878eb3d5d229022))
 * support `this.environment` in `options` and `onLog` hook ([#18142](https://github.com/vitejs/vite/issues/18142)) ([7722c06](https://github.com/vitejs/vite/commit/7722c061646bc8587f55f560bfe06b2a9643639a))
