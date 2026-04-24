@@ -8,3 +8,7 @@ test('from source code', async () => {
 test('from dependency', async () => {
   expect(await page.textContent('.dep'), 'world')
 })
+
+test('dynamic import with attributes', async () => {
+  expect(await page.textContent('.dynamic'), 'bar')
+})
