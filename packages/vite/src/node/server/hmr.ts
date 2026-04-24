@@ -691,8 +691,12 @@ export function updateModules(
         ({ boundary, acceptedVia, isWithinCircularImport }) => ({
           type: `${boundary.type}-update` as const,
           timestamp,
-          path: normalizeHmrUrl(boundary.url),
-          acceptedPath: normalizeHmrUrl(acceptedVia.url),
+          path: normalizeHmrUrl(
+            boundary.id?.includes('\0') ? boundary.id : boundary.url,
+          ),
+          acceptedPath: normalizeHmrUrl(
+            acceptedVia.id?.includes('\0') ? acceptedVia.id : acceptedVia.url,
+          ),
           explicitImportRequired:
             boundary.type === 'js'
               ? isExplicitImportRequired(acceptedVia.url)
