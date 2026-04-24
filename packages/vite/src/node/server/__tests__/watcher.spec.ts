@@ -53,4 +53,17 @@ describe('watcher configuration', () => {
       )
     })
   })
+
+  it('should not watch a non-existent public directory', async () => {
+    const root = fileURLToPath(
+      new URL('./fixtures/watcher/nested-root', import.meta.url),
+    )
+    const nonExistentPublicDir = resolve(root, '../non-existent-public')
+    server = await createServer({ root, publicDir: nonExistentPublicDir })
+    await new Promise((resolve) => server!.watcher.once('ready', resolve))
+    await vi.waitFor(() => {
+      const watchedDirs = Object.keys(server!.watcher.getWatched())
+      expect(watchedDirs).not.toContain(nonExistentPublicDir)
+    })
+  })
 })
