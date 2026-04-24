@@ -255,6 +255,14 @@ describe.runIf(isServe)('matrix', () => {
       content: /403 Restricted/,
       status: '403',
     },
+    // On NTFS, it exposes a file's default data stream through the `::$DATA` suffix,
+    // so `.env::$DATA` resolves to the same content as `.env`.
+    {
+      name: 'denied .env with NTFS ADS suffix',
+      testId: 'unsafe-dotenv-ntfs-ads',
+      content: /403 Restricted/,
+      status: '403',
+    },
   ]
 
   for (const {

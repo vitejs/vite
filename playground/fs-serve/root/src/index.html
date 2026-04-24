@@ -154,6 +154,8 @@
     },
     // .env with ?import&raw
     { testId: 'unsafe-dotenv-import-raw', path: '/root/src/.env?import&raw' },
+    // .env with NTFS ADS suffix
+    { testId: 'unsafe-dotenv-ntfs-ads', path: '/root/src/.env::$DATA' },
   ]
   const variants = {
     '': (path) =>
