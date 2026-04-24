@@ -12,6 +12,7 @@ export default defineConfig({
         nested: resolve(dirname, 'nested/index.html'),
         scriptAsync: resolve(dirname, 'scriptAsync.html'),
         scriptMixed: resolve(dirname, 'scriptMixed.html'),
+        scriptFetchPriority: resolve(dirname, 'scriptFetchPriority.html'),
         emptyAttr: resolve(dirname, 'emptyAttr.html'),
         link: resolve(dirname, 'link.html'),
         'link/target': resolve(dirname, 'index.html'),
