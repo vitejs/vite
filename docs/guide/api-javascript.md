@@ -312,7 +312,7 @@ function mergeConfig(
 
 Deeply merge two Vite configs. `isRoot` represents the level within the Vite config which is being merged. For example, set `false` if you're merging two `build` options.
 
-::: info Handling of `null` and `undefined`
+::: tip NOTE
 `null` and `undefined` values in `overrides` are skipped, so the corresponding values in `defaults` are preserved. This makes it convenient to merge in options conditionally without unintentionally clearing values from `defaults`:
 
 ```ts twoslash
