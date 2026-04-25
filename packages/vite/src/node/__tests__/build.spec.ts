@@ -1,4 +1,5 @@
 import { basename, resolve } from 'node:path'
+import { tmpdir } from 'node:os'
 import { stripVTControlCharacters } from 'node:util'
 import fsp from 'node:fs/promises'
 import colors from 'picocolors'
@@ -1185,6 +1186,38 @@ test('watch rebuild manifest', async (ctx) => {
       "entry.js",
     ]
   `)
+})
+
+test('copies public directory after building same environment with write false first', async (ctx) => {
+  const root = await fsp.realpath(
+    await fsp.mkdtemp(resolve(tmpdir(), 'vite-public-write-')),
+  )
+  ctx.onTestFinished(() => fsp.rm(root, { recursive: true, force: true }))
+
+  await fsp.mkdir(resolve(root, 'public'), { recursive: true })
+  await fsp.writeFile(resolve(root, 'public/favicon.svg'), '<svg></svg>')
+  await fsp.writeFile(
+    resolve(root, 'index.html'),
+    '<script type="module" src="/src/main.js"></script>',
+  )
+  await fsp.mkdir(resolve(root, 'src'), { recursive: true })
+  await fsp.writeFile(resolve(root, 'src/main.js'), 'console.log("ok")')
+
+  const builder = await createBuilder({
+    root,
+    configFile: false,
+    logLevel: 'silent',
+  })
+
+  builder.environments.client.config.build.write = false
+  await builder.build(builder.environments.client)
+
+  builder.environments.client.config.build.write = true
+  await builder.build(builder.environments.client)
+
+  await expect(
+    fsp.readFile(resolve(root, 'dist/favicon.svg'), 'utf-8'),
+  ).resolves.toBe('<svg></svg>')
 })
 
 /**
