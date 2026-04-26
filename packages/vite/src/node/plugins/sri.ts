@@ -47,16 +47,6 @@ const createSriPlaceholderRE = (algorithm: SRIHashAlgorithm): RegExp => {
   return new RegExp(`${sriPlaceholderPrefix}[A-Z0-9_]{${suffixLength}}`, 'g')
 }
 
-const createSriPlaceholderStringRE = (algorithm: SRIHashAlgorithm): RegExp => {
-  const placeholderLength = integrityLengthByAlgorithm[algorithm]
-  const suffixLength = placeholderLength - sriPlaceholderPrefix.length
-
-  return new RegExp(
-    `(["'])(${sriPlaceholderPrefix}[A-Z0-9_]{${suffixLength}})\\1`,
-    'g',
-  )
-}
-
 export const getSriState: (context: PluginContext) => SRIState =
   perEnvironmentState<SRIState>(() => ({
     fileToPlaceholder: new Map(),
@@ -130,8 +120,8 @@ export const createSriHtmlPlaceholder = (
  * Creates a fixed-width SRI placeholder for JS preload metadata and records the
  * `ownerFileName -> dependencyFileName` edge used to resolve integrity values.
  *
- * Cyclic preload references may be replaced with `void 0` to omit the runtime
- * `integrity` value instead of emitting an incorrect hash.
+ * Cyclic preload references fail the build because Vite cannot compute valid
+ * integrity values when chunks' final content depends on each other's hashes.
  */
 export const createSriDependencyPlaceholder = (
   context: PluginContext,
@@ -330,70 +320,13 @@ const resolveReadyChunks = (
   }
 }
 
-const createWidthPreservingVoidExpression = (targetLength: number): string => {
-  const expression = 'void 0'
-  const commentStart = '/*'
-  const commentEnd = '*/'
-
-  const commentPaddingLength =
-    targetLength - expression.length - commentStart.length - commentEnd.length
-
-  if (commentPaddingLength < 0) {
-    throw new Error('SRI fallback replacement is longer than the placeholder')
-  }
-
-  return `${expression}${commentStart}${'_'.repeat(commentPaddingLength)}${commentEnd}`
-}
-
-const replaceSriDependencyPlaceholders = (
-  content: string,
-  state: SRIState,
-  placeholderStringRE: RegExp,
-  unresolvedNodesByFile: Map<string, ChunkNode>,
-): string =>
-  content.replace(
-    placeholderStringRE,
-    (match, _quote: string, placeholder: string) => {
-      const fileName = state.placeholderToFile.get(placeholder)
-      if (!fileName) {
-        return match
-      }
-
-      if (unresolvedNodesByFile.has(fileName)) {
-        return createWidthPreservingVoidExpression(match.length)
-      }
-
-      const integrity = state.integrityByFile.get(fileName)
-      if (integrity === undefined) {
-        return createWidthPreservingVoidExpression(match.length)
-      }
-
-      return JSON.stringify(integrity)
-    },
-  )
-
-const resolveUnresolvedChunks = (
-  graph: ChunkGraph,
-  state: SRIState,
-  algorithm: SRIHashAlgorithm,
-  placeholderStringRE: RegExp,
-): void => {
-  for (const node of graph.nodesByFile.values()) {
-    node.chunk.code = replaceSriDependencyPlaceholders(
-      node.chunk.code,
-      state,
-      placeholderStringRE,
-      graph.nodesByFile,
-    )
-
-    state.integrityByFile.set(
-      node.chunk.fileName,
-      generateIntegrity(node.chunk.code, algorithm),
-    )
-  }
-
-  graph.nodesByFile.clear()
-}
+const formatUnresolvedSriError = (unresolvedFiles: string[]): string =>
+  `Unable to compute SRI integrity for ${unresolvedFiles.length} chunk${
+    unresolvedFiles.length === 1 ? '' : 's'
+  }.\n` +
+  `This is usually caused by cyclic preload references between generated chunks.\n` +
+  `Vite cannot emit valid SRI metadata for these chunks because their final integrity values depend on each other.\n` +
+  unresolvedFiles.map((file) => `  - ${file}`).join('\n')
 
 const assetSourceToString = (source: OutputAsset['source']): string => {
   return typeof source === 'string'
@@ -438,7 +371,6 @@ export const sriPlugin = (): Plugin => {
 
       const algorithm = this.environment.config.build.sri as SRIHashAlgorithm
       const placeholderRE = createSriPlaceholderRE(algorithm)
-      const placeholderStringRE = createSriPlaceholderStringRE(algorithm)
 
       const { htmlAssets, nodesByFile } = collectSriOutputs(
         bundle,
@@ -451,7 +383,7 @@ export const sriPlugin = (): Plugin => {
       resolveReadyChunks(graph, state, algorithm, placeholderRE)
 
       if (graph.nodesByFile.size > 0) {
-        resolveUnresolvedChunks(graph, state, algorithm, placeholderStringRE)
+        this.error(formatUnresolvedSriError([...graph.nodesByFile.keys()]))
       }
 
       resolveHtmlAssets(htmlAssets, state, placeholderRE)
