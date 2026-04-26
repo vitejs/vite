@@ -66,6 +66,69 @@ modulePreload: {
 
 The resolved dependency paths can be further modified using [`experimental.renderBuiltUrl`](../guide/build.md#advanced-base-options).
 
+## build.sri
+
+- **Type:** `boolean | 'sha256' | 'sha384' | 'sha512'`
+- **Default:** `false`
+- **Related:** [Backend Integration](/guide/backend-integration), [SSR](/guide/ssr#generating-preload-directives)
+
+Enable [Subresource Integrity](https://developer.mozilla.org/en-US/docs/Web/Security/Subresource_Integrity) metadata for Vite-emitted JavaScript and CSS assets.
+
+When set to `true`, Vite uses `sha384`.
+
+```js twoslash [vite.config.js]
+import { defineConfig } from 'vite'
+
+export default defineConfig({
+  build: {
+    sri: true,
+  },
+})
+```
+
+You can also choose the hash algorithm explicitly:
+
+```js twoslash [vite.config.js]
+import { defineConfig } from 'vite'
+
+export default defineConfig({
+  build: {
+    sri: 'sha512',
+  },
+})
+```
+
+When enabled, Vite adds `integrity` attributes to Vite-generated tags in built HTML:
+
+- `<script type="module">`
+- `<link rel="modulepreload">`
+- `<link rel="stylesheet">`
+
+Vite also attaches integrity metadata to runtime preload links created for dynamic imports when the corresponding emitted JavaScript or CSS file is known. If runtime preload metadata between generated chunks forms a cycle, the build fails with an error: Vite cannot compute valid integrity values when the final content of two chunks depends on each other's hashes.
+
+The [`build.modulePreload`](#build-modulepreload) option can still be set to `false`. In that case, Vite doesn't emit module preload links for dynamic imports, but SRI remains enabled for other supported output surfaces.
+
+If [`build.manifest`](#build-manifest) and/or [`build.ssrManifest`](#build-ssrmanifest) is enabled, Vite also emits `.vite/sri-manifest.json`. This file contains a `file -> integrity` mapping for emitted JavaScript and CSS files:
+
+```json [.vite/sri-manifest.json]
+{
+  "assets/index-BRBmoGS9.js": "sha384-...",
+  "assets/index-5UjPuW-k.css": "sha384-..."
+}
+```
+
+Backend and SSR integrations can read `sri-manifest.json` alongside `manifest.json` or `ssr-manifest.json` to render `integrity` attributes themselves.
+
+Integrity values are computed from the final emitted content, after Vite has finalized JavaScript, CSS, and HTML output.
+
+Vite only emits integrity metadata for JavaScript and CSS assets it can map to final emitted files. If a URL is customized in a way that Vite can't associate with an emitted asset, for example through [`experimental.renderBuiltUrl`](/guide/build#advanced-base-options), integrity metadata is omitted for that URL.
+
+SRI metadata is not generated for workers, WebAssembly, images, fonts, or other generic assets.
+
+This option doesn't configure or validate [`Integrity-Policy`](https://developer.mozilla.org/en-US/docs/Web/HTTP/Reference/Headers/Integrity-Policy) headers. `Integrity-Policy` remains a deployment concern.
+
+`build.sri` is not supported in [Library Mode](/guide/build#library-mode), where the final deployment URL and loading policy are controlled by the library consumer.
+
 ## build.polyfillModulePreload
 
 - **Type:** `boolean`

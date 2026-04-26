@@ -187,87 +187,175 @@ If you need a custom integration, you can follow the steps in this guide to conf
 
    JS chunks (chunks other than assets or CSS) will contain information on their static and dynamic imports (both are keys that map to the corresponding chunk in the manifest). Chunks also list their corresponding CSS and asset files if they have any.
 
+   If [`build.sri`](/config/build-options.md#build-sri) is enabled together with [`build.manifest`](/config/build-options.md#build-manifest), Vite emits a separate `.vite/sri-manifest.json` file.
+
+   This file maps emitted JavaScript and CSS file names to their Subresource Integrity values. The shape of `manifest.json` is unchanged.
+
+   ```json [.vite/manifest.json]
+   {
+     "views/foo.js": {
+       "file": "assets/foo-BRBmoGS9.js",
+       "src": "views/foo.js",
+       "isEntry": true,
+       "css": ["assets/foo-5UjPuW-k.css"]
+     }
+   }
+   ```
+
+   ```json [.vite/sri-manifest.json]
+   {
+     "assets/foo-BRBmoGS9.js": "sha384-...",
+     "assets/foo-5UjPuW-k.css": "sha384-..."
+   }
+   ```
+
+   Backend integrations can read `sri-manifest.json` alongside `manifest.json` and look up integrity values by the emitted file names from the `file`, `css`, and `imports` entries.
+
+   The `integrity` attribute should only be rendered when the corresponding file exists in `sri-manifest.json`. If `build.sri` is disabled, or if a file has no matching entry in `sri-manifest.json`, omit the `integrity` attribute.
+
 4. You can use this file to render links or preload directives with hashed filenames.
 
    Here is an example HTML template to render the proper links. The syntax here is for
    explanation only, substitute with your server templating language. The `importedChunks`
    function is for illustration and isn't provided by Vite.
 
+   If [`build.sri`](/config/build-options.md#build-sri) is enabled, read `.vite/sri-manifest.json` alongside `.vite/manifest.json` and use it to render `integrity` attributes when available.
+
    ```html
    <!-- if production -->
 
    <!-- for cssFile of manifest[name].css -->
-   <link rel="stylesheet" href="/{{ cssFile }}" />
+   <link
+     rel="stylesheet"
+     href="/{{ cssFile }}"
+     crossorigin
+     integrity="{{ sriManifest[cssFile] }}"
+   />
 
    <!-- for chunk of importedChunks(manifest, name) -->
    <!-- for cssFile of chunk.css -->
-   <link rel="stylesheet" href="/{{ cssFile }}" />
+   <link
+     rel="stylesheet"
+     href="/{{ cssFile }}"
+     crossorigin
+     integrity="{{ sriManifest[cssFile] }}"
+   />
 
-   <script type="module" src="/{{ manifest[name].file }}"></script>
+   <script
+     type="module"
+     src="/{{ manifest[name].file }}"
+     crossorigin
+     integrity="{{ sriManifest[manifest[name].file] }}"
+   ></script>
 
    <!-- for chunk of importedChunks(manifest, name) -->
-   <link rel="modulepreload" href="/{{ chunk.file }}" />
+   <link
+     rel="modulepreload"
+     href="/{{ chunk.file }}"
+     crossorigin
+     integrity="{{ sriManifest[chunk.file] }}"
+   />
    ```
+
+   The `integrity` attributes in the example above should only be rendered when the corresponding entry exists in `sri-manifest.json`.
 
    Specifically, a backend generating HTML should include the following tags given a manifest
    file and an entry point. Note that following this order is recommended for optimal performance:
-   1. A `<link rel="stylesheet">` tag for each file in the entry point chunk's `css` list (if it exists)
-   2. Recursively follow all chunks in the entry point's `imports` list and include a
-      `<link rel="stylesheet">` tag for each CSS file of each imported chunk's `css` list (if it exists).
-   3. A tag for the `file` key of the entry point chunk. This can be `<script type="module">` for JavaScript, `<link rel="stylesheet">` for CSS.
-   4. Optionally, `<link rel="modulepreload">` tag for the `file` of each imported JavaScript
-      chunk, again recursively following the imports starting from the entry point chunk.
 
-   Following the above example manifest, for the entry point `views/foo.js` the following tags should be included in production:
+5. A `<link rel="stylesheet">` tag for each file in the entry point chunk's `css` list (if it exists)
+6. Recursively follow all chunks in the entry point's `imports` list and include a
+   `<link rel="stylesheet">` tag for each CSS file of each imported chunk's `css` list (if it exists).
+7. A tag for the `file` key of the entry point chunk. This can be `<script type="module">` for JavaScript, `<link rel="stylesheet">` for CSS.
+8. Optionally, `<link rel="modulepreload">` tag for the `file` of each imported JavaScript
+   chunk, again recursively following the imports starting from the entry point chunk.
 
-   ```html
-   <link rel="stylesheet" href="assets/foo-5UjPuW-k.css" />
-   <link rel="stylesheet" href="assets/shared-ChJ_j-JJ.css" />
-   <script type="module" src="assets/foo-BRBmoGS9.js"></script>
-   <!-- optional -->
-   <link rel="modulepreload" href="assets/shared-B7PI925R.js" />
-   ```
+If [`build.sri`](/config/build-options.md#build-sri) is enabled, include `integrity` attributes from `.vite/sri-manifest.json` when a matching entry exists.
 
-   While the following should be included for the entry point `views/bar.js`:
+Following the above example manifest, for the entry point `views/foo.js` the following tags should be included in production:
 
-   ```html
-   <link rel="stylesheet" href="assets/shared-ChJ_j-JJ.css" />
-   <script type="module" src="assets/bar-gkvgaI9m.js"></script>
-   <!-- optional -->
-   <link rel="modulepreload" href="assets/shared-B7PI925R.js" />
-   ```
+```html
+<link
+  rel="stylesheet"
+  href="/assets/foo-5UjPuW-k.css"
+  crossorigin
+  integrity="sha384-..."
+/>
+<link
+  rel="stylesheet"
+  href="/assets/shared-ChJ_j-JJ.css"
+  crossorigin
+  integrity="sha384-..."
+/>
+<script
+  type="module"
+  src="/assets/foo-BRBmoGS9.js"
+  crossorigin
+  integrity="sha384-..."
+></script>
+<!-- optional -->
+<link
+  rel="modulepreload"
+  href="/assets/shared-B7PI925R.js"
+  crossorigin
+  integrity="sha384-..."
+/>
+```
 
-   ::: details Pseudo implementation of `importedChunks`
-   An example pseudo implementation of `importedChunks` in TypeScript (This will
-   need to be adapted for your programming language and templating language):
+While the following should be included for the entry point `views/bar.js`:
 
-   ```ts
-   import type { Manifest, ManifestChunk } from 'vite'
+```html
+<link
+  rel="stylesheet"
+  href="/assets/shared-ChJ_j-JJ.css"
+  crossorigin
+  integrity="sha384-..."
+/>
+<script
+  type="module"
+  src="/assets/bar-gkvgaI9m.js"
+  crossorigin
+  integrity="sha384-..."
+></script>
+<!-- optional -->
+<link
+  rel="modulepreload"
+  href="/assets/shared-B7PI925R.js"
+  crossorigin
+  integrity="sha384-..."
+/>
+```
 
-   export default function importedChunks(
-     manifest: Manifest,
-     name: string,
-   ): ManifestChunk[] {
-     const seen = new Set<string>()
+::: details Pseudo implementation of `importedChunks`
+An example pseudo implementation of `importedChunks` in TypeScript (This will
+need to be adapted for your programming language and templating language):
 
-     function getImportedChunks(chunk: ManifestChunk): ManifestChunk[] {
-       const chunks: ManifestChunk[] = []
-       for (const file of chunk.imports ?? []) {
-         const importee = manifest[file]
-         if (seen.has(file)) {
-           continue
-         }
-         seen.add(file)
+```ts
+import type { Manifest, ManifestChunk } from 'vite'
 
-         chunks.push(...getImportedChunks(importee))
-         chunks.push(importee)
-       }
+export default function importedChunks(
+  manifest: Manifest,
+  name: string,
+): ManifestChunk[] {
+  const seen = new Set<string>()
 
-       return chunks
-     }
+  function getImportedChunks(chunk: ManifestChunk): ManifestChunk[] {
+    const chunks: ManifestChunk[] = []
+    for (const file of chunk.imports ?? []) {
+      const importee = manifest[file]
+      if (seen.has(file)) {
+        continue
+      }
+      seen.add(file)
 
-     return getImportedChunks(manifest[name])
-   }
-   ```
+      chunks.push(...getImportedChunks(importee))
+      chunks.push(importee)
+    }
 
-   :::
+    return chunks
+  }
+
+  return getImportedChunks(manifest[name])
+}
+```
+
+:::

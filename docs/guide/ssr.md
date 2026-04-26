@@ -205,6 +205,38 @@ Refer to the [example projects](#example-projects) for a working setup.
 
 The above script will now generate `dist/client/.vite/ssr-manifest.json` for the client build (Yes, the SSR manifest is generated from the client build because we want to map module IDs to client files). The manifest contains mappings of module IDs to their associated chunks and asset files.
 
+If [`build.sri`](/config/build-options.md#build-sri) is enabled for the client build together with [`build.ssrManifest`](/config/build-options.md#build-ssrmanifest), Vite also generates `dist/client/.vite/sri-manifest.json`.
+
+This file maps emitted JavaScript and CSS file names to their Subresource Integrity values:
+
+```json [.vite/sri-manifest.json]
+{
+  "assets/async-route-B7PI925R.js": "sha384-...",
+  "assets/async-route-ChJ_j-JJ.css": "sha384-..."
+}
+```
+
+The shape of `ssr-manifest.json` is unchanged. SSR integrations that render preload directives can read `sri-manifest.json` alongside `ssr-manifest.json` and add `integrity` attributes when a matching emitted file exists in the SRI manifest.
+
+The `integrity` attribute should only be rendered when the corresponding file exists in `sri-manifest.json`. If `build.sri` is disabled, or if a file has no matching entry in `sri-manifest.json`, omit the `integrity` attribute.
+
+If your integration applies a `base` URL or otherwise converts emitted file names into public URLs, look up the integrity value before or while applying that URL transformation. `sri-manifest.json` is keyed by emitted file names, not by fully resolved public URLs.
+
+```html
+<link
+  rel="modulepreload"
+  href="/assets/async-route-B7PI925R.js"
+  crossorigin
+  integrity="sha384-..."
+/>
+<link
+  rel="stylesheet"
+  href="/assets/async-route-ChJ_j-JJ.css"
+  crossorigin
+  integrity="sha384-..."
+/>
+```
+
 To leverage the manifest, frameworks need to provide a way to collect the module IDs of the components that were used during a server render call.
 
 `@vitejs/plugin-vue` supports this out of the box and automatically registers used component module IDs on to the associated Vue SSR context:

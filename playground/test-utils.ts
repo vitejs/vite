@@ -251,6 +251,15 @@ export function readManifest(base = ''): Manifest {
   )
 }
 
+export function readSriManifest(base = ''): Record<string, string> {
+  return JSON.parse(
+    fs.readFileSync(
+      path.join(testDir, 'dist', base, '.vite/sri-manifest.json'),
+      'utf-8',
+    ),
+  )
+}
+
 export function readDepOptimizationMetadata(
   environmentName = 'client',
 ): DepOptimizationMetadata {

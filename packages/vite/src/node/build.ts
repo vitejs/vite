@@ -45,6 +45,7 @@ import { resolveConfig } from './config'
 import type { PartialEnvironment } from './baseEnvironment'
 import { buildReporterPlugin } from './plugins/reporter'
 import { buildEsbuildPlugin } from './plugins/esbuild'
+import { sriPlugin } from './plugins/sri'
 import { type TerserOptions, terserPlugin } from './plugins/terser'
 import {
   arraify,
@@ -88,6 +89,9 @@ import {
 } from './deprecations'
 import { prepareOutDirPlugin } from './plugins/prepareOutDir'
 import type { Environment } from './environment'
+import { sriManifestPlugin } from './plugins/sriManifest'
+
+export type SRIHashAlgorithm = 'sha256' | 'sha384' | 'sha512'
 
 export interface BuildEnvironmentOptions {
   /**
@@ -249,6 +253,12 @@ export interface BuildEnvironmentOptions {
    */
   manifest?: boolean | string
   /**
+   * Emit Subresource Integrity metadata for Vite-generated JS and CSS.
+   * `true` uses the default `sha384` algorithm.
+   * @default false
+   */
+  sri?: boolean | SRIHashAlgorithm
+  /**
    * Build in library mode. The value should be the global name of the lib in
    * UMD mode. This will produce esm + cjs + umd bundle formats with default
    * configurations that are suitable for distributing libraries.
@@ -367,12 +377,14 @@ export interface ResolvedBuildEnvironmentOptions extends Required<
   Omit<BuildEnvironmentOptions, 'polyfillModulePreload'>
 > {
   modulePreload: false | ResolvedModulePreloadOptions
+  sri: false | SRIHashAlgorithm
 }
 
 export interface ResolvedBuildOptions extends Required<
   Omit<BuildOptions, 'polyfillModulePreload'>
 > {
   modulePreload: false | ResolvedModulePreloadOptions
+  sri: false | SRIHashAlgorithm
 }
 
 const _buildEnvironmentOptionsDefaults = Object.freeze({
@@ -402,6 +414,7 @@ const _buildEnvironmentOptionsDefaults = Object.freeze({
   copyPublicDir: true,
   license: false,
   manifest: false,
+  sri: false,
   lib: false,
   // ssr
   ssrManifest: false,
@@ -477,9 +490,20 @@ export function resolveBuildEnvironmentOptions(
     merged.minify = 'oxc'
   }
 
+  if (merged.sri === true) {
+    merged.sri = 'sha384'
+  }
+
+  if (merged.sri && merged.lib) {
+    throw new Error(
+      'Option "build.sri" is not supported with enabled "build.lib"',
+    )
+  }
+
   const defaultModulePreload = {
     polyfill: true,
   }
+  const resolvedSri = merged.sri as false | SRIHashAlgorithm
 
   const resolved: ResolvedBuildEnvironmentOptions = {
     ...merged,
@@ -497,6 +521,7 @@ export function resolveBuildEnvironmentOptions(
               ...defaultModulePreload,
               ...merged.modulePreload,
             },
+    sri: resolvedSri,
   }
 
   return resolved
@@ -528,8 +553,15 @@ export async function resolveBuildPlugins(config: ResolvedConfig): Promise<{
       ...(isBuild && !config.isWorker
         ? [
             licensePlugin(),
+
             manifestPlugin(),
             ssrManifestPlugin(),
+
+            // Run SRI after JS/CSS/HTML output is finalized, including minification and
+            // sourcemap updates, so hashes match the final emitted content.
+            sriPlugin(),
+            sriManifestPlugin(),
+
             buildReporterPlugin(config),
           ]
         : []),
