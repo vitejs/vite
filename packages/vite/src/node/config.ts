@@ -2349,7 +2349,7 @@ async function bundleConfigFile(
     input: fileName,
     // target: [`node${process.versions.node}`],
     platform: 'node',
-    logLevel,
+    logLevel: logLevel === 'error' ? 'silent' : logLevel,
     resolve: {
       mainFields: ['main'],
     },
