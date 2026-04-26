@@ -934,6 +934,52 @@ describe('resolveConfig', () => {
       resolved.optimizeDeps!.rolldownOptions,
     )
   })
+
+  test('normalizes build.sri=true to sha384', async () => {
+    const resolved = await resolveConfig(
+      {
+        build: {
+          sri: true,
+        },
+      },
+      'build',
+    )
+
+    expect(resolved.build.sri).toBe('sha384')
+  })
+
+  test('keeps build.sri algorithm values and supports modulePreload=false', async () => {
+    const resolved = await resolveConfig(
+      {
+        build: {
+          sri: 'sha512',
+          modulePreload: false,
+        },
+      },
+      'build',
+    )
+
+    expect(resolved.build.sri).toBe('sha512')
+    expect(resolved.build.modulePreload).toBe(false)
+  })
+
+  test('rejects build.sri in library mode', async () => {
+    await expect(
+      resolveConfig(
+        {
+          build: {
+            sri: true,
+            lib: {
+              entry: 'entry.js',
+              name: 'MyLib',
+              formats: ['es'],
+            },
+          },
+        },
+        'build',
+      ),
+    ).rejects.toThrowError(/build\.sri.*build\.lib/i)
+  })
 })
 
 test('config compat 1', async () => {

@@ -3,6 +3,7 @@ import { defineConfig } from 'vite'
 export default defineConfig({
   build: {
     outDir: 'dist/preload-disabled',
+    sri: true,
     minify: 'terser',
     terserOptions: {
       format: {

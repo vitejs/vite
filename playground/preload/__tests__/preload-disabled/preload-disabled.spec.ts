@@ -23,5 +23,14 @@ describe.runIf(isBuild)('build', () => {
     expect(html).toMatch(
       /link rel="stylesheet".*?href=".*?\/assets\/hello-[-\w]{8}\.css"/,
     )
+
+    const stylesheetIntegrity = await page
+      .locator('link[rel="stylesheet"][href*="/assets/hello-"]')
+      .evaluate((link: HTMLLinkElement) => ({
+        crossorigin: link.getAttribute('crossorigin'),
+        integrity: link.integrity,
+      }))
+    expect(stylesheetIntegrity.crossorigin).toBe('')
+    expect(stylesheetIntegrity.integrity).toMatch(/^sha384-/)
   })
 })
