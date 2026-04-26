@@ -89,6 +89,7 @@ import {
 } from './deprecations'
 import { prepareOutDirPlugin } from './plugins/prepareOutDir'
 import type { Environment } from './environment'
+import { sriManifestPlugin } from './plugins/sriManifest'
 
 export type SRIHashAlgorithm = 'sha256' | 'sha384' | 'sha512'
 
@@ -565,6 +566,7 @@ export function resolveBuildPlugins(config: ResolvedConfig): {
             // Run SRI after JS/CSS/HTML output is finalized, including minification and
             // sourcemap updates, so hashes match the final emitted content.
             sriPlugin(),
+            sriManifestPlugin(),
 
             buildReporterPlugin(config),
           ]
