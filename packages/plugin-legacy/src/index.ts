@@ -641,7 +641,12 @@ function viteLegacyPlugin(options: Options = {}): Plugin[] {
         }
       }
       if (!genModern) {
-        html = html.replace(/<script type="module".*?<\/script>/g, '')
+        html = html
+          .replace(/<script type="module".*?<\/script>/g, '')
+          .replace(
+            /<link(?=[\s>])(?=[^>]+\srel=(['"])modulepreload\1)[^>]+>/g,
+            '',
+          )
       }
 
       const tags: HtmlTagDescriptor[] = []
