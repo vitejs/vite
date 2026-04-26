@@ -329,20 +329,23 @@ export function buildImportAnalysisPlugin(config: ResolvedConfig): Plugin[] {
           const rewroteMarkerStartPos = new Set() // position of the leading double quote
 
           const fileDeps: FileDep[] = []
+          const fileDepsIndexByUrl = new Map<string, number>()
+
           const addFileDep = (
             url: string,
             runtime: boolean = false,
             integrity?: string,
           ): number => {
-            const index = fileDeps.findIndex((dep) => dep.url === url)
-            if (index === -1) {
-              return fileDeps.push({ url, runtime, integrity }) - 1
+            const existingIndex = fileDepsIndexByUrl.get(url)
+            if (existingIndex !== undefined) {
+              if (integrity && !fileDeps[existingIndex].integrity) {
+                fileDeps[existingIndex].integrity = integrity
+              }
+              return existingIndex
             }
 
-            if (integrity && !fileDeps[index].integrity) {
-              fileDeps[index].integrity = integrity
-            }
-
+            const index = fileDeps.push({ url, runtime, integrity }) - 1
+            fileDepsIndexByUrl.set(url, index)
             return index
           }
 
