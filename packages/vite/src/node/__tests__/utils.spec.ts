@@ -10,6 +10,8 @@ import {
   extractHostnamesFromCerts,
   extractHostnamesFromSubjectAltName,
   flattenId,
+  fsPathFromUrl,
+  fsPathToUrl,
   generateCodeFrame,
   getHash,
   getLocalhostAddressIfDiffersFromDNS,
@@ -1093,5 +1095,87 @@ describe('resolveServerUrls', () => {
     )
 
     expect(result.local).toContain('https://localhost:3000/')
+  })
+})
+
+describe('fsPathToUrl', () => {
+  // Regression test for #22329: when the project's resolved filesystem path
+  // contains `#`, the bare `normalizePath` produced a URL the browser
+  // truncated as a fragment. `fsPathToUrl` encodes URL-reserved chars that
+  // may legally appear in an FS path, and `fsPathFromUrl` decodes them
+  // back so the URL <-> FS round-trip is lossless.
+  test('encodes # as %23', () => {
+    expect(fsPathToUrl('/tmp/C#/project/vite/dist/client/client.mjs')).toBe(
+      '/tmp/C%23/project/vite/dist/client/client.mjs',
+    )
+  })
+
+  test('encodes ? as %3F', () => {
+    expect(fsPathToUrl('/tmp/foo?bar/client.mjs')).toBe(
+      '/tmp/foo%3Fbar/client.mjs',
+    )
+  })
+
+  test('encodes % as %25 first so existing percent sequences survive', () => {
+    // A literal `#` in a path encoded by fsPathToUrl produces `%23`.
+    // A literal `%23` in a path (rare but possible) must encode to `%2523`,
+    // so decodeURIComponent returns the original `%23`.
+    expect(fsPathToUrl('/tmp/has%23in-name/client.mjs')).toBe(
+      '/tmp/has%2523in-name/client.mjs',
+    )
+    expect(
+      decodeURIComponent(fsPathToUrl('/tmp/has%23in-name/client.mjs')),
+    ).toBe('/tmp/has%23in-name/client.mjs')
+  })
+
+  test('round-trips a # path through fsPathFromUrl', () => {
+    const original = '/tmp/C#/project/vite/dist/client.mjs'
+    expect(fsPathFromUrl(fsPathToUrl(original))).toBe(original)
+  })
+
+  test('round-trips a ? path through fsPathFromUrl', () => {
+    const original = '/tmp/why?/project/client.mjs'
+    expect(fsPathFromUrl(fsPathToUrl(original))).toBe(original)
+  })
+
+  test('leaves URL-safe paths unchanged after normalization', () => {
+    expect(fsPathToUrl('/tmp/normal-path/client.mjs')).toBe(
+      '/tmp/normal-path/client.mjs',
+    )
+  })
+
+  test('normalizes path separators (Windows backslashes)', () => {
+    // On Windows, the input may have backslashes. fsPathToUrl normalizes
+    // first, then encodes.
+    const expected = isWindows
+      ? 'C:/tmp/C%23/project/client.mjs'
+      : 'C:\\tmp\\C%23\\project\\client.mjs'
+    expect(fsPathToUrl('C:\\tmp\\C#\\project\\client.mjs')).toBe(expected)
+  })
+})
+
+describe('fsPathFromUrl', () => {
+  // Regression test for #22329: URL-encoded chars in `/@fs/` paths must
+  // decode back to the original filesystem path so file lookups succeed.
+  test('decodes %23 back to #', () => {
+    expect(fsPathFromUrl('/tmp/C%23/project/client.mjs')).toBe(
+      '/tmp/C%23/project/client.mjs'.replace('%23', '#'),
+    )
+  })
+
+  test('strips fragment and decodes', () => {
+    // cleanUrl strips the literal `#fragment` suffix; the remaining %-encoded
+    // chars are then decoded.
+    expect(fsPathFromUrl('/tmp/C%23/client.mjs#fragment')).toBe(
+      '/tmp/C#/client.mjs',
+    )
+  })
+
+  test('falls back to unmodified path on malformed % sequence', () => {
+    // `decodeURIComponent('%E0%A4%A')` throws URIError; the helper must
+    // not let a bad URL crash the dev server.
+    expect(fsPathFromUrl('/tmp/bad%E0%A4%A/client.mjs')).toBe(
+      '/tmp/bad%E0%A4%A/client.mjs',
+    )
   })
 })
