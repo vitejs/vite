@@ -21,6 +21,7 @@ import type { ResolvedConfig } from '../config'
 import { checkPublicFile } from '../publicDir'
 import {
   encodeURIPath,
+  fsPathToUrl,
   getHash,
   injectQuery,
   joinUrlSegments,
@@ -370,7 +371,7 @@ export async function fileToDevUrl(
   } else {
     // outside of project root, use absolute fs path
     // (this is special handled by the serve static middleware
-    rtn = path.posix.join(FS_PREFIX, id)
+    rtn = path.posix.join(FS_PREFIX, fsPathToUrl(id))
   }
   const base = joinUrlSegments(config.server.origin ?? '', config.decodedBase)
   return joinUrlSegments(base, removeLeadingSlash(rtn))

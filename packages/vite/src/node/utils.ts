@@ -241,18 +241,31 @@ export function fsPathFromId(id: string): string {
 }
 
 export function fsPathFromUrl(url: string): string {
-  // Percent-decode after stripping the query/fragment so URL-encoded chars
-  // (`%23` -> `#`, `%3F` -> `?`, `%25` -> `%`) round-trip back to the
-  // original filesystem path. See `fsPathToUrl` and #22329. Falls back to
-  // the unmodified path on a malformed sequence so an attacker cannot
-  // crash the dev server with a bad URL.
+  // First do `decodeURI` so URL-safe chars (e.g. `%20` -> ` `, UTF-8
+  // sequences for Unicode filenames) round-trip back to the filesystem
+  // path. `decodeURI` deliberately leaves reserved chars `#`, `?`, `/`,
+  // `&`, etc. alone -- so `%2f` stays encoded and the static middleware's
+  // path-traversal guard keeps working.
+  //
+  // Then explicitly decode the chars that `fsPathToUrl` encodes
+  // (`%23` -> `#`, `%3F` -> `?`, `%25` -> `%`) so a filesystem path
+  // containing those characters survives the URL round-trip. `%25` is
+  // decoded last so existing `%`-prefixed sequences are preserved.
+  //
+  // Falls back to the unmodified path on a malformed sequence so a bad
+  // URL cannot crash the dev server. See `fsPathToUrl` and #22329.
   const cleaned = cleanUrl(url)
   let decoded: string
   try {
-    decoded = decodeURIComponent(cleaned)
+    decoded = decodeURI(cleaned)
   } catch {
     decoded = cleaned
   }
+  decoded = decoded
+    .replaceAll('%23', '#')
+    .replaceAll('%3F', '?')
+    .replaceAll('%3f', '?')
+    .replaceAll('%25', '%')
   return fsPathFromId(decoded)
 }
 

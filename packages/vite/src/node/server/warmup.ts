@@ -3,7 +3,7 @@ import path from 'node:path'
 import colors from 'picocolors'
 import { glob, isDynamicPattern } from 'tinyglobby'
 import { FS_PREFIX } from '../constants'
-import { normalizePath } from '../utils'
+import { fsPathToUrl, normalizePath } from '../utils'
 import type { ViteDevServer } from '../index'
 import type { DevEnvironment } from './environment'
 
@@ -64,7 +64,7 @@ function fileToUrl(file: string, root: string) {
   const url = path.relative(root, file)
   // out of root, use /@fs/ prefix
   if (url[0] === '.') {
-    return path.posix.join(FS_PREFIX, normalizePath(file))
+    return path.posix.join(FS_PREFIX, fsPathToUrl(file))
   }
   // file within root, create root-relative url
   return '/' + normalizePath(url)

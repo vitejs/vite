@@ -17,7 +17,7 @@ import {
   bareImportRE,
   createDebugger,
   deepImportRE,
-  fsPathFromId,
+  fsPathFromUrl,
   getNpmPackageName,
   injectQuery,
   isBuiltin,
@@ -432,7 +432,7 @@ function optimizerResolvePlugin(
         // exists if we are in the middle of a deps re-processing
         if (asSrc && depsOptimizer.isOptimizedDepUrl(id)) {
           const optimizedPath = id.startsWith(FS_PREFIX)
-            ? fsPathFromId(id)
+            ? fsPathFromUrl(id)
             : normalizePath(path.resolve(root, id.slice(1)))
           return optimizedPath
         }
