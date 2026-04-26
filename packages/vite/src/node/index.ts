@@ -159,6 +159,7 @@ export type {
   ModulePreloadOptions,
   ResolvedModulePreloadOptions,
   ResolveModulePreloadDependenciesFn,
+  SRIHashAlgorithm,
 } from './build'
 export type {
   PreviewOptions,
