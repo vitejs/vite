@@ -13,11 +13,15 @@ import { toOutputFilePathInJS } from '../build'
 import { genSourceMapUrl } from '../server/sourcemap'
 import type { PartialEnvironment } from '../baseEnvironment'
 import { removedPureCssFilesCache } from './css'
+import { createSriDependencyPlaceholder, isSriFile } from './sri'
 
 type FileDep = {
+  integrity?: string
   url: string
   runtime: boolean
 }
+
+type PreloadDeps = string[] & { i?: (string | undefined)[] }
 
 type VitePreloadErrorEvent = Event & { payload: Error }
 
@@ -61,7 +65,7 @@ declare const scriptRel: string
 declare const seen: Record<string, boolean>
 function preload(
   baseModule: () => Promise<unknown>,
-  deps?: string[],
+  deps?: PreloadDeps,
   importerUrl?: string,
 ) {
   let promise: Promise<PromiseSettledResult<unknown>[] | void> =
@@ -92,11 +96,12 @@ function preload(
     }
 
     promise = allSettled(
-      deps.map((dep) => {
+      deps.map((dep, index) => {
         // @ts-expect-error assetsURL is declared before preload.toString()
         dep = assetsURL(dep, importerUrl)
         if (dep in seen) return
         seen[dep] = true
+        const integrity = deps.i?.[index]
         const isCss = dep.endsWith('.css')
         const cssSelector = isCss ? '[rel="stylesheet"]' : ''
         const isBaseRelative = !!importerUrl
@@ -125,6 +130,9 @@ function preload(
           link.as = 'script'
         }
         link.crossOrigin = ''
+        if (integrity) {
+          link.integrity = integrity
+        }
         link.href = dep
         if (cspNonce) {
           link.setAttribute('nonce', cspNonce)
@@ -324,13 +332,33 @@ export function buildImportAnalysisPlugin(config: ResolvedConfig): Plugin[] {
           const addFileDep = (
             url: string,
             runtime: boolean = false,
+            integrity?: string,
           ): number => {
             const index = fileDeps.findIndex((dep) => dep.url === url)
             if (index === -1) {
-              return fileDeps.push({ url, runtime }) - 1
-            } else {
-              return index
+              return fileDeps.push({ url, runtime, integrity }) - 1
             }
+
+            if (integrity && !fileDeps[index].integrity) {
+              fileDeps[index].integrity = integrity
+            }
+
+            return index
+          }
+
+          const getDepIntegrityPlaceholder = (fileName: string) => {
+            if (
+              !config.build.sri ||
+              !bundle[fileName] ||
+              !isSriFile(fileName)
+            ) {
+              return undefined
+            }
+            return createSriDependencyPlaceholder(
+              this,
+              chunk.fileName,
+              fileName,
+            )
           }
 
           if (imports.length) {
@@ -453,7 +481,11 @@ export function buildImportAnalysisPlugin(config: ResolvedConfig): Plugin[] {
                     )
 
                     if (typeof replacement === 'string') {
-                      return addFileDep(replacement)
+                      return addFileDep(
+                        replacement,
+                        false,
+                        getDepIntegrityPlaceholder(dep),
+                      )
                     }
 
                     return addFileDep(replacement.runtime, true)
@@ -462,9 +494,11 @@ export function buildImportAnalysisPlugin(config: ResolvedConfig): Plugin[] {
                   renderedDeps = depsArray.map((d) =>
                     // Don't include the assets dir if the default asset file names
                     // are used, the path will be reconstructed by the import preload helper
-                    isRelativeBase
-                      ? addFileDep(toRelativePath(d, file))
-                      : addFileDep(d),
+                    addFileDep(
+                      isRelativeBase ? toRelativePath(d, file) : d,
+                      false,
+                      getDepIntegrityPlaceholder(d),
+                    ),
                   )
                 }
 
@@ -487,7 +521,17 @@ export function buildImportAnalysisPlugin(config: ResolvedConfig): Plugin[] {
               )
               .join(',')}]`
 
-            const mapDepsCode = `const __vite__mapDeps=(i,m=__vite__mapDeps,d=(m.f||(m.f=${fileDepsCode})))=>i.map(i=>d[i]);\n`
+            let mapDepsCode: string = ''
+            if (config.build.sri) {
+              const integrityDepsCode = `[${fileDeps
+                .map(({ integrity }) =>
+                  integrity ? JSON.stringify(integrity) : 'void 0',
+                )
+                .join(',')}]`
+              mapDepsCode = `const __vite__mapDeps=(i,m=__vite__mapDeps,d=(m.f||(m.f=${fileDepsCode})),e=(m.i||(m.i=${integrityDepsCode})))=>{const a=i.map(i=>d[i]);a.i=i.map(i=>e[i]);return a};\n`
+            } else {
+              mapDepsCode = `const __vite__mapDeps=(i,m=__vite__mapDeps,d=(m.f||(m.f=${fileDepsCode})))=>i.map(i=>d[i]);\n`
+            }
 
             // inject extra code at the top or next line of hashbang
             if (code.startsWith('#!')) {
