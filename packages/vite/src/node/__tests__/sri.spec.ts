@@ -50,6 +50,12 @@ const findAsset = (output: RolldownOutput['output'], fileName: string) =>
 const getJsChunks = (output: RolldownOutput['output']) =>
   output.filter((o): o is OutputChunk => o.type === 'chunk')
 
+const getMapDepsFileList = (chunk: OutputChunk): string[] => {
+  const match = chunk.code.match(/m\.f\|\|\(m\.f=(\[[^\]]*\])\)/)
+  expect(match).toBeDefined()
+  return JSON.parse(match![1]) as string[]
+}
+
 const collectIntegrityAttributes = (html: string) =>
   [...html.matchAll(/integrity="([^"]+)"/g)].map((m) => m[1])
 
@@ -138,6 +144,25 @@ describe('build.sri', () => {
     expect(chunkWithMapDeps!.code).toMatch(/link\.integrity\s*=/)
   })
 
+  test('runtime preload metadata omits owner static dependencies', async () => {
+    const { output } = await buildSriApp()
+    const entryChunk = getJsChunks(output).find((chunk) => chunk.isEntry)
+    const sharedChunk = getJsChunks(output).find(
+      (chunk) => chunk.name === 'shared',
+    )
+    expect(entryChunk).toBeDefined()
+    expect(sharedChunk).toBeDefined()
+
+    const preloadDeps = getMapDepsFileList(entryChunk!)
+    expect(preloadDeps).not.toContain(sharedChunk!.fileName)
+    expect(preloadDeps.some((dep) => /dynamic-[\w-]+\.js$/.test(dep))).toBe(
+      true,
+    )
+    expect(preloadDeps.some((dep) => /dynamic-[\w-]+\.css$/.test(dep))).toBe(
+      true,
+    )
+  })
+
   test('manifest.json shape is unchanged and sri-manifest covers JS and CSS only', async () => {
     const { output } = await buildSriApp({ manifest: true })
 
@@ -207,51 +232,58 @@ describe('build.sri', () => {
     }
   })
 
-  test('cyclic preload dependencies fall back to void 0 without unresolved placeholders', async () => {
-    // Two-chunk cycle: chunk A dynamically imports B, chunk B dynamically
-    // imports A. After topo-sort there's no resolution order; the SRI plugin
-    // must replace cyclic dependency placeholders with `void 0` rather than
-    // emit an incorrect hash or fail the build.
-    const { output } = (await build({
-      root: SRI_CYCLE_APP,
-      logLevel: 'silent',
-      build: {
-        sri: true,
-        write: false,
-        minify: false,
-        manifest: true,
-        rollupOptions: {
-          input: { entry: 'entry.js' },
-          output: {
-            manualChunks(id: string) {
-              if (id.endsWith('a.js')) return 'chunkA'
-              if (id.endsWith('b.js')) return 'chunkB'
-              return undefined
+  test('cyclic preload dependencies fail the build', async () => {
+    // A preloads C and injects B through resolveDependencies. B preloads D and
+    // injects A the same way. There is no valid order for replacing both
+    // chunks' preload integrity placeholders, so the build must fail instead
+    // of omitting SRI.
+    let error: unknown
+    try {
+      await build({
+        root: SRI_CYCLE_APP,
+        logLevel: 'silent',
+        build: {
+          sri: true,
+          write: false,
+          minify: false,
+          manifest: true,
+          modulePreload: {
+            resolveDependencies(_filename, deps, { hostId }) {
+              if (hostId === 'assets/chunkA.js') {
+                return [...deps, 'assets/chunkB.js']
+              }
+              if (hostId === 'assets/chunkB.js') {
+                return [...deps, 'assets/chunkA.js']
+              }
+              return deps
+            },
+          },
+          rollupOptions: {
+            input: { entry: 'entry.js' },
+            output: {
+              entryFileNames: 'assets/[name].js',
+              chunkFileNames: 'assets/[name].js',
+              manualChunks(id: string) {
+                if (id.endsWith('a.js')) return 'chunkA'
+                if (id.endsWith('b.js')) return 'chunkB'
+                if (id.endsWith('c.js')) return 'chunkC'
+                if (id.endsWith('d.js')) return 'chunkD'
+                return undefined
+              },
             },
           },
         },
-      },
-    })) as RolldownOutput
-
-    const chunks = getJsChunks(output)
-
-    for (const chunk of chunks) {
-      expect(chunk.code).not.toContain(SRI_PLACEHOLDER_PREFIX)
-      expect(chunk.code).not.toMatch(/integrity="void 0/)
+      })
+    } catch (e) {
+      error = e
     }
 
-    // At least one chunk's __vite__mapDeps integrity array contains void 0.
-    expect(
-      chunks.some((c) => /m\.i\|\|\(m\.i=\[[^\]]*\bvoid 0/.test(c.code)),
-    ).toBe(true)
-
-    // sri-manifest still contains integrity for the cyclic chunks themselves —
-    // only the runtime preload metadata for cyclic deps is omitted.
-    const sriManifest = JSON.parse(
-      String(findAsset(output, '.vite/sri-manifest.json')!.source),
-    ) as Record<string, string>
-    for (const chunk of chunks) {
-      expect(sriManifest[chunk.fileName]).toMatch(/^sha384-/)
-    }
+    expect(error).toBeInstanceOf(Error)
+    const message = (error as Error).message
+    expect(message).toContain('Unable to compute SRI integrity for 2 chunks')
+    expect(message).toContain('cyclic preload references')
+    expect(message).toContain('assets/chunkA.js')
+    expect(message).toContain('assets/chunkB.js')
+    expect(message).not.toContain(SRI_PLACEHOLDER_PREFIX)
   })
 })

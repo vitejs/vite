@@ -104,7 +104,7 @@ When enabled, Vite adds `integrity` attributes to Vite-generated tags in built H
 - `<link rel="modulepreload">`
 - `<link rel="stylesheet">`
 
-Vite also attaches integrity metadata to runtime preload links created for dynamic imports when the corresponding emitted JavaScript or CSS file is known and the integrity value can be computed without a cyclic preload dependency. If runtime preload metadata between generated chunks forms a cycle, Vite omits the affected runtime preload `integrity` values. Integrity metadata for generated HTML tags and `.vite/sri-manifest.json`, when emitted, is still generated.
+Vite also attaches integrity metadata to runtime preload links created for dynamic imports when the corresponding emitted JavaScript or CSS file is known. If runtime preload metadata between generated chunks forms a cycle, the build fails with an error: Vite cannot compute valid integrity values when the final content of two chunks depends on each other's hashes.
 
 The [`build.modulePreload`](#build-modulepreload) option can still be set to `false`. In that case, Vite doesn't emit module preload links for dynamic imports, but SRI remains enabled for other supported output surfaces.
 

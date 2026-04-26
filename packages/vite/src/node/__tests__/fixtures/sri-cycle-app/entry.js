@@ -1,4 +1,7 @@
-// Entry dynamically imports a, which dynamically imports b, which dynamically
-// imports a — forming a runtime preload cycle once `manualChunks` forces a and
-// b into separate chunks.
-import('./a.js').then((a) => console.log(a.value))
+// Entry statically imports a and b. The runtime preload cycle is injected by
+// `modulePreload.resolveDependencies` in the test once `manualChunks` forces
+// each module into a separate chunk.
+import { value as aValue } from './a.js'
+import { value as bValue } from './b.js'
+
+console.log(aValue, bValue)

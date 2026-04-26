@@ -1,3 +1,5 @@
 export const value = 'a'
 
-export const loadB = () => import('./b.js')
+export const loadC = () => import('./c.js')
+
+globalThis.__vite_sri_cycle_a = loadC
