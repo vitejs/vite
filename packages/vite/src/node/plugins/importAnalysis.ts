@@ -32,6 +32,7 @@ import {
 import {
   createDebugger,
   fsPathFromUrl,
+  fsPathToUrl,
   generateCodeFrame,
   getFileStartIndex,
   getHash,
@@ -129,7 +130,7 @@ function normalizeResolvedIdToUrl(
   ) {
     // an optimized deps may not yet exists in the filesystem, or
     // a regular file exists but is out of root: rewrite to absolute /@fs/ paths
-    url = path.posix.join(FS_PREFIX, resolved.id)
+    url = path.posix.join(FS_PREFIX, fsPathToUrl(resolved.id))
   } else {
     url = resolved.id
   }

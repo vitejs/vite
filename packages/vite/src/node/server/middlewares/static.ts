@@ -217,12 +217,7 @@ export function serveRawFsMiddleware(
     // searching based from fs root.
     if (req.url!.startsWith(FS_PREFIX)) {
       const url = new URL(req.url!, 'http://example.com')
-      const pathname = decodeURIIfPossible(url.pathname)
-      if (pathname === undefined) {
-        return next()
-      }
-
-      let newPathname = pathname.slice(FS_PREFIX.length)
+      let newPathname = fsPathFromUrl(url.pathname)
       if (isWindows) newPathname = newPathname.replace(/^[A-Z]:/i, '')
       url.pathname = encodeURI(newPathname)
       req.url = url.href.slice(url.origin.length)

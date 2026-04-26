@@ -6,7 +6,7 @@ import type { Connect } from '#dep-types/connect'
 import type { ViteDevServer } from '..'
 import {
   createDebugger,
-  fsPathFromId,
+  fsPathFromUrl,
   injectQuery,
   isCSSRequest,
   isImportRequest,
@@ -159,7 +159,7 @@ export function transformMiddleware(
           // If the browser is requesting a source map for an optimized dep, it
           // means that the dependency has already been pre-bundled and loaded
           const sourcemapPath = url.startsWith(FS_PREFIX)
-            ? fsPathFromId(url)
+            ? fsPathFromUrl(url)
             : normalizePath(path.resolve(server.config.root, url.slice(1)))
           // url may contain relative path that may resolve outside of the optimized deps directory
           if (!depsOptimizer.isOptimizedDepFile(sourcemapPath)) {

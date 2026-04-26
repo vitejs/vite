@@ -1171,9 +1171,28 @@ describe('fsPathFromUrl', () => {
     )
   })
 
-  test('falls back to unmodified path on malformed % sequence', () => {
-    // `decodeURIComponent('%E0%A4%A')` throws URIError; the helper must
-    // not let a bad URL crash the dev server.
+  test('preserves %2f so encoded path-traversal segments do not form ../', () => {
+    // `decodeURI` decodes `%2e` to `.` (not a reserved char) but leaves
+    // `%2f` encoded (`/` is reserved). The intermediate `..%2f` cannot
+    // resolve into a parent-dir traversal, which is what the static
+    // middleware's #8498 guard relies on.
+    expect(fsPathFromUrl('/tmp/%2e%2e%2funsafe.txt')).toBe(
+      '/tmp/..%2funsafe.txt',
+    )
+  })
+
+  test('decodes UTF-8 sequences and safe URL chars (decodeURI semantics)', () => {
+    // Non-reserved sequences like `%20` and Unicode bytes must round-trip
+    // back to the actual filesystem name so the static middleware can
+    // find files like `special characters åäö/safe.txt`.
+    expect(
+      fsPathFromUrl('/tmp/special%20chars%20%C3%A5%C3%A4%C3%B6/safe.txt'),
+    ).toBe('/tmp/special chars åäö/safe.txt')
+  })
+
+  test('handles malformed % sequence without throwing', () => {
+    // The narrow replaceAll-based decoder must not throw on bytes that
+    // would crash decodeURIComponent.
     expect(fsPathFromUrl('/tmp/bad%E0%A4%A/client.mjs')).toBe(
       '/tmp/bad%E0%A4%A/client.mjs',
     )
