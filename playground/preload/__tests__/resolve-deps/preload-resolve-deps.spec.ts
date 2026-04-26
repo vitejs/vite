@@ -27,5 +27,32 @@ describe.runIf(isBuild)('build', () => {
     expect(html).toMatch(
       /link rel="stylesheet".*?href="http.*?\/hello-[-\w]{8}\.css"/,
     )
+
+    const knownModulePreload = await page
+      .locator('link[rel="modulepreload"][href*="/hello-"]')
+      .evaluate((link: HTMLLinkElement) => ({
+        crossorigin: link.getAttribute('crossorigin'),
+        integrity: link.integrity,
+      }))
+    expect(knownModulePreload.crossorigin).toBe('')
+    expect(knownModulePreload.integrity).toMatch(/^sha384-/)
+
+    const customModulePreload = await page
+      .locator('link[rel="modulepreload"][href*="/preloaded.js"]')
+      .evaluate((link: HTMLLinkElement) => ({
+        crossorigin: link.getAttribute('crossorigin'),
+        integrity: link.getAttribute('integrity'),
+      }))
+    expect(customModulePreload.crossorigin).toBe('')
+    expect(customModulePreload.integrity).toBeNull()
+
+    const stylesheetIntegrity = await page
+      .locator('link[rel="stylesheet"][href*="/hello-"]')
+      .evaluate((link: HTMLLinkElement) => ({
+        crossorigin: link.getAttribute('crossorigin'),
+        integrity: link.integrity,
+      }))
+    expect(stylesheetIntegrity.crossorigin).toBe('')
+    expect(stylesheetIntegrity.integrity).toMatch(/^sha384-/)
   })
 })
