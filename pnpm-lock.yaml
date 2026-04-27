@@ -867,7 +867,11 @@ importers:
 
   playground/glob-import/import-meta-glob-pkg: {}
 
-  playground/hmr: {}
+  playground/hmr:
+    devDependencies:
+      ws:
+        specifier: ^8.20.0
+        version: 8.20.0
 
   playground/hmr-full-bundle-mode: {}
 

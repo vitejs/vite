@@ -1,6 +1,7 @@
 import { stripVTControlCharacters } from 'node:util'
 import { beforeAll, describe, expect, it, test } from 'vitest'
 import type { Page } from 'playwright-chromium'
+import WebSocket from 'ws'
 import {
   addFile,
   browser,
@@ -9,6 +10,7 @@ import {
   getBg,
   getColor,
   isBuild,
+  isServe,
   page,
   readFile,
   removeFile,
@@ -1160,3 +1162,40 @@ if (!isBuild) {
     await expect.poll(() => getColor('.test-css-link')).toBe('black')
   })
 }
+
+describe.runIf(isServe)('malformed vite:invoke', () => {
+  function connectClient(
+    url: string,
+  ): Promise<{ send: WebSocket['send']; [Symbol.dispose](): void }> {
+    return new Promise((resolve, reject) => {
+      const ws = new WebSocket(url, 'vite-hmr')
+      ws.on('open', () => {
+        // Wait for the { type: 'connected' } message before resolving
+        ws.once('message', () => {
+          resolve({
+            send: ws.send.bind(ws),
+            [Symbol.dispose]() {
+              ws.close()
+            },
+          })
+        })
+      })
+      ws.on('error', reject)
+    })
+  }
+
+  it('does not throw unhandled promise rejection for missing properties', async () => {
+    serverLogs.length = 0
+    const wsUrl = viteTestUrl.replace(/^http/, 'ws')
+    using ws = await connectClient(wsUrl)
+    ws.send(
+      JSON.stringify({
+        type: 'custom',
+        event: 'vite:invoke',
+      }),
+    )
+    await expect
+      .poll(() => serverLogs)
+      .toContainEqual(expect.stringContaining('ws custom listener error'))
+  })
+})
