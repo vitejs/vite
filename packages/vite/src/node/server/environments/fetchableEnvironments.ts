@@ -33,7 +33,7 @@ export function isFetchableDevEnvironment(
   return environment instanceof FetchableDevEnvironment
 }
 
-class FetchableDevEnvironment extends DevEnvironment {
+export class FetchableDevEnvironment extends DevEnvironment {
   private _handleRequest: (request: Request) => Promise<Response> | Response
 
   constructor(
@@ -60,5 +60,3 @@ class FetchableDevEnvironment extends DevEnvironment {
     return response
   }
 }
-
-export type { FetchableDevEnvironment }
