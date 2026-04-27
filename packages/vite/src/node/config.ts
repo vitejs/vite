@@ -1482,6 +1482,15 @@ export async function resolveConfig(
     )
   }
 
+  if (process.versions.pnp) {
+    logger.warnOnce(
+      colors.yellow(
+        `Using Yarn PnP with Vite is discouraged and PnP-specific bugs will no longer be actively worked on. ` +
+          `Please switch to a different ${colors.bold('nodeLinker')} mode or to a different package manager.`,
+      ),
+    )
+  }
+
   // resolve root
   const resolvedRoot = normalizePath(
     config.root ? path.resolve(config.root) : process.cwd(),
