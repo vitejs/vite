@@ -478,6 +478,10 @@ importers:
         specifier: link:../child
         version: link:../child
 
+  packages/vite/src/node/__tests__/plugins/fixtures/css-subpath-imports: {}
+
+  packages/vite/src/node/__tests__/plugins/fixtures/css-subpath-imports/packages/pkg: {}
+
   packages/vite/src/node/__tests__/plugins/fixtures/license:
     dependencies:
       '@vitejs/test-dep-licence-cc0':
