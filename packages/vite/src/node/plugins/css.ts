@@ -2391,7 +2391,7 @@ type StylePreprocessor<Options extends StylePreprocessorInternalOptions> = {
     options: Options,
     resolvers: CSSAtImportResolvers,
   ) => StylePreprocessorResults | Promise<StylePreprocessorResults>
-  close: () => Promise<void>
+  close: () => void | Promise<void>
 }
 
 export interface StylePreprocessorResults {
@@ -2911,8 +2911,8 @@ const lessProcessor = (
   let worker: ReturnType<typeof makeLessWorker> | undefined
 
   return {
-    async close() {
-      await worker?.stop()
+    close() {
+      worker?.stop()
     },
     async process(environment, source, root, options, resolvers) {
       const lessPath = loadPreprocessorPath(PreprocessLang.less, root)
@@ -3034,8 +3034,8 @@ const stylProcessor = (
   let worker: ReturnType<typeof makeStylWorker> | undefined
 
   return {
-    async close() {
-      await worker?.stop()
+    close() {
+      worker?.stop()
     },
     async process(_environment, source, root, options, _resolvers) {
       const stylusPath = loadPreprocessorPath(PreprocessLang.stylus, root)
