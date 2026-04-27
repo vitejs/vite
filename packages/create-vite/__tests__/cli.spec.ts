@@ -55,8 +55,33 @@ const clearAnyPreviousFolders = () => {
   }
 }
 
+const readFilesRecursively = (dir: string): string[] =>
+  fs.readdirSync(dir, { withFileTypes: true }).flatMap((entry) => {
+    const filePath = path.join(dir, entry.name)
+    return entry.isDirectory() ? readFilesRecursively(filePath) : [filePath]
+  })
+
 beforeAll(() => clearAnyPreviousFolders())
 afterEach(() => clearAnyPreviousFolders())
+
+test('built-in templates avoid root-absolute icon sprite references', () => {
+  const templateDirs = fs
+    .readdirSync(CLI_PATH, { withFileTypes: true })
+    .filter(
+      (entry) => entry.isDirectory() && entry.name.startsWith('template-'),
+    )
+
+  for (const templateDir of templateDirs) {
+    const files = readFilesRecursively(path.join(CLI_PATH, templateDir.name))
+    for (const file of files) {
+      if (!/\.(?:[cm]?[jt]sx?|vue|svelte|html|css|json|md|svg)$/.test(file)) {
+        continue
+      }
+      const source = fs.readFileSync(file, 'utf-8')
+      expect(source, path.relative(CLI_PATH, file)).not.toContain('/icons.svg#')
+    }
+  }
+})
 
 test('prompts for the project name if none supplied', () => {
   const { stdout } = run(['--interactive'])

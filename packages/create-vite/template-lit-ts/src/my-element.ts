@@ -1,4 +1,5 @@
 import { LitElement, css, html } from 'lit'
+import icons from '/icons.svg'
 import { customElement, property } from 'lit/decorators.js'
 import litLogo from './assets/lit.svg'
 import viteLogo from './assets/vite.svg'
@@ -43,7 +44,7 @@ export class MyElement extends LitElement {
       <section id="next-steps">
         <div id="docs">
           <svg class="icon" role="presentation" aria-hidden="true">
-            <use href="/icons.svg#documentation-icon"></use>
+            <use href=${icons + '#documentation-icon'}></use>
           </svg>
           <h2>Documentation</h2>
           <p>Your questions, answered</p>
@@ -64,7 +65,7 @@ export class MyElement extends LitElement {
         </div>
         <div id="social">
           <svg class="icon" role="presentation" aria-hidden="true">
-            <use href="/icons.svg#social-icon"></use>
+            <use href=${icons + '#social-icon'}></use>
           </svg>
           <h2>Connect with us</h2>
           <p>Join the Vite community</p>
@@ -72,7 +73,7 @@ export class MyElement extends LitElement {
             <li>
               <a href="https://github.com/vitejs/vite" target="_blank">
                 <svg class="button-icon" role="presentation" aria-hidden="true">
-                  <use href="/icons.svg#github-icon"></use>
+                  <use href=${icons + '#github-icon'}></use>
                 </svg>
                 GitHub
               </a>
@@ -80,7 +81,7 @@ export class MyElement extends LitElement {
             <li>
               <a href="https://chat.vite.dev/" target="_blank">
                 <svg class="button-icon" role="presentation" aria-hidden="true">
-                  <use href="/icons.svg#discord-icon"></use>
+                  <use href=${icons + '#discord-icon'}></use>
                 </svg>
                 Discord
               </a>
@@ -88,7 +89,7 @@ export class MyElement extends LitElement {
             <li>
               <a href="https://x.com/vite_js" target="_blank">
                 <svg class="button-icon" role="presentation" aria-hidden="true">
-                  <use href="/icons.svg#x-icon"></use>
+                  <use href=${icons + '#x-icon'}></use>
                 </svg>
                 X.com
               </a>
@@ -96,7 +97,7 @@ export class MyElement extends LitElement {
             <li>
               <a href="https://bsky.app/profile/vite.dev" target="_blank">
                 <svg class="button-icon" role="presentation" aria-hidden="true">
-                  <use href="/icons.svg#bluesky-icon"></use>
+                  <use href=${icons + '#bluesky-icon'}></use>
                 </svg>
                 Bluesky
               </a>
