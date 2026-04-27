@@ -224,6 +224,17 @@ export function buildImportAnalysisPlugin(config: ResolvedConfig): Plugin[] {
       return null
     },
 
+    augmentChunkHash() {
+      if (config.experimental?.renderBuiltUrl) {
+        // toString() captures source text only — closed-over variables are not
+        // visible. If renderBuiltUrl behavior changes via external state (e.g.
+        // env vars) without a change to the function body, the hash will not
+        // update. This matches the general contract of augmentChunkHash: callers
+        // are responsible for returning a string that encodes all relevant state.
+        return config.experimental.renderBuiltUrl.toString()
+      }
+    },
+
     async generateBundle({ format }, bundle) {
       if (format !== 'es') {
         return
