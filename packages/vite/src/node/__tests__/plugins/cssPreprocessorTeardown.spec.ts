@@ -28,7 +28,7 @@ describe('css preprocessor worker teardown', () => {
       root,
       logLevel: 'silent',
       configFile: false,
-      server: { port: 0, ws: false },
+      server: { ws: false },
     })
     await server.listen()
 
