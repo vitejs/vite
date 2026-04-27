@@ -19,7 +19,7 @@
     "vitepress-plugin-graphviz": "^0.1.0",
     "vitepress-plugin-group-icons": "^1.7.5",
     "vitepress-plugin-llms": "^1.12.1",
-    "vue": "^3.5.32",
+    "vue": "^3.5.33",
     "vue-tsc": "^3.2.7"
   }
 }
