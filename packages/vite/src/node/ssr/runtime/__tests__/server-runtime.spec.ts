@@ -2,21 +2,63 @@ import { existsSync, readdirSync } from 'node:fs'
 import { posix, resolve, win32 } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { setTimeout } from 'node:timers/promises'
-import { describe, expect, it, vi } from 'vitest'
-import { isWindows } from '../../../../shared/utils'
+import { describe, expect, vi } from 'vitest'
+import { isWindows, slash } from '../../../../shared/utils'
 import type { ExternalFetchResult } from '../../../../shared/invokeMethods'
+import type { HMRLogger } from '../../../../module-runner'
 import { createServer } from '../../../server'
 import {
   createRunnableDevEnvironment,
   isRunnableDevEnvironment,
 } from '../../../server/environments/runnableEnvironment'
-import type { HMRLogger } from '../../../../../dist/node/module-runner'
-import { createModuleRunnerTester } from './utils'
+import { runnerTest as it } from './utils'
 
 const _URL = URL
 
-describe('module runner initialization', async () => {
-  const it = await createModuleRunnerTester({
+describe.for([
+  {
+    fullBundle: [
+      './fixtures/dynamic-import.js',
+      './fixtures/simple.js',
+      './fixtures/test.css',
+      './fixtures/test.module.css',
+      './fixtures/assets.js',
+      './fixtures/top-level-object.js',
+      './fixtures/cyclic2/test9/index.js',
+      './fixtures/live-binding/test4/index.js',
+      './fixtures/live-binding/test3/index.js',
+      './fixtures/live-binding/test2/index.js',
+      './fixtures/live-binding/test1/index.js',
+      './fixtures/execution-order-re-export/index.js',
+      './fixtures/cyclic2/test7/Ion.js',
+      './fixtures/cyclic2/test6/index.js',
+      './fixtures/cyclic2/test5/index.js',
+      './fixtures/cyclic2/test4/index.js',
+      './fixtures/cyclic2/test3/index.js',
+      './fixtures/cyclic2/test2/index.js',
+      './fixtures/cyclic2/test1/index.js',
+      './fixtures/no-this/importer.js',
+      './fixtures/native.js',
+      './fixtures/installed.js',
+      './fixtures/virtual.js',
+      './fixtures/cyclic/entry.js',
+      './fixtures/has-error.js',
+      './fixtures/basic.js',
+      './fixtures/simple.js?raw',
+      './fixtures/simple.js?url',
+      './fixtures/test.css?inline',
+      './fixtures/oxc-runtime-helper.ts',
+
+      // TODO: this fails during bundle, not at runtime
+      // './fixtures/esm-external-non-existing.js',
+      // './fixtures/cjs-external-non-existing.js',
+    ],
+    title: 'full bundle mode',
+  },
+  { fullBundle: [], title: 'dev mode' },
+])('module runner initialization ($title)', async ({ fullBundle }) => {
+  it.override('fullBundle', fullBundle)
+  it.override('config', {
     resolve: {
       external: ['tinyglobby'],
       noExternal: ['@oxc-project/runtime'],
@@ -24,7 +66,7 @@ describe('module runner initialization', async () => {
   })
 
   it('correctly runs ssr code', async ({ runner }) => {
-    const mod = await runner.import('/fixtures/simple.js')
+    const mod = await runner.import('./fixtures/simple.js')
     expect(mod.test).toEqual('I am initialized')
 
     // loads the same module if id is a file url
@@ -36,43 +78,6 @@ describe('module runner initialization', async () => {
     const filePath = fileURLToPath(fileUrl)
     const mod3 = await runner.import(filePath)
     expect(mod).toBe(mod3)
-  })
-
-  it('can load virtual modules as an entry point', async ({ runner }) => {
-    const mod = await runner.import('virtual:test')
-    expect(mod.msg).toBe('virtual')
-
-    // already resolved id works similar to `transformRequest`
-    expect(await runner.import(`\0virtual:normal`)).toMatchInlineSnapshot(`
-      {
-        "default": "ok",
-      }
-    `)
-
-    // escaped virtual module id works
-    expect(await runner.import(`/@id/__x00__virtual:normal`))
-      .toMatchInlineSnapshot(`
-      {
-        "default": "ok",
-      }
-    `)
-
-    // timestamp query works
-    expect(await runner.import(`virtual:normal?t=${Date.now()}`))
-      .toMatchInlineSnapshot(`
-      {
-        "default": "ok",
-      }
-    `)
-
-    // other arbitrary queries don't work
-    await expect(() =>
-      runner.import('virtual:normal?abcd=1234'),
-    ).rejects.toMatchObject({
-      message: expect.stringContaining(
-        'Failed to load url virtual:normal?abcd=1234',
-      ),
-    })
   })
 
   it('css is loaded correctly', async ({ runner }) => {
@@ -87,17 +92,29 @@ describe('module runner initialization', async () => {
     })
   })
 
-  it('assets are loaded correctly', async ({ runner }) => {
+  it('assets are loaded correctly', async ({ runner, fullBundle }) => {
     const assets = await runner.import('/fixtures/assets.js')
-    expect(assets).toMatchObject({
-      mov: '/fixtures/assets/placeholder.mov',
-      txt: '/fixtures/assets/placeholder.txt',
-      png: '/fixtures/assets/placeholder.png',
-      webp: '/fixtures/assets/placeholder.webp',
-    })
+    if (fullBundle.length) {
+      expect(assets).toMatchObject({
+        mov: 'data:video/quicktime;base64,',
+        txt: 'data:text/plain;base64,',
+        png: 'data:image/png;base64,',
+        webp: 'data:image/webp;base64,',
+      })
+    } else {
+      expect(assets).toMatchObject({
+        mov: '/fixtures/assets/placeholder.mov',
+        txt: '/fixtures/assets/placeholder.txt',
+        png: '/fixtures/assets/placeholder.png',
+        webp: '/fixtures/assets/placeholder.webp',
+      })
+    }
   })
 
-  it('ids with Vite queries are loaded correctly', async ({ runner }) => {
+  it('ids with Vite queries are loaded correctly', async ({
+    runner,
+    fullBundle,
+  }) => {
     const raw = await runner.import('/fixtures/simple.js?raw')
     expect(raw.default).toMatchInlineSnapshot(`
       "export const test = 'I am initialized'
@@ -106,7 +123,11 @@ describe('module runner initialization', async () => {
       "
     `)
     const url = await runner.import('/fixtures/simple.js?url')
-    expect(url.default).toMatchInlineSnapshot(`"/fixtures/simple.js"`)
+    if (fullBundle.length) {
+      expect(url.default).toMatch('__VITE_ASSET__')
+    } else {
+      expect(url.default).toMatchInlineSnapshot(`"/fixtures/simple.js"`)
+    }
     const inline = await runner.import('/fixtures/test.css?inline')
     expect(inline.default).toMatchInlineSnapshot(`
       ".test {
@@ -118,11 +139,16 @@ describe('module runner initialization', async () => {
 
   it('modules with query strings are treated as different modules', async ({
     runner,
+    fullBundle,
   }) => {
     const modSimple = await runner.import('/fixtures/simple.js')
     const modUrl = await runner.import('/fixtures/simple.js?url')
     expect(modSimple).not.toBe(modUrl)
-    expect(modUrl.default).toBe('/fixtures/simple.js')
+    if (fullBundle.length) {
+      expect(modUrl.default).toContain('__VITE_ASSET__')
+    } else {
+      expect(modUrl.default).toBe('/fixtures/simple.js')
+    }
   })
 
   it('exports is not modifiable', async ({ runner }) => {
@@ -155,7 +181,7 @@ describe('module runner initialization', async () => {
     const s = Symbol()
     try {
       await runner.import('/fixtures/has-error.js')
-    } catch (e) {
+    } catch (e: any) {
       expect(e[s]).toBeUndefined()
       e[s] = true
       expect(e[s]).toBe(true)
@@ -163,54 +189,9 @@ describe('module runner initialization', async () => {
 
     try {
       await runner.import('/fixtures/has-error.js')
-    } catch (e) {
+    } catch (e: any) {
       expect(e[s]).toBe(true)
     }
-  })
-
-  it('importing external cjs library checks exports', async ({ runner }) => {
-    await expect(() => runner.import('/fixtures/cjs-external-non-existing.js'))
-      .rejects.toThrowErrorMatchingInlineSnapshot(`
-      [SyntaxError: [vite] Named export 'nonExisting' not found. The requested module '@vitejs/cjs-external' is a CommonJS module, which may not support all module.exports as named exports.
-      CommonJS modules can always be imported via the default export, for example using:
-
-      import pkg from '@vitejs/cjs-external';
-      const {nonExisting} = pkg;
-      ]
-    `)
-    // subsequent imports of the same external package should not throw if imports are correct
-    await expect(
-      runner.import('/fixtures/cjs-external-existing.js'),
-    ).resolves.toMatchObject({
-      result: 'world',
-    })
-  })
-
-  it('importing external esm library checks exports', async ({ runner }) => {
-    await expect(() =>
-      runner.import('/fixtures/esm-external-non-existing.js'),
-    ).rejects.toThrowErrorMatchingInlineSnapshot(
-      `[SyntaxError: [vite] The requested module '@vitejs/esm-external' does not provide an export named 'nonExisting']`,
-    )
-    // subsequent imports of the same external package should not throw if imports are correct
-    await expect(
-      runner.import('/fixtures/esm-external-existing.js'),
-    ).resolves.toMatchObject({
-      result: 'world',
-    })
-  })
-
-  it("dynamic import doesn't produce duplicates", async ({ runner }) => {
-    const mod = await runner.import('/fixtures/dynamic-import.js')
-    const modules = await mod.initialize()
-    // toBe checks that objects are actually the same, not just structurally
-    // using toEqual here would be a mistake because it check the structural difference
-    expect(modules.static).toBe(modules.dynamicProcessed)
-    expect(modules.static).toBe(modules.dynamicRelative)
-    expect(modules.static).toBe(modules.dynamicAbsolute)
-    expect(modules.static).toBe(modules.dynamicAbsoluteExtension)
-    expect(modules.static).toBe(modules.dynamicAbsoluteFull)
-    expect(modules.static).toBe(modules.dynamicFileUrl)
   })
 
   it('correctly imports a virtual module', async ({ runner }) => {
@@ -232,44 +213,6 @@ describe('module runner initialization', async () => {
     const mod = await runner.import('/fixtures/native.js')
     expect(mod.readdirSync).toBe(readdirSync)
     expect(mod.existsSync).toBe(existsSync)
-  })
-
-  it('correctly resolves module url', async ({ runner, server }) => {
-    const { meta } = await runner.import('/fixtures/basic')
-    const basicUrl = new _URL('./fixtures/basic.js', import.meta.url).toString()
-    expect(meta.url).toBe(basicUrl)
-
-    const filename = meta.filename!
-    const dirname = meta.dirname!
-
-    if (isWindows) {
-      const cwd = process.cwd()
-      const drive = `${cwd[0].toUpperCase()}:\\`
-      const root = server.config.root.replace(/\\/g, '/')
-
-      expect(filename.startsWith(drive)).toBe(true)
-      expect(dirname.startsWith(drive)).toBe(true)
-
-      expect(filename).toBe(win32.join(root, '.\\fixtures\\basic.js'))
-      expect(dirname).toBe(win32.join(root, '.\\fixtures'))
-    } else {
-      const root = server.config.root
-
-      expect(posix.join(root, './fixtures/basic.js')).toBe(filename)
-      expect(posix.join(root, './fixtures')).toBe(dirname)
-    }
-  })
-
-  it(`no maximum call stack error ModuleRunner.isCircularImport`, async ({
-    runner,
-  }) => {
-    // entry.js ⇔ entry-cyclic.js
-    //   ⇓
-    // action.js
-    const mod = await runner.import('/fixtures/cyclic/entry')
-    await mod.setupCyclic()
-    const action = await mod.importAction('/fixtures/cyclic/action')
-    expect(action).toBeDefined()
   })
 
   it('this of the exported function should be undefined', async ({
@@ -304,19 +247,6 @@ describe('module runner initialization', async () => {
       runner.import('/fixtures/cyclic2/test5/index.js'),
     ).rejects.toMatchInlineSnapshot(
       `[TypeError: Cannot read properties of undefined (reading 'ok')]`,
-    )
-  })
-
-  it(`cyclic invalid 2`, async ({ runner }) => {
-    // It should be an error but currently `undefined` fallback.
-    expect(
-      await runner.import('/fixtures/cyclic2/test6/index.js'),
-    ).toMatchInlineSnapshot(
-      `
-      {
-        "dep1": "dep1: dep2: undefined",
-      }
-    `,
     )
   })
 
@@ -423,8 +353,156 @@ describe('module runner initialization', async () => {
   })
 })
 
+describe('not supported by bundle mode', () => {
+  // if bundle throws an error, we should stopn waiting
+  it('importing external cjs library checks exports', async ({ runner }) => {
+    await expect(() => runner.import('/fixtures/cjs-external-non-existing.js'))
+      .rejects.toThrowErrorMatchingInlineSnapshot(`
+      [SyntaxError: [vite] Named export 'nonExisting' not found. The requested module '@vitejs/cjs-external' is a CommonJS module, which may not support all module.exports as named exports.
+      CommonJS modules can always be imported via the default export, for example using:
+
+      import pkg from '@vitejs/cjs-external';
+      const {nonExisting} = pkg;
+      ]
+    `)
+    // subsequent imports of the same external package should not throw if imports are correct
+    await expect(
+      runner.import('/fixtures/cjs-external-existing.js'),
+    ).resolves.toMatchObject({
+      result: 'world',
+    })
+  })
+
+  it('importing external esm library checks exports', async ({ runner }) => {
+    await expect(() =>
+      runner.import('/fixtures/esm-external-non-existing.js'),
+    ).rejects.toThrowErrorMatchingInlineSnapshot(
+      `[SyntaxError: [vite] The requested module '@vitejs/esm-external' does not provide an export named 'nonExisting']`,
+    )
+    // subsequent imports of the same external package should not throw if imports are correct
+    await expect(
+      runner.import('/fixtures/esm-external-existing.js'),
+    ).resolves.toMatchObject({
+      result: 'world',
+    })
+  })
+
+  it("dynamic import doesn't produce duplicates", async ({ runner }) => {
+    const mod = await runner.import('/fixtures/dynamic-import.js')
+    const modules = await mod.initialize()
+    // toBe checks that objects are actually the same, not just structurally
+    // using toEqual here would be a mistake because it check the structural difference
+    expect(modules.static).toBe(modules.dynamicProcessed)
+    expect(modules.static).toBe(modules.dynamicRelative)
+    expect(modules.static).toBe(modules.dynamicAbsolute)
+    expect(modules.static).toBe(modules.dynamicAbsoluteExtension)
+    expect(modules.static).toBe(modules.dynamicAbsoluteFull)
+    expect(modules.static).toBe(modules.dynamicFileUrl)
+  })
+
+  it('can load virtual modules as an entry point', async ({ runner }) => {
+    const mod = await runner.import('virtual:test')
+    expect(mod.msg).toBe('virtual')
+
+    // already resolved id works similar to `transformRequest`
+    expect(await runner.import(`\0virtual:normal`)).toMatchInlineSnapshot(`
+      {
+        "default": "ok",
+      }
+    `)
+
+    // escaped virtual module id works
+    expect(await runner.import(`/@id/__x00__virtual:normal`))
+      .toMatchInlineSnapshot(`
+      {
+        "default": "ok",
+      }
+    `)
+
+    // timestamp query works
+    expect(await runner.import(`virtual:normal?t=${Date.now()}`))
+      .toMatchInlineSnapshot(`
+      {
+        "default": "ok",
+      }
+    `)
+
+    // other arbitrary queries don't work
+    await expect(() =>
+      runner.import('virtual:normal?abcd=1234'),
+    ).rejects.toMatchObject({
+      message: expect.stringContaining(
+        'Failed to load url virtual:normal?abcd=1234',
+      ),
+    })
+  })
+
+  it('dynamic imports in FBM', async ({ runner }) => {
+    const mod = await runner.import('./fixtures/dynamic-import.js')
+    const modules = await mod.initialize(true)
+
+    expect(modules.static.test).toBeTypeOf('string')
+    expect(modules.dynamicProcessed.test).toBeTypeOf('string')
+    expect(modules.dynamicProcessed.test).toBe(modules.static.test)
+  })
+
+  // files are virtual, so url is not defined
+  it('correctly resolves module url', async ({ runner, server }) => {
+    const { meta } = await runner.import('/fixtures/basic.js')
+    const basicUrl = new _URL('./fixtures/basic.js', import.meta.url).toString()
+    expect(meta.url).toBe(basicUrl)
+
+    const filename = meta.filename!
+    const dirname = meta.dirname!
+
+    if (isWindows) {
+      const cwd = process.cwd()
+      const drive = `${cwd[0].toUpperCase()}:\\`
+      const root = server.config.root.replace(/\\/g, '/')
+
+      expect(filename.startsWith(drive)).toBe(true)
+      expect(dirname.startsWith(drive)).toBe(true)
+
+      expect(filename).toBe(win32.join(root, '.\\fixtures\\basic.js'))
+      expect(dirname).toBe(win32.join(root, '.\\fixtures'))
+    } else {
+      const root = server.config.root
+
+      expect(posix.join(root, './fixtures/basic.js')).toBe(filename)
+      expect(posix.join(root, './fixtures')).toBe(dirname)
+    }
+  })
+
+  it(`no maximum call stack error ModuleRunner.isCircularImport`, async ({
+    runner,
+  }) => {
+    // entry.js ⇔ entry-cyclic.js
+    //   ⇓
+    // action.js
+    const mod = await runner.import('./fixtures/cyclic/entry.js')
+    await mod.setupCyclic()
+    const action = await mod.importAction('/fixtures/cyclic/action')
+    expect(action).toBeDefined()
+  })
+
+  // rolldown doesn't support this
+  // - Cannot access 'dep1' before initialization
+  it(`cyclic invalid 2`, async ({ runner }) => {
+    // It should be an error but currently `undefined` fallback.
+    expect(
+      await runner.import('/fixtures/cyclic2/test6/index.js'),
+    ).toMatchInlineSnapshot(
+      `
+      {
+        "dep1": "dep1: dep2: undefined",
+      }
+    `,
+    )
+  })
+})
+
 describe('optimize-deps', async () => {
-  const it = await createModuleRunnerTester({
+  it.override('config', {
     cacheDir: 'node_modules/.vite-test',
     ssr: {
       noExternal: true,
@@ -441,7 +519,7 @@ describe('optimize-deps', async () => {
 })
 
 describe('resolveId absolute path entry', async () => {
-  const it = await createModuleRunnerTester({
+  it.override('config', {
     plugins: [
       {
         name: 'test-resolevId',
@@ -476,12 +554,28 @@ describe('resolveId absolute path entry', async () => {
     )
     expect(mod.name).toMatchInlineSnapshot(`"virtual:basic"`)
   })
+
+  describe('in full bundle mode', async () => {
+    it.override('fullBundle', [
+      posix.join(slash(import.meta.dirname), 'fixtures/basic.js'),
+    ])
+
+    it('runner', async ({ runner }) => {
+      // Unlike with dev mode, the ID is specified in the build options,
+      // And then we HAVE to use the resolved ID here to get the chunk name.
+      const mod = await runner.import('\0virtual:basic')
+      expect(mod.name).toMatchInlineSnapshot(`"virtual:basic"`)
+    })
+  })
 })
 
 describe('virtual module hmr', async () => {
   let state = 'init'
 
-  const it = await createModuleRunnerTester({
+  it.override('config', {
+    server: {
+      hmr: true,
+    },
     plugins: [
       {
         name: 'test-resolevId',
@@ -500,12 +594,12 @@ describe('virtual module hmr', async () => {
     ],
   })
 
-  it('full reload', async ({ server, runner }) => {
+  it('full reload', async ({ environment, runner }) => {
     const mod = await runner.import('virtual:test')
     expect(mod.default).toBe('init')
     state = 'reloaded'
-    server.environments.ssr.moduleGraph.invalidateAll()
-    server.environments.ssr.hot.send({ type: 'full-reload' })
+    environment.moduleGraph.invalidateAll()
+    environment.hot.send({ type: 'full-reload' })
     await vi.waitFor(() => {
       const mod = runner.evaluatedModules.getModuleById('\0virtual:test')
       expect(mod?.exports.default).toBe('reloaded')
@@ -534,7 +628,7 @@ describe('virtual module hmr', async () => {
 })
 
 describe('invalid package', async () => {
-  const it = await createModuleRunnerTester({
+  it.override('config', {
     environments: {
       ssr: {
         resolve: {

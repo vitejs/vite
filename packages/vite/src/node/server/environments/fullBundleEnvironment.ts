@@ -7,6 +7,7 @@ import {
 } from 'rolldown/experimental'
 import colors from 'picocolors'
 import getEtag from 'etag'
+import type { OutputOptions, RolldownOptions } from 'rolldown'
 import type { Update } from '#types/hmrPayload'
 import { ChunkMetadataMap, resolveRolldownOptions } from '../../build'
 import { getHmrImplementation } from '../../plugins/clientInjections'
@@ -60,7 +61,7 @@ export class MemoryFiles {
 }
 
 export class FullBundleDevEnvironment extends DevEnvironment {
-  private devEngine!: DevEngine
+  private _devEngine: DevEngine | undefined
   private clients = new Clients()
   private invalidateCalledModules = new Map<
     NormalizedHotChannelClient,
@@ -72,19 +73,21 @@ export class FullBundleDevEnvironment extends DevEnvironment {
   })
 
   memoryFiles: MemoryFiles = new MemoryFiles()
+  facadeToChunk: Map<string, string> = new Map()
 
   constructor(
     name: string,
     config: ResolvedConfig,
     context: DevEnvironmentContext,
   ) {
-    if (name !== 'client') {
-      throw new Error(
-        'currently full bundle mode is only available for client environment',
-      )
-    }
-
     super(name, config, { ...context, disableDepsOptimizer: true })
+  }
+
+  private get devEngine(): DevEngine {
+    if (!this._devEngine) {
+      throw new Error(`dev engine was not yet initialized`)
+    }
+    return this._devEngine
   }
 
   override async listen(_server: ViteDevServer): Promise<void> {
@@ -116,7 +119,7 @@ export class FullBundleDevEnvironment extends DevEnvironment {
       }
     })
 
-    this.devEngine = await dev(rollupOptions, outputOptions, {
+    this._devEngine = await dev(rollupOptions, outputOptions, {
       onHmrUpdates: (result) => {
         if (result instanceof Error) {
           // TODO: send to the specific client
@@ -158,6 +161,12 @@ export class FullBundleDevEnvironment extends DevEnvironment {
 
         // NOTE: don't clear memoryFiles here as incremental build reuses the files
         for (const outputFile of result.output) {
+          if (outputFile.type === 'chunk' && outputFile.facadeModuleId) {
+            this.facadeToChunk.set(
+              outputFile.facadeModuleId,
+              outputFile.fileName,
+            )
+          }
           this.memoryFiles.set(outputFile.fileName, () => {
             const source =
               outputFile.type === 'chunk' ? outputFile.code : outputFile.source
@@ -173,7 +182,7 @@ export class FullBundleDevEnvironment extends DevEnvironment {
       },
     })
     debug?.('INITIAL: setup dev engine')
-    this.devEngine.run().then(
+    this._devEngine.run().then(
       () => {
         debug?.('INITIAL: run done')
       },
@@ -185,6 +194,19 @@ export class FullBundleDevEnvironment extends DevEnvironment {
       debug?.('INITIAL: build done')
       this.hot.send({ type: 'full-reload', path: '*' })
     })
+  }
+
+  /**
+   * @internal
+   */
+  public async _waitForInitialBuildSuccess(): Promise<void> {
+    await this.devEngine.ensureCurrentBuildFinish()
+    const bundleState = await this.devEngine.getBundleState()
+    if (bundleState.lastFullBuildFailed) {
+      throw new Error(
+        `The last full bundle mode build has failed. See logs for more information.`,
+      )
+    }
   }
 
   private async waitForInitialBuildFinish(): Promise<void> {
@@ -275,12 +297,16 @@ export class FullBundleDevEnvironment extends DevEnvironment {
     await Promise.all([super.close(), this.devEngine.close()])
   }
 
-  private async getRolldownOptions() {
+  protected async getDevRuntimeImplementation(): Promise<string> {
+    return await getHmrImplementation(this.getTopLevelConfig())
+  }
+
+  protected async getRolldownOptions(): Promise<RolldownOptions> {
     const chunkMetadataMap = new ChunkMetadataMap()
     const rolldownOptions = resolveRolldownOptions(this, chunkMetadataMap)
     rolldownOptions.experimental ??= {}
     rolldownOptions.experimental.devMode = {
-      implement: await getHmrImplementation(this.getTopLevelConfig()),
+      implement: await this.getDevRuntimeImplementation(),
     }
 
     // disable inlineConst optimization due to a bug in Rolldown
@@ -291,22 +317,24 @@ export class FullBundleDevEnvironment extends DevEnvironment {
     // set filenames to make output paths predictable so that `renderChunk` hook does not need to be used
     if (Array.isArray(rolldownOptions.output)) {
       for (const output of rolldownOptions.output) {
-        output.entryFileNames = 'assets/[name].js'
-        output.chunkFileNames = 'assets/[name]-[hash].js'
-        output.assetFileNames = 'assets/[name]-[hash][extname]'
-        output.minify = false
-        output.sourcemap = true
+        Object.assign(output, this.getOutputOptions())
       }
     } else {
       rolldownOptions.output ??= {}
-      rolldownOptions.output.entryFileNames = 'assets/[name].js'
-      rolldownOptions.output.chunkFileNames = 'assets/[name]-[hash].js'
-      rolldownOptions.output.assetFileNames = 'assets/[name]-[hash][extname]'
-      rolldownOptions.output.minify = false
-      rolldownOptions.output.sourcemap = true
+      Object.assign(rolldownOptions.output, this.getOutputOptions())
     }
 
     return rolldownOptions
+  }
+
+  protected getOutputOptions(): OutputOptions {
+    return {
+      entryFileNames: 'assets/[name].js',
+      chunkFileNames: 'assets/[name]-[hash].js',
+      assetFileNames: 'assets/[name]-[hash][extname]',
+      minify: false,
+      sourcemap: true,
+    }
   }
 
   private handleHmrOutput(

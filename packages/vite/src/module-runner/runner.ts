@@ -1,4 +1,4 @@
-import type { ViteHotContext } from '#types/hot'
+import type { DevRuntime } from 'rolldown/experimental/runtime-types'
 import { HMRClient, HMRContext, type HMRLogger } from '../shared/hmr'
 import { cleanUrl, isPrimitive } from '../shared/utils'
 import { analyzeImportedModDifference } from '../shared/ssrTransform'
@@ -16,7 +16,7 @@ import type {
   ResolvedResult,
   SSRImportMetadata,
 } from './types'
-import { posixDirname, posixPathToFileHref, posixResolve } from './utils'
+import { posixDirname, posixJoin } from './utils'
 import {
   ssrDynamicImportKey,
   ssrExportAllKey,
@@ -24,6 +24,10 @@ import {
   ssrImportKey,
   ssrImportMetaKey,
   ssrModuleExportsKey,
+  ssrRolldownRuntimeCreateHotContextMethod,
+  ssrRolldownRuntimeDefineMethod,
+  ssrRolldownRuntimeKey,
+  ssrRolldownRuntimeTransport,
 } from './constants'
 import { hmrLogger, silentConsole } from './hmrLogger'
 import { createHMRHandlerForRunner } from './hmrHandler'
@@ -47,6 +51,42 @@ export class ModuleRunner {
   >()
   private isBuiltin?: (id: string) => boolean
   private builtinsPromise?: Promise<void>
+  private rolldownDevRuntime?: DevRuntime
+
+  // We need the proxy because the runtime MUST be ready before the first import is processed.
+  // Because `context['__rolldown_runtime__']` is passed down before the modules are executed as a function argument.
+  private rolldownDevRuntimeProxy = new Proxy(
+    {},
+    {
+      get: (_, p, receiver) => {
+        // Special `__rolldown_runtime__.__vite_ssr_defineRuntime__` method only for the module runner,
+        // It's not available in the browser because it's a global there. We cannot have it as a global because
+        //   - It's possible to have multiple runners (`ssrLoadModule` has its own compat runner);
+        //   - We don't want to pollute Dev Server's global namespace.
+        if (p === ssrRolldownRuntimeDefineMethod) {
+          return (runtime: DevRuntime) => {
+            this.rolldownDevRuntime = runtime
+          }
+        }
+
+        if (p === ssrRolldownRuntimeCreateHotContextMethod) {
+          return this.closed
+            ? () => {}
+            : (url: string) => this.ensureModuleHotContext(url)
+        }
+
+        if (p === ssrRolldownRuntimeTransport) {
+          return this.closed ? undefined : this.transport
+        }
+
+        if (!this.rolldownDevRuntime) {
+          throw new Error(`__rolldown_runtime__ was not initialized.`)
+        }
+
+        return Reflect.get(this.rolldownDevRuntime, p, receiver)
+      },
+    },
+  ) as DevRuntime
 
   private closed = false
 
@@ -89,7 +129,7 @@ export class ModuleRunner {
    */
   public async import<T = any>(url: string): Promise<T> {
     const fetchedModule = await this.cachedModule(url)
-    return await this.cachedRequest(url, fetchedModule)
+    return await this.cachedRequest(fetchedModule.url, fetchedModule)
   }
 
   /**
@@ -321,6 +361,7 @@ export class ModuleRunner {
 
     if ('invalidate' in fetchedModule && fetchedModule.invalidate) {
       this.evaluatedModules.invalidateModule(module)
+      this.moduleHotContexts.delete(module.url)
     }
 
     fetchedModule.url = moduleUrl
@@ -353,7 +394,7 @@ export class ModuleRunner {
       // it's possible to provide an object with toString() method inside import()
       dep = String(dep)
       if (dep[0] === '.') {
-        dep = posixResolve(posixDirname(url), dep)
+        dep = posixJoin(posixDirname(url), dep)
       }
       return request(dep, { isDynamicImport: true })
     }
@@ -380,9 +421,9 @@ export class ModuleRunner {
     const createImportMeta =
       this.options.createImportMeta ?? createDefaultImportMeta
 
+    // TODO: consider using `data:application/javascript` for virtual files instead in the major
     const modulePath = cleanUrl(file || moduleId)
     // disambiguate the `<UNIT>:/` on windows: see nodejs/node#31710
-    const href = posixPathToFileHref(modulePath)
     const meta = await createImportMeta(modulePath)
     const exports = Object.create(null)
     Object.defineProperty(exports, Symbol.toStringTag, {
@@ -393,20 +434,14 @@ export class ModuleRunner {
 
     mod.exports = exports
 
-    let hotContext: ViteHotContext | undefined
     if (this.hmrClient) {
       Object.defineProperty(meta, 'hot', {
         enumerable: true,
         get: () => {
-          if (!this.hmrClient) {
-            throw new Error(`[module runner] HMR client was closed.`)
-          }
-          this.debug?.('[module runner] creating hmr context for', mod.url)
-          hotContext ||= new HMRContext(this.hmrClient, mod.url)
-          return hotContext
+          return this.ensureModuleHotContext(mod.url)
         },
         set: (value) => {
-          hotContext = value
+          this.moduleHotContexts.set(mod.url, value)
         },
       })
     }
@@ -423,13 +458,29 @@ export class ModuleRunner {
           get: getter,
         }),
       [ssrImportMetaKey]: meta,
+      [ssrRolldownRuntimeKey]: this.rolldownDevRuntimeProxy,
     }
 
-    this.debug?.('[module runner] executing', href)
+    this.debug?.('[module runner] executing', meta.href)
 
     await this.evaluator.runInlinedModule(context, code, mod)
 
     return exports
+  }
+
+  private moduleHotContexts = new Map<string, HMRContext>()
+
+  private ensureModuleHotContext(url: string) {
+    if (!this.hmrClient) {
+      return
+    }
+
+    if (!this.moduleHotContexts.has(url)) {
+      this.debug?.('[module runner] creating hmr context for', url)
+      const hotContext = new HMRContext(this.hmrClient, url)
+      this.moduleHotContexts.set(url, hotContext)
+    }
+    return this.moduleHotContexts.get(url)
   }
 }
 

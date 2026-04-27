@@ -131,6 +131,7 @@ import {
 } from './server/pluginContainer'
 import { nodeResolveWithVite } from './nodeResolve'
 import { FullBundleDevEnvironment } from './server/environments/fullBundleEnvironment'
+import { createFullBundleRunnableDevEnvironment } from './server/environments/fullBundleRunnableEnvironment'
 
 const debug = createDebugger('vite:config', { depth: 10 })
 const promisifiedRealpath = promisify(fs.realpath)
@@ -256,6 +257,13 @@ function defaultCreateClientDevEnvironment(
     transport: context.ws,
     disableFetchModule: true,
   })
+}
+
+function defaultCreateSSRDevEnvironment(name: string, config: ResolvedConfig) {
+  if (config.experimental.ssrBundledDev) {
+    return createFullBundleRunnableDevEnvironment(name, config)
+  }
+  return createRunnableDevEnvironment(name, config)
 }
 
 function defaultCreateDevEnvironment(name: string, config: ResolvedConfig) {
@@ -575,6 +583,14 @@ export interface ExperimentalOptions {
    * @default false
    */
   bundledDev?: boolean
+  /**
+   * Enable full bundle mode in SSR.
+   *
+   * This is highly experimental.
+   *
+   * @experimental
+   */
+  ssrBundledDev?: boolean
 }
 
 export interface LegacyOptions {
@@ -822,6 +838,7 @@ const configDefaults = Object.freeze({
     renderBuiltUrl: undefined,
     hmrPartialAccept: false,
     bundledDev: false,
+    ssrBundledDev: false,
   },
   future: {
     removePluginHookHandleHotUpdate: undefined,
@@ -884,7 +901,9 @@ export function resolveDevEnvironmentOptions(
       createEnvironment:
         environmentName === 'client'
           ? defaultCreateClientDevEnvironment
-          : defaultCreateDevEnvironment,
+          : environmentName === 'ssr'
+            ? defaultCreateSSRDevEnvironment
+            : defaultCreateDevEnvironment,
       recoverable: consumer === 'client',
       moduleRunnerTransform: consumer === 'server',
     },
@@ -1891,7 +1910,10 @@ export async function resolveConfig(
     cacheDir,
     command,
     mode,
-    isBundled: config.experimental?.bundledDev || isBuild,
+    isBundled:
+      config.experimental?.bundledDev ||
+      config.experimental?.ssrBundledDev ||
+      isBuild, // TODO: ssr shouldn't break client
     isWorker: false,
     mainConfig: null,
     bundleChain: [],
