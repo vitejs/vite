@@ -522,13 +522,56 @@ export interface UserConfig extends DefaultEnvironmentOptions {
   devtools?: boolean | DevToolsConfig
 }
 
+export interface SplitCSPNonce {
+  /**
+   * A nonce value placeholder that will be used for `<script>` tags and
+   * script-related preload tags.
+   */
+  script: string
+  /**
+   * A nonce value placeholder that will be used for `<style>` tags and
+   * style-related link tags.
+   */
+  style: string
+}
+
+export type CSPNonce = string | SplitCSPNonce
+
 export interface HTMLOptions {
   /**
-   * A nonce value placeholder that will be used when generating script/style tags.
+   * A nonce value placeholder that will be used when generating script/style
+   * related tags.
+   *
+   * Provide a string to use the same nonce everywhere, or an object to use
+   * separate script and style nonces.
    *
    * Make sure that this placeholder will be replaced with a unique value for each request by the server.
    */
-  cspNonce?: string
+  cspNonce?: CSPNonce
+}
+
+const normalizeCspNonce = (
+  cspNonce: CSPNonce | null | undefined,
+): CSPNonce | undefined => {
+  if (cspNonce == null) return undefined
+  if (typeof cspNonce === 'string') return cspNonce
+
+  if (
+    !isObject(cspNonce) ||
+    typeof cspNonce.script !== 'string' ||
+    typeof cspNonce.style !== 'string'
+  ) {
+    throw new Error(
+      'html.cspNonce must be a string or an object with string "script" and "style" properties.',
+    )
+  }
+
+  if (cspNonce.script === '' && cspNonce.style === '') return undefined
+
+  return {
+    script: cspNonce.script,
+    style: cspNonce.style,
+  }
 }
 
 export interface FutureOptions {
@@ -1441,6 +1484,13 @@ export async function resolveConfig(
   // run config hooks
   const userPlugins = [...prePlugins, ...normalPlugins, ...postPlugins]
   config = await runConfigHook(config, userPlugins, configEnv)
+
+  if (config.html) {
+    config.html = {
+      ...config.html,
+      cspNonce: normalizeCspNonce(config.html.cspNonce),
+    }
+  }
 
   // Ensure default client and ssr environments
   // If there are present, ensure order { client, ssr, ...custom }

@@ -1,4 +1,5 @@
 import type { ErrorPayload } from '#types/hmrPayload'
+import { resolveCspNonceFromDocument } from '../shared/cspNonce'
 
 // injected by the hmr plugin when served
 declare const __BASE__: string
@@ -7,10 +8,10 @@ declare const __HMR_CONFIG_NAME__: string
 const hmrConfigName = __HMR_CONFIG_NAME__
 const base = __BASE__ || '/'
 
-export const cspNonce =
-  'document' in globalThis
-    ? document.querySelector<HTMLMetaElement>('meta[property=csp-nonce]')?.nonce
-    : undefined
+const cspNonce =
+  'document' in globalThis ? resolveCspNonceFromDocument() : undefined
+export const cspScriptNonce = cspNonce?.script
+export const cspStyleNonce = cspNonce?.style
 
 // Create an element with provided attributes and optional children
 function h(
@@ -204,7 +205,7 @@ const createTemplate = () =>
         '.',
       ),
     ),
-    h('style', { nonce: cspNonce }, templateStyle),
+    h('style', { nonce: cspStyleNonce }, templateStyle),
   )
 
 const fileRE = /(?:file:\/\/)?(?:[a-zA-Z]:\\|\/).*?:\d+:\d+/g

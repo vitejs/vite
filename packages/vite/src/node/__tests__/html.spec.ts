@@ -1,6 +1,11 @@
 import { describe, expect, test } from 'vitest'
 import type { OutputBundle, OutputChunk } from 'rolldown'
-import { getCssFilesForChunk } from '../plugins/html'
+import { resolveConfig } from '../config'
+import {
+  getCssFilesForChunk,
+  injectCspNonceMetaTagHook,
+  injectNonceAttributeTagHook,
+} from '../plugins/html'
 
 function createChunk(
   fileName: string,
@@ -21,6 +26,20 @@ function createBundle(...chunks: OutputChunk[]): OutputBundle {
     bundle[chunk.fileName] = chunk
   }
   return bundle as unknown as OutputBundle
+}
+
+async function resolveHtmlConfig(
+  cspNonce?: string | { script: string; style: string },
+) {
+  return resolveConfig(
+    {
+      configFile: false,
+      html: {
+        cspNonce,
+      },
+    },
+    'serve',
+  )
 }
 
 describe('getCssFilesForChunk', () => {
@@ -238,5 +257,151 @@ describe('getCssFilesForChunk', () => {
       'b.css',
       'a.css',
     ])
+  })
+})
+
+describe('CSP nonce HTML hooks', () => {
+  test('injectCspNonceMetaTagHook injects only shared meta tag for string config', async () => {
+    const config = await resolveHtmlConfig('__NONCE__')
+
+    expect(injectCspNonceMetaTagHook(config)()).toEqual([
+      {
+        tag: 'meta',
+        injectTo: 'head',
+        attrs: {
+          property: 'csp-nonce',
+          nonce: '__NONCE__',
+        },
+      },
+    ])
+  })
+
+  test('injectCspNonceMetaTagHook injects split meta tags and omits empty values', async () => {
+    const config = await resolveHtmlConfig({
+      script: '',
+      style: '__STYLE_NONCE__',
+    })
+
+    expect(injectCspNonceMetaTagHook(config)()).toEqual([
+      {
+        tag: 'meta',
+        injectTo: 'head',
+        attrs: {
+          property: 'csp-style-nonce',
+          nonce: '__STYLE_NONCE__',
+        },
+      },
+    ])
+  })
+
+  test('injectNonceAttributeTagHook applies shared nonce to script and style destinations only', async () => {
+    const config = await resolveHtmlConfig('__NONCE__')
+    const html = [
+      '<link rel="stylesheet" href="/style.css">',
+      '<link rel="modulepreload" href="/dep.js">',
+      '<link rel="preload" as="script" href="/dep.js">',
+      '<link rel="preload" as="style" href="/dep.css">',
+      '<link rel="preload" as="image" href="/image.png">',
+      '<link rel="preload" as="font" href="/font.woff2" crossorigin>',
+      '<style>.foo { color: red }</style>',
+      '<script type="module" src="/main.js"></script>',
+    ].join('\n')
+
+    const transformed = await injectNonceAttributeTagHook(config)(html, {
+      filename: '/index.html',
+    } as any)
+
+    expect(transformed).toContain(
+      '<link rel="stylesheet" href="/style.css" nonce="__NONCE__">',
+    )
+    expect(transformed).toContain(
+      '<link rel="modulepreload" href="/dep.js" nonce="__NONCE__">',
+    )
+    expect(transformed).toContain(
+      '<link rel="preload" as="script" href="/dep.js" nonce="__NONCE__">',
+    )
+    expect(transformed).toContain(
+      '<link rel="preload" as="style" href="/dep.css" nonce="__NONCE__">',
+    )
+    expect(transformed).toContain(
+      '<style nonce="__NONCE__">.foo { color: red }</style>',
+    )
+    expect(transformed).toContain(
+      '<script type="module" src="/main.js" nonce="__NONCE__"></script>',
+    )
+    expect(transformed).not.toMatch(/as="image"[^>]*\snonce=/)
+    expect(transformed).not.toMatch(/as="font"[^>]*\snonce=/)
+  })
+
+  test('injectNonceAttributeTagHook routes split nonces by destination', async () => {
+    const config = await resolveHtmlConfig({
+      script: '__SCRIPT_NONCE__',
+      style: '__STYLE_NONCE__',
+    })
+    const html = [
+      '<link rel="stylesheet" href="/style.css">',
+      '<link rel="modulepreload" href="/dep.js">',
+      '<link rel="preload" as="script" href="/dep.js">',
+      '<link rel="preload" as="style" href="/dep.css">',
+      '<link rel="preload" as="image" href="/image.png">',
+      '<link rel="preload" as="font" href="/font.woff2" crossorigin>',
+      '<style>.foo { color: red }</style>',
+      '<script type="module" src="/main.js"></script>',
+    ].join('\n')
+
+    const transformed = await injectNonceAttributeTagHook(config)(html, {
+      filename: '/index.html',
+    } as any)
+
+    expect(transformed).toContain(
+      '<link rel="stylesheet" href="/style.css" nonce="__STYLE_NONCE__">',
+    )
+    expect(transformed).toContain(
+      '<link rel="modulepreload" href="/dep.js" nonce="__SCRIPT_NONCE__">',
+    )
+    expect(transformed).toContain(
+      '<link rel="preload" as="script" href="/dep.js" nonce="__SCRIPT_NONCE__">',
+    )
+    expect(transformed).toContain(
+      '<link rel="preload" as="style" href="/dep.css" nonce="__STYLE_NONCE__">',
+    )
+    expect(transformed).toContain(
+      '<style nonce="__STYLE_NONCE__">.foo { color: red }</style>',
+    )
+    expect(transformed).toContain(
+      '<script type="module" src="/main.js" nonce="__SCRIPT_NONCE__"></script>',
+    )
+    expect(transformed).not.toMatch(/as="image"[^>]*\snonce=/)
+    expect(transformed).not.toMatch(/as="font"[^>]*\snonce=/)
+  })
+
+  test('injectNonceAttributeTagHook omits empty split destinations and does not repeat nonce attributes', async () => {
+    const config = await resolveHtmlConfig({
+      script: '',
+      style: '__STYLE_NONCE__',
+    })
+    const html = [
+      '<link rel="stylesheet" href="/style.css">',
+      '<script type="module" src="/main.js"></script>',
+      '<script nonce="__EXISTING__">console.log("ok")</script>',
+      '<style>.foo { color: red }</style>',
+    ].join('\n')
+
+    const transformed = await injectNonceAttributeTagHook(config)(html, {
+      filename: '/index.html',
+    } as any)
+
+    expect(transformed).toContain(
+      '<link rel="stylesheet" href="/style.css" nonce="__STYLE_NONCE__">',
+    )
+    expect(transformed).toContain(
+      '<style nonce="__STYLE_NONCE__">.foo { color: red }</style>',
+    )
+    expect(transformed).toContain(
+      '<script type="module" src="/main.js"></script>',
+    )
+    expect(transformed).toContain(
+      '<script nonce="__EXISTING__">console.log("ok")</script>',
+    )
   })
 })

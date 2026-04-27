@@ -10,6 +10,7 @@ import { combineSourcemaps, generateCodeFrame, numberToPos } from '../utils'
 import { type Plugin, perEnvironmentPlugin } from '../plugin'
 import type { ResolvedConfig } from '../config'
 import { toOutputFilePathInJS } from '../build'
+import type { ReadCSPNonce } from '../../shared/cspNonce'
 import { genSourceMapUrl } from '../server/sourcemap'
 import type { PartialEnvironment } from '../baseEnvironment'
 import { removedPureCssFilesCache } from './css'
@@ -69,13 +70,23 @@ function preload(
   // @ts-expect-error __VITE_IS_MODERN__ will be replaced with boolean later
   if (__VITE_IS_MODERN__ && deps && deps.length > 0) {
     const links = document.getElementsByTagName('link')
-    const cspNonceMeta = document.querySelector<HTMLMetaElement>(
-      'meta[property=csp-nonce]',
-    )
-    // `.nonce` should be used to get along with nonce hiding (https://developer.mozilla.org/en-US/docs/Web/HTML/Global_attributes/nonce#accessing_nonces_and_nonce_hiding)
-    // Firefox 67-74 uses modern chunks and supports CSP nonce, but does not support `.nonce`
-    // in that case fallback to getAttribute
-    const cspNonce = cspNonceMeta?.nonce || cspNonceMeta?.getAttribute('nonce')
+
+    const readCspNonceFromMeta: ReadCSPNonce = (property) => {
+      const meta = document.querySelector<HTMLMetaElement>(
+        `meta[property="${property}"]`,
+      )
+      if (!meta?.hasAttribute('nonce')) return undefined
+      // `.nonce` should be used to get along with nonce hiding (https://developer.mozilla.org/en-US/docs/Web/HTML/Global_attributes/nonce#accessing_nonces_and_nonce_hiding)
+      // Firefox 67-74 uses modern chunks and supports CSP nonce, but does not support `.nonce`
+      // in that case fallback to getAttribute
+      return meta?.nonce || meta?.getAttribute('nonce') || undefined
+    }
+
+    const sharedCspNonce = readCspNonceFromMeta('csp-nonce')
+    const cspScriptNonce =
+      readCspNonceFromMeta('csp-script-nonce') || sharedCspNonce
+    const cspStyleNonce =
+      readCspNonceFromMeta('csp-style-nonce') || sharedCspNonce
 
     // Promise.allSettled is not supported by Chrome 64-75, Firefox 67-70, Safari 11.1-12.1
     function allSettled<T>(
@@ -126,6 +137,7 @@ function preload(
         }
         link.crossOrigin = ''
         link.href = dep
+        const cspNonce = isCss ? cspStyleNonce : cspScriptNonce
         if (cspNonce) {
           link.setAttribute('nonce', cspNonce)
         }
