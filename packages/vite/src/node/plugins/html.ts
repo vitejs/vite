@@ -24,6 +24,7 @@ import {
   encodeURIPath,
   generateCodeFrame,
   getHash,
+  injectQuery,
   isCSSRequest,
   isDataUrl,
   isExternalUrl,
@@ -47,7 +48,7 @@ import {
   publicAssetUrlRE,
   urlToBuiltUrl,
 } from './asset'
-import { cssBundleNameCache } from './css'
+import { cssBundleNameCache, isModuleCSSRequest } from './css'
 import { modulePreloadPolyfillId } from './modulePreloadPolyfill'
 
 interface ScriptAssetsUrl {
@@ -657,7 +658,11 @@ export function buildHtmlPlugin(config: ResolvedConfig): Plugin {
                   !('media' in attr.attributes || 'disabled' in attr.attributes)
                 ) {
                   // CSS references, convert to import
-                  const importExpression = `\nimport ${JSON.stringify(url)}`
+                  const importExpression = `\nimport ${JSON.stringify(
+                    isModuleCSSRequest(url)
+                      ? injectQuery(url, 'html-style')
+                      : url,
+                  )}`
                   styleUrls.push({
                     url,
                     start: nodeStartWithLeadingWhitespace(node),

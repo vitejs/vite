@@ -1,0 +1,7 @@
+:global(.linked-module-css) {
+  color: mediumseagreen;
+
+  & span {
+    color: tomato;
+  }
+}

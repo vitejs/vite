@@ -27,9 +27,13 @@ export const tests = (isLightningCSS: boolean) => {
   test('linked css', async () => {
     const linked = await page.$('.linked')
     const atImport = await page.$('.linked-at-import')
+    const linkedModule = await page.$('.linked-module-css')
+    const linkedModuleNested = await page.$('.linked-module-css span')
 
     expect(await getColor(linked)).toBe('blue')
     expect(await getColor(atImport)).toBe('red')
+    expect(await getColor(linkedModule)).toBe('mediumseagreen')
+    expect(await getColor(linkedModuleNested)).toBe('tomato')
 
     if (isBuild) return
 
