@@ -132,8 +132,13 @@ function createIsExternal(
   const isConfiguredAsExternal = createIsConfiguredAsExternal(environment)
 
   return (id: string, importer?: string) => {
-    if (processedIds.has(id)) {
-      return processedIds.get(id)!
+    // Cache key includes importer because different importers may resolve
+    // the same bare specifier to different packages (e.g. in pnpm monorepos
+    // with multiple versions of a dependency). Without importer in the key,
+    // the first resolution's result is incorrectly reused for all importers.
+    const cacheKey = importer ? `${id}\0${importer}` : id
+    if (processedIds.has(cacheKey)) {
+      return processedIds.get(cacheKey)!
     }
     let isExternal = false
     if (id[0] !== '.' && !path.isAbsolute(id)) {
@@ -141,7 +146,7 @@ function createIsExternal(
         isBuiltin(environment.config.resolve.builtins, id) ||
         isConfiguredAsExternal(id, importer)
     }
-    processedIds.set(id, isExternal)
+    processedIds.set(cacheKey, isExternal)
     return isExternal
   }
 }
