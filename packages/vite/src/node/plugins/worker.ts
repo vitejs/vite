@@ -23,7 +23,7 @@ import {
   onRollupLog,
   toOutputFilePathInJS,
 } from '../build'
-import { cleanUrl } from '../../shared/utils'
+import { cleanUrl, splitFileAndPostfix } from '../../shared/utils'
 import type { Logger } from '../logger'
 import { fileToUrl, toOutputFilePathInJSForBundledDev } from './asset'
 
@@ -155,6 +155,23 @@ export const workerOrSharedWorkerRE: RegExp =
   /(?:\?|&)(worker|sharedworker)(?:&|$)/
 const workerFileRE = /(?:\?|&)worker_file&type=(\w+)(?:&|$)/
 const inlineRE = /[?&]inline\b/
+
+function getWorkerRequestPostfix(id: string): string {
+  const { postfix } = splitFileAndPostfix(id)
+  if (!postfix || postfix[0] !== '?') {
+    return ''
+  }
+
+  const queryParams = new URLSearchParams(postfix.slice(1))
+
+  queryParams.delete('worker')
+  queryParams.delete('sharedworker')
+  queryParams.delete('inline')
+  queryParams.delete('url')
+
+  const customQuery = queryParams.toString()
+  return customQuery ? `?${customQuery}` : ''
+}
 
 export const WORKER_FILE_ID = 'worker_file'
 const workerOutputCaches = new WeakMap<ResolvedConfig, WorkerOutputCache>()
@@ -489,8 +506,12 @@ export function webWorkerPlugin(config: ResolvedConfig): Plugin {
             }
           }
         } else {
+          const workerRequestPostfix = getWorkerRequestPostfix(id)
           let url = await fileToUrl(this, cleanUrl(id))
-          url = injectQuery(url, `${WORKER_FILE_ID}&type=${workerType}`)
+          url = injectQuery(
+            `${url}${workerRequestPostfix}`,
+            `${WORKER_FILE_ID}&type=${workerType}`,
+          )
           urlCode = JSON.stringify(url)
         }
 

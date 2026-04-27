@@ -253,4 +253,14 @@ new Worker(
       )"
     `)
   })
+
+  test('preserves custom search params in worker URL', async () => {
+    expect(
+      await transform(
+        'new Worker(new URL("./worker.js?foo=bar&baz=qux", import.meta.url), { type: "module" })',
+      ),
+    ).toMatchInlineSnapshot(
+      '"new Worker(new URL(/* @vite-ignore */ "/worker.js?worker_file&type=module&foo=bar&baz=qux", \'\' + import.meta.url), { type: "module" })"',
+    )
+  })
 })
