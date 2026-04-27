@@ -41,7 +41,7 @@ import type {
   ResolvedConfig,
   ResolvedEnvironmentOptions,
 } from './config'
-import { resolveConfig } from './config'
+import { getDevToolsEnvironments, resolveConfig } from './config'
 import type { PartialEnvironment } from './baseEnvironment'
 import { buildReporterPlugin } from './plugins/reporter'
 import { buildEsbuildPlugin } from './plugins/esbuild'
@@ -1848,7 +1848,13 @@ export async function createBuilder(
     },
     async runDevTools() {
       const devtoolsConfig = config.devtools
-      if (devtoolsConfig.enabled) {
+      const shouldStartDevTools =
+        devtoolsConfig.enabled &&
+        getDevToolsEnvironments(devtoolsConfig, environments).some(
+          (environmentName) => environments[environmentName]?.isBuilt,
+        )
+
+      if (shouldStartDevTools) {
         try {
           const { start } = await import(`@vitejs/devtools/cli-commands`)
           await start(devtoolsConfig.config)

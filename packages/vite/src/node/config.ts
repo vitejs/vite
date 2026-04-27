@@ -135,6 +135,7 @@ import { FullBundleDevEnvironment } from './server/environments/fullBundleEnviro
 const debug = createDebugger('vite:config', { depth: 10 })
 const promisifiedRealpath = promisify(fs.realpath)
 const SYMBOL_RESOLVED_CONFIG: unique symbol = Symbol('vite:resolved-config')
+type DevToolsConfigWithEnvironments = { environments?: string[] }
 
 export interface ConfigEnv {
   /**
@@ -757,6 +758,16 @@ export async function resolveDevToolsConfig(
     )
     return fallbackConfig
   }
+}
+
+export function getDevToolsEnvironments(
+  devtoolsConfig: ResolvedDevToolsConfig,
+  environments: Record<string, unknown>,
+): string[] {
+  return (
+    (devtoolsConfig.config as DevToolsConfigWithEnvironments).environments ??
+    Object.keys(environments)
+  )
 }
 
 // inferred ones are omitted
@@ -2066,9 +2077,17 @@ export async function resolveConfig(
       resolved.build.ssrEmitAssets || resolved.build.emitAssets
   }
 
-  // Enable `rolldownOptions.devtools` if devtools is enabled
+  // Enable `rolldownOptions.devtools` if devtools is enabled and the environment is selected, or for all environments by default.
   if (resolved.devtools.enabled) {
-    resolved.build.rolldownOptions.devtools ??= {}
+    for (const environmentName of getDevToolsEnvironments(
+      resolved.devtools,
+      resolved.environments,
+    )) {
+      const environment = resolved.environments[environmentName]
+      if (resolved.environments[environmentName]) {
+        environment.build.rolldownOptions.devtools ??= {}
+      }
+    }
   }
 
   applyDepOptimizationOptionCompat(resolved)
