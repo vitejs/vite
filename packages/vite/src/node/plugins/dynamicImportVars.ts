@@ -6,7 +6,7 @@ import { parseAst } from 'rolldown/parseAst'
 import { dynamicImportToGlob } from '@rollup/plugin-dynamic-import-vars'
 import { viteDynamicImportVarsPlugin as nativeDynamicImportVarsPlugin } from 'rolldown/experimental'
 import { exactRegex } from 'rolldown/filter'
-import { type Plugin, perEnvironmentPlugin } from '../plugin'
+import type { Plugin } from '../plugin'
 import type { ResolvedConfig } from '../config'
 import { CLIENT_ENTRY } from '../constants'
 import { createBackCompatIdResolver } from '../idResolver'
@@ -173,22 +173,6 @@ export function dynamicImportVarsPlugin(config: ResolvedConfig): Plugin {
     extensions: [],
   })
 
-  if (config.isBundled) {
-    return perEnvironmentPlugin('native:dynamic-import-vars', (environment) => {
-      const { include, exclude } =
-        environment.config.build.dynamicImportVarsOptions
-
-      return nativeDynamicImportVarsPlugin({
-        include,
-        exclude,
-        resolver(id, importer) {
-          return resolve(environment, id, importer)
-        },
-        sourcemap: !!environment.config.build.sourcemap,
-      })
-    })
-  }
-
   const getFilter = perEnvironmentState((environment: Environment) => {
     const { include, exclude } =
       environment.config.build.dynamicImportVarsOptions
@@ -197,6 +181,23 @@ export function dynamicImportVarsPlugin(config: ResolvedConfig): Plugin {
 
   return {
     name: 'vite:dynamic-import-vars',
+
+    applyToEnvironment(environment) {
+      if (environment.config.isBundled) {
+        const { include, exclude } =
+          environment.config.build.dynamicImportVarsOptions
+
+        return nativeDynamicImportVarsPlugin({
+          include,
+          exclude,
+          resolver(id, importer) {
+            return resolve(environment, id, importer)
+          },
+          sourcemap: !!environment.config.build.sourcemap,
+        })
+      }
+      return true
+    },
 
     resolveId: {
       filter: { id: exactRegex(dynamicImportHelperId) },
