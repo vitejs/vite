@@ -80,6 +80,7 @@ import {
   asyncFlatten,
   createDebugger,
   createFilter,
+  deepClone,
   hasBothRollupOptionsAndRolldownOptions,
   isExternalUrl,
   isFilePathESM,
@@ -1568,7 +1569,9 @@ export async function resolveConfig(
     config.environments[name] = mergeConfig(
       name === 'client'
         ? defaultClientEnvironmentOptions
-        : defaultNonClientEnvironmentOptions,
+        : (deepClone(
+            defaultNonClientEnvironmentOptions as object,
+          ) as UserConfig),
       config.environments[name],
     )
   }
