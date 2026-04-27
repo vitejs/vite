@@ -316,7 +316,7 @@ export function rolldownDepPlugin(
         filter: {
           code: assetImportMetaUrlRE,
         },
-        async handler(code, id) {
+        handler(code, id) {
           let s: MagicString | undefined
           const re = new RegExp(assetImportMetaUrlRE)
           const cleanString = stripLiteral(code)

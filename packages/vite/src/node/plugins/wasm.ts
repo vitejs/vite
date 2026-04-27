@@ -113,7 +113,7 @@ export default ${wasmHelperCode}
         env.config.consumer === 'server'
           ? {
               filter: { code: wasmInitUrlRE },
-              async handler(code, chunk, opts, meta) {
+              handler(code, chunk, opts, meta) {
                 const toRelativeRuntime =
                   createToImportMetaURLBasedRelativeRuntime(
                     opts.format,

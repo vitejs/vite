@@ -2370,7 +2370,7 @@ async function bundleConfigFile(
         name: 'externalize-deps',
         resolveId: {
           filter: { id: /^[^.#].*/ },
-          async handler(id, importer, { kind }) {
+          handler(id, importer, { kind }) {
             if (!importer || path.isAbsolute(id) || isNodeBuiltin(id)) {
               return
             }
