@@ -313,6 +313,25 @@ function mergeConfig(
 Deeply merge two Vite configs. `isRoot` represents the level within the Vite config which is being merged. For example, set `false` if you're merging two `build` options.
 
 ::: tip NOTE
+`null` and `undefined` values in `overrides` are skipped, so the corresponding values in `defaults` are preserved. This makes it convenient to merge in options conditionally without unintentionally clearing values from `defaults`:
+
+```ts twoslash
+import { mergeConfig, type UserConfig } from 'vite'
+declare const baseConfig: UserConfig
+declare const condition: boolean
+
+// ---cut---
+mergeConfig(baseConfig, {
+  // when `condition` is false, `base` is `undefined` and
+  // `baseConfig.base` is preserved
+  base: condition ? '/admin/' : undefined,
+})
+```
+
+If you need to explicitly clear a value from `defaults`, modify the result of `mergeConfig` directly instead of passing `null` or `undefined` as the override.
+:::
+
+::: tip NOTE
 `mergeConfig` accepts only config in object form. If you have a config in callback form, you should call it before passing into `mergeConfig`.
 
 You can use the `defineConfig` helper to merge a config in callback form with another config:
