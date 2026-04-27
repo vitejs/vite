@@ -331,8 +331,8 @@ export function cssPlugin(config: ResolvedConfig): Plugin {
       )
     },
 
-    buildEnd() {
-      preprocessorWorkerController?.close()
+    async buildEnd() {
+      await preprocessorWorkerController?.close()
     },
 
     load: {
@@ -2391,7 +2391,7 @@ type StylePreprocessor<Options extends StylePreprocessorInternalOptions> = {
     options: Options,
     resolvers: CSSAtImportResolvers,
   ) => StylePreprocessorResults | Promise<StylePreprocessorResults>
-  close: () => void
+  close: () => void | Promise<void>
 }
 
 export interface StylePreprocessorResults {
@@ -2612,8 +2612,8 @@ const scssProcessor = (
   const normalizedErrors = new WeakSet<Error>()
 
   return {
-    close() {
-      worker?.stop()
+    async close() {
+      await worker?.stop()
     },
     async process(environment, source, root, options, resolvers) {
       let sassPackage = loadSassPackage(root, failedSassEmbedded ?? false)
@@ -3150,10 +3150,8 @@ const createPreprocessorWorkerController = (maxWorkers: number | undefined) => {
       return scss.process(environment, source, root, opts, resolvers)
     }
 
-  const close = () => {
-    less.close()
-    scss.close()
-    styl.close()
+  const close = async () => {
+    await Promise.all([less.close(), scss.close(), styl.close()])
   }
 
   return {
