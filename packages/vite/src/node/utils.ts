@@ -241,7 +241,52 @@ export function fsPathFromId(id: string): string {
 }
 
 export function fsPathFromUrl(url: string): string {
-  return fsPathFromId(cleanUrl(url))
+  // First do `decodeURI` so URL-safe chars (e.g. `%20` -> ` `, UTF-8
+  // sequences for Unicode filenames) round-trip back to the filesystem
+  // path. `decodeURI` deliberately leaves reserved chars `#`, `?`, `/`,
+  // `&`, etc. alone -- so `%2f` stays encoded and the static middleware's
+  // path-traversal guard keeps working.
+  //
+  // Then explicitly decode the chars that `fsPathToUrl` encodes
+  // (`%23` -> `#`, `%3F` -> `?`, `%25` -> `%`) so a filesystem path
+  // containing those characters survives the URL round-trip. `%25` is
+  // decoded last so existing `%`-prefixed sequences are preserved.
+  //
+  // Falls back to the unmodified path on a malformed sequence so a bad
+  // URL cannot crash the dev server. See `fsPathToUrl` and #22329.
+  const cleaned = cleanUrl(url)
+  let decoded: string
+  try {
+    decoded = decodeURI(cleaned)
+  } catch {
+    decoded = cleaned
+  }
+  decoded = decoded
+    .replaceAll('%23', '#')
+    .replaceAll('%3F', '?')
+    .replaceAll('%3f', '?')
+    .replaceAll('%25', '%')
+  return fsPathFromId(decoded)
+}
+
+/**
+ * Encode a filesystem path so it can be used as a URL path. Replaces the
+ * URL-reserved characters that may legally appear in a filesystem path
+ * (`%`, `#`, `?`) with their percent-encoded forms. The `%` is encoded
+ * first so existing `%`-prefixed sequences in the path are preserved.
+ *
+ * Use this when constructing a URL from an absolute filesystem path.
+ * Server-side middlewares already call `decodeURI` / `decodeURIComponent`
+ * on the request URL before mapping it back to a filesystem path. See
+ * #22329: vite resolves its own internals via Node, so a project root
+ * containing `#` (e.g. `C:\C#\project` on Windows) leaks `#` into the
+ * `/@fs/...` URL and the browser truncates it as a fragment.
+ */
+export function fsPathToUrl(p: string): string {
+  return normalizePath(p)
+    .replaceAll('%', '%25')
+    .replaceAll('#', '%23')
+    .replaceAll('?', '%3F')
 }
 
 /**

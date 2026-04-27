@@ -80,6 +80,7 @@ import {
   asyncFlatten,
   createDebugger,
   createFilter,
+  fsPathToUrl,
   hasBothRollupOptionsAndRolldownOptions,
   isExternalUrl,
   isFilePathESM,
@@ -1045,14 +1046,19 @@ function checkBadCharactersInPath(
   }
 }
 
+// Encode `#`, `?`, and `%` so a project root containing those characters
+// (e.g. `C:\C#\project` on Windows, valid macOS/Linux filenames with `?`)
+// does not produce a URL the browser truncates as a fragment or query.
+// Server-side middlewares already decode the URL back to a filesystem path.
+// See #22329.
 const clientAlias = [
   {
     find: /^\/?@vite\/env/,
-    replacement: path.posix.join(FS_PREFIX, normalizePath(ENV_ENTRY)),
+    replacement: path.posix.join(FS_PREFIX, fsPathToUrl(ENV_ENTRY)),
   },
   {
     find: /^\/?@vite\/client/,
-    replacement: path.posix.join(FS_PREFIX, normalizePath(CLIENT_ENTRY)),
+    replacement: path.posix.join(FS_PREFIX, fsPathToUrl(CLIENT_ENTRY)),
   },
 ]
 

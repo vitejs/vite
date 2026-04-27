@@ -2,6 +2,7 @@ import { extname } from 'node:path'
 import type { ModuleInfo, PartialResolvedId } from 'rolldown'
 import { isDirectCSSRequest } from '../plugins/css'
 import {
+  fsPathToUrl,
   monotonicDateNow,
   normalizePath,
   removeImportQuery,
@@ -400,7 +401,7 @@ export class EnvironmentModuleGraph {
       this.fileToModulesMap.set(file, fileMappedModules)
     }
 
-    const url = `${FS_PREFIX}${file}`
+    const url = `${FS_PREFIX}${fsPathToUrl(file)}`
     for (const m of fileMappedModules) {
       if ((m.url === url || m.id === file) && m.type === 'asset') {
         return m
