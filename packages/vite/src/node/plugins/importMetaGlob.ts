@@ -66,23 +66,30 @@ export function importGlobPlugin(config: ResolvedConfig): Plugin {
           config.logger,
         )
         if (result) {
-          const allGlobs = result.matches.map((i) => i.globsResolved)
           if (!importGlobMaps.has(this.environment)) {
             importGlobMaps.set(this.environment, new Map())
           }
 
-          const globMatchers = allGlobs.map((globs) => {
+          const globMatchers = result.matches.map((i) => {
             const affirmed: string[] = []
             const negated: string[] = []
-            for (const glob of globs) {
+            for (const glob of i.globsResolved) {
               if (glob[0] === '!') {
                 negated.push(glob.slice(1))
               } else {
                 affirmed.push(glob)
               }
             }
-            const affirmedMatcher = picomatch(affirmed)
-            const negatedMatcher = picomatch(negated)
+            const affirmedMatcher = picomatch(affirmed, {
+              noextglob: true,
+              dot: !!i.options.exhaustive,
+              ignore: i.options.exhaustive ? [] : ['**/node_modules/**'],
+            })
+            const negatedMatcher = picomatch(negated, {
+              noextglob: true,
+              dot: !!i.options.exhaustive,
+              ignore: i.options.exhaustive ? [] : ['**/node_modules/**'],
+            })
 
             return (file: string) => {
               // (glob1 || glob2) && !(glob3 || glob4)...
