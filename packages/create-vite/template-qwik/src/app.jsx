@@ -1,6 +1,5 @@
 import { component$, useSignal } from '@builder.io/qwik'
 import icons from '/icons.svg'
-
 import qwikLogo from './assets/qwik.svg'
 import viteLogo from './assets/vite.svg'
 import heroImg from './assets/hero.png'
