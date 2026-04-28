@@ -1,3 +1,20 @@
+## <small>[8.0.10](https://github.com/vitejs/vite/compare/v8.0.9...v8.0.10) (2026-04-23)</small>
+### Features
+
+* update rolldown to 1.0.0-rc.17 ([#22299](https://github.com/vitejs/vite/issues/22299)) ([a4d06d9](https://github.com/vitejs/vite/commit/a4d06d9015167d30fe8ac63d1ce2edc146cdca31))
+
+### Bug Fixes
+
+* `hmrClient.logger.debug` and `hmrClient.logger.error` looked different from other HMR logs ([#22147](https://github.com/vitejs/vite/issues/22147)) ([a4d828f](https://github.com/vitejs/vite/commit/a4d828f2d5ed85440bc0774eab342e6f9a5e5f62))
+* **css:** show filename in CSS minification warnings for `.css?inline` ([#22292](https://github.com/vitejs/vite/issues/22292)) ([83f0a78](https://github.com/vitejs/vite/commit/83f0a785a2ae48d6761fb69f4b0523a24ae9342c))
+* **optimizer:** allow user transform.target to override default in optimizeDeps ([#22273](https://github.com/vitejs/vite/issues/22273)) ([5c7cec6](https://github.com/vitejs/vite/commit/5c7cec69b637544ab16009d8758df7dbbf7f2674))
+* remove format sniffing module resolution from JS resolver ([#22297](https://github.com/vitejs/vite/issues/22297)) ([b8a21cc](https://github.com/vitejs/vite/commit/b8a21cc821c1434ac9d2b85ec53005df9edc306b))
+
+### Code Refactoring
+
+* enable some typecheck rules ([#22278](https://github.com/vitejs/vite/issues/22278)) ([9437518](https://github.com/vitejs/vite/commit/943751801f70057ae94f9092e349c8f3fd9ccdf2))
+* typecheck client directory ([#22284](https://github.com/vitejs/vite/issues/22284)) ([40a0847](https://github.com/vitejs/vite/commit/40a0847276502b33a3942b3cfab04b20218f3543))
+
 ## <small>[8.0.9](https://github.com/vitejs/vite/compare/v8.0.8...v8.0.9) (2026-04-20)</small>
 ### Features
 

@@ -21,6 +21,8 @@
 <pre class="escape-relative"></pre>
 <h2>Escape alias glob</h2>
 <pre class="escape-alias"></pre>
+<h2>Escape literal parenthesis</h2>
+<pre class="escape-literal-parenthesis"></pre>
 <h2>Subpath imports</h2>
 <pre class="subpath-imports"></pre>
 <h2>Subpath imports (sub dir)</h2>
@@ -151,6 +153,17 @@
 </script>
 
 <script type="module">
+  // https://github.com/vitejs/vite/issues/22166
+  // Backslash-escaped glob metachars must match their literal counterparts
+  // consistently in dev and build.
+  const literalParen = import.meta.glob('/escape/\\(parenthesis\\)/mod/*.js', {
+    eager: true,
+  })
+  document.querySelector('.escape-literal-parenthesis').textContent =
+    JSON.stringify(Object.keys(literalParen).sort())
+</script>
+
+<script type="module">
   const subpathImports = import.meta.glob('#imports/*', { eager: true })
   document.querySelector('.subpath-imports').textContent = Object.values(
     subpathImports,
@@ -272,6 +285,24 @@
     null,
     2,
   )
+</script>
+
+<h2>Array Pattern with Sibling Directories Sharing a Prefix</h2>
+<pre class="array-common-base-result"></pre>
+
+<script type="module">
+  const arrayCommonBaseModules = import.meta.glob(
+    [
+      '/array-common-base/pattern1/**/*.js',
+      '/array-common-base/pattern2/**/*.js',
+    ],
+    {
+      eager: true,
+      import: 'default',
+    },
+  )
+  document.querySelector('.array-common-base-result').textContent =
+    JSON.stringify(arrayCommonBaseModules, null, 2)
 </script>
 
 <h2>Transform visibility</h2>
