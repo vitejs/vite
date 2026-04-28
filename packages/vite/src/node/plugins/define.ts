@@ -169,10 +169,10 @@ export function replaceDefine(
   code: string,
   id: string,
   define: Record<string, string>,
-): Promise<{
+): {
   code: string
   map: ReturnType<typeof transformSync>['map'] | null
-}> {
+} {
   const result = transformSync(id, code, {
     lang: 'js',
     sourceType: 'module',
