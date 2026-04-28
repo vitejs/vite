@@ -3,6 +3,7 @@ import fsp from 'node:fs/promises'
 import path from 'node:path'
 import { performance } from 'node:perf_hooks'
 import { scan } from 'rolldown/experimental'
+import type { TransformOptions as OxcTransformOptions } from 'rolldown/utils'
 import { transformSync } from 'rolldown/utils'
 import type { PartialResolvedId, Plugin } from 'rolldown'
 import colors from 'picocolors'
@@ -36,7 +37,7 @@ import { BaseEnvironment } from '../baseEnvironment'
 import type { DevEnvironment } from '../server/environment'
 import { transformGlobImport } from '../plugins/importMetaGlob'
 import { cleanUrl } from '../../shared/utils'
-import { getRollupJsxPresets } from '../plugins/oxc'
+import { type OxcOptions, getRollupJsxPresets } from '../plugins/oxc'
 
 export class ScanEnvironment extends BaseEnvironment {
   mode = 'scan' as const
@@ -328,6 +329,25 @@ async function globEntries(
 
 type Loader = 'js' | 'ts' | 'jsx' | 'tsx'
 
+function getOxcTransformOptions(
+  options: OxcOptions | false,
+): OxcTransformOptions {
+  if (!options) {
+    return {}
+  }
+
+  const {
+    jsxInject: _jsxInject,
+    include: _include,
+    exclude: _exclude,
+    jsxRefreshInclude: _jsxRefreshInclude,
+    jsxRefreshExclude: _jsxRefreshExclude,
+    ...transformOptions
+  } = options
+
+  return transformOptions
+}
+
 export const scriptRE: RegExp =
   /(<script(?:\s+[a-z_:][-\w:]*(?:\s*=\s*(?:"[^"]*"|'[^']*'|[^"'<>=\s]+))?)*\s*>)(.*?)<\/script>/gis
 export const commentRE: RegExp = /<!--.*?-->/gs
@@ -397,6 +417,7 @@ function rolldownScanPlugin(
     // transpile because `transformGlobImport` only expects js
     if (loader !== 'js') {
       const result = transformSync(id, contents, {
+        ...getOxcTransformOptions(environment.config.oxc),
         lang: loader,
         tsconfig: false,
       })

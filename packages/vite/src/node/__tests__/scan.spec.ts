@@ -175,6 +175,41 @@ test('scan jsx-runtime', async (ctx) => {
   expect(mod1).toBe(mod2)
 })
 
+test('scan import.meta.glob respects oxc jsx options', async (ctx) => {
+  const server = await createServer({
+    configFile: false,
+    logLevel: 'error',
+    root: path.join(import.meta.dirname, 'fixtures', 'scan-jsx-runtime'),
+    oxc: {
+      jsx: {
+        runtime: 'automatic',
+        importSource: 'vue',
+      },
+    },
+    optimizeDeps: {
+      force: true,
+      noDiscovery: false,
+      entries: ['./entry-glob-custom-oxc.tsx'],
+    },
+  })
+  ctx.onTestFinished(() => server.close())
+
+  const { cancel, result } = scanImports(
+    devToScanEnvironment(server.environments.client),
+  )
+  ctx.onTestFinished(cancel)
+
+  const scanResult = await result
+
+  expect(scanResult).toMatchObject({
+    deps: {
+      'vue/jsx-dev-runtime': expect.any(String),
+    },
+    missing: {},
+  })
+  expect(scanResult.deps).not.toHaveProperty('react/jsx-runtime')
+})
+
 test('scan import.meta.glob package imports patterns', async (ctx) => {
   const server = await createServer({
     configFile: false,
