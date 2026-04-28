@@ -384,6 +384,35 @@ export const buildEsbuildPlugin = (): Plugin => {
   }
 }
 
+const destructuringBugRE = /^(safari|ios)(\d+)(?:\.(\d+))?$/
+
+// Workaround for https://github.com/evanw/esbuild/issues/4436
+// Safari 10 through 14.1 and ios 10 through 14.5 have a bug related to destructuring.
+// So esbuild 0.27.7+ treats those browsers as not supporting destructuring.
+// However, because esbuild does not support lowering destructuring, it errors when it encounters it.
+// Since it was not lowered in old Vite versions, we set `destructuring: true` to revert to the old behavior.
+// This means the end users using those Safari versions will encounter the bug,
+// but at least it won't cause a complete build failure.
+// If the user wants to avoid that, they can use Vite v8 + plugin-legacy.
+function needsDestructuringSupportedWorkaround(
+  target: string | string[] | false | undefined,
+): boolean {
+  if (!target) return false
+  const targets = Array.isArray(target) ? target : [target]
+  for (const t of targets) {
+    const match = destructuringBugRE.exec(t)
+    if (!match) continue
+    const major = Number(match[2])
+    if (major < 10) continue
+    if (major < 14) return true
+    if (major > 14) continue
+    const minor = match[3] ? Number(match[3]) : 0
+    const requiredMinor = match[1] === 'safari' ? 1 : 5
+    if (minor < requiredMinor) return true
+  }
+  return false
+}
+
 export function resolveEsbuildTranspileOptions(
   config: ResolvedConfig,
   format: InternalModuleFormat,
@@ -408,6 +437,9 @@ export function resolveEsbuildTranspileOptions(
     format: rollupToEsbuildFormatMap[format],
     supported: {
       ...defaultEsbuildSupported,
+      ...(needsDestructuringSupportedWorkaround(target)
+        ? { destructuring: true }
+        : null),
       ...esbuildOptions.supported,
     },
   }
