@@ -205,7 +205,7 @@ async function bundleWorkerEntry(
     },
     preserveEntrySignatures: false,
     experimental: {
-      ...rollupOptions.experimental,
+      ...rolldownOptions.experimental,
       viteMode: true,
     },
   })
