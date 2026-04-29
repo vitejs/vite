@@ -135,14 +135,13 @@ export function convertEsbuildPluginToRolldownPlugin(
       }
     },
     generateBundle() {
-      const buildResult = new Proxy(
-        {},
-        {
-          get(_target, _prop) {
-            throw new Error('Not implemented')
-          },
-        },
-      ) as esbuild.BuildResult
+      const buildResult = {
+        errors: [],
+        warnings: [],
+        outputFiles: undefined,
+        metafile: undefined,
+        mangleCache: undefined,
+      } satisfies esbuild.BuildResult
       for (const cb of onEndCallbacks) {
         cb(buildResult)
       }
