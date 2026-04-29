@@ -447,6 +447,11 @@ export async function transformGlobImport(
           onlyKeys,
           onlyValues,
         }) => {
+          if (!dir && isRelative && !options.base) {
+            throw new Error(
+              "In virtual modules, all globs must start with '/'",
+            )
+          }
           const cwd = getCommonBase(globsResolved) ?? root
           const files = (
             await glob(globsResolved, {
