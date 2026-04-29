@@ -13,15 +13,12 @@ async function createServer(inlineConfig?: InlineConfig): Promise<ViteDevServer>
 **Example Usage:**
 
 ```ts twoslash
-import { fileURLToPath } from 'node:url'
 import { createServer } from 'vite'
-
-const __dirname = fileURLToPath(new URL('.', import.meta.url))
 
 const server = await createServer({
   // any valid user config options, plus `mode` and `configFile`
   configFile: false,
-  root: __dirname,
+  root: import.meta.dirname,
   server: {
     port: 1337,
   },
@@ -210,13 +207,10 @@ async function build(
 
 ```ts twoslash [vite.config.js]
 import path from 'node:path'
-import { fileURLToPath } from 'node:url'
 import { build } from 'vite'
 
-const __dirname = fileURLToPath(new URL('.', import.meta.url))
-
 await build({
-  root: path.resolve(__dirname, './project'),
+  root: path.resolve(import.meta.dirname, './project'),
   base: '/foo/',
   build: {
     rollupOptions: {
@@ -467,3 +461,27 @@ Pre-processes `.css`, `.scss`, `.sass`, `.less`, `.styl` and `.stylus` files to 
 The pre-processor used is inferred from the `filename` extension. If the `filename` ends with `.module.{ext}`, it is inferred as a [CSS module](https://github.com/css-modules/css-modules) and the returned result will include a `modules` object mapping the original class names to the transformed ones.
 
 Note that pre-processing will not resolve URLs in `url()` or `image-set()`.
+
+## `version`
+
+**Type:** `string`
+
+The current version of Vite as a string (e.g. `"8.0.0"`).
+
+## `rolldownVersion`
+
+**Type:** `string`
+
+The version of Rolldown used by Vite as a string (e.g. `"1.0.0"`). A re-export of [`VERSION`](https://rolldown.rs/reference/Variable.VERSION) from `rolldown`.
+
+## `esbuildVersion`
+
+**Type:** `string`
+
+Only kept for backward compatibility.
+
+## `rollupVersion`
+
+**Type:** `string`
+
+Only kept for backward compatibility.

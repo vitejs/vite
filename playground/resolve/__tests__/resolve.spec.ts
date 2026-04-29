@@ -101,12 +101,6 @@ test("don't add extension to directory name (./dir-with-ext.js/index.js)", async
   expect(await page.textContent('.dir-with-ext')).toMatch('[success]')
 })
 
-test('do not resolve to the `module` field if the importer is a `require` call', async () => {
-  expect(await page.textContent('.require-pkg-with-module-field')).toMatch(
-    '[success]',
-  )
-})
-
 test('a ts module can import another ts module using its corresponding js file name', async () => {
   expect(await page.textContent('.ts-extension')).toMatch('[success]')
 })
@@ -187,7 +181,7 @@ test('resolve.conditions', async () => {
 
 test('resolve package that contains # in path', async () => {
   expect(await page.textContent('.path-contains-sharp-symbol')).toMatch(
-    '[success] true #',
+    '[success] ok ok ok',
   )
 })
 

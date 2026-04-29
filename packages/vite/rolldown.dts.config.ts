@@ -7,17 +7,17 @@ import type {
   PluginContext,
   RenderedChunk,
 } from 'rolldown'
+import type { ESTree } from 'rolldown/utils'
 import { parseAst } from 'rolldown/parseAst'
 import { dts } from 'rolldown-plugin-dts'
 import { parse as parseWithBabel } from '@babel/parser'
 import { walk } from 'estree-walker'
 import MagicString from 'magic-string'
-import type {
-  Directive,
-  ModuleExportName,
-  Program,
-  Statement,
-} from '@oxc-project/types'
+
+type Directive = ESTree.Directive
+type ModuleExportName = ESTree.ModuleExportName
+type Program = ESTree.Program
+type Statement = ESTree.Statement
 
 const pkg = JSON.parse(
   readFileSync(new URL('./package.json', import.meta.url)).toString(),
@@ -61,7 +61,6 @@ export default defineConfig({
         },
       },
       emitDtsOnly: true,
-      resolve: true,
     }),
   ],
 })
@@ -84,9 +83,9 @@ const identifierReplacements: Record<string, Record<string, string>> = {
     Plugin$1: 'Rolldown.Plugin',
     TransformResult$1: 'Rolldown.TransformResult',
   },
-  'rolldown/experimental': {
-    TransformOptions$1: 'rolldown_experimental_TransformOptions',
-    TransformResult$2: 'rolldown_experimental_TransformResult',
+  'rolldown/utils': {
+    TransformOptions$1: 'rolldown_utils_TransformOptions',
+    TransformResult$2: 'rolldown_utils_TransformResult',
   },
   'node:http': {
     Server$1: 'http.Server',
@@ -119,9 +118,6 @@ const ignoreConfusingTypeNames = [
   'MinimalPluginContext$1',
   'ServerOptions$1',
   'ServerOptions$3',
-  // type parameters
-  'K$1',
-  'Server$3',
   // temporary variables for types
   'parseAst$1',
   'parseAstAsync$1',

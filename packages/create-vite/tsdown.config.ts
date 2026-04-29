@@ -6,6 +6,7 @@ export default defineConfig(() => ({
   entry: ['src/index.ts'],
   target: 'node20',
   minify: true,
+  inlineOnly: false as const,
   fixedExtension: false,
   plugins: [
     licensePlugin(

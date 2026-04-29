@@ -78,6 +78,7 @@ export function bindCLIShortcuts<Server extends ViteDevServer | PreviewServer>(
   const onInput = async (input: string) => {
     if (actionRunning) return
 
+    input = input.trim().toLocaleLowerCase()
     if (input === 'h') {
       const loggedKeys = new Set<string>()
       server.config.logger.info('\n  Shortcuts')

@@ -8,10 +8,5 @@ export default defineConfig({
   build: {
     minify: 'esbuild',
     cssMinify: 'esbuild',
-    rolldownOptions: {
-      output: {
-        legalComments: 'none',
-      },
-    },
   },
 })

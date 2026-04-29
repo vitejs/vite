@@ -163,6 +163,14 @@ export interface DepOptimizationConfig {
    * @experimental
    */
   holdUntilCrawlEnd?: boolean
+  /**
+   * When enabled, Vite will not throw an error when an outdated optimized
+   * dependency is requested. Enabling this option may cause a single module
+   * to have a multiple reference.
+   * @default false
+   * @experimental
+   */
+  ignoreOutdatedRequests?: boolean
 }
 
 export type DepOptimizationOptions = DepOptimizationConfig & {
@@ -775,7 +783,7 @@ async function prepareRolldownOptimizerRun(
         jsxLoader = true
       }
       const flatId = flattenId(id)
-      flatIdDeps[flatId] = src
+      flatIdDeps[flatId] = isWindows ? src.replaceAll('/', '\\') : src
       idToExports[id] = exportsData
     }),
   )
@@ -838,7 +846,6 @@ async function prepareRolldownOptimizerRun(
       throw new Error('The build was canceled')
     }
     const result = await bundle.write({
-      legalComments: 'none',
       ...rolldownOptions.output,
       format: 'esm',
       sourcemap: true,

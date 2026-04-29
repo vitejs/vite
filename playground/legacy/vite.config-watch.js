@@ -8,7 +8,10 @@ export default defineConfig({
     manifest: true,
     rolldownOptions: {
       input: {
-        'style-only-entry': resolve(__dirname, 'style-only-entry.css'),
+        'style-only-entry': resolve(
+          import.meta.dirname,
+          'style-only-entry.css',
+        ),
       },
     },
     watch: {},

@@ -668,6 +668,14 @@ describe('flattenId', () => {
     const result2 = flattenId(id)
     expect(result2).toHaveLength(170)
   })
+
+  test('should replace + symbols in package subpath exports', () => {
+    // Packages like ravelinjs use + in their subpath exports
+    const id = 'ravelinjs/core+track+encrypt+promise'
+    const result = flattenId(id)
+    expect(result).not.toContain('+')
+    expect(result).toBe('ravelinjs_core_____track_____encrypt_____promise')
+  })
 })
 
 describe('mergeWithDefaults', () => {

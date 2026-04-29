@@ -224,6 +224,44 @@ The error that appears in the Browser when the fallback happens can be ignored. 
 
 :::
 
+## server.forwardConsole
+
+- **Type:** `boolean | { unhandledErrors?: boolean, logLevels?: ('error' | 'warn' | 'info' | 'log' | 'debug')[] }`
+- **Default:** auto (`true` when an AI coding agent is detected based on [`@vercel/detect-agent`](https://www.npmjs.com/package/@vercel/detect-agent), otherwise `false`)
+
+Forward browser runtime events to the Vite server console during development.
+
+- `true` enables forwarding unhandled errors and `console.error` / `console.warn` logs.
+- `unhandledErrors` controls forwarding uncaught exceptions and unhandled promise rejections.
+- `logLevels` controls which `console.*` calls are forwarded.
+
+For example:
+
+```js
+export default defineConfig({
+  server: {
+    forwardConsole: {
+      unhandledErrors: true,
+      logLevels: ['warn', 'error'],
+    },
+  },
+})
+```
+
+When unhandled errors are forwarded, they are logged in the server terminal with enhanced formatting, for example:
+
+```log
+1:18:38 AM [vite] (client) [Unhandled error] Error: this is test error
+ > testError src/main.ts:20:8
+     18|
+     19| function testError() {
+     20|   throw new Error('this is test error')
+       |        ^
+     21| }
+     22|
+ > HTMLButtonElement.<anonymous> src/main.ts:6:2
+```
+
 ## server.warmup
 
 - **Type:** `{ clientFiles?: string[], ssrFiles?: string[] }`

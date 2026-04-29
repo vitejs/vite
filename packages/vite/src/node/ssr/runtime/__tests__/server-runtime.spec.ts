@@ -12,6 +12,7 @@ describe('module runner initialization', async () => {
   const it = await createModuleRunnerTester({
     resolve: {
       external: ['tinyglobby'],
+      noExternal: ['@oxc-project/runtime'],
     },
   })
 
@@ -396,6 +397,15 @@ describe('module runner initialization', async () => {
     )
   })
 
+  it('oxc runtime helpers are loadable', async ({ runner }) => {
+    const mod = await runner.import('/fixtures/oxc-runtime-helper.ts')
+    expect(mod.result).toMatchInlineSnapshot(`
+      "<script>
+        console.log('hi')
+      </script>"
+    `)
+  })
+
   it(`handle Object variable`, async ({ runner }) => {
     const mod = await runner.import('/fixtures/top-level-object.js')
     expect(mod).toMatchInlineSnapshot(`
@@ -513,5 +523,27 @@ describe('virtual module hmr', async () => {
       expect(moduleNode.id).toMatch(/^\//) // /
       expect(moduleNode.file).toMatch(/^\//) // /
     }
+  })
+})
+
+describe('invalid package', async () => {
+  const it = await createModuleRunnerTester({
+    environments: {
+      ssr: {
+        resolve: {
+          noExternal: true,
+        },
+      },
+    },
+  })
+
+  it('can catch resolve error on runtime', async ({ runner }) => {
+    const mod = await runner.import('./fixtures/invalid-package/test.js')
+    expect(await mod.test()).toMatchInlineSnapshot(`
+      {
+        "data": [Error: Failed to resolve entry for package "test-dep-invalid-exports". The package may have incorrect main/module/exports specified in its package.json.],
+        "ok": false,
+      }
+    `)
   })
 })

@@ -4,7 +4,4 @@ export default defineConfig({
   resolve: {
     tsconfigPaths: true,
   },
-  experimental: {
-    enableNativePlugin: 'resolver',
-  },
 })

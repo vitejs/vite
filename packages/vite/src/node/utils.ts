@@ -70,13 +70,15 @@ const replaceSlashOrColonRE = /[/:]/g
 const replaceDotRE = /\./g
 const replaceNestedIdRE = /\s*>\s*/g
 const replaceHashRE = /#/g
+const replacePlusRE = /\+/g
 export const flattenId = (id: string): string => {
   const flatId = limitFlattenIdLength(
     id
       .replace(replaceSlashOrColonRE, '_')
       .replace(replaceDotRE, '__')
       .replace(replaceNestedIdRE, '___')
-      .replace(replaceHashRE, '____'),
+      .replace(replaceHashRE, '____')
+      .replace(replacePlusRE, '_____'),
   )
   return flatId
 }
@@ -1289,6 +1291,20 @@ const rollupOptionsRootPaths = new Set([
   'ssr.optimizeDeps',
 ])
 
+/**
+ * Sets up `rollupOptions` compat proxies for an environment.
+ */
+function setupRollupOptionCompatForEnvironment(environment: any): any {
+  if (!isObject(environment)) {
+    return environment
+  }
+  const merged: Record<string, any> = { ...environment }
+  if (isObject(merged.build)) {
+    setupRollupOptionCompat(merged.build, 'build')
+  }
+  return merged
+}
+
 export function hasBothRollupOptionsAndRolldownOptions(
   options: Record<string, any>,
 ): boolean {
@@ -1334,7 +1350,21 @@ function mergeConfigRecursively(
     }
 
     if (existing == null) {
-      merged[key] = value
+      if (rootPath === '' && key === 'environments' && isObject(value)) {
+        // Clone to avoid mutating the original override object
+        const environments = { ...value }
+        for (const envName in environments) {
+          environments[envName] = setupRollupOptionCompatForEnvironment(
+            environments[envName],
+          )
+        }
+        merged[key] = environments
+      } else if (rootPath === 'environments') {
+        // `environments` exists, but a new environment is added
+        merged[key] = setupRollupOptionCompatForEnvironment(value)
+      } else {
+        merged[key] = value
+      }
       continue
     }
 
@@ -1489,17 +1519,6 @@ export function stripBomTag(content: string): string {
   }
 
   return content
-}
-
-const windowsDrivePathPrefixRE = /^[A-Za-z]:[/\\]/
-
-/**
- * path.isAbsolute also returns true for drive relative paths on windows (e.g. /something)
- * this function returns false for them but true for absolute paths (e.g. C:/something)
- */
-export const isNonDriveRelativeAbsolutePath = (p: string): boolean => {
-  if (!isWindows) return p[0] === '/'
-  return windowsDrivePathPrefixRE.test(p)
 }
 
 /**
