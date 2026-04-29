@@ -120,6 +120,20 @@ if (typeof window !== 'undefined') {
   window.addEventListener?.('beforeunload', () => {
     willUnload = true
   })
+
+  // Disconnect HMR WebSocket on pagehide so the page qualifies for
+  // back/forward cache (BFCache). Reconnect on pageshow when the page
+  // is restored from cache. Using pagehide/pageshow instead of
+  // unload/beforeunload because registering listeners for those also
+  // disqualifies pages from BFCache.
+  window.addEventListener?.('pagehide', () => {
+    transport.disconnect?.()
+  })
+  window.addEventListener?.('pageshow', async (event: PageTransitionEvent) => {
+    if (event.persisted) {
+      await transport.connect!(createHMRHandler(handleMessage))
+    }
+  })
 }
 
 function cleanUrl(pathname: string): string {
