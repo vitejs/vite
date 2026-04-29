@@ -705,6 +705,27 @@ describe.runIf(isBuild)('css and assets in css in build watch', () => {
     expect(cssFile).not.toMatch(/undefined/)
   })
 
+  test('old file is removed when the content changes', async () => {
+    await expect.poll(() => page.textContent('.update-content')).toBe('hello')
+
+    const oldMainJsFiles = listAssets('foo').filter((f) =>
+      /index-[-\w]+\.js$/.test(f),
+    )
+    expect(oldMainJsFiles.length).toBe(1)
+    const oldMainJsFile = oldMainJsFiles[0]
+
+    editFile('asset/update.js', (code) => code.replace('hello', 'world'))
+    await notifyRebuildComplete(watcher)
+    await page.reload()
+    await expect.poll(() => page.textContent('.update-content')).toBe('world')
+
+    const newMainJsFiles = listAssets('foo').filter((f) =>
+      /index-[-\w]+\.js$/.test(f),
+    )
+    expect(newMainJsFiles).not.toContain(oldMainJsFile)
+    expect(newMainJsFiles.length).toBe(1)
+  })
+
   test('import module.css', async () => {
     expect(await getColor('#foo')).toBe('red')
     editFile('css/foo.module.css', (code) => code.replace('red', 'blue'))

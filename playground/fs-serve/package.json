@@ -1,7 +1,7 @@
 {
   "name": "@vitejs/test-fs-serve",
-  "private": true,
   "version": "0.0.0",
+  "private": true,
   "type": "module",
   "scripts": {
     "dev": "vite root",
@@ -16,6 +16,8 @@
     "preview:deny": "vite preview root --config ./root/vite.config-deny.js"
   },
   "devDependencies": {
-    "ws": "^8.19.0"
+    "@types/escape-html": "^1.0.4",
+    "escape-html": "^1.0.3",
+    "ws": "^8.20.0"
   }
 }

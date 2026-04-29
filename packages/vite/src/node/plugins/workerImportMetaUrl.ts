@@ -214,7 +214,7 @@ export function workerImportMetaUrlPlugin(config: ResolvedConfig): Plugin {
         let match: RegExpExecArray | null
         while ((match = re.exec(cleanString))) {
           const [[, endIndex], [expStart, expEnd], [urlStart, urlEnd]] =
-            match.indices!
+            match.indices as Array<[number, number]>
 
           const rawUrl = code.slice(urlStart, urlEnd)
 

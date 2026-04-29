@@ -1,7 +1,7 @@
 {
   "name": "vite-lit-starter",
-  "private": true,
   "version": "0.0.0",
+  "private": true,
   "type": "module",
   "scripts": {
     "dev": "vite",
@@ -12,6 +12,6 @@
     "lit": "^3.3.2"
   },
   "devDependencies": {
-    "vite": "^8.0.1"
+    "vite": "^8.0.10"
   }
 }

@@ -1,8 +1,11 @@
 {
   "name": "@vitejs/test-css",
-  "private": true,
   "version": "0.0.0",
+  "private": true,
   "type": "module",
+  "imports": {
+    "#imports": "./imports-field.css"
+  },
   "scripts": {
     "dev": "vite",
     "build": "vite build",
@@ -24,12 +27,9 @@
     "less": "^4.6.4",
     "lightningcss": "^1.32.0",
     "postcss-nested": "^7.0.2",
-    "sass": "^1.98.0",
+    "sass": "^1.99.0",
     "stylus": "^0.64.0",
     "sugarss": "^5.0.1",
-    "tinyglobby": "^0.2.15"
-  },
-  "imports": {
-    "#imports": "./imports-field.css"
+    "tinyglobby": "^0.2.16"
   }
 }

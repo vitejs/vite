@@ -1,7 +1,7 @@
 {
   "name": "vite-preact-starter",
-  "private": true,
   "version": "0.0.0",
+  "private": true,
   "type": "module",
   "scripts": {
     "dev": "vite",
@@ -9,10 +9,10 @@
     "preview": "vite preview"
   },
   "dependencies": {
-    "preact": "^10.29.0"
+    "preact": "^10.29.1"
   },
   "devDependencies": {
-    "@preact/preset-vite": "^2.10.4",
-    "vite": "^8.0.1"
+    "@preact/preset-vite": "^2.10.5",
+    "vite": "^8.0.10"
   }
 }

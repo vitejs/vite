@@ -1,5 +1,4 @@
 // @ts-check
-import { createRequire } from 'node:module'
 import eslint from '@eslint/js'
 import pluginN from 'eslint-plugin-n'
 import pluginImportX from 'eslint-plugin-import-x'
@@ -7,9 +6,7 @@ import pluginRegExp from 'eslint-plugin-regexp'
 import tseslint from 'typescript-eslint'
 import { defineConfig } from 'eslint/config'
 import globals from 'globals'
-
-const require = createRequire(import.meta.url)
-const pkgVite = require('./packages/vite/package.json')
+import pkgVite from './packages/vite/package.json' with { type: 'json' }
 
 // Some rules work better with typechecking enabled, but as enabling it is slow,
 // we only do so when linting in IDEs for now. If you want to lint with typechecking
@@ -31,6 +28,8 @@ export default defineConfig(
   eslint.configs.recommended,
   ...tseslint.configs.recommended,
   ...tseslint.configs.stylistic,
+  ...(shouldTypeCheck ? tseslint.configs.recommendedTypeCheckedOnly : []),
+  ...(shouldTypeCheck ? tseslint.configs.stylisticTypeCheckedOnly : []),
   pluginRegExp.configs['flat/recommended'],
   {
     name: 'main',
@@ -40,12 +39,7 @@ export default defineConfig(
         sourceType: 'module',
         ecmaVersion: 2022,
         isolatedDeclarations: true,
-        project: shouldTypeCheck
-          ? [
-              './packages/*/tsconfig.json',
-              './packages/vite/src/*/tsconfig.json',
-            ]
-          : undefined,
+        projectService: shouldTypeCheck,
       },
       globals: {
         ...globals.es2023,
@@ -161,6 +155,26 @@ export default defineConfig(
       '@typescript-eslint/consistent-type-definitions': 'off',
       '@typescript-eslint/prefer-for-of': 'off',
       '@typescript-eslint/prefer-function-type': 'off',
+      // disable typecheck-specific rules
+      '@typescript-eslint/await-thenable': 'off', // does not handle `void | Promise<void>` well
+      '@typescript-eslint/no-base-to-string': 'off', // does not matter for us
+      '@typescript-eslint/no-implied-eval': 'off', // we intentionally use `Function()`
+      '@typescript-eslint/no-floating-promises': 'off',
+      '@typescript-eslint/no-misused-promises': 'off',
+      '@typescript-eslint/no-redundant-type-constituents': 'off', // hard to handle some cases
+      '@typescript-eslint/no-unnecessary-type-assertion': 'off',
+      '@typescript-eslint/no-unsafe-argument': 'off',
+      '@typescript-eslint/no-unsafe-assignment': 'off',
+      '@typescript-eslint/no-unsafe-call': 'off',
+      '@typescript-eslint/no-unsafe-member-access': 'off',
+      '@typescript-eslint/no-unsafe-return': 'off',
+      '@typescript-eslint/only-throw-error': 'off',
+      '@typescript-eslint/prefer-nullish-coalescing': 'off',
+      '@typescript-eslint/prefer-optional-chain': 'off',
+      '@typescript-eslint/prefer-string-starts-ends-with': 'off', // prefer indexed access for better performance
+      '@typescript-eslint/require-await': 'off',
+      '@typescript-eslint/restrict-template-expressions': 'off', // does not matter for us
+      '@typescript-eslint/unbound-method': 'off',
 
       'import-x/no-duplicates': 'error',
       'import-x/order': [
@@ -356,6 +370,14 @@ export default defineConfig(
     },
   },
   {
+    name: 'disables/test-dts',
+    files: ['**/__tests_dts__/**/*.?([cm])[jt]s?(x)'],
+    rules: {
+      // disable typecheck-specific rules
+      '@typescript-eslint/no-duplicate-type-constituents': 'off',
+    },
+  },
+  {
     name: 'disables/typechecking',
     files: [
       '**/*.js',
@@ -372,8 +394,9 @@ export default defineConfig(
     ],
     languageOptions: {
       parserOptions: {
-        project: false,
+        projectService: false,
       },
     },
+    extends: [tseslint.configs.disableTypeChecked],
   },
 )

@@ -1,9 +1,18 @@
 {
   "name": "create-vite",
-  "version": "9.0.3",
-  "type": "module",
+  "version": "9.0.6",
+  "homepage": "https://github.com/vitejs/vite/tree/main/packages/create-vite#readme",
+  "bugs": {
+    "url": "https://github.com/vitejs/vite/issues"
+  },
   "license": "MIT",
   "author": "Evan You",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/vitejs/vite.git",
+    "directory": "packages/create-vite"
+  },
+  "funding": "https://github.com/vitejs/vite?sponsor=1",
   "bin": {
     "create-vite": "index.js",
     "cva": "index.js"
@@ -13,6 +22,7 @@
     "template-*",
     "dist"
   ],
+  "type": "module",
   "scripts": {
     "dev": "tsdown --watch",
     "build": "tsdown",
@@ -20,25 +30,14 @@
     "prepublishOnly": "npm run build",
     "execute": "node index.js"
   },
-  "engines": {
-    "node": "^20.19.0 || >=22.12.0"
-  },
-  "repository": {
-    "type": "git",
-    "url": "git+https://github.com/vitejs/vite.git",
-    "directory": "packages/create-vite"
-  },
-  "bugs": {
-    "url": "https://github.com/vitejs/vite/issues"
-  },
-  "homepage": "https://github.com/vitejs/vite/tree/main/packages/create-vite#readme",
-  "funding": "https://github.com/vitejs/vite?sponsor=1",
   "devDependencies": {
-    "@clack/prompts": "^1.1.0",
-    "@vercel/detect-agent": "^1.2.1",
+    "@clack/prompts": "^1.2.0",
+    "@vercel/detect-agent": "^1.2.3",
     "cross-spawn": "^7.0.6",
     "mri": "^1.2.0",
-    "picocolors": "^1.1.1",
-    "tsdown": "^0.21.4"
+    "tsdown": "^0.21.10"
+  },
+  "engines": {
+    "node": "^20.19.0 || >=22.12.0"
   }
 }

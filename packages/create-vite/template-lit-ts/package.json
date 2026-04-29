@@ -1,7 +1,7 @@
 {
   "name": "vite-lit-ts-starter",
-  "private": true,
   "version": "0.0.0",
+  "private": true,
   "type": "module",
   "scripts": {
     "dev": "vite",
@@ -12,7 +12,7 @@
     "lit": "^3.3.2"
   },
   "devDependencies": {
-    "typescript": "~5.9.3",
-    "vite": "^8.0.1"
+    "typescript": "~6.0.2",
+    "vite": "^8.0.10"
   }
 }

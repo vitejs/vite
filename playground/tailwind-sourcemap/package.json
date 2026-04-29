@@ -1,7 +1,7 @@
 {
   "name": "@vitejs/test-tailwind-sourcemap",
-  "private": true,
   "version": "0.0.0",
+  "private": true,
   "type": "module",
   "scripts": {
     "dev": "vite",
@@ -10,7 +10,7 @@
     "preview": "vite preview"
   },
   "dependencies": {
-    "@tailwindcss/postcss": "^4.2.1",
-    "tailwindcss": "^4.2.1"
+    "@tailwindcss/postcss": "^4.2.4",
+    "tailwindcss": "^4.2.4"
   }
 }

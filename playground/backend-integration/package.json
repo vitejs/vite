@@ -1,7 +1,7 @@
 {
   "name": "@vitejs/test-backend-integration",
-  "private": true,
   "version": "0.0.0",
+  "private": true,
   "type": "module",
   "scripts": {
     "dev": "vite",
@@ -10,9 +10,9 @@
     "preview": "vite preview"
   },
   "devDependencies": {
-    "@tailwindcss/vite": "^4.2.1",
-    "sass": "^1.98.0",
-    "tailwindcss": "^4.2.1",
-    "tinyglobby": "^0.2.15"
+    "@tailwindcss/vite": "^4.2.4",
+    "sass": "^1.99.0",
+    "tailwindcss": "^4.2.4",
+    "tinyglobby": "^0.2.16"
   }
 }

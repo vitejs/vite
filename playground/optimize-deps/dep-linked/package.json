@@ -1,10 +1,10 @@
 {
   "name": "@vitejs/test-dep-linked",
-  "private": true,
   "version": "0.0.0",
+  "private": true,
   "type": "module",
   "main": "index.js",
   "dependencies": {
-    "lodash-es": "^4.17.23"
+    "@vitejs/test-dep-lodash-es": "file:../dep-lodash-es"
   }
 }

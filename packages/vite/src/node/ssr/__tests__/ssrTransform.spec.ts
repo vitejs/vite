@@ -300,6 +300,18 @@ test('import.meta', async () => {
   ).toMatchInlineSnapshot(`"console.log(__vite_ssr_import_meta__.url)"`)
 })
 
+test('import.meta with imported variable named meta', async () => {
+  expect(
+    await ssrTransformSimpleCode(
+      `import { meta } from './meta';\nconsole.log(import.meta.url, \`Hello, \${meta}!\`)`,
+    ),
+  ).toMatchInlineSnapshot(`
+    "const __vite_ssr_import_0__ = await __vite_ssr_import__("./meta", {"importedNames":["meta"]});
+
+    console.log(__vite_ssr_import_meta__.url, \`Hello, \${__vite_ssr_import_0__.meta}!\`)"
+  `)
+})
+
 test('dynamic import', async () => {
   const result = await ssrTransformSimple(
     `export const i = () => import('./foo')`,
@@ -848,25 +860,35 @@ test('class props', async () => {
   expect(
     await ssrTransformSimpleCode(
       `
-import { remove, add } from 'vue'
+import { remove, add, update, del, call } from 'vue'
 
 class A {
   remove = 1
   add = null
+  update = update
+  del = () => del()
+  call = call(4)
 }
+
+remove(2);
+add(4);
 `,
     ),
   ).toMatchInlineSnapshot(`
-    "const __vite_ssr_import_0__ = await __vite_ssr_import__("vue", {"importedNames":["remove","add"]});
+    "const __vite_ssr_import_0__ = await __vite_ssr_import__("vue", {"importedNames":["remove","add","update","del","call"]});
 
 
 
-    const add = __vite_ssr_import_0__.add;
-    const remove = __vite_ssr_import_0__.remove;
     class A {
       remove = 1
       add = null
+      update = __vite_ssr_import_0__.update
+      del = () => (0,__vite_ssr_import_0__.del)()
+      call = (0,__vite_ssr_import_0__.call)(4)
     }
+
+    (0,__vite_ssr_import_0__.remove)(2);
+    (0,__vite_ssr_import_0__.add)(4);
     "
   `)
 })

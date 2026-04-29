@@ -1,7 +1,7 @@
 {
   "name": "vite-svelte-ts-starter",
-  "private": true,
   "version": "0.0.0",
+  "private": true,
   "type": "module",
   "scripts": {
     "dev": "vite",
@@ -12,10 +12,10 @@
   "devDependencies": {
     "@sveltejs/vite-plugin-svelte": "^7.0.0",
     "@tsconfig/svelte": "^5.0.8",
-    "@types/node": "^24.12.0",
-    "svelte": "^5.53.12",
-    "svelte-check": "^4.4.5",
-    "typescript": "~5.9.3",
-    "vite": "^8.0.1"
+    "@types/node": "^24.12.2",
+    "svelte": "^5.55.5",
+    "svelte-check": "^4.4.6",
+    "typescript": "~6.0.2",
+    "vite": "^8.0.10"
   }
 }

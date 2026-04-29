@@ -1,0 +1,7 @@
+{
+  "name": "@vitejs/test-dep-lodash-es",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "main": "index.js"
+}

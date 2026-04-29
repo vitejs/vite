@@ -1,20 +1,20 @@
 {
   "name": "vite-qwik",
-  "private": true,
   "version": "0.0.0",
+  "private": true,
   "type": "module",
   "scripts": {
     "dev": "vite",
     "build": "tsc -b && vite build",
     "preview": "serve dist"
   },
-  "devDependencies": {
-    "@types/node": "^24.12.0",
-    "serve": "^14.2.6",
-    "typescript": "~5.9.3",
-    "vite": "^8.0.1"
-  },
   "dependencies": {
     "@builder.io/qwik": "^1.19.2"
+  },
+  "devDependencies": {
+    "@types/node": "^24.12.2",
+    "serve": "^14.2.6",
+    "typescript": "~6.0.2",
+    "vite": "^8.0.10"
   }
 }

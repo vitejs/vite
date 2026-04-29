@@ -19,11 +19,11 @@ import colors from 'picocolors'
 import browserslist from 'browserslist'
 import type { Options } from './types'
 import {
+  createModernChunkLegacyGuard,
   detectModernBrowserCode,
   dynamicFallbackInlineCode,
   legacyEntryId,
   legacyPolyfillId,
-  modernChunkLegacyGuard,
   safari10NoModuleFix,
   systemJSInlineCode,
 } from './snippets'
@@ -73,6 +73,7 @@ function toOutputFilePathInHtml(
   if (relative && !config.build.ssr) {
     return toRelative(filename, hostId)
   } else {
+    // @ts-expect-error `decodedBase` is internal
     return joinUrlSegments(config.decodedBase, filename)
   }
 }
@@ -518,7 +519,7 @@ function viteLegacyPlugin(options: Options = {}): Plugin[] {
 
         if (genLegacy && chunk.isEntry) {
           // append this code to avoid modern chunks running on legacy targeted browsers
-          ms.prepend(modernChunkLegacyGuard)
+          ms.prepend(createModernChunkLegacyGuard(chunk.fileName))
         }
 
         if (raw.includes(legacyEnvVarMarker)) {
@@ -961,7 +962,10 @@ function prependModenChunkLegacyGuardPlugin(): Plugin {
     configResolved(config) {
       sourceMapEnabled = !!config.build.sourcemap
     },
-    renderChunk(code) {
+    renderChunk(code, chunk) {
+      const modernChunkLegacyGuard = createModernChunkLegacyGuard(
+        chunk.fileName,
+      )
       if (!sourceMapEnabled) {
         return modernChunkLegacyGuard + code
       }

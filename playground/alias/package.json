@@ -1,7 +1,7 @@
 {
   "name": "@vitejs/test-alias",
-  "private": true,
   "version": "0.0.0",
+  "private": true,
   "type": "module",
   "scripts": {
     "dev": "vite",
@@ -10,9 +10,9 @@
     "preview": "vite preview"
   },
   "dependencies": {
+    "@vue/shared": "^3.5.33",
     "aliased-module": "file:./dir/module",
-    "vue": "^3.5.30",
-    "@vue/shared": "^3.5.30"
+    "vue": "^3.5.33"
   },
   "devDependencies": {
     "@vitejs/test-resolve-linked": "workspace:*"

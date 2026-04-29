@@ -406,3 +406,26 @@ test('buildStart before transform', async () => {
     ]
   `)
 })
+
+test('server.fs check is not applied to ssrLoadModule', async () => {
+  const server = await createServer({
+    configFile: false,
+    root,
+    logLevel: 'silent',
+    optimizeDeps: {
+      noDiscovery: true,
+    },
+    server: {
+      fs: {
+        allow: [
+          path.resolve(import.meta.dirname, './fixtures/named-overwrite-all'),
+        ],
+      },
+    },
+  })
+  onTestFinished(() => server.close())
+  await server.environments.ssr.pluginContainer.buildStart({})
+
+  const mod = await server.ssrLoadModule('/fixtures/basic/file.js')
+  expect(mod.default).toBe('ok')
+})
