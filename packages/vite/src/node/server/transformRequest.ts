@@ -138,11 +138,14 @@ export function transformRequest(
   }
 
   // Cache the request and clear it once processing is done
-  environment._pendingRequests.set(url, {
-    request,
-    timestamp,
-    abort: clearCache,
-  })
+  // Limit map size to prevent unbounded memory growth from unique URL floods
+  if (environment._pendingRequests.size < 1000) {
+    environment._pendingRequests.set(url, {
+      request,
+      timestamp,
+      abort: clearCache,
+    })
+  }
 
   return request.finally(clearCache)
 }
