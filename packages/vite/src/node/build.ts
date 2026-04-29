@@ -195,7 +195,7 @@ export interface BuildEnvironmentOptions {
   rollupOptions?: RolldownOptions
   /**
    * Will be merged with internal rolldown options.
-   * https://rolldown.rs/reference/config-options
+   * https://rolldown.rs/reference/Interface.RolldownOptions
    */
   rolldownOptions?: RolldownOptions
   /**
