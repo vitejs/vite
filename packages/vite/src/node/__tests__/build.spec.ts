@@ -891,6 +891,41 @@ test.for([true, false])(
   },
 )
 
+// https://github.com/vitejs/vite/issues/22033
+test('runtime mutations of rolldownOptions are reflected on rollupOptions', async () => {
+  const root = resolve(dirname, 'fixtures/shared-plugins/minify')
+  const builder = await createBuilder({
+    root,
+    logLevel: 'warn',
+    configFile: false,
+    environments: {
+      client: {
+        build: {
+          write: false,
+          outDir: './dist/client',
+        },
+      },
+    },
+  })
+
+  // Reassign the whole `rolldownOptions` object after config resolution. This
+  // mirrors how plugins/builders set the input at runtime. Without the proxy
+  // being re-installed on the resolved build options, the client environment
+  // would fall back to looking up `index.html`.
+  builder.environments.client.config.build.rolldownOptions = {
+    input: '/entry.js',
+  }
+
+  expect(builder.environments.client.config.build.rollupOptions.input).toBe(
+    '/entry.js',
+  )
+
+  const result = (await builder.build(
+    builder.environments.client,
+  )) as RolldownOutput
+  expect(result.output[0].fileName).toMatch(/entry-[-\w]+\.js$/)
+})
+
 test('sharedConfigBuild and emitAssets', async () => {
   const root = resolve(dirname, 'fixtures/shared-config-build/emitAssets')
   const builder = await createBuilder({

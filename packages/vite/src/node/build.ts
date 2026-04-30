@@ -498,6 +498,12 @@ export function resolveBuildEnvironmentOptions(
               ...merged.modulePreload,
             },
   }
+  // Spreading `merged` above turns the `rollupOptions` getter installed by
+  // `setupRollupOptionCompat` into a plain data property on `resolved`. Re-install
+  // the proxy so that runtime mutations of either `rolldownOptions` or
+  // `rollupOptions` (e.g. `builder.environments.<name>.config.build.rolldownOptions = {...}`)
+  // stay in sync. See https://github.com/vitejs/vite/issues/22033.
+  setupRollupOptionCompat(resolved, 'build')
 
   return resolved
 }
