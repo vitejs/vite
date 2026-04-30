@@ -299,6 +299,37 @@ if (!isBuild) {
     await expect.poll(() => el.textContent()).toMatch('edited')
   })
 
+  test('handles extensionless index.ts -> index.tsx rename', async () => {
+    const tsFile = 'extensionless-import-rename/Foo/index.ts'
+    const tsxFile = 'extensionless-import-rename/Foo/index.tsx'
+
+    await page.goto(viteTestUrl + '/extensionless-import-rename/index.html', {
+      waitUntil: 'networkidle',
+    })
+
+    try {
+      await expect
+        .poll(() => page.textContent('.extensionless-import-rename'))
+        .toBe('from ts')
+
+      const tsContent = readFile(tsFile)
+      addFile(tsxFile, tsContent.replace('from ts', 'from tsx'))
+      removeFile(tsFile)
+
+      await expect
+        .poll(() => page.textContent('.extensionless-import-rename'))
+        .toBe('from tsx')
+
+      editFile(tsxFile, (code) => code.replace('from tsx', 'from tsx updated'))
+
+      await expect
+        .poll(() => page.textContent('.extensionless-import-rename'))
+        .toBe('from tsx updated')
+    } finally {
+      await page.goto(viteTestUrl, { waitUntil: 'networkidle' })
+    }
+  })
+
   test('plugin client-server communication', async () => {
     const el = await page.$('.custom-communication')
     await expect.poll(() => el.textContent()).toMatch('3')
