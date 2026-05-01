@@ -129,6 +129,11 @@ export const sassOtherTests = () => {
     expect(await getColor('.css-dep-exports-deep-sass')).toBe('orange')
   })
 
+  // regression test for https://github.com/vitejs/vite/issues/22294
+  test('@import dependency w/ sass export wildcard to `_partial.scss`', async () => {
+    expect(await getColor('.css-dep-exports-partial-sass')).toBe('orange')
+  })
+
   test('@import dependency w/out package scss', async () => {
     expect(await getColor('.sass-dep')).toBe('lavender')
   })

@@ -11,8 +11,10 @@ import {
   getEmptyChunkReplacer,
   hoistAtRules,
   injectInlinedCSS,
+  isSassExportsLookupError,
   preprocessCSS,
   resolveLibCssFilename,
+  withSassPartialPrefix,
 } from '../../plugins/css'
 import { PartialEnvironment } from '../../baseEnvironment'
 
@@ -796,5 +798,58 @@ exports.foo = foo;
       //#endregion
       })();"
     `)
+  })
+})
+
+// regression coverage for https://github.com/vitejs/vite/issues/22294
+describe('withSassPartialPrefix', () => {
+  test('prefixes the basename of a bare package subpath', () => {
+    expect(withSassPartialPrefix('@scope/pkg/styles/mixins')).toBe(
+      '@scope/pkg/styles/_mixins',
+    )
+  })
+
+  test('prefixes a relative path', () => {
+    expect(withSassPartialPrefix('./styles/mixins')).toBe('./styles/_mixins')
+  })
+
+  test('uses POSIX separators even when given Windows-style backslashes', () => {
+    expect(withSassPartialPrefix('@scope\\pkg\\styles\\mixins')).toBe(
+      '@scope/pkg/styles/_mixins',
+    )
+  })
+
+  test('preserves a query string while prefixing the basename', () => {
+    expect(withSassPartialPrefix('@scope/pkg/styles/mixins?inline')).toBe(
+      '@scope/pkg/styles/_mixins?inline',
+    )
+  })
+
+  test('returns undefined when the basename is already underscore-prefixed', () => {
+    expect(withSassPartialPrefix('@scope/pkg/styles/_mixins')).toBeUndefined()
+  })
+
+  test('returns undefined when there is no basename', () => {
+    expect(withSassPartialPrefix('@scope/pkg/styles/')).toBeUndefined()
+  })
+})
+
+describe('isSassExportsLookupError', () => {
+  test('matches the oxc-resolver "not exported under the conditions" error', () => {
+    const error = new Error(
+      `"./styles\\_mixins" is not exported under the conditions ["sass", "style"] from package /pkg`,
+    )
+    expect(isSassExportsLookupError(error)).toBe(true)
+  })
+
+  test('matches Node-style "not exported in" error', () => {
+    const error = new Error(`Subpath "./missing" is not exported in /pkg`)
+    expect(isSassExportsLookupError(error)).toBe(true)
+  })
+
+  test('does not match unrelated errors', () => {
+    expect(isSassExportsLookupError(new Error('ENOENT'))).toBe(false)
+    expect(isSassExportsLookupError('not an error')).toBe(false)
+    expect(isSassExportsLookupError(undefined)).toBe(false)
   })
 })

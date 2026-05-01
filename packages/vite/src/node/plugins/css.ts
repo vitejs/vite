@@ -1277,6 +1277,36 @@ export function getEmptyChunkReplacer(
 
 const fileURLWithWindowsDriveRE = /^file:\/\/\/[a-zA-Z]:\//
 
+// Matches errors thrown by oxc-resolver when a package subpath fails the
+// `exports` lookup. Used to swallow the false negative caused by oxc-resolver
+// joining a `tryPrefix`-prefixed subpath with backslashes on Windows. See
+// https://github.com/vitejs/vite/issues/22294
+const sassExportsLookupErrorRE = /is not exported (?:under the conditions|in)/
+
+export function isSassExportsLookupError(e: unknown): e is Error {
+  return e instanceof Error && sassExportsLookupErrorRE.test(e.message)
+}
+
+// Returns the input id with the sass `_` partial prefix applied to the
+// basename, joined with forward slashes so it survives Node `exports`
+// resolution on Windows. Returns `undefined` when the input cannot be
+// underscore-prefixed (already prefixed, no basename, or only contains a
+// trailing slash).
+export function withSassPartialPrefix(id: string): string | undefined {
+  // strip query/hash so we can re-attach them after prefixing
+  const queryIndex = id.search(/[?#]/)
+  const cleanId = queryIndex >= 0 ? id.slice(0, queryIndex) : id
+  const suffix = queryIndex >= 0 ? id.slice(queryIndex) : ''
+  // normalize backslashes that may have been introduced upstream so the
+  // returned id always uses POSIX separators (required for `exports`)
+  const normalized = cleanId.replace(/\\/g, '/')
+  const lastSlash = normalized.lastIndexOf('/')
+  const basename = lastSlash >= 0 ? normalized.slice(lastSlash + 1) : normalized
+  if (!basename || basename.startsWith('_')) return undefined
+  const dir = lastSlash >= 0 ? normalized.slice(0, lastSlash + 1) : ''
+  return `${dir}_${basename}${suffix}`
+}
+
 interface CSSAtImportResolvers {
   css: ResolveIdFn
   sass: ResolveIdFn
@@ -1309,19 +1339,45 @@ function createCSSResolvers(config: ResolvedConfig): CSSAtImportResolvers {
           preferRelative: true,
           skipMainField: true,
         })
-        sassResolve = async (...args) => {
+        sassResolve = async (environment, id, importer, aliasOnly) => {
           // the modern API calls `canonicalize` with resolved file URLs
           // for relative URLs before raw specifiers
-          if (args[1].startsWith('file://')) {
-            args[1] = fileURLToPath(args[1], {
+          if (id.startsWith('file://')) {
+            id = fileURLToPath(id, {
               windows:
                 // file:///foo cannot be converted to path with windows mode
-                isWindows && !fileURLWithWindowsDriveRE.test(args[1])
+                isWindows && !fileURLWithWindowsDriveRE.test(id)
                   ? false
                   : undefined,
             })
           }
-          return resolver(...args)
+          // The underlying native resolver applies `tryPrefix` ('_') by joining
+          // path segments with the OS-specific separator. On Windows that
+          // produces a subpath like `./styles\_mixins`, which fails (or throws)
+          // when fed through Node `exports` resolution because exports keys
+          // require POSIX-style separators. Try the original id first; on
+          // failure, manually retry with a forward-slash-joined `_` prefix on
+          // the basename so package-exports + sass `_partials` work on Windows.
+          // See https://github.com/vitejs/vite/issues/22294
+          try {
+            const resolved = await resolver(
+              environment,
+              id,
+              importer,
+              aliasOnly,
+            )
+            if (resolved) return resolved
+          } catch (e) {
+            if (!isSassExportsLookupError(e)) throw e
+          }
+          const prefixed = withSassPartialPrefix(id)
+          if (prefixed === undefined) return undefined
+          try {
+            return await resolver(environment, prefixed, importer, aliasOnly)
+          } catch (e) {
+            if (isSassExportsLookupError(e)) return undefined
+            throw e
+          }
         }
       }
       return sassResolve
