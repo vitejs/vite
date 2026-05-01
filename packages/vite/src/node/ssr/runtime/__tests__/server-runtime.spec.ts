@@ -228,6 +228,33 @@ describe('module runner initialization', async () => {
     expect(fn.called).toBe(true)
   })
 
+  // regression test for #19975: when a bare specifier (node_modules dep) is
+  // used directly as the runner entry, the cached module url must not have a
+  // file extension appended to the bare specifier. Otherwise re-importing the
+  // entry (e.g. on full reload) tries to resolve a non-existent specifier
+  // like `pkg.js` and fails with "Failed to load url pkg.js".
+  it('importing node_modules dep as runner entry preserves bare specifier url', async ({
+    runner,
+  }) => {
+    const mod = await runner.import('@vitejs/esm-external')
+    expect(mod.hello()).toBe('world')
+
+    // mimic the full-reload path: collect entrypoint urls from the runner's
+    // module graph (modules without importers) and re-import them.
+    const entrypointUrls = [...runner.evaluatedModules.idToModuleMap.values()]
+      .filter((m) => !m.importers.size)
+      .map((m) => m.url)
+    expect(entrypointUrls).toContain('@vitejs/esm-external')
+
+    runner.evaluatedModules.clear()
+    for (const url of entrypointUrls) {
+      const reloaded = await runner.import(url)
+      if (url === '@vitejs/esm-external') {
+        expect((reloaded as { hello: () => string }).hello()).toBe('world')
+      }
+    }
+  })
+
   it('importing native node package', async ({ runner }) => {
     const mod = await runner.import('/fixtures/native.js')
     expect(mod.readdirSync).toBe(readdirSync)

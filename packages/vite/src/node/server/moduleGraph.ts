@@ -474,7 +474,13 @@ export class EnvironmentModuleGraph {
     if (
       url !== resolvedId &&
       !url.includes('\0') &&
-      !url.startsWith(`virtual:`)
+      !url.startsWith(`virtual:`) &&
+      // Skip extension append for bare specifiers (e.g. `pkg-name`,
+      // `@scope/pkg`). The extension append is meant to align path-style
+      // URLs (e.g. `/foo` -> `/foo.js`) with their resolved file id, but
+      // is meaningless for bare module specifiers used as runner entries
+      // and would produce unresolvable urls like `pkg-name.js` (#19975).
+      (url[0] === '/' || url[0] === '.')
     ) {
       const ext = extname(cleanUrl(resolvedId))
       if (ext) {
