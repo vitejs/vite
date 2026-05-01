@@ -33,7 +33,9 @@ import {
   getHash,
   injectQuery,
   isCSSRequest,
+  isDataUrl,
   isDevServer,
+  isExternalUrl,
   isJSRequest,
   isParentDirectory,
   joinUrlSegments,
@@ -43,7 +45,7 @@ import {
 } from '../../utils'
 import { checkPublicFile } from '../../publicDir'
 import { getCodeWithSourcemap, injectSourcesContent } from '../sourcemap'
-import { cleanUrl, unwrapId, wrapId } from '../../../shared/utils'
+import { cleanUrl, slash, unwrapId, wrapId } from '../../../shared/utils'
 import { getNodeAssetAttributes } from '../../assetSource'
 import {
   BasicMinimalPluginContext,
@@ -131,6 +133,46 @@ function getHtmlDirnameForRelativeUrl(htmlPath: string): string {
   return htmlPath.endsWith('/') ? htmlPath : path.posix.dirname(htmlPath)
 }
 
+// Matches a Windows-style absolute path like `C:/foo` or `C:\foo`.
+const windowsVolumePathRE = /^[A-Za-z]:[/\\]/
+
+// Resolves alias and Windows absolute path forms in HTML attribute values
+// so that they behave consistently between dev and build (#17910).
+export function resolveHtmlAttrUrl(
+  url: string,
+  config: Pick<ResolvedConfig, 'resolve'>,
+): string {
+  // Windows absolute path (e.g. `C:/foo/bar.js` or `C:\foo\bar.js`)
+  // → normalize to `/@fs/C:/foo/bar.js` so the dev server can serve it
+  // the same way build's `this.resolve` resolves it from disk.
+  if (windowsVolumePathRE.test(url)) {
+    return joinUrlSegments(FS_PREFIX, slash(url))
+  }
+  // Aliases that don't start with `/` (e.g. `@/main.js`).
+  // In build these are passed through `this.resolve` which runs the alias
+  // plugin; in dev we apply the alias manually so the resulting path can
+  // be served as `/@fs/...`.
+  if (
+    url[0] !== '/' &&
+    url[0] !== '.' &&
+    !isExternalUrl(url) &&
+    !isDataUrl(url)
+  ) {
+    for (const { find, replacement } of config.resolve.alias) {
+      const matches =
+        typeof find === 'string' ? url.startsWith(find) : find.test(url)
+      if (matches) {
+        const resolved = url.replace(find, replacement)
+        if (windowsVolumePathRE.test(resolved) || resolved[0] === '/') {
+          return joinUrlSegments(FS_PREFIX, slash(resolved))
+        }
+        return resolved
+      }
+    }
+  }
+  return url
+}
+
 const processNodeUrl = (
   url: string,
   useSrcSetReplacer: boolean,
@@ -142,6 +184,8 @@ const processNodeUrl = (
 ): string => {
   // prefix with base (dev only, base is never relative)
   const replacer = (url: string) => {
+    url = resolveHtmlAttrUrl(url, config)
+
     if (
       (url[0] === '/' && url[1] !== '/') ||
       // #3230 if some request url (localhost:3000/a/b) return to fallback html, the relative assets
