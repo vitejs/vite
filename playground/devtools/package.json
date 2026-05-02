@@ -10,10 +10,10 @@
     "preview": "vite preview"
   },
   "dependencies": {
-    "vue": "^3.5.32"
+    "vue": "^3.5.33"
   },
   "devDependencies": {
     "vite": "workspace:*",
-    "@vitejs/devtools": "https://pkg.pr.new/@vitejs/devtools@0cacb1f"
+    "@vitejs/devtools": "^0.1.18"
   }
 }

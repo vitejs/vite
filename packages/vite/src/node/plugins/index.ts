@@ -52,9 +52,10 @@ export async function resolvePlugins(
   const buildPlugins = isBundled
     ? await (await import('../build')).resolveBuildPlugins(config)
     : { pre: [], post: [] }
-  const devtoolsIntegrationPlugin = config.devtools.enabled
-    ? await loadDevToolsIntegrationPlugin(config)
-    : null
+  const devtoolsIntegrationPlugin =
+    config.devtools.enabled && !isWorker
+      ? await loadDevToolsIntegrationPlugin(config)
+      : null
   const { modulePreload } = config.build
 
   return [
@@ -143,13 +144,11 @@ async function loadDevToolsIntegrationPlugin(
 ): Promise<Plugin | null> {
   try {
     const { DevToolsIntegration } = await import('@vitejs/devtools/integration')
-    return DevToolsIntegration({
-      config: config,
-    })
+    return DevToolsIntegration({ config })
   } catch (error: any) {
     config.logger.error(
       colors.red(
-        `Failed to run Vite DevTools: ${error?.message || error?.stack}`,
+        `Failed to load Vite DevTools integration: ${error?.message || error?.stack}`,
       ),
       { error },
     )
