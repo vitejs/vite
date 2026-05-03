@@ -79,6 +79,7 @@ export function proxyMiddleware(
 ): Connect.NextHandleFunction {
   // lazy require only when proxy is used
   const proxies: Record<string, [httpProxy.ProxyServer, ProxyOptions]> = {}
+  const regexCache = new Map<string, RegExp>()
 
   Object.keys(options).forEach((context) => {
     let opts = options[context]
@@ -136,13 +137,16 @@ export function proxyMiddleware(
 
     // clone before saving because http-proxy mutates the options
     proxies[context] = [proxy, { ...opts }]
+    if (context[0] === '^') {
+      regexCache.set(context, new RegExp(context))
+    }
   })
 
   if (httpServer) {
     httpServer.on('upgrade', async (req, socket, head) => {
       const url = req.url!
       for (const context in proxies) {
-        if (doesProxyContextMatchUrl(context, url)) {
+        if (doesProxyContextMatchUrl(context, url, regexCache)) {
           const [proxy, opts] = proxies[context]
           if (
             opts.ws ||
@@ -190,7 +194,7 @@ export function proxyMiddleware(
   return async function viteProxyMiddleware(req, res, next) {
     const url = req.url!
     for (const context in proxies) {
-      if (doesProxyContextMatchUrl(context, url)) {
+      if (doesProxyContextMatchUrl(context, url, regexCache)) {
         const [proxy, opts] = proxies[context]
         const options: httpProxy.ServerOptions = {}
 
@@ -228,9 +232,13 @@ export function proxyMiddleware(
   }
 }
 
-function doesProxyContextMatchUrl(context: string, url: string): boolean {
-  return (
-    (context[0] === '^' && new RegExp(context).test(url)) ||
-    url.startsWith(context)
-  )
+function doesProxyContextMatchUrl(
+  context: string,
+  url: string,
+  regexCache: Map<string, RegExp>,
+): boolean {
+  if (context[0] === '^') {
+    return regexCache.get(context)!.test(url)
+  }
+  return url.startsWith(context)
 }
