@@ -22,7 +22,7 @@ describe('getModuleTypeFromId', () => {
 
 describe('injectSourcesContent', () => {
   test('does not warn when mod.file lacks a drive letter but the source is inside the package', async () => {
-    const url = '/@fs/node_modules/foo/dist/bundle.js'
+    const url = '/node_modules/foo/dist/bundle.js'
 
     const plugin: Plugin = {
       name: 'test-pkg',
