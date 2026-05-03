@@ -3,7 +3,6 @@ import { type UserConfig, resolveConfig } from '../../config'
 import type { Plugin } from '../../plugin'
 import { DevEnvironment } from '../environment'
 import { getModuleTypeFromId, transformRequest } from '../transformRequest'
-import { isWindows } from '../../../shared/utils'
 
 describe('getModuleTypeFromId', () => {
   const testCases = [
@@ -22,45 +21,42 @@ describe('getModuleTypeFromId', () => {
 })
 
 describe('injectSourcesContent', () => {
-  test.skipIf(!isWindows)(
-    'does not warn when mod.file lacks a drive letter but the source is inside the package',
-    async () => {
-      const url = '/node_modules/foo/dist/bundle.js'
+  test('does not warn when mod.file lacks a drive letter but the source is inside the package', async () => {
+    const url = '/node_modules/foo/dist/bundle.js'
 
-      const plugin: Plugin = {
-        name: 'test-pkg',
-        resolveId(id) {
-          if (id === url) return id
-        },
-        load(id) {
-          if (id === url) {
-            return {
-              code: 'export default 1',
-              map: {
-                version: 3,
-                file: 'bundle.js',
-                sources: ['../src/index.ts'],
-                mappings: 'AAAA',
-                sourcesContent: [null],
-              },
-            }
+    const plugin: Plugin = {
+      name: 'test-pkg',
+      resolveId(id) {
+        if (id === url) return id
+      },
+      load(id) {
+        if (id === url) {
+          return {
+            code: 'export default 1',
+            map: {
+              version: 3,
+              file: 'bundle.js',
+              sources: ['../src/index.ts'],
+              mappings: 'AAAA',
+              sourcesContent: [null],
+            },
           }
-        },
-      }
+        }
+      },
+    }
 
-      const environment = await createDevEnvironment({ plugins: [plugin] })
+    const environment = await createDevEnvironment({ plugins: [plugin] })
 
-      const warnOnce = vi.spyOn(environment.logger, 'warnOnce')
+    const warnOnce = vi.spyOn(environment.logger, 'warnOnce')
 
-      await transformRequest(environment, url, { skipFsCheck: true })
+    await transformRequest(environment, url, { skipFsCheck: true })
 
-      expect(warnOnce).not.toHaveBeenCalledWith(
-        expect.stringContaining('outside its package'),
-      )
+    expect(warnOnce).not.toHaveBeenCalledWith(
+      expect.stringContaining('outside its package'),
+    )
 
-      await environment.close()
-    },
-  )
+    await environment.close()
+  })
 })
 
 async function createDevEnvironment(
