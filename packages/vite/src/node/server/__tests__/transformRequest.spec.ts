@@ -4,7 +4,6 @@ import { type UserConfig, resolveConfig } from '../../config'
 import type { Plugin } from '../../plugin'
 import { DevEnvironment } from '../environment'
 import { getModuleTypeFromId, transformRequest } from '../transformRequest'
-import { normalizePath } from '../..'
 
 describe('getModuleTypeFromId', () => {
   const testCases = [
@@ -36,27 +35,24 @@ describe('injectSourcesContent', () => {
   // assertion (no warning for a legitimate in-package source).
   test('does not warn when the source is inside the package', async () => {
     const file = path.posix.resolve(
-      normalizePath(import.meta.dirname),
-      'fixtures/sourcemap-drive-letter/node_modules/foo/dist/index.js',
+      'packages/vite/src/node/server/__tests__/fixtures/sourcemap-drive-letter/node_modules/foo/src/index.js',
     )
 
     const plugin: Plugin = {
       name: 'test-pkg',
       resolveId(id) {
-        if (id === file) return id
+        return id
       },
-      load(id) {
-        if (id === file) {
-          return {
-            code: 'export default 1',
-            map: {
-              version: 3,
-              file,
-              sources: ['index.ts'],
-              mappings: 'AAAA',
-              sourcesContent: [null],
-            },
-          }
+      load() {
+        return {
+          code: 'export default 1',
+          map: {
+            version: 3,
+            file,
+            sources: ['index.js'],
+            mappings: 'AAAA',
+            sourcesContent: [null],
+          },
         }
       },
     }
