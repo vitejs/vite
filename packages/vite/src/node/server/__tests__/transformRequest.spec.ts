@@ -34,25 +34,24 @@ describe('injectSourcesContent', () => {
   // On other platforms: the full path is used, validating the same happy-path
   // assertion (no warning for a legitimate in-package source).
   test('does not warn when the source is inside the package', async () => {
-    const moduleId =
-      '/@fs' +
-      path.posix.resolve(
-        import.meta.dirname,
-        'fixtures/sourcemap-drive-letter/node_modules/foo/dist/bundle.js',
-      )
+    const file = path.posix.resolve(
+      import.meta.dirname,
+      'fixtures/sourcemap-drive-letter/node_modules/foo/dist/index.js',
+    )
 
     const plugin: Plugin = {
       name: 'test-pkg',
       resolveId(id) {
-        if (id === moduleId) return id
+        if (id === file) return id
       },
       load(id) {
-        if (id === moduleId) {
+        if (id === file) {
           return {
             code: 'export default 1',
             map: {
               version: 3,
-              sources: ['../src/index.ts'],
+              file,
+              sources: ['index.js'],
               mappings: 'AAAA',
               sourcesContent: [null],
             },
@@ -64,7 +63,7 @@ describe('injectSourcesContent', () => {
     const environment = await createDevEnvironment({ plugins: [plugin] })
     const warnOnce = vi.spyOn(environment.logger, 'warnOnce')
 
-    await transformRequest(environment, moduleId, { skipFsCheck: false })
+    await transformRequest(environment, '/@fs' + file, { skipFsCheck: false })
 
     expect(warnOnce).not.toHaveBeenCalledWith(
       expect.stringContaining('outside its package'),
