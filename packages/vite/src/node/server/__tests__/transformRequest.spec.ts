@@ -22,7 +22,7 @@ describe('getModuleTypeFromId', () => {
 })
 
 describe('transformRequest', () => {
-  test('does not warn when sourcemap points to a source is inside its package', async () => {
+  test('does not warn when sourcemap points to a source inside its package', async () => {
     const file = path.posix.resolve(
       'packages/vite/src/node/server/__tests__/fixtures/sourcemap-drive-letter/node_modules/foo/src/index.js',
     )
