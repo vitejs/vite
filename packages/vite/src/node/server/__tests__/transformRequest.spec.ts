@@ -38,6 +38,7 @@ describe('injectSourcesContent', () => {
               code: 'export default 1',
               map: {
                 version: 3,
+                file: 'bundle.js',
                 sources: ['../src/index.ts'],
                 mappings: 'AAAA',
                 sourcesContent: [null],
