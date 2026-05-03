@@ -18,4 +18,3 @@ temp
 TODOs.md
 .eslintcache
 !packages/vite/src/node/server/__tests__/fixtures/sourcemap-drive-letter/node_modules
-!packages/vite/src/node/server/__tests__/fixtures/sourcemap-drive-letter/node_modules/foo/dist
