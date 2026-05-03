@@ -52,7 +52,7 @@ describe('injectSourcesContent', () => {
             map: {
               version: 3,
               file,
-              sources: ['index.js'],
+              sources: ['index.ts'],
               mappings: 'AAAA',
               sourcesContent: [null],
             },
@@ -64,7 +64,7 @@ describe('injectSourcesContent', () => {
     const environment = await createDevEnvironment({ plugins: [plugin] })
     const warnOnce = vi.spyOn(environment.logger, 'warnOnce')
 
-    await transformRequest(environment, file, { skipFsCheck: false })
+    await transformRequest(environment, '/@fs' + file, { skipFsCheck: false })
 
     expect(warnOnce).not.toHaveBeenCalledWith(
       expect.stringContaining('outside its package'),
