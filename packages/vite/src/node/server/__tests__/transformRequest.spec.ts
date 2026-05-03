@@ -4,6 +4,7 @@ import { type UserConfig, resolveConfig } from '../../config'
 import type { Plugin } from '../../plugin'
 import { DevEnvironment } from '../environment'
 import { getModuleTypeFromId, transformRequest } from '../transformRequest'
+import { normalizePath } from '../..'
 
 describe('getModuleTypeFromId', () => {
   const testCases = [
@@ -35,7 +36,7 @@ describe('injectSourcesContent', () => {
   // assertion (no warning for a legitimate in-package source).
   test('does not warn when the source is inside the package', async () => {
     const file = path.posix.resolve(
-      import.meta.dirname,
+      normalizePath(import.meta.dirname),
       'fixtures/sourcemap-drive-letter/node_modules/foo/dist/index.js',
     )
 
