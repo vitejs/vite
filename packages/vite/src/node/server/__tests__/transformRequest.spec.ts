@@ -63,7 +63,7 @@ describe('injectSourcesContent', () => {
     const environment = await createDevEnvironment({ plugins: [plugin] })
     const warnOnce = vi.spyOn(environment.logger, 'warnOnce')
 
-    await transformRequest(environment, '/@fs' + file, { skipFsCheck: false })
+    await transformRequest(environment, file, { skipFsCheck: false })
 
     expect(warnOnce).not.toHaveBeenCalledWith(
       expect.stringContaining('outside its package'),
