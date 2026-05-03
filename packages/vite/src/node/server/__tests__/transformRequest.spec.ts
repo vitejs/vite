@@ -22,7 +22,7 @@ describe('getModuleTypeFromId', () => {
 
 describe('injectSourcesContent', () => {
   test('does not warn when mod.file lacks a drive letter but the source is inside the package', async () => {
-    const url = '/node_modules/foo/dist/bundle.js'
+    const url = '/@fs/node_modules/foo/dist/bundle.js'
 
     const plugin: Plugin = {
       name: 'test-pkg',
@@ -35,8 +35,8 @@ describe('injectSourcesContent', () => {
             code: 'export default 1',
             map: {
               version: 3,
-              file: 'bundle.js',
-              sources: ['../src/index.ts'],
+              file: '/node_modules/foo/dist/bundle.js',
+              sources: ['bundle.js'],
               mappings: 'AAAA',
               sourcesContent: [null],
             },
