@@ -22,24 +22,13 @@ describe('getModuleTypeFromId', () => {
 })
 
 describe('injectSourcesContent', () => {
-  // This test covers the Windows-specific bug where packageRoot is derived from
-  // a module id that lacks a drive letter (e.g. /Users/…/node_modules/foo) while
-  // path.resolve prepends the CWD drive letter to the resolved source path
-  // (C:/Users/…/node_modules/foo/src/index.ts). Without the fix, isParentDirectory
-  // returns false and a spurious "outside its package" warning fires.
-  //
-  // On Windows: we strip the drive letter from the absolute fixture path to
-  // reproduce the bug scenario — path.resolve and fsp.realpath restore it so
-  // the files are found on disk without any mocking.
-  // On other platforms: the full path is used, validating the same happy-path
-  // assertion (no warning for a legitimate in-package source).
   test('does not warn when the source is inside the package', async () => {
     const file = path.posix.resolve(
       'packages/vite/src/node/server/__tests__/fixtures/sourcemap-drive-letter/node_modules/foo/src/index.js',
     )
 
     const plugin: Plugin = {
-      name: 'test-pkg',
+      name: 'vite-plugin-test-sourcemap',
       resolveId(id) {
         return id
       },
