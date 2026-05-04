@@ -81,6 +81,43 @@ describe('build', () => {
     assertOutputHashContentChange(result[0], result[1])
   })
 
+  test('prepends a charset rule to emitted CSS with non-ASCII codepoints', async () => {
+    const result = (await build({
+      root: resolve(dirname, 'packages/build-project'),
+      logLevel: 'silent',
+      build: {
+        write: false,
+      },
+      plugins: [
+        {
+          name: 'test',
+          resolveId(id) {
+            if (id === 'entry.js' || id === 'foo.css') {
+              return '\0' + id
+            }
+          },
+          load(id) {
+            if (id === '\0entry.js') {
+              return `import 'foo.css'`
+            }
+            if (id === '\0foo.css') {
+              return `.icon::before { content: "\uf200" }`
+            }
+          },
+        },
+      ],
+    })) as RolldownOutput
+
+    const cssAsset = result.output.find(
+      (chunk) => chunk.type === 'asset' && chunk.fileName.endsWith('.css'),
+    )
+
+    expect(cssAsset?.source).toEqual(
+      expect.stringMatching(/^@charset "UTF-8";/),
+    )
+    expect(cssAsset?.source).toContain('\uf200')
+  })
+
   test('file hash should change when pure css chunk changes', async () => {
     const buildProject = async (cssColor: string) => {
       return (await build({

@@ -1900,6 +1900,7 @@ function combineSourcemapsIfExists(
 
 const viteHashUpdateMarker = '/*$vite$:1*/'
 const viteHashUpdateMarkerRE = /\/\*\$vite\$:\d+\*\//
+const cssCharsetUTF8 = '@charset "UTF-8";'
 
 async function finalizeCss(css: string, config: ResolvedConfig) {
   // hoist external @imports and @charset to the top of the CSS chunk per spec (#1845 and #6333)
@@ -1908,6 +1909,9 @@ async function finalizeCss(css: string, config: ResolvedConfig) {
   }
   if (config.build.cssMinify) {
     css = await minifyCSS(css, config, false)
+  }
+  if (needsCharset(css)) {
+    css = cssCharsetUTF8 + css
   }
   // inject an additional string to generate a different hash for https://github.com/vitejs/vite/issues/18038
   //
@@ -2309,6 +2313,26 @@ const atImportRE =
   /@import(?:\s*(?:url\([^)]*\)|"(?:[^"]|(?<=\\)")*"|'(?:[^']|(?<=\\)')*').*?|[^;]*);/g
 const atCharsetRE =
   /@charset(?:\s*(?:"(?:[^"]|(?<=\\)")*"|'(?:[^']|(?<=\\)')*').*?|[^;]*);/g
+
+function needsCharset(css: string): boolean {
+  if (!hasNonAscii(css) || css.charCodeAt(0) === 0xfeff) {
+    return false
+  }
+
+  atCharsetRE.lastIndex = 0
+  const hasCharset = atCharsetRE.test(emptyCssComments(css))
+  atCharsetRE.lastIndex = 0
+  return !hasCharset
+}
+
+function hasNonAscii(css: string): boolean {
+  for (let i = 0; i < css.length; i++) {
+    if (css.charCodeAt(i) > 0x7f) {
+      return true
+    }
+  }
+  return false
+}
 
 export async function hoistAtRules(css: string): Promise<string> {
   const s = new MagicString(css)
