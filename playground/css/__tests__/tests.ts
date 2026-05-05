@@ -192,6 +192,10 @@ export const tests = (isLightningCSS: boolean) => {
     await expect.poll(() => getColor(imported)).toBe('red')
   })
 
+  test('css modules with JS keyword class name', async () => {
+    expect(await getColor('.modules-keyword')).toBe('tomato')
+  })
+
   test('css modules composes/from path resolving', async () => {
     const imported = await page.$('.path-resolved-modules-css')
     expect(await getColor(imported)).toBe('turquoise')

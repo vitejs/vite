@@ -25,6 +25,9 @@ import sassMod from './mod.module.scss'
 document.querySelector('.modules-sass').classList.add(sassMod['apply-color'])
 text('.modules-sass-code', JSON.stringify(sassMod, null, 2))
 
+import * as keywordMod from './keyword.module.css'
+document.querySelector('.modules-keyword').classList.add(keywordMod.switch)
+
 import { a as treeshakeMod } from './treeshake-module/index.js'
 document
   .querySelector('.modules-treeshake')
