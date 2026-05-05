@@ -219,6 +219,7 @@ test('return help usage how to use create-vite', () => {
   const message = 'Usage: create-vite [OPTION]... [DIRECTORY]'
   expect(stdout).toContain(message)
   expect(stdout).toContain('--overwrite')
+  expect(stdout).toContain('-h, --help')
 })
 
 test('return help usage how to use create-vite with -h alias', () => {
