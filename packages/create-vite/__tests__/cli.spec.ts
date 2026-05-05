@@ -222,7 +222,7 @@ test('return help usage how to use create-vite', () => {
 })
 
 test('return help usage how to use create-vite with -h alias', () => {
-  const { stdout } = run(['--h'], { cwd: import.meta.dirname })
+  const { stdout } = run(['-h'], { cwd: import.meta.dirname })
   const message = 'Usage: create-vite [OPTION]... [DIRECTORY]'
   expect(stdout).toContain(message)
 })
