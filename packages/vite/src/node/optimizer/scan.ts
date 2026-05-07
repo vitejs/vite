@@ -214,7 +214,7 @@ async function computeEntries(environment: ScanEnvironment) {
       )?.id
       if (id === undefined) {
         throw new Error(
-          `failed to resolve rollupOptions.input value: ${JSON.stringify(p)}.`,
+          `failed to resolve rolldownOptions.input value: ${JSON.stringify(p)}.`,
         )
       }
       return id
