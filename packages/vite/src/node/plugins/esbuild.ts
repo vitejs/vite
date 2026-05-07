@@ -387,7 +387,7 @@ export const buildEsbuildPlugin = (): Plugin => {
 const destructuringBugRE = /^(safari|ios)(\d+)(?:\.(\d+))?$/
 
 // Workaround for https://github.com/evanw/esbuild/issues/4436
-// Safari 10 through 14.1 and ios 10 through 14.5 have a bug related to destructuring.
+// Safari 10 through 14.0.x and ios 10 through 14.4 have a bug related to destructuring.
 // So esbuild 0.27.7+ treats those browsers as not supporting destructuring.
 // However, because esbuild does not support lowering destructuring, it errors when it encounters it.
 // Since it was not lowered in old Vite versions, we set `destructuring: true` to revert to the old behavior.
