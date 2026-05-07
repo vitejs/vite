@@ -11,9 +11,9 @@
   "devDependencies": {
     "@types/react": "^19.2.14",
     "@types/react-dom": "^19.2.3",
-    "react": "^19.2.5",
-    "react-fake-client": "npm:react@^19.2.5",
-    "react-fake-server": "npm:react@^19.2.5",
-    "react-dom": "^19.2.5"
+    "react": "^19.2.6",
+    "react-fake-client": "npm:react@^19.2.6",
+    "react-fake-server": "npm:react@^19.2.6",
+    "react-dom": "^19.2.6"
   }
 }
