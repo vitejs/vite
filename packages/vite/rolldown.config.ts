@@ -181,7 +181,7 @@ function enableSourceMapsInWatchModePlugin(): Plugin {
 function writeTypesPlugin(): Plugin {
   return {
     name: 'write-types',
-    async writeBundle() {
+    writeBundle() {
       if (this.meta.watchMode) {
         writeFileSync(
           'dist/node/index.d.ts',

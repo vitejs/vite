@@ -537,10 +537,10 @@ export function getTSConfigResolutionCache(
   return cache
 }
 
-export async function reloadOnTsconfigChange(
+export function reloadOnTsconfigChange(
   server: ViteDevServer,
   changedFile: string,
-): Promise<void> {
+): void {
   // any tsconfig.json that's added in the workspace could be closer to a code file than a previously cached one
   // any json file in the tsconfig cache could have been used to compile ts
   if (changedFile.endsWith('.json')) {
