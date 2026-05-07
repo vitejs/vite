@@ -339,7 +339,16 @@ export class FullBundleDevEnvironment extends DevEnvironment {
       code: typeof hmrOutput.code === 'string' ? '[code]' : hmrOutput.code,
     })
 
-    this.memoryFiles.set(hmrOutput.filename, { source: hmrOutput.code })
+    this.memoryFiles.set(hmrOutput.filename, {
+      // ensure that the generated hmr patch contains ESM syntax
+      // this is to avoid attacks like GHSA-4v9v-hfq4-rm2v
+      // https://github.com/webpack/webpack-dev-server/security/advisories/GHSA-4v9v-hfq4-rm2v
+      // https://green.sapphi.red/blog/local-server-security-best-practices#_2-using-xssi-and-modifying-the-prototype
+      // https://green.sapphi.red/blog/local-server-security-best-practices#properly-check-the-request-origin
+      // we can also use `Cross-Origin Resource Policy` header instead of this
+      // but we cannot use `Sec-Fetch-*` headers as they are only sent to potentially-trustworthy origins
+      source: hmrOutput.code + '\n; export {}',
+    })
     if (hmrOutput.sourcemapFilename && hmrOutput.sourcemap) {
       this.memoryFiles.set(hmrOutput.sourcemapFilename, {
         source: hmrOutput.sourcemap,

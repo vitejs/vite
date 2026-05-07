@@ -80,6 +80,7 @@ import {
   asyncFlatten,
   createDebugger,
   createFilter,
+  deepClone,
   hasBothRollupOptionsAndRolldownOptions,
   isExternalUrl,
   isFilePathESM,
@@ -1035,6 +1036,7 @@ export type ResolveFn = (
  */
 function checkBadCharactersInPath(
   name: string,
+  type: 'directory' | 'file',
   path: string,
   logger: Logger,
 ): void {
@@ -1058,7 +1060,7 @@ function checkBadCharactersInPath(
       colors.yellow(
         `${name} contains the ${charString} ${inflectedChars} (${colors.cyan(
           path,
-        )}), which may not work when running Vite. Consider renaming the directory / file to remove the characters.`,
+        )}), which may not work when running Vite. Consider renaming the ${type} without the characters.`,
       ),
     )
   }
@@ -1506,7 +1508,12 @@ export async function resolveConfig(
     config.root ? path.resolve(config.root) : process.cwd(),
   )
 
-  checkBadCharactersInPath('The project root', resolvedRoot, logger)
+  checkBadCharactersInPath(
+    'The project root',
+    'directory',
+    resolvedRoot,
+    logger,
+  )
 
   const configEnvironmentsClient = config.environments!.client!
   configEnvironmentsClient.dev ??= {}
@@ -1587,7 +1594,9 @@ export async function resolveConfig(
     config.environments[name] = mergeConfig(
       name === 'client'
         ? defaultClientEnvironmentOptions
-        : defaultNonClientEnvironmentOptions,
+        : (deepClone(
+            defaultNonClientEnvironmentOptions as object,
+          ) as UserConfig),
       config.environments[name],
     )
   }
@@ -2085,11 +2094,6 @@ export async function resolveConfig(
       resolved.build.ssrEmitAssets || resolved.build.emitAssets
   }
 
-  // Enable `rolldownOptions.devtools` if devtools is enabled
-  if (resolved.devtools.enabled) {
-    resolved.build.rolldownOptions.devtools ??= {}
-  }
-
   applyDepOptimizationOptionCompat(resolved)
   await setOptimizeDepsPluginNames(resolved)
 
@@ -2302,7 +2306,7 @@ export async function loadConfigFromFile(
     }
   } catch (e) {
     const logger = createLogger(logLevel, { customLogger })
-    checkBadCharactersInPath('The config path', resolvedPath, logger)
+    checkBadCharactersInPath('The config path', 'file', resolvedPath, logger)
     logger.error(colors.red(`failed to load config from ${resolvedPath}`), {
       error: e,
     })
@@ -2389,7 +2393,7 @@ async function bundleConfigFile(
         name: 'externalize-deps',
         resolveId: {
           filter: { id: /^[^.#].*/ },
-          async handler(id, importer, { kind }) {
+          handler(id, importer, { kind }) {
             if (!importer || path.isAbsolute(id) || isNodeBuiltin(id)) {
               return
             }
