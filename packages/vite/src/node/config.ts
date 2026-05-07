@@ -80,6 +80,7 @@ import {
   asyncFlatten,
   createDebugger,
   createFilter,
+  deepClone,
   hasBothRollupOptionsAndRolldownOptions,
   isExternalUrl,
   isFilePathESM,
@@ -1593,7 +1594,9 @@ export async function resolveConfig(
     config.environments[name] = mergeConfig(
       name === 'client'
         ? defaultClientEnvironmentOptions
-        : defaultNonClientEnvironmentOptions,
+        : (deepClone(
+            defaultNonClientEnvironmentOptions as object,
+          ) as UserConfig),
       config.environments[name],
     )
   }
@@ -2094,11 +2097,6 @@ export async function resolveConfig(
       resolved.build.ssrEmitAssets || resolved.build.emitAssets
   }
 
-  // Enable `rolldownOptions.devtools` if devtools is enabled
-  if (resolved.devtools.enabled) {
-    resolved.build.rolldownOptions.devtools ??= {}
-  }
-
   applyDepOptimizationOptionCompat(resolved)
   await setOptimizeDepsPluginNames(resolved)
 
@@ -2398,7 +2396,7 @@ async function bundleConfigFile(
         name: 'externalize-deps',
         resolveId: {
           filter: { id: /^[^.#].*/ },
-          async handler(id, importer, { kind }) {
+          handler(id, importer, { kind }) {
             if (!importer || path.isAbsolute(id) || isNodeBuiltin(id)) {
               return
             }
