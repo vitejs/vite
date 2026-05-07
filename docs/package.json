@@ -8,7 +8,7 @@
     "docs-serve": "vitepress serve"
   },
   "devDependencies": {
-    "@iconify/vue": "^5.0.0",
+    "@iconify/vue": "^5.0.1",
     "@shikijs/vitepress-twoslash": "^4.0.2",
     "@types/express": "^5.0.6",
     "@voidzero-dev/vitepress-theme": "^4.8.4",
@@ -18,8 +18,8 @@
     "vitepress": "^2.0.0-alpha.17",
     "vitepress-plugin-graphviz": "^0.1.0",
     "vitepress-plugin-group-icons": "^1.7.5",
-    "vitepress-plugin-llms": "^1.12.1",
-    "vue": "^3.5.33",
-    "vue-tsc": "^3.2.7"
+    "vitepress-plugin-llms": "^1.12.2",
+    "vue": "^3.5.34",
+    "vue-tsc": "^3.2.8"
   }
 }
