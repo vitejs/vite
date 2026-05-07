@@ -129,7 +129,6 @@ export async function fetchModule(
     }
 
     const memoryFile = environment.memoryFiles.get(fileName)
-    // TODO: how to check caching?
     const code = memoryFile?.source
     if (code == null) {
       throw new Error(
