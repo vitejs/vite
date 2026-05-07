@@ -59,37 +59,33 @@ export async function resolvePlugins(
       : null
   const { modulePreload } = config.build
 
-  const hasCustomAliasResolver = config.resolve.alias.some(
-    (v) => v.customResolver,
-  )
-
   return [
     onlyWhenUnbundled(optimizedDepsPlugin()),
     !isWorker ? watchPackageDataPlugin(config.packageCache) : null,
     onlyWhenUnbundled(preAliasPlugin(config)),
-    !hasCustomAliasResolver
-      ? onlyWhenBundled(
-          nativeAliasPlugin({
-            entries: config.resolve.alias.map((item) => ({
-              find: item.find,
-              replacement: item.replacement,
-            })),
-          }),
-        )
-      : null,
-    hasCustomAliasResolver
-      ? aliasPlugin({
-          // @ts-expect-error aliasPlugin receives rollup types
-          entries: config.resolve.alias,
-          customResolver: viteAliasCustomResolver,
-        })
-      : onlyWhenUnbundled(
-          aliasPlugin({
-            // @ts-expect-error aliasPlugin receives rollup types
-            entries: config.resolve.alias,
-            customResolver: viteAliasCustomResolver,
-          }) as unknown as Plugin,
-        ),
+    {
+      ...aliasPlugin({
+        // @ts-expect-error aliasPlugin receives rollup types
+        entries: config.resolve.alias,
+        customResolver: viteAliasCustomResolver,
+      }),
+      applyToEnvironment(environment) {
+        if (
+          environment.config.isBundled &&
+          !environment.config.resolve.alias.some((v) => v.customResolver)
+        ) {
+          return nativeAliasPlugin({
+            entries: config.resolve.alias.map((item) => {
+              return {
+                find: item.find,
+                replacement: item.replacement,
+              }
+            }),
+          })
+        }
+        return true
+      },
+    } as Plugin,
 
     ...prePlugins,
 
