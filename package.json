@@ -64,7 +64,7 @@
     "oxfmt": "^0.46.0",
     "picocolors": "^1.1.1",
     "playwright-chromium": "^1.59.1",
-    "rolldown": "1.0.0-rc.17",
+    "rolldown": "1.0.0-rc.18",
     "rollup": "^4.59.0",
     "simple-git-hooks": "^2.13.1",
     "tsx": "^4.21.0",
