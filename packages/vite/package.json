@@ -75,7 +75,7 @@
   "dependencies": {
     "lightningcss": "^1.32.0",
     "picomatch": "^4.0.4",
-    "postcss": "^8.5.12",
+    "postcss": "^8.5.14",
     "rolldown": "1.0.0-rc.18",
     "tinyglobby": "^0.2.16"
   },
@@ -83,7 +83,7 @@
     "fsevents": "~2.3.3"
   },
   "devDependencies": {
-    "@babel/parser": "^7.29.2",
+    "@babel/parser": "^7.29.3",
     "@jridgewell/remapping": "^2.3.5",
     "@jridgewell/trace-mapping": "^0.3.31",
     "@polka/compression": "^1.0.0-next.25",
@@ -94,9 +94,9 @@
     "@types/escape-html": "^1.0.4",
     "@types/pnpapi": "^0.0.5",
     "@vitest/utils": "4.1.5",
-    "@vitejs/devtools": "^0.1.18",
+    "@vitejs/devtools": "^0.1.19",
     "artichokie": "^0.4.3",
-    "baseline-browser-mapping": "^2.10.23",
+    "baseline-browser-mapping": "^2.10.27",
     "cac": "^7.0.0",
     "chokidar": "^3.6.0",
     "connect": "^3.7.0",
@@ -115,7 +115,7 @@
     "magic-string": "^0.30.21",
     "mlly": "^1.8.2",
     "mrmime": "^2.0.1",
-    "nanoid": "^5.1.9",
+    "nanoid": "^5.1.11",
     "obug": "^1.0.2",
     "open": "^10.2.0",
     "parse5": "^8.0.1",
@@ -135,7 +135,7 @@
     "sirv": "^3.0.2",
     "strip-literal": "^3.1.0",
     "terser": "^5.46.2",
-    "ufo": "^1.6.3",
+    "ufo": "^1.6.4",
     "ws": "^8.20.0"
   },
   "peerDependencies": {

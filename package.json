@@ -59,9 +59,9 @@
     "eslint-plugin-n": "^17.24.0",
     "eslint-plugin-regexp": "^3.1.0",
     "execa": "^9.6.1",
-    "globals": "^17.5.0",
+    "globals": "^17.6.0",
     "lint-staged": "^16.4.0",
-    "oxfmt": "^0.46.0",
+    "oxfmt": "^0.48.0",
     "picocolors": "^1.1.1",
     "playwright-chromium": "^1.59.1",
     "rolldown": "1.0.0-rc.18",
@@ -69,7 +69,7 @@
     "simple-git-hooks": "^2.13.1",
     "tsx": "^4.21.0",
     "typescript": "~6.0.2",
-    "typescript-eslint": "^8.59.0",
+    "typescript-eslint": "^8.59.2",
     "vite": "workspace:*",
     "vitest": "^4.1.5"
   },
@@ -90,7 +90,7 @@
       "eslint --cache --fix --concurrency auto"
     ]
   },
-  "packageManager": "pnpm@10.33.2",
+  "packageManager": "pnpm@10.33.4",
   "stackblitz": {
     "startCommand": "pnpm --filter='./packages/vite' run dev"
   }
