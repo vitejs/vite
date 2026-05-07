@@ -114,7 +114,7 @@ export class ModuleRunner {
               this.rolldownDevRuntimeProxy.loadExports(acceptedPath),
             )
           }
-          this.import(acceptedPath)
+          return this.import(acceptedPath)
         },
       )
       if (!this.transport.connect) {
