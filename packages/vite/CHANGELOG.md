@@ -1,3 +1,8 @@
+## <small>[7.3.3](https://github.com/vitejs/vite/compare/v7.3.2...v7.3.3) (2026-05-07)</small>
+### Bug Fixes
+
+* avoid destructure lowering for newer safari ([#22346](https://github.com/vitejs/vite/issues/22346)) ([5ab51c0](https://github.com/vitejs/vite/commit/5ab51c0f76f0896175e02ad797c1f5fe116d02f4))
+
 ## <small>[7.3.2](https://github.com/vitejs/vite/compare/v7.3.1...v7.3.2) (2026-04-06)</small>
 ### Bug Fixes
 
