@@ -1829,8 +1829,8 @@ export async function resolveConfig(
   } = {
     format: config.worker?.format || 'iife',
     plugins: createWorkerPlugins,
-    rolldownOptions: config.worker?.rolldownOptions || {},
-    rollupOptions: config.worker?.rollupOptions, // will be set by setupRollupOptionCompat if undefined
+    rollupOptions: config.worker?.rollupOptions || {},
+    rolldownOptions: config.worker?.rolldownOptions, // will be set by setupRollupOptionCompat if undefined
   }
   setupRollupOptionCompat(resolvedWorkerOptions, 'worker')
 
