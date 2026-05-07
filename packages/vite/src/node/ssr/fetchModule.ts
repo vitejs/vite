@@ -147,7 +147,7 @@ export async function fetchModule(
       // The potential position on the file system.
       // We don't actually keep it there, it's virtual.
       file: normalizePath(path.resolve(outDir, fileName)),
-      // TODO: how to know the file was invalidated?
+      // chunks cannot be invalidated manually
       invalidate: false,
     }
     // TODO: this should be done in rolldown, there is already a function for it

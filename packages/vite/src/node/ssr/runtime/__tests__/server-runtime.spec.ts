@@ -721,7 +721,7 @@ describe('full-reload during close', () => {
 })
 
 describe('server.fs check', async () => {
-  const it = await createModuleRunnerTester({
+  it.override('config', {
     server: {
       fs: {
         allow: [resolve(import.meta.dirname, './fixtures/circular')],
