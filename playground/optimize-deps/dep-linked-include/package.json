@@ -1,7 +1,7 @@
 {
   "name": "@vitejs/test-dep-linked-include",
-  "version": "0.0.0",
   "private": true,
+  "version": "0.0.0",
   "main": "index.mjs",
   "dependencies": {
     "react": "19.2.5"

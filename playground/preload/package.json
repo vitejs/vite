@@ -1,7 +1,7 @@
 {
   "name": "@vitejs/test-preload",
-  "version": "0.0.0",
   "private": true,
+  "version": "0.0.0",
   "type": "module",
   "scripts": {
     "dev": "vite",
@@ -18,8 +18,8 @@
     "preview:preload-disabled": "vite preview --config vite.config-preload-disabled.js"
   },
   "devDependencies": {
+    "terser": "^5.46.2",
     "@vitejs/test-dep-a": "file:./dep-a",
-    "@vitejs/test-dep-including-a": "file:./dep-including-a",
-    "terser": "^5.46.2"
+    "@vitejs/test-dep-including-a": "file:./dep-including-a"
   }
 }

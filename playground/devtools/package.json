@@ -1,7 +1,7 @@
 {
   "name": "@vitejs/test-devtools",
-  "version": "0.0.0",
   "private": true,
+  "version": "0.0.0",
   "type": "module",
   "scripts": {
     "dev": "vite",
@@ -13,7 +13,7 @@
     "vue": "^3.5.33"
   },
   "devDependencies": {
-    "@vitejs/devtools": "^0.1.15",
-    "vite": "workspace:*"
+    "vite": "workspace:*",
+    "@vitejs/devtools": "^0.1.18"
   }
 }

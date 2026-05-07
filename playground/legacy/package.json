@@ -1,7 +1,7 @@
 {
   "name": "@vitejs/test-legacy",
-  "version": "0.0.0",
   "private": true,
+  "version": "0.0.0",
   "type": "module",
   "scripts": {
     "dev": "vite",
@@ -15,9 +15,9 @@
     "preview": "vite preview"
   },
   "devDependencies": {
+    "vite": "workspace:*",
     "@vitejs/plugin-legacy": "workspace:*",
     "express": "^5.2.1",
-    "terser": "^5.46.2",
-    "vite": "workspace:*"
+    "terser": "^5.46.2"
   }
 }

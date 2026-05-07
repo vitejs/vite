@@ -1,7 +1,7 @@
 {
   "name": "@vitejs/test-json",
-  "version": "0.0.0",
   "private": true,
+  "version": "0.0.0",
   "type": "module",
   "scripts": {
     "dev": "vite",
@@ -10,8 +10,8 @@
     "preview": "vite preview"
   },
   "devDependencies": {
-    "@vitejs/test-json-module": "file:./json-module",
     "@vitejs/test-json-require": "file:./dep-json-require",
+    "@vitejs/test-json-module": "file:./json-module",
     "vue": "^3.5.33"
   }
 }

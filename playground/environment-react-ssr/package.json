@@ -1,7 +1,7 @@
 {
   "name": "@vitejs/test-environment-react-ssr",
-  "version": "0.0.0",
   "private": true,
+  "version": "0.0.0",
   "type": "module",
   "scripts": {
     "dev": "vite",
@@ -12,8 +12,8 @@
     "@types/react": "^19.2.14",
     "@types/react-dom": "^19.2.3",
     "react": "^19.2.5",
-    "react-dom": "^19.2.5",
     "react-fake-client": "npm:react@^19.2.5",
-    "react-fake-server": "npm:react@^19.2.5"
+    "react-fake-server": "npm:react@^19.2.5",
+    "react-dom": "^19.2.5"
   }
 }

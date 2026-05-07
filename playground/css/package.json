@@ -1,11 +1,8 @@
 {
   "name": "@vitejs/test-css",
-  "version": "0.0.0",
   "private": true,
+  "version": "0.0.0",
   "type": "module",
-  "imports": {
-    "#imports": "./imports-field.css"
-  },
   "scripts": {
     "dev": "vite",
     "build": "vite build",
@@ -31,5 +28,8 @@
     "stylus": "^0.64.0",
     "sugarss": "^5.0.1",
     "tinyglobby": "^0.2.16"
+  },
+  "imports": {
+    "#imports": "./imports-field.css"
   }
 }

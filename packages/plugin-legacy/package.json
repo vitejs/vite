@@ -1,28 +1,18 @@
 {
   "name": "@vitejs/plugin-legacy",
   "version": "8.0.1",
-  "keywords": [
-    "@vitejs/plugin-legacy",
-    "frontend",
-    "vite",
-    "vite-plugin"
-  ],
-  "homepage": "https://github.com/vitejs/vite/tree/main/packages/plugin-legacy#readme",
-  "bugs": {
-    "url": "https://github.com/vitejs/vite/issues"
-  },
+  "type": "module",
   "license": "MIT",
   "author": "Evan You",
-  "repository": {
-    "type": "git",
-    "url": "git+https://github.com/vitejs/vite.git",
-    "directory": "packages/plugin-legacy"
-  },
-  "funding": "https://github.com/vitejs/vite?sponsor=1",
   "files": [
     "dist"
   ],
-  "type": "module",
+  "keywords": [
+    "frontend",
+    "vite",
+    "vite-plugin",
+    "@vitejs/plugin-legacy"
+  ],
   "exports": "./dist/index.js",
   "scripts": {
     "dev": "tsdown --watch",
@@ -30,6 +20,19 @@
     "typecheck": "tsc",
     "prepublishOnly": "npm run build"
   },
+  "engines": {
+    "node": "^20.19.0 || >=22.12.0"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/vitejs/vite.git",
+    "directory": "packages/plugin-legacy"
+  },
+  "bugs": {
+    "url": "https://github.com/vitejs/vite/issues"
+  },
+  "homepage": "https://github.com/vitejs/vite/tree/main/packages/plugin-legacy#readme",
+  "funding": "https://github.com/vitejs/vite?sponsor=1",
   "dependencies": {
     "@babel/core": "^7.29.0",
     "@babel/plugin-transform-dynamic-import": "^7.27.1",
@@ -44,18 +47,15 @@
     "regenerator-runtime": "^0.14.1",
     "systemjs": "^6.15.1"
   },
+  "peerDependencies": {
+    "terser": "^5.16.0",
+    "vite": "^8.0.0"
+  },
   "devDependencies": {
     "acorn": "^8.16.0",
     "picocolors": "^1.1.1",
     "tsdown": "^0.21.10",
     "vite": "workspace:*"
-  },
-  "peerDependencies": {
-    "terser": "^5.16.0",
-    "vite": "^8.0.0"
-  },
-  "engines": {
-    "node": "^20.19.0 || >=22.12.0"
   },
   "compatiblePackages": {
     "schemaVersion": 1,

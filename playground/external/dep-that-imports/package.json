@@ -1,7 +1,7 @@
 {
   "name": "@vitejs/test-dep-that-imports",
-  "version": "0.0.0",
   "private": true,
+  "version": "0.0.0",
   "dependencies": {
     "slash3": "npm:slash@^3.0.0",
     "slash5": "npm:slash@^5.1.0",

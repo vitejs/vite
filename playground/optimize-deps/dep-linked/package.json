@@ -1,7 +1,7 @@
 {
   "name": "@vitejs/test-dep-linked",
-  "version": "0.0.0",
   "private": true,
+  "version": "0.0.0",
   "type": "module",
   "main": "index.js",
   "dependencies": {
