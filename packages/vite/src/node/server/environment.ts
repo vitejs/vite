@@ -161,7 +161,7 @@ export class DevEnvironment extends BaseEnvironment {
 
     this.hot.on(
       'vite:invalidate',
-      async ({ path, message, firstInvalidatedBy }, client) => {
+      ({ path, message, firstInvalidatedBy }, client) => {
         this.invalidateModule(
           {
             path,
@@ -401,7 +401,7 @@ function setupOnCrawlEnd(): CrawlEndFinder {
       callCrawlEndIfIdleAfterMs,
     )
   }
-  async function callOnCrawlEndWhenIdle() {
+  function callOnCrawlEndWhenIdle() {
     if (cancelled || registeredIds.size > 0) return
     onCrawlEndPromiseWithResolvers.resolve()
   }

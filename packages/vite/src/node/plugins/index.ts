@@ -50,7 +50,7 @@ export async function resolvePlugins(
   const isBundled = config.isBundled
   const isWorker = config.isWorker
   const buildPlugins = isBundled
-    ? await (await import('../build')).resolveBuildPlugins(config)
+    ? (await import('../build')).resolveBuildPlugins(config)
     : { pre: [], post: [] }
   const devtoolsIntegrationPlugin =
     config.devtools.enabled && !isWorker

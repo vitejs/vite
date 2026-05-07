@@ -43,10 +43,10 @@ export async function ssrTransform(
   return ssrTransformScript(code, inMap, url, originalCode)
 }
 
-async function ssrTransformJSON(
+function ssrTransformJSON(
   code: string,
   inMap: SourceMap | { mappings: '' } | null,
-): Promise<TransformResult> {
+): TransformResult {
   return {
     code: code.replace('export default', `${ssrModuleExportsKey}.default =`),
     map: inMap,
