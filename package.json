@@ -1,19 +1,22 @@
 {
   "name": "@vitejs/vite-monorepo",
   "private": true,
-  "keywords": [
-    "build-tool",
-    "dev-server",
-    "frontend",
-    "hmr",
-    "vite"
-  ],
+  "type": "module",
+  "engines": {
+    "node": "^20.19.0 || >=22.12.0"
+  },
   "homepage": "https://vite.dev/",
   "repository": {
     "type": "git",
     "url": "git+https://github.com/vitejs/vite.git"
   },
-  "type": "module",
+  "keywords": [
+    "frontend",
+    "hmr",
+    "dev-server",
+    "build-tool",
+    "vite"
+  ],
   "scripts": {
     "preinstall": "npx only-allow pnpm",
     "postinstall": "simple-git-hooks",
@@ -61,7 +64,7 @@
     "oxfmt": "^0.46.0",
     "picocolors": "^1.1.1",
     "playwright-chromium": "^1.59.1",
-    "rolldown": "1.0.0-rc.17",
+    "rolldown": "1.0.0-rc.18",
     "rollup": "^4.59.0",
     "simple-git-hooks": "^2.13.1",
     "tsx": "^4.21.0",
@@ -86,9 +89,6 @@
     "playground/**/__tests__/**/*.ts": [
       "eslint --cache --fix --concurrency auto"
     ]
-  },
-  "engines": {
-    "node": "^20.19.0 || >=22.12.0"
   },
   "packageManager": "pnpm@10.33.2",
   "stackblitz": {
