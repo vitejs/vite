@@ -241,6 +241,78 @@ describe('resolveEsbuildTranspileOptions', () => {
       },
     })
   })
+
+  describe('destructuring workaround for safari/ios (esbuild#4436)', () => {
+    const workaroundNeededTargets = [
+      'safari10',
+      'safari12.1',
+      'safari14.0',
+      'ios10',
+      'ios12.2',
+      'ios14',
+      'ios14.4',
+      ['chrome87', 'safari14'],
+    ]
+    const workaroundNotNeededTargets = [
+      'safari9',
+      'safari14.1',
+      'safari14.2',
+      'safari15',
+      'safari16',
+      'ios9',
+      'ios14.5',
+      'ios15',
+      'es2020',
+      'chrome87',
+    ]
+
+    test('sets supported.destructuring=true for necessary targets', () => {
+      for (const target of workaroundNeededTargets) {
+        const options = resolveEsbuildTranspileOptions(
+          defineResolvedConfig({
+            build: { target, minify: false },
+          }),
+          'es',
+        )
+        expect(options?.supported).toStrictEqual(
+          expect.objectContaining({
+            destructuring: true,
+          }),
+        )
+      }
+    })
+
+    test('does not set supported.destructuring=true for unnecessary targets', () => {
+      for (const target of workaroundNotNeededTargets) {
+        const options = resolveEsbuildTranspileOptions(
+          defineResolvedConfig({
+            build: { target, minify: false },
+          }),
+          'es',
+        )
+        expect(options?.supported).toStrictEqual(
+          expect.not.objectContaining({
+            destructuring: true,
+          }),
+        )
+      }
+    })
+
+    test('user override wins over auto-set destructuring', () => {
+      const options = resolveEsbuildTranspileOptions(
+        defineResolvedConfig({
+          build: { target: 'safari14', minify: false },
+          esbuild: { supported: { destructuring: false } },
+        }),
+        'es',
+      )
+      expect(options?.supported).toEqual({
+        'dynamic-import': true,
+        'import-meta': true,
+        destructuring: false,
+      })
+    })
+  })
 })
 
 describe('transformWithEsbuild', () => {
