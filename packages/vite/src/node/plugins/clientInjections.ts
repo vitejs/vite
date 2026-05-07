@@ -37,7 +37,7 @@ export function clientInjectionsPlugin(config: ResolvedConfig): Plugin {
     async buildStart() {
       injectConfigValues = await createClientConfigValueReplacer(config)
     },
-    async transform(code, id) {
+    transform(code, id) {
       const ssr = this.environment.config.consumer === 'server'
       const cleanId = cleanUrl(id)
       if (cleanId === normalizedClientEntry || cleanId === normalizedEnvEntry) {
@@ -50,7 +50,7 @@ export function clientInjectionsPlugin(config: ResolvedConfig): Plugin {
         const nodeEnv =
           this.environment.config.define?.['process.env.NODE_ENV'] ||
           JSON.stringify(process.env.NODE_ENV || config.mode)
-        return await replaceDefine(this.environment, code, id, {
+        return replaceDefine(this.environment, code, id, {
           'process.env.NODE_ENV': nodeEnv,
           'global.process.env.NODE_ENV': nodeEnv,
           'globalThis.process.env.NODE_ENV': nodeEnv,
