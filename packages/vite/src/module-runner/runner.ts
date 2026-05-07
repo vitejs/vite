@@ -108,7 +108,14 @@ export class ModuleRunner {
       this.hmrClient = new HMRClient(
         resolvedHmrLogger,
         this.transport,
-        ({ acceptedPath }) => this.import(acceptedPath),
+        async ({ acceptedPath, url }) => {
+          if (this.rolldownDevRuntime && url) {
+            return this.import(url).then(() =>
+              this.rolldownDevRuntimeProxy.loadExports(acceptedPath),
+            )
+          }
+          this.import(acceptedPath)
+        },
       )
       if (!this.transport.connect) {
         throw new Error(

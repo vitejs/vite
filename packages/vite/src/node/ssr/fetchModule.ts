@@ -249,6 +249,9 @@ function resolveEntryFilename(
   environment: FullBundleDevEnvironment,
   url: string,
 ) {
+  if (environment.memoryFiles.has(url)) {
+    return url
+  }
   // Already resolved by the user to be a url
   if (environment.facadeToChunk.has(url)) {
     return environment.facadeToChunk.get(url)
