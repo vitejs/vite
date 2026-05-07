@@ -94,7 +94,7 @@
     "@types/escape-html": "^1.0.4",
     "@types/pnpapi": "^0.0.5",
     "@vitest/utils": "4.1.5",
-    "@vitejs/devtools": "^0.1.15",
+    "@vitejs/devtools": "^0.1.18",
     "artichokie": "^0.4.3",
     "baseline-browser-mapping": "^2.10.23",
     "cac": "^7.0.0",
@@ -140,7 +140,7 @@
   },
   "peerDependencies": {
     "@types/node": "^20.19.0 || >=22.12.0",
-    "@vitejs/devtools": "^0.1.0",
+    "@vitejs/devtools": "^0.1.18",
     "esbuild": "^0.27.0 || ^0.28.0",
     "jiti": ">=1.21.0",
     "less": "^4.0.0",

@@ -2075,11 +2075,6 @@ export async function resolveConfig(
       resolved.build.ssrEmitAssets || resolved.build.emitAssets
   }
 
-  // Enable `rolldownOptions.devtools` if devtools is enabled
-  if (resolved.devtools.enabled) {
-    resolved.build.rolldownOptions.devtools ??= {}
-  }
-
   applyDepOptimizationOptionCompat(resolved)
   await setOptimizeDepsPluginNames(resolved)
 

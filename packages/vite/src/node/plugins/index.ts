@@ -1,4 +1,5 @@
 import aliasPlugin, { type ResolverFunction } from '@rollup/plugin-alias'
+import colors from 'picocolors'
 import type { ObjectHook } from 'rolldown'
 import {
   viteAliasPlugin as nativeAliasPlugin,
@@ -51,6 +52,10 @@ export async function resolvePlugins(
   const buildPlugins = isBundled
     ? await (await import('../build')).resolveBuildPlugins(config)
     : { pre: [], post: [] }
+  const devtoolsIntegrationPlugin =
+    config.devtools.enabled && !isWorker
+      ? await loadDevToolsIntegrationPlugin(config)
+      : null
   const { modulePreload } = config.build
 
   return [
@@ -121,6 +126,7 @@ export async function resolvePlugins(
     ...postPlugins,
 
     ...buildPlugins.post,
+    devtoolsIntegrationPlugin,
 
     // internal server-only plugins are always applied after everything else
     ...(isBundled
@@ -131,6 +137,23 @@ export async function resolvePlugins(
           importAnalysisPlugin(config),
         ]),
   ].filter(Boolean) as Plugin[]
+}
+
+async function loadDevToolsIntegrationPlugin(
+  config: ResolvedConfig,
+): Promise<Plugin | null> {
+  try {
+    const { DevToolsIntegration } = await import('@vitejs/devtools/integration')
+    return DevToolsIntegration({ config })
+  } catch (error: any) {
+    config.logger.error(
+      colors.red(
+        `Failed to load Vite DevTools integration: ${error?.message || error?.stack}`,
+      ),
+      { error },
+    )
+    return null
+  }
 }
 
 export function createPluginHookUtils(

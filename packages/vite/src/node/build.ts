@@ -1847,14 +1847,15 @@ export async function createBuilder(
       return output
     },
     async runDevTools() {
-      const devtoolsConfig = config.devtools
-      if (devtoolsConfig.enabled) {
+      if (config.devtools.enabled) {
         try {
-          const { start } = await import(`@vitejs/devtools/cli-commands`)
-          await start(devtoolsConfig.config)
+          const { runDevTools } = await import('@vitejs/devtools/integration')
+          await runDevTools(builder)
         } catch (e) {
           config.logger.error(
-            colors.red(`Failed to run Vite DevTools: ${e.message || e.stack}`),
+            colors.red(
+              `Failed to run Vite DevTools: ${e?.message || e?.stack}`,
+            ),
             { error: e },
           )
         }
