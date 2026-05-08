@@ -631,12 +631,7 @@ export { ErrorOverlay }
 declare const DevRuntime: typeof DevRuntimeType
 
 if (isBundleMode && typeof DevRuntime !== 'undefined') {
-  const clientId = crypto.randomUUID()
   class ViteDevRuntime extends DevRuntime {
-    constructor(messenger: Messenger) {
-      super(messenger, clientId)
-    }
-
     override createModuleHotContext(moduleId: string) {
       const ctx = createHotContext(moduleId)
       // @ts-expect-error TODO: support CSS properly
@@ -648,6 +643,8 @@ if (isBundleMode && typeof DevRuntime !== 'undefined') {
       // noop, handled in the HMR client
     }
   }
+
+  const clientId = nanoid()
 
   // notify client id
   transport.send({
@@ -673,7 +670,6 @@ if (isBundleMode && typeof DevRuntime !== 'undefined') {
       }
     },
   }
-  const clientId = nanoid()
   ;(globalThis as any).__rolldown_runtime__ ??= new ViteDevRuntime(
     wrappedSocket,
     clientId,
