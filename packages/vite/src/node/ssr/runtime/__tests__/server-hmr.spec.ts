@@ -1,4 +1,4 @@
-import { describe, expect } from 'vitest'
+import { describe, expect, onTestFinished } from 'vitest'
 import { createModuleRunnerTester } from './utils'
 
 describe(
@@ -45,6 +45,9 @@ describe(
       testGlobal.__vite_ssr_hmr_reexport_race__ = {
         wait: () => Promise.resolve(),
       }
+      onTestFinished(() => {
+        delete testGlobal.__vite_ssr_hmr_reexport_race__
+      })
 
       await runner.import('/fixtures/hmr-reexport-race/entry-a.js')
       await runner.import('/fixtures/hmr-reexport-race/entry-b.js')
@@ -129,8 +132,6 @@ describe(
       expect(hmrListeners.has('/fixtures/hmr-reexport-race/entry-b.js')).toBe(
         true,
       )
-
-      delete testGlobal.__vite_ssr_hmr_reexport_race__
     })
   },
   process.env.CI ? 50_00 : 5_000,
