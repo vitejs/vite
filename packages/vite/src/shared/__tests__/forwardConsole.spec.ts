@@ -1,5 +1,17 @@
-import { describe, expect, test } from 'vitest'
-import { formatConsoleArgs } from '../forwardConsole'
+import { afterEach, describe, expect, test, vi } from 'vitest'
+import {
+  formatConsoleArgs,
+  setupForwardConsoleHandler,
+} from '../forwardConsole'
+
+afterEach(() => {
+  vi.restoreAllMocks()
+  vi.unstubAllGlobals()
+})
+
+function waitForUnhandledRejectionCheck() {
+  return new Promise((resolve) => setTimeout(resolve, 0))
+}
 
 describe('formatConsoleArgs', () => {
   test('formats placeholders', () => {
@@ -57,5 +69,77 @@ describe('formatConsoleArgs', () => {
     ).toMatchInlineSnapshot(
       `"1n undefined true Symbol(s) [Function: sampleFn] Error: boom {"ok":true,"big":"2n","err":{"name":"Error","message":"nested"},"self":"[Circular]"}"`,
     )
+  })
+})
+
+describe('setupForwardConsoleHandler', () => {
+  test('swallows transport errors while forwarding unhandled rejections', async () => {
+    const transport = {
+      send: vi
+        .fn()
+        .mockRejectedValue(new Error('send was called before connect')),
+    }
+    const unhandledRejections: unknown[] = []
+    const onUnhandledRejection = (reason: unknown) => {
+      unhandledRejections.push(reason)
+    }
+    process.on('unhandledRejection', onUnhandledRejection)
+
+    try {
+      const window = new EventTarget()
+      vi.stubGlobal('window', window)
+      setupForwardConsoleHandler(transport as any, {
+        enabled: true,
+        unhandledErrors: true,
+        logLevels: [],
+      })
+
+      const event = new Event('unhandledrejection') as Event & {
+        reason: unknown
+      }
+      Object.defineProperty(event, 'reason', {
+        value: new Error('original rejection'),
+      })
+      window.dispatchEvent(event)
+
+      await waitForUnhandledRejectionCheck()
+
+      expect(transport.send).toHaveBeenCalledTimes(1)
+      expect(unhandledRejections).toEqual([])
+    } finally {
+      process.off('unhandledRejection', onUnhandledRejection)
+    }
+  })
+
+  test('swallows transport errors while forwarding console logs', async () => {
+    const consoleDebug = vi.spyOn(console, 'debug').mockImplementation(() => {})
+    const transport = {
+      send: vi
+        .fn()
+        .mockRejectedValue(new Error('send was called before connect')),
+    }
+    const unhandledRejections: unknown[] = []
+    const onUnhandledRejection = (reason: unknown) => {
+      unhandledRejections.push(reason)
+    }
+    process.on('unhandledRejection', onUnhandledRejection)
+
+    try {
+      setupForwardConsoleHandler(transport as any, {
+        enabled: true,
+        unhandledErrors: false,
+        logLevels: ['debug'],
+      })
+
+      console.debug('after disconnect')
+
+      await waitForUnhandledRejectionCheck()
+
+      expect(consoleDebug).toHaveBeenCalledWith('after disconnect')
+      expect(transport.send).toHaveBeenCalledTimes(1)
+      expect(unhandledRejections).toEqual([])
+    } finally {
+      process.off('unhandledRejection', onUnhandledRejection)
+    }
   })
 })

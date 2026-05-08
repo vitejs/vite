@@ -28,32 +28,37 @@ export function setupForwardConsoleHandler(
     return
   }
 
+  function sendForwardConsolePayload(data: ForwardConsolePayload) {
+    transport
+      .send({
+        type: 'custom',
+        event: 'vite:forward-console',
+        data,
+      })
+      .catch(() => {
+        // Ignore forwarding failures, e.g. when the WebSocket was disconnected.
+        // Re-throwing here would trigger `unhandledrejection` and recurse.
+      })
+  }
+
   function sendError(type: 'error' | 'unhandled-rejection', error: any) {
-    transport.send({
-      type: 'custom',
-      event: 'vite:forward-console',
+    sendForwardConsolePayload({
+      type,
       data: {
-        type,
-        data: {
-          name: error?.name || 'Unknown Error',
-          message: error?.message || String(error),
-          stack: error?.stack,
-        },
-      } satisfies ForwardConsolePayload,
+        name: error?.name || 'Unknown Error',
+        message: error?.message || String(error),
+        stack: error?.stack,
+      },
     })
   }
 
   function sendLog(level: ForwardConsoleLogLevel, args: unknown[]) {
-    transport.send({
-      type: 'custom',
-      event: 'vite:forward-console',
+    sendForwardConsolePayload({
+      type: 'log',
       data: {
-        type: 'log',
-        data: {
-          level,
-          message: formatConsoleArgs(args),
-        },
-      } satisfies ForwardConsolePayload,
+        level,
+        message: formatConsoleArgs(args),
+      },
     })
   }
 
