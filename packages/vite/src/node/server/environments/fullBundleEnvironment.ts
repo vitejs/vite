@@ -60,6 +60,7 @@ export class MemoryFiles {
 
 export class FullBundleDevEnvironment extends DevEnvironment {
   private devEngine!: DevEngine
+  private initialBuildCompleted = false
   private clients = new Clients()
   private invalidateCalledModules = new Map<
     NormalizedHotChannelClient,
@@ -183,6 +184,7 @@ export class FullBundleDevEnvironment extends DevEnvironment {
     this.waitForInitialBuildFinish().then(() => {
       debug?.('INITIAL: build done')
       this.hot.send({ type: 'full-reload', path: '*' })
+      this.initialBuildCompleted = true
     })
   }
 
@@ -259,7 +261,9 @@ export class FullBundleDevEnvironment extends DevEnvironment {
   async triggerBundleRegenerationIfStale(): Promise<boolean> {
     const bundleState = await this.devEngine.getBundleState()
     const shouldTrigger =
-      bundleState.hasStaleOutput && !bundleState.lastFullBuildFailed
+      bundleState.hasStaleOutput &&
+      !bundleState.lastFullBuildFailed &&
+      this.initialBuildCompleted
     if (shouldTrigger) {
       this.devEngine.ensureLatestBuildOutput().then(() => {
         this.debouncedFullReload()
@@ -285,6 +289,7 @@ export class FullBundleDevEnvironment extends DevEnvironment {
   override async close(): Promise<void> {
     this.memoryFiles.clear()
     await Promise.all([super.close(), this.devEngine.close()])
+    this.initialBuildCompleted = false
   }
 
   private async getRolldownOptions() {
