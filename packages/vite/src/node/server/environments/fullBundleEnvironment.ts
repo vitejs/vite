@@ -292,6 +292,7 @@ export class FullBundleDevEnvironment extends DevEnvironment {
     const rolldownOptions = resolveRolldownOptions(this, chunkMetadataMap)
     rolldownOptions.experimental ??= {}
     rolldownOptions.experimental.devMode = {
+      lazy: true,
       ...(typeof rolldownOptions.experimental.devMode === 'object'
         ? rolldownOptions.experimental.devMode
         : {}),
