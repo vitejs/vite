@@ -1,5 +1,5 @@
 {
-  "include": ["src"],
+  "include": ["tsdown.config.ts", "src"],
   "exclude": ["**/*.spec.ts"],
   "compilerOptions": {
     "outDir": "dist",
@@ -10,9 +10,7 @@
     "isolatedDeclarations": true,
     "declaration": true,
     "sourceMap": true,
-    "noUnusedLocals": true,
-    "paths": {
-      "vite": ["../vite/src/node/index.js"]
-    }
+    "skipLibCheck": true,
+    "noUnusedLocals": true
   }
 }

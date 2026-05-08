@@ -17,6 +17,7 @@
   "scripts": {
     "dev": "tsdown --watch",
     "build": "tsdown",
+    "typecheck": "tsc",
     "prepublishOnly": "npm run build"
   },
   "engines": {
@@ -35,8 +36,8 @@
   "dependencies": {
     "@babel/core": "^7.29.0",
     "@babel/plugin-transform-dynamic-import": "^7.27.1",
-    "@babel/plugin-transform-modules-systemjs": "^7.29.0",
-    "@babel/preset-env": "^7.29.2",
+    "@babel/plugin-transform-modules-systemjs": "^7.29.4",
+    "@babel/preset-env": "^7.29.5",
     "babel-plugin-polyfill-corejs3": "^0.14.2",
     "babel-plugin-polyfill-regenerator": "^0.6.8",
     "browserslist": "^4.28.2",
@@ -53,7 +54,7 @@
   "devDependencies": {
     "acorn": "^8.16.0",
     "picocolors": "^1.1.1",
-    "tsdown": "^0.21.7",
+    "tsdown": "^0.21.10",
     "vite": "workspace:*"
   },
   "compatiblePackages": {

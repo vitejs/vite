@@ -540,7 +540,7 @@ export function createDepsOptimizer(
     })
   }
 
-  async function rerun() {
+  function rerun() {
     // debounce time to wait for new missing deps finished, issue a new
     // optimization of deps (both old and newly found) once the previous
     // optimizeDeps processing is finished
