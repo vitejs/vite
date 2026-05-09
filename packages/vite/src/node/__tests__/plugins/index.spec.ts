@@ -1,7 +1,13 @@
 import { RUNTIME_MODULE_ID } from 'rolldown'
 import { exactRegex } from 'rolldown/filter'
 import { afterAll, describe, expect, test, vi } from 'vitest'
-import { type InlineConfig, type Plugin, build, createServer } from '../..'
+import {
+  type InlineConfig,
+  type Plugin,
+  build,
+  createServer,
+  resolveConfig,
+} from '../..'
 
 const getConfigWithPlugin = (
   plugins: Plugin[],
@@ -166,4 +172,44 @@ describe('hook filter with build', async () => {
       any,
     )
   })
+})
+
+test('build uses the JS alias plugin for resolve.alias', async () => {
+  const config = await resolveConfig(
+    {
+      configFile: false,
+      resolve: {
+        alias: {
+          '@': '/src',
+        },
+      },
+    },
+    'build',
+  )
+
+  expect(config.plugins.some((plugin) => plugin.name === 'alias')).toBe(true)
+  expect(
+    config.plugins.some((plugin) => plugin.name === 'builtin:vite-alias'),
+  ).toBe(false)
+})
+
+test('bundled dev keeps the native alias plugin for resolve.alias', async () => {
+  const config = await resolveConfig(
+    {
+      configFile: false,
+      experimental: {
+        bundledDev: true,
+      },
+      resolve: {
+        alias: {
+          '@': '/src',
+        },
+      },
+    },
+    'serve',
+  )
+
+  expect(
+    config.plugins.some((plugin) => plugin.name === 'builtin:vite-alias'),
+  ).toBe(true)
 })

@@ -49,6 +49,10 @@ export async function resolvePlugins(
   const isBuild = config.command === 'build'
   const isBundled = config.isBundled
   const isWorker = config.isWorker
+  // Build keeps the JS alias plugin to preserve Vite resolver semantics in
+  // programmatic build hosts; bundled dev can still use the native alias plugin.
+  const useNativeAliasPlugin =
+    isBundled && !isBuild && !config.resolve.alias.some((v) => v.customResolver)
   const buildPlugins = isBundled
     ? (await import('../build')).resolveBuildPlugins(config)
     : { pre: [], post: [] }
@@ -62,7 +66,7 @@ export async function resolvePlugins(
     !isBundled ? optimizedDepsPlugin() : null,
     !isWorker ? watchPackageDataPlugin(config.packageCache) : null,
     !isBundled ? preAliasPlugin(config) : null,
-    isBundled && !config.resolve.alias.some((v) => v.customResolver)
+    useNativeAliasPlugin
       ? nativeAliasPlugin({
           entries: config.resolve.alias.map((item) => {
             return {
