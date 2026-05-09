@@ -51,12 +51,12 @@
     "@vitejs/test-dep-lodash.clonedeep": "file:./dep-lodash-clonedeep",
     "@vitejs/test-dep-lodash-es": "file:./dep-lodash-es",
     "@vitejs/test-nested-exclude": "file:./nested-exclude",
-    "phoenix": "^1.8.5",
-    "react": "^19.2.5",
-    "react-dom": "^19.2.5",
+    "phoenix": "^1.8.7",
+    "react": "^19.2.6",
+    "react-dom": "^19.2.6",
     "@vitejs/test-resolve-linked": "workspace:0.0.0",
     "url": "^0.11.4",
-    "vue": "^3.5.33",
+    "vue": "^3.5.34",
     "vuex": "^4.1.0"
   }
 }

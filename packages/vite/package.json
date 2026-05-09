@@ -1,6 +1,6 @@
 {
   "name": "vite",
-  "version": "8.0.10",
+  "version": "8.0.11",
   "type": "module",
   "license": "MIT",
   "author": "Evan You",
@@ -75,15 +75,15 @@
   "dependencies": {
     "lightningcss": "^1.32.0",
     "picomatch": "^4.0.4",
-    "postcss": "^8.5.12",
-    "rolldown": "1.0.0-rc.17",
+    "postcss": "^8.5.14",
+    "rolldown": "1.0.0",
     "tinyglobby": "^0.2.16"
   },
   "optionalDependencies": {
     "fsevents": "~2.3.3"
   },
   "devDependencies": {
-    "@babel/parser": "^7.29.2",
+    "@babel/parser": "^7.29.3",
     "@jridgewell/remapping": "^2.3.5",
     "@jridgewell/trace-mapping": "^0.3.31",
     "@polka/compression": "^1.0.0-next.25",
@@ -94,9 +94,9 @@
     "@types/escape-html": "^1.0.4",
     "@types/pnpapi": "^0.0.5",
     "@vitest/utils": "4.1.5",
-    "@vitejs/devtools": "^0.1.15",
+    "@vitejs/devtools": "^0.1.19",
     "artichokie": "^0.4.3",
-    "baseline-browser-mapping": "^2.10.23",
+    "baseline-browser-mapping": "^2.10.27",
     "cac": "^7.0.0",
     "chokidar": "^3.6.0",
     "connect": "^3.7.0",
@@ -115,7 +115,7 @@
     "magic-string": "^0.30.21",
     "mlly": "^1.8.2",
     "mrmime": "^2.0.1",
-    "nanoid": "^5.1.9",
+    "nanoid": "^5.1.11",
     "obug": "^1.0.2",
     "open": "^10.2.0",
     "parse5": "^8.0.1",
@@ -127,7 +127,7 @@
     "postcss-modules": "^6.0.1",
     "premove": "^4.0.0",
     "resolve.exports": "^2.0.3",
-    "rolldown-plugin-dts": "^0.23.2",
+    "rolldown-plugin-dts": "^0.24.1",
     "rollup": "^4.59.0",
     "rollup-plugin-license": "^3.7.1",
     "sass": "^1.99.0",
@@ -135,12 +135,12 @@
     "sirv": "^3.0.2",
     "strip-literal": "^3.1.0",
     "terser": "^5.46.2",
-    "ufo": "^1.6.3",
+    "ufo": "^1.6.4",
     "ws": "^8.20.0"
   },
   "peerDependencies": {
     "@types/node": "^20.19.0 || >=22.12.0",
-    "@vitejs/devtools": "^0.1.0",
+    "@vitejs/devtools": "^0.1.18",
     "esbuild": "^0.27.0 || ^0.28.0",
     "jiti": ">=1.21.0",
     "less": "^4.0.0",
