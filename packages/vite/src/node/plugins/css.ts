@@ -1906,6 +1906,11 @@ async function finalizeCss(css: string, config: ResolvedConfig) {
   if (css.includes('@import') || css.includes('@charset')) {
     css = hoistAtRules(css)
   }
+  // Add @charset "UTF-8" if CSS contains non-ASCII characters and no charset is present
+  // to prevent encoding issues in browsers without explicit charset signals (#22381)
+  if (!css.includes('@charset') && /[^\x00-\x7F]/.test(css)) {
+    css = '@charset "UTF-8";\n' + css
+  }
   if (config.build.cssMinify) {
     css = await minifyCSS(css, config, false)
   }
