@@ -1215,11 +1215,11 @@ export async function resolveServerOptions(
   }
 
   let allowDirs = server.fs.allow
-  // running a command fails if cwd doesn't exist and root may not exist
-  // search for package root to find a path that exists
-  const cwd = searchForPackageRoot(root)
 
   if (process.versions.pnp) {
+    // running a command fails if cwd doesn't exist and root may not exist
+    // search for package root to find a path that exists
+    const cwd = searchForPackageRoot(root)
     try {
       const enableGlobalCache =
         execSync('yarn config get enableGlobalCache', { cwd })
@@ -1241,19 +1241,22 @@ export async function resolveServerOptions(
 
   // pnpm's global virtual store may place package files outside workspace root.
   // Try to include the global store path when enabled.
-  try {
-    const enableGlobalVirtualStore =
-      execSync('pnpm config get enableGlobalVirtualStore', { cwd })
-        .toString()
-        .trim() === 'true'
-    if (enableGlobalVirtualStore) {
-      const pnpmStoreDir = execSync('pnpm store path', { cwd })
-        .toString()
-        .trim()
-      allowDirs.push(pnpmStoreDir)
+  if (process.env.npm_config_user_agent?.includes('pnpm')) {
+    try {
+      const cwd = searchForPackageRoot(root)
+      const enableGlobalVirtualStore =
+        execSync('pnpm config get enableGlobalVirtualStore', { cwd })
+          .toString()
+          .trim() === 'true'
+      if (enableGlobalVirtualStore) {
+        const pnpmStoreDir = execSync('pnpm store path', { cwd })
+          .toString()
+          .trim()
+        allowDirs.push(pnpmStoreDir)
+      }
+    } catch {
+      // Ignore if pnpm isn't installed or config can't be resolved.
     }
-  } catch {
-    // Ignore if pnpm isn't installed or config can't be resolved.
   }
 
   allowDirs = allowDirs.map((i) => resolvedAllowDir(root, i))
