@@ -189,6 +189,7 @@ async function bundleWorkerEntry(
   await workerEnvironment.init()
 
   const chunkMetadataMap = new ChunkMetadataMap()
+  const workerBuildTarget = workerEnvironment.config.build.target
   const bundle = await rolldown({
     ...rollupOptions,
     input,
@@ -197,6 +198,10 @@ async function bundleWorkerEntry(
     ),
     onLog(level, log) {
       onRollupLog(level, log, workerEnvironment)
+    },
+    transform: {
+      target: workerBuildTarget === false ? undefined : workerBuildTarget,
+      ...rollupOptions.transform,
     },
     // TODO: remove this and enable rolldown's CSS support later
     moduleTypes: {

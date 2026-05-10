@@ -174,7 +174,7 @@ const FRAMEWORKS: Framework[] = [
         link: 'https://tanstack.com/router',
         color: cyan,
         customCommand:
-          'npm exec -- @tanstack/cli@latest create TARGET_DIR --interactive',
+          'npm exec -- @tanstack/cli@latest create TARGET_DIR --framework react --interactive',
       },
       {
         name: 'redwoodsdk-standard',
