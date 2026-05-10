@@ -1,5 +1,5 @@
 import { execSync } from 'node:child_process'
-import { beforeEach, describe, expect, test, vi } from 'vitest'
+import { afterEach, beforeEach, describe, expect, test, vi } from 'vitest'
 import { createLogger } from '../../logger'
 import { resolveServerOptions } from '../index'
 
@@ -13,9 +13,17 @@ vi.mock('node:child_process', async (importOriginal) => {
 
 describe('resolveServerOptions', () => {
   const execSyncMock = vi.mocked(execSync)
+  let originalUserAgent: string | undefined
 
   beforeEach(() => {
     execSyncMock.mockReset()
+    originalUserAgent = process.env.npm_config_user_agent
+    process.env.npm_config_user_agent =
+      'pnpm/9.0.0 npm/? node/v20.0.0 linux x64'
+  })
+
+  afterEach(() => {
+    process.env.npm_config_user_agent = originalUserAgent
   })
 
   test('adds pnpm store path when enableGlobalVirtualStore is true', async () => {
