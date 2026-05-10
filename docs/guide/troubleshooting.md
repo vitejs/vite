@@ -254,7 +254,7 @@ When you use a Node.js module in the browser, Vite will output the following war
 
 This is because Vite does not automatically polyfill Node.js modules.
 
-We recommend avoiding Node.js modules for browser code to reduce the bundle size, although you can add polyfills manually. If the module is imported from a third-party library (that's meant to be used in the browser), it's advised to report the issue to the respective library.
+We recommend avoiding Node.js modules for browser code to reduce the bundle size, although you can add polyfills manually using a plugin such as [vite-plugin-node-polyfills](https://github.com/davidmyersdev/vite-plugin-node-polyfills). If the module is imported from a third-party library (that's meant to be used in the browser), it's advised to report the issue to the respective library.
 
 ### Syntax Error / Type Error happens
 
