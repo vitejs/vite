@@ -1,3 +1,21 @@
+## <small>[8.0.12](https://github.com/vitejs/vite/compare/v8.0.11...v8.0.12) (2026-05-11)</small>
+### Features
+
+* update rolldown to 1.0.0 ([#22401](https://github.com/vitejs/vite/issues/22401)) ([cf0ff41](https://github.com/vitejs/vite/commit/cf0ff4154b26cffbf18541ade1a50818842731d3))
+
+### Bug Fixes
+
+* **create-vite:** pass react framework to TanStack CLI ([#22397](https://github.com/vitejs/vite/issues/22397)) ([18f0f90](https://github.com/vitejs/vite/commit/18f0f904442cc45bd4b1c83db2627fd5cb0c9937))
+* **deps:** update all non-major dependencies ([#22420](https://github.com/vitejs/vite/issues/22420)) ([2be6000](https://github.com/vitejs/vite/commit/2be6000130e3ae2160acc301baa4f7913fbc1f6e))
+* **module-runner:** prevent partial-exports race on concurrent imports of in-flight invalidated re-export chains ([#22369](https://github.com/vitejs/vite/issues/22369)) ([f5a22e6](https://github.com/vitejs/vite/commit/f5a22e62ada75286138b7ceb3825e43958ef00e1))
+* refer to `rolldownOptions` instead of deprecated `rollupOptions` in messages ([#22400](https://github.com/vitejs/vite/issues/22400)) ([b675c7b](https://github.com/vitejs/vite/commit/b675c7b6697423275ad9dd521d3ce7c8679761a0))
+* **worker:** apply `build.target` to worker bundle ([#22404](https://github.com/vitejs/vite/issues/22404)) ([3c93fde](https://github.com/vitejs/vite/commit/3c93fde21f07d44db7669ca7484f4e7a8767afe5))
+* **worker:** forward define to worker bundle transform ([#22408](https://github.com/vitejs/vite/issues/22408)) ([d4838a0](https://github.com/vitejs/vite/commit/d4838a0358d9f04a980d4d2ac7263f21a6b28ee2))
+
+### Miscellaneous Chores
+
+* **deps:** update dependency eslint-plugin-n to v18 ([#22423](https://github.com/vitejs/vite/issues/22423)) ([2fe7bd2](https://github.com/vitejs/vite/commit/2fe7bd2d73beb697a3d149e943ac74b768c9d27f))
+* **deps:** update rolldown-related dependencies ([#22421](https://github.com/vitejs/vite/issues/22421)) ([66b9eb3](https://github.com/vitejs/vite/commit/66b9eb35188007e0e9a1bd03b4be820016cad60b))
 ## <small>[8.0.11](https://github.com/vitejs/vite/compare/v8.0.10...v8.0.11) (2026-05-07)</small>
 ### Features
 
