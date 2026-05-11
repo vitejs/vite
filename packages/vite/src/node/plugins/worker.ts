@@ -202,6 +202,11 @@ async function bundleWorkerEntry(
     transform: {
       target: workerBuildTarget === false ? undefined : workerBuildTarget,
       ...rollupOptions.transform,
+      define: {
+        ...rollupOptions.transform?.define,
+        // disable builtin process.env.NODE_ENV replacement as it is handled by the define plugin
+        'process.env.NODE_ENV': 'process.env.NODE_ENV',
+      },
     },
     // TODO: remove this and enable rolldown's CSS support later
     moduleTypes: {
