@@ -56,7 +56,7 @@
     "@vitejs/release-scripts": "^1.7.0",
     "eslint": "^9.39.4",
     "eslint-plugin-import-x": "^4.16.2",
-    "eslint-plugin-n": "^17.24.0",
+    "eslint-plugin-n": "^18.0.1",
     "eslint-plugin-regexp": "^3.1.0",
     "execa": "^9.6.1",
     "globals": "^17.6.0",
