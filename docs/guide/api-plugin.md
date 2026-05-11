@@ -115,6 +115,7 @@ Module IDs passed to plugin hooks may include query parameters (e.g., `?raw`, `?
 If your plugin is transforming a specific file type (e.g., `.mdx`), it should check if the ID contains any of Vite's special query parameters before processing it. If it does, you should likely return `null` to let Vite's internal plugins handle it.
 
 Special query parameters include:
+
 - `?raw`: Load the asset as a string.
 - `?url`: Load the asset as a URL.
 - `?worker` / `?sharedworker`: Load the script as a Web Worker.
@@ -132,7 +133,7 @@ export default function myPlugin() {
         return null
       }
       // ... transform logic
-    }
+    },
   }
 }
 ```
