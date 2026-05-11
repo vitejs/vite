@@ -201,9 +201,9 @@ async function bundleWorkerEntry(
     },
     transform: {
       target: workerBuildTarget === false ? undefined : workerBuildTarget,
-      ...rollupOptions.transform,
+      ...rolldownOptions.transform,
       define: {
-        ...rollupOptions.transform?.define,
+        ...rolldownOptions.transform?.define,
         // disable builtin process.env.NODE_ENV replacement as it is handled by the define plugin
         'process.env.NODE_ENV': 'process.env.NODE_ENV',
       },
