@@ -16,14 +16,6 @@ import {
   serverLogs,
 } from '~utils'
 
-function createMapFileReader(moduleUrl: string) {
-  return async (filename: string): Promise<string> => {
-    const base = new URL(moduleUrl, page.url())
-    const res = await page.request.get(new URL(filename, base).href)
-    return res.text()
-  }
-}
-
 if (!isBuild) {
   test('js', async () => {
     const res = await page.request.get(new URL('./foo.js', page.url()).href)
@@ -184,7 +176,10 @@ if (!isBuild) {
     expect(depUrl).toContain('.vite/deps')
     const depRes = await page.request.get(new URL(depUrl, page.url()).href)
     const depJs = await depRes.text()
-    const map = await extractSourcemap(depJs, createMapFileReader(depUrl))
+    expect(depJs).toMatch(
+      /^\/\/# sourceMappingURL=data:application\/json;base64,/m,
+    )
+    const map = extractSourcemap(depJs)
     expect(map.sourcesContent).toBeDefined()
     expect(map.sourcesContent).not.toContainEqual(
       expect.stringContaining('defineConfig'),

@@ -411,6 +411,7 @@ function cleanUnnecessaryComments(chunk: OutputChunk) {
     .replace(consecutiveNewlinesRE, '\n\n')
 }
 
+// TODO [engine:node@>=24]: Switch to RegExp.escape
 const escapeRegexRE = /[-/\\^$*+?.()|[\]{}]/g
 function escapeRegex(str: string): string {
   return str.replace(escapeRegexRE, '\\$&')

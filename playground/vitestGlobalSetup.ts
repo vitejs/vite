@@ -42,6 +42,7 @@ export async function setup(project: TestProject): Promise<void> {
   const dedicatedCopyList: Record<string, string[]> = {
     assets: ['encoded-base', 'relative-base', 'runtime-base', 'url-base'],
     css: ['lightningcss'],
+    'js-sourcemap': ['downleveled-optimized-dep-transformed-again'],
     'transform-plugin': ['base'],
   }
   const cpPromises = []

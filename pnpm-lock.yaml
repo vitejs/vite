@@ -887,6 +887,12 @@ importers:
 
   playground/js-sourcemap:
     dependencies:
+      '@babel/core':
+        specifier: ^7.29.0
+        version: 7.29.0(ms@2.1.3)
+      '@jridgewell/trace-mapping':
+        specifier: ^0.3.31
+        version: 0.3.31
       '@vitejs/test-dep-malicious-sourcemap':
         specifier: file:dep-malicious-sourcemap
         version: file:playground/js-sourcemap/dep-malicious-sourcemap
@@ -899,6 +905,13 @@ importers:
       magic-string:
         specifier: ^0.30.21
         version: 0.30.21
+      oxc-parser:
+        specifier: ^0.126.0
+        version: 0.126.0
+
+  playground/js-sourcemap/__tests__/downleveled-optimized-dep-transformed-again/root/dep-class-field-sourcemap-babel: {}
+
+  playground/js-sourcemap/__tests__/downleveled-optimized-dep-transformed-again/root/dep-class-field-sourcemap-oxc: {}
 
   playground/js-sourcemap/dep-malicious-sourcemap: {}
 

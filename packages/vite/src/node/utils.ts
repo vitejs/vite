@@ -1615,6 +1615,7 @@ export function getPkgName(name: string): string | undefined {
   return name[0] === '@' ? name.split('/')[1] : name
 }
 
+// TODO [engine:node@>=24]: Switch to RegExp.escape
 const escapeRegexRE = /[-/\\^$*+?.()|[\]{}]/g
 export function escapeRegex(str: string): string {
   return str.replace(escapeRegexRE, '\\$&')
