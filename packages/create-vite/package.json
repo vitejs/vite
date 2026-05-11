@@ -38,6 +38,7 @@
     "@vercel/detect-agent": "^1.2.3",
     "cross-spawn": "^7.0.6",
     "mri": "^1.2.0",
-    "tsdown": "^0.21.10"
+    "tsdown": "^0.22.0",
+    "unrun": "^0.3.0"
   }
 }
