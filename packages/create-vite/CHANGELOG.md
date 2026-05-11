@@ -1,46 +1,24 @@
 ## <small>[9.0.7](https://github.com/vitejs/vite/compare/create-vite@9.0.6...create-vite@9.0.7) (2026-05-11)</small>
-### Features
-
-* update rolldown to 1.0.0 ([#22401](https://github.com/vitejs/vite/issues/22401)) ([cf0ff41](https://github.com/vitejs/vite/commit/cf0ff4154b26cffbf18541ade1a50818842731d3))
-* update rolldown to 1.0.0-rc.18 ([#22360](https://github.com/vitejs/vite/issues/22360)) ([3f80524](https://github.com/vitejs/vite/commit/3f80524aa1fa40bfa831f1a1bf2641c3979ba396))
-
 ### Bug Fixes
 
 * **create-vite:** pass react framework to TanStack CLI ([#22397](https://github.com/vitejs/vite/issues/22397)) ([18f0f90](https://github.com/vitejs/vite/commit/18f0f904442cc45bd4b1c83db2627fd5cb0c9937))
 * **deps:** update all non-major dependencies ([#22334](https://github.com/vitejs/vite/issues/22334)) ([672c962](https://github.com/vitejs/vite/commit/672c96288fd5440bbecddc65551e713edeb8d403))
 * **deps:** update all non-major dependencies ([#22382](https://github.com/vitejs/vite/issues/22382)) ([5c0cfcb](https://github.com/vitejs/vite/commit/5c0cfcb83dde2c6e25b6c3215dd622956bf29631))
 * **deps:** update all non-major dependencies ([#22420](https://github.com/vitejs/vite/issues/22420)) ([2be6000](https://github.com/vitejs/vite/commit/2be6000130e3ae2160acc301baa4f7913fbc1f6e))
-* **glob:** align hmr matcher options with glob enumeration ([#22306](https://github.com/vitejs/vite/issues/22306)) ([30028f9](https://github.com/vitejs/vite/commit/30028f94516fa06dd0212567373169b3b3f6e393))
-* make separate object instance for each environment ([#22276](https://github.com/vitejs/vite/issues/22276)) ([7c2aa3b](https://github.com/vitejs/vite/commit/7c2aa3b40ba00ce1299e4f31932c7929f179a80a))
-* **module-runner:** prevent partial-exports race on concurrent imports of in-flight invalidated re-export chains ([#22369](https://github.com/vitejs/vite/issues/22369)) ([f5a22e6](https://github.com/vitejs/vite/commit/f5a22e62ada75286138b7ceb3825e43958ef00e1))
-* refer to `rolldownOptions` instead of deprecated `rollupOptions` in messages ([#22400](https://github.com/vitejs/vite/issues/22400)) ([b675c7b](https://github.com/vitejs/vite/commit/b675c7b6697423275ad9dd521d3ce7c8679761a0))
-* **worker:** apply `build.target` to worker bundle ([#22404](https://github.com/vitejs/vite/issues/22404)) ([3c93fde](https://github.com/vitejs/vite/commit/3c93fde21f07d44db7669ca7484f4e7a8767afe5))
-* **worker:** forward define to worker bundle transform ([#22408](https://github.com/vitejs/vite/issues/22408)) ([d4838a0](https://github.com/vitejs/vite/commit/d4838a0358d9f04a980d4d2ac7263f21a6b28ee2))
 
 ### Documentation
 
 * **create-vite:** list react-compiler templates in README ([#22347](https://github.com/vitejs/vite/issues/22347)) ([7c3a61f](https://github.com/vitejs/vite/commit/7c3a61f42da6445904e93f0e29e9a2a838fa684a))
-* explain mergeConfig skips null/undefined ([#22325](https://github.com/vitejs/vite/issues/22325)) ([2151f70](https://github.com/vitejs/vite/commit/2151f701dc98270c905c540b209fb6d23d53d3ad))
-* mention native config loader in CLI options ([#22348](https://github.com/vitejs/vite/issues/22348)) ([0420c5d](https://github.com/vitejs/vite/commit/0420c5d37b6049476b6e6c16662be372575dd683))
-* update evan's x handle ([640202a](https://github.com/vitejs/vite/commit/640202a2167b0c19b94e4d3b8ff87309ae1f44d0))
 
 ### Miscellaneous Chores
 
-* **deps:** update dependency eslint-plugin-n to v18 ([#22423](https://github.com/vitejs/vite/issues/22423)) ([2fe7bd2](https://github.com/vitejs/vite/commit/2fe7bd2d73beb697a3d149e943ac74b768c9d27f))
 * **deps:** update dependency tsdown to ^0.21.10 ([#22333](https://github.com/vitejs/vite/issues/22333)) ([3b51e05](https://github.com/vitejs/vite/commit/3b51e050214c5a817c163838ab8643fe34c7d0c3))
-* **deps:** update rolldown-related dependencies ([#22383](https://github.com/vitejs/vite/issues/22383)) ([555ff36](https://github.com/vitejs/vite/commit/555ff36de70a43b3b3dc22f958bf78fe75e11d67))
 * **deps:** update rolldown-related dependencies ([#22421](https://github.com/vitejs/vite/issues/22421)) ([66b9eb3](https://github.com/vitejs/vite/commit/66b9eb35188007e0e9a1bd03b4be820016cad60b))
-* **deps:** update transitive packages to fix npm audit alerts ([#22316](https://github.com/vitejs/vite/issues/22316)) ([86aee62](https://github.com/vitejs/vite/commit/86aee6268aa879d74f68a890392c1dee973ebf05))
-
-### Code Refactoring
-
-* devtools integration ([#22312](https://github.com/vitejs/vite/issues/22312)) ([3c8bf06](https://github.com/vitejs/vite/commit/3c8bf064ec76e311f2d8be3a37dcfdcdd4e4253c))
-* remove unnecessary async ([#22296](https://github.com/vitejs/vite/issues/22296)) ([b31fd35](https://github.com/vitejs/vite/commit/b31fd355d93eb166573362bd09c07745b9f76755))
-* show direct path type in bad character warning ([#22339](https://github.com/vitejs/vite/issues/22339)) ([0c162e9](https://github.com/vitejs/vite/commit/0c162e96a6545c93808e7338b9adeca2636596fa))
 
 ### Tests
 
 * **create-vite:** use short help alias ([#22389](https://github.com/vitejs/vite/issues/22389)) ([994ab66](https://github.com/vitejs/vite/commit/994ab66bc4dc872278d8353d710ffc4bbd881f8d))
+
 ## <small>[9.0.6](https://github.com/vitejs/vite/compare/create-vite@9.0.5...create-vite@9.0.6) (2026-04-23)</small>
 ### Features
 
