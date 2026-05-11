@@ -14,6 +14,6 @@
   },
   "devDependencies": {
     "vite": "workspace:*",
-    "@vitejs/devtools": "^0.1.19"
+    "@vitejs/devtools": "^0.1.21"
   }
 }
