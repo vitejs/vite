@@ -179,7 +179,10 @@ importers:
         version: 1.2.0
       tsdown:
         specifier: ^0.22.0
-        version: 0.22.0(@vitejs/devtools@0.1.21)(publint@0.3.20)(tsx@4.21.0)(typescript@6.0.2)(vue-tsc@3.2.8)
+        version: 0.22.0(@vitejs/devtools@0.1.21)(publint@0.3.20)(tsx@4.21.0)(typescript@6.0.2)(unrun@0.3.0)(vue-tsc@3.2.8)
+      unrun:
+        specifier: ^0.3.0
+        version: 0.3.0
 
   packages/plugin-legacy:
     dependencies:
@@ -228,7 +231,10 @@ importers:
         version: 1.1.1
       tsdown:
         specifier: ^0.22.0
-        version: 0.22.0(@vitejs/devtools@0.1.21)(publint@0.3.20)(tsx@4.21.0)(typescript@6.0.2)(vue-tsc@3.2.8)
+        version: 0.22.0(@vitejs/devtools@0.1.21)(publint@0.3.20)(tsx@4.21.0)(typescript@6.0.2)(unrun@0.3.0)(vue-tsc@3.2.8)
+      unrun:
+        specifier: ^0.3.0
+        version: 0.3.0
       vite:
         specifier: workspace:*
         version: link:../vite
@@ -7986,6 +7992,16 @@ packages:
   unrs-resolver@1.11.1:
     resolution: {integrity: sha512-bSjt9pjaEBnNiGgc9rUiHGKv5l4/TGzDmYw3RhnkJGtLhbnnA/5qJj7x3dNDCRx/PJxu774LlH8lCOlB4hEfKg==}
 
+  unrun@0.3.0:
+    resolution: {integrity: sha512-5xw2AIVS2WR9Lqhz76qDIQLxipKRidf7Nq+Iz5SZ8shk1OmRlxnc6FyI/1Q2m99WLj6cbqaKFdESfWE99KPzlA==}
+    engines: {node: ^22.13.0 || >=24.0.0}
+    hasBin: true
+    peerDependencies:
+      synckit: ^0.11.11
+    peerDependenciesMeta:
+      synckit:
+        optional: true
+
   unstorage@1.17.5:
     resolution: {integrity: sha512-0i3iqvRfx29hkNntHyQvJTpf5W9dQ9ZadSoRU8+xVlhVtT7jAX57fazYO9EHvcRCfBCyi5YRya7XCDOsbTgkPg==}
     peerDependencies:
@@ -14424,7 +14440,7 @@ snapshots:
 
   ts-interface-checker@0.1.13: {}
 
-  tsdown@0.22.0(@vitejs/devtools@0.1.21)(publint@0.3.20)(tsx@4.21.0)(typescript@6.0.2)(vue-tsc@3.2.8):
+  tsdown@0.22.0(@vitejs/devtools@0.1.21)(publint@0.3.20)(tsx@4.21.0)(typescript@6.0.2)(unrun@0.3.0)(vue-tsc@3.2.8):
     dependencies:
       ansis: 4.2.0
       cac: 7.0.0
@@ -14446,6 +14462,7 @@ snapshots:
       publint: 0.3.20
       tsx: 4.21.0
       typescript: 6.0.2
+      unrun: 0.3.0
     transitivePeerDependencies:
       - '@ts-macro/tsc'
       - '@typescript/native-preview'
@@ -14614,6 +14631,10 @@ snapshots:
       '@unrs/resolver-binding-win32-arm64-msvc': 1.11.1
       '@unrs/resolver-binding-win32-ia32-msvc': 1.11.1
       '@unrs/resolver-binding-win32-x64-msvc': 1.11.1
+
+  unrun@0.3.0:
+    dependencies:
+      rolldown: 1.0.0
 
   unstorage@1.17.5:
     dependencies:
