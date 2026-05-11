@@ -364,7 +364,7 @@ describe('resolveBuildOutputs', () => {
     const resolveBuild = () => resolveBuildOutputs(outputs, libOptions, logger)
 
     expect(resolveBuild).toThrowError(
-      /Entries in "build\.rollupOptions\.output" must specify "name"/,
+      /Entries in "build\.rolldownOptions\.output" must specify "name"/,
     )
   })
 
@@ -375,7 +375,7 @@ describe('resolveBuildOutputs', () => {
     const resolveBuild = () => resolveBuildOutputs(outputs, libOptions, logger)
 
     expect(resolveBuild).toThrowError(
-      /Entries in "build\.rollupOptions\.output" must specify "name"/,
+      /Entries in "build\.rolldownOptions\.output" must specify "name"/,
     )
   })
 })
