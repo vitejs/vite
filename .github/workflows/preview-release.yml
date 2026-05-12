@@ -37,7 +37,7 @@ jobs:
           package-manager-cache: false
 
       - name: Disallow installation scripts
-        run: yq '.onlyBuiltDependencies = []' -i pnpm-workspace.yaml
+        run: yq '.allowBuilds[]=false' -i pnpm-workspace.yaml
 
       - name: Install deps
         run: pnpm install
