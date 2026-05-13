@@ -24,6 +24,8 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v6
+        with:
+          persist-credentials: false
 
       - name: Install pnpm
         uses: pnpm/action-setup@91ab88e2619ed1f46221f0ba42d1492c02baf788 # v6.0.6
@@ -52,4 +54,6 @@ jobs:
         working-directory: ./packages/plugin-legacy
         run: pnpm build
 
-      - run: pnpm dlx pkg-pr-new@0.0 publish --pnpm './packages/vite' './packages/plugin-legacy' --packageManager=pnpm,npm,yarn --commentWithDev
+      - name: Publish preview release
+        # zizmor: ignore[use-trusted-publishing]
+        run: pnpm dlx pkg-pr-new@0.0 publish --pnpm './packages/vite' './packages/plugin-legacy' --packageManager=pnpm,npm,yarn --commentWithDev
