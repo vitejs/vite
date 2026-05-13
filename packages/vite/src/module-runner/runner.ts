@@ -110,9 +110,23 @@ export class ModuleRunner {
         this.transport,
         async ({ acceptedPath, url }) => {
           if (this.rolldownDevRuntime && url) {
-            return this.import(url).then(() =>
+            const moduleExports = await this.import(url).then(() =>
               this.rolldownDevRuntimeProxy.loadExports(acceptedPath),
             )
+            // patch modules should just be executed
+            // don't leave them in memory
+            const patchModule = this.evaluatedModules.getModuleByUrl(url)
+            if (patchModule) {
+              this.evaluatedModules.invalidateModule(patchModule)
+            }
+            // TODO: need anything else?
+            // TODO: source maps are not incorrect?
+            const acceptedModule =
+              this.evaluatedModules.getModuleById(acceptedPath)
+            if (acceptedModule) {
+              acceptedModule.exports = moduleExports
+            }
+            return moduleExports
           }
           return this.import(acceptedPath)
         },
