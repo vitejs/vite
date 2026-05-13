@@ -44,9 +44,10 @@ When running in TTY, the CLI will start in interactive mode.
 
 Options:
   -t, --template NAME                   use a specific template
-  -i, --immediate                       install dependencies and start dev
+  -i, --immediate / --no-immediate      install dependencies and start dev
   --overwrite                           remove existing files if target directory is not empty
   --interactive / --no-interactive      force interactive / non-interactive mode
+  -h, --help                            display this help message
 
 Available templates:
 ${yellow    ('vanilla-ts          vanilla'       )}
