@@ -76,7 +76,7 @@
     "lightningcss": "^1.32.0",
     "picomatch": "^4.0.4",
     "postcss": "^8.5.14",
-    "rolldown": "1.0.0",
+    "rolldown": "1.0.1",
     "tinyglobby": "^0.2.16"
   },
   "optionalDependencies": {
