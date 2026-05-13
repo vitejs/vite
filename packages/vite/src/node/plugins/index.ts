@@ -60,9 +60,9 @@ export async function resolvePlugins(
   const { modulePreload } = config.build
 
   return [
-    onlyWhenUnbundled(optimizedDepsPlugin()),
+    optimizedDepsPlugin(),
     !isWorker ? watchPackageDataPlugin(config.packageCache) : null,
-    onlyWhenUnbundled(preAliasPlugin(config)),
+    preAliasPlugin(config),
     {
       ...aliasPlugin({
         // @ts-expect-error aliasPlugin receives rollup types
@@ -116,7 +116,14 @@ export async function resolvePlugins(
     cssPlugin(config),
     esbuildBannerFooterCompatPlugin(config),
     // @oxc-project/runtime resolution is handled by rolldown in build
-    config.oxc !== false ? onlyWhenUnbundled(oxcRuntimePlugin()) : null,
+    config.oxc !== false
+      ? ({
+          ...oxcRuntimePlugin(),
+          applyToEnvironment(environment) {
+            return !environment.config.isBundled
+          },
+        } satisfies Plugin)
+      : null,
     config.oxc !== false ? oxcPlugin(config) : null,
     nativeJsonPlugin({ ...config.json, minify: isBuild }),
     wasmHelperPlugin(),
@@ -131,7 +138,7 @@ export async function resolvePlugins(
     nativeWasmFallbackPlugin(),
     definePlugin(config),
     cssPostPlugin(config),
-    onlyWhenBundled(buildHtmlPlugin(config)),
+    buildHtmlPlugin(config),
     workerImportMetaUrlPlugin(config),
     assetImportMetaUrlPlugin(config),
     ...buildPlugins.pre,
@@ -144,38 +151,10 @@ export async function resolvePlugins(
     devtoolsIntegrationPlugin,
 
     // internal server-only plugins are always applied after everything else
-    onlyWhenUnbundled(clientInjectionsPlugin(config)),
-    onlyWhenUnbundled(cssAnalysisPlugin(config)),
-    onlyWhenUnbundled(importAnalysisPlugin(config)),
+    clientInjectionsPlugin(config),
+    cssAnalysisPlugin(config),
+    importAnalysisPlugin(config),
   ].filter(Boolean) as Plugin[]
-}
-
-function wrapWithIsBundledCheck(
-  plugin: Plugin | null | undefined | false,
-  expectBundled: boolean,
-): Plugin | null {
-  if (!plugin) return null
-  const originalApply = plugin.applyToEnvironment
-  const applyToEnvironment: Plugin['applyToEnvironment'] = (env) => {
-    if (env.config.isBundled !== expectBundled) return false
-    return originalApply ? originalApply(env) : true
-  }
-  return {
-    ...plugin,
-    applyToEnvironment,
-  }
-}
-
-function onlyWhenUnbundled(
-  plugin: Plugin | null | undefined | false,
-): Plugin | null {
-  return wrapWithIsBundledCheck(plugin, false)
-}
-
-function onlyWhenBundled(
-  plugin: Plugin | null | undefined | false,
-): Plugin | null {
-  return wrapWithIsBundledCheck(plugin, true)
 }
 
 async function loadDevToolsIntegrationPlugin(

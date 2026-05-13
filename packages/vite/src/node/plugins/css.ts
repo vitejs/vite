@@ -1175,6 +1175,10 @@ export function cssAnalysisPlugin(config: ResolvedConfig): Plugin {
   return {
     name: 'vite:css-analysis',
 
+    applyToEnvironment(environment) {
+      return !environment.config.isBundled
+    },
+
     transform: {
       filter: {
         id: {
