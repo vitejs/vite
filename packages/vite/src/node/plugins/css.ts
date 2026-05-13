@@ -564,7 +564,11 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
         const modulesCode =
           modules &&
           !inlined &&
-          dataToEsm(modules, { namedExports: true, preferConst: true, includeArbitraryNames: true })
+          dataToEsm(modules, {
+            namedExports: true,
+            preferConst: true,
+            includeArbitraryNames: true,
+          })
 
         if (config.command === 'serve') {
           const getContentWithSourcemap = async (content: string) => {
