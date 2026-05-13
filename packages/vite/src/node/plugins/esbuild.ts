@@ -385,13 +385,10 @@ export const injectEsbuildHelpers = (
   return esbuildCode
 }
 
-export const buildEsbuildPlugin = (config: ResolvedConfig): Plugin => {
+export const buildEsbuildPlugin = (): Plugin => {
   return {
     name: 'vite:esbuild-transpile',
     applyToEnvironment(environment) {
-      if (config.command !== 'build' && !environment.config.isBundled) {
-        return false
-      }
       return environment.config.esbuild !== false
     },
     async renderChunk(code, chunk, opts) {

@@ -527,8 +527,8 @@ export function resolveBuildPlugins(config: ResolvedConfig): {
     ],
     post: [
       ...(isBuild ? buildImportAnalysisPlugin(config) : []),
-      ...(config.build.minify === 'esbuild'
-        ? [buildEsbuildPlugin(config)]
+      ...(isBuild && config.build.minify === 'esbuild'
+        ? [buildEsbuildPlugin()]
         : []),
       ...(isBuild ? [terserPlugin(config)] : []),
       ...(isBuild && !config.isWorker
