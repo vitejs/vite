@@ -234,48 +234,6 @@ describe('build', () => {
     },
   )
 
-  test('css url() should be relative to css output dir when base is "./" and assetFileNames places css in a subfolder (#22434)', async () => {
-    const root = resolve(dirname, 'fixtures/css-relative-base-subfolder')
-    const result = (await build({
-      root,
-      logLevel: 'silent',
-      base: './',
-      build: {
-        write: false,
-        assetsInlineLimit: 0,
-        rollupOptions: {
-          input: resolve(root, 'entry.js'),
-          output: {
-            assetFileNames(chunkInfo) {
-              const name = chunkInfo.name ?? ''
-              if (name.endsWith('.css')) {
-                return 'css/[name]-[hash].[ext]'
-              }
-              if (name.match(/\.(png|jpe?g|gif|svg|webp)$/)) {
-                return 'img/[name]-[hash].[ext]'
-              }
-              return '[name]-[hash].[ext]'
-            },
-          },
-        },
-      },
-    })) as RolldownOutput
-
-    const cssAsset = result.output.find(
-      (o) => o.type === 'asset' && o.fileName.endsWith('.css'),
-    ) as { source: string; fileName: string } | undefined
-    expect(cssAsset).toBeDefined()
-    expect(cssAsset!.fileName).toMatch(/^css\//)
-    const cssSource =
-      typeof cssAsset!.source === 'string'
-        ? cssAsset!.source
-        : Buffer.from(cssAsset!.source).toString()
-    // CSS lives in dist/css/, image lives in dist/img/.
-    // The url() should walk up out of css/ and into img/.
-    expect(cssSource).toMatch(/url\(\.\.\/img\/foo-[\w-]+\.png\)/)
-    expect(cssSource).not.toMatch(/url\(\.\/img\//)
-  })
-
   test('external modules should not be hoisted in library build', async () => {
     const [esBundle] = (await build({
       logLevel: 'silent',

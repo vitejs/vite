@@ -491,10 +491,6 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
       return path.dirname(
         assetFileNames({
           type: 'asset',
-          // `name` and `originalFileName` are deprecated in rolldown but
-          // still populated for the real asset emit, so user-provided
-          // `assetFileNames` callbacks commonly read them. Pass them here
-          // too so this synthetic call matches what user code expects.
           name: cssAssetName,
           names: [cssAssetName],
           originalFileName,
