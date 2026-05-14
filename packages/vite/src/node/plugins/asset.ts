@@ -475,7 +475,7 @@ async function fileToBuiltUrl(
 
     if (
       environment.config.command === 'serve' &&
-      environment.config.experimental.bundledDev
+      environment.config.isBundled
     ) {
       const outputFilename = pluginContext.getFileName(referenceId)
       url = toOutputFilePathInJSForBundledDev(environment, outputFilename)

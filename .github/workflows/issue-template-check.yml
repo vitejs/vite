@@ -18,6 +18,8 @@ jobs:
       skip: ${{ steps.detect.outputs.skip }}
     steps:
       - uses: actions/checkout@v6
+        with:
+          persist-credentials: false
 
       - name: Detect issue type
         id: detect

@@ -1,0 +1,9 @@
+rules:
+  unpinned-uses:
+    config:
+      policies:
+        actions/*: ref-pin
+        github/*: ref-pin
+  cache-poisoning:
+    ignore:
+      - ci.yml # it is not used for publishing

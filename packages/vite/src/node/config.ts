@@ -303,6 +303,17 @@ export interface SharedEnvironmentOptions {
    * Optimize deps config
    */
   optimizeDeps?: DepOptimizationOptions
+  /**
+   * Whether this environment produces a bundled output.
+   *
+   * During `build`, this defaults to `true` for every environment.
+   * During `serve`, this defaults to `true` only for the client environment
+   * when `experimental.bundledDev` is enabled, and `false` otherwise.
+   * Setting this explicitly on an environment always overrides the default.
+   *
+   * @experimental
+   */
+  isBundled?: boolean
 }
 
 export interface EnvironmentOptions extends SharedEnvironmentOptions {
@@ -326,6 +337,7 @@ export type ResolvedEnvironmentOptions = {
   optimizeDeps: DepOptimizationOptions
   dev: ResolvedDevEnvironmentOptions
   build: ResolvedBuildEnvironmentOptions
+  isBundled: boolean
   plugins: readonly Plugin[]
   /** @internal */
   optimizeDepsPluginNames: string[]
@@ -568,7 +580,11 @@ export interface ExperimentalOptions {
    */
   hmrPartialAccept?: boolean
   /**
-   * Enable full bundle mode.
+   * Enable full bundle mode during `serve`.
+   *
+   * This seeds the default for the client environment's `isBundled` option.
+   * Other environments default to `false` during `serve`. Any environment
+   * can override its `isBundled` value via `environments[name].isBundled`.
    *
    * This is highly experimental.
    *
@@ -654,8 +670,6 @@ export interface ResolvedConfig extends Readonly<
     cacheDir: string
     command: 'build' | 'serve'
     mode: string
-    /** `true` when build or full-bundle mode dev */
-    isBundled: boolean
     isWorker: boolean
     // in nested worker bundle to find the main config
     /** @internal */
@@ -907,6 +921,7 @@ function resolveEnvironmentOptions(
   forceOptimizeDeps: boolean | undefined,
   logger: Logger,
   environmentName: string,
+  isBuild: boolean,
   isBundledDev: boolean,
   // Backward compatibility
   isSsrTargetWebworkerSet?: boolean,
@@ -917,6 +932,9 @@ function resolveEnvironmentOptions(
     options.consumer ?? (isClientEnvironment ? 'client' : 'server')
   const isSsrTargetWebworkerEnvironment =
     isSsrTargetWebworkerSet && environmentName === 'ssr'
+
+  const isBundled =
+    options.isBundled ?? (isBuild || (isClientEnvironment && isBundledDev))
 
   if (options.define?.['process.env']) {
     const processEnvDefine = options.define['process.env']
@@ -970,9 +988,10 @@ function resolveEnvironmentOptions(
       options.build ?? {},
       logger,
       consumer,
-      isBundledDev,
+      isBundled && !isBuild,
       isSsrTargetWebworkerEnvironment,
     ),
+    isBundled,
     plugins: undefined!, // to be resolved later
     // will be set by `setOptimizeDepsPluginNames` later
     optimizeDepsPluginNames: undefined!,
@@ -1608,6 +1627,7 @@ export async function resolveConfig(
       inlineConfig.forceOptimizeDeps,
       logger,
       environmentName,
+      isBuild,
       isBundledDev,
       config.ssr?.target === 'webworker',
       config.server?.preTransformRequests,
@@ -1900,7 +1920,6 @@ export async function resolveConfig(
     cacheDir,
     command,
     mode,
-    isBundled: config.experimental?.bundledDev || isBuild,
     isWorker: false,
     mainConfig: null,
     bundleChain: [],

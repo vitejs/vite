@@ -5,7 +5,7 @@ import colors from 'picocolors'
 import { type ImportSpecifier, init, parse } from 'es-module-lexer'
 import { viteWebWorkerPostPlugin as nativeWebWorkerPostPlugin } from 'rolldown/experimental'
 import type { ResolvedConfig } from '../config'
-import { type Plugin, perEnvironmentPlugin } from '../plugin'
+import type { Plugin } from '../plugin'
 import { ENV_ENTRY, ENV_PUBLIC_PATH } from '../constants'
 import {
   encodeURIPath,
@@ -325,20 +325,18 @@ export async function workerFileToUrl(
   return bundle
 }
 
-export function webWorkerPostPlugin(config: ResolvedConfig): Plugin {
-  if (config.isBundled) {
-    return perEnvironmentPlugin(
-      'native:web-worker-post-plugin',
-      (environment) => {
+export function webWorkerPostPlugin(_config: ResolvedConfig): Plugin {
+  return {
+    name: 'vite:worker-post',
+    applyToEnvironment(environment) {
+      if (environment.config.isBundled) {
         if (environment.config.worker.format === 'iife') {
           return nativeWebWorkerPostPlugin()
         }
-      },
-    )
-  }
-
-  return {
-    name: 'vite:worker-post',
+        return false
+      }
+      return true
+    },
     transform: {
       filter: {
         code: 'import.meta',
@@ -415,7 +413,8 @@ export function webWorkerPlugin(config: ResolvedConfig): Plugin {
         const { format } = config.worker
         const workerConstructor =
           workerMatch[1] === 'sharedworker' ? 'SharedWorker' : 'Worker'
-        const workerType = config.isBundled
+        const isBundled = this.environment.config.isBundled
+        const workerType = isBundled
           ? format === 'es'
             ? 'module'
             : 'classic'
@@ -426,7 +425,7 @@ export function webWorkerPlugin(config: ResolvedConfig): Plugin {
         }`
 
         let urlCode: string
-        if (config.isBundled) {
+        if (isBundled) {
           if (isWorker && config.bundleChain.at(-1) === cleanUrl(id)) {
             urlCode = 'self.location.href'
           } else if (inlineRE.test(id)) {
@@ -484,7 +483,7 @@ export function webWorkerPlugin(config: ResolvedConfig): Plugin {
             let url: string
             if (
               this.environment.config.command === 'serve' &&
-              this.environment.config.experimental.bundledDev
+              this.environment.config.isBundled
             ) {
               url = toOutputFilePathInJSForBundledDev(
                 this.environment,
@@ -543,7 +542,7 @@ export function webWorkerPlugin(config: ResolvedConfig): Plugin {
             const scriptPath = JSON.stringify(ENV_PUBLIC_PATH)
             injectEnv = `import ${scriptPath}\n`
           } else if (workerType === 'ignore') {
-            if (config.isBundled) {
+            if (this.environment.config.isBundled) {
               injectEnv = ''
             } else {
               // dynamic worker type we can't know how import the env

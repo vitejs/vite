@@ -430,6 +430,10 @@ export function buildHtmlPlugin(config: ResolvedConfig): Plugin {
   return {
     name: 'vite:build-html',
 
+    applyToEnvironment(environment) {
+      return environment.config.isBundled
+    },
+
     transform: {
       filter: { id: /\.html$/ },
       async handler(html, id) {
