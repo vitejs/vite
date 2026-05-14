@@ -1,14 +1,15 @@
 import type * as esbuild from 'esbuild'
 import { describe, expect, test } from 'vitest'
 import { convertEsbuildPluginToRolldownPlugin } from '../../optimizer/pluginConverter'
+import type { Plugin } from '../../plugin'
 
 type ConvertedPluginHooks = {
-  options(inputOptions: { plugins: []; platform: 'browser' }): Promise<void>
-  generateBundle(): void
+  options: Extract<Plugin['options'], Function>
+  generateBundle: Extract<Plugin['generateBundle'], Function>
 }
 
 describe('convertEsbuildPluginToRolldownPlugin', () => {
-  test('passes a valid build result to onEnd callbacks', async () => {
+  test('passes a BuildResult to onEnd callbacks', async () => {
     let buildResult: esbuild.BuildResult | undefined
 
     const plugin = convertEsbuildPluginToRolldownPlugin({
@@ -21,12 +22,10 @@ describe('convertEsbuildPluginToRolldownPlugin', () => {
       },
     }) as ConvertedPluginHooks
 
-    await plugin.options({ plugins: [], platform: 'browser' })
-    plugin.generateBundle()
+    await plugin.options.call({} as any, { plugins: [], platform: 'browser' })
+    await plugin.generateBundle.call({} as any, {} as any, {} as any, true)
 
     expect(buildResult).toEqual({
-      errors: [],
-      warnings: [],
       outputFiles: undefined,
       metafile: undefined,
       mangleCache: undefined,

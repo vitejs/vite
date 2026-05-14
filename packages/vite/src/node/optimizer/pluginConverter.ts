@@ -134,14 +134,22 @@ export function convertEsbuildPluginToRolldownPlugin(
         cb()
       }
     },
-    generateBundle() {
-      const buildResult = {
-        errors: [],
-        warnings: [],
-        outputFiles: undefined,
-        metafile: undefined,
-        mangleCache: undefined,
-      } satisfies esbuild.BuildResult
+    generateBundle(_outputOpts, _bundle, isWrite) {
+      const buildResult = new Proxy(
+        {
+          metafile: undefined,
+          mangleCache: undefined,
+          ...(isWrite ? { outputFiles: undefined } : {}),
+        } as esbuild.BuildResult,
+        {
+          get(_target, prop) {
+            if (prop in _target || typeof prop === 'symbol') {
+              return (_target as any)[prop]
+            }
+            throw new Error('Not implemented property: ' + prop)
+          },
+        },
+      )
       for (const cb of onEndCallbacks) {
         cb(buildResult)
       }
