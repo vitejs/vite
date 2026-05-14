@@ -19,8 +19,6 @@ test.runIf(isBuild)(
   'does not emit modulepreload links for legacy-only output',
   async () => {
     await page.goto(viteTestUrl + '/no-polyfills.html')
-    expect(await page.content()).not.toMatch(
-      /<link(?=[\s>])(?=[^>]+\srel=(['"])modulepreload\1)[^>]+>/,
-    )
+    expect(await page.content()).not.toContain('modulepreload')
   },
 )
