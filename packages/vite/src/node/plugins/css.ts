@@ -491,7 +491,9 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
       return path.dirname(
         assetFileNames({
           type: 'asset',
+          name: cssAssetName,
           names: [cssAssetName],
+          originalFileName,
           originalFileNames: originalFileName ? [originalFileName] : [],
           source: '/* vite internal call, ignore */',
         }),
