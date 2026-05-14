@@ -712,6 +712,16 @@ function isRefIdentifier(
     return false
   }
 
+  // label declaration or break/continue target
+  if (
+    (parent.type === 'LabeledStatement' ||
+      parent.type === 'BreakStatement' ||
+      parent.type === 'ContinueStatement') &&
+    parent.label === id
+  ) {
+    return false
+  }
+
   // meta property (e.g. import.meta)
   if (parent.type === 'MetaProperty') {
     return false
