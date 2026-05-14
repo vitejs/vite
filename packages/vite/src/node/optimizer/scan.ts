@@ -37,7 +37,7 @@ import { BaseEnvironment } from '../baseEnvironment'
 import type { DevEnvironment } from '../server/environment'
 import { transformGlobImport } from '../plugins/importMetaGlob'
 import { cleanUrl } from '../../shared/utils'
-import { type OxcOptions, getRollupJsxPresets } from '../plugins/oxc'
+import { getRollupJsxPresets } from '../plugins/oxc'
 
 export class ScanEnvironment extends BaseEnvironment {
   mode = 'scan' as const
@@ -253,9 +253,6 @@ async function prepareRolldownScanner(
   const { plugins: pluginsFromConfig = [], ...rolldownOptions } =
     environment.config.optimizeDeps.rolldownOptions ?? {}
 
-  const plugins = await asyncFlatten(arraify(pluginsFromConfig))
-  plugins.push(...rolldownScanPlugin(environment, deps, missing, entries))
-
   const transformOptions = deepClone(rolldownOptions.transform) ?? {}
   if (transformOptions.jsx === undefined) {
     transformOptions.jsx = {}
@@ -268,6 +265,19 @@ async function prepareRolldownScanner(
   if (typeof transformOptions.jsx === 'object') {
     transformOptions.jsx.development ??= !environment.config.isProduction
   }
+  const transformSyncJsxOptions: OxcTransformOptions['jsx'] =
+    transformOptions.jsx === false ? undefined : transformOptions.jsx
+
+  const plugins = await asyncFlatten(arraify(pluginsFromConfig))
+  plugins.push(
+    ...rolldownScanPlugin(
+      environment,
+      deps,
+      missing,
+      entries,
+      transformSyncJsxOptions,
+    ),
+  )
 
   async function build() {
     await scan({
@@ -329,25 +339,6 @@ async function globEntries(
 
 type Loader = 'js' | 'ts' | 'jsx' | 'tsx'
 
-function getOxcTransformOptions(
-  options: OxcOptions | false,
-): OxcTransformOptions {
-  if (!options) {
-    return {}
-  }
-
-  const {
-    jsxInject: _jsxInject,
-    include: _include,
-    exclude: _exclude,
-    jsxRefreshInclude: _jsxRefreshInclude,
-    jsxRefreshExclude: _jsxRefreshExclude,
-    ...transformOptions
-  } = options
-
-  return transformOptions
-}
-
 export const scriptRE: RegExp =
   /(<script(?:\s+[a-z_:][-\w:]*(?:\s*=\s*(?:"[^"]*"|'[^']*'|[^"'<>=\s]+))?)*\s*>)(.*?)<\/script>/gis
 export const commentRE: RegExp = /<!--.*?-->/gs
@@ -363,6 +354,7 @@ function rolldownScanPlugin(
   depImports: Record<string, string>,
   missing: Record<string, string>,
   entries: string[],
+  jsxOptions: OxcTransformOptions['jsx'],
 ): Plugin[] {
   const seen = new Map<string, string | undefined>()
   async function resolveId(
@@ -417,7 +409,7 @@ function rolldownScanPlugin(
     // transpile because `transformGlobImport` only expects js
     if (loader !== 'js') {
       const result = transformSync(id, contents, {
-        ...getOxcTransformOptions(environment.config.oxc),
+        ...(jsxOptions !== undefined ? { jsx: jsxOptions } : {}),
         lang: loader,
         tsconfig: false,
       })

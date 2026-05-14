@@ -175,7 +175,7 @@ test('scan jsx-runtime', async (ctx) => {
   expect(mod1).toBe(mod2)
 })
 
-test('scan import.meta.glob respects oxc jsx options', async (ctx) => {
+test('scan import.meta.glob respects rolldown transform jsx options', async (ctx) => {
   const server = await createServer({
     configFile: false,
     logLevel: 'error',
@@ -183,13 +183,21 @@ test('scan import.meta.glob respects oxc jsx options', async (ctx) => {
     oxc: {
       jsx: {
         runtime: 'automatic',
-        importSource: 'vue',
+        importSource: 'react',
       },
     },
     optimizeDeps: {
       force: true,
       noDiscovery: false,
       entries: ['./entry-glob-custom-oxc.tsx'],
+      rolldownOptions: {
+        transform: {
+          jsx: {
+            runtime: 'automatic',
+            importSource: 'vue',
+          },
+        },
+      },
     },
   })
   ctx.onTestFinished(() => server.close())
