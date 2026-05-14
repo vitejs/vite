@@ -512,18 +512,24 @@ export function resolveBuildPlugins(config: ResolvedConfig): {
       ...(isBuild && !config.isWorker ? [prepareOutDirPlugin()] : []),
       perEnvironmentPlugin(
         'vite:rollup-options-plugins',
-        async (environment) =>
-          (
+        async (environment) => {
+          if (!isBuild && !environment.config.isBundled) {
+            return false
+          }
+          return (
             await asyncFlatten(
               arraify(environment.config.build.rollupOptions.plugins),
             )
-          ).filter(Boolean) as Plugin[],
+          ).filter(Boolean) as Plugin[]
+        },
       ),
       ...(config.isWorker ? [webWorkerPostPlugin(config)] : []),
     ],
     post: [
       ...(isBuild ? buildImportAnalysisPlugin(config) : []),
-      ...(config.build.minify === 'esbuild' ? [buildEsbuildPlugin()] : []),
+      ...(isBuild && config.build.minify === 'esbuild'
+        ? [buildEsbuildPlugin()]
+        : []),
       ...(isBuild ? [terserPlugin(config)] : []),
       ...(isBuild && !config.isWorker
         ? [

@@ -594,7 +594,7 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
 
           const cssContent = await getContentWithSourcemap(css)
           const code = [
-            config.isBundled
+            this.environment.config.isBundled
               ? `const { updateStyle: __vite__updateStyle, removeStyle: __vite__removeStyle } = import.meta.hot._internal`
               : `import { updateStyle as __vite__updateStyle, removeStyle as __vite__removeStyle } from ${JSON.stringify(
                   path.posix.join(config.base, CLIENT_PUBLIC_PATH),
@@ -1174,6 +1174,10 @@ export function injectInlinedCSS(
 export function cssAnalysisPlugin(config: ResolvedConfig): Plugin {
   return {
     name: 'vite:css-analysis',
+
+    applyToEnvironment(environment) {
+      return !environment.config.isBundled
+    },
 
     transform: {
       filter: {

@@ -27,6 +27,9 @@ async function createDefinePluginTransform(
       )
       return result?.code || result
     } else {
+      const nativeDefinePlugin = await (
+        definePlugin(config) as any
+      ).applyToEnvironment(environment)
       const bundler = await rolldown({
         input: 'entry.js',
         plugins: [
@@ -45,9 +48,7 @@ async function createDefinePluginTransform(
           },
           {
             name: 'native:define',
-            options: (definePlugin(config).options! as any).bind({
-              environment,
-            }),
+            options: nativeDefinePlugin.options.bind({ environment }),
           },
         ],
         experimental: {
