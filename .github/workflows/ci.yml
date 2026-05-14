@@ -43,6 +43,7 @@ jobs:
         with:
           # Assume PRs are less than 50 commits
           fetch-depth: 50
+          persist-credentials: false
 
       - name: Get changed files
         id: changed-files
@@ -76,6 +77,8 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v6
+        with:
+          persist-credentials: false
 
       - name: Install pnpm
         uses: pnpm/action-setup@91ab88e2619ed1f46221f0ba42d1492c02baf788 # v6.0.6
@@ -149,6 +152,8 @@ jobs:
     name: "Lint: node-24, ubuntu-latest"
     steps:
       - uses: actions/checkout@v6
+        with:
+          persist-credentials: false
 
       - name: Install pnpm
         uses: pnpm/action-setup@91ab88e2619ed1f46221f0ba42d1492c02baf788 # v6.0.6

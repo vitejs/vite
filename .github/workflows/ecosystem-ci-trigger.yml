@@ -107,9 +107,11 @@ jobs:
       - name: Check Package Existence
         uses: actions/github-script@v9
         id: check-package
+        env:
+          PR_DATA: ${{ steps.get-pr-data.outputs.result }}
         with:
           script: |
-            const prData = ${{ steps.get-pr-data.outputs.result }}
+            const prData = JSON.parse(process.env.PR_DATA)
             const url = `https://pkg.pr.new/vite@${prData.commit}`
             const response = await fetch(url)
             console.log(`Package check URL: ${url}, Status: ${response.status}`)
