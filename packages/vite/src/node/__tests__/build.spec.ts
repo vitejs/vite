@@ -1187,6 +1187,29 @@ test('watch rebuild manifest', async (ctx) => {
   `)
 })
 
+test('copies public directory after building same environment with write false first', async (ctx) => {
+  const root = resolve(dirname, 'fixtures/public-dir-write-false')
+  ctx.onTestFinished(() =>
+    fsp.rm(resolve(root, 'dist'), { recursive: true, force: true }),
+  )
+
+  const builder = await createBuilder({
+    root,
+    configFile: false,
+    logLevel: 'silent',
+  })
+
+  builder.environments.client.config.build.write = false
+  await builder.build(builder.environments.client)
+
+  builder.environments.client.config.build.write = true
+  await builder.build(builder.environments.client)
+
+  await expect(
+    fsp.readFile(resolve(root, 'dist/favicon.svg'), 'utf-8'),
+  ).resolves.toBe('<svg></svg>')
+})
+
 /**
  * for each chunks in output1, if there's a chunk in output2 with the same fileName,
  * ensure that the chunk code is the same. if not, the chunk hash should have changed.
