@@ -2,6 +2,7 @@ import { describe, expect, test } from 'vitest'
 import type { ecmaVersion } from 'acorn'
 import { parse } from 'acorn'
 import {
+  createModernChunkLegacyGuard,
   detectModernBrowserCode,
   detectModernBrowserDetector,
   dynamicFallbackInlineCode,
@@ -59,4 +60,23 @@ describe('snippets are valid', () => {
       }).not.toThrow()
     })
   }
+})
+
+describe('createModernChunkLegacyGuard', () => {
+  // https://github.com/vitejs/vite/issues/22008
+  test('generates unique data URLs for different chunk filenames', () => {
+    const guard1 = createModernChunkLegacyGuard('assets/index-abc123.js')
+    const guard2 = createModernChunkLegacyGuard('assets/chunk-def456.js')
+    expect(guard1).not.toBe(guard2)
+  })
+
+  test('is valid JS', () => {
+    const guard = createModernChunkLegacyGuard('assets/index-abc123.js')
+    expect(() => {
+      parse(guard, {
+        ecmaVersion: 'latest',
+        sourceType: 'module',
+      })
+    }).not.toThrow()
+  })
 })

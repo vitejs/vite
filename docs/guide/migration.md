@@ -19,7 +19,7 @@ Vite 8 uses [Rolldown](https://rolldown.rs/) and [Oxc](https://oxc.rs/) based to
 
 ### Gradual Migration
 
-The `rolldown-vite` package implements Vite 7 with Rolldown, without other Vite 8 changes. This can be used as a intermediate step to migrate to Vite 8. See [the Rolldown Integration guide](https://v7.vite.dev/guide/rolldown) in the Vite 7 docs to switch to `rolldown-vite` from Vite 7.
+The `rolldown-vite` package implements Vite 7 with Rolldown, without other Vite 8 changes. This can be used as an intermediate step to migrate to Vite 8. See [the Rolldown Integration guide](https://v7.vite.dev/guide/rolldown) in the Vite 7 docs to switch to `rolldown-vite` from Vite 7.
 
 For users migrating from `rolldown-vite` to Vite 8, you can undo the dependency changes in `package.json` and update to Vite 8:
 
@@ -368,6 +368,8 @@ These breaking changes are expected to only affect a minority of use cases:
   - `renderDynamicImport` hook ([rolldown#4532](https://github.com/rolldown/rolldown/issues/4532))
   - `resolveFileUrl` hook
 - `parseAst` / `parseAstAsync` functions are now deprecated in favor of `parseSync` / `parse` functions which have more features.
+- comments are removed before the `renderChunk` hook instead of after the `renderChunk` hook
+- comments other than the ones listed [here](https://rolldown.rs/reference/OutputOptions.comments) are moved, while Rollup only removes comments if the adjacent code is removed
 
 ## Migration from v6
 

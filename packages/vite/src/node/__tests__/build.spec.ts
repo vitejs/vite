@@ -144,6 +144,33 @@ describe('build', () => {
     assertOutputHashContentChange(result[0], result[1])
   })
 
+  test('css entries with the same basename should not cross-link manifest assets', async () => {
+    const root = resolve(dirname, 'fixtures/css-entry-same-basename')
+    const result = (await build({
+      root,
+      logLevel: 'silent',
+      build: {
+        write: false,
+        manifest: true,
+        assetsInlineLimit: 0,
+        rollupOptions: {
+          input: [resolve(root, 'a/index.css'), resolve(root, 'b/index.css')],
+        },
+      },
+    })) as RolldownOutput
+
+    const manifest = JSON.parse(
+      (result.output.find((o) => o.fileName === '.vite/manifest.json') as any)
+        .source,
+    )
+    expect(manifest['a/index.css']).toMatchObject({
+      isEntry: true,
+    })
+    expect(manifest['b/index.css']).toMatchObject({
+      isEntry: true,
+    })
+  })
+
   test.for([
     [true, true],
     [true, false],
@@ -337,7 +364,7 @@ describe('resolveBuildOutputs', () => {
     const resolveBuild = () => resolveBuildOutputs(outputs, libOptions, logger)
 
     expect(resolveBuild).toThrowError(
-      /Entries in "build\.rollupOptions\.output" must specify "name"/,
+      /Entries in "build\.rolldownOptions\.output" must specify "name"/,
     )
   })
 
@@ -348,7 +375,7 @@ describe('resolveBuildOutputs', () => {
     const resolveBuild = () => resolveBuildOutputs(outputs, libOptions, logger)
 
     expect(resolveBuild).toThrowError(
-      /Entries in "build\.rollupOptions\.output" must specify "name"/,
+      /Entries in "build\.rolldownOptions\.output" must specify "name"/,
     )
   })
 })
@@ -675,7 +702,7 @@ describe('resolveBuildOutputs', () => {
     ).toEqual([{ name: 'A' }])
     expect(log.warn).toHaveBeenLastCalledWith(
       colors.yellow(
-        `"build.lib.formats" will be ignored because "build.rollupOptions.output" is already an array format.`,
+        `"build.lib.formats" will be ignored because "build.rolldownOptions.output" is already an array format.`,
       ),
     )
   })

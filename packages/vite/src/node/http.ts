@@ -229,7 +229,30 @@ export async function httpServerStart(
   for (let port = startPort; port <= MAX_PORT; port++) {
     // Pre-check port availability on wildcard addresses (0.0.0.0, ::)
     // so that we avoid conflicts with other servers listening on all interfaces
-    if (await isPortAvailable(port)) {
+    const portAvailableOnWildcard = await isPortAvailable(port)
+
+    // If port is not available on a wildcard address but strictPort is set,
+    // we still try binding directly before giving up.
+    if (strictPort) {
+      const result = await tryBindServer(httpServer, port, host)
+      if (result.success) {
+        if (!portAvailableOnWildcard) {
+          logger.warn(
+            colors.yellow(
+              `Port ${port} is in use on a wildcard address, but ${host ?? 'localhost'}:${port} is available. ` +
+                `There may be another server running on a wildcard IP on port ${port}.`,
+            ),
+          )
+        }
+        return port
+      }
+      if (result.error.code !== 'EADDRINUSE') {
+        throw result.error
+      }
+      throw new Error(`Port ${port} is already in use`)
+    }
+
+    if (portAvailableOnWildcard) {
       const result = await tryBindServer(httpServer, port, host)
       if (result.success) {
         return port
@@ -238,11 +261,6 @@ export async function httpServerStart(
         throw result.error
       }
     }
-
-    if (strictPort) {
-      throw new Error(`Port ${port} is already in use`)
-    }
-
     logger.info(`Port ${port} is in use, trying another one...`)
   }
   throw new Error(

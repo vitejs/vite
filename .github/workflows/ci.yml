@@ -43,10 +43,11 @@ jobs:
         with:
           # Assume PRs are less than 50 commits
           fetch-depth: 50
+          persist-credentials: false
 
       - name: Get changed files
         id: changed-files
-        uses: tj-actions/changed-files@22103cc46bda19c2b464ffe86db46df6922fd323 # v47.0.5
+        uses: tj-actions/changed-files@9426d40962ed5378910ee2e21d5f8c6fcbf2dd96 # v47.0.6
         with:
           files: |
             docs/**
@@ -76,9 +77,11 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v6
+        with:
+          persist-credentials: false
 
       - name: Install pnpm
-        uses: pnpm/action-setup@fc06bc1257f339d1d5d8b3a19a8cae5388b55320 # v5.0.0
+        uses: pnpm/action-setup@91ab88e2619ed1f46221f0ba42d1492c02baf788 # v6.0.6
 
       - name: Set node version to ${{ matrix.node_version }}
         uses: actions/setup-node@v6
@@ -149,9 +152,11 @@ jobs:
     name: "Lint: node-24, ubuntu-latest"
     steps:
       - uses: actions/checkout@v6
+        with:
+          persist-credentials: false
 
       - name: Install pnpm
-        uses: pnpm/action-setup@fc06bc1257f339d1d5d8b3a19a8cae5388b55320 # v5.0.0
+        uses: pnpm/action-setup@91ab88e2619ed1f46221f0ba42d1492c02baf788 # v6.0.6
 
       - name: Set node version to 24
         uses: actions/setup-node@v6
@@ -169,7 +174,7 @@ jobs:
         run: pnpm run lint
 
       - name: Check formatting
-        run: pnpm prettier --write --log-level=warn . && git diff --exit-code
+        run: pnpm format && git diff --exit-code
 
       - name: Typecheck
         run: pnpm run typecheck

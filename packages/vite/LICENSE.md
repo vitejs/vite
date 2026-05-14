@@ -1549,7 +1549,7 @@ Repository: https://github.com/jshttp/on-finished
 
 ## parse5
 License: MIT
-By: Ivan Nikulin, https://github.com/inikulin/parse5/graphs/contributors
+By: Ivan Nikulin, James Garbutt, Felix Boehm, Titus
 Repository: https://github.com/inikulin/parse5
 
 > Copyright (c) 2013-2019 Ivan Nikulin (ifaaan@gmail.com, https://github.com/inikulin)
