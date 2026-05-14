@@ -11,22 +11,13 @@
 * **css:** await sass/less/styl worker disposal on teardown (fix [#22274](https://github.com/vitejs/vite/issues/22274)) ([#22275](https://github.com/vitejs/vite/issues/22275)) ([b7edcb7](https://github.com/vitejs/vite/commit/b7edcb7d0dd17ddfeef4ace78d610c099216dade))
 * **css:** keep deprecated `name`/`originalFileName` in synthetic `assetFileNames` call ([#22439](https://github.com/vitejs/vite/issues/22439)) ([8e59c97](https://github.com/vitejs/vite/commit/8e59c97a44d923c4c06f67287a793c9aa5a4ebaa))
 * make `isBundled` per environment ([#22257](https://github.com/vitejs/vite/issues/22257)) ([a576326](https://github.com/vitejs/vite/commit/a5763266170f8606836da5c6f987b4b2fd6ddc55))
-* **plugin-legacy:** remove modulepreload links for legacy-only builds ([#22332](https://github.com/vitejs/vite/issues/22332)) ([f3a0bc9](https://github.com/vitejs/vite/commit/f3a0bc90bcc529a12a520469b9d0fb6fa751107c))
 * **ssr:** avoid rewriting labels that collide with imports ([#22451](https://github.com/vitejs/vite/issues/22451)) ([d9b18e0](https://github.com/vitejs/vite/commit/d9b18e0387a253628d3d834288e79c5f7e85d566))
-
-### Documentation
-
-* **create-vite:** add more flags to help output ([#22431](https://github.com/vitejs/vite/issues/22431)) ([7190cca](https://github.com/vitejs/vite/commit/7190cca9e02a873fa6b635145e04f318ed5f7bf4))
 
 ### Miscellaneous Chores
 
 * remove irrelevant commits from changelog ([#22430](https://github.com/vitejs/vite/issues/22430)) ([6ea3838](https://github.com/vitejs/vite/commit/6ea383859aaf0ef8e673b458f164e84aeb6ff51d))
 * update changelog ([#22413](https://github.com/vitejs/vite/issues/22413)) ([fcdc87c](https://github.com/vitejs/vite/commit/fcdc87cc6799857e2bab0f44f333a681694fff74))
 
-### Continuous Integration
-
-* add zizmor ([#22442](https://github.com/vitejs/vite/issues/22442)) ([d757558](https://github.com/vitejs/vite/commit/d7575583989f51c187fc209888b57ac5d20dade4))
-* set `allowBuilds` instead of `onlyBuiltDependencies` for disabling installation scripts before publishing ([#22436](https://github.com/vitejs/vite/issues/22436)) ([84b05b5](https://github.com/vitejs/vite/commit/84b05b5b0483bca1a7c918b383554aee201b877c))
 ## <small>[8.0.12](https://github.com/vitejs/vite/compare/v8.0.11...v8.0.12) (2026-05-11)</small>
 ### Features
 
