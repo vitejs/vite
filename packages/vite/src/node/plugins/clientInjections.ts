@@ -138,7 +138,6 @@ async function createClientConfigValueReplacer(
       .replace(`__HMR_ENABLE_OVERLAY__`, hmrEnableOverlayReplacement)
       .replace(`__HMR_CONFIG_NAME__`, hmrConfigNameReplacement)
       .replace(`__WS_TOKEN__`, wsTokenReplacement)
-      .replace(`__HMR_RUNTIME_ERRORS__`, hmrRuntimeErrorsReplacement)
       .replace(`__SERVER_FORWARD_CONSOLE__`, serverForwardConsoleReplacement)
       .replaceAll(`__BUNDLED_DEV__`, bundleDevReplacement)
       .replace(`__HMR_RUNTIME_ERRORS__`, hmrRuntimeErrorsReplacement)
