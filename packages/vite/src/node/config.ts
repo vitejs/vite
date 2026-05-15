@@ -6,6 +6,7 @@ import { inspect, promisify } from 'node:util'
 import { performance } from 'node:perf_hooks'
 import { createRequire } from 'node:module'
 import crypto from 'node:crypto'
+import { ignoreInput, ignoreOutput } from '@voidzero-dev/vite-task-client'
 import colors from 'picocolors'
 import picomatch from 'picomatch'
 import {
@@ -2573,6 +2574,16 @@ async function loadConfigFromBundledFile(
           throw e
         }
       }
+    }
+    if (nodeModulesDir) {
+      // When run inside Vite Task, the bundled config is written into
+      // `node_modules/.vite-temp/` and immediately imported back. Tell Vite
+      // Task to ignore that directory as both input and output so the
+      // read-write of this transient file doesn't poison the build cache.
+      // No-op outside Vite Task.
+      const viteTempDir = path.resolve(nodeModulesDir, '.vite-temp')
+      ignoreInput(viteTempDir)
+      ignoreOutput(viteTempDir)
     }
     const hash = `timestamp-${Date.now()}-${Math.random().toString(16).slice(2)}`
     const tempFileName = nodeModulesDir

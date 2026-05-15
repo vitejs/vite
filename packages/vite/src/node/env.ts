@@ -2,6 +2,7 @@ import fs from 'node:fs'
 import path from 'node:path'
 // eslint-disable-next-line n/no-unsupported-features/node-builtins -- our supported nodejs range supports `parseEnv` but in experimental state, which is fine
 import { parseEnv } from 'node:util'
+import { getEnvs } from '@voidzero-dev/vite-task-client'
 import { type DotenvPopulateInput, expand } from 'dotenv-expand'
 import colors from 'picocolors'
 import { arraify, createDebugger, normalizePath, tryStatSync } from './utils'
@@ -80,6 +81,17 @@ export function loadEnv(
     if (prefixes.some((prefix) => key.startsWith(prefix))) {
       env[key] = value
     }
+  }
+
+  // When run inside Vite Task, ask it for every env matching each prefix.
+  // Vite Task adds the glob and its match-set to the build's cache
+  // fingerprint, so adding/removing/changing a matching env invalidates the
+  // cache. `getEnvs` also populates `process.env` for names Vite Task knows
+  // about and that aren't already set, so the loop below picks them up
+  // alongside inline inherited envs. Outside Vite Task this is a no-op (the
+  // client cannot connect).
+  for (const prefix of prefixes) {
+    getEnvs(`${prefix}*`, { tracked: true })
   }
 
   // check if there are actual env variables starting with VITE_*

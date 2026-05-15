@@ -241,6 +241,9 @@ importers:
 
   packages/vite:
     dependencies:
+      '@voidzero-dev/vite-task-client':
+        specifier: github:voidzero-dev/vite-task#7ae2c7db6fa8562ff85d45ac66df97fbc6c69958
+        version: https://codeload.github.com/voidzero-dev/vite-task/tar.gz/7ae2c7db6fa8562ff85d45ac66df97fbc6c69958
       lightningcss:
         specifier: ^1.32.0
         version: 1.32.0
@@ -4738,6 +4741,10 @@ packages:
 
   '@vitest/utils@4.1.7':
     resolution: {integrity: sha512-T532WBu791cBxJlCl6SO+J14l81DQx6uQHm1bQbmCDY7nqlEIgkza/UFnSBNaUtSf41unldDFjdOBYEQC4b5Hw==}
+
+  '@voidzero-dev/vite-task-client@https://codeload.github.com/voidzero-dev/vite-task/tar.gz/7ae2c7db6fa8562ff85d45ac66df97fbc6c69958':
+    resolution: {gitHosted: true, integrity: sha512-9SGeE62S+17rFYpVL7SGG1UI656M1RidhUdYG5WAIfSUWenCV7vr1omgLCYENU0pDHW0i3FbphVz+72DMLAsGw==, tarball: https://codeload.github.com/voidzero-dev/vite-task/tar.gz/7ae2c7db6fa8562ff85d45ac66df97fbc6c69958}
+    version: 0.0.0
 
   '@voidzero-dev/vitepress-theme@4.8.4':
     resolution: {integrity: sha512-o7R2g9OPu5iLW3R4PNkj+JRSIncO8f1hTY0YvO13OMP/kytKUn8MLhy4kTvx+IMRSLeqrGfrBpze/OEPKzcLUQ==}
@@ -10896,6 +10903,8 @@ snapshots:
       '@vitest/pretty-format': 4.1.7
       convert-source-map: 2.0.0
       tinyrainbow: 3.1.0
+
+  '@voidzero-dev/vite-task-client@https://codeload.github.com/voidzero-dev/vite-task/tar.gz/7ae2c7db6fa8562ff85d45ac66df97fbc6c69958': {}
 
   '@voidzero-dev/vitepress-theme@4.8.4(focus-trap@8.0.1)(vite@packages+vite)(vitepress@2.0.0-alpha.17)(vue@3.5.34)':
     dependencies:

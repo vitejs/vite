@@ -73,6 +73,7 @@
   },
   "//": "READ CONTRIBUTING.md to understand what to put under deps vs. devDeps!",
   "dependencies": {
+    "@voidzero-dev/vite-task-client": "github:voidzero-dev/vite-task#7ae2c7db6fa8562ff85d45ac66df97fbc6c69958",
     "lightningcss": "^1.32.0",
     "picomatch": "^4.0.4",
     "postcss": "^8.5.15",

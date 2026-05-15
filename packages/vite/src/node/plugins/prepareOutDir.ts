@@ -1,5 +1,6 @@
 import fs from 'node:fs'
 import path from 'node:path'
+import { ignoreInput } from '@voidzero-dev/vite-task-client'
 import colors from 'picocolors'
 import type { Plugin } from '../plugin'
 import { getResolvedOutDirs, resolveEmptyOutDir } from '../watch'
@@ -51,6 +52,11 @@ function prepareOutDir(
   const { publicDir } = environment.config
   const outDirsArray = [...outDirs]
   for (const outDir of outDirs) {
+    // When run inside Vite Task, `emptyDir` below reads the entries of
+    // `outDir`. Without this, those reads would be recorded as build inputs
+    // and mix with the writes that follow, tripping Vite Task's read-write
+    // overlap check. No-op outside Vite Task.
+    ignoreInput(outDir)
     if (emptyOutDir !== false && fs.existsSync(outDir)) {
       // skip those other outDirs which are nested in current outDir
       const skipDirs = outDirsArray
