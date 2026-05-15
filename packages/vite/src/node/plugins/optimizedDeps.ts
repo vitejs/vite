@@ -51,7 +51,12 @@ export function optimizedDepsPlugin(): Plugin {
           : undefined
 
         // Search in both the currently optimized and newly discovered deps
-        const info = optimizedDepInfoFromFile(metadata, file)
+        let info = optimizedDepInfoFromFile(metadata, file)
+        if (!info && depsOptimizer.isProcessing?.()) {
+          await depsOptimizer.waitForProcessing?.()
+          metadata = depsOptimizer.metadata
+          info = optimizedDepInfoFromFile(metadata, file)
+        }
         if (info) {
           if (
             browserHash &&
@@ -84,18 +89,29 @@ export function optimizedDepsPlugin(): Plugin {
         // Load the file from the cache instead of waiting for other plugin
         // load hooks to avoid race conditions, once processing is resolved,
         // we are sure that the file has been properly save to disk
-        try {
-          return await fsp.readFile(file, 'utf-8')
-        } catch {
-          if (
-            browserHash &&
-            !environment.config.optimizeDeps.ignoreOutdatedRequests
-          ) {
-            // Outdated optimized files loaded after a rerun
-            throwOutdatedRequest(id)
+        const loadOptimizedDep = async (retryCount = 0): Promise<string> => {
+          try {
+            return await fsp.readFile(file, 'utf-8')
+          } catch (e: any) {
+            if (
+              e.code === 'ENOENT' &&
+              retryCount < 3 &&
+              depsOptimizer?.isProcessing?.() === false
+            ) {
+              await new Promise((r) => setTimeout(r, 10 * (retryCount + 1)))
+              return loadOptimizedDep(retryCount + 1)
+            }
+            if (
+              browserHash &&
+              !environment.config.optimizeDeps.ignoreOutdatedRequests
+            ) {
+              // Outdated optimized files loaded after a rerun
+              throwOutdatedRequest(id)
+            }
+            throwFileNotFoundInOptimizedDep(id)
           }
-          throwFileNotFoundInOptimizedDep(id)
         }
+        return loadOptimizedDep()
       }
     },
   }

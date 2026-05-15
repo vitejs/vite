@@ -59,6 +59,14 @@ export interface DepsOptimizer {
 
   metadata: DepOptimizationMetadata
   scanProcessing?: Promise<void>
+  /**
+   * @internal
+   */
+  isProcessing?: () => boolean
+  /**
+   * @internal
+   */
+  waitForProcessing?: () => Promise<void>
   registerMissingImport: (id: string, resolved: string) => OptimizedDepInfo
   run: () => void
 

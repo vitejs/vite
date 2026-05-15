@@ -65,6 +65,14 @@ export function createDepsOptimizer(
     isOptimizedDepUrl: createIsOptimizedDepUrl(environment),
     getOptimizedDepId: (depInfo: OptimizedDepInfo) =>
       `${depInfo.file}?v=${depInfo.browserHash}`,
+    isProcessing() {
+      return currentlyProcessing
+    },
+    async waitForProcessing() {
+      while (currentlyProcessing) {
+        await depOptimizationProcessing.promise
+      }
+    },
     close,
     options,
   }
