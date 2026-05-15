@@ -19,7 +19,10 @@ export function esbuildBannerFooterCompatPlugin(
   const { include, exclude, banner, footer } = options
   if (!banner && !footer) return
 
-  const filter = createFilter(include || /\.(m?ts|[jt]sx)$/, exclude || /\.js$/)
+  const filter = createFilter(
+    include || /\.([cm]?ts|[jt]sx)$/,
+    exclude || /\.js$/,
+  )
 
   return {
     name: 'vite:esbuild-banner-footer-compat',

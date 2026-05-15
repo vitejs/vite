@@ -153,4 +153,20 @@ describe('transformWithOxc', () => {
     )
     expect(result?.code).toContain('_decorateMetadata("design:type"')
   })
+
+  test('transforms .cts files as TypeScript', async () => {
+    const code = 'const foo: string = "bar"'
+    const result = await transformWithOxc(code, 'test.cts')
+    expect(result?.code).toBeTruthy()
+    // Should not contain type annotations after transformation
+    expect(result?.code).not.toContain(': string')
+  })
+
+  test('transforms .mts files as TypeScript', async () => {
+    const code = 'const foo: string = "bar"'
+    const result = await transformWithOxc(code, 'test.mts')
+    expect(result?.code).toBeTruthy()
+    // Should not contain type annotations after transformation
+    expect(result?.code).not.toContain(': string')
+  })
 })

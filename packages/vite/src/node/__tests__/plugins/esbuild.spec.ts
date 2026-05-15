@@ -308,6 +308,22 @@ describe('transformWithEsbuild', () => {
     )
   })
 
+  test('transforms .cts files as TypeScript', async () => {
+    const code = 'const foo: string = "bar"'
+    const result = await transformWithEsbuild(code, 'test.cts')
+    expect(result?.code).toBeTruthy()
+    // Should not contain type annotations after transformation
+    expect(result?.code).not.toContain(': string')
+  })
+
+  test('transforms .mts files as TypeScript', async () => {
+    const code = 'const foo: string = "bar"'
+    const result = await transformWithEsbuild(code, 'test.mts')
+    expect(result?.code).toBeTruthy()
+    // Should not contain type annotations after transformation
+    expect(result?.code).not.toContain(': string')
+  })
+
   describe('useDefineForClassFields', async () => {
     const transformClassCode = async (
       target: string,

@@ -218,7 +218,10 @@ export function oxcPlugin(config: ResolvedConfig): Plugin {
     ...oxcTransformOptions
   } = options
 
-  const filter = createFilter(include || /\.(m?ts|[jt]sx)$/, exclude || /\.js$/)
+  const filter = createFilter(
+    include || /\.([cm]?ts|[jt]sx)$/,
+    exclude || /\.js$/,
+  )
   const jsxRefreshFilter =
     jsxRefreshInclude || jsxRefreshExclude
       ? createFilter(jsxRefreshInclude, jsxRefreshExclude)
