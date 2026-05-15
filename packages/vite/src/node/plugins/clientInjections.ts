@@ -116,17 +116,13 @@ async function createClientConfigValueReplacer(
   const hmrEnableOverlayReplacement = escapeReplacement(overlay)
   const hmrConfigNameReplacement = escapeReplacement(hmrConfigName)
   const wsTokenReplacement = escapeReplacement(config.webSocketToken)
-  const hmrRuntimeErrorsReplacement =
-    typeof runtimeErrors === 'function'
-      ? () => runtimeErrors.toString()
-      : escapeReplacement(runtimeErrors)
+  const hmrRuntimeErrorsReplacement = escapeReplacement(runtimeErrors)
   const serverForwardConsoleReplacement = escapeReplacement(
     config.server.forwardConsole as any,
   )
   const bundleDevReplacement = escapeReplacement(
     config.experimental.bundledDev || false,
   )
-  const hmrRuntimeErrorsReplacement = escapeReplacement(runtimeErrors)
 
   return (code) =>
     code
