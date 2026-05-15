@@ -260,6 +260,20 @@ const createTemplate = (runtimeErrors: boolean) =>
     ),
   )
 
+// Runtime Errors Template
+export const createRuntimeToastTemplate = (): HTMLElement =>
+  h(
+    'div',
+    { class: 'runtime-toast', part: 'runtime-toast' },
+    h(
+      'div',
+      { class: 'error-info', part: 'error-info' },
+      h('span', { class: 'issue-text', part: 'issue-text' }),
+      h('span', { class: 'close-icon', part: 'close-icon' }, '✕'),
+    ),
+    h('style', {}, ToastTemplateStyle),
+  )
+
 const fileRE = /(?:file:\/\/)?(?:[a-zA-Z]:\\|\/).*?:\d+:\d+/g
 const codeframeRE = /^(?:>?\s*\d+\s+\|.*|\s+\|\s*\^.*)\r?\n/gm
 
