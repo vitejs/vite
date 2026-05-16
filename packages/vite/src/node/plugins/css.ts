@@ -363,8 +363,6 @@ export function cssPlugin(config: ResolvedConfig): Plugin {
       cssModulesCache.set(config, moduleCache)
 
       removedPureCssFilesCache.set(config, new Map<string, RenderedChunk>())
-      cssBundleSegmentsMap.set(config, new Map<string, CssBundleSegment[]>())
-
       preprocessorWorkerController = createPreprocessorWorkerController(
         normalizeMaxWorkers(config.css.preprocessorMaxWorkers),
       )
@@ -567,7 +565,7 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
       pureCssChunks = new Set<RenderedChunk>()
       hasEmitted = false
       chunkCSSMap = new Map()
-      cssBundleSegmentsMap.get(config)?.clear()
+      cssBundleSegmentsMap.set(config, new Map<string, CssBundleSegment[]>())
       codeSplitEmitQueue = createSerialPromiseQueue()
     },
 
@@ -735,11 +733,13 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
 
                 const style = styles.get(id)!
                 chunkCSS = (chunkCSS || '') + style
-                appendCssBundleSegment(
-                  chunkCssSegments,
-                  id,
-                  countCssLines(style),
-                )
+                if (!this.environment.config.build.cssCodeSplit) {
+                  appendCssBundleSegment(
+                    chunkCssSegments,
+                    id,
+                    countCssLines(style),
+                  )
+                }
               } else if (!isJsChunkEmpty) {
                 // if the module does not have a style, then it's not a pure css chunk.
                 // this is true because in the `transform` hook above, only modules
@@ -1009,9 +1009,11 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
                 // finalizeCss is called for the aggregated chunk in generateBundle
 
                 chunkCSSMap.set(chunk.fileName, chunkCSS)
-                cssBundleSegmentsMap
-                  .get(config)!
-                  .set(chunk.fileName, chunkCssSegments)
+                if (!this.environment.config.build.cssCodeSplit) {
+                  cssBundleSegmentsMap
+                    .get(config)!
+                    .set(chunk.fileName, chunkCssSegments)
+                }
               }
             }
 
