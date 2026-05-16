@@ -1584,7 +1584,7 @@ export function stripBase(path: string, base: string): string {
   return path.startsWith(devBase) ? path.slice(devBase.length - 1) : path
 }
 
-export function arrayEqual(a: any[], b: any[]): boolean {
+export function arrayEqual<T>(a: readonly T[], b: readonly T[]): boolean {
   if (a === b) return true
   if (a.length !== b.length) return false
   for (let i = 0; i < a.length; i++) {

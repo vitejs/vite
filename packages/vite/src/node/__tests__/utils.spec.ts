@@ -4,6 +4,7 @@ import crypto from 'node:crypto'
 import { describe, expect, test } from 'vitest'
 import { fileURLToPath } from 'mlly'
 import {
+  arrayEqual,
   asyncFlatten,
   bareImportRE,
   combineSourcemaps,
@@ -1093,5 +1094,37 @@ describe('resolveServerUrls', () => {
     )
 
     expect(result.local).toContain('https://localhost:3000/')
+  })
+})
+
+describe('arrayEqual', () => {
+  test('returns true for the same array reference', () => {
+    const a = [1, 2, 3]
+    expect(arrayEqual(a, a)).toBe(true)
+  })
+
+  test('returns true for two arrays with equal elements', () => {
+    expect(arrayEqual([1, 2, 3], [1, 2, 3])).toBe(true)
+    expect(arrayEqual(['a', 'b'], ['a', 'b'])).toBe(true)
+  })
+
+  test('returns false for arrays of different lengths', () => {
+    expect(arrayEqual([1, 2], [1, 2, 3])).toBe(false)
+    expect(arrayEqual([], [1])).toBe(false)
+  })
+
+  test('returns false when any element differs', () => {
+    expect(arrayEqual([1, 2, 3], [1, 2, 4])).toBe(false)
+    expect(arrayEqual(['a', 'b'], ['a', 'c'])).toBe(false)
+  })
+
+  test('uses strict equality (no deep comparison)', () => {
+    expect(arrayEqual([{ a: 1 }], [{ a: 1 }])).toBe(false)
+    const obj = { a: 1 }
+    expect(arrayEqual([obj], [obj])).toBe(true)
+  })
+
+  test('returns true for two empty arrays', () => {
+    expect(arrayEqual([], [])).toBe(true)
   })
 })
