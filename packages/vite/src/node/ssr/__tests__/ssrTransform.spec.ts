@@ -49,6 +49,19 @@ test('named import: arbitrary module namespace specifier', async () => {
   )
 })
 
+test('named import colliding with label', async () => {
+  expect(
+    await ssrTransformSimpleCode(
+      `import { query } from 'vue';function foo() { query: while (true) { continue query; break query } }`,
+    ),
+  ).toMatchInlineSnapshot(
+    `
+    "const __vite_ssr_import_0__ = await __vite_ssr_import__("vue", {"importedNames":["query"]});
+    function foo() { query: while (true) { continue query; break query } }"
+  `,
+  )
+})
+
 test('namespace import', async () => {
   expect(
     await ssrTransformSimpleCode(

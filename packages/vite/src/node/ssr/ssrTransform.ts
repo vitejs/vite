@@ -43,10 +43,10 @@ export async function ssrTransform(
   return ssrTransformScript(code, inMap, url, originalCode)
 }
 
-async function ssrTransformJSON(
+function ssrTransformJSON(
   code: string,
   inMap: SourceMap | { mappings: '' } | null,
-): Promise<TransformResult> {
+): TransformResult {
   return {
     code: code.replace('export default', `${ssrModuleExportsKey}.default =`),
     map: inMap,
@@ -708,6 +708,16 @@ function isRefIdentifier(
     parent.type === 'MemberExpression' &&
     parent.property === id &&
     !parent.computed
+  ) {
+    return false
+  }
+
+  // label declaration or break/continue target
+  if (
+    (parent.type === 'LabeledStatement' ||
+      parent.type === 'BreakStatement' ||
+      parent.type === 'ContinueStatement') &&
+    parent.label === id
   ) {
     return false
   }

@@ -127,7 +127,7 @@ if (!isBuild) {
     expect(formatSourcemapForSnapshot(map, js)).toMatchInlineSnapshot(`
       SourceMap {
         content: {
-          "mappings": ";AACA,SACE,WACK;AAEP,QAAQ,IAAI,yBAAyB,IAAI",
+          "mappings": ";AACA,SACE,WACK;AAEP,QAAQ,IAAI,yBAAyB,GAAG",
           "sources": [
             "with-multiline-import.ts",
           ],
@@ -142,7 +142,7 @@ if (!isBuild) {
           ],
           "version": 3,
         },
-        visualization: "https://evanw.github.io/source-map-visualization/#MjQ3AGNvbnN0IGZvbyA9IF9fdml0ZV9fY2pzSW1wb3J0MF9fdml0ZWpzX3Rlc3RJbXBvcnRlZVBrZ1siZm9vIl07Ly8gcHJldHRpZXItaWdub3JlCmltcG9ydCBfX3ZpdGVfX2Nqc0ltcG9ydDBfX3ZpdGVqc190ZXN0SW1wb3J0ZWVQa2cgZnJvbSAiL25vZGVfbW9kdWxlcy8udml0ZS9kZXBzL0B2aXRlanNfdGVzdC1pbXBvcnRlZS1wa2cuanM/dj0wMDAwMDAwMCI7CmNvbnNvbGUubG9nKCJ3aXRoLW11bHRpbGluZS1pbXBvcnQiLCBmb28pOwoyNDgAeyJtYXBwaW5ncyI6IjtBQUNBLFNBQ0UsV0FDSztBQUVQLFFBQVEsSUFBSSx5QkFBeUIsSUFBSSIsInNvdXJjZXMiOlsid2l0aC1tdWx0aWxpbmUtaW1wb3J0LnRzIl0sInZlcnNpb24iOjMsInNvdXJjZXNDb250ZW50IjpbIi8vIHByZXR0aWVyLWlnbm9yZVxuaW1wb3J0IHtcbiAgZm9vXG59IGZyb20gJ0B2aXRlanMvdGVzdC1pbXBvcnRlZS1wa2cnXG5cbmNvbnNvbGUubG9nKCd3aXRoLW11bHRpbGluZS1pbXBvcnQnLCBmb28pXG4iXX0="
+        visualization: "https://evanw.github.io/source-map-visualization/#MjQ3AGNvbnN0IGZvbyA9IF9fdml0ZV9fY2pzSW1wb3J0MF9fdml0ZWpzX3Rlc3RJbXBvcnRlZVBrZ1siZm9vIl07Ly8gcHJldHRpZXItaWdub3JlCmltcG9ydCBfX3ZpdGVfX2Nqc0ltcG9ydDBfX3ZpdGVqc190ZXN0SW1wb3J0ZWVQa2cgZnJvbSAiL25vZGVfbW9kdWxlcy8udml0ZS9kZXBzL0B2aXRlanNfdGVzdC1pbXBvcnRlZS1wa2cuanM/dj0wMDAwMDAwMCI7CmNvbnNvbGUubG9nKCJ3aXRoLW11bHRpbGluZS1pbXBvcnQiLCBmb28pOwoyNDgAeyJtYXBwaW5ncyI6IjtBQUNBLFNBQ0UsV0FDSztBQUVQLFFBQVEsSUFBSSx5QkFBeUIsR0FBRyIsInNvdXJjZXMiOlsid2l0aC1tdWx0aWxpbmUtaW1wb3J0LnRzIl0sInZlcnNpb24iOjMsInNvdXJjZXNDb250ZW50IjpbIi8vIHByZXR0aWVyLWlnbm9yZVxuaW1wb3J0IHtcbiAgZm9vXG59IGZyb20gJ0B2aXRlanMvdGVzdC1pbXBvcnRlZS1wa2cnXG5cbmNvbnNvbGUubG9nKCd3aXRoLW11bHRpbGluZS1pbXBvcnQnLCBmb28pXG4iXX0="
       }
     `)
   })
@@ -208,7 +208,7 @@ describe.runIf(isBuild)('build tests', () => {
           content: {
             "debugId": "00000000-0000-0000-0000-000000000000",
             "ignoreList": [],
-            "mappings": ";gqCAAA,OAAO,qDAEP,QAAQ,IAAI,wBAAwB",
+            "mappings": ";gqCAAA,OAAO,qDAEP,QAAQ,IAAI,uBAAuB",
             "sources": [
               "../../after-preload-dynamic.js",
             ],
@@ -220,7 +220,7 @@ describe.runIf(isBuild)('build tests', () => {
             ],
             "version": 3,
           },
-          visualization: "https://evanw.github.io/source-map-visualization/#MTU0OQBjb25zdCBfX3ZpdGVfX21hcERlcHM9KGksbT1fX3ZpdGVfX21hcERlcHMsZD0obS5mfHwobS5mPVsiYXNzZXRzL2R5bmFtaWMtZm9vLUI0SmtWTWJvLmpzIiwiYXNzZXRzL2R5bmFtaWMtZm9vLURzcUtSckV5LmNzcyJdKSkpPT5pLm1hcChpPT5kW2ldKTsKdmFyIGU9YG1vZHVsZXByZWxvYWRgLHQ9ZnVuY3Rpb24oZSl7cmV0dXJuYC9gK2V9LG49e30scj1mdW5jdGlvbihyLGksYSl7bGV0IG89UHJvbWlzZS5yZXNvbHZlKCk7aWYoaSYmaS5sZW5ndGg+MCl7bGV0IHI9ZG9jdW1lbnQuZ2V0RWxlbWVudHNCeVRhZ05hbWUoYGxpbmtgKSxzPWRvY3VtZW50LnF1ZXJ5U2VsZWN0b3IoYG1ldGFbcHJvcGVydHk9Y3NwLW5vbmNlXWApLGM9cz8ubm9uY2V8fHM/LmdldEF0dHJpYnV0ZShgbm9uY2VgKTtmdW5jdGlvbiBsKGUpe3JldHVybiBQcm9taXNlLmFsbChlLm1hcChlPT5Qcm9taXNlLnJlc29sdmUoZSkudGhlbihlPT4oe3N0YXR1czpgZnVsZmlsbGVkYCx2YWx1ZTplfSksZT0+KHtzdGF0dXM6YHJlamVjdGVkYCxyZWFzb246ZX0pKSkpfW89bChpLm1hcChpPT57aWYoaT10KGksYSksaSBpbiBuKXJldHVybjtuW2ldPSEwO2xldCBvPWkuZW5kc1dpdGgoYC5jc3NgKSxzPW8/YFtyZWw9InN0eWxlc2hlZXQiXWA6YGA7aWYoYSlmb3IobGV0IGU9ci5sZW5ndGgtMTtlPj0wO2UtLSl7bGV0IHQ9cltlXTtpZih0LmhyZWY9PT1pJiYoIW98fHQucmVsPT09YHN0eWxlc2hlZXRgKSlyZXR1cm59ZWxzZSBpZihkb2N1bWVudC5xdWVyeVNlbGVjdG9yKGBsaW5rW2hyZWY9IiR7aX0iXSR7c31gKSlyZXR1cm47bGV0IGw9ZG9jdW1lbnQuY3JlYXRlRWxlbWVudChgbGlua2ApO2lmKGwucmVsPW8/YHN0eWxlc2hlZXRgOmUsb3x8KGwuYXM9YHNjcmlwdGApLGwuY3Jvc3NPcmlnaW49YGAsbC5ocmVmPWksYyYmbC5zZXRBdHRyaWJ1dGUoYG5vbmNlYCxjKSxkb2N1bWVudC5oZWFkLmFwcGVuZENoaWxkKGwpLG8pcmV0dXJuIG5ldyBQcm9taXNlKChlLHQpPT57bC5hZGRFdmVudExpc3RlbmVyKGBsb2FkYCxlKSxsLmFkZEV2ZW50TGlzdGVuZXIoYGVycm9yYCwoKT0+dChFcnJvcihgVW5hYmxlIHRvIHByZWxvYWQgQ1NTIGZvciAke2l9YCkpKX0pfSkpfWZ1bmN0aW9uIHMoZSl7bGV0IHQ9bmV3IEV2ZW50KGB2aXRlOnByZWxvYWRFcnJvcmAse2NhbmNlbGFibGU6ITB9KTtpZih0LnBheWxvYWQ9ZSx3aW5kb3cuZGlzcGF0Y2hFdmVudCh0KSwhdC5kZWZhdWx0UHJldmVudGVkKXRocm93IGV9cmV0dXJuIG8udGhlbihlPT57Zm9yKGxldCB0IG9mIGV8fFtdKXQuc3RhdHVzPT09YHJlamVjdGVkYCYmcyh0LnJlYXNvbik7cmV0dXJuIHIoKS5jYXRjaChzKX0pfTtyKCgpPT5pbXBvcnQoYC4vZHluYW1pYy1mb28tQjRKa1ZNYm8uanNgKSxfX3ZpdGVfX21hcERlcHMoWzAsMV0pKSxjb25zb2xlLmxvZyhgYWZ0ZXIgcHJlbG9hZCBkeW5hbWljYCk7ZXhwb3J0e3IgYXMgdH07Ci8vIyBkZWJ1Z0lkPWYxYjI2YTNiLTc0YzQtNDUwMC04ZjI1LWIyODY2OTk1MmQ0YgovLyMgc291cmNlTWFwcGluZ1VSTD1hZnRlci1wcmVsb2FkLWR5bmFtaWMtRHhzbW83ZE0uanMubWFwMjY3AHsidmVyc2lvbiI6MywibWFwcGluZ3MiOiI7Z3FDQUFBLE9BQU8scURBRVAsUUFBUSxJQUFJLHdCQUF3QiIsImlnbm9yZUxpc3QiOltdLCJzb3VyY2VzIjpbIi4uLy4uL2FmdGVyLXByZWxvYWQtZHluYW1pYy5qcyJdLCJzb3VyY2VzQ29udGVudCI6WyJpbXBvcnQoJy4vZHluYW1pYy9keW5hbWljLWZvbycpXG5cbmNvbnNvbGUubG9nKCdhZnRlciBwcmVsb2FkIGR5bmFtaWMnKVxuIl0sImRlYnVnSWQiOiIwMDAwMDAwMC0wMDAwLTAwMDAtMDAwMC0wMDAwMDAwMDAwMDAifQ=="
+          visualization: "https://evanw.github.io/source-map-visualization/#MTU0OQBjb25zdCBfX3ZpdGVfX21hcERlcHM9KGksbT1fX3ZpdGVfX21hcERlcHMsZD0obS5mfHwobS5mPVsiYXNzZXRzL2R5bmFtaWMtZm9vLUI0SmtWTWJvLmpzIiwiYXNzZXRzL2R5bmFtaWMtZm9vLURzcUtSckV5LmNzcyJdKSkpPT5pLm1hcChpPT5kW2ldKTsKdmFyIGU9YG1vZHVsZXByZWxvYWRgLHQ9ZnVuY3Rpb24oZSl7cmV0dXJuYC9gK2V9LG49e30scj1mdW5jdGlvbihyLGksYSl7bGV0IG89UHJvbWlzZS5yZXNvbHZlKCk7aWYoaSYmaS5sZW5ndGg+MCl7bGV0IHI9ZG9jdW1lbnQuZ2V0RWxlbWVudHNCeVRhZ05hbWUoYGxpbmtgKSxzPWRvY3VtZW50LnF1ZXJ5U2VsZWN0b3IoYG1ldGFbcHJvcGVydHk9Y3NwLW5vbmNlXWApLGM9cz8ubm9uY2V8fHM/LmdldEF0dHJpYnV0ZShgbm9uY2VgKTtmdW5jdGlvbiBsKGUpe3JldHVybiBQcm9taXNlLmFsbChlLm1hcChlPT5Qcm9taXNlLnJlc29sdmUoZSkudGhlbihlPT4oe3N0YXR1czpgZnVsZmlsbGVkYCx2YWx1ZTplfSksZT0+KHtzdGF0dXM6YHJlamVjdGVkYCxyZWFzb246ZX0pKSkpfW89bChpLm1hcChpPT57aWYoaT10KGksYSksaSBpbiBuKXJldHVybjtuW2ldPSEwO2xldCBvPWkuZW5kc1dpdGgoYC5jc3NgKSxzPW8/YFtyZWw9InN0eWxlc2hlZXQiXWA6YGA7aWYoYSlmb3IobGV0IGU9ci5sZW5ndGgtMTtlPj0wO2UtLSl7bGV0IHQ9cltlXTtpZih0LmhyZWY9PT1pJiYoIW98fHQucmVsPT09YHN0eWxlc2hlZXRgKSlyZXR1cm59ZWxzZSBpZihkb2N1bWVudC5xdWVyeVNlbGVjdG9yKGBsaW5rW2hyZWY9IiR7aX0iXSR7c31gKSlyZXR1cm47bGV0IGw9ZG9jdW1lbnQuY3JlYXRlRWxlbWVudChgbGlua2ApO2lmKGwucmVsPW8/YHN0eWxlc2hlZXRgOmUsb3x8KGwuYXM9YHNjcmlwdGApLGwuY3Jvc3NPcmlnaW49YGAsbC5ocmVmPWksYyYmbC5zZXRBdHRyaWJ1dGUoYG5vbmNlYCxjKSxkb2N1bWVudC5oZWFkLmFwcGVuZENoaWxkKGwpLG8pcmV0dXJuIG5ldyBQcm9taXNlKChlLHQpPT57bC5hZGRFdmVudExpc3RlbmVyKGBsb2FkYCxlKSxsLmFkZEV2ZW50TGlzdGVuZXIoYGVycm9yYCwoKT0+dChFcnJvcihgVW5hYmxlIHRvIHByZWxvYWQgQ1NTIGZvciAke2l9YCkpKX0pfSkpfWZ1bmN0aW9uIHMoZSl7bGV0IHQ9bmV3IEV2ZW50KGB2aXRlOnByZWxvYWRFcnJvcmAse2NhbmNlbGFibGU6ITB9KTtpZih0LnBheWxvYWQ9ZSx3aW5kb3cuZGlzcGF0Y2hFdmVudCh0KSwhdC5kZWZhdWx0UHJldmVudGVkKXRocm93IGV9cmV0dXJuIG8udGhlbihlPT57Zm9yKGxldCB0IG9mIGV8fFtdKXQuc3RhdHVzPT09YHJlamVjdGVkYCYmcyh0LnJlYXNvbik7cmV0dXJuIHIoKS5jYXRjaChzKX0pfTtyKCgpPT5pbXBvcnQoYC4vZHluYW1pYy1mb28tQjRKa1ZNYm8uanNgKSxfX3ZpdGVfX21hcERlcHMoWzAsMV0pKSxjb25zb2xlLmxvZyhgYWZ0ZXIgcHJlbG9hZCBkeW5hbWljYCk7ZXhwb3J0e3IgYXMgdH07Ci8vIyBkZWJ1Z0lkPWYxYjI2YTNiLTc0YzQtNDUwMC04ZjI1LWIyODY2OTk1MmQ0YgovLyMgc291cmNlTWFwcGluZ1VSTD1hZnRlci1wcmVsb2FkLWR5bmFtaWMtRHhzbW83ZE0uanMubWFwMjY3AHsidmVyc2lvbiI6MywibWFwcGluZ3MiOiI7Z3FDQUFBLE9BQU8scURBRVAsUUFBUSxJQUFJLHVCQUF1QiIsImlnbm9yZUxpc3QiOltdLCJzb3VyY2VzIjpbIi4uLy4uL2FmdGVyLXByZWxvYWQtZHluYW1pYy5qcyJdLCJzb3VyY2VzQ29udGVudCI6WyJpbXBvcnQoJy4vZHluYW1pYy9keW5hbWljLWZvbycpXG5cbmNvbnNvbGUubG9nKCdhZnRlciBwcmVsb2FkIGR5bmFtaWMnKVxuIl0sImRlYnVnSWQiOiIwMDAwMDAwMC0wMDAwLTAwMDAtMDAwMC0wMDAwMDAwMDAwMDAifQ=="
         }
       `)
     // verify sourcemap comment is preserved at the last line
@@ -267,7 +267,7 @@ describe.runIf(isBuild)('build tests', () => {
         SourceMap {
           content: {
             "debugId": "00000000-0000-0000-0000-000000000000",
-            "mappings": "AAEA,SAAS,GAAO,CACd,GAAW,CAGb,SAAS,GAAY,CAEnB,QAAQ,MAAM,qBAAA,CAAA,MAAA,OAAA,CAAyC,CAGzD,GAAM",
+            "mappings": "AAEA,SAAS,GAAO,CACd,EAAU,CACZ,CAEA,SAAS,GAAY,CAEnB,QAAQ,MAAM,qBAAA,CAAA,MAAA,MAAA,CAAwC,CACxD,CAEA,EAAK",
             "sources": [
               "../../with-define-object.ts",
             ],
@@ -288,7 +288,7 @@ describe.runIf(isBuild)('build tests', () => {
             ],
             "version": 3,
           },
-          visualization: "https://evanw.github.io/source-map-visualization/#MTkwAGZ1bmN0aW9uIGUoKXt0KCl9ZnVuY3Rpb24gdCgpe2NvbnNvbGUudHJhY2UoYHdpdGgtZGVmaW5lLW9iamVjdGAse2hlbGxvOmB0ZXN0YH0pfWUoKTsKLy8jIGRlYnVnSWQ9ZmVmMjQxOWEtZmZmOC00MzMwLTgzZTktMWRkNTVlYmNmOTBkCi8vIyBzb3VyY2VNYXBwaW5nVVJMPXdpdGgtZGVmaW5lLW9iamVjdC1ELThrR2FfXy5qcy5tYXA1MDAAeyJ2ZXJzaW9uIjozLCJzb3VyY2VzIjpbIi4uLy4uL3dpdGgtZGVmaW5lLW9iamVjdC50cyJdLCJzb3VyY2VzQ29udGVudCI6WyIvLyB0ZXN0IGNvbXBsaWNhdGVkIHN0YWNrIHNpbmNlIGJyb2tlbiBzb3VyY2VtYXBcbi8vIG1pZ2h0IHN0aWxsIGxvb2sgY29ycmVjdCB3aXRoIGEgc2ltcGxlIGNhc2VcbmZ1bmN0aW9uIG1haW4oKSB7XG4gIG1haW5Jbm5lcigpXG59XG5cbmZ1bmN0aW9uIG1haW5Jbm5lcigpIHtcbiAgLy8gQHRzLWV4cGVjdC1lcnJvciBcImRlZmluZVwiXG4gIGNvbnNvbGUudHJhY2UoJ3dpdGgtZGVmaW5lLW9iamVjdCcsIF9fdGVzdERlZmluZU9iamVjdClcbn1cblxubWFpbigpXG4iXSwibWFwcGluZ3MiOiJBQUVBLFNBQVMsR0FBTyxDQUNkLEdBQVcsQ0FHYixTQUFTLEdBQVksQ0FFbkIsUUFBUSxNQUFNLHFCQUFBLENBQUEsTUFBQSxPQUFBLENBQXlDLENBR3pELEdBQU0iLCJkZWJ1Z0lkIjoiMDAwMDAwMDAtMDAwMC0wMDAwLTAwMDAtMDAwMDAwMDAwMDAwIn0="
+          visualization: "https://evanw.github.io/source-map-visualization/#MTkwAGZ1bmN0aW9uIGUoKXt0KCl9ZnVuY3Rpb24gdCgpe2NvbnNvbGUudHJhY2UoYHdpdGgtZGVmaW5lLW9iamVjdGAse2hlbGxvOmB0ZXN0YH0pfWUoKTsKLy8jIGRlYnVnSWQ9ZmVmMjQxOWEtZmZmOC00MzMwLTgzZTktMWRkNTVlYmNmOTBkCi8vIyBzb3VyY2VNYXBwaW5nVVJMPXdpdGgtZGVmaW5lLW9iamVjdC1ELThrR2FfXy5qcy5tYXA1MTAAeyJ2ZXJzaW9uIjozLCJzb3VyY2VzIjpbIi4uLy4uL3dpdGgtZGVmaW5lLW9iamVjdC50cyJdLCJzb3VyY2VzQ29udGVudCI6WyIvLyB0ZXN0IGNvbXBsaWNhdGVkIHN0YWNrIHNpbmNlIGJyb2tlbiBzb3VyY2VtYXBcbi8vIG1pZ2h0IHN0aWxsIGxvb2sgY29ycmVjdCB3aXRoIGEgc2ltcGxlIGNhc2VcbmZ1bmN0aW9uIG1haW4oKSB7XG4gIG1haW5Jbm5lcigpXG59XG5cbmZ1bmN0aW9uIG1haW5Jbm5lcigpIHtcbiAgLy8gQHRzLWV4cGVjdC1lcnJvciBcImRlZmluZVwiXG4gIGNvbnNvbGUudHJhY2UoJ3dpdGgtZGVmaW5lLW9iamVjdCcsIF9fdGVzdERlZmluZU9iamVjdClcbn1cblxubWFpbigpXG4iXSwibWFwcGluZ3MiOiJBQUVBLFNBQVMsR0FBTyxDQUNkLEVBQVUsQ0FDWixDQUVBLFNBQVMsR0FBWSxDQUVuQixRQUFRLE1BQU0scUJBQUEsQ0FBQSxNQUFBLE1BQUEsQ0FBd0MsQ0FDeEQsQ0FFQSxFQUFLIiwiZGVidWdJZCI6IjAwMDAwMDAwLTAwMDAtMDAwMC0wMDAwLTAwMDAwMDAwMDAwMCJ9"
         }
       `)
   })

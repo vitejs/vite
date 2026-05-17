@@ -1,5 +1,13 @@
-import { describe, expect, test } from 'vitest'
-import { formatConsoleArgs } from '../forwardConsole'
+import { setTimeout } from 'node:timers/promises'
+import { describe, expect, test, vi } from 'vitest'
+import {
+  formatConsoleArgs,
+  setupForwardConsoleHandler,
+} from '../forwardConsole'
+import {
+  type NormalizedModuleRunnerTransport,
+  SendBeforeConnectError,
+} from '../moduleRunnerTransport'
 
 describe('formatConsoleArgs', () => {
   test('formats placeholders', () => {
@@ -56,6 +64,76 @@ describe('formatConsoleArgs', () => {
       ]),
     ).toMatchInlineSnapshot(
       `"1n undefined true Symbol(s) [Function: sampleFn] Error: boom {"ok":true,"big":"2n","err":{"name":"Error","message":"nested"},"self":"[Circular]"}"`,
+    )
+  })
+})
+
+describe('setupForwardConsoleHandler', () => {
+  function createMockConsole() {
+    return {
+      error: vi.fn(),
+      warn: vi.fn(),
+      info: vi.fn(),
+      log: vi.fn(),
+      debug: vi.fn(),
+    } as unknown as Console
+  }
+
+  function createMockTransport(
+    send: (...args: any[]) => Promise<void>,
+  ): NormalizedModuleRunnerTransport {
+    return {
+      connect: () => Promise.resolve(),
+      disconnect: () => Promise.resolve(),
+      send,
+      invoke: () => Promise.resolve({ result: undefined } as any),
+    }
+  }
+
+  test('ignore SendBeforeConnectError from transport.send', async () => {
+    const transport = createMockTransport(() =>
+      Promise.reject(new SendBeforeConnectError('not connected yet')),
+    )
+    const console = createMockConsole()
+
+    setupForwardConsoleHandler(
+      transport,
+      {
+        enabled: true,
+        unhandledErrors: false,
+        logLevels: ['log'],
+      },
+      console,
+    )
+
+    console.log('hi')
+    await setTimeout(50)
+
+    expect(console.error).not.toHaveBeenCalled()
+  })
+
+  test('log errors from transport.send', async () => {
+    const transport = createMockTransport(() =>
+      Promise.reject(new Error('other error')),
+    )
+    const console = createMockConsole()
+
+    setupForwardConsoleHandler(
+      transport,
+      {
+        enabled: true,
+        unhandledErrors: false,
+        logLevels: ['log'],
+      },
+      console,
+    )
+
+    console.log('hi')
+    await setTimeout(50)
+
+    expect(console.error).toHaveBeenCalledWith(
+      'Failed to send error to Vite server:',
+      new Error('other error'),
     )
   })
 })
