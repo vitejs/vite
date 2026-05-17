@@ -871,8 +871,6 @@ importers:
         specifier: file:./root/import-meta-glob-pkg
         version: file:playground/glob-import/root/import-meta-glob-pkg
 
-  playground/glob-import/import-meta-glob-pkg: {}
-
   playground/glob-import/root/import-meta-glob-pkg: {}
 
   playground/hmr: {}
