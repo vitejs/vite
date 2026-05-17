@@ -146,6 +146,24 @@ const modernTargetsBabel =
 const outputOptionsForLegacyChunks =
   new WeakSet<Rollup.NormalizedOutputOptions>()
 
+const legacyOxcMinifyOptions = {
+  compress: {
+    target: 'es2015',
+  },
+} as const
+
+function resolveLegacyOutputMinify(
+  minify: BuildOptions['minify'],
+): Rollup.OutputOptions['minify'] {
+  return minify === 'oxc' || minify === true ? legacyOxcMinifyOptions : false
+}
+
+function resolveLegacyBuildMinify(
+  minify: BuildOptions['minify'],
+): BuildOptions['minify'] {
+  return minify === 'oxc' || minify === true ? 'oxc' : minify ? 'terser' : false
+}
+
 function viteLegacyPlugin(options: Options = {}): Plugin[] {
   let config: ResolvedConfig
   let targets: Options['targets']
@@ -454,7 +472,7 @@ function viteLegacyPlugin(options: Options = {}): Plugin[] {
           format: 'esm',
           entryFileNames: getLegacyOutputFileName(options.entryFileNames),
           chunkFileNames: getLegacyOutputFileName(options.chunkFileNames),
-          minify: false, // minify with terser instead
+          minify: resolveLegacyOutputMinify(config.build.minify),
         }
       }
 
@@ -849,8 +867,8 @@ async function buildPolyfillChunk(
   excludeSystemJS?: boolean,
   prependModenChunkLegacyGuard?: boolean,
 ) {
-  let { minify, assetsDir, sourcemap } = buildOptions
-  minify = minify ? 'terser' : false
+  const { assetsDir, sourcemap } = buildOptions
+  const minify = resolveLegacyBuildMinify(buildOptions.minify)
   const res = await build({
     mode,
     // so that everything is resolved from here
@@ -866,7 +884,7 @@ async function buildPolyfillChunk(
       minify,
       assetsDir,
       sourcemap,
-      rollupOptions: {
+      rolldownOptions: {
         input: {
           polyfills: polyfillId,
         },
@@ -875,6 +893,7 @@ async function buildPolyfillChunk(
           hashCharacters: rollupOutputOptions.hashCharacters,
           entryFileNames: rollupOutputOptions.entryFileNames,
           sourcemapBaseUrl: rollupOutputOptions.sourcemapBaseUrl,
+          minify: resolveLegacyOutputMinify(buildOptions.minify),
         },
       },
     },
