@@ -868,10 +868,12 @@ importers:
   playground/glob-import:
     dependencies:
       '@vitejs/test-import-meta-glob-pkg':
-        specifier: file:./import-meta-glob-pkg
-        version: file:playground/glob-import/import-meta-glob-pkg
+        specifier: file:./root/import-meta-glob-pkg
+        version: file:playground/glob-import/root/import-meta-glob-pkg
 
   playground/glob-import/import-meta-glob-pkg: {}
+
+  playground/glob-import/root/import-meta-glob-pkg: {}
 
   playground/hmr: {}
 
@@ -4759,8 +4761,8 @@ packages:
   '@vitejs/test-import-builtin@file:playground/ssr-deps/import-builtin-cjs':
     resolution: {directory: playground/ssr-deps/import-builtin-cjs, type: directory}
 
-  '@vitejs/test-import-meta-glob-pkg@file:playground/glob-import/import-meta-glob-pkg':
-    resolution: {directory: playground/glob-import/import-meta-glob-pkg, type: directory}
+  '@vitejs/test-import-meta-glob-pkg@file:playground/glob-import/root/import-meta-glob-pkg':
+    resolution: {directory: playground/glob-import/root/import-meta-glob-pkg, type: directory}
 
   '@vitejs/test-importee-pkg@file:playground/js-sourcemap/importee-pkg':
     resolution: {directory: playground/js-sourcemap/importee-pkg, type: directory}
@@ -11012,7 +11014,7 @@ snapshots:
 
   '@vitejs/test-import-builtin@file:playground/ssr-deps/import-builtin-cjs': {}
 
-  '@vitejs/test-import-meta-glob-pkg@file:playground/glob-import/import-meta-glob-pkg': {}
+  '@vitejs/test-import-meta-glob-pkg@file:playground/glob-import/root/import-meta-glob-pkg': {}
 
   '@vitejs/test-importee-pkg@file:playground/js-sourcemap/importee-pkg': {}
 
