@@ -526,6 +526,7 @@ Example:
 function outputMetadataPlugin(): Plugin {
   return {
     name: 'output-metadata-plugin',
+    enforce: 'post',
     generateBundle(_, bundle) {
       for (const output of Object.values(bundle)) {
         const css = output.viteMetadata?.importedCss
@@ -541,6 +542,12 @@ function outputMetadataPlugin(): Plugin {
   }
 }
 ```
+
+::: tip Inspecting final CSS metadata
+
+Use `enforce: 'post'` when reading `viteMetadata.importedCss` in `generateBundle`. This ensures the hook runs after Vite moves metadata from empty CSS-only chunks to the chunks that import them, so the metadata reflects the final output bundle.
+
+:::
 
 ## Plugin Ordering
 
