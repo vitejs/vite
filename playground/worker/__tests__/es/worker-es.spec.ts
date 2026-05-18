@@ -141,6 +141,22 @@ describe.runIf(isBuild)('build', () => {
       .poll(() => page.textContent('.nested-worker-constructor'))
       .toMatch('"type":"constructor"')
   })
+
+  test('dead-code-eliminated worker asset is not emitted', () => {
+    const assetsDir = path.resolve(testDir, 'dist/es/assets')
+    const files = fs.readdirSync(assetsDir)
+
+    // dce-test-importer.js is imported from main-module.js but its export is
+    // unused; rolldown tree-shakes the importer, so its `?worker` import
+    // should never reach the output bundle.
+    expect(files.some((f) => f.includes('dce-test-worker'))).toBe(false)
+    // the nested worker is only reachable via the (tree-shaken) parent worker,
+    // so it must not be emitted either.
+    expect(files.some((f) => f.includes('dce-test-nested-worker'))).toBe(false)
+
+    // sanity: the worker we DO use is still emitted (`my-worker`).
+    expect(files.some((f) => f.includes('my-worker'))).toBe(true)
+  })
 })
 
 test('module worker', async () => {

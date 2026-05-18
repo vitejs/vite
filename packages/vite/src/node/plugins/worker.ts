@@ -56,6 +56,22 @@ class WorkerOutputCache {
     /* entryFilename */ string
   >()
   private invalidatedBundles = new Set</* inputId */ string>()
+  /**
+   * Module IDs in the main bundle that reference each worker bundle.
+   * Cleared at the start of each non-worker build and re-populated by load/transform hooks.
+   */
+  private bundleReferencingIds = new Map<
+    /* childInputId */ string,
+    Set</* referencingModuleId */ string>
+  >()
+  /**
+   * For each worker bundle, the set of other worker bundles it references
+   * (nested workers). Persists across rebuilds; cleared in removeBundle.
+   */
+  private bundleNestedReferences = new Map<
+    /* parentInputId */ string,
+    Set</* childInputId */ string>
+  >()
 
   saveWorkerBundle(
     file: string,
@@ -126,6 +142,71 @@ class WorkerOutputCache {
         this.assets.delete(asset)
       }
     }
+
+    this.bundleReferencingIds.delete(file)
+    this.bundleNestedReferences.delete(file)
+  }
+
+  recordReference(
+    parentInputId: string | undefined,
+    childInputId: string,
+    referencingModuleId: string,
+  ) {
+    if (parentInputId !== undefined) {
+      let set = this.bundleNestedReferences.get(parentInputId)
+      if (!set) {
+        set = new Set()
+        this.bundleNestedReferences.set(parentInputId, set)
+      }
+      set.add(childInputId)
+    } else {
+      let set = this.bundleReferencingIds.get(childInputId)
+      if (!set) {
+        set = new Set()
+        this.bundleReferencingIds.set(childInputId, set)
+      }
+      set.add(referencingModuleId)
+    }
+  }
+
+  clearDirectReferences() {
+    this.bundleReferencingIds.clear()
+  }
+
+  getLiveAssetFileNames(liveModuleIds: Set<string>): Set<string> {
+    const liveBundles = new Set<string>()
+    const queue: string[] = []
+    for (const [inputId, refIds] of this.bundleReferencingIds) {
+      for (const refId of refIds) {
+        if (liveModuleIds.has(refId)) {
+          liveBundles.add(inputId)
+          queue.push(inputId)
+          break
+        }
+      }
+    }
+    while (queue.length > 0) {
+      const parent = queue.shift()!
+      const nested = this.bundleNestedReferences.get(parent)
+      if (!nested) continue
+      for (const child of nested) {
+        if (!liveBundles.has(child)) {
+          liveBundles.add(child)
+          queue.push(child)
+        }
+      }
+    }
+
+    const liveFileNames = new Set<string>()
+    for (const inputId of liveBundles) {
+      const wb = this.bundles.get(inputId)
+      if (!wb) continue
+      liveFileNames.add(wb.entryFilename)
+      for (const fileName of wb.referencedAssets) {
+        liveFileNames.add(fileName)
+      }
+    }
+    return liveFileNames
   }
 
   getWorkerBundle(file: string) {
@@ -158,6 +239,17 @@ const inlineRE = /[?&]inline\b/
 
 export const WORKER_FILE_ID = 'worker_file'
 const workerOutputCaches = new WeakMap<ResolvedConfig, WorkerOutputCache>()
+
+export function recordWorkerReference(
+  config: ResolvedConfig,
+  parentInputId: string | undefined,
+  childInputId: string,
+  referencingModuleId: string,
+): void {
+  workerOutputCaches
+    .get(config.mainConfig || config)!
+    .recordReference(parentInputId, childInputId, referencingModuleId)
+}
 
 async function bundleWorkerEntry(
   config: ResolvedConfig,
@@ -402,6 +494,7 @@ export function webWorkerPlugin(config: ResolvedConfig): Plugin {
     buildStart() {
       if (isWorker) return
       emittedAssets.clear()
+      workerOutputCaches.get(config)!.clearDirectReferences()
     },
 
     load: {
@@ -429,6 +522,12 @@ export function webWorkerPlugin(config: ResolvedConfig): Plugin {
           if (isWorker && config.bundleChain.at(-1) === cleanUrl(id)) {
             urlCode = 'self.location.href'
           } else if (inlineRE.test(id)) {
+            recordWorkerReference(
+              config,
+              config.bundleChain.at(-1),
+              cleanUrl(id),
+              id,
+            )
             const result = await bundleWorkerEntry(config, id)
             for (const file of result.watchedFiles) {
               this.addWatchFile(file)
@@ -479,6 +578,12 @@ export function webWorkerPlugin(config: ResolvedConfig): Plugin {
               map: { mappings: '' },
             }
           } else {
+            recordWorkerReference(
+              config,
+              config.bundleChain.at(-1),
+              cleanUrl(id),
+              id,
+            )
             const result = await workerFileToUrl(config, id)
             let url: string
             if (
@@ -637,7 +742,19 @@ export function webWorkerPlugin(config: ResolvedConfig): Plugin {
       ) {
         return
       }
-      for (const asset of workerOutputCaches.get(config)!.getAssets()) {
+      const cache = workerOutputCaches.get(config)!
+      const liveModuleIds = new Set<string>()
+      for (const fileName in bundle) {
+        const chunk = bundle[fileName]
+        if (chunk.type === 'chunk') {
+          for (const moduleId of chunk.moduleIds) {
+            liveModuleIds.add(moduleId)
+          }
+        }
+      }
+      const liveFileNames = cache.getLiveAssetFileNames(liveModuleIds)
+      for (const asset of cache.getAssets()) {
+        if (!liveFileNames.has(asset.fileName)) continue
         if (emittedAssets.has(asset.fileName)) continue
         emittedAssets.add(asset.fileName)
 
