@@ -4743,7 +4743,7 @@ packages:
     resolution: {integrity: sha512-T532WBu791cBxJlCl6SO+J14l81DQx6uQHm1bQbmCDY7nqlEIgkza/UFnSBNaUtSf41unldDFjdOBYEQC4b5Hw==}
 
   '@voidzero-dev/vite-task-client@https://codeload.github.com/voidzero-dev/vite-task/tar.gz/1d49f00186a4c935187c79507f3364ee0358c9f3#path:/packages/vite-task-client':
-    resolution: {gitHosted: true, integrity: sha512-FTpphztQCfiIu0a4bXM68AZZ3/ubW7dHIgoGHVp4acFd9YFrNFsdoKWpwv+brBq3oBkY8umdwQSotkBQmRhJbA==, path: /packages/vite-task-client, tarball: https://codeload.github.com/voidzero-dev/vite-task/tar.gz/1d49f00186a4c935187c79507f3364ee0358c9f3}
+    resolution: {gitHosted: true, integrity: sha512-FTpphztQCfiIu0a4bXM68AZZ3/ubW7dHIgoGHVp4acFd9YFrNFsdoKWpwv+brBq3oBkY8umdwQSotkBQmRhJbA==, tarball: https://codeload.github.com/voidzero-dev/vite-task/tar.gz/1d49f00186a4c935187c79507f3364ee0358c9f3}
     version: 0.0.0
 
   '@voidzero-dev/vitepress-theme@4.8.4':

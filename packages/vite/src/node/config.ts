@@ -2575,16 +2575,6 @@ async function loadConfigFromBundledFile(
         }
       }
     }
-    if (nodeModulesDir) {
-      // When run inside Vite Task, the bundled config is written into
-      // `node_modules/.vite-temp/` and immediately imported back. Tell Vite
-      // Task to ignore that directory as both input and output so the
-      // read-write of this transient file doesn't poison the build cache.
-      // No-op outside Vite Task.
-      const viteTempDir = path.resolve(nodeModulesDir, '.vite-temp')
-      ignoreInput(viteTempDir)
-      ignoreOutput(viteTempDir)
-    }
     const hash = `timestamp-${Date.now()}-${Math.random().toString(16).slice(2)}`
     const tempFileName = nodeModulesDir
       ? path.resolve(
@@ -2592,6 +2582,12 @@ async function loadConfigFromBundledFile(
           `.vite-temp/${path.basename(fileName)}.${hash}.mjs`,
         )
       : `${fileName}.${hash}.mjs`
+
+    // Tell Vite Task to ignore this transient file as both input and output,
+    // so the read-write of this file doesn't affect the cache fingerprints.
+    // No-op outside Vite Task.
+    ignoreInput(tempFileName)
+    ignoreOutput(tempFileName)
     await fsp.writeFile(tempFileName, bundledCode)
     try {
       return (await import(pathToFileURL(tempFileName).href)).default
