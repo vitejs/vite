@@ -43,7 +43,7 @@ export function optimizedDepsPlugin(): Plugin {
       const environment = this.environment as DevEnvironment
       const depsOptimizer = environment.depsOptimizer
       if (depsOptimizer?.isOptimizedDepFile(id)) {
-        const metadata = depsOptimizer.metadata
+        let metadata = depsOptimizer.metadata
         const file = cleanUrl(id)
         const versionMatch = DEP_VERSION_RE.exec(id)
         const browserHash = versionMatch
@@ -88,7 +88,7 @@ export function optimizedDepsPlugin(): Plugin {
         debug?.(`load ${colors.cyan(file)}`)
         // Load the file from the cache instead of waiting for other plugin
         // load hooks to avoid race conditions, once processing is resolved,
-        // we are sure that the file has been properly save to disk
+        // we are sure that the file has been properly saved to disk
         const loadOptimizedDep = async (retryCount = 0): Promise<string> => {
           try {
             return await fsp.readFile(file, 'utf-8')

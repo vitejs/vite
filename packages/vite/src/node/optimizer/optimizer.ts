@@ -70,7 +70,8 @@ export function createDepsOptimizer(
     },
     async waitForProcessing() {
       while (currentlyProcessing) {
-        await depOptimizationProcessing.promise
+        const current = depOptimizationProcessing.promise
+        await current
       }
     },
     close,
