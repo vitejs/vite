@@ -6,7 +6,11 @@ import { inspect, promisify } from 'node:util'
 import { performance } from 'node:perf_hooks'
 import { createRequire } from 'node:module'
 import crypto from 'node:crypto'
-import { ignoreInput, ignoreOutput } from '@voidzero-dev/vite-task-client'
+import {
+  getEnv,
+  ignoreInput,
+  ignoreOutput,
+} from '@voidzero-dev/vite-task-client'
 import colors from 'picocolors'
 import picomatch from 'picomatch'
 import {
@@ -1402,6 +1406,12 @@ export async function resolveConfig(
 
   let configFileDependencies: string[] = []
   let mode = inlineConfig.mode || defaultMode
+  // Ask Vite Task for `NODE_ENV` so the env becomes part of the build's
+  // cache fingerprint and `process.env.NODE_ENV` is populated when only
+  // Vite Task knows it. Vite's build output branches on the value below
+  // (`isProduction`), so changing it between runs must invalidate the
+  // cache. No-op outside Vite Task.
+  getEnv('NODE_ENV')
   const isNodeEnvSet = !!process.env.NODE_ENV
   const packageCache: PackageCache = new Map()
 
