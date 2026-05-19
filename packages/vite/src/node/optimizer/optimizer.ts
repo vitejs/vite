@@ -68,11 +68,11 @@ export function createDepsOptimizer(
     isProcessing() {
       return currentlyProcessing
     },
-    async waitForProcessing() {
-      while (currentlyProcessing) {
-        const current = depOptimizationProcessing.promise
-        await current
-      }
+    async waitForProcessing(timeoutMs = 5000): Promise<void> {
+      await Promise.race([
+        depOptimizationProcessing.promise,
+        new Promise<void>((_,reject) => setTimeout(() => reject(new Error('waitForProcessing timeout')), timeoutMs))
+      ]).catch(() => {}) // timeout is non-fatal
     },
     close,
     options,
