@@ -20,10 +20,10 @@ export function prepareOutDirPlugin(): Plugin {
         if (rendered.has(this.environment)) {
           return
         }
-        rendered.add(this.environment)
 
         const { config } = this.environment
         if (config.build.write) {
+          rendered.add(this.environment)
           const { root, build: options } = config
           const resolvedOutDirs = getResolvedOutDirs(
             root,

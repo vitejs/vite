@@ -1,3 +1,23 @@
+## <small>[8.0.13](https://github.com/vitejs/vite/compare/v8.0.12...v8.0.13) (2026-05-14)</small>
+### Features
+
+* **bundled-dev:** add lazy bundling support ([#21406](https://github.com/vitejs/vite/issues/21406)) ([4f0949f](https://github.com/vitejs/vite/commit/4f0949f3f13e4b2b34d32bf7b2b4de5f26bea192))
+* **optimizer:** improve the esbuild plugin converter to pass some properties of build result to `onEnd` ([#22357](https://github.com/vitejs/vite/issues/22357)) ([47071ce](https://github.com/vitejs/vite/commit/47071ce53f21726cf39e999c4407c4828ecbe957))
+* update rolldown to 1.0.1 ([#22444](https://github.com/vitejs/vite/issues/22444)) ([8c766a6](https://github.com/vitejs/vite/commit/8c766a6c5ee014969c4e32f29cc265e8e2c96e18))
+
+### Bug Fixes
+
+* **build:** copy public directory after building same environment with `write=false` ([#22328](https://github.com/vitejs/vite/issues/22328)) ([158e8ae](https://github.com/vitejs/vite/commit/158e8ae8efdf7075ab295727e36b5ff68da3243e))
+* **css:** await sass/less/styl worker disposal on teardown (fix [#22274](https://github.com/vitejs/vite/issues/22274)) ([#22275](https://github.com/vitejs/vite/issues/22275)) ([b7edcb7](https://github.com/vitejs/vite/commit/b7edcb7d0dd17ddfeef4ace78d610c099216dade))
+* **css:** keep deprecated `name`/`originalFileName` in synthetic `assetFileNames` call ([#22439](https://github.com/vitejs/vite/issues/22439)) ([8e59c97](https://github.com/vitejs/vite/commit/8e59c97a44d923c4c06f67287a793c9aa5a4ebaa))
+* make `isBundled` per environment ([#22257](https://github.com/vitejs/vite/issues/22257)) ([a576326](https://github.com/vitejs/vite/commit/a5763266170f8606836da5c6f987b4b2fd6ddc55))
+* **ssr:** avoid rewriting labels that collide with imports ([#22451](https://github.com/vitejs/vite/issues/22451)) ([d9b18e0](https://github.com/vitejs/vite/commit/d9b18e0387a253628d3d834288e79c5f7e85d566))
+
+### Miscellaneous Chores
+
+* remove irrelevant commits from changelog ([#22430](https://github.com/vitejs/vite/issues/22430)) ([6ea3838](https://github.com/vitejs/vite/commit/6ea383859aaf0ef8e673b458f164e84aeb6ff51d))
+* update changelog ([#22413](https://github.com/vitejs/vite/issues/22413)) ([fcdc87c](https://github.com/vitejs/vite/commit/fcdc87cc6799857e2bab0f44f333a681694fff74))
+
 ## <small>[8.0.12](https://github.com/vitejs/vite/compare/v8.0.11...v8.0.12) (2026-05-11)</small>
 ### Features
 

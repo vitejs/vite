@@ -53,7 +53,7 @@
     "@types/picomatch": "^4.0.3",
     "@types/stylus": "^0.48.43",
     "@types/ws": "^8.18.1",
-    "@vitejs/release-scripts": "^1.7.0",
+    "@vitejs/release-scripts": "^1.7.1",
     "eslint": "^9.39.4",
     "eslint-plugin-import-x": "^4.16.2",
     "eslint-plugin-n": "^18.0.1",

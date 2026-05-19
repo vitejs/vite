@@ -3,6 +3,7 @@ import fsp from 'node:fs/promises'
 import path from 'node:path'
 import { performance } from 'node:perf_hooks'
 import { scan } from 'rolldown/experimental'
+import type { TransformOptions as OxcTransformOptions } from 'rolldown/utils'
 import { transformSync } from 'rolldown/utils'
 import type { PartialResolvedId, Plugin } from 'rolldown'
 import colors from 'picocolors'
@@ -252,9 +253,6 @@ async function prepareRolldownScanner(
   const { plugins: pluginsFromConfig = [], ...rolldownOptions } =
     environment.config.optimizeDeps.rolldownOptions ?? {}
 
-  const plugins = await asyncFlatten(arraify(pluginsFromConfig))
-  plugins.push(...rolldownScanPlugin(environment, deps, missing, entries))
-
   const transformOptions = deepClone(rolldownOptions.transform) ?? {}
   if (transformOptions.jsx === undefined) {
     transformOptions.jsx = {}
@@ -267,6 +265,19 @@ async function prepareRolldownScanner(
   if (typeof transformOptions.jsx === 'object') {
     transformOptions.jsx.development ??= !environment.config.isProduction
   }
+  const transformSyncJsxOptions: OxcTransformOptions['jsx'] =
+    transformOptions.jsx === false ? undefined : transformOptions.jsx
+
+  const plugins = await asyncFlatten(arraify(pluginsFromConfig))
+  plugins.push(
+    ...rolldownScanPlugin(
+      environment,
+      deps,
+      missing,
+      entries,
+      transformSyncJsxOptions,
+    ),
+  )
 
   async function build() {
     await scan({
@@ -343,6 +354,7 @@ function rolldownScanPlugin(
   depImports: Record<string, string>,
   missing: Record<string, string>,
   entries: string[],
+  jsxOptions: OxcTransformOptions['jsx'],
 ): Plugin[] {
   const seen = new Map<string, string | undefined>()
   async function resolveId(
@@ -397,6 +409,7 @@ function rolldownScanPlugin(
     // transpile because `transformGlobImport` only expects js
     if (loader !== 'js') {
       const result = transformSync(id, contents, {
+        ...(jsxOptions !== undefined ? { jsx: jsxOptions } : {}),
         lang: loader,
         tsconfig: false,
       })

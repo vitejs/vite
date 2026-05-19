@@ -1,3 +1,26 @@
+## <small>[8.0.2](https://github.com/vitejs/vite/compare/plugin-legacy@8.0.1...plugin-legacy@8.0.2) (2026-05-14)</small>
+### Bug Fixes
+
+* **deps:** update all non-major dependencies ([#22143](https://github.com/vitejs/vite/issues/22143)) ([22b0166](https://github.com/vitejs/vite/commit/22b016612703320db45c64a2fe44472051ef5ec5))
+* **deps:** update all non-major dependencies ([#22382](https://github.com/vitejs/vite/issues/22382)) ([5c0cfcb](https://github.com/vitejs/vite/commit/5c0cfcb83dde2c6e25b6c3215dd622956bf29631))
+* **plugin-legacy:** remove modulepreload links for legacy-only builds ([#22332](https://github.com/vitejs/vite/issues/22332)) ([f3a0bc9](https://github.com/vitejs/vite/commit/f3a0bc90bcc529a12a520469b9d0fb6fa751107c))
+
+### Miscellaneous Chores
+
+* **deps:** update dependency tsdown to ^0.21.10 ([#22333](https://github.com/vitejs/vite/issues/22333)) ([3b51e05](https://github.com/vitejs/vite/commit/3b51e050214c5a817c163838ab8643fe34c7d0c3))
+* **deps:** update dependency tsdown to ^0.21.9 ([#22267](https://github.com/vitejs/vite/issues/22267)) ([a0aef50](https://github.com/vitejs/vite/commit/a0aef50f6b51120df95cc11a7354af2afabe6a4a))
+* **deps:** update rolldown-related dependencies ([#21989](https://github.com/vitejs/vite/issues/21989)) ([0ded627](https://github.com/vitejs/vite/commit/0ded6274579e8bda6b22a7ba93b15d15b4c28b78))
+* **deps:** update rolldown-related dependencies ([#22421](https://github.com/vitejs/vite/issues/22421)) ([66b9eb3](https://github.com/vitejs/vite/commit/66b9eb35188007e0e9a1bd03b4be820016cad60b))
+
+### Code Refactoring
+
+* upgrade to typescript 6 ([#22110](https://github.com/vitejs/vite/issues/22110)) ([cc41398](https://github.com/vitejs/vite/commit/cc41398c2cf0bb5061cf0ca5dc3b408ae7e41191))
+
+### Build System
+
+* handle tsdown inlineOnly deprecation ([#22111](https://github.com/vitejs/vite/issues/22111)) ([86cbc6e](https://github.com/vitejs/vite/commit/86cbc6e5571aefd6278d6ecbbfb5ede8d4061940))
+* improve typecheck and linting ([#22230](https://github.com/vitejs/vite/issues/22230)) ([3770a53](https://github.com/vitejs/vite/commit/3770a53064e8da27d4cb8d595a2b038413e6abdb))
+
 ## <small>[8.0.1](https://github.com/vitejs/vite/compare/plugin-legacy@8.0.0...plugin-legacy@8.0.1) (2026-03-26)</small>
 ### Bug Fixes
 
