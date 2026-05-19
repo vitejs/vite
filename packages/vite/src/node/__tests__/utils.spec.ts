@@ -13,6 +13,7 @@ import {
   generateCodeFrame,
   getHash,
   getLocalhostAddressIfDiffersFromDNS,
+  getNpmPackageName,
   getServerUrlByHost,
   injectQuery,
   isFileReadable,
@@ -1093,5 +1094,33 @@ describe('resolveServerUrls', () => {
     )
 
     expect(result.local).toContain('https://localhost:3000/')
+  })
+})
+
+describe('getNpmPackageName', () => {
+  test('returns null for empty string', () => {
+    expect(getNpmPackageName('')).toBe(null)
+  })
+
+  test('returns package name for unscoped package', () => {
+    expect(getNpmPackageName('react')).toBe('react')
+  })
+
+  test('returns scoped package name', () => {
+    expect(getNpmPackageName('@tanstack/react-query')).toBe(
+      '@tanstack/react-query',
+    )
+  })
+
+  test('returns package name ignoring subpath', () => {
+    expect(getNpmPackageName('react/jsx-runtime')).toBe('react')
+  })
+
+  test('returns scoped package name ignoring subpath', () => {
+    expect(getNpmPackageName('@scope/pkg/subpath')).toBe('@scope/pkg')
+  })
+
+  test('returns null for scoped package with no name', () => {
+    expect(getNpmPackageName('@scope')).toBe(null)
   })
 })

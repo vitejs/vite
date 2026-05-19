@@ -1602,6 +1602,7 @@ export function evalValue<T = any>(rawValue: string): T {
 }
 
 export function getNpmPackageName(importPath: string): string | null {
+  if (!importPath) return null
   const parts = importPath.split('/')
   if (parts[0][0] === '@') {
     if (!parts[1]) return null
