@@ -1,4 +1,5 @@
 import path from 'node:path'
+import fs from 'node:fs'
 import { execSync } from 'node:child_process'
 import type * as net from 'node:net'
 import { get as httpGet } from 'node:http'
@@ -1239,24 +1240,23 @@ export async function resolveServerOptions(
     }
   }
 
-  // pnpm's global virtual store may place package files outside workspace root.
-  // Try to include the global store path when enabled.
-  if (process.env.npm_config_user_agent?.includes('pnpm')) {
-    try {
-      const cwd = searchForPackageRoot(root)
-      const enableGlobalVirtualStore =
-        execSync('pnpm config get enableGlobalVirtualStore', { cwd })
-          .toString()
-          .trim() === 'true'
-      if (enableGlobalVirtualStore) {
-        const pnpmStoreDir = execSync('pnpm store path', { cwd })
-          .toString()
-          .trim()
-        allowDirs.push(pnpmStoreDir)
-      }
-    } catch {
-      // Ignore if pnpm isn't installed or config can't be resolved.
+  // pnpm's global virtual store (GVS) may place package files outside workspace root.
+  // Read node_modules/.modules.yaml which pnpm always writes on install — this works
+  // unconditionally regardless of how Vite is launched (node / npx / pnpm run),
+  // avoiding the need for subprocess calls or user-agent sniffing.
+  const pnpmModulesYaml = path.join(
+    searchForPackageRoot(root),
+    'node_modules',
+    '.modules.yaml',
+  )
+  try {
+    const content = fs.readFileSync(pnpmModulesYaml, 'utf-8')
+    const parsed = JSON.parse(content)
+    if (parsed.storeDir) {
+      allowDirs.push(parsed.storeDir)
     }
+  } catch {
+    // .modules.yaml not found or unreadable — not a pnpm project, skip
   }
 
   allowDirs = allowDirs.map((i) => resolvedAllowDir(root, i))
