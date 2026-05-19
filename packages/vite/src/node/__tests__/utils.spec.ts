@@ -1,7 +1,7 @@
 import fs from 'node:fs'
 import path from 'node:path'
 import crypto from 'node:crypto'
-import { describe, expect, test } from 'vitest'
+import { afterEach, beforeEach, describe, expect, test, vi } from 'vitest'
 import { fileURLToPath } from 'mlly'
 import {
   asyncFlatten,
@@ -14,6 +14,7 @@ import {
   getHash,
   getLocalhostAddressIfDiffersFromDNS,
   getServerUrlByHost,
+  hasCorrectCase,
   injectQuery,
   isFileReadable,
   isParentDirectory,
@@ -1093,5 +1094,52 @@ describe('resolveServerUrls', () => {
     )
 
     expect(result.local).toContain('https://localhost:3000/')
+  })
+})
+
+describe('hasCorrectCase', () => {
+  let readdirSyncSpy: ReturnType<typeof vi.spyOn>
+
+  beforeEach(() => {
+    readdirSyncSpy = vi.spyOn(fs, 'readdirSync')
+  })
+
+  afterEach(() => {
+    readdirSyncSpy.mockRestore()
+  })
+
+  test('returns true when file equals assets root (base case)', () => {
+    expect(hasCorrectCase('/project', '/project')).toBe(true)
+    expect(readdirSyncSpy).not.toHaveBeenCalled()
+  })
+
+  test('returns true for correctly cased file path under root', () => {
+    readdirSyncSpy.mockImplementation((dir: unknown) => {
+      if (dir === '/project/src') return ['index.ts'] as any
+      if (dir === '/project') return ['src'] as any
+      return [] as any
+    })
+    expect(hasCorrectCase('/project/src/index.ts', '/project')).toBe(true)
+  })
+
+  test('returns false for incorrectly cased file', () => {
+    readdirSyncSpy.mockImplementation((dir: unknown) => {
+      if (dir === '/project/src') return ['index.ts'] as any
+      return [] as any
+    })
+    expect(hasCorrectCase('/project/src/INDEX.ts', '/project')).toBe(false)
+  })
+
+  test('returns false when file is outside root without infinite recursion', () => {
+    // Without `if (parent === file) return false`, reaching the OS root would
+    // cause readdirSync('/').includes('') to be true here ('' is in the mock
+    // listing), recurse into hasCorrectCase('/', ...) again, and loop forever.
+    // The guard makes this termination explicit and correct on all platforms.
+    readdirSyncSpy.mockImplementation((dir: unknown) => {
+      if (dir === '/outside') return ['file.ts'] as any
+      if (dir === '/') return ['outside', ''] as any
+      return [] as any
+    })
+    expect(hasCorrectCase('/outside/file.ts', '/project')).toBe(false)
   })
 })

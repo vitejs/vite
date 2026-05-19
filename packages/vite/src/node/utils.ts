@@ -1547,10 +1547,11 @@ export function shouldServeFile(filePath: string, root: string): boolean {
  * Note that we can't use realpath here, because we don't want to follow
  * symlinks.
  */
-function hasCorrectCase(file: string, assets: string): boolean {
+export function hasCorrectCase(file: string, assets: string): boolean {
   if (file === assets) return true
 
   const parent = path.dirname(file)
+  if (parent === file) return false
 
   if (fs.readdirSync(parent).includes(path.basename(file))) {
     return hasCorrectCase(parent, assets)
