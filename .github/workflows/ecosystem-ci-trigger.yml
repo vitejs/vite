@@ -131,7 +131,7 @@ jobs:
 
       - name: Generate Token
         id: generate-token
-        uses: actions/create-github-app-token@v3
+        uses: actions/create-github-app-token@v3 # zizmor: ignore[github-app]
         with:
           app-id: ${{ secrets.ECOSYSTEM_CI_GITHUB_APP_ID }}
           private-key: ${{ secrets.ECOSYSTEM_CI_GITHUB_APP_PRIVATE_KEY }}

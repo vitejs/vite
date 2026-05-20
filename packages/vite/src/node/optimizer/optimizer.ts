@@ -71,7 +71,12 @@ export function createDepsOptimizer(
     async waitForProcessing(timeoutMs = 5000): Promise<void> {
       await Promise.race([
         depOptimizationProcessing.promise,
-        new Promise<void>((_,reject) => setTimeout(() => reject(new Error('waitForProcessing timeout')), timeoutMs))
+        new Promise<void>((_, reject) =>
+          setTimeout(
+            () => reject(new Error('waitForProcessing timeout')),
+            timeoutMs,
+          ),
+        ),
       ]).catch(() => {}) // timeout is non-fatal
     },
     close,
