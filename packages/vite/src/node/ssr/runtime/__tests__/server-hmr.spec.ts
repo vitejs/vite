@@ -133,6 +133,97 @@ describe(
         true,
       )
     })
+
+    it('does not expose partial exports across a stale importers triangle', async ({
+      runner,
+    }) => {
+      const testGlobal = globalThis as any
+
+      // Default the wait hook to a no-op so the warmup pass completes.
+      testGlobal.__vite_ssr_hmr_graph_cycle__ = {
+        wait: () => Promise.resolve(),
+      }
+      onTestFinished(() => {
+        delete testGlobal.__vite_ssr_hmr_graph_cycle__
+      })
+
+      // Warmup: evaluate the t -> u -> v -> t triangle so the persisted
+      // importers graph contains the cycle.
+      await runner.import('/fixtures/hmr-graph-cycle/t.js')
+
+      const tModule = runner.evaluatedModules.getModuleByUrl(
+        '/fixtures/hmr-graph-cycle/t.js',
+      )!
+      const uModule = runner.evaluatedModules.getModuleByUrl(
+        '/fixtures/hmr-graph-cycle/u.js',
+      )!
+      const vModule = runner.evaluatedModules.getModuleByUrl(
+        '/fixtures/hmr-graph-cycle/v.js',
+      )!
+      const stallModule = runner.evaluatedModules.getModuleByUrl(
+        '/fixtures/hmr-graph-cycle/stall.js',
+      )!
+
+      // Sanity check: the importers graph contains the t <- v <- u <- t cycle
+      // that the buggy graph-only check used to walk. invalidateModule
+      // intentionally does not clear `importers`, so this cycle survives the
+      // invalidation below and is what makes the regression possible.
+      expect(tModule.importers.has(vModule.id)).toBe(true)
+      expect(vModule.importers.has(uModule.id)).toBe(true)
+      expect(uModule.importers.has(tModule.id)).toBe(true)
+
+      // Install a controllable wait so t parks mid-eval inside stall.js
+      // exactly when entry-b reaches cachedRequest(t.js).
+      let waitStarted!: () => void
+      const waitStartedPromise = new Promise<void>((resolve) => {
+        waitStarted = resolve
+      })
+      let releaseWait!: () => void
+      const waitPromise = new Promise<void>((resolve) => {
+        releaseWait = resolve
+      })
+
+      testGlobal.__vite_ssr_hmr_graph_cycle__ = {
+        wait: () => {
+          waitStarted()
+          return waitPromise
+        },
+      }
+
+      for (const module of [tModule, uModule, vModule, stallModule]) {
+        runner.evaluatedModules.invalidateModule(module)
+      }
+
+      const importA = runner.import('/fixtures/hmr-graph-cycle/entry-a.js')
+      await waitStartedPromise
+
+      const importB = runner.import('/fixtures/hmr-graph-cycle/entry-b.js')
+      // Wait deterministically until entry-b has reached the point where it
+      // observes t as in-flight. `imports` is cleared by invalidateModule, so
+      // observing this edge means entry-b is racing the cycle-detection
+      // prefix of cachedRequest(t.js) on the same microtask boundary the bug
+      // fires on. (See the matching pattern in the re-export race test above.)
+      while (true) {
+        const entryBNode = runner.evaluatedModules.getModuleByUrl(
+          '/fixtures/hmr-graph-cycle/entry-b.js',
+        )
+        if (entryBNode?.imports.has(tModule.id)) break
+        await new Promise((resolve) => setImmediate(resolve))
+      }
+      releaseWait()
+      const results = await Promise.allSettled([importA, importB] as const)
+
+      expect(results).toEqual([
+        {
+          status: 'fulfilled',
+          value: expect.objectContaining({ seen: 1 }),
+        },
+        {
+          status: 'fulfilled',
+          value: expect.objectContaining({ seen: 1 }),
+        },
+      ])
+    })
   },
   process.env.CI ? 50_00 : 5_000,
 )
