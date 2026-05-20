@@ -136,7 +136,7 @@
     "strip-literal": "^3.1.0",
     "terser": "^5.47.1",
     "ufo": "^1.6.4",
-    "ws": "^8.20.0"
+    "ws": "^8.20.1"
   },
   "peerDependencies": {
     "@types/node": "^20.19.0 || >=22.12.0",
