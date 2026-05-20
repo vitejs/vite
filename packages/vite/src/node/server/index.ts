@@ -1248,8 +1248,15 @@ export async function resolveServerOptions(
   try {
     const content = fs.readFileSync(pnpmModulesYaml, 'utf-8')
     const parsed = JSON.parse(content)
-    if (parsed.virtualStoreDir && parsed.virtualStoreDir.startsWith('..')) {
-      allowDirs.push(parsed.virtualStoreDir)
+    const virtualStoreDir = parsed.virtualStoreDir
+    if (virtualStoreDir) {
+      if (path.isAbsolute(virtualStoreDir)) {
+        allowDirs.push(virtualStoreDir)
+      } else if (virtualStoreDir.startsWith('..')) {
+        allowDirs.push(
+          path.resolve(path.join(cwd, 'node_modules'), virtualStoreDir),
+        )
+      }
     }
   } catch {
     // .modules.yaml not found or unreadable — not a pnpm project, skip
