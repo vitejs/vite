@@ -1,6 +1,7 @@
-import { basename, resolve } from 'node:path'
-import { stripVTControlCharacters } from 'node:util'
+import { execFile } from 'node:child_process'
 import fsp from 'node:fs/promises'
+import { basename, resolve } from 'node:path'
+import { promisify, stripVTControlCharacters } from 'node:util'
 import colors from 'picocolors'
 import { afterEach, describe, expect, test, vi } from 'vitest'
 import type {
@@ -24,6 +25,7 @@ import { createLogger } from '../logger'
 import { BuildEnvironment, resolveConfig } from '..'
 
 const dirname = import.meta.dirname
+const execFileAsync = promisify(execFile)
 
 type FormatsToFileNames = [LibraryFormats, string][]
 
@@ -169,6 +171,29 @@ describe('build', () => {
     expect(manifest['b/index.css']).toMatchObject({
       isEntry: true,
     })
+  })
+
+  test('manifest build works when Vite is imported from a tsx CJS script', async () => {
+    const root = resolve(dirname, 'fixtures/tsx-cjs-manifest')
+    const outDir = resolve(root, 'dist')
+    await fsp.rm(outDir, { recursive: true, force: true })
+
+    try {
+      await execFileAsync(
+        process.execPath,
+        [
+          resolve(dirname, '../../../../..', 'node_modules/tsx/dist/cli.mjs'),
+          'build.ts',
+        ],
+        { cwd: root },
+      )
+
+      await expect(
+        fsp.readFile(resolve(outDir, '.vite/manifest.json'), 'utf-8'),
+      ).resolves.toContain('src/main.ts')
+    } finally {
+      await fsp.rm(outDir, { recursive: true, force: true })
+    }
   })
 
   test.for([
