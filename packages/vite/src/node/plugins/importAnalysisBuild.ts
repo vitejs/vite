@@ -2,7 +2,7 @@ import path from 'node:path'
 import MagicString from 'magic-string'
 import type { ImportSpecifier } from 'es-module-lexer'
 import { init, parse as parseImports } from 'es-module-lexer'
-import type { SourceMap } from 'rolldown'
+import type { OutputBundle, OutputChunk, SourceMap } from 'rolldown'
 import { viteBuildImportAnalysisPlugin as nativeBuildImportAnalysisPlugin } from 'rolldown/experimental'
 import type { RawSourceMap } from '@jridgewell/remapping'
 import convertSourceMap from 'convert-source-map'
@@ -13,11 +13,15 @@ import { toOutputFilePathInJS } from '../build'
 import { genSourceMapUrl } from '../server/sourcemap'
 import type { PartialEnvironment } from '../baseEnvironment'
 import { removedPureCssFilesCache } from './css'
+import { createSriDependencyPlaceholder, isSriFile } from './sri'
 
 type FileDep = {
+  integrity?: string
   url: string
   runtime: boolean
 }
+
+type PreloadDeps = string[] & { i?: (string | undefined)[] }
 
 type VitePreloadErrorEvent = Event & { payload: Error }
 
@@ -44,6 +48,44 @@ function findPreloadMarker(str: string, pos: number = 0): number {
   return result?.index ?? -1
 }
 
+const collectOwnerStaticDependencyFiles = (
+  ownerChunk: OutputChunk,
+  bundle: OutputBundle,
+): Set<string> => {
+  const files = new Set<string>()
+
+  const addChunk = (fileName: string): void => {
+    if (files.has(fileName)) {
+      return
+    }
+
+    const output = bundle[fileName]
+    if (!output || output.type !== 'chunk') {
+      return
+    }
+
+    files.add(output.fileName)
+
+    for (const importedFileName of output.imports) {
+      addChunk(importedFileName)
+    }
+
+    for (const cssFileName of output.viteMetadata!.importedCss) {
+      files.add(cssFileName)
+    }
+  }
+
+  for (const importedFileName of ownerChunk.imports) {
+    addChunk(importedFileName)
+  }
+
+  for (const cssFileName of ownerChunk.viteMetadata!.importedCss) {
+    files.add(cssFileName)
+  }
+
+  return files
+}
+
 /**
  * Helper for preloading CSS and direct imports of async chunks in parallel to
  * the async chunk itself.
@@ -61,7 +103,7 @@ declare const scriptRel: string
 declare const seen: Record<string, boolean>
 function preload(
   baseModule: () => Promise<unknown>,
-  deps?: string[],
+  deps?: PreloadDeps,
   importerUrl?: string,
 ) {
   let promise: Promise<PromiseSettledResult<unknown>[] | void> =
@@ -92,11 +134,12 @@ function preload(
     }
 
     promise = allSettled(
-      deps.map((dep) => {
+      deps.map((dep, index) => {
         // @ts-expect-error assetsURL is declared before preload.toString()
         dep = assetsURL(dep, importerUrl)
         if (dep in seen) return
         seen[dep] = true
+        const integrity = deps.i?.[index]
         const isCss = dep.endsWith('.css')
         const cssSelector = isCss ? '[rel="stylesheet"]' : ''
         const isBaseRelative = !!importerUrl
@@ -125,6 +168,9 @@ function preload(
           link.as = 'script'
         }
         link.crossOrigin = ''
+        if (integrity) {
+          link.integrity = integrity
+        }
         link.href = dep
         if (cspNonce) {
           link.setAttribute('nonce', cspNonce)
@@ -293,7 +339,8 @@ export function buildImportAnalysisPlugin(config: ResolvedConfig): Plugin[] {
         return
       }
       const buildSourcemap = this.environment.config.build.sourcemap
-      const { modulePreload } = this.environment.config.build
+      const { modulePreload, sri } = this.environment.config.build
+      const isSriEnabled = !!sri
 
       for (const file in bundle) {
         const chunk = bundle[file]
@@ -321,16 +368,75 @@ export function buildImportAnalysisPlugin(config: ResolvedConfig): Plugin[] {
           const rewroteMarkerStartPos = new Set() // position of the leading double quote
 
           const fileDeps: FileDep[] = []
+          const fileDepsIndexByUrl = new Map<string, number>()
+
           const addFileDep = (
             url: string,
             runtime: boolean = false,
+            integrity?: string,
           ): number => {
-            const index = fileDeps.findIndex((dep) => dep.url === url)
-            if (index === -1) {
-              return fileDeps.push({ url, runtime }) - 1
-            } else {
-              return index
+            const existingIndex = fileDepsIndexByUrl.get(url)
+            if (existingIndex !== undefined) {
+              if (integrity && !fileDeps[existingIndex]?.integrity) {
+                fileDeps[existingIndex].integrity = integrity
+              }
+              return existingIndex
             }
+
+            const index = fileDeps.push({ url, runtime, integrity }) - 1
+            fileDepsIndexByUrl.set(url, index)
+            return index
+          }
+
+          const getDepIntegrityPlaceholder = (fileName: string) => {
+            if (!isSriEnabled || !bundle[fileName] || !isSriFile(fileName)) {
+              return undefined
+            }
+            return createSriDependencyPlaceholder(
+              this,
+              chunk.fileName,
+              fileName,
+            )
+          }
+
+          const addRenderedFileDep = (dep: string): number => {
+            // SRI belongs to the emitted file before URL rendering.
+            const integrity = getDepIntegrityPlaceholder(dep)
+
+            if (!renderBuiltUrl) {
+              return addFileDep(
+                isRelativeBase ? toRelativePath(dep, file) : dep,
+                false,
+                integrity,
+              )
+            }
+
+            const replacement = toOutputFilePathInJS(
+              this.environment,
+              dep,
+              'asset',
+              chunk.fileName,
+              'js',
+              toRelativePath,
+            )
+
+            if (typeof replacement === 'string') {
+              return addFileDep(replacement, false, integrity)
+            }
+
+            return addFileDep(replacement.runtime, true, integrity)
+          }
+
+          let ownerStaticDependencyFiles: Set<string> | undefined
+          const isOwnerStaticDependency = (fileName: string): boolean => {
+            if (!isSriEnabled) {
+              return false
+            }
+            ownerStaticDependencyFiles ??= collectOwnerStaticDependencyFiles(
+              chunk,
+              bundle,
+            )
+            return ownerStaticDependencyFiles.has(fileName)
           }
 
           if (imports.length) {
@@ -373,13 +479,18 @@ export function buildImportAnalysisPlugin(config: ResolvedConfig): Plugin[] {
                   analyzed.add(filename)
                   const chunk = bundle[filename]
                   if (chunk) {
+                    // Avoid artificial SRI cycles from deps already loaded by the owner chunk.
+                    if (isOwnerStaticDependency(filename)) return
+
                     deps.add(chunk.fileName)
                     if (chunk.type === 'chunk') {
                       chunk.imports.forEach(addDeps)
                       // Ensure that the css imported by current chunk is loaded after the dependencies.
                       // So the style of current chunk won't be overwritten unexpectedly.
                       chunk.viteMetadata!.importedCss.forEach((file) => {
-                        deps.add(file)
+                        if (!isOwnerStaticDependency(file)) {
+                          deps.add(file)
+                        }
                       })
                     }
                   } else {
@@ -389,7 +500,9 @@ export function buildImportAnalysisPlugin(config: ResolvedConfig): Plugin[] {
                     if (chunk) {
                       if (chunk.viteMetadata!.importedCss.size) {
                         chunk.viteMetadata!.importedCss.forEach((file) => {
-                          deps.add(file)
+                          if (!isOwnerStaticDependency(file)) {
+                            deps.add(file)
+                          }
                         })
                         hasRemovedPureCssChunk = true
                       }
@@ -408,9 +521,12 @@ export function buildImportAnalysisPlugin(config: ResolvedConfig): Plugin[] {
               }
 
               if (markerStartPos > 0) {
-                // the dep list includes the main chunk, so only need to reload when there are actual other deps.
+                // The dep list includes the imported chunk itself.
+                // With SRI enabled and modulePreload enabled, keep it so __vitePreload can
+                // attach integrity before import() runs.
                 let depsArray =
                   deps.size > 1 ||
+                  (isSriEnabled && modulePreload !== false && deps.size > 0) ||
                   // main chunk is removed
                   (hasRemovedPureCssChunk && deps.size > 0)
                     ? modulePreload === false
@@ -440,33 +556,7 @@ export function buildImportAnalysisPlugin(config: ResolvedConfig): Plugin[] {
                   ]
                 }
 
-                let renderedDeps: number[]
-                if (renderBuiltUrl) {
-                  renderedDeps = depsArray.map((dep) => {
-                    const replacement = toOutputFilePathInJS(
-                      this.environment,
-                      dep,
-                      'asset',
-                      chunk.fileName,
-                      'js',
-                      toRelativePath,
-                    )
-
-                    if (typeof replacement === 'string') {
-                      return addFileDep(replacement)
-                    }
-
-                    return addFileDep(replacement.runtime, true)
-                  })
-                } else {
-                  renderedDeps = depsArray.map((d) =>
-                    // Don't include the assets dir if the default asset file names
-                    // are used, the path will be reconstructed by the import preload helper
-                    isRelativeBase
-                      ? addFileDep(toRelativePath(d, file))
-                      : addFileDep(d),
-                  )
-                }
+                const renderedDeps = depsArray.map(addRenderedFileDep)
 
                 s.update(
                   markerStartPos,
@@ -487,7 +577,17 @@ export function buildImportAnalysisPlugin(config: ResolvedConfig): Plugin[] {
               )
               .join(',')}]`
 
-            const mapDepsCode = `const __vite__mapDeps=(i,m=__vite__mapDeps,d=(m.f||(m.f=${fileDepsCode})))=>i.map(i=>d[i]);\n`
+            let mapDepsCode: string = ''
+            if (isSriEnabled) {
+              const integrityDepsCode = `[${fileDeps
+                .map(({ integrity }) =>
+                  integrity ? JSON.stringify(integrity) : 'void 0',
+                )
+                .join(',')}]`
+              mapDepsCode = `const __vite__mapDeps=(i,m=__vite__mapDeps,d=(m.f||(m.f=${fileDepsCode})),e=(m.i||(m.i=${integrityDepsCode})))=>{const a=i.map(i=>d[i]);a.i=i.map(i=>e[i]);return a};\n`
+            } else {
+              mapDepsCode = `const __vite__mapDeps=(i,m=__vite__mapDeps,d=(m.f||(m.f=${fileDepsCode})))=>i.map(i=>d[i]);\n`
+            }
 
             // inject extra code at the top or next line of hashbang
             if (code.startsWith('#!')) {

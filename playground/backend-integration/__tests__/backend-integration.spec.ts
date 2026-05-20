@@ -11,6 +11,7 @@ import {
   page,
   ports,
   readManifest,
+  readSriManifest,
   serverLogs,
   untilBrowserLogAfter,
 } from '~utils'
@@ -81,6 +82,35 @@ describe.runIf(isBuild)('build', () => {
     expect(customNameAssetEntry.name).toStrictEqual('bar.custom')
     expect(iconEntrypointEntry?.file).not.toBeUndefined()
     expect(waterContainerEntry?.file).not.toBeUndefined()
+  })
+
+  test('sri-manifest', async () => {
+    const manifest = readManifest('dev')
+    const sriManifest = readSriManifest('dev')
+
+    const htmlEntry = manifest['index.html']
+    const mainTsEntry = manifest['main.ts']
+    const cssAssetEntry = manifest['global.css']
+    const pcssAssetEntry = manifest['foo.pcss']
+    const scssAssetEntry = manifest['nested/blue.scss']
+    const imgAssetEntry = manifest['../images/logo.png']
+    const dirFooAssetEntry = manifest['../../dir/foo.css']
+    const customNameAssetEntry = manifest['../../dir/custom.css']
+    const iconEntrypointEntry = manifest['icon.png']
+
+    // JS and CSS chunks have integrity entries
+    expect(sriManifest[htmlEntry.file]).toMatch(/^sha384-/)
+    expect(sriManifest[htmlEntry.css[0]]).toMatch(/^sha384-/)
+    expect(sriManifest[mainTsEntry.file]).toMatch(/^sha384-/)
+    expect(sriManifest[cssAssetEntry.file]).toMatch(/^sha384-/)
+    expect(sriManifest[pcssAssetEntry.file]).toMatch(/^sha384-/)
+    expect(sriManifest[scssAssetEntry.file]).toMatch(/^sha384-/)
+    expect(sriManifest[dirFooAssetEntry.file]).toMatch(/^sha384-/)
+    expect(sriManifest[customNameAssetEntry.file]).toMatch(/^sha384-/)
+
+    // binary assets have no integrity entries
+    expect(sriManifest[imgAssetEntry.file]).toBeUndefined()
+    expect(sriManifest[iconEntrypointEntry.file]).toBeUndefined()
   })
 
   test('CSS imported from JS entry should have a non-nested chunk name', () => {
