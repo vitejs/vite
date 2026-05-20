@@ -769,9 +769,11 @@ To deploy CSP, certain directives or configs must be set due to Vite's internals
 
 ### [`'nonce-{RANDOM}'`](https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Content-Security-Policy/Sources#nonce-base64-value)
 
-When [`html.cspNonce`](/config/shared-options#html-cspnonce) is set, Vite adds a nonce attribute with the specified value to any `<script>` and `<style>` tags, as well as `<link>` tags for stylesheets and module preloading. Additionally, when this option is set, Vite will inject a meta tag (`<meta property="csp-nonce" nonce="PLACEHOLDER" />`).
+When [`html.cspNonce`](/config/shared-options#html-cspnonce) is set, Vite adds a nonce attribute to `<script>`, `<style>`, and to `<link>` tags that load scripts or styles (`rel="stylesheet"`, `rel="modulepreload"`, `rel="preload"` with `as="script"` or `as="style"`).
 
-The nonce value of a meta tag with `property="csp-nonce"` will be used by Vite whenever necessary during both dev and after build.
+If `cspNonce` is a string, the same nonce is used everywhere and Vite injects a single meta tag (`<meta property="csp-nonce" nonce="PLACEHOLDER" />`). If `cspNonce` is `{ script, style }`, Vite uses separate nonces and injects `<meta property="csp-script-nonce" ... />` and `<meta property="csp-style-nonce" ... />` instead.
+
+During dev and after build, Vite reads the nonce back from these meta tags. `csp-script-nonce` and `csp-style-nonce` fall back to `csp-nonce`, so servers can emit either form.
 
 :::warning
 Ensure that you replace the placeholder with a unique value for each request. This is important to prevent bypassing a resource's policy, which can otherwise be easily done.

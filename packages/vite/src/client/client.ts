@@ -12,7 +12,7 @@ import {
 } from '../shared/moduleRunnerTransport'
 import { createHMRHandler } from '../shared/hmrHandler'
 import { setupForwardConsoleHandler } from '../shared/forwardConsole'
-import { ErrorOverlay, cspNonce, overlayId } from './overlay'
+import { ErrorOverlay, cspStyleNonce, overlayId } from './overlay'
 // @ts-expect-error internal virtual module
 import '@vite/env'
 
@@ -561,8 +561,8 @@ export function updateStyle(id: string, content: string): void {
     style.setAttribute('type', 'text/css')
     style.setAttribute('data-vite-dev-id', id)
     style.textContent = content
-    if (cspNonce) {
-      style.setAttribute('nonce', cspNonce)
+    if (cspStyleNonce) {
+      style.setAttribute('nonce', cspStyleNonce)
     }
 
     if (!lastInsertedStyle) {
