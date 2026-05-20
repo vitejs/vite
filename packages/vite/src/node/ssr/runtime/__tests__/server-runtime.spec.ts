@@ -1,9 +1,16 @@
 import { existsSync, readdirSync } from 'node:fs'
-import { posix, win32 } from 'node:path'
+import { posix, resolve, win32 } from 'node:path'
 import { fileURLToPath } from 'node:url'
-import { describe, expect, vi } from 'vitest'
+import { setTimeout } from 'node:timers/promises'
+import { describe, expect, it, vi } from 'vitest'
 import { isWindows } from '../../../../shared/utils'
 import type { ExternalFetchResult } from '../../../../shared/invokeMethods'
+import { createServer } from '../../../server'
+import {
+  createRunnableDevEnvironment,
+  isRunnableDevEnvironment,
+} from '../../../server/environments/runnableEnvironment'
+import type { HMRLogger } from '../../../../../dist/node/module-runner'
 import { createModuleRunnerTester } from './utils'
 
 const _URL = URL
@@ -545,5 +552,91 @@ describe('invalid package', async () => {
         "ok": false,
       }
     `)
+  })
+})
+
+describe('full-reload during close', () => {
+  it('does not error when server closes during full-reload re-import', async () => {
+    const errors: (string | Error)[] = []
+    const logger: HMRLogger = {
+      error: (msg) => errors.push(msg),
+      debug: () => {},
+    }
+
+    const server = await createServer({
+      root: import.meta.dirname,
+      logLevel: 'error',
+      server: {
+        middlewareMode: true,
+        watch: null,
+        ws: false,
+      },
+      optimizeDeps: {
+        disabled: true,
+        noDiscovery: true,
+      },
+      environments: {
+        ssr: {
+          dev: {
+            createEnvironment(name, config) {
+              return createRunnableDevEnvironment(name, config, {
+                runnerOptions: { hmr: { logger } },
+              })
+            },
+          },
+        },
+      },
+      plugins: [
+        {
+          name: 'test-slow-virtual',
+          enforce: 'pre',
+          resolveId(source) {
+            if (source === 'virtual:slow') return '\0virtual:slow'
+          },
+          async load(id) {
+            if (id === '\0virtual:slow') {
+              await setTimeout(10)
+              return `export default "ok"`
+            }
+          },
+        },
+      ],
+    })
+
+    const env = server.environments.ssr
+    if (!isRunnableDevEnvironment(env)) {
+      throw new Error('expected RunnableDevEnvironment')
+    }
+
+    const mod = await env.runner.import('virtual:slow')
+    expect(mod.default).toBe('ok')
+
+    // re-import will run async via the HMR queue
+    env.moduleGraph.invalidateAll()
+    env.hot.send({ type: 'full-reload' })
+
+    // server.close() -> environment.close() -> runner.close() ->
+    // transport.disconnect() rejects the pending fetchModule RPC
+    await server.close()
+    await setTimeout(100) // Give the HMR handler time to settle
+
+    expect(
+      errors.some((e) => e.toString().includes('transport was disconnected')),
+    ).toBe(false)
+  })
+})
+
+describe('server.fs check', async () => {
+  const it = await createModuleRunnerTester({
+    server: {
+      fs: {
+        allow: [resolve(import.meta.dirname, './fixtures/circular')],
+      },
+    },
+  })
+
+  it('it is not applied to the server module runner', async ({ runner }) => {
+    const mod = await runner.import('/fixtures/basic.js')
+    expect(mod.name).toBe('basic')
   })
 })

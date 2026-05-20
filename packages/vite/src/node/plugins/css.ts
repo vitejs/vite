@@ -331,15 +331,15 @@ export function cssPlugin(config: ResolvedConfig): Plugin {
       )
     },
 
-    buildEnd() {
-      preprocessorWorkerController?.close()
+    async buildEnd() {
+      await preprocessorWorkerController?.close()
     },
 
     load: {
       filter: {
         id: CSS_LANGS_RE,
       },
-      async handler(id) {
+      handler(id) {
         if (urlRE.test(id)) {
           if (isModuleCSSRequest(id)) {
             throw new Error(
@@ -491,7 +491,9 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
       return path.dirname(
         assetFileNames({
           type: 'asset',
+          name: cssAssetName,
           names: [cssAssetName],
+          originalFileName,
           originalFileNames: originalFileName ? [originalFileName] : [],
           source: '/* vite internal call, ignore */',
         }),
@@ -594,7 +596,7 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
 
           const cssContent = await getContentWithSourcemap(css)
           const code = [
-            config.isBundled
+            this.environment.config.isBundled
               ? `const { updateStyle: __vite__updateStyle, removeStyle: __vite__removeStyle } = import.meta.hot._internal`
               : `import { updateStyle as __vite__updateStyle, removeStyle as __vite__removeStyle } from ${JSON.stringify(
                   path.posix.join(config.base, CLIENT_PUBLIC_PATH),
@@ -622,7 +624,7 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
         } else if (inlined) {
           let content = css
           if (config.build.cssMinify) {
-            content = await minifyCSS(content, config, true)
+            content = await minifyCSS(content, config, true, id)
           }
           code = `export default ${JSON.stringify(content)}`
         } else {
@@ -914,7 +916,7 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
                   if (isEntry) {
                     cssEntriesMap
                       .get(this.environment)!
-                      .set(chunk.name, referenceId)
+                      .set(chunk.fileName, { referenceId, name: chunk.name })
                   }
                   chunk.viteMetadata!.importedCss.add(
                     this.getFileName(referenceId),
@@ -1103,13 +1105,13 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
 
         const removedPureCssFiles = removedPureCssFilesCache.get(config)!
         pureCssChunkNames.forEach((fileName) => {
-          const emptyJsPlaceholder = bundle[fileName] as RenderedChunk
+          const emptyJsPlaceholder = bundle[fileName] as OutputChunk
           if (emptyJsPlaceholder.isEntry) {
             const { importedAssets, importedCss } =
               emptyJsPlaceholder.viteMetadata!
             const cssReferenceId = cssEntriesMap
               .get(this.environment)!
-              .get(emptyJsPlaceholder.name)!
+              .get(emptyJsPlaceholder.preliminaryFileName)!.referenceId
             const realCssEntryName = this.getFileName(cssReferenceId)
             const realCssEntry = bundle[realCssEntryName]!
             importedCss.delete(realCssEntryName)
@@ -1175,6 +1177,10 @@ export function cssAnalysisPlugin(config: ResolvedConfig): Plugin {
   return {
     name: 'vite:css-analysis',
 
+    applyToEnvironment(environment) {
+      return !environment.config.isBundled
+    },
+
     transform: {
       filter: {
         id: {
@@ -1182,7 +1188,7 @@ export function cssAnalysisPlugin(config: ResolvedConfig): Plugin {
           exclude: [commonjsProxyRE, SPECIAL_QUERY_RE],
         },
       },
-      async handler(_, id) {
+      handler(_, id) {
         const { moduleGraph } = this.environment as DevEnvironment
         const thisModule = moduleGraph.getModuleById(id)
 
@@ -1277,13 +1283,15 @@ export function getEmptyChunkReplacer(
 
 const fileURLWithWindowsDriveRE = /^file:\/\/\/[a-zA-Z]:\//
 
-interface CSSAtImportResolvers {
+export interface CSSAtImportResolvers {
   css: ResolveIdFn
   sass: ResolveIdFn
   less: ResolveIdFn
 }
 
-function createCSSResolvers(config: ResolvedConfig): CSSAtImportResolvers {
+export function createCSSResolvers(
+  config: ResolvedConfig,
+): CSSAtImportResolvers {
   let cssResolve: ResolveIdFn | undefined
   let sassResolve: ResolveIdFn | undefined
   let lessResolve: ResolveIdFn | undefined
@@ -1904,7 +1912,7 @@ const viteHashUpdateMarkerRE = /\/\*\$vite\$:\d+\*\//
 async function finalizeCss(css: string, config: ResolvedConfig) {
   // hoist external @imports and @charset to the top of the CSS chunk per spec (#1845 and #6333)
   if (css.includes('@import') || css.includes('@charset')) {
-    css = await hoistAtRules(css)
+    css = hoistAtRules(css)
   }
   if (config.build.cssMinify) {
     css = await minifyCSS(css, config, false)
@@ -2202,6 +2210,7 @@ async function minifyCSS(
   css: string,
   config: ResolvedConfig,
   inlined: boolean,
+  filename: string = defaultCssBundleName,
 ) {
   // We want inlined CSS to not end with a linebreak, while ensuring that
   // regular CSS assets do end with a linebreak.
@@ -2213,6 +2222,7 @@ async function minifyCSS(
       const { code, warnings } = await transform(css, {
         loader: 'css',
         target: config.build.cssTarget || undefined,
+        sourcefile: filename,
         ...resolveMinifyCssEsbuildOptions(config.esbuild || {}),
       })
       if (warnings.length) {
@@ -2239,9 +2249,7 @@ async function minifyCSS(
       ...config.css.lightningcss,
       targets: convertTargets(config.build.cssTarget),
       cssModules: undefined,
-      // TODO: Pass actual filename here, which can also be passed to esbuild's
-      // `sourcefile` option below to improve error messages
-      filename: defaultCssBundleName,
+      filename,
       code: Buffer.from(css),
       minify: true,
     })
@@ -2310,7 +2318,7 @@ const atImportRE =
 const atCharsetRE =
   /@charset(?:\s*(?:"(?:[^"]|(?<=\\)")*"|'(?:[^']|(?<=\\)')*').*?|[^;]*);/g
 
-export async function hoistAtRules(css: string): Promise<string> {
+export function hoistAtRules(css: string): string {
   const s = new MagicString(css)
   const cleanCss = emptyCssComments(css)
   let match: RegExpExecArray | null
@@ -2391,7 +2399,7 @@ type StylePreprocessor<Options extends StylePreprocessorInternalOptions> = {
     options: Options,
     resolvers: CSSAtImportResolvers,
   ) => StylePreprocessorResults | Promise<StylePreprocessorResults>
-  close: () => void
+  close: () => void | Promise<void>
 }
 
 export interface StylePreprocessorResults {
@@ -2467,7 +2475,7 @@ async function loadSss(root: string): Promise<PostCSS.Syntax> {
   return cachedSss
 }
 
-declare const window: unknown | undefined
+declare const window: unknown
 declare const location: { href: string } | undefined
 
 // in unix, scss might append `location.href` in environments that shim `location`
@@ -2609,10 +2617,11 @@ const scssProcessor = (
 ): StylePreprocessor<SassStylePreprocessorInternalOptions> => {
   let worker: ReturnType<typeof makeScssWorker> | undefined
   let failedSassEmbedded: boolean | undefined
+  const normalizedErrors = new WeakSet<Error>()
 
   return {
-    close() {
-      worker?.stop()
+    async close() {
+      await worker?.stop()
     },
     async process(environment, source, root, options, resolvers) {
       let sassPackage = loadSassPackage(root, failedSassEmbedded ?? false)
@@ -2668,19 +2677,24 @@ const scssProcessor = (
           deps,
         }
       } catch (e) {
-        // normalize SASS error
-        e.message = `[sass] ${e.message}`
-        e.id = e.file
-        e.frame = e.formatted
-        // modern api lacks `line` and `column` property. extract from `e.span`.
-        // NOTE: the values are 0-based so +1 is required.
-        if (e.span?.start) {
-          e.line = e.span.start.line + 1
-          e.column = e.span.start.column + 1
-          // it also lacks `e.formatted`, so we shim with the message here since
-          // sass error messages have the frame already in them and we don't want
-          // to re-generate a new frame (same as legacy api)
-          e.frame = e.message
+        if (!normalizedErrors.has(e)) {
+          // normalize SASS error
+          e.message = `[sass] ${e.message}`
+          e.id = e.file
+          e.frame = e.formatted
+          // modern api lacks `line` and `column` property. extract from `e.span`.
+          // NOTE: the values are 0-based so +1 is required.
+          if (e.span?.start) {
+            e.line = e.span.start.line + 1
+            e.column = e.span.start.column + 1
+            // it also lacks `e.formatted`, so we shim with the message here since
+            // sass error messages have the frame already in them and we don't want
+            // to re-generate a new frame (same as legacy api)
+            e.frame = e.message
+          }
+          // sass sometimes reuses the error instance
+          // avoid mutating the same instance multiple times
+          normalizedErrors.add(e)
         }
         return { code: '', error: e, deps: [] }
       }
@@ -3144,10 +3158,8 @@ const createPreprocessorWorkerController = (maxWorkers: number | undefined) => {
       return scss.process(environment, source, root, opts, resolvers)
     }
 
-  const close = () => {
-    less.close()
-    scss.close()
-    styl.close()
+  const close = async () => {
+    await Promise.all([less.close(), scss.close(), styl.close()])
   }
 
   return {
