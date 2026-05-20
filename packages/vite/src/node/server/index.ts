@@ -1217,10 +1217,10 @@ export async function resolveServerOptions(
 
   let allowDirs = server.fs.allow
 
+  const cwd = searchForPackageRoot(root)
   if (process.versions.pnp) {
     // running a command fails if cwd doesn't exist and root may not exist
     // search for package root to find a path that exists
-    const cwd = searchForPackageRoot(root)
     try {
       const enableGlobalCache =
         execSync('yarn config get enableGlobalCache', { cwd })
@@ -1244,16 +1244,12 @@ export async function resolveServerOptions(
   // Read node_modules/.modules.yaml which pnpm always writes on install — this works
   // unconditionally regardless of how Vite is launched (node / npx / pnpm run),
   // avoiding the need for subprocess calls or user-agent sniffing.
-  const pnpmModulesYaml = path.join(
-    searchForPackageRoot(root),
-    'node_modules',
-    '.modules.yaml',
-  )
+  const pnpmModulesYaml = path.join(cwd, 'node_modules', '.modules.yaml')
   try {
     const content = fs.readFileSync(pnpmModulesYaml, 'utf-8')
     const parsed = JSON.parse(content)
-    if (parsed.storeDir) {
-      allowDirs.push(parsed.storeDir)
+    if (parsed.virtualStoreDir && parsed.virtualStoreDir.startsWith('..')) {
+      allowDirs.push(parsed.virtualStoreDir)
     }
   } catch {
     // .modules.yaml not found or unreadable — not a pnpm project, skip
