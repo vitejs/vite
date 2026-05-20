@@ -358,16 +358,12 @@ export function oxcResolvePlugin(
             })
           },
 
-          ...(partialEnv.config.command === 'serve'
-            ? {
-                async onWarn(msg) {
-                  getEnv().logger.warn(`warning: ${msg}`, {
-                    clear: true,
-                    timestamp: true,
-                  })
-                },
-              }
-            : {}),
+          async onWarn(msg) {
+            getEnv().logger.warn(`warning: ${msg}`, {
+              clear: true,
+              timestamp: true,
+            })
+          },
           ...(debug
             ? {
                 async onDebug(message) {
