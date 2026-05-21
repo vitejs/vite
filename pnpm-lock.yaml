@@ -462,6 +462,8 @@ importers:
 
   packages/vite/src/node/__tests__/fixtures/file-url: {}
 
+  packages/vite/src/node/__tests__/fixtures/manifest-tsx-cjs: {}
+
   packages/vite/src/node/__tests__/fixtures/scan-subpath-import-glob: {}
 
   packages/vite/src/node/__tests__/fixtures/test-dep-conditions: {}
