@@ -1,5 +1,5 @@
 import path from 'node:path'
-import type { OutputChunk, RenderedChunk } from 'rolldown'
+import type { OutputAsset, OutputChunk, RenderedChunk } from 'rolldown'
 import { viteManifestPlugin as nativeManifestPlugin } from 'rolldown/experimental'
 import type { Plugin } from '../plugin'
 import { normalizePath } from '../utils'
@@ -111,63 +111,189 @@ export function manifestPlugin(): Plugin {
       {
         name: 'native:manifest-compatible',
         generateBundle(_, bundle) {
-          const asset = bundle[outPath]
-          if (asset.type === 'asset') {
-            let manifest: Manifest | undefined
-            for (const output of Object.values(bundle)) {
-              const importedCss = output.viteMetadata?.importedCss
-              const importedAssets = output.viteMetadata?.importedAssets
-              if (!importedCss?.size && !importedAssets?.size) continue
-              manifest ??= JSON.parse(asset.source.toString()) as Manifest
-              if (output.type === 'chunk') {
-                const item = manifest[getChunkName(output)]
-                if (!item) continue
-                if (importedCss?.size) {
-                  item.css = [...importedCss]
-                }
-                if (importedAssets?.size) {
-                  item.assets = [...importedAssets]
-                }
-              } else if (output.type === 'asset' && output.names.length > 0) {
-                // Add every unique asset to the manifest, keyed by its original name
-                const keys =
-                  output.originalFileNames.length > 0
-                    ? output.originalFileNames
-                    : [`_${path.basename(output.fileName)}`]
+          const createFallbackManifest = (): Manifest => {
+            const manifest: Manifest = {}
+            const entryCssReferenceIds = cssEntriesMap.get(this.environment)
+            const entryCssAssetFileNames = new Set(entryCssReferenceIds?.keys())
+            for (const { referenceId } of entryCssReferenceIds?.values() ??
+              []) {
+              try {
+                entryCssAssetFileNames.add(this.getFileName(referenceId))
+              } catch {
+                // The asset was generated as part of a different output option.
+              }
+            }
 
-                for (const key of keys) {
-                  const item = manifest[key]
-                  if (!item) continue
-                  if (!(item.file && endsWithJSRE.test(item.file))) {
-                    if (importedCss?.size) {
-                      item.css = [...importedCss]
-                    }
-                    if (importedAssets?.size) {
-                      item.assets = [...importedAssets]
-                    }
+            for (const file in bundle) {
+              const output = bundle[file]
+              if (output.type === 'chunk') {
+                manifest[getChunkName(output)] = createChunk(output)
+              } else if (output.type === 'asset' && output.names.length > 0) {
+                const src =
+                  output.originalFileNames.length > 0
+                    ? output.originalFileNames[0]
+                    : `_${path.basename(output.fileName)}`
+                const isEntry = entryCssAssetFileNames.has(output.fileName)
+                const asset = createAsset(output, src, isEntry)
+
+                const file = manifest[src]?.file
+                if (!(file && endsWithJSRE.test(file))) {
+                  manifest[src] = asset
+                }
+
+                for (const originalFileName of output.originalFileNames.slice(
+                  1,
+                )) {
+                  const file = manifest[originalFileName]?.file
+                  if (!(file && endsWithJSRE.test(file))) {
+                    manifest[originalFileName] = asset
                   }
                 }
               }
             }
-            const output = this.environment.config.build.rolldownOptions.output
-            const outputLength = Array.isArray(output) ? output.length : 1
-            if (manifest && outputLength === 1) {
-              asset.source = JSON.stringify(manifest, undefined, 2)
-              return
-            }
 
-            const state = getState(this)
-            state.outputCount++
-            state.manifest = Object.assign(
-              state.manifest,
-              manifest ?? JSON.parse(asset.source.toString()),
-            )
-            if (state.outputCount >= outputLength) {
-              asset.source = JSON.stringify(state.manifest, undefined, 2)
-              state.reset()
+            return manifest
+          }
+
+          const asset = bundle[outPath]
+          if (asset && asset.type !== 'asset') return
+          const manifest = asset
+            ? (JSON.parse(asset.source.toString()) as Manifest)
+            : createFallbackManifest()
+          for (const output of Object.values(bundle)) {
+            const importedCss = output.viteMetadata?.importedCss
+            const importedAssets = output.viteMetadata?.importedAssets
+            if (!importedCss?.size && !importedAssets?.size) continue
+            if (output.type === 'chunk') {
+              const item = manifest[getChunkName(output)]
+              if (!item) continue
+              if (importedCss?.size) {
+                item.css = [...importedCss]
+              }
+              if (importedAssets?.size) {
+                item.assets = [...importedAssets]
+              }
+            } else if (output.type === 'asset' && output.names.length > 0) {
+              // Add every unique asset to the manifest, keyed by its original name
+              const keys =
+                output.originalFileNames.length > 0
+                  ? output.originalFileNames
+                  : [`_${path.basename(output.fileName)}`]
+
+              for (const key of keys) {
+                const item = manifest[key]
+                if (!item) continue
+                if (!(item.file && endsWithJSRE.test(item.file))) {
+                  if (importedCss?.size) {
+                    item.css = [...importedCss]
+                  }
+                  if (importedAssets?.size) {
+                    item.assets = [...importedAssets]
+                  }
+                }
+              }
+            }
+          }
+          const output = this.environment.config.build.rolldownOptions.output
+          const outputLength = Array.isArray(output) ? output.length : 1
+          if (outputLength === 1) {
+            const source = JSON.stringify(manifest, undefined, 2)
+            if (asset) {
+              asset.source = source
             } else {
+              this.emitFile({
+                fileName: outPath,
+                type: 'asset',
+                source,
+              })
+            }
+            return
+          }
+
+          const state = getState(this)
+          state.outputCount++
+          state.manifest = Object.assign(state.manifest, manifest)
+          if (state.outputCount >= outputLength) {
+            const source = JSON.stringify(state.manifest, undefined, 2)
+            if (asset) {
+              asset.source = source
+            } else {
+              this.emitFile({
+                fileName: outPath,
+                type: 'asset',
+                source,
+              })
+            }
+            state.reset()
+          } else {
+            if (asset) {
               delete bundle[outPath]
             }
+          }
+
+          function getInternalImports(imports: string[]): string[] {
+            const filteredImports: string[] = []
+
+            for (const file of imports) {
+              const output = bundle[file]
+              if (output?.type !== 'chunk') continue
+              filteredImports.push(getChunkName(output))
+            }
+
+            return filteredImports
+          }
+
+          function createChunk(chunk: OutputChunk): ManifestChunk {
+            const manifestChunk: ManifestChunk = {
+              file: chunk.fileName,
+              name: chunk.name,
+            }
+
+            if (chunk.facadeModuleId) {
+              manifestChunk.src = getChunkName(chunk)
+            }
+            if (chunk.isEntry) {
+              manifestChunk.isEntry = true
+            }
+            if (chunk.isDynamicEntry) {
+              manifestChunk.isDynamicEntry = true
+            }
+
+            if (chunk.imports.length) {
+              const internalImports = getInternalImports(chunk.imports)
+              if (internalImports.length > 0) {
+                manifestChunk.imports = internalImports
+              }
+            }
+
+            if (chunk.dynamicImports.length) {
+              const internalImports = getInternalImports(chunk.dynamicImports)
+              if (internalImports.length > 0) {
+                manifestChunk.dynamicImports = internalImports
+              }
+            }
+
+            if (chunk.viteMetadata?.importedCss.size) {
+              manifestChunk.css = [...chunk.viteMetadata.importedCss]
+            }
+            if (chunk.viteMetadata?.importedAssets.size) {
+              manifestChunk.assets = [...chunk.viteMetadata.importedAssets]
+            }
+
+            return manifestChunk
+          }
+
+          function createAsset(
+            asset: OutputAsset,
+            src: string,
+            isEntry?: boolean,
+          ): ManifestChunk {
+            const manifestChunk: ManifestChunk = {
+              file: asset.fileName,
+              src,
+            }
+            if (isEntry) manifestChunk.isEntry = true
+            return manifestChunk
           }
         },
       },

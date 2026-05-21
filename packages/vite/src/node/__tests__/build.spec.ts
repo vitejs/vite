@@ -1,5 +1,6 @@
+import { execFile } from 'node:child_process'
 import { basename, resolve } from 'node:path'
-import { stripVTControlCharacters } from 'node:util'
+import { promisify, stripVTControlCharacters } from 'node:util'
 import fsp from 'node:fs/promises'
 import colors from 'picocolors'
 import { afterEach, describe, expect, test, vi } from 'vitest'
@@ -24,6 +25,7 @@ import { createLogger } from '../logger'
 import { BuildEnvironment, resolveConfig } from '..'
 
 const dirname = import.meta.dirname
+const execFileAsync = promisify(execFile)
 
 type FormatsToFileNames = [LibraryFormats, string][]
 
@@ -168,6 +170,31 @@ describe('build', () => {
     })
     expect(manifest['b/index.css']).toMatchObject({
       isEntry: true,
+    })
+  })
+
+  test('manifest builds from a tsx CommonJS TypeScript script', async (ctx) => {
+    const root = resolve(dirname, 'fixtures/manifest-tsx-cjs')
+    ctx.onTestFinished(() =>
+      fsp.rm(resolve(root, 'dist'), { recursive: true, force: true }),
+    )
+
+    await execFileAsync(
+      process.execPath,
+      [
+        resolve(dirname, '../../../../../node_modules/tsx/dist/cli.mjs'),
+        'build.ts',
+      ],
+      { cwd: root },
+    )
+
+    const manifest = JSON.parse(
+      await fsp.readFile(resolve(root, 'dist/.vite/manifest.json'), 'utf-8'),
+    )
+    expect(manifest['index.ts']).toMatchObject({
+      file: expect.stringMatching(/^assets\/index-.*\.js$/),
+      isEntry: true,
+      src: 'index.ts',
     })
   })
 
