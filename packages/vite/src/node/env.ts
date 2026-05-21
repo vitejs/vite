@@ -1,5 +1,6 @@
 import fs from 'node:fs'
 import path from 'node:path'
+// eslint-disable-next-line n/no-unsupported-features/node-builtins -- our supported nodejs range supports `parseEnv` but in experimental state, which is fine
 import { parseEnv } from 'node:util'
 import { type DotenvPopulateInput, expand } from 'dotenv-expand'
 import colors from 'picocolors'

@@ -125,6 +125,8 @@ const _require = createRequire(import.meta.url)
 
 const nonLeadingHashInFileNameRE = /[^/]+\[hash(?::\d+)?\]/
 const prefixedHashInFileNameRE = /\W?\[hash(?::\d+)?\]/
+export const modulePreloadLinkRE: RegExp =
+  /<link(?![\w-])[^>]*?\srel=(['"])modulepreload\1[^>]*>/g
 
 // browsers supporting dynamic import + import.meta.resolve + async generator
 const modernTargetsEsbuild = [
@@ -641,7 +643,9 @@ function viteLegacyPlugin(options: Options = {}): Plugin[] {
         }
       }
       if (!genModern) {
-        html = html.replace(/<script type="module".*?<\/script>/g, '')
+        html = html
+          .replace(/<script type="module".*?<\/script>/g, '')
+          .replace(modulePreloadLinkRE, '')
       }
 
       const tags: HtmlTagDescriptor[] = []

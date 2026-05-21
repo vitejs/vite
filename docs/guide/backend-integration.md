@@ -21,7 +21,7 @@ If you need a custom integration, you can follow the steps in this guide to conf
      build: {
        // generate .vite/manifest.json in outDir
        manifest: true,
-       rollupOptions: {
+       rolldownOptions: {
          // overwrite default .html entry
          input: '/path/to/main.js',
        },
@@ -179,7 +179,7 @@ If you need a custom integration, you can follow the steps in this guide to conf
    ```
 
    Each entry in the manifest represents one of the following:
-   - **Entry chunks**: Generated from files specified in [`build.rollupOptions.input`](https://rollupjs.org/configuration-options/#input). These chunks have `isEntry: true` and their key is the relative src path from project root.
+   - **Entry chunks**: Generated from files specified in [`build.rolldownOptions.input`](https://rollupjs.org/configuration-options/#input). These chunks have `isEntry: true` and their key is the relative src path from project root.
    - **Dynamic entry chunks**: Generated from dynamic imports. These chunks have `isDynamicEntry: true` and their key is the relative src path from project root.
    - **Non-entry chunks**: Their key is the base name of the generated file prefixed with `_`.
    - **Asset chunks**: Generated from imported assets like images, fonts. Their key is the relative src path from project root.

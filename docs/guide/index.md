@@ -268,7 +268,7 @@ Then go to your Vite based project and run `pnpm link vite` (or the package mana
 To learn more about how and when Vite does releases, check out the [Releases](../releases.md) documentation.
 
 ::: tip Dependencies using Vite
-To replace the Vite version used by dependencies transitively, you should use [npm overrides](https://docs.npmjs.com/cli/v11/configuring-npm/package-json#overrides) or [pnpm overrides](https://pnpm.io/9.x/package_json#pnpmoverrides).
+To replace the Vite version used by dependencies transitively, you should use [npm overrides](https://docs.npmjs.com/cli/v11/configuring-npm/package-json#overrides) or [pnpm overrides](https://pnpm.io/settings#overrides).
 :::
 
 ## Community

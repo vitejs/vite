@@ -6,6 +6,7 @@ import { resolveConfig } from '../../config'
 import type { InlineConfig } from '../../config'
 import {
   convertTargets,
+  createCSSResolvers,
   cssPlugin,
   cssUrlRE,
   getEmptyChunkReplacer,
@@ -15,6 +16,7 @@ import {
   resolveLibCssFilename,
 } from '../../plugins/css'
 import { PartialEnvironment } from '../../baseEnvironment'
+import { normalizePath } from '../../utils'
 
 const dirname = import.meta.dirname
 
@@ -418,6 +420,36 @@ describe('preprocessCSS', () => {
       }
       "
     `)
+  })
+})
+
+// Sass does not consult the `main` field; see
+// https://sass-lang.com/documentation/js-api/classes/nodepackageimporter/
+describe('sass package resolution', () => {
+  const fixtureRoot = path.resolve(dirname, 'fixtures/sass-package-resolution')
+  const importer = path.resolve(fixtureRoot, 'entry.scss')
+
+  async function getSassResolver() {
+    const config = await resolveConfig(
+      { configFile: false, root: fixtureRoot },
+      'serve',
+    )
+    const environment = new PartialEnvironment('client', config)
+    const resolvers = createCSSResolvers(config)
+    return (id: string) => resolvers.sass(environment, id, importer)
+  }
+
+  test('resolves to index.scss at package root, ignoring main field', async () => {
+    const resolve = await getSassResolver()
+    const resolved = await resolve('sass-pkg-with-index')
+    expect(resolved).toBe(
+      normalizePath(
+        path.resolve(
+          fixtureRoot,
+          'node_modules/sass-pkg-with-index/index.scss',
+        ),
+      ),
+    )
   })
 })
 
