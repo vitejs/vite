@@ -403,7 +403,6 @@ export async function loadCachedDepOptimizationMetadata(
   // Task to treat it as neither a build input nor a build output: the
   // lockfile hash stored in the metadata already drives re-optimization,
   // and the cache is process-local scratch space, not a build artifact.
-  // No-op outside Vite Task.
   ignoreInput(depsCacheDir)
   ignoreOutput(depsCacheDir)
 

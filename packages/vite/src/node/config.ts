@@ -1406,11 +1406,6 @@ export async function resolveConfig(
 
   let configFileDependencies: string[] = []
   let mode = inlineConfig.mode || defaultMode
-  // Ask Vite Task for `NODE_ENV` so the env becomes part of the build's
-  // cache fingerprint and `process.env.NODE_ENV` is populated when only
-  // Vite Task knows it. Vite's build output branches on the value below
-  // (`isProduction`), so changing it between runs must invalidate the
-  // cache. No-op outside Vite Task.
   getEnv('NODE_ENV')
   const isNodeEnvSet = !!process.env.NODE_ENV
   const packageCache: PackageCache = new Map()
@@ -2595,7 +2590,6 @@ async function loadConfigFromBundledFile(
 
     // Tell Vite Task to ignore this transient file as both input and output,
     // so the read-write of this file doesn't affect the cache fingerprints.
-    // No-op outside Vite Task.
     ignoreInput(tempFileName)
     ignoreOutput(tempFileName)
     await fsp.writeFile(tempFileName, bundledCode)

@@ -485,8 +485,7 @@ export async function _createServer(
   },
 ): Promise<ViteDevServer> {
   // The dev server is a long-running, interactive process whose outputs
-  // (network responses, HMR updates) cannot be replayed from a cache, so
-  // tell Vite Task to skip storing this run. No-op outside Vite Task.
+  // (network responses, HMR updates) cannot be replayed from a cache.
   disableCache()
 
   const config = isResolvedConfig(inlineConfig)

@@ -83,13 +83,6 @@ export function loadEnv(
     }
   }
 
-  // When run inside Vite Task, ask it for every env matching each prefix.
-  // Vite Task adds the glob and its match-set to the build's cache
-  // fingerprint, so adding/removing/changing a matching env invalidates the
-  // cache. `getEnvs` also populates `process.env` for names Vite Task knows
-  // about and that aren't already set, so the loop below picks them up
-  // alongside inline inherited envs. Outside Vite Task this is a no-op (the
-  // client cannot connect).
   for (const prefix of prefixes) {
     getEnvs(`${prefix}*`, { tracked: true })
   }

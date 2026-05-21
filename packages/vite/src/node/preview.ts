@@ -128,8 +128,7 @@ export async function preview(
   inlineConfig: InlineConfig = {},
 ): Promise<PreviewServer> {
   // The preview server is a long-running, interactive process whose
-  // responses cannot be replayed from a cache, so tell Vite Task to skip
-  // storing this run. No-op outside Vite Task.
+  // responses cannot be replayed from a cache.
   disableCache()
 
   const config = await resolveConfig(
