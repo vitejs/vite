@@ -78,8 +78,6 @@ export async function createServer(
       if (url === '/trailing-slash/dir/') {
         const template = fs.readFileSync(resolve(`.${url}index.html`), 'utf-8')
         const html = await vite.transformIndexHtml(url, template)
-        await vite.waitForRequestsIdle()
-
         return res.status(200).set({ 'Content-Type': 'text/html' }).end(html)
       }
 

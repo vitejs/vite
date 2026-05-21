@@ -3,12 +3,10 @@
 
 import path from 'node:path'
 import kill from 'kill-port'
-import type { ViteDevServer } from 'vite'
 import { createInMemoryLogger, hmrPorts, ports, rootDir } from '~utils'
 
 export const port = ports['ssr-html']
 export const serverLogs: string[] = []
-export let viteServer: ViteDevServer
 
 export async function serve(): Promise<{ close(): Promise<void> }> {
   await kill(port)
@@ -19,7 +17,6 @@ export async function serve(): Promise<{ close(): Promise<void> }> {
     hmrPorts['ssr-html'],
     createInMemoryLogger(serverLogs),
   )
-  viteServer = vite
 
   return new Promise((resolve, reject) => {
     try {

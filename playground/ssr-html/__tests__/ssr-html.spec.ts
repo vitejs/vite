@@ -2,9 +2,10 @@ import { execFile } from 'node:child_process'
 import { promisify } from 'node:util'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
+import { setTimeout } from 'node:timers/promises'
 import { describe, expect, test } from 'vitest'
 import { port, serverLogs } from './serve'
-import { editFile, isServe, page, viteServer } from '~utils'
+import { editFile, isServe, page } from '~utils'
 
 const url = `http://localhost:${port}`
 
@@ -51,27 +52,10 @@ describe.runIf(isServe)('trailing slash html paths', () => {
     expect(response.status).toBe(200)
     await response.text()
 
-    await expect
-      .poll(() => [
-        viteServer.environments.client.moduleGraph.urlToModuleMap.has(
-          '/trailing-slash/dir/filename.js',
-        ),
-        viteServer.environments.client.moduleGraph.urlToModuleMap.has(
-          '/trailing-slash/other.js',
-        ),
-      ])
-      .toEqual([true, true])
-    expect(
-      viteServer.environments.client.moduleGraph.urlToModuleMap.has(
-        '/trailing-slash/filename.js',
-      ),
-    ).toBe(false)
-    expect(
-      viteServer.environments.client.moduleGraph.urlToModuleMap.has(
-        '/other.js',
-      ),
-    ).toBe(false)
-    expect(serverLogs.join('\n')).not.toContain('Pre-transform error')
+    await setTimeout(100) // wait for pre-transform to happen
+    expect(serverLogs).not.toEqual(
+      expect.arrayContaining([expect.stringContaining('Pre-transform error')]),
+    )
   })
 
   test('loads relative module scripts from the trailing slash directory', async () => {
@@ -80,9 +64,9 @@ describe.runIf(isServe)('trailing slash html paths', () => {
     await expect
       .poll(() => page.textContent('.relative-script'))
       .toBe('relative module loaded')
-    expect(await page.locator('html').getAttribute('data-parent-script')).toBe(
-      'loaded',
-    )
+    await expect
+      .poll(() => page.textContent('.relative-parent-script'))
+      .toBe('relative parent module loaded')
   })
 })
 

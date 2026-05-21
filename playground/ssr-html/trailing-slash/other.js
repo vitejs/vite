@@ -1,1 +1,2 @@
-document.documentElement.dataset.parentScript = 'loaded'
+document.querySelector('.relative-parent-script').textContent =
+  'relative parent module loaded'
