@@ -91,7 +91,7 @@ export function optimizedDepsPlugin(): Plugin {
           ])
           if (map) {
             return {
-              code: code.replace(/^\/\/# sourceMappingURL=.*$/m, ''),
+              code,
               map,
             }
           }
