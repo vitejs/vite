@@ -367,3 +367,12 @@ test('import.meta.glob and dynamic import vars transformations should be visible
       JSON.stringify({ globTransformed: true, dynamicImportTransformed: true }),
     )
 })
+
+test('absolute base with files outside of root', async () => {
+  await expect
+    .poll(async () => JSON.parse(await page.textContent('.absolute-base-outside-root')))
+    .toStrictEqual({
+      '../external/x.js': 'hello from x',
+      '../external/y.js': 'hello from y',
+    })
+})

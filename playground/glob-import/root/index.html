@@ -313,3 +313,24 @@
   document.querySelector('.transform-visibility').textContent =
     JSON.stringify(result)
 </script>
+
+<h2>Absolute base outside root</h2>
+<pre class="absolute-base-outside-root"></pre>
+
+<script type="module">
+  // Regression test for https://github.com/rolldown/rolldown/issues/9144:
+  // `import.meta.glob` with `base: '/'` matching files outside of vite's root
+  // must emit a root-relative import path (prefixed with `/`) rather than an
+  // importer-relative one, otherwise the bundler resolves it against the
+  // importer and lands on a non-existent file.
+  const modules = import.meta.glob('../external/*.js', {
+    eager: true,
+    base: '/',
+  })
+  document.querySelector('.absolute-base-outside-root').textContent =
+    JSON.stringify(
+      Object.fromEntries(Object.entries(modules).map(([k, v]) => [k, v.msg])),
+      null,
+      2,
+    )
+</script>
