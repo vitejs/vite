@@ -313,3 +313,19 @@
   document.querySelector('.transform-visibility').textContent =
     JSON.stringify(result)
 </script>
+
+<h2>Absolute base outside root</h2>
+<pre class="absolute-base-outside-root"></pre>
+
+<script type="module">
+  const modules = import.meta.glob('../external/*.js', {
+    eager: true,
+    base: '/',
+  })
+  document.querySelector('.absolute-base-outside-root').textContent =
+    JSON.stringify(
+      Object.fromEntries(Object.entries(modules).map(([k, v]) => [k, v.msg])),
+      null,
+      2,
+    )
+</script>
