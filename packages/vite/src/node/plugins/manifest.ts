@@ -112,7 +112,7 @@ export function manifestPlugin(): Plugin {
         name: 'native:manifest-compatible',
         generateBundle(_, bundle) {
           const asset = bundle[outPath]
-          if (asset.type === 'asset') {
+          if (asset?.type === 'asset') {
             let manifest: Manifest | undefined
             for (const output of Object.values(bundle)) {
               const importedCss = output.viteMetadata?.importedCss
