@@ -66,6 +66,7 @@
     "playwright-chromium": "^1.59.1",
     "rolldown": "1.0.1",
     "rollup": "^4.59.0",
+    "semver": "^7.8.1",
     "simple-git-hooks": "^2.13.1",
     "tsx": "^4.21.0",
     "typescript": "~6.0.2",

@@ -1,4 +1,5 @@
 import { pathToFileURL } from 'node:url'
+import { createRequire } from 'node:module'
 import { WorkerWithFallback } from 'artichokie'
 import type {
   TerserMinifyOptions,
@@ -34,6 +35,12 @@ function loadTerserPath(root: string) {
     'terser not found. Since Vite v3, terser has become an optional dependency. You need to install it.',
   )
 }
+
+const _require = createRequire(import.meta.url)
+
+// Legacy Oxc minification requires coordinated support
+// between plugin-legacy and Vite core.
+const legacyOxcMinificationSupportedVersion = '8.0.15'
 
 export function terserPlugin(config: ResolvedConfig): Plugin {
   const { maxWorkers, ...terserOptions } = config.build.terserOptions
@@ -73,21 +80,31 @@ export function terserPlugin(config: ResolvedConfig): Plugin {
 
   let worker: ReturnType<typeof makeWorker>
 
+  const pkg = _require('vite/package.json')
+  const semver = _require('semver')
+  const viteVersion = pkg && pkg.version ? String(pkg.version) : undefined
+  const supportsLegacyOxcMinification =
+    !!viteVersion &&
+    semver.gte(viteVersion, legacyOxcMinificationSupportedVersion)
+
   return {
     name: 'vite:terser',
 
     applyToEnvironment(environment) {
       // We also need the plugin when minify isn't 'terser' for plugin-legacy
-      // configurations that still need Terser for legacy-safe minification.
+      // configurations that still require Terser for legacy chunk minification.
       return !!environment.config.build.minify
     },
 
     async renderChunk(code, chunk, outputOptions) {
       // This plugin is included for any non-false value of config.build.minify,
       // so that normal chunks can use the preferred minifier, and legacy chunks
-      // can use Terser when Oxc isn't selected.
+      // can use terser when coordinated Oxc minification isn't available
+      const usesOxcMinifier =
+        supportsLegacyOxcMinification &&
+        (config.build.minify === true || config.build.minify === 'oxc')
       const minifyLegacyWithTerser =
-        config.build.minify !== 'oxc' &&
+        !usesOxcMinifier &&
         this.environment.config.isOutputOptionsForLegacyChunks?.(outputOptions)
       if (config.build.minify !== 'terser' && !minifyLegacyWithTerser) {
         return null
