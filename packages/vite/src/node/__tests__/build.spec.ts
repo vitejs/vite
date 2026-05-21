@@ -188,9 +188,13 @@ describe('build', () => {
         { cwd: root },
       )
 
-      await expect(
-        fsp.readFile(resolve(outDir, '.vite/manifest.json'), 'utf-8'),
-      ).resolves.toContain('src/main.ts')
+      const manifest = JSON.parse(
+        await fsp.readFile(resolve(outDir, '.vite/manifest.json'), 'utf-8'),
+      ) as Record<string, { css?: string[] }>
+      const entry = manifest['src/main.ts']
+
+      expect(entry).toBeDefined()
+      expect(entry?.css?.length).toBeGreaterThan(0)
     } finally {
       await fsp.rm(outDir, { recursive: true, force: true })
     }
