@@ -83,8 +83,11 @@ export function loadEnv(
     }
   }
 
+  // Vite Task may know prefixed envs not present here; fetch them and let
+  // the runner record each glob in the build's cache key. The `process.env`
+  // loop below still takes precedence. No-op outside Vite Task.
   for (const prefix of prefixes) {
-    getEnvs(`${prefix}*`, { tracked: true })
+    Object.assign(env, getEnvs(`${prefix}*`, { tracked: true }))
   }
 
   // check if there are actual env variables starting with VITE_*
