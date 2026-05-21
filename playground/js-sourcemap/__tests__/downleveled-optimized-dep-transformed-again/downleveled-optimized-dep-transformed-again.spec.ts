@@ -3,7 +3,6 @@ import { TraceMap, originalPositionFor } from '@jridgewell/trace-mapping'
 import { expect, test } from 'vitest'
 import { extractSourcemap, isBuild, page } from '~utils'
 
-// TODO [engine:node@>=24]: Switch to RegExp.escape
 const escapeRegexRE = /[-/\\^$*+?.()|[\]{}]/g
 function escapeRegex(str: string): string {
   return str.replace(escapeRegexRE, '\\$&')
