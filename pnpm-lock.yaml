@@ -915,9 +915,9 @@ importers:
         specifier: ^0.126.0
         version: 0.126.0
 
-  playground/js-sourcemap/__tests__/downleveled-optimized-dep-transformed-again/root/dep-class-field-sourcemap-babel: {}
+  playground/js-sourcemap/dep-class-field-sourcemap-babel: {}
 
-  playground/js-sourcemap/__tests__/downleveled-optimized-dep-transformed-again/root/dep-class-field-sourcemap-oxc: {}
+  playground/js-sourcemap/dep-class-field-sourcemap-oxc: {}
 
   playground/js-sourcemap/dep-malicious-sourcemap: {}
 
