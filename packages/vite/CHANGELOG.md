@@ -1,3 +1,28 @@
+## <small>[8.0.14](https://github.com/vitejs/vite/compare/v8.0.13...v8.0.14) (2026-05-21)</small>
+### Features
+
+* update rolldown to 1.0.2 ([#22484](https://github.com/vitejs/vite/issues/22484)) ([96efc88](https://github.com/vitejs/vite/commit/96efc88570b6a6ddf1a910f106920cbac07b3cf0))
+
+### Bug Fixes
+
+* **deps:** update all non-major dependencies ([#22471](https://github.com/vitejs/vite/issues/22471)) ([98b8163](https://github.com/vitejs/vite/commit/98b81632139d51820f82036e58d6fbbf122b77b3))
+* **dev:** handle errors when sending messages to vite server ([#22450](https://github.com/vitejs/vite/issues/22450)) ([e8e9a34](https://github.com/vitejs/vite/commit/e8e9a34dcf2540139de558a10187630884d10217))
+* **html:** handle trailing slash paths in transformIndexHtml ([#22480](https://github.com/vitejs/vite/issues/22480)) ([5d94d1b](https://github.com/vitejs/vite/commit/5d94d1bffdb2a15de9341194d89baec86ce1f693))
+* **optimizer:** pass oxc jsx options to transformSync in dependency scan                                                            ([#22342](https://github.com/vitejs/vite/issues/22342)) ([b3132da](https://github.com/vitejs/vite/commit/b3132dacea9c6e0cf526cd9f0f09d850f577c262))
+
+### Miscellaneous Chores
+
+* **deps:** update rolldown-related dependencies ([#22470](https://github.com/vitejs/vite/issues/22470)) ([7cb728e](https://github.com/vitejs/vite/commit/7cb728eb629cc677661f1bc52a044ffc0b87fc7f))
+* remove irrelevant commits from changelog ([2c69495](https://github.com/vitejs/vite/commit/2c69495f250edf01132d4a20128de19dbe836086))
+
+### Code Refactoring
+
+* **glob:** do not rewrite import path for absolute base ([#22310](https://github.com/vitejs/vite/issues/22310)) ([0ae2844](https://github.com/vitejs/vite/commit/0ae2844ab6d6d1ccf78a2975b8132769fc35b302))
+
+### Tests
+
+* **css:** sass does not use main field ([#22449](https://github.com/vitejs/vite/issues/22449)) ([ebf39a0](https://github.com/vitejs/vite/commit/ebf39a04329ddc6ba765e006a5d463680a952270))
+
 ## <small>[8.0.13](https://github.com/vitejs/vite/compare/v8.0.12...v8.0.13) (2026-05-14)</small>
 ### Features
 
