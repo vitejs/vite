@@ -115,6 +115,10 @@ const transport = normalizeModuleRunnerTransport(
 )
 
 let willUnload = false
+// Tracks the `serverStartTime` from the last `connected` message. Used to
+// detect whether the dev server was restarted while the page was in BFCache.
+let lastServerStartTime: number | null = null
+
 if (typeof window !== 'undefined') {
   // window can be misleadingly defined in a worker if using define (see #19307)
   window.addEventListener?.('beforeunload', () => {
@@ -131,6 +135,11 @@ if (typeof window !== 'undefined') {
   })
   window.addEventListener?.('pageshow', async (event: PageTransitionEvent) => {
     if (event.persisted) {
+      // Reconnect and verify the server state has not changed since the page
+      // was frozen. The `connected` message carries the server's start time;
+      // if it differs from the value recorded at the last connection, the dev
+      // server has been restarted and the page's module state is stale —
+      // perform a full reload in that case.
       await transport.connect!(createHMRHandler(handleMessage))
     }
   })
@@ -221,6 +230,19 @@ async function handleMessage(payload: HotPayload) {
   switch (payload.type) {
     case 'connected':
       console.debug(`[vite] connected.`)
+      if (
+        lastServerStartTime !== null &&
+        lastServerStartTime !== payload.serverStartTime
+      ) {
+        // The dev server was restarted while the page was in BFCache.
+        // Module state is stale; perform a full reload.
+        console.debug(
+          '[vite] server restarted while page was in BFCache — reloading',
+        )
+        location.reload()
+        return
+      }
+      lastServerStartTime = payload.serverStartTime
       break
     case 'update':
       await hmrClient.notifyListeners('vite:beforeUpdate', payload)

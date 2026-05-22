@@ -214,6 +214,11 @@ export function createWebSocketServer(
       wss.emit('connection', ws, req)
     })
   }
+  // A stable timestamp for this server process, sent to clients in the
+  // `connected` payload so they can detect restarts (e.g. after a BFCache
+  // restore) and perform a full reload instead of resuming stale HMR state.
+  const serverStartTime = Date.now()
+
   const wss: WebSocketServerRaw_ = new WebSocketServerRaw({ noServer: true })
   wss.shouldHandle = shouldHandle
 
@@ -320,7 +325,7 @@ export function createWebSocketServer(
 
     emitCustomEvent('vite:client:connect', undefined, socket)
 
-    socket.send(JSON.stringify({ type: 'connected' }))
+    socket.send(JSON.stringify({ type: 'connected', serverStartTime }))
     if (bufferedMessage) {
       socket.send(JSON.stringify(bufferedMessage))
       bufferedMessage = null

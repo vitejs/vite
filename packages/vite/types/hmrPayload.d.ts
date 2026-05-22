@@ -11,6 +11,13 @@ export type HotPayload =
 
 export interface ConnectedPayload {
   type: 'connected'
+  /**
+   * A timestamp recorded when the WebSocket server was created. Used by the
+   * client to detect whether the dev server has been restarted while the page
+   * was held in the back/forward cache, so it can perform a full reload
+   * instead of resuming stale HMR state.
+   */
+  serverStartTime: number
 }
 
 export interface PingPayload {
