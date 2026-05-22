@@ -34,7 +34,7 @@ import fsp from 'node:fs/promises'
 import { join } from 'node:path'
 import { performance } from 'node:perf_hooks'
 import { parseAst as rolldownParseAst } from 'rolldown/parseAst'
-import type { Program } from '@oxc-project/types'
+import type { ESTree } from 'rolldown/utils'
 import type {
   AsyncPluginHooks,
   CustomPluginOptions,
@@ -765,7 +765,7 @@ class PluginContext
 
   fs: RollupFsModule = fsModule
 
-  parse(code: string, opts: any): Program {
+  parse(code: string, opts: any): ESTree.Program {
     return rolldownParseAst(code, opts)
   }
 
@@ -918,7 +918,7 @@ class PluginContext
 
   private _formatLog<E extends RollupLog>(
     e: string | E,
-    position?: number | { column: number; line: number } | undefined,
+    position?: number | { column: number; line: number },
   ): E {
     const err = (typeof e === 'string' ? new Error(e) : e) as E
     if (err.pluginCode) {

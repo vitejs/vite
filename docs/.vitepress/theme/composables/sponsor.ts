@@ -1,132 +1,46 @@
-import { onMounted, onUnmounted, ref } from 'vue'
-import type {
-  Sponsor,
-  SponsorTier,
-} from '@voidzero-dev/vitepress-theme/src/types/sponsors'
-import voidZeroSvg from './images/voidzero.svg'
-import boltSvg from './images/bolt.svg'
-import nuxtLabsSvg from './images/nuxtlabs.svg'
+import { onMounted, ref } from 'vue'
+import type { Sponsor, SponsorTier } from '@voidzero-dev/vitepress-theme'
 
 interface Sponsors {
-  special: Sponsor[]
+  main: Sponsor[]
+  partnership: Sponsor[]
   platinum: Sponsor[]
-  platinum_china: Sponsor[]
   gold: Sponsor[]
-  silver: Sponsor[]
-  bronze: Sponsor[]
 }
 
 // shared data across instances so we load only once.
 const data = ref<SponsorTier[]>()
 
-const dataHost = 'https://sponsors.vuejs.org'
-const dataUrl = `${dataHost}/vite.json`
-
-export const voidZero = {
-  name: 'VoidZero',
-  url: 'https://voidzero.dev',
-  img: voidZeroSvg,
-} satisfies Sponsor
-
-const viteSponsors: Pick<Sponsors, 'special' | 'gold'> = {
-  special: [
-    // sponsors patak-dev
-    {
-      name: 'Bolt',
-      url: 'https://bolt.new',
-      img: boltSvg,
-    },
-    // sponsors antfu
-    {
-      name: 'NuxtLabs',
-      url: 'https://nuxtlabs.com',
-      img: nuxtLabsSvg,
-    },
-  ],
-  gold: [
-    // now automated via sponsors.vuejs.org too
-  ],
-}
-
-function toggleDarkLogos() {
-  if (data.value) {
-    const isDark = document.documentElement.classList.contains('dark')
-    data.value.forEach(({ items }) => {
-      items.forEach((s: Sponsor) => {
-        if (s.hasDark) {
-          s.img = isDark
-            ? s.img.replace(/(\.\w+)$/, '-dark$1')
-            : s.img.replace(/-dark(\.\w+)$/, '$1')
-        }
-      })
-    })
-  }
-}
-
 export function useSponsor() {
   onMounted(async () => {
-    const ob = new MutationObserver((list) => {
-      for (const m of list) {
-        if (m.attributeName === 'class') {
-          toggleDarkLogos()
-        }
-      }
-    })
-    ob.observe(document.documentElement, { attributes: true })
-    onUnmounted(() => {
-      ob.disconnect()
-    })
+    if (data.value) return
 
-    if (data.value) {
-      return
-    }
+    const result = await fetch('https://sponsors.vite.dev/sponsors.json')
+    const sponsors: Sponsors = await result.json()
 
-    const result = await fetch(dataUrl)
-    const json = await result.json()
-
-    data.value = mapSponsors(json)
-    toggleDarkLogos()
+    data.value = [
+      {
+        tier: 'Brought to you by',
+        size: 'big',
+        items: sponsors.main,
+      },
+      {
+        tier: 'In partnership with',
+        size: 'big',
+        items: sponsors.partnership,
+      },
+      {
+        tier: 'Platinum Sponsors',
+        size: 'big',
+        items: sponsors.platinum,
+      },
+      {
+        tier: 'Gold Sponsors',
+        size: 'medium',
+        items: sponsors.gold,
+      },
+    ]
   })
 
-  return {
-    data,
-  }
-}
-
-function mapSponsors(sponsors: Sponsors): SponsorTier[] {
-  return [
-    {
-      tier: 'in partnership with',
-      size: 'big' as const,
-      items: viteSponsors['special'],
-    },
-    {
-      tier: 'Platinum Sponsors',
-      size: 'big' as const,
-      items: mapImgPath(sponsors['platinum']),
-    },
-    {
-      tier: 'Gold Sponsors',
-      size: 'medium' as const,
-      items: [...mapImgPath(sponsors['gold']), ...viteSponsors['gold']],
-    },
-  ]
-}
-
-const viteSponsorNames = new Set(
-  Object.values(viteSponsors).flatMap((sponsors) =>
-    sponsors.map((s) => s.name),
-  ),
-)
-
-/**
- * Map Vue/Vite sponsors data to objects and filter out Vite-specific sponsors
- */
-function mapImgPath(sponsors: Sponsor[]) {
-  return sponsors
-    .filter((sponsor) => !viteSponsorNames.has(sponsor.name))
-    .map((sponsor) => ({
-      ...sponsor,
-      img: `${dataHost}/images/${sponsor.img}`,
-    }))
+  return data
 }

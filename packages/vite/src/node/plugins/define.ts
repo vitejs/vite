@@ -7,12 +7,9 @@ import { isHTMLRequest } from './html'
 
 const nonJsRe = /\.json(?:$|\?)/
 const isNonJsRequest = (request: string): boolean => nonJsRe.test(request)
-const importMetaEnvMarker = '__vite_import_meta_env__'
-const importMetaEnvKeyReCache = new Map<string, RegExp>()
 const escapedDotRE = /(?<!\\)\\./g
 
 export function definePlugin(config: ResolvedConfig): Plugin {
-  const isBundled = config.isBundled
   const isBuild = config.command === 'build'
   const isBuildLib = isBuild && config.build.lib
 
@@ -30,26 +27,27 @@ export function definePlugin(config: ResolvedConfig): Plugin {
     })
   }
 
-  // during dev, import.meta properties are handled by importAnalysis plugin.
-  const importMetaKeys: Record<string, string> = {}
-  const importMetaEnvKeys: Record<string, string> = {}
-  const importMetaFallbackKeys: Record<string, string> = {}
-  if (isBuild) {
-    importMetaKeys['import.meta.hot'] = `undefined`
-  }
-  if (isBundled) {
-    for (const key in config.env) {
-      const val = JSON.stringify(config.env[key])
-      importMetaKeys[`import.meta.env.${key}`] = val
-      importMetaEnvKeys[key] = val
-    }
-    // these will be set to a proper value in `generatePattern`
-    importMetaKeys['import.meta.env.SSR'] = `undefined`
-    importMetaFallbackKeys['import.meta.env'] = `undefined`
-  }
-
   function generatePattern(environment: Environment) {
+    const isBundled = environment.config.isBundled
     const keepProcessEnv = environment.config.keepProcessEnv
+
+    // during dev, import.meta properties are handled by importAnalysis plugin.
+    const importMetaKeys: Record<string, string> = {}
+    const importMetaEnvKeys: Record<string, string> = {}
+    const importMetaFallbackKeys: Record<string, string> = {}
+    if (isBuild) {
+      importMetaKeys['import.meta.hot'] = `undefined`
+    }
+    if (isBundled) {
+      for (const key in config.env) {
+        const val = JSON.stringify(config.env[key])
+        importMetaKeys[`import.meta.env.${key}`] = val
+        importMetaEnvKeys[key] = val
+      }
+      // these will be set to a proper value below
+      importMetaKeys['import.meta.env.SSR'] = `undefined`
+      importMetaFallbackKeys['import.meta.env'] = `undefined`
+    }
 
     const userDefine: Record<string, string> = {}
     const userDefineEnv: Record<string, any> = {}
@@ -74,9 +72,6 @@ export function definePlugin(config: ResolvedConfig): Plugin {
 
     if ('import.meta.env.SSR' in define) {
       define['import.meta.env.SSR'] = ssr + ''
-    }
-    if ('import.meta.env' in define) {
-      define['import.meta.env'] = importMetaEnvMarker
     }
 
     const importMetaEnvVal = serializeDefine({
@@ -118,27 +113,30 @@ export function definePlugin(config: ResolvedConfig): Plugin {
     return pattern
   }
 
-  if (isBundled && config.nativePluginEnabledLevel >= 1) {
-    return {
-      name: 'vite:define',
-      options(option) {
-        const [define, _pattern, importMetaEnvVal] = getPattern(
-          this.environment,
-        )
-        define['import.meta.env'] = importMetaEnvVal
-        define['import.meta.env.*'] = 'undefined'
-        option.transform ??= {}
-        option.transform.define = { ...option.transform.define, ...define }
-      },
-    }
-  }
-
   return {
     name: 'vite:define',
 
+    applyToEnvironment(environment) {
+      if (environment.config.isBundled) {
+        return {
+          name: 'vite:define',
+          options(option) {
+            const [define, _pattern, importMetaEnvVal] = getPattern(
+              this.environment,
+            )
+            define['import.meta.env'] = importMetaEnvVal
+            define['import.meta.env.*'] = 'undefined'
+            option.transform ??= {}
+            option.transform.define = { ...option.transform.define, ...define }
+          },
+        }
+      }
+      return true
+    },
+
     transform: {
-      async handler(code, id) {
-        if (this.environment.config.consumer === 'client' && !isBundled) {
+      handler(code, id) {
+        if (this.environment.config.consumer === 'client') {
           // for dev we inject actual global defines in the vite client to
           // avoid the transform cost. see the `clientInjection` and
           // `importAnalysis` plugin.
@@ -155,64 +153,29 @@ export function definePlugin(config: ResolvedConfig): Plugin {
           return
         }
 
-        let [define, pattern, importMetaEnvVal] = getPattern(this.environment)
+        const [define, pattern] = getPattern(this.environment)
         if (!pattern) return
 
         // Check if our code needs any replacements before running esbuild
         pattern.lastIndex = 0
         if (!pattern.test(code)) return
 
-        const hasDefineImportMetaEnv = 'import.meta.env' in define
-        let marker = importMetaEnvMarker
-
-        if (hasDefineImportMetaEnv && code.includes(marker)) {
-          // append a number to the marker until it's unique, to avoid if there is a
-          // marker already in the code
-          let i = 1
-          do {
-            marker = importMetaEnvMarker + i++
-          } while (code.includes(marker))
-
-          if (marker !== importMetaEnvMarker) {
-            define = { ...define, 'import.meta.env': marker }
-          }
-        }
-
-        const result = await replaceDefine(this.environment, code, id, define)
-
-        if (hasDefineImportMetaEnv) {
-          // Replace `import.meta.env.*` with undefined
-          result.code = result.code.replaceAll(
-            getImportMetaEnvKeyRe(marker),
-            (m) => 'undefined'.padEnd(m.length),
-          )
-
-          // If there's bare `import.meta.env` references, prepend the banner
-          if (result.code.includes(marker)) {
-            result.code =
-              `const ${marker} = ${importMetaEnvVal};\n` + result.code
-
-            if (result.map) {
-              result.map.mappings = ';' + result.map.mappings
-            }
-          }
-        }
-
+        const result = replaceDefine(this.environment, code, id, define)
         return result
       },
     },
   }
 }
 
-export async function replaceDefine(
+export function replaceDefine(
   environment: Environment,
   code: string,
   id: string,
   define: Record<string, string>,
-): Promise<{
+): {
   code: string
   map: ReturnType<typeof transformSync>['map'] | null
-}> {
+} {
   const result = transformSync(id, code, {
     lang: 'js',
     sourceType: 'module',
@@ -257,13 +220,4 @@ function handleDefineValue(value: any): string {
   if (typeof value === 'undefined') return 'undefined'
   if (typeof value === 'string') return value
   return JSON.stringify(value)
-}
-
-function getImportMetaEnvKeyRe(marker: string): RegExp {
-  let re = importMetaEnvKeyReCache.get(marker)
-  if (!re) {
-    re = new RegExp(`${marker}\\..+?\\b`, 'g')
-    importMetaEnvKeyReCache.set(marker, re)
-  }
-  return re
 }

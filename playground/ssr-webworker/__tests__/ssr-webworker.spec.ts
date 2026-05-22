@@ -30,6 +30,12 @@ test('supports nodejs_compat', async () => {
   )
 })
 
+test.runIf(isBuild)('build output does not contain createRequire', async () => {
+  const workerContent = findAssetFile(/entry-worker/, 'worker', '')
+  expect(workerContent).toBeDefined()
+  expect(workerContent).not.toContain('createRequire')
+})
+
 test.runIf(isBuild)('codeSplitting: false', () => {
   const dynamicJsContent = findAssetFile(/dynamic-[-\w]+\.js/, 'worker')
   expect(dynamicJsContent).toBeUndefined()

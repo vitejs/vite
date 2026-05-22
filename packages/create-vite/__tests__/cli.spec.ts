@@ -173,7 +173,7 @@ test('successfully scaffolds a project based on react-compiler-ts starter templa
 
   // Assertions
   expect(stdout).toContain(`Scaffolding project in ${genPath}`)
-  expect(configFile).toContain('babel-plugin-react-compiler')
+  expect(configFile).toContain('reactCompilerPreset')
   expect(packageJsonFile).toContain('babel-plugin-react-compiler')
   expect(readmeFile).toContain('The React Compiler is enabled on this template')
 })
@@ -218,10 +218,13 @@ test('return help usage how to use create-vite', () => {
   const { stdout } = run(['--help'], { cwd: import.meta.dirname })
   const message = 'Usage: create-vite [OPTION]... [DIRECTORY]'
   expect(stdout).toContain(message)
+  expect(stdout).toContain('-i, --immediate / --no-immediate')
+  expect(stdout).toContain('--overwrite')
+  expect(stdout).toContain('-h, --help')
 })
 
 test('return help usage how to use create-vite with -h alias', () => {
-  const { stdout } = run(['--h'], { cwd: import.meta.dirname })
+  const { stdout } = run(['-h'], { cwd: import.meta.dirname })
   const message = 'Usage: create-vite [OPTION]... [DIRECTORY]'
   expect(stdout).toContain(message)
 })
