@@ -166,6 +166,7 @@ export function assetPlugin(config: ResolvedConfig): Plugin {
       filter: {
         id: [
           urlRE,
+          rawRE,
           DEFAULT_ASSETS_RE,
           ...makeIdFiltersToMatchWithQuery(config.rawAssetsInclude).map((v) =>
             typeof v === 'string' ? picomatch.makeRe(v, { dot: true }) : v,
@@ -173,7 +174,11 @@ export function assetPlugin(config: ResolvedConfig): Plugin {
         ],
       },
       handler(id) {
-        if (!config.assetsInclude(cleanUrl(id)) && !urlRE.test(id)) {
+        if (
+          !config.assetsInclude(cleanUrl(id)) &&
+          !urlRE.test(id) &&
+          !rawRE.test(id)
+        ) {
           return
         }
         // imports to absolute urls pointing to files in /public

@@ -16,6 +16,7 @@ import {
   isParentDirectory,
   isSameFilePath,
   normalizePath,
+  rawRE,
   removeLeadingSlash,
   urlRE,
 } from '../../utils'
@@ -112,8 +113,9 @@ export function servePublicMiddleware(
       (publicFiles && !publicFiles.has(toFilePath(req.url!))) ||
       isImportRequest(req.url!) ||
       isInternalRequest(req.url!) ||
-      // for `/public-file.js?url` to be transformed
-      urlRE.test(req.url!)
+      // for `/public-file.js?url` and `/public-file.js?raw` to be transformed
+      urlRE.test(req.url!) ||
+      rawRE.test(req.url!)
     ) {
       return next()
     }
