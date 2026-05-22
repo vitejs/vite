@@ -68,6 +68,16 @@ export const tests = (isLightningCSS: boolean) => {
     expect(await getBg(importedWithSpace)).toMatch(/.*\/ok.*\.png/)
   })
 
+  test('css url from path with opening parenthesis', async () => {
+    const urlWithOpeningParen = await page.$('.css-url-with-opening-paren')
+
+    expect(await getBg(urlWithOpeningParen)).toMatch(
+      isBuild
+        ? /^url\("data:text\/plain/
+        : /url-with-(?:\(|%28)paren\/asset\.txt/,
+    )
+  })
+
   test('postcss config', async () => {
     const imported = await page.$('.postcss .nesting')
     expect(await getColor(imported)).toBe('pink')
