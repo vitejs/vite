@@ -622,17 +622,17 @@ All the resulting module keys are modified to be relative to the base if provide
 
 #### Case Sensitive Matching
 
-By default, glob pattern matching is case-sensitive. You can use the `caseSensitiveMatch` option to change this behavior:
+By default, glob pattern matching is case-sensitive. You can use the `caseSensitive` option to change this behavior:
 
 ```ts twoslash
 import 'vite/client'
 // ---cut---
 const modules = import.meta.glob('./dir/module*.js', {
-  caseSensitiveMatch: false,
+  caseSensitive: false,
 })
 ```
 
-With `caseSensitiveMatch: false`, the glob will match files regardless of case (e.g., `Module.js`, `module.js`, `MODULE.js` will all be matched by `module*.js`).
+With `caseSensitive: false`, the glob will match files regardless of case (e.g., `Module.js`, `module.js`, `MODULE.js` will all be matched by `module*.js`).
 
 ### Glob Import Caveats
 

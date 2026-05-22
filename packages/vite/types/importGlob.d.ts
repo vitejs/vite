@@ -35,7 +35,7 @@ export interface ImportGlobOptions<
   /**
    * Whether the glob pattern matching should be case-sensitive. Defaults to `true`.
    */
-  caseSensitiveMatch?: boolean
+  caseSensitive?: boolean
 }
 
 export type GeneralImportGlobOptions = ImportGlobOptions<boolean, string>
