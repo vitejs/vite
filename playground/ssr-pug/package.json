@@ -10,6 +10,6 @@
   },
   "devDependencies": {
     "express": "^5.2.1",
-    "pug": "^3.0.3"
+    "pug": "^3.0.4"
   }
 }

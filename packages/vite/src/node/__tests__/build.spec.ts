@@ -144,6 +144,33 @@ describe('build', () => {
     assertOutputHashContentChange(result[0], result[1])
   })
 
+  test('css entries with the same basename should not cross-link manifest assets', async () => {
+    const root = resolve(dirname, 'fixtures/css-entry-same-basename')
+    const result = (await build({
+      root,
+      logLevel: 'silent',
+      build: {
+        write: false,
+        manifest: true,
+        assetsInlineLimit: 0,
+        rollupOptions: {
+          input: [resolve(root, 'a/index.css'), resolve(root, 'b/index.css')],
+        },
+      },
+    })) as RolldownOutput
+
+    const manifest = JSON.parse(
+      (result.output.find((o) => o.fileName === '.vite/manifest.json') as any)
+        .source,
+    )
+    expect(manifest['a/index.css']).toMatchObject({
+      isEntry: true,
+    })
+    expect(manifest['b/index.css']).toMatchObject({
+      isEntry: true,
+    })
+  })
+
   test.for([
     [true, true],
     [true, false],
@@ -337,7 +364,7 @@ describe('resolveBuildOutputs', () => {
     const resolveBuild = () => resolveBuildOutputs(outputs, libOptions, logger)
 
     expect(resolveBuild).toThrowError(
-      /Entries in "build\.rollupOptions\.output" must specify "name"/,
+      /Entries in "build\.rolldownOptions\.output" must specify "name"/,
     )
   })
 
@@ -348,7 +375,7 @@ describe('resolveBuildOutputs', () => {
     const resolveBuild = () => resolveBuildOutputs(outputs, libOptions, logger)
 
     expect(resolveBuild).toThrowError(
-      /Entries in "build\.rollupOptions\.output" must specify "name"/,
+      /Entries in "build\.rolldownOptions\.output" must specify "name"/,
     )
   })
 })
@@ -675,7 +702,7 @@ describe('resolveBuildOutputs', () => {
     ).toEqual([{ name: 'A' }])
     expect(log.warn).toHaveBeenLastCalledWith(
       colors.yellow(
-        `"build.lib.formats" will be ignored because "build.rollupOptions.output" is already an array format.`,
+        `"build.lib.formats" will be ignored because "build.rolldownOptions.output" is already an array format.`,
       ),
     )
   })
@@ -1158,6 +1185,29 @@ test('watch rebuild manifest', async (ctx) => {
       "entry.js",
     ]
   `)
+})
+
+test('copies public directory after building same environment with write false first', async (ctx) => {
+  const root = resolve(dirname, 'fixtures/public-dir-write-false')
+  ctx.onTestFinished(() =>
+    fsp.rm(resolve(root, 'dist'), { recursive: true, force: true }),
+  )
+
+  const builder = await createBuilder({
+    root,
+    configFile: false,
+    logLevel: 'silent',
+  })
+
+  builder.environments.client.config.build.write = false
+  await builder.build(builder.environments.client)
+
+  builder.environments.client.config.build.write = true
+  await builder.build(builder.environments.client)
+
+  await expect(
+    fsp.readFile(resolve(root, 'dist/favicon.svg'), 'utf-8'),
+  ).resolves.toBe('<svg></svg>')
 })
 
 /**

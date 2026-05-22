@@ -42,8 +42,21 @@ function createHMROptions(
     return false
   }
   if (!('api' in environment.hot)) return false
+
+  const defaultLogger: ModuleRunnerHmr['logger'] = {
+    debug: (...msg) =>
+      environment.logger.info(msg.join(' '), {
+        timestamp: true,
+      }),
+    error: (err) =>
+      environment.logger.error(
+        err instanceof Error ? err.message : String(err),
+        { timestamp: true },
+      ),
+  }
+
   return {
-    logger: options.hmr?.logger,
+    logger: options.hmr?.logger ?? defaultLogger,
   }
 }
 
