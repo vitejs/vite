@@ -458,7 +458,7 @@ export async function transformGlobImport(
               cwd,
               dot: !!options.exhaustive,
               expandDirectories: false,
-              caseSensitive: options.caseSensitive ?? true,
+              caseSensitiveMatch: options.caseSensitive ?? true,
               ignore: options.exhaustive ? [] : ['**/node_modules/**'],
               extglob: false,
             })
