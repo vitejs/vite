@@ -34,3 +34,11 @@
 - **types:** Deleted unused `PluginContainerOptions` interface from
   `packages/vite/src/node/server/pluginContainer.ts` — declared but
   never referenced anywhere in the codebase
+
+## Chore
+
+- **cleanup:** Removed dead code `esbuildPlugin` function from
+  `packages/vite/src/node/plugins/esbuild.ts` — declared but never
+  imported or called anywhere in the codebase
+- **cleanup:** Removed stale `removeRawQuery` knip report —
+  function no longer exists in `packages/vite/src/node/utils.ts`
