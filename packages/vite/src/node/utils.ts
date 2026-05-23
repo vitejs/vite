@@ -331,9 +331,6 @@ export const rawRE: RegExp = /(\?|&)raw(?:&|$)/
 export function removeUrlQuery(url: string): string {
   return url.replace(urlRE, '$1').replace(trailingSeparatorRE, '')
 }
-export function removeRawQuery(url: string): string {
-  return url.replace(rawRE, '$1').replace(trailingSeparatorRE, '')
-}
 
 export function injectQuery(url: string, queryToInject: string): string {
   const { file, postfix } = splitFileAndPostfix(url)

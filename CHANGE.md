@@ -42,3 +42,7 @@
   imported or called anywhere in the codebase
 - **cleanup:** Removed stale `removeRawQuery` knip report —
   function no longer exists in `packages/vite/src/node/utils.ts`
+
+- **cleanup:** Removed unused `removeRawQuery` function from
+  `packages/vite/src/node/utils.ts` — declared but never referenced
+  anywhere in the codebase
