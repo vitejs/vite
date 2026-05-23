@@ -21,3 +21,10 @@
 
 - **deps:** Removed unused dependencies `rollup-plugin-license` and
   `sass-embedded` from `packages/vite`
+
+## Chore
+
+- **build:** Removed duplicate `export {}` block for `toOutputFilePathWithoutRuntime`,
+  `toOutputFilePathInCss`, and `toOutputFilePathInHtml` in `packages/vite/src/node/build.ts`
+- **tooling:** Removed redundant patterns from `knip.json` that knip already
+  handles natively (template globs, binary detection, auto-detected entry points)

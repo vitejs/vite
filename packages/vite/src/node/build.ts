@@ -1696,10 +1696,12 @@ export function toOutputFilePathWithoutRuntime(
   }
 }
 
+/*
 export const toOutputFilePathInCss: typeof toOutputFilePathWithoutRuntime =
   toOutputFilePathWithoutRuntime
 export const toOutputFilePathInHtml: typeof toOutputFilePathWithoutRuntime =
   toOutputFilePathWithoutRuntime
+*/
 
 export class BuildEnvironment extends BaseEnvironment {
   mode = 'build' as const
