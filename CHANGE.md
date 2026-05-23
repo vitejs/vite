@@ -16,3 +16,8 @@
 - **tooling:** Added `knip.json` configuration to suppress false positives
   from playground templates, public API exports, and dynamically loaded
   playground dependencies
+
+  ## Chore
+
+- **deps:** Removed unused dependencies `rollup-plugin-license` and
+  `sass-embedded` from `packages/vite`
