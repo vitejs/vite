@@ -1,0 +1,1273 @@
+Unused files (698)
+docs/_data/acknowledgements.data.ts                                                                  
+docs/_data/blog.data.ts                                                                              
+docs/_data/team.js                                                                                   
+docs/.vitepress/inlined-scripts/banner.js                                                            
+docs/.vitepress/theme/components/BlogIndex.vue                                                       
+docs/.vitepress/theme/components/SponsorBanner.vue                                                   
+docs/.vitepress/theme/components/SupportedVersions.vue                                               
+docs/.vitepress/theme/landing/Community.vue                                                          
+docs/.vitepress/theme/landing/FeatureGrid1.vue                                                       
+docs/.vitepress/theme/landing/FeatureGrid2.vue                                                       
+docs/.vitepress/theme/landing/Frameworks.vue                                                         
+docs/.vitepress/theme/landing/Hero.vue                                                               
+docs/.vitepress/theme/landing/Layout.vue                                                             
+docs/.vitepress/theme/live/Events.vue                                                                
+docs/.vitepress/theme/live/Hero.vue                                                                  
+docs/.vitepress/theme/live/Layout.vue                                                                
+docs/.vitepress/theme/live/TimeoutSwitcher.vue                                                       
+docs/.vitepress/theme/live/Timer.vue                                                                 
+docs/.vitepress/theme/live/useYoutubePlayer.ts                                                       
+docs/.vitepress/theme/live/VideoIframe.vue                                                           
+packages/create-vite/template-lit-ts/src/index.css                                                   
+packages/create-vite/template-lit-ts/src/my-element.ts                                               
+packages/create-vite/template-lit/src/index.css                                                      
+packages/create-vite/template-lit/src/my-element.js                                                  
+packages/create-vite/template-preact-ts/src/app.css                                                  
+packages/create-vite/template-preact-ts/src/app.tsx                                                  
+packages/create-vite/template-preact-ts/src/index.css                                                
+packages/create-vite/template-preact-ts/src/main.tsx                                                 
+packages/create-vite/template-preact-ts/vite.config.ts                                               
+packages/create-vite/template-preact/src/app.css                                                     
+packages/create-vite/template-preact/src/app.jsx                                                     
+packages/create-vite/template-preact/src/index.css                                                   
+packages/create-vite/template-preact/src/main.jsx                                                    
+packages/create-vite/template-preact/vite.config.js                                                  
+packages/create-vite/template-qwik-ts/src/app.css                                                    
+packages/create-vite/template-qwik-ts/src/app.tsx                                                    
+packages/create-vite/template-qwik-ts/src/index.css                                                  
+packages/create-vite/template-qwik-ts/src/main.tsx                                                   
+packages/create-vite/template-qwik-ts/vite.config.ts                                                 
+packages/create-vite/template-qwik/src/app.css                                                       
+packages/create-vite/template-qwik/src/app.jsx                                                       
+packages/create-vite/template-qwik/src/index.css                                                     
+packages/create-vite/template-qwik/src/main.jsx                                                      
+packages/create-vite/template-qwik/vite.config.js                                                    
+packages/create-vite/template-react-ts/eslint.config.js                                              
+packages/create-vite/template-react-ts/src/App.css                                                   
+packages/create-vite/template-react-ts/src/App.tsx                                                   
+packages/create-vite/template-react-ts/src/index.css                                                 
+packages/create-vite/template-react-ts/src/main.tsx                                                  
+packages/create-vite/template-react-ts/vite.config.ts                                                
+packages/create-vite/template-react/eslint.config.js                                                 
+packages/create-vite/template-react/src/App.css                                                      
+packages/create-vite/template-react/src/App.jsx                                                      
+packages/create-vite/template-react/src/index.css                                                    
+packages/create-vite/template-react/src/main.jsx                                                     
+packages/create-vite/template-react/vite.config.js                                                   
+packages/create-vite/template-solid-ts/src/App.css                                                   
+packages/create-vite/template-solid-ts/src/App.tsx                                                   
+packages/create-vite/template-solid-ts/src/index.css                                                 
+packages/create-vite/template-solid-ts/src/index.tsx                                                 
+packages/create-vite/template-solid-ts/vite.config.ts                                                
+packages/create-vite/template-solid/src/App.css                                                      
+packages/create-vite/template-solid/src/App.jsx                                                      
+packages/create-vite/template-solid/src/index.css                                                    
+packages/create-vite/template-solid/src/index.jsx                                                    
+packages/create-vite/template-solid/vite.config.js                                                   
+packages/create-vite/template-svelte-ts/src/app.css                                                  
+packages/create-vite/template-svelte-ts/src/main.ts                                                  
+packages/create-vite/template-svelte-ts/svelte.config.js                                             
+packages/create-vite/template-svelte-ts/vite.config.ts                                               
+packages/create-vite/template-svelte/src/app.css                                                     
+packages/create-vite/template-svelte/src/main.js                                                     
+packages/create-vite/template-svelte/svelte.config.js                                                
+packages/create-vite/template-svelte/vite.config.js                                                  
+packages/create-vite/template-vanilla-ts/src/counter.ts                                              
+packages/create-vite/template-vanilla-ts/src/main.ts                                                 
+packages/create-vite/template-vanilla-ts/src/style.css                                               
+packages/create-vite/template-vanilla/src/counter.js                                                 
+packages/create-vite/template-vanilla/src/main.js                                                    
+packages/create-vite/template-vanilla/src/style.css                                                  
+packages/create-vite/template-vue-ts/src/App.vue                                                     
+packages/create-vite/template-vue-ts/src/components/HelloWorld.vue                                   
+packages/create-vite/template-vue-ts/src/main.ts                                                     
+packages/create-vite/template-vue-ts/src/style.css                                                   
+packages/create-vite/template-vue-ts/vite.config.ts                                                  
+packages/create-vite/template-vue/src/App.vue                                                        
+packages/create-vite/template-vue/src/components/HelloWorld.vue                                      
+packages/create-vite/template-vue/src/main.js                                                        
+packages/create-vite/template-vue/src/style.css                                                      
+packages/create-vite/template-vue/vite.config.js                                                     
+packages/vite/bin/openChrome.js                                                                      
+packages/vite/misc/false.d.ts                                                                        
+packages/vite/misc/true.d.ts                                                                         
+packages/vite/rolldown.dts.config.ts                                                                 
+packages/vite/scripts/benchCircularImport.ts                                                         
+packages/vite/src/client/client.ts                                                                   
+packages/vite/src/client/env.ts                                                                      
+packages/vite/src/client/overlay.ts                                                                  
+packages/vite/src/module-runner/__tests_dts__/importMeta.ts                                          
+packages/vite/src/node/__tests__/fixtures/config/entry/vite.config.import-attributes.ts              
+packages/vite/src/node/__tests__/fixtures/config/native-import/basic.js                              
+packages/vite/src/node/__tests__/fixtures/config/shebang/vite.config.ts                              
+packages/vite/src/node/__tests__/fixtures/dynamic-import/dep.mjs                                     
+packages/vite/src/node/__tests__/fixtures/dynamic-import/entry.mjs                                   
+packages/vite/src/node/__tests__/fixtures/emit-assets/entry.mjs                                      
+packages/vite/src/node/__tests__/fixtures/environment-alias/test.client.js                           
+packages/vite/src/node/__tests__/fixtures/environment-alias/test.rsc.js                              
+packages/vite/src/node/__tests__/fixtures/environment-alias/test.ssr.js                              
+packages/vite/src/node/__tests__/fixtures/runner-import/cjs.js                                       
+packages/vite/src/node/__tests__/fixtures/runner-import/dynamic-import-dep.ts                        
+packages/vite/src/node/__tests__/fixtures/runner-import/dynamic-import.ts                            
+packages/vite/src/node/__tests__/fixtures/scan-jsx-runtime/entry-glob-custom-oxc.tsx                 
+packages/vite/src/node/__tests__/fixtures/scan-jsx-runtime/entry-jsx.tsx                             
+packages/vite/src/node/__tests__/fixtures/scan-jsx-runtime/entry-no-jsx.js                           
+packages/vite/src/node/__tests__/fixtures/scan-jsx-runtime/pages/index.tsx                           
+packages/vite/src/node/__tests__/fixtures/scan-subpath-import-glob/entry.ts                          
+packages/vite/src/node/__tests__/fixtures/scan-subpath-import-glob/src/foo/a.ts                      
+packages/vite/src/node/__tests__/fixtures/shared-config-build/emitAssets/entry.js                    
+packages/vite/src/node/__tests__/fixtures/shared-plugins/minify/entry.js                             
+packages/vite/src/node/__tests__/fixtures/test-dep-conditions-app/entry-with-module.js               
+packages/vite/src/node/__tests__/fixtures/test-dep-conditions-app/entry.js                           
+packages/vite/src/node/__tests__/fixtures/watch-rebuild-manifest/dep.js                              
+packages/vite/src/node/__tests__/fixtures/watch-rebuild-manifest/entry.js                            
+packages/vite/src/node/__tests__/fixtures/worker-dynamic/dynamic.js                                  
+packages/vite/src/node/__tests__/fixtures/worker-dynamic/main.js                                     
+packages/vite/src/node/__tests__/fixtures/worker-dynamic/worker.js                                   
+packages/vite/src/node/__tests__/plugins/dynamicImportVar/mods/hello.js                              
+packages/vite/src/node/__tests__/plugins/dynamicImportVar/mods/hi.js                                 
+packages/vite/src/node/__tests__/plugins/fixtures/worker-url/entry.js                                
+packages/vite/src/node/__tests__/plugins/fixtures/worker-url/worker.js                               
+packages/vite/src/node/__tests__/plugins/importGlob/fixture-a/.foo/test.ts                           
+packages/vite/src/node/__tests__/plugins/importGlob/fixture-a/index.ts                               
+packages/vite/src/node/__tests__/plugins/importGlob/fixture-a/modules/a.ts                           
+packages/vite/src/node/__tests__/plugins/importGlob/fixture-a/modules/b.ts                           
+packages/vite/src/node/__tests__/plugins/importGlob/fixture-a/modules/index.ts                       
+packages/vite/src/node/__tests__/plugins/importGlob/fixture-a/sibling.ts                             
+packages/vite/src/node/__tests__/plugins/importGlob/fixture-b/a.ts                                   
+packages/vite/src/node/__tests__/plugins/importGlob/fixture-b/b.ts                                   
+packages/vite/src/node/__tests__/plugins/importGlob/fixture-b/index.ts                               
+packages/vite/src/node/__tests_dts__/config.ts                                                       
+packages/vite/src/node/__tests_dts__/plugin.ts                                                       
+packages/vite/src/node/__tests_dts__/typeOptions.ts                                                  
+packages/vite/src/node/__tests_dts__/utils.ts                                                        
+packages/vite/src/node/cli.ts                                                                        
+packages/vite/src/node/internalIndex.ts                                                              
+packages/vite/src/node/server/__tests__/fixtures/watcher/config-deps/foo.js                          
+packages/vite/src/node/server/__tests__/fixtures/watcher/nested-root/vite.config.js                  
+packages/vite/src/node/ssr/__tests__/fixtures/basic/file.js                                          
+packages/vite/src/node/ssr/__tests__/fixtures/bundled-with-sourcemaps/bundle.js                      
+packages/vite/src/node/ssr/__tests__/fixtures/errors/syntax-error-dep.js                             
+packages/vite/src/node/ssr/__tests__/fixtures/errors/syntax-error-dep.ts                             
+packages/vite/src/node/ssr/__tests__/fixtures/errors/syntax-error.js                                 
+packages/vite/src/node/ssr/__tests__/fixtures/errors/syntax-error.ts                                 
+packages/vite/src/node/ssr/__tests__/fixtures/global/export.js                                       
+packages/vite/src/node/ssr/__tests__/fixtures/global/test.js                                         
+packages/vite/src/node/ssr/__tests__/fixtures/modules/has-error.js                                   
+packages/vite/src/node/ssr/__tests__/fixtures/modules/has-invalid-import.js                          
+packages/vite/src/node/ssr/__tests__/fixtures/modules/import-meta.js                                 
+packages/vite/src/node/ssr/__tests__/fixtures/multi-source-sourcemaps/dist.js                        
+packages/vite/src/node/ssr/__tests__/fixtures/multi-source-sourcemaps/entrypoint.js                  
+packages/vite/src/node/ssr/__tests__/fixtures/multi-source-sourcemaps/nested-directory/nested-file.js
+packages/vite/src/node/ssr/__tests__/fixtures/named-overwrite-all/dep1.js                            
+packages/vite/src/node/ssr/__tests__/fixtures/named-overwrite-all/dep2.js                            
+packages/vite/src/node/ssr/__tests__/fixtures/named-overwrite-all/main.js                            
+packages/vite/src/node/ssr/runtime/__tests__/fixture-outside.js                                      
+packages/vite/src/node/ssr/runtime/__tests__/fixtures/a.ts                                           
+packages/vite/src/node/ssr/runtime/__tests__/fixtures/assets.js                                      
+packages/vite/src/node/ssr/runtime/__tests__/fixtures/b.ts                                           
+packages/vite/src/node/ssr/runtime/__tests__/fixtures/basic.js                                       
+packages/vite/src/node/ssr/runtime/__tests__/fixtures/builtin-import.ts                              
+packages/vite/src/node/ssr/runtime/__tests__/fixtures/c.ts                                           
+packages/vite/src/node/ssr/runtime/__tests__/fixtures/circular/circular-a.js                         
+packages/vite/src/node/ssr/runtime/__tests__/fixtures/circular/circular-b.js                         
+packages/vite/src/node/ssr/runtime/__tests__/fixtures/circular/circular-index.js                     
+packages/vite/src/node/ssr/runtime/__tests__/fixtures/cjs-external-existing.js                       
+packages/vite/src/node/ssr/runtime/__tests__/fixtures/cjs-external-non-existing.js                   
+packages/vite/src/node/ssr/runtime/__tests__/fixtures/cyclic/action.js                               
+packages/vite/src/node/ssr/runtime/__tests__/fixtures/cyclic/entry-cyclic.js                         
+packages/vite/src/node/ssr/runtime/__tests__/fixtures/cyclic/entry.js                                
+packages/vite/src/node/ssr/runtime/__tests__/fixtures/cyclic2/test1/dep1.js                          
+packages/vite/src/node/ssr/runtime/__tests__/fixtures/cyclic2/test1/dep2.js                          
+packages/vite/src/node/ssr/runtime/__tests__/fixtures/cyclic2/test1/index.js                         
+packages/vite/src/node/ssr/runtime/__tests__/fixtures/cyclic2/test2/dep1.js                          
+packages/vite/src/node/ssr/runtime/__tests__/fixtures/cyclic2/test2/dep2.js                          
+packages/vite/src/node/ssr/runtime/__tests__/fixtures/cyclic2/test2/index.js                         
+packages/vite/src/node/ssr/runtime/__tests__/fixtures/cyclic2/test3/dep1.js                          
+packages/vite/src/node/ssr/runtime/__tests__/fixtures/cyclic2/test3/dep2.js                          
+packages/vite/src/node/ssr/runtime/__tests__/fixtures/cyclic2/test3/index.js                         
+packages/vite/src/node/ssr/runtime/__tests__/fixtures/cyclic2/test4/dep1.js                          
+packages/vite/src/node/ssr/runtime/__tests__/fixtures/cyclic2/test4/dep2.js                          
+packages/vite/src/node/ssr/runtime/__tests__/fixtures/cyclic2/test4/index.js                         
+packages/vite/src/node/ssr/runtime/__tests__/fixtures/cyclic2/test5/dep1.js                          
+packages/vite/src/node/ssr/runtime/__tests__/fixtures/cyclic2/test5/dep2.js                          
+packages/vite/src/node/ssr/runtime/__tests__/fixtures/cyclic2/test5/index.js                         
+packages/vite/src/node/ssr/runtime/__tests__/fixtures/cyclic2/test6/dep1.js                          
+packages/vite/src/node/ssr/runtime/__tests__/fixtures/cyclic2/test6/dep2.js                          
+packages/vite/src/node/ssr/runtime/__tests__/fixtures/cyclic2/test6/index.js                         
+packages/vite/src/node/ssr/runtime/__tests__/fixtures/cyclic2/test7/dom/Blob.js                      
+packages/vite/src/node/ssr/runtime/__tests__/fixtures/cyclic2/test7/dom/index.js                     
+packages/vite/src/node/ssr/runtime/__tests__/fixtures/cyclic2/test7/Ion.js                           
+packages/vite/src/node/ssr/runtime/__tests__/fixtures/cyclic2/test7/IonTypes.js                      
+packages/vite/src/node/ssr/runtime/__tests__/fixtures/cyclic2/test9/dep.js                           
+packages/vite/src/node/ssr/runtime/__tests__/fixtures/cyclic2/test9/index.js                         
+packages/vite/src/node/ssr/runtime/__tests__/fixtures/d.ts                                           
+packages/vite/src/node/ssr/runtime/__tests__/fixtures/default-string.ts                              
+packages/vite/src/node/ssr/runtime/__tests__/fixtures/dynamic-import.js                              
+packages/vite/src/node/ssr/runtime/__tests__/fixtures/esm-external-existing.js                       
+packages/vite/src/node/ssr/runtime/__tests__/fixtures/esm-external-non-existing.js                   
+packages/vite/src/node/ssr/runtime/__tests__/fixtures/execution-order-re-export/dep1.js              
+packages/vite/src/node/ssr/runtime/__tests__/fixtures/execution-order-re-export/dep2.js              
+packages/vite/src/node/ssr/runtime/__tests__/fixtures/execution-order-re-export/index.js             
+packages/vite/src/node/ssr/runtime/__tests__/fixtures/has-error-deep.ts                              
+packages/vite/src/node/ssr/runtime/__tests__/fixtures/has-error-first-comment.ts                     
+packages/vite/src/node/ssr/runtime/__tests__/fixtures/has-error-first.js                             
+packages/vite/src/node/ssr/runtime/__tests__/fixtures/has-error.js                                   
+packages/vite/src/node/ssr/runtime/__tests__/fixtures/hmr-reexport-race/core.js                      
+packages/vite/src/node/ssr/runtime/__tests__/fixtures/hmr-reexport-race/entry-a.js                   
+packages/vite/src/node/ssr/runtime/__tests__/fixtures/hmr-reexport-race/entry-b.js                   
+packages/vite/src/node/ssr/runtime/__tests__/fixtures/hmr-reexport-race/shared.js                    
+packages/vite/src/node/ssr/runtime/__tests__/fixtures/hmr.js                                         
+packages/vite/src/node/ssr/runtime/__tests__/fixtures/import-external.ts                             
+packages/vite/src/node/ssr/runtime/__tests__/fixtures/installed.js                                   
+packages/vite/src/node/ssr/runtime/__tests__/fixtures/invalid-package/test.js                        
+packages/vite/src/node/ssr/runtime/__tests__/fixtures/live-binding/test1/dep.js                      
+packages/vite/src/node/ssr/runtime/__tests__/fixtures/live-binding/test1/index.js                    
+packages/vite/src/node/ssr/runtime/__tests__/fixtures/live-binding/test2/dep.js                      
+packages/vite/src/node/ssr/runtime/__tests__/fixtures/live-binding/test2/index.js                    
+packages/vite/src/node/ssr/runtime/__tests__/fixtures/live-binding/test3/dep.js                      
+packages/vite/src/node/ssr/runtime/__tests__/fixtures/live-binding/test3/index.js                    
+packages/vite/src/node/ssr/runtime/__tests__/fixtures/live-binding/test4/dep.js                      
+packages/vite/src/node/ssr/runtime/__tests__/fixtures/live-binding/test4/index.js                    
+packages/vite/src/node/ssr/runtime/__tests__/fixtures/native.js                                      
+packages/vite/src/node/ssr/runtime/__tests__/fixtures/no-this/importee.js                            
+packages/vite/src/node/ssr/runtime/__tests__/fixtures/no-this/importer.js                            
+packages/vite/src/node/ssr/runtime/__tests__/fixtures/oxc-runtime-helper.ts                          
+packages/vite/src/node/ssr/runtime/__tests__/fixtures/pre-source-mapped-file.js                      
+packages/vite/src/node/ssr/runtime/__tests__/fixtures/simple.js                                      
+packages/vite/src/node/ssr/runtime/__tests__/fixtures/string-literal-sourcemap.ts                    
+packages/vite/src/node/ssr/runtime/__tests__/fixtures/throws-error-method.ts                         
+packages/vite/src/node/ssr/runtime/__tests__/fixtures/top-level-object.js                            
+packages/vite/src/node/ssr/runtime/__tests__/fixtures/virtual.js                                     
+packages/vite/src/types/shims.d.ts                                                                   
+playground/alias/customResolver.js                                                                   
+playground/alias/dir/from-script-src.js                                                              
+playground/alias/dir/test.js                                                                         
+playground/alias/dir/url_conflict.js                                                                 
+playground/alias/test.js                                                                             
+playground/assets/asset/style.css                                                                    
+playground/assets/css/css-url-url.css                                                                
+playground/assets/css/css-url.css                                                                    
+playground/assets/css/fonts.css                                                                      
+playground/assets/css/foo.module.css                                                                 
+playground/assets/css/icons.css                                                                      
+playground/assets/css/import.css                                                                     
+playground/assets/css/manual-chunks.css                                                              
+playground/assets/css/nested/at-imported-css-url.css                                                 
+playground/assets/foo.js                                                                             
+playground/assets/multiline-import-meta-url.js                                                       
+playground/assets/nested/test.js                                                                     
+playground/assets/static/foo.css                                                                     
+playground/assets/static/import-expression.js                                                        
+playground/assets/static/raw.css                                                                     
+playground/assets/static/raw.js                                                                      
+playground/assets/static/raw.mts                                                                     
+playground/assets/static/raw.ts                                                                      
+playground/assets/テスト-測試-white space.js                                                              
+playground/backend-integration/dir/custom.css                                                        
+playground/backend-integration/dir/foo.css                                                           
+playground/backend-integration/frontend/entrypoints/global.css                                       
+playground/backend-integration/frontend/entrypoints/main.ts                                          
+playground/backend-integration/frontend/entrypoints/nested/blue.scss                                 
+playground/backend-integration/frontend/entrypoints/nested/sub.ts                                    
+playground/backend-integration/frontend/styles/background.css                                        
+playground/backend-integration/frontend/styles/imported.css                                          
+playground/backend-integration/frontend/styles/tailwind.css                                          
+playground/backend-integration/frontend/styles/url.css                                               
+playground/backend-integration/references.css                                                        
+playground/base-conflict/src/importee.ts                                                             
+playground/build-old/dynamic.js                                                                      
+playground/client-reload/__tests__/serve.ts                                                          
+playground/csp/linked.css                                                                            
+playground/css-codesplit-cjs/other.js                                                                
+playground/css-codesplit/other.js                                                                    
+playground/css-codesplit/shared-css-empty-1.js                                                       
+playground/css-codesplit/shared-css-empty-2.js                                                       
+playground/css-codesplit/shared-css-main.js                                                          
+playground/css-codesplit/shared-css-theme.css                                                        
+playground/css-codesplit/style2.css                                                                  
+playground/css-codesplit/style2.js                                                                   
+playground/css-dynamic-import/__tests__/serve.ts                                                     
+playground/css-lightningcss/composed.module.css                                                      
+playground/css-lightningcss/inlined.css                                                              
+playground/css-lightningcss/linked-at-import.css                                                     
+playground/css-lightningcss/linked.css                                                               
+playground/css-lightningcss/nested/nested.css                                                        
+playground/css-no-codesplit/shared-linked.css                                                        
+playground/css-sourcemap/be-imported.css                                                             
+playground/css-sourcemap/imported-nested.sass                                                        
+playground/css-sourcemap/imported-with-import.css                                                    
+playground/css-sourcemap/imported.css                                                                
+playground/css-sourcemap/imported.module.sass                                                        
+playground/css-sourcemap/imported.sass                                                               
+playground/css-sourcemap/input-map.css                                                               
+playground/css-sourcemap/input-map.src.css                                                           
+playground/css-sourcemap/linked-with-import.css                                                      
+playground/css-sourcemap/linked.css                                                                  
+playground/css-sourcemap/vite.config-lib-entry.js                                                    
+playground/css-sourcemap/vite.config-lightningcss.js                                                 
+playground/css/__tests__/postcss-plugins-different-dir/serve.ts                                      
+playground/css/composed.module.scss                                                                  
+playground/css/file-absolute.scss                                                                    
+playground/css/imported.scss                                                                         
+playground/css/less-plugin/test.js                                                                   
+playground/css/lightningcss-plugins.js                                                               
+playground/css/nested/_index.scss                                                                    
+playground/css/nested/_partial.scss                                                                  
+playground/css/nested/replacement-alias.scss                                                         
+playground/css/nested/root-relative.scss                                                             
+playground/css/pkg-dep/_index.scss                                                                   
+playground/css/postcss-caching/blue-app/postcss.config.js                                            
+playground/css/postcss-caching/green-app/postcss.config.js                                           
+playground/css/postcss-caching/serve.ts                                                              
+playground/css/postcss.config.js                                                                     
+playground/css/sass-modern-compiler-build/entry1.scss                                                
+playground/css/sass-modern-compiler-build/entry2.scss                                                
+playground/css/scss-dir/dir/index.scss                                                               
+playground/css/scss-dir/main.scss                                                                    
+playground/css/treeshake-scoped/order/a.js                                                           
+playground/css/vite.config-lightningcss.js                                                           
+playground/css/vite.config-same-file-name.js                                                         
+playground/css/vite.config-sass-modern-compiler-build.js                                             
+playground/define/optional-env.js                                                                    
+playground/dynamic-import/(app)/main.js                                                              
+playground/dynamic-import/alias/hello.js                                                             
+playground/dynamic-import/alias/hi.js                                                                
+playground/dynamic-import/alias/url.js                                                               
+playground/dynamic-import/alias/worker.js                                                            
+playground/dynamic-import/nested/hello.js                                                            
+playground/dynamic-import/nested/nested/self.js                                                      
+playground/dynamic-import/nested/self.js                                                             
+playground/dynamic-import/views/bar.js                                                               
+playground/dynamic-import/views/foo.js                                                               
+playground/dynamic-import/views/qux.js                                                               
+playground/environment-react-ssr/src/entry-client.tsx                                                
+playground/environment-react-ssr/src/entry-server.tsx                                                
+playground/environment-react-ssr/src/root.tsx                                                        
+playground/external/public/slash@3.0.0.js                                                            
+playground/fs-serve/entry.js                                                                         
+playground/fs-serve/nested/foo.js                                                                    
+playground/fs-serve/root/src/code.js                                                                 
+playground/fs-serve/root/vite.config.js                                                              
+playground/glob-import/external/x.js                                                                 
+playground/glob-import/external/y.js                                                                 
+playground/glob-import/root/array-common-base/pattern1/a.js                                          
+playground/glob-import/root/array-common-base/pattern2/b.js                                          
+playground/glob-import/root/array-test-dir/excluded.js                                               
+playground/glob-import/root/array-test-dir/included.js                                               
+playground/glob-import/root/dir/alias.js                                                             
+playground/glob-import/root/dir/foo.js                                                               
+playground/glob-import/root/dir/index.js                                                             
+playground/glob-import/root/dir/nested/bar.js                                                        
+playground/glob-import/root/dir/quote'.js                                                            
+playground/glob-import/root/escape/(parenthesis)/glob.js                                             
+playground/glob-import/root/escape/(parenthesis)/mod/index.js                                        
+playground/glob-import/root/escape/[brackets]/glob.js                                                
+playground/glob-import/root/escape/[brackets]/mod/index.js                                           
+playground/glob-import/root/escape/{curlies}/glob.js                                                 
+playground/glob-import/root/escape/{curlies}/mod/index.js                                            
+playground/glob-import/root/follow-symlinks/packages/my-lib/components/a.js                          
+playground/glob-import/root/follow-symlinks/packages/my-lib/components/b.js                          
+playground/glob-import/root/imports-path/bar.js                                                      
+playground/glob-import/root/imports-path/foo.js                                                      
+playground/glob-import/root/pkg-pages/foo.js                                                         
+playground/glob-import/root/side-effect/writedom.js                                                  
+playground/glob-import/root/side-effect/writetodom.js                                                
+playground/glob-import/root/subpath-imports-sub/index.js                                             
+playground/glob-import/root/transform-visibility.js                                                  
+playground/glob-import/root/vite.config.ts                                                           
+playground/hmr-root/foo.js                                                                           
+playground/hmr-root/vite.config.ts                                                                   
+playground/hmr-ssr/accept-exports/dynamic-imports/deps-all-accepted.ts                               
+playground/hmr-ssr/accept-exports/dynamic-imports/deps-some-accepted.ts                              
+playground/hmr-ssr/accept-exports/dynamic-imports/dynamic-imports.ts                                 
+playground/hmr-ssr/accept-exports/dynamic-imports/index.ts                                           
+playground/hmr-ssr/accept-exports/export-from/depA.ts                                                
+playground/hmr-ssr/accept-exports/export-from/export-from.ts                                         
+playground/hmr-ssr/accept-exports/export-from/hub.ts                                                 
+playground/hmr-ssr/accept-exports/main-accepted/callback.ts                                          
+playground/hmr-ssr/accept-exports/main-accepted/dep.ts                                               
+playground/hmr-ssr/accept-exports/main-accepted/index.ts                                             
+playground/hmr-ssr/accept-exports/main-accepted/main-accepted.ts                                     
+playground/hmr-ssr/accept-exports/main-accepted/target.ts                                            
+playground/hmr-ssr/accept-exports/main-non-accepted/default.ts                                       
+playground/hmr-ssr/accept-exports/main-non-accepted/dep.ts                                           
+playground/hmr-ssr/accept-exports/main-non-accepted/index.ts                                         
+playground/hmr-ssr/accept-exports/main-non-accepted/main-non-accepted.ts                             
+playground/hmr-ssr/accept-exports/main-non-accepted/named.ts                                         
+playground/hmr-ssr/accept-exports/reexports.bak/accept-named.ts                                      
+playground/hmr-ssr/accept-exports/reexports.bak/reexports.ts                                         
+playground/hmr-ssr/accept-exports/reexports.bak/source.ts                                            
+playground/hmr-ssr/accept-exports/side-effects/index.ts                                              
+playground/hmr-ssr/accept-exports/side-effects/side-effects.ts                                       
+playground/hmr-ssr/accept-exports/star-imports/deps-all-accepted.ts                                  
+playground/hmr-ssr/accept-exports/star-imports/deps-some-accepted.ts                                 
+playground/hmr-ssr/accept-exports/star-imports/index.ts                                              
+playground/hmr-ssr/accept-exports/star-imports/star-imports.ts                                       
+playground/hmr-ssr/accept-exports/unused-exports/index.ts                                            
+playground/hmr-ssr/accept-exports/unused-exports/unused.ts                                           
+playground/hmr-ssr/accept-exports/unused-exports/used.ts                                             
+playground/hmr-ssr/circular/index.js                                                                 
+playground/hmr-ssr/circular/mod-a.js                                                                 
+playground/hmr-ssr/circular/mod-b.js                                                                 
+playground/hmr-ssr/circular/mod-c.js                                                                 
+playground/hmr-ssr/counter/dep.ts                                                                    
+playground/hmr-ssr/counter/index.ts                                                                  
+playground/hmr-ssr/customFile.js                                                                     
+playground/hmr-ssr/file-delete-restore/child.js                                                      
+playground/hmr-ssr/file-delete-restore/index.js                                                      
+playground/hmr-ssr/file-delete-restore/parent.js                                                     
+playground/hmr-ssr/file-delete-restore/runtime.js                                                    
+playground/hmr-ssr/hmr.ts                                                                            
+playground/hmr-ssr/hmrDep.js                                                                         
+playground/hmr-ssr/hmrNestedDep.js                                                                   
+playground/hmr-ssr/importedVirtual.js                                                                
+playground/hmr-ssr/importing-updated/a.js                                                            
+playground/hmr-ssr/importing-updated/b.js                                                            
+playground/hmr-ssr/importing-updated/index.js                                                        
+playground/hmr-ssr/intermediate-file-delete/display.js                                               
+playground/hmr-ssr/intermediate-file-delete/index.js                                                 
+playground/hmr-ssr/intermediate-file-delete/re-export.js                                             
+playground/hmr-ssr/invalidation-circular-deps/circular-invalidate/child.js                           
+playground/hmr-ssr/invalidation-circular-deps/circular-invalidate/parent.js                          
+playground/hmr-ssr/invalidation-circular-deps/index.js                                               
+playground/hmr-ssr/invalidation-circular-deps/invalidate-handled-in-circle/child.js                  
+playground/hmr-ssr/invalidation-circular-deps/invalidate-handled-in-circle/parent.js                 
+playground/hmr-ssr/invalidation/child.js                                                             
+playground/hmr-ssr/invalidation/parent.js                                                            
+playground/hmr-ssr/missing-import/a.js                                                               
+playground/hmr-ssr/missing-import/index.js                                                           
+playground/hmr-ssr/missing-import/main.js                                                            
+playground/hmr-ssr/non-tested/dep.js                                                                 
+playground/hmr-ssr/non-tested/index.js                                                               
+playground/hmr-ssr/optional-chaining/child.js                                                        
+playground/hmr-ssr/optional-chaining/parent.js                                                       
+playground/hmr-ssr/queries/index.js                                                                  
+playground/hmr-ssr/queries/multi-query.js                                                            
+playground/hmr-ssr/self-accept-within-circular/a.js                                                  
+playground/hmr-ssr/self-accept-within-circular/b.js                                                  
+playground/hmr-ssr/self-accept-within-circular/c.js                                                  
+playground/hmr-ssr/self-accept-within-circular/index.js                                              
+playground/hmr-ssr/soft-invalidation/child.js                                                        
+playground/hmr-ssr/soft-invalidation/index.js                                                        
+playground/hmr-ssr/unresolved.ts                                                                     
+playground/hmr/accept-exports/dynamic-imports/deps-all-accepted.ts                                   
+playground/hmr/accept-exports/dynamic-imports/deps-some-accepted.ts                                  
+playground/hmr/accept-exports/dynamic-imports/dynamic-imports.ts                                     
+playground/hmr/accept-exports/export-from/depA.ts                                                    
+playground/hmr/accept-exports/export-from/export-from.ts                                             
+playground/hmr/accept-exports/export-from/hub.ts                                                     
+playground/hmr/accept-exports/main-accepted/callback.ts                                              
+playground/hmr/accept-exports/main-accepted/dep.ts                                                   
+playground/hmr/accept-exports/main-accepted/main-accepted.ts                                         
+playground/hmr/accept-exports/main-accepted/target.ts                                                
+playground/hmr/accept-exports/main-non-accepted/default.ts                                           
+playground/hmr/accept-exports/main-non-accepted/dep.ts                                               
+playground/hmr/accept-exports/main-non-accepted/main-non-accepted.ts                                 
+playground/hmr/accept-exports/main-non-accepted/named.ts                                             
+playground/hmr/accept-exports/reexports.bak/accept-named.ts                                          
+playground/hmr/accept-exports/reexports.bak/reexports.ts                                             
+playground/hmr/accept-exports/reexports.bak/source.ts                                                
+playground/hmr/accept-exports/side-effects/side-effects.ts                                           
+playground/hmr/accept-exports/star-imports/deps-all-accepted.ts                                      
+playground/hmr/accept-exports/star-imports/deps-some-accepted.ts                                     
+playground/hmr/accept-exports/star-imports/star-imports.ts                                           
+playground/hmr/accept-exports/unused-exports/index.ts                                                
+playground/hmr/accept-exports/unused-exports/unused.ts                                               
+playground/hmr/accept-exports/unused-exports/used.ts                                                 
+playground/hmr/counter/dep.ts                                                                        
+playground/hmr/counter/index.ts                                                                      
+playground/hmr/css-deps/dep.js                                                                       
+playground/hmr/css-deps/main.css                                                                     
+playground/hmr/css-link/main.js                                                                      
+playground/hmr/css-link/styles.css                                                                   
+playground/hmr/customFile.js                                                                         
+playground/hmr/global.css                                                                            
+playground/hmr/importedVirtual.js                                                                    
+playground/hmr/missing-file/main.js                                                                  
+playground/hmr/missing-import/a.js                                                                   
+playground/hmr/missing-import/main.js                                                                
+playground/hmr/self-accept-within-circular/a.js                                                      
+playground/hmr/self-accept-within-circular/b.js                                                      
+playground/hmr/self-accept-within-circular/c.js                                                      
+playground/hmr/self-accept-within-circular/index.js                                                  
+playground/html/inline/common.js                                                                     
+playground/html/inline/dep1.js                                                                       
+playground/html/inline/dep2.js                                                                       
+playground/html/inline/dep3.js                                                                       
+playground/html/inline/shared.js                                                                     
+playground/html/inline/unique.js                                                                     
+playground/html/link-props/print.css                                                                 
+playground/html/link-props/screen.css                                                                
+playground/html/nested/asset/main.js                                                                 
+playground/html/nested/asset/style.css                                                               
+playground/html/nested/nested.css                                                                    
+playground/html/nested/nested.js                                                                     
+playground/html/relative-input/main.js                                                               
+playground/html/test.js                                                                              
+playground/html/valid.js                                                                             
+playground/html/warmup/warm.js                                                                       
+playground/js-sourcemap/foo-with-sourcemap.js                                                        
+playground/js-sourcemap/plugin-foo.js                                                                
+playground/js-sourcemap/test-ssr-dev.js                                                              
+playground/js-sourcemap/with-define-object-ssr.ts                                                    
+playground/legacy/entry-server-sequential.js                                                         
+playground/legacy/entry-server.js                                                                    
+playground/legacy/no-polyfills-no-systemjs.js                                                        
+playground/legacy/no-polyfills.js                                                                    
+playground/lib/__tests__/serve.ts                                                                    
+playground/lib/src/css-entry-1.js                                                                    
+playground/lib/src/css-entry-2.js                                                                    
+playground/lib/src/dynamic.css                                                                       
+playground/lib/src/entry-1.css                                                                       
+playground/lib/src/entry-2.css                                                                       
+playground/lib/src/main-helpers-injection.js                                                         
+playground/lib/src/main-multiple-output.js                                                           
+playground/lib/src/main-named.js                                                                     
+playground/lib/src/main2.js                                                                          
+playground/lib/src/message.js                                                                        
+playground/lib/src/sub-multiple-output.js                                                            
+playground/lib/vite.css-code-split.config.js                                                         
+playground/lib/vite.css-multi-entry.config.js                                                        
+playground/lib/vite.css-single-entry.config.js                                                       
+playground/lib/vite.dyimport.config.js                                                               
+playground/lib/vite.helpers-injection.config.js                                                      
+playground/lib/vite.multiple-output.config.js                                                        
+playground/lib/vite.named-exports.config.js                                                          
+playground/lib/vite.nominify.config.js                                                               
+playground/lib/vite.terser.config.js                                                                 
+playground/module-graph/empty.js                                                                     
+playground/module-graph/imported-urls-order.js                                                       
+playground/multiple-entrypoints/entrypoints/a0.js                                                    
+playground/multiple-entrypoints/entrypoints/a1.js                                                    
+playground/multiple-entrypoints/entrypoints/a10.js                                                   
+playground/multiple-entrypoints/entrypoints/a11.js                                                   
+playground/multiple-entrypoints/entrypoints/a12.js                                                   
+playground/multiple-entrypoints/entrypoints/a13.js                                                   
+playground/multiple-entrypoints/entrypoints/a14.js                                                   
+playground/multiple-entrypoints/entrypoints/a15.js                                                   
+playground/multiple-entrypoints/entrypoints/a16.js                                                   
+playground/multiple-entrypoints/entrypoints/a17.js                                                   
+playground/multiple-entrypoints/entrypoints/a18.js                                                   
+playground/multiple-entrypoints/entrypoints/a19.js                                                   
+playground/multiple-entrypoints/entrypoints/a2.js                                                    
+playground/multiple-entrypoints/entrypoints/a20.js                                                   
+playground/multiple-entrypoints/entrypoints/a21.js                                                   
+playground/multiple-entrypoints/entrypoints/a22.js                                                   
+playground/multiple-entrypoints/entrypoints/a23.js                                                   
+playground/multiple-entrypoints/entrypoints/a24.js                                                   
+playground/multiple-entrypoints/entrypoints/a3.js                                                    
+playground/multiple-entrypoints/entrypoints/a4.js                                                    
+playground/multiple-entrypoints/entrypoints/a5.js                                                    
+playground/multiple-entrypoints/entrypoints/a6.js                                                    
+playground/multiple-entrypoints/entrypoints/a7.js                                                    
+playground/multiple-entrypoints/entrypoints/a8.js                                                    
+playground/multiple-entrypoints/entrypoints/a9.js                                                    
+playground/nested-deps/test-package-c/side.js                                                        
+playground/optimize-deps/.hidden-dir/foo.js                                                          
+playground/optimize-deps/dep-cjs-browser-field-bare/events-shim.js                                   
+playground/optimize-deps/dep-cjs-browser-field/lib/adapters/xhr.js                                   
+playground/optimize-deps/dep-css-require/mod.cjs                                                     
+playground/optimize-deps/dep-incompatible/sub.js                                                     
+playground/optimize-deps/dep-lodash/cloneDeep.js                                                     
+playground/optimize-deps/dep-not-js/foo.js                                                           
+playground/optimize-deps/dep-optimize-exports-with-root-glob/dir/file2.js                            
+playground/optimize-deps/dep-optimize-exports-with-root-glob/file1.js                                
+playground/optimize-deps/dep-optimize-with-glob/glob/bar.js                                          
+playground/optimize-deps/dep-optimize-with-glob/glob/foo.js                                          
+playground/optimize-deps/dep-optimize-with-glob/glob/nested/baz.js                                   
+playground/optimize-deps/dep-optimize-with-glob/named.js                                             
+playground/optimize-deps/dep-relative-to-main/entry.js                                               
+playground/optimize-deps/dep-source-map-no-sources/all.js                                            
+playground/optimize-deps/dep-source-map-no-sources/sub.js                                            
+playground/optimize-deps/dynamic-use-dep-alias-using-absolute-path.js                                
+playground/optimize-deps/generics.vue                                                                
+playground/optimize-deps/glob/foo.js                                                                 
+playground/optimize-deps/unused-split-entry.js                                                       
+playground/optimize-missing-deps/multi-entry-dep/index.browser.js                                    
+playground/preload/public/preloaded.js                                                               
+playground/proxy-hmr/__tests__/serve.ts                                                              
+playground/resolve-tsconfig-paths/fallback/fallback.js                                               
+playground/resolve-tsconfig-paths/src/hash.ts                                                        
+playground/resolve-tsconfig-paths/src/imported.js                                                    
+playground/resolve-tsconfig-paths/src/js.js                                                          
+playground/resolve-tsconfig-paths/src/nested/a-imported.ts                                           
+playground/resolve-tsconfig-paths/src/nested/a.ts                                                    
+playground/resolve-tsconfig-paths/src/nested/b-imported.ts                                           
+playground/resolve-tsconfig-paths/src/nested/b.ts                                                    
+playground/resolve-tsconfig-paths/src/nested/index.ts                                                
+playground/resolve-tsconfig-paths/src/ts.ts                                                          
+playground/resolve/absolute.js                                                                       
+playground/resolve/browser-field/bare-import.js                                                      
+playground/resolve/browser-field/multiple.dot.path.js                                                
+playground/resolve/browser-field/no-ext-index/index.js                                               
+playground/resolve/browser-field/no-ext.js                                                           
+playground/resolve/browser-field/not-browser.js                                                      
+playground/resolve/browser-field/out/esm.browser.js                                                  
+playground/resolve/browser-field/relative.js                                                         
+playground/resolve/custom-browser-main-field/index.custom.js                                         
+playground/resolve/custom-main-field/index.custom.js                                                 
+playground/resolve/dir-with-ext/index.js                                                             
+playground/resolve/dir.js                                                                            
+playground/resolve/dir/index.js                                                                      
+playground/resolve/drive-relative.js                                                                 
+playground/resolve/exact-extension/file.js                                                           
+playground/resolve/exact-extension/file.js.js                                                        
+playground/resolve/exact-extension/file.json.js                                                      
+playground/resolve/imports-path/importer.js                                                          
+playground/resolve/imports-path/other-pkg/nest/index.js                                              
+playground/resolve/imports-path/root-slash/index.js                                                  
+playground/resolve/imports-path/slash/index.js                                                       
+playground/resolve/imports-path/star/index.js                                                        
+playground/resolve/inline-package/inline.js                                                          
+playground/resolve/non-normalized.js                                                                 
+playground/resolve/sharp-dir-nested/#/index.cjs                                                      
+playground/resolve/ts-extension/hello.ts                                                             
+playground/resolve/ts-extension/hellocjs.cts                                                         
+playground/resolve/ts-extension/hellojsx.tsx                                                         
+playground/resolve/ts-extension/hellomjs.mts                                                         
+playground/resolve/ts-extension/hellotsx.tsx                                                         
+playground/resolve/ts-extension/index-js.js                                                          
+playground/resolve/ts-extension/index.ts                                                             
+playground/resolve/utf8-bom/main.js                                                                  
+playground/resolve/util/bar.util.js                                                                  
+playground/resolve/util/index.js                                                                     
+playground/resolve/vite.config-mainfields-custom-first.js                                            
+playground/ssr-alias/src/alias-process.js                                                            
+playground/ssr-conditions/src/app.js                                                                 
+playground/ssr-deps/require-absolute/foo.js                                                          
+playground/ssr-deps/src/app.js                                                                       
+playground/ssr-deps/src/isomorphic-module-browser.js                                                 
+playground/ssr-deps/src/isomorphic-module-server.js                                                  
+playground/ssr-html/public/slash@3.0.0.js                                                            
+playground/ssr-html/src/app.js                                                                       
+playground/ssr-html/src/error-js.js                                                                  
+playground/ssr-html/src/error-ts.ts                                                                  
+playground/ssr-html/src/has-error-deep.ts                                                            
+playground/ssr-html/src/importedVirtual.js                                                           
+playground/ssr-html/src/network-imports.js                                                           
+playground/ssr-html/test-network-imports.js                                                          
+playground/ssr-html/test-stacktrace-runtime.js                                                       
+playground/ssr-html/trailing-slash/dir/filename.js                                                   
+playground/ssr-html/trailing-slash/other.js                                                          
+playground/ssr-noexternal/src/entry-server.js                                                        
+playground/ssr-pug/src/app.js                                                                        
+playground/ssr-resolve/entries/dir/index.js                                                          
+playground/ssr-resolve/entries/file.js                                                               
+playground/ssr-wasm/src/app.js                                                                       
+playground/ssr-wasm/src/static-heavy.js                                                              
+playground/ssr-wasm/src/static-light.js                                                              
+playground/ssr-webworker/src/dynamic.js                                                              
+playground/ssr-webworker/src/entry-worker.jsx                                                        
+playground/ssr/src/app.js                                                                            
+playground/ssr/src/circular-dep-init/circular-dep-init.js                                            
+playground/ssr/src/circular-dep-init/module-a.js                                                     
+playground/ssr/src/circular-dep-init/module-b.js                                                     
+playground/ssr/src/circular-import/a.js                                                              
+playground/ssr/src/circular-import/b.js                                                              
+playground/ssr/src/circular-import/index.js                                                          
+playground/ssr/src/circular-import2/a.js                                                             
+playground/ssr/src/circular-import2/b.js                                                             
+playground/ssr/src/circular-import2/index.js                                                         
+playground/ssr/src/forked-deadlock/common-module.js                                                  
+playground/ssr/src/forked-deadlock/deadlock-fuse-module.js                                           
+playground/ssr/src/forked-deadlock/dynamic-imports/common-module.js                                  
+playground/ssr/src/forked-deadlock/dynamic-imports/deadlock-fuse-module.js                           
+playground/ssr/src/forked-deadlock/dynamic-imports/fuse-stuck-bridge-module.js                       
+playground/ssr/src/forked-deadlock/dynamic-imports/middle-module.js                                  
+playground/ssr/src/forked-deadlock/dynamic-imports/stuck-module.js                                   
+playground/ssr/src/forked-deadlock/fuse-stuck-bridge-module.js                                       
+playground/ssr/src/forked-deadlock/middle-module.js                                                  
+playground/ssr/src/forked-deadlock/stuck-module.js                                                   
+playground/ssr/src/utils.js                                                                          
+playground/tailwind-sourcemap/tailwind.css                                                           
+playground/tailwind-v3/postcss.config.js                                                             
+playground/transform-plugin/plugin-dep-load.js                                                       
+playground/transform-plugin/plugin-dep.js                                                            
+playground/transform-plugin/vite.config-base.js                                                      
+playground/wasm/worker.js                                                                            
+playground/worker/classic-esm.js                                                                     
+playground/worker/emit-chunk-dynamic-import-worker.js                                                
+playground/worker/emit-chunk-nested-worker.js                                                        
+playground/worker/emit-chunk-sub-worker.js                                                           
+playground/worker/importMetaGlob.worker.js                                                           
+playground/worker/module-and-worker.js                                                               
+playground/worker/public/classic.js                                                                  
+playground/worker/vite.config-sourcemap-hidden.js                                                    
+playground/worker/vite.config-sourcemap-inline.js                                                    
+playground/worker/worker/main-format-es.js                                                           
+Unused dependencies (124)
+core-js                                                      packages/plugin-legacy/package.json:45:6                   
+regenerator-runtime                                          packages/plugin-legacy/package.json:47:6                   
+systemjs                                                     packages/plugin-legacy/package.json:48:6                   
+@vitejs/cjs-ssr-dep                                          packages/vite/src/node/__tests__/package.json:7:6          
+@vitejs/test-dep-conditions                                  packages/vite/src/node/__tests__/package.json:8:6          
+vue                                                          packages/vite/src/node/__tests__/package.json:9:6          
+@vitejs/test-dep-license-mit                                 …c/node/__tests__/plugins/fixtures/license/package.json:7:6
+@vitejs/test-dep-licence-cc0                                 …c/node/__tests__/plugins/fixtures/license/package.json:8:6
+@vitejs/cjs-external                                         …kages/vite/src/node/ssr/runtime/__tests__/package.json:9:6
+@vitejs/esm-external                                         …ages/vite/src/node/ssr/runtime/__tests__/package.json:10:6
+test-dep-invalid-exports                                     …ages/vite/src/node/ssr/runtime/__tests__/package.json:11:6
+aliased-module                                               playground/alias/package.json:13:6                         
+vue                                                          playground/alias/package.json:14:6                         
+@vitejs/test-css-proxy-dep-nested                            playground/css/css-proxy-dep/package.json:7:6              
+@vitejs/test-scss-proxy-dep-nested                           playground/css/scss-proxy-dep/package.json:7:6             
+@vitejs/test-commonjs-dep                                    playground/define/package.json:13:6                        
+vue                                                          playground/extensions/package.json:13:6                    
+slash5                                                       playground/external/dep-that-requires/package.json:7:6     
+@vitejs/test-import-meta-glob-pkg                            playground/glob-import/package.json:16:6                   
+@vitejs/test-import-assertion-dep                            playground/import-assertion/package.json:13:6              
+@vitejs/test-package-a                                       playground/nested-deps/package.json:13:6                   
+@vitejs/test-package-b                                       playground/nested-deps/package.json:14:6                   
+@vitejs/test-package-c                                       playground/nested-deps/package.json:15:6                   
+@vitejs/test-package-d                                       playground/nested-deps/package.json:16:6                   
+@vitejs/test-package-e                                       playground/nested-deps/package.json:17:6                   
+@vitejs/test-package-f                                       playground/nested-deps/package.json:18:6                   
+@vitejs/self-referencing                                     playground/nested-deps/package.json:19:6                   
+@vitejs/test-dep-no-discovery                                playground/optimize-deps-no-discovery/package.json:13:6    
+vue                                                          playground/optimize-deps-no-discovery/package.json:14:6    
+vuex                                                         playground/optimize-deps-no-discovery/package.json:15:6    
+stream                                                       …/optimize-deps/dep-cjs-with-external-deps/package.json:8:6
+@vitejs/test-dep-cjs-browser-field                           playground/optimize-deps/package.json:14:6                 
+@vitejs/test-dep-cjs-browser-field-bare                      playground/optimize-deps/package.json:17:6                 
+@vitejs/test-dep-cjs-with-assets                             playground/optimize-deps/package.json:20:6                 
+@vitejs/test-dep-cjs-with-external-deps                      playground/optimize-deps/package.json:22:6                 
+@vitejs/test-dep-cjs-css-main-field                          playground/optimize-deps/package.json:23:6                 
+@vitejs/test-dep-cjs-require-css-main-field                  playground/optimize-deps/package.json:24:6                 
+@vitejs/test-dep-css-require                                 playground/optimize-deps/package.json:25:6                 
+@vitejs/test-dep-esbuild-plugin-transform                    playground/optimize-deps/package.json:26:6                 
+@vitejs/test-dep-incompatible                                playground/optimize-deps/package.json:27:6                 
+@vitejs/test-dep-linked                                      playground/optimize-deps/package.json:28:6                 
+@vitejs/test-dep-node-env                                    playground/optimize-deps/package.json:30:6                 
+@vitejs/test-dep-not-js                                      playground/optimize-deps/package.json:31:6                 
+@vitejs/test-dep-optimize-exports-with-glob                  playground/optimize-deps/package.json:32:6                 
+@vitejs/test-dep-optimize-exports-with-root-glob             playground/optimize-deps/package.json:33:6                 
+@vitejs/test-dep-optimize-with-glob                          playground/optimize-deps/package.json:34:6                 
+@vitejs/test-dep-relative-to-main                            playground/optimize-deps/package.json:35:6                 
+@vitejs/test-dep-source-map-no-sources                       playground/optimize-deps/package.json:36:6                 
+@vitejs/test-dep-with-asset-ext1.pdf                         playground/optimize-deps/package.json:37:6                 
+@vitejs/test-dep-with-asset-ext2.pdf                         playground/optimize-deps/package.json:38:6                 
+@vitejs/test-dep-with-builtin-module-cjs                     playground/optimize-deps/package.json:39:6                 
+@vitejs/test-dep-with-builtin-module-esm                     playground/optimize-deps/package.json:40:6                 
+@vitejs/test-dep-with-dynamic-import                         playground/optimize-deps/package.json:41:6                 
+@vitejs/test-dep-with-optional-peer-dep                      playground/optimize-deps/package.json:42:6                 
+@vitejs/test-dep-with-optional-peer-dep-cjs                  playground/optimize-deps/package.json:43:6                 
+@vitejs/test-dep-with-optional-peer-dep-submodule            playground/optimize-deps/package.json:44:6                 
+@vitejs/test-dep-with-plus-subpath                           playground/optimize-deps/package.json:45:6                 
+@vitejs/test-dep-non-optimized                               playground/optimize-deps/package.json:46:6                 
+@vitejs/test-added-in-entries                                playground/optimize-deps/package.json:47:6                 
+@vitejs/test-dep-cjs-external-package-omit-js-suffix         playground/optimize-deps/package.json:48:6                 
+@vitejs/test-dep-with-assets                                 playground/optimize-deps/package.json:49:6                 
+@vitejs/test-dep-lodash                                      playground/optimize-deps/package.json:50:6                 
+@vitejs/test-dep-lodash.clonedeep                            playground/optimize-deps/package.json:51:6                 
+@vitejs/test-dep-lodash-es                                   playground/optimize-deps/package.json:52:6                 
+@vitejs/test-nested-exclude                                  playground/optimize-deps/package.json:53:6                 
+@vitejs/test-resolve-linked                                  playground/optimize-deps/package.json:57:6                 
+url                                                          playground/optimize-deps/package.json:58:6                 
+vue                                                          playground/optimize-deps/package.json:59:6                 
+vuex                                                         playground/optimize-deps/package.json:60:6                 
+@vitejs/test-resolve-browser-field-bare-import-fail          playground/resolve/browser-field/package.json:20:6         
+@vitejs/test-resolve-browser-field-bare-import-success       playground/resolve/browser-field/package.json:21:6         
+@babel/runtime                                               playground/resolve/package.json:24:6                       
+normalize.css                                                playground/resolve/package.json:25:6                       
+@vitejs/test-resolve-browser-field                           playground/resolve/package.json:26:6                       
+@vitejs/test-resolve-browser-module-field1                   playground/resolve/package.json:27:6                       
+@vitejs/test-resolve-custom-condition                        playground/resolve/package.json:28:6                       
+@vitejs/test-resolve-custom-main-field                       playground/resolve/package.json:29:6                       
+@vitejs/test-resolve-custom-browser-main-field               playground/resolve/package.json:30:6                       
+@vitejs/test-resolve-exports-and-nested-scope                playground/resolve/package.json:31:6                       
+@vitejs/test-resolve-exports-env                             playground/resolve/package.json:32:6                       
+@vitejs/test-resolve-exports-from-root                       playground/resolve/package.json:33:6                       
+@vitejs/test-resolve-exports-legacy-fallback                 playground/resolve/package.json:34:6                       
+@vitejs/test-resolve-exports-path                            playground/resolve/package.json:35:6                       
+@vitejs/test-resolve-exports-with-module                     playground/resolve/package.json:36:6                       
+@vitejs/test-resolve-exports-with-module-condition           playground/resolve/package.json:37:6                       
+@vitejs/test-resolve-exports-with-module-condition-required  playground/resolve/package.json:38:6                       
+@vitejs/test-resolve-linked                                  playground/resolve/package.json:39:6                       
+@vitejs/test-resolve-imports-pkg                             playground/resolve/package.json:40:6                       
+@vitejs/test-resolve-sharp-dir                               playground/resolve/package.json:41:6                       
+@vitejs/test-resolve-sharp-dir-nested                        playground/resolve/package.json:42:6                       
+@vitejs/test-resolve-side-effects-glob                       playground/resolve/package.json:43:6                       
+@vitejs/test-utf8-bom-package                                playground/resolve/package.json:44:6                       
+@vitejs/test-ssr-conditions-external                         playground/ssr-conditions/package.json:15:6                
+@vitejs/test-ssr-conditions-no-external                      playground/ssr-conditions/package.json:16:6                
+@node-rs/bcrypt                                              playground/ssr-deps/package.json:12:6                      
+@vitejs/test-css-lib                                         playground/ssr-deps/package.json:13:6                      
+@vitejs/test-define-properties-exports                       playground/ssr-deps/package.json:14:6                      
+@vitejs/test-define-property-exports                         playground/ssr-deps/package.json:15:6                      
+@vitejs/test-external-entry                                  playground/ssr-deps/package.json:16:6                      
+@vitejs/test-external-using-external-entry                   playground/ssr-deps/package.json:17:6                      
+@vitejs/test-forwarded-export                                playground/ssr-deps/package.json:18:6                      
+@vitejs/test-import-builtin-cjs                              playground/ssr-deps/package.json:19:6                      
+@vitejs/test-linked-no-external                              playground/ssr-deps/package.json:20:6                      
+@vitejs/test-module-condition                                playground/ssr-deps/package.json:21:6                      
+@vitejs/test-nested-exclude                                  playground/ssr-deps/package.json:22:6                      
+@vitejs/test-no-external-cjs                                 playground/ssr-deps/package.json:23:6                      
+@vitejs/test-no-external-css                                 playground/ssr-deps/package.json:24:6                      
+@vitejs/test-non-optimized-with-nested-external              playground/ssr-deps/package.json:25:6                      
+@vitejs/test-object-assigned-exports                         playground/ssr-deps/package.json:26:6                      
+@vitejs/test-only-object-assigned-exports                    playground/ssr-deps/package.json:27:6                      
+@vitejs/test-optimized-cjs-with-nested-external              playground/ssr-deps/package.json:28:6                      
+@vitejs/test-optimized-with-nested-external                  playground/ssr-deps/package.json:29:6                      
+@vitejs/test-pkg-exports                                     playground/ssr-deps/package.json:30:6                      
+@vitejs/test-primitive-export                                playground/ssr-deps/package.json:31:6                      
+@vitejs/test-read-file-content                               playground/ssr-deps/package.json:32:6                      
+@vitejs/test-require-absolute                                playground/ssr-deps/package.json:33:6                      
+@vitejs/test-ts-transpiled-exports                           playground/ssr-deps/package.json:34:6                      
+@vitejs/test-external-cjs                                    playground/ssr-noexternal/package.json:13:6                
+@vitejs/test-require-external-cjs                            playground/ssr-noexternal/package.json:14:6                
+react                                                        playground/ssr-webworker/package.json:11:6                 
+@vitejs/test-browser-exports                                 playground/ssr-webworker/package.json:12:6                 
+@vitejs/test-worker-exports                                  playground/ssr-webworker/package.json:13:6                 
+tailwindcss                                                  playground/tailwind-sourcemap/package.json:14:6            
+autoprefixer                                                 playground/tailwind-v3/package.json:13:6                   
+Unused devDependencies (45)
+@iconify/vue                  docs/package.json:11:6                             
+@types/express                docs/package.json:13:6                             
+vue-tsc                       docs/package.json:23:6                             
+@babel/parser                 packages/vite/package.json:86:6                    
+cac                           packages/vite/package.json:100:6                   
+rolldown-plugin-dts           packages/vite/package.json:130:6                   
+@vitejs/test-resolve-linked   playground/alias/package.json:18:6                 
+sass                          playground/backend-integration/package.json:14:6   
+tailwindcss                   playground/backend-integration/package.json:15:6   
+url                           playground/cli-module/package.json:13:6            
+lightningcss                  playground/css-lightningcss-proxy/package.json:12:6
+lightningcss                  playground/css-lightningcss-root/package.json:12:6 
+lightningcss                  playground/css-lightningcss/package.json:12:6      
+less                          playground/css-sourcemap/package.json:13:6         
+lightningcss                  playground/css-sourcemap/package.json:14:6         
+sass                          playground/css-sourcemap/package.json:16:6         
+stylus                        playground/css-sourcemap/package.json:17:6         
+sugarss                       playground/css-sourcemap/package.json:18:6         
+@vitejs/test-css-dep          playground/css/package.json:19:6                   
+@vitejs/test-css-dep-exports  playground/css/package.json:20:6                   
+@vitejs/test-css-proxy-dep    playground/css/package.json:22:6                   
+@vitejs/test-scss-proxy-dep   playground/css/package.json:23:6                   
+less                          playground/css/package.json:24:6                   
+lightningcss                  playground/css/package.json:25:6                   
+postcss-nested                playground/css/package.json:26:6                   
+sass                          playground/css/package.json:27:6                   
+sugarss                       playground/css/package.json:29:6                   
+tinyglobby                    playground/css/package.json:30:6                   
+@types/react                  playground/environment-react-ssr/package.json:12:6 
+@types/react-dom              playground/environment-react-ssr/package.json:13:6 
+react                         playground/environment-react-ssr/package.json:14:6 
+react-fake-client             playground/environment-react-ssr/package.json:15:6 
+react-fake-server             playground/environment-react-ssr/package.json:16:6 
+react-dom                     playground/environment-react-ssr/package.json:17:6 
+slash5                        playground/external/package.json:18:6              
+vue34                         playground/external/package.json:21:6              
+@vitejs/test-json-require     playground/json/package.json:13:6                  
+@vitejs/test-json-module      playground/json/package.json:14:6                  
+sirv                          playground/lib/package.json:13:6                   
+sass                          playground/multiple-entrypoints/package.json:13:6  
+terser                        playground/preload/package.json:21:6               
+@vitejs/test-dep-a            playground/preload/package.json:22:6               
+@vitejs/test-resolve-linked   playground/ssr-webworker/package.json:17:6         
+tsx                           playground/tailwind-v3/package.json:17:6           
+tsx                           playground/tailwind/package.json:17:6              
+Referenced optional peerDependencies (9)
+@types/node  packages/vite/package.json                                                
+jiti         packages/vite/package.json                                                
+less         packages/vite/package.json                                                
+stylus       packages/vite/package.json                                                
+tsx          packages/vite/package.json                                                
+yaml         packages/vite/package.json                                                
+foobar       playground/optimize-deps/dep-with-optional-peer-dep-cjs/package.json      
+foobar       playground/optimize-deps/dep-with-optional-peer-dep-submodule/package.json
+foobar       playground/optimize-deps/dep-with-optional-peer-dep/package.json          
+Unlisted dependencies (2)
+absolute-importer  playground/base-conflict/src/main.ts:1:21          
+test-package-a     playground/nested-deps/test-package-b/index.js:1:30
+Unlisted binaries (1)
+only-allow  package.json
+Unresolved imports (4)
+#alias         playground/css/main.js:125:8                        
+#alias?inline  playground/css/main.js:126:26                       
+#alias-module  playground/css/main.js:128:25                       
+./data         playground/preserve-symlinks/module-a/linked.js:1:22
+Unused exports (153)
+normalizeModuleId                     function  packages/vite/src/module-runner/evaluatedModules.ts:147:17              
+EvaluatedModules                                packages/vite/src/module-runner/index.ts:4:3                            
+normalizeModuleId                               packages/vite/src/module-runner/index.ts:5:3                            
+createDefaultImportMeta                         packages/vite/src/module-runner/index.ts:11:3                           
+createWebSocketModuleRunnerTransport            packages/vite/src/module-runner/index.ts:15:10                          
+ssrDynamicImportKey                             packages/vite/src/module-runner/index.ts:34:3                           
+ssrExportAllKey                                 packages/vite/src/module-runner/index.ts:35:3                           
+ssrExportNameKey                                packages/vite/src/module-runner/index.ts:36:3                           
+ssrImportKey                                    packages/vite/src/module-runner/index.ts:37:3                           
+ssrImportMetaKey                                packages/vite/src/module-runner/index.ts:38:3                           
+ssrModuleExportsKey                             packages/vite/src/module-runner/index.ts:39:3                           
+test                                            packages/vite/src/node/__tests__/fixtures/runner-import/basic.ts:5:14   
+default                                         …_tests__/fixtures/runner-import/vite.config.outside-pkg-import.mts:3:16
+default                                         …ages/vite/src/node/__tests__/fixtures/runner-import/vite.config.ts:4:16
+resolveDevToolsConfig                 function  packages/vite/src/node/config.ts:745:23                                 
+resolveDevEnvironmentOptions          function  packages/vite/src/node/config.ts:887:17                                 
+getDefaultEnvironmentOptions          function  packages/vite/src/node/config.ts:1001:17                                
+resolveBaseUrl                        function  packages/vite/src/node/config.ts:2170:17                                
+sortUserPlugins                       function  packages/vite/src/node/config.ts:2220:17                                
+esmExternalRequirePlugin                        packages/vite/src/node/index.ts:9:10                                    
+parse                                           packages/vite/src/node/index.ts:11:3                                    
+parseSync                                       packages/vite/src/node/index.ts:12:3                                    
+minify                                          packages/vite/src/node/index.ts:15:3                                    
+minifySync                                      packages/vite/src/node/index.ts:16:3                                    
+Visitor                                         packages/vite/src/node/index.ts:19:3                                    
+parseAst                                        packages/vite/src/node/index.ts:25:14                                   
+parseAstAsync                                   packages/vite/src/node/index.ts:27:14                                   
+defineConfig                                    packages/vite/src/node/index.ts:30:3                                    
+loadConfigFromFile                              packages/vite/src/node/index.ts:31:3                                    
+sortUserPlugins                                 packages/vite/src/node/index.ts:33:3                                    
+perEnvironmentState                             packages/vite/src/node/index.ts:36:10                                   
+preview                                         packages/vite/src/node/index.ts:38:10                                   
+createBuilder                                   packages/vite/src/node/index.ts:39:17                                   
+optimizeDeps                                    packages/vite/src/node/index.ts:41:10                                   
+createIdResolver                                packages/vite/src/node/index.ts:42:10                                   
+formatPostcssSourceMap                          packages/vite/src/node/index.ts:44:10                                   
+preprocessCSS                                   packages/vite/src/node/index.ts:44:34                                   
+transformWithEsbuild                            packages/vite/src/node/index.ts:45:10                                   
+transformWithOxc                                packages/vite/src/node/index.ts:46:10                                   
+buildErrorMessage                               packages/vite/src/node/index.ts:47:10                                   
+createRunnableDevEnvironment                    packages/vite/src/node/index.ts:50:3                                    
+createFetchableDevEnvironment                   packages/vite/src/node/index.ts:56:3                                    
+isFetchableDevEnvironment                       packages/vite/src/node/index.ts:57:3                                    
+runnerImport                                    packages/vite/src/node/index.ts:65:10                                   
+fetchModule                                     packages/vite/src/node/index.ts:68:10                                   
+createServerModuleRunnerTransport               packages/vite/src/node/index.ts:71:3                                    
+createServerHotChannel                          packages/vite/src/node/index.ts:73:10                                   
+moduleRunnerTransform                           packages/vite/src/node/index.ts:74:26                                   
+version                                         packages/vite/src/node/index.ts:78:14                                   
+defaultClientConditions                         packages/vite/src/node/index.ts:79:32                                   
+defaultClientMainFields                         packages/vite/src/node/index.ts:80:33                                   
+defaultExternalConditions                       packages/vite/src/node/index.ts:81:34                                   
+defaultServerConditions                         packages/vite/src/node/index.ts:82:32                                   
+defaultServerMainFields                         packages/vite/src/node/index.ts:83:33                                   
+defaultAllowedOrigins                           packages/vite/src/node/index.ts:84:3                                    
+esbuildVersion                                  packages/vite/src/node/index.ts:87:14                                   
+mergeConfig                                     packages/vite/src/node/index.ts:90:3                                    
+mergeAlias                                      packages/vite/src/node/index.ts:91:3                                    
+createFilter                                    packages/vite/src/node/index.ts:92:3                                    
+withFilter                                      packages/vite/src/node/index.ts:93:3                                    
+isCSSRequest                                    packages/vite/src/node/index.ts:94:3                                    
+rollupVersion                                   packages/vite/src/node/index.ts:95:3                                    
+rolldownVersion                                 packages/vite/src/node/index.ts:96:3                                    
+send                                            packages/vite/src/node/index.ts:98:10                                   
+createLogger                                    packages/vite/src/node/index.ts:99:10                                   
+searchForWorkspaceRoot                          packages/vite/src/node/index.ts:100:10                                  
+isFileServingAllowed                            packages/vite/src/node/index.ts:103:3                                   
+isFileLoadingAllowed                            packages/vite/src/node/index.ts:104:3                                   
+loadEnv                                         packages/vite/src/node/index.ts:106:10                                  
+resolveEnvPrefix                                packages/vite/src/node/index.ts:106:19                                  
+optimizeDeps                          function  packages/vite/src/node/optimizer/index.ts:283:23                        
+getDepsCacheDir                       function  packages/vite/src/node/optimizer/index.ts:947:17                        
+cleanupDepsCacheStaleDirs             function  packages/vite/src/node/optimizer/index.ts:1411:23                       
+noInlineRE                                      packages/vite/src/node/plugins/asset.ts:51:14                           
+inlineRE                                        packages/vite/src/node/plugins/asset.ts:52:14                           
+registerCustomMime                    function  packages/vite/src/node/plugins/asset.ts:63:17                           
+fileToDevUrl                          function  packages/vite/src/node/plugins/asset.ts:333:23                          
+formatPostcssSourceMap                function  packages/vite/src/node/plugins/css.ts:1862:23                           
+cssDataUriRE                                    packages/vite/src/node/plugins/css.ts:2007:14                           
+importCssRE                                     packages/vite/src/node/plugins/css.ts:2009:14                           
+dynamicImportHelperId                           packages/vite/src/node/plugins/dynamicImportVars.ts:27:14               
+defaultEsbuildSupported                         packages/vite/src/node/plugins/esbuild.ts:40:14                         
+esbuildPlugin                         function  packages/vite/src/node/plugins/esbuild.ts:278:17                        
+htmlProxyMap                                    packages/vite/src/node/plugins/html.ts:87:14                            
+isAsyncScriptMap                                packages/vite/src/node/plugins/html.ts:172:14                           
+parseRelAttr                          function  packages/vite/src/node/plugins/html.ts:1076:17                          
+canSkipImportAnalysis                           packages/vite/src/node/plugins/importAnalysis.ts:87:14                  
+createParseErrorInfo                  function  packages/vite/src/node/plugins/importAnalysis.ts:888:17                 
+interopNamedImports                   function  packages/vite/src/node/plugins/importAnalysis.ts:932:17                 
+isModernFlag                                    packages/vite/src/node/plugins/importAnalysisBuild.ts:29:14             
+preloadMarker                                   packages/vite/src/node/plugins/importAnalysisBuild.ts:31:14             
+toAbsoluteGlob                        function  packages/vite/src/node/plugins/importMetaGlob.ts:640:23                 
+isVirtualModule                       function  packages/vite/src/node/plugins/importMetaGlob.ts:714:17                 
+viteAliasCustomResolver                         packages/vite/src/node/plugins/index.ts:296:14                          
+throwFileNotFoundInOptimizedDep       function  packages/vite/src/node/plugins/optimizedDeps.ts:126:17                  
+resolvePackageEntry                   function  packages/vite/src/node/plugins/resolve.ts:903:17                        
+workerAssetUrlRE                                packages/vite/src/node/plugins/worker.ts:308:14                         
+createFetchableDevEnvironment         function  …ckages/vite/src/node/server/environments/fetchableEnvironments.ts:10:17
+isFetchableDevEnvironment             function  …ckages/vite/src/node/server/environments/fetchableEnvironments.ts:30:17
+getSortedPluginsByHotUpdateHook       function  packages/vite/src/node/server/hmr.ts:341:17                             
+resolveForwardConsoleOptions          function  packages/vite/src/node/server/index.ts:268:23                           
+_createServer                         function  packages/vite/src/node/server/index.ts:476:23                           
+logError                              function  packages/vite/src/node/server/middlewares/error.ts:45:17                
+isFileServingAllowed                  function  packages/vite/src/node/server/middlewares/static.ts:249:17              
+ERR_LOAD_PUBLIC_URL                             packages/vite/src/node/server/transformRequest.ts:41:14                 
+HMR_HEADER                                      packages/vite/src/node/server/ws.ts:34:14                               
+rebindErrorStacktrace                 function  packages/vite/src/node/ssr/ssrStacktrace.ts:75:17                       
+ssrModuleExportsKey                             packages/vite/src/node/ssr/ssrTransform.ts:26:14                        
+ssrImportKey                                    packages/vite/src/node/ssr/ssrTransform.ts:27:14                        
+ssrDynamicImportKey                             packages/vite/src/node/ssr/ssrTransform.ts:28:14                        
+ssrExportAllKey                                 packages/vite/src/node/ssr/ssrTransform.ts:29:14                        
+ssrExportNameKey                                packages/vite/src/node/ssr/ssrTransform.ts:30:14                        
+ssrImportMetaKey                                packages/vite/src/node/ssr/ssrTransform.ts:31:14                        
+withFilter                                      packages/vite/src/node/utils.ts:67:10                                   
+isCaseInsensitiveFS                             packages/vite/src/node/utils.ts:228:14                                  
+removeRawQuery                        function  packages/vite/src/node/utils.ts:334:17                                  
+splitRE                                         packages/vite/src/node/utils.ts:447:14                                  
+parseSrcset                           function  packages/vite/src/node/utils.ts:787:17                                  
+arrayEqual                            function  packages/vite/src/node/utils.ts:1587:17                                 
+createWebSocketModuleRunnerTransport            packages/vite/src/shared/moduleRunnerTransport.ts:265:14                
+watch                                 function  packages/vite/src/types/chokidar.d.ts:216:17                            
+WebSocketAlias                                  packages/vite/src/types/ws.d.ts:565:21                                  
+serve                                 function  playground/cli-module/__tests__/serve.ts:18:23                          
+serve                                 function  playground/cli/__tests__/serve.ts:21:23                                 
+serve                                 function  playground/css-lightningcss-proxy/__tests__/serve.ts:10:23              
+b                                     function  playground/css/treeshake-module/b.js:3:17                               
+b                                               playground/css/treeshake-module/index.js:2:10                           
+default                               function  playground/css/treeshake-scoped/b.js:3:25                               
+default                               function  playground/css/treeshake-scoped/c.js:3:25                               
+default                               function  playground/css/treeshake-scoped/d.js:3:25                               
+b                                               playground/css/treeshake-scoped/index.js:2:21                           
+c                                               playground/css/treeshake-scoped/index.js:3:21                           
+d                                               playground/css/treeshake-scoped/index.js:4:21                           
+default                                         playground/external/src/require-polyfill.js:4:16                        
+foo                                             playground/hmr-full-bundle-mode/hmr.js:1:14                             
+assetUrl                                        playground/hmr-full-bundle-mode/hmr.js:6:14                             
+serve                                 function  playground/legacy/__tests__/client-and-ssr/serve.ts:8:23                
+serve                                 function  playground/legacy/__tests__/ssr/serve.ts:8:23                           
+serve                                 function  playground/optimize-missing-deps/__test__/serve.ts:9:23                 
+default                                         playground/resolve/config-dep.cjs:1:18                                  
+serve                                 function  playground/ssr-conditions/__tests__/serve.ts:10:23                      
+serve                                 function  playground/ssr-deps/__tests__/serve.ts:10:23                            
+serve                                 function  playground/ssr-html/__tests__/serve.ts:11:23                            
+serve                                 function  playground/ssr-noexternal/__tests__/serve.ts:10:23                      
+serve                                 function  playground/ssr-pug/__tests__/serve.ts:10:23                             
+treeshaken                            function  playground/ssr-resolve/util.js:8:17                                     
+preServe                              function  playground/ssr-wasm/__tests__/serve.ts:11:23                            
+serve                                 function  playground/ssr-wasm/__tests__/serve.ts:17:23                            
+serve                                 function  playground/ssr-webworker/__tests__/serve.ts:10:23                       
+serve                                 function  playground/ssr/__tests__/serve.ts:12:23                                 
+serve                                 function  playground/tsconfig-json-load-error/__tests__/serve.ts:6:23             
+Foo                                   class     playground/tsconfig-json/src/decorator.ts:6:14                          
+getLatestTag                          function  scripts/releaseUtils.ts:17:23                                           
+Unused exported types (220)
+ModuleRunnerTransportHandlers                   type       packages/vite/src/module-runner/index.ts:19:3                
+HMRLogger                                       type       packages/vite/src/module-runner/index.ts:22:15               
+FetchFunction                                   type       packages/vite/src/module-runner/index.ts:26:3                
+ResolvedResult                                  type       packages/vite/src/module-runner/index.ts:27:3                
+SSRImportMetadata                               type       packages/vite/src/module-runner/index.ts:28:3                
+ModuleRunnerImportMeta                          type       packages/vite/src/module-runner/index.ts:29:3                
+InterceptorOptions                              type       packages/vite/src/module-runner/index.ts:41:15               
+DefineImportMetadata                            type       packages/vite/src/module-runner/types.ts:25:15               
+FetchFunction                                   type       packages/vite/src/module-runner/types.ts:78:13               
+ImportMetaEnv                                   interface  packages/vite/src/module-runner/types.ts:126:18              
+AppType                                         type       packages/vite/src/node/config.ts:158:13                      
+CreateDevEnvironmentContext                     interface  packages/vite/src/node/config.ts:186:18                      
+DevEnvironmentOptions                           interface  packages/vite/src/node/config.ts:190:18                      
+ResolvedDevEnvironmentOptions                   type       packages/vite/src/node/config.ts:266:13                      
+SharedEnvironmentOptions                        interface  packages/vite/src/node/config.ts:282:18                      
+ResolvedResolveOptions                          type       packages/vite/src/node/config.ts:330:13                      
+DefaultEnvironmentOptions                       type       packages/vite/src/node/config.ts:346:13                      
+HTMLOptions                                     interface  packages/vite/src/node/config.ts:538:18                      
+ExperimentalOptions                             interface  packages/vite/src/node/config.ts:561:18                      
+LegacyOptions                                   interface  packages/vite/src/node/config.ts:597:18                      
+ResolvedWorkerOptions                           interface  packages/vite/src/node/config.ts:623:18                      
+ResolveFn                                       type       packages/vite/src/node/config.ts:1026:13                     
+CorsOptions                                     interface  packages/vite/src/node/http.ts:95:18                         
+CorsOrigin                                      type       packages/vite/src/node/http.ts:117:13                        
+Rollup                                          type       packages/vite/src/node/index.ts:8:15                         
+Rolldown                                        type       packages/vite/src/node/index.ts:8:23                         
+ParserOptions                                   type       packages/vite/src/node/index.ts:13:8                         
+ParseResult                                     type       packages/vite/src/node/index.ts:14:8                         
+MinifyOptions                                   type       packages/vite/src/node/index.ts:17:8                         
+MinifyResult                                    type       packages/vite/src/node/index.ts:18:8                         
+VisitorObject                                   type       packages/vite/src/node/index.ts:20:8                         
+ESTree                                          type       packages/vite/src/node/index.ts:21:8                         
+RunnableDevEnvironment                          type       packages/vite/src/node/index.ts:52:8                         
+RunnableDevEnvironmentContext                   type       packages/vite/src/node/index.ts:53:8                         
+FetchableDevEnvironment                         type       packages/vite/src/node/index.ts:58:8                         
+FetchableDevEnvironmentContext                  type       packages/vite/src/node/index.ts:59:8                         
+DevEnvironmentContext                           type       packages/vite/src/node/index.ts:63:8                         
+FetchModuleOptions                              type       packages/vite/src/node/index.ts:68:28                        
+ModuleRunnerTransformOptions                    type       packages/vite/src/node/index.ts:75:15                        
+AppType                                         type       packages/vite/src/node/index.ts:110:3                        
+ConfigEnv                                       type       packages/vite/src/node/index.ts:111:3                        
+ExperimentalOptions                             type       packages/vite/src/node/index.ts:112:3                        
+HTMLOptions                                     type       packages/vite/src/node/index.ts:113:3                        
+LegacyOptions                                   type       packages/vite/src/node/index.ts:115:3                        
+PluginHookUtils                                 type       packages/vite/src/node/index.ts:116:3                        
+ResolveFn                                       type       packages/vite/src/node/index.ts:117:3                        
+ResolvedWorkerOptions                           type       packages/vite/src/node/index.ts:118:3                        
+UserConfig                                      type       packages/vite/src/node/index.ts:120:3                        
+UserConfigExport                                type       packages/vite/src/node/index.ts:121:3                        
+UserConfigFn                                    type       packages/vite/src/node/index.ts:122:3                        
+UserConfigFnObject                              type       packages/vite/src/node/index.ts:123:3                        
+UserConfigFnPromise                             type       packages/vite/src/node/index.ts:124:3                        
+EnvironmentOptions                              type       packages/vite/src/node/index.ts:125:3                        
+DevEnvironmentOptions                           type       packages/vite/src/node/index.ts:126:3                        
+ResolvedDevEnvironmentOptions                   type       packages/vite/src/node/index.ts:127:3                        
+HookHandler                                     type       packages/vite/src/node/index.ts:132:3                        
+ConfigPluginContext                             type       packages/vite/src/node/index.ts:133:3                        
+MinimalPluginContextWithoutEnvironment          type       packages/vite/src/node/index.ts:134:3                        
+FilterPattern                                   type       packages/vite/src/node/index.ts:137:15                       
+CorsOptions                                     type       packages/vite/src/node/index.ts:138:15                       
+CorsOrigin                                      type       packages/vite/src/node/index.ts:138:28                       
+ServerOptions                                   type       packages/vite/src/node/index.ts:141:3                        
+FileSystemServeOptions                          type       packages/vite/src/node/index.ts:142:3                        
+ServerHook                                      type       packages/vite/src/node/index.ts:143:3                        
+HttpServer                                      type       packages/vite/src/node/index.ts:146:3                        
+ViteBuilder                                     type       packages/vite/src/node/index.ts:149:3                        
+BuildAppHook                                    type       packages/vite/src/node/index.ts:150:3                        
+BuilderOptions                                  type       packages/vite/src/node/index.ts:151:3                        
+BuildOptions                                    type       packages/vite/src/node/index.ts:152:3                        
+BuildEnvironmentOptions                         type       packages/vite/src/node/index.ts:153:3                        
+LibraryOptions                                  type       packages/vite/src/node/index.ts:154:3                        
+LibraryFormats                                  type       packages/vite/src/node/index.ts:155:3                        
+RenderBuiltAssetUrl                             type       packages/vite/src/node/index.ts:156:3                        
+ResolvedBuildOptions                            type       packages/vite/src/node/index.ts:157:3                        
+ResolvedBuildEnvironmentOptions                 type       packages/vite/src/node/index.ts:158:3                        
+ModulePreloadOptions                            type       packages/vite/src/node/index.ts:159:3                        
+ResolvedModulePreloadOptions                    type       packages/vite/src/node/index.ts:160:3                        
+ResolveModulePreloadDependenciesFn              type       packages/vite/src/node/index.ts:161:3                        
+PreviewOptions                                  type       packages/vite/src/node/index.ts:164:3                        
+PreviewServerHook                               type       packages/vite/src/node/index.ts:166:3                        
+DepOptimizationMetadata                         type       packages/vite/src/node/index.ts:170:3                        
+DepOptimizationConfig                           type       packages/vite/src/node/index.ts:172:3                        
+OptimizedDepInfo                                type       packages/vite/src/node/index.ts:173:3                        
+ExportsData                                     type       packages/vite/src/node/index.ts:174:3                        
+ResolvedSSROptions                              type       packages/vite/src/node/index.ts:177:3                        
+SsrDepOptimizationConfig                        type       packages/vite/src/node/index.ts:178:3                        
+SSROptions                                      type       packages/vite/src/node/index.ts:179:3                        
+SSRTarget                                       type       packages/vite/src/node/index.ts:180:3                        
+Logger                                          type       packages/vite/src/node/index.ts:183:3                        
+LogOptions                                      type       packages/vite/src/node/index.ts:184:3                        
+LogErrorOptions                                 type       packages/vite/src/node/index.ts:185:3                        
+LogLevel                                        type       packages/vite/src/node/index.ts:186:3                        
+LogType                                         type       packages/vite/src/node/index.ts:187:3                        
+LoggerOptions                                   type       packages/vite/src/node/index.ts:188:3                        
+IndexHtmlTransform                              type       packages/vite/src/node/index.ts:191:3                        
+IndexHtmlTransformHook                          type       packages/vite/src/node/index.ts:192:3                        
+IndexHtmlTransformContext                       type       packages/vite/src/node/index.ts:193:3                        
+IndexHtmlTransformResult                        type       packages/vite/src/node/index.ts:194:3                        
+HtmlTagDescriptor                               type       packages/vite/src/node/index.ts:195:3                        
+CSSOptions                                      type       packages/vite/src/node/index.ts:198:3                        
+CSSModulesOptions                               type       packages/vite/src/node/index.ts:199:3                        
+PreprocessCSSResult                             type       packages/vite/src/node/index.ts:200:3                        
+ResolvedCSSOptions                              type       packages/vite/src/node/index.ts:201:3                        
+SassPreprocessorOptions                         type       packages/vite/src/node/index.ts:202:3                        
+LessPreprocessorOptions                         type       packages/vite/src/node/index.ts:203:3                        
+StylusPreprocessorOptions                       type       packages/vite/src/node/index.ts:204:3                        
+JsonOptions                                     type       packages/vite/src/node/index.ts:206:15                       
+ESBuildOptions                                  type       packages/vite/src/node/index.ts:207:15                       
+EsbuildTransformOptions                         type       packages/vite/src/node/index.ts:208:15                       
+OxcOptions                                      type       packages/vite/src/node/index.ts:209:15                       
+Manifest                                        type       packages/vite/src/node/index.ts:210:15                       
+ManifestChunk                                   type       packages/vite/src/node/index.ts:210:25                       
+ResolveOptions                                  type       packages/vite/src/node/index.ts:211:15                       
+InternalResolveOptions                          type       packages/vite/src/node/index.ts:211:31                       
+TerserOptions                                   type       packages/vite/src/node/index.ts:212:15                       
+WebSocketServer                                 type       packages/vite/src/node/index.ts:215:3                        
+WebSocketClient                                 type       packages/vite/src/node/index.ts:216:3                        
+WebSocketCustomListener                         type       packages/vite/src/node/index.ts:217:3                        
+SkipInformation                                 type       packages/vite/src/node/index.ts:219:15                       
+PluginContainer                                 type       packages/vite/src/node/index.ts:219:32                       
+ResolvedUrl                                     type       packages/vite/src/node/index.ts:223:3                        
+SendOptions                                     type       packages/vite/src/node/index.ts:225:15                       
+ProxyOptions                                    type       packages/vite/src/node/index.ts:226:15                       
+TransformOptions                                type       packages/vite/src/node/index.ts:228:3                        
+HmrOptions                                      type       packages/vite/src/node/index.ts:232:3                        
+HmrContext                                      type       packages/vite/src/node/index.ts:233:3                        
+HotUpdateOptions                                type       packages/vite/src/node/index.ts:234:3                        
+HotChannelListener                              type       packages/vite/src/node/index.ts:235:3                        
+HotChannel                                      type       packages/vite/src/node/index.ts:236:3                        
+ServerHotChannel                                type       packages/vite/src/node/index.ts:237:3                        
+HotChannelClient                                type       packages/vite/src/node/index.ts:238:3                        
+NormalizedHotChannel                            type       packages/vite/src/node/index.ts:239:3                        
+NormalizedHotChannelClient                      type       packages/vite/src/node/index.ts:240:3                        
+NormalizedServerHotChannel                      type       packages/vite/src/node/index.ts:241:3                        
+FetchFunction                                   type       packages/vite/src/node/index.ts:244:15                       
+FetchResult                                     type       packages/vite/src/node/index.ts:244:30                       
+ServerModuleRunnerOptions                       type       packages/vite/src/node/index.ts:245:15                       
+BindCLIShortcutsOptions                         type       packages/vite/src/node/index.ts:247:15                       
+CLIShortcut                                     type       packages/vite/src/node/index.ts:247:40                       
+HMRPayload                                      type       packages/vite/src/node/index.ts:250:3                        
+HotPayload                                      type       packages/vite/src/node/index.ts:251:3                        
+ConnectedPayload                                type       packages/vite/src/node/index.ts:252:3                        
+UpdatePayload                                   type       packages/vite/src/node/index.ts:253:3                        
+Update                                          type       packages/vite/src/node/index.ts:254:3                        
+FullReloadPayload                               type       packages/vite/src/node/index.ts:255:3                        
+CustomPayload                                   type       packages/vite/src/node/index.ts:256:3                        
+PrunePayload                                    type       packages/vite/src/node/index.ts:257:3                        
+ErrorPayload                                    type       packages/vite/src/node/index.ts:258:3                        
+CustomEventMap                                  type       packages/vite/src/node/index.ts:261:3                        
+InvalidatePayload                               type       packages/vite/src/node/index.ts:263:3                        
+ImportGlobFunction                              type       packages/vite/src/node/index.ts:266:3                        
+ImportGlobOptions                               type       packages/vite/src/node/index.ts:267:3                        
+GeneralImportGlobOptions                        type       packages/vite/src/node/index.ts:268:3                        
+KnownAsTypeMap                                  type       packages/vite/src/node/index.ts:269:3                        
+ChunkMetadata                                   type       packages/vite/src/node/index.ts:271:15                       
+CustomPluginOptionsVite                         type       packages/vite/src/node/index.ts:271:30                       
+MapToFunction                                   type       packages/vite/src/node/index.ts:276:3                        
+ResolverFunction                                type       packages/vite/src/node/index.ts:277:3                        
+ResolverObject                                  type       packages/vite/src/node/index.ts:278:3                        
+Connect                                         type       packages/vite/src/node/index.ts:281:15                       
+WebSocket                                       type       packages/vite/src/node/index.ts:282:15                       
+WebSocketAlias                                  type       packages/vite/src/node/index.ts:282:26                       
+FSWatcher                                       type       packages/vite/src/node/index.ts:284:15                       
+WatchOptions                                    type       packages/vite/src/node/index.ts:284:26                       
+Terser                                          type       packages/vite/src/node/index.ts:285:15                       
+RollupCommonJSOptions                           type       packages/vite/src/node/index.ts:286:15                       
+RollupDynamicImportVarsOptions                  type       packages/vite/src/node/index.ts:287:15                       
+Matcher                                         type       packages/vite/src/node/index.ts:288:15                       
+AnymatchPattern                                 type       packages/vite/src/node/index.ts:288:24                       
+AnymatchFn                                      type       packages/vite/src/node/index.ts:288:41                       
+LightningCSSOptions                             type       packages/vite/src/node/index.ts:289:15                       
+ModuleGraph                                     type       packages/vite/src/node/index.ts:292:15                       
+ModuleNode                                      type       packages/vite/src/node/index.ts:292:28                       
+LogType                                         type       packages/vite/src/node/logger.ts:8:13                        
+LogOptions                                      interface  packages/vite/src/node/logger.ts:20:18                       
+LogErrorOptions                                 interface  packages/vite/src/node/logger.ts:26:18                       
+PluginContextExtension                          interface  packages/vite/src/node/plugin.ts:62:18                       
+PluginContextMetaExtension                      interface  packages/vite/src/node/plugin.ts:69:18                       
+ConfigPluginContext                             interface  packages/vite/src/node/plugin.ts:73:18                       
+CSSModulesOptions                               interface  packages/vite/src/node/plugins/css.ts:167:18                 
+SassPreprocessorOptions                         type       packages/vite/src/node/plugins/css.ts:2367:13                
+LessPreprocessorOptions                         type       packages/vite/src/node/plugins/css.ts:2371:13                
+StylusPreprocessorOptions                       type       packages/vite/src/node/plugins/css.ts:2375:13                
+StylePreprocessorResults                        interface  packages/vite/src/node/plugins/css.ts:2405:18                
+TSCompilerOptions                               type       packages/vite/src/node/plugins/esbuild.ts:77:13              
+HtmlTagDescriptor                               interface  packages/vite/src/node/plugins/html.ts:1119:18               
+IndexHtmlTransformResult                        type       packages/vite/src/node/plugins/html.ts:1132:13               
+LicenseEntry                                    interface  packages/vite/src/node/plugins/license.ts:8:18               
+Manifest                                        type       packages/vite/src/node/plugins/manifest.ts:12:13             
+ManifestChunk                                   interface  packages/vite/src/node/plugins/manifest.ts:14:18             
+FetchableDevEnvironmentContext                  interface  …e/src/node/server/environments/fetchableEnvironments.ts:6:18
+FetchableDevEnvironment                         type       …/src/node/server/environments/fetchableEnvironments.ts:64:15
+HotChannelListener                              type       packages/vite/src/node/server/hmr.ts:86:13                   
+ServerHotChannelApi                             type       packages/vite/src/node/server/hmr.ts:1124:13                 
+FileSystemServeOptions                          interface  packages/vite/src/node/server/index.ts:232:18                
+PluginContainerOptions                          interface  packages/vite/src/node/server/pluginContainer.ts:138:18      
+SkipInformation                                 type       packages/vite/src/node/server/pluginContainer.ts:168:13      
+TransformResult                                 type       packages/vite/src/node/server/pluginContainer.ts:1178:3      
+WebSocketCustomListener                         type       packages/vite/src/node/server/ws.ts:36:13                    
+WebSocketClient                                 interface  packages/vite/src/node/server/ws.ts:75:18                    
+CLIShortcut                                     type       packages/vite/src/node/shortcuts.ts:27:13                    
+SSRTarget                                       type       packages/vite/src/node/ssr/index.ts:4:13                     
+SsrDepOptimizationConfig                        type       packages/vite/src/node/ssr/index.ts:6:13                     
+NonNeverKeys                                    type       packages/vite/src/node/typeUtils.ts:7:13                     
+GetHookContextMap                               type       packages/vite/src/node/typeUtils.ts:11:13                    
+ForwardConsoleLogLevel                          type       packages/vite/src/shared/forwardConsole.ts:7:13              
+CachedFetchResult                               interface  packages/vite/src/shared/invokeMethods.ts:11:18              
+ModuleRunnerTransportHandlers                   type       packages/vite/src/shared/moduleRunnerTransport.ts:10:13      
+MapToFunction                                   type       packages/vite/src/types/alias.d.ts:44:13                     
+ResolverFunction                                type       packages/vite/src/types/alias.d.ts:46:13                     
+ResolverObject                                  interface  packages/vite/src/types/alias.d.ts:48:18                     
+AnymatchPattern                                 type       packages/vite/src/types/anymatch.d.ts:2:13                   
+AwaitWriteFinishOptions                         interface  packages/vite/src/types/chokidar.d.ts:201:18                 
+RollupBuild                             Rollup  type       packages/vite/types/internal/rollupTypeCompat.d.ts:6:13      
+RollupOptions                           Rollup  type       packages/vite/types/internal/rollupTypeCompat.d.ts:9:13      
+RollupOutput                            Rollup  type       packages/vite/types/internal/rollupTypeCompat.d.ts:12:13     
+RollupPlugin                            Rollup  type       packages/vite/types/internal/rollupTypeCompat.d.ts:15:13     
+RollupPluginOption                      Rollup  type       packages/vite/types/internal/rollupTypeCompat.d.ts:18:13     
+RollupWatcher                           Rollup  type       packages/vite/types/internal/rollupTypeCompat.d.ts:21:13     
+RollupWatcherEvent                      Rollup  type       packages/vite/types/internal/rollupTypeCompat.d.ts:24:13     
+Unused exported namespace members (5)
+ServerHandle          Connect  packages/vite/src/types/connect.d.ts:14:15
+NextFunction          Connect  packages/vite/src/types/connect.d.ts:20:15
+SimpleHandleFunction  Connect  packages/vite/src/types/connect.d.ts:22:15
+HandleFunction        Connect  packages/vite/src/types/connect.d.ts:37:15
+ServerStackItem       Connect  packages/vite/src/types/connect.d.ts:42:20
+Duplicate exports (1)
+toOutputFilePathWithoutRuntime|toOutputFilePathInCss|toOutputFilePathInHtml  packages/vite/src/node/build.ts

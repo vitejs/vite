@@ -1,0 +1,47 @@
+{
+  "$schema": "https://unpkg.com/knip@latest/schema.json",
+
+  "ignore": [
+    "packages/create-vite/template-**",
+    "playground/**",
+    "docs/**",
+    "scripts/**",
+    "**/__tests__/**",
+    "**/__tests_dts__/**",
+    "**/*.d.ts"
+  ],
+
+  "ignoreExportsUsedInFile": true,
+
+  "ignoreDependencies": [
+    "core-js",
+    "regenerator-runtime",
+    "systemjs",
+    "only-allow"
+  ],
+
+  "ignoreWorkspaces": ["playground/**", "docs"],
+
+  "workspaces": {
+    "packages/vite": {
+      "entry": [
+        "src/node/index.ts",
+        "src/node/cli.ts",
+        "src/node/internalIndex.ts",
+        "src/client/client.ts",
+        "src/client/env.ts",
+        "src/module-runner/index.ts"
+      ],
+      "project": "src/**/*.ts",
+      "ignoreDependencies": ["@babel/parser", "cac", "rolldown-plugin-dts"]
+    },
+    "packages/plugin-legacy": {
+      "entry": ["src/index.ts"],
+      "project": "src/**/*.ts"
+    },
+    "packages/create-vite": {
+      "entry": ["src/index.ts"],
+      "project": "src/**/*.ts"
+    }
+  }
+}

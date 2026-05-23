@@ -1,0 +1,98 @@
+
+> @vitejs/vite-monorepo@ test-unit /home/antony/Desktop/PROJ/vite
+> vitest run
+
+
+[1m[30m[46m RUN [49m[39m[22m [36mv4.1.7 [39m[90m/home/antony/Desktop/PROJ/vite[39m
+
+ [32m✓[39m packages/create-vite/__tests__/cli.spec.ts [2m([22m[2m19 tests[22m[2m)[22m[33m 3582[2mms[22m[39m
+[2Ktransforming...✓ 4 modules transformed.
+rendering chunks...
+[2Ktransforming...✓ 4 modules transformed.
+rendering chunks...
+[2Ktransforming...✓ 4 modules transformed.
+rendering chunks...
+[2Ktransforming...✓ 4 modules transformed.
+rendering chunks...
+ [32m✓[39m packages/vite/src/node/__tests__/scan.spec.ts [2m([22m[2m9 tests[22m[2m)[22m[33m 4008[2mms[22m[39m
+   [33m[2m✓[22m[39m scan jsx-runtime [33m 3669[2mms[22m[39m
+ [32m✓[39m packages/vite/src/node/__tests__/build.spec.ts [2m([22m[2m56 tests[22m[2m | [22m[33m1 skipped[39m[2m)[22m[33m 4294[2mms[22m[39m
+     [33m[2m✓[22m[39m file hash should change when css changes for dynamic entries [33m 630[2mms[22m[39m
+   [33m[2m✓[22m[39m minify per environment (builder.sharedPlugins: true) [32m 300[2mms[22m[39m
+   [33m[2m✓[22m[39m minify per environment (builder.sharedPlugins: false) [33m 393[2mms[22m[39m
+ [32m✓[39m packages/vite/src/node/ssr/runtime/__tests__/server-runtime.spec.ts [2m([22m[2m40 tests[22m[2m)[22m[33m 2585[2mms[22m[39m
+ [32m✓[39m packages/vite/src/node/ssr/__tests__/ssrTransform.spec.ts [2m([22m[2m71 tests[22m[2m)[22m[33m 1110[2mms[22m[39m
+   [33m[2m✓[22m[39m combine mappings [33m 528[2mms[22m[39m
+ [32m✓[39m packages/vite/src/node/__tests__/resolve.spec.ts [2m([22m[2m14 tests[22m[2m)[22m[33m 1532[2mms[22m[39m
+ [32m✓[39m packages/vite/src/node/__tests__/config.spec.ts [2m([22m[2m67 tests[22m[2m)[22m[33m 1290[2mms[22m[39m
+ [32m✓[39m packages/vite/src/node/__tests__/plugins/hooks.spec.ts [2m([22m[2m15 tests[22m[2m)[22m[33m 1136[2mms[22m[39m
+ [32m✓[39m packages/vite/src/node/__tests__/plugins/terser.spec.ts [2m([22m[2m3 tests[22m[2m)[22m[33m 1259[2mms[22m[39m
+     [33m[2m✓[22m[39m basic [33m 779[2mms[22m[39m
+     [33m[2m✓[22m[39m nth [33m 357[2mms[22m[39m
+ [32m✓[39m packages/vite/src/node/ssr/__tests__/ssrLoadModule.spec.ts [2m([22m[2m15 tests[22m[2m | [22m[33m1 skipped[39m[2m)[22m[33m 1219[2mms[22m[39m
+ [32m✓[39m packages/vite/src/node/__tests__/environment.spec.ts [2m([22m[2m4 tests[22m[2m)[22m[33m 2295[2mms[22m[39m
+     [33m[2m✓[22m[39m dev noExternal [33m 948[2mms[22m[39m
+     [33m[2m✓[22m[39m dev external [33m 633[2mms[22m[39m
+     [33m[2m✓[22m[39m css [33m 387[2mms[22m[39m
+     [33m[2m✓[22m[39m build [33m 325[2mms[22m[39m
+ [32m✓[39m packages/vite/src/node/__tests__/plugins/index.spec.ts [2m([22m[2m6 tests[22m[2m)[22m[33m 871[2mms[22m[39m
+     [33m[2m✓[22m[39m resolveId [33m 516[2mms[22m[39m
+ [32m✓[39m packages/vite/src/node/ssr/runtime/__tests__/server-worker-runner.spec.ts [2m([22m[2m2 tests[22m[2m)[22m[33m 546[2mms[22m[39m
+     [33m[2m✓[22m[39m correctly runs ssr code [33m 376[2mms[22m[39m
+ [32m✓[39m packages/vite/src/node/__tests__/plugins/cssPreprocessorTeardown.spec.ts [2m([22m[2m1 test[22m[2m)[22m[33m 957[2mms[22m[39m
+     [33m[2m✓[22m[39m awaits sass-embedded worker disposal on server.close() [33m 957[2mms[22m[39m
+ [32m✓[39m packages/vite/src/node/ssr/runtime/__tests__/server-worker-runner.invoke.spec.ts [2m([22m[2m5 tests[22m[2m)[22m[33m 349[2mms[22m[39m
+ [32m✓[39m packages/vite/src/node/server/__tests__/pluginContainer.spec.ts [2m([22m[2m17 tests[22m[2m)[22m[33m 357[2mms[22m[39m
+ [32m✓[39m packages/vite/src/node/ssr/runtime/__tests__/server-hmr.spec.ts [2m([22m[2m3 tests[22m[2m)[22m[33m 356[2mms[22m[39m
+ [32m✓[39m packages/vite/src/node/__tests__/plugins/css.spec.ts [2m([22m[2m45 tests[22m[2m)[22m[32m 258[2mms[22m[39m
+ [32m✓[39m packages/vite/src/node/ssr/runtime/__tests__/server-source-maps.spec.ts [2m([22m[2m6 tests[22m[2m)[22m[32m 290[2mms[22m[39m
+ [32m✓[39m packages/vite/src/node/__tests__/http.spec.ts [2m([22m[2m8 tests[22m[2m)[22m[32m 276[2mms[22m[39m
+[90mstdout[2m | packages/vite/src/node/__tests__/shortcuts.spec.ts[2m > [22m[2mbindCLIShortcuts[2m > [22m[2mrebinds shortcuts after server restart
+[22m[39m4:47:07 PM [vite] server restarted.
+
+ [32m✓[39m packages/vite/src/node/__tests__/plugins/define.spec.ts [2m([22m[2m12 tests[22m[2m)[22m[32m 288[2mms[22m[39m
+ [32m✓[39m packages/vite/src/node/__tests__/shortcuts.spec.ts [2m([22m[2m3 tests[22m[2m)[22m[32m 267[2mms[22m[39m
+ [32m✓[39m packages/vite/src/node/__tests__/plugins/worker.spec.ts [2m([22m[2m1 test[22m[2m)[22m[32m 283[2mms[22m[39m
+ [32m✓[39m packages/vite/src/node/__tests__/plugins/license.spec.ts [2m([22m[2m2 tests[22m[2m)[22m[32m 147[2mms[22m[39m
+ [32m✓[39m packages/vite/src/node/__tests__/plugins/importGlob/fixture.spec.ts [2m([22m[2m4 tests[22m[2m)[22m[32m 202[2mms[22m[39m
+ [32m✓[39m packages/vite/src/node/__tests__/utils.spec.ts [2m([22m[2m108 tests[22m[2m)[22m[32m 120[2mms[22m[39m
+ [32m✓[39m packages/vite/src/node/server/__tests__/watcher.spec.ts [2m([22m[2m3 tests[22m[2m)[22m[32m 152[2mms[22m[39m
+ [32m✓[39m packages/vite/src/node/__tests__/plugins/importGlob/parse.spec.ts [2m([22m[2m24 tests[22m[2m)[22m[32m 87[2mms[22m[39m
+ [32m✓[39m packages/vite/src/node/__tests__/runnerImport.spec.ts [2m([22m[2m5 tests[22m[2m)[22m[32m 133[2mms[22m[39m
+ [32m✓[39m packages/vite/src/shared/__tests__/forwardConsole.spec.ts [2m([22m[2m4 tests[22m[2m)[22m[32m 113[2mms[22m[39m
+ [32m✓[39m packages/vite/src/node/__tests__/plugins/modulePreloadPolyfill/modulePreloadPolyfill.spec.ts [2m([22m[2m2 tests[22m[2m)[22m[32m 97[2mms[22m[39m
+ [32m✓[39m packages/vite/src/node/__tests__/dev.spec.ts [2m([22m[2m2 tests[22m[2m)[22m[32m 74[2mms[22m[39m
+ [32m✓[39m packages/vite/src/node/__tests__/plugins/import.spec.ts [2m([22m[2m6 tests[22m[2m)[22m[32m 35[2mms[22m[39m
+ [32m✓[39m packages/vite/src/node/ssr/__tests__/ssrStacktrace.spec.ts [2m([22m[2m2 tests[22m[2m)[22m[32m 63[2mms[22m[39m
+ [32m✓[39m packages/vite/src/node/__tests__/plugins/workerImportMetaUrl.spec.ts [2m([22m[2m19 tests[22m[2m)[22m[32m 60[2mms[22m[39m
+ [32m✓[39m packages/vite/src/node/__tests__/env.spec.ts [2m([22m[2m8 tests[22m[2m)[22m[32m 31[2mms[22m[39m
+ [32m✓[39m packages/vite/src/node/__tests__/plugins/esbuild.spec.ts [2m([22m[2m22 tests[22m[2m)[22m[32m 56[2mms[22m[39m
+ [32m✓[39m packages/plugin-legacy/src/__tests__/snippets.spec.ts [2m([22m[2m16 tests[22m[2m)[22m[32m 45[2mms[22m[39m
+ [32m✓[39m packages/vite/src/node/ssr/runtime/__tests__/server-no-hmr.spec.ts [2m([22m[2m1 test[22m[2m)[22m[32m 25[2mms[22m[39m
+ [32m✓[39m packages/vite/src/node/__tests__/plugins/pluginFilter.spec.ts [2m([22m[2m35 tests[22m[2m)[22m[32m 30[2mms[22m[39m
+ [32m✓[39m packages/vite/src/node/__tests__/external.spec.ts [2m([22m[2m2 tests[22m[2m)[22m[32m 23[2mms[22m[39m
+ [32m✓[39m packages/vite/src/node/__tests__/optimizer/rolldownDepPlugin.spec.ts [2m([22m[2m8 tests[22m[2m)[22m[32m 21[2mms[22m[39m
+ [32m✓[39m packages/vite/src/node/__tests__/plugins/oxc.spec.ts [2m([22m[2m10 tests[22m[2m)[22m[32m 12[2mms[22m[39m
+ [32m✓[39m packages/vite/src/node/__tests__/html.spec.ts [2m([22m[2m12 tests[22m[2m)[22m[32m 11[2mms[22m[39m
+ [32m✓[39m packages/vite/src/node/__tests__/assetSource.spec.ts [2m([22m[2m9 tests[22m[2m)[22m[32m 14[2mms[22m[39m
+ [32m✓[39m packages/vite/src/node/__tests__/plugins/dynamicImportVar/parse.spec.ts [2m([22m[2m11 tests[22m[2m)[22m[32m 14[2mms[22m[39m
+ [32m✓[39m packages/vite/src/node/__tests__/filterRegex.spec.ts [2m([22m[2m4 tests[22m[2m)[22m[32m 8[2mms[22m[39m
+ [32m✓[39m packages/vite/src/node/server/__tests__/moduleGraph.spec.ts [2m([22m[2m3 tests[22m[2m)[22m[32m 5[2mms[22m[39m
+ [32m✓[39m packages/vite/src/node/__tests__/plugins/assetImportMetaUrl.spec.ts [2m([22m[2m5 tests[22m[2m)[22m[32m 15[2mms[22m[39m
+ [32m✓[39m packages/vite/src/node/server/__tests__/search-root.spec.ts [2m([22m[2m7 tests[22m[2m)[22m[32m 7[2mms[22m[39m
+ [32m✓[39m packages/vite/src/node/__tests__/plugins/importGlob/utils.spec.ts [2m([22m[2m6 tests[22m[2m)[22m[32m 3[2mms[22m[39m
+ [32m✓[39m packages/vite/src/node/server/__tests__/sourcemap.spec.ts [2m([22m[2m11 tests[22m[2m | [22m[33m2 skipped[39m[2m)[22m[32m 3[2mms[22m[39m
+ [32m✓[39m packages/vite/src/node/server/middlewares/__tests__/static.spec.ts [2m([22m[2m10 tests[22m[2m)[22m[32m 3[2mms[22m[39m
+ [32m✓[39m packages/vite/src/node/server/__tests__/transformRequest.spec.ts [2m([22m[2m4 tests[22m[2m)[22m[32m 2[2mms[22m[39m
+ [32m✓[39m packages/vite/src/node/__tests__/constants.spec.ts [2m([22m[2m1 test[22m[2m)[22m[32m 2[2mms[22m[39m
+ [32m✓[39m packages/vite/src/node/__tests__/plugins/wasm.spec.ts [2m([22m[2m2 tests[22m[2m)[22m[32m 2[2mms[22m[39m
+ [32m✓[39m packages/vite/src/node/__tests__/optimizer/pluginConverter.spec.ts [2m([22m[2m1 test[22m[2m)[22m[32m 2[2mms[22m[39m
+ [32m✓[39m packages/plugin-legacy/src/__tests__/index.spec.ts [2m([22m[2m14 tests[22m[2m)[22m[32m 3[2mms[22m[39m
+ [32m✓[39m packages/vite/src/node/server/middlewares/__tests__/hostCheck.spec.ts [2m([22m[2m1 test[22m[2m)[22m[32m 1[2mms[22m[39m
+ [32m✓[39m packages/plugin-legacy/src/__tests__/readme.spec.ts [2m([22m[2m1 test[22m[2m)[22m[32m 1[2mms[22m[39m
+
+[2m Test Files [22m [1m[32m60 passed[39m[22m[90m (60)[39m
+[2m      Tests [22m [1m[32m803 passed[39m[22m[2m | [22m[33m4 skipped[39m[90m (807)[39m
+[2m   Start at [22m 16:46:53
+[2m   Duration [22m 15.72s[2m (transform 6.63s, setup 0ms, import 13.53s, tests 31.03s, environment 22ms)[22m
+
