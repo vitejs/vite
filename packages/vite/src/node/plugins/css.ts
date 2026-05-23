@@ -59,6 +59,7 @@ import {
   _dirname,
   arraify,
   asyncReplace,
+  bareImportRE,
   combineSourcemaps,
   createSerialPromiseQueue,
   emptyCssComments,
@@ -1283,6 +1284,20 @@ export function getEmptyChunkReplacer(
 
 const fileURLWithWindowsDriveRE = /^file:\/\/\/[a-zA-Z]:\//
 
+function getSassPartialSpecifier(id: string): string | undefined {
+  const parts = id.split('/')
+  if (id.startsWith('@') ? parts.length <= 2 : parts.length <= 1) {
+    return
+  }
+
+  const index = id.lastIndexOf('/')
+  const basename = id.slice(index + 1)
+  if (!basename || basename.startsWith('_')) {
+    return
+  }
+  return `${id.slice(0, index + 1)}_${basename}`
+}
+
 export interface CSSAtImportResolvers {
   css: ResolveIdFn
   sass: ResolveIdFn
@@ -1317,19 +1332,71 @@ export function createCSSResolvers(
           preferRelative: true,
           skipMainField: true,
         })
-        sassResolve = async (...args) => {
+        sassResolve = async (environment, id, importer, aliasOnly) => {
           // the modern API calls `canonicalize` with resolved file URLs
           // for relative URLs before raw specifiers
-          if (args[1].startsWith('file://')) {
-            args[1] = fileURLToPath(args[1], {
+          let fileUrlPath: string | undefined
+          if (id.startsWith('file://')) {
+            fileUrlPath = fileURLToPath(id, {
               windows:
                 // file:///foo cannot be converted to path with windows mode
-                isWindows && !fileURLWithWindowsDriveRE.test(args[1])
+                isWindows && !fileURLWithWindowsDriveRE.test(id)
                   ? false
                   : undefined,
             })
+            id = fileUrlPath
           }
-          return resolver(...args)
+
+          const resolved = await resolver(environment, id, importer, aliasOnly)
+          if (resolved || !fileUrlPath || !importer) {
+            return resolved
+          }
+
+          // Sass can turn `pkg/path` into a file URL before retrying the raw
+          // specifier. Recover the package id after the relative lookup misses.
+          const bareSpecifier = normalizePath(
+            path.relative(path.dirname(importer), fileUrlPath),
+          )
+          if (bareImportRE.test(bareSpecifier)) {
+            let resolutionError: unknown
+            try {
+              const resolved = await resolver(
+                environment,
+                bareSpecifier,
+                importer,
+                aliasOnly,
+              )
+              if (resolved) {
+                return resolved
+              }
+            } catch (e) {
+              resolutionError = e
+            }
+
+            const partialSpecifier = getSassPartialSpecifier(bareSpecifier)
+            if (partialSpecifier) {
+              try {
+                const resolved = await resolver(
+                  environment,
+                  partialSpecifier,
+                  importer,
+                  aliasOnly,
+                )
+                if (resolved) {
+                  return resolved
+                }
+              } catch (e) {
+                if (resolutionError) {
+                  throw resolutionError
+                }
+                throw e
+              }
+            }
+
+            if (resolutionError) {
+              throw resolutionError
+            }
+          }
         }
       }
       return sassResolve

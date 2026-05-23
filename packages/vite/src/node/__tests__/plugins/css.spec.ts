@@ -1,4 +1,5 @@
 import path from 'node:path'
+import { pathToFileURL } from 'node:url'
 import { describe, expect, test } from 'vitest'
 import type { InternalModuleFormat } from 'rolldown'
 import MagicString from 'magic-string'
@@ -447,6 +448,26 @@ describe('sass package resolution', () => {
         path.resolve(
           fixtureRoot,
           'node_modules/sass-pkg-with-index/index.scss',
+        ),
+      ),
+    )
+  })
+
+  test('resolves package exports when Sass first passes a file URL for a partial', async () => {
+    const resolve = await getSassResolver()
+    const resolved = await resolve(
+      pathToFileURL(
+        path.resolve(
+          path.dirname(importer),
+          'sass-pkg-with-wildcard-partial/styles/mixins',
+        ),
+      ).href,
+    )
+    expect(resolved).toBe(
+      normalizePath(
+        path.resolve(
+          fixtureRoot,
+          'node_modules/sass-pkg-with-wildcard-partial/dist/styles/_mixins.scss',
         ),
       ),
     )
