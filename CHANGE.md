@@ -28,3 +28,9 @@
   `toOutputFilePathInCss`, and `toOutputFilePathInHtml` in `packages/vite/src/node/build.ts`
 - **tooling:** Removed redundant patterns from `knip.json` that knip already
   handles natively (template globs, binary detection, auto-detected entry points)
+
+## Chore
+
+- **types:** Deleted unused `PluginContainerOptions` interface from
+  `packages/vite/src/node/server/pluginContainer.ts` — declared but
+  never referenced anywhere in the codebase
