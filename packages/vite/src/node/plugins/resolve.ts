@@ -358,16 +358,14 @@ export function oxcResolvePlugin(
             })
           },
 
-          ...(partialEnv.config.command === 'serve'
-            ? {
-                async onWarn(msg) {
-                  getEnv().logger.warn(`warning: ${msg}`, {
-                    clear: true,
-                    timestamp: true,
-                  })
-                },
-              }
-            : {}),
+          async onWarn(msg) {
+            // getEnv() is unset on side containers (createIdResolver builds them with autoStart:false, skipping the buildStart that populates envs).
+            const logger = getEnv()?.logger ?? partialEnv.config.logger
+            logger.warn(`warning: ${msg}`, {
+              clear: true,
+              timestamp: true,
+            })
+          },
           ...(debug
             ? {
                 async onDebug(message) {
