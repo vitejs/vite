@@ -657,6 +657,7 @@ export function buildHtmlPlugin(config: ResolvedConfig): Plugin {
                 if (
                   node.nodeName === 'link' &&
                   isCSSRequest(url) &&
+                  !url.includes('.module.') &&
                   // should not be converted if following attributes are present (#6748)
                   !('media' in attr.attributes || 'disabled' in attr.attributes)
                 ) {
