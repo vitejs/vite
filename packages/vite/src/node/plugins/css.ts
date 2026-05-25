@@ -2227,15 +2227,19 @@ async function minifyCSS(
       })
       if (warnings.length) {
         const msgs = await formatMessages(warnings, { kind: 'warning' })
+        const messagesWithFile = warnings.map((warning, i) => {
+          const file = warning.location?.file
+          return file ? `${file}: ${msgs[i]}` : msgs[i]
+        })
         config.logger.warn(
-          colors.yellow(`[esbuild css minify]\n${msgs.join('\n')}`),
+          colors.yellow(`[esbuild css minify]\n${messagesWithFile.join('\n')}`),
         )
       }
       // esbuild output does return a linebreak at the end
       return inlined ? code.trimEnd() : code
     } catch (e) {
       if (e.errors) {
-        e.message = '[esbuild css minify] ' + e.message
+        e.message = `[esbuild css minify] ${filename}\n  ` + e.message
         const msgs = await formatMessages(e.errors, { kind: 'error' })
         e.frame = '\n' + msgs.join('\n')
         e.loc = e.errors[0].location
@@ -2255,7 +2259,7 @@ async function minifyCSS(
     })
 
     for (const warning of warnings) {
-      let msg = `[lightningcss minify] ${warning.message}`
+      let msg = `[lightningcss minify] ${filename}\n  ${warning.message}`
       msg += `\n${generateCodeFrame(css, {
         line: warning.loc.line,
         column: warning.loc.column - 1, // 1-based
@@ -2269,7 +2273,7 @@ async function minifyCSS(
     // LightningCSS output does not return a linebreak at the end
     return decoder.decode(code) + (inlined ? '' : '\n')
   } catch (e) {
-    e.message = `[lightningcss minify] ${e.message}`
+    e.message = `[lightningcss minify] ${filename}\n  ${e.message}`
     const friendlyMessage = getLightningCssErrorMessageForIeSyntaxes(css)
     if (friendlyMessage) {
       e.message += friendlyMessage
