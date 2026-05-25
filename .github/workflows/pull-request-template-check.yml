@@ -1,10 +1,11 @@
 name: Pull Request Template Check
 
-# SAFETY: pull_request_target is used here because:
-# - The workflow does NOT check out PR code (actions/checkout checks out the base branch)
-# - Only PR metadata (title, body) from the event payload is read
-# - No PR-supplied code is executed
 on:
+  # zizmor: ignore[dangerous-triggers]
+  # SAFETY: pull_request_target is used here because:
+  # - The workflow does NOT check out PR code (actions/checkout checks out the base branch)
+  # - Only PR metadata (title, body) from the event payload is read
+  # - No PR-supplied code is executed
   pull_request_target:
     types: [opened]
 
@@ -19,7 +20,9 @@ jobs:
     outputs:
       agent_output: ${{ steps.agent.outputs.agent_output }}
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
+        with:
+          persist-credentials: false
 
       - uses: warpdotdev/oz-agent-action@ce1621abf6a8ed8afdd4e4cc994545ede8fe1c6f # v1
         id: agent
@@ -66,7 +69,7 @@ jobs:
       pull-requests: write
     steps:
       - name: Write result to summary
-        uses: actions/github-script@v8
+        uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3 # v9
         env:
           AGENT_OUTPUT: ${{ needs.evaluate-pr.outputs.agent_output }}
         with:

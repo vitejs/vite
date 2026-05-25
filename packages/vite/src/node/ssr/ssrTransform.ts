@@ -43,10 +43,10 @@ export async function ssrTransform(
   return ssrTransformScript(code, inMap, url, originalCode)
 }
 
-async function ssrTransformJSON(
+function ssrTransformJSON(
   code: string,
   inMap: SourceMap | { mappings: '' } | null,
-): Promise<TransformResult> {
+): TransformResult {
   return {
     code: code.replace('export default', `${ssrModuleExportsKey}.default =`),
     map: inMap,
@@ -344,7 +344,6 @@ async function ssrTransformScript(
       }
     },
     onIdentifier(id, parent, parentStack) {
-      const grandparent = parentStack[1]
       const binding = idToImportMap.get(id.name)
       if (!binding) {
         return
@@ -360,9 +359,8 @@ async function ssrTransformScript(
           s.appendLeft(id.end, `: ${binding}`)
         }
       } else if (
-        (parent.type === 'PropertyDefinition' &&
-          grandparent?.type === 'ClassBody') ||
-        (parent.type === 'ClassDeclaration' && id === parent.superClass)
+        parent.type === 'ClassDeclaration' &&
+        id === parent.superClass
       ) {
         if (!declaredConst.has(id.name)) {
           declaredConst.add(id.name)
@@ -680,6 +678,13 @@ function isRefIdentifier(
     return false
   }
 
+  // class property key
+  if (parent.type === 'PropertyDefinition' && !parent.computed) {
+    // values can still contain identifier references,
+    // but keys cannot unless computed.
+    return parent.value === id
+  }
+
   // property key
   if (isStaticPropertyKey(id, parent)) {
     return false
@@ -703,6 +708,16 @@ function isRefIdentifier(
     parent.type === 'MemberExpression' &&
     parent.property === id &&
     !parent.computed
+  ) {
+    return false
+  }
+
+  // label declaration or break/continue target
+  if (
+    (parent.type === 'LabeledStatement' ||
+      parent.type === 'BreakStatement' ||
+      parent.type === 'ContinueStatement') &&
+    parent.label === id
   ) {
     return false
   }

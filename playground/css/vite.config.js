@@ -55,6 +55,7 @@ export default defineConfig({
         },
       },
     },
+    emptyOutDir: false, // the dist directory is shared with other configs
   },
   esbuild: {
     logOverride: {

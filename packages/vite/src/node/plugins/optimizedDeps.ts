@@ -22,6 +22,9 @@ export function optimizedDepsPlugin(): Plugin {
     name: 'vite:optimized-deps',
 
     applyToEnvironment(environment) {
+      if (environment.config.isBundled) {
+        return false
+      }
       return !isDepOptimizationDisabled(environment.config.optimizeDeps)
     },
 

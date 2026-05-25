@@ -7,7 +7,7 @@ import crypto from 'node:crypto'
 import { fileURLToPath } from 'node:url'
 import type { ServerOptions as HttpsServerOptions } from 'node:https'
 import { builtinModules } from 'node:module'
-import { promises as dns, getDefaultResultOrder } from 'node:dns'
+import { promises as dns } from 'node:dns'
 import { performance } from 'node:perf_hooks'
 import type { AddressInfo, Server } from 'node:net'
 import fsp from 'node:fs/promises'
@@ -62,23 +62,25 @@ export const createFilter = _createFilter as (
   include?: FilterPattern,
   exclude?: FilterPattern,
   options?: { resolve?: string | false | null },
-) => (id: string | unknown) => boolean
+) => (id: unknown) => boolean
 
 export { withFilter } from 'rolldown/filter'
 
-const replaceSlashOrColonRE = /[/:]/g
-const replaceDotRE = /\./g
+// eslint-disable-next-line no-control-regex
+const invalidUrlPathCharRE = /[\u0000-\u001F"#$%&*+,:;<=>?[\]^`{|}\u007F]/g
 const replaceNestedIdRE = /\s*>\s*/g
-const replaceHashRE = /#/g
-const replacePlusRE = /\+/g
 export const flattenId = (id: string): string => {
   const flatId = limitFlattenIdLength(
     id
-      .replace(replaceSlashOrColonRE, '_')
-      .replace(replaceDotRE, '__')
-      .replace(replaceNestedIdRE, '___')
-      .replace(replaceHashRE, '____')
-      .replace(replacePlusRE, '_____'),
+      .replaceAll(/_+/g, '$&__')
+      .replaceAll('/', '_')
+      .replaceAll('.', '__')
+      .replace(replaceNestedIdRE, '_n_')
+      // replace any characters that will be replaced by sanitizeFileName
+      .replace(
+        invalidUrlPathCharRE,
+        (c) => '_0' + c.charCodeAt(0).toString(16) + '_',
+      ),
   )
   return flatId
 }
@@ -925,7 +927,10 @@ export function unique<T>(arr: T[]): T[] {
 export function getLocalhostAddressIfDiffersFromDNS():
   | Promise<string | undefined>
   | undefined {
-  if (getDefaultResultOrder() === 'verbatim') {
+  // dns.getDefaultResultOrder is not available in bun 1.3.11 and deno 2.7.11
+  // while this is a bug in bun and deno, since this function is commonly called,
+  // we give a workaround specially until the API is supported in a few versions
+  if (dns.getDefaultResultOrder && dns.getDefaultResultOrder() === 'verbatim') {
     return undefined
   }
   return Promise.all([

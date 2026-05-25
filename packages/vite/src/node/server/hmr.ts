@@ -348,7 +348,7 @@ export function getSortedPluginsByHotUpdateHook(
     normal = 0,
     post = 0
   for (const plugin of plugins) {
-    const hook = plugin['hotUpdate'] ?? plugin['handleHotUpdate']
+    const hook = plugin.hotUpdate ?? plugin.handleHotUpdate
     if (hook) {
       if (typeof hook === 'object') {
         if (hook.order === 'pre') {
