@@ -72,6 +72,19 @@ const debug = createDebugger('vite:resolve-details', {
   onlyWhenFocused: true,
 })
 
+function normalizeResolvedId(resolvedId: string): string | undefined {
+  if (
+    !resolvedId.includes('\\') ||
+    resolvedId.includes('\0') ||
+    isExternalUrl(resolvedId) ||
+    isDataUrl(resolvedId)
+  ) {
+    return
+  }
+  const normalizedId = normalizePath(resolvedId)
+  return normalizedId === resolvedId ? undefined : normalizedId
+}
+
 export interface EnvironmentResolveOptions {
   /**
    * @default ['browser', 'module', 'jsnext:main', 'jsnext']
@@ -276,7 +289,9 @@ export function oxcResolvePlugin(
             tryIndex: options.tryIndex ?? true,
             tryPrefix: options.tryPrefix,
             preserveSymlinks: options.preserveSymlinks,
-            tsconfigPaths: options.tsconfigPaths,
+            // Build uses Rolldown's tsconfig discovery, so route aliases through
+            // Vite's resolver first to keep resolved ids normalized.
+            tsconfigPaths: options.tsconfigPaths || options.isBuild,
           },
           environmentConsumer: partialEnv.config.consumer,
           environmentName: partialEnv.name,
@@ -289,67 +304,72 @@ export function oxcResolvePlugin(
             // eslint-disable-next-line eqeqeq
             partialEnv.config.server.watch === null,
           legacyInconsistentCjsInterop: options.legacyInconsistentCjsInterop,
-          finalizeBareSpecifier: !depsOptimizerEnabled
-            ? undefined
-            : (resolvedId, rawId, importer) => {
-                const depsOptimizer = getDepsOptimizer()
-                // if we reach here, it's a valid dep import that hasn't been optimized.
-                const isJsType = isOptimizable(
-                  resolvedId,
-                  depsOptimizer.options,
-                )
-                const exclude = depsOptimizer?.options.exclude
+          finalizeBareSpecifier: (resolvedId, rawId, importer) => {
+            const normalizedId = normalizeResolvedId(resolvedId)
+            if (!depsOptimizerEnabled) {
+              return normalizedId
+            }
+            resolvedId = normalizedId ?? resolvedId
 
-                // check for deep import, e.g. "my-lib/foo"
-                const deepMatch = deepImportRE.exec(rawId)
-                // package name doesn't include postfixes
-                // trim them to support importing package with queries (e.g. `import css from 'normalize.css?inline'`)
-                const pkgId = deepMatch
-                  ? deepMatch[1] || deepMatch[2]
-                  : cleanUrl(rawId)
+            const depsOptimizer = getDepsOptimizer()
+            // if we reach here, it's a valid dep import that hasn't been optimized.
+            const isJsType = isOptimizable(resolvedId, depsOptimizer.options)
+            const exclude = depsOptimizer?.options.exclude
 
-                const skipOptimization =
-                  depsOptimizer.options.noDiscovery ||
-                  !isJsType ||
-                  (importer && isInNodeModules(importer)) ||
-                  exclude?.includes(pkgId) ||
-                  exclude?.includes(rawId) ||
-                  SPECIAL_QUERY_RE.test(resolvedId)
+            // check for deep import, e.g. "my-lib/foo"
+            const deepMatch = deepImportRE.exec(rawId)
+            // package name doesn't include postfixes
+            // trim them to support importing package with queries (e.g. `import css from 'normalize.css?inline'`)
+            const pkgId = deepMatch
+              ? deepMatch[1] || deepMatch[2]
+              : cleanUrl(rawId)
 
-                let newId = resolvedId
-                if (skipOptimization) {
-                  // excluded from optimization
-                  // Inject a version query to npm deps so that the browser
-                  // can cache it without re-validation, but only do so for known js types.
-                  // otherwise we may introduce duplicated modules for externalized files
-                  // from pre-bundled deps.
-                  const versionHash = depsOptimizer!.metadata.browserHash
-                  if (versionHash && isJsType) {
-                    newId = injectQuery(newId, `v=${versionHash}`)
-                  }
-                } else {
-                  // this is a missing import, queue optimize-deps re-run and
-                  // get a resolved its optimized info
-                  const optimizedInfo = depsOptimizer!.registerMissingImport(
-                    rawId,
-                    newId,
-                  )
-                  newId = depsOptimizer!.getOptimizedDepId(optimizedInfo)
-                }
-                return newId
-              },
-          finalizeOtherSpecifiers: !depsOptimizerEnabled
-            ? undefined
-            : (resolvedId, rawId) => {
-                const depsOptimizer = getDepsOptimizer()
-                const newResolvedId = ensureVersionQuery(
-                  resolvedId,
-                  rawId,
-                  options,
-                  depsOptimizer,
-                )
-                return newResolvedId === resolvedId ? undefined : newResolvedId
-              },
+            const skipOptimization =
+              depsOptimizer.options.noDiscovery ||
+              !isJsType ||
+              (importer && isInNodeModules(importer)) ||
+              exclude?.includes(pkgId) ||
+              exclude?.includes(rawId) ||
+              SPECIAL_QUERY_RE.test(resolvedId)
+
+            let newId = resolvedId
+            if (skipOptimization) {
+              // excluded from optimization
+              // Inject a version query to npm deps so that the browser
+              // can cache it without re-validation, but only do so for known js types.
+              // otherwise we may introduce duplicated modules for externalized files
+              // from pre-bundled deps.
+              const versionHash = depsOptimizer!.metadata.browserHash
+              if (versionHash && isJsType) {
+                newId = injectQuery(newId, `v=${versionHash}`)
+              }
+            } else {
+              // this is a missing import, queue optimize-deps re-run and
+              // get a resolved its optimized info
+              const optimizedInfo = depsOptimizer!.registerMissingImport(
+                rawId,
+                newId,
+              )
+              newId = depsOptimizer!.getOptimizedDepId(optimizedInfo)
+            }
+            return newId
+          },
+          finalizeOtherSpecifiers: (resolvedId, rawId) => {
+            const normalizedId = normalizeResolvedId(resolvedId)
+            if (!depsOptimizerEnabled) {
+              return normalizedId
+            }
+            resolvedId = normalizedId ?? resolvedId
+
+            const depsOptimizer = getDepsOptimizer()
+            const newResolvedId = ensureVersionQuery(
+              resolvedId,
+              rawId,
+              options,
+              depsOptimizer,
+            )
+            return newResolvedId === resolvedId ? undefined : newResolvedId
+          },
           resolveSubpathImports(id, importer, isRequire, scan) {
             return resolveSubpathImports(id, importer, {
               ...options,

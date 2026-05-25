@@ -278,6 +278,25 @@ describe('build', () => {
     ) as OutputChunk
     expect(foo.code).not.contains('import "external"')
   })
+
+  test('normalizes tsconfig path aliases to avoid duplicated modules', async () => {
+    const result = (await build({
+      root: resolve(dirname, 'fixtures/tsconfig-paths-alias-duplication'),
+      logLevel: 'silent',
+      build: {
+        write: false,
+        ssr: true,
+        rollupOptions: {
+          input: '/src/main.js',
+        },
+      },
+    })) as RolldownOutput
+
+    const chunk = result.output.find(
+      (output): output is OutputChunk => output.type === 'chunk',
+    )!
+    expect(chunk.code.match(/Symbol\("shared-singleton"\)/g)).toHaveLength(1)
+  })
 })
 
 const baseLibOptions: LibraryOptions = {
