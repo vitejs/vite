@@ -10,7 +10,6 @@ const isNonJsRequest = (request: string): boolean => nonJsRe.test(request)
 const escapedDotRE = /(?<!\\)\\./g
 
 export function definePlugin(config: ResolvedConfig): Plugin {
-  const isBundled = config.isBundled
   const isBuild = config.command === 'build'
   const isBuildLib = isBuild && config.build.lib
 
@@ -28,26 +27,27 @@ export function definePlugin(config: ResolvedConfig): Plugin {
     })
   }
 
-  // during dev, import.meta properties are handled by importAnalysis plugin.
-  const importMetaKeys: Record<string, string> = {}
-  const importMetaEnvKeys: Record<string, string> = {}
-  const importMetaFallbackKeys: Record<string, string> = {}
-  if (isBuild) {
-    importMetaKeys['import.meta.hot'] = `undefined`
-  }
-  if (isBundled) {
-    for (const key in config.env) {
-      const val = JSON.stringify(config.env[key])
-      importMetaKeys[`import.meta.env.${key}`] = val
-      importMetaEnvKeys[key] = val
-    }
-    // these will be set to a proper value in `generatePattern`
-    importMetaKeys['import.meta.env.SSR'] = `undefined`
-    importMetaFallbackKeys['import.meta.env'] = `undefined`
-  }
-
   function generatePattern(environment: Environment) {
+    const isBundled = environment.config.isBundled
     const keepProcessEnv = environment.config.keepProcessEnv
+
+    // during dev, import.meta properties are handled by importAnalysis plugin.
+    const importMetaKeys: Record<string, string> = {}
+    const importMetaEnvKeys: Record<string, string> = {}
+    const importMetaFallbackKeys: Record<string, string> = {}
+    if (isBuild) {
+      importMetaKeys['import.meta.hot'] = `undefined`
+    }
+    if (isBundled) {
+      for (const key in config.env) {
+        const val = JSON.stringify(config.env[key])
+        importMetaKeys[`import.meta.env.${key}`] = val
+        importMetaEnvKeys[key] = val
+      }
+      // these will be set to a proper value below
+      importMetaKeys['import.meta.env.SSR'] = `undefined`
+      importMetaFallbackKeys['import.meta.env'] = `undefined`
+    }
 
     const userDefine: Record<string, string> = {}
     const userDefineEnv: Record<string, any> = {}
@@ -113,23 +113,26 @@ export function definePlugin(config: ResolvedConfig): Plugin {
     return pattern
   }
 
-  if (isBundled) {
-    return {
-      name: 'vite:define',
-      options(option) {
-        const [define, _pattern, importMetaEnvVal] = getPattern(
-          this.environment,
-        )
-        define['import.meta.env'] = importMetaEnvVal
-        define['import.meta.env.*'] = 'undefined'
-        option.transform ??= {}
-        option.transform.define = { ...option.transform.define, ...define }
-      },
-    }
-  }
-
   return {
     name: 'vite:define',
+
+    applyToEnvironment(environment) {
+      if (environment.config.isBundled) {
+        return {
+          name: 'vite:define',
+          options(option) {
+            const [define, _pattern, importMetaEnvVal] = getPattern(
+              this.environment,
+            )
+            define['import.meta.env'] = importMetaEnvVal
+            define['import.meta.env.*'] = 'undefined'
+            option.transform ??= {}
+            option.transform.define = { ...option.transform.define, ...define }
+          },
+        }
+      }
+      return true
+    },
 
     transform: {
       handler(code, id) {

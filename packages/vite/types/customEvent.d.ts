@@ -18,7 +18,7 @@ export interface CustomEventMap {
   /** @internal */
   'vite:forward-console': ForwardConsolePayload
   /** @internal */
-  'vite:module-loaded': { modules: string[] }
+  'vite:module-loaded': { modules: string[]; clientId: string }
 
   // server events
   'vite:client:connect': undefined

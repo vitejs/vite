@@ -237,7 +237,7 @@ export const normalizeModuleRunnerTransport = (
         if (connectingPromise) {
           await connectingPromise
         } else {
-          throw new Error('send was called before connect')
+          throw new SendBeforeConnectError('send was called before connect')
         }
       }
       await invokeableTransport.send(data)
@@ -247,11 +247,18 @@ export const normalizeModuleRunnerTransport = (
         if (connectingPromise) {
           await connectingPromise
         } else {
-          throw new Error('invoke was called before connect')
+          throw new SendBeforeConnectError('invoke was called before connect')
         }
       }
       return invokeableTransport.invoke(name, data)
     },
+  }
+}
+
+export class SendBeforeConnectError extends Error {
+  constructor(message: string) {
+    super(message)
+    this.name = 'SendBeforeConnectError'
   }
 }
 
