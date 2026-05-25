@@ -223,6 +223,7 @@ const perEnvironmentOrWorkerPlugin = (
 export function oxcResolvePlugin(
   resolveOptions: ResolvePluginOptionsWithOverrides,
   overrideEnvConfig: (ResolvedConfig & ResolvedEnvironmentOptions) | undefined,
+  isJsPluginContainer = false,
 ): Plugin[] {
   return [
     ...(resolveOptions.optimizeDeps && !resolveOptions.isBuild
@@ -358,14 +359,16 @@ export function oxcResolvePlugin(
             })
           },
 
-          async onWarn(msg) {
-            // getEnv() is unset on side containers (createIdResolver builds them with autoStart:false, skipping the buildStart that populates envs).
-            const logger = getEnv()?.logger ?? partialEnv.config.logger
-            logger.warn(`warning: ${msg}`, {
-              clear: true,
-              timestamp: true,
-            })
-          },
+          ...(partialEnv.config.command === 'serve' || isJsPluginContainer
+            ? {
+                async onWarn(msg) {
+                  partialEnv.config.logger.warn(`warning: ${msg}`, {
+                    clear: true,
+                    timestamp: true,
+                  })
+                },
+              }
+            : {}),
           ...(debug
             ? {
                 async onDebug(message) {
