@@ -3,6 +3,7 @@
   padding: 5px 10px;
   border-radius: 5px;
   color: var(--accent);
+  cursor: pointer;
   background: var(--accent-bg);
   border: 2px solid transparent;
   transition: border-color 0.3s;
