@@ -257,6 +257,22 @@ See Rolldown's docs about this problem for more details: [Ambiguous `default` im
 
 This change may break some existing code importing CJS modules. You can use the deprecated `legacy.inconsistentCjsInterop: true` option to temporarily restore the previous behavior. If you find a package that is affected by this change, please report it to the package author or send them a pull request. Make sure to link to the Rolldown documentation above so that the author can understand the context.
 
+If your code relies on a CJS package whose `module.exports` object is mutated by another CJS module, use a default import instead of a namespace import. Namespace imports may not reflect properties added to `module.exports` by another module.
+
+For example, use:
+
+```js
+import Backbone from 'backbone'
+import 'backbone-relational'
+```
+
+instead of:
+
+```js
+import * as Backbone from 'backbone'
+import 'backbone-relational'
+```
+
 ### Removed Module Resolution Using Format Sniffing
 
 When both `browser` and `module` fields are present in `package.json`, Vite used to resolve the field based on the content of the file and it used to pick the ESM file for browsers. This was introduced because some packages were using the `module` field to point to ESM files for Node.js and some other packages were using the `browser` field to point to UMD files for browsers. Given that the modern `exports` field solved this problem and is now adopted by many packages, Vite no longer uses this heuristic and always respects the order of the [`resolve.mainFields`](/config/shared-options#resolve-mainfields) option. If you were relying on this behavior, you can use the [`resolve.alias`](/config/shared-options#resolve-alias) option to map the field to the desired file or apply a patch with your package manager (e.g. `patch-package`, `pnpm patch`).
