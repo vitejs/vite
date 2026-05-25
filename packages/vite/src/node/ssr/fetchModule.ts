@@ -177,7 +177,9 @@ export async function fetchModule(
       // TODO: seems like rolldown uses `process.cwd()` instead of `config.root`
       // We need this because __rolldown_runtime__ keeps modules internally
       // And after HMR there is no other way to receive the updated exports
-      regionId: facadeId ? path.relative(process.cwd(), facadeId) : undefined,
+      regionId: facadeId
+        ? normalizePath(path.relative(process.cwd(), facadeId))
+        : undefined,
     }
     // TODO: this should be done in rolldown, there is already a function for it
     // output.format = 'module-runner'
