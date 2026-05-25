@@ -49,6 +49,24 @@ export default defineConfig({
 
 When making changes to the linked dep, restart the dev server with the `--force` command line option for the changes to take effect.
 
+If the linked dep is a CommonJS package, note that Vite uses `@rollup/plugin-commonjs` internally for the build, which resolves symlinks to their real paths. Because of this, `build.commonjsOptions.include` patterns must match the **real file path** of the package, not the symlinked alias:
+
+```js twoslash [vite.config.js]
+import { defineConfig } from 'vite'
+// ---cut---
+export default defineConfig({
+  build: {
+    commonjsOptions: {
+      // Use real path pattern (e.g. /packages\/linked-dep/)
+      // instead of the symlinked alias (e.g. /@my-scope\/linked-dep/)
+      include: [/packages\/linked-dep/, /node_modules/],
+    },
+  },
+})
+```
+
+See [@rollup/plugin-commonjs - Usage with symlinks](https://github.com/rollup/plugins/tree/master/packages/commonjs#usage-with-symlinks) for more details.
+
 ## Customizing the Behavior
 
 The default dependency discovery heuristics may not always be desirable. In cases where you want to explicitly include/exclude dependencies from the list, use the [`optimizeDeps` config options](/config/dep-optimization-options.md).
