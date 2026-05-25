@@ -67,19 +67,16 @@ describe('fixture', async () => {
     // Regression test for vitejs/vite#22345: even when the relative glob
     // matches zero files, virtual modules must still surface the error
     // instead of silently returning `{}`.
-    try {
+    await expect(async () => {
       await transformGlobImport(
         "import.meta.glob('./no-such-dir/*.ts')",
         'virtual:module',
         root,
         resolveId,
       )
-      expect('no error').toBe('should throw an error')
-    } catch (err) {
-      expect(err).toMatchInlineSnapshot(
-        "[Error: In virtual modules, all globs must start with '/']",
-      )
-    }
+    }).rejects.toMatchInlineSnapshot(
+      `[Error: In virtual modules, all globs must start with '/']`,
+    )
   })
 
   it('transform with restoreQueryExtension', async () => {
