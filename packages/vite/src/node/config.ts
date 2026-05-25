@@ -261,7 +261,7 @@ function defaultCreateClientDevEnvironment(
 }
 
 function defaultCreateSSRDevEnvironment(name: string, config: ResolvedConfig) {
-  if (config.experimental.ssrBundledDev) {
+  if (config.environments.ssr.isBundled) {
     return createFullBundleRunnableDevEnvironment(name, config)
   }
   return createRunnableDevEnvironment(name, config)
@@ -600,14 +600,6 @@ export interface ExperimentalOptions {
    * @default false
    */
   bundledDev?: boolean
-  /**
-   * Enable full bundle mode in SSR.
-   *
-   * This is highly experimental.
-   *
-   * @experimental
-   */
-  ssrBundledDev?: boolean
 }
 
 export interface LegacyOptions {
@@ -853,7 +845,6 @@ const configDefaults = Object.freeze({
     renderBuiltUrl: undefined,
     hmrPartialAccept: false,
     bundledDev: false,
-    ssrBundledDev: false,
   },
   future: {
     removePluginHookHandleHotUpdate: undefined,

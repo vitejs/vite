@@ -1,3 +1,5 @@
+import fs from 'node:fs'
+import { resolve } from 'node:path'
 import { describe, expect, onTestFinished } from 'vitest'
 import { runnerTest as it } from './utils'
 
@@ -134,6 +136,50 @@ describe(
         true,
       )
     })
+
+    describe('full bundle mode', () => {
+      it.override('fullBundle', ['./fixtures/simple-hmr.js'])
+      it.override('config', {
+        server: {
+          hmr: true,
+          watch: {},
+        },
+      })
+
+      it('the exports object is updated', async ({ runner }) => {
+        const exports1 = await runner.import('/fixtures/simple-hmr.js')
+
+        // TODO: Cannot use `toEqual` because rolldown injects something non-enumerable
+        expect(exports1).toMatchObject({
+          test: 'I am initialized',
+        })
+        expect(exports1).not.toHaveProperty('hmr')
+
+        const hmrCode = `\nexport const hmr = true;globalThis.__HMR_PROMISE__.resolve()`
+
+        editFile('./fixtures/simple-hmr.js', (code) => code + hmrCode)
+        onTestFinished(() => {
+          ;(globalThis as any).__HMR_PROMISE__ = undefined
+          editFile('./fixtures/simple-hmr.js', (code) =>
+            code.replace(hmrCode, ''),
+          )
+        })
+
+        await (globalThis as any).__HMR_PROMISE__.promise
+
+        const exports2 = await runner.import('/fixtures/simple-hmr.js')
+        expect(exports2).toMatchObject({
+          test: 'I am initialized',
+          hmr: true,
+        })
+      })
+    })
   },
   process.env.CI ? 50_00 : 5_000,
 )
+
+function editFile(file: string, callback: (content: string) => string) {
+  const filepath = resolve(import.meta.dirname, file)
+  const content = fs.readFileSync(filepath, 'utf-8')
+  fs.writeFileSync(filepath, callback(content), 'utf-8')
+}

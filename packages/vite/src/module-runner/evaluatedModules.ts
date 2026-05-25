@@ -99,6 +99,12 @@ export class EvaluatedModules {
     node.imports.clear()
   }
 
+  public removeModule(node: EvaluatedModuleNode): void {
+    this.fileToModulesMap.delete(node.file)
+    this.idToModuleMap.delete(node.id)
+    this.urlToIdModuleMap.delete(node.id)
+  }
+
   /**
    * Extracts the inlined source map from the module code and returns the decoded
    * source map. If the source map is not inlined, it will return null.

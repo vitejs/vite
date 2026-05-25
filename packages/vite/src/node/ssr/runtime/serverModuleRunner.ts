@@ -91,7 +91,7 @@ export const createServerModuleRunnerTransport = (options: {
     send: (payload: HotPayload) => {
       if (payload.type !== 'custom' && payload.type !== 'update') {
         throw new Error(
-          'Cannot send non-custom events from the client to the server.',
+          `Cannot send non-custom events (${payload.type}) from the client to the server.`,
         )
       }
       options.channel.send(payload)

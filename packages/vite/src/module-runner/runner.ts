@@ -113,18 +113,10 @@ export class ModuleRunner {
             const moduleExports = await this.import(url).then(() =>
               this.rolldownDevRuntimeProxy.loadExports(acceptedPath),
             )
-            // patch modules should just be executed
-            // don't leave them in memory
+            // don't leave the HMR patch in memory
             const patchModule = this.evaluatedModules.getModuleByUrl(url)
             if (patchModule) {
-              this.evaluatedModules.invalidateModule(patchModule)
-            }
-            // TODO: need anything else?
-            // TODO: source maps are not incorrect?
-            const acceptedModule =
-              this.evaluatedModules.getModuleById(acceptedPath)
-            if (acceptedModule) {
-              acceptedModule.exports = moduleExports
+              this.evaluatedModules.removeModule(patchModule)
             }
             return moduleExports
           }
@@ -150,7 +142,24 @@ export class ModuleRunner {
    */
   public async import<T = any>(url: string): Promise<T> {
     const fetchedModule = await this.cachedModule(url)
-    return await this.cachedRequest(fetchedModule.url, fetchedModule)
+    const exportsObject = await this.cachedRequest(
+      fetchedModule.url,
+      fetchedModule,
+    )
+    if (
+      this.rolldownDevRuntime &&
+      fetchedModule.meta &&
+      'regionId' in fetchedModule.meta &&
+      fetchedModule.meta.regionId &&
+      fetchedModule.meta.regionId in this.rolldownDevRuntime.modules
+    ) {
+      const loadedExports = this.rolldownDevRuntime.loadExports(
+        fetchedModule.meta.regionId,
+      )
+      fetchedModule.exports = loadedExports
+      return loadedExports
+    }
+    return exportsObject
   }
 
   /**
@@ -379,6 +388,11 @@ export class ModuleRunner {
     fetchedModule.id = moduleId
     module.meta = fetchedModule
 
+    // Do not keep lazy "patches" in memory
+    if (module.url.startsWith('/@vite/lazy?')) {
+      this.evaluatedModules.removeModule(module)
+    }
+
     return module
   }
 
@@ -415,6 +429,7 @@ export class ModuleRunner {
       this.debug?.('[module runner] externalizing', externalize)
       const exports = await this.evaluator.runExternalModule(externalize)
       mod.exports = exports
+      this.rolldownDevRuntime?.registerModule(externalize, { exports })
       return exports
     }
 

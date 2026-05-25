@@ -36,9 +36,10 @@ export const runnerTest = base.extend<TestClient>({
       ssr: {
         external: ['@vitejs/cjs-external', '@vitejs/esm-external'],
       },
-      experimental: {
-        ssrBundledDev: fullBundle.length > 0,
-        ...config.experimental,
+      environments: {
+        ssr: {
+          isBundled: fullBundle.length > 0,
+        },
       },
       build: {
         rolldownOptions: {

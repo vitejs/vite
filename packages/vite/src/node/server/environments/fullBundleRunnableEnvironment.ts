@@ -46,6 +46,15 @@ class FullBundleRunnableDevEnvironment extends FullBundleDevEnvironment {
     }
   }
 
+  // TODO: more random
+  const clientId = String(Date.now())
+
+  ${ssrRolldownRuntimeKey}.${ssrRolldownRuntimeTransport}?.send({
+    type: 'custom',
+    event: 'vite:module-loaded',
+    data: { modules: [], clientId }
+  })
+
   const wrappedSocket = {
     send(message) {
       switch (message.type) {
@@ -54,7 +63,7 @@ class FullBundleRunnableDevEnvironment extends FullBundleDevEnvironment {
             type: 'custom',
             event: 'vite:module-loaded',
             // clone array as the runtime reuses the array instance
-            data: { modules: message.modules.slice() },
+            data: { modules: message.modules.slice(), clientId },
           })
           break
         }
@@ -64,7 +73,7 @@ class FullBundleRunnableDevEnvironment extends FullBundleDevEnvironment {
     },
   }
 
-  ;${ssrRolldownRuntimeKey}.${ssrRolldownRuntimeDefineMethod}(new ViteDevRuntime(wrappedSocket))
+  ;${ssrRolldownRuntimeKey}.${ssrRolldownRuntimeDefineMethod}(new ViteDevRuntime(wrappedSocket, clientId))
     `
   }
 

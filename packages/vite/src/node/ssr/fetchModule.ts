@@ -9,7 +9,7 @@ import {
   isFilePathESM,
   normalizePath,
 } from '../utils'
-import { unwrapId } from '../../shared/utils'
+import { cleanUrl, unwrapId } from '../../shared/utils'
 import {
   MODULE_RUNNER_SOURCEMAPPING_SOURCE,
   SOURCEMAPPING_URL,
@@ -98,16 +98,38 @@ export async function fetchModule(
   if (environment instanceof FullBundleDevEnvironment) {
     await environment._waitForInitialBuildSuccess()
 
+    if (url.startsWith('/@vite/lazy?')) {
+      const { searchParams } = new URL(url, 'http://localhost')
+      const moduleId = searchParams.get('id')!
+      const clientId = searchParams.get('clientId')!
+
+      const code = await environment.triggerLazyBundling(moduleId, clientId)
+
+      if (code == null) {
+        throw new Error(`unknown request: ${url}`)
+      }
+
+      // This module is invalidated immediately, so url/id do not matter
+      return {
+        code,
+        url,
+        id: moduleId!,
+        file: cleanUrl(moduleId!),
+        invalidate: false,
+      }
+    }
+
     const outDir = normalizePath(
       path.resolve(environment.config.root, environment.config.build.outDir),
     )
 
     let fileName: string
+    let facadeId: string | undefined
 
     if (!importer) {
-      fileName = resolveEntryFilename(environment, url)!
+      const resolvedEntry = resolveEntryFilename(environment, url)!
 
-      if (!fileName) {
+      if (!resolvedEntry) {
         const entrypoints = [...environment.facadeToChunk.keys()]
         throw new Error(
           `[vite] Entrypoint '${url}' was not defined in the config. ` +
@@ -116,6 +138,9 @@ export async function fetchModule(
               : `The build did not produce any chunks. Did it finish successfully? See the logs for more information.`),
         )
       }
+
+      fileName = resolvedEntry[1]
+      facadeId = resolvedEntry[0]
     } else if (url[0] === '.') {
       // Importer is reported as a full path on the file system.
       // This happens because we provide the `file` attribute.
@@ -149,6 +174,10 @@ export async function fetchModule(
       file: normalizePath(path.resolve(outDir, fileName)),
       // chunks cannot be invalidated manually
       invalidate: false,
+      // TODO: seems like rolldown uses `process.cwd()` instead of `config.root`
+      // We need this because __rolldown_runtime__ keeps modules internally
+      // And after HMR there is no other way to receive the updated exports
+      regionId: facadeId ? path.relative(process.cwd(), facadeId) : undefined,
     }
     // TODO: this should be done in rolldown, there is already a function for it
     // output.format = 'module-runner'
@@ -248,13 +277,13 @@ function isChunkUrl(environment: DevEnvironment, url: string) {
 function resolveEntryFilename(
   environment: FullBundleDevEnvironment,
   url: string,
-) {
+): [facadeId: string | undefined, chunkName: string] | undefined {
   if (environment.memoryFiles.has(url)) {
-    return url
+    return [undefined, url]
   }
   // Already resolved by the user to be a url
   if (environment.facadeToChunk.has(url)) {
-    return environment.facadeToChunk.get(url)
+    return [url, environment.facadeToChunk.get(url)!]
   }
   const moduleId = normalizePath(
     url.startsWith('file://')
@@ -266,10 +295,13 @@ function resolveEntryFilename(
         path.resolve(environment.config.root, url),
   )
   if (environment.facadeToChunk.get(moduleId)) {
-    return environment.facadeToChunk.get(moduleId)
+    return [moduleId, environment.facadeToChunk.get(moduleId)!]
   }
   if (url[0] === '/') {
     const tryAbsouteUrl = path.posix.join(environment.config.root, url)
-    return environment.facadeToChunk.get(tryAbsouteUrl)
+    const absoluteChunk = environment.facadeToChunk.get(tryAbsouteUrl)
+    if (absoluteChunk) {
+      return [tryAbsouteUrl, absoluteChunk]
+    }
   }
 }

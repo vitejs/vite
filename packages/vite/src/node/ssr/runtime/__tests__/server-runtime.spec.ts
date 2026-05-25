@@ -124,7 +124,7 @@ describe.for([
     `)
     const url = await runner.import('/fixtures/simple.js?url')
     if (fullBundle.length) {
-      expect(url.default).toMatch('__VITE_ASSET__')
+      expect(url.default).toMatch('/assets')
     } else {
       expect(url.default).toMatchInlineSnapshot(`"/fixtures/simple.js"`)
     }
@@ -145,7 +145,7 @@ describe.for([
     const modUrl = await runner.import('/fixtures/simple.js?url')
     expect(modSimple).not.toBe(modUrl)
     if (fullBundle.length) {
-      expect(modUrl.default).toContain('__VITE_ASSET__')
+      expect(modUrl.default).toContain('/assets')
     } else {
       expect(modUrl.default).toBe('/fixtures/simple.js')
     }
@@ -351,6 +351,15 @@ describe.for([
       }
     `)
   })
+
+  it('dynamic imports in FBM', async ({ runner }) => {
+    const mod = await runner.import('./fixtures/dynamic-import.js')
+    const modules = await mod.initialize(true)
+
+    expect(modules.static).toBe(modules.dynamicProcessed)
+    expect(modules.dynamicProcessed.test).toBeTypeOf('string')
+    expect(modules.dynamicProcessed.test).toBe(modules.static.test)
+  })
 })
 
 describe('not supported by bundle mode', () => {
@@ -435,15 +444,6 @@ describe('not supported by bundle mode', () => {
         'Failed to load url virtual:normal?abcd=1234',
       ),
     })
-  })
-
-  it('dynamic imports in FBM', async ({ runner }) => {
-    const mod = await runner.import('./fixtures/dynamic-import.js')
-    const modules = await mod.initialize(true)
-
-    expect(modules.static.test).toBeTypeOf('string')
-    expect(modules.dynamicProcessed.test).toBeTypeOf('string')
-    expect(modules.dynamicProcessed.test).toBe(modules.static.test)
   })
 
   // files are virtual, so url is not defined
