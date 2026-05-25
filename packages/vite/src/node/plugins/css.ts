@@ -111,6 +111,18 @@ import { IIFE_BEGIN_RE, UMD_BEGIN_RE } from './oxc'
 const decoder = new TextDecoder()
 // const debug = createDebugger('vite:css')
 
+export type PostcssUserConfig = {
+  parser?: string | PostCSS.ProcessOptions['parser'] | false
+  stringifier?: string | PostCSS.ProcessOptions['stringifier'] | false
+  syntax?: string | PostCSS.ProcessOptions['syntax'] | false
+  map?: string | false
+  from?: string
+  to?: string
+  plugins?:
+    | Array<PostCSS.Plugin | PostCSS.TransformCallback | PostCSS.Processor>
+    | Record<string, object | false>
+}
+
 export interface CSSOptions {
   /**
    * Using lightningcss is an experimental option to handle CSS modules,
