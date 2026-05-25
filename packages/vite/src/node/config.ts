@@ -1406,11 +1406,13 @@ export async function resolveConfig(
 
   let configFileDependencies: string[] = []
   let mode = inlineConfig.mode || defaultMode
-  // `NODE_ENV` may be known only to Vite Task; fetch it from the runner,
-  // which also records it in the build's cache key. No-op outside Vite Task.
-  const nodeEnv = process.env.NODE_ENV ?? getEnv('NODE_ENV')
-  if (nodeEnv !== undefined) {
-    process.env.NODE_ENV = nodeEnv
+  // When `NODE_ENV` isn't set locally, ask Vite Task for it; the runner
+  // also records the env in the build's cache key.
+  if (process.env.NODE_ENV === undefined) {
+    const nodeEnv = getEnv('NODE_ENV')
+    if (nodeEnv !== undefined) {
+      process.env.NODE_ENV = nodeEnv
+    }
   }
   const isNodeEnvSet = !!process.env.NODE_ENV
   const packageCache: PackageCache = new Map()
