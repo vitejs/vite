@@ -362,6 +362,8 @@ export function oxcResolvePlugin(
           ...(partialEnv.config.command === 'serve' || isJsPluginContainer
             ? {
                 async onWarn(msg) {
+                  // use `partialEnv` instead of `getEnv()` because `buildStart` is
+                  // not called for plugin container used by `createIdResolver`
                   partialEnv.config.logger.warn(`warning: ${msg}`, {
                     clear: true,
                     timestamp: true,
