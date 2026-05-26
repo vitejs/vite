@@ -14,7 +14,7 @@ import type {
   RollupError,
   SourceMapInput,
 } from 'rolldown'
-import { dataToEsm } from '@rollup/pluginutils'
+import { dataToEsm, makeLegalIdentifier } from '@rollup/pluginutils'
 import colors from 'picocolors'
 import MagicString from 'magic-string'
 import type * as PostCSS from 'postcss'
@@ -564,13 +564,7 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
         // `foo.module.css` => modulesCode
         // `foo.module.css?inline` => cssContent
         const modulesCode =
-          modules &&
-          !inlined &&
-          dataToEsm(modules, {
-            namedExports: true,
-            preferConst: true,
-            includeArbitraryNames: true,
-          })
+          modules && !inlined && getCssModulesCode(modules, config.build.target)
 
         if (config.command === 'serve') {
           const getContentWithSourcemap = async (content: string) => {
@@ -3495,6 +3489,112 @@ const esMap: Record<number, string[]> = {
 
 const esRE = /es(6|\d{4})/
 const versionRE = /\d/
+
+// Minimum versions that support arbitrary module namespace identifier names
+// (e.g. `export { x as "string name" }`), matching esbuild's compat table.
+// https://github.com/evanw/esbuild/blob/main/internal/compat/js_table.go (ArbitraryModuleNamespaceNames)
+const arbitraryModuleNamespaceIdentifierNameSupport: Record<
+  string,
+  [major: number, minor: number]
+> = {
+  chrome: [90, 0],
+  edge: [90, 0],
+  firefox: [87, 0],
+  ios: [14, 5],
+  node: [16, 0],
+  safari: [14, 1],
+}
+
+const identifierNameRE = /^[$_\p{ID_Start}][$\u200c\u200d\p{ID_Continue}]*$/u
+
+const getCssModulesCode = (
+  modules: Record<string, string>,
+  esbuildTarget: string | string[] | false,
+): string => {
+  const includeArbitraryNames =
+    isArbitraryModuleNamespaceIdentifierNameSupported(esbuildTarget)
+  const code = dataToEsm(modules, {
+    namedExports: true,
+    preferConst: true,
+    includeArbitraryNames,
+  })
+
+  if (includeArbitraryNames) {
+    return code
+  }
+
+  const identifierNameKeys = Object.keys(modules).filter(
+    (key) => key !== makeLegalIdentifier(key) && identifierNameRE.test(key),
+  )
+  if (identifierNameKeys.length === 0) {
+    return code
+  }
+
+  let maxUnderbarPrefixLength = 0
+  for (const key of Object.keys(modules)) {
+    const underbarPrefixLength = /^_+/.exec(key)?.[0].length ?? 0
+    if (underbarPrefixLength > maxUnderbarPrefixLength) {
+      maxUnderbarPrefixLength = underbarPrefixLength
+    }
+  }
+
+  const identifierNamePrefix = `${'_'.repeat(maxUnderbarPrefixLength + 1)}identifier`
+  const identifierNameExportRows = identifierNameKeys.map((key, index) => {
+    const variableName = `${identifierNamePrefix}${index}`
+    return {
+      declaration: `const ${variableName} = ${JSON.stringify(modules[key])};`,
+      export: `${variableName} as ${key}`,
+    }
+  })
+
+  return `${identifierNameExportRows.map(({ declaration }) => declaration).join('\n')}
+export {
+\t${identifierNameExportRows.map(({ export: row }) => row).join(',\n\t')}
+};
+${code}`
+}
+
+export const isArbitraryModuleNamespaceIdentifierNameSupported = (
+  esbuildTarget: string | string[] | false,
+): boolean => {
+  if (
+    !esbuildTarget ||
+    esbuildTarget === 'esnext' ||
+    esbuildTarget === 'baseline-widely-available'
+  ) {
+    return true
+  }
+
+  return arraify(esbuildTarget).every((entry) => {
+    if (entry === 'esnext') {
+      return true
+    }
+
+    const esMatch = esRE.exec(entry)
+    if (esMatch) {
+      const year = esMatch[1] === '6' ? 2015 : Number(esMatch[1])
+      return year >= 2022
+    }
+
+    const index = entry.search(versionRE)
+    if (index >= 0) {
+      const browser = entry.slice(0, index)
+      const minVersion = arbitraryModuleNamespaceIdentifierNameSupport[browser]
+      if (!minVersion) {
+        return false
+      }
+
+      const [major, minor = 0] = entry
+        .slice(index)
+        .split('.')
+        .map((v) => parseInt(v, 10))
+      const [minMajor, minMinor] = minVersion
+      return major > minMajor || (major === minMajor && minor >= minMinor)
+    }
+
+    return false
+  })
+}
 
 const convertTargetsCache = new Map<
   string | string[],
