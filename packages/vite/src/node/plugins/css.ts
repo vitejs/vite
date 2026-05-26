@@ -2270,7 +2270,9 @@ async function minifyCSS(
     return decoder.decode(code) + (inlined ? '' : '\n')
   } catch (e) {
     e.message = `[lightningcss minify] ${e.message}`
-    const friendlyMessage = getLightningCssErrorMessageForIeSyntaxes(css)
+    const friendlyMessage =
+      getLightningCssNativeBindingErrorMessage(e) ??
+      getLightningCssErrorMessageForIeSyntaxes(css)
     if (friendlyMessage) {
       e.message += friendlyMessage
     }
@@ -3315,7 +3317,10 @@ async function compileLightningCSS(
         })
   } catch (e) {
     e.message = `[lightningcss] ${e.message}`
-    if (e.loc) {
+    const nativeBindingMessage = getLightningCssNativeBindingErrorMessage(e)
+    if (nativeBindingMessage) {
+      e.message += nativeBindingMessage
+    } else if (e.loc) {
       e.loc = {
         file: e.fileName.replace(NULL_BYTE_PLACEHOLDER, '\0'),
         line: e.loc.line,
@@ -3399,6 +3404,37 @@ async function compileLightningCSS(
     map: 'map' in res ? res.map?.toString() : undefined,
     modules,
   }
+}
+
+// Friendly hint when the platform-specific Lightning CSS native binding is
+// missing (e.g. linux-arm64-musl on Gentoo/Alpine, or unusual containers where
+// the lightningcss optional platform package was not installed by the package
+// manager). Without this, users only see a low-level
+// `Cannot find module '../lightningcss.<platform>.node'` stack trace.
+const lightningCssNativeBindingMissingRE =
+  /Cannot find module '[^']*lightningcss[^']*\.node'/
+
+export function getLightningCssNativeBindingErrorMessage(e: {
+  message?: string
+  code?: string
+}): string | undefined {
+  if (
+    e.code === 'MODULE_NOT_FOUND' &&
+    typeof e.message === 'string' &&
+    lightningCssNativeBindingMissingRE.test(e.message)
+  ) {
+    return (
+      '\n\nThe Lightning CSS native binding for your platform is not installed. ' +
+      'This usually happens on musl libc, uncommon CPU architectures, or in containers ' +
+      'where the platform-specific optional dependency was skipped during install.\n\n' +
+      'You can either:\n' +
+      "  - Switch the CSS minifier to esbuild: set `build.cssMinify: 'esbuild'` " +
+      '(and install `esbuild` as a devDependency), or\n' +
+      '  - Disable CSS minification: set `build.cssMinify: false`, or\n' +
+      '  - Install the missing platform package manually, e.g. `lightningcss-linux-arm64-musl`.\n'
+    )
+  }
+  return undefined
 }
 
 // friendly error for https://github.com/parcel-bundler/lightningcss/issues/39

@@ -10,6 +10,7 @@ import {
   cssPlugin,
   cssUrlRE,
   getEmptyChunkReplacer,
+  getLightningCssNativeBindingErrorMessage,
   hoistAtRules,
   injectInlinedCSS,
   preprocessCSS,
@@ -828,5 +829,59 @@ exports.foo = foo;
       //#endregion
       })();"
     `)
+  })
+})
+
+describe('getLightningCssNativeBindingErrorMessage', () => {
+  test('returns hint when lightningcss native binding is missing', () => {
+    const e = {
+      code: 'MODULE_NOT_FOUND',
+      message:
+        "Cannot find module '../lightningcss.linux-arm64-musl.node'\nRequire stack:\n- /app/node_modules/lightningcss/node/index.js",
+    }
+    const msg = getLightningCssNativeBindingErrorMessage(e)
+    expect(msg).toBeDefined()
+    expect(msg).toContain('Lightning CSS native binding')
+    expect(msg).toContain("build.cssMinify: 'esbuild'")
+    expect(msg).toContain('build.cssMinify: false')
+    expect(msg).toContain('lightningcss-linux-arm64-musl')
+  })
+
+  test('matches other platform native bindings (e.g. darwin-arm64)', () => {
+    const e = {
+      code: 'MODULE_NOT_FOUND',
+      message: "Cannot find module '../lightningcss.darwin-arm64.node'",
+    }
+    expect(getLightningCssNativeBindingErrorMessage(e)).toBeDefined()
+  })
+
+  test('returns undefined when error code is not MODULE_NOT_FOUND', () => {
+    const e = {
+      code: 'ERR_OTHER',
+      message: "Cannot find module '../lightningcss.linux-arm64-musl.node'",
+    }
+    expect(getLightningCssNativeBindingErrorMessage(e)).toBeUndefined()
+  })
+
+  test('returns undefined when message does not match lightningcss .node', () => {
+    const e = {
+      code: 'MODULE_NOT_FOUND',
+      message: "Cannot find module 'some-other-package'",
+    }
+    expect(getLightningCssNativeBindingErrorMessage(e)).toBeUndefined()
+  })
+
+  test('returns undefined for unrelated lightningcss errors (e.g. CSS syntax)', () => {
+    const e = {
+      code: 'MODULE_NOT_FOUND',
+      message: 'Unexpected token in CSS',
+    }
+    expect(getLightningCssNativeBindingErrorMessage(e)).toBeUndefined()
+  })
+
+  test('returns undefined when message is missing', () => {
+    expect(
+      getLightningCssNativeBindingErrorMessage({ code: 'MODULE_NOT_FOUND' }),
+    ).toBeUndefined()
   })
 })
