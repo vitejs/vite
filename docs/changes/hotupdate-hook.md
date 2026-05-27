@@ -14,7 +14,7 @@ Affected scope: `Vite Plugin Authors`
 
 ## Motivation
 
-The [`handleHotUpdate` hook](/guide/api-plugin.md#handlehotupdate) allows to perform custom HMR update handling. A list of modules to be updated is passed in the `HmrContext`.
+The [`handleHotUpdate` hook](/guide/api-plugin.md#handlehotupdate) allows you to perform custom HMR update handling. A list of modules to be updated is passed in the `HmrContext`.
 
 ```ts
 interface HmrContext {
