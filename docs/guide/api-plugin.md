@@ -543,12 +543,6 @@ function outputMetadataPlugin(): Plugin {
 }
 ```
 
-::: tip Inspecting final CSS metadata
-
-Use `enforce: 'post'` when reading `viteMetadata.importedCss` in `generateBundle`. This ensures the hook runs after Vite moves metadata from empty CSS-only chunks to the chunks that import them, so the metadata reflects the final output bundle.
-
-:::
-
 ## Plugin Ordering
 
 A Vite plugin can additionally specify an `enforce` property (similar to webpack loaders) to adjust its application order. The value of `enforce` can be either `"pre"` or `"post"`. The resolved plugins will be in the following order:
