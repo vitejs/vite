@@ -42,6 +42,7 @@ import {
   normalizePath,
   resolveHostname,
   resolveServerUrls,
+  safeRealpathSync,
   setupSIGTERMListener,
   teardownSIGTERMListener,
 } from '../utils'
@@ -1154,6 +1155,26 @@ function resolvedAllowDir(root: string, dir: string): string {
   return normalizePath(path.resolve(root, dir))
 }
 
+function addRealpathAllowDirs(allowDirs: string[]): string[] {
+  const seen = new Set(allowDirs)
+
+  for (const dir of allowDirs) {
+    let realDir: string
+    try {
+      realDir = normalizePath(safeRealpathSync(dir))
+    } catch {
+      continue
+    }
+
+    if (!seen.has(realDir)) {
+      seen.add(realDir)
+      allowDirs.push(realDir)
+    }
+  }
+
+  return allowDirs
+}
+
 const _serverConfigDefaults = Object.freeze({
   port: DEFAULT_DEV_PORT,
   strictPort: false,
@@ -1249,7 +1270,7 @@ export async function resolveServerOptions(
     allowDirs.push(resolvedClientDir)
   }
 
-  server.fs.allow = allowDirs
+  server.fs.allow = addRealpathAllowDirs(allowDirs)
 
   if (server.origin?.endsWith('/')) {
     server.origin = server.origin.slice(0, -1)
