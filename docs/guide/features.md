@@ -172,6 +172,7 @@ For example, to make the default import of `*.svg` a React component:
   }
   ```
 - If you are using triple-slash directives, update the file containing the reference to `vite/client` (normally `vite-env.ts`):
+
   ```ts
   /// <reference types="./vite-env-override.d.ts" />
   /// <reference types="vite/client" />
