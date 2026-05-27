@@ -54,13 +54,17 @@ export default defineConfig({
 ```
 
 ::: tip NOTE
-For TypeScript users, make sure to add the type declarations in the `vite-env.d.ts` file to get type checks and Intellisense.
+For TypeScript users, make sure to add the type declarations in the `vite-env.ts` file to get type checks and Intellisense.
 
 Example:
 
 ```ts
-// vite-env.d.ts
-declare const __APP_VERSION__: string
+// vite-env.ts
+declare global {
+  const __APP_VERSION__: string
+}
+
+export {}
 ```
 
 :::
