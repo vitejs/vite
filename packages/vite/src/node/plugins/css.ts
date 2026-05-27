@@ -279,6 +279,18 @@ export const removedPureCssFilesCache: WeakMap<
 // Used only if the config doesn't code-split CSS (builds a single CSS file)
 export const cssBundleNameCache: WeakMap<ResolvedConfig, string> = new WeakMap()
 
+/**
+ * Maps the id of every CSS module that contributes to an emitted CSS file
+ * to that emitted CSS file's final filename. Built up while chunks are
+ * rendered (and again as pure-CSS chunks are absorbed into their importers).
+ * Consumed by the build-html plugin to order `<link rel="stylesheet">` tags
+ * by the source-import position of the CSS modules.
+ */
+export const cssModuleFileMapCache: WeakMap<
+  ResolvedConfig,
+  Map<string, string>
+> = new WeakMap()
+
 const postcssConfigCache = new WeakMap<
   ResolvedConfig,
   PostCSSConfigResult | null | Promise<PostCSSConfigResult | null>
@@ -525,6 +537,7 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
       hasEmitted = false
       chunkCSSMap = new Map()
       codeSplitEmitQueue = createSerialPromiseQueue()
+      cssModuleFileMapCache.set(config, new Map())
     },
 
     transform: {
@@ -948,9 +961,15 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
                       .get(this.environment)!
                       .set(chunk.fileName, { referenceId, name: chunk.name })
                   }
-                  chunk.viteMetadata!.importedCss.add(
-                    this.getFileName(referenceId),
-                  )
+                  const emittedCssFile = this.getFileName(referenceId)
+                  chunk.viteMetadata!.importedCss.add(emittedCssFile)
+                  // Record each contributing CSS module's id -> emitted file
+                  // so the html plugin can place `<link>` tags in source
+                  // import order.
+                  const cssModuleFileMap = cssModuleFileMapCache.get(config)!
+                  for (const id of orderedCssIds) {
+                    cssModuleFileMap.set(id, emittedCssFile)
+                  }
                 } else if (this.environment.config.consumer === 'client') {
                   // legacy build and inline css
 
