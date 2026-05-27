@@ -194,7 +194,7 @@ const UnoCssPlugin = () => {
 }
 ```
 
-If a plugin isn't environment aware and has state that isn't keyed on the current environment, the `applyToEnvironment` hook allows to easily make it per-environment.
+If a plugin isn't environment aware and has state that isn't keyed on the current environment, the `applyToEnvironment` hook allows you to easily make it per-environment.
 
 ```js
 import { nonShareablePlugin } from 'non-shareable-plugin'
