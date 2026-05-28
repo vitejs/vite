@@ -855,12 +855,27 @@ async function prepareRolldownOptimizerRun(
       await bundle.close()
       throw new Error('The build was canceled')
     }
-    const result = await bundle.write({
+    const outputOptions: RolldownOutputOptions = {
       ...rolldownOptions.output,
       format: 'esm',
       sourcemap: true,
       dir: processingCacheDir,
       entryFileNames: '[name].js',
+      // Server environments can discover deps while a request is already
+      // running. Preserving module boundaries keeps previously optimized
+      // entry outputs stable when new deps are added, avoiding mid-request
+      // invalidation caused by shared chunk reshuffling.
+      ...(shouldPreserveDepOptimizerModules(environment)
+        ? {
+            preserveModules: rolldownOptions.output?.preserveModules ?? true,
+            preserveModulesRoot:
+              rolldownOptions.output?.preserveModulesRoot ??
+              environment.config.root,
+          }
+        : {}),
+    }
+    const result = await bundle.write({
+      ...outputOptions,
     })
     await bundle.close()
     return result
@@ -871,6 +886,13 @@ async function prepareRolldownOptimizerRun(
   }
 
   return { context: { build, cancel }, idToExports }
+}
+
+function shouldPreserveDepOptimizerModules(environment: Environment): boolean {
+  return (
+    environment.config.consumer === 'server' &&
+    !environment.config.optimizeDeps.noDiscovery
+  )
 }
 
 export async function addManuallyIncludedOptimizeDeps(
