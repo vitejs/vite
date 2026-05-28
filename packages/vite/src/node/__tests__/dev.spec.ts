@@ -65,4 +65,30 @@ describe('the dev server', () => {
       network: [],
     })
   })
+
+  test('applies server headers to POST 404 responses', async () => {
+    server = await createServer({
+      root: import.meta.dirname,
+      logLevel: 'error',
+      server: {
+        ws: false,
+        headers: {
+          'X-Powered-By': 'Vite',
+        },
+      },
+      optimizeDeps: {
+        noDiscovery: true,
+        include: [],
+      },
+    })
+
+    await server.listen()
+
+    const response = await fetch(`${server.resolvedUrls!.local[0]}missing`, {
+      method: 'POST',
+    })
+
+    expect(response.status).toBe(404)
+    expect(response.headers.get('X-Powered-By')).toBe('Vite')
+  })
 })
