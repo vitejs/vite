@@ -26,6 +26,10 @@ patchedDependencies:
 importers:
 
   .:
+    dependencies:
+      path-to-regexp:
+        specifier: 8.4.0
+        version: 8.4.0
     devDependencies:
       '@eslint/js':
         specifier: ^9.39.4
@@ -6731,6 +6735,9 @@ packages:
   path-to-regexp@8.3.0:
     resolution: {integrity: sha512-7jdwVIRtsP8MYpdXSwOS0YdD0Du+qOoF/AEPIt88PcCFrZCzx41oxku1jD88hZBwbNUIEfpqvuhjFaMAqMTWnA==}
 
+  path-to-regexp@8.4.0:
+    resolution: {integrity: sha512-PuseHIvAnz3bjrM2rGJtSgo1zjgxapTLZ7x2pjhzWwlp4SJQgK3f3iZIQwkpEnBaKz6seKBADpM4B4ySkuYypg==}
+
   pathe@2.0.3:
     resolution: {integrity: sha512-WUjGcAqP1gQacoQe+OBJsFA7Ld4DyXuUIjZ5cc75cLHvJ7dtNsTugphxIADwspS+AraAUePCKrSVtPLFj/F88w==}
 
@@ -13110,6 +13117,8 @@ snapshots:
   path-to-regexp@6.3.0: {}
 
   path-to-regexp@8.3.0: {}
+
+  path-to-regexp@8.4.0: {}
 
   pathe@2.0.3: {}
 
