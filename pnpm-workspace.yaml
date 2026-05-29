@@ -16,6 +16,7 @@ overrides:
   vite: 'workspace:*'
   debug: 'npm:obug@^1.0.2'
 patchedDependencies:
+  "@rollup/pluginutils@5.3.0": "patches/@rollup__pluginutils@5.3.0.patch"
   "sirv@3.0.2": "patches/sirv@3.0.2.patch"
   "chokidar@3.6.0": "patches/chokidar@3.6.0.patch"
   "dotenv-expand@13.0.0": "patches/dotenv-expand@13.0.0.patch"

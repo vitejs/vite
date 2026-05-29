@@ -8,10 +8,12 @@ import {
   convertTargets,
   createCSSResolvers,
   cssPlugin,
+  cssPostPlugin,
   cssUrlRE,
   getEmptyChunkReplacer,
   hoistAtRules,
   injectInlinedCSS,
+  isArbitraryModuleNamespaceIdentifierNameSupported,
   preprocessCSS,
   resolveLibCssFilename,
 } from '../../plugins/css'
@@ -69,6 +71,34 @@ describe('search css url function', () => {
 })
 
 describe('css modules', () => {
+  test('includes arbitrary named exports for supported targets', async () => {
+    const code = await transformCssModuleToJs({
+      configFile: false,
+      build: {
+        target: 'es2022',
+      },
+    })
+
+    // `switch` is a valid IdentifierName, so it uses the unquoted ES2015 form;
+    // only `foo-bar` needs the quoted arbitrary-namespace form.
+    expect(code).toContain('_arbitrary0 as switch')
+    expect(code).toContain('_arbitrary1 as "foo-bar"')
+  })
+
+  test('includes keyword named exports for unsupported arbitrary name targets', async () => {
+    const code = await transformCssModuleToJs({
+      configFile: false,
+      build: {
+        target: 'es2021',
+      },
+    })
+
+    expect(code).toContain('_arbitrary0 as switch')
+    expect(code).toContain('"switch": "_switch_')
+    expect(code).not.toContain(' as "foo-bar"')
+    expect(code).toContain('"foo-bar": "_foo-bar_')
+  })
+
   test('css module compose/from path resolutions', async () => {
     const { transform } = await createCssPluginTransform({
       configFile: false,
@@ -261,7 +291,81 @@ async function createCssPluginTransform(inlineConfig: InlineConfig = {}) {
   }
 }
 
+async function transformCssModuleToJs(inlineConfig: InlineConfig = {}) {
+  const config = await resolveConfig(inlineConfig, 'build')
+  const environment = new PartialEnvironment('client', config)
+  const css = `.switch {
+  color: red;
+}
+.foo-bar {
+  color: blue;
+}`
+  const id = '/foo.module.css'
+
+  const { transform, buildStart } = cssPlugin(config)
+
+  // @ts-expect-error buildStart is function
+  await buildStart.call({})
+
+  // @ts-expect-error transform.handler is function
+  const cssResult = await transform.handler.call(
+    {
+      addWatchFile() {
+        return
+      },
+      environment,
+    },
+    css,
+    id,
+  )
+
+  const postPlugin = cssPostPlugin(config)
+
+  // @ts-expect-error transform.handler is function
+  const jsResult = await postPlugin.transform.handler.call(
+    {
+      environment,
+    },
+    cssResult.code,
+    id,
+  )
+
+  return jsResult.code
+}
+
 describe('convertTargets', () => {
+  test('detects arbitrary module namespace identifier name target support', () => {
+    expect(isArbitraryModuleNamespaceIdentifierNameSupported('es2022')).toBe(
+      true,
+    )
+    expect(
+      isArbitraryModuleNamespaceIdentifierNameSupported(
+        'baseline-widely-available',
+      ),
+    ).toBe(true)
+    expect(isArbitraryModuleNamespaceIdentifierNameSupported('es2021')).toBe(
+      false,
+    )
+    expect(isArbitraryModuleNamespaceIdentifierNameSupported('node16')).toBe(
+      true,
+    )
+    expect(
+      isArbitraryModuleNamespaceIdentifierNameSupported([
+        'chrome90',
+        'safari14.1',
+      ]),
+    ).toBe(true)
+    expect(
+      isArbitraryModuleNamespaceIdentifierNameSupported([
+        'chrome90',
+        'safari14.0',
+      ]),
+    ).toBe(false)
+    expect(isArbitraryModuleNamespaceIdentifierNameSupported('chrome89')).toBe(
+      false,
+    )
+  })
+
   test('basic cases', () => {
     expect(convertTargets('es2018')).toStrictEqual({
       chrome: 4128768,

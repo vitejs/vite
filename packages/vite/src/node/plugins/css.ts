@@ -564,9 +564,7 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
         // `foo.module.css` => modulesCode
         // `foo.module.css?inline` => cssContent
         const modulesCode =
-          modules &&
-          !inlined &&
-          dataToEsm(modules, { namedExports: true, preferConst: true })
+          modules && !inlined && getCssModulesCode(modules, config.build.target)
 
         if (config.command === 'serve') {
           const getContentWithSourcemap = async (content: string) => {
@@ -3493,6 +3491,78 @@ const esMap: Record<number, string[]> = {
 
 const esRE = /es(6|\d{4})/
 const versionRE = /\d/
+
+// Minimum versions that support arbitrary module namespace identifier names
+// (e.g. `export { x as "string name" }`), matching esbuild's compat table.
+// https://github.com/evanw/esbuild/blob/main/internal/compat/js_table.go (ArbitraryModuleNamespaceNames)
+const arbitraryModuleNamespaceIdentifierNameSupport: Record<
+  string,
+  [major: number, minor: number]
+> = {
+  chrome: [90, 0],
+  edge: [90, 0],
+  firefox: [87, 0],
+  ios: [14, 5],
+  node: [16, 0],
+  safari: [14, 1],
+}
+
+// Reserved-word class names (e.g. `switch`, `default`) and other keys that are
+// valid `IdentifierName`s are handled by `dataToEsm`, which emits the ES2015-safe
+// `export { _x as switch }` form. The quoted arbitrary-namespace form (ES2022+)
+// is gated on `includeArbitraryNames` based on the build target.
+const getCssModulesCode = (
+  modules: Record<string, string>,
+  esbuildTarget: string | string[] | false,
+): string =>
+  dataToEsm(modules, {
+    namedExports: true,
+    preferConst: true,
+    includeArbitraryNames:
+      isArbitraryModuleNamespaceIdentifierNameSupported(esbuildTarget),
+  })
+
+export const isArbitraryModuleNamespaceIdentifierNameSupported = (
+  esbuildTarget: string | string[] | false,
+): boolean => {
+  if (
+    !esbuildTarget ||
+    esbuildTarget === 'esnext' ||
+    esbuildTarget === 'baseline-widely-available'
+  ) {
+    return true
+  }
+
+  return arraify(esbuildTarget).every((entry) => {
+    if (entry === 'esnext') {
+      return true
+    }
+
+    const esMatch = esRE.exec(entry)
+    if (esMatch) {
+      const year = esMatch[1] === '6' ? 2015 : Number(esMatch[1])
+      return year >= 2022
+    }
+
+    const index = entry.search(versionRE)
+    if (index >= 0) {
+      const browser = entry.slice(0, index)
+      const minVersion = arbitraryModuleNamespaceIdentifierNameSupport[browser]
+      if (!minVersion) {
+        return false
+      }
+
+      const [major, minor = 0] = entry
+        .slice(index)
+        .split('.')
+        .map((v) => parseInt(v, 10))
+      const [minMajor, minMinor] = minVersion
+      return major > minMajor || (major === minMajor && minor >= minMinor)
+    }
+
+    return false
+  })
+}
 
 const convertTargetsCache = new Map<
   string | string[],

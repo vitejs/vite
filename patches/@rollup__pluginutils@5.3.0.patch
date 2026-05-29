@@ -1,0 +1,60 @@
+diff --git a/dist/cjs/index.js b/dist/cjs/index.js
+index 9559fa134c9c2e598107c3d24b6da028c668bb57..3f337e4f1ffaaef53e8e02d1aed53274f0ded740 100644
+--- a/dist/cjs/index.js
++++ b/dist/cjs/index.js
+@@ -303,6 +303,7 @@ function isWellFormedString(input) {
+     // https://github.com/tc39/proposal-is-usv-string/blob/main/README.md#algorithm
+     return !/\p{Surrogate}/u.test(input);
+ }
++const identifierNameRE = /^[$_\p{ID_Start}][$\u200c\u200d\p{ID_Continue}]*$/u;
+ const dataToEsm = function dataToEsm(data, options = {}) {
+     var _a, _b;
+     const t = options.compact ? '' : 'indent' in options ? options.indent : '\t';
+@@ -340,10 +341,13 @@ const dataToEsm = function dataToEsm(data, options = {}) {
+         }
+         else {
+             defaultExportRows.push(`${stringify(key)}:${_}${serialize(value, options.compact ? null : t, '')}`);
+-            if (options.includeArbitraryNames && isWellFormedString(key)) {
+-                const variableName = `${arbitraryNamePrefix}${arbitraryNameExportRows.length}`;
+-                namedExportCode += `${declarationType} ${variableName}${_}=${_}${serialize(value, options.compact ? null : t, '')};${n}`;
+-                arbitraryNameExportRows.push(`${variableName} as ${JSON.stringify(key)}`);
++            if (key !== 'default') {
++                const isIdentifierName = identifierNameRE.test(key);
++                if (isIdentifierName || (options.includeArbitraryNames && isWellFormedString(key))) {
++                    const variableName = `${arbitraryNamePrefix}${arbitraryNameExportRows.length}`;
++                    namedExportCode += `${declarationType} ${variableName}${_}=${_}${serialize(value, options.compact ? null : t, '')};${n}`;
++                    arbitraryNameExportRows.push(`${variableName} as ${isIdentifierName ? key : JSON.stringify(key)}`);
++                }
+             }
+         }
+     }
+diff --git a/dist/es/index.js b/dist/es/index.js
+index eae161749d18d564f901a52000bfb36192ab411e..a4da9a939afb7194614ffd9556745e8b36edd507 100644
+--- a/dist/es/index.js
++++ b/dist/es/index.js
+@@ -299,6 +299,7 @@ function isWellFormedString(input) {
+     // https://github.com/tc39/proposal-is-usv-string/blob/main/README.md#algorithm
+     return !/\p{Surrogate}/u.test(input);
+ }
++const identifierNameRE = /^[$_\p{ID_Start}][$\u200c\u200d\p{ID_Continue}]*$/u;
+ const dataToEsm = function dataToEsm(data, options = {}) {
+     var _a, _b;
+     const t = options.compact ? '' : 'indent' in options ? options.indent : '\t';
+@@ -336,10 +337,13 @@ const dataToEsm = function dataToEsm(data, options = {}) {
+         }
+         else {
+             defaultExportRows.push(`${stringify(key)}:${_}${serialize(value, options.compact ? null : t, '')}`);
+-            if (options.includeArbitraryNames && isWellFormedString(key)) {
+-                const variableName = `${arbitraryNamePrefix}${arbitraryNameExportRows.length}`;
+-                namedExportCode += `${declarationType} ${variableName}${_}=${_}${serialize(value, options.compact ? null : t, '')};${n}`;
+-                arbitraryNameExportRows.push(`${variableName} as ${JSON.stringify(key)}`);
++            if (key !== 'default') {
++                const isIdentifierName = identifierNameRE.test(key);
++                if (isIdentifierName || (options.includeArbitraryNames && isWellFormedString(key))) {
++                    const variableName = `${arbitraryNamePrefix}${arbitraryNameExportRows.length}`;
++                    namedExportCode += `${declarationType} ${variableName}${_}=${_}${serialize(value, options.compact ? null : t, '')};${n}`;
++                    arbitraryNameExportRows.push(`${variableName} as ${isIdentifierName ? key : JSON.stringify(key)}`);
++                }
+             }
+         }
+     }

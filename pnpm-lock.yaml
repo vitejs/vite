@@ -13,6 +13,9 @@ overrides:
 packageExtensionsChecksum: sha256-Tldxs3DhJEw/FFBonUidqhCBqApA0zxQnop3Y+BTO3U=
 
 patchedDependencies:
+  '@rollup/pluginutils@5.3.0':
+    hash: ba95dd7e76e187263ec83e88d9a1f0b2a4f8d8d259fdd63df5b4dc3bb1dcf1f4
+    path: patches/@rollup__pluginutils@5.3.0.patch
   chokidar@3.6.0:
     hash: 8a4f9e2b397e6034b91a0508faae3cecb97f222313faa129d7cb0eb71e9d0e84
     path: patches/chokidar@3.6.0.patch
@@ -277,7 +280,7 @@ importers:
         version: 2.1.4(rollup@4.59.0)
       '@rollup/pluginutils':
         specifier: ^5.3.0
-        version: 5.3.0(rollup@4.59.0)
+        version: 5.3.0(patch_hash=ba95dd7e76e187263ec83e88d9a1f0b2a4f8d8d259fdd63df5b4dc3bb1dcf1f4)(rollup@4.59.0)
       '@types/escape-html':
         specifier: ^1.0.4
         version: 1.0.4
@@ -9841,7 +9844,7 @@ snapshots:
 
   '@rollup/plugin-dynamic-import-vars@2.1.4(rollup@4.59.0)':
     dependencies:
-      '@rollup/pluginutils': 5.3.0(rollup@4.59.0)
+      '@rollup/pluginutils': 5.3.0(patch_hash=ba95dd7e76e187263ec83e88d9a1f0b2a4f8d8d259fdd63df5b4dc3bb1dcf1f4)(rollup@4.59.0)
       '@types/estree': 1.0.8
       astring: 1.9.0
       estree-walker: 2.0.2
@@ -9850,7 +9853,7 @@ snapshots:
     optionalDependencies:
       rollup: 4.59.0
 
-  '@rollup/pluginutils@5.3.0(rollup@4.59.0)':
+  '@rollup/pluginutils@5.3.0(patch_hash=ba95dd7e76e187263ec83e88d9a1f0b2a4f8d8d259fdd63df5b4dc3bb1dcf1f4)(rollup@4.59.0)':
     dependencies:
       '@types/estree': 1.0.8
       estree-walker: 2.0.2
