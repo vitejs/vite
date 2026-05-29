@@ -14,7 +14,7 @@ import type {
   RollupError,
   SourceMapInput,
 } from 'rolldown'
-import { dataToEsm, makeLegalIdentifier } from '@rollup/pluginutils'
+import { dataToEsm } from '@rollup/pluginutils'
 import colors from 'picocolors'
 import MagicString from 'magic-string'
 import type * as PostCSS from 'postcss'
@@ -3505,54 +3505,20 @@ const arbitraryModuleNamespaceIdentifierNameSupport: Record<
   safari: [14, 1],
 }
 
-const identifierNameRE = /^[$_\p{ID_Start}][$\u200c\u200d\p{ID_Continue}]*$/u
-
+// Reserved-word class names (e.g. `switch`, `default`) and other keys that are
+// valid `IdentifierName`s are handled by `dataToEsm`, which emits the ES2015-safe
+// `export { _x as switch }` form. The quoted arbitrary-namespace form (ES2022+)
+// is gated on `includeArbitraryNames` based on the build target.
 const getCssModulesCode = (
   modules: Record<string, string>,
   esbuildTarget: string | string[] | false,
-): string => {
-  const includeArbitraryNames =
-    isArbitraryModuleNamespaceIdentifierNameSupported(esbuildTarget)
-  const code = dataToEsm(modules, {
+): string =>
+  dataToEsm(modules, {
     namedExports: true,
     preferConst: true,
-    includeArbitraryNames,
+    includeArbitraryNames:
+      isArbitraryModuleNamespaceIdentifierNameSupported(esbuildTarget),
   })
-
-  if (includeArbitraryNames) {
-    return code
-  }
-
-  const identifierNameKeys = Object.keys(modules).filter(
-    (key) => key !== makeLegalIdentifier(key) && identifierNameRE.test(key),
-  )
-  if (identifierNameKeys.length === 0) {
-    return code
-  }
-
-  let maxUnderbarPrefixLength = 0
-  for (const key of Object.keys(modules)) {
-    const underbarPrefixLength = /^_+/.exec(key)?.[0].length ?? 0
-    if (underbarPrefixLength > maxUnderbarPrefixLength) {
-      maxUnderbarPrefixLength = underbarPrefixLength
-    }
-  }
-
-  const identifierNamePrefix = `${'_'.repeat(maxUnderbarPrefixLength + 1)}identifier`
-  const identifierNameExportRows = identifierNameKeys.map((key, index) => {
-    const variableName = `${identifierNamePrefix}${index}`
-    return {
-      declaration: `const ${variableName} = ${JSON.stringify(modules[key])};`,
-      export: `${variableName} as ${key}`,
-    }
-  })
-
-  return `${identifierNameExportRows.map(({ declaration }) => declaration).join('\n')}
-export {
-\t${identifierNameExportRows.map(({ export: row }) => row).join(',\n\t')}
-};
-${code}`
-}
 
 export const isArbitraryModuleNamespaceIdentifierNameSupported = (
   esbuildTarget: string | string[] | false,

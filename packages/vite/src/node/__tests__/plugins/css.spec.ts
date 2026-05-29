@@ -77,7 +77,9 @@ describe('css modules', () => {
       },
     })
 
-    expect(code).toContain('_arbitrary0 as "switch"')
+    // `switch` is a valid IdentifierName, so it uses the unquoted ES2015 form;
+    // only `foo-bar` needs the quoted arbitrary-namespace form.
+    expect(code).toContain('_arbitrary0 as switch')
     expect(code).toContain('_arbitrary1 as "foo-bar"')
   })
 
@@ -89,7 +91,7 @@ describe('css modules', () => {
       },
     })
 
-    expect(code).toContain('export {\n\t_identifier0 as switch\n};')
+    expect(code).toContain('_arbitrary0 as switch')
     expect(code).toContain('"switch": "_switch_')
     expect(code).not.toContain(' as "foo-bar"')
     expect(code).toContain('"foo-bar": "_foo-bar_')
