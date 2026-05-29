@@ -781,10 +781,10 @@ export async function _createServer(
           config.logger.info,
         )
       } else if (middlewareMode) {
-        throw new Error('cannot print server URLs in middleware mode.')
+        throw new Error('Cannot print server URLs in middleware mode.')
       } else {
         throw new Error(
-          'cannot print server URLs before server.listen is called.',
+          'Cannot print server URLs before server.listen is called.',
         )
       }
     },

@@ -1156,7 +1156,7 @@ export async function extractExportsData(
       `Unable to parse: ${filePath}.\n Trying again with a ${lang} transform.`,
     )
     if (lang !== 'jsx' && lang !== 'tsx' && lang !== 'ts') {
-      throw new Error(`Unable to parse : ${filePath}.`)
+      throw new Error(`Unable to parse: ${filePath}.`)
     }
     const transformed = await transformWithOxc(
       entryContent,
