@@ -208,7 +208,10 @@ export function createWebSocketServer(
     // (e.g. a browser tab closing mid-HMR), the underlying socket emits
     // 'error' with ECONNRESET. Without a listener Node throws an unhandled
     // 'error' event and the dev server crashes.
-    socket.on('error', (err: Error) => {
+    // Benign client-disconnect codes are silently absorbed (the client is
+    // already gone — there's nothing to do); unexpected errors are logged.
+    socket.on('error', (err: Error & { code?: string }) => {
+      if (err.code === 'ECONNRESET' || err.code === 'EPIPE') return
       config.logger.error(`${colors.red(`ws upgrade error:`)}\n${err.stack}`, {
         timestamp: true,
         error: err,
