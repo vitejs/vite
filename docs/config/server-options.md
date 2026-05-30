@@ -300,6 +300,24 @@ To fix it, you could either:
 
 :::
 
+::: tip Watching files on network drives
+
+If your project is on a network drive or mounted file share, file system events may be unreliable depending on the underlying watcher implementation. You can try enabling polling:
+
+```js
+export default defineConfig({
+  server: {
+    watch: {
+      usePolling: true,
+    },
+  },
+})
+```
+
+Note that polling can increase CPU usage. If the issue is caused by a directory with many files, you can combine this with [`server.watch.ignored`](#server-watch) to exclude that directory.
+
+:::
+
 ## server.middlewareMode
 
 - **Type:** `boolean`
