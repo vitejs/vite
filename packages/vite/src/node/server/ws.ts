@@ -203,6 +203,17 @@ export function createWebSocketServer(
     head: Buffer,
     isPing: boolean,
   ) => {
+    // Attach an error listener on the raw socket before delegating to ws.
+    // If the client RSTs the TCP connection during the upgrade handshake
+    // (e.g. a browser tab closing mid-HMR), the underlying socket emits
+    // 'error' with ECONNRESET. Without a listener Node throws an unhandled
+    // 'error' event and the dev server crashes.
+    socket.on('error', (err: Error) => {
+      config.logger.error(`${colors.red(`ws upgrade error:`)}\n${err.stack}`, {
+        timestamp: true,
+        error: err,
+      })
+    })
     wss.handleUpgrade(req, socket as Socket, head, (ws) => {
       // vite-ping is allowed to connect from anywhere
       // we close the connection immediately without connection event
