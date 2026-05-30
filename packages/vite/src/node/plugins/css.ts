@@ -663,7 +663,9 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
             )
             // the chunk is empty if it's a dynamic entry chunk that only contains a CSS import
             const isJsChunkEmpty = code === '' && !chunk.isEntry
-            let isPureCssChunk = chunk.exports.length === 0
+            // Rolldown may synthesize facade exports for CSS-only chunks.
+            // Classify by rendered module content instead of chunk exports.
+            let isPureCssChunk = true
             const ids = Object.keys(chunk.modules)
             for (const id of ids) {
               if (styles.has(id)) {

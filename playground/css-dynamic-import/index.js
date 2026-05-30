@@ -8,3 +8,9 @@ link.href = new URL('./dynamic.css', import.meta.url).href
 import('./dynamic.js').then(async ({ lazyLoad }) => {
   await lazyLoad()
 })
+
+if (import.meta.env.PROD) {
+  import('./manual.css').then(() => {
+    document.body.classList.add('manual-css-loaded')
+  })
+}

@@ -1,7 +1,15 @@
 import type { InlineConfig } from 'vite'
 import { build, createServer, preview } from 'vite'
 import { expect, test } from 'vitest'
-import { getColor, isBuild, isServe, page, ports, rootDir } from '~utils'
+import {
+  findAssetFile,
+  getColor,
+  isBuild,
+  isServe,
+  page,
+  ports,
+  rootDir,
+} from '~utils'
 
 const baseOptions = [
   { base: '', label: 'relative' },
@@ -14,7 +22,18 @@ const getConfig = (base: string): InlineConfig => ({
   logLevel: 'silent',
   server: { port: ports['css/dynamic-import'] },
   preview: { port: ports['css/dynamic-import'] },
-  build: { assetsInlineLimit: 0 },
+  build: {
+    assetsInlineLimit: 0,
+    rolldownOptions: {
+      output: {
+        manualChunks(id) {
+          if (id.endsWith('/manual.css')) {
+            return 'manual-css'
+          }
+        },
+      },
+    },
+  },
 })
 
 async function withBuild(base: string, fn: () => Promise<void>) {
@@ -63,11 +82,17 @@ baseOptions.forEach(({ base, label }) => {
     async () => {
       await withBuild(base, async () => {
         await page.waitForSelector('.loaded', { state: 'attached' })
+        await page.waitForSelector('.manual-css-loaded', {
+          state: 'attached',
+        })
 
         expect(await getColor('.css-dynamic-import')).toBe('green')
+        expect(await getColor('.manual-css-dynamic-import')).toBe('purple')
         const linkUrls = (await getLinks()).map((link) => link.pathname)
         const uniqueLinkUrls = [...new Set(linkUrls)]
         expect(linkUrls).toStrictEqual(uniqueLinkUrls)
+
+        expect(findAssetFile(/manual-css.*\.js$/)).toBeUndefined()
       })
     },
   )
