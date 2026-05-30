@@ -28,6 +28,42 @@ const dirname = import.meta.dirname
 type FormatsToFileNames = [LibraryFormats, string][]
 
 describe('build', () => {
+  test('SSR html entry error refers to rolldownOptions.input', async () => {
+    await expect(
+      build({
+        root: resolve(dirname, 'packages/build-project'),
+        logLevel: 'silent',
+        build: {
+          ssr: true,
+          write: false,
+          rollupOptions: {
+            input: 'index.html',
+          },
+        },
+      }),
+    ).rejects.toThrow(
+      'rolldownOptions.input should not be an html file when building for SSR.',
+    )
+  })
+
+  test('CSS entry with cssCodeSplit false error refers to rolldownOptions.input', async () => {
+    await expect(
+      build({
+        root: resolve(dirname, 'packages/build-project'),
+        logLevel: 'silent',
+        build: {
+          cssCodeSplit: false,
+          write: false,
+          rollupOptions: {
+            input: 'style.css',
+          },
+        },
+      }),
+    ).rejects.toThrow(
+      'When "build.cssCodeSplit: false" is set, "rolldownOptions.input" should not include CSS files.',
+    )
+  })
+
   test('file hash should change when css changes for dynamic entries', async () => {
     const buildProject = async (cssColor: string) => {
       return (await build({
