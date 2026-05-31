@@ -138,6 +138,8 @@ jobs:
           repositories: |
             vite
             vite-ecosystem-ci
+          permission-actions: write
+          permission-issues: write
 
       - name: Trigger Preview Release (if Package Not Found)
         if: fromJSON(steps.check-package.outputs.result).exists == false

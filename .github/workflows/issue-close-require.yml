@@ -9,13 +9,32 @@ jobs:
     if: github.repository == 'vitejs/vite'
     runs-on: ubuntu-slim
     permissions:
-      issues: write # for actions-cool/issues-helper to update issues
-      pull-requests: write # for actions-cool/issues-helper to update PRs
+      issues: write # to close stale needs reproduction issues
     steps:
-      - name: needs reproduction
-        uses: actions-cool/issues-helper@200c78641dbf33838311e5a1e0c31bbdb92d7cf0 # v3
+      - name: Close inactive needs reproduction issues
+        uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3 # v9
         with:
-          actions: "close-issues"
-          token: ${{ secrets.GITHUB_TOKEN }}
-          labels: "needs reproduction"
-          inactive-day: 3
+          script: |
+            const cutoff = new Date(Date.now() - 3 * 24 * 60 * 60 * 1000)
+              .toISOString()
+              .slice(0, 10)
+            const q = `repo:${context.repo.owner}/${context.repo.repo} is:issue is:open label:"needs reproduction" updated:<${cutoff}`
+
+            let closed = 0
+            for await (const response of github.paginate.iterator(
+              github.rest.search.issuesAndPullRequests,
+              { q, per_page: 100 },
+            )) {
+              for (const issue of response.data) {
+                await github.rest.issues.update({
+                  owner: context.repo.owner,
+                  repo: context.repo.repo,
+                  issue_number: issue.number,
+                  state: 'closed',
+                  state_reason: 'not_planned',
+                })
+                closed++
+              }
+            }
+
+            core.info(`Closed ${closed} inactive issue(s).`)

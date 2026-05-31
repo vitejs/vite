@@ -9,34 +9,54 @@ jobs:
     if: github.repository == 'vitejs/vite'
     runs-on: ubuntu-slim
     permissions:
-      issues: write # for actions-cool/issues-helper to update issues
-      pull-requests: write # for actions-cool/issues-helper to update PRs
+      issues: write # to update labels and comments
     steps:
-      - name: contribution welcome
-        if: github.event.label.name == 'contribution welcome' || github.event.label.name == 'help wanted'
-        uses: actions-cool/issues-helper@200c78641dbf33838311e5a1e0c31bbdb92d7cf0 # v3
+      - name: Update labels and reproduction prompt
+        uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3 # v9
         with:
-          actions: "remove-labels"
-          token: ${{ secrets.GITHUB_TOKEN }}
-          issue-number: ${{ github.event.issue.number }}
-          labels: "pending triage, needs reproduction"
+          script: |
+            const issue = context.payload.issue
+            const addedLabel = context.payload.label
+            const labelNames = new Set(issue.labels.map((label) => label.name))
 
-      - name: remove pending
-        if: (github.event.label.name == 'enhancement' || contains(github.event.label.description, '(priority)')) && contains(github.event.issue.labels.*.name, 'pending triage')
-        uses: actions-cool/issues-helper@200c78641dbf33838311e5a1e0c31bbdb92d7cf0 # v3
-        with:
-          actions: "remove-labels"
-          token: ${{ secrets.GITHUB_TOKEN }}
-          issue-number: ${{ github.event.issue.number }}
-          labels: "pending triage"
+            async function removeLabels(labels) {
+              for (const name of labels) {
+                if (!labelNames.has(name)) continue
 
-      - name: needs reproduction
-        if: github.event.label.name == 'needs reproduction'
-        uses: actions-cool/issues-helper@200c78641dbf33838311e5a1e0c31bbdb92d7cf0 # v3
-        with:
-          actions: "create-comment, remove-labels"
-          token: ${{ secrets.GITHUB_TOKEN }}
-          issue-number: ${{ github.event.issue.number }}
-          body: |
-            Hello @${{ github.event.issue.user.login }}. Please provide a [minimal reproduction](https://stackoverflow.com/help/minimal-reproducible-example) using a GitHub repository or [StackBlitz](https://vite.new). Issues marked with `needs reproduction` will be closed if they have no activity within 3 days.
-          labels: "pending triage"
+                try {
+                  await github.rest.issues.removeLabel({
+                    owner: context.repo.owner,
+                    repo: context.repo.repo,
+                    issue_number: issue.number,
+                    name,
+                  })
+                } catch (error) {
+                  if (error.status !== 404) throw error
+                }
+              }
+            }
+
+            if (
+              addedLabel.name === 'contribution welcome' ||
+              addedLabel.name === 'help wanted'
+            ) {
+              await removeLabels(['pending triage', 'needs reproduction'])
+            }
+
+            if (
+              (addedLabel.name === 'enhancement' ||
+                (addedLabel.description ?? '').includes('(priority)')) &&
+              labelNames.has('pending triage')
+            ) {
+              await removeLabels(['pending triage'])
+            }
+
+            if (addedLabel.name === 'needs reproduction') {
+              await github.rest.issues.createComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: issue.number,
+                body: `Hello @${issue.user.login}. Please provide a [minimal reproduction](https://stackoverflow.com/help/minimal-reproducible-example) using a GitHub repository or [StackBlitz](https://vite.new). Issues marked with \`needs reproduction\` will be closed if they have no activity within 3 days.`,
+              })
+              await removeLabels(['pending triage'])
+            }

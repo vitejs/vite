@@ -12,13 +12,30 @@ jobs:
     if: github.repository == 'vitejs/vite'
     runs-on: ubuntu-slim
     steps:
-      - uses: actions-cool/issues-helper@200c78641dbf33838311e5a1e0c31bbdb92d7cf0 # v3
+      - name: Lock inactive closed issues
+        uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3 # v9
         with:
-          actions: "lock-issues"
-          token: ${{ secrets.GITHUB_TOKEN }}
-          #body: |
-          #  This issue has been locked since it has been closed for more than 14 days.
-          #
-          #  If you have found a concrete bug or regression related to it, please open a new [bug report](https://github.com/vitejs/vite/issues/new/choose) with a reproduction against the latest Vite version. If you have any other comments you should join the chat at [Vite Land](https://chat.vite.dev) or create a new [discussion](https://github.com/vitejs/vite/discussions).
-          issue-state: closed
-          inactive-day: 14
+          script: |
+            const cutoff = new Date(Date.now() - 14 * 24 * 60 * 60 * 1000)
+              .toISOString()
+              .slice(0, 10)
+            const q = `repo:${context.repo.owner}/${context.repo.repo} is:issue is:closed updated:<${cutoff}`
+
+            let locked = 0
+            for await (const response of github.paginate.iterator(
+              github.rest.search.issuesAndPullRequests,
+              { q, per_page: 100 },
+            )) {
+              for (const issue of response.data) {
+                if (issue.locked) continue
+
+                await github.rest.issues.lock({
+                  owner: context.repo.owner,
+                  repo: context.repo.repo,
+                  issue_number: issue.number,
+                })
+                locked++
+              }
+            }
+
+            core.info(`Locked ${locked} inactive closed issue(s).`)
