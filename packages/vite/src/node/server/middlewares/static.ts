@@ -82,14 +82,14 @@ export function servePublicMiddleware(
   publicFiles?: Set<string>,
 ): Connect.NextHandleFunction {
   const dir = server.config.publicDir
-  const serve = sirv(
-    dir,
-    sirvOptions({
+  const serve = sirv(dir, {
+    ...sirvOptions({
       config: server.config,
       getHeaders: () => server.config.server.headers,
       disableFsServeCheck: true,
     }),
-  )
+    extensions: ['html'],
+  })
 
   const toFilePath = (url: string) => {
     let filePath = cleanUrl(url)
@@ -108,8 +108,15 @@ export function servePublicMiddleware(
     // To avoid the performance impact of `existsSync` on every request, we check against an
     // in-memory set of known public files. This set is updated on restarts.
     // also skip import request and internal requests `/@fs/ /@vite-client` etc...
+    const filePath = toFilePath(req.url!)
     if (
-      (publicFiles && !publicFiles.has(toFilePath(req.url!))) ||
+      (publicFiles &&
+        !publicFiles.has(filePath) &&
+        // Also check for index.html in subdirectories so that
+        // /foo/bar/ serves /foo/bar/index.html from the public dir
+        !(
+          filePath.endsWith('/') && publicFiles.has(filePath + 'index.html')
+        )) ||
       isImportRequest(req.url!) ||
       isInternalRequest(req.url!) ||
       // for `/public-file.js?url` to be transformed
