@@ -28,6 +28,46 @@ const dirname = import.meta.dirname
 type FormatsToFileNames = [LibraryFormats, string][]
 
 describe('build', () => {
+  test('applies transform hook id filters with Vite glob semantics', async (ctx) => {
+    const root = resolve(dirname, 'packages/hook-filter-build-project')
+    await fsp.rm(root, { recursive: true, force: true })
+    ctx.onTestFinished(() => fsp.rm(root, { recursive: true, force: true }))
+    await fsp.mkdir(resolve(root, 'src'), { recursive: true })
+    await fsp.writeFile(
+      resolve(root, 'index.html'),
+      '<script type="module" src="/src/main.js"></script>',
+    )
+    await fsp.writeFile(resolve(root, 'src/main.js'), 'console.log("main")')
+
+    const transformed: string[] = []
+    await build({
+      root,
+      configFile: false,
+      logLevel: 'silent',
+      build: {
+        write: false,
+      },
+      plugins: [
+        {
+          name: 'filter-test',
+          transform: {
+            filter: {
+              id: {
+                include: '**/*.(js)',
+              },
+            },
+            handler(code, id) {
+              transformed.push(id)
+              return code
+            },
+          },
+        },
+      ],
+    })
+
+    expect(transformed.some((id) => id.endsWith('/src/main.js'))).toBe(true)
+  })
+
   test('file hash should change when css changes for dynamic entries', async () => {
     const buildProject = async (cssColor: string) => {
       return (await build({

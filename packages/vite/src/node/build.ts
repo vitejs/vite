@@ -73,7 +73,7 @@ import {
   resolveEmptyOutDir,
 } from './watch'
 import { webWorkerPostPlugin } from './plugins/worker'
-import { getHookHandler } from './plugins'
+import { getCachedFilterForPlugin, getHookHandler } from './plugins'
 import { BaseEnvironment } from './baseEnvironment'
 import type { MinimalPluginContextWithoutEnvironment, Plugin } from './plugin'
 import type { RollupPluginHooks } from './typeUtils'
@@ -1258,7 +1258,7 @@ export function injectEnvironmentToHooks(
   chunkMetadataMap: ChunkMetadataMap,
   plugin: Plugin,
 ): Plugin {
-  const { resolveId, load, transform } = plugin
+  const { resolveId, load } = plugin
 
   // the plugin can be a class instance (e.g. native plugins)
   const clone: Plugin = Object.assign(
@@ -1279,11 +1279,7 @@ export function injectEnvironmentToHooks(
         clone[hook] = wrapEnvironmentLoad(environment, load, plugin.name)
         break
       case 'transform':
-        clone[hook] = wrapEnvironmentTransform(
-          environment,
-          transform,
-          plugin.name,
-        )
+        clone[hook] = wrapEnvironmentTransform(environment, plugin)
         break
       default:
         if (ROLLUP_HOOKS.includes(hook)) {
@@ -1396,26 +1392,46 @@ function wrapEnvironmentLoad(
 
 function wrapEnvironmentTransform(
   environment: Environment,
-  hook: Plugin['transform'] | undefined,
-  pluginName: string,
+  plugin: Plugin,
 ): Plugin['transform'] {
+  const hook = plugin.transform
   if (!hook) return
 
+  const pluginName = plugin.name
   const fn = getHookHandler(hook)
+  const filter = getCachedFilterForPlugin(plugin, 'transform')
   const handler: Plugin['transform'] = function (code, importer, ...args) {
+    const options = injectSsrFlag(args[0], environment, pluginName)
+    // Build applies Vite's hook filter in this wrapper so dev and build use
+    // the same matcher semantics before the plugin handler runs.
+    if (filter && !filter(importer, code, options.moduleType ?? 'js')) {
+      return null
+    }
     return fn.call(
       injectEnvironmentInContext(this, environment),
       code,
       importer,
-      injectSsrFlag(args[0], environment, pluginName),
+      options,
     )
   }
 
   if ('handler' in hook) {
-    return wrapHookObject(hook, handler)
+    return wrapHookObjectWithoutNativeFilter(hook, handler)
   } else {
     return handler
   }
+}
+
+function wrapHookObjectWithoutNativeFilter<
+  Handler extends Function,
+  Hook extends AbstractHook<Handler>,
+>(hook: Hook, handler: Handler): Hook {
+  const newHook = {
+    ...hook,
+    handler,
+  }
+  delete (newHook as Partial<AbstractHook<Function>>).filter
+  return newHook
 }
 
 function wrapEnvironmentHook<HookName extends keyof Plugin>(
