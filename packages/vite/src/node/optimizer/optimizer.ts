@@ -450,8 +450,8 @@ export function createDepsOptimizer(
           debug(
             colors.green(
               !isRerun
-               ? `dependencies optimized`
-               : `optimized dependencies unchanged`,
+                ? `dependencies optimized`
+                : `optimized dependencies unchanged`,
             ),
           )
         }
