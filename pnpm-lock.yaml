@@ -327,8 +327,8 @@ importers:
         specifier: ^1.18.1
         version: 1.18.1(patch_hash=8071c23044f455271f4d4074ae4c7b81beec17a03aefd158d5f4edd4ef751c11)(debug@4.4.0)
       launch-editor-middleware:
-        specifier: ^2.10.0
-        version: 2.10.0
+        specifier: ^2.14.1
+        version: 2.14.1
       lightningcss:
         specifier: ^1.29.3
         version: 1.29.3
@@ -5433,11 +5433,11 @@ packages:
   kolorist@1.8.0:
     resolution: {integrity: sha512-Y+60/zizpJ3HRH8DCss+q95yr6145JXZo46OTpFvDZWLfRCE4qChOyk1b26nMaNpfHHgxagk9dXT5OP0Tfe+dQ==}
 
-  launch-editor-middleware@2.10.0:
-    resolution: {integrity: sha512-RzZu7MeVlE3p1H6Sadc2BhuDGAj7bkeDCBpNq/zSENP4ohJGhso00k5+iYaRwKshIpiOAhMmimce+5D389xmSg==}
+  launch-editor-middleware@2.14.1:
+    resolution: {integrity: sha512-Y8rM8ujxag67bXKCML5RLK5neOwj9rcgYlhgPAG0roa3sM6gjBjq7Bl/mE63XcdAmjMMsPtJhd1ry8+wstwQew==}
 
-  launch-editor@2.10.0:
-    resolution: {integrity: sha512-D7dBRJo/qcGX9xlvt/6wUYzQxjh5G1RvZPgPv8vi4KRU99DVQL/oW7tnVOCCTm2HGeo3C5HvGE5Yrh6UBoZ0vA==}
+  launch-editor@2.14.1:
+    resolution: {integrity: sha512-QWBrQsMpH7gPr965dsKD/3cKWiNoTjpATQf++Xq63N6sKRGMwlVXz41O1IZTMfZQgBctD/K5Zt06+/I6pP6+HA==}
 
   less@4.3.0:
     resolution: {integrity: sha512-X9RyH9fvemArzfdP8Pi3irr7lor2Ok4rOttDXBhlwDg+wKQsXOXgHWduAJE1EsF7JJx0w0bcO6BC6tCKKYnXKA==}
@@ -6895,8 +6895,8 @@ packages:
   shell-exec@1.0.2:
     resolution: {integrity: sha512-jyVd+kU2X+mWKMmGhx4fpWbPsjvD53k9ivqetutVW/BQ+WIZoDoP4d8vUMGezV6saZsiNoW2f9GIhg9Dondohg==}
 
-  shell-quote@1.8.2:
-    resolution: {integrity: sha512-AzqKpGKjrj7EM6rKVQEPpB288oCfnrEIuyoT9cyF4nmGa7V8Zk6f7RRqYisX8X9m+Q7bd632aZW4ky7EhbQztA==}
+  shell-quote@1.8.4:
+    resolution: {integrity: sha512-VsC6n6vz1ihYYyZZwX7YZSF5l5x36ca17OC+a69h94YqB7X6XLwf+5MOgynYir2SLFUbl8gIYvBo8K8RoNQ6bQ==}
     engines: {node: '>= 0.4'}
 
   shiki@2.5.0:
@@ -11435,14 +11435,14 @@ snapshots:
 
   kolorist@1.8.0: {}
 
-  launch-editor-middleware@2.10.0:
+  launch-editor-middleware@2.14.1:
     dependencies:
-      launch-editor: 2.10.0
+      launch-editor: 2.14.1
 
-  launch-editor@2.10.0:
+  launch-editor@2.14.1:
     dependencies:
       picocolors: 1.1.1
-      shell-quote: 1.8.2
+      shell-quote: 1.8.4
 
   less@4.3.0:
     dependencies:
@@ -13018,7 +13018,7 @@ snapshots:
 
   shell-exec@1.0.2: {}
 
-  shell-quote@1.8.2: {}
+  shell-quote@1.8.4: {}
 
   shiki@2.5.0:
     dependencies:
