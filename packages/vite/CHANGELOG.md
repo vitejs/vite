@@ -1,3 +1,13 @@
+## <small>[7.3.5](https://github.com/vitejs/vite/compare/v7.3.3...v7.3.5) (2026-06-01)</small>
+### Bug Fixes
+
+* backport [#22572](https://github.com/vitejs/vite/issues/22572), reject windows alternate paths ([#22574](https://github.com/vitejs/vite/issues/22574)) ([8c18556](https://github.com/vitejs/vite/commit/8c1855607b7c9884c4565d897ee98899a008a2d0))
+* **deps:** backport [#22571](https://github.com/vitejs/vite/issues/22571), reject UNC paths for launch-editor-middleware ([#22573](https://github.com/vitejs/vite/issues/22573)) ([f20d64b](https://github.com/vitejs/vite/commit/f20d64bef6e0ef1e4fa7a9783281c7bba0ce5292))
+
+### Miscellaneous Chores
+
+* skip v7.3.4 release ([8a6a0c9](https://github.com/vitejs/vite/commit/8a6a0c9fc734dbfe293ac33a4954506ee50430e1))
+
 ## <small>[7.3.4](https://github.com/vitejs/vite/compare/v7.3.3...v7.3.4) (2026-06-01)</small>
 ### Bug Fixes
 
