@@ -373,10 +373,6 @@ function loadEnv(
 
 Load `.env` files within the `envDir` and merge them with the matching variables already present in `process.env`. By default, only env variables prefixed with `VITE_` are loaded, unless `prefixes` is changed.
 
-:::warning SECURITY NOTES
-`prefixes` filters both the `.env` files and `process.env`, so setting it to `''` returns **every** variable in `process.env`, not just those defined in `.env` files. Avoid passing `''`, especially when inlining the result into client code (e.g. via [`define`](/config/shared-options.md#define)), as it can leak sensitive values from the build environment (such as CI/CD secrets) into your bundle. For the same reason, [`envPrefix`](/config/shared-options.md#envprefix) throws when set to `''`.
-:::
-
 ## `normalizePath`
 
 **Type Signature:**
