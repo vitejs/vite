@@ -453,7 +453,9 @@ export function createDepsOptimizer(
                 !isRerun
                   ? `dependencies optimized`
                   : `optimized dependencies unchanged`
-              }`,
+              !isRerun
+                 ? `dependencies optimized`
+                 : `optimized dependencies unchanged`,
             ),
           )
         }
