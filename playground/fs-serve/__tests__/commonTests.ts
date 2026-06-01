@@ -261,11 +261,12 @@ describe.runIf(isServe)('matrix', () => {
     },
     // On NTFS, it exposes a file's default data stream through the `::$DATA` suffix,
     // so `.env::$DATA` resolves to the same content as `.env`.
+    // It is 404 on non-NTFS.
     {
       name: 'denied .env with NTFS ADS suffix',
       testId: 'unsafe-dotenv-ntfs-ads',
-      content: /403 Restricted/,
-      status: '403',
+      content: /403 Restricted|^$/,
+      status: ['403', '404'],
     },
     // On Windows, the files can be accessed through the 8.3 short name if the feature is enabled.
     // For example, if the short name for `.env` is `ENV~1`, it can be accessed as `ENV~1`.
