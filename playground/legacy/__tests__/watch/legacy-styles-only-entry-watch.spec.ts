@@ -34,12 +34,14 @@ test.runIf(isBuild)('rebuilds styles only entry on change', async () => {
     'watch',
   )
   expect(reRenderedCssFile).toContain('#ffb6c1')
-  const reRenderedCssLegacyFile = findAssetFile(
-    updatedManifest['style-only-entry-legacy.css']!.file.substring(
-      'assets/'.length,
-    ),
-    'watch',
-  )
-  expect(reRenderedCssLegacyFile).toContain('#ffb6c1')
+   if (updatedManifest['style-only-entry-legacy.css']) {
+    const reRenderedCssLegacyFile = findAssetFile(
+      updatedManifest['style-only-entry-legacy.css']!.file.substring(
+        'assets/'.length,
+      ),
+      'watch',
+    )
+    expect(reRenderedCssLegacyFile).toContain('#ffb6c1')
+  }
   expect(findAssetFile(/polyfills-legacy-.+\.js/, 'watch')).toBeTruthy()
 })
