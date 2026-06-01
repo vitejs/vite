@@ -16,7 +16,7 @@ jobs:
     permissions:
       contents: write # for yyx990803/release-tag to create a release tag
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
 
       - name: Get pkgName for tag
         id: tag
