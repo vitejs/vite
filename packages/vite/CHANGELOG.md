@@ -1,3 +1,9 @@
+## <small>[8.0.16](https://github.com/vitejs/vite/compare/v8.0.15...v8.0.16) (2026-06-01)</small>
+### Bug Fixes
+
+* **deps:** reject UNC paths for launch-editor-middleware ([#22571](https://github.com/vitejs/vite/issues/22571)) ([50b9512](https://github.com/vitejs/vite/commit/50b951225bbf6151eb84a3ad5a454908ab4a76c9))
+* reject windows alternate paths ([#22572](https://github.com/vitejs/vite/issues/22572)) ([dc245c7](https://github.com/vitejs/vite/commit/dc245c71e5007ea4d891a025e2d69ac96c736546))
+
 ## <small>[8.0.15](https://github.com/vitejs/vite/compare/v8.0.14...v8.0.15) (2026-06-01)</small>
 ### Features
 
