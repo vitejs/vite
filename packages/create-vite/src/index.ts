@@ -777,7 +777,7 @@ function setupReactCompiler(root: string, isTs: boolean) {
   // renovate: datasource=npm depName=babel-plugin-react-compiler
   const reactCompilerPluginVersion = '1.0.0'
   // renovate: datasource=npm depName=@babel/core
-  const babelCoreVersion = '7.29.0'
+  const babelCoreVersion = '7.29.7'
   // renovate: datasource=npm depName=@types/babel__core
   const typesBabelCoreVersion = '7.20.5'
 

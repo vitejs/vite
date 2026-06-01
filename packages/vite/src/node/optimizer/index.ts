@@ -864,15 +864,17 @@ async function prepareRolldownOptimizerRun(
       await bundle.close()
       throw new Error('The build was canceled')
     }
-    const result = await bundle.write({
-      ...rolldownOptions.output,
-      format: 'esm',
-      sourcemap: true,
-      dir: processingCacheDir,
-      entryFileNames: '[name].js',
-    })
-    await bundle.close()
-    return result
+    try {
+      return await bundle.write({
+        ...rolldownOptions.output,
+        format: 'esm',
+        sourcemap: true,
+        dir: processingCacheDir,
+        entryFileNames: '[name].js',
+      })
+    } finally {
+      await bundle.close()
+    }
   }
 
   function cancel() {
@@ -1165,7 +1167,7 @@ export async function extractExportsData(
       `Unable to parse: ${filePath}.\n Trying again with a ${lang} transform.`,
     )
     if (lang !== 'jsx' && lang !== 'tsx' && lang !== 'ts') {
-      throw new Error(`Unable to parse : ${filePath}.`)
+      throw new Error(`Unable to parse: ${filePath}.`)
     }
     const transformed = await transformWithOxc(
       entryContent,

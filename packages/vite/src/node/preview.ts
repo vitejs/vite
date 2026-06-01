@@ -188,7 +188,7 @@ export async function preview(
       if (server.resolvedUrls) {
         printServerUrls(server.resolvedUrls, options.host, logger.info)
       } else {
-        throw new Error('cannot print server URLs before server is listening.')
+        throw new Error('Cannot print server URLs before server is listening.')
       }
     },
     bindCLIShortcuts(options) {

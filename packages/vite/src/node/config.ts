@@ -2538,16 +2538,16 @@ function collectAllModules(
   if (analyzedModules.has(fileName)) return
   analyzedModules.add(fileName)
 
-  const chunk = bundle[fileName]!
+  const chunk = bundle[fileName]
+  if (!chunk) return // external modules
+
   for (const mod of chunk.moduleIds) {
     allModules.add(mod)
   }
   for (const i of chunk.imports) {
-    analyzedModules.add(i)
     collectAllModules(bundle, i, allModules, analyzedModules)
   }
   for (const i of chunk.dynamicImports) {
-    analyzedModules.add(i)
     collectAllModules(bundle, i, allModules, analyzedModules)
   }
 }
