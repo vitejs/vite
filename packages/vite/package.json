@@ -124,7 +124,7 @@
     "estree-walker": "^3.0.3",
     "etag": "^1.8.1",
     "http-proxy": "^1.18.1",
-    "launch-editor-middleware": "^2.10.0",
+    "launch-editor-middleware": "^2.14.1",
     "lightningcss": "^1.29.3",
     "magic-string": "^0.30.17",
     "mlly": "^1.7.4",
