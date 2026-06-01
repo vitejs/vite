@@ -17,6 +17,7 @@ import {
   createFilter,
   ensureWatchedFile,
   generateCodeFrame,
+  normalizePath,
 } from '../utils'
 import type { ViteDevServer } from '../server'
 import type { ResolvedConfig } from '../config'
@@ -153,8 +154,15 @@ export async function transformWithEsbuild(
         const { tsconfig: loadedTsconfig, tsconfigFilePaths } = result
         // tsconfig could be out of root, make sure it is watched on dev
         if (watcher && config) {
+          const sourceFile = cleanUrl(filename)
           for (const tsconfigFile of tsconfigFilePaths) {
-            ensureWatchedFile(watcher, tsconfigFile, config.root)
+            const normalizedTsconfigFile = normalizePath(tsconfigFile)
+            ensureWatchedFile(watcher, normalizedTsconfigFile, config.root)
+            registerTsconfigDependency(
+              config,
+              normalizedTsconfigFile,
+              sourceFile,
+            )
           }
         }
 

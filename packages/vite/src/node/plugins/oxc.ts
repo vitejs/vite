@@ -16,7 +16,11 @@ import type { Environment } from '..'
 import type { ViteDevServer } from '../server'
 import { JS_TYPES_RE } from '../constants'
 import type { Logger } from '../logger'
-import { type ESBuildOptions, getTSConfigResolutionCache } from './esbuild'
+import {
+  type ESBuildOptions,
+  getTSConfigResolutionCache,
+  registerTsconfigDependency,
+} from './esbuild'
 
 // IIFE content looks like `var MyLib = (function() {` or `this.nested.myLib = (function() {`.
 export const IIFE_BEGIN_RE: RegExp =
@@ -161,8 +165,11 @@ export async function transformWithOxc(
     result.tsconfigFilePaths &&
     result.tsconfigFilePaths.length > 0
   ) {
+    const sourceFile = cleanUrl(filename)
     for (const tsconfigFile of result.tsconfigFilePaths) {
-      ensureWatchedFile(watcher, normalizePath(tsconfigFile), config.root)
+      const normalizedTsconfigFile = normalizePath(tsconfigFile)
+      ensureWatchedFile(watcher, normalizedTsconfigFile, config.root)
+      registerTsconfigDependency(config, normalizedTsconfigFile, sourceFile)
     }
   }
 
