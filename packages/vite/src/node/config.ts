@@ -2520,10 +2520,22 @@ function collectAllModules(
   bundle: Record<string, OutputChunk>,
   fileName: string,
   allModules: Set<string>,
+  analyzedModules = new Set<string>(),
 ) {
-  const chunk = bundle[fileName]!
+  if (analyzedModules.has(fileName)) return
+  analyzedModules.add(fileName)
+
+  const chunk = bundle[fileName]
+  if (!chunk) return // external modules
+
   for (const mod of chunk.moduleIds) {
     allModules.add(mod)
+  }
+  for (const i of chunk.imports) {
+    collectAllModules(bundle, i, allModules, analyzedModules)
+  }
+  for (const i of chunk.dynamicImports) {
+    collectAllModules(bundle, i, allModules, analyzedModules)
   }
 }
 
