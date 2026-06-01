@@ -1675,6 +1675,12 @@ export async function resolveConfig(
 
   // load .env files
   // Backward compatibility: set envDir to false when envFile is false
+  if (config.envFile === false) {
+    logger.warn(
+      'config.envFile is deprecated. Use config.envDir instead. ' +
+        'For example, replace { envFile: false } with { envDir: false }.',
+    )
+  }
   let envDir = config.envFile === false ? false : config.envDir
   if (envDir !== false) {
     envDir = config.envDir
