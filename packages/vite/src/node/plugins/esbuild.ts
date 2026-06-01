@@ -20,6 +20,7 @@ import {
   normalizePath,
 } from '../utils'
 import type { ViteDevServer } from '../server'
+import type { EnvironmentModuleNode } from '../server/moduleGraph'
 import type { ResolvedConfig } from '../config'
 import type { Plugin } from '../plugin'
 import { cleanUrl } from '../../shared/utils'
@@ -580,6 +581,7 @@ export function registerTsconfigDependency(
 export function reloadOnTsconfigChange(
   server: ViteDevServer,
   changedFile: string,
+  event: 'create' | 'delete' | 'update',
 ): void {
   // any tsconfig.json that's added in the workspace could be closer to a code file than a previously cached one
   // any json file in the tsconfig cache could have been used to compile ts
@@ -591,15 +593,33 @@ export function reloadOnTsconfigChange(
         { clear: server.config.clearScreen, timestamp: true },
       )
 
-      // TODO: more finegrained invalidation than the nuclear option below
-
-      // clear module graph to remove code compiled with outdated config
-      for (const environment of Object.values(server.environments)) {
-        environment.moduleGraph.invalidateAll()
-      }
-
       // reset the cache so that recompile works with up2date configs
       cache.clear()
+
+      // On 'update' we can scope invalidation to modules that actually
+      // referenced this tsconfig (tracked during transform). On create/delete,
+      // a new/removed tsconfig may change which tsconfig other files resolve
+      // to, which the reverse index can't capture, so invalidate everything.
+      const dependentFiles =
+        event === 'update'
+          ? getTsconfigDependentFilesMap(server.config).get(changedFile)
+          : undefined
+
+      for (const environment of Object.values(server.environments)) {
+        if (dependentFiles) {
+          const seen = new Set<EnvironmentModuleNode>()
+          for (const file of dependentFiles) {
+            environment.moduleGraph
+              .getModulesByFile(file)
+              ?.forEach((mod) =>
+                environment.moduleGraph.invalidateModule(mod, seen),
+              )
+          }
+        } else {
+          // clear module graph to remove code compiled with outdated config
+          environment.moduleGraph.invalidateAll()
+        }
+      }
 
       // reload environments
       for (const environment of Object.values(server.environments)) {
