@@ -1,3 +1,10 @@
+## <small>6.4.3 (2026-06-01)</small>
+
+* fix: backport #22572, reject windows alternate paths (#22576) ([96b0c10](https://github.com/vitejs/vite/commit/96b0c10162e9c55485d922db2cfc6b8227cbc176)), closes [#22572](https://github.com/vitejs/vite/issues/22572) [#22576](https://github.com/vitejs/vite/issues/22576)
+* fix(deps): backport #22571, reject UNC paths for launch-editor-middleware (#22575) ([8fed5cf](https://github.com/vitejs/vite/commit/8fed5cf540c0d475266787f52072f258478cd42f)), closes [#22571](https://github.com/vitejs/vite/issues/22571) [#22575](https://github.com/vitejs/vite/issues/22575)
+
+
+
 ## <small>6.4.2 (2026-04-06)</small>
 
 * fix: apply server.fs check to env transport (#22159) (#22163) ([fe28e47](https://github.com/vitejs/vite/commit/fe28e47e9463e4c9619f94bfa06d2f8f1411b44b)), closes [#22159](https://github.com/vitejs/vite/issues/22159) [#22163](https://github.com/vitejs/vite/issues/22163)
