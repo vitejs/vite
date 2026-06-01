@@ -257,7 +257,7 @@ export interface BuildEnvironmentOptions {
   lib?: LibraryOptions | false
   /**
    * Produce SSR oriented build. Note this requires specifying SSR entry via
-   * `rollupOptions.input`.
+   * `rolldownOptions.input`.
    * @default false
    */
   ssr?: boolean | string
@@ -601,7 +601,7 @@ export function resolveRolldownOptions(
 
   if (ssr && typeof input === 'string' && input.endsWith('.html')) {
     throw new Error(
-      `rollupOptions.input should not be an html file when building for SSR. ` +
+      `rolldownOptions.input should not be an html file when building for SSR. ` +
         `Please specify a dedicated SSR entry.`,
     )
   }
@@ -614,7 +614,7 @@ export function resolveRolldownOptions(
           : Object.values(input)
     if (inputs.some((input) => input.endsWith('.css'))) {
       throw new Error(
-        `When "build.cssCodeSplit: false" is set, "rollupOptions.input" should not include CSS files.`,
+        `When "build.cssCodeSplit: false" is set, "rolldownOptions.input" should not include CSS files.`,
       )
     }
   }
