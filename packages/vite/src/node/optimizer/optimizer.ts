@@ -449,10 +449,6 @@ export function createDepsOptimizer(
         } else {
           debug(
             colors.green(
-              `${
-                !isRerun
-                  ? `dependencies optimized`
-                  : `optimized dependencies unchanged`
               !isRerun
                  ? `dependencies optimized`
                  : `optimized dependencies unchanged`,
