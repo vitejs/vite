@@ -28,11 +28,6 @@ export function getEnvFilesForMode(
 /**
  * Load `.env` files within the `envDir` and merge them with the matching
  * variables already present in `process.env`.
- *
- * By default, only variables prefixed with `VITE_` are returned. Note that
- * `prefixes` filters `process.env` too, so passing `''` returns the entire
- * `process.env`. Avoid `''`, especially when inlining the result (e.g. via
- * `define`), as it can leak environment secrets into the client bundle.
  */
 export function loadEnv(
   mode: string,
