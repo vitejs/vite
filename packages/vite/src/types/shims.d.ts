@@ -8,11 +8,6 @@ declare module 'cors' {
   export = cors
 }
 
-declare module 'launch-editor-middleware' {
-  const plugin: any
-  export = plugin
-}
-
 declare module 'postcss-import' {
   import type { Plugin } from 'postcss'
   const plugin: (options: {
