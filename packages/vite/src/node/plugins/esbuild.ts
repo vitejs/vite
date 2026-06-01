@@ -537,6 +537,38 @@ export function getTSConfigResolutionCache(
   return cache
 }
 
+// reverse index: tsconfig file path -> source files that referenced it.
+// used by reloadOnTsconfigChange to only invalidate affected modules.
+const tsconfigDependentFilesMap = new WeakMap<
+  ResolvedConfig,
+  Map<string, Set<string>>
+>()
+
+function getTsconfigDependentFilesMap(
+  config: ResolvedConfig,
+): Map<string, Set<string>> {
+  let map = tsconfigDependentFilesMap.get(config)
+  if (!map) {
+    map = new Map()
+    tsconfigDependentFilesMap.set(config, map)
+  }
+  return map
+}
+
+export function registerTsconfigDependency(
+  config: ResolvedConfig,
+  tsconfigFile: string,
+  sourceFile: string,
+): void {
+  const map = getTsconfigDependentFilesMap(config)
+  let files = map.get(tsconfigFile)
+  if (!files) {
+    files = new Set()
+    map.set(tsconfigFile, files)
+  }
+  files.add(sourceFile)
+}
+
 export function reloadOnTsconfigChange(
   server: ViteDevServer,
   changedFile: string,
