@@ -237,9 +237,10 @@ describe.runIf(isServe)('main', () => {
   })
 
   test('denied .env with NTFS ADS suffix', async () => {
+    // It is 403 on NTFS, 404 on others
     await expect
       .poll(() => page.textContent('.unsafe-dotenv-ntfs-ads'))
-      .toBe('403')
+      .toStrictEqual(expect.toBeOneOf(['403', '404']))
   })
 
   const dotEnvWindows83ShortName = getWindows83ShortNameForDotEnv()
