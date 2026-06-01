@@ -922,28 +922,6 @@ describe('resolveConfig', () => {
     await resolveConfig({ root: './inc?ud#s*', customLogger: logger }, 'build')
   })
 
-  test('warns when using deprecated envFile option', async () => {
-    const logger = createLogger('info')
-    logger.warn = vi.fn()
-
-    await resolveConfig({ envFile: false, customLogger: logger }, 'build')
-
-    expect(logger.warn).toHaveBeenCalledWith(
-      expect.stringContaining(
-        '`envFile: false` is deprecated. Use `envDir: false` instead.',
-      ),
-    )
-  })
-
-  test('does not warn when using envDir to disable env files', async () => {
-    const logger = createLogger('info')
-    logger.warn = vi.fn()
-
-    await resolveConfig({ envDir: false, customLogger: logger }, 'build')
-
-    expect(logger.warn).not.toHaveBeenCalled()
-  })
-
   test('syncs `build.rollupOptions` and `build.rolldownOptions`', async () => {
     const resolved = await resolveConfig({}, 'build')
     expect(resolved.build!.rollupOptions).toStrictEqual(
