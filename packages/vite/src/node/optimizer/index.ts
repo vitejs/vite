@@ -855,15 +855,17 @@ async function prepareRolldownOptimizerRun(
       await bundle.close()
       throw new Error('The build was canceled')
     }
-    const result = await bundle.write({
-      ...rolldownOptions.output,
-      format: 'esm',
-      sourcemap: true,
-      dir: processingCacheDir,
-      entryFileNames: '[name].js',
-    })
-    await bundle.close()
-    return result
+    try {
+      return await bundle.write({
+        ...rolldownOptions.output,
+        format: 'esm',
+        sourcemap: true,
+        dir: processingCacheDir,
+        entryFileNames: '[name].js',
+      })
+    } finally {
+      await bundle.close()
+    }
   }
 
   function cancel() {
