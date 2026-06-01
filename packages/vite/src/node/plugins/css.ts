@@ -2165,8 +2165,13 @@ async function doUrlReplace(
   }
 
   // The new url might need wrapping even if the original did not have it, e.g.
-  // if a space was added during replacement or the URL contains ")"
-  if (wrap === '' && (newUrl !== encodeURI(newUrl) || newUrl.includes(')'))) {
+  // if a space was added during replacement or the URL contains parentheses
+  if (
+    wrap === '' &&
+    (newUrl !== encodeURI(newUrl) ||
+      newUrl.includes('(') ||
+      newUrl.includes(')'))
+  ) {
     wrap = '"'
   }
   // If wrapping in single quotes and newUrl also contains single quotes, switch to double quotes.
