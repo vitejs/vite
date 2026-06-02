@@ -196,7 +196,7 @@ async function computeEntries(environment: ScanEnvironment) {
   let entries: string[] = []
 
   const explicitEntryPatterns = environment.config.optimizeDeps.entries
-  const buildInput = environment.config.build.rollupOptions.input
+  const buildInput = environment.config.build.rolldownOptions.input
 
   if (explicitEntryPatterns) {
     entries = await globEntries(explicitEntryPatterns, environment)

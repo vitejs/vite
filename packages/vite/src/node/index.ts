@@ -132,6 +132,7 @@ export type {
   DevEnvironmentOptions,
   ResolvedDevEnvironmentOptions,
 } from './config'
+export type { HtmlAssetSource } from './assetSource'
 export type {
   Plugin,
   PluginOption,
@@ -236,6 +237,7 @@ export type {
 } from './server/transformRequest'
 export type {
   HmrOptions,
+  WsOptions,
   HmrContext,
   HotUpdateOptions,
   HotChannelListener,

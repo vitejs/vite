@@ -94,18 +94,18 @@ export class FullBundleDevEnvironment extends DevEnvironment {
     this.hot.listen()
 
     debug?.('INITIAL: setup bundle options')
-    const rollupOptions = await this.getRolldownOptions()
+    const rolldownOptions = await this.getRolldownOptions()
     // NOTE: only single outputOptions is supported here
     if (
-      Array.isArray(rollupOptions.output) &&
-      rollupOptions.output.length > 1
+      Array.isArray(rolldownOptions.output) &&
+      rolldownOptions.output.length > 1
     ) {
       throw new Error('multiple output options are not supported in dev mode')
     }
     const outputOptions = (
-      Array.isArray(rollupOptions.output)
-        ? rollupOptions.output[0]
-        : rollupOptions.output
+      Array.isArray(rolldownOptions.output)
+        ? rolldownOptions.output[0]
+        : rolldownOptions.output
     )!
 
     this.hot.on('vite:module-loaded', (payload, client) => {
@@ -119,7 +119,7 @@ export class FullBundleDevEnvironment extends DevEnvironment {
       }
     })
 
-    this._devEngine = await dev(rollupOptions, outputOptions, {
+    this._devEngine = await dev(rolldownOptions, outputOptions, {
       onHmrUpdates: (result) => {
         if (result instanceof Error) {
           // TODO: send to the specific client
