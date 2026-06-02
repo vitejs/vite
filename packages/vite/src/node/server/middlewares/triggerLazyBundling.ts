@@ -4,8 +4,8 @@ import type { ViteDevServer } from '..'
 export function triggerLazyBundlingMiddleware(
   server: ViteDevServer,
 ): Connect.NextHandleFunction {
-  const bundle = server.environments.client.bundle
-    ? server.environments.client.bundle
+  const bundle = server.environments.client.bundledDev
+    ? server.environments.client.bundledDev
     : undefined
   if (!bundle) {
     throw new Error(

@@ -454,8 +454,8 @@ export function indexHtmlMiddleware(
 ): Connect.NextHandleFunction {
   const isDev = isDevServer(server)
   const fullBundle =
-    isDev && server.environments.client.bundle
-      ? server.environments.client.bundle
+    isDev && server.environments.client.bundledDev
+      ? server.environments.client.bundledDev
       : undefined
 
   // Keep the named function. The name is visible in debug logs via `DEBUG=connect:dispatcher ...`

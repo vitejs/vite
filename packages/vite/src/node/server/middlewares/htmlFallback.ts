@@ -12,8 +12,8 @@ export function htmlFallbackMiddleware(
   spaFallback: boolean,
   clientEnvironment?: DevEnvironment,
 ): Connect.NextHandleFunction {
-  const memoryFiles = clientEnvironment?.bundle
-    ? clientEnvironment.bundle.memoryFiles
+  const memoryFiles = clientEnvironment?.bundledDev
+    ? clientEnvironment.bundledDev.memoryFiles
     : undefined
 
   function checkFileExists(relativePath: string) {

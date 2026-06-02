@@ -36,7 +36,7 @@ import {
 import { type WebSocketServer, isWebSocketServer } from './ws'
 import { warmupFiles } from './warmup'
 import { buildErrorMessage } from './middlewares/error'
-import { FullBundle } from './fullBundle'
+import { BundledDev } from './bundledDev'
 
 export interface DevEnvironmentContext {
   hot: boolean
@@ -107,7 +107,7 @@ export class DevEnvironment extends BaseEnvironment {
    */
   hot: NormalizedHotChannel
 
-  public bundle?: FullBundle
+  public bundledDev?: BundledDev
 
   constructor(
     name: string,
@@ -130,7 +130,7 @@ export class DevEnvironment extends BaseEnvironment {
       (name === 'client' && config.experimental.bundledDev)
     ) {
       context.disableDepsOptimizer = true
-      this.bundle = new FullBundle(this)
+      this.bundledDev = new BundledDev(this)
     }
 
     this._pendingRequests = new Map()
@@ -228,7 +228,7 @@ export class DevEnvironment extends BaseEnvironment {
    */
   async listen(server: ViteDevServer): Promise<void> {
     this.hot.listen()
-    await Promise.all([this.bundle?.listen(), this.depsOptimizer?.init()])
+    await Promise.all([this.bundledDev?.listen(), this.depsOptimizer?.init()])
     warmupFiles(server, this)
   }
 
@@ -260,7 +260,7 @@ export class DevEnvironment extends BaseEnvironment {
   }
 
   async warmupRequest(url: string): Promise<void> {
-    if (this.bundle) {
+    if (this.bundledDev) {
       // no-op
       return
     }
@@ -294,7 +294,7 @@ export class DevEnvironment extends BaseEnvironment {
     },
     _client: NormalizedHotChannelClient,
   ): void {
-    if (this.bundle) {
+    if (this.bundledDev) {
       this.invalidateModule(m, _client)
       return
     }
@@ -330,7 +330,7 @@ export class DevEnvironment extends BaseEnvironment {
     this._crawlEndFinder.cancel()
     await Promise.allSettled([
       this.pluginContainer.close(),
-      this.bundle?.close(),
+      this.bundledDev?.close(),
       this.depsOptimizer?.close(),
       // WebSocketServer is independent of HotChannel and should not be closed on environment close
       isWebSocketServer in this.hot ? Promise.resolve() : this.hot.close(),

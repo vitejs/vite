@@ -56,7 +56,7 @@ export class MemoryFiles {
   }
 }
 
-export class FullBundle {
+export class BundledDev {
   private _devEngine: DevEngine | undefined
   private initialBuildCompleted = false
   private clients = new Clients()
