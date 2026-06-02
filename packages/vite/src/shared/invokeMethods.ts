@@ -57,7 +57,7 @@ export interface ViteFetchResult {
   /**
    * Id that rolldown uses to track original modules.
    * This is primarily needed to update the exports map of HMR'd modules.
-   * @internal
+   * @experimental
    */
   regionId?: string
 }

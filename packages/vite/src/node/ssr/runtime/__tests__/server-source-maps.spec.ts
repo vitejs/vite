@@ -152,7 +152,7 @@ describe('module runner with node:vm executor', async () => {
     }
   }
 
-  it.scoped({
+  it.override({
     runnerOptions: {
       sourcemapInterceptor: 'prepareStackTrace',
       evaluator: new Evaluator(),

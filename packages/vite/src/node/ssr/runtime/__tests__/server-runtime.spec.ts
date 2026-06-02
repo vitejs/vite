@@ -152,7 +152,7 @@ describe.for([
   })
 
   it('exports is not modifiable', async ({ runner, skip, fullBundle }) => {
-    // TODO: fix in rolldown
+    // TODO: fix in rolldown https://github.com/rolldown/rolldown/issues/7722
     skip(!!fullBundle.length, "rolldown's module is not sealed")
 
     const mod = await runner.import('/fixtures/simple.js')
