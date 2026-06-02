@@ -149,10 +149,7 @@ describe(
       it('the exports object is updated', async ({ runner }) => {
         const exports1 = await runner.import('/fixtures/simple-hmr.js')
 
-        // TODO: Cannot use `toEqual` because rolldown injects something non-enumerable
-        expect(exports1).toMatchObject({
-          test: 'I am initialized',
-        })
+        expect(exports1).toHaveProperty('test', 'I am initialized')
         expect(exports1).not.toHaveProperty('hmr')
 
         const hmrCode = `\nexport const hmr = true;globalThis.__HMR_PROMISE__.resolve()`
@@ -165,7 +162,7 @@ describe(
           )
         })
 
-        await (globalThis as any).__HMR_PROMISE__
+        await (globalThis as any).__HMR_PROMISE__t
 
         const exports2 = await runner.import('/fixtures/simple-hmr.js')
         expect(exports2).toMatchObject({
