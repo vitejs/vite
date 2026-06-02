@@ -102,9 +102,7 @@ export async function fetchModule(
       const { searchParams } = new URL(url, 'http://localhost')
       const moduleId = searchParams.get('id')!
       const clientId = searchParams.get('clientId')!
-
       const code = await environment.triggerLazyBundling(moduleId, clientId)
-
       if (code == null) {
         throw new Error(`unknown request: ${url}`)
       }
@@ -128,7 +126,6 @@ export async function fetchModule(
 
     if (!importer) {
       const resolvedEntry = resolveEntryFilename(environment, url)!
-
       if (!resolvedEntry) {
         const entrypoints = [...environment.facadeToChunk.keys()]
         throw new Error(
@@ -138,16 +135,13 @@ export async function fetchModule(
               : `The build did not produce any chunks. Did it finish successfully? See the logs for more information.`),
         )
       }
-
-      fileName = resolvedEntry[1]
-      facadeId = resolvedEntry[0]
+      ;[facadeId, fileName] = resolvedEntry
     } else if (url[0] === '.') {
       // Importer is reported as a full path on the file system.
       // This happens because we provide the `file` attribute.
       if (importer.startsWith(outDir)) {
         importer = importer.slice(outDir.length + 1)
       }
-
       fileName = path.posix.join(path.posix.dirname(importer), url)
     } else {
       fileName = url

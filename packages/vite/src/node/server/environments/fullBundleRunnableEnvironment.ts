@@ -35,7 +35,7 @@ class FullBundleRunnableDevEnvironment extends FullBundleDevEnvironment {
   }
 
   protected override async getDevRuntimeImplementation(): Promise<string> {
-    return `
+    return /* js */ `
   class ViteDevRuntime extends DevRuntime {
     createModuleHotContext(moduleId) {
       return ${ssrRolldownRuntimeKey}.${ssrRolldownRuntimeCreateHotContextMethod}(moduleId)
