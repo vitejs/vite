@@ -45,7 +45,7 @@ export function licensePlugin(): Plugin {
   return {
     name: 'vite:license',
 
-    async generateBundle(_, bundle) {
+    generateBundle(_, bundle) {
       const licenseOption = this.environment.config.build.license
       if (licenseOption === false) return
 

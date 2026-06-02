@@ -1,9 +1,8 @@
 {
   "compilerOptions": {
-    "target": "ES2023",
-    "useDefineForClassFields": true,
-    "module": "ESNext",
-    "lib": ["ES2023", "DOM", "DOM.Iterable"],
+    "target": "es2023",
+    "module": "esnext",
+    "lib": ["ES2023", "DOM"],
     "types": ["vite/client"],
     "skipLibCheck": true,
 
@@ -15,12 +14,10 @@
     "noEmit": true,
 
     /* Linting */
-    "strict": true,
     "noUnusedLocals": true,
     "noUnusedParameters": true,
     "erasableSyntaxOnly": true,
-    "noFallthroughCasesInSwitch": true,
-    "noUncheckedSideEffectImports": true
+    "noFallthroughCasesInSwitch": true
   },
   "include": ["src"]
 }
