@@ -3272,7 +3272,8 @@ async function compileLightningCSS(
 
               // contrary to lightningcss, postcss-import does this internally
               if (absoluteOrProtocolRelativeUrlRE.test(id)) {
-                return { external: id }
+                // @ts-expect-error -- https://github.com/parcel-bundler/lightningcss/pull/1261
+                return { external: id } as string
               }
 
               // NOTE: with `transformer: 'postcss'`, CSS modules `composes` tried to resolve with
@@ -3403,7 +3404,9 @@ async function compileLightningCSS(
         break
       }
       default:
-        throw new Error(`Unsupported dependency type: ${dep.type}`)
+        throw new Error(
+          `Unsupported dependency type: ${(dep satisfies never as any).type}`,
+        )
     }
   }
 
