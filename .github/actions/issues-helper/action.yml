@@ -113,7 +113,7 @@ runs:
               .filter(e => e.event === 'labeled' && labelSet.has(e.label?.name))
               .at(-1)?.created_at
 
-            if (!labeledAt || new Date(labeledAt) > cutoff) continue
+            if (!labeledAt || new Date(labeledAt) > cutoff || new Date(issue.updated_at) > cutoff) continue
 
             console.log(`Closing #${issue.number}, labeled at ${labeledAt}`)
             await github.rest.issues.update({
