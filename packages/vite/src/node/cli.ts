@@ -427,6 +427,7 @@ cli
   .option('--strictPort', `[boolean] exit if specified port is already in use`)
   .option('--open [path]', `[boolean | string] open browser on startup`)
   .option('--outDir <dir>', `[string] output directory (default: dist)`)
+  .option('--watch', `[boolean] reload browser when output files change`)
   .action(
     async (
       root: string,
@@ -436,6 +437,7 @@ cli
         open?: boolean | string
         strictPort?: boolean
         outDir?: string
+        watch?: boolean
       } & GlobalCLIOptions,
     ) => {
       filterDuplicateOptions(options)
@@ -456,6 +458,7 @@ cli
             strictPort: options.strictPort,
             host: options.host,
             open: options.open,
+            watch: options.watch,
           },
         })
         server.printUrls()
