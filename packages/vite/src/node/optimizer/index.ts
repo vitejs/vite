@@ -163,12 +163,20 @@ export interface DepOptimizationConfig {
    * @experimental
    */
   holdUntilCrawlEnd?: boolean
+  /**
+   * When enabled, Vite will not throw an error when an outdated optimized
+   * dependency is requested. Enabling this option may cause a single module
+   * to have a multiple reference.
+   * @default false
+   * @experimental
+   */
+  ignoreOutdatedRequests?: boolean
 }
 
 export type DepOptimizationOptions = DepOptimizationConfig & {
   /**
    * By default, Vite will crawl your `index.html` to detect dependencies that
-   * need to be pre-bundled. If `build.rollupOptions.input` is specified, Vite
+   * need to be pre-bundled. If `build.rolldownOptions.input` is specified, Vite
    * will crawl those entry points instead.
    *
    * If neither of these fit your needs, you can specify custom entries using
@@ -636,6 +644,12 @@ export function runOptimizeDeps(
 
   const start = performance.now()
 
+  const bundleTimer = setTimeout(() => {
+    environment.logger.info('[optimizer] bundling dependencies...', {
+      timestamp: true,
+    })
+  }, 1000)
+
   const preparedRun = prepareRolldownOptimizerRun(
     environment,
     depsInfo,
@@ -645,6 +659,7 @@ export function runOptimizeDeps(
 
   const runResult = preparedRun.then(({ context, idToExports }) => {
     if (!context || optimizerContext.cancelled) {
+      clearTimeout(bundleTimer)
       return cancelledResult
     }
 
@@ -704,6 +719,8 @@ export function runOptimizeDeps(
           }
         }
 
+        clearTimeout(bundleTimer)
+
         debug?.(
           `Dependencies bundled in ${(performance.now() - start).toFixed(2)}ms`,
         )
@@ -712,6 +729,7 @@ export function runOptimizeDeps(
       })
 
       .catch((e) => {
+        clearTimeout(bundleTimer)
         if (e.errors && e.message.includes('The build was canceled')) {
           // an error happens when cancelling, but this is expected so
           // return an empty result instead
@@ -775,7 +793,7 @@ async function prepareRolldownOptimizerRun(
         jsxLoader = true
       }
       const flatId = flattenId(id)
-      flatIdDeps[flatId] = src
+      flatIdDeps[flatId] = isWindows ? src.replaceAll('/', '\\') : src
       idToExports[id] = exportsData
     }),
   )
@@ -818,8 +836,8 @@ async function prepareRolldownOptimizerRun(
       plugins,
       platform,
       transform: {
-        ...rolldownOptions.transform,
         target: ESBUILD_BASELINE_WIDELY_AVAILABLE_TARGET,
+        ...rolldownOptions.transform,
         define,
       },
       resolve: {
@@ -837,16 +855,17 @@ async function prepareRolldownOptimizerRun(
       await bundle.close()
       throw new Error('The build was canceled')
     }
-    const result = await bundle.write({
-      legalComments: 'none',
-      ...rolldownOptions.output,
-      format: 'esm',
-      sourcemap: true,
-      dir: processingCacheDir,
-      entryFileNames: '[name].js',
-    })
-    await bundle.close()
-    return result
+    try {
+      return await bundle.write({
+        ...rolldownOptions.output,
+        format: 'esm',
+        sourcemap: true,
+        dir: processingCacheDir,
+        entryFileNames: '[name].js',
+      })
+    } finally {
+      await bundle.close()
+    }
   }
 
   function cancel() {
@@ -1139,7 +1158,7 @@ export async function extractExportsData(
       `Unable to parse: ${filePath}.\n Trying again with a ${lang} transform.`,
     )
     if (lang !== 'jsx' && lang !== 'tsx' && lang !== 'ts') {
-      throw new Error(`Unable to parse : ${filePath}.`)
+      throw new Error(`Unable to parse: ${filePath}.`)
     }
     const transformed = await transformWithOxc(
       entryContent,

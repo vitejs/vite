@@ -1,7 +1,9 @@
 import fs from 'node:fs'
 import path from 'node:path'
-import { parse } from 'dotenv'
+// eslint-disable-next-line n/no-unsupported-features/node-builtins -- our supported nodejs range supports `parseEnv` but in experimental state, which is fine
+import { parseEnv } from 'node:util'
 import { type DotenvPopulateInput, expand } from 'dotenv-expand'
+import colors from 'picocolors'
 import { arraify, createDebugger, normalizePath, tryStatSync } from './utils'
 import type { UserConfig } from './config'
 
@@ -45,9 +47,12 @@ export function loadEnv(
 
   const parsed = Object.fromEntries(
     envFiles.flatMap((filePath) => {
-      if (!tryStatSync(filePath)?.isFile()) return []
+      const stat = tryStatSync(filePath)
+      // Support FIFOs (named pipes) for apps like 1Password
+      if (!stat || (!stat.isFile() && !stat.isFIFO())) return []
 
-      return Object.entries(parse(fs.readFileSync(filePath)))
+      const parsedEnv = parseEnv(fs.readFileSync(filePath, 'utf-8'))
+      return Object.entries(parsedEnv as Record<string, string>)
     }),
   )
 
@@ -81,7 +86,7 @@ export function loadEnv(
   // these are typically provided inline and should be prioritized
   for (const key in process.env) {
     if (prefixes.some((prefix) => key.startsWith(prefix))) {
-      env[key] = process.env[key] as string
+      env[key] = process.env[key]!
     }
   }
 
@@ -97,6 +102,14 @@ export function resolveEnvPrefix({
   if (envPrefix.includes('')) {
     throw new Error(
       `envPrefix option contains value '', which could lead unexpected exposure of sensitive information.`,
+    )
+  }
+  if (envPrefix.some((prefix) => /\s/.test(prefix))) {
+    // eslint-disable-next-line no-console
+    console.warn(
+      colors.yellow(
+        `[vite] Warning: envPrefix option contains values with whitespace, which does not work in practice.`,
+      ),
     )
   }
   return envPrefix

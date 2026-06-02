@@ -1,4 +1,4 @@
-import { defineConfig } from 'tsdown'
+import { type UserConfig, defineConfig } from 'tsdown'
 
 export default defineConfig({
   entry: ['src/index.ts'],
@@ -6,4 +6,7 @@ export default defineConfig({
   tsconfig: false, // disable tsconfig `paths` when bundling
   dts: true,
   fixedExtension: false,
-})
+  deps: {
+    onlyBundle: ['picocolors'],
+  },
+}) as UserConfig

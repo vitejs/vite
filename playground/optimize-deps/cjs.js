@@ -5,6 +5,7 @@ import React, { useState } from 'react'
 import ReactDOM from 'react-dom/client'
 import { Socket } from 'phoenix'
 import clip from 'clipboard'
+import m from '@vitejs/test-dep-cjs-with-es-module-flag'
 import cjsFromESM from '@vitejs/test-dep-cjs-compiled-from-esm'
 import cjsFromCJS from '@vitejs/test-dep-cjs-compiled-from-cjs'
 import * as cjsFromCJSNamespace from '@vitejs/test-dep-cjs-compiled-from-cjs'
@@ -21,6 +22,8 @@ if (typeof clip === 'function') {
 if (typeof Socket === 'function') {
   text('.cjs-phoenix', 'ok')
 }
+
+text('.cjs-with-es-module-flag', m.info)
 
 if (typeof cjsFromESM.default === 'function') {
   text('.cjs-dep-cjs-compiled-from-esm', 'ok')

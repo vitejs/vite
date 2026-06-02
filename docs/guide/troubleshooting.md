@@ -19,7 +19,7 @@ You will need to either:
 
 ### This package is ESM only
 
-When importing a ESM only package by `require`, the following error happens.
+When importing an ESM only package by `require`, the following error happens.
 
 > Failed to resolve "foo". This package is ESM only but it was tried to load by `require`.
 
@@ -73,6 +73,31 @@ Note that these settings persist but a **restart is required**.
 
 Alternatively, if the server is running inside a VS Code devcontainer, the request may appear to be stalled. To fix this issue, see
 [Dev Containers / VS Code Port Forwarding](#dev-containers-vs-code-port-forwarding).
+
+### Vite crashes with ENOSPC error
+
+If you see an error like this on Linux:
+
+> Error: ENOSPC: System limit for number of file watchers reached
+
+This happens when you have too many files in your project directory (e.g., many images or assets) and exceed the system's file watcher limit. Linux has a default limit of around 8,192-10,000 file watchers.
+
+To solve this, you can:
+
+- Increase the system file watcher limit:
+
+  ```shell
+  # Check current limit
+  $ cat /proc/sys/fs/inotify/max_user_watches
+  # Increase limit (temporary)
+  $ sudo sysctl fs.inotify.max_user_watches=524288
+  # Make it permanent - add to /etc/sysctl.conf (or edit if it already exists)
+  $ echo "fs.inotify.max_user_watches=524288" | sudo tee -a /etc/sysctl.conf
+  $ sudo sysctl -p
+  ```
+
+- Exclude directories with many files from file watching using [`server.watch.ignored`](/config/server-options#server-watch)
+- Use polling instead of file system events with [`server.watch.usePolling`](/config/server-options#server-watch). Note that polling uses more CPU resources
 
 ### Network requests stop loading
 
@@ -261,6 +286,18 @@ An example of cross drive links are:
 - a symlink/junction to a different drive by `mklink` command (e.g. Yarn global cache)
 
 Related issue: [#10802](https://github.com/vitejs/vite/issues/10802)
+
+### Default import unexpectedly returns an object
+
+The default import returns the `module.exports` object for CJS modules, while you may expect it to return the `module.exports.default` value.
+
+This may cause errors like:
+
+> Element type is invalid: expected a string (for built-in components) or a class/function (for composite components) but got: object.
+
+> foo is not a function
+
+See Rolldown's docs about this problem for more details: [Ambiguous `default` import from CJS modules - Bundling CJS | Rolldown](https://rolldown.rs/in-depth/bundling-cjs#ambiguous-default-import-from-cjs-modules).
 
 <script setup lang="ts">
 // redirect old links with hash to old version docs

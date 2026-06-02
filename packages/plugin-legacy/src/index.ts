@@ -19,11 +19,11 @@ import colors from 'picocolors'
 import browserslist from 'browserslist'
 import type { Options } from './types'
 import {
+  createModernChunkLegacyGuard,
   detectModernBrowserCode,
   dynamicFallbackInlineCode,
   legacyEntryId,
   legacyPolyfillId,
-  modernChunkLegacyGuard,
   safari10NoModuleFix,
   systemJSInlineCode,
 } from './snippets'
@@ -73,6 +73,7 @@ function toOutputFilePathInHtml(
   if (relative && !config.build.ssr) {
     return toRelative(filename, hostId)
   } else {
+    // @ts-expect-error `decodedBase` is internal
     return joinUrlSegments(config.decodedBase, filename)
   }
 }
@@ -118,25 +119,29 @@ function toAssetPathFromHtml(
 }
 
 const legacyEnvVarMarker = `__VITE_IS_LEGACY__`
+const modernEnvVarMarker = `__VITE_IS_MODERN__`
 
 const _require = createRequire(import.meta.url)
 
 const nonLeadingHashInFileNameRE = /[^/]+\[hash(?::\d+)?\]/
 const prefixedHashInFileNameRE = /\W?\[hash(?::\d+)?\]/
+export const modulePreloadLinkRE: RegExp =
+  /<link(?![\w-])[^>]*?\srel=(['"])modulepreload\1[^>]*>/g
 
-// browsers supporting ESM + dynamic import + import.meta + async generator
+// browsers supporting dynamic import + import.meta.resolve + async generator
 const modernTargetsEsbuild = [
   'es2020',
-  'edge79',
-  'firefox67',
-  'chrome64',
-  'safari12',
+  'edge105',
+  'firefox106',
+  'chrome105',
+  'safari16.4',
+  'ios16.4',
 ]
 // same with above but by browserslist syntax
 // es2020 = chrome 80+, safari 13.1+, firefox 72+, edge 80+
 // https://github.com/evanw/esbuild/issues/121#issuecomment-646956379
 const modernTargetsBabel =
-  'edge>=79, firefox>=67, chrome>=64, safari>=12, chromeAndroid>=64, iOS>=12'
+  'edge>=105, firefox>=106, chrome>=105, safari>=16.4, chromeAndroid>=105, iOS>=16.4'
 
 const outputOptionsForLegacyChunks =
   new WeakSet<Rollup.NormalizedOutputOptions>()
@@ -516,7 +521,7 @@ function viteLegacyPlugin(options: Options = {}): Plugin[] {
 
         if (genLegacy && chunk.isEntry) {
           // append this code to avoid modern chunks running on legacy targeted browsers
-          ms.prepend(modernChunkLegacyGuard)
+          ms.prepend(createModernChunkLegacyGuard(chunk.fileName))
         }
 
         if (raw.includes(legacyEnvVarMarker)) {
@@ -590,6 +595,7 @@ function viteLegacyPlugin(options: Options = {}): Plugin[] {
               plugins: [
                 recordAndRemovePolyfillBabelPlugin(polyfillsDiscovered.legacy),
                 replaceLegacyEnvBabelPlugin(),
+                replaceModernEnvBabelPlugin(),
                 wrapIIFEBabelPlugin(),
               ],
             }),
@@ -637,7 +643,9 @@ function viteLegacyPlugin(options: Options = {}): Plugin[] {
         }
       }
       if (!genModern) {
-        html = html.replace(/<script type="module".*?<\/script>/g, '')
+        html = html
+          .replace(/<script type="module".*?<\/script>/g, '')
+          .replace(modulePreloadLinkRE, '')
       }
 
       const tags: HtmlTagDescriptor[] = []
@@ -900,9 +908,16 @@ async function buildPolyfillChunk(
 
   // add the chunk to the bundle
   ctx.emitFile({
-    type: 'asset',
+    type: 'prebuilt-chunk',
+    name: polyfillChunk.name,
     fileName: polyfillChunk.fileName,
-    source: polyfillChunk.code,
+    code: polyfillChunk.code,
+    facadeModuleId: polyfillChunk.facadeModuleId ?? undefined,
+    isEntry: polyfillChunk.isEntry,
+    isDynamicEntry: polyfillChunk.isDynamicEntry,
+    exports: [],
+    map: polyfillChunk.map ?? undefined,
+    sourcemapFileName: polyfillChunk.sourcemapFileName ?? undefined,
   })
   if (polyfillChunk.sourcemapFileName) {
     const polyfillChunkMapAsset = _polyfillChunk.output.find(
@@ -951,7 +966,10 @@ function prependModenChunkLegacyGuardPlugin(): Plugin {
     configResolved(config) {
       sourceMapEnabled = !!config.build.sourcemap
     },
-    renderChunk(code) {
+    renderChunk(code, chunk) {
+      const modernChunkLegacyGuard = createModernChunkLegacyGuard(
+        chunk.fileName,
+      )
       if (!sourceMapEnabled) {
         return modernChunkLegacyGuard + code
       }
@@ -1001,6 +1019,19 @@ function replaceLegacyEnvBabelPlugin(): BabelPlugin {
       Identifier(path) {
         if (path.node.name === legacyEnvVarMarker) {
           path.replaceWith(t.booleanLiteral(true))
+        }
+      },
+    },
+  })
+}
+
+function replaceModernEnvBabelPlugin(): BabelPlugin {
+  return ({ types: t }): BabelPlugin => ({
+    name: 'vite-replace-env-modern',
+    visitor: {
+      Identifier(path) {
+        if (path.node.name === modernEnvVarMarker) {
+          path.replaceWith(t.booleanLiteral(false))
         }
       },
     },

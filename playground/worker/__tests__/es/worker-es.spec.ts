@@ -96,7 +96,17 @@ describe.runIf(isBuild)('build', () => {
   test('inlined code generation', async () => {
     const assetsDir = path.resolve(testDir, 'dist/es/assets')
     const files = fs.readdirSync(assetsDir)
-    expect(files.length).toBe(38)
+
+    // inline-only worker should not be emitted as a separate worker file
+    const workerFiles = files.filter((f) => f.startsWith('worker_'))
+    for (const file of workerFiles) {
+      const fileContent = fs.readFileSync(
+        path.resolve(assetsDir, file),
+        'utf-8',
+      )
+      expect(fileContent).not.toContain('my-inline-shared-worker.js')
+    }
+
     const index = files.find((f) => f.includes('main-module'))
     const content = fs.readFileSync(path.resolve(assetsDir, index), 'utf-8')
     const worker = files.find((f) => f.includes('my-worker'))
@@ -189,6 +199,12 @@ test('import.meta.glob with eager in worker', async () => {
   await expect
     .poll(() => page.textContent('.importMetaGlobEager-worker'))
     .toMatch('["')
+})
+
+test.runIf(isBuild)('require json in worker', async () => {
+  await expect
+    .poll(() => page.textContent('.worker-require-json'))
+    .toMatch('[{"name":"a"},{"name":"b"}]')
 })
 
 test('self reference worker', async () => {

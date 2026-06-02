@@ -53,7 +53,7 @@ describe.runIf(isBuild)('build', () => {
     expect(code).not.toMatch('__vitePreload')
 
     // Test that library chunks are hashed
-    expect(code).toMatch(/await import\("\.\/message-[-\w]{8}.js"\)/)
+    expect(code).toMatch(/await import\(['"`]\.\/message-[-\w]{8}.js['"`]\)/)
   })
 
   test('Library mode does not have any reference to pure CSS chunks', async () => {
@@ -64,6 +64,16 @@ describe.runIf(isBuild)('build', () => {
       /await import\(['"`]\.\/dynamic-[-\w]{8}.js['"`]\)/,
     )
     expect(code).toMatch(/await Promise.resolve\(\{.*\}\)/)
+  })
+
+  test('pure annotations are kept for es output', () => {
+    const es = readFile('dist/my-lib-custom-filename.js')
+    expect(es).toMatch(/[@#]__PURE__/)
+  })
+
+  test('pure annotations are removed for non-es output', () => {
+    const es = readFile('dist/my-lib-custom-filename.iife.js')
+    expect(es).not.toMatch(/[@#]__PURE__/)
   })
 
   test('@import hoist', async () => {

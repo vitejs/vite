@@ -22,6 +22,8 @@ You can also explicitly specify a config file to use with the `--config` CLI opt
 vite --config my-config.js
 ```
 
+<ScrimbaLink href="https://scrimba.com/intro-to-vite-c03p6pbbdq/~05jg?via=vite" title="Configuring Vite">Watch an interactive lesson on Scrimba</ScrimbaLink>
+
 ::: tip CONFIG LOADING
 By default, Vite uses [Rolldown](https://rolldown.rs/) to bundle the config into a temporary file and load it. This may cause issues when importing TypeScript files in a monorepo. If you encounter any issues with this approach, you can specify `--configLoader runner` to use the [module runner](/guide/api-environment-runtimes.html#modulerunner) instead, which will not create a temporary config and will transform any files on the fly. Note that module runner doesn't support CJS in config files, but external CJS packages should work as usual.
 

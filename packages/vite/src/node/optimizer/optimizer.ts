@@ -200,6 +200,12 @@ export function createDepsOptimizer(
             try {
               debug?.(colors.green(`scanning for dependencies...`))
 
+              const scanTimer = setTimeout(() => {
+                logger.info('[optimizer] scanning dependencies...', {
+                  timestamp: true,
+                })
+              }, 1000)
+
               let deps: Record<string, string>
               try {
                 discover = discoverProjectDependencies(
@@ -216,6 +222,8 @@ export function createDepsOptimizer(
                   ),
                 )
                 return
+              } finally {
+                clearTimeout(scanTimer)
               }
 
               const manuallyIncluded = Object.keys(manuallyIncludedDepsInfo)
@@ -532,7 +540,7 @@ export function createDepsOptimizer(
     })
   }
 
-  async function rerun() {
+  function rerun() {
     // debounce time to wait for new missing deps finished, issue a new
     // optimization of deps (both old and newly found) once the previous
     // optimizeDeps processing is finished

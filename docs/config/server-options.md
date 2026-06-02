@@ -16,20 +16,7 @@ This can be set via the CLI using `--host 0.0.0.0` or `--host`.
 
 There are cases when other servers might respond instead of Vite.
 
-The first case is when `localhost` is used. Node.js under v17 reorders the result of DNS-resolved addresses by default. When accessing `localhost`, browsers use DNS to resolve the address and that address might differ from the address which Vite is listening to. Vite prints the resolved address when it differs.
-
-You can set [`dns.setDefaultResultOrder('verbatim')`](https://nodejs.org/api/dns.html#dns_dns_setdefaultresultorder_order) to disable the reordering behavior. Vite will then print the address as `localhost`.
-
-```js twoslash [vite.config.js]
-import { defineConfig } from 'vite'
-import dns from 'node:dns'
-
-dns.setDefaultResultOrder('verbatim')
-
-export default defineConfig({
-  // omit
-})
-```
+The first case is when `localhost` is used. Node.js's [`dns.setDefaultResultOrder`](https://nodejs.org/docs/latest-v24.x/api/dns.html#dnssetdefaultresultorderorder) changes how DNS-resolved addresses are ordered, and browsers may use a different resolved address than the one Vite is listening to. Vite prints the resolved address when it differs.
 
 The second case is when wildcard hosts (e.g. `0.0.0.0`) are used. This is because servers listening on non-wildcard hosts take priority over those listening on wildcard hosts.
 
@@ -252,6 +239,44 @@ The error that appears in the Browser when the fallback happens can be ignored. 
 
 :::
 
+## server.forwardConsole
+
+- **Type:** `boolean | { unhandledErrors?: boolean, logLevels?: ('error' | 'warn' | 'info' | 'log' | 'debug')[] }`
+- **Default:** auto (`true` when an AI coding agent is detected based on [`@vercel/detect-agent`](https://www.npmjs.com/package/@vercel/detect-agent), otherwise `false`)
+
+Forward browser runtime events to the Vite server console during development.
+
+- `true` enables forwarding unhandled errors and `console.error` / `console.warn` logs.
+- `unhandledErrors` controls forwarding uncaught exceptions and unhandled promise rejections.
+- `logLevels` controls which `console.*` calls are forwarded.
+
+For example:
+
+```js
+export default defineConfig({
+  server: {
+    forwardConsole: {
+      unhandledErrors: true,
+      logLevels: ['warn', 'error'],
+    },
+  },
+})
+```
+
+When unhandled errors are forwarded, they are logged in the server terminal with enhanced formatting, for example:
+
+```log
+1:18:38 AM [vite] (client) [Unhandled error] Error: this is test error
+ > testError src/main.ts:20:8
+     18|
+     19| function testError() {
+     20|   throw new Error('this is test error')
+       |        ^
+     21| }
+     22|
+ > HTMLButtonElement.<anonymous> src/main.ts:6:2
+```
+
 ## server.warmup
 
 - **Type:** `{ clientFiles?: string[], ssrFiles?: string[] }`
@@ -409,6 +434,12 @@ This blocklist does not apply to [the public directory](/guide/assets.md#the-pub
 
 :::
 
+::: tip NOTE
+
+The deny filter is applied against the module id and the id with query parameters stripped. Since a plugin can read files from any files in its load hook (including resolving symlinks to denied paths), Vite cannot guarantee that a denied file is inaccessible through an alternative path. If you have an alternative path, include it in the deny list as well.
+
+:::
+
 ## server.origin
 
 - **Type:** `string`
@@ -430,7 +461,7 @@ export default defineConfig({
 
 Whether or not to ignore source files in the server sourcemap, used to populate the [`x_google_ignoreList` source map extension](https://developer.chrome.com/articles/x-google-ignore-list/).
 
-`server.sourcemapIgnoreList` is the equivalent of [`build.rollupOptions.output.sourcemapIgnoreList`](https://rollupjs.org/configuration-options/#output-sourcemapignorelist) for the dev server. A difference between the two config options is that the rollup function is called with a relative path for `sourcePath` while `server.sourcemapIgnoreList` is called with an absolute path. During dev, most modules have the map and the source in the same folder, so the relative path for `sourcePath` is the file name itself. In these cases, absolute paths makes it convenient to be used instead.
+`server.sourcemapIgnoreList` is the equivalent of [`build.rolldownOptions.output.sourcemapIgnoreList`](https://rollupjs.org/configuration-options/#output-sourcemapignorelist) for the dev server. A difference between the two config options is that the rollup function is called with a relative path for `sourcePath` while `server.sourcemapIgnoreList` is called with an absolute path. During dev, most modules have the map and the source in the same folder, so the relative path for `sourcePath` is the file name itself. In these cases, absolute paths makes it convenient to be used instead.
 
 By default, it excludes all paths containing `node_modules`. You can pass `false` to disable this behavior, or, for full control, a function that takes the source path and sourcemap path and returns whether to ignore the source path.
 
@@ -447,5 +478,5 @@ export default defineConfig({
 ```
 
 ::: tip Note
-[`server.sourcemapIgnoreList`](#server-sourcemapignorelist) and [`build.rollupOptions.output.sourcemapIgnoreList`](https://rollupjs.org/configuration-options/#output-sourcemapignorelist) need to be set independently. `server.sourcemapIgnoreList` is a server only config and doesn't get its default value from the defined rollup options.
+[`server.sourcemapIgnoreList`](#server-sourcemapignorelist) and [`build.rolldownOptions.output.sourcemapIgnoreList`](https://rollupjs.org/configuration-options/#output-sourcemapignorelist) need to be set independently. `server.sourcemapIgnoreList` is a server only config and doesn't get its default value from the defined rollup options.
 :::

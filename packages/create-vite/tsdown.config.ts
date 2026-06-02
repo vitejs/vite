@@ -7,6 +7,9 @@ export default defineConfig(() => ({
   target: 'node20',
   minify: true,
   fixedExtension: false,
+  deps: {
+    onlyBundle: false as const,
+  },
   plugins: [
     licensePlugin(
       path.resolve(import.meta.dirname, './LICENSE'),

@@ -1,6 +1,8 @@
 import path from 'node:path'
 import { defineConfig } from 'vite'
 import svgVirtualModulePlugin from './svgVirtualModulePlugin'
+import matrixTestResultPlugin from './matrixTestResultPlugin'
+import { getWindows83ShortNameForDotEnv } from './windows83Filename'
 
 const BASE = '/base/'
 
@@ -9,14 +11,15 @@ export default defineConfig({
   build: {
     rollupOptions: {
       input: {
-        main: path.resolve(__dirname, 'src/index.html'),
+        main: path.resolve(import.meta.dirname, 'src/index.html'),
       },
     },
+    outDir: 'dist/base',
   },
   server: {
     fs: {
       strict: true,
-      allow: [path.resolve(__dirname, 'src')],
+      allow: [path.resolve(import.meta.dirname, 'src')],
     },
     hmr: {
       overlay: false,
@@ -31,8 +34,9 @@ export default defineConfig({
     },
   },
   define: {
-    ROOT: JSON.stringify(path.dirname(__dirname).replace(/\\/g, '/')),
+    ROOT: JSON.stringify(path.dirname(import.meta.dirname).replace(/\\/g, '/')),
     BASE: JSON.stringify(BASE),
+    DOTENV83SHORTNAME: JSON.stringify(getWindows83ShortNameForDotEnv()),
   },
-  plugins: [svgVirtualModulePlugin()],
+  plugins: [svgVirtualModulePlugin(), matrixTestResultPlugin()],
 })

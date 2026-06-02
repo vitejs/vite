@@ -13,7 +13,6 @@
     {
       "matchDepTypes": ["action"],
       "pinDigests": true,
-      "matchPackageNames": ["!actions/{/,}**", "!github/{/,}**"],
     },
     {
       "groupName": "rolldown-related dependencies",
@@ -28,12 +27,10 @@
   ],
   "ignoreDeps": [
     // manually bumping
-    "esbuild",
     "rollup",
     "node",
     "typescript",
     "@rollup/plugin-dynamic-import-vars", // prefer version using tinyglobby
-    "@oxc-project/types", // align version with rolldown
 
     // pinned
     "slash3",
