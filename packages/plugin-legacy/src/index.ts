@@ -167,7 +167,7 @@ function viteLegacyPlugin(options: Options = {}): Plugin[] {
   const assumptions = options.assumptions || {}
 
   const facadeToLegacyChunkMap = new Map()
-  const facedeToLegacyImportMap = new Map<string | null, Rollup.OutputAsset>()
+  const facadeToLegacyImportMap = new Map<string | null, Rollup.OutputAsset>()
   const facadeToLegacyPolyfillMap = new Map()
   const facadeToModernPolyfillMap = new Map()
   const modernPolyfills = new Set<string>()
@@ -640,7 +640,7 @@ function viteLegacyPlugin(options: Options = {}): Plugin[] {
         // modern bundle will be generated. Here we simply record its corresponding legacy chunk.
         facadeToLegacyChunkMap.set(chunk.facadeModuleId, chunk.fileName)
         if (config.build.chunkImportMap) {
-          facedeToLegacyImportMap.set(
+          facadeToLegacyImportMap.set(
             chunk.facadeModuleId,
             bundle![getImportMapFilename(config)]! as Rollup.OutputAsset,
           )
@@ -690,7 +690,7 @@ function viteLegacyPlugin(options: Options = {}): Plugin[] {
 
       // 2. inject importmaps
       if (config.build.chunkImportMap) {
-        const importMap = facedeToLegacyImportMap.get(chunk.facadeModuleId)!
+        const importMap = facadeToLegacyImportMap.get(chunk.facadeModuleId)!
         const decoder = new TextDecoder()
         tags.push({
           tag: 'script',
