@@ -108,6 +108,7 @@ import type { DevEnvironment } from './environment'
 import { hostValidationMiddleware } from './middlewares/hostCheck'
 import { rejectInvalidRequestMiddleware } from './middlewares/rejectInvalidRequest'
 import { memoryFilesMiddleware } from './middlewares/memoryFiles'
+import { triggerLazyBundlingMiddleware } from './middlewares/triggerLazyBundling'
 
 const usedConfigs = new WeakSet<ResolvedConfig>()
 
@@ -781,10 +782,10 @@ export async function _createServer(
           config.logger.info,
         )
       } else if (middlewareMode) {
-        throw new Error('cannot print server URLs in middleware mode.')
+        throw new Error('Cannot print server URLs in middleware mode.')
       } else {
         throw new Error(
-          'cannot print server URLs before server.listen is called.',
+          'Cannot print server URLs before server.listen is called.',
         )
       }
     },
@@ -994,6 +995,7 @@ export async function _createServer(
   }
 
   if (config.experimental.bundledDev) {
+    middlewares.use(triggerLazyBundlingMiddleware(server))
     middlewares.use(memoryFilesMiddleware(server))
   } else {
     // main transform middleware

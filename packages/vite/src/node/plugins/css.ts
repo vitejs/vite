@@ -331,8 +331,8 @@ export function cssPlugin(config: ResolvedConfig): Plugin {
       )
     },
 
-    buildEnd() {
-      preprocessorWorkerController?.close()
+    async buildEnd() {
+      await preprocessorWorkerController?.close()
     },
 
     load: {
@@ -491,7 +491,9 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
       return path.dirname(
         assetFileNames({
           type: 'asset',
+          name: cssAssetName,
           names: [cssAssetName],
+          originalFileName,
           originalFileNames: originalFileName ? [originalFileName] : [],
           source: '/* vite internal call, ignore */',
         }),
@@ -594,7 +596,7 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
 
           const cssContent = await getContentWithSourcemap(css)
           const code = [
-            config.isBundled
+            this.environment.config.isBundled
               ? `const { updateStyle: __vite__updateStyle, removeStyle: __vite__removeStyle } = import.meta.hot._internal`
               : `import { updateStyle as __vite__updateStyle, removeStyle as __vite__removeStyle } from ${JSON.stringify(
                   path.posix.join(config.base, CLIENT_PUBLIC_PATH),
@@ -1175,6 +1177,10 @@ export function cssAnalysisPlugin(config: ResolvedConfig): Plugin {
   return {
     name: 'vite:css-analysis',
 
+    applyToEnvironment(environment) {
+      return !environment.config.isBundled
+    },
+
     transform: {
       filter: {
         id: {
@@ -1277,13 +1283,15 @@ export function getEmptyChunkReplacer(
 
 const fileURLWithWindowsDriveRE = /^file:\/\/\/[a-zA-Z]:\//
 
-interface CSSAtImportResolvers {
+export interface CSSAtImportResolvers {
   css: ResolveIdFn
   sass: ResolveIdFn
   less: ResolveIdFn
 }
 
-function createCSSResolvers(config: ResolvedConfig): CSSAtImportResolvers {
+export function createCSSResolvers(
+  config: ResolvedConfig,
+): CSSAtImportResolvers {
   let cssResolve: ResolveIdFn | undefined
   let sassResolve: ResolveIdFn | undefined
   let lessResolve: ResolveIdFn | undefined
@@ -2391,7 +2399,7 @@ type StylePreprocessor<Options extends StylePreprocessorInternalOptions> = {
     options: Options,
     resolvers: CSSAtImportResolvers,
   ) => StylePreprocessorResults | Promise<StylePreprocessorResults>
-  close: () => void
+  close: () => void | Promise<void>
 }
 
 export interface StylePreprocessorResults {
@@ -2612,8 +2620,8 @@ const scssProcessor = (
   const normalizedErrors = new WeakSet<Error>()
 
   return {
-    close() {
-      worker?.stop()
+    async close() {
+      await worker?.stop()
     },
     async process(environment, source, root, options, resolvers) {
       let sassPackage = loadSassPackage(root, failedSassEmbedded ?? false)
@@ -3150,10 +3158,8 @@ const createPreprocessorWorkerController = (maxWorkers: number | undefined) => {
       return scss.process(environment, source, root, opts, resolvers)
     }
 
-  const close = () => {
-    less.close()
-    scss.close()
-    styl.close()
+  const close = async () => {
+    await Promise.all([less.close(), scss.close(), styl.close()])
   }
 
   return {

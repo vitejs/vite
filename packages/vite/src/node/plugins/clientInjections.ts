@@ -34,6 +34,9 @@ export function clientInjectionsPlugin(config: ResolvedConfig): Plugin {
 
   return {
     name: 'vite:client-inject',
+    applyToEnvironment(environment) {
+      return !environment.config.isBundled
+    },
     async buildStart() {
       injectConfigValues = await createClientConfigValueReplacer(config)
     },

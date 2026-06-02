@@ -644,6 +644,15 @@ if (isBundleMode && typeof DevRuntime !== 'undefined') {
     }
   }
 
+  const clientId = nanoid()
+
+  // notify client id
+  transport.send({
+    type: 'custom',
+    event: 'vite:module-loaded',
+    data: { modules: [], clientId },
+  })
+
   const wrappedSocket: Messenger = {
     send(message) {
       switch (message.type) {
@@ -652,7 +661,7 @@ if (isBundleMode && typeof DevRuntime !== 'undefined') {
             type: 'custom',
             event: 'vite:module-loaded',
             // clone array as the runtime reuses the array instance
-            data: { modules: message.modules.slice() },
+            data: { modules: message.modules.slice(), clientId },
           })
           break
         }
@@ -661,7 +670,6 @@ if (isBundleMode && typeof DevRuntime !== 'undefined') {
       }
     },
   }
-  const clientId = nanoid()
   ;(globalThis as any).__rolldown_runtime__ ??= new ViteDevRuntime(
     wrappedSocket,
     clientId,
