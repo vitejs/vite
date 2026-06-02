@@ -4,10 +4,8 @@ import type { ViteDevServer } from '..'
 export function triggerLazyBundlingMiddleware(
   server: ViteDevServer,
 ): Connect.NextHandleFunction {
-  const bundle = server.environments.client.bundledDev
-    ? server.environments.client.bundledDev
-    : undefined
-  if (!bundle) {
+  const bundledDev = server.environments.client.bundledDev
+  if (!bundledDev) {
     throw new Error(
       'triggerLazyBundlingMiddleware can only be used for fullBundleMode',
     )
@@ -28,7 +26,7 @@ export function triggerLazyBundlingMiddleware(
 
     const moduleId = params.get('id')
     const clientId = params.get('clientId')
-    const code = await bundle.triggerLazyBundling(moduleId, clientId)
+    const code = await bundledDev.triggerLazyBundling(moduleId, clientId)
     if (code == null) {
       return next()
     }

@@ -453,10 +453,7 @@ export function indexHtmlMiddleware(
   server: ViteDevServer | PreviewServer,
 ): Connect.NextHandleFunction {
   const isDev = isDevServer(server)
-  const fullBundle =
-    isDev && server.environments.client.bundledDev
-      ? server.environments.client.bundledDev
-      : undefined
+  const fullBundle = isDev && server.environments.client.bundledDev
 
   // Keep the named function. The name is visible in debug logs via `DEBUG=connect:dispatcher ...`
   return async function viteIndexHtmlMiddleware(req, res, next) {
@@ -498,9 +495,7 @@ export function indexHtmlMiddleware(
           typeof file.source === 'string'
             ? file.source
             : Buffer.from(file.source)
-        const headers = isDev
-          ? server.config.server.headers
-          : server.config.preview.headers
+        const headers = server.config.server.headers
         return send(req, res, html, 'html', { headers, etag: file.etag })
       }
 

@@ -6,9 +6,7 @@ import type { ViteDevServer } from '..'
 export function memoryFilesMiddleware(
   server: ViteDevServer,
 ): Connect.NextHandleFunction {
-  const memoryFiles = server.environments.client.bundledDev
-    ? server.environments.client.bundledDev.memoryFiles
-    : undefined
+  const memoryFiles = server.environments.client.bundledDev?.memoryFiles
   if (!memoryFiles) {
     throw new Error('memoryFilesMiddleware can only be used for fullBundleMode')
   }
