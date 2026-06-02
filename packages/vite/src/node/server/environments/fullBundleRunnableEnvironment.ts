@@ -46,8 +46,8 @@ class FullBundleRunnableDevEnvironment extends FullBundleDevEnvironment {
     }
   }
 
-  // TODO: more random
-  const clientId = String(Date.now())
+  const rand = (Math.random() * 1000).toFixed(0).padStart(3, '0')
+  const clientId = String(Date.now()) + rand
 
   ${ssrRolldownRuntimeKey}.${ssrRolldownRuntimeTransport}?.send({
     type: 'custom',
