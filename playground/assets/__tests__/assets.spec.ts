@@ -67,7 +67,7 @@ test('should get a 404 when using incorrect case', async () => {
   expect(barResult.status).toBe(200)
 })
 
-test('should fallback to index.html when accessing non-existant html file', async () => {
+test('should fallback to index.html when accessing non-existent html file', async () => {
   expect((await fetchPath('doesnt-exist.html')).status).toBe(200)
 })
 
@@ -703,6 +703,27 @@ describe.runIf(isBuild)('css and assets in css in build watch', () => {
     const cssFile = findAssetFile(/index-[-\w]+\.css$/, 'foo')
     expect(cssFile).not.toBe('')
     expect(cssFile).not.toMatch(/undefined/)
+  })
+
+  test('old file is removed when the content changes', async () => {
+    await expect.poll(() => page.textContent('.update-content')).toBe('hello')
+
+    const oldMainJsFiles = listAssets('foo').filter((f) =>
+      /index-[-\w]+\.js$/.test(f),
+    )
+    expect(oldMainJsFiles.length).toBe(1)
+    const oldMainJsFile = oldMainJsFiles[0]
+
+    editFile('asset/update.js', (code) => code.replace('hello', 'world'))
+    await notifyRebuildComplete(watcher)
+    await page.reload()
+    await expect.poll(() => page.textContent('.update-content')).toBe('world')
+
+    const newMainJsFiles = listAssets('foo').filter((f) =>
+      /index-[-\w]+\.js$/.test(f),
+    )
+    expect(newMainJsFiles).not.toContain(oldMainJsFile)
+    expect(newMainJsFiles.length).toBe(1)
   })
 
   test('import module.css', async () => {

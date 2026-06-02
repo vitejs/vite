@@ -20,12 +20,16 @@ const generatedContentVirtualFile = '@generated-content-virtual-file'
 const generatedContentImports = [
   {
     specifier: normalizePath(
-      path.resolve(__dirname, './drive-relative.js').replace(/^[a-zA-Z]:/, ''),
+      path
+        .resolve(import.meta.dirname, './drive-relative.js')
+        .replace(/^[a-zA-Z]:/, ''),
     ),
     elementQuery: '.drive-relative',
   },
   {
-    specifier: normalizePath(path.resolve(__dirname, './absolute.js')),
+    specifier: normalizePath(
+      path.resolve(import.meta.dirname, './absolute.js'),
+    ),
     elementQuery: '.absolute',
   },
   {
@@ -150,14 +154,13 @@ export default defineConfig({
       name: 'resolve to non normalized absolute',
       async resolveId(id) {
         if (id !== '@non-normalized') return
-        return this.resolve(__dirname + '//non-normalized')
+        return this.resolve(import.meta.dirname + '//non-normalized')
       },
     },
   ],
   optimizeDeps: {
     include: [
       '@vitejs/test-resolve-exports-with-module-condition-required',
-      '@vitejs/test-require-pkg-with-module-field',
       '@vitejs/test-resolve-sharp-dir',
     ],
   },

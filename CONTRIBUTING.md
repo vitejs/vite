@@ -124,19 +124,12 @@ However, this behavior may not be desirable when you are developing source map r
 
 ## Testing Vite against external packages
 
-You may wish to test your locally modified copy of Vite against another package that is built with Vite. For pnpm, after building Vite, you can use [`pnpm.overrides`](https://pnpm.io/package_json#pnpmoverrides) to do this. Note that `pnpm.overrides` must be specified in the root `package.json`, and you must list the package as a dependency in the root `package.json`:
+You may wish to test your locally modified copy of Vite against another package that is built with Vite. For pnpm, after building Vite, you can use [`overrides`](https://pnpm.io/settings#overrides) to do this. In pnpm v10.5+, `overrides` should be specified in the root `pnpm-workspace.yaml`, and you must list the package as a dependency in the root `package.json`:
 
-```json
-{
-  "dependencies": {
-    "vite": "^7.0.0"
-  },
-  "pnpm": {
-    "overrides": {
-      "vite": "link:../path/to/vite/packages/vite"
-    }
-  }
-}
+```yaml
+# pnpm-workspace.yaml
+overrides:
+  vite: link:../path/to/vite/packages/vite
 ```
 
 And re-run `pnpm install` to link the package.
@@ -225,6 +218,9 @@ For a mock dependency, make sure you add a `@vitejs/test-` prefix to the package
 
 ## Pull Request Guidelines
 
+> [!NOTE]
+> You do not need to ask for permission to work on an open issue. You can start investigating or open a PR directly. If someone else ships a fix first, you can still help by reviewing or validating the solution.
+
 - Checkout a topic branch from a base branch (e.g. `main`), and merge back against that branch.
 
 - If adding a new feature:
@@ -234,7 +230,7 @@ For a mock dependency, make sure you add a `@vitejs/test-` prefix to the package
 - If fixing a bug:
   - If you are resolving a special issue, add `(fix #xxxx[,#xxxx])` (#xxxx is the issue id) in your PR title for a better release log (e.g. `fix: update entities encoding/decoding (fix #3899)`).
   - Provide a detailed description of the bug in the PR. Live demo preferred.
-  - Add appropriate test coverage if applicable.
+  - Add appropriate test coverage. If not applicable, explain in the PR description why tests are not included.
 
 - If it's a chore:
   - For typos and comment changes, try to combine multiple of them into a single PR.
@@ -245,7 +241,7 @@ For a mock dependency, make sure you add a `@vitejs/test-` prefix to the package
 
 - Make sure tests pass!
 
-- No need to worry about code style as long as you have installed the dev dependencies. Modified files are automatically formatted with Prettier on commit (by invoking [Git Hooks](https://git-scm.com/docs/githooks) via [simple-git-hooks](https://github.com/toplenboren/simple-git-hooks)).
+- No need to worry about code style as long as you have installed the dev dependencies. Modified files are automatically formatted with Oxfmt on commit (by invoking [Git Hooks](https://git-scm.com/docs/githooks) via [simple-git-hooks](https://github.com/toplenboren/simple-git-hooks)).
 
 - PR title must follow the [commit message convention](./.github/commit-convention.md) so that changelogs can be automatically generated.
 

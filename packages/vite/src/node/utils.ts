@@ -62,21 +62,25 @@ export const createFilter = _createFilter as (
   include?: FilterPattern,
   exclude?: FilterPattern,
   options?: { resolve?: string | false | null },
-) => (id: string | unknown) => boolean
+) => (id: unknown) => boolean
 
 export { withFilter } from 'rolldown/filter'
 
-const replaceSlashOrColonRE = /[/:]/g
-const replaceDotRE = /\./g
+// eslint-disable-next-line no-control-regex
+const invalidUrlPathCharRE = /[\u0000-\u001F"#$%&*+,:;<=>?[\]^`{|}\u007F]/g
 const replaceNestedIdRE = /\s*>\s*/g
-const replaceHashRE = /#/g
 export const flattenId = (id: string): string => {
   const flatId = limitFlattenIdLength(
     id
-      .replace(replaceSlashOrColonRE, '_')
-      .replace(replaceDotRE, '__')
-      .replace(replaceNestedIdRE, '___')
-      .replace(replaceHashRE, '____'),
+      .replaceAll(/_+/g, '$&__')
+      .replaceAll('/', '_')
+      .replaceAll('.', '__')
+      .replace(replaceNestedIdRE, '_n_')
+      // replace any characters that will be replaced by sanitizeFileName
+      .replace(
+        invalidUrlPathCharRE,
+        (c) => '_0' + c.charCodeAt(0).toString(16) + '_',
+      ),
   )
   return flatId
 }
@@ -920,17 +924,24 @@ export function unique<T>(arr: T[]): T[] {
  * Even if defaultResultOrder is `ipv4first`, `dns.lookup` result maybe same.
  * For example, when IPv6 is not supported on that machine/network.
  */
-export async function getLocalhostAddressIfDiffersFromDNS(): Promise<
-  string | undefined
-> {
-  const [nodeResult, dnsResult] = await Promise.all([
+export function getLocalhostAddressIfDiffersFromDNS():
+  | Promise<string | undefined>
+  | undefined {
+  // dns.getDefaultResultOrder is not available in bun 1.3.11 and deno 2.7.11
+  // while this is a bug in bun and deno, since this function is commonly called,
+  // we give a workaround specially until the API is supported in a few versions
+  if (dns.getDefaultResultOrder && dns.getDefaultResultOrder() === 'verbatim') {
+    return undefined
+  }
+  return Promise.all([
     dns.lookup('localhost'),
     dns.lookup('localhost', { verbatim: true }),
-  ])
-  const isSame =
-    nodeResult.family === dnsResult.family &&
-    nodeResult.address === dnsResult.address
-  return isSame ? undefined : nodeResult.address
+  ]).then(([nodeResult, dnsResult]) => {
+    const isSame =
+      nodeResult.family === dnsResult.family &&
+      nodeResult.address === dnsResult.address
+    return isSame ? undefined : nodeResult.address
+  })
 }
 
 export function diffDnsOrderChange(
@@ -1289,6 +1300,20 @@ const rollupOptionsRootPaths = new Set([
   'ssr.optimizeDeps',
 ])
 
+/**
+ * Sets up `rollupOptions` compat proxies for an environment.
+ */
+function setupRollupOptionCompatForEnvironment(environment: any): any {
+  if (!isObject(environment)) {
+    return environment
+  }
+  const merged: Record<string, any> = { ...environment }
+  if (isObject(merged.build)) {
+    setupRollupOptionCompat(merged.build, 'build')
+  }
+  return merged
+}
+
 export function hasBothRollupOptionsAndRolldownOptions(
   options: Record<string, any>,
 ): boolean {
@@ -1301,7 +1326,9 @@ export function hasBothRollupOptionsAndRolldownOptions(
     if (
       opt != null &&
       opt.rollupOptions != null &&
-      opt.rolldownOptions != null
+      opt.rolldownOptions != null &&
+      // Check they are not just proxy values created by setupRollupOptionCompat
+      opt.rollupOptions !== opt.rolldownOptions
     ) {
       return true
     }
@@ -1334,7 +1361,21 @@ function mergeConfigRecursively(
     }
 
     if (existing == null) {
-      merged[key] = value
+      if (rootPath === '' && key === 'environments' && isObject(value)) {
+        // Clone to avoid mutating the original override object
+        const environments = { ...value }
+        for (const envName in environments) {
+          environments[envName] = setupRollupOptionCompatForEnvironment(
+            environments[envName],
+          )
+        }
+        merged[key] = environments
+      } else if (rootPath === 'environments') {
+        // `environments` exists, but a new environment is added
+        merged[key] = setupRollupOptionCompatForEnvironment(value)
+      } else {
+        merged[key] = value
+      }
       continue
     }
 
@@ -1489,17 +1530,6 @@ export function stripBomTag(content: string): string {
   }
 
   return content
-}
-
-const windowsDrivePathPrefixRE = /^[A-Za-z]:[/\\]/
-
-/**
- * path.isAbsolute also returns true for drive relative paths on windows (e.g. /something)
- * this function returns false for them but true for absolute paths (e.g. C:/something)
- */
-export const isNonDriveRelativeAbsolutePath = (p: string): boolean => {
-  if (!isWindows) return p[0] === '/'
-  return windowsDrivePathPrefixRE.test(p)
 }
 
 /**
@@ -1773,4 +1803,33 @@ export function monotonicDateNow(): number {
 
   lastDateNow++
   return lastDateNow
+}
+
+export function formatAndTruncateFileList(files: string[]): {
+  formatted: string
+  truncated: boolean
+} {
+  const MAX_LOG_LENGTH = 500
+  let log = ''
+  let truncated = false
+  for (let i = 0; i < files.length; i++) {
+    const file = files[i]
+    if (log === '') {
+      log = file
+    } else if (log.length + 2 + file.length < MAX_LOG_LENGTH) {
+      log += ', ' + file
+    } else {
+      log += ` and ${files.length - i} more`
+      truncated = true
+      break
+    }
+  }
+  return { formatted: log, truncated }
+}
+
+const hashbangRE = /^#!.*\n/
+
+// find the start of the file, after the hashbang
+export function getFileStartIndex(code: string): number {
+  return hashbangRE.exec(code)?.[0].length ?? 0
 }

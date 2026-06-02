@@ -1,5 +1,6 @@
 <script setup>
 // these components live in @voidzero-dev/vitepress-theme
+import { computed } from 'vue'
 import Hero from './Hero.vue'
 import ViteFeatureGrid1 from './FeatureGrid1.vue'
 import ViteFeatureGrid2 from './FeatureGrid2.vue'
@@ -12,7 +13,11 @@ import Spacer from '@components/shared/Spacer.vue'
 import Footer from '@components/oss/Footer.vue'
 import { useSponsor } from '../composables/sponsor'
 
-const { data: sponsors } = useSponsor()
+const data = useSponsor()
+
+const sponsors = computed(
+  () => data.value?.filter((s) => s.tier !== 'Brought to you by') ?? [],
+)
 </script>
 
 <template>

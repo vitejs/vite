@@ -4,6 +4,7 @@ import fs from 'node:fs'
 import { stripVTControlCharacters } from 'node:util'
 import { expect, onTestFinished, test, vi } from 'vitest'
 import { createServer } from '../../server'
+import { DevEnvironment } from '../../server/environment'
 import { normalizePath } from '../../utils'
 
 const root = fileURLToPath(new URL('./', import.meta.url))
@@ -319,6 +320,32 @@ test('named exports overwrite export all', async () => {
   `)
 })
 
+test('throws when ssr environment is not runnable', async () => {
+  const server = await createServer({
+    configFile: false,
+    root,
+    logLevel: 'silent',
+    optimizeDeps: {
+      noDiscovery: true,
+    },
+    environments: {
+      ssr: {
+        dev: {
+          createEnvironment: (name, config) =>
+            new DevEnvironment(name, config, { hot: false }),
+        },
+      },
+    },
+  })
+  onTestFinished(() => server.close())
+
+  await expect(
+    server.ssrLoadModule('/fixtures/modules/has-invalid-import.js'),
+  ).rejects.toThrow(
+    "ssrLoadModule requires the 'ssr' environment to be a runnable environment.",
+  )
+})
+
 test('buildStart before transform', async () => {
   const fn = vi.fn()
   const server = await createServer({
@@ -378,4 +405,27 @@ test('buildStart before transform', async () => {
       ],
     ]
   `)
+})
+
+test('server.fs check is not applied to ssrLoadModule', async () => {
+  const server = await createServer({
+    configFile: false,
+    root,
+    logLevel: 'silent',
+    optimizeDeps: {
+      noDiscovery: true,
+    },
+    server: {
+      fs: {
+        allow: [
+          path.resolve(import.meta.dirname, './fixtures/named-overwrite-all'),
+        ],
+      },
+    },
+  })
+  onTestFinished(() => server.close())
+  await server.environments.ssr.pluginContainer.buildStart({})
+
+  const mod = await server.ssrLoadModule('/fixtures/basic/file.js')
+  expect(mod.default).toBe('ok')
 })

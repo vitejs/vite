@@ -14,7 +14,7 @@ export class EvaluatedModuleNode {
   public evaluated = false
   public meta: ResolvedResult | undefined
   public promise: Promise<any> | undefined
-  public exports: any | undefined
+  public exports: any
   public file: string
   public map: DecodedMap | undefined
 

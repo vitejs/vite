@@ -1,11 +1,11 @@
 import fs from 'node:fs'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
+import util from 'node:util'
 import type { SpawnOptions } from 'node:child_process'
 import spawn from 'cross-spawn'
 import mri from 'mri'
 import * as prompts from '@clack/prompts'
-import colors from 'picocolors'
 import { determineAgent } from '@vercel/detect-agent'
 
 const {
@@ -18,8 +18,9 @@ const {
   red,
   redBright,
   reset,
+  underline,
   yellow,
-} = colors
+} = createColors()
 
 const argv = mri<{
   template?: string
@@ -28,7 +29,7 @@ const argv = mri<{
   immediate?: boolean
   interactive?: boolean
 }>(process.argv.slice(2), {
-  boolean: ['help', 'overwrite', 'immediate', 'rolldown', 'interactive'],
+  boolean: ['help', 'overwrite', 'immediate', 'interactive'],
   alias: { h: 'help', t: 'template', i: 'immediate' },
   string: ['template'],
 })
@@ -43,22 +44,23 @@ When running in TTY, the CLI will start in interactive mode.
 
 Options:
   -t, --template NAME                   use a specific template
-  -i, --immediate                       install dependencies and start dev
+  -i, --immediate / --no-immediate      install dependencies and start dev
+  --overwrite                           remove existing files if target directory is not empty
   --interactive / --no-interactive      force interactive / non-interactive mode
+  -h, --help                            display this help message
 
 Available templates:
 ${yellow    ('vanilla-ts          vanilla'       )}
 ${green     ('vue-ts              vue'           )}
 ${cyan      ('react-ts            react'         )}
 ${cyan      ('react-compiler-ts   react-compiler')}
-${cyan      ('react-swc-ts        react-swc'     )}
 ${magenta   ('preact-ts           preact'        )}
 ${redBright ('lit-ts              lit'           )}
 ${red       ('svelte-ts           svelte'        )}
 ${blue      ('solid-ts            solid'         )}
 ${blueBright('qwik-ts             qwik'          )}`
 
-type ColorFunc = (str: string | number) => string
+type ColorFunc = (str: string) => string
 type Framework = {
   name: string
   display: string
@@ -68,6 +70,7 @@ type Framework = {
 type FrameworkVariant = {
   name: string
   display: string
+  link?: `https://${string}`
   color: ColorFunc
   customCommand?: string
 }
@@ -114,12 +117,14 @@ const FRAMEWORKS: Framework[] = [
       {
         name: 'custom-nuxt',
         display: 'Nuxt ↗',
+        link: 'https://nuxt.com',
         color: greenBright,
         customCommand: 'npm exec nuxi init TARGET_DIR',
       },
       {
         name: 'custom-vike-vue',
         display: 'Vike ↗',
+        link: 'https://vike.dev',
         color: greenBright,
         customCommand: 'npm create -- vike@latest --vue TARGET_DIR',
       },
@@ -141,11 +146,6 @@ const FRAMEWORKS: Framework[] = [
         color: blue,
       },
       {
-        name: 'react-swc-ts',
-        display: 'TypeScript + SWC',
-        color: blue,
-      },
-      {
         name: 'react',
         display: 'JavaScript',
         color: yellow,
@@ -156,39 +156,38 @@ const FRAMEWORKS: Framework[] = [
         color: yellow,
       },
       {
-        name: 'react-swc',
-        display: 'JavaScript + SWC',
-        color: yellow,
+        name: 'rsc',
+        display: 'RSC',
+        color: magenta,
+        customCommand:
+          'npm exec tiged vitejs/vite-plugin-react/packages/plugin-rsc/examples/starter TARGET_DIR',
       },
       {
         name: 'custom-react-router',
         display: 'React Router v7 ↗',
+        link: 'https://reactrouter.com',
         color: cyan,
         customCommand: 'npm create react-router@latest TARGET_DIR',
       },
       {
         name: 'custom-tanstack-router-react',
         display: 'TanStack Router ↗',
+        link: 'https://tanstack.com/router',
         color: cyan,
         customCommand:
-          'npm create -- tsrouter-app@latest TARGET_DIR --framework React --interactive',
+          'npm exec -- @tanstack/cli@latest create TARGET_DIR --framework react --interactive',
       },
       {
         name: 'redwoodsdk-standard',
         display: 'RedwoodSDK ↗',
-        color: red,
+        link: 'https://rwsdk.com',
+        color: cyan,
         customCommand: 'npm create rwsdk@latest TARGET_DIR',
-      },
-      {
-        name: 'rsc',
-        display: 'RSC ↗',
-        color: magenta,
-        customCommand:
-          'npm exec tiged vitejs/vite-plugin-react/packages/plugin-rsc/examples/starter TARGET_DIR',
       },
       {
         name: 'custom-vike-react',
         display: 'Vike ↗',
+        link: 'https://vike.dev',
         color: cyan,
         customCommand: 'npm create -- vike@latest --react TARGET_DIR',
       },
@@ -275,13 +274,15 @@ const FRAMEWORKS: Framework[] = [
       {
         name: 'custom-tanstack-router-solid',
         display: 'TanStack Router ↗',
+        link: 'https://tanstack.com/router',
         color: cyan,
         customCommand:
-          'npm create -- tsrouter-app@latest TARGET_DIR --framework Solid --interactive',
+          'npm exec -- @tanstack/cli@latest create TARGET_DIR --framework solid --interactive',
       },
       {
         name: 'custom-vike-solid',
         display: 'Vike ↗',
+        link: 'https://vike.dev',
         color: cyan,
         customCommand: 'npm create -- vike@latest --solid TARGET_DIR',
       },
@@ -574,7 +575,6 @@ async function init() {
       const variant = await prompts.select({
         message: 'Select a variant:',
         options: framework.variants.map((variant) => {
-          const variantColor = variant.color
           const command = variant.customCommand
             ? getFullCustomCommand(variant.customCommand, pkgInfo).replace(
                 / TARGET_DIR$/,
@@ -582,7 +582,7 @@ async function init() {
               )
             : undefined
           return {
-            label: variantColor(variant.display || variant.name),
+            label: getLabel(variant),
             value: variant.name,
             hint: command,
           }
@@ -600,11 +600,6 @@ async function init() {
 
   const root = path.join(cwd, targetDir)
   // determine template
-  let isReactSwc = false
-  if (template.includes('-swc')) {
-    isReactSwc = true
-    template = template.replace('-swc', '')
-  }
   let isReactCompiler = false
   if (template.includes('react-compiler')) {
     isReactCompiler = true
@@ -682,9 +677,7 @@ async function init() {
 
   write('package.json', JSON.stringify(pkg, null, 2) + '\n')
 
-  if (isReactSwc) {
-    setupReactSwc(root, template.endsWith('-ts'))
-  } else if (isReactCompiler) {
+  if (isReactCompiler) {
     setupReactCompiler(root, template.endsWith('-ts'))
   }
 
@@ -707,7 +700,10 @@ async function init() {
 }
 
 function formatTargetDir(targetDir: string) {
-  return targetDir.trim().replace(/\/+$/g, '')
+  return targetDir
+    .trim()
+    .replace(/[<>:"\\|?*]/g, '')
+    .replace(/\/+$/g, '')
 }
 
 function copy(src: string, dest: string) {
@@ -775,39 +771,28 @@ function pkgFromUserAgent(userAgent: string | undefined): PkgInfo | undefined {
   }
 }
 
-function setupReactSwc(root: string, isTs: boolean) {
-  // renovate: datasource=npm depName=@vitejs/plugin-react-swc
-  const reactSwcPluginVersion = '4.2.2'
-
-  editFile(path.resolve(root, 'package.json'), (content) => {
-    return content.replace(
-      /"@vitejs\/plugin-react": ".+?"/,
-      `"@vitejs/plugin-react-swc": "^${reactSwcPluginVersion}"`,
-    )
-  })
-  editFile(
-    path.resolve(root, `vite.config.${isTs ? 'ts' : 'js'}`),
-    (content) => {
-      return content.replace('@vitejs/plugin-react', '@vitejs/plugin-react-swc')
-    },
-  )
-  updateReactCompilerReadme(
-    root,
-    'The React Compiler is currently not compatible with SWC. See [this issue](https://github.com/vitejs/vite-plugin-react/issues/428) for tracking the progress.',
-  )
-}
-
 function setupReactCompiler(root: string, isTs: boolean) {
+  // renovate: datasource=npm depName=@rolldown/plugin-babel
+  const babelPluginVersion = '0.2.3'
   // renovate: datasource=npm depName=babel-plugin-react-compiler
   const reactCompilerPluginVersion = '1.0.0'
+  // renovate: datasource=npm depName=@babel/core
+  const babelCoreVersion = '7.29.7'
+  // renovate: datasource=npm depName=@types/babel__core
+  const typesBabelCoreVersion = '7.20.5'
 
   editFile(path.resolve(root, 'package.json'), (content) => {
     const asObject = JSON.parse(content)
     const devDepsEntries = Object.entries(asObject.devDependencies)
+    devDepsEntries.push(['@rolldown/plugin-babel', `^${babelPluginVersion}`])
     devDepsEntries.push([
       'babel-plugin-react-compiler',
       `^${reactCompilerPluginVersion}`,
     ])
+    devDepsEntries.push(['@babel/core', `^${babelCoreVersion}`])
+    if (isTs) {
+      devDepsEntries.push(['@types/babel__core', `^${typesBabelCoreVersion}`])
+    }
     devDepsEntries.sort()
     asObject.devDependencies = Object.fromEntries(devDepsEntries)
     return JSON.stringify(asObject, null, 2) + '\n'
@@ -815,16 +800,19 @@ function setupReactCompiler(root: string, isTs: boolean) {
   editFile(
     path.resolve(root, `vite.config.${isTs ? 'ts' : 'js'}`),
     (content) => {
-      return content.replace(
-        '  plugins: [react()],',
-        `  plugins: [
-    react({
-      babel: {
-        plugins: [['babel-plugin-react-compiler']],
-      },
-    }),
+      return content
+        .replace(
+          `import react from '@vitejs/plugin-react'`,
+          `import react, { reactCompilerPreset } from '@vitejs/plugin-react'
+import babel from '@rolldown/plugin-babel'`,
+        )
+        .replace(
+          '  plugins: [react()],',
+          `  plugins: [
+    react(),
+    babel({ presets: [reactCompilerPreset()] })
   ],`,
-      )
+        )
     },
   )
   updateReactCompilerReadme(
@@ -861,7 +849,7 @@ function getFullCustomCommand(customCommand: string, pkgInfo?: PkgInfo) {
   return (
     customCommand
       .replace(/^npm create (?:-- )?/, () => {
-        // `bun create` uses it's own set of templates,
+        // `bun create` uses its own set of templates,
         // the closest alternative is using `bun x` directly on the package
         if (pkgManager === 'bun') {
           return 'bun x create-'
@@ -881,9 +869,10 @@ function getFullCustomCommand(customCommand: string, pkgInfo?: PkgInfo) {
       })
       // Only Yarn 1.x doesn't support `@version` in the `create` command
       .replace('@latest', () => (isYarn1 ? '' : '@latest'))
-      .replace(/^npm exec /, () => {
+      .replace(/^npm exec (?:-- )?/, () => {
         // Prefer `pnpm dlx`, `yarn dlx`, or `bun x`
         if (pkgManager === 'pnpm') {
+          // pnpm doesn't support the -- syntax
           return 'pnpm dlx '
         }
         if (pkgManager === 'yarn' && !isYarn1) {
@@ -897,9 +886,21 @@ function getFullCustomCommand(customCommand: string, pkgInfo?: PkgInfo) {
         }
         // Use `npm exec` in all other cases,
         // including Yarn 1.x and other custom npm clients.
-        return 'npm exec '
+        return customCommand.startsWith('npm exec -- ')
+          ? 'npm exec -- '
+          : 'npm exec '
       })
   )
+}
+
+function getLabel(variant: FrameworkVariant) {
+  const labelText = variant.display || variant.name
+  let label = variant.color(labelText)
+  const { link } = variant
+  if (link) {
+    label += ` ${underline(link)}`
+  }
+  return label
 }
 
 function getInstallCommand(agent: string) {
@@ -920,6 +921,17 @@ function getRunCommand(agent: string, script: string) {
     default:
       return [agent, 'run', script]
   }
+}
+
+type ColorName = Exclude<Parameters<typeof util.styleText>[0], any[]>
+
+function createColors() {
+  return new Proxy({} as Record<ColorName, ColorFunc>, {
+    get(_, prop: ColorName) {
+      // eslint-disable-next-line n/no-unsupported-features/node-builtins -- our supported nodejs range supports `styleText` but in experimental state, which is fine
+      return (str: string) => util.styleText(prop, str)
+    },
+  })
 }
 
 init().catch((e) => {

@@ -6,7 +6,7 @@ import { defineConfig } from 'vite'
 export default defineConfig({
   build: {
     lib: {
-      entry: path.resolve(__dirname, 'src/main-helpers-injection.js'),
+      entry: path.resolve(import.meta.dirname, 'src/main-helpers-injection.js'),
       name: 'MyLib',
       formats: ['iife'],
       fileName: 'my-lib-custom-filename',

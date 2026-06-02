@@ -1,6 +1,7 @@
 import path from 'node:path'
 import fsp from 'node:fs/promises'
 import { Buffer } from 'node:buffer'
+import { pathToFileURL } from 'node:url'
 import * as mrmime from 'mrmime'
 import type {
   NormalizedOutputOptions,
@@ -10,7 +11,7 @@ import type {
 import MagicString from 'magic-string'
 import colors from 'picocolors'
 import picomatch from 'picomatch'
-import { makeIdFiltersToMatchWithQuery } from '@rolldown/pluginutils'
+import { makeIdFiltersToMatchWithQuery } from 'rolldown/filter'
 import {
   createToImportMetaURLBasedRelativeRuntime,
   toOutputFilePathInJS,
@@ -55,7 +56,7 @@ const assetCache = new WeakMap<Environment, Map<string, string>>()
 /** a set of referenceId for entry CSS assets for each environment */
 export const cssEntriesMap: WeakMap<
   Environment,
-  Map<string, string>
+  Map<string, { referenceId: string; name: string }>
 > = new WeakMap()
 
 // add own dictionary entry by directly assigning mrmime
@@ -63,13 +64,13 @@ export function registerCustomMime(): void {
   // https://github.com/lukeed/mrmime/issues/3
   // instead of `image/vnd.microsoft.icon` which is registered on IANA Media Types DB
   // image/x-icon should be used instead for better compatibility (https://github.com/h5bp/html5-boilerplate/issues/219)
-  mrmime.mimes['ico'] = 'image/x-icon'
+  mrmime.mimes.ico = 'image/x-icon'
   // https://mimesniff.spec.whatwg.org/#matching-an-image-type-pattern
-  mrmime.mimes['cur'] = 'image/x-icon'
+  mrmime.mimes.cur = 'image/x-icon'
   // https://developer.mozilla.org/en-US/docs/Web/Media/Formats/Containers#flac
-  mrmime.mimes['flac'] = 'audio/flac'
+  mrmime.mimes.flac = 'audio/flac'
   // https://developer.mozilla.org/en-US/docs/Web/HTTP/Basics_of_HTTP/MIME_types/Common_types
-  mrmime.mimes['eot'] = 'application/vnd.ms-fontobject'
+  mrmime.mimes.eot = 'application/vnd.ms-fontobject'
 }
 
 export function renderAssetUrlInJS(
@@ -208,6 +209,7 @@ export function assetPlugin(config: ResolvedConfig): Plugin {
             code: `export default ${JSON.stringify(
               await fsp.readFile(file, 'utf-8'),
             )}`,
+            map: { mappings: '' },
             moduleType: 'js', // NOTE: needs to be set to avoid double `export default` in `?raw&.txt`s
           }
         }
@@ -318,10 +320,11 @@ export function assetPlugin(config: ResolvedConfig): Plugin {
 export async function fileToUrl(
   pluginContext: PluginContext,
   id: string,
+  asFileUrl = false,
 ): Promise<string> {
   const { environment } = pluginContext
   if (!environment.config.isBundled) {
-    return fileToDevUrl(environment, id)
+    return fileToDevUrl(environment, id, asFileUrl)
   } else {
     return fileToBuiltUrl(pluginContext, id)
   }
@@ -330,7 +333,7 @@ export async function fileToUrl(
 export async function fileToDevUrl(
   environment: Environment,
   id: string,
-  skipBase = false,
+  asFileUrl = false,
 ): Promise<string> {
   const config = environment.getTopLevelConfig()
   const publicFile = checkPublicFile(id, config)
@@ -353,6 +356,10 @@ export async function fileToDevUrl(
     }
   }
 
+  if (asFileUrl) {
+    return pathToFileURL(cleanedId).href
+  }
+
   let rtn: string
   if (publicFile) {
     // in public dir during dev, keep the url as-is
@@ -364,9 +371,6 @@ export async function fileToDevUrl(
     // outside of project root, use absolute fs path
     // (this is special handled by the serve static middleware
     rtn = path.posix.join(FS_PREFIX, id)
-  }
-  if (skipBase) {
-    return rtn
   }
   const base = joinUrlSegments(config.server.origin ?? '', config.decodedBase)
   return joinUrlSegments(base, removeLeadingSlash(rtn))
@@ -471,7 +475,7 @@ async function fileToBuiltUrl(
 
     if (
       environment.config.command === 'serve' &&
-      environment.config.experimental.bundledDev
+      environment.config.isBundled
     ) {
       const outputFilename = pluginContext.getFileName(referenceId)
       url = toOutputFilePathInJSForBundledDev(environment, outputFilename)

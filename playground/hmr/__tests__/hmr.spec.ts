@@ -1,3 +1,4 @@
+import { stripVTControlCharacters } from 'node:util'
 import { beforeAll, describe, expect, it, test } from 'vitest'
 import type { Page } from 'playwright-chromium'
 import {
@@ -1053,16 +1054,17 @@ if (!isBuild) {
     await page.goto(viteTestUrl + '/self-accept-within-circular/index.html')
     const el = await page.$('.self-accept-within-circular')
     expect(await el.textContent()).toBe('c')
+    const lastServerLogIndex = serverLogs.length
     editFile('self-accept-within-circular/c.js', (code) =>
       code.replace(`export const c = 'c'`, `export const c = 'cc'`),
     )
     await expect
       .poll(() => page.textContent('.self-accept-within-circular'))
       .toBe('cc')
-    expect(serverLogs.length).greaterThanOrEqual(1)
     // Should still keep hmr update, but it'll error on the browser-side and will refresh itself.
-    // Match on full log not possible because of color markers
-    expect(serverLogs.at(-1)!).toContain('hmr update')
+    expect(
+      serverLogs.slice(lastServerLogIndex).map(stripVTControlCharacters),
+    ).toContain('hmr update /self-accept-within-circular/c.js')
   })
 
   test('hmr should not reload if no accepted within circular imported files', async () => {

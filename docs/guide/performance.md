@@ -116,7 +116,6 @@ Examples of doing less work:
 
 - Use CSS instead of Sass/Less/Stylus when possible (nesting can be handled by PostCSS / Lightning CSS)
 - Don't transform SVGs into UI framework components (React, Vue, etc.). Import them as strings or URLs instead.
-- When using `@vitejs/plugin-react`, avoid configuring the Babel options, so it skips the transformation during build (only Oxc will be used).
 
 Examples of using native tooling:
 

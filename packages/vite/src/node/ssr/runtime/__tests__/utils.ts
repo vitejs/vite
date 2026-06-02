@@ -36,7 +36,7 @@ export async function createModuleRunnerTester(
     globalThis.__HMR__ = {}
 
     t.server = await createServer({
-      root: __dirname,
+      root: import.meta.dirname,
       logLevel: 'error',
       server: {
         middlewareMode: true,

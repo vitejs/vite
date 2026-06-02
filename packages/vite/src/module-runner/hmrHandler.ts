@@ -50,9 +50,11 @@ export function createHMRHandlerForRunner(
         runner.evaluatedModules.clear()
 
         for (const url of clearEntrypointUrls) {
+          if (runner.isClosed()) break
           try {
             await runner.import(url)
           } catch (err) {
+            if (runner.isClosed()) break
             if (err.code !== ERR_OUTDATED_OPTIMIZED_DEP) {
               hmrClient.logger.error(
                 `An error happened during full reload\n${err.message}\n${err.stack}`,

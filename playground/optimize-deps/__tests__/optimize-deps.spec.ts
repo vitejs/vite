@@ -25,6 +25,12 @@ test('default import from webpacked cjs (clipboard)', async () => {
   await expect.poll(() => page.textContent('.cjs-clipboard')).toBe('ok')
 })
 
+test('default import from cjs with es-module-flag (dep-cjs-with-es-module-flag)', async () => {
+  await expect
+    .poll(() => page.textContent('.cjs-with-es-module-flag'))
+    .toBe('ok')
+})
+
 test('default import from cjs (cjs-dep-cjs-compiled-from-esm)', async () => {
   await expect
     .poll(() => page.textContent('.cjs-dep-cjs-compiled-from-esm'))
@@ -64,6 +70,12 @@ test('dynamic default import from cjs (cjs-dynamic-dep-cjs-compiled-from-esm)', 
 test('dynamic default import from cjs (cjs-dynamic-dep-cjs-compiled-from-cjs)', async () => {
   await expect
     .poll(() => page.textContent('.cjs-dynamic-dep-cjs-compiled-from-cjs'))
+    .toBe('ok')
+})
+
+test('dynamic default import from cjs with es-module-flag (cjs-dynamic-dep-cjs-with-es-module-flag)', async () => {
+  await expect
+    .poll(() => page.textContent('.cjs-dynamic-dep-cjs-with-es-module-flag'))
     .toBe('ok')
 })
 
@@ -154,6 +166,10 @@ test('CJS dep with css import', async () => {
   await expect.poll(() => getColor('.cjs-with-assets')).toBe('blue')
 })
 
+test('CJS dep requiring dep with css main field', async () => {
+  await expect.poll(() => getColor('.cjs-require-css-main-field')).toBe('coral')
+})
+
 test('externalize known non-js files in optimize included dep', async () => {
   await expect
     .poll(() => page.textContent('.externalize-known-non-js'))
@@ -198,6 +214,8 @@ test('variable names are reused in different scripts', async () => {
     .toBe('reused')
 })
 
+// Regression test for #8428: flattenId must encode '/' and '.' differently
+// to avoid collisions between 'lodash/cloneDeep' and 'lodash.clonedeep'
 test('flatten id should generate correctly', async () => {
   await expect
     .poll(() => page.textContent('.clonedeep-slash'))
@@ -205,6 +223,9 @@ test('flatten id should generate correctly', async () => {
   await expect
     .poll(() => page.textContent('.clonedeep-dot'))
     .toBe('clonedeep-dot')
+  await expect
+    .poll(() => page.textContent('.dep-with-plus-subpath'))
+    .toBe('plus-subpath')
 })
 
 test('non optimized module is not duplicated', async () => {

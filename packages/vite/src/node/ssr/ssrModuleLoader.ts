@@ -10,6 +10,7 @@ import { unwrapId } from '../../shared/utils'
 import type { DevEnvironment } from '../server/environment'
 import type { NormalizedServerHotChannel } from '../server/hmr'
 import { buildErrorMessage } from '../server/middlewares/error'
+import { isRunnableDevEnvironment } from '../../node'
 import { ssrFixStacktrace } from './ssrStacktrace'
 import { createServerModuleRunnerTransport } from './runtime/serverModuleRunner'
 
@@ -21,6 +22,11 @@ export async function ssrLoadModule(
   fixStacktrace?: boolean,
 ): Promise<SSRModule> {
   const environment = server.environments.ssr
+  if (!isRunnableDevEnvironment(environment)) {
+    throw new Error(
+      `ssrLoadModule requires the 'ssr' environment to be a runnable environment.`,
+    )
+  }
   server._ssrCompatModuleRunner ||= new SSRCompatModuleRunner(environment)
   url = unwrapId(url)
 

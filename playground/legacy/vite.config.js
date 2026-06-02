@@ -17,10 +17,11 @@ export default defineConfig({
     manifest: true,
     sourcemap: true,
     assetsInlineLimit: 100, // keep SVG as assets URL
+    emptyOutDir: false, // the dist directory is shared with other configs
     rollupOptions: {
       input: {
-        index: path.resolve(__dirname, 'index.html'),
-        nested: path.resolve(__dirname, 'nested/index.html'),
+        index: path.resolve(import.meta.dirname, 'index.html'),
+        nested: path.resolve(import.meta.dirname, 'nested/index.html'),
       },
       output: {
         chunkFileNames(chunkInfo) {
@@ -40,7 +41,7 @@ export default defineConfig({
   // for tests, remove `<script type="module">` tags and remove `nomodule`
   // attrs so that we run the legacy bundle instead.
   __test__() {
-    const indexPath = path.resolve(__dirname, './dist/index.html')
+    const indexPath = path.resolve(import.meta.dirname, './dist/index.html')
     let index = fs.readFileSync(indexPath, 'utf-8')
     index = index
       .replace(/<script type="module".*?<\/script>/g, '')
