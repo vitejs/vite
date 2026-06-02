@@ -137,7 +137,6 @@ import {
   basePluginContextMeta,
 } from './server/pluginContainer'
 import { nodeResolveWithVite } from './nodeResolve'
-import { FullBundleDevEnvironment } from './server/environments/fullBundleEnvironment'
 
 const debug = createDebugger('vite:config', { depth: 10 })
 const promisifiedRealpath = promisify(fs.realpath)
@@ -251,17 +250,10 @@ function defaultCreateClientDevEnvironment(
   config: ResolvedConfig,
   context: CreateDevEnvironmentContext,
 ) {
-  if (config.experimental.bundledDev) {
-    return new FullBundleDevEnvironment(name, config, {
-      hot: true,
-      transport: context.ws,
-    })
-  }
-
   return new DevEnvironment(name, config, {
     hot: true,
     transport: context.ws,
-    disableFetchModule: true,
+    disableFetchModule: !config.experimental.bundledDev,
   })
 }
 

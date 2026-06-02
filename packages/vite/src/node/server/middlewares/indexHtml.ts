@@ -49,7 +49,6 @@ import {
   BasicMinimalPluginContext,
   basePluginContextMeta,
 } from '../pluginContainer'
-import { FullBundleDevEnvironment } from '../environments/fullBundleEnvironment'
 import { getHmrImplementation } from '../../plugins/clientInjections'
 import { checkLoadingAccess, respondWithAccessDenied } from './static'
 
@@ -454,9 +453,9 @@ export function indexHtmlMiddleware(
   server: ViteDevServer | PreviewServer,
 ): Connect.NextHandleFunction {
   const isDev = isDevServer(server)
-  const fullBundleEnv =
-    isDev && server.environments.client instanceof FullBundleDevEnvironment
-      ? server.environments.client
+  const fullBundle =
+    isDev && server.environments.client.bundle
+      ? server.environments.client.bundle
       : undefined
 
   // Keep the named function. The name is visible in debug logs via `DEBUG=connect:dispatcher ...`
@@ -468,12 +467,12 @@ export function indexHtmlMiddleware(
     const url = req.url && cleanUrl(req.url)
     // htmlFallbackMiddleware appends '.html' to URLs
     if (url?.endsWith('.html') && req.headers['sec-fetch-dest'] !== 'script') {
-      if (fullBundleEnv) {
+      if (fullBundle) {
         const pathname = decodeURIComponent(url)
         const filePath = pathname.slice(1) // remove first /
 
-        let file = fullBundleEnv.memoryFiles.get(filePath)
-        if (!file && fullBundleEnv.memoryFiles.size !== 0) {
+        let file = fullBundle.memoryFiles.get(filePath)
+        if (!file && fullBundle.memoryFiles.size !== 0) {
           return next()
         }
         const secFetchDest = req.headers['sec-fetch-dest']
@@ -486,7 +485,7 @@ export function indexHtmlMiddleware(
             '',
             undefined,
           ].includes(secFetchDest) &&
-          ((await fullBundleEnv.triggerBundleRegenerationIfStale()) ||
+          ((await fullBundle.triggerBundleRegenerationIfStale()) ||
             file === undefined)
         ) {
           file = { source: await generateFallbackHtml(server as ViteDevServer) }

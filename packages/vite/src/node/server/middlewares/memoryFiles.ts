@@ -2,15 +2,13 @@ import * as mrmime from 'mrmime'
 import type { Connect } from '#dep-types/connect'
 import { cleanUrl } from '../../../shared/utils'
 import type { ViteDevServer } from '..'
-import { FullBundleDevEnvironment } from '../environments/fullBundleEnvironment'
 
 export function memoryFilesMiddleware(
   server: ViteDevServer,
 ): Connect.NextHandleFunction {
-  const memoryFiles =
-    server.environments.client instanceof FullBundleDevEnvironment
-      ? server.environments.client.memoryFiles
-      : undefined
+  const memoryFiles = server.environments.client.bundle
+    ? server.environments.client.bundle.memoryFiles
+    : undefined
   if (!memoryFiles) {
     throw new Error('memoryFilesMiddleware can only be used for fullBundleMode')
   }
