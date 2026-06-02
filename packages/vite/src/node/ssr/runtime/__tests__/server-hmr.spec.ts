@@ -162,7 +162,7 @@ describe(
           )
         })
 
-        await (globalThis as any).__HMR_PROMISE__t
+        await (globalThis as any).__HMR_PROMISE__
 
         const exports2 = await runner.import('/fixtures/simple-hmr.js')
         expect(exports2).toMatchObject({
