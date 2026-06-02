@@ -25,7 +25,7 @@ runs:
   steps:
     - name: Add labels
       if: inputs.actions == 'add-labels'
-      uses: actions/github-script@ed597411d8f924073f98dfc5c65a23a2325f34cd # v8.0.0
+      uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3 # v9
       env:
         INPUT_ISSUE_NUMBER: ${{ inputs.issue-number }}
         INPUT_LABELS: ${{ inputs.labels }}
@@ -42,7 +42,7 @@ runs:
 
     - name: Remove labels
       if: inputs.actions == 'remove-labels'
-      uses: actions/github-script@ed597411d8f924073f98dfc5c65a23a2325f34cd # v8.0.0
+      uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3 # v9
       env:
         INPUT_ISSUE_NUMBER: ${{ inputs.issue-number }}
         INPUT_LABELS: ${{ inputs.labels }}
@@ -65,7 +65,7 @@ runs:
 
     - name: Create comment
       if: inputs.actions == 'create-comment'
-      uses: actions/github-script@ed597411d8f924073f98dfc5c65a23a2325f34cd # v8.0.0
+      uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3 # v9
       env:
         INPUT_ISSUE_NUMBER: ${{ inputs.issue-number }}
         INPUT_BODY: ${{ inputs.body }}
@@ -81,7 +81,7 @@ runs:
 
     - name: Close stale issues
       if: inputs.actions == 'close-issues'
-      uses: actions/github-script@ed597411d8f924073f98dfc5c65a23a2325f34cd # v8.0.0
+      uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3 # v9
       env:
         INPUT_LABELS: ${{ inputs.labels }}
         INPUT_INACTIVE_DAY: ${{ inputs.inactive-day }}
@@ -133,7 +133,7 @@ runs:
       if: inputs.actions == 'lock-closed-issues'
       # Mirrors the issue-only behavior previously used from:
       # https://github.com/dessant/lock-threads/blob/7266a7ce5c1df01b1c6db85bf8cd86c737dadbe7/src/index.js
-      uses: actions/github-script@ed597411d8f924073f98dfc5c65a23a2325f34cd # v8.0.0
+      uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3 # v9
       env:
         INPUT_INACTIVE_DAY: ${{ inputs.inactive-day }}
       with:
