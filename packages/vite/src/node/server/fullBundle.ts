@@ -57,7 +57,7 @@ export class MemoryFiles {
 }
 
 export class FullBundle {
-  private devEngine!: DevEngine
+  private _devEngine: DevEngine | undefined
   private initialBuildCompleted = false
   private clients = new Clients()
   private invalidateCalledModules = new Map<
@@ -79,6 +79,13 @@ export class FullBundle {
         'currently full bundle mode is only available for client environment',
       )
     }
+  }
+
+  private get devEngine(): DevEngine {
+    if (!this._devEngine) {
+      throw new Error(`dev engine was not yet initialized`)
+    }
+    return this._devEngine
   }
 
   async listen(): Promise<void> {
@@ -108,7 +115,7 @@ export class FullBundle {
       }
     })
 
-    this.devEngine = await dev(rolldownOptions, outputOptions, {
+    this._devEngine = await dev(rolldownOptions, outputOptions, {
       onHmrUpdates: (result) => {
         if (result instanceof Error) {
           // TODO: send to the specific client
