@@ -2,14 +2,14 @@ import { execFile } from 'node:child_process'
 import { promisify } from 'node:util'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
-import fetch from 'node-fetch'
+import { setTimeout } from 'node:timers/promises'
 import { describe, expect, test } from 'vitest'
-import { port } from './serve'
-import { editFile, isServe, page, untilUpdated } from '~utils'
+import { port, serverLogs } from './serve'
+import { editFile, isServe, page } from '~utils'
 
 const url = `http://localhost:${port}`
 
-describe('injected inline scripts', () => {
+describe.runIf(isServe)('injected inline scripts', () => {
   test('no injected inline scripts are present', async () => {
     await page.goto(url)
     const inlineScripts = await page.$$eval('script', (nodes) =>
@@ -44,6 +44,32 @@ describe('injected inline scripts', () => {
   })
 })
 
+describe.runIf(isServe)('trailing slash html paths', () => {
+  test('pre-transforms relative module scripts from the trailing slash directory', async () => {
+    serverLogs.length = 0
+
+    const response = await fetch(`${url}/trailing-slash/dir/`)
+    expect(response.status).toBe(200)
+    await response.text()
+
+    await setTimeout(100) // wait for pre-transform to happen
+    expect(serverLogs).not.toEqual(
+      expect.arrayContaining([expect.stringContaining('Pre-transform error')]),
+    )
+  })
+
+  test('loads relative module scripts from the trailing slash directory', async () => {
+    await page.goto(`${url}/trailing-slash/dir/`)
+
+    await expect
+      .poll(() => page.textContent('.relative-script'))
+      .toBe('relative module loaded')
+    await expect
+      .poll(() => page.textContent('.relative-parent-script'))
+      .toBe('relative parent module loaded')
+  })
+})
+
 describe.runIf(isServe)('hmr', () => {
   test('handle virtual module updates', async () => {
     await page.goto(url)
@@ -56,10 +82,12 @@ describe.runIf(isServe)('hmr', () => {
     )
     await loadPromise
 
-    await untilUpdated(async () => {
-      const el = await page.$('.virtual')
-      return await el.textContent()
-    }, '[wow]')
+    await expect
+      .poll(async () => {
+        const el = await page.$('.virtual')
+        return await el.textContent()
+      })
+      .toMatch('[wow]')
   })
 })
 
@@ -72,7 +100,7 @@ describe.runIf(isServe)('stacktrace', () => {
         sourcemapsEnabled ? '' : ' not'
       } enabled in Node.js`, async () => {
         const testStacktraceFile = path.resolve(
-          __dirname,
+          import.meta.dirname,
           '../test-stacktrace.js',
         )
 
@@ -87,7 +115,7 @@ describe.runIf(isServe)('stacktrace', () => {
 
         const reg = new RegExp(
           path
-            .resolve(__dirname, '../src', `error.${ext}`)
+            .resolve(import.meta.dirname, '../src', `error-${ext}.${ext}`)
             .replace(/\\/g, '\\\\') + ':2:9',
           'i',
         )

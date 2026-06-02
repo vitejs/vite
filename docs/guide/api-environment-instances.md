@@ -1,17 +1,19 @@
-# Using `Environment` instances
+# Using `Environment` Instances
 
-:::warning Experimental
-Initial work for this API was introduced in Vite 5.1 with the name "Vite Runtime API". This guide describes a revised API, renamed to Environment API. This API will be released in Vite 6 as experimental. You can already test it in the latest `vite@6.0.0-beta.x` version.
+:::info Release Candidate
+The Environment API is generally in the release candidate phase. We'll maintain stability in the APIs between major releases to allow the ecosystem to experiment and build upon them. However, note that [some specific APIs](/changes/#considering) are still considered experimental.
+
+We plan to stabilize these new APIs (with potential breaking changes) in a future major release once downstream projects have had time to experiment with the new features and validate them.
 
 Resources:
 
 - [Feedback discussion](https://github.com/vitejs/vite/discussions/16358) where we are gathering feedback about the new APIs.
-- [Environment API PR](https://github.com/vitejs/vite/pull/16471) where the new API were implemented and reviewed.
+- [Environment API PR](https://github.com/vitejs/vite/pull/16471) where the new APIs were implemented and reviewed.
 
-Please share with us your feedback as you test the proposal.
+Please share your feedback with us.
 :::
 
-## Accessing the environments
+## Accessing the Environments
 
 During dev, the available environments in a dev server can be accessed using `server.environments`:
 
@@ -19,8 +21,8 @@ During dev, the available environments in a dev server can be accessed using `se
 // create the server, or get it from the configureServer hook
 const server = await createServer(/* options */)
 
-const environment = server.environments.client
-environment.transformRequest(url)
+const clientEnvironment = server.environments.client
+clientEnvironment.transformRequest(url)
 console.log(server.environments.ssr.moduleGraph)
 ```
 
@@ -41,7 +43,7 @@ class DevEnvironment {
    * Communication channel to send and receive messages from the
    * associated module runner in the target runtime.
    */
-  hot: HotChannel | null
+  hot: NormalizedHotChannel
   /**
    * Graph of module nodes, with the imported relationship between
    * processed modules and the cached result of the processed code.
@@ -64,25 +66,55 @@ class DevEnvironment {
    */
   config: ResolvedConfig & ResolvedDevEnvironmentOptions
 
-  constructor(name, config, { hot, options }: DevEnvironmentSetup)
+  constructor(
+    name: string,
+    config: ResolvedConfig,
+    context: DevEnvironmentContext,
+  )
 
   /**
    * Resolve the URL to an id, load it, and process the code using the
    * plugins pipeline. The module graph is also updated.
    */
-  async transformRequest(url: string): TransformResult
+  async transformRequest(url: string): Promise<TransformResult | null>
 
   /**
    * Register a request to be processed with low priority. This is useful
-   * to avoid waterfalls. The Vite server has information about the imported
-   * modules by other requests, so it can warmup the module graph so the
-   * modules are already processed when they are requested.
+   * to avoid waterfalls. The Vite server has information about the
+   * imported modules by other requests, so it can warmup the module graph
+   * so the modules are already processed when they are requested.
    */
-  async warmupRequest(url: string): void
+  async warmupRequest(url: string): Promise<void>
+
+  /**
+   * Called by the module runner to retrieve information about the specified
+   * module. Internally calls `transformRequest` and wraps the result in the
+   * format that the module runner understands.
+   * This method is not meant to be called manually.
+   */
+  async fetchModule(
+    id: string,
+    importer?: string,
+    options?: FetchFunctionOptions,
+  ): Promise<FetchResult>
 }
 ```
 
-With `TransformResult` being:
+With `DevEnvironmentContext` being:
+
+```ts
+interface DevEnvironmentContext {
+  hot: boolean
+  transport?: HotChannel | WebSocketServer
+  options?: EnvironmentOptions
+  remoteRunner?: {
+    inlineSourceMap?: boolean
+  }
+  depsOptimizer?: DepsOptimizer
+}
+```
+
+and with `TransformResult` being:
 
 ```ts
 interface TransformResult {
@@ -100,7 +132,7 @@ An environment instance in the Vite server lets you process a URL using the `env
 We are using `transformRequest(url)` and `warmupRequest(url)` in the current version of this proposal so it is easier to discuss and understand for users used to Vite's current API. Before releasing, we can take the opportunity to review these names too. For example, it could be named `environment.processModule(url)` or `environment.loadModule(url)` taking a page from Rollup's `context.load(id)` in plugin hooks. For the moment, we think keeping the current names and delaying this discussion is better.
 :::
 
-## Separate module graphs
+## Separate Module Graphs
 
 Each environment has an isolated module graph. All module graphs have the same signature, so generic algorithms can be implemented to crawl or query the graph without depending on the environment. `hotUpdate` is a good example. When a file is modified, the module graph of each environment will be used to discover the affected modules and perform HMR for each environment independently.
 
@@ -156,14 +188,18 @@ export class EnvironmentModuleGraph {
     rawUrl: string,
   ): Promise<EnvironmentModuleNode | undefined>
 
+  getModuleById(id: string): EnvironmentModuleNode | undefined
+
   getModulesByFile(file: string): Set<EnvironmentModuleNode> | undefined
 
   onFileChange(file: string): void
 
+  onFileDelete(file: string): void
+
   invalidateModule(
     mod: EnvironmentModuleNode,
     seen: Set<EnvironmentModuleNode> = new Set(),
-    timestamp: number = Date.now(),
+    timestamp: number = monotonicDateNow(),
     isHmr: boolean = false,
   ): void
 
@@ -184,5 +220,71 @@ export class EnvironmentModuleGraph {
   ): void
 
   getModuleByEtag(etag: string): EnvironmentModuleNode | undefined
+}
+```
+
+## `FetchResult`
+
+The `environment.fetchModule` method returns a `FetchResult` that is meant to be consumed by the module runner. `FetchResult` is a union of `CachedFetchResult`, `ExternalFetchResult`, and `ViteFetchResult`.
+
+`CachedFetchResult` is analogous to the `304` (Not Modified) HTTP status code.
+
+```ts
+export interface CachedFetchResult {
+  /**
+   * If the module is cached in the runner, this confirms
+   * it was not invalidated on the server side.
+   */
+  cache: true
+}
+```
+
+`ExternalFetchResult` instructs the module runner to import the module using the `runExternalModule` method on the [`ModuleEvaluator`](/guide/api-environment-runtimes#moduleevaluator). In this case, the default module evaluator will use the runtime's native `import` instead of processing the file through Vite.
+
+```ts
+export interface ExternalFetchResult {
+  /**
+   * The path to the externalized module starting with file://.
+   * By default this will be imported via a dynamic "import"
+   * instead of being transformed by Vite and loaded with the Vite runner.
+   */
+  externalize: string
+  /**
+   * Type of the module. Used to determine if the import statement is correct.
+   * For example, if Vite needs to throw an error if a variable is not actually exported.
+   */
+  type: 'module' | 'commonjs' | 'builtin' | 'network'
+}
+```
+
+`ViteFetchResult` returns information about the current module, including the `code` to execute and the module's `id`, `file`, and `url`.
+
+The `invalidate` field instructs the module runner to invalidate the module before executing it again rather than serving it from cache. This is usually `true` when an HMR update was triggered.
+
+```ts
+export interface ViteFetchResult {
+  /**
+   * Code that will be evaluated by the Vite runner.
+   * By default this will be wrapped in an async function.
+   */
+  code: string
+  /**
+   * File path of the module on disk.
+   * This will be resolved as import.meta.url/filename.
+   * Will be `null` for virtual modules.
+   */
+  file: string | null
+  /**
+   * Module ID in the server module graph.
+   */
+  id: string
+  /**
+   * Module URL used in the import.
+   */
+  url: string
+  /**
+   * Invalidate module on the client side.
+   */
+  invalidate: boolean
 }
 ```

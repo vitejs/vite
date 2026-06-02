@@ -33,7 +33,7 @@ test.runIf(isServe)('scanner should not error with decorators', () => {
 
 describe('transformWithEsbuild', () => {
   test('merge tsconfigRaw object', async () => {
-    const main = path.resolve(__dirname, '../src/main.ts')
+    const main = path.resolve(import.meta.dirname, '../src/main.ts')
     const mainContent = fs.readFileSync(main, 'utf-8')
     const result = await transformWithEsbuild(mainContent, main, {
       tsconfigRaw: {
@@ -47,7 +47,7 @@ describe('transformWithEsbuild', () => {
   })
 
   test('overwrite tsconfigRaw string', async () => {
-    const main = path.resolve(__dirname, '../src/main.ts')
+    const main = path.resolve(import.meta.dirname, '../src/main.ts')
     const mainContent = fs.readFileSync(main, 'utf-8')
     const result = await transformWithEsbuild(mainContent, main, {
       tsconfigRaw: `{
@@ -56,13 +56,13 @@ describe('transformWithEsbuild', () => {
         }
       }`,
     })
-    // "verbatimModuleSyntax": true from from tsconfig.json should not be read
+    // "verbatimModuleSyntax": true from tsconfig.json should not be read
     // and defaults to false
     expect(result.code).not.toMatch(/import.*".\/not-used-type";/)
   })
 
   test('verbatimModuleSyntax', async () => {
-    const main = path.resolve(__dirname, '../src/main.ts')
+    const main = path.resolve(import.meta.dirname, '../src/main.ts')
     const mainContent = fs.readFileSync(main, 'utf-8')
     const result = await transformWithEsbuild(mainContent, main, {
       tsconfigRaw: {
@@ -77,7 +77,7 @@ describe('transformWithEsbuild', () => {
   })
 
   test('experimentalDecorators', async () => {
-    const main = path.resolve(__dirname, '../src/decorator.ts')
+    const main = path.resolve(import.meta.dirname, '../src/decorator.ts')
     const mainContent = fs.readFileSync(main, 'utf-8')
     // Should not error when transpiling decorators as nearest tsconfig.json
     // has "experimentalDecorators": true

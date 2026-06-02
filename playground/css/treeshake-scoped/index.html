@@ -1,0 +1,12 @@
+<h1>treeshake-scoped</h1>
+<p class="scoped-index">Imported scoped CSS</p>
+<p class="treeshake-scoped-order">
+  scoped CSS order (this should be red text with blue background)
+</p>
+
+<script type="module">
+  import { d } from './index.js'
+  import order from './order/a.js'
+  document.querySelector('.scoped-index').classList.add(d())
+  document.querySelector('.treeshake-scoped-order').classList.add(order())
+</script>

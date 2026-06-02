@@ -1,16 +1,16 @@
 import path from 'node:path'
 import colors from 'picocolors'
+import type { RawSourceMap } from '@jridgewell/remapping'
+import type { InternalModuleFormat, SourceMap } from 'rolldown'
+import { resolveTsconfig } from 'rolldown/experimental'
+import { TsconfigCache } from 'rolldown/utils'
 import type {
-  Loader,
-  Message,
-  TransformOptions,
-  TransformResult,
-} from 'esbuild'
-import { transform } from 'esbuild'
-import type { RawSourceMap } from '@ampproject/remapping'
-import type { InternalModuleFormat, SourceMap } from 'rollup'
-import type { TSConfckParseResult } from 'tsconfck'
-import { TSConfckCache, TSConfckParseError, parse } from 'tsconfck'
+  EsbuildLoader,
+  EsbuildMessage,
+  EsbuildTransformOptions,
+  EsbuildTransformResult as RawEsbuildTransformResult,
+} from '#types/internal/esbuildOptions'
+import type { FSWatcher } from '#dep-types/chokidar'
 import {
   combineSourcemaps,
   createDebugger,
@@ -28,7 +28,7 @@ const debug = createDebugger('vite:esbuild')
 // IIFE content looks like `var MyLib = function() {`.
 // Spaces are removed and parameters are mangled when minified
 const IIFE_BEGIN_RE =
-  /(?:const|var)\s+\S+\s*=\s*function\([^()]*\)\s*\{\s*"use strict";/
+  /(?:const|var)\s+\S+\s*=\s*\(?function\([^()]*\)\s*\{\s*"use strict";/
 
 const validExtensionRE = /\.\w+$/
 const jsxExtensionsRE = /\.(?:j|t)sx\b/
@@ -36,18 +36,15 @@ const jsxExtensionsRE = /\.(?:j|t)sx\b/
 // the final build should always support dynamic import and import.meta.
 // if they need to be polyfilled, plugin-legacy should be used.
 // plugin-legacy detects these two features when checking for modern code.
+// Browser support: https://caniuse.com/es6-module-dynamic-import,mdn-javascript_operators_import_meta#:~:text=Feature%20summary
 export const defaultEsbuildSupported = {
   'dynamic-import': true,
   'import-meta': true,
 }
 
-// TODO: rework to avoid caching the server for this module.
-// If two servers are created in the same process, they will interfere with each other.
-let server: ViteDevServer
-
-export interface ESBuildOptions extends TransformOptions {
-  include?: string | RegExp | string[] | RegExp[]
-  exclude?: string | RegExp | string[] | RegExp[]
+export interface ESBuildOptions extends EsbuildTransformOptions {
+  include?: string | RegExp | ReadonlyArray<string | RegExp>
+  exclude?: string | RegExp | ReadonlyArray<string | RegExp>
   jsxInject?: string
   /**
    * This option is not respected. Use `build.minify` instead.
@@ -55,7 +52,7 @@ export interface ESBuildOptions extends TransformOptions {
   minify?: never
 }
 
-export type ESBuildTransformResult = Omit<TransformResult, 'map'> & {
+export type ESBuildTransformResult = Omit<RawEsbuildTransformResult, 'map'> & {
   map: SourceMap
 }
 
@@ -72,17 +69,42 @@ type TSConfigJSON = {
     preserveValueImports?: boolean
     target?: string
     useDefineForClassFields?: boolean
+    emitDecoratorMetadata?: boolean
     verbatimModuleSyntax?: boolean
   }
   [key: string]: any
 }
-type TSCompilerOptions = NonNullable<TSConfigJSON['compilerOptions']>
+export type TSCompilerOptions = NonNullable<TSConfigJSON['compilerOptions']>
+
+let esbuild: Promise<typeof import('esbuild')> | undefined
+const importEsbuild = () => {
+  esbuild ||= import('esbuild')
+  return esbuild
+}
+
+let warnedTransformWithEsbuild = false
+const warnTransformWithEsbuildUsageOnce = () => {
+  if (warnedTransformWithEsbuild) return
+  warnedTransformWithEsbuild = true
+
+  // eslint-disable-next-line no-console -- logger cannot be used here
+  console.warn(
+    colors.yellow(
+      '`transformWithEsbuild` is deprecated and will be removed in the future. ' +
+        'Please migrate to `transformWithOxc`.',
+    ),
+  )
+}
 
 export async function transformWithEsbuild(
   code: string,
   filename: string,
-  options?: TransformOptions,
+  options?: EsbuildTransformOptions,
   inMap?: object,
+  config?: ResolvedConfig,
+  watcher?: FSWatcher,
+  /** @internal */
+  ignoreEsbuildWarning = false,
 ): Promise<ESBuildTransformResult> {
   let loader = options?.loader
 
@@ -98,7 +120,7 @@ export async function transformWithEsbuild(
     } else if (ext === 'cts' || ext === 'mts') {
       loader = 'ts'
     } else {
-      loader = ext as Loader
+      loader = ext as EsbuildLoader
     }
   }
 
@@ -123,13 +145,26 @@ export async function transformWithEsbuild(
     ]
     const compilerOptionsForFile: TSCompilerOptions = {}
     if (loader === 'ts' || loader === 'tsx') {
-      const loadedTsconfig = await loadTsconfigJsonForFile(filename)
-      const loadedCompilerOptions = loadedTsconfig.compilerOptions ?? {}
+      const result = resolveTsconfig(
+        filename,
+        getTSConfigResolutionCache(config),
+      )
+      if (result) {
+        const { tsconfig: loadedTsconfig, tsconfigFilePaths } = result
+        // tsconfig could be out of root, make sure it is watched on dev
+        if (watcher && config) {
+          for (const tsconfigFile of tsconfigFilePaths) {
+            ensureWatchedFile(watcher, tsconfigFile, config.root)
+          }
+        }
 
-      for (const field of meaningfulFields) {
-        if (field in loadedCompilerOptions) {
-          // @ts-expect-error TypeScript can't tell they are of the same type
-          compilerOptionsForFile[field] = loadedCompilerOptions[field]
+        const loadedCompilerOptions = loadedTsconfig.compilerOptions ?? {}
+
+        for (const field of meaningfulFields) {
+          if (field in loadedCompilerOptions) {
+            // @ts-expect-error TypeScript can't tell they are of the same type
+            compilerOptionsForFile[field] = loadedCompilerOptions[field]
+          }
         }
       }
     }
@@ -164,7 +199,7 @@ export async function transformWithEsbuild(
     }
   }
 
-  const resolvedOptions: TransformOptions = {
+  const resolvedOptions: EsbuildTransformOptions = {
     sourcemap: true,
     // ensure source file name contains full query
     sourcefile: filename,
@@ -181,6 +216,22 @@ export async function transformWithEsbuild(
   delete resolvedOptions.exclude
   // @ts-expect-error jsxInject exists in ESBuildOptions
   delete resolvedOptions.jsxInject
+
+  let transform: typeof import('esbuild').transform
+  try {
+    transform = (await importEsbuild()).transform
+  } catch (e) {
+    throw new Error(
+      'Failed to load `transformWithEsbuild`. ' +
+        'It is deprecated and it now requires esbuild to be installed separately. ' +
+        'If you are a package author, please migrate to `transformWithOxc` instead.',
+      { cause: e },
+    )
+  }
+
+  if (!ignoreEsbuildWarning) {
+    warnTransformWithEsbuildUsageOnce()
+  }
 
   try {
     const result = await transform(code, resolvedOptions)
@@ -207,7 +258,7 @@ export async function transformWithEsbuild(
     // patch error information
     if (e.errors) {
       e.frame = ''
-      e.errors.forEach((m: Message) => {
+      e.errors.forEach((m: EsbuildMessage) => {
         if (
           m.text === 'Experimental decorators are not currently enabled' ||
           m.text ===
@@ -232,9 +283,8 @@ export function esbuildPlugin(config: ResolvedConfig): Plugin {
 
   // Remove optimization options for dev as we only need to transpile them,
   // and for build as the final optimization is in `buildEsbuildPlugin`
-  const transformOptions: TransformOptions = {
+  const transformOptions: EsbuildTransformOptions = {
     target: 'esnext',
-    charset: 'utf8',
     ...esbuildTransformOptions,
     minify: false,
     minifyIdentifiers: false,
@@ -251,22 +301,23 @@ export function esbuildPlugin(config: ResolvedConfig): Plugin {
     },
   }
 
+  let server: ViteDevServer | undefined
+
   return {
     name: 'vite:esbuild',
     configureServer(_server) {
       server = _server
-      server.watcher
-        .on('add', reloadOnTsconfigChange)
-        .on('change', reloadOnTsconfigChange)
-        .on('unlink', reloadOnTsconfigChange)
-    },
-    buildEnd() {
-      // recycle serve to avoid preventing Node self-exit (#6815)
-      server = null as any
     },
     async transform(code, id) {
       if (filter(id) || filter(cleanUrl(id))) {
-        const result = await transformWithEsbuild(code, id, transformOptions)
+        const result = await transformWithEsbuild(
+          code,
+          id,
+          transformOptions,
+          undefined,
+          config,
+          server?.watcher,
+        )
         if (result.warnings.length) {
           result.warnings.forEach((m) => {
             this.warn(prettifyMessage(m, code))
@@ -278,6 +329,7 @@ export function esbuildPlugin(config: ResolvedConfig): Plugin {
         return {
           code: result.code,
           map: result.map,
+          moduleType: 'js',
         }
       }
     },
@@ -286,7 +338,7 @@ export function esbuildPlugin(config: ResolvedConfig): Plugin {
 
 const rollupToEsbuildFormatMap: Record<
   string,
-  TransformOptions['format'] | undefined
+  EsbuildTransformOptions['format'] | undefined
 > = {
   es: 'esm',
   cjs: 'cjs',
@@ -302,48 +354,69 @@ const rollupToEsbuildFormatMap: Record<
   iife: undefined,
 }
 
-export const buildEsbuildPlugin = (config: ResolvedConfig): Plugin => {
+// #7188, esbuild adds helpers out of the UMD and IIFE wrappers, and the
+// names are minified potentially causing collision with other globals.
+// We inject the helpers inside the wrappers.
+// e.g. turn:
+//    <esbuild helpers> (function(){ /*actual content/* })()
+// into:
+//    (function(){ <esbuild helpers> /*actual content/* })()
+// Not using regex because it's too hard to rule out performance issues like #8738 #8099 #10900 #14065
+// Instead, using plain string index manipulation (indexOf, slice) which is simple and performant
+// We don't need to create a MagicString here because both the helpers and
+// the headers don't modify the sourcemap
+export const injectEsbuildHelpers = (
+  esbuildCode: string,
+  format: string,
+): string => {
+  const contentIndex =
+    format === 'iife'
+      ? Math.max(esbuildCode.search(IIFE_BEGIN_RE), 0)
+      : format === 'umd'
+        ? esbuildCode.indexOf(`(function(`) // same for minified or not
+        : 0
+
+  if (contentIndex > 0) {
+    const esbuildHelpers = esbuildCode.slice(0, contentIndex)
+    return esbuildCode
+      .slice(contentIndex)
+      .replace('"use strict";', (m: string) => m + esbuildHelpers)
+  }
+  return esbuildCode
+}
+
+export const buildEsbuildPlugin = (): Plugin => {
   return {
     name: 'vite:esbuild-transpile',
+    applyToEnvironment(environment) {
+      return environment.config.esbuild !== false
+    },
     async renderChunk(code, chunk, opts) {
-      // @ts-expect-error injected by @vitejs/plugin-legacy
-      if (opts.__vite_skip_esbuild__) {
+      // avoid on legacy chunks since it produces legacy-unsafe code
+      // e.g. rewriting object properties into shorthands
+      if (this.environment.config.isOutputOptionsForLegacyChunks?.(opts)) {
         return null
       }
 
+      const config = this.environment.config
       const options = resolveEsbuildTranspileOptions(config, opts.format)
 
       if (!options) {
         return null
       }
 
-      const res = await transformWithEsbuild(code, chunk.fileName, options)
+      const res = await transformWithEsbuild(
+        code,
+        chunk.fileName,
+        options,
+        undefined,
+        config,
+        undefined,
+        true,
+      )
 
       if (config.build.lib) {
-        // #7188, esbuild adds helpers out of the UMD and IIFE wrappers, and the
-        // names are minified potentially causing collision with other globals.
-        // We inject the helpers inside the wrappers.
-        // e.g. turn:
-        //    <esbuild helpers> (function(){ /*actual content/* })()
-        // into:
-        //    (function(){ <esbuild helpers> /*actual content/* })()
-        // Not using regex because it's too hard to rule out performance issues like #8738 #8099 #10900 #14065
-        // Instead, using plain string index manipulation (indexOf, slice) which is simple and performant
-        // We don't need to create a MagicString here because both the helpers and
-        // the headers don't modify the sourcemap
-        const esbuildCode = res.code
-        const contentIndex =
-          opts.format === 'iife'
-            ? Math.max(esbuildCode.search(IIFE_BEGIN_RE), 0)
-            : opts.format === 'umd'
-              ? esbuildCode.indexOf(`(function(`) // same for minified or not
-              : 0
-        if (contentIndex > 0) {
-          const esbuildHelpers = esbuildCode.slice(0, contentIndex)
-          res.code = esbuildCode
-            .slice(contentIndex)
-            .replace(`"use strict";`, `"use strict";` + esbuildHelpers)
-        }
+        res.code = injectEsbuildHelpers(res.code, opts.format)
       }
 
       return res
@@ -354,7 +427,7 @@ export const buildEsbuildPlugin = (config: ResolvedConfig): Plugin => {
 export function resolveEsbuildTranspileOptions(
   config: ResolvedConfig,
   format: InternalModuleFormat,
-): TransformOptions | null {
+): EsbuildTransformOptions | null {
   const target = config.build.target
   const minify = config.build.minify === 'esbuild'
 
@@ -368,8 +441,7 @@ export function resolveEsbuildTranspileOptions(
   const isEsLibBuild = config.build.lib && format === 'es'
   const esbuildOptions = config.esbuild || {}
 
-  const options: TransformOptions = {
-    charset: 'utf8',
+  const options: EsbuildTransformOptions = {
     ...esbuildOptions,
     loader: 'js',
     target: target || undefined,
@@ -440,7 +512,7 @@ export function resolveEsbuildTranspileOptions(
   }
 }
 
-function prettifyMessage(m: Message, code: string): string {
+function prettifyMessage(m: EsbuildMessage, code: string): string {
   let res = colors.yellow(m.text)
   if (m.location) {
     res += `\n` + generateCodeFrame(code, m.location)
@@ -448,63 +520,54 @@ function prettifyMessage(m: Message, code: string): string {
   return res + `\n`
 }
 
-let tsconfckCache: TSConfckCache<TSConfckParseResult> | undefined
+let globalTSConfigResolutionCache: TsconfigCache | undefined
+const tsconfigResolutionCacheMap = new WeakMap<ResolvedConfig, TsconfigCache>()
 
-export async function loadTsconfigJsonForFile(
-  filename: string,
-): Promise<TSConfigJSON> {
-  try {
-    if (!tsconfckCache) {
-      tsconfckCache = new TSConfckCache<TSConfckParseResult>()
-    }
-    const result = await parse(filename, {
-      cache: tsconfckCache,
-      ignoreNodeModules: true,
-    })
-    // tsconfig could be out of root, make sure it is watched on dev
-    if (server && result.tsconfigFile) {
-      ensureWatchedFile(server.watcher, result.tsconfigFile, server.config.root)
-    }
-    return result.tsconfig
-  } catch (e) {
-    if (e instanceof TSConfckParseError) {
-      // tsconfig could be out of root, make sure it is watched on dev
-      if (server && e.tsconfigFile) {
-        ensureWatchedFile(server.watcher, e.tsconfigFile, server.config.root)
-      }
-    }
-    throw e
+export function getTSConfigResolutionCache(
+  config?: ResolvedConfig,
+): TsconfigCache {
+  if (!config) {
+    return (globalTSConfigResolutionCache ??= new TsconfigCache())
   }
+  let cache = tsconfigResolutionCacheMap.get(config)
+  if (!cache) {
+    cache = new TsconfigCache()
+    tsconfigResolutionCacheMap.set(config, cache)
+  }
+  return cache
 }
 
-async function reloadOnTsconfigChange(changedFile: string) {
-  // server could be closed externally after a file change is detected
-  if (!server) return
+export function reloadOnTsconfigChange(
+  server: ViteDevServer,
+  changedFile: string,
+): void {
   // any tsconfig.json that's added in the workspace could be closer to a code file than a previously cached one
   // any json file in the tsconfig cache could have been used to compile ts
-  if (
-    path.basename(changedFile) === 'tsconfig.json' ||
-    (changedFile.endsWith('.json') &&
-      tsconfckCache?.hasParseResult(changedFile))
-  ) {
-    server.config.logger.info(
-      `changed tsconfig file detected: ${changedFile} - Clearing cache and forcing full-reload to ensure TypeScript is compiled with updated config values.`,
-      { clear: server.config.clearScreen, timestamp: true },
-    )
+  if (changedFile.endsWith('.json')) {
+    const cache = getTSConfigResolutionCache(server.config)
+    if (changedFile.endsWith('/tsconfig.json')) {
+      server.config.logger.info(
+        `changed tsconfig file detected: ${changedFile} - Clearing cache and forcing full-reload to ensure TypeScript is compiled with updated config values.`,
+        { clear: server.config.clearScreen, timestamp: true },
+      )
 
-    // clear module graph to remove code compiled with outdated config
-    server.moduleGraph.invalidateAll()
+      // TODO: more finegrained invalidation than the nuclear option below
 
-    // reset tsconfck so that recompile works with up2date configs
-    tsconfckCache?.clear()
+      // clear module graph to remove code compiled with outdated config
+      for (const environment of Object.values(server.environments)) {
+        environment.moduleGraph.invalidateAll()
+      }
 
-    // server may not be available if vite config is updated at the same time
-    if (server) {
-      // force full reload
-      server.hot.send({
-        type: 'full-reload',
-        path: '*',
-      })
+      // reset the cache so that recompile works with up2date configs
+      cache.clear()
+
+      // reload environments
+      for (const environment of Object.values(server.environments)) {
+        environment.hot.send({
+          type: 'full-reload',
+          path: '*',
+        })
+      }
     }
   }
 }

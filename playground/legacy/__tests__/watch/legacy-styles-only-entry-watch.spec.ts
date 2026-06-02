@@ -19,10 +19,8 @@ test.runIf(isBuild)('rebuilds styles only entry on change', async () => {
   const numberOfManifestEntries = Object.keys(readManifest('watch')).length
   expect(numberOfManifestEntries).toBe(3)
 
-  editFile(
-    'style-only-entry.css',
-    (originalContents) => originalContents.replace('#ff69b4', '#ffb6c1'),
-    true,
+  editFile('style-only-entry.css', (originalContents) =>
+    originalContents.replace('#ff69b4', '#ffb6c1'),
   )
   await notifyRebuildComplete(watcher)
 

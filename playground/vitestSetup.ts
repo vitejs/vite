@@ -20,13 +20,48 @@ import {
   preview,
 } from 'vite'
 import type { Browser, Page } from 'playwright-chromium'
-import type { RollupError, RollupWatcher, RollupWatcherEvent } from 'rollup'
-import type { File } from 'vitest'
-import { beforeAll, inject } from 'vitest'
+import type {
+  RolldownWatcher,
+  RolldownWatcherEvent,
+  RollupError,
+} from 'rolldown'
+import { beforeAll, expect, inject } from 'vitest'
+
+// #region serializer
+
+export const sourcemapSnapshot = Symbol()
+
+const generateVisualizationLink = (code: string, map: string) => {
+  const utf16ToUTF8 = (x) => unescape(encodeURIComponent(x))
+  const convertedCode = utf16ToUTF8(code)
+  const convertedMap = utf16ToUTF8(map)
+  const hash = `${convertedCode.length}\0${convertedCode}${convertedMap.length}\0${convertedMap}`
+  return `https://evanw.github.io/source-map-visualization/#${btoa(hash)}`
+}
+
+expect.addSnapshotSerializer({
+  serialize(val, config, indentation, depth, refs, printer) {
+    const options = val[sourcemapSnapshot]
+    const map = { ...val.map }
+    if (options.withoutContent) {
+      delete map.sourcesContent
+    }
+
+    return `${indentation}SourceMap {
+${indentation}${config.indent}content: ${printer(map, config, indentation + config.indent, depth, refs)},
+${indentation}${config.indent}visualization: ${JSON.stringify(generateVisualizationLink(val.code, JSON.stringify(val.map)))}
+${indentation}}`
+  },
+  test(val) {
+    return typeof val === 'object' && val && val[sourcemapSnapshot]
+  },
+})
+
+// #endregion
 
 // #region env
 
-export const workspaceRoot = path.resolve(__dirname, '../')
+export const workspaceRoot = path.resolve(import.meta.dirname, '../')
 
 export const isBuild = !!process.env.VITE_TEST_BUILD
 export const isServe = !isBuild
@@ -67,35 +102,43 @@ export const serverLogs: string[] = []
 export const browserLogs: string[] = []
 export const browserErrors: Error[] = []
 
-export let resolvedConfig: ResolvedConfig = undefined!
-
 export let page: Page = undefined!
 export let browser: Browser = undefined!
 export let viteTestUrl: string = ''
-export let watcher: RollupWatcher | undefined = undefined
+export let watcher: RolldownWatcher | undefined = undefined
 
 export function setViteUrl(url: string): void {
   viteTestUrl = url
 }
 
+function throwHtmlParseError() {
+  return {
+    name: 'vite-plugin-throw-html-parse-error',
+    configResolved(config: ResolvedConfig) {
+      const warn = config.logger.warn
+      config.logger.warn = (msg, opts) => {
+        // convert HTML parse warnings to make it easier to test
+        if (msg.includes('Unable to parse HTML;')) {
+          throw new Error(msg)
+        }
+        warn.call(config.logger, msg, opts)
+      }
+    },
+  }
+}
 // #endregion
 
-beforeAll(async (s) => {
-  const suite = s as File
-
-  testPath = suite.filepath!
+// eslint-disable-next-line no-empty-pattern
+beforeAll(async ({}, suite) => {
+  testPath = suite.file.filepath!
   testName = slash(testPath).match(/playground\/([\w-]+)\//)?.[1]
   testDir = path.dirname(testPath)
   if (testName) {
     testDir = path.resolve(workspaceRoot, 'playground-temp', testName)
   }
 
-  // skip browser setup for non-playground tests
-  // TODO: ssr playground?
-  if (
-    !suite.filepath.includes('playground') ||
-    suite.filepath.includes('hmr-ssr')
-  ) {
+  // skip browser setup for hmr-ssr playground
+  if (testName === 'hmr-ssr') {
     return
   }
 
@@ -106,15 +149,6 @@ beforeAll(async (s) => {
 
   browser = await chromium.connect(wsEndpoint)
   page = await browser.newPage()
-
-  const globalConsole = global.console
-  const warn = globalConsole.warn
-  globalConsole.warn = (msg, ...args) => {
-    // suppress @vue/reactivity-transform warning
-    if (msg.includes('@vue/reactivity-transform')) return
-    if (msg.includes('Generated an empty chunk')) return
-    warn.call(globalConsole, msg, ...args)
-  }
 
   try {
     page.on('console', (msg) => {
@@ -226,18 +260,14 @@ async function loadConfig(configEnv: ConfigEnv) {
         usePolling: true,
         interval: 100,
       },
-      fs: {
-        strict: !isBuild,
-      },
     },
     build: {
       // esbuild do not minify ES lib output since that would remove pure annotations and break tree-shaking
       // skip transpilation during tests to make it faster
       target: 'esnext',
-      // tests are flaky when `emptyOutDir` is `true`
-      emptyOutDir: false,
     },
     customLogger: createInMemoryLogger(serverLogs),
+    plugins: [throwHtmlParseError()],
   }
   return mergeConfig(options, config || {})
 }
@@ -249,13 +279,14 @@ export async function startDefaultServe(): Promise<void> {
     process.env.VITE_INLINE = 'inline-serve'
     const config = await loadConfig({ command: 'serve', mode: 'development' })
     viteServer = server = await (await createServer(config)).listen()
-    viteTestUrl = server.resolvedUrls.local[0]
-    if (server.config.base === '/') {
-      viteTestUrl = viteTestUrl.replace(/\/$/, '')
-    }
+    viteTestUrl = stripTrailingSlashIfNeeded(
+      server.resolvedUrls.local[0],
+      server.config.base,
+    )
     await page.goto(viteTestUrl)
   } else {
     process.env.VITE_INLINE = 'inline-build'
+    let resolvedConfig: ResolvedConfig
     // determine build watch
     const resolvedPlugin: () => PluginOption = () => ({
       name: 'vite-plugin-watcher',
@@ -277,7 +308,7 @@ export async function startDefaultServe(): Promise<void> {
       const isWatch = !!resolvedConfig!.build.watch
       // in build watch,call startStaticServer after the build is complete
       if (isWatch) {
-        watcher = rollupOutput as RollupWatcher
+        watcher = rollupOutput as RolldownWatcher
         await notifyRebuildComplete(watcher)
       }
       if (buildConfig.__test__) {
@@ -294,7 +325,10 @@ export async function startDefaultServe(): Promise<void> {
     const previewServer = await preview(previewConfig)
     // prevent preview change NODE_ENV
     process.env.NODE_ENV = _nodeEnv
-    viteTestUrl = previewServer.resolvedUrls.local[0]
+    viteTestUrl = stripTrailingSlashIfNeeded(
+      previewServer.resolvedUrls.local[0],
+      previewServer.config.base,
+    )
     await page.goto(viteTestUrl)
   }
 }
@@ -303,10 +337,10 @@ export async function startDefaultServe(): Promise<void> {
  * Send the rebuild complete message in build watch
  */
 export async function notifyRebuildComplete(
-  watcher: RollupWatcher,
-): Promise<RollupWatcher> {
+  watcher: RolldownWatcher,
+): Promise<void> {
   let resolveFn: undefined | (() => void)
-  const callback = (event: RollupWatcherEvent): void => {
+  const callback = (event: RolldownWatcherEvent): void => {
     if (event.code === 'END') {
       resolveFn?.()
     }
@@ -315,7 +349,8 @@ export async function notifyRebuildComplete(
   await new Promise<void>((resolve) => {
     resolveFn = resolve
   })
-  return watcher.off('event', callback)
+
+  watcher.off('event', callback)
 }
 
 export function createInMemoryLogger(logs: string[]): Logger {
@@ -360,6 +395,13 @@ function setupConsoleWarnCollector(logs: string[]) {
 
 export function slash(p: string): string {
   return p.replace(/\\/g, '/')
+}
+
+function stripTrailingSlashIfNeeded(url: string, base: string): string {
+  if (base === '/') {
+    return url.replace(/\/$/, '')
+  }
+  return url
 }
 
 declare module 'vite' {

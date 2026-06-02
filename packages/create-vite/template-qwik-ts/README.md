@@ -2,7 +2,7 @@
 
 ## Qwik in CSR mode
 
-This starter is using a pure CSR (Client Side Rendering) mode. This means, that the application is fully bootstrapped in the browser. Most of Qwik innovations however take advantage of SSR (Server Side Rendering) mode.
+This starter is using a pure CSR (Client-Side Rendering) mode. This means, that the application is fully bootstrapped in the browser. Most of Qwik innovations however take advantage of SSR (Server-Side Rendering) mode.
 
 ```ts
 export default defineConfig({
@@ -14,7 +14,7 @@ export default defineConfig({
 })
 ```
 
-Use `npm create qwik@latest` to create a full production ready Qwik application, using SSR and [QwikCity](https://qwik.dev/docs/qwikcity/), our server-side metaframwork.
+Use `npm create qwik@latest` to create a full production ready Qwik application, using SSR and [QwikCity](https://qwik.dev/docs/qwikcity/), our server-side meta-framework.
 
 ## Usage
 

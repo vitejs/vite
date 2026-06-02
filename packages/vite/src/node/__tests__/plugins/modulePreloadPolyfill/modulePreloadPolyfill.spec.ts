@@ -1,5 +1,5 @@
 import { describe, it } from 'vitest'
-import type { ModuleFormat, RollupOutput } from 'rollup'
+import type { ModuleFormat, RolldownOutput } from 'rolldown'
 import { build } from '../../../build'
 import { modulePreloadPolyfillId } from '../../../plugins/modulePreloadPolyfill'
 
@@ -34,7 +34,7 @@ const buildProject = ({ format = 'es' as ModuleFormat } = {}) =>
         },
       },
     ],
-  }) as Promise<RollupOutput>
+  }) as Promise<RolldownOutput>
 
 describe('load', () => {
   it('loads modulepreload polyfill', async ({ expect }) => {

@@ -29,4 +29,10 @@ export interface Options {
    * default: true
    */
   renderModernChunks?: boolean
+  /**
+   * @see https://babeljs.io/docs/assumptions
+   *
+   * default: {}
+   */
+  assumptions?: Record<string, boolean>
 }

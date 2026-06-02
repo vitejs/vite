@@ -12,6 +12,7 @@ async function runTest() {
     server: {
       middlewareMode: true,
       hmr: false,
+      ws: false,
     },
     define: {
       __testDefineObject: '{ "hello": "test" }',

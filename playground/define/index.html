@@ -21,6 +21,7 @@
 <p>define variable in html: <code class="exp-define">__EXP__</code></p>
 <p>import json: <code class="import-json"></code></p>
 <p>define in dep: <code class="define-in-dep"></code></p>
+<p>define in environment: <code class="define-in-environment"></code></p>
 
 <h2>Define ignores string literals</h2>
 <section class="ignores-string-literals">
@@ -71,6 +72,18 @@
   </p>
 </section>
 
+<h2>Optional values are detected by pattern properly</h2>
+<p>
+  process?.env?.SOMEVAR
+  <code class="optional-env"></code>
+</p>
+
+<h2>Env import with query parameters works correctly</h2>
+<p>
+  /@vite/env?foo should be transformed
+  <code class="env-with-query"></code>
+</p>
+
 <script>
   // inject __VITE_SOME_IDENTIFIER__ to test if it's replaced
   window.__VITE_SOME_IDENTIFIER__ = true
@@ -114,6 +127,8 @@
   import { defined } from '@vitejs/test-commonjs-dep'
   text('.define-in-dep', JSON.stringify(defined))
 
+  text('.define-in-environment', JSON.stringify(__DEFINE_IN_ENVIRONMENT__))
+
   text('.ignores-string-literals .process-env-dot', 'process.env.')
   text(
     '.ignores-string-literals .global-process-env-dot',
@@ -151,6 +166,18 @@
     '.replace-undefined-constants-on-import-meta-env .import-meta-env-SOME_IDENTIFIER',
     `${import.meta.env.SOME_IDENTIFIER}`,
   )
+
+  import optionalEnv from './optional-env.js'
+  text('.optional-env', optionalEnv)
+
+  // replaced by a plugin
+  import(__VITE_ENV_WITH_QUERY__)
+    .then(() => {
+      text('.env-with-query', 'success')
+    })
+    .catch((err) => {
+      text('.env-with-query', `error: ${err.message}`)
+    })
 </script>
 
 <style>

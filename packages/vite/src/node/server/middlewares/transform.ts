@@ -1,46 +1,74 @@
 import path from 'node:path'
 import fsp from 'node:fs/promises'
-import type { Connect } from 'dep-types/connect'
 import colors from 'picocolors'
-import type { ExistingRawSourceMap } from 'rollup'
+import type { ExistingRawSourceMap } from 'rolldown'
+import type { Connect } from '#dep-types/connect'
 import type { ViteDevServer } from '..'
 import {
   createDebugger,
   fsPathFromId,
   injectQuery,
+  isCSSRequest,
   isImportRequest,
   isJSRequest,
   normalizePath,
   prettifyUrl,
-  rawRE,
   removeImportQuery,
   removeTimestampQuery,
-  urlRE,
 } from '../../utils'
 import { send } from '../send'
-import { ERR_LOAD_URL, transformRequest } from '../transformRequest'
+import { ERR_DENIED_ID, ERR_LOAD_URL } from '../transformRequest'
 import { applySourcemapIgnoreList } from '../sourcemap'
 import { isHTMLProxy } from '../../plugins/html'
 import {
   DEP_VERSION_RE,
   ERR_FILE_NOT_FOUND_IN_OPTIMIZED_DEP_DIR,
   ERR_OPTIMIZE_DEPS_PROCESSING_ERROR,
-  ERR_OUTDATED_OPTIMIZED_DEP,
   FS_PREFIX,
 } from '../../constants'
-import {
-  isCSSRequest,
-  isDirectCSSRequest,
-  isDirectRequest,
-} from '../../plugins/css'
+import { isDirectCSSRequest, isDirectRequest } from '../../plugins/css'
 import { ERR_CLOSED_SERVER } from '../pluginContainer'
 import { cleanUrl, unwrapId, withTrailingSlash } from '../../../shared/utils'
-import { NULL_BYTE_PLACEHOLDER } from '../../../shared/constants'
-import { ensureServingAccess } from './static'
+import {
+  ERR_OUTDATED_OPTIMIZED_DEP,
+  NULL_BYTE_PLACEHOLDER,
+} from '../../../shared/constants'
+import type { ResolvedConfig } from '../../config'
+import { checkLoadingAccess, respondWithAccessDenied } from './static'
 
 const debugCache = createDebugger('vite:cache')
 
 const knownIgnoreList = new Set(['/', '/favicon.ico'])
+
+const documentFetchDests = new Set([
+  'document',
+  'iframe',
+  'frame',
+  'fencedframe',
+])
+function isDocumentFetchDest(req: Connect.IncomingMessage) {
+  const fetchDest = req.headers['sec-fetch-dest']
+  return fetchDest !== undefined && documentFetchDests.has(fetchDest)
+}
+
+// TODO: consolidate this regex pattern with the url, raw, and inline checks in plugins
+const urlRE = /[?&]url\b/
+const rawRE = /[?&]raw\b/
+const inlineRE = /[?&]inline\b/
+const svgRE = /\.svg\b/
+
+export function isServerAccessDeniedForTransform(
+  config: ResolvedConfig,
+  id: string,
+): boolean {
+  if (rawRE.test(id) || urlRE.test(id) || inlineRE.test(id) || svgRE.test(id)) {
+    return (
+      checkLoadingAccess(config, cleanUrl(id)) !== 'allowed' ||
+      checkLoadingAccess(config, id) !== 'allowed'
+    )
+  }
+  return false
+}
 
 /**
  * A middleware that short-circuits the middleware chain to serve cached transformed modules
@@ -52,13 +80,18 @@ export function cachedTransformMiddleware(
   return function viteCachedTransformMiddleware(req, res, next) {
     const environment = server.environments.client
 
+    if (isDocumentFetchDest(req)) {
+      res.appendHeader('Vary', 'Sec-Fetch-Dest')
+      return next()
+    }
+
     // check if we can return 304 early
     const ifNoneMatch = req.headers['if-none-match']
     if (ifNoneMatch) {
       const moduleByEtag = environment.moduleGraph.getModuleByEtag(ifNoneMatch)
       if (
         moduleByEtag?.transformResult?.etag === ifNoneMatch &&
-        moduleByEtag?.url === req.url
+        moduleByEtag.url === req.url
       ) {
         // For CSS requests, if the same CSS file is imported in a module,
         // the browser sends the request for the direct CSS request with the etag
@@ -89,7 +122,11 @@ export function transformMiddleware(
   return async function viteTransformMiddleware(req, res, next) {
     const environment = server.environments.client
 
-    if (req.method !== 'GET' || knownIgnoreList.has(req.url!)) {
+    if (
+      (req.method !== 'GET' && req.method !== 'HEAD') ||
+      knownIgnoreList.has(req.url!) ||
+      isDocumentFetchDest(req)
+    ) {
       return next()
     }
 
@@ -100,6 +137,14 @@ export function transformMiddleware(
         '\0',
       )
     } catch (e) {
+      if (e instanceof URIError) {
+        server.config.logger.warn(
+          colors.yellow(
+            `Malformed URI sequence in request URL: ${removeTimestampQuery(req.url!)}`,
+          ),
+        )
+        return next()
+      }
       return next(e)
     }
 
@@ -116,6 +161,10 @@ export function transformMiddleware(
           const sourcemapPath = url.startsWith(FS_PREFIX)
             ? fsPathFromId(url)
             : normalizePath(path.resolve(server.config.root, url.slice(1)))
+          // url may contain relative path that may resolve outside of the optimized deps directory
+          if (!depsOptimizer.isOptimizedDepFile(sourcemapPath)) {
+            return next()
+          }
           try {
             const map = JSON.parse(
               await fsp.readFile(sourcemapPath, 'utf-8'),
@@ -168,13 +217,7 @@ export function transformMiddleware(
       }
 
       if (
-        (rawRE.test(url) || urlRE.test(url)) &&
-        !ensureServingAccess(url, server, res, next)
-      ) {
-        return
-      }
-
-      if (
+        req.headers['sec-fetch-dest'] === 'script' ||
         isJSRequest(url) ||
         isImportRequest(url) ||
         isCSSRequest(url) ||
@@ -211,9 +254,7 @@ export function transformMiddleware(
         }
 
         // resolve, load and transform using the plugin container
-        const result = await transformRequest(environment, url, {
-          html: req.headers.accept?.includes('text/html'),
-        })
+        const result = await environment.transformRequest(url)
         if (result) {
           const depsOptimizer = environment.depsOptimizer
           const type = isDirectCSSRequest(url) ? 'css' : 'js'
@@ -282,6 +323,26 @@ export function transformMiddleware(
       if (e?.code === ERR_LOAD_URL) {
         // Let other middleware handle if we can't load the url via transformRequest
         return next()
+      }
+      if (e?.code === ERR_DENIED_ID) {
+        const id: string = e.id
+        let servingAccessResult = checkLoadingAccess(
+          server.config,
+          cleanUrl(id),
+        )
+        if (servingAccessResult === 'allowed') {
+          servingAccessResult = checkLoadingAccess(server.config, id)
+        }
+        if (servingAccessResult === 'denied') {
+          respondWithAccessDenied(id, server, res)
+          return true
+        }
+        if (servingAccessResult === 'fallback') {
+          next()
+          return true
+        }
+        servingAccessResult satisfies 'allowed'
+        throw new Error(`Unexpected access result for id ${id}`)
       }
       return next(e)
     }

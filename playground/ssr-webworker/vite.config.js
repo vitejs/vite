@@ -1,4 +1,4 @@
-import { defineConfig } from 'vite'
+import { defaultClientConditions, defineConfig } from 'vite'
 
 export default defineConfig({
   build: {
@@ -6,7 +6,6 @@ export default defineConfig({
   },
   resolve: {
     dedupe: ['react'],
-    conditions: ['worker'],
   },
   ssr: {
     target: 'webworker',
@@ -14,6 +13,9 @@ export default defineConfig({
     // Some webworker builds may choose to externalize node builtins as they may be implemented
     // in the runtime, and so we can externalize it when bundling.
     external: ['node:assert'],
+    resolve: {
+      conditions: [...defaultClientConditions, 'worker'],
+    },
   },
   plugins: [
     {

@@ -1,3 +1,3 @@
 export default async function main() {
-	await import("./entry.js");
+  await import('./entry.js')
 }

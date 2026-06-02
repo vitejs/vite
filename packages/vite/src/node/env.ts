@@ -1,24 +1,38 @@
 import fs from 'node:fs'
 import path from 'node:path'
-import { parse } from 'dotenv'
+// eslint-disable-next-line n/no-unsupported-features/node-builtins -- our supported nodejs range supports `parseEnv` but in experimental state, which is fine
+import { parseEnv } from 'node:util'
 import { type DotenvPopulateInput, expand } from 'dotenv-expand'
-import { arraify, normalizePath, tryStatSync } from './utils'
+import colors from 'picocolors'
+import { arraify, createDebugger, normalizePath, tryStatSync } from './utils'
 import type { UserConfig } from './config'
 
-export function getEnvFilesForMode(mode: string, envDir: string): string[] {
-  return [
-    /** default file */ `.env`,
-    /** local file */ `.env.local`,
-    /** mode file */ `.env.${mode}`,
-    /** mode local file */ `.env.${mode}.local`,
-  ].map((file) => normalizePath(path.join(envDir, file)))
+const debug = createDebugger('vite:env')
+
+export function getEnvFilesForMode(
+  mode: string,
+  envDir: string | false,
+): string[] {
+  if (envDir !== false) {
+    return [
+      /** default file */ `.env`,
+      /** local file */ `.env.local`,
+      /** mode file */ `.env.${mode}`,
+      /** mode local file */ `.env.${mode}.local`,
+    ].map((file) => normalizePath(path.join(envDir, file)))
+  }
+
+  return []
 }
 
 export function loadEnv(
   mode: string,
-  envDir: string,
+  envDir: string | false,
   prefixes: string | string[] = 'VITE_',
 ): Record<string, string> {
+  const start = performance.now()
+  const getTime = () => `${(performance.now() - start).toFixed(2)}ms`
+
   if (mode === 'local') {
     throw new Error(
       `"local" cannot be used as a mode name because it conflicts with ` +
@@ -29,13 +43,20 @@ export function loadEnv(
   const env: Record<string, string> = {}
   const envFiles = getEnvFilesForMode(mode, envDir)
 
+  debug?.(`loading env files: %O`, envFiles)
+
   const parsed = Object.fromEntries(
     envFiles.flatMap((filePath) => {
-      if (!tryStatSync(filePath)?.isFile()) return []
+      const stat = tryStatSync(filePath)
+      // Support FIFOs (named pipes) for apps like 1Password
+      if (!stat || (!stat.isFile() && !stat.isFIFO())) return []
 
-      return Object.entries(parse(fs.readFileSync(filePath)))
+      const parsedEnv = parseEnv(fs.readFileSync(filePath, 'utf-8'))
+      return Object.entries(parsedEnv as Record<string, string>)
     }),
   )
+
+  debug?.(`env files loaded in ${getTime()}`)
 
   // test NODE_ENV override before expand as otherwise process.env.NODE_ENV would override this
   if (parsed.NODE_ENV && process.env.VITE_USER_NODE_ENV === undefined) {
@@ -65,9 +86,11 @@ export function loadEnv(
   // these are typically provided inline and should be prioritized
   for (const key in process.env) {
     if (prefixes.some((prefix) => key.startsWith(prefix))) {
-      env[key] = process.env[key] as string
+      env[key] = process.env[key]!
     }
   }
+
+  debug?.(`using resolved env: %O`, env)
 
   return env
 }
@@ -79,6 +102,14 @@ export function resolveEnvPrefix({
   if (envPrefix.includes('')) {
     throw new Error(
       `envPrefix option contains value '', which could lead unexpected exposure of sensitive information.`,
+    )
+  }
+  if (envPrefix.some((prefix) => /\s/.test(prefix))) {
+    // eslint-disable-next-line no-console
+    console.warn(
+      colors.yellow(
+        `[vite] Warning: envPrefix option contains values with whitespace, which does not work in practice.`,
+      ),
     )
   }
   return envPrefix

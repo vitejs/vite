@@ -2,19 +2,21 @@ import fs from 'node:fs'
 import license from 'rollup-plugin-license'
 import type { Dependency } from 'rollup-plugin-license'
 import colors from 'picocolors'
-import type { Plugin } from 'rollup'
+import type { Plugin, PluginContext } from 'rollup'
 
 export default function licensePlugin(
   licenseFilePath: string,
   licenseTitle: string,
   packageName: string,
+  additionalSection?: string,
 ): Plugin {
-  return license({
+  const originalPlugin = license({
     thirdParty(dependencies) {
       // https://github.com/rollup/rollup/blob/master/build-plugins/generate-license-file.js
       // MIT Licensed https://github.com/rollup/rollup/blob/master/LICENSE-CORE.md
       const coreLicense = fs.readFileSync(
         new URL('../../LICENSE', import.meta.url),
+        'utf-8',
       )
 
       const deps = sortDependencies(dependencies)
@@ -95,7 +97,9 @@ export default function licensePlugin(
         `# ${licenseTitle}\n` +
         `${packageName} is released under the MIT license:\n\n` +
         coreLicense +
-        `\n# Licenses of bundled dependencies\n` +
+        `\n` +
+        (additionalSection || '') +
+        `# Licenses of bundled dependencies\n` +
         `The published ${packageName} artifact additionally contains code with the following licenses:\n` +
         `${licenses.join(', ')}\n\n` +
         `# Bundled dependencies:\n` +
@@ -112,6 +116,15 @@ export default function licensePlugin(
       }
     },
   })
+  // skip for watch mode
+  for (const hook of ['renderChunk', 'generateBundle'] as const) {
+    const originalHook = originalPlugin[hook]!
+    originalPlugin[hook] = function (this: PluginContext, ...args: unknown[]) {
+      if (this.meta.watchMode) return
+      return (originalHook as Function).apply(this, args)
+    }
+  }
+  return originalPlugin
 }
 
 function sortDependencies(dependencies: Dependency[]) {
@@ -124,7 +137,7 @@ function sortLicenses(licenses: Set<string>) {
   let withParenthesis: string[] = []
   let noParenthesis: string[] = []
   licenses.forEach((license) => {
-    if (/^\(/.test(license)) {
+    if (license[0] === '(') {
       withParenthesis.push(license)
     } else {
       noParenthesis.push(license)
@@ -161,9 +174,31 @@ function getDependencyInformation(dep: Dependency): DependencyInfo {
   }
 
   if (repository) {
-    info.repository =
-      typeof repository === 'string' ? repository : repository.url
+    info.repository = normalizeGitUrl(
+      typeof repository === 'string' ? repository : repository.url,
+    )
   }
 
   return info
+}
+
+function normalizeGitUrl(url: string): string {
+  url = url
+    .replace(/^git\+/, '')
+    .replace(/\.git$/, '')
+    .replace(/(^|\/)[^/]+?@/, '$1') // remove "user@" from "ssh://user@host.com:..."
+    .replace(/(\.[^.]+?):/, '$1/') // change ".com:" to ".com/" from "ssh://user@host.com:..."
+    .replace(/^git:\/\//, 'https://')
+    .replace(/^ssh:\/\//, 'https://')
+  if (url.startsWith('github:')) {
+    return `https://github.com/${url.slice(7)}`
+  } else if (url.startsWith('gitlab:')) {
+    return `https://gitlab.com/${url.slice(7)}`
+  } else if (url.startsWith('bitbucket:')) {
+    return `https://bitbucket.org/${url.slice(10)}`
+  } else if (!url.includes(':') && url.split('/').length === 2) {
+    return `https://github.com/${url}`
+  } else {
+    return url.includes('://') ? url : `https://${url}`
+  }
 }

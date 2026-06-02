@@ -14,5 +14,10 @@
     "dev:deny": "vite root --config ./root/vite.config-deny.js",
     "build:deny": "vite build root --config ./root/vite.config-deny.js",
     "preview:deny": "vite preview root --config ./root/vite.config-deny.js"
+  },
+  "devDependencies": {
+    "@types/escape-html": "^1.0.4",
+    "escape-html": "^1.0.3",
+    "ws": "^8.21.0"
   }
 }

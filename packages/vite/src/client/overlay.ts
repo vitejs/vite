@@ -1,4 +1,4 @@
-import type { ErrorPayload } from 'types/hmrPayload'
+import type { ErrorPayload } from '#types/hmrPayload'
 
 // injected by the hmr plugin when served
 declare const __BASE__: string
@@ -7,15 +7,22 @@ declare const __HMR_CONFIG_NAME__: string
 const hmrConfigName = __HMR_CONFIG_NAME__
 const base = __BASE__ || '/'
 
+export const cspNonce =
+  'document' in globalThis
+    ? document.querySelector<HTMLMetaElement>('meta[property=csp-nonce]')?.nonce
+    : undefined
+
 // Create an element with provided attributes and optional children
 function h(
   e: string,
-  attrs: Record<string, string> = {},
+  attrs: Record<string, string | undefined> = {},
   ...children: (string | Node)[]
 ) {
   const elem = document.createElement(e)
   for (const [k, v] of Object.entries(attrs)) {
-    elem.setAttribute(k, v)
+    if (v !== undefined) {
+      elem.setAttribute(k, v)
+    }
   }
   elem.append(...children)
   return elem
@@ -197,10 +204,10 @@ const createTemplate = () =>
         '.',
       ),
     ),
-    h('style', {}, templateStyle),
+    h('style', { nonce: cspNonce }, templateStyle),
   )
 
-const fileRE = /(?:[a-zA-Z]:\\|\/).*?:\d+:\d+/g
+const fileRE = /(?:file:\/\/)?(?:[a-zA-Z]:\\|\/).*?:\d+:\d+/g
 const codeframeRE = /^(?:>?\s*\d+\s+\|.*|\s+\|\s*\^.*)\r?\n/gm
 
 // Allow `ErrorOverlay` to extend `HTMLElement` even in environments where
@@ -264,23 +271,24 @@ export class ErrorOverlay extends HTMLElement {
       fileRE.lastIndex = 0
       while ((match = fileRE.exec(text))) {
         const { 0: file, index } = match
-        if (index != null) {
-          const frag = text.slice(curIndex, index)
-          el.appendChild(document.createTextNode(frag))
-          const link = document.createElement('a')
-          link.textContent = file
-          link.className = 'file-link'
-          link.onclick = () => {
-            fetch(
-              new URL(
-                `${base}__open-in-editor?file=${encodeURIComponent(file)}`,
-                import.meta.url,
-              ),
-            )
-          }
-          el.appendChild(link)
-          curIndex += frag.length + file.length
+        const frag = text.slice(curIndex, index)
+        el.appendChild(document.createTextNode(frag))
+        const link = document.createElement('a')
+        link.textContent = file
+        link.className = 'file-link'
+        link.onclick = () => {
+          fetch(
+            new URL(
+              `${base}__open-in-editor?file=${encodeURIComponent(file)}`,
+              import.meta.url,
+            ),
+          )
         }
+        el.appendChild(link)
+        curIndex += frag.length + file.length
+      }
+      if (curIndex < text.length) {
+        el.appendChild(document.createTextNode(text.slice(curIndex)))
       }
     }
   }

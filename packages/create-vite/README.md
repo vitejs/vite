@@ -3,30 +3,36 @@
 ## Scaffolding Your First Vite Project
 
 > **Compatibility Note:**
-> Vite requires [Node.js](https://nodejs.org/en/) version 18+, 20+. However, some templates require a higher Node.js version to work, please upgrade if your package manager warns about it.
+> Vite requires [Node.js](https://nodejs.org/en/) version 20.19+, 22.12+. However, some templates require a higher Node.js version to work, please upgrade if your package manager warns about it.
 
 With NPM:
 
 ```bash
-$ npm create vite@latest
+npm create vite@latest
 ```
 
 With Yarn:
 
 ```bash
-$ yarn create vite
+yarn create vite
 ```
 
 With PNPM:
 
 ```bash
-$ pnpm create vite
+pnpm create vite
 ```
 
 With Bun:
 
 ```bash
-$ bun create vite
+bun create vite
+```
+
+With Deno:
+
+```bash
+deno init --npm vite
 ```
 
 Then follow the prompts!
@@ -45,6 +51,9 @@ pnpm create vite my-vue-app --template vue
 
 # Bun
 bun create vite my-vue-app --template vue
+
+# Deno
+deno init --npm vite my-vue-app --template vue
 ```
 
 Currently supported template presets include:
@@ -54,9 +63,9 @@ Currently supported template presets include:
 - `vue`
 - `vue-ts`
 - `react`
+- `react-compiler`
 - `react-ts`
-- `react-swc`
-- `react-swc-ts`
+- `react-compiler-ts`
 - `preact`
 - `preact-ts`
 - `lit`
@@ -72,18 +81,12 @@ You can use `.` for the project name to scaffold in the current directory.
 
 ## Community Templates
 
-create-vite is a tool to quickly start a project from a basic template for popular frameworks. Check out Awesome Vite for [community maintained templates](https://github.com/vitejs/awesome-vite#templates) that include other tools or target different frameworks. You can use a tool like [degit](https://github.com/Rich-Harris/degit) to scaffold your project with one of the templates.
+create-vite is a tool to quickly start a project from a basic template for popular frameworks. Check out Awesome Vite for [community maintained templates](https://github.com/vitejs/awesome-vite#templates) that include other tools or target different frameworks. You can use a tool like [tiged](https://github.com/tiged/tiged) to scaffold your project with one of the templates.
 
 ```bash
-npx degit user/project my-project
+npx tiged user/project my-project
 cd my-project
 
 npm install
 npm run dev
-```
-
-If the project uses `main` as the default branch, suffix the project repo with `#main`
-
-```bash
-npx degit user/project#main my-project
 ```

@@ -20,7 +20,16 @@ export default defineConfig((env) => ({
         Object.assign(globalThis, { __globalServer: server })
       },
     },
+    {
+      name: 'build-client',
+      async buildApp(builder) {
+        await builder.build(builder.environments.client)
+      },
+    },
   ],
+  resolve: {
+    noExternal: true,
+  },
   environments: {
     client: {
       build: {
@@ -28,15 +37,19 @@ export default defineConfig((env) => ({
         sourcemap: true,
         outDir: 'dist/client',
       },
+      optimizeDeps: {
+        rolldownOptions: {
+          // manual test for https://github.com/vitejs/rolldown-vite/issues/416
+          transform: {},
+        },
+      },
     },
     ssr: {
+      optimizeDeps: {
+        noDiscovery: false,
+      },
       build: {
         outDir: 'dist/server',
-        // [feedback]
-        // is this still meant to be used?
-        // for example, `ssr: true` seems to make `minify: false` automatically
-        // and also externalization.
-        ssr: true,
         rollupOptions: {
           input: {
             index: '/src/entry-server',
@@ -48,7 +61,9 @@ export default defineConfig((env) => ({
 
   builder: {
     async buildApp(builder) {
-      await builder.build(builder.environments.client)
+      if (!builder.environments.client.isBuilt) {
+        throw new Error('Client environment should be built first')
+      }
       await builder.build(builder.environments.ssr)
     },
   },
@@ -69,9 +84,23 @@ export function vitePluginSsrMiddleware({
       const runner = createServerModuleRunner(server.environments.ssr, {
         hmr: { logger: false },
       })
+      const importWithRetry = async () => {
+        try {
+          return await runner.import(entry)
+        } catch (e) {
+          if (
+            e instanceof Error &&
+            (e as any).code === 'ERR_OUTDATED_OPTIMIZED_DEP'
+          ) {
+            runner.clearCache()
+            return await importWithRetry()
+          }
+          throw e
+        }
+      }
       const handler: Connect.NextHandleFunction = async (req, res, next) => {
         try {
-          const mod = await runner.import(entry)
+          const mod = await importWithRetry()
           await mod['default'](req, res, next)
         } catch (e) {
           next(e)

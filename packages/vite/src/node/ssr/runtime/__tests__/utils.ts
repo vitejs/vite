@@ -2,7 +2,7 @@ import fs from 'node:fs'
 import { dirname, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import type { TestAPI } from 'vitest'
-import { afterEach, beforeEach, test } from 'vitest'
+import { afterEach, beforeEach, onTestFinished, test } from 'vitest'
 import type { ModuleRunner } from 'vite/module-runner'
 import type { ServerModuleRunnerOptions } from '../serverModuleRunner'
 import type { ViteDevServer } from '../../../server'
@@ -32,10 +32,11 @@ export async function createModuleRunnerTester(
   }
 
   beforeEach<TestClient>(async (t) => {
+    // @ts-ignore
     globalThis.__HMR__ = {}
 
     t.server = await createServer({
-      root: __dirname,
+      root: import.meta.dirname,
       logLevel: 'error',
       server: {
         middlewareMode: true,
@@ -60,6 +61,9 @@ export async function createModuleRunnerTester(
             if (id === 'virtual:test') {
               return 'virtual:test'
             }
+            if (id === 'virtual:normal') {
+              return '\0' + id
+            }
           },
           load(id) {
             if (id === `\0virtual:test`) {
@@ -68,8 +72,12 @@ export async function createModuleRunnerTester(
             if (id === `virtual:test`) {
               return `export const msg = 'virtual'`
             }
+            if (id === '\0virtual:normal') {
+              return 'export default "ok"'
+            }
           },
         },
+        ...(config.plugins ?? []),
       ],
       ...config,
     })
@@ -95,32 +103,26 @@ export async function createModuleRunnerTester(
   return test as TestAPI<TestClient>
 }
 
-const originalFiles = new Map<string, string>()
-const createdFiles = new Set<string>()
-afterEach(() => {
-  originalFiles.forEach((content, file) => {
-    fs.writeFileSync(file, content, 'utf-8')
-  })
-  createdFiles.forEach((file) => {
-    if (fs.existsSync(file)) fs.unlinkSync(file)
-  })
-  originalFiles.clear()
-  createdFiles.clear()
-})
-
-export function createFile(file: string, content: string): void {
-  createdFiles.add(file)
-  fs.mkdirSync(dirname(file), { recursive: true })
-  fs.writeFileSync(file, content, 'utf-8')
+type FixtureEditor = {
+  editFile: (file: string, callback: (content: string) => string) => void
 }
 
-export function editFile(
-  file: string,
-  callback: (content: string) => string,
-): void {
-  const content = fs.readFileSync(file, 'utf-8')
-  if (!originalFiles.has(file)) originalFiles.set(file, content)
-  fs.writeFileSync(file, callback(content), 'utf-8')
+export function createFixtureEditor(): FixtureEditor {
+  const originalFiles = new Map<string, string>()
+  onTestFinished(() => {
+    originalFiles.forEach((content, file) => {
+      fs.writeFileSync(file, content, 'utf-8')
+    })
+    originalFiles.clear()
+  })
+
+  return {
+    editFile(file, callback) {
+      const content = fs.readFileSync(file, 'utf-8')
+      if (!originalFiles.has(file)) originalFiles.set(file, content)
+      fs.writeFileSync(file, callback(content), 'utf-8')
+    },
+  }
 }
 
 export function resolvePath(baseUrl: string, path: string): string {

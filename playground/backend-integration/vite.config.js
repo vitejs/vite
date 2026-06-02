@@ -1,6 +1,7 @@
 import path from 'node:path'
 import { globSync } from 'tinyglobby'
 import { defineConfig, normalizePath } from 'vite'
+import tailwind from '@tailwindcss/vite'
 
 /**
  * @returns {import('vite').Plugin}
@@ -9,7 +10,7 @@ function BackendIntegrationExample() {
   return {
     name: 'backend-integration',
     config() {
-      const projectRoot = __dirname
+      const projectRoot = import.meta.dirname
       const sourceCodeDir = path.join(projectRoot, 'frontend')
       const root = path.join(sourceCodeDir, 'entrypoints')
       const outDir = path.relative(root, path.join(projectRoot, 'dist/dev'))
@@ -21,7 +22,11 @@ function BackendIntegrationExample() {
       }).map((filename) => [path.relative(root, filename), filename])
 
       entrypoints.push(['tailwindcss-colors', 'tailwindcss/colors.js'])
-      entrypoints.push(['bar.css', path.resolve(__dirname, './dir/foo.css')])
+      entrypoints.push(['bar.css', path.resolve(projectRoot, './dir/foo.css')])
+      entrypoints.push([
+        'bar.custom',
+        path.resolve(projectRoot, './dir/custom.css'),
+      ])
 
       return {
         server: {
@@ -53,12 +58,5 @@ function BackendIntegrationExample() {
 
 export default defineConfig({
   base: '/dev/',
-  plugins: [BackendIntegrationExample()],
-  css: {
-    preprocessorOptions: {
-      scss: {
-        silenceDeprecations: ['legacy-js-api'],
-      },
-    },
-  },
+  plugins: [BackendIntegrationExample(), tailwind()],
 })

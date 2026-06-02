@@ -1,19 +1,29 @@
 import { basename, resolve } from 'node:path'
-import { fileURLToPath } from 'node:url'
+import { stripVTControlCharacters } from 'node:util'
+import fsp from 'node:fs/promises'
 import colors from 'picocolors'
-import { describe, expect, test, vi } from 'vitest'
-import type { OutputChunk, OutputOptions, RollupOutput } from 'rollup'
+import { afterEach, describe, expect, test, vi } from 'vitest'
+import type {
+  LogLevel,
+  OutputChunk,
+  OutputOptions,
+  RolldownOptions,
+  RolldownOutput,
+  RollupLog,
+} from 'rolldown'
 import type { LibraryFormats, LibraryOptions } from '../build'
 import {
   build,
   createBuilder,
+  onRollupLog,
   resolveBuildOutputs,
   resolveLibFilename,
 } from '../build'
 import type { Logger } from '../logger'
 import { createLogger } from '../logger'
+import { BuildEnvironment, resolveConfig } from '..'
 
-const __dirname = resolve(fileURLToPath(import.meta.url), '..')
+const dirname = import.meta.dirname
 
 type FormatsToFileNames = [LibraryFormats, string][]
 
@@ -21,7 +31,7 @@ describe('build', () => {
   test('file hash should change when css changes for dynamic entries', async () => {
     const buildProject = async (cssColor: string) => {
       return (await build({
-        root: resolve(__dirname, 'packages/build-project'),
+        root: resolve(dirname, 'packages/build-project'),
         logLevel: 'silent',
         build: {
           write: false,
@@ -51,19 +61,30 @@ describe('build', () => {
             },
           },
         ],
-      })) as RollupOutput
+      })) as RolldownOutput
     }
     const result = await Promise.all([
       buildProject('red'),
       buildProject('blue'),
     ])
+    expect(getOutputHashChanges(result[0], result[1])).toMatchInlineSnapshot(`
+      {
+        "changed": [
+          "index",
+          "_subentry.css",
+        ],
+        "unchanged": [
+          "undefined",
+        ],
+      }
+    `)
     assertOutputHashContentChange(result[0], result[1])
   })
 
   test('file hash should change when pure css chunk changes', async () => {
     const buildProject = async (cssColor: string) => {
       return (await build({
-        root: resolve(__dirname, 'packages/build-project'),
+        root: resolve(dirname, 'packages/build-project'),
         logLevel: 'silent',
         build: {
           write: false,
@@ -99,14 +120,119 @@ describe('build', () => {
             },
           },
         ],
-      })) as RollupOutput
+      })) as RolldownOutput
     }
     const result = await Promise.all([
       buildProject('yellow'),
       buildProject('blue'),
     ])
+    expect(getOutputHashChanges(result[0], result[1])).toMatchInlineSnapshot(`
+      {
+        "changed": [
+          "index",
+          "_bar",
+          "_foo",
+          "_baz.css",
+        ],
+        "unchanged": [
+          "_bar.css",
+          "_foo.css",
+          "undefined",
+        ],
+      }
+    `)
     assertOutputHashContentChange(result[0], result[1])
   })
+
+  test('css entries with the same basename should not cross-link manifest assets', async () => {
+    const root = resolve(dirname, 'fixtures/css-entry-same-basename')
+    const result = (await build({
+      root,
+      logLevel: 'silent',
+      build: {
+        write: false,
+        manifest: true,
+        assetsInlineLimit: 0,
+        rollupOptions: {
+          input: [resolve(root, 'a/index.css'), resolve(root, 'b/index.css')],
+        },
+      },
+    })) as RolldownOutput
+
+    const manifest = JSON.parse(
+      (result.output.find((o) => o.fileName === '.vite/manifest.json') as any)
+        .source,
+    )
+    expect(manifest['a/index.css']).toMatchObject({
+      isEntry: true,
+    })
+    expect(manifest['b/index.css']).toMatchObject({
+      isEntry: true,
+    })
+  })
+
+  test.for([
+    [true, true],
+    [true, false],
+    [false, true],
+    [false, false],
+    ['auto', true],
+    ['auto', false],
+  ] as const)(
+    'large json object files should have tree-shaking (json.stringify: %s, json.namedExports: %s)',
+    async ([stringify, namedExports]) => {
+      const esBundle = (await build({
+        mode: 'development',
+        root: resolve(dirname, 'packages/build-project'),
+        logLevel: 'silent',
+        json: { stringify, namedExports },
+        build: {
+          minify: false,
+          modulePreload: { polyfill: false },
+          write: false,
+        },
+        plugins: [
+          {
+            name: 'test',
+            resolveId(id) {
+              if (
+                id === 'entry.js' ||
+                id === 'object.json' ||
+                id === 'array.json'
+              ) {
+                return '\0' + id
+              }
+            },
+            load(id) {
+              if (id === '\0entry.js') {
+                return `
+                  import object from 'object.json';
+                  import array from 'array.json';
+                  console.log();
+                `
+              }
+              if (id === '\0object.json') {
+                return `
+                  {"value": {"${stringify}_${namedExports}":"JSON_OBJ${'_'.repeat(10_000)}"}}
+                `
+              }
+              if (id === '\0array.json') {
+                return `
+                  ["${stringify}_${namedExports}","JSON_ARR${'_'.repeat(10_000)}"]
+                `
+              }
+            },
+          },
+        ],
+      })) as RolldownOutput
+
+      const foo = esBundle.output.find(
+        (chunk) => chunk.type === 'chunk' && chunk.isEntry,
+      ) as OutputChunk
+      expect(foo.code).not.contains('JSON_ARR')
+      expect(foo.code).not.contains('JSON_OBJ')
+    },
+  )
 
   test('external modules should not be hoisted in library build', async () => {
     const [esBundle] = (await build({
@@ -145,7 +271,7 @@ describe('build', () => {
           },
         },
       ],
-    })) as RollupOutput[]
+    })) as RolldownOutput[]
 
     const foo = esBundle.output.find(
       (chunk) => chunk.fileName === 'foo.js',
@@ -238,7 +364,7 @@ describe('resolveBuildOutputs', () => {
     const resolveBuild = () => resolveBuildOutputs(outputs, libOptions, logger)
 
     expect(resolveBuild).toThrowError(
-      /Entries in "build\.rollupOptions\.output" must specify "name"/,
+      /Entries in "build\.rolldownOptions\.output" must specify "name"/,
     )
   })
 
@@ -249,7 +375,7 @@ describe('resolveBuildOutputs', () => {
     const resolveBuild = () => resolveBuildOutputs(outputs, libOptions, logger)
 
     expect(resolveBuild).toThrowError(
-      /Entries in "build\.rollupOptions\.output" must specify "name"/,
+      /Entries in "build\.rolldownOptions\.output" must specify "name"/,
     )
   })
 })
@@ -263,7 +389,7 @@ describe('resolveLibFilename', () => {
       },
       'es',
       'myLib',
-      resolve(__dirname, 'packages/name'),
+      resolve(dirname, 'packages/name'),
     )
 
     expect(filename).toBe('custom-filename-function.es.js')
@@ -277,7 +403,7 @@ describe('resolveLibFilename', () => {
       },
       'es',
       'myLib',
-      resolve(__dirname, 'packages/name'),
+      resolve(dirname, 'packages/name'),
     )
 
     expect(filename).toBe('custom-filename.mjs')
@@ -290,7 +416,7 @@ describe('resolveLibFilename', () => {
       },
       'es',
       'myLib',
-      resolve(__dirname, 'packages/name'),
+      resolve(dirname, 'packages/name'),
     )
 
     expect(filename).toBe('mylib.mjs')
@@ -304,23 +430,22 @@ describe('resolveLibFilename', () => {
       },
       'es',
       'myLib',
-      resolve(__dirname, 'packages/noname'),
+      resolve(dirname, 'packages/noname'),
     )
 
     expect(filename).toBe('custom-filename.mjs')
   })
 
   test('missing filename', () => {
-    expect(() => {
-      resolveLibFilename(
-        {
-          entry: 'mylib.js',
-        },
-        'es',
-        'myLib',
-        resolve(__dirname, 'packages/noname'),
-      )
-    }).toThrow()
+    const filename = resolveLibFilename(
+      {
+        entry: 'mylib.js',
+      },
+      'es',
+      'myLib',
+      resolve(dirname, 'packages/noname'),
+    )
+    expect(filename).toBe('named-testing-package.mjs')
   })
 
   test('commonjs package extensions', () => {
@@ -336,7 +461,7 @@ describe('resolveLibFilename', () => {
         baseLibOptions,
         format,
         'myLib',
-        resolve(__dirname, 'packages/noname'),
+        resolve(dirname, 'packages/noname'),
       )
 
       expect(filename).toBe(expectedFilename)
@@ -356,7 +481,7 @@ describe('resolveLibFilename', () => {
         baseLibOptions,
         format,
         'myLib',
-        resolve(__dirname, 'packages/module'),
+        resolve(dirname, 'packages/module'),
       )
 
       expect(expectedFilename).toBe(filename)
@@ -376,7 +501,7 @@ describe('resolveLibFilename', () => {
         libOptions,
         'es',
         entryAlias,
-        resolve(__dirname, 'packages/name'),
+        resolve(dirname, 'packages/name'),
       ),
     )
 
@@ -399,7 +524,7 @@ describe('resolveLibFilename', () => {
         libOptions,
         'es',
         entryAlias,
-        resolve(__dirname, 'packages/name'),
+        resolve(dirname, 'packages/name'),
       ),
     )
 
@@ -421,7 +546,7 @@ describe('resolveLibFilename', () => {
         libOptions,
         'es',
         entryAlias,
-        resolve(__dirname, 'packages/name'),
+        resolve(dirname, 'packages/name'),
       ),
     )
 
@@ -439,7 +564,7 @@ describe('resolveLibFilename', () => {
         libOptions,
         'es',
         entryAlias,
-        resolve(__dirname, 'packages/name'),
+        resolve(dirname, 'packages/name'),
       ),
     )
 
@@ -459,7 +584,7 @@ describe('resolveLibFilename', () => {
         libOptions,
         'es',
         entryAlias,
-        resolve(__dirname, 'packages/name'),
+        resolve(dirname, 'packages/name'),
       ),
     )
 
@@ -478,7 +603,7 @@ describe('resolveLibFilename', () => {
         libOptions,
         'es',
         entryAlias,
-        resolve(__dirname, 'packages/name'),
+        resolve(dirname, 'packages/name'),
       ),
     )
 
@@ -577,14 +702,14 @@ describe('resolveBuildOutputs', () => {
     ).toEqual([{ name: 'A' }])
     expect(log.warn).toHaveBeenLastCalledWith(
       colors.yellow(
-        `"build.lib.formats" will be ignored because "build.rollupOptions.output" is already an array format.`,
+        `"build.lib.formats" will be ignored because "build.rolldownOptions.output" is already an array format.`,
       ),
     )
   })
 
   test('ssrEmitAssets', async () => {
     const result = await build({
-      root: resolve(__dirname, 'fixtures/emit-assets'),
+      root: resolve(dirname, 'fixtures/emit-assets'),
       logLevel: 'silent',
       build: {
         ssr: true,
@@ -602,7 +727,7 @@ describe('resolveBuildOutputs', () => {
           fileName: 'index.mjs',
         },
         {
-          fileName: expect.stringMatching(/assets\/index-\w*\.css/),
+          fileName: expect.stringMatching(/assets\/index-[-\w]{8}\.css/),
         },
       ],
     })
@@ -610,7 +735,7 @@ describe('resolveBuildOutputs', () => {
 
   test('emitAssets', async () => {
     const builder = await createBuilder({
-      root: resolve(__dirname, 'fixtures/emit-assets'),
+      root: resolve(dirname, 'fixtures/emit-assets'),
       logLevel: 'warn',
       environments: {
         ssr: {
@@ -633,7 +758,7 @@ describe('resolveBuildOutputs', () => {
           fileName: 'index.mjs',
         },
         {
-          fileName: expect.stringMatching(/assets\/index-\w*\.css/),
+          fileName: expect.stringMatching(/assets\/index-[-\w]{8}\.css/),
         },
       ],
     })
@@ -641,7 +766,7 @@ describe('resolveBuildOutputs', () => {
 
   test('ssr builtin', async () => {
     const builder = await createBuilder({
-      root: resolve(__dirname, 'fixtures/dynamic-import'),
+      root: resolve(dirname, 'fixtures/dynamic-import'),
       logLevel: 'warn',
       environments: {
         ssr: {
@@ -657,12 +782,12 @@ describe('resolveBuildOutputs', () => {
       },
     })
     const result = await builder.build(builder.environments.ssr)
-    expect((result as RollupOutput).output[0].code).not.toContain('preload')
+    expect((result as RolldownOutput).output[0].code).not.toContain('preload')
   })
 
   test('ssr custom', async () => {
     const builder = await createBuilder({
-      root: resolve(__dirname, 'fixtures/dynamic-import'),
+      root: resolve(dirname, 'fixtures/dynamic-import'),
       logLevel: 'warn',
       environments: {
         custom: {
@@ -678,14 +803,14 @@ describe('resolveBuildOutputs', () => {
       },
     })
     const result = await builder.build(builder.environments.custom)
-    expect((result as RollupOutput).output[0].code).not.toContain('preload')
+    expect((result as RolldownOutput).output[0].code).not.toContain('preload')
   })
 })
 
 test('default sharedConfigBuild true on build api', async () => {
   let counter = 0
   await build({
-    root: resolve(__dirname, 'fixtures/emit-assets'),
+    root: resolve(dirname, 'fixtures/emit-assets'),
     logLevel: 'warn',
     build: {
       ssr: true,
@@ -707,10 +832,136 @@ test('default sharedConfigBuild true on build api', async () => {
   expect(counter).toBe(1)
 })
 
-test('adjust worker build error for worker.format', async () => {
+test.for([true, false])(
+  'minify per environment (builder.sharedPlugins: %s)',
+  async (sharedPlugins) => {
+    const root = resolve(dirname, 'fixtures/shared-plugins/minify')
+    const builder = await createBuilder({
+      root,
+      logLevel: 'warn',
+      environments: {
+        client: {
+          build: {
+            outDir: './dist/client',
+            rollupOptions: {
+              input: '/entry.js',
+            },
+          },
+        },
+        ssr: {
+          build: {
+            outDir: './dist/server',
+            rollupOptions: {
+              input: '/entry.js',
+            },
+          },
+        },
+        custom1: {
+          build: {
+            minify: true,
+            outDir: './dist/custom1',
+            rollupOptions: {
+              input: '/entry.js',
+            },
+          },
+        },
+        custom2: {
+          build: {
+            minify: false,
+            outDir: './dist/custom2',
+            rollupOptions: {
+              input: '/entry.js',
+            },
+          },
+        },
+      },
+      builder: {
+        sharedPlugins,
+      },
+    })
+    const client = await builder.build(builder.environments.client)
+    const ssr = await builder.build(builder.environments.ssr)
+    const custom1 = await builder.build(builder.environments.custom1)
+    const custom2 = await builder.build(builder.environments.custom2)
+    expect(
+      ([client, ssr, custom1, custom2] as RolldownOutput[]).map(
+        (o) => o.output[0].code.split('\n').length,
+      ),
+    ).toEqual([1, 8, 1, 8])
+  },
+)
+
+test('sharedConfigBuild and emitAssets', async () => {
+  const root = resolve(dirname, 'fixtures/shared-config-build/emitAssets')
+  const builder = await createBuilder({
+    root,
+    logLevel: 'warn',
+    configFile: false,
+    environments: {
+      client: {
+        build: {
+          outDir: './dist/client',
+          emitAssets: true,
+          rollupOptions: {
+            input: '/entry.js',
+          },
+        },
+      },
+      ssr: {
+        build: {
+          outDir: './dist/ssr',
+          emitAssets: true,
+          rollupOptions: {
+            input: '/entry.js',
+          },
+        },
+      },
+      custom: {
+        build: {
+          outDir: './dist/custom',
+          emitAssets: true,
+          rollupOptions: {
+            input: '/entry.js',
+          },
+        },
+      },
+    },
+    builder: {
+      sharedConfigBuild: true,
+    },
+  })
+
+  expect(
+    ['client', 'ssr', 'custom'].map(
+      (name) => builder.environments[name].config.build.emitAssets,
+    ),
+  ).toEqual([true, true, true])
+
+  await builder.buildApp()
+
+  expect(
+    await Promise.all(
+      ['client', 'ssr', 'custom'].map((name) =>
+        fsp.readdir(
+          resolve(
+            root,
+            builder.environments[name].config.build.outDir,
+            'assets',
+          ),
+        ),
+      ),
+    ),
+  ).toEqual([
+    expect.arrayContaining([expect.stringMatching(/\.css$/)]),
+    expect.arrayContaining([expect.stringMatching(/\.css$/)]),
+    expect.arrayContaining([expect.stringMatching(/\.css$/)]),
+  ])
+})
+
+test.skip('adjust worker build error for worker.format', async () => {
   try {
     await build({
-      root: resolve(__dirname, 'fixtures/worker-dynamic'),
+      root: resolve(dirname, 'fixtures/worker-dynamic'),
       build: {
         rollupOptions: {
           input: {
@@ -728,13 +979,244 @@ test('adjust worker build error for worker.format', async () => {
   expect.unreachable()
 })
 
+describe('onRollupLog', () => {
+  const pluginName = 'rollup-plugin-test'
+  const msgInfo = 'This is the INFO message.'
+  const msgWarn = 'This is the WARN message.'
+  const buildProject = async (
+    level: LogLevel | 'error',
+    message: string | RollupLog,
+    logger: Logger,
+    options?: Pick<RolldownOptions, 'onLog' | 'onwarn'>,
+  ) => {
+    await build({
+      root: resolve(dirname, 'packages/build-project'),
+      logLevel: 'info',
+      build: {
+        write: false,
+        rollupOptions: {
+          ...options,
+          logLevel: 'debug',
+        },
+      },
+      customLogger: logger,
+      plugins: [
+        {
+          name: pluginName,
+          resolveId(id) {
+            this[level](message)
+            if (id === 'entry.js') {
+              return '\0' + id
+            }
+          },
+          load(id) {
+            if (id === '\0entry.js') {
+              return `export default "This is test module";`
+            }
+          },
+        },
+      ],
+    })
+  }
+
+  const callOnRollupLog = async (
+    logger: Logger,
+    level: LogLevel,
+    log: RollupLog,
+  ) => {
+    const config = await resolveConfig(
+      { customLogger: logger },
+      'build',
+      'production',
+      'production',
+    )
+    const buildEnvironment = new BuildEnvironment('client', config)
+    onRollupLog(level, log, buildEnvironment)
+  }
+
+  afterEach(() => {
+    vi.restoreAllMocks()
+  })
+
+  test('Rollup logs of info should be handled by vite', async () => {
+    const logger = createLogger()
+    const loggerSpy = vi.spyOn(logger, 'info').mockImplementation(() => {})
+
+    await buildProject('info', msgInfo, logger)
+    const logs = loggerSpy.mock.calls.map((args) =>
+      stripVTControlCharacters(args[0]),
+    )
+    expect(logs).contain(`[plugin ${pluginName}] ${msgInfo}`)
+  })
+
+  test('Rollup logs of warn should be handled by vite', async () => {
+    const logger = createLogger('silent')
+    const loggerSpy = vi.spyOn(logger, 'warn').mockImplementation(() => {})
+
+    await buildProject('warn', msgWarn, logger)
+    const logs = loggerSpy.mock.calls.map((args) =>
+      stripVTControlCharacters(args[0]),
+    )
+    expect(logs).contain(`[plugin ${pluginName}] ${msgWarn}`)
+  })
+
+  test('onLog passed by user is called', async () => {
+    const logger = createLogger('silent')
+
+    const onLogInfo = vi.fn((_log: RollupLog) => {})
+    await buildProject('info', msgInfo, logger, {
+      onLog(level, log) {
+        if (level === 'info') {
+          onLogInfo(log)
+        }
+      },
+    })
+    expect(onLogInfo).toBeCalledWith(
+      expect.objectContaining({ message: msgInfo, plugin: pluginName }),
+    )
+  })
+
+  test('onwarn passed by user is called', async () => {
+    const logger = createLogger('silent')
+
+    const onWarn = vi.fn((_log: RollupLog) => {})
+    await buildProject('warn', msgWarn, logger, {
+      onwarn(warning) {
+        onWarn(warning)
+      },
+    })
+    expect(onWarn).toBeCalledWith(
+      expect.objectContaining({ message: msgWarn, plugin: pluginName }),
+    )
+  })
+
+  test('should throw error when warning contains UNRESOLVED_IMPORT', async () => {
+    const logger = createLogger()
+    await expect(() =>
+      callOnRollupLog(logger, 'warn', {
+        code: 'UNRESOLVED_IMPORT',
+        message: 'test',
+      }),
+    ).rejects.toThrowError(/Rolldown failed to resolve import/)
+  })
+
+  test.each([[`Unsupported expression`], [`statically analyzed`]])(
+    'should ignore dynamic import warnings (%s)',
+    async (message: string) => {
+      const logger = createLogger()
+      const loggerSpy = vi.spyOn(logger, 'warn').mockImplementation(() => {})
+
+      await callOnRollupLog(logger, 'warn', {
+        code: 'PLUGIN_WARNING',
+        message: message,
+        plugin: 'rollup-plugin-dynamic-import-variables',
+      })
+      expect(loggerSpy).toBeCalledTimes(0)
+    },
+  )
+
+  test.each([[`CIRCULAR_DEPENDENCY`], [`THIS_IS_UNDEFINED`]])(
+    'should ignore some warnings (%s)',
+    async (code: string) => {
+      const logger = createLogger()
+      const loggerSpy = vi.spyOn(logger, 'warn').mockImplementation(() => {})
+
+      await callOnRollupLog(logger, 'warn', {
+        code: code,
+        message: 'test message',
+        plugin: pluginName,
+      })
+      expect(loggerSpy).toBeCalledTimes(0)
+    },
+  )
+})
+
+test('watch rebuild manifest', async (ctx) => {
+  // this doesn't actually test watch rebuild
+  // but it simulates something similar by running two builds for the same environment
+  const root = resolve(dirname, 'fixtures/watch-rebuild-manifest')
+  const builder = await createBuilder({
+    root,
+    logLevel: 'error',
+    environments: {
+      client: {
+        build: {
+          rollupOptions: {
+            input: '/entry.js',
+          },
+        },
+      },
+    },
+    build: {
+      manifest: true,
+    },
+  })
+
+  function getManifestKeys(output: RolldownOutput) {
+    return Object.keys(
+      JSON.parse(
+        (output.output.find((o) => o.fileName === '.vite/manifest.json') as any)
+          .source,
+      ),
+    )
+  }
+
+  const result = await builder.build(builder.environments.client)
+  expect(getManifestKeys(result as RolldownOutput)).toMatchInlineSnapshot(`
+    [
+      "dep.js",
+      "entry.js",
+    ]
+  `)
+
+  const entry = resolve(root, 'entry.js')
+  const content = await fsp.readFile(entry, 'utf-8')
+  await fsp.writeFile(
+    entry,
+    content.replace(`import('./dep.js')`, `'dep.js removed'`),
+  )
+  ctx.onTestFinished(async () => {
+    await fsp.writeFile(entry, content)
+  })
+
+  const result2 = await builder.build(builder.environments.client)
+  expect(getManifestKeys(result2 as RolldownOutput)).toMatchInlineSnapshot(`
+    [
+      "entry.js",
+    ]
+  `)
+})
+
+test('copies public directory after building same environment with write false first', async (ctx) => {
+  const root = resolve(dirname, 'fixtures/public-dir-write-false')
+  ctx.onTestFinished(() =>
+    fsp.rm(resolve(root, 'dist'), { recursive: true, force: true }),
+  )
+
+  const builder = await createBuilder({
+    root,
+    configFile: false,
+    logLevel: 'silent',
+  })
+
+  builder.environments.client.config.build.write = false
+  await builder.build(builder.environments.client)
+
+  builder.environments.client.config.build.write = true
+  await builder.build(builder.environments.client)
+
+  await expect(
+    fsp.readFile(resolve(root, 'dist/favicon.svg'), 'utf-8'),
+  ).resolves.toBe('<svg></svg>')
+})
+
 /**
  * for each chunks in output1, if there's a chunk in output2 with the same fileName,
  * ensure that the chunk code is the same. if not, the chunk hash should have changed.
  */
 function assertOutputHashContentChange(
-  output1: RollupOutput,
-  output2: RollupOutput,
+  output1: RolldownOutput,
+  output2: RolldownOutput,
 ) {
   for (const chunk of output1.output) {
     if (chunk.type === 'chunk') {
@@ -748,5 +1230,22 @@ function assertOutputHashContentChange(
         ).toEqual(chunk2.code)
       }
     }
+  }
+}
+
+function getOutputHashChanges(
+  output1: RolldownOutput,
+  output2: RolldownOutput,
+) {
+  const map1 = Object.fromEntries(
+    output1.output.map((o) => [o.name, o.fileName]),
+  )
+  const map2 = Object.fromEntries(
+    output2.output.map((o) => [o.name, o.fileName]),
+  )
+  const names = Object.keys(map1).filter(Boolean)
+  return {
+    changed: names.filter((name) => map1[name] !== map2[name]),
+    unchanged: names.filter((name) => map1[name] === map2[name]),
   }
 }

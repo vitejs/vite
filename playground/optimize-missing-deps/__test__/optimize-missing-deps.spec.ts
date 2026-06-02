@@ -1,15 +1,14 @@
-import fetch from 'node-fetch'
 import { expect, test } from 'vitest'
 import { port } from './serve'
-import { page, untilUpdated } from '~utils'
+import { isBuild, page } from '~utils'
 
 const url = `http://localhost:${port}/`
 
-test('optimize', async () => {
+test.runIf(!isBuild)('optimize', async () => {
   await page.goto(url)
   // reload page to get optimized missing deps
   await page.reload()
-  await untilUpdated(() => page.textContent('div'), 'Client')
+  await expect.poll(() => page.textContent('div')).toMatch('Client')
 
   // raw http request
   const aboutHtml = await (await fetch(url)).text()

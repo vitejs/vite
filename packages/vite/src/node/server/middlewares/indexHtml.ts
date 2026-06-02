@@ -1,17 +1,16 @@
+import fs from 'node:fs'
 import fsp from 'node:fs/promises'
 import path from 'node:path'
 import MagicString from 'magic-string'
-import type { SourceMapInput } from 'rollup'
-import type { Connect } from 'dep-types/connect'
+import type { SourceMapInput } from 'rolldown'
 import type { DefaultTreeAdapterMap, Token } from 'parse5'
+import type { Connect } from '#dep-types/connect'
 import type { IndexHtmlTransformHook } from '../../plugins/html'
 import {
   addToHTMLProxyCache,
   applyHtmlTransforms,
-  assetAttrsConfig,
   extractImportExpressionFromClassicScript,
   findNeedTransformStyleAttribute,
-  getAttrKey,
   getScriptInfo,
   htmlEnvHook,
   htmlProxyResult,
@@ -21,6 +20,7 @@ import {
   overwriteAttrValue,
   postImportMapHook,
   preImportMapHook,
+  removeViteIgnoreAttr,
   resolveHtmlTransforms,
   traverseHtml,
 } from '../../plugins/html'
@@ -32,18 +32,26 @@ import {
   fsPathFromId,
   getHash,
   injectQuery,
+  isCSSRequest,
   isDevServer,
   isJSRequest,
+  isParentDirectory,
   joinUrlSegments,
   normalizePath,
   processSrcSetSync,
   stripBase,
 } from '../../utils'
-import { getFsUtils } from '../../fsUtils'
 import { checkPublicFile } from '../../publicDir'
-import { isCSSRequest } from '../../plugins/css'
 import { getCodeWithSourcemap, injectSourcesContent } from '../sourcemap'
 import { cleanUrl, unwrapId, wrapId } from '../../../shared/utils'
+import { getNodeAssetAttributes } from '../../assetSource'
+import {
+  BasicMinimalPluginContext,
+  basePluginContextMeta,
+} from '../pluginContainer'
+import { FullBundleDevEnvironment } from '../environments/fullBundleEnvironment'
+import { getHmrImplementation } from '../../plugins/clientInjections'
+import { checkLoadingAccess, respondWithAccessDenied } from './static'
 
 interface AssetNode {
   start: number
@@ -67,7 +75,6 @@ export function createDevHtmlTransformFn(
 ) => Promise<string> {
   const [preHooks, normalHooks, postHooks] = resolveHtmlTransforms(
     config.plugins,
-    config.logger,
   )
   const transformHooks = [
     preImportMapHook(config),
@@ -80,13 +87,17 @@ export function createDevHtmlTransformFn(
     injectNonceAttributeTagHook(config),
     postImportMapHook(),
   ]
+  const pluginContext = new BasicMinimalPluginContext(
+    { ...basePluginContextMeta, watchMode: true },
+    config.logger,
+  )
   return (
     server: ViteDevServer,
     url: string,
     html: string,
     originalUrl?: string,
   ): Promise<string> => {
-    return applyHtmlTransforms(html, transformHooks, {
+    return applyHtmlTransforms(html, transformHooks, pluginContext, {
       path: url,
       filename: getHtmlFilename(url, server),
       server,
@@ -117,8 +128,10 @@ function isBareRelative(url: string) {
   return wordCharRE.test(url[0]) && !url.includes(':')
 }
 
-const isSrcSet = (attr: Token.Attribute) =>
-  attr.name === 'srcset' && attr.prefix === undefined
+function getHtmlDirnameForRelativeUrl(htmlPath: string): string {
+  return htmlPath.endsWith('/') ? htmlPath : path.posix.dirname(htmlPath)
+}
+
 const processNodeUrl = (
   url: string,
   useSrcSetReplacer: boolean,
@@ -130,13 +143,6 @@ const processNodeUrl = (
 ): string => {
   // prefix with base (dev only, base is never relative)
   const replacer = (url: string) => {
-    if (server) {
-      const mod = server.environments.client.moduleGraph.urlToModuleMap.get(url)
-      if (mod && mod.lastHMRTimestamp > 0) {
-        url = injectQuery(url, `t=${mod.lastHMRTimestamp}`)
-      }
-    }
-
     if (
       (url[0] === '/' && url[1] !== '/') ||
       // #3230 if some request url (localhost:3000/a/b) return to fallback html, the relative assets
@@ -155,27 +161,39 @@ const processNodeUrl = (
       url = path.posix.join(config.base, url)
     }
 
-    if (server && !isClassicScriptLink && shouldPreTransform(url, config)) {
-      let preTransformUrl: string | undefined
+    let preTransformUrl: string | undefined
+
+    if (!isClassicScriptLink && shouldPreTransform(url, config)) {
       if (url[0] === '/' && url[1] !== '/') {
         preTransformUrl = url
       } else if (url[0] === '.' || isBareRelative(url)) {
         preTransformUrl = path.posix.join(
           config.base,
-          path.posix.dirname(htmlPath),
+          getHtmlDirnameForRelativeUrl(htmlPath),
           url,
         )
       }
-      if (preTransformUrl) {
-        try {
-          preTransformUrl = decodeURI(preTransformUrl)
-        } catch {
-          // Malformed uri. Skip pre-transform.
-          return url
-        }
-        preTransformRequest(server, preTransformUrl, config.decodedBase)
+    }
+
+    if (server) {
+      const mod = server.environments.client.moduleGraph.urlToModuleMap.get(
+        preTransformUrl || url,
+      )
+      if (mod && mod.lastHMRTimestamp > 0) {
+        url = injectQuery(url, `t=${mod.lastHMRTimestamp}`)
       }
     }
+
+    if (server && preTransformUrl) {
+      try {
+        preTransformUrl = decodeURI(preTransformUrl)
+      } catch {
+        // Malformed uri. Skip pre-transform.
+        return url
+      }
+      preTransformRequest(server, preTransformUrl, config.decodedBase)
+    }
+
     return url
   }
 
@@ -196,9 +214,12 @@ const devHtmlHook: IndexHtmlTransformHook = async (
   let proxyModuleUrl: string
 
   const trailingSlash = htmlPath.endsWith('/')
-  if (!trailingSlash && getFsUtils(config).existsSync(filename)) {
-    proxyModulePath = htmlPath
-    proxyModuleUrl = proxyModulePath
+  if (!trailingSlash && fs.existsSync(filename)) {
+    // If htmlPath is a /@fs/ URL (e.g. vitest-browser always uses this form
+    // for testerHtmlPath), normalise to an absolute FS path so proxyCacheUrl
+    // is always root-relative.
+    proxyModulePath = htmlPath.startsWith(FS_PREFIX) ? filename : htmlPath
+    proxyModuleUrl = htmlPath
   } else {
     // There are users of vite.transformIndexHtml calling it with url '/'
     // for SSR integrations #7993, filename is root for this case
@@ -220,6 +241,7 @@ const devHtmlHook: IndexHtmlTransformHook = async (
   )
   const styleUrl: AssetNode[] = []
   const inlineStyles: InlineStyleAttribute[] = []
+  const inlineModulePaths: string[] = []
 
   const addInlineModule = (
     node: DefaultTreeAdapterMap['element'],
@@ -248,13 +270,8 @@ const devHtmlHook: IndexHtmlTransformHook = async (
 
     // inline js module. convert to src="proxy" (dev only, base is never relative)
     const modulePath = `${proxyModuleUrl}?html-proxy&index=${inlineModuleIndex}.${ext}`
+    inlineModulePaths.push(modulePath)
 
-    // invalidate the module so the newly cached contents will be served
-    const clientModuleGraph = server?.environments.client.moduleGraph
-    const module = clientModuleGraph?.getModuleById(modulePath)
-    if (module) {
-      clientModuleGraph!.invalidateModule(module)
-    }
     s.update(
       node.sourceCodeLocation!.startOffset,
       node.sourceCodeLocation!.endOffset,
@@ -263,19 +280,22 @@ const devHtmlHook: IndexHtmlTransformHook = async (
     preTransformRequest(server!, modulePath, decodedBase)
   }
 
-  await traverseHtml(html, filename, (node) => {
+  await traverseHtml(html, filename, config.logger.warn, (node) => {
     if (!nodeIsElement(node)) {
       return
     }
 
     // script tags
     if (node.nodeName === 'script') {
-      const { src, sourceCodeLocation, isModule } = getScriptInfo(node)
+      const { src, srcSourceCodeLocation, isModule, isIgnored } =
+        getScriptInfo(node)
 
-      if (src) {
+      if (isIgnored) {
+        removeViteIgnoreAttr(s, node.sourceCodeLocation!)
+      } else if (src) {
         const processedUrl = processNodeUrl(
           src.value,
-          isSrcSet(src),
+          /* useSrcSetReplacer */ false,
           config,
           htmlPath,
           originalUrl,
@@ -283,7 +303,7 @@ const devHtmlHook: IndexHtmlTransformHook = async (
           !isModule,
         )
         if (processedUrl !== src.value) {
-          overwriteAttrValue(s, sourceCodeLocation!, processedUrl)
+          overwriteAttrValue(s, srcSourceCodeLocation!, processedUrl)
         }
       } else if (isModule && node.childNodes.length) {
         addInlineModule(node, 'js')
@@ -330,29 +350,37 @@ const devHtmlHook: IndexHtmlTransformHook = async (
     }
 
     // elements with [href/src] attrs
-    const assetAttrs = assetAttrsConfig[node.nodeName]
-    if (assetAttrs) {
-      for (const p of node.attrs) {
-        const attrKey = getAttrKey(p)
-        if (p.value && assetAttrs.includes(attrKey)) {
-          const processedUrl = processNodeUrl(
-            p.value,
-            isSrcSet(p),
-            config,
-            htmlPath,
-            originalUrl,
-          )
-          if (processedUrl !== p.value) {
-            overwriteAttrValue(
-              s,
-              node.sourceCodeLocation!.attrs![attrKey],
-              processedUrl,
-            )
-          }
+    const assetAttributes = getNodeAssetAttributes(node)
+    for (const attr of assetAttributes) {
+      if (attr.type === 'remove') {
+        s.remove(attr.location.startOffset, attr.location.endOffset)
+      } else {
+        const processedUrl = processNodeUrl(
+          attr.value,
+          attr.type === 'srcset',
+          config,
+          htmlPath,
+          originalUrl,
+        )
+        if (processedUrl !== attr.value) {
+          overwriteAttrValue(s, attr.location, processedUrl)
         }
       }
     }
   })
+
+  // invalidate the module so the newly cached contents will be served
+  const clientModuleGraph = server?.environments.client.moduleGraph
+  if (clientModuleGraph) {
+    await Promise.all(
+      inlineModulePaths.map(async (url) => {
+        const module = await clientModuleGraph.getModuleByUrl(url)
+        if (module) {
+          clientModuleGraph.invalidateModule(module)
+        }
+      }),
+    )
+  }
 
   await Promise.all([
     ...styleUrl.map(async ({ start, end, code }, index) => {
@@ -366,23 +394,19 @@ const devHtmlHook: IndexHtmlTransformHook = async (
         )
       ensureWatchedFile(watcher, mod.file, config.root)
 
-      const result = await server!.pluginContainer.transform(code, mod.id!, {
-        environment: server!.environments.client,
-      })
+      const result =
+        await server!.environments.client.pluginContainer.transform(
+          code,
+          mod.id!,
+        )
       let content = ''
-      if (result) {
-        if (result.map && 'version' in result.map) {
-          if (result.map.mappings) {
-            await injectSourcesContent(
-              result.map,
-              proxyModulePath,
-              config.logger,
-            )
-          }
-          content = getCodeWithSourcemap('css', result.code, result.map)
-        } else {
-          content = result.code
+      if (result.map && 'version' in result.map) {
+        if (result.map.mappings) {
+          await injectSourcesContent(result.map, proxyModulePath, config.logger)
         }
+        content = getCodeWithSourcemap('css', result.code, result.map)
+      } else {
+        content = result.code
       }
       s.overwrite(start, end, content)
     }),
@@ -397,9 +421,7 @@ const devHtmlHook: IndexHtmlTransformHook = async (
         )
       ensureWatchedFile(watcher, mod.file, config.root)
 
-      await server?.pluginContainer.transform(code, mod.id!, {
-        environment: server!.environments.client,
-      })
+      await server?.environments.client.pluginContainer.transform(code, mod.id!)
 
       const hash = getHash(cleanUrl(mod.id!))
       const result = htmlProxyResult.get(`${hash}_${index}`)
@@ -429,7 +451,10 @@ export function indexHtmlMiddleware(
   server: ViteDevServer | PreviewServer,
 ): Connect.NextHandleFunction {
   const isDev = isDevServer(server)
-  const fsUtils = getFsUtils(server.config)
+  const fullBundleEnv =
+    isDev && server.environments.client instanceof FullBundleDevEnvironment
+      ? server.environments.client
+      : undefined
 
   // Keep the named function. The name is visible in debug logs via `DEBUG=connect:dispatcher ...`
   return async function viteIndexHtmlMiddleware(req, res, next) {
@@ -440,14 +465,70 @@ export function indexHtmlMiddleware(
     const url = req.url && cleanUrl(req.url)
     // htmlFallbackMiddleware appends '.html' to URLs
     if (url?.endsWith('.html') && req.headers['sec-fetch-dest'] !== 'script') {
+      if (fullBundleEnv) {
+        const pathname = decodeURIComponent(url)
+        const filePath = pathname.slice(1) // remove first /
+
+        let file = fullBundleEnv.memoryFiles.get(filePath)
+        if (!file && fullBundleEnv.memoryFiles.size !== 0) {
+          return next()
+        }
+        const secFetchDest = req.headers['sec-fetch-dest']
+        if (
+          [
+            'document',
+            'iframe',
+            'frame',
+            'fencedframe',
+            '',
+            undefined,
+          ].includes(secFetchDest) &&
+          ((await fullBundleEnv.triggerBundleRegenerationIfStale()) ||
+            file === undefined)
+        ) {
+          file = { source: await generateFallbackHtml(server as ViteDevServer) }
+        }
+        if (!file) {
+          return next()
+        }
+
+        const html =
+          typeof file.source === 'string'
+            ? file.source
+            : Buffer.from(file.source)
+        const headers = isDev
+          ? server.config.server.headers
+          : server.config.preview.headers
+        return send(req, res, html, 'html', { headers, etag: file.etag })
+      }
+
       let filePath: string
       if (isDev && url.startsWith(FS_PREFIX)) {
         filePath = decodeURIComponent(fsPathFromId(url))
       } else {
-        filePath = path.join(root, decodeURIComponent(url))
+        filePath = normalizePath(
+          path.resolve(path.join(root, decodeURIComponent(url))),
+        )
       }
 
-      if (fsUtils.existsSync(filePath)) {
+      if (isDev) {
+        const servingAccessResult = checkLoadingAccess(server.config, filePath)
+        if (servingAccessResult === 'denied') {
+          return respondWithAccessDenied(filePath, server, res)
+        }
+        if (servingAccessResult === 'fallback') {
+          return next()
+        }
+        servingAccessResult satisfies 'allowed'
+      } else {
+        // `server.fs` options does not apply to the preview server.
+        // But we should disallow serving files outside the output directory.
+        if (!isParentDirectory(root, filePath)) {
+          return next()
+        }
+      }
+
+      if (fs.existsSync(filePath)) {
         const headers = isDev
           ? server.config.server.headers
           : server.config.preview.headers
@@ -479,4 +560,67 @@ function preTransformRequest(
   // transform all url as non-ssr as html includes client-side assets only
   decodedUrl = unwrapId(stripBase(decodedUrl, decodedBase))
   server.warmupRequest(decodedUrl)
+}
+
+async function generateFallbackHtml(server: ViteDevServer) {
+  const hmrRuntime = await getHmrImplementation(server.config)
+  return /* html */ `
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <script type="module">
+    ${hmrRuntime.replaceAll('</script>', '<\\/script>')}
+  </script>
+  <style>
+    :root {
+      --page-bg: #ffffff;
+      --text-color: #1d1d1f;
+      --spinner-track: #f5f5f7;
+      --spinner-accent: #0071e3;
+    }
+    @media (prefers-color-scheme: dark) {
+      :root {
+        --page-bg: #1e1e1e;
+        --text-color: #f5f5f5;
+        --spinner-track: #424242;
+      }
+    }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      display: flex;
+      background-color: var(--page-bg);
+      color: var(--text-color);
+    }
+
+    .container {
+      margin: auto;
+      padding: 2rem;
+      text-align: center;
+      border-radius: 1rem;
+    }
+
+    .spinner {
+      width: 3rem;
+      height: 3rem;
+      margin: 2rem auto;
+      border: 3px solid var(--spinner-track);
+      border-top-color: var(--spinner-accent);
+      border-radius: 50%;
+      animation: spin 1s linear infinite;
+    }
+
+    @keyframes spin { to { transform: rotate(360deg) } }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>Bundling in progress</h1>
+    <p>The page will automatically reload when ready.</p>
+    <div class="spinner"></div>
+  </div>
+</body>
+</html>
+`
 }

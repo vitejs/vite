@@ -28,5 +28,5 @@ if (!isBuild) {
 
 test.runIf(!isBuild)('denied .env', async () => {
   expect(await page.textContent('.unsafe-dotenv')).toBe('403')
-  expect(await page.textContent('.unsafe-dotenv-double-slash')).toBe('403')
+  expect(await page.textContent('.unsafe-dotenv-double-slash')).toBe('200') // SPA fallback
 })

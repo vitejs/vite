@@ -6,7 +6,7 @@ import tsDefaultExport, {
 } from '@vitejs/test-ts-transpiled-exports'
 import objectAssignedExports from '@vitejs/test-object-assigned-exports'
 import forwardedExport from '@vitejs/test-forwarded-export'
-import bcrypt from 'bcrypt'
+import bcrypt from '@node-rs/bcrypt'
 import definePropertiesExports from '@vitejs/test-define-properties-exports'
 import definePropertyExports from '@vitejs/test-define-property-exports'
 import onlyObjectAssignedExports from '@vitejs/test-only-object-assigned-exports'
@@ -23,6 +23,7 @@ import '@vitejs/test-non-optimized-with-nested-external'
 
 import * as optimizedWithNestedExternal from '@vitejs/test-optimized-with-nested-external'
 import * as optimizedCjsWithNestedExternal from '@vitejs/test-optimized-cjs-with-nested-external'
+import * as optimizeDepsNestedInclude from '@vitejs/test-nested-exclude'
 
 import { setMessage } from '@vitejs/test-external-entry/entry'
 setMessage('Hello World!')
@@ -93,6 +94,8 @@ export async function render(url, rootDir) {
   html += `\n<p class="isomorphic-module-server">${isomorphicModuleMessage}</p>`
 
   html += `\n<p class="isomorphic-module-browser"></p>`
+
+  html += `\n<p class="optimize-deps-nested-include">message from optimize-deps-nested-include: ${optimizeDepsNestedInclude.nestedInclude}</p>`
 
   return html + '\n'
 }

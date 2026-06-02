@@ -23,14 +23,16 @@ function calculateOffsetOnce() {
 export function ssrRewriteStacktrace(
   stack: string,
   moduleGraph: EnvironmentModuleGraph,
-): string {
+): { result: string; alreadyRewritten: boolean } {
   calculateOffsetOnce()
-  return stack
+
+  let alreadyRewritten = false
+  const rewritten = stack
     .split('\n')
     .map((line) => {
       return line.replace(
         /^ {4}at (?:(\S.*?)\s\()?(.+?):(\d+)(?::(\d+))?\)?/,
-        (input, varName, id, line, column) => {
+        (input, varName, id, originalLine, originalColumn) => {
           if (!id) return input
 
           const mod = moduleGraph.getModuleById(id)
@@ -41,18 +43,20 @@ export function ssrRewriteStacktrace(
           }
 
           const traced = new TraceMap(rawSourceMap as any)
-
-          const pos = originalPositionFor(traced, {
-            line: Number(line) - offset,
-            // stacktrace's column is 1-indexed, but sourcemap's one is 0-indexed
-            column: Number(column) - 1,
-          })
-
-          if (!pos.source || pos.line == null || pos.column == null) {
+          const line = Number(originalLine) - offset
+          // stacktrace's column is 1-indexed, but sourcemap's one is 0-indexed
+          const column = Number(originalColumn) - 1
+          if (line <= 0 || column < 0) {
+            alreadyRewritten = true
             return input
           }
 
-          const trimmedVarName = varName.trim()
+          const pos = originalPositionFor(traced, { line, column })
+          if (!pos.source) {
+            return input
+          }
+
+          const trimmedVarName = varName?.trim()
           const sourceFile = path.resolve(path.dirname(id), pos.source)
           // stacktrace's column is 1-indexed, but sourcemap's one is 0-indexed
           const source = `${sourceFile}:${pos.line}:${pos.column + 1}`
@@ -65,6 +69,7 @@ export function ssrRewriteStacktrace(
       )
     })
     .join('\n')
+  return { result: rewritten, alreadyRewritten }
 }
 
 export function rebindErrorStacktrace(e: Error, stacktrace: string): void {
@@ -94,8 +99,15 @@ export function ssrFixStacktrace(
   // stacktrace shouldn't be rewritten more than once
   if (rewroteStacktraces.has(e)) return
 
-  const stacktrace = ssrRewriteStacktrace(e.stack, moduleGraph)
+  const { result: stacktrace, alreadyRewritten } = ssrRewriteStacktrace(
+    e.stack,
+    moduleGraph,
+  )
   rebindErrorStacktrace(e, stacktrace)
+  if (alreadyRewritten) {
+    e.message +=
+      ' (The stacktrace appears to be already rewritten by something else, but was passed to vite.ssrFixStacktrace. This may cause incorrect stacktraces.)'
+  }
 
   rewroteStacktraces.add(e)
 }

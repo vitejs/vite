@@ -1,0 +1,59 @@
+name: Preview release
+
+env:
+  # install playwright binary manually (because pnpm only runs install script once)
+  PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD: "1"
+
+permissions:
+  pull-requests: write
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    types: [opened, synchronize, labeled]
+
+jobs:
+  preview:
+    if: >
+      github.repository == 'vitejs/vite' &&
+      (github.event_name == 'push' ||
+      (github.event_name == 'pull_request' && contains(github.event.pull_request.labels.*.name, 'trigger: preview')))
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
+        with:
+          persist-credentials: false
+
+      - name: Install pnpm
+        uses: pnpm/action-setup@0e279bb959325dab635dd2c09392533439d90093 # v6.0.8
+
+      - name: Set node version to 24
+        uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e # v6
+        with:
+          node-version: 24
+          registry-url: https://registry.npmjs.org/
+          # disable cache, to avoid cache poisoning (https://docs.zizmor.sh/audits/#cache-poisoning)
+          package-manager-cache: false
+
+      - name: Disallow installation scripts
+        run: yq '.allowBuilds[]=false' -i pnpm-workspace.yaml
+
+      - name: Install deps
+        run: pnpm install
+        env:
+          PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD: "1"
+
+      - name: Build Vite core
+        working-directory: ./packages/vite
+        run: pnpm build
+
+      - name: Build plugin-legacy
+        working-directory: ./packages/plugin-legacy
+        run: pnpm build
+
+      - name: Publish preview release
+        # zizmor: ignore[use-trusted-publishing]
+        run: pnpm dlx pkg-pr-new@0.0 publish --pnpm './packages/vite' './packages/plugin-legacy' --packageManager=pnpm,npm,yarn --commentWithDev

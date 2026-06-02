@@ -4,7 +4,7 @@ import type {
   ParseError as EsModuleLexerParseError,
   ImportSpecifier,
 } from 'es-module-lexer'
-import type { OutputChunk } from 'rollup'
+import type { OutputChunk } from 'rolldown'
 import type { Plugin } from '../plugin'
 import { preloadMethod } from '../plugins/importAnalysisBuild'
 import {
@@ -14,11 +14,11 @@ import {
   numberToPos,
   sortObjectKeys,
 } from '../utils'
-import { usePerEnvironmentState } from '../environment'
+import { perEnvironmentState } from '../environment'
 
 export function ssrManifestPlugin(): Plugin {
   // module id => preload assets mapping
-  const getSsrManifest = usePerEnvironmentState(() => {
+  const getSsrManifest = perEnvironmentState(() => {
     return {} as Record<string, string[]>
   })
 

@@ -3,9 +3,10 @@ import type {
   FullReloadPayload,
   PrunePayload,
   UpdatePayload,
-} from './hmrPayload'
+} from './hmrPayload.js'
 
 export interface CustomEventMap {
+  // client events
   'vite:beforeUpdate': UpdatePayload
   'vite:afterUpdate': UpdatePayload
   'vite:beforePrune': PrunePayload
@@ -14,6 +15,14 @@ export interface CustomEventMap {
   'vite:invalidate': InvalidatePayload
   'vite:ws:connect': WebSocketConnectionPayload
   'vite:ws:disconnect': WebSocketConnectionPayload
+  /** @internal */
+  'vite:forward-console': ForwardConsolePayload
+  /** @internal */
+  'vite:module-loaded': { modules: string[]; clientId: string }
+
+  // server events
+  'vite:client:connect': undefined
+  'vite:client:disconnect': undefined
 }
 
 export interface WebSocketConnectionPayload {
@@ -30,10 +39,41 @@ export interface WebSocketConnectionPayload {
 export interface InvalidatePayload {
   path: string
   message: string | undefined
+  firstInvalidatedBy: string
 }
 
+export type ForwardConsolePayload =
+  | {
+      type: 'error'
+      data: {
+        name: string
+        message: string
+        stack?: string
+      }
+    }
+  | {
+      type: 'unhandled-rejection'
+      data: {
+        name: string
+        message: string
+        stack?: string
+      }
+    }
+  | {
+      type: 'log'
+      data: {
+        level: string
+        message: string
+      }
+    }
+
 /**
- * provides types for built-in Vite events
+ * provides types for payloads of built-in Vite events
  */
 export type InferCustomEventPayload<T extends string> =
   T extends keyof CustomEventMap ? CustomEventMap[T] : any
+
+/**
+ * provides types for names of built-in Vite events
+ */
+export type CustomEventName = keyof CustomEventMap | (string & {})

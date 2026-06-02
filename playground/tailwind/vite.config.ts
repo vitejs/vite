@@ -1,5 +1,6 @@
 import { defineConfig } from 'vite'
 import type { Plugin } from 'vite'
+import tailwindcss from '@tailwindcss/vite'
 
 function delayIndexCssPlugin(): Plugin {
   let server
@@ -20,7 +21,7 @@ function delayIndexCssPlugin(): Plugin {
 export default defineConfig({
   resolve: {
     alias: {
-      '/@': __dirname,
+      '/@': import.meta.dirname,
     },
   },
   build: {
@@ -38,5 +39,6 @@ export default defineConfig({
       },
     },
     delayIndexCssPlugin(),
+    tailwindcss(),
   ],
 })

@@ -5,7 +5,7 @@ import { cspHashes } from '..'
 
 test('CSP hashes in README.md should be correct', () => {
   const readme = fs.readFileSync(
-    path.resolve(__dirname, '../../README.md'),
+    path.resolve(import.meta.dirname, '../../README.md'),
     'utf-8',
   )
   const hashesInDoc = [...readme.matchAll(/`sha256-(.+)`/g)].map(

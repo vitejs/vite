@@ -33,7 +33,7 @@ Vite (French word for "fast", pronounced `/vit/`) is a new kind of build tool fo
 
 To get a sense of how fast Vite is, check out [this video comparison](https://twitter.com/amasad/status/1355379680275128321) of booting up a React application on Repl.it using Vite vs. `create-react-app` (CRA).
 
-If you've never heard of Vite before and would love to learn more about it, check out [the rationale behind the project](https://vite.dev/guide/why.html). If you are interested in how Vite differs from other similar tools, check out the [comparisons](https://vite.dev/guide/comparisons.html).
+If you've never heard of Vite before and would love to learn more about it, check out [the rationale behind the project](https://vite.dev/guide/why.html). If you are interested in how Vite differs from other similar tools, check out the [comparisons](https://v5.vite.dev/guide/comparisons.html).
 
 ## What's New in 2.0
 
@@ -81,4 +81,4 @@ That was a lot of features, but getting started with Vite is simple! You can spi
 npm init @vitejs/app
 ```
 
-Then, check out [the guide](https://vite.dev/guide/) to see what Vite provides out of the box. You can also check out the source code on [GitHub](https://github.com/vitejs/vite), follow updates on [Twitter](https://twitter.com/vite_js), or join discussions with other Vite users on our [Discord chat server](http://chat.vite.dev/).
+Then, check out [the guide](https://vite.dev/guide/) to see what Vite provides out of the box. You can also check out the source code on [GitHub](https://github.com/vitejs/vite), follow updates on [Twitter](https://twitter.com/vite_js), or join discussions with other Vite users on our [Discord chat server](https://chat.vite.dev).

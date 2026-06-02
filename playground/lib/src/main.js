@@ -1,4 +1,4 @@
-export default function myLib(sel) {
+export default /* @__PURE__ */ Object.assign(function myLib(sel) {
   // Force esbuild spread helpers (https://github.com/evanw/esbuild/issues/951)
   console.log({ ...'foo' })
 
@@ -9,7 +9,10 @@ export default function myLib(sel) {
 
   // make sure umd helper has been moved to the right position
   console.log(`amd function(){ "use strict"; }`)
-}
+
+  // eslint-disable-next-line no-debugger
+  debugger
+})
 
 // For triggering unhandled global esbuild helpers in previous regex-based implementation for injection
 ;(function () {})()?.foo

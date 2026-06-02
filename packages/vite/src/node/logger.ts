@@ -2,7 +2,7 @@
 
 import readline from 'node:readline'
 import colors from 'picocolors'
-import type { RollupError } from 'rollup'
+import type { RollupError } from 'rolldown'
 import type { ResolvedServerUrls } from './server'
 
 export type LogType = 'error' | 'warn' | 'info'
@@ -50,6 +50,7 @@ export interface LoggerOptions {
   prefix?: string
   allowClearScreen?: boolean
   customLogger?: Logger
+  console?: Console
 }
 
 // Only initialize the timeFormatter when the timestamp option is used, and
@@ -73,7 +74,11 @@ export function createLogger(
   }
 
   const loggedErrors = new WeakSet<Error | RollupError>()
-  const { prefix = '[vite]', allowClearScreen = true } = options
+  const {
+    prefix = '[vite]',
+    allowClearScreen = true,
+    console = globalThis.console,
+  } = options
   const thresh = LogLevels[level]
   const canClearScreen =
     allowClearScreen && process.stdout.isTTY && !process.env.CI

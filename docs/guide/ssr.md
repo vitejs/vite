@@ -1,4 +1,4 @@
-# Server-Side Rendering
+# Server-Side Rendering (SSR)
 
 :::tip Note
 SSR specifically refers to front-end frameworks (for example React, Preact, Vue, and Svelte) that support running the same application in Node.js, pre-rendering it to HTML, and finally hydrating it on the client. If you are looking for integration with traditional server-side frameworks, check out the [Backend Integration guide](./backend-integration) instead.
@@ -10,10 +10,6 @@ The following guide also assumes prior experience working with SSR in your frame
 This is a low-level API meant for library and framework authors. If your goal is to create an application, make sure to check out the higher-level SSR plugins and tools at [Awesome Vite SSR section](https://github.com/vitejs/awesome-vite#ssr) first. That said, many applications are successfully built directly on top of Vite's native low-level API.
 
 Currently, Vite is working on an improved SSR API with the [Environment API](https://github.com/vitejs/vite/discussions/16358). Check out the link for more details.
-:::
-
-:::tip Help
-If you have questions, the community is usually helpful at [Vite Discord's #ssr channel](https://discord.gg/PkbxgzPhJv).
 :::
 
 ## Example Projects
@@ -72,11 +68,8 @@ When building an SSR app, you likely want to have full control over your main se
 ```js{15-18} twoslash [server.js]
 import fs from 'node:fs'
 import path from 'node:path'
-import { fileURLToPath } from 'node:url'
 import express from 'express'
 import { createServer as createViteServer } from 'vite'
-
-const __dirname = path.dirname(fileURLToPath(import.meta.url))
 
 async function createServer() {
   const app = express()
@@ -97,7 +90,7 @@ async function createServer() {
   // middlewares). The following is valid even after restarts.
   app.use(vite.middlewares)
 
-  app.use('*', async (req, res) => {
+  app.use('*all', async (req, res) => {
     // serve index.html - we will tackle this next
   })
 
@@ -115,7 +108,6 @@ The next step is implementing the `*` handler to serve server-rendered HTML:
 // @noErrors
 import fs from 'node:fs'
 import path from 'node:path'
-import { fileURLToPath } from 'node:url'
 
 /** @type {import('express').Express} */
 var app
@@ -123,13 +115,13 @@ var app
 var vite
 
 // ---cut---
-app.use('*', async (req, res, next) => {
+app.use('*all', async (req, res, next) => {
   const url = req.originalUrl
 
   try {
     // 1. Read index.html
     let template = fs.readFileSync(
-      path.resolve(__dirname, 'index.html'),
+      path.resolve(import.meta.dirname, 'index.html'),
       'utf-8',
     )
 
@@ -149,7 +141,7 @@ app.use('*', async (req, res, next) => {
     const appHtml = await render(url)
 
     // 5. Inject the app-rendered HTML into the template.
-    const html = template.replace(`<!--ssr-outlet-->`, appHtml)
+    const html = template.replace(`<!--ssr-outlet-->`, () => appHtml)
 
     // 6. Send the rendered HTML back.
     res.status(200).set({ 'Content-Type': 'text/html' }).end(html)
@@ -266,7 +258,7 @@ export function mySSRPlugin() {
 }
 ```
 
-The options object in `load` and `transform` is optional, rollup is not currently using this object but may extend these hooks with additional metadata in the future.
+The options object in `load` and `transform` is optional, Rollup is not currently using this object but may extend these hooks with additional metadata in the future.
 
 :::tip Note
 Before Vite 2.7, this was informed to plugin hooks with a positional `ssr` param instead of using the `options` object. All major frameworks and plugins are updated but you may find outdated posts using the previous API.

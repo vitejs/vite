@@ -1,52 +1,54 @@
 import { relative, resolve } from 'node:path'
 import { defineConfig } from 'vite'
 
+const dirname = import.meta.dirname
+
 export default defineConfig({
   base: './',
   build: {
     rollupOptions: {
       input: {
-        main: resolve(__dirname, 'index.html'),
-        nested: resolve(__dirname, 'nested/index.html'),
-        scriptAsync: resolve(__dirname, 'scriptAsync.html'),
-        scriptMixed: resolve(__dirname, 'scriptMixed.html'),
-        emptyAttr: resolve(__dirname, 'emptyAttr.html'),
-        link: resolve(__dirname, 'link.html'),
-        'link/target': resolve(__dirname, 'index.html'),
-        zeroJS: resolve(__dirname, 'zeroJS.html'),
-        noHead: resolve(__dirname, 'noHead.html'),
-        noBody: resolve(__dirname, 'noBody.html'),
-        inlinea: resolve(__dirname, 'inline/shared_a.html'),
-        inline1: resolve(__dirname, 'inline/shared-1.html'),
-        inline2: resolve(__dirname, 'inline/shared-2.html'),
-        inline3: resolve(__dirname, 'inline/unique.html'),
+        main: resolve(dirname, 'index.html'),
+        nested: resolve(dirname, 'nested/index.html'),
+        scriptAsync: resolve(dirname, 'scriptAsync.html'),
+        scriptMixed: resolve(dirname, 'scriptMixed.html'),
+        emptyAttr: resolve(dirname, 'emptyAttr.html'),
+        link: resolve(dirname, 'link.html'),
+        'link/target': resolve(dirname, 'index.html'),
+        zeroJS: resolve(dirname, 'zeroJS.html'),
+        noHead: resolve(dirname, 'noHead.html'),
+        noBody: resolve(dirname, 'noBody.html'),
+        inlinea: resolve(dirname, 'inline/shared_a.html'),
+        inline1: resolve(dirname, 'inline/shared-1.html'),
+        inline2: resolve(dirname, 'inline/shared-2.html'),
+        inline3: resolve(dirname, 'inline/unique.html'),
         unicodePath: resolve(
-          __dirname,
+          dirname,
           'unicode-path/中文-にほんご-한글-🌕🌖🌗/index.html',
         ),
-        linkProps: resolve(__dirname, 'link-props/index.html'),
-        valid: resolve(__dirname, 'valid.html'),
-        importmapOrder: resolve(__dirname, 'importmapOrder.html'),
-        env: resolve(__dirname, 'env.html'),
-        sideEffects: resolve(__dirname, 'side-effects/index.html'),
-        'a á': resolve(__dirname, 'a á.html'),
-        serveFile: resolve(__dirname, 'serve/file.html'),
-        serveFolder: resolve(__dirname, 'serve/folder/index.html'),
-        serveBothFile: resolve(__dirname, 'serve/both.html'),
-        serveBothFolder: resolve(__dirname, 'serve/both/index.html'),
-        write: resolve(__dirname, 'write.html'),
+        linkProps: resolve(dirname, 'link-props/index.html'),
+        valid: resolve(dirname, 'valid.html'),
+        importmapOrder: resolve(dirname, 'importmapOrder.html'),
+        env: resolve(dirname, 'env.html'),
+        sideEffects: resolve(dirname, 'side-effects/index.html'),
+        'a á': resolve(dirname, 'a á.html'),
+        serveFile: resolve(dirname, 'serve/file.html'),
+        serveFolder: resolve(dirname, 'serve/folder/index.html'),
+        serveBothFile: resolve(dirname, 'serve/both.html'),
+        serveBothFolder: resolve(dirname, 'serve/both/index.html'),
+        write: resolve(dirname, 'write.html'),
+        'transform-inline-js': resolve(dirname, 'transform-inline-js.html'),
         relativeInput: relative(
           process.cwd(),
-          resolve(__dirname, 'relative-input.html'),
+          resolve(dirname, 'relative-input.html'),
         ),
+        malformedUrl: resolve(dirname, 'malformed-url.html'),
       },
+      external: ['/external-path-by-rollup-options.js'],
     },
   },
 
   server: {
-    fs: {
-      cachedChecks: false,
-    },
     warmup: {
       clientFiles: ['./warmup/*'],
     },
@@ -205,7 +207,7 @@ ${
             children: `
               {
                 "imports": {
-                  "vue": "https://unpkg.com/vue@3.2.0/dist/vue.runtime.esm-browser.js"
+                  "vue": "https://unpkg.com/vue@3.4.38/dist/vue.runtime.esm-browser.js"
                 }
               }
             `,
@@ -231,5 +233,68 @@ ${
         },
       },
     },
+    {
+      name: 'append-external-path-by-rollup-options',
+      apply: 'build', // this does not work in serve
+      transformIndexHtml: {
+        order: 'pre',
+        handler(_, ctx) {
+          if (!ctx.filename.endsWith('html/index.html')) return
+          return [
+            {
+              tag: 'script',
+              attrs: {
+                type: 'module',
+                src: '/external-path-by-rollup-options.js',
+              },
+              injectTo: 'body',
+            },
+          ]
+        },
+      },
+    },
+    {
+      name: 'transform-inline-js',
+      transformIndexHtml: {
+        order: 'pre',
+        handler(html, ctx) {
+          if (!ctx.filename.endsWith('html/transform-inline-js.html')) return
+          return html.replaceAll(
+            '{{ id }}',
+            Math.random().toString(36).slice(2),
+          )
+        },
+      },
+    },
+    serveExternalPathPlugin(),
   ],
 })
+
+/** @returns {import('vite').Plugin} */
+function serveExternalPathPlugin() {
+  const handler = (req, res, next) => {
+    if (req.url === '/external-path.js') {
+      res.setHeader('Content-Type', 'application/javascript')
+      res.end('document.querySelector(".external-path").textContent = "works"')
+    } else if (req.url === '/external-path.css') {
+      res.setHeader('Content-Type', 'text/css')
+      res.end('.external-path{color:red}')
+    } else if (req.url === '/external-path-by-rollup-options.js') {
+      res.setHeader('Content-Type', 'application/javascript')
+      res.end(
+        'document.querySelector(".external-path-by-rollup-options").textContent = "works"',
+      )
+    } else {
+      next()
+    }
+  }
+  return {
+    name: 'serve-external-path',
+    configureServer(server) {
+      server.middlewares.use(handler)
+    },
+    configurePreviewServer(server) {
+      server.middlewares.use(handler)
+    },
+  }
+}

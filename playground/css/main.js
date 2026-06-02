@@ -3,14 +3,19 @@ import './imported.css'
 import './sugarss.sss'
 import './sass.scss'
 import './less.less'
+import './less-plugin.less'
 import './stylus.styl'
 import './manual-chunk.css'
+import './postcss-inject-url.css'
 
 import urlCss from './url-imported.css?url'
 appendLinkStylesheet(urlCss)
 
 import rawCss from './raw-imported.css?raw'
 text('.raw-imported-css', rawCss)
+
+import { cUsed, a as treeshakeScopedA } from './treeshake-scoped/index.js'
+document.querySelector('.scoped').classList.add(treeshakeScopedA(), cUsed())
 
 import mod from './mod.module.css'
 document.querySelector('.modules').classList.add(mod['apply-color'])

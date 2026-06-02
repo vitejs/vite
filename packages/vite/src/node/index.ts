@@ -1,13 +1,39 @@
-import type * as Rollup from 'rollup'
+import type * as Rolldown from 'rolldown'
+import {
+  parseAst as _parseAst,
+  parseAstAsync as _parseAstAsync,
+} from 'rolldown/parseAst'
+import type * as Rollup from '#types/internal/rollupTypeCompat'
 
-export type { Rollup }
-export { parseAst, parseAstAsync } from 'rollup/parseAst'
+export type { Rollup, Rolldown }
+export { esmExternalRequirePlugin } from 'rolldown/plugins'
+export {
+  parse,
+  parseSync,
+  type ParserOptions,
+  type ParseResult,
+  minify,
+  minifySync,
+  type MinifyOptions,
+  type MinifyResult,
+  Visitor,
+  type VisitorObject,
+  type ESTree,
+} from 'rolldown/utils'
+
+/** @deprecated - use `parse` instead */
+export const parseAst: typeof _parseAst = _parseAst
+/** @deprecated - use `parseAsync` instead */
+export const parseAstAsync: typeof _parseAstAsync = _parseAstAsync
+
 export {
   defineConfig,
   loadConfigFromFile,
   resolveConfig,
   sortUserPlugins,
 } from './config'
+export { perEnvironmentPlugin } from './plugin'
+export { perEnvironmentState } from './environment'
 export { createServer } from './server'
 export { preview } from './preview'
 export { build, createBuilder } from './build'
@@ -17,9 +43,9 @@ export { createIdResolver } from './idResolver'
 
 export { formatPostcssSourceMap, preprocessCSS } from './plugins/css'
 export { transformWithEsbuild } from './plugins/esbuild'
+export { transformWithOxc } from './plugins/oxc'
 export { buildErrorMessage } from './server/middlewares/error'
 
-export { RemoteEnvironmentTransport } from './server/environmentTransport'
 export {
   createRunnableDevEnvironment,
   isRunnableDevEnvironment,
@@ -27,19 +53,57 @@ export {
   type RunnableDevEnvironmentContext,
 } from './server/environments/runnableEnvironment'
 export {
+  createFetchableDevEnvironment,
+  isFetchableDevEnvironment,
+  type FetchableDevEnvironment,
+  type FetchableDevEnvironmentContext,
+} from './server/environments/fetchableEnvironments'
+export {
   DevEnvironment,
   type DevEnvironmentContext,
 } from './server/environment'
+export { runnerImport } from './ssr/runnerImport'
 export { BuildEnvironment } from './build'
 
 export { fetchModule, type FetchModuleOptions } from './ssr/fetchModule'
-export { createServerModuleRunner } from './ssr/runtime/serverModuleRunner'
+export {
+  createServerModuleRunner,
+  createServerModuleRunnerTransport,
+} from './ssr/runtime/serverModuleRunner'
 export { createServerHotChannel } from './server/hmr'
-export { ServerHMRConnector } from './ssr/runtime/serverHmrConnector'
 export { ssrTransform as moduleRunnerTransform } from './ssr/ssrTransform'
 export type { ModuleRunnerTransformOptions } from './ssr/ssrTransform'
 
-export * from './publicUtils'
+export {
+  VERSION as version,
+  DEFAULT_CLIENT_CONDITIONS as defaultClientConditions,
+  DEFAULT_CLIENT_MAIN_FIELDS as defaultClientMainFields,
+  DEFAULT_EXTERNAL_CONDITIONS as defaultExternalConditions,
+  DEFAULT_SERVER_CONDITIONS as defaultServerConditions,
+  DEFAULT_SERVER_MAIN_FIELDS as defaultServerMainFields,
+  defaultAllowedOrigins,
+} from './constants'
+// NOTE: export for backward compat
+export const esbuildVersion = '0.25.0'
+export {
+  normalizePath,
+  mergeConfig,
+  mergeAlias,
+  createFilter,
+  withFilter,
+  isCSSRequest,
+  rollupVersion,
+  rolldownVersion,
+} from './utils'
+export { send } from './server/send'
+export { createLogger } from './logger'
+export { searchForWorkspaceRoot } from './server/searchRoot'
+
+export {
+  isFileServingAllowed,
+  isFileLoadingAllowed,
+} from './server/middlewares/static'
+export { loadEnv, resolveEnvPrefix } from './env'
 
 // additional types
 export type {
@@ -62,7 +126,13 @@ export type {
   DevEnvironmentOptions,
   ResolvedDevEnvironmentOptions,
 } from './config'
-export type { Plugin, PluginOption, HookHandler } from './plugin'
+export type {
+  Plugin,
+  PluginOption,
+  HookHandler,
+  ConfigPluginContext,
+  MinimalPluginContextWithoutEnvironment,
+} from './plugin'
 export type { Environment } from './environment'
 export type { FilterPattern } from './utils'
 export type { CorsOptions, CorsOrigin, CommonServerOptions } from './http'
@@ -77,6 +147,7 @@ export type {
 } from './server'
 export type {
   ViteBuilder,
+  BuildAppHook,
   BuilderOptions,
   BuildOptions,
   BuildEnvironmentOptions,
@@ -128,13 +199,16 @@ export type {
   CSSModulesOptions,
   PreprocessCSSResult,
   ResolvedCSSOptions,
+  SassPreprocessorOptions,
+  LessPreprocessorOptions,
+  StylusPreprocessorOptions,
 } from './plugins/css'
 export type { JsonOptions } from './plugins/json'
-export type { TransformOptions as EsbuildTransformOptions } from 'esbuild'
-export type { ESBuildOptions, ESBuildTransformResult } from './plugins/esbuild'
+export type { ESBuildOptions } from './plugins/esbuild'
+export type { EsbuildTransformOptions } from '#types/internal/esbuildOptions'
+export type { OxcOptions } from './plugins/oxc'
 export type { Manifest, ManifestChunk } from './plugins/manifest'
 export type { ResolveOptions, InternalResolveOptions } from './plugins/resolve'
-export type { SplitVendorChunkCache } from './plugins/splitVendorChunk'
 export type { TerserOptions } from './plugins/terser'
 
 export type {
@@ -142,7 +216,7 @@ export type {
   WebSocketClient,
   WebSocketCustomListener,
 } from './server/ws'
-export type { PluginContainer } from './server/pluginContainer'
+export type { SkipInformation, PluginContainer } from './server/pluginContainer'
 export type {
   EnvironmentModuleGraph,
   EnvironmentModuleNode,
@@ -158,13 +232,13 @@ export type {
   HmrOptions,
   HmrContext,
   HotUpdateOptions,
-  HMRBroadcaster,
-  HMRBroadcasterClient,
-  ServerHMRChannel,
-  HMRChannel,
+  HotChannelListener,
   HotChannel,
   ServerHotChannel,
   HotChannelClient,
+  NormalizedHotChannel,
+  NormalizedHotChannelClient,
+  NormalizedServerHotChannel,
 } from './server/hmr'
 
 export type { FetchFunction, FetchResult } from 'vite/module-runner'
@@ -182,19 +256,19 @@ export type {
   CustomPayload,
   PrunePayload,
   ErrorPayload,
-} from 'types/hmrPayload'
+} from '#types/hmrPayload'
 export type {
   CustomEventMap,
   InferCustomEventPayload,
   InvalidatePayload,
-} from 'types/customEvent'
+} from '#types/customEvent'
 export type {
   ImportGlobFunction,
   ImportGlobOptions,
   GeneralImportGlobOptions,
   KnownAsTypeMap,
-} from 'types/importGlob'
-export type { ChunkMetadata } from 'types/metadata'
+} from '#types/importGlob'
+export type { ChunkMetadata, CustomPluginOptionsVite } from '#types/metadata'
 
 // dep types
 export type {
@@ -203,20 +277,16 @@ export type {
   ResolverFunction,
   ResolverObject,
   Alias,
-} from 'dep-types/alias'
-export type { Connect } from 'dep-types/connect'
-export type { WebSocket, WebSocketAlias } from 'dep-types/ws'
-export type { HttpProxy } from 'dep-types/http-proxy'
-export type {
-  FSWatcher,
-  WatchOptions,
-  AwaitWriteFinishOptions,
-} from 'dep-types/chokidar'
-export type { Terser } from 'dep-types/terser'
-export type { RollupCommonJSOptions } from 'dep-types/commonjs'
-export type { RollupDynamicImportVarsOptions } from 'dep-types/dynamicImportVars'
-export type { Matcher, AnymatchPattern, AnymatchFn } from 'dep-types/anymatch'
-export type { LightningCSSOptions } from 'dep-types/lightningcss'
+} from '#dep-types/alias'
+export type { Connect } from '#dep-types/connect'
+export type { WebSocket, WebSocketAlias } from '#dep-types/ws'
+export type * as HttpProxy from 'http-proxy-3'
+export type { FSWatcher, WatchOptions } from '#dep-types/chokidar'
+export type { Terser } from '#types/internal/terserOptions'
+export type { RollupCommonJSOptions } from '#dep-types/commonjs'
+export type { RollupDynamicImportVarsOptions } from '#dep-types/dynamicImportVars'
+export type { Matcher, AnymatchPattern, AnymatchFn } from '#dep-types/anymatch'
+export type { LightningCSSOptions } from '#types/internal/lightningcssOptions'
 
 // Backward compatibility
 export type { ModuleGraph, ModuleNode } from './server/mixedModuleGraph'

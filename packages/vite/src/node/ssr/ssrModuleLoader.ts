@@ -1,10 +1,18 @@
 import colors from 'picocolors'
 import type { EvaluatedModuleNode } from 'vite/module-runner'
-import { ESModulesEvaluator, ModuleRunner } from 'vite/module-runner'
+import {
+  ESModulesEvaluator,
+  ModuleRunner,
+  createNodeImportMeta,
+} from 'vite/module-runner'
 import type { ViteDevServer } from '../server'
 import { unwrapId } from '../../shared/utils'
 import type { DevEnvironment } from '../server/environment'
+import type { NormalizedServerHotChannel } from '../server/hmr'
+import { buildErrorMessage } from '../server/middlewares/error'
+import { isRunnableDevEnvironment } from '../../node'
 import { ssrFixStacktrace } from './ssrStacktrace'
+import { createServerModuleRunnerTransport } from './runtime/serverModuleRunner'
 
 type SSRModule = Record<string, any>
 
@@ -14,6 +22,11 @@ export async function ssrLoadModule(
   fixStacktrace?: boolean,
 ): Promise<SSRModule> {
   const environment = server.environments.ssr
+  if (!isRunnableDevEnvironment(environment)) {
+    throw new Error(
+      `ssrLoadModule requires the 'ssr' environment to be a runnable environment.`,
+    )
+  }
   server._ssrCompatModuleRunner ||= new SSRCompatModuleRunner(environment)
   url = unwrapId(url)
 
@@ -45,7 +58,9 @@ async function instantiateModule(
     }
 
     environment.logger.error(
-      colors.red(`Error when evaluating SSR module ${url}:\n|- ${e.stack}\n`),
+      buildErrorMessage(e, [
+        colors.red(`Error when evaluating SSR module ${url}: ${e.message}`),
+      ]),
       {
         timestamp: true,
         clear: environment.config.clearScreen,
@@ -61,11 +76,10 @@ class SSRCompatModuleRunner extends ModuleRunner {
   constructor(private environment: DevEnvironment) {
     super(
       {
-        root: environment.config.root,
-        transport: {
-          fetchModule: (id, importer, options) =>
-            environment.fetchModule(id, importer, options),
-        },
+        transport: createServerModuleRunnerTransport({
+          channel: environment.hot as NormalizedServerHotChannel,
+        }),
+        createImportMeta: createNodeImportMeta,
         sourcemapInterceptor: false,
         hmr: false,
       },

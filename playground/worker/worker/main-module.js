@@ -21,6 +21,7 @@ worker.addEventListener('message', (e) => {
   text('.mode', e.data.mode)
   text('.bundle-with-plugin', e.data.bundleWithPlugin)
   text('.asset-url', e.data.viteSvg)
+  text('.dep-cjs', e.data.depCjs.test)
 })
 
 const namedWorker = new myWorker({ name: 'namedWorker' })
@@ -139,7 +140,6 @@ const genWorkerName = () => 'module'
 const w2 = new SharedWorker(
   new URL('../url-shared-worker.js', import.meta.url),
   {
-    /* @vite-ignore */
     name: genWorkerName(),
     type: 'module',
   },
@@ -178,6 +178,23 @@ selfReferenceUrlWorker.addEventListener('message', (e) => {
   document.querySelector('.self-reference-url-worker').textContent +=
     `${e.data}\n`
 })
+
+// only run on build
+if (!import.meta.hot) {
+  const cjsInteropWorker = new Worker(
+    new URL('../worker-require-json.js', import.meta.url),
+    { type: 'module' },
+  )
+  cjsInteropWorker.addEventListener('message', (e) => {
+    if (e.data.ok) {
+      text('.worker-require-json', e.data.content)
+    } else {
+      text('.worker-require-json', e.data.error)
+    }
+  })
+} else {
+  text('.worker-require-json', 'skipped in dev')
+}
 
 depSelfReferenceUrlWorker.startWorker((e) => {
   document.querySelector('.self-reference-url-worker-dep').textContent +=

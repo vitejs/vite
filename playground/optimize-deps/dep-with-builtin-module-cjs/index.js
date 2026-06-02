@@ -1,7 +1,7 @@
 // no node: protocol intentionally
-// eslint-disable-next-line import-x/no-nodejs-modules
+// eslint-disable-next-line n/prefer-node-protocol
 const fs = require('fs')
-// eslint-disable-next-line import-x/no-nodejs-modules
+// eslint-disable-next-line n/prefer-node-protocol
 const path = require('path')
 
 // NOTE: require destructure would error immediately because of how esbuild

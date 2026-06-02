@@ -1,6 +1,6 @@
 {
   "name": "vite",
-  "version": "6.0.0-beta.3",
+  "version": "8.0.16",
   "type": "module",
   "license": "MIT",
   "author": "Evan You",
@@ -16,49 +16,37 @@
     "build-tool",
     "vite"
   ],
-  "main": "./dist/node/index.js",
-  "types": "./dist/node/index.d.ts",
   "exports": {
-    ".": {
-      "import": {
-        "types": "./dist/node/index.d.ts",
-        "default": "./dist/node/index.js"
-      },
-      "require": {
-        "types": "./index.d.cts",
-        "default": "./index.cjs"
-      }
-    },
+    ".": "./dist/node/index.js",
     "./client": {
       "types": "./client.d.ts"
     },
-    "./module-runner": {
-      "types": "./dist/node/module-runner.d.ts",
-      "import": "./dist/node/module-runner.js"
-    },
+    "./module-runner": "./dist/node/module-runner.js",
+    "./internal": "./dist/node/internal.js",
     "./dist/client/*": "./dist/client/*",
     "./types/*": {
       "types": "./types/*"
     },
+    "./types/internal/*": null,
     "./package.json": "./package.json"
   },
-  "typesVersions": {
-    "*": {
-      "module-runner": [
-        "dist/node/module-runner.d.ts"
-      ]
-    }
+  "imports": {
+    "#module-sync-enabled": {
+      "module-sync": "./misc/true.js",
+      "default": "./misc/false.js"
+    },
+    "#types/*": "./types/*.d.ts",
+    "#dep-types/*": "./src/types/*.d.ts"
   },
   "files": [
     "bin",
     "dist",
+    "misc/**/*.js",
     "client.d.ts",
-    "index.cjs",
-    "index.d.cts",
     "types"
   ],
   "engines": {
-    "node": "^18.0.0 || >=20.0.0"
+    "node": "^20.19.0 || >=22.12.0"
   },
   "repository": {
     "type": "git",
@@ -71,101 +59,110 @@
   "homepage": "https://vite.dev",
   "funding": "https://github.com/vitejs/vite?sponsor=1",
   "scripts": {
-    "dev": "tsx scripts/dev.ts",
-    "build": "rimraf dist && pnpm build-bundle && pnpm build-types",
-    "build-bundle": "rollup --config rollup.config.ts --configPlugin esbuild",
-    "build-types": "pnpm build-types-temp && pnpm build-types-roll && pnpm build-types-check",
-    "build-types-temp": "tsc --emitDeclarationOnly --outDir temp -p src/node",
-    "build-types-roll": "rollup --config rollup.dts.config.ts --configPlugin esbuild && rimraf temp",
+    "dev": "premove dist && pnpm build-bundle -w",
+    "build": "premove dist && pnpm build-bundle && pnpm build-types",
+    "build-bundle": "rolldown --config rolldown.config.ts",
+    "build-types": "pnpm build-types-roll && pnpm build-types-check",
+    "build-types-roll": "rolldown --config rolldown.dts.config.ts",
     "build-types-check": "tsc --project tsconfig.check.json",
-    "typecheck": "tsc --noEmit && tsc --noEmit -p src/node",
+    "typecheck": "tsc && tsc -p src/node && tsc -p src/client && tsc -p src/module-runner && tsc -p src/shared && tsc -p src/node/__tests_dts__ && tsc -p src/module-runner/__tests_dts__",
     "lint": "eslint --cache --ext .ts src/**",
-    "format": "prettier --write --cache --parser typescript \"src/**/*.ts\"",
+    "format": "oxfmt",
+    "generate-target": "tsx scripts/generateTarget.ts",
     "prepublishOnly": "npm run build"
   },
   "//": "READ CONTRIBUTING.md to understand what to put under deps vs. devDeps!",
   "dependencies": {
-    "esbuild": "^0.24.0",
-    "postcss": "^8.4.47",
-    "rollup": "^4.22.5"
+    "lightningcss": "^1.32.0",
+    "picomatch": "^4.0.4",
+    "postcss": "^8.5.15",
+    "rolldown": "1.0.3",
+    "tinyglobby": "^0.2.17"
   },
   "optionalDependencies": {
     "fsevents": "~2.3.3"
   },
   "devDependencies": {
-    "@ampproject/remapping": "^2.3.0",
-    "@babel/parser": "^7.25.8",
-    "@jridgewell/trace-mapping": "^0.3.25",
+    "@babel/parser": "^7.29.7",
+    "@jridgewell/remapping": "^2.3.5",
+    "@jridgewell/trace-mapping": "^0.3.31",
     "@polka/compression": "^1.0.0-next.25",
-    "@rollup/plugin-alias": "^5.1.1",
-    "@rollup/plugin-commonjs": "^28.0.0",
-    "@rollup/plugin-dynamic-import-vars": "^2.1.3",
-    "@rollup/plugin-json": "^6.1.0",
-    "@rollup/plugin-node-resolve": "15.3.0",
-    "@rollup/pluginutils": "^5.1.2",
+    "@rollup/plugin-alias": "^6.0.0",
+    "@rollup/plugin-dynamic-import-vars": "2.1.4",
+    "@rollup/pluginutils": "^5.4.0",
+    "@vercel/detect-agent": "^1.2.3",
     "@types/escape-html": "^1.0.4",
     "@types/pnpapi": "^0.0.5",
-    "artichokie": "^0.2.1",
-    "cac": "^6.7.14",
+    "@vitest/utils": "4.1.7",
+    "@vitejs/devtools": "^0.3.1",
+    "artichokie": "^0.4.3",
+    "baseline-browser-mapping": "^2.10.33",
+    "cac": "^7.0.0",
     "chokidar": "^3.6.0",
     "connect": "^3.7.0",
     "convert-source-map": "^2.0.0",
-    "cors": "^2.8.5",
-    "cross-spawn": "^7.0.3",
-    "debug": "^4.3.7",
-    "dep-types": "link:./src/types",
-    "dotenv": "^16.4.5",
-    "dotenv-expand": "^11.0.6",
-    "es-module-lexer": "^1.5.4",
+    "cors": "^2.8.6",
+    "cross-spawn": "^7.0.6",
+    "dotenv-expand": "^13.0.0",
+    "es-module-lexer": "^1.7.0",
+    "esbuild": "^0.28.0",
     "escape-html": "^1.0.3",
     "estree-walker": "^3.0.3",
     "etag": "^1.8.1",
-    "http-proxy": "^1.18.1",
-    "launch-editor-middleware": "^2.9.1",
-    "lightningcss": "^1.27.0",
-    "magic-string": "^0.30.12",
-    "micromatch": "^4.0.8",
-    "mlly": "^1.7.2",
-    "mrmime": "^2.0.0",
-    "nanoid": "^5.0.7",
-    "open": "^10.1.0",
-    "parse5": "^7.2.0",
-    "pathe": "^1.1.2",
-    "periscopic": "^4.0.2",
-    "picocolors": "^1.1.0",
-    "picomatch": "^2.3.1",
-    "postcss-import": "^16.1.0",
-    "postcss-load-config": "^4.0.2",
-    "postcss-modules": "^6.0.0",
-    "resolve.exports": "^2.0.2",
-    "rollup-plugin-dts": "^6.1.1",
-    "rollup-plugin-esbuild": "^6.1.1",
-    "rollup-plugin-license": "^3.5.3",
-    "sass": "^1.79.5",
-    "sass-embedded": "^1.79.5",
-    "sirv": "^3.0.0",
-    "source-map-support": "^0.5.21",
-    "strip-ansi": "^7.1.0",
-    "strip-literal": "^2.1.0",
-    "tinyglobby": "^0.2.9",
-    "tsconfck": "^3.1.4",
-    "tslib": "^2.7.0",
-    "types": "link:./types",
-    "ufo": "^1.5.4",
-    "ws": "^8.18.0"
+    "host-validation-middleware": "^0.1.4",
+    "http-proxy-3": "^1.23.2",
+    "launch-editor-middleware": "^2.14.1",
+    "magic-string": "^0.30.21",
+    "mlly": "^1.8.2",
+    "mrmime": "^2.0.1",
+    "nanoid": "^5.1.11",
+    "obug": "^1.0.2",
+    "open": "^10.2.0",
+    "parse5": "^8.0.1",
+    "pathe": "^2.0.3",
+    "periscopic": "^4.0.3",
+    "picocolors": "^1.1.1",
+    "postcss-import": "^16.1.1",
+    "postcss-load-config": "^6.0.1",
+    "postcss-modules": "^6.0.1",
+    "premove": "^4.0.0",
+    "resolve.exports": "^2.0.3",
+    "rolldown-plugin-dts": "^0.25.2",
+    "rollup": "^4.59.0",
+    "rollup-plugin-license": "^3.7.1",
+    "sass": "^1.100.0",
+    "sass-embedded": "^1.100.0",
+    "sirv": "^3.0.2",
+    "strip-literal": "^3.1.0",
+    "terser": "^5.48.0",
+    "ufo": "^1.6.4",
+    "ws": "^8.21.0"
   },
   "peerDependencies": {
-    "@types/node": "^18.0.0 || >=20.0.0",
-    "less": "*",
-    "lightningcss": "^1.21.0",
-    "sass": "*",
-    "sass-embedded": "*",
-    "stylus": "*",
-    "sugarss": "*",
-    "terser": "^5.4.0"
+    "@types/node": "^20.19.0 || >=22.12.0",
+    "@vitejs/devtools": "^0.1.18",
+    "esbuild": "^0.27.0 || ^0.28.0",
+    "jiti": ">=1.21.0",
+    "less": "^4.0.0",
+    "sass": "^1.70.0",
+    "sass-embedded": "^1.70.0",
+    "stylus": ">=0.54.8",
+    "sugarss": "^5.0.0",
+    "terser": "^5.16.0",
+    "tsx": "^4.8.1",
+    "yaml": "^2.4.2"
   },
   "peerDependenciesMeta": {
     "@types/node": {
+      "optional": true
+    },
+    "@vitejs/devtools": {
+      "optional": true
+    },
+    "esbuild": {
+      "optional": true
+    },
+    "jiti": {
       "optional": true
     },
     "sass": {
@@ -183,10 +180,13 @@
     "sugarss": {
       "optional": true
     },
-    "lightningcss": {
+    "terser": {
       "optional": true
     },
-    "terser": {
+    "tsx": {
+      "optional": true
+    },
+    "yaml": {
       "optional": true
     }
   }

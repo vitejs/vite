@@ -3,6 +3,7 @@ import viteConfig from '../vite.config'
 import { page } from '~utils'
 
 const defines = viteConfig.define
+const envDefines = viteConfig.environments.client.define
 
 test('string', async () => {
   expect(await page.textContent('.exp')).toBe(
@@ -47,6 +48,9 @@ test('string', async () => {
   expect(await page.textContent('.import-json')).toBe('__EXP__')
   expect(await page.textContent('.define-in-dep')).toBe(
     defines.__STRINGIFIED_OBJ__,
+  )
+  expect(await page.textContent('.define-in-environment')).toBe(
+    envDefines.__DEFINE_IN_ENVIRONMENT__,
   )
 })
 
@@ -104,4 +108,14 @@ test('replace constants on import.meta.env when it is a invalid json', async () 
       '.replace-undefined-constants-on-import-meta-env .import-meta-env-SOME_IDENTIFIER',
     ),
   ).toBe('true')
+})
+
+test('optional values are detected by pattern properly', async () => {
+  expect(await page.textContent('.optional-env')).toBe(
+    JSON.parse(defines['process.env.SOMEVAR']),
+  )
+})
+
+test('env import with query parameters works correctly', async () => {
+  expect(await page.textContent('.env-with-query')).toBe('success')
 })

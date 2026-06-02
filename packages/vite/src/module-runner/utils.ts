@@ -1,31 +1,16 @@
 import * as pathe from 'pathe'
-import { isWindows, slash } from '../shared/utils'
+import { isWindows } from '../shared/utils'
 
-export function normalizeAbsoluteUrl(url: string, root: string): string {
-  url = slash(url)
+const textDecoder = new TextDecoder()
 
-  // file:///C:/root/id.js -> C:/root/id.js
-  if (url.startsWith('file://')) {
-    // 8 is the length of "file:///"
-    url = url.slice(isWindows ? 8 : 7)
+export const decodeBase64: (base64: string) => string = (() => {
+  if (typeof Buffer === 'function' && typeof Buffer.from === 'function') {
+    return (base64: string) => Buffer.from(base64, 'base64').toString('utf-8')
   }
 
-  // strip root from the URL because fetchModule prefers a public served url path
-  // packages/vite/src/node/server/moduleGraph.ts:17
-  if (url.startsWith(root)) {
-    // /root/id.js -> /id.js
-    // C:/root/id.js -> /id.js
-    // 1 is to keep the leading slash
-    url = url.slice(root.length - 1)
-  }
-
-  return url
-}
-
-export const decodeBase64 =
-  typeof atob !== 'undefined'
-    ? atob
-    : (str: string) => Buffer.from(str, 'base64').toString('utf-8')
+  return (base64: string) =>
+    textDecoder.decode(Uint8Array.from(atob(base64), (c) => c.charCodeAt(0)))
+})()
 
 const CHAR_FORWARD_SLASH = 47
 const CHAR_BACKWARD_SLASH = 92
@@ -39,22 +24,19 @@ const questionRegex = /\?/g
 const hashRegex = /#/g
 
 function encodePathChars(filepath: string) {
-  if (filepath.indexOf('%') !== -1)
-    filepath = filepath.replace(percentRegEx, '%25')
+  if (filepath.includes('%')) filepath = filepath.replace(percentRegEx, '%25')
   // In posix, backslash is a valid character in paths:
-  if (!isWindows && filepath.indexOf('\\') !== -1)
+  if (!isWindows && filepath.includes('\\'))
     filepath = filepath.replace(backslashRegEx, '%5C')
-  if (filepath.indexOf('\n') !== -1)
-    filepath = filepath.replace(newlineRegEx, '%0A')
-  if (filepath.indexOf('\r') !== -1)
+  if (filepath.includes('\n')) filepath = filepath.replace(newlineRegEx, '%0A')
+  if (filepath.includes('\r'))
     filepath = filepath.replace(carriageReturnRegEx, '%0D')
-  if (filepath.indexOf('\t') !== -1)
-    filepath = filepath.replace(tabRegEx, '%09')
+  if (filepath.includes('\t')) filepath = filepath.replace(tabRegEx, '%09')
   return filepath
 }
 
-export const posixDirname = pathe.dirname
-export const posixResolve = pathe.resolve
+export const posixDirname: (path: string) => string = pathe.dirname
+export const posixResolve: (...paths: string[]) => string = pathe.resolve
 
 export function posixPathToFileHref(posixPath: string): string {
   let resolved = posixResolve(posixPath)
@@ -74,10 +56,8 @@ export function posixPathToFileHref(posixPath: string): string {
   // Therefore, encoding is required to eliminate parsing them in different states.
   // This is done as an optimization to not creating a URL instance and
   // later triggering pathname setter, which impacts performance
-  if (resolved.indexOf('?') !== -1)
-    resolved = resolved.replace(questionRegex, '%3F')
-  if (resolved.indexOf('#') !== -1)
-    resolved = resolved.replace(hashRegex, '%23')
+  if (resolved.includes('?')) resolved = resolved.replace(questionRegex, '%3F')
+  if (resolved.includes('#')) resolved = resolved.replace(hashRegex, '%23')
   return new URL(`file://${resolved}`).href
 }
 

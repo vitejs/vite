@@ -1,16 +1,13 @@
-import type { FetchFunctionOptions, FetchResult } from 'vite/module-runner'
-import type { FSWatcher } from 'dep-types/chokidar'
 import colors from 'picocolors'
-import {
-  BaseEnvironment,
-  getDefaultResolvedEnvironmentOptions,
-} from '../baseEnvironment'
+import type { FetchFunctionOptions, FetchResult } from 'vite/module-runner'
+import type { FSWatcher } from '#dep-types/chokidar'
+import { BaseEnvironment } from '../baseEnvironment'
 import type {
   EnvironmentOptions,
   ResolvedConfig,
   ResolvedEnvironmentOptions,
 } from '../config'
-import { mergeConfig, promiseWithResolvers } from '../utils'
+import { mergeConfig, monotonicDateNow } from '../utils'
 import { fetchModule } from '../ssr/fetchModule'
 import type { DepsOptimizer } from '../optimizer'
 import { isDepOptimizationDisabled } from '../optimizer'
@@ -18,12 +15,17 @@ import {
   createDepsOptimizer,
   createExplicitDepsOptimizer,
 } from '../optimizer/optimizer'
-import { resolveEnvironmentPlugins } from '../plugin'
-import { ERR_OUTDATED_OPTIMIZED_DEP } from '../constants'
+import { ERR_OUTDATED_OPTIMIZED_DEP } from '../../shared/constants'
+import { promiseWithResolvers } from '../../shared/utils'
+import type { ViteDevServer } from '../server'
 import { EnvironmentModuleGraph } from './moduleGraph'
 import type { EnvironmentModuleNode } from './moduleGraph'
-import type { HotChannel } from './hmr'
-import { createNoopHotChannel, getShortName, updateModules } from './hmr'
+import type {
+  HotChannel,
+  NormalizedHotChannel,
+  NormalizedHotChannelClient,
+} from './hmr'
+import { getShortName, normalizeHotChannel, updateModules } from './hmr'
 import type { TransformResult } from './transformRequest'
 import { transformRequest } from './transformRequest'
 import type { EnvironmentPluginContainer } from './pluginContainer'
@@ -31,17 +33,22 @@ import {
   ERR_CLOSED_SERVER,
   createEnvironmentPluginContainer,
 } from './pluginContainer'
-import type { RemoteEnvironmentTransport } from './environmentTransport'
-import { isWebSocketServer } from './ws'
+import { type WebSocketServer, isWebSocketServer } from './ws'
+import { warmupFiles } from './warmup'
+import { buildErrorMessage } from './middlewares/error'
 
 export interface DevEnvironmentContext {
-  hot: false | HotChannel
+  hot: boolean
+  transport?: HotChannel | WebSocketServer
   options?: EnvironmentOptions
   remoteRunner?: {
     inlineSourceMap?: boolean
-    transport?: RemoteEnvironmentTransport
   }
   depsOptimizer?: DepsOptimizer
+  /** @internal used for client environment */
+  disableFetchModule?: boolean
+  /** @internal used for full bundle mode */
+  disableDepsOptimizer?: boolean
 }
 
 export class DevEnvironment extends BaseEnvironment {
@@ -53,8 +60,12 @@ export class DevEnvironment extends BaseEnvironment {
    * @internal
    */
   _remoteRunnerOptions: DevEnvironmentContext['remoteRunner']
+  /**
+   * @internal
+   */
+  _skipFsCheck: boolean
 
-  get pluginContainer(): EnvironmentPluginContainer {
+  get pluginContainer(): EnvironmentPluginContainer<DevEnvironment> {
     if (!this._pluginContainer)
       throw new Error(
         `${this.name} environment.pluginContainer called before initialized`,
@@ -64,7 +75,7 @@ export class DevEnvironment extends BaseEnvironment {
   /**
    * @internal
    */
-  _pluginContainer: EnvironmentPluginContainer | undefined
+  _pluginContainer: EnvironmentPluginContainer<DevEnvironment> | undefined
 
   /**
    * @internal
@@ -93,14 +104,16 @@ export class DevEnvironment extends BaseEnvironment {
    * @example
    * environment.hot.send({ type: 'full-reload' })
    */
-  hot: HotChannel
+  hot: NormalizedHotChannel
   constructor(
     name: string,
     config: ResolvedConfig,
     context: DevEnvironmentContext,
   ) {
-    let options =
-      config.environments[name] ?? getDefaultResolvedEnvironmentOptions(config)
+    let options = config.environments[name]
+    if (!options) {
+      throw new Error(`Environment "${name}" is not defined in the config.`)
+    }
     if (context.options) {
       options = mergeConfig(
         options,
@@ -115,53 +128,105 @@ export class DevEnvironment extends BaseEnvironment {
       this.pluginContainer!.resolveId(url, undefined),
     )
 
-    this.hot = context.hot || createNoopHotChannel()
-
     this._crawlEndFinder = setupOnCrawlEnd()
 
     this._remoteRunnerOptions = context.remoteRunner ?? {}
-    context.remoteRunner?.transport?.register(this)
+    this._skipFsCheck = !!(
+      context.transport &&
+      !(isWebSocketServer in context.transport) &&
+      context.transport.skipFsCheck
+    )
 
-    this.hot.on('vite:invalidate', async ({ path, message }) => {
-      invalidateModule(this, {
-        path,
-        message,
-      })
+    this.hot = context.transport
+      ? isWebSocketServer in context.transport
+        ? context.transport
+        : normalizeHotChannel(context.transport, context.hot)
+      : normalizeHotChannel({}, context.hot)
+
+    this.hot.setInvokeHandler({
+      fetchModule: (id, importer, options) => {
+        if (context.disableFetchModule) {
+          throw new Error('fetchModule is disabled in this environment')
+        }
+        return this.fetchModule(id, importer, options)
+      },
+      getBuiltins: async () => {
+        return this.config.resolve.builtins.map((builtin) =>
+          typeof builtin === 'string'
+            ? { type: 'string', value: builtin }
+            : { type: 'RegExp', source: builtin.source, flags: builtin.flags },
+        )
+      },
     })
 
-    const { optimizeDeps } = this.config.dev
-    if (context.depsOptimizer) {
-      this.depsOptimizer = context.depsOptimizer
-    } else if (isDepOptimizationDisabled(optimizeDeps)) {
-      this.depsOptimizer = undefined
-    } else {
-      // We only support auto-discovery for the client environment, for all other
-      // environments `noDiscovery` has no effect and a simpler explicit deps
-      // optimizer is used that only optimizes explicitly included dependencies
-      // so it doesn't need to reload the environment. Now that we have proper HMR
-      // and full reload for general environments, we can enable auto-discovery for
-      // them in the future
-      this.depsOptimizer = (
-        optimizeDeps.noDiscovery || options.consumer !== 'client'
-          ? createExplicitDepsOptimizer
-          : createDepsOptimizer
-      )(this)
+    this.hot.on(
+      'vite:invalidate',
+      ({ path, message, firstInvalidatedBy }, client) => {
+        this.invalidateModule(
+          {
+            path,
+            message,
+            firstInvalidatedBy,
+          },
+          client,
+        )
+      },
+    )
+
+    if (!context.disableDepsOptimizer) {
+      const { optimizeDeps } = this.config
+      if (context.depsOptimizer) {
+        this.depsOptimizer = context.depsOptimizer
+      } else if (isDepOptimizationDisabled(optimizeDeps)) {
+        this.depsOptimizer = undefined
+      } else {
+        this.depsOptimizer = (
+          optimizeDeps.noDiscovery
+            ? createExplicitDepsOptimizer
+            : createDepsOptimizer
+        )(this)
+      }
     }
   }
 
-  async init(options?: { watcher?: FSWatcher }): Promise<void> {
+  async init(options?: {
+    watcher?: FSWatcher
+    /**
+     * the previous instance used for the environment with the same name
+     *
+     * when using, the consumer should check if it's an instance generated from the same class or factory function
+     */
+    previousInstance?: DevEnvironment
+  }): Promise<void> {
     if (this._initiated) {
       return
     }
     this._initiated = true
-    this._plugins = resolveEnvironmentPlugins(this)
     this._pluginContainer = await createEnvironmentPluginContainer(
       this,
-      this._plugins,
+      this.config.plugins,
       options?.watcher,
     )
   }
 
+  /**
+   * When the dev server is restarted, the methods are called in the following order:
+   * - new instance `init`
+   * - previous instance `close`
+   * - new instance `listen`
+   */
+  async listen(server: ViteDevServer): Promise<void> {
+    this.hot.listen()
+    await this.depsOptimizer?.init()
+    warmupFiles(server, this)
+  }
+
+  /**
+   * Called by the module runner to retrieve information about the specified
+   * module. Internally calls `transformRequest` and wraps the result in the
+   * format that the module runner understands.
+   * This method is not meant to be called manually.
+   */
   fetchModule(
     id: string,
     importer?: string,
@@ -175,17 +240,17 @@ export class DevEnvironment extends BaseEnvironment {
 
   async reloadModule(module: EnvironmentModuleNode): Promise<void> {
     if (this.config.server.hmr !== false && module.file) {
-      updateModules(this, module.file, [module], Date.now())
+      updateModules(this, module.file, [module], monotonicDateNow())
     }
   }
 
   transformRequest(url: string): Promise<TransformResult | null> {
-    return transformRequest(this, url)
+    return transformRequest(this, url, { skipFsCheck: this._skipFsCheck })
   }
 
   async warmupRequest(url: string): Promise<void> {
     try {
-      await this.transformRequest(url)
+      await transformRequest(this, url, { skipFsCheck: true })
     } catch (e) {
       if (
         e?.code === ERR_OUTDATED_OPTIMIZED_DEP ||
@@ -195,17 +260,53 @@ export class DevEnvironment extends BaseEnvironment {
         return
       }
       // Unexpected error, log the issue but avoid an unhandled exception
-      this.logger.error(`Pre-transform error: ${e.message}`, {
-        error: e,
-        timestamp: true,
-      })
+      this.logger.error(
+        buildErrorMessage(e, [`Pre-transform error: ${e.message}`], false),
+        {
+          error: e,
+          timestamp: true,
+        },
+      )
+    }
+  }
+
+  protected invalidateModule(
+    m: {
+      path: string
+      message?: string
+      firstInvalidatedBy: string
+    },
+    _client: NormalizedHotChannelClient,
+  ): void {
+    const mod = this.moduleGraph.urlToModuleMap.get(m.path)
+    if (
+      mod &&
+      mod.isSelfAccepting &&
+      mod.lastHMRTimestamp > 0 &&
+      !mod.lastHMRInvalidationReceived
+    ) {
+      mod.lastHMRInvalidationReceived = true
+      this.logger.info(
+        colors.yellow(`hmr invalidate `) +
+          colors.dim(m.path) +
+          (m.message ? ` ${m.message}` : ''),
+        { timestamp: true },
+      )
+      const file = getShortName(mod.file!, this.config.root)
+      updateModules(
+        this,
+        file,
+        [...mod.importers].filter((imp) => imp !== mod), // ignore self-imports
+        mod.lastHMRTimestamp,
+        m.firstInvalidatedBy,
+      )
     }
   }
 
   async close(): Promise<void> {
     this._closing = true
 
-    this._crawlEndFinder?.cancel()
+    this._crawlEndFinder.cancel()
     await Promise.allSettled([
       this.pluginContainer.close(),
       this.depsOptimizer?.close(),
@@ -240,38 +341,6 @@ export class DevEnvironment extends BaseEnvironment {
    */
   _registerRequestProcessing(id: string, done: () => Promise<unknown>): void {
     this._crawlEndFinder.registerRequestProcessing(id, done)
-  }
-}
-
-function invalidateModule(
-  environment: DevEnvironment,
-  m: {
-    path: string
-    message?: string
-  },
-) {
-  const mod = environment.moduleGraph.urlToModuleMap.get(m.path)
-  if (
-    mod &&
-    mod.isSelfAccepting &&
-    mod.lastHMRTimestamp > 0 &&
-    !mod.lastHMRInvalidationReceived
-  ) {
-    mod.lastHMRInvalidationReceived = true
-    environment.logger.info(
-      colors.yellow(`hmr invalidate `) +
-        colors.dim(m.path) +
-        (m.message ? ` ${m.message}` : ''),
-      { timestamp: true },
-    )
-    const file = getShortName(mod.file!, environment.config.root)
-    updateModules(
-      environment,
-      file,
-      [...mod.importers],
-      mod.lastHMRTimestamp,
-      true,
-    )
   }
 }
 
@@ -332,7 +401,7 @@ function setupOnCrawlEnd(): CrawlEndFinder {
       callCrawlEndIfIdleAfterMs,
     )
   }
-  async function callOnCrawlEndWhenIdle() {
+  function callOnCrawlEndWhenIdle() {
     if (cancelled || registeredIds.size > 0) return
     onCrawlEndPromiseWithResolvers.resolve()
   }

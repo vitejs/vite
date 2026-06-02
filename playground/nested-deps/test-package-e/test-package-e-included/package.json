@@ -5,6 +5,6 @@
   "type": "module",
   "main": "index.js",
   "dependencies": {
-    "test-package-e-excluded": "link:../test-package-e-excluded"
+    "@vitejs/test-package-e-excluded": "link:../test-package-e-excluded"
   }
 }

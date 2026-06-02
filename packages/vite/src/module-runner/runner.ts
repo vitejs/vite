@@ -1,35 +1,35 @@
-import type { ViteHotContext } from 'types/hot'
-import { HMRClient, HMRContext } from '../shared/hmr'
-import { cleanUrl, isPrimitive, isWindows } from '../shared/utils'
+import type { ViteHotContext } from '#types/hot'
+import { HMRClient, HMRContext, type HMRLogger } from '../shared/hmr'
+import { cleanUrl, isPrimitive } from '../shared/utils'
 import { analyzeImportedModDifference } from '../shared/ssrTransform'
+import {
+  type NormalizedModuleRunnerTransport,
+  normalizeModuleRunnerTransport,
+} from '../shared/moduleRunnerTransport'
+import { createIsBuiltin } from '../shared/builtin'
 import type { EvaluatedModuleNode } from './evaluatedModules'
 import { EvaluatedModules } from './evaluatedModules'
 import type {
   ModuleEvaluator,
   ModuleRunnerContext,
-  ModuleRunnerImportMeta,
   ModuleRunnerOptions,
   ResolvedResult,
   SSRImportMetadata,
 } from './types'
-import {
-  normalizeAbsoluteUrl,
-  posixDirname,
-  posixPathToFileHref,
-  posixResolve,
-  toWindowsPath,
-} from './utils'
+import { posixDirname, posixPathToFileHref, posixResolve } from './utils'
 import {
   ssrDynamicImportKey,
   ssrExportAllKey,
+  ssrExportNameKey,
   ssrImportKey,
   ssrImportMetaKey,
   ssrModuleExportsKey,
 } from './constants'
 import { hmrLogger, silentConsole } from './hmrLogger'
-import { createHMRHandler } from './hmrHandler'
+import { createHMRHandlerForRunner } from './hmrHandler'
 import { enableSourceMapSupport } from './sourcemap/index'
-import type { RunnerTransport } from './runnerTransport'
+import { ESModulesEvaluator } from './esmEvaluator'
+import { createDefaultImportMeta } from './createImportMeta'
 
 interface ModuleRunnerDebugger {
   (formatter: unknown, ...args: unknown[]): void
@@ -39,41 +39,45 @@ export class ModuleRunner {
   public evaluatedModules: EvaluatedModules
   public hmrClient?: HMRClient
 
-  private readonly envProxy = new Proxy({} as any, {
-    get(_, p) {
-      throw new Error(
-        `[module runner] Dynamic access of "import.meta.env" is not supported. Please, use "import.meta.env.${String(p)}" instead.`,
-      )
-    },
-  })
-  private readonly transport: RunnerTransport
+  private readonly transport: NormalizedModuleRunnerTransport
   private readonly resetSourceMapSupport?: () => void
-  private readonly root: string
   private readonly concurrentModuleNodePromises = new Map<
     string,
     Promise<EvaluatedModuleNode>
   >()
+  private isBuiltin?: (id: string) => boolean
+  private builtinsPromise?: Promise<void>
 
   private closed = false
 
   constructor(
     public options: ModuleRunnerOptions,
-    public evaluator: ModuleEvaluator,
-    private debug?: ModuleRunnerDebugger,
+    public evaluator: ModuleEvaluator = new ESModulesEvaluator(),
+    private debug?: ModuleRunnerDebugger | undefined,
   ) {
-    const root = this.options.root
-    this.root = root[root.length - 1] === '/' ? root : `${root}/`
     this.evaluatedModules = options.evaluatedModules ?? new EvaluatedModules()
-    this.transport = options.transport
-    if (typeof options.hmr === 'object') {
+    this.transport = normalizeModuleRunnerTransport(options.transport)
+    if (options.hmr !== false) {
+      const optionsHmr = options.hmr ?? true
+      const resolvedHmrLogger: HMRLogger =
+        optionsHmr === true || optionsHmr.logger === undefined
+          ? hmrLogger
+          : optionsHmr.logger === false
+            ? silentConsole
+            : optionsHmr.logger
       this.hmrClient = new HMRClient(
-        options.hmr.logger === false
-          ? silentConsole
-          : options.hmr.logger || hmrLogger,
-        options.hmr.connection,
+        resolvedHmrLogger,
+        this.transport,
         ({ acceptedPath }) => this.import(acceptedPath),
       )
-      options.hmr.connection.onUpdate(createHMRHandler(this))
+      if (!this.transport.connect) {
+        throw new Error(
+          'HMR is not supported by this runner transport, but `hmr` option was set to true',
+        )
+      }
+      this.transport.connect(createHMRHandlerForRunner(this))
+    } else {
+      this.transport.connect?.()
     }
     if (options.sourcemapInterceptor !== false) {
       this.resetSourceMapSupport = enableSourceMapSupport(this)
@@ -105,6 +109,7 @@ export class ModuleRunner {
     this.clearCache()
     this.hmrClient = undefined
     this.closed = true
+    await this.transport.disconnect?.()
   }
 
   /**
@@ -128,37 +133,32 @@ export class ModuleRunner {
     return exports
   }
 
-  private isCircularModule(mod: EvaluatedModuleNode) {
-    for (const importedFile of mod.imports) {
-      if (mod.importers.has(importedFile)) {
-        return true
-      }
-    }
-    return false
-  }
-
-  private isCircularImport(
-    importers: Set<string>,
-    moduleUrl: string,
+  private isCircularRequest(
+    mod: EvaluatedModuleNode,
+    callstack: string[],
     visited = new Set<string>(),
-  ) {
-    for (const importer of importers) {
-      if (visited.has(importer)) {
-        continue
-      }
-      visited.add(importer)
-      if (importer === moduleUrl) {
+  ): boolean {
+    if (visited.has(mod.id)) {
+      return false
+    }
+    visited.add(mod.id)
+
+    for (const importedModuleId of mod.imports) {
+      if (callstack.includes(importedModuleId)) {
         return true
       }
-      const mod = this.evaluatedModules.getModuleById(importer)
+
+      const importedModule =
+        this.evaluatedModules.getModuleById(importedModuleId)
       if (
-        mod &&
-        mod.importers.size &&
-        this.isCircularImport(mod.importers, moduleUrl, visited)
+        importedModule?.promise &&
+        !importedModule.evaluated &&
+        this.isCircularRequest(importedModule, callstack, visited)
       ) {
         return true
       }
     }
+
     return false
   }
 
@@ -171,19 +171,23 @@ export class ModuleRunner {
     const meta = mod.meta!
     const moduleId = meta.id
 
-    const { importers } = mod
-
     const importee = callstack[callstack.length - 1]
 
-    if (importee) importers.add(importee)
+    if (importee) mod.importers.add(importee)
 
-    // check circular dependency
-    if (
-      callstack.includes(moduleId) ||
-      this.isCircularModule(mod) ||
-      this.isCircularImport(importers, moduleId)
-    ) {
-      if (mod.exports) return this.processImport(mod.exports, meta, metadata)
+    // fast path: already evaluated modules can't deadlock
+    if (mod.evaluated && mod.promise) {
+      return this.processImport(await mod.promise, meta, metadata)
+    }
+
+    if (mod.promise) {
+      if (
+        mod.exports &&
+        (callstack.includes(moduleId) || this.isCircularRequest(mod, callstack))
+      ) {
+        return this.processImport(mod.exports, meta, metadata)
+      }
+      return this.processImport(await mod.promise, meta, metadata)
     }
 
     let debugTimer: any
@@ -202,10 +206,6 @@ export class ModuleRunner {
     }
 
     try {
-      // cached module
-      if (mod.promise)
-        return this.processImport(await mod.promise, meta, metadata)
-
       const promise = this.directRequest(url, mod, callstack)
       mod.promise = promise
       mod.evaluated = false
@@ -220,8 +220,6 @@ export class ModuleRunner {
     url: string,
     importer?: string,
   ): Promise<EvaluatedModuleNode> {
-    url = normalizeAbsoluteUrl(url, this.root)
-
     let cached = this.concurrentModuleNodePromises.get(url)
     if (!cached) {
       const cachedModule = this.evaluatedModules.getModuleByUrl(url)
@@ -238,6 +236,34 @@ export class ModuleRunner {
     return cached
   }
 
+  private ensureBuiltins(): Promise<void> | undefined {
+    if (this.isBuiltin) return
+
+    this.builtinsPromise ??= (async () => {
+      try {
+        this.debug?.('[module runner] fetching builtins from server')
+        const serializedBuiltins = await this.transport.invoke(
+          'getBuiltins',
+          [],
+        )
+        const builtins = serializedBuiltins.map((builtin) =>
+          typeof builtin === 'object' && builtin && 'type' in builtin
+            ? builtin.type === 'string'
+              ? builtin.value
+              : new RegExp(builtin.source, builtin.flags)
+            : // NOTE: Vitest returns raw values instead of serialized ones
+              builtin,
+        )
+        this.isBuiltin = createIsBuiltin(builtins)
+        this.debug?.('[module runner] builtins loaded:', builtins)
+      } finally {
+        this.builtinsPromise = undefined
+      }
+    })()
+
+    return this.builtinsPromise
+  }
+
   private async getModuleInformation(
     url: string,
     importer: string | undefined,
@@ -247,18 +273,24 @@ export class ModuleRunner {
       throw new Error(`Vite module runner has been closed.`)
     }
 
+    await this.ensureBuiltins()
+
     this.debug?.('[module runner] fetching', url)
 
     const isCached = !!(typeof cachedModule === 'object' && cachedModule.meta)
 
     const fetchedModule = // fast return for established externalized pattern
       (
-        url.startsWith('data:')
+        url.startsWith('data:') || this.isBuiltin?.(url)
           ? { externalize: url, type: 'builtin' }
-          : await this.transport.fetchModule(url, importer, {
-              cached: isCached,
-              startOffset: this.evaluator.startOffset,
-            })
+          : await this.transport.invoke('fetchModule', [
+              url,
+              importer,
+              {
+                cached: isCached,
+                startOffset: this.evaluator.startOffset,
+              },
+            ])
       ) as ResolvedResult
 
     if ('cache' in fetchedModule) {
@@ -335,29 +367,13 @@ export class ModuleRunner {
       )
     }
 
+    const createImportMeta =
+      this.options.createImportMeta ?? createDefaultImportMeta
+
     const modulePath = cleanUrl(file || moduleId)
     // disambiguate the `<UNIT>:/` on windows: see nodejs/node#31710
     const href = posixPathToFileHref(modulePath)
-    const filename = modulePath
-    const dirname = posixDirname(modulePath)
-    const meta: ModuleRunnerImportMeta = {
-      filename: isWindows ? toWindowsPath(filename) : filename,
-      dirname: isWindows ? toWindowsPath(dirname) : dirname,
-      url: href,
-      env: this.envProxy,
-      resolve(_id, _parent) {
-        throw new Error(
-          '[module runner] "import.meta.resolve" is not supported.',
-        )
-      },
-      // should be replaced during transformation
-      glob() {
-        throw new Error(
-          `[module runner] "import.meta.glob" is statically replaced during ` +
-            `file transformation. Make sure to reference it by the full name.`,
-        )
-      },
-    }
+    const meta = await createImportMeta(modulePath)
     const exports = Object.create(null)
     Object.defineProperty(exports, Symbol.toStringTag, {
       value: 'Module',
@@ -390,6 +406,12 @@ export class ModuleRunner {
       [ssrDynamicImportKey]: dynamicRequest,
       [ssrModuleExportsKey]: exports,
       [ssrExportAllKey]: (obj: any) => exportAll(exports, obj),
+      [ssrExportNameKey]: (name, getter) =>
+        Object.defineProperty(exports, name, {
+          enumerable: true,
+          configurable: true,
+          get: getter,
+        }),
       [ssrImportMetaKey]: meta,
     }
 
@@ -414,7 +436,7 @@ function exportAll(exports: any, sourceModule: any) {
     return
 
   for (const key in sourceModule) {
-    if (key !== 'default' && key !== '__esModule') {
+    if (key !== 'default' && key !== '__esModule' && !(key in exports)) {
       try {
         Object.defineProperty(exports, key, {
           enumerable: true,

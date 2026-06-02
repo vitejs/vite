@@ -1,12 +1,16 @@
 import { expect, test } from 'vitest'
-import { editFile, page, untilUpdated } from '~utils'
+import { tests } from './tests'
+import { page } from '~utils'
 
-test('should re-run transform when dependencies are edited', async () => {
-  expect(await page.textContent('#transform-count')).toBe('1')
-
-  editFile('plugin-dep.js', (str) => str)
-  await untilUpdated(() => page.textContent('#transform-count'), '2')
-
-  editFile('plugin-dep-load.js', (str) => str)
-  await untilUpdated(() => page.textContent('#transform-count'), '3')
+test('module type should be supported', async () => {
+  expect(await page.textContent('#module-type-json-pre')).toBe('json')
+  expect(await page.textContent('#module-type-json-post')).toBe('js')
+  expect(await page.textContent('#module-type-json-virtual-pre')).toBe('json')
+  expect(await page.textContent('#module-type-json-virtual-post')).toBe('js')
 })
+
+test('lazy hook filter should be applied', async () => {
+  expect(await page.textContent('#lazy-hook-filter')).toBe('success')
+})
+
+tests()

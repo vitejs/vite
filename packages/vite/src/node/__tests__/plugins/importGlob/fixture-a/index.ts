@@ -1,25 +1,69 @@
-import 'types/importMeta'
+// NOTE: `#types/importMeta` does not work as `src/node/__tests__/package.json` shadows the root
+// `package.json` and does not declare the subpath import.
+import '../../../../../../types/importMeta'
 
 export interface ModuleType {
   name: string
 }
 
 export const basic = import.meta.glob<ModuleType>('./modules/*.ts')
+// prettier-ignore
+export const basicWithObjectKeys = Object.keys(import.meta.glob<ModuleType>('./modules/*.ts'))
+// prettier-ignore
+export const basicWithObjectValues = Object.values(import.meta.glob<ModuleType>('./modules/*.ts'))
 
 export const basicEager = import.meta.glob<ModuleType>('./modules/*.ts', {
   eager: true,
 })
+export const basicEagerWithObjectKeys = Object.keys(
+  import.meta.glob<ModuleType>('./modules/*.ts', {
+    eager: true,
+  }),
+)
+export const basicEagerWithObjectValues = Object.values(
+  import.meta.glob<ModuleType>('./modules/*.ts', {
+    eager: true,
+  }),
+)
 
 export const ignore = import.meta.glob(['./modules/*.ts', '!**/index.ts'])
+export const ignoreWithObjectKeys = Object.keys(
+  import.meta.glob(['./modules/*.ts', '!**/index.ts']),
+)
+export const ignoreWithObjectValues = Object.values(
+  import.meta.glob(['./modules/*.ts', '!**/index.ts']),
+)
 
 export const namedEager = import.meta.glob<string>('./modules/*.ts', {
   eager: true,
   import: 'name',
 })
+export const namedEagerWithObjectKeys = Object.keys(
+  import.meta.glob<string>('./modules/*.ts', {
+    eager: true,
+    import: 'name',
+  }),
+)
+export const namedEagerWithObjectValues = Object.values(
+  import.meta.glob<string>('./modules/*.ts', {
+    eager: true,
+    import: 'name',
+  }),
+)
 
 export const namedDefault = import.meta.glob<string>('./modules/*.ts', {
   import: 'default',
 })
+export const namedDefaultWithObjectKeys = Object.keys(
+  import.meta.glob<string>('./modules/*.ts', {
+    import: 'default',
+  }),
+)
+export const namedDefaultWithObjectValues = Object.values(
+  import.meta.glob<string>('./modules/*.ts', {
+    import: 'default',
+  }),
+)
 
 export const eagerAs = import.meta.glob<ModuleType>(
   ['./modules/*.ts', '!**/index.ts'],
@@ -38,6 +82,7 @@ export const excludeSelf = import.meta.glob(
    * for test: annotation contain ")"
    * */
 )
+export const excludeSelfRaw = import.meta.glob('./*.ts', { query: '?raw' })
 
 export const customQueryString = import.meta.glob('./*.ts', { query: 'custom' })
 
@@ -67,3 +112,15 @@ export const cleverCwd2 = import.meta.glob([
   '../fixture-b/*.ts',
   '!**/index.ts',
 ])
+
+export const customBase = import.meta.glob('./**/*.ts', { base: './' })
+
+export const customRootBase = import.meta.glob('./**/*.ts', {
+  base: '/fixture-b',
+})
+
+export const customBaseParent = import.meta.glob('/fixture-b/**/*.ts', {
+  base: '/fixture-a',
+})
+
+export const dotFolder = import.meta.glob('./.foo/*.ts', { eager: true })

@@ -1,7 +1,10 @@
 import { fileURLToPath } from 'node:url'
 import path from 'node:path'
-import { expect, test } from 'vitest'
+import fs from 'node:fs'
+import { stripVTControlCharacters } from 'node:util'
+import { expect, onTestFinished, test, vi } from 'vitest'
 import { createServer } from '../../server'
+import { DevEnvironment } from '../../server/environment'
 import { normalizePath } from '../../utils'
 
 const root = fileURLToPath(new URL('./', import.meta.url))
@@ -15,7 +18,7 @@ async function createDevServer() {
       noDiscovery: true,
     },
   })
-  server.pluginContainer.buildStart({})
+  await server.environments.ssr.pluginContainer.buildStart({})
   return server
 }
 
@@ -91,7 +94,7 @@ test('virtual module invalidation simple', async () => {
       },
     ],
   })
-  await server.pluginContainer.buildStart({})
+  await server.environments.ssr.pluginContainer.buildStart({})
 
   const mod1 = await server.ssrLoadModule('virtual:test')
   expect(mod1.default).toEqual(1)
@@ -149,7 +152,7 @@ test('virtual module invalidation nested', async () => {
       },
     ],
   })
-  await server.pluginContainer.buildStart({})
+  await server.environments.ssr.pluginContainer.buildStart({})
 
   const mod1 = await server.ssrLoadModule('virtual:test')
   expect(mod1.default).toEqual(1)
@@ -177,4 +180,252 @@ test('can access nodejs global', async () => {
   const server = await createDevServer()
   const mod = await server.ssrLoadModule('/fixtures/global/test.js')
   expect(mod.default).toBe(globalThis)
+})
+
+// skip for now as rolldown returns different error message from esbuild
+// related: https://github.com/oxc-project/oxc/issues/7261
+// (rolldown does not set the properties passed from Oxc)
+test.skip('parse error', async () => {
+  const server = await createDevServer()
+
+  function stripRoot(s?: string) {
+    return (s || '').replace(server.config.root, '<root>')
+  }
+
+  for (const file of [
+    '/fixtures/errors/syntax-error.ts',
+    '/fixtures/errors/syntax-error.js',
+    '/fixtures/errors/syntax-error-dep.ts',
+    '/fixtures/errors/syntax-error-dep.js',
+  ]) {
+    try {
+      await server.ssrLoadModule(file)
+    } catch (e) {
+      expect(e).toBeInstanceOf(Error)
+      expect({
+        message: stripRoot(e.message),
+        frame: stripVTControlCharacters(e.frame || ''),
+        id: stripRoot(e.id),
+        loc: e.loc && {
+          file: stripRoot(e.loc.file),
+          column: e.loc.column,
+          line: e.loc.line,
+        },
+      }).toMatchSnapshot()
+      continue
+    }
+    expect.unreachable()
+  }
+})
+
+test('json', async () => {
+  const server = await createDevServer()
+  const mod = await server.ssrLoadModule('/fixtures/json/test.json')
+  expect(mod).toMatchInlineSnapshot(`
+    {
+      "default": {
+        "hello": "this is json",
+      },
+      "hello": "this is json",
+    }
+  `)
+
+  const source = fs.readFileSync(
+    path.join(root, 'fixtures/json/test.json'),
+    'utf-8',
+  )
+  const json = await server.ssrTransform(
+    `export default ${source}`,
+    null,
+    '/test.json',
+  )
+  expect(json?.code.length).toMatchInlineSnapshot(`165`)
+})
+
+test('file url', async () => {
+  const server = await createDevServer()
+
+  const mod = await server.ssrLoadModule(
+    new URL('./fixtures/file-url/test.js', import.meta.url).href,
+  )
+  expect(mod.msg).toBe('works')
+
+  const modWithSpace = await server.ssrLoadModule(
+    new URL('./fixtures/file-url/test space.js', import.meta.url).href,
+  )
+  expect(modWithSpace.msg).toBe('works')
+})
+
+test('plugin error', async () => {
+  const server = await createServer({
+    configFile: false,
+    root,
+    logLevel: 'error',
+    plugins: [
+      {
+        name: 'test-plugin',
+        resolveId(source) {
+          if (source === 'virtual:test') {
+            return '\0' + source
+          }
+        },
+        load(id) {
+          if (id === '\0virtual:test') {
+            return this.error('test-error')
+          }
+        },
+      },
+    ],
+  })
+  onTestFinished(() => server.close())
+
+  const spy = vi
+    .spyOn(server.config.logger, 'error')
+    .mockImplementation(() => {})
+  try {
+    await server.ssrLoadModule('virtual:test')
+    expect.unreachable()
+  } catch {}
+  expect(
+    stripVTControlCharacters(spy.mock.lastCall![0])
+      .split('\n')
+      .slice(0, 2)
+      .join('\n'),
+  ).toMatchInlineSnapshot(`
+    "Error when evaluating SSR module virtual:test: test-error
+      Plugin: test-plugin"
+  `)
+})
+
+test('named exports overwrite export all', async () => {
+  const server = await createDevServer()
+  const mod = await server.ssrLoadModule(
+    './fixtures/named-overwrite-all/main.js',
+  )
+
+  // ESM spec doesn't allow conflicting `export *` and such duplicate exports are removed (in this case "d"),
+  // but this is likely not possible to support due to Vite dev SSR's lazy nature.
+  // [Node]
+  //   $ node -e 'import("./packages/vite/src/node/ssr/__tests__/fixtures/named-overwrite-all/main.js").then(console.log)'
+  //   [Module: null prototype] { a: 'main-a', b: 'dep1-b', c: 'main-c' }
+  // [Rollup]
+  //   Conflicting namespaces: "main.js" re-exports "d" from one of the modules "dep1.js" and "dep2.js" (will be ignored).
+  expect(mod).toMatchInlineSnapshot(`
+    {
+      "a": "main-a",
+      "b": "dep1-b",
+      "c": "main-c",
+      "d": "dep1-d",
+    }
+  `)
+})
+
+test('throws when ssr environment is not runnable', async () => {
+  const server = await createServer({
+    configFile: false,
+    root,
+    logLevel: 'silent',
+    optimizeDeps: {
+      noDiscovery: true,
+    },
+    environments: {
+      ssr: {
+        dev: {
+          createEnvironment: (name, config) =>
+            new DevEnvironment(name, config, { hot: false }),
+        },
+      },
+    },
+  })
+  onTestFinished(() => server.close())
+
+  await expect(
+    server.ssrLoadModule('/fixtures/modules/has-invalid-import.js'),
+  ).rejects.toThrow(
+    "ssrLoadModule requires the 'ssr' environment to be a runnable environment.",
+  )
+})
+
+test('buildStart before transform', async () => {
+  const fn = vi.fn()
+  const server = await createServer({
+    configFile: false,
+    root,
+    logLevel: 'error',
+    plugins: [
+      {
+        name: 'test-plugin',
+        async buildStart() {
+          fn('buildStart:in')
+          await new Promise((r) => setTimeout(r, 200))
+          fn('buildStart:out')
+        },
+        resolveId(source) {
+          if (source === 'virtual:test') {
+            fn('resolveId')
+            return '\0' + source
+          }
+        },
+        load(id) {
+          if (id === '\0virtual:test') {
+            fn('load')
+            return `export default 'ok'`
+          }
+        },
+        transform(code, id) {
+          if (id === '\0virtual:test') {
+            fn('transform')
+            return code
+          }
+        },
+      },
+    ],
+  })
+  onTestFinished(() => server.close())
+  await server.pluginContainer.buildStart({})
+
+  const mod = await server.ssrLoadModule('virtual:test')
+  expect(mod.default).toBe('ok')
+  expect(fn.mock.calls).toMatchInlineSnapshot(`
+    [
+      [
+        "buildStart:in",
+      ],
+      [
+        "buildStart:out",
+      ],
+      [
+        "resolveId",
+      ],
+      [
+        "load",
+      ],
+      [
+        "transform",
+      ],
+    ]
+  `)
+})
+
+test('server.fs check is not applied to ssrLoadModule', async () => {
+  const server = await createServer({
+    configFile: false,
+    root,
+    logLevel: 'silent',
+    optimizeDeps: {
+      noDiscovery: true,
+    },
+    server: {
+      fs: {
+        allow: [
+          path.resolve(import.meta.dirname, './fixtures/named-overwrite-all'),
+        ],
+      },
+    },
+  })
+  onTestFinished(() => server.close())
+  await server.environments.ssr.pluginContainer.buildStart({})
+
+  const mod = await server.ssrLoadModule('/fixtures/basic/file.js')
+  expect(mod.default).toBe('ok')
 })

@@ -33,7 +33,7 @@
   import C from '@vitejs/test-package-c'
   import { C as sideC } from '@vitejs/test-package-c/side'
   import D, { nestedD } from '@vitejs/test-package-d'
-  // import { testExcluded } from '@vitejs/test-package-e'
+  import { testExcluded } from '@vitejs/test-package-e'
   import F from '__F_ABSOLUTE_PACKAGE_PATH__'
   import { isSelfReference } from '@vitejs/self-referencing/test'
 
@@ -47,7 +47,7 @@
   text('.d', D)
   text('.nested-d', nestedD)
 
-  // text('.nested-e', testExcluded())
+  text('.nested-e', testExcluded())
 
   text('.absolute-f', F)
 

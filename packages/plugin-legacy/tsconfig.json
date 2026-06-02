@@ -1,18 +1,16 @@
 {
-  "include": ["build.config.ts", "src"],
+  "include": ["tsdown.config.ts", "src"],
   "exclude": ["**/*.spec.ts"],
   "compilerOptions": {
     "outDir": "dist",
-    "target": "ES2020",
-    "module": "ES2020",
-    "moduleResolution": "Node",
-    "strict": true,
+    "target": "es2023",
+    "module": "preserve",
+    "types": ["node"],
+    "moduleResolution": "bundler",
+    "isolatedDeclarations": true,
     "declaration": true,
     "sourceMap": true,
-    "noUnusedLocals": true,
-    "esModuleInterop": true,
-    "paths": {
-      "vite": ["../vite/src/node/index.js"]
-    }
+    "skipLibCheck": true,
+    "noUnusedLocals": true
   }
 }

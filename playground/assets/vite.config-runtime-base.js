@@ -11,7 +11,7 @@ export default defineConfig({
   base: './', // overwrite the original base: '/foo/'
   build: {
     ...baseConfig.build,
-    outDir: 'dist',
+    outDir: 'dist/runtime-base',
     watch: null,
     minify: false,
     assetsInlineLimit: 0,

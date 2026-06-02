@@ -1,27 +1,48 @@
 import fs from 'node:fs'
-import fsp from 'node:fs/promises'
 import path from 'node:path'
+import fsp from 'node:fs/promises'
 import { pathToFileURL } from 'node:url'
-import { promisify } from 'node:util'
+import { inspect, promisify } from 'node:util'
 import { performance } from 'node:perf_hooks'
 import { createRequire } from 'node:module'
+import crypto from 'node:crypto'
 import colors from 'picocolors'
-import type { Alias, AliasOptions } from 'dep-types/alias'
-import { build } from 'esbuild'
-import type { RollupOptions } from 'rollup'
 import picomatch from 'picomatch'
+import {
+  type NormalizedOutputOptions,
+  type OutputChunk,
+  type PluginContextMeta,
+  type RolldownOptions,
+  rolldown,
+} from 'rolldown'
+import type {
+  DevToolsConfig,
+  ResolvedDevToolsConfig,
+} from '@vitejs/devtools/config'
+import type { Alias, AliasOptions } from '#dep-types/alias'
 import type { AnymatchFn } from '../types/anymatch'
 import { withTrailingSlash } from '../shared/utils'
 import {
+  createImportMetaResolver,
+  importMetaResolveWithCustomHookString,
+} from '../module-runner/importMetaResolver'
+import {
   CLIENT_ENTRY,
   DEFAULT_ASSETS_RE,
+  DEFAULT_CLIENT_CONDITIONS,
+  DEFAULT_CLIENT_MAIN_FIELDS,
   DEFAULT_CONFIG_FILES,
   DEFAULT_EXTENSIONS,
-  DEFAULT_MAIN_FIELDS,
+  DEFAULT_EXTERNAL_CONDITIONS,
+  DEFAULT_PREVIEW_PORT,
+  DEFAULT_SERVER_CONDITIONS,
+  DEFAULT_SERVER_MAIN_FIELDS,
   ENV_ENTRY,
   FS_PREFIX,
 } from './constants'
+import { resolveEnvironmentPlugins } from './plugin'
 import type {
+  FalsyPlugin,
   HookHandler,
   Plugin,
   PluginOption,
@@ -35,9 +56,14 @@ import type {
   ResolvedBuildOptions,
   ResolvedBuilderOptions,
 } from './build'
-import { resolveBuildEnvironmentOptions, resolveBuilderOptions } from './build'
+import {
+  buildEnvironmentOptionsDefaults,
+  builderOptionsDefaults,
+  resolveBuildEnvironmentOptions,
+  resolveBuilderOptions,
+} from './build'
 import type { ResolvedServerOptions, ServerOptions } from './server'
-import { resolveServerOptions } from './server'
+import { resolveServerOptions, serverConfigDefaults } from './server'
 import { DevEnvironment } from './server/environment'
 import { createRunnableDevEnvironment } from './server/environments/runnableEnvironment'
 import type { WebSocketServer } from './server/ws'
@@ -46,23 +72,31 @@ import { resolvePreviewOptions } from './preview'
 import {
   type CSSOptions,
   type ResolvedCSSOptions,
+  cssConfigDefaults,
   resolveCSSOptions,
 } from './plugins/css'
 import {
+  arraify,
   asyncFlatten,
   createDebugger,
   createFilter,
-  isBuiltin,
+  deepClone,
+  hasBothRollupOptionsAndRolldownOptions,
   isExternalUrl,
   isFilePathESM,
   isInNodeModules,
   isNodeBuiltin,
+  isNodeLikeBuiltin,
   isObject,
   isParentDirectory,
   mergeAlias,
   mergeConfig,
+  mergeWithDefaults,
+  nodeLikeBuiltins,
   normalizeAlias,
   normalizePath,
+  resolveHostname,
+  setupRollupOptionCompat,
 } from './utils'
 import {
   createPluginHookUtils,
@@ -71,26 +105,37 @@ import {
   resolvePlugins,
 } from './plugins'
 import type { ESBuildOptions } from './plugins/esbuild'
-import type {
-  EnvironmentResolveOptions,
-  InternalResolveOptions,
-  ResolveOptions,
+import {
+  type EnvironmentResolveOptions,
+  type InternalResolveOptions,
+  type ResolveOptions,
 } from './plugins/resolve'
-import { tryNodeResolve } from './plugins/resolve'
 import type { LogLevel, Logger } from './logger'
 import { createLogger } from './logger'
 import type { DepOptimizationOptions } from './optimizer'
 import type { JsonOptions } from './plugins/json'
 import type { PackageCache } from './packages'
-import { findNearestPackageData } from './packages'
+import { findNearestNodeModules, findNearestPackageData } from './packages'
 import { loadEnv, resolveEnvPrefix } from './env'
 import type { ResolvedSSROptions, SSROptions } from './ssr'
-import { resolveSSROptions } from './ssr'
+import { resolveSSROptions, ssrConfigDefaults } from './ssr'
 import { PartialEnvironment } from './baseEnvironment'
 import { createIdResolver } from './idResolver'
+import { runnerImport } from './ssr/runnerImport'
+import { getAdditionalAllowedHosts } from './server/middlewares/hostCheck'
+import { convertEsbuildPluginToRolldownPlugin } from './optimizer/pluginConverter'
+import { type OxcOptions, convertEsbuildConfigToOxcConfig } from './plugins/oxc'
+import type { RequiredExceptFor } from './typeUtils'
+import {
+  BasicMinimalPluginContext,
+  basePluginContextMeta,
+} from './server/pluginContainer'
+import { nodeResolveWithVite } from './nodeResolve'
+import { FullBundleDevEnvironment } from './server/environments/fullBundleEnvironment'
 
-const debug = createDebugger('vite:config')
+const debug = createDebugger('vite:config', { depth: 10 })
 const promisifiedRealpath = promisify(fs.realpath)
+const SYMBOL_RESOLVED_CONFIG: unique symbol = Symbol('vite:resolved-config')
 
 export interface ConfigEnv {
   /**
@@ -171,11 +216,6 @@ export interface DevEnvironmentOptions {
     | ((sourcePath: string, sourcemapPath: string) => boolean)
 
   /**
-   * Optimize deps config
-   */
-  optimizeDeps?: DepOptimizationOptions
-
-  /**
    * create the Dev Environment instance
    */
   createEnvironment?: (
@@ -194,7 +234,7 @@ export interface DevEnvironmentOptions {
 
   /**
    * For environments associated with a module runner.
-   * By default it is true for the client environment and false for non-client environments.
+   * By default, it is false for the client environment and true for non-client environments.
    * This option can also be used instead of the removed config.experimental.skipSsrTransform.
    */
   moduleRunnerTransform?: boolean
@@ -205,25 +245,33 @@ function defaultCreateClientDevEnvironment(
   config: ResolvedConfig,
   context: CreateDevEnvironmentContext,
 ) {
-  return new DevEnvironment(name, config, {
-    hot: context.ws,
-  })
-}
+  if (config.experimental.bundledDev) {
+    return new FullBundleDevEnvironment(name, config, {
+      hot: true,
+      transport: context.ws,
+    })
+  }
 
-function defaultCreateSsrDevEnvironment(
-  name: string,
-  config: ResolvedConfig,
-): DevEnvironment {
-  return createRunnableDevEnvironment(name, config)
+  return new DevEnvironment(name, config, {
+    hot: true,
+    transport: context.ws,
+    disableFetchModule: true,
+  })
 }
 
 function defaultCreateDevEnvironment(name: string, config: ResolvedConfig) {
-  return new DevEnvironment(name, config, {
-    hot: false,
-  })
+  return createRunnableDevEnvironment(name, config)
 }
 
-export type ResolvedDevEnvironmentOptions = Required<DevEnvironmentOptions>
+export type ResolvedDevEnvironmentOptions = Omit<
+  Required<DevEnvironmentOptions>,
+  'sourcemapIgnoreList'
+> & {
+  sourcemapIgnoreList: Exclude<
+    DevEnvironmentOptions['sourcemapIgnoreList'],
+    false | undefined
+  >
+}
 
 type AllResolveOptions = ResolveOptions & {
   alias?: AliasOptions
@@ -242,15 +290,30 @@ export interface SharedEnvironmentOptions {
    */
   resolve?: EnvironmentResolveOptions
   /**
-   * Define if this environment is used for Server Side Rendering
+   * Define if this environment is used for Server-Side Rendering
    * @default 'server' if it isn't the client environment
    */
   consumer?: 'client' | 'server'
   /**
-   * Runtime Compatibility
-   * Temporal options, we should remove these in favor of fine-grained control
+   * If true, `process.env` referenced in code will be preserved as-is and evaluated in runtime.
+   * Otherwise, it is statically replaced as an empty object.
    */
-  webCompatible?: boolean // was ssr.target === 'webworker'
+  keepProcessEnv?: boolean
+  /**
+   * Optimize deps config
+   */
+  optimizeDeps?: DepOptimizationOptions
+  /**
+   * Whether this environment produces a bundled output.
+   *
+   * During `build`, this defaults to `true` for every environment.
+   * During `serve`, this defaults to `true` only for the client environment
+   * when `experimental.bundledDev` is enabled, and `false` otherwise.
+   * Setting this explicitly on an environment always overrides the default.
+   *
+   * @experimental
+   */
+  isBundled?: boolean
 }
 
 export interface EnvironmentOptions extends SharedEnvironmentOptions {
@@ -270,14 +333,19 @@ export type ResolvedEnvironmentOptions = {
   define?: Record<string, any>
   resolve: ResolvedResolveOptions
   consumer: 'client' | 'server'
-  webCompatible: boolean
+  keepProcessEnv?: boolean
+  optimizeDeps: DepOptimizationOptions
   dev: ResolvedDevEnvironmentOptions
   build: ResolvedBuildEnvironmentOptions
+  isBundled: boolean
+  plugins: readonly Plugin[]
+  /** @internal */
+  optimizeDepsPluginNames: string[]
 }
 
 export type DefaultEnvironmentOptions = Omit<
   EnvironmentOptions,
-  'consumer' | 'webCompatible' | 'resolve'
+  'consumer' | 'resolve' | 'keepProcessEnv'
 > & {
   resolve?: AllResolveOptions
 }
@@ -337,14 +405,22 @@ export interface UserConfig extends DefaultEnvironmentOptions {
   /**
    * Transform options to pass to esbuild.
    * Or set to `false` to disable esbuild.
+   *
+   * @deprecated Use `oxc` option instead.
    */
   esbuild?: ESBuildOptions | false
+  /**
+   * Transform options to pass to Oxc.
+   * Or set to `false` to disable Oxc.
+   */
+  oxc?: OxcOptions | false
   /**
    * Specify additional picomatch patterns to be treated as static assets.
    */
   assetsInclude?: string | RegExp | (string | RegExp)[]
   /**
    * Builder specific options
+   * @experimental
    */
   builder?: BuilderOptions
   /**
@@ -366,7 +442,7 @@ export interface UserConfig extends DefaultEnvironmentOptions {
   /**
    * Options to opt-in to future behavior
    */
-  future?: FutureOptions
+  future?: FutureOptions | 'warn'
   /**
    * Legacy options
    *
@@ -392,7 +468,7 @@ export interface UserConfig extends DefaultEnvironmentOptions {
    * root.
    * @default root
    */
-  envDir?: string
+  envDir?: string | false
   /**
    * Env variables starts with `envPrefix` will be exposed to your client source code via import.meta.env.
    * @default 'VITE_'
@@ -410,14 +486,22 @@ export interface UserConfig extends DefaultEnvironmentOptions {
     /**
      * Vite plugins that apply to worker bundle. The plugins returned by this function
      * should be new instances every time it is called, because they are used for each
-     * rollup worker bundling process.
+     * rolldown worker bundling process.
      */
     plugins?: () => PluginOption[]
     /**
-     * Rollup options to build worker bundle
+     * Alias to `rolldownOptions`.
+     * @deprecated Use `rolldownOptions` instead.
      */
     rollupOptions?: Omit<
-      RollupOptions,
+      RolldownOptions,
+      'plugins' | 'input' | 'onwarn' | 'preserveEntrySignatures'
+    >
+    /**
+     * Rolldown options to build worker bundle
+     */
+    rolldownOptions?: Omit<
+      RolldownOptions,
       'plugins' | 'input' | 'onwarn' | 'preserveEntrySignatures'
     >
   }
@@ -442,6 +526,13 @@ export interface UserConfig extends DefaultEnvironmentOptions {
    * @default 'spa'
    */
   appType?: AppType
+  /**
+   * Enable devtools integration. Ensure that `@vitejs/devtools` is installed as a dependency.
+   * This feature is currently supported only in build mode.
+   * @experimental
+   * @default false
+   */
+  devtools?: boolean | DevToolsConfig
 }
 
 export interface HTMLOptions {
@@ -458,8 +549,11 @@ export interface FutureOptions {
   removePluginHookSsrArgument?: 'warn'
 
   removeServerModuleGraph?: 'warn'
+  removeServerReloadModule?: 'warn'
+  removeServerPluginContainer?: 'warn'
   removeServerHot?: 'warn'
   removeServerTransformRequest?: 'warn'
+  removeServerWarmupRequest?: 'warn'
 
   removeSsrLoadModule?: 'warn'
 }
@@ -486,53 +580,82 @@ export interface ExperimentalOptions {
    */
   hmrPartialAccept?: boolean
   /**
-   * Skips SSR transform to make it easier to use Vite with Node ESM loaders.
-   * @warning Enabling this will break normal operation of Vite's SSR in development mode.
+   * Enable full bundle mode during `serve`.
+   *
+   * This seeds the default for the client environment's `isBundled` option.
+   * Other environments default to `false` during `serve`. Any environment
+   * can override its `isBundled` value via `environments[name].isBundled`.
+   *
+   * This is highly experimental.
    *
    * @experimental
    * @default false
    */
-  skipSsrTransform?: boolean
+  bundledDev?: boolean
 }
 
 export interface LegacyOptions {
   /**
-   * In Vite 4, SSR-externalized modules (modules not bundled and loaded by Node.js at runtime)
-   * are implicitly proxied in dev to automatically handle `default` and `__esModule` access.
-   * However, this does not correctly reflect how it works in the Node.js runtime, causing
-   * inconsistencies between dev and prod.
+   * In Vite 6.0.8 and below, WebSocket server was able to connect from any web pages. However,
+   * that could be exploited by a malicious web page.
    *
-   * In Vite 5, the proxy is removed so dev and prod are consistent, but if you still require
-   * the old behaviour, you can enable this option. If so, please leave your feedback at
-   * https://github.com/vitejs/vite/discussions/14697.
+   * In Vite 6.0.9+, the WebSocket server now requires a token to connect from a web page.
+   * But this may break some plugins and frameworks that connects to the WebSocket server
+   * on their own. Enabling this option will make Vite skip the token check.
+   *
+   * **We do not recommend enabling this option unless you are sure that you are fine with
+   * that security weakness.**
    */
-  proxySsrExternalModules?: boolean
+  skipWebSocketTokenCheck?: boolean
+  /**
+   * Opt-in to the pre-Vite 8 CJS interop behavior, which was inconsistent.
+   *
+   * In pre-Vite 8 versions, Vite had inconsistent CJS interop behavior. This was due to
+   * the different behavior of esbuild and the Rollup commonjs plugin.
+   * Vite 8+ uses Rolldown for both the dependency optimization in dev and the production build,
+   * which aligns the behavior to esbuild.
+   *
+   * See the Vite 8 migration guide for more details.
+   */
+  inconsistentCjsInterop?: boolean
 }
 
 export interface ResolvedWorkerOptions {
   format: 'es' | 'iife'
-  plugins: (
-    bundleChain: string[],
-  ) => Promise<{ plugins: Plugin[]; config: ResolvedConfig }>
-  rollupOptions: RollupOptions
+  plugins: (bundleChain: string[]) => Promise<ResolvedConfig>
+  /**
+   * @deprecated Use `rolldownOptions` instead.
+   */
+  rollupOptions: RolldownOptions
+  rolldownOptions: RolldownOptions
 }
 
 export interface InlineConfig extends UserConfig {
   configFile?: string | false
+  /** @experimental */
+  configLoader?: 'bundle' | 'runner' | 'native'
+  /** @deprecated */
   envFile?: false
+  forceOptimizeDeps?: boolean
 }
 
-export type ResolvedConfig = Readonly<
+export interface ResolvedConfig extends Readonly<
   Omit<
     UserConfig,
     | 'plugins'
     | 'css'
+    | 'json'
     | 'assetsInclude'
     | 'optimizeDeps'
     | 'worker'
     | 'build'
     | 'dev'
     | 'environments'
+    | 'experimental'
+    | 'future'
+    | 'server'
+    | 'preview'
+    | 'devtools'
   > & {
     configFile: string | undefined
     configFileDependencies: string[]
@@ -554,110 +677,324 @@ export type ResolvedConfig = Readonly<
     /** @internal list of bundle entry id. used to detect recursive worker bundle. */
     bundleChain: string[]
     isProduction: boolean
-    envDir: string
+    envDir: string | false
     env: Record<string, any>
     resolve: Required<ResolveOptions> & {
       alias: Alias[]
     }
     plugins: readonly Plugin[]
     css: ResolvedCSSOptions
+    json: Required<JsonOptions>
+    /** @deprecated Use `oxc` option instead. */
     esbuild: ESBuildOptions | false
+    oxc: OxcOptions | false
     server: ResolvedServerOptions
     dev: ResolvedDevEnvironmentOptions
-    builder: ResolvedBuilderOptions
+    /** @experimental */
+    builder: ResolvedBuilderOptions | undefined
     build: ResolvedBuildOptions
+    devtools: ResolvedDevToolsConfig
     preview: ResolvedPreviewOptions
     ssr: ResolvedSSROptions
     assetsInclude: (file: string) => boolean
+    rawAssetsInclude: (string | RegExp)[]
     logger: Logger
+    /**
+     * Create an internal resolver to be used in special scenarios, e.g.
+     * optimizer & handling css `@imports`.
+     *
+     * This API is deprecated. It only works for the client and ssr
+     * environments. The `aliasOnly` option is also not being used anymore.
+     * Plugins should move to `createIdResolver(environment.config)` instead.
+     *
+     * @deprecated Use `createIdResolver` from `vite` instead.
+     */
     createResolver: (options?: Partial<InternalResolveOptions>) => ResolveFn
     optimizeDeps: DepOptimizationOptions
     /** @internal */
     packageCache: PackageCache
     worker: ResolvedWorkerOptions
     appType: AppType
-    experimental: ExperimentalOptions
+    experimental: RequiredExceptFor<ExperimentalOptions, 'renderBuiltUrl'>
+    future: FutureOptions | undefined
     environments: Record<string, ResolvedEnvironmentOptions>
+    /** @internal injected by legacy plugin */
+    isOutputOptionsForLegacyChunks?(
+      outputOptions: NormalizedOutputOptions,
+    ): boolean
+    /**
+     * The token to connect to the WebSocket server from browsers.
+     *
+     * We recommend using `import.meta.hot` rather than connecting
+     * to the WebSocket server directly.
+     * If you have a usecase that requires connecting to the WebSocket
+     * server, please create an issue so that we can discuss.
+     *
+     * @deprecated
+     */
+    webSocketToken: string
     /** @internal */
     fsDenyGlob: AnymatchFn
     /** @internal */
     safeModulePaths: Set<string>
+    /** @internal */
+    [SYMBOL_RESOLVED_CONFIG]: true
   } & PluginHookUtils
->
+> {}
+
+export async function resolveDevToolsConfig(
+  config: DevToolsConfig | boolean | undefined,
+  host: string | boolean | undefined,
+  logger: Logger,
+): Promise<ResolvedDevToolsConfig> {
+  const isEnabled = config === true || !!(config && config.enabled)
+  const resolvedHostname = await resolveHostname(host)
+  const fallbackHostname = resolvedHostname.host ?? 'localhost'
+  const fallbackConfig = {
+    config: {
+      host: fallbackHostname,
+    },
+    enabled: false,
+  }
+  if (!isEnabled) {
+    return fallbackConfig
+  }
+
+  try {
+    const { normalizeDevToolsConfig } = await import('@vitejs/devtools/config')
+    return normalizeDevToolsConfig(config, fallbackHostname)
+  } catch (e) {
+    logger.error(
+      colors.red(
+        `Failed to load Vite DevTools config: ${e.message || e.stack}`,
+      ),
+      { error: e },
+    )
+    return fallbackConfig
+  }
+}
+
+// inferred ones are omitted
+const configDefaults = Object.freeze({
+  define: {},
+  dev: {
+    warmup: [],
+    // preTransformRequests
+    /** @experimental */
+    sourcemap: { js: true },
+    sourcemapIgnoreList: undefined,
+    // createEnvironment
+    // recoverable
+    // moduleRunnerTransform
+  },
+  build: buildEnvironmentOptionsDefaults,
+  resolve: {
+    // mainFields
+    // conditions
+    externalConditions: [...DEFAULT_EXTERNAL_CONDITIONS],
+    extensions: DEFAULT_EXTENSIONS,
+    dedupe: [],
+    /** @experimental */
+    noExternal: [],
+    external: [],
+    preserveSymlinks: false,
+    tsconfigPaths: false,
+    alias: [],
+  },
+
+  // root
+  base: '/',
+  publicDir: 'public',
+  // cacheDir
+  // mode
+  plugins: [],
+  html: {
+    cspNonce: undefined,
+  },
+  css: cssConfigDefaults,
+  json: {
+    namedExports: true,
+    stringify: 'auto',
+  },
+  // esbuild
+  assetsInclude: undefined,
+  /** @experimental */
+  builder: builderOptionsDefaults,
+  server: serverConfigDefaults,
+  preview: {
+    port: DEFAULT_PREVIEW_PORT,
+    // strictPort
+    // host
+    // https
+    // open
+    // proxy
+    // cors
+    // headers
+  },
+  /** @experimental */
+  experimental: {
+    importGlobRestoreExtension: false,
+    renderBuiltUrl: undefined,
+    hmrPartialAccept: false,
+    bundledDev: false,
+  },
+  future: {
+    removePluginHookHandleHotUpdate: undefined,
+    removePluginHookSsrArgument: undefined,
+    removeServerModuleGraph: undefined,
+    removeServerHot: undefined,
+    removeServerTransformRequest: undefined,
+    removeServerWarmupRequest: undefined,
+    removeSsrLoadModule: undefined,
+  },
+  legacy: {
+    skipWebSocketTokenCheck: false,
+  },
+  logLevel: 'info',
+  customLogger: undefined,
+  clearScreen: true,
+  envDir: undefined,
+  envPrefix: 'VITE_',
+  worker: {
+    format: 'iife',
+    plugins: (): never[] => [],
+    // rollupOptions
+  },
+  optimizeDeps: {
+    include: [],
+    exclude: [],
+    needsInterop: [],
+    // esbuildOptions
+    rolldownOptions: {},
+    /** @experimental */
+    extensions: [],
+    /** @deprecated @experimental */
+    disabled: 'build',
+    // noDiscovery
+    /** @experimental */
+    holdUntilCrawlEnd: true,
+    // entries
+    /** @experimental */
+    force: false,
+    /** @experimental */
+    ignoreOutdatedRequests: false,
+  },
+  ssr: ssrConfigDefaults,
+  environments: {},
+  appType: 'spa',
+} satisfies UserConfig)
 
 export function resolveDevEnvironmentOptions(
   dev: DevEnvironmentOptions | undefined,
-  preserverSymlinks: boolean,
   environmentName: string | undefined,
   consumer: 'client' | 'server' | undefined,
   // Backward compatibility
-  skipSsrTransform?: boolean,
+  preTransformRequest?: boolean,
 ): ResolvedDevEnvironmentOptions {
+  const resolved = mergeWithDefaults(
+    {
+      ...configDefaults.dev,
+      sourcemapIgnoreList: isInNodeModules,
+      preTransformRequests: preTransformRequest ?? consumer === 'client',
+      createEnvironment:
+        environmentName === 'client'
+          ? defaultCreateClientDevEnvironment
+          : defaultCreateDevEnvironment,
+      recoverable: consumer === 'client',
+      moduleRunnerTransform: consumer === 'server',
+    },
+    dev ?? {},
+  )
   return {
-    sourcemap: dev?.sourcemap ?? { js: true },
+    ...resolved,
     sourcemapIgnoreList:
-      dev?.sourcemapIgnoreList === false
+      resolved.sourcemapIgnoreList === false
         ? () => false
-        : dev?.sourcemapIgnoreList || isInNodeModules,
-    preTransformRequests: dev?.preTransformRequests ?? consumer === 'client',
-    warmup: dev?.warmup ?? [],
-    optimizeDeps: resolveDepOptimizationOptions(
-      dev?.optimizeDeps,
-      preserverSymlinks,
-      consumer,
-    ),
-    createEnvironment:
-      dev?.createEnvironment ??
-      (environmentName === 'client'
-        ? defaultCreateClientDevEnvironment
-        : environmentName === 'ssr'
-          ? defaultCreateSsrDevEnvironment
-          : defaultCreateDevEnvironment),
-    recoverable: dev?.recoverable ?? consumer === 'client',
-    moduleRunnerTransform:
-      dev?.moduleRunnerTransform ??
-      (skipSsrTransform !== undefined && consumer === 'server'
-        ? skipSsrTransform
-        : consumer === 'server'),
+        : resolved.sourcemapIgnoreList,
   }
 }
 
 function resolveEnvironmentOptions(
   options: EnvironmentOptions,
-  resolvedRoot: string,
   alias: Alias[],
   preserveSymlinks: boolean,
+  forceOptimizeDeps: boolean | undefined,
   logger: Logger,
   environmentName: string,
+  isBuild: boolean,
+  isBundledDev: boolean,
   // Backward compatibility
-  skipSsrTransform?: boolean,
+  isSsrTargetWebworkerSet?: boolean,
+  preTransformRequests?: boolean,
 ): ResolvedEnvironmentOptions {
+  const isClientEnvironment = environmentName === 'client'
+  const consumer =
+    options.consumer ?? (isClientEnvironment ? 'client' : 'server')
+  const isSsrTargetWebworkerEnvironment =
+    isSsrTargetWebworkerSet && environmentName === 'ssr'
+
+  const isBundled =
+    options.isBundled ?? (isBuild || (isClientEnvironment && isBundledDev))
+
+  if (options.define?.['process.env']) {
+    const processEnvDefine = options.define['process.env']
+    if (typeof processEnvDefine === 'object') {
+      const pathKey = Object.entries(processEnvDefine).find(
+        // check with toLowerCase() to match with `Path` / `PATH` (Windows uses `Path`)
+        ([key, value]) => key.toLowerCase() === 'path' && !!value,
+      )?.[0]
+      if (pathKey) {
+        logger.warnOnce(
+          colors.yellow(
+            `The \`define\` option contains an object with ${JSON.stringify(pathKey)} for "process.env" key. ` +
+              'It looks like you may have passed the entire `process.env` object to `define`, ' +
+              'which can unintentionally expose all environment variables. ' +
+              'This poses a security risk and is discouraged.',
+          ),
+        )
+      }
+    }
+  }
+
   const resolve = resolveEnvironmentResolveOptions(
     options.resolve,
     alias,
     preserveSymlinks,
     logger,
-  )
-  const isClientEnvironment = environmentName === 'client'
-  const consumer =
-    options.consumer ?? (isClientEnvironment ? 'client' : 'server')
-  return {
-    resolve,
     consumer,
-    webCompatible: options.webCompatible ?? consumer === 'client',
+    isSsrTargetWebworkerEnvironment,
+  )
+  return {
+    define: options.define,
+    resolve,
+    keepProcessEnv:
+      options.keepProcessEnv ??
+      (isSsrTargetWebworkerEnvironment ? false : consumer === 'server'),
+    consumer,
+    optimizeDeps: resolveDepOptimizationOptions(
+      options.optimizeDeps,
+      resolve.preserveSymlinks,
+      forceOptimizeDeps,
+      consumer,
+      logger,
+    ),
     dev: resolveDevEnvironmentOptions(
       options.dev,
-      resolve.preserveSymlinks,
       environmentName,
       consumer,
-      skipSsrTransform,
+      preTransformRequests,
     ),
     build: resolveBuildEnvironmentOptions(
       options.build ?? {},
       logger,
-      resolvedRoot,
       consumer,
+      isBundled && !isBuild,
+      isSsrTargetWebworkerEnvironment,
     ),
+    isBundled,
+    plugins: undefined!, // to be resolved later
+    // will be set by `setOptimizeDepsPluginNames` later
+    optimizeDepsPluginNames: undefined!,
   }
 }
 
@@ -666,7 +1003,12 @@ export function getDefaultEnvironmentOptions(
 ): EnvironmentOptions {
   return {
     define: config.define,
-    resolve: config.resolve,
+    resolve: {
+      ...config.resolve,
+      // mainFields and conditions are not inherited
+      mainFields: undefined,
+      conditions: undefined,
+    },
     dev: config.dev,
     build: config.build,
   }
@@ -690,9 +1032,14 @@ export type ResolveFn = (
 
 /**
  * Check and warn if `path` includes characters that don't work well in Vite,
- * such as `#` and `?`.
+ * such as `#` and `?` and `*`.
  */
-function checkBadCharactersInPath(path: string, logger: Logger): void {
+function checkBadCharactersInPath(
+  name: string,
+  type: 'directory' | 'file',
+  path: string,
+  logger: Logger,
+): void {
   const badChars = []
 
   if (path.includes('#')) {
@@ -701,6 +1048,9 @@ function checkBadCharactersInPath(path: string, logger: Logger): void {
   if (path.includes('?')) {
     badChars.push('?')
   }
+  if (path.includes('*')) {
+    badChars.push('*')
+  }
 
   if (badChars.length > 0) {
     const charString = badChars.map((c) => `"${c}"`).join(' and ')
@@ -708,9 +1058,9 @@ function checkBadCharactersInPath(path: string, logger: Logger): void {
 
     logger.warn(
       colors.yellow(
-        `The project root contains the ${charString} ${inflectedChars} (${colors.cyan(
+        `${name} contains the ${charString} ${inflectedChars} (${colors.cyan(
           path,
-        )}), which may not work when running Vite. Consider renaming the directory to remove the characters.`,
+        )}), which may not work when running Vite. Consider renaming the ${type} without the characters.`,
       ),
     )
   }
@@ -736,18 +1086,38 @@ function resolveEnvironmentResolveOptions(
   alias: Alias[],
   preserveSymlinks: boolean,
   logger: Logger,
+  /** undefined when resolving the top-level resolve options */
+  consumer: 'client' | 'server' | undefined,
+  // Backward compatibility
+  isSsrTargetWebworkerEnvironment?: boolean,
 ): ResolvedAllResolveOptions {
-  const resolvedResolve: ResolvedAllResolveOptions = {
-    mainFields: resolve?.mainFields ?? DEFAULT_MAIN_FIELDS,
-    conditions: resolve?.conditions ?? [],
-    externalConditions: resolve?.externalConditions ?? [],
-    external: resolve?.external ?? [],
-    noExternal: resolve?.noExternal ?? [],
-    extensions: resolve?.extensions ?? DEFAULT_EXTENSIONS,
-    dedupe: resolve?.dedupe ?? [],
-    preserveSymlinks,
-    alias,
-  }
+  const resolvedResolve: ResolvedAllResolveOptions = mergeWithDefaults(
+    {
+      ...configDefaults.resolve,
+      mainFields:
+        consumer === undefined ||
+        consumer === 'client' ||
+        isSsrTargetWebworkerEnvironment
+          ? DEFAULT_CLIENT_MAIN_FIELDS
+          : DEFAULT_SERVER_MAIN_FIELDS,
+      conditions:
+        consumer === undefined ||
+        consumer === 'client' ||
+        isSsrTargetWebworkerEnvironment
+          ? DEFAULT_CLIENT_CONDITIONS
+          : DEFAULT_SERVER_CONDITIONS.filter((c) => c !== 'browser'),
+      builtins:
+        resolve?.builtins ??
+        (consumer === 'server'
+          ? isSsrTargetWebworkerEnvironment && resolve?.noExternal === true
+            ? []
+            : nodeLikeBuiltins
+          : []),
+    },
+    resolve ?? {},
+  )
+  resolvedResolve.preserveSymlinks = preserveSymlinks
+  resolvedResolve.alias = alias
 
   if (
     // @ts-expect-error removed field
@@ -770,13 +1140,36 @@ function resolveResolveOptions(
   logger: Logger,
 ): ResolvedAllResolveOptions {
   // resolve alias with internal client alias
-  const alias = normalizeAlias(mergeAlias(clientAlias, resolve?.alias || []))
-  const preserveSymlinks = resolve?.preserveSymlinks ?? false
+  const alias = normalizeAlias(
+    mergeAlias(clientAlias, resolve?.alias || configDefaults.resolve.alias),
+  )
+  const preserveSymlinks =
+    resolve?.preserveSymlinks ?? configDefaults.resolve.preserveSymlinks
+
+  if (alias.some((a) => a.find === '/')) {
+    logger.warn(
+      colors.yellow(
+        `\`resolve.alias\` contains an alias that maps \`/\`. ` +
+          `This is not recommended as it can cause unexpected behavior when resolving paths.`,
+      ),
+    )
+  }
+  if (alias.some((a) => a.customResolver)) {
+    logger.warn(
+      colors.yellow(
+        `\`resolve.alias\` contains an alias with \`customResolver\` option. ` +
+          `This is deprecated and will be removed in Vite 9. ` +
+          `Please use a custom plugin with a resolveId hook and \`enforce: 'pre'\` instead.`,
+      ),
+    )
+  }
+
   return resolveEnvironmentResolveOptions(
     resolve,
     alias,
     preserveSymlinks,
     logger,
+    undefined,
   )
 }
 
@@ -784,24 +1177,203 @@ function resolveResolveOptions(
 function resolveDepOptimizationOptions(
   optimizeDeps: DepOptimizationOptions | undefined,
   preserveSymlinks: boolean,
+  forceOptimizeDeps: boolean | undefined,
   consumer: 'client' | 'server' | undefined,
+  logger: Logger,
 ): DepOptimizationOptions {
-  optimizeDeps ??= {}
-  return {
-    include: optimizeDeps.include ?? [],
-    exclude: optimizeDeps.exclude ?? [],
-    needsInterop: optimizeDeps.needsInterop ?? [],
-    extensions: optimizeDeps.extensions ?? [],
-    noDiscovery: optimizeDeps.noDiscovery ?? consumer !== 'client',
-    holdUntilCrawlEnd: optimizeDeps.holdUntilCrawlEnd ?? true,
-    esbuildOptions: {
-      preserveSymlinks,
-      ...optimizeDeps.esbuildOptions,
-    },
-    disabled: optimizeDeps.disabled,
-    entries: optimizeDeps.entries,
-    force: optimizeDeps.force ?? false,
+  if (
+    optimizeDeps?.rolldownOptions &&
+    optimizeDeps?.rolldownOptions === optimizeDeps?.rollupOptions
+  ) {
+    delete optimizeDeps?.rollupOptions
   }
+  const merged = mergeWithDefaults(
+    {
+      ...configDefaults.optimizeDeps,
+      disabled: undefined, // do not set here to avoid deprecation warning
+      noDiscovery: consumer !== 'client',
+      force: forceOptimizeDeps ?? configDefaults.optimizeDeps.force,
+    },
+    optimizeDeps ?? {},
+  )
+  setupRollupOptionCompat(merged, 'optimizeDeps')
+
+  const rolldownOptions = merged.rolldownOptions as Exclude<
+    DepOptimizationOptions['rolldownOptions'],
+    undefined
+  >
+
+  if (merged.esbuildOptions && Object.keys(merged.esbuildOptions).length > 0) {
+    logger.warn(
+      colors.yellow(
+        `You or a plugin you are using have set \`optimizeDeps.esbuildOptions\` ` +
+          `but this option is now deprecated. ` +
+          `Vite now uses Rolldown to optimize the dependencies. ` +
+          `Please use \`optimizeDeps.rolldownOptions\` instead.`,
+      ),
+    )
+
+    rolldownOptions.resolve ??= {}
+    rolldownOptions.output ??= {}
+    rolldownOptions.transform ??= {}
+
+    const setResolveOptions = <
+      T extends keyof Exclude<RolldownOptions['resolve'], undefined>,
+    >(
+      key: T,
+      value: Exclude<RolldownOptions['resolve'], undefined>[T],
+    ) => {
+      if (value !== undefined && rolldownOptions.resolve![key] === undefined) {
+        rolldownOptions.resolve![key] = value
+      }
+    }
+
+    if (
+      merged.esbuildOptions.minify !== undefined &&
+      rolldownOptions.output.minify === undefined
+    ) {
+      rolldownOptions.output.minify = merged.esbuildOptions.minify
+    }
+    if (
+      merged.esbuildOptions.treeShaking !== undefined &&
+      rolldownOptions.treeshake === undefined
+    ) {
+      rolldownOptions.treeshake = merged.esbuildOptions.treeShaking
+    }
+    if (
+      merged.esbuildOptions.define !== undefined &&
+      rolldownOptions.transform.define === undefined
+    ) {
+      rolldownOptions.transform.define = merged.esbuildOptions.define
+    }
+    if (merged.esbuildOptions.loader !== undefined) {
+      const loader = merged.esbuildOptions.loader
+      rolldownOptions.moduleTypes ??= {}
+      for (const [key, value] of Object.entries(loader)) {
+        if (
+          rolldownOptions.moduleTypes[key] === undefined &&
+          value !== 'copy' &&
+          value !== 'css' &&
+          value !== 'default' &&
+          value !== 'file' &&
+          value !== 'local-css'
+        ) {
+          rolldownOptions.moduleTypes[key] = value
+        }
+      }
+    }
+    if (
+      merged.esbuildOptions.preserveSymlinks !== undefined &&
+      rolldownOptions.resolve.symlinks === undefined
+    ) {
+      rolldownOptions.resolve.symlinks = !merged.esbuildOptions.preserveSymlinks
+    }
+    setResolveOptions('extensions', merged.esbuildOptions.resolveExtensions)
+    setResolveOptions('mainFields', merged.esbuildOptions.mainFields)
+    setResolveOptions('conditionNames', merged.esbuildOptions.conditions)
+    if (
+      merged.esbuildOptions.keepNames !== undefined &&
+      rolldownOptions.output.keepNames === undefined
+    ) {
+      rolldownOptions.output.keepNames = merged.esbuildOptions.keepNames
+    }
+
+    if (
+      merged.esbuildOptions.platform !== undefined &&
+      rolldownOptions.platform === undefined
+    ) {
+      rolldownOptions.platform = merged.esbuildOptions.platform
+    }
+
+    // NOTE: the following options cannot be converted
+    // - legalComments
+    // - target, supported (Vite used to transpile down to `ESBUILD_MODULES_TARGET`)
+    // - ignoreAnnotations
+    // - jsx, jsxFactory, jsxFragment, jsxImportSource, jsxDev, jsxSideEffects
+    // - tsconfigRaw, tsconfig
+
+    // NOTE: the following options can be converted but probably not worth it
+    // - sourceRoot
+    // - sourcesContent (`output.sourcemapExcludeSources` is not supported by rolldown)
+    // - drop
+    // - dropLabels
+    // - mangleProps, reserveProps, mangleQuoted, mangleCache
+    // - minifyWhitespace, minifyIdentifiers, minifySyntax
+    // - lineLimit
+    // - charset
+    // - pure (`treeshake.manualPureFunctions` is not supported by rolldown)
+    // - alias (it probably does not work the same with `resolve.alias`)
+    // - inject
+    // - banner, footer
+    // - nodePaths
+
+    // NOTE: the following options does not make sense to set / convert it
+    // - globalName (we only use ESM format)
+    // - color
+    // - logLimit
+    // - logOverride
+    // - splitting
+    // - outbase
+    // - packages (this should not be set)
+    // - allowOverwrite
+    // - publicPath (`file` loader is not supported by rolldown)
+    // - entryNames, chunkNames, assetNames (Vite does not support changing these options)
+    // - stdin
+    // - absWorkingDir
+  }
+
+  merged.esbuildOptions ??= {}
+  merged.esbuildOptions.preserveSymlinks ??= preserveSymlinks
+
+  rolldownOptions.resolve ??= {}
+  rolldownOptions.resolve.symlinks ??= !preserveSymlinks
+  rolldownOptions.output ??= {}
+  rolldownOptions.output.topLevelVar ??= true
+
+  return merged
+}
+
+async function setOptimizeDepsPluginNames(resolvedConfig: ResolvedConfig) {
+  await Promise.all(
+    Object.values(resolvedConfig.environments).map(async (environment) => {
+      const plugins = environment.optimizeDeps.rolldownOptions?.plugins ?? []
+      const outputPlugins =
+        environment.optimizeDeps.rolldownOptions?.output?.plugins ?? []
+      const flattenedPlugins = await asyncFlatten([plugins, outputPlugins])
+
+      const pluginNames = []
+      for (const plugin of flattenedPlugins) {
+        if (plugin && 'name' in plugin) {
+          pluginNames.push(plugin.name)
+        }
+      }
+      environment.optimizeDepsPluginNames = pluginNames
+    }),
+  )
+}
+
+function applyDepOptimizationOptionCompat(resolvedConfig: ResolvedConfig) {
+  if (
+    resolvedConfig.optimizeDeps.esbuildOptions?.plugins &&
+    resolvedConfig.optimizeDeps.esbuildOptions.plugins.length > 0
+  ) {
+    resolvedConfig.optimizeDeps.rolldownOptions ??= {}
+    resolvedConfig.optimizeDeps.rolldownOptions.plugins ||= []
+    ;(resolvedConfig.optimizeDeps.rolldownOptions.plugins as any[]).push(
+      ...resolvedConfig.optimizeDeps.esbuildOptions.plugins.map((plugin) =>
+        convertEsbuildPluginToRolldownPlugin(plugin),
+      ),
+    )
+  }
+}
+
+export function isResolvedConfig(
+  inlineConfig: InlineConfig | ResolvedConfig,
+): inlineConfig is ResolvedConfig {
+  return (
+    SYMBOL_RESOLVED_CONFIG in inlineConfig &&
+    inlineConfig[SYMBOL_RESOLVED_CONFIG]
+  )
 }
 
 export async function resolveConfig(
@@ -816,6 +1388,17 @@ export async function resolveConfig(
   patchPlugins: ((resolvedPlugins: Plugin[]) => void) | undefined = undefined,
 ): Promise<ResolvedConfig> {
   let config = inlineConfig
+  config.build ??= {}
+  setupRollupOptionCompat(config.build, 'build')
+  config.worker ??= {}
+  setupRollupOptionCompat(config.worker, 'worker')
+  config.optimizeDeps ??= {}
+  setupRollupOptionCompat(config.optimizeDeps, 'optimizeDeps')
+  if (config.ssr) {
+    config.ssr.optimizeDeps ??= {}
+    setupRollupOptionCompat(config.ssr.optimizeDeps, 'ssr.optimizeDeps')
+  }
+
   let configFileDependencies: string[] = []
   let mode = inlineConfig.mode || defaultMode
   const isNodeEnvSet = !!process.env.NODE_ENV
@@ -842,6 +1425,7 @@ export async function resolveConfig(
       config.root,
       config.logLevel,
       config.customLogger,
+      config.configLoader,
     )
     if (loadResult) {
       config = mergeConfig(loadResult.config, config)
@@ -854,7 +1438,7 @@ export async function resolveConfig(
   mode = inlineConfig.mode || config.mode || mode
   configEnv.mode = mode
 
-  const filterPlugin = (p: Plugin) => {
+  const filterPlugin = (p: Plugin | FalsyPlugin): p is Plugin => {
     if (!p) {
       return false
     } else if (!p.apply) {
@@ -867,9 +1451,9 @@ export async function resolveConfig(
   }
 
   // resolve plugins
-  const rawPlugins = (
-    (await asyncFlatten(config.plugins || [])) as Plugin[]
-  ).filter(filterPlugin)
+  const rawPlugins = (await asyncFlatten(config.plugins || [])).filter(
+    filterPlugin,
+  )
 
   const [prePlugins, normalPlugins, postPlugins] = sortUserPlugins(rawPlugins)
 
@@ -904,20 +1488,35 @@ export async function resolveConfig(
     customLogger: config.customLogger,
   })
 
+  const tsconfigPathsPlugin = userPlugins.find(
+    (p) =>
+      p.name === 'vite-tsconfig-paths' ||
+      p.name === 'vite-plugin-tsconfig-paths',
+  )
+  if (tsconfigPathsPlugin) {
+    logger.warnOnce(
+      colors.yellow(
+        `The plugin ${JSON.stringify(tsconfigPathsPlugin.name)} is detected. ` +
+          `Vite now supports tsconfig paths resolution natively via the ${colors.bold('resolve.tsconfigPaths')} option. ` +
+          `You can remove the plugin and set ${colors.bold('resolve.tsconfigPaths: true')} in your Vite config instead.`,
+      ),
+    )
+  }
+
   // resolve root
   const resolvedRoot = normalizePath(
     config.root ? path.resolve(config.root) : process.cwd(),
   )
 
-  checkBadCharactersInPath(resolvedRoot, logger)
+  checkBadCharactersInPath(
+    'The project root',
+    'directory',
+    resolvedRoot,
+    logger,
+  )
 
-  // Backward compatibility: merge optimizeDeps into environments.client.dev.optimizeDeps as defaults
   const configEnvironmentsClient = config.environments!.client!
   configEnvironmentsClient.dev ??= {}
-  configEnvironmentsClient.dev.optimizeDeps = mergeConfig(
-    config.optimizeDeps ?? {},
-    configEnvironmentsClient.dev.optimizeDeps ?? {},
-  )
 
   const deprecatedSsrOptimizeDepsConfig = config.ssr?.optimizeDeps ?? {}
   let configEnvironmentsSsr = config.environments!.ssr
@@ -925,32 +1524,36 @@ export async function resolveConfig(
   // Backward compatibility: server.warmup.clientFiles/ssrFiles -> environment.dev.warmup
   const warmupOptions = config.server?.warmup
   if (warmupOptions?.clientFiles) {
-    configEnvironmentsClient.dev.warmup = warmupOptions?.clientFiles
+    configEnvironmentsClient.dev.warmup = warmupOptions.clientFiles
   }
   if (warmupOptions?.ssrFiles) {
     configEnvironmentsSsr ??= {}
     configEnvironmentsSsr.dev ??= {}
-    configEnvironmentsSsr.dev.warmup = warmupOptions?.ssrFiles
+    configEnvironmentsSsr.dev.warmup = warmupOptions.ssrFiles
   }
 
   // Backward compatibility: merge ssr into environments.ssr.config as defaults
   if (configEnvironmentsSsr) {
-    configEnvironmentsSsr.dev ??= {}
-    configEnvironmentsSsr.dev.optimizeDeps = mergeConfig(
+    configEnvironmentsSsr.optimizeDeps = mergeConfig(
       deprecatedSsrOptimizeDepsConfig,
-      configEnvironmentsSsr.dev.optimizeDeps ?? {},
+      configEnvironmentsSsr.optimizeDeps ?? {},
     )
 
-    configEnvironmentsSsr.resolve ??= {}
-    configEnvironmentsSsr.resolve.conditions ??= config.ssr?.resolve?.conditions
-    configEnvironmentsSsr.resolve.externalConditions ??=
-      config.ssr?.resolve?.externalConditions
-    configEnvironmentsSsr.resolve.external ??= config.ssr?.external
-    configEnvironmentsSsr.resolve.noExternal ??= config.ssr?.noExternal
-
-    if (config.ssr?.target === 'webworker') {
-      configEnvironmentsSsr.webCompatible = true
-    }
+    // merge with `resolve` as the root to merge `noExternal` correctly
+    configEnvironmentsSsr.resolve = mergeConfig(
+      {
+        resolve: {
+          conditions: config.ssr?.resolve?.conditions,
+          externalConditions: config.ssr?.resolve?.externalConditions,
+          mainFields: config.ssr?.resolve?.mainFields,
+          external: config.ssr?.external,
+          noExternal: config.ssr?.noExternal,
+        },
+      } satisfies EnvironmentOptions,
+      {
+        resolve: configEnvironmentsSsr.resolve ?? {},
+      },
+    ).resolve
   }
 
   if (config.build?.ssrEmitAssets !== undefined) {
@@ -960,11 +1563,7 @@ export async function resolveConfig(
   }
 
   // The client and ssr environment configs can't be removed by the user in the config hook
-  if (
-    !config.environments ||
-    !config.environments.client ||
-    (!config.environments.ssr && !isBuild)
-  ) {
+  if (!config.environments.client || (!config.environments.ssr && !isBuild)) {
     throw new Error(
       'Required environments configuration were stripped out in the config hook',
     )
@@ -972,14 +1571,50 @@ export async function resolveConfig(
 
   // Merge default environment config values
   const defaultEnvironmentOptions = getDefaultEnvironmentOptions(config)
+  // Some top level options only apply to the client environment
+  const defaultClientEnvironmentOptions: UserConfig = {
+    ...defaultEnvironmentOptions,
+    resolve: config.resolve, // inherit everything including mainFields and conditions
+    optimizeDeps: config.optimizeDeps,
+  }
+  const defaultNonClientEnvironmentOptions: UserConfig = {
+    ...defaultEnvironmentOptions,
+    dev: {
+      ...defaultEnvironmentOptions.dev,
+      createEnvironment: undefined,
+      warmup: undefined,
+    },
+    build: {
+      ...defaultEnvironmentOptions.build,
+      createEnvironment: undefined,
+    },
+  }
+
   for (const name of Object.keys(config.environments)) {
     config.environments[name] = mergeConfig(
-      defaultEnvironmentOptions,
+      name === 'client'
+        ? defaultClientEnvironmentOptions
+        : (deepClone(
+            defaultNonClientEnvironmentOptions as object,
+          ) as UserConfig),
       config.environments[name],
     )
   }
 
-  await runConfigEnvironmentHook(config.environments, userPlugins, configEnv)
+  await runConfigEnvironmentHook(
+    config.environments,
+    userPlugins,
+    logger,
+    configEnv,
+    config.ssr?.target === 'webworker',
+  )
+
+  const isBundledDev = command === 'serve' && !!config.experimental?.bundledDev
+
+  // Backward compatibility: merge config.environments.client.resolve back into config.resolve
+  config.resolve ??= {}
+  config.resolve.conditions = config.environments.client.resolve?.conditions
+  config.resolve.mainFields = config.environments.client.resolve?.mainFields
 
   const resolvedDefaultResolve = resolveResolveOptions(config.resolve, logger)
 
@@ -987,25 +1622,27 @@ export async function resolveConfig(
   for (const environmentName of Object.keys(config.environments)) {
     resolvedEnvironments[environmentName] = resolveEnvironmentOptions(
       config.environments[environmentName],
-      resolvedRoot,
       resolvedDefaultResolve.alias,
       resolvedDefaultResolve.preserveSymlinks,
+      inlineConfig.forceOptimizeDeps,
       logger,
       environmentName,
-      config.experimental?.skipSsrTransform,
+      isBuild,
+      isBundledDev,
+      config.ssr?.target === 'webworker',
+      config.server?.preTransformRequests,
     )
   }
 
-  // Backward compatibility: merge environments.client.dev.optimizeDeps back into optimizeDeps
+  // Backward compatibility: merge environments.client.optimizeDeps back into optimizeDeps
   // The same object is assigned back for backward compatibility. The ecosystem is modifying
   // optimizeDeps in the ResolvedConfig hook, so these changes will be reflected on the
   // client environment.
   const backwardCompatibleOptimizeDeps =
-    resolvedEnvironments.client.dev.optimizeDeps
+    resolvedEnvironments.client.optimizeDeps
 
   const resolvedDevEnvironmentOptions = resolveDevEnvironmentOptions(
     config.dev,
-    resolvedDefaultResolve.preserveSymlinks,
     // default environment options
     undefined,
     undefined,
@@ -1014,8 +1651,8 @@ export async function resolveConfig(
   const resolvedBuildOptions = resolveBuildEnvironmentOptions(
     config.build ?? {},
     logger,
-    resolvedRoot,
     undefined,
+    isBundledDev,
   )
 
   // Backward compatibility: merge config.environments.ssr back into config.ssr
@@ -1024,7 +1661,7 @@ export async function resolveConfig(
     ...config.ssr,
     external: resolvedEnvironments.ssr?.resolve.external,
     noExternal: resolvedEnvironments.ssr?.resolve.noExternal,
-    optimizeDeps: resolvedEnvironments.ssr?.dev?.optimizeDeps,
+    optimizeDeps: resolvedEnvironments.ssr?.optimizeDeps,
     resolve: {
       ...config.ssr?.resolve,
       conditions: resolvedEnvironments.ssr?.resolve.conditions,
@@ -1037,12 +1674,15 @@ export async function resolveConfig(
   )
 
   // load .env files
-  const envDir = config.envDir
-    ? normalizePath(path.resolve(resolvedRoot, config.envDir))
-    : resolvedRoot
-  const userEnv =
-    inlineConfig.envFile !== false &&
-    loadEnv(mode, envDir, resolveEnvPrefix(config))
+  // Backward compatibility: set envDir to false when envFile is false
+  let envDir = config.envFile === false ? false : config.envDir
+  if (envDir !== false) {
+    envDir = config.envDir
+      ? normalizePath(path.resolve(resolvedRoot, config.envDir))
+      : resolvedRoot
+  }
+
+  const userEnv = loadEnv(mode, envDir, resolveEnvPrefix(config))
 
   // Note it is possible for user to have a custom mode, e.g. `staging` where
   // development-like behavior is expected. This is indicated by NODE_ENV=development
@@ -1073,7 +1713,7 @@ export async function resolveConfig(
     ? !isBuild || config.build?.ssr
       ? '/'
       : './'
-    : (resolveBaseUrl(config.base, isBuild, logger) ?? '/')
+    : resolveBaseUrl(config.base, isBuild, logger)
 
   // resolve cache directory
   const pkgDir = findNearestPackageData(resolvedRoot, packageCache)?.dir
@@ -1097,16 +1737,28 @@ export async function resolveConfig(
       ? normalizePath(
           path.resolve(
             resolvedRoot,
-            typeof publicDir === 'string' ? publicDir : 'public',
+            typeof publicDir === 'string'
+              ? publicDir
+              : configDefaults.publicDir,
           ),
         )
       : ''
 
-  const server = resolveServerOptions(resolvedRoot, config.server, logger)
+  const server = await resolveServerOptions(resolvedRoot, config.server, logger)
 
   const builder = resolveBuilderOptions(config.builder)
 
   const BASE_URL = resolvedBase
+
+  const resolvedConfigContext = new BasicMinimalPluginContext(
+    {
+      ...basePluginContextMeta,
+      watchMode:
+        (command === 'serve' && !isPreview) ||
+        (command === 'build' && !!resolvedBuildOptions.watch),
+    } satisfies PluginContextMeta,
+    logger,
+  )
 
   let resolved: ResolvedConfig
 
@@ -1128,7 +1780,7 @@ export async function resolveConfig(
     // And Plugins may also have cached that could be corrupted by being used in these extra rollup calls.
     // So we need to separate the worker plugin from the plugin that vite needs to run.
     const rawWorkerUserPlugins = (
-      (await asyncFlatten(createUserWorkerPlugins?.() || [])) as Plugin[]
+      await asyncFlatten(createUserWorkerPlugins?.() || [])
     ).filter(filterPlugin)
 
     // resolve worker
@@ -1155,30 +1807,104 @@ export async function resolveConfig(
       mainConfig: resolved,
       bundleChain,
     }
-    const resolvedWorkerPlugins = (await resolvePlugins(
+
+    // Plugins resolution needs the resolved config (minus plugins) so we need to mutate here
+    ;(workerResolved.plugins as Plugin[]) = await resolvePlugins(
       workerResolved,
       workerPrePlugins,
       workerNormalPlugins,
       workerPostPlugins,
-    )) as Plugin[]
+    )
 
     // run configResolved hooks
     await Promise.all(
-      createPluginHookUtils(resolvedWorkerPlugins)
+      createPluginHookUtils(workerResolved.plugins)
         .getSortedPluginHooks('configResolved')
-        .map((hook) => hook(workerResolved)),
+        .map((hook) => hook.call(resolvedConfigContext, workerResolved)),
     )
 
-    return { plugins: resolvedWorkerPlugins, config: workerResolved }
+    // Resolve environment plugins after configResolved because there are
+    // downstream projects modifying the plugins in it. This may change
+    // once the ecosystem is ready.
+    // During Build the client environment is used to bundle the worker
+    // Avoid overriding the mainConfig (resolved.environments.client)
+    ;(workerResolved.environments as Record<
+      string,
+      ResolvedEnvironmentOptions
+    >) = {
+      ...workerResolved.environments,
+      client: {
+        ...workerResolved.environments.client,
+        plugins: await resolveEnvironmentPlugins(
+          new PartialEnvironment('client', workerResolved),
+        ),
+      },
+    }
+
+    return workerResolved
   }
 
-  const resolvedWorkerOptions: ResolvedWorkerOptions = {
+  const resolvedWorkerOptions: Omit<
+    ResolvedWorkerOptions,
+    'rolldownOptions'
+  > & {
+    rolldownOptions: ResolvedWorkerOptions['rolldownOptions'] | undefined
+  } = {
     format: config.worker?.format || 'iife',
     plugins: createWorkerPlugins,
     rollupOptions: config.worker?.rollupOptions || {},
+    rolldownOptions: config.worker?.rolldownOptions, // will be set by setupRollupOptionCompat if undefined
   }
+  setupRollupOptionCompat(resolvedWorkerOptions, 'worker')
 
   const base = withTrailingSlash(resolvedBase)
+
+  const preview = resolvePreviewOptions(config.preview, server)
+
+  const additionalAllowedHosts = getAdditionalAllowedHosts(server, preview)
+  if (Array.isArray(server.allowedHosts)) {
+    server.allowedHosts.push(...additionalAllowedHosts)
+  }
+  if (Array.isArray(preview.allowedHosts)) {
+    preview.allowedHosts.push(...additionalAllowedHosts)
+  }
+
+  let oxc: OxcOptions | false | undefined = config.oxc
+  if (config.esbuild) {
+    if (config.oxc) {
+      logger.warn(
+        colors.yellow(
+          `Both esbuild and oxc options were set. oxc options will be used and esbuild options will be ignored.`,
+        ) +
+          ` The following esbuild options were set: \`${inspect(config.esbuild)}\``,
+      )
+    } else {
+      oxc = convertEsbuildConfigToOxcConfig(config.esbuild, logger)
+    }
+  } else if (config.esbuild === false && config.oxc !== false) {
+    logger.warn(
+      colors.yellow(
+        `\`esbuild\` option is set to false, but \`oxc\` option was not set to false. ` +
+          `\`esbuild: false\` does not have effect any more. ` +
+          `If you want to disable the default transformation, which is now handled by Oxc, please set \`oxc: false\` instead.`,
+      ),
+    )
+  }
+
+  const experimental = mergeWithDefaults(
+    configDefaults.experimental,
+    config.experimental ?? {},
+  )
+  if (command === 'serve' && experimental.bundledDev) {
+    // full bundle mode does not support experimental.renderBuiltUrl
+    experimental.renderBuiltUrl = undefined
+  }
+
+  const resolvedDevToolsConfig = await resolveDevToolsConfig(
+    config.devtools,
+    server.host,
+    logger,
+  )
 
   resolved = {
     configFile: configFile ? normalizePath(configFile) : undefined,
@@ -1188,7 +1914,7 @@ export async function resolveConfig(
     inlineConfig,
     root: resolvedRoot,
     base,
-    decodedBase: decodeURI(base),
+    decodedBase: decodeBase(base),
     rawBase: resolvedBase,
     publicDir: resolvedPublicDir,
     cacheDir,
@@ -1200,16 +1926,34 @@ export async function resolveConfig(
     isProduction,
     plugins: userPlugins, // placeholder to be replaced
     css: resolveCSSOptions(config.css),
+    json: mergeWithDefaults(configDefaults.json, config.json ?? {}),
+    // preserve esbuild for buildEsbuildPlugin
     esbuild:
       config.esbuild === false
         ? false
         : {
             jsxDev: !isProduction,
+            // change defaults that fit better for vite
+            charset: 'utf8',
+            legalComments: 'none',
             ...config.esbuild,
+          },
+    oxc:
+      oxc === false
+        ? false
+        : {
+            ...oxc,
+            jsx:
+              typeof oxc?.jsx === 'string'
+                ? oxc.jsx
+                : {
+                    development: oxc?.jsx?.development ?? !isProduction,
+                    ...oxc?.jsx,
+                  },
           },
     server,
     builder,
-    preview: resolvePreviewOptions(config.preview, server),
+    preview,
     envDir,
     env: {
       ...userEnv,
@@ -1221,37 +1965,47 @@ export async function resolveConfig(
     assetsInclude(file: string) {
       return DEFAULT_ASSETS_RE.test(file) || assetsFilter(file)
     },
+    rawAssetsInclude: config.assetsInclude ? arraify(config.assetsInclude) : [],
     logger,
     packageCache,
     worker: resolvedWorkerOptions,
     appType: config.appType ?? 'spa',
-    experimental: {
-      importGlobRestoreExtension: false,
-      hmrPartialAccept: false,
-      ...config.experimental,
-    },
-    future: config.future,
+    experimental,
+    future:
+      config.future === 'warn'
+        ? ({
+            removePluginHookHandleHotUpdate: 'warn',
+            removePluginHookSsrArgument: 'warn',
+            removeServerModuleGraph: 'warn',
+            removeServerReloadModule: 'warn',
+            removeServerPluginContainer: 'warn',
+            removeServerHot: 'warn',
+            removeServerTransformRequest: 'warn',
+            removeServerWarmupRequest: 'warn',
+            removeSsrLoadModule: 'warn',
+          } satisfies Required<FutureOptions>)
+        : config.future,
 
-    // Backward compatibility, users should use environment.config.dev.optimizeDeps
-    optimizeDeps: backwardCompatibleOptimizeDeps,
     ssr,
 
+    optimizeDeps: backwardCompatibleOptimizeDeps,
     resolve: resolvedDefaultResolve,
     dev: resolvedDevEnvironmentOptions,
     build: resolvedBuildOptions,
+    devtools: resolvedDevToolsConfig,
 
     environments: resolvedEnvironments,
+
+    // random 72 bits (12 base64 chars)
+    // at least 64bits is recommended
+    // https://owasp.org/www-community/vulnerabilities/Insufficient_Session-ID_Length
+    webSocketToken: Buffer.from(
+      crypto.getRandomValues(new Uint8Array(9)),
+    ).toString('base64url'),
 
     getSortedPlugins: undefined!,
     getSortedPluginHooks: undefined!,
 
-    /**
-     * createResolver is deprecated. It only works for the client and ssr
-     * environments. The `aliasOnly` option is also not being used any more
-     * Plugins should move to createIdResolver(environment) instead.
-     * create an internal resolver to be used in special scenarios, e.g.
-     * optimizer & handling css @imports
-     */
     createResolver(options) {
       const resolve = createIdResolver(this, options)
       const clientEnvironment = new PartialEnvironment('client', this)
@@ -1282,6 +2036,7 @@ export async function resolveConfig(
       },
     ),
     safeModulePaths: new Set<string>(),
+    [SYMBOL_RESOLVED_CONFIG]: true,
   }
   resolved = {
     ...config,
@@ -1313,8 +2068,17 @@ export async function resolveConfig(
   await Promise.all(
     resolved
       .getSortedPluginHooks('configResolved')
-      .map((hook) => hook(resolved)),
+      .map((hook) => hook.call(resolvedConfigContext, resolved)),
   )
+
+  // Resolve environment plugins after configResolved because there are
+  // downstream projects modifying the plugins in it. This may change
+  // once the ecosystem is ready.
+  for (const name of Object.keys(resolved.environments)) {
+    resolved.environments[name].plugins = await resolveEnvironmentPlugins(
+      new PartialEnvironment(name, resolved),
+    )
+  }
 
   optimizeDepsDisabledBackwardCompatibility(resolved, resolved.optimizeDeps)
   optimizeDepsDisabledBackwardCompatibility(
@@ -1325,10 +2089,13 @@ export async function resolveConfig(
 
   // For backward compat, set ssr environment build.emitAssets with the same value as build.ssrEmitAssets that might be changed in configResolved hook
   // https://github.com/vikejs/vike/blob/953614cea7b418fcc0309b5c918491889fdec90a/vike/node/plugin/plugins/buildConfig.ts#L67
-  if (resolved.environments.ssr) {
+  if (!resolved.builder?.sharedConfigBuild && resolved.environments.ssr) {
     resolved.environments.ssr.build.emitAssets =
       resolved.build.ssrEmitAssets || resolved.build.emitAssets
   }
+
+  applyDepOptimizationOptionCompat(resolved)
+  await setOptimizeDepsPluginNames(resolved)
 
   debug?.(`using resolved config: %O`, {
     ...resolved,
@@ -1357,7 +2124,7 @@ export async function resolveConfig(
       if (hasDifferentReference) {
         resolved.logger.warn(
           colors.yellow(`
-assetFileNames isn't equal for every build.rollupOptions.output. A single pattern across all outputs is supported by Vite.
+assetFileNames isn't equal for every build.rolldownOptions.output. A single pattern across all outputs is supported by Vite.
 `),
         )
       }
@@ -1401,7 +2168,7 @@ assetFileNames isn't equal for every build.rollupOptions.output. A single patter
  * electron or expects to deploy
  */
 export function resolveBaseUrl(
-  base: UserConfig['base'] = '/',
+  base: UserConfig['base'] = configDefaults.base,
   isBuild: boolean,
   logger: Logger,
 ): string {
@@ -1440,6 +2207,16 @@ export function resolveBaseUrl(
   return base
 }
 
+function decodeBase(base: string): string {
+  try {
+    return decodeURI(base)
+  } catch {
+    throw new Error(
+      'The value passed to "base" option was malformed. It should be a valid URL.',
+    )
+  }
+}
+
 export function sortUserPlugins(
   plugins: (Plugin | Plugin[])[] | undefined,
 ): [Plugin[], Plugin[], Plugin[]] {
@@ -1464,11 +2241,22 @@ export async function loadConfigFromFile(
   configRoot: string = process.cwd(),
   logLevel?: LogLevel,
   customLogger?: Logger,
+  configLoader: 'bundle' | 'runner' | 'native' = 'bundle',
 ): Promise<{
   path: string
   config: UserConfig
   dependencies: string[]
 } | null> {
+  if (
+    configLoader !== 'bundle' &&
+    configLoader !== 'runner' &&
+    configLoader !== 'native'
+  ) {
+    throw new Error(
+      `Unsupported configLoader: ${configLoader}. Accepted values are 'bundle', 'runner', and 'native'.`,
+    )
+  }
+
   const start = performance.now()
   const getTime = () => `${(performance.now() - start).toFixed(2)}ms`
 
@@ -1494,37 +2282,72 @@ export async function loadConfigFromFile(
     return null
   }
 
-  const isESM =
-    typeof process.versions.deno === 'string' || isFilePathESM(resolvedPath)
-
   try {
-    const bundled = await bundleConfigFile(resolvedPath, isESM)
-    const userConfig = await loadConfigFromBundledFile(
-      resolvedPath,
-      bundled.code,
-      isESM,
-    )
-    debug?.(`bundled config file loaded in ${getTime()}`)
+    const resolver =
+      configLoader === 'bundle'
+        ? bundleAndLoadConfigFile
+        : configLoader === 'runner'
+          ? runnerImportConfigFile
+          : nativeImportConfigFile
+    const { configExport, dependencies } = await resolver(resolvedPath)
+    debug?.(`config file loaded in ${getTime()}`)
 
-    const config = await (typeof userConfig === 'function'
-      ? userConfig(configEnv)
-      : userConfig)
+    const config = await (typeof configExport === 'function'
+      ? configExport(configEnv)
+      : configExport)
     if (!isObject(config)) {
       throw new Error(`config must export or return an object.`)
     }
+
     return {
       path: normalizePath(resolvedPath),
       config,
-      dependencies: bundled.dependencies,
+      dependencies,
     }
   } catch (e) {
-    createLogger(logLevel, { customLogger }).error(
-      colors.red(`failed to load config from ${resolvedPath}`),
-      {
-        error: e,
-      },
-    )
+    const logger = createLogger(logLevel, { customLogger })
+    checkBadCharactersInPath('The config path', 'file', resolvedPath, logger)
+    logger.error(colors.red(`failed to load config from ${resolvedPath}`), {
+      error: e,
+    })
     throw e
+  }
+}
+
+async function nativeImportConfigFile(resolvedPath: string) {
+  const module = await import(
+    pathToFileURL(resolvedPath).href + '?t=' + Date.now()
+  )
+  return {
+    configExport: module.default,
+    dependencies: [],
+  }
+}
+
+async function runnerImportConfigFile(resolvedPath: string) {
+  const { module, dependencies } = await runnerImport<{
+    default: UserConfigExport
+  }>(resolvedPath)
+  return {
+    configExport: module.default,
+    dependencies,
+  }
+}
+
+async function bundleAndLoadConfigFile(resolvedPath: string) {
+  const isESM =
+    typeof process.versions.deno === 'string' || isFilePathESM(resolvedPath)
+
+  const bundled = await bundleConfigFile(resolvedPath, isESM)
+  const userConfig = await loadConfigFromBundledFile(
+    resolvedPath,
+    bundled.code,
+    isESM,
+  )
+
+  return {
+    configExport: userConfig,
+    dependencies: bundled.dependencies,
   }
 }
 
@@ -1532,150 +2355,187 @@ async function bundleConfigFile(
   fileName: string,
   isESM: boolean,
 ): Promise<{ code: string; dependencies: string[] }> {
+  let importMetaResolverRegistered = false
+
+  const root = path.dirname(fileName)
   const dirnameVarName = '__vite_injected_original_dirname'
   const filenameVarName = '__vite_injected_original_filename'
   const importMetaUrlVarName = '__vite_injected_original_import_meta_url'
-  const result = await build({
-    absWorkingDir: process.cwd(),
-    entryPoints: [fileName],
-    write: false,
-    target: [`node${process.versions.node}`],
+  const importMetaResolveVarName =
+    '__vite_injected_original_import_meta_resolve'
+  const importMetaResolveRegex = /import\.meta\s*\.\s*resolve/
+
+  const bundle = await rolldown({
+    input: fileName,
+    // target: [`node${process.versions.node}`],
     platform: 'node',
-    bundle: true,
-    format: isESM ? 'esm' : 'cjs',
-    mainFields: ['main'],
-    sourcemap: 'inline',
-    metafile: true,
-    define: {
-      __dirname: dirnameVarName,
-      __filename: filenameVarName,
-      'import.meta.url': importMetaUrlVarName,
-      'import.meta.dirname': dirnameVarName,
-      'import.meta.filename': filenameVarName,
+    resolve: {
+      mainFields: ['main'],
     },
+    transform: {
+      define: {
+        __dirname: dirnameVarName,
+        __filename: filenameVarName,
+        'import.meta.url': importMetaUrlVarName,
+        'import.meta.dirname': dirnameVarName,
+        'import.meta.filename': filenameVarName,
+        'import.meta.resolve': importMetaResolveVarName,
+        'import.meta.main': 'false',
+      },
+    },
+    // disable treeshake to include files that is not sideeffectful to `moduleIds`
+    treeshake: false,
+    // disable tsconfig as it's confusing to respect tsconfig options in the config file
+    // this also aligns with other config loader behaviors
+    tsconfig: false,
     plugins: [
       {
         name: 'externalize-deps',
-        setup(build) {
-          const packageCache = new Map()
-          const resolveByViteResolver = (
-            id: string,
-            importer: string,
-            isRequire: boolean,
-          ) => {
-            return tryNodeResolve(id, importer, {
-              root: path.dirname(fileName),
-              isBuild: true,
-              isProduction: true,
-              preferRelative: false,
-              tryIndex: true,
-              mainFields: [],
-              conditions: [],
-              externalConditions: [],
-              external: [],
-              noExternal: [],
-              overrideConditions: ['node'],
-              dedupe: [],
-              extensions: DEFAULT_EXTENSIONS,
-              preserveSymlinks: false,
-              packageCache,
-              isRequire,
-              webCompatible: false,
-            })?.id
-          }
+        resolveId: {
+          filter: { id: /^[^.#].*/ },
+          handler(id, importer, { kind }) {
+            if (!importer || path.isAbsolute(id) || isNodeBuiltin(id)) {
+              return
+            }
 
-          // externalize bare imports
-          build.onResolve(
-            { filter: /^[^.].*/ },
-            async ({ path: id, importer, kind }) => {
-              if (
-                kind === 'entry-point' ||
-                path.isAbsolute(id) ||
-                isNodeBuiltin(id)
-              ) {
-                return
-              }
+            // With the `isNodeBuiltin` check above, this check captures if the builtin is a
+            // non-node built-in, which esbuild doesn't know how to handle. In that case, we
+            // externalize it so the non-node runtime handles it instead.
+            if (isNodeLikeBuiltin(id) || id.startsWith('npm:')) {
+              return { id, external: true }
+            }
 
-              // With the `isNodeBuiltin` check above, this check captures if the builtin is a
-              // non-node built-in, which esbuild doesn't know how to handle. In that case, we
-              // externalize it so the non-node runtime handles it instead.
-              if (isBuiltin(id)) {
-                return { external: true }
-              }
-
-              const isImport = isESM || kind === 'dynamic-import'
-              let idFsPath: string | undefined
-              try {
-                idFsPath = resolveByViteResolver(id, importer, !isImport)
-              } catch (e) {
-                if (!isImport) {
-                  let canResolveWithImport = false
-                  try {
-                    canResolveWithImport = !!resolveByViteResolver(
+            const isImport = isESM || kind === 'dynamic-import'
+            let idFsPath: string | undefined
+            try {
+              idFsPath = nodeResolveWithVite(id, importer, {
+                root,
+                isRequire: !isImport,
+              })
+            } catch (e) {
+              if (!isImport) {
+                let canResolveWithImport = false
+                try {
+                  canResolveWithImport = !!nodeResolveWithVite(id, importer, {
+                    root,
+                  })
+                } catch {}
+                if (canResolveWithImport) {
+                  throw new Error(
+                    `Failed to resolve ${JSON.stringify(
                       id,
-                      importer,
-                      false,
-                    )
-                  } catch {}
-                  if (canResolveWithImport) {
-                    throw new Error(
-                      `Failed to resolve ${JSON.stringify(
-                        id,
-                      )}. This package is ESM only but it was tried to load by \`require\`. See https://vite.dev/guide/troubleshooting.html#this-package-is-esm-only for more details.`,
-                    )
-                  }
+                    )}. This package is ESM only but it was tried to load by \`require\`. See https://vite.dev/guide/troubleshooting.html#this-package-is-esm-only for more details.`,
+                  )
                 }
-                throw e
               }
-              if (idFsPath && isImport) {
-                idFsPath = pathToFileURL(idFsPath).href
-              }
-              if (
-                idFsPath &&
-                !isImport &&
-                isFilePathESM(idFsPath, packageCache)
-              ) {
-                throw new Error(
-                  `${JSON.stringify(
-                    id,
-                  )} resolved to an ESM file. ESM file cannot be loaded by \`require\`. See https://vite.dev/guide/troubleshooting.html#this-package-is-esm-only for more details.`,
-                )
-              }
-              return {
-                path: idFsPath,
-                external: true,
-              }
-            },
-          )
+              throw e
+            }
+            if (!idFsPath) return
+            // always no-externalize json files as rolldown does not support import attributes
+            if (idFsPath.endsWith('.json')) {
+              return idFsPath
+            }
+
+            if (idFsPath && isImport) {
+              idFsPath = pathToFileURL(idFsPath).href
+            }
+            return { id: idFsPath, external: true }
+          },
         },
       },
       {
         name: 'inject-file-scope-variables',
-        setup(build) {
-          build.onLoad({ filter: /\.[cm]?[jt]s$/ }, async (args) => {
-            const contents = await fsp.readFile(args.path, 'utf-8')
-            const injectValues =
-              `const ${dirnameVarName} = ${JSON.stringify(
-                path.dirname(args.path),
-              )};` +
-              `const ${filenameVarName} = ${JSON.stringify(args.path)};` +
+        transform: {
+          filter: { id: /\.[cm]?[jt]s$/ },
+          handler(code, id) {
+            let injectValues =
+              `const ${dirnameVarName} = ${JSON.stringify(path.dirname(id))};` +
+              `const ${filenameVarName} = ${JSON.stringify(id)};` +
               `const ${importMetaUrlVarName} = ${JSON.stringify(
-                pathToFileURL(args.path).href,
+                pathToFileURL(id).href,
               )};`
+            if (importMetaResolveRegex.test(code)) {
+              if (isESM) {
+                if (!importMetaResolverRegistered) {
+                  importMetaResolverRegistered = true
+                  createImportMetaResolver()
+                }
+                injectValues += `const ${importMetaResolveVarName} = (specifier, importer = ${importMetaUrlVarName}) => (${importMetaResolveWithCustomHookString})(specifier, importer);`
+              } else {
+                injectValues += `const ${importMetaResolveVarName} = (specifier, importer = ${importMetaUrlVarName}) => { throw new Error('import.meta.resolve is not supported in CJS config files') };`
+              }
+            }
+
+            let injectedContents: string
+            if (code.startsWith('#!')) {
+              // hashbang
+              let firstLineEndIndex = code.indexOf('\n')
+              if (firstLineEndIndex < 0) firstLineEndIndex = code.length
+              injectedContents =
+                code.slice(0, firstLineEndIndex + 1) +
+                injectValues +
+                code.slice(firstLineEndIndex + 1)
+            } else {
+              injectedContents = injectValues + code
+            }
 
             return {
-              loader: args.path.endsWith('ts') ? 'ts' : 'js',
-              contents: injectValues + contents,
+              code: injectedContents,
+              map: null,
             }
-          })
+          },
         },
       },
     ],
   })
-  const { text } = result.outputFiles[0]
+  const result = await bundle.generate({
+    format: isESM ? 'esm' : 'cjs',
+    sourcemap: 'inline',
+    sourcemapPathTransform(relative) {
+      return path.resolve(fileName, relative)
+    },
+    // we want to generate a single chunk like esbuild does with `splitting: false`
+    codeSplitting: false,
+  })
+  await bundle.close()
+
+  const entryChunk = result.output.find(
+    (chunk): chunk is OutputChunk => chunk.type === 'chunk' && chunk.isEntry,
+  )!
+  const bundleChunks = Object.fromEntries(
+    result.output.flatMap((c) => (c.type === 'chunk' ? [[c.fileName, c]] : [])),
+  )
+
+  const allModules = new Set<string>()
+  collectAllModules(bundleChunks, entryChunk.fileName, allModules)
+
   return {
-    code: text,
-    dependencies: result.metafile ? Object.keys(result.metafile.inputs) : [],
+    code: entryChunk.code,
+    // exclude `\x00rolldown/runtime.js`
+    dependencies: [...allModules].filter((m) => !m.startsWith('\0')),
+  }
+}
+
+function collectAllModules(
+  bundle: Record<string, OutputChunk>,
+  fileName: string,
+  allModules: Set<string>,
+  analyzedModules = new Set<string>(),
+) {
+  if (analyzedModules.has(fileName)) return
+  analyzedModules.add(fileName)
+
+  const chunk = bundle[fileName]
+  if (!chunk) return // external modules
+
+  for (const mod of chunk.moduleIds) {
+    allModules.add(mod)
+  }
+  for (const i of chunk.imports) {
+    collectAllModules(bundle, i, allModules, analyzedModules)
+  }
+  for (const i of chunk.dynamicImports) {
+    collectAllModules(bundle, i, allModules, analyzedModules)
   }
 }
 
@@ -1683,7 +2543,7 @@ interface NodeModuleWithCompile extends NodeModule {
   _compile(code: string, filename: string): any
 }
 
-const _require = createRequire(import.meta.url)
+const _require = createRequire(/** #__KEEP__ */ import.meta.url)
 async function loadConfigFromBundledFile(
   fileName: string,
   bundledCode: string,
@@ -1693,16 +2553,39 @@ async function loadConfigFromBundledFile(
   // with --experimental-loader themselves, we have to do a hack here:
   // write it to disk, load it with native Node ESM, then delete the file.
   if (isESM) {
-    const fileBase = `${fileName}.timestamp-${Date.now()}-${Math.random()
-      .toString(16)
-      .slice(2)}`
-    const fileNameTmp = `${fileBase}.mjs`
-    const fileUrl = `${pathToFileURL(fileBase)}.mjs`
-    await fsp.writeFile(fileNameTmp, bundledCode)
+    // Storing the bundled file in node_modules/ is avoided for Deno
+    // because Deno only supports Node.js style modules under node_modules/
+    // and configs with `npm:` import statements will fail when executed.
+    let nodeModulesDir =
+      typeof process.versions.deno === 'string'
+        ? undefined
+        : findNearestNodeModules(path.dirname(fileName))
+    if (nodeModulesDir) {
+      try {
+        await fsp.mkdir(path.resolve(nodeModulesDir, '.vite-temp/'), {
+          recursive: true,
+        })
+      } catch (e) {
+        if (e.code === 'EACCES') {
+          // If there is no access permission, a temporary configuration file is created by default.
+          nodeModulesDir = undefined
+        } else {
+          throw e
+        }
+      }
+    }
+    const hash = `timestamp-${Date.now()}-${Math.random().toString(16).slice(2)}`
+    const tempFileName = nodeModulesDir
+      ? path.resolve(
+          nodeModulesDir,
+          `.vite-temp/${path.basename(fileName)}.${hash}.mjs`,
+        )
+      : `${fileName}.${hash}.mjs`
+    await fsp.writeFile(tempFileName, bundledCode)
     try {
-      return (await import(fileUrl)).default
+      return (await import(pathToFileURL(tempFileName).href)).default
     } finally {
-      fs.unlink(fileNameTmp, () => {}) // Ignore errors
+      fs.unlink(tempFileName, () => {}) // Ignore errors
     }
   }
   // for cjs, we can register a custom loader via `_require.extensions`
@@ -1737,14 +2620,38 @@ async function runConfigHook(
 ): Promise<InlineConfig> {
   let conf = config
 
+  const tempLogger = createLogger(config.logLevel, {
+    allowClearScreen: config.clearScreen,
+    customLogger: config.customLogger,
+  })
+  const context = new BasicMinimalPluginContext<
+    Omit<PluginContextMeta, 'watchMode'>
+  >(basePluginContextMeta, tempLogger)
+
   for (const p of getSortedPluginsByHook('config', plugins)) {
     const hook = p.config
     const handler = getHookHandler(hook)
-    if (handler) {
-      const res = await handler(conf, configEnv)
-      if (res) {
-        conf = mergeConfig(conf, res)
+    const res = await handler.call(context, conf, configEnv)
+    if (res && res !== conf) {
+      if (hasBothRollupOptionsAndRolldownOptions(res)) {
+        context.warn(
+          `Both \`rollupOptions\` and \`rolldownOptions\` were specified by ${JSON.stringify(p.name)} plugin. ` +
+            `\`rollupOptions\` specified by that plugin will be ignored.`,
+        )
       }
+      if (res.esbuild) {
+        context.warn(
+          `\`esbuild\` option was specified by ${JSON.stringify(p.name)} plugin. ` +
+            `This option is deprecated, please use \`oxc\` instead.`,
+        )
+      }
+      if (res.optimizeDeps?.esbuildOptions) {
+        context.warn(
+          `\`optimizeDeps.esbuildOptions\` option was specified by ${JSON.stringify(p.name)} plugin. ` +
+            `This option is deprecated, please use \`optimizeDeps.rolldownOptions\` instead.`,
+        )
+      }
+      conf = mergeConfig(conf, res)
     }
   }
 
@@ -1754,18 +2661,25 @@ async function runConfigHook(
 async function runConfigEnvironmentHook(
   environments: Record<string, EnvironmentOptions>,
   plugins: Plugin[],
+  logger: Logger,
   configEnv: ConfigEnv,
+  isSsrTargetWebworkerSet: boolean,
 ): Promise<void> {
+  const context = new BasicMinimalPluginContext<
+    Omit<PluginContextMeta, 'watchMode'>
+  >(basePluginContextMeta, logger)
+
   const environmentNames = Object.keys(environments)
   for (const p of getSortedPluginsByHook('configEnvironment', plugins)) {
     const hook = p.configEnvironment
     const handler = getHookHandler(hook)
-    if (handler) {
-      for (const name of environmentNames) {
-        const res = await handler(name, environments[name], configEnv)
-        if (res) {
-          environments[name] = mergeConfig(environments[name], res)
-        }
+    for (const name of environmentNames) {
+      const res = await handler.call(context, name, environments[name], {
+        ...configEnv,
+        isSsrTargetWebworker: isSsrTargetWebworkerSet && name === 'ssr',
+      })
+      if (res) {
+        environments[name] = mergeConfig(environments[name], res)
       }
     }
   }
@@ -1779,7 +2693,7 @@ function optimizeDepsDisabledBackwardCompatibility(
   const optimizeDepsDisabled = optimizeDeps.disabled
   if (optimizeDepsDisabled !== undefined) {
     if (optimizeDepsDisabled === true || optimizeDepsDisabled === 'dev') {
-      const commonjsOptionsInclude = resolved.build?.commonjsOptions?.include
+      const commonjsOptionsInclude = resolved.build.commonjsOptions.include
       const commonjsPluginDisabled =
         Array.isArray(commonjsOptionsInclude) &&
         commonjsOptionsInclude.length === 0

@@ -10,7 +10,10 @@ Vite exposes its manual HMR API via the special `import.meta.hot` object:
 
 ```ts twoslash
 import type { ModuleNamespace } from 'vite/types/hot.d.ts'
-import type { InferCustomEventPayload } from 'vite/types/customEvent.d.ts'
+import type {
+  CustomEventName,
+  InferCustomEventPayload,
+} from 'vite/types/customEvent.d.ts'
 
 // ---cut---
 interface ImportMeta {
@@ -32,15 +35,18 @@ interface ViteHotContext {
   prune(cb: (data: any) => void): void
   invalidate(message?: string): void
 
-  on<T extends string>(
+  on<T extends CustomEventName>(
     event: T,
     cb: (payload: InferCustomEventPayload<T>) => void,
   ): void
-  off<T extends string>(
+  off<T extends CustomEventName>(
     event: T,
     cb: (payload: InferCustomEventPayload<T>) => void,
   ): void
-  send<T extends string>(event: T, data?: InferCustomEventPayload<T>): void
+  send<T extends CustomEventName>(
+    event: T,
+    data?: InferCustomEventPayload<T>,
+  ): void
 }
 ```
 
@@ -56,10 +62,14 @@ if (import.meta.hot) {
 
 ## IntelliSense for TypeScript
 
-Vite provides type definitions for `import.meta.hot` in [`vite/client.d.ts`](https://github.com/vitejs/vite/blob/main/packages/vite/client.d.ts). You can create an `env.d.ts` in the `src` directory so TypeScript picks up the type definitions:
+Vite provides type definitions for `import.meta.hot` in [`vite/client.d.ts`](https://github.com/vitejs/vite/blob/main/packages/vite/client.d.ts). You can add "vite/client" in the `tsconfig.json` so TypeScript picks up the type definitions:
 
-```ts
-/// <reference types="vite/client" />
+```json [tsconfig.json]
+{
+  "compilerOptions": {
+    "types": ["vite/client"]
+  }
+}
 ```
 
 ## `hot.accept(cb)`
@@ -82,6 +92,25 @@ if (import.meta.hot) {
 ```
 
 A module that "accepts" hot updates is considered an **HMR boundary**.
+
+```dot
+digraph hmr_boundary {
+  rankdir=RL
+  ranksep=0.3
+  node [shape=box style="rounded,filled" fontname="Arial" fontsize=11 margin="0.2,0.1" fontcolor="${#3c3c43|#ffffff}" color="${#c2c2c4|#3c3f44}"]
+  edge [color="${#67676c|#98989f}" fontname="Arial" fontsize=10 fontcolor="${#67676c|#98989f}"]
+  bgcolor="transparent"
+
+  root [label="main.js" fillcolor="${#f6f6f7|#2e2e32}"]
+  parent [label="App.vue" fillcolor="${#f6f6f7|#2e2e32}"]
+  boundary [label="Component.vue\n(HMR boundary)\nhot.accept()" fillcolor="${#def5ed|#15312d}" color="${#18794e|#3dd68c}" penwidth=2]
+  edited [label="utils.js\n(edited)" fillcolor="${#fcf4dc|#38301a}" color="${#915930|#f9b44e}" penwidth=2]
+
+  boundary -> edited [label="imports" color="${#915930|#f9b44e}" style=bold]
+  parent -> boundary [label="imports" style=dashed]
+  root -> parent [label="imports" style=dashed]
+}
+```
 
 Vite's HMR does not actually swap the originally imported module: if an HMR boundary module re-exports imports from a dep, then it is responsible for updating those re-exports (and these exports must be using `let`). In addition, importers up the chain from the boundary module will not be notified of the change. This simplified HMR implementation is sufficient for most dev use cases, while allowing us to skip the expensive work of generating proxy modules.
 

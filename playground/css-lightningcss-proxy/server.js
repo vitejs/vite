@@ -3,7 +3,6 @@ import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 import express from 'express'
 
-const __dirname = path.dirname(fileURLToPath(import.meta.url))
 const isTest = process.env.VITEST
 
 const DYNAMIC_STYLES = `
@@ -15,7 +14,7 @@ const DYNAMIC_STYLES = `
 `
 
 export async function createServer(root = process.cwd(), hmrPort) {
-  const resolve = (p) => path.resolve(__dirname, p)
+  const resolve = (p) => path.resolve(import.meta.dirname, p)
 
   const app = express()
 
@@ -47,7 +46,7 @@ export async function createServer(root = process.cwd(), hmrPort) {
   // use vite's connect instance as middleware
   app.use(vite.middlewares)
 
-  app.use('*', async (req, res, next) => {
+  app.use('*all', async (req, res, next) => {
     try {
       let [url] = req.originalUrl.split('?')
       if (url.endsWith('/')) url += 'index.html'

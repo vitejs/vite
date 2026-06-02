@@ -175,7 +175,7 @@ function mapSourcePosition(position: OriginalMapping) {
   let sourceMap = getRunnerSourceMap(position)
   if (!sourceMap) sourceMap = sourceMapCache[position.source]
   if (!sourceMap) {
-    // Call the (overrideable) retrieveSourceMap function to get the source map.
+    // Call the (overridable) retrieveSourceMap function to get the source map.
     const urlAndMap = retrieveSourceMap(position.source)
     if (urlAndMap && urlAndMap.map) {
       const url = urlAndMap.url
@@ -210,7 +210,7 @@ function mapSourcePosition(position: OriginalMapping) {
   }
 
   // Resolve the source URL relative to the URL of the source map
-  if (sourceMap && sourceMap.map && sourceMap.url) {
+  if (sourceMap.map && sourceMap.url) {
     const originalPosition = getOriginalPosition(sourceMap.map, position)
 
     // Only return the original position if a matching line was found. If no
@@ -271,7 +271,7 @@ function CallSiteToString(this: CallSite) {
   } else {
     fileName = this.getScriptNameOrSourceURL()
     if (!fileName && this.isEval()) {
-      fileLocation = this.getEvalOrigin() as string
+      fileLocation = this.getEvalOrigin()!
       fileLocation += ', ' // Expecting source position to follow.
     }
 
@@ -298,7 +298,7 @@ function CallSiteToString(this: CallSite) {
   const isMethodCall = !(this.isToplevel() || isConstructor)
   if (isMethodCall) {
     let typeName = this.getTypeName()
-    // Fixes shim to be backward compatable with Node v0 to v4
+    // Fixes shim to be backward compatible with Node v0 to v4
     if (typeName === '[object Object]') typeName = 'null'
 
     const methodName = this.getMethodName()
@@ -358,17 +358,8 @@ function wrapCallSite(frame: CallSite, state: State) {
   // from getScriptNameOrSourceURL() instead
   const source = frame.getFileName() || frame.getScriptNameOrSourceURL()
   if (source) {
-    const line = frame.getLineNumber() as number
-    let column = (frame.getColumnNumber() as number) - 1
-
-    // Fix position in Node where some (internal) code is prepended.
-    // See https://github.com/evanw/node-source-map-support/issues/36
-    // Header removed in node at ^10.16 || >=11.11.0
-    // v11 is not an LTS candidate, we can just test the one version with it.
-    // Test node versions for: 10.16-19, 10.20+, 12-19, 20-99, 100+, or 11.11
-    const headerLength = 62
-    if (line === 1 && column > headerLength && !frame.isEval())
-      column -= headerLength
+    const line = frame.getLineNumber() ?? 0
+    const column = (frame.getColumnNumber() ?? 1) - 1
 
     const position = mapSourcePosition({
       name: null,
@@ -388,7 +379,7 @@ function wrapCallSite(frame: CallSite, state: State) {
       return name === 'eval' && '_vite' in position ? null : name
     }
     frame.getFileName = function () {
-      return position.source ?? undefined
+      return position.source ?? null
     }
     frame.getLineNumber = function () {
       return position.line
@@ -397,7 +388,7 @@ function wrapCallSite(frame: CallSite, state: State) {
       return position.column + 1
     }
     frame.getScriptNameOrSourceURL = function () {
-      return position.source as string
+      return position.source!
     }
     return frame
   }

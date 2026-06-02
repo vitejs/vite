@@ -1,6 +1,7 @@
 {
   "name": "@vitejs/plugin-legacy",
-  "version": "5.4.2",
+  "version": "8.0.2",
+  "type": "module",
   "license": "MIT",
   "author": "Evan You",
   "files": [
@@ -12,23 +13,15 @@
     "vite-plugin",
     "@vitejs/plugin-legacy"
   ],
-  "main": "./dist/index.cjs",
-  "module": "./dist/index.mjs",
-  "types": "./dist/index.d.ts",
-  "exports": {
-    ".": {
-      "import": "./dist/index.mjs",
-      "require": "./dist/index.cjs"
-    }
-  },
+  "exports": "./dist/index.js",
   "scripts": {
-    "dev": "unbuild --stub",
-    "build": "unbuild && pnpm run patch-cjs",
-    "patch-cjs": "tsx ../../scripts/patchCJS.ts",
+    "dev": "tsdown --watch",
+    "build": "tsdown",
+    "typecheck": "tsc",
     "prepublishOnly": "npm run build"
   },
   "engines": {
-    "node": "^18.0.0 || >=20.0.0"
+    "node": "^20.19.0 || >=22.12.0"
   },
   "repository": {
     "type": "git",
@@ -41,23 +34,39 @@
   "homepage": "https://github.com/vitejs/vite/tree/main/packages/plugin-legacy#readme",
   "funding": "https://github.com/vitejs/vite?sponsor=1",
   "dependencies": {
-    "@babel/core": "^7.25.8",
-    "@babel/preset-env": "^7.25.8",
-    "browserslist": "^4.24.0",
+    "@babel/core": "^7.29.7",
+    "@babel/plugin-transform-dynamic-import": "^7.29.7",
+    "@babel/plugin-transform-modules-systemjs": "^7.29.7",
+    "@babel/preset-env": "^7.29.7",
+    "babel-plugin-polyfill-corejs3": "^0.14.2",
+    "babel-plugin-polyfill-regenerator": "^0.6.8",
+    "browserslist": "^4.28.2",
     "browserslist-to-esbuild": "^2.1.1",
-    "core-js": "^3.38.1",
-    "magic-string": "^0.30.12",
+    "core-js": "^3.49.0",
+    "magic-string": "^0.30.21",
     "regenerator-runtime": "^0.14.1",
     "systemjs": "^6.15.1"
   },
   "peerDependencies": {
-    "terser": "^5.4.0",
-    "vite": "^5.0.0"
+    "terser": "^5.16.0",
+    "vite": "^8.0.0"
   },
   "devDependencies": {
-    "acorn": "^8.12.1",
-    "picocolors": "^1.1.0",
-    "unbuild": "^2.0.0",
+    "acorn": "^8.16.0",
+    "picocolors": "^1.1.1",
+    "tsdown": "^0.22.1",
+    "unrun": "^0.3.0",
     "vite": "workspace:*"
+  },
+  "compatiblePackages": {
+    "schemaVersion": 1,
+    "rolldown": {
+      "type": "incompatible",
+      "reason": "Only supports Vite"
+    },
+    "rollup": {
+      "type": "incompatible",
+      "reason": "Only supports Vite"
+    }
   }
 }

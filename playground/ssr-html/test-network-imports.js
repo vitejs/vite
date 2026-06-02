@@ -8,6 +8,7 @@ async function runTest(userRunner) {
     root: fileURLToPath(new URL('.', import.meta.url)),
     server: {
       middlewareMode: true,
+      ws: false,
     },
   })
   let mod

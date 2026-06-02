@@ -1,5 +1,8 @@
 /// <reference path="./types/importMeta.d.ts" />
 
+// virtual modules
+declare module 'vite/modulepreload-polyfill' {}
+
 // CSS modules
 type CSSModuleClasses = { readonly [key: string]: string }
 
@@ -99,6 +102,14 @@ declare module '*.webp' {
   export default src
 }
 declare module '*.avif' {
+  const src: string
+  export default src
+}
+declare module '*.cur' {
+  const src: string
+  export default src
+}
+declare module '*.jxl' {
   const src: string
   export default src
 }
@@ -243,6 +254,21 @@ declare module '*?url' {
 }
 
 declare module '*?inline' {
+  const src: string
+  export default src
+}
+
+declare module '*?no-inline' {
+  const src: string
+  export default src
+}
+
+declare module '*?url&inline' {
+  const src: string
+  export default src
+}
+
+declare module '*?url&no-inline' {
   const src: string
   export default src
 }

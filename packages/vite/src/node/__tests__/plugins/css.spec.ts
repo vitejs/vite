@@ -1,17 +1,24 @@
-import fs from 'node:fs'
 import path from 'node:path'
-import { describe, expect, test, vi } from 'vitest'
+import { describe, expect, test } from 'vitest'
+import type { InternalModuleFormat } from 'rolldown'
+import MagicString from 'magic-string'
 import { resolveConfig } from '../../config'
 import type { InlineConfig } from '../../config'
 import {
   convertTargets,
+  createCSSResolvers,
   cssPlugin,
   cssUrlRE,
   getEmptyChunkReplacer,
   hoistAtRules,
+  injectInlinedCSS,
   preprocessCSS,
+  resolveLibCssFilename,
 } from '../../plugins/css'
 import { PartialEnvironment } from '../../baseEnvironment'
+import { normalizePath } from '../../utils'
+
+const dirname = import.meta.dirname
 
 describe('search css url function', () => {
   test('some spaces before it', () => {
@@ -53,31 +60,30 @@ describe('search css url function', () => {
       ),
     ).toBe(true)
   })
+
+  test('should capture the full url with escaped parentheses', () => {
+    const css = 'background-image: url(public/awkward-name\\)2.png);'
+    const match = cssUrlRE.exec(css)
+    expect(match?.[1].trim()).toBe('public/awkward-name\\)2.png')
+  })
 })
 
 describe('css modules', () => {
   test('css module compose/from path resolutions', async () => {
-    const mockedProjectPath = path.join(process.cwd(), '/foo/bar/project')
-    const { transform, resetMock } = await createCssPluginTransform(
-      {
-        [path.join(mockedProjectPath, '/css/bar.module.css')]: `\
-.bar {
-display: block;
-background: #f0f;
-}`,
+    const { transform } = await createCssPluginTransform({
+      configFile: false,
+      resolve: {
+        alias: [
+          {
+            find: '@',
+            replacement: path.join(
+              import.meta.dirname,
+              './fixtures/css-module-compose',
+            ),
+          },
+        ],
       },
-      {
-        configFile: false,
-        resolve: {
-          alias: [
-            {
-              find: '@',
-              replacement: mockedProjectPath,
-            },
-          ],
-        },
-      },
-    )
+    })
 
     const result = await transform(
       `\
@@ -88,22 +94,21 @@ composes: bar from '@/css/bar.module.css';
       '/css/foo.module.css',
     )
 
-    expect(result.code).toBe(
-      `\
-._bar_1csqm_1 {
-display: block;
-background: #f0f;
-}
-._foo_86148_1 {
-position: fixed;
-}`,
+    expect(result.code).toMatchInlineSnapshot(
+      `
+      "._bar_1b4ow_1 {
+        display: block;
+        background: #f0f;
+      }
+      ._foo_86148_1 {
+      position: fixed;
+      }"
+    `,
     )
-
-    resetMock()
   })
 
   test('custom generateScopedName', async () => {
-    const { transform, resetMock } = await createCssPluginTransform(undefined, {
+    const { transform } = await createCssPluginTransform({
       configFile: false,
       css: {
         modules: {
@@ -118,7 +123,25 @@ position: fixed;
     const result1 = await transform(css, '/foo.module.css') // server
     const result2 = await transform(css, '/foo.module.css?direct') // client
     expect(result1.code).toBe(result2.code)
-    resetMock()
+  })
+
+  test('custom generateScopedName with lightningcss', async () => {
+    const { transform } = await createCssPluginTransform({
+      configFile: false,
+      css: {
+        modules: {
+          generateScopedName: 'custom__[hash:base64:5]',
+        },
+        transformer: 'lightningcss',
+      },
+    })
+    const css = `\
+.foo {
+  color: red;
+}`
+    const result1 = await transform(css, '/foo.module.css') // server
+    const result2 = await transform(css, '/foo.module.css?direct') // client
+    expect(result1.code).toBe(result2.code)
   })
 })
 
@@ -212,10 +235,7 @@ describe('hoist @ rules', () => {
   })
 })
 
-async function createCssPluginTransform(
-  files?: Record<string, string>,
-  inlineConfig: InlineConfig = {},
-) {
+async function createCssPluginTransform(inlineConfig: InlineConfig = {}) {
   const config = await resolveConfig(inlineConfig, 'serve')
   const environment = new PartialEnvironment('client', config)
 
@@ -224,17 +244,10 @@ async function createCssPluginTransform(
   // @ts-expect-error buildStart is function
   await buildStart.call({})
 
-  const mockFs = vi
-    .spyOn(fs, 'readFile')
-    // @ts-expect-error vi.spyOn not recognize override `fs.readFile` definition.
-    .mockImplementationOnce((p, _encoding, callback) => {
-      callback(null, Buffer.from(files?.[p] ?? ''))
-    })
-
   return {
     async transform(code: string, id: string) {
-      // @ts-expect-error transform is function
-      return await transform.call(
+      // @ts-expect-error transform.handler is function
+      return await transform.handler.call(
         {
           addWatchFile() {
             return
@@ -244,9 +257,6 @@ async function createCssPluginTransform(
         code,
         id,
       )
-    },
-    resetMock() {
-      mockFs.mockReset()
     },
   }
 }
@@ -258,12 +268,17 @@ describe('convertTargets', () => {
       edge: 5177344,
       firefox: 3801088,
       safari: 786432,
+      ios_saf: 786432,
       opera: 3276800,
     })
     expect(convertTargets(['safari13.1', 'ios13', 'node14'])).toStrictEqual({
       ios_saf: 851968,
       safari: 852224,
     })
+  })
+
+  test('supports es6 as an alias of es2015', () => {
+    expect(convertTargets('es6')).toStrictEqual(convertTargets('es2015'))
   })
 })
 
@@ -328,10 +343,22 @@ require("other-module");`
 
     const replacer = getEmptyChunkReplacer(['pure_css_chunk.js'], 'cjs')
     const newCode = replacer(code)
+    expect(newCode.length).toBe(code.length)
     expect(newCode).toMatchInlineSnapshot(
       `"require("some-module"),/* empty css               */require("other-module");"`,
     )
     // So there should be no pure css chunk anymore
+    expect(newCode).not.toContain('pure_css_chunk.js')
+  })
+
+  test('replaces require call in minified code that uses comma operator 2', () => {
+    const code = 'require("pure_css_chunk.js"),console.log();'
+    const replacer = getEmptyChunkReplacer(['pure_css_chunk.js'], 'cjs')
+    const newCode = replacer(code)
+    expect(newCode.length).toBe(code.length)
+    expect(newCode).toMatchInlineSnapshot(
+      `"/* empty css               */console.log();"`,
+    )
     expect(newCode).not.toContain('pure_css_chunk.js')
   })
 
@@ -340,9 +367,12 @@ require("other-module");`
       'require("some-module"),require("pure_css_chunk.js");const v=require("other-module");'
 
     const replacer = getEmptyChunkReplacer(['pure_css_chunk.js'], 'cjs')
-    expect(replacer(code)).toMatchInlineSnapshot(
+    const newCode = replacer(code)
+    expect(newCode.length).toBe(code.length)
+    expect(newCode).toMatchInlineSnapshot(
       `"require("some-module");/* empty css               */const v=require("other-module");"`,
     )
+    expect(newCode).not.toContain('pure_css_chunk.js')
   })
 })
 
@@ -389,6 +419,414 @@ describe('preprocessCSS', () => {
         background: url("./foo.png");
       }
       "
+    `)
+  })
+})
+
+// Sass does not consult the `main` field; see
+// https://sass-lang.com/documentation/js-api/classes/nodepackageimporter/
+describe('sass package resolution', () => {
+  const fixtureRoot = path.resolve(dirname, 'fixtures/sass-package-resolution')
+  const importer = path.resolve(fixtureRoot, 'entry.scss')
+
+  async function getSassResolver() {
+    const config = await resolveConfig(
+      { configFile: false, root: fixtureRoot },
+      'serve',
+    )
+    const environment = new PartialEnvironment('client', config)
+    const resolvers = createCSSResolvers(config)
+    return (id: string) => resolvers.sass(environment, id, importer)
+  }
+
+  test('resolves to index.scss at package root, ignoring main field', async () => {
+    const resolve = await getSassResolver()
+    const resolved = await resolve('sass-pkg-with-index')
+    expect(resolved).toBe(
+      normalizePath(
+        path.resolve(
+          fixtureRoot,
+          'node_modules/sass-pkg-with-index/index.scss',
+        ),
+      ),
+    )
+  })
+})
+
+describe('resolveLibCssFilename', () => {
+  test('use name from package.json', () => {
+    const filename = resolveLibCssFilename(
+      {
+        entry: 'mylib.js',
+      },
+      path.resolve(dirname, '../packages/name'),
+    )
+    expect(filename).toBe('mylib.css')
+  })
+
+  test('set cssFileName', () => {
+    const filename = resolveLibCssFilename(
+      {
+        entry: 'mylib.js',
+        cssFileName: 'style',
+      },
+      path.resolve(dirname, '../packages/noname'),
+    )
+    expect(filename).toBe('style.css')
+  })
+
+  test('use fileName if set', () => {
+    const filename = resolveLibCssFilename(
+      {
+        entry: 'mylib.js',
+        fileName: 'custom-name',
+      },
+      path.resolve(dirname, '../packages/name'),
+    )
+    expect(filename).toBe('custom-name.css')
+  })
+
+  test('use fileName if set and has array entry', () => {
+    const filename = resolveLibCssFilename(
+      {
+        entry: ['mylib.js', 'mylib2.js'],
+        fileName: 'custom-name',
+      },
+      path.resolve(dirname, '../packages/name'),
+    )
+    expect(filename).toBe('custom-name.css')
+  })
+})
+
+describe('injectInlinedCSS', () => {
+  function getInlinedCSSInjectedCode(
+    code: string,
+    format: InternalModuleFormat,
+  ) {
+    const s = new MagicString(code)
+    injectInlinedCSS(
+      s,
+      {
+        error(e) {
+          throw e
+        },
+      },
+      code,
+      format,
+      'injectCSS();',
+    )
+    return s.toString()
+  }
+
+  test('should inject CSS for iife without exports from esm', async () => {
+    const result = getInlinedCSSInjectedCode(
+      `(function() {
+
+"use strict";
+
+//#region src/index.js
+(async () => {
+	await new Promise((resolve) => setTimeout(resolve, 1e3));
+	console.log("foo");
+})();
+
+//#endregion
+})();`,
+      'iife',
+    )
+    expect(result).toMatchInlineSnapshot(`
+      "(function() {
+
+      "use strict";injectCSS();
+
+      //#region src/index.js
+      (async () => {
+      	await new Promise((resolve) => setTimeout(resolve, 1e3));
+      	console.log("foo");
+      })();
+
+      //#endregion
+      })();"
+    `)
+  })
+
+  test('should inject helper for iife without exports from cjs', async () => {
+    const result = getInlinedCSSInjectedCode(
+      `(function() {
+
+
+//#region src/index.js
+(async () => {
+	await new Promise((resolve) => setTimeout(resolve, 1e3));
+	console.log("foo");
+})();
+
+//#endregion
+})();`,
+      'iife',
+    )
+    expect(result).toMatchInlineSnapshot(`
+      "(function() {injectCSS();
+
+
+      //#region src/index.js
+      (async () => {
+      	await new Promise((resolve) => setTimeout(resolve, 1e3));
+      	console.log("foo");
+      })();
+
+      //#endregion
+      })();"
+    `)
+  })
+
+  test('should inject helper for iife with exports', async () => {
+    const result = getInlinedCSSInjectedCode(
+      `var lib = (function(exports) {
+
+
+//#region entry.js
+(async () => {
+	await new Promise((resolve) => setTimeout(resolve, 1e3));
+	console.log("foo");
+})();
+const foo = "foo";
+
+//#endregion
+exports.foo = foo;
+return exports;
+})({});`,
+      'iife',
+    )
+    expect(result).toMatchInlineSnapshot(`
+      "var lib = (function(exports) {injectCSS();
+
+
+      //#region entry.js
+      (async () => {
+      	await new Promise((resolve) => setTimeout(resolve, 1e3));
+      	console.log("foo");
+      })();
+      const foo = "foo";
+
+      //#endregion
+      exports.foo = foo;
+      return exports;
+      })({});"
+    `)
+  })
+
+  test('should inject helper for iife with nested name', async () => {
+    const result = getInlinedCSSInjectedCode(
+      `this.nested = this.nested || {};
+this.nested.lib = (function(exports) {
+
+Object.defineProperty(exports, Symbol.toStringTag, { value: 'Module' });
+
+//#region a.ts
+	const foo = "foo";
+
+//#endregion
+exports.foo = foo;
+return exports;
+})({});`,
+      'iife',
+    )
+    expect(result).toMatchInlineSnapshot(`
+      "this.nested = this.nested || {};
+      this.nested.lib = (function(exports) {injectCSS();
+
+      Object.defineProperty(exports, Symbol.toStringTag, { value: 'Module' });
+
+      //#region a.ts
+      	const foo = "foo";
+
+      //#endregion
+      exports.foo = foo;
+      return exports;
+      })({});"
+    `)
+  })
+
+  test('should inject helper for umd without exports', async () => {
+    const result = getInlinedCSSInjectedCode(
+      `(function(factory) {
+
+  typeof define === 'function' && define.amd ? define([], factory) :
+  factory();
+})(function() {
+
+//#region entry.js
+(async () => {
+	await new Promise((resolve) => setTimeout(resolve, 1e3));
+	console.log("foo");
+})();
+
+//#endregion
+});`,
+      'umd',
+    )
+    expect(result).toMatchInlineSnapshot(`
+      "(function(factory) {
+
+        typeof define === 'function' && define.amd ? define([], factory) :
+        factory();
+      })(function() {injectCSS();
+
+      //#region entry.js
+      (async () => {
+      	await new Promise((resolve) => setTimeout(resolve, 1e3));
+      	console.log("foo");
+      })();
+
+      //#endregion
+      });"
+    `)
+  })
+
+  test('should inject helper for umd with exports', async () => {
+    const result = getInlinedCSSInjectedCode(
+      `(function(global, factory) {
+  typeof exports === 'object' && typeof module !== 'undefined' ?  factory(exports) :
+  typeof define === 'function' && define.amd ? define(['exports'], factory) :
+  (global = typeof globalThis !== 'undefined' ? globalThis : global || self, factory((global.lib = {})));
+})(this, function(exports) {
+
+//#region entry.js
+(async () => {
+	await new Promise((resolve) => setTimeout(resolve, 1e3));
+	console.log("foo");
+})();
+const foo = "foo";
+
+//#endregion
+exports.foo = foo;
+});`,
+      'umd',
+    )
+    expect(result).toMatchInlineSnapshot(`
+      "(function(global, factory) {
+        typeof exports === 'object' && typeof module !== 'undefined' ?  factory(exports) :
+        typeof define === 'function' && define.amd ? define(['exports'], factory) :
+        (global = typeof globalThis !== 'undefined' ? globalThis : global || self, factory((global.lib = {})));
+      })(this, function(exports) {injectCSS();
+
+      //#region entry.js
+      (async () => {
+      	await new Promise((resolve) => setTimeout(resolve, 1e3));
+      	console.log("foo");
+      })();
+      const foo = "foo";
+
+      //#endregion
+      exports.foo = foo;
+      });"
+    `)
+  })
+
+  test('should inject helper for umd with only default export', async () => {
+    const result = getInlinedCSSInjectedCode(
+      `(function(global, factory) {
+  typeof exports === 'object' && typeof module !== 'undefined' ? module.exports =  factory() :
+  typeof define === 'function' && define.amd ? define([], factory) :
+  (global = typeof globalThis !== 'undefined' ? globalThis : global || self, (global.lib = factory()));
+})(this, function() {
+
+//#region entry.js
+(async () => {
+	await new Promise((resolve) => setTimeout(resolve, 1e3));
+	console.log("foo");
+})();
+var index_default = "foo";
+
+//#endregion
+return index_default;
+});`,
+      'umd',
+    )
+    expect(result).toMatchInlineSnapshot(`
+      "(function(global, factory) {
+        typeof exports === 'object' && typeof module !== 'undefined' ? module.exports =  factory() :
+        typeof define === 'function' && define.amd ? define([], factory) :
+        (global = typeof globalThis !== 'undefined' ? globalThis : global || self, (global.lib = factory()));
+      })(this, function() {injectCSS();
+
+      //#region entry.js
+      (async () => {
+      	await new Promise((resolve) => setTimeout(resolve, 1e3));
+      	console.log("foo");
+      })();
+      var index_default = "foo";
+
+      //#endregion
+      return index_default;
+      });"
+    `)
+  })
+
+  test('should inject helper for umd with nested name', async () => {
+    const result = getInlinedCSSInjectedCode(
+      `(function(global, factory) {
+  typeof exports === 'object' && typeof module !== 'undefined' ?  factory(exports) :
+  typeof define === 'function' && define.amd ? define(['exports'], factory) :
+  (global = typeof globalThis !== 'undefined' ? globalThis : global || self, factory((global.nested = global.nested || {},global.nested.lib = {})));
+})(this, function(exports) {
+Object.defineProperty(exports, Symbol.toStringTag, { value: 'Module' });
+
+//#region a.ts
+	const foo = "foo";
+
+//#endregion
+exports.foo = foo;
+});`,
+      'umd',
+    )
+    expect(result).toMatchInlineSnapshot(`
+      "(function(global, factory) {
+        typeof exports === 'object' && typeof module !== 'undefined' ?  factory(exports) :
+        typeof define === 'function' && define.amd ? define(['exports'], factory) :
+        (global = typeof globalThis !== 'undefined' ? globalThis : global || self, factory((global.nested = global.nested || {},global.nested.lib = {})));
+      })(this, function(exports) {injectCSS();
+      Object.defineProperty(exports, Symbol.toStringTag, { value: 'Module' });
+
+      //#region a.ts
+      	const foo = "foo";
+
+      //#endregion
+      exports.foo = foo;
+      });"
+    `)
+  })
+
+  test('should inject multiple helpers', async () => {
+    const result = getInlinedCSSInjectedCode(
+      `(function() {
+
+"use strict";
+
+//#region src/index.js
+(async () => {
+	await new Promise((resolve) => setTimeout(resolve, 1e3));
+	console.log("foo", { ..."foo" });
+})();
+
+//#endregion
+})();`,
+      'iife',
+    )
+    expect(result).toMatchInlineSnapshot(`
+      "(function() {
+
+      "use strict";injectCSS();
+
+      //#region src/index.js
+      (async () => {
+      	await new Promise((resolve) => setTimeout(resolve, 1e3));
+      	console.log("foo", { ..."foo" });
+      })();
+
+      //#endregion
+      })();"
     `)
   })
 })

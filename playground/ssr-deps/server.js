@@ -1,10 +1,7 @@
 // @ts-check
 import fs from 'node:fs'
 import path from 'node:path'
-import { fileURLToPath } from 'node:url'
 import express from 'express'
-
-const __dirname = path.dirname(fileURLToPath(import.meta.url))
 
 const isTest = process.env.VITEST
 
@@ -16,7 +13,7 @@ const noExternal = [
 ]
 
 export async function createServer(root = process.cwd(), hmrPort) {
-  const resolve = (p) => path.resolve(__dirname, p)
+  const resolve = (p) => path.resolve(import.meta.dirname, p)
 
   const app = express()
 
@@ -42,13 +39,20 @@ export async function createServer(root = process.cwd(), hmrPort) {
     },
     appType: 'custom',
     ssr: {
-      noExternal,
+      noExternal: [
+        ...noExternal,
+        '@vitejs/test-nested-exclude',
+        '@vitejs/test-nested-include',
+      ],
       external: [
         '@vitejs/test-nested-external',
         '@vitejs/test-external-entry/entry',
       ],
       optimizeDeps: {
-        include: noExternal,
+        include: [
+          ...noExternal,
+          '@vitejs/test-nested-exclude > @vitejs/test-nested-include',
+        ],
       },
     },
     plugins: [
@@ -88,7 +92,7 @@ export async function createServer(root = process.cwd(), hmrPort) {
   // use vite's connect instance as middleware
   app.use(vite.middlewares)
 
-  app.use('*', async (req, res) => {
+  app.use('*all', async (req, res) => {
     try {
       const url = req.originalUrl
 
@@ -97,7 +101,7 @@ export async function createServer(root = process.cwd(), hmrPort) {
       template = await vite.transformIndexHtml(url, template)
       const render = (await vite.ssrLoadModule('/src/app.js')).render
 
-      const appHtml = await render(url, __dirname)
+      const appHtml = await render(url, import.meta.dirname)
 
       const html = template.replace(`<!--app-html-->`, appHtml)
 

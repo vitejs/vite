@@ -21,10 +21,8 @@ on:
       - feat/*
       - fix/*
       - perf/*
-      - v1
-      - v2
-      - v2.*
-      - v3.*
+      - "v[0-9]+" # v1, v2, ...
+      - "v[0-9]+.[0-9]+" # v4.0, v4.1, ...
   pull_request:
   workflow_dispatch:
 
@@ -35,20 +33,21 @@ concurrency:
 jobs:
   changed:
     name: Get changed files
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-slim
     outputs:
       should_skip: ${{ steps.changed-files.outputs.only_changed == 'true' }}
 
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
         with:
           # Assume PRs are less than 50 commits
           fetch-depth: 50
+          persist-credentials: false
 
       - name: Get changed files
         id: changed-files
-        uses: tj-actions/changed-files@c3a1bb2c992d77180ae65be6ae6c166cf40f857c # v45.0.3
+        uses: tj-actions/changed-files@9426d40962ed5378910ee2e21d5f8c6fcbf2dd96 # v47.0.6
         with:
           files: |
             docs/**
@@ -65,25 +64,27 @@ jobs:
     strategy:
       matrix:
         os: [ubuntu-latest]
-        node_version: [18, 20, 22]
+        node_version: [20, 22, 24, 26]
         include:
           # Active LTS + other OS
           - os: macos-latest
-            node_version: 20
+            node_version: 24
           - os: windows-latest
-            node_version: 20
+            node_version: 24
       fail-fast: false
 
     name: "Build&Test: node-${{ matrix.node_version }}, ${{ matrix.os }}"
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
+        with:
+          persist-credentials: false
 
       - name: Install pnpm
-        uses: pnpm/action-setup@v4.0.0
+        uses: pnpm/action-setup@0e279bb959325dab635dd2c09392533439d90093 # v6.0.8
 
       - name: Set node version to ${{ matrix.node_version }}
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e # v6
         with:
           node-version: ${{ matrix.node_version }}
           cache: "pnpm"
@@ -106,7 +107,7 @@ jobs:
           echo "PLAYWRIGHT_VERSION=$env:PLAYWRIGHT_VERSION" >> $env:GITHUB_ENV
 
       - name: Cache Playwright's binary
-        uses: actions/cache@v4
+        uses: actions/cache@27d5ce7f107fe9357f9df03efb73ab90386fccae # v5
         with:
           key: ${{ runner.os }}-playwright-bin-v1-${{ env.PLAYWRIGHT_VERSION }}
           path: ${{ env.PLAYWRIGHT_BROWSERS_PATH }}
@@ -132,7 +133,7 @@ jobs:
   test-passed:
     if: (!cancelled() && !failure())
     needs: test
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-slim
     name: Build & Test Passed or Skipped
     steps:
       - run: echo "Build & Test Passed or Skipped"
@@ -140,7 +141,7 @@ jobs:
   test-failed:
     if: (!cancelled() && failure())
     needs: test
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-slim
     name: Build & Test Failed
     steps:
       - run: echo "Build & Test Failed"
@@ -148,17 +149,19 @@ jobs:
   lint:
     timeout-minutes: 10
     runs-on: ubuntu-latest
-    name: "Lint: node-20, ubuntu-latest"
+    name: "Lint: node-24, ubuntu-latest"
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
+        with:
+          persist-credentials: false
 
       - name: Install pnpm
-        uses: pnpm/action-setup@v4.0.0
+        uses: pnpm/action-setup@0e279bb959325dab635dd2c09392533439d90093 # v6.0.8
 
-      - name: Set node version to 20
-        uses: actions/setup-node@v4
+      - name: Set node version to 24
+        uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e # v6
         with:
-          node-version: 20
+          node-version: 24
           cache: "pnpm"
 
       - name: Install deps
@@ -171,7 +174,7 @@ jobs:
         run: pnpm run lint
 
       - name: Check formatting
-        run: pnpm prettier --check .
+        run: pnpm format && git diff --exit-code
 
       - name: Typecheck
         run: pnpm run typecheck

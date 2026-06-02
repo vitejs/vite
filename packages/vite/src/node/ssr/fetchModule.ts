@@ -10,7 +10,6 @@ import {
 } from '../../shared/constants'
 import { genSourceMapUrl } from '../server/sourcemap'
 import type { DevEnvironment } from '../server/environment'
-import { normalizeResolvedIdToUrl } from '../plugins/importAnalysis'
 
 export interface FetchModuleOptions {
   cached?: boolean
@@ -19,7 +18,7 @@ export interface FetchModuleOptions {
 }
 
 /**
- * Fetch module information for Vite runner.
+ * Fetch module information for Vite module runner.
  * @experimental
  */
 export async function fetchModule(
@@ -28,49 +27,43 @@ export async function fetchModule(
   importer?: string,
   options: FetchModuleOptions = {},
 ): Promise<FetchResult> {
-  // builtins should always be externalized
-  if (url.startsWith('data:') || isBuiltin(url)) {
+  if (
+    url.startsWith('data:') ||
+    isBuiltin(environment.config.resolve.builtins, url)
+  ) {
     return { externalize: url, type: 'builtin' }
   }
 
-  if (isExternalUrl(url)) {
+  // handle file urls from not statically analyzable dynamic import
+  const isFileUrl = url.startsWith('file://')
+
+  if (isExternalUrl(url) && !isFileUrl) {
     return { externalize: url, type: 'network' }
   }
 
   // if there is no importer, the file is an entry point
   // entry points are always internalized
-  if (importer && url[0] !== '.' && url[0] !== '/') {
+  if (!isFileUrl && importer && url[0] !== '.' && url[0] !== '/') {
     const { isProduction, root } = environment.config
     const { externalConditions, dedupe, preserveSymlinks } =
       environment.config.resolve
 
-    const resolved = tryNodeResolve(
-      url,
-      importer,
-      {
-        mainFields: ['main'],
-        conditions: [],
-        externalConditions,
-        external: [],
-        noExternal: [],
-        overrideConditions: [
-          ...externalConditions,
-          'production',
-          'development',
-        ],
-        extensions: ['.js', '.cjs', '.json'],
-        dedupe,
-        preserveSymlinks,
-        isBuild: false,
-        isProduction,
-        root,
-        packageCache: environment.config.packageCache,
-        tryEsmOnly: true,
-        webCompatible: environment.config.webCompatible,
-      },
-      undefined,
-      true,
-    )
+    const resolved = tryNodeResolve(url, importer, {
+      mainFields: ['main'],
+      conditions: externalConditions,
+      externalConditions,
+      external: [],
+      noExternal: [],
+      extensions: ['.js', '.cjs', '.json'],
+      dedupe,
+      preserveSymlinks,
+      tsconfigPaths: false,
+      isBuild: false,
+      isProduction,
+      root,
+      packageCache: environment.config.packageCache,
+      builtins: environment.config.resolve.builtins,
+    })
     if (!resolved) {
       const err: any = new Error(
         `Cannot find module '${url}' imported from '${importer}'`,
@@ -85,20 +78,10 @@ export async function fetchModule(
     return { externalize: file, type }
   }
 
-  // this is an entry point module, very high chance it's not resolved yet
-  // for example: runner.import('./some-file') or runner.import('/some-file')
-  if (!importer) {
-    const resolved = await environment.pluginContainer.resolveId(url)
-    if (!resolved) {
-      throw new Error(`[vite] cannot find entry point module '${url}'.`)
-    }
-    url = normalizeResolvedIdToUrl(environment, url, resolved)
-  }
-
   url = unwrapId(url)
 
-  let mod = await environment.moduleGraph.getModuleByUrl(url)
-  const cached = !!mod?.transformResult
+  const mod = await environment.moduleGraph.ensureEntryFromUrl(url)
+  const cached = !!mod.transformResult
 
   // if url is already cached, we can just confirm it's also cached on the server
   if (options.cached && cached) {
@@ -110,17 +93,6 @@ export async function fetchModule(
   if (!result) {
     throw new Error(
       `[vite] transform failed for module '${url}'${
-        importer ? ` imported from '${importer}'` : ''
-      }.`,
-    )
-  }
-
-  // module entry should be created by transformRequest
-  mod ??= await environment.moduleGraph.getModuleByUrl(url)
-
-  if (!mod) {
-    throw new Error(
-      `[vite] cannot find module '${url}' ${
         importer ? ` imported from '${importer}'` : ''
       }.`,
     )

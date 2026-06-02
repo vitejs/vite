@@ -1,5 +1,5 @@
 import { expect, test } from 'vitest'
-import { editFile, getColor, page, untilUpdated } from '~utils'
+import { editFile, getColor, isBuild, page } from '~utils'
 
 test('fs', async () => {
   expect(await page.textContent('.fs')).toMatch('[success] alias to fs path')
@@ -29,8 +29,9 @@ test('js via script src', async () => {
 
 test('css via link', async () => {
   expect(await getColor('body')).toBe('grey')
+  if (isBuild) return
   editFile('dir/test.css', (code) => code.replace('grey', 'red'))
-  await untilUpdated(() => getColor('body'), 'red')
+  await expect.poll(() => getColor('body')).toBe('red')
 })
 
 test('optimized dep', async () => {
@@ -42,6 +43,12 @@ test('optimized dep', async () => {
 test('aliased module', async () => {
   expect(await page.textContent('.aliased-module')).toMatch(
     '[success] aliased module',
+  )
+})
+
+test('url conflict alias', async () => {
+  expect(await page.textContent('.url-conflict')).toMatch(
+    '[success] url conflict alias',
   )
 })
 

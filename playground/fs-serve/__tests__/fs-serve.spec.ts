@@ -1,115 +1,123 @@
-import fetch from 'node-fetch'
-import { beforeAll, describe, expect, test } from 'vitest'
-import testJSON from '../safe.json'
-import { isServe, page, viteTestUrl } from '~utils'
+import net from 'node:net'
+import path from 'node:path'
+import { describe, expect, test } from 'vitest'
+import { isServe, isWindows, viteTestUrl } from '~utils'
+import './commonTests'
 
-const stringified = JSON.stringify(testJSON)
+describe.runIf(isServe)('invalid request', () => {
+  const sendRawRequest = async (baseUrl: string, requestTarget: string) => {
+    return new Promise<string>((resolve, reject) => {
+      const parsedUrl = new URL(baseUrl)
 
-describe.runIf(isServe)('main', () => {
-  beforeAll(async () => {
-    const srcPrefix = viteTestUrl.endsWith('/') ? '' : '/'
-    await page.goto(viteTestUrl + srcPrefix + 'src/')
-  })
+      const buf: Buffer[] = []
+      const client = net.createConnection(
+        { port: +parsedUrl.port, host: parsedUrl.hostname },
+        () => {
+          client.write(
+            [
+              `GET ${encodeURI(requestTarget)} HTTP/1.1`,
+              `Host: ${parsedUrl.host}`,
+              'Connection: Close',
+              '\r\n',
+            ].join('\r\n'),
+          )
+        },
+      )
+      client.on('data', (data) => {
+        buf.push(data)
+      })
+      client.on('end', (hadError) => {
+        if (!hadError) {
+          resolve(Buffer.concat(buf).toString())
+        }
+      })
+      client.on('error', (err) => {
+        reject(err)
+      })
+    })
+  }
 
-  test('default import', async () => {
-    expect(await page.textContent('.full')).toBe(stringified)
-  })
-
-  test('named import', async () => {
-    expect(await page.textContent('.named')).toBe(testJSON.msg)
-  })
-
-  test('safe fetch', async () => {
-    expect(await page.textContent('.safe-fetch')).toMatch('KEY=safe')
-    expect(await page.textContent('.safe-fetch-status')).toBe('200')
-  })
-
-  test('safe fetch with query', async () => {
-    expect(await page.textContent('.safe-fetch-query')).toMatch('KEY=safe')
-    expect(await page.textContent('.safe-fetch-query-status')).toBe('200')
-  })
-
-  test('safe fetch with special characters', async () => {
-    expect(
-      await page.textContent('.safe-fetch-subdir-special-characters'),
-    ).toMatch('KEY=safe')
-    expect(
-      await page.textContent('.safe-fetch-subdir-special-characters-status'),
-    ).toBe('200')
-  })
-
-  test('unsafe fetch', async () => {
-    expect(await page.textContent('.unsafe-fetch')).toMatch('403 Restricted')
-    expect(await page.textContent('.unsafe-fetch-status')).toBe('403')
-  })
-
-  test('unsafe fetch with special characters (#8498)', async () => {
-    expect(await page.textContent('.unsafe-fetch-8498')).toBe('')
-    expect(await page.textContent('.unsafe-fetch-8498-status')).toBe('404')
-  })
-
-  test('unsafe fetch with special characters 2 (#8498)', async () => {
-    expect(await page.textContent('.unsafe-fetch-8498-2')).toBe('')
-    expect(await page.textContent('.unsafe-fetch-8498-2-status')).toBe('404')
-  })
-
-  test('safe fs fetch', async () => {
-    expect(await page.textContent('.safe-fs-fetch')).toBe(stringified)
-    expect(await page.textContent('.safe-fs-fetch-status')).toBe('200')
-  })
-
-  test('safe fs fetch', async () => {
-    expect(await page.textContent('.safe-fs-fetch-query')).toBe(stringified)
-    expect(await page.textContent('.safe-fs-fetch-query-status')).toBe('200')
-  })
-
-  test('safe fs fetch with special characters', async () => {
-    expect(await page.textContent('.safe-fs-fetch-special-characters')).toBe(
-      stringified,
-    )
-    expect(
-      await page.textContent('.safe-fs-fetch-special-characters-status'),
-    ).toBe('200')
-  })
-
-  test('unsafe fs fetch', async () => {
-    expect(await page.textContent('.unsafe-fs-fetch')).toBe('')
-    expect(await page.textContent('.unsafe-fs-fetch-status')).toBe('403')
-  })
-
-  test('unsafe fs fetch', async () => {
-    expect(await page.textContent('.unsafe-fs-fetch-raw')).toBe('')
-    expect(await page.textContent('.unsafe-fs-fetch-raw-status')).toBe('403')
-  })
-
-  test('unsafe fs fetch with special characters (#8498)', async () => {
-    expect(await page.textContent('.unsafe-fs-fetch-8498')).toBe('')
-    expect(await page.textContent('.unsafe-fs-fetch-8498-status')).toBe('404')
-  })
-
-  test('unsafe fs fetch with special characters 2 (#8498)', async () => {
-    expect(await page.textContent('.unsafe-fs-fetch-8498-2')).toBe('')
-    expect(await page.textContent('.unsafe-fs-fetch-8498-2-status')).toBe('404')
-  })
-
-  test('nested entry', async () => {
-    expect(await page.textContent('.nested-entry')).toBe('foobar')
-  })
-
-  test('denied', async () => {
-    expect(await page.textContent('.unsafe-dotenv')).toBe('403')
-  })
-
-  test('denied EnV casing', async () => {
-    // It is 403 in case insensitive system, 404 in others
-    const code = await page.textContent('.unsafe-dotEnV-casing')
-    expect(code === '403' || code === '404').toBeTruthy()
-  })
-})
-
-describe('fetch', () => {
-  test('serve with configured headers', async () => {
-    const res = await fetch(viteTestUrl + '/src/')
-    expect(res.headers.get('x-served-by')).toBe('vite')
-  })
+  const root = path
+    .resolve(import.meta.dirname.replace('playground', 'playground-temp'), '..')
+    .replace(/\\/g, '/')
+  const testCases: Array<{
+    name: string
+    target: string
+    status: string
+    content?: string
+  }> = [
+    {
+      name: 'basic request',
+      target: '/src/safe.txt',
+      status: 'HTTP/1.1 200 OK',
+      content: 'KEY=safe',
+    },
+    {
+      name: 'request with /@fs/',
+      target: path.posix.join('/@fs/', root, 'root/src/safe.txt'),
+      status: 'HTTP/1.1 200 OK',
+      content: 'KEY=safe',
+    },
+    {
+      name: '# in request-target',
+      target: '/src/safe.txt#/../../unsafe.txt',
+      status: 'HTTP/1.1 400 Bad Request',
+    },
+    {
+      name: '# in request-target with /@fs/',
+      target:
+        path.posix.join('/@fs/', root, 'root/src/safe.txt') +
+        '#/../../unsafe.txt',
+      status: 'HTTP/1.1 400 Bad Request',
+    },
+    {
+      name: 'denied file with /.',
+      target: '/src/dummy.crt/.',
+      status: 'HTTP/1.1 403 Forbidden',
+    },
+    {
+      name: 'denied file ending with \\',
+      target: '/src/.env\\',
+      status: isWindows ? 'HTTP/1.1 403 Forbidden' : 'HTTP/1.1 404 Not Found',
+    },
+    {
+      name: 'denied file ending with \\ with /@fs/',
+      target: path.posix.join('/@fs/', root, 'root/src/.env') + '\\',
+      status: isWindows ? 'HTTP/1.1 403 Forbidden' : 'HTTP/1.1 404 Not Found',
+    },
+    {
+      name: 'denied file with /. with /@fs/',
+      target: path.posix.join('/@fs/', root, 'root/src/dummy.crt/') + '.',
+      status: 'HTTP/1.1 403 Forbidden',
+    },
+    {
+      name: 'denied optimize deps sourcemap handler',
+      target:
+        path.posix.join('/@fs/', root) +
+        '/node_modules/.vite/deps/../../../unsafe.map',
+      status: 'HTTP/1.1 403 Forbidden',
+    },
+    {
+      name: 'denied backslash optimize deps sourcemap handler',
+      target:
+        path.posix.join('/@fs/', root) +
+        '/node_modules/.vite/deps/..\\..\\..\\unsafe.map',
+      status: isWindows ? 'HTTP/1.1 403 Forbidden' : 'HTTP/1.1 200 OK',
+      content: isWindows ? undefined : 'Cache-Control: no-cache',
+    },
+    {
+      name: 'HTML outside root with relative path',
+      target: '/../unsafe.html',
+      status: 'HTTP/1.1 403 Forbidden',
+    },
+  ]
+  for (const { name, target, status, content } of testCases) {
+    test(name, async () => {
+      const response = await sendRawRequest(viteTestUrl, target)
+      expect(response).toContain(status)
+      if (content !== undefined) {
+        expect(response).toContain(content)
+      }
+    })
+  }
 })

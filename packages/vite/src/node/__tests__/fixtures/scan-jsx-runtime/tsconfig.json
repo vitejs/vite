@@ -1,0 +1,13 @@
+{
+  "compilerOptions": {
+    "jsx": "react-jsx",
+    "jsxImportSource": "vue",
+    "strict": true,
+    "verbatimModuleSyntax": true,
+    "noEmit": true,
+    "moduleResolution": "bundler",
+    "module": "esnext",
+    "target": "esnext",
+    "lib": ["ESNext", "DOM"]
+  }
+}

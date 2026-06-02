@@ -10,10 +10,43 @@ globalThis.window = {}
 // @ts-expect-error refer to https://github.com/vitejs/vite/pull/11079
 globalThis.location = new URL('http://localhost/')
 
+const dirname = import.meta.dirname
+
 export default defineConfig({
+  plugins: [
+    {
+      // Emulate a UI framework component where a framework module would import
+      // scoped CSS files that should treeshake if the default export is not used.
+      name: 'treeshake-scoped-css',
+      enforce: 'pre',
+      async resolveId(id, importer) {
+        if (!importer || !id.endsWith('-scoped.css')) return
+
+        const resolved = await this.resolve(id, importer)
+        if (!resolved) return
+
+        return {
+          ...resolved,
+          meta: {
+            vite: {
+              cssScopeTo: [
+                importer,
+                resolved.id.includes('barrel') ? undefined : 'default',
+              ],
+            },
+          },
+        }
+      },
+    },
+  ],
   build: {
     cssTarget: 'chrome61',
     rollupOptions: {
+      input: {
+        index: path.resolve(dirname, './index.html'),
+        treeshakeScoped: path.resolve(dirname, './treeshake-scoped/index.html'),
+        empty: path.resolve(dirname, './empty.css'),
+      },
       output: {
         manualChunks(id) {
           if (id.includes('manual-chunk.css')) {
@@ -22,6 +55,7 @@ export default defineConfig({
         },
       },
     },
+    emptyOutDir: false, // the dist directory is shared with other configs
   },
   esbuild: {
     logOverride: {
@@ -29,13 +63,20 @@ export default defineConfig({
     },
   },
   resolve: {
-    alias: {
-      '=': __dirname,
-      spacefolder: __dirname + '/folder with space',
-      '#alias': __dirname + '/aliased/foo.css',
-      '#alias?inline': __dirname + '/aliased/foo.css?inline',
-      '#alias-module': __dirname + '/aliased/bar.module.css',
-    },
+    alias: [
+      { find: '=', replacement: dirname },
+      { find: /^=replace\/(.*)/, replacement: `${dirname}/$1` },
+      { find: 'spacefolder', replacement: dirname + '/folder with space' },
+      { find: '#alias', replacement: dirname + '/aliased/foo.css' },
+      {
+        find: '#alias?inline',
+        replacement: dirname + '/aliased/foo.css?inline',
+      },
+      {
+        find: '#alias-module',
+        replacement: dirname + '/aliased/bar.module.css',
+      },
+    ],
   },
   css: {
     modules: {
@@ -62,28 +103,40 @@ export default defineConfig({
     preprocessorOptions: {
       scss: {
         additionalData: `$injectedColor: orange;`,
-        importer: [
-          function (url) {
-            return url === 'virtual-dep' ? { contents: '' } : null
+        importers: [
+          {
+            canonicalize(url) {
+              return url === 'virtual-dep' || url.endsWith('.wxss')
+                ? new URL('custom-importer:virtual-dep')
+                : null
+            },
+            load() {
+              return {
+                contents: ``,
+                syntax: 'scss',
+              }
+            },
           },
-          function (url) {
-            return url === 'virtual-file-absolute'
-              ? {
-                  contents: `@import "${pathToFileURL(path.join(import.meta.dirname, 'file-absolute.scss')).href}"`,
-                }
-              : null
-          },
-          function (url) {
-            return url.endsWith('.wxss') ? { contents: '' } : null
+          {
+            canonicalize(url) {
+              return url === 'virtual-file-absolute'
+                ? new URL('custom-importer:virtual-file-absolute')
+                : null
+            },
+            load() {
+              return {
+                contents: `@use "${pathToFileURL(path.join(import.meta.dirname, 'file-absolute.scss')).href}"`,
+                syntax: 'scss',
+              }
+            },
           },
         ],
-        silenceDeprecations: ['legacy-js-api'],
       },
       styl: {
         additionalData: `$injectedColor ?= orange`,
         imports: [
           './options/relative-import.styl',
-          path.join(__dirname, 'options/absolute-import.styl'),
+          path.join(dirname, 'options/absolute-import.styl'),
         ],
         define: {
           $definedColor: new stylus.nodes.RGBA(51, 197, 255, 1),

@@ -1,6 +1,7 @@
 import path from 'node:path'
 import MagicString from 'magic-string'
 import { stripLiteral } from 'strip-literal'
+import { exactRegex } from 'rolldown/filter'
 import type { Plugin } from '../plugin'
 import type { ResolvedConfig } from '../config'
 import {
@@ -8,6 +9,7 @@ import {
   isDataUrl,
   isParentDirectory,
   transformStableResult,
+  tryStatSync,
 } from '../utils'
 import { CLIENT_ENTRY } from '../constants'
 import { slash } from '../../shared/utils'
@@ -29,6 +31,9 @@ import { hasViteIgnoreRE } from './importAnalysis'
  * import.meta.glob('./dir/**.png', { eager: true, import: 'default' })[`./dir/${name}.png`]
  * ```
  */
+export const assetImportMetaUrlRE: RegExp =
+  /\bnew\s+URL\s*\(\s*('[^']+'|"[^"]+"|`[^`]+`)\s*,\s*import\.meta\.url\s*(?:,\s*)?\)/dg
+
 export function assetImportMetaUrlPlugin(config: ResolvedConfig): Plugin {
   const { publicDir } = config
   let assetResolver: ResolveIdFn
@@ -44,23 +49,27 @@ export function assetImportMetaUrlPlugin(config: ResolvedConfig): Plugin {
 
   return {
     name: 'vite:asset-import-meta-url',
-    async transform(code, id) {
-      const { environment } = this
-      if (
-        environment.config.consumer === 'client' &&
-        id !== preloadHelperId &&
-        id !== CLIENT_ENTRY &&
-        code.includes('new URL') &&
-        code.includes(`import.meta.url`)
-      ) {
+
+    applyToEnvironment(environment) {
+      return environment.config.consumer === 'client'
+    },
+
+    transform: {
+      filter: {
+        id: {
+          exclude: [exactRegex(preloadHelperId), exactRegex(CLIENT_ENTRY)],
+        },
+        code: assetImportMetaUrlRE,
+      },
+      async handler(code, id) {
         let s: MagicString | undefined
-        const assetImportMetaUrlRE =
-          /\bnew\s+URL\s*\(\s*('[^']+'|"[^"]+"|`[^`]+`)\s*,\s*import\.meta\.url\s*(?:,\s*)?\)/dg
+        const re = new RegExp(assetImportMetaUrlRE)
         const cleanString = stripLiteral(code)
 
         let match: RegExpExecArray | null
-        while ((match = assetImportMetaUrlRE.exec(cleanString))) {
-          const [[startIndex, endIndex], [urlStart, urlEnd]] = match.indices!
+        while ((match = re.exec(cleanString))) {
+          const [[startIndex, endIndex], [urlStart, urlEnd]] =
+            match.indices as Array<[number, number]>
           if (hasViteIgnoreRE.test(code.slice(startIndex, urlStart))) continue
 
           const rawUrl = code.slice(urlStart, urlEnd)
@@ -81,7 +90,7 @@ export function assetImportMetaUrlPlugin(config: ResolvedConfig): Plugin {
             const templateLiteral = (ast as any).body[0].expression
             if (templateLiteral.expressions.length) {
               const pattern = buildGlobPattern(templateLiteral)
-              if (pattern.startsWith('**')) {
+              if (pattern[0] === '*') {
                 // don't transform for patterns like this
                 // because users won't intend to do that in most cases
                 continue
@@ -121,7 +130,7 @@ export function assetImportMetaUrlPlugin(config: ResolvedConfig): Plugin {
               tryIndex: false,
               preferRelative: true,
             })
-            file = await assetResolver(environment, url, id)
+            file = await assetResolver(this.environment, url, id)
             file ??=
               url[0] === '/'
                 ? slash(path.join(publicDir, url))
@@ -138,6 +147,10 @@ export function assetImportMetaUrlPlugin(config: ResolvedConfig): Plugin {
                 builtUrl = await fileToUrl(this, publicPath)
               } else {
                 builtUrl = await fileToUrl(this, file)
+                // during dev, builtUrl may point to a directory or a non-existing file
+                if (tryStatSync(file)?.isFile()) {
+                  this.addWatchFile(file)
+                }
               }
             } catch {
               // do nothing, we'll log a warning after this
@@ -154,33 +167,32 @@ export function assetImportMetaUrlPlugin(config: ResolvedConfig): Plugin {
           s.update(
             startIndex,
             endIndex,
-            `new URL(${JSON.stringify(builtUrl)}, import.meta.url)`,
+            // NOTE: add `'' +` to opt-out rolldown's transform: https://github.com/rolldown/rolldown/issues/2745
+            `new URL(${JSON.stringify(builtUrl)}, '' + import.meta.url)`,
           )
         }
         if (s) {
           return transformStableResult(s, id, config)
         }
-      }
-      return null
+      },
     },
   }
 }
 
 function buildGlobPattern(ast: any) {
   let pattern = ''
-  let lastElementIndex = -1
-  for (const exp of ast.expressions) {
-    for (let i = lastElementIndex + 1; i < ast.quasis.length; i++) {
-      const el = ast.quasis[i]
-      if (el.end < exp.start) {
-        pattern += el.value.raw
-        lastElementIndex = i
-      }
+  let lastIsGlob = false
+  for (let i = 0; i < ast.quasis.length; i++) {
+    const str = ast.quasis[i].value.raw
+    if (str) {
+      pattern += str
+      lastIsGlob = false
     }
-    pattern += '**'
-  }
-  for (let i = lastElementIndex + 1; i < ast.quasis.length; i++) {
-    pattern += ast.quasis[i].value.raw
+
+    if (ast.expressions[i] && !lastIsGlob) {
+      pattern += '*'
+      lastIsGlob = true
+    }
   }
   return pattern
 }
