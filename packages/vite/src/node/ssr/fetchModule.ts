@@ -300,10 +300,10 @@ function resolveEntryFilename(
     return [moduleId, environment.facadeToChunk.get(moduleId)!]
   }
   if (url[0] === '/') {
-    const tryAbsouteUrl = path.posix.join(environment.config.root, url)
-    const absoluteChunk = environment.facadeToChunk.get(tryAbsouteUrl)
+    const tryAbsoluteUrl = path.posix.join(environment.config.root, url)
+    const absoluteChunk = environment.facadeToChunk.get(tryAbsoluteUrl)
     if (absoluteChunk) {
-      return [tryAbsouteUrl, absoluteChunk]
+      return [tryAbsoluteUrl, absoluteChunk]
     }
   }
 }
