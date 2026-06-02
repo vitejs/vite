@@ -3,16 +3,16 @@ description: Add labels, create comments, close stale issues, or lock inactive c
 inputs:
   actions:
     required: true
-    description: One of `add-labels`, `create-comment`, `close-issues`, `lock-closed-issues`.
+    description: One of `add-labels`, `remove-labels`, `create-comment`, `close-issues`, `lock-closed-issues`.
   token:
     required: true
     description: GitHub token.
   issue-number:
     required: false
-    description: Issue or PR number. Required for `add-labels` and `create-comment`.
+    description: Issue or PR number. Required for `add-labels`, `remove-labels` and `create-comment`.
   labels:
     required: false
-    description: Comma-separated label names. Required for `add-labels` and `close-issues`.
+    description: Comma-separated label names. Required for `add-labels`, `remove-labels` and `close-issues`.
   body:
     required: false
     description: Comment body. Required for `create-comment`.
