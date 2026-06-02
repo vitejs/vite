@@ -6,7 +6,7 @@ import { getWindows83ShortNameForDotEnv } from './windows83Filename'
 
 export default defineConfig({
   build: {
-    rollupOptions: {
+    rolldownOptions: {
       input: {
         main: path.resolve(import.meta.dirname, 'src/index.html'),
       },
