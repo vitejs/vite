@@ -282,7 +282,7 @@ export class BundledDev {
 
   async close(): Promise<void> {
     this.memoryFiles.clear()
-    await this.devEngine.close()
+    await this._devEngine?.close()
     this.initialBuildCompleted = false
   }
 
