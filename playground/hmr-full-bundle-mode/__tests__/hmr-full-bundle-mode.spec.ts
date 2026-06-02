@@ -183,4 +183,9 @@ if (isBuild) {
     )
     await expect.poll(() => page.textContent('.worker-url')).toBe('worker-url')
   })
+
+  test('lazy bundling', async () => {
+    await page.click('#load-dynamic')
+    await expect.poll(() => page.textContent('.dynamic')).toBe('loaded')
+  })
 }

@@ -125,6 +125,8 @@ const _require = createRequire(import.meta.url)
 
 const nonLeadingHashInFileNameRE = /[^/]+\[hash(?::\d+)?\]/
 const prefixedHashInFileNameRE = /\W?\[hash(?::\d+)?\]/
+export const modulePreloadLinkRE: RegExp =
+  /<link(?![\w-])[^>]*?\srel=(['"])modulepreload\1[^>]*>/g
 
 // browsers supporting dynamic import + import.meta.resolve + async generator
 const modernTargetsEsbuild = [
@@ -456,15 +458,15 @@ function viteLegacyPlugin(options: Options = {}): Plugin[] {
         }
       }
 
-      const { rollupOptions } = config.build
-      const { output } = rollupOptions
+      const { rolldownOptions } = config.build
+      const { output } = rolldownOptions
       if (Array.isArray(output)) {
-        rollupOptions.output = [
+        rolldownOptions.output = [
           ...output.map(createLegacyOutput),
           ...(genModern ? output : []),
         ]
       } else {
-        rollupOptions.output = [
+        rolldownOptions.output = [
           createLegacyOutput(output),
           ...(genModern ? [output || {}] : []),
         ]
@@ -641,7 +643,9 @@ function viteLegacyPlugin(options: Options = {}): Plugin[] {
         }
       }
       if (!genModern) {
-        html = html.replace(/<script type="module".*?<\/script>/g, '')
+        html = html
+          .replace(/<script type="module".*?<\/script>/g, '')
+          .replace(modulePreloadLinkRE, '')
       }
 
       const tags: HtmlTagDescriptor[] = []
@@ -862,7 +866,7 @@ async function buildPolyfillChunk(
       minify,
       assetsDir,
       sourcemap,
-      rollupOptions: {
+      rolldownOptions: {
         input: {
           polyfills: polyfillId,
         },

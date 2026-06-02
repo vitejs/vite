@@ -430,6 +430,10 @@ export function buildHtmlPlugin(config: ResolvedConfig): Plugin {
   return {
     name: 'vite:build-html',
 
+    applyToEnvironment(environment) {
+      return environment.config.isBundled
+    },
+
     transform: {
       filter: { id: /\.html$/ },
       async handler(html, id) {
@@ -505,7 +509,9 @@ export function buildHtmlPlugin(config: ResolvedConfig): Plugin {
         // for each encountered asset url, rewrite original html so that it
         // references the post-build location, ignoring empty attributes and
         // attributes that directly reference named output.
-        const namedOutput = Object.keys(config.build.rollupOptions.input || {})
+        const namedOutput = Object.keys(
+          config.build.rolldownOptions.input || {},
+        )
         const processAssetUrl = async (url: string, shouldInline?: boolean) => {
           if (
             url !== '' && // Empty attribute
@@ -610,7 +616,10 @@ export function buildHtmlPlugin(config: ResolvedConfig): Plugin {
 
           // For asset references in index.html, also generate an import
           // statement for each - this will be handled by the asset plugin
-          const assetAttributes = getNodeAssetAttributes(node)
+          const assetAttributes = getNodeAssetAttributes(
+            node,
+            config.html?.additionalAssetSources,
+          )
           for (const attr of assetAttributes) {
             if (attr.type === 'remove') {
               s.remove(attr.location.startOffset, attr.location.endOffset)

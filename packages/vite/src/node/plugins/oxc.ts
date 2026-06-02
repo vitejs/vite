@@ -12,7 +12,7 @@ import { createFilter, ensureWatchedFile, normalizePath } from '../utils'
 import type { ResolvedConfig } from '../config'
 import type { Plugin } from '../plugin'
 import { cleanUrl } from '../../shared/utils'
-import { type Environment, perEnvironmentPlugin } from '..'
+import type { Environment } from '..'
 import type { ViteDevServer } from '../server'
 import { JS_TYPES_RE } from '../constants'
 import type { Logger } from '../logger'
@@ -208,35 +208,6 @@ function shouldSkipWarning(warning: RolldownLog): boolean {
 }
 
 export function oxcPlugin(config: ResolvedConfig): Plugin {
-  if (config.isBundled) {
-    return perEnvironmentPlugin('native:transform', (environment) => {
-      const {
-        jsxInject,
-        include = /\.(m?ts|[jt]sx)$/,
-        exclude = /\.js$/,
-        jsxRefreshInclude,
-        jsxRefreshExclude,
-        ..._transformOptions
-      } = config.oxc as Exclude<OxcOptions, false | undefined>
-
-      const transformOptions: OxcTransformOptions = _transformOptions
-      transformOptions.sourcemap =
-        environment.config.mode !== 'build' ||
-        !!environment.config.build.sourcemap
-
-      return nativeTransformPlugin({
-        root: environment.config.root,
-        include,
-        exclude,
-        jsxRefreshInclude,
-        jsxRefreshExclude,
-        isServerConsumer: environment.config.consumer === 'server',
-        jsxInject,
-        transformOptions,
-      })
-    })
-  }
-
   const options = config.oxc as OxcOptions
   const {
     jsxInject,
@@ -303,6 +274,35 @@ export function oxcPlugin(config: ResolvedConfig): Plugin {
 
   return {
     name: 'vite:oxc',
+    applyToEnvironment(environment) {
+      if (environment.config.isBundled) {
+        const {
+          jsxInject,
+          include = /\.(m?ts|[jt]sx)$/,
+          exclude = /\.js$/,
+          jsxRefreshInclude,
+          jsxRefreshExclude,
+          ..._transformOptions
+        } = environment.config.oxc as Exclude<OxcOptions, false | undefined>
+
+        const transformOptions: OxcTransformOptions = _transformOptions
+        transformOptions.sourcemap =
+          environment.config.mode !== 'build' ||
+          !!environment.config.build.sourcemap
+
+        return nativeTransformPlugin({
+          root: environment.config.root,
+          include,
+          exclude,
+          jsxRefreshInclude,
+          jsxRefreshExclude,
+          isServerConsumer: environment.config.consumer === 'server',
+          jsxInject,
+          transformOptions,
+        })
+      }
+      return true
+    },
     configureServer(_server) {
       server = _server
     },

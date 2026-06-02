@@ -9,7 +9,7 @@ export default defineConfig(({ command }) => ({
     hmrPartialAccept: true,
   },
   build: {
-    rollupOptions: {
+    rolldownOptions: {
       input: [
         path.resolve(import.meta.dirname, './index.html'),
         ...(command === 'build'

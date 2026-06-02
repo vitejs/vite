@@ -47,9 +47,10 @@ export async function resolvePlugins(
   postPlugins: Plugin[],
 ): Promise<Plugin[]> {
   const isBuild = config.command === 'build'
-  const isBundled = config.isBundled
   const isWorker = config.isWorker
-  const buildPlugins = isBundled
+  const anyEnvBundled =
+    isBuild || Object.values(config.environments).some((env) => env.isBundled)
+  const buildPlugins = anyEnvBundled
     ? (await import('../build')).resolveBuildPlugins(config)
     : { pre: [], post: [] }
   const devtoolsIntegrationPlugin =
@@ -59,28 +60,37 @@ export async function resolvePlugins(
   const { modulePreload } = config.build
 
   return [
-    !isBundled ? optimizedDepsPlugin() : null,
+    optimizedDepsPlugin(),
     !isWorker ? watchPackageDataPlugin(config.packageCache) : null,
-    !isBundled ? preAliasPlugin(config) : null,
-    isBundled && !config.resolve.alias.some((v) => v.customResolver)
-      ? nativeAliasPlugin({
-          entries: config.resolve.alias.map((item) => {
-            return {
-              find: item.find,
-              replacement: item.replacement,
-            }
-          }),
-        })
-      : aliasPlugin({
-          // @ts-expect-error aliasPlugin receives rollup types
-          entries: config.resolve.alias,
-          customResolver: viteAliasCustomResolver,
-        }),
+    preAliasPlugin(config),
+    {
+      ...aliasPlugin({
+        // @ts-expect-error aliasPlugin receives rollup types
+        entries: config.resolve.alias,
+        customResolver: viteAliasCustomResolver,
+      }),
+      applyToEnvironment(environment) {
+        if (
+          environment.config.isBundled &&
+          !environment.config.resolve.alias.some((v) => v.customResolver)
+        ) {
+          return nativeAliasPlugin({
+            entries: config.resolve.alias.map((item) => {
+              return {
+                find: item.find,
+                replacement: item.replacement,
+              }
+            }),
+          })
+        }
+        return true
+      },
+    } as Plugin,
 
     ...prePlugins,
 
     modulePreload !== false && modulePreload.polyfill
-      ? modulePreloadPolyfillPlugin(config)
+      ? modulePreloadPolyfillPlugin()
       : null,
     ...oxcResolvePlugin(
       {
@@ -94,14 +104,26 @@ export async function resolvePlugins(
         legacyInconsistentCjsInterop: config.legacy?.inconsistentCjsInterop,
       },
       isWorker
-        ? { ...config, consumer: 'client', optimizeDepsPluginNames: [] }
+        ? {
+            ...config,
+            consumer: 'client',
+            isBundled: true,
+            optimizeDepsPluginNames: [],
+          }
         : undefined,
     ),
     htmlInlineProxyPlugin(config),
     cssPlugin(config),
     esbuildBannerFooterCompatPlugin(config),
     // @oxc-project/runtime resolution is handled by rolldown in build
-    config.oxc !== false && !isBundled ? oxcRuntimePlugin() : null,
+    config.oxc !== false
+      ? ({
+          ...oxcRuntimePlugin(),
+          applyToEnvironment(environment) {
+            return !environment.config.isBundled
+          },
+        } satisfies Plugin)
+      : null,
     config.oxc !== false ? oxcPlugin(config) : null,
     nativeJsonPlugin({ ...config.json, minify: isBuild }),
     wasmHelperPlugin(),
@@ -116,7 +138,7 @@ export async function resolvePlugins(
     nativeWasmFallbackPlugin(),
     definePlugin(config),
     cssPostPlugin(config),
-    isBundled && buildHtmlPlugin(config),
+    buildHtmlPlugin(config),
     workerImportMetaUrlPlugin(config),
     assetImportMetaUrlPlugin(config),
     ...buildPlugins.pre,
@@ -129,13 +151,9 @@ export async function resolvePlugins(
     devtoolsIntegrationPlugin,
 
     // internal server-only plugins are always applied after everything else
-    ...(isBundled
-      ? []
-      : [
-          clientInjectionsPlugin(config),
-          cssAnalysisPlugin(config),
-          importAnalysisPlugin(config),
-        ]),
+    clientInjectionsPlugin(config),
+    cssAnalysisPlugin(config),
+    importAnalysisPlugin(config),
   ].filter(Boolean) as Plugin[]
 }
 

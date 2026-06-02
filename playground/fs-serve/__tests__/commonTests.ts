@@ -14,6 +14,7 @@ import {
 import type { Page } from 'playwright-chromium'
 import WebSocket from 'ws'
 import testJSON from '../safe.json'
+import { getWindows83ShortNameForDotEnv as getWindows83ShortNameForDotEnv } from '../root/windows83Filename'
 import { browser, isServe, page, viteServer, viteTestUrl } from '~utils'
 
 const getViteTestIndexHtmlUrl = () => {
@@ -51,6 +52,8 @@ describe.runIf(isServe)('normal', () => {
 })
 
 describe.runIf(isServe)('matrix', () => {
+  const dotEnvWindows83ShortName = getWindows83ShortNameForDotEnv()
+
   const variants = [
     { variantId: '', variantName: 'normal' },
     { variantId: '-fs', variantName: '/@fs/' },
@@ -61,7 +64,8 @@ describe.runIf(isServe)('matrix', () => {
     testId: string
     content: string | RegExp
     status: string | string[]
-    skipVariants?: VariantId[]
+    disableVariants?: VariantId[]
+    skip?: boolean
     isSPAFallback?: boolean
   }> = [
     {
@@ -99,14 +103,14 @@ describe.runIf(isServe)('matrix', () => {
       testId: 'safe-imported',
       content: safeJsonContent,
       status: '200',
-      skipVariants: [''],
+      disableVariants: [''],
     },
     {
       name: 'safe fetch imported with query',
       testId: 'safe-imported-query',
       content: safeJsonContent,
       status: '200',
-      skipVariants: [''],
+      disableVariants: [''],
     },
 
     {
@@ -120,7 +124,7 @@ describe.runIf(isServe)('matrix', () => {
       testId: 'unsafe-json',
       content: /403 Restricted/,
       status: '403',
-      skipVariants: [''],
+      disableVariants: [''],
     },
     {
       name: 'unsafe HTML fetch',
@@ -133,7 +137,7 @@ describe.runIf(isServe)('matrix', () => {
       testId: 'unsafe-html-outside-root',
       content: /403 Restricted/,
       status: '403',
-      skipVariants: [''],
+      disableVariants: [''],
     },
     {
       name: 'unsafe fetch with special characters (#8498)',
@@ -164,21 +168,21 @@ describe.runIf(isServe)('matrix', () => {
       testId: 'unsafe-raw-import-raw-outside-root',
       content: /403 Restricted/,
       status: '403',
-      skipVariants: [''],
+      disableVariants: [''],
     },
     {
       name: 'unsafe fetch raw import raw outside root 1',
       testId: 'unsafe-raw-import-raw-outside-root1',
       content: /403 Restricted/,
       status: '403',
-      skipVariants: [''],
+      disableVariants: [''],
     },
     {
       name: 'unsafe fetch raw import raw outside root 2',
       testId: 'unsafe-raw-import-raw-outside-root2',
       content: /403 Restricted/,
       status: '403',
-      skipVariants: [''],
+      disableVariants: [''],
     },
     {
       name: 'unsafe fetch with ?url query',
@@ -255,6 +259,24 @@ describe.runIf(isServe)('matrix', () => {
       content: /403 Restricted/,
       status: '403',
     },
+    // On NTFS, it exposes a file's default data stream through the `::$DATA` suffix,
+    // so `.env::$DATA` resolves to the same content as `.env`.
+    // It is 404 on non-NTFS.
+    {
+      name: 'denied .env with NTFS ADS suffix',
+      testId: 'unsafe-dotenv-ntfs-ads',
+      content: /403 Restricted|^$/,
+      status: ['403', '404'],
+    },
+    // On Windows, the files can be accessed through the 8.3 short name if the feature is enabled.
+    // For example, if the short name for `.env` is `ENV~1`, it can be accessed as `ENV~1`.
+    {
+      name: 'denied .env with 8.3 short name',
+      testId: 'unsafe-dotenv-83-short-name',
+      content: /403 Restricted/,
+      status: '403',
+      skip: dotEnvWindows83ShortName === undefined, // skip if 8.3 short name is not available
+    },
   ]
 
   for (const {
@@ -262,41 +284,48 @@ describe.runIf(isServe)('matrix', () => {
     testId,
     content,
     status,
-    skipVariants,
+    disableVariants,
+    skip,
     isSPAFallback,
   } of cases) {
     for (const { variantId, variantName } of variants) {
-      if (skipVariants?.includes(variantId)) {
+      if (disableVariants?.includes(variantId)) {
         continue
       }
 
-      test.concurrent(`${name} (${variantName})`, async ({ expect }) => {
-        const baseSelector = `.fetch${variantId}-${testId}`
-        const actualStatus = expect.poll(() =>
-          page.textContent(`${baseSelector}-status`),
-        )
-        const actualContent = expect.poll(() =>
-          page.textContent(`${baseSelector}-content`),
-        )
+      test.concurrent(
+        `${name} (${variantName})`,
+        { skip },
+        async ({ expect }) => {
+          const baseSelector = `.fetch${variantId}-${testId}`
+          const actualStatus = expect.poll(() =>
+            page.textContent(`${baseSelector}-status`),
+          )
+          const actualContent = expect.poll(() =>
+            page.textContent(`${baseSelector}-content`),
+          )
 
-        if (variantName === 'normal' && isSPAFallback) {
-          await actualStatus.toBe('200')
-          await actualContent.toContain('<h1>FS Serve Matrix Test Summary</h1>')
-          return
-        }
+          if (variantName === 'normal' && isSPAFallback) {
+            await actualStatus.toBe('200')
+            await actualContent.toContain(
+              '<h1>FS Serve Matrix Test Summary</h1>',
+            )
+            return
+          }
 
-        if (typeof status === 'string') {
-          await actualStatus.toBe(status)
-        } else {
-          await actualStatus.toBeOneOf(status)
-        }
+          if (typeof status === 'string') {
+            await actualStatus.toBe(status)
+          } else {
+            await actualStatus.toBeOneOf(status)
+          }
 
-        if (typeof content === 'string') {
-          await actualContent.toBe(content)
-        } else {
-          await actualContent.toMatch(content)
-        }
-      })
+          if (typeof content === 'string') {
+            await actualContent.toBe(content)
+          } else {
+            await actualContent.toMatch(content)
+          }
+        },
+      )
     }
   }
 })

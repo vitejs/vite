@@ -406,9 +406,9 @@ export function cssPlugin(config: ResolvedConfig): Plugin {
             return [url, cleanUrl(resolved)]
           }
           if (config.command === 'build') {
-            const isExternal = config.build.rollupOptions.external
+            const isExternal = config.build.rolldownOptions.external
               ? resolveUserExternal(
-                  config.build.rollupOptions.external,
+                  config.build.rolldownOptions.external,
                   decodedUrl, // use URL as id since id could not be resolved
                   id,
                   false,
@@ -472,11 +472,11 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
   let hasEmitted = false
   let chunkCSSMap: Map<string, string>
 
-  const rollupOptionsOutput = config.build.rollupOptions.output
+  const rolldownOptionsOutput = config.build.rolldownOptions.output
   const assetFileNames = (
-    Array.isArray(rollupOptionsOutput)
-      ? rollupOptionsOutput[0]
-      : rollupOptionsOutput
+    Array.isArray(rolldownOptionsOutput)
+      ? rolldownOptionsOutput[0]
+      : rolldownOptionsOutput
   )?.assetFileNames
   const getCssAssetDirname = (
     cssAssetName: string,
@@ -491,7 +491,9 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
       return path.dirname(
         assetFileNames({
           type: 'asset',
+          name: cssAssetName,
           names: [cssAssetName],
+          originalFileName,
           originalFileNames: originalFileName ? [originalFileName] : [],
           source: '/* vite internal call, ignore */',
         }),
@@ -594,7 +596,7 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
 
           const cssContent = await getContentWithSourcemap(css)
           const code = [
-            config.isBundled
+            this.environment.config.isBundled
               ? `const { updateStyle: __vite__updateStyle, removeStyle: __vite__removeStyle } = import.meta.hot._internal`
               : `import { updateStyle as __vite__updateStyle, removeStyle as __vite__removeStyle } from ${JSON.stringify(
                   path.posix.join(config.base, CLIENT_PUBLIC_PATH),
@@ -1175,6 +1177,10 @@ export function cssAnalysisPlugin(config: ResolvedConfig): Plugin {
   return {
     name: 'vite:css-analysis',
 
+    applyToEnvironment(environment) {
+      return !environment.config.isBundled
+    },
+
     transform: {
       filter: {
         id: {
@@ -1277,13 +1283,15 @@ export function getEmptyChunkReplacer(
 
 const fileURLWithWindowsDriveRE = /^file:\/\/\/[a-zA-Z]:\//
 
-interface CSSAtImportResolvers {
+export interface CSSAtImportResolvers {
   css: ResolveIdFn
   sass: ResolveIdFn
   less: ResolveIdFn
 }
 
-function createCSSResolvers(config: ResolvedConfig): CSSAtImportResolvers {
+export function createCSSResolvers(
+  config: ResolvedConfig,
+): CSSAtImportResolvers {
   let cssResolve: ResolveIdFn | undefined
   let sassResolve: ResolveIdFn | undefined
   let lessResolve: ResolveIdFn | undefined
@@ -3339,6 +3347,24 @@ async function compileLightningCSS(
   let css = decoder.decode(res.code)
   for (const dep of res.dependencies!) {
     switch (dep.type) {
+      case 'file': {
+        deps.add(dep.filePath)
+        break
+      }
+      case 'glob': {
+        for (const file of globSync(dep.glob)) {
+          deps.add(file)
+        }
+        const files = globSync(dep.glob, {
+          absolute: true,
+          expandDirectories: false,
+          ignore: ['**/node_modules/**'],
+        })
+        for (let i = 0; i < files.length; i++) {
+          deps.add(files[i])
+        }
+        break
+      }
       case 'url': {
         let replaceUrl: string
         if (skipUrlReplacer(dep.url)) {

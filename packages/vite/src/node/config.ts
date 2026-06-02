@@ -6,6 +6,11 @@ import { inspect, promisify } from 'node:util'
 import { performance } from 'node:perf_hooks'
 import { createRequire } from 'node:module'
 import crypto from 'node:crypto'
+import {
+  getEnv,
+  ignoreInput,
+  ignoreOutput,
+} from '@voidzero-dev/vite-task-client'
 import colors from 'picocolors'
 import picomatch from 'picomatch'
 import {
@@ -114,6 +119,7 @@ import type { LogLevel, Logger } from './logger'
 import { createLogger } from './logger'
 import type { DepOptimizationOptions } from './optimizer'
 import type { JsonOptions } from './plugins/json'
+import type { HtmlAssetSource } from './assetSource'
 import type { PackageCache } from './packages'
 import { findNearestNodeModules, findNearestPackageData } from './packages'
 import { loadEnv, resolveEnvPrefix } from './env'
@@ -303,6 +309,17 @@ export interface SharedEnvironmentOptions {
    * Optimize deps config
    */
   optimizeDeps?: DepOptimizationOptions
+  /**
+   * Whether this environment produces a bundled output.
+   *
+   * During `build`, this defaults to `true` for every environment.
+   * During `serve`, this defaults to `true` only for the client environment
+   * when `experimental.bundledDev` is enabled, and `false` otherwise.
+   * Setting this explicitly on an environment always overrides the default.
+   *
+   * @experimental
+   */
+  isBundled?: boolean
 }
 
 export interface EnvironmentOptions extends SharedEnvironmentOptions {
@@ -326,6 +343,7 @@ export type ResolvedEnvironmentOptions = {
   optimizeDeps: DepOptimizationOptions
   dev: ResolvedDevEnvironmentOptions
   build: ResolvedBuildEnvironmentOptions
+  isBundled: boolean
   plugins: readonly Plugin[]
   /** @internal */
   optimizeDepsPluginNames: string[]
@@ -530,6 +548,23 @@ export interface HTMLOptions {
    * Make sure that this placeholder will be replaced with a unique value for each request by the server.
    */
   cspNonce?: string
+  /**
+   * Define additional HTML elements and attributes to be treated as asset sources.
+   * This extends the built-in list that includes standard elements like `<img src>`, `<video src>`, etc.
+   *
+   * @example
+   * ```ts
+   * html: {
+   *   additionalAssetSources: {
+   *     // Custom web component
+   *     'html-import': { srcAttributes: ['src'] },
+   *     // Add data-* attributes to existing element
+   *     'img': { srcAttributes: ['data-src-dark', 'data-src-light'] }
+   *   }
+   * }
+   * ```
+   */
+  additionalAssetSources?: Record<string, HtmlAssetSource>
 }
 
 export interface FutureOptions {
@@ -568,7 +603,11 @@ export interface ExperimentalOptions {
    */
   hmrPartialAccept?: boolean
   /**
-   * Enable full bundle mode.
+   * Enable full bundle mode during `serve`.
+   *
+   * This seeds the default for the client environment's `isBundled` option.
+   * Other environments default to `false` during `serve`. Any environment
+   * can override its `isBundled` value via `environments[name].isBundled`.
    *
    * This is highly experimental.
    *
@@ -654,8 +693,6 @@ export interface ResolvedConfig extends Readonly<
     cacheDir: string
     command: 'build' | 'serve'
     mode: string
-    /** `true` when build or full-bundle mode dev */
-    isBundled: boolean
     isWorker: boolean
     // in nested worker bundle to find the main config
     /** @internal */
@@ -844,7 +881,7 @@ const configDefaults = Object.freeze({
   worker: {
     format: 'iife',
     plugins: (): never[] => [],
-    // rollupOptions
+    // rolldownOptions
   },
   optimizeDeps: {
     include: [],
@@ -907,6 +944,7 @@ function resolveEnvironmentOptions(
   forceOptimizeDeps: boolean | undefined,
   logger: Logger,
   environmentName: string,
+  isBuild: boolean,
   isBundledDev: boolean,
   // Backward compatibility
   isSsrTargetWebworkerSet?: boolean,
@@ -917,6 +955,9 @@ function resolveEnvironmentOptions(
     options.consumer ?? (isClientEnvironment ? 'client' : 'server')
   const isSsrTargetWebworkerEnvironment =
     isSsrTargetWebworkerSet && environmentName === 'ssr'
+
+  const isBundled =
+    options.isBundled ?? (isBuild || (isClientEnvironment && isBundledDev))
 
   if (options.define?.['process.env']) {
     const processEnvDefine = options.define['process.env']
@@ -970,9 +1011,10 @@ function resolveEnvironmentOptions(
       options.build ?? {},
       logger,
       consumer,
-      isBundledDev,
+      isBundled && !isBuild,
       isSsrTargetWebworkerEnvironment,
     ),
+    isBundled,
     plugins: undefined!, // to be resolved later
     // will be set by `setOptimizeDepsPluginNames` later
     optimizeDepsPluginNames: undefined!,
@@ -1382,6 +1424,14 @@ export async function resolveConfig(
 
   let configFileDependencies: string[] = []
   let mode = inlineConfig.mode || defaultMode
+  // When `NODE_ENV` isn't set locally, ask Vite Task for it; the runner
+  // also records the env in the build's cache key.
+  if (process.env.NODE_ENV === undefined) {
+    const nodeEnv = getEnv('NODE_ENV')
+    if (nodeEnv !== undefined) {
+      process.env.NODE_ENV = nodeEnv
+    }
+  }
   const isNodeEnvSet = !!process.env.NODE_ENV
   const packageCache: PackageCache = new Map()
 
@@ -1480,6 +1530,15 @@ export async function resolveConfig(
         `The plugin ${JSON.stringify(tsconfigPathsPlugin.name)} is detected. ` +
           `Vite now supports tsconfig paths resolution natively via the ${colors.bold('resolve.tsconfigPaths')} option. ` +
           `You can remove the plugin and set ${colors.bold('resolve.tsconfigPaths: true')} in your Vite config instead.`,
+      ),
+    )
+  }
+
+  if (process.versions.pnp) {
+    logger.warnOnce(
+      colors.yellow(
+        `Using Yarn PnP with Vite is discouraged and PnP-specific bugs will no longer be actively worked on. ` +
+          `Please switch to a different ${colors.bold('nodeLinker')} mode or to a different package manager.`,
       ),
     )
   }
@@ -1608,6 +1667,7 @@ export async function resolveConfig(
       inlineConfig.forceOptimizeDeps,
       logger,
       environmentName,
+      isBuild,
       isBundledDev,
       config.ssr?.target === 'webworker',
       config.server?.preTransformRequests,
@@ -1696,14 +1756,23 @@ export async function resolveConfig(
     : resolveBaseUrl(config.base, isBuild, logger)
 
   // resolve cache directory
+  // pkgDir may be an ancestor directory (findNearestPackageData walks up).
+  // When no package.json is found but node_modules/ exists in resolvedRoot
+  // (e.g. Deno projects using npm packages), prefer node_modules/.vite
+  // over a bare .vite directory.
   const pkgDir = findNearestPackageData(resolvedRoot, packageCache)?.dir
-  const cacheDir = normalizePath(
-    config.cacheDir
-      ? path.resolve(resolvedRoot, config.cacheDir)
-      : pkgDir
-        ? path.join(pkgDir, `node_modules/.vite`)
-        : path.join(resolvedRoot, `.vite`),
-  )
+  let cacheDir: string
+  if (config.cacheDir) {
+    cacheDir = path.resolve(resolvedRoot, config.cacheDir)
+  } else if (pkgDir) {
+    cacheDir = path.join(pkgDir, `node_modules/.vite`)
+  } else {
+    const nodeModulesDir = path.join(resolvedRoot, 'node_modules')
+    cacheDir = fs.existsSync(nodeModulesDir)
+      ? path.join(nodeModulesDir, `.vite`)
+      : path.join(resolvedRoot, `.vite`)
+  }
+  cacheDir = normalizePath(cacheDir)
 
   const assetsFilter =
     config.assetsInclude &&
@@ -1900,7 +1969,6 @@ export async function resolveConfig(
     cacheDir,
     command,
     mode,
-    isBundled: config.experimental?.bundledDev || isBuild,
     isWorker: false,
     mainConfig: null,
     bundleChain: [],
@@ -2091,7 +2159,7 @@ export async function resolveConfig(
 
   // Check if all assetFileNames have the same reference.
   // If not, display a warn for user.
-  const outputOption = config.build?.rollupOptions?.output ?? []
+  const outputOption = config.build?.rolldownOptions?.output ?? []
   // Use isArray to narrow its type to array
   if (Array.isArray(outputOption)) {
     const assetFileNamesList = outputOption.map(
@@ -2506,16 +2574,16 @@ function collectAllModules(
   if (analyzedModules.has(fileName)) return
   analyzedModules.add(fileName)
 
-  const chunk = bundle[fileName]!
+  const chunk = bundle[fileName]
+  if (!chunk) return // external modules
+
   for (const mod of chunk.moduleIds) {
     allModules.add(mod)
   }
   for (const i of chunk.imports) {
-    analyzedModules.add(i)
     collectAllModules(bundle, i, allModules, analyzedModules)
   }
   for (const i of chunk.dynamicImports) {
-    analyzedModules.add(i)
     collectAllModules(bundle, i, allModules, analyzedModules)
   }
 }
@@ -2562,6 +2630,11 @@ async function loadConfigFromBundledFile(
           `.vite-temp/${path.basename(fileName)}.${hash}.mjs`,
         )
       : `${fileName}.${hash}.mjs`
+
+    // Tell Vite Task to ignore this transient file as both input and output,
+    // so the read-write of this file doesn't affect the cache fingerprints.
+    ignoreInput(tempFileName)
+    ignoreOutput(tempFileName)
     await fsp.writeFile(tempFileName, bundledCode)
     try {
       return (await import(pathToFileURL(tempFileName).href)).default
