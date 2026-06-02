@@ -191,10 +191,6 @@ export class FullBundle {
     }
   }
 
-  // override async warmupRequest(_url: string): Promise<void> {
-  //   // no-op
-  // }
-
   async invalidateModule(
     m: {
       path: string
