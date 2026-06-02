@@ -24,6 +24,7 @@ import type {
   WatcherOptions,
 } from 'rolldown'
 import { viteLoadFallbackPlugin as nativeLoadFallbackPlugin } from 'rolldown/experimental'
+import { esmExternalRequirePlugin } from 'rolldown/plugins'
 import type { EsbuildTarget } from '#types/internal/esbuildOptions'
 import type { RollupCommonJSOptions } from '#dep-types/commonjs'
 import type { RollupDynamicImportVarsOptions } from '#dep-types/dynamicImportVars'
@@ -66,7 +67,7 @@ import { ssrManifestPlugin } from './ssr/ssrManifestPlugin'
 import { findNearestMainPackageData, findNearestPackageData } from './packages'
 import type { PackageCache } from './packages'
 import {
-  convertToNotifyOptions,
+  convertToWatcherOptions,
   getResolvedOutDirs,
   resolveChokidarOptions,
   resolveEmptyOutDir,
@@ -427,6 +428,7 @@ export function resolveBuildEnvironmentOptions(
   logger: Logger,
   consumer: 'client' | 'server' | undefined,
   isBundledDev: boolean,
+  isSsrTargetWebworkerEnvironment?: boolean,
 ): ResolvedBuildEnvironmentOptions {
   const deprecatedPolyfillModulePreload = raw.polyfillModulePreload
   const { polyfillModulePreload, ...rest } = raw
@@ -458,7 +460,10 @@ export function resolveBuildEnvironmentOptions(
   )
   setupRollupOptionCompat(merged, 'build')
   merged.rolldownOptions = {
-    platform: consumer === 'server' ? 'node' : 'browser',
+    platform:
+      consumer === 'client' || isSsrTargetWebworkerEnvironment
+        ? 'browser'
+        : 'node',
     ...merged.rolldownOptions,
   }
 
@@ -504,33 +509,39 @@ export function resolveBuildEnvironmentOptions(
   return resolved
 }
 
-export async function resolveBuildPlugins(config: ResolvedConfig): Promise<{
+export function resolveBuildPlugins(config: ResolvedConfig): {
   pre: Plugin[]
   post: Plugin[]
-}> {
+} {
   const isBuild = config.command === 'build'
   return {
     pre: [
       ...(isBuild && !config.isWorker ? [prepareOutDirPlugin()] : []),
       perEnvironmentPlugin(
         'vite:rollup-options-plugins',
-        async (environment) =>
-          (
+        async (environment) => {
+          if (!isBuild && !environment.config.isBundled) {
+            return false
+          }
+          return (
             await asyncFlatten(
               arraify(environment.config.build.rollupOptions.plugins),
             )
-          ).filter(Boolean) as Plugin[],
+          ).filter(Boolean) as Plugin[]
+        },
       ),
       ...(config.isWorker ? [webWorkerPostPlugin(config)] : []),
     ],
     post: [
       ...(isBuild ? buildImportAnalysisPlugin(config) : []),
-      ...(config.build.minify === 'esbuild' ? [buildEsbuildPlugin()] : []),
+      ...(isBuild && config.build.minify === 'esbuild'
+        ? [buildEsbuildPlugin()]
+        : []),
       ...(isBuild ? [terserPlugin(config)] : []),
       ...(isBuild && !config.isWorker
         ? [
             licensePlugin(),
-            manifestPlugin(config),
+            manifestPlugin(),
             ssrManifestPlugin(),
             buildReporterPlugin(config),
           ]
@@ -660,41 +671,37 @@ export function resolveRolldownOptions(
           }
         : options.rollupOptions.experimental?.chunkImportMap,
     },
-    optimization: {
-      inlineConst:
-        typeof options.rollupOptions.optimization?.inlineConst === 'boolean'
-          ? options.rollupOptions.optimization.inlineConst
-          : {
-              mode: 'smart',
-              ...options.rollupOptions.optimization?.inlineConst,
-            },
-      ...options.rollupOptions.optimization,
-    },
   }
 
   const isSsrTargetWebworkerEnvironment =
     environment.name === 'ssr' &&
     environment.getTopLevelConfig().ssr?.target === 'webworker'
 
+  // For webworker SSR with platform: 'browser', external CJS require() calls
+  // need to be converted to ESM imports since createRequire is not available.
+  if (isSsrTargetWebworkerEnvironment) {
+    plugins.push(esmExternalRequirePlugin())
+  }
+
   const buildOutputOptions = (output: OutputOptions = {}): OutputOptions => {
     // @ts-expect-error See https://github.com/vitejs/vite/issues/5812#issuecomment-984345618
     if (output.output) {
       logger.warn(
-        `You've set "rollupOptions.output.output" in your config. ` +
+        `You've set "rolldownOptions.output.output" in your config. ` +
           `This is deprecated and will override all Vite.js default output options. ` +
-          `Please use "rollupOptions.output" instead.`,
+          `Please use "rolldownOptions.output" instead.`,
       )
     }
     if (output.file) {
       throw new Error(
-        `Vite does not support "rollupOptions.output.file". ` +
-          `Please use "rollupOptions.output.dir" and "rollupOptions.output.entryFileNames" instead.`,
+        `Vite does not support "rolldownOptions.output.file". ` +
+          `Please use "rolldownOptions.output.dir" and "rolldownOptions.output.entryFileNames" instead.`,
       )
     }
     if (output.sourcemap) {
       logger.warnOnce(
         colors.yellow(
-          `Vite does not support "rollupOptions.output.sourcemap". ` +
+          `Vite does not support "rolldownOptions.output.sourcemap". ` +
             `Please use "build.sourcemap" instead.`,
         ),
       )
@@ -749,7 +756,19 @@ export function resolveRolldownOptions(
           (typeof input === 'string' || Object.keys(input).length === 1))
           ? false
           : undefined),
-      legalComments: 'none',
+      comments:
+        typeof output.comments === 'boolean'
+          ? output.comments
+          : {
+              // Do not minify whitespace for ES lib output since that would remove
+              // pure annotations and break tree-shaking
+              annotation:
+                !options.minify ||
+                (libOptions && (format === 'es' || format === 'esm')),
+              jsdoc: !options.minify,
+              legal: !options.minify,
+              ...output.comments,
+            },
       minify:
         options.minify === 'oxc'
           ? libOptions && (format === 'es' || format === 'esm')
@@ -841,7 +860,7 @@ async function buildEnvironment(
         watch: {
           ...rollupOptions.watch,
           ...options.watch,
-          notify: convertToNotifyOptions(resolvedChokidarOptions),
+          watcher: convertToWatcherOptions(resolvedChokidarOptions),
         },
       })
 
@@ -1036,7 +1055,7 @@ export function resolveBuildOutputs(
     if (libOptions.formats) {
       logger.warn(
         colors.yellow(
-          '"build.lib.formats" will be ignored because "build.rollupOptions.output" is already an array format.',
+          '"build.lib.formats" will be ignored because "build.rolldownOptions.output" is already an array format.',
         ),
       )
     }
@@ -1047,7 +1066,7 @@ export function resolveBuildOutputs(
         !output.name
       ) {
         throw new Error(
-          'Entries in "build.rollupOptions.output" must specify "name" when the format is "umd" or "iife".',
+          'Entries in "build.rolldownOptions.output" must specify "name" when the format is "umd" or "iife".',
         )
       }
     })
@@ -1089,7 +1108,7 @@ export function onRollupLog(
           `[vite]: Rolldown failed to resolve import "${exporter}" from "${id}".\n` +
             `This is most likely unintended because it can break your application at runtime.\n` +
             `If you do want to externalize this module explicitly add it to\n` +
-            `\`build.rollupOptions.external\``,
+            `\`build.rolldownOptions.external\``,
         )
       }
     }
@@ -1846,14 +1865,15 @@ export async function createBuilder(
       return output
     },
     async runDevTools() {
-      const devtoolsConfig = config.devtools
-      if (devtoolsConfig.enabled) {
+      if (config.devtools.enabled) {
         try {
-          const { start } = await import(`@vitejs/devtools/cli-commands`)
-          await start(devtoolsConfig.config)
+          const { runDevTools } = await import('@vitejs/devtools/integration')
+          await runDevTools(builder)
         } catch (e) {
           config.logger.error(
-            colors.red(`Failed to run Vite DevTools: ${e.message || e.stack}`),
+            colors.red(
+              `Failed to run Vite DevTools: ${e?.message || e?.stack}`,
+            ),
             { error: e },
           )
         }

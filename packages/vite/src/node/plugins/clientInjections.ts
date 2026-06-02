@@ -34,10 +34,13 @@ export function clientInjectionsPlugin(config: ResolvedConfig): Plugin {
 
   return {
     name: 'vite:client-inject',
+    applyToEnvironment(environment) {
+      return !environment.config.isBundled
+    },
     async buildStart() {
       injectConfigValues = await createClientConfigValueReplacer(config)
     },
-    async transform(code, id) {
+    transform(code, id) {
       const ssr = this.environment.config.consumer === 'server'
       const cleanId = cleanUrl(id)
       if (cleanId === normalizedClientEntry || cleanId === normalizedEnvEntry) {
@@ -50,7 +53,7 @@ export function clientInjectionsPlugin(config: ResolvedConfig): Plugin {
         const nodeEnv =
           this.environment.config.define?.['process.env.NODE_ENV'] ||
           JSON.stringify(process.env.NODE_ENV || config.mode)
-        return await replaceDefine(this.environment, code, id, {
+        return replaceDefine(this.environment, code, id, {
           'process.env.NODE_ENV': nodeEnv,
           'global.process.env.NODE_ENV': nodeEnv,
           'globalThis.process.env.NODE_ENV': nodeEnv,
@@ -112,6 +115,9 @@ async function createClientConfigValueReplacer(
   const hmrEnableOverlayReplacement = escapeReplacement(overlay)
   const hmrConfigNameReplacement = escapeReplacement(hmrConfigName)
   const wsTokenReplacement = escapeReplacement(config.webSocketToken)
+  const serverForwardConsoleReplacement = escapeReplacement(
+    config.server.forwardConsole as any,
+  )
   const bundleDevReplacement = escapeReplacement(
     config.experimental.bundledDev || false,
   )
@@ -130,6 +136,7 @@ async function createClientConfigValueReplacer(
       .replace(`__HMR_ENABLE_OVERLAY__`, hmrEnableOverlayReplacement)
       .replace(`__HMR_CONFIG_NAME__`, hmrConfigNameReplacement)
       .replace(`__WS_TOKEN__`, wsTokenReplacement)
+      .replace(`__SERVER_FORWARD_CONSOLE__`, serverForwardConsoleReplacement)
       .replaceAll(`__BUNDLED_DEV__`, bundleDevReplacement)
 }
 

@@ -6,7 +6,7 @@ import type { InlineConfig, PluginOption } from '..'
 import type { UserConfig, UserConfigExport } from '../config'
 import { defineConfig, loadConfigFromFile, resolveConfig } from '../config'
 import { resolveEnvPrefix } from '../env'
-import { mergeConfig } from '../utils'
+import { hasBothRollupOptionsAndRolldownOptions, mergeConfig } from '../utils'
 import { createLogger } from '../logger'
 
 describe('mergeConfig', () => {
@@ -560,6 +560,46 @@ describe('mergeConfig', () => {
     expect(downOutput.hashCharacters).toBe('base36')
   })
 
+  test('hasBothRollupOptionsAndRolldownOptions returns false when only rollupOptions is set', () => {
+    // When mergeConfig is called with only rollupOptions in the override,
+    // setupRollupOptionCompat creates a proxy where rollupOptions === rolldownOptions.
+    // hasBothRollupOptionsAndRolldownOptions should return false in this case
+    // to avoid false positive warnings.
+    const baseConfig = defineConfig({
+      build: {}, // Need existing build object for recursive merge to happen
+    })
+    const newConfig = defineConfig({
+      build: {
+        rollupOptions: {
+          treeshake: false,
+        },
+      },
+    })
+    const mergedConfig: UserConfig = mergeConfig(baseConfig, newConfig)
+
+    expect(mergedConfig.build!.rollupOptions).toBeDefined()
+    expect(mergedConfig.build!.rolldownOptions).toBeDefined()
+    expect(mergedConfig.build!.rollupOptions).toBe(
+      mergedConfig.build!.rolldownOptions,
+    )
+
+    expect(hasBothRollupOptionsAndRolldownOptions(mergedConfig)).toBe(false)
+  })
+
+  test('hasBothRollupOptionsAndRolldownOptions returns true when both are explicitly set to different values', () => {
+    const config = defineConfig({
+      build: {
+        rollupOptions: {
+          treeshake: false,
+        },
+        rolldownOptions: {
+          platform: 'neutral',
+        },
+      },
+    })
+    expect(hasBothRollupOptionsAndRolldownOptions(config)).toBe(true)
+  })
+
   test('rollupOptions/rolldownOptions.platform', async () => {
     const testRollupOptions = await resolveConfig(
       {
@@ -875,7 +915,7 @@ describe('resolveConfig', () => {
     const logger = createLogger('info')
     logger.warn = (str) => {
       expect(str).to.include(
-        'Consider renaming the directory / file to remove the characters',
+        'Consider renaming the directory without the characters',
       )
     }
 
@@ -1048,6 +1088,51 @@ test('config compat 3', async () => {
       "development|production",
     ]
   `)
+})
+
+test('configEnvironment mutation does not leak between environments', async () => {
+  const resolved = await resolveConfig(
+    {
+      environments: {
+        custom1: {},
+        custom2: {},
+      },
+      plugins: [
+        {
+          name: 'test-mutate-env',
+          configEnvironment(name, config) {
+            if (name === 'custom1') {
+              config.resolve ??= {}
+              config.resolve.noExternal = true
+            }
+          },
+        },
+      ],
+    },
+    'serve',
+  )
+
+  expect(resolved.environments.custom1.resolve.noExternal).toBe(true)
+  expect(resolved.environments.custom2.resolve.noExternal).not.toBe(true)
+})
+
+test('build and environments.client.build has the same reference', async () => {
+  const nameCache = {}
+  const resolved = await resolveConfig(
+    {
+      build: {
+        terserOptions: {
+          nameCache,
+        },
+      },
+    },
+    'serve',
+  )
+
+  expect(resolved.build.terserOptions.nameCache).toBe(nameCache)
+  expect(resolved.environments.client.build.terserOptions.nameCache).toBe(
+    resolved.build.terserOptions.nameCache,
+  )
 })
 
 test('preTransformRequests', async () => {

@@ -17,7 +17,7 @@ export default defineConfig({
     target: 'chrome46',
     rollupOptions: {
       output: {
-        legalComments: 'inline',
+        comments: { legal: true },
         banner: `/*!\nMayLib\n*/`,
       },
     },

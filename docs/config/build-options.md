@@ -21,7 +21,7 @@ Note the build will output a warning if the code contains features that cannot b
 - **Type:** `boolean | { polyfill?: boolean, resolveDependencies?: ResolveModulePreloadDependenciesFn }`
 - **Default:** `{ polyfill: true }`
 
-By default, a [module preload polyfill](https://guybedford.com/es-module-preloading-integrity#modulepreload-polyfill) is automatically injected. The polyfill is auto injected into the proxy module of each `index.html` entry. If the build is configured to use a non-HTML custom entry via `build.rollupOptions.input`, then it is necessary to manually import the polyfill in your custom entry:
+By default, a [module preload polyfill](https://guybedford.com/es-module-preloading-integrity#modulepreload-polyfill) is automatically injected. The polyfill is auto injected into the proxy module of each `index.html` entry. If the build is configured to use a non-HTML custom entry via `build.rolldownOptions.input`, then it is necessary to manually import the polyfill in your custom entry:
 
 ```js
 import 'vite/modulepreload-polyfill'
@@ -130,7 +130,7 @@ In this case, you need to set `build.cssTarget` to `chrome61` to prevent vite fr
 ## build.cssMinify
 
 - **Type:** `boolean | 'lightningcss' | 'esbuild'`
-- **Default:** the same as [`build.minify`](#build-minify) for client, `'lightningcss'` for SSR
+- **Default:** `'lightningcss'`, but `false` if [`build.minify`](#build-minify) is disabled for client build
 
 This option allows users to override CSS minification specifically instead of defaulting to `build.minify`, so you can configure minification for JS and CSS separately. Vite uses [Lightning CSS](https://lightningcss.dev/minification.html) by default to minify CSS. It can be configured using [`css.lightningcss`](./shared-options.md#css-lightningcss). Set the option to `'esbuild'` to use esbuild instead.
 
@@ -280,7 +280,7 @@ When the value is a string, it will be used as the manifest file path relative t
 - **Default:** `false`
 - **Related:** [Server-Side Rendering](/guide/ssr)
 
-Produce SSR-oriented build. The value can be a string to directly specify the SSR entry, or `true`, which requires specifying the SSR entry via `rollupOptions.input`.
+Produce SSR-oriented build. The value can be a string to directly specify the SSR entry, or `true`, which requires specifying the SSR entry via `rolldownOptions.input`.
 
 ## build.emitAssets
 

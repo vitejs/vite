@@ -1,3 +1,4 @@
+import { nanoid } from 'nanoid/non-secure'
 import type {
   DevRuntime as DevRuntimeType,
   Messenger,
@@ -10,7 +11,9 @@ import {
   normalizeModuleRunnerTransport,
 } from '../shared/moduleRunnerTransport'
 import { createHMRHandler } from '../shared/hmrHandler'
+import { setupForwardConsoleHandler } from '../shared/forwardConsole'
 import { ErrorOverlay, cspNonce, overlayId } from './overlay'
+// @ts-expect-error internal virtual module
 import '@vite/env'
 
 // injected by the hmr plugin when served
@@ -24,6 +27,7 @@ declare const __HMR_BASE__: string
 declare const __HMR_TIMEOUT__: number
 declare const __HMR_ENABLE_OVERLAY__: boolean
 declare const __WS_TOKEN__: string
+declare const __SERVER_FORWARD_CONSOLE__: any
 declare const __BUNDLED_DEV__: boolean
 
 console.debug('[vite] connecting...')
@@ -43,6 +47,7 @@ const base = __BASE__ || '/'
 const hmrTimeout = __HMR_TIMEOUT__
 const wsToken = __WS_TOKEN__
 const isBundleMode = __BUNDLED_DEV__
+const forwardConsole = __SERVER_FORWARD_CONSOLE__
 
 const transport = normalizeModuleRunnerTransport(
   (() => {
@@ -195,6 +200,8 @@ const hmrClient = new HMRClient(
       },
 )
 transport.connect!(createHMRHandler(handleMessage))
+
+setupForwardConsoleHandler(transport, forwardConsole)
 
 async function handleMessage(payload: HotPayload) {
   switch (payload.type) {
@@ -390,7 +397,7 @@ function waitForSuccessfulPing(socketUrl: string) {
       document.removeEventListener('visibilitychange', onVisibilityChange)
       sharedWorker.port.close()
 
-      const data: { type: 'success' } | { type: 'error'; error: unknown } =
+      const data: { type: 'success' } | { type: 'error'; error: Error } =
         event.data
       if (data.type === 'error') {
         reject(data.error)
@@ -637,6 +644,15 @@ if (isBundleMode && typeof DevRuntime !== 'undefined') {
     }
   }
 
+  const clientId = nanoid()
+
+  // notify client id
+  transport.send({
+    type: 'custom',
+    event: 'vite:module-loaded',
+    data: { modules: [], clientId },
+  })
+
   const wrappedSocket: Messenger = {
     send(message) {
       switch (message.type) {
@@ -645,7 +661,7 @@ if (isBundleMode && typeof DevRuntime !== 'undefined') {
             type: 'custom',
             event: 'vite:module-loaded',
             // clone array as the runtime reuses the array instance
-            data: { modules: message.modules.slice() },
+            data: { modules: message.modules.slice(), clientId },
           })
           break
         }
@@ -656,5 +672,6 @@ if (isBundleMode && typeof DevRuntime !== 'undefined') {
   }
   ;(globalThis as any).__rolldown_runtime__ ??= new ViteDevRuntime(
     wrappedSocket,
+    clientId,
   )
 }
