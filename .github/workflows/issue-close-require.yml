@@ -9,11 +9,16 @@ jobs:
     if: github.repository == 'vitejs/vite'
     runs-on: ubuntu-slim
     permissions:
-      issues: write # for actions-cool/issues-helper to update issues
-      pull-requests: write # for actions-cool/issues-helper to update PRs
+      contents: read # to check out the repo for local actions
+      issues: write # for actions/issues-helper to update issues
+      pull-requests: write # for actions/issues-helper to update PRs
     steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
+        with:
+          persist-credentials: false
+
       - name: needs reproduction
-        uses: actions-cool/issues-helper@200c78641dbf33838311e5a1e0c31bbdb92d7cf0 # v3
+        uses: ./.github/actions/issues-helper
         with:
           actions: "close-issues"
           token: ${{ secrets.GITHUB_TOKEN }}
