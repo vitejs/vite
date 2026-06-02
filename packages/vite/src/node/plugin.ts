@@ -66,7 +66,7 @@ export interface PluginContextExtension {
   environment: Environment
 }
 
-export interface PluginContextMetaExtension {
+interface PluginContextMetaExtension {
   viteVersion: string
 }
 

@@ -189,7 +189,7 @@ export function defineConfig(config: UserConfigExport): UserConfigExport {
   return config
 }
 
-export interface CreateDevEnvironmentContext {
+interface CreateDevEnvironmentContext {
   ws: WebSocketServer
 }
 
@@ -285,7 +285,7 @@ type AllResolveOptions = ResolveOptions & {
 
 type ResolvedAllResolveOptions = Required<ResolveOptions> & { alias: Alias[] }
 
-export interface SharedEnvironmentOptions {
+interface SharedEnvironmentOptions {
   /**
    * Define global variable replacements.
    * Entries will be defined on `window` during dev and replaced during build.
@@ -333,7 +333,7 @@ export interface EnvironmentOptions extends SharedEnvironmentOptions {
   build?: BuildEnvironmentOptions
 }
 
-export type ResolvedResolveOptions = Required<ResolveOptions>
+type ResolvedResolveOptions = Required<ResolveOptions>
 
 export type ResolvedEnvironmentOptions = {
   define?: Record<string, any>
@@ -349,7 +349,7 @@ export type ResolvedEnvironmentOptions = {
   optimizeDepsPluginNames: string[]
 }
 
-export type DefaultEnvironmentOptions = Omit<
+type DefaultEnvironmentOptions = Omit<
   EnvironmentOptions,
   'consumer' | 'resolve' | 'keepProcessEnv'
 > & {
@@ -765,7 +765,7 @@ export interface ResolvedConfig extends Readonly<
   } & PluginHookUtils
 > {}
 
-export async function resolveDevToolsConfig(
+async function resolveDevToolsConfig(
   config: DevToolsConfig | boolean | undefined,
   host: string | boolean | undefined,
   logger: Logger,
@@ -907,7 +907,7 @@ const configDefaults = Object.freeze({
   appType: 'spa',
 } satisfies UserConfig)
 
-export function resolveDevEnvironmentOptions(
+function resolveDevEnvironmentOptions(
   dev: DevEnvironmentOptions | undefined,
   environmentName: string | undefined,
   consumer: 'client' | 'server' | undefined,
@@ -1021,9 +1021,7 @@ function resolveEnvironmentOptions(
   }
 }
 
-export function getDefaultEnvironmentOptions(
-  config: UserConfig,
-): EnvironmentOptions {
+function getDefaultEnvironmentOptions(config: UserConfig): EnvironmentOptions {
   return {
     define: config.define,
     resolve: {
@@ -2216,7 +2214,7 @@ assetFileNames isn't equal for every build.rolldownOptions.output. A single patt
  * Resolve base url. Note that some users use Vite to build for non-web targets like
  * electron or expects to deploy
  */
-export function resolveBaseUrl(
+function resolveBaseUrl(
   base: UserConfig['base'] = configDefaults.base,
   isBuild: boolean,
   logger: Logger,

@@ -2004,9 +2004,9 @@ type CssUrlReplacer = (
 // https://drafts.csswg.org/css-syntax-3/#identifier-code-point
 export const cssUrlRE: RegExp =
   /(?<!@import\s+)(?<=^|[^\w\-\u0080-\uffff])url\((\s*('[^']+'|"[^"]+")\s*|(?:\\.|[^'")\\])+)\)/
-export const cssDataUriRE: RegExp =
+const cssDataUriRE: RegExp =
   /(?<=^|[^\w\-\u0080-\uffff])data-uri\((\s*('[^']+'|"[^"]+")\s*|[^'")]+)\)/
-export const importCssRE: RegExp =
+const importCssRE: RegExp =
   /@import\s+(?:url\()?('[^']+\.css'|"[^"]+\.css"|[^'"\s)]+\.css)/
 // Assuming a function name won't be longer than 256 chars
 // eslint-disable-next-line regexp/no-unused-capturing-group -- doesn't detect asyncReplace usage
@@ -2402,7 +2402,7 @@ type StylePreprocessor<Options extends StylePreprocessorInternalOptions> = {
   close: () => void | Promise<void>
 }
 
-export interface StylePreprocessorResults {
+interface StylePreprocessorResults {
   code: string
   map?: ExistingRawSourceMap | undefined
   additionalMap?: ExistingRawSourceMap | undefined

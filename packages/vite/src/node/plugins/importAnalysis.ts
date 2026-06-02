@@ -84,7 +84,7 @@ const debug = createDebugger('vite:import-analysis')
 const clientDir = normalizePath(CLIENT_DIR)
 
 const skipRE = /\.(?:map|json)(?:$|\?)/
-export const canSkipImportAnalysis = (id: string): boolean =>
+const canSkipImportAnalysis = (id: string): boolean =>
   skipRE.test(id) || isDirectCSSRequest(id)
 
 const optimizedDepChunkRE = /\/chunk-[A-Z\d]{8}\.js/
@@ -885,7 +885,7 @@ function mergeAcceptedUrls<T>(orderedUrls: Array<Set<T> | undefined>) {
   return acceptedUrls
 }
 
-export function createParseErrorInfo(
+function createParseErrorInfo(
   importer: string,
   source: string,
 ): { message: string; showCodeFrame: boolean } {
@@ -929,7 +929,7 @@ const interopHelper = (m: any, n: boolean) =>
     : m
 const interopHelperStr = interopHelper.toString().replaceAll('\n', '')
 
-export function interopNamedImports(
+function interopNamedImports(
   str: MagicString,
   importSpecifier: ImportSpecifier,
   rewrittenUrl: string,

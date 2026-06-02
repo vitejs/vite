@@ -903,7 +903,7 @@ export async function tryOptimizedResolve(
   }
 }
 
-export function resolvePackageEntry(
+function resolvePackageEntry(
   id: string,
   { dir, data, setResolvedCache, getResolvedCache }: PackageData,
   options: InternalResolveOptions,

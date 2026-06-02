@@ -4,7 +4,7 @@ import {
   SendBeforeConnectError,
 } from './moduleRunnerTransport'
 
-export type ForwardConsoleLogLevel =
+type ForwardConsoleLogLevel =
   | 'error'
   | 'warn'
   | 'info'

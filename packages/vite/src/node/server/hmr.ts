@@ -369,9 +369,7 @@ export const normalizeHotChannel = (
   }
 }
 
-export function getSortedPluginsByHotUpdateHook(
-  plugins: readonly Plugin[],
-): Plugin[] {
+function getSortedPluginsByHotUpdateHook(plugins: readonly Plugin[]): Plugin[] {
   const sortedPlugins: Plugin[] = []
   // Use indexes to track and insert the ordered plugins directly in the
   // resulting array to avoid creating 3 extra temporary arrays per hook
@@ -1152,7 +1150,7 @@ async function readModifiedFile(file: string): Promise<string> {
   }
 }
 
-export type ServerHotChannelApi = {
+type ServerHotChannelApi = {
   innerEmitter: EventEmitter
   outsideEmitter: EventEmitter
 }

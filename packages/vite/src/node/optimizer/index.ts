@@ -955,7 +955,7 @@ function getDepsCacheSuffix(environment: Environment): string {
   return environment.name === 'client' ? '' : `_${environment.name}`
 }
 
-export function getDepsCacheDir(environment: Environment): string {
+function getDepsCacheDir(environment: Environment): string {
   return getDepsCacheDirPrefix(environment) + getDepsCacheSuffix(environment)
 }
 
@@ -1419,7 +1419,7 @@ export async function optimizedDepNeedsInterop(
 }
 
 const MAX_TEMP_DIR_AGE_MS = 24 * 60 * 60 * 1000
-export async function cleanupDepsCacheStaleDirs(
+async function cleanupDepsCacheStaleDirs(
   config: ResolvedConfig,
 ): Promise<void> {
   try {

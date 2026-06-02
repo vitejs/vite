@@ -48,8 +48,8 @@ export const assetUrlRE: RegExp = /__VITE_ASSET__([\w$]+)__(?:\$_(.*?)__)?/g
 
 const jsSourceMapRE = /\.[cm]?js\.map$/
 
-export const noInlineRE: RegExp = /[?&]no-inline\b/
-export const inlineRE: RegExp = /[?&]inline\b/
+const noInlineRE: RegExp = /[?&]no-inline\b/
+const inlineRE: RegExp = /[?&]inline\b/
 
 const assetCache = new WeakMap<Environment, Map<string, string>>()
 
@@ -60,7 +60,7 @@ export const cssEntriesMap: WeakMap<
 > = new WeakMap()
 
 // add own dictionary entry by directly assigning mrmime
-export function registerCustomMime(): void {
+function registerCustomMime(): void {
   // https://github.com/lukeed/mrmime/issues/3
   // instead of `image/vnd.microsoft.icon` which is registered on IANA Media Types DB
   // image/x-icon should be used instead for better compatibility (https://github.com/h5bp/html5-boilerplate/issues/219)
@@ -330,7 +330,7 @@ export async function fileToUrl(
   }
 }
 
-export async function fileToDevUrl(
+async function fileToDevUrl(
   environment: Environment,
   id: string,
   asFileUrl = false,
