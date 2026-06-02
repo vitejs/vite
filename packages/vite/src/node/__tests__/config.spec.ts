@@ -313,26 +313,26 @@ describe('mergeConfig', () => {
     ).toThrowError('Cannot merge config in form of callback')
   })
 
-  test('handles `rollupOptions`', () => {
+  test('handles `rolldownOptions`', () => {
     const baseConfig = defineConfig({
       build: {
-        rollupOptions: {
+        rolldownOptions: {
           treeshake: false,
         },
       },
       worker: {
-        rollupOptions: {
+        rolldownOptions: {
           treeshake: false,
         },
       },
       optimizeDeps: {
-        rollupOptions: {
+        rolldownOptions: {
           treeshake: false,
         },
       },
       ssr: {
         optimizeDeps: {
-          rollupOptions: {
+          rolldownOptions: {
             treeshake: false,
           },
         },
@@ -341,21 +341,21 @@ describe('mergeConfig', () => {
 
     const newConfig = defineConfig({
       build: {
-        rollupOptions: {
+        rolldownOptions: {
           output: {
             minifyInternalExports: true,
           },
         },
       },
       worker: {
-        rollupOptions: {
+        rolldownOptions: {
           output: {
             minifyInternalExports: true,
           },
         },
       },
       optimizeDeps: {
-        rollupOptions: {
+        rolldownOptions: {
           output: {
             minifyInternalExports: true,
           },
@@ -363,7 +363,7 @@ describe('mergeConfig', () => {
       },
       ssr: {
         optimizeDeps: {
-          rollupOptions: {
+          rolldownOptions: {
             output: {
               minifyInternalExports: true,
             },
