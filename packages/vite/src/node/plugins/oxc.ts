@@ -4,7 +4,10 @@ import type {
   TransformResult as OxcTransformResult,
 } from 'rolldown/utils'
 import { transformSync } from 'rolldown/utils'
-import { viteTransformPlugin as nativeTransformPlugin } from 'rolldown/experimental'
+import {
+  viteTransformPlugin as nativeTransformPlugin,
+  resolveTsconfig,
+} from 'rolldown/experimental'
 import type { RolldownError, RolldownLog, SourceMap } from 'rolldown'
 import colors from 'picocolors'
 import type { FSWatcher } from '#dep-types/chokidar'
@@ -159,17 +162,18 @@ export async function transformWithOxc(
     resolvedOptions,
     getTSConfigResolutionCache(config),
   )
-  if (
-    watcher &&
-    config &&
-    result.tsconfigFilePaths &&
-    result.tsconfigFilePaths.length > 0
-  ) {
-    const sourceFile = cleanUrl(filename)
-    for (const tsconfigFile of result.tsconfigFilePaths) {
-      const normalizedTsconfigFile = normalizePath(tsconfigFile)
-      ensureWatchedFile(watcher, normalizedTsconfigFile, config.root)
-      registerTsconfigDependency(config, normalizedTsconfigFile, sourceFile)
+  if (watcher && config && (lang === 'ts' || lang === 'tsx')) {
+    const tsconfigResult = resolveTsconfig(
+      cleanUrl(filename),
+      getTSConfigResolutionCache(config),
+    )
+    if (tsconfigResult) {
+      const sourceFile = cleanUrl(filename)
+      for (const tsconfigFile of tsconfigResult.tsconfigFilePaths) {
+        const normalizedTsconfigFile = normalizePath(tsconfigFile)
+        ensureWatchedFile(watcher, normalizedTsconfigFile, config.root)
+        registerTsconfigDependency(config, normalizedTsconfigFile, sourceFile)
+      }
     }
   }
 
