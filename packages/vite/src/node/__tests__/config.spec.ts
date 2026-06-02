@@ -1426,16 +1426,24 @@ describe('resolveServerOptions', () => {
     delete process.env.__VITE_ADDITIONAL_SERVER_ALLOWED_HOSTS
   })
 
-  test('adds single host from __VITE_ADDITIONAL_SERVER_ALLOWED_HOSTS', () => {
+  test('adds single host from __VITE_ADDITIONAL_SERVER_ALLOWED_HOSTS', async () => {
     process.env.__VITE_ADDITIONAL_SERVER_ALLOWED_HOSTS = 'example.com'
-    const resolved = resolveServerOptions('/root', { allowedHosts: [] }, logger)
+    const resolved = await resolveServerOptions(
+      '/root',
+      { allowedHosts: [] },
+      logger,
+    )
     expect(resolved.allowedHosts).toEqual(['example.com'])
   })
 
-  test('adds multiple hosts from __VITE_ADDITIONAL_SERVER_ALLOWED_HOSTS', () => {
+  test('adds multiple hosts from __VITE_ADDITIONAL_SERVER_ALLOWED_HOSTS', async () => {
     process.env.__VITE_ADDITIONAL_SERVER_ALLOWED_HOSTS =
       'example.com,test.com,dev.example.org'
-    const resolved = resolveServerOptions('/root', { allowedHosts: [] }, logger)
+    const resolved = await resolveServerOptions(
+      '/root',
+      { allowedHosts: [] },
+      logger,
+    )
     expect(resolved.allowedHosts).toEqual([
       'example.com',
       'test.com',
@@ -1443,10 +1451,14 @@ describe('resolveServerOptions', () => {
     ])
   })
 
-  test('trims whitespace from hosts in __VITE_ADDITIONAL_SERVER_ALLOWED_HOSTS', () => {
+  test('trims whitespace from hosts in __VITE_ADDITIONAL_SERVER_ALLOWED_HOSTS', async () => {
     process.env.__VITE_ADDITIONAL_SERVER_ALLOWED_HOSTS =
       ' example.com , test.com , dev.example.org '
-    const resolved = resolveServerOptions('/root', { allowedHosts: [] }, logger)
+    const resolved = await resolveServerOptions(
+      '/root',
+      { allowedHosts: [] },
+      logger,
+    )
     expect(resolved.allowedHosts).toEqual([
       'example.com',
       'test.com',
@@ -1454,16 +1466,20 @@ describe('resolveServerOptions', () => {
     ])
   })
 
-  test('filters empty hosts from __VITE_ADDITIONAL_SERVER_ALLOWED_HOSTS', () => {
+  test('filters empty hosts from __VITE_ADDITIONAL_SERVER_ALLOWED_HOSTS', async () => {
     process.env.__VITE_ADDITIONAL_SERVER_ALLOWED_HOSTS =
       'example.com,,test.com,,'
-    const resolved = resolveServerOptions('/root', { allowedHosts: [] }, logger)
+    const resolved = await resolveServerOptions(
+      '/root',
+      { allowedHosts: [] },
+      logger,
+    )
     expect(resolved.allowedHosts).toEqual(['example.com', 'test.com'])
   })
 
-  test('appends to existing allowedHosts', () => {
+  test('appends to existing allowedHosts', async () => {
     process.env.__VITE_ADDITIONAL_SERVER_ALLOWED_HOSTS = 'new.com,another.com'
-    const resolved = resolveServerOptions(
+    const resolved = await resolveServerOptions(
       '/root',
       { allowedHosts: ['existing.com'] },
       logger,
@@ -1475,9 +1491,9 @@ describe('resolveServerOptions', () => {
     ])
   })
 
-  test('does not modify allowedHosts when set to true', () => {
+  test('does not modify allowedHosts when set to true', async () => {
     process.env.__VITE_ADDITIONAL_SERVER_ALLOWED_HOSTS = 'example.com'
-    const resolved = resolveServerOptions(
+    const resolved = await resolveServerOptions(
       '/root',
       { allowedHosts: true },
       logger,
