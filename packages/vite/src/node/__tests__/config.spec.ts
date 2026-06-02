@@ -9,6 +9,7 @@ import { resolveServerOptions } from '../server'
 import { resolveEnvPrefix } from '../env'
 import { hasBothRollupOptionsAndRolldownOptions, mergeConfig } from '../utils'
 import { createLogger } from '../logger'
+import type { Logger } from '../logger'
 
 describe('mergeConfig', () => {
   test('handles configs with different alias schemas', () => {
@@ -1420,7 +1421,8 @@ describe('loadConfigFromFile', () => {
 })
 
 describe('resolveServerOptions', () => {
-  const logger = createLogger()
+  const warnFn = vi.fn()
+  const logger = { warn: warnFn } as unknown as Logger
 
   afterEach(() => {
     delete process.env.__VITE_ADDITIONAL_SERVER_ALLOWED_HOSTS
@@ -1499,5 +1501,24 @@ describe('resolveServerOptions', () => {
       logger,
     )
     expect(resolved.allowedHosts).toBe(true)
+  })
+
+  test('throw an error if it contains `"` or `\'` or `\\`', async () => {
+    const envs = ['"example.com"', "'example.com'", '\\example.com']
+    for (const env of envs) {
+      process.env.__VITE_ADDITIONAL_SERVER_ALLOWED_HOSTS = env
+      const resolved = await resolveServerOptions(
+        '/root',
+        { allowedHosts: [] },
+        logger,
+      )
+      expect(resolved.allowedHosts).toEqual([])
+      expect(warnFn).toHaveBeenCalledWith(
+        expect.stringContaining(
+          'Skipping additional allowed hosts from environment variable due to reserved characters',
+        ),
+      )
+      warnFn.mockClear()
+    }
   })
 })
