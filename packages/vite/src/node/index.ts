@@ -231,6 +231,7 @@ export type {
 } from './server/transformRequest'
 export type {
   HmrOptions,
+  WsOptions,
   HmrContext,
   HotUpdateOptions,
   HotChannelListener,
