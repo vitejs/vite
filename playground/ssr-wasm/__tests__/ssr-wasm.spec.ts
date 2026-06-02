@@ -44,11 +44,11 @@ test('direct wasm import', async () => {
 test.runIf(isBuild)(
   'direct wasm import should contain and reference wasm file',
   async () => {
-    const assets = await listAssets()
+    const assets = listAssets()
     const addWasm = assets.find((f) => /add-.+\.wasm$/.test(f))
     expect(addWasm).toBeDefined()
 
-    const directAdd = await findAssetFile(/^direct-add-.+\.js$/)
+    const directAdd = findAssetFile(/^direct-add-.+\.js$/)
     expect(directAdd).toContain(addWasm)
     expect(directAdd).not.toContain('data:application/wasm;base64,')
   },

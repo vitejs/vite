@@ -191,15 +191,15 @@ async function parseWasm(wasmFilePath: string): Promise<WasmInfo> {
   try {
     const wasmBinary = await fsp.readFile(wasmFilePath)
     const wasmModule = await WebAssembly.compile(wasmBinary)
-    const imports = Object.entries(
-      WebAssembly.Module.imports(wasmModule).reduce(
-        (result, item) => ({
-          ...result,
-          [item.module]: [...(result[item.module] || []), item.name],
-        }),
-        {} as Record<string, string[]>,
-      ),
-    ).map(([from, names]) => ({ from, names }))
+    const importMap: Record<string, string[]> = Object.create(null)
+    for (const item of WebAssembly.Module.imports(wasmModule)) {
+      importMap[item.module] ??= []
+      importMap[item.module].push(item.name)
+    }
+    const imports = Object.entries(importMap).map(([from, names]) => ({
+      from,
+      names,
+    }))
 
     const exports = WebAssembly.Module.exports(wasmModule).map(
       (item) => item.name,
@@ -238,15 +238,13 @@ function generateGlueCode(
 
   const initCode = `const __vite__wasmModule = (await ${names.initWasm}(${codegenSimpleObject(importObject)}, ${names.wasmUrl})).exports;`
 
-  const exportStatements: string[] = []
-
   if (wasmInfo.exports.length === 0) {
     return [...importStatements, initCode].join('\n')
   }
 
+  const exportStatements: string[] = []
   const nameMap = new Map<string, string>()
-
-  wasmInfo.exports.forEach((name, index) => {
+  for (const [index, name] of wasmInfo.exports.entries()) {
     if (isValidJsDeclareName(name)) {
       exportStatements.push(`  ${name},`)
     } else {
@@ -254,20 +252,20 @@ function generateGlueCode(
       exportStatements.push(`  ${JSON.stringify(name)}: ${placeholderName},`)
       nameMap.set(name, placeholderName)
     }
-  })
+  }
 
   if (nameMap.size > 0) {
     exportStatements.unshift(`const {`)
     exportStatements.push(`} = __vite__wasmModule;`)
     exportStatements.push(`export {`)
-    wasmInfo.exports.forEach((name) => {
+    for (const name of wasmInfo.exports) {
       const localName = nameMap.get(name)
       if (localName) {
         exportStatements.push(`  ${localName} as ${JSON.stringify(name)},`)
       } else {
         exportStatements.push(`  ${name},`)
       }
-    })
+    }
     exportStatements.push(`};`)
   } else {
     exportStatements.unshift(`export const {`)
