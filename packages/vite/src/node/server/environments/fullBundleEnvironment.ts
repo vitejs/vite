@@ -1,4 +1,3 @@
-import { randomUUID } from 'node:crypto'
 import { setTimeout } from 'node:timers/promises'
 import {
   type BindingClientHmrUpdate,
@@ -13,8 +12,8 @@ import { getHmrImplementation } from '../../plugins/clientInjections'
 import { DevEnvironment, type DevEnvironmentContext } from '../environment'
 import type { ResolvedConfig } from '../../config'
 import type { ViteDevServer } from '../../server'
-import { createDebugger } from '../../utils'
-import { type NormalizedHotChannelClient, getShortName } from '../hmr'
+import { createDebugger, formatAndTruncateFileList } from '../../utils'
+import { type NormalizedHotChannelClient, debugHmr, getShortName } from '../hmr'
 import { prepareError } from '../middlewares/error'
 
 const debug = createDebugger('vite:full-bundle-mode')
@@ -61,6 +60,7 @@ export class MemoryFiles {
 
 export class FullBundleDevEnvironment extends DevEnvironment {
   private devEngine!: DevEngine
+  private initialBuildCompleted = false
   private clients = new Clients()
   private invalidateCalledModules = new Map<
     NormalizedHotChannelClient,
@@ -91,23 +91,23 @@ export class FullBundleDevEnvironment extends DevEnvironment {
     this.hot.listen()
 
     debug?.('INITIAL: setup bundle options')
-    const rollupOptions = await this.getRolldownOptions()
+    const rolldownOptions = await this.getRolldownOptions()
     // NOTE: only single outputOptions is supported here
     if (
-      Array.isArray(rollupOptions.output) &&
-      rollupOptions.output.length > 1
+      Array.isArray(rolldownOptions.output) &&
+      rolldownOptions.output.length > 1
     ) {
       throw new Error('multiple output options are not supported in dev mode')
     }
     const outputOptions = (
-      Array.isArray(rollupOptions.output)
-        ? rollupOptions.output[0]
-        : rollupOptions.output
+      Array.isArray(rolldownOptions.output)
+        ? rolldownOptions.output[0]
+        : rolldownOptions.output
     )!
 
     this.hot.on('vite:module-loaded', (payload, client) => {
-      const clientId = this.clients.setupIfNeeded(client)
-      this.devEngine.registerModules(clientId, payload.modules)
+      this.clients.setupIfNeeded(client, payload.clientId)
+      this.devEngine.registerModules(payload.clientId, payload.modules)
     })
     this.hot.on('vite:client:disconnect', (_payload, client) => {
       const clientId = this.clients.delete(client)
@@ -116,7 +116,7 @@ export class FullBundleDevEnvironment extends DevEnvironment {
       }
     })
 
-    this.devEngine = await dev(rollupOptions, outputOptions, {
+    this.devEngine = await dev(rolldownOptions, outputOptions, {
       onHmrUpdates: (result) => {
         if (result instanceof Error) {
           // TODO: send to the specific client
@@ -156,7 +156,7 @@ export class FullBundleDevEnvironment extends DevEnvironment {
           return
         }
 
-        // NOTE: don't clear memoryFiles here as incremental build re-uses the files
+        // NOTE: don't clear memoryFiles here as incremental build reuses the files
         for (const outputFile of result.output) {
           this.memoryFiles.set(outputFile.fileName, () => {
             const source =
@@ -184,6 +184,7 @@ export class FullBundleDevEnvironment extends DevEnvironment {
     this.waitForInitialBuildFinish().then(() => {
       debug?.('INITIAL: build done')
       this.hot.send({ type: 'full-reload', path: '*' })
+      this.initialBuildCompleted = true
     })
   }
 
@@ -260,7 +261,9 @@ export class FullBundleDevEnvironment extends DevEnvironment {
   async triggerBundleRegenerationIfStale(): Promise<boolean> {
     const bundleState = await this.devEngine.getBundleState()
     const shouldTrigger =
-      bundleState.hasStaleOutput && !bundleState.lastFullBuildFailed
+      bundleState.hasStaleOutput &&
+      !bundleState.lastFullBuildFailed &&
+      this.initialBuildCompleted
     if (shouldTrigger) {
       this.devEngine.ensureLatestBuildOutput().then(() => {
         this.debouncedFullReload()
@@ -270,9 +273,23 @@ export class FullBundleDevEnvironment extends DevEnvironment {
     return shouldTrigger
   }
 
+  async triggerLazyBundling(
+    moduleId: string | null,
+    clientId: string | null,
+  ): Promise<string | undefined> {
+    if (!moduleId || !clientId) {
+      return
+    }
+    debug?.(
+      `TRIGGER-LAZY: trigger lazy bundling for module ${moduleId} for client ${clientId}`,
+    )
+    return await this.devEngine.compileEntry(moduleId, clientId)
+  }
+
   override async close(): Promise<void> {
     this.memoryFiles.clear()
     await Promise.all([super.close(), this.devEngine.close()])
+    this.initialBuildCompleted = false
   }
 
   private async getRolldownOptions() {
@@ -280,13 +297,17 @@ export class FullBundleDevEnvironment extends DevEnvironment {
     const rolldownOptions = resolveRolldownOptions(this, chunkMetadataMap)
     rolldownOptions.experimental ??= {}
     rolldownOptions.experimental.devMode = {
+      lazy: true,
+      ...(typeof rolldownOptions.experimental.devMode === 'object'
+        ? rolldownOptions.experimental.devMode
+        : {}),
       implement: await getHmrImplementation(this.getTopLevelConfig()),
     }
 
-    if (rolldownOptions.optimization) {
-      // disable inlineConst optimization due to a bug in Rolldown
-      rolldownOptions.optimization.inlineConst = false
-    }
+    // disable inlineConst optimization due to a bug in Rolldown
+    // https://github.com/vitejs/vite/issues/21843
+    rolldownOptions.optimization ??= {}
+    rolldownOptions.optimization.inlineConst = false
 
     // set filenames to make output paths predictable so that `renderChunk` hook does not need to be used
     if (Array.isArray(rolldownOptions.output)) {
@@ -339,7 +360,16 @@ export class FullBundleDevEnvironment extends DevEnvironment {
       code: typeof hmrOutput.code === 'string' ? '[code]' : hmrOutput.code,
     })
 
-    this.memoryFiles.set(hmrOutput.filename, { source: hmrOutput.code })
+    this.memoryFiles.set(hmrOutput.filename, {
+      // ensure that the generated hmr patch contains ESM syntax
+      // this is to avoid attacks like GHSA-4v9v-hfq4-rm2v
+      // https://github.com/webpack/webpack-dev-server/security/advisories/GHSA-4v9v-hfq4-rm2v
+      // https://green.sapphi.red/blog/local-server-security-best-practices#_2-using-xssi-and-modifying-the-prototype
+      // https://green.sapphi.red/blog/local-server-security-best-practices#properly-check-the-request-origin
+      // we can also use `Cross-Origin Resource Policy` header instead of this
+      // but we cannot use `Sec-Fetch-*` headers as they are only sent to potentially-trustworthy origins
+      source: hmrOutput.code + '\n; export {}',
+    })
     if (hmrOutput.sourcemapFilename && hmrOutput.sourcemap) {
       this.memoryFiles.set(hmrOutput.sourcemapFilename, {
         source: hmrOutput.sourcemap,
@@ -359,11 +389,13 @@ export class FullBundleDevEnvironment extends DevEnvironment {
       type: 'update',
       updates,
     })
-    this.logger.info(
-      colors.green(`hmr update `) +
-        colors.dim([...new Set(updates.map((u) => u.path))].join(', ')),
-      { clear: !invalidateInformation, timestamp: true },
-    )
+    const filePaths = [...new Set(updates.map((u) => u.path))]
+    const { formatted, truncated } = formatAndTruncateFileList(filePaths)
+    if (truncated) debugHmr?.(`hmr update ${filePaths.join(', ')}`)
+    this.logger.info(colors.green(`hmr update `) + colors.dim(formatted), {
+      clear: !invalidateInformation,
+      timestamp: true,
+    })
   }
 }
 
@@ -371,14 +403,15 @@ class Clients {
   private clientToId = new Map<NormalizedHotChannelClient, string>()
   private idToClient = new Map<string, NormalizedHotChannelClient>()
 
-  setupIfNeeded(client: NormalizedHotChannelClient): string {
+  setupIfNeeded(client: NormalizedHotChannelClient, clientId: string) {
     const id = this.clientToId.get(client)
-    if (id) return id
-
-    const newId = randomUUID()
-    this.clientToId.set(client, newId)
-    this.idToClient.set(newId, client)
-    return newId
+    if (id && id !== clientId) {
+      throw new Error(
+        'client ID conflict detected. Please restart the dev server.',
+      )
+    }
+    this.clientToId.set(client, clientId)
+    this.idToClient.set(clientId, client)
   }
 
   get(id: string): NormalizedHotChannelClient | undefined {

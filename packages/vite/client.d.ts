@@ -1,5 +1,8 @@
 /// <reference path="./types/importMeta.d.ts" />
 
+// virtual modules
+declare module 'vite/modulepreload-polyfill' {}
+
 // CSS modules
 type CSSModuleClasses = { readonly [key: string]: string }
 

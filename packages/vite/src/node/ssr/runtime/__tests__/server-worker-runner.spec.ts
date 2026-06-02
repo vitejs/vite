@@ -1,4 +1,5 @@
 import { BroadcastChannel, Worker } from 'node:worker_threads'
+import path from 'node:path'
 import { describe, expect, it, onTestFinished } from 'vitest'
 import type { HotChannel, HotChannelListener, HotPayload } from 'vite'
 import { DevEnvironment } from '../../..'
@@ -111,5 +112,49 @@ describe('running module runner inside a worker', () => {
       }
       channel.postMessage({ id: './fixtures/default-string.ts' })
     })
+  })
+
+  it('server.fs check is applied to the custom transport by default', async () => {
+    const worker = new Worker(
+      new URL('./fixtures/worker.mjs', import.meta.url),
+      { stdout: true },
+    )
+    await new Promise<void>((resolve, reject) => {
+      worker.on('message', () => resolve())
+      worker.on('error', reject)
+    })
+    const server = await createServer({
+      root: import.meta.dirname,
+      logLevel: 'error',
+      server: {
+        middlewareMode: true,
+        watch: null,
+        hmr: {
+          port: 9609,
+        },
+        fs: {
+          allow: [path.resolve(import.meta.dirname, './fixtures')],
+        },
+      },
+      environments: {
+        worker: {
+          dev: {
+            createEnvironment: (name, config) => {
+              return new DevEnvironment(name, config, {
+                hot: false,
+                transport: createWorkerTransport(worker),
+              })
+            },
+          },
+        },
+      },
+    })
+    onTestFinished(async () => {
+      await Promise.allSettled([server.close(), worker.terminate()])
+    })
+
+    await expect(
+      server.environments.worker.transformRequest('./fixture-outside.js'),
+    ).rejects.toThrow('Failed to load url')
   })
 })

@@ -145,7 +145,7 @@ When `find` is a regular expression, the `replacement` can use [replacement patt
 If you have duplicated copies of the same dependency in your app (likely due to hoisting or linked packages in monorepos), use this option to force Vite to always resolve listed dependencies to the same copy (from project root).
 
 :::warning SSR + ESM
-For SSR builds, deduplication does not work for ESM build outputs configured from `build.rollupOptions.output`. A workaround is to use CJS build outputs until ESM has better plugin support for module loading.
+For SSR builds, deduplication does not work for ESM build outputs configured from `build.rolldownOptions.output`. A workaround is to use CJS build outputs until ESM has better plugin support for module loading.
 :::
 
 ## resolve.conditions <NonInheritBadge />
@@ -213,6 +213,48 @@ Enables the tsconfig paths resolution feature. `paths` option in `tsconfig.json`
 - **Related:** [Content Security Policy (CSP)](/guide/features#content-security-policy-csp)
 
 A nonce value placeholder that will be used when generating script / style tags. Setting this value will also generate a meta tag with nonce value.
+
+## html.additionalAssetSources
+
+- **Type:** `Record<string, HtmlAssetSource>`
+
+```ts
+interface HtmlAssetSource {
+  srcAttributes?: string[]
+  srcsetAttributes?: string[]
+  filter?: (data: {
+    key: string
+    value: string
+    attributes: Record<string, string>
+  }) => boolean
+}
+```
+
+Define additional HTML elements and attributes to be treated as asset sources. This extends the built-in list that includes standard elements like `<img src>`, `<video src>`, `<link href>`, etc.
+
+This is useful when using custom web components or non-standard attributes (like `data-*`) that reference assets.
+
+**Example:**
+
+```js
+export default defineConfig({
+  html: {
+    additionalAssetSources: {
+      // Custom web component
+      'html-import': { srcAttributes: ['src'] },
+      // Add data-* attributes to existing element
+      img: { srcAttributes: ['data-src-dark', 'data-src-light'] },
+      // With srcset format
+      'my-picture': { srcsetAttributes: ['data-srcset'] },
+      // With filter function
+      'my-component': {
+        srcAttributes: ['asset'],
+        filter: ({ attributes }) => attributes.type === 'image',
+      },
+    },
+  },
+})
+```
 
 ## css.modules
 

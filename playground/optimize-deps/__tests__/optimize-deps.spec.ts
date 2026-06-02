@@ -214,6 +214,8 @@ test('variable names are reused in different scripts', async () => {
     .toBe('reused')
 })
 
+// Regression test for #8428: flattenId must encode '/' and '.' differently
+// to avoid collisions between 'lodash/cloneDeep' and 'lodash.clonedeep'
 test('flatten id should generate correctly', async () => {
   await expect
     .poll(() => page.textContent('.clonedeep-slash'))
@@ -221,6 +223,9 @@ test('flatten id should generate correctly', async () => {
   await expect
     .poll(() => page.textContent('.clonedeep-dot'))
     .toBe('clonedeep-dot')
+  await expect
+    .poll(() => page.textContent('.dep-with-plus-subpath'))
+    .toBe('plus-subpath')
 })
 
 test('non optimized module is not duplicated', async () => {

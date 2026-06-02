@@ -10,7 +10,6 @@ const isNonJsRequest = (request: string): boolean => nonJsRe.test(request)
 const escapedDotRE = /(?<!\\)\\./g
 
 export function definePlugin(config: ResolvedConfig): Plugin {
-  const isBundled = config.isBundled
   const isBuild = config.command === 'build'
   const isBuildLib = isBuild && config.build.lib
 
@@ -28,26 +27,27 @@ export function definePlugin(config: ResolvedConfig): Plugin {
     })
   }
 
-  // during dev, import.meta properties are handled by importAnalysis plugin.
-  const importMetaKeys: Record<string, string> = {}
-  const importMetaEnvKeys: Record<string, string> = {}
-  const importMetaFallbackKeys: Record<string, string> = {}
-  if (isBuild) {
-    importMetaKeys['import.meta.hot'] = `undefined`
-  }
-  if (isBundled) {
-    for (const key in config.env) {
-      const val = JSON.stringify(config.env[key])
-      importMetaKeys[`import.meta.env.${key}`] = val
-      importMetaEnvKeys[key] = val
-    }
-    // these will be set to a proper value in `generatePattern`
-    importMetaKeys['import.meta.env.SSR'] = `undefined`
-    importMetaFallbackKeys['import.meta.env'] = `undefined`
-  }
-
   function generatePattern(environment: Environment) {
+    const isBundled = environment.config.isBundled
     const keepProcessEnv = environment.config.keepProcessEnv
+
+    // during dev, import.meta properties are handled by importAnalysis plugin.
+    const importMetaKeys: Record<string, string> = {}
+    const importMetaEnvKeys: Record<string, string> = {}
+    const importMetaFallbackKeys: Record<string, string> = {}
+    if (isBuild) {
+      importMetaKeys['import.meta.hot'] = `undefined`
+    }
+    if (isBundled) {
+      for (const key in config.env) {
+        const val = JSON.stringify(config.env[key])
+        importMetaKeys[`import.meta.env.${key}`] = val
+        importMetaEnvKeys[key] = val
+      }
+      // these will be set to a proper value below
+      importMetaKeys['import.meta.env.SSR'] = `undefined`
+      importMetaFallbackKeys['import.meta.env'] = `undefined`
+    }
 
     const userDefine: Record<string, string> = {}
     const userDefineEnv: Record<string, any> = {}
@@ -113,26 +113,29 @@ export function definePlugin(config: ResolvedConfig): Plugin {
     return pattern
   }
 
-  if (isBundled) {
-    return {
-      name: 'vite:define',
-      options(option) {
-        const [define, _pattern, importMetaEnvVal] = getPattern(
-          this.environment,
-        )
-        define['import.meta.env'] = importMetaEnvVal
-        define['import.meta.env.*'] = 'undefined'
-        option.transform ??= {}
-        option.transform.define = { ...option.transform.define, ...define }
-      },
-    }
-  }
-
   return {
     name: 'vite:define',
 
+    applyToEnvironment(environment) {
+      if (environment.config.isBundled) {
+        return {
+          name: 'vite:define',
+          options(option) {
+            const [define, _pattern, importMetaEnvVal] = getPattern(
+              this.environment,
+            )
+            define['import.meta.env'] = importMetaEnvVal
+            define['import.meta.env.*'] = 'undefined'
+            option.transform ??= {}
+            option.transform.define = { ...option.transform.define, ...define }
+          },
+        }
+      }
+      return true
+    },
+
     transform: {
-      async handler(code, id) {
+      handler(code, id) {
         if (this.environment.config.consumer === 'client') {
           // for dev we inject actual global defines in the vite client to
           // avoid the transform cost. see the `clientInjection` and
@@ -157,22 +160,22 @@ export function definePlugin(config: ResolvedConfig): Plugin {
         pattern.lastIndex = 0
         if (!pattern.test(code)) return
 
-        const result = await replaceDefine(this.environment, code, id, define)
+        const result = replaceDefine(this.environment, code, id, define)
         return result
       },
     },
   }
 }
 
-export async function replaceDefine(
+export function replaceDefine(
   environment: Environment,
   code: string,
   id: string,
   define: Record<string, string>,
-): Promise<{
+): {
   code: string
   map: ReturnType<typeof transformSync>['map'] | null
-}> {
+} {
   const result = transformSync(id, code, {
     lang: 'js',
     sourceType: 'module',

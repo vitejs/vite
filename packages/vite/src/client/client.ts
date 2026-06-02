@@ -1,3 +1,4 @@
+import { nanoid } from 'nanoid/non-secure'
 import type {
   DevRuntime as DevRuntimeType,
   Messenger,
@@ -12,6 +13,7 @@ import {
 import { createHMRHandler } from '../shared/hmrHandler'
 import { setupForwardConsoleHandler } from '../shared/forwardConsole'
 import { ErrorOverlay, cspNonce, overlayId } from './overlay'
+// @ts-expect-error internal virtual module
 import '@vite/env'
 
 // injected by the hmr plugin when served
@@ -395,7 +397,7 @@ function waitForSuccessfulPing(socketUrl: string) {
       document.removeEventListener('visibilitychange', onVisibilityChange)
       sharedWorker.port.close()
 
-      const data: { type: 'success' } | { type: 'error'; error: unknown } =
+      const data: { type: 'success' } | { type: 'error'; error: Error } =
         event.data
       if (data.type === 'error') {
         reject(data.error)
@@ -642,6 +644,15 @@ if (isBundleMode && typeof DevRuntime !== 'undefined') {
     }
   }
 
+  const clientId = nanoid()
+
+  // notify client id
+  transport.send({
+    type: 'custom',
+    event: 'vite:module-loaded',
+    data: { modules: [], clientId },
+  })
+
   const wrappedSocket: Messenger = {
     send(message) {
       switch (message.type) {
@@ -650,7 +661,7 @@ if (isBundleMode && typeof DevRuntime !== 'undefined') {
             type: 'custom',
             event: 'vite:module-loaded',
             // clone array as the runtime reuses the array instance
-            data: { modules: message.modules.slice() },
+            data: { modules: message.modules.slice(), clientId },
           })
           break
         }
@@ -661,5 +672,6 @@ if (isBundleMode && typeof DevRuntime !== 'undefined') {
   }
   ;(globalThis as any).__rolldown_runtime__ ??= new ViteDevRuntime(
     wrappedSocket,
+    clientId,
   )
 }
