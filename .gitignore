@@ -1,4 +1,4 @@
-!**/glob-import/dir/node_modules
+!**/glob-import/root/dir/node_modules
 .DS_Store
 .idea
 .pnpm-store

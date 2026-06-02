@@ -80,6 +80,7 @@ import {
   asyncFlatten,
   createDebugger,
   createFilter,
+  deepClone,
   hasBothRollupOptionsAndRolldownOptions,
   isExternalUrl,
   isFilePathESM,
@@ -254,6 +255,7 @@ function defaultCreateClientDevEnvironment(
   return new DevEnvironment(name, config, {
     hot: true,
     transport: context.ws,
+    disableFetchModule: true,
   })
 }
 
@@ -301,6 +303,17 @@ export interface SharedEnvironmentOptions {
    * Optimize deps config
    */
   optimizeDeps?: DepOptimizationOptions
+  /**
+   * Whether this environment produces a bundled output.
+   *
+   * During `build`, this defaults to `true` for every environment.
+   * During `serve`, this defaults to `true` only for the client environment
+   * when `experimental.bundledDev` is enabled, and `false` otherwise.
+   * Setting this explicitly on an environment always overrides the default.
+   *
+   * @experimental
+   */
+  isBundled?: boolean
 }
 
 export interface EnvironmentOptions extends SharedEnvironmentOptions {
@@ -324,6 +337,7 @@ export type ResolvedEnvironmentOptions = {
   optimizeDeps: DepOptimizationOptions
   dev: ResolvedDevEnvironmentOptions
   build: ResolvedBuildEnvironmentOptions
+  isBundled: boolean
   plugins: readonly Plugin[]
   /** @internal */
   optimizeDepsPluginNames: string[]
@@ -566,7 +580,11 @@ export interface ExperimentalOptions {
    */
   hmrPartialAccept?: boolean
   /**
-   * Enable full bundle mode.
+   * Enable full bundle mode during `serve`.
+   *
+   * This seeds the default for the client environment's `isBundled` option.
+   * Other environments default to `false` during `serve`. Any environment
+   * can override its `isBundled` value via `environments[name].isBundled`.
    *
    * This is highly experimental.
    *
@@ -652,8 +670,6 @@ export interface ResolvedConfig extends Readonly<
     cacheDir: string
     command: 'build' | 'serve'
     mode: string
-    /** `true` when build or full-bundle mode dev */
-    isBundled: boolean
     isWorker: boolean
     // in nested worker bundle to find the main config
     /** @internal */
@@ -905,6 +921,7 @@ function resolveEnvironmentOptions(
   forceOptimizeDeps: boolean | undefined,
   logger: Logger,
   environmentName: string,
+  isBuild: boolean,
   isBundledDev: boolean,
   // Backward compatibility
   isSsrTargetWebworkerSet?: boolean,
@@ -915,6 +932,9 @@ function resolveEnvironmentOptions(
     options.consumer ?? (isClientEnvironment ? 'client' : 'server')
   const isSsrTargetWebworkerEnvironment =
     isSsrTargetWebworkerSet && environmentName === 'ssr'
+
+  const isBundled =
+    options.isBundled ?? (isBuild || (isClientEnvironment && isBundledDev))
 
   if (options.define?.['process.env']) {
     const processEnvDefine = options.define['process.env']
@@ -968,8 +988,10 @@ function resolveEnvironmentOptions(
       options.build ?? {},
       logger,
       consumer,
-      isBundledDev,
+      isBundled && !isBuild,
+      isSsrTargetWebworkerEnvironment,
     ),
+    isBundled,
     plugins: undefined!, // to be resolved later
     // will be set by `setOptimizeDepsPluginNames` later
     optimizeDepsPluginNames: undefined!,
@@ -1014,6 +1036,7 @@ export type ResolveFn = (
  */
 function checkBadCharactersInPath(
   name: string,
+  type: 'directory' | 'file',
   path: string,
   logger: Logger,
 ): void {
@@ -1037,7 +1060,7 @@ function checkBadCharactersInPath(
       colors.yellow(
         `${name} contains the ${charString} ${inflectedChars} (${colors.cyan(
           path,
-        )}), which may not work when running Vite. Consider renaming the directory / file to remove the characters.`,
+        )}), which may not work when running Vite. Consider renaming the ${type} without the characters.`,
       ),
     )
   }
@@ -1465,12 +1488,32 @@ export async function resolveConfig(
     customLogger: config.customLogger,
   })
 
+  const tsconfigPathsPlugin = userPlugins.find(
+    (p) =>
+      p.name === 'vite-tsconfig-paths' ||
+      p.name === 'vite-plugin-tsconfig-paths',
+  )
+  if (tsconfigPathsPlugin) {
+    logger.warnOnce(
+      colors.yellow(
+        `The plugin ${JSON.stringify(tsconfigPathsPlugin.name)} is detected. ` +
+          `Vite now supports tsconfig paths resolution natively via the ${colors.bold('resolve.tsconfigPaths')} option. ` +
+          `You can remove the plugin and set ${colors.bold('resolve.tsconfigPaths: true')} in your Vite config instead.`,
+      ),
+    )
+  }
+
   // resolve root
   const resolvedRoot = normalizePath(
     config.root ? path.resolve(config.root) : process.cwd(),
   )
 
-  checkBadCharactersInPath('The project root', resolvedRoot, logger)
+  checkBadCharactersInPath(
+    'The project root',
+    'directory',
+    resolvedRoot,
+    logger,
+  )
 
   const configEnvironmentsClient = config.environments!.client!
   configEnvironmentsClient.dev ??= {}
@@ -1551,7 +1594,9 @@ export async function resolveConfig(
     config.environments[name] = mergeConfig(
       name === 'client'
         ? defaultClientEnvironmentOptions
-        : defaultNonClientEnvironmentOptions,
+        : (deepClone(
+            defaultNonClientEnvironmentOptions as object,
+          ) as UserConfig),
       config.environments[name],
     )
   }
@@ -1582,6 +1627,7 @@ export async function resolveConfig(
       inlineConfig.forceOptimizeDeps,
       logger,
       environmentName,
+      isBuild,
       isBundledDev,
       config.ssr?.target === 'webworker',
       config.server?.preTransformRequests,
@@ -1698,7 +1744,7 @@ export async function resolveConfig(
         )
       : ''
 
-  const server = resolveServerOptions(resolvedRoot, config.server, logger)
+  const server = await resolveServerOptions(resolvedRoot, config.server, logger)
 
   const builder = resolveBuilderOptions(config.builder)
 
@@ -1874,7 +1920,6 @@ export async function resolveConfig(
     cacheDir,
     command,
     mode,
-    isBundled: config.experimental?.bundledDev || isBuild,
     isWorker: false,
     mainConfig: null,
     bundleChain: [],
@@ -2049,11 +2094,6 @@ export async function resolveConfig(
       resolved.build.ssrEmitAssets || resolved.build.emitAssets
   }
 
-  // Enable `rolldownOptions.devtools` if devtools is enabled
-  if (resolved.devtools.enabled) {
-    resolved.build.rolldownOptions.devtools ??= {}
-  }
-
   applyDepOptimizationOptionCompat(resolved)
   await setOptimizeDepsPluginNames(resolved)
 
@@ -2084,7 +2124,7 @@ export async function resolveConfig(
       if (hasDifferentReference) {
         resolved.logger.warn(
           colors.yellow(`
-assetFileNames isn't equal for every build.rollupOptions.output. A single pattern across all outputs is supported by Vite.
+assetFileNames isn't equal for every build.rolldownOptions.output. A single pattern across all outputs is supported by Vite.
 `),
         )
       }
@@ -2266,7 +2306,7 @@ export async function loadConfigFromFile(
     }
   } catch (e) {
     const logger = createLogger(logLevel, { customLogger })
-    checkBadCharactersInPath('The config path', resolvedPath, logger)
+    checkBadCharactersInPath('The config path', 'file', resolvedPath, logger)
     logger.error(colors.red(`failed to load config from ${resolvedPath}`), {
       error: e,
     })
@@ -2353,7 +2393,7 @@ async function bundleConfigFile(
         name: 'externalize-deps',
         resolveId: {
           filter: { id: /^[^.#].*/ },
-          async handler(id, importer, { kind }) {
+          handler(id, importer, { kind }) {
             if (!importer || path.isAbsolute(id) || isNodeBuiltin(id)) {
               return
             }
@@ -2485,16 +2525,16 @@ function collectAllModules(
   if (analyzedModules.has(fileName)) return
   analyzedModules.add(fileName)
 
-  const chunk = bundle[fileName]!
+  const chunk = bundle[fileName]
+  if (!chunk) return // external modules
+
   for (const mod of chunk.moduleIds) {
     allModules.add(mod)
   }
   for (const i of chunk.imports) {
-    analyzedModules.add(i)
     collectAllModules(bundle, i, allModules, analyzedModules)
   }
   for (const i of chunk.dynamicImports) {
-    analyzedModules.add(i)
     collectAllModules(bundle, i, allModules, analyzedModules)
   }
 }

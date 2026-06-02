@@ -1,11 +1,11 @@
 import fs from 'node:fs'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
+import util from 'node:util'
 import type { SpawnOptions } from 'node:child_process'
 import spawn from 'cross-spawn'
 import mri from 'mri'
 import * as prompts from '@clack/prompts'
-import colors from 'picocolors'
 import { determineAgent } from '@vercel/detect-agent'
 
 const {
@@ -20,7 +20,7 @@ const {
   reset,
   underline,
   yellow,
-} = colors
+} = createColors()
 
 const argv = mri<{
   template?: string
@@ -44,8 +44,10 @@ When running in TTY, the CLI will start in interactive mode.
 
 Options:
   -t, --template NAME                   use a specific template
-  -i, --immediate                       install dependencies and start dev
+  -i, --immediate / --no-immediate      install dependencies and start dev
+  --overwrite                           remove existing files if target directory is not empty
   --interactive / --no-interactive      force interactive / non-interactive mode
+  -h, --help                            display this help message
 
 Available templates:
 ${yellow    ('vanilla-ts          vanilla'       )}
@@ -58,7 +60,7 @@ ${red       ('svelte-ts           svelte'        )}
 ${blue      ('solid-ts            solid'         )}
 ${blueBright('qwik-ts             qwik'          )}`
 
-type ColorFunc = (str: string | number) => string
+type ColorFunc = (str: string) => string
 type Framework = {
   name: string
   display: string
@@ -173,7 +175,7 @@ const FRAMEWORKS: Framework[] = [
         link: 'https://tanstack.com/router',
         color: cyan,
         customCommand:
-          'npm exec @tanstack/cli@latest -- create TARGET_DIR --template file-router --interactive',
+          'npm exec -- @tanstack/cli@latest create TARGET_DIR --framework react --interactive',
       },
       {
         name: 'redwoodsdk-standard',
@@ -275,7 +277,7 @@ const FRAMEWORKS: Framework[] = [
         link: 'https://tanstack.com/router',
         color: cyan,
         customCommand:
-          'npm exec @tanstack/cli@latest -- create TARGET_DIR --template file-router --framework solid --interactive',
+          'npm exec -- @tanstack/cli@latest create TARGET_DIR --framework solid --interactive',
       },
       {
         name: 'custom-vike-solid',
@@ -770,16 +772,27 @@ function pkgFromUserAgent(userAgent: string | undefined): PkgInfo | undefined {
 }
 
 function setupReactCompiler(root: string, isTs: boolean) {
+  // renovate: datasource=npm depName=@rolldown/plugin-babel
+  const babelPluginVersion = '0.2.3'
   // renovate: datasource=npm depName=babel-plugin-react-compiler
   const reactCompilerPluginVersion = '1.0.0'
+  // renovate: datasource=npm depName=@babel/core
+  const babelCoreVersion = '7.29.7'
+  // renovate: datasource=npm depName=@types/babel__core
+  const typesBabelCoreVersion = '7.20.5'
 
   editFile(path.resolve(root, 'package.json'), (content) => {
     const asObject = JSON.parse(content)
     const devDepsEntries = Object.entries(asObject.devDependencies)
+    devDepsEntries.push(['@rolldown/plugin-babel', `^${babelPluginVersion}`])
     devDepsEntries.push([
       'babel-plugin-react-compiler',
       `^${reactCompilerPluginVersion}`,
     ])
+    devDepsEntries.push(['@babel/core', `^${babelCoreVersion}`])
+    if (isTs) {
+      devDepsEntries.push(['@types/babel__core', `^${typesBabelCoreVersion}`])
+    }
     devDepsEntries.sort()
     asObject.devDependencies = Object.fromEntries(devDepsEntries)
     return JSON.stringify(asObject, null, 2) + '\n'
@@ -787,16 +800,19 @@ function setupReactCompiler(root: string, isTs: boolean) {
   editFile(
     path.resolve(root, `vite.config.${isTs ? 'ts' : 'js'}`),
     (content) => {
-      return content.replace(
-        '  plugins: [react()],',
-        `  plugins: [
-    react({
-      babel: {
-        plugins: ['babel-plugin-react-compiler'],
-      },
-    }),
+      return content
+        .replace(
+          `import react from '@vitejs/plugin-react'`,
+          `import react, { reactCompilerPreset } from '@vitejs/plugin-react'
+import babel from '@rolldown/plugin-babel'`,
+        )
+        .replace(
+          '  plugins: [react()],',
+          `  plugins: [
+    react(),
+    babel({ presets: [reactCompilerPreset()] })
   ],`,
-      )
+        )
     },
   )
   updateReactCompilerReadme(
@@ -853,9 +869,10 @@ function getFullCustomCommand(customCommand: string, pkgInfo?: PkgInfo) {
       })
       // Only Yarn 1.x doesn't support `@version` in the `create` command
       .replace('@latest', () => (isYarn1 ? '' : '@latest'))
-      .replace(/^npm exec /, () => {
+      .replace(/^npm exec (?:-- )?/, () => {
         // Prefer `pnpm dlx`, `yarn dlx`, or `bun x`
         if (pkgManager === 'pnpm') {
+          // pnpm doesn't support the -- syntax
           return 'pnpm dlx '
         }
         if (pkgManager === 'yarn' && !isYarn1) {
@@ -869,7 +886,9 @@ function getFullCustomCommand(customCommand: string, pkgInfo?: PkgInfo) {
         }
         // Use `npm exec` in all other cases,
         // including Yarn 1.x and other custom npm clients.
-        return 'npm exec '
+        return customCommand.startsWith('npm exec -- ')
+          ? 'npm exec -- '
+          : 'npm exec '
       })
   )
 }
@@ -902,6 +921,17 @@ function getRunCommand(agent: string, script: string) {
     default:
       return [agent, 'run', script]
   }
+}
+
+type ColorName = Exclude<Parameters<typeof util.styleText>[0], any[]>
+
+function createColors() {
+  return new Proxy({} as Record<ColorName, ColorFunc>, {
+    get(_, prop: ColorName) {
+      // eslint-disable-next-line n/no-unsupported-features/node-builtins -- our supported nodejs range supports `styleText` but in experimental state, which is fine
+      return (str: string) => util.styleText(prop, str)
+    },
+  })
 }
 
 init().catch((e) => {

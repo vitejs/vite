@@ -918,7 +918,7 @@ class PluginContext
 
   private _formatLog<E extends RollupLog>(
     e: string | E,
-    position?: number | { column: number; line: number } | undefined,
+    position?: number | { column: number; line: number },
   ): E {
     const err = (typeof e === 'string' ? new Error(e) : e) as E
     if (err.pluginCode) {

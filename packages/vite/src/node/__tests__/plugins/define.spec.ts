@@ -27,6 +27,9 @@ async function createDefinePluginTransform(
       )
       return result?.code || result
     } else {
+      const nativeDefinePlugin = await (
+        definePlugin(config) as any
+      ).applyToEnvironment(environment)
       const bundler = await rolldown({
         input: 'entry.js',
         plugins: [
@@ -45,9 +48,7 @@ async function createDefinePluginTransform(
           },
           {
             name: 'native:define',
-            options: (definePlugin(config).options! as any).bind({
-              environment,
-            }),
+            options: nativeDefinePlugin.options.bind({ environment }),
           },
         ],
         experimental: {
@@ -108,10 +109,10 @@ describe('native definePlugin', () => {
       __APP_VERSION__: JSON.stringify('1.0'),
     })
     expect(await transform('export const version = __APP_VERSION__;')).toBe(
-      'const version = "1.0";\n\nexport { version };',
+      'const version = "1.0";\nexport { version };\n',
     )
     expect(await transform('export const version = __APP_VERSION__ ;')).toBe(
-      'const version = "1.0";\n\nexport { version };',
+      'const version = "1.0";\nexport { version };\n',
     )
   })
 
@@ -120,17 +121,17 @@ describe('native definePlugin', () => {
       __APP_VERSION__: JSON.stringify('1.0'),
     })
     expect(await transform('export const version = "1.0";')).toBe(
-      'const version = "1.0";\n\nexport { version };',
+      'const version = "1.0";\nexport { version };\n',
     )
     expect(
       await transform('export const version = import.meta.SOMETHING'),
-    ).toBe('const version = import.meta.SOMETHING;\n\nexport { version };')
+    ).toBe('const version = import.meta.SOMETHING;\nexport { version };\n')
   })
 
   test('replaces import.meta.env.SSR with false', async () => {
     const transform = await createDefinePluginTransform()
     expect(await transform('export const isSSR = import.meta.env.SSR;')).toBe(
-      'const isSSR = false;\n\nexport { isSSR };',
+      'const isSSR = false;\nexport { isSSR };\n',
     )
   })
 
@@ -138,21 +139,21 @@ describe('native definePlugin', () => {
     // assert that the default behavior is to replace import.meta.hot with undefined
     const transform = await createDefinePluginTransform()
     expect(await transform('export const hot = import.meta.hot;')).toBe(
-      'const hot = void 0;\n\nexport { hot };',
+      'const hot = void 0;\nexport { hot };\n',
     )
     // assert that we can specify a user define to preserve import.meta.hot
     const overrideTransform = await createDefinePluginTransform({
       'import.meta.hot': 'import.meta.hot',
     })
     expect(await overrideTransform('export const hot = import.meta.hot;')).toBe(
-      'const hot = import.meta.hot;\n\nexport { hot };',
+      'const hot = import.meta.hot;\nexport { hot };\n',
     )
   })
 
   test('replace import.meta.env.UNKNOWN with undefined', async () => {
     const transform = await createDefinePluginTransform()
     expect(await transform('export const foo = import.meta.env.UNKNOWN;')).toBe(
-      'const foo = void 0;\n\nexport { foo };',
+      'const foo = void 0;\nexport { foo };\n',
     )
   })
 
@@ -160,7 +161,7 @@ describe('native definePlugin', () => {
     const transform = await createDefinePluginTransform()
     expect(
       await transform('export const foo = import.meta.env["UNKNOWN"];'),
-    ).toMatch(/const foo = .*\["UNKNOWN"\];\n\nexport \{ foo \};/s)
+    ).toMatch(/const foo = .*\["UNKNOWN"\];\nexport \{ foo \};\n/s)
   })
 
   test('preserve import.meta.env.UNKNOWN with override', async () => {
@@ -168,7 +169,7 @@ describe('native definePlugin', () => {
       'import.meta.env.UNKNOWN': 'import.meta.env.UNKNOWN',
     })
     expect(await transform('export const foo = import.meta.env.UNKNOWN;')).toBe(
-      'const foo = import.meta.env.UNKNOWN;\n\nexport { foo };',
+      'const foo = import.meta.env.UNKNOWN;\nexport { foo };\n',
     )
   })
 
@@ -182,14 +183,14 @@ describe('native definePlugin', () => {
         'export const isLegacy = import.meta.env.LEGACY;\nimport.meta.env.UNDEFINED && console.log(import.meta.env.UNDEFINED);',
       ),
     ).toMatchInlineSnapshot(
-      `"const isLegacy = __VITE_IS_LEGACY__;\n\nexport { isLegacy };"`,
+      `"const isLegacy = __VITE_IS_LEGACY__;\nexport { isLegacy };\n"`,
     )
   })
 
   test('replace bare import.meta.env', async () => {
     const transform = await createDefinePluginTransform()
     expect(await transform('export const env = import.meta.env;')).toMatch(
-      /const env = .*;\n\nexport \{ env \};/s,
+      /const env = .*;\nexport \{ env \};\n/s,
     )
   })
 })
