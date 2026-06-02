@@ -12,6 +12,7 @@ import colors from 'picocolors'
 import chokidar from 'chokidar'
 import launchEditorMiddleware from 'launch-editor-middleware'
 import { determineAgent } from '@vercel/detect-agent'
+import { disableCache } from '@voidzero-dev/vite-task-client'
 import type { SourceMap } from 'rolldown'
 import type { ModuleRunner } from 'vite/module-runner'
 import type { FSWatcher, WatchOptions } from '#dep-types/chokidar'
@@ -484,6 +485,10 @@ export async function _createServer(
     previousForceOptimizeOnRestart?: boolean
   },
 ): Promise<ViteDevServer> {
+  // The dev server is a long-running, interactive process whose outputs
+  // (network responses, HMR updates) cannot be replayed from a cache.
+  disableCache()
+
   const config = isResolvedConfig(inlineConfig)
     ? inlineConfig
     : await resolveConfig(inlineConfig, 'serve')

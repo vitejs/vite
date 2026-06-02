@@ -6,6 +6,11 @@ import { inspect, promisify } from 'node:util'
 import { performance } from 'node:perf_hooks'
 import { createRequire } from 'node:module'
 import crypto from 'node:crypto'
+import {
+  getEnv,
+  ignoreInput,
+  ignoreOutput,
+} from '@voidzero-dev/vite-task-client'
 import colors from 'picocolors'
 import picomatch from 'picomatch'
 import {
@@ -1419,6 +1424,14 @@ export async function resolveConfig(
 
   let configFileDependencies: string[] = []
   let mode = inlineConfig.mode || defaultMode
+  // When `NODE_ENV` isn't set locally, ask Vite Task for it; the runner
+  // also records the env in the build's cache key.
+  if (process.env.NODE_ENV === undefined) {
+    const nodeEnv = getEnv('NODE_ENV')
+    if (nodeEnv !== undefined) {
+      process.env.NODE_ENV = nodeEnv
+    }
+  }
   const isNodeEnvSet = !!process.env.NODE_ENV
   const packageCache: PackageCache = new Map()
 
@@ -2617,6 +2630,11 @@ async function loadConfigFromBundledFile(
           `.vite-temp/${path.basename(fileName)}.${hash}.mjs`,
         )
       : `${fileName}.${hash}.mjs`
+
+    // Tell Vite Task to ignore this transient file as both input and output,
+    // so the read-write of this file doesn't affect the cache fingerprints.
+    ignoreInput(tempFileName)
+    ignoreOutput(tempFileName)
     await fsp.writeFile(tempFileName, bundledCode)
     try {
       return (await import(pathToFileURL(tempFileName).href)).default
