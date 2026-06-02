@@ -47,6 +47,9 @@ export interface ModuleRunnerContext {
   [ssrExportAllKey]: (obj: any) => void
   [ssrExportNameKey]: (name: string, getter: () => unknown) => void
   [ssrImportMetaKey]: ModuleRunnerImportMeta
+  /**
+   * @internal
+   */
   [ssrRolldownRuntimeKey]: DevRuntime | undefined
 }
 
