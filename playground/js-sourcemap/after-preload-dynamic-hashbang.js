@@ -1,4 +1,4 @@
-// hashbang is injected via rollupOptions.output.banner
+// hashbang is injected via rolldownOptions.output.banner
 
 import('./dynamic/dynamic-foo')
 

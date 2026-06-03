@@ -451,6 +451,10 @@ export async function transformGlobImport(
           onlyKeys,
           onlyValues,
         }) => {
+          if (!dir && !options.base && isRelative) {
+            throw new Error("In virtual modules, all globs must start with '/'")
+          }
+
           const cwd = getCommonBase(globsResolved) ?? root
           const files = (
             await glob(globsResolved, {
@@ -471,10 +475,6 @@ export async function transformGlobImport(
 
           const resolvePaths = (file: string) => {
             if (!dir) {
-              if (!options.base && isRelative)
-                throw new Error(
-                  "In virtual modules, all globs must start with '/'",
-                )
               const importPath = `/${relative(root, file)}`
               let filePath = options.base
                 ? `${relative(posix.join(root, options.base), file)}`
@@ -704,7 +704,11 @@ export function getCommonBase(globsResolved: string[]): null | string {
   const dirS = bases[0].split('/')
   for (let i = 0; i < dirS.length; i++) {
     const candidate = dirS.slice(0, i + 1).join('/')
-    if (bases.every((base) => base.startsWith(candidate)))
+    if (
+      bases.every(
+        (base) => base === candidate || base.startsWith(`${candidate}/`),
+      )
+    )
       commonAncestor = candidate
     else break
   }

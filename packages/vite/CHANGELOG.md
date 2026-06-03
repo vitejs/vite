@@ -1,3 +1,32 @@
+## <small>[8.0.16](https://github.com/vitejs/vite/compare/v8.0.15...v8.0.16) (2026-06-01)</small>
+### Bug Fixes
+
+* **deps:** reject UNC paths for launch-editor-middleware ([#22571](https://github.com/vitejs/vite/issues/22571)) ([50b9512](https://github.com/vitejs/vite/commit/50b951225bbf6151eb84a3ad5a454908ab4a76c9))
+* reject windows alternate paths ([#22572](https://github.com/vitejs/vite/issues/22572)) ([dc245c7](https://github.com/vitejs/vite/commit/dc245c71e5007ea4d891a025e2d69ac96c736546))
+
+## <small>[8.0.15](https://github.com/vitejs/vite/compare/v8.0.14...v8.0.15) (2026-06-01)</small>
+### Features
+
+* send 408 on request timeout ([#22476](https://github.com/vitejs/vite/issues/22476)) ([c85c9ee](https://github.com/vitejs/vite/commit/c85c9eeb9aaf41f477b48b057146887bd5620797))
+* update rolldown to 1.0.3 ([#22538](https://github.com/vitejs/vite/issues/22538)) ([646dbed](https://github.com/vitejs/vite/commit/646dbedd2870f8ec48df0321177d8aa64bbd1575))
+
+### Bug Fixes
+
+* capitalize error messages and remove spurious space in parse error ([#22488](https://github.com/vitejs/vite/issues/22488)) ([85a0eff](https://github.com/vitejs/vite/commit/85a0eff1c82bbb7c99a0fe8e63704316578a40d3))
+* **deps:** update all non-major dependencies ([#22511](https://github.com/vitejs/vite/issues/22511)) ([2686d7d](https://github.com/vitejs/vite/commit/2686d7d0b722402204d3bcc687a87adea1bcf9fa))
+* **dev:** fix html-proxy cache key mismatch for /@fs/ HTML paths ([#21762](https://github.com/vitejs/vite/issues/21762)) ([47c4213](https://github.com/vitejs/vite/commit/47c4213f134f562c41ed7c031e4788510cf7e31e))
+* **glob:** error on relative glob in virtual module when no files match ([#22497](https://github.com/vitejs/vite/issues/22497)) ([5c8e98f](https://github.com/vitejs/vite/commit/5c8e98f8b584ac5d42f0f9b8580c49792213b13c))
+* **optimizer:** close the rolldown bundle when write() rejects ([#22528](https://github.com/vitejs/vite/issues/22528)) ([e3cfb9d](https://github.com/vitejs/vite/commit/e3cfb9deecff563550fa1b8abd27656b8b292815))
+* **resolve:** provide onWarn for viteResolvePlugin in JS plugin containers ([#22509](https://github.com/vitejs/vite/issues/22509)) ([40985f1](https://github.com/vitejs/vite/commit/40985f1c09b7696e594e6c5695fbc315d2da2c83))
+
+### Miscellaneous Chores
+
+* **deps:** update rolldown-related dependencies ([#22566](https://github.com/vitejs/vite/issues/22566)) ([3052a67](https://github.com/vitejs/vite/commit/3052a67d9350f4c5076ab1c222c4a21a589cbcdd))
+
+### Code Refactoring
+
+* correct logic in `collectAllModules` function ([#22562](https://github.com/vitejs/vite/issues/22562)) ([6978a9c](https://github.com/vitejs/vite/commit/6978a9ceb942c4f5e211d52b8a1e569f8a65c80c))
+
 ## <small>[8.0.14](https://github.com/vitejs/vite/compare/v8.0.13...v8.0.14) (2026-05-21)</small>
 ### Features
 

@@ -126,6 +126,7 @@ export type {
   DevEnvironmentOptions,
   ResolvedDevEnvironmentOptions,
 } from './config'
+export type { HtmlAssetSource } from './assetSource'
 export type {
   Plugin,
   PluginOption,
@@ -230,6 +231,7 @@ export type {
 } from './server/transformRequest'
 export type {
   HmrOptions,
+  WsOptions,
   HmrContext,
   HotUpdateOptions,
   HotChannelListener,
@@ -267,6 +269,7 @@ export type {
   ImportGlobOptions,
   GeneralImportGlobOptions,
   KnownAsTypeMap,
+  KnownQueryTypeMap,
 } from '#types/importGlob'
 export type { ChunkMetadata, CustomPluginOptionsVite } from '#types/metadata'
 
