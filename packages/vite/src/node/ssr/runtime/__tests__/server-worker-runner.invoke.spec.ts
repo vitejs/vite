@@ -1,4 +1,5 @@
 import { BroadcastChannel, Worker } from 'node:worker_threads'
+import path from 'node:path'
 import { afterAll, beforeAll, describe, expect, it } from 'vitest'
 import type { BirpcReturn } from 'birpc'
 import { createBirpc } from 'birpc'
@@ -33,6 +34,9 @@ describe('running module runner inside a worker and using the ModuleRunnerTransp
         watch: null,
         hmr: {
           port: 9610,
+        },
+        fs: {
+          allow: [path.resolve(import.meta.dirname, './fixtures')],
         },
       },
       environments: {
@@ -108,5 +112,14 @@ describe('running module runner inside a worker and using the ModuleRunnerTransp
     expect(output).toHaveProperty('result')
     expect(output.result).toBe('baz.txt')
     expect(output.error).toBeUndefined()
+  })
+
+  it('server.fs check is applied to the custom transport by default', async () => {
+    handleInvoke = (data: any) =>
+      server.environments.worker.hot.handleInvoke(data)
+
+    const output = await run('./fixture-outside.js')
+    expect(output).toHaveProperty('error')
+    expect(output.error).toContain('Failed to load url')
   })
 })

@@ -1,0 +1,7 @@
+{
+  "name": "@vitejs/test-dep-class-field-sourcemap-oxc",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "main": "index.js"
+}

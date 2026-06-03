@@ -19,11 +19,11 @@ import colors from 'picocolors'
 import browserslist from 'browserslist'
 import type { Options } from './types'
 import {
+  createModernChunkLegacyGuard,
   detectModernBrowserCode,
   dynamicFallbackInlineCode,
   legacyEntryId,
   legacyPolyfillId,
-  modernChunkLegacyGuard,
   safari10NoModuleFix,
   systemJSInlineCode,
 } from './snippets'
@@ -73,6 +73,7 @@ function toOutputFilePathInHtml(
   if (relative && !config.build.ssr) {
     return toRelative(filename, hostId)
   } else {
+    // @ts-expect-error `decodedBase` is internal
     return joinUrlSegments(config.decodedBase, filename)
   }
 }
@@ -124,6 +125,8 @@ const _require = createRequire(import.meta.url)
 
 const nonLeadingHashInFileNameRE = /[^/]+\[hash(?::\d+)?\]/
 const prefixedHashInFileNameRE = /\W?\[hash(?::\d+)?\]/
+export const modulePreloadLinkRE: RegExp =
+  /<link(?![\w-])[^>]*?\srel=(['"])modulepreload\1[^>]*>/g
 
 // browsers supporting dynamic import + import.meta.resolve + async generator
 const modernTargetsEsbuild = [
@@ -455,15 +458,15 @@ function viteLegacyPlugin(options: Options = {}): Plugin[] {
         }
       }
 
-      const { rollupOptions } = config.build
-      const { output } = rollupOptions
+      const { rolldownOptions } = config.build
+      const { output } = rolldownOptions
       if (Array.isArray(output)) {
-        rollupOptions.output = [
+        rolldownOptions.output = [
           ...output.map(createLegacyOutput),
           ...(genModern ? output : []),
         ]
       } else {
-        rollupOptions.output = [
+        rolldownOptions.output = [
           createLegacyOutput(output),
           ...(genModern ? [output || {}] : []),
         ]
@@ -518,7 +521,7 @@ function viteLegacyPlugin(options: Options = {}): Plugin[] {
 
         if (genLegacy && chunk.isEntry) {
           // append this code to avoid modern chunks running on legacy targeted browsers
-          ms.prepend(modernChunkLegacyGuard)
+          ms.prepend(createModernChunkLegacyGuard(chunk.fileName))
         }
 
         if (raw.includes(legacyEnvVarMarker)) {
@@ -640,7 +643,9 @@ function viteLegacyPlugin(options: Options = {}): Plugin[] {
         }
       }
       if (!genModern) {
-        html = html.replace(/<script type="module".*?<\/script>/g, '')
+        html = html
+          .replace(/<script type="module".*?<\/script>/g, '')
+          .replace(modulePreloadLinkRE, '')
       }
 
       const tags: HtmlTagDescriptor[] = []
@@ -861,7 +866,7 @@ async function buildPolyfillChunk(
       minify,
       assetsDir,
       sourcemap,
-      rollupOptions: {
+      rolldownOptions: {
         input: {
           polyfills: polyfillId,
         },
@@ -961,7 +966,10 @@ function prependModenChunkLegacyGuardPlugin(): Plugin {
     configResolved(config) {
       sourceMapEnabled = !!config.build.sourcemap
     },
-    renderChunk(code) {
+    renderChunk(code, chunk) {
+      const modernChunkLegacyGuard = createModernChunkLegacyGuard(
+        chunk.fileName,
+      )
       if (!sourceMapEnabled) {
         return modernChunkLegacyGuard + code
       }

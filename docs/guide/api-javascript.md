@@ -213,7 +213,7 @@ await build({
   root: path.resolve(import.meta.dirname, './project'),
   base: '/foo/',
   build: {
-    rollupOptions: {
+    rolldownOptions: {
       // ...
     },
   },
@@ -312,6 +312,8 @@ function mergeConfig(
 
 Deeply merge two Vite configs. `isRoot` represents the level within the Vite config which is being merged. For example, set `false` if you're merging two `build` options.
 
+Note that `null` and `undefined` values in `overrides` are skipped and not merged. If you need to explicitly clear a value from `defaults`, modify the result of `mergeConfig` directly.
+
 ::: tip NOTE
 `mergeConfig` accepts only config in object form. If you have a config in callback form, you should call it before passing into `mergeConfig`.
 
@@ -369,7 +371,7 @@ function loadEnv(
 
 **Related:** [`.env` Files](./env-and-mode.md#env-files)
 
-Load `.env` files within the `envDir`. By default, only env variables prefixed with `VITE_` are loaded, unless `prefixes` is changed.
+Load `.env` files within the `envDir` and merge them with the matching variables already present in `process.env`. By default, only env variables prefixed with `VITE_` are loaded, unless `prefixes` is changed.
 
 ## `normalizePath`
 
