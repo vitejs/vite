@@ -305,24 +305,6 @@
     JSON.stringify(arrayCommonBaseModules, null, 2)
 </script>
 
-<h2>Array Pattern with Directory Prefix Overlap</h2>
-<pre class="array-common-base-prefix-result"></pre>
-
-<script type="module">
-  const arrayCommonBasePrefixModules = import.meta.glob(
-    [
-      '/array-common-base-prefix/foo/**/*.js',
-      '/array-common-base-prefix/foobar/**/*.js',
-    ],
-    {
-      eager: true,
-      import: 'default',
-    },
-  )
-  document.querySelector('.array-common-base-prefix-result').textContent =
-    JSON.stringify(arrayCommonBasePrefixModules, null, 2)
-</script>
-
 <h2>Transform visibility</h2>
 <pre class="transform-visibility"></pre>
 

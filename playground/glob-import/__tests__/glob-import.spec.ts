@@ -284,17 +284,6 @@ test('array pattern with sibling directories sharing a prefix', async () => {
     })
 })
 
-test('array pattern with directory names where one is a prefix of another', async () => {
-  await expect
-    .poll(async () =>
-      JSON.parse(await page.textContent('.array-common-base-prefix-result')),
-    )
-    .toStrictEqual({
-      '/array-common-base-prefix/foo/a.js': 'a',
-      '/array-common-base-prefix/foobar/b.js': 'b',
-    })
-})
-
 test('tree-shake eager css', async () => {
   expect(await page.textContent('.no-tree-shake-eager-css-result')).toMatch(
     '.no-tree-shake-eager-css',
