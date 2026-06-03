@@ -269,6 +269,7 @@ export type {
   ImportGlobOptions,
   GeneralImportGlobOptions,
   KnownAsTypeMap,
+  KnownQueryTypeMap,
 } from '#types/importGlob'
 export type { ChunkMetadata, CustomPluginOptionsVite } from '#types/metadata'
 
