@@ -153,7 +153,7 @@ describe('build', () => {
         write: false,
         manifest: true,
         assetsInlineLimit: 0,
-        rollupOptions: {
+        rolldownOptions: {
           input: [resolve(root, 'a/index.css'), resolve(root, 'b/index.css')],
         },
       },
@@ -242,7 +242,7 @@ describe('build', () => {
           entry: ['foo.js', 'bar.js'],
           formats: ['es'],
         },
-        rollupOptions: {
+        rolldownOptions: {
           external: 'external',
         },
         write: false,
@@ -714,7 +714,7 @@ describe('resolveBuildOutputs', () => {
       build: {
         ssr: true,
         ssrEmitAssets: true,
-        rollupOptions: {
+        rolldownOptions: {
           input: {
             index: '/entry',
           },
@@ -742,7 +742,7 @@ describe('resolveBuildOutputs', () => {
           build: {
             ssr: true,
             emitAssets: true,
-            rollupOptions: {
+            rolldownOptions: {
               input: {
                 index: '/entry',
               },
@@ -772,7 +772,7 @@ describe('resolveBuildOutputs', () => {
         ssr: {
           build: {
             ssr: true,
-            rollupOptions: {
+            rolldownOptions: {
               input: {
                 index: '/entry',
               },
@@ -793,7 +793,7 @@ describe('resolveBuildOutputs', () => {
         custom: {
           build: {
             ssr: true,
-            rollupOptions: {
+            rolldownOptions: {
               input: {
                 index: '/entry',
               },
@@ -814,7 +814,7 @@ test('default sharedConfigBuild true on build api', async () => {
     logLevel: 'warn',
     build: {
       ssr: true,
-      rollupOptions: {
+      rolldownOptions: {
         input: {
           index: '/entry',
         },
@@ -843,7 +843,7 @@ test.for([true, false])(
         client: {
           build: {
             outDir: './dist/client',
-            rollupOptions: {
+            rolldownOptions: {
               input: '/entry.js',
             },
           },
@@ -851,7 +851,7 @@ test.for([true, false])(
         ssr: {
           build: {
             outDir: './dist/server',
-            rollupOptions: {
+            rolldownOptions: {
               input: '/entry.js',
             },
           },
@@ -860,7 +860,7 @@ test.for([true, false])(
           build: {
             minify: true,
             outDir: './dist/custom1',
-            rollupOptions: {
+            rolldownOptions: {
               input: '/entry.js',
             },
           },
@@ -869,7 +869,7 @@ test.for([true, false])(
           build: {
             minify: false,
             outDir: './dist/custom2',
-            rollupOptions: {
+            rolldownOptions: {
               input: '/entry.js',
             },
           },
@@ -902,7 +902,7 @@ test('sharedConfigBuild and emitAssets', async () => {
         build: {
           outDir: './dist/client',
           emitAssets: true,
-          rollupOptions: {
+          rolldownOptions: {
             input: '/entry.js',
           },
         },
@@ -911,7 +911,7 @@ test('sharedConfigBuild and emitAssets', async () => {
         build: {
           outDir: './dist/ssr',
           emitAssets: true,
-          rollupOptions: {
+          rolldownOptions: {
             input: '/entry.js',
           },
         },
@@ -920,7 +920,7 @@ test('sharedConfigBuild and emitAssets', async () => {
         build: {
           outDir: './dist/custom',
           emitAssets: true,
-          rollupOptions: {
+          rolldownOptions: {
             input: '/entry.js',
           },
         },
@@ -963,7 +963,7 @@ test.skip('adjust worker build error for worker.format', async () => {
     await build({
       root: resolve(dirname, 'fixtures/worker-dynamic'),
       build: {
-        rollupOptions: {
+        rolldownOptions: {
           input: {
             index: '/main.js',
           },
@@ -994,7 +994,7 @@ describe('onRollupLog', () => {
       logLevel: 'info',
       build: {
         write: false,
-        rollupOptions: {
+        rolldownOptions: {
           ...options,
           logLevel: 'debug',
         },
@@ -1141,7 +1141,7 @@ test('watch rebuild manifest', async (ctx) => {
     environments: {
       client: {
         build: {
-          rollupOptions: {
+          rolldownOptions: {
             input: '/entry.js',
           },
         },
