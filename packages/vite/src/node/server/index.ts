@@ -12,6 +12,7 @@ import colors from 'picocolors'
 import chokidar from 'chokidar'
 import launchEditorMiddleware from 'launch-editor-middleware'
 import { determineAgent } from '@vercel/detect-agent'
+import { disableCache } from '@voidzero-dev/vite-task-client'
 import type { SourceMap } from 'rolldown'
 import type { ModuleRunner } from 'vite/module-runner'
 import type { FSWatcher, WatchOptions } from '#dep-types/chokidar'
@@ -42,6 +43,7 @@ import {
   normalizePath,
   resolveHostname,
   resolveServerUrls,
+  setupHmrWsOptionCompat,
   setupSIGTERMListener,
   teardownSIGTERMListener,
 } from '../utils'
@@ -98,7 +100,7 @@ import { ModuleGraph } from './mixedModuleGraph'
 import type { ModuleNode } from './mixedModuleGraph'
 import { notFoundMiddleware } from './middlewares/notFound'
 import { errorMiddleware } from './middlewares/error'
-import type { HmrOptions, NormalizedHotChannel } from './hmr'
+import type { HmrOptions, NormalizedHotChannel, WsOptions } from './hmr'
 import { handleHMRUpdate, updateModules } from './hmr'
 import { openBrowser as _openBrowser } from './openBrowser'
 import type { TransformOptions, TransformResult } from './transformRequest'
@@ -117,10 +119,10 @@ export interface ServerOptions extends CommonServerOptions {
    */
   hmr?: HmrOptions | boolean
   /**
-   * Do not start the websocket connection.
-   * @experimental
+   * Configure WebSocket connection options.
+   * Set to `false` to disable the WebSocket server and connection.
    */
-  ws?: false
+  ws?: WsOptions | false
   /**
    * Warm-up files to transform and cache the results in advance. This improves the
    * initial page load during server starts and prevents transform waterfalls.
@@ -483,6 +485,10 @@ export async function _createServer(
     previousForceOptimizeOnRestart?: boolean
   },
 ): Promise<ViteDevServer> {
+  // The dev server is a long-running, interactive process whose outputs
+  // (network responses, HMR updates) cannot be replayed from a cache.
+  disableCache()
+
   const config = isResolvedConfig(inlineConfig)
     ? inlineConfig
     : await resolveConfig(inlineConfig, 'serve')
@@ -508,7 +514,7 @@ export async function _createServer(
   const resolvedOutDirs = getResolvedOutDirs(
     config.root,
     config.build.outDir,
-    config.build.rollupOptions.output,
+    config.build.rolldownOptions.output,
   )
   const emptyOutDir = resolveEmptyOutDir(
     config.build.emptyOutDir,
@@ -781,10 +787,10 @@ export async function _createServer(
           config.logger.info,
         )
       } else if (middlewareMode) {
-        throw new Error('cannot print server URLs in middleware mode.')
+        throw new Error('Cannot print server URLs in middleware mode.')
       } else {
         throw new Error(
-          'cannot print server URLs before server.listen is called.',
+          'Cannot print server URLs before server.listen is called.',
         )
       }
     },
@@ -1188,6 +1194,8 @@ const _serverConfigDefaults = Object.freeze({
 export const serverConfigDefaults: Readonly<Partial<ServerOptions>> =
   _serverConfigDefaults
 
+const RESERVED_ALLOWED_HOSTS_CHARACTERS_RE = /[\\"']/
+
 export async function resolveServerOptions(
   root: string,
   raw: ServerOptions | undefined,
@@ -1201,6 +1209,8 @@ export async function resolveServerOptions(
     },
     raw ?? {},
   )
+
+  setupHmrWsOptionCompat(_server)
 
   const server: ResolvedServerOptions = {
     ..._server,
@@ -1266,8 +1276,21 @@ export async function resolveServerOptions(
     process.env.__VITE_ADDITIONAL_SERVER_ALLOWED_HOSTS &&
     Array.isArray(server.allowedHosts)
   ) {
-    const additionalHost = process.env.__VITE_ADDITIONAL_SERVER_ALLOWED_HOSTS
-    server.allowedHosts = [...server.allowedHosts, additionalHost]
+    const rawAdditionalHosts =
+      process.env.__VITE_ADDITIONAL_SERVER_ALLOWED_HOSTS
+    if (RESERVED_ALLOWED_HOSTS_CHARACTERS_RE.test(rawAdditionalHosts)) {
+      logger.warn(
+        colors.yellow(
+          `${colors.bold('(!)')} Skipping additional allowed hosts from environment variable due to reserved characters. Received: "${rawAdditionalHosts}".`,
+        ),
+      )
+    } else {
+      const additionalHosts = rawAdditionalHosts
+        .split(',')
+        .map((host) => host.trim())
+        .filter(Boolean)
+      server.allowedHosts = [...server.allowedHosts, ...additionalHosts]
+    }
   }
 
   return server

@@ -10,9 +10,12 @@
     "preview": "vite preview"
   },
   "dependencies": {
+    "@jridgewell/trace-mapping": "^0.3.31",
+    "@babel/core": "^7.29.0",
     "@vitejs/test-dep-malicious-sourcemap": "file:dep-malicious-sourcemap",
     "@vitejs/test-dep-optimized-malicious": "file:dep-optimized-malicious",
     "@vitejs/test-importee-pkg": "file:importee-pkg",
-    "magic-string": "^0.30.21"
+    "magic-string": "^0.30.21",
+    "oxc-parser": "^0.126.0"
   }
 }

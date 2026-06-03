@@ -273,19 +273,35 @@ export function setClientErrorHandler(
   logger: Logger,
 ): void {
   server.on('clientError', (err, socket) => {
-    let msg = '400 Bad Request'
-    if ((err as any).code === 'HPE_HEADER_OVERFLOW') {
-      msg = '431 Request Header Fields Too Large'
-      logger.warn(
-        colors.yellow(
-          'Server responded with status code 431. ' +
-            'See https://vite.dev/guide/troubleshooting.html#_431-request-header-fields-too-large.',
-        ),
-      )
+    // https://github.com/nodejs/node/blob/v26.2.0/lib/_http_server.js#L992
+    let msg
+    switch ((err as any).code) {
+      case 'HPE_HEADER_OVERFLOW': {
+        msg = '431 Request Header Fields Too Large'
+        logger.warn(
+          colors.yellow(
+            'Server responded with status code 431. ' +
+              'See https://vite.dev/guide/troubleshooting.html#_431-request-header-fields-too-large.',
+          ),
+        )
+        break
+      }
+      case 'HPE_CHUNK_EXTENSIONS_OVERFLOW': {
+        msg = '413 Payload Too Large'
+        break
+      }
+      case 'ERR_HTTP_REQUEST_TIMEOUT': {
+        msg = '408 Request Timeout'
+        break
+      }
+      default: {
+        msg = '400 Bad Request'
+        break
+      }
     }
     if ((err as any).code === 'ECONNRESET' || !socket.writable) {
       return
     }
-    socket.end(`HTTP/1.1 ${msg}\r\n\r\n`)
+    socket.end(`HTTP/1.1 ${msg}\r\nConnection: close\r\n\r\n`)
   })
 }

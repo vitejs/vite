@@ -124,19 +124,12 @@ However, this behavior may not be desirable when you are developing source map r
 
 ## Testing Vite against external packages
 
-You may wish to test your locally modified copy of Vite against another package that is built with Vite. For pnpm, after building Vite, you can use [`pnpm.overrides`](https://pnpm.io/package_json#pnpmoverrides) to do this. Note that `pnpm.overrides` must be specified in the root `package.json`, and you must list the package as a dependency in the root `package.json`:
+You may wish to test your locally modified copy of Vite against another package that is built with Vite. For pnpm, after building Vite, you can use [`overrides`](https://pnpm.io/settings#overrides) to do this. In pnpm v10.5+, `overrides` should be specified in the root `pnpm-workspace.yaml`, and you must list the package as a dependency in the root `package.json`:
 
-```json
-{
-  "dependencies": {
-    "vite": "^8.0.0"
-  },
-  "pnpm": {
-    "overrides": {
-      "vite": "link:../path/to/vite/packages/vite"
-    }
-  }
-}
+```yaml
+# pnpm-workspace.yaml
+overrides:
+  vite: link:../path/to/vite/packages/vite
 ```
 
 And re-run `pnpm install` to link the package.

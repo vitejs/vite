@@ -3,6 +3,7 @@ import fsp from 'node:fs/promises'
 import path from 'node:path'
 import { promisify } from 'node:util'
 import { performance } from 'node:perf_hooks'
+import { ignoreInput, ignoreOutput } from '@voidzero-dev/vite-task-client'
 import colors from 'picocolors'
 import { init, parse } from 'es-module-lexer'
 import { isDynamicPattern } from 'tinyglobby'
@@ -396,6 +397,14 @@ export async function loadCachedDepOptimizationMetadata(
   }
 
   const depsCacheDir = getDepsCacheDir(environment)
+
+  // When run inside Vite Task, the dep optimizer cache is both read and
+  // written under this directory (metadata + pre-bundled deps). Tell Vite
+  // Task to treat it as neither a build input nor a build output: the
+  // lockfile hash stored in the metadata already drives re-optimization,
+  // and the cache is process-local scratch space, not a build artifact.
+  ignoreInput(depsCacheDir)
+  ignoreOutput(depsCacheDir)
 
   if (!force) {
     let cachedMetadata: DepOptimizationMetadata | undefined
@@ -855,15 +864,17 @@ async function prepareRolldownOptimizerRun(
       await bundle.close()
       throw new Error('The build was canceled')
     }
-    const result = await bundle.write({
-      ...rolldownOptions.output,
-      format: 'esm',
-      sourcemap: true,
-      dir: processingCacheDir,
-      entryFileNames: '[name].js',
-    })
-    await bundle.close()
-    return result
+    try {
+      return await bundle.write({
+        ...rolldownOptions.output,
+        format: 'esm',
+        sourcemap: 'hidden',
+        dir: processingCacheDir,
+        entryFileNames: '[name].js',
+      })
+    } finally {
+      await bundle.close()
+    }
   }
 
   function cancel() {
@@ -1156,7 +1167,7 @@ export async function extractExportsData(
       `Unable to parse: ${filePath}.\n Trying again with a ${lang} transform.`,
     )
     if (lang !== 'jsx' && lang !== 'tsx' && lang !== 'ts') {
-      throw new Error(`Unable to parse : ${filePath}.`)
+      throw new Error(`Unable to parse: ${filePath}.`)
     }
     const transformed = await transformWithOxc(
       entryContent,
