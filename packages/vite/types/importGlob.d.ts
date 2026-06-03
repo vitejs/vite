@@ -1,4 +1,6 @@
-type BaseQueryType = string | Record<string, string | number | boolean>
+// make input suggestions work
+type StringQueryType = `?${keyof KnownAsTypeMap}` | (string & {})
+type BaseQueryType = StringQueryType | Record<string, string | number | boolean>
 
 export interface ImportGlobOptions<
   Eager extends boolean,
@@ -66,10 +68,8 @@ export interface KnownAsTypeMap {
   worker: Worker
 }
 
-export interface KnownQueryTypeMap {
-  '?raw': string
-  '?url': string
-  '?worker': Worker
+type KnownQueryTypeMap = {
+  [K in keyof KnownAsTypeMap as `?${K}`]: KnownAsTypeMap[K]
 }
 
 export interface ImportGlobFunction {
