@@ -13,6 +13,7 @@ import {
 } from '@voidzero-dev/vite-task-client'
 import colors from 'picocolors'
 import picomatch from 'picomatch'
+import { createFreshImporter, formatTrackingQuery } from 'fresh-import'
 import {
   type NormalizedOutputOptions,
   type OutputChunk,
@@ -2363,14 +2364,30 @@ export async function loadConfigFromFile(
   }
 }
 
-async function nativeImportConfigFile(resolvedPath: string) {
+// A loader registered via `Module.register` cannot be unregistered, so we keep a
+// single importer for the process rather than creating one per config load.
+let freshImporter: ReturnType<typeof createFreshImporter> | undefined
+
+async function nativeImportConfigFile(
+  resolvedPath: string,
+): Promise<{ configExport: any; dependencies: string[] }> {
+  freshImporter ??= createFreshImporter({ queryName: 't' })
+  if (freshImporter) {
+    const { result, dependencies } = await freshImporter.collect(
+      resolvedPath,
+      () =>
+        import(
+          pathToFileURL(resolvedPath).href +
+            formatTrackingQuery('t', Date.now(), resolvedPath)
+        ),
+    )
+    return { configExport: result.default, dependencies }
+  }
+
   const module = await import(
     pathToFileURL(resolvedPath).href + '?t=' + Date.now()
   )
-  return {
-    configExport: module.default,
-    dependencies: [],
-  }
+  return { configExport: module.default, dependencies: [] }
 }
 
 async function runnerImportConfigFile(resolvedPath: string) {
