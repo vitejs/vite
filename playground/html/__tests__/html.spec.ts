@@ -281,6 +281,15 @@ describe.runIf(isServe)('SPA fallback', () => {
     expect(content).toContain('Transformed')
     expect(content).not.toContain('This is test.js')
   })
+
+  test('should serve index.html for html requests when path matches file basename', async () => {
+    const response = await fetchHtml('/test')
+    expect(response.status).toBe(200)
+    expect(response.headers.get('content-type')).toContain('text/html')
+    const content = await response.text()
+    expect(content).toContain('Transformed')
+    expect(content).not.toContain('This is test.js')
+  })
 })
 
 describe.runIf(isServe)('invalid', () => {

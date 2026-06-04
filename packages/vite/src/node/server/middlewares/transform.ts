@@ -1,5 +1,6 @@
 import path from 'node:path'
 import fsp from 'node:fs/promises'
+import type { ServerResponse } from 'node:http'
 import colors from 'picocolors'
 import type { ExistingRawSourceMap } from 'rolldown'
 import type { Connect } from '#dep-types/connect'
@@ -51,6 +52,26 @@ function isDocumentFetchDest(req: Connect.IncomingMessage) {
   return fetchDest !== undefined && documentFetchDests.has(fetchDest)
 }
 
+function acceptsHtml(req: Connect.IncomingMessage) {
+  return req.headers.accept?.includes('text/html')
+}
+
+function isDocumentRequest(req: Connect.IncomingMessage) {
+  return isDocumentFetchDest(req) || acceptsHtml(req)
+}
+
+function appendDocumentRequestVaryHeaders(
+  req: Connect.IncomingMessage,
+  res: ServerResponse,
+) {
+  if (isDocumentFetchDest(req)) {
+    res.appendHeader('Vary', 'Sec-Fetch-Dest')
+  }
+  if (acceptsHtml(req)) {
+    res.appendHeader('Vary', 'Accept')
+  }
+}
+
 // TODO: consolidate this regex pattern with the url, raw, and inline checks in plugins
 const urlRE = /[?&]url\b/
 const rawRE = /[?&]raw\b/
@@ -80,8 +101,8 @@ export function cachedTransformMiddleware(
   return function viteCachedTransformMiddleware(req, res, next) {
     const environment = server.environments.client
 
-    if (isDocumentFetchDest(req)) {
-      res.appendHeader('Vary', 'Sec-Fetch-Dest')
+    if (isDocumentRequest(req)) {
+      appendDocumentRequestVaryHeaders(req, res)
       return next()
     }
 
@@ -125,7 +146,7 @@ export function transformMiddleware(
     if (
       (req.method !== 'GET' && req.method !== 'HEAD') ||
       knownIgnoreList.has(req.url!) ||
-      isDocumentFetchDest(req)
+      isDocumentRequest(req)
     ) {
       return next()
     }
