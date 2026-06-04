@@ -188,4 +188,39 @@ if (isBuild) {
     await page.click('#load-dynamic')
     await expect.poll(() => page.textContent('.dynamic')).toBe('loaded')
   })
+
+  // https://github.com/vitejs/vite/issues/22596
+  // assets emitted while compiling a lazily-bundled module must be served on
+  // the first request, not only after a refresh
+  test('lazy bundling serves emitted assets on first load', async () => {
+    const failedAssets: string[] = []
+    const onResponse = (res) => {
+      const url = res.url()
+      if (/dynamic-(?:image|bg)/.test(url) && res.status() >= 400) {
+        failedAssets.push(`${res.status()} ${url}`)
+      }
+    }
+    page.on('response', onResponse)
+    try {
+      await page.click('#load-dynamic-asset')
+      await expect
+        .poll(() => page.textContent('.dynamic-asset-status'))
+        .toBe('loaded')
+      // the JS-imported image must actually decode (naturalWidth > 0), which
+      // only happens if its request was served instead of returning a 404
+      await expect
+        .poll(() =>
+          page
+            .$eval(
+              '.dynamic-image',
+              (img: HTMLImageElement) => img.complete && img.naturalWidth > 0,
+            )
+            .catch(() => false),
+        )
+        .toBe(true)
+      expect(failedAssets).toEqual([])
+    } finally {
+      page.off('response', onResponse)
+    }
+  })
 }

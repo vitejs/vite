@@ -23,6 +23,10 @@ document.querySelector('#load-dynamic').addEventListener('click', () => {
   import('./dynamic.js')
 })
 
+document.querySelector('#load-dynamic-asset').addEventListener('click', () => {
+  import('./dynamic-asset.js')
+})
+
 function text(el, text) {
   document.querySelector(el).textContent = text
 }

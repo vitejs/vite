@@ -283,7 +283,18 @@ export class FullBundleDevEnvironment extends DevEnvironment {
     debug?.(
       `TRIGGER-LAZY: trigger lazy bundling for module ${moduleId} for client ${clientId}`,
     )
-    return await this.devEngine.compileEntry(moduleId, clientId)
+    const code = await this.devEngine.compileEntry(moduleId, clientId)
+    // `compileEntry` resolves with the lazy chunk's patch code, but any assets
+    // emitted while compiling it (e.g. images imported from JS or referenced by
+    // CSS `url()`) are only registered into `memoryFiles` by the `onOutput`
+    // callback, which can run after `compileEntry` resolves. If we returned the
+    // code right away, the browser could request those assets before they are
+    // available and receive a 404 on the first load (a refresh would then
+    // succeed). Ensure the latest build output is flushed first so the
+    // referenced assets are served.
+    // https://github.com/vitejs/vite/issues/22596
+    await this.devEngine.ensureLatestBuildOutput()
+    return code
   }
 
   override async close(): Promise<void> {
