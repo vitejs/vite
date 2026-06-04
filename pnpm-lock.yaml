@@ -241,9 +241,6 @@ importers:
 
   packages/vite:
     dependencies:
-      '@voidzero-dev/vite-task-client':
-        specifier: ^0.1.1
-        version: 0.1.1
       lightningcss:
         specifier: ^1.32.0
         version: 1.32.0
@@ -296,6 +293,9 @@ importers:
       '@vitest/utils':
         specifier: 4.1.7
         version: 4.1.7
+      '@voidzero-dev/vite-task-client':
+        specifier: ^0.1.1
+        version: 0.1.1
       artichokie:
         specifier: ^0.4.3
         version: 0.4.3
