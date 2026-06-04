@@ -1,14 +1,20 @@
-import { describe, expect, test, vi } from 'vitest'
+import fs from 'node:fs'
+import os from 'node:os'
+import path from 'node:path'
+import { afterEach, beforeEach, describe, expect, test } from 'vitest'
 import { expandGlobIds } from '../../optimizer/resolve'
 
-vi.mock('../../packages', () => ({
-  resolvePackageData: vi.fn(),
-}))
+let tmpDir: string
 
-const { resolvePackageData } = await import('../../packages')
-const mockResolvePackageData = vi.mocked(resolvePackageData)
+beforeEach(() => {
+  tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), 'vite-expandGlobIds-'))
+})
 
-function makeConfig(root = '/root'): any {
+afterEach(() => {
+  fs.rmSync(tmpDir, { recursive: true, force: true })
+})
+
+function makeConfig(root: string): any {
   return {
     root,
     resolve: { preserveSymlinks: false },
@@ -16,23 +22,34 @@ function makeConfig(root = '/root'): any {
   }
 }
 
-function makePkgData(dir: string, exports: Record<string, any>) {
-  return { dir, data: { exports } }
+function writePkg(pkgName: string, exports: Record<string, any>): string {
+  const pkgDir = path.join(tmpDir, 'node_modules', pkgName)
+  fs.mkdirSync(pkgDir, { recursive: true })
+  fs.writeFileSync(
+    path.join(pkgDir, 'package.json'),
+    JSON.stringify({ name: pkgName, exports }),
+  )
+  return pkgDir
 }
 
 describe('expandGlobIds', () => {
   test('skips null-valued exports (private subpath patterns)', () => {
-    mockResolvePackageData.mockReturnValue(
-      makePkgData('/root/node_modules/my-pkg', {
-        '.': './dist/index.js',
-        './utils': './dist/utils.js',
-        './private': null,
-        './also-private': null,
-        './public': './dist/public.js',
-      }) as any,
-    )
+    writePkg('my-pkg', {
+      '.': './dist/index.js',
+      './utils': './dist/utils.js',
+      './private': null,
+      './also-private': null,
+      './public': './dist/public.js',
+    })
 
-    const result = expandGlobIds('my-pkg/*', makeConfig())
+    // create stub dist files so non-null entries resolve
+    const distDir = path.join(tmpDir, 'node_modules', 'my-pkg', 'dist')
+    fs.mkdirSync(distDir, { recursive: true })
+    for (const f of ['index.js', 'utils.js', 'public.js']) {
+      fs.writeFileSync(path.join(distDir, f), '')
+    }
+
+    const result = expandGlobIds('my-pkg/*', makeConfig(tmpDir))
 
     expect(result).toContain('my-pkg')
     expect(result).toContain('my-pkg/utils')
@@ -42,15 +59,13 @@ describe('expandGlobIds', () => {
   })
 
   test('includes non-null exports when glob matches', () => {
-    mockResolvePackageData.mockReturnValue(
-      makePkgData('/root/node_modules/my-pkg', {
-        '.': './dist/index.js',
-        './utils': './dist/utils.js',
-        './helpers': './dist/helpers.js',
-      }) as any,
-    )
+    writePkg('my-pkg', {
+      '.': './dist/index.js',
+      './utils': './dist/utils.js',
+      './helpers': './dist/helpers.js',
+    })
 
-    const result = expandGlobIds('my-pkg/*', makeConfig())
+    const result = expandGlobIds('my-pkg/*', makeConfig(tmpDir))
 
     expect(result).toContain('my-pkg')
     expect(result).toContain('my-pkg/utils')
