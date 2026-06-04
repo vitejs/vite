@@ -102,7 +102,7 @@ export class EvaluatedModules {
   public removeModule(node: EvaluatedModuleNode): void {
     this.fileToModulesMap.delete(node.file)
     this.idToModuleMap.delete(node.id)
-    this.urlToIdModuleMap.delete(node.id)
+    this.urlToIdModuleMap.delete(node.url)
   }
 
   /**
