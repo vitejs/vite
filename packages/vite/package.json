@@ -73,7 +73,6 @@
   },
   "//": "READ CONTRIBUTING.md to understand what to put under deps vs. devDeps!",
   "dependencies": {
-    "@voidzero-dev/vite-task-client": "^0.1.1",
     "lightningcss": "^1.32.0",
     "picomatch": "^4.0.4",
     "postcss": "^8.5.15",
@@ -96,6 +95,7 @@
     "@vercel/detect-agent": "^1.2.3",
     "@vitejs/devtools": "^0.3.1",
     "@vitest/utils": "4.1.7",
+    "@voidzero-dev/vite-task-client": "^0.1.1",
     "artichokie": "^0.4.3",
     "baseline-browser-mapping": "^2.10.33",
     "cac": "^7.0.0",
