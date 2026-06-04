@@ -7,7 +7,9 @@ import { expandGlobIds } from '../../optimizer/resolve'
 let tmpDir: string
 
 beforeEach(() => {
-  tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), 'vite-expandGlobIds-'))
+  tmpDir = fs.realpathSync(
+    fs.mkdtempSync(path.join(os.tmpdir(), 'vite-expandGlobIds-')),
+  )
 })
 
 afterEach(() => {
