@@ -1,11 +1,11 @@
 import type { ModuleRunner } from 'vite/module-runner'
 import type { ResolvedConfig } from '../../config'
-import type { DevEnvironmentContext } from '../environment'
-import { DevEnvironment } from '../environment'
 import type { ServerModuleRunnerOptions } from '../../ssr/runtime/serverModuleRunner'
 import { createServerModuleRunner } from '../../ssr/runtime/serverModuleRunner'
 import { createServerHotChannel } from '../hmr'
 import type { Environment } from '../../environment'
+import { FetchableDevEnvironment } from './fetchableEnvironments'
+import type { FetchableDevEnvironmentContext } from './fetchableEnvironments'
 
 export function createRunnableDevEnvironment(
   name: string,
@@ -23,8 +23,8 @@ export function createRunnableDevEnvironment(
 }
 
 export interface RunnableDevEnvironmentContext extends Omit<
-  DevEnvironmentContext,
-  'hot'
+  FetchableDevEnvironmentContext,
+  'hot' | 'handleRequest'
 > {
   runner?: (
     environment: RunnableDevEnvironment,
@@ -32,6 +32,7 @@ export interface RunnableDevEnvironmentContext extends Omit<
   ) => ModuleRunner
   runnerOptions?: ServerModuleRunnerOptions
   hot?: boolean
+  requestHandlerExport?: string
 }
 
 export function isRunnableDevEnvironment(
@@ -40,7 +41,7 @@ export function isRunnableDevEnvironment(
   return environment instanceof RunnableDevEnvironment
 }
 
-class RunnableDevEnvironment extends DevEnvironment {
+class RunnableDevEnvironment extends FetchableDevEnvironment {
   private _runner: ModuleRunner | undefined
   private _runnerFactory:
     | ((
@@ -55,7 +56,17 @@ class RunnableDevEnvironment extends DevEnvironment {
     config: ResolvedConfig,
     context: RunnableDevEnvironmentContext,
   ) {
-    super(name, config, context as DevEnvironmentContext)
+    const exportName = context.requestHandlerExport ?? 'default'
+    const handleRequest = async (request: Request) => {
+      const url = new URL(request.url)
+      const mod = await this.runner.import(url.pathname)
+      return mod[exportName](request)
+    }
+    super(name, config, {
+      ...context,
+      hot: context.hot ?? false,
+      handleRequest,
+    })
     this._runnerFactory = context.runner
     this._runnerOptions = context.runnerOptions
   }
