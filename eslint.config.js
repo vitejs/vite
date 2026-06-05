@@ -69,9 +69,7 @@ export default defineConfig(
       'n/hashbang': 'error',
 
       eqeqeq: ['warn', 'always', { null: 'never' }],
-      'no-debugger': ['error'],
       'no-empty': ['warn', { allowEmptyCatch: true }],
-      'no-process-exit': 'off',
       'prefer-const': [
         'warn',
         {
@@ -92,7 +90,6 @@ export default defineConfig(
       'n/no-extraneous-require': 'error',
       'n/prefer-node-protocol': 'error',
 
-      '@typescript-eslint/ban-ts-comment': 'error',
       '@typescript-eslint/no-unsafe-function-type': 'off',
       '@typescript-eslint/explicit-module-boundary-types': [
         'error',
@@ -106,11 +103,8 @@ export default defineConfig(
         'error',
         { allowInterfaces: 'with-single-extends' },
       ],
-      '@typescript-eslint/no-empty-interface': 'off',
       '@typescript-eslint/no-explicit-any': 'off',
-      'no-extra-semi': 'off',
-      '@typescript-eslint/no-extra-semi': 'off', // conflicts with prettier
-      '@typescript-eslint/no-inferrable-types': 'off',
+      '@typescript-eslint/no-inferrable-types': 'off', // incompatible with `isolatedDeclarations`
       '@typescript-eslint/no-unused-vars': [
         'error',
         {
@@ -123,7 +117,6 @@ export default defineConfig(
           ignoreRestSiblings: true,
         },
       ],
-      '@typescript-eslint/no-require-imports': 'off',
       '@typescript-eslint/consistent-type-imports': [
         'error',
         { prefer: 'type-imports', disallowTypeAnnotations: false },
@@ -239,6 +232,7 @@ export default defineConfig(
       'n/no-unsupported-features/es-builtins': 'off',
       'n/no-unsupported-features/node-builtins': 'off',
       '@typescript-eslint/explicit-module-boundary-types': 'off',
+      '@typescript-eslint/no-require-imports': 'off',
       '@typescript-eslint/no-unused-expressions': 'off',
       '@typescript-eslint/no-unused-vars': 'off',
       'no-undef': 'off',
