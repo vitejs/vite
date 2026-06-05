@@ -88,29 +88,8 @@ export default defineConfig(
           tryExtensions: ['.ts', '.js', '.jsx', '.tsx', '.d.ts'],
         },
       ],
-      'n/no-extraneous-import': [
-        'error',
-        {
-          allowModules: [
-            'vite',
-            'esbuild',
-            'rolldown',
-            'less',
-            'sass',
-            'sass-embedded',
-            'terser',
-            'lightningcss',
-            'vitest',
-            'unbuild',
-          ],
-        },
-      ],
-      'n/no-extraneous-require': [
-        'error',
-        {
-          allowModules: ['vite'],
-        },
-      ],
+      'n/no-extraneous-import': 'error',
+      'n/no-extraneous-require': 'error',
       'n/prefer-node-protocol': 'error',
 
       '@typescript-eslint/ban-ts-comment': 'error',
@@ -276,17 +255,6 @@ export default defineConfig(
     },
   },
   {
-    name: 'disables/vite/types',
-    files: [
-      'packages/vite/src/types/**/*.{,c,m}[jt]s{,x}',
-      'packages/vite/scripts/**/*.{,c,m}[jt]s{,x}',
-      '**/*.spec.ts',
-    ],
-    rules: {
-      'n/no-extraneous-import': 'off',
-    },
-  },
-  {
     name: 'disables/vite/cjs',
     files: ['packages/vite/index.cjs'],
     rules: {
@@ -303,8 +271,6 @@ export default defineConfig(
     rules: {
       'no-undef': 'off',
       'n/no-missing-import': 'off',
-      'n/no-extraneous-import': 'off',
-      'n/no-extraneous-require': 'off',
       '@typescript-eslint/explicit-module-boundary-types': 'off',
     },
   },
@@ -349,6 +315,7 @@ export default defineConfig(
     name: 'disables/dts',
     files: ['**/*.d.ts'],
     rules: {
+      'n/no-extraneous-import': 'off',
       '@typescript-eslint/consistent-indexed-object-style': 'off',
       '@typescript-eslint/triple-slash-reference': 'off',
     },
@@ -359,6 +326,7 @@ export default defineConfig(
     rules: {
       'no-console': 'off',
       '@typescript-eslint/ban-ts-comment': 'off',
+      'n/no-extraneous-import': 'off',
     },
   },
   {
