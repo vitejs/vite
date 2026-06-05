@@ -205,7 +205,7 @@ export default defineConfig(
   },
   {
     name: 'vite/globals',
-    files: ['packages/**/*.?([cm])[jt]s?(x)'],
+    files: ['packages/**/*.{,c,m}[jt]s{,x}'],
     ignores: ['**/__tests__/**'],
     rules: {
       'no-restricted-globals': ['error', 'require', '__dirname', '__filename'],
@@ -213,7 +213,7 @@ export default defineConfig(
   },
   {
     name: 'vite/node',
-    files: ['packages/vite/src/node/**/*.?([cm])[jt]s?(x)'],
+    files: ['packages/vite/src/node/**/*.{,c,m}[jt]s{,x}'],
     rules: {
       'no-console': ['error'],
       'n/no-restricted-require': [
@@ -230,7 +230,7 @@ export default defineConfig(
   },
   {
     name: 'playground/enforce-esm',
-    files: ['playground/**/*.?([cm])[jt]s?(x)'],
+    files: ['playground/**/*.{,c,m}[jt]s{,x}'],
     ignores: [
       'playground/ssr-resolve/**',
       'playground/**/*{commonjs,cjs}*/**',
@@ -245,7 +245,7 @@ export default defineConfig(
   },
   {
     name: 'tests',
-    files: ['**/__tests__/**/*.?([cm])[jt]s?(x)'],
+    files: ['**/__tests__/**/*.{,c,m}[jt]s{,x}'],
     rules: {
       'n/no-unsupported-features/node-builtins': [
         'error',
@@ -277,7 +277,7 @@ export default defineConfig(
 
   {
     name: 'disables/vite/client',
-    files: ['packages/vite/src/client/**/*.?([cm])[jt]s?(x)'],
+    files: ['packages/vite/src/client/**/*.{,c,m}[jt]s{,x}'],
     ignores: ['**/__tests__/**'],
     rules: {
       'n/no-unsupported-features/node-builtins': 'off',
@@ -286,8 +286,8 @@ export default defineConfig(
   {
     name: 'disables/vite/types',
     files: [
-      'packages/vite/src/types/**/*.?([cm])[jt]s?(x)',
-      'packages/vite/scripts/**/*.?([cm])[jt]s?(x)',
+      'packages/vite/src/types/**/*.{,c,m}[jt]s{,x}',
+      'packages/vite/scripts/**/*.{,c,m}[jt]s{,x}',
       '**/*.spec.ts',
     ],
     rules: {
@@ -305,7 +305,7 @@ export default defineConfig(
   {
     name: 'disables/create-vite/templates',
     files: [
-      'packages/create-vite/template-*/**/*.?([cm])[jt]s?(x)',
+      'packages/create-vite/template-*/**/*.{,c,m}[jt]s{,x}',
       '**/build.config.ts',
     ],
     rules: {
@@ -318,7 +318,7 @@ export default defineConfig(
   },
   {
     name: 'disables/playground',
-    files: ['playground/**/*.?([cm])[jt]s?(x)', 'docs/**/*.?([cm])[jt]s?(x)'],
+    files: ['playground/**/*.{,c,m}[jt]s{,x}', 'docs/**/*.{,c,m}[jt]s{,x}'],
     rules: {
       'n/no-extraneous-import': 'off',
       'n/no-extraneous-require': 'off',
@@ -338,8 +338,8 @@ export default defineConfig(
   {
     name: 'disables/playground/tsconfig-json',
     files: [
-      'playground/tsconfig-json/**/*.?([cm])[jt]s?(x)',
-      'playground/tsconfig-json-load-error/**/*.?([cm])[jt]s?(x)',
+      'playground/tsconfig-json/**/*.{,c,m}[jt]s{,x}',
+      'playground/tsconfig-json-load-error/**/*.{,c,m}[jt]s{,x}',
     ],
     ignores: ['**/__tests__/**'],
     rules: {
@@ -363,7 +363,7 @@ export default defineConfig(
   },
   {
     name: 'disables/test',
-    files: ['**/__tests__/**/*.?([cm])[jt]s?(x)'],
+    files: ['**/__tests__/**/*.{,c,m}[jt]s{,x}'],
     rules: {
       'no-console': 'off',
       '@typescript-eslint/ban-ts-comment': 'off',
@@ -371,7 +371,7 @@ export default defineConfig(
   },
   {
     name: 'disables/test-dts',
-    files: ['**/__tests_dts__/**/*.?([cm])[jt]s?(x)'],
+    files: ['**/__tests_dts__/**/*.{,c,m}[jt]s{,x}'],
     rules: {
       // disable typecheck-specific rules
       '@typescript-eslint/no-duplicate-type-constituents': 'off',
