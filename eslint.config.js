@@ -169,12 +169,6 @@ export default defineConfig(
           ],
         },
       ],
-      'sort-imports': [
-        'error',
-        {
-          ignoreDeclarationSort: true,
-        },
-      ],
 
       'regexp/prefer-regexp-exec': 'error',
       'regexp/prefer-regexp-test': 'error',
