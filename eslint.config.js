@@ -249,33 +249,11 @@ export default defineConfig(
     },
   },
   {
-    name: 'disables/vite/cjs',
-    files: ['packages/vite/index.cjs'],
-    rules: {
-      'no-restricted-globals': 'off',
-      'n/no-missing-require': 'off',
-    },
-  },
-  {
-    name: 'disables/create-vite/templates',
-    files: [
-      'packages/create-vite/template-*/**/*.{,c,m}[jt]s{,x}',
-      '**/build.config.ts',
-    ],
-    rules: {
-      'no-undef': 'off',
-      'n/no-missing-import': 'off',
-      '@typescript-eslint/explicit-module-boundary-types': 'off',
-    },
-  },
-  {
     name: 'disables/playground',
     files: ['playground/**/*.{,c,m}[jt]s{,x}', 'docs/**/*.{,c,m}[jt]s{,x}'],
     rules: {
       'n/no-extraneous-import': 'off',
       'n/no-extraneous-require': 'off',
-      'n/no-missing-import': 'off',
-      'n/no-missing-require': 'off',
       'n/no-unsupported-features/es-builtins': 'off',
       'n/no-unsupported-features/node-builtins': 'off',
       '@typescript-eslint/explicit-module-boundary-types': 'off',
