@@ -6,7 +6,6 @@ import pluginRegExp from 'eslint-plugin-regexp'
 import tseslint from 'typescript-eslint'
 import { defineConfig } from 'eslint/config'
 import globals from 'globals'
-import pkgVite from './packages/vite/package.json' with { type: 'json' }
 
 // Some rules work better with typechecking enabled, but as enabling it is slow,
 // we only do so when linting in IDEs for now. If you want to lint with typechecking
@@ -79,6 +78,7 @@ export default defineConfig(
           destructuring: 'all',
         },
       ],
+      'no-restricted-globals': ['error', 'require', '__dirname', '__filename'],
 
       'n/no-missing-require': [
         'error',
@@ -177,28 +177,10 @@ export default defineConfig(
     },
   },
   {
-    name: 'vite/globals',
-    files: ['packages/**/*.{,c,m}[jt]s{,x}'],
-    ignores: ['**/__tests__/**'],
-    rules: {
-      'no-restricted-globals': ['error', 'require', '__dirname', '__filename'],
-    },
-  },
-  {
     name: 'vite/node',
     files: ['packages/vite/src/node/**/*.{,c,m}[jt]s{,x}'],
     rules: {
       'no-console': ['error'],
-      'n/no-restricted-require': [
-        'error',
-        Object.keys(pkgVite.devDependencies).map((d) => ({
-          name: d,
-          message:
-            `devDependencies can only be imported using ESM syntax so ` +
-            `that they are included in the rolldown bundle. If you are trying to ` +
-            `lazy load a dependency, use (await import('dependency')).default instead.`,
-        })),
-      ],
     },
   },
   {
@@ -262,6 +244,7 @@ export default defineConfig(
       'no-undef': 'off',
       'no-empty': 'off',
       'no-constant-condition': 'off',
+      'no-restricted-globals': 'off',
       '@typescript-eslint/no-empty-function': 'off',
     },
   },
