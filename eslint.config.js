@@ -249,11 +249,7 @@ export default defineConfig(
     rules: {
       'n/no-unsupported-features/node-builtins': [
         'error',
-        {
-          // ideally we would like to allow all experimental features
-          // https://github.com/eslint-community/eslint-plugin-n/issues/199
-          ignores: ['fetch', 'import.meta.dirname'],
-        },
+        { allowExperimental: true },
       ],
     },
   },
@@ -266,11 +262,7 @@ export default defineConfig(
     rules: {
       'n/no-unsupported-features/node-builtins': [
         'error',
-        {
-          // ideally we would like to allow all experimental features
-          // https://github.com/eslint-community/eslint-plugin-n/issues/199
-          ignores: ['fetch', 'import.meta.dirname'],
-        },
+        { allowExperimental: true },
       ],
     },
   },
