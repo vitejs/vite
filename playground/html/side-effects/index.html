@@ -1,2 +1,6 @@
 <h1>sideEffects false</h1>
 <script type="module" src="./sideEffects.js"></script>
+<script type="module">
+  console.log('message from inline sideEffects script')
+  globalThis.__inlineSideEffectsScript = 'executed'
+</script>

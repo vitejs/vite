@@ -2,5 +2,7 @@
   "name": "@vitejs/test-html-side-effects",
   "private": true,
   "version": "0.0.0",
-  "sideEffects": false
+  "sideEffects": [
+    "./sideEffects.js"
+  ]
 }

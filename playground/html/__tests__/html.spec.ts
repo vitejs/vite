@@ -406,8 +406,18 @@ describe('side-effects', () => {
     await page.goto(viteTestUrl + '/side-effects/')
   })
 
-  test('console.log is not tree-shaken', async () => {
+  test('allowlisted external module script is not tree-shaken', async () => {
     expect(browserLogs).toContain('message from sideEffects script')
+  })
+
+  test('inline module script omitted from the sideEffects allowlist is not tree-shaken', async () => {
+    // Reproduces the Rollup -> Rolldown regression from #22620: the
+    // package.json sideEffects allowlist only includes ./sideEffects.js, but
+    // the generated HTML proxy module for this inline script must still run.
+    expect(browserLogs).toContain('message from inline sideEffects script')
+    expect(
+      await page.evaluate(() => globalThis.__inlineSideEffectsScript),
+    ).toBe('executed')
   })
 })
 

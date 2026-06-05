@@ -111,10 +111,9 @@ export function htmlInlineProxyPlugin(config: ResolvedConfig): Plugin {
     resolveId: {
       filter: { id: isHtmlProxyRE },
       handler(id) {
-        return id
+        return { id, moduleSideEffects: 'no-treeshake' }
       },
     },
-
     load: {
       filter: { id: isHtmlProxyRE },
       handler(id) {
@@ -126,7 +125,7 @@ export function htmlInlineProxyPlugin(config: ResolvedConfig): Plugin {
           const result = htmlProxyMap.get(config)!.get(url)?.[index]
           if (result) {
             // set moduleSideEffects to keep the module even if `treeshake.moduleSideEffects=false` is set
-            return { ...result, moduleSideEffects: true }
+            return { ...result, moduleSideEffects: 'no-treeshake' }
           } else {
             throw new Error(`No matching HTML proxy module found from ${id}`)
           }
