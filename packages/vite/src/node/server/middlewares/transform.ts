@@ -61,10 +61,18 @@ export function isServerAccessDeniedForTransform(
   config: ResolvedConfig,
   id: string,
 ): boolean {
-  if (rawRE.test(id) || urlRE.test(id) || inlineRE.test(id) || svgRE.test(id)) {
+  // Decode the id to prevent bypass via percent-encoded characters (e.g. %3fraw for ?raw)
+  // decodeURI used in the middleware does NOT decode %3F (?), so it can still reach here encoded
+  let decodedId: string
+  try {
+    decodedId = decodeURIComponent(id)
+  } catch {
+    decodedId = id
+  }
+  if (rawRE.test(decodedId) || urlRE.test(decodedId) || inlineRE.test(decodedId) || svgRE.test(decodedId)) {
     return (
-      checkLoadingAccess(config, cleanUrl(id)) !== 'allowed' ||
-      checkLoadingAccess(config, id) !== 'allowed'
+      checkLoadingAccess(config, cleanUrl(decodedId)) !== 'allowed' ||
+      checkLoadingAccess(config, decodedId) !== 'allowed'
     )
   }
   return false
