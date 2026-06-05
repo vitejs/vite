@@ -11,6 +11,12 @@ describe('registerCustomMime', () => {
     savedMimes = Object.fromEntries(
       TS_EXTENSIONS.map((ext) => [ext, mrmime.mimes[ext]]),
     )
+    // Reset to mrmime's original defaults — registerCustomMime() may have already
+    // been called by other test files that share this module graph (e.g. via assetPlugin()).
+    mrmime.mimes.ts = 'video/mp2t'
+    delete mrmime.mimes.tsx
+    delete mrmime.mimes.mts
+    delete mrmime.mimes.cts
   })
 
   afterEach(() => {
