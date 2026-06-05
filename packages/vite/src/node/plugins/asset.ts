@@ -71,6 +71,12 @@ export function registerCustomMime(): void {
   mrmime.mimes.flac = 'audio/flac'
   // https://developer.mozilla.org/en-US/docs/Web/HTTP/Basics_of_HTTP/MIME_types/Common_types
   mrmime.mimes.eot = 'application/vnd.ms-fontobject'
+  // mrmime maps .ts to video/mp2t (MPEG-2 transport stream); TypeScript files compile to JavaScript in Vite
+  // https://github.com/vitejs/vite/issues/11823
+  mrmime.mimes.ts = 'text/javascript'
+  mrmime.mimes.tsx = 'text/javascript'
+  mrmime.mimes.mts = 'text/javascript'
+  mrmime.mimes.cts = 'text/javascript'
 }
 
 export function renderAssetUrlInJS(
