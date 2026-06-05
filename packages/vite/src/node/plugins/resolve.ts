@@ -1080,7 +1080,7 @@ function resolveDeepImport(
     }
     if (!relativeId) {
       throw new Error(
-        `Package subpath '${relativeId}' is not defined by "exports" in ` +
+        `Package subpath '${id}' is not defined by "exports" in ` +
           `${path.join(dir, 'package.json')}.`,
       )
     }

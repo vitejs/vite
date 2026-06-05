@@ -4,6 +4,9 @@ import { createServer } from '../server'
 import { createServerModuleRunner } from '../ssr/runtime/serverModuleRunner'
 import type { EnvironmentOptions, InlineConfig } from '../config'
 import { build } from '../build'
+import { DEFAULT_EXTENSIONS } from '../constants'
+import { tryNodeResolve } from '../plugins/resolve'
+import { nodeLikeBuiltins } from '../utils'
 
 describe('import and resolveId', () => {
   async function createTestServer() {
@@ -52,6 +55,35 @@ describe('import and resolveId', () => {
       'dir/index.default.js',
       expect.stringContaining('dir/index.module.js'),
     ])
+  })
+
+  test('tryNodeResolve reports the requested package subpath for missing string exports', () => {
+    const root = join(import.meta.dirname, 'fixtures/string-exports')
+
+    expect(() =>
+      tryNodeResolve(
+        '@vitejs/test-string-exports/missing',
+        join(root, 'index.js'),
+        {
+          root,
+          isBuild: true,
+          isProduction: true,
+          preferRelative: false,
+          tryIndex: true,
+          mainFields: [],
+          conditions: ['node'],
+          externalConditions: [],
+          external: [],
+          noExternal: [],
+          dedupe: [],
+          extensions: DEFAULT_EXTENSIONS,
+          preserveSymlinks: false,
+          tsconfigPaths: false,
+          packageCache: undefined,
+          builtins: nodeLikeBuiltins,
+        },
+      ),
+    ).toThrow(`Package subpath './missing' is not defined by "exports"`)
   })
 })
 

@@ -1,0 +1,6 @@
+{
+  "name": "@vitejs/test-string-exports",
+  "private": true,
+  "type": "module",
+  "exports": "./index.js"
+}
