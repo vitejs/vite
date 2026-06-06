@@ -1,5 +1,4 @@
 import path from 'node:path'
-import fs from 'node:fs'
 import type { HeadConfig } from 'vitepress'
 import { defineConfig } from 'vitepress'
 import { transformerTwoslash } from '@shikijs/vitepress-twoslash'
@@ -75,17 +74,6 @@ const versionLinks = (() => {
   return links
 })()
 
-function inlineScript(file: string): HeadConfig {
-  return [
-    'script',
-    {},
-    fs.readFileSync(
-      path.resolve(import.meta.dirname, `./inlined-scripts/${file}`),
-      'utf-8',
-    ),
-  ]
-}
-
 const config = defineConfig({
   title: `Vite${additionalTitle}`,
   description: 'Next Generation Frontend Tooling',
@@ -103,7 +91,6 @@ const config = defineConfig({
       { rel: 'alternate', type: 'application/rss+xml', href: '/blog.rss' },
     ],
     ['link', { rel: 'preconnect', href: 'https://fonts.googleapis.com' }],
-    inlineScript('banner.js'),
     ['link', { rel: 'me', href: 'https://m.webtoo.ls/@vite' }],
     ['meta', { property: 'og:type', content: 'website' }],
     ['meta', { property: 'og:title', content: ogTitle }],
@@ -138,12 +125,10 @@ const config = defineConfig({
 
   themeConfig: {
     variant: 'vite',
-    logo: '/logo.svg',
-
     banner: {
-      id: 'viteplus-alpha',
-      text: 'Announcing Vite+ Alpha: Open source. Unified. Next-gen.',
-      url: 'https://voidzero.dev/posts/announcing-vite-plus-alpha?utm_source=vite&utm_content=top_banner',
+      id: 'cloudflare-supports-vite',
+      text: `Cloudflare supports Vite's mission`,
+      url: '/blog/cloudflare-supports-vite',
     },
 
     editLink: {
@@ -574,6 +559,14 @@ const config = defineConfig({
     },
   },
   vite: {
+    resolve: {
+      alias: {
+        '@components/oss/TopBanner.vue': path.resolve(
+          import.meta.dirname,
+          'theme/components/TopBanner.vue',
+        ),
+      },
+    },
     plugins: [
       groupIconVitePlugin({
         customIcon: {
