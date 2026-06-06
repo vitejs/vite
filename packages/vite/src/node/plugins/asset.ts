@@ -34,6 +34,8 @@ import {
   DEFAULT_ASSETS_INLINE_LIMIT,
   DEFAULT_ASSETS_RE,
   FS_PREFIX,
+  inlineRE,
+  noInlineRE,
 } from '../constants'
 import {
   cleanUrl,
@@ -47,9 +49,6 @@ import type { PartialEnvironment } from '../baseEnvironment'
 export const assetUrlRE: RegExp = /__VITE_ASSET__([\w$]+)__(?:\$_(.*?)__)?/g
 
 const jsSourceMapRE = /\.[cm]?js\.map$/
-
-export const noInlineRE: RegExp = /[?&]no-inline\b/
-export const inlineRE: RegExp = /[?&]inline\b/
 
 const assetCache = new WeakMap<Environment, Map<string, string>>()
 
