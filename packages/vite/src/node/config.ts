@@ -37,11 +37,13 @@ import {
   DEFAULT_CLIENT_CONDITIONS,
   DEFAULT_CLIENT_MAIN_FIELDS,
   DEFAULT_CONFIG_FILES,
+  DEFAULT_DEV_PORT,
   DEFAULT_EXTENSIONS,
   DEFAULT_EXTERNAL_CONDITIONS,
   DEFAULT_PREVIEW_PORT,
   DEFAULT_SERVER_CONDITIONS,
   DEFAULT_SERVER_MAIN_FIELDS,
+  defaultAllowedOrigins,
   ENV_ENTRY,
   FS_PREFIX,
 } from './constants'
@@ -68,7 +70,7 @@ import {
   resolveBuilderOptions,
 } from './build'
 import type { ResolvedServerOptions, ServerOptions } from './server'
-import { resolveServerOptions, serverConfigDefaults } from './server'
+import { resolveServerOptions } from './server'
 import { DevEnvironment } from './server/environment'
 import { createRunnableDevEnvironment } from './server/environments/runnableEnvironment'
 import type { WebSocketServer } from './server/ws'
@@ -796,6 +798,40 @@ export async function resolveDevToolsConfig(
     return fallbackConfig
   }
 }
+
+const _serverConfigDefaults = Object.freeze({
+  port: DEFAULT_DEV_PORT,
+  strictPort: false,
+  host: 'localhost',
+  allowedHosts: [],
+  https: undefined,
+  open: false,
+  proxy: undefined,
+  cors: { origin: defaultAllowedOrigins },
+  headers: {},
+  // hmr
+  // ws
+  warmup: {
+    clientFiles: [],
+    ssrFiles: [],
+  },
+  // watch
+  middlewareMode: false,
+  fs: {
+    strict: true,
+    // allow
+    deny: ['.env', '.env.*', '*.{crt,pem}', '**/.git/**'],
+  },
+  // origin
+  preTransformRequests: true,
+  // sourcemapIgnoreList
+  perEnvironmentStartEndDuringDev: false,
+  perEnvironmentWatchChangeDuringDev: false,
+  // hotUpdateEnvironments
+  forwardConsole: undefined,
+} satisfies ServerOptions)
+export const serverConfigDefaults: Readonly<Partial<ServerOptions>> =
+  _serverConfigDefaults
 
 // inferred ones are omitted
 const configDefaults = Object.freeze({
