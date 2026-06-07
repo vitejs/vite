@@ -2217,7 +2217,18 @@ async function minifyCSS(
   // See https://github.com/vitejs/vite/pull/13893#issuecomment-1678628198
 
   if (config.build.cssMinify === 'esbuild') {
-    const { transform, formatMessages } = await importEsbuild()
+    let transform: typeof import('esbuild').transform
+    let formatMessages: typeof import('esbuild').formatMessages
+    try {
+      ({ transform, formatMessages } = await import('esbuild'))
+    } catch (e) {
+      config.logger.error(
+        colors.red(
+          '[esbuild css minify] `esbuild` is not installed. Please install it.',
+        ),
+      )
+      throw e
+    }
     try {
       const { code, warnings } = await transform(css, {
         loader: 'css',
@@ -3193,8 +3204,6 @@ const preprocessorSet = new Set([
 function isPreProcessor(lang: any): lang is PreprocessLang {
   return lang && preprocessorSet.has(lang)
 }
-
-const importEsbuild = createCachedImport(() => import('esbuild'))
 
 const importLightningCSS = createCachedImport(() => import('lightningcss'))
 async function compileLightningCSS(
