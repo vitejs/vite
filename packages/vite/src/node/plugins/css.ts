@@ -2220,7 +2220,9 @@ async function minifyCSS(
     let transform: typeof import('esbuild').transform
     let formatMessages: typeof import('esbuild').formatMessages
     try {
-      ;({ transform, formatMessages } = await (createCachedImport(() => import('esbuild'))()))
+      ;({ transform, formatMessages } = await createCachedImport(
+        () => import('esbuild'),
+      )())
     } catch (e) {
       config.logger.error(
         colors.red(
