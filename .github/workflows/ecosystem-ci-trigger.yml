@@ -138,9 +138,8 @@ jobs:
           repositories: |
             vite
             vite-ecosystem-ci
-          permission-issues: write
-          permission-pull-requests: write
-          permission-actions: write
+          permission-pull-requests: write # to add pr labels, add / delete comment reactions
+          permission-actions: write # to list workflow runs, to dispatch workflows
 
       - name: Trigger Preview Release (if Package Not Found)
         if: fromJSON(steps.check-package.outputs.result).exists == false
