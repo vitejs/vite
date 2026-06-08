@@ -54,12 +54,41 @@ export default defineConfig(({ command }) => ({
       },
     },
     virtualPlugin(),
+    virtualInvalidationPlugin(),
     transformCountPlugin(),
     watchCssDepsPlugin(),
     TestCssLinkPlugin(),
     hotEventsPlugin(),
   ],
 }))
+
+// Virtual module that supports invalidate() — tests that invalidate()
+// correctly resolves virtual module URLs (/@id/__x00__... → \0...)
+function virtualInvalidationPlugin(): Plugin {
+  return {
+    name: 'virtual-invalidation-file',
+    resolveId(id) {
+      if (id === 'virtual:invalidation-file') {
+        return '\0virtual:invalidation-file'
+      }
+    },
+    load(id) {
+      if (id === '\0virtual:invalidation-file') {
+        // Import a real file so editing it triggers Vite's HMR pipeline.
+        // The virtual module accepts and immediately invalidates,
+        // which should propagate to its importers.
+        return `\
+import { depValue } from '/virtual-invalidation/dep.js';
+export const value = depValue;
+if (import.meta.hot) {
+  import.meta.hot.accept(() => {
+    import.meta.hot.invalidate()
+  })
+}`
+      }
+    },
+  }
+}
 
 function virtualPlugin(): Plugin {
   let num = 0

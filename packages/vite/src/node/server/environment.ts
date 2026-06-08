@@ -16,7 +16,7 @@ import {
   createExplicitDepsOptimizer,
 } from '../optimizer/optimizer'
 import { ERR_OUTDATED_OPTIMIZED_DEP } from '../../shared/constants'
-import { promiseWithResolvers } from '../../shared/utils'
+import { promiseWithResolvers, unwrapId } from '../../shared/utils'
 import type { ViteDevServer } from '../server'
 import { EnvironmentModuleGraph } from './moduleGraph'
 import type { EnvironmentModuleNode } from './moduleGraph'
@@ -278,7 +278,12 @@ export class DevEnvironment extends BaseEnvironment {
     },
     _client: NormalizedHotChannelClient,
   ): void {
-    const mod = this.moduleGraph.urlToModuleMap.get(m.path)
+    // Try direct URL lookup first (fast path for regular modules), then
+    // fall back to ID lookup via unwrapId (handles virtual modules whose
+    // client-side URL /@id/__x00__... differs from the stored URL)
+    const mod =
+      this.moduleGraph.urlToModuleMap.get(m.path) ??
+      this.moduleGraph.idToModuleMap.get(unwrapId(m.path))
     if (
       mod &&
       mod.isSelfAccepting &&
