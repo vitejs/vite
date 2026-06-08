@@ -28,8 +28,9 @@ const argv = mri<{
   overwrite?: boolean
   immediate?: boolean
   interactive?: boolean
+  oxlint?: boolean
 }>(process.argv.slice(2), {
-  boolean: ['help', 'overwrite', 'immediate', 'interactive'],
+  boolean: ['help', 'overwrite', 'immediate', 'interactive', 'oxlint'],
   alias: { h: 'help', t: 'template', i: 'immediate' },
   string: ['template'],
 })
@@ -45,6 +46,7 @@ When running in TTY, the CLI will start in interactive mode.
 Options:
   -t, --template NAME                   use a specific template
   -i, --immediate / --no-immediate      install dependencies and start dev
+  --oxlint / --no-oxlint                use Oxlint instead of ESLint (only for React templates)
   --overwrite                           remove existing files if target directory is not empty
   --interactive / --no-interactive      force interactive / non-interactive mode
   -h, --help                            display this help message
@@ -442,6 +444,7 @@ async function init() {
   const argOverwrite = argv.overwrite
   const argImmediate = argv.immediate
   const argInteractive = argv.interactive
+  const argOxlint = argv.oxlint
 
   const help = argv.help
   if (help) {
@@ -623,7 +626,26 @@ async function init() {
     process.exit(status ?? 0)
   }
 
-  // 5. Ask about immediate install and package manager
+  // 5. Ask whether to use Oxlint instead of ESLint (React templates only)
+  const isReactTemplate = template === 'react' || template === 'react-ts'
+  let oxlint = argOxlint
+  if (isReactTemplate && oxlint === undefined) {
+    if (interactive) {
+      const oxlintResult = await prompts.select({
+        message: 'Use Oxlint instead of ESLint?',
+        options: [
+          { label: 'No (ESLint)', value: false },
+          { label: 'Yes (Oxlint)', value: true },
+        ],
+      })
+      if (prompts.isCancel(oxlintResult)) return cancel()
+      oxlint = oxlintResult
+    } else {
+      oxlint = false
+    }
+  }
+
+  // 6. Ask about immediate install and package manager
   let immediate = argImmediate
   if (immediate === undefined) {
     if (interactive) {
@@ -679,6 +701,10 @@ async function init() {
 
   if (isReactCompiler) {
     setupReactCompiler(root, template.endsWith('-ts'))
+  }
+
+  if (oxlint) {
+    setupOxlint(root)
   }
 
   if (immediate) {
@@ -819,6 +845,75 @@ import babel from '@rolldown/plugin-babel'`,
     root,
     'The React Compiler is enabled on this template. See [this documentation](https://react.dev/learn/react-compiler) for more information.\n\nNote: This will impact Vite dev & build performances.',
   )
+}
+
+function setupOxlint(root: string) {
+  // renovate: datasource=npm depName=oxlint
+  const oxlintVersion = '1.68.0'
+
+  fs.rmSync(path.resolve(root, 'eslint.config.js'))
+
+  const oxlintConfig = {
+    $schema: './node_modules/oxlint/configuration_schema.json',
+    plugins: ['react', 'typescript', 'oxc'],
+    categories: { correctness: 'error' },
+    rules: {
+      'react/rules-of-hooks': 'error',
+      'react/exhaustive-deps': 'warn',
+      'react/only-export-components': ['warn', { allowConstantExport: true }],
+    },
+  }
+  fs.writeFileSync(
+    path.resolve(root, '.oxlintrc.json'),
+    JSON.stringify(oxlintConfig, null, 2) + '\n',
+  )
+
+  editFile(path.resolve(root, 'package.json'), (content) => {
+    const asObject = JSON.parse(content)
+    const devDepsEntries = Object.entries(asObject.devDependencies).filter(
+      ([name]) =>
+        name !== 'eslint' &&
+        name !== 'globals' &&
+        name !== 'typescript-eslint' &&
+        !name.startsWith('@eslint/') &&
+        !name.startsWith('eslint-plugin-'),
+    )
+    devDepsEntries.push(['oxlint', `^${oxlintVersion}`])
+    devDepsEntries.sort()
+    asObject.devDependencies = Object.fromEntries(devDepsEntries)
+    asObject.scripts.lint = 'oxlint'
+    return JSON.stringify(asObject, null, 2) + '\n'
+  })
+
+  editFile(path.resolve(root, 'README.md'), (content) => {
+    content = content.replace(
+      'with HMR and some ESLint rules',
+      'with HMR and some Oxlint rules',
+    )
+    const headingIndex = content.indexOf(
+      '## Expanding the ESLint configuration',
+    )
+    if (headingIndex === -1) {
+      console.warn('Could not update ESLint section in README.md')
+      return content
+    }
+    const oxlintSection = `## Expanding the Oxlint configuration
+
+This template uses [Oxlint](https://oxc.rs) for linting. If you are developing a production application, we recommend enabling additional rule categories for stricter checks by editing \`.oxlintrc.json\`:
+
+\`\`\`json
+{
+  "categories": {
+    "correctness": "error",
+    "pedantic": "warn"
+  }
+}
+\`\`\`
+
+See the [Oxlint rules documentation](https://oxc.rs/docs/guide/usage/linter/rules) for the full list of rules and categories.
+`
+    return content.slice(0, headingIndex) + oxlintSection
+  })
 }
 
 function updateReactCompilerReadme(root: string, newBody: string) {

@@ -91,6 +91,16 @@ test('prompts for the framework on supplying an invalid template', () => {
   )
 })
 
+test('prompts to use Oxlint for React templates in interactive mode', () => {
+  const { stdout } = run([
+    projectName,
+    '--interactive',
+    '--template',
+    'react-ts',
+  ])
+  expect(stdout).toContain('Use Oxlint instead of ESLint?')
+})
+
 test('asks to overwrite non-empty target directory', () => {
   createNonEmptyDir()
   const { stdout } = run([projectName, '--interactive'], {
@@ -144,6 +154,7 @@ test('successfully scaffolds a project with subfolder based on react starter tem
       '--no-immediate',
       '--template',
       'react',
+      '--no-oxlint',
       '--no-rolldown',
     ],
     {
@@ -176,6 +187,39 @@ test('successfully scaffolds a project based on react-compiler-ts starter templa
   expect(configFile).toContain('reactCompilerPreset')
   expect(packageJsonFile).toContain('babel-plugin-react-compiler')
   expect(readmeFile).toContain('The React Compiler is enabled on this template')
+})
+
+test('scaffolds react-ts with Oxlint when --oxlint is passed', () => {
+  const { stdout } = run([projectName, '--template', 'react-ts', '--oxlint'], {
+    cwd: import.meta.dirname,
+  })
+  expect(stdout).toContain(`Scaffolding project in ${genPath}`)
+
+  expect(fs.existsSync(path.join(genPath, '.oxlintrc.json'))).toBe(true)
+  expect(fs.existsSync(path.join(genPath, 'eslint.config.js'))).toBe(false)
+
+  const pkg = fs.readFileSync(path.join(genPath, 'package.json'), 'utf-8')
+  expect(pkg).toContain('"oxlint"')
+  expect(pkg).not.toContain('eslint')
+  expect(pkg).toContain('"lint": "oxlint"')
+
+  const readme = fs.readFileSync(path.join(genPath, 'README.md'), 'utf-8')
+  expect(readme).toContain('Expanding the Oxlint configuration')
+  expect(readme).not.toContain('ESLint')
+})
+
+test('keeps ESLint for React templates by default', () => {
+  const { stdout } = run([projectName, '--template', 'react'], {
+    cwd: import.meta.dirname,
+  })
+  expect(stdout).toContain(`Scaffolding project in ${genPath}`)
+
+  expect(fs.existsSync(path.join(genPath, 'eslint.config.js'))).toBe(true)
+  expect(fs.existsSync(path.join(genPath, '.oxlintrc.json'))).toBe(false)
+
+  const pkg = fs.readFileSync(path.join(genPath, 'package.json'), 'utf-8')
+  expect(pkg).toContain('eslint')
+  expect(pkg).not.toContain('oxlint')
 })
 
 test('works with the -t alias', () => {
@@ -219,6 +263,7 @@ test('return help usage how to use create-vite', () => {
   const message = 'Usage: create-vite [OPTION]... [DIRECTORY]'
   expect(stdout).toContain(message)
   expect(stdout).toContain('-i, --immediate / --no-immediate')
+  expect(stdout).toContain('--oxlint / --no-oxlint')
   expect(stdout).toContain('--overwrite')
   expect(stdout).toContain('-h, --help')
 })
