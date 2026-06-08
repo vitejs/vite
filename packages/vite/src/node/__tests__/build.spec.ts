@@ -81,6 +81,35 @@ describe('build', () => {
     assertOutputHashContentChange(result[0], result[1])
   })
 
+  test('top-level input is used as the default build entry', async () => {
+    const result = (await build({
+      root: resolve(dirname, 'packages/build-project'),
+      logLevel: 'silent',
+      input: 'top-level-entry.js',
+      build: {
+        write: false,
+      },
+      plugins: [
+        {
+          name: 'test',
+          resolveId(id) {
+            if (id.replace(/\\/g, '/').endsWith('top-level-entry.js')) {
+              return '\0top-level-entry.js'
+            }
+          },
+          load(id) {
+            if (id === '\0top-level-entry.js') {
+              return `console.log('from-top-level-input')`
+            }
+          },
+        },
+      ],
+    })) as RolldownOutput
+    const chunk = result.output.find((o) => o.type === 'chunk')
+    expect(chunk?.fileName).toContain('top-level-entry')
+    expect(chunk?.code).toContain('from-top-level-input')
+  })
+
   test('file hash should change when pure css chunk changes', async () => {
     const buildProject = async (cssColor: string) => {
       return (await build({

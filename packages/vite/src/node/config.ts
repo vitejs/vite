@@ -14,6 +14,7 @@ import {
 import colors from 'picocolors'
 import picomatch from 'picomatch'
 import {
+  type InputOption,
   type NormalizedOutputOptions,
   type OutputChunk,
   type PluginContextMeta,
@@ -287,6 +288,12 @@ type ResolvedAllResolveOptions = Required<ResolveOptions> & { alias: Alias[] }
 
 export interface SharedEnvironmentOptions {
   /**
+   * Entry point(s) of the application. Used as the default value for
+   * `build.rolldownOptions.input`, `build.lib.entry`, and `optimizeDeps.entries`
+   * when those are not set. Paths are resolved relative to the project root.
+   */
+  input?: InputOption
+  /**
    * Define global variable replacements.
    * Entries will be defined on `window` during dev and replaced during build.
    */
@@ -336,6 +343,7 @@ export interface EnvironmentOptions extends SharedEnvironmentOptions {
 export type ResolvedResolveOptions = Required<ResolveOptions>
 
 export type ResolvedEnvironmentOptions = {
+  input?: InputOption
   define?: Record<string, any>
   resolve: ResolvedResolveOptions
   consumer: 'client' | 'server'
@@ -988,6 +996,7 @@ function resolveEnvironmentOptions(
     isSsrTargetWebworkerEnvironment,
   )
   return {
+    input: options.input,
     define: options.define,
     resolve,
     keepProcessEnv:
@@ -1012,6 +1021,7 @@ function resolveEnvironmentOptions(
       logger,
       consumer,
       isBundled && !isBuild,
+      options.input,
       isSsrTargetWebworkerEnvironment,
     ),
     isBundled,
@@ -1614,6 +1624,7 @@ export async function resolveConfig(
   // Some top level options only apply to the client environment
   const defaultClientEnvironmentOptions: UserConfig = {
     ...defaultEnvironmentOptions,
+    input: config.input,
     resolve: config.resolve, // inherit everything including mainFields and conditions
     optimizeDeps: config.optimizeDeps,
   }
@@ -1693,6 +1704,7 @@ export async function resolveConfig(
     logger,
     undefined,
     isBundledDev,
+    config.input,
   )
 
   // Backward compatibility: merge config.environments.ssr back into config.ssr
