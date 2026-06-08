@@ -2,6 +2,9 @@ import { execSync } from 'node:child_process'
 import path from 'node:path'
 
 function getWindows83ShortName(inputPath: string): string | undefined {
+  if (process.platform !== 'win32') {
+    return undefined
+  }
   try {
     const result = execSync(
       `powershell -Command "(New-Object -ComObject Scripting.FileSystemObject).GetFile('${inputPath}').ShortPath"`,

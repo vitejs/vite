@@ -9,10 +9,10 @@ import { init, parse } from 'es-module-lexer'
 import { isDynamicPattern } from 'tinyglobby'
 import {
   type RolldownOptions,
-  type RolldownOutput,
   type OutputOptions as RolldownOutputOptions,
   rolldown,
 } from 'rolldown'
+import type { RolldownOutput } from '#types/internal/rollupTypeCompat'
 import type { DepsOptimizerEsbuildOptions } from '#types/internal/esbuildOptions'
 import type { ResolvedConfig } from '../config'
 import {
@@ -1148,7 +1148,11 @@ export async function extractExportsData(
       format: 'esm',
       sourcemap: false,
     })
-    const [, exports, , hasModuleSyntax] = parse(result.output[0].code)
+    const outputChunk = result.output.find((chunk) => chunk.type === 'chunk')
+    if (!outputChunk) {
+      throw new Error(`Could not find entry chunk for ${filePath}`)
+    }
+    const [, exports, , hasModuleSyntax] = parse(outputChunk.code)
     return {
       hasModuleSyntax,
       exports: exports.map((e) => e.n),
