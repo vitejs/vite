@@ -3,6 +3,7 @@ import fsp from 'node:fs/promises'
 import path from 'node:path'
 import { fileURLToPath, pathToFileURL } from 'node:url'
 import postcssrc from 'postcss-load-config'
+import type { Message as EsbuildMessage } from 'esbuild'
 import type {
   ExistingRawSourceMap,
   InternalModuleFormat,
@@ -471,6 +472,7 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
   // since output formats have no effect on the generated CSS.
   let hasEmitted = false
   let chunkCSSMap: Map<string, string>
+  let chunkCSSSourceMap: Map<string, CssMinifySourceMap>
 
   const rolldownOptionsOutput = config.build.rolldownOptions.output
   const assetFileNames = (
@@ -524,6 +526,7 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
       pureCssChunks = new Set<RenderedChunk>()
       hasEmitted = false
       chunkCSSMap = new Map()
+      chunkCSSSourceMap = new Map()
       codeSplitEmitQueue = createSerialPromiseQueue()
     },
 
@@ -647,6 +650,7 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
       ? {
           async renderChunk(code, chunk, opts, meta) {
             let chunkCSS: string | undefined
+            const chunkSources: CssMinifySourceMap = []
             const renderedModules = new Proxy(
               {} as Record<string, RenderedModule | undefined>,
               {
@@ -688,7 +692,12 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
                   isPureCssChunk = false
                 }
 
-                chunkCSS = (chunkCSS || '') + styles.get(id)
+                const css = styles.get(id)
+                if (css == null) {
+                  continue
+                }
+                addCssSourceMapEntry(chunkSources, cleanUrl(id), css, chunkCSS)
+                chunkCSS = (chunkCSS || '') + css
               } else if (!isJsChunkEmpty) {
                 // if the module does not have a style, then it's not a pure css chunk.
                 // this is true because in the `transform` hook above, only modules
@@ -818,7 +827,15 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
             await urlEmitQueue.run(async () =>
               Promise.all(
                 urlEmitTasks.map(async (info) => {
-                  info.content = await finalizeCss(info.content, config)
+                  info.content = await finalizeCss(
+                    info.content,
+                    config,
+                    info.originalFileName,
+                    createCssMinifySourceMap(
+                      info.originalFileName,
+                      info.content,
+                    ),
+                  )
                 }),
               ),
             )
@@ -903,7 +920,12 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
 
                   // wait for previous tasks as well
                   chunkCSS = await codeSplitEmitQueue.run(async () => {
-                    return finalizeCss(chunkCSS!, config)
+                    return finalizeCss(
+                      chunkCSS!,
+                      config,
+                      cssAssetName,
+                      chunkSources,
+                    )
                   })
 
                   // emit corresponding css file
@@ -930,7 +952,12 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
                   // But because entry chunk can be imported by dynamic import,
                   // we shouldn't remove the inlined CSS. (#10285)
 
-                  chunkCSS = await finalizeCss(chunkCSS, config)
+                  chunkCSS = await finalizeCss(
+                    chunkCSS,
+                    config,
+                    defaultCssBundleName,
+                    chunkSources,
+                  )
                   let cssString = JSON.stringify(chunkCSS)
                   cssString =
                     renderAssetUrlInJS(
@@ -958,6 +985,7 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
                 // finalizeCss is called for the aggregated chunk in generateBundle
 
                 chunkCSSMap.set(chunk.fileName, chunkCSS)
+                chunkCSSSourceMap.set(chunk.fileName, chunkSources)
               }
             }
 
@@ -1005,6 +1033,7 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
         !hasEmitted
       ) {
         let extractedCss = ''
+        const extractedCssSources: CssMinifySourceMap = []
         const collected = new Set<OutputChunk>()
         // will be populated in order they are used by entry points
         const dynamicImports = new Set<string>()
@@ -1020,7 +1049,21 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
             dynamicImports.add(importName),
           )
           // Then collect the styles of the current chunk (might overwrite some styles from previous imports)
-          extractedCss += chunkCSSMap.get(chunk.preliminaryFileName) ?? ''
+          const css = chunkCSSMap.get(chunk.preliminaryFileName)
+          if (css) {
+            const sources = chunkCSSSourceMap.get(chunk.preliminaryFileName)
+            if (sources) {
+              const lineOffset = extractedCss ? countLines(extractedCss) - 1 : 0
+              for (const source of sources) {
+                extractedCssSources.push({
+                  ...source,
+                  startLine: source.startLine + lineOffset,
+                  endLine: source.endLine + lineOffset,
+                })
+              }
+            }
+            extractedCss += css
+          }
         }
 
         // The bundle is guaranteed to be deterministic, if not then we have a bug in rollup.
@@ -1038,7 +1081,12 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
         // Finally, if there's any extracted CSS, we emit the asset
         if (extractedCss) {
           hasEmitted = true
-          extractedCss = await finalizeCss(extractedCss, config)
+          extractedCss = await finalizeCss(
+            extractedCss,
+            config,
+            getCssBundleName(),
+            extractedCssSources,
+          )
           this.emitFile({
             name: getCssBundleName(),
             type: 'asset',
@@ -1909,13 +1957,88 @@ function combineSourcemapsIfExists(
 const viteHashUpdateMarker = '/*$vite$:1*/'
 const viteHashUpdateMarkerRE = /\/\*\$vite\$:\d+\*\//
 
-async function finalizeCss(css: string, config: ResolvedConfig) {
+interface CssMinifySource {
+  filename: string
+  startLine: number
+  endLine: number
+}
+
+type CssMinifySourceMap = CssMinifySource[]
+
+function countLines(css: string): number {
+  return css.split('\n').length
+}
+
+function createCssMinifySourceMap(
+  filename: string,
+  css: string,
+): CssMinifySourceMap {
+  return [
+    {
+      filename,
+      startLine: 1,
+      endLine: countLines(css),
+    },
+  ]
+}
+
+function addCssSourceMapEntry(
+  sourceMap: CssMinifySourceMap,
+  filename: string,
+  css: string,
+  previousCss: string | undefined,
+) {
+  const startLine = previousCss ? countLines(previousCss) : 1
+  const endLine = startLine + countLines(css) - 1
+  sourceMap.push({ filename, startLine, endLine })
+}
+
+function resolveCssMinifySource(
+  sourceMap: CssMinifySourceMap | undefined,
+  line: number,
+) {
+  if (!sourceMap) return
+
+  return sourceMap.find(
+    (source) => line >= source.startLine && line <= source.endLine,
+  )
+}
+
+function remapCssMinifyWarnings(
+  warnings: EsbuildMessage[],
+  sourceMap: CssMinifySourceMap | undefined,
+) {
+  if (!sourceMap) return warnings
+
+  return warnings.map((warning) => {
+    if (!warning.location) return warning
+
+    const source = resolveCssMinifySource(sourceMap, warning.location.line)
+    if (!source) return warning
+
+    return {
+      ...warning,
+      location: {
+        ...warning.location,
+        file: source.filename,
+        line: warning.location.line - source.startLine + 1,
+      },
+    }
+  })
+}
+
+async function finalizeCss(
+  css: string,
+  config: ResolvedConfig,
+  filename: string = defaultCssBundleName,
+  sourceMap?: CssMinifySourceMap,
+) {
   // hoist external @imports and @charset to the top of the CSS chunk per spec (#1845 and #6333)
   if (css.includes('@import') || css.includes('@charset')) {
     css = hoistAtRules(css)
   }
   if (config.build.cssMinify) {
-    css = await minifyCSS(css, config, false)
+    css = await minifyCSS(css, config, false, filename, sourceMap)
   }
   // inject an additional string to generate a different hash for https://github.com/vitejs/vite/issues/18038
   //
@@ -2211,6 +2334,7 @@ async function minifyCSS(
   config: ResolvedConfig,
   inlined: boolean,
   filename: string = defaultCssBundleName,
+  sourceMap?: CssMinifySourceMap,
 ) {
   // We want inlined CSS to not end with a linebreak, while ensuring that
   // regular CSS assets do end with a linebreak.
@@ -2226,7 +2350,10 @@ async function minifyCSS(
         ...resolveMinifyCssEsbuildOptions(config.esbuild || {}),
       })
       if (warnings.length) {
-        const msgs = await formatMessages(warnings, { kind: 'warning' })
+        const msgs = await formatMessages(
+          remapCssMinifyWarnings(warnings, sourceMap),
+          { kind: 'warning' },
+        )
         config.logger.warn(
           colors.yellow(`[esbuild css minify]\n${msgs.join('\n')}`),
         )
