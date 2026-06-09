@@ -147,7 +147,12 @@ export function assetImportMetaUrlPlugin(config: ResolvedConfig): Plugin {
               if (publicDir && isParentDirectory(publicDir, file)) {
                 const publicPath = '/' + path.posix.relative(publicDir, file)
                 builtUrl = await fileToUrl(this, publicPath)
-              } else if (isBundled && /\.(ts|tsx|mts|cts)$/.test(file)) {
+              // TypeScript files in new URL() can’t be served raw in bundled mode (mrmime classifies .ts as video/mp2t); route through bundleWorkerEntry. Declaration files excluded — no runtime code.
+              } else if (
+                isBundled &&
+                /\.(?:ts|tsx|mts|cts)$/.test(file) &&
+                !/\.d\.[cm]?ts$/.test(file)
+              ) {
                 const result = await workerFileToUrl(config, file)
                 if (this.environment.config.command === 'serve') {
                   builtUrl = toOutputFilePathInJSForBundledDev(
