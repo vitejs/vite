@@ -506,8 +506,10 @@ describe('isFileReadable', () => {
     expect(isFileReadable('/does_not_exist')).toBe(false)
   })
 
-  const testFile =
-    require.resolve('./utils/isFileReadable/permission-test-file')
+  const testFile = path.resolve(
+    import.meta.dirname,
+    './utils/isFileReadable/permission-test-file',
+  )
   test('file with normal permission', async () => {
     expect(isFileReadable(testFile)).toBe(true)
   })
@@ -667,6 +669,43 @@ describe('flattenId', () => {
     id += tenChars
     const result2 = flattenId(id)
     expect(result2).toHaveLength(170)
+  })
+
+  test('should replace + symbols in package subpath exports', () => {
+    // Packages like ravelinjs use + in their subpath exports
+    const id = 'ravelinjs/core+track+encrypt+promise'
+    const result = flattenId(id)
+    expect(result).not.toContain('+')
+    expect(result).toBe('ravelinjs_core_02b_track_02b_encrypt_02b_promise')
+  })
+
+  test('escape _', () => {
+    expect(flattenId('foo_bar')).toMatchInlineSnapshot(`"foo___bar"`)
+    expect(flattenId('foo__bar')).toMatchInlineSnapshot(`"foo____bar"`)
+    expect(flattenId('foo___bar')).toMatchInlineSnapshot(`"foo_____bar"`)
+    expect(flattenId('foo____bar')).toMatchInlineSnapshot(`"foo______bar"`)
+  })
+
+  test('escape /', () => {
+    expect(flattenId('foo/bar')).toMatchInlineSnapshot(`"foo_bar"`)
+  })
+
+  test('escape .', () => {
+    expect(flattenId('foo.bar')).toMatchInlineSnapshot(`"foo__bar"`)
+  })
+
+  test('escape invalid URL path chars', () => {
+    expect(flattenId('foo#bar')).toMatchInlineSnapshot(`"foo_023_bar"`)
+    expect(flattenId('foo$bar')).toMatchInlineSnapshot(`"foo_024_bar"`)
+    expect(flattenId('foo*bar')).toMatchInlineSnapshot(`"foo_02a_bar"`)
+    expect(flattenId('foo+bar')).toMatchInlineSnapshot(`"foo_02b_bar"`)
+  })
+
+  test('escape nested IDs', () => {
+    expect(flattenId('foo>bar')).toMatchInlineSnapshot(`"foo_n_bar"`)
+    expect(flattenId('foo >bar')).toMatchInlineSnapshot(`"foo_n_bar"`)
+    expect(flattenId('foo> bar')).toMatchInlineSnapshot(`"foo_n_bar"`)
+    expect(flattenId('foo > bar')).toMatchInlineSnapshot(`"foo_n_bar"`)
   })
 })
 

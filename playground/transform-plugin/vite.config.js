@@ -1,7 +1,7 @@
 import { resolve } from 'node:path'
 import { defineConfig, normalizePath } from 'vite'
 
-const file = normalizePath(resolve(__dirname, 'index.js'))
+const file = normalizePath(resolve(import.meta.dirname, 'index.js'))
 let transformCount = 1
 
 const transformPlugin = {
@@ -59,6 +59,21 @@ const moduleTypePlugins = [
   },
 ]
 
+const lazyHookFilterPlugin = {
+  name: 'lazy-hook-filter',
+  options() {
+    lazyHookFilterPlugin.transform.filter = { id: '**/index.js' }
+  },
+  transform: {
+    filter: /** @type {import('vite').Rolldown.HookFilter} */ ({
+      id: { exclude: ['**/*.js'] },
+    }),
+    handler(code) {
+      return code.replaceAll('LAZY_HOOK_FILTER_CONTENT', 'success')
+    },
+  },
+}
+
 export default defineConfig({
-  plugins: [transformPlugin, moduleTypePlugins],
+  plugins: [transformPlugin, moduleTypePlugins, lazyHookFilterPlugin],
 })

@@ -4,6 +4,7 @@ import {
   browserLogs,
   editFile,
   getColor,
+  getCssRuleBg,
   isBuild,
   isServe,
   listAssets,
@@ -76,6 +77,7 @@ describe.runIf(isBuild)('build', () => {
     // use the entry name
     expect(dirFooAssetEntry.file).toMatch('assets/bar-')
     expect(dirFooAssetEntry.name).toStrictEqual('bar.css')
+    expect(dirFooAssetEntry.assets.length).toEqual(1)
     expect(customNameAssetEntry.name).toStrictEqual('bar.custom')
     expect(iconEntrypointEntry?.file).not.toBeUndefined()
     expect(waterContainerEntry?.file).not.toBeUndefined()
@@ -117,6 +119,20 @@ describe.runIf(isServe)('serve', () => {
     // Verify that the base (/dev/) was added during the css-update
     const link = await page.$('link[rel="stylesheet"]:last-of-type')
     expect(await link.getAttribute('href')).toContain('/dev/global.css?t=')
+  })
+
+  test('server.origin is applied to non-public CSS url()', async () => {
+    const bg = await getCssRuleBg('.outside-root--aliased')
+    expect(bg).toContain(
+      `http://localhost:${ports['backend-integration']}/dev/`,
+    )
+  })
+
+  test('server.origin is applied to public CSS url()', async () => {
+    const bg = await getCssRuleBg('.public-asset')
+    expect(bg).toContain(
+      `http://localhost:${ports['backend-integration']}/dev/icon.png`,
+    )
   })
 
   test('CSS dependencies are tracked for HMR', async () => {

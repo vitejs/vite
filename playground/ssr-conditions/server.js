@@ -1,10 +1,7 @@
 import fs from 'node:fs'
 import path from 'node:path'
-import { fileURLToPath } from 'node:url'
 import express from 'express'
 import sirv from 'sirv'
-
-const __dirname = path.dirname(fileURLToPath(import.meta.url))
 
 const isTest = process.env.VITEST
 
@@ -13,7 +10,7 @@ export async function createServer(
   isProd = process.env.NODE_ENV === 'production',
   hmrPort,
 ) {
-  const resolve = (p) => path.resolve(__dirname, p)
+  const resolve = (p) => path.resolve(import.meta.dirname, p)
 
   const indexProd = isProd
     ? fs.readFileSync(resolve('dist/client/index.html'), 'utf-8')
@@ -64,7 +61,7 @@ export async function createServer(
         render = (await import('./dist/server/app.js')).render
       }
 
-      const appHtml = await render(url, __dirname)
+      const appHtml = await render(url, import.meta.dirname)
 
       const html = template.replace(`<!--app-html-->`, appHtml)
 

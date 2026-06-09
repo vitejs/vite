@@ -10,7 +10,12 @@ import type {
   InvokeSendData,
 } from '../../shared/invokeMethods'
 import { CLIENT_DIR } from '../constants'
-import { createDebugger, monotonicDateNow, normalizePath } from '../utils'
+import {
+  createDebugger,
+  formatAndTruncateFileList,
+  monotonicDateNow,
+  normalizePath,
+} from '../utils'
 import type { InferCustomEventPayload, ViteDevServer } from '..'
 import { getHookHandler } from '../plugins'
 import { isExplicitImportRequired } from '../plugins/importAnalysis'
@@ -40,14 +45,45 @@ const whitespaceRE = /\s/
 
 const normalizedClientDir = normalizePath(CLIENT_DIR)
 
-export interface HmrOptions {
+export interface WsOptions {
   protocol?: string
   host?: string
   port?: number
   clientPort?: number
   path?: string
   timeout?: number
+  server?: HttpServer
+}
+
+export interface HmrOptions {
+  /**
+   * @deprecated Use `server.ws.protocol` instead.
+   */
+  protocol?: string
+  /**
+   * @deprecated Use `server.ws.host` instead.
+   */
+  host?: string
+  /**
+   * @deprecated Use `server.ws.port` instead.
+   */
+  port?: number
+  /**
+   * @deprecated Use `server.ws.clientPort` instead.
+   */
+  clientPort?: number
+  /**
+   * @deprecated Use `server.ws.path` instead.
+   */
+  path?: string
+  /**
+   * @deprecated Use `server.ws.timeout` instead.
+   */
+  timeout?: number
   overlay?: boolean
+  /**
+   * @deprecated Use `server.ws.server` instead.
+   */
   server?: HttpServer
 }
 
@@ -84,6 +120,11 @@ export type HotChannelListener<T extends string = string> = (
 ) => void
 
 export interface HotChannel<Api = any> {
+  /**
+   * When true, the fs access check is skipped in fetchModule.
+   * Set this for transports that is not exposed over the network.
+   */
+  skipFsCheck?: boolean
   /**
    * Broadcast events to all clients
    */
@@ -338,7 +379,7 @@ export function getSortedPluginsByHotUpdateHook(
     normal = 0,
     post = 0
   for (const plugin of plugins) {
-    const hook = plugin['hotUpdate'] ?? plugin['handleHotUpdate']
+    const hook = plugin.hotUpdate ?? plugin.handleHotUpdate
     if (hook) {
       if (typeof hook === 'object') {
         if (hook.order === 'pre') {
@@ -730,11 +771,13 @@ export function updateModules(
     return
   }
 
-  environment.logger.info(
-    colors.green(`hmr update `) +
-      colors.dim([...new Set(updates.map((u) => u.path))].join(', ')),
-    { clear: !firstInvalidatedBy, timestamp: true },
-  )
+  const filePaths = [...new Set(updates.map((u) => u.path))]
+  const { formatted, truncated } = formatAndTruncateFileList(filePaths)
+  if (truncated) debugHmr?.(`hmr update ${filePaths.join(', ')}`)
+  environment.logger.info(colors.green(`hmr update `) + colors.dim(formatted), {
+    clear: !firstInvalidatedBy,
+    timestamp: true,
+  })
   hot.send({
     type: 'update',
     updates,
@@ -1123,6 +1166,7 @@ export function createServerHotChannel(): ServerHotChannel {
   const outsideEmitter = new EventEmitter()
 
   return {
+    skipFsCheck: true,
     send(payload: HotPayload) {
       outsideEmitter.emit('send', payload)
     },

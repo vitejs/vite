@@ -9,7 +9,7 @@ export default defineConfig(({ command }) => ({
     hmrPartialAccept: true,
   },
   build: {
-    rollupOptions: {
+    rolldownOptions: {
       input: [
         path.resolve(import.meta.dirname, './index.html'),
         ...(command === 'build'
@@ -110,7 +110,7 @@ function watchCssDepsPlugin(): Plugin {
       // replace the `replaced` identifier in the CSS file with the adjacent
       // `dep.js` file's `color` variable.
       if (id.includes('css-deps/main.css')) {
-        const depPath = path.resolve(__dirname, './css-deps/dep.js')
+        const depPath = path.resolve(import.meta.dirname, './css-deps/dep.js')
         const dep = await fs.readFile(depPath, 'utf-8')
         const color = dep.match(/color = '(.+?)'/)[1]
         this.addWatchFile(depPath)

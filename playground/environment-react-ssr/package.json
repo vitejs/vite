@@ -9,11 +9,11 @@
     "preview": "vite preview"
   },
   "devDependencies": {
-    "@types/react": "^19.2.8",
+    "@types/react": "^19.2.17",
     "@types/react-dom": "^19.2.3",
-    "react": "^19.2.3",
-    "react-fake-client": "npm:react@^19.2.3",
-    "react-fake-server": "npm:react@^19.2.3",
-    "react-dom": "^19.2.3"
+    "react": "^19.2.7",
+    "react-fake-client": "npm:react@^19.2.7",
+    "react-fake-server": "npm:react@^19.2.7",
+    "react-dom": "^19.2.7"
   }
 }

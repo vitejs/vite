@@ -13,3 +13,7 @@
 .outside-root--relative {
   background-image: url('../images/logo.png');
 }
+
+.public-asset {
+  background-image: url('/icon.png');
+}

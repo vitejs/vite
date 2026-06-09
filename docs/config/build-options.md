@@ -8,7 +8,7 @@ Unless noted, the options in this section are only applied to build.
 - **Default:** `'baseline-widely-available'`
 - **Related:** [Browser Compatibility](/guide/build#browser-compatibility)
 
-Browser compatibility target for the final bundle. The default value is a Vite special value, `'baseline-widely-available'`, which targets browsers that are included in the [Baseline](https://web-platform-dx.github.io/web-features/) Widely Available on 2026-01-01. Specifically, it is `['chrome111', 'edge111', 'firefox114', 'safari16.4']`.
+Browser compatibility target for the final bundle. The default value is a Vite special value, `'baseline-widely-available'`, which targets browsers that are included in the [Baseline](https://web-platform-dx.github.io/web-features/) Widely Available on 2026-01-01. Specifically, it is `['chrome111', 'edge111', 'firefox114', 'safari16.4', 'ios16.4']`.
 
 Another special value is `'esnext'` - which assumes native dynamic imports support and will only perform minimal transpiling.
 
@@ -21,7 +21,7 @@ Note the build will output a warning if the code contains features that cannot b
 - **Type:** `boolean | { polyfill?: boolean, resolveDependencies?: ResolveModulePreloadDependenciesFn }`
 - **Default:** `{ polyfill: true }`
 
-By default, a [module preload polyfill](https://guybedford.com/es-module-preloading-integrity#modulepreload-polyfill) is automatically injected. The polyfill is auto injected into the proxy module of each `index.html` entry. If the build is configured to use a non-HTML custom entry via `build.rollupOptions.input`, then it is necessary to manually import the polyfill in your custom entry:
+By default, a [module preload polyfill](https://guybedford.com/es-module-preloading-integrity#modulepreload-polyfill) is automatically injected. The polyfill is auto injected into the proxy module of each `index.html` entry. If the build is configured to use a non-HTML custom entry via `build.rolldownOptions.input`, then it is necessary to manually import the polyfill in your custom entry:
 
 ```js
 import 'vite/modulepreload-polyfill'
@@ -130,7 +130,7 @@ In this case, you need to set `build.cssTarget` to `chrome61` to prevent vite fr
 ## build.cssMinify
 
 - **Type:** `boolean | 'lightningcss' | 'esbuild'`
-- **Default:** the same as [`build.minify`](#build-minify) for client, `'lightningcss'` for SSR
+- **Default:** `'lightningcss'`, but `false` if [`build.minify`](#build-minify) is disabled for client build
 
 This option allows users to override CSS minification specifically instead of defaulting to `build.minify`, so you can configure minification for JS and CSS separately. Vite uses [Lightning CSS](https://lightningcss.dev/minification.html) by default to minify CSS. It can be configured using [`css.lightningcss`](./shared-options.md#css-lightningcss). Set the option to `'esbuild'` to use esbuild instead.
 
@@ -162,12 +162,10 @@ This option is an alias of `build.rolldownOptions` option. Use `build.rolldownOp
 
 ## build.dynamicImportVarsOptions
 
-- **Type:** [`RollupDynamicImportVarsOptions`](https://github.com/rollup/plugins/tree/master/packages/dynamic-import-vars#options)
+- **Type:** `{ include?: string | RegExp | (string | RegExp)[], exclude?: string | RegExp | (string | RegExp)[] }`
 - **Related:** [Dynamic Import](/guide/features#dynamic-import)
 
-Options to pass on to [@rollup/plugin-dynamic-import-vars](https://github.com/rollup/plugins/tree/master/packages/dynamic-import-vars).
-
-<!-- TODO: we need to have a more detailed explanation here as we no longer use @rollup/plugin-dynamic-import-vars. we should say it's compatible with it though -->
+Whether to transform dynamic imports with variables.
 
 ## build.lib
 
@@ -223,9 +221,7 @@ If `fileName` is passed, it will be used as the license file name relative to th
 
 ::: tip
 
-If you'd like to reference the license file in the built code, you can use `build.rolldownOptions.output.postBanner` to inject a comment at the top of the files. For example:
-
-<!-- TODO: add a link for output.postBanner above to Rolldown's documentation -->
+If you'd like to reference the license file in the built code, you can use [`build.rolldownOptions.output.postBanner`](https://rolldown.rs/reference/OutputOptions.postBanner#postbanner) to inject a comment at the top of the files. For example:
 
 ```js twoslash [vite.config.js]
 import { defineConfig } from 'vite'
@@ -255,6 +251,8 @@ Whether to generate a manifest file that contains a mapping of non-hashed asset 
 
 When the value is a string, it will be used as the manifest file path relative to `build.outDir`. When set to `true`, the path would be `.vite/manifest.json`.
 
+If you are writing a plugin and need to inspect each output chunk or asset's related CSS and static assets during the build, you can also use [`viteMetadata` output bundle metadata API](/guide/api-plugin#output-bundle-metadata).
+
 ## build.ssrManifest
 
 - **Type:** `boolean | string`
@@ -271,7 +269,7 @@ When the value is a string, it will be used as the manifest file path relative t
 - **Default:** `false`
 - **Related:** [Server-Side Rendering](/guide/ssr)
 
-Produce SSR-oriented build. The value can be a string to directly specify the SSR entry, or `true`, which requires specifying the SSR entry via `rollupOptions.input`.
+Produce SSR-oriented build. The value can be a string to directly specify the SSR entry, or `true`, which requires specifying the SSR entry via `rolldownOptions.input`.
 
 ## build.emitAssets
 

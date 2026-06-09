@@ -3,7 +3,7 @@ import MagicString from 'magic-string'
 import type { RollupError } from 'rolldown'
 import { parseAstAsync } from 'rolldown/parseAst'
 import { stripLiteral } from 'strip-literal'
-import type { Expression, ExpressionStatement } from 'estree'
+import type { ESTree } from 'rolldown/utils'
 import type { ResolvedConfig } from '../config'
 import type { Plugin } from '../plugin'
 import { evalValue, injectQuery, transformStableResult } from '../utils'
@@ -12,7 +12,7 @@ import type { ResolveIdFn } from '../idResolver'
 import { cleanUrl, slash } from '../../shared/utils'
 import type { WorkerType } from './worker'
 import { WORKER_FILE_ID, workerFileToUrl } from './worker'
-import { fileToUrl } from './asset'
+import { fileToUrl, toOutputFilePathInJSForBundledDev } from './asset'
 import type { InternalResolveOptions } from './resolve'
 import { tryFsResolve } from './resolve'
 import { hasViteIgnoreRE } from './importAnalysis'
@@ -40,7 +40,7 @@ function findClosingParen(input: string, fromIndex: number) {
 }
 
 function extractWorkerTypeFromAst(
-  expression: Expression,
+  expression: ESTree.Expression,
   optsStartIndex: number,
 ): 'classic' | 'module' | undefined {
   if (expression.type !== 'ObjectExpression') {
@@ -102,7 +102,8 @@ async function parseWorkerOptions(
     opts = evalValue<WorkerOptions>(rawOpts)
   } catch {
     const optsNode = (
-      (await parseAstAsync(`(${rawOpts})`)).body[0] as ExpressionStatement
+      (await parseAstAsync(`(${rawOpts})`))
+        .body[0] as ESTree.ExpressionStatement
     ).expression
 
     const type = extractWorkerTypeFromAst(optsNode, optsStartIndex)
@@ -180,11 +181,10 @@ async function getWorkerType(
   return 'classic'
 }
 
-const workerImportMetaUrlRE =
-  /new\s+(?:Worker|SharedWorker)\s*\(\s*new\s+URL.+?import\.meta\.url/s
+export const workerImportMetaUrlRE: RegExp =
+  /\bnew\s+(?:Worker|SharedWorker)\s*\(\s*(new\s+URL\s*\(\s*('[^']+'|"[^"]+"|`[^`]+`)\s*,\s*import\.meta\.url\s*(?:,\s*)?\))/dg
 
 export function workerImportMetaUrlPlugin(config: ResolvedConfig): Plugin {
-  const isBuild = config.command === 'build'
   let workerResolver: ResolveIdFn
 
   const fsResolveOptions: InternalResolveOptions = {
@@ -206,15 +206,15 @@ export function workerImportMetaUrlPlugin(config: ResolvedConfig): Plugin {
     transform: {
       filter: { code: workerImportMetaUrlRE },
       async handler(code, id) {
+        const isBundled = this.environment.config.isBundled
         let s: MagicString | undefined
         const cleanString = stripLiteral(code)
-        const workerImportMetaUrlRE =
-          /\bnew\s+(?:Worker|SharedWorker)\s*\(\s*(new\s+URL\s*\(\s*('[^']+'|"[^"]+"|`[^`]+`)\s*,\s*import\.meta\.url\s*(?:,\s*)?\))/dg
+        const re = new RegExp(workerImportMetaUrlRE)
 
         let match: RegExpExecArray | null
-        while ((match = workerImportMetaUrlRE.exec(cleanString))) {
+        while ((match = re.exec(cleanString))) {
           const [[, endIndex], [expStart, expEnd], [urlStart, urlEnd]] =
-            match.indices!
+            match.indices as Array<[number, number]>
 
           const rawUrl = code.slice(urlStart, urlEnd)
 
@@ -247,16 +247,23 @@ export function workerImportMetaUrlPlugin(config: ResolvedConfig): Plugin {
           }
 
           if (
-            isBuild &&
+            isBundled &&
             config.isWorker &&
             config.bundleChain.at(-1) === cleanUrl(file)
           ) {
             s.update(expStart, expEnd, 'self.location.href')
           } else {
             let builtUrl: string
-            if (isBuild) {
+            if (isBundled) {
               const result = await workerFileToUrl(config, file)
-              builtUrl = result.entryUrlPlaceholder
+              if (this.environment.config.command === 'serve') {
+                builtUrl = toOutputFilePathInJSForBundledDev(
+                  this.environment,
+                  result.entryFilename,
+                )
+              } else {
+                builtUrl = result.entryUrlPlaceholder
+              }
               for (const file of result.watchedFiles) {
                 this.addWatchFile(file)
               }

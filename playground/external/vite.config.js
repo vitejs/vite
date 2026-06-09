@@ -28,11 +28,11 @@ export default defineConfig({
   },
   build: {
     minify: false,
-    rollupOptions: {
+    rolldownOptions: {
       external: ['vue', 'slash3', 'slash5'],
       transform: {
         inject: {
-          require: path.resolve(__dirname, 'src/require-polyfill.js'),
+          require: path.resolve(import.meta.dirname, 'src/require-polyfill.js'),
         },
       },
     },

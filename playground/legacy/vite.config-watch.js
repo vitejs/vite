@@ -6,9 +6,12 @@ export default defineConfig({
   plugins: [legacy()],
   build: {
     manifest: true,
-    rollupOptions: {
+    rolldownOptions: {
       input: {
-        'style-only-entry': resolve(__dirname, 'style-only-entry.css'),
+        'style-only-entry': resolve(
+          import.meta.dirname,
+          'style-only-entry.css',
+        ),
       },
     },
     watch: {},

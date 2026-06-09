@@ -1,5 +1,4 @@
 import { basename, resolve } from 'node:path'
-import { fileURLToPath } from 'node:url'
 import { stripVTControlCharacters } from 'node:util'
 import fsp from 'node:fs/promises'
 import colors from 'picocolors'
@@ -24,7 +23,7 @@ import type { Logger } from '../logger'
 import { createLogger } from '../logger'
 import { BuildEnvironment, resolveConfig } from '..'
 
-const __dirname = resolve(fileURLToPath(import.meta.url), '..')
+const dirname = import.meta.dirname
 
 type FormatsToFileNames = [LibraryFormats, string][]
 
@@ -32,7 +31,7 @@ describe('build', () => {
   test('file hash should change when css changes for dynamic entries', async () => {
     const buildProject = async (cssColor: string) => {
       return (await build({
-        root: resolve(__dirname, 'packages/build-project'),
+        root: resolve(dirname, 'packages/build-project'),
         logLevel: 'silent',
         build: {
           write: false,
@@ -85,7 +84,7 @@ describe('build', () => {
   test('file hash should change when pure css chunk changes', async () => {
     const buildProject = async (cssColor: string) => {
       return (await build({
-        root: resolve(__dirname, 'packages/build-project'),
+        root: resolve(dirname, 'packages/build-project'),
         logLevel: 'silent',
         build: {
           write: false,
@@ -145,6 +144,33 @@ describe('build', () => {
     assertOutputHashContentChange(result[0], result[1])
   })
 
+  test('css entries with the same basename should not cross-link manifest assets', async () => {
+    const root = resolve(dirname, 'fixtures/css-entry-same-basename')
+    const result = (await build({
+      root,
+      logLevel: 'silent',
+      build: {
+        write: false,
+        manifest: true,
+        assetsInlineLimit: 0,
+        rolldownOptions: {
+          input: [resolve(root, 'a/index.css'), resolve(root, 'b/index.css')],
+        },
+      },
+    })) as RolldownOutput
+
+    const manifest = JSON.parse(
+      (result.output.find((o) => o.fileName === '.vite/manifest.json') as any)
+        .source,
+    )
+    expect(manifest['a/index.css']).toMatchObject({
+      isEntry: true,
+    })
+    expect(manifest['b/index.css']).toMatchObject({
+      isEntry: true,
+    })
+  })
+
   test.for([
     [true, true],
     [true, false],
@@ -157,7 +183,7 @@ describe('build', () => {
     async ([stringify, namedExports]) => {
       const esBundle = (await build({
         mode: 'development',
-        root: resolve(__dirname, 'packages/build-project'),
+        root: resolve(dirname, 'packages/build-project'),
         logLevel: 'silent',
         json: { stringify, namedExports },
         build: {
@@ -216,7 +242,7 @@ describe('build', () => {
           entry: ['foo.js', 'bar.js'],
           formats: ['es'],
         },
-        rollupOptions: {
+        rolldownOptions: {
           external: 'external',
         },
         write: false,
@@ -338,7 +364,7 @@ describe('resolveBuildOutputs', () => {
     const resolveBuild = () => resolveBuildOutputs(outputs, libOptions, logger)
 
     expect(resolveBuild).toThrowError(
-      /Entries in "build\.rollupOptions\.output" must specify "name"/,
+      /Entries in "build\.rolldownOptions\.output" must specify "name"/,
     )
   })
 
@@ -349,7 +375,7 @@ describe('resolveBuildOutputs', () => {
     const resolveBuild = () => resolveBuildOutputs(outputs, libOptions, logger)
 
     expect(resolveBuild).toThrowError(
-      /Entries in "build\.rollupOptions\.output" must specify "name"/,
+      /Entries in "build\.rolldownOptions\.output" must specify "name"/,
     )
   })
 })
@@ -363,7 +389,7 @@ describe('resolveLibFilename', () => {
       },
       'es',
       'myLib',
-      resolve(__dirname, 'packages/name'),
+      resolve(dirname, 'packages/name'),
     )
 
     expect(filename).toBe('custom-filename-function.es.js')
@@ -377,7 +403,7 @@ describe('resolveLibFilename', () => {
       },
       'es',
       'myLib',
-      resolve(__dirname, 'packages/name'),
+      resolve(dirname, 'packages/name'),
     )
 
     expect(filename).toBe('custom-filename.mjs')
@@ -390,7 +416,7 @@ describe('resolveLibFilename', () => {
       },
       'es',
       'myLib',
-      resolve(__dirname, 'packages/name'),
+      resolve(dirname, 'packages/name'),
     )
 
     expect(filename).toBe('mylib.mjs')
@@ -404,7 +430,7 @@ describe('resolveLibFilename', () => {
       },
       'es',
       'myLib',
-      resolve(__dirname, 'packages/noname'),
+      resolve(dirname, 'packages/noname'),
     )
 
     expect(filename).toBe('custom-filename.mjs')
@@ -417,7 +443,7 @@ describe('resolveLibFilename', () => {
       },
       'es',
       'myLib',
-      resolve(__dirname, 'packages/noname'),
+      resolve(dirname, 'packages/noname'),
     )
     expect(filename).toBe('named-testing-package.mjs')
   })
@@ -435,7 +461,7 @@ describe('resolveLibFilename', () => {
         baseLibOptions,
         format,
         'myLib',
-        resolve(__dirname, 'packages/noname'),
+        resolve(dirname, 'packages/noname'),
       )
 
       expect(filename).toBe(expectedFilename)
@@ -455,7 +481,7 @@ describe('resolveLibFilename', () => {
         baseLibOptions,
         format,
         'myLib',
-        resolve(__dirname, 'packages/module'),
+        resolve(dirname, 'packages/module'),
       )
 
       expect(expectedFilename).toBe(filename)
@@ -475,7 +501,7 @@ describe('resolveLibFilename', () => {
         libOptions,
         'es',
         entryAlias,
-        resolve(__dirname, 'packages/name'),
+        resolve(dirname, 'packages/name'),
       ),
     )
 
@@ -498,7 +524,7 @@ describe('resolveLibFilename', () => {
         libOptions,
         'es',
         entryAlias,
-        resolve(__dirname, 'packages/name'),
+        resolve(dirname, 'packages/name'),
       ),
     )
 
@@ -520,7 +546,7 @@ describe('resolveLibFilename', () => {
         libOptions,
         'es',
         entryAlias,
-        resolve(__dirname, 'packages/name'),
+        resolve(dirname, 'packages/name'),
       ),
     )
 
@@ -538,7 +564,7 @@ describe('resolveLibFilename', () => {
         libOptions,
         'es',
         entryAlias,
-        resolve(__dirname, 'packages/name'),
+        resolve(dirname, 'packages/name'),
       ),
     )
 
@@ -558,7 +584,7 @@ describe('resolveLibFilename', () => {
         libOptions,
         'es',
         entryAlias,
-        resolve(__dirname, 'packages/name'),
+        resolve(dirname, 'packages/name'),
       ),
     )
 
@@ -577,7 +603,7 @@ describe('resolveLibFilename', () => {
         libOptions,
         'es',
         entryAlias,
-        resolve(__dirname, 'packages/name'),
+        resolve(dirname, 'packages/name'),
       ),
     )
 
@@ -676,19 +702,19 @@ describe('resolveBuildOutputs', () => {
     ).toEqual([{ name: 'A' }])
     expect(log.warn).toHaveBeenLastCalledWith(
       colors.yellow(
-        `"build.lib.formats" will be ignored because "build.rollupOptions.output" is already an array format.`,
+        `"build.lib.formats" will be ignored because "build.rolldownOptions.output" is already an array format.`,
       ),
     )
   })
 
   test('ssrEmitAssets', async () => {
     const result = await build({
-      root: resolve(__dirname, 'fixtures/emit-assets'),
+      root: resolve(dirname, 'fixtures/emit-assets'),
       logLevel: 'silent',
       build: {
         ssr: true,
         ssrEmitAssets: true,
-        rollupOptions: {
+        rolldownOptions: {
           input: {
             index: '/entry',
           },
@@ -709,14 +735,14 @@ describe('resolveBuildOutputs', () => {
 
   test('emitAssets', async () => {
     const builder = await createBuilder({
-      root: resolve(__dirname, 'fixtures/emit-assets'),
+      root: resolve(dirname, 'fixtures/emit-assets'),
       logLevel: 'warn',
       environments: {
         ssr: {
           build: {
             ssr: true,
             emitAssets: true,
-            rollupOptions: {
+            rolldownOptions: {
               input: {
                 index: '/entry',
               },
@@ -740,13 +766,13 @@ describe('resolveBuildOutputs', () => {
 
   test('ssr builtin', async () => {
     const builder = await createBuilder({
-      root: resolve(__dirname, 'fixtures/dynamic-import'),
+      root: resolve(dirname, 'fixtures/dynamic-import'),
       logLevel: 'warn',
       environments: {
         ssr: {
           build: {
             ssr: true,
-            rollupOptions: {
+            rolldownOptions: {
               input: {
                 index: '/entry',
               },
@@ -761,13 +787,13 @@ describe('resolveBuildOutputs', () => {
 
   test('ssr custom', async () => {
     const builder = await createBuilder({
-      root: resolve(__dirname, 'fixtures/dynamic-import'),
+      root: resolve(dirname, 'fixtures/dynamic-import'),
       logLevel: 'warn',
       environments: {
         custom: {
           build: {
             ssr: true,
-            rollupOptions: {
+            rolldownOptions: {
               input: {
                 index: '/entry',
               },
@@ -784,11 +810,11 @@ describe('resolveBuildOutputs', () => {
 test('default sharedConfigBuild true on build api', async () => {
   let counter = 0
   await build({
-    root: resolve(__dirname, 'fixtures/emit-assets'),
+    root: resolve(dirname, 'fixtures/emit-assets'),
     logLevel: 'warn',
     build: {
       ssr: true,
-      rollupOptions: {
+      rolldownOptions: {
         input: {
           index: '/entry',
         },
@@ -809,7 +835,7 @@ test('default sharedConfigBuild true on build api', async () => {
 test.for([true, false])(
   'minify per environment (builder.sharedPlugins: %s)',
   async (sharedPlugins) => {
-    const root = resolve(__dirname, 'fixtures/shared-plugins/minify')
+    const root = resolve(dirname, 'fixtures/shared-plugins/minify')
     const builder = await createBuilder({
       root,
       logLevel: 'warn',
@@ -817,7 +843,7 @@ test.for([true, false])(
         client: {
           build: {
             outDir: './dist/client',
-            rollupOptions: {
+            rolldownOptions: {
               input: '/entry.js',
             },
           },
@@ -825,7 +851,7 @@ test.for([true, false])(
         ssr: {
           build: {
             outDir: './dist/server',
-            rollupOptions: {
+            rolldownOptions: {
               input: '/entry.js',
             },
           },
@@ -834,7 +860,7 @@ test.for([true, false])(
           build: {
             minify: true,
             outDir: './dist/custom1',
-            rollupOptions: {
+            rolldownOptions: {
               input: '/entry.js',
             },
           },
@@ -843,7 +869,7 @@ test.for([true, false])(
           build: {
             minify: false,
             outDir: './dist/custom2',
-            rollupOptions: {
+            rolldownOptions: {
               input: '/entry.js',
             },
           },
@@ -861,12 +887,12 @@ test.for([true, false])(
       ([client, ssr, custom1, custom2] as RolldownOutput[]).map(
         (o) => o.output[0].code.split('\n').length,
       ),
-    ).toEqual([1, 6, 1, 6])
+    ).toEqual([1, 8, 1, 8])
   },
 )
 
 test('sharedConfigBuild and emitAssets', async () => {
-  const root = resolve(__dirname, 'fixtures/shared-config-build/emitAssets')
+  const root = resolve(dirname, 'fixtures/shared-config-build/emitAssets')
   const builder = await createBuilder({
     root,
     logLevel: 'warn',
@@ -876,7 +902,7 @@ test('sharedConfigBuild and emitAssets', async () => {
         build: {
           outDir: './dist/client',
           emitAssets: true,
-          rollupOptions: {
+          rolldownOptions: {
             input: '/entry.js',
           },
         },
@@ -885,7 +911,7 @@ test('sharedConfigBuild and emitAssets', async () => {
         build: {
           outDir: './dist/ssr',
           emitAssets: true,
-          rollupOptions: {
+          rolldownOptions: {
             input: '/entry.js',
           },
         },
@@ -894,7 +920,7 @@ test('sharedConfigBuild and emitAssets', async () => {
         build: {
           outDir: './dist/custom',
           emitAssets: true,
-          rollupOptions: {
+          rolldownOptions: {
             input: '/entry.js',
           },
         },
@@ -935,9 +961,9 @@ test('sharedConfigBuild and emitAssets', async () => {
 test.skip('adjust worker build error for worker.format', async () => {
   try {
     await build({
-      root: resolve(__dirname, 'fixtures/worker-dynamic'),
+      root: resolve(dirname, 'fixtures/worker-dynamic'),
       build: {
-        rollupOptions: {
+        rolldownOptions: {
           input: {
             index: '/main.js',
           },
@@ -964,11 +990,11 @@ describe('onRollupLog', () => {
     options?: Pick<RolldownOptions, 'onLog' | 'onwarn'>,
   ) => {
     await build({
-      root: resolve(__dirname, 'packages/build-project'),
+      root: resolve(dirname, 'packages/build-project'),
       logLevel: 'info',
       build: {
         write: false,
-        rollupOptions: {
+        rolldownOptions: {
           ...options,
           logLevel: 'debug',
         },
@@ -1108,14 +1134,14 @@ describe('onRollupLog', () => {
 test('watch rebuild manifest', async (ctx) => {
   // this doesn't actually test watch rebuild
   // but it simulates something similar by running two builds for the same environment
-  const root = resolve(__dirname, 'fixtures/watch-rebuild-manifest')
+  const root = resolve(dirname, 'fixtures/watch-rebuild-manifest')
   const builder = await createBuilder({
     root,
     logLevel: 'error',
     environments: {
       client: {
         build: {
-          rollupOptions: {
+          rolldownOptions: {
             input: '/entry.js',
           },
         },
@@ -1159,6 +1185,29 @@ test('watch rebuild manifest', async (ctx) => {
       "entry.js",
     ]
   `)
+})
+
+test('copies public directory after building same environment with write false first', async (ctx) => {
+  const root = resolve(dirname, 'fixtures/public-dir-write-false')
+  ctx.onTestFinished(() =>
+    fsp.rm(resolve(root, 'dist'), { recursive: true, force: true }),
+  )
+
+  const builder = await createBuilder({
+    root,
+    configFile: false,
+    logLevel: 'silent',
+  })
+
+  builder.environments.client.config.build.write = false
+  await builder.build(builder.environments.client)
+
+  builder.environments.client.config.build.write = true
+  await builder.build(builder.environments.client)
+
+  await expect(
+    fsp.readFile(resolve(root, 'dist/favicon.svg'), 'utf-8'),
+  ).resolves.toBe('<svg></svg>')
 })
 
 /**

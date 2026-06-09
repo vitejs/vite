@@ -6,6 +6,11 @@ import { inspect, promisify } from 'node:util'
 import { performance } from 'node:perf_hooks'
 import { createRequire } from 'node:module'
 import crypto from 'node:crypto'
+import {
+  getEnv,
+  ignoreInput,
+  ignoreOutput,
+} from '@voidzero-dev/vite-task-client'
 import colors from 'picocolors'
 import picomatch from 'picomatch'
 import {
@@ -15,6 +20,10 @@ import {
   type RolldownOptions,
   rolldown,
 } from 'rolldown'
+import type {
+  DevToolsConfig,
+  ResolvedDevToolsConfig,
+} from '@vitejs/devtools/config'
 import type { Alias, AliasOptions } from '#dep-types/alias'
 import type { AnymatchFn } from '../types/anymatch'
 import { withTrailingSlash } from '../shared/utils'
@@ -76,6 +85,7 @@ import {
   asyncFlatten,
   createDebugger,
   createFilter,
+  deepClone,
   hasBothRollupOptionsAndRolldownOptions,
   isExternalUrl,
   isFilePathESM,
@@ -90,6 +100,7 @@ import {
   nodeLikeBuiltins,
   normalizeAlias,
   normalizePath,
+  resolveHostname,
   setupRollupOptionCompat,
 } from './utils'
 import {
@@ -108,6 +119,7 @@ import type { LogLevel, Logger } from './logger'
 import { createLogger } from './logger'
 import type { DepOptimizationOptions } from './optimizer'
 import type { JsonOptions } from './plugins/json'
+import type { HtmlAssetSource } from './assetSource'
 import type { PackageCache } from './packages'
 import { findNearestNodeModules, findNearestPackageData } from './packages'
 import { loadEnv, resolveEnvPrefix } from './env'
@@ -249,6 +261,7 @@ function defaultCreateClientDevEnvironment(
   return new DevEnvironment(name, config, {
     hot: true,
     transport: context.ws,
+    disableFetchModule: true,
   })
 }
 
@@ -296,6 +309,17 @@ export interface SharedEnvironmentOptions {
    * Optimize deps config
    */
   optimizeDeps?: DepOptimizationOptions
+  /**
+   * Whether this environment produces a bundled output.
+   *
+   * During `build`, this defaults to `true` for every environment.
+   * During `serve`, this defaults to `true` only for the client environment
+   * when `experimental.bundledDev` is enabled, and `false` otherwise.
+   * Setting this explicitly on an environment always overrides the default.
+   *
+   * @experimental
+   */
+  isBundled?: boolean
 }
 
 export interface EnvironmentOptions extends SharedEnvironmentOptions {
@@ -319,6 +343,7 @@ export type ResolvedEnvironmentOptions = {
   optimizeDeps: DepOptimizationOptions
   dev: ResolvedDevEnvironmentOptions
   build: ResolvedBuildEnvironmentOptions
+  isBundled: boolean
   plugins: readonly Plugin[]
   /** @internal */
   optimizeDepsPluginNames: string[]
@@ -507,6 +532,13 @@ export interface UserConfig extends DefaultEnvironmentOptions {
    * @default 'spa'
    */
   appType?: AppType
+  /**
+   * Enable devtools integration. Ensure that `@vitejs/devtools` is installed as a dependency.
+   * This feature is currently supported only in build mode.
+   * @experimental
+   * @default false
+   */
+  devtools?: boolean | DevToolsConfig
 }
 
 export interface HTMLOptions {
@@ -516,6 +548,23 @@ export interface HTMLOptions {
    * Make sure that this placeholder will be replaced with a unique value for each request by the server.
    */
   cspNonce?: string
+  /**
+   * Define additional HTML elements and attributes to be treated as asset sources.
+   * This extends the built-in list that includes standard elements like `<img src>`, `<video src>`, etc.
+   *
+   * @example
+   * ```ts
+   * html: {
+   *   additionalAssetSources: {
+   *     // Custom web component
+   *     'html-import': { srcAttributes: ['src'] },
+   *     // Add data-* attributes to existing element
+   *     'img': { srcAttributes: ['data-src-dark', 'data-src-light'] }
+   *   }
+   * }
+   * ```
+   */
+  additionalAssetSources?: Record<string, HtmlAssetSource>
 }
 
 export interface FutureOptions {
@@ -554,19 +603,11 @@ export interface ExperimentalOptions {
    */
   hmrPartialAccept?: boolean
   /**
-   * Enable builtin plugin that written by rust, which is faster than js plugin.
+   * Enable full bundle mode during `serve`.
    *
-   * - 'resolver' (deprecated, will be removed in v8 stable): Enable only the native resolver plugin.
-   * - 'v1' (will be deprecated, will be removed in v8 stable): Enable the first stable set of native plugins (including resolver).
-   * - 'v2' (will be deprecated, will be removed in v8 stable): Enable the improved dynamicImportVarsPlugin and importGlobPlugin.
-   * - true: Enable all native plugins (currently an alias of 'v2', it will map to a newer one in the future versions).
-   *
-   * @experimental
-   * @default 'v2'
-   */
-  enableNativePlugin?: boolean | 'resolver' | 'v1' | 'v2'
-  /**
-   * Enable full bundle mode.
+   * This seeds the default for the client environment's `isBundled` option.
+   * Other environments default to `false` during `serve`. Any environment
+   * can override its `isBundled` value via `environments[name].isBundled`.
    *
    * This is highly experimental.
    *
@@ -637,6 +678,7 @@ export interface ResolvedConfig extends Readonly<
     | 'future'
     | 'server'
     | 'preview'
+    | 'devtools'
   > & {
     configFile: string | undefined
     configFileDependencies: string[]
@@ -651,8 +693,6 @@ export interface ResolvedConfig extends Readonly<
     cacheDir: string
     command: 'build' | 'serve'
     mode: string
-    /** `true` when build or full-bundle mode dev */
-    isBundled: boolean
     isWorker: boolean
     // in nested worker bundle to find the main config
     /** @internal */
@@ -676,6 +716,7 @@ export interface ResolvedConfig extends Readonly<
     /** @experimental */
     builder: ResolvedBuilderOptions | undefined
     build: ResolvedBuildOptions
+    devtools: ResolvedDevToolsConfig
     preview: ResolvedPreviewOptions
     ssr: ResolvedSSROptions
     assetsInclude: (file: string) => boolean
@@ -720,11 +761,41 @@ export interface ResolvedConfig extends Readonly<
     /** @internal */
     safeModulePaths: Set<string>
     /** @internal */
-    nativePluginEnabledLevel: number
-    /** @internal */
     [SYMBOL_RESOLVED_CONFIG]: true
   } & PluginHookUtils
 > {}
+
+export async function resolveDevToolsConfig(
+  config: DevToolsConfig | boolean | undefined,
+  host: string | boolean | undefined,
+  logger: Logger,
+): Promise<ResolvedDevToolsConfig> {
+  const isEnabled = config === true || !!(config && config.enabled)
+  const resolvedHostname = await resolveHostname(host)
+  const fallbackHostname = resolvedHostname.host ?? 'localhost'
+  const fallbackConfig = {
+    config: {
+      host: fallbackHostname,
+    },
+    enabled: false,
+  }
+  if (!isEnabled) {
+    return fallbackConfig
+  }
+
+  try {
+    const { normalizeDevToolsConfig } = await import('@vitejs/devtools/config')
+    return normalizeDevToolsConfig(config, fallbackHostname)
+  } catch (e) {
+    logger.error(
+      colors.red(
+        `Failed to load Vite DevTools config: ${e.message || e.stack}`,
+      ),
+      { error: e },
+    )
+    return fallbackConfig
+  }
+}
 
 // inferred ones are omitted
 const configDefaults = Object.freeze({
@@ -788,7 +859,6 @@ const configDefaults = Object.freeze({
     importGlobRestoreExtension: false,
     renderBuiltUrl: undefined,
     hmrPartialAccept: false,
-    enableNativePlugin: process.env._VITE_TEST_JS_PLUGIN ? false : 'v2',
     bundledDev: false,
   },
   future: {
@@ -811,7 +881,7 @@ const configDefaults = Object.freeze({
   worker: {
     format: 'iife',
     plugins: (): never[] => [],
-    // rollupOptions
+    // rolldownOptions
   },
   optimizeDeps: {
     include: [],
@@ -874,6 +944,7 @@ function resolveEnvironmentOptions(
   forceOptimizeDeps: boolean | undefined,
   logger: Logger,
   environmentName: string,
+  isBuild: boolean,
   isBundledDev: boolean,
   // Backward compatibility
   isSsrTargetWebworkerSet?: boolean,
@@ -884,6 +955,9 @@ function resolveEnvironmentOptions(
     options.consumer ?? (isClientEnvironment ? 'client' : 'server')
   const isSsrTargetWebworkerEnvironment =
     isSsrTargetWebworkerSet && environmentName === 'ssr'
+
+  const isBundled =
+    options.isBundled ?? (isBuild || (isClientEnvironment && isBundledDev))
 
   if (options.define?.['process.env']) {
     const processEnvDefine = options.define['process.env']
@@ -937,8 +1011,10 @@ function resolveEnvironmentOptions(
       options.build ?? {},
       logger,
       consumer,
-      isBundledDev,
+      isBundled && !isBuild,
+      isSsrTargetWebworkerEnvironment,
     ),
+    isBundled,
     plugins: undefined!, // to be resolved later
     // will be set by `setOptimizeDepsPluginNames` later
     optimizeDepsPluginNames: undefined!,
@@ -983,6 +1059,7 @@ export type ResolveFn = (
  */
 function checkBadCharactersInPath(
   name: string,
+  type: 'directory' | 'file',
   path: string,
   logger: Logger,
 ): void {
@@ -1006,7 +1083,7 @@ function checkBadCharactersInPath(
       colors.yellow(
         `${name} contains the ${charString} ${inflectedChars} (${colors.cyan(
           path,
-        )}), which may not work when running Vite. Consider renaming the directory / file to remove the characters.`,
+        )}), which may not work when running Vite. Consider renaming the ${type} without the characters.`,
       ),
     )
   }
@@ -1097,6 +1174,15 @@ function resolveResolveOptions(
       colors.yellow(
         `\`resolve.alias\` contains an alias that maps \`/\`. ` +
           `This is not recommended as it can cause unexpected behavior when resolving paths.`,
+      ),
+    )
+  }
+  if (alias.some((a) => a.customResolver)) {
+    logger.warn(
+      colors.yellow(
+        `\`resolve.alias\` contains an alias with \`customResolver\` option. ` +
+          `This is deprecated and will be removed in Vite 9. ` +
+          `Please use a custom plugin with a resolveId hook and \`enforce: 'pre'\` instead.`,
       ),
     )
   }
@@ -1338,6 +1424,14 @@ export async function resolveConfig(
 
   let configFileDependencies: string[] = []
   let mode = inlineConfig.mode || defaultMode
+  // When `NODE_ENV` isn't set locally, ask Vite Task for it; the runner
+  // also records the env in the build's cache key.
+  if (process.env.NODE_ENV === undefined) {
+    const nodeEnv = getEnv('NODE_ENV')
+    if (nodeEnv !== undefined) {
+      process.env.NODE_ENV = nodeEnv
+    }
+  }
   const isNodeEnvSet = !!process.env.NODE_ENV
   const packageCache: PackageCache = new Map()
 
@@ -1425,12 +1519,41 @@ export async function resolveConfig(
     customLogger: config.customLogger,
   })
 
+  const tsconfigPathsPlugin = userPlugins.find(
+    (p) =>
+      p.name === 'vite-tsconfig-paths' ||
+      p.name === 'vite-plugin-tsconfig-paths',
+  )
+  if (tsconfigPathsPlugin) {
+    logger.warnOnce(
+      colors.yellow(
+        `The plugin ${JSON.stringify(tsconfigPathsPlugin.name)} is detected. ` +
+          `Vite now supports tsconfig paths resolution natively via the ${colors.bold('resolve.tsconfigPaths')} option. ` +
+          `You can remove the plugin and set ${colors.bold('resolve.tsconfigPaths: true')} in your Vite config instead.`,
+      ),
+    )
+  }
+
+  if (process.versions.pnp) {
+    logger.warnOnce(
+      colors.yellow(
+        `Using Yarn PnP with Vite is discouraged and PnP-specific bugs will no longer be actively worked on. ` +
+          `Please switch to a different ${colors.bold('nodeLinker')} mode or to a different package manager.`,
+      ),
+    )
+  }
+
   // resolve root
   const resolvedRoot = normalizePath(
     config.root ? path.resolve(config.root) : process.cwd(),
   )
 
-  checkBadCharactersInPath('The project root', resolvedRoot, logger)
+  checkBadCharactersInPath(
+    'The project root',
+    'directory',
+    resolvedRoot,
+    logger,
+  )
 
   const configEnvironmentsClient = config.environments!.client!
   configEnvironmentsClient.dev ??= {}
@@ -1511,7 +1634,9 @@ export async function resolveConfig(
     config.environments[name] = mergeConfig(
       name === 'client'
         ? defaultClientEnvironmentOptions
-        : defaultNonClientEnvironmentOptions,
+        : (deepClone(
+            defaultNonClientEnvironmentOptions as object,
+          ) as UserConfig),
       config.environments[name],
     )
   }
@@ -1542,6 +1667,7 @@ export async function resolveConfig(
       inlineConfig.forceOptimizeDeps,
       logger,
       environmentName,
+      isBuild,
       isBundledDev,
       config.ssr?.target === 'webworker',
       config.server?.preTransformRequests,
@@ -1630,14 +1756,23 @@ export async function resolveConfig(
     : resolveBaseUrl(config.base, isBuild, logger)
 
   // resolve cache directory
+  // pkgDir may be an ancestor directory (findNearestPackageData walks up).
+  // When no package.json is found but node_modules/ exists in resolvedRoot
+  // (e.g. Deno projects using npm packages), prefer node_modules/.vite
+  // over a bare .vite directory.
   const pkgDir = findNearestPackageData(resolvedRoot, packageCache)?.dir
-  const cacheDir = normalizePath(
-    config.cacheDir
-      ? path.resolve(resolvedRoot, config.cacheDir)
-      : pkgDir
-        ? path.join(pkgDir, `node_modules/.vite`)
-        : path.join(resolvedRoot, `.vite`),
-  )
+  let cacheDir: string
+  if (config.cacheDir) {
+    cacheDir = path.resolve(resolvedRoot, config.cacheDir)
+  } else if (pkgDir) {
+    cacheDir = path.join(pkgDir, `node_modules/.vite`)
+  } else {
+    const nodeModulesDir = path.join(resolvedRoot, 'node_modules')
+    cacheDir = fs.existsSync(nodeModulesDir)
+      ? path.join(nodeModulesDir, `.vite`)
+      : path.join(resolvedRoot, `.vite`)
+  }
+  cacheDir = normalizePath(cacheDir)
 
   const assetsFilter =
     config.assetsInclude &&
@@ -1658,7 +1793,7 @@ export async function resolveConfig(
         )
       : ''
 
-  const server = resolveServerOptions(resolvedRoot, config.server, logger)
+  const server = await resolveServerOptions(resolvedRoot, config.server, logger)
 
   const builder = resolveBuilderOptions(config.builder)
 
@@ -1814,6 +1949,12 @@ export async function resolveConfig(
     experimental.renderBuiltUrl = undefined
   }
 
+  const resolvedDevToolsConfig = await resolveDevToolsConfig(
+    config.devtools,
+    server.host,
+    logger,
+  )
+
   resolved = {
     configFile: configFile ? normalizePath(configFile) : undefined,
     configFileDependencies: configFileDependencies.map((name) =>
@@ -1828,7 +1969,6 @@ export async function resolveConfig(
     cacheDir,
     command,
     mode,
-    isBundled: config.experimental?.bundledDev || isBuild,
     isWorker: false,
     mainConfig: null,
     bundleChain: [],
@@ -1901,6 +2041,7 @@ export async function resolveConfig(
     resolve: resolvedDefaultResolve,
     dev: resolvedDevEnvironmentOptions,
     build: resolvedBuildOptions,
+    devtools: resolvedDevToolsConfig,
 
     environments: resolvedEnvironments,
 
@@ -1944,9 +2085,6 @@ export async function resolveConfig(
       },
     ),
     safeModulePaths: new Set<string>(),
-    nativePluginEnabledLevel: resolveNativePluginEnabledLevel(
-      experimental.enableNativePlugin,
-    ),
     [SYMBOL_RESOLVED_CONFIG]: true,
   }
   resolved = {
@@ -2021,7 +2159,7 @@ export async function resolveConfig(
 
   // Check if all assetFileNames have the same reference.
   // If not, display a warn for user.
-  const outputOption = config.build?.rollupOptions?.output ?? []
+  const outputOption = config.build?.rolldownOptions?.output ?? []
   // Use isArray to narrow its type to array
   if (Array.isArray(outputOption)) {
     const assetFileNamesList = outputOption.map(
@@ -2035,7 +2173,7 @@ export async function resolveConfig(
       if (hasDifferentReference) {
         resolved.logger.warn(
           colors.yellow(`
-assetFileNames isn't equal for every build.rollupOptions.output. A single pattern across all outputs is supported by Vite.
+assetFileNames isn't equal for every build.rolldownOptions.output. A single pattern across all outputs is supported by Vite.
 `),
         )
       }
@@ -2071,40 +2209,7 @@ assetFileNames isn't equal for every build.rollupOptions.output. A single patter
     )
   }
 
-  if (
-    resolved.resolve.tsconfigPaths &&
-    resolved.experimental.enableNativePlugin === false
-  ) {
-    resolved.logger.warn(
-      colors.yellow(`
-(!) resolve.tsconfigPaths is set to true, but native plugins are disabled. To use resolve.tsconfigPaths, please enable native plugins via experimental.enableNativePlugin.
-`),
-    )
-  }
-
   return resolved
-}
-
-function resolveNativePluginEnabledLevel(
-  enableNativePlugin: Exclude<
-    ExperimentalOptions['enableNativePlugin'],
-    undefined
-  >,
-) {
-  switch (enableNativePlugin) {
-    case 'resolver':
-      return 0
-    case 'v1':
-      return 1
-    case 'v2':
-    case true:
-      return 2
-    case false:
-      return -1
-    default:
-      enableNativePlugin satisfies never
-      return -1
-  }
 }
 
 /**
@@ -2250,7 +2355,7 @@ export async function loadConfigFromFile(
     }
   } catch (e) {
     const logger = createLogger(logLevel, { customLogger })
-    checkBadCharactersInPath('The config path', resolvedPath, logger)
+    checkBadCharactersInPath('The config path', 'file', resolvedPath, logger)
     logger.error(colors.red(`failed to load config from ${resolvedPath}`), {
       error: e,
     })
@@ -2329,12 +2434,15 @@ async function bundleConfigFile(
     },
     // disable treeshake to include files that is not sideeffectful to `moduleIds`
     treeshake: false,
+    // disable tsconfig as it's confusing to respect tsconfig options in the config file
+    // this also aligns with other config loader behaviors
+    tsconfig: false,
     plugins: [
       {
         name: 'externalize-deps',
         resolveId: {
           filter: { id: /^[^.#].*/ },
-          async handler(id, importer, { kind }) {
+          handler(id, importer, { kind }) {
             if (!importer || path.isAbsolute(id) || isNodeBuiltin(id)) {
               return
             }
@@ -2388,7 +2496,7 @@ async function bundleConfigFile(
         name: 'inject-file-scope-variables',
         transform: {
           filter: { id: /\.[cm]?[jt]s$/ },
-          async handler(code, id) {
+          handler(code, id) {
             let injectValues =
               `const ${dirnameVarName} = ${JSON.stringify(path.dirname(id))};` +
               `const ${filenameVarName} = ${JSON.stringify(id)};` +
@@ -2399,7 +2507,7 @@ async function bundleConfigFile(
               if (isESM) {
                 if (!importMetaResolverRegistered) {
                   importMetaResolverRegistered = true
-                  await createImportMetaResolver()
+                  createImportMetaResolver()
                 }
                 injectValues += `const ${importMetaResolveVarName} = (specifier, importer = ${importMetaUrlVarName}) => (${importMetaResolveWithCustomHookString})(specifier, importer);`
               } else {
@@ -2436,7 +2544,7 @@ async function bundleConfigFile(
       return path.resolve(fileName, relative)
     },
     // we want to generate a single chunk like esbuild does with `splitting: false`
-    inlineDynamicImports: true,
+    codeSplitting: false,
   })
   await bundle.close()
 
@@ -2452,7 +2560,8 @@ async function bundleConfigFile(
 
   return {
     code: entryChunk.code,
-    dependencies: [...allModules],
+    // exclude `\x00rolldown/runtime.js`
+    dependencies: [...allModules].filter((m) => !m.startsWith('\0')),
   }
 }
 
@@ -2465,16 +2574,16 @@ function collectAllModules(
   if (analyzedModules.has(fileName)) return
   analyzedModules.add(fileName)
 
-  const chunk = bundle[fileName]!
+  const chunk = bundle[fileName]
+  if (!chunk) return // external modules
+
   for (const mod of chunk.moduleIds) {
     allModules.add(mod)
   }
   for (const i of chunk.imports) {
-    analyzedModules.add(i)
     collectAllModules(bundle, i, allModules, analyzedModules)
   }
   for (const i of chunk.dynamicImports) {
-    analyzedModules.add(i)
     collectAllModules(bundle, i, allModules, analyzedModules)
   }
 }
@@ -2521,6 +2630,11 @@ async function loadConfigFromBundledFile(
           `.vite-temp/${path.basename(fileName)}.${hash}.mjs`,
         )
       : `${fileName}.${hash}.mjs`
+
+    // Tell Vite Task to ignore this transient file as both input and output,
+    // so the read-write of this file doesn't affect the cache fingerprints.
+    ignoreInput(tempFileName)
+    ignoreOutput(tempFileName)
     await fsp.writeFile(tempFileName, bundledCode)
     try {
       return (await import(pathToFileURL(tempFileName).href)).default

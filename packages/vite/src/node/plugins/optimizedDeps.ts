@@ -22,6 +22,9 @@ export function optimizedDepsPlugin(): Plugin {
     name: 'vite:optimized-deps',
 
     applyToEnvironment(environment) {
+      if (environment.config.isBundled) {
+        return false
+      }
       return !isDepOptimizationDisabled(environment.config.optimizeDeps)
     },
 
@@ -82,7 +85,20 @@ export function optimizedDepsPlugin(): Plugin {
         // load hooks to avoid race conditions, once processing is resolved,
         // we are sure that the file has been properly save to disk
         try {
-          return await fsp.readFile(file, 'utf-8')
+          const [code, map] = await Promise.all([
+            fsp.readFile(file, 'utf-8'),
+            fsp
+              .readFile(`${file}.map`, 'utf-8')
+              .then((map) => JSON.parse(map))
+              .catch(() => null),
+          ])
+          if (map) {
+            return {
+              code,
+              map,
+            }
+          }
+          return code
         } catch {
           if (
             browserHash &&

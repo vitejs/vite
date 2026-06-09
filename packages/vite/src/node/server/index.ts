@@ -1,4 +1,5 @@
 import path from 'node:path'
+import fs from 'node:fs'
 import { execSync } from 'node:child_process'
 import type * as net from 'node:net'
 import { get as httpGet } from 'node:http'
@@ -11,11 +12,17 @@ import corsMiddleware from 'cors'
 import colors from 'picocolors'
 import chokidar from 'chokidar'
 import launchEditorMiddleware from 'launch-editor-middleware'
+import { determineAgent } from '@vercel/detect-agent'
+import { disableCache } from '@voidzero-dev/vite-task-client'
 import type { SourceMap } from 'rolldown'
 import type { ModuleRunner } from 'vite/module-runner'
 import type { FSWatcher, WatchOptions } from '#dep-types/chokidar'
 import type { Connect } from '#dep-types/connect'
 import type { CommonServerOptions } from '../http'
+import type {
+  ForwardConsoleOptions,
+  ResolvedForwardConsoleOptions,
+} from '../../shared/forwardConsole'
 import {
   httpServerStart,
   resolveHttpServer,
@@ -37,6 +44,7 @@ import {
   normalizePath,
   resolveHostname,
   resolveServerUrls,
+  setupHmrWsOptionCompat,
   setupSIGTERMListener,
   teardownSIGTERMListener,
 } from '../utils'
@@ -93,7 +101,7 @@ import { ModuleGraph } from './mixedModuleGraph'
 import type { ModuleNode } from './mixedModuleGraph'
 import { notFoundMiddleware } from './middlewares/notFound'
 import { errorMiddleware } from './middlewares/error'
-import type { HmrOptions, NormalizedHotChannel } from './hmr'
+import type { HmrOptions, NormalizedHotChannel, WsOptions } from './hmr'
 import { handleHMRUpdate, updateModules } from './hmr'
 import { openBrowser as _openBrowser } from './openBrowser'
 import type { TransformOptions, TransformResult } from './transformRequest'
@@ -102,7 +110,7 @@ import type { DevEnvironment } from './environment'
 import { hostValidationMiddleware } from './middlewares/hostCheck'
 import { rejectInvalidRequestMiddleware } from './middlewares/rejectInvalidRequest'
 import { memoryFilesMiddleware } from './middlewares/memoryFiles'
-import { rejectNoCorsRequestMiddleware } from './middlewares/rejectNoCorsRequest'
+import { triggerLazyBundlingMiddleware } from './middlewares/triggerLazyBundling'
 
 const usedConfigs = new WeakSet<ResolvedConfig>()
 
@@ -112,10 +120,10 @@ export interface ServerOptions extends CommonServerOptions {
    */
   hmr?: HmrOptions | boolean
   /**
-   * Do not start the websocket connection.
-   * @experimental
+   * Configure WebSocket connection options.
+   * Set to `false` to disable the WebSocket server and connection.
    */
-  ws?: false
+  ws?: WsOptions | false
   /**
    * Warm-up files to transform and cache the results in advance. This improves the
    * initial page load during server starts and prevents transform waterfalls.
@@ -197,6 +205,8 @@ export interface ServerOptions extends CommonServerOptions {
     server: ViteDevServer,
     hmr: (environment: DevEnvironment) => Promise<void>,
   ) => Promise<void>
+
+  forwardConsole?: boolean | ForwardConsoleOptions
 }
 
 export interface ResolvedServerOptions extends Omit<
@@ -211,7 +221,7 @@ export interface ResolvedServerOptions extends Omit<
     | 'origin'
     | 'hotUpdateEnvironments'
   >,
-  'fs' | 'middlewareMode' | 'sourcemapIgnoreList'
+  'fs' | 'middlewareMode' | 'sourcemapIgnoreList' | 'forwardConsole'
 > {
   fs: Required<FileSystemServeOptions>
   middlewareMode: NonNullable<ServerOptions['middlewareMode']>
@@ -219,6 +229,7 @@ export interface ResolvedServerOptions extends Omit<
     ServerOptions['sourcemapIgnoreList'],
     false | undefined
   >
+  forwardConsole: ResolvedForwardConsoleOptions
 }
 
 export interface FileSystemServeOptions {
@@ -256,6 +267,37 @@ export type ServerHook = (
 ) => (() => void) | void | Promise<(() => void) | void>
 
 export type HttpServer = http.Server | Http2SecureServer
+
+export async function resolveForwardConsoleOptions(
+  value: boolean | ForwardConsoleOptions | undefined,
+): Promise<ResolvedForwardConsoleOptions> {
+  value ??= (await determineAgent()).isAgent
+
+  if (value === false) {
+    return {
+      enabled: false,
+      unhandledErrors: false,
+      logLevels: [],
+    }
+  }
+
+  if (value === true) {
+    return {
+      enabled: true,
+      unhandledErrors: true,
+      logLevels: ['error', 'warn'],
+    }
+  }
+
+  const unhandledErrors = value.unhandledErrors ?? true
+  const logLevels = value.logLevels ?? []
+
+  return {
+    enabled: unhandledErrors || logLevels.length > 0,
+    unhandledErrors,
+    logLevels,
+  }
+}
 
 export interface ViteDevServer {
   /**
@@ -440,8 +482,14 @@ export async function _createServer(
     listen: boolean
     previousEnvironments?: Record<string, DevEnvironment>
     previousShortcutsState?: ShortcutsState<ViteDevServer>
+    previousRestartPromise?: Promise<void> | null
+    previousForceOptimizeOnRestart?: boolean
   },
 ): Promise<ViteDevServer> {
+  // The dev server is a long-running, interactive process whose outputs
+  // (network responses, HMR updates) cannot be replayed from a cache.
+  disableCache()
+
   const config = isResolvedConfig(inlineConfig)
     ? inlineConfig
     : await resolveConfig(inlineConfig, 'serve')
@@ -467,7 +515,7 @@ export async function _createServer(
   const resolvedOutDirs = getResolvedOutDirs(
     config.root,
     config.build.outDir,
-    config.build.rollupOptions.output,
+    config.build.rolldownOptions.output,
   )
   const emptyOutDir = resolveEmptyOutDir(
     config.build.emptyOutDir,
@@ -740,10 +788,10 @@ export async function _createServer(
           config.logger.info,
         )
       } else if (middlewareMode) {
-        throw new Error('cannot print server URLs in middleware mode.')
+        throw new Error('Cannot print server URLs in middleware mode.')
       } else {
         throw new Error(
-          'cannot print server URLs before server.listen is called.',
+          'Cannot print server URLs before server.listen is called.',
         )
       }
     },
@@ -770,8 +818,8 @@ export async function _createServer(
       // server instance after a restart
       server = _server
     },
-    _restartPromise: null,
-    _forceOptimizeOnRestart: false,
+    _restartPromise: options.previousRestartPromise ?? null,
+    _forceOptimizeOnRestart: options.previousForceOptimizeOnRestart ?? false,
     _shortcutsState: options.previousShortcutsState,
   }
 
@@ -846,7 +894,7 @@ export async function _createServer(
     await onHMRUpdate(isUnlink ? 'delete' : 'create', file)
   }
 
-  watcher.on('change', async (file) => {
+  const onFileChange = async (file: string) => {
     file = normalizePath(file)
     reloadOnTsconfigChange(server, file)
 
@@ -860,13 +908,17 @@ export async function _createServer(
       environment.moduleGraph.onFileChange(file)
     }
     await onHMRUpdate('update', file)
+  }
+
+  watcher.on('change', (file) => {
+    onFileChange(file).catch((e) => server.config.logger.error(e))
   })
 
   watcher.on('add', (file) => {
-    onFileAddUnlink(file, false)
+    onFileAddUnlink(file, false).catch((e) => server.config.logger.error(e))
   })
   watcher.on('unlink', (file) => {
-    onFileAddUnlink(file, true)
+    onFileAddUnlink(file, true).catch((e) => server.config.logger.error(e))
   })
 
   if (!middlewareMode && httpServer) {
@@ -884,7 +936,6 @@ export async function _createServer(
   }
 
   middlewares.use(rejectInvalidRequestMiddleware())
-  middlewares.use(rejectNoCorsRequestMiddleware())
 
   // cors
   const { cors } = serverConfig
@@ -935,7 +986,7 @@ export async function _createServer(
   // ping request handler
   // Keep the named function. The name is visible in debug logs via `DEBUG=connect:dispatcher ...`
   middlewares.use(function viteHMRPingMiddleware(req, res, next) {
-    if (req.headers['accept'] === 'text/x-vite-ping') {
+    if (req.headers.accept === 'text/x-vite-ping') {
       res.writeHead(204).end()
     } else {
       next()
@@ -950,6 +1001,7 @@ export async function _createServer(
   }
 
   if (config.experimental.bundledDev) {
+    middlewares.use(triggerLazyBundlingMiddleware(server))
     middlewares.use(memoryFilesMiddleware(server))
   } else {
     // main transform middleware
@@ -1138,15 +1190,18 @@ const _serverConfigDefaults = Object.freeze({
   perEnvironmentStartEndDuringDev: false,
   perEnvironmentWatchChangeDuringDev: false,
   // hotUpdateEnvironments
+  forwardConsole: undefined,
 } satisfies ServerOptions)
 export const serverConfigDefaults: Readonly<Partial<ServerOptions>> =
   _serverConfigDefaults
 
-export function resolveServerOptions(
+const RESERVED_ALLOWED_HOSTS_CHARACTERS_RE = /[\\"']/
+
+export async function resolveServerOptions(
   root: string,
   raw: ServerOptions | undefined,
   logger: Logger,
-): ResolvedServerOptions {
+): Promise<ResolvedServerOptions> {
   const _server = mergeWithDefaults(
     {
       ..._serverConfigDefaults,
@@ -1155,6 +1210,8 @@ export function resolveServerOptions(
     },
     raw ?? {},
   )
+
+  setupHmrWsOptionCompat(_server)
 
   const server: ResolvedServerOptions = {
     ..._server,
@@ -1167,14 +1224,15 @@ export function resolveServerOptions(
       _server.sourcemapIgnoreList === false
         ? () => false
         : _server.sourcemapIgnoreList,
+    forwardConsole: await resolveForwardConsoleOptions(_server.forwardConsole),
   }
 
   let allowDirs = server.fs.allow
 
+  const cwd = searchForPackageRoot(root)
   if (process.versions.pnp) {
     // running a command fails if cwd doesn't exist and root may not exist
     // search for package root to find a path that exists
-    const cwd = searchForPackageRoot(root)
     try {
       const enableGlobalCache =
         execSync('yarn config get enableGlobalCache', { cwd })
@@ -1192,6 +1250,28 @@ export function resolveServerOptions(
         timestamp: true,
       })
     }
+  }
+
+  // pnpm's global virtual store (GVS) may place package files outside workspace root.
+  // Read node_modules/.modules.yaml which pnpm always writes on install — this works
+  // unconditionally regardless of how Vite is launched (node / npx / pnpm run),
+  // avoiding the need for subprocess calls or user-agent sniffing.
+  const pnpmModulesYaml = path.join(cwd, 'node_modules', '.modules.yaml')
+  try {
+    const content = fs.readFileSync(pnpmModulesYaml, 'utf-8')
+    const parsed = JSON.parse(content)
+    const virtualStoreDir = parsed.virtualStoreDir
+    if (virtualStoreDir) {
+      if (path.isAbsolute(virtualStoreDir)) {
+        allowDirs.push(virtualStoreDir)
+      } else if (virtualStoreDir.startsWith('..')) {
+        allowDirs.push(
+          path.resolve(path.join(cwd, 'node_modules'), virtualStoreDir),
+        )
+      }
+    }
+  } catch {
+    // .modules.yaml not found or unreadable — not a pnpm project, skip
   }
 
   allowDirs = allowDirs.map((i) => resolvedAllowDir(root, i))
@@ -1219,8 +1299,21 @@ export function resolveServerOptions(
     process.env.__VITE_ADDITIONAL_SERVER_ALLOWED_HOSTS &&
     Array.isArray(server.allowedHosts)
   ) {
-    const additionalHost = process.env.__VITE_ADDITIONAL_SERVER_ALLOWED_HOSTS
-    server.allowedHosts = [...server.allowedHosts, additionalHost]
+    const rawAdditionalHosts =
+      process.env.__VITE_ADDITIONAL_SERVER_ALLOWED_HOSTS
+    if (RESERVED_ALLOWED_HOSTS_CHARACTERS_RE.test(rawAdditionalHosts)) {
+      logger.warn(
+        colors.yellow(
+          `${colors.bold('(!)')} Skipping additional allowed hosts from environment variable due to reserved characters. Received: "${rawAdditionalHosts}".`,
+        ),
+      )
+    } else {
+      const additionalHosts = rawAdditionalHosts
+        .split(',')
+        .map((host) => host.trim())
+        .filter(Boolean)
+      server.allowedHosts = [...server.allowedHosts, ...additionalHosts]
+    }
   }
 
   return server
@@ -1249,6 +1342,8 @@ async function restartServer(server: ViteDevServer) {
         listen: false,
         previousEnvironments: server.environments,
         previousShortcutsState: server._shortcutsState,
+        previousRestartPromise: server._restartPromise,
+        previousForceOptimizeOnRestart: server._forceOptimizeOnRestart,
       })
     } catch (err: any) {
       server.config.logger.error(err.message, {

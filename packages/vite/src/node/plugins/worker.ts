@@ -5,7 +5,7 @@ import colors from 'picocolors'
 import { type ImportSpecifier, init, parse } from 'es-module-lexer'
 import { viteWebWorkerPostPlugin as nativeWebWorkerPostPlugin } from 'rolldown/experimental'
 import type { ResolvedConfig } from '../config'
-import { type Plugin, perEnvironmentPlugin } from '../plugin'
+import type { Plugin } from '../plugin'
 import { ENV_ENTRY, ENV_PUBLIC_PATH } from '../constants'
 import {
   encodeURIPath,
@@ -25,7 +25,7 @@ import {
 } from '../build'
 import { cleanUrl } from '../../shared/utils'
 import type { Logger } from '../logger'
-import { fileToUrl } from './asset'
+import { fileToUrl, toOutputFilePathInJSForBundledDev } from './asset'
 
 type WorkerBundle = {
   entryFilename: string
@@ -183,14 +183,15 @@ async function bundleWorkerEntry(
 
   // bundle the file as entry to support imports
   const { rolldown } = await import('rolldown')
-  const { plugins, rollupOptions, format } = config.worker
+  const { plugins, rolldownOptions, format } = config.worker
   const workerConfig = await plugins(newBundleChain)
   const workerEnvironment = new BuildEnvironment('client', workerConfig) // TODO: should this be 'worker'?
   await workerEnvironment.init()
 
   const chunkMetadataMap = new ChunkMetadataMap()
+  const workerBuildTarget = workerEnvironment.config.build.target
   const bundle = await rolldown({
-    ...rollupOptions,
+    ...rolldownOptions,
     input,
     plugins: workerEnvironment.plugins.map((p) =>
       injectEnvironmentToHooks(workerEnvironment, chunkMetadataMap, p),
@@ -198,17 +199,30 @@ async function bundleWorkerEntry(
     onLog(level, log) {
       onRollupLog(level, log, workerEnvironment)
     },
+    transform: {
+      target: workerBuildTarget === false ? undefined : workerBuildTarget,
+      ...rolldownOptions.transform,
+      define: {
+        ...rolldownOptions.transform?.define,
+        // disable builtin process.env.NODE_ENV replacement as it is handled by the define plugin
+        'process.env.NODE_ENV': 'process.env.NODE_ENV',
+      },
+    },
     // TODO: remove this and enable rolldown's CSS support later
     moduleTypes: {
       '.css': 'js',
-      ...rollupOptions.moduleTypes,
+      ...rolldownOptions.moduleTypes,
     },
     preserveEntrySignatures: false,
+    experimental: {
+      ...rolldownOptions.experimental,
+      viteMode: true,
+    },
   })
   let result: RolldownOutput
   let watchedFiles: string[] | undefined
   try {
-    const workerOutputConfig = config.worker.rollupOptions.output
+    const workerOutputConfig = config.worker.rolldownOptions.output
     const workerConfig = workerOutputConfig
       ? Array.isArray(workerOutputConfig)
         ? workerOutputConfig[0] || {}
@@ -228,14 +242,14 @@ async function bundleWorkerEntry(
         '[name]-[hash].[ext]',
       ),
       minify:
-        config.build.minify === 'oxc'
+        workerEnvironment.config.build.minify === 'oxc'
           ? true
-          : config.build.minify === false
+          : workerEnvironment.config.build.minify === false
             ? 'dce-only'
             : undefined,
       ...workerConfig,
       format,
-      sourcemap: config.build.sourcemap,
+      sourcemap: workerEnvironment.config.build.sourcemap,
     })
     watchedFiles = (await bundle.watchFiles).map((f) => normalizePath(f))
   } catch (e) {
@@ -311,20 +325,18 @@ export async function workerFileToUrl(
   return bundle
 }
 
-export function webWorkerPostPlugin(config: ResolvedConfig): Plugin {
-  if (config.isBundled && config.nativePluginEnabledLevel >= 1) {
-    return perEnvironmentPlugin(
-      'native:web-worker-post-plugin',
-      (environment) => {
+export function webWorkerPostPlugin(_config: ResolvedConfig): Plugin {
+  return {
+    name: 'vite:worker-post',
+    applyToEnvironment(environment) {
+      if (environment.config.isBundled) {
         if (environment.config.worker.format === 'iife') {
           return nativeWebWorkerPostPlugin()
         }
-      },
-    )
-  }
-
-  return {
-    name: 'vite:worker-post',
+        return false
+      }
+      return true
+    },
     transform: {
       filter: {
         code: 'import.meta',
@@ -401,7 +413,8 @@ export function webWorkerPlugin(config: ResolvedConfig): Plugin {
         const { format } = config.worker
         const workerConstructor =
           workerMatch[1] === 'sharedworker' ? 'SharedWorker' : 'Worker'
-        const workerType = isBuild
+        const isBundled = this.environment.config.isBundled
+        const workerType = isBundled
           ? format === 'es'
             ? 'module'
             : 'classic'
@@ -412,7 +425,7 @@ export function webWorkerPlugin(config: ResolvedConfig): Plugin {
         }`
 
         let urlCode: string
-        if (isBuild) {
+        if (isBundled) {
           if (isWorker && config.bundleChain.at(-1) === cleanUrl(id)) {
             urlCode = 'self.location.href'
           } else if (inlineRE.test(id)) {
@@ -467,7 +480,19 @@ export function webWorkerPlugin(config: ResolvedConfig): Plugin {
             }
           } else {
             const result = await workerFileToUrl(config, id)
-            urlCode = JSON.stringify(result.entryUrlPlaceholder)
+            let url: string
+            if (
+              this.environment.config.command === 'serve' &&
+              this.environment.config.isBundled
+            ) {
+              url = toOutputFilePathInJSForBundledDev(
+                this.environment,
+                result.entryFilename,
+              )
+            } else {
+              url = result.entryUrlPlaceholder
+            }
+            urlCode = JSON.stringify(url)
             for (const file of result.watchedFiles) {
               this.addWatchFile(file)
             }
@@ -499,7 +524,7 @@ export function webWorkerPlugin(config: ResolvedConfig): Plugin {
 
     transform: {
       filter: { id: workerFileRE },
-      async handler(raw, id) {
+      handler(raw, id) {
         const workerFileMatch = workerFileRE.exec(id)
         if (workerFileMatch) {
           // if import worker by worker constructor will have query.type
@@ -517,7 +542,7 @@ export function webWorkerPlugin(config: ResolvedConfig): Plugin {
             const scriptPath = JSON.stringify(ENV_PUBLIC_PATH)
             injectEnv = `import ${scriptPath}\n`
           } else if (workerType === 'ignore') {
-            if (isBuild) {
+            if (this.environment.config.isBundled) {
               injectEnv = ''
             } else {
               // dynamic worker type we can't know how import the env

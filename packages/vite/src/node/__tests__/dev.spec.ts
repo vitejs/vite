@@ -5,7 +5,7 @@ import type { ViteDevServer } from '..'
 import { promiseWithResolvers } from '../../shared/utils'
 
 describe('resolveBuildEnvironmentOptions in dev', () => {
-  test('build.rollupOptions should not have input in lib', async () => {
+  test('build.rolldownOptions should not have input in lib', async () => {
     const config = await resolveConfig(
       {
         build: {
@@ -17,7 +17,7 @@ describe('resolveBuildEnvironmentOptions in dev', () => {
       'serve',
     )
 
-    expect(config.build.rollupOptions).not.toHaveProperty('input')
+    expect(config.build.rolldownOptions).not.toHaveProperty('input')
   })
 })
 
@@ -38,7 +38,7 @@ describe('the dev server', () => {
     const { promise, resolve } =
       promiseWithResolvers<ResolvedServerUrls | null>()
     server = await createServer({
-      root: __dirname,
+      root: import.meta.dirname,
       logLevel: 'error',
       server: {
         strictPort: true,

@@ -5,10 +5,10 @@ export default defineConfig({
   build: {
     outDir: './dist',
     manifest: true,
-    rollupOptions: {
+    rolldownOptions: {
       input: {
-        main: resolve(__dirname, './index.html'),
-        other: resolve(__dirname, './other.js'),
+        main: resolve(import.meta.dirname, './index.html'),
+        other: resolve(import.meta.dirname, './other.js'),
       },
       treeshake: false,
       output: {

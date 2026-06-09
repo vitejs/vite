@@ -1,6 +1,12 @@
 import aliasPlugin, { type ResolverFunction } from '@rollup/plugin-alias'
+import colors from 'picocolors'
 import type { ObjectHook } from 'rolldown'
-import { viteAliasPlugin as nativeAliasPlugin } from 'rolldown/experimental'
+import {
+  viteAliasPlugin as nativeAliasPlugin,
+  viteJsonPlugin as nativeJsonPlugin,
+  viteWasmFallbackPlugin as nativeWasmFallbackPlugin,
+  oxcRuntimePlugin,
+} from 'rolldown/experimental'
 import type { PluginHookUtils, ResolvedConfig } from '../config'
 import {
   type HookHandler,
@@ -8,15 +14,14 @@ import {
   type PluginWithRequiredHook,
 } from '../plugin'
 import { watchPackageDataPlugin } from '../packages'
-import { jsonPlugin } from './json'
-import { oxcResolvePlugin, resolvePlugin } from './resolve'
+import { oxcResolvePlugin } from './resolve'
 import { optimizedDepsPlugin } from './optimizedDeps'
 import { importAnalysisPlugin } from './importAnalysis'
 import { cssAnalysisPlugin, cssPlugin, cssPostPlugin } from './css'
 import { assetPlugin } from './asset'
 import { clientInjectionsPlugin } from './clientInjections'
 import { buildHtmlPlugin, htmlInlineProxyPlugin } from './html'
-import { wasmFallbackPlugin, wasmHelperPlugin } from './wasm'
+import { wasmHelperPlugin } from './wasm'
 import { modulePreloadPolyfillPlugin } from './modulePreloadPolyfill'
 import { webWorkerPlugin } from './worker'
 import { preAliasPlugin } from './preAlias'
@@ -31,6 +36,7 @@ import {
   createFilterForTransform,
   createIdFilter,
 } from './pluginFilter'
+import { forwardConsolePlugin } from './forwardConsole'
 import { oxcPlugin } from './oxc'
 import { esbuildBannerFooterCompatPlugin } from './esbuildBannerFooterCompatPlugin'
 
@@ -41,83 +47,98 @@ export async function resolvePlugins(
   postPlugins: Plugin[],
 ): Promise<Plugin[]> {
   const isBuild = config.command === 'build'
-  const isBundled = config.isBundled
   const isWorker = config.isWorker
-  const buildPlugins = isBundled
-    ? await (await import('../build')).resolveBuildPlugins(config)
+  const anyEnvBundled =
+    isBuild || Object.values(config.environments).some((env) => env.isBundled)
+  const buildPlugins = anyEnvBundled
+    ? (await import('../build')).resolveBuildPlugins(config)
     : { pre: [], post: [] }
+  const devtoolsIntegrationPlugin =
+    config.devtools.enabled && !isWorker
+      ? await loadDevToolsIntegrationPlugin(config)
+      : null
   const { modulePreload } = config.build
-  const enableNativePlugin = config.nativePluginEnabledLevel >= 0
-  const enableNativePluginV1 = config.nativePluginEnabledLevel >= 1
 
   return [
-    !isBundled ? optimizedDepsPlugin() : null,
+    optimizedDepsPlugin(),
     !isWorker ? watchPackageDataPlugin(config.packageCache) : null,
-    !isBundled ? preAliasPlugin(config) : null,
-    isBundled &&
-    enableNativePluginV1 &&
-    !config.resolve.alias.some((v) => v.customResolver)
-      ? nativeAliasPlugin({
-          entries: config.resolve.alias.map((item) => {
-            return {
-              find: item.find,
-              replacement: item.replacement,
-            }
-          }),
-        })
-      : aliasPlugin({
-          // @ts-expect-error aliasPlugin receives rollup types
-          entries: config.resolve.alias,
-          customResolver: viteAliasCustomResolver,
-        }),
+    preAliasPlugin(config),
+    {
+      ...aliasPlugin({
+        // @ts-expect-error aliasPlugin receives rollup types
+        entries: config.resolve.alias,
+        customResolver: viteAliasCustomResolver,
+      }),
+      applyToEnvironment(environment) {
+        if (
+          environment.config.isBundled &&
+          !environment.config.resolve.alias.some((v) => v.customResolver)
+        ) {
+          return nativeAliasPlugin({
+            entries: config.resolve.alias.map((item) => {
+              return {
+                find: item.find,
+                replacement: item.replacement,
+              }
+            }),
+          })
+        }
+        return true
+      },
+    } as Plugin,
 
     ...prePlugins,
 
     modulePreload !== false && modulePreload.polyfill
-      ? modulePreloadPolyfillPlugin(config)
+      ? modulePreloadPolyfillPlugin()
       : null,
-    ...(enableNativePlugin
-      ? oxcResolvePlugin(
-          {
-            root: config.root,
-            isProduction: config.isProduction,
-            isBuild,
-            packageCache: config.packageCache,
-            asSrc: true,
-            optimizeDeps: true,
-            externalize: true,
-            legacyInconsistentCjsInterop: config.legacy?.inconsistentCjsInterop,
-          },
-          isWorker
-            ? { ...config, consumer: 'client', optimizeDepsPluginNames: [] }
-            : undefined,
-        )
-      : [
-          resolvePlugin({
-            root: config.root,
-            isProduction: config.isProduction,
-            isBuild,
-            packageCache: config.packageCache,
-            asSrc: true,
-            optimizeDeps: true,
-            externalize: true,
-          }),
-        ]),
+    ...oxcResolvePlugin(
+      {
+        root: config.root,
+        isProduction: config.isProduction,
+        isBuild,
+        packageCache: config.packageCache,
+        asSrc: true,
+        optimizeDeps: true,
+        externalize: true,
+        legacyInconsistentCjsInterop: config.legacy?.inconsistentCjsInterop,
+      },
+      isWorker
+        ? {
+            ...config,
+            consumer: 'client',
+            isBundled: true,
+            optimizeDepsPluginNames: [],
+          }
+        : undefined,
+    ),
     htmlInlineProxyPlugin(config),
     cssPlugin(config),
     esbuildBannerFooterCompatPlugin(config),
+    // @oxc-project/runtime resolution is handled by rolldown in build
+    config.oxc !== false
+      ? ({
+          ...oxcRuntimePlugin(),
+          applyToEnvironment(environment) {
+            return !environment.config.isBundled
+          },
+        } satisfies Plugin)
+      : null,
     config.oxc !== false ? oxcPlugin(config) : null,
-    jsonPlugin(config.json, isBuild, enableNativePluginV1),
-    wasmHelperPlugin(config),
+    nativeJsonPlugin({ ...config.json, minify: isBuild }),
+    wasmHelperPlugin(),
     webWorkerPlugin(config),
     assetPlugin(config),
+    // for now client only
+    config.server.forwardConsole.enabled &&
+      forwardConsolePlugin({ environments: ['client'] }),
 
     ...normalPlugins,
 
-    wasmFallbackPlugin(config),
+    nativeWasmFallbackPlugin(),
     definePlugin(config),
     cssPostPlugin(config),
-    isBundled && buildHtmlPlugin(config),
+    buildHtmlPlugin(config),
     workerImportMetaUrlPlugin(config),
     assetImportMetaUrlPlugin(config),
     ...buildPlugins.pre,
@@ -127,16 +148,30 @@ export async function resolvePlugins(
     ...postPlugins,
 
     ...buildPlugins.post,
+    devtoolsIntegrationPlugin,
 
     // internal server-only plugins are always applied after everything else
-    ...(isBundled
-      ? []
-      : [
-          clientInjectionsPlugin(config),
-          cssAnalysisPlugin(config),
-          importAnalysisPlugin(config),
-        ]),
+    clientInjectionsPlugin(config),
+    cssAnalysisPlugin(config),
+    importAnalysisPlugin(config),
   ].filter(Boolean) as Plugin[]
+}
+
+async function loadDevToolsIntegrationPlugin(
+  config: ResolvedConfig,
+): Promise<Plugin | null> {
+  try {
+    const { DevToolsIntegration } = await import('@vitejs/devtools/integration')
+    return DevToolsIntegration({ config })
+  } catch (error: any) {
+    config.logger.error(
+      colors.red(
+        `Failed to load Vite DevTools integration: ${error?.message || error?.stack}`,
+      ),
+      { error },
+    )
+    return null
+  }
 }
 
 export function createPluginHookUtils(

@@ -10,7 +10,7 @@ function BackendIntegrationExample() {
   return {
     name: 'backend-integration',
     config() {
-      const projectRoot = __dirname
+      const projectRoot = import.meta.dirname
       const sourceCodeDir = path.join(projectRoot, 'frontend')
       const root = path.join(sourceCodeDir, 'entrypoints')
       const outDir = path.relative(root, path.join(projectRoot, 'dist/dev'))
@@ -22,10 +22,10 @@ function BackendIntegrationExample() {
       }).map((filename) => [path.relative(root, filename), filename])
 
       entrypoints.push(['tailwindcss-colors', 'tailwindcss/colors.js'])
-      entrypoints.push(['bar.css', path.resolve(__dirname, './dir/foo.css')])
+      entrypoints.push(['bar.css', path.resolve(projectRoot, './dir/foo.css')])
       entrypoints.push([
         'bar.custom',
-        path.resolve(__dirname, './dir/custom.css'),
+        path.resolve(projectRoot, './dir/custom.css'),
       ])
 
       return {
@@ -41,7 +41,7 @@ function BackendIntegrationExample() {
         build: {
           manifest: true,
           outDir,
-          rollupOptions: {
+          rolldownOptions: {
             input: Object.fromEntries(entrypoints),
           },
         },

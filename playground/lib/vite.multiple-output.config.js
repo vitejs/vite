@@ -2,21 +2,21 @@ import path from 'node:path'
 import { defineConfig } from 'vite'
 
 const root = process.env.VITEST
-  ? path.resolve(__dirname, '../../playground-temp/lib')
-  : __dirname
+  ? path.resolve(import.meta.dirname, '../../playground-temp/lib')
+  : import.meta.dirname
 
 export default defineConfig({
   build: {
     lib: {
       // set multiple entrypoint to trigger css chunking
       entry: {
-        main: path.resolve(__dirname, 'src/main-multiple-output.js'),
-        sub: path.resolve(__dirname, 'src/sub-multiple-output.js'),
+        main: path.resolve(import.meta.dirname, 'src/main-multiple-output.js'),
+        sub: path.resolve(import.meta.dirname, 'src/sub-multiple-output.js'),
       },
       name: 'MyLib',
     },
     outDir: 'dist/multiple-output',
-    rollupOptions: {
+    rolldownOptions: {
       // due to playground-temp, the `dir` needs to be relative to the resolvedRoot
       output: [
         {

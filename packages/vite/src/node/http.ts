@@ -1,4 +1,5 @@
 import fsp from 'node:fs/promises'
+import net from 'node:net'
 import path from 'node:path'
 import type { OutgoingHttpHeaders as HttpServerHeaders } from 'node:http'
 import type { ServerOptions as HttpsServerOptions } from 'node:https'
@@ -7,6 +8,7 @@ import type { Connect } from '#dep-types/connect'
 import type { ProxyOptions } from './server/middlewares/proxy'
 import type { Logger } from './logger'
 import type { HttpServer } from './server'
+import { wildcardHosts } from './constants'
 
 export interface CommonServerOptions {
   /**
@@ -162,6 +164,57 @@ async function readFileIfExists(value?: string | Buffer | any[]) {
   return value
 }
 
+// Check if a port is available on wildcard addresses (0.0.0.0, ::)
+async function isPortAvailable(port: number): Promise<boolean> {
+  for (const host of wildcardHosts) {
+    // Gracefully handle errors (e.g., IPv6 disabled on the system)
+    const available = await tryListen(port, host).catch(() => true)
+    if (!available) return false
+  }
+  return true
+}
+
+function tryListen(port: number, host: string): Promise<boolean> {
+  return new Promise((resolve) => {
+    const server = net.createServer()
+    server.once('error', (e: NodeJS.ErrnoException) => {
+      server.close(() => resolve(e.code !== 'EADDRINUSE'))
+    })
+    server.once('listening', () => {
+      server.close(() => resolve(true))
+    })
+    server.listen(port, host)
+  })
+}
+
+async function tryBindServer(
+  httpServer: HttpServer,
+  port: number,
+  host: string | undefined,
+): Promise<
+  { success: true } | { success: false; error: NodeJS.ErrnoException }
+> {
+  return new Promise((resolve) => {
+    const onError = (e: NodeJS.ErrnoException) => {
+      httpServer.off('error', onError)
+      httpServer.off('listening', onListening)
+      resolve({ success: false, error: e })
+    }
+    const onListening = () => {
+      httpServer.off('error', onError)
+      httpServer.off('listening', onListening)
+      resolve({ success: true })
+    }
+
+    httpServer.on('error', onError)
+    httpServer.on('listening', onListening)
+
+    httpServer.listen(port, host)
+  })
+}
+
+const MAX_PORT = 65535
+
 export async function httpServerStart(
   httpServer: HttpServer,
   serverOptions: {
@@ -171,31 +224,48 @@ export async function httpServerStart(
     logger: Logger
   },
 ): Promise<number> {
-  let { port, strictPort, host, logger } = serverOptions
+  const { port: startPort, strictPort, host, logger } = serverOptions
 
-  return new Promise((resolve, reject) => {
-    const onError = (e: Error & { code?: string }) => {
-      if (e.code === 'EADDRINUSE') {
-        if (strictPort) {
-          httpServer.removeListener('error', onError)
-          reject(new Error(`Port ${port} is already in use`))
-        } else {
-          logger.info(`Port ${port} is in use, trying another one...`)
-          httpServer.listen(++port, host)
+  for (let port = startPort; port <= MAX_PORT; port++) {
+    // Pre-check port availability on wildcard addresses (0.0.0.0, ::)
+    // so that we avoid conflicts with other servers listening on all interfaces
+    const portAvailableOnWildcard = await isPortAvailable(port)
+
+    // If port is not available on a wildcard address but strictPort is set,
+    // we still try binding directly before giving up.
+    if (strictPort) {
+      const result = await tryBindServer(httpServer, port, host)
+      if (result.success) {
+        if (!portAvailableOnWildcard) {
+          logger.warn(
+            colors.yellow(
+              `Port ${port} is in use on a wildcard address, but ${host ?? 'localhost'}:${port} is available. ` +
+                `There may be another server running on a wildcard IP on port ${port}.`,
+            ),
+          )
         }
-      } else {
-        httpServer.removeListener('error', onError)
-        reject(e)
+        return port
       }
+      if (result.error.code !== 'EADDRINUSE') {
+        throw result.error
+      }
+      throw new Error(`Port ${port} is already in use`)
     }
 
-    httpServer.on('error', onError)
-
-    httpServer.listen(port, host, () => {
-      httpServer.removeListener('error', onError)
-      resolve(port)
-    })
-  })
+    if (portAvailableOnWildcard) {
+      const result = await tryBindServer(httpServer, port, host)
+      if (result.success) {
+        return port
+      }
+      if (result.error.code !== 'EADDRINUSE') {
+        throw result.error
+      }
+    }
+    logger.info(`Port ${port} is in use, trying another one...`)
+  }
+  throw new Error(
+    `No available ports found between ${startPort} and ${MAX_PORT}`,
+  )
 }
 
 export function setClientErrorHandler(
@@ -203,19 +273,35 @@ export function setClientErrorHandler(
   logger: Logger,
 ): void {
   server.on('clientError', (err, socket) => {
-    let msg = '400 Bad Request'
-    if ((err as any).code === 'HPE_HEADER_OVERFLOW') {
-      msg = '431 Request Header Fields Too Large'
-      logger.warn(
-        colors.yellow(
-          'Server responded with status code 431. ' +
-            'See https://vite.dev/guide/troubleshooting.html#_431-request-header-fields-too-large.',
-        ),
-      )
+    // https://github.com/nodejs/node/blob/v26.2.0/lib/_http_server.js#L992
+    let msg
+    switch ((err as any).code) {
+      case 'HPE_HEADER_OVERFLOW': {
+        msg = '431 Request Header Fields Too Large'
+        logger.warn(
+          colors.yellow(
+            'Server responded with status code 431. ' +
+              'See https://vite.dev/guide/troubleshooting.html#_431-request-header-fields-too-large.',
+          ),
+        )
+        break
+      }
+      case 'HPE_CHUNK_EXTENSIONS_OVERFLOW': {
+        msg = '413 Payload Too Large'
+        break
+      }
+      case 'ERR_HTTP_REQUEST_TIMEOUT': {
+        msg = '408 Request Timeout'
+        break
+      }
+      default: {
+        msg = '400 Bad Request'
+        break
+      }
     }
     if ((err as any).code === 'ECONNRESET' || !socket.writable) {
       return
     }
-    socket.end(`HTTP/1.1 ${msg}\r\n\r\n`)
+    socket.end(`HTTP/1.1 ${msg}\r\nConnection: close\r\n\r\n`)
   })
 }
