@@ -218,3 +218,9 @@ test('self reference url worker', async () => {
     .poll(() => page.textContent('.self-reference-url-worker'))
     .toMatch('pong: main\npong: nested\n')
 })
+
+test('factory pattern TypeScript worker', async () => {
+  await expect
+    .poll(() => page.textContent('.factory-ts-worker'))
+    .toMatch('factory-ts-worker-pong')
+})
