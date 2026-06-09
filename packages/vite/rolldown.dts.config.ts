@@ -297,7 +297,7 @@ function replaceConfusingTypeNames(
         const regexEscapedId = escapeRegex(id)
         // If the better id accesses a namespace, the existing `Foo as Foo$1`
         // named import cannot be replaced with `Foo as Namespace.Foo`, so we
-        // pre-emptively remove the whole named import
+        // preemptively remove the whole named import
         if (betterId.includes('.')) {
           chunk.code = chunk.code.replace(
             new RegExp(`\\b\\w+\\b as ${regexEscapedId},?\\s?`),
