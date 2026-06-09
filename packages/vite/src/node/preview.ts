@@ -4,6 +4,7 @@ import sirv from 'sirv'
 import compression from '@polka/compression'
 import connect from 'connect'
 import corsMiddleware from 'cors'
+import { disableCache } from '@voidzero-dev/vite-task-client'
 import type { Connect } from '#dep-types/connect'
 import type {
   HttpServer,
@@ -126,6 +127,10 @@ export type PreviewServerHook = (
 export async function preview(
   inlineConfig: InlineConfig = {},
 ): Promise<PreviewServer> {
+  // The preview server is a long-running, interactive process whose
+  // responses cannot be replayed from a cache.
+  disableCache()
+
   const config = await resolveConfig(
     inlineConfig,
     'serve',
