@@ -76,7 +76,7 @@
     "lightningcss": "^1.32.0",
     "picomatch": "^4.0.4",
     "postcss": "^8.5.15",
-    "rolldown": "https://pkg.pr.new/rolldown/rolldown@411f374",
+    "rolldown": "https://pkg.pr.new/rolldown/rolldown@9704",
     "tinyglobby": "^0.2.17"
   },
   "optionalDependencies": {
