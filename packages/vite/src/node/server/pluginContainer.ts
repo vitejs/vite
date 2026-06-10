@@ -161,7 +161,7 @@ export async function createEnvironmentPluginContainer<
     watcher,
     autoStart,
   )
-  await container.resolveRollupOptions()
+  await container.resolveRolldownOptions()
   return container
 }
 
@@ -174,7 +174,7 @@ export type SkipInformation = {
 
 class EnvironmentPluginContainer<Env extends Environment = Environment> {
   private _pluginContextMap = new Map<Plugin, PluginContext>()
-  private _resolvedRollupOptions?: InputOptions
+  private _resolvedRolldownOptions?: InputOptions
   private _processesing = new Set<Promise<any>>()
   private _seenResolves: Record<string, true | undefined> = {}
 
@@ -273,12 +273,12 @@ class EnvironmentPluginContainer<Env extends Environment = Environment> {
   }
 
   get options(): InputOptions {
-    return this._resolvedRollupOptions!
+    return this._resolvedRolldownOptions!
   }
 
-  async resolveRollupOptions(): Promise<InputOptions> {
-    if (!this._resolvedRollupOptions) {
-      let options = this.environment.config.build.rollupOptions
+  async resolveRolldownOptions(): Promise<InputOptions> {
+    if (!this._resolvedRolldownOptions) {
+      let options = this.environment.config.build.rolldownOptions
       for (const optionsHook of this.getSortedPluginHooks('options')) {
         if (this._closed) {
           throwClosedServerError()
@@ -288,9 +288,9 @@ class EnvironmentPluginContainer<Env extends Environment = Environment> {
             optionsHook.call(this.minimalContext, options),
           )) || options
       }
-      this._resolvedRollupOptions = options
+      this._resolvedRolldownOptions = options
     }
-    return this._resolvedRollupOptions
+    return this._resolvedRolldownOptions
   }
 
   private _getPluginContext(plugin: Plugin) {

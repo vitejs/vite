@@ -128,6 +128,10 @@ function isBareRelative(url: string) {
   return wordCharRE.test(url[0]) && !url.includes(':')
 }
 
+function getHtmlDirnameForRelativeUrl(htmlPath: string): string {
+  return htmlPath.endsWith('/') ? htmlPath : path.posix.dirname(htmlPath)
+}
+
 const processNodeUrl = (
   url: string,
   useSrcSetReplacer: boolean,
@@ -165,7 +169,7 @@ const processNodeUrl = (
       } else if (url[0] === '.' || isBareRelative(url)) {
         preTransformUrl = path.posix.join(
           config.base,
-          path.posix.dirname(htmlPath),
+          getHtmlDirnameForRelativeUrl(htmlPath),
           url,
         )
       }
@@ -211,8 +215,11 @@ const devHtmlHook: IndexHtmlTransformHook = async (
 
   const trailingSlash = htmlPath.endsWith('/')
   if (!trailingSlash && fs.existsSync(filename)) {
-    proxyModulePath = htmlPath
-    proxyModuleUrl = proxyModulePath
+    // If htmlPath is a /@fs/ URL (e.g. vitest-browser always uses this form
+    // for testerHtmlPath), normalise to an absolute FS path so proxyCacheUrl
+    // is always root-relative.
+    proxyModulePath = htmlPath.startsWith(FS_PREFIX) ? filename : htmlPath
+    proxyModuleUrl = htmlPath
   } else {
     // There are users of vite.transformIndexHtml calling it with url '/'
     // for SSR integrations #7993, filename is root for this case
@@ -343,7 +350,10 @@ const devHtmlHook: IndexHtmlTransformHook = async (
     }
 
     // elements with [href/src] attrs
-    const assetAttributes = getNodeAssetAttributes(node)
+    const assetAttributes = getNodeAssetAttributes(
+      node,
+      config.html?.additionalAssetSources,
+    )
     for (const attr of assetAttributes) {
       if (attr.type === 'remove') {
         s.remove(attr.location.startOffset, attr.location.endOffset)

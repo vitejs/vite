@@ -49,7 +49,7 @@
     "@types/cross-spawn": "^6.0.6",
     "@types/etag": "^1.8.4",
     "@types/less": "^3.0.8",
-    "@types/node": "^24.12.3",
+    "@types/node": "^24.13.1",
     "@types/picomatch": "^4.0.3",
     "@types/stylus": "^0.48.43",
     "@types/ws": "^8.18.1",
@@ -60,18 +60,18 @@
     "eslint-plugin-regexp": "^3.1.0",
     "execa": "^9.6.1",
     "globals": "^17.6.0",
-    "lint-staged": "^16.4.0",
-    "oxfmt": "^0.48.0",
+    "lint-staged": "^17.0.7",
+    "oxfmt": "^0.53.0",
     "picocolors": "^1.1.1",
-    "playwright-chromium": "^1.59.1",
-    "rolldown": "1.0.1",
+    "playwright-chromium": "^1.60.0",
+    "rolldown": "1.0.3",
     "rollup": "^4.59.0",
     "simple-git-hooks": "^2.13.1",
-    "tsx": "^4.21.0",
+    "tsx": "^4.22.4",
     "typescript": "~6.0.2",
-    "typescript-eslint": "^8.59.2",
+    "typescript-eslint": "^8.60.1",
     "vite": "workspace:*",
-    "vitest": "^4.1.5"
+    "vitest": "^4.1.8"
   },
   "simple-git-hooks": {
     "pre-commit": "pnpm exec lint-staged --concurrent false"
@@ -90,7 +90,7 @@
       "eslint --cache --fix --concurrency auto"
     ]
   },
-  "packageManager": "pnpm@10.33.4",
+  "packageManager": "pnpm@10.34.1",
   "stackblitz": {
     "startCommand": "pnpm --filter='./packages/vite' run dev"
   }

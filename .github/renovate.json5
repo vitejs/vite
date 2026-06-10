@@ -13,7 +13,6 @@
     {
       "matchDepTypes": ["action"],
       "pinDigests": true,
-      "matchPackageNames": ["!actions/{/,}**", "!github/{/,}**"],
     },
     {
       "groupName": "rolldown-related dependencies",
