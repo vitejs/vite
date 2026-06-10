@@ -73,6 +73,15 @@ Automatically open the app in the browser on server start. When the value is a s
 
 `BROWSER` and `BROWSER_ARGS` are also special environment variables you can set in the `.env` file to configure it. See [the `open` package](https://github.com/sindresorhus/open#app) for more details.
 
+## preview.watch
+
+- **Type:** `boolean | WatchOptions`
+- **Default:** `false`
+
+Watch the build output directory and reload open browser pages when output files change. This is useful when running `vite build --watch` and `vite preview --watch` together.
+
+This can be set via the CLI using `--watch`.
+
 ## preview.proxy
 
 - **Type:** `Record<string, string | ProxyOptions>`

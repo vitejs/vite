@@ -2,9 +2,12 @@ import fs from 'node:fs'
 import path from 'node:path'
 import sirv from 'sirv'
 import compression from '@polka/compression'
+import chokidar from 'chokidar'
 import connect from 'connect'
 import corsMiddleware from 'cors'
+import colors from 'picocolors'
 import { disableCache } from '@voidzero-dev/vite-task-client'
+import type { FSWatcher, WatchOptions } from '#dep-types/chokidar'
 import type { Connect } from '#dep-types/connect'
 import type {
   HttpServer,
@@ -34,6 +37,8 @@ import {
   shouldServeFile,
   teardownSIGTERMListener,
 } from './utils'
+import type { WebSocketServer } from './server/ws'
+import { createWebSocketServer } from './server/ws'
 import { printServerUrls } from './logger'
 import { bindCLIShortcuts } from './shortcuts'
 import type { BindCLIShortcutsOptions, ShortcutsState } from './shortcuts'
@@ -48,7 +53,12 @@ import {
 } from './server/pluginContainer'
 import type { MinimalPluginContextWithoutEnvironment } from './plugin'
 
-export interface PreviewOptions extends CommonServerOptions {}
+export interface PreviewOptions extends CommonServerOptions {
+  /**
+   * Watch the output directory and trigger browser reloads on changes.
+   */
+  watch?: boolean | WatchOptions
+}
 
 export interface ResolvedPreviewOptions extends RequiredExceptFor<
   PreviewOptions,
@@ -72,6 +82,7 @@ export function resolvePreviewOptions(
     proxy: preview?.proxy ?? server.proxy,
     cors: preview?.cors ?? server.cors,
     headers: preview?.headers ?? server.headers,
+    watch: preview?.watch ?? false,
   }
 }
 
@@ -110,6 +121,26 @@ export interface PreviewServer {
    * Bind CLI shortcuts
    */
   bindCLIShortcuts(options?: BindCLIShortcutsOptions<PreviewServer>): void
+  /**
+   * Websocket server used by preview watch mode.
+   * @internal
+   */
+  ws?: WebSocketServer
+  /**
+   * File watcher used by preview watch mode.
+   * @internal
+   */
+  watcher?: FSWatcher
+  /**
+   * Reload client injected into preview HTML responses.
+   * @internal
+   */
+  _reloadClientCode?: string
+  /**
+   * Resolves when the preview watcher has finished its initial scan.
+   * @internal
+   */
+  _watcherReady?: Promise<void>
   /**
    * @internal
    */
@@ -162,21 +193,67 @@ export async function preview(
 
   const options = config.preview
   const logger = config.logger
+  const watchEnabled = options.watch !== false
 
   const closeHttpServer = createServerCloseFn(httpServer)
+  const ws = watchEnabled
+    ? createWebSocketServer(httpServer, config, httpsOptions)
+    : undefined
+  const watcher = watchEnabled
+    ? chokidar.watch(
+        distDir,
+        resolvePreviewWatchOptions(options.watch, config.server.watch),
+      )
+    : undefined
+  const watcherReady = watcher
+    ? new Promise<void>((resolve) => watcher.once('ready', () => resolve()))
+    : undefined
 
   // Promise used by `server.close()` to ensure `closeServer()` is only called once
   let closeServerPromise: Promise<void> | undefined
+  let reloadTimer: ReturnType<typeof setTimeout> | undefined
   const closeServer = async () => {
     teardownSIGTERMListener(closeServerAndExit)
+    if (reloadTimer) {
+      clearTimeout(reloadTimer)
+      reloadTimer = undefined
+    }
+    await watcher?.close()
+    await ws?.close()
     await closeHttpServer()
     server.resolvedUrls = null
   }
+
+  const scheduleReload = (file: string) => {
+    if (!ws) return
+    if (reloadTimer) {
+      clearTimeout(reloadTimer)
+    }
+    reloadTimer = setTimeout(() => {
+      reloadTimer = undefined
+      ws.send({ type: 'full-reload', path: '*' })
+      logger.info(
+        colors.green(`page reload `) +
+          colors.dim(normalizePath(path.relative(config.root, file))),
+        { timestamp: true },
+      )
+    }, 50)
+  }
+
+  watcher?.on('add', scheduleReload)
+  watcher?.on('change', scheduleReload)
+  watcher?.on('unlink', scheduleReload)
 
   const server: PreviewServer = {
     config,
     middlewares: app,
     httpServer,
+    ws,
+    watcher,
+    _reloadClientCode: watchEnabled
+      ? getPreviewReloadClientCode(config)
+      : undefined,
+    _watcherReady: watcherReady,
     async close() {
       if (!closeServerPromise) {
         closeServerPromise = closeServer()
@@ -309,4 +386,54 @@ export async function preview(
   }
 
   return server as PreviewServer
+}
+
+function resolvePreviewWatchOptions(
+  previewWatch: ResolvedPreviewOptions['watch'],
+  serverWatch: ResolvedServerOptions['watch'],
+): WatchOptions {
+  const watchOptions =
+    typeof previewWatch === 'object'
+      ? previewWatch
+      : serverWatch == null
+        ? {}
+        : serverWatch
+
+  return {
+    ignoreInitial: true,
+    ignorePermissionErrors: true,
+    disableGlobbing: true,
+    ...watchOptions,
+  }
+}
+
+function getPreviewReloadClientCode(config: ResolvedConfig): string {
+  const wsConfig =
+    typeof config.server.ws === 'object' ? config.server.ws : undefined
+  const wsPath = path.posix.join(
+    getPreviewWebSocketBase(config),
+    wsConfig?.path ?? '',
+  )
+
+  return /* js */ `
+const protocol = ${JSON.stringify(wsConfig?.protocol ?? null)} || (location.protocol === 'https:' ? 'wss' : 'ws');
+const host = ${JSON.stringify(wsConfig?.host ?? null)} || location.hostname;
+const port = ${JSON.stringify(wsConfig?.clientPort ?? wsConfig?.port ?? null)} || location.port;
+const socket = new WebSocket(
+  protocol + '://' + host + (port ? ':' + port : '') + ${JSON.stringify(wsPath)} + ${JSON.stringify(`?token=${config.webSocketToken}`)},
+  'vite-hmr',
+);
+socket.addEventListener('message', ({ data }) => {
+  const payload = JSON.parse(data);
+  if (payload.type === 'full-reload') {
+    location.reload();
+  }
+});
+`
+}
+
+function getPreviewWebSocketBase(config: ResolvedConfig): string {
+  return config.rawBase === './' || config.rawBase === ''
+    ? '/'
+    : new URL(config.base, 'http://vite.invalid').pathname
 }
