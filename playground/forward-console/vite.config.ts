@@ -3,7 +3,7 @@ import { defineConfig } from 'vite'
 export default defineConfig({
   server: {
     forwardConsole: true,
-    hmr: {
+    ws: {
       runtimeErrors: true,
     },
   },

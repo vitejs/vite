@@ -181,23 +181,11 @@ Specify server response headers.
 
 ## server.hmr
 
-- **Type:** `boolean | { overlay?: boolean, runtimeErrors?: boolean }`
+- **Type:** `boolean | { overlay?: boolean }`
 
 Disable or configure HMR behavior.
 
 Set `server.hmr.overlay` to `false` to disable the server error overlay.
-
-Set `server.hmr.runtimeErrors` to `true` to capture uncaught browser runtime errors (including unhandled promise rejections) and display them in the overlay with sourcemap-resolved stack traces and code frames. The error is sent to the Vite dev server for sourcemap resolution before being shown.
-
-```js
-export default defineConfig({
-  server: {
-    hmr: {
-      runtimeErrors: true,
-    },
-  },
-})
-```
 
 ::: warning Deprecated Options
 
@@ -207,7 +195,7 @@ The WebSocket-related options (`protocol`, `host`, `port`, `path`, `clientPort`,
 
 ## server.ws
 
-- **Type:** `false | { protocol?: string, host?: string, port?: number, path?: string, timeout?: number, clientPort?: number, server?: Server }`
+- **Type:** `false | { protocol?: string, host?: string, port?: number, path?: string, timeout?: number, clientPort?: number, server?: Server, runtimeErrors?: boolean }`
 
 Configure WebSocket connection options. Set to `false` to disable the WebSocket connection entirely.
 
@@ -218,6 +206,7 @@ Configure WebSocket connection options. Set to `false` to disable the WebSocket 
 - `clientPort` - Override the port on the client side, allowing you to serve the websocket on a different port than the client code looks for it on
 - `timeout` - Connection timeout in milliseconds (default: 30000)
 - `server` - Use a custom HTTP server for WebSocket connections
+- `runtimeErrors` - Capture uncaught browser runtime errors (including unhandled promise rejections) and show them in the overlay using sourcemap-resolved stack traces and code frames
 
 When `server.ws.server` is defined, Vite will process the WebSocket connection requests through the provided server. If not in middleware mode, Vite will attempt to process WebSocket connection requests through the existing server. This can be helpful when using self-signed certificates or when you want to expose Vite over a network on a single port.
 
@@ -228,6 +217,7 @@ export default defineConfig({
       protocol: 'wss',
       host: 'localhost',
       port: 3001,
+      runtimeErrors: true,
     },
   },
 })

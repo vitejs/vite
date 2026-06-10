@@ -82,9 +82,9 @@ async function createClientConfigValueReplacer(
   const host = wsConfig?.host || null
   const protocol = wsConfig?.protocol || null
   const timeout = wsConfig?.timeout || 30000
+  const runtimeErrors = wsConfig?.runtimeErrors ?? false
   const isWsServerSpecified = !!wsConfig?.server
   const hmrConfigName = path.basename(config.configFile || 'vite.config.js')
-  const runtimeErrors = hmrConfig?.runtimeErrors ?? false
 
   const hmrConfig = isObject(config.server.hmr) ? config.server.hmr : undefined
   const overlay = hmrConfig?.overlay !== false

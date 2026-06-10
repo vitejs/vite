@@ -134,8 +134,8 @@ export async function resolvePlugins(
       forwardConsolePlugin({ environments: ['client'] }),
     // handle runtime error sourcemap resolution for the overlay
     !isBuild &&
-      typeof config.server.hmr === 'object' &&
-      config.server.hmr.runtimeErrors === true &&
+      typeof config.server.ws === 'object' &&
+      config.server.ws.runtimeErrors === true &&
       runtimeErrorsPlugin(),
 
     ...normalPlugins,

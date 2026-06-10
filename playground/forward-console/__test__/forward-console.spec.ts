@@ -77,7 +77,7 @@ test.runIf(isServe)('dependency stack uses source map path', async () => {
 `)
 })
 
-// runtime overlay tests (hmr.runtimeErrors: true)
+// runtime overlay tests (ws.runtimeErrors: true)
 async function getOverlayShadowText(selector: string): Promise<string> {
   return page.evaluate((sel) => {
     const overlay = document.querySelector('vite-error-overlay')
