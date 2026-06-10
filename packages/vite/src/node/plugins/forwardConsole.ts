@@ -168,7 +168,7 @@ export function runtimeErrorsPlugin(): Plugin {
     name: 'vite:runtime-errors-overlay',
     apply: 'serve',
     configureServer(server) {
-      const environment = server.environments['client']
+      const environment = server.environments.client
       if (!environment) return
 
       environment.hot.on(
