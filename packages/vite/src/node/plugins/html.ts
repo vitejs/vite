@@ -72,7 +72,7 @@ const importMapRE =
 const moduleScriptRE =
   /[ \t]*<script[^>]*type\s*=\s*(?:"module"|'module'|module)[^>]*>/i
 const modulePreloadLinkRE =
-  /[ \t]*<link[^>]*rel\s*=\s*(?:"modulepreload"|'modulepreload'|modulepreload)[\s\S]*?\/>/i
+  /[ \t]*<link[^>]*rel\s*=\s*(?:"modulepreload"|'modulepreload'|modulepreload)[\s\S]*?>/i
 const importMapAppendRE = new RegExp(
   [moduleScriptRE, modulePreloadLinkRE].map((r) => r.source).join('|'),
   'i',
@@ -206,13 +206,13 @@ export async function traverseHtml(
   visitor: (node: DefaultTreeAdapterMap['node']) => void,
 ): Promise<void> {
   // lazy load compiler
-  const { parse } = await import('parse5')
+  const { parse, ErrorCodes } = await import('parse5')
   const warnings: ParseWarnings = {}
   const ast = parse(html, {
     scriptingEnabled: false, // parse inside <noscript>
     sourceCodeLocationInfo: true,
     onParseError: (e: ParserError) => {
-      handleParseError(e, html, filePath, warnings)
+      handleParseError(e, ErrorCodes, html, filePath, warnings)
     },
   })
   traverseNodes(ast, visitor)
@@ -239,7 +239,7 @@ export function getScriptInfo(node: DefaultTreeAdapterMap['element']): {
     if (p.name === 'src') {
       if (!src) {
         src = p
-        srcSourceCodeLocation = node.sourceCodeLocation?.attrs!['src']
+        srcSourceCodeLocation = node.sourceCodeLocation?.attrs!.src
       }
     } else if (p.name === 'type' && p.value === 'module') {
       isModule = true
@@ -316,25 +316,26 @@ function formatParseError(parserError: ParserError, id: string, html: string) {
 
 function handleParseError(
   parserError: ParserError,
+  errorCodes: typeof ErrorCodes,
   html: string,
   filePath: string,
   warnings: ParseWarnings,
 ) {
   switch (parserError.code) {
-    case 'missing-doctype':
+    case errorCodes.missingDoctype:
       // ignore missing DOCTYPE
       return
-    case 'abandoned-head-element-child':
+    case errorCodes.abandonedHeadElementChild:
       // Accept elements without closing tag in <head>
       return
-    case 'duplicate-attribute':
+    case errorCodes.duplicateAttribute:
       // Accept duplicate attributes #5966
       // The first attribute is used, browsers silently ignore duplicates
       return
-    case 'non-void-html-element-start-tag-with-trailing-solidus':
+    case errorCodes.nonVoidHtmlElementStartTagWithTrailingSolidus:
       // Allow self closing on non-void elements #10439
       return
-    case 'unexpected-question-mark-instead-of-tag-name':
+    case errorCodes.unexpectedQuestionMarkInsteadOfTagName:
       // Allow <?xml> declaration and <?> empty elements
       // lit generates <?>: https://github.com/lit/lit/issues/2470
       return
@@ -429,6 +430,10 @@ export function buildHtmlPlugin(config: ResolvedConfig): Plugin {
   return {
     name: 'vite:build-html',
 
+    applyToEnvironment(environment) {
+      return environment.config.isBundled
+    },
+
     transform: {
       filter: { id: /\.html$/ },
       async handler(html, id) {
@@ -504,7 +509,9 @@ export function buildHtmlPlugin(config: ResolvedConfig): Plugin {
         // for each encountered asset url, rewrite original html so that it
         // references the post-build location, ignoring empty attributes and
         // attributes that directly reference named output.
-        const namedOutput = Object.keys(config.build.rollupOptions.input || {})
+        const namedOutput = Object.keys(
+          config.build.rolldownOptions.input || {},
+        )
         const processAssetUrl = async (url: string, shouldInline?: boolean) => {
           if (
             url !== '' && // Empty attribute
@@ -609,7 +616,10 @@ export function buildHtmlPlugin(config: ResolvedConfig): Plugin {
 
           // For asset references in index.html, also generate an import
           // statement for each - this will be handled by the asset plugin
-          const assetAttributes = getNodeAssetAttributes(node)
+          const assetAttributes = getNodeAssetAttributes(
+            node,
+            config.html?.additionalAssetSources,
+          )
           for (const attr of assetAttributes) {
             if (attr.type === 'remove') {
               s.remove(attr.location.startOffset, attr.location.endOffset)
@@ -1085,7 +1095,7 @@ export function findNeedTransformStyleAttribute(
       (prop.value.includes('url(') || prop.value.includes('image-set(')),
   )
   if (!attr) return undefined
-  const location = node.sourceCodeLocation?.attrs?.['style']
+  const location = node.sourceCodeLocation?.attrs?.style
   return { attr, location }
 }
 
@@ -1099,7 +1109,7 @@ export function extractImportExpressionFromClassicScript(
   let match: RegExpExecArray | null
   inlineImportRE.lastIndex = 0
   while ((match = inlineImportRE.exec(cleanCode))) {
-    const [, [urlStart, urlEnd]] = match.indices!
+    const [, [urlStart, urlEnd]] = match.indices as Array<[number, number]>
     const start = urlStart + 1
     const end = urlEnd - 1
     scriptUrls.push({

@@ -333,8 +333,8 @@
 </script>
 
 <script type="module">
-  import cloneDeepSlash from 'lodash/cloneDeep'
-  import cloneDeepDot from 'lodash.clonedeep'
+  import cloneDeepSlash from '@vitejs/test-dep-lodash/cloneDeep'
+  import cloneDeepDot from '@vitejs/test-dep-lodash.clonedeep'
   import { msg as plusSubpath } from '@vitejs/test-dep-with-plus-subpath/core+feature'
 
   text('.clonedeep-slash', cloneDeepSlash({ name: 'clonedeep-slash' }).name)

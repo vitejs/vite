@@ -49,7 +49,6 @@ import {
   BasicMinimalPluginContext,
   basePluginContextMeta,
 } from '../pluginContainer'
-import { FullBundleDevEnvironment } from '../environments/fullBundleEnvironment'
 import { getHmrImplementation } from '../../plugins/clientInjections'
 import { checkLoadingAccess, respondWithAccessDenied } from './static'
 
@@ -128,6 +127,10 @@ function isBareRelative(url: string) {
   return wordCharRE.test(url[0]) && !url.includes(':')
 }
 
+function getHtmlDirnameForRelativeUrl(htmlPath: string): string {
+  return htmlPath.endsWith('/') ? htmlPath : path.posix.dirname(htmlPath)
+}
+
 const processNodeUrl = (
   url: string,
   useSrcSetReplacer: boolean,
@@ -165,7 +168,7 @@ const processNodeUrl = (
       } else if (url[0] === '.' || isBareRelative(url)) {
         preTransformUrl = path.posix.join(
           config.base,
-          path.posix.dirname(htmlPath),
+          getHtmlDirnameForRelativeUrl(htmlPath),
           url,
         )
       }
@@ -211,8 +214,11 @@ const devHtmlHook: IndexHtmlTransformHook = async (
 
   const trailingSlash = htmlPath.endsWith('/')
   if (!trailingSlash && fs.existsSync(filename)) {
-    proxyModulePath = htmlPath
-    proxyModuleUrl = proxyModulePath
+    // If htmlPath is a /@fs/ URL (e.g. vitest-browser always uses this form
+    // for testerHtmlPath), normalise to an absolute FS path so proxyCacheUrl
+    // is always root-relative.
+    proxyModulePath = htmlPath.startsWith(FS_PREFIX) ? filename : htmlPath
+    proxyModuleUrl = htmlPath
   } else {
     // There are users of vite.transformIndexHtml calling it with url '/'
     // for SSR integrations #7993, filename is root for this case
@@ -343,7 +349,10 @@ const devHtmlHook: IndexHtmlTransformHook = async (
     }
 
     // elements with [href/src] attrs
-    const assetAttributes = getNodeAssetAttributes(node)
+    const assetAttributes = getNodeAssetAttributes(
+      node,
+      config.html?.additionalAssetSources,
+    )
     for (const attr of assetAttributes) {
       if (attr.type === 'remove') {
         s.remove(attr.location.startOffset, attr.location.endOffset)
@@ -444,10 +453,7 @@ export function indexHtmlMiddleware(
   server: ViteDevServer | PreviewServer,
 ): Connect.NextHandleFunction {
   const isDev = isDevServer(server)
-  const fullBundleEnv =
-    isDev && server.environments.client instanceof FullBundleDevEnvironment
-      ? server.environments.client
-      : undefined
+  const fullBundle = isDev && server.environments.client.bundledDev
 
   // Keep the named function. The name is visible in debug logs via `DEBUG=connect:dispatcher ...`
   return async function viteIndexHtmlMiddleware(req, res, next) {
@@ -458,12 +464,12 @@ export function indexHtmlMiddleware(
     const url = req.url && cleanUrl(req.url)
     // htmlFallbackMiddleware appends '.html' to URLs
     if (url?.endsWith('.html') && req.headers['sec-fetch-dest'] !== 'script') {
-      if (fullBundleEnv) {
+      if (fullBundle) {
         const pathname = decodeURIComponent(url)
         const filePath = pathname.slice(1) // remove first /
 
-        let file = fullBundleEnv.memoryFiles.get(filePath)
-        if (!file && fullBundleEnv.memoryFiles.size !== 0) {
+        let file = fullBundle.memoryFiles.get(filePath)
+        if (!file && fullBundle.memoryFiles.size !== 0) {
           return next()
         }
         const secFetchDest = req.headers['sec-fetch-dest']
@@ -476,7 +482,7 @@ export function indexHtmlMiddleware(
             '',
             undefined,
           ].includes(secFetchDest) &&
-          ((await fullBundleEnv.triggerBundleRegenerationIfStale()) ||
+          ((await fullBundle.triggerBundleRegenerationIfStale()) ||
             file === undefined)
         ) {
           file = { source: await generateFallbackHtml(server as ViteDevServer) }
@@ -489,9 +495,7 @@ export function indexHtmlMiddleware(
           typeof file.source === 'string'
             ? file.source
             : Buffer.from(file.source)
-        const headers = isDev
-          ? server.config.server.headers
-          : server.config.preview.headers
+        const headers = server.config.server.headers
         return send(req, res, html, 'html', { headers, etag: file.etag })
       }
 

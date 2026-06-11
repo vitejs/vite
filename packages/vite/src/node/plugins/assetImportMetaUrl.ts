@@ -68,7 +68,8 @@ export function assetImportMetaUrlPlugin(config: ResolvedConfig): Plugin {
 
         let match: RegExpExecArray | null
         while ((match = re.exec(cleanString))) {
-          const [[startIndex, endIndex], [urlStart, urlEnd]] = match.indices!
+          const [[startIndex, endIndex], [urlStart, urlEnd]] =
+            match.indices as Array<[number, number]>
           if (hasViteIgnoreRE.test(code.slice(startIndex, urlStart))) continue
 
           const rawUrl = code.slice(urlStart, urlEnd)

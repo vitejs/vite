@@ -57,9 +57,15 @@ const rawRE = /[?&]raw\b/
 const inlineRE = /[?&]inline\b/
 const svgRE = /\.svg\b/
 
-function isServerAccessDeniedForTransform(config: ResolvedConfig, id: string) {
+export function isServerAccessDeniedForTransform(
+  config: ResolvedConfig,
+  id: string,
+): boolean {
   if (rawRE.test(id) || urlRE.test(id) || inlineRE.test(id) || svgRE.test(id)) {
-    return checkLoadingAccess(config, id) !== 'allowed'
+    return (
+      checkLoadingAccess(config, cleanUrl(id)) !== 'allowed' ||
+      checkLoadingAccess(config, id) !== 'allowed'
+    )
   }
   return false
 }
@@ -155,6 +161,10 @@ export function transformMiddleware(
           const sourcemapPath = url.startsWith(FS_PREFIX)
             ? fsPathFromId(url)
             : normalizePath(path.resolve(server.config.root, url.slice(1)))
+          // url may contain relative path that may resolve outside of the optimized deps directory
+          if (!depsOptimizer.isOptimizedDepFile(sourcemapPath)) {
+            return next()
+          }
           try {
             const map = JSON.parse(
               await fsp.readFile(sourcemapPath, 'utf-8'),
@@ -244,14 +254,7 @@ export function transformMiddleware(
         }
 
         // resolve, load and transform using the plugin container
-        const result = await environment.transformRequest(url, {
-          allowId(id) {
-            return (
-              id[0] === '\0' ||
-              !isServerAccessDeniedForTransform(server.config, id)
-            )
-          },
-        })
+        const result = await environment.transformRequest(url)
         if (result) {
           const depsOptimizer = environment.depsOptimizer
           const type = isDirectCSSRequest(url) ? 'css' : 'js'
@@ -323,7 +326,13 @@ export function transformMiddleware(
       }
       if (e?.code === ERR_DENIED_ID) {
         const id: string = e.id
-        const servingAccessResult = checkLoadingAccess(server.config, id)
+        let servingAccessResult = checkLoadingAccess(
+          server.config,
+          cleanUrl(id),
+        )
+        if (servingAccessResult === 'allowed') {
+          servingAccessResult = checkLoadingAccess(server.config, id)
+        }
         if (servingAccessResult === 'denied') {
           respondWithAccessDenied(id, server, res)
           return true
