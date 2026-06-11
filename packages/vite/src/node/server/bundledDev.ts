@@ -57,7 +57,7 @@ export class MemoryFiles {
 }
 
 export class BundledDev {
-  private _devEngine: DevEngine | undefined
+  private _devEngine!: DevEngine
   private initialBuildCompleted = false
   private clients = new Clients()
   private invalidateCalledModules = new Map<
