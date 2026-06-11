@@ -16,8 +16,8 @@ import {
 } from '../../shared/constants'
 import { genSourceMapUrl } from '../server/sourcemap'
 import type { DevEnvironment } from '../server/environment'
-import { FullBundleDevEnvironment } from '../server/environments/fullBundleEnvironment'
 import type { ViteFetchResult } from '../../shared/invokeMethods'
+import type { BundledDev } from '../server/bundledDev'
 import { ssrTransform } from './ssrTransform'
 
 export interface FetchModuleOptions {
@@ -95,100 +95,10 @@ export async function fetchModule(
 
   url = unwrapId(url)
 
-  if (environment instanceof FullBundleDevEnvironment) {
-    await environment._waitForInitialBuildSuccess()
+  const bundledDev = environment.bundledDev
 
-    if (url.startsWith('/@vite/lazy?')) {
-      const { searchParams } = new URL(url, 'http://localhost')
-      const moduleId = searchParams.get('id')!
-      const clientId = searchParams.get('clientId')!
-      const code = await environment.triggerLazyBundling(moduleId, clientId)
-      if (code == null) {
-        throw new Error(`unknown request: ${url}`)
-      }
-
-      // This module is invalidated immediately, so url/id do not matter
-      return {
-        code,
-        url,
-        id: moduleId!,
-        file: cleanUrl(moduleId!),
-        invalidate: false,
-      }
-    }
-
-    const outDir = normalizePath(
-      path.resolve(environment.config.root, environment.config.build.outDir),
-    )
-
-    let fileName: string
-    let facadeId: string | undefined
-
-    if (!importer) {
-      const resolvedEntry = resolveEntryFilename(environment, url)!
-      if (!resolvedEntry) {
-        const entrypoints = [...environment.facadeToChunk.keys()]
-        throw new Error(
-          `[vite] Entrypoint '${url}' was not defined in the config. ` +
-            (entrypoints.length
-              ? `Available entry points: \n- ${[...environment.facadeToChunk.keys()].join('\n- ')}`
-              : `The build did not produce any chunks. Did it finish successfully? See the logs for more information.`),
-        )
-      }
-      ;[facadeId, fileName] = resolvedEntry
-    } else if (url[0] === '.') {
-      // Importer is reported as a full path on the file system.
-      // This happens because we provide the `file` attribute.
-      if (importer.startsWith(outDir)) {
-        importer = importer.slice(outDir.length + 1)
-      }
-      fileName = path.posix.join(path.posix.dirname(importer), url)
-    } else {
-      fileName = url
-    }
-
-    const memoryFile = environment.memoryFiles.get(fileName)
-    const code = memoryFile?.source
-    if (code == null) {
-      throw new Error(
-        `[vite] the module '${url}' (chunk '${fileName}') ${
-          importer ? ` imported from '${importer}'` : ''
-        } was not bundled. Is server established?`,
-      )
-    }
-
-    const result: ViteFetchResult = {
-      code: code.toString(),
-      // To make sure dynamic imports resolve assets correctly.
-      // (Dynamic import resolves relative urls with importer url)
-      url: fileName,
-      id: fileName,
-      // The potential position on the file system.
-      // We don't actually keep it there, it's virtual.
-      file: normalizePath(path.resolve(outDir, fileName)),
-      // chunks cannot be invalidated manually
-      invalidate: false,
-      // TODO: seems like rolldown uses `process.cwd()` instead of `config.root`
-      // We need this because __rolldown_runtime__ keeps modules internally
-      // And after HMR there is no other way to receive the updated exports
-      regionId: facadeId
-        ? normalizePath(path.relative(process.cwd(), facadeId))
-        : undefined,
-    }
-    // TODO: this should be done in rolldown, there is already a function for it
-    // output.format = 'module-runner'
-    // See https://github.com/rolldown/rolldown/issues/8376
-    const ssrResult = await ssrTransform(result.code, null, url, result.code)
-    if (!ssrResult) {
-      throw new Error(`[vite] cannot apply ssr transform to '${url}'.`)
-    }
-    result.code = ssrResult.code
-
-    // remove shebang
-    if (result.code[0] === '#')
-      result.code = result.code.replace(/^#!.*/, (s) => ' '.repeat(s.length))
-
-    return result
+  if (bundledDev) {
+    return fetchBundledModule(environment, bundledDev, url, importer)
   }
 
   const mod = await environment.moduleGraph.ensureEntryFromUrl(url)
@@ -224,6 +134,112 @@ export async function fetchModule(
     url: mod.url,
     invalidate: !cached,
   }
+}
+
+async function fetchBundledModule(
+  environment: DevEnvironment,
+  bundledDev: BundledDev,
+  url: string,
+  importer: string | undefined,
+) {
+  await bundledDev._waitForInitialBuildSuccess()
+
+  if (url.startsWith('/@vite/lazy?')) {
+    const { searchParams } = new URL(url, 'http://localhost')
+    const moduleId = searchParams.get('id')!
+    const clientId = searchParams.get('clientId')!
+    const code = await bundledDev.triggerLazyBundling(moduleId, clientId)
+    if (code == null) {
+      throw new Error(`unknown request: ${url}`)
+    }
+
+    // This module is invalidated immediately, so url/id do not matter
+    return {
+      code,
+      url,
+      id: moduleId!,
+      file: cleanUrl(moduleId!),
+      invalidate: false,
+    }
+  }
+
+  const outDir = normalizePath(
+    path.resolve(environment.config.root, environment.config.build.outDir),
+  )
+
+  let fileName: string
+  let facadeId: string | undefined
+
+  // Assume this is an entry point that was specified in rolldownOption.entries
+  if (!importer) {
+    const resolvedEntry = resolveEntryFilename(
+      bundledDev,
+      environment.config.root,
+      url,
+    )!
+    if (!resolvedEntry) {
+      const entrypoints = [...bundledDev.facadeToChunk.keys()]
+      throw new Error(
+        `[vite] Entrypoint '${url}' was not defined in the config. ` +
+          (entrypoints.length
+            ? `Available entry points: \n- ${[...bundledDev.facadeToChunk.keys()].join('\n- ')}`
+            : `The build did not produce any chunks. Did it finish successfully? See the logs for more information.`),
+      )
+    }
+    ;[facadeId, fileName] = resolvedEntry
+  } else if (url[0] === '.') {
+    // Importer is reported as a full path on the file system.
+    // This happens because we provide the `file` attribute.
+    if (importer.startsWith(outDir)) {
+      importer = importer.slice(outDir.length + 1)
+    }
+    fileName = path.posix.join(path.posix.dirname(importer), url)
+  } else {
+    fileName = url
+  }
+
+  const memoryFile = bundledDev.memoryFiles.get(fileName)
+  const code = memoryFile?.source
+  if (code == null) {
+    throw new Error(
+      `[vite] the module '${url}' (chunk '${fileName}') ${
+        importer ? ` imported from '${importer}'` : ''
+      } was not bundled. Is server established?`,
+    )
+  }
+
+  const result: ViteFetchResult = {
+    code: code.toString(),
+    // To make sure dynamic imports resolve assets correctly.
+    // (Dynamic import resolves relative urls with importer url)
+    url: fileName,
+    id: fileName,
+    // The potential position on the file system.
+    // We don't actually keep it there, it's virtual.
+    file: normalizePath(path.resolve(outDir, fileName)),
+    // chunks cannot be invalidated manually
+    invalidate: false,
+    // TODO: seems like rolldown uses `process.cwd()` instead of `config.root`
+    // We need this because __rolldown_runtime__ keeps modules internally
+    // And after HMR there is no other way to receive the updated exports
+    regionId: facadeId
+      ? normalizePath(path.relative(process.cwd(), facadeId))
+      : undefined,
+  }
+  // TODO: this should be done in rolldown, there is already a function for it
+  // output.format = 'module-runner'
+  // See https://github.com/rolldown/rolldown/issues/8376
+  const ssrResult = await ssrTransform(result.code, null, url, result.code)
+  if (!ssrResult) {
+    throw new Error(`[vite] cannot apply ssr transform to '${url}'.`)
+  }
+  result.code = ssrResult.code
+
+  // remove shebang
+  if (result.code[0] === '#')
+    result.code = result.code.replace(/^#!.*/, (s) => ' '.repeat(s.length))
+
+  return result
 }
 
 const OTHER_SOURCE_MAP_REGEXP = new RegExp(
@@ -264,14 +280,12 @@ function inlineSourceMap(
 }
 
 function isChunkUrl(environment: DevEnvironment, url: string) {
-  return (
-    environment instanceof FullBundleDevEnvironment &&
-    environment.memoryFiles.has(url)
-  )
+  return environment.bundledDev?.memoryFiles.has(url)
 }
 
 function resolveEntryFilename(
-  environment: FullBundleDevEnvironment,
+  environment: BundledDev,
+  root: string,
   url: string,
 ): [facadeId: string | undefined, chunkName: string] | undefined {
   if (environment.memoryFiles.has(url)) {
@@ -288,13 +302,13 @@ function resolveEntryFilename(
       : // ./index.js
         // NOTE: we don't try to find it if extension is not passed
         // It will throw an error instead
-        path.resolve(environment.config.root, url),
+        path.resolve(root, url),
   )
   if (environment.facadeToChunk.get(moduleId)) {
     return [moduleId, environment.facadeToChunk.get(moduleId)!]
   }
   if (url[0] === '/') {
-    const tryAbsoluteUrl = path.posix.join(environment.config.root, url)
+    const tryAbsoluteUrl = path.posix.join(root, url)
     const absoluteChunk = environment.facadeToChunk.get(tryAbsoluteUrl)
     if (absoluteChunk) {
       return [tryAbsoluteUrl, absoluteChunk]

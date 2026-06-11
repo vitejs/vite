@@ -11,6 +11,12 @@ import type { Update } from '#types/hmrPayload'
 import { ChunkMetadataMap, resolveRolldownOptions } from '../build'
 import { getHmrImplementation } from '../plugins/clientInjections'
 import { createDebugger, formatAndTruncateFileList } from '../utils'
+import {
+  ssrRolldownRuntimeCreateHotContextMethod,
+  ssrRolldownRuntimeDefineMethod,
+  ssrRolldownRuntimeKey,
+  ssrRolldownRuntimeTransport,
+} from '../../module-runner/constants'
 import type { DevEnvironment } from './environment'
 import { type NormalizedHotChannelClient, debugHmr, getShortName } from './hmr'
 import { prepareError } from './middlewares/error'
@@ -75,13 +81,7 @@ export class BundledDev {
   memoryFiles: MemoryFiles = new MemoryFiles()
   facadeToChunk: Map<string, string> = new Map()
 
-  constructor(private environment: DevEnvironment) {
-    if (environment.name !== 'client') {
-      throw new Error(
-        'currently full bundle mode is only available for client environment',
-      )
-    }
-  }
+  constructor(private environment: DevEnvironment) {}
 
   async listen(): Promise<void> {
     debug?.('INITIAL: setup bundle options')
@@ -301,6 +301,9 @@ export class BundledDev {
   }
 
   protected async getDevRuntimeImplementation(): Promise<string> {
+    if (this.environment.config.consumer === 'server') {
+      return this.getDevServerRuntimeImplementation()
+    }
     return await getHmrImplementation(this.environment.getTopLevelConfig())
   }
 
@@ -343,7 +346,8 @@ export class BundledDev {
       chunkFileNames: 'assets/[name]-[hash].js',
       assetFileNames: 'assets/[name]-[hash][extname]',
       minify: false,
-      sourcemap: true,
+      sourcemap:
+        this.environment.config.consumer === 'server' ? 'inline' : true,
     }
   }
 
@@ -416,6 +420,49 @@ export class BundledDev {
         timestamp: true,
       },
     )
+  }
+
+  private getDevServerRuntimeImplementation(): string {
+    return /* js */ `
+      class ViteDevRuntime extends DevRuntime {
+        createModuleHotContext(moduleId) {
+          return ${ssrRolldownRuntimeKey}.${ssrRolldownRuntimeCreateHotContextMethod}(moduleId)
+        }
+    
+        applyUpdates() {
+          // noop, handled in the HMR client
+        }
+      }
+    
+      const rand = (Math.random() * 1000).toFixed(0).padStart(3, '0')
+      const clientId = String(Date.now()) + rand
+    
+      ${ssrRolldownRuntimeKey}.${ssrRolldownRuntimeTransport}?.send({
+        type: 'custom',
+        event: 'vite:module-loaded',
+        data: { modules: [], clientId }
+      })
+    
+      const wrappedSocket = {
+        send(message) {
+          switch (message.type) {
+            case 'hmr:module-registered': {
+              ${ssrRolldownRuntimeKey}.${ssrRolldownRuntimeTransport}?.send({
+                type: 'custom',
+                event: 'vite:module-loaded',
+                // clone array as the runtime reuses the array instance
+                data: { modules: message.modules.slice(), clientId },
+              })
+              break
+            }
+            default:
+              throw new Error(\`Unknown message type: \${JSON.stringify(message)}\`)
+          }
+        },
+      }
+    
+      ;${ssrRolldownRuntimeKey}.${ssrRolldownRuntimeDefineMethod}(new ViteDevRuntime(wrappedSocket, clientId))
+        `
   }
 }
 

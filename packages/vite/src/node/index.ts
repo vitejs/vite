@@ -53,12 +53,6 @@ export {
   type RunnableDevEnvironmentContext,
 } from './server/environments/runnableEnvironment'
 export {
-  createFullBundleRunnableDevEnvironment,
-  isFullBundleRunnableDevEnvironment,
-  // TODO: should have a unified FBM Dev Environment, not split between client and ssr
-  FullBundleRunnableDevEnvironment,
-} from './server/environments/fullBundleRunnableEnvironment'
-export {
   createFetchableDevEnvironment,
   isFetchableDevEnvironment,
   type FetchableDevEnvironment,
