@@ -6,7 +6,6 @@ import escapeHtml from 'escape-html'
 import type { Connect } from '#dep-types/connect'
 import type { ViteDevServer } from '../../server'
 import type { ResolvedConfig } from '../../config'
-import { FS_PREFIX } from '../../constants'
 import {
   decodeURIIfPossible,
   fsPathFromUrl,
@@ -200,6 +199,7 @@ export function serveStaticMiddleware(
 
 export function serveRawFsMiddleware(
   server: ViteDevServer,
+  prefix: string,
 ): Connect.NextHandleFunction {
   const serveFromRoot = sirv(
     '/',
@@ -215,14 +215,14 @@ export function serveRawFsMiddleware(
     // reference assets that are also out of served root. In such cases
     // the paths are rewritten to `/@fs/` prefixed paths and must be served by
     // searching based from fs root.
-    if (req.url!.startsWith(FS_PREFIX)) {
+    if (req.url!.startsWith(prefix)) {
       const url = new URL(req.url!, 'http://example.com')
       const pathname = decodeURIIfPossible(url.pathname)
       if (pathname === undefined) {
         return next()
       }
 
-      let newPathname = pathname.slice(FS_PREFIX.length)
+      let newPathname = pathname.slice(prefix.length)
       if (isWindows) newPathname = newPathname.replace(/^[A-Z]:/i, '')
       url.pathname = encodeURI(newPathname)
       req.url = url.href.slice(url.origin.length)
