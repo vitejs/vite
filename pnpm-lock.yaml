@@ -1521,6 +1521,12 @@ importers:
 
   playground/ssr-alias/alias-original: {}
 
+  playground/ssr-bundled-dev:
+    devDependencies:
+      express:
+        specifier: ^5.2.1
+        version: 5.2.1(ms@2.1.3)
+
   playground/ssr-conditions:
     dependencies:
       '@vitejs/test-ssr-conditions-external':

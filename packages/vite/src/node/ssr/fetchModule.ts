@@ -170,7 +170,7 @@ async function fetchBundledModule(
   let fileName: string
   let facadeId: string | undefined
 
-  // Assume this is an entry point that was specified in rolldownOption.entries
+  // Assume this is an entry point that was specified in rolldownOptions.input
   if (!importer) {
     const resolvedEntry = resolveEntryFilename(
       bundledDev,
