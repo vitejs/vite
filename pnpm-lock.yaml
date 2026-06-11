@@ -339,8 +339,8 @@ importers:
         specifier: ^1.8.1
         version: 1.8.1
       fresh-import:
-        specifier: ^0.0.2
-        version: 0.0.2
+        specifier: ^0.1.0
+        version: 0.1.0
       host-validation-middleware:
         specifier: ^0.1.4
         version: 0.1.4
@@ -5820,8 +5820,8 @@ packages:
   fraction.js@5.3.4:
     resolution: {integrity: sha512-1X1NTtiJphryn/uLQz3whtY6jK3fTqoE3ohKs0tT+Ujr1W59oopxmoEh7Lu5p6vBaPbgoM0bzveAW4Qi5RyWDQ==}
 
-  fresh-import@0.0.2:
-    resolution: {integrity: sha512-Bp+8RLIfHz1Va8Ky/qTxKjrZaji/Wfu/TVirkpmVlZZXMfhy91QcrDJSQpJtCR0O+mweZBEnge7ce3xka8CtCQ==}
+  fresh-import@0.1.0:
+    resolution: {integrity: sha512-mjpLFgA9GZVLb79Ld1x4xs8gli6XvxnHUZQttaqPg3GmhUT5Sy7MZZDoCpTth2vLgl/RVaA8oy91Qq2eB76XfQ==}
     engines: {node: ^20.19.0 || >=22.12.0}
 
   fresh@2.0.0:
@@ -12055,7 +12055,7 @@ snapshots:
 
   fraction.js@5.3.4: {}
 
-  fresh-import@0.0.2: {}
+  fresh-import@0.1.0: {}
 
   fresh@2.0.0: {}
 

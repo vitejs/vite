@@ -13,7 +13,7 @@ import {
 } from '@voidzero-dev/vite-task-client'
 import colors from 'picocolors'
 import picomatch from 'picomatch'
-import { createFreshImporter, formatTrackingQuery } from 'fresh-import'
+import { createFreshImporter } from 'fresh-import'
 import {
   type NormalizedOutputOptions,
   type OutputChunk,
@@ -2371,17 +2371,16 @@ let freshImporter: ReturnType<typeof createFreshImporter> | undefined
 async function nativeImportConfigFile(
   resolvedPath: string,
 ): Promise<{ configExport: any; dependencies: string[] }> {
-  freshImporter ??= createFreshImporter({ queryName: 't' })
+  freshImporter ??= createFreshImporter()
   if (freshImporter) {
     const { result, dependencies } = await freshImporter.collect(
-      resolvedPath,
-      () =>
-        import(
-          pathToFileURL(resolvedPath).href +
-            formatTrackingQuery('t', Date.now(), resolvedPath)
-        ),
+      pathToFileURL(resolvedPath).href,
     )
-    return { configExport: result.default, dependencies }
+    return {
+      configExport: (result as { [Symbol.toStringTag]: 'Module'; default: any })
+        .default,
+      dependencies,
+    }
   }
 
   const module = await import(
