@@ -10,16 +10,16 @@
     "preview": "vite preview"
   },
   "dependencies": {
-    "react": "^19.2.6",
-    "react-dom": "^19.2.6"
+    "react": "^19.2.7",
+    "react-dom": "^19.2.7"
   },
   "devDependencies": {
-    "@types/node": "^24.12.4",
-    "@types/react": "^19.2.15",
+    "@types/node": "^24.13.1",
+    "@types/react": "^19.2.17",
     "@types/react-dom": "^19.2.3",
     "@vitejs/plugin-react": "^6.0.2",
     "oxlint": "^1.68.0",
     "typescript": "~6.0.2",
-    "vite": "^8.0.14"
+    "vite": "^8.0.16"
   }
 }
