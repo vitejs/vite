@@ -461,10 +461,8 @@ export function resolveBuildEnvironmentOptions(
         : 'node',
     ...merged.rolldownOptions,
   }
-
-  // The top-level `input` option works as a default value for `build.lib.entry`
   if (merged.lib && merged.lib.entry == null && input != null) {
-    merged.lib = { ...merged.lib, entry: input }
+    merged.lib.entry = input
   }
 
   // handle special build targets
@@ -590,37 +588,29 @@ export function resolveRolldownOptions(
   const ssr = environment.config.consumer === 'server'
 
   const resolve = (p: string) => path.resolve(root, p)
-  const resolveInput = (entry: InputOption): InputOption =>
-    typeof entry === 'string'
-      ? resolve(entry)
-      : Array.isArray(entry)
-        ? entry.map(resolve)
-        : Object.fromEntries(
-            Object.entries(entry).map(([alias, file]) => [
-              alias,
-              resolve(file),
-            ]),
-          )
-  // The top-level `input` option works as a default value for
-  // `build.lib.entry` (backfilled in `resolveBuildEnvironmentOptions`) and
-  // `build.rolldownOptions.input` (resolved here)
   const topLevelInput = environment.config.input
-  if (
-    libOptions &&
-    options.rolldownOptions.input == null &&
-    libOptions.entry == null
-  ) {
+  if (libOptions && libOptions.entry == null) {
     throw new Error(
       `Either "build.lib.entry" or the top-level "input" option is required when "build.lib" is set.`,
     )
   }
   const input = libOptions
-    ? options.rolldownOptions.input || resolveInput(libOptions.entry!)
+    ? options.rolldownOptions.input ||
+      (typeof libOptions.entry === 'string'
+        ? resolve(libOptions.entry)
+        : Array.isArray(libOptions.entry)
+          ? libOptions.entry.map(resolve)
+          : Object.fromEntries(
+              Object.entries(libOptions.entry!).map(([alias, file]) => [
+                alias,
+                resolve(file),
+              ]),
+            ))
     : typeof options.ssr === 'string'
       ? resolve(options.ssr)
       : options.rolldownOptions.input ||
         (topLevelInput != null
-          ? resolveInput(topLevelInput)
+          ? topLevelInput // top-level `input` is already resolved in resolveConfig
           : resolve('index.html'))
 
   if (ssr && typeof input === 'string' && input.endsWith('.html')) {
@@ -1043,6 +1033,7 @@ export function resolveBuildOutputs(
   if (libOptions) {
     const libHasMultipleEntries =
       typeof libOptions.entry !== 'string' &&
+      libOptions.entry &&
       Object.values(libOptions.entry).length > 1
     const libFormats =
       libOptions.formats ||

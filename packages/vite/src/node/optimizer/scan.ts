@@ -200,15 +200,17 @@ async function computeEntries(environment: ScanEnvironment) {
   let entries: string[] = []
 
   const explicitEntryPatterns = environment.config.optimizeDeps.entries
-  // Fall back to the top-level `input` option when neither `optimizeDeps.entries`
-  // nor `build.rolldownOptions.input` is set
   const buildInput =
-    environment.config.build.rolldownOptions.input ?? environment.config.input
+    environment.config.input ?? environment.config.build.rolldownOptions.input
 
   if (explicitEntryPatterns) {
     entries = await globEntries(explicitEntryPatterns, environment)
   } else if (buildInput) {
     const resolvePath = async (p: string) => {
+      if (environment.config.input) {
+        // input is already resolved in resolveConfig
+        return p
+      }
       // rollup resolves the input from process.cwd()
       const id = (
         await environment.pluginContainer.resolveId(

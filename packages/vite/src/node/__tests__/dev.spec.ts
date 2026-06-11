@@ -21,59 +21,6 @@ describe('resolveBuildEnvironmentOptions in dev', () => {
   })
 })
 
-describe('top-level input option', () => {
-  test('top-level input applies to the client environment only (non-inherit)', async () => {
-    const config = await resolveConfig({ input: 'src/main.ts' }, 'serve')
-
-    expect(config.input).toBe('src/main.ts')
-    expect(config.environments.client.input).toBe('src/main.ts')
-    expect(config.environments.ssr.input).toBeUndefined()
-  })
-
-  test('per-environment input overrides the top-level value', async () => {
-    const config = await resolveConfig(
-      {
-        input: 'src/main.ts',
-        environments: {
-          ssr: { input: 'src/entry-server.ts' },
-        },
-      },
-      'serve',
-    )
-
-    expect(config.environments.client.input).toBe('src/main.ts')
-    expect(config.environments.ssr.input).toBe('src/entry-server.ts')
-  })
-
-  test('is used as the default for build.lib.entry when entry is omitted', async () => {
-    const config = await resolveConfig(
-      {
-        input: 'src/lib.ts',
-        build: { lib: { name: 'MyLib' } },
-      },
-      'build',
-    )
-
-    expect(config.build.lib && config.build.lib.entry).toBe('src/lib.ts')
-    expect(
-      config.environments.client.build.lib &&
-        config.environments.client.build.lib.entry,
-    ).toBe('src/lib.ts')
-  })
-
-  test('explicit build.lib.entry overrides the top-level input', async () => {
-    const config = await resolveConfig(
-      {
-        input: 'src/lib.ts',
-        build: { lib: { entry: 'src/explicit.ts', name: 'MyLib' } },
-      },
-      'build',
-    )
-
-    expect(config.build.lib && config.build.lib.entry).toBe('src/explicit.ts')
-  })
-})
-
 describe('the dev server', () => {
   let server: ViteDevServer
 

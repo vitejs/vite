@@ -218,6 +218,28 @@ test('scan import.meta.glob respects rolldown transform jsx options', async (ctx
   expect(scanResult.deps).not.toHaveProperty('react/jsx-runtime')
 })
 
+test('top-level input is used as the entry for dep scanning', async (ctx) => {
+  const server = await createServer({
+    configFile: false,
+    logLevel: 'error',
+    root: path.join(import.meta.dirname, 'fixtures', 'input-option'),
+    input: 'entry.js',
+    optimizeDeps: {
+      force: true,
+      noDiscovery: false,
+    },
+  })
+  ctx.onTestFinished(() => server.close())
+
+  const { cancel, result } = scanImports(
+    devToScanEnvironment(server.environments.client),
+  )
+  ctx.onTestFinished(cancel)
+
+  const scanResult = await result
+  expect(scanResult.deps).toHaveProperty('vue')
+})
+
 test('scan import.meta.glob package imports patterns', async (ctx) => {
   const server = await createServer({
     configFile: false,

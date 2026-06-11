@@ -288,9 +288,9 @@ type ResolvedAllResolveOptions = Required<ResolveOptions> & { alias: Alias[] }
 
 export interface SharedEnvironmentOptions {
   /**
-   * Entry point(s) of the application. Used as the default value for
-   * `build.rolldownOptions.input`, `build.lib.entry`, and `optimizeDeps.entries`
-   * when those are not set. Paths are resolved relative to the project root.
+   * Entry points of the application.
+   *
+   * Paths are resolved relative to the project root.
    */
   input?: InputOption
   /**
@@ -915,6 +915,26 @@ const configDefaults = Object.freeze({
   appType: 'spa',
 } satisfies UserConfig)
 
+function resolveInput(
+  input: InputOption | undefined,
+  root: string,
+): InputOption | undefined {
+  if (input === undefined) {
+    return undefined
+  }
+  if (typeof input === 'string') {
+    return normalizePath(path.resolve(root, input))
+  }
+  if (Array.isArray(input)) {
+    return input.map((inp) => normalizePath(path.resolve(root, inp)))
+  }
+  const resolved: Record<string, string> = {}
+  for (const key in input) {
+    resolved[key] = normalizePath(path.resolve(root, input[key]))
+  }
+  return resolved
+}
+
 export function resolveDevEnvironmentOptions(
   dev: DevEnvironmentOptions | undefined,
   environmentName: string | undefined,
@@ -949,6 +969,7 @@ function resolveEnvironmentOptions(
   options: EnvironmentOptions,
   alias: Alias[],
   preserveSymlinks: boolean,
+  root: string,
   forceOptimizeDeps: boolean | undefined,
   logger: Logger,
   environmentName: string,
@@ -996,7 +1017,7 @@ function resolveEnvironmentOptions(
     isSsrTargetWebworkerEnvironment,
   )
   return {
-    input: options.input,
+    input: resolveInput(options.input, root),
     define: options.define,
     resolve,
     keepProcessEnv:
@@ -1675,6 +1696,7 @@ export async function resolveConfig(
       config.environments[environmentName],
       resolvedDefaultResolve.alias,
       resolvedDefaultResolve.preserveSymlinks,
+      resolvedRoot,
       inlineConfig.forceOptimizeDeps,
       logger,
       environmentName,
@@ -2049,6 +2071,7 @@ export async function resolveConfig(
 
     ssr,
 
+    input: resolveInput(config.input, resolvedRoot),
     optimizeDeps: backwardCompatibleOptimizeDeps,
     resolve: resolvedDefaultResolve,
     dev: resolvedDevEnvironmentOptions,

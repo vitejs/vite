@@ -1053,6 +1053,90 @@ describe('resolveConfig', () => {
       resolved.optimizeDeps!.rolldownOptions,
     )
   })
+
+  const resolveInputFromRoot = (p: string) =>
+    normalizePath(path.resolve(process.cwd(), p))
+
+  test('top-level input applies to the client environment only (non-inherit)', async () => {
+    const config = await resolveConfig({ input: 'src/main.ts' }, 'serve')
+
+    expect(config.input).toBe(resolveInputFromRoot('src/main.ts'))
+    expect(config.environments.client.input).toBe(
+      resolveInputFromRoot('src/main.ts'),
+    )
+    expect(
+      config.environments.client.build.rolldownOptions.input,
+    ).toBeUndefined()
+    expect(config.environments.ssr.input).toBeUndefined()
+    expect(config.environments.ssr.build.rolldownOptions.input).toBeUndefined()
+  })
+
+  test('per-environment input overrides the top-level value', async () => {
+    const config = await resolveConfig(
+      {
+        input: 'src/main.ts',
+        environments: {
+          ssr: { input: 'src/entry-server.ts' },
+        },
+      },
+      'serve',
+    )
+
+    expect(config.environments.client.input).toBe(
+      resolveInputFromRoot('src/main.ts'),
+    )
+    expect(config.environments.ssr.input).toBe(
+      resolveInputFromRoot('src/entry-server.ts'),
+    )
+  })
+
+  test('resolves array input to absolute paths', async () => {
+    const config = await resolveConfig(
+      { input: ['src/a.ts', 'src/b.ts'] },
+      'serve',
+    )
+
+    expect(config.environments.client.input).toEqual([
+      resolveInputFromRoot('src/a.ts'),
+      resolveInputFromRoot('src/b.ts'),
+    ])
+  })
+
+  test('resolves record input to absolute paths', async () => {
+    const config = await resolveConfig(
+      { input: { main: 'src/a.ts', admin: 'src/b.ts' } },
+      'serve',
+    )
+
+    expect(config.environments.client.input).toEqual({
+      main: resolveInputFromRoot('src/a.ts'),
+      admin: resolveInputFromRoot('src/b.ts'),
+    })
+  })
+
+  test('is used as the default for build.lib.entry when entry is omitted', async () => {
+    const config = await resolveConfig(
+      {
+        input: 'src/lib.ts',
+        build: { lib: { name: 'MyLib' } },
+      },
+      'build',
+    )
+
+    expect(config.build.lib && config.build.lib.entry).toBe('src/lib.ts')
+  })
+
+  test('explicit build.lib.entry overrides the top-level input', async () => {
+    const config = await resolveConfig(
+      {
+        input: 'src/lib.ts',
+        build: { lib: { entry: 'src/explicit.ts', name: 'MyLib' } },
+      },
+      'build',
+    )
+
+    expect(config.build.lib && config.build.lib.entry).toBe('src/explicit.ts')
+  })
 })
 
 test('config compat 1', async () => {

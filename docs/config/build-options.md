@@ -153,7 +153,7 @@ Generate production source maps. If `true`, a separate sourcemap file will be cr
 
 Directly customize the underlying Rolldown bundle. This is the same as options that can be exported from a Rolldown config file and will be merged with Vite's internal Rolldown options. See [Rolldown options docs](https://rolldown.rs/reference/) for more details.
 
-When `input` is not set, it defaults to the top-level [`input`](/config/shared-options#input) option, then to `index.html`.
+When `input` is not set, it defaults to the top-level [`input`](/config/shared-options#input) option.
 
 ## build.rollupOptions
 
@@ -271,7 +271,7 @@ When the value is a string, it will be used as the manifest file path relative t
 - **Default:** `false`
 - **Related:** [Server-Side Rendering](/guide/ssr)
 
-Produce SSR-oriented build. The value can be a string to directly specify the SSR entry, or `true`, which requires specifying the SSR entry via `rolldownOptions.input`.
+Produce SSR-oriented build. The value can be a string to directly specify the SSR entry, or `true`, which requires specifying the SSR entry via `input` or `build.rolldownOptions.input`.
 
 ## build.emitAssets
 

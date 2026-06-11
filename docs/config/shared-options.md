@@ -38,7 +38,7 @@ See [Env Variables and Modes](/guide/env-and-mode) for more details.
 
 - **Type:** `string | string[] | { [entryAlias: string]: string }`
 
-Entry point(s) of your application, resolved relative to the project root. This works as the default value for [`build.rolldownOptions.input`](/config/build-options#build-rolldownoptions), [`build.lib.entry`](/config/build-options#build-lib), and [`optimizeDeps.entries`](/config/dep-optimization-options#optimizedeps-entries) when those are not set explicitly.
+Entry points of your application, resolved relative to the project root. This works as the default value for [`build.rolldownOptions.input`](/config/build-options#build-rolldownoptions), [`build.lib.entry`](/config/build-options#build-lib), [`build.ssr`](/config/build-options#build-ssr) (if `true`), and [`optimizeDeps.entries`](/config/dep-optimization-options#optimizedeps-entries) when those are not set explicitly.
 
 This is useful when your application does not use an `index.html` entry, so you only need to declare the entry once instead of repeating it across the options above.
 
