@@ -53,9 +53,11 @@ export const core = [
   },
   {
     avatar: 'https://github.com/sapphi-red.png',
-    name: 'green',
+    name: 'sapphi-red',
     title: 'Web Developer',
-    desc: 'Vite core team member. Call me sapphi or green or midori ;)',
+    org: 'VoidZero',
+    orgLink: 'https://voidzero.dev/',
+    desc: 'Vite core team member. Call me sapphi or midori ;)',
     links: [
       { icon: 'github', link: 'https://github.com/sapphi-red' },
       { icon: 'bluesky', link: 'https://bsky.app/profile/sapphi.red' },
@@ -80,20 +82,11 @@ export const core = [
     sponsor: 'https://github.com/sponsors/ArnaudBarre',
   },
   {
-    avatar: 'https://github.com/dominikg.png',
-    name: 'Dominik G.',
-    title: 'Resident CI Expert',
-    desc: 'Team Member of Vite and Svelte',
-    links: [
-      { icon: 'github', link: 'https://github.com/dominikg' },
-      { icon: 'mastodon', link: 'https://elk.zone/m.webtoo.ls/@dominikg' },
-    ],
-    sponsor: 'https://github.com/sponsors/dominikg',
-  },
-  {
     avatar: 'https://github.com/sheremet-va.png',
     name: 'Vladimir',
     title: 'Core team member of Vitest & Vite',
+    org: 'VoidZero',
+    orgLink: 'https://voidzero.dev/',
     desc: 'An open source fullstack developer',
     links: [
       { icon: 'github', link: 'https://github.com/sheremet-va' },
@@ -106,6 +99,8 @@ export const core = [
     avatar: 'https://github.com/hi-ogawa.png',
     name: 'Hiroshi Ogawa',
     title: 'Team Member of Vitest & Vite',
+    org: 'VoidZero',
+    orgLink: 'https://voidzero.dev/',
     desc: 'Open source enthusiast',
     links: [
       { icon: 'github', link: 'https://github.com/hi-ogawa' },
@@ -214,5 +209,16 @@ export const emeriti = [
       { icon: 'mastodon', link: 'https://elk.zone/m.webtoo.ls/@haoqun' },
     ],
     sponsor: 'https://github.com/sponsors/haoqunjiang',
+  },
+  {
+    avatar: 'https://github.com/dominikg.png',
+    name: 'Dominik G.',
+    title: 'Resident CI Expert',
+    desc: 'Team Member of Vite and Svelte',
+    links: [
+      { icon: 'github', link: 'https://github.com/dominikg' },
+      { icon: 'mastodon', link: 'https://elk.zone/m.webtoo.ls/@dominikg' },
+    ],
+    sponsor: 'https://github.com/sponsors/dominikg',
   },
 ]
