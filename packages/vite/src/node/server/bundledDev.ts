@@ -8,14 +8,12 @@ import colors from 'picocolors'
 import getEtag from 'etag'
 import type { OutputOptions, RolldownOptions } from 'rolldown'
 import type { Update } from '#types/hmrPayload'
-import { ChunkMetadataMap, resolveRolldownOptions } from '../../build'
-import { getHmrImplementation } from '../../plugins/clientInjections'
-import { DevEnvironment, type DevEnvironmentContext } from '../environment'
-import type { ResolvedConfig } from '../../config'
-import type { ViteDevServer } from '../../server'
-import { createDebugger, formatAndTruncateFileList } from '../../utils'
-import { type NormalizedHotChannelClient, debugHmr, getShortName } from '../hmr'
-import { prepareError } from '../middlewares/error'
+import { ChunkMetadataMap, resolveRolldownOptions } from '../build'
+import { getHmrImplementation } from '../plugins/clientInjections'
+import { createDebugger, formatAndTruncateFileList } from '../utils'
+import type { DevEnvironment } from './environment'
+import { type NormalizedHotChannelClient, debugHmr, getShortName } from './hmr'
+import { prepareError } from './middlewares/error'
 
 const debug = createDebugger('vite:full-bundle-mode')
 
@@ -59,8 +57,8 @@ export class MemoryFiles {
   }
 }
 
-export class FullBundleDevEnvironment extends DevEnvironment {
-  private _devEngine: DevEngine | undefined
+export class BundledDev {
+  private devEngine!: DevEngine
   private initialBuildCompleted = false
   private clients = new Clients()
   private invalidateCalledModules = new Map<
@@ -68,31 +66,24 @@ export class FullBundleDevEnvironment extends DevEnvironment {
     Set<string>
   >()
   private debouncedFullReload = debounce(20, () => {
-    this.hot.send({ type: 'full-reload', path: '*' })
-    this.logger.info(colors.green(`page reload`), { timestamp: true })
+    this.environment.hot.send({ type: 'full-reload', path: '*' })
+    this.environment.logger.info(colors.green(`page reload`), {
+      timestamp: true,
+    })
   })
 
   memoryFiles: MemoryFiles = new MemoryFiles()
   facadeToChunk: Map<string, string> = new Map()
 
-  constructor(
-    name: string,
-    config: ResolvedConfig,
-    context: DevEnvironmentContext,
-  ) {
-    super(name, config, { ...context, disableDepsOptimizer: true })
-  }
-
-  private get devEngine(): DevEngine {
-    if (!this._devEngine) {
-      throw new Error(`dev engine was not yet initialized`)
+  constructor(private environment: DevEnvironment) {
+    if (environment.name !== 'client') {
+      throw new Error(
+        'currently full bundle mode is only available for client environment',
+      )
     }
-    return this._devEngine
   }
 
-  override async listen(_server: ViteDevServer): Promise<void> {
-    this.hot.listen()
-
+  async listen(): Promise<void> {
     debug?.('INITIAL: setup bundle options')
     const rolldownOptions = await this.getRolldownOptions()
     // NOTE: only single outputOptions is supported here
@@ -108,18 +99,18 @@ export class FullBundleDevEnvironment extends DevEnvironment {
         : rolldownOptions.output
     )!
 
-    this.hot.on('vite:module-loaded', (payload, client) => {
+    this.environment.hot.on('vite:module-loaded', (payload, client) => {
       this.clients.setupIfNeeded(client, payload.clientId)
       this.devEngine.registerModules(payload.clientId, payload.modules)
     })
-    this.hot.on('vite:client:disconnect', (_payload, client) => {
+    this.environment.hot.on('vite:client:disconnect', (_payload, client) => {
       const clientId = this.clients.delete(client)
       if (clientId) {
         this.devEngine.removeClient(clientId)
       }
     })
 
-    this._devEngine = await dev(rolldownOptions, outputOptions, {
+    this.devEngine = await dev(rolldownOptions, outputOptions, {
       onHmrUpdates: (result) => {
         if (result instanceof Error) {
           // TODO: send to the specific client
@@ -149,10 +140,13 @@ export class FullBundleDevEnvironment extends DevEnvironment {
       },
       onOutput: (result) => {
         if (result instanceof Error) {
-          this.logger.error(colors.red(`✘ Build error: ${result.message}`), {
-            error: result,
-          })
-          this.hot.send({
+          this.environment.logger.error(
+            colors.red(`✘ Build error: ${result.message}`),
+            {
+              error: result,
+            },
+          )
+          this.environment.hot.send({
             type: 'error',
             err: prepareError(result),
           })
@@ -182,7 +176,7 @@ export class FullBundleDevEnvironment extends DevEnvironment {
       },
     })
     debug?.('INITIAL: setup dev engine')
-    this._devEngine.run().then(
+    this.devEngine.run().then(
       () => {
         debug?.('INITIAL: run done')
       },
@@ -192,7 +186,7 @@ export class FullBundleDevEnvironment extends DevEnvironment {
     )
     this.waitForInitialBuildFinish().then(() => {
       debug?.('INITIAL: build done')
-      this.hot.send({ type: 'full-reload', path: '*' })
+      this.environment.hot.send({ type: 'full-reload', path: '*' })
       this.initialBuildCompleted = true
     })
   }
@@ -218,66 +212,58 @@ export class FullBundleDevEnvironment extends DevEnvironment {
     }
   }
 
-  override async warmupRequest(_url: string): Promise<void> {
-    // no-op
-  }
-
-  protected override invalidateModule(
+  async invalidateModule(
     m: {
       path: string
       message?: string
       firstInvalidatedBy: string
     },
     client: NormalizedHotChannelClient,
-  ): void {
-    ;(async () => {
-      const invalidateCalledModules = this.invalidateCalledModules.get(client)
-      if (invalidateCalledModules?.has(m.path)) {
-        debug?.(
-          `INVALIDATE: invalidate received from ${m.path}, but ignored because it was already invalidated`,
-        )
-        return
-      }
-
+  ): Promise<void> {
+    const invalidateCalledModules = this.invalidateCalledModules.get(client)
+    if (invalidateCalledModules?.has(m.path)) {
       debug?.(
-        `INVALIDATE: invalidate received from ${m.path}, re-triggering HMR`,
+        `INVALIDATE: invalidate received from ${m.path}, but ignored because it was already invalidated`,
       )
-      if (!invalidateCalledModules) {
-        this.invalidateCalledModules.set(client, new Set([]))
-      }
-      this.invalidateCalledModules.get(client)!.add(m.path)
+      return
+    }
 
-      let update: BindingClientHmrUpdate['update'] | undefined
-      try {
-        const _update = await this.devEngine.invalidate(
-          m.path,
-          m.firstInvalidatedBy,
-        )
-        update = _update.find(
-          (u) => this.clients.get(u.clientId) === client,
-        )?.update
-      } catch (e) {
-        client.send({
-          type: 'error',
-          err: prepareError(e as Error),
-        })
-        return
-      }
-      if (!update) return
+    debug?.(`INVALIDATE: invalidate received from ${m.path}, re-triggering HMR`)
+    if (!invalidateCalledModules) {
+      this.invalidateCalledModules.set(client, new Set([]))
+    }
+    this.invalidateCalledModules.get(client)!.add(m.path)
 
-      if (update.type === 'Patch') {
-        this.logger.info(
-          colors.yellow(`hmr invalidate `) +
-            colors.dim(m.path) +
-            (m.message ? ` ${m.message}` : ''),
-          { timestamp: true },
-        )
-      }
-
-      this.handleHmrOutput(client, [m.path], update, {
-        firstInvalidatedBy: m.firstInvalidatedBy,
+    let update: BindingClientHmrUpdate['update'] | undefined
+    try {
+      const _update = await this.devEngine.invalidate(
+        m.path,
+        m.firstInvalidatedBy,
+      )
+      update = _update.find(
+        (u) => this.clients.get(u.clientId) === client,
+      )?.update
+    } catch (e) {
+      client.send({
+        type: 'error',
+        err: prepareError(e as Error),
       })
-    })()
+      return
+    }
+    if (!update) return
+
+    if (update.type === 'Patch') {
+      this.environment.logger.info(
+        colors.yellow(`hmr invalidate `) +
+          colors.dim(m.path) +
+          (m.message ? ` ${m.message}` : ''),
+        { timestamp: true },
+      )
+    }
+
+    this.handleHmrOutput(client, [m.path], update, {
+      firstInvalidatedBy: m.firstInvalidatedBy,
+    })
   }
 
   async triggerBundleRegenerationIfStale(): Promise<boolean> {
@@ -308,19 +294,22 @@ export class FullBundleDevEnvironment extends DevEnvironment {
     return await this.devEngine.compileEntry(moduleId, clientId)
   }
 
-  override async close(): Promise<void> {
+  async close(): Promise<void> {
     this.memoryFiles.clear()
-    await Promise.all([super.close(), this.devEngine.close()])
+    await this.devEngine?.close()
     this.initialBuildCompleted = false
   }
 
   protected async getDevRuntimeImplementation(): Promise<string> {
-    return await getHmrImplementation(this.getTopLevelConfig())
+    return await getHmrImplementation(this.environment.getTopLevelConfig())
   }
 
   protected async getRolldownOptions(): Promise<RolldownOptions> {
     const chunkMetadataMap = new ChunkMetadataMap()
-    const rolldownOptions = resolveRolldownOptions(this, chunkMetadataMap)
+    const rolldownOptions = resolveRolldownOptions(
+      this.environment,
+      chunkMetadataMap,
+    )
     rolldownOptions.experimental ??= {}
     rolldownOptions.experimental.devMode = {
       lazy: true,
@@ -367,13 +356,13 @@ export class FullBundleDevEnvironment extends DevEnvironment {
     if (hmrOutput.type === 'Noop') return
 
     const shortFile = files
-      .map((file) => getShortName(file, this.config.root))
+      .map((file) => getShortName(file, this.environment.config.root))
       .join(', ')
     if (hmrOutput.type === 'FullReload') {
       const reason = hmrOutput.reason
         ? colors.dim(` (${hmrOutput.reason})`)
         : ''
-      this.logger.info(
+      this.environment.logger.info(
         colors.green(`trigger page reload `) + colors.dim(shortFile) + reason,
         { clear: !invalidateInformation, timestamp: true },
       )
@@ -420,10 +409,13 @@ export class FullBundleDevEnvironment extends DevEnvironment {
     const filePaths = [...new Set(updates.map((u) => u.path))]
     const { formatted, truncated } = formatAndTruncateFileList(filePaths)
     if (truncated) debugHmr?.(`hmr update ${filePaths.join(', ')}`)
-    this.logger.info(colors.green(`hmr update `) + colors.dim(formatted), {
-      clear: !invalidateInformation,
-      timestamp: true,
-    })
+    this.environment.logger.info(
+      colors.green(`hmr update `) + colors.dim(formatted),
+      {
+        clear: !invalidateInformation,
+        timestamp: true,
+      },
+    )
   }
 }
 
