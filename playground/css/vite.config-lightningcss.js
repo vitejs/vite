@@ -19,7 +19,7 @@ export default defineConfig({
       },
       visitor: composeVisitors([
         nestedLikePlugin(),
-        testDirDep(),
+        testDirDep,
         testSourceInput(),
         testInjectUrl(),
       ]),

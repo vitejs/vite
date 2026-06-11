@@ -368,6 +368,22 @@ test('import.meta.glob and dynamic import vars transformations should be visible
     )
 })
 
+test('caseSensitiveMatch option', async () => {
+  await expect
+    .poll(async () =>
+      JSON.parse(await page.textContent('.case-sensitive-true')),
+    )
+    .toStrictEqual(['./case-sensitive-dir/data-test.js'])
+
+  await expect
+    .poll(async () =>
+      JSON.parse(await page.textContent('.case-sensitive-false')),
+    )
+    .toStrictEqual([
+      './case-sensitive-dir/DATA-other.js',
+      './case-sensitive-dir/data-test.js',
+    ])
+})
 test('absolute base with files outside of root', async () => {
   await expect
     .poll(async () =>

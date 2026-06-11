@@ -216,7 +216,7 @@ Property mangling and its related options ([`mangleProps`, `reserveProps`, `mang
 esbuild and Oxc Minifier make slightly different assumptions about source code. In case you suspect the minifier is causing breakage in your code, you can compare these assumptions here:
 
 - [esbuild minify assumptions](https://esbuild.github.io/api/#minify-considerations)
-- [Oxc Minifier assumptions](https://oxc.rs/docs/guide/usage/minifier.html#assumptions)
+- [Oxc Minifier assumptions](https://github.com/oxc-project/oxc/blob/main/crates/oxc_minifier/docs/ASSUMPTIONS.md)
 
 Please report any issues you find related to minification in your JavaScript apps.
 
