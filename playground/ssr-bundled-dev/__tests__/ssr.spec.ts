@@ -1,15 +1,14 @@
-import { beforeEach, expect, test } from 'vitest'
+import { expect, test } from 'vitest'
 import { port, serverLogs } from './serve'
 import { browserLogs, editFile, isServe, page } from '~utils'
 
 const url = `http://localhost:${port}`
 
-beforeEach(({ skip }) => {
-  // TODO: playground doesn't work yet
-  skip()
-})
+// TODO: playground works only because there is a direct dependency on "ws",
+// It should removed on rolldown side
 
-test(`circular dependencies modules doesn't throw`, async () => {
+// TODO: this crashes the server, not yet supported(?)
+test.skip(`circular dependencies modules doesn't throw`, async () => {
   await page.goto(`${url}/circular-dep`)
 
   expect(await page.textContent('.circ-dep-init')).toMatch(

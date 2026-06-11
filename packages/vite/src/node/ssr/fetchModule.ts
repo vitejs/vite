@@ -154,13 +154,21 @@ async function fetchBundledModule(
     }
 
     // This module is invalidated immediately, so url/id do not matter
-    return {
+    const result: ViteFetchResult = {
       code,
       url,
       id: moduleId!,
       file: cleanUrl(moduleId!),
       invalidate: false,
     }
+
+    // See https://github.com/rolldown/rolldown/issues/8376
+    const ssrResult = await ssrTransform(result.code, null, url, result.code)
+    if (!ssrResult) {
+      throw new Error(`[vite] cannot apply ssr transform to '${url}'.`)
+    }
+    result.code = ssrResult.code
+    return result
   }
 
   const outDir = normalizePath(
