@@ -25,6 +25,7 @@ import {
   injectQuery,
   joinUrlSegments,
   normalizePath,
+  normalizeWindowsDriveLetter,
   rawRE,
   removeLeadingSlash,
   removeUrlQuery,
@@ -364,9 +365,18 @@ export async function fileToDevUrl(
   if (publicFile) {
     // in public dir during dev, keep the url as-is
     rtn = id
-  } else if (id.startsWith(withTrailingSlash(config.root))) {
+  } else if (
+    normalizeWindowsDriveLetter(id).startsWith(
+      withTrailingSlash(normalizeWindowsDriveLetter(config.root)),
+    )
+  ) {
     // in project root, infer short public path
-    rtn = '/' + path.posix.relative(config.root, id)
+    rtn =
+      '/' +
+      path.posix.relative(
+        normalizeWindowsDriveLetter(config.root),
+        normalizeWindowsDriveLetter(id),
+      )
   } else {
     // outside of project root, use absolute fs path
     // (this is special handled by the serve static middleware
