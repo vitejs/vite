@@ -26,6 +26,10 @@ export function getEnvFilesForMode(
   return []
 }
 
+/**
+ * Load `.env` files within the `envDir` and merge them with the matching
+ * variables already present in `process.env`.
+ */
 export function loadEnv(
   mode: string,
   envDir: string | false,
