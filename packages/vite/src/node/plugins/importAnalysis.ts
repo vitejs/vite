@@ -540,12 +540,15 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
             ) {
               return
             }
-            // skip ssr externals and builtins
-            if (ssr && !matchAlias(specifier)) {
+            // skip configured externals, ssr externals and builtins
+            if (!matchAlias(specifier)) {
               if (shouldExternalize(environment, specifier, importer)) {
                 return
               }
-              if (isBuiltin(environment.config.resolve.builtins, specifier)) {
+              if (
+                ssr &&
+                isBuiltin(environment.config.resolve.builtins, specifier)
+              ) {
                 return
               }
             }
