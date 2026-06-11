@@ -1484,11 +1484,11 @@ const bodyPrependInjectRE = /([ \t]*)<body[^>]*>/i
 
 const doctypePrependInjectRE = /<!doctype html>/i
 
-function injectToHead(
+export function injectToHead(
   html: string,
   tags: HtmlTagDescriptor[],
   prepend = false,
-) {
+): string {
   if (tags.length === 0) return html
 
   if (prepend) {
