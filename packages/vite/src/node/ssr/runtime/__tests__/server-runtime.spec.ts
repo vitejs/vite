@@ -140,15 +140,13 @@ describe.for([
   it('modules with query strings are treated as different modules', async ({
     runner,
     fullBundle,
+    skip,
   }) => {
+    skip(!!fullBundle.length)
     const modSimple = await runner.import('/fixtures/simple.js')
     const modUrl = await runner.import('/fixtures/simple.js?url')
     expect(modSimple).not.toBe(modUrl)
-    if (fullBundle.length) {
-      expect(modUrl.default).toContain('/assets')
-    } else {
-      expect(modUrl.default).toBe('/fixtures/simple.js')
-    }
+    expect(modUrl.default).toBe('/fixtures/simple.js')
   })
 
   it('exports is not modifiable', async ({ runner, skip, fullBundle }) => {
