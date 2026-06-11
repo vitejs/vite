@@ -28,9 +28,9 @@ export const core = [
     avatar: 'https://www.github.com/antfu.png',
     name: 'Anthony Fu',
     title: 'A fanatical open sourceror',
-    org: 'NuxtLabs',
-    orgLink: 'https://nuxtlabs.com/',
-    desc: 'Core team member of Vite & Vue. Working at NuxtLabs.',
+    org: 'Vercel',
+    orgLink: 'https://vercel.com/',
+    desc: 'Core team member of Vite & Vue. Working on Nuxt.',
     links: [
       { icon: 'github', link: 'https://github.com/antfu' },
       { icon: 'bluesky', link: 'https://bsky.app/profile/antfu.me' },
