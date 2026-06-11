@@ -58,6 +58,8 @@ import {
   CLIENT_DIR,
   DEFAULT_DEV_PORT,
   defaultAllowedOrigins,
+  FS_PREFIX,
+  FS_RAW_PREFIX,
 } from '../constants'
 import type { Logger } from '../logger'
 import { printServerUrls } from '../logger'
@@ -1004,11 +1006,14 @@ export async function _createServer(
     middlewares.use(triggerLazyBundlingMiddleware(server))
     middlewares.use(memoryFilesMiddleware(server))
   } else {
+    // serve static files from @fs-raw before transformMiddleware so that they are served as-is without transforms.
+    middlewares.use(serveRawFsMiddleware(server, FS_RAW_PREFIX))
+
     // main transform middleware
     middlewares.use(transformMiddleware(server))
 
     // serve static files
-    middlewares.use(serveRawFsMiddleware(server))
+    middlewares.use(serveRawFsMiddleware(server, FS_PREFIX))
     middlewares.use(serveStaticMiddleware(server))
   }
 
