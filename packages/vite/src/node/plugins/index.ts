@@ -4,7 +4,6 @@ import type { ObjectHook } from 'rolldown'
 import {
   viteAliasPlugin as nativeAliasPlugin,
   viteJsonPlugin as nativeJsonPlugin,
-  viteWasmFallbackPlugin as nativeWasmFallbackPlugin,
   oxcRuntimePlugin,
 } from 'rolldown/experimental'
 import type { PluginHookUtils, ResolvedConfig } from '../config'
@@ -135,7 +134,6 @@ export async function resolvePlugins(
 
     ...normalPlugins,
 
-    nativeWasmFallbackPlugin(),
     definePlugin(config),
     cssPostPlugin(config),
     buildHtmlPlugin(config),

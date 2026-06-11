@@ -868,7 +868,7 @@ async function prepareRolldownOptimizerRun(
       return await bundle.write({
         ...rolldownOptions.output,
         format: 'esm',
-        sourcemap: true,
+        sourcemap: 'hidden',
         dir: processingCacheDir,
         entryFileNames: '[name].js',
       })

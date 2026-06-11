@@ -137,6 +137,7 @@ const knownOptions = {
   exhaustive: ['boolean'],
   query: ['object', 'string'],
   base: ['string'],
+  caseSensitive: ['boolean'],
 }
 
 const forceDefaultAs = ['raw', 'url']
@@ -461,6 +462,7 @@ export async function transformGlobImport(
               cwd,
               dot: !!options.exhaustive,
               expandDirectories: false,
+              caseSensitiveMatch: options.caseSensitive ?? true,
               ignore: options.exhaustive ? [] : ['**/node_modules/**'],
               extglob: false,
             })
@@ -702,7 +704,11 @@ export function getCommonBase(globsResolved: string[]): null | string {
   const dirS = bases[0].split('/')
   for (let i = 0; i < dirS.length; i++) {
     const candidate = dirS.slice(0, i + 1).join('/')
-    if (bases.every((base) => base.startsWith(candidate)))
+    if (
+      bases.every(
+        (base) => base === candidate || base.startsWith(`${candidate}/`),
+      )
+    )
       commonAncestor = candidate
     else break
   }

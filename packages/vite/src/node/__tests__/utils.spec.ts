@@ -506,8 +506,10 @@ describe('isFileReadable', () => {
     expect(isFileReadable('/does_not_exist')).toBe(false)
   })
 
-  const testFile =
-    require.resolve('./utils/isFileReadable/permission-test-file')
+  const testFile = path.resolve(
+    import.meta.dirname,
+    './utils/isFileReadable/permission-test-file',
+  )
   test('file with normal permission', async () => {
     expect(isFileReadable(testFile)).toBe(true)
   })

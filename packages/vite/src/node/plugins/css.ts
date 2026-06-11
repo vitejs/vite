@@ -3194,6 +3194,8 @@ function isPreProcessor(lang: any): lang is PreprocessLang {
   return lang && preprocessorSet.has(lang)
 }
 
+const absoluteOrProtocolRelativeUrlRE = /^(?:[a-z]+:)?\/\//i
+
 const importEsbuild = createCachedImport(() => import('esbuild'))
 
 const importLightningCSS = createCachedImport(() => import('lightningcss'))
@@ -3268,6 +3270,12 @@ async function compileLightningCSS(
                 return publicFile
               }
 
+              // contrary to lightningcss, postcss-import does this internally
+              if (absoluteOrProtocolRelativeUrlRE.test(id)) {
+                // @ts-expect-error -- https://github.com/parcel-bundler/lightningcss/pull/1261
+                return { external: id } as string
+              }
+
               // NOTE: with `transformer: 'postcss'`, CSS modules `composes` tried to resolve with
               //       all resolvers, but in `transformer: 'lightningcss'`, only the one for the
               //       current file type is used.
@@ -3308,7 +3316,7 @@ async function compileLightningCSS(
             config.command === 'build'
               ? !!config.build.sourcemap
               : config.css.devSourcemap,
-          analyzeDependencies: true,
+          analyzeDependencies: { preserveImports: true },
           cssModules: cssModuleRE.test(id)
             ? (config.css.lightningcss?.cssModules ?? true)
             : undefined,
@@ -3391,8 +3399,14 @@ async function compileLightningCSS(
         )
         break
       }
+      case 'import': {
+        css = css.replace(dep.placeholder, dep.url)
+        break
+      }
       default:
-        throw new Error(`Unsupported dependency type: ${dep.type}`)
+        throw new Error(
+          `Unsupported dependency type: ${(dep satisfies never as any).type}`,
+        )
     }
   }
 
