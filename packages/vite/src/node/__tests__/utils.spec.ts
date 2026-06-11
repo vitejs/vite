@@ -132,17 +132,15 @@ describe('normalizeWindowsDriveLetter', () => {
   })
 })
 
-describe('prettifyUrl', () => {
-  if (isWindows) {
-    test('keeps root files relative when drive letter casing differs', () => {
-      expect(prettifyUrl('C:/repo/src/main.ts', 'c:/repo')).toContain(
-        'src/main.ts',
-      )
-      expect(
-        prettifyUrl(`${FS_PREFIX}C:/repo/src/main.ts`, 'c:/repo'),
-      ).toContain('src/main.ts')
-    })
-  }
+describe.runIf(isWindows)('prettifyUrl', () => {
+  test('keeps root files relative when drive letter casing differs', () => {
+    expect(prettifyUrl('C:/repo/src/main.ts', 'c:/repo')).toContain(
+      'src/main.ts',
+    )
+    expect(prettifyUrl(`${FS_PREFIX}C:/repo/src/main.ts`, 'c:/repo')).toContain(
+      'src/main.ts',
+    )
+  })
 })
 
 describe('injectQuery', () => {
