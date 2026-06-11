@@ -64,7 +64,7 @@ export class MemoryFiles {
 }
 
 export class BundledDev {
-  private devEngine!: DevEngine
+  private _devEngine!: DevEngine
   private initialBuildCompleted = false
   private clients = new Clients()
   private invalidateCalledModules = new Map<
@@ -82,6 +82,13 @@ export class BundledDev {
   facadeToChunk: Map<string, string> = new Map()
 
   constructor(private environment: DevEnvironment) {}
+
+  private get devEngine(): DevEngine {
+    if (!this._devEngine) {
+      throw new Error(`dev engine was not yet initialized`)
+    }
+    return this._devEngine
+  }
 
   async listen(): Promise<void> {
     debug?.('INITIAL: setup bundle options')
@@ -110,7 +117,7 @@ export class BundledDev {
       }
     })
 
-    this.devEngine = await dev(rolldownOptions, outputOptions, {
+    this._devEngine = await dev(rolldownOptions, outputOptions, {
       onHmrUpdates: (result) => {
         if (result instanceof Error) {
           // TODO: send to the specific client

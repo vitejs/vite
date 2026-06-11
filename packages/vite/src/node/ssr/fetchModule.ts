@@ -57,7 +57,7 @@ export async function fetchModule(
     importer &&
     url[0] !== '.' &&
     url[0] !== '/' &&
-    !isChunkUrl(environment, url)
+    !isBundledChunkUrl(environment, url)
   ) {
     const { isProduction, root } = environment.config
     const { externalConditions, dedupe, preserveSymlinks } =
@@ -180,7 +180,7 @@ async function fetchBundledModule(
 
   // Assume this is an entry point that was specified in rolldownOptions.input
   if (!importer) {
-    const resolvedEntry = resolveEntryFilename(
+    const resolvedEntry = resolveBundledEntryFilename(
       bundledDev,
       environment.config.root,
       url,
@@ -287,11 +287,11 @@ function inlineSourceMap(
   return result
 }
 
-function isChunkUrl(environment: DevEnvironment, url: string) {
+function isBundledChunkUrl(environment: DevEnvironment, url: string) {
   return environment.bundledDev?.memoryFiles.has(url)
 }
 
-function resolveEntryFilename(
+function resolveBundledEntryFilename(
   environment: BundledDev,
   root: string,
   url: string,

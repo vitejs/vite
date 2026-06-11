@@ -257,10 +257,6 @@ function defaultCreateClientDevEnvironment(
   })
 }
 
-function defaultCreateSSRDevEnvironment(name: string, config: ResolvedConfig) {
-  return createRunnableDevEnvironment(name, config)
-}
-
 function defaultCreateDevEnvironment(name: string, config: ResolvedConfig) {
   return createRunnableDevEnvironment(name, config)
 }
@@ -918,9 +914,7 @@ export function resolveDevEnvironmentOptions(
       createEnvironment:
         environmentName === 'client'
           ? defaultCreateClientDevEnvironment
-          : environmentName === 'ssr'
-            ? defaultCreateSSRDevEnvironment
-            : defaultCreateDevEnvironment,
+          : defaultCreateDevEnvironment,
       recoverable: consumer === 'client',
       moduleRunnerTransform: consumer === 'server',
     },
