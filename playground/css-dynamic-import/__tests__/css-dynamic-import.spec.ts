@@ -1,3 +1,4 @@
+import path from 'node:path'
 import type { InlineConfig } from 'vite'
 import { build, createServer, preview } from 'vite'
 import { expect, test } from 'vitest'
@@ -7,6 +8,9 @@ const baseOptions = [
   { base: '', label: 'relative' },
   { base: '/', label: 'absolute' },
 ]
+
+const fsPath = (filename: string) =>
+  `/@fs-raw${path.posix.join('/', rootDir.replaceAll('\\', '/'), filename)}`
 
 const getConfig = (base: string): InlineConfig => ({
   base,
@@ -82,7 +86,7 @@ baseOptions.forEach(({ base, label }) => {
         // in serve there is no preloading
         expect(await getLinks()).toEqual([
           {
-            pathname: '/dynamic.css',
+            pathname: fsPath('dynamic.css'),
             rel: 'preload',
             as: 'style',
           },
