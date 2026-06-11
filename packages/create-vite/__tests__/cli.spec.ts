@@ -32,18 +32,22 @@ const createNonEmptyDir = (overrideFolder?: string) => {
   fs.writeFileSync(pkgJson, '{ "foo": "bar" }')
 }
 
+// Underscore-prefixed files are renamed to dot-prefixed on scaffold
+const fileNameMap: Record<string, string> = {
+  _gitignore: '.gitignore',
+  '_oxlintrc.json': '.oxlintrc.json',
+}
+
 // Vue 3 starter template
 const templateFiles = fs
   .readdirSync(path.join(CLI_PATH, 'template-vue'))
-  // _gitignore is renamed to .gitignore
-  .map((filePath) => (filePath === '_gitignore' ? '.gitignore' : filePath))
+  .map((filePath) => fileNameMap[filePath] ?? filePath)
   .sort()
 
 // React starter template
 const templateFilesReact = fs
   .readdirSync(path.join(CLI_PATH, 'template-react'))
-  // _gitignore is renamed to .gitignore
-  .map((filePath) => (filePath === '_gitignore' ? '.gitignore' : filePath))
+  .map((filePath) => fileNameMap[filePath] ?? filePath)
   .sort()
 
 const clearAnyPreviousFolders = () => {
@@ -91,14 +95,14 @@ test('prompts for the framework on supplying an invalid template', () => {
   )
 })
 
-test('prompts to use Oxlint for React templates in interactive mode', () => {
+test('prompts to use ESLint for React templates in interactive mode', () => {
   const { stdout } = run([
     projectName,
     '--interactive',
     '--template',
     'react-ts',
   ])
-  expect(stdout).toContain('Use Oxlint instead of ESLint?')
+  expect(stdout).toContain('Use ESLint instead of Oxlint?')
 })
 
 test('asks to overwrite non-empty target directory', () => {
@@ -154,7 +158,7 @@ test('successfully scaffolds a project with subfolder based on react starter tem
       '--no-immediate',
       '--template',
       'react',
-      '--no-oxlint',
+      '--no-eslint',
       '--no-rolldown',
     ],
     {
@@ -189,8 +193,8 @@ test('successfully scaffolds a project based on react-compiler-ts starter templa
   expect(readmeFile).toContain('The React Compiler is enabled on this template')
 })
 
-test('scaffolds react-ts with Oxlint when --oxlint is passed', () => {
-  const { stdout } = run([projectName, '--template', 'react-ts', '--oxlint'], {
+test('scaffolds react-ts with Oxlint by default', () => {
+  const { stdout } = run([projectName, '--template', 'react-ts'], {
     cwd: import.meta.dirname,
   })
   expect(stdout).toContain(`Scaffolding project in ${genPath}`)
@@ -208,8 +212,8 @@ test('scaffolds react-ts with Oxlint when --oxlint is passed', () => {
   expect(readme).not.toContain('ESLint')
 })
 
-test('keeps ESLint for React templates by default', () => {
-  const { stdout } = run([projectName, '--template', 'react'], {
+test('scaffolds React template with ESLint when --eslint is passed', () => {
+  const { stdout } = run([projectName, '--template', 'react', '--eslint'], {
     cwd: import.meta.dirname,
   })
   expect(stdout).toContain(`Scaffolding project in ${genPath}`)
@@ -218,8 +222,9 @@ test('keeps ESLint for React templates by default', () => {
   expect(fs.existsSync(path.join(genPath, '.oxlintrc.json'))).toBe(false)
 
   const pkg = fs.readFileSync(path.join(genPath, 'package.json'), 'utf-8')
-  expect(pkg).toContain('eslint')
+  expect(pkg).toContain('"eslint"')
   expect(pkg).not.toContain('oxlint')
+  expect(pkg).toContain('"lint": "eslint ."')
 })
 
 test('works with the -t alias', () => {
@@ -263,7 +268,7 @@ test('return help usage how to use create-vite', () => {
   const message = 'Usage: create-vite [OPTION]... [DIRECTORY]'
   expect(stdout).toContain(message)
   expect(stdout).toContain('-i, --immediate / --no-immediate')
-  expect(stdout).toContain('--oxlint / --no-oxlint')
+  expect(stdout).toContain('--eslint / --no-eslint')
   expect(stdout).toContain('--overwrite')
   expect(stdout).toContain('-h, --help')
 })
