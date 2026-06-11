@@ -2,11 +2,8 @@ import type { ModuleRunner } from 'vite/module-runner'
 import type { ResolvedConfig } from '../../config'
 import type { DevEnvironmentContext } from '../environment'
 import { DevEnvironment } from '../environment'
-import type {
-  ServerModuleRunnerFactory,
-  ServerModuleRunnerOptions,
-} from '../../ssr/runtime/serverModuleRunner'
-import { defineServerModuleRunnerFactory } from '../../ssr/runtime/serverModuleRunner'
+import type { ServerModuleRunnerOptions } from '../../ssr/runtime/serverModuleRunner'
+import { createServerModuleRunner } from '../../ssr/runtime/serverModuleRunner'
 import { createServerHotChannel } from '../hmr'
 import type { Environment } from '../../environment'
 
@@ -25,10 +22,14 @@ export function createRunnableDevEnvironment(
   return new RunnableDevEnvironment(name, config, context)
 }
 
-export interface RunnableDevEnvironmentContext<
-  E extends DevEnvironment = RunnableDevEnvironment,
-> extends Omit<DevEnvironmentContext, 'hot'> {
-  runner?: (environment: E, options?: ServerModuleRunnerOptions) => ModuleRunner
+export interface RunnableDevEnvironmentContext extends Omit<
+  DevEnvironmentContext,
+  'hot'
+> {
+  runner?: (
+    environment: RunnableDevEnvironment,
+    options?: ServerModuleRunnerOptions,
+  ) => ModuleRunner
   runnerOptions?: ServerModuleRunnerOptions
   hot?: boolean
 }
@@ -40,7 +41,14 @@ export function isRunnableDevEnvironment(
 }
 
 class RunnableDevEnvironment extends DevEnvironment {
-  private _runner: ServerModuleRunnerFactory
+  private _runner: ModuleRunner | undefined
+  private _runnerFactory:
+    | ((
+        environment: RunnableDevEnvironment,
+        options?: ServerModuleRunnerOptions,
+      ) => ModuleRunner)
+    | undefined
+  private _runnerOptions: ServerModuleRunnerOptions | undefined
 
   constructor(
     name: string,
@@ -48,16 +56,24 @@ class RunnableDevEnvironment extends DevEnvironment {
     context: RunnableDevEnvironmentContext,
   ) {
     super(name, config, context as DevEnvironmentContext)
-    this._runner = defineServerModuleRunnerFactory(this, context)
+    this._runnerFactory = context.runner
+    this._runnerOptions = context.runnerOptions
   }
 
   get runner(): ModuleRunner {
-    return this._runner.ensure()
+    if (this._runner) {
+      return this._runner
+    }
+    const factory = this._runnerFactory || createServerModuleRunner
+    this._runner = factory(this, this._runnerOptions)
+    return this._runner
   }
 
   override async close(): Promise<void> {
     await super.close()
-    await this._runner.get()?.close()
+    if (this._runner) {
+      await this._runner.close()
+    }
   }
 }
 
