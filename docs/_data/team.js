@@ -14,6 +14,21 @@ export const core = [
     sponsor: 'https://github.com/sponsors/yyx990803',
   },
   {
+    avatar: 'https://github.com/sapphi-red.png',
+    name: 'sapphi-red',
+    title: 'Web Developer',
+    org: 'VoidZero',
+    orgLink: 'https://voidzero.dev/',
+    desc: 'Vite core team member. Call me sapphi or midori ;)',
+    links: [
+      { icon: 'github', link: 'https://github.com/sapphi-red' },
+      { icon: 'bluesky', link: 'https://bsky.app/profile/sapphi.red' },
+      { icon: 'twitter', link: 'https://twitter.com/sapphi_red' },
+      { icon: 'mastodon', link: 'https://elk.zone/m.webtoo.ls/@sapphi_red' },
+    ],
+    sponsor: 'https://github.com/sponsors/sapphi-red',
+  },
+  {
     avatar: 'https://www.github.com/patak-cat.png',
     name: 'Patak',
     title: 'Open Source Adventurer',
@@ -50,21 +65,6 @@ export const core = [
       { icon: 'mastodon', link: 'https://elk.zone/m.webtoo.ls/@bluwy' },
     ],
     sponsor: 'https://bjornlu.com/sponsor',
-  },
-  {
-    avatar: 'https://github.com/sapphi-red.png',
-    name: 'sapphi-red',
-    title: 'Web Developer',
-    org: 'VoidZero',
-    orgLink: 'https://voidzero.dev/',
-    desc: 'Vite core team member. Call me sapphi or midori ;)',
-    links: [
-      { icon: 'github', link: 'https://github.com/sapphi-red' },
-      { icon: 'bluesky', link: 'https://bsky.app/profile/sapphi.red' },
-      { icon: 'twitter', link: 'https://twitter.com/sapphi_red' },
-      { icon: 'mastodon', link: 'https://elk.zone/m.webtoo.ls/@sapphi_red' },
-    ],
-    sponsor: 'https://github.com/sponsors/sapphi-red',
   },
   {
     avatar: 'https://github.com/ArnaudBarre.png',
