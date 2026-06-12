@@ -923,16 +923,42 @@ function resolveInput(
     return undefined
   }
   if (typeof input === 'string') {
+    assertInputIsNotGlob(input, 'value')
     return normalizePath(path.resolve(root, input))
   }
   if (Array.isArray(input)) {
-    return input.map((inp) => normalizePath(path.resolve(root, inp)))
+    return input.map((inp) => {
+      assertInputIsNotGlob(inp, 'value')
+      return normalizePath(path.resolve(root, inp))
+    })
   }
   const resolved: Record<string, string> = {}
   for (const key in input) {
+    assertInputIsNotGlob(key, 'key')
+    assertInputIsNotGlob(input[key], 'value')
     resolved[key] = normalizePath(path.resolve(root, input[key]))
   }
   return resolved
+}
+
+// Characters that have a special meaning in glob patterns. They are reserved in
+// the `input` option so that it could later be changed to accept globs without
+// breaking existing configs.
+const globCharactersRE = /[*?[\]{}()!+@|]/
+
+function assertInputIsNotGlob(value: string, kind: 'key' | 'value'): void {
+  if (value.includes('\\')) {
+    throw new Error(
+      `\`input\` must use \`/\` as the path separator even on Windows, ` +
+        `so the ${kind} ${JSON.stringify(value)} is not allowed.`,
+    )
+  }
+  if (globCharactersRE.test(value)) {
+    throw new Error(
+      `\`input\` cannot contain glob characters. They are reserved, ` +
+        `so the ${kind} ${JSON.stringify(value)} is not allowed.`,
+    )
+  }
 }
 
 export function resolveDevEnvironmentOptions(
