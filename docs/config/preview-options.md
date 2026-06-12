@@ -35,6 +35,8 @@ See [`server.allowedHosts`](./server-options#server-allowedhosts) for more detai
 
 Specify server port. Note if the port is already being used, Vite will automatically try the next available port so this may not be the actual port the server ends up listening on.
 
+This can be set via the CLI using `--port 8080`.
+
 **Example:**
 
 ```js
