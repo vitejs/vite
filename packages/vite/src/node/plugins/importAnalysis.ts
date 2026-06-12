@@ -917,15 +917,19 @@ export function createParseErrorInfo(
   }
 }
 
+// This matches how Rolldown's `__toESM` runtime helper.
 const interopHelper = (m: any, n: boolean) =>
   n || !m?.__esModule
-    ? {
-        ...((typeof m === 'object' && !Array.isArray(m)) ||
-        typeof m === 'function'
-          ? m
-          : {}),
-        default: m,
-      }
+    ? (m && typeof m === 'object') || typeof m === 'function'
+      ? Object.defineProperty(
+          Object.defineProperties(
+            Object.create(Object.getPrototypeOf(m)),
+            Object.getOwnPropertyDescriptors(m),
+          ),
+          'default',
+          { value: m, enumerable: true },
+        )
+      : { default: m }
     : m
 const interopHelperStr = interopHelper.toString().replaceAll('\n', '')
 

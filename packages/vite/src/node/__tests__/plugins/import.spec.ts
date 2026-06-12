@@ -81,12 +81,12 @@ describe('runTransform', () => {
   test('import all specifier', () => {
     expect(runTransformCjsImport('import * as react from "react"', false))
       .toMatchInlineSnapshot(`
-      "const react = ((m, n) => n || !m?.__esModule ? {	...typeof m === "object" && !Array.isArray(m) || typeof m === "function" ? m : {},	default: m} : m)(__vite__cjsImport0_react, 0);
-       import __vite__cjsImport0_react from "./node_modules/.vite/deps/react.js""
-    `)
+        "const react = ((m, n) => n || !m?.__esModule ? m && typeof m === "object" || typeof m === "function" ? Object.defineProperty(Object.defineProperties(Object.create(Object.getPrototypeOf(m)), Object.getOwnPropertyDescriptors(m)), "default", {	value: m,	enumerable: true}) : { default: m } : m)(__vite__cjsImport0_react, 0);
+         import __vite__cjsImport0_react from "./node_modules/.vite/deps/react.js""
+      `)
     expect(runTransformCjsImport('import * as react from "react"', true))
       .toMatchInlineSnapshot(`
-        "const react = ((m, n) => n || !m?.__esModule ? {	...typeof m === "object" && !Array.isArray(m) || typeof m === "function" ? m : {},	default: m} : m)(__vite__cjsImport0_react, 1);
+        "const react = ((m, n) => n || !m?.__esModule ? m && typeof m === "object" || typeof m === "function" ? Object.defineProperty(Object.defineProperties(Object.create(Object.getPrototypeOf(m)), Object.getOwnPropertyDescriptors(m)), "default", {	value: m,	enumerable: true}) : { default: m } : m)(__vite__cjsImport0_react, 1);
          import __vite__cjsImport0_react from "./node_modules/.vite/deps/react.js""
       `)
   })

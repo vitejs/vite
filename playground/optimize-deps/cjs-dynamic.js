@@ -37,6 +37,35 @@
     cjsWithEsModuleFlag.default.info,
   )
 
+  const cjsProtoMembers = await import('@vitejs/test-dep-cjs-prototype-members')
+  if (cjsProtoMembers.Color?.('#2e95c8') === '#2e95c8') {
+    text('.cjs-dynamic-dep-cjs-prototype-members', 'ok')
+  }
+
+  if (cjsProtoMembers.nonEnumerable === 'non-enumerable') {
+    text('.cjs-dynamic-dep-cjs-prototype-members-non-enumerable', 'ok')
+  }
+
+  const liveGetterFirst = cjsProtoMembers.liveGetter
+  if (cjsProtoMembers.liveGetter === liveGetterFirst + 1) {
+    text('.cjs-dynamic-dep-cjs-prototype-members-live-getter', 'ok')
+  }
+
+  const cjsDefaultArray = await import('@vitejs/test-dep-cjs-default-array')
+  if (
+    cjsDefaultArray[0] === 'a' &&
+    cjsDefaultArray.length === 3 &&
+    Array.isArray(cjsDefaultArray.default) &&
+    cjsDefaultArray.default.join('') === 'abc'
+  ) {
+    text('.cjs-dynamic-dep-cjs-default-array', 'ok')
+  }
+
+  const cjsDefaultNull = await import('@vitejs/test-dep-cjs-default-null')
+  if (cjsDefaultNull.default === null) {
+    text('.cjs-dynamic-dep-cjs-default-null', 'ok')
+  }
+
   function App() {
     const [count, setCount] = useState(0)
 

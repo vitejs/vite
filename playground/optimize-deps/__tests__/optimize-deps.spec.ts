@@ -43,6 +43,38 @@ test('default import from cjs (cjs-dep-cjs-compiled-from-cjs)', async () => {
     .toBe('ok')
 })
 
+test('namespace import from cjs preserves prototype members (dep-cjs-prototype-members)', async () => {
+  await expect
+    .poll(() => page.textContent('.cjs-dep-cjs-prototype-members'))
+    .toBe('ok')
+})
+
+test('namespace import from cjs preserves non-enumerable own member (dep-cjs-prototype-members)', async () => {
+  await expect
+    .poll(() =>
+      page.textContent('.cjs-dep-cjs-prototype-members-non-enumerable'),
+    )
+    .toBe('ok')
+})
+
+test('namespace import from cjs preserves live own getter (dep-cjs-prototype-members)', async () => {
+  await expect
+    .poll(() => page.textContent('.cjs-dep-cjs-prototype-members-live-getter'))
+    .toBe('ok')
+})
+
+test('namespace import from cjs with array default export exposes indices (dep-cjs-default-array)', async () => {
+  await expect
+    .poll(() => page.textContent('.cjs-dep-cjs-default-array'))
+    .toBe('ok')
+})
+
+test('namespace import from cjs with null default export does not throw (dep-cjs-default-null)', async () => {
+  await expect
+    .poll(() => page.textContent('.cjs-dep-cjs-default-null'))
+    .toBe('ok')
+})
+
 test('dynamic imports from cjs dep (react)', async () => {
   await expect
     .poll(() => page.textContent('.cjs-dynamic button'))
@@ -76,6 +108,40 @@ test('dynamic default import from cjs (cjs-dynamic-dep-cjs-compiled-from-cjs)', 
 test('dynamic default import from cjs with es-module-flag (cjs-dynamic-dep-cjs-with-es-module-flag)', async () => {
   await expect
     .poll(() => page.textContent('.cjs-dynamic-dep-cjs-with-es-module-flag'))
+    .toBe('ok')
+})
+
+test('dynamic namespace import from cjs preserves prototype members (dep-cjs-prototype-members)', async () => {
+  await expect
+    .poll(() => page.textContent('.cjs-dynamic-dep-cjs-prototype-members'))
+    .toBe('ok')
+})
+
+test('dynamic namespace import from cjs preserves non-enumerable own member (dep-cjs-prototype-members)', async () => {
+  await expect
+    .poll(() =>
+      page.textContent('.cjs-dynamic-dep-cjs-prototype-members-non-enumerable'),
+    )
+    .toBe('ok')
+})
+
+test('dynamic namespace import from cjs preserves live own getter (dep-cjs-prototype-members)', async () => {
+  await expect
+    .poll(() =>
+      page.textContent('.cjs-dynamic-dep-cjs-prototype-members-live-getter'),
+    )
+    .toBe('ok')
+})
+
+test('dynamic namespace import from cjs with array default export exposes indices (dep-cjs-default-array)', async () => {
+  await expect
+    .poll(() => page.textContent('.cjs-dynamic-dep-cjs-default-array'))
+    .toBe('ok')
+})
+
+test('dynamic namespace import from cjs with null default export does not throw (dep-cjs-default-null)', async () => {
+  await expect
+    .poll(() => page.textContent('.cjs-dynamic-dep-cjs-default-null'))
     .toBe('ok')
 })
 
