@@ -124,6 +124,105 @@ describe('mergeConfig', () => {
     expect(mergeConfig(baseConfig, newConfig)).toEqual(mergedConfig)
   })
 
+  test('handles input', () => {
+    const cases: {
+      name: string
+      a: UserConfig['input']
+      b: UserConfig['input']
+      expected: UserConfig['input']
+    }[] = [
+      {
+        name: 'string + string',
+        a: 'src/a.ts',
+        b: 'src/b.ts',
+        expected: ['src/a.ts', 'src/b.ts'],
+      },
+      {
+        name: 'array + string',
+        a: ['src/a.ts'],
+        b: 'src/b.ts',
+        expected: ['src/a.ts', 'src/b.ts'],
+      },
+      {
+        name: 'string + array',
+        a: 'src/a.ts',
+        b: ['src/b.ts'],
+        expected: ['src/a.ts', 'src/b.ts'],
+      },
+      {
+        name: 'array + array',
+        a: ['src/a.ts'],
+        b: ['src/b.ts'],
+        expected: ['src/a.ts', 'src/b.ts'],
+      },
+      {
+        name: 'object + object',
+        a: { a: 'src/a.ts', shared: 'src/old.ts' },
+        b: { b: 'src/b.ts', shared: 'src/new.ts' },
+        expected: { a: 'src/a.ts', b: 'src/b.ts', shared: 'src/new.ts' },
+      },
+      {
+        name: 'string + object',
+        a: 'src/a.ts',
+        b: { b: 'src/b.ts' },
+        expected: { a: 'src/a.ts', b: 'src/b.ts' },
+      },
+      {
+        name: 'object + string',
+        a: { a: 'src/a.ts' },
+        b: 'src/b.ts',
+        expected: { a: 'src/a.ts', b: 'src/b.ts' },
+      },
+      {
+        name: 'array + object',
+        a: ['src/a.ts'],
+        b: { b: 'src/b.ts' },
+        expected: { a: 'src/a.ts', b: 'src/b.ts' },
+      },
+      {
+        name: 'only a',
+        a: 'src/a.ts',
+        b: undefined,
+        expected: 'src/a.ts',
+      },
+      {
+        name: 'only b',
+        a: undefined,
+        b: 'src/b.ts',
+        expected: 'src/b.ts',
+      },
+    ]
+
+    for (const { name, a, b, expected } of cases) {
+      expect(mergeConfig({ input: a }, { input: b }), name).toStrictEqual({
+        input: expected,
+      })
+    }
+  })
+
+  test('not handles input not at top level', () => {
+    const baseConfig = {
+      build: {
+        input: 'src/a.ts',
+      },
+    }
+
+    const newConfig = {
+      build: {
+        input: 'src/b.ts',
+      },
+    }
+
+    // nested `input` is overwritten, not merged
+    const mergedConfig = {
+      build: {
+        input: 'src/b.ts',
+      },
+    }
+
+    expect(mergeConfig(baseConfig, newConfig)).toEqual(mergedConfig)
+  })
+
   test('not handles alias not under `resolve`', () => {
     const baseConfig = {
       custom: {
