@@ -13,6 +13,7 @@ import {
 } from '@voidzero-dev/vite-task-client'
 import colors from 'picocolors'
 import picomatch from 'picomatch'
+import { freshImport } from 'fresh-import'
 import {
   type NormalizedOutputOptions,
   type OutputChunk,
@@ -2355,14 +2356,23 @@ export async function loadConfigFromFile(
   }
 }
 
-async function nativeImportConfigFile(resolvedPath: string) {
+async function nativeImportConfigFile(
+  resolvedPath: string,
+): Promise<{ configExport: any; dependencies: string[] }> {
+  const freshImported = freshImport(pathToFileURL(resolvedPath).href)
+  if (freshImported) {
+    const { result, dependencies } = await freshImported
+    return {
+      configExport: (result as { [Symbol.toStringTag]: 'Module'; default: any })
+        .default,
+      dependencies,
+    }
+  }
+
   const module = await import(
     pathToFileURL(resolvedPath).href + '?t=' + Date.now()
   )
-  return {
-    configExport: module.default,
-    dependencies: [],
-  }
+  return { configExport: module.default, dependencies: [] }
 }
 
 async function runnerImportConfigFile(resolvedPath: string) {
