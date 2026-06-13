@@ -36,6 +36,7 @@ import {
 import { type WebSocketServer, isWebSocketServer } from './ws'
 import { warmupFiles } from './warmup'
 import { buildErrorMessage } from './middlewares/error'
+import { BundledDev } from './bundledDev'
 
 export interface DevEnvironmentContext {
   hot: boolean
@@ -105,6 +106,9 @@ export class DevEnvironment extends BaseEnvironment {
    * environment.hot.send({ type: 'full-reload' })
    */
   hot: NormalizedHotChannel
+
+  public bundledDev?: BundledDev
+
   constructor(
     name: string,
     config: ResolvedConfig,
@@ -121,6 +125,13 @@ export class DevEnvironment extends BaseEnvironment {
       ) as ResolvedEnvironmentOptions
     }
     super(name, config, options)
+    if (
+      options.isBundled ||
+      (name === 'client' && config.experimental.bundledDev)
+    ) {
+      context.disableDepsOptimizer = true
+      this.bundledDev = new BundledDev(this)
+    }
 
     this._pendingRequests = new Map()
 
@@ -217,7 +228,7 @@ export class DevEnvironment extends BaseEnvironment {
    */
   async listen(server: ViteDevServer): Promise<void> {
     this.hot.listen()
-    await this.depsOptimizer?.init()
+    await Promise.all([this.bundledDev?.listen(), this.depsOptimizer?.init()])
     warmupFiles(server, this)
   }
 
@@ -249,6 +260,11 @@ export class DevEnvironment extends BaseEnvironment {
   }
 
   async warmupRequest(url: string): Promise<void> {
+    if (this.bundledDev) {
+      // no-op
+      return
+    }
+
     try {
       await transformRequest(this, url, { skipFsCheck: true })
     } catch (e) {
@@ -278,6 +294,11 @@ export class DevEnvironment extends BaseEnvironment {
     },
     _client: NormalizedHotChannelClient,
   ): void {
+    if (this.bundledDev) {
+      this.invalidateModule(m, _client)
+      return
+    }
+
     const mod = this.moduleGraph.urlToModuleMap.get(m.path)
     if (
       mod &&
@@ -309,6 +330,7 @@ export class DevEnvironment extends BaseEnvironment {
     this._crawlEndFinder.cancel()
     await Promise.allSettled([
       this.pluginContainer.close(),
+      this.bundledDev?.close(),
       this.depsOptimizer?.close(),
       // WebSocketServer is independent of HotChannel and should not be closed on environment close
       isWebSocketServer in this.hot ? Promise.resolve() : this.hot.close(),
