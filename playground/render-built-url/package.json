@@ -1,0 +1,6 @@
+{
+  "name": "@vitejs/test-render-built-url",
+  "private": true,
+  "type": "module",
+  "version": "0.0.0"
+}

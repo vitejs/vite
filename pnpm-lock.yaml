@@ -1377,6 +1377,8 @@ importers:
 
   playground/proxy-hmr/other-app: {}
 
+  playground/render-built-url: {}
+
   playground/resolve:
     dependencies:
       '@babel/runtime':
