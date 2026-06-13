@@ -63,6 +63,21 @@
   <span class="result"></span>
 </div>
 
+<div class="source-phase-wasm">
+  <h3>Source phase import, result should be 3</h3>
+  <span class="result"></span>
+</div>
+
+<div class="source-phase-wasm-dynamic">
+  <h3>Dynamic source phase import, result should be 7</h3>
+  <span class="result"></span>
+</div>
+
+<div class="source-phase-wasm-with-imports">
+  <h3>Source phase import instantiated with imports, result should be 42</h3>
+  <span class="result"></span>
+</div>
+
 <script type="module">
   import light from './light.wasm?init'
   import heavy from './heavy.wasm?init'
@@ -74,6 +89,9 @@
   import { getAnswerPlusOne, readCounter } from './global-consumer.wasm'
   import { bumpCounter } from './global.wasm'
   import { helloLength } from './string-constants.wasm'
+  import source addModule from './add.wasm'
+  import source lightWithImportsModule from './light-with-imports.wasm'
+  import { imported_func } from './imports.js'
 
   const w = new myWorker()
   w.addEventListener('message', (ev) => {
@@ -97,6 +115,23 @@
   // 'hello'.length, where 'hello' is an engine-provided imported string constant
   // and `length` is a js-string builtin.
   text('.direct-wasm-string-builtins .result', helloLength())
+
+  // Source phase import: `addModule` is the compiled WebAssembly.Module, the
+  // consumer owns instantiation.
+  const addInstance = await WebAssembly.instantiate(addModule)
+  text('.source-phase-wasm .result', addInstance.exports.add(1, 2))
+
+  // Dynamic source phase import also yields a WebAssembly.Module.
+  const dynamicModule = await import.source('./add.wasm')
+  const dynamicInstance = await WebAssembly.instantiate(dynamicModule)
+  text('.source-phase-wasm-dynamic .result', dynamicInstance.exports.add(3, 4))
+
+  // Source phase import instantiated with the wasm's own imports satisfied.
+  const lwiInstance = await WebAssembly.instantiate(lightWithImportsModule, {
+    './imports.js': { imported_func },
+  })
+  lwiInstance.exports.exported_func()
+  text('.source-phase-wasm-with-imports .result', getResult())
 
   async function testWasm(init, resultElement) {
     const { exported_func } = await init({
