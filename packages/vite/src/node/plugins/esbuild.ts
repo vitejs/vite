@@ -14,7 +14,6 @@ import type { FSWatcher } from '#dep-types/chokidar'
 import {
   combineSourcemaps,
   createDebugger,
-  createFilter,
   ensureWatchedFile,
   generateCodeFrame,
 } from '../utils'
@@ -31,13 +30,12 @@ const IIFE_BEGIN_RE =
   /(?:const|var)\s+\S+\s*=\s*\(?function\([^()]*\)\s*\{\s*"use strict";/
 
 const validExtensionRE = /\.\w+$/
-const jsxExtensionsRE = /\.(?:j|t)sx\b/
 
 // the final build should always support dynamic import and import.meta.
 // if they need to be polyfilled, plugin-legacy should be used.
 // plugin-legacy detects these two features when checking for modern code.
 // Browser support: https://caniuse.com/es6-module-dynamic-import,mdn-javascript_operators_import_meta#:~:text=Feature%20summary
-export const defaultEsbuildSupported = {
+const defaultEsbuildSupported = {
   'dynamic-import': true,
   'import-meta': true,
 }
@@ -74,7 +72,7 @@ type TSConfigJSON = {
   }
   [key: string]: any
 }
-export type TSCompilerOptions = NonNullable<TSConfigJSON['compilerOptions']>
+type TSCompilerOptions = NonNullable<TSConfigJSON['compilerOptions']>
 
 let esbuild: Promise<typeof import('esbuild')> | undefined
 const importEsbuild = () => {
@@ -272,67 +270,6 @@ export async function transformWithEsbuild(
       e.loc = e.errors[0].location
     }
     throw e
-  }
-}
-
-export function esbuildPlugin(config: ResolvedConfig): Plugin {
-  const options = config.esbuild as ESBuildOptions
-  const { jsxInject, include, exclude, ...esbuildTransformOptions } = options
-
-  const filter = createFilter(include || /\.(m?ts|[jt]sx)$/, exclude || /\.js$/)
-
-  // Remove optimization options for dev as we only need to transpile them,
-  // and for build as the final optimization is in `buildEsbuildPlugin`
-  const transformOptions: EsbuildTransformOptions = {
-    target: 'esnext',
-    ...esbuildTransformOptions,
-    minify: false,
-    minifyIdentifiers: false,
-    minifySyntax: false,
-    minifyWhitespace: false,
-    treeShaking: false,
-    // keepNames is not needed when minify is disabled.
-    // Also transforming multiple times with keepNames enabled breaks
-    // tree-shaking. (#9164)
-    keepNames: false,
-    supported: {
-      ...defaultEsbuildSupported,
-      ...esbuildTransformOptions.supported,
-    },
-  }
-
-  let server: ViteDevServer | undefined
-
-  return {
-    name: 'vite:esbuild',
-    configureServer(_server) {
-      server = _server
-    },
-    async transform(code, id) {
-      if (filter(id) || filter(cleanUrl(id))) {
-        const result = await transformWithEsbuild(
-          code,
-          id,
-          transformOptions,
-          undefined,
-          config,
-          server?.watcher,
-        )
-        if (result.warnings.length) {
-          result.warnings.forEach((m) => {
-            this.warn(prettifyMessage(m, code))
-          })
-        }
-        if (jsxInject && jsxExtensionsRE.test(id)) {
-          result.code = jsxInject + ';' + result.code
-        }
-        return {
-          code: result.code,
-          map: result.map,
-          moduleType: 'js',
-        }
-      }
-    },
   }
 }
 

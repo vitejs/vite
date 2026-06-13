@@ -1,0 +1,85 @@
+{
+  "$schema": "https://unpkg.com/knip@6/schema.json",
+  "ignoreWorkspaces": ["playground/**"],
+  "ignoreFiles": [
+    "packages/vite/src/**/__tests__/**",
+    "packages/vite/misc/*.d.ts",
+    "packages/vite/src/types/shims.d.ts"
+  ],
+  "ignoreIssues": {
+    "**/__tests__/**": ["exports", "types", "namespaceMembers", "duplicates"],
+    "**/__tests__/**/package.json": ["dependencies", "devDependencies"],
+    "**/__tests_dts__/**/package.json": ["dependencies", "devDependencies"],
+    "docs/.vitepress/theme/landing/**/*.vue": ["unlisted"],
+    "docs/.vitepress/theme/live/**/*.vue": ["unlisted"],
+    "packages/vite/src/types/**/*.d.ts": [
+      "exports",
+      "types",
+      "namespaceMembers"
+    ]
+  },
+  "ignoreBinaries": ["only-allow"],
+  "vite": {
+    "config": []
+  },
+  "workspaces": {
+    ".": {
+      "entry": ["scripts/**/*.ts"],
+      "project": ["scripts/**/*.ts"]
+    },
+    "packages/vite": {
+      "paths": {
+        "@vite/env": ["./src/client/env.ts"]
+      },
+      "ignoreDependencies": [
+        "@types/node",
+        "jiti",
+        "less",
+        "sass-embedded",
+        "stylus",
+        "tsx",
+        "yaml"
+      ],
+      "entry": [
+        "src/node/index.ts",
+        "src/node/cli.ts",
+        "src/node/internalIndex.ts",
+        "src/module-runner/index.ts",
+        "src/client/client.ts",
+        "src/client/env.ts",
+        "src/client/overlay.ts",
+        "src/**/__tests__/**/*.spec.ts",
+        "src/**/__tests_dts__/**/*.ts",
+        "rolldown*.ts",
+        "rollupLicensePlugin.ts"
+      ],
+      "project": [
+        "src/**/*.{js,cjs,mjs,ts,cts,mts,tsx,d.ts}",
+        "misc/**/*.{js,d.ts}",
+        "rolldown*.ts"
+      ]
+    },
+    "packages/create-vite": {
+      "entry": ["__tests__/**/*.spec.ts"],
+      "project": ["src/**/*.ts", "__tests__/**/*.spec.ts"]
+    },
+    "packages/plugin-legacy": {
+      "ignoreDependencies": ["core-js", "regenerator-runtime", "systemjs"],
+      "entry": ["src/**/__tests__/**/*.spec.ts"],
+      "project": ["src/**/*.{js,cjs,mjs,ts,cts,mts,d.ts}"]
+    },
+    "docs": {
+      "entry": [
+        ".vitepress/buildEnd.config.ts",
+        ".vitepress/theme/landing/Layout.vue",
+        ".vitepress/theme/live/Layout.vue",
+        ".vitepress/theme/components/BlogIndex.vue",
+        ".vitepress/theme/components/SupportedVersions.vue",
+        ".vitepress/inlined-scripts/*.js",
+        "_data/**/*.{js,ts}",
+        "**/*.md"
+      ],
+      "project": [".vitepress/**/*.{js,ts,vue,d.ts}", "_data/**/*.{js,ts}"]
+    }
+  }
+}

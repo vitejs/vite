@@ -5,7 +5,7 @@ import { isInNodeModules, sortObjectKeys } from '../utils'
 import type { PackageCache } from '../packages'
 import { findNearestMainPackageData } from '../packages'
 
-export interface LicenseEntry {
+interface LicenseEntry {
   /**
    * Package name
    */

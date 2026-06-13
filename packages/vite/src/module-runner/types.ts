@@ -22,7 +22,7 @@ import type {
 } from './constants'
 import type { InterceptorOptions } from './sourcemap/interceptor'
 
-export type { DefineImportMetadata, SSRImportMetadata }
+export type { SSRImportMetadata }
 
 export interface ModuleRunnerImportMeta {
   url: string
@@ -123,7 +123,7 @@ export interface ModuleRunnerOptions {
   evaluatedModules?: EvaluatedModules
 }
 
-export interface ImportMetaEnv {
+interface ImportMetaEnv {
   [key: string]: any
   BASE_URL: string
   MODE: string

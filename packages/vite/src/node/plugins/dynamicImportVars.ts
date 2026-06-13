@@ -24,7 +24,7 @@ import { perEnvironmentState } from '../environment'
 import { hasViteIgnoreRE } from './importAnalysis'
 import { workerOrSharedWorkerRE } from './worker'
 
-export const dynamicImportHelperId = '\0vite/dynamic-import-helper.js'
+const dynamicImportHelperId = '\0vite/dynamic-import-helper.js'
 
 const relativePathRE = /^\.{1,2}\//
 // fast path to check if source contains a dynamic import. we check for a

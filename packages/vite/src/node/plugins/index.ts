@@ -291,7 +291,7 @@ function extractFilter<T extends Function, F>(
 
 // Same as `@rollup/plugin-alias` default resolver, but we attach additional meta
 // if we can't resolve to something, which will error in `importAnalysis`
-export const viteAliasCustomResolver: ResolverFunction = async function (
+const viteAliasCustomResolver: ResolverFunction = async function (
   id,
   importer,
   options,

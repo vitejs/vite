@@ -72,7 +72,7 @@ export function ssrRewriteStacktrace(
   return { result: rewritten, alreadyRewritten }
 }
 
-export function rebindErrorStacktrace(e: Error, stacktrace: string): void {
+function rebindErrorStacktrace(e: Error, stacktrace: string): void {
   const { configurable, writable } = Object.getOwnPropertyDescriptor(
     e,
     'stack',

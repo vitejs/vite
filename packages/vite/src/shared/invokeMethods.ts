@@ -8,7 +8,7 @@ export type FetchResult =
   | ExternalFetchResult
   | ViteFetchResult
 
-export interface CachedFetchResult {
+interface CachedFetchResult {
   /**
    * If the module is cached in the runner, this confirms
    * it was not invalidated on the server side.

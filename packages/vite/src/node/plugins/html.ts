@@ -84,7 +84,7 @@ export const isHTMLRequest = (request: string): boolean =>
   htmlLangRE.test(request)
 
 // HTML Proxy Caches are stored by config -> filePath -> index
-export const htmlProxyMap: WeakMap<
+const htmlProxyMap: WeakMap<
   ResolvedConfig,
   Map<
     string,
@@ -169,7 +169,7 @@ const noInlineLinkRels = new Set([
   'manifest',
 ])
 
-export const isAsyncScriptMap: WeakMap<
+const isAsyncScriptMap: WeakMap<
   ResolvedConfig,
   Map<string, boolean>
 > = new WeakMap()
@@ -1078,7 +1078,7 @@ export function buildHtmlPlugin(config: ResolvedConfig): Plugin {
   }
 }
 
-export function parseRelAttr(attr: string): string[] {
+function parseRelAttr(attr: string): string[] {
   return attr.split(spaceRe).map((v) => v.toLowerCase())
 }
 

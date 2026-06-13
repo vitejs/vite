@@ -47,7 +47,6 @@ import type {
   ModuleOptions,
   ModuleType,
   NormalizedInputOptions,
-  OutputOptions,
   ParallelPluginHooks,
   PartialNull,
   PartialResolvedId,
@@ -133,13 +132,6 @@ export function throwClosedServerError(): never {
   // This error will be caught by the transform middleware that will
   // send a 504 status code request timeout
   throw err
-}
-
-export interface PluginContainerOptions {
-  cwd?: string
-  output?: OutputOptions
-  modules?: Map<string, { info: ModuleInfo }>
-  writeFile?: (name: string, source: string | Uint8Array) => void
 }
 
 /**
@@ -1172,11 +1164,7 @@ class TransformPluginContext
   }
 }
 
-export type {
-  EnvironmentPluginContainer,
-  TransformPluginContext,
-  TransformResult,
-}
+export type { EnvironmentPluginContainer, TransformPluginContext }
 
 // Backward compatibility
 class PluginContainer {

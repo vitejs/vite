@@ -31,7 +31,7 @@ const WebSocketServerRaw = process.versions.bun
     import.meta.require('ws').WebSocketServer
   : WebSocketServerRaw_
 
-export const HMR_HEADER = 'vite-hmr'
+const HMR_HEADER = 'vite-hmr'
 
 export type WebSocketCustomListener<T> = (
   data: T,

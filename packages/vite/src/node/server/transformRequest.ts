@@ -38,7 +38,7 @@ import type { DevEnvironment } from './environment'
 import { isServerAccessDeniedForTransform } from './middlewares/transform'
 
 export const ERR_LOAD_URL = 'ERR_LOAD_URL'
-export const ERR_LOAD_PUBLIC_URL = 'ERR_LOAD_PUBLIC_URL'
+const ERR_LOAD_PUBLIC_URL = 'ERR_LOAD_PUBLIC_URL'
 export const ERR_DENIED_ID = 'ERR_DENIED_ID'
 
 const debugLoad = createDebugger('vite:load')

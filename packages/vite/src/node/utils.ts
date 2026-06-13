@@ -225,7 +225,7 @@ function testCaseInsensitiveFS() {
   return fs.existsSync(CLIENT_ENTRY.replace('client.mjs', 'cLiEnT.mjs'))
 }
 
-export const isCaseInsensitiveFS: boolean = testCaseInsensitiveFS()
+const isCaseInsensitiveFS: boolean = testCaseInsensitiveFS()
 
 const VOLUME_RE = /^[A-Z]:/i
 
@@ -330,9 +330,6 @@ export const urlRE: RegExp = /(\?|&)url(?:&|$)/
 export const rawRE: RegExp = /(\?|&)raw(?:&|$)/
 export function removeUrlQuery(url: string): string {
   return url.replace(urlRE, '$1').replace(trailingSeparatorRE, '')
-}
-export function removeRawQuery(url: string): string {
-  return url.replace(rawRE, '$1').replace(trailingSeparatorRE, '')
 }
 
 export function injectQuery(url: string, queryToInject: string): string {
@@ -444,7 +441,7 @@ export function isFilePathESM(
   }
 }
 
-export const splitRE: RegExp = /\r?\n/g
+const splitRE: RegExp = /\r?\n/g
 
 const range: number = 2
 
@@ -784,7 +781,7 @@ const imageCandidateRegex =
   /(?:^|\s|(?<=,))(?<url>[\w-]+\([^)]*\)|"[^"]*"|'[^']*'|[^,]\S*[^,])\s*(?:\s(?<descriptor>\w[^,]+))?(?:,|$)/g
 const escapedSpaceCharacters = /(?: |\\t|\\n|\\f|\\r)+/g
 
-export function parseSrcset(string: string): ImageCandidate[] {
+function parseSrcset(string: string): ImageCandidate[] {
   const matches = string
     .trim()
     .replace(escapedSpaceCharacters, ' ')
@@ -1667,7 +1664,7 @@ export function stripBase(path: string, base: string): string {
   return path.startsWith(devBase) ? path.slice(devBase.length - 1) : path
 }
 
-export function arrayEqual(a: any[], b: any[]): boolean {
+function arrayEqual(a: any[], b: any[]): boolean {
   if (a === b) return true
   if (a.length !== b.length) return false
   for (let i = 0; i < a.length; i++) {

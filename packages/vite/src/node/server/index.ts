@@ -268,7 +268,7 @@ export type ServerHook = (
 
 export type HttpServer = http.Server | Http2SecureServer
 
-export async function resolveForwardConsoleOptions(
+async function resolveForwardConsoleOptions(
   value: boolean | ForwardConsoleOptions | undefined,
 ): Promise<ResolvedForwardConsoleOptions> {
   value ??= (await determineAgent()).isAgent
@@ -476,7 +476,7 @@ export function createServer(
   return _createServer(inlineConfig, { listen: true })
 }
 
-export async function _createServer(
+async function _createServer(
   inlineConfig: ResolvedConfig | InlineConfig | undefined = {},
   options: {
     listen: boolean

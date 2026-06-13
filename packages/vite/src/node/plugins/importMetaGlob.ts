@@ -639,7 +639,7 @@ function globSafeResolvedPath(resolved: string, glob: string) {
   return globSafePath(staticPart) + dynamicPart
 }
 
-export async function toAbsoluteGlob(
+async function toAbsoluteGlob(
   glob: string,
   root: string,
   importer: string | undefined,
@@ -717,7 +717,7 @@ export function getCommonBase(globsResolved: string[]): null | string {
   return commonAncestor
 }
 
-export function isVirtualModule(id: string): boolean {
+function isVirtualModule(id: string): boolean {
   // https://vite.dev/guide/api-plugin.html#virtual-modules-convention
   return id.startsWith('virtual:') || id[0] === '\0' || !id.includes('/')
 }

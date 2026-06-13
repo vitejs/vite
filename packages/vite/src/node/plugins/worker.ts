@@ -305,7 +305,7 @@ async function bundleWorkerEntry(
   return newBundleInfo
 }
 
-export const workerAssetUrlRE: RegExp = /__VITE_WORKER_ASSET__([a-z\d]{8})__/g
+const workerAssetUrlRE: RegExp = /__VITE_WORKER_ASSET__([a-z\d]{8})__/g
 
 export async function workerFileToUrl(
   config: ResolvedConfig,
