@@ -11,10 +11,16 @@ function createEnvironment(root: string): Environment {
       server: {},
       decodedBase: '/',
     }),
-  } as Environment
+  } as unknown as Environment
 }
 
 describe.runIf(isWindows)('fileToDevUrl', () => {
+  test('keeps root files relative when drive letter casing matches', async () => {
+    await expect(
+      fileToDevUrl(createEnvironment('C:/repo'), 'C:/repo/src/main.ts'),
+    ).resolves.toBe('/src/main.ts')
+  })
+
   test('keeps root files relative when drive letter casing differs', async () => {
     await expect(
       fileToDevUrl(createEnvironment('c:/repo'), 'C:/repo/src/main.ts'),

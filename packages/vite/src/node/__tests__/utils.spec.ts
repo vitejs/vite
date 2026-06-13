@@ -125,10 +125,14 @@ describe('normalizeWindowsDriveLetter', () => {
     expect(normalizeWindowsDriveLetter('c:/repo')).toBe('C:/repo')
     expect(normalizeWindowsDriveLetter('C:/repo')).toBe('C:/repo')
     expect(normalizeWindowsDriveLetter('/repo')).toBe('/repo')
+    expect(normalizeWindowsDriveLetter('/Home/user')).toBe('/Home/user')
+    expect(normalizeWindowsDriveLetter('')).toBe('')
   })
 
   test.runIf(!isWindows)('keeps paths unchanged outside Windows', () => {
     expect(normalizeWindowsDriveLetter('c:/repo')).toBe('c:/repo')
+    expect(normalizeWindowsDriveLetter('/Home/user')).toBe('/Home/user')
+    expect(normalizeWindowsDriveLetter('')).toBe('')
   })
 })
 

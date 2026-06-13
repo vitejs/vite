@@ -362,21 +362,14 @@ export async function fileToDevUrl(
   }
 
   let rtn: string
+  const normalizedId = normalizeWindowsDriveLetter(id)
+  const normalizedRoot = normalizeWindowsDriveLetter(config.root)
   if (publicFile) {
     // in public dir during dev, keep the url as-is
     rtn = id
-  } else if (
-    normalizeWindowsDriveLetter(id).startsWith(
-      withTrailingSlash(normalizeWindowsDriveLetter(config.root)),
-    )
-  ) {
+  } else if (normalizedId.startsWith(withTrailingSlash(normalizedRoot))) {
     // in project root, infer short public path
-    rtn =
-      '/' +
-      path.posix.relative(
-        normalizeWindowsDriveLetter(config.root),
-        normalizeWindowsDriveLetter(id),
-      )
+    rtn = '/' + path.posix.relative(normalizedRoot, normalizedId)
   } else {
     // outside of project root, use absolute fs path
     // (this is special handled by the serve static middleware
