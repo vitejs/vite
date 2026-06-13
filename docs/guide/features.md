@@ -663,7 +663,7 @@ These rules are enforced to prevent accidentally importing files that are not in
 
 ## WebAssembly
 
-Vite supports importing pre-compiled `.wasm` files in two ways: directly as an [ES module](#esm-integration) when you only need the module's exports, or with [`?init`](#manual-initialization) when you need explicit control over instantiation.
+Vite supports importing pre-compiled `.wasm` files directly as an [ES module](#esm-integration) when you only need the module's exports. When you need explicit control over instantiation, import the compiled module with a [source phase import](#source-phase-imports), or use [`?init`](#manual-initialization).
 
 ### ESM Integration
 
@@ -678,6 +678,40 @@ console.log(add(1, 2)) // 3
 If the WebAssembly module declares imports of its own, Vite resolves them from JavaScript modules. Each import's module name is treated as an import specifier (resolved relative to the `.wasm` file) and the requested members are wired into the instance automatically.
 
 This follows the [WebAssembly/ES Module Integration proposal](https://github.com/WebAssembly/esm-integration). Because a WebAssembly module is instantiated asynchronously, a directly imported `.wasm` file behaves as an async module and requires top-level `await` support.
+
+### Source Phase Imports
+
+A [source phase import](https://github.com/tc39/proposal-source-phase-imports) gives you the compiled [`WebAssembly.Module`](https://developer.mozilla.org/en-US/docs/WebAssembly/JavaScript_interface/Module) without instantiating it, leaving instantiation entirely to you. This is the standard way to take control over instantiation and is the recommended alternative to [`?init`](#manual-initialization):
+
+```js
+import source mod from './example.wasm'
+
+// `mod` is a `WebAssembly.Module`; instantiate it whenever (and however) you like
+const instance = await WebAssembly.instantiate(mod)
+instance.exports.test()
+```
+
+Because you own the `WebAssembly.Instance`, you can satisfy the module's own imports and instantiate it as many times as needed:
+
+```js
+import source mod from './example.wasm'
+
+const instance = await WebAssembly.instantiate(mod, {
+  './imports.js': {
+    someFunc: () => {
+      /* ... */
+    },
+  },
+})
+```
+
+The dynamic form resolves to the `WebAssembly.Module` as well:
+
+```js
+const mod = await import.source('./example.wasm')
+```
+
+Modules are compiled with the [JS String Builtins](https://github.com/WebAssembly/js-string-builtins) and [Imported String Constants](https://github.com/WebAssembly/js-string-builtins) proposals enabled, matching the WebAssembly/ES Module Integration loader.
 
 ### Manual Initialization
 
@@ -714,7 +748,7 @@ In the production build, `.wasm` files smaller than `assetInlineLimit` will be i
 
 ::: warning For SSR build, Node.js compatible runtimes are only supported
 
-Due to the lack of a universal way to load a file, the internal implementation for both direct `.wasm` imports and `.wasm?init` relies on the `node:fs` module. This means that these features will only work in Node.js compatible runtimes for SSR builds.
+Due to the lack of a universal way to load a file, the internal implementation for direct `.wasm` imports, source phase imports, and `.wasm?init` relies on the `node:fs` module. This means that these features will only work in Node.js compatible runtimes for SSR builds.
 
 :::
 

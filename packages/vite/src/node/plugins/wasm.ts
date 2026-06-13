@@ -1,38 +1,64 @@
 import fsp from 'node:fs/promises'
 import MagicString from 'magic-string'
+import {
+  init as esModuleLexerInit,
+  parse as parseImports,
+} from 'es-module-lexer'
 import { exactRegex } from 'rolldown/filter'
 import type { RolldownMagicString } from 'rolldown'
 import { createToImportMetaURLBasedRelativeRuntime } from '../build'
 import { type Plugin, perEnvironmentPlugin } from '../plugin'
 import { cleanUrl } from '../../shared/utils'
+import { injectQuery } from '../utils'
 import { assetUrlRE, fileToUrl } from './asset'
 
 const wasmHelperId = '\0vite/wasm-helper.js'
 
 const wasmInitRE = /(?<![?#].*)\.wasm\?init/
+const wasmSourceRE = /(?<![?#].*)\.wasm\?source/
 const wasmDirectRE = /(?<![?#].*)\.wasm$/
 
+// Detects the `import source` / `import.source(...)` phase forms cheaply so we
+// only run the full lexer pass over modules that actually use them.
+const wasmSourcePhaseRE = /\bimport\s+source\b|\bimport\s*\.\s*source\b/
+
 const wasmInitUrlRE: RegExp = /__VITE_WASM_INIT__([\w$]+)__/g
+
+// Enable the JS String Builtins and Imported String Constants proposals on
+// compile/instantiate, matching the WebAssembly/ES Module Integration loader.
+const wasmCompileOptions = {
+  builtins: ['js-string'],
+  importedStringConstants: 'wasm:js/string-constants',
+}
+
+// Decodes a base64 wasm data URL to bytes in both browser and SSR runtimes.
+const dataUrlToBytes = (url: string) => {
+  const urlContent = url.replace(/^data:.*?base64,/, '')
+  if (typeof Buffer === 'function' && typeof Buffer.from === 'function') {
+    return Buffer.from(urlContent, 'base64')
+  } else if (typeof atob === 'function') {
+    const binaryString = atob(urlContent)
+    const bytes = new Uint8Array(binaryString.length)
+    for (let i = 0; i < binaryString.length; i++) {
+      bytes[i] = binaryString.charCodeAt(i)
+    }
+    return bytes
+  }
+  throw new Error(
+    'Failed to decode base64-encoded data URL, Buffer and atob are not supported',
+  )
+}
+
+const dataUrlToBytesCode = dataUrlToBytes.toString()
 
 const wasmHelper = async (opts = {}, url: string) => {
   let result
   if (url.startsWith('data:')) {
-    const urlContent = url.replace(/^data:.*?base64,/, '')
-    let bytes
-    if (typeof Buffer === 'function' && typeof Buffer.from === 'function') {
-      bytes = Buffer.from(urlContent, 'base64')
-    } else if (typeof atob === 'function') {
-      const binaryString = atob(urlContent)
-      bytes = new Uint8Array(binaryString.length)
-      for (let i = 0; i < binaryString.length; i++) {
-        bytes[i] = binaryString.charCodeAt(i)
-      }
-    } else {
-      throw new Error(
-        'Failed to decode base64-encoded data URL, Buffer and atob are not supported',
-      )
-    }
-    result = await WebAssembly.instantiate(bytes, opts)
+    result = await WebAssembly.instantiate(
+      dataUrlToBytes(url),
+      opts,
+      wasmCompileOptions,
+    )
   } else {
     result = await instantiateFromUrl(url, opts)
   }
@@ -40,6 +66,18 @@ const wasmHelper = async (opts = {}, url: string) => {
 }
 
 const wasmHelperCode = wasmHelper.toString()
+
+// Compiles a `.wasm` to a `WebAssembly.Module` without instantiating it, backing
+// the source phase import (`import source mod from './mod.wasm'`). Callers own
+// instantiation, mirroring the native source phase import semantics.
+const compileWasm = async (url: string) => {
+  if (url.startsWith('data:')) {
+    return WebAssembly.compile(dataUrlToBytes(url), wasmCompileOptions)
+  }
+  return compileFromUrl(url)
+}
+
+const compileWasmCode = compileWasm.toString()
 
 const instantiateFromUrl = async (url: string, opts?: WebAssembly.Imports) => {
   // https://github.com/mdn/webassembly-examples/issues/5
@@ -53,14 +91,30 @@ const instantiateFromUrl = async (url: string, opts?: WebAssembly.Imports) => {
     'instantiateStreaming' in WebAssembly &&
     contentType.startsWith('application/wasm')
   ) {
-    return WebAssembly.instantiateStreaming(response, opts)
+    return WebAssembly.instantiateStreaming(response, opts, wasmCompileOptions)
   } else {
     const buffer = await response.arrayBuffer()
-    return WebAssembly.instantiate(buffer, opts)
+    return WebAssembly.instantiate(buffer, opts, wasmCompileOptions)
   }
 }
 
 const instantiateFromUrlCode = instantiateFromUrl.toString()
+
+const compileFromUrl = async (url: string) => {
+  const response = await fetch(url)
+  const contentType = response.headers.get('Content-Type') || ''
+  if (
+    'compileStreaming' in WebAssembly &&
+    contentType.startsWith('application/wasm')
+  ) {
+    return WebAssembly.compileStreaming(response, wasmCompileOptions)
+  } else {
+    const buffer = await response.arrayBuffer()
+    return WebAssembly.compile(buffer, wasmCompileOptions)
+  }
+}
+
+const compileFromUrlCode = compileFromUrl.toString()
 
 const instantiateFromFile = async (
   fileUrlString: string,
@@ -69,10 +123,19 @@ const instantiateFromFile = async (
   const { readFile } = await import('node:fs/promises')
   const fileUrl = new URL(fileUrlString, /** #__KEEP__ */ import.meta.url)
   const buffer = await readFile(fileUrl)
-  return WebAssembly.instantiate(buffer, opts)
+  return WebAssembly.instantiate(buffer, opts, wasmCompileOptions)
 }
 
 const instantiateFromFileCode = instantiateFromFile.toString()
+
+const compileFromFile = async (fileUrlString: string) => {
+  const { readFile } = await import('node:fs/promises')
+  const fileUrl = new URL(fileUrlString, /** #__KEEP__ */ import.meta.url)
+  const buffer = await readFile(fileUrl)
+  return WebAssembly.compile(buffer, wasmCompileOptions)
+}
+
+const compileFromFileCode = compileFromFile.toString()
 
 export const wasmHelperPlugin = (): Plugin => {
   return perEnvironmentPlugin('vite:wasm-helper', (env) => {
@@ -86,19 +149,82 @@ export const wasmHelperPlugin = (): Plugin => {
         },
       },
 
+      // Rewrite source phase imports (`import source mod from './mod.wasm'` and
+      // the dynamic `import.source('./mod.wasm')`) to a plain import of the
+      // `?source` module, which resolves to a compiled `WebAssembly.Module`.
+      // This polyfills the proposal on top of Vite's existing module pipeline.
+      transform: {
+        filter: { code: wasmSourcePhaseRE },
+        async handler(code) {
+          await esModuleLexerInit
+          let imports: ReturnType<typeof parseImports>[0]
+          try {
+            ;[imports] = parseImports(code)
+          } catch {
+            return
+          }
+
+          let s: MagicString | undefined
+          for (const imp of imports) {
+            // 4 = `import source ...`, 5 = `import.source(...)`
+            if (imp.t !== 4 && imp.t !== 5) continue
+            const specifier = imp.n
+            if (specifier === undefined) continue
+            // Source phase imports are only meaningful for `.wasm` in Vite.
+            if (!wasmDirectRE.test(cleanUrl(specifier))) continue
+
+            s ??= new MagicString(code)
+            const sourced = injectQuery(specifier, 'source')
+            if (imp.t === 5) {
+              // `import.source(spec)` resolves to the module source object (the
+              // `WebAssembly.Module`), whereas `import(spec)` resolves to the
+              // namespace, so rewrite to `import(spec?source).then(m => m.default)`.
+              s.remove(imp.ss + 'import'.length, imp.d)
+              // For dynamic imports the specifier span includes the quotes.
+              s.update(imp.s, imp.e, JSON.stringify(sourced))
+              s.appendLeft(imp.se, '.then((m) => m.default)')
+            } else {
+              // Drop the `source` phase keyword, keeping `import x from ...`.
+              const keyword = imp.ss + 'import'.length
+              const offset = code.slice(keyword, imp.s).indexOf('source')
+              s.remove(keyword + offset, keyword + offset + 'source'.length + 1)
+              s.update(imp.s, imp.e, sourced)
+            }
+          }
+
+          if (!s) return
+          return {
+            code: s.toString(),
+            map: s.generateMap({ hires: 'boundary' }),
+          }
+        },
+      },
+
       load: {
-        filter: { id: [exactRegex(wasmHelperId), wasmInitRE, wasmDirectRE] },
+        filter: {
+          id: [
+            exactRegex(wasmHelperId),
+            wasmInitRE,
+            wasmSourceRE,
+            wasmDirectRE,
+          ],
+        },
         async handler(id) {
           const ssr = this.environment.config.consumer === 'server'
 
           if (id === wasmHelperId) {
             return `
+const wasmCompileOptions = ${JSON.stringify(wasmCompileOptions)}
+const dataUrlToBytes = ${dataUrlToBytesCode}
 const instantiateFromUrl = ${ssr ? instantiateFromFileCode : instantiateFromUrlCode}
+const compileFromUrl = ${ssr ? compileFromFileCode : compileFromUrlCode}
 export default ${wasmHelperCode}
+export const compileWasm = ${compileWasmCode}
 `
           }
 
           const isInit = wasmInitRE.test(id)
+          const isSource = wasmSourceRE.test(id)
           const cleanedId = id.split('?')[0]
           let url = await fileToUrl(this, cleanedId, ssr)
           assetUrlRE.lastIndex = 0
@@ -111,6 +237,13 @@ export default ${wasmHelperCode}
   import initWasm from "${wasmHelperId}"
   export default opts => initWasm(opts, ${JSON.stringify(url)})
   `
+          }
+
+          if (isSource) {
+            return `
+import { compileWasm } from "${wasmHelperId}"
+export default await compileWasm(${JSON.stringify(url)})
+`
           }
 
           // Direct .wasm import (WASM ESM Integration)

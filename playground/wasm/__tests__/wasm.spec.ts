@@ -41,3 +41,21 @@ test('direct wasm import with wasm imports', async () => {
     .poll(() => page.textContent('.direct-wasm-with-imports .result'))
     .toMatch('42')
 })
+
+test('source phase import yields a WebAssembly.Module', async () => {
+  await expect
+    .poll(() => page.textContent('.source-phase-wasm .result'))
+    .toMatch('3')
+})
+
+test('dynamic source phase import yields a WebAssembly.Module', async () => {
+  await expect
+    .poll(() => page.textContent('.source-phase-wasm-dynamic .result'))
+    .toMatch('7')
+})
+
+test('source phase import instantiated with imports', async () => {
+  await expect
+    .poll(() => page.textContent('.source-phase-wasm-with-imports .result'))
+    .toMatch('42')
+})
