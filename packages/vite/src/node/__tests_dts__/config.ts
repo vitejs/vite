@@ -2,6 +2,7 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
 import type { Equal, ExpectTrue } from '@type-challenges/utils'
 import {
+  type EnvironmentOptions,
   type UserConfig,
   type UserConfigExport,
   type UserConfigFn,
@@ -99,5 +100,45 @@ mergeConfig(
   defineConfig(() => ({})),
   defineConfig({}),
 )
+
+defineConfig({
+  // @ts-expect-error --- `requestEntrypoints` is not a top-level option
+  requestEntrypoints: ['ssr'],
+})
+
+type IsAssignable<T, U> = T extends U ? true : false
+
+export type requestEntrypointsCases = [
+  // allowed on a server environment (record form)
+  ExpectTrue<
+    Equal<
+      IsAssignable<
+        {
+          consumer: 'server'
+          requestEntrypoints: { ssr: { type: 'fetchable' } }
+        },
+        EnvironmentOptions
+      >,
+      true
+    >
+  >,
+  // allowed when `consumer` is left to default (server for non-client environments)
+  ExpectTrue<
+    Equal<
+      IsAssignable<{ requestEntrypoints: string[] }, EnvironmentOptions>,
+      true
+    >
+  >,
+  // rejected on a client environment
+  ExpectTrue<
+    Equal<
+      IsAssignable<
+        { consumer: 'client'; requestEntrypoints: string[] },
+        EnvironmentOptions
+      >,
+      false
+    >
+  >,
+]
 
 export {}
