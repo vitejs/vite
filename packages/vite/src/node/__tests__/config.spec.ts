@@ -1075,6 +1075,81 @@ describe('resolveConfig', () => {
   })
 })
 
+describe('requestEntrypoints', () => {
+  test('normalizes the record form and defaults type to fetchable', async () => {
+    const config = await resolveConfig(
+      {
+        environments: {
+          ssr: { requestEntrypoints: { ssr: { type: 'fetchable' }, api: {} } },
+        },
+      },
+      'build',
+    )
+    expect(config.environments.ssr.requestEntrypoints).toStrictEqual([
+      { name: 'ssr', type: 'fetchable' },
+      { name: 'api', type: 'fetchable' },
+    ])
+  })
+
+  test('preserves an explicit custom type', async () => {
+    const config = await resolveConfig(
+      {
+        environments: {
+          ssr: { requestEntrypoints: { api: { type: 'custom' }, ssr: {} } },
+        },
+      },
+      'build',
+    )
+    expect(config.environments.ssr.requestEntrypoints).toStrictEqual([
+      { name: 'api', type: 'custom' },
+      { name: 'ssr', type: 'fetchable' },
+    ])
+  })
+
+  test('normalizes the array shorthand to fetchable entries', async () => {
+    const config = await resolveConfig(
+      { environments: { ssr: { requestEntrypoints: ['ssr', 'api'] } } },
+      'build',
+    )
+    expect(config.environments.ssr.requestEntrypoints).toStrictEqual([
+      { name: 'ssr', type: 'fetchable' },
+      { name: 'api', type: 'fetchable' },
+    ])
+  })
+
+  test('defaults to an empty array when unset', async () => {
+    const config = await resolveConfig({}, 'serve')
+    expect(config.environments.client.requestEntrypoints).toStrictEqual([])
+    expect(config.environments.ssr.requestEntrypoints).toStrictEqual([])
+  })
+
+  test('does not leak from a server environment into the client environment', async () => {
+    const config = await resolveConfig(
+      { environments: { ssr: { requestEntrypoints: { ssr: {} } } } },
+      'build',
+    )
+    expect(config.environments.ssr.requestEntrypoints).toStrictEqual([
+      { name: 'ssr', type: 'fetchable' },
+    ])
+    expect(config.environments.client.requestEntrypoints).toStrictEqual([])
+  })
+
+  test('warns when set on a non-server environment', async () => {
+    expect.assertions(1)
+    const logger = createLogger('info')
+    logger.warnOnce = (str) => {
+      expect(str).to.include('only meaningful for server environments')
+    }
+    await resolveConfig(
+      {
+        customLogger: logger,
+        environments: { client: { requestEntrypoints: ['index'] } },
+      },
+      'serve',
+    )
+  })
+})
+
 test('config compat 1', async () => {
   const config = await resolveConfig(
     {
