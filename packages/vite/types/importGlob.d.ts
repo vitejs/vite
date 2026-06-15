@@ -37,6 +37,10 @@ export interface ImportGlobOptions<
    * Base path to resolve relative paths.
    */
   base?: string
+  /**
+   * Whether the glob pattern matching should be case-sensitive. Defaults to `true`.
+   */
+  caseSensitive?: boolean
 }
 
 export type ImportGlobOptionsWithoutAs<

@@ -13,6 +13,7 @@ import {
 } from '@voidzero-dev/vite-task-client'
 import colors from 'picocolors'
 import picomatch from 'picomatch'
+import { freshImport } from 'fresh-import'
 import {
   type NormalizedOutputOptions,
   type OutputChunk,
@@ -137,7 +138,6 @@ import {
   basePluginContextMeta,
 } from './server/pluginContainer'
 import { nodeResolveWithVite } from './nodeResolve'
-import { FullBundleDevEnvironment } from './server/environments/fullBundleEnvironment'
 
 const debug = createDebugger('vite:config', { depth: 10 })
 const promisifiedRealpath = promisify(fs.realpath)
@@ -251,13 +251,6 @@ function defaultCreateClientDevEnvironment(
   config: ResolvedConfig,
   context: CreateDevEnvironmentContext,
 ) {
-  if (config.experimental.bundledDev) {
-    return new FullBundleDevEnvironment(name, config, {
-      hot: true,
-      transport: context.ws,
-    })
-  }
-
   return new DevEnvironment(name, config, {
     hot: true,
     transport: context.ws,
@@ -2180,6 +2173,15 @@ assetFileNames isn't equal for every build.rolldownOptions.output. A single patt
     }
   }
 
+  if (config.experimental?.renderBuiltUrl && config.build?.chunkImportMap) {
+    resolved.logger.warn(
+      colors.yellow(
+        `The \`build.chunkImportMap\` option and the \`experimental.renderBuiltUrl\` option are both enabled.` +
+          ` The combination of these two options is not supported and may result in unexpected behavior.`,
+      ),
+    )
+  }
+
   // Warn about removal of experimental features
   if (
     // @ts-expect-error Option removed
@@ -2363,14 +2365,23 @@ export async function loadConfigFromFile(
   }
 }
 
-async function nativeImportConfigFile(resolvedPath: string) {
+async function nativeImportConfigFile(
+  resolvedPath: string,
+): Promise<{ configExport: any; dependencies: string[] }> {
+  const freshImported = freshImport(pathToFileURL(resolvedPath).href)
+  if (freshImported) {
+    const { result, dependencies } = await freshImported
+    return {
+      configExport: (result as { [Symbol.toStringTag]: 'Module'; default: any })
+        .default,
+      dependencies,
+    }
+  }
+
   const module = await import(
     pathToFileURL(resolvedPath).href + '?t=' + Date.now()
   )
-  return {
-    configExport: module.default,
-    dependencies: [],
-  }
+  return { configExport: module.default, dependencies: [] }
 }
 
 async function runnerImportConfigFile(resolvedPath: string) {
