@@ -84,7 +84,7 @@ export function createDevHtmlTransformFn(
     ...normalHooks,
     ...postHooks,
     injectNonceAttributeTagHook(config),
-    postImportMapHook(),
+    postImportMapHook(config),
   ]
   const pluginContext = new BasicMinimalPluginContext(
     { ...basePluginContextMeta, watchMode: true },
