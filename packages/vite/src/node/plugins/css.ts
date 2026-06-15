@@ -406,9 +406,9 @@ export function cssPlugin(config: ResolvedConfig): Plugin {
             return [url, cleanUrl(resolved)]
           }
           if (config.command === 'build') {
-            const isExternal = config.build.rollupOptions.external
+            const isExternal = config.build.rolldownOptions.external
               ? resolveUserExternal(
-                  config.build.rollupOptions.external,
+                  config.build.rolldownOptions.external,
                   decodedUrl, // use URL as id since id could not be resolved
                   id,
                   false,
@@ -472,11 +472,11 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
   let hasEmitted = false
   let chunkCSSMap: Map<string, string>
 
-  const rollupOptionsOutput = config.build.rollupOptions.output
+  const rolldownOptionsOutput = config.build.rolldownOptions.output
   const assetFileNames = (
-    Array.isArray(rollupOptionsOutput)
-      ? rollupOptionsOutput[0]
-      : rollupOptionsOutput
+    Array.isArray(rolldownOptionsOutput)
+      ? rolldownOptionsOutput[0]
+      : rolldownOptionsOutput
   )?.assetFileNames
   const getCssAssetDirname = (
     cssAssetName: string,
@@ -3194,6 +3194,8 @@ function isPreProcessor(lang: any): lang is PreprocessLang {
   return lang && preprocessorSet.has(lang)
 }
 
+const absoluteOrProtocolRelativeUrlRE = /^(?:[a-z]+:)?\/\//i
+
 const importEsbuild = createCachedImport(() => import('esbuild'))
 
 const importLightningCSS = createCachedImport(() => import('lightningcss'))
@@ -3268,6 +3270,12 @@ async function compileLightningCSS(
                 return publicFile
               }
 
+              // contrary to lightningcss, postcss-import does this internally
+              if (absoluteOrProtocolRelativeUrlRE.test(id)) {
+                // @ts-expect-error -- https://github.com/parcel-bundler/lightningcss/pull/1261
+                return { external: id } as string
+              }
+
               // NOTE: with `transformer: 'postcss'`, CSS modules `composes` tried to resolve with
               //       all resolvers, but in `transformer: 'lightningcss'`, only the one for the
               //       current file type is used.
@@ -3308,7 +3316,7 @@ async function compileLightningCSS(
             config.command === 'build'
               ? !!config.build.sourcemap
               : config.css.devSourcemap,
-          analyzeDependencies: true,
+          analyzeDependencies: { preserveImports: true },
           cssModules: cssModuleRE.test(id)
             ? (config.css.lightningcss?.cssModules ?? true)
             : undefined,
@@ -3347,6 +3355,24 @@ async function compileLightningCSS(
   let css = decoder.decode(res.code)
   for (const dep of res.dependencies!) {
     switch (dep.type) {
+      case 'file': {
+        deps.add(dep.filePath)
+        break
+      }
+      case 'glob': {
+        for (const file of globSync(dep.glob)) {
+          deps.add(file)
+        }
+        const files = globSync(dep.glob, {
+          absolute: true,
+          expandDirectories: false,
+          ignore: ['**/node_modules/**'],
+        })
+        for (let i = 0; i < files.length; i++) {
+          deps.add(files[i])
+        }
+        break
+      }
       case 'url': {
         let replaceUrl: string
         if (skipUrlReplacer(dep.url)) {
@@ -3373,8 +3399,14 @@ async function compileLightningCSS(
         )
         break
       }
+      case 'import': {
+        css = css.replace(dep.placeholder, dep.url)
+        break
+      }
       default:
-        throw new Error(`Unsupported dependency type: ${dep.type}`)
+        throw new Error(
+          `Unsupported dependency type: ${(dep satisfies never as any).type}`,
+        )
     }
   }
 
