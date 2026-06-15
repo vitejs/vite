@@ -12,9 +12,9 @@
     "solid-js": "^1.9.13"
   },
   "devDependencies": {
-    "@types/node": "^24.12.4",
+    "@types/node": "^24.13.2",
     "typescript": "~6.0.2",
-    "vite": "^8.0.14",
+    "vite": "^8.0.16",
     "vite-plugin-solid": "^2.11.12"
   }
 }
