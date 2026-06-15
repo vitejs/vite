@@ -133,7 +133,7 @@ export function expandGlobIds(id: string, config: ResolvedConfig): string[] {
         } else {
           // null export value means the subpath is intentionally private/blocked
           // https://nodejs.org/api/packages.html#subpath-patterns
-          if (exports[key] === null) continue
+          if (exports[key] == null) continue
           possibleExportPaths.push(key.slice(2))
         }
       }

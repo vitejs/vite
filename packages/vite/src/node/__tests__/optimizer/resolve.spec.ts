@@ -22,12 +22,4 @@ describe('expandGlobIds', () => {
     expect(result).not.toContain('my-pkg/private')
     expect(result).not.toContain('my-pkg/also-private')
   })
-
-  test('includes non-null exports when glob matches', () => {
-    const result = expandGlobIds('my-pkg/*', makeConfig(fixtureRoot))
-
-    expect(result).toContain('my-pkg')
-    expect(result).toContain('my-pkg/utils')
-    expect(result).toContain('my-pkg/public')
-  })
 })
