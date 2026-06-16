@@ -505,6 +505,9 @@ export function resolveBuildEnvironmentOptions(
               ...merged.modulePreload,
             },
   }
+  // The object spread above evaluates the `rollupOptions` getter set up on
+  // `merged` and copies it as a plain data property.
+  setupRollupOptionCompat(resolved, 'build')
 
   return resolved
 }
