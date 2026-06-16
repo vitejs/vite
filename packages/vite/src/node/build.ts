@@ -669,7 +669,7 @@ export function resolveRolldownOptions(
         ? {
             baseUrl: base,
           }
-        : options.rollupOptions.experimental?.chunkImportMap,
+        : options.rolldownOptions.experimental?.chunkImportMap,
     },
   }
 
