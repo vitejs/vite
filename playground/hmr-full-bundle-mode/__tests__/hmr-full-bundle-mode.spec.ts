@@ -1,6 +1,6 @@
 import { setTimeout } from 'node:timers/promises'
 import { expect, test } from 'vitest'
-import { editFile, isBuild, page } from '~utils'
+import { editFile, getColor, isBuild, page } from '~utils'
 
 const assetUrl = /asset-[\w-]+\.png/
 
@@ -187,5 +187,9 @@ if (isBuild) {
   test('lazy bundling', async () => {
     await page.click('#load-dynamic')
     await expect.poll(() => page.textContent('.dynamic')).toBe('loaded')
+    // `dynamic.js` lazily imports `dynamic.css`. The CSS proxy module Rolldown
+    // emits (`dynamic.css?rolldown-lazy`) must be skipped by the `vite:css`
+    // transform instead of being parsed as CSS (#22651).
+    await expect.poll(() => getColor('.dynamic')).toBe('green')
   })
 }

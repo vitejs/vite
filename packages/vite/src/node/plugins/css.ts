@@ -229,6 +229,11 @@ const directRequestRE = /[?&]direct\b/
 const htmlProxyRE = /[?&]html-proxy\b/
 const htmlProxyIndexRE = /&index=(\d+)/
 const commonjsProxyRE = /[?&]commonjs-proxy/
+// In `experimental.bundledDev` mode, Rolldown wraps lazily-bundled modules in a
+// JavaScript proxy that keeps the original id and appends a `?rolldown-lazy`
+// query. For CSS the proxy id still matches `CSS_LANGS_RE`, so it must be
+// skipped to avoid running PostCSS over the JS proxy content.
+const rolldownLazyProxyRE = /[?&]rolldown-lazy/
 const inlineRE = /[?&]inline\b/
 const inlineCSSRE = /[?&]inline-css\b/
 const styleAttrRE = /[?&]style-attr\b/
@@ -367,7 +372,7 @@ export function cssPlugin(config: ResolvedConfig): Plugin {
       filter: {
         id: {
           include: CSS_LANGS_RE,
-          exclude: [commonjsProxyRE, SPECIAL_QUERY_RE],
+          exclude: [commonjsProxyRE, SPECIAL_QUERY_RE, rolldownLazyProxyRE],
         },
       },
       async handler(raw, id) {
@@ -531,7 +536,7 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
       filter: {
         id: {
           include: CSS_LANGS_RE,
-          exclude: [commonjsProxyRE, SPECIAL_QUERY_RE],
+          exclude: [commonjsProxyRE, SPECIAL_QUERY_RE, rolldownLazyProxyRE],
         },
       },
       async handler(css, id) {
@@ -1185,7 +1190,7 @@ export function cssAnalysisPlugin(config: ResolvedConfig): Plugin {
       filter: {
         id: {
           include: CSS_LANGS_RE,
-          exclude: [commonjsProxyRE, SPECIAL_QUERY_RE],
+          exclude: [commonjsProxyRE, SPECIAL_QUERY_RE, rolldownLazyProxyRE],
         },
       },
       handler(_, id) {
