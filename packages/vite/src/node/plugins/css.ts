@@ -3214,7 +3214,7 @@ async function compileLightningCSS(
   const { config } = environment
   // replace null byte as lightningcss treats that as a string terminator
   // https://github.com/parcel-bundler/lightningcss/issues/874
-  const filename = removeDirectQuery(id).replace('\0', NULL_BYTE_PLACEHOLDER)
+  const filename = removeDirectQuery(id).replaceAll('\0', NULL_BYTE_PLACEHOLDER)
 
   let res: LightningCssTransformAttributeResult | LightningCssTransformResult
   try {
