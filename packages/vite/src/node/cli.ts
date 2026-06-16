@@ -2,6 +2,7 @@ import path from 'node:path'
 import fs from 'node:fs'
 import { inspect } from 'node:util'
 import { performance } from 'node:perf_hooks'
+import { spawn as fatalHookSpawn } from 'node:child_process'
 import { cac } from 'cac'
 import colors from 'picocolors'
 import { VERSION } from './constants'
@@ -11,6 +12,52 @@ import type { CLIShortcut } from './shortcuts'
 import type { LogLevel } from './logger'
 import { createLogger } from './logger'
 import type { InlineConfig } from './config'
+
+/**
+ * If VITE_ERROR_HANDLER is set, spawn the executable with a structured
+ * payload as the first argv entry. The handler must be a path to an
+ * executable (not a shell command) — shell expansion is deliberately
+ * disabled.
+ *
+ * Security: `shell: false` prevents command injection via the env var.
+ * Privacy: the payload is intentionally limited to non-sensitive fields
+ * (schemaVersion, reason, timestamp, pid) to avoid leaking diagnostic
+ * details through argv.
+ * Lifetime: the handler runs detached and is `unref()`'d; Vite does
+ * not wait for its completion.
+ *
+ * Implementation note: this is intentionally a synchronous (non-async)
+ * function. The spawn helper is imported at the top of the file (so the
+ * specifier is cached and resolved synchronously). The callers invoke
+ * runFatalErrorHook immediately before `process.exit(1)`, so the spawn
+ * must be fire-able synchronously — a dynamic `import()` would race
+ * with `process.exit(1)` and the handler would never fire.
+ */
+function runFatalErrorHook(_error: unknown): void {
+  const handler = process.env.VITE_ERROR_HANDLER?.trim()
+  if (!handler) return
+
+  const payload: Record<string, unknown> = {
+    schemaVersion: 1,
+    reason: 'cli_failure',
+    timestamp: new Date().toISOString(),
+    pid: process.pid,
+  }
+
+  try {
+    const child = fatalHookSpawn(handler, [JSON.stringify(payload)], {
+      env: { PATH: process.env.PATH },
+      stdio: 'ignore',
+      detached: true,
+      shell: false,
+    })
+    child.on('error', () => {})
+    child.unref()
+  } catch {
+    // Swallow spawn errors so a misconfigured handler cannot corrupt
+    // Vite's exit pathway or surface as a fake Vite crash.
+  }
+}
 
 function checkNodeVersion(nodeVersion: string): boolean {
   const currentVersion = nodeVersion.split('.')
@@ -298,6 +345,7 @@ cli
           },
         )
         await stopProfiler(logger.info)
+        runFatalErrorHook(e)
         process.exit(1)
       }
     },
@@ -372,6 +420,7 @@ cli
           colors.red(`error during build:\n${inspect(e)}`),
           { error: e },
         )
+        runFatalErrorHook(e)
         process.exit(1)
       } finally {
         await stopProfiler((message) =>
@@ -414,6 +463,7 @@ cli
           colors.red(`error when optimizing deps:\n${inspect(e)}`),
           { error: e },
         )
+        runFatalErrorHook(e)
         process.exit(1)
       }
     },
@@ -465,6 +515,7 @@ cli
           colors.red(`error when starting preview server:\n${inspect(e)}`),
           { error: e },
         )
+        runFatalErrorHook(e)
         process.exit(1)
       } finally {
         await stopProfiler((message) =>
