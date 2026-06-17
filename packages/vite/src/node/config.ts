@@ -1678,7 +1678,7 @@ export async function resolveConfig(
   if (config.envFile === false) {
     logger.warn(
       colors.yellow(
-        'The `envFile` option is deprecated, please use `envDir: false` instead. ',
+        'The `envFile` option is deprecated, please use `envDir: false` instead.',
       ),
     )
   }
