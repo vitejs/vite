@@ -1,3 +1,22 @@
+## [8.1.0-beta.0](https://github.com/vitejs/vite/compare/plugin-legacy@8.0.2...plugin-legacy@8.1.0-beta.0) (2026-06-15)
+### Features
+
+* **build:** chunk importmap ([#21580](https://github.com/vitejs/vite/issues/21580)) ([e180312](https://github.com/vitejs/vite/commit/e1803128e5698202e22c6e5e17dc9ebd83d4f3f5))
+
+### Bug Fixes
+
+* **deps:** update all non-major dependencies ([#22511](https://github.com/vitejs/vite/issues/22511)) ([2686d7d](https://github.com/vitejs/vite/commit/2686d7d0b722402204d3bcc687a87adea1bcf9fa))
+* **deps:** update all non-major dependencies ([#22637](https://github.com/vitejs/vite/issues/22637)) ([44bb9d9](https://github.com/vitejs/vite/commit/44bb9d95a246011a2fba9a19cadeac4181bef1b4))
+* **deps:** update all non-major dependencies ([#22681](https://github.com/vitejs/vite/issues/22681)) ([f4f0633](https://github.com/vitejs/vite/commit/f4f063382dde0d67b2158374c56443d0bf5c9501))
+
+### Miscellaneous Chores
+
+* **deps:** update rolldown-related dependencies ([#22566](https://github.com/vitejs/vite/issues/22566)) ([3052a67](https://github.com/vitejs/vite/commit/3052a67d9350f4c5076ab1c222c4a21a589cbcdd))
+
+### Code Refactoring
+
+* use rolldownOptions where possible ([#21205](https://github.com/vitejs/vite/issues/21205)) ([7ca7c1b](https://github.com/vitejs/vite/commit/7ca7c1bedf0a9754e7631cbe615e41231b0aeb80))
+
 ## <small>[8.0.2](https://github.com/vitejs/vite/compare/plugin-legacy@8.0.1...plugin-legacy@8.0.2) (2026-05-14)</small>
 ### Bug Fixes
 
