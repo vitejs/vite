@@ -236,7 +236,24 @@ export async function preview(
     app.use(proxyMiddleware(httpServer, proxy, config))
   }
 
-  app.use(compression())
+  // @polka/compression wraps response methods before it decides whether
+  // to actually compress. For SSE (`text/event-stream`) this wrapping breaks
+  // HTTP/2 stream lifecycle when the client aborts the connection.
+  // Skip installing the wrapper for SSE.
+  app.use((req, res, next) => {
+    const contentType = (res as any).getHeader?.('Content-Type') as
+      | string
+      | undefined
+    const accept = req.headers['accept'] || ''
+
+    const isSSE =
+      contentType === 'text/event-stream' ||
+      (typeof accept === 'string' && accept.includes('text/event-stream'))
+
+    if (isSSE) return next()
+
+    return compression()(req, res, next)
+  })
 
   // base
   if (config.base !== '/') {
