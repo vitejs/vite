@@ -72,7 +72,7 @@ const importMapRE =
 const moduleScriptRE =
   /[ \t]*<script[^>]*type\s*=\s*(?:"module"|'module'|module)[^>]*>/i
 const modulePreloadLinkRE =
-  /[ \t]*<link[^>]*rel\s*=\s*(?:"modulepreload"|'modulepreload'|modulepreload)[\s\S]*?\/>/i
+  /[ \t]*<link[^>]*rel\s*=\s*(?:"modulepreload"|'modulepreload'|modulepreload)[\s\S]*?>/i
 const importMapAppendRE = new RegExp(
   [moduleScriptRE, modulePreloadLinkRE].map((r) => r.source).join('|'),
   'i',
@@ -418,7 +418,7 @@ export function buildHtmlPlugin(config: ResolvedConfig): Plugin {
   preHooks.unshift(preImportMapHook(config))
   preHooks.push(htmlEnvHook(config))
   postHooks.push(injectNonceAttributeTagHook(config))
-  postHooks.push(postImportMapHook())
+  postHooks.push(postImportMapHook(config))
   const processedHtml = perEnvironmentState(() => new Map<string, string>())
 
   const isExcludedUrl = (url: string) =>
@@ -509,7 +509,9 @@ export function buildHtmlPlugin(config: ResolvedConfig): Plugin {
         // for each encountered asset url, rewrite original html so that it
         // references the post-build location, ignoring empty attributes and
         // attributes that directly reference named output.
-        const namedOutput = Object.keys(config.build.rollupOptions.input || {})
+        const namedOutput = Object.keys(
+          config.build.rolldownOptions.input || {},
+        )
         const processAssetUrl = async (url: string, shouldInline?: boolean) => {
           if (
             url !== '' && // Empty attribute
@@ -614,7 +616,10 @@ export function buildHtmlPlugin(config: ResolvedConfig): Plugin {
 
           // For asset references in index.html, also generate an import
           // statement for each - this will be handled by the asset plugin
-          const assetAttributes = getNodeAssetAttributes(node)
+          const assetAttributes = getNodeAssetAttributes(
+            node,
+            config.html?.additionalAssetSources,
+          )
           for (const attr of assetAttributes) {
             if (attr.type === 'remove') {
               s.remove(attr.location.startOffset, attr.location.endOffset)
@@ -1193,21 +1198,56 @@ export function preImportMapHook(
 /**
  * Move importmap before the first module script and modulepreload link
  */
-export function postImportMapHook(): IndexHtmlTransformHook {
-  return (html) => {
-    if (!importMapAppendRE.test(html)) return
+export function postImportMapHook(
+  config: ResolvedConfig,
+): IndexHtmlTransformHook {
+  const decoder = new TextDecoder()
+  return function (html, { bundle }) {
+    const chunkImportMapEnabled =
+      config.command === 'build' && config.build.chunkImportMap
 
-    let importMap: string | undefined
-    html = html.replace(importMapRE, (match) => {
-      importMap = match
-      return ''
-    })
+    if (importMapAppendRE.test(html)) {
+      let importMap: string | undefined
+      html = html.replace(importMapRE, (match) => {
+        importMap = match
+        return ''
+      })
 
-    if (importMap) {
-      html = html.replace(
-        importMapAppendRE,
-        (match) => `${importMap}\n${match}`,
-      )
+      if (importMap) {
+        html = html.replace(
+          importMapAppendRE,
+          (match) => `${importMap}\n${match}`,
+        )
+        if (chunkImportMapEnabled) {
+          // https://caniuse.com/mdn-html_elements_script_type_importmap_multiple_import_maps
+          this.warn(
+            `The \`build.chunkImportMap\` option is enabled but an import map also exists in the input HTML file.` +
+              ` This leads to multiple import maps generated in the output HTML, which is not supported by older browsers and Firefox.`,
+          )
+        }
+      }
+    }
+
+    if (chunkImportMapEnabled) {
+      const nonce = config.html?.cspNonce
+      const importMap = bundle![getImportMapFilename(config)] as OutputAsset
+      const importMapHtml = serializeTag({
+        tag: 'script',
+        attrs: { type: 'importmap', nonce },
+        children:
+          typeof importMap.source === 'string'
+            ? importMap.source
+            : decoder.decode(importMap.source),
+      })
+      if (importMapAppendRE.test(html)) {
+        // NOTE: insert before the existing import map so that our import map takes precedence
+        html = html.replace(
+          importMapAppendRE,
+          (match) => `${importMapHtml}\n${match}`,
+        )
+      } else {
+        html = `${importMapHtml}\n${html}`
+      }
     }
 
     return html
@@ -1607,4 +1647,13 @@ function serializeAttrs(attrs: HtmlTagDescriptor['attrs']): string {
 
 function incrementIndent(indent: string = '') {
   return `${indent}${indent[0] === '\t' ? '\t' : '  '}`
+}
+
+export function getImportMapFilename(config: ResolvedConfig): string {
+  const chunkImportMap =
+    config.build.rolldownOptions.experimental?.chunkImportMap
+  if (typeof chunkImportMap === 'object' && chunkImportMap.fileName) {
+    return chunkImportMap.fileName
+  }
+  return 'importmap.json'
 }

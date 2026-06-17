@@ -67,10 +67,16 @@ jobs:
             })
 
             const commentCreatedAt = new Date(context.payload.comment.created_at)
-            const commitPushedAt = new Date(pr.head.repo.pushed_at)
+
+            const { data: headCommit } = await github.rest.repos.getCommit({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              ref: pr.head.sha,
+            })
+            const commitPushedAt = new Date(headCommit.commit.committer.date)
 
             console.log(`Comment created at: ${commentCreatedAt.toISOString()}`)
-            console.log(`PR last pushed at: ${commitPushedAt.toISOString()}`)
+            console.log(`Head commit (${pr.head.sha}) date: ${commitPushedAt.toISOString()}`)
 
             // Check if any commits were pushed after the comment was created
             if (commitPushedAt > commentCreatedAt) {
@@ -78,7 +84,7 @@ jobs:
                 '⚠️ Security warning: PR was updated after the trigger command was posted.',
                 '',
                 `Comment posted at: ${commentCreatedAt.toISOString()}`,
-                `PR last pushed at: ${commitPushedAt.toISOString()}`,
+                `Head commit (${pr.head.sha}) date: ${commitPushedAt.toISOString()}`,
                 '',
                 'This could indicate an attempt to inject code after approval.',
                 'Please review the latest changes and re-run /ecosystem-ci run if they are acceptable.'
@@ -133,11 +139,13 @@ jobs:
         id: generate-token
         uses: actions/create-github-app-token@bcd2ba49218906704ab6c1aa796996da409d3eb1 # v3
         with:
-          app-id: ${{ secrets.ECOSYSTEM_CI_GITHUB_APP_ID }}
+          client-id: ${{ secrets.ECOSYSTEM_CI_GITHUB_APP_ID }}
           private-key: ${{ secrets.ECOSYSTEM_CI_GITHUB_APP_PRIVATE_KEY }}
           repositories: |
             vite
             vite-ecosystem-ci
+          permission-pull-requests: write # to add pr labels, add / delete comment reactions
+          permission-actions: write # to list workflow runs, to dispatch workflows
 
       - name: Trigger Preview Release (if Package Not Found)
         if: fromJSON(steps.check-package.outputs.result).exists == false

@@ -8,7 +8,7 @@ Unless noted, the options in this section are only applied to build.
 - **Default:** `'baseline-widely-available'`
 - **Related:** [Browser Compatibility](/guide/build#browser-compatibility)
 
-Browser compatibility target for the final bundle. The default value is a Vite special value, `'baseline-widely-available'`, which targets browsers that are included in the [Baseline](https://web-platform-dx.github.io/web-features/) Widely Available on 2026-01-01. Specifically, it is `['chrome111', 'edge111', 'firefox114', 'safari16.4']`.
+Browser compatibility target for the final bundle. The default value is a Vite special value, `'baseline-widely-available'`, which targets browsers that are included in the [Baseline](https://web-platform-dx.github.io/web-features/) Widely Available on 2026-01-01. Specifically, it is `['chrome111', 'edge111', 'firefox114', 'safari16.4', 'ios16.4']`.
 
 Another special value is `'esnext'` - which assumes native dynamic imports support and will only perform minimal transpiling.
 
@@ -146,6 +146,17 @@ npm add -D esbuild
 - **Default:** `false`
 
 Generate production source maps. If `true`, a separate sourcemap file will be created. If `'inline'`, the sourcemap will be appended to the resulting output file as a data URI. `'hidden'` works like `true` except that the corresponding sourcemap comments in the bundled files are suppressed.
+
+## build.chunkImportMap
+
+- **Type:** `boolean`
+- **Default:** `false`
+- **Experimental**
+- **Related:** [Chunk Import Map Optimization](/guide/features#chunk-import-map-optimization)
+
+Whether to use import maps feature to optimize chunk caching efficiency.
+
+Note that this option requires [`import.meta.resolve` support](https://caniuse.com/mdn-javascript_operators_import_meta_resolve). If you need to support older browsers, check out [`@vitejs/plugin-legacy`](https://github.com/vitejs/vite/tree/main/packages/plugin-legacy).
 
 ## build.rolldownOptions
 
