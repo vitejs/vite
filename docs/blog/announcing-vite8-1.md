@@ -2,7 +2,7 @@
 title: Vite 8.1 is out!
 author:
   name: The Vite Team
-date: 2026-06-18
+date: 2026-06-22
 sidebar: false
 head:
   - - meta
@@ -27,7 +27,7 @@ head:
 
 # Vite 8.1 is out!
 
-_June 18, 2026_
+_June 22, 2026_
 
 ![Vite 8 Announcement Cover Image](/og-image-announcing-vite8.webp) // TODO: update the cover image
 
