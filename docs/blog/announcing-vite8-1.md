@@ -31,7 +31,7 @@ _June 18, 2026_
 
 ![Vite 8 Announcement Cover Image](/og-image-announcing-vite8.webp) // TODO: update the cover image
 
-Vite 8 [was released](./announcing-vite8.md) in March with a single unified bundler powered by [Rolldown](https://rolldown.rs/), opening the door to further improvements. It is now seeing 27.7 million weekly downloads, around half of the total downloads of Vite 7. While we've focused on resolving upgrade regressions, we're excited to announce the release of Vite 8.1.
+Vite 8 [was released](./announcing-vite8.md) in March with a single unified bundler powered by [Rolldown](https://rolldown.rs/), opening the door to further improvements. It is now seeing 34.8 million weekly downloads, around two third of the total downloads of Vite 7. While we've focused on resolving upgrade regressions, we're excited to announce the release of Vite 8.1.
 
 Quick links:
 
