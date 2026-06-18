@@ -67,7 +67,7 @@ Bundled Dev Mode would allow serving bundled files not only in production but al
 
 :::
 
-Currently, it focuses on the browser side and the basic plugins and the main features. If you are using a third party plugin, it may not work with this mode. If you are using a minor feature, it may not work as well. We are working on expanding the support and preparing a document that clarifies the changes that may be needed on the plugin side. See [the design document]() for more details about the roadmap.
+Currently, it focuses on the browser side and the basic plugins and the main features. If you are using a third party plugin, it may not work with this mode. If you are using a minor feature, it may not work as well. We are working on expanding the support and preparing a document that clarifies the changes that may be needed on the plugin side. See [the design document](https://example.com) for more details about the roadmap.
 
 // TODO: add link to the design document
 // TODO: create a discussion for the experimental support
@@ -120,7 +120,7 @@ import { add } from './add.wasm'
 console.log(add(1, 2)) // 3
 ```
 
-Huge thanks to [Menci](https://github.com/Menci) for their creation and maintenance of vite-plugin-wasm while the proposal was early stages and also for upstreaming the implemention to Vite core!
+Huge thanks to [Menci](https://github.com/Menci) for their creation and maintenance of vite-plugin-wasm while the proposal was early stages and also for upstreaming the implementation to Vite core!
 
 See [the guide](/guide/features#esm-integration) for more details.
 
