@@ -233,3 +233,31 @@ The different values of `NODE_ENV` and mode also reflect on its corresponding `i
 
 The main benefit with `NODE_ENV=...` in the command is that it allows Vite to detect the value early. It also allows you to read `process.env.NODE_ENV` in your Vite config as Vite can only load the env files once the config is evaluated.
 :::
+
+## `VITE_ERROR_HANDLER`
+
+When set, Vite routes CLI command failures to an external executable as a structured JSON payload. This is intended for CI/CD operators who run Vite as part of a build pipeline and want to forward command failures to their own alerting (syslog, webhook, custom script) without parsing Vite's stderr output.
+
+The handler receives a single JSON argv argument with the following schema:
+
+```ts
+{
+  schemaVersion: 1,
+  reason: 'dev_failure' | 'build_failure' | 'optimize_deps_failure' | 'preview_failure',
+  timestamp: string,  // ISO 8601
+  pid: number,
+}
+```
+
+The `reason` value identifies which CLI command action emitted the failure: `dev_failure` for the dev server, `build_failure` for `vite build`, `optimize_deps_failure` for dependency pre-bundling, and `preview_failure` for `vite preview`.
+
+The handler is spawned with `shell: false`, `detached: true`, `stdio: 'ignore'`, and only `PATH` is propagated to the child environment. The handler cannot read other Vite runtime secrets (cache tokens, upstream registry auth). Vite does not wait for the handler to complete before exiting.
+
+Example:
+
+```bash
+VITE_ERROR_HANDLER=/usr/bin/logger vite build /nonexistent/index.html
+# On build failure, the JSON payload is written to syslog via /usr/bin/logger
+```
+
+The env var is unset by default, so no behavior change unless an operator opts in.

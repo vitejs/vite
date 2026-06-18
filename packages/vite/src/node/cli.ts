@@ -33,7 +33,7 @@ import type { InlineConfig } from './config'
  * spawn must be fire-able synchronously — a dynamic `import()` would
  * race with `process.exit(1)` and the handler would never fire.
  */
-function runExternalErrorHandler(reason: string): void {
+export function runExternalErrorHandler(reason: string): void {
   const handler = process.env.VITE_ERROR_HANDLER?.trim()
   if (!handler) return
 
