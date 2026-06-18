@@ -12,13 +12,13 @@ const wasmHelperId = '\0vite/wasm-helper.js'
 const wasmInitRE = /(?<![?#].*)\.wasm\?init/
 const wasmDirectRE = /(?<![?#].*)\.wasm$/
 
-// Lower "raw" layer of a directly imported `.wasm` module that exports a
+// Lower "instance" layer of a directly imported `.wasm` module that exports a
 // WebAssembly.Global. It owns the WebAssembly.Instance and exposes exports
-// unwrapped (globals stay WebAssembly.Global objects), so that wasm-to-wasm
+// verbatim (globals stay WebAssembly.Global objects), so that wasm-to-wasm
 // global imports receive the actual Global. The user-facing `.wasm` module is a
 // thin wrapper around this layer that unwraps globals for JS consumers.
-const wasmRawSuffix = '?vite-wasm-raw'
-const wasmRawRE = /[?&]vite-wasm-raw(?:&|$)/
+const wasmInstanceSuffix = '?vite-wasm-instance'
+const wasmInstanceRE = /[?&]vite-wasm-instance(?:&|$)/
 
 const wasmInitUrlRE: RegExp = /__VITE_WASM_INIT__([\w$]+)__/g
 
@@ -113,7 +113,12 @@ export const wasmHelperPlugin = (): Plugin => {
 
       load: {
         filter: {
-          id: [exactRegex(wasmHelperId), wasmInitRE, wasmDirectRE, wasmRawRE],
+          id: [
+            exactRegex(wasmHelperId),
+            wasmInitRE,
+            wasmDirectRE,
+            wasmInstanceRE,
+          ],
         },
         async handler(id) {
           const ssr = this.environment.config.consumer === 'server'
@@ -127,17 +132,20 @@ export default ${wasmHelperCode}
           }
 
           const isInit = wasmInitRE.test(id)
-          const isRaw = wasmRawRE.test(id)
-          const cleanedId = isRaw ? cleanUrl(id) : id.split('?')[0]
+          const isInstance = wasmInstanceRE.test(id)
+          const cleanedId = isInstance ? cleanUrl(id) : id.split('?')[0]
 
           // Direct .wasm import (WASM ESM Integration)
           let wasmInfo: WasmInfo | undefined
           if (!isInit) {
             wasmInfo = await parseWasm(cleanedId)
             // The user-facing module of a wasm that exports a global is a thin
-            // wrapper that re-exports the raw layer, unwrapping globals for JS.
-            if (!isRaw && wasmInfo.hasGlobalExport) {
-              return generateWrapperGlue(wasmInfo, cleanedId + wasmRawSuffix)
+            // wrapper that re-exports the instance layer, unwrapping globals for JS.
+            if (!isInstance && wasmInfo.hasGlobalExport) {
+              return generateWrapperGlue(
+                wasmInfo,
+                cleanedId + wasmInstanceSuffix,
+              )
             }
           }
 
@@ -160,7 +168,7 @@ export default ${wasmHelperCode}
               initWasm: '__vite__initWasm',
               wasmUrl: '__vite__wasmUrl',
             },
-            (from) => from + wasmRawSuffix,
+            (from) => from + wasmInstanceSuffix,
           )
 
           return `
@@ -270,7 +278,7 @@ async function parseWasm(wasmFilePath: string): Promise<WasmInfo> {
 function generateInstanceGlue(
   wasmInfo: WasmInfo,
   names: { initWasm: string; wasmUrl: string },
-  toRawSpecifier: (from: string) => string,
+  toInstanceSpecifier: (from: string) => string,
 ): string {
   const importStatements: string[] = []
   const importObject: SimpleObject = wasmInfo.imports.map(
@@ -290,10 +298,10 @@ function generateInstanceGlue(
       }
       if (globals.length > 0) {
         // Wasm global imports need the WebAssembly.Global object, so import them
-        // from the exporter's raw layer instead of its JS-unwrapped value.
-        const ns = `__vite__wasmImportRaw_${i}`
+        // from the exporter's instance layer instead of its JS-unwrapped value.
+        const ns = `__vite__wasmImportInstance_${i}`
         importStatements.push(
-          `import * as ${ns} from ${JSON.stringify(toRawSpecifier(from))};`,
+          `import * as ${ns} from ${JSON.stringify(toInstanceSpecifier(from))};`,
         )
         for (const { name } of globals) {
           value.push({
@@ -345,15 +353,15 @@ function generateInstanceGlue(
   return [...importStatements, initCode, ...exportStatements].join('\n')
 }
 
-// User-facing module of a wasm that exports a global. Re-exports the raw layer
-// and overrides each global with its unwrapped JS value.
-function generateWrapperGlue(wasmInfo: WasmInfo, rawId: string): string {
-  const rawIdLiteral = JSON.stringify(rawId)
-  const lines = [`export * from ${rawIdLiteral};`]
+// User-facing module of a wasm that exports a global. Re-exports the instance
+// layer and overrides each global with its unwrapped JS value.
+function generateWrapperGlue(wasmInfo: WasmInfo, instanceId: string): string {
+  const instanceIdLiteral = JSON.stringify(instanceId)
+  const lines = [`export * from ${instanceIdLiteral};`]
 
   // `export *` skips `default`, so re-export it explicitly when present.
   if (wasmInfo.exports.some((e) => e.name === 'default')) {
-    lines.push(`export { default } from ${rawIdLiteral};`)
+    lines.push(`export { default } from ${instanceIdLiteral};`)
   }
 
   const imports: string[] = []
@@ -378,7 +386,7 @@ function generateWrapperGlue(wasmInfo: WasmInfo, rawId: string): string {
   }
 
   if (bindings.length > 0) {
-    lines.push(`import { ${imports.join(', ')} } from ${rawIdLiteral};`)
+    lines.push(`import { ${imports.join(', ')} } from ${instanceIdLiteral};`)
     lines.push(`let ${bindings.join(', ')};`)
     lines.push(...unwraps)
     lines.push(`export { ${reExports.join(', ')} };`)
