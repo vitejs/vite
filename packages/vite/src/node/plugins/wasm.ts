@@ -22,9 +22,7 @@ const wasmInstanceRE = /[?&]vite-wasm-instance(?:&|$)/
 
 const wasmInitUrlRE: RegExp = /__VITE_WASM_INIT__([\w$]+)__/g
 
-// Enable the JS String Builtins and Imported String Constants proposals, matching
-// the WebAssembly/ES Module Integration loader. Imports from these reserved
-// modules are provided by the engine, so they don't surface as JS imports.
+// Enabled per spec
 const wasmCompileOptions = {
   builtins: ['js-string'],
   importedStringConstants: 'wasm:js/string-constants',
