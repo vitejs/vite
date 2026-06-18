@@ -105,18 +105,9 @@ export const wasmHelperPlugin = (): Plugin => {
       name: 'vite:wasm-helper',
 
       resolveId: {
-        filter: { id: [exactRegex(wasmHelperId), wasmRawRE] },
-        async handler(id, importer) {
-          if (id === wasmHelperId) {
-            return id
-          }
-          // Resolve the raw layer relative to its importer, preserving the marker.
-          const base = id.slice(0, -wasmRawSuffix.length)
-          const resolved = await this.resolve(base, importer, {
-            skipSelf: true,
-          })
-          if (!resolved) return
-          return resolved.id + wasmRawSuffix
+        filter: { id: exactRegex(wasmHelperId) },
+        handler(id) {
+          return id
         },
       },
 
