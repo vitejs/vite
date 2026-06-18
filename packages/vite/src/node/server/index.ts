@@ -18,6 +18,7 @@ import type { SourceMap } from 'rolldown'
 import type { ModuleRunner } from 'vite/module-runner'
 import type { FSWatcher, WatchOptions } from '#dep-types/chokidar'
 import type { Connect } from '#dep-types/connect'
+import { serverConfigDefaults, isResolvedConfig, resolveConfig  } from '../config'
 import type { CommonServerOptions } from '../http'
 import type {
   ForwardConsoleOptions,
@@ -30,7 +31,6 @@ import {
   setClientErrorHandler,
 } from '../http'
 import type { InlineConfig, ResolvedConfig } from '../config'
-import { isResolvedConfig, resolveConfig } from '../config'
 import {
   type Hostname,
   diffDnsOrderChange,
@@ -54,11 +54,7 @@ import { ssrTransform } from '../ssr/ssrTransform'
 import { reloadOnTsconfigChange } from '../plugins/esbuild'
 import { bindCLIShortcuts } from '../shortcuts'
 import type { BindCLIShortcutsOptions, ShortcutsState } from '../shortcuts'
-import {
-  CLIENT_DIR,
-  DEFAULT_DEV_PORT,
-  defaultAllowedOrigins,
-} from '../constants'
+import { CLIENT_DIR, DEFAULT_DEV_PORT } from '../constants'
 import type { Logger } from '../logger'
 import { printServerUrls } from '../logger'
 import { warnFutureDeprecation } from '../deprecations'
@@ -1161,40 +1157,6 @@ function resolvedAllowDir(root: string, dir: string): string {
   return normalizePath(path.resolve(root, dir))
 }
 
-const _serverConfigDefaults = Object.freeze({
-  port: DEFAULT_DEV_PORT,
-  strictPort: false,
-  host: 'localhost',
-  allowedHosts: [],
-  https: undefined,
-  open: false,
-  proxy: undefined,
-  cors: { origin: defaultAllowedOrigins },
-  headers: {},
-  // hmr
-  // ws
-  warmup: {
-    clientFiles: [],
-    ssrFiles: [],
-  },
-  // watch
-  middlewareMode: false,
-  fs: {
-    strict: true,
-    // allow
-    deny: ['.env', '.env.*', '*.{crt,pem}', '**/.git/**'],
-  },
-  // origin
-  preTransformRequests: true,
-  // sourcemapIgnoreList
-  perEnvironmentStartEndDuringDev: false,
-  perEnvironmentWatchChangeDuringDev: false,
-  // hotUpdateEnvironments
-  forwardConsole: undefined,
-} satisfies ServerOptions)
-export const serverConfigDefaults: Readonly<Partial<ServerOptions>> =
-  _serverConfigDefaults
-
 const RESERVED_ALLOWED_HOSTS_CHARACTERS_RE = /[\\"']/
 
 export async function resolveServerOptions(
@@ -1204,7 +1166,7 @@ export async function resolveServerOptions(
 ): Promise<ResolvedServerOptions> {
   const _server = mergeWithDefaults(
     {
-      ..._serverConfigDefaults,
+      ...serverConfigDefaults,
       host: undefined, // do not set here to detect whether host is set or not
       sourcemapIgnoreList: isInNodeModules,
     },
@@ -1214,9 +1176,10 @@ export async function resolveServerOptions(
   setupHmrWsOptionCompat(_server)
 
   const server: ResolvedServerOptions = {
-    ..._server,
+    ...(_server as ResolvedServerOptions),
     fs: {
-      ..._server.fs,
+      strict: _server.fs?.strict ?? true,
+      deny: _server.fs?.deny ?? ['.env', '.env.*', '*.{crt,pem}', '**/.git/**'],
       // run searchForWorkspaceRoot only if needed
       allow: raw?.fs?.allow ?? [searchForWorkspaceRoot(root)],
     },
@@ -1224,7 +1187,9 @@ export async function resolveServerOptions(
       _server.sourcemapIgnoreList === false
         ? () => false
         : _server.sourcemapIgnoreList,
-    forwardConsole: await resolveForwardConsoleOptions(_server.forwardConsole),
+    forwardConsole: await resolveForwardConsoleOptions(
+      _server.forwardConsole as boolean | ForwardConsoleOptions | undefined,
+    ),
   }
 
   let allowDirs = server.fs.allow
