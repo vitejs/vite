@@ -162,14 +162,10 @@ export default ${wasmHelperCode}
   `
           }
 
-          const glueCode = generateInstanceGlue(
-            wasmInfo!,
-            {
-              initWasm: '__vite__initWasm',
-              wasmUrl: '__vite__wasmUrl',
-            },
-            (from) => from + wasmInstanceSuffix,
-          )
+          const glueCode = generateInstanceGlue(wasmInfo!, {
+            initWasm: '__vite__initWasm',
+            wasmUrl: '__vite__wasmUrl',
+          })
 
           return `
 import __vite__initWasm from "${wasmHelperId}"
@@ -278,7 +274,6 @@ async function parseWasm(wasmFilePath: string): Promise<WasmInfo> {
 function generateInstanceGlue(
   wasmInfo: WasmInfo,
   names: { initWasm: string; wasmUrl: string },
-  toInstanceSpecifier: (from: string) => string,
 ): string {
   const importStatements: string[] = []
   const importObject: SimpleObject = wasmInfo.imports.map(
@@ -301,7 +296,7 @@ function generateInstanceGlue(
         // from the exporter's instance layer instead of its JS-unwrapped value.
         const ns = `__vite__wasmImportInstance_${i}`
         importStatements.push(
-          `import * as ${ns} from ${JSON.stringify(toInstanceSpecifier(from))};`,
+          `import * as ${ns} from ${JSON.stringify(from + wasmInstanceSuffix)};`,
         )
         for (const { name } of globals) {
           value.push({
