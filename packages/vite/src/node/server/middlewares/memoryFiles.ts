@@ -18,7 +18,13 @@ export function memoryFilesMiddleware(
       return next()
     }
 
-    const pathname = decodeURIComponent(cleanedUrl)
+    let pathname
+    try {
+      pathname = decodeURIComponent(cleanedUrl)
+    } catch {
+      // ignore malformed URI
+      return next()
+    }
     const filePath = pathname.slice(1) // remove first /
 
     const file = memoryFiles.get(filePath)
