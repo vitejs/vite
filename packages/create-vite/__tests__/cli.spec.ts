@@ -32,18 +32,22 @@ const createNonEmptyDir = (overrideFolder?: string) => {
   fs.writeFileSync(pkgJson, '{ "foo": "bar" }')
 }
 
+// Underscore-prefixed files are renamed to dot-prefixed on scaffold
+const fileNameMap: Record<string, string> = {
+  _gitignore: '.gitignore',
+  '_oxlintrc.json': '.oxlintrc.json',
+}
+
 // Vue 3 starter template
 const templateFiles = fs
   .readdirSync(path.join(CLI_PATH, 'template-vue'))
-  // _gitignore is renamed to .gitignore
-  .map((filePath) => (filePath === '_gitignore' ? '.gitignore' : filePath))
+  .map((filePath) => fileNameMap[filePath] ?? filePath)
   .sort()
 
 // React starter template
 const templateFilesReact = fs
   .readdirSync(path.join(CLI_PATH, 'template-react'))
-  // _gitignore is renamed to .gitignore
-  .map((filePath) => (filePath === '_gitignore' ? '.gitignore' : filePath))
+  .map((filePath) => fileNameMap[filePath] ?? filePath)
   .sort()
 
 const clearAnyPreviousFolders = () => {
@@ -89,6 +93,16 @@ test('prompts for the framework on supplying an invalid template', () => {
   expect(stdout).toContain(
     `"unknown" isn't a valid template. Please choose from below:`,
   )
+})
+
+test('prompts to use ESLint for React templates in interactive mode', () => {
+  const { stdout } = run([
+    projectName,
+    '--interactive',
+    '--template',
+    'react-ts',
+  ])
+  expect(stdout).toContain('Use ESLint instead of Oxlint?')
 })
 
 test('asks to overwrite non-empty target directory', () => {
@@ -144,6 +158,7 @@ test('successfully scaffolds a project with subfolder based on react starter tem
       '--no-immediate',
       '--template',
       'react',
+      '--no-eslint',
       '--no-rolldown',
     ],
     {
@@ -173,9 +188,43 @@ test('successfully scaffolds a project based on react-compiler-ts starter templa
 
   // Assertions
   expect(stdout).toContain(`Scaffolding project in ${genPath}`)
-  expect(configFile).toContain('babel-plugin-react-compiler')
+  expect(configFile).toContain('reactCompilerPreset')
   expect(packageJsonFile).toContain('babel-plugin-react-compiler')
   expect(readmeFile).toContain('The React Compiler is enabled on this template')
+})
+
+test('scaffolds react-ts with Oxlint by default', () => {
+  const { stdout } = run([projectName, '--template', 'react-ts'], {
+    cwd: import.meta.dirname,
+  })
+  expect(stdout).toContain(`Scaffolding project in ${genPath}`)
+
+  expect(fs.existsSync(path.join(genPath, '.oxlintrc.json'))).toBe(true)
+  expect(fs.existsSync(path.join(genPath, 'eslint.config.js'))).toBe(false)
+
+  const pkg = fs.readFileSync(path.join(genPath, 'package.json'), 'utf-8')
+  expect(pkg).toContain('"oxlint"')
+  expect(pkg).not.toContain('eslint')
+  expect(pkg).toContain('"lint": "oxlint"')
+
+  const readme = fs.readFileSync(path.join(genPath, 'README.md'), 'utf-8')
+  expect(readme).toContain('Expanding the Oxlint configuration')
+  expect(readme).not.toContain('ESLint')
+})
+
+test('scaffolds React template with ESLint when --eslint is passed', () => {
+  const { stdout } = run([projectName, '--template', 'react', '--eslint'], {
+    cwd: import.meta.dirname,
+  })
+  expect(stdout).toContain(`Scaffolding project in ${genPath}`)
+
+  expect(fs.existsSync(path.join(genPath, 'eslint.config.js'))).toBe(true)
+  expect(fs.existsSync(path.join(genPath, '.oxlintrc.json'))).toBe(false)
+
+  const pkg = fs.readFileSync(path.join(genPath, 'package.json'), 'utf-8')
+  expect(pkg).toContain('"eslint"')
+  expect(pkg).not.toContain('oxlint')
+  expect(pkg).toContain('"lint": "eslint ."')
 })
 
 test('works with the -t alias', () => {
@@ -218,10 +267,14 @@ test('return help usage how to use create-vite', () => {
   const { stdout } = run(['--help'], { cwd: import.meta.dirname })
   const message = 'Usage: create-vite [OPTION]... [DIRECTORY]'
   expect(stdout).toContain(message)
+  expect(stdout).toContain('-i, --immediate / --no-immediate')
+  expect(stdout).toContain('--eslint / --no-eslint')
+  expect(stdout).toContain('--overwrite')
+  expect(stdout).toContain('-h, --help')
 })
 
 test('return help usage how to use create-vite with -h alias', () => {
-  const { stdout } = run(['--h'], { cwd: import.meta.dirname })
+  const { stdout } = run(['-h'], { cwd: import.meta.dirname })
   const message = 'Usage: create-vite [OPTION]... [DIRECTORY]'
   expect(stdout).toContain(message)
 })

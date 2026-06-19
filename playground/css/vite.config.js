@@ -41,7 +41,7 @@ export default defineConfig({
   ],
   build: {
     cssTarget: 'chrome61',
-    rollupOptions: {
+    rolldownOptions: {
       input: {
         index: path.resolve(dirname, './index.html'),
         treeshakeScoped: path.resolve(dirname, './treeshake-scoped/index.html'),
@@ -55,6 +55,7 @@ export default defineConfig({
         },
       },
     },
+    emptyOutDir: false, // the dist directory is shared with other configs
   },
   esbuild: {
     logOverride: {

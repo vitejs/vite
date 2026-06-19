@@ -1,5 +1,7 @@
 import http from 'node:http'
-import { afterEach, describe, expect, test } from 'vitest'
+import net from 'node:net'
+import { afterEach, describe, expect, test, vi } from 'vitest'
+import { wildcardHosts } from '../constants'
 import { createServer } from '..'
 import type { ViteDevServer } from '..'
 
@@ -157,6 +159,44 @@ describe('port detection', () => {
     })
   })
 
+  test('non-EADDRINUSE errors on wildcard do not block port selection', async () => {
+    const originalCreateServer = net.createServer.bind(net)
+    using _ = vi.spyOn(net, 'createServer').mockImplementation(() => {
+      const server = originalCreateServer()
+      const originalListen = server.listen.bind(server)
+      // @ts-expect-error this is the overload used internally
+      server.listen = (
+        port: number,
+        host: string,
+        ...args: unknown[]
+      ): net.Server => {
+        if (wildcardHosts.has(host)) {
+          process.nextTick(() => {
+            const err: NodeJS.ErrnoException = new Error(
+              'listen EACCES: permission denied',
+            )
+            err.code = 'EACCES'
+            server.emit('error', err)
+          })
+          return server
+        }
+        // @ts-expect-error this is the overload used internally
+        return originalListen(port, host, ...args)
+      }
+      return server
+    })
+
+    viteServer = await createServer({
+      root: import.meta.dirname,
+      logLevel: 'silent',
+      server: { port: BASE_PORT, strictPort: false, ws: false },
+    })
+    await viteServer.listen()
+
+    const address = viteServer.httpServer!.address()
+    expect(address).toStrictEqual(expect.objectContaining({ port: BASE_PORT }))
+  })
+
   test('throws error when port is blocked and strictPort is true', async () => {
     await using _blockingServer = await createSimpleServer(
       BASE_PORT,
@@ -172,5 +212,43 @@ describe('port detection', () => {
     await expect(viteServer.listen()).rejects.toThrow(
       `Port ${BASE_PORT} is already in use`,
     )
+  })
+
+  test('allows binding to specific host with strictPort when wildcard port is in use', async () => {
+    await using _wildcardServer = await createSimpleServer(BASE_PORT, '0.0.0.0')
+
+    const warnMessages: string[] = []
+    viteServer = await createServer({
+      root: import.meta.dirname,
+      customLogger: {
+        info: () => {},
+        warn: (msg) => warnMessages.push(msg),
+        warnOnce: () => {},
+        error: () => {},
+        clearScreen: () => {},
+        hasErrorLogged: () => false,
+        hasWarned: false,
+      },
+      server: {
+        port: BASE_PORT,
+        host: '127.0.0.1',
+        strictPort: true,
+        ws: false,
+      },
+    })
+
+    try {
+      await viteServer.listen()
+    } catch (e) {
+      // it may not be allowed to bind to specific host when wildcard port is in use
+      expect(() => {
+        throw e
+      }).toThrow(`Port ${BASE_PORT} is already in use`)
+      return
+    }
+
+    const address = viteServer.httpServer!.address()
+    expect(address).toStrictEqual(expect.objectContaining({ port: BASE_PORT }))
+    expect(warnMessages).toContainEqual(expect.stringContaining('wildcard'))
   })
 })

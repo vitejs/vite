@@ -177,9 +177,8 @@ async function isPortAvailable(port: number): Promise<boolean> {
 function tryListen(port: number, host: string): Promise<boolean> {
   return new Promise((resolve) => {
     const server = net.createServer()
-    server.once('error', () => {
-      // Ensure server is closed even on error to prevent resource leaks
-      server.close(() => resolve(false))
+    server.once('error', (e: NodeJS.ErrnoException) => {
+      server.close(() => resolve(e.code !== 'EADDRINUSE'))
     })
     server.once('listening', () => {
       server.close(() => resolve(true))
@@ -193,10 +192,10 @@ async function tryBindServer(
   port: number,
   host: string | undefined,
 ): Promise<
-  { success: true } | { success: false; error: Error & { code?: string } }
+  { success: true } | { success: false; error: NodeJS.ErrnoException }
 > {
   return new Promise((resolve) => {
-    const onError = (e: Error & { code?: string }) => {
+    const onError = (e: NodeJS.ErrnoException) => {
       httpServer.off('error', onError)
       httpServer.off('listening', onListening)
       resolve({ success: false, error: e })
@@ -230,7 +229,30 @@ export async function httpServerStart(
   for (let port = startPort; port <= MAX_PORT; port++) {
     // Pre-check port availability on wildcard addresses (0.0.0.0, ::)
     // so that we avoid conflicts with other servers listening on all interfaces
-    if (await isPortAvailable(port)) {
+    const portAvailableOnWildcard = await isPortAvailable(port)
+
+    // If port is not available on a wildcard address but strictPort is set,
+    // we still try binding directly before giving up.
+    if (strictPort) {
+      const result = await tryBindServer(httpServer, port, host)
+      if (result.success) {
+        if (!portAvailableOnWildcard) {
+          logger.warn(
+            colors.yellow(
+              `Port ${port} is in use on a wildcard address, but ${host ?? 'localhost'}:${port} is available. ` +
+                `There may be another server running on a wildcard IP on port ${port}.`,
+            ),
+          )
+        }
+        return port
+      }
+      if (result.error.code !== 'EADDRINUSE') {
+        throw result.error
+      }
+      throw new Error(`Port ${port} is already in use`)
+    }
+
+    if (portAvailableOnWildcard) {
       const result = await tryBindServer(httpServer, port, host)
       if (result.success) {
         return port
@@ -239,11 +261,6 @@ export async function httpServerStart(
         throw result.error
       }
     }
-
-    if (strictPort) {
-      throw new Error(`Port ${port} is already in use`)
-    }
-
     logger.info(`Port ${port} is in use, trying another one...`)
   }
   throw new Error(
@@ -256,19 +273,35 @@ export function setClientErrorHandler(
   logger: Logger,
 ): void {
   server.on('clientError', (err, socket) => {
-    let msg = '400 Bad Request'
-    if ((err as any).code === 'HPE_HEADER_OVERFLOW') {
-      msg = '431 Request Header Fields Too Large'
-      logger.warn(
-        colors.yellow(
-          'Server responded with status code 431. ' +
-            'See https://vite.dev/guide/troubleshooting.html#_431-request-header-fields-too-large.',
-        ),
-      )
+    // https://github.com/nodejs/node/blob/v26.2.0/lib/_http_server.js#L992
+    let msg
+    switch ((err as any).code) {
+      case 'HPE_HEADER_OVERFLOW': {
+        msg = '431 Request Header Fields Too Large'
+        logger.warn(
+          colors.yellow(
+            'Server responded with status code 431. ' +
+              'See https://vite.dev/guide/troubleshooting.html#_431-request-header-fields-too-large.',
+          ),
+        )
+        break
+      }
+      case 'HPE_CHUNK_EXTENSIONS_OVERFLOW': {
+        msg = '413 Payload Too Large'
+        break
+      }
+      case 'ERR_HTTP_REQUEST_TIMEOUT': {
+        msg = '408 Request Timeout'
+        break
+      }
+      default: {
+        msg = '400 Bad Request'
+        break
+      }
     }
     if ((err as any).code === 'ECONNRESET' || !socket.writable) {
       return
     }
-    socket.end(`HTTP/1.1 ${msg}\r\n\r\n`)
+    socket.end(`HTTP/1.1 ${msg}\r\nConnection: close\r\n\r\n`)
   })
 }

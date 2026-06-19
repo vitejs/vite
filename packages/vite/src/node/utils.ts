@@ -44,7 +44,7 @@ import {
 } from './constants'
 import type { DepOptimizationOptions } from './optimizer'
 import type { ResolvedConfig } from './config'
-import type { ResolvedServerUrls, ViteDevServer } from './server'
+import type { ResolvedServerUrls, ServerOptions, ViteDevServer } from './server'
 import type { PreviewServer } from './preview'
 import { type PackageCache, findNearestPackageData } from './packages'
 import type { BuildEnvironmentOptions } from './build'
@@ -62,21 +62,25 @@ export const createFilter = _createFilter as (
   include?: FilterPattern,
   exclude?: FilterPattern,
   options?: { resolve?: string | false | null },
-) => (id: string | unknown) => boolean
+) => (id: unknown) => boolean
 
 export { withFilter } from 'rolldown/filter'
 
-const replaceSlashOrColonRE = /[/:]/g
-const replaceDotRE = /\./g
+// eslint-disable-next-line no-control-regex
+const invalidUrlPathCharRE = /[\u0000-\u001F"#$%&*+,:;<=>?[\]^`{|}\u007F]/g
 const replaceNestedIdRE = /\s*>\s*/g
-const replaceHashRE = /#/g
 export const flattenId = (id: string): string => {
   const flatId = limitFlattenIdLength(
     id
-      .replace(replaceSlashOrColonRE, '_')
-      .replace(replaceDotRE, '__')
-      .replace(replaceNestedIdRE, '___')
-      .replace(replaceHashRE, '____'),
+      .replaceAll(/_+/g, '$&__')
+      .replaceAll('/', '_')
+      .replaceAll('.', '__')
+      .replace(replaceNestedIdRE, '_n_')
+      // replace any characters that will be replaced by sanitizeFileName
+      .replace(
+        invalidUrlPathCharRE,
+        (c) => '_0' + c.charCodeAt(0).toString(16) + '_',
+      ),
   )
   return flatId
 }
@@ -920,17 +924,24 @@ export function unique<T>(arr: T[]): T[] {
  * Even if defaultResultOrder is `ipv4first`, `dns.lookup` result maybe same.
  * For example, when IPv6 is not supported on that machine/network.
  */
-export async function getLocalhostAddressIfDiffersFromDNS(): Promise<
-  string | undefined
-> {
-  const [nodeResult, dnsResult] = await Promise.all([
+export function getLocalhostAddressIfDiffersFromDNS():
+  | Promise<string | undefined>
+  | undefined {
+  // dns.getDefaultResultOrder is not available in bun 1.3.11 and deno 2.7.11
+  // while this is a bug in bun and deno, since this function is commonly called,
+  // we give a workaround specially until the API is supported in a few versions
+  if (dns.getDefaultResultOrder && dns.getDefaultResultOrder() === 'verbatim') {
+    return undefined
+  }
+  return Promise.all([
     dns.lookup('localhost'),
     dns.lookup('localhost', { verbatim: true }),
-  ])
-  const isSame =
-    nodeResult.family === dnsResult.family &&
-    nodeResult.address === dnsResult.address
-  return isSame ? undefined : nodeResult.address
+  ]).then(([nodeResult, dnsResult]) => {
+    const isSame =
+      nodeResult.family === dnsResult.family &&
+      nodeResult.address === dnsResult.address
+    return isSame ? undefined : nodeResult.address
+  })
 }
 
 export function diffDnsOrderChange(
@@ -1315,12 +1326,82 @@ export function hasBothRollupOptionsAndRolldownOptions(
     if (
       opt != null &&
       opt.rollupOptions != null &&
-      opt.rolldownOptions != null
+      opt.rolldownOptions != null &&
+      // Check they are not just proxy values created by setupRollupOptionCompat
+      opt.rollupOptions !== opt.rolldownOptions
     ) {
       return true
     }
   }
   return false
+}
+
+const wsOptionKeys = [
+  'protocol',
+  'host',
+  'port',
+  'clientPort',
+  'path',
+  'timeout',
+  'server',
+] as const
+
+const hmrWsOptionsDeprecationCall = /* @__PURE__ */ (() => {
+  let logged = false
+  return () => {
+    if (logged) return
+    logged = true
+    const method = process.env.VITE_DEPRECATION_TRACE ? 'trace' : 'warn'
+    // eslint-disable-next-line no-console
+    console[method](
+      '`server.hmr.protocol/host/port/path/clientPort/timeout/server` is deprecated. ' +
+        'Use `server.ws.*` instead. Note that this option may be set by a plugin. ' +
+        (method === 'trace'
+          ? 'Showing trace because VITE_DEPRECATION_TRACE is set.'
+          : 'Set VITE_DEPRECATION_TRACE=1 to see where it is called.'),
+    )
+  }
+})()
+
+export function setupHmrWsOptionCompat(
+  serverConfig: Pick<ServerOptions, 'hmr' | 'ws'>,
+): void {
+  if (serverConfig.hmr === false || serverConfig.ws === false) {
+    return
+  }
+  if (serverConfig.hmr === true) {
+    serverConfig.hmr = {}
+  }
+
+  const hmrConfig = serverConfig.hmr
+  const wsConfig = serverConfig.ws ? { ...serverConfig.ws } : {}
+  if (hmrConfig) {
+    for (const key of wsOptionKeys) {
+      if (hmrConfig[key] !== undefined) {
+        // @ts-expect-error same value for same key
+        wsConfig[key] ??= hmrConfig[key]
+      }
+    }
+  }
+  serverConfig.ws = wsConfig
+
+  const hmrProxy = hmrConfig || {}
+  for (const key of wsOptionKeys) {
+    Object.defineProperty(hmrProxy, key, {
+      get() {
+        return (serverConfig.ws as Record<string, unknown>)?.[key]
+      },
+      set(newValue) {
+        hmrWsOptionsDeprecationCall()
+        if (typeof serverConfig.ws === 'object') {
+          ;(serverConfig.ws as Record<string, unknown>)[key] = newValue
+        }
+      },
+      configurable: true,
+      enumerable: true,
+    })
+  }
+  serverConfig.hmr = hmrProxy
 }
 
 function mergeConfigRecursively(
@@ -1331,6 +1412,18 @@ function mergeConfigRecursively(
   const merged: Record<string, any> = { ...defaults }
   if (rollupOptionsRootPaths.has(rootPath)) {
     setupRollupOptionCompat(merged, rootPath)
+  }
+  if (rootPath === 'server') {
+    setupHmrWsOptionCompat(merged)
+  }
+  if (rootPath === 'server.hmr') {
+    for (const key of wsOptionKeys) {
+      Object.defineProperty(
+        merged,
+        key,
+        Object.getOwnPropertyDescriptor(defaults, key)!,
+      )
+    }
   }
 
   for (const key in overrides) {
@@ -1387,7 +1480,10 @@ function mergeConfigRecursively(
         ...backwardCompatibleWorkerPlugins(value),
       ]
       continue
-    } else if (key === 'server' && rootPath === 'server.hmr') {
+    } else if (
+      key === 'server' &&
+      (rootPath === 'server.hmr' || rootPath === 'server.ws')
+    ) {
       merged[key] = value
       continue
     }
@@ -1790,4 +1886,33 @@ export function monotonicDateNow(): number {
 
   lastDateNow++
   return lastDateNow
+}
+
+export function formatAndTruncateFileList(files: string[]): {
+  formatted: string
+  truncated: boolean
+} {
+  const MAX_LOG_LENGTH = 500
+  let log = ''
+  let truncated = false
+  for (let i = 0; i < files.length; i++) {
+    const file = files[i]
+    if (log === '') {
+      log = file
+    } else if (log.length + 2 + file.length < MAX_LOG_LENGTH) {
+      log += ', ' + file
+    } else {
+      log += ` and ${files.length - i} more`
+      truncated = true
+      break
+    }
+  }
+  return { formatted: log, truncated }
+}
+
+const hashbangRE = /^#!.*\n/
+
+// find the start of the file, after the hashbang
+export function getFileStartIndex(code: string): number {
+  return hashbangRE.exec(code)?.[0].length ?? 0
 }

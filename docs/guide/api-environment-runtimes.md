@@ -13,9 +13,11 @@ Resources:
 Please share your feedback with us.
 :::
 
+This page is for runtime providers, authors who integrate a JavaScript runtime with Vite. A runtime here is the JavaScript engine where transformed code executes, such as Node.js, the browser, Cloudflare's workerd, or a Worker thread. A runtime provider packages the integration for one of these runtimes, so framework authors and end users (the developers building an app) don't have to set it up themselves.
+
 ## Environment Factories
 
-Environments factories are intended to be implemented by Environment providers like Cloudflare, and not by end users. Environment factories return a `EnvironmentOptions` for the most common case of using the target runtime for both dev and build environments. The default environment options can also be set so the user doesn't need to do it.
+Environment factories are intended to be implemented by runtime providers, not by end users. Environment factories return an `EnvironmentOptions` for the most common case of using the target runtime for both dev and build environments. The default environment options can also be set so the user doesn't need to do it.
 
 ```ts
 function createWorkerdEnvironment(
@@ -82,6 +84,52 @@ The transformed source code is called a module, and the relationships between th
 
 A Vite Module Runner allows running any code by processing it with Vite plugins first. It is different from `server.ssrLoadModule` because the runner implementation is decoupled from the server. This allows library and framework authors to implement their layer of communication between the Vite server and the runner. The browser communicates with its corresponding environment using the server WebSocket and through HTTP requests. The Node Module runner can directly do function calls to process modules as it is running in the same process. Other environments could run modules connecting to a JS runtime like workerd, or a Worker Thread as Vitest does.
 
+```dot
+digraph module_runner {
+  rankdir=LR
+  node [shape=box style="rounded,filled" fontname="Arial" fontsize=11 margin="0.2,0.1" fontcolor="${#3c3c43|#ffffff}" color="${#c2c2c4|#3c3f44}"]
+  edge [color="${#67676c|#98989f}" fontname="Arial" fontsize=10 fontcolor="${#67676c|#98989f}"]
+  bgcolor="transparent"
+  compound=true
+
+  subgraph cluster_server {
+    label="Vite Dev Server (Node.js)" labeljust=l fontname="Arial" fontsize=12
+    style="rounded,filled" fillcolor="${#f6f6f7|#1a1a1f}" color="${#c2c2c4|#3c3f44}"
+    fontcolor="${#3c3c43|#ffffff}"
+
+    subgraph cluster_env {
+      label="DevEnvironment" labeljust=l fontname="Arial" fontsize=11
+      style="rounded,filled" fillcolor="${#f2ecfc|#2c273e}" color="${#c2c2c4|#3c3f44}"
+      fontcolor="${#3c3c43|#ffffff}"
+
+      plugins [label="Plugin\nPipeline" fillcolor="${#e9eaff|#222541}"]
+      mg [label="Module\nGraph" fillcolor="${#e9eaff|#222541}"]
+      hot [label="HotChannel" fillcolor="${#fcf4dc|#38301a}"]
+
+      plugins -> mg [dir=both]
+      mg -> hot [style=invis]
+    }
+  }
+
+  subgraph cluster_runtime {
+    label="Target Runtime" labeljust=l fontname="Arial" fontsize=12
+    style="rounded,filled" fillcolor="${#f0fdf4|#131b15}" color="${#c2c2c4|#3c3f44}"
+    fontcolor="${#3c3c43|#ffffff}"
+
+    subgraph cluster_runner {
+      label="ModuleRunner" labeljust=l fontname="Arial" fontsize=11
+      style="rounded,filled" fillcolor="${#def5ed|#15312d}" color="${#c2c2c4|#3c3f44}"
+      fontcolor="${#3c3c43|#ffffff}"
+
+      evaluator [label="Module\nEvaluator" fillcolor="${#def5ed|#15312d}"]
+      transport [label="Transport" fillcolor="${#fcf4dc|#38301a}"]
+    }
+  }
+
+  hot -> transport [label="HMR / Module\nfetch & invoke" dir=both style=bold color="${#6f42c1|#c8abfa}"]
+}
+```
+
 One of the goals of this feature is to provide a customizable API to process and run code. Users can create new environment factories using the exposed primitives.
 
 ```ts
@@ -109,6 +157,8 @@ function createWorkerdDevEnvironment(
   return workerdDevEnvironment
 }
 ```
+
+By default, `HotChannel` transports have `server.fs` restrictions applied, meaning only files within the allowed directories can be served. If your transport is not exposed over the network (e.g., it communicates via worker threads or in-process calls), you can set `skipFsCheck: true` on the `HotChannel` to bypass these restrictions.
 
 There are [multiple communication levels for the `DevEnvironment`](/guide/api-environment-frameworks#devenvironment-communication-levels). To make it easier for frameworks to write runtime agnostic code, we recommend to implement the most flexible communication level possible.
 
@@ -323,6 +373,8 @@ function createWorkerEnvironment(name, config, context) {
   }
 
   const workerHotChannel = {
+    // Worker threads post messages are not exposed over the network, skip server.fs checks
+    skipFsCheck: true,
     send: (data) => worker.postMessage(data),
     on: (event, handler) => {
       // client is already connected
@@ -425,4 +477,13 @@ server.onRequest((request: Request) => {
 
 But note that for HMR support, `send` and `connect` methods are required. The `send` method is usually called when the custom event is triggered (like, `import.meta.hot.send("my-event")`).
 
-Vite exports `createServerHotChannel` from the main entry point to support HMR during Vite SSR.
+For an SSR environment running in the same Node.js process as the Vite server, Vite exports `createServerHotChannel` as a ready-made `HotChannel`:
+
+```js
+import { createServerHotChannel, DevEnvironment } from 'vite'
+
+new DevEnvironment(name, config, {
+  hot: true,
+  transport: createServerHotChannel(),
+})
+```

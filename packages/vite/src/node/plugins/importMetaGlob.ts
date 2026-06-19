@@ -2,14 +2,7 @@ import { isAbsolute, posix } from 'node:path'
 import picomatch from 'picomatch'
 import { stripLiteral } from 'strip-literal'
 import colors from 'picocolors'
-import type {
-  ArrayExpression,
-  Expression,
-  Literal,
-  Node,
-  SpreadElement,
-  TemplateLiteral,
-} from 'estree'
+import type { ESTree } from 'rolldown/utils'
 import type { CustomPluginOptions, RollupError } from 'rolldown'
 import MagicString from 'magic-string'
 import { stringifyQuery } from 'ufo'
@@ -42,14 +35,6 @@ interface ParsedGeneralImportGlobOptions extends GeneralImportGlobOptions {
 }
 
 export function importGlobPlugin(config: ResolvedConfig): Plugin {
-  if (config.isBundled && config.nativePluginEnabledLevel >= 1) {
-    return nativeImportGlobPlugin({
-      root: config.root,
-      sourcemap: !!config.build.sourcemap,
-      restoreQueryExtension: config.experimental.importGlobRestoreExtension,
-    })
-  }
-
   const importGlobMaps = new Map<
     Environment,
     Map<string, Array<(file: string) => boolean>>
@@ -57,6 +42,17 @@ export function importGlobPlugin(config: ResolvedConfig): Plugin {
 
   return {
     name: 'vite:import-glob',
+    applyToEnvironment(environment) {
+      if (environment.config.isBundled) {
+        return nativeImportGlobPlugin({
+          root: environment.config.root,
+          sourcemap: !!environment.config.build.sourcemap,
+          restoreQueryExtension:
+            environment.config.experimental.importGlobRestoreExtension,
+        })
+      }
+      return true
+    },
     buildStart() {
       importGlobMaps.clear()
     },
@@ -73,23 +69,30 @@ export function importGlobPlugin(config: ResolvedConfig): Plugin {
           config.logger,
         )
         if (result) {
-          const allGlobs = result.matches.map((i) => i.globsResolved)
           if (!importGlobMaps.has(this.environment)) {
             importGlobMaps.set(this.environment, new Map())
           }
 
-          const globMatchers = allGlobs.map((globs) => {
+          const globMatchers = result.matches.map((i) => {
             const affirmed: string[] = []
             const negated: string[] = []
-            for (const glob of globs) {
+            for (const glob of i.globsResolved) {
               if (glob[0] === '!') {
                 negated.push(glob.slice(1))
               } else {
                 affirmed.push(glob)
               }
             }
-            const affirmedMatcher = picomatch(affirmed)
-            const negatedMatcher = picomatch(negated)
+            const affirmedMatcher = picomatch(affirmed, {
+              noextglob: true,
+              dot: !!i.options.exhaustive,
+              ignore: i.options.exhaustive ? [] : ['**/node_modules/**'],
+            })
+            const negatedMatcher = picomatch(negated, {
+              noextglob: true,
+              dot: !!i.options.exhaustive,
+              ignore: i.options.exhaustive ? [] : ['**/node_modules/**'],
+            })
 
             return (file: string) => {
               // (glob1 || glob2) && !(glob3 || glob4)...
@@ -134,6 +137,7 @@ const knownOptions = {
   exhaustive: ['boolean'],
   query: ['object', 'string'],
   base: ['string'],
+  caseSensitive: ['boolean'],
 }
 
 const forceDefaultAs = ['raw', 'url']
@@ -289,14 +293,14 @@ export async function parseImportGlob(
     if (ast.arguments.length < 1 || ast.arguments.length > 2)
       throw err(`Expected 1-2 arguments, but got ${ast.arguments.length}`)
 
-    const arg1 = ast.arguments[0] as ArrayExpression | Literal | TemplateLiteral
-    const arg2 = ast.arguments[1] as
-      | (Node & { start: number; end: number })
-      | undefined
+    const arg1 = ast.arguments[0]
+    const arg2 = ast.arguments[1]
 
     const globs: string[] = []
 
-    const validateLiteral = (element: Expression | SpreadElement | null) => {
+    const validateLiteral = (
+      element: ESTree.Expression | ESTree.SpreadElement | null,
+    ) => {
       if (!element) return
       if (element.type === 'Literal') {
         if (typeof element.value !== 'string')
@@ -447,6 +451,10 @@ export async function transformGlobImport(
           onlyKeys,
           onlyValues,
         }) => {
+          if (!dir && !options.base && isRelative) {
+            throw new Error("In virtual modules, all globs must start with '/'")
+          }
+
           const cwd = getCommonBase(globsResolved) ?? root
           const files = (
             await glob(globsResolved, {
@@ -454,7 +462,9 @@ export async function transformGlobImport(
               cwd,
               dot: !!options.exhaustive,
               expandDirectories: false,
+              caseSensitiveMatch: options.caseSensitive ?? true,
               ignore: options.exhaustive ? [] : ['**/node_modules/**'],
+              extglob: false,
             })
           )
             .filter((file) => file !== id)
@@ -465,10 +475,6 @@ export async function transformGlobImport(
 
           const resolvePaths = (file: string) => {
             if (!dir) {
-              if (!options.base && isRelative)
-                throw new Error(
-                  "In virtual modules, all globs must start with '/'",
-                )
               const importPath = `/${relative(root, file)}`
               let filePath = options.base
                 ? `${relative(posix.join(root, options.base), file)}`
@@ -497,9 +503,6 @@ export async function transformGlobImport(
               )
               if (!filePath.startsWith('./') && !filePath.startsWith('../')) {
                 filePath = `./${filePath}`
-              }
-              if (options.base[0] === '/') {
-                importPath = `/${relative(root, file)}`
               }
             } else if (isRelative) {
               filePath = importPath
@@ -701,7 +704,11 @@ export function getCommonBase(globsResolved: string[]): null | string {
   const dirS = bases[0].split('/')
   for (let i = 0; i < dirS.length; i++) {
     const candidate = dirS.slice(0, i + 1).join('/')
-    if (bases.every((base) => base.startsWith(candidate)))
+    if (
+      bases.every(
+        (base) => base === candidate || base.startsWith(`${candidate}/`),
+      )
+    )
       commonAncestor = candidate
     else break
   }

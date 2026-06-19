@@ -21,7 +21,7 @@ If you need a custom integration, you can follow the steps in this guide to conf
      build: {
        // generate .vite/manifest.json in outDir
        manifest: true,
-       rollupOptions: {
+       rolldownOptions: {
          // overwrite default .html entry
          input: '/path/to/main.js',
        },
@@ -104,6 +104,31 @@ If you need a custom integration, you can follow the steps in this guide to conf
    }
    ```
 
+   The manifest maps source files to their build outputs and dependencies:
+
+   ```dot
+   digraph manifest {
+     rankdir=TB
+     node [shape=box style="rounded,filled" fontname="Arial" fontsize=10 margin="0.2,0.1" fontcolor="${#3c3c43|#ffffff}" color="${#c2c2c4|#3c3f44}"]
+     edge [color="${#67676c|#98989f}" fontname="Arial" fontsize=9 fontcolor="${#67676c|#98989f}"]
+     bgcolor="transparent"
+
+     foo [label="views/foo.js\n(entry)" fillcolor="${#e9eaff|#222541}"]
+     bar [label="views/bar.js\n(entry)" fillcolor="${#e9eaff|#222541}"]
+     shared [label="_shared-B7PI925R.js\n(common chunk)" fillcolor="${#f2ecfc|#2c273e}"]
+     baz [label="baz.js\n(dynamic import)" fillcolor="${#fcf4dc|#38301a}"]
+     foocss [label="foo.css" shape=ellipse fillcolor="${#fde4e8|#3a1d27}"]
+     sharedcss [label="shared.css" shape=ellipse fillcolor="${#fde4e8|#3a1d27}"]
+     logo [label="logo.svg\n(asset)" shape=ellipse fillcolor="${#def5ed|#15312d}"]
+
+     foo -> shared [label="imports"]
+     bar -> shared [label="imports"]
+     bar -> baz [label="dynamicImports" style=dashed]
+     foo -> foocss [label="css"]
+     shared -> sharedcss [label="css"]
+   }
+   ```
+
    The manifest has a `Record<name, chunk>` structure where each chunk follows the `ManifestChunk` interface:
 
    ```ts style:max-height:400px
@@ -154,7 +179,7 @@ If you need a custom integration, you can follow the steps in this guide to conf
    ```
 
    Each entry in the manifest represents one of the following:
-   - **Entry chunks**: Generated from files specified in [`build.rollupOptions.input`](https://rollupjs.org/configuration-options/#input). These chunks have `isEntry: true` and their key is the relative src path from project root.
+   - **Entry chunks**: Generated from files specified in [`build.rolldownOptions.input`](https://rolldown.rs/reference/InputOptions.input#input). These chunks have `isEntry: true` and their key is the relative src path from project root.
    - **Dynamic entry chunks**: Generated from dynamic imports. These chunks have `isDynamicEntry: true` and their key is the relative src path from project root.
    - **Non-entry chunks**: Their key is the base name of the generated file prefixed with `_`.
    - **Asset chunks**: Generated from imported assets like images, fonts. Their key is the relative src path from project root.
@@ -245,4 +270,11 @@ If you need a custom integration, you can follow the steps in this guide to conf
    }
    ```
 
+   :::
+
+   :::info Chunk Import Maps Support (Experimental)
+
+   If you are using the experimental [`build.chunkImportMap`](/config/build-options#build-chunkimportmap) option, you also need to inject the import map into the HTML.
+
+   The import map is output to `importmap.json` in the output directory. Make sure to inject the `<script type="importmap">` tag before any `<script type="module">` tags or `<link rel="modulepreload">` tags.
    :::

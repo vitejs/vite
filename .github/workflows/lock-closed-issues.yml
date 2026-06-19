@@ -5,20 +5,20 @@ on:
     - cron: "0 0 * * *"
 
 permissions:
-  issues: write
+  contents: read # to check out the repo for local actions
+  issues: write # for actions/issues-helper to update issues
 
 jobs:
   action:
     if: github.repository == 'vitejs/vite'
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-slim
     steps:
-      - uses: actions-cool/issues-helper@e2ff99831a4f13625d35064e2b3dfe65c07a0396 # v3
+      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6
         with:
-          actions: "lock-issues"
+          persist-credentials: false
+
+      - uses: ./.github/actions/issues-helper
+        with:
+          actions: "lock-closed-issues"
           token: ${{ secrets.GITHUB_TOKEN }}
-          #body: |
-          #  This issue has been locked since it has been closed for more than 14 days.
-          #
-          #  If you have found a concrete bug or regression related to it, please open a new [bug report](https://github.com/vitejs/vite/issues/new/choose) with a reproduction against the latest Vite version. If you have any other comments you should join the chat at [Vite Land](https://chat.vite.dev) or create a new [discussion](https://github.com/vitejs/vite/discussions).
-          issue-state: closed
           inactive-day: 14

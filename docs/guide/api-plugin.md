@@ -89,13 +89,16 @@ export default function myPlugin() {
   return {
     name: 'transform-file',
 
-    transform(src, id) {
-      if (fileRegex.test(id)) {
+    transform: {
+      filter: {
+        id: fileRegex,
+      },
+      handler(src, id) {
         return {
           code: compileFileToJS(src),
           map: null, // provide source map if available
         }
-      }
+      },
     },
   }
 }
@@ -110,21 +113,25 @@ See the example in the [next section](#virtual-modules-convention).
 Virtual modules are a useful scheme that allows you to pass build time information to the source files using normal ESM import syntax.
 
 ```js
+import { exactRegex } from '@rolldown/pluginutils'
+
 export default function myPlugin() {
   const virtualModuleId = 'virtual:my-module'
   const resolvedVirtualModuleId = '\0' + virtualModuleId
 
   return {
     name: 'my-plugin', // required, will show up in warnings and errors
-    resolveId(id) {
-      if (id === virtualModuleId) {
+    resolveId: {
+      filter: { id: exactRegex(virtualModuleId) },
+      handler() {
         return resolvedVirtualModuleId
-      }
+      },
     },
-    load(id) {
-      if (id === resolvedVirtualModuleId) {
+    load: {
+      filter: { id: exactRegex(resolvedVirtualModuleId) },
+      handler() {
         return `export const msg = "from virtual module"`
-      }
+      },
     },
   }
 }
@@ -470,6 +477,72 @@ Vite plugins can also provide hooks that serve Vite-specific purposes. These hoo
     }
     ```
 
+## Plugin Context Meta
+
+For plugin hooks that has access to the plugin context, Vite exposes additional properties on `this.meta`:
+
+- `this.meta.viteVersion`: The current Vite version string (e.g. `"8.0.0"`).
+
+::: tip Detecting Rolldown powered Vite
+
+[`this.meta.rolldownVersion`](https://rolldown.rs/reference/Interface.PluginContextMeta#rolldownversion) is only available for Rolldown powered Vite (i.e. Vite 8+). You can use it to detect whether the current Vite instance is powered by Rolldown:
+
+```ts
+function versionCheckPlugin(): Plugin {
+  return {
+    name: 'version-check',
+    buildStart() {
+      if (this.meta.rolldownVersion) {
+        // only do something if running on a Rolldown powered Vite
+      } else {
+        // do something else if running on a Rollup powered Vite
+      }
+    },
+  }
+}
+```
+
+:::
+
+## Output Bundle Metadata
+
+During build, Vite augments Rolldown's build output objects with a Vite-specific `viteMetadata` field.
+
+This is available through:
+
+- `RenderedChunk` (for example in `renderChunk` and `augmentChunkHash`)
+- `OutputChunk` and `OutputAsset` (for example in `generateBundle` and `writeBundle`)
+
+`viteMetadata` provides:
+
+- `viteMetadata.importedCss: Set<string>`
+- `viteMetadata.importedAssets: Set<string>`
+
+This is useful when writing plugins that need to inspect emitted CSS and static assets without relying on [`build.manifest`](/config/build-options#build-manifest).
+
+Example:
+
+```ts [vite.config.ts]
+function outputMetadataPlugin(): Plugin {
+  return {
+    name: 'output-metadata-plugin',
+    enforce: 'post',
+    generateBundle(_, bundle) {
+      for (const output of Object.values(bundle)) {
+        const css = output.viteMetadata?.importedCss
+        const assets = output.viteMetadata?.importedAssets
+        if (!css?.size && !assets?.size) continue
+
+        console.log(output.fileName, {
+          css: css ? [...css] : [],
+          assets: assets ? [...assets] : [],
+        })
+      }
+    },
+  }
+}
+```
+
 ## Plugin Ordering
 
 A Vite plugin can additionally specify an `enforce` property (similar to webpack loaders) to adjust its application order. The value of `enforce` can be either `"pre"` or `"post"`. The resolved plugins will be in the following order:
@@ -586,6 +659,44 @@ export default function myPlugin() {
 ::: tip
 [`@rolldown/pluginutils`](https://www.npmjs.com/package/@rolldown/pluginutils) exports some utilities for hook filters like `exactRegex` and `prefixRegex`. These are also re-exported from `rolldown/filter` for convenience.
 :::
+
+## Chunk Import Map Information
+
+:::info Experimental
+
+This feature is experimental and may change in the future.
+
+:::
+
+When [`build.chunkImportMap`](/config/build-options#build-chunkimportmap) option is enabled, the import statements in the generated chunks will use a unique ID for each chunk instead of the file path.
+
+To get the mapping from the chunk ID to the file path, you can access the import map emitted to the bundle in the `generateBundle` hook or the `writeBundle` hook. The import map has the name specified by [`build.rolldownOptions.experimental.chunkImportMap.fileName`](https://rolldown.rs/reference/InputOptions.experimental#chunkimportmap) (defaults to `importmap.json`).
+
+```ts
+function accessImportMap() {
+  let config: ResolvedConfig
+  return {
+    name: 'access-import-map',
+    configResolved(resolvedConfig) {
+      config = resolvedConfig
+    },
+    generateBundle(options, bundle) {
+      const chunkImportMap =
+        config.build.rolldownOptions.experimental?.chunkImportMap
+      if (chunkImportMap) {
+        const importMapFilename =
+          typeof chunkImportMap === 'object' && chunkImportMap.fileName
+            ? chunkImportMap.fileName
+            : 'importmap.json'
+        const importMap = bundle[importMapFilename]! as OutputAsset
+        const mapping = JSON.parse(importMap.source).imports
+        console.log(mapping)
+        // { "./entry.hash1.js": "./entry.hash2.js" }
+      }
+    },
+  }
+}
+```
 
 ## Client-server Communication
 

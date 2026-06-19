@@ -78,13 +78,14 @@ export function resolveChokidarOptions(
   return resolvedWatchOptions
 }
 
-export function convertToNotifyOptions(
+export function convertToWatcherOptions(
   options: WatchOptions | undefined,
-): WatcherOptions['notify'] {
+): WatcherOptions['watcher'] {
   if (!options) return
 
   return {
-    pollInterval: options.usePolling ? (options.interval ?? 100) : undefined,
+    usePolling: options.usePolling,
+    pollInterval: options.interval,
   }
 }
 

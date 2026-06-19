@@ -6,7 +6,7 @@ const dirname = import.meta.dirname
 export default defineConfig({
   build: {
     manifest: true,
-    rollupOptions: {
+    rolldownOptions: {
       input: {
         main: resolve(dirname, './index.html'),
         other: resolve(dirname, './other.js'),
@@ -16,14 +16,14 @@ export default defineConfig({
       },
       output: {
         // manualChunks(id) {
-        //   // make `chunk.css` it's own chunk for easier testing of pure css chunks
+        //   // make `chunk.css` its own chunk for easier testing of pure css chunks
         //   if (id.includes('chunk.css')) {
         //     return 'chunk'
         //   }
         // },
         codeSplitting: {
           groups: [
-            // make `chunk.css` it's own chunk for easier testing of pure css chunks
+            // make `chunk.css` its own chunk for easier testing of pure css chunks
             {
               name: 'chunk',
               test: 'chunk.css',
