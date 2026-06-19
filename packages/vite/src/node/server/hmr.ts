@@ -850,8 +850,6 @@ function propagateUpdate(
   }
 
   for (const importer of node.importers) {
-    const subChain = currentChain.concat(importer)
-
     if (importer.acceptedHmrDeps.has(node)) {
       // acceptedHmrDeps has value only for js and css
       const boundary = importer as EnvironmentModuleNode & {
@@ -860,7 +858,10 @@ function propagateUpdate(
       boundaries.push({
         boundary,
         acceptedVia: node,
-        isWithinCircularImport: isNodeWithinCircularImports(importer, subChain),
+        isWithinCircularImport: isNodeWithinCircularImports(
+          importer,
+          currentChain.concat(importer),
+        ),
       })
       continue
     }
@@ -877,7 +878,12 @@ function propagateUpdate(
 
     if (
       !currentChain.includes(importer) &&
-      propagateUpdate(importer, traversedModules, boundaries, subChain)
+      propagateUpdate(
+        importer,
+        traversedModules,
+        boundaries,
+        currentChain.concat(importer),
+      )
     ) {
       return true
     }
