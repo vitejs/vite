@@ -594,6 +594,24 @@ function viteLegacyPlugin(options: Options = {}): Plugin[] {
         targets,
         assumptions,
         browserslistConfigFile: false,
+        plugins: needPolyfills
+          ? [
+              [
+                (await import('babel-plugin-polyfill-corejs3')).default,
+                {
+                  method: 'usage-global',
+                  version: _require('core-js/package.json').version,
+                  proposals: true,
+                },
+              ],
+              [
+                (await import('babel-plugin-polyfill-regenerator')).default,
+                {
+                  method: 'usage-global',
+                },
+              ],
+            ]
+          : [],
         presets: [
           // forcing our plugin to run before preset-env by wrapping it in a
           // preset so we can catch the injected import statements...
@@ -610,14 +628,6 @@ function viteLegacyPlugin(options: Options = {}): Plugin[] {
             (await import('@babel/preset-env')).default as BabelPresetTarget,
             {
               modules: false,
-              useBuiltIns: needPolyfills ? 'usage' : false,
-              corejs: needPolyfills
-                ? {
-                    version: _require('core-js/package.json').version,
-                    proposals: false,
-                  }
-                : undefined,
-              shippedProposals: true,
             },
           ],
         ],

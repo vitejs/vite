@@ -45,6 +45,8 @@ allowBuilds:
   workerd: true
 
 minimumReleaseAge: 1440
+minimumReleaseAgeExclude:
+  - '@babel/*'
 blockExoticSubdeps: true
 trustPolicy: no-downgrade
 trustPolicyExclude:
