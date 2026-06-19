@@ -327,7 +327,7 @@ async function ssrTransformScript(
   }
 
   // 3. convert references to import bindings & import.meta references
-  walk(ast, {
+  walk(ast, idToImportMap, {
     onStatements(statements) {
       // ensure ";" between statements
       for (let i = 0; i < statements.length - 1; i++) {
@@ -451,6 +451,7 @@ const isNodeInPattern = (node: ESTree.Node): node is ESTreeProperty =>
  */
 function walk(
   root: ESTree.Node,
+  idToImportMap: Map<string, string>,
   { onIdentifier, onImportMeta, onDynamicImport, onStatements }: Visitors,
 ) {
   const parentStack: ESTree.Node[] = []
@@ -541,6 +542,7 @@ function walk(
 
       if (node.type === 'Identifier') {
         if (
+          idToImportMap.has(node.name) &&
           !isInScope(node.name, parentStack) &&
           isRefIdentifier(node, parent!, parentStack)
         ) {
