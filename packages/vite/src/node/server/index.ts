@@ -256,7 +256,7 @@ export interface FileSystemServeOptions {
    * This will have higher priority than `allow`.
    * picomatch patterns are supported.
    *
-   * @default ['.env', '.env.*', '*.{crt,pem}', '**\/.git/**']
+   * @default ['.env', '.env.*', '*.{crt,pem,key,p12,pfx,cer,der}', '.npmrc', '.yarnrc.yml', '**\/.git/**']
    */
   deny?: string[]
 }
@@ -1182,7 +1182,14 @@ const _serverConfigDefaults = Object.freeze({
   fs: {
     strict: true,
     // allow
-    deny: ['.env', '.env.*', '*.{crt,pem}', '**/.git/**'],
+    deny: [
+      '.env',
+      '.env.*',
+      '*.{crt,pem,key,p12,pfx,cer,der}',
+      '.npmrc',
+      '.yarnrc.yml',
+      '**/.git/**',
+    ],
   },
   // origin
   preTransformRequests: true,
