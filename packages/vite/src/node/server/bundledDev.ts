@@ -254,14 +254,9 @@ export class BundledDev {
 
   async triggerBundleRegenerationIfStale(): Promise<boolean> {
     const bundleState = await this.devEngine.getBundleState()
-    // A full build (initial full build or rebuild) failed. An `Hmr`-stage
-    // failure is recoverable by forcing a full rebuild (which is what this
-    // method does), so it must not count as a failed full build here.
-    const lastFullBuildFailed =
-      bundleState.lastBuildErrored && bundleState.lastErrorStage !== 'Hmr'
     const shouldTrigger =
       bundleState.hasStaleOutput &&
-      !lastFullBuildFailed &&
+      !bundleState.lastFullBuildFailed &&
       this.initialBuildCompleted
     if (shouldTrigger) {
       this.devEngine.ensureLatestBuildOutput().then(() => {
