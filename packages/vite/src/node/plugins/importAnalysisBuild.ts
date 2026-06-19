@@ -369,7 +369,9 @@ export function buildImportAnalysisPlugin(config: ResolvedConfig): Plugin[] {
           }
 
           if (imports.length) {
-            for (let index = 0; index < imports.length; index++) {
+            // Nested preload wrappers emit inner markers before outer markers.
+            // Pair dynamic imports from the inside out so each import claims its own marker.
+            for (let index = imports.length - 1; index >= 0; index--) {
               // To handle escape sequences in specifier strings, the .n field will be provided where possible.
               const {
                 n: name,
@@ -439,6 +441,15 @@ export function buildImportAnalysisPlugin(config: ResolvedConfig): Plugin[] {
               }
 
               let markerStartPos = findPreloadMarker(code, end)
+              while (
+                markerStartPos !== -1 &&
+                rewroteMarkerStartPos.has(markerStartPos)
+              ) {
+                markerStartPos = findPreloadMarker(
+                  code,
+                  markerStartPos + preloadMarker.length,
+                )
+              }
               // fix issue #3051
               if (markerStartPos === -1 && imports.length === 1) {
                 markerStartPos = findPreloadMarker(code)

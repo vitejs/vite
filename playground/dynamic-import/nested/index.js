@@ -74,6 +74,15 @@ document.querySelector('.pkg-css').addEventListener('click', async () => {
   text('.view', 'dynamic import css in package')
 })
 
+document.querySelector('.issue-22700').addEventListener('click', async () => {
+  const { markerClass } = await import('./issue-22700-a.js').then((mod) => {
+    return import('./issue-22700-b.js').then(() => mod)
+  })
+  const result = document.querySelector('.issue-22700-result')
+  result.classList.add(markerClass)
+  text('.issue-22700-result', 'nested dynamic import with css')
+})
+
 function text(el, text) {
   document.querySelector(el).textContent = text
 }
