@@ -3400,7 +3400,9 @@ async function compileLightningCSS(
         break
       }
       case 'import': {
-        css = css.replace(dep.placeholder, dep.url)
+        // use a function replacer so `$` sequences in the URL are inserted
+        // verbatim instead of being interpreted as replacement patterns
+        css = css.replace(dep.placeholder, () => dep.url)
         break
       }
       default:
