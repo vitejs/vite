@@ -481,6 +481,15 @@ async function handleModuleSoftInvalidation(
     const s = new MagicString(source)
     const [imports] = parseImports(source, mod.id || undefined)
 
+    // index imported modules by url so the lookup below is O(1) per import
+    // instead of scanning the whole importedModules set each time
+    const importedModulesByUrl = new Map<string, EnvironmentModuleNode>()
+    for (const importedMod of mod.importedModules) {
+      if (!importedModulesByUrl.has(importedMod.url)) {
+        importedModulesByUrl.set(importedMod.url, importedMod)
+      }
+    }
+
     for (const imp of imports) {
       let rawUrl = source.slice(imp.s, imp.e)
       if (rawUrl === 'import.meta') continue
@@ -498,8 +507,8 @@ async function handleModuleSoftInvalidation(
           environment.config.base,
         ),
       )
-      for (const importedMod of mod.importedModules) {
-        if (importedMod.url !== hmrUrl) continue
+      const importedMod = importedModulesByUrl.get(hmrUrl)
+      if (importedMod) {
         if (importedMod.lastHMRTimestamp > 0) {
           const replacedUrl = injectQuery(
             urlWithoutTimestamp,
@@ -514,8 +523,6 @@ async function handleModuleSoftInvalidation(
           // pre-transform known direct imports
           environment.warmupRequest(hmrUrl)
         }
-
-        break
       }
     }
 
