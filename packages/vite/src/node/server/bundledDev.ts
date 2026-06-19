@@ -167,6 +167,7 @@ export class BundledDev {
             },
           )
           this.lastBuildError = result
+          this.fullReloadPending = false
           this.environment.hot.send({
             type: 'error',
             err: prepareError(result),
