@@ -1233,7 +1233,7 @@ export function postImportMapHook(
       const importMap = bundle![getImportMapFilename(config)] as OutputAsset
       const importMapHtml = serializeTag({
         tag: 'script',
-        attrs: { type: 'importmap', nonce },
+        attrs: { type: 'importmap', ...(nonce ? { nonce } : {}) },
         children:
           typeof importMap.source === 'string'
             ? importMap.source
