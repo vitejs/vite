@@ -245,13 +245,23 @@ beforeAll(async ({}, suite) => {
   }
 
   return async () => {
+    debugSetup('cleanup:start')
     serverLogs.length = 0
+    debugSetup('cleanup:pageClose:start')
     await page?.close()
+    debugSetup('cleanup:pageClose:done')
+    debugSetup('cleanup:serverClose:start')
     await server?.close()
+    debugSetup('cleanup:serverClose:done')
+    debugSetup('cleanup:watcherClose:start')
     await watcher?.close()
+    debugSetup('cleanup:watcherClose:done')
     if (browser) {
+      debugSetup('cleanup:browserClose:start')
       await browser.close()
+      debugSetup('cleanup:browserClose:done')
     }
+    debugSetup('cleanup:done')
   }
 })
 
