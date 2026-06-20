@@ -107,20 +107,8 @@ export let browser: Browser = undefined!
 export let viteTestUrl: string = ''
 export let watcher: RolldownWatcher | undefined = undefined
 
-let setupStart = 0
-
 export function setViteUrl(url: string): void {
   viteTestUrl = url
-}
-
-function debugSetup(message: string, data?: Record<string, unknown>) {
-  if (process.env.CI && testName === 'import-assertion') {
-    const elapsed = setupStart ? Date.now() - setupStart : 0
-    console.log(
-      `[DEBUG-vite-e2e-22664] ${message} +${elapsed}ms`,
-      data ? JSON.stringify(data) : '',
-    )
-  }
 }
 
 function throwHtmlParseError() {
@@ -142,14 +130,12 @@ function throwHtmlParseError() {
 
 // eslint-disable-next-line no-empty-pattern
 beforeAll(async ({}, suite) => {
-  setupStart = Date.now()
   testPath = suite.file.filepath!
   testName = slash(testPath).match(/playground\/([\w-]+)\//)?.[1]
   testDir = path.dirname(testPath)
   if (testName) {
     testDir = path.resolve(workspaceRoot, 'playground-temp', testName)
   }
-  debugSetup('beforeAll:start', { testPath, testDir })
 
   // skip browser setup for hmr-ssr playground
   if (testName === 'hmr-ssr') {
@@ -161,12 +147,8 @@ beforeAll(async ({}, suite) => {
     throw new Error('wsEndpoint not found')
   }
 
-  debugSetup('browser:connect:start')
   browser = await chromium.connect(wsEndpoint)
-  debugSetup('browser:connect:done')
-  debugSetup('browser:newPage:start')
   page = await browser.newPage()
-  debugSetup('browser:newPage:done')
 
   try {
     page.on('console', (msg) => {
@@ -190,7 +172,6 @@ beforeAll(async ({}, suite) => {
       // when `root` dir is present, use it as vite's root
       const testCustomRoot = path.resolve(testDir, 'root')
       rootDir = fs.existsSync(testCustomRoot) ? testCustomRoot : testDir
-      debugSetup('root:resolved', { rootDir })
 
       // separate rootDir for variant
       const variantName = path.basename(path.dirname(testPath))
@@ -198,7 +179,6 @@ beforeAll(async ({}, suite) => {
         const variantTestDir = testDir + '__' + variantName
         if (fs.existsSync(variantTestDir)) {
           rootDir = testDir = variantTestDir
-          debugSetup('variant:resolved', { variantName, rootDir })
         }
       }
 
@@ -209,32 +189,21 @@ beforeAll(async ({}, suite) => {
 
       if (testCustomServe) {
         // test has custom server configuration.
-        debugSetup('customServe:import:start', { testCustomServe })
         const mod = await import(testCustomServe)
-        debugSetup('customServe:import:done')
         const serve = mod.serve || mod.default?.serve
         const preServe = mod.preServe || mod.default?.preServe
         if (preServe) {
-          debugSetup('customServe:preServe:start')
           await preServe()
-          debugSetup('customServe:preServe:done')
         }
         if (serve) {
-          debugSetup('customServe:serve:start')
           server = await serve()
-          debugSetup('customServe:serve:done')
           viteServer = mod.viteServer
         }
       } else {
-        debugSetup('defaultServe:start')
         await startDefaultServe()
-        debugSetup('defaultServe:done')
       }
     }
   } catch (e) {
-    debugSetup('beforeAll:error', {
-      message: e instanceof Error ? e.message : String(e),
-    })
     // Closing the page since an error in the setup, for example a runtime error
     // when building the playground should skip further tests.
     // If the page remains open, a command like `await page.click(...)` produces
@@ -245,23 +214,13 @@ beforeAll(async ({}, suite) => {
   }
 
   return async () => {
-    debugSetup('cleanup:start')
     serverLogs.length = 0
-    debugSetup('cleanup:pageClose:start')
     await page?.close()
-    debugSetup('cleanup:pageClose:done')
-    debugSetup('cleanup:serverClose:start')
     await server?.close()
-    debugSetup('cleanup:serverClose:done')
-    debugSetup('cleanup:watcherClose:start')
     await watcher?.close()
-    debugSetup('cleanup:watcherClose:done')
     if (browser) {
-      debugSetup('cleanup:browserClose:start')
       await browser.close()
-      debugSetup('cleanup:browserClose:done')
     }
-    debugSetup('cleanup:done')
   }
 })
 
@@ -318,21 +277,13 @@ export async function startDefaultServe(): Promise<void> {
 
   if (!isBuild) {
     process.env.VITE_INLINE = 'inline-serve'
-    debugSetup('loadConfig:serve:start')
     const config = await loadConfig({ command: 'serve', mode: 'development' })
-    debugSetup('loadConfig:serve:done')
-    debugSetup('createServer:start')
     viteServer = server = await (await createServer(config)).listen()
-    debugSetup('createServer:listen:done', {
-      urls: server.resolvedUrls.local,
-    })
     viteTestUrl = stripTrailingSlashIfNeeded(
       server.resolvedUrls.local[0],
       server.config.base,
     )
-    debugSetup('pageGoto:start', { viteTestUrl })
     await page.goto(viteTestUrl)
-    debugSetup('pageGoto:done')
   } else {
     process.env.VITE_INLINE = 'inline-build'
     let resolvedConfig: ResolvedConfig
