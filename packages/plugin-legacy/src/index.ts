@@ -9,10 +9,17 @@ import type {
   HtmlTagDescriptor,
   Plugin,
   ResolvedConfig,
+  Rolldown,
   Rollup,
 } from 'vite'
 import type {
-  PluginItem as BabelPlugin,
+  FileResult as BabelFileResult,
+  InputOptions as BabelInputOptions,
+  PluginAPI as BabelPluginAPI,
+  PluginItem as BabelPluginItem,
+  PluginObject as BabelPluginObject,
+  PresetObject as BabelPresetObject,
+  PresetTarget as BabelPresetTarget,
   types as BabelTypes,
 } from '@babel/core'
 import colors from 'picocolors'
@@ -564,21 +571,20 @@ function viteLegacyPlugin(options: Options = {}): Plugin[] {
 
       // need to transform into systemjs separately from other plugins
       // for preset-env polyfill detection and removal
-      const resultSystem = babel.transform(raw, {
+      const resultSystem = babel.transformSync(raw, {
         babelrc: false,
         configFile: false,
         ast: true,
         code: false,
         sourceMaps,
         plugins: [
-          // @ts-expect-error -- not typed
           (await import('@babel/plugin-transform-dynamic-import')).default,
-          // @ts-expect-error -- not typed
-          (await import('@babel/plugin-transform-modules-systemjs')).default,
+          (await import('@babel/plugin-transform-modules-systemjs'))
+            .default as BabelPluginItem,
         ],
       })
 
-      const babelTransformOptions: babel.TransformOptions = {
+      const babelTransformOptions: BabelInputOptions = {
         babelrc: false,
         configFile: false,
         cloneInputAst: false,
@@ -588,47 +594,56 @@ function viteLegacyPlugin(options: Options = {}): Plugin[] {
         targets,
         assumptions,
         browserslistConfigFile: false,
+        plugins: needPolyfills
+          ? [
+              [
+                (await import('babel-plugin-polyfill-corejs3')).default,
+                {
+                  method: 'usage-global',
+                  version: _require('core-js/package.json').version,
+                  proposals: true,
+                },
+              ],
+              [
+                (await import('babel-plugin-polyfill-regenerator')).default,
+                {
+                  method: 'usage-global',
+                },
+              ],
+            ]
+          : [],
         presets: [
           // forcing our plugin to run before preset-env by wrapping it in a
           // preset so we can catch the injected import statements...
-          [
-            () => ({
+          () =>
+            ({
               plugins: [
                 recordAndRemovePolyfillBabelPlugin(polyfillsDiscovered.legacy),
                 replaceLegacyEnvBabelPlugin(),
                 replaceModernEnvBabelPlugin(),
                 wrapIIFEBabelPlugin(),
               ],
-            }),
-          ],
+            }) satisfies BabelPresetObject,
           [
-            (await import('@babel/preset-env')).default,
+            (await import('@babel/preset-env')).default as BabelPresetTarget,
             {
-              bugfixes: true,
               modules: false,
-              useBuiltIns: needPolyfills ? 'usage' : false,
-              corejs: needPolyfills
-                ? {
-                    version: _require('core-js/package.json').version,
-                    proposals: false,
-                  }
-                : undefined,
-              shippedProposals: true,
             },
           ],
         ],
       }
-      let result: babel.BabelFileResult | null
+      let result: BabelFileResult | null
       if (resultSystem) {
         result = babel.transformFromAstSync(
           resultSystem.ast!,
-          undefined,
+          '',
           babelTransformOptions,
         )
       } else {
-        result = babel.transform(raw, babelTransformOptions)
+        result = babel.transformSync(raw, babelTransformOptions)
       }
-      if (result) return { code: result.code!, map: result.map }
+      if (result)
+        return { code: result.code!, map: result.map as Rolldown.SourceMap }
       return null
     },
 
@@ -831,7 +846,7 @@ export async function detectPolyfills(
   list: Set<string>,
 ): Promise<void> {
   const babel = await loadBabel()
-  const result = babel.transform(code, {
+  const result = babel.transformSync(code, {
     ast: true,
     code: false,
     babelrc: false,
@@ -1031,8 +1046,8 @@ function isLegacyBundle(bundle: Rollup.OutputBundle) {
 
 function recordAndRemovePolyfillBabelPlugin(
   polyfills: Set<string>,
-): BabelPlugin {
-  return ({ types: t }: { types: typeof BabelTypes }): BabelPlugin => ({
+): BabelPluginItem {
+  return ({ types: t }: BabelPluginAPI): BabelPluginObject => ({
     name: 'vite-remove-polyfill-import',
     post({ path }) {
       path.get('body').forEach((p) => {
@@ -1045,8 +1060,8 @@ function recordAndRemovePolyfillBabelPlugin(
   })
 }
 
-function replaceLegacyEnvBabelPlugin(): BabelPlugin {
-  return ({ types: t }): BabelPlugin => ({
+function replaceLegacyEnvBabelPlugin(): BabelPluginItem {
+  return ({ types: t }: BabelPluginAPI): BabelPluginObject => ({
     name: 'vite-replace-env-legacy',
     visitor: {
       Identifier(path) {
@@ -1058,8 +1073,8 @@ function replaceLegacyEnvBabelPlugin(): BabelPlugin {
   })
 }
 
-function replaceModernEnvBabelPlugin(): BabelPlugin {
-  return ({ types: t }): BabelPlugin => ({
+function replaceModernEnvBabelPlugin(): BabelPluginItem {
+  return ({ types: t }: BabelPluginAPI): BabelPluginObject => ({
     name: 'vite-replace-env-modern',
     visitor: {
       Identifier(path) {
@@ -1071,16 +1086,20 @@ function replaceModernEnvBabelPlugin(): BabelPlugin {
   })
 }
 
-function wrapIIFEBabelPlugin(): BabelPlugin {
-  return ({ types: t, template }): BabelPlugin => {
+function wrapIIFEBabelPlugin(): BabelPluginItem {
+  return ({ types: t, template }: BabelPluginAPI): BabelPluginObject => {
     const buildIIFE = template(';(function(){%%body%%})();')
 
     return {
       name: 'vite-wrap-iife',
       post({ path }) {
-        if (!this.isWrapped) {
-          this.isWrapped = true
-          path.replaceWith(t.program(buildIIFE({ body: path.node.body })))
+        if (!this.get('isWrapped')) {
+          this.set('isWrapped', true)
+          path.replaceWith(
+            t.program(
+              buildIIFE({ body: path.node.body }) as BabelTypes.Statement[],
+            ),
+          )
         }
       },
     }
