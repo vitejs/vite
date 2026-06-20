@@ -1,4 +1,3 @@
-!**/glob-import/root/dir/node_modules
 .DS_Store
 .idea
 .pnpm-store
@@ -13,6 +12,9 @@ dist
 dist-ssr
 explorations
 node_modules
+!**/glob-import/root/dir/node_modules
+!**/fixtures/glob-exports/node_modules
+!**/fixtures/glob-exports/node_modules/my-pkg/dist
 playground-temp
 temp
 TODOs.md

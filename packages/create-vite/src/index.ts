@@ -28,8 +28,9 @@ const argv = mri<{
   overwrite?: boolean
   immediate?: boolean
   interactive?: boolean
+  eslint?: boolean
 }>(process.argv.slice(2), {
-  boolean: ['help', 'overwrite', 'immediate', 'interactive'],
+  boolean: ['help', 'overwrite', 'immediate', 'interactive', 'eslint'],
   alias: { h: 'help', t: 'template', i: 'immediate' },
   string: ['template'],
 })
@@ -45,6 +46,7 @@ When running in TTY, the CLI will start in interactive mode.
 Options:
   -t, --template NAME                   use a specific template
   -i, --immediate / --no-immediate      install dependencies and start dev
+  --eslint / --no-eslint                use ESLint instead of Oxlint (only for React templates)
   --overwrite                           remove existing files if target directory is not empty
   --interactive / --no-interactive      force interactive / non-interactive mode
   -h, --help                            display this help message
@@ -391,6 +393,7 @@ const TEMPLATES = FRAMEWORKS.map((f) => f.variants.map((v) => v.name)).reduce(
 
 const renameFiles: Record<string, string | undefined> = {
   _gitignore: '.gitignore',
+  '_oxlintrc.json': '.oxlintrc.json',
 }
 
 const defaultTargetDir = 'vite-project'
@@ -442,6 +445,7 @@ async function init() {
   const argOverwrite = argv.overwrite
   const argImmediate = argv.immediate
   const argInteractive = argv.interactive
+  const argEslint = argv.eslint
 
   const help = argv.help
   if (help) {
@@ -623,7 +627,26 @@ async function init() {
     process.exit(status ?? 0)
   }
 
-  // 5. Ask about immediate install and package manager
+  // 5. Ask whether to use ESLint instead of Oxlint (React templates only)
+  const isReactTemplate = template === 'react' || template === 'react-ts'
+  let eslint = argEslint
+  if (isReactTemplate && eslint === undefined) {
+    if (interactive) {
+      const eslintResult = await prompts.select({
+        message: 'Use ESLint instead of Oxlint?',
+        options: [
+          { label: 'No (Oxlint)', value: false },
+          { label: 'Yes (ESLint)', value: true },
+        ],
+      })
+      if (prompts.isCancel(eslintResult)) return cancel()
+      eslint = eslintResult
+    } else {
+      eslint = false
+    }
+  }
+
+  // 6. Ask about immediate install and package manager
   let immediate = argImmediate
   if (immediate === undefined) {
     if (interactive) {
@@ -679,6 +702,10 @@ async function init() {
 
   if (isReactCompiler) {
     setupReactCompiler(root, template.endsWith('-ts'))
+  }
+
+  if (eslint) {
+    setupEslint(root, template.endsWith('-ts'))
   }
 
   if (immediate) {
@@ -819,6 +846,181 @@ import babel from '@rolldown/plugin-babel'`,
     root,
     'The React Compiler is enabled on this template. See [this documentation](https://react.dev/learn/react-compiler) for more information.\n\nNote: This will impact Vite dev & build performances.',
   )
+}
+
+function setupEslint(root: string, isTs: boolean) {
+  // renovate: datasource=npm depName=@eslint/js
+  const eslintJsVersion = '10.0.1'
+  // renovate: datasource=npm depName=eslint
+  const eslintVersion = '10.5.0'
+  // renovate: datasource=npm depName=eslint-plugin-react-hooks
+  const eslintPluginReactHooksVersion = '7.1.1'
+  // renovate: datasource=npm depName=eslint-plugin-react-refresh
+  const eslintPluginReactRefreshVersion = '0.5.3'
+  // renovate: datasource=npm depName=globals
+  const globalsVersion = '17.6.0'
+  // renovate: datasource=npm depName=typescript-eslint
+  const typescriptEslintVersion = '8.61.0'
+
+  const eslintConfigForTS = /* js */ `import js from '@eslint/js'
+import globals from 'globals'
+import reactHooks from 'eslint-plugin-react-hooks'
+import reactRefresh from 'eslint-plugin-react-refresh'
+import tseslint from 'typescript-eslint'
+import { defineConfig, globalIgnores } from 'eslint/config'
+
+export default defineConfig([
+  globalIgnores(['dist']),
+  {
+    files: ['**/*.{ts,tsx}'],
+    extends: [
+      js.configs.recommended,
+      tseslint.configs.recommended,
+      reactHooks.configs.flat.recommended,
+      reactRefresh.configs.vite,
+    ],
+    languageOptions: {
+      globals: globals.browser,
+    },
+  },
+])
+`
+  const eslintConfigForJS = /* js */ `import js from '@eslint/js'
+import globals from 'globals'
+import reactHooks from 'eslint-plugin-react-hooks'
+import reactRefresh from 'eslint-plugin-react-refresh'
+import { defineConfig, globalIgnores } from 'eslint/config'
+
+export default defineConfig([
+  globalIgnores(['dist']),
+  {
+    files: ['**/*.{js,jsx}'],
+    extends: [
+      js.configs.recommended,
+      reactHooks.configs.flat.recommended,
+      reactRefresh.configs.vite,
+    ],
+    languageOptions: {
+      globals: globals.browser,
+      parserOptions: { ecmaFeatures: { jsx: true } },
+    },
+  },
+])
+`
+
+  fs.rmSync(path.resolve(root, '.oxlintrc.json'))
+
+  const eslintConfig = isTs ? eslintConfigForTS : eslintConfigForJS
+  fs.writeFileSync(path.resolve(root, 'eslint.config.js'), eslintConfig)
+
+  editFile(path.resolve(root, 'package.json'), (content) => {
+    const asObject = JSON.parse(content)
+    const devDepsEntries = Object.entries(asObject.devDependencies).filter(
+      ([name]) => name !== 'oxlint',
+    )
+    devDepsEntries.push(
+      ['@eslint/js', `^${eslintJsVersion}`],
+      ['eslint', `^${eslintVersion}`],
+      ['eslint-plugin-react-hooks', `^${eslintPluginReactHooksVersion}`],
+      ['eslint-plugin-react-refresh', `^${eslintPluginReactRefreshVersion}`],
+      ['globals', `^${globalsVersion}`],
+    )
+    if (isTs) {
+      devDepsEntries.push(['typescript-eslint', `^${typescriptEslintVersion}`])
+    }
+    devDepsEntries.sort()
+    asObject.devDependencies = Object.fromEntries(devDepsEntries)
+    asObject.scripts.lint = 'eslint .'
+    return JSON.stringify(asObject, null, 2) + '\n'
+  })
+
+  editFile(path.resolve(root, 'README.md'), (content) => {
+    content = content.replace(
+      'with HMR and some Oxlint rules',
+      'with HMR and some ESLint rules',
+    )
+    const headingIndex = content.indexOf(
+      '## Expanding the Oxlint configuration',
+    )
+    if (headingIndex === -1) {
+      console.warn('Could not update Oxlint section in README.md')
+      return content
+    }
+    const eslintTypeAwareConfig =
+      /* js */ `export default defineConfig([
+  globalIgnores(['dist']),
+  {
+    files: ['**/*.{ts,tsx}'],
+    extends: [
+      // Other configs...
+
+      // Remove tseslint.configs.recommended and replace with this
+      tseslint.configs.recommendedTypeChecked,
+      // Alternatively, use this for stricter rules
+      tseslint.configs.strictTypeChecked,
+      // Optionally, add this for stylistic rules
+      tseslint.configs.stylisticTypeChecked,
+
+      // Other configs...
+    ],
+    languageOptions: {
+      parserOptions: {
+        project: ['./tsconfig.node.json', './tsconfig.app.json'],
+        tsconfigRootDir: import.meta.dirname,
+      },
+      // other options...
+    },
+  },
+])
+`
+    const eslintReactConfig =
+      /* js */ `// eslint.config.js
+import reactX from 'eslint-plugin-react-x'
+import reactDom from 'eslint-plugin-react-dom'
+
+export default defineConfig([
+  globalIgnores(['dist']),
+  {
+    files: ['**/*.{ts,tsx}'],
+    extends: [
+      // Other configs...
+      // Enable lint rules for React
+      reactX.configs['recommended-typescript'],
+      // Enable lint rules for React DOM
+      reactDom.configs.recommended,
+    ],
+    languageOptions: {
+      parserOptions: {
+        project: ['./tsconfig.node.json', './tsconfig.app.json'],
+        tsconfigRootDir: import.meta.dirname,
+      },
+      // other options...
+    },
+  },
+])
+`
+
+    const eslintSection = isTs
+      ? `## Expanding the ESLint configuration
+
+If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
+
+\`\`\`js
+${eslintTypeAwareConfig}
+\`\`\`
+
+You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
+
+\`\`\`js
+${eslintReactConfig}
+\`\`\`
+`
+      : `## Expanding the ESLint configuration
+
+If you are developing a production application, we recommend using TypeScript with type-aware lint rules enabled. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) for information on how to integrate TypeScript and [\`typescript-eslint\`](https://typescript-eslint.io) in your project.
+`
+    return content.slice(0, headingIndex) + eslintSection
+  })
 }
 
 function updateReactCompilerReadme(root: string, newBody: string) {

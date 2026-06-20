@@ -669,6 +669,26 @@ describe('mergeConfig', () => {
     ).toBe('browser')
   })
 
+  test('resolved build options keep rollupOptions as a live proxy of rolldownOptions', async () => {
+    const config = await resolveConfig({}, 'serve')
+
+    for (const build of [
+      config.build,
+      config.environments.client.build,
+      config.environments.ssr.build,
+    ]) {
+      // Reassigning `rolldownOptions` must be reflected through the `rollupOptions` getter.
+      const newOptions = { treeshake: false }
+      build.rolldownOptions = newOptions
+      expect(build.rollupOptions).toBe(newOptions)
+
+      // Assigning through `rollupOptions` must update `rolldownOptions` too.
+      const newerOptions = { treeshake: true }
+      build.rollupOptions = newerOptions
+      expect(build.rolldownOptions).toBe(newerOptions)
+    }
+  })
+
   test('syncs `server.hmr.*` to `server.ws.*`', () => {
     const baseConfig = defineConfig({
       server: {

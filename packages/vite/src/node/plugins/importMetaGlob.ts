@@ -86,11 +86,13 @@ export function importGlobPlugin(config: ResolvedConfig): Plugin {
             const affirmedMatcher = picomatch(affirmed, {
               noextglob: true,
               dot: !!i.options.exhaustive,
+              nocase: !(i.options.caseSensitive ?? true),
               ignore: i.options.exhaustive ? [] : ['**/node_modules/**'],
             })
             const negatedMatcher = picomatch(negated, {
               noextglob: true,
               dot: !!i.options.exhaustive,
+              nocase: !(i.options.caseSensitive ?? true),
               ignore: i.options.exhaustive ? [] : ['**/node_modules/**'],
             })
 
@@ -137,6 +139,7 @@ const knownOptions = {
   exhaustive: ['boolean'],
   query: ['object', 'string'],
   base: ['string'],
+  caseSensitive: ['boolean'],
 }
 
 const forceDefaultAs = ['raw', 'url']
@@ -461,6 +464,7 @@ export async function transformGlobImport(
               cwd,
               dot: !!options.exhaustive,
               expandDirectories: false,
+              caseSensitiveMatch: options.caseSensitive ?? true,
               ignore: options.exhaustive ? [] : ['**/node_modules/**'],
               extglob: false,
             })
