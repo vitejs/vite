@@ -52,6 +52,8 @@ import charset from './charset.css?inline'
 text('.charset-css', charset)
 
 import './layered/index.css'
+import './layer-order/vendor.css'
+import './layer-order/order.css'
 import './external.css'
 
 import './dep.css'

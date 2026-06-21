@@ -1,0 +1,7 @@
+@layer layer-order-base, layer-order-reset, layer-order-utilities;
+
+@layer layer-order-base {
+  .layer-order-base {
+    color: green;
+  }
+}

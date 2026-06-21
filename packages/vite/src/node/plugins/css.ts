@@ -2232,7 +2232,8 @@ async function minifyCSS(
         )
       }
       // esbuild output does return a linebreak at the end
-      return inlined ? code.trimEnd() : code
+      const minifiedCss = restoreCssLayerOrderStatements(css, code)
+      return inlined ? minifiedCss.trimEnd() : minifiedCss
     } catch (e) {
       if (e.errors) {
         e.message = '[esbuild css minify] ' + e.message
@@ -2267,7 +2268,11 @@ async function minifyCSS(
     // Deno res.code = Uint8Array
     // For correct decode compiled css need to use TextDecoder
     // LightningCSS output does not return a linebreak at the end
-    return decoder.decode(code) + (inlined ? '' : '\n')
+    const minifiedCss = restoreCssLayerOrderStatements(
+      css,
+      decoder.decode(code),
+    )
+    return minifiedCss + (inlined ? '' : '\n')
   } catch (e) {
     e.message = `[lightningcss minify] ${e.message}`
     const friendlyMessage = getLightningCssErrorMessageForIeSyntaxes(css)
@@ -3199,6 +3204,31 @@ const absoluteOrProtocolRelativeUrlRE = /^(?:[a-z]+:)?\/\//i
 const importEsbuild = createCachedImport(() => import('esbuild'))
 
 const importLightningCSS = createCachedImport(() => import('lightningcss'))
+
+const cssLayerOrderStatementRE = /@layer[^;{}]*;/g
+
+function restoreCssLayerOrderStatements(
+  css: string,
+  minifiedCss: string,
+): string {
+  const statements = css.match(cssLayerOrderStatementRE)
+  if (!statements) {
+    return minifiedCss
+  }
+
+  const missingStatements = statements
+    .filter((statement) => /^@layer\s/.test(statement))
+    .map((statement) =>
+      statement.replace(/\s*,\s*/g, ',').replace(/\s+;/g, ';'),
+    )
+    .filter((statement) => !minifiedCss.includes(statement))
+
+  if (missingStatements.length === 0) {
+    return minifiedCss
+  }
+
+  return `${missingStatements.join('')}${minifiedCss}`
+}
 async function compileLightningCSS(
   environment: PartialEnvironment,
   id: string,
