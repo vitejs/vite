@@ -47,8 +47,6 @@ export function importGlobPlugin(config: ResolvedConfig): Plugin {
         return nativeImportGlobPlugin({
           root: environment.config.root,
           sourcemap: !!environment.config.build.sourcemap,
-          restoreQueryExtension:
-            environment.config.experimental.importGlobRestoreExtension,
         })
       }
       return true
@@ -65,7 +63,6 @@ export function importGlobPlugin(config: ResolvedConfig): Plugin {
           config.root,
           (im, _, options) =>
             this.resolve(im, id, options).then((i) => i?.id || im),
-          config.experimental.importGlobRestoreExtension,
           config.logger,
         )
         if (result) {
@@ -404,7 +401,7 @@ function findCorrespondingCloseParenthesisPosition(
 
 const importPrefix = '__vite_glob_'
 
-const { basename, dirname, relative } = posix
+const { dirname, relative } = posix
 
 export interface TransformGlobImportResult {
   s: MagicString
@@ -420,7 +417,6 @@ export async function transformGlobImport(
   id: string,
   root: string,
   resolveId: IdResolver,
-  restoreQueryExtension = false,
   logger?: Logger,
 ): Promise<TransformGlobImportResult | null> {
   id = slash(id)
@@ -522,17 +518,11 @@ export async function transformGlobImport(
             const paths = resolvePaths(file)
             const filePath = paths.filePath
             let importPath = paths.importPath
-            let importQuery = options.query ?? ''
+            const importQuery = options.query ?? ''
 
             if (onlyKeys) {
               objectProps.push(`${JSON.stringify(filePath)}: 0`)
               return
-            }
-
-            if (importQuery && importQuery !== '?raw') {
-              const fileExtension = basename(file).split('.').slice(-1)[0]
-              if (fileExtension && restoreQueryExtension)
-                importQuery = `${importQuery}&lang.${fileExtension}`
             }
 
             importPath = `${importPath}${importQuery}`

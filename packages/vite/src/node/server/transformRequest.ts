@@ -554,6 +554,20 @@ const defaultModuleTypes: Record<string, ModuleType | undefined> = {
 
 // https://github.com/rolldown/rolldown/blob/bf53a100edf1780d5a5aa41f0bc0459c5696543e/crates/rolldown/src/utils/load_source.rs#L53-L89
 export function getModuleTypeFromId(id: string): ModuleType | undefined {
+  // Scan the full id first so explicit query hints like `?lang.ts`
+  // keep taking precedence over the pathname extension.
+  const moduleType = getModuleTypeFromKnownExtension(id)
+  if (moduleType) {
+    return moduleType
+  }
+
+  const cleanId = cleanUrl(id)
+  if (cleanId !== id) {
+    return getModuleTypeFromKnownExtension(cleanId)
+  }
+}
+
+function getModuleTypeFromKnownExtension(id: string): ModuleType | undefined {
   let pos = -1
   while ((pos = id.indexOf('.', pos + 1)) >= 0) {
     const ext = id.slice(pos + 1)
