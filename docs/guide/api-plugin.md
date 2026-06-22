@@ -376,8 +376,9 @@ Vite plugins can also provide hooks that serve Vite-specific purposes. These hoo
       path: string
       filename: string
       server?: ViteDevServer
-      bundle?: import('rollup').OutputBundle
-      chunk?: import('rollup').OutputChunk
+      bundle?: import('rolldown').OutputBundle
+      chunk?: import('rolldown').OutputChunk
+      originalUrl?: string
     },
   ) =>
     | IndexHtmlTransformResult
