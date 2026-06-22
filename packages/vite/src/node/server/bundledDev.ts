@@ -256,7 +256,7 @@ export class BundledDev {
     const bundleState = await this.devEngine.getBundleState()
     const shouldTrigger =
       bundleState.hasStaleOutput &&
-      !bundleState.lastFullBuildFailed &&
+      !bundleState.lastBuildErrored &&
       this.initialBuildCompleted
     if (shouldTrigger) {
       this.devEngine.ensureLatestBuildOutput().then(() => {

@@ -45,9 +45,6 @@ allowBuilds:
   workerd: true
 
 minimumReleaseAge: 1440
-minimumReleaseAgeExclude:
-  - rolldown
-  - '@rolldown/binding-*'
 blockExoticSubdeps: true
 trustPolicy: no-downgrade
 trustPolicyExclude:
