@@ -174,6 +174,19 @@ export const isAsyncScriptMap: WeakMap<
   Map<string, boolean>
 > = new WeakMap()
 
+// Stores extra attributes from user-written `<link rel="stylesheet">` tags so
+// they can be preserved when Vite re-emits the link during build. See #17322.
+export const linkExtraAttrsByUrlMap: WeakMap<
+  ResolvedConfig,
+  Map<
+    string,
+    {
+      resolvedId?: string
+      extraAttrs: Record<string, string | boolean>
+    }
+  >
+> = new WeakMap()
+
 export function nodeIsElement(
   node: DefaultTreeAdapterMap['node'],
 ): node is DefaultTreeAdapterMap['element'] {
@@ -250,6 +263,20 @@ export function getScriptInfo(node: DefaultTreeAdapterMap['element']): {
     }
   }
   return { src, srcSourceCodeLocation, isModule, isAsync, isIgnored }
+}
+
+// Returns any non-`href` attributes from a `<link>` node so they can be
+// preserved when Vite re-emits the tag during build (see #17322).
+export function getLinkExtraAttrs(
+  node: DefaultTreeAdapterMap['element'],
+): Record<string, string | boolean> {
+  const extraAttrs: Record<string, string | boolean> = {}
+  for (const p of node.attrs) {
+    if (p.prefix !== undefined) continue
+    if (p.name === 'href') continue
+    extraAttrs[p.name] = p.value === '' ? true : p.value
+  }
+  return extraAttrs
 }
 
 const attrValueStartRE = /=\s*(.)/
@@ -426,6 +453,7 @@ export function buildHtmlPlugin(config: ResolvedConfig): Plugin {
 
   // Same reason with `htmlInlineProxyPlugin`
   isAsyncScriptMap.set(config, new Map())
+  linkExtraAttrsByUrlMap.set(config, new Map())
 
   return {
     name: 'vite:build-html',
@@ -673,6 +701,12 @@ export function buildHtmlPlugin(config: ResolvedConfig): Plugin {
                     end: node.sourceCodeLocation!.endOffset,
                   })
                   js += importExpression
+                  // Preserve user-written attributes (e.g. `onload`, custom
+                  // `rel` like `preload`) so they survive the rewrite below.
+                  // See #17322.
+                  linkExtraAttrsByUrlMap
+                    .get(config)!
+                    .set(url, { extraAttrs: getLinkExtraAttrs(node) })
                 } else {
                   // If the node is a link, check if it can be inlined. If not, set `shouldInline`
                   // to `false` to force no inline. If `undefined`, it leaves to the default heuristics.
@@ -794,6 +828,12 @@ export function buildHtmlPlugin(config: ResolvedConfig): Plugin {
             js = js.replace(importExpression, '')
           } else {
             s.remove(start, end)
+            // Build a Map<emitted-file → extra-attrs> for #17322.
+            const map = linkExtraAttrsByUrlMap.get(config)!
+            const existing = map.get(url)
+            if (existing) {
+              existing.resolvedId = resolved.id
+            }
           }
         }
 
@@ -878,17 +918,43 @@ export function buildHtmlPlugin(config: ResolvedConfig): Plugin {
         },
       })
 
+      const linkExtraAttrsByFile = new Map<
+        string,
+        Record<string, string | boolean>
+      >()
+      for (const { resolvedId, extraAttrs } of linkExtraAttrsByUrlMap.get(
+        config,
+      )!.values()) {
+        if (!resolvedId) continue
+        const baseResolved = path.basename(resolvedId)
+        for (const key of Object.keys(bundle)) {
+          const asset = bundle[key]
+          // Match by basename prefix (Vite may append a hash + .css).
+          const baseBundle = path.basename(key)
+          if (
+            baseBundle === baseResolved ||
+            baseBundle.startsWith(`${baseResolved}-`) ||
+            baseBundle.startsWith(`${baseResolved}.`)
+          ) {
+            linkExtraAttrsByFile.set(key, extraAttrs)
+          }
+        }
+      }
+
       const toStyleSheetLinkTag = (
         file: string,
         toOutputPath: (filename: string) => string,
-      ): HtmlTagDescriptor => ({
-        tag: 'link',
-        attrs: {
-          rel: 'stylesheet',
+      ): HtmlTagDescriptor => {
+        const preservedAttrs = linkExtraAttrsByFile.get(file) ?? {}
+        // Don't clobber `rel` set by the user (e.g. `preload`).
+        const attrs: Record<string, string | boolean> = {
+          ...preservedAttrs,
+          rel: preservedAttrs.rel ?? 'stylesheet',
           crossorigin: true,
           href: toOutputPath(file),
-        },
-      })
+        }
+        return { tag: 'link', attrs }
+      }
 
       const getCssTagsForChunk = (
         chunk: OutputChunk,
