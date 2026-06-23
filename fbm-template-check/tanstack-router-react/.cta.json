@@ -1,0 +1,17 @@
+{
+  "projectName": "tanstack-router-react",
+  "mode": "file-router",
+  "typescript": true,
+  "tailwind": true,
+  "packageManager": "npm",
+  "git": false,
+  "install": false,
+  "intent": true,
+  "addOnOptions": {},
+  "includeExamples": true,
+  "envVarValues": {},
+  "routerOnly": false,
+  "version": 1,
+  "framework": "react",
+  "chosenAddOns": []
+}

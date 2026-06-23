@@ -1,0 +1,16 @@
+{
+  "name": "svelte",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview"
+  },
+  "devDependencies": {
+    "@sveltejs/vite-plugin-svelte": "^7.1.2",
+    "svelte": "^5.56.3",
+    "vite": "link:../../packages/vite"
+  }
+}

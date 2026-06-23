@@ -1,0 +1,3 @@
+{
+  "recommendations": ["svelte.svelte-vscode"]
+}

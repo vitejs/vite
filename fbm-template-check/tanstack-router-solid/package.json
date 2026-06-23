@@ -1,0 +1,39 @@
+{
+  "name": "tanstack-router-solid",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "vite dev --port 3000",
+    "generate-routes": "tsr generate",
+    "build": "vite build",
+    "start": "node .output/server/index.mjs",
+    "preview": "vite preview",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "@tailwindcss/vite": "^4.1.18",
+    "@tanstack/router-plugin": "^1.133.21",
+    "@tanstack/solid-router": "latest",
+    "@tanstack/solid-router-devtools": "latest",
+    "@tanstack/solid-router-ssr-query": "latest",
+    "@tanstack/solid-start": "latest",
+    "solid-js": "^1.9.12",
+    "tailwindcss": "^4.1.18"
+  },
+  "devDependencies": {
+    "@solidjs/testing-library": "^0.8.10",
+    "@tanstack/devtools-vite": "latest",
+    "@tanstack/router-cli": "^1.133.21",
+    "jsdom": "^28.1.0",
+    "typescript": "^6.0.2",
+    "vite": "^8.0.0",
+    "vite-plugin-solid": "^2.11.12",
+    "vitest": "^4.1.5"
+  },
+  "pnpm": {
+    "onlyBuiltDependencies": [
+      "esbuild",
+      "lightningcss"
+    ]
+  }
+}
