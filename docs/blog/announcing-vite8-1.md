@@ -2,7 +2,7 @@
 title: Vite 8.1 is out!
 author:
   name: The Vite Team
-date: 2026-06-22
+date: 2026-06-23
 sidebar: false
 head:
   - - meta
@@ -13,7 +13,7 @@ head:
       content: Announcing Vite 8.1
   - - meta
     - property: og:image
-      content: https://vite.dev/og-image-announcing-vite8.webp
+      content: https://vite.dev/og-image-announcing-vite8-1.webp
   - - meta
     - property: og:url
       content: https://vite.dev/blog/announcing-vite8-1
@@ -27,11 +27,11 @@ head:
 
 # Vite 8.1 is out!
 
-_June 22, 2026_
+_June 23, 2026_
 
-![Vite 8 Announcement Cover Image](/og-image-announcing-vite8.webp) // TODO: update the cover image
+![Vite 8 Announcement Cover Image](/og-image-announcing-vite8-1.webp)
 
-Vite 8 [was released](./announcing-vite8.md) in March with a single unified bundler powered by [Rolldown](https://rolldown.rs/), opening the door to further improvements. It is now seeing 34.8 million weekly downloads, around two third of the total downloads of Vite 7. While we've focused on resolving upgrade regressions, we're excited to announce the release of Vite 8.1.
+Vite 8 [was released](./announcing-vite8.md) in March with a single unified bundler powered by [Rolldown](https://rolldown.rs/), opening the door to further improvements. It is now seeing 41.6 million weekly downloads, almost reaching the total downloads of Vite 7. While we've focused on resolving upgrade regressions, we're excited to announce the release of Vite 8.1.
 
 Quick links:
 
@@ -67,10 +67,7 @@ Bundled Dev Mode would allow serving bundled files not only in production but al
 
 :::
 
-Currently, it focuses on the browser side and the basic plugins and the main features. If you are using a third party plugin, it may not work with this mode. If you are using a minor feature, it may not work as well. We are working on expanding the support and preparing a document that clarifies the changes that may be needed on the plugin side. See [the design document](https://example.com) for more details about the roadmap.
-
-// TODO: add link to the design document
-// TODO: create a discussion for the experimental support
+Currently, it focuses on the browser side and the basic plugins and the main features. If you are using a third party plugin, it may not work with this mode. If you are using a minor feature, it may not work as well. We are working on expanding the support and preparing a document that clarifies the changes that may be needed on the plugin side. See [the design document](https://github.com/vitejs/vite/discussions/22746) for more details about the roadmap.
 
 To enable this mode, you can pass `--experimental-bundle` or add `experimental.bundledDev: true` to your `vite.config.js`:
 
@@ -83,6 +80,8 @@ export default defineConfig({
   },
 })
 ```
+
+Share your feedback in [the discussion](https://github.com/vitejs/vite/discussions/22747).
 
 ### Experimental Chunk Import Map
 
