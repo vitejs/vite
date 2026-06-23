@@ -1,6 +1,6 @@
 import { setTimeout } from 'node:timers/promises'
 import { expect, test } from 'vitest'
-import { editFile, isBuild, page } from '~utils'
+import { addFile, editFile, isBuild, page, readFile } from '~utils'
 
 const assetUrl = /asset-[\w-]+\.png/
 
@@ -136,6 +136,41 @@ if (isBuild) {
       ),
     )
     await expect.poll(() => page.textContent('.hmr')).toBe('hello')
+  })
+
+  // an asset added by an HMR patch is emitted without `onOutput`, so it must be
+  // served via `onAdditionalAssets`. https://github.com/vitejs/vite/issues/22596
+  test('hmr patch serves a newly emitted asset', async () => {
+    const original = readFile('hmr-asset.js')
+    await expect
+      .poll(() => page.getAttribute('#hmr-asset-image', 'alt'))
+      .toBe('hmr-asset')
+
+    const assetResponse = page.waitForResponse(/hmr-asset-[\w-]+\.png/)
+    editFile(
+      'hmr-asset.js',
+      (code) =>
+        `import imageUrl from './hmr-asset.png'\n` +
+        code.replace('/* @asset-src */', 'img.src = imageUrl'),
+    )
+    try {
+      // the image only decodes if the emitted asset was served (not a 404)
+      await expect
+        .poll(() =>
+          page
+            .$eval(
+              '#hmr-asset-image',
+              (img: HTMLImageElement) => img.complete && img.naturalWidth > 0,
+            )
+            .catch(() => false),
+        )
+        .toBe(true)
+      const src = await page.getAttribute('#hmr-asset-image', 'src')
+      expect(src).toMatch(/\/assets\/hmr-asset-[\w-]+\.png/)
+      expect((await assetResponse).status()).toBe(200)
+    } finally {
+      addFile('hmr-asset.js', original)
+    }
   })
 
   test('worker with ?worker query', async () => {

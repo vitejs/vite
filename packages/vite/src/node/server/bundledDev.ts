@@ -4,6 +4,7 @@ import {
   type DevEngine,
   dev,
 } from 'rolldown/experimental'
+import type { RolldownOutput } from 'rolldown'
 import colors from 'picocolors'
 import getEtag from 'etag'
 import type { Update } from '#types/hmrPayload'
@@ -176,23 +177,18 @@ export class BundledDev {
         }
         this.lastBuildError = null
 
-        // NOTE: don't clear memoryFiles here as incremental build reuses the files
-        for (const outputFile of result.output) {
-          this.memoryFiles.set(outputFile.fileName, () => {
-            const source =
-              outputFile.type === 'chunk' ? outputFile.code : outputFile.source
-            return {
-              source,
-              etag: getEtag(Buffer.from(source), { weak: true }),
-            }
-          })
-        }
+        this.storeOutputFiles(result.output)
 
         // Trigger a full reload if there's no error in the result and a reload is pending from HMR.
         if (this.fullReloadPending) {
           this.fullReloadPending = false
           this.debouncedFullReload()
         }
+      },
+      onAdditionalAssets: (result) => {
+        // Assets emitted by an HMR patch / lazy compile don't go through
+        // `onOutput`. https://github.com/vitejs/vite/issues/22596
+        this.storeOutputFiles(result.output)
       },
       watch: {
         skipWrite: true,
@@ -327,6 +323,20 @@ export class BundledDev {
     this.memoryFiles.clear()
     await this._devEngine?.close()
     this.initialBuildCompleted = false
+  }
+
+  private storeOutputFiles(output: RolldownOutput['output']): void {
+    // NOTE: don't clear memoryFiles here as incremental build reuses the files
+    for (const outputFile of output) {
+      this.memoryFiles.set(outputFile.fileName, () => {
+        const source =
+          outputFile.type === 'chunk' ? outputFile.code : outputFile.source
+        return {
+          source,
+          etag: getEtag(Buffer.from(source), { weak: true }),
+        }
+      })
+    }
   }
 
   private async getRolldownOptions() {
