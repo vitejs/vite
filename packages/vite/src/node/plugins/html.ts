@@ -1178,7 +1178,7 @@ export function preImportMapHook(
 
     let importMapIndex = -1
     let importMapAppendIndex = -1
-    await traverseHtml(html, ctx.path, (node) => {
+    await traverseHtml(html, ctx.path, config.logger.warn, (node) => {
       if (!nodeIsElement(node)) {
         return
       }
@@ -1266,7 +1266,7 @@ export function postImportMapHook(
 
     let importMapAppendIndex = 0
     const s = new MagicString(html)
-    await traverseHtml(html, path, (node) => {
+    await traverseHtml(html, path, config.logger.warn, (node) => {
       if (!nodeIsElement(node)) {
         return
       }
