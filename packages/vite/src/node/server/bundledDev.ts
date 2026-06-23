@@ -71,6 +71,10 @@ export class BundledDev {
     })
   })
 
+  private fullReloadPending = false
+
+  private lastBuildError: Error | null = null
+
   memoryFiles: MemoryFiles = new MemoryFiles()
 
   constructor(private environment: DevEnvironment) {
@@ -107,6 +111,17 @@ export class BundledDev {
     this.environment.hot.on('vite:module-loaded', (payload, client) => {
       this.clients.setupIfNeeded(client, payload.clientId)
       this.devEngine.registerModules(payload.clientId, payload.modules)
+    })
+    this.environment.hot.on('vite:client:connect', (_payload, client) => {
+      // Replay the cached build error to freshly connected clients.
+      if (this.lastBuildError) {
+        debug?.('REPLAY: replaying last build error to newly connected client')
+
+        client.send({
+          type: 'error',
+          err: prepareError(this.lastBuildError),
+        })
+      }
     })
     this.environment.hot.on('vite:client:disconnect', (_payload, client) => {
       const clientId = this.clients.delete(client)
@@ -151,12 +166,15 @@ export class BundledDev {
               error: result,
             },
           )
+          this.lastBuildError = result
+          this.fullReloadPending = false
           this.environment.hot.send({
             type: 'error',
             err: prepareError(result),
           })
           return
         }
+        this.lastBuildError = null
 
         // NOTE: don't clear memoryFiles here as incremental build reuses the files
         for (const outputFile of result.output) {
@@ -168,6 +186,12 @@ export class BundledDev {
               etag: getEtag(Buffer.from(source), { weak: true }),
             }
           })
+        }
+
+        // Trigger a full reload if there's no error in the result and a reload is pending from HMR.
+        if (this.fullReloadPending) {
+          this.fullReloadPending = false
+          this.debouncedFullReload()
         }
       },
       watch: {
@@ -192,9 +216,11 @@ export class BundledDev {
 
   private async waitForInitialBuildFinish(): Promise<void> {
     await this.devEngine.ensureCurrentBuildFinish()
-    while (this.memoryFiles.size === 0) {
+    let state = await this.devEngine.getBundleState()
+    while (this.memoryFiles.size === 0 && !state.lastBuildErrored) {
       await setTimeout(10)
       await this.devEngine.ensureCurrentBuildFinish()
+      state = await this.devEngine.getBundleState()
     }
   }
 
@@ -254,6 +280,23 @@ export class BundledDev {
 
   async triggerBundleRegenerationIfStale(): Promise<boolean> {
     const bundleState = await this.devEngine.getBundleState()
+
+    // Trigger full build if the HMR errors,
+    // this is to make it easier to recover if the HMR generation is broken for some reason.
+    if (
+      this.initialBuildCompleted &&
+      bundleState.lastBuildErrored &&
+      bundleState.lastErrorStage === 'Hmr'
+    ) {
+      debug?.(`TRIGGER: access after HMR-stage failure, forcing full rebuild`)
+
+      this.devEngine.triggerFullBuild()
+      this.devEngine.ensureLatestBuildOutput().then(() => {
+        this.debouncedFullReload()
+      })
+      return true
+    }
+
     const shouldTrigger =
       bundleState.hasStaleOutput &&
       !bundleState.lastBuildErrored &&
@@ -348,9 +391,16 @@ export class BundledDev {
         colors.green(`trigger page reload `) + colors.dim(shortFile) + reason,
         { clear: !invalidateInformation, timestamp: true },
       )
-      this.devEngine.ensureLatestBuildOutput().then(() => {
-        this.debouncedFullReload()
-      })
+      if (invalidateInformation) {
+        // Invalidate does not get upgraded to `rebuild`,
+        // so `onOutput` will not be triggered and thus the reload needs to be triggered here.
+        this.devEngine.ensureLatestBuildOutput().then(async () => {
+          this.debouncedFullReload()
+        })
+      } else {
+        // Use a flag to defer the reload until the `onOutput` callback to avoid error lay flashes.
+        this.fullReloadPending = true
+      }
       return
     }
 
