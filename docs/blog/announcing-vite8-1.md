@@ -162,14 +162,14 @@ import { defineConfig } from 'vite'
 
 export default defineConfig({
   html: {
-    additionalAssetSources: [
+    additionalAssetSources: {
       'html-import': {
         srcAttributes: 'src',
       },
       img: {
         srcAttributes: ['data-src-dark', 'data-src-light'],
       },
-    ],
+    },
   },
 })
 ```
