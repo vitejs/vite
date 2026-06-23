@@ -922,9 +922,9 @@ export function buildHtmlPlugin(config: ResolvedConfig): Plugin {
         string,
         Record<string, string | boolean>
       >()
-      for (const { resolvedId, extraAttrs } of linkExtraAttrsByUrlMap.get(
-        config,
-      )!.values()) {
+      for (const { resolvedId, extraAttrs } of linkExtraAttrsByUrlMap
+        .get(config)!
+        .values()) {
         if (!resolvedId) continue
         const baseResolved = path.basename(resolvedId)
         for (const key of Object.keys(bundle)) {
