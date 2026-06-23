@@ -2,8 +2,10 @@ import { posix } from 'node:path'
 import MagicString from 'magic-string'
 import { init, parse as parseImports } from 'es-module-lexer'
 import type { ImportSpecifier } from 'es-module-lexer'
-import { parseAst } from 'rollup/parseAst'
+import { parseAst } from 'rolldown/parseAst'
 import { dynamicImportToGlob } from '@rollup/plugin-dynamic-import-vars'
+import { viteDynamicImportVarsPlugin as nativeDynamicImportVarsPlugin } from 'rolldown/experimental'
+import { exactRegex } from 'rolldown/filter'
 import type { Plugin } from '../plugin'
 import type { ResolvedConfig } from '../config'
 import { CLIENT_ENTRY } from '../constants'
@@ -180,30 +182,45 @@ export function dynamicImportVarsPlugin(config: ResolvedConfig): Plugin {
   return {
     name: 'vite:dynamic-import-vars',
 
+    applyToEnvironment(environment) {
+      if (environment.config.isBundled) {
+        const { include, exclude } =
+          environment.config.build.dynamicImportVarsOptions
+
+        return nativeDynamicImportVarsPlugin({
+          include,
+          exclude,
+          resolver(id, importer) {
+            return resolve(environment, id, importer)
+          },
+          sourcemap: !!environment.config.build.sourcemap,
+        })
+      }
+      return true
+    },
+
     resolveId: {
+      filter: { id: exactRegex(dynamicImportHelperId) },
       handler(id) {
-        if (id === dynamicImportHelperId) {
-          return id
-        }
+        return id
       },
     },
 
     load: {
-      handler(id) {
-        if (id === dynamicImportHelperId) {
-          return `export default ${dynamicImportHelper.toString()}`
-        }
+      filter: { id: exactRegex(dynamicImportHelperId) },
+      handler(_id) {
+        return `export default ${dynamicImportHelper.toString()}`
       },
     },
 
     transform: {
+      filter: {
+        id: { exclude: exactRegex(CLIENT_ENTRY) },
+        code: hasDynamicImportRE,
+      },
       async handler(source, importer) {
         const { environment } = this
-        if (
-          !getFilter(this)(importer) ||
-          importer === CLIENT_ENTRY ||
-          !hasDynamicImportRE.test(source)
-        ) {
+        if (!getFilter(this)(importer)) {
           return
         }
 
@@ -251,11 +268,7 @@ export function dynamicImportVarsPlugin(config: ResolvedConfig): Plugin {
               config.root,
             )
           } catch (error) {
-            if (environment.config.build.dynamicImportVarsOptions.warnOnError) {
-              this.warn(error)
-            } else {
-              this.error(error)
-            }
+            this.warn(error)
           }
 
           if (!result) {

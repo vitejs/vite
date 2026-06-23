@@ -10,6 +10,8 @@ globalThis.window = {}
 // @ts-expect-error refer to https://github.com/vitejs/vite/pull/11079
 globalThis.location = new URL('http://localhost/')
 
+const dirname = import.meta.dirname
+
 export default defineConfig({
   plugins: [
     {
@@ -39,13 +41,11 @@ export default defineConfig({
   ],
   build: {
     cssTarget: 'chrome61',
-    rollupOptions: {
+    rolldownOptions: {
       input: {
-        index: path.resolve(__dirname, './index.html'),
-        treeshakeScoped: path.resolve(
-          __dirname,
-          './treeshake-scoped/index.html',
-        ),
+        index: path.resolve(dirname, './index.html'),
+        treeshakeScoped: path.resolve(dirname, './treeshake-scoped/index.html'),
+        empty: path.resolve(dirname, './empty.css'),
       },
       output: {
         manualChunks(id) {
@@ -55,6 +55,7 @@ export default defineConfig({
         },
       },
     },
+    emptyOutDir: false, // the dist directory is shared with other configs
   },
   esbuild: {
     logOverride: {
@@ -63,17 +64,17 @@ export default defineConfig({
   },
   resolve: {
     alias: [
-      { find: '=', replacement: __dirname },
-      { find: /=replace\/(.*)/, replacement: `${__dirname}/$1` },
-      { find: 'spacefolder', replacement: __dirname + '/folder with space' },
-      { find: '#alias', replacement: __dirname + '/aliased/foo.css' },
+      { find: '=', replacement: dirname },
+      { find: /^=replace\/(.*)/, replacement: `${dirname}/$1` },
+      { find: 'spacefolder', replacement: dirname + '/folder with space' },
+      { find: '#alias', replacement: dirname + '/aliased/foo.css' },
       {
         find: '#alias?inline',
-        replacement: __dirname + '/aliased/foo.css?inline',
+        replacement: dirname + '/aliased/foo.css?inline',
       },
       {
         find: '#alias-module',
-        replacement: __dirname + '/aliased/bar.module.css',
+        replacement: dirname + '/aliased/bar.module.css',
       },
     ],
   },
@@ -135,7 +136,7 @@ export default defineConfig({
         additionalData: `$injectedColor ?= orange`,
         imports: [
           './options/relative-import.styl',
-          path.join(__dirname, 'options/absolute-import.styl'),
+          path.join(dirname, 'options/absolute-import.styl'),
         ],
         define: {
           $definedColor: new stylus.nodes.RGBA(51, 197, 255, 1),

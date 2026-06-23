@@ -1,2 +1,2 @@
-import dep from "./index.js"
+import dep from './index.js'
 export default dep

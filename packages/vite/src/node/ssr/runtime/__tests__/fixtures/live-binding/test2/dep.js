@@ -1,13 +1,13 @@
 function f() {
-  return 0;
+  return 0
 }
 
-f = () => 1;
+f = () => 1
 
-export default f;
+export default f
 
-f = () => 2;
+f = () => 2
 
 export function update() {
-  f = () => 3;
+  f = () => 3
 }

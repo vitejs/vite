@@ -1,3 +1,346 @@
+## <small>[9.0.7](https://github.com/vitejs/vite/compare/create-vite@9.0.6...create-vite@9.0.7) (2026-05-11)</small>
+### Bug Fixes
+
+* **create-vite:** pass react framework to TanStack CLI ([#22397](https://github.com/vitejs/vite/issues/22397)) ([18f0f90](https://github.com/vitejs/vite/commit/18f0f904442cc45bd4b1c83db2627fd5cb0c9937))
+* **deps:** update all non-major dependencies ([#22334](https://github.com/vitejs/vite/issues/22334)) ([672c962](https://github.com/vitejs/vite/commit/672c96288fd5440bbecddc65551e713edeb8d403))
+* **deps:** update all non-major dependencies ([#22382](https://github.com/vitejs/vite/issues/22382)) ([5c0cfcb](https://github.com/vitejs/vite/commit/5c0cfcb83dde2c6e25b6c3215dd622956bf29631))
+* **deps:** update all non-major dependencies ([#22420](https://github.com/vitejs/vite/issues/22420)) ([2be6000](https://github.com/vitejs/vite/commit/2be6000130e3ae2160acc301baa4f7913fbc1f6e))
+
+### Documentation
+
+* **create-vite:** list react-compiler templates in README ([#22347](https://github.com/vitejs/vite/issues/22347)) ([7c3a61f](https://github.com/vitejs/vite/commit/7c3a61f42da6445904e93f0e29e9a2a838fa684a))
+
+### Miscellaneous Chores
+
+* **deps:** update dependency tsdown to ^0.21.10 ([#22333](https://github.com/vitejs/vite/issues/22333)) ([3b51e05](https://github.com/vitejs/vite/commit/3b51e050214c5a817c163838ab8643fe34c7d0c3))
+* **deps:** update rolldown-related dependencies ([#22421](https://github.com/vitejs/vite/issues/22421)) ([66b9eb3](https://github.com/vitejs/vite/commit/66b9eb35188007e0e9a1bd03b4be820016cad60b))
+
+### Tests
+
+* **create-vite:** use short help alias ([#22389](https://github.com/vitejs/vite/issues/22389)) ([994ab66](https://github.com/vitejs/vite/commit/994ab66bc4dc872278d8353d710ffc4bbd881f8d))
+
+## <small>[9.0.6](https://github.com/vitejs/vite/compare/create-vite@9.0.5...create-vite@9.0.6) (2026-04-23)</small>
+### Features
+
+* **create-vite:** use ESLint v10 ([#22266](https://github.com/vitejs/vite/issues/22266)) ([959fee5](https://github.com/vitejs/vite/commit/959fee53fdb8e647a62b11182ff05973d0815018))
+
+### Bug Fixes
+
+* **create-vite:** use `type="button"` to counter button in templates consistently ([#22142](https://github.com/vitejs/vite/issues/22142)) ([1ac46d6](https://github.com/vitejs/vite/commit/1ac46d64b81e0ac12b4df1ed28fd91cee1fd5f0b))
+
+## <small>[9.0.5](https://github.com/vitejs/vite/compare/create-vite@9.0.4...create-vite@9.0.5) (2026-04-20)</small>
+### Bug Fixes
+
+* **create-vite:** add missing quotes around viteLogo src attribute ([#22216](https://github.com/vitejs/vite/issues/22216)) ([bb5203d](https://github.com/vitejs/vite/commit/bb5203d01c24cf89b4f497ee968ce6f63876b946))
+* **deps:** update all non-major dependencies ([#22219](https://github.com/vitejs/vite/issues/22219)) ([4cd0d67](https://github.com/vitejs/vite/commit/4cd0d6760edd5fb0841abe86538de3c225e880a1))
+* **deps:** update all non-major dependencies ([#22268](https://github.com/vitejs/vite/issues/22268)) ([c28e9c1](https://github.com/vitejs/vite/commit/c28e9c12a849f80e6fdc93f42283ad2863ab9dbc))
+
+### Documentation
+
+* **create-vite:** list overwrite flag in help ([#22262](https://github.com/vitejs/vite/issues/22262)) ([6b00462](https://github.com/vitejs/vite/commit/6b00462546931c135fb2e1e4be1daf57f59cf463))
+* remove reference to react swc templates ([#22129](https://github.com/vitejs/vite/issues/22129)) ([7706a7d](https://github.com/vitejs/vite/commit/7706a7d8c94c7a3d9463d1de856b7b583f479552))
+
+### Miscellaneous Chores
+
+* **create-vite:** remove unnecessary DOM.Iterable ([#22168](https://github.com/vitejs/vite/issues/22168)) ([bdc53ab](https://github.com/vitejs/vite/commit/bdc53ab1e67f7e2e000112eeed9c85413ddb0e9e))
+* **deps:** update dependency tsdown to ^0.21.9 ([#22267](https://github.com/vitejs/vite/issues/22267)) ([a0aef50](https://github.com/vitejs/vite/commit/a0aef50f6b51120df95cc11a7354af2afabe6a4a))
+
+### Code Refactoring
+
+* **create-vite:** optimize hero.png ([#22203](https://github.com/vitejs/vite/issues/22203)) ([a07a4bd](https://github.com/vitejs/vite/commit/a07a4bd052ac75f916391c999c408ad5f2867e61))
+* **create-vite:** use styleText ([#22174](https://github.com/vitejs/vite/issues/22174)) ([dc60aae](https://github.com/vitejs/vite/commit/dc60aae47508a39bffb582242e093d7a8c10a80f))
+
+## <small>[9.0.4](https://github.com/vitejs/vite/compare/create-vite@9.0.3...create-vite@9.0.4) (2026-04-06)</small>
+### Bug Fixes
+
+* **deps:** update all non-major dependencies ([#21988](https://github.com/vitejs/vite/issues/21988)) ([9b7d150](https://github.com/vitejs/vite/commit/9b7d15002a75474421bc5636238336d88c7fe2f3))
+* **deps:** update all non-major dependencies ([#22073](https://github.com/vitejs/vite/issues/22073)) ([6daa10f](https://github.com/vitejs/vite/commit/6daa10ff1e8d15a90f49d8dd909ff208da85d6d8))
+* **deps:** update all non-major dependencies ([#22143](https://github.com/vitejs/vite/issues/22143)) ([22b0166](https://github.com/vitejs/vite/commit/22b016612703320db45c64a2fe44472051ef5ec5))
+
+### Documentation
+
+* **create-vite:** fix qwik template typo ([#21964](https://github.com/vitejs/vite/issues/21964)) ([c2d17bd](https://github.com/vitejs/vite/commit/c2d17bd87998ba828984aa9963586f09ebf2fd9b))
+
+### Miscellaneous Chores
+
+* **deps:** update rolldown-related dependencies ([#21989](https://github.com/vitejs/vite/issues/21989)) ([0ded627](https://github.com/vitejs/vite/commit/0ded6274579e8bda6b22a7ba93b15d15b4c28b78))
+
+### Code Refactoring
+
+* upgrade to typescript 6 ([#22110](https://github.com/vitejs/vite/issues/22110)) ([cc41398](https://github.com/vitejs/vite/commit/cc41398c2cf0bb5061cf0ca5dc3b408ae7e41191))
+
+### Build System
+
+* handle tsdown inlineOnly deprecation ([#22111](https://github.com/vitejs/vite/issues/22111)) ([86cbc6e](https://github.com/vitejs/vite/commit/86cbc6e5571aefd6278d6ecbbfb5ede8d4061940))
+
+## <small>[9.0.3](https://github.com/vitejs/vite/compare/create-vite@9.0.2...create-vite@9.0.3) (2026-03-19)</small>
+### Bug Fixes
+
+* **deps:** update all non-major dependencies ([#21878](https://github.com/vitejs/vite/issues/21878)) ([6dbbd7f](https://github.com/vitejs/vite/commit/6dbbd7f072b1e13abd96489b0016b3d93d937999))
+
+### Miscellaneous Chores
+
+* **deps:** update rolldown-related dependencies ([#21787](https://github.com/vitejs/vite/issues/21787)) ([1af1d3a](https://github.com/vitejs/vite/commit/1af1d3a3a4fd62fa581392b2dec9052efe8485b3))
+
+## <small>[9.0.2](https://github.com/vitejs/vite/compare/create-vite@9.0.1...create-vite@9.0.2) (2026-03-13)</small>
+### Bug Fixes
+
+* **create-vue:** add `lang="ts"` to vue files to fix type errors in vue-ts template ([#21838](https://github.com/vitejs/vite/issues/21838)) ([1b8592d](https://github.com/vitejs/vite/commit/1b8592d2754da20e9ca4c4ba39c318b9168da893))
+
+## <small>[9.0.1](https://github.com/vitejs/vite/compare/create-vite@9.0.0...create-vite@9.0.1) (2026-03-12)</small>
+### Bug Fixes
+
+* **create-vite:** add `@babel/core` and `@types/babel__core` for react compiler template ([#21833](https://github.com/vitejs/vite/issues/21833)) ([e818474](https://github.com/vitejs/vite/commit/e818474496746d9f386f9ed00c93200b083a16ad))
+
+## [9.0.0](https://github.com/vitejs/vite/compare/create-vite@8.2.0...create-vite@9.0.0) (2026-03-12)
+### ⚠ BREAKING CHANGES
+
+* update default browser target (#21193)
+
+### Features
+
+* **create-vite:** add AI agent experience (AX) support ([#21116](https://github.com/vitejs/vite/issues/21116)) ([38d6011](https://github.com/vitejs/vite/commit/38d6011b7b6e23e113d22bfabdd034ea182d18ea))
+* **create-vite:** add ember ([#20069](https://github.com/vitejs/vite/issues/20069)) ([2f9428d](https://github.com/vitejs/vite/commit/2f9428d1ffd988e30cb253d5bb84844fb1654e86))
+* **create-vite:** make vitePreprocess not the default in svelte ([#21637](https://github.com/vitejs/vite/issues/21637)) ([2a2c8a4](https://github.com/vitejs/vite/commit/2a2c8a4b05208d786ff4630e6917d3975b304787))
+* **create-vite:** remove react-swc variants ([#21633](https://github.com/vitejs/vite/issues/21633)) ([14fcb60](https://github.com/vitejs/vite/commit/14fcb60cf376e0c7b93d84dad19851ac985f59c4))
+* **create-vite:** show description for template variants ([#21403](https://github.com/vitejs/vite/issues/21403)) ([cb85e5c](https://github.com/vitejs/vite/commit/cb85e5ce939ce04b9a37c06bba23b7cb2d0cb1e1))
+* **create-vite:** update framework starter templates to align the new theme ([#21432](https://github.com/vitejs/vite/issues/21432)) ([520d13b](https://github.com/vitejs/vite/commit/520d13bfb14c4cf4fd8d3620e1fc5e6e815c9606))
+* **create-vite:** update react template for new plugin-react ([#21742](https://github.com/vitejs/vite/issues/21742)) ([0b4242e](https://github.com/vitejs/vite/commit/0b4242e2edfe094de5f8ebfcc2bbb676a0222715))
+* **create-vite:** update vanilla starter templates to align the new theme ([#21425](https://github.com/vitejs/vite/issues/21425)) ([7453556](https://github.com/vitejs/vite/commit/7453556f5cbacad2ea4d216f4d0c92826b49f466))
+* **deps:** bump plugin versions in create-vite templates ([#21832](https://github.com/vitejs/vite/issues/21832)) ([ebb041e](https://github.com/vitejs/vite/commit/ebb041eaadefb7fdbd42428d40537e07f640720d))
+* update default browser target ([#21193](https://github.com/vitejs/vite/issues/21193)) ([8c3dd06](https://github.com/vitejs/vite/commit/8c3dd06bd9903bf0e6bc51f3554eea8cb6b26903))
+
+### Bug Fixes
+
+* **create-vite:** do not create empty directory for custom commands ([#21367](https://github.com/vitejs/vite/issues/21367)) ([df767ed](https://github.com/vitejs/vite/commit/df767edeaecc73d0e78cdadb42d7fb1646955951))
+* **create-vite:** handle double dash for `npm exec` ([#21830](https://github.com/vitejs/vite/issues/21830)) ([e4bcd59](https://github.com/vitejs/vite/commit/e4bcd59b2549801e55bbf41a92bd295288e27d0d))
+* **create-vite:** skip irrelevant "immediate" prompt for external commands ([#21410](https://github.com/vitejs/vite/issues/21410)) ([33e74e5](https://github.com/vitejs/vite/commit/33e74e5ad29342668ebc20c48e5ac2214d3ac8d2))
+* **create-vite:** strip invalid characters in project name ([#21553](https://github.com/vitejs/vite/issues/21553)) ([4bba787](https://github.com/vitejs/vite/commit/4bba787083393bdc79f5f49da9c0e86a497eee64))
+* **create-vite:** tanstack cli `--template` is deprecated ([#21831](https://github.com/vitejs/vite/issues/21831)) ([1527f35](https://github.com/vitejs/vite/commit/1527f358182de0dfde1eea905edb0f87a9b808b9))
+* **create-vite:** update deprecated tsrouter-app to `@tanstack/cli` ([#21527](https://github.com/vitejs/vite/issues/21527)) ([ddecf2b](https://github.com/vitejs/vite/commit/ddecf2bf5cf7bdcabad63e300cf9f80c5f6e0ca4))
+* **create-vite:** update QwikCity custom command to "empty" template ([#21279](https://github.com/vitejs/vite/issues/21279)) ([9890dd6](https://github.com/vitejs/vite/commit/9890dd6cddc5a3940c7fde2ec7966923f43e3957))
+* **deps:** update `@clack/prompts` to 1.0.0-alpha.9 ([#21421](https://github.com/vitejs/vite/issues/21421)) ([6864c27](https://github.com/vitejs/vite/commit/6864c2727a19270339b9693b8abdd4c26c92d1c3))
+* **deps:** update all non-major dependencies ([#21146](https://github.com/vitejs/vite/issues/21146)) ([a3cd262](https://github.com/vitejs/vite/commit/a3cd262f37228967e455617e982b35fccc49ffe9))
+* **deps:** update all non-major dependencies ([#21175](https://github.com/vitejs/vite/issues/21175)) ([72e398a](https://github.com/vitejs/vite/commit/72e398a46d8d2f54fbcbeb9ff0dceab346aeb642))
+* **deps:** update all non-major dependencies ([#21231](https://github.com/vitejs/vite/issues/21231)) ([859789c](https://github.com/vitejs/vite/commit/859789c856412dfa67969232ddda1df754febf40))
+* **deps:** update all non-major dependencies ([#21285](https://github.com/vitejs/vite/issues/21285)) ([4635b2e](https://github.com/vitejs/vite/commit/4635b2e90f833d1048d76381e20208c0e0841e97))
+* **deps:** update all non-major dependencies ([#21321](https://github.com/vitejs/vite/issues/21321)) ([9bc7c2e](https://github.com/vitejs/vite/commit/9bc7c2ed4f387fb982b84d1988a26af8990096f7))
+* **deps:** update all non-major dependencies ([#21389](https://github.com/vitejs/vite/issues/21389)) ([30f48df](https://github.com/vitejs/vite/commit/30f48df33ec9e9bd0b8164461eede5574398370b))
+* **deps:** update all non-major dependencies ([#21440](https://github.com/vitejs/vite/issues/21440)) ([1835995](https://github.com/vitejs/vite/commit/18359959cb2960a2fb2b9a340e5ae27d122a1501))
+* **deps:** update all non-major dependencies ([#21488](https://github.com/vitejs/vite/issues/21488)) ([2b32ca2](https://github.com/vitejs/vite/commit/2b32ca24fe9d742901c2cb5c88e6b1fd734f8c73))
+* **deps:** update all non-major dependencies ([#21540](https://github.com/vitejs/vite/issues/21540)) ([9ebaeaa](https://github.com/vitejs/vite/commit/9ebaeaac094db996b1d12665052633c20ac8a9cf))
+* **deps:** update all non-major dependencies ([#21594](https://github.com/vitejs/vite/issues/21594)) ([becdc5d](https://github.com/vitejs/vite/commit/becdc5dcc49efa3769c92e9929fb2280fd776206))
+* **deps:** update all non-major dependencies ([#21691](https://github.com/vitejs/vite/issues/21691)) ([521fdc0](https://github.com/vitejs/vite/commit/521fdc0ced51ddee7f728e6f891f36ebc6c0e1ce))
+* **deps:** update all non-major dependencies ([#21732](https://github.com/vitejs/vite/issues/21732)) ([5c921ca](https://github.com/vitejs/vite/commit/5c921ca9bfe64327df82b04ae34ccfe0a7cfa297))
+* **deps:** update all non-major dependencies ([#21786](https://github.com/vitejs/vite/issues/21786)) ([eaa4352](https://github.com/vitejs/vite/commit/eaa4352af8f8658e3a10a9945ad9c227fcb2f28a))
+
+### Documentation
+
+* correct "it's" to "its" for possessive usage ([#21645](https://github.com/vitejs/vite/issues/21645)) ([2b90b39](https://github.com/vitejs/vite/commit/2b90b39c4592f386639410175263d35d0651ff33))
+* **degit:** switch to recommending tiged ([#21148](https://github.com/vitejs/vite/issues/21148)) ([977d9ee](https://github.com/vitejs/vite/commit/977d9ee28df7b2a95db5ec3b1fde27033c485199))
+
+### Miscellaneous Chores
+
+* changes to merge back to vite repo ([35b3cae](https://github.com/vitejs/vite/commit/35b3cae772419409872e1afd8d51a303e3504d2d))
+* **create-vite:** update logo ([#21405](https://github.com/vitejs/vite/issues/21405)) ([80840d3](https://github.com/vitejs/vite/commit/80840d37d88f3f4344d6317a087dde3469273917))
+* **deps:** update dependency globals to v17 ([#21441](https://github.com/vitejs/vite/issues/21441)) ([526a687](https://github.com/vitejs/vite/commit/526a687e4150e4ffa9301c8329c397afe379f2dc))
+* **deps:** update dependency tsdown to ^0.16.6 ([#21145](https://github.com/vitejs/vite/issues/21145)) ([d9ac204](https://github.com/vitejs/vite/commit/d9ac20406cca3b32fc37c32a1c081881bf1ee897))
+* **deps:** update dependency tsdown to ^0.17.4 ([#21284](https://github.com/vitejs/vite/issues/21284)) ([43f061a](https://github.com/vitejs/vite/commit/43f061adc677d40ce226de4dd07ee9a1f5e4ca73))
+* **deps:** update dependency tsdown to ^0.18.4 ([#21344](https://github.com/vitejs/vite/issues/21344)) ([964c718](https://github.com/vitejs/vite/commit/964c718a382ff46ec1f906d7d6bc3f135a6dcd3f))
+* **deps:** update dependency tsdown to ^0.20.3 ([#21593](https://github.com/vitejs/vite/issues/21593)) ([e3f6ac9](https://github.com/vitejs/vite/commit/e3f6ac9326bf7c31a916e7c5dd90277de4c262c0))
+* **deps:** update rolldown-related dependencies ([#21174](https://github.com/vitejs/vite/issues/21174)) ([74559c9](https://github.com/vitejs/vite/commit/74559c947483a8ee24da052ac2d9568f7cb3546a))
+* **deps:** update rolldown-related dependencies ([#21230](https://github.com/vitejs/vite/issues/21230)) ([9349446](https://github.com/vitejs/vite/commit/9349446e9344bd81ccfb37af482f479cd1b59bbc))
+* **deps:** update rolldown-related dependencies ([#21390](https://github.com/vitejs/vite/issues/21390)) ([be9dd4e](https://github.com/vitejs/vite/commit/be9dd4e08d899f9ed27f2bdcb81bf27d018377a6))
+* **deps:** update rolldown-related dependencies ([#21487](https://github.com/vitejs/vite/issues/21487)) ([5863e51](https://github.com/vitejs/vite/commit/5863e513fab6b481cfb42da86202f9db728c077d))
+* update create-vite versions ([6556550](https://github.com/vitejs/vite/commit/6556550a81d4b87023057aaf106b2560c1b84adb))
+
+### Code Refactoring
+
+* **create-vite:** remove `rolldown` boolean flag ([#21596](https://github.com/vitejs/vite/issues/21596)) ([e8c9334](https://github.com/vitejs/vite/commit/e8c9334c4843324f760ec3a862f2778d0be9ea4a))
+* **create-vite:** remove extra brackets in React Compiler babel plugins ([#21674](https://github.com/vitejs/vite/issues/21674)) ([fe949f7](https://github.com/vitejs/vite/commit/fe949f78c0ef057bf59dc46d97ac0ed11d251ed7))
+* use `import.meta.dirname` everywhere ([#21509](https://github.com/vitejs/vite/issues/21509)) ([7becf5f](https://github.com/vitejs/vite/commit/7becf5f8fe9041cff60f495ef975faaba68f9eb2))
+
+## [8.2.0](https://github.com/vitejs/vite/compare/create-vite@8.1.0...create-vite@8.2.0) (2025-11-20)
+### Features
+
+* **create-vite:** add Vike ([#21132](https://github.com/vitejs/vite/issues/21132)) ([0a86262](https://github.com/vitejs/vite/commit/0a86262cb253a6a38bb02d72a39805fe552b944b))
+
+### Bug Fixes
+
+* **deps:** update all non-major dependencies ([#21128](https://github.com/vitejs/vite/issues/21128)) ([4f8171e](https://github.com/vitejs/vite/commit/4f8171eb3046bd70c83964689897dab4c6b58bc0))
+
+### Miscellaneous Chores
+
+* **deps:** update rolldown-related dependencies ([#21127](https://github.com/vitejs/vite/issues/21127)) ([5029720](https://github.com/vitejs/vite/commit/50297208452241061cb44d09a4bbdf77a11ac01e))
+
+## [8.1.0](https://github.com/vitejs/vite/compare/create-vite@8.0.3...create-vite@8.1.0) (2025-11-12)
+### Features
+
+* **create-vite:** update React Compiler dep to 1.0.0 ([#20911](https://github.com/vitejs/vite/issues/20911)) ([6cf3304](https://github.com/vitejs/vite/commit/6cf3304c83586cf547d0b706d2e58ae647b93218))
+* **create-vite:** updated eslint-plugin-react-hooks to v7 and updated the config ([#20914](https://github.com/vitejs/vite/issues/20914)) ([0ec8aeb](https://github.com/vitejs/vite/commit/0ec8aeba479bb42d37521cf8d256286abc06c129))
+
+### Miscellaneous Chores
+
+* **deps:** update rolldown-related dependencies ([#21095](https://github.com/vitejs/vite/issues/21095)) ([39a0a15](https://github.com/vitejs/vite/commit/39a0a15fd24ed37257c48b795097a3794e54d255))
+
+## <small>[8.0.3](https://github.com/vitejs/vite/compare/create-vite@8.0.2...create-vite@8.0.3) (2025-11-10)</small>
+### Bug Fixes
+
+* **create-vite:** use `create-rwsdk` for redwood template ([#21091](https://github.com/vitejs/vite/issues/21091)) ([9aefcb6](https://github.com/vitejs/vite/commit/9aefcb6b9138942068eee074afb4c9dec71c4735))
+* **deps:** update all non-major dependencies ([879de86](https://github.com/vitejs/vite/commit/879de86935a31b4e47ab907ddd859366518ce268))
+* **deps:** update all non-major dependencies ([#20894](https://github.com/vitejs/vite/issues/20894)) ([3213f90](https://github.com/vitejs/vite/commit/3213f90ff0d8f274bcec65f40aac6dfcff1ac244))
+* **deps:** update all non-major dependencies ([#21008](https://github.com/vitejs/vite/issues/21008)) ([185641e](https://github.com/vitejs/vite/commit/185641e3cdae29277c41eb8028f6eac542215f01))
+* **deps:** update all non-major dependencies ([#21096](https://github.com/vitejs/vite/issues/21096)) ([6a34ac3](https://github.com/vitejs/vite/commit/6a34ac3422686e7cf7cc9a25d299cb8e5a8d92a0))
+* revert "refactor: use fs.cpSync ([#21019](https://github.com/vitejs/vite/issues/21019))" ([#21081](https://github.com/vitejs/vite/issues/21081)) ([728c8ee](https://github.com/vitejs/vite/commit/728c8eeebc0ad7ba48e680f46bbdb55020b2e152))
+
+### Miscellaneous Chores
+
+* **deps:** update all non-major dependencies ([#20966](https://github.com/vitejs/vite/issues/20966)) ([6fb41a2](https://github.com/vitejs/vite/commit/6fb41a260bda443685e719ea4765d3faca3db944))
+* **deps:** update dependency tsdown to ^0.15.6 ([#20893](https://github.com/vitejs/vite/issues/20893)) ([3dfe8a1](https://github.com/vitejs/vite/commit/3dfe8a1572ae8ad247814c3d041f0421906eaaf7))
+* **deps:** update rolldown-related dependencies ([#20923](https://github.com/vitejs/vite/issues/20923)) ([a5e3b06](https://github.com/vitejs/vite/commit/a5e3b064fa7ca981cb6f15f8e88806b36a99b8bf))
+* **deps:** update rolldown-related dependencies ([#20965](https://github.com/vitejs/vite/issues/20965)) ([6ad5424](https://github.com/vitejs/vite/commit/6ad5424f0bcabd8943c34d341cf9ed2e64b3d53c))
+* **deps:** update rolldown-related dependencies ([#21009](https://github.com/vitejs/vite/issues/21009)) ([7cec1ad](https://github.com/vitejs/vite/commit/7cec1addc257eb5bd0856adbe1e4306f0bb83e22))
+* **deps:** update rolldown-related dependencies ([#21047](https://github.com/vitejs/vite/issues/21047)) ([e3a6a83](https://github.com/vitejs/vite/commit/e3a6a83406943bc59a9916cae3f25ab33c2b5802))
+
+### Code Refactoring
+
+* use `fs.cpSync` ([#21019](https://github.com/vitejs/vite/issues/21019)) ([a2df778](https://github.com/vitejs/vite/commit/a2df77812814b927880bc4d68aafa8c8fa47daf0))
+
+### Build System
+
+* normalize license repo url ([#21010](https://github.com/vitejs/vite/issues/21010)) ([bb65468](https://github.com/vitejs/vite/commit/bb65468f3c6213fdd870c085610ec575af66b03c))
+
+## <small>[8.0.2](https://github.com/vitejs/vite/compare/create-vite@8.0.1...create-vite@8.0.2) (2025-10-02)</small>
+### Features
+
+* **create-vite:** add @types/node to typescript templates ([#18642](https://github.com/vitejs/vite/issues/18642)) ([302f809](https://github.com/vitejs/vite/commit/302f8091b2a5e342f90d98c97331d2177bb48336))
+* **create-vite:** bump TS to 5.9 ([#20870](https://github.com/vitejs/vite/issues/20870)) ([4e35c9d](https://github.com/vitejs/vite/commit/4e35c9dfcf948e333f22add061b84b9e9603cafd))
+
+### Bug Fixes
+
+* **deps:** update all non-major dependencies ([#20855](https://github.com/vitejs/vite/issues/20855)) ([788a183](https://github.com/vitejs/vite/commit/788a183afce57de13f5656f0cf42cdf6fdc3ebaa))
+
+### Documentation
+
+* **create-vite:** mention oxc in React templates ([#20871](https://github.com/vitejs/vite/issues/20871)) ([c1caacd](https://github.com/vitejs/vite/commit/c1caacdfae2917e91d26d3cb4d3a80d9fa11634f))
+* **create-vite:** provide deno example ([#20747](https://github.com/vitejs/vite/issues/20747)) ([fdb758a](https://github.com/vitejs/vite/commit/fdb758a51796b1ab605437b2eee778a84e87e169))
+
+### Miscellaneous Chores
+
+* **deps:** update rolldown-related dependencies ([#20854](https://github.com/vitejs/vite/issues/20854)) ([4dd06fd](https://github.com/vitejs/vite/commit/4dd06fdc8d643059c2abf88188eae7c4877aab6e))
+
+## <small>[8.0.1](https://github.com/vitejs/vite/compare/create-vite@8.0.0...create-vite@8.0.1) (2025-09-23)</small>
+### Bug Fixes
+
+* **create-vite:** fix installing dependencies ([#20826](https://github.com/vitejs/vite/issues/20826)) ([01ae663](https://github.com/vitejs/vite/commit/01ae66387cf1f44e029c427251af7d09b9eb2567))
+
+## [8.0.0](https://github.com/vitejs/vite/compare/create-vite@8.0.0-beta.0...create-vite@8.0.0) (2025-09-23)
+### Features
+
+* **create-vite:** ask rolldown-vite before asking auto install ([#20820](https://github.com/vitejs/vite/issues/20820)) ([123f239](https://github.com/vitejs/vite/commit/123f2396c8e84308928daf0d61488fa886fc7d50))
+
+### Bug Fixes
+
+* **create-vite:** use shorter command name for `run dev` for each package manager ([#20821](https://github.com/vitejs/vite/issues/20821)) ([0c1bc8a](https://github.com/vitejs/vite/commit/0c1bc8af3422a4c4a3f39ba4a759d9f169e04833))
+
+### Miscellaneous Chores
+
+* **deps:** update rolldown-related dependencies ([#20810](https://github.com/vitejs/vite/issues/20810)) ([ea68a88](https://github.com/vitejs/vite/commit/ea68a8868c7ee249213057f8a81c3f92a9839dde))
+
+## [8.0.0-beta.0](https://github.com/vitejs/vite/compare/create-vite@7.1.3...create-vite@8.0.0-beta.0) (2025-09-23)
+### Features
+
+* **create-vite:** add `--interactive` / `--no-interactive` ([#20797](https://github.com/vitejs/vite/issues/20797)) ([03a56c5](https://github.com/vitejs/vite/commit/03a56c50a1a6eac76c99b0ce00c17518ed3ccae6))
+* **create-vite:** scaffold with rolldown-vite ([#20739](https://github.com/vitejs/vite/issues/20739)) ([b3227d5](https://github.com/vitejs/vite/commit/b3227d5398a14c1a7aa9a1a997879bca4d80e719))
+* **create-vite:** set default title in index.html to project name ([#20519](https://github.com/vitejs/vite/issues/20519)) ([b178f90](https://github.com/vitejs/vite/commit/b178f90ad0b337fc2a2e5c5091e889a9912ce948))
+* **create-vite:** set types compiler option in tsconfigs ([#20132](https://github.com/vitejs/vite/issues/20132)) ([52469c3](https://github.com/vitejs/vite/commit/52469c3dfe6f46a928a24805ef498993de5d491c))
+* **create-vite:** support auto install dependencies and start dev ([#20468](https://github.com/vitejs/vite/issues/20468)) ([925cefe](https://github.com/vitejs/vite/commit/925cefe8ee5c88c9b5b6fa525f46addc4a8aef83))
+* **create-vite:** support React Compiler ([#20704](https://github.com/vitejs/vite/issues/20704)) ([052aa88](https://github.com/vitejs/vite/commit/052aa88d5618e48a47fe8e868157e768ce38af2e))
+
+## <small>[7.1.3](https://github.com/vitejs/vite/compare/create-vite@7.1.2...create-vite@7.1.3) (2025-09-22)</small>
+### Bug Fixes
+
+* **create-vite:** support deno create command ([#20806](https://github.com/vitejs/vite/issues/20806)) ([a50a162](https://github.com/vitejs/vite/commit/a50a16274ab6a23cb14b2b65b8df4a36dc5f84d2))
+* **deps:** update all non-major dependencies ([#20811](https://github.com/vitejs/vite/issues/20811)) ([9f2247c](https://github.com/vitejs/vite/commit/9f2247c066cac75746356c9391845235445a154b))
+
+## <small>[7.1.2](https://github.com/vitejs/vite/compare/create-vite@7.1.1...create-vite@7.1.2) (2025-09-18)</small>
+### Bug Fixes
+
+* **create-vite:** unique name for tanstack router options ([#20783](https://github.com/vitejs/vite/issues/20783)) ([91e68a3](https://github.com/vitejs/vite/commit/91e68a3015bdf30667ba9365f8fc51d3571f10d0))
+* **deps:** update all non-major dependencies ([#20634](https://github.com/vitejs/vite/issues/20634)) ([4851cab](https://github.com/vitejs/vite/commit/4851cab3ba818b5f0f82eef3796b61d4b12768f1))
+* **deps:** update all non-major dependencies ([#20676](https://github.com/vitejs/vite/issues/20676)) ([5a274b2](https://github.com/vitejs/vite/commit/5a274b29df83744cf0ce4dafd94029d2a9e01135))
+* **deps:** update all non-major dependencies ([#20709](https://github.com/vitejs/vite/issues/20709)) ([0401feb](https://github.com/vitejs/vite/commit/0401feba17e60bd7e976c5643128a0da49670a83))
+* **deps:** update all non-major dependencies ([#20732](https://github.com/vitejs/vite/issues/20732)) ([122bfba](https://github.com/vitejs/vite/commit/122bfbabeb1f095ce7cabd30893e5531e9a007c4))
+* **deps:** update all non-major dependencies ([#20773](https://github.com/vitejs/vite/issues/20773)) ([88af2ae](https://github.com/vitejs/vite/commit/88af2ae7df77160e7d11a9fa147a4967c8499f13))
+
+### Miscellaneous Chores
+
+* **deps:** update rolldown-related dependencies ([#20633](https://github.com/vitejs/vite/issues/20633)) ([98b92e8](https://github.com/vitejs/vite/commit/98b92e8c4b10ae87c48292a8ac09b01ca81a02cf))
+* **deps:** update rolldown-related dependencies ([#20675](https://github.com/vitejs/vite/issues/20675)) ([a67bb5f](https://github.com/vitejs/vite/commit/a67bb5fbec5f3e42151dc7e3166858d0d33533de))
+* **deps:** update rolldown-related dependencies ([#20772](https://github.com/vitejs/vite/issues/20772)) ([d785e72](https://github.com/vitejs/vite/commit/d785e72f2ead705e8b2416c0a5097878fced3435))
+
+### Code Refactoring
+
+* **create-vite:** migrate `tseslint.config` to ESLint core's `defineConfig` ([#20734](https://github.com/vitejs/vite/issues/20734)) ([feeb8bc](https://github.com/vitejs/vite/commit/feeb8bccfb6981c21f3f8a09b26e36373a51dae0))
+
+## <small>[7.1.1](https://github.com/vitejs/vite/compare/create-vite@7.1.0...create-vite@7.1.1) (2025-08-12)</small>
+### Bug Fixes
+
+* **deps:** update all non-major dependencies ([#20587](https://github.com/vitejs/vite/issues/20587)) ([20d4817](https://github.com/vitejs/vite/commit/20d48172a0352d32f766b3c878d52a8944fdbf6e))
+
+### Miscellaneous Chores
+
+* **deps:** update dependency @vitejs/plugin-react to v5 ([#20588](https://github.com/vitejs/vite/issues/20588)) ([a627a0b](https://github.com/vitejs/vite/commit/a627a0ba91fc5a9174ca7356dcab0e86b9703e0f))
+* **deps:** update dependency @vitejs/plugin-react-swc to v4 ([#20589](https://github.com/vitejs/vite/issues/20589)) ([1c372dd](https://github.com/vitejs/vite/commit/1c372dde7ff4d228f0eb620733ef1c5b66ef49f0))
+* **deps:** update rolldown-related dependencies ([#20586](https://github.com/vitejs/vite/issues/20586)) ([77632c5](https://github.com/vitejs/vite/commit/77632c55db51cd6d03bcf24a1cef8d21058100a3))
+
+### Code Refactoring
+
+* **create-vite:** add jsdoc for svelte.config.js in svelte-ts template ([#20543](https://github.com/vitejs/vite/issues/20543)) ([aa93814](https://github.com/vitejs/vite/commit/aa938149337f5232011f203bfe55c741fbaddd6c))
+
+## [7.1.0](https://github.com/vitejs/vite/compare/create-vite@7.0.3...create-vite@7.1.0) (2025-08-07)
+### Bug Fixes
+
+* **deps:** update all non-major dependencies ([#20406](https://github.com/vitejs/vite/issues/20406)) ([1a1cc8a](https://github.com/vitejs/vite/commit/1a1cc8a435a21996255b3e5cc75ed4680de2a7f3))
+* **deps:** update all non-major dependencies ([#20442](https://github.com/vitejs/vite/issues/20442)) ([e49f505](https://github.com/vitejs/vite/commit/e49f50599d852eec644e79b074b4648e2dff1e5d))
+* **deps:** update all non-major dependencies ([#20489](https://github.com/vitejs/vite/issues/20489)) ([f6aa04a](https://github.com/vitejs/vite/commit/f6aa04a52d486c8881f666c450caa3dab3c6bba1))
+* **deps:** update all non-major dependencies ([#20537](https://github.com/vitejs/vite/issues/20537)) ([fc9a9d3](https://github.com/vitejs/vite/commit/fc9a9d3f1493caa3d614f64e0a61fd5684f0928b))
+
+### Documentation
+
+* tiny typo ([#20404](https://github.com/vitejs/vite/issues/20404)) ([3123eb7](https://github.com/vitejs/vite/commit/3123eb7071b7f89c7d0043030edc8eb5b3731680))
+
+### Miscellaneous Chores
+
+* **deps:** update dependency vue-tsc to v3 ([#20491](https://github.com/vitejs/vite/issues/20491)) ([51f512f](https://github.com/vitejs/vite/commit/51f512f12aae4b2905863d25b803c1f5d634ba03))
+* **deps:** update rolldown-related dependencies ([#20441](https://github.com/vitejs/vite/issues/20441)) ([f689d61](https://github.com/vitejs/vite/commit/f689d613429ae9452c74f8bc482d8cc2584ea6b8))
+* **deps:** update rolldown-related dependencies ([#20536](https://github.com/vitejs/vite/issues/20536)) ([8be2787](https://github.com/vitejs/vite/commit/8be278748a92b128c49a24619d8d537dd2b08ceb))
+
+## <small>[7.0.3](https://github.com/vitejs/vite/compare/create-vite@7.0.2...create-vite@7.0.3) (2025-07-11)</small>
+### Features
+
+* **create-vite:** bump vite-plugin-svelte to new major for vite7 ([#20394](https://github.com/vitejs/vite/issues/20394)) ([a829a29](https://github.com/vitejs/vite/commit/a829a2963cd201ef0422afdc4cfca3d3e7c92770))
+
+## <small>[7.0.2](https://github.com/vitejs/vite/compare/create-vite@7.0.1...create-vite@7.0.2) (2025-07-10)</small>
+### Bug Fixes
+
+* **create-vite:** fix command for react rsc template ([#20378](https://github.com/vitejs/vite/issues/20378)) ([0362484](https://github.com/vitejs/vite/commit/03624844ebc2950cfb1a48379726d60e6d31bd6e))
+
+## <small>[7.0.1](https://github.com/vitejs/vite/compare/create-vite@7.0.0...create-vite@7.0.1) (2025-07-08)</small>
+### Features
+
+* **create-vite:** update rsc template to use `@vitejs/plugin-rsc` ([#20351](https://github.com/vitejs/vite/issues/20351)) ([b9ebc96](https://github.com/vitejs/vite/commit/b9ebc967bb9e8137dedb7d1304e4f693a52f1c03))
+
+### Bug Fixes
+
+* **deps:** update all non-major dependencies ([#20324](https://github.com/vitejs/vite/issues/20324)) ([3e81af3](https://github.com/vitejs/vite/commit/3e81af38a80c7617aba6bf3300d8b4267570f9cf))
+* **deps:** update all non-major dependencies ([#20366](https://github.com/vitejs/vite/issues/20366)) ([43ac73d](https://github.com/vitejs/vite/commit/43ac73da27b3907c701e95e6a7d28fde659729ec))
+
+### Miscellaneous Chores
+
+* **deps:** update rolldown-related dependencies ([#20323](https://github.com/vitejs/vite/issues/20323)) ([30d2f1b](https://github.com/vitejs/vite/commit/30d2f1b38c72387ffdca3ee4746730959a020b59))
+* group commits by category in changelog ([#20310](https://github.com/vitejs/vite/issues/20310)) ([41e83f6](https://github.com/vitejs/vite/commit/41e83f62b1adb65f5af4c1ec006de1c845437edc))
+
 ## [7.0.0](https://github.com/vitejs/vite/compare/create-vite@6.5.0...create-vite@7.0.0) (2025-06-24)
 ### ⚠ BREAKING CHANGES
 

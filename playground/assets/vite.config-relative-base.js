@@ -10,16 +10,16 @@ export default defineConfig(({ isPreview }) => ({
     watch: null,
     minify: false,
     assetsInlineLimit: 0,
-    rollupOptions: {
+    rolldownOptions: {
       output: {
         entryFileNames: 'entries/[name].js',
         chunkFileNames: 'chunks/[name]-[hash].js',
         assetFileNames: 'other-assets/[name]-[hash][extname]',
-        manualChunks(id) {
-          if (id.includes('css/manual-chunks.css')) {
-            return 'css/manual-chunks'
-          }
-        },
+        // manualChunks(id) {
+        //   if (id.includes('css/manual-chunks.css')) {
+        //     return 'css/manual-chunks'
+        //   }
+        // },
       },
     },
   },

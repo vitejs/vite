@@ -1,4 +1,6 @@
-import 'types/importMeta'
+// NOTE: `#types/importMeta` does not work as `src/node/__tests__/package.json` shadows the root
+// `package.json` and does not declare the subpath import.
+import '../../../../../../types/importMeta'
 
 export interface ModuleType {
   name: string
@@ -120,3 +122,5 @@ export const customRootBase = import.meta.glob('./**/*.ts', {
 export const customBaseParent = import.meta.glob('/fixture-b/**/*.ts', {
   base: '/fixture-a',
 })
+
+export const dotFolder = import.meta.glob('./.foo/*.ts', { eager: true })

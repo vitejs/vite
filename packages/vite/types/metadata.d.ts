@@ -1,6 +1,13 @@
+export interface AssetMetadata {
+  importedAssets: Set<string>
+  importedCss: Set<string>
+}
+
 export interface ChunkMetadata {
   importedAssets: Set<string>
   importedCss: Set<string>
+  /** @internal */
+  __modules: any
 }
 
 export interface CustomPluginOptionsVite {
@@ -15,8 +22,6 @@ export interface CustomPluginOptionsVite {
    * ```js
    * cssScopeTo: ['/src/App.vue', 'default']
    * ```
-   *
-   * @experimental
    */
   cssScopeTo?: readonly [importerId: string, exportName: string | undefined]
 
@@ -24,8 +29,15 @@ export interface CustomPluginOptionsVite {
   lang?: string
 }
 
-declare module 'rollup' {
+declare module 'rolldown' {
+  export interface OutputAsset {
+    viteMetadata?: AssetMetadata
+  }
+
   export interface RenderedChunk {
+    viteMetadata?: ChunkMetadata
+  }
+  export interface OutputChunk {
     viteMetadata?: ChunkMetadata
   }
 

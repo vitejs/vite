@@ -9,12 +9,12 @@ import type {
   ImportSpecifier,
 } from 'es-module-lexer'
 import { init, parse as parseImports } from 'es-module-lexer'
-import { parseAst } from 'rollup/parseAst'
+import { parseAst } from 'rolldown/parseAst'
 import type { StaticImport } from 'mlly'
 import { ESM_STATIC_IMPORT_RE, parseStaticImport } from 'mlly'
 import { makeLegalIdentifier } from '@rollup/pluginutils'
-import type { PartialResolvedId, RollupError } from 'rollup'
-import type { Identifier, Literal } from 'estree'
+import type { PartialResolvedId, RollupError } from 'rolldown'
+import type { ESTree } from 'rolldown/utils'
 import {
   CLIENT_DIR,
   CLIENT_PUBLIC_PATH,
@@ -33,6 +33,7 @@ import {
   createDebugger,
   fsPathFromUrl,
   generateCodeFrame,
+  getFileStartIndex,
   getHash,
   injectQuery,
   isBuiltin,
@@ -40,6 +41,7 @@ import {
   isDataUrl,
   isDefined,
   isExternalUrl,
+  isFilePathESM,
   isInNodeModules,
   isJSRequest,
   joinUrlSegments,
@@ -59,7 +61,10 @@ import type { ResolvedConfig } from '../config'
 import type { Plugin } from '../plugin'
 import type { DevEnvironment } from '../server/environment'
 import { shouldExternalize } from '../external'
-import { optimizedDepNeedsInterop } from '../optimizer'
+import {
+  optimizedDepInfoFromFile,
+  optimizedDepNeedsInterop,
+} from '../optimizer'
 import {
   cleanUrl,
   unwrapId,
@@ -83,9 +88,8 @@ export const canSkipImportAnalysis = (id: string): boolean =>
   skipRE.test(id) || isDirectCSSRequest(id)
 
 const optimizedDepChunkRE = /\/chunk-[A-Z\d]{8}\.js/
-const optimizedDepDynamicRE = /-[A-Z\d]{8}\.js/
 
-export const hasViteIgnoreRE = /\/\*\s*@vite-ignore\s*\*\//
+export const hasViteIgnoreRE: RegExp = /\/\*\s*@vite-ignore\s*\*\//
 
 const urlIsStringRE = /^(?:'.*'|".*"|`.*`)$/
 
@@ -253,6 +257,10 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
   return {
     name: 'vite:import-analysis',
 
+    applyToEnvironment(environment) {
+      return !environment.config.isBundled
+    },
+
     async transform(source, importer) {
       const environment = this.environment as DevEnvironment
       const ssr = environment.config.consumer === 'server'
@@ -296,7 +304,17 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
         !imports.length &&
         !(this as unknown as TransformPluginContext)._addedImports
       ) {
-        importerModule.isSelfAccepting = false
+        const prunedImports = await moduleGraph.updateModuleInfo(
+          importerModule,
+          new Set(),
+          null,
+          new Set(),
+          null,
+          false,
+        )
+        if (prunedImports) {
+          handlePrunedModules(prunedImports, environment)
+        }
         debug?.(
           `${timeFrom(msAtStart)} ${colors.dim(
             `[no imports] ${prettifyUrl(importer, root)}`,
@@ -315,16 +333,12 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
       const importedBindings = enablePartialAccept
         ? new Map<string, Set<string>>()
         : null
-      const toAbsoluteUrl = (url: string) =>
-        path.posix.resolve(path.posix.dirname(importerModule.url), url)
 
       const normalizeUrl = async (
         url: string,
         pos: number,
         forceSkipImportAnalysis: boolean = false,
       ): Promise<[string, string | null]> => {
-        url = stripBase(url, base)
-
         let importerFile = importer
 
         if (
@@ -373,31 +387,7 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
           return [resolved.id, resolved.id]
         }
 
-        const isRelative = url[0] === '.'
-        const isSelfImport = !isRelative && cleanUrl(url) === cleanUrl(importer)
-
         url = normalizeResolvedIdToUrl(environment, url, resolved)
-
-        // make the URL browser-valid
-        if (environment.config.consumer === 'client') {
-          // mark non-js/css imports with `?import`
-          if (isExplicitImportRequired(url)) {
-            url = injectQuery(url, 'import')
-          } else if (
-            (isRelative || isSelfImport) &&
-            !DEP_VERSION_RE.test(url)
-          ) {
-            // If the url isn't a request for a pre-bundled common chunk,
-            // for relative js/css imports, or self-module virtual imports
-            // (e.g. vue blocks), inherit importer's version query
-            // do not do this for unknown type imports, otherwise the appended
-            // query can break 3rd party plugin's extension checks.
-            const versionMatch = DEP_VERSION_RE.exec(importer)
-            if (versionMatch) {
-              url = injectQuery(url, versionMatch[1])
-            }
-          }
-        }
 
         try {
           // delay setting `isSelfAccepting` until the file is actually used (#7870)
@@ -423,6 +413,31 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
           throw e
         }
 
+        // make the URL browser-valid
+        if (environment.config.consumer === 'client') {
+          const isRelative = url[0] === '.'
+          const isSelfImport =
+            !isRelative && cleanUrl(url) === cleanUrl(importer)
+
+          // mark non-js/css imports with `?import`
+          if (isExplicitImportRequired(url)) {
+            url = injectQuery(url, 'import')
+          } else if (
+            (isRelative || isSelfImport) &&
+            !DEP_VERSION_RE.test(url)
+          ) {
+            // If the url isn't a request for a pre-bundled common chunk,
+            // for relative js/css imports, or self-module virtual imports
+            // (e.g. vue blocks), inherit importer's version query
+            // do not do this for unknown type imports, otherwise the appended
+            // query can break 3rd party plugin's extension checks.
+            const versionMatch = DEP_VERSION_RE.exec(importer)
+            if (versionMatch) {
+              url = injectQuery(url, versionMatch[1])
+            }
+          }
+        }
+
         // prepend base
         if (!ssr) url = joinUrlSegments(base, url)
 
@@ -436,6 +451,14 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
       const orderedAcceptedExports = new Array<Set<string> | undefined>(
         imports.length,
       )
+
+      let _isNodeModeResult = config.legacy?.inconsistentCjsInterop
+        ? false
+        : undefined
+      const isNodeMode = () => {
+        _isNodeModeResult ??= isFilePathESM(importer, config.packageCache)
+        return _isNodeModeResult
+      }
 
       await Promise.all(
         imports.map(async (importSpecifier, index) => {
@@ -511,8 +534,9 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
           if (specifier !== undefined) {
             // skip external / data uri
             if (
-              (isExternalUrl(specifier) && !specifier.startsWith('file://')) ||
-              isDataUrl(specifier)
+              ((isExternalUrl(specifier) && !specifier.startsWith('file://')) ||
+                isDataUrl(specifier)) &&
+              !matchAlias(specifier)
             ) {
               return
             }
@@ -562,6 +586,7 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
             if (url !== specifier) {
               let rewriteDone = false
               if (
+                !depsOptimizer?.isOptimizedDepFile(importer) &&
                 depsOptimizer?.isOptimizedDepFile(resolvedId) &&
                 !optimizedDepChunkRE.test(resolvedId)
               ) {
@@ -572,6 +597,10 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
                 // page reload. We could return a 404 in that case but it is safe to return the request
                 const file = cleanUrl(resolvedId) // Remove ?v={hash}
 
+                const depInfo = optimizedDepInfoFromFile(
+                  depsOptimizer.metadata,
+                  file,
+                )
                 const needsInterop = await optimizedDepNeedsInterop(
                   environment,
                   depsOptimizer.metadata,
@@ -582,7 +611,7 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
                   // Non-entry dynamic imports from dependencies will reach here as there isn't
                   // optimize info for them, but they don't need es interop. If the request isn't
                   // a dynamic import, then it is an internal Vite error
-                  if (!optimizedDepDynamicRE.test(file)) {
+                  if (depInfo?.isDynamicEntry) {
                     config.logger.error(
                       colors.red(
                         `Vite Error, ${url} optimized info should be defined`,
@@ -597,6 +626,7 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
                     url,
                     index,
                     importer,
+                    isNodeMode(),
                     config,
                   )
                   rewriteDone = true
@@ -606,7 +636,7 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
               // would fail as it's `export default` only. Apply interop for builtin modules to
               // correctly throw the error message.
               else if (
-                url.includes(browserExternalId) &&
+                url.startsWith(wrapId(browserExternalId)) &&
                 source.slice(expStart, start).includes('{')
               ) {
                 interopNamedImports(
@@ -615,6 +645,7 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
                   url,
                   index,
                   importer,
+                  isNodeMode(),
                   config,
                 )
                 rewriteDone = true
@@ -770,22 +801,10 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
           }
           normalized = mod.url
         } else {
-          try {
-            // this fallback is for backward compat and will be removed in Vite 7
-            const [resolved] = await moduleGraph.resolveUrl(toAbsoluteUrl(url))
-            normalized = resolved
-            if (resolved) {
-              this.warn({
-                message:
-                  `Failed to resolve ${JSON.stringify(url)} from ${importer}.` +
-                  ' An id should be written. Did you pass a URL?',
-                pos: start,
-              })
-            }
-          } catch {
-            this.error(`Failed to resolve ${JSON.stringify(url)}`, start)
-            return
-          }
+          this.error({
+            message: `Failed to resolve ${JSON.stringify(url)} from ${importer}.`,
+            pos: start,
+          })
         }
         normalizedAcceptedUrls.add(normalized)
         const hmrAccept = normalizeHmrUrl(normalized)
@@ -834,7 +853,7 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
           isSelfAccepting,
           staticImportedUrls,
         )
-        if (hasHMR && prunedImports) {
+        if (prunedImports) {
           handlePrunedModules(prunedImports, environment)
         }
       }
@@ -897,8 +916,18 @@ export function createParseErrorInfo(
     showCodeFrame: !probablyBinary,
   }
 }
-// prettier-ignore
-const interopHelper = (m: any) => m?.__esModule ? m : { ...(typeof m === 'object' && !Array.isArray(m) || typeof m === 'function' ? m : {}), default: m }
+
+const interopHelper = (m: any, n: boolean) =>
+  n || !m?.__esModule
+    ? {
+        ...((typeof m === 'object' && !Array.isArray(m)) ||
+        typeof m === 'function'
+          ? m
+          : {}),
+        default: m,
+      }
+    : m
+const interopHelperStr = interopHelper.toString().replaceAll('\n', '')
 
 export function interopNamedImports(
   str: MagicString,
@@ -906,6 +935,7 @@ export function interopNamedImports(
   rewrittenUrl: string,
   importIndex: number,
   importer: string,
+  isNodeMode: boolean,
   config: ResolvedConfig,
 ): void {
   const source = str.original
@@ -918,11 +948,12 @@ export function interopNamedImports(
   } = importSpecifier
   const exp = source.slice(expStart, expEnd)
   if (dynamicIndex > -1) {
+    const inconsistentCjsInterop = !!config.legacy?.inconsistentCjsInterop
     // rewrite `import('package')` to expose the default directly
     str.overwrite(
       expStart,
       expEnd,
-      `import('${rewrittenUrl}').then(m => (${interopHelper.toString()})(m.default))` +
+      `import('${rewrittenUrl}').then(m => (${interopHelperStr})(m.default, ${inconsistentCjsInterop ? 0 : 1}))` +
         getLineBreaks(exp),
       { contentOnly: true },
     )
@@ -934,12 +965,22 @@ export function interopNamedImports(
       rawUrl,
       importIndex,
       importer,
+      isNodeMode,
       config,
     )
     if (rewritten) {
-      str.overwrite(expStart, expEnd, rewritten + getLineBreaks(exp), {
-        contentOnly: true,
-      })
+      str.overwrite(
+        expStart,
+        expEnd,
+        rewritten.importLine + getLineBreaks(exp),
+        { contentOnly: true },
+      )
+      if (rewritten.hoistedAssignments) {
+        str.appendLeft(
+          getFileStartIndex(source),
+          rewritten.hoistedAssignments + ';',
+        )
+      }
     } else {
       // #1439 export * from '...'
       str.overwrite(
@@ -980,8 +1021,9 @@ export function transformCjsImport(
   rawUrl: string,
   importIndex: number,
   importer: string,
+  isNodeMode: boolean,
   config: ResolvedConfig,
-): string | undefined {
+): { importLine: string; hoistedAssignments?: string } | undefined {
   const node = parseAst(importExp).body[0]
 
   // `export * from '...'` may cause unexpected problem, so give it a warning
@@ -1000,7 +1042,7 @@ export function transformCjsImport(
     node.type === 'ExportNamedDeclaration'
   ) {
     if (!node.specifiers.length) {
-      return `import "${url}"`
+      return { importLine: `import "${url}"` }
     }
 
     const importNames: ImportNameSpecifier[] = []
@@ -1008,9 +1050,7 @@ export function transformCjsImport(
     let defaultExports: string = ''
     for (const spec of node.specifiers) {
       if (spec.type === 'ImportSpecifier') {
-        const importedName = getIdentifierNameOrLiteralValue(
-          spec.imported,
-        ) as string
+        const importedName = getIdentifierNameOrLiteralValue(spec.imported)
         const localName = spec.local.name
         importNames.push({ importedName, localName })
       } else if (spec.type === 'ImportDefaultSpecifier') {
@@ -1023,13 +1063,9 @@ export function transformCjsImport(
       } else if (spec.type === 'ExportSpecifier') {
         // for ExportSpecifier, local name is same as imported name
         // prefix the variable name to avoid clashing with other local variables
-        const importedName = getIdentifierNameOrLiteralValue(
-          spec.local,
-        ) as string
+        const importedName = getIdentifierNameOrLiteralValue(spec.local)
         // we want to specify exported name as variable and re-export it
-        const exportedName = getIdentifierNameOrLiteralValue(
-          spec.exported,
-        ) as string
+        const exportedName = getIdentifierNameOrLiteralValue(spec.exported)
         if (exportedName === 'default') {
           defaultExports = makeLegalIdentifier(
             `__vite__cjsExportDefault_${importIndex}`,
@@ -1038,7 +1074,7 @@ export function transformCjsImport(
         } else {
           const localName = `__vite__cjsExport${
             spec.exported.type === 'Literal'
-              ? `L_${getHash(spec.exported.value as string)}`
+              ? `L_${getHash(spec.exported.value)}`
               : 'I_' + spec.exported.name
           }`
           importNames.push({ importedName, localName })
@@ -1054,16 +1090,21 @@ export function transformCjsImport(
     const cjsModuleName = makeLegalIdentifier(
       `__vite__cjsImport${importIndex}_${rawUrl}`,
     )
-    const lines: string[] = [`import ${cjsModuleName} from "${url}"`]
+    const importLine = `import ${cjsModuleName} from "${url}"`
+    const lines: string[] = []
     importNames.forEach(({ importedName, localName }) => {
       if (importedName === '*') {
         lines.push(
-          `const ${localName} = (${interopHelper.toString()})(${cjsModuleName})`,
+          `const ${localName} = (${interopHelperStr})(${cjsModuleName}, ${+isNodeMode})`,
         )
       } else if (importedName === 'default') {
-        lines.push(
-          `const ${localName} = ${cjsModuleName}.__esModule ? ${cjsModuleName}.default : ${cjsModuleName}`,
-        )
+        if (isNodeMode) {
+          lines.push(`const ${localName} = ${cjsModuleName}`)
+        } else {
+          lines.push(
+            `const ${localName} = !${cjsModuleName}.__esModule ? ${cjsModuleName} : ${cjsModuleName}.default`,
+          )
+        }
       } else {
         lines.push(`const ${localName} = ${cjsModuleName}["${importedName}"]`)
       }
@@ -1075,11 +1116,11 @@ export function transformCjsImport(
       lines.push(`export { ${exportNames.join(', ')} }`)
     }
 
-    return lines.join('; ')
+    return { importLine, hoistedAssignments: lines.join('; ') }
   }
 }
 
-function getIdentifierNameOrLiteralValue(node: Identifier | Literal) {
+function getIdentifierNameOrLiteralValue(node: ESTree.ModuleExportName) {
   return node.type === 'Identifier' ? node.name : node.value
 }
 

@@ -1,6 +1,6 @@
 import path from 'node:path'
 import { describe, expect, onTestFinished, test } from 'vitest'
-import type { RollupOutput } from 'rollup'
+import type { RolldownOutput } from 'rolldown'
 import { createServer } from '../server'
 import type { InlineConfig } from '../config'
 import { createBuilder } from '../build'
@@ -20,6 +20,8 @@ describe('custom environment conditions', () => {
         middlewareMode: true,
         ws: false,
       },
+      // disable scanner for client env to suppress scanner warnings
+      optimizeDeps: { entries: [] },
       environments: {
         // default
         ssr: {
@@ -31,7 +33,7 @@ describe('custom environment conditions', () => {
               import.meta.dirname,
               'fixtures/test-dep-conditions/dist/ssr',
             ),
-            rollupOptions: {
+            rolldownOptions: {
               input: { index: '@vitejs/test-dep-conditions' },
             },
           },
@@ -48,7 +50,7 @@ describe('custom environment conditions', () => {
               import.meta.dirname,
               'fixtures/test-dep-conditions/dist/worker',
             ),
-            rollupOptions: {
+            rolldownOptions: {
               input: { index: '@vitejs/test-dep-conditions' },
             },
           },
@@ -65,7 +67,7 @@ describe('custom environment conditions', () => {
               import.meta.dirname,
               'fixtures/test-dep-conditions/dist/custom1',
             ),
-            rollupOptions: {
+            rolldownOptions: {
               input: { index: '@vitejs/test-dep-conditions' },
             },
           },
@@ -82,7 +84,7 @@ describe('custom environment conditions', () => {
               import.meta.dirname,
               'fixtures/test-dep-conditions/dist/custom1_2',
             ),
-            rollupOptions: {
+            rolldownOptions: {
               input: { index: '@vitejs/test-dep-conditions' },
             },
           },
@@ -167,7 +169,7 @@ describe('custom environment conditions', () => {
     const results: Record<string, unknown> = {}
     for (const key of ['ssr', 'worker', 'custom1', 'custom1_2']) {
       const output = await builder.build(builder.environments[key])
-      const chunk = (output as RollupOutput).output[0]
+      const chunk = (output as RolldownOutput).output[0]
       const mod = await import(
         path.join(
           import.meta.dirname,

@@ -1,0 +1,6 @@
+{
+  "name": "@vitejs/test-dep-cjs-with-es-module-flag",
+  "private": true,
+  "version": "0.0.0",
+  "main": "index.js"
+}

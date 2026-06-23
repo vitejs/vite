@@ -31,3 +31,13 @@ test('?url', async () => {
 test('should work when wasm in worker', async () => {
   await expect.poll(() => page.textContent('.worker-wasm .result')).toMatch('3')
 })
+
+test('direct wasm import', async () => {
+  await expect.poll(() => page.textContent('.direct-wasm .result')).toMatch('3')
+})
+
+test('direct wasm import with wasm imports', async () => {
+  await expect
+    .poll(() => page.textContent('.direct-wasm-with-imports .result'))
+    .toMatch('42')
+})

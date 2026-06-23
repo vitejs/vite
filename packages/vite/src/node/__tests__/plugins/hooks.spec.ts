@@ -1,11 +1,12 @@
 import path from 'node:path'
-import { describe, expect, onTestFinished, test } from 'vitest'
+import { describe, expect, onTestFinished, test, vi } from 'vitest'
 import { build } from '../../build'
 import type { Plugin } from '../../plugin'
 import { resolveConfig } from '../../config'
 import { createServer } from '../../server'
 import { preview } from '../../preview'
 import { promiseWithResolvers } from '../../../shared/utils'
+import { type Logger, createLogger } from '../../logger'
 
 const resolveConfigWithPlugin = (
   plugin: Plugin,
@@ -33,14 +34,19 @@ const resolveEntryPlugin: Plugin = {
   },
 }
 
-const createServerWithPlugin = async (plugin: Plugin) => {
+const createServerWithPlugin = async (
+  plugin: Plugin,
+  customLogger?: Logger,
+) => {
   const server = await createServer({
     configFile: false,
     root: import.meta.dirname,
     plugins: [plugin, resolveEntryPlugin],
     logLevel: 'error',
+    customLogger,
     server: {
       middlewareMode: true,
+      ws: false,
     },
   })
   onTestFinished(() => server.close())
@@ -56,9 +62,9 @@ const createPreviewServerWithPlugin = async (plugin: Plugin) => {
         name: 'mock-preview',
         configurePreviewServer({ httpServer }) {
           // NOTE: make httpServer.listen no-op to avoid starting a server
-          httpServer.listen = (...args: unknown[]) => {
-            const listener = args.at(-1) as () => void
-            listener()
+          httpServer.listen = () => {
+            const lastListener = httpServer.listeners('listening').at(-1)!
+            lastListener.call(httpServer)
             return httpServer as any
           }
         },
@@ -329,5 +335,114 @@ describe('supports plugin context', () => {
         expect(this.meta.watchMode).toBe(false)
       },
     })
+  })
+
+  test('this.fs is supported in dev', async () => {
+    expect.hasAssertions()
+
+    const server = await createServerWithPlugin({
+      name: 'test',
+      resolveId(id) {
+        if (id !== ENTRY_ID) return
+        expect(this.fs.readFile).toBeTypeOf('function')
+      },
+    })
+    await server.transformRequest(ENTRY_ID)
+    await server.close()
+  })
+})
+
+describe('watcher add/unlink error handling', () => {
+  test("'add' event logs error when watchChange throws", async () => {
+    const { promise, resolve } = promiseWithResolvers<void>()
+    const error = new Error('async watchChange error')
+
+    const logError = vi.fn()
+    const logger = createLogger('error')
+    logger.error = (...args) => {
+      logError(...args)
+      resolve()
+    }
+
+    const server = await createServerWithPlugin(
+      {
+        name: 'test',
+        watchChange() {
+          return Promise.reject(error)
+        },
+      },
+      logger,
+    )
+
+    server.watcher.emit(
+      'add',
+      path.resolve(import.meta.dirname, 'some-file.js'),
+    )
+
+    await promise
+    expect(logError).toHaveBeenCalled()
+    expect(logError).toHaveBeenCalledWith(error)
+  })
+
+  test("'change' event logs error when watchChange throws", async () => {
+    const { promise, resolve } = promiseWithResolvers<void>()
+    const error = new Error('async watchChange error')
+
+    const logError = vi.fn()
+    const logger = createLogger('error')
+    logger.error = (...args) => {
+      logError(...args)
+      resolve()
+    }
+
+    const server = await createServerWithPlugin(
+      {
+        name: 'test',
+        watchChange() {
+          return Promise.reject(error)
+        },
+      },
+      logger,
+    )
+
+    server.watcher.emit(
+      'change',
+      path.resolve(import.meta.dirname, 'some-file.js'),
+    )
+
+    await promise
+    expect(logError).toHaveBeenCalled()
+    expect(logError).toHaveBeenCalledWith(error)
+  })
+
+  test("'unlink' event logs error when watchChange throws", async () => {
+    const { promise, resolve } = promiseWithResolvers<void>()
+    const error = new Error('async watchChange error')
+
+    const logError = vi.fn()
+    const logger = createLogger('error')
+    logger.error = (...args) => {
+      logError(...args)
+      resolve()
+    }
+
+    const server = await createServerWithPlugin(
+      {
+        name: 'test',
+        watchChange() {
+          return Promise.reject(error)
+        },
+      },
+      logger,
+    )
+
+    server.watcher.emit(
+      'unlink',
+      path.resolve(import.meta.dirname, 'some-file.js'),
+    )
+
+    await promise
+    expect(logError).toHaveBeenCalled()
+    expect(logError).toHaveBeenCalledWith(error)
   })
 })

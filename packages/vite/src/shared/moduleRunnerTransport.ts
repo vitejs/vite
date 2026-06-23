@@ -1,5 +1,5 @@
 import { nanoid } from 'nanoid/non-secure'
-import type { CustomPayload, HotPayload } from 'types/hmrPayload'
+import type { CustomPayload, HotPayload } from '#types/hmrPayload'
 import { promiseWithResolvers } from './utils'
 import type {
   InvokeMethods,
@@ -237,7 +237,7 @@ export const normalizeModuleRunnerTransport = (
         if (connectingPromise) {
           await connectingPromise
         } else {
-          throw new Error('send was called before connect')
+          throw new SendBeforeConnectError('send was called before connect')
         }
       }
       await invokeableTransport.send(data)
@@ -247,11 +247,18 @@ export const normalizeModuleRunnerTransport = (
         if (connectingPromise) {
           await connectingPromise
         } else {
-          throw new Error('invoke was called before connect')
+          throw new SendBeforeConnectError('invoke was called before connect')
         }
       }
       return invokeableTransport.invoke(name, data)
     },
+  }
+}
+
+export class SendBeforeConnectError extends Error {
+  constructor(message: string) {
+    super(message)
+    this.name = 'SendBeforeConnectError'
   }
 }
 
@@ -270,7 +277,7 @@ export const createWebSocketModuleRunnerTransport = (options: {
   return {
     async connect({ onMessage, onDisconnection }) {
       const socket = options.createConnection()
-      socket.addEventListener('message', async ({ data }) => {
+      socket.addEventListener('message', ({ data }) => {
         onMessage(JSON.parse(data))
       })
 
@@ -285,7 +292,7 @@ export const createWebSocketModuleRunnerTransport = (options: {
             },
             { once: true },
           )
-          socket.addEventListener('close', async () => {
+          socket.addEventListener('close', () => {
             if (!isOpened) {
               reject(new Error('WebSocket closed without opened.'))
               return

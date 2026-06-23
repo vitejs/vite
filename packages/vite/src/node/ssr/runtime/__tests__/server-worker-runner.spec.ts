@@ -1,38 +1,57 @@
 import { BroadcastChannel, Worker } from 'node:worker_threads'
+import path from 'node:path'
 import { describe, expect, it, onTestFinished } from 'vitest'
 import type { HotChannel, HotChannelListener, HotPayload } from 'vite'
 import { DevEnvironment } from '../../..'
 import { createServer } from '../../../server'
 
-const createWorkerTransport = (w: Worker): HotChannel => {
+const createWorkerTransport = (worker: Worker): HotChannel => {
   const handlerToWorkerListener = new WeakMap<
     HotChannelListener,
     (value: HotPayload) => void
   >()
+  const client = {
+    send(payload: HotPayload) {
+      worker.postMessage(payload)
+    },
+  }
 
   return {
-    send: (data) => w.postMessage(data),
+    send: (data) => worker.postMessage(data),
     on: (event: string, handler: HotChannelListener) => {
-      if (event === 'connection') return
+      // client is already connected
+      if (event === 'vite:client:connect') return
+      if (event === 'vite:client:disconnect') {
+        const listener = () => {
+          handler(undefined, client)
+        }
+        handlerToWorkerListener.set(handler, listener)
+        worker.on('exit', listener)
+        return
+      }
 
       const listener = (value: HotPayload) => {
         if (value.type === 'custom' && value.event === event) {
-          const client = {
-            send(payload: HotPayload) {
-              w.postMessage(payload)
-            },
-          }
           handler(value.data, client)
         }
       }
       handlerToWorkerListener.set(handler, listener)
-      w.on('message', listener)
+      worker.on('message', listener)
     },
     off: (event, handler: HotChannelListener) => {
-      if (event === 'connection') return
+      if (event === 'vite:client:connect') return
+      if (event === 'vite:client:disconnect') {
+        const listener = handlerToWorkerListener.get(handler)
+        if (listener) {
+          worker.off('exit', listener)
+          handlerToWorkerListener.delete(handler)
+        }
+        return
+      }
+
       const listener = handlerToWorkerListener.get(handler)
       if (listener) {
-        w.off('message', listener)
+        worker.off('message', listener)
         handlerToWorkerListener.delete(handler)
       }
     },
@@ -53,7 +72,7 @@ describe('running module runner inside a worker', () => {
       worker.on('error', reject)
     })
     const server = await createServer({
-      root: __dirname,
+      root: import.meta.dirname,
       logLevel: 'error',
       server: {
         middlewareMode: true,
@@ -75,15 +94,14 @@ describe('running module runner inside a worker', () => {
         },
       },
     })
-    onTestFinished(() => {
-      server.close()
-      worker.terminate()
+    onTestFinished(async () => {
+      await Promise.allSettled([server.close(), worker.terminate()])
     })
     const channel = new BroadcastChannel('vite-worker')
     return new Promise<void>((resolve, reject) => {
       channel.onmessage = (event) => {
         try {
-          expect((event as MessageEvent).data).toEqual({
+          expect(event.data).toEqual({
             result: 'hello world',
           })
         } catch (e) {
@@ -94,5 +112,49 @@ describe('running module runner inside a worker', () => {
       }
       channel.postMessage({ id: './fixtures/default-string.ts' })
     })
+  })
+
+  it('server.fs check is applied to the custom transport by default', async () => {
+    const worker = new Worker(
+      new URL('./fixtures/worker.mjs', import.meta.url),
+      { stdout: true },
+    )
+    await new Promise<void>((resolve, reject) => {
+      worker.on('message', () => resolve())
+      worker.on('error', reject)
+    })
+    const server = await createServer({
+      root: import.meta.dirname,
+      logLevel: 'error',
+      server: {
+        middlewareMode: true,
+        watch: null,
+        hmr: {
+          port: 9609,
+        },
+        fs: {
+          allow: [path.resolve(import.meta.dirname, './fixtures')],
+        },
+      },
+      environments: {
+        worker: {
+          dev: {
+            createEnvironment: (name, config) => {
+              return new DevEnvironment(name, config, {
+                hot: false,
+                transport: createWorkerTransport(worker),
+              })
+            },
+          },
+        },
+      },
+    })
+    onTestFinished(async () => {
+      await Promise.allSettled([server.close(), worker.terminate()])
+    })
+
+    await expect(
+      server.environments.worker.transformRequest('./fixture-outside.js'),
+    ).rejects.toThrow('Failed to load url')
   })
 })

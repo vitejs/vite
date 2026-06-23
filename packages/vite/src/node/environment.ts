@@ -1,4 +1,4 @@
-import type { PluginContext } from 'rollup'
+import type { PluginContext } from 'rolldown'
 import type { DevEnvironment } from './server/environment'
 import type { BuildEnvironment } from './build'
 import type { ScanEnvironment } from './optimizer/scan'
@@ -23,11 +23,9 @@ export function perEnvironmentState<State>(
   const stateMap = new WeakMap<Environment, State>()
   return function (context: PluginContext) {
     const { environment } = context
-    let state = stateMap.get(environment)
-    if (!state) {
-      state = initial(environment)
-      stateMap.set(environment, state)
+    if (!stateMap.has(environment)) {
+      stateMap.set(environment, initial(environment))
     }
-    return state
+    return stateMap.get(environment)!
   }
 }

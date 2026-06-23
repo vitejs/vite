@@ -76,11 +76,11 @@ describe.runIf(isBuild)('build', () => {
     )
 
     // worker should have all imports resolved and no exports
-    expect(workerContent).not.toMatch(/import(?!\.)/) // accept import.meta.url
-    expect(workerContent).not.toMatch(`export`)
+    expect(workerContent).not.toMatch(/import\s*["(]/)
+    expect(workerContent).not.toMatch(/\bexport\b/)
     // chunk
-    expect(content).toMatch(`new Worker(""+new URL("../worker-entries/`)
-    expect(content).toMatch(`new SharedWorker(""+new URL("../worker-entries/`)
+    expect(content).toMatch('new Worker(``+new URL(`../worker-entries/')
+    expect(content).toMatch('new SharedWorker(``+new URL(`../worker-entries/')
     // inlined
     expect(content).toMatch(`(self.URL||self.webkitURL).createObjectURL`)
     expect(content).toMatch(`self.Blob`)

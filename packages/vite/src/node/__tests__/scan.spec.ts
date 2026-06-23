@@ -1,6 +1,14 @@
+import path from 'node:path'
 import { describe, expect, test } from 'vitest'
-import { commentRE, importsRE, scriptRE } from '../optimizer/scan'
+import {
+  commentRE,
+  devToScanEnvironment,
+  importsRE,
+  scanImports,
+  scriptRE,
+} from '../optimizer/scan'
 import { multilineCommentsRE, singlelineCommentsRE } from '../utils'
+import { createServer, createServerModuleRunner } from '..'
 
 describe('optimizer-scan:script-test', () => {
   const scriptContent = `import { defineComponent } from 'vue'
@@ -122,4 +130,115 @@ describe('optimizer-scan:script-test', () => {
     ret = `//export default { }`.replace(singlelineCommentsRE, '')
     expect(ret).not.toContain('export default')
   })
+})
+
+test('scan jsx-runtime', async (ctx) => {
+  const server = await createServer({
+    configFile: false,
+    logLevel: 'error',
+    root: path.join(import.meta.dirname, 'fixtures', 'scan-jsx-runtime'),
+    environments: {
+      client: {
+        // silence client optimizer
+        optimizeDeps: {
+          noDiscovery: true,
+        },
+      },
+      ssr: {
+        resolve: {
+          noExternal: true,
+        },
+        optimizeDeps: {
+          force: true,
+          noDiscovery: false,
+          entries: ['./entry-jsx.tsx', './entry-no-jsx.js'],
+        },
+      },
+    },
+  })
+
+  // start server to ensure optimizer run
+  await server.listen()
+  ctx.onTestFinished(() => server.close())
+
+  const runner = createServerModuleRunner(server.environments.ssr, {
+    hmr: { logger: false },
+  })
+
+  // flush initial optimizer by importing any file
+  await runner.import('./entry-no-jsx.js')
+
+  // verify jsx won't trigger optimizer re-run
+  const mod1 = await runner.import('./entry-jsx.js')
+  const mod2 = await runner.import('./entry-jsx.js')
+  expect((globalThis as any).__test_scan_jsx_runtime).toBe(1)
+  expect(mod1).toBe(mod2)
+})
+
+test('scan import.meta.glob respects rolldown transform jsx options', async (ctx) => {
+  const server = await createServer({
+    configFile: false,
+    logLevel: 'error',
+    root: path.join(import.meta.dirname, 'fixtures', 'scan-jsx-runtime'),
+    oxc: {
+      jsx: {
+        runtime: 'automatic',
+        importSource: 'react',
+      },
+    },
+    optimizeDeps: {
+      force: true,
+      noDiscovery: false,
+      entries: ['./entry-glob-custom-oxc.tsx'],
+      rolldownOptions: {
+        transform: {
+          jsx: {
+            runtime: 'automatic',
+            importSource: 'vue',
+          },
+        },
+      },
+    },
+  })
+  ctx.onTestFinished(() => server.close())
+
+  const { cancel, result } = scanImports(
+    devToScanEnvironment(server.environments.client),
+  )
+  ctx.onTestFinished(cancel)
+
+  const scanResult = await result
+
+  expect(scanResult).toMatchObject({
+    deps: {
+      'vue/jsx-dev-runtime': expect.any(String),
+    },
+    missing: {},
+  })
+  expect(scanResult.deps).not.toHaveProperty('react/jsx-runtime')
+})
+
+test('scan import.meta.glob package imports patterns', async (ctx) => {
+  const server = await createServer({
+    configFile: false,
+    logLevel: 'error',
+    root: path.join(
+      import.meta.dirname,
+      'fixtures',
+      'scan-subpath-import-glob',
+    ),
+    optimizeDeps: {
+      entries: ['./entry.ts'],
+      force: true,
+      noDiscovery: false,
+    },
+  })
+  ctx.onTestFinished(() => server.close())
+
+  const { cancel, result } = scanImports(
+    devToScanEnvironment(server.environments.client),
+  )
+  ctx.onTestFinished(cancel)
+
+  await expect(result).resolves.toEqual({ deps: {}, missing: {} })
 })

@@ -1,0 +1,10 @@
+{
+  "name": "@vitejs/test-license",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "dependencies": {
+    "@vitejs/test-dep-license-mit": "file:./dep-license-mit",
+    "@vitejs/test-dep-licence-cc0": "file:./dep-licence-cc0"
+  }
+}

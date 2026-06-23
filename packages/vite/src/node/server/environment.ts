@@ -1,6 +1,6 @@
-import type { FSWatcher } from 'dep-types/chokidar'
 import colors from 'picocolors'
 import type { FetchFunctionOptions, FetchResult } from 'vite/module-runner'
+import type { FSWatcher } from '#dep-types/chokidar'
 import { BaseEnvironment } from '../baseEnvironment'
 import type {
   EnvironmentOptions,
@@ -20,7 +20,11 @@ import { promiseWithResolvers } from '../../shared/utils'
 import type { ViteDevServer } from '../server'
 import { EnvironmentModuleGraph } from './moduleGraph'
 import type { EnvironmentModuleNode } from './moduleGraph'
-import type { HotChannel, NormalizedHotChannel } from './hmr'
+import type {
+  HotChannel,
+  NormalizedHotChannel,
+  NormalizedHotChannelClient,
+} from './hmr'
 import { getShortName, normalizeHotChannel, updateModules } from './hmr'
 import type { TransformResult } from './transformRequest'
 import { transformRequest } from './transformRequest'
@@ -32,6 +36,7 @@ import {
 import { type WebSocketServer, isWebSocketServer } from './ws'
 import { warmupFiles } from './warmup'
 import { buildErrorMessage } from './middlewares/error'
+import { BundledDev } from './bundledDev'
 
 export interface DevEnvironmentContext {
   hot: boolean
@@ -41,6 +46,10 @@ export interface DevEnvironmentContext {
     inlineSourceMap?: boolean
   }
   depsOptimizer?: DepsOptimizer
+  /** @internal used for client environment */
+  disableFetchModule?: boolean
+  /** @internal used for full bundle mode */
+  disableDepsOptimizer?: boolean
 }
 
 export class DevEnvironment extends BaseEnvironment {
@@ -52,6 +61,10 @@ export class DevEnvironment extends BaseEnvironment {
    * @internal
    */
   _remoteRunnerOptions: DevEnvironmentContext['remoteRunner']
+  /**
+   * @internal
+   */
+  _skipFsCheck: boolean
 
   get pluginContainer(): EnvironmentPluginContainer<DevEnvironment> {
     if (!this._pluginContainer)
@@ -93,6 +106,9 @@ export class DevEnvironment extends BaseEnvironment {
    * environment.hot.send({ type: 'full-reload' })
    */
   hot: NormalizedHotChannel
+
+  public bundledDev?: BundledDev
+
   constructor(
     name: string,
     config: ResolvedConfig,
@@ -109,6 +125,13 @@ export class DevEnvironment extends BaseEnvironment {
       ) as ResolvedEnvironmentOptions
     }
     super(name, config, options)
+    if (
+      options.isBundled ||
+      (name === 'client' && config.experimental.bundledDev)
+    ) {
+      context.disableDepsOptimizer = true
+      this.bundledDev = new BundledDev(this)
+    }
 
     this._pendingRequests = new Map()
 
@@ -119,6 +142,11 @@ export class DevEnvironment extends BaseEnvironment {
     this._crawlEndFinder = setupOnCrawlEnd()
 
     this._remoteRunnerOptions = context.remoteRunner ?? {}
+    this._skipFsCheck = !!(
+      context.transport &&
+      !(isWebSocketServer in context.transport) &&
+      context.transport.skipFsCheck
+    )
 
     this.hot = context.transport
       ? isWebSocketServer in context.transport
@@ -128,32 +156,47 @@ export class DevEnvironment extends BaseEnvironment {
 
     this.hot.setInvokeHandler({
       fetchModule: (id, importer, options) => {
+        if (context.disableFetchModule) {
+          throw new Error('fetchModule is disabled in this environment')
+        }
         return this.fetchModule(id, importer, options)
+      },
+      getBuiltins: async () => {
+        return this.config.resolve.builtins.map((builtin) =>
+          typeof builtin === 'string'
+            ? { type: 'string', value: builtin }
+            : { type: 'RegExp', source: builtin.source, flags: builtin.flags },
+        )
       },
     })
 
     this.hot.on(
       'vite:invalidate',
-      async ({ path, message, firstInvalidatedBy }) => {
-        invalidateModule(this, {
-          path,
-          message,
-          firstInvalidatedBy,
-        })
+      ({ path, message, firstInvalidatedBy }, client) => {
+        this.invalidateModule(
+          {
+            path,
+            message,
+            firstInvalidatedBy,
+          },
+          client,
+        )
       },
     )
 
-    const { optimizeDeps } = this.config
-    if (context.depsOptimizer) {
-      this.depsOptimizer = context.depsOptimizer
-    } else if (isDepOptimizationDisabled(optimizeDeps)) {
-      this.depsOptimizer = undefined
-    } else {
-      this.depsOptimizer = (
-        optimizeDeps.noDiscovery
-          ? createExplicitDepsOptimizer
-          : createDepsOptimizer
-      )(this)
+    if (!context.disableDepsOptimizer) {
+      const { optimizeDeps } = this.config
+      if (context.depsOptimizer) {
+        this.depsOptimizer = context.depsOptimizer
+      } else if (isDepOptimizationDisabled(optimizeDeps)) {
+        this.depsOptimizer = undefined
+      } else {
+        this.depsOptimizer = (
+          optimizeDeps.noDiscovery
+            ? createExplicitDepsOptimizer
+            : createDepsOptimizer
+        )(this)
+      }
     }
   }
 
@@ -185,10 +228,16 @@ export class DevEnvironment extends BaseEnvironment {
    */
   async listen(server: ViteDevServer): Promise<void> {
     this.hot.listen()
-    await this.depsOptimizer?.init()
+    await Promise.all([this.bundledDev?.listen(), this.depsOptimizer?.init()])
     warmupFiles(server, this)
   }
 
+  /**
+   * Called by the module runner to retrieve information about the specified
+   * module. Internally calls `transformRequest` and wraps the result in the
+   * format that the module runner understands.
+   * This method is not meant to be called manually.
+   */
   fetchModule(
     id: string,
     importer?: string,
@@ -207,12 +256,17 @@ export class DevEnvironment extends BaseEnvironment {
   }
 
   transformRequest(url: string): Promise<TransformResult | null> {
-    return transformRequest(this, url)
+    return transformRequest(this, url, { skipFsCheck: this._skipFsCheck })
   }
 
   async warmupRequest(url: string): Promise<void> {
+    if (this.bundledDev) {
+      // no-op
+      return
+    }
+
     try {
-      await this.transformRequest(url)
+      await transformRequest(this, url, { skipFsCheck: true })
     } catch (e) {
       if (
         e?.code === ERR_OUTDATED_OPTIMIZED_DEP ||
@@ -232,12 +286,51 @@ export class DevEnvironment extends BaseEnvironment {
     }
   }
 
+  protected invalidateModule(
+    m: {
+      path: string
+      message?: string
+      firstInvalidatedBy: string
+    },
+    _client: NormalizedHotChannelClient,
+  ): void {
+    if (this.bundledDev) {
+      this.invalidateModule(m, _client)
+      return
+    }
+
+    const mod = this.moduleGraph.urlToModuleMap.get(m.path)
+    if (
+      mod &&
+      mod.isSelfAccepting &&
+      mod.lastHMRTimestamp > 0 &&
+      !mod.lastHMRInvalidationReceived
+    ) {
+      mod.lastHMRInvalidationReceived = true
+      this.logger.info(
+        colors.yellow(`hmr invalidate `) +
+          colors.dim(m.path) +
+          (m.message ? ` ${m.message}` : ''),
+        { timestamp: true },
+      )
+      const file = getShortName(mod.file!, this.config.root)
+      updateModules(
+        this,
+        file,
+        [...mod.importers].filter((imp) => imp !== mod), // ignore self-imports
+        mod.lastHMRTimestamp,
+        m.firstInvalidatedBy,
+      )
+    }
+  }
+
   async close(): Promise<void> {
     this._closing = true
 
     this._crawlEndFinder.cancel()
     await Promise.allSettled([
       this.pluginContainer.close(),
+      this.bundledDev?.close(),
       this.depsOptimizer?.close(),
       // WebSocketServer is independent of HotChannel and should not be closed on environment close
       isWebSocketServer in this.hot ? Promise.resolve() : this.hot.close(),
@@ -270,39 +363,6 @@ export class DevEnvironment extends BaseEnvironment {
    */
   _registerRequestProcessing(id: string, done: () => Promise<unknown>): void {
     this._crawlEndFinder.registerRequestProcessing(id, done)
-  }
-}
-
-function invalidateModule(
-  environment: DevEnvironment,
-  m: {
-    path: string
-    message?: string
-    firstInvalidatedBy: string
-  },
-) {
-  const mod = environment.moduleGraph.urlToModuleMap.get(m.path)
-  if (
-    mod &&
-    mod.isSelfAccepting &&
-    mod.lastHMRTimestamp > 0 &&
-    !mod.lastHMRInvalidationReceived
-  ) {
-    mod.lastHMRInvalidationReceived = true
-    environment.logger.info(
-      colors.yellow(`hmr invalidate `) +
-        colors.dim(m.path) +
-        (m.message ? ` ${m.message}` : ''),
-      { timestamp: true },
-    )
-    const file = getShortName(mod.file!, environment.config.root)
-    updateModules(
-      environment,
-      file,
-      [...mod.importers],
-      mod.lastHMRTimestamp,
-      m.firstInvalidatedBy,
-    )
   }
 }
 
@@ -363,7 +423,7 @@ function setupOnCrawlEnd(): CrawlEndFinder {
       callCrawlEndIfIdleAfterMs,
     )
   }
-  async function callOnCrawlEndWhenIdle() {
+  function callOnCrawlEndWhenIdle() {
     if (cancelled || registeredIds.size > 0) return
     onCrawlEndPromiseWithResolvers.resolve()
   }

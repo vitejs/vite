@@ -1,6 +1,6 @@
 # @vitejs/plugin-legacy [![npm](https://img.shields.io/npm/v/@vitejs/plugin-legacy.svg)](https://npmjs.com/package/@vitejs/plugin-legacy)
 
-Vite's default browser support baseline is [Native ESM](https://caniuse.com/es6-module), [native ESM dynamic import](https://caniuse.com/es6-module-dynamic-import), and [`import.meta`](https://caniuse.com/mdn-javascript_operators_import_meta). This plugin provides support for legacy browsers that do not support those features when building for production.
+Vite's minimum browser support target is [native ESM dynamic import](https://caniuse.com/es6-module-dynamic-import), and [`import.meta`](https://caniuse.com/mdn-javascript_operators_import_meta). This plugin provides support for legacy browsers that do not support those features when building for production.
 
 By default, this plugin will:
 
@@ -40,7 +40,7 @@ npm add -D terser
 - **Type:** `string | string[] | { [key: string]: string }`
 - **Default:** [`'last 2 versions and not dead, > 0.3%, Firefox ESR'`](https://browsersl.ist/#q=last+2+versions+and+not+dead%2C+%3E+0.3%25%2C+Firefox+ESR)
 
-  If explicitly set, it's passed on to [`@babel/preset-env`](https://babeljs.io/docs/en/babel-preset-env#targets) when rendering **legacy chunks**.
+  It's passed on to [`@babel/preset-env`](https://babeljs.io/docs/en/babel-preset-env#targets) when rendering **legacy chunks**.
 
   The query is also [Browserslist compatible](https://github.com/browserslist/browserslist). See [Browserslist Best Practices](https://github.com/browserslist/browserslist#best-practices) for more details.
 
@@ -49,13 +49,15 @@ npm add -D terser
 ### `modernTargets`
 
 - **Type:** `string | string[]`
-- **Default:** [`'edge>=79, firefox>=67, chrome>=64, safari>=12, chromeAndroid>=64, iOS>=12'`](https://browsersl.ist/#q=edge%3E%3D79%2C+firefox%3E%3D67%2C+chrome%3E%3D64%2C+safari%3E%3D12%2C+chromeAndroid%3E%3D64%2C+iOS%3E%3D12)
+- **Default:** [`'edge>=105, firefox>=106, chrome>=105, safari>=16.4, chromeAndroid>=105, iOS>=16.4'`](https://browsersl.ist/#q=edge%3E%3D105%2C+firefox%3E%3D106%2C+chrome%3E%3D105%2C+safari%3E%3D16.4%2C+chromeAndroid%3E%3D105%2C+iOS%3E%3D16.4)
 
-  If explicitly set, it's passed on to [`@babel/preset-env`](https://babeljs.io/docs/en/babel-preset-env#targets) when rendering **modern chunks**.
+  It's passed on to [`@babel/preset-env`](https://babeljs.io/docs/en/babel-preset-env#targets) when collecting polyfills for **modern chunks**. The value set here will override the `build.target` option.
 
   The query is also [Browserslist compatible](https://github.com/browserslist/browserslist). See [Browserslist Best Practices](https://github.com/browserslist/browserslist#best-practices) for more details.
 
   If it's not set, plugin-legacy will fallback to the default value.
+
+  Note that this options should not be set unless `renderLegacyChunks` is set to `false`.
 
 ### `polyfills`
 
@@ -133,16 +135,16 @@ npm add -D terser
 
 ## Browsers that supports ESM but does not support widely-available features
 
-The legacy plugin offers a way to use widely-available features natively in the modern build, while falling back to the legacy build in browsers with native ESM but without those features supported (e.g. Legacy Edge). This feature works by injecting a runtime check and loading the legacy bundle with SystemJs runtime if needed. There are the following drawbacks:
+The legacy plugin offers a way to use widely-available features natively in the modern build, while falling back to the legacy build in browsers with native ESM but without those features supported (e.g. Legacy Edge). This feature works by injecting a runtime check and loading the legacy bundle with SystemJS runtime if needed. There are the following drawbacks:
 
 - Modern bundle is downloaded in all ESM browsers
-- Modern bundle throws `SyntaxError` in browsers without those features support
+- Modern bundle throws an error in browsers without those features support
 
-The following syntax are considered as widely-available:
+The following features are considered as widely-available:
 
 - dynamic import
-- `import.meta`
 - async generator
+- `import.meta.resolve`
 
 ## Polyfill Specifiers
 
@@ -181,7 +183,7 @@ The current values are:
 
 - `sha256-MS6/3FCg4WjP9gwgaBGwLpRCY6fZBgwmhVCdrPrNf3E=`
 - `sha256-tQjf8gvb2ROOMapIxFvFAYBeUJ0v1HCbOcSmDNXGtDo=`
-- `sha256-ZxAi3a7m9Mzbc+Z1LGuCCK5Xee6reDkEPRas66H9KSo=`
+- `sha256-w36slEqa9euNKxfvkw+LLGsDIr++3rsZXpZxtmRh8Aw=`
 - `sha256-+5XkZFazzJo8n0iOP4ti/cLCMUudTf//Mzkb7xNPXIc=`
 
 <!--

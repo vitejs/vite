@@ -4,7 +4,12 @@ import { performance } from 'node:perf_hooks'
 import getEtag from 'etag'
 import MagicString from 'magic-string'
 import { init, parse as parseImports } from 'es-module-lexer'
-import type { PartialResolvedId, SourceDescription, SourceMap } from 'rollup'
+import type {
+  ModuleType,
+  PartialResolvedId,
+  SourceDescription,
+  SourceMap,
+} from 'rolldown'
 import colors from 'picocolors'
 import type { EnvironmentModuleNode } from '../server/moduleGraph'
 import {
@@ -21,7 +26,7 @@ import {
 } from '../utils'
 import { ssrTransform } from '../ssr/ssrTransform'
 import { checkPublicFile } from '../publicDir'
-import { cleanUrl, unwrapId } from '../../shared/utils'
+import { cleanUrl, slash, unwrapId } from '../../shared/utils'
 import {
   applySourcemapIgnoreList,
   extractSourcemapFromFile,
@@ -30,6 +35,7 @@ import {
 import { isFileLoadingAllowed } from './middlewares/static'
 import { throwClosedServerError } from './pluginContainer'
 import type { DevEnvironment } from './environment'
+import { isServerAccessDeniedForTransform } from './middlewares/transform'
 
 export const ERR_LOAD_URL = 'ERR_LOAD_URL'
 export const ERR_LOAD_PUBLIC_URL = 'ERR_LOAD_PUBLIC_URL'
@@ -53,14 +59,13 @@ export interface TransformOptions {
    * @deprecated inferred from environment
    */
   ssr?: boolean
+}
+
+interface TransformOptionsInternal {
   /**
-   * @internal
+   * Whether to skip the `server.fs` check.
    */
-  html?: boolean
-  /**
-   * @internal
-   */
-  allowId?: (id: string) => boolean
+  skipFsCheck: boolean
 }
 
 // TODO: This function could be moved to the DevEnvironment class.
@@ -73,18 +78,10 @@ export interface TransformOptions {
 export function transformRequest(
   environment: DevEnvironment,
   url: string,
-  options: TransformOptions = {},
+  options: TransformOptionsInternal,
 ): Promise<TransformResult | null> {
-  // Backward compatibility when only `ssr` is passed
-  if (!options.ssr) {
-    // Backward compatibility
-    options = { ...options, ssr: environment.config.consumer === 'server' }
-  }
-
   if (environment._closing && environment.config.dev.recoverable)
     throwClosedServerError()
-
-  const cacheKey = `${options.html ? 'html:' : ''}${url}`
 
   // This module may get invalidated while we are processing it. For example
   // when a full page reload is needed after the re-processing of pre-bundled
@@ -108,25 +105,25 @@ export function transformRequest(
   // last time this module is invalidated
   const timestamp = monotonicDateNow()
 
-  const pending = environment._pendingRequests.get(cacheKey)
-  if (pending) {
-    return environment.moduleGraph
-      .getModuleByUrl(removeTimestampQuery(url))
-      .then((module) => {
-        if (!module || pending.timestamp > module.lastInvalidationTimestamp) {
-          // The pending request is still valid, we can safely reuse its result
-          return pending.request
-        } else {
-          // Request 1 for module A     (pending.timestamp)
-          // Invalidate module A        (module.lastInvalidationTimestamp)
-          // Request 2 for module A     (timestamp)
+  url = removeTimestampQuery(url)
 
-          // First request has been invalidated, abort it to clear the cache,
-          // then perform a new doTransform.
-          pending.abort()
-          return transformRequest(environment, url, options)
-        }
-      })
+  const pending = environment._pendingRequests.get(url)
+  if (pending) {
+    return environment.moduleGraph.getModuleByUrl(url).then((module) => {
+      if (!module || pending.timestamp > module.lastInvalidationTimestamp) {
+        // The pending request is still valid, we can safely reuse its result
+        return pending.request
+      } else {
+        // Request 1 for module A     (pending.timestamp)
+        // Invalidate module A        (module.lastInvalidationTimestamp)
+        // Request 2 for module A     (timestamp)
+
+        // First request has been invalidated, abort it to clear the cache,
+        // then perform a new doTransform.
+        pending.abort()
+        return transformRequest(environment, url, options)
+      }
+    })
   }
 
   const request = doTransform(environment, url, options, timestamp)
@@ -135,13 +132,13 @@ export function transformRequest(
   let cleared = false
   const clearCache = () => {
     if (!cleared) {
-      environment._pendingRequests.delete(cacheKey)
+      environment._pendingRequests.delete(url)
       cleared = true
     }
   }
 
   // Cache the request and clear it once processing is done
-  environment._pendingRequests.set(cacheKey, {
+  environment._pendingRequests.set(url, {
     request,
     timestamp,
     abort: clearCache,
@@ -153,11 +150,9 @@ export function transformRequest(
 async function doTransform(
   environment: DevEnvironment,
   url: string,
-  options: TransformOptions,
+  options: TransformOptionsInternal,
   timestamp: number,
 ) {
-  url = removeTimestampQuery(url)
-
   const { pluginContainer } = environment
 
   let module = await environment.moduleGraph.getModuleByUrl(url)
@@ -243,7 +238,7 @@ async function loadAndTransform(
   environment: DevEnvironment,
   id: string,
   url: string,
-  options: TransformOptions,
+  options: TransformOptionsInternal,
   timestamp: number,
   mod?: EnvironmentModuleNode,
   resolved?: PartialResolvedId,
@@ -254,14 +249,20 @@ async function loadAndTransform(
 
   const moduleGraph = environment.moduleGraph
 
-  if (options.allowId && !options.allowId(id)) {
+  if (
+    !options.skipFsCheck &&
+    id[0] !== '\0' &&
+    isServerAccessDeniedForTransform(config, id)
+  ) {
     const err: any = new Error(`Denied ID ${id}`)
     err.code = ERR_DENIED_ID
+    err.id = id
     throw err
   }
 
   let code: string | null = null
   let map: SourceDescription['map'] = null
+  let moduleType: ModuleType | undefined
 
   // load
   const loadStart = debugLoad ? performance.now() : 0
@@ -270,28 +271,20 @@ async function loadAndTransform(
   if (loadResult == null) {
     const file = cleanUrl(id)
 
-    // if this is an html request and there is no load result, skip ahead to
-    // SPA fallback.
-    if (options.html && !id.endsWith('.html')) {
-      return null
-    }
     // try fallback loading it from fs as string
     // if the file is a binary, there should be a plugin that already loaded it
     // as string
     // only try the fallback if access is allowed, skip for out of root url
     // like /service-worker.js or /api/users
     if (
-      environment.config.consumer === 'server' ||
-      isFileLoadingAllowed(environment.getTopLevelConfig(), file)
+      options.skipFsCheck ||
+      isFileLoadingAllowed(environment.getTopLevelConfig(), slash(file))
     ) {
       try {
         code = await fsp.readFile(file, 'utf-8')
         debugLoad?.(`${timeFrom(loadStart)} [fs] ${prettyUrl}`)
       } catch (e) {
-        if (e.code !== 'ENOENT') {
-          if (e.code === 'EISDIR') {
-            e.message = `${e.message} ${file}`
-          }
+        if (e.code !== 'ENOENT' && e.code !== 'EISDIR') {
           throw e
         }
       }
@@ -305,7 +298,7 @@ async function loadAndTransform(
     }
     if (code) {
       try {
-        const extracted = await extractSourcemapFromFile(code, file)
+        const extracted = extractSourcemapFromFile(code, file, logger)
         if (extracted) {
           code = extracted.code
           map = extracted.map
@@ -321,6 +314,7 @@ async function loadAndTransform(
     if (isObject(loadResult)) {
       code = loadResult.code
       map = loadResult.map
+      moduleType = loadResult.moduleType
     } else {
       code = loadResult
     }
@@ -346,6 +340,12 @@ async function loadAndTransform(
     err.code = isPublicFile ? ERR_LOAD_PUBLIC_URL : ERR_LOAD_URL
     throw err
   }
+  if (moduleType === undefined) {
+    const guessedModuleType = getModuleTypeFromId(id)
+    if (guessedModuleType && guessedModuleType !== 'js') {
+      moduleType = guessedModuleType
+    }
+  }
 
   if (environment._closing && environment.config.dev.recoverable)
     throwClosedServerError()
@@ -357,6 +357,7 @@ async function loadAndTransform(
   const transformStart = debugTransform ? performance.now() : 0
   const transformResult = await pluginContainer.transform(code, id, {
     inMap: map,
+    moduleType,
   })
   const originalCode = code
   if (transformResult.code === originalCode) {
@@ -534,4 +535,31 @@ async function handleModuleSoftInvalidation(
     environment.moduleGraph.updateModuleTransformResult(mod, result)
 
   return result
+}
+
+// https://github.com/rolldown/rolldown/blob/cc66f4b7189dfb3a248608d02f5962edb09b11f8/crates/rolldown/src/utils/normalize_options.rs#L95-L111
+const defaultModuleTypes: Record<string, ModuleType | undefined> = {
+  js: 'js',
+  mjs: 'js',
+  cjs: 'js',
+  jsx: 'jsx',
+  ts: 'ts',
+  mts: 'ts',
+  cts: 'ts',
+  tsx: 'tsx',
+  json: 'json',
+  txt: 'text',
+  css: 'css',
+}
+
+// https://github.com/rolldown/rolldown/blob/bf53a100edf1780d5a5aa41f0bc0459c5696543e/crates/rolldown/src/utils/load_source.rs#L53-L89
+export function getModuleTypeFromId(id: string): ModuleType | undefined {
+  let pos = -1
+  while ((pos = id.indexOf('.', pos + 1)) >= 0) {
+    const ext = id.slice(pos + 1)
+    const moduleType = defaultModuleTypes[ext]
+    if (moduleType) {
+      return moduleType
+    }
+  }
 }

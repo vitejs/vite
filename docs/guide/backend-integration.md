@@ -3,7 +3,7 @@
 :::tip Note
 If you want to serve the HTML using a traditional backend (e.g. Rails, Laravel) but use Vite for serving assets, check for existing integrations listed in [Awesome Vite](https://github.com/vitejs/awesome-vite#integrations-with-backends).
 
-If you need a custom integration, you can follow the steps in this guide to configure it manually
+If you need a custom integration, you can follow the steps in this guide to configure it manually.
 :::
 
 1. In your Vite config, configure the entry and enable build manifest:
@@ -21,7 +21,7 @@ If you need a custom integration, you can follow the steps in this guide to conf
      build: {
        // generate .vite/manifest.json in outDir
        manifest: true,
-       rollupOptions: {
+       rolldownOptions: {
          // overwrite default .html entry
          input: '/path/to/main.js',
        },
@@ -62,9 +62,9 @@ If you need a custom integration, you can follow the steps in this guide to conf
    </script>
    ```
 
-3. For production: after running `vite build`, a `.vite/manifest.json` file will be generated alongside other asset files. An example manifest file looks like this:
+3. For production, after running `vite build`, a `.vite/manifest.json` file will be generated alongside other asset files. An example manifest file looks like this:
 
-   ```json [.vite/manifest.json]
+   ```json [.vite/manifest.json] style:max-height:400px
    {
      "_shared-B7PI925R.js": {
        "file": "assets/shared-B7PI925R.js",
@@ -74,6 +74,10 @@ If you need a custom integration, you can follow the steps in this guide to conf
      "_shared-ChJ_j-JJ.css": {
        "file": "assets/shared-ChJ_j-JJ.css",
        "src": "_shared-ChJ_j-JJ.css"
+     },
+     "logo.svg": {
+       "file": "assets/logo-BuPIv-2h.svg",
+       "src": "logo.svg"
      },
      "baz.js": {
        "file": "assets/baz-B2H3sXNv.js",
@@ -100,11 +104,88 @@ If you need a custom integration, you can follow the steps in this guide to conf
    }
    ```
 
-   - The manifest has a `Record<name, chunk>` structure
-   - For entry or dynamic entry chunks, the key is the relative src path from project root.
-   - For non entry chunks, the key is the base name of the generated file prefixed with `_`.
-   - For the CSS file generated when [`build.cssCodeSplit`](/config/build-options.md#build-csscodesplit) is `false`, the key is `style.css`.
-   - Chunks will contain information on its static and dynamic imports (both are keys that map to the corresponding chunk in the manifest), and also its corresponding CSS and asset files (if any).
+   The manifest maps source files to their build outputs and dependencies:
+
+   ```dot
+   digraph manifest {
+     rankdir=TB
+     node [shape=box style="rounded,filled" fontname="Arial" fontsize=10 margin="0.2,0.1" fontcolor="${#3c3c43|#ffffff}" color="${#c2c2c4|#3c3f44}"]
+     edge [color="${#67676c|#98989f}" fontname="Arial" fontsize=9 fontcolor="${#67676c|#98989f}"]
+     bgcolor="transparent"
+
+     foo [label="views/foo.js\n(entry)" fillcolor="${#e9eaff|#222541}"]
+     bar [label="views/bar.js\n(entry)" fillcolor="${#e9eaff|#222541}"]
+     shared [label="_shared-B7PI925R.js\n(common chunk)" fillcolor="${#f2ecfc|#2c273e}"]
+     baz [label="baz.js\n(dynamic import)" fillcolor="${#fcf4dc|#38301a}"]
+     foocss [label="foo.css" shape=ellipse fillcolor="${#fde4e8|#3a1d27}"]
+     sharedcss [label="shared.css" shape=ellipse fillcolor="${#fde4e8|#3a1d27}"]
+     logo [label="logo.svg\n(asset)" shape=ellipse fillcolor="${#def5ed|#15312d}"]
+
+     foo -> shared [label="imports"]
+     bar -> shared [label="imports"]
+     bar -> baz [label="dynamicImports" style=dashed]
+     foo -> foocss [label="css"]
+     shared -> sharedcss [label="css"]
+   }
+   ```
+
+   The manifest has a `Record<name, chunk>` structure where each chunk follows the `ManifestChunk` interface:
+
+   ```ts style:max-height:400px
+   interface ManifestChunk {
+     /**
+      * The input file name of this chunk / asset if known
+      */
+     src?: string
+     /**
+      * The output file name of this chunk / asset
+      */
+     file: string
+     /**
+      * The list of CSS files imported by this chunk
+      */
+     css?: string[]
+     /**
+      * The list of asset files imported by this chunk, excluding CSS files
+      */
+     assets?: string[]
+     /**
+      * Whether this chunk or asset is an entry point
+      */
+     isEntry?: boolean
+     /**
+      * The name of this chunk / asset if known
+      */
+     name?: string
+     /**
+      * Whether this chunk is a dynamic entry point
+      *
+      * This field is only present in JS chunks.
+      */
+     isDynamicEntry?: boolean
+     /**
+      * The list of statically imported chunks by this chunk
+      *
+      * The values are the keys of the manifest. This field is only present in JS chunks.
+      */
+     imports?: string[]
+     /**
+      * The list of dynamically imported chunks by this chunk
+      *
+      * The values are the keys of the manifest. This field is only present in JS chunks.
+      */
+     dynamicImports?: string[]
+   }
+   ```
+
+   Each entry in the manifest represents one of the following:
+   - **Entry chunks**: Generated from files specified in [`build.rolldownOptions.input`](https://rolldown.rs/reference/InputOptions.input#input). These chunks have `isEntry: true` and their key is the relative src path from project root.
+   - **Dynamic entry chunks**: Generated from dynamic imports. These chunks have `isDynamicEntry: true` and their key is the relative src path from project root.
+   - **Non-entry chunks**: Their key is the base name of the generated file prefixed with `_`.
+   - **Asset chunks**: Generated from imported assets like images, fonts. Their key is the relative src path from project root.
+   - **CSS files**: When [`build.cssCodeSplit`](/config/build-options.md#build-csscodesplit) is `false`, a single CSS file is generated with the key `style.css`. When `build.cssCodeSplit` is not `false`, the key is generated similar to JS chunks (i.e. entry chunks will not have `_` prefix and non-entry chunks will have `_` prefix).
+
+   JS chunks (chunks other than assets or CSS) will contain information on their static and dynamic imports (both are keys that map to the corresponding chunk in the manifest). Chunks also list their corresponding CSS and asset files if they have any.
 
 4. You can use this file to render links or preload directives with hashed filenames.
 
@@ -129,14 +210,13 @@ If you need a custom integration, you can follow the steps in this guide to conf
    ```
 
    Specifically, a backend generating HTML should include the following tags given a manifest
-   file and an entry point:
-   - A `<link rel="stylesheet">` tag for each file in the entry point chunk's `css` list
-   - Recursively follow all chunks in the entry point's `imports` list and include a
-     `<link rel="stylesheet">` tag for each CSS file of each imported chunk.
-   - A tag for the `file` key of the entry point chunk (`<script type="module">` for JavaScript,
-     or `<link rel="stylesheet">` for CSS)
-   - Optionally, `<link rel="modulepreload">` tag for the `file` of each imported JavaScript
-     chunk, again recursively following the imports starting from the entry point chunk.
+   file and an entry point. Note that following this order is recommended for optimal performance:
+   1. A `<link rel="stylesheet">` tag for each file in the entry point chunk's `css` list (if it exists)
+   2. Recursively follow all chunks in the entry point's `imports` list and include a
+      `<link rel="stylesheet">` tag for each CSS file of each imported chunk's `css` list (if it exists).
+   3. A tag for the `file` key of the entry point chunk. This can be `<script type="module">` for JavaScript, `<link rel="stylesheet">` for CSS.
+   4. Optionally, `<link rel="modulepreload">` tag for the `file` of each imported JavaScript
+      chunk, again recursively following the imports starting from the entry point chunk.
 
    Following the above example manifest, for the entry point `views/foo.js` the following tags should be included in production:
 
@@ -190,4 +270,11 @@ If you need a custom integration, you can follow the steps in this guide to conf
    }
    ```
 
+   :::
+
+   :::info Chunk Import Maps Support (Experimental)
+
+   If you are using the experimental [`build.chunkImportMap`](/config/build-options#build-chunkimportmap) option, you also need to inject the import map into the HTML.
+
+   The import map is output to `importmap.json` in the output directory. Make sure to inject the `<script type="importmap">` tag before any `<script type="module">` tags or `<link rel="modulepreload">` tags.
    :::

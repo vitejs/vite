@@ -40,6 +40,17 @@ test('should have no 404s', () => {
   })
 })
 
+test.runIf(isBuild)(
+  'should not warn about VITE_ASSET tokens in image-set',
+  async () => {
+    expect(serverLogs).toStrictEqual(
+      expect.not.arrayContaining([
+        expect.stringMatching(/VITE_ASSET__.*?didn't resolve at build time/),
+      ]),
+    )
+  },
+)
+
 test('should get a 404 when using incorrect case', async () => {
   expect((await fetchPath('icon.png')).headers.get('Content-Type')).toBe(
     'image/png',
@@ -56,7 +67,7 @@ test('should get a 404 when using incorrect case', async () => {
   expect(barResult.status).toBe(200)
 })
 
-test('should fallback to index.html when accessing non-existant html file', async () => {
+test('should fallback to index.html when accessing non-existent html file', async () => {
   expect((await fetchPath('doesnt-exist.html')).status).toBe(200)
 })
 
@@ -362,6 +373,14 @@ describe('css url() references', () => {
       await expect.poll(() => getBg('.css-url-svg')).toMatch('red')
     }
   })
+
+  test.runIf(isServe)('non inlined url() HMR', async () => {
+    const bg = await getBg('.css-url-non-inline-hmr')
+    editFile('nested/donuts-large.svg', (code) =>
+      code.replace('fill="blue"', 'fill="red"'),
+    )
+    await expect.poll(() => getBg('.css-url-non-inline-hmr')).not.toBe(bg)
+  })
 })
 
 describe('image', () => {
@@ -463,6 +482,20 @@ test('Unknown extension assets import', async () => {
 
 test('?raw import', async () => {
   expect(await page.textContent('.raw')).toMatch('SVG')
+  expect(await page.textContent('.raw-html')).toBe('<div>partial</div>\n')
+
+  if (isBuild) return
+  editFile('nested/partial.html', (code) =>
+    code.replace('<div>partial</div>', '<div>partial updated</div>'),
+  )
+  await expect
+    .poll(() => page.textContent('.raw-html'))
+    .toBe('<div>partial updated</div>\n')
+  expect(browserLogs).toStrictEqual(
+    expect.arrayContaining([
+      expect.stringContaining('hot updated: /nested/partial.html?raw via'),
+    ]),
+  )
 })
 
 test('?no-inline svg import', async () => {
@@ -536,7 +569,31 @@ describe.runIf(isBuild)('encodeURI', () => {
 })
 
 test('new URL(..., import.meta.url)', async () => {
-  expect(await page.textContent('.import-meta-url')).toMatch(assetMatch)
+  const imgMatch = isBuild
+    ? /\/foo\/bar\/assets\/img-[-\w]{8}\.png/
+    : '/foo/bar/import-meta-url/img.png'
+
+  expect(await page.textContent('.import-meta-url')).toMatch(imgMatch)
+  if (isServe) {
+    const loadPromise = page.waitForEvent('load')
+    const newContent = readFile('import-meta-url/img-update.png', null)
+    let oldContent: Buffer
+    editFile('import-meta-url/img.png', null, (_oldContent) => {
+      oldContent = _oldContent
+      return newContent
+    })
+    await loadPromise // expect reload
+    await expect
+      .poll(() => page.textContent('.import-meta-url'))
+      .toMatch(imgMatch)
+
+    const loadPromise2 = page.waitForEvent('load')
+    editFile('import-meta-url/img.png', null, (_) => oldContent)
+    await loadPromise2 // expect reload
+    await expect
+      .poll(() => page.textContent('.import-meta-url'))
+      .toMatch(imgMatch)
+  }
 })
 
 test('new URL("@/...", import.meta.url)', async () => {
@@ -614,6 +671,16 @@ test("new URL(/* @vite-ignore */ 'non-existent', import.meta.url)", async () => 
   )
 })
 
+test('new URL(..., import.meta.url) (multiline)', async () => {
+  const assetMatch = isBuild
+    ? /\/foo\/bar\/assets\/asset-[-\w]{8}\.png/
+    : '/foo/bar/nested/asset.png'
+
+  expect(await page.textContent('.import-meta-url-multiline')).toMatch(
+    assetMatch,
+  )
+})
+
 test.runIf(isBuild)('manifest', async () => {
   const manifest = readManifest('foo')
   const entry = manifest['index.html']
@@ -636,6 +703,27 @@ describe.runIf(isBuild)('css and assets in css in build watch', () => {
     const cssFile = findAssetFile(/index-[-\w]+\.css$/, 'foo')
     expect(cssFile).not.toBe('')
     expect(cssFile).not.toMatch(/undefined/)
+  })
+
+  test('old file is removed when the content changes', async () => {
+    await expect.poll(() => page.textContent('.update-content')).toBe('hello')
+
+    const oldMainJsFiles = listAssets('foo').filter((f) =>
+      /index-[-\w]+\.js$/.test(f),
+    )
+    expect(oldMainJsFiles.length).toBe(1)
+    const oldMainJsFile = oldMainJsFiles[0]
+
+    editFile('asset/update.js', (code) => code.replace('hello', 'world'))
+    await notifyRebuildComplete(watcher)
+    await page.reload()
+    await expect.poll(() => page.textContent('.update-content')).toBe('world')
+
+    const newMainJsFiles = listAssets('foo').filter((f) =>
+      /index-[-\w]+\.js$/.test(f),
+    )
+    expect(newMainJsFiles).not.toContain(oldMainJsFile)
+    expect(newMainJsFiles.length).toBe(1)
   })
 
   test('import module.css', async () => {

@@ -1,7 +1,11 @@
 // @ts-check
 
 import { BroadcastChannel, parentPort } from 'node:worker_threads'
-import { ESModulesEvaluator, ModuleRunner } from 'vite/module-runner'
+import {
+  ESModulesEvaluator,
+  ModuleRunner,
+  createNodeImportMeta,
+} from 'vite/module-runner'
 import { createBirpc } from 'birpc'
 
 if (!parentPort) {
@@ -12,16 +16,22 @@ if (!parentPort) {
 const pPort = parentPort
 
 /** @type {import('birpc').BirpcReturn<{ invoke: (data: any) => any }>} */
-const rpc = createBirpc({}, {
-  post: (data) => pPort.postMessage(data),
-  on: (data) => pPort.on('message', data),
-})
+const rpc = createBirpc(
+  {},
+  {
+    post: (data) => pPort.postMessage(data),
+    on: (data) => pPort.on('message', data),
+  },
+)
 
 const runner = new ModuleRunner(
   {
     transport: {
-      invoke(data) { return rpc.invoke(data) }
+      invoke(data) {
+        return rpc.invoke(data)
+      },
     },
+    createImportMeta: createNodeImportMeta,
     hmr: false,
   },
   new ESModulesEvaluator(),

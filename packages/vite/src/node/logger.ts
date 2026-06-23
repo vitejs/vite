@@ -2,7 +2,7 @@
 
 import readline from 'node:readline'
 import colors from 'picocolors'
-import type { RollupError } from 'rollup'
+import type { RollupError } from 'rolldown'
 import type { ResolvedServerUrls } from './server'
 
 export type LogType = 'error' | 'warn' | 'info'

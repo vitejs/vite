@@ -1,4 +1,4 @@
-// eslint-disable-next-line import-x/no-nodejs-modules
+// eslint-disable-next-line n/prefer-node-protocol
 import { URL } from 'url'
 import { defineConfig } from 'vite'
 

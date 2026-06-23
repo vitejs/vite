@@ -1,10 +1,15 @@
 import path from 'node:path'
 import picomatch from 'picomatch'
+import type { ModuleTypeFilter } from 'rolldown'
 import { arraify } from '../utils'
 import { slash } from '../../shared/utils'
 
 export type PluginFilter = (input: string) => boolean
-export type TransformHookFilter = (id: string, code: string) => boolean
+export type TransformHookFilter = (
+  id: string,
+  code: string,
+  moduleType: string,
+) => boolean
 
 export type StringFilter<Value = string | RegExp> =
   | Value
@@ -98,7 +103,7 @@ function normalizeFilter(filter: StringFilter): NormalizedStringFilter {
 
 export function createIdFilter(
   filter: StringFilter | undefined,
-  cwd = process.cwd(),
+  cwd: string = process.cwd(),
 ): PluginFilter | undefined {
   if (!filter) return
   const { exclude, include } = normalizeFilter(filter)
@@ -117,16 +122,30 @@ export function createCodeFilter(
   return createFilter(excludeFilter, includeFilter)
 }
 
+function createModuleTypeFilter(
+  filter: ModuleTypeFilter | undefined,
+): PluginFilter | undefined {
+  if (!filter) return
+  const include = Array.isArray(filter) ? filter : (filter.include ?? [])
+  return (moduleType: string) => include.includes(moduleType)
+}
+
 export function createFilterForTransform(
   idFilter: StringFilter | undefined,
   codeFilter: StringFilter | undefined,
+  moduleTypeFilter: ModuleTypeFilter | undefined,
   cwd?: string,
 ): TransformHookFilter | undefined {
-  if (!idFilter && !codeFilter) return
+  if (!idFilter && !codeFilter && !moduleTypeFilter) return
   const idFilterFn = createIdFilter(idFilter, cwd)
   const codeFilterFn = createCodeFilter(codeFilter)
-  return (id, code) => {
-    let fallback = true
+  const moduleTypeFilterFn = createModuleTypeFilter(moduleTypeFilter)
+  return (id, code, moduleType) => {
+    let fallback = moduleTypeFilterFn?.(moduleType) ?? true
+    if (!fallback) {
+      return false
+    }
+
     if (idFilterFn) {
       fallback &&= idFilterFn(id)
     }

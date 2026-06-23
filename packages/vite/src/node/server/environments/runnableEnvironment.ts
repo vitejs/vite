@@ -22,8 +22,10 @@ export function createRunnableDevEnvironment(
   return new RunnableDevEnvironment(name, config, context)
 }
 
-export interface RunnableDevEnvironmentContext
-  extends Omit<DevEnvironmentContext, 'hot'> {
+export interface RunnableDevEnvironmentContext extends Omit<
+  DevEnvironmentContext,
+  'hot'
+> {
   runner?: (
     environment: RunnableDevEnvironment,
     options?: ServerModuleRunnerOptions,

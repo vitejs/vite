@@ -1,10 +1,10 @@
 /**
  * The following is modified based on source found in
- * https://github.com/facebook/create-react-app
+ * https://github.com/react/create-react-app
  *
  * MIT Licensed
  * Copyright (c) 2015-present, Facebook, Inc.
- * https://github.com/facebook/create-react-app/blob/master/LICENSE
+ * https://github.com/react/create-react-app/blob/main/LICENSE
  *
  */
 
@@ -77,16 +77,16 @@ async function startBrowserProcess(
 ) {
   // If we're on OS X, the user hasn't specifically
   // requested a different browser, we can try opening
-  // a Chromium browser with AppleScript. This lets us reuse an
+  // a Chromium browser with JXA. This lets us reuse an
   // existing tab when possible instead of creating a new one.
   const preferredOSXBrowser =
     browser === 'google chrome' ? 'Google Chrome' : browser
-  const shouldTryOpenChromeWithAppleScript =
+  const shouldTryOpenChromeWithJXA =
     process.platform === 'darwin' &&
     (!preferredOSXBrowser ||
       supportedChromiumBrowsers.includes(preferredOSXBrowser))
 
-  if (shouldTryOpenChromeWithAppleScript) {
+  if (shouldTryOpenChromeWithJXA) {
     try {
       const ps = await execAsync('ps cax')
       const openedBrowser =
@@ -94,13 +94,10 @@ async function startBrowserProcess(
           ? preferredOSXBrowser
           : supportedChromiumBrowsers.find((b) => ps.includes(b))
       if (openedBrowser) {
-        // Try our best to reuse existing tab with AppleScript
-        await execAsync(
-          `osascript openChrome.applescript "${url}" "${openedBrowser}"`,
-          {
-            cwd: join(VITE_PACKAGE_DIR, 'bin'),
-          },
-        )
+        // Try our best to reuse existing tab with JXA
+        await execAsync(`osascript openChrome.js "${url}" "${openedBrowser}"`, {
+          cwd: join(VITE_PACKAGE_DIR, 'bin'),
+        })
         return true
       }
     } catch {
@@ -111,7 +108,7 @@ async function startBrowserProcess(
   // Another special case: on OS X, check if BROWSER has been set to "open".
   // In this case, instead of passing the string `open` to `open` function (which won't work),
   // just ignore it (thus ensuring the intended behavior, i.e. opening the system browser):
-  // https://github.com/facebook/create-react-app/pull/1690#issuecomment-283518768
+  // https://github.com/react/create-react-app/pull/1690#issuecomment-283518768
   if (process.platform === 'darwin' && browser === 'open') {
     browser = undefined
   }

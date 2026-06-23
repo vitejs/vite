@@ -6,7 +6,7 @@ import type {
 import path from 'node:path'
 import convertSourceMap from 'convert-source-map'
 import getEtag from 'etag'
-import type { SourceMap } from 'rollup'
+import type { SourceMap } from 'rolldown'
 import MagicString from 'magic-string'
 import { createDebugger, removeTimestampQuery } from '../utils'
 import { getCodeWithSourcemap } from './sourcemap'
@@ -86,12 +86,16 @@ export function send(
           source: path.basename(urlWithoutTimestamp),
           hires: 'boundary',
           includeContent: true,
-        }),
+        }) as SourceMap,
       )
     }
   }
 
   res.statusCode = 200
-  res.end(content)
+  if (req.method === 'HEAD') {
+    res.end()
+  } else {
+    res.end(content)
+  }
   return
 }

@@ -30,18 +30,22 @@ SOFTWARE.
 */
 
 import fs from 'node:fs'
+import fsp from 'node:fs/promises'
 import { join } from 'node:path'
 import { performance } from 'node:perf_hooks'
-import { parseAst as rollupParseAst } from 'rollup/parseAst'
+import { parseAst as rolldownParseAst } from 'rolldown/parseAst'
+import type { ESTree } from 'rolldown/utils'
 import type {
   AsyncPluginHooks,
   CustomPluginOptions,
   EmittedFile,
   FunctionPluginHooks,
+  ImportKind,
   InputOptions,
   LoadResult,
   ModuleInfo,
   ModuleOptions,
+  ModuleType,
   NormalizedInputOptions,
   OutputOptions,
   ParallelPluginHooks,
@@ -50,6 +54,7 @@ import type {
   PluginContextMeta,
   ResolvedId,
   RollupError,
+  RolldownFsModule as RollupFsModule,
   RollupLog,
   MinimalPluginContext as RollupMinimalPluginContext,
   PluginContext as RollupPluginContext,
@@ -57,12 +62,12 @@ import type {
   SourceDescription,
   SourceMap,
   TransformResult,
-} from 'rollup'
-import type { RawSourceMap } from '@ampproject/remapping'
+} from 'rolldown'
+import type { RawSourceMap } from '@jridgewell/remapping'
 import { TraceMap, originalPositionFor } from '@jridgewell/trace-mapping'
 import MagicString from 'magic-string'
-import type { FSWatcher } from 'dep-types/chokidar'
 import colors from 'picocolors'
+import type { FSWatcher } from '#dep-types/chokidar'
 import type { Plugin } from '../plugin'
 import {
   combineSourcemaps,
@@ -74,6 +79,7 @@ import {
   normalizePath,
   numberToPos,
   prettifyUrl,
+  rolldownVersion,
   rollupVersion,
   timeFrom,
 } from '../utils'
@@ -87,6 +93,10 @@ import { cleanUrl, unwrapId } from '../../shared/utils'
 import type { PluginHookUtils } from '../config'
 import type { Environment } from '../environment'
 import type { Logger } from '../logger'
+import {
+  isFutureDeprecationEnabled,
+  warnFutureDeprecation,
+} from '../deprecations'
 import type { DevEnvironment } from './environment'
 import { buildErrorMessage } from './middlewares/error'
 import type {
@@ -151,7 +161,7 @@ export async function createEnvironmentPluginContainer<
     watcher,
     autoStart,
   )
-  await container.resolveRollupOptions()
+  await container.resolveRolldownOptions()
   return container
 }
 
@@ -164,7 +174,7 @@ export type SkipInformation = {
 
 class EnvironmentPluginContainer<Env extends Environment = Environment> {
   private _pluginContextMap = new Map<Plugin, PluginContext>()
-  private _resolvedRollupOptions?: InputOptions
+  private _resolvedRolldownOptions?: InputOptions
   private _processesing = new Set<Promise<any>>()
   private _seenResolves: Record<string, true | undefined> = {}
 
@@ -178,7 +188,7 @@ class EnvironmentPluginContainer<Env extends Environment = Environment> {
   getSortedPlugins: PluginHookUtils['getSortedPlugins']
 
   moduleGraph: EnvironmentModuleGraph | undefined
-  watchFiles = new Set<string>()
+  watchFiles: Set<string> = new Set()
   minimalContext: MinimalPluginContext<Env>
 
   private _started = false
@@ -191,7 +201,7 @@ class EnvironmentPluginContainer<Env extends Environment = Environment> {
   constructor(
     public environment: Env,
     public plugins: readonly Plugin[],
-    public watcher?: FSWatcher,
+    public watcher?: FSWatcher | undefined,
     autoStart = true,
   ) {
     this._started = !autoStart
@@ -263,12 +273,12 @@ class EnvironmentPluginContainer<Env extends Environment = Environment> {
   }
 
   get options(): InputOptions {
-    return this._resolvedRollupOptions!
+    return this._resolvedRolldownOptions!
   }
 
-  async resolveRollupOptions(): Promise<InputOptions> {
-    if (!this._resolvedRollupOptions) {
-      let options = this.environment.config.build.rollupOptions
+  async resolveRolldownOptions(): Promise<InputOptions> {
+    if (!this._resolvedRolldownOptions) {
+      let options = this.environment.config.build.rolldownOptions
       for (const optionsHook of this.getSortedPluginHooks('options')) {
         if (this._closed) {
           throwClosedServerError()
@@ -278,9 +288,9 @@ class EnvironmentPluginContainer<Env extends Environment = Environment> {
             optionsHook.call(this.minimalContext, options),
           )) || options
       }
-      this._resolvedRollupOptions = options
+      this._resolvedRolldownOptions = options
     }
-    return this._resolvedRollupOptions
+    return this._resolvedRolldownOptions
   }
 
   private _getPluginContext(plugin: Plugin) {
@@ -346,6 +356,7 @@ class EnvironmentPluginContainer<Env extends Environment = Environment> {
       'index.html',
     ),
     options?: {
+      kind?: ImportKind
       attributes?: Record<string, string>
       custom?: CustomPluginOptions
       /** @deprecated use `skipCalls` instead */
@@ -367,6 +378,7 @@ class EnvironmentPluginContainer<Env extends Environment = Environment> {
     const scan = !!options?.scan
     const ssr = this.environment.config.consumer === 'server'
     const ctx = new ResolveIdContext(this, skip, skipCalls, scan)
+    const topLevelConfig = this.environment.getTopLevelConfig()
 
     const mergedSkip = new Set<Plugin>(skip)
     for (const call of skipCalls ?? []) {
@@ -388,16 +400,40 @@ class EnvironmentPluginContainer<Env extends Environment = Environment> {
 
       ctx._plugin = plugin
 
+      const normalizedOptions = {
+        kind: options?.kind,
+        attributes: options?.attributes ?? {},
+        custom: options?.custom,
+        isEntry: !!options?.isEntry,
+        ssr,
+        scan,
+      }
+      if (
+        isFutureDeprecationEnabled(
+          topLevelConfig,
+          'removePluginHookSsrArgument',
+        )
+      ) {
+        let ssrTemp = ssr
+        Object.defineProperty(normalizedOptions, 'ssr', {
+          get() {
+            warnFutureDeprecation(
+              topLevelConfig,
+              'removePluginHookSsrArgument',
+              `Used in plugin "${plugin.name}".`,
+            )
+            return ssrTemp
+          },
+          set(v) {
+            ssrTemp = v
+          },
+        })
+      }
+
       const pluginResolveStart = debugPluginResolve ? performance.now() : 0
       const handler = getHookHandler(plugin.resolveId)
       const result = await this.handleHookPromise(
-        handler.call(ctx as any, rawId, importer, {
-          attributes: options?.attributes ?? {},
-          custom: options?.custom,
-          isEntry: !!options?.isEntry,
-          ssr,
-          scan,
-        }),
+        handler.call(ctx as any, rawId, importer, normalizedOptions),
       )
       if (!result) continue
 
@@ -432,7 +468,7 @@ class EnvironmentPluginContainer<Env extends Environment = Environment> {
     }
 
     if (id) {
-      partial.id = isExternalUrl(id) ? id : normalizePath(id)
+      partial.id = isExternalUrl(id) || id[0] === '\0' ? id : normalizePath(id)
       return partial as PartialResolvedId
     } else {
       return null
@@ -440,7 +476,8 @@ class EnvironmentPluginContainer<Env extends Environment = Environment> {
   }
 
   async load(id: string): Promise<LoadResult | null> {
-    const ssr = this.environment.config.consumer === 'server'
+    let ssr = this.environment.config.consumer === 'server'
+    const topLevelConfig = this.environment.getTopLevelConfig()
     const options = { ssr }
     const ctx = new LoadPluginContext(this)
     for (const plugin of this.getSortedPlugins('load')) {
@@ -451,6 +488,28 @@ class EnvironmentPluginContainer<Env extends Environment = Environment> {
       if (filter && !filter(id)) continue
 
       ctx._plugin = plugin
+
+      if (
+        isFutureDeprecationEnabled(
+          topLevelConfig,
+          'removePluginHookSsrArgument',
+        )
+      ) {
+        Object.defineProperty(options, 'ssr', {
+          get() {
+            warnFutureDeprecation(
+              topLevelConfig,
+              'removePluginHookSsrArgument',
+              `Used in plugin "${plugin.name}".`,
+            )
+            return ssr
+          },
+          set(v) {
+            ssr = v
+          },
+        })
+      }
+
       const handler = getHookHandler(plugin.load)
       const result = await this.handleHookPromise(
         handler.call(ctx as any, id, options),
@@ -472,10 +531,18 @@ class EnvironmentPluginContainer<Env extends Environment = Environment> {
     id: string,
     options?: {
       inMap?: SourceDescription['map']
+      moduleType?: string
     },
-  ): Promise<{ code: string; map: SourceMap | { mappings: '' } | null }> {
-    const ssr = this.environment.config.consumer === 'server'
-    const optionsWithSSR = options ? { ...options, ssr } : { ssr }
+  ): Promise<{
+    code: string
+    map: SourceMap | { mappings: '' } | null
+    moduleType?: ModuleType
+  }> {
+    let ssr = this.environment.config.consumer === 'server'
+    const topLevelConfig = this.environment.getTopLevelConfig()
+    const optionsWithSSR = options
+      ? { ...options, ssr, moduleType: options.moduleType ?? 'js' }
+      : { ssr, moduleType: 'js' }
     const inMap = options?.inMap
 
     const ctx = new TransformPluginContext(this, id, code, inMap as SourceMap)
@@ -486,7 +553,28 @@ class EnvironmentPluginContainer<Env extends Environment = Environment> {
         throwClosedServerError()
 
       const filter = getCachedFilterForPlugin(plugin, 'transform')
-      if (filter && !filter(id, code)) continue
+      if (filter && !filter(id, code, optionsWithSSR.moduleType)) continue
+
+      if (
+        isFutureDeprecationEnabled(
+          topLevelConfig,
+          'removePluginHookSsrArgument',
+        )
+      ) {
+        Object.defineProperty(optionsWithSSR, 'ssr', {
+          get() {
+            warnFutureDeprecation(
+              topLevelConfig,
+              'removePluginHookSsrArgument',
+              `Used in plugin "${plugin.name}".`,
+            )
+            return ssr
+          },
+          set(v) {
+            ssr = v
+          },
+        })
+      }
 
       ctx._updateActiveInfo(plugin, id, code)
       const start = debugPluginTransform ? performance.now() : 0
@@ -507,7 +595,7 @@ class EnvironmentPluginContainer<Env extends Environment = Environment> {
       )
       if (isObject(result)) {
         if (result.code !== undefined) {
-          code = result.code
+          code = result.code as string
           if (result.map) {
             if (debugSourcemapCombine) {
               // @ts-expect-error inject plugin name for debug purpose
@@ -515,6 +603,9 @@ class EnvironmentPluginContainer<Env extends Environment = Environment> {
             }
             ctx.sourcemapChain.push(result.map)
           }
+        }
+        if (result.moduleType !== undefined) {
+          optionsWithSSR.moduleType = result.moduleType
         }
         ctx._updateModuleInfo(id, result)
       } else {
@@ -524,6 +615,7 @@ class EnvironmentPluginContainer<Env extends Environment = Environment> {
     return {
       code,
       map: ctx._getCombinedSourcemap(),
+      moduleType: optionsWithSSR.moduleType,
     }
   }
 
@@ -531,10 +623,15 @@ class EnvironmentPluginContainer<Env extends Environment = Environment> {
     id: string,
     change: { event: 'create' | 'update' | 'delete' },
   ): Promise<void> {
+    const config = this.environment.getTopLevelConfig()
     await this.hookParallel(
       'watchChange',
       (plugin) => this._getPluginContext(plugin),
       () => [id, change],
+      (plugin) =>
+        this.environment.name === 'client' ||
+        config.server.perEnvironmentWatchChangeDuringDev ||
+        plugin.perEnvironmentWatchChangeDuringDev,
     )
   }
 
@@ -560,9 +657,14 @@ class EnvironmentPluginContainer<Env extends Environment = Environment> {
   }
 }
 
-export const basePluginContextMeta = {
+export const basePluginContextMeta: {
+  viteVersion: string
+  rollupVersion: string
+  rolldownVersion: string
+} = {
   viteVersion,
   rollupVersion,
+  rolldownVersion,
 }
 
 export class BasicMinimalPluginContext<Meta = PluginContextMeta> {
@@ -570,6 +672,12 @@ export class BasicMinimalPluginContext<Meta = PluginContextMeta> {
     public meta: Meta,
     private _logger: Logger,
   ) {}
+
+  // FIXME: properly support this later
+  // eslint-disable-next-line @typescript-eslint/class-literal-property-style
+  get pluginName(): string {
+    return ''
+  }
 
   debug(rawLog: string | RollupLog | (() => string | RollupLog)): void {
     const log = this._normalizeRawLog(rawLog)
@@ -617,6 +725,22 @@ class MinimalPluginContext<T extends Environment = Environment>
   }
 }
 
+const fsModule: RollupFsModule = {
+  appendFile: fsp.appendFile,
+  copyFile: fsp.copyFile,
+  mkdir: fsp.mkdir as RollupFsModule['mkdir'],
+  mkdtemp: fsp.mkdtemp,
+  readdir: fsp.readdir,
+  readFile: fsp.readFile as RollupFsModule['readFile'],
+  realpath: fsp.realpath,
+  rename: fsp.rename,
+  rmdir: fsp.rmdir,
+  stat: fsp.stat,
+  lstat: fsp.lstat,
+  unlink: fsp.unlink,
+  writeFile: fsp.writeFile,
+}
+
 class PluginContext
   extends MinimalPluginContext
   implements Omit<RollupPluginContext, 'cache'>
@@ -628,6 +752,10 @@ class PluginContext
   _resolveSkips?: Set<Plugin>
   _resolveSkipCalls?: readonly SkipInformation[]
 
+  override get pluginName(): string {
+    return this._plugin.name
+  }
+
   constructor(
     public _plugin: Plugin,
     public _container: EnvironmentPluginContainer,
@@ -635,8 +763,10 @@ class PluginContext
     super(_container.minimalContext.meta, _container.environment)
   }
 
-  parse(code: string, opts: any) {
-    return rollupParseAst(code, opts)
+  fs: RollupFsModule = fsModule
+
+  parse(code: string, opts: any): ESTree.Program {
+    return rolldownParseAst(code, opts)
   }
 
   async resolve(
@@ -648,7 +778,7 @@ class PluginContext
       isEntry?: boolean
       skipSelf?: boolean
     },
-  ) {
+  ): Promise<ResolvedId | null> {
     let skipCalls: readonly SkipInformation[] | undefined
     if (options?.skipSelf === false) {
       skipCalls = this._resolveSkipCalls
@@ -713,7 +843,7 @@ class PluginContext
     return this._container.getModuleInfo(id)
   }
 
-  _updateModuleInfo(id: string, { meta }: { meta?: object | null }) {
+  _updateModuleInfo(id: string, { meta }: { meta?: object | null }): void {
     if (meta) {
       const moduleInfo = this.getModuleInfo(id)
       if (moduleInfo) {
@@ -788,7 +918,7 @@ class PluginContext
 
   private _formatLog<E extends RollupLog>(
     e: string | E,
-    position?: number | { column: number; line: number } | undefined,
+    position?: number | { column: number; line: number },
   ): E {
     const err = (typeof e === 'string' ? new Error(e) : e) as E
     if (err.pluginCode) {
@@ -1030,7 +1160,7 @@ class TransformPluginContext
         includeContent: true,
         hires: 'boundary',
         source: cleanUrl(this.filename),
-      })
+      }) as SourceMap
     }
     return map
   }
@@ -1114,7 +1244,8 @@ class PluginContainer {
   }
 
   // For backward compatibility, buildStart and watchChange are called only for the client environment
-  // buildStart is called per environment for a plugin with the perEnvironmentStartEndDuring dev flag
+  // buildStart is called per environment for a plugin with the perEnvironmentStartEndDuringDev flag
+  // watchChange is called per environment for a plugin with the perEnvironmentWatchChangeDuringDev flag
 
   async buildStart(_options?: InputOptions): Promise<void> {
     return (

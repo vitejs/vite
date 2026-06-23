@@ -1,9 +1,7 @@
 import fs from 'node:fs'
 import path from 'node:path'
-import { fileURLToPath } from 'node:url'
 import express from 'express'
 
-const __dirname = path.dirname(fileURLToPath(import.meta.url))
 const isTest = process.env.VITEST
 
 const DYNAMIC_SCRIPTS = `
@@ -23,8 +21,12 @@ const DYNAMIC_STYLES = `
   </style>
 `
 
-export async function createServer(root = process.cwd(), hmrPort) {
-  const resolve = (p) => path.resolve(__dirname, p)
+export async function createServer(
+  root = process.cwd(),
+  hmrPort,
+  customLogger,
+) {
+  const resolve = (p) => path.resolve(import.meta.dirname, p)
 
   const app = express()
 
@@ -49,6 +51,7 @@ export async function createServer(root = process.cwd(), hmrPort) {
       },
     },
     appType: 'custom',
+    customLogger,
     plugins: [
       {
         name: 'virtual-file',
@@ -71,6 +74,13 @@ export async function createServer(root = process.cwd(), hmrPort) {
   app.use('*all', async (req, res, next) => {
     try {
       let [url] = req.originalUrl.split('?')
+
+      if (url === '/trailing-slash/dir/') {
+        const template = fs.readFileSync(resolve(`.${url}index.html`), 'utf-8')
+        const html = await vite.transformIndexHtml(url, template)
+        return res.status(200).set({ 'Content-Type': 'text/html' }).end(html)
+      }
+
       if (url.endsWith('/')) url += 'index.html'
 
       if (url.startsWith('/favicon.ico')) {

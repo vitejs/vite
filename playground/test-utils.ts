@@ -11,10 +11,14 @@ import type {
 } from 'playwright-chromium'
 import type { DepOptimizationMetadata, Manifest } from 'vite'
 import { normalizePath } from 'vite'
-import { fromComment } from 'convert-source-map'
+import {
+  fromComment,
+  fromMapFileComment,
+  removeComments,
+} from 'convert-source-map'
 import { expect } from 'vitest'
 import type { ResultPromise as ExecaResultPromise } from 'execa'
-import { isWindows, page, testDir } from './vitestSetup'
+import { isWindows, page, sourcemapSnapshot, testDir } from './vitestSetup'
 
 export * from './vitestSetup'
 
@@ -34,6 +38,7 @@ export const ports = {
   'ssr-html': 9602,
   'ssr-noexternal': 9603,
   'ssr-pug': 9604,
+  'ssr-wasm': 9608,
   'ssr-webworker': 9605,
   'proxy-bypass': 9606, // not imported but used in `proxy-hmr/vite.config.js`
   'proxy-bypass/non-existent-app': 9607, // not imported but used in `proxy-hmr/other-app/vite.config.js`
@@ -57,6 +62,7 @@ export const hmrPorts = {
   'ssr-html': 24683,
   'ssr-noexternal': 24684,
   'ssr-pug': 24685,
+  'ssr-wasm': 24691,
   'css/lightningcss-proxy': 24686,
   json: 24687,
   'ssr-conditions': 24688,
@@ -119,6 +125,25 @@ export async function getBg(
   return el.evaluate((el) => getComputedStyle(el as Element).backgroundImage)
 }
 
+/**
+ * Unlike `getBg`, this function returns the raw value of the `background-image` CSS property.
+ *
+ * `getBg` returns the resolved value, which has the hostname and port prepended due to `computedStyle` call.
+ */
+export async function getCssRuleBg(selector: string): Promise<string> {
+  return page.evaluate((sel) => {
+    for (const sheet of document.styleSheets) {
+      try {
+        for (const rule of sheet.cssRules) {
+          if (rule instanceof CSSStyleRule && rule.selectorText === sel) {
+            return rule.style.backgroundImage
+          }
+        }
+      } catch (_e) {}
+    }
+  }, selector)
+}
+
 export async function getBgColor(
   el: string | ElementHandle | Locator,
 ): Promise<string> {
@@ -129,17 +154,43 @@ export async function getBgColor(
   return hexToNameMap[rgbToHex(rgb)] ?? rgb
 }
 
-export function readFile(filename: string): string {
-  return fs.readFileSync(path.resolve(testDir, filename), 'utf-8')
+export function readFile(filename: string, encoding?: BufferEncoding): string
+export function readFile(filename: string, encoding: null): Buffer
+export function readFile(
+  filename: string,
+  encoding?: BufferEncoding | null,
+): Buffer | string {
+  if (encoding === undefined) encoding = 'utf-8'
+  return fs.readFileSync(path.resolve(testDir, filename), encoding)
 }
 
 export function editFile(
   filename: string,
-  replacer: (str: string) => string,
+  replacer: (content: string) => string,
+): void
+export function editFile(
+  filename: string,
+  encoding: null,
+  replacer: (content: Buffer) => Buffer,
+): void
+export function editFile(
+  filename: string,
+  encoding: BufferEncoding | null,
+  replacer: ((content: Buffer) => Buffer) | ((content: string) => string),
+): void
+export function editFile(
+  filename: string,
+  encodingOrReplacer: BufferEncoding | null | ((content: string) => string),
+  maybeReplacer?: ((content: Buffer) => Buffer) | ((content: string) => string),
 ): void {
   filename = path.resolve(testDir, filename)
-  const content = fs.readFileSync(filename, 'utf-8')
-  const modified = replacer(content)
+  const [encoding, replacer] = maybeReplacer
+    ? [encodingOrReplacer as BufferEncoding | null, maybeReplacer]
+    : ['utf-8' as const, encodingOrReplacer as (content: string) => string]
+  const content: string | Buffer = fs.readFileSync(filename, encoding)
+  const modified = (replacer as (content: string | Buffer) => string | Buffer)(
+    content,
+  )
   fs.writeFileSync(filename, modified)
 }
 
@@ -163,14 +214,14 @@ export function findAssetFile(
   base = '',
   assets = 'assets',
   matchAll = false,
-): string {
+): string | undefined {
   const assetsDir = path.join(testDir, 'dist', base, assets)
   let files: string[]
   try {
     files = fs.readdirSync(assetsDir)
   } catch (e) {
     if (e.code === 'ENOENT') {
-      return ''
+      return undefined
     }
     throw e
   }
@@ -182,12 +233,12 @@ export function findAssetFile(
             fs.readFileSync(path.resolve(assetsDir, file), 'utf-8'),
           )
           .join('')
-      : ''
+      : undefined
   } else {
     const matchedFile = files.find((file) => file.match(match))
     return matchedFile
       ? fs.readFileSync(path.resolve(assetsDir, matchedFile), 'utf-8')
-      : ''
+      : undefined
   }
 }
 
@@ -248,6 +299,7 @@ async function untilBrowserLog(
   expectOrder = true,
 ): Promise<string[]> {
   const { promise, resolve, reject } = promiseWithResolvers<void>()
+  let timeoutId: ReturnType<typeof setTimeout>
 
   const logs = []
 
@@ -296,26 +348,66 @@ async function untilBrowserLog(
       }
     }
 
+    timeoutId = setTimeout(() => {
+      const nextTarget = Array.isArray(target)
+        ? expectOrder
+          ? target[0]
+          : target.join(', ')
+        : target
+      reject(
+        new Error(
+          `Timeout waiting for browser logs. Waiting for: ${nextTarget}`,
+        ),
+      )
+      page.off('console', handleMsg)
+    }, 5000)
+
     page.on('console', handleMsg)
   } catch (err) {
     reject(err)
   }
 
   await promise
+  clearTimeout(timeoutId)
 
   return logs
 }
 
-export const extractSourcemap = (content: string): any => {
+export function extractSourcemap(content: string): any
+export function extractSourcemap(
+  content: string,
+  read: (filename: string) => Promise<string>,
+): Promise<any>
+export function extractSourcemap(
+  content: string,
+  read?: (filename: string) => Promise<string>,
+): any {
   const lines = content.trim().split('\n')
-  return fromComment(lines[lines.length - 1]).toObject()
+  const lastLine = lines[lines.length - 1]
+  if (read) {
+    const result = fromMapFileComment(lastLine, async (url) => {
+      if (url.startsWith('data:')) {
+        throw new Error(`Omit read argument when sourcemap is inline`)
+      }
+      const content = await read(url)
+      return content
+    })
+    return result.then((r) => r.toObject())
+  }
+  return fromComment(lastLine).toObject()
 }
 
-export const formatSourcemapForSnapshot = (map: any): any => {
+export const formatSourcemapForSnapshot = (
+  map: any,
+  code: string,
+  withoutContent = false,
+): any => {
   const root = normalizePath(testDir)
   const m = { ...map }
   delete m.file
-  delete m.names
+  if (m.names && m.names.length === 0) {
+    delete m.names
+  }
   if (m.debugId) {
     m.debugId = '00000000-0000-0000-0000-000000000000'
   }
@@ -323,7 +415,8 @@ export const formatSourcemapForSnapshot = (map: any): any => {
   if (m.sourceRoot) {
     m.sourceRoot = m.sourceRoot.replace(root, '/root')
   }
-  return m
+  const c = removeComments(code.replace(/\?v=[\da-f]{8}/g, '?v=00000000'))
+  return { map: m, code: c, [sourcemapSnapshot]: { withoutContent } }
 }
 
 // helper function to kill process, uses taskkill on windows to ensure child process is killed too

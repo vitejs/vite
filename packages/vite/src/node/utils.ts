@@ -6,22 +6,23 @@ import { exec } from 'node:child_process'
 import crypto from 'node:crypto'
 import { fileURLToPath } from 'node:url'
 import type { ServerOptions as HttpsServerOptions } from 'node:https'
-import { builtinModules, createRequire } from 'node:module'
+import { builtinModules } from 'node:module'
 import { promises as dns } from 'node:dns'
 import { performance } from 'node:perf_hooks'
 import type { AddressInfo, Server } from 'node:net'
 import fsp from 'node:fs/promises'
-import type { FSWatcher } from 'dep-types/chokidar'
-import remapping from '@ampproject/remapping'
-import type { DecodedSourceMap, RawSourceMap } from '@ampproject/remapping'
+import remapping from '@jridgewell/remapping'
+import type { DecodedSourceMap, RawSourceMap } from '@jridgewell/remapping'
 import colors from 'picocolors'
-import debug from 'debug'
-import type { Alias, AliasOptions } from 'dep-types/alias'
+import type { Debugger } from 'obug'
+import debug from 'obug'
 import type MagicString from 'magic-string'
 import type { Equal } from '@type-challenges/utils'
 
-import type { TransformResult } from 'rollup'
+import type { TransformResult } from 'rolldown'
 import { createFilter as _createFilter } from '@rollup/pluginutils'
+import type { Alias, AliasOptions } from '#dep-types/alias'
+import type { FSWatcher } from '#dep-types/chokidar'
 import {
   cleanUrl,
   isWindows,
@@ -30,6 +31,7 @@ import {
   withTrailingSlash,
 } from '../shared/utils'
 import { VALID_ID_PREFIX } from '../shared/constants'
+import { createIsBuiltin } from '../shared/builtin'
 import {
   CLIENT_ENTRY,
   CLIENT_PUBLIC_PATH,
@@ -42,13 +44,10 @@ import {
 } from './constants'
 import type { DepOptimizationOptions } from './optimizer'
 import type { ResolvedConfig } from './config'
-import type { ResolvedServerUrls, ViteDevServer } from './server'
+import type { ResolvedServerUrls, ServerOptions, ViteDevServer } from './server'
 import type { PreviewServer } from './preview'
-import {
-  type PackageCache,
-  findNearestPackageData,
-  resolvePackageData,
-} from './packages'
+import { type PackageCache, findNearestPackageData } from './packages'
+import type { BuildEnvironmentOptions } from './build'
 import type { CommonServerOptions } from '.'
 
 /**
@@ -63,19 +62,25 @@ export const createFilter = _createFilter as (
   include?: FilterPattern,
   exclude?: FilterPattern,
   options?: { resolve?: string | false | null },
-) => (id: string | unknown) => boolean
+) => (id: unknown) => boolean
 
-const replaceSlashOrColonRE = /[/:]/g
-const replaceDotRE = /\./g
+export { withFilter } from 'rolldown/filter'
+
+// eslint-disable-next-line no-control-regex
+const invalidUrlPathCharRE = /[\u0000-\u001F"#$%&*+,:;<=>?[\]^`{|}\u007F]/g
 const replaceNestedIdRE = /\s*>\s*/g
-const replaceHashRE = /#/g
 export const flattenId = (id: string): string => {
   const flatId = limitFlattenIdLength(
     id
-      .replace(replaceSlashOrColonRE, '_')
-      .replace(replaceDotRE, '__')
-      .replace(replaceNestedIdRE, '___')
-      .replace(replaceHashRE, '____'),
+      .replaceAll(/_+/g, '$&__')
+      .replaceAll('/', '_')
+      .replaceAll('.', '__')
+      .replace(replaceNestedIdRE, '_n_')
+      // replace any characters that will be replaced by sanitizeFileName
+      .replace(
+        invalidUrlPathCharRE,
+        (c) => '_0' + c.charCodeAt(0).toString(16) + '_',
+      ),
   )
   return flatId
 }
@@ -98,8 +103,6 @@ export const normalizeId = (id: string): string =>
 
 // Supported by Node, Deno, Bun
 const NODE_BUILTIN_NAMESPACE = 'node:'
-// Supported by Deno
-const NPM_BUILTIN_NAMESPACE = 'npm:'
 // Supported by Bun
 const BUN_BUILTIN_NAMESPACE = 'bun:'
 // Some runtimes like Bun injects namespaced modules here, which is not a node builtin
@@ -119,24 +122,9 @@ export function isBuiltin(builtins: (string | RegExp)[], id: string): boolean {
   return isBuiltin(id)
 }
 
-export function createIsBuiltin(
-  builtins: (string | RegExp)[],
-): (id: string) => boolean {
-  const plainBuiltinsSet = new Set(
-    builtins.filter((builtin) => typeof builtin === 'string'),
-  )
-  const regexBuiltins = builtins.filter(
-    (builtin) => typeof builtin !== 'string',
-  )
-
-  return (id) =>
-    plainBuiltinsSet.has(id) || regexBuiltins.some((regexp) => regexp.test(id))
-}
-
-export const nodeLikeBuiltins = [
+export const nodeLikeBuiltins: (string | RegExp)[] = [
   ...nodeBuiltins,
   new RegExp(`^${NODE_BUILTIN_NAMESPACE}`),
-  new RegExp(`^${NPM_BUILTIN_NAMESPACE}`),
   new RegExp(`^${BUN_BUILTIN_NAMESPACE}`),
 ]
 
@@ -173,17 +161,16 @@ export function isOptimizable(
   )
 }
 
-export const bareImportRE = /^(?![a-zA-Z]:)[\w@](?!.*:\/\/)/
-export const deepImportRE = /^([^@][^/]*)\/|^(@[^/]+\/[^/]+)\//
+export const bareImportRE: RegExp = /^(?![a-zA-Z]:)[\w@](?!.*:\/\/)/
+export const deepImportRE: RegExp = /^([^@][^/]*)\/|^(@[^/]+\/[^/]+)\//
 
-// TODO: use import()
-const _require = createRequire(/** #__KEEP__ */ import.meta.url)
+export const _dirname: string = path.dirname(
+  fileURLToPath(/** #__KEEP__ */ import.meta.url),
+)
 
-const _dirname = path.dirname(fileURLToPath(/** #__KEEP__ */ import.meta.url))
-
-// NOTE: we don't use VERSION variable exported from rollup to avoid importing rollup in dev
-export const rollupVersion =
-  resolvePackageData('rollup', _dirname, true)?.data.version ?? ''
+// https://github.com/rolldown/rolldown/blob/62fba31428af244f871f0e119ed43936ee5d01fd/packages/rolldown/src/log/logger.ts#L64
+export const rollupVersion = '4.23.0'
+export { VERSION as rolldownVersion } from 'rolldown'
 
 // set in bin/vite.js
 const filter = process.env.VITE_DEBUG_FILTER
@@ -200,13 +187,11 @@ export type ViteDebugScope = `vite:${string}`
 export function createDebugger(
   namespace: ViteDebugScope,
   options: DebuggerOptions = {},
-): debug.Debugger['log'] | undefined {
+): Debugger['log'] | undefined {
   const log = debug(namespace)
   const { onlyWhenFocused, depth } = options
 
-  // @ts-expect-error - The log function is bound to inspectOpts, but the type is not reflected
   if (depth && log.inspectOpts && log.inspectOpts.depth == null) {
-    // @ts-expect-error - The log function is bound to inspectOpts, but the type is not reflected
     log.inspectOpts.depth = options.depth
   }
 
@@ -240,7 +225,7 @@ function testCaseInsensitiveFS() {
   return fs.existsSync(CLIENT_ENTRY.replace('client.mjs', 'cLiEnT.mjs'))
 }
 
-export const isCaseInsensitiveFS = testCaseInsensitiveFS()
+export const isCaseInsensitiveFS: boolean = testCaseInsensitiveFS()
 
 const VOLUME_RE = /^[A-Z]:/i
 
@@ -285,20 +270,20 @@ export function isParentDirectory(dir: string, file: string): boolean {
  * @param file2 - normalized absolute path
  * @returns true if both files url are identical
  */
-export function isSameFileUri(file1: string, file2: string): boolean {
+export function isSameFilePath(file1: string, file2: string): boolean {
   return (
     file1 === file2 ||
     (isCaseInsensitiveFS && file1.toLowerCase() === file2.toLowerCase())
   )
 }
 
-export const externalRE = /^([a-z]+:)?\/\//
+export const externalRE: RegExp = /^([a-z]+:)?\/\//
 export const isExternalUrl = (url: string): boolean => externalRE.test(url)
 
-export const dataUrlRE = /^\s*data:/i
+export const dataUrlRE: RegExp = /^\s*data:/i
 export const isDataUrl = (url: string): boolean => dataUrlRE.test(url)
 
-export const virtualModuleRE = /^virtual-module:.*/
+export const virtualModuleRE: RegExp = /^virtual-module:.*/
 export const virtualModulePrefix = 'virtual-module:'
 
 // NOTE: We should start relying on the "Sec-Fetch-Dest" header instead of this
@@ -341,13 +326,10 @@ export function removeDirectQuery(url: string): string {
   return url.replace(directRequestRE, '$1').replace(trailingSeparatorRE, '')
 }
 
-export const urlRE = /(\?|&)url(?:&|$)/
-export const rawRE = /(\?|&)raw(?:&|$)/
+export const urlRE: RegExp = /(\?|&)url(?:&|$)/
+export const rawRE: RegExp = /(\?|&)raw(?:&|$)/
 export function removeUrlQuery(url: string): string {
   return url.replace(urlRE, '$1').replace(trailingSeparatorRE, '')
-}
-export function removeRawQuery(url: string): string {
-  return url.replace(rawRE, '$1').replace(trailingSeparatorRE, '')
 }
 
 export function injectQuery(url: string, queryToInject: string): string {
@@ -459,7 +441,7 @@ export function isFilePathESM(
   }
 }
 
-export const splitRE = /\r?\n/g
+export const splitRE: RegExp = /\r?\n/g
 
 const range: number = 2
 
@@ -501,6 +483,9 @@ export function numberToPos(source: string, offset: number | Pos): Pos {
   }
 }
 
+const MAX_DISPLAY_LEN = 120
+const ELLIPSIS = '...'
+
 export function generateCodeFrame(
   source: string,
   start: number | Pos = 0,
@@ -511,6 +496,11 @@ export function generateCodeFrame(
     end !== undefined ? posToNumber(source, end) : start,
     source.length,
   )
+  const lastPosLine =
+    end !== undefined
+      ? numberToPos(source, end).line
+      : numberToPos(source, start).line + range
+  const lineNumberWidth = Math.max(3, String(lastPosLine).length + 1)
   const lines = source.split(splitRE)
   let count = 0
   const res: string[] = []
@@ -520,24 +510,51 @@ export function generateCodeFrame(
       for (let j = i - range; j <= i + range || end > count; j++) {
         if (j < 0 || j >= lines.length) continue
         const line = j + 1
-        res.push(
-          `${line}${' '.repeat(Math.max(3 - String(line).length, 0))}|  ${
-            lines[j]
-          }`,
-        )
         const lineLength = lines[j].length
+        const pad = Math.max(start - (count - lineLength), 0)
+        const underlineLength = Math.max(
+          1,
+          end > count ? lineLength - pad : end - start,
+        )
+
+        let displayLine = lines[j]
+        let underlinePad = pad
+        if (lineLength > MAX_DISPLAY_LEN) {
+          let startIdx = 0
+          if (j === i) {
+            if (underlineLength > MAX_DISPLAY_LEN) {
+              startIdx = pad
+            } else {
+              const center = pad + Math.floor(underlineLength / 2)
+              startIdx = Math.max(0, center - Math.floor(MAX_DISPLAY_LEN / 2))
+            }
+            underlinePad =
+              Math.max(0, pad - startIdx) + (startIdx > 0 ? ELLIPSIS.length : 0)
+          }
+          const prefix = startIdx > 0 ? ELLIPSIS : ''
+          const suffix = lineLength - startIdx > MAX_DISPLAY_LEN ? ELLIPSIS : ''
+          const sliceLen = MAX_DISPLAY_LEN - prefix.length - suffix.length
+          displayLine =
+            prefix + displayLine.slice(startIdx, startIdx + sliceLen) + suffix
+        }
+        res.push(
+          `${line}${' '.repeat(lineNumberWidth - String(line).length)}|  ${displayLine}`,
+        )
         if (j === i) {
           // push underline
-          const pad = Math.max(start - (count - lineLength), 0)
-          const length = Math.max(
-            1,
-            end > count ? lineLength - pad : end - start,
+          const underline = '^'.repeat(
+            Math.min(underlineLength, MAX_DISPLAY_LEN),
           )
-          res.push(`   |  ` + ' '.repeat(pad) + '^'.repeat(length))
+          res.push(
+            `${' '.repeat(lineNumberWidth)}|  ` +
+              ' '.repeat(underlinePad) +
+              underline,
+          )
         } else if (j > i) {
           if (end > count) {
             const length = Math.max(Math.min(end - count, lineLength), 1)
-            res.push(`   |  ` + '^'.repeat(length))
+            const underline = '^'.repeat(Math.min(length, MAX_DISPLAY_LEN))
+            res.push(`${' '.repeat(lineNumberWidth)}|  ` + underline)
           }
           count += lineLength + 1
         }
@@ -606,6 +623,8 @@ export function emptyDir(dir: string, skip?: string[]): void {
   }
 }
 
+// NOTE: we cannot use `fs.cpSync` because of a bug in Node.js (https://github.com/nodejs/node/issues/58768, https://github.com/nodejs/node/issues/59168)
+//       also note that we should set `dereference: true` when we use `fs.cpSync`
 export function copyDir(srcDir: string, destDir: string): void {
   fs.mkdirSync(destDir, { recursive: true })
   for (const file of fs.readdirSync(srcDir)) {
@@ -658,7 +677,9 @@ export async function recursiveReaddir(dir: string): Promise<string[]> {
 // `fs.realpathSync.native` resolves differently in Windows network drive,
 // causing file read errors. skip for now.
 // https://github.com/nodejs/node/issues/37737
-export let safeRealpathSync = isWindows
+export let safeRealpathSync:
+  | typeof windowsSafeRealPathSync
+  | typeof fs.realpathSync.native = isWindows
   ? windowsSafeRealPathSync
   : fs.realpathSync.native
 
@@ -900,17 +921,24 @@ export function unique<T>(arr: T[]): T[] {
  * Even if defaultResultOrder is `ipv4first`, `dns.lookup` result maybe same.
  * For example, when IPv6 is not supported on that machine/network.
  */
-export async function getLocalhostAddressIfDiffersFromDNS(): Promise<
-  string | undefined
-> {
-  const [nodeResult, dnsResult] = await Promise.all([
+export function getLocalhostAddressIfDiffersFromDNS():
+  | Promise<string | undefined>
+  | undefined {
+  // dns.getDefaultResultOrder is not available in bun 1.3.11 and deno 2.7.11
+  // while this is a bug in bun and deno, since this function is commonly called,
+  // we give a workaround specially until the API is supported in a few versions
+  if (dns.getDefaultResultOrder && dns.getDefaultResultOrder() === 'verbatim') {
+    return undefined
+  }
+  return Promise.all([
     dns.lookup('localhost'),
     dns.lookup('localhost', { verbatim: true }),
-  ])
-  const isSame =
-    nodeResult.family === dnsResult.family &&
-    nodeResult.address === dnsResult.address
-  return isSame ? undefined : nodeResult.address
+  ]).then(([nodeResult, dnsResult]) => {
+    const isSame =
+      nodeResult.family === dnsResult.family &&
+      nodeResult.address === dnsResult.address
+    return isSame ? undefined : nodeResult.address
+  })
 }
 
 export function diffDnsOrderChange(
@@ -961,12 +989,36 @@ export async function resolveHostname(
   return { host, name }
 }
 
-export async function resolveServerUrls(
+export function extractHostnamesFromCerts(
+  certs: HttpsServerOptions['cert'] | undefined,
+): string[] {
+  const certList = certs ? arraify(certs) : []
+  if (certList.length === 0) return []
+
+  const hostnames = certList
+    .map((cert) => {
+      try {
+        return new crypto.X509Certificate(cert)
+      } catch {
+        return null
+      }
+    })
+    .flatMap((cert) =>
+      cert?.subjectAltName
+        ? extractHostnamesFromSubjectAltName(cert.subjectAltName)
+        : [],
+    )
+
+  return unique(hostnames)
+}
+
+export function resolveServerUrls(
   server: Server,
   options: CommonServerOptions,
+  hostname: Hostname,
   httpsOptions: HttpsServerOptions | undefined,
   config: ResolvedConfig,
-): Promise<ResolvedServerUrls> {
+): ResolvedServerUrls {
   const address = server.address()
 
   const isAddressInfo = (x: any): x is AddressInfo => x?.address
@@ -976,7 +1028,6 @@ export async function resolveServerUrls(
 
   const local: string[] = []
   const network: string[] = []
-  const hostname = await resolveHostname(options.host)
   const protocol = options.https ? 'https' : 'http'
   const port = address.port
   const base =
@@ -1013,19 +1064,12 @@ export async function resolveServerUrls(
       })
   }
 
-  const cert =
-    httpsOptions?.cert && !Array.isArray(httpsOptions.cert)
-      ? new crypto.X509Certificate(httpsOptions.cert)
-      : undefined
-  const hostnameFromCert = cert?.subjectAltName
-    ? extractHostnamesFromSubjectAltName(cert.subjectAltName)
-    : []
-
-  if (hostnameFromCert.length > 0) {
+  const hostnamesFromCert = extractHostnamesFromCerts(httpsOptions?.cert)
+  if (hostnamesFromCert.length > 0) {
     const existings = new Set([...local, ...network])
     local.push(
-      ...hostnameFromCert
-        .map((hostname) => `https://${hostname}:${port}${base}`)
+      ...hostnamesFromCert
+        .map((hostname) => `${protocol}://${hostname}:${port}${base}`)
         .filter((url) => !existings.has(url)),
     )
   }
@@ -1076,10 +1120,10 @@ export function arraify<T>(target: T | T[]): T[] {
 }
 
 // Taken from https://stackoverflow.com/a/36328890
-export const multilineCommentsRE = /\/\*[^*]*\*+(?:[^/*][^*]*\*+)*\//g
-export const singlelineCommentsRE = /\/\/.*/g
-export const requestQuerySplitRE = /\?(?!.*[/|}])/
-export const requestQueryMaybeEscapedSplitRE = /\\?\?(?!.*[/|}])/
+export const multilineCommentsRE: RegExp = /\/\*[^*]*\*+(?:[^/*][^*]*\*+)*\//g
+export const singlelineCommentsRE: RegExp = /\/\/.*/g
+export const requestQuerySplitRE: RegExp = /\?(?!.*[/|}])/
+export const requestQueryMaybeEscapedSplitRE: RegExp = /\\?\?(?!.*[/|}])/
 
 export const blankReplacer = (match: string): string => ' '.repeat(match.length)
 
@@ -1087,25 +1131,6 @@ export function getHash(text: Buffer | string, length = 8): string {
   const h = crypto.hash('sha256', text, 'hex').substring(0, length)
   if (length <= 64) return h
   return h.padEnd(length, '_')
-}
-
-export const requireResolveFromRootWithFallback = (
-  root: string,
-  id: string,
-): string => {
-  // check existence first, so if the package is not found,
-  // it won't be cached by nodejs, since there isn't a way to invalidate them:
-  // https://github.com/nodejs/node/issues/44663
-  const found = resolvePackageData(id, root) || resolvePackageData(id, _dirname)
-  if (!found) {
-    const error = new Error(`${JSON.stringify(id)} not found.`)
-    ;(error as any).code = 'MODULE_NOT_FOUND'
-    throw error
-  }
-
-  // actually resolve
-  // Search in the root directory first, and fallback to the default require paths.
-  return _require.resolve(id, { paths: [root, _dirname] })
 }
 
 export function emptyCssComments(raw: string): string {
@@ -1131,7 +1156,7 @@ type DeepWritable<T> =
         ? T
         : { -readonly [P in keyof T]: DeepWritable<T[P]> }
 
-function deepClone<T>(value: T): DeepWritable<T> {
+export function deepClone<T>(value: T): DeepWritable<T> {
   if (Array.isArray(value)) {
     return value.map((v) => deepClone(v)) as DeepWritable<T>
   }
@@ -1215,22 +1240,219 @@ export function mergeWithDefaults<
   return mergeWithDefaultsRecursively(clonedDefaults, values)
 }
 
+const runtimeDeprecatedPath = new Set(['optimizeDeps', 'ssr.optimizeDeps'])
+const rollupOptionsDeprecationCall = (() => {
+  return () => {
+    const method = process.env.VITE_DEPRECATION_TRACE ? 'trace' : 'warn'
+    // eslint-disable-next-line no-console
+    console[method](
+      '`optimizeDeps.rollupOptions` / `ssr.optimizeDeps.rollupOptions` is deprecated. ' +
+        'Use `optimizeDeps.rolldownOptions` instead. Note that this option may be set by a plugin. ' +
+        (method === 'trace'
+          ? 'Showing trace because VITE_DEPRECATION_TRACE is set.'
+          : 'Set VITE_DEPRECATION_TRACE=1 to see where it is called.'),
+    )
+  }
+})()
+
+export function setupRollupOptionCompat<
+  T extends Pick<BuildEnvironmentOptions, 'rollupOptions' | 'rolldownOptions'>,
+>(
+  buildConfig: T,
+  path: string,
+): asserts buildConfig is T & {
+  rolldownOptions: Exclude<T['rolldownOptions'], undefined>
+} {
+  // if both rollupOptions and rolldownOptions are present,
+  // ignore rollupOptions and use rolldownOptions
+  buildConfig.rolldownOptions ??= buildConfig.rollupOptions
+  if (
+    runtimeDeprecatedPath.has(path) &&
+    buildConfig.rollupOptions &&
+    buildConfig.rolldownOptions !== buildConfig.rollupOptions
+  ) {
+    rollupOptionsDeprecationCall()
+  }
+
+  // proxy rolldownOptions to rollupOptions
+  Object.defineProperty(buildConfig, 'rollupOptions', {
+    get() {
+      return buildConfig.rolldownOptions
+    },
+    set(newValue) {
+      if (runtimeDeprecatedPath.has(path)) {
+        rollupOptionsDeprecationCall()
+      }
+      buildConfig.rolldownOptions = newValue
+    },
+    configurable: true,
+    enumerable: true,
+  })
+}
+
+const rollupOptionsRootPaths = new Set([
+  'build',
+  'worker',
+  'optimizeDeps',
+  'ssr.optimizeDeps',
+])
+
+/**
+ * Sets up `rollupOptions` compat proxies for an environment.
+ */
+function setupRollupOptionCompatForEnvironment(environment: any): any {
+  if (!isObject(environment)) {
+    return environment
+  }
+  const merged: Record<string, any> = { ...environment }
+  if (isObject(merged.build)) {
+    setupRollupOptionCompat(merged.build, 'build')
+  }
+  return merged
+}
+
+export function hasBothRollupOptionsAndRolldownOptions(
+  options: Record<string, any>,
+): boolean {
+  for (const opt of [
+    options.build,
+    options.worker,
+    options.optimizeDeps,
+    options.ssr?.optimizeDeps,
+  ]) {
+    if (
+      opt != null &&
+      opt.rollupOptions != null &&
+      opt.rolldownOptions != null &&
+      // Check they are not just proxy values created by setupRollupOptionCompat
+      opt.rollupOptions !== opt.rolldownOptions
+    ) {
+      return true
+    }
+  }
+  return false
+}
+
+const wsOptionKeys = [
+  'protocol',
+  'host',
+  'port',
+  'clientPort',
+  'path',
+  'timeout',
+  'server',
+] as const
+
+const hmrWsOptionsDeprecationCall = /* @__PURE__ */ (() => {
+  let logged = false
+  return () => {
+    if (logged) return
+    logged = true
+    const method = process.env.VITE_DEPRECATION_TRACE ? 'trace' : 'warn'
+    // eslint-disable-next-line no-console
+    console[method](
+      '`server.hmr.protocol/host/port/path/clientPort/timeout/server` is deprecated. ' +
+        'Use `server.ws.*` instead. Note that this option may be set by a plugin. ' +
+        (method === 'trace'
+          ? 'Showing trace because VITE_DEPRECATION_TRACE is set.'
+          : 'Set VITE_DEPRECATION_TRACE=1 to see where it is called.'),
+    )
+  }
+})()
+
+export function setupHmrWsOptionCompat(
+  serverConfig: Pick<ServerOptions, 'hmr' | 'ws'>,
+): void {
+  if (serverConfig.hmr === false || serverConfig.ws === false) {
+    return
+  }
+  if (serverConfig.hmr === true) {
+    serverConfig.hmr = {}
+  }
+
+  const hmrConfig = serverConfig.hmr
+  const wsConfig = serverConfig.ws ? { ...serverConfig.ws } : {}
+  if (hmrConfig) {
+    for (const key of wsOptionKeys) {
+      if (hmrConfig[key] !== undefined) {
+        // @ts-expect-error same value for same key
+        wsConfig[key] ??= hmrConfig[key]
+      }
+    }
+  }
+  serverConfig.ws = wsConfig
+
+  const hmrProxy = hmrConfig || {}
+  for (const key of wsOptionKeys) {
+    Object.defineProperty(hmrProxy, key, {
+      get() {
+        return (serverConfig.ws as Record<string, unknown>)?.[key]
+      },
+      set(newValue) {
+        hmrWsOptionsDeprecationCall()
+        if (typeof serverConfig.ws === 'object') {
+          ;(serverConfig.ws as Record<string, unknown>)[key] = newValue
+        }
+      },
+      configurable: true,
+      enumerable: true,
+    })
+  }
+  serverConfig.hmr = hmrProxy
+}
+
 function mergeConfigRecursively(
   defaults: Record<string, any>,
   overrides: Record<string, any>,
   rootPath: string,
 ) {
   const merged: Record<string, any> = { ...defaults }
+  if (rollupOptionsRootPaths.has(rootPath)) {
+    setupRollupOptionCompat(merged, rootPath)
+  }
+  if (rootPath === 'server') {
+    setupHmrWsOptionCompat(merged)
+  }
+  if (rootPath === 'server.hmr') {
+    for (const key of wsOptionKeys) {
+      Object.defineProperty(
+        merged,
+        key,
+        Object.getOwnPropertyDescriptor(defaults, key)!,
+      )
+    }
+  }
+
   for (const key in overrides) {
     const value = overrides[key]
     if (value == null) {
       continue
     }
 
-    const existing = merged[key]
+    let existing = merged[key]
+    if (key === 'rollupOptions' && rollupOptionsRootPaths.has(rootPath)) {
+      // if both rollupOptions and rolldownOptions are present,
+      // ignore rollupOptions and use rolldownOptions
+      if (overrides.rolldownOptions) continue
+      existing = merged.rolldownOptions
+    }
 
     if (existing == null) {
-      merged[key] = value
+      if (rootPath === '' && key === 'environments' && isObject(value)) {
+        // Clone to avoid mutating the original override object
+        const environments = { ...value }
+        for (const envName in environments) {
+          environments[envName] = setupRollupOptionCompatForEnvironment(
+            environments[envName],
+          )
+        }
+        merged[key] = environments
+      } else if (rootPath === 'environments') {
+        // `environments` exists, but a new environment is added
+        merged[key] = setupRollupOptionCompatForEnvironment(value)
+      } else {
+        merged[key] = value
+      }
       continue
     }
 
@@ -1242,7 +1464,7 @@ function mergeConfigRecursively(
       merged[key] = [].concat(existing, value)
       continue
     } else if (
-      ((key === 'noExternal' &&
+      (((key === 'noExternal' || key === 'external') &&
         (rootPath === 'ssr' || rootPath === 'resolve')) ||
         (key === 'allowedHosts' && rootPath === 'server')) &&
       (existing === true || value === true)
@@ -1255,7 +1477,10 @@ function mergeConfigRecursively(
         ...backwardCompatibleWorkerPlugins(value),
       ]
       continue
-    } else if (key === 'server' && rootPath === 'server.hmr') {
+    } else if (
+      key === 'server' &&
+      (rootPath === 'server.hmr' || rootPath === 'server.ws')
+    ) {
       merged[key] = value
       continue
     }
@@ -1385,17 +1610,6 @@ export function stripBomTag(content: string): string {
   }
 
   return content
-}
-
-const windowsDrivePathPrefixRE = /^[A-Za-z]:[/\\]/
-
-/**
- * path.isAbsolute also returns true for drive relative paths on windows (e.g. /something)
- * this function returns false for them but true for absolute paths (e.g. C:/something)
- */
-export const isNonDriveRelativeAbsolutePath = (p: string): boolean => {
-  if (!isWindows) return p[0] === '/'
-  return windowsDrivePathPrefixRE.test(p)
 }
 
 /**
@@ -1594,6 +1808,15 @@ export function partialEncodeURIPath(uri: string): string {
   return filePath.replaceAll('%', '%25') + postfix
 }
 
+export function decodeURIIfPossible(input: string): string | undefined {
+  try {
+    return decodeURI(input)
+  } catch {
+    // url is malformed, probably a interpolate syntax of template engines
+    return
+  }
+}
+
 type SigtermCallback = (signal?: 'SIGTERM', exitCode?: number) => Promise<void>
 
 // Use a shared callback when attaching sigterm listeners to avoid `MaxListenersExceededWarning`
@@ -1660,4 +1883,33 @@ export function monotonicDateNow(): number {
 
   lastDateNow++
   return lastDateNow
+}
+
+export function formatAndTruncateFileList(files: string[]): {
+  formatted: string
+  truncated: boolean
+} {
+  const MAX_LOG_LENGTH = 500
+  let log = ''
+  let truncated = false
+  for (let i = 0; i < files.length; i++) {
+    const file = files[i]
+    if (log === '') {
+      log = file
+    } else if (log.length + 2 + file.length < MAX_LOG_LENGTH) {
+      log += ', ' + file
+    } else {
+      log += ` and ${files.length - i} more`
+      truncated = true
+      break
+    }
+  }
+  return { formatted: log, truncated }
+}
+
+const hashbangRE = /^#!.*\n/
+
+// find the start of the file, after the hashbang
+export function getFileStartIndex(code: string): number {
+  return hashbangRE.exec(code)?.[0].length ?? 0
 }

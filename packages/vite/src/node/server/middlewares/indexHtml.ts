@@ -2,9 +2,9 @@ import fs from 'node:fs'
 import fsp from 'node:fs/promises'
 import path from 'node:path'
 import MagicString from 'magic-string'
-import type { SourceMapInput } from 'rollup'
-import type { Connect } from 'dep-types/connect'
+import type { SourceMapInput } from 'rolldown'
 import type { DefaultTreeAdapterMap, Token } from 'parse5'
+import type { Connect } from '#dep-types/connect'
 import type { IndexHtmlTransformHook } from '../../plugins/html'
 import {
   addToHTMLProxyCache,
@@ -35,6 +35,7 @@ import {
   isCSSRequest,
   isDevServer,
   isJSRequest,
+  isParentDirectory,
   joinUrlSegments,
   normalizePath,
   processSrcSetSync,
@@ -48,6 +49,8 @@ import {
   BasicMinimalPluginContext,
   basePluginContextMeta,
 } from '../pluginContainer'
+import { getHmrImplementation } from '../../plugins/clientInjections'
+import { checkLoadingAccess, respondWithAccessDenied } from './static'
 
 interface AssetNode {
   start: number
@@ -81,7 +84,7 @@ export function createDevHtmlTransformFn(
     ...normalHooks,
     ...postHooks,
     injectNonceAttributeTagHook(config),
-    postImportMapHook(),
+    postImportMapHook(config),
   ]
   const pluginContext = new BasicMinimalPluginContext(
     { ...basePluginContextMeta, watchMode: true },
@@ -124,6 +127,10 @@ function isBareRelative(url: string) {
   return wordCharRE.test(url[0]) && !url.includes(':')
 }
 
+function getHtmlDirnameForRelativeUrl(htmlPath: string): string {
+  return htmlPath.endsWith('/') ? htmlPath : path.posix.dirname(htmlPath)
+}
+
 const processNodeUrl = (
   url: string,
   useSrcSetReplacer: boolean,
@@ -161,7 +168,7 @@ const processNodeUrl = (
       } else if (url[0] === '.' || isBareRelative(url)) {
         preTransformUrl = path.posix.join(
           config.base,
-          path.posix.dirname(htmlPath),
+          getHtmlDirnameForRelativeUrl(htmlPath),
           url,
         )
       }
@@ -207,8 +214,11 @@ const devHtmlHook: IndexHtmlTransformHook = async (
 
   const trailingSlash = htmlPath.endsWith('/')
   if (!trailingSlash && fs.existsSync(filename)) {
-    proxyModulePath = htmlPath
-    proxyModuleUrl = proxyModulePath
+    // If htmlPath is a /@fs/ URL (e.g. vitest-browser always uses this form
+    // for testerHtmlPath), normalise to an absolute FS path so proxyCacheUrl
+    // is always root-relative.
+    proxyModulePath = htmlPath.startsWith(FS_PREFIX) ? filename : htmlPath
+    proxyModuleUrl = htmlPath
   } else {
     // There are users of vite.transformIndexHtml calling it with url '/'
     // for SSR integrations #7993, filename is root for this case
@@ -269,7 +279,7 @@ const devHtmlHook: IndexHtmlTransformHook = async (
     preTransformRequest(server!, modulePath, decodedBase)
   }
 
-  await traverseHtml(html, filename, (node) => {
+  await traverseHtml(html, filename, config.logger.warn, (node) => {
     if (!nodeIsElement(node)) {
       return
     }
@@ -339,7 +349,10 @@ const devHtmlHook: IndexHtmlTransformHook = async (
     }
 
     // elements with [href/src] attrs
-    const assetAttributes = getNodeAssetAttributes(node)
+    const assetAttributes = getNodeAssetAttributes(
+      node,
+      config.html?.additionalAssetSources,
+    )
     for (const attr of assetAttributes) {
       if (attr.type === 'remove') {
         s.remove(attr.location.startOffset, attr.location.endOffset)
@@ -359,13 +372,13 @@ const devHtmlHook: IndexHtmlTransformHook = async (
   })
 
   // invalidate the module so the newly cached contents will be served
-  const clientModuelGraph = server?.environments.client.moduleGraph
-  if (clientModuelGraph) {
+  const clientModuleGraph = server?.environments.client.moduleGraph
+  if (clientModuleGraph) {
     await Promise.all(
       inlineModulePaths.map(async (url) => {
-        const module = await clientModuelGraph.getModuleByUrl(url)
+        const module = await clientModuleGraph.getModuleByUrl(url)
         if (module) {
-          clientModuelGraph.invalidateModule(module)
+          clientModuleGraph.invalidateModule(module)
         }
       }),
     )
@@ -383,9 +396,11 @@ const devHtmlHook: IndexHtmlTransformHook = async (
         )
       ensureWatchedFile(watcher, mod.file, config.root)
 
-      const result = await server!.pluginContainer.transform(code, mod.id!, {
-        environment: server!.environments.client,
-      })
+      const result =
+        await server!.environments.client.pluginContainer.transform(
+          code,
+          mod.id!,
+        )
       let content = ''
       if (result.map && 'version' in result.map) {
         if (result.map.mappings) {
@@ -408,9 +423,7 @@ const devHtmlHook: IndexHtmlTransformHook = async (
         )
       ensureWatchedFile(watcher, mod.file, config.root)
 
-      await server?.pluginContainer.transform(code, mod.id!, {
-        environment: server!.environments.client,
-      })
+      await server?.environments.client.pluginContainer.transform(code, mod.id!)
 
       const hash = getHash(cleanUrl(mod.id!))
       const result = htmlProxyResult.get(`${hash}_${index}`)
@@ -440,6 +453,7 @@ export function indexHtmlMiddleware(
   server: ViteDevServer | PreviewServer,
 ): Connect.NextHandleFunction {
   const isDev = isDevServer(server)
+  const fullBundle = isDev && server.environments.client.bundledDev
 
   // Keep the named function. The name is visible in debug logs via `DEBUG=connect:dispatcher ...`
   return async function viteIndexHtmlMiddleware(req, res, next) {
@@ -450,11 +464,65 @@ export function indexHtmlMiddleware(
     const url = req.url && cleanUrl(req.url)
     // htmlFallbackMiddleware appends '.html' to URLs
     if (url?.endsWith('.html') && req.headers['sec-fetch-dest'] !== 'script') {
+      if (fullBundle) {
+        const pathname = decodeURIComponent(url)
+        const filePath = pathname.slice(1) // remove first /
+
+        let file = fullBundle.memoryFiles.get(filePath)
+        if (!file && fullBundle.memoryFiles.size !== 0) {
+          return next()
+        }
+        const secFetchDest = req.headers['sec-fetch-dest']
+        if (
+          [
+            'document',
+            'iframe',
+            'frame',
+            'fencedframe',
+            '',
+            undefined,
+          ].includes(secFetchDest) &&
+          ((await fullBundle.triggerBundleRegenerationIfStale()) ||
+            file === undefined)
+        ) {
+          file = { source: await generateFallbackHtml(server as ViteDevServer) }
+        }
+        if (!file) {
+          return next()
+        }
+
+        const html =
+          typeof file.source === 'string'
+            ? file.source
+            : Buffer.from(file.source)
+        const headers = server.config.server.headers
+        return send(req, res, html, 'html', { headers, etag: file.etag })
+      }
+
       let filePath: string
       if (isDev && url.startsWith(FS_PREFIX)) {
         filePath = decodeURIComponent(fsPathFromId(url))
       } else {
-        filePath = path.join(root, decodeURIComponent(url))
+        filePath = normalizePath(
+          path.resolve(path.join(root, decodeURIComponent(url))),
+        )
+      }
+
+      if (isDev) {
+        const servingAccessResult = checkLoadingAccess(server.config, filePath)
+        if (servingAccessResult === 'denied') {
+          return respondWithAccessDenied(filePath, server, res)
+        }
+        if (servingAccessResult === 'fallback') {
+          return next()
+        }
+        servingAccessResult satisfies 'allowed'
+      } else {
+        // `server.fs` options does not apply to the preview server.
+        // But we should disallow serving files outside the output directory.
+        if (!isParentDirectory(root, filePath)) {
+          return next()
+        }
       }
 
       if (fs.existsSync(filePath)) {
@@ -489,4 +557,67 @@ function preTransformRequest(
   // transform all url as non-ssr as html includes client-side assets only
   decodedUrl = unwrapId(stripBase(decodedUrl, decodedBase))
   server.warmupRequest(decodedUrl)
+}
+
+async function generateFallbackHtml(server: ViteDevServer) {
+  const hmrRuntime = await getHmrImplementation(server.config)
+  return /* html */ `
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <script type="module">
+    ${hmrRuntime.replaceAll('</script>', '<\\/script>')}
+  </script>
+  <style>
+    :root {
+      --page-bg: #ffffff;
+      --text-color: #1d1d1f;
+      --spinner-track: #f5f5f7;
+      --spinner-accent: #0071e3;
+    }
+    @media (prefers-color-scheme: dark) {
+      :root {
+        --page-bg: #1e1e1e;
+        --text-color: #f5f5f5;
+        --spinner-track: #424242;
+      }
+    }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      display: flex;
+      background-color: var(--page-bg);
+      color: var(--text-color);
+    }
+
+    .container {
+      margin: auto;
+      padding: 2rem;
+      text-align: center;
+      border-radius: 1rem;
+    }
+
+    .spinner {
+      width: 3rem;
+      height: 3rem;
+      margin: 2rem auto;
+      border: 3px solid var(--spinner-track);
+      border-top-color: var(--spinner-accent);
+      border-radius: 50%;
+      animation: spin 1s linear infinite;
+    }
+
+    @keyframes spin { to { transform: rotate(360deg) } }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>Bundling in progress</h1>
+    <p>The page will automatically reload when ready.</p>
+    <div class="spinner"></div>
+  </div>
+</body>
+</html>
+`
 }

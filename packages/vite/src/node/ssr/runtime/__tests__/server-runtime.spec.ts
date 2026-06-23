@@ -1,14 +1,27 @@
 import { existsSync, readdirSync } from 'node:fs'
-import { posix, win32 } from 'node:path'
+import { posix, resolve, win32 } from 'node:path'
 import { fileURLToPath } from 'node:url'
-import { describe, expect, vi } from 'vitest'
+import { setTimeout } from 'node:timers/promises'
+import { describe, expect, it, vi } from 'vitest'
 import { isWindows } from '../../../../shared/utils'
+import type { ExternalFetchResult } from '../../../../shared/invokeMethods'
+import { createServer } from '../../../server'
+import {
+  createRunnableDevEnvironment,
+  isRunnableDevEnvironment,
+} from '../../../server/environments/runnableEnvironment'
+import type { HMRLogger } from '../../../../../dist/node/module-runner'
 import { createModuleRunnerTester } from './utils'
 
 const _URL = URL
 
 describe('module runner initialization', async () => {
-  const it = await createModuleRunnerTester()
+  const it = await createModuleRunnerTester({
+    resolve: {
+      external: ['tinyglobby'],
+      noExternal: ['@oxc-project/runtime'],
+    },
+  })
 
   it('correctly runs ssr code', async ({ runner }) => {
     const mod = await runner.import('/fixtures/simple.js')
@@ -325,7 +338,7 @@ describe('module runner initialization', async () => {
     runner,
     onTestFinished,
   }) => {
-    const spy = vi.spyOn(console, 'log')
+    const spy = vi.spyOn(console, 'log').mockImplementation(() => {})
     onTestFinished(() => spy.mockRestore())
 
     await runner.import('/fixtures/execution-order-re-export/index.js')
@@ -389,6 +402,15 @@ describe('module runner initialization', async () => {
       }
     `,
     )
+  })
+
+  it('oxc runtime helpers are loadable', async ({ runner }) => {
+    const mod = await runner.import('/fixtures/oxc-runtime-helper.ts')
+    expect(mod.result).toMatchInlineSnapshot(`
+      "<script>
+        console.log('hi')
+      </script>"
+    `)
   })
 
   it(`handle Object variable`, async ({ runner }) => {
@@ -488,5 +510,133 @@ describe('virtual module hmr', async () => {
       const mod = runner.evaluatedModules.getModuleById('\0virtual:test')
       expect(mod?.exports.default).toBe('reloaded')
     })
+  })
+
+  it("the external module's ID and file are resolved correctly", async ({
+    server,
+    runner,
+  }) => {
+    await runner.import(
+      posix.join(server.config.root, 'fixtures/import-external.ts'),
+    )
+    const moduleNode = runner.evaluatedModules.getModuleByUrl('tinyglobby')!
+    const meta = moduleNode.meta as ExternalFetchResult
+    if (process.platform === 'win32') {
+      expect(meta.externalize).toMatch(/^file:\/\/\/\w:\//) // file:///C:/
+      expect(moduleNode.id).toMatch(/^\w:\//) // C:/
+      expect(moduleNode.file).toMatch(/^\w:\//) // C:/
+    } else {
+      expect(meta.externalize).toMatch(/^file:\/\/\//) // file:///
+      expect(moduleNode.id).toMatch(/^\//) // /
+      expect(moduleNode.file).toMatch(/^\//) // /
+    }
+  })
+})
+
+describe('invalid package', async () => {
+  const it = await createModuleRunnerTester({
+    environments: {
+      ssr: {
+        resolve: {
+          noExternal: true,
+        },
+      },
+    },
+  })
+
+  it('can catch resolve error on runtime', async ({ runner }) => {
+    const mod = await runner.import('./fixtures/invalid-package/test.js')
+    expect(await mod.test()).toMatchInlineSnapshot(`
+      {
+        "data": [Error: Failed to resolve entry for package "test-dep-invalid-exports". The package may have incorrect main/module/exports specified in its package.json.],
+        "ok": false,
+      }
+    `)
+  })
+})
+
+describe('full-reload during close', () => {
+  it('does not error when server closes during full-reload re-import', async () => {
+    const errors: (string | Error)[] = []
+    const logger: HMRLogger = {
+      error: (msg) => errors.push(msg),
+      debug: () => {},
+    }
+
+    const server = await createServer({
+      root: import.meta.dirname,
+      logLevel: 'error',
+      server: {
+        middlewareMode: true,
+        watch: null,
+        ws: false,
+      },
+      optimizeDeps: {
+        disabled: true,
+        noDiscovery: true,
+      },
+      environments: {
+        ssr: {
+          dev: {
+            createEnvironment(name, config) {
+              return createRunnableDevEnvironment(name, config, {
+                runnerOptions: { hmr: { logger } },
+              })
+            },
+          },
+        },
+      },
+      plugins: [
+        {
+          name: 'test-slow-virtual',
+          enforce: 'pre',
+          resolveId(source) {
+            if (source === 'virtual:slow') return '\0virtual:slow'
+          },
+          async load(id) {
+            if (id === '\0virtual:slow') {
+              await setTimeout(10)
+              return `export default "ok"`
+            }
+          },
+        },
+      ],
+    })
+
+    const env = server.environments.ssr
+    if (!isRunnableDevEnvironment(env)) {
+      throw new Error('expected RunnableDevEnvironment')
+    }
+
+    const mod = await env.runner.import('virtual:slow')
+    expect(mod.default).toBe('ok')
+
+    // re-import will run async via the HMR queue
+    env.moduleGraph.invalidateAll()
+    env.hot.send({ type: 'full-reload' })
+
+    // server.close() -> environment.close() -> runner.close() ->
+    // transport.disconnect() rejects the pending fetchModule RPC
+    await server.close()
+    await setTimeout(100) // Give the HMR handler time to settle
+
+    expect(
+      errors.some((e) => e.toString().includes('transport was disconnected')),
+    ).toBe(false)
+  })
+})
+
+describe('server.fs check', async () => {
+  const it = await createModuleRunnerTester({
+    server: {
+      fs: {
+        allow: [resolve(import.meta.dirname, './fixtures/circular')],
+      },
+    },
+  })
+
+  it('it is not applied to the server module runner', async ({ runner }) => {
+    const mod = await runner.import('/fixtures/basic.js')
+    expect(mod.name).toBe('basic')
   })
 })

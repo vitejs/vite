@@ -7,7 +7,7 @@ export default defineConfig({
   },
   resolve: {
     alias: {
-      '@': path.resolve(__dirname, 'nested'),
+      '@': path.resolve(import.meta.dirname, 'nested'),
     },
   },
   build: {

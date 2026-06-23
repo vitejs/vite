@@ -19,9 +19,12 @@ export default defineConfig(({ isPreview }) => ({
 
   build: {
     outDir: 'dist/no-polyfills-no-systemjs',
-    rollupOptions: {
+    rolldownOptions: {
       input: {
-        index: path.resolve(__dirname, 'no-polyfills-no-systemjs.html'),
+        index: path.resolve(
+          import.meta.dirname,
+          'no-polyfills-no-systemjs.html',
+        ),
       },
     },
   },
