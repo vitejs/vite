@@ -105,6 +105,42 @@ export function isExplicitImportRequired(url: string): boolean {
   return !isJSRequest(url) && !isCSSRequest(url)
 }
 
+/** es-module-lexer (v2+) misreports a method/shorthand named `import` as a dynamic import; a real one is never directly followed by `{`. */
+function isImportMethodDefinition(
+  source: string,
+  importExpEnd: number,
+): boolean {
+  let i = importExpEnd
+  while (i < source.length) {
+    const code = source.charCodeAt(i)
+    if (
+      code === 32 ||
+      code === 9 ||
+      code === 10 ||
+      code === 11 ||
+      code === 12 ||
+      code === 13
+    ) {
+      i++
+      continue
+    }
+    if (code === 47 && source.charCodeAt(i + 1) === 47) {
+      const newlineIndex = source.indexOf('\n', i + 2)
+      if (newlineIndex === -1) return false
+      i = newlineIndex + 1
+      continue
+    }
+    if (code === 47 && source.charCodeAt(i + 1) === 42) {
+      const blockCommentEnd = source.indexOf('*/', i + 2)
+      if (blockCommentEnd === -1) return false
+      i = blockCommentEnd + 2
+      continue
+    }
+    return code === 123 // '{'
+  }
+  return false
+}
+
 function normalizeResolvedIdToUrl(
   environment: DevEnvironment,
   url: string,
@@ -523,6 +559,11 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
           }
 
           const isDynamicImport = dynamicIndex > -1
+
+          // es-module-lexer can misreport a method named `import` as a dynamic import; skip it.
+          if (isDynamicImport && isImportMethodDefinition(source, expEnd)) {
+            return
+          }
 
           // strip import attributes as we can process them ourselves
           if (!isDynamicImport && attributeIndex > -1) {

@@ -22,6 +22,21 @@ test('should load full dynamic import from public', async () => {
   ).toBe(false)
 })
 
+test('should not treat a method named `import` as a dynamic import', async () => {
+  // Methods named `import` must be left untouched (es-module-lexer misreports them).
+  await expect
+    .poll(() => page.textContent('.method-named-import'))
+    .toMatch('a,b c,d e,f')
+  // The method must not be reported as an un-analyzable dynamic import.
+  expect(
+    serverLogs.some(
+      (log) =>
+        log.includes('cannot be analyzed') &&
+        log.includes('method-named-import'),
+    ),
+  ).toBe(false)
+})
+
 test('should load data URL of `blob:`', async () => {
   await page.click('.issue-2658-1')
   await expect.poll(() => page.textContent('.view')).toMatch('blob')
