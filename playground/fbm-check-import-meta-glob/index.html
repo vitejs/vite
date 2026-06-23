@@ -1,0 +1,146 @@
+<!doctype html>
+<html>
+  <head>
+    <title>FBM check: import.meta.glob</title>
+  </head>
+  <body>
+    <h1>FBM check: import.meta.glob</h1>
+    <pre class="app"></pre>
+
+    <h2>Lazy glob (./dir/*.js)</h2>
+    <pre class="result"></pre>
+
+    <h2>Eager glob (./dir/*.js, { eager: true })</h2>
+    <pre class="result-eager"></pre>
+
+    <h2>
+      Raw glob (./dir/*.txt, { query: '?raw', eager: true, import: 'default' })
+    </h2>
+    <pre class="result-raw"></pre>
+
+    <h2>
+      Url glob (./dir/*.txt, { query: '?url', eager: true, import: 'default' })
+    </h2>
+    <pre class="result-url"></pre>
+
+    <h2>Url glob fetched bodies</h2>
+    <pre class="result-url-fetched"></pre>
+
+    <script type="module">
+      // Stable JSON of the glob KEY SET (sorted) so the spec can assert which files the
+      // glob matched (this is what changes when a file is added/removed — the M2 concern).
+      function keysOf(modules) {
+        return JSON.stringify(Object.keys(modules).sort())
+      }
+
+      // 1. LAZY glob — value is `() => import(path)`. Load each module, render { key: msg }.
+      const lazyModules = import.meta.glob('./dir/*.js')
+      async function renderLazy() {
+        const keys = Object.keys(lazyModules).sort()
+        const mods = await Promise.all(keys.map((k) => lazyModules[k]()))
+        const res = {}
+        mods.forEach((m, i) => {
+          res[keys[i]] = m.msg
+        })
+        document.querySelector('.result').textContent = JSON.stringify(res)
+      }
+
+      // 2. EAGER glob — values are the modules directly.
+      const eagerModules = import.meta.glob('./dir/*.js', { eager: true })
+      function renderEager() {
+        const res = {}
+        for (const k of Object.keys(eagerModules).sort()) {
+          res[k] = eagerModules[k].msg
+        }
+        document.querySelector('.result-eager').textContent =
+          JSON.stringify(res)
+      }
+
+      // 3. RAW glob — `{ query: '?raw', import: 'default' }` → values are raw file strings.
+      const rawModules = import.meta.glob('./dir/*.txt', {
+        query: '?raw',
+        eager: true,
+        import: 'default',
+      })
+      // The .txt files carry a unique single-occurrence MARKER on line 1 plus filler bytes
+      // (so they exceed the 4096 B inline limit → `?url` takes the EMITTED-asset path, not a
+      // data: URI). For `?raw` we assert the marker (line 1); filler is not load-bearing.
+      const firstLine = (s) => s.split('\n', 1)[0]
+      function renderRaw() {
+        const res = {}
+        for (const k of Object.keys(rawModules).sort()) {
+          res[k] = firstLine(rawModules[k])
+        }
+        document.querySelector('.result-raw').textContent = JSON.stringify(res)
+      }
+
+      // 4. URL glob — `{ query: '?url', import: 'default' }` → values are URL strings.
+      const urlModules = import.meta.glob('./dir/*.txt', {
+        query: '?url',
+        eager: true,
+        import: 'default',
+      })
+      async function renderUrl() {
+        const keys = Object.keys(urlModules).sort()
+        const res = {}
+        for (const k of keys) {
+          res[k] = urlModules[k]
+        }
+        document.querySelector('.result-url').textContent = JSON.stringify(res)
+
+        // Fetch each emitted URL's body so the spec can assert the served bytes (and
+        // whether they refresh on edit).
+        const fetched = {}
+        for (const k of keys) {
+          try {
+            const r = await fetch(urlModules[k], { cache: 'no-store' })
+            fetched[k] = (await r.text()).trim()
+          } catch (e) {
+            fetched[k] = 'FETCH_THREW'
+          }
+        }
+        document.querySelector('.result-url-fetched').textContent =
+          JSON.stringify(fetched)
+      }
+
+      async function renderAll() {
+        await renderLazy()
+        renderEager()
+        renderRaw()
+        await renderUrl()
+        document.querySelector('.app').textContent = 'glob loaded'
+        // Expose the live glob results + a fresh re-fetch helper so the spec can probe
+        // the emitted `?url` asset bytes after an edit, independent of render timing.
+        window.__GLOB__ = {
+          eagerKeys: () => Object.keys(eagerModules).sort(),
+          rawValues: () =>
+            Object.fromEntries(
+              Object.keys(rawModules)
+                .sort()
+                .map((k) => [k, rawModules[k].split('\n', 1)[0]]),
+            ),
+          urlMap: () =>
+            Object.fromEntries(
+              Object.keys(urlModules)
+                .sort()
+                .map((k) => [k, urlModules[k]]),
+            ),
+          fetchUrls: async () => {
+            const out = {}
+            for (const k of Object.keys(urlModules).sort()) {
+              try {
+                const r = await fetch(urlModules[k], { cache: 'no-store' })
+                out[k] = (await r.text()).trim()
+              } catch {
+                out[k] = 'FETCH_THREW'
+              }
+            }
+            return out
+          },
+        }
+        console.log('glob-keys ' + keysOf(eagerModules))
+      }
+      renderAll()
+    </script>
+  </body>
+</html>

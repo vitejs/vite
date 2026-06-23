@@ -1,0 +1,14 @@
+<h1>FBM check: ?inline / ?no-inline</h1>
+
+<div class="app"></div>
+
+<!-- ?inline: the imported value is a `data:` URI baked into the JS module. -->
+<pre class="inline-value"></pre>
+
+<!-- ?no-inline: the imported value is a real emitted asset URL (NOT a data URI). -->
+<pre class="noinline-value"></pre>
+<!-- the fetched body of the ?no-inline URL, so the spec can assert the URL resolves
+     to the real served file (and catch a placeholder / 404). -->
+<pre class="noinline-fetched"></pre>
+
+<script type="module" src="./main.js"></script>

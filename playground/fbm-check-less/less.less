@@ -1,0 +1,8 @@
+// Genuine Less so the Less preprocessor must run for this to compile:
+// a Less `@variable` (neither valid plain CSS), mirroring Vite's
+// playground/css/less.less (`@color: blue;` then `.less { color: @color }`).
+@color: blue;
+
+.less {
+  color: @color;
+}

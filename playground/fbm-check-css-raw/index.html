@@ -1,0 +1,9 @@
+<h1>FBM check: CSS ?raw</h1>
+
+<div class="app"></div>
+<!-- the imported RAW CSS string is rendered here so the spec can read it.
+     With ?raw the file contents are returned verbatim (un-transformed): the
+     comment and nested `&-imported` selector survive, proving no CSS processing. -->
+<pre class="raw-imported-css"></pre>
+
+<script type="module" src="./main.js"></script>

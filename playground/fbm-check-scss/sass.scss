@@ -1,0 +1,7 @@
+// Genuine SCSS so the Sass preprocessor must run for this to compile:
+// a SCSS variable + nesting (neither is valid plain CSS).
+$injectedColor: orange;
+
+.sass {
+  color: $injectedColor;
+}

@@ -90,6 +90,11 @@
       "eslint --cache --fix --concurrency auto"
     ]
   },
+  "pnpm": {
+    "overrides": {
+      "rolldown": "link:/Users/shuyuan/Projects/rolldown/packages/rolldown"
+    }
+  },
   "packageManager": "pnpm@10.34.3",
   "stackblitz": {
     "startCommand": "pnpm --filter='./packages/vite' run dev"

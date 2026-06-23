@@ -1,0 +1,12 @@
+/* Genuine PostCSS so the PostCSS `postcss-nested` plugin must run for this to
+ * apply: a NESTED rule (`.postcss { .nesting { ... } }`). Plain CSS nesting is
+ * not what's exercised here — `postcss-nested` flattens this to
+ * `.postcss .nesting { color: pink }` at transform time. Mirrors the
+ * `/* test postcss nesting *​/` block in Vite's playground/css/imported.css
+ * (`.postcss { .nesting { color: pink } }`), the source behind
+ * tests.ts `test('postcss config')`. */
+.postcss {
+  .nesting {
+    color: pink;
+  }
+}

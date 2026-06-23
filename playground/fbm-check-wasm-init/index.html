@@ -1,0 +1,35 @@
+<h1>FBM check: *.wasm?init (init function returns a WebAssembly.Instance)</h1>
+
+<!-- `import init from './x.wasm?init'` => `init` is a FUNCTION. `await init(opts)`
+     fetches/decodes the emitted wasm and returns a WebAssembly.Instance. The wasm URL
+     is resolved by `fileToUrl` (inline data: URI for small files; an emitted
+     /assets/<name>-<hash>.wasm for files >= assetsInlineLimit). If that URL were an
+     unresolved __ROLLDOWN_ASSET__/__VITE_ASSET__ placeholder (or a 404), `init()`'s
+     fetch -> WebAssembly.instantiate would throw and the call would fail. The
+     instantiated exports' values are rendered here so the spec can read them. -->
+<div class="app"></div>
+
+<div class="inline-wasm-init">
+  <h3>
+    light.wasm?init (small, inlined): init() -> exported_func() -> result 42
+  </h3>
+  <span class="result"></span>
+</div>
+
+<div class="output-wasm-init">
+  <h3>
+    heavy.wasm?init (>=4096B, EMITTED asset): init() -> exported_func() ->
+    result 24
+  </h3>
+  <span class="result"></span>
+</div>
+
+<div class="init-returns-instance">
+  <h3>init() resolves to a WebAssembly.Instance (should be true)</h3>
+  <span class="result"></span>
+</div>
+
+<!-- If init()/instantiation throws, this surfaces the error to the spec. -->
+<pre class="error"></pre>
+
+<script type="module" src="./main.js"></script>

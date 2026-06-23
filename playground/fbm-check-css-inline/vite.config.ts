@@ -1,0 +1,9 @@
+import { defineConfig } from 'vite'
+
+// Faithful FBM port of Vite's CSS `?inline` case (playground/css).
+// The ONLY intended change vs. the non-FBM playground is enabling FBM.
+export default defineConfig({
+  experimental: {
+    bundledDev: true,
+  },
+})

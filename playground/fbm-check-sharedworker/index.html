@@ -1,0 +1,28 @@
+<h1>FBM check: ?sharedworker</h1>
+
+<p>
+  import MySharedWorker from './my-shared-worker.js?sharedworker' -> new
+  MySharedWorker() port round-trip
+  <code class="pong"></code>
+</p>
+
+<p>
+  import InlineSharedWorker from
+  './my-inline-shared-worker.js?sharedworker&inline' -> new InlineSharedWorker()
+  port round-trip
+  <code class="pong-inline"></code>
+</p>
+
+<p>
+  import sharedWorkerUrl from './url-shared-worker.js?sharedworker&url' -> the
+  URL string
+  <code class="worker-url"></code>
+</p>
+
+<p>
+  new SharedWorker(sharedWorkerUrl, { type: 'module' }) port round-trip (proves
+  the ?sharedworker&url value actually loads)
+  <code class="pong-url"></code>
+</p>
+
+<script type="module" src="./main.js"></script>

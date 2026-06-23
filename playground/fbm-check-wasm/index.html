@@ -1,0 +1,31 @@
+<h1>FBM check: plain .wasm default import (WASM ESM Integration)</h1>
+
+<!-- The instantiated wasm export values are rendered here so the spec can read them.
+     Plain `.wasm` import => glue code resolves the wasm URL (inline data: URI for
+     small files; an emitted /assets/<name>-<hash>.wasm for files >= assetsInlineLimit),
+     fetches/decodes it, instantiates it, and re-exports the module's exports. If the
+     URL were an unresolved __ROLLDOWN_ASSET__/__VITE_ASSET__ placeholder (or 404),
+     instantiation would throw and LOAD itself would fail. -->
+<div class="app"></div>
+
+<div class="direct-wasm">
+  <h3>Direct wasm import (small, inlined), add(1, 2) should be 3</h3>
+  <span class="result"></span>
+</div>
+
+<div class="direct-wasm-with-imports">
+  <h3>
+    Direct wasm import with wasm imports (small, inlined), result should be 42
+  </h3>
+  <span class="result"></span>
+</div>
+
+<div class="direct-wasm-emitted">
+  <h3>Direct wasm import (>=4096B, EMITTED asset), add(1, 2) should be 3</h3>
+  <span class="result"></span>
+</div>
+
+<!-- If instantiation throws, this surfaces the error to the spec. -->
+<pre class="error"></pre>
+
+<script type="module" src="./main.js"></script>

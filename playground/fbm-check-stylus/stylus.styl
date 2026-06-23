@@ -1,0 +1,8 @@
+// Genuine Stylus so the Stylus preprocessor must run for this to compile:
+// a Stylus `$variable` with conditional `?=` assignment and indentation-based
+// (brace-less) rule syntax, neither valid plain CSS. Mirrors Vite's
+// playground/css/stylus.styl (`$color ?= blue` then `.stylus\n  color $color`).
+$color ?= blue
+
+.stylus
+  color $color

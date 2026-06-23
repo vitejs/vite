@@ -1,0 +1,18 @@
+<h1>
+  FBM check: new Worker(new URL('./my-worker.js', import.meta.url), { type:
+  'module' })
+</h1>
+
+<p>
+  new Worker(new URL('./my-worker.js', import.meta.url), { type: 'module' }) ->
+  postMessage('ping') round-trip reply
+  <code class="pong"></code>
+</p>
+
+<p>
+  the worker's own location URL (self.location.href) — must be a real served
+  asset, not a placeholder/404
+  <code class="worker-url"></code>
+</p>
+
+<script type="module" src="./main.js"></script>

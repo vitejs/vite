@@ -1,0 +1,57 @@
+FBM check sample plain-text asset.
+This file is imported via a default import from JS, which under Vite
+returns a static-asset URL string (NOT the text content; that would
+require the ?raw query). The extension .txt is in KNOWN_ASSET_TYPES.
+
+NEEDLE: TXT-FBM-MARKER-V1
+
+filler line 00001 lorem ipsum dolor sit amet consectetur adipiscing elit sed do eiusmod
+filler line 00002 lorem ipsum dolor sit amet consectetur adipiscing elit sed do eiusmod
+filler line 00003 lorem ipsum dolor sit amet consectetur adipiscing elit sed do eiusmod
+filler line 00004 lorem ipsum dolor sit amet consectetur adipiscing elit sed do eiusmod
+filler line 00005 lorem ipsum dolor sit amet consectetur adipiscing elit sed do eiusmod
+filler line 00006 lorem ipsum dolor sit amet consectetur adipiscing elit sed do eiusmod
+filler line 00007 lorem ipsum dolor sit amet consectetur adipiscing elit sed do eiusmod
+filler line 00008 lorem ipsum dolor sit amet consectetur adipiscing elit sed do eiusmod
+filler line 00009 lorem ipsum dolor sit amet consectetur adipiscing elit sed do eiusmod
+filler line 00010 lorem ipsum dolor sit amet consectetur adipiscing elit sed do eiusmod
+filler line 00011 lorem ipsum dolor sit amet consectetur adipiscing elit sed do eiusmod
+filler line 00012 lorem ipsum dolor sit amet consectetur adipiscing elit sed do eiusmod
+filler line 00013 lorem ipsum dolor sit amet consectetur adipiscing elit sed do eiusmod
+filler line 00014 lorem ipsum dolor sit amet consectetur adipiscing elit sed do eiusmod
+filler line 00015 lorem ipsum dolor sit amet consectetur adipiscing elit sed do eiusmod
+filler line 00016 lorem ipsum dolor sit amet consectetur adipiscing elit sed do eiusmod
+filler line 00017 lorem ipsum dolor sit amet consectetur adipiscing elit sed do eiusmod
+filler line 00018 lorem ipsum dolor sit amet consectetur adipiscing elit sed do eiusmod
+filler line 00019 lorem ipsum dolor sit amet consectetur adipiscing elit sed do eiusmod
+filler line 00020 lorem ipsum dolor sit amet consectetur adipiscing elit sed do eiusmod
+filler line 00021 lorem ipsum dolor sit amet consectetur adipiscing elit sed do eiusmod
+filler line 00022 lorem ipsum dolor sit amet consectetur adipiscing elit sed do eiusmod
+filler line 00023 lorem ipsum dolor sit amet consectetur adipiscing elit sed do eiusmod
+filler line 00024 lorem ipsum dolor sit amet consectetur adipiscing elit sed do eiusmod
+filler line 00025 lorem ipsum dolor sit amet consectetur adipiscing elit sed do eiusmod
+filler line 00026 lorem ipsum dolor sit amet consectetur adipiscing elit sed do eiusmod
+filler line 00027 lorem ipsum dolor sit amet consectetur adipiscing elit sed do eiusmod
+filler line 00028 lorem ipsum dolor sit amet consectetur adipiscing elit sed do eiusmod
+filler line 00029 lorem ipsum dolor sit amet consectetur adipiscing elit sed do eiusmod
+filler line 00030 lorem ipsum dolor sit amet consectetur adipiscing elit sed do eiusmod
+filler line 00031 lorem ipsum dolor sit amet consectetur adipiscing elit sed do eiusmod
+filler line 00032 lorem ipsum dolor sit amet consectetur adipiscing elit sed do eiusmod
+filler line 00033 lorem ipsum dolor sit amet consectetur adipiscing elit sed do eiusmod
+filler line 00034 lorem ipsum dolor sit amet consectetur adipiscing elit sed do eiusmod
+filler line 00035 lorem ipsum dolor sit amet consectetur adipiscing elit sed do eiusmod
+filler line 00036 lorem ipsum dolor sit amet consectetur adipiscing elit sed do eiusmod
+filler line 00037 lorem ipsum dolor sit amet consectetur adipiscing elit sed do eiusmod
+filler line 00038 lorem ipsum dolor sit amet consectetur adipiscing elit sed do eiusmod
+filler line 00039 lorem ipsum dolor sit amet consectetur adipiscing elit sed do eiusmod
+filler line 00040 lorem ipsum dolor sit amet consectetur adipiscing elit sed do eiusmod
+filler line 00041 lorem ipsum dolor sit amet consectetur adipiscing elit sed do eiusmod
+filler line 00042 lorem ipsum dolor sit amet consectetur adipiscing elit sed do eiusmod
+filler line 00043 lorem ipsum dolor sit amet consectetur adipiscing elit sed do eiusmod
+filler line 00044 lorem ipsum dolor sit amet consectetur adipiscing elit sed do eiusmod
+filler line 00045 lorem ipsum dolor sit amet consectetur adipiscing elit sed do eiusmod
+filler line 00046 lorem ipsum dolor sit amet consectetur adipiscing elit sed do eiusmod
+filler line 00047 lorem ipsum dolor sit amet consectetur adipiscing elit sed do eiusmod
+filler line 00048 lorem ipsum dolor sit amet consectetur adipiscing elit sed do eiusmod
+filler line 00049 lorem ipsum dolor sit amet consectetur adipiscing elit sed do eiusmod
+filler line 00050 lorem ipsum dolor sit amet consectetur adipiscing elit sed do eiusmod

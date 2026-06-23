@@ -1,0 +1,12 @@
+<h1>FBM check: CSS ?url</h1>
+
+<div class="app"></div>
+<!-- the imported URL string is rendered here so the spec can read it -->
+<pre class="url-value"></pre>
+<!-- `.url-imported-css` gets its color from the processed CSS served at the URL,
+     injected via a <link rel="stylesheet" href={urlCss}> (mirrors Vite's css playground). -->
+<p class="url-imported-css">URL Support</p>
+<!-- the fetched CSS body is rendered here so the spec can assert the URL resolves -->
+<pre class="url-fetched"></pre>
+
+<script type="module" src="./main.js"></script>

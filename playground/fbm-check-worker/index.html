@@ -1,0 +1,25 @@
+<h1>FBM check: ?worker</h1>
+
+<p>
+  import MyWorker from './my-worker.js?worker' -> new MyWorker() round-trip
+  <code class="pong"></code>
+</p>
+
+<p>
+  import InlineWorker from './my-worker.js?worker&inline' -> new InlineWorker()
+  round-trip
+  <code class="pong-inline"></code>
+</p>
+
+<p>
+  import workerUrl from './my-worker.js?worker&url' -> the URL string
+  <code class="worker-url"></code>
+</p>
+
+<p>
+  new Worker(workerUrl, { type: 'module' }) round-trip (proves the ?worker&url
+  value actually loads)
+  <code class="pong-url"></code>
+</p>
+
+<script type="module" src="./main.js"></script>

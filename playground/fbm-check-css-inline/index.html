@@ -1,0 +1,10 @@
+<h1>FBM check: CSS ?inline</h1>
+
+<div class="app"></div>
+<!-- `.inline` carries NO own stylesheet: with ?inline the CSS is returned as a
+     string and is NOT injected, so this element must render the default color. -->
+<div class="inline">inline</div>
+<!-- the imported CSS string is rendered here so the spec can read it -->
+<pre class="inline-code"></pre>
+
+<script type="module" src="./main.js"></script>

@@ -1,0 +1,4 @@
+{
+  "hello": "this is json",
+  "hmr": "this is hmr json"
+}

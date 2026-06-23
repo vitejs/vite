@@ -1,0 +1,6 @@
+{
+  // JSON5-only: line comment, unquoted key, single quotes, trailing comma.
+  // (A vanilla JSON.parse would throw on every one of these.)
+  hello: "this is json5",
+  hmr: "phrase-alpha",
+}

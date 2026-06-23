@@ -1,0 +1,14 @@
+<h1>FBM check: .html</h1>
+
+<!--
+  The served index.html is the dev-server entry, not an importable module. The
+  `<button>` text below is markup that lives ONLY in this HTML file (not written by
+  JS) — Vite's non-FBM dev FULL-RELOADS when index.html is edited so the new markup
+  shows. The needle "Counter" occurs EXACTLY ONCE in the real markup (the button),
+  mirroring Vite's playground/hmr/counter/index.html + hmr.spec.ts `test('HTML')`.
+-->
+<button class="counter">Counter 0</button>
+
+<div class="app"></div>
+
+<script type="module" src="./main.js"></script>
