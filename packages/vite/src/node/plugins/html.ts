@@ -928,7 +928,6 @@ export function buildHtmlPlugin(config: ResolvedConfig): Plugin {
         if (!resolvedId) continue
         const baseResolved = path.basename(resolvedId)
         for (const key of Object.keys(bundle)) {
-          const asset = bundle[key]
           // Match by basename prefix (Vite may append a hash + .css).
           const baseBundle = path.basename(key)
           if (
