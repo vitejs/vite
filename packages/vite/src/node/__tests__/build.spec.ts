@@ -15,6 +15,7 @@ import type { LibraryFormats, LibraryOptions } from '../build'
 import {
   build,
   createBuilder,
+  injectEnvironmentToHooks,
   onRollupLog,
   resolveBuildOutputs,
   resolveLibFilename,
@@ -28,6 +29,41 @@ const dirname = import.meta.dirname
 type FormatsToFileNames = [LibraryFormats, string][]
 
 describe('build', () => {
+  test('preserves transform metadata when injecting ssr flag', () => {
+    const transformMeta = { moduleType: 'js' }
+    Object.defineProperty(transformMeta, 'customMetadata', {
+      get() {
+        return 'preserved'
+      },
+    })
+
+    let checkedMetadata = false
+    const plugin = injectEnvironmentToHooks(
+      {
+        config: { consumer: 'client' },
+        getTopLevelConfig: () => ({}),
+      } as any,
+      {} as any,
+      {
+        name: 'test-preserve-transform-metadata',
+        transform(_code, _id, meta) {
+          expect(meta.ssr).toBe(false)
+          expect(meta.moduleType).toBe('js')
+          expect((meta as any).customMetadata).toBe('preserved')
+          checkedMetadata = true
+        },
+      },
+    )
+
+    ;(plugin.transform as Function).call(
+      { meta: {} },
+      '',
+      'entry.js',
+      transformMeta,
+    )
+    expect(checkedMetadata).toBe(true)
+  })
+
   test('file hash should change when css changes for dynamic entries', async () => {
     const buildProject = async (cssColor: string) => {
       return (await build({

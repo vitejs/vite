@@ -1513,9 +1513,22 @@ function injectSsrFlag<T extends Record<string, any>>(
   pluginName: string,
 ): T & { ssr?: boolean } {
   let ssr = environment.config.consumer === 'server'
-  const newOptions = { ...(options ?? {}), ssr } as T & {
+
+  const newOptions = {} as T & {
     ssr?: boolean
   }
+  if (options) {
+    Object.defineProperties(
+      newOptions,
+      Object.getOwnPropertyDescriptors(options),
+    )
+  }
+  Object.defineProperty(newOptions, 'ssr', {
+    value: ssr,
+    writable: true,
+    enumerable: true,
+    configurable: true,
+  })
 
   if (
     isFutureDeprecationEnabled(
