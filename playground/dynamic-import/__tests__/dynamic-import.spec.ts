@@ -135,6 +135,44 @@ test('should work with load ../ and contain itself directory', async () => {
     .toMatch('dynamic-import-nested-self-content')
 })
 
+// #22700: nested `import('a').then(() => import('b'))` where `a` has a CSS
+// side-effect dep — the outer import's CSS must still be loaded in build output
+test('should load css of nested dynamic import', async () => {
+  await expect
+    .poll(() => page.textContent('.then-css-outer'))
+    .toMatch('then-css-outer')
+  await expect.poll(() => getColor('.then-css-outer')).toBe('red')
+  await expect
+    .poll(() => page.textContent('.then-css-inner'))
+    .toMatch('then-css-inner')
+  await expect.poll(() => getColor('.then-css-inner')).toBe('green')
+})
+
+// #22721: each nested dynamic import must preload its OWN chunk's css. The inner
+// import is immediately followed by its own `__vite__mapDeps(...)` (its `.then`
+// callback contains no further import, so the first dep list after it is its
+// own), so we read that list back and confirm it resolves to the inner css. A
+// pairing that walks imports front-to-back and skips already-claimed markers
+// swaps the lists, putting the outer chunk's css here instead.
+test.runIf(isBuild)(
+  'should preload its own css for a nested dynamic import',
+  () => {
+    const js = findAssetFile(/index-[-\w]{8}\.js$/) ?? ''
+    const depTable = js.match(/m\.f=(\[[^\]]*\])/)
+    const innerCall = js.match(
+      /import\([^)]*\binner-[-\w]+\.js[^)]*\)[\s\S]*?__vite__mapDeps\(\[([\d,]+)\]\)/,
+    )
+    expect(depTable, 'preload dep table not found').not.toBeNull()
+    expect(innerCall, 'inner import preload call not found').not.toBeNull()
+    const files: string[] = JSON.parse(depTable![1])
+    const innerPreloads = innerCall![1].split(',').map((i) => files[Number(i)])
+    expect(innerPreloads.some((f) => /\binner-[-\w]+\.css$/.test(f))).toBe(true)
+    expect(innerPreloads.some((f) => /\bouter-[-\w]+\.css$/.test(f))).toBe(
+      false,
+    )
+  },
+)
+
 test('should work a load path that contains parentheses.', async () => {
   await expect
     .poll(() =>
