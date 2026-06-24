@@ -1,21 +1,46 @@
 {
   "name": "vite",
-  "version": "8.1.0-beta.0",
-  "type": "module",
+  "version": "8.1.0",
+  "description": "Native-ESM powered web dev build tool",
+  "keywords": [
+    "build-tool",
+    "dev-server",
+    "framework",
+    "frontend",
+    "hmr",
+    "vite"
+  ],
+  "homepage": "https://vite.dev",
+  "bugs": {
+    "url": "https://github.com/vitejs/vite/issues"
+  },
   "license": "MIT",
   "author": "Evan You",
-  "description": "Native-ESM powered web dev build tool",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/vitejs/vite.git",
+    "directory": "packages/vite"
+  },
+  "funding": "https://github.com/vitejs/vite?sponsor=1",
   "bin": {
     "vite": "bin/vite.js"
   },
-  "keywords": [
-    "frontend",
-    "framework",
-    "hmr",
-    "dev-server",
-    "build-tool",
-    "vite"
+  "files": [
+    "bin",
+    "dist",
+    "misc/**/*.js",
+    "client.d.ts",
+    "types"
   ],
+  "type": "module",
+  "imports": {
+    "#module-sync-enabled": {
+      "module-sync": "./misc/true.js",
+      "default": "./misc/false.js"
+    },
+    "#types/*": "./types/*.d.ts",
+    "#dep-types/*": "./src/types/*.d.ts"
+  },
   "exports": {
     ".": "./dist/node/index.js",
     "./client": {
@@ -30,34 +55,6 @@
     "./types/internal/*": null,
     "./package.json": "./package.json"
   },
-  "imports": {
-    "#module-sync-enabled": {
-      "module-sync": "./misc/true.js",
-      "default": "./misc/false.js"
-    },
-    "#types/*": "./types/*.d.ts",
-    "#dep-types/*": "./src/types/*.d.ts"
-  },
-  "files": [
-    "bin",
-    "dist",
-    "misc/**/*.js",
-    "client.d.ts",
-    "types"
-  ],
-  "engines": {
-    "node": "^20.19.0 || >=22.12.0"
-  },
-  "repository": {
-    "type": "git",
-    "url": "git+https://github.com/vitejs/vite.git",
-    "directory": "packages/vite"
-  },
-  "bugs": {
-    "url": "https://github.com/vitejs/vite/issues"
-  },
-  "homepage": "https://vite.dev",
-  "funding": "https://github.com/vitejs/vite?sponsor=1",
   "scripts": {
     "dev": "premove dist && pnpm build-bundle -w",
     "build": "premove dist && pnpm build-bundle && pnpm build-types",
@@ -71,16 +68,12 @@
     "generate-target": "tsx scripts/generateTarget.ts",
     "prepublishOnly": "npm run build"
   },
-  "//": "READ CONTRIBUTING.md to understand what to put under deps vs. devDeps!",
   "dependencies": {
     "lightningcss": "^1.32.0",
     "picomatch": "^4.0.4",
     "postcss": "^8.5.15",
-    "rolldown": "~1.1.1",
+    "rolldown": "~1.1.2",
     "tinyglobby": "^0.2.17"
-  },
-  "optionalDependencies": {
-    "fsevents": "~2.3.3"
   },
   "devDependencies": {
     "@babel/parser": "^7.29.7",
@@ -95,7 +88,7 @@
     "@vercel/detect-agent": "^1.2.3",
     "@vitejs/devtools": "^0.3.3",
     "@vitest/utils": "4.1.8",
-    "@voidzero-dev/vite-task-client": "^0.1.1",
+    "@voidzero-dev/vite-task-client": "^0.2.0",
     "artichokie": "^0.4.3",
     "baseline-browser-mapping": "^2.10.37",
     "cac": "^7.0.0",
@@ -191,5 +184,12 @@
     "yaml": {
       "optional": true
     }
-  }
+  },
+  "optionalDependencies": {
+    "fsevents": "~2.3.3"
+  },
+  "engines": {
+    "node": "^20.19.0 || >=22.12.0"
+  },
+  "//": "READ CONTRIBUTING.md to understand what to put under deps vs. devDeps!"
 }

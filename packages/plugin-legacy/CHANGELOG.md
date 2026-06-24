@@ -1,3 +1,5 @@
+## [8.1.0](https://github.com/vitejs/vite/compare/plugin-legacy@8.1.0-beta.0...plugin-legacy@8.1.0) (2026-06-23)
+
 ## [8.1.0-beta.0](https://github.com/vitejs/vite/compare/plugin-legacy@8.0.2...plugin-legacy@8.1.0-beta.0) (2026-06-15)
 ### Features
 
