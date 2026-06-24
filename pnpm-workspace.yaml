@@ -48,6 +48,7 @@ minimumReleaseAge: 1440
 minimumReleaseAgeExclude:
   - rolldown
   - '@rolldown/binding-*'
+  - '@napi-rs/wasm-runtime'
 blockExoticSubdeps: true
 trustPolicy: no-downgrade
 trustPolicyExclude:
