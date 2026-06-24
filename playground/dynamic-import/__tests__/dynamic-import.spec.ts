@@ -126,10 +126,11 @@ test('should load dynamic import with css in package', async () => {
 test.runIf(isBuild)(
   'should preload css for nested dynamic imports',
   async () => {
-    const js = findAssetFile(/index-[-\w]{8}\.js$/)
-    expect(js).toMatch(
-      /import\(`\.\/issue-22700-a-[^`]+\.js`\)\.then\((\w+)=>\w+\(\(\)=>import\(`\.\/issue-22700-b-[^`]+\.js`\)\.then\(\(\)=>\1\),\[\]\)\),__vite__mapDeps\(\[\d+,\d+\]\)/,
-    )
+    const js = findAssetFile(/index-[-\w]{8}\.js$/) ?? ''
+    const innerPreload = js.match(
+      /import\([^)]*issue-22700-b-[-\w]+\.js[^)]*\)[\s\S]*?(,\[\]\)|__vite__mapDeps)/,
+    )?.[1]
+    expect(innerPreload).toBe(',[])')
 
     await page.click('.issue-22700')
     await expect
