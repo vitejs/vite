@@ -102,7 +102,7 @@ test('prompts to use ESLint for React templates in interactive mode', () => {
     '--template',
     'react-ts',
   ])
-  expect(stdout).toContain('Use ESLint instead of Oxlint?')
+  expect(stdout).toContain('Which linter to use?')
 })
 
 test('asks to overwrite non-empty target directory', () => {
