@@ -3,15 +3,20 @@
 
 import path from 'node:path'
 import kill from 'kill-port'
-import { hmrPorts, ports, rootDir } from '~utils'
+import { createInMemoryLogger, hmrPorts, ports, rootDir } from '~utils'
 
 export const port = ports['ssr-html']
+export const serverLogs: string[] = []
 
 export async function serve(): Promise<{ close(): Promise<void> }> {
   await kill(port)
 
   const { createServer } = await import(path.resolve(rootDir, 'server.js'))
-  const { app, vite } = await createServer(rootDir, hmrPorts['ssr-html'])
+  const { app, vite } = await createServer(
+    rootDir,
+    hmrPorts['ssr-html'],
+    createInMemoryLogger(serverLogs),
+  )
 
   return new Promise((resolve, reject) => {
     try {

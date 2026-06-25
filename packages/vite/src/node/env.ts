@@ -1,6 +1,8 @@
 import fs from 'node:fs'
 import path from 'node:path'
+// eslint-disable-next-line n/no-unsupported-features/node-builtins -- our supported nodejs range supports `parseEnv` but in experimental state, which is fine
 import { parseEnv } from 'node:util'
+import { getEnvs } from '@voidzero-dev/vite-task-client'
 import { type DotenvPopulateInput, expand } from 'dotenv-expand'
 import colors from 'picocolors'
 import { arraify, createDebugger, normalizePath, tryStatSync } from './utils'
@@ -24,6 +26,10 @@ export function getEnvFilesForMode(
   return []
 }
 
+/**
+ * Load `.env` files within the `envDir` and merge them with the matching
+ * variables already present in `process.env`.
+ */
 export function loadEnv(
   mode: string,
   envDir: string | false,
@@ -81,11 +87,17 @@ export function loadEnv(
     }
   }
 
+  // Vite Task may know prefixed envs not present here; fetch them and let
+  // the runner record each prefix in the build's cache key.
+  for (const prefix of prefixes) {
+    Object.assign(env, getEnvs({ prefix }))
+  }
+
   // check if there are actual env variables starting with VITE_*
   // these are typically provided inline and should be prioritized
   for (const key in process.env) {
     if (prefixes.some((prefix) => key.startsWith(prefix))) {
-      env[key] = process.env[key] as string
+      env[key] = process.env[key]!
     }
   }
 

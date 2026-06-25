@@ -39,7 +39,12 @@ export class MyElement extends LitElement {
             <code>HMR</code>
           </p>
         </div>
-        <button class="counter" @click=${this._onClick} part="button">
+        <button
+          type="button"
+          class="counter"
+          @click=${this._onClick}
+          part="button"
+        >
           Count is ${this.count}
         </button>
       </section>

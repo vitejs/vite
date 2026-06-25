@@ -1,11 +1,11 @@
 import fs from 'node:fs'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
+import util from 'node:util'
 import type { SpawnOptions } from 'node:child_process'
 import spawn from 'cross-spawn'
 import mri from 'mri'
 import * as prompts from '@clack/prompts'
-import colors from 'picocolors'
 import { determineAgent } from '@vercel/detect-agent'
 
 const {
@@ -20,7 +20,7 @@ const {
   reset,
   underline,
   yellow,
-} = colors
+} = createColors()
 
 const argv = mri<{
   template?: string
@@ -28,8 +28,9 @@ const argv = mri<{
   overwrite?: boolean
   immediate?: boolean
   interactive?: boolean
+  eslint?: boolean
 }>(process.argv.slice(2), {
-  boolean: ['help', 'overwrite', 'immediate', 'interactive'],
+  boolean: ['help', 'overwrite', 'immediate', 'interactive', 'eslint'],
   alias: { h: 'help', t: 'template', i: 'immediate' },
   string: ['template'],
 })
@@ -44,8 +45,11 @@ When running in TTY, the CLI will start in interactive mode.
 
 Options:
   -t, --template NAME                   use a specific template
-  -i, --immediate                       install dependencies and start dev
+  -i, --immediate / --no-immediate      install dependencies and start dev
+  --eslint / --no-eslint                use ESLint instead of Oxlint (only for React templates)
+  --overwrite                           remove existing files if target directory is not empty
   --interactive / --no-interactive      force interactive / non-interactive mode
+  -h, --help                            display this help message
 
 Available templates:
 ${yellow    ('vanilla-ts          vanilla'       )}
@@ -58,7 +62,7 @@ ${red       ('svelte-ts           svelte'        )}
 ${blue      ('solid-ts            solid'         )}
 ${blueBright('qwik-ts             qwik'          )}`
 
-type ColorFunc = (str: string | number) => string
+type ColorFunc = (str: string) => string
 type Framework = {
   name: string
   display: string
@@ -173,7 +177,7 @@ const FRAMEWORKS: Framework[] = [
         link: 'https://tanstack.com/router',
         color: cyan,
         customCommand:
-          'npm exec @tanstack/cli@latest -- create TARGET_DIR --template file-router --interactive',
+          'npm exec -- @tanstack/cli@latest create TARGET_DIR --framework react --interactive',
       },
       {
         name: 'redwoodsdk-standard',
@@ -275,7 +279,7 @@ const FRAMEWORKS: Framework[] = [
         link: 'https://tanstack.com/router',
         color: cyan,
         customCommand:
-          'npm exec @tanstack/cli@latest -- create TARGET_DIR --template file-router --framework solid --interactive',
+          'npm exec -- @tanstack/cli@latest create TARGET_DIR --framework solid --interactive',
       },
       {
         name: 'custom-vike-solid',
@@ -389,6 +393,7 @@ const TEMPLATES = FRAMEWORKS.map((f) => f.variants.map((v) => v.name)).reduce(
 
 const renameFiles: Record<string, string | undefined> = {
   _gitignore: '.gitignore',
+  '_oxlintrc.json': '.oxlintrc.json',
 }
 
 const defaultTargetDir = 'vite-project'
@@ -440,6 +445,7 @@ async function init() {
   const argOverwrite = argv.overwrite
   const argImmediate = argv.immediate
   const argInteractive = argv.interactive
+  const argEslint = argv.eslint
 
   const help = argv.help
   if (help) {
@@ -621,7 +627,26 @@ async function init() {
     process.exit(status ?? 0)
   }
 
-  // 5. Ask about immediate install and package manager
+  // 5. Ask whether to use ESLint instead of Oxlint (React templates only)
+  const isReactTemplate = template === 'react' || template === 'react-ts'
+  let eslint = argEslint
+  if (isReactTemplate && eslint === undefined) {
+    if (interactive) {
+      const eslintResult = await prompts.select({
+        message: 'Use ESLint instead of Oxlint?',
+        options: [
+          { label: 'No (Oxlint)', value: false },
+          { label: 'Yes (ESLint)', value: true },
+        ],
+      })
+      if (prompts.isCancel(eslintResult)) return cancel()
+      eslint = eslintResult
+    } else {
+      eslint = false
+    }
+  }
+
+  // 6. Ask about immediate install and package manager
   let immediate = argImmediate
   if (immediate === undefined) {
     if (interactive) {
@@ -677,6 +702,10 @@ async function init() {
 
   if (isReactCompiler) {
     setupReactCompiler(root, template.endsWith('-ts'))
+  }
+
+  if (eslint) {
+    setupEslint(root, template.endsWith('-ts'))
   }
 
   if (immediate) {
@@ -770,16 +799,27 @@ function pkgFromUserAgent(userAgent: string | undefined): PkgInfo | undefined {
 }
 
 function setupReactCompiler(root: string, isTs: boolean) {
+  // renovate: datasource=npm depName=@rolldown/plugin-babel
+  const babelPluginVersion = '0.2.3'
   // renovate: datasource=npm depName=babel-plugin-react-compiler
   const reactCompilerPluginVersion = '1.0.0'
+  // renovate: datasource=npm depName=@babel/core
+  const babelCoreVersion = '7.29.7'
+  // renovate: datasource=npm depName=@types/babel__core
+  const typesBabelCoreVersion = '7.20.5'
 
   editFile(path.resolve(root, 'package.json'), (content) => {
     const asObject = JSON.parse(content)
     const devDepsEntries = Object.entries(asObject.devDependencies)
+    devDepsEntries.push(['@rolldown/plugin-babel', `^${babelPluginVersion}`])
     devDepsEntries.push([
       'babel-plugin-react-compiler',
       `^${reactCompilerPluginVersion}`,
     ])
+    devDepsEntries.push(['@babel/core', `^${babelCoreVersion}`])
+    if (isTs) {
+      devDepsEntries.push(['@types/babel__core', `^${typesBabelCoreVersion}`])
+    }
     devDepsEntries.sort()
     asObject.devDependencies = Object.fromEntries(devDepsEntries)
     return JSON.stringify(asObject, null, 2) + '\n'
@@ -787,22 +827,200 @@ function setupReactCompiler(root: string, isTs: boolean) {
   editFile(
     path.resolve(root, `vite.config.${isTs ? 'ts' : 'js'}`),
     (content) => {
-      return content.replace(
-        '  plugins: [react()],',
-        `  plugins: [
-    react({
-      babel: {
-        plugins: ['babel-plugin-react-compiler'],
-      },
-    }),
+      return content
+        .replace(
+          `import react from '@vitejs/plugin-react'`,
+          `import react, { reactCompilerPreset } from '@vitejs/plugin-react'
+import babel from '@rolldown/plugin-babel'`,
+        )
+        .replace(
+          '  plugins: [react()],',
+          `  plugins: [
+    react(),
+    babel({ presets: [reactCompilerPreset()] })
   ],`,
-      )
+        )
     },
   )
   updateReactCompilerReadme(
     root,
     'The React Compiler is enabled on this template. See [this documentation](https://react.dev/learn/react-compiler) for more information.\n\nNote: This will impact Vite dev & build performances.',
   )
+}
+
+function setupEslint(root: string, isTs: boolean) {
+  // renovate: datasource=npm depName=@eslint/js
+  const eslintJsVersion = '10.0.1'
+  // renovate: datasource=npm depName=eslint
+  const eslintVersion = '10.5.0'
+  // renovate: datasource=npm depName=eslint-plugin-react-hooks
+  const eslintPluginReactHooksVersion = '7.1.1'
+  // renovate: datasource=npm depName=eslint-plugin-react-refresh
+  const eslintPluginReactRefreshVersion = '0.5.3'
+  // renovate: datasource=npm depName=globals
+  const globalsVersion = '17.6.0'
+  // renovate: datasource=npm depName=typescript-eslint
+  const typescriptEslintVersion = '8.61.0'
+
+  const eslintConfigForTS = /* js */ `import js from '@eslint/js'
+import globals from 'globals'
+import reactHooks from 'eslint-plugin-react-hooks'
+import reactRefresh from 'eslint-plugin-react-refresh'
+import tseslint from 'typescript-eslint'
+import { defineConfig, globalIgnores } from 'eslint/config'
+
+export default defineConfig([
+  globalIgnores(['dist']),
+  {
+    files: ['**/*.{ts,tsx}'],
+    extends: [
+      js.configs.recommended,
+      tseslint.configs.recommended,
+      reactHooks.configs.flat.recommended,
+      reactRefresh.configs.vite,
+    ],
+    languageOptions: {
+      globals: globals.browser,
+    },
+  },
+])
+`
+  const eslintConfigForJS = /* js */ `import js from '@eslint/js'
+import globals from 'globals'
+import reactHooks from 'eslint-plugin-react-hooks'
+import reactRefresh from 'eslint-plugin-react-refresh'
+import { defineConfig, globalIgnores } from 'eslint/config'
+
+export default defineConfig([
+  globalIgnores(['dist']),
+  {
+    files: ['**/*.{js,jsx}'],
+    extends: [
+      js.configs.recommended,
+      reactHooks.configs.flat.recommended,
+      reactRefresh.configs.vite,
+    ],
+    languageOptions: {
+      globals: globals.browser,
+      parserOptions: { ecmaFeatures: { jsx: true } },
+    },
+  },
+])
+`
+
+  fs.rmSync(path.resolve(root, '.oxlintrc.json'))
+
+  const eslintConfig = isTs ? eslintConfigForTS : eslintConfigForJS
+  fs.writeFileSync(path.resolve(root, 'eslint.config.js'), eslintConfig)
+
+  editFile(path.resolve(root, 'package.json'), (content) => {
+    const asObject = JSON.parse(content)
+    const devDepsEntries = Object.entries(asObject.devDependencies).filter(
+      ([name]) => name !== 'oxlint',
+    )
+    devDepsEntries.push(
+      ['@eslint/js', `^${eslintJsVersion}`],
+      ['eslint', `^${eslintVersion}`],
+      ['eslint-plugin-react-hooks', `^${eslintPluginReactHooksVersion}`],
+      ['eslint-plugin-react-refresh', `^${eslintPluginReactRefreshVersion}`],
+      ['globals', `^${globalsVersion}`],
+    )
+    if (isTs) {
+      devDepsEntries.push(['typescript-eslint', `^${typescriptEslintVersion}`])
+    }
+    devDepsEntries.sort()
+    asObject.devDependencies = Object.fromEntries(devDepsEntries)
+    asObject.scripts.lint = 'eslint .'
+    return JSON.stringify(asObject, null, 2) + '\n'
+  })
+
+  editFile(path.resolve(root, 'README.md'), (content) => {
+    content = content.replace(
+      'with HMR and some Oxlint rules',
+      'with HMR and some ESLint rules',
+    )
+    const headingIndex = content.indexOf(
+      '## Expanding the Oxlint configuration',
+    )
+    if (headingIndex === -1) {
+      console.warn('Could not update Oxlint section in README.md')
+      return content
+    }
+    const eslintTypeAwareConfig =
+      /* js */ `export default defineConfig([
+  globalIgnores(['dist']),
+  {
+    files: ['**/*.{ts,tsx}'],
+    extends: [
+      // Other configs...
+
+      // Remove tseslint.configs.recommended and replace with this
+      tseslint.configs.recommendedTypeChecked,
+      // Alternatively, use this for stricter rules
+      tseslint.configs.strictTypeChecked,
+      // Optionally, add this for stylistic rules
+      tseslint.configs.stylisticTypeChecked,
+
+      // Other configs...
+    ],
+    languageOptions: {
+      parserOptions: {
+        project: ['./tsconfig.node.json', './tsconfig.app.json'],
+        tsconfigRootDir: import.meta.dirname,
+      },
+      // other options...
+    },
+  },
+])
+`
+    const eslintReactConfig =
+      /* js */ `// eslint.config.js
+import reactX from 'eslint-plugin-react-x'
+import reactDom from 'eslint-plugin-react-dom'
+
+export default defineConfig([
+  globalIgnores(['dist']),
+  {
+    files: ['**/*.{ts,tsx}'],
+    extends: [
+      // Other configs...
+      // Enable lint rules for React
+      reactX.configs['recommended-typescript'],
+      // Enable lint rules for React DOM
+      reactDom.configs.recommended,
+    ],
+    languageOptions: {
+      parserOptions: {
+        project: ['./tsconfig.node.json', './tsconfig.app.json'],
+        tsconfigRootDir: import.meta.dirname,
+      },
+      // other options...
+    },
+  },
+])
+`
+
+    const eslintSection = isTs
+      ? `## Expanding the ESLint configuration
+
+If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
+
+\`\`\`js
+${eslintTypeAwareConfig}
+\`\`\`
+
+You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
+
+\`\`\`js
+${eslintReactConfig}
+\`\`\`
+`
+      : `## Expanding the ESLint configuration
+
+If you are developing a production application, we recommend using TypeScript with type-aware lint rules enabled. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) for information on how to integrate TypeScript and [\`typescript-eslint\`](https://typescript-eslint.io) in your project.
+`
+    return content.slice(0, headingIndex) + eslintSection
+  })
 }
 
 function updateReactCompilerReadme(root: string, newBody: string) {
@@ -853,9 +1071,10 @@ function getFullCustomCommand(customCommand: string, pkgInfo?: PkgInfo) {
       })
       // Only Yarn 1.x doesn't support `@version` in the `create` command
       .replace('@latest', () => (isYarn1 ? '' : '@latest'))
-      .replace(/^npm exec /, () => {
+      .replace(/^npm exec (?:-- )?/, () => {
         // Prefer `pnpm dlx`, `yarn dlx`, or `bun x`
         if (pkgManager === 'pnpm') {
+          // pnpm doesn't support the -- syntax
           return 'pnpm dlx '
         }
         if (pkgManager === 'yarn' && !isYarn1) {
@@ -869,7 +1088,9 @@ function getFullCustomCommand(customCommand: string, pkgInfo?: PkgInfo) {
         }
         // Use `npm exec` in all other cases,
         // including Yarn 1.x and other custom npm clients.
-        return 'npm exec '
+        return customCommand.startsWith('npm exec -- ')
+          ? 'npm exec -- '
+          : 'npm exec '
       })
   )
 }
@@ -902,6 +1123,17 @@ function getRunCommand(agent: string, script: string) {
     default:
       return [agent, 'run', script]
   }
+}
+
+type ColorName = Exclude<Parameters<typeof util.styleText>[0], any[]>
+
+function createColors() {
+  return new Proxy({} as Record<ColorName, ColorFunc>, {
+    get(_, prop: ColorName) {
+      // eslint-disable-next-line n/no-unsupported-features/node-builtins -- our supported nodejs range supports `styleText` but in experimental state, which is fine
+      return (str: string) => util.styleText(prop, str)
+    },
+  })
 }
 
 init().catch((e) => {

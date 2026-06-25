@@ -1,13 +1,20 @@
 import http from 'node:http'
+import os from 'node:os'
 import path from 'node:path'
 import fs from 'node:fs'
-import { afterEach, describe, expect, test, vi } from 'vitest'
+import { afterEach, assert, describe, expect, test, vi } from 'vitest'
 import type { InlineConfig, PluginOption } from '..'
 import type { UserConfig, UserConfigExport } from '../config'
 import { defineConfig, loadConfigFromFile, resolveConfig } from '../config'
+import { resolveServerOptions } from '../server'
 import { resolveEnvPrefix } from '../env'
-import { mergeConfig } from '../utils'
+import {
+  hasBothRollupOptionsAndRolldownOptions,
+  mergeConfig,
+  normalizePath,
+} from '../utils'
 import { createLogger } from '../logger'
+import type { Logger } from '../logger'
 
 describe('mergeConfig', () => {
   test('handles configs with different alias schemas', () => {
@@ -286,7 +293,11 @@ describe('mergeConfig', () => {
     }
 
     const mergedConfig = {
-      server: { allowedHosts: true },
+      server: {
+        allowedHosts: true,
+        hmr: expect.any(Object),
+        ws: expect.any(Object),
+      },
     }
 
     expect(mergeConfig(baseConfig, newConfig)).toEqual(mergedConfig)
@@ -313,26 +324,26 @@ describe('mergeConfig', () => {
     ).toThrowError('Cannot merge config in form of callback')
   })
 
-  test('handles `rollupOptions`', () => {
+  test('handles `rolldownOptions`', () => {
     const baseConfig = defineConfig({
       build: {
-        rollupOptions: {
+        rolldownOptions: {
           treeshake: false,
         },
       },
       worker: {
-        rollupOptions: {
+        rolldownOptions: {
           treeshake: false,
         },
       },
       optimizeDeps: {
-        rollupOptions: {
+        rolldownOptions: {
           treeshake: false,
         },
       },
       ssr: {
         optimizeDeps: {
-          rollupOptions: {
+          rolldownOptions: {
             treeshake: false,
           },
         },
@@ -341,21 +352,21 @@ describe('mergeConfig', () => {
 
     const newConfig = defineConfig({
       build: {
-        rollupOptions: {
+        rolldownOptions: {
           output: {
             minifyInternalExports: true,
           },
         },
       },
       worker: {
-        rollupOptions: {
+        rolldownOptions: {
           output: {
             minifyInternalExports: true,
           },
         },
       },
       optimizeDeps: {
-        rollupOptions: {
+        rolldownOptions: {
           output: {
             minifyInternalExports: true,
           },
@@ -363,7 +374,7 @@ describe('mergeConfig', () => {
       },
       ssr: {
         optimizeDeps: {
-          rollupOptions: {
+          rolldownOptions: {
             output: {
               minifyInternalExports: true,
             },
@@ -560,6 +571,46 @@ describe('mergeConfig', () => {
     expect(downOutput.hashCharacters).toBe('base36')
   })
 
+  test('hasBothRollupOptionsAndRolldownOptions returns false when only rollupOptions is set', () => {
+    // When mergeConfig is called with only rollupOptions in the override,
+    // setupRollupOptionCompat creates a proxy where rollupOptions === rolldownOptions.
+    // hasBothRollupOptionsAndRolldownOptions should return false in this case
+    // to avoid false positive warnings.
+    const baseConfig = defineConfig({
+      build: {}, // Need existing build object for recursive merge to happen
+    })
+    const newConfig = defineConfig({
+      build: {
+        rollupOptions: {
+          treeshake: false,
+        },
+      },
+    })
+    const mergedConfig: UserConfig = mergeConfig(baseConfig, newConfig)
+
+    expect(mergedConfig.build!.rollupOptions).toBeDefined()
+    expect(mergedConfig.build!.rolldownOptions).toBeDefined()
+    expect(mergedConfig.build!.rollupOptions).toBe(
+      mergedConfig.build!.rolldownOptions,
+    )
+
+    expect(hasBothRollupOptionsAndRolldownOptions(mergedConfig)).toBe(false)
+  })
+
+  test('hasBothRollupOptionsAndRolldownOptions returns true when both are explicitly set to different values', () => {
+    const config = defineConfig({
+      build: {
+        rollupOptions: {
+          treeshake: false,
+        },
+        rolldownOptions: {
+          platform: 'neutral',
+        },
+      },
+    })
+    expect(hasBothRollupOptionsAndRolldownOptions(config)).toBe(true)
+  })
+
   test('rollupOptions/rolldownOptions.platform', async () => {
     const testRollupOptions = await resolveConfig(
       {
@@ -616,6 +667,134 @@ describe('mergeConfig', () => {
     expect(
       testRolldownOptions.environments.client.build.rolldownOptions.platform,
     ).toBe('browser')
+  })
+
+  test('resolved build options keep rollupOptions as a live proxy of rolldownOptions', async () => {
+    const config = await resolveConfig({}, 'serve')
+
+    for (const build of [
+      config.build,
+      config.environments.client.build,
+      config.environments.ssr.build,
+    ]) {
+      // Reassigning `rolldownOptions` must be reflected through the `rollupOptions` getter.
+      const newOptions = { treeshake: false }
+      build.rolldownOptions = newOptions
+      expect(build.rollupOptions).toBe(newOptions)
+
+      // Assigning through `rollupOptions` must update `rolldownOptions` too.
+      const newerOptions = { treeshake: true }
+      build.rollupOptions = newerOptions
+      expect(build.rolldownOptions).toBe(newerOptions)
+    }
+  })
+
+  test('syncs `server.hmr.*` to `server.ws.*`', () => {
+    const baseConfig = defineConfig({
+      server: {
+        hmr: {
+          protocol: 'wss',
+          host: 'example.com',
+          port: 3001,
+          clientPort: 443,
+          path: '/ws',
+          timeout: 60000,
+        },
+      },
+    })
+
+    const mergedConfig = mergeConfig(
+      {
+        server: { ws: {} },
+      },
+      baseConfig,
+    )
+
+    expect(mergedConfig.server.ws).toStrictEqual({
+      protocol: 'wss',
+      host: 'example.com',
+      port: 3001,
+      clientPort: 443,
+      path: '/ws',
+      timeout: 60000,
+    })
+    expect(mergedConfig.server.hmr).toStrictEqual({
+      protocol: 'wss',
+      host: 'example.com',
+      port: 3001,
+      clientPort: 443,
+      path: '/ws',
+      timeout: 60000,
+      server: undefined,
+    })
+  })
+
+  test('mergeConfig works with `server.ws` and `server.hmr`', () => {
+    const baseConfig = defineConfig({
+      server: {
+        ws: {
+          host: 'old-host.com',
+          port: 3001,
+        },
+      },
+    })
+
+    const newConfig = defineConfig({
+      server: {
+        hmr: {
+          host: 'new-host.com',
+          port: 3002,
+        },
+      },
+    })
+
+    const mergedConfig = mergeConfig(baseConfig, newConfig)
+
+    expect(mergedConfig.server.ws.host).toBe('new-host.com')
+    expect(mergedConfig.server.hmr.host).toBe('new-host.com')
+    expect(mergedConfig.server.ws.port).toBe(3002)
+    expect(mergedConfig.server.hmr.port).toBe(3002)
+  })
+
+  test('`server.hmr.overlay` is not mapped to `server.ws.overlay`', () => {
+    const config = mergeConfig(
+      {},
+      defineConfig({
+        server: {
+          hmr: {
+            overlay: false,
+          },
+        },
+      }),
+    )
+
+    expect(config.server.hmr.overlay).toBe(false)
+    // overlay should not be synced to ws
+    expect(config.server.ws?.overlay).toBeUndefined()
+  })
+
+  test('resolveConfig properly syncs hmr and ws', async () => {
+    const config = await resolveConfig(
+      {
+        server: {
+          hmr: {
+            host: 'test-host.com',
+            port: 4000,
+          },
+        },
+      },
+      'serve',
+    )
+
+    assert(typeof config.server.ws === 'object')
+    expect(config.server.ws.host).toBe('test-host.com')
+    expect(config.server.ws.port).toBe(4000)
+
+    assert(typeof config.server.hmr === 'object')
+    config.server.hmr!.host = 'new-host.com'
+
+    expect(config.server.ws.host).toBe('new-host.com')
+    expect(config.server.hmr.host).toBe('new-host.com')
   })
 
   describe('later plugin can read `rollupOptions` set via `rolldownOptions` in earlier plugin', () => {
@@ -875,7 +1054,7 @@ describe('resolveConfig', () => {
     const logger = createLogger('info')
     logger.warn = (str) => {
       expect(str).to.include(
-        'Consider renaming the directory / file to remove the characters',
+        'Consider renaming the directory without the characters',
       )
     }
 
@@ -1048,6 +1227,51 @@ test('config compat 3', async () => {
       "development|production",
     ]
   `)
+})
+
+test('configEnvironment mutation does not leak between environments', async () => {
+  const resolved = await resolveConfig(
+    {
+      environments: {
+        custom1: {},
+        custom2: {},
+      },
+      plugins: [
+        {
+          name: 'test-mutate-env',
+          configEnvironment(name, config) {
+            if (name === 'custom1') {
+              config.resolve ??= {}
+              config.resolve.noExternal = true
+            }
+          },
+        },
+      ],
+    },
+    'serve',
+  )
+
+  expect(resolved.environments.custom1.resolve.noExternal).toBe(true)
+  expect(resolved.environments.custom2.resolve.noExternal).not.toBe(true)
+})
+
+test('build and environments.client.build has the same reference', async () => {
+  const nameCache = {}
+  const resolved = await resolveConfig(
+    {
+      build: {
+        terserOptions: {
+          nameCache,
+        },
+      },
+    },
+    'serve',
+  )
+
+  expect(resolved.build.terserOptions.nameCache).toBe(nameCache)
+  expect(resolved.environments.client.build.terserOptions.nameCache).toBe(
+    resolved.build.terserOptions.nameCache,
+  )
 })
 
 test('preTransformRequests', async () => {
@@ -1330,5 +1554,142 @@ describe('loadConfigFromFile', () => {
       `)
       expect(result.dependencies.length).toBe(0)
     })
+  })
+
+  describe('cacheDir resolution', () => {
+    // Use /tmp to avoid findNearestPackageData finding a parent package.json
+    const tmpBase = path.join(os.tmpdir(), 'vite-cachedir-test')
+
+    afterEach(() => {
+      if (fs.existsSync(tmpBase)) {
+        fs.rmSync(tmpBase, { recursive: true, force: true })
+      }
+    })
+
+    test('uses node_modules/.vite when node_modules exists without package.json', async () => {
+      const tempDir = path.join(tmpBase, 'with-node-modules')
+      const nodeModulesDir = path.join(tempDir, 'node_modules')
+      fs.mkdirSync(nodeModulesDir, { recursive: true })
+
+      const config = await resolveConfig({ root: tempDir }, 'serve')
+
+      expect(config.cacheDir).toBe(
+        normalizePath(path.resolve(tempDir, 'node_modules/.vite')),
+      )
+    })
+
+    test('uses .vite when neither package.json nor node_modules exist', async () => {
+      const tempDir = path.join(tmpBase, 'empty')
+      fs.mkdirSync(tempDir, { recursive: true })
+
+      const config = await resolveConfig({ root: tempDir }, 'serve')
+
+      expect(config.cacheDir).toBe(
+        normalizePath(path.resolve(tempDir, '.vite')),
+      )
+    })
+  })
+})
+
+describe('resolveServerOptions', () => {
+  const warnFn = vi.fn()
+  const logger = { warn: warnFn } as unknown as Logger
+
+  afterEach(() => {
+    delete process.env.__VITE_ADDITIONAL_SERVER_ALLOWED_HOSTS
+  })
+
+  test('adds single host from __VITE_ADDITIONAL_SERVER_ALLOWED_HOSTS', async () => {
+    process.env.__VITE_ADDITIONAL_SERVER_ALLOWED_HOSTS = 'example.com'
+    const resolved = await resolveServerOptions(
+      '/root',
+      { allowedHosts: [] },
+      logger,
+    )
+    expect(resolved.allowedHosts).toEqual(['example.com'])
+  })
+
+  test('adds multiple hosts from __VITE_ADDITIONAL_SERVER_ALLOWED_HOSTS', async () => {
+    process.env.__VITE_ADDITIONAL_SERVER_ALLOWED_HOSTS =
+      'example.com,test.com,dev.example.org'
+    const resolved = await resolveServerOptions(
+      '/root',
+      { allowedHosts: [] },
+      logger,
+    )
+    expect(resolved.allowedHosts).toEqual([
+      'example.com',
+      'test.com',
+      'dev.example.org',
+    ])
+  })
+
+  test('trims whitespace from hosts in __VITE_ADDITIONAL_SERVER_ALLOWED_HOSTS', async () => {
+    process.env.__VITE_ADDITIONAL_SERVER_ALLOWED_HOSTS =
+      ' example.com , test.com , dev.example.org '
+    const resolved = await resolveServerOptions(
+      '/root',
+      { allowedHosts: [] },
+      logger,
+    )
+    expect(resolved.allowedHosts).toEqual([
+      'example.com',
+      'test.com',
+      'dev.example.org',
+    ])
+  })
+
+  test('filters empty hosts from __VITE_ADDITIONAL_SERVER_ALLOWED_HOSTS', async () => {
+    process.env.__VITE_ADDITIONAL_SERVER_ALLOWED_HOSTS =
+      'example.com,,test.com,,'
+    const resolved = await resolveServerOptions(
+      '/root',
+      { allowedHosts: [] },
+      logger,
+    )
+    expect(resolved.allowedHosts).toEqual(['example.com', 'test.com'])
+  })
+
+  test('appends to existing allowedHosts', async () => {
+    process.env.__VITE_ADDITIONAL_SERVER_ALLOWED_HOSTS = 'new.com,another.com'
+    const resolved = await resolveServerOptions(
+      '/root',
+      { allowedHosts: ['existing.com'] },
+      logger,
+    )
+    expect(resolved.allowedHosts).toEqual([
+      'existing.com',
+      'new.com',
+      'another.com',
+    ])
+  })
+
+  test('does not modify allowedHosts when set to true', async () => {
+    process.env.__VITE_ADDITIONAL_SERVER_ALLOWED_HOSTS = 'example.com'
+    const resolved = await resolveServerOptions(
+      '/root',
+      { allowedHosts: true },
+      logger,
+    )
+    expect(resolved.allowedHosts).toBe(true)
+  })
+
+  test('throw an error if it contains `"` or `\'` or `\\`', async () => {
+    const envs = ['"example.com"', "'example.com'", '\\example.com']
+    for (const env of envs) {
+      process.env.__VITE_ADDITIONAL_SERVER_ALLOWED_HOSTS = env
+      const resolved = await resolveServerOptions(
+        '/root',
+        { allowedHosts: [] },
+        logger,
+      )
+      expect(resolved.allowedHosts).toEqual([])
+      expect(warnFn).toHaveBeenCalledWith(
+        expect.stringContaining(
+          'Skipping additional allowed hosts from environment variable due to reserved characters',
+        ),
+      )
+      warnFn.mockClear()
+    }
   })
 })

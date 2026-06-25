@@ -4,8 +4,10 @@
     "noEmit": true,
     "paths": {
       "@/*": ["./src/*"],
-      "@fallback/*": ["./src/*", "./fallback/*"]
+      "@fallback/*": ["./src/*", "./fallback/*"],
+      "#/*": ["./src/*"]
     }
   },
+  "include": ["**/*", "index.html"],
   "exclude": ["./__tests__"]
 }

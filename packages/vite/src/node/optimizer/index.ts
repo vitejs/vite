@@ -3,6 +3,7 @@ import fsp from 'node:fs/promises'
 import path from 'node:path'
 import { promisify } from 'node:util'
 import { performance } from 'node:perf_hooks'
+import { ignoreInput, ignoreOutput } from '@voidzero-dev/vite-task-client'
 import colors from 'picocolors'
 import { init, parse } from 'es-module-lexer'
 import { isDynamicPattern } from 'tinyglobby'
@@ -176,7 +177,7 @@ export interface DepOptimizationConfig {
 export type DepOptimizationOptions = DepOptimizationConfig & {
   /**
    * By default, Vite will crawl your `index.html` to detect dependencies that
-   * need to be pre-bundled. If `build.rollupOptions.input` is specified, Vite
+   * need to be pre-bundled. If `build.rolldownOptions.input` is specified, Vite
    * will crawl those entry points instead.
    *
    * If neither of these fit your needs, you can specify custom entries using
@@ -396,6 +397,14 @@ export async function loadCachedDepOptimizationMetadata(
   }
 
   const depsCacheDir = getDepsCacheDir(environment)
+
+  // When run inside Vite Task, the dep optimizer cache is both read and
+  // written under this directory (metadata + pre-bundled deps). Tell Vite
+  // Task to treat it as neither a build input nor a build output: the
+  // lockfile hash stored in the metadata already drives re-optimization,
+  // and the cache is process-local scratch space, not a build artifact.
+  ignoreInput(depsCacheDir)
+  ignoreOutput(depsCacheDir)
 
   if (!force) {
     let cachedMetadata: DepOptimizationMetadata | undefined
@@ -644,6 +653,12 @@ export function runOptimizeDeps(
 
   const start = performance.now()
 
+  const bundleTimer = setTimeout(() => {
+    environment.logger.info('[optimizer] bundling dependencies...', {
+      timestamp: true,
+    })
+  }, 1000)
+
   const preparedRun = prepareRolldownOptimizerRun(
     environment,
     depsInfo,
@@ -653,6 +668,7 @@ export function runOptimizeDeps(
 
   const runResult = preparedRun.then(({ context, idToExports }) => {
     if (!context || optimizerContext.cancelled) {
+      clearTimeout(bundleTimer)
       return cancelledResult
     }
 
@@ -712,6 +728,8 @@ export function runOptimizeDeps(
           }
         }
 
+        clearTimeout(bundleTimer)
+
         debug?.(
           `Dependencies bundled in ${(performance.now() - start).toFixed(2)}ms`,
         )
@@ -720,6 +738,7 @@ export function runOptimizeDeps(
       })
 
       .catch((e) => {
+        clearTimeout(bundleTimer)
         if (e.errors && e.message.includes('The build was canceled')) {
           // an error happens when cancelling, but this is expected so
           // return an empty result instead
@@ -826,8 +845,8 @@ async function prepareRolldownOptimizerRun(
       plugins,
       platform,
       transform: {
-        ...rolldownOptions.transform,
         target: ESBUILD_BASELINE_WIDELY_AVAILABLE_TARGET,
+        ...rolldownOptions.transform,
         define,
       },
       resolve: {
@@ -845,15 +864,17 @@ async function prepareRolldownOptimizerRun(
       await bundle.close()
       throw new Error('The build was canceled')
     }
-    const result = await bundle.write({
-      ...rolldownOptions.output,
-      format: 'esm',
-      sourcemap: true,
-      dir: processingCacheDir,
-      entryFileNames: '[name].js',
-    })
-    await bundle.close()
-    return result
+    try {
+      return await bundle.write({
+        ...rolldownOptions.output,
+        format: 'esm',
+        sourcemap: 'hidden',
+        dir: processingCacheDir,
+        entryFileNames: '[name].js',
+      })
+    } finally {
+      await bundle.close()
+    }
   }
 
   function cancel() {
@@ -1146,7 +1167,7 @@ export async function extractExportsData(
       `Unable to parse: ${filePath}.\n Trying again with a ${lang} transform.`,
     )
     if (lang !== 'jsx' && lang !== 'tsx' && lang !== 'ts') {
-      throw new Error(`Unable to parse : ${filePath}.`)
+      throw new Error(`Unable to parse: ${filePath}.`)
     }
     const transformed = await transformWithOxc(
       entryContent,

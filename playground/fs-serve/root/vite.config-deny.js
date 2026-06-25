@@ -4,11 +4,12 @@ import svgVirtualModulePlugin from './svgVirtualModulePlugin'
 
 export default defineConfig({
   build: {
-    rollupOptions: {
+    rolldownOptions: {
       input: {
         main: path.resolve(import.meta.dirname, 'src/index.html'),
       },
     },
+    outDir: 'dist/deny',
   },
   server: {
     fs: {

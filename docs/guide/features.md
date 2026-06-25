@@ -12,7 +12,7 @@ import { someMethod } from 'my-dep'
 
 The above import will throw an error in the browser. Vite will detect such bare module imports in all served source files and perform the following:
 
-1. [Pre-bundle](./dep-pre-bundling) them to improve page loading speed and convert CommonJS / UMD modules to ESM. The pre-bundling step is performed with [esbuild](https://esbuild.github.io/) and makes Vite's cold start time significantly faster than any JavaScript-based bundler.
+1. [Pre-bundle](./dep-pre-bundling) them to improve page loading speed and convert CommonJS / UMD modules to ESM. The pre-bundling step is performed with [Rolldown](https://rolldown.rs/) and makes Vite's cold start time significantly faster than any JavaScript-based bundler.
 
 2. Rewrite the imports to valid URLs like `/node_modules/.vite/deps/my-dep.js?v=f3sf2ebd` so that the browser can import them properly.
 
@@ -42,7 +42,7 @@ Vite's job is to get your source modules into a form that can run in the browser
 
 - During development, if you need more than IDE hints, we recommend running `tsc --noEmit --watch` in a separate process, or use [vite-plugin-checker](https://github.com/fi3ework/vite-plugin-checker) if you prefer having type errors directly reported in the browser.
 
-Vite uses [esbuild](https://github.com/evanw/esbuild) to transpile TypeScript into JavaScript which is about 20~30x faster than vanilla `tsc`, and HMR updates can reflect in the browser in under 50ms.
+Vite uses [Oxc Transformer](https://oxc.rs/docs/guide/usage/transformer.html) to transpile TypeScript into JavaScript which is faster than vanilla `tsc`, and HMR updates can reflect in the browser in under 50ms.
 
 Use the [Type-Only Imports and Export](https://www.typescriptlang.org/docs/handbook/release-notes/typescript-3-8.html#type-only-imports-and-export) syntax to avoid potential problems like type-only imports being incorrectly bundled, for example:
 
@@ -53,7 +53,7 @@ export type { T }
 
 ### TypeScript Compiler Options
 
-Vite respects some of the options in `tsconfig.json` and sets the corresponding esbuild options. For each file, Vite uses the `tsconfig.json` in the closest parent directory. If that `tsconfig.json` contains a [`references`](https://www.typescriptlang.org/tsconfig/#references) field, Vite will use the referenced config file that satisfies the [`include`](https://www.typescriptlang.org/tsconfig/#include) and [`exclude`](https://www.typescriptlang.org/tsconfig/#exclude) fields.
+Vite respects some of the options in `tsconfig.json` and sets the corresponding Oxc Transformer options. For each file, Vite uses the `tsconfig.json` in the closest parent directory. If that `tsconfig.json` contains a [`references`](https://www.typescriptlang.org/tsconfig/#references) field, Vite will use the referenced config file that satisfies the [`include`](https://www.typescriptlang.org/tsconfig/#include) and [`exclude`](https://www.typescriptlang.org/tsconfig/#exclude) fields.
 
 When the options are set in both the Vite config and the `tsconfig.json`, the value in the Vite config takes precedence.
 
@@ -65,7 +65,7 @@ Some configuration fields under `compilerOptions` in `tsconfig.json` require spe
 
 Should be set to `true`.
 
-It is because `esbuild` only performs transpilation without type information, it doesn't support certain features like const enum and implicit type-only imports.
+It is because Oxc transformer only performs transpilation without type information, it doesn't support certain features like const enum and implicit type-only imports.
 
 You must set `"isolatedModules": true` in your `tsconfig.json` under `compilerOptions`, so that TS will warn you against the features that do not work with isolated transpilation.
 
@@ -87,15 +87,15 @@ While most libraries expect `"useDefineForClassFields": true`, you can explicitl
 
 - [TypeScript documentation](https://www.typescriptlang.org/tsconfig#target)
 
-Vite ignores the `target` value in the `tsconfig.json`, following the same behavior as `esbuild`.
+Vite ignores the `target` value in the `tsconfig.json`, following the same behavior as [esbuild](https://esbuild.github.io/).
 
-To specify the target in dev, the [`esbuild.target`](/config/shared-options.html#esbuild) option can be used, which defaults to `esnext` for minimal transpilation. In builds, the [`build.target`](/config/build-options.html#build-target) option takes higher priority over `esbuild.target` and can also be set if needed.
+To specify the target in dev, the [`oxc.target`](/config/shared-options.html#oxc) option can be used, which defaults to `esnext` for minimal transpilation. In builds, the [`build.target`](/config/build-options.html#build-target) option takes higher priority over `oxc.target` and can also be set if needed.
 
 #### `emitDecoratorMetadata`
 
 - [TypeScript documentation](https://www.typescriptlang.org/tsconfig#emitDecoratorMetadata)
 
-This option is only partially supported. Full support requires type inference by the TypeScript compiler, which is not supported. See [Oxc Transformer's documentation](https://oxc.rs/docs/guide/usage/transformer/typescript#decorators) for details.
+This option is only partially supported. Full support requires type inference by the TypeScript compiler, which is not supported. See [Oxc Transformer's documentation](https://oxc.rs/docs/guide/usage/transformer/typescript.html#decorators) for details.
 
 #### `paths`
 
@@ -235,24 +235,25 @@ Check out the [Plugins Guide](/plugins/) for more information.
 
 ## JSX
 
-`.jsx` and `.tsx` files are also supported out of the box. JSX transpilation is also handled via [esbuild](https://esbuild.github.io).
+`.jsx` and `.tsx` files are also supported out of the box. JSX transpilation is also handled via [Oxc Transformer](https://oxc.rs/docs/guide/usage/transformer.html).
 
 Your framework of choice will already configure JSX out of the box (for example, Vue users should use the official [@vitejs/plugin-vue-jsx](https://github.com/vitejs/vite-plugin-vue/tree/main/packages/plugin-vue-jsx) plugin, which provides Vue 3 specific features including HMR, global component resolving, directives and slots).
 
-If using JSX with your own framework, custom `jsxFactory` and `jsxFragment` can be configured using the [`esbuild` option](/config/shared-options.md#esbuild). For example, the Preact plugin would use:
+If using JSX with your own framework, custom `jsxFactory` and `jsxFragment` can be configured using the [`oxc` option](/config/shared-options.md#oxc). For example, the Preact plugin would use:
 
 ```js twoslash [vite.config.js]
 import { defineConfig } from 'vite'
 
 export default defineConfig({
-  esbuild: {
-    jsxFactory: 'h',
-    jsxFragment: 'Fragment',
+  oxc: {
+    jsx: {
+      importSource: 'preact',
+    },
   },
 })
 ```
 
-More details in [esbuild docs](https://esbuild.github.io/content-types/#jsx).
+More details in [Oxc Transformer docs](https://oxc.rs/docs/guide/usage/transformer/jsx.html).
 
 You can inject the JSX helpers using `jsxInject` (which is a Vite-only option) to avoid manual imports:
 
@@ -260,7 +261,7 @@ You can inject the JSX helpers using `jsxInject` (which is a Vite-only option) t
 import { defineConfig } from 'vite'
 
 export default defineConfig({
-  esbuild: {
+  oxc: {
     jsxInject: `import React from 'react'`,
   },
 })
@@ -353,17 +354,11 @@ Default and named imports from CSS files (e.g `import style from './foo.css'`) a
 
 ### Lightning CSS
 
-Starting from Vite 4.4, there is experimental support for [Lightning CSS](https://lightningcss.dev/). You can opt into it by adding [`css.transformer: 'lightningcss'`](../config/shared-options.md#css-transformer) to your config file and install the optional [`lightningcss`](https://www.npmjs.com/package/lightningcss) dependency:
+Vite uses [Lightning CSS](https://lightningcss.dev/) to minify CSS in production builds by default. However, PostCSS is still used for other CSS processing.
 
-```bash
-npm add -D lightningcss
-```
+There is experimental support for using Lightning CSS for CSS processing entirely. You can opt into it by adding [`css.transformer: 'lightningcss'`](../config/shared-options.md#css-transformer).
 
-If enabled, CSS files will be processed by Lightning CSS instead of PostCSS. To configure it, you can pass Lightning CSS options to the [`css.lightningcss`](../config/shared-options.md#css-lightningcss) config option.
-
-To configure CSS Modules, you'll use [`css.lightningcss.cssModules`](https://lightningcss.dev/css-modules.html) instead of [`css.modules`](../config/shared-options.md#css-modules) (which configures the way PostCSS handles CSS modules).
-
-By default, Vite uses esbuild to minify CSS. Lightning CSS can also be used as the CSS minifier with [`build.cssMinify: 'lightningcss'`](../config/build-options.md#build-cssminify).
+To configure it, you can pass Lightning CSS options to the [`css.lightningcss`](../config/shared-options.md#css-lightningcss) config option. To configure CSS Modules, you should use [`css.lightningcss.cssModules`](https://lightningcss.dev/css-modules.html) instead of [`css.modules`](../config/shared-options.md#css-modules) (which configures the way PostCSS handles CSS modules).
 
 ## Static Assets
 
@@ -625,6 +620,20 @@ Only the globs that are relative paths are interpreted as relative to the resolv
 
 All the resulting module keys are modified to be relative to the base if provided.
 
+#### Case Sensitive Matching
+
+By default, glob pattern matching is case-sensitive. You can use the `caseSensitive` option to change this behavior:
+
+```ts twoslash
+import 'vite/client'
+// ---cut---
+const modules = import.meta.glob('./dir/module*.js', {
+  caseSensitive: false,
+})
+```
+
+With `caseSensitive: false`, the glob will match files regardless of case (e.g., `Module.js`, `module.js`, `MODULE.js` will all be matched by `module*.js`).
+
 ### Glob Import Caveats
 
 Note that:
@@ -654,8 +663,25 @@ These rules are enforced to prevent accidentally importing files that are not in
 
 ## WebAssembly
 
-Pre-compiled `.wasm` files can be imported with `?init`.
-The default export will be an initialization function that returns a Promise of the [`WebAssembly.Instance`](https://developer.mozilla.org/en-US/docs/WebAssembly/JavaScript_interface/Instance):
+Vite supports importing pre-compiled `.wasm` files in two ways: directly as an [ES module](#esm-integration) when you only need the module's exports, or with [`?init`](#manual-initialization) when you need explicit control over instantiation.
+
+### ESM Integration
+
+A `.wasm` file can be imported directly. Vite reads the module's imports and exports from the binary, instantiates it, and re-exposes its exports as named ES module exports:
+
+```js
+import { add } from './add.wasm'
+
+console.log(add(1, 2)) // 3
+```
+
+If the WebAssembly module declares imports of its own, Vite resolves them from JavaScript modules. Each import's module name is treated as an import specifier (resolved relative to the `.wasm` file) and the requested members are wired into the instance automatically.
+
+This follows the [WebAssembly/ES Module Integration proposal](https://github.com/WebAssembly/esm-integration). Because a WebAssembly module is instantiated asynchronously, a directly imported `.wasm` file behaves as an async module and requires top-level `await` support.
+
+### Manual Initialization
+
+When you need control over when and how the module is instantiated, import it with `?init`. The default export will be an initialization function that returns a Promise of the [`WebAssembly.Instance`](https://developer.mozilla.org/en-US/docs/WebAssembly/JavaScript_interface/Instance):
 
 ```js twoslash
 import 'vite/client'
@@ -686,14 +712,9 @@ init({
 
 In the production build, `.wasm` files smaller than `assetInlineLimit` will be inlined as base64 strings. Otherwise, they will be treated as a [static asset](./assets) and fetched on-demand.
 
-::: tip NOTE
-[ES Module Integration Proposal for WebAssembly](https://github.com/WebAssembly/esm-integration) is not currently supported.
-Use [`vite-plugin-wasm`](https://github.com/Menci/vite-plugin-wasm) or other community plugins to handle this.
-:::
-
 ::: warning For SSR build, Node.js compatible runtimes are only supported
 
-Due to the lack of a universal way to load a file, the internal implementation for `.wasm?init` relies on `node:fs` module. This means that this feature will only work in Node.js compatible runtimes for SSR builds.
+Due to the lack of a universal way to load a file, the internal implementation for both direct `.wasm` imports and `.wasm?init` relies on the `node:fs` module. This means that these features will only work in Node.js compatible runtimes for SSR builds.
 
 :::
 
@@ -828,7 +849,7 @@ To serve the file at a different path, you can pass `{ fileName: 'license.md' }`
 
 ## Build Optimizations
 
-> Features listed below are automatically applied as part of the build process and there is no need for explicit configuration unless you want to disable them.
+> Features listed below are automatically applied (except for the exprimental chunk importmap feature) as part of the build process and there is no need for explicit configuration unless you want to disable them.
 
 ### CSS Code Splitting
 
@@ -862,3 +883,21 @@ Entry ---> (A + C)
 ```
 
 It is possible for `C` to have further imports, which will result in even more roundtrips in the un-optimized scenario. Vite's optimization will trace all the direct imports to completely eliminate the roundtrips regardless of import depth.
+
+### Chunk Import Map Optimization
+
+To improve the cache hit rate of chunks, Vite can create an import map for chunks. This prevents the cascading cache invalidation issue, which is a problem with ES Modules.
+
+For example, consider the following scenario:
+
+```
+Entry --> A ---> C
+```
+
+If `C` is updated, the only chunk that inherently needs to be invalidated is `C`. However, if `A` references `C` via a normal URL in a static import (i.e. the hash of `C` is included in the URL), the content of `A` is changed, thus `A` would also need to be invalidated. The same applies to `Entry`.
+
+By utilizing the import maps feature, this issue can be avoided. When this optimization is enabled, Vite will create an import map that maps each chunk's ID to its URL and uses the chunk ID in the import statements instead of the URL. This way, when a chunk is updated, only the updated chunk needs to be invalidated, while the chunks that reference it will not be invalidated.
+
+Note that this optimization currently does not apply to CSS and assets. If you update an asset, the chunks that reference it will be invalidated. That said, the invalidation would not cascade and the chunk importing the invalidated chunk would not be invalidated.
+
+To enable this feature, set [`build.chunkImportMap`](/config/build-options.md#build-chunkimportmap) to `true`.

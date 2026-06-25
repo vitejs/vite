@@ -369,6 +369,34 @@ Repository: https://github.com/vitest-dev/vitest
 
 ---------------------------------------
 
+## @voidzero-dev/vite-task-client
+License: MIT
+Repository: https://github.com/voidzero-dev/vite-task
+
+> MIT License
+> 
+> Copyright (c) 2026-present, VoidZero Inc.
+> 
+> Permission is hereby granted, free of charge, to any person obtaining a copy
+> of this software and associated documentation files (the "Software"), to deal
+> in the Software without restriction, including without limitation the rights
+> to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+> copies of the Software, and to permit persons to whom the Software is
+> furnished to do so, subject to the following conditions:
+> 
+> The above copyright notice and this permission notice shall be included in all
+> copies or substantial portions of the Software.
+> 
+> THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+> IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+> FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+> AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+> LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+> OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+> SOFTWARE.
+
+---------------------------------------
+
 ## anymatch
 License: ISC
 By: Elan Shanker
@@ -962,6 +990,35 @@ Repository: https://github.com/follow-redirects/follow-redirects
 
 ---------------------------------------
 
+## fresh-import
+License: MIT
+By: sapphi-red
+Repository: https://github.com/sapphi-red/fresh-import
+
+> MIT License
+> 
+> Copyright (c) 2026 sapphi-red
+> 
+> Permission is hereby granted, free of charge, to any person obtaining a copy
+> of this software and associated documentation files (the "Software"), to deal
+> in the Software without restriction, including without limitation the rights
+> to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+> copies of the Software, and to permit persons to whom the Software is
+> furnished to do so, subject to the following conditions:
+> 
+> The above copyright notice and this permission notice shall be included in all
+> copies or substantial portions of the Software.
+> 
+> THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+> IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+> FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+> AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+> LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+> OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+> SOFTWARE.
+
+---------------------------------------
+
 ## generic-names
 License: MIT
 By: Alexey Litvinov
@@ -1217,7 +1274,7 @@ Repository: https://github.com/lydell/js-tokens
 ## launch-editor, launch-editor-middleware
 License: MIT
 By: Evan You
-Repositories: https://github.com/yyx990803/launch-editor, https://github.com/yyx990803/launch-editor
+Repositories: https://github.com/vitejs/launch-editor, https://github.com/vitejs/launch-editor
 
 > The MIT License (MIT)
 > 
@@ -1549,7 +1606,7 @@ Repository: https://github.com/jshttp/on-finished
 
 ## parse5
 License: MIT
-By: Ivan Nikulin, https://github.com/inikulin/parse5/graphs/contributors
+By: Ivan Nikulin, James Garbutt, Felix Boehm, Titus
 Repository: https://github.com/inikulin/parse5
 
 > Copyright (c) 2013-2019 Ivan Nikulin (ifaaan@gmail.com, https://github.com/inikulin)
