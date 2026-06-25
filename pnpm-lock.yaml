@@ -1447,7 +1447,14 @@ importers:
 
   playground/resolve-linked: {}
 
-  playground/resolve-tsconfig-paths: {}
+  playground/resolve-tsconfig-paths:
+    devDependencies:
+      less:
+        specifier: ^4.6.6
+        version: 4.6.7
+      sass:
+        specifier: ^1.101.0
+        version: 1.101.0
 
   playground/resolve/browser-field:
     dependencies:

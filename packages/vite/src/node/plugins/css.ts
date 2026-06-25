@@ -1547,7 +1547,7 @@ async function compilePostCSS(
   if (needInlineImport) {
     postcssPlugins.unshift(
       (await importPostcssImport()).default({
-        async resolve(id, basedir) {
+        async resolve(id, basedir, _importOptions, atRule) {
           const publicFile = checkPublicFile(
             id,
             environment.getTopLevelConfig(),
@@ -1556,10 +1556,15 @@ async function compilePostCSS(
             return publicFile
           }
 
+          // Resolve from the real importing file (the `@import` AtRule's source)
+          // so `resolve.tsconfigPaths` can find the tsconfig that owns it. The
+          // source is only absent for an `@import` injected by another plugin
+          // (a node with no source), in which case the resolver falls back to
+          // the project root.
           const resolved = await atImportResolvers.css(
             environment,
             id,
-            path.join(basedir, '*'),
+            atRule.source?.input.file,
           )
 
           if (resolved) {
@@ -2787,6 +2792,9 @@ const makeLessWorker = (
     const resolved = await resolvers.less(
       environment,
       filename,
+      // Less only exposes the importer's directory, not the file, so Vite can't
+      // pass a real importer like CSS/Sass do. `resolve.tsconfigPaths` therefore
+      // does not apply inside `.less` files. See the `resolve.tsconfigPaths` docs.
       path.join(dir, '*'),
     )
     if (!resolved) return undefined
