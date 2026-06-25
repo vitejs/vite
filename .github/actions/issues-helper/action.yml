@@ -1,0 +1,168 @@
+name: Issues Helper
+description: Add labels, create comments, close stale issues, or lock inactive closed issues by label.
+inputs:
+  actions:
+    required: true
+    description: One of `add-labels`, `remove-labels`, `create-comment`, `close-issues`, `lock-closed-issues`.
+  token:
+    required: true
+    description: GitHub token.
+  issue-number:
+    required: false
+    description: Issue or PR number. Required for `add-labels`, `remove-labels` and `create-comment`.
+  labels:
+    required: false
+    description: Comma-separated label names. Required for `add-labels`, `remove-labels` and `close-issues`.
+  body:
+    required: false
+    description: Comment body. Required for `create-comment`.
+  inactive-day:
+    required: false
+    description: Close or lock issues that have had no activity for this many days. Required for `close-issues` and `lock-closed-issues`.
+
+runs:
+  using: composite
+  steps:
+    - name: Add labels
+      if: inputs.actions == 'add-labels'
+      uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3 # v9
+      env:
+        INPUT_ISSUE_NUMBER: ${{ inputs.issue-number }}
+        INPUT_LABELS: ${{ inputs.labels }}
+      with:
+        github-token: ${{ inputs.token }}
+        script: |
+          const labels = process.env.INPUT_LABELS.split(',').map(l => l.trim()).filter(Boolean)
+          await github.rest.issues.addLabels({
+            owner: context.repo.owner,
+            repo: context.repo.repo,
+            issue_number: Number(process.env.INPUT_ISSUE_NUMBER),
+            labels,
+          })
+
+    - name: Remove labels
+      if: inputs.actions == 'remove-labels'
+      uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3 # v9
+      env:
+        INPUT_ISSUE_NUMBER: ${{ inputs.issue-number }}
+        INPUT_LABELS: ${{ inputs.labels }}
+      with:
+        github-token: ${{ inputs.token }}
+        script: |
+          const labels = process.env.INPUT_LABELS.split(',').map(l => l.trim()).filter(Boolean)
+          for (const name of labels) {
+            try {
+              await github.rest.issues.removeLabel({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: Number(process.env.INPUT_ISSUE_NUMBER),
+                name,
+              })
+            } catch (e) {
+              if (e.status !== 404) throw e
+            }
+          }
+
+    - name: Create comment
+      if: inputs.actions == 'create-comment'
+      uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3 # v9
+      env:
+        INPUT_ISSUE_NUMBER: ${{ inputs.issue-number }}
+        INPUT_BODY: ${{ inputs.body }}
+      with:
+        github-token: ${{ inputs.token }}
+        script: |
+          await github.rest.issues.createComment({
+            owner: context.repo.owner,
+            repo: context.repo.repo,
+            issue_number: Number(process.env.INPUT_ISSUE_NUMBER),
+            body: process.env.INPUT_BODY,
+          })
+
+    - name: Close stale issues
+      if: inputs.actions == 'close-issues'
+      uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3 # v9
+      env:
+        INPUT_LABELS: ${{ inputs.labels }}
+        INPUT_INACTIVE_DAY: ${{ inputs.inactive-day }}
+      with:
+        github-token: ${{ inputs.token }}
+        script: |
+          const labels = process.env.INPUT_LABELS
+          const inactiveDay = Number(process.env.INPUT_INACTIVE_DAY)
+          const cutoff = new Date(Date.now() - inactiveDay * 24 * 60 * 60 * 1000)
+          const labelSet = new Set(labels.split(',').map(l => l.trim()))
+
+          const issues = await github.paginate(github.rest.issues.listForRepo, {
+            owner: context.repo.owner,
+            repo: context.repo.repo,
+            state: 'open',
+            labels,
+            per_page: 100,
+          })
+
+          let closed = 0
+          for (const issue of issues) {
+            const events = await github.paginate(github.rest.issues.listEvents, {
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: issue.number,
+              per_page: 100,
+            })
+            const labeledAt = events
+              .filter(e => e.event === 'labeled' && labelSet.has(e.label?.name))
+              .at(-1)?.created_at
+
+            if (!labeledAt || new Date(labeledAt) > cutoff || new Date(issue.updated_at) > cutoff) continue
+
+            console.log(`Closing #${issue.number}, labeled at ${labeledAt}`)
+            await github.rest.issues.update({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: issue.number,
+              state: 'closed',
+            })
+            closed++
+          }
+
+          if (closed === 0) {
+            console.log(`No stale items with label "${labels}" found`)
+          }
+
+    - name: Lock inactive closed issues
+      if: inputs.actions == 'lock-closed-issues'
+      # Mirrors the issue-only behavior previously used from:
+      # https://github.com/dessant/lock-threads/blob/7266a7ce5c1df01b1c6db85bf8cd86c737dadbe7/src/index.js
+      uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3 # v9
+      env:
+        INPUT_INACTIVE_DAY: ${{ inputs.inactive-day }}
+      with:
+        github-token: ${{ inputs.token }}
+        script: |
+          const inactiveDay = Number(process.env.INPUT_INACTIVE_DAY)
+          const cutoff = new Date(Date.now() - inactiveDay * 24 * 60 * 60 * 1000)
+          const cutoffTimestamp = cutoff.toISOString().split('.')[0] + 'Z'
+          const query = `repo:${context.repo.owner}/${context.repo.repo} updated:<${cutoffTimestamp} is:closed is:unlocked is:issue`
+
+          const { data } = await github.rest.search.issuesAndPullRequests({
+            q: query,
+            sort: 'updated',
+            order: 'desc',
+            per_page: 50,
+          })
+          const issues = data.items.filter(issue => !issue.locked)
+
+          let locked = 0
+          for (const issue of issues) {
+            console.log(`Locking #${issue.number}, updated at ${issue.updated_at}`)
+            await github.rest.issues.lock({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: issue.number,
+            })
+            locked++
+          }
+
+          if (locked === 0) {
+            console.log(`No inactive closed issues found`)
+          }

@@ -14,6 +14,21 @@ export const core = [
     sponsor: 'https://github.com/sponsors/yyx990803',
   },
   {
+    avatar: 'https://github.com/sapphi-red.png',
+    name: 'sapphi-red',
+    title: 'Web Developer',
+    org: 'VoidZero',
+    orgLink: 'https://voidzero.dev/',
+    desc: 'Vite core team member. Call me sapphi or midori ;)',
+    links: [
+      { icon: 'github', link: 'https://github.com/sapphi-red' },
+      { icon: 'bluesky', link: 'https://bsky.app/profile/sapphi.red' },
+      { icon: 'twitter', link: 'https://twitter.com/sapphi_red' },
+      { icon: 'mastodon', link: 'https://elk.zone/m.webtoo.ls/@sapphi_red' },
+    ],
+    sponsor: 'https://github.com/sponsors/sapphi-red',
+  },
+  {
     avatar: 'https://www.github.com/patak-cat.png',
     name: 'Patak',
     title: 'Open Source Adventurer',
@@ -28,9 +43,9 @@ export const core = [
     avatar: 'https://www.github.com/antfu.png',
     name: 'Anthony Fu',
     title: 'A fanatical open sourceror',
-    org: 'NuxtLabs',
-    orgLink: 'https://nuxtlabs.com/',
-    desc: 'Core team member of Vite & Vue. Working at NuxtLabs.',
+    org: 'Vercel',
+    orgLink: 'https://vercel.com/',
+    desc: 'Core team member of Vite & Vue. Working on Nuxt.',
     links: [
       { icon: 'github', link: 'https://github.com/antfu' },
       { icon: 'bluesky', link: 'https://bsky.app/profile/antfu.me' },
@@ -52,19 +67,6 @@ export const core = [
     sponsor: 'https://bjornlu.com/sponsor',
   },
   {
-    avatar: 'https://github.com/sapphi-red.png',
-    name: 'green',
-    title: 'Web Developer',
-    desc: 'Vite core team member. Call me sapphi or green or midori ;)',
-    links: [
-      { icon: 'github', link: 'https://github.com/sapphi-red' },
-      { icon: 'bluesky', link: 'https://bsky.app/profile/sapphi.red' },
-      { icon: 'twitter', link: 'https://twitter.com/sapphi_red' },
-      { icon: 'mastodon', link: 'https://elk.zone/m.webtoo.ls/@sapphi_red' },
-    ],
-    sponsor: 'https://github.com/sponsors/sapphi-red',
-  },
-  {
     avatar: 'https://github.com/ArnaudBarre.png',
     name: 'Arnaud Barré',
     title: 'Frontend Developer',
@@ -80,20 +82,11 @@ export const core = [
     sponsor: 'https://github.com/sponsors/ArnaudBarre',
   },
   {
-    avatar: 'https://github.com/dominikg.png',
-    name: 'Dominik G.',
-    title: 'Resident CI Expert',
-    desc: 'Team Member of Vite and Svelte',
-    links: [
-      { icon: 'github', link: 'https://github.com/dominikg' },
-      { icon: 'mastodon', link: 'https://elk.zone/m.webtoo.ls/@dominikg' },
-    ],
-    sponsor: 'https://github.com/sponsors/dominikg',
-  },
-  {
     avatar: 'https://github.com/sheremet-va.png',
     name: 'Vladimir',
     title: 'Core team member of Vitest & Vite',
+    org: 'VoidZero',
+    orgLink: 'https://voidzero.dev/',
     desc: 'An open source fullstack developer',
     links: [
       { icon: 'github', link: 'https://github.com/sheremet-va' },
@@ -106,6 +99,8 @@ export const core = [
     avatar: 'https://github.com/hi-ogawa.png',
     name: 'Hiroshi Ogawa',
     title: 'Team Member of Vitest & Vite',
+    org: 'VoidZero',
+    orgLink: 'https://voidzero.dev/',
     desc: 'Open source enthusiast',
     links: [
       { icon: 'github', link: 'https://github.com/hi-ogawa' },
@@ -214,5 +209,16 @@ export const emeriti = [
       { icon: 'mastodon', link: 'https://elk.zone/m.webtoo.ls/@haoqun' },
     ],
     sponsor: 'https://github.com/sponsors/haoqunjiang',
+  },
+  {
+    avatar: 'https://github.com/dominikg.png',
+    name: 'Dominik G.',
+    title: 'Resident CI Expert',
+    desc: 'Team Member of Vite and Svelte',
+    links: [
+      { icon: 'github', link: 'https://github.com/dominikg' },
+      { icon: 'mastodon', link: 'https://elk.zone/m.webtoo.ls/@dominikg' },
+    ],
+    sponsor: 'https://github.com/sponsors/dominikg',
   },
 ]

@@ -21,9 +21,9 @@ export {
   type ESTree,
 } from 'rolldown/utils'
 
-/** @deprecated - use `parse` instead */
+/** @deprecated - use `parseSync` instead */
 export const parseAst: typeof _parseAst = _parseAst
-/** @deprecated - use `parseAsync` instead */
+/** @deprecated - use `parse` instead */
 export const parseAstAsync: typeof _parseAstAsync = _parseAstAsync
 
 export {
@@ -126,6 +126,7 @@ export type {
   DevEnvironmentOptions,
   ResolvedDevEnvironmentOptions,
 } from './config'
+export type { HtmlAssetSource } from './assetSource'
 export type {
   Plugin,
   PluginOption,
@@ -230,6 +231,7 @@ export type {
 } from './server/transformRequest'
 export type {
   HmrOptions,
+  WsOptions,
   HmrContext,
   HotUpdateOptions,
   HotChannelListener,
@@ -267,6 +269,7 @@ export type {
   ImportGlobOptions,
   GeneralImportGlobOptions,
   KnownAsTypeMap,
+  KnownQueryTypeMap,
 } from '#types/importGlob'
 export type { ChunkMetadata, CustomPluginOptionsVite } from '#types/metadata'
 
