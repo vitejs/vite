@@ -104,11 +104,7 @@ export default function myPlugin() {
 }
 ```
 
-### Importing a Virtual File
-
-See the example in the [next section](#virtual-modules-convention).
-
-## Handling Query Parameters
+#### Handling Query Parameters
 
 Module IDs passed to plugin hooks may include query parameters (e.g., `?raw`, `?url`). These are used by Vite's internal plugins to determine how a module should be processed.
 
@@ -116,14 +112,13 @@ If your plugin is transforming a specific file type (e.g., `.mdx`), it should ch
 
 Special query parameters include:
 
-- `?raw`: Load the asset as a string.
-- `?url`: Load the asset as a URL.
-- `?worker` / `?sharedworker`: Load the script as a Web Worker.
+- [`?raw`](/guide/assets#importing-asset-as-string): Load the asset as a string.
+- [`?url`](/guide/assets#url-imports): Load the asset as a URL.
 
 You can use a simple regex to check for these:
 
 ```js
-const SPECIAL_QUERY_RE = /[?&](?:worker|sharedworker|raw|url)\b/
+const SPECIAL_QUERY_RE = /[?&](?:raw|url)\b/
 
 export default function myPlugin() {
   return {
@@ -137,6 +132,10 @@ export default function myPlugin() {
   }
 }
 ```
+
+### Importing a Virtual File
+
+See the example in the [next section](#virtual-modules-convention).
 
 ## Virtual Modules Convention
 
