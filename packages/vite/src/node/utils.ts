@@ -718,7 +718,7 @@ function optimizeSafeRealPathSync() {
       return
     }
   }
-  exec('net use', (error, stdout) => {
+  exec('net use', { windowsHide: true }, (error, stdout) => {
     if (error) return
     const lines = stdout.split('\n')
     // OK           Y:        \\NETWORKA\Foo         Microsoft Windows Network
