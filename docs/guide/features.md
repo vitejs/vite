@@ -53,11 +53,7 @@ export type { T }
 
 ### TypeScript Compiler Options
 
-Vite respects some of the options in `tsconfig.json` and sets the corresponding Oxc Transformer options. For each file, Vite uses the closest parent `tsconfig.json` that matches the file:
-
-- A `tsconfig.json` matches when the file satisfies its [`files`](https://www.typescriptlang.org/tsconfig/#files), [`include`](https://www.typescriptlang.org/tsconfig/#include), and [`exclude`](https://www.typescriptlang.org/tsconfig/#exclude) fields, or those of one of the config files listed in its [`references`](https://www.typescriptlang.org/tsconfig/#references) field.
-- If a `tsconfig.json` doesn't match, Vite keeps searching parent directories upward.
-- If no `tsconfig.json` matches the file, none of these options are applied.
+Vite respects some of the options in `tsconfig.json` and sets the corresponding Oxc Transformer options. For each file, Vite uses the closest parent `tsconfig.json` or the config referenced by the [`references`](https://www.typescriptlang.org/tsconfig/#references) field in them if that config matches the file. Vite treats the config to match a file when the file satisfies the config's [`files`](https://www.typescriptlang.org/tsconfig/#files), [`include`](https://www.typescriptlang.org/tsconfig/#include), and [`exclude`](https://www.typescriptlang.org/tsconfig/#exclude) fields.
 
 When the options are set in both the Vite config and the `tsconfig.json`, the value in the Vite config takes precedence.
 
