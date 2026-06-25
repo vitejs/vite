@@ -858,9 +858,9 @@ function setupEslint(root: string, isTs: boolean) {
   // renovate: datasource=npm depName=eslint-plugin-react-refresh
   const eslintPluginReactRefreshVersion = '0.5.3'
   // renovate: datasource=npm depName=globals
-  const globalsVersion = '17.6.0'
+  const globalsVersion = '17.7.0'
   // renovate: datasource=npm depName=typescript-eslint
-  const typescriptEslintVersion = '8.61.0'
+  const typescriptEslintVersion = '8.62.0'
 
   const eslintConfigForTS = /* js */ `import js from '@eslint/js'
 import globals from 'globals'
