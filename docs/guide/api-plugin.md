@@ -155,7 +155,7 @@ During dev, the Vite dev server creates a plugin container that invokes [Rolldow
 
 The following hooks are called once on server start:
 
-- [`options`](https://rolldown.rs/reference/interface.plugin#options)
+- [`options`](https://rolldown.rs/reference/Interface.Plugin#options)
 - [`buildStart`](https://rolldown.rs/reference/Interface.Plugin#buildstart)
 
 The following hooks are called on each incoming module request:
