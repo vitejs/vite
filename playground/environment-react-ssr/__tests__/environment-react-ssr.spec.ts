@@ -81,7 +81,7 @@ describe.runIf(!isBuild)('pre-bundling', () => {
           .map(
             (log) =>
               stripVTControlCharacters(log).match(
-                /new dependencies optimized: (react-fake-.*)/,
+                /dependenc(?:y|ies) optimized: (react-fake-.*)/,
               )?.[1],
           )
           .filter(Boolean),
