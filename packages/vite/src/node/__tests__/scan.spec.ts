@@ -218,6 +218,44 @@ test('scan import.meta.glob respects rolldown transform jsx options', async (ctx
   expect(scanResult.deps).not.toHaveProperty('react/jsx-runtime')
 })
 
+// regression test for https://github.com/vitejs/vite/issues/22752
+// `resolveRolldownOptions` resolves `build.rolldownOptions.input` relative to the root,
+// so the scanner needs to resolve a relative bare entry from the root
+test('scan resolves build.rolldownOptions.input relative to the root', async (ctx) => {
+  const server = await createServer({
+    configFile: false,
+    logLevel: 'error',
+    // root differs from process.cwd(); the entry lives at `<root>/entry-client.tsx`
+    root: path.join(import.meta.dirname, 'fixtures', 'scan-build-input', 'src'),
+    environments: {
+      client: {
+        build: {
+          rolldownOptions: {
+            input: 'entry-client.tsx',
+          },
+        },
+      },
+    },
+    optimizeDeps: {
+      force: true,
+      noDiscovery: false,
+    },
+  })
+  ctx.onTestFinished(() => server.close())
+
+  const { cancel, result } = scanImports(
+    devToScanEnvironment(server.environments.client),
+  )
+  ctx.onTestFinished(cancel)
+
+  await expect(result).resolves.toMatchObject({
+    deps: {
+      vue: expect.any(String),
+    },
+    missing: {},
+  })
+})
+
 test('scan import.meta.glob package imports patterns', async (ctx) => {
   const server = await createServer({
     configFile: false,
