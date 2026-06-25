@@ -1,5 +1,6 @@
 {
   "compilerOptions": {
+    "allowArbitraryExtensions": true,
     "target": "es2023",
     "experimentalDecorators": true,
     "useDefineForClassFields": false,
