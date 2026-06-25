@@ -1,3 +1,8 @@
+## <small>[7.3.6](https://github.com/vitejs/vite/compare/v7.3.5...v7.3.6) (2026-06-25)</small>
+### Features
+
+* allow esbuild 0.28 ([#22743](https://github.com/vitejs/vite/issues/22743)) ([a24931e](https://github.com/vitejs/vite/commit/a24931e7934e80eff5895b89d9e612ad3ad3e1f4))
+
 ## <small>[7.3.5](https://github.com/vitejs/vite/compare/v7.3.3...v7.3.5) (2026-06-01)</small>
 ### Bug Fixes
 
