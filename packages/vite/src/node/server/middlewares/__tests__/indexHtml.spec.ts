@@ -1,4 +1,6 @@
 import fs from 'node:fs'
+import http from 'node:http'
+import type { AddressInfo } from 'node:net'
 import path from 'node:path'
 import { describe, expect, onTestFinished, test } from 'vitest'
 import { createServer } from '../../../server'
@@ -28,6 +30,27 @@ async function createTestServer(rootDir?: string) {
   onTestFinished(() => server.close())
   return server
 }
+
+describe('indexHtml middleware — malformed URI guard (non-fullBundle path)', () => {
+  test('request with malformed URI falls through to next() rather than throwing URIError', async () => {
+    const server = await createTestServer()
+
+    // Wrap the Vite middleware stack in a real HTTP server so we can observe the
+    // HTTP status code instead of catching an unhandled async exception.
+    const httpServer = http.createServer(server.middlewares)
+    await new Promise<void>((resolve) =>
+      httpServer.listen(0, '127.0.0.1', resolve),
+    )
+    onTestFinished(() => httpServer.close())
+
+    const { port } = httpServer.address() as AddressInfo
+
+    // /%c0.html → decodeURIComponent would throw URIError without the guard.
+    // With the guard it calls next() and the request falls through to a 404.
+    const response = await fetch(`http://127.0.0.1:${port}/%c0.html`)
+    expect(response.status).not.toBe(500)
+  })
+})
 
 describe('indexHtml middleware — /@fs/ inline script proxy cache', () => {
   test('inline <script type="module"> in an /@fs/ HTML file is loadable via the html-proxy module', async () => {
