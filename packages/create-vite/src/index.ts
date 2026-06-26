@@ -633,10 +633,10 @@ async function init() {
   if (isReactTemplate && eslint === undefined) {
     if (interactive) {
       const eslintResult = await prompts.select({
-        message: 'Use ESLint instead of Oxlint?',
+        message: 'Which linter to use?',
         options: [
-          { label: 'No (Oxlint)', value: false },
-          { label: 'Yes (ESLint)', value: true },
+          { label: 'Oxlint', value: false },
+          { label: 'ESLint', value: true },
         ],
       })
       if (prompts.isCancel(eslintResult)) return cancel()
