@@ -7,7 +7,7 @@
 <p class="dep"></p>
 
 <script type="module">
-  import * as data from './data.json' assert { type: 'json' }
+  import * as data from './data.json' with { type: 'json' }
   text('.src', data.foo)
 
   import * as depData from '@vitejs/test-import-assertion-dep'
