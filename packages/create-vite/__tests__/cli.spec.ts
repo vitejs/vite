@@ -300,6 +300,23 @@ test('accepts immediate flag', () => {
   expect(stdout).toContain('Installing dependencies')
 })
 
+test('uses vp commands in the done message when run via vp dlx', () => {
+  const { stdout } = run([projectName, '--template', 'vue', '--no-immediate'], {
+    cwd: import.meta.dirname,
+    env: {
+      ...process.env,
+      _VITE_TEST_CLI: 'true',
+      // `vp dlx` sets VP_USER_AGENT; the underlying package manager overwrites
+      // npm_config_user_agent, so VP_USER_AGENT must take precedence.
+      VP_USER_AGENT: 'vp/0.2.1',
+      npm_config_user_agent: 'pnpm/10.0.0 npm/? node/v24.18.0 darwin arm64',
+    },
+  })
+  expect(stdout).toContain('Done. Now run:')
+  expect(stdout).toContain('vp install')
+  expect(stdout).toContain('vp dev')
+})
+
 test('accepts immediate flag and skips install prompt', () => {
   const { stdout } = run([projectName, '--template', 'vue', '--no-immediate'], {
     cwd: import.meta.dirname,
