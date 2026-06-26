@@ -694,8 +694,7 @@ Since the types of `.wasm` files are unknown, TypeScript will report errors like
 
 With `allowArbitraryExtensions` enabled, TypeScript will look for a declaration file named `{filename}.d.wasm.ts` when resolving a `.wasm` import. For example, for `add.wasm`, create `add.d.wasm.ts`:
 
-```ts
-// add.d.wasm.ts
+```ts [add.d.wasm.ts]
 export function add(a: number, b: number): number
 ```
 
