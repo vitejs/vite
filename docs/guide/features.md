@@ -681,7 +681,7 @@ This follows the [WebAssembly/ES Module Integration proposal](https://github.com
 
 ::: tip TypeScript support
 
-Since Vite cannot infer the exports of a `.wasm` file at compile time, TypeScript will report errors like `Module '"*.wasm"' has no exported member 'add'`. To fix this, enable [`allowArbitraryExtensions`](https://www.typescriptlang.org/tsconfig/#allowArbitraryExtensions) in your `tsconfig.json` and create a declaration file next to your `.wasm` file:
+Since the types of `.wasm` files are unknown, TypeScript will report errors like `Module '"*.wasm"' has no exported member 'add'`. To fix this, enable [`allowArbitraryExtensions`](https://www.typescriptlang.org/tsconfig/#allowArbitraryExtensions) in your `tsconfig.json` and create a declaration file next to your `.wasm` file:
 
 ```json
 // tsconfig.json
