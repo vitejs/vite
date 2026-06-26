@@ -1,5 +1,5 @@
 import { setTimeout } from 'node:timers/promises'
-import { expect, test } from 'vitest'
+import { expect, test, onTestFinished } from 'vitest'
 import { addFile, editFile, isBuild, page, readFile } from '~utils'
 
 const assetUrl = /asset-[\w-]+\.png/
@@ -153,24 +153,24 @@ if (isBuild) {
         `import imageUrl from './hmr-asset.png'\n` +
         code.replace('/* @asset-src */', 'img.src = imageUrl'),
     )
-    try {
-      // the image only decodes if the emitted asset was served (not a 404)
-      await expect
-        .poll(() =>
-          page
-            .$eval(
-              '#hmr-asset-image',
-              (img: HTMLImageElement) => img.complete && img.naturalWidth > 0,
-            )
-            .catch(() => false),
-        )
-        .toBe(true)
-      const src = await page.getAttribute('#hmr-asset-image', 'src')
-      expect(src).toMatch(/\/assets\/hmr-asset-[\w-]+\.png/)
-      expect((await assetResponse).status()).toBe(200)
-    } finally {
+    onTestFinished(() => {
       addFile('hmr-asset.js', original)
-    }
+    })
+
+    // the image only decodes if the emitted asset was served (not a 404)
+    await expect
+      .poll(() =>
+        page
+          .$eval(
+            '#hmr-asset-image',
+            (img: HTMLImageElement) => img.complete && img.naturalWidth > 0,
+          )
+          .catch(() => false),
+      )
+      .toBe(true)
+    const src = await page.getAttribute('#hmr-asset-image', 'src')
+    expect(src).toMatch(/\/assets\/hmr-asset-[\w-]+\.png/)
+    expect((await assetResponse).status()).toBe(200)
   })
 
   test('worker with ?worker query', async () => {

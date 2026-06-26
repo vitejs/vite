@@ -186,8 +186,6 @@ export class BundledDev {
         }
       },
       onAdditionalAssets: (result) => {
-        // Assets emitted by an HMR patch / lazy compile don't go through
-        // `onOutput`. https://github.com/vitejs/vite/issues/22596
         this.storeOutputFiles(result.output)
       },
       watch: {
