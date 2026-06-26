@@ -1,15 +1,24 @@
-import { pathToFileURL } from 'node:url'
+import { fileURLToPath, pathToFileURL } from 'node:url'
+import path from 'node:path'
 import type { FetchResult } from 'vite/module-runner'
-import type { EnvironmentModuleNode, TransformResult } from '..'
+import type { TransformResult } from '..'
 import { tryNodeResolve } from '../plugins/resolve'
-import { isBuiltin, isExternalUrl, isFilePathESM } from '../utils'
-import { unwrapId } from '../../shared/utils'
+import {
+  isBuiltin,
+  isExternalUrl,
+  isFilePathESM,
+  normalizePath,
+} from '../utils'
+import { cleanUrl, unwrapId } from '../../shared/utils'
 import {
   MODULE_RUNNER_SOURCEMAPPING_SOURCE,
   SOURCEMAPPING_URL,
 } from '../../shared/constants'
 import { genSourceMapUrl } from '../server/sourcemap'
 import type { DevEnvironment } from '../server/environment'
+import type { ViteFetchResult } from '../../shared/invokeMethods'
+import type { BundledDev } from '../server/bundledDev'
+import { ssrTransform } from './ssrTransform'
 
 export interface FetchModuleOptions {
   cached?: boolean
@@ -43,7 +52,13 @@ export async function fetchModule(
 
   // if there is no importer, the file is an entry point
   // entry points are always internalized
-  if (!isFileUrl && importer && url[0] !== '.' && url[0] !== '/') {
+  if (
+    !isFileUrl &&
+    importer &&
+    url[0] !== '.' &&
+    url[0] !== '/' &&
+    !isBundledChunkUrl(environment, url)
+  ) {
     const { isProduction, root } = environment.config
     const { externalConditions, dedupe, preserveSymlinks } =
       environment.config.resolve
@@ -80,6 +95,12 @@ export async function fetchModule(
 
   url = unwrapId(url)
 
+  const bundledDev = environment.bundledDev
+
+  if (bundledDev) {
+    return fetchBundledModule(environment, bundledDev, url, importer)
+  }
+
   const mod = await environment.moduleGraph.ensureEntryFromUrl(url)
   const cached = !!mod.transformResult
 
@@ -99,7 +120,7 @@ export async function fetchModule(
   }
 
   if (options.inlineSourceMap !== false) {
-    result = inlineSourceMap(mod, result, options.startOffset)
+    result = inlineSourceMap(mod.id!, result, options.startOffset)
   }
 
   // remove shebang
@@ -115,13 +136,127 @@ export async function fetchModule(
   }
 }
 
+async function fetchBundledModule(
+  environment: DevEnvironment,
+  bundledDev: BundledDev,
+  url: string,
+  importer: string | undefined,
+) {
+  await bundledDev._waitForInitialBuildSuccess()
+
+  if (url.startsWith('/@vite/lazy?')) {
+    const { searchParams } = new URL(url, 'http://localhost')
+    const moduleId = searchParams.get('id')!
+    const clientId = searchParams.get('clientId')!
+    const code = await bundledDev.triggerLazyBundling(moduleId, clientId)
+    if (code == null) {
+      throw new Error(`unknown request: ${url}`)
+    }
+
+    // This module is invalidated immediately, so url/id do not matter
+    const result: ViteFetchResult = {
+      code,
+      url,
+      id: moduleId!,
+      file: cleanUrl(moduleId!),
+      invalidate: false,
+    }
+
+    // See https://github.com/rolldown/rolldown/issues/8376
+    const ssrResult = await ssrTransform(result.code, null, url, result.code)
+    if (!ssrResult) {
+      throw new Error(`[vite] cannot apply ssr transform to '${url}'.`)
+    }
+    result.code = ssrResult.code
+    return result
+  }
+
+  const outDir = normalizePath(
+    path.resolve(environment.config.root, environment.config.build.outDir),
+  )
+
+  let fileName: string
+  let facadeId: string | undefined
+
+  // Assume this is an entry point that was specified in rolldownOptions.input
+  if (!importer) {
+    const resolvedEntry = resolveBundledEntryFilename(
+      bundledDev,
+      environment.config.root,
+      url,
+    )
+    if (!resolvedEntry) {
+      const entrypoints = [...bundledDev.facadeToChunk.keys()]
+      throw new Error(
+        `[vite] Entrypoint '${url}' was not defined in the config. ` +
+          (entrypoints.length
+            ? `Available entry points: \n- ${[...bundledDev.facadeToChunk.keys()].join('\n- ')}`
+            : `The build did not produce any chunks. Did it finish successfully? See the logs for more information.`),
+      )
+    }
+    ;[facadeId, fileName] = resolvedEntry
+  } else if (url[0] === '.') {
+    // Importer is reported as a full path on the file system.
+    // This happens because we provide the `file` attribute.
+    if (importer.startsWith(outDir)) {
+      importer = importer.slice(outDir.length + 1)
+    }
+    fileName = path.posix.join(path.posix.dirname(importer), url)
+  } else {
+    fileName = url
+  }
+
+  const memoryFile = bundledDev.memoryFiles.get(fileName)
+  const code = memoryFile?.source
+  if (code == null) {
+    throw new Error(
+      `[vite] the module '${url}' (chunk '${fileName}') ${
+        importer ? ` imported from '${importer}'` : ''
+      } was not bundled. Is server established?`,
+    )
+  }
+
+  const result: ViteFetchResult = {
+    code: code.toString(),
+    // To make sure dynamic imports resolve assets correctly.
+    // (Dynamic import resolves relative urls with importer url)
+    url: fileName,
+    id: fileName,
+    // The potential position on the file system.
+    // We don't actually keep it there, it's virtual.
+    file: normalizePath(path.resolve(outDir, fileName)),
+    // chunks cannot be invalidated manually
+    invalidate: false,
+    // TODO: seems like rolldown uses `process.cwd()` instead of `config.root`
+    // We need this because __rolldown_runtime__ keeps modules internally
+    // And after HMR there is no other way to receive the updated exports
+    regionId: facadeId
+      ? normalizePath(path.relative(process.cwd(), facadeId))
+      : undefined,
+  }
+  // TODO: this should be done in rolldown, there is already a function for it
+  // output.format = 'module-runner'
+  // See https://github.com/rolldown/rolldown/issues/8376
+  const ssrResult = await ssrTransform(result.code, null, url, result.code)
+  if (!ssrResult) {
+    throw new Error(`[vite] cannot apply ssr transform to '${url}'.`)
+  }
+  result.code = ssrResult.code
+
+  // remove shebang
+  if (result.code[0] === '#')
+    result.code = result.code.replace(/^#!.*/, (s) => ' '.repeat(s.length))
+
+  return result
+}
+
 const OTHER_SOURCE_MAP_REGEXP = new RegExp(
   `//# ${SOURCEMAPPING_URL}=data:application/json[^,]+base64,([A-Za-z0-9+/=]+)$`,
   'gm',
 )
 
 function inlineSourceMap(
-  mod: EnvironmentModuleNode,
+  id: string,
   result: TransformResult,
   startOffset: number | undefined,
 ) {
@@ -146,8 +281,45 @@ function inlineSourceMap(
       })
     : map
   result.code = `${code.trimEnd()}\n//# sourceURL=${
-    mod.id
+    id
   }\n${MODULE_RUNNER_SOURCEMAPPING_SOURCE}\n//# ${SOURCEMAPPING_URL}=${genSourceMapUrl(sourceMap)}\n`
 
   return result
+}
+
+function isBundledChunkUrl(environment: DevEnvironment, url: string) {
+  return environment.bundledDev?.memoryFiles.has(url)
+}
+
+function resolveBundledEntryFilename(
+  environment: BundledDev,
+  root: string,
+  url: string,
+): [facadeId: string | undefined, chunkName: string] | undefined {
+  if (environment.memoryFiles.has(url)) {
+    return [undefined, url]
+  }
+  // Already resolved by the user to be a url
+  if (environment.facadeToChunk.has(url)) {
+    return [url, environment.facadeToChunk.get(url)!]
+  }
+  const moduleId = normalizePath(
+    url.startsWith('file://')
+      ? // new URL(path)
+        fileURLToPath(url)
+      : // ./index.js
+        // NOTE: we don't try to find it if extension is not passed
+        // It will throw an error instead
+        path.resolve(root, url),
+  )
+  if (environment.facadeToChunk.get(moduleId)) {
+    return [moduleId, environment.facadeToChunk.get(moduleId)!]
+  }
+  if (url[0] === '/') {
+    const tryAbsoluteUrl = path.posix.join(root, url)
+    const absoluteChunk = environment.facadeToChunk.get(tryAbsoluteUrl)
+    if (absoluteChunk) {
+      return [tryAbsoluteUrl, absoluteChunk]
+    }
+  }
 }

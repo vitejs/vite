@@ -6,10 +6,17 @@ import {
 } from 'rolldown/experimental'
 import colors from 'picocolors'
 import getEtag from 'etag'
+import type { OutputOptions, RolldownOptions } from 'rolldown'
 import type { Update } from '#types/hmrPayload'
 import { ChunkMetadataMap, resolveRolldownOptions } from '../build'
 import { getHmrImplementation } from '../plugins/clientInjections'
 import { createDebugger, formatAndTruncateFileList } from '../utils'
+import {
+  ssrRolldownRuntimeCreateHotContextMethod,
+  ssrRolldownRuntimeDefineMethod,
+  ssrRolldownRuntimeKey,
+  ssrRolldownRuntimeTransport,
+} from '../../module-runner/constants'
 import type { DevEnvironment } from './environment'
 import { type NormalizedHotChannelClient, debugHmr, getShortName } from './hmr'
 import { prepareError } from './middlewares/error'
@@ -76,14 +83,9 @@ export class BundledDev {
   private lastBuildError: Error | null = null
 
   memoryFiles: MemoryFiles = new MemoryFiles()
+  facadeToChunk: Map<string, string> = new Map()
 
-  constructor(private environment: DevEnvironment) {
-    if (environment.name !== 'client') {
-      throw new Error(
-        'currently full bundle mode is only available for client environment',
-      )
-    }
-  }
+  constructor(private environment: DevEnvironment) {}
 
   private get devEngine(): DevEngine {
     if (!this._devEngine) {
@@ -178,6 +180,12 @@ export class BundledDev {
 
         // NOTE: don't clear memoryFiles here as incremental build reuses the files
         for (const outputFile of result.output) {
+          if (outputFile.type === 'chunk' && outputFile.facadeModuleId) {
+            this.facadeToChunk.set(
+              outputFile.facadeModuleId,
+              outputFile.fileName,
+            )
+          }
           this.memoryFiles.set(outputFile.fileName, () => {
             const source =
               outputFile.type === 'chunk' ? outputFile.code : outputFile.source
@@ -212,6 +220,19 @@ export class BundledDev {
       this.environment.hot.send({ type: 'full-reload', path: '*' })
       this.initialBuildCompleted = true
     })
+  }
+
+  /**
+   * @internal
+   */
+  public async _waitForInitialBuildSuccess(): Promise<void> {
+    await this.devEngine.ensureCurrentBuildFinish()
+    const bundleState = await this.devEngine.getBundleState()
+    if (bundleState.lastFullBuildFailed) {
+      throw new Error(
+        `The last full bundle mode build has failed. See logs for more information.`,
+      )
+    }
   }
 
   private async waitForInitialBuildFinish(): Promise<void> {
@@ -325,11 +346,18 @@ export class BundledDev {
 
   async close(): Promise<void> {
     this.memoryFiles.clear()
-    await this._devEngine?.close()
+    await this.devEngine?.close()
     this.initialBuildCompleted = false
   }
 
-  private async getRolldownOptions() {
+  protected async getDevRuntimeImplementation(): Promise<string> {
+    if (this.environment.config.consumer === 'server') {
+      return this.getDevServerRuntimeImplementation()
+    }
+    return await getHmrImplementation(this.environment.getTopLevelConfig())
+  }
+
+  protected async getRolldownOptions(): Promise<RolldownOptions> {
     const chunkMetadataMap = new ChunkMetadataMap()
     const rolldownOptions = resolveRolldownOptions(
       this.environment,
@@ -341,9 +369,7 @@ export class BundledDev {
       ...(typeof rolldownOptions.experimental.devMode === 'object'
         ? rolldownOptions.experimental.devMode
         : {}),
-      implement: await getHmrImplementation(
-        this.environment.getTopLevelConfig(),
-      ),
+      implement: await this.getDevRuntimeImplementation(),
     }
 
     // disable inlineConst optimization due to a bug in Rolldown
@@ -354,22 +380,25 @@ export class BundledDev {
     // set filenames to make output paths predictable so that `renderChunk` hook does not need to be used
     if (Array.isArray(rolldownOptions.output)) {
       for (const output of rolldownOptions.output) {
-        output.entryFileNames = 'assets/[name].js'
-        output.chunkFileNames = 'assets/[name]-[hash].js'
-        output.assetFileNames = 'assets/[name]-[hash][extname]'
-        output.minify = false
-        output.sourcemap = true
+        Object.assign(output, this.getOutputOptions())
       }
     } else {
       rolldownOptions.output ??= {}
-      rolldownOptions.output.entryFileNames = 'assets/[name].js'
-      rolldownOptions.output.chunkFileNames = 'assets/[name]-[hash].js'
-      rolldownOptions.output.assetFileNames = 'assets/[name]-[hash][extname]'
-      rolldownOptions.output.minify = false
-      rolldownOptions.output.sourcemap = true
+      Object.assign(rolldownOptions.output, this.getOutputOptions())
     }
 
     return rolldownOptions
+  }
+
+  protected getOutputOptions(): OutputOptions {
+    return {
+      entryFileNames: 'assets/[name].js',
+      chunkFileNames: 'assets/[name]-[hash].js',
+      assetFileNames: 'assets/[name]-[hash][extname]',
+      minify: false,
+      sourcemap:
+        this.environment.config.consumer === 'server' ? 'inline' : true,
+    }
   }
 
   private handleHmrOutput(
@@ -448,6 +477,49 @@ export class BundledDev {
         timestamp: true,
       },
     )
+  }
+
+  private getDevServerRuntimeImplementation(): string {
+    return /* js */ `
+      class ViteDevRuntime extends DevRuntime {
+        createModuleHotContext(moduleId) {
+          return ${ssrRolldownRuntimeKey}.${ssrRolldownRuntimeCreateHotContextMethod}(moduleId)
+        }
+    
+        applyUpdates() {
+          // noop, handled in the HMR client
+        }
+      }
+    
+      const rand = (Math.random() * 1000).toFixed(0).padStart(3, '0')
+      const clientId = String(Date.now()) + rand
+    
+      ${ssrRolldownRuntimeKey}.${ssrRolldownRuntimeTransport}?.send({
+        type: 'custom',
+        event: 'vite:module-loaded',
+        data: { modules: [], clientId }
+      })
+    
+      const wrappedSocket = {
+        send(message) {
+          switch (message.type) {
+            case 'hmr:module-registered': {
+              ${ssrRolldownRuntimeKey}.${ssrRolldownRuntimeTransport}?.send({
+                type: 'custom',
+                event: 'vite:module-loaded',
+                // clone array as the runtime reuses the array instance
+                data: { modules: message.modules.slice(), clientId },
+              })
+              break
+            }
+            default:
+              throw new Error(\`Unknown message type: \${JSON.stringify(message)}\`)
+          }
+        },
+      }
+    
+      ;${ssrRolldownRuntimeKey}.${ssrRolldownRuntimeDefineMethod}(new ViteDevRuntime(wrappedSocket, clientId))
+        `
   }
 }
 
