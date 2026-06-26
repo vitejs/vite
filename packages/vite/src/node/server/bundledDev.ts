@@ -351,6 +351,33 @@ export class BundledDev {
     rolldownOptions.optimization ??= {}
     rolldownOptions.optimization.inlineConst = false
 
+    // In bundledDev mode, Rolldown's DevEngine generates lazy-loading stub modules
+    // for dynamically imported files, appending `?rolldown-lazy=1` to the module ID.
+    // These stubs are JavaScript placeholders, not the actual file content. However,
+    // plugins like `@vitejs/plugin-vue` have broad `transform` filters that match
+    // any `.vue` file with any query parameter, causing them to try to parse the
+    // stub code as a Vue SFC and fail.
+    // The actual module compilation happens later through `compileEntry`, which calls
+    // plugin hooks with the real file ID (without `?rolldown-lazy=1`).
+    // Here we wrap each plugin's `transform` hook to skip `?rolldown-lazy=1` modules.
+    const plugins = await normalizePlugins(rolldownOptions.plugins)
+    for (const plugin of plugins) {
+      const transform = (plugin as any).transform
+      if (!transform) continue
+      const handler =
+        typeof transform === 'function' ? transform : transform.handler
+      const wrappedHandler = function (this: any, code: string, id: string) {
+        if (id.includes('?rolldown-lazy=')) return null
+        return handler.call(this, code, id)
+      }
+      if (typeof transform === 'function') {
+        ;(plugin as any).transform = wrappedHandler
+      } else {
+        transform.handler = wrappedHandler
+      }
+    }
+    rolldownOptions.plugins = plugins
+
     // set filenames to make output paths predictable so that `renderChunk` hook does not need to be used
     if (Array.isArray(rolldownOptions.output)) {
       for (const output of rolldownOptions.output) {
@@ -493,4 +520,21 @@ function debounce(time: number, cb: () => void) {
     }
     timer = globalThis.setTimeout(cb, time)
   }
+}
+
+async function normalizePlugins(plugins: any): Promise<any[]> {
+  if (!plugins) return []
+  const resolved = await plugins
+  if (Array.isArray(resolved)) {
+    const result: any[] = []
+    for (const p of resolved) {
+      const flattened = await normalizePlugins(p)
+      result.push(...flattened)
+    }
+    return result
+  }
+  if (resolved) {
+    return [resolved]
+  }
+  return []
 }
