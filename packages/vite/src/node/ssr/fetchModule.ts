@@ -184,7 +184,7 @@ async function fetchBundledModule(
       bundledDev,
       environment.config.root,
       url,
-    )!
+    )
     if (!resolvedEntry) {
       const entrypoints = [...bundledDev.facadeToChunk.keys()]
       throw new Error(
