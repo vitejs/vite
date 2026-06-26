@@ -202,16 +202,13 @@ async function computeEntries(environment: ScanEnvironment) {
     entries = await globEntries(explicitEntryPatterns, environment)
   } else if (buildInput) {
     const resolvePath = async (p: string) => {
-      // rollup resolves the input from process.cwd()
+      // `build.rollupOptions.input` is resolved from the root (not `process.cwd()`)
+      // by the build, so resolve it from the root here too by not passing an importer.
       const id = (
-        await environment.pluginContainer.resolveId(
-          p,
-          path.join(process.cwd(), '*'),
-          {
-            isEntry: true,
-            scan: true,
-          },
-        )
+        await environment.pluginContainer.resolveId(p, undefined, {
+          isEntry: true,
+          scan: true,
+        })
       )?.id
       if (id === undefined) {
         throw new Error(
