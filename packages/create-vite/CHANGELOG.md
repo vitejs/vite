@@ -1,3 +1,27 @@
+## [9.1.0](https://github.com/vitejs/vite/compare/create-vite@9.0.7...create-vite@9.1.0) (2026-06-23)
+### Features
+
+* **create-vite:** use `"moduleResolution": "nodenext"` for `tsconfig.node.json` ([#22592](https://github.com/vitejs/vite/issues/22592)) ([fef134a](https://github.com/vitejs/vite/commit/fef134a37d265db82fba06599636a167a6aee59c))
+* **create-vite:** use Oxlint for react templates and add ESLint option ([#22638](https://github.com/vitejs/vite/issues/22638)) ([456901b](https://github.com/vitejs/vite/commit/456901bb64de3f7c116e2c6cc1f9624d131b52f3))
+
+### Bug Fixes
+
+* **create-vite:** remove tsconfig `moduleResolution` option ([#22643](https://github.com/vitejs/vite/issues/22643)) ([689a066](https://github.com/vitejs/vite/commit/689a0669ad926461f3f1b81701cb6c01f7b2bd4a))
+* **deps:** update all non-major dependencies ([#22471](https://github.com/vitejs/vite/issues/22471)) ([98b8163](https://github.com/vitejs/vite/commit/98b81632139d51820f82036e58d6fbbf122b77b3))
+* **deps:** update all non-major dependencies ([#22511](https://github.com/vitejs/vite/issues/22511)) ([2686d7d](https://github.com/vitejs/vite/commit/2686d7d0b722402204d3bcc687a87adea1bcf9fa))
+* **deps:** update all non-major dependencies ([#22637](https://github.com/vitejs/vite/issues/22637)) ([44bb9d9](https://github.com/vitejs/vite/commit/44bb9d95a246011a2fba9a19cadeac4181bef1b4))
+* **deps:** update all non-major dependencies ([#22681](https://github.com/vitejs/vite/issues/22681)) ([f4f0633](https://github.com/vitejs/vite/commit/f4f063382dde0d67b2158374c56443d0bf5c9501))
+
+### Documentation
+
+* **create-vite:** add more flags to help output ([#22431](https://github.com/vitejs/vite/issues/22431)) ([7190cca](https://github.com/vitejs/vite/commit/7190cca9e02a873fa6b635145e04f318ed5f7bf4))
+
+### Miscellaneous Chores
+
+* **deps:** update all non-major dependencies ([#22682](https://github.com/vitejs/vite/issues/22682)) ([8b89729](https://github.com/vitejs/vite/commit/8b89729eee83492a1bd88ecb6ff1c0fd084a9178))
+* **deps:** update rolldown-related dependencies ([#22566](https://github.com/vitejs/vite/issues/22566)) ([3052a67](https://github.com/vitejs/vite/commit/3052a67d9350f4c5076ab1c222c4a21a589cbcdd))
+* remove irrelevant commits from changelog ([#22430](https://github.com/vitejs/vite/issues/22430)) ([6ea3838](https://github.com/vitejs/vite/commit/6ea383859aaf0ef8e673b458f164e84aeb6ff51d))
+
 ## <small>[9.0.7](https://github.com/vitejs/vite/compare/create-vite@9.0.6...create-vite@9.0.7) (2026-05-11)</small>
 ### Bug Fixes
 

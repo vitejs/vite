@@ -554,7 +554,10 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
             `${getHash(cleanUrl(id))}_${Number.parseInt(index)}`,
             css,
           )
-          return `export default ''`
+          return {
+            code: `export default ''`,
+            map: { mappings: '' },
+          }
         }
 
         const inlined = inlineRE.test(id)

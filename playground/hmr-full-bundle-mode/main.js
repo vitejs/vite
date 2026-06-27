@@ -1,4 +1,5 @@
 import './hmr.js'
+import './hmr-asset.js'
 import assetUrl from './asset.png'
 import WorkerQuery from './worker-query.js?worker'
 

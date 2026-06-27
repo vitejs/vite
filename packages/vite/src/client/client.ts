@@ -588,13 +588,9 @@ export function removeStyle(id: string): void {
     // re-select elements since HMR can replace links
     document
       .querySelectorAll<HTMLLinkElement>(
-        `link[rel="stylesheet"][data-vite-dev-id]`,
+        `link[rel="stylesheet"][data-vite-dev-id="${CSS.escape(id)}"]`,
       )
-      .forEach((el) => {
-        if (el.getAttribute('data-vite-dev-id') === id) {
-          el.remove()
-        }
-      })
+      .forEach((el) => el.remove())
     linkSheetsMap.delete(id)
   }
   const style = sheetsMap.get(id)
