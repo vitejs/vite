@@ -979,6 +979,63 @@ test.skip('adjust worker build error for worker.format', async () => {
   expect.unreachable()
 })
 
+test('css minify warnings include the original file name', async () => {
+  const logger = createLogger('silent')
+  const loggerSpy = vi.spyOn(logger, 'warn').mockImplementation(() => {})
+
+  const result = (await build({
+    root: resolve(dirname, 'packages/build-project'),
+    logLevel: 'silent',
+    build: {
+      write: false,
+      cssCodeSplit: false,
+      cssMinify: 'esbuild',
+      cssTarget: 'chrome87',
+      rollupOptions: {
+        input: 'entry.js',
+      },
+    },
+    customLogger: logger,
+    plugins: [
+      {
+        name: 'test-css-minify-warning-filename',
+        resolveId(id) {
+          if (id === 'entry.js' || id === 'one.css' || id === 'two.css') {
+            return `\0${id}`
+          }
+        },
+        load(id) {
+          if (id === '\0entry.js') {
+            return `import 'one.css'; import 'two.css'`
+          }
+          if (id === '\0one.css') {
+            return `.ok { color: red; }`
+          }
+          if (id === '\0two.css') {
+            return `body {
+  h1 {
+    div[id*='app'] & {
+      color: red;
+    }
+  }
+}`
+          }
+        },
+      },
+    ],
+  })) as RolldownOutput
+
+  const cssAsset = result.output.find(
+    (item) => item.type === 'asset' && item.fileName.endsWith('.css'),
+  )
+  expect(cssAsset).toBeDefined()
+
+  const logs = loggerSpy.mock.calls.map((args) =>
+    stripVTControlCharacters(args[0]),
+  )
+  expect(logs.join('\n')).toContain('two.css')
+})
+
 describe('onRollupLog', () => {
   const pluginName = 'rollup-plugin-test'
   const msgInfo = 'This is the INFO message.'

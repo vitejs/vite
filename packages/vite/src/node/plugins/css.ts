@@ -271,6 +271,43 @@ const cssModulesCache = new WeakMap<
   Map<string, Record<string, string>>
 >()
 
+interface CssBundleSegment {
+  filename: string
+  startLine: number
+  endLine: number
+}
+
+function countCssLines(css: string): number {
+  let lines = 1
+  for (let i = 0; i < css.length; i++) {
+    if (css[i] === '\n') {
+      lines++
+    }
+  }
+  return lines
+}
+
+function appendCssBundleSegment(
+  segments: CssBundleSegment[],
+  filename: string,
+  lineCount: number,
+) {
+  const startLine = segments.length
+    ? segments[segments.length - 1]!.endLine + 1
+    : 1
+  const endLine = startLine + lineCount - 1
+  segments.push({ filename, startLine, endLine })
+}
+
+function findCssBundleSegment(
+  segments: CssBundleSegment[] | undefined,
+  line: number,
+): CssBundleSegment | undefined {
+  return segments?.find(
+    (segment) => line >= segment.startLine && line <= segment.endLine,
+  )
+}
+
 export const removedPureCssFilesCache: WeakMap<
   ResolvedConfig,
   Map<string, RenderedChunk>
@@ -278,6 +315,11 @@ export const removedPureCssFilesCache: WeakMap<
 
 // Used only if the config doesn't code-split CSS (builds a single CSS file)
 export const cssBundleNameCache: WeakMap<ResolvedConfig, string> = new WeakMap()
+
+const cssBundleSegmentsMap = new WeakMap<
+  ResolvedConfig,
+  Map<string, CssBundleSegment[]>
+>()
 
 const postcssConfigCache = new WeakMap<
   ResolvedConfig,
@@ -321,7 +363,6 @@ export function cssPlugin(config: ResolvedConfig): Plugin {
       cssModulesCache.set(config, moduleCache)
 
       removedPureCssFilesCache.set(config, new Map<string, RenderedChunk>())
-
       preprocessorWorkerController = createPreprocessorWorkerController(
         normalizeMaxWorkers(config.css.preprocessorMaxWorkers),
       )
@@ -524,6 +565,7 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
       pureCssChunks = new Set<RenderedChunk>()
       hasEmitted = false
       chunkCSSMap = new Map()
+      cssBundleSegmentsMap.set(config, new Map<string, CssBundleSegment[]>())
       codeSplitEmitQueue = createSerialPromiseQueue()
     },
 
@@ -668,6 +710,7 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
             const isJsChunkEmpty = code === '' && !chunk.isEntry
             let isPureCssChunk = chunk.exports.length === 0
             const ids = Object.keys(chunk.modules)
+            const chunkCssSegments: CssBundleSegment[] = []
             for (const id of ids) {
               if (styles.has(id)) {
                 // ?transform-only is used for ?url and shouldn't be included in normal CSS chunks
@@ -691,7 +734,15 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
                   isPureCssChunk = false
                 }
 
-                chunkCSS = (chunkCSS || '') + styles.get(id)
+                const style = styles.get(id)!
+                chunkCSS = (chunkCSS || '') + style
+                if (!this.environment.config.build.cssCodeSplit) {
+                  appendCssBundleSegment(
+                    chunkCssSegments,
+                    id,
+                    countCssLines(style),
+                  )
+                }
               } else if (!isJsChunkEmpty) {
                 // if the module does not have a style, then it's not a pure css chunk.
                 // this is true because in the `transform` hook above, only modules
@@ -961,6 +1012,11 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
                 // finalizeCss is called for the aggregated chunk in generateBundle
 
                 chunkCSSMap.set(chunk.fileName, chunkCSS)
+                if (!this.environment.config.build.cssCodeSplit) {
+                  cssBundleSegmentsMap
+                    .get(config)!
+                    .set(chunk.fileName, chunkCssSegments)
+                }
               }
             }
 
@@ -1008,6 +1064,7 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
         !hasEmitted
       ) {
         let extractedCss = ''
+        const extractedCssSegments: CssBundleSegment[] = []
         const collected = new Set<OutputChunk>()
         // will be populated in order they are used by entry points
         const dynamicImports = new Set<string>()
@@ -1023,7 +1080,20 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
             dynamicImports.add(importName),
           )
           // Then collect the styles of the current chunk (might overwrite some styles from previous imports)
-          extractedCss += chunkCSSMap.get(chunk.preliminaryFileName) ?? ''
+          const chunkCss = chunkCSSMap.get(chunk.preliminaryFileName) ?? ''
+          extractedCss += chunkCss
+          const chunkSegments = cssBundleSegmentsMap
+            .get(config)!
+            .get(chunk.preliminaryFileName)
+          if (chunkSegments) {
+            for (const segment of chunkSegments) {
+              appendCssBundleSegment(
+                extractedCssSegments,
+                segment.filename,
+                segment.endLine - segment.startLine + 1,
+              )
+            }
+          }
         }
 
         // The bundle is guaranteed to be deterministic, if not then we have a bug in rollup.
@@ -1041,6 +1111,9 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
         // Finally, if there's any extracted CSS, we emit the asset
         if (extractedCss) {
           hasEmitted = true
+          cssBundleSegmentsMap
+            .get(config)!
+            .set(defaultCssBundleName, extractedCssSegments)
           extractedCss = await finalizeCss(extractedCss, config)
           this.emitFile({
             name: getCssBundleName(),
@@ -1933,6 +2006,14 @@ async function finalizeCss(css: string, config: ResolvedConfig) {
   return css
 }
 
+function formatCssWarningSource(
+  filename: string,
+  location: { line: number; column: number | null | undefined },
+): string {
+  const column = location.column == null ? 0 : location.column + 1
+  return `${filename}:${location.line}:${column}`
+}
+
 interface PostCSSConfigResult {
   options: PostCSS.ProcessOptions
   plugins: PostCSS.AcceptedPlugin[]
@@ -2209,12 +2290,13 @@ async function doImportCSSReplace(
   return `@import ${prefix}${wrap}${newUrl}${wrap}`
 }
 
-async function minifyCSS(
+export async function minifyCSS(
   css: string,
   config: ResolvedConfig,
   inlined: boolean,
   filename: string = defaultCssBundleName,
-) {
+): Promise<string> {
+  const bundleSegments = cssBundleSegmentsMap.get(config)?.get(filename)
   // We want inlined CSS to not end with a linebreak, while ensuring that
   // regular CSS assets do end with a linebreak.
   // See https://github.com/vitejs/vite/pull/13893#issuecomment-1678628198
@@ -2229,6 +2311,18 @@ async function minifyCSS(
         ...resolveMinifyCssEsbuildOptions(config.esbuild || {}),
       })
       if (warnings.length) {
+        for (const warning of warnings) {
+          if (bundleSegments && warning.location) {
+            const segment = findCssBundleSegment(
+              bundleSegments,
+              warning.location.line,
+            )
+            if (segment) {
+              warning.location.file = segment.filename
+              warning.location.line -= segment.startLine - 1
+            }
+          }
+        }
         const msgs = await formatMessages(warnings, { kind: 'warning' })
         config.logger.warn(
           colors.yellow(`[esbuild css minify]\n${msgs.join('\n')}`),
@@ -2259,6 +2353,15 @@ async function minifyCSS(
 
     for (const warning of warnings) {
       let msg = `[lightningcss minify] ${warning.message}`
+      if (bundleSegments) {
+        const segment = findCssBundleSegment(bundleSegments, warning.loc.line)
+        if (segment) {
+          msg += `\n${formatCssWarningSource(segment.filename, {
+            line: warning.loc.line - segment.startLine + 1,
+            column: warning.loc.column - 1,
+          })}`
+        }
+      }
       msg += `\n${generateCodeFrame(css, {
         line: warning.loc.line,
         column: warning.loc.column - 1, // 1-based
