@@ -734,7 +734,7 @@ async function init() {
     setupEslint(root, template.endsWith('-ts'))
   }
 
-  if (devtools) {
+  if (devtools && isVueTemplate) {
     setupDevtools(root, template.endsWith('-ts'))
   }
 
