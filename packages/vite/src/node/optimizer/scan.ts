@@ -227,7 +227,7 @@ async function computeEntries(environment: ScanEnvironment) {
       throw new Error('invalid rolldownOptions.input value.')
     }
   } else {
-    entries = await globEntries('**/*.html', environment)
+    entries = await globEntries('**/*.{html,htm}', environment)
   }
 
   // Non-supported entry file types and virtual files should not be scanned for
@@ -440,7 +440,7 @@ function rolldownScanPlugin(
     let raw = await fsp.readFile(id, 'utf-8')
     // Avoid matching the content of the comment
     raw = raw.replace(commentRE, '<!---->')
-    const isHtml = id.endsWith('.html')
+    const isHtml = id.endsWith('.html') || id.endsWith('.htm')
     let js = ''
     let scriptId = 0
     const matches = raw.matchAll(scriptRE)
