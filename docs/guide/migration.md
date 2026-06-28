@@ -292,6 +292,29 @@ The `build.rollupOptions.watch.chokidar` option was removed. Please migrate to t
 
 The object form `output.manualChunks` option is not supported anymore. The function form `output.manualChunks` is deprecated. Rolldown has the more flexible [`codeSplitting`](https://rolldown.rs/reference/OutputOptions.codeSplitting) option. See Rolldown's docs for more details about `codeSplitting`: [Manual Code Splitting - Rolldown](https://rolldown.rs/in-depth/manual-code-splitting).
 
+### Removed `build.rollupOptions.output.experimentalMinChunkSize`
+
+The `output.experimentalMinChunkSize` option was used to set a minimum chunk size when code splitting. In Vite v8 (Rolldown), this is configured through the [`codeSplitting.minSize`](https://rolldown.rs/reference/OutputOptions.codeSplitting#minsize) option:
+
+```diff
+export default defineConfig({
+  build: {
+-    rollupOptions: {
+-      output: {
+-        experimentalMinChunkSize: 2000,
+-      },
+-    },
++    rolldownOptions: {
++      output: {
++        codeSplitting: {
++          minSize: 2000,
++        },
++      },
++    },
+  },
+})
+```
+
 ### `build()` Throws `BundleError`
 
 _This change only affects JS API users._
