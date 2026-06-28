@@ -49,28 +49,42 @@ export function htmlFallbackMiddleware(
       return next()
     }
 
-    // .html files are not handled by serveStaticMiddleware
+    // .html/.htm files are not handled by serveStaticMiddleware
     // so we need to check if the file exists
-    if (pathname.endsWith('.html')) {
+    if (pathname.endsWith('.html') || pathname.endsWith('.htm')) {
       if (checkFileExists(pathname)) {
         debug?.(`Rewriting ${req.method} ${req.url} to ${url}`)
         req.url = url
         return next()
       }
     }
-    // trailing slash should check for fallback index.html
+    // trailing slash should check for fallback index.html / index.htm
     else if (pathname.endsWith('/')) {
-      if (checkFileExists(joinUrlSegments(pathname, 'index.html'))) {
+      const indexHtml = joinUrlSegments(pathname, 'index.html')
+      const indexHtm = joinUrlSegments(pathname, 'index.htm')
+      if (checkFileExists(indexHtml)) {
         const newUrl = url + 'index.html'
         debug?.(`Rewriting ${req.method} ${req.url} to ${newUrl}`)
         req.url = newUrl
         return next()
       }
+      if (checkFileExists(indexHtm)) {
+        const newUrl = url + 'index.htm'
+        debug?.(`Rewriting ${req.method} ${req.url} to ${newUrl}`)
+        req.url = newUrl
+        return next()
+      }
     }
-    // non-trailing slash should check for fallback .html
+    // non-trailing slash should check for fallback .html / .htm
     else {
       if (checkFileExists(pathname + '.html')) {
         const newUrl = url + '.html'
+        debug?.(`Rewriting ${req.method} ${req.url} to ${newUrl}`)
+        req.url = newUrl
+        return next()
+      }
+      if (checkFileExists(pathname + '.htm')) {
+        const newUrl = url + '.htm'
         debug?.(`Rewriting ${req.method} ${req.url} to ${newUrl}`)
         req.url = newUrl
         return next()
