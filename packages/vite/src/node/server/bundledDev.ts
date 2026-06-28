@@ -353,6 +353,9 @@ export class BundledDev {
         this.environment.getTopLevelConfig(),
       ),
     }
+    // disable lazy barrel optimization due to a bug in Rolldown dev mode
+    // https://github.com/vitejs/vite/issues/22749
+    rolldownOptions.experimental.lazyBarrel = false
 
     // disable inlineConst optimization due to a bug in Rolldown
     // https://github.com/vitejs/vite/issues/21843
