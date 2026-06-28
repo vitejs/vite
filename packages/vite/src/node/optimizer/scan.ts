@@ -244,7 +244,7 @@ async function computeEntries(environment: ScanEnvironment) {
       throw new Error('invalid rolldownOptions.input value.')
     }
   } else {
-    entries = await globEntries('**/*.{html,htm}', environment)
+    entries = await globEntries('**/*.html', environment)
   }
 
   // Non-supported entry file types and virtual files should not be scanned for
