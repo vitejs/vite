@@ -370,8 +370,42 @@ export function buildImportAnalysisPlugin(config: ResolvedConfig): Plugin[] {
 
           if (imports.length) {
             // Nested preload wrappers emit inner markers before outer markers.
-            // Pair dynamic imports from the inside out so each import claims its own marker.
-            for (let index = imports.length - 1; index >= 0; index--) {
+            // Pair markers with the latest open dynamic import while scanning forward.
+            const markerStartPosByImportIndex = new Map<number, number>()
+            const openImports: number[] = []
+            let importIndex = 0
+            let markerStartPos = findPreloadMarker(code)
+            const firstMarkerStartPos = markerStartPos
+            while (markerStartPos !== -1) {
+              while (
+                importIndex < imports.length &&
+                imports[importIndex].e <= markerStartPos
+              ) {
+                openImports.push(importIndex)
+                importIndex++
+              }
+              const ownerImportIndex = openImports.pop()
+              if (ownerImportIndex !== undefined) {
+                markerStartPosByImportIndex.set(
+                  ownerImportIndex,
+                  markerStartPos,
+                )
+              }
+              markerStartPos = findPreloadMarker(
+                code,
+                markerStartPos + preloadMarker.length,
+              )
+            }
+            // fix issue #3051
+            if (
+              firstMarkerStartPos !== -1 &&
+              imports.length === 1 &&
+              !markerStartPosByImportIndex.has(0)
+            ) {
+              markerStartPosByImportIndex.set(0, firstMarkerStartPos)
+            }
+
+            for (let index = 0; index < imports.length; index++) {
               // To handle escape sequences in specifier strings, the .n field will be provided where possible.
               const {
                 n: name,
@@ -440,20 +474,7 @@ export function buildImportAnalysisPlugin(config: ResolvedConfig): Plugin[] {
                 addDeps(normalizedFile)
               }
 
-              let markerStartPos = findPreloadMarker(code, end)
-              while (
-                markerStartPos !== -1 &&
-                rewroteMarkerStartPos.has(markerStartPos)
-              ) {
-                markerStartPos = findPreloadMarker(
-                  code,
-                  markerStartPos + preloadMarker.length,
-                )
-              }
-              // fix issue #3051
-              if (markerStartPos === -1 && imports.length === 1) {
-                markerStartPos = findPreloadMarker(code)
-              }
+              markerStartPos = markerStartPosByImportIndex.get(index) ?? -1
 
               if (markerStartPos > 0) {
                 // the dep list includes the main chunk, so only need to reload when there are actual other deps.
