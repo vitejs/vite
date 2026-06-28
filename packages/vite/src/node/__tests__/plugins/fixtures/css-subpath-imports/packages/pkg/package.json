@@ -1,0 +1,7 @@
+{
+  "name": "pkg",
+  "private": true,
+  "imports": {
+    "#src/*": "./src/*"
+  }
+}
