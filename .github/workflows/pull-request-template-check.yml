@@ -24,7 +24,7 @@ jobs:
         with:
           persist-credentials: false
 
-      - uses: warpdotdev/oz-agent-action@ce1621abf6a8ed8afdd4e4cc994545ede8fe1c6f # v1
+      - uses: warpdotdev/oz-agent-action@8ba4e142060cca997ddf354d8c40da7511110510 # v1
         id: agent
         with:
           prompt: |
