@@ -105,7 +105,7 @@ When using a self-signed SSL certificate, Chrome ignores all caching directives 
 
 To resolve the problem use a trusted SSL cert.
 
-See: [Cache problems](https://helpx.adobe.com/mt/experience-manager/kb/cache-problems-on-chrome-with-SSL-certificate-errors.html), [Chrome issue](https://bugs.chromium.org/p/chromium/issues/detail?id=110649#c8)
+See: [Chrome issue](https://bugs.chromium.org/p/chromium/issues/detail?id=110649#c8)
 
 #### macOS
 

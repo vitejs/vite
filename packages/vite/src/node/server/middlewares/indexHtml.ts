@@ -465,7 +465,13 @@ export function indexHtmlMiddleware(
     // htmlFallbackMiddleware appends '.html' to URLs
     if (url?.endsWith('.html') && req.headers['sec-fetch-dest'] !== 'script') {
       if (fullBundle) {
-        const pathname = decodeURIComponent(url)
+        let pathname
+        try {
+          pathname = decodeURIComponent(url)
+        } catch {
+          // ignore malformed URI
+          return next()
+        }
         const filePath = pathname.slice(1) // remove first /
 
         let file = fullBundle.memoryFiles.get(filePath)
