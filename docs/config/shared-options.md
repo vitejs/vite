@@ -202,10 +202,38 @@ Enabling this setting causes vite to determine file identity by the original fil
 
 ## resolve.tsconfigPaths
 
-- **Type:** `boolean`
+- **Type:** `boolean | TsconfigPathsOptions`
 - **Default:** `false`
 
 Enables the tsconfig paths resolution feature. `paths` option in `tsconfig.json` will be used to resolve imports. See [Features](/guide/features.md#paths) for more details.
+
+Set to `true` to enable auto-discovery of the nearest `tsconfig.json`. Pass an object to pin a specific config file:
+
+```ts
+interface TsconfigPathsOptions {
+  /**
+   * Path to the tsconfig.json file to use for path resolution.
+   * Can be a relative path (resolved against the project root) or an absolute path.
+   * For auto-discovery, use `tsconfigPaths: true` instead.
+   */
+  configFile: string
+}
+```
+
+Example: load a different tsconfig in production builds:
+
+```js
+import { defineConfig } from 'vite'
+
+export default defineConfig(({ mode }) => ({
+  resolve: {
+    tsconfigPaths: {
+      configFile:
+        mode === 'production' ? './tsconfig.prod.json' : './tsconfig.json',
+    },
+  },
+}))
+```
 
 ## html.cspNonce
 

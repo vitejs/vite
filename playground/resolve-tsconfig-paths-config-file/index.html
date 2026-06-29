@@ -1,0 +1,16 @@
+<h1>Resolve: tsconfig paths (custom configFile)</h1>
+
+<h2>Import via @/ alias (custom tsconfig)</h2>
+<p class="custom"></p>
+
+<script type="module">
+  function text(selector, value) {
+    document.querySelector(selector).textContent = value
+  }
+
+  // `@/imported` resolves through tsconfig.custom.json paths
+  // (`./src/*`), not the default tsconfig.json (`./src/wrong/*`)
+  // which would 404 because `./src/wrong/imported.js` does not exist.
+  import imported from '@/imported'
+  text('.custom', imported)
+</script>

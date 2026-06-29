@@ -103,18 +103,32 @@ export interface EnvironmentResolveOptions {
   builtins?: (string | RegExp)[]
 }
 
+export interface TsconfigPathsOptions {
+  /**
+   * Path to the tsconfig.json file to use for path resolution.
+   * Can be a relative path (resolved against the project root) or an absolute path.
+   * For auto-discovery of the nearest tsconfig.json, use `tsconfigPaths: true`
+   * instead.
+   */
+  configFile: string
+}
+
 export interface ResolveOptions extends EnvironmentResolveOptions {
   /**
    * @default false
    */
   preserveSymlinks?: boolean
   /**
-   * Enable tsconfig paths resolution
+   * Enable tsconfig paths resolution.
+   *
+   * Set to `true` to enable auto-discovery of the nearest tsconfig.json,
+   * or pass an object to customize the behavior (e.g. specify a custom
+   * tsconfig file).
    *
    * @default false
    * @experimental
    */
-  tsconfigPaths?: boolean
+  tsconfigPaths?: boolean | TsconfigPathsOptions
 }
 
 interface ResolvePluginOptions {
@@ -178,6 +192,22 @@ export interface InternalResolveOptions
 // It is used when creating custom resolvers (for CSS, scanning, etc)
 export interface ResolvePluginOptionsWithOverrides
   extends ResolveOptions, ResolvePluginOptions {}
+
+// Maps Vite's user-facing `tsconfigPaths` option to the shape rolldown's
+// viteResolvePlugin expects. `true`/`false` pass through unchanged; for the
+// object form, we resolve a relative `configFile` against the project root
+// because oxc-resolver expects an absolute path.
+function normalizeTsconfigPathsOption(
+  tsconfigPaths: boolean | TsconfigPathsOptions,
+  root: string,
+): boolean | { configFile: string } {
+  if (typeof tsconfigPaths !== 'object') return tsconfigPaths
+  return {
+    configFile: path.isAbsolute(tsconfigPaths.configFile)
+      ? tsconfigPaths.configFile
+      : path.resolve(root, tsconfigPaths.configFile),
+  }
+}
 
 const perEnvironmentOrWorkerPlugin = (
   name: string,
@@ -277,7 +307,10 @@ export function oxcResolvePlugin(
             tryIndex: options.tryIndex ?? true,
             tryPrefix: options.tryPrefix,
             preserveSymlinks: options.preserveSymlinks,
-            tsconfigPaths: options.tsconfigPaths,
+            tsconfigPaths: normalizeTsconfigPathsOption(
+              options.tsconfigPaths,
+              options.root,
+            ),
           },
           environmentConsumer: partialEnv.config.consumer,
           environmentName: partialEnv.name,
