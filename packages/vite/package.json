@@ -76,7 +76,7 @@
     "tinyglobby": "^0.2.17"
   },
   "devDependencies": {
-    "@babel/parser": "^7.29.7",
+    "@babel/parser": "^8.0.0",
     "@jridgewell/remapping": "^2.3.5",
     "@jridgewell/trace-mapping": "^0.3.31",
     "@polka/compression": "^1.0.0-next.25",
