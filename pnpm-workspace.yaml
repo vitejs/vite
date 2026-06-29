@@ -44,6 +44,11 @@ allowBuilds:
   unrs-resolver: true
   workerd: true
 
+minimumReleaseAge: 1440
+minimumReleaseAgeExclude:
+  - rolldown
+  - '@rolldown/binding-*'
+blockExoticSubdeps: true
 trustPolicy: no-downgrade
 trustPolicyExclude:
   - chokidar@4.0.3 # https://github.com/paulmillr/chokidar/issues/1440

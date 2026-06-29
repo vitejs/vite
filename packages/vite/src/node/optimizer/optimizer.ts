@@ -75,9 +75,11 @@ export function createDepsOptimizer(
   let newDepsToLogHandle: NodeJS.Timeout | undefined
   const logNewlyDiscoveredDeps = () => {
     if (newDepsToLog.length) {
+      const dependencyLabel =
+        newDepsToLog.length === 1 ? 'dependency' : 'dependencies'
       logger.info(
         colors.green(
-          `✨ new dependencies optimized: ${depsLogString(newDepsToLog)}`,
+          `${dependencyLabel} optimized: ${depsLogString(newDepsToLog)}`,
         ),
         {
           timestamp: true,
@@ -88,14 +90,17 @@ export function createDepsOptimizer(
   }
 
   let discoveredDepsWhileScanning: string[] = []
-  const logDiscoveredDepsWhileScanning = () => {
+  const logOptimizeDepsIncludeSuggestion = (reason: string) => {
     if (discoveredDepsWhileScanning.length) {
       logger.info(
-        colors.green(
-          `✨ discovered while scanning: ${depsLogString(
+        colors.magenta(
+          `tip: consider adding ${depsLogString(
             discoveredDepsWhileScanning,
-          )}`,
-        ),
+          )} to optimizeDeps.include to ${reason}`,
+        ) +
+          colors.dim(
+            `\n  See https://vite.dev/guide/dep-pre-bundling.html#customizing-the-behavior`,
+          ),
         {
           timestamp: true,
         },
@@ -437,24 +442,16 @@ export function createDepsOptimizer(
             newDepsToLogHandle = undefined
             logNewlyDiscoveredDeps()
             if (warnAboutMissedDependencies) {
-              logDiscoveredDepsWhileScanning()
-              logger.info(
-                colors.magenta(
-                  `❗ add these dependencies to optimizeDeps.include to speed up cold start`,
-                ),
-                { timestamp: true },
-              )
+              logOptimizeDepsIncludeSuggestion('speed up cold start')
               warnAboutMissedDependencies = false
             }
           }, 2 * debounceMs)
         } else {
           debug(
             colors.green(
-              `✨ ${
-                !isRerun
-                  ? `dependencies optimized`
-                  : `optimized dependencies unchanged`
-              }`,
+              !isRerun
+                ? `dependencies optimized`
+                : `optimized dependencies unchanged`,
             ),
           )
         }
@@ -468,7 +465,7 @@ export function createDepsOptimizer(
 
           debug?.(
             colors.green(
-              `✨ delaying reload as new dependencies have been found...`,
+              `delaying reload as new dependencies have been found...`,
             ),
           )
         } else {
@@ -479,19 +476,15 @@ export function createDepsOptimizer(
             newDepsToLogHandle = undefined
             logNewlyDiscoveredDeps()
             if (warnAboutMissedDependencies) {
-              logDiscoveredDepsWhileScanning()
-              logger.info(
-                colors.magenta(
-                  `❗ add these dependencies to optimizeDeps.include to avoid a full page reload during cold start`,
-                ),
-                { timestamp: true },
+              logOptimizeDepsIncludeSuggestion(
+                'avoid a full page reload during cold start',
               )
               warnAboutMissedDependencies = false
             }
           }
 
           logger.info(
-            colors.green(`✨ optimized dependencies changed. reloading`),
+            colors.green(`optimized dependencies changed. reloading`),
             {
               timestamp: true,
             },
@@ -643,7 +636,7 @@ export function createDepsOptimizer(
     // switch after this point to a simple debounce strategy
     waitingForCrawlEnd = false
 
-    debug?.(colors.green(`✨ static imports crawl ended`))
+    debug?.(colors.green(`static imports crawl ended`))
     if (closed) {
       return
     }
@@ -672,7 +665,7 @@ export function createDepsOptimizer(
       if (scanDeps.length === 0 && crawlDeps.length === 0) {
         debug?.(
           colors.green(
-            `✨ no dependencies found by the scanner or crawling static imports`,
+            `no dependencies found by the scanner or crawling static imports`,
           ),
         )
         // We still commit the result so the scanner isn't run on the next cold start
@@ -703,16 +696,16 @@ export function createDepsOptimizer(
         if (scannerMissedDeps) {
           debug?.(
             colors.yellow(
-              `✨ new dependencies were found while crawling that weren't detected by the scanner`,
+              `new dependencies were found while crawling that weren't detected by the scanner`,
             ),
           )
         }
-        debug?.(colors.green(`✨ re-running optimizer`))
+        debug?.(colors.green(`re-running optimizer`))
         debouncedProcessing(0)
       } else {
         debug?.(
           colors.green(
-            `✨ using post-scan optimizer result, the scanner found every used dependency`,
+            `using post-scan optimizer result, the scanner found every used dependency`,
           ),
         )
         startNextDiscoveredBatch()
@@ -726,7 +719,7 @@ export function createDepsOptimizer(
       if (newDepsDiscovered) {
         debug?.(
           colors.green(
-            `✨ new dependencies were found while crawling static imports, re-running optimizer`,
+            `new dependencies were found while crawling static imports, re-running optimizer`,
           ),
         )
         warnAboutMissedDependencies = true
@@ -739,7 +732,7 @@ export function createDepsOptimizer(
       if (crawlDeps.length === 0) {
         debug?.(
           colors.green(
-            `✨ no dependencies found while crawling the static imports`,
+            `no dependencies found while crawling the static imports`,
           ),
         )
         firstRunCalled = true
@@ -804,7 +797,7 @@ function findInteropMismatches(
       // This only happens when a discovered dependency has mixed ESM and CJS syntax
       // and it hasn't been manually added to optimizeDeps.needsInterop
       needsInteropMismatch.push(dep)
-      debug?.(colors.cyan(`✨ needsInterop mismatch detected for ${dep}`))
+      debug?.(colors.cyan(`needsInterop mismatch detected for ${dep}`))
     }
   }
   return needsInteropMismatch
