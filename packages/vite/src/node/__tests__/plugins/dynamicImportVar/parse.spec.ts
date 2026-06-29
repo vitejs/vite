@@ -25,6 +25,10 @@ describe('parse positives', () => {
     expect(await run('`./mods/${base}.js`')).toMatchSnapshot()
   })
 
+  it('constant before variable', async () => {
+    expect(await run("`./${'mods'}/${base}.js`")).toMatchSnapshot()
+  })
+
   it('alias path', async () => {
     expect(await run('`@/${base}.js`')).toMatchSnapshot()
   })
