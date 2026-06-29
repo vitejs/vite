@@ -184,6 +184,9 @@ async function getWorkerType(
 export const workerImportMetaUrlRE: RegExp =
   /\bnew\s+(?:Worker|SharedWorker)\s*\(\s*(new\s+URL\s*\(\s*('[^']+'|"[^"]+"|`[^`]+`)\s*,\s*import\.meta\.url\s*(?:,\s*)?\))/dg
 
+const bareImportMetaUrlRE: RegExp =
+  /\bnew\s+URL\s*\(\s*('[^']+'|"[^"]+"|`[^`]+`)\s*,\s*import\.meta\.url\s*(?:,\s*)?\)/dg
+
 export function workerImportMetaUrlPlugin(config: ResolvedConfig): Plugin {
   let workerResolver: ResolveIdFn
 
@@ -204,17 +207,21 @@ export function workerImportMetaUrlPlugin(config: ResolvedConfig): Plugin {
     },
 
     transform: {
-      filter: { code: workerImportMetaUrlRE },
+      filter: { code: /\bnew\s+(?:Worker|SharedWorker)\s*\(/ },
       async handler(code, id) {
         const isBundled = this.environment.config.isBundled
         let s: MagicString | undefined
         const cleanString = stripLiteral(code)
         const re = new RegExp(workerImportMetaUrlRE)
 
+        const handledExpStarts = new Set<number>()
+
         let match: RegExpExecArray | null
         while ((match = re.exec(cleanString))) {
           const [[, endIndex], [expStart, expEnd], [urlStart, urlEnd]] =
             match.indices as Array<[number, number]>
+
+          handledExpStarts.add(expStart)
 
           const rawUrl = code.slice(urlStart, urlEnd)
 
@@ -279,6 +286,26 @@ export function workerImportMetaUrlPlugin(config: ResolvedConfig): Plugin {
               expEnd,
               // NOTE: add `'' +` to opt-out rolldown's transform: https://github.com/rolldown/rolldown/issues/2745
               `new URL(/* @vite-ignore */ ${JSON.stringify(builtUrl)}, '' + import.meta.url)`,
+            )
+          }
+        }
+
+        const bareRe = new RegExp(bareImportMetaUrlRE)
+        let bareMatch: RegExpExecArray | null
+        while ((bareMatch = bareRe.exec(cleanString))) {
+          const [[bareStart], [urlStart, urlEnd]] = bareMatch.indices as Array<
+            [number, number]
+          >
+          if (!handledExpStarts.has(bareStart)) {
+            const rawUrl = code.slice(urlStart, urlEnd)
+            if (rawUrl[0] === '`' && rawUrl.includes('${')) {
+              continue
+            }
+            this.warn(
+              `\`new URL(${rawUrl}, import.meta.url)\` is not directly passed to a Worker constructor and will not be processed as a worker entry point. ` +
+                `To bundle this file as a worker, pass the URL expression directly: ` +
+                `\`new Worker(new URL(${rawUrl}, import.meta.url))\``,
+              bareStart,
             )
           }
         }

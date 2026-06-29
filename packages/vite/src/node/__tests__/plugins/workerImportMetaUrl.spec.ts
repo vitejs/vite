@@ -10,15 +10,93 @@ async function createWorkerImportMetaUrlPluginTransform() {
   const environment = new PartialEnvironment('client', config)
 
   return async (code: string) => {
+    const warnings: string[] = []
     // @ts-expect-error transform.handler should exist
     const result = await instance.transform.handler.call(
-      { environment, parse: parseAst },
+      {
+        environment,
+        parse: parseAst,
+        warn: (msg: string | { message: string }) => {
+          warnings.push(typeof msg === 'string' ? msg : msg.message)
+        },
+      },
       code,
       'foo.ts',
     )
     return result?.code || result
   }
 }
+
+async function createWorkerImportMetaUrlPluginTransformWithWarnings() {
+  const config = await resolveConfig({ configFile: false }, 'serve')
+  const instance = workerImportMetaUrlPlugin(config)
+  const environment = new PartialEnvironment('client', config)
+
+  return async (code: string) => {
+    const warnings: string[] = []
+    // @ts-expect-error transform.handler should exist
+    const result = await instance.transform.handler.call(
+      {
+        environment,
+        parse: parseAst,
+        warn: (msg: string | { message: string }) => {
+          warnings.push(typeof msg === 'string' ? msg : msg.message)
+        },
+      },
+      code,
+      'foo.ts',
+    )
+    return { code: result?.code || result, warnings }
+  }
+}
+
+describe('workerImportMetaUrlPlugin - indirect new URL warnings', async () => {
+  const transformWithWarnings =
+    await createWorkerImportMetaUrlPluginTransformWithWarnings()
+
+  test('warns when new URL is assigned to a variable before being passed to Worker', async () => {
+    const { code, warnings } = await transformWithWarnings(
+      `const url = new URL('./worker.js', import.meta.url)
+new Worker(url)`,
+    )
+    expect(code).toBeNull()
+    expect(warnings).toHaveLength(1)
+    expect(warnings[0]).toContain(
+      `\`new URL('./worker.js', import.meta.url)\` is not directly passed to a Worker constructor`,
+    )
+    expect(warnings[0]).toContain(
+      `new Worker(new URL('./worker.js', import.meta.url))`,
+    )
+  })
+
+  test('warns for each indirect URL when multiple workers use variable URLs', async () => {
+    const { warnings } = await transformWithWarnings(
+      `const url1 = new URL('./cpu.worker.js', import.meta.url)
+const url2 = new URL('./gpu.worker.js', import.meta.url)
+new Worker(url1)
+new Worker(url2)`,
+    )
+    expect(warnings).toHaveLength(2)
+  })
+
+  test('does not warn when new URL is passed directly to Worker', async () => {
+    const { warnings } = await transformWithWarnings(
+      `new Worker(new URL('./worker.js', import.meta.url))`,
+    )
+    expect(warnings).toHaveLength(0)
+  })
+
+  test('does not warn for dynamic template literal URLs', async () => {
+    const { warnings } = await transformWithWarnings(
+      'const name = "worker"\n' +
+        'const url = new URL(`./' +
+        '$' +
+        '{name}.js`, import.meta.url)\n' +
+        'new Worker(url)',
+    )
+    expect(warnings).toHaveLength(0)
+  })
+})
 
 describe('workerImportMetaUrlPlugin', async () => {
   const transform = await createWorkerImportMetaUrlPluginTransform()
