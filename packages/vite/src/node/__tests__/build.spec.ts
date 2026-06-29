@@ -11,7 +11,7 @@ import type {
   RolldownOutput,
   RollupLog,
 } from 'rolldown'
-import type { LibraryFormats, LibraryOptions } from '../build'
+import type { BuildOutput, LibraryFormats, LibraryOptions } from '../build'
 import {
   build,
   createBuilder,
@@ -28,6 +28,24 @@ const dirname = import.meta.dirname
 type FormatsToFileNames = [LibraryFormats, string][]
 
 describe('build', () => {
+  test('returns an asset first when building a css entry', async () => {
+    const result = (await build({
+      configFile: false,
+      publicDir: false,
+      logLevel: 'silent',
+      build: {
+        write: false,
+        rolldownOptions: {
+          input: resolve(dirname, 'fixtures/emit-assets/css-normal.css'),
+        },
+      },
+    })) as BuildOutput
+
+    expect(result.output[0]).toMatchObject({
+      type: 'asset',
+    })
+  })
+
   test('file hash should change when css changes for dynamic entries', async () => {
     const buildProject = async (cssColor: string) => {
       return (await build({

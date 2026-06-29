@@ -311,6 +311,12 @@ export interface BuildEnvironmentOptions {
 
 export type BuildOptions = BuildEnvironmentOptions
 
+export type BuildOutput = Omit<RolldownOutput, 'output'> & {
+  output: [OutputChunk | OutputAsset, ...(OutputChunk | OutputAsset)[]]
+}
+
+export type BuildResult = BuildOutput | BuildOutput[] | RolldownWatcher
+
 export interface LibraryOptions {
   /**
    * Path of library entry
@@ -560,7 +566,7 @@ export function resolveBuildPlugins(config: ResolvedConfig): {
  */
 export async function build(
   inlineConfig: InlineConfig = {},
-): Promise<RolldownOutput | RolldownOutput[] | RolldownWatcher> {
+): Promise<BuildResult> {
   const builder = await createBuilder(inlineConfig, true)
   const environment = Object.values(builder.environments)[0]
   if (!environment) throw new Error('No environment found')
@@ -1755,9 +1761,7 @@ export interface ViteBuilder {
   environments: Record<string, BuildEnvironment>
   config: ResolvedConfig
   buildApp(): Promise<void>
-  build(
-    environment: BuildEnvironment,
-  ): Promise<RolldownOutput | RolldownOutput[] | RolldownWatcher>
+  build(environment: BuildEnvironment): Promise<BuildResult>
   runDevTools(): Promise<void>
 }
 
@@ -1863,9 +1867,7 @@ export async function createBuilder(
         }
       }
     },
-    async build(
-      environment: BuildEnvironment,
-    ): Promise<RolldownOutput | RolldownOutput[] | RolldownWatcher> {
+    async build(environment: BuildEnvironment): Promise<BuildResult> {
       const output = await buildEnvironment(environment)
       environment.isBuilt = true
       return output
