@@ -1276,6 +1276,11 @@ const lockfileFormats = [
     checkPatchesDir: 'patches',
     manager: 'bun',
   },
+  {
+    path: 'aube-lock.yaml',
+    checkPatchesDir: false,
+    manager: 'aube',
+  },
 ].sort((_, { manager }) => {
   return process.env.npm_config_user_agent?.startsWith(manager) ? 1 : -1
 })
