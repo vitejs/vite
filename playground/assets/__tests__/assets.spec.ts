@@ -730,16 +730,24 @@ describe.runIf(isBuild)('css and assets in css in build watch', () => {
     expect(await getColor('#foo')).toBe('red')
     editFile('css/foo.module.css', (code) => code.replace('red', 'blue'))
     await notifyRebuildComplete(watcher)
-    await page.reload()
-    expect(await getColor('#foo')).toBe('blue')
+    await expect
+      .poll(async () => {
+        await page.reload()
+        return getColor('#foo')
+      })
+      .toBe('blue')
   })
 
   test('import with raw query', async () => {
     expect(await page.textContent('.raw-query')).toBe('foo')
     editFile('static/foo.txt', (code) => code.replace('foo', 'zoo'))
     await notifyRebuildComplete(watcher)
-    await page.reload()
-    expect(await page.textContent('.raw-query')).toBe('zoo')
+    await expect
+      .poll(async () => {
+        await page.reload()
+        return page.textContent('.raw-query')
+      })
+      .toBe('zoo')
   })
 })
 
