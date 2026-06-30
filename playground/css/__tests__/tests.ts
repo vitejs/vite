@@ -497,8 +497,7 @@ test('@import scss', async () => {
   expect(await getColor('.at-import-scss')).toBe('red')
 })
 
-// TODO: skipped because of https://github.com/rolldown/rolldown/issues/7315
-test.runIf(isBuild).skip('manual chunk path', async () => {
+test.runIf(isBuild)('manual chunk path', async () => {
   // assert that the manual-chunk css is output in the directory specified in manualChunk (#12072)
   expect(
     findAssetFile(/manual-chunk-[-\w]{8}\.css$/, undefined, 'assets/dir/dir2'),

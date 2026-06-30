@@ -958,27 +958,6 @@ test('sharedConfigBuild and emitAssets', async () => {
   ])
 })
 
-test.skip('adjust worker build error for worker.format', async () => {
-  try {
-    await build({
-      root: resolve(dirname, 'fixtures/worker-dynamic'),
-      build: {
-        rolldownOptions: {
-          input: {
-            index: '/main.js',
-          },
-        },
-      },
-      logLevel: 'silent',
-    })
-  } catch (e) {
-    expect(e.message).toContain('worker.format')
-    expect(e.message).not.toContain('output.format')
-    return
-  }
-  expect.unreachable()
-})
-
 describe('onRollupLog', () => {
   const pluginName = 'rollup-plugin-test'
   const msgInfo = 'This is the INFO message.'
