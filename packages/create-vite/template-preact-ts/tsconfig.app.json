@@ -5,8 +5,8 @@
     "module": "esnext",
     "lib": ["ES2023", "DOM"],
     "types": ["vite/client"],
-    "skipLibCheck": true,
     "allowArbitraryExtensions": true,
+    "skipLibCheck": true,
     "paths": {
       "react": ["./node_modules/preact/compat/"],
       "react-dom": ["./node_modules/preact/compat/"]
