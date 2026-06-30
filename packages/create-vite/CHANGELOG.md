@@ -1,3 +1,18 @@
+## <small>[9.1.1](https://github.com/vitejs/vite/compare/create-vite@9.1.0...create-vite@9.1.1) (2026-06-30)</small>
+### Bug Fixes
+
+* **deps:** update all non-major dependencies ([#22734](https://github.com/vitejs/vite/issues/22734)) ([e635f49](https://github.com/vitejs/vite/commit/e635f493faa24930ae637318d6564539bc668e89))
+* **deps:** update all non-major dependencies ([#22804](https://github.com/vitejs/vite/issues/22804)) ([8837400](https://github.com/vitejs/vite/commit/8837400a676a633af1ad6d3746b584d13cf90ecc))
+* **deps:** update rolldown-related dependencies ([#22591](https://github.com/vitejs/vite/issues/22591)) ([2ce6677](https://github.com/vitejs/vite/commit/2ce6677a151c53a019baec32859b646267f9d320))
+
+### Documentation
+
+* add TypeScript tip for WASM ESM integration type errors ([#22773](https://github.com/vitejs/vite/issues/22773)) ([197b68f](https://github.com/vitejs/vite/commit/197b68fd9276b9dfe02f1fb1f98ba338bb50753c))
+
+### Miscellaneous Chores
+
+* **create-vite:** reword linter prompt to "Which linter to use?" ([#22761](https://github.com/vitejs/vite/issues/22761)) ([e347fef](https://github.com/vitejs/vite/commit/e347fef1df224f93207e3ae1513b3ff7eb69ae67))
+
 ## [9.1.0](https://github.com/vitejs/vite/compare/create-vite@9.0.7...create-vite@9.1.0) (2026-06-23)
 ### Features
 
