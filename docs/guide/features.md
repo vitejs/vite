@@ -765,7 +765,7 @@ const worker = new Worker(new URL('./worker.js', import.meta.url), {
 })
 ```
 
-The worker detection will only work if the `new URL()` constructor is used directly inside the `new Worker()` declaration. Additionally, all options parameters must be static values (i.e. string literals).
+The worker detection will only work if the `new URL()` constructor is used directly inside the `new Worker()` declaration. Otherwise it is handled as a [static asset URL](./assets#new-url-url-import-meta-url) instead. Additionally, all options parameters must be static values (i.e. string literals).
 
 ### Import with Query Suffixes
 
