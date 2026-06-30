@@ -531,9 +531,7 @@ export function webWorkerPlugin(config: ResolvedConfig): Plugin {
                 config.mainConfig || config,
               )!
               const placeholderStrings = result.preloadFilenames
-                .map((f) =>
-                  JSON.stringify(workerOutputCache.placeholderFor(f)),
-                )
+                .map((f) => JSON.stringify(workerOutputCache.placeholderFor(f)))
                 .join(',')
               preloadDepsCode = `__vitePreload(function(){return Promise.resolve()}, [${placeholderStrings}], import.meta.url)`
             }

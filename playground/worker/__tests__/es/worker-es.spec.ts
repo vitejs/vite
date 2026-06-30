@@ -171,8 +171,7 @@ describe.runIf(isBuild)('build', () => {
     const hasPreloadCode = allJs.some((f) => {
       const content = fs.readFileSync(f, 'utf-8')
       return (
-        content.includes('__vitePreload') &&
-        content.includes('worker_chunk-')
+        content.includes('__vitePreload') && content.includes('worker_chunk-')
       )
     })
     expect(hasPreloadCode).toBe(true)
