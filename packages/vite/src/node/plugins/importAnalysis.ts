@@ -704,7 +704,7 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
                     colors.yellow(
                       `\nThe above dynamic import cannot be analyzed by Vite.\n` +
                         `See ${colors.blue(
-                          `https://github.com/rollup/plugins/tree/master/packages/dynamic-import-vars#limitations`,
+                          `https://vite.dev/guide/features#dynamic-import`,
                         )} ` +
                         `for supported dynamic import formats. ` +
                         `If this is intended to be left as-is, you can use the ` +
