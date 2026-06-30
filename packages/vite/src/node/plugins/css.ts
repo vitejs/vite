@@ -554,7 +554,10 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
             `${getHash(cleanUrl(id))}_${Number.parseInt(index)}`,
             css,
           )
-          return `export default ''`
+          return {
+            code: `export default ''`,
+            map: { mappings: '' },
+          }
         }
 
         const inlined = inlineRE.test(id)
@@ -1547,7 +1550,7 @@ async function compilePostCSS(
   if (needInlineImport) {
     postcssPlugins.unshift(
       (await importPostcssImport()).default({
-        async resolve(id, basedir) {
+        async resolve(id, basedir, _importOptions, atRule) {
           const publicFile = checkPublicFile(
             id,
             environment.getTopLevelConfig(),
@@ -1559,7 +1562,10 @@ async function compilePostCSS(
           const resolved = await atImportResolvers.css(
             environment,
             id,
-            path.join(basedir, '*'),
+            // The `source` is only absent for an `@import` injected by another plugin
+            // (a node with no source), in which case the resolver falls back to
+            // the project root.
+            atRule.source?.input.file,
           )
 
           if (resolved) {
@@ -2787,6 +2793,9 @@ const makeLessWorker = (
     const resolved = await resolvers.less(
       environment,
       filename,
+      // Less only exposes the importer's directory, not the file, so Vite can't
+      // pass a real importer like CSS/Sass do. `resolve.tsconfigPaths` therefore
+      // does not apply inside `.less` files. See the `resolve.tsconfigPaths` docs.
       path.join(dir, '*'),
     )
     if (!resolved) return undefined
@@ -3212,9 +3221,7 @@ async function compileLightningCSS(
   modules?: Record<string, string>
 }> {
   const { config } = environment
-  // replace null byte as lightningcss treats that as a string terminator
-  // https://github.com/parcel-bundler/lightningcss/issues/874
-  const filename = removeDirectQuery(id).replace('\0', NULL_BYTE_PLACEHOLDER)
+  const filename = removeDirectQuery(id)
 
   let res: LightningCssTransformAttributeResult | LightningCssTransformResult
   try {
@@ -3400,7 +3407,9 @@ async function compileLightningCSS(
         break
       }
       case 'import': {
-        css = css.replace(dep.placeholder, dep.url)
+        // use a function replacer so `$` sequences in the URL are inserted
+        // verbatim instead of being interpreted as replacement patterns
+        css = css.replace(dep.placeholder, () => dep.url)
         break
       }
       default:

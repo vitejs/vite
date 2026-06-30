@@ -1,4 +1,6 @@
 import './hmr.js'
+import './hmr-asset.js'
+import './invalidation-parent.js'
 import assetUrl from './asset.png'
 import WorkerQuery from './worker-query.js?worker'
 
