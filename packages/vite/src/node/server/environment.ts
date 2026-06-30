@@ -295,7 +295,7 @@ export class DevEnvironment extends BaseEnvironment {
     _client: NormalizedHotChannelClient,
   ): void {
     if (this.bundledDev) {
-      this.invalidateModule(m, _client)
+      this.bundledDev.invalidateModule(m, _client)
       return
     }
 

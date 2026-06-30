@@ -813,7 +813,11 @@ export function buildHtmlPlugin(config: ResolvedConfig): Plugin {
 
         // Force rollup to keep this module from being shared between other entry points.
         // If the resulting chunk is empty, it will be removed in generateBundle.
-        return { code: js, moduleSideEffects: 'no-treeshake' }
+        return {
+          code: js,
+          map: { mappings: '' },
+          moduleSideEffects: 'no-treeshake',
+        }
       },
     },
 
@@ -1233,7 +1237,7 @@ export function postImportMapHook(
       const importMap = bundle![getImportMapFilename(config)] as OutputAsset
       const importMapHtml = serializeTag({
         tag: 'script',
-        attrs: { type: 'importmap', nonce },
+        attrs: { type: 'importmap', ...(nonce ? { nonce } : {}) },
         children:
           typeof importMap.source === 'string'
             ? importMap.source
