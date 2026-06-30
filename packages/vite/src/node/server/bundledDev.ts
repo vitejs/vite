@@ -9,7 +9,11 @@ import getEtag from 'etag'
 import type { Update } from '#types/hmrPayload'
 import { ChunkMetadataMap, resolveRolldownOptions } from '../build'
 import { getHmrImplementation } from '../plugins/clientInjections'
-import { createDebugger, formatAndTruncateFileList } from '../utils'
+import {
+  asyncFlatten,
+  createDebugger,
+  formatAndTruncateFileList,
+} from '../utils'
 import type { DevEnvironment } from './environment'
 import { type NormalizedHotChannelClient, debugHmr, getShortName } from './hmr'
 import { prepareError } from './middlewares/error'
@@ -353,22 +357,18 @@ export class BundledDev {
 
     // In bundledDev mode, Rolldown's DevEngine generates lazy-loading stub modules
     // for dynamically imported files, appending `?rolldown-lazy=1` to the module ID.
-    // These stubs are JavaScript placeholders, not the actual file content. However,
-    // plugins like `@vitejs/plugin-vue` have broad `transform` filters that match
-    // any `.vue` file with any query parameter, causing them to try to parse the
-    // stub code as a Vue SFC and fail.
-    // The actual module compilation happens later through `compileEntry`, which calls
-    // plugin hooks with the real file ID (without `?rolldown-lazy=1`).
-    // Here we wrap each plugin's `transform` hook to skip `?rolldown-lazy=1` modules.
-    const plugins = await normalizePlugins(rolldownOptions.plugins)
+    // Skip all plugins for these stub modules as a workaround.
+    // https://github.com/vitejs/vite/issues/22651
+    const plugins = await asyncFlatten([rolldownOptions.plugins])
     for (const plugin of plugins) {
-      const transform = (plugin as any).transform
+      const transform =
+        plugin && 'transform' in plugin ? plugin.transform : undefined
       if (!transform) continue
       const handler =
         typeof transform === 'function' ? transform : transform.handler
-      const wrappedHandler = function (this: any, code: string, id: string) {
+      const wrappedHandler: typeof handler = function (this, code, id, opts) {
         if (id.includes('?rolldown-lazy=')) return null
-        return handler.call(this, code, id)
+        return handler.call(this, code, id, opts)
       }
       if (typeof transform === 'function') {
         ;(plugin as any).transform = wrappedHandler
@@ -520,21 +520,4 @@ function debounce(time: number, cb: () => void) {
     }
     timer = globalThis.setTimeout(cb, time)
   }
-}
-
-async function normalizePlugins(plugins: any): Promise<any[]> {
-  if (!plugins) return []
-  const resolved = await plugins
-  if (Array.isArray(resolved)) {
-    const result: any[] = []
-    for (const p of resolved) {
-      const flattened = await normalizePlugins(p)
-      result.push(...flattened)
-    }
-    return result
-  }
-  if (resolved) {
-    return [resolved]
-  }
-  return []
 }
