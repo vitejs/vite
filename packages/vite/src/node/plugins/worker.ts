@@ -33,6 +33,7 @@ type WorkerBundle = {
   entryUrlPlaceholder: string
   referencedAssets: Set<string>
   watchedFiles: string[]
+  preloadFilenames: string[]
 }
 
 type WorkerBundleAsset = {
@@ -63,6 +64,7 @@ class WorkerOutputCache {
     outputEntryFilename: string,
     outputEntryCode: string,
     outputAssets: WorkerBundleAsset[],
+    preloadFilenames: string[],
     logger: Logger,
   ): WorkerBundle {
     for (const asset of outputAssets) {
@@ -75,6 +77,7 @@ class WorkerOutputCache {
         this.generateEntryUrlPlaceholder(outputEntryFilename),
       referencedAssets: new Set(outputAssets.map((asset) => asset.fileName)),
       watchedFiles,
+      preloadFilenames,
     }
     this.bundles.set(file, bundle)
     return bundle
@@ -138,6 +141,14 @@ class WorkerOutputCache {
 
   getEntryFilenameFromHash(hash: string) {
     return this.fileNameHash.get(hash)
+  }
+
+  placeholderFor(filename: string): string {
+    const hash = getHash(filename)
+    if (!this.fileNameHash.has(hash)) {
+      this.fileNameHash.set(hash, filename)
+    }
+    return `__VITE_WORKER_ASSET__${hash}__`
   }
 
   private generateEntryUrlPlaceholder(entryFilename: string): string {
@@ -280,6 +291,22 @@ async function bundleWorkerEntry(
           source: outputChunk.code,
         },
   )
+  const chunkByFile = new Map<string, { imports: readonly string[] }>()
+  chunkByFile.set(outputChunk.fileName, outputChunk)
+  for (const chunk of outputChunks) {
+    if (chunk.type === 'chunk') {
+      chunkByFile.set(chunk.fileName, chunk)
+    }
+  }
+
+  const preloadFilenames = computeWorkerPreloadDeps(outputChunk, chunkByFile)
+
+  // Register each preload filename with the hash mechanism so that
+  // renderChunk can resolve their __VITE_WORKER_ASSET__ placeholders
+  for (const f of preloadFilenames) {
+    workerOutput.placeholderFor(f)
+  }
+
   if (
     (config.build.sourcemap === 'hidden' || config.build.sourcemap === true) &&
     outputChunk.map
@@ -300,6 +327,7 @@ async function bundleWorkerEntry(
       outputChunk.fileName,
       outputChunk.code,
       assets,
+      preloadFilenames,
       config.logger,
     )
   return newBundleInfo
@@ -425,6 +453,7 @@ export function webWorkerPlugin(config: ResolvedConfig): Plugin {
         }`
 
         let urlCode: string
+        let preloadDepsCode = ''
         if (isBundled) {
           if (isWorker && config.bundleChain.at(-1) === cleanUrl(id)) {
             urlCode = 'self.location.href'
@@ -496,6 +525,18 @@ export function webWorkerPlugin(config: ResolvedConfig): Plugin {
             for (const file of result.watchedFiles) {
               this.addWatchFile(file)
             }
+
+            if (format === 'es' && result.preloadFilenames.length > 0) {
+              const workerOutputCache = workerOutputCaches.get(
+                config.mainConfig || config,
+              )!
+              const placeholderStrings = result.preloadFilenames
+                .map((f) =>
+                  JSON.stringify(workerOutputCache.placeholderFor(f)),
+                )
+                .join(',')
+              preloadDepsCode = `__vitePreload(function(){return Promise.resolve()}, [${placeholderStrings}], import.meta.url)`
+            }
           }
         } else {
           let url = await fileToUrl(this, cleanUrl(id))
@@ -510,14 +551,18 @@ export function webWorkerPlugin(config: ResolvedConfig): Plugin {
           }
         }
 
+        const preloadPreamble = preloadDepsCode
+          ? `import(import.meta.url).catch(function(){});\n`
+          : ''
+        const wrapperBody = preloadDepsCode
+          ? `${preloadDepsCode};return new ${workerConstructor}(${urlCode}, ${workerTypeOption});`
+          : `return new ${workerConstructor}(${urlCode}, ${workerTypeOption});`
+
         return {
-          code: `export default function WorkerWrapper(options) {
-            return new ${workerConstructor}(
-              ${urlCode},
-              ${workerTypeOption}
-            );
-          }`,
-          map: { mappings: '' }, // Empty sourcemap to suppress Rollup warning
+          code: `${preloadPreamble}export default function WorkerWrapper(options) {
+  ${wrapperBody}
+}`,
+          map: { mappings: '' }, // Empty sourcemap to suppress Rolldown warning
         }
       },
     },
@@ -680,4 +725,45 @@ function isSameContent(a: string | Uint8Array, b: string | Uint8Array) {
     return Buffer.from(a).equals(b)
   }
   return Buffer.from(b).equals(a)
+}
+
+/**
+ * Post-order DFS traversal of an import graph.
+ *
+ * Contract:
+ * - Dependencies always appear before their dependents (post-order).
+ * - Sibling ordering is NOT guaranteed — depends on iteration order.
+ * - Each file is visited at most once (prevents infinite cycles).
+ * - Files not found by `lookup` are passed through as-is (externals).
+ */
+export function walkImportChain(
+  files: readonly string[],
+  lookup: (file: string) => { imports: readonly string[] } | undefined,
+  seen: Set<string> = new Set(),
+): string[] {
+  const result: string[] = []
+  for (const file of files) {
+    if (seen.has(file)) continue
+    seen.add(file)
+    const entry = lookup(file)
+    if (entry) {
+      result.push(...walkImportChain(entry.imports, lookup, seen))
+      result.push(file)
+    } else {
+      result.push(file)
+    }
+  }
+  return result
+}
+
+function computeWorkerPreloadDeps(
+  entry: { imports: readonly string[]; dynamicImports: readonly string[] },
+  chunkByFile: Map<string, { imports: readonly string[] }>,
+): string[] {
+  const seen = new Set<string>()
+  const lookup = (file: string) => chunkByFile.get(file)
+  return [
+    ...walkImportChain(entry.imports, lookup, seen),
+    ...walkImportChain(entry.dynamicImports, lookup, seen),
+  ].filter((f) => chunkByFile.has(f))
 }

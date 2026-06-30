@@ -3,6 +3,16 @@ import path from 'node:path'
 import { describe, expect, test } from 'vitest'
 import { isBuild, page, testDir } from '~utils'
 
+function getFilesRecursive(dir: string): string[] {
+  const result: string[] = []
+  for (const entry of fs.readdirSync(dir, { withFileTypes: true })) {
+    const full = path.join(dir, entry.name)
+    if (entry.isDirectory()) result.push(...getFilesRecursive(full))
+    else result.push(full)
+  }
+  return result
+}
+
 test('normal', async () => {
   await expect.poll(() => page.textContent('.pong')).toMatch('pong')
   await expect
@@ -140,6 +150,32 @@ describe.runIf(isBuild)('build', () => {
     await expect
       .poll(() => page.textContent('.nested-worker-constructor'))
       .toMatch('"type":"constructor"')
+  })
+
+  test('worker dynamic import chunks exist and are preloaded at worker creation', () => {
+    const assetsDir = path.resolve(testDir, 'dist/es/assets')
+    const files = fs.readdirSync(assetsDir)
+
+    // Chunk graph: worker dynamic imports produce separate chunks.
+    // The naming pattern is set explicitly in vite.config-es.js
+    // (worker.rolldownOptions.output.chunkFileNames), not a Vite
+    // internal — it's the test fixture's own configuration.
+    const workerChunks = files.filter((f) => f.startsWith('worker_chunk-'))
+    expect(workerChunks.length).toBeGreaterThan(0)
+
+    // Preload: WorkerWrapper should use __vitePreload to preload worker
+    // deps at runtime before creating the Worker. Verify by checking the
+    // main entry JS contains the __vitePreload call with worker chunk names.
+    const distDir = path.resolve(testDir, 'dist/es')
+    const allJs = getFilesRecursive(distDir).filter((f) => f.endsWith('.js'))
+    const hasPreloadCode = allJs.some((f) => {
+      const content = fs.readFileSync(f, 'utf-8')
+      return (
+        content.includes('__vitePreload') &&
+        content.includes('worker_chunk-')
+      )
+    })
+    expect(hasPreloadCode).toBe(true)
   })
 })
 
