@@ -57,6 +57,21 @@ class WorkerOutputCache {
     /* entryFilename */ string
   >()
   private invalidatedBundles = new Set</* inputId */ string>()
+  /** worker input ID → transitive preload filenames from nested workers */
+  private nestedPreloadDeps = new Map<string, string[]>()
+
+  addNestedPreloadDeps(parentId: string, childFilenames: string[]) {
+    if (childFilenames.length === 0) return
+    const existing = this.nestedPreloadDeps.get(parentId) ?? []
+    this.nestedPreloadDeps.set(
+      parentId,
+      [...existing, ...childFilenames].filter((v, i, a) => a.indexOf(v) === i),
+    )
+  }
+
+  getNestedPreloadDeps(parentId: string): string[] {
+    return this.nestedPreloadDeps.get(parentId) ?? []
+  }
 
   saveWorkerBundle(
     file: string,
@@ -299,7 +314,28 @@ async function bundleWorkerEntry(
     }
   }
 
-  const preloadFilenames = computeWorkerPreloadDeps(outputChunk, chunkByFile)
+  let preloadFilenames = computeWorkerPreloadDeps(outputChunk, chunkByFile)
+
+  // Bubble up: register this worker's deps with its parent so the
+  // top-level WorkerWrapper can preload them all at once.
+  if (config.bundleChain.length > 0) {
+    workerOutput.addNestedPreloadDeps(
+      config.bundleChain.at(-1)!,
+      preloadFilenames,
+    )
+  }
+
+  // Collect transitive deps from nested workers of this worker
+  const nestedDeps = workerOutput.getNestedPreloadDeps(input)
+  if (nestedDeps.length > 0) {
+    const seen = new Set(preloadFilenames)
+    for (const f of nestedDeps) {
+      if (!seen.has(f)) {
+        seen.add(f)
+        preloadFilenames = [...preloadFilenames, f]
+      }
+    }
+  }
 
   // Register each preload filename with the hash mechanism so that
   // renderChunk can resolve their __VITE_WORKER_ASSET__ placeholders
