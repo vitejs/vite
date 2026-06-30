@@ -1556,14 +1556,12 @@ async function compilePostCSS(
             return publicFile
           }
 
-          // Resolve from the real importing file (the `@import` AtRule's source)
-          // so `resolve.tsconfigPaths` can find the tsconfig that owns it. The
-          // source is only absent for an `@import` injected by another plugin
-          // (a node with no source), in which case the resolver falls back to
-          // the project root.
           const resolved = await atImportResolvers.css(
             environment,
             id,
+            // The `source` is only absent for an `@import` injected by another plugin
+            // (a node with no source), in which case the resolver falls back to
+            // the project root.
             atRule.source?.input.file,
           )
 
