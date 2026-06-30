@@ -64,13 +64,13 @@ if (isBuild) {
     )
     await setTimeout(100)
     editFile('main.js', (code) =>
-      code.replace("text('.app', 'hello1')", "text('.app', 'hello2')"),
+      code.replace("text('.app', 'hello1')", "text('.app', 'hello2') "),
     )
     await expect.poll(() => page.textContent('.app')).toBe('hello2')
 
     editFile('main.js', (code) =>
       code.replace(
-        "text('.app', 'hello2')\n" + '// @delay-transform',
+        "text('.app', 'hello2') \n" + '// @delay-transform',
         "text('.app', 'hello')",
       ),
     )
@@ -125,13 +125,13 @@ if (isBuild) {
     )
     await setTimeout(100)
     editFile('hmr.js', (code) =>
-      code.replace("const foo = 'hello1'", "const foo = 'hello2'"),
+      code.replace("const foo = 'hello1'", "const foo = 'hello2' "),
     )
     await expect.poll(() => page.textContent('.hmr')).toBe('hello2')
 
     editFile('hmr.js', (code) =>
       code.replace(
-        "const foo = 'hello2'\n" + '// @delay-transform',
+        "const foo = 'hello2' \n" + '// @delay-transform',
         "const foo = 'hello'",
       ),
     )
