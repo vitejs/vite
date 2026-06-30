@@ -741,7 +741,7 @@ if (import.meta.hot) {
 
 ### Client to Server
 
-To send events from the client to the server, we can use [`hot.send`](/guide/api-hmr.html#hot-send-event-payload):
+To send events from the client to the server, we can use [`hot.send`](/guide/api-hmr.html#hot-send-event-data):
 
 ```ts
 // client side
