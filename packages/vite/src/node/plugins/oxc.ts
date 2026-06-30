@@ -384,7 +384,6 @@ export function convertEsbuildConfigToOxcConfig(
       jsxOptions.development = esbuildTransformOptions.jsxDev
     }
     if (esbuildTransformOptions.jsxSideEffects !== undefined) {
-      // esbuild's `jsxSideEffects` is the inverse of oxc's `jsx.pure`
       jsxOptions.pure = !esbuildTransformOptions.jsxSideEffects
     }
 
