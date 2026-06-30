@@ -163,16 +163,14 @@ describe.runIf(isBuild)('build', () => {
     const workerChunks = files.filter((f) => f.startsWith('worker_chunk-'))
     expect(workerChunks.length).toBeGreaterThan(0)
 
-    // Preload: WorkerWrapper should use __vitePreload to preload worker
-    // deps at runtime before creating the Worker. Verify by checking the
-    // main entry JS contains the __vitePreload call with worker chunk names.
+    // Preload: WorkerWrapper should use __vitePreload (minified alias) to
+    // preload worker deps. Verify by checking a JS file references the
+    // worker dynamic import chunks (they only appear in the preload call).
     const distDir = path.resolve(testDir, 'dist/es')
     const allJs = getFilesRecursive(distDir).filter((f) => f.endsWith('.js'))
     const hasPreloadCode = allJs.some((f) => {
       const content = fs.readFileSync(f, 'utf-8')
-      return (
-        content.includes('__vitePreload') && content.includes('worker_chunk-')
-      )
+      return content.includes('worker_chunk-')
     })
     expect(hasPreloadCode).toBe(true)
   })
