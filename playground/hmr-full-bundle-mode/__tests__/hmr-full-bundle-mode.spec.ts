@@ -224,7 +224,6 @@ if (isBuild) {
     await expect.poll(() => page.textContent('.dynamic')).toBe('loaded')
   })
 
-  // `import.meta.hot.invalidate()` used to crash the bundled dev server.
   test('invalidate', async () => {
     const original = readFile('invalidation-child.js')
     onTestFinished(() => addFile('invalidation-child.js', original))
