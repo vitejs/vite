@@ -852,7 +852,7 @@ function setupEslint(root: string, isTs: boolean) {
   // renovate: datasource=npm depName=@eslint/js
   const eslintJsVersion = '10.0.1'
   // renovate: datasource=npm depName=eslint
-  const eslintVersion = '10.5.0'
+  const eslintVersion = '10.6.0'
   // renovate: datasource=npm depName=eslint-plugin-react-hooks
   const eslintPluginReactHooksVersion = '7.1.1'
   // renovate: datasource=npm depName=eslint-plugin-react-refresh

@@ -54,7 +54,7 @@ if (!isBuild) {
     await untilBrowserLogAfter(
       () =>
         editFile('hmr.ts', (code) =>
-          code.replace('const foo = 1', 'const foo = 2'),
+          code.replace('const foo = 1', 'const foo = 2 '),
         ),
       [
         '>>> vite:beforeUpdate -- update',
@@ -71,7 +71,7 @@ if (!isBuild) {
     await untilBrowserLogAfter(
       () =>
         editFile('hmr.ts', (code) =>
-          code.replace('const foo = 2', 'const foo = 3'),
+          code.replace('const foo = 2', 'const foo = 3 '),
         ),
       [
         '>>> vite:beforeUpdate -- update',
@@ -91,7 +91,7 @@ if (!isBuild) {
     await untilBrowserLogAfter(
       () =>
         editFile('hmrDep.js', (code) =>
-          code.replace('const foo = 1', 'const foo = 2'),
+          code.replace('const foo = 1', 'const foo = 2 '),
         ),
       [
         '>>> vite:beforeUpdate -- update',
@@ -111,7 +111,7 @@ if (!isBuild) {
     await untilBrowserLogAfter(
       () =>
         editFile('hmrDep.js', (code) =>
-          code.replace('const foo = 2', 'const foo = 3'),
+          code.replace('const foo = 2', 'const foo = 3 '),
         ),
       [
         '>>> vite:beforeUpdate -- update',
@@ -134,7 +134,7 @@ if (!isBuild) {
     await untilBrowserLogAfter(
       () =>
         editFile('hmrNestedDep.js', (code) =>
-          code.replace('const foo = 1', 'const foo = 2'),
+          code.replace('const foo = 1', 'const foo = 2 '),
         ),
       [
         '>>> vite:beforeUpdate -- update',
@@ -154,7 +154,7 @@ if (!isBuild) {
     await untilBrowserLogAfter(
       () =>
         editFile('hmrNestedDep.js', (code) =>
-          code.replace('const foo = 2', 'const foo = 3'),
+          code.replace('const foo = 2', 'const foo = 3 '),
         ),
       [
         '>>> vite:beforeUpdate -- update',
@@ -287,16 +287,15 @@ if (!isBuild) {
 
   test('plugin hmr handler + custom event', async () => {
     const el = await page.$('.custom')
-    editFile('customFile.js', (code) => code.replace('custom', 'edited'))
-    await expect.poll(() => el.textContent()).toMatch('edited')
+    editFile('customFile.js', (code) => code.replace('custom', 'edited2'))
+    await expect.poll(() => el.textContent()).toMatch('edited2')
   })
 
   test('plugin hmr remove custom events', async () => {
     const el = await page.$('.toRemove')
-    editFile('customFile.js', (code) => code.replace('custom', 'edited'))
-    await expect.poll(() => el.textContent()).toMatch('edited')
-    editFile('customFile.js', (code) => code.replace('edited', 'custom'))
-    await expect.poll(() => el.textContent()).toMatch('edited')
+    await expect.poll(() => el.textContent()).toMatch('edited2')
+    editFile('customFile.js', (code) => code.replace('edited2', 'custom33'))
+    await expect.poll(() => el.textContent()).toMatch('edited2')
   })
 
   test('plugin client-server communication', async () => {
@@ -338,7 +337,7 @@ if (!isBuild) {
   test('it swaps out link tags', async () => {
     await page.goto(viteTestUrl)
 
-    editFile('global.css', (code) => code.replace('white', 'tomato'))
+    editFile('global.css', (code) => code.replace('tomato', 'white'))
 
     let el = await page.$('.link-tag-added')
     await expect.poll(() => el.textContent()).toMatch('yes')
@@ -359,7 +358,7 @@ if (!isBuild) {
 
     // Modifying `index.ts` triggers a page reload, as expected
     const indexTsLoadPromise = page.waitForEvent('load')
-    editFile('counter/index.ts', (code) => code)
+    editFile('counter/index.ts', (code) => code + '\n')
     await indexTsLoadPromise
     btn = await page.$('button')
     expect(await btn.textContent()).toBe('Counter 0')
@@ -374,7 +373,7 @@ if (!isBuild) {
     // define `accept.module.hot.accept` may wrongfully trigger a full page
     // reload, see discussion at #7561.)
     const depTsLoadPromise = page.waitForEvent('load', { timeout: 1000 })
-    editFile('counter/dep.ts', (code) => code)
+    editFile('counter/dep.ts', (code) => code + ' ')
     await expect(depTsLoadPromise).rejects.toThrow(
       /page\.waitForEvent: Timeout \d+ms exceeded while waiting for event "load"/,
     )
@@ -395,13 +394,13 @@ if (!isBuild) {
       .poll(getOutput)
       .toMatch(['a.js: a0', 'b.js: b0,a0'].join('<br>'))
 
-    editFile('importing-updated/a.js', (code) => code.replace("'a0'", "'a1'"))
+    editFile('importing-updated/a.js', (code) => code.replace("'a0'", "'a1' "))
     await expect
       .poll(getOutput)
       .toMatch(['a.js: a0', 'b.js: b0,a0', 'a.js: a1'].join('<br>'))
 
     editFile('importing-updated/b.js', (code) =>
-      code.replace('`b0,${a}`', '`b1,${a}`'),
+      code.replace('`b0,${a}`', '`b1,${a}` '),
     )
     // note that "a.js: a1" should not happen twice after "b.js: b0,a0'"
     await expect
@@ -460,7 +459,9 @@ if (!isBuild) {
 
         await untilBrowserLogAfter(
           () => {
-            editFile(callbackFile, (code) => code.replace("x = 'Y'", "x = 'Z'"))
+            editFile(callbackFile, (code) =>
+              code.replace("x = 'Y'", "x = 'Z' "),
+            )
           },
           HOT_UPDATED,
           (logs) => {
@@ -478,7 +479,10 @@ if (!isBuild) {
 
         await untilBrowserLogAfter(
           () => {
-            editFile(depFile, (code) => code.replace('dep0', (dep = 'dep1')))
+            editFile(
+              depFile,
+              (code) => code.replace('dep0', (dep = 'dep1')) + '\n',
+            )
           },
           HOT_UPDATED,
           (logs) => {
@@ -493,7 +497,7 @@ if (!isBuild) {
       it('accepts itself and refreshes on change', async () => {
         await untilBrowserLogAfter(
           () => {
-            editFile(file, (code) => code.replace(/(\b[A-Z])0/g, '$11'))
+            editFile(file, (code) => code.replace(/(\b[A-Z])0/g, '$11') + '\n')
           },
           HOT_UPDATED,
           (logs) => {
@@ -508,13 +512,15 @@ if (!isBuild) {
       it('accepts itself and refreshes on 2nd change', async () => {
         await untilBrowserLogAfter(
           () => {
-            editFile(file, (code) =>
-              code
-                .replace(/(\b[A-Z])1/g, '$12')
-                .replace(
-                  "acceptExports(['a', 'default']",
-                  "acceptExports(['b', 'default']",
-                ),
+            editFile(
+              file,
+              (code) =>
+                code
+                  .replace(/(\b[A-Z])1/g, '$12')
+                  .replace(
+                    "acceptExports(['a', 'default']",
+                    "acceptExports(['b', 'default']",
+                  ) + '\n',
             )
           },
           HOT_UPDATED,
@@ -530,7 +536,7 @@ if (!isBuild) {
       it('does not accept itself anymore after acceptedExports change', async () => {
         await untilBrowserLogAfter(
           async () => {
-            editFile(file, (code) => code.replace(/(\b[A-Z])2/g, '$13'))
+            editFile(file, (code) => code.replace(/(\b[A-Z])2/g, '$13') + '\n')
             await page.waitForEvent('load')
           },
           [CONNECTED, />>>>>>/],
@@ -570,7 +576,10 @@ if (!isBuild) {
       it('does not stop the HMR bubble on change to dep', async () => {
         await untilBrowserLogAfter(
           async () => {
-            editFile(depFile, (code) => code.replace('dep0', (dep = 'dep1')))
+            editFile(
+              depFile,
+              (code) => code.replace('dep0', (dep = 'dep1')) + '\n',
+            )
             await page.waitForEvent('load')
           },
           [CONNECTED, />>>>>>/],
@@ -584,7 +593,7 @@ if (!isBuild) {
         it('with named exports', async () => {
           await untilBrowserLogAfter(
             async () => {
-              editFile(namedFile, (code) => code.replace(a, 'A1'))
+              editFile(namedFile, (code) => code.replace(a, 'A1') + '\n')
               await page.waitForEvent('load')
             },
             [CONNECTED, />>>>>>/],
@@ -597,7 +606,10 @@ if (!isBuild) {
         it('with default export', async () => {
           await untilBrowserLogAfter(
             async () => {
-              editFile(defaultFile, (code) => code.replace('def0', 'def1'))
+              editFile(
+                defaultFile,
+                (code) => code.replace('def0', 'def1') + '\n',
+              )
               await page.waitForEvent('load')
             },
             [CONNECTED, />>>>>>/],
@@ -655,8 +667,9 @@ if (!isBuild) {
 
         await untilBrowserLogAfter(
           () => {
-            editFile(file, (code) =>
-              code.replace('-- unused --', '-> unused <-'),
+            editFile(
+              file,
+              (code) => code.replace('-- unused --', '-> unused <-') + '\n',
             )
           },
           HOT_UPDATED,
@@ -681,8 +694,12 @@ if (!isBuild) {
 
         await untilBrowserLogAfter(
           async () => {
-            editFile(file, (code) =>
-              code.replace('foo0', 'foo1').replace('-- used --', '-> used <-'),
+            editFile(
+              file,
+              (code) =>
+                code
+                  .replace('foo0', 'foo1')
+                  .replace('-- used --', '-> used <-') + '\n',
             )
             await page.waitForEvent('load')
           },
@@ -715,7 +732,7 @@ if (!isBuild) {
 
           await untilBrowserLogAfter(
             () => {
-              editFile(file, (code) => code.replace(/([abc])0/g, '$11'))
+              editFile(file, (code) => code.replace(/([abc])0/g, '$11') + '\n')
             },
             HOT_UPDATED,
             (logs) => {
@@ -728,7 +745,7 @@ if (!isBuild) {
 
           await untilBrowserLogAfter(
             () => {
-              editFile(file, (code) => code.replace(/([abc])1/g, '$12'))
+              editFile(file, (code) => code.replace(/([abc])1/g, '$12') + '\n')
             },
             HOT_UPDATED,
             (logs) => {
@@ -756,7 +773,7 @@ if (!isBuild) {
           await untilBrowserLogAfter(
             async () => {
               const loadPromise = page.waitForEvent('load')
-              editFile(file, (code) => code.replace(/([abc])0/g, '$11'))
+              editFile(file, (code) => code.replace(/([abc])0/g, '$11') + '\n')
               await loadPromise
             },
             [CONNECTED, '>>> ready <<<'],
@@ -781,7 +798,7 @@ if (!isBuild) {
     expect(await getBg('.import-image')).toMatch('icon')
 
     const loadPromise = page.waitForEvent('load')
-    editFile('index.html', (code) => code.replace('url("./icon.png")', ''))
+    editFile('index.html', (code) => code.replace("url('./icon.png')", ''))
     await loadPromise
     expect(await getBg('.import-image')).toMatch('')
   })
@@ -831,13 +848,13 @@ if (!isBuild) {
     await page.goto(viteTestUrl)
     const el = await page.$('.virtual-dep')
     expect(await el.textContent()).toBe('0')
-    editFile('importedVirtual.js', (code) => code.replace('[success]', '[wow]'))
+    editFile('importedVirtual.js', (code) => code.replace('[wow]', '[wow2]'))
     await expect
       .poll(async () => {
         const el = await page.$('.virtual-dep')
         return await el.textContent()
       })
-      .toBe('[wow]0')
+      .toBe('[wow2]0')
   })
 
   test('invalidate virtual module and accept', async () => {
@@ -851,7 +868,7 @@ if (!isBuild) {
         const el = await page.$('.virtual-dep')
         return await el.textContent()
       })
-      .toBe('[wow]2')
+      .toBe('[wow2]2')
   })
 
   test('keep hmr reload after missing import on server startup', async () => {
@@ -1042,8 +1059,9 @@ if (!isBuild) {
     const el = await page.$('.optional-chaining')
     await untilBrowserLogAfter(
       () =>
-        editFile('optional-chaining/child.js', (code) =>
-          code.replace('const foo = 1', 'const foo = 2'),
+        editFile(
+          'optional-chaining/child.js',
+          (code) => code.replace('const foo = 1', 'const foo = 2') + '\n',
         ),
       '(optional-chaining) child update',
     )
@@ -1087,7 +1105,7 @@ if (!isBuild) {
     await untilBrowserLogAfter(
       () =>
         editFile('logo-no-inline.svg', (code) =>
-          code.replace('height="30px"', 'height="40px"'),
+          code.replace('height="30px"', 'height="40px" '),
         ),
       /Logo-no-inline updated/,
     )
@@ -1102,7 +1120,7 @@ if (!isBuild) {
     await untilBrowserLogAfter(
       () =>
         editFile('logo.svg', (code) =>
-          code.replace('height="30px"', 'height="40px"'),
+          code.replace('height="30px"', 'height="40px" '),
         ),
       /Logo updated/,
     )

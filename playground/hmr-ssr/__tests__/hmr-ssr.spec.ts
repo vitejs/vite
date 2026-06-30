@@ -83,7 +83,7 @@ describe.skipIf(isBuild)('hmr works correctly', () => {
     await untilConsoleLogAfter(
       () =>
         editFile('hmr.ts', (code) =>
-          code.replace('const foo = 1', 'const foo = 2'),
+          code.replace('const foo = 1', 'const foo = 2 '),
         ),
       [
         '>>> vite:beforeUpdate -- update',
@@ -100,7 +100,7 @@ describe.skipIf(isBuild)('hmr works correctly', () => {
     await untilConsoleLogAfter(
       () =>
         editFile('hmr.ts', (code) =>
-          code.replace('const foo = 2', 'const foo = 3'),
+          code.replace('const foo = 2', 'const foo = 3 '),
         ),
       [
         '>>> vite:beforeUpdate -- update',
@@ -120,7 +120,7 @@ describe.skipIf(isBuild)('hmr works correctly', () => {
     await untilConsoleLogAfter(
       () =>
         editFile('hmrDep.js', (code) =>
-          code.replace('const foo = 1', 'const foo = 2'),
+          code.replace('const foo = 1', 'const foo = 2 '),
         ),
       [
         '>>> vite:beforeUpdate -- update',
@@ -140,7 +140,7 @@ describe.skipIf(isBuild)('hmr works correctly', () => {
     await untilConsoleLogAfter(
       () =>
         editFile('hmrDep.js', (code) =>
-          code.replace('const foo = 2', 'const foo = 3'),
+          code.replace('const foo = 2', 'const foo = 3 '),
         ),
       [
         '>>> vite:beforeUpdate -- update',
@@ -163,7 +163,7 @@ describe.skipIf(isBuild)('hmr works correctly', () => {
     await untilConsoleLogAfter(
       () =>
         editFile('hmrNestedDep.js', (code) =>
-          code.replace('const foo = 1', 'const foo = 2'),
+          code.replace('const foo = 1', 'const foo = 2 '),
         ),
       [
         '>>> vite:beforeUpdate -- update',
@@ -183,7 +183,7 @@ describe.skipIf(isBuild)('hmr works correctly', () => {
     await untilConsoleLogAfter(
       () =>
         editFile('hmrNestedDep.js', (code) =>
-          code.replace('const foo = 2', 'const foo = 3'),
+          code.replace('const foo = 2', 'const foo = 3 '),
         ),
       [
         '>>> vite:beforeUpdate -- update',
@@ -261,16 +261,15 @@ describe.skipIf(isBuild)('hmr works correctly', () => {
 
   test('plugin hmr handler + custom event', async () => {
     const el = () => hmr('.custom')
-    editFile('customFile.js', (code) => code.replace('custom', 'edited'))
-    await expect.poll(() => el()).toMatch('edited')
+    editFile('customFile.js', (code) => code.replace('custom', 'edited2'))
+    await expect.poll(() => el()).toMatch('edited2')
   })
 
   test('plugin hmr remove custom events', async () => {
     const el = () => hmr('.toRemove')
-    editFile('customFile.js', (code) => code.replace('custom', 'edited'))
-    await expect.poll(() => el()).toMatch('edited')
-    editFile('customFile.js', (code) => code.replace('edited', 'custom'))
-    await expect.poll(() => el()).toMatch('edited')
+    await expect.poll(() => el()).toMatch('edited2')
+    editFile('customFile.js', (code) => code.replace('edited2', 'custom33'))
+    await expect.poll(() => el()).toMatch('edited2')
   })
 
   test('plugin client-server communication', async () => {
@@ -307,7 +306,7 @@ describe('self accept with different entry point formats', () => {
       await untilConsoleLogAfter(
         () =>
           editFile('unresolved.ts', (code) =>
-            code.replace('const foo = 1', 'const foo = 2'),
+            code.replace('const foo = 1', 'const foo = 2 '),
           ),
         [
           'foo was: 1',
@@ -322,7 +321,7 @@ describe('self accept with different entry point formats', () => {
       await untilConsoleLogAfter(
         () =>
           editFile('unresolved.ts', (code) =>
-            code.replace('const foo = 2', 'const foo = 3'),
+            code.replace('const foo = 2', 'const foo = 3 '),
           ),
         [
           'foo was: 2',
@@ -387,7 +386,7 @@ describe('acceptExports', () => {
 
       await untilConsoleLogAfter(
         () => {
-          editFile(callbackFile, (code) => code.replace("x = 'Y'", "x = 'Z'"))
+          editFile(callbackFile, (code) => code.replace("x = 'Y'", "x = 'Z' "))
         },
         HOT_UPDATED,
         (logs) => {
@@ -405,7 +404,10 @@ describe('acceptExports', () => {
 
       await untilConsoleLogAfter(
         () => {
-          editFile(depFile, (code) => code.replace('dep0', (dep = 'dep1')))
+          editFile(
+            depFile,
+            (code) => code.replace('dep0', (dep = 'dep1')) + '\n',
+          )
         },
         HOT_UPDATED,
         (logs) => {
@@ -420,7 +422,7 @@ describe('acceptExports', () => {
     test('accepts itself and refreshes on change', async () => {
       await untilConsoleLogAfter(
         () => {
-          editFile(file, (code) => code.replace(/(\b[A-Z])0/g, '$11'))
+          editFile(file, (code) => code.replace(/(\b[A-Z])0/g, '$11') + '\n')
         },
         HOT_UPDATED,
         (logs) => {
@@ -435,13 +437,15 @@ describe('acceptExports', () => {
     test('accepts itself and refreshes on 2nd change', async () => {
       await untilConsoleLogAfter(
         () => {
-          editFile(file, (code) =>
-            code
-              .replace(/(\b[A-Z])1/g, '$12')
-              .replace(
-                "acceptExports(['a', 'default']",
-                "acceptExports(['b', 'default']",
-              ),
+          editFile(
+            file,
+            (code) =>
+              code
+                .replace(/(\b[A-Z])1/g, '$12')
+                .replace(
+                  "acceptExports(['a', 'default']",
+                  "acceptExports(['b', 'default']",
+                ) + '\n',
           )
         },
         HOT_UPDATED,
@@ -457,7 +461,7 @@ describe('acceptExports', () => {
     test('does not accept itself anymore after acceptedExports change', async () => {
       await untilConsoleLogAfter(
         async () => {
-          editFile(file, (code) => code.replace(/(\b[A-Z])2/g, '$13'))
+          editFile(file, (code) => code.replace(/(\b[A-Z])2/g, '$13') + '\n')
         },
         [PROGRAM_RELOAD, />>>>>>/],
         (logs) => {
@@ -496,7 +500,10 @@ describe('acceptExports', () => {
     test('does not stop the HMR bubble on change to dep', async () => {
       await untilConsoleLogAfter(
         async () => {
-          editFile(depFile, (code) => code.replace('dep0', (dep = 'dep1')))
+          editFile(
+            depFile,
+            (code) => code.replace('dep0', (dep = 'dep1')) + '\n',
+          )
         },
         [PROGRAM_RELOAD, />>>>>>/],
         (logs) => {
@@ -509,7 +516,7 @@ describe('acceptExports', () => {
       test('with named exports', async () => {
         await untilConsoleLogAfter(
           async () => {
-            editFile(namedFile, (code) => code.replace(a, 'A1'))
+            editFile(namedFile, (code) => code.replace(a, 'A1') + '\n')
           },
           [PROGRAM_RELOAD, />>>>>>/],
           (logs) => {
@@ -521,7 +528,7 @@ describe('acceptExports', () => {
       test('with default export', async () => {
         await untilConsoleLogAfter(
           async () => {
-            editFile(defaultFile, (code) => code.replace('def0', 'def1'))
+            editFile(defaultFile, (code) => code.replace('def0', 'def1') + '\n')
           },
           [PROGRAM_RELOAD, />>>>>>/],
           (logs) => {
@@ -625,7 +632,10 @@ describe('acceptExports', () => {
 
       await untilConsoleLogAfter(
         () => {
-          editFile(file, (code) => code.replace('-- unused --', '-> unused <-'))
+          editFile(
+            file,
+            (code) => code.replace('-- unused --', '-> unused <-') + '\n',
+          )
         },
         HOT_UPDATED,
         (logs) => {
@@ -649,8 +659,11 @@ describe('acceptExports', () => {
 
       await untilConsoleLogAfter(
         async () => {
-          editFile(file, (code) =>
-            code.replace('foo0', 'foo1').replace('-- used --', '-> used <-'),
+          editFile(
+            file,
+            (code) =>
+              code.replace('foo0', 'foo1').replace('-- used --', '-> used <-') +
+              '\n',
           )
         },
         [PROGRAM_RELOAD, /used:foo/],
@@ -682,7 +695,7 @@ describe('acceptExports', () => {
 
         await untilConsoleLogAfter(
           () => {
-            editFile(file, (code) => code.replace(/([abc])0/g, '$11'))
+            editFile(file, (code) => code.replace(/([abc])0/g, '$11') + '\n')
           },
           HOT_UPDATED,
           (logs) => {
@@ -692,7 +705,7 @@ describe('acceptExports', () => {
 
         await untilConsoleLogAfter(
           () => {
-            editFile(file, (code) => code.replace(/([abc])1/g, '$12'))
+            editFile(file, (code) => code.replace(/([abc])1/g, '$12') + '\n')
           },
           HOT_UPDATED,
           (logs) => {
@@ -716,7 +729,7 @@ describe('acceptExports', () => {
 
         await untilConsoleLogAfter(
           async () => {
-            editFile(file, (code) => code.replace(/([abc])0/g, '$11'))
+            editFile(file, (code) => code.replace(/([abc])0/g, '$11') + '\n')
           },
           [PROGRAM_RELOAD, '>>> ready <<<'],
           (logs) => {
@@ -879,7 +892,7 @@ test('import.meta.hot?.accept', async () => {
   await untilConsoleLogAfter(
     () =>
       editFile('optional-chaining/child.js', (code) =>
-        code.replace('const foo = 1', 'const foo = 2'),
+        code.replace('const foo = 1', 'const foo = 2 '),
       ),
     '(optional-chaining) child update',
   )
@@ -923,7 +936,7 @@ test('not inlined assets HMR', async () => {
   await untilConsoleLogAfter(
     () =>
       editFile('logo-no-inline.svg', (code) =>
-        code.replace('height="30px"', 'height="40px"'),
+        code.replace('height="30px"', 'height="40px" '),
       ),
     /Logo-no-inline updated/,
   )
@@ -938,7 +951,7 @@ test('inlined assets HMR', async () => {
   await untilConsoleLogAfter(
     () =>
       editFile('logo.svg', (code) =>
-        code.replace('height="30px"', 'height="40px"'),
+        code.replace('height="30px"', 'height="40px" '),
       ),
     /Logo updated/,
   )
