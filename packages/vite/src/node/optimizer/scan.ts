@@ -32,7 +32,10 @@ import {
   virtualModuleRE,
 } from '../utils'
 import type { EnvironmentPluginContainer } from '../server/pluginContainer'
-import { createEnvironmentPluginContainer } from '../server/pluginContainer'
+import {
+  ERR_CLOSED_SERVER,
+  createEnvironmentPluginContainer,
+} from '../server/pluginContainer'
 import { BaseEnvironment } from '../baseEnvironment'
 import type { DevEnvironment } from '../server/environment'
 import { transformGlobImport } from '../plugins/importMetaGlob'
@@ -165,6 +168,17 @@ export function scanImports(environment: ScanEnvironment): {
         missing,
       }
     } catch (e) {
+      // The scanner runs in the background and may still be crawling when the
+      // server is closed. In that case resolutions reject with
+      // `ERR_CLOSED_SERVER` and the scan build fails.
+      if (
+        e.errors?.some(
+          (error: { pluginCode?: string }) =>
+            error.pluginCode === ERR_CLOSED_SERVER,
+        )
+      ) {
+        return
+      }
       const prependMessage = colors.red(`\
   Failed to scan for dependencies from entries:
   ${entries.join('\n')}

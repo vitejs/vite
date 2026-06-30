@@ -16,7 +16,18 @@
 <p class="nested-a"></p>
 <p class="nested-b"></p>
 
+<h2>CSS / Sass @import resolves tsconfig paths (Less does not)</h2>
+<p class="tsconfig-paths-css">This text should be darkcyan</p>
+<p class="tsconfig-paths-scss">This text should be seagreen</p>
+<p class="tsconfig-paths-less">
+  This text should stay navy (Less is unsupported)
+</p>
+
 <script type="module">
+  import '@/style.css'
+  import '@/style.scss'
+  import '@/style.less'
+
   function text(selector, text) {
     document.querySelector(selector).textContent = text
   }
