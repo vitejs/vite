@@ -201,4 +201,8 @@ import(`../nested/static.js`).then((mod) => {
   text('.dynamic-import-static', mod.self)
 })
 
+import('./rest-destructure.js').then(({ a, ...rest }) => {
+  text('.dynamic-import-rest', `${a} ${rest.b} ${rest.c}`)
+})
+
 console.log('index.js')

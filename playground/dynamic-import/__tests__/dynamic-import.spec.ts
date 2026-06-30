@@ -135,6 +135,12 @@ test('should work with load ../ and contain itself directory', async () => {
     .toMatch('dynamic-import-nested-self-content')
 })
 
+test('should handle object rest destructuring of a dynamic import', async () => {
+  await expect
+    .poll(() => page.textContent('.dynamic-import-rest'))
+    .toMatch('a rest-b rest-c')
+})
+
 test('should work a load path that contains parentheses.', async () => {
   await expect
     .poll(() =>
