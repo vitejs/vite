@@ -2623,36 +2623,38 @@ async function loadConfigFromBundledFile(
     // Storing the bundled file in node_modules/ is avoided for Deno
     // because Deno only supports Node.js style modules under node_modules/
     // and configs with `npm:` import statements will fail when executed.
-    let nodeModulesDir =
+    const nodeModulesDir =
       typeof process.versions.deno === 'string'
         ? undefined
         : findNearestNodeModules(path.dirname(fileName))
-    if (nodeModulesDir) {
+
+    let viteTempDir = nodeModulesDir
+      ? path.resolve(nodeModulesDir, '.vite-temp')
+      : undefined
+    if (viteTempDir) {
       try {
-        await fsp.mkdir(path.resolve(nodeModulesDir, '.vite-temp/'), {
+        await fsp.mkdir(viteTempDir, {
           recursive: true,
         })
       } catch (e) {
         if (e.code === 'EACCES') {
           // If there is no access permission, a temporary configuration file is created by default.
-          nodeModulesDir = undefined
+          viteTempDir = undefined
         } else {
           throw e
         }
       }
     }
     const hash = `timestamp-${Date.now()}-${Math.random().toString(16).slice(2)}`
-    const tempFileName = nodeModulesDir
-      ? path.resolve(
-          nodeModulesDir,
-          `.vite-temp/${path.basename(fileName)}.${hash}.mjs`,
-        )
+    const tempFileName = viteTempDir
+      ? path.resolve(viteTempDir, `${path.basename(fileName)}.${hash}.mjs`)
       : `${fileName}.${hash}.mjs`
 
-    // Tell Vite Task to ignore this transient file as both input and output,
-    // so the read-write of this file doesn't affect the cache fingerprints.
-    ignoreInput(tempFileName)
-    ignoreOutput(tempFileName)
+    // Tell Vite Task to ignore node_modules/.vite-temp or the temp config file,
+    // so the read-write of this path doesn't affect the cache fingerprints.
+    const pathToIgnore = viteTempDir ?? tempFileName
+    ignoreInput(pathToIgnore)
+    ignoreOutput(pathToIgnore)
     await fsp.writeFile(tempFileName, bundledCode)
     try {
       return (await import(pathToFileURL(tempFileName).href)).default
