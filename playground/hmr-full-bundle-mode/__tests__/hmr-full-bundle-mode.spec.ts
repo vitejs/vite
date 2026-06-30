@@ -1,6 +1,6 @@
 import { setTimeout } from 'node:timers/promises'
-import { expect, test } from 'vitest'
-import { editFile, isBuild, page } from '~utils'
+import { expect, test, onTestFinished } from 'vitest'
+import { addFile, editFile, isBuild, page, readFile, serverLogs } from '~utils'
 
 const assetUrl = /asset-[\w-]+\.png/
 
@@ -64,13 +64,13 @@ if (isBuild) {
     )
     await setTimeout(100)
     editFile('main.js', (code) =>
-      code.replace("text('.app', 'hello1')", "text('.app', 'hello2')"),
+      code.replace("text('.app', 'hello1')", "text('.app', 'hello2') "),
     )
     await expect.poll(() => page.textContent('.app')).toBe('hello2')
 
     editFile('main.js', (code) =>
       code.replace(
-        "text('.app', 'hello2')\n" + '// @delay-transform',
+        "text('.app', 'hello2') \n" + '// @delay-transform',
         "text('.app', 'hello')",
       ),
     )
@@ -125,17 +125,52 @@ if (isBuild) {
     )
     await setTimeout(100)
     editFile('hmr.js', (code) =>
-      code.replace("const foo = 'hello1'", "const foo = 'hello2'"),
+      code.replace("const foo = 'hello1'", "const foo = 'hello2' "),
     )
     await expect.poll(() => page.textContent('.hmr')).toBe('hello2')
 
     editFile('hmr.js', (code) =>
       code.replace(
-        "const foo = 'hello2'\n" + '// @delay-transform',
+        "const foo = 'hello2' \n" + '// @delay-transform',
         "const foo = 'hello'",
       ),
     )
     await expect.poll(() => page.textContent('.hmr')).toBe('hello')
+  })
+
+  // an asset added by an HMR patch is emitted without `onOutput`, so it must be
+  // served via `onAdditionalAssets`. https://github.com/vitejs/vite/issues/22596
+  test('hmr patch serves a newly emitted asset', async () => {
+    const original = readFile('hmr-asset.js')
+    await expect
+      .poll(() => page.getAttribute('#hmr-asset-image', 'alt'))
+      .toBe('hmr-asset')
+
+    const assetResponse = page.waitForResponse(/hmr-asset-[\w-]+\.png/)
+    editFile(
+      'hmr-asset.js',
+      (code) =>
+        `import imageUrl from './hmr-asset.png'\n` +
+        code.replace('/* @asset-src */', 'img.src = imageUrl'),
+    )
+    onTestFinished(() => {
+      addFile('hmr-asset.js', original)
+    })
+
+    // the image only decodes if the emitted asset was served (not a 404)
+    await expect
+      .poll(() =>
+        page
+          .$eval(
+            '#hmr-asset-image',
+            (img: HTMLImageElement) => img.complete && img.naturalWidth > 0,
+          )
+          .catch(() => false),
+      )
+      .toBe(true)
+    const src = await page.getAttribute('#hmr-asset-image', 'src')
+    expect(src).toMatch(/\/assets\/hmr-asset-[\w-]+\.png/)
+    expect((await assetResponse).status()).toBe(200)
   })
 
   test('worker with ?worker query', async () => {
@@ -187,5 +222,21 @@ if (isBuild) {
   test('lazy bundling', async () => {
     await page.click('#load-dynamic')
     await expect.poll(() => page.textContent('.dynamic')).toBe('loaded')
+  })
+
+  test('invalidate', async () => {
+    const original = readFile('invalidation-child.js')
+    onTestFinished(() => addFile('invalidation-child.js', original))
+
+    await expect
+      .poll(() => page.textContent('.invalidation-parent'))
+      .toBe('child')
+    const logIndex = serverLogs.length
+    editFile('invalidation-child.js', (code) =>
+      code.replace("'child'", "'child updated'"),
+    )
+    await expect
+      .poll(() => serverLogs.slice(logIndex).join('\n'))
+      .toContain('hmr invalidate')
   })
 }
