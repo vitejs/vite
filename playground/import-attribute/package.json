@@ -1,5 +1,5 @@
 {
-  "name": "@vitejs/test-import-assertion",
+  "name": "@vitejs/test-import-attribute",
   "private": true,
   "version": "0.0.0",
   "type": "module",
@@ -10,6 +10,6 @@
     "preview": "vite preview"
   },
   "dependencies": {
-    "@vitejs/test-import-assertion-dep": "file:./import-assertion-dep"
+    "@vitejs/test-import-attribute-dep": "file:./import-attribute-dep"
   }
 }
