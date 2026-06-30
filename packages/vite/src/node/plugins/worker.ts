@@ -526,7 +526,11 @@ export function webWorkerPlugin(config: ResolvedConfig): Plugin {
               this.addWatchFile(file)
             }
 
-            if (format === 'es' && result.preloadFilenames.length > 0) {
+            if (
+              !isWorker &&
+              format === 'es' &&
+              result.preloadFilenames.length > 0
+            ) {
               const workerOutputCache = workerOutputCaches.get(
                 config.mainConfig || config,
               )!
