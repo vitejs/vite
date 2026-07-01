@@ -73,6 +73,34 @@ export function registerCustomMime(): void {
   mrmime.mimes.eot = 'application/vnd.ms-fontobject'
 }
 
+// When the placeholder sits inside a string literal (`"__VITE_ASSET__abc__"`),
+// expand the rewrite range to include the surrounding quotes and emit a
+// parenthesized string expression. Without parentheses, a leading unary
+// operator like `typeof "..."` parses as `(typeof "") + runtime + ""`,
+// which evaluates to a concatenated string instead of `"string"`. See #22304.
+// Exported for unit testing only.
+export function writeRuntimeAssetReplacement(
+  s: MagicString,
+  code: string,
+  match: RegExpExecArray,
+  full: string,
+  runtime: string,
+): void {
+  const start = match.index
+  const end = match.index + full.length
+  const before = code[start - 1]
+  const after = code[end]
+  if (
+    (before === '"' && after === '"') ||
+    (before === "'" && after === "'") ||
+    (before === '`' && after === '`')
+  ) {
+    s.update(start - 1, end + 1, `(""+${runtime}+"")`)
+  } else {
+    s.update(start, end, `"+${runtime}+"`)
+  }
+}
+
 export function renderAssetUrlInJS(
   pluginContext: PluginContext,
   chunk: RenderedChunk,
@@ -111,11 +139,15 @@ export function renderAssetUrlInJS(
       'js',
       toRelativeRuntime,
     )
-    const replacementString =
-      typeof replacement === 'string'
-        ? JSON.stringify(encodeURIPath(replacement)).slice(1, -1)
-        : `"+${replacement.runtime}+"`
-    s.update(match.index, match.index + full.length, replacementString)
+    if (typeof replacement === 'string') {
+      s.update(
+        match.index,
+        match.index + full.length,
+        JSON.stringify(encodeURIPath(replacement)).slice(1, -1),
+      )
+    } else {
+      writeRuntimeAssetReplacement(s, code, match, full, replacement.runtime)
+    }
   }
 
   // Replace __VITE_PUBLIC_ASSET__5aA0Ddc0__ with absolute paths
@@ -136,11 +168,15 @@ export function renderAssetUrlInJS(
       'js',
       toRelativeRuntime,
     )
-    const replacementString =
-      typeof replacement === 'string'
-        ? JSON.stringify(encodeURIPath(replacement)).slice(1, -1)
-        : `"+${replacement.runtime}+"`
-    s.update(match.index, match.index + full.length, replacementString)
+    if (typeof replacement === 'string') {
+      s.update(
+        match.index,
+        match.index + full.length,
+        JSON.stringify(encodeURIPath(replacement)).slice(1, -1),
+      )
+    } else {
+      writeRuntimeAssetReplacement(s, code, match, full, replacement.runtime)
+    }
   }
 
   return s
