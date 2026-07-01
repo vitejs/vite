@@ -40,7 +40,7 @@ describe('matchImportsToPreloadMarkers', () => {
     const code = `__vitePreload(() => import('a'), ${preloadMarker})`
     const [marker] = markerPositions(code)
     const { importMarkerPos } = match(code)
-    expect(importMarkerPos).toEqual([marker])
+    expect(importMarkerPos).toStrictEqual([marker])
   })
 
   test('gives sibling imports their own markers (Rollup-era interleaved shape)', () => {
