@@ -55,6 +55,7 @@ import {
   joinUrlSegments,
   mergeConfig,
   mergeWithDefaults,
+  nodeLikeBuiltins,
   partialEncodeURIPath,
   setupRollupOptionCompat,
   unique,
@@ -682,8 +683,13 @@ export function resolveRolldownOptions(
 
   // For webworker SSR with platform: 'browser', external CJS require() calls
   // need to be converted to ESM imports since createRequire is not available.
+  // Without an `external` list the plugin matches nothing, so a bundled CJS
+  // dependency calling `require("<node builtin>")` (e.g. node-forge requiring
+  // "crypto") falls through to Rolldown's throwing `__require` stub. Pass the
+  // node-like builtins so those requires become ESM imports the runtime
+  // (e.g. workerd's nodejs_compat) can resolve.
   if (isSsrTargetWebworkerEnvironment) {
-    plugins.push(esmExternalRequirePlugin())
+    plugins.push(esmExternalRequirePlugin({ external: nodeLikeBuiltins }))
   }
 
   const buildOutputOptions = (output: OutputOptions = {}): OutputOptions => {
