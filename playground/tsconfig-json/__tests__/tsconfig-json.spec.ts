@@ -2,7 +2,14 @@ import path from 'node:path'
 import fs from 'node:fs'
 import { transformWithEsbuild } from 'vite'
 import { describe, expect, test } from 'vitest'
-import { browserLogs, isServe, serverLogs } from '~utils'
+import {
+  browserLogs,
+  editFile,
+  isServe,
+  page,
+  serverLogs,
+  viteTestUrl,
+} from '~utils'
 
 test('should respected each `tsconfig.json`s compilerOptions', () => {
   // main side effect should be called (because of `"verbatimModuleSyntax": true`)
@@ -20,6 +27,49 @@ test('should respected each `tsconfig.json`s compilerOptions', () => {
   // nested-with-extends base setter should be called (because of `"useDefineForClassFields": false"`)
   expect(browserLogs).toContain('data setter in NestedWithExtendsBase')
 })
+
+test.runIf(isServe)(
+  'nested tsconfig update: only affected modules are re-transformed',
+  async () => {
+    const before = (await fetch(viteTestUrl + '/transform-counts').then((r) =>
+      r.json(),
+    )) as Record<string, number>
+
+    // both zones should have been transformed on initial load
+    expect(before['nested/main.ts']).toBeGreaterThan(0)
+    expect(before['nested-with-extends/main.ts']).toBeGreaterThan(0)
+
+    editFile('nested/tsconfig.json', (code) =>
+      code.replace(
+        '"useDefineForClassFields": false',
+        '"useDefineForClassFields": true',
+      ),
+    )
+    await page.waitForEvent('load')
+
+    const after = (await fetch(viteTestUrl + '/transform-counts').then((r) =>
+      r.json(),
+    )) as Record<string, number>
+
+    // nested modules should have been re-transformed (tsconfig changed)
+    expect(after['nested/main.ts']).toBeGreaterThan(before['nested/main.ts'])
+
+    // nested-with-extends is in a separate tsconfig zone and not in nested/'s
+    // import chain, so it should NOT be re-transformed
+    expect(after['nested-with-extends/main.ts']).toBe(
+      before['nested-with-extends/main.ts'],
+    )
+
+    // restore
+    editFile('nested/tsconfig.json', (code) =>
+      code.replace(
+        '"useDefineForClassFields": true',
+        '"useDefineForClassFields": false',
+      ),
+    )
+    await page.waitForEvent('load')
+  },
+)
 
 test.runIf(isServe)('scanner should not error with decorators', () => {
   expect(serverLogs).not.toStrictEqual(

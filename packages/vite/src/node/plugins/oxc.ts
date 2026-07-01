@@ -4,7 +4,10 @@ import type {
   TransformResult as OxcTransformResult,
 } from 'rolldown/utils'
 import { transformSync } from 'rolldown/utils'
-import { viteTransformPlugin as nativeTransformPlugin } from 'rolldown/experimental'
+import {
+  viteTransformPlugin as nativeTransformPlugin,
+  resolveTsconfig,
+} from 'rolldown/experimental'
 import type { RolldownError, RolldownLog, SourceMap } from 'rolldown'
 import colors from 'picocolors'
 import type { FSWatcher } from '#dep-types/chokidar'
@@ -16,7 +19,11 @@ import type { Environment } from '..'
 import type { ViteDevServer } from '../server'
 import { JS_TYPES_RE } from '../constants'
 import type { Logger } from '../logger'
-import { type ESBuildOptions, getTSConfigResolutionCache } from './esbuild'
+import {
+  type ESBuildOptions,
+  getTSConfigResolutionCache,
+  registerTsconfigDependency,
+} from './esbuild'
 
 // IIFE content looks like `var MyLib = (function() {` or `this.nested.myLib = (function() {`.
 export const IIFE_BEGIN_RE: RegExp =
@@ -155,14 +162,18 @@ export async function transformWithOxc(
     resolvedOptions,
     getTSConfigResolutionCache(config),
   )
-  if (
-    watcher &&
-    config &&
-    result.tsconfigFilePaths &&
-    result.tsconfigFilePaths.length > 0
-  ) {
-    for (const tsconfigFile of result.tsconfigFilePaths) {
-      ensureWatchedFile(watcher, normalizePath(tsconfigFile), config.root)
+  if (watcher && config && (lang === 'ts' || lang === 'tsx')) {
+    const tsconfigResult = resolveTsconfig(
+      cleanUrl(filename),
+      getTSConfigResolutionCache(config),
+    )
+    if (tsconfigResult) {
+      const sourceFile = cleanUrl(filename)
+      for (const tsconfigFile of tsconfigResult.tsconfigFilePaths) {
+        const normalizedTsconfigFile = normalizePath(tsconfigFile)
+        ensureWatchedFile(watcher, normalizedTsconfigFile, config.root)
+        registerTsconfigDependency(config, normalizedTsconfigFile, sourceFile)
+      }
     }
   }
 

@@ -17,8 +17,10 @@ import {
   createFilter,
   ensureWatchedFile,
   generateCodeFrame,
+  normalizePath,
 } from '../utils'
 import type { ViteDevServer } from '../server'
+import type { EnvironmentModuleNode } from '../server/moduleGraph'
 import type { ResolvedConfig } from '../config'
 import type { Plugin } from '../plugin'
 import { cleanUrl } from '../../shared/utils'
@@ -153,8 +155,15 @@ export async function transformWithEsbuild(
         const { tsconfig: loadedTsconfig, tsconfigFilePaths } = result
         // tsconfig could be out of root, make sure it is watched on dev
         if (watcher && config) {
+          const sourceFile = cleanUrl(filename)
           for (const tsconfigFile of tsconfigFilePaths) {
-            ensureWatchedFile(watcher, tsconfigFile, config.root)
+            const normalizedTsconfigFile = normalizePath(tsconfigFile)
+            ensureWatchedFile(watcher, normalizedTsconfigFile, config.root)
+            registerTsconfigDependency(
+              config,
+              normalizedTsconfigFile,
+              sourceFile,
+            )
           }
         }
 
@@ -537,9 +546,42 @@ export function getTSConfigResolutionCache(
   return cache
 }
 
+// reverse index: tsconfig file path -> source files that referenced it.
+// used by reloadOnTsconfigChange to only invalidate affected modules.
+const tsconfigDependentFilesMap = new WeakMap<
+  ResolvedConfig,
+  Map<string, Set<string>>
+>()
+
+function getTsconfigDependentFilesMap(
+  config: ResolvedConfig,
+): Map<string, Set<string>> {
+  let map = tsconfigDependentFilesMap.get(config)
+  if (!map) {
+    map = new Map()
+    tsconfigDependentFilesMap.set(config, map)
+  }
+  return map
+}
+
+export function registerTsconfigDependency(
+  config: ResolvedConfig,
+  tsconfigFile: string,
+  sourceFile: string,
+): void {
+  const map = getTsconfigDependentFilesMap(config)
+  let files = map.get(tsconfigFile)
+  if (!files) {
+    files = new Set()
+    map.set(tsconfigFile, files)
+  }
+  files.add(sourceFile)
+}
+
 export function reloadOnTsconfigChange(
   server: ViteDevServer,
   changedFile: string,
+  event: 'create' | 'delete' | 'update',
 ): void {
   // any tsconfig.json that's added in the workspace could be closer to a code file than a previously cached one
   // any json file in the tsconfig cache could have been used to compile ts
@@ -551,15 +593,33 @@ export function reloadOnTsconfigChange(
         { clear: server.config.clearScreen, timestamp: true },
       )
 
-      // TODO: more finegrained invalidation than the nuclear option below
-
-      // clear module graph to remove code compiled with outdated config
-      for (const environment of Object.values(server.environments)) {
-        environment.moduleGraph.invalidateAll()
-      }
-
       // reset the cache so that recompile works with up2date configs
       cache.clear()
+
+      // On 'update' we can scope invalidation to modules that actually
+      // referenced this tsconfig (tracked during transform). On create/delete,
+      // a new/removed tsconfig may change which tsconfig other files resolve
+      // to, which the reverse index can't capture, so invalidate everything.
+      const dependentFiles =
+        event === 'update'
+          ? getTsconfigDependentFilesMap(server.config).get(changedFile)
+          : undefined
+
+      for (const environment of Object.values(server.environments)) {
+        if (dependentFiles) {
+          const seen = new Set<EnvironmentModuleNode>()
+          for (const file of dependentFiles) {
+            environment.moduleGraph
+              .getModulesByFile(file)
+              ?.forEach((mod) =>
+                environment.moduleGraph.invalidateModule(mod, seen),
+              )
+          }
+        } else {
+          // clear module graph to remove code compiled with outdated config
+          environment.moduleGraph.invalidateAll()
+        }
+      }
 
       // reload environments
       for (const environment of Object.values(server.environments)) {

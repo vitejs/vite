@@ -858,7 +858,7 @@ export async function _createServer(
 
   const onFileAddUnlink = async (file: string, isUnlink: boolean) => {
     file = normalizePath(file)
-    reloadOnTsconfigChange(server, file)
+    reloadOnTsconfigChange(server, file, isUnlink ? 'delete' : 'create')
 
     await Promise.all(
       Object.values(server.environments).map((environment) =>
@@ -896,7 +896,7 @@ export async function _createServer(
 
   const onFileChange = async (file: string) => {
     file = normalizePath(file)
-    reloadOnTsconfigChange(server, file)
+    reloadOnTsconfigChange(server, file, 'update')
 
     await Promise.all(
       Object.values(server.environments).map((environment) =>
