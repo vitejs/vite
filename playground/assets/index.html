@@ -51,6 +51,10 @@
     <code class="public-mts-import-content"></code> Content-Type:
     <code class="public-mts-import-content-type"></code>
   </li>
+  <li>
+    From publicDir (?raw):
+    <code class="public-js-raw-import-content"></code>
+  </li>
 </ul>
 
 <h2>CSS url references</h2>
@@ -546,6 +550,9 @@
       await res.headers.get('Content-Type'),
     )
   })()
+
+  import publicJsRaw from '/raw.js?raw'
+  text('.public-js-raw-import-content', publicJsRaw)
 
   import svgFrag from './nested/fragment.svg'
   text('.svg-frag-import-path', svgFrag)
