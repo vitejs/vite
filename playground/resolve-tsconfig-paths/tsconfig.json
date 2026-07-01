@@ -8,6 +8,6 @@
       "#/*": ["./src/*"]
     }
   },
-  "include": ["**/*", "index.html"],
+  "include": ["**/*", "**/*.css", "**/*.scss", "**/*.less", "index.html"],
   "exclude": ["./__tests__"]
 }

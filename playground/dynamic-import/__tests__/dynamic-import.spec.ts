@@ -135,6 +135,19 @@ test('should work with load ../ and contain itself directory', async () => {
     .toMatch('dynamic-import-nested-self-content')
 })
 
+// #22700: nested `import('a').then(() => import('b'))` where `a` has a CSS
+// side-effect dep — the outer import's CSS must still be loaded in build output
+test('should load css of nested dynamic import', async () => {
+  await expect
+    .poll(() => page.textContent('.then-css-outer'))
+    .toMatch('then-css-outer')
+  await expect.poll(() => getColor('.then-css-outer')).toBe('red')
+  await expect
+    .poll(() => page.textContent('.then-css-inner'))
+    .toMatch('then-css-inner')
+  await expect.poll(() => getColor('.then-css-inner')).toBe('green')
+})
+
 test('should work a load path that contains parentheses.', async () => {
   await expect
     .poll(() =>

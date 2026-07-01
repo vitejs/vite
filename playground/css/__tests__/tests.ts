@@ -278,7 +278,7 @@ test('async chunk', async () => {
     expect(findAssetFile(/async-[-\w]{8}\.css$/)).toMatch('.async{color:teal}')
   } else {
     // test hmr
-    editFile('async.css', (code) => code.replace('color: teal', 'color: blue'))
+    editFile('async.css', (code) => code.replace('color: teal', 'color: blue '))
     await expect.poll(() => getColor(el)).toBe('blue')
   }
 })
@@ -301,7 +301,7 @@ test('treeshaken async chunk', async () => {
     // should be present in dev
     const el = await page.$('.async-treeshaken')
     editFile('async-treeshaken.css', (code) =>
-      code.replace('color: plum', 'color: blue'),
+      code.replace('color: plum', 'color: blue '),
     )
     await expect.poll(() => getColor(el)).toBe('blue')
   }
@@ -319,7 +319,7 @@ test('PostCSS dir-dependency', async () => {
   // NOTE: lightningcss does not support registering dependencies in plugins
   if (!isBuild) {
     editFile('glob-dep/foo.css', (code) =>
-      code.replace('color: grey', 'color: blue'),
+      code.replace('color: grey', 'color: blue '),
     )
     await expect.poll(() => getColor(el1)).toBe('blue')
     expect(await getColor(el2)).toBe('grey')
@@ -365,7 +365,8 @@ test('URL separation', async () => {
 
   for (const [c, i] of cases.map((c, i) => [c, i]) as [string, number][]) {
     // Replace the previous case
-    if (i > 0) editFile('imported.css', (code) => code.replace(cases[i - 1], c))
+    if (i > 0)
+      editFile('imported.css', (code) => code.replace(cases[i - 1], c) + '\n')
 
     expect(await getBg(urlSeparated)).toMatch(
       /^url\(.+\)(?:\s*,\s*url\(.+\))*$/,
@@ -496,8 +497,7 @@ test('@import scss', async () => {
   expect(await getColor('.at-import-scss')).toBe('red')
 })
 
-// TODO: skipped because of https://github.com/rolldown/rolldown/issues/7315
-test.runIf(isBuild).skip('manual chunk path', async () => {
+test.runIf(isBuild)('manual chunk path', async () => {
   // assert that the manual-chunk css is output in the directory specified in manualChunk (#12072)
   expect(
     findAssetFile(/manual-chunk-[-\w]{8}\.css$/, undefined, 'assets/dir/dir2'),

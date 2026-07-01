@@ -68,7 +68,7 @@ test.runIf(isServe)('html proxy is encoded', async () => {
 
 // run this at the end to reduce flakiness
 test.runIf(isServe)('should restart ssr', async () => {
-  editFile('./vite.config.ts', (content) => content)
+  editFile('./vite.config.ts', (content) => content + '\n')
   await expect
     .poll(() => {
       expect(serverLogs).toEqual(

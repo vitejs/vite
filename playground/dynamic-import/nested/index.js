@@ -201,4 +201,13 @@ import(`../nested/static.js`).then((mod) => {
   text('.dynamic-import-static', mod.self)
 })
 
+// #22700: in a nested `import().then(() => import())`, the outer import's CSS
+// dep used to be dropped to `void 0` in the build output, orphaning the CSS.
+import('./then-css/outer.js').then((outerMod) => {
+  text('.then-css-outer', outerMod.outer)
+  return import('./then-css/inner.js').then((innerMod) => {
+    text('.then-css-inner', innerMod.inner)
+  })
+})
+
 console.log('index.js')
