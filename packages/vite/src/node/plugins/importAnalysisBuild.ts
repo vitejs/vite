@@ -378,8 +378,14 @@ export function buildImportAnalysisPlugin(config: ResolvedConfig): Plugin[] {
             const importMarkerPos = new Array<number>(imports.length).fill(-1)
             const openImports: number[] = []
             let nextImport = 0
-            let markerStartPos = findPreloadMarker(code, imports[0].e)
-            while (markerStartPos !== -1) {
+            for (
+              let markerStartPos = findPreloadMarker(code, imports[0].e);
+              markerStartPos !== -1;
+              markerStartPos = findPreloadMarker(
+                code,
+                markerStartPos + preloadMarker.length,
+              )
+            ) {
               while (
                 nextImport < imports.length &&
                 imports[nextImport].e <= markerStartPos
@@ -389,10 +395,6 @@ export function buildImportAnalysisPlugin(config: ResolvedConfig): Plugin[] {
               if (openImports.length) {
                 importMarkerPos[openImports.pop()!] = markerStartPos
               }
-              markerStartPos = findPreloadMarker(
-                code,
-                markerStartPos + preloadMarker.length,
-              )
             }
             // #3051: a lone import whose marker isn't placed after it pairs with the only marker
             if (imports.length === 1 && importMarkerPos[0] === -1) {
