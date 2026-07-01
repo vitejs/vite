@@ -1,6 +1,6 @@
 import { setTimeout } from 'node:timers/promises'
 import { expect, test, onTestFinished } from 'vitest'
-import { addFile, editFile, isBuild, page, readFile } from '~utils'
+import { addFile, editFile, isBuild, page, readFile, serverLogs } from '~utils'
 
 const assetUrl = /asset-[\w-]+\.png/
 
@@ -64,13 +64,13 @@ if (isBuild) {
     )
     await setTimeout(100)
     editFile('main.js', (code) =>
-      code.replace("text('.app', 'hello1')", "text('.app', 'hello2')"),
+      code.replace("text('.app', 'hello1')", "text('.app', 'hello2') "),
     )
     await expect.poll(() => page.textContent('.app')).toBe('hello2')
 
     editFile('main.js', (code) =>
       code.replace(
-        "text('.app', 'hello2')\n" + '// @delay-transform',
+        "text('.app', 'hello2') \n" + '// @delay-transform',
         "text('.app', 'hello')",
       ),
     )
@@ -125,13 +125,13 @@ if (isBuild) {
     )
     await setTimeout(100)
     editFile('hmr.js', (code) =>
-      code.replace("const foo = 'hello1'", "const foo = 'hello2'"),
+      code.replace("const foo = 'hello1'", "const foo = 'hello2' "),
     )
     await expect.poll(() => page.textContent('.hmr')).toBe('hello2')
 
     editFile('hmr.js', (code) =>
       code.replace(
-        "const foo = 'hello2'\n" + '// @delay-transform',
+        "const foo = 'hello2' \n" + '// @delay-transform',
         "const foo = 'hello'",
       ),
     )
@@ -222,5 +222,21 @@ if (isBuild) {
   test('lazy bundling', async () => {
     await page.click('#load-dynamic')
     await expect.poll(() => page.textContent('.dynamic')).toBe('loaded')
+  })
+
+  test('invalidate', async () => {
+    const original = readFile('invalidation-child.js')
+    onTestFinished(() => addFile('invalidation-child.js', original))
+
+    await expect
+      .poll(() => page.textContent('.invalidation-parent'))
+      .toBe('child')
+    const logIndex = serverLogs.length
+    editFile('invalidation-child.js', (code) =>
+      code.replace("'child'", "'child updated'"),
+    )
+    await expect
+      .poll(() => serverLogs.slice(logIndex).join('\n'))
+      .toContain('hmr invalidate')
   })
 }
