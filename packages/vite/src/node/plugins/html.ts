@@ -1523,33 +1523,72 @@ const bodyPrependInjectRE = /([ \t]*)<body[^>]*>/i
 
 const doctypePrependInjectRE = /<!doctype html>/i
 
-function injectToHead(
+const htmlCommentRE = /<!--[\s\S]*?-->/g
+
+// Returns a copy of `html` with the contents of HTML comments replaced by
+// spaces of equal length so that match indices in the masked string map 1:1
+// to positions in the original. This lets us run the head/body/html injection
+// regexes without matching markers that appear inside comments (#18386).
+function maskHtmlComments(html: string): string {
+  return html.replace(htmlCommentRE, (m) => ' '.repeat(m.length))
+}
+
+function testOutsideComments(html: string, re: RegExp): boolean {
+  return re.test(maskHtmlComments(html))
+}
+
+function replaceFirstOutsideComments(
+  html: string,
+  re: RegExp,
+  replacement: string | ((substring: string, ...args: any[]) => string),
+): string {
+  const masked = maskHtmlComments(html)
+  const match = re.exec(masked)
+  if (!match) return html
+  const start = match.index
+  const matched = match[0]
+  const end = start + matched.length
+  let replaced: string
+  if (typeof replacement === 'function') {
+    replaced = replacement(matched, ...match.slice(1))
+  } else {
+    // Delegate to String.prototype.replace on the matched span so that
+    // replacement-string semantics (e.g. `$&`, `$1`) are preserved.
+    replaced = matched.replace(re, replacement)
+  }
+  return html.slice(0, start) + replaced + html.slice(end)
+}
+
+export function injectToHead(
   html: string,
   tags: HtmlTagDescriptor[],
   prepend = false,
-) {
+): string {
   if (tags.length === 0) return html
 
   if (prepend) {
     // inject as the first element of head
-    if (headPrependInjectRE.test(html)) {
-      return html.replace(
+    if (testOutsideComments(html, headPrependInjectRE)) {
+      return replaceFirstOutsideComments(
+        html,
         headPrependInjectRE,
         (match, p1) => `${match}\n${serializeTags(tags, incrementIndent(p1))}`,
       )
     }
   } else {
     // inject before head close
-    if (headInjectRE.test(html)) {
+    if (testOutsideComments(html, headInjectRE)) {
       // respect indentation of head tag
-      return html.replace(
+      return replaceFirstOutsideComments(
+        html,
         headInjectRE,
         (match, p1) => `${serializeTags(tags, incrementIndent(p1))}${match}`,
       )
     }
     // try to inject before the body tag
-    if (bodyPrependInjectRE.test(html)) {
-      return html.replace(
+    if (testOutsideComments(html, bodyPrependInjectRE)) {
+      return replaceFirstOutsideComments(
+        html,
         bodyPrependInjectRE,
         (match, p1) => `${serializeTags(tags, p1)}\n${match}`,
       )
@@ -1559,24 +1598,26 @@ function injectToHead(
   return prependInjectFallback(html, tags)
 }
 
-function injectToBody(
+export function injectToBody(
   html: string,
   tags: HtmlTagDescriptor[],
   prepend = false,
-) {
+): string {
   if (tags.length === 0) return html
 
   if (prepend) {
     // inject after body open
-    if (bodyPrependInjectRE.test(html)) {
-      return html.replace(
+    if (testOutsideComments(html, bodyPrependInjectRE)) {
+      return replaceFirstOutsideComments(
+        html,
         bodyPrependInjectRE,
         (match, p1) => `${match}\n${serializeTags(tags, incrementIndent(p1))}`,
       )
     }
     // if no there is no body tag, inject after head or fallback to prepend in html
-    if (headInjectRE.test(html)) {
-      return html.replace(
+    if (testOutsideComments(html, headInjectRE)) {
+      return replaceFirstOutsideComments(
+        html,
         headInjectRE,
         (match, p1) => `${match}\n${serializeTags(tags, p1)}`,
       )
@@ -1584,15 +1625,20 @@ function injectToBody(
     return prependInjectFallback(html, tags)
   } else {
     // inject before body close
-    if (bodyInjectRE.test(html)) {
-      return html.replace(
+    if (testOutsideComments(html, bodyInjectRE)) {
+      return replaceFirstOutsideComments(
+        html,
         bodyInjectRE,
         (match, p1) => `${serializeTags(tags, incrementIndent(p1))}${match}`,
       )
     }
     // if no body tag is present, append to the html tag, or at the end of the file
-    if (htmlInjectRE.test(html)) {
-      return html.replace(htmlInjectRE, `${serializeTags(tags)}\n$&`)
+    if (testOutsideComments(html, htmlInjectRE)) {
+      return replaceFirstOutsideComments(
+        html,
+        htmlInjectRE,
+        `${serializeTags(tags)}\n$&`,
+      )
     }
     return html + `\n` + serializeTags(tags)
   }
@@ -1600,11 +1646,19 @@ function injectToBody(
 
 function prependInjectFallback(html: string, tags: HtmlTagDescriptor[]) {
   // prepend to the html tag, append after doctype, or the document start
-  if (htmlPrependInjectRE.test(html)) {
-    return html.replace(htmlPrependInjectRE, `$&\n${serializeTags(tags)}`)
+  if (testOutsideComments(html, htmlPrependInjectRE)) {
+    return replaceFirstOutsideComments(
+      html,
+      htmlPrependInjectRE,
+      `$&\n${serializeTags(tags)}`,
+    )
   }
-  if (doctypePrependInjectRE.test(html)) {
-    return html.replace(doctypePrependInjectRE, `$&\n${serializeTags(tags)}`)
+  if (testOutsideComments(html, doctypePrependInjectRE)) {
+    return replaceFirstOutsideComments(
+      html,
+      doctypePrependInjectRE,
+      `$&\n${serializeTags(tags)}`,
+    )
   }
   return serializeTags(tags) + html
 }

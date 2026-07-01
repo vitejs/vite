@@ -1,6 +1,10 @@
 import { describe, expect, test } from 'vitest'
 import type { OutputBundle, OutputChunk } from 'rolldown'
-import { getCssFilesForChunk } from '../plugins/html'
+import {
+  getCssFilesForChunk,
+  injectToBody,
+  injectToHead,
+} from '../plugins/html'
 
 function createChunk(
   fileName: string,
@@ -238,5 +242,120 @@ describe('getCssFilesForChunk', () => {
       'b.css',
       'a.css',
     ])
+  })
+})
+
+describe('injectToHead/injectToBody (#18386: skip HTML comments)', () => {
+  const scriptTag = {
+    tag: 'script',
+    attrs: { type: 'module', src: '/@vite/client' },
+  }
+
+  test('injectToHead injects after the real <head>, not one inside a comment', () => {
+    const html = [
+      '<!-- <!DOCTYPE html>',
+      '<html lang="en">',
+      '  <head>',
+      '    <title>old</title>',
+      '  </head>',
+      '  <body></body>',
+      '</html> -->',
+      '<!DOCTYPE html>',
+      '<html lang="en">',
+      '  <head>',
+      '    <title>real</title>',
+      '  </head>',
+      '  <body></body>',
+      '</html>',
+    ].join('\n')
+
+    const out = injectToHead(html, [scriptTag], true)
+
+    // The injected script must not be placed inside the leading comment
+    const commentEnd = out.indexOf('-->')
+    const injected = out.indexOf('/@vite/client')
+    expect(injected).toBeGreaterThan(commentEnd)
+    // And it must be inside the real head (before </head> of the real document)
+    const realHeadOpen = out.indexOf('<head>', commentEnd)
+    const realHeadClose = out.indexOf('</head>', realHeadOpen)
+    expect(injected).toBeGreaterThan(realHeadOpen)
+    expect(injected).toBeLessThan(realHeadClose)
+    // The original commented document should remain unchanged
+    expect(out).toContain(
+      '<!-- <!DOCTYPE html>\n<html lang="en">\n  <head>\n    <title>old</title>\n  </head>\n  <body></body>\n</html> -->',
+    )
+  })
+
+  test('injectToHead (append) injects before the real </head>, not one inside a comment', () => {
+    const html = [
+      '<!DOCTYPE html>',
+      '<html>',
+      '  <head>',
+      '    <!-- legacy </head> reference inside a comment -->',
+      '    <title>real</title>',
+      '  </head>',
+      '  <body></body>',
+      '</html>',
+    ].join('\n')
+
+    const out = injectToHead(html, [scriptTag])
+
+    const commentStart = out.indexOf('<!--')
+    const commentEnd = out.indexOf('-->', commentStart)
+    const injected = out.indexOf('/@vite/client')
+    // Injected tag must not land inside the comment
+    expect(injected < commentStart || injected > commentEnd).toBe(true)
+    // Injected tag must be just before the real </head>
+    const realHeadClose = out.lastIndexOf('</head>')
+    expect(injected).toBeLessThan(realHeadClose)
+  })
+
+  test('injectToBody injects before the real </body>, not one inside a comment', () => {
+    const html = [
+      '<!DOCTYPE html>',
+      '<html>',
+      '  <head></head>',
+      '  <body>',
+      '    <!-- prior layout had </body> here -->',
+      '    <div id="root"></div>',
+      '  </body>',
+      '</html>',
+    ].join('\n')
+
+    const out = injectToBody(html, [scriptTag])
+
+    const commentStart = out.indexOf('<!--')
+    const commentEnd = out.indexOf('-->', commentStart)
+    const injected = out.indexOf('/@vite/client')
+    expect(injected < commentStart || injected > commentEnd).toBe(true)
+    const realBodyClose = out.lastIndexOf('</body>')
+    expect(injected).toBeLessThan(realBodyClose)
+    // The original commented marker should still be present unchanged
+    expect(out).toContain('<!-- prior layout had </body> here -->')
+  })
+
+  test('injectToHead falls back to body when only commented head exists', () => {
+    const html = [
+      '<!DOCTYPE html>',
+      '<!-- <head></head> -->',
+      '<html>',
+      '  <body>',
+      '    <div id="root"></div>',
+      '  </body>',
+      '</html>',
+    ].join('\n')
+
+    const out = injectToHead(html, [scriptTag])
+
+    // Must not be injected inside the comment
+    const commentStart = out.indexOf('<!--')
+    const commentEnd = out.indexOf('-->', commentStart)
+    const injected = out.indexOf('/@vite/client')
+    expect(injected < commentStart || injected > commentEnd).toBe(true)
+    // Should land before the real <body>
+    const bodyOpen = out.indexOf('<body>')
+    expect(injected).toBeLessThan(bodyOpen)
+    // The comment itself remains intact
+    expect(out).toContain('<!-- <head></head> -->')
   })
 })
