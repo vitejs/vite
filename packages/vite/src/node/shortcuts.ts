@@ -65,6 +65,12 @@ export function bindCLIShortcuts<Server extends ViteDevServer | PreviewServer>(
         colors.bold('h + enter') +
         colors.dim(' to show help'),
     )
+    server.config.logger.info(
+      colors.dim(colors.green('  ➜')) +
+        colors.dim('  press ') +
+        colors.bold('q + enter') +
+        colors.dim(' to quit'),
+    )
   }
 
   const shortcuts = customShortcuts.concat(
