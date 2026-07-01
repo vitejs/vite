@@ -1073,9 +1073,18 @@ importers:
       '@vitejs/test-dep-cjs-css-main-field':
         specifier: file:./dep-cjs-css-main-field
         version: file:playground/optimize-deps/dep-cjs-css-main-field
+      '@vitejs/test-dep-cjs-default-array':
+        specifier: file:./dep-cjs-default-array
+        version: file:playground/optimize-deps/dep-cjs-default-array
+      '@vitejs/test-dep-cjs-default-null':
+        specifier: file:./dep-cjs-default-null
+        version: file:playground/optimize-deps/dep-cjs-default-null
       '@vitejs/test-dep-cjs-external-package-omit-js-suffix':
         specifier: file:./dep-cjs-external-package-omit-js-suffix
         version: file:playground/optimize-deps/dep-cjs-external-package-omit-js-suffix
+      '@vitejs/test-dep-cjs-prototype-members':
+        specifier: file:./dep-cjs-prototype-members
+        version: file:playground/optimize-deps/dep-cjs-prototype-members
       '@vitejs/test-dep-cjs-require-css-main-field':
         specifier: file:./dep-cjs-require-css-main-field
         version: file:playground/optimize-deps/dep-cjs-require-css-main-field
@@ -1226,7 +1235,13 @@ importers:
 
   playground/optimize-deps/dep-cjs-css-main-field: {}
 
+  playground/optimize-deps/dep-cjs-default-array: {}
+
+  playground/optimize-deps/dep-cjs-default-null: {}
+
   playground/optimize-deps/dep-cjs-external-package-omit-js-suffix: {}
+
+  playground/optimize-deps/dep-cjs-prototype-members: {}
 
   playground/optimize-deps/dep-cjs-require-css-main-field:
     dependencies:
@@ -4544,8 +4559,17 @@ packages:
   '@vitejs/test-dep-cjs-css-main-field@file:playground/optimize-deps/dep-cjs-css-main-field':
     resolution: {directory: playground/optimize-deps/dep-cjs-css-main-field, type: directory}
 
+  '@vitejs/test-dep-cjs-default-array@file:playground/optimize-deps/dep-cjs-default-array':
+    resolution: {directory: playground/optimize-deps/dep-cjs-default-array, type: directory}
+
+  '@vitejs/test-dep-cjs-default-null@file:playground/optimize-deps/dep-cjs-default-null':
+    resolution: {directory: playground/optimize-deps/dep-cjs-default-null, type: directory}
+
   '@vitejs/test-dep-cjs-external-package-omit-js-suffix@file:playground/optimize-deps/dep-cjs-external-package-omit-js-suffix':
     resolution: {directory: playground/optimize-deps/dep-cjs-external-package-omit-js-suffix, type: directory}
+
+  '@vitejs/test-dep-cjs-prototype-members@file:playground/optimize-deps/dep-cjs-prototype-members':
+    resolution: {directory: playground/optimize-deps/dep-cjs-prototype-members, type: directory}
 
   '@vitejs/test-dep-cjs-require-css-main-field@file:playground/optimize-deps/dep-cjs-require-css-main-field':
     resolution: {directory: playground/optimize-deps/dep-cjs-require-css-main-field, type: directory}
@@ -10721,7 +10745,13 @@ snapshots:
 
   '@vitejs/test-dep-cjs-css-main-field@file:playground/optimize-deps/dep-cjs-css-main-field': {}
 
+  '@vitejs/test-dep-cjs-default-array@file:playground/optimize-deps/dep-cjs-default-array': {}
+
+  '@vitejs/test-dep-cjs-default-null@file:playground/optimize-deps/dep-cjs-default-null': {}
+
   '@vitejs/test-dep-cjs-external-package-omit-js-suffix@file:playground/optimize-deps/dep-cjs-external-package-omit-js-suffix': {}
+
+  '@vitejs/test-dep-cjs-prototype-members@file:playground/optimize-deps/dep-cjs-prototype-members': {}
 
   '@vitejs/test-dep-cjs-require-css-main-field@file:playground/optimize-deps/dep-cjs-require-css-main-field':
     dependencies:

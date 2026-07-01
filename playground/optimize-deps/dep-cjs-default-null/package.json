@@ -1,0 +1,6 @@
+{
+  "name": "@vitejs/test-dep-cjs-default-null",
+  "private": true,
+  "version": "0.0.0",
+  "main": "index.js"
+}
