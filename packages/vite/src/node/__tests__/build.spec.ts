@@ -171,6 +171,47 @@ describe('build', () => {
     })
   })
 
+  test('root URL import error includes asset hint', async () => {
+    let error: Error | undefined
+    try {
+      await build({
+        root: resolve(dirname, 'packages/build-project'),
+        logLevel: 'silent',
+        build: {
+          write: false,
+          rollupOptions: {
+            input: 'entry.js',
+          },
+        },
+        plugins: [
+          {
+            name: 'root-url-import',
+            resolveId(id) {
+              if (id === 'entry.js') {
+                return '\0' + id
+              }
+            },
+            load(id) {
+              if (id === '\0entry.js') {
+                return `import url from '/'; console.log(url)`
+              }
+            },
+          },
+        ],
+      })
+    } catch (e) {
+      error = e
+    }
+
+    expect(error).toBeDefined()
+    const message = stripVTControlCharacters(error!.message)
+    expect(message).toContain(`Could not resolve '/'`)
+    expect(message).toContain(
+      `A root URL "/" cannot be imported from source code.`,
+    )
+    expect(message).not.toContain(`Failed to resolve entry for package`)
+  })
+
   test.for([
     [true, true],
     [true, false],

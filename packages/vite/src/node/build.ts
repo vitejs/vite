@@ -923,6 +923,7 @@ async function buildEnvironment(
 
 export function enhanceRollupError(e: RollupError): void {
   const stackOnly = extractStack(e)
+  augmentRootUrlImportError(e)
 
   let msg = colors.red((e.plugin ? `[${e.plugin}] ` : '') + e.message)
   if (e.loc && e.loc.file && e.loc.file !== e.id) {
@@ -948,6 +949,26 @@ export function enhanceRollupError(e: RollupError): void {
   if (stackOnly !== undefined) {
     e.stack = `${e.message}\n${stackOnly}`
   }
+}
+
+function augmentRootUrlImportError(e: RollupError): void {
+  const errors = (e as RollupError & { errors?: RollupError[] }).errors
+  if (
+    isRootUrlImportError(e) ||
+    (Array.isArray(errors) && errors.some(isRootUrlImportError))
+  ) {
+    const hint =
+      `A root URL "/" cannot be imported from source code. ` +
+      `If this was generated from an asset reference, use a concrete file path such as "/logo.svg" instead.`
+
+    if (!e.message.includes(hint)) {
+      e.message += `\n\n${hint}`
+    }
+  }
+}
+
+function isRootUrlImportError(e: RollupError & { exporter?: string }): boolean {
+  return e.code === 'UNRESOLVED_IMPORT' && e.exporter === '/'
 }
 
 /**
