@@ -113,6 +113,9 @@ export const OPTIMIZABLE_ENTRY_RE: RegExp = /\.[cm]?[jt]s$/
 
 export const SPECIAL_QUERY_RE: RegExp = /[?&](?:worker|sharedworker|raw|url)\b/
 
+export const inlineRE: RegExp = /[?&]inline\b/
+export const noInlineRE: RegExp = /[?&]no-inline\b/
+
 /**
  * Prefix for resolved fs paths, since windows paths may not be valid as URLs.
  */

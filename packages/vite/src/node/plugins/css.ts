@@ -51,6 +51,7 @@ import {
   DEV_PROD_CONDITION,
   ESBUILD_BASELINE_WIDELY_AVAILABLE_TARGET,
   SPECIAL_QUERY_RE,
+  inlineRE,
 } from '../constants'
 import type { ResolvedConfig } from '../config'
 import type { Plugin } from '../plugin'
@@ -229,7 +230,6 @@ const directRequestRE = /[?&]direct\b/
 const htmlProxyRE = /[?&]html-proxy\b/
 const htmlProxyIndexRE = /&index=(\d+)/
 const commonjsProxyRE = /[?&]commonjs-proxy/
-const inlineRE = /[?&]inline\b/
 const inlineCSSRE = /[?&]inline-css\b/
 const styleAttrRE = /[?&]style-attr\b/
 const functionCallRE = /^[A-Z_][.\w-]*\(/i
