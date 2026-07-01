@@ -248,6 +248,10 @@ For a mock dependency, make sure you add a `@vitejs/test-` prefix to the package
 
 - PR title must follow the [commit message convention](./.github/commit-convention.md) so that changelogs can be automatically generated.
 
+- If you used AI, disclose the prompts used in the pull request description. If the maintainers find a PR that likely used AI and doesn't disclose the prompts, it may be closed without any explanation. If the prompt is generic, it may be closed with a comment.
+
+- If there's already an existing PR that solves the same problem, make sure to link to it in the PR description and clarify what is different from it. If it is missing, the maintainers may close it without any explanation.
+
 ## Maintenance Guidelines
 
 > The following section is mostly for maintainers who have commit access, but it's helpful to go through if you intend to make non-trivial contributions to the codebase.
