@@ -2,6 +2,8 @@
 
 When it is time to deploy your app for production, simply run the `vite build` command. By default, it uses `<root>/index.html` as the build entry point, and produces an application bundle that is suitable to be served over a static hosting service. Check out the [Deploying a Static Site](./static-deploy) for guides about popular services.
 
+Vite's dependency pre-bundling and `cacheDir` file-system cache are dev-focused optimizations. Production builds don't currently reuse `cacheDir` as a persistent cache across separate `vite build` runs, so repeated builds are expected to transform and bundle the app again.
+
 <ScrimbaLink href="https://scrimba.com/intro-to-vite-c03p6pbbdq/~037q?via=vite" title="Building for Production">Watch an interactive lesson on Scrimba</ScrimbaLink>
 
 ## Browser Compatibility
