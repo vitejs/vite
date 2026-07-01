@@ -558,9 +558,18 @@ export function resolveBuildPlugins(config: ResolvedConfig): {
  * Bundles a single environment for production.
  * Returns a Promise containing the build result.
  */
+export type ViteBuildOutput = Omit<RolldownOutput, 'output'> & {
+  output: [OutputAsset | OutputChunk, ...(OutputAsset | OutputChunk)[]]
+}
+
+export type ViteBuildResult =
+  | ViteBuildOutput
+  | ViteBuildOutput[]
+  | RolldownWatcher
+
 export async function build(
   inlineConfig: InlineConfig = {},
-): Promise<RolldownOutput | RolldownOutput[] | RolldownWatcher> {
+): Promise<ViteBuildResult> {
   const builder = await createBuilder(inlineConfig, true)
   const environment = Object.values(builder.environments)[0]
   if (!environment) throw new Error('No environment found')
@@ -812,7 +821,7 @@ export function resolveRolldownOptions(
  **/
 async function buildEnvironment(
   environment: BuildEnvironment,
-): Promise<RolldownOutput | RolldownOutput[] | RolldownWatcher> {
+): Promise<ViteBuildResult> {
   const { logger, config } = environment
   const { root, build: options } = config
 
@@ -1755,9 +1764,7 @@ export interface ViteBuilder {
   environments: Record<string, BuildEnvironment>
   config: ResolvedConfig
   buildApp(): Promise<void>
-  build(
-    environment: BuildEnvironment,
-  ): Promise<RolldownOutput | RolldownOutput[] | RolldownWatcher>
+  build(environment: BuildEnvironment): Promise<ViteBuildResult>
   runDevTools(): Promise<void>
 }
 
@@ -1863,9 +1870,7 @@ export async function createBuilder(
         }
       }
     },
-    async build(
-      environment: BuildEnvironment,
-    ): Promise<RolldownOutput | RolldownOutput[] | RolldownWatcher> {
+    async build(environment: BuildEnvironment): Promise<ViteBuildResult> {
       const output = await buildEnvironment(environment)
       environment.isBuilt = true
       return output

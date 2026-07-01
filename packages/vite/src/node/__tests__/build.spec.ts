@@ -171,6 +171,44 @@ describe('build', () => {
     })
   })
 
+  test('css-only entry can return an asset as the first build output', async () => {
+    const result = await build({
+      logLevel: 'silent',
+      configFile: false,
+      publicDir: false,
+      build: {
+        write: false,
+        rolldownOptions: {
+          input: 'style.css',
+        },
+      },
+      plugins: [
+        {
+          name: 'fixture-css-entry',
+          resolveId(id) {
+            if (id === 'style.css') {
+              return '\0style.css'
+            }
+          },
+          load(id) {
+            if (id === '\0style.css') {
+              return '.foo { color: red }'
+            }
+          },
+        },
+      ],
+    })
+
+    expect(Array.isArray(result)).toBe(false)
+    expect('output' in result).toBe(true)
+
+    if (Array.isArray(result) || !('output' in result)) {
+      return
+    }
+
+    expect(result.output[0].type).toBe('asset')
+  })
+
   test.for([
     [true, true],
     [true, false],
