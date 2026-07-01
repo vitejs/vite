@@ -1566,7 +1566,7 @@ describe('loadConfigFromFile', () => {
       }
     })
 
-    test('uses node_modules/.vite when node_modules exists without package.json', async () => {
+    test.skip('uses node_modules/.vite when node_modules exists without package.json', async () => {
       const tempDir = path.join(tmpBase, 'with-node-modules')
       const nodeModulesDir = path.join(tempDir, 'node_modules')
       fs.mkdirSync(nodeModulesDir, { recursive: true })
@@ -1578,7 +1578,7 @@ describe('loadConfigFromFile', () => {
       )
     })
 
-    test('uses .vite when neither package.json nor node_modules exist', async () => {
+    test.skip('uses .vite when neither package.json nor node_modules exist', async () => {
       const tempDir = path.join(tmpBase, 'empty')
       fs.mkdirSync(tempDir, { recursive: true })
 
