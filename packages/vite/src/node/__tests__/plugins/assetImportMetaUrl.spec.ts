@@ -27,7 +27,7 @@ describe('assetImportMetaUrlPlugin', async () => {
     expect(
       await transform('new URL(`./foo/${dir}/index.js`, import.meta.url)'),
     ).toMatchInlineSnapshot(
-      `"new URL((import.meta.glob("./foo/*/index.js", {"eager":true,"import":"default","query":"?url"}))[\`./foo/\${dir}/index.js\`], import.meta.url)"`,
+      `"new URL((import.meta.glob("./foo/*/index.js", {"eager":true,"import":"default","query":"?url"}))[\`./foo/\${dir}/index.js\`] || \`./foo/\${dir}/index.js\`, import.meta.url)"`,
     )
   })
 
@@ -35,7 +35,7 @@ describe('assetImportMetaUrlPlugin', async () => {
     expect(
       await transform('new URL(`./foo/${dir}.js`, import.meta.url)'),
     ).toMatchInlineSnapshot(
-      `"new URL((import.meta.glob("./foo/*.js", {"eager":true,"import":"default","query":"?url"}))[\`./foo/\${dir}.js\`], import.meta.url)"`,
+      `"new URL((import.meta.glob("./foo/*.js", {"eager":true,"import":"default","query":"?url"}))[\`./foo/\${dir}.js\`] || \`./foo/\${dir}.js\`, import.meta.url)"`,
     )
   })
 
@@ -43,7 +43,7 @@ describe('assetImportMetaUrlPlugin', async () => {
     expect(
       await transform('new URL(`./foo/${dir}${file}.js`, import.meta.url)'),
     ).toMatchInlineSnapshot(
-      `"new URL((import.meta.glob("./foo/*.js", {"eager":true,"import":"default","query":"?url"}))[\`./foo/\${dir}\${file}.js\`], import.meta.url)"`,
+      `"new URL((import.meta.glob("./foo/*.js", {"eager":true,"import":"default","query":"?url"}))[\`./foo/\${dir}\${file}.js\`] || \`./foo/\${dir}\${file}.js\`, import.meta.url)"`,
     )
   })
 
@@ -53,7 +53,7 @@ describe('assetImportMetaUrlPlugin', async () => {
         'new URL(`./foo/${dir}${dir2}/index.js`, import.meta.url)',
       ),
     ).toMatchInlineSnapshot(
-      `"new URL((import.meta.glob("./foo/*/index.js", {"eager":true,"import":"default","query":"?url"}))[\`./foo/\${dir}\${dir2}/index.js\`], import.meta.url)"`,
+      `"new URL((import.meta.glob("./foo/*/index.js", {"eager":true,"import":"default","query":"?url"}))[\`./foo/\${dir}\${dir2}/index.js\`] || \`./foo/\${dir}\${dir2}/index.js\`, import.meta.url)"`,
     )
   })
 
