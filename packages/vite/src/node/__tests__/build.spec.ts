@@ -278,6 +278,47 @@ describe('build', () => {
     ) as OutputChunk
     expect(foo.code).not.contains('import "external"')
   })
+
+  test('externalized module should not be inlined as bare-specifier script src in html (#20053)', async () => {
+    const result = (await build({
+      root: resolve(dirname, 'packages/build-project'),
+      logLevel: 'silent',
+      build: {
+        write: false,
+        modulePreload: { polyfill: false },
+      },
+      plugins: [
+        {
+          name: 'test',
+          resolveId: {
+            order: 'pre',
+            handler(id) {
+              if (id === 'entry.js') return '\0entry.js'
+              if (id === '@external/lib/foo.js') return false
+            },
+          },
+          load(id) {
+            if (id === '\0entry.js') {
+              return `import '@external/lib/foo.js'`
+            }
+          },
+        },
+      ],
+    })) as RolldownOutput
+
+    const html = result.output.find(
+      (o) => o.type === 'asset' && o.fileName === 'index.html',
+    ) as { source: string } | undefined
+    expect(html).toBeTruthy()
+    // The externalized module must not be emitted as a bare-specifier script
+    // `src` (which is invalid in browsers and breaks at runtime). It should
+    // instead be preserved via an inline `import` statement so an importmap
+    // can resolve it.
+    expect(html!.source).not.toMatch(
+      /<script[^>]+src=["']@external\/lib\/foo\.js["']/,
+    )
+    expect(html!.source).toContain('import "@external/lib/foo.js"')
+  })
 })
 
 const baseLibOptions: LibraryOptions = {
