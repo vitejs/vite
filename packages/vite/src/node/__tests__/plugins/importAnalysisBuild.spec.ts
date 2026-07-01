@@ -25,22 +25,18 @@ function markerPositions(code: string): number[] {
 // pair dynamic imports with markers the way the plugin does (see `generateBundle`)
 function match(code: string) {
   const imports = parseImports(code)[0].filter((i) => i.d > -1)
-  return {
-    imports,
-    importMarkerPos: matchImportsToPreloadMarkers(code, imports),
-  }
+  return matchImportsToPreloadMarkers(code, imports)
 }
 
 describe('matchImportsToPreloadMarkers', () => {
   test('returns an empty array when there are no imports', () => {
-    expect(matchImportsToPreloadMarkers('const a = 1', [])).toEqual([])
+    expect(matchImportsToPreloadMarkers('const a = 1', [])).toStrictEqual([])
   })
 
   test('pairs a single dynamic import with its marker', () => {
     const code = `__vitePreload(() => import('a'), ${preloadMarker})`
     const [marker] = markerPositions(code)
-    const { importMarkerPos } = match(code)
-    expect(importMarkerPos).toStrictEqual([marker])
+    expect(match(code)).toStrictEqual([marker])
   })
 
   test('gives sibling imports their own markers (Rollup-era interleaved shape)', () => {
@@ -49,9 +45,7 @@ describe('matchImportsToPreloadMarkers', () => {
       `__vitePreload(() => import('a'), ${preloadMarker})` +
       `.then(() => __vitePreload(() => import('b'), ${preloadMarker}))`
     const [markerA, markerB] = markerPositions(code)
-    const { imports, importMarkerPos } = match(code)
-    expect(imports).toHaveLength(2)
-    expect(importMarkerPos).toEqual([markerA, markerB])
+    expect(match(code)).toStrictEqual([markerA, markerB])
   })
 
   test('gives a nested `import().then(() => import())` each its own marker (#22700)', () => {
@@ -61,16 +55,13 @@ describe('matchImportsToPreloadMarkers', () => {
       `__vitePreload(() => import('a').then(() => ` +
       `__vitePreload(() => import('b'), ${preloadMarker})), ${preloadMarker})`
     const [innerMarker, outerMarker] = markerPositions(code)
-    const { imports, importMarkerPos } = match(code)
     // source order: [0] = import('a') (outer), [1] = import('b') (inner)
-    expect(imports).toHaveLength(2)
-    expect(importMarkerPos).toEqual([outerMarker, innerMarker])
+    expect(match(code)).toStrictEqual([outerMarker, innerMarker])
   })
 
   test('#3051: a lone import whose marker precedes it still pairs with that marker', () => {
     const code = `const x = ${preloadMarker};import('a')`
     const [marker] = markerPositions(code)
-    const { importMarkerPos } = match(code)
-    expect(importMarkerPos).toEqual([marker])
+    expect(match(code)).toStrictEqual([marker])
   })
 })
