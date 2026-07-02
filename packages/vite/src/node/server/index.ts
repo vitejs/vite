@@ -950,6 +950,17 @@ export async function _createServer(
     middlewares.use(hostValidationMiddleware(allowedHosts, false))
   }
 
+  // apply server.headers to all subsequent responses
+  const { headers } = serverConfig
+  if (headers) {
+    middlewares.use(function viteHeadersMiddleware(_, res, next) {
+      for (const name in headers) {
+        res.setHeader(name, headers[name]!)
+      }
+      next()
+    })
+  }
+
   // apply configureServer hooks ------------------------------------------------
 
   const configureServerContext = new BasicMinimalPluginContext(
