@@ -111,6 +111,35 @@ import { IIFE_BEGIN_RE, UMD_BEGIN_RE } from './oxc'
 const decoder = new TextDecoder()
 // const debug = createDebugger('vite:css')
 
+/**
+ * The shape of a PostCSS config file (e.g. `postcss.config.js`), matching the
+ * `Config` type of the `postcss-load-config` version that Vite uses to load it.
+ * Use it to write a type-safe PostCSS config:
+ *
+ * ```ts
+ * import type { PostcssUserConfig } from 'vite'
+ *
+ * const config: PostcssUserConfig = { plugins: [] }
+ * export default config
+ * ```
+ *
+ * `postcss-load-config` is bundled into Vite and its types are declared with
+ * CommonJS `export =` syntax, so they cannot be re-exported through the bundled
+ * `.d.ts`. This mirrors its `Config` type instead, and a type-level test in
+ * `__tests_dts__/postcss.ts` asserts the two stay structurally identical.
+ */
+export type PostcssUserConfig = {
+  parser?: string | PostCSS.ProcessOptions['parser'] | false
+  stringifier?: string | PostCSS.ProcessOptions['stringifier'] | false
+  syntax?: string | PostCSS.ProcessOptions['syntax'] | false
+  map?: string | false
+  from?: string
+  to?: string
+  plugins?:
+    | Array<PostCSS.Transformer | PostCSS.Plugin | PostCSS.Processor | false>
+    | Record<string, object | false>
+}
+
 export interface CSSOptions {
   /**
    * Using lightningcss is an experimental option to handle CSS modules,
