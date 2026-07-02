@@ -39,6 +39,11 @@ jobs:
 
           echo "pkgName=$pkgName" >> $GITHUB_OUTPUT
 
+      - name: Extract Release Notes
+        if: steps.tag.outputs.pkgName
+        run: |
+          node scripts/extractReleaseNotes.js ${{ steps.tag.outputs.pkgName }} ${{ github.ref_name }} .github/release-notes.md
+
       - name: Create Release for Tag
         # only run if tag is not alpha
         if: steps.tag.outputs.pkgName
@@ -48,5 +53,4 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           tag_name: ${{ github.ref }}
-          body: |
-            Please refer to [CHANGELOG.md](https://github.com/vitejs/vite/blob/${{ github.ref_name }}/packages/${{ steps.tag.outputs.pkgName }}/CHANGELOG.md) for details.
+          body_path: .github/release-notes.md
