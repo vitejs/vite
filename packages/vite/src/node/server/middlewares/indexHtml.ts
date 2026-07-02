@@ -15,6 +15,7 @@ import {
   htmlEnvHook,
   htmlProxyResult,
   injectCspNonceMetaTagHook,
+  injectToHead,
   injectNonceAttributeTagHook,
   nodeIsElement,
   overwriteAttrValue,
@@ -491,7 +492,12 @@ export function indexHtmlMiddleware(
           ((await fullBundle.triggerBundleRegenerationIfStale()) ||
             file === undefined)
         ) {
-          file = { source: await generateFallbackHtml(server as ViteDevServer) }
+          file = {
+            source: await generateFallbackHtml(
+              server as ViteDevServer,
+              pathname,
+            ),
+          }
         }
         if (!file) {
           return next()
@@ -565,15 +571,10 @@ function preTransformRequest(
   server.warmupRequest(decodedUrl)
 }
 
-async function generateFallbackHtml(server: ViteDevServer) {
-  const hmrRuntime = await getHmrImplementation(server.config)
-  return /* html */ `
+export const defaultBundledDevLoadingHtml = /* html */ `
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <script type="module">
-    ${hmrRuntime.replaceAll('</script>', '<\\/script>')}
-  </script>
   <style>
     :root {
       --page-bg: #ffffff;
@@ -626,4 +627,44 @@ async function generateFallbackHtml(server: ViteDevServer) {
 </body>
 </html>
 `
+
+export async function generateFallbackHtml(
+  server: ViteDevServer,
+  path = '/index.html',
+): Promise<string> {
+  const { bundledDev } = server.config.experimental
+  const loadingHtml =
+    typeof bundledDev === 'object' ? bundledDev.loadingHtml : undefined
+
+  let html = defaultBundledDevLoadingHtml
+
+  if (typeof loadingHtml === 'string') {
+    html = loadingHtml
+  } else if (typeof loadingHtml === 'function') {
+    try {
+      html = await loadingHtml({
+        defaultHtml: defaultBundledDevLoadingHtml,
+        path,
+        server,
+      })
+    } catch (error) {
+      server.config.logger.error(
+        `Failed to generate bundled dev loading HTML. Falling back to the default page.\n${error instanceof Error ? error.stack || error.message : error}`,
+      )
+    }
+  }
+
+  const hmrRuntime = await getHmrImplementation(server.config)
+  return injectToHead(
+    html,
+    [
+      {
+        tag: 'script',
+        attrs: { type: 'module' },
+        children: hmrRuntime.replaceAll('</script>', '<\\/script>'),
+        injectTo: 'head-prepend',
+      },
+    ],
+    true,
+  )
 }

@@ -2,7 +2,10 @@ import { type Plugin, defineConfig } from 'vite'
 
 export default defineConfig({
   experimental: {
-    bundledDev: true,
+    bundledDev: {
+      loadingHtml: ({ defaultHtml }) =>
+        defaultHtml.replace('</h1>', ' (custom)</h1>'),
+    },
   },
   build: {
     // emit assets as files instead of inlining, for the new-asset HMR test

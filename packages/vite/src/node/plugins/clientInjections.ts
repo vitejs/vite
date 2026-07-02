@@ -120,7 +120,7 @@ async function createClientConfigValueReplacer(
     config.server.forwardConsole as any,
   )
   const bundleDevReplacement = escapeReplacement(
-    config.experimental.bundledDev || false,
+    !!config.experimental.bundledDev,
   )
 
   return (code) =>

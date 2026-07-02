@@ -17,6 +17,7 @@ if (isBuild) {
     await expect
       .poll(() => page.textContent('body'))
       .toContain('Bundling in progress')
+    await expect.poll(() => page.textContent('h1')).toContain('(custom)')
     await reloadPromise // page shown after reload
     await expect.poll(() => page.textContent('h1')).toBe('HMR Full Bundle Mode')
     await expect.poll(() => page.textContent('.app')).toBe('hello')

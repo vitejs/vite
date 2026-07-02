@@ -68,7 +68,11 @@ import {
   resolveBuildEnvironmentOptions,
   resolveBuilderOptions,
 } from './build'
-import type { ResolvedServerOptions, ServerOptions } from './server'
+import type {
+  ResolvedServerOptions,
+  ServerOptions,
+  ViteDevServer,
+} from './server'
 import { resolveServerOptions, serverConfigDefaults } from './server'
 import { DevEnvironment } from './server/environment'
 import { createRunnableDevEnvironment } from './server/environments/runnableEnvironment'
@@ -574,6 +578,52 @@ export interface FutureOptions {
   removeSsrLoadModule?: 'warn'
 }
 
+export interface BundledDevLoadingHtmlContext {
+  /**
+   * The default loading page HTML. Does NOT include the HMR runtime script;
+   * Vite always injects it into the returned HTML so the page reloads
+   * automatically when the bundle is ready.
+   */
+  defaultHtml: string
+  /** Decoded URL path being requested, e.g. `/index.html` */
+  path: string
+  server: ViteDevServer
+}
+
+export interface BundledDevOptions {
+  /**
+   * Custom HTML served while the bundle is being generated.
+   *
+   * A string replaces the default page. A function receives the default HTML and
+   * can tweak or replace it. Vite always injects the HMR runtime script into the
+   * returned HTML so the page reloads automatically when the bundle is ready.
+   *
+   * @example
+   * ```ts
+   * experimental: {
+   *   bundledDev: {
+   *     loadingHtml: '<!doctype html><h1>Loading...</h1>',
+   *   },
+   * }
+   * ```
+   *
+   * @example
+   * ```ts
+   * experimental: {
+   *   bundledDev: {
+   *     loadingHtml: ({ defaultHtml }) =>
+   *       defaultHtml.replace('Bundling in progress', 'Hold tight...'),
+   *   },
+   * }
+   * ```
+   *
+   * @experimental
+   */
+  loadingHtml?:
+    | string
+    | ((ctx: BundledDevLoadingHtmlContext) => string | Promise<string>)
+}
+
 export interface ExperimentalOptions {
   /**
    * Append fake `&lang.(ext)` when queries are specified, to preserve the file extension for following plugins to process.
@@ -604,10 +654,32 @@ export interface ExperimentalOptions {
    *
    * This is highly experimental.
    *
+   * Pass an object to customize the HTML served while the bundle is being
+   * generated. The HMR runtime script is always injected by Vite afterwards.
+   *
+   * @example
+   * ```ts
+   * experimental: {
+   *   bundledDev: {
+   *     loadingHtml: '<!doctype html><h1>Loading...</h1>',
+   *   },
+   * }
+   * ```
+   *
+   * @example
+   * ```ts
+   * experimental: {
+   *   bundledDev: {
+   *     loadingHtml: ({ defaultHtml }) =>
+   *       defaultHtml.replace('Bundling in progress', 'Hold tight...'),
+   *   },
+   * }
+   * ```
+   *
    * @experimental
    * @default false
    */
-  bundledDev?: boolean
+  bundledDev?: boolean | BundledDevOptions
 }
 
 export interface LegacyOptions {
