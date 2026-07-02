@@ -1034,7 +1034,7 @@ export async function _createServer(
     middlewares.use(indexHtmlMiddleware(root, server))
 
     // handle 404s
-    middlewares.use(notFoundMiddleware())
+    middlewares.use(notFoundMiddleware(serverConfig.headers))
   }
 
   // error handler
