@@ -292,7 +292,10 @@ async function handleMessage(payload: HotPayload) {
     case 'full-reload':
       await hmrClient.notifyListeners('vite:beforeFullReload', payload)
       if (hasDocument) {
-        if (payload.path && payload.path.endsWith('.html')) {
+        if (
+          payload.path &&
+          (payload.path.endsWith('.html') || payload.path.endsWith('.htm'))
+        ) {
           // if html file is edited, only reload the page if the browser is
           // currently on that page.
           const pagePath = decodeURI(location.pathname)
