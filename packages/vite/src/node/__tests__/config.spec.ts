@@ -1368,6 +1368,82 @@ test('preTransformRequests', async () => {
   `)
 })
 
+describe('relative base with environment API', () => {
+  test('server-consumer environment overrides relative base to "/"', async () => {
+    const resolved = await resolveConfig(
+      {
+        base: './',
+        environments: {
+          ssr: {},
+        },
+      },
+      'build',
+    )
+    expect(resolved.base).toBe('./')
+    expect(resolved.environments.ssr.consumer).toBe('server')
+    expect(resolved.environments.ssr.base).toBe('/')
+    expect(resolved.environments.ssr.rawBase).toBe('/')
+    expect(resolved.environments.ssr.decodedBase).toBe('/')
+  })
+
+  test('client-consumer environment falls back to relative base', async () => {
+    const resolved = await resolveConfig({ base: './' }, 'build')
+    expect(resolved.environments.client.consumer).toBe('client')
+    // Client doesn't override; the proxy on the environment config falls
+    // back to the top-level base.
+    expect(resolved.environments.client.base).toBeUndefined()
+  })
+
+  test('custom server environment also gets the override', async () => {
+    const resolved = await resolveConfig(
+      {
+        base: './',
+        environments: {
+          edge: { consumer: 'server' },
+        },
+      },
+      'build',
+    )
+    expect(resolved.environments.edge.base).toBe('/')
+  })
+
+  test('non-shortcut base is not overridden for server environments', async () => {
+    const resolved = await resolveConfig(
+      {
+        base: '/foo/',
+        environments: { ssr: {} },
+      },
+      'build',
+    )
+    expect(resolved.base).toBe('/foo/')
+    expect(resolved.environments.ssr.base).toBeUndefined()
+  })
+
+  test('legacy build.ssr already forces "/" so no per-env override is needed', async () => {
+    const resolved = await resolveConfig(
+      {
+        base: './',
+        build: { ssr: true },
+      },
+      'build',
+    )
+    expect(resolved.base).toBe('/')
+    expect(resolved.environments.ssr.base).toBeUndefined()
+  })
+
+  test('dev mode is unaffected (top-level already resolves to "/")', async () => {
+    const resolved = await resolveConfig(
+      {
+        base: './',
+        environments: { ssr: {} },
+      },
+      'serve',
+    )
+    expect(resolved.base).toBe('/')
+    expect(resolved.environments.ssr.base).toBeUndefined()
+  })
+})
+
 describe('loadConfigFromFile', () => {
   const fixtures = path.resolve(import.meta.dirname, './fixtures/config')
 

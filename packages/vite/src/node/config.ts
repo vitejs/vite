@@ -338,6 +338,18 @@ export type ResolvedEnvironmentOptions = {
   build: ResolvedBuildEnvironmentOptions
   isBundled: boolean
   plugins: readonly Plugin[]
+  /**
+   * Per-environment base override. Set only when the top-level `base` is
+   * resolved via the relative-base shortcut and the environment's code
+   * runs on the server, where `import.meta.url` can't resolve `./`.
+   * Read by callers via the environment `config` proxy.
+   * @internal
+   */
+  base?: string
+  /** @internal */
+  rawBase?: string
+  /** @internal */
+  decodedBase?: string
   /** @internal */
   optimizeDepsPluginNames: string[]
 }
@@ -1754,6 +1766,22 @@ export async function resolveConfig(
       ? '/'
       : './'
     : resolveBaseUrl(config.base, isBuild, logger)
+
+  // The relative-base shortcut leaves the top-level base as `./` for client
+  // builds, but `import.meta.url` can't resolve `./` on the server. For
+  // environments whose code runs on the server, surface an absolute base via
+  // the environment `config` proxy so they emit `/asset` instead of
+  // `./asset`. Legacy `config.build.ssr` already gets this for free above,
+  // since it forces the top-level base to `/`.
+  if (isBuild && relativeBaseShortcut && resolvedBase !== '/') {
+    for (const env of Object.values(resolvedEnvironments)) {
+      if (env.consumer === 'server') {
+        env.base = '/'
+        env.rawBase = '/'
+        env.decodedBase = '/'
+      }
+    }
+  }
 
   // resolve cache directory
   // pkgDir may be an ancestor directory (findNearestPackageData walks up).
