@@ -60,7 +60,7 @@ import { checkPublicFile } from '../publicDir'
 import type { ResolvedConfig } from '../config'
 import type { Plugin } from '../plugin'
 import type { DevEnvironment } from '../server/environment'
-import { shouldExternalize } from '../external'
+import { isExplicitlyExternal, shouldExternalize } from '../external'
 import {
   optimizedDepInfoFromFile,
   optimizedDepNeedsInterop,
@@ -540,12 +540,22 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
             ) {
               return
             }
-            // skip ssr externals and builtins
-            if (ssr && !matchAlias(specifier)) {
-              if (shouldExternalize(environment, specifier, importer)) {
+            // skip configured client externals, ssr externals and builtins
+            if (!matchAlias(specifier)) {
+              if (
+                ssr
+                  ? shouldExternalize(environment, specifier, importer)
+                  : isExplicitlyExternal(
+                      specifier,
+                      environment.config.resolve.external,
+                    )
+              ) {
                 return
               }
-              if (isBuiltin(environment.config.resolve.builtins, specifier)) {
+              if (
+                ssr &&
+                isBuiltin(environment.config.resolve.builtins, specifier)
+              ) {
                 return
               }
             }
