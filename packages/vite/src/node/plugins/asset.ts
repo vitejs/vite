@@ -34,6 +34,7 @@ import {
   DEFAULT_ASSETS_INLINE_LIMIT,
   DEFAULT_ASSETS_RE,
   FS_PREFIX,
+  FS_RAW_PREFIX,
 } from '../constants'
 import {
   cleanUrl,
@@ -321,10 +322,11 @@ export async function fileToUrl(
   pluginContext: PluginContext,
   id: string,
   asFileUrl = false,
+  raw: boolean = false,
 ): Promise<string> {
   const { environment } = pluginContext
   if (!environment.config.isBundled) {
-    return fileToDevUrl(environment, id, asFileUrl)
+    return fileToDevUrl(environment, id, asFileUrl, raw)
   } else {
     return fileToBuiltUrl(pluginContext, id)
   }
@@ -334,6 +336,7 @@ export async function fileToDevUrl(
   environment: Environment,
   id: string,
   asFileUrl = false,
+  raw: boolean,
 ): Promise<string> {
   const config = environment.getTopLevelConfig()
   const publicFile = checkPublicFile(id, config)
@@ -364,6 +367,8 @@ export async function fileToDevUrl(
   if (publicFile) {
     // in public dir during dev, keep the url as-is
     rtn = id
+  } else if (raw) {
+    rtn = path.posix.join(FS_RAW_PREFIX, id)
   } else if (id.startsWith(withTrailingSlash(config.root))) {
     // in project root, infer short public path
     rtn = '/' + path.posix.relative(config.root, id)

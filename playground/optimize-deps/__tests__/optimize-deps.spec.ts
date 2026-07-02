@@ -336,11 +336,9 @@ test('long file name should work', async () => {
     .toMatch(`hello world`)
 })
 
-test.runIf(isServe)('warn on incompatible dependency', () => {
+test.runIf(isServe)('warn on unresolved included dependency', () => {
   expect(serverLogs).toContainEqual(
-    expect.stringContaining(
-      'The dependency might be incompatible with the dep optimizer.',
-    ),
+    expect.stringContaining('Failed to resolve dependency'),
   )
 })
 
