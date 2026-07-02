@@ -31,6 +31,7 @@ import {
   partialEncodeURIPath,
   processSrcSet,
   removeLeadingSlash,
+  safeRealpathSync,
   unique,
 } from '../utils'
 import type { ResolvedConfig } from '../config'
@@ -424,6 +425,24 @@ export function buildHtmlPlugin(config: ResolvedConfig): Plugin {
   const isExcludedUrl = (url: string) =>
     url[0] === '#' || isExternalUrl(url) || isDataUrl(url)
 
+  // The `id` of an HTML file may be a real path while `config.root` is not.
+  // For example, this happens when the project root is symlinked.
+  // In that case, `path.relative(config.root, id)` returns a path with `../`.
+  // To handle this, retry the relative path against the real path of the root
+  // so that the result stays inside the root.
+  let realRoot: string | undefined
+  const relativePathFromRoot = (id: string): string => {
+    const relativePath = normalizePath(path.relative(config.root, id))
+    if (!relativePath.startsWith('../')) {
+      return relativePath
+    }
+    realRoot ??= normalizePath(safeRealpathSync(config.root))
+    const relativePathFromRealRoot = normalizePath(path.relative(realRoot, id))
+    return relativePathFromRealRoot.startsWith('../')
+      ? relativePath
+      : relativePathFromRealRoot
+  }
+
   // Same reason with `htmlInlineProxyPlugin`
   isAsyncScriptMap.set(config, new Map())
 
@@ -438,7 +457,7 @@ export function buildHtmlPlugin(config: ResolvedConfig): Plugin {
       filter: { id: /\.html$/ },
       async handler(html, id) {
         id = normalizePath(id)
-        const relativeUrlPath = normalizePath(path.relative(config.root, id))
+        const relativeUrlPath = relativePathFromRoot(id)
         const publicPath = `/${relativeUrlPath}`
         const publicBase = getBaseInHTML(relativeUrlPath, config)
 
@@ -903,9 +922,7 @@ export function buildHtmlPlugin(config: ResolvedConfig): Plugin {
         )
 
       for (const [normalizedId, html] of processedHtml(this)) {
-        const relativeUrlPath = normalizePath(
-          path.relative(config.root, normalizedId),
-        )
+        const relativeUrlPath = relativePathFromRoot(normalizedId)
         const assetsBase = getBaseInHTML(relativeUrlPath, config)
         const toOutputFilePath = (
           filename: string,
@@ -1063,9 +1080,7 @@ export function buildHtmlPlugin(config: ResolvedConfig): Plugin {
           inlineEntryChunk.add(chunk.fileName)
         }
 
-        const shortEmitName = normalizePath(
-          path.relative(config.root, normalizedId),
-        )
+        const shortEmitName = relativePathFromRoot(normalizedId)
         this.emitFile({
           type: 'asset',
           originalFileName: normalizedId,

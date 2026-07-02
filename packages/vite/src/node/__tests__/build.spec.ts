@@ -1,5 +1,6 @@
-import { basename, resolve } from 'node:path'
+import { basename, join, resolve } from 'node:path'
 import { stripVTControlCharacters } from 'node:util'
+import fs from 'node:fs'
 import fsp from 'node:fs/promises'
 import colors from 'picocolors'
 import { afterEach, describe, expect, test, vi } from 'vitest'
@@ -277,6 +278,37 @@ describe('build', () => {
       (chunk) => chunk.fileName === 'foo.js',
     ) as OutputChunk
     expect(foo.code).not.contains('import "external"')
+  })
+
+  test('html entry should not escape root when root is symlinked', async () => {
+    // The bundler resolves the HTML entry id to its real path (symlinks
+    // resolved), while `config.root` is not. When the root is a symlink, the
+    // emitted file name would escape the root with `../`. See #21955.
+    const realRoot = resolve(dirname, 'fixtures/symlink-root')
+    // Create the symlink on the same drive as the fixture. On Windows,
+    // `path.relative` between different drives returns an absolute path, which
+    // is unrelated to the symlink resolution being tested here.
+    const tmp = join(dirname, 'fixtures', '.tmp-symlink-root')
+    fs.rmSync(tmp, { recursive: true, force: true })
+    fs.mkdirSync(tmp)
+    const linkedRoot = join(tmp, 'linked')
+    fs.symlinkSync(
+      realRoot,
+      linkedRoot,
+      process.platform === 'win32' ? 'junction' : 'dir',
+    )
+
+    try {
+      const bundle = (await build({
+        root: linkedRoot,
+        logLevel: 'silent',
+        build: { write: false },
+      })) as RolldownOutput
+      const html = bundle.output.find((o) => o.fileName.endsWith('index.html'))
+      expect(html?.fileName).toBe('index.html')
+    } finally {
+      fs.rmSync(tmp, { recursive: true, force: true })
+    }
   })
 })
 
