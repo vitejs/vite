@@ -147,6 +147,10 @@ export function createDepsOptimizer(
 
   async function close() {
     closed = true
+    if (debounceProcessingHandle) clearTimeout(debounceProcessingHandle)
+    if (newDepsToLogHandle) clearTimeout(newDepsToLogHandle)
+    depOptimizationProcessing.resolve()
+    resolveEnqueuedProcessingPromises()
     await Promise.allSettled([
       discover?.cancel(),
       depsOptimizer.scanProcessing,

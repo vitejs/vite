@@ -47,6 +47,7 @@ import {
   joinUrlSegments,
   moduleListContains,
   normalizePath,
+  normalizeWindowsDriveLetter,
   prettifyUrl,
   removeImportQuery,
   removeTimestampQuery,
@@ -112,12 +113,14 @@ function normalizeResolvedIdToUrl(
 ): string {
   const root = environment.config.root
   const depsOptimizer = environment.depsOptimizer
+  const normalizedRoot = normalizeWindowsDriveLetter(root)
+  const normalizedResolvedId = normalizeWindowsDriveLetter(resolved.id)
 
   // normalize all imports into resolved URLs
   // e.g. `import 'foo'` -> `import '/@fs/.../node_modules/foo/index.js'`
-  if (resolved.id.startsWith(withTrailingSlash(root))) {
+  if (normalizedResolvedId.startsWith(withTrailingSlash(normalizedRoot))) {
     // in root: infer short absolute path from root
-    url = resolved.id.slice(root.length)
+    url = normalizedResolvedId.slice(normalizedRoot.length)
   } else if (
     depsOptimizer?.isOptimizedDepFile(resolved.id) ||
     // vite-plugin-react isn't following the leading \0 virtual module convention.

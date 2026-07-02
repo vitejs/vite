@@ -228,9 +228,16 @@ function testCaseInsensitiveFS() {
 export const isCaseInsensitiveFS: boolean = testCaseInsensitiveFS()
 
 const VOLUME_RE = /^[A-Z]:/i
+const WINDOWS_DRIVE_LETTER_RE = /^[A-Z]:/i
 
 export function normalizePath(id: string): string {
   return path.posix.normalize(isWindows ? slash(id) : id)
+}
+
+export function normalizeWindowsDriveLetter(id: string): string {
+  return isWindows && WINDOWS_DRIVE_LETTER_RE.test(id)
+    ? id[0].toUpperCase() + id.slice(1)
+    : id
 }
 
 export function fsPathFromId(id: string): string {
@@ -254,7 +261,8 @@ export function fsPathFromUrl(url: string): string {
  * @returns true if dir is a parent of file
  */
 export function isParentDirectory(dir: string, file: string): boolean {
-  dir = withTrailingSlash(dir)
+  dir = withTrailingSlash(normalizeWindowsDriveLetter(dir))
+  file = normalizeWindowsDriveLetter(file)
   return (
     file.startsWith(dir) ||
     (isCaseInsensitiveFS && file.toLowerCase().startsWith(dir.toLowerCase()))
@@ -377,11 +385,15 @@ export function timeFrom(start: number, subtract = 0): string {
  */
 export function prettifyUrl(url: string, root: string): string {
   url = removeTimestampQuery(url)
-  const isAbsoluteFile = url.startsWith(root)
+  root = normalizeWindowsDriveLetter(root)
+  const normalizedUrl = normalizeWindowsDriveLetter(url)
+  const isAbsoluteFile = normalizedUrl.startsWith(root)
   if (isAbsoluteFile || url.startsWith(FS_PREFIX)) {
     const file = path.posix.relative(
       root,
-      isAbsoluteFile ? url : fsPathFromId(url),
+      isAbsoluteFile
+        ? normalizedUrl
+        : normalizeWindowsDriveLetter(fsPathFromId(url)),
     )
     return colors.dim(file)
   } else {
@@ -743,7 +755,9 @@ export function ensureWatchedFile(
   if (
     file &&
     // only need to watch if out of root
-    !file.startsWith(withTrailingSlash(root)) &&
+    !normalizeWindowsDriveLetter(file).startsWith(
+      withTrailingSlash(normalizeWindowsDriveLetter(root)),
+    ) &&
     // some rollup plugins use null bytes for private resolved Ids
     !file.includes('\0') &&
     fs.existsSync(file)

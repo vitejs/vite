@@ -19,12 +19,15 @@ import {
   isParentDirectory,
   mergeWithDefaults,
   normalizePath,
+  normalizeWindowsDriveLetter,
   numberToPos,
   posToNumber,
+  prettifyUrl,
   processSrcSetSync,
   resolveHostname,
   resolveServerUrls,
 } from '../utils'
+import { FS_PREFIX } from '../constants'
 import { isWindows } from '../../shared/utils'
 import type { CommonServerOptions, ResolvedServerUrls } from '..'
 
@@ -105,6 +108,43 @@ describe('isParentDirectory', () => {
       })
     }
   }
+
+  if (isWindows) {
+    test('normalizes drive letter casing on Windows', () => {
+      expect(isParentDirectory('c:/parent', 'C:/parent/child')).toBe(true)
+      expect(isParentDirectory('C:/parent', 'c:/parent/child')).toBe(true)
+      expect(isParentDirectory('c:/parent', 'C:/parent-other/child')).toBe(
+        false,
+      )
+    })
+  }
+})
+
+describe('normalizeWindowsDriveLetter', () => {
+  test.runIf(isWindows)('normalizes drive letter casing on Windows', () => {
+    expect(normalizeWindowsDriveLetter('c:/repo')).toBe('C:/repo')
+    expect(normalizeWindowsDriveLetter('C:/repo')).toBe('C:/repo')
+    expect(normalizeWindowsDriveLetter('/repo')).toBe('/repo')
+    expect(normalizeWindowsDriveLetter('/Home/user')).toBe('/Home/user')
+    expect(normalizeWindowsDriveLetter('')).toBe('')
+  })
+
+  test.runIf(!isWindows)('keeps paths unchanged outside Windows', () => {
+    expect(normalizeWindowsDriveLetter('c:/repo')).toBe('c:/repo')
+    expect(normalizeWindowsDriveLetter('/Home/user')).toBe('/Home/user')
+    expect(normalizeWindowsDriveLetter('')).toBe('')
+  })
+})
+
+describe.runIf(isWindows)('prettifyUrl', () => {
+  test('keeps root files relative when drive letter casing differs', () => {
+    expect(prettifyUrl('C:/repo/src/main.ts', 'c:/repo')).toContain(
+      'src/main.ts',
+    )
+    expect(prettifyUrl(`${FS_PREFIX}C:/repo/src/main.ts`, 'c:/repo')).toContain(
+      'src/main.ts',
+    )
+  })
 })
 
 describe('injectQuery', () => {
