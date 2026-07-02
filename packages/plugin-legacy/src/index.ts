@@ -123,7 +123,25 @@ const modernEnvVarMarker = `__VITE_IS_MODERN__`
 
 // Legacy Oxc minification requires coordinated support
 // between plugin-legacy and Vite core.
-const legacyOxcMinificationSupportedVersion = '8.0.15'
+const legacyOxcMinificationSupportedVersion = '8.1.2'
+
+function parseVersionCore(v: string): number[] {
+  return v
+    .split('-', 1)[0]
+    .split('.')
+    .map((part) => Number.parseInt(part, 10) || 0)
+}
+
+/** Minimal `>=` comparison for `major.minor.patch(-prerelease)?` version strings */
+function isVersionGte(version: string, minVersion: string): boolean {
+  const core = parseVersionCore(version)
+  const minCore = parseVersionCore(minVersion)
+  for (let i = 0; i < 3; i++) {
+    if (core[i] !== minCore[i]) return core[i] > minCore[i]
+  }
+  // a prerelease (e.g. `8.1.2-beta.0`) ranks lower than the corresponding release (`8.1.2`)
+  return !version.includes('-') || minVersion.includes('-')
+}
 
 const _require = createRequire(import.meta.url)
 
@@ -150,18 +168,12 @@ const modernTargetsBabel =
 const outputOptionsForLegacyChunks =
   new WeakSet<Rollup.NormalizedOutputOptions>()
 
-const legacyOxcMinifyOptions = {
-  compress: {
-    target: 'es2015',
-  },
-} as const
-
 function resolveLegacyOutputMinify(
   minify: BuildOptions['minify'],
   supportsOxc: boolean | undefined,
 ): Rollup.OutputOptions['minify'] {
   const usesOxc = supportsOxc && (minify === 'oxc' || minify === true)
-  return usesOxc ? legacyOxcMinifyOptions : false
+  return usesOxc ? true : false
 }
 
 function resolveLegacyBuildMinify(
@@ -427,22 +439,18 @@ function viteLegacyPlugin(options: Options = {}): Plugin[] {
       }
       config = _config
 
-      const pkg = _require('vite/package.json')
-      const semver = _require('semver')
-      const viteVersion = pkg && pkg.version ? String(pkg.version) : undefined
+      const viteVersion = this.meta.viteVersion
       supportsLegacyOxcMinification =
         !!viteVersion &&
-        semver.gte(viteVersion, legacyOxcMinificationSupportedVersion)
+        isVersionGte(viteVersion, legacyOxcMinificationSupportedVersion)
 
-      if (!supportsLegacyOxcMinification) {
-        const requested = config.build && config.build.minify
-        if (requested === 'oxc') {
-          ;(_config.logger || config.logger).warn(
-            colors.yellow(
-              `@vitejs/plugin-legacy: 'oxc' minifier not supported by Vite version ${viteVersion ?? 'unknown'}.`,
-            ),
-          )
-        }
+      if (!supportsLegacyOxcMinification && config.build.minify === 'oxc') {
+        config.logger.warn(
+          colors.yellow(
+            `'oxc' minifier is not supported for legacy chunks by Vite version ${viteVersion}. ` +
+              `Please upgrade to Vite version ${legacyOxcMinificationSupportedVersion} or later.`,
+          ),
+        )
       }
 
       if (isDebug) {

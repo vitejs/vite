@@ -108,18 +108,19 @@ describe.runIf(isBuild)('build', () => {
   })
 
   test('should minify legacy chunks', async () => {
-    // Legacy outputs should not be ESM (no `import`/`export` keywords),
-    // This is minifier-agnostic and works whether using terser or oxc.
-    const esModuleRE = /\b(import|export)\b/
+    // This is a ghetto heuristic, but Oxc output seems to reliably include
+    // this code
+    const terserPattern = /,function\(e,/
 
-    expect(findAssetFile(/chunk-async-legacy/)).not.toMatch(esModuleRE)
-    expect(findAssetFile(/chunk-async(?!-legacy)/)).toMatch(esModuleRE)
-
-    expect(findAssetFile(/immutable-chunk-legacy/)).not.toMatch(esModuleRE)
-    expect(findAssetFile(/immutable-chunk(?!-legacy)/)).toMatch(esModuleRE)
-
-    expect(findAssetFile(/index-legacy/)).not.toMatch(esModuleRE)
-    expect(findAssetFile(/index(?!-legacy)/)).toMatch(esModuleRE)
+    expect(findAssetFile(/chunk-async-legacy/)).toMatch(terserPattern)
+    expect(findAssetFile(/chunk-async(?!-legacy)/)).not.toMatch(terserPattern)
+    expect(findAssetFile(/immutable-chunk-legacy/)).toMatch(terserPattern)
+    expect(findAssetFile(/immutable-chunk(?!-legacy)/)).not.toMatch(
+      terserPattern,
+    )
+    expect(findAssetFile(/index-legacy/)).toMatch(terserPattern)
+    expect(findAssetFile(/index(?!-legacy)/)).not.toMatch(terserPattern)
+    expect(findAssetFile(/polyfills-legacy/)).toMatch(terserPattern)
   })
 
   test('should emit css file', async () => {
@@ -129,14 +130,8 @@ describe.runIf(isBuild)('build', () => {
   })
 
   test('includes structuredClone polyfill which is supported after core-js v3', () => {
-    // structuredClone polyfill may appear as a string or referenced via core-js imports
-    // accept either so tests work with different minifiers (terser or oxc).
-    expect(findAssetFile(/polyfills-legacy/)).toMatch(
-      /(?:"structuredClone"|structuredClone|core-js)/,
-    )
-    expect(findAssetFile(/polyfills-[-\w]{8}\./)).toMatch(
-      /(?:"structuredClone"|structuredClone|core-js)/,
-    )
+    expect(findAssetFile(/polyfills-legacy/)).toMatch('`structuredClone`')
+    expect(findAssetFile(/polyfills-[-\w]{8}\./)).toMatch('`structuredClone`')
   })
 
   test('should generate legacy sourcemap file', async () => {

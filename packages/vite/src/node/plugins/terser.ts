@@ -1,5 +1,4 @@
 import { pathToFileURL } from 'node:url'
-import { createRequire } from 'node:module'
 import { WorkerWithFallback } from 'artichokie'
 import type {
   TerserMinifyOptions,
@@ -35,12 +34,6 @@ function loadTerserPath(root: string) {
     'terser not found. Since Vite v3, terser has become an optional dependency. You need to install it.',
   )
 }
-
-const _require = createRequire(import.meta.url)
-
-// Legacy Oxc minification requires coordinated support
-// between plugin-legacy and Vite core.
-const legacyOxcMinificationSupportedVersion = '8.0.15'
 
 export function terserPlugin(config: ResolvedConfig): Plugin {
   const { maxWorkers, ...terserOptions } = config.build.terserOptions
@@ -80,13 +73,6 @@ export function terserPlugin(config: ResolvedConfig): Plugin {
 
   let worker: ReturnType<typeof makeWorker>
 
-  const pkg = _require('vite/package.json')
-  const semver = _require('semver')
-  const viteVersion = pkg && pkg.version ? String(pkg.version) : undefined
-  const supportsLegacyOxcMinification =
-    !!viteVersion &&
-    semver.gte(viteVersion, legacyOxcMinificationSupportedVersion)
-
   return {
     name: 'vite:terser',
 
@@ -100,13 +86,13 @@ export function terserPlugin(config: ResolvedConfig): Plugin {
       // This plugin is included for any non-false value of config.build.minify,
       // so that normal chunks can use the preferred minifier, and legacy chunks
       // can use terser when coordinated Oxc minification isn't available
-      const isLegacyChunk =
-        this.environment.config.isOutputOptionsForLegacyChunks?.(outputOptions)
       const usesOxcMinifier =
-        supportsLegacyOxcMinification &&
         (config.build.minify === true || config.build.minify === 'oxc') &&
         outputOptions.minify !== false
-      const minifyLegacyWithTerser = isLegacyChunk && !usesOxcMinifier
+      const minifyLegacyWithTerser =
+        this.environment.config.isOutputOptionsForLegacyChunks?.(
+          outputOptions,
+        ) && !usesOxcMinifier
       if (config.build.minify !== 'terser' && !minifyLegacyWithTerser) {
         return null
       }
