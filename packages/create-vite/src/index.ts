@@ -1,12 +1,12 @@
-import fs from 'node:fs'
-import path from 'node:path'
-import { fileURLToPath } from 'node:url'
-import util from 'node:util'
-import type { SpawnOptions } from 'node:child_process'
-import spawn from 'cross-spawn'
-import mri from 'mri'
-import * as prompts from '@clack/prompts'
-import { determineAgent } from '@vercel/detect-agent'
+import fs from "node:fs";
+import path from "node:path";
+import { fileURLToPath } from "node:url";
+import util from "node:util";
+import type { SpawnOptions } from "node:child_process";
+import spawn from "cross-spawn";
+import mri from "mri";
+import * as prompts from "@clack/prompts";
+import { determineAgent } from "@vercel/detect-agent";
 
 const {
   blue,
@@ -20,21 +20,21 @@ const {
   reset,
   underline,
   yellow,
-} = createColors()
+} = createColors();
 
 const argv = mri<{
-  template?: string
-  help?: boolean
-  overwrite?: boolean
-  immediate?: boolean
-  interactive?: boolean
-  eslint?: boolean
+  template?: string;
+  help?: boolean;
+  overwrite?: boolean;
+  immediate?: boolean;
+  interactive?: boolean;
+  eslint?: boolean;
 }>(process.argv.slice(2), {
-  boolean: ['help', 'overwrite', 'immediate', 'interactive', 'eslint'],
-  alias: { h: 'help', t: 'template', i: 'immediate' },
-  string: ['template'],
-})
-const cwd = process.cwd()
+  boolean: ["help", "overwrite", "immediate", "interactive", "eslint"],
+  alias: { h: "help", t: "template", i: "immediate" },
+  string: ["template"],
+});
+const cwd = process.cwd();
 
 // prettier-ignore
 const helpMessage = `\
@@ -62,352 +62,352 @@ ${red       ('svelte-ts           svelte'        )}
 ${blue      ('solid-ts            solid'         )}
 ${blueBright('qwik-ts             qwik'          )}`
 
-type ColorFunc = (str: string) => string
+type ColorFunc = (str: string) => string;
 type Framework = {
-  name: string
-  display: string
-  color: ColorFunc
-  variants: FrameworkVariant[]
-}
+  name: string;
+  display: string;
+  color: ColorFunc;
+  variants: FrameworkVariant[];
+};
 type FrameworkVariant = {
-  name: string
-  display: string
-  link?: `https://${string}`
-  color: ColorFunc
-  customCommand?: string
-}
+  name: string;
+  display: string;
+  link?: `https://${string}`;
+  color: ColorFunc;
+  customCommand?: string;
+};
 
 const FRAMEWORKS: Framework[] = [
   {
-    name: 'vanilla',
-    display: 'Vanilla',
+    name: "vanilla",
+    display: "Vanilla",
     color: yellow,
     variants: [
       {
-        name: 'vanilla-ts',
-        display: 'TypeScript',
+        name: "vanilla-ts",
+        display: "TypeScript",
         color: blue,
       },
       {
-        name: 'vanilla',
-        display: 'JavaScript',
+        name: "vanilla",
+        display: "JavaScript",
         color: yellow,
       },
     ],
   },
   {
-    name: 'vue',
-    display: 'Vue',
+    name: "vue",
+    display: "Vue",
     color: green,
     variants: [
       {
-        name: 'vue-ts',
-        display: 'TypeScript',
+        name: "vue-ts",
+        display: "TypeScript",
         color: blue,
       },
       {
-        name: 'vue',
-        display: 'JavaScript',
+        name: "vue",
+        display: "JavaScript",
         color: yellow,
       },
       {
-        name: 'custom-create-vue',
-        display: 'Official Vue Starter ↗',
+        name: "custom-create-vue",
+        display: "Official Vue Starter ↗",
         color: green,
-        customCommand: 'npm create vue@latest TARGET_DIR',
+        customCommand: "npm create vue@latest TARGET_DIR",
       },
       {
-        name: 'custom-nuxt',
-        display: 'Nuxt ↗',
-        link: 'https://nuxt.com',
+        name: "custom-nuxt",
+        display: "Nuxt ↗",
+        link: "https://nuxt.com",
         color: greenBright,
-        customCommand: 'npm exec nuxi init TARGET_DIR',
+        customCommand: "npm exec nuxi init TARGET_DIR",
       },
       {
-        name: 'custom-vike-vue',
-        display: 'Vike ↗',
-        link: 'https://vike.dev',
+        name: "custom-vike-vue",
+        display: "Vike ↗",
+        link: "https://vike.dev",
         color: greenBright,
-        customCommand: 'npm create -- vike@latest --vue TARGET_DIR',
+        customCommand: "npm create -- vike@latest --vue TARGET_DIR",
       },
     ],
   },
   {
-    name: 'react',
-    display: 'React',
+    name: "react",
+    display: "React",
     color: cyan,
     variants: [
       {
-        name: 'react-ts',
-        display: 'TypeScript',
+        name: "react-ts",
+        display: "TypeScript",
         color: blue,
       },
       {
-        name: 'react-compiler-ts',
-        display: 'TypeScript + React Compiler',
+        name: "react-compiler-ts",
+        display: "TypeScript + React Compiler",
         color: blue,
       },
       {
-        name: 'react',
-        display: 'JavaScript',
+        name: "react",
+        display: "JavaScript",
         color: yellow,
       },
       {
-        name: 'react-compiler',
-        display: 'JavaScript + React Compiler',
+        name: "react-compiler",
+        display: "JavaScript + React Compiler",
         color: yellow,
       },
       {
-        name: 'rsc',
-        display: 'RSC',
+        name: "rsc",
+        display: "RSC",
         color: magenta,
         customCommand:
-          'npm exec tiged vitejs/vite-plugin-react/packages/plugin-rsc/examples/starter TARGET_DIR',
+          "npm exec tiged vitejs/vite-plugin-react/packages/plugin-rsc/examples/starter TARGET_DIR",
       },
       {
-        name: 'custom-react-router',
-        display: 'React Router v7 ↗',
-        link: 'https://reactrouter.com',
+        name: "custom-react-router",
+        display: "React Router v7 ↗",
+        link: "https://reactrouter.com",
         color: cyan,
-        customCommand: 'npm create react-router@latest TARGET_DIR',
+        customCommand: "npm create react-router@latest TARGET_DIR",
       },
       {
-        name: 'custom-tanstack-router-react',
-        display: 'TanStack Router ↗',
-        link: 'https://tanstack.com/router',
+        name: "custom-tanstack-router-react",
+        display: "TanStack Router ↗",
+        link: "https://tanstack.com/router",
         color: cyan,
         customCommand:
-          'npm exec -- @tanstack/cli@latest create TARGET_DIR --framework react --interactive',
+          "npm exec -- @tanstack/cli@latest create TARGET_DIR --framework react --interactive",
       },
       {
-        name: 'redwoodsdk-standard',
-        display: 'RedwoodSDK ↗',
-        link: 'https://rwsdk.com',
+        name: "redwoodsdk-standard",
+        display: "RedwoodSDK ↗",
+        link: "https://rwsdk.com",
         color: cyan,
-        customCommand: 'npm create rwsdk@latest TARGET_DIR',
+        customCommand: "npm create rwsdk@latest TARGET_DIR",
       },
       {
-        name: 'custom-vike-react',
-        display: 'Vike ↗',
-        link: 'https://vike.dev',
+        name: "custom-vike-react",
+        display: "Vike ↗",
+        link: "https://vike.dev",
         color: cyan,
-        customCommand: 'npm create -- vike@latest --react TARGET_DIR',
+        customCommand: "npm create -- vike@latest --react TARGET_DIR",
       },
     ],
   },
   {
-    name: 'preact',
-    display: 'Preact',
+    name: "preact",
+    display: "Preact",
     color: magenta,
     variants: [
       {
-        name: 'preact-ts',
-        display: 'TypeScript',
+        name: "preact-ts",
+        display: "TypeScript",
         color: blue,
       },
       {
-        name: 'preact',
-        display: 'JavaScript',
+        name: "preact",
+        display: "JavaScript",
         color: yellow,
       },
       {
-        name: 'custom-create-preact',
-        display: 'Official Preact Starter ↗',
+        name: "custom-create-preact",
+        display: "Official Preact Starter ↗",
         color: magenta,
-        customCommand: 'npm create preact@latest TARGET_DIR',
+        customCommand: "npm create preact@latest TARGET_DIR",
       },
     ],
   },
   {
-    name: 'lit',
-    display: 'Lit',
+    name: "lit",
+    display: "Lit",
     color: redBright,
     variants: [
       {
-        name: 'lit-ts',
-        display: 'TypeScript',
+        name: "lit-ts",
+        display: "TypeScript",
         color: blue,
       },
       {
-        name: 'lit',
-        display: 'JavaScript',
+        name: "lit",
+        display: "JavaScript",
         color: yellow,
       },
     ],
   },
   {
-    name: 'svelte',
-    display: 'Svelte',
+    name: "svelte",
+    display: "Svelte",
     color: red,
     variants: [
       {
-        name: 'svelte-ts',
-        display: 'TypeScript',
+        name: "svelte-ts",
+        display: "TypeScript",
         color: blue,
       },
       {
-        name: 'svelte',
-        display: 'JavaScript',
+        name: "svelte",
+        display: "JavaScript",
         color: yellow,
       },
       {
-        name: 'custom-svelte-kit',
-        display: 'SvelteKit ↗',
+        name: "custom-svelte-kit",
+        display: "SvelteKit ↗",
         color: red,
-        customCommand: 'npm exec sv create TARGET_DIR',
+        customCommand: "npm exec sv create TARGET_DIR",
       },
     ],
   },
   {
-    name: 'solid',
-    display: 'Solid',
+    name: "solid",
+    display: "Solid",
     color: blue,
     variants: [
       {
-        name: 'solid-ts',
-        display: 'TypeScript',
+        name: "solid-ts",
+        display: "TypeScript",
         color: blue,
       },
       {
-        name: 'solid',
-        display: 'JavaScript',
+        name: "solid",
+        display: "JavaScript",
         color: yellow,
       },
       {
-        name: 'custom-tanstack-router-solid',
-        display: 'TanStack Router ↗',
-        link: 'https://tanstack.com/router',
+        name: "custom-tanstack-router-solid",
+        display: "TanStack Router ↗",
+        link: "https://tanstack.com/router",
         color: cyan,
         customCommand:
-          'npm exec -- @tanstack/cli@latest create TARGET_DIR --framework solid --interactive',
+          "npm exec -- @tanstack/cli@latest create TARGET_DIR --framework solid --interactive",
       },
       {
-        name: 'custom-vike-solid',
-        display: 'Vike ↗',
-        link: 'https://vike.dev',
+        name: "custom-vike-solid",
+        display: "Vike ↗",
+        link: "https://vike.dev",
         color: cyan,
-        customCommand: 'npm create -- vike@latest --solid TARGET_DIR',
+        customCommand: "npm create -- vike@latest --solid TARGET_DIR",
       },
     ],
   },
   {
-    name: 'ember',
-    display: 'Ember',
+    name: "ember",
+    display: "Ember",
     color: redBright,
     variants: [
       {
-        name: 'ember-app-ts',
-        display: 'TypeScript ↗',
+        name: "ember-app-ts",
+        display: "TypeScript ↗",
         color: blueBright,
         customCommand:
-          'npm exec -- ember-cli@latest new TARGET_DIR --typescript',
+          "npm exec -- ember-cli@latest new TARGET_DIR --typescript",
       },
       {
-        name: 'ember-app',
-        display: 'JavaScript ↗',
+        name: "ember-app",
+        display: "JavaScript ↗",
         color: redBright,
-        customCommand: 'npm exec -- ember-cli@latest new TARGET_DIR',
+        customCommand: "npm exec -- ember-cli@latest new TARGET_DIR",
       },
     ],
   },
   {
-    name: 'qwik',
-    display: 'Qwik',
+    name: "qwik",
+    display: "Qwik",
     color: blueBright,
     variants: [
       {
-        name: 'qwik-ts',
-        display: 'TypeScript',
+        name: "qwik-ts",
+        display: "TypeScript",
         color: blueBright,
       },
       {
-        name: 'qwik',
-        display: 'JavaScript',
+        name: "qwik",
+        display: "JavaScript",
         color: yellow,
       },
       {
-        name: 'custom-qwik-city',
-        display: 'QwikCity ↗',
+        name: "custom-qwik-city",
+        display: "QwikCity ↗",
         color: blueBright,
-        customCommand: 'npm create qwik@latest empty TARGET_DIR',
+        customCommand: "npm create qwik@latest empty TARGET_DIR",
       },
     ],
   },
   {
-    name: 'angular',
-    display: 'Angular',
+    name: "angular",
+    display: "Angular",
     color: red,
     variants: [
       {
-        name: 'custom-angular',
-        display: 'Angular ↗',
+        name: "custom-angular",
+        display: "Angular ↗",
         color: red,
-        customCommand: 'npm exec @angular/cli@latest new TARGET_DIR',
+        customCommand: "npm exec @angular/cli@latest new TARGET_DIR",
       },
       {
-        name: 'custom-analog',
-        display: 'Analog ↗',
+        name: "custom-analog",
+        display: "Analog ↗",
         color: yellow,
-        customCommand: 'npm create analog@latest TARGET_DIR',
+        customCommand: "npm create analog@latest TARGET_DIR",
       },
     ],
   },
   {
-    name: 'marko',
-    display: 'Marko',
+    name: "marko",
+    display: "Marko",
     color: magenta,
     variants: [
       {
-        name: 'marko-run',
-        display: 'Marko Run ↗',
+        name: "marko-run",
+        display: "Marko Run ↗",
         color: magenta,
-        customCommand: 'npm create -- marko@latest --name TARGET_DIR',
+        customCommand: "npm create -- marko@latest --name TARGET_DIR",
       },
     ],
   },
   {
-    name: 'others',
-    display: 'Others',
+    name: "others",
+    display: "Others",
     color: reset,
     variants: [
       {
-        name: 'create-vite-extra',
-        display: 'Extra Vite Starters ↗',
+        name: "create-vite-extra",
+        display: "Extra Vite Starters ↗",
         color: reset,
-        customCommand: 'npm create vite-extra@latest TARGET_DIR',
+        customCommand: "npm create vite-extra@latest TARGET_DIR",
       },
       {
-        name: 'create-electron-vite',
-        display: 'Electron ↗',
+        name: "create-electron-vite",
+        display: "Electron ↗",
         color: reset,
-        customCommand: 'npm create electron-vite@latest TARGET_DIR',
+        customCommand: "npm create electron-vite@latest TARGET_DIR",
       },
     ],
   },
-]
+];
 
 const TEMPLATES = FRAMEWORKS.map((f) => f.variants.map((v) => v.name)).reduce(
   (a, b) => a.concat(b),
   [],
-)
+);
 
 const renameFiles: Record<string, string | undefined> = {
-  _gitignore: '.gitignore',
-  '_oxlintrc.json': '.oxlintrc.json',
-}
+  _gitignore: ".gitignore",
+  "_oxlintrc.json": ".oxlintrc.json",
+};
 
-const defaultTargetDir = 'vite-project'
+const defaultTargetDir = "vite-project";
 
 function run([command, ...args]: string[], options?: SpawnOptions) {
-  const { status, error } = spawn.sync(command, args, options)
+  const { status, error } = spawn.sync(command, args, options);
   if (status != null && status > 0) {
-    process.exit(status)
+    process.exit(status);
   }
 
   if (error) {
-    console.error(`\n${command} ${args.join(' ')} error!`)
-    console.error(error)
-    process.exit(1)
+    console.error(`\n${command} ${args.join(" ")} error!`);
+    console.error(error);
+    process.exit(1);
   }
 }
 
@@ -415,417 +415,425 @@ function install(root: string, agent: string) {
   if (process.env._VITE_TEST_CLI) {
     prompts.log.step(
       `Installing dependencies with ${agent}... (skipped in test)`,
-    )
-    return
+    );
+    return;
   }
-  prompts.log.step(`Installing dependencies with ${agent}...`)
+  prompts.log.step(`Installing dependencies with ${agent}...`);
   run(getInstallCommand(agent), {
-    stdio: 'inherit',
+    stdio: "inherit",
     cwd: root,
-  })
+  });
 }
 
 function start(root: string, agent: string) {
   if (process.env._VITE_TEST_CLI) {
-    prompts.log.step('Starting dev server... (skipped in test)')
-    return
+    prompts.log.step("Starting dev server... (skipped in test)");
+    return;
   }
-  prompts.log.step('Starting dev server...')
-  run(getRunCommand(agent, 'dev'), {
-    stdio: 'inherit',
+  prompts.log.step("Starting dev server...");
+  run(getRunCommand(agent, "dev"), {
+    stdio: "inherit",
     cwd: root,
-  })
+  });
 }
 
 async function init() {
   const argTargetDir = argv._[0]
     ? formatTargetDir(String(argv._[0]))
-    : undefined
-  const argTemplate = argv.template
-  const argOverwrite = argv.overwrite
-  const argImmediate = argv.immediate
-  const argInteractive = argv.interactive
-  const argEslint = argv.eslint
+    : undefined;
+  const argTemplate = argv.template;
+  const argOverwrite = argv.overwrite;
+  const argImmediate = argv.immediate;
+  const argInteractive = argv.interactive;
+  const argEslint = argv.eslint;
 
-  const help = argv.help
+  const help = argv.help;
   if (help) {
-    console.log(helpMessage)
-    return
+    console.log(helpMessage);
+    return;
   }
 
-  const interactive = argInteractive ?? process.stdin.isTTY
+  const interactive = argInteractive ?? process.stdin.isTTY;
 
   // Detect AI agent environment for better agent experience (AX)
-  const { isAgent } = await determineAgent()
+  const { isAgent } = await determineAgent();
   if (isAgent && interactive) {
     console.log(
-      '\nTo create in one go, run: create-vite <DIRECTORY> --no-interactive --template <TEMPLATE>\n',
-    )
+      "\nTo create in one go, run: create-vite <DIRECTORY> --no-interactive --template <TEMPLATE>\n",
+    );
   }
 
-  const pkgInfo = pkgFromUserAgent(process.env.npm_config_user_agent)
-  const cancel = () => prompts.cancel('Operation cancelled')
+  const pkgInfo = pkgFromUserAgent(process.env.npm_config_user_agent);
+  const cancel = () => prompts.cancel("Operation cancelled");
 
   // 1. Get project name and target dir
-  let targetDir = argTargetDir
+  let targetDir = argTargetDir;
   if (!targetDir) {
     if (interactive) {
       const projectName = await prompts.text({
-        message: 'Project name:',
+        message: "Project name:",
         defaultValue: defaultTargetDir,
         placeholder: defaultTargetDir,
         validate: (value) => {
           return !value || formatTargetDir(value).length > 0
             ? undefined
-            : 'Invalid project name'
+            : "Invalid project name";
         },
-      })
-      if (prompts.isCancel(projectName)) return cancel()
-      targetDir = formatTargetDir(projectName)
+      });
+      if (prompts.isCancel(projectName)) return cancel();
+      targetDir = formatTargetDir(projectName);
     } else {
-      targetDir = defaultTargetDir
+      targetDir = defaultTargetDir;
     }
   }
 
   // 2. Handle directory if exist and not empty
   if (fs.existsSync(targetDir) && !isEmpty(targetDir)) {
-    let overwrite: 'yes' | 'no' | 'ignore' | undefined = argOverwrite
-      ? 'yes'
-      : undefined
+    let overwrite: "yes" | "no" | "ignore" | undefined = argOverwrite
+      ? "yes"
+      : undefined;
     if (!overwrite) {
       if (interactive) {
         const res = await prompts.select({
           message:
-            (targetDir === '.'
-              ? 'Current directory'
+            (targetDir === "."
+              ? "Current directory"
               : `Target directory "${targetDir}"`) +
             ` is not empty. Please choose how to proceed:`,
           options: [
             {
-              label: 'Cancel operation',
-              value: 'no',
+              label: "Cancel operation",
+              value: "no",
             },
             {
-              label: 'Remove existing files and continue',
-              value: 'yes',
+              label: "Remove existing files and continue",
+              value: "yes",
             },
             {
-              label: 'Ignore files and continue',
-              value: 'ignore',
+              label: "Ignore files and continue",
+              value: "ignore",
             },
           ],
-        })
-        if (prompts.isCancel(res)) return cancel()
-        overwrite = res
+        });
+        if (prompts.isCancel(res)) return cancel();
+        overwrite = res;
       } else {
-        overwrite = 'no'
+        overwrite = "no";
       }
     }
 
     switch (overwrite) {
-      case 'yes':
-        emptyDir(targetDir)
-        break
-      case 'no':
-        cancel()
-        return
+      case "yes":
+        emptyDir(targetDir);
+        break;
+      case "no":
+        cancel();
+        return;
     }
   }
 
   // 3. Get package name
-  let packageName = path.basename(path.resolve(targetDir))
+  let packageName = path.basename(path.resolve(targetDir));
   if (!isValidPackageName(packageName)) {
     if (interactive) {
       const packageNameResult = await prompts.text({
-        message: 'Package name:',
+        message: "Package name:",
         defaultValue: toValidPackageName(packageName),
         placeholder: toValidPackageName(packageName),
         validate(dir) {
           if (dir && !isValidPackageName(dir)) {
-            return 'Invalid package.json name'
+            return "Invalid package.json name";
           }
         },
-      })
-      if (prompts.isCancel(packageNameResult)) return cancel()
-      packageName = packageNameResult
+      });
+      if (prompts.isCancel(packageNameResult)) return cancel();
+      packageName = packageNameResult;
     } else {
-      packageName = toValidPackageName(packageName)
+      packageName = toValidPackageName(packageName);
     }
   }
 
   // 4. Choose a framework and variant
-  let template = argTemplate
-  let hasInvalidArgTemplate = false
+  let template = argTemplate;
+  let hasInvalidArgTemplate = false;
   if (argTemplate && !TEMPLATES.includes(argTemplate)) {
-    template = undefined
-    hasInvalidArgTemplate = true
+    template = undefined;
+    hasInvalidArgTemplate = true;
   }
   if (!template) {
     if (interactive) {
       const framework = await prompts.select({
         message: hasInvalidArgTemplate
           ? `"${argTemplate}" isn't a valid template. Please choose from below: `
-          : 'Select a framework:',
+          : "Select a framework:",
         options: FRAMEWORKS.map((framework) => {
-          const frameworkColor = framework.color
+          const frameworkColor = framework.color;
           return {
             label: frameworkColor(framework.display || framework.name),
             value: framework,
-          }
+          };
         }),
-      })
-      if (prompts.isCancel(framework)) return cancel()
+      });
+      if (prompts.isCancel(framework)) return cancel();
 
       const variant = await prompts.select({
-        message: 'Select a variant:',
+        message: "Select a variant:",
         options: framework.variants.map((variant) => {
           const command = variant.customCommand
             ? getFullCustomCommand(variant.customCommand, pkgInfo).replace(
                 / TARGET_DIR$/,
-                '',
+                "",
               )
-            : undefined
+            : undefined;
           return {
             label: getLabel(variant),
             value: variant.name,
             hint: command,
-          }
+          };
         }),
-      })
-      if (prompts.isCancel(variant)) return cancel()
+      });
+      if (prompts.isCancel(variant)) return cancel();
 
-      template = variant
+      template = variant;
     } else {
-      template = 'vanilla-ts'
+      if (hasInvalidArgTemplate) {
+        console.error(
+          red(`\nError: "${argTemplate}" is not a valid template.`),
+        );
+        console.error(`Available templates: ${TEMPLATES.join(", ")}`);
+        process.exit(1);
+      }
+      template = "vanilla-ts";
     }
   }
 
-  const pkgManager = pkgInfo ? pkgInfo.name : 'npm'
+  const pkgManager = pkgInfo ? pkgInfo.name : "npm";
 
-  const root = path.join(cwd, targetDir)
+  const root = path.join(cwd, targetDir);
   // determine template
-  let isReactCompiler = false
-  if (template.includes('react-compiler')) {
-    isReactCompiler = true
-    template = template.replace('-compiler', '')
+  let isReactCompiler = false;
+  if (template.includes("react-compiler")) {
+    isReactCompiler = true;
+    template = template.replace("-compiler", "");
   }
 
   const { customCommand } =
-    FRAMEWORKS.flatMap((f) => f.variants).find((v) => v.name === template) ?? {}
+    FRAMEWORKS.flatMap((f) => f.variants).find((v) => v.name === template) ??
+    {};
 
   if (customCommand) {
-    const fullCustomCommand = getFullCustomCommand(customCommand, pkgInfo)
+    const fullCustomCommand = getFullCustomCommand(customCommand, pkgInfo);
 
-    const [command, ...args] = fullCustomCommand.split(' ')
+    const [command, ...args] = fullCustomCommand.split(" ");
     // we replace TARGET_DIR here because targetDir may include a space
     const replacedArgs = args.map((arg) =>
-      arg.replace('TARGET_DIR', () => targetDir),
-    )
+      arg.replace("TARGET_DIR", () => targetDir),
+    );
     const { status } = spawn.sync(command, replacedArgs, {
-      stdio: 'inherit',
-    })
-    process.exit(status ?? 0)
+      stdio: "inherit",
+    });
+    process.exit(status ?? 0);
   }
 
   // 5. Ask whether to use ESLint instead of Oxlint (React templates only)
-  const isReactTemplate = template === 'react' || template === 'react-ts'
-  let eslint = argEslint
+  const isReactTemplate = template === "react" || template === "react-ts";
+  let eslint = argEslint;
   if (isReactTemplate && eslint === undefined) {
     if (interactive) {
       const eslintResult = await prompts.select({
-        message: 'Which linter to use?',
+        message: "Which linter to use?",
         options: [
-          { label: 'Oxlint', value: false },
-          { label: 'ESLint', value: true },
+          { label: "Oxlint", value: false },
+          { label: "ESLint", value: true },
         ],
-      })
-      if (prompts.isCancel(eslintResult)) return cancel()
-      eslint = eslintResult
+      });
+      if (prompts.isCancel(eslintResult)) return cancel();
+      eslint = eslintResult;
     } else {
-      eslint = false
+      eslint = false;
     }
   }
 
   // 6. Ask about immediate install and package manager
-  let immediate = argImmediate
+  let immediate = argImmediate;
   if (immediate === undefined) {
     if (interactive) {
       const immediateResult = await prompts.confirm({
         message: `Install with ${pkgManager} and start now?`,
-      })
-      if (prompts.isCancel(immediateResult)) return cancel()
-      immediate = immediateResult
+      });
+      if (prompts.isCancel(immediateResult)) return cancel();
+      immediate = immediateResult;
     } else {
-      immediate = false
+      immediate = false;
     }
   }
 
   // Only create directory for built-in templates, not for customCommand
-  fs.mkdirSync(root, { recursive: true })
-  prompts.log.step(`Scaffolding project in ${root}...`)
+  fs.mkdirSync(root, { recursive: true });
+  prompts.log.step(`Scaffolding project in ${root}...`);
 
   const templateDir = path.resolve(
     fileURLToPath(import.meta.url),
-    '../..',
+    "../..",
     `template-${template}`,
-  )
+  );
 
   const write = (file: string, content?: string) => {
-    const targetPath = path.join(root, renameFiles[file] ?? file)
+    const targetPath = path.join(root, renameFiles[file] ?? file);
     if (content) {
-      fs.writeFileSync(targetPath, content)
-    } else if (file === 'index.html') {
-      const templatePath = path.join(templateDir, file)
-      const templateContent = fs.readFileSync(templatePath, 'utf-8')
+      fs.writeFileSync(targetPath, content);
+    } else if (file === "index.html") {
+      const templatePath = path.join(templateDir, file);
+      const templateContent = fs.readFileSync(templatePath, "utf-8");
       const updatedContent = templateContent.replace(
         /<title>.*?<\/title>/,
         `<title>${packageName}</title>`,
-      )
-      fs.writeFileSync(targetPath, updatedContent)
+      );
+      fs.writeFileSync(targetPath, updatedContent);
     } else {
-      copy(path.join(templateDir, file), targetPath)
+      copy(path.join(templateDir, file), targetPath);
     }
-  }
+  };
 
-  const files = fs.readdirSync(templateDir)
-  for (const file of files.filter((f) => f !== 'package.json')) {
-    write(file)
+  const files = fs.readdirSync(templateDir);
+  for (const file of files.filter((f) => f !== "package.json")) {
+    write(file);
   }
 
   const pkg = JSON.parse(
-    fs.readFileSync(path.join(templateDir, `package.json`), 'utf-8'),
-  )
+    fs.readFileSync(path.join(templateDir, `package.json`), "utf-8"),
+  );
 
-  pkg.name = packageName
+  pkg.name = packageName;
 
-  write('package.json', JSON.stringify(pkg, null, 2) + '\n')
+  write("package.json", JSON.stringify(pkg, null, 2) + "\n");
 
   if (isReactCompiler) {
-    setupReactCompiler(root, template.endsWith('-ts'))
+    setupReactCompiler(root, template.endsWith("-ts"));
   }
 
   if (eslint) {
-    setupEslint(root, template.endsWith('-ts'))
+    setupEslint(root, template.endsWith("-ts"));
   }
 
   if (immediate) {
-    install(root, pkgManager)
-    start(root, pkgManager)
+    install(root, pkgManager);
+    start(root, pkgManager);
   } else {
-    let doneMessage = ''
-    const cdProjectName = path.relative(cwd, root)
-    doneMessage += `Done. Now run:\n`
+    let doneMessage = "";
+    const cdProjectName = path.relative(cwd, root);
+    doneMessage += `Done. Now run:\n`;
     if (root !== cwd) {
       doneMessage += `\n  cd ${
-        cdProjectName.includes(' ') ? `"${cdProjectName}"` : cdProjectName
-      }`
+        cdProjectName.includes(" ") ? `"${cdProjectName}"` : cdProjectName
+      }`;
     }
-    doneMessage += `\n  ${getInstallCommand(pkgManager).join(' ')}`
-    doneMessage += `\n  ${getRunCommand(pkgManager, 'dev').join(' ')}`
-    prompts.outro(doneMessage)
+    doneMessage += `\n  ${getInstallCommand(pkgManager).join(" ")}`;
+    doneMessage += `\n  ${getRunCommand(pkgManager, "dev").join(" ")}`;
+    prompts.outro(doneMessage);
   }
 }
 
 function formatTargetDir(targetDir: string) {
   return targetDir
     .trim()
-    .replace(/[<>:"\\|?*]/g, '')
-    .replace(/\/+$/g, '')
+    .replace(/[<>:"\\|?*]/g, "")
+    .replace(/\/+$/g, "");
 }
 
 function copy(src: string, dest: string) {
-  const stat = fs.statSync(src)
+  const stat = fs.statSync(src);
   if (stat.isDirectory()) {
-    copyDir(src, dest)
+    copyDir(src, dest);
   } else {
-    fs.copyFileSync(src, dest)
+    fs.copyFileSync(src, dest);
   }
 }
 
 function isValidPackageName(projectName: string) {
   return /^(?:@[a-z\d\-*~][a-z\d\-*._~]*\/)?[a-z\d\-~][a-z\d\-._~]*$/.test(
     projectName,
-  )
+  );
 }
 
 function toValidPackageName(projectName: string) {
   return projectName
     .trim()
     .toLowerCase()
-    .replace(/\s+/g, '-')
-    .replace(/^[._]/, '')
-    .replace(/[^a-z\d\-~]+/g, '-')
+    .replace(/\s+/g, "-")
+    .replace(/^[._]/, "")
+    .replace(/[^a-z\d\-~]+/g, "-");
 }
 
 function copyDir(srcDir: string, destDir: string) {
-  fs.mkdirSync(destDir, { recursive: true })
+  fs.mkdirSync(destDir, { recursive: true });
   for (const file of fs.readdirSync(srcDir)) {
-    const srcFile = path.resolve(srcDir, file)
-    const destFile = path.resolve(destDir, file)
-    copy(srcFile, destFile)
+    const srcFile = path.resolve(srcDir, file);
+    const destFile = path.resolve(destDir, file);
+    copy(srcFile, destFile);
   }
 }
 
 function isEmpty(path: string) {
-  const files = fs.readdirSync(path)
-  return files.length === 0 || (files.length === 1 && files[0] === '.git')
+  const files = fs.readdirSync(path);
+  return files.length === 0 || (files.length === 1 && files[0] === ".git");
 }
 
 function emptyDir(dir: string) {
   if (!fs.existsSync(dir)) {
-    return
+    return;
   }
   for (const file of fs.readdirSync(dir)) {
-    if (file === '.git') {
-      continue
+    if (file === ".git") {
+      continue;
     }
-    fs.rmSync(path.resolve(dir, file), { recursive: true, force: true })
+    fs.rmSync(path.resolve(dir, file), { recursive: true, force: true });
   }
 }
 
 interface PkgInfo {
-  name: string
-  version: string
+  name: string;
+  version: string;
 }
 
 function pkgFromUserAgent(userAgent: string | undefined): PkgInfo | undefined {
-  if (!userAgent) return undefined
-  const pkgSpec = userAgent.split(' ')[0]
-  const pkgSpecArr = pkgSpec.split('/')
+  if (!userAgent) return undefined;
+  const pkgSpec = userAgent.split(" ")[0];
+  const pkgSpecArr = pkgSpec.split("/");
   return {
     name: pkgSpecArr[0],
     version: pkgSpecArr[1],
-  }
+  };
 }
 
 function setupReactCompiler(root: string, isTs: boolean) {
   // renovate: datasource=npm depName=@rolldown/plugin-babel
-  const babelPluginVersion = '0.2.3'
+  const babelPluginVersion = "0.2.3";
   // renovate: datasource=npm depName=babel-plugin-react-compiler
-  const reactCompilerPluginVersion = '1.0.0'
+  const reactCompilerPluginVersion = "1.0.0";
   // renovate: datasource=npm depName=@babel/core
-  const babelCoreVersion = '7.29.7'
+  const babelCoreVersion = "7.29.7";
   // renovate: datasource=npm depName=@types/babel__core
-  const typesBabelCoreVersion = '7.20.5'
+  const typesBabelCoreVersion = "7.20.5";
 
-  editFile(path.resolve(root, 'package.json'), (content) => {
-    const asObject = JSON.parse(content)
-    const devDepsEntries = Object.entries(asObject.devDependencies)
-    devDepsEntries.push(['@rolldown/plugin-babel', `^${babelPluginVersion}`])
+  editFile(path.resolve(root, "package.json"), (content) => {
+    const asObject = JSON.parse(content);
+    const devDepsEntries = Object.entries(asObject.devDependencies);
+    devDepsEntries.push(["@rolldown/plugin-babel", `^${babelPluginVersion}`]);
     devDepsEntries.push([
-      'babel-plugin-react-compiler',
+      "babel-plugin-react-compiler",
       `^${reactCompilerPluginVersion}`,
-    ])
-    devDepsEntries.push(['@babel/core', `^${babelCoreVersion}`])
+    ]);
+    devDepsEntries.push(["@babel/core", `^${babelCoreVersion}`]);
     if (isTs) {
-      devDepsEntries.push(['@types/babel__core', `^${typesBabelCoreVersion}`])
+      devDepsEntries.push(["@types/babel__core", `^${typesBabelCoreVersion}`]);
     }
-    devDepsEntries.sort()
-    asObject.devDependencies = Object.fromEntries(devDepsEntries)
-    return JSON.stringify(asObject, null, 2) + '\n'
-  })
+    devDepsEntries.sort();
+    asObject.devDependencies = Object.fromEntries(devDepsEntries);
+    return JSON.stringify(asObject, null, 2) + "\n";
+  });
   editFile(
-    path.resolve(root, `vite.config.${isTs ? 'ts' : 'js'}`),
+    path.resolve(root, `vite.config.${isTs ? "ts" : "js"}`),
     (content) => {
       return content
         .replace(
@@ -834,33 +842,33 @@ function setupReactCompiler(root: string, isTs: boolean) {
 import babel from '@rolldown/plugin-babel'`,
         )
         .replace(
-          '  plugins: [react()],',
+          "  plugins: [react()],",
           `  plugins: [
     react(),
     babel({ presets: [reactCompilerPreset()] })
   ],`,
-        )
+        );
     },
-  )
+  );
   updateReactCompilerReadme(
     root,
-    'The React Compiler is enabled on this template. See [this documentation](https://react.dev/learn/react-compiler) for more information.\n\nNote: This will impact Vite dev & build performances.',
-  )
+    "The React Compiler is enabled on this template. See [this documentation](https://react.dev/learn/react-compiler) for more information.\n\nNote: This will impact Vite dev & build performances.",
+  );
 }
 
 function setupEslint(root: string, isTs: boolean) {
   // renovate: datasource=npm depName=@eslint/js
-  const eslintJsVersion = '10.0.1'
+  const eslintJsVersion = "10.0.1";
   // renovate: datasource=npm depName=eslint
-  const eslintVersion = '10.6.0'
+  const eslintVersion = "10.6.0";
   // renovate: datasource=npm depName=eslint-plugin-react-hooks
-  const eslintPluginReactHooksVersion = '7.1.1'
+  const eslintPluginReactHooksVersion = "7.1.1";
   // renovate: datasource=npm depName=eslint-plugin-react-refresh
-  const eslintPluginReactRefreshVersion = '0.5.3'
+  const eslintPluginReactRefreshVersion = "0.5.3";
   // renovate: datasource=npm depName=globals
-  const globalsVersion = '17.7.0'
+  const globalsVersion = "17.7.0";
   // renovate: datasource=npm depName=typescript-eslint
-  const typescriptEslintVersion = '8.62.0'
+  const typescriptEslintVersion = "8.62.0";
 
   const eslintConfigForTS = /* js */ `import js from '@eslint/js'
 import globals from 'globals'
@@ -884,7 +892,7 @@ export default defineConfig([
     },
   },
 ])
-`
+`;
   const eslintConfigForJS = /* js */ `import js from '@eslint/js'
 import globals from 'globals'
 import reactHooks from 'eslint-plugin-react-hooks'
@@ -906,48 +914,47 @@ export default defineConfig([
     },
   },
 ])
-`
+`;
 
-  fs.rmSync(path.resolve(root, '.oxlintrc.json'))
+  fs.rmSync(path.resolve(root, ".oxlintrc.json"));
 
-  const eslintConfig = isTs ? eslintConfigForTS : eslintConfigForJS
-  fs.writeFileSync(path.resolve(root, 'eslint.config.js'), eslintConfig)
+  const eslintConfig = isTs ? eslintConfigForTS : eslintConfigForJS;
+  fs.writeFileSync(path.resolve(root, "eslint.config.js"), eslintConfig);
 
-  editFile(path.resolve(root, 'package.json'), (content) => {
-    const asObject = JSON.parse(content)
+  editFile(path.resolve(root, "package.json"), (content) => {
+    const asObject = JSON.parse(content);
     const devDepsEntries = Object.entries(asObject.devDependencies).filter(
-      ([name]) => name !== 'oxlint',
-    )
+      ([name]) => name !== "oxlint",
+    );
     devDepsEntries.push(
-      ['@eslint/js', `^${eslintJsVersion}`],
-      ['eslint', `^${eslintVersion}`],
-      ['eslint-plugin-react-hooks', `^${eslintPluginReactHooksVersion}`],
-      ['eslint-plugin-react-refresh', `^${eslintPluginReactRefreshVersion}`],
-      ['globals', `^${globalsVersion}`],
-    )
+      ["@eslint/js", `^${eslintJsVersion}`],
+      ["eslint", `^${eslintVersion}`],
+      ["eslint-plugin-react-hooks", `^${eslintPluginReactHooksVersion}`],
+      ["eslint-plugin-react-refresh", `^${eslintPluginReactRefreshVersion}`],
+      ["globals", `^${globalsVersion}`],
+    );
     if (isTs) {
-      devDepsEntries.push(['typescript-eslint', `^${typescriptEslintVersion}`])
+      devDepsEntries.push(["typescript-eslint", `^${typescriptEslintVersion}`]);
     }
-    devDepsEntries.sort()
-    asObject.devDependencies = Object.fromEntries(devDepsEntries)
-    asObject.scripts.lint = 'eslint .'
-    return JSON.stringify(asObject, null, 2) + '\n'
-  })
+    devDepsEntries.sort();
+    asObject.devDependencies = Object.fromEntries(devDepsEntries);
+    asObject.scripts.lint = "eslint .";
+    return JSON.stringify(asObject, null, 2) + "\n";
+  });
 
-  editFile(path.resolve(root, 'README.md'), (content) => {
+  editFile(path.resolve(root, "README.md"), (content) => {
     content = content.replace(
-      'with HMR and some Oxlint rules',
-      'with HMR and some ESLint rules',
-    )
+      "with HMR and some Oxlint rules",
+      "with HMR and some ESLint rules",
+    );
     const headingIndex = content.indexOf(
-      '## Expanding the Oxlint configuration',
-    )
+      "## Expanding the Oxlint configuration",
+    );
     if (headingIndex === -1) {
-      console.warn('Could not update Oxlint section in README.md')
-      return content
+      console.warn("Could not update Oxlint section in README.md");
+      return content;
     }
-    const eslintTypeAwareConfig =
-      /* js */ `export default defineConfig([
+    const eslintTypeAwareConfig = /* js */ `export default defineConfig([
   globalIgnores(['dist']),
   {
     files: ['**/*.{ts,tsx}'],
@@ -972,9 +979,8 @@ export default defineConfig([
     },
   },
 ])
-`
-    const eslintReactConfig =
-      /* js */ `// eslint.config.js
+`;
+    const eslintReactConfig = /* js */ `// eslint.config.js
 import reactX from 'eslint-plugin-react-x'
 import reactDom from 'eslint-plugin-react-dom'
 
@@ -998,7 +1004,7 @@ export default defineConfig([
     },
   },
 ])
-`
+`;
 
     const eslintSection = isTs
       ? `## Expanding the ESLint configuration
@@ -1018,124 +1024,124 @@ ${eslintReactConfig}
       : `## Expanding the ESLint configuration
 
 If you are developing a production application, we recommend using TypeScript with type-aware lint rules enabled. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) for information on how to integrate TypeScript and [\`typescript-eslint\`](https://typescript-eslint.io) in your project.
-`
-    return content.slice(0, headingIndex) + eslintSection
-  })
+`;
+    return content.slice(0, headingIndex) + eslintSection;
+  });
 }
 
 function updateReactCompilerReadme(root: string, newBody: string) {
   editFile(path.resolve(root, `README.md`), (content) => {
-    const h2Start = content.indexOf('## React Compiler')
-    const bodyStart = content.indexOf('\n\n', h2Start)
-    const compilerSectionEnd = content.indexOf('\n## ', bodyStart)
+    const h2Start = content.indexOf("## React Compiler");
+    const bodyStart = content.indexOf("\n\n", h2Start);
+    const compilerSectionEnd = content.indexOf("\n## ", bodyStart);
     if (h2Start === -1 || bodyStart === -1 || compilerSectionEnd === -1) {
-      console.warn('Could not update compiler section in README.md')
-      return content
+      console.warn("Could not update compiler section in README.md");
+      return content;
     }
     return content.replace(
       content.slice(bodyStart + 2, compilerSectionEnd - 1),
       newBody,
-    )
-  })
+    );
+  });
 }
 
 function editFile(file: string, callback: (content: string) => string) {
-  const content = fs.readFileSync(file, 'utf-8')
-  fs.writeFileSync(file, callback(content), 'utf-8')
+  const content = fs.readFileSync(file, "utf-8");
+  fs.writeFileSync(file, callback(content), "utf-8");
 }
 
 function getFullCustomCommand(customCommand: string, pkgInfo?: PkgInfo) {
-  const pkgManager = pkgInfo ? pkgInfo.name : 'npm'
-  const isYarn1 = pkgManager === 'yarn' && pkgInfo?.version.startsWith('1.')
+  const pkgManager = pkgInfo ? pkgInfo.name : "npm";
+  const isYarn1 = pkgManager === "yarn" && pkgInfo?.version.startsWith("1.");
 
   return (
     customCommand
       .replace(/^npm create (?:-- )?/, () => {
         // `bun create` uses its own set of templates,
         // the closest alternative is using `bun x` directly on the package
-        if (pkgManager === 'bun') {
-          return 'bun x create-'
+        if (pkgManager === "bun") {
+          return "bun x create-";
         }
         // Deno uses `run -A npm:create-` instead of `create` or `init` to also provide needed perms
-        if (pkgManager === 'deno') {
-          return 'deno run -A npm:create-'
+        if (pkgManager === "deno") {
+          return "deno run -A npm:create-";
         }
         // pnpm doesn't support the -- syntax
-        if (pkgManager === 'pnpm') {
-          return 'pnpm create '
+        if (pkgManager === "pnpm") {
+          return "pnpm create ";
         }
         // For other package managers, preserve the original format
-        return customCommand.startsWith('npm create -- ')
+        return customCommand.startsWith("npm create -- ")
           ? `${pkgManager} create -- `
-          : `${pkgManager} create `
+          : `${pkgManager} create `;
       })
       // Only Yarn 1.x doesn't support `@version` in the `create` command
-      .replace('@latest', () => (isYarn1 ? '' : '@latest'))
+      .replace("@latest", () => (isYarn1 ? "" : "@latest"))
       .replace(/^npm exec (?:-- )?/, () => {
         // Prefer `pnpm dlx`, `yarn dlx`, or `bun x`
-        if (pkgManager === 'pnpm') {
+        if (pkgManager === "pnpm") {
           // pnpm doesn't support the -- syntax
-          return 'pnpm dlx '
+          return "pnpm dlx ";
         }
-        if (pkgManager === 'yarn' && !isYarn1) {
-          return 'yarn dlx '
+        if (pkgManager === "yarn" && !isYarn1) {
+          return "yarn dlx ";
         }
-        if (pkgManager === 'bun') {
-          return 'bun x '
+        if (pkgManager === "bun") {
+          return "bun x ";
         }
-        if (pkgManager === 'deno') {
-          return 'deno run -A npm:'
+        if (pkgManager === "deno") {
+          return "deno run -A npm:";
         }
         // Use `npm exec` in all other cases,
         // including Yarn 1.x and other custom npm clients.
-        return customCommand.startsWith('npm exec -- ')
-          ? 'npm exec -- '
-          : 'npm exec '
+        return customCommand.startsWith("npm exec -- ")
+          ? "npm exec -- "
+          : "npm exec ";
       })
-  )
+  );
 }
 
 function getLabel(variant: FrameworkVariant) {
-  const labelText = variant.display || variant.name
-  let label = variant.color(labelText)
-  const { link } = variant
+  const labelText = variant.display || variant.name;
+  let label = variant.color(labelText);
+  const { link } = variant;
   if (link) {
-    label += ` ${underline(link)}`
+    label += ` ${underline(link)}`;
   }
-  return label
+  return label;
 }
 
 function getInstallCommand(agent: string) {
-  if (agent === 'yarn') {
-    return [agent]
+  if (agent === "yarn") {
+    return [agent];
   }
-  return [agent, 'install']
+  return [agent, "install"];
 }
 
 function getRunCommand(agent: string, script: string) {
   switch (agent) {
-    case 'yarn':
-    case 'pnpm':
-    case 'bun':
-      return [agent, script]
-    case 'deno':
-      return [agent, 'task', script]
+    case "yarn":
+    case "pnpm":
+    case "bun":
+      return [agent, script];
+    case "deno":
+      return [agent, "task", script];
     default:
-      return [agent, 'run', script]
+      return [agent, "run", script];
   }
 }
 
-type ColorName = Exclude<Parameters<typeof util.styleText>[0], any[]>
+type ColorName = Exclude<Parameters<typeof util.styleText>[0], any[]>;
 
 function createColors() {
   return new Proxy({} as Record<ColorName, ColorFunc>, {
     get(_, prop: ColorName) {
       // eslint-disable-next-line n/no-unsupported-features/node-builtins -- our supported nodejs range supports `styleText` but in experimental state, which is fine
-      return (str: string) => util.styleText(prop, str)
+      return (str: string) => util.styleText(prop, str);
     },
-  })
+  });
 }
 
 init().catch((e) => {
-  console.error(e)
-})
+  console.error(e);
+});
