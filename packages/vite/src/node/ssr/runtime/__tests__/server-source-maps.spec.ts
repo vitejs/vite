@@ -76,12 +76,11 @@ describe('module runner initialization', async () => {
   })
 
   it('stacktrace column on first line', async ({ runner, server }) => {
-    // column is off by "use strict"
     const topLevelError = await getError(() =>
       runner.import('/fixtures/has-error-first.js'),
     )
     expect(serializeStack(server, topLevelError)).toBe(
-      '    at <root>/fixtures/has-error-first.js:1:18',
+      '    at <root>/fixtures/has-error-first.js:1:7',
     )
 
     const topLevelErrorTs = await getError(() =>
