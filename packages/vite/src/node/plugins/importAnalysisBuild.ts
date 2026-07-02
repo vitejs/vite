@@ -148,7 +148,7 @@ function preload(
       if (import.meta.resolve) {
         return import.meta.resolve(specifier)
       }
-      return new URL(specifier, import.meta.url).href
+      return new URL(specifier, /** #__KEEP__ */ import.meta.url).href
     }
 
     promise = allSettled(
