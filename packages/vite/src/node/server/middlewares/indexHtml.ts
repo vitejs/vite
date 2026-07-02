@@ -505,13 +505,19 @@ export function indexHtmlMiddleware(
         return send(req, res, html, 'html', { headers, etag: file.etag })
       }
 
+      let pathname: string
+      try {
+        pathname = decodeURIComponent(url)
+      } catch {
+        // ignore malformed URI
+        return next()
+      }
+
       let filePath: string
       if (isDev && url.startsWith(FS_PREFIX)) {
-        filePath = decodeURIComponent(fsPathFromId(url))
+        filePath = fsPathFromId(pathname)
       } else {
-        filePath = normalizePath(
-          path.resolve(path.join(root, decodeURIComponent(url))),
-        )
+        filePath = normalizePath(path.resolve(path.join(root, pathname)))
       }
 
       if (isDev) {
