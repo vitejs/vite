@@ -10,7 +10,9 @@ function calculateOffsetOnce() {
   }
 
   try {
-    new Function('throw new Error(1)')()
+    // `"use strict";` mirrors the directive prepended on its own line by
+    // `ESModulesEvaluator`
+    new Function('"use strict";\nthrow new Error(1)')()
   } catch (e) {
     // in Node 12, stack traces account for the function wrapper.
     // in Node 13 and later, the function wrapper adds two lines,

@@ -48,6 +48,7 @@ minimumReleaseAge: 1440
 minimumReleaseAgeExclude:
   - rolldown
   - '@rolldown/binding-*'
+  - es-module-lexer@2.3.0
 blockExoticSubdeps: true
 trustPolicy: no-downgrade
 trustPolicyExclude:
