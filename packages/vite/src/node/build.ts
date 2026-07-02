@@ -87,6 +87,7 @@ import {
   warnFutureDeprecation,
 } from './deprecations'
 import { prepareOutDirPlugin } from './plugins/prepareOutDir'
+import { requestEntrypointsPlugin } from './plugins/requestEntrypoints'
 import type { Environment } from './environment'
 
 export interface BuildEnvironmentOptions {
@@ -520,6 +521,7 @@ export function resolveBuildPlugins(config: ResolvedConfig): {
   return {
     pre: [
       ...(isBuild && !config.isWorker ? [prepareOutDirPlugin()] : []),
+      ...(config.isWorker ? [] : [requestEntrypointsPlugin()]),
       perEnvironmentPlugin(
         'vite:rollup-options-plugins',
         async (environment) => {

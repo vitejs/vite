@@ -278,6 +278,54 @@ type AllResolveOptions = ResolveOptions & {
 
 type ResolvedAllResolveOptions = Required<ResolveOptions> & { alias: Alias[] }
 
+/**
+ * How a server request entrypoint is invoked.
+ * - `'fetchable'`: a standard [Fetchable](https://fetchable.org/) module, i.e. a
+ *   `(request: Request) => Response | Promise<Response>` style handler.
+ * - `'custom'`: a non-standard handler whose signature a provider must special-case.
+ *
+ * @experimental
+ */
+export type RequestEntrypointType = 'fetchable' | 'custom'
+
+/**
+ * @experimental
+ */
+export interface RequestEntrypointOptions {
+  /**
+   * @default 'fetchable'
+   */
+  type?: RequestEntrypointType
+}
+
+/**
+ * A server request entrypoint after normalization, as returned by
+ * {@link BaseEnvironment.getRequestEntrypoints}.
+ *
+ * @experimental
+ */
+export interface ResolvedRequestEntrypoint {
+  /**
+   * Stable entrypoint name, equal to the Rollup input (entry) name.
+   */
+  name: string
+  type: RequestEntrypointType
+}
+
+/**
+ * A resolved request entrypoint paired with its emitted output, as returned by
+ * {@link BaseEnvironment.getRequestEntrypointOutputs}.
+ *
+ * @experimental
+ */
+export interface RequestEntrypointOutput extends ResolvedRequestEntrypoint {
+  /**
+   * The emitted file for this entrypoint's input.
+   */
+  fileName: string
+  chunk: OutputChunk
+}
+
 export interface SharedEnvironmentOptions {
   /**
    * Define global variable replacements.
@@ -288,11 +336,6 @@ export interface SharedEnvironmentOptions {
    * Configure resolver
    */
   resolve?: EnvironmentResolveOptions
-  /**
-   * Define if this environment is used for Server-Side Rendering
-   * @default 'server' if it isn't the client environment
-   */
-  consumer?: 'client' | 'server'
   /**
    * If true, `process.env` referenced in code will be preserved as-is and evaluated in runtime.
    * Otherwise, it is statically replaced as an empty object.
@@ -315,7 +358,53 @@ export interface SharedEnvironmentOptions {
   isBundled?: boolean
 }
 
-export interface EnvironmentOptions extends SharedEnvironmentOptions {
+/**
+ * The `consumer`-dependent part of {@link EnvironmentOptions}. `requestEntrypoints`
+ * is only allowed when `consumer` is `'server'` (or left to default), so it can't be
+ * set on a `consumer: 'client'` environment.
+ */
+type ConsumerEnvironmentOptions =
+  | {
+      /**
+       * Define if this environment is used for Server-Side Rendering
+       * @default 'server' if it isn't the client environment
+       */
+      consumer?: 'server'
+      /**
+       * Annotate which server bundle inputs are request entrypoint files, so that
+       * framework-agnostic provider plugins can locate the emitted request handler(s).
+       *
+       * Keys (or array items) must match an entry name in (normalized)
+       * `build.rollupOptions.input`; an unmatched name throws during build. Entrypoints
+       * are assumed to be [Fetchable](https://fetchable.org/) modules unless `type: 'custom'`
+       * is specified.
+       *
+       * @example
+       * // record form
+       * { ssr: { type: 'fetchable' }, api: {} }
+       * // array shorthand (all `fetchable`)
+       * ['ssr', 'api']
+       *
+       * @experimental
+       */
+      requestEntrypoints?:
+        | Record<string, RequestEntrypointOptions>
+        | readonly string[]
+    }
+  | {
+      /**
+       * Define if this environment is used for Server-Side Rendering
+       * @default 'server' if it isn't the client environment
+       */
+      consumer: 'client'
+      /**
+       * `requestEntrypoints` is only supported on server environments
+       * (`consumer: 'server'`).
+       */
+      requestEntrypoints?: never
+    }
+
+export type EnvironmentOptions = SharedEnvironmentOptions & {
   /**
    * Dev specific options
    */
@@ -324,7 +413,7 @@ export interface EnvironmentOptions extends SharedEnvironmentOptions {
    * Build specific options
    */
   build?: BuildEnvironmentOptions
-}
+} & ConsumerEnvironmentOptions
 
 export type ResolvedResolveOptions = Required<ResolveOptions>
 
@@ -332,6 +421,7 @@ export type ResolvedEnvironmentOptions = {
   define?: Record<string, any>
   resolve: ResolvedResolveOptions
   consumer: 'client' | 'server'
+  requestEntrypoints: ResolvedRequestEntrypoint[]
   keepProcessEnv?: boolean
   optimizeDeps: DepOptimizationOptions
   dev: ResolvedDevEnvironmentOptions
@@ -342,10 +432,15 @@ export type ResolvedEnvironmentOptions = {
   optimizeDepsPluginNames: string[]
 }
 
+// `consumer` and `requestEntrypoints` are intentionally excluded: they are
+// per-environment options (and `requestEntrypoints` is server-only), so they
+// cannot be set on the top-level config.
 export type DefaultEnvironmentOptions = Omit<
-  EnvironmentOptions,
-  'consumer' | 'resolve' | 'keepProcessEnv'
+  SharedEnvironmentOptions,
+  'resolve' | 'keepProcessEnv'
 > & {
+  dev?: DevEnvironmentOptions
+  build?: BuildEnvironmentOptions
   resolve?: AllResolveOptions
 }
 
@@ -930,6 +1025,18 @@ export function resolveDevEnvironmentOptions(
   }
 }
 
+function resolveRequestEntrypoints(
+  raw: EnvironmentOptions['requestEntrypoints'],
+): ResolvedRequestEntrypoint[] {
+  if (!raw) return []
+  if (Array.isArray(raw)) {
+    return raw.map((name) => ({ name, type: 'fetchable' as const }))
+  }
+  return Object.entries(raw as Record<string, RequestEntrypointOptions>).map(
+    ([name, options]) => ({ name, type: options?.type ?? 'fetchable' }),
+  )
+}
+
 function resolveEnvironmentOptions(
   options: EnvironmentOptions,
   alias: Alias[],
@@ -948,6 +1055,18 @@ function resolveEnvironmentOptions(
     options.consumer ?? (isClientEnvironment ? 'client' : 'server')
   const isSsrTargetWebworkerEnvironment =
     isSsrTargetWebworkerSet && environmentName === 'ssr'
+
+  const requestEntrypoints = resolveRequestEntrypoints(
+    options.requestEntrypoints,
+  )
+  if (consumer !== 'server' && requestEntrypoints.length > 0) {
+    logger.warnOnce(
+      colors.yellow(
+        `"requestEntrypoints" is set on environment "${environmentName}" but its "consumer" ` +
+          `is "${consumer}". Request entrypoints are only meaningful for server environments.`,
+      ),
+    )
+  }
 
   const isBundled =
     options.isBundled ?? (isBuild || (isClientEnvironment && isBundledDev))
@@ -987,6 +1106,7 @@ function resolveEnvironmentOptions(
       options.keepProcessEnv ??
       (isSsrTargetWebworkerEnvironment ? false : consumer === 'server'),
     consumer,
+    requestEntrypoints,
     optimizeDeps: resolveDepOptimizationOptions(
       options.optimizeDeps,
       resolve.preserveSymlinks,

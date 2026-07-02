@@ -269,6 +269,40 @@ The application side is same with the Client-server Communication feature. You c
 In the same way as during dev, plugin hooks also receive the environment instance during build, replacing the `ssr` boolean.
 This also works for `renderChunk`, `generateBundle`, and other build only hooks.
 
+### Resolving request entrypoints
+
+:::info Experimental
+This API is experimental. We're gathering feedback in the [RFC discussion](https://github.com/vitejs/vite/discussions/22507).
+:::
+
+When a framework annotates a server environment's request handler entrypoints with [`requestEntrypoints`](./api-environment-frameworks.md#server-request-entrypoints), a provider plugin (for example, for a deployment platform) can resolve them to their emitted files from the `generateBundle` hook via `this.environment.getRequestEntrypointOutputs(bundle)`:
+
+```js
+export function myPlatform() {
+  return {
+    name: 'my-platform',
+    applyToEnvironment(environment) {
+      return environment.config.consumer === 'server'
+    },
+    generateBundle(_options, bundle) {
+      for (const entrypoint of this.environment.getRequestEntrypointOutputs(
+        bundle,
+      )) {
+        // entrypoint: { name, type, fileName, chunk }
+        if (entrypoint.type === 'fetchable') {
+          generateServerlessFunction({
+            name: entrypoint.name,
+            handler: entrypoint.fileName,
+          })
+        }
+      }
+    },
+  }
+}
+```
+
+`this.environment.getRequestEntrypoints()` returns the configured entrypoints without needing a bundle. A configured name that doesn't resolve to exactly one emitted entry chunk throws during the build.
+
 ## Shared Plugins During Build
 
 Before Vite 6, the plugins pipelines worked in a different way during dev and build:

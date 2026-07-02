@@ -351,6 +351,39 @@ await builder.buildApp()
 
 `createBuilder` supersedes the standalone `build` function for environment-aware builds. `build` still works as the simple entry point for the legacy client-only and ssr-only builds described above, but it cannot build arbitrary environments. Running `builder.buildApp()` is the programmatic equivalent of `vite build --app`.
 
+### Server request entrypoints
+
+:::info Experimental
+This API is experimental. We're gathering feedback in the [RFC discussion](https://github.com/vitejs/vite/discussions/22507).
+:::
+
+A server environment's bundle can contain several entries, only some of which are request handlers (for example an SSR entry alongside an RSC entry). A framework can annotate which inputs are request handler entrypoints with `requestEntrypoints`, so that framework-agnostic provider plugins (e.g. for deployment platforms) can locate the emitted files instead of guessing from `build.rollupOptions.input`.
+
+Each key must match a named entry in `build.rollupOptions.input`. Entrypoints are assumed to be [Fetchable](https://fetchable.org/) modules unless marked `{ type: 'custom' }`. `requestEntrypoints` is only valid on `consumer: 'server'` environments.
+
+```js [vite.config.js]
+export default {
+  environments: {
+    server: {
+      consumer: 'server',
+      build: {
+        rollupOptions: {
+          input: {
+            ssr: 'virtual:my-framework/ssr-entry',
+            rsc: 'virtual:my-framework/rsc-entry',
+          },
+        },
+      },
+      // `ssr` is a request handler; `rsc` is not, so it is omitted.
+      // Shorthand for `{ ssr: {} }` when all entries are fetchable: `['ssr']`.
+      requestEntrypoints: { ssr: { type: 'fetchable' } },
+    },
+  },
+}
+```
+
+Provider plugins read these annotations during the build to locate the emitted files. See [Resolving request entrypoints](./api-environment-plugins.md#resolving-request-entrypoints) for the consuming side.
+
 ## Environment Agnostic Code
 
 Most of the time, the current `environment` instance will be available as part of the context of the code being run so the need to access them through `server.environments` should be rare. For example, inside plugin hooks the environment is exposed as part of the `PluginContext`, so it can be accessed using `this.environment`. See [Environment API for Plugins](./api-environment-plugins.md) to learn about how to build environment aware plugins.

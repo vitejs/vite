@@ -21,6 +21,7 @@ import {
 } from '../build'
 import type { Logger } from '../logger'
 import { createLogger } from '../logger'
+import type { RequestEntrypointOutput } from '..'
 import { BuildEnvironment, resolveConfig } from '..'
 
 const dirname = import.meta.dirname
@@ -804,6 +805,132 @@ describe('resolveBuildOutputs', () => {
     })
     const result = await builder.build(builder.environments.custom)
     expect((result as RolldownOutput).output[0].code).not.toContain('preload')
+  })
+
+  test('getRequestEntrypointOutputs resolves entrypoints to emitted chunks', async () => {
+    const captured: RequestEntrypointOutput[] = []
+    const builder = await createBuilder({
+      root: resolve(dirname, 'fixtures/emit-assets'),
+      logLevel: 'warn',
+      environments: {
+        ssr: {
+          build: {
+            ssr: true,
+            rollupOptions: { input: { index: '/entry' } },
+          },
+          requestEntrypoints: { index: { type: 'fetchable' } },
+        },
+      },
+      plugins: [
+        {
+          name: 'provider-like',
+          generateBundle(_options, bundle) {
+            captured.push(
+              ...this.environment.getRequestEntrypointOutputs(bundle),
+            )
+          },
+        },
+      ],
+    })
+    // getRequestEntrypoints() returns the resolved annotations independent of any bundle
+    expect(builder.environments.ssr.getRequestEntrypoints()).toStrictEqual([
+      { name: 'index', type: 'fetchable' },
+    ])
+
+    await builder.build(builder.environments.ssr)
+    expect(captured).toMatchObject([
+      { name: 'index', type: 'fetchable', fileName: 'index.mjs' },
+    ])
+    expect(captured[0].chunk.isEntry).toBe(true)
+  })
+
+  test('throws when a requestEntrypoint does not match an input name', async () => {
+    const builder = await createBuilder({
+      root: resolve(dirname, 'fixtures/emit-assets'),
+      logLevel: 'silent',
+      environments: {
+        ssr: {
+          build: {
+            ssr: true,
+            rollupOptions: { input: { index: '/entry' } },
+          },
+          requestEntrypoints: { nope: {} },
+        },
+      },
+    })
+    await expect(builder.build(builder.environments.ssr)).rejects.toThrow(
+      /does not match any/,
+    )
+  })
+
+  test('resolves entrypoints against derived names for array form input', async () => {
+    const captured: RequestEntrypointOutput[] = []
+    const builder = await createBuilder({
+      root: resolve(dirname, 'fixtures/emit-assets'),
+      logLevel: 'warn',
+      environments: {
+        ssr: {
+          build: {
+            ssr: true,
+            rollupOptions: { input: ['/entry'] },
+          },
+          requestEntrypoints: ['entry'],
+        },
+      },
+      plugins: [
+        {
+          name: 'provider-like',
+          generateBundle(_options, bundle) {
+            captured.push(
+              ...this.environment.getRequestEntrypointOutputs(bundle),
+            )
+          },
+        },
+      ],
+    })
+    await builder.build(builder.environments.ssr)
+    expect(captured).toMatchObject([
+      { name: 'entry', type: 'fetchable', fileName: 'entry.mjs' },
+    ])
+  })
+
+  test('throws when a requestEntrypoint matches multiple entry chunks', async () => {
+    const builder = await createBuilder({
+      root: resolve(dirname, 'fixtures/request-entrypoints'),
+      logLevel: 'silent',
+      environments: {
+        ssr: {
+          build: {
+            ssr: true,
+            rollupOptions: { input: ['/a/handler.js', '/b/handler.js'] },
+          },
+          requestEntrypoints: ['handler'],
+        },
+      },
+    })
+    await expect(builder.build(builder.environments.ssr)).rejects.toThrow(
+      /ambiguous/,
+    )
+  })
+
+  test('does not validate requestEntrypoints on a non-server environment', async () => {
+    const builder = await createBuilder({
+      root: resolve(dirname, 'fixtures/emit-assets'),
+      logLevel: 'silent',
+      environments: {
+        client: {
+          build: {
+            rollupOptions: { input: { index: '/entry' } },
+          },
+          // unmatched name, but ignored because `client` is not a server consumer
+          requestEntrypoints: { nope: {} },
+        },
+      },
+    })
+    // the build succeeds rather than throwing on the unmatched name
+    await expect(
+      builder.build(builder.environments.client),
+    ).resolves.toBeDefined()
   })
 })
 
