@@ -31,20 +31,20 @@
 </div>
 
 <p>
-  import InlineWorker from '../my-worker?worker&inline'
+  import InlineWorker from '../my-worker?worker&amp;inline'
   <span class="classname">.pong-inline</span>
 </p>
 <code class="pong-inline"></code>
 
 <p>
-  import InlineWorker from '../my-worker?worker&inline'
+  import InlineWorker from '../my-worker?worker&amp;inline'
   <span>new InlineWorker({ name: "named-inline-worker" })</span>
   <span class="classname">.pong-inline-named</span>
 </p>
 <code class="pong-inline-named"></code>
 
 <p>
-  import InlineWorker from '../my-worker?worker&inline'
+  import InlineWorker from '../my-worker?worker&amp;inline'
   <span>new InlineWorker()</span>
   <span>import.meta.url</span>
   <span class="classname">.pong-inline-url</span>
@@ -52,7 +52,7 @@
 <code class="pong-inline-url"></code>
 
 <p>
-  import InlineWorker from '../my-worker?worker&inline'
+  import InlineWorker from '../my-worker?worker&amp;inline'
   <span class="classname">.pong-inline-unicode</span>
 </p>
 <code class="pong-inline-unicode"></code>
@@ -64,20 +64,20 @@
 <code class="pong-ts-output"></code>
 
 <p>
-  import mySharedWorker from '../my-shared-worker?sharedworker&name=shared'
+  import mySharedWorker from '../my-shared-worker?sharedworker&amp;name=shared'
   <span class="classname">.tick-count</span>
 </p>
 <code class="tick-count"></code>
 
 <p>
-  import mySharedWorker from '../my-shared-worker?sharedworker&name=shared'
+  import mySharedWorker from '../my-shared-worker?sharedworker&amp;name=shared'
   <span>new mySharedWorker({ name: "namedSharedWorker" })</span>
   <span class="classname">.tick-count-named</span>
 </p>
 <code class="tick-count-named"></code>
 
 <p>
-  import InlineSharedWorker from '../my-shared-worker?sharedworker&inline'
+  import InlineSharedWorker from '../my-shared-worker?sharedworker&amp;inline'
   <span class="classname">.pong-shared-inline</span>
 </p>
 <code class="pong-shared-inline"></code>
@@ -226,6 +226,12 @@
   <span class="classname">.module-and-worker-worker</span>
 </p>
 <code class="module-and-worker-worker"></code>
+
+<p>
+  factory pattern TypeScript worker
+  <span class="classname">.factory-ts-worker</span>
+</p>
+<code class="factory-ts-worker"></code>
 
 <style>
   p {
