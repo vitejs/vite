@@ -463,7 +463,11 @@ async function init() {
     )
   }
 
-  const pkgInfo = pkgFromUserAgent(process.env.npm_config_user_agent)
+  // Vite+ (`vp`) exposes its own `VP_USER_AGENT` because the underlying package
+  // manager overwrites `npm_config_user_agent` when running `vp dlx create-vite`.
+  const pkgInfo = pkgFromUserAgent(
+    process.env.VP_USER_AGENT ?? process.env.npm_config_user_agent,
+  )
   const cancel = () => prompts.cancel('Operation cancelled')
 
   // 1. Get project name and target dir
@@ -1064,6 +1068,10 @@ function getFullCustomCommand(customCommand: string, pkgInfo?: PkgInfo) {
         if (pkgManager === 'pnpm') {
           return 'pnpm create '
         }
+        // Vite+ uses `vp dlx create-` directly on the package
+        if (pkgManager === 'vp') {
+          return 'vp dlx create-'
+        }
         // For other package managers, preserve the original format
         return customCommand.startsWith('npm create -- ')
           ? `${pkgManager} create -- `
@@ -1085,6 +1093,10 @@ function getFullCustomCommand(customCommand: string, pkgInfo?: PkgInfo) {
         }
         if (pkgManager === 'deno') {
           return 'deno run -A npm:'
+        }
+        // Vite+ uses `vp dlx` to execute package binaries
+        if (pkgManager === 'vp') {
+          return 'vp dlx '
         }
         // Use `npm exec` in all other cases,
         // including Yarn 1.x and other custom npm clients.
@@ -1117,6 +1129,7 @@ function getRunCommand(agent: string, script: string) {
     case 'yarn':
     case 'pnpm':
     case 'bun':
+    case 'vp':
       return [agent, script]
     case 'deno':
       return [agent, 'task', script]
