@@ -82,6 +82,7 @@ async function createClientConfigValueReplacer(
   const host = wsConfig?.host || null
   const protocol = wsConfig?.protocol || null
   const timeout = wsConfig?.timeout || 30000
+  const runtimeErrors = wsConfig?.runtimeErrors ?? false
   const isWsServerSpecified = !!wsConfig?.server
   const hmrConfigName = path.basename(config.configFile || 'vite.config.js')
 
@@ -116,6 +117,7 @@ async function createClientConfigValueReplacer(
   const hmrEnableOverlayReplacement = escapeReplacement(overlay)
   const hmrConfigNameReplacement = escapeReplacement(hmrConfigName)
   const wsTokenReplacement = escapeReplacement(config.webSocketToken)
+  const hmrRuntimeErrorsReplacement = escapeReplacement(runtimeErrors)
   const serverForwardConsoleReplacement = escapeReplacement(
     config.server.forwardConsole as any,
   )
@@ -139,6 +141,7 @@ async function createClientConfigValueReplacer(
       .replace(`__WS_TOKEN__`, wsTokenReplacement)
       .replace(`__SERVER_FORWARD_CONSOLE__`, serverForwardConsoleReplacement)
       .replaceAll(`__BUNDLED_DEV__`, bundleDevReplacement)
+      .replace(`__HMR_RUNTIME_ERRORS__`, hmrRuntimeErrorsReplacement)
 }
 
 export async function getHmrImplementation(
