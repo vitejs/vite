@@ -164,7 +164,7 @@ Note that this option requires [`import.meta.resolve` support](https://caniuse.c
 
 Directly customize the underlying Rolldown bundle. This is the same as options that can be exported from a Rolldown config file and will be merged with Vite's internal Rolldown options. See [Rolldown options docs](https://rolldown.rs/reference/) for more details.
 
-Instead of `build.rolldownOptions.input`, it is recommended to set the top-level `input` option, because it will be used in dev as well. If `build.rolldownOptions.input` is set, it overrides the top-level `input` option for build only.
+Instead of `build.rolldownOptions.input`, it is recommended to set the top-level [`input`](/config/shared-options#input) option, because it will be used in dev as well. If `build.rolldownOptions.input` is set, it overrides the top-level `input` option for build only.
 
 ## build.rollupOptions
 
