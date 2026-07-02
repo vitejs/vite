@@ -1162,11 +1162,14 @@ export function injectInlinedCSS(
   } else if (format === 'es') {
     // legacy build
     if (code.startsWith('#!')) {
-      let secondLinePos = code.indexOf('\n')
-      if (secondLinePos === -1) {
-        secondLinePos = 0
+      // inject after the shebang line instead of into it
+      const newlinePos = code.indexOf('\n')
+      if (newlinePos === -1) {
+        // the shebang has no trailing newline, add one so it stays intact
+        s.append(`\n${injectCode}`)
+        return
       }
-      injectionPoint = secondLinePos
+      injectionPoint = newlinePos + 1
     } else {
       injectionPoint = 0
     }
