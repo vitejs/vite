@@ -15,6 +15,7 @@ declare module 'postcss-import' {
       id: string,
       basedir: string,
       importOptions: any,
+      atRule: import('postcss').AtRule,
     ) => string | string[] | Promise<string | string[]>
     load: (id: string) => Promise<string>
     nameLayer: (index: number, rootFilename: string) => string

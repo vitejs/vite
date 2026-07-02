@@ -314,6 +314,40 @@
     JSON.stringify(result)
 </script>
 
+<h2>Case Sensitive Match (default: true)</h2>
+<pre class="case-sensitive-true"></pre>
+
+<h2>Case Sensitive Match (false)</h2>
+<pre class="case-sensitive-false"></pre>
+
+<script type="module">
+  const caseSensitiveModules = import.meta.glob(
+    './case-sensitive-dir/data-*.js',
+    {
+      eager: true,
+      import: 'default',
+    },
+  )
+  document.querySelector('.case-sensitive-true').textContent = JSON.stringify(
+    Object.keys(caseSensitiveModules).sort(),
+    null,
+    2,
+  )
+
+  const caseInsensitiveModules = import.meta.glob(
+    './case-sensitive-dir/data-*.js',
+    {
+      eager: true,
+      import: 'default',
+      caseSensitive: false,
+    },
+  )
+  document.querySelector('.case-sensitive-false').textContent = JSON.stringify(
+    Object.keys(caseInsensitiveModules).sort(),
+    null,
+    2,
+  )
+</script>
 <h2>Absolute base outside root</h2>
 <pre class="absolute-base-outside-root"></pre>
 

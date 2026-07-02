@@ -256,7 +256,7 @@ export interface FileSystemServeOptions {
    * This will have higher priority than `allow`.
    * picomatch patterns are supported.
    *
-   * @default ['.env', '.env.*', '*.{crt,pem}', '**\/.git/**']
+   * @default ['.env', '.env.*', '*.{crt,pem,key,p12,pfx,cer,der}', '.npmrc', '.yarnrc.yml', '**\/.git/**']
    */
   deny?: string[]
 }
@@ -1182,7 +1182,14 @@ const _serverConfigDefaults = Object.freeze({
   fs: {
     strict: true,
     // allow
-    deny: ['.env', '.env.*', '*.{crt,pem}', '**/.git/**'],
+    deny: [
+      '.env',
+      '.env.*',
+      '*.{crt,pem,key,p12,pfx,cer,der}',
+      '.npmrc',
+      '.yarnrc.yml',
+      '**/.git/**',
+    ],
   },
   // origin
   preTransformRequests: true,
@@ -1213,12 +1220,13 @@ export async function resolveServerOptions(
 
   setupHmrWsOptionCompat(_server)
 
+  const workspaceRoot = searchForWorkspaceRoot(root)
   const server: ResolvedServerOptions = {
     ..._server,
     fs: {
       ..._server.fs,
       // run searchForWorkspaceRoot only if needed
-      allow: raw?.fs?.allow ?? [searchForWorkspaceRoot(root)],
+      allow: raw?.fs?.allow ?? [workspaceRoot],
     },
     sourcemapIgnoreList:
       _server.sourcemapIgnoreList === false
@@ -1256,7 +1264,13 @@ export async function resolveServerOptions(
   // Read node_modules/.modules.yaml which pnpm always writes on install — this works
   // unconditionally regardless of how Vite is launched (node / npx / pnpm run),
   // avoiding the need for subprocess calls or user-agent sniffing.
-  const pnpmModulesYaml = path.join(cwd, 'node_modules', '.modules.yaml')
+  // Use workspace root (not package root) because .modules.yaml lives at the
+  // monorepo root's node_modules/, not in nested workspace packages.
+  const pnpmModulesYaml = path.join(
+    workspaceRoot,
+    'node_modules',
+    '.modules.yaml',
+  )
   try {
     const content = fs.readFileSync(pnpmModulesYaml, 'utf-8')
     const parsed = JSON.parse(content)
@@ -1266,7 +1280,10 @@ export async function resolveServerOptions(
         allowDirs.push(virtualStoreDir)
       } else if (virtualStoreDir.startsWith('..')) {
         allowDirs.push(
-          path.resolve(path.join(cwd, 'node_modules'), virtualStoreDir),
+          path.resolve(
+            path.join(workspaceRoot, 'node_modules'),
+            virtualStoreDir,
+          ),
         )
       }
     }

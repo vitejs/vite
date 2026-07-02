@@ -331,9 +331,6 @@ export const rawRE: RegExp = /(\?|&)raw(?:&|$)/
 export function removeUrlQuery(url: string): string {
   return url.replace(urlRE, '$1').replace(trailingSeparatorRE, '')
 }
-export function removeRawQuery(url: string): string {
-  return url.replace(rawRE, '$1').replace(trailingSeparatorRE, '')
-}
 
 export function injectQuery(url: string, queryToInject: string): string {
   const { file, postfix } = splitFileAndPostfix(url)
@@ -721,7 +718,7 @@ function optimizeSafeRealPathSync() {
       return
     }
   }
-  exec('net use', (error, stdout) => {
+  exec('net use', { windowsHide: true }, (error, stdout) => {
     if (error) return
     const lines = stdout.split('\n')
     // OK           Y:        \\NETWORKA\Foo         Microsoft Windows Network

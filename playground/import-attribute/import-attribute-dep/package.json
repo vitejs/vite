@@ -1,5 +1,5 @@
 {
-  "name": "@vitejs/test-import-assertion-dep",
+  "name": "@vitejs/test-import-attribute-dep",
   "private": true,
   "version": "0.0.0",
   "type": "module",

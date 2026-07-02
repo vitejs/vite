@@ -189,6 +189,12 @@ export interface BuildEnvironmentOptions {
    */
   terserOptions?: TerserOptions
   /**
+   * Whether to use import maps feature to optimize chunk caching efficiency.
+   * @default false
+   * @experimental
+   */
+  chunkImportMap?: boolean
+  /**
    * Alias to `rolldownOptions`
    * @deprecated Use `rolldownOptions` instead.
    */
@@ -390,6 +396,7 @@ const _buildEnvironmentOptionsDefaults = Object.freeze({
   sourcemap: false,
   // minify
   terserOptions: {},
+  chunkImportMap: false,
   rolldownOptions: {},
   commonjsOptions: {
     include: [/node_modules/],
@@ -503,6 +510,9 @@ export function resolveBuildEnvironmentOptions(
               ...merged.modulePreload,
             },
   }
+  // The object spread above evaluates the `rollupOptions` getter set up on
+  // `merged` and copies it as a plain data property.
+  setupRollupOptionCompat(resolved, 'build')
 
   return resolved
 }
@@ -582,7 +592,7 @@ export function resolveRolldownOptions(
   environment: Environment,
   chunkMetadataMap: ChunkMetadataMap,
 ): RolldownOptions {
-  const { root, packageCache, build: options } = environment.config
+  const { root, packageCache, base, build: options } = environment.config
   const libOptions = options.lib
   const { logger } = environment
   const ssr = environment.config.consumer === 'server'
@@ -672,6 +682,11 @@ export function resolveRolldownOptions(
     experimental: {
       ...options.rolldownOptions.experimental,
       viteMode: true,
+      chunkImportMap: options.chunkImportMap
+        ? {
+            baseUrl: base,
+          }
+        : options.rolldownOptions.experimental?.chunkImportMap,
     },
   }
 

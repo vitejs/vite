@@ -2,7 +2,7 @@ import path from 'node:path'
 import MagicString from 'magic-string'
 import type { ImportSpecifier } from 'es-module-lexer'
 import { init, parse as parseImports } from 'es-module-lexer'
-import type { SourceMap } from 'rolldown'
+import type { OutputAsset, SourceMap } from 'rolldown'
 import { viteBuildImportAnalysisPlugin as nativeBuildImportAnalysisPlugin } from 'rolldown/experimental'
 import type { RawSourceMap } from '@jridgewell/remapping'
 import convertSourceMap from 'convert-source-map'
@@ -13,6 +13,7 @@ import { toOutputFilePathInJS } from '../build'
 import { genSourceMapUrl } from '../server/sourcemap'
 import type { PartialEnvironment } from '../baseEnvironment'
 import { removedPureCssFilesCache } from './css'
+import { getImportMapFilename } from './html'
 
 type FileDep = {
   url: string
@@ -42,6 +43,55 @@ function findPreloadMarker(str: string, pos: number = 0): number {
   preloadMarkerRE.lastIndex = pos
   const result = preloadMarkerRE.exec(str)
   return result?.index ?? -1
+}
+
+/**
+ * Pairs each dynamic `import()` with the `__VITE_PRELOAD__` marker that belongs to it.
+ *
+ * Each import is wrapped as `__vitePreload(factory, __VITE_PRELOAD__)`, so its marker
+ * comes right after it. Nested imports nest the wrappers, so the imports and markers
+ * form balanced brackets. For example, in `import('a').then(() => import('b'))`, b's
+ * marker ends up before a's. Pairing each import with the next marker would give b's
+ * marker to both imports and drop a's CSS to `void 0` (#22700). Instead the markers are
+ * matched with a stack in one pass, and each marker closes the innermost import that is
+ * still open.
+ *
+ * The returned array is parallel to `imports`. Entry `i` holds the start position of
+ * import `i`'s marker, or -1 when the import has no marker.
+ */
+export function matchImportsToPreloadMarkers(
+  code: string,
+  imports: readonly ImportSpecifier[],
+): number[] {
+  const importMarkerPos = new Array<number>(imports.length).fill(-1)
+  if (imports.length === 0) return importMarkerPos
+
+  const openImports: number[] = []
+  let nextImport = 0
+  for (
+    let markerStartPos = findPreloadMarker(code, imports[0].e);
+    markerStartPos !== -1;
+    markerStartPos = findPreloadMarker(
+      code,
+      markerStartPos + preloadMarker.length,
+    )
+  ) {
+    while (
+      nextImport < imports.length &&
+      imports[nextImport].e <= markerStartPos
+    ) {
+      openImports.push(nextImport++)
+    }
+    if (openImports.length) {
+      importMarkerPos[openImports.pop()!] = markerStartPos
+    }
+  }
+  // #3051: a lone import whose marker isn't placed after it pairs with the only marker
+  if (imports.length === 1 && importMarkerPos[0] === -1) {
+    importMarkerPos[0] = findPreloadMarker(code)
+  }
+
+  return importMarkerPos
 }
 
 /**
@@ -91,32 +141,34 @@ function preload(
       )
     }
 
+    function importMetaResolve(specifier: string): string {
+      // @ts-expect-error import.meta.resolve is not supported by all browsers we support
+      // But `import.meta.resolve` is only needed when build.chunkImportMap is enabled,
+      // and that option requires `import.meta.resolve` support.
+      if (import.meta.resolve) {
+        return import.meta.resolve(specifier)
+      }
+      return new URL(specifier, import.meta.url).href
+    }
+
     promise = allSettled(
       deps.map((dep) => {
         // @ts-expect-error assetsURL is declared before preload.toString()
         dep = assetsURL(dep, importerUrl)
+        dep = importMetaResolve(dep)
         if (dep in seen) return
         seen[dep] = true
         const isCss = dep.endsWith('.css')
-        const cssSelector = isCss ? '[rel="stylesheet"]' : ''
-        const isBaseRelative = !!importerUrl
 
         // check if the file is already preloaded by SSR markup
-        if (isBaseRelative) {
-          // When isBaseRelative is true then we have `importerUrl` and `dep` is
-          // already converted to an absolute URL by the `assetsURL` function
-          for (let i = links.length - 1; i >= 0; i--) {
-            const link = links[i]
-            // The `links[i].href` is an absolute URL thanks to browser doing the work
-            // for us. See https://html.spec.whatwg.org/multipage/common-dom-interfaces.html#reflecting-content-attributes-in-idl-attributes:idl-domstring-5
-            if (link.href === dep && (!isCss || link.rel === 'stylesheet')) {
-              return
-            }
+        // `dep` is already converted to an absolute URL by the `assetsURL` function
+        for (let i = links.length - 1; i >= 0; i--) {
+          const link = links[i]
+          // The `links[i].href` is an absolute URL thanks to browser doing the work
+          // for us. See https://html.spec.whatwg.org/multipage/common-dom-interfaces.html#reflecting-content-attributes-in-idl-attributes:idl-domstring-5
+          if (link.href === dep && (!isCss || link.rel === 'stylesheet')) {
+            return
           }
-        } else if (
-          document.querySelector(`link[href="${dep}"]${cssSelector}`)
-        ) {
-          return
         }
 
         const link = document.createElement('link')
@@ -224,7 +276,8 @@ export function buildImportAnalysisPlugin(config: ResolvedConfig): Plugin[] {
       return null
     },
 
-    async generateBundle({ format }, bundle) {
+    async generateBundle(opts, bundle) {
+      const { format } = opts
       if (format !== 'es') {
         return
       }
@@ -295,6 +348,37 @@ export function buildImportAnalysisPlugin(config: ResolvedConfig): Plugin[] {
       const buildSourcemap = this.environment.config.build.sourcemap
       const { modulePreload } = this.environment.config.build
 
+      let importMapMapping: Record<string, string> | undefined
+      let importMapReverseMapping: Record<string, string> | undefined
+      if (config.build.chunkImportMap) {
+        const decoder = new TextDecoder()
+        const importMap = bundle[getImportMapFilename(config)]! as OutputAsset
+        const importMapContent: { imports: Record<string, string> } =
+          JSON.parse(
+            typeof importMap.source === 'string'
+              ? importMap.source
+              : decoder.decode(importMap.source),
+          )
+        importMapMapping = Object.fromEntries(
+          Object.entries(importMapContent.imports).map(([k, v]) => [
+            k.slice(config.base.length),
+            v.slice(config.base.length),
+          ]),
+        )
+        importMapReverseMapping = Object.fromEntries(
+          Object.entries(importMapMapping).map(([k, v]) => [v, k]),
+        )
+
+        if (config.isOutputOptionsForLegacyChunks?.(opts)) {
+          this.emitFile({
+            type: 'asset',
+            fileName: 'importmap.legacy.json',
+            source: importMap.source,
+          })
+          delete bundle[getImportMapFilename(config)]
+        }
+      }
+
       for (const file in bundle) {
         const chunk = bundle[file]
         // can't use chunk.dynamicImports.length here since some modules e.g.
@@ -334,6 +418,8 @@ export function buildImportAnalysisPlugin(config: ResolvedConfig): Plugin[] {
           }
 
           if (imports.length) {
+            const importMarkerPos = matchImportsToPreloadMarkers(code, imports)
+
             for (let index = 0; index < imports.length; index++) {
               // To handle escape sequences in specifier strings, the .n field will be provided where possible.
               const {
@@ -367,7 +453,9 @@ export function buildImportAnalysisPlugin(config: ResolvedConfig): Plugin[] {
                 const ownerFilename = chunk.fileName
                 // literal import - trace direct imports and add to deps
                 const analyzed: Set<string> = new Set<string>()
-                const addDeps = (filename: string) => {
+                const addDeps = (rawFilename: string) => {
+                  const filename =
+                    importMapMapping?.[rawFilename] ?? rawFilename
                   if (filename === ownerFilename) return
                   if (analyzed.has(filename)) return
                   analyzed.add(filename)
@@ -401,11 +489,7 @@ export function buildImportAnalysisPlugin(config: ResolvedConfig): Plugin[] {
                 addDeps(normalizedFile)
               }
 
-              let markerStartPos = findPreloadMarker(code, end)
-              // fix issue #3051
-              if (markerStartPos === -1 && imports.length === 1) {
-                markerStartPos = findPreloadMarker(code)
-              }
+              const markerStartPos = importMarkerPos[index]
 
               if (markerStartPos > 0) {
                 // the dep list includes the main chunk, so only need to reload when there are actual other deps.
@@ -432,6 +516,7 @@ export function buildImportAnalysisPlugin(config: ResolvedConfig): Plugin[] {
                     ;(dep.endsWith('.css') ? cssDeps : otherDeps).push(dep)
                   }
                   depsArray = [
+                    // NOTE: deps are URLs, not specifiers using the import map mapping
                     ...resolveDependencies(normalizedFile, otherDeps, {
                       hostId: file,
                       hostType: 'js',
@@ -439,6 +524,10 @@ export function buildImportAnalysisPlugin(config: ResolvedConfig): Plugin[] {
                     ...cssDeps,
                   ]
                 }
+
+                depsArray = depsArray.map(
+                  (dep) => importMapReverseMapping?.[dep] ?? dep,
+                )
 
                 let renderedDeps: number[]
                 if (renderBuiltUrl) {
