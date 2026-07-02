@@ -609,6 +609,12 @@ importers:
 
   playground/build-old: {}
 
+  playground/bundled-dev:
+    dependencies:
+      date-fns:
+        specifier: 4.1.0
+        version: 4.1.0
+
   playground/chunk-importmap: {}
 
   playground/cli: {}
@@ -5394,6 +5400,9 @@ packages:
   d3-shape@3.2.0:
     resolution: {integrity: sha512-SaLBuwGm3MOViRq2ABk3eLoxwZELpH6zhl3FbAoJ7Vm1gofKx6El1Ib5z23NUEhF9AsGl7y+dzLe5Cw2AArGTA==}
     engines: {node: '>=12'}
+
+  date-fns@4.1.0:
+    resolution: {integrity: sha512-Ukq0owbQXxa/U3EGtsdVBkR1w7KOQ5gIBqdH2hkvknzZPYvBxb/aa6E8L7tmjFtkwZBu3UXBbjIgPo/Ez4xaNg==}
 
   decode-named-character-reference@1.3.0:
     resolution: {integrity: sha512-GtpQYB283KrPp6nRw50q3U9/VfOutZOe103qlN7BPP6Ad27xYnOIWv4lPzo8HCAL+mMZofJ9KEy30fq6MfaK6Q==}
@@ -11573,6 +11582,8 @@ snapshots:
   d3-shape@3.2.0:
     dependencies:
       d3-path: 3.1.0
+
+  date-fns@4.1.0: {}
 
   decode-named-character-reference@1.3.0:
     dependencies:
