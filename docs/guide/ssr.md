@@ -65,6 +65,8 @@ This is statically replaced during build so it will allow tree-shaking of unused
 
 When building an SSR app, you likely want to have full control over your main server and decouple Vite from the production environment. It is therefore recommended to use Vite in middleware mode. Here is an example with [express](https://expressjs.com/):
 
+Express is used here for its familiar API, but you can use any connect-compatible Node.js framework. For production SSR apps, consider modern alternatives such as [h3](https://github.com/unjs/h3) or [Fastify](https://fastify.dev/).
+
 ```js{15-18} twoslash [server.js]
 import fs from 'node:fs'
 import path from 'node:path'
