@@ -19,7 +19,7 @@ import debug from 'obug'
 import type MagicString from 'magic-string'
 import type { Equal } from '@type-challenges/utils'
 
-import type { TransformResult } from 'rolldown'
+import type { InputOption, TransformResult } from 'rolldown'
 import { createFilter as _createFilter } from '@rollup/pluginutils'
 import type { Alias, AliasOptions } from '#dep-types/alias'
 import type { FSWatcher } from '#dep-types/chokidar'
@@ -1457,7 +1457,10 @@ function mergeConfigRecursively(
     }
 
     // fields that require special handling
-    if (key === 'alias' && (rootPath === 'resolve' || rootPath === '')) {
+    if (key === 'input' && rootPath === '') {
+      merged[key] = mergeInput(existing, value)
+      continue
+    } else if (key === 'alias' && (rootPath === 'resolve' || rootPath === '')) {
       merged[key] = mergeAlias(existing, value)
       continue
     } else if (key === 'assetsInclude' && rootPath === '') {
@@ -1519,6 +1522,44 @@ export function mergeConfig<
   }
 
   return mergeConfigRecursively(defaults, overrides, isRoot ? '' : '.')
+}
+
+function mergeInput(a?: InputOption, b?: InputOption): InputOption | undefined {
+  if (!a) return b
+  if (!b) return a
+
+  if (typeof a === 'string' && typeof b === 'string') {
+    return [a, b]
+  }
+  if (Array.isArray(a) && (typeof b === 'string' || Array.isArray(b))) {
+    return [...a, ...(Array.isArray(b) ? b : [b])]
+  }
+  if (Array.isArray(b) && (typeof a === 'string' || Array.isArray(a))) {
+    return [...(Array.isArray(a) ? a : [a]), ...b]
+  }
+  if (typeof a !== 'string' && !Array.isArray(a)) {
+    return {
+      ...a,
+      ...normalizeToInputObject(b),
+    }
+  }
+  // b is a record
+  return {
+    ...normalizeToInputObject(a),
+    ...(b as Record<string, string>),
+  }
+}
+
+function normalizeToInputObject(input: InputOption): Record<string, string> {
+  if (typeof input === 'string') {
+    return { [path.basename(input, path.extname(input))]: input }
+  }
+  if (Array.isArray(input)) {
+    return Object.fromEntries(
+      input.map((i) => [path.basename(i, path.extname(i)), i]),
+    )
+  }
+  return input
 }
 
 export function mergeAlias(
