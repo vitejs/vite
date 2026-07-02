@@ -94,7 +94,7 @@ import { type DevEnvironment } from '..'
 import type { PackageCache } from '../packages'
 import { findNearestMainPackageData } from '../packages'
 import { nodeResolveWithVite } from '../nodeResolve'
-import { addToHTMLProxyTransformResult } from './html'
+import { addToHTMLProxyTransformResult, getImportMap } from './html'
 import {
   assetUrlRE,
   cssEntriesMap,
@@ -1072,8 +1072,21 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
           .map((pureCssChunk) => prelimaryNameToChunkMap[pureCssChunk.fileName])
           .filter(Boolean)
 
+        let importMapReverseMapping: Record<string, string> | undefined
+        if (config.build.chunkImportMap) {
+          const importMap = getImportMap(bundle, config)!
+          importMapReverseMapping = Object.fromEntries(
+            Object.entries(importMap.mapping).map(([k, v]) => [v, k]),
+          )
+        }
+        const pureCssChunkNamesInCode = importMapReverseMapping
+          ? pureCssChunkNames.map(
+              (name) => importMapReverseMapping![name] ?? name,
+            )
+          : pureCssChunkNames
+
         const replaceEmptyChunk = getEmptyChunkReplacer(
-          pureCssChunkNames,
+          pureCssChunkNamesInCode,
           opts.format,
         )
 
