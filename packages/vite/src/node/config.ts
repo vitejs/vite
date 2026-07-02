@@ -102,6 +102,7 @@ import {
   normalizeAlias,
   normalizePath,
   resolveHostname,
+  safeRealpathSync,
   setupRollupOptionCompat,
 } from './utils'
 import {
@@ -1537,9 +1538,13 @@ export async function resolveConfig(
   }
 
   // resolve root
-  const resolvedRoot = normalizePath(
-    config.root ? path.resolve(config.root) : process.cwd(),
-  )
+  let nonNormalizedResolvedRoot = config.root
+    ? path.resolve(config.root)
+    : process.cwd()
+  try {
+    nonNormalizedResolvedRoot = safeRealpathSync(nonNormalizedResolvedRoot)
+  } catch {}
+  const resolvedRoot = normalizePath(nonNormalizedResolvedRoot)
 
   checkBadCharactersInPath(
     'The project root',
