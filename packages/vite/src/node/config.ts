@@ -13,6 +13,7 @@ import {
 } from '@voidzero-dev/vite-task-client'
 import colors from 'picocolors'
 import picomatch from 'picomatch'
+import { freshImport } from 'fresh-import'
 import {
   type NormalizedOutputOptions,
   type OutputChunk,
@@ -137,7 +138,6 @@ import {
   basePluginContextMeta,
 } from './server/pluginContainer'
 import { nodeResolveWithVite } from './nodeResolve'
-import { FullBundleDevEnvironment } from './server/environments/fullBundleEnvironment'
 
 const debug = createDebugger('vite:config', { depth: 10 })
 const promisifiedRealpath = promisify(fs.realpath)
@@ -251,13 +251,6 @@ function defaultCreateClientDevEnvironment(
   config: ResolvedConfig,
   context: CreateDevEnvironmentContext,
 ) {
-  if (config.experimental.bundledDev) {
-    return new FullBundleDevEnvironment(name, config, {
-      hot: true,
-      transport: context.ws,
-    })
-  }
-
   return new DevEnvironment(name, config, {
     hot: true,
     transport: context.ws,
@@ -1716,6 +1709,13 @@ export async function resolveConfig(
 
   // load .env files
   // Backward compatibility: set envDir to false when envFile is false
+  if (config.envFile === false) {
+    logger.warn(
+      colors.yellow(
+        'The `envFile` option is deprecated, please use `envDir: false` instead.',
+      ),
+    )
+  }
   let envDir = config.envFile === false ? false : config.envDir
   if (envDir !== false) {
     envDir = config.envDir
@@ -2181,6 +2181,15 @@ assetFileNames isn't equal for every build.rolldownOptions.output. A single patt
     }
   }
 
+  if (config.experimental?.renderBuiltUrl && config.build?.chunkImportMap) {
+    resolved.logger.warn(
+      colors.yellow(
+        `The \`build.chunkImportMap\` option and the \`experimental.renderBuiltUrl\` option are both enabled.` +
+          ` The combination of these two options is not supported and may result in unexpected behavior.`,
+      ),
+    )
+  }
+
   // Warn about removal of experimental features
   if (
     // @ts-expect-error Option removed
@@ -2364,14 +2373,23 @@ export async function loadConfigFromFile(
   }
 }
 
-async function nativeImportConfigFile(resolvedPath: string) {
+async function nativeImportConfigFile(
+  resolvedPath: string,
+): Promise<{ configExport: any; dependencies: string[] }> {
+  const freshImported = freshImport(pathToFileURL(resolvedPath).href)
+  if (freshImported) {
+    const { result, dependencies } = await freshImported
+    return {
+      configExport: (result as { [Symbol.toStringTag]: 'Module'; default: any })
+        .default,
+      dependencies,
+    }
+  }
+
   const module = await import(
     pathToFileURL(resolvedPath).href + '?t=' + Date.now()
   )
-  return {
-    configExport: module.default,
-    dependencies: [],
-  }
+  return { configExport: module.default, dependencies: [] }
 }
 
 async function runnerImportConfigFile(resolvedPath: string) {
@@ -2606,36 +2624,38 @@ async function loadConfigFromBundledFile(
     // Storing the bundled file in node_modules/ is avoided for Deno
     // because Deno only supports Node.js style modules under node_modules/
     // and configs with `npm:` import statements will fail when executed.
-    let nodeModulesDir =
+    const nodeModulesDir =
       typeof process.versions.deno === 'string'
         ? undefined
         : findNearestNodeModules(path.dirname(fileName))
-    if (nodeModulesDir) {
+
+    let viteTempDir = nodeModulesDir
+      ? path.resolve(nodeModulesDir, '.vite-temp')
+      : undefined
+    if (viteTempDir) {
       try {
-        await fsp.mkdir(path.resolve(nodeModulesDir, '.vite-temp/'), {
+        await fsp.mkdir(viteTempDir, {
           recursive: true,
         })
       } catch (e) {
         if (e.code === 'EACCES') {
           // If there is no access permission, a temporary configuration file is created by default.
-          nodeModulesDir = undefined
+          viteTempDir = undefined
         } else {
           throw e
         }
       }
     }
     const hash = `timestamp-${Date.now()}-${Math.random().toString(16).slice(2)}`
-    const tempFileName = nodeModulesDir
-      ? path.resolve(
-          nodeModulesDir,
-          `.vite-temp/${path.basename(fileName)}.${hash}.mjs`,
-        )
+    const tempFileName = viteTempDir
+      ? path.resolve(viteTempDir, `${path.basename(fileName)}.${hash}.mjs`)
       : `${fileName}.${hash}.mjs`
 
-    // Tell Vite Task to ignore this transient file as both input and output,
-    // so the read-write of this file doesn't affect the cache fingerprints.
-    ignoreInput(tempFileName)
-    ignoreOutput(tempFileName)
+    // Tell Vite Task to ignore node_modules/.vite-temp or the temp config file,
+    // so the read-write of this path doesn't affect the cache fingerprints.
+    const pathToIgnore = viteTempDir ?? tempFileName
+    ignoreInput(pathToIgnore)
+    ignoreOutput(pathToIgnore)
     await fsp.writeFile(tempFileName, bundledCode)
     try {
       return (await import(pathToFileURL(tempFileName).href)).default

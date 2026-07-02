@@ -45,6 +45,13 @@ test('css import from js', async () => {
   await expect.poll(() => getColor(atImport)).toBe('blue')
 })
 
+test('@import external css', async () => {
+  const icon = page.locator('.icon--mdi-light--help-circle')
+  expect(
+    await icon.evaluate((span) => getComputedStyle(span).maskImage),
+  ).toContain('data:image/svg+xml,')
+})
+
 test('css modules', async () => {
   const imported = await page.$('.modules')
   expect(await getColor(imported)).toBe('turquoise')

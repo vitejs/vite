@@ -1,21 +1,46 @@
 {
   "name": "vite",
-  "version": "8.0.16",
-  "type": "module",
+  "version": "8.1.3",
+  "description": "Native-ESM powered web dev build tool",
+  "keywords": [
+    "build-tool",
+    "dev-server",
+    "framework",
+    "frontend",
+    "hmr",
+    "vite"
+  ],
+  "homepage": "https://vite.dev",
+  "bugs": {
+    "url": "https://github.com/vitejs/vite/issues"
+  },
   "license": "MIT",
   "author": "Evan You",
-  "description": "Native-ESM powered web dev build tool",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/vitejs/vite.git",
+    "directory": "packages/vite"
+  },
+  "funding": "https://github.com/vitejs/vite?sponsor=1",
   "bin": {
     "vite": "bin/vite.js"
   },
-  "keywords": [
-    "frontend",
-    "framework",
-    "hmr",
-    "dev-server",
-    "build-tool",
-    "vite"
+  "files": [
+    "bin",
+    "dist",
+    "misc/**/*.js",
+    "client.d.ts",
+    "types"
   ],
+  "type": "module",
+  "imports": {
+    "#module-sync-enabled": {
+      "module-sync": "./misc/true.js",
+      "default": "./misc/false.js"
+    },
+    "#types/*": "./types/*.d.ts",
+    "#dep-types/*": "./src/types/*.d.ts"
+  },
   "exports": {
     ".": "./dist/node/index.js",
     "./client": {
@@ -30,34 +55,6 @@
     "./types/internal/*": null,
     "./package.json": "./package.json"
   },
-  "imports": {
-    "#module-sync-enabled": {
-      "module-sync": "./misc/true.js",
-      "default": "./misc/false.js"
-    },
-    "#types/*": "./types/*.d.ts",
-    "#dep-types/*": "./src/types/*.d.ts"
-  },
-  "files": [
-    "bin",
-    "dist",
-    "misc/**/*.js",
-    "client.d.ts",
-    "types"
-  ],
-  "engines": {
-    "node": "^20.19.0 || >=22.12.0"
-  },
-  "repository": {
-    "type": "git",
-    "url": "git+https://github.com/vitejs/vite.git",
-    "directory": "packages/vite"
-  },
-  "bugs": {
-    "url": "https://github.com/vitejs/vite/issues"
-  },
-  "homepage": "https://vite.dev",
-  "funding": "https://github.com/vitejs/vite?sponsor=1",
   "scripts": {
     "dev": "premove dist && pnpm build-bundle -w",
     "build": "premove dist && pnpm build-bundle && pnpm build-types",
@@ -71,17 +68,12 @@
     "generate-target": "tsx scripts/generateTarget.ts",
     "prepublishOnly": "npm run build"
   },
-  "//": "READ CONTRIBUTING.md to understand what to put under deps vs. devDeps!",
   "dependencies": {
-    "@voidzero-dev/vite-task-client": "^0.1.1",
     "lightningcss": "^1.32.0",
     "picomatch": "^4.0.4",
-    "postcss": "^8.5.15",
-    "rolldown": "1.0.3",
+    "postcss": "^8.5.16",
+    "rolldown": "~1.1.3",
     "tinyglobby": "^0.2.17"
-  },
-  "optionalDependencies": {
-    "fsevents": "~2.3.3"
   },
   "devDependencies": {
     "@babel/parser": "^7.29.7",
@@ -91,13 +83,14 @@
     "@rollup/plugin-alias": "^6.0.0",
     "@rollup/plugin-dynamic-import-vars": "2.1.4",
     "@rollup/pluginutils": "^5.4.0",
-    "@vercel/detect-agent": "^1.2.3",
     "@types/escape-html": "^1.0.4",
     "@types/pnpapi": "^0.0.5",
-    "@vitest/utils": "4.1.7",
-    "@vitejs/devtools": "^0.3.1",
-    "artichokie": "^0.4.3",
-    "baseline-browser-mapping": "^2.10.33",
+    "@vercel/detect-agent": "^1.2.3",
+    "@vitejs/devtools": "^0.3.3",
+    "@vitest/utils": "4.1.9",
+    "@voidzero-dev/vite-task-client": "^0.2.0",
+    "artichokie": "^0.4.4",
+    "baseline-browser-mapping": "^2.10.40",
     "cac": "^7.0.0",
     "chokidar": "^3.6.0",
     "connect": "^3.7.0",
@@ -105,18 +98,19 @@
     "cors": "^2.8.6",
     "cross-spawn": "^7.0.6",
     "dotenv-expand": "^13.0.0",
-    "es-module-lexer": "^1.7.0",
-    "esbuild": "^0.28.0",
+    "es-module-lexer": "^2.3.0",
+    "esbuild": "^0.28.1",
     "escape-html": "^1.0.3",
     "estree-walker": "^3.0.3",
     "etag": "^1.8.1",
+    "fresh-import": "^0.2.1",
     "host-validation-middleware": "^0.1.4",
-    "http-proxy-3": "^1.23.2",
+    "http-proxy-3": "^1.23.3",
     "launch-editor-middleware": "^2.14.1",
     "magic-string": "^0.30.21",
     "mlly": "^1.8.2",
     "mrmime": "^2.0.1",
-    "nanoid": "^5.1.11",
+    "nanoid": "^5.1.16",
     "obug": "^1.0.2",
     "open": "^10.2.0",
     "parse5": "^8.0.1",
@@ -128,10 +122,10 @@
     "postcss-modules": "^6.0.1",
     "premove": "^4.0.0",
     "resolve.exports": "^2.0.3",
-    "rolldown-plugin-dts": "^0.25.2",
+    "rolldown-plugin-dts": "^0.26.0",
     "rollup": "^4.59.0",
     "rollup-plugin-license": "^3.7.1",
-    "sass": "^1.100.0",
+    "sass": "^1.101.0",
     "sass-embedded": "^1.100.0",
     "sirv": "^3.0.2",
     "strip-literal": "^3.1.0",
@@ -141,7 +135,7 @@
   },
   "peerDependencies": {
     "@types/node": "^20.19.0 || >=22.12.0",
-    "@vitejs/devtools": "^0.1.18",
+    "@vitejs/devtools": "^0.3.0",
     "esbuild": "^0.27.0 || ^0.28.0",
     "jiti": ">=1.21.0",
     "less": "^4.0.0",
@@ -190,5 +184,12 @@
     "yaml": {
       "optional": true
     }
-  }
+  },
+  "optionalDependencies": {
+    "fsevents": "~2.3.3"
+  },
+  "engines": {
+    "node": "^20.19.0 || >=22.12.0"
+  },
+  "//": "READ CONTRIBUTING.md to understand what to put under deps vs. devDeps!"
 }
