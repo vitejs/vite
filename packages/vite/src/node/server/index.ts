@@ -468,6 +468,15 @@ export interface ViteDevServer {
 export interface ResolvedServerUrls {
   local: string[]
   network: string[]
+  /**
+   * Names of the network interface that each {@link ResolvedServerUrls.network}
+   * URL is bound to, in the same order as `network`. An entry is `undefined`
+   * when the interface name is not known, for example when an explicit `host`
+   * is set.
+   *
+   * @experimental
+   */
+  networkInterfaceNames?: (string | undefined)[]
 }
 
 export function createServer(

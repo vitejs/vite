@@ -1,7 +1,8 @@
 import fs from 'node:fs'
 import path from 'node:path'
 import crypto from 'node:crypto'
-import { describe, expect, test } from 'vitest'
+import os from 'node:os'
+import { describe, expect, test, vi } from 'vitest'
 import { fileURLToPath } from 'mlly'
 import {
   asyncFlatten,
@@ -1095,5 +1096,50 @@ describe('resolveServerUrls', () => {
     )
 
     expect(result.local).toContain('https://localhost:3000/')
+  })
+
+  test('captures interface names aligned with the network URLs', () => {
+    const mockServer = createMockServer('IPv4', '0.0.0.0')
+    const networkInterfacesSpy = vi
+      .spyOn(os, 'networkInterfaces')
+      .mockReturnValue({
+        lo: [{ address: '127.0.0.1', family: 'IPv4' } as any],
+        eth0: [{ address: '192.168.1.10', family: 'IPv4' } as any],
+        wlan0: [{ address: '10.0.0.5', family: 'IPv4' } as any],
+      })
+
+    const result = resolveServerUrls(
+      mockServer,
+      { https: false } as any,
+      { host: undefined, name: 'localhost' } as any,
+      {},
+      { rawBase: '/' } as any,
+    )
+
+    expect(result.network).toEqual([
+      'http://192.168.1.10:3000/',
+      'http://10.0.0.5:3000/',
+    ])
+    expect(result.networkInterfaceNames).toEqual(['eth0', 'wlan0'])
+    expect(result.networkInterfaceNames).toHaveLength(result.network.length)
+    // The loopback interface is reported as a local URL, not a network one.
+    expect(result.local).toContain('http://localhost:3000/')
+
+    networkInterfacesSpy.mockRestore()
+  })
+
+  test('uses an undefined interface name for an explicit network host', () => {
+    const mockServer = createMockServer('IPv4', '0.0.0.0')
+
+    const result = resolveServerUrls(
+      mockServer,
+      { https: false } as any,
+      { host: 'example.com', name: 'example.com' } as any,
+      {},
+      { rawBase: '/' } as any,
+    )
+
+    expect(result.network).toEqual(['http://example.com:3000/'])
+    expect(result.networkInterfaceNames).toEqual([undefined])
   })
 })
