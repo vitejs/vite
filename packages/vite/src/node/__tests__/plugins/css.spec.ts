@@ -421,6 +421,22 @@ describe('preprocessCSS', () => {
       "
     `)
   })
+
+  test('lightningcss preserves $ in external @import url', async () => {
+    const resolvedConfig = await resolveConfig(
+      {
+        configFile: false,
+        css: { transformer: 'lightningcss' },
+      },
+      'serve',
+    )
+    const result = await preprocessCSS(
+      `@import 'http://example.com/a.css?x=$&y';`,
+      'foo.css',
+      resolvedConfig,
+    )
+    expect(result.code).toContain('http://example.com/a.css?x=$&y')
+  })
 })
 
 // Sass does not consult the `main` field; see

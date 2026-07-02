@@ -1,3 +1,74 @@
+## <small>[8.1.2](https://github.com/vitejs/vite/compare/v8.1.1...v8.1.2) (2026-06-30)</small>
+### Bug Fixes
+
+* **deps:** revert es-module-lexer to 2.1.0 ([#22827](https://github.com/vitejs/vite/issues/22827)) ([0d3bd7c](https://github.com/vitejs/vite/commit/0d3bd7c4111b8345cfc353c7bbb2c30601752e26))
+* restore, "fix: resolve pnpm .modules.yaml from workspace root instead of cwd ([#22757](https://github.com/vitejs/vite/issues/22757))" ([#22825](https://github.com/vitejs/vite/issues/22825)) ([efb98cc](https://github.com/vitejs/vite/commit/efb98cce73f3f89c4f03936ab7741cd5b0636f5c))
+* revert, "fix: escape ids with multiple null bytes ([#22687](https://github.com/vitejs/vite/issues/22687))" ([cccef55](https://github.com/vitejs/vite/commit/cccef55dfaa6253929d2cb58d3af53f217efc877))
+* revert, "fix: resolve pnpm .modules.yaml from workspace root instead of cwd ([#22757](https://github.com/vitejs/vite/issues/22757))" ([cf97711](https://github.com/vitejs/vite/commit/cf97711963ddcdcfac3e4fcd00771d7a55e92141))
+
+## <small>[8.1.1](https://github.com/vitejs/vite/compare/v8.1.0...v8.1.1) (2026-06-30)</small>
+### Features
+
+* update dynamic import warning to link to Vite docs ([#22823](https://github.com/vitejs/vite/issues/22823)) ([62bd7af](https://github.com/vitejs/vite/commit/62bd7afd27ec0507bf528a135165dda3a44ebc21))
+
+### Bug Fixes
+
+* **bundled-dev:** avoid stack overflow on `import.meta.hot.invalidate()` ([#22797](https://github.com/vitejs/vite/issues/22797)) ([709eb8e](https://github.com/vitejs/vite/commit/709eb8ee03d3c46269755334f59b7e9a353fc522))
+* **bundled-dev:** serve assets emitted during HMR/lazy compile ([#22745](https://github.com/vitejs/vite/issues/22745)) ([5876b2c](https://github.com/vitejs/vite/commit/5876b2cc2e1a01df9363e1e3d1d19f474ba68285))
+* **bundledDev:** skip plugin transform hooks for rolldown-lazy stub modules ([#22778](https://github.com/vitejs/vite/issues/22778)) ([8f925e2](https://github.com/vitejs/vite/commit/8f925e2e496f4d313d860acb53880245b07ce6f7))
+* **css:** preserve dollar signs in external `@import` urls with lightningcss ([#22718](https://github.com/vitejs/vite/issues/22718)) ([9fa7ab4](https://github.com/vitejs/vite/commit/9fa7ab4990f4fe74597d0a37a16d84af1c1e3544))
+* **css:** resolve tsconfig paths in CSS and Sass [@import](https://github.com/import) ([#22775](https://github.com/vitejs/vite/issues/22775)) ([ef0b891](https://github.com/vitejs/vite/commit/ef0b8916160c4d2a677decc062f6faa48fbf1578))
+* **deps:** update all non-major dependencies ([#22734](https://github.com/vitejs/vite/issues/22734)) ([e635f49](https://github.com/vitejs/vite/commit/e635f493faa24930ae637318d6564539bc668e89))
+* **deps:** update all non-major dependencies ([#22804](https://github.com/vitejs/vite/issues/22804)) ([8837400](https://github.com/vitejs/vite/commit/8837400a676a633af1ad6d3746b584d13cf90ecc))
+* **deps:** update rolldown-related dependencies ([#22591](https://github.com/vitejs/vite/issues/22591)) ([2ce6677](https://github.com/vitejs/vite/commit/2ce6677a151c53a019baec32859b646267f9d320))
+* escape ids with multiple null bytes ([#22687](https://github.com/vitejs/vite/issues/22687)) ([833fc30](https://github.com/vitejs/vite/commit/833fc302f3f4a5030f49207b5fbf10422f3247a2))
+* hide console window when running 'net use' on Windows ([#22698](https://github.com/vitejs/vite/issues/22698)) ([92b63f2](https://github.com/vitejs/vite/commit/92b63f219f6c1872f35461aa75e9e9aec79bb01c))
+* ignore bundled config temp dir ([#22800](https://github.com/vitejs/vite/issues/22800)) ([043a810](https://github.com/vitejs/vite/commit/043a81096ddf8c6f9077c8e3e12362c83f9ed089))
+* invert `esbuild.jsxSideEffects` when converting to `oxc.jsx.pure` ([#22809](https://github.com/vitejs/vite/issues/22809)) ([33895ba](https://github.com/vitejs/vite/commit/33895ba4faa0a46d5bd7b3eb53d02255113c8b5d))
+* **optimize-deps:** ignore `ERR_CLOSED_SERVER` in scanner ([#22784](https://github.com/vitejs/vite/issues/22784)) ([085a0ab](https://github.com/vitejs/vite/commit/085a0ab704bf1a698d459d625a5c955d27b73134))
+* **optimizer:** scanner should resolve `input` from `root` ([#22769](https://github.com/vitejs/vite/issues/22769)) ([9722b07](https://github.com/vitejs/vite/commit/9722b0795b68602597ddd53e3d3c7ed9f00cb831))
+* resolve pnpm .modules.yaml from workspace root instead of cwd ([#22757](https://github.com/vitejs/vite/issues/22757)) ([2531ac7](https://github.com/vitejs/vite/commit/2531ac7ccd1d581df5febe4a3814226ba8939a20))
+* return sourcemap field from some plugins that were lacking ([#22782](https://github.com/vitejs/vite/issues/22782)) ([7e18bf8](https://github.com/vitejs/vite/commit/7e18bf802bdde7a386eb3b407c87a67f89a895ca))
+* **server:** handle malformed URI in indexHtmlMiddleware ([#22781](https://github.com/vitejs/vite/issues/22781)) ([84f5ccc](https://github.com/vitejs/vite/commit/84f5cccc7574c740c46f5cb2a09f29cde8380701))
+
+### Miscellaneous Chores
+
+* improve dependency optimizer messages ([#22549](https://github.com/vitejs/vite/issues/22549)) ([092cb3b](https://github.com/vitejs/vite/commit/092cb3b4247a06ba176c094a9a743d335adc6574))
+
+### Code Refactoring
+
+* **css:** remove lightningcss null byte bug workaround ([#22822](https://github.com/vitejs/vite/issues/22822)) ([2dafd3b](https://github.com/vitejs/vite/commit/2dafd3bb7f8b265037e216f50afaa890ae2e2875))
+* use pre-defined environments variable to avoid duplicate `Object.values` calls ([#22790](https://github.com/vitejs/vite/issues/22790)) ([1113acf](https://github.com/vitejs/vite/commit/1113acf6cff711196b3443f7126804847c1d4e1e))
+
+### Tests
+
+* enable "manual chunk path" test and remove "worker.format error" test ([#22824](https://github.com/vitejs/vite/issues/22824)) ([c088511](https://github.com/vitejs/vite/commit/c088511f34a01f13e21498a492df8554bf332cdf))
+
+## [8.1.0](https://github.com/vitejs/vite/compare/v8.1.0-beta.0...v8.1.0) (2026-06-23)
+### Features
+
+* extend `server.fs.deny` list with common files ([#22707](https://github.com/vitejs/vite/issues/22707)) ([61ba8fd](https://github.com/vitejs/vite/commit/61ba8fdc6500e8aa668021833ae5e6ebd200466d))
+* update rolldown to 1.1.2 ([#22695](https://github.com/vitejs/vite/issues/22695)) ([4f008a6](https://github.com/vitejs/vite/commit/4f008a6213014fe5e898f42561bdc621e103903e))
+* use `~` for Rolldown ([#22693](https://github.com/vitejs/vite/issues/22693)) ([9928722](https://github.com/vitejs/vite/commit/9928722f7d08de27907c48b65ddc071244166e05))
+
+### Bug Fixes
+
+* **bundled-dev:** errors should be kept when incremental build fails ([#22617](https://github.com/vitejs/vite/issues/22617)) ([9a0dd48](https://github.com/vitejs/vite/commit/9a0dd481ac2160078b8173879e0fa86e5e6af05d))
+* cache falsy values in perEnvironmentState ([#22715](https://github.com/vitejs/vite/issues/22715)) ([0e91e79](https://github.com/vitejs/vite/commit/0e91e79841b501d29dc86a6b7c0313660781196a))
+* **glob:** respect caseSensitive option in hmr matcher ([#22711](https://github.com/vitejs/vite/issues/22711)) ([65f525e](https://github.com/vitejs/vite/commit/65f525e643ba31faeaeafbc5d888b61465e6b48d))
+* **html:** omit nonce on import map when cspNonce is unset ([#22713](https://github.com/vitejs/vite/issues/22713)) ([8340bb5](https://github.com/vitejs/vite/commit/8340bb51cab703427a13d5df40b0005352c1b676))
+* **optimizer:** skip null-valued exports in expandGlobIds glob resolution ([#22611](https://github.com/vitejs/vite/issues/22611)) ([8b9f5cd](https://github.com/vitejs/vite/commit/8b9f5cd9f19f6002e1323b10155ab943219e86aa))
+* resolved build options should be kept as a getter ([#22691](https://github.com/vitejs/vite/issues/22691)) ([3527191](https://github.com/vitejs/vite/commit/3527191cad6c935a3d129506cc9a893c84009037))
+* **server:** handle malformed URI in memory files middleware ([#22714](https://github.com/vitejs/vite/issues/22714)) ([df9e0a5](https://github.com/vitejs/vite/commit/df9e0a589ff64e09c32beca9494bff4757d4ea37))
+* use literal envPrefix queries for Vite Task ([#22706](https://github.com/vitejs/vite/issues/22706)) ([da72733](https://github.com/vitejs/vite/commit/da727337b13ac6144e523eb06852b2a52c377f22))
+* warn on deprecated envFile ([#22555](https://github.com/vitejs/vite/issues/22555)) ([ed7b283](https://github.com/vitejs/vite/commit/ed7b28352e347dc7c95d590d2e696c3e5bd1e3d7))
+
+### Code Refactoring
+
+* **client:** inline dev-id value in CSS selector ([#22736](https://github.com/vitejs/vite/issues/22736)) ([57f59bc](https://github.com/vitejs/vite/commit/57f59bc843dd527a81c503684b7f408872edaef3))
+* remove unused removeRawQuery util ([#22724](https://github.com/vitejs/vite/issues/22724)) ([403cc60](https://github.com/vitejs/vite/commit/403cc608e4e8633b0335f5e8221c83dfca4994f8))
+* use `rolldownOptions` property for chunkImportMap ([#22692](https://github.com/vitejs/vite/issues/22692)) ([8e8816c](https://github.com/vitejs/vite/commit/8e8816ca9fa249d210150c5590bac06af3560aa7))
+
 ## [8.1.0-beta.0](https://github.com/vitejs/vite/compare/v8.0.16...v8.1.0-beta.0) (2026-06-15)
 ### Features
 

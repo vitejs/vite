@@ -4,12 +4,17 @@ import {
   type DevEngine,
   dev,
 } from 'rolldown/experimental'
+import type { RolldownOutput } from 'rolldown'
 import colors from 'picocolors'
 import getEtag from 'etag'
 import type { Update } from '#types/hmrPayload'
 import { ChunkMetadataMap, resolveRolldownOptions } from '../build'
 import { getHmrImplementation } from '../plugins/clientInjections'
-import { createDebugger, formatAndTruncateFileList } from '../utils'
+import {
+  asyncFlatten,
+  createDebugger,
+  formatAndTruncateFileList,
+} from '../utils'
 import type { DevEnvironment } from './environment'
 import { type NormalizedHotChannelClient, debugHmr, getShortName } from './hmr'
 import { prepareError } from './middlewares/error'
@@ -71,6 +76,10 @@ export class BundledDev {
     })
   })
 
+  private fullReloadPending = false
+
+  private lastBuildError: Error | null = null
+
   memoryFiles: MemoryFiles = new MemoryFiles()
 
   constructor(private environment: DevEnvironment) {
@@ -107,6 +116,17 @@ export class BundledDev {
     this.environment.hot.on('vite:module-loaded', (payload, client) => {
       this.clients.setupIfNeeded(client, payload.clientId)
       this.devEngine.registerModules(payload.clientId, payload.modules)
+    })
+    this.environment.hot.on('vite:client:connect', (_payload, client) => {
+      // Replay the cached build error to freshly connected clients.
+      if (this.lastBuildError) {
+        debug?.('REPLAY: replaying last build error to newly connected client')
+
+        client.send({
+          type: 'error',
+          err: prepareError(this.lastBuildError),
+        })
+      }
     })
     this.environment.hot.on('vite:client:disconnect', (_payload, client) => {
       const clientId = this.clients.delete(client)
@@ -151,24 +171,26 @@ export class BundledDev {
               error: result,
             },
           )
+          this.lastBuildError = result
+          this.fullReloadPending = false
           this.environment.hot.send({
             type: 'error',
             err: prepareError(result),
           })
           return
         }
+        this.lastBuildError = null
 
-        // NOTE: don't clear memoryFiles here as incremental build reuses the files
-        for (const outputFile of result.output) {
-          this.memoryFiles.set(outputFile.fileName, () => {
-            const source =
-              outputFile.type === 'chunk' ? outputFile.code : outputFile.source
-            return {
-              source,
-              etag: getEtag(Buffer.from(source), { weak: true }),
-            }
-          })
+        this.storeOutputFiles(result.output)
+
+        // Trigger a full reload if there's no error in the result and a reload is pending from HMR.
+        if (this.fullReloadPending) {
+          this.fullReloadPending = false
+          this.debouncedFullReload()
         }
+      },
+      onAdditionalAssets: (result) => {
+        this.storeOutputFiles(result.output)
       },
       watch: {
         skipWrite: true,
@@ -192,9 +214,11 @@ export class BundledDev {
 
   private async waitForInitialBuildFinish(): Promise<void> {
     await this.devEngine.ensureCurrentBuildFinish()
-    while (this.memoryFiles.size === 0) {
+    let state = await this.devEngine.getBundleState()
+    while (this.memoryFiles.size === 0 && !state.lastBuildErrored) {
       await setTimeout(10)
       await this.devEngine.ensureCurrentBuildFinish()
+      state = await this.devEngine.getBundleState()
     }
   }
 
@@ -254,9 +278,26 @@ export class BundledDev {
 
   async triggerBundleRegenerationIfStale(): Promise<boolean> {
     const bundleState = await this.devEngine.getBundleState()
+
+    // Trigger full build if the HMR errors,
+    // this is to make it easier to recover if the HMR generation is broken for some reason.
+    if (
+      this.initialBuildCompleted &&
+      bundleState.lastBuildErrored &&
+      bundleState.lastErrorStage === 'Hmr'
+    ) {
+      debug?.(`TRIGGER: access after HMR-stage failure, forcing full rebuild`)
+
+      this.devEngine.triggerFullBuild()
+      this.devEngine.ensureLatestBuildOutput().then(() => {
+        this.debouncedFullReload()
+      })
+      return true
+    }
+
     const shouldTrigger =
       bundleState.hasStaleOutput &&
-      !bundleState.lastFullBuildFailed &&
+      !bundleState.lastBuildErrored &&
       this.initialBuildCompleted
     if (shouldTrigger) {
       this.devEngine.ensureLatestBuildOutput().then(() => {
@@ -286,6 +327,20 @@ export class BundledDev {
     this.initialBuildCompleted = false
   }
 
+  private storeOutputFiles(output: RolldownOutput['output']): void {
+    // NOTE: don't clear memoryFiles here as incremental build reuses the files
+    for (const outputFile of output) {
+      this.memoryFiles.set(outputFile.fileName, () => {
+        const source =
+          outputFile.type === 'chunk' ? outputFile.code : outputFile.source
+        return {
+          source,
+          etag: getEtag(Buffer.from(source), { weak: true }),
+        }
+      })
+    }
+  }
+
   private async getRolldownOptions() {
     const chunkMetadataMap = new ChunkMetadataMap()
     const rolldownOptions = resolveRolldownOptions(
@@ -307,6 +362,29 @@ export class BundledDev {
     // https://github.com/vitejs/vite/issues/21843
     rolldownOptions.optimization ??= {}
     rolldownOptions.optimization.inlineConst = false
+
+    // In bundledDev mode, Rolldown's DevEngine generates lazy-loading stub modules
+    // for dynamically imported files, appending `?rolldown-lazy=1` to the module ID.
+    // Skip all plugins for these stub modules as a workaround.
+    // https://github.com/vitejs/vite/issues/22651
+    const plugins = await asyncFlatten([rolldownOptions.plugins])
+    for (const plugin of plugins) {
+      const transform =
+        plugin && 'transform' in plugin ? plugin.transform : undefined
+      if (!transform) continue
+      const handler =
+        typeof transform === 'function' ? transform : transform.handler
+      const wrappedHandler: typeof handler = function (this, code, id, opts) {
+        if (id.includes('?rolldown-lazy=')) return null
+        return handler.call(this, code, id, opts)
+      }
+      if (typeof transform === 'function') {
+        ;(plugin as any).transform = wrappedHandler
+      } else {
+        transform.handler = wrappedHandler
+      }
+    }
+    rolldownOptions.plugins = plugins
 
     // set filenames to make output paths predictable so that `renderChunk` hook does not need to be used
     if (Array.isArray(rolldownOptions.output)) {
@@ -348,9 +426,16 @@ export class BundledDev {
         colors.green(`trigger page reload `) + colors.dim(shortFile) + reason,
         { clear: !invalidateInformation, timestamp: true },
       )
-      this.devEngine.ensureLatestBuildOutput().then(() => {
-        this.debouncedFullReload()
-      })
+      if (invalidateInformation) {
+        // Invalidate does not get upgraded to `rebuild`,
+        // so `onOutput` will not be triggered and thus the reload needs to be triggered here.
+        this.devEngine.ensureLatestBuildOutput().then(async () => {
+          this.debouncedFullReload()
+        })
+      } else {
+        // Use a flag to defer the reload until the `onOutput` callback to avoid error lay flashes.
+        this.fullReloadPending = true
+      }
       return
     }
 

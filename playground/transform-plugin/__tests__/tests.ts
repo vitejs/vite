@@ -6,10 +6,10 @@ export const tests = () => {
     expect(await page.textContent('#transform-count')).toBe('1')
 
     if (isBuild) return
-    editFile('plugin-dep.js', (str) => str)
+    editFile('plugin-dep.js', (str) => str + ' ')
     await expect.poll(() => page.textContent('#transform-count')).toBe('2')
 
-    editFile('plugin-dep-load.js', (str) => str)
+    editFile('plugin-dep-load.js', (str) => str + ' ')
     await expect.poll(() => page.textContent('#transform-count')).toBe('3')
   })
 }

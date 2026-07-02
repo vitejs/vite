@@ -9,17 +9,17 @@
   },
   "devDependencies": {
     "@iconify/vue": "^5.0.1",
-    "@shikijs/vitepress-twoslash": "^4.2.0",
+    "@shikijs/vitepress-twoslash": "^4.3.0",
     "@types/express": "^5.0.6",
     "@voidzero-dev/vitepress-theme": "^4.8.4",
     "feed": "^5.2.1",
     "markdown-it-image-size": "^15.0.1",
-    "oxc-minify": "^0.135.0",
+    "oxc-minify": "^0.137.0",
     "vitepress": "^2.0.0-alpha.17",
     "vitepress-plugin-graphviz": "^0.1.0",
     "vitepress-plugin-group-icons": "^1.7.5",
-    "vitepress-plugin-llms": "^1.13.1",
-    "vue": "^3.5.38",
+    "vitepress-plugin-llms": "^1.13.2",
+    "vue": "^3.5.39",
     "vue-tsc": "^3.3.5"
   }
 }
