@@ -28,13 +28,13 @@ describe.runIf(isBuild)('build', () => {
     expect(baseIdx).toBeGreaterThanOrEqual(0)
     if (depIdx >= 0) {
       // unminified bundle: both rules are present in source-import order
-      expect(css.slice(baseIdx, depIdx)).toContain('red')
-      expect(css.slice(depIdx)).toContain('green')
+      expect(css.slice(baseIdx, depIdx)).toMatch(/color:\s*red/)
+      expect(css.slice(depIdx)).toMatch(/color:\s*green/)
     } else {
       // minified bundle: duplicate `.order-static` rules collapse and
       // the last (later-source-order) rule wins
-      expect(css).toContain('green')
-      expect(css).not.toContain('red')
+      expect(css).toMatch(/color:\s*green/)
+      expect(css).not.toMatch(/color:\s*red/)
     }
   })
 })
