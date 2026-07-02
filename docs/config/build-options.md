@@ -282,7 +282,7 @@ When the value is a string, it will be used as the manifest file path relative t
 - **Default:** `false`
 - **Related:** [Server-Side Rendering](/guide/ssr)
 
-Produce SSR-oriented build. The value can be a string to directly specify the SSR entry, or `true`, which requires specifying the SSR entry via `input` or `build.rolldownOptions.input`.
+Produce SSR-oriented build. The value can be a string to directly specify the SSR entry, or `true`, which requires specifying the SSR entry via [`input`](/config/shared-options#input) or `build.rolldownOptions.input`.
 
 ## build.emitAssets
 
