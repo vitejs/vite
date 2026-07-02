@@ -1661,3 +1661,34 @@ export function getImportMapFilename(config: ResolvedConfig): string {
   }
   return 'importmap.json'
 }
+
+/**
+ * Read and parse the chunk import map asset from the bundle.
+ * Returns `undefined` when the import map is not present in the bundle.
+ */
+export function getImportMap(
+  bundle: OutputBundle,
+  config: ResolvedConfig,
+):
+  | {
+      asset: OutputAsset
+      /** import map entries with the base stripped (placeholder name -> real name) */
+      mapping: Record<string, string>
+    }
+  | undefined {
+  const asset = bundle[getImportMapFilename(config)] as OutputAsset | undefined
+  if (!asset) return undefined
+
+  const content: { imports: Record<string, string> } = JSON.parse(
+    typeof asset.source === 'string'
+      ? asset.source
+      : new TextDecoder().decode(asset.source),
+  )
+  const mapping = Object.fromEntries(
+    Object.entries(content.imports).map(([k, v]) => [
+      k.slice(config.base.length),
+      v.slice(config.base.length),
+    ]),
+  )
+  return { asset, mapping }
+}
