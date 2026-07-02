@@ -121,6 +121,28 @@ function toAssetPathFromHtml(
 const legacyEnvVarMarker = `__VITE_IS_LEGACY__`
 const modernEnvVarMarker = `__VITE_IS_MODERN__`
 
+// Legacy Oxc minification requires coordinated support
+// between plugin-legacy and Vite core.
+const legacyOxcMinificationSupportedVersion = '8.1.3'
+
+function parseVersionCore(v: string): number[] {
+  return v
+    .split('-', 1)[0]
+    .split('.')
+    .map((part) => Number.parseInt(part, 10) || 0)
+}
+
+/** Minimal `>=` comparison for `major.minor.patch(-prerelease)?` version strings */
+function isVersionGte(version: string, minVersion: string): boolean {
+  const core = parseVersionCore(version)
+  const minCore = parseVersionCore(minVersion)
+  for (let i = 0; i < 3; i++) {
+    if (core[i] !== minCore[i]) return core[i] > minCore[i]
+  }
+  // a prerelease (e.g. `8.1.2-beta.0`) ranks lower than the corresponding release (`8.1.2`)
+  return !version.includes('-') || minVersion.includes('-')
+}
+
 const _require = createRequire(import.meta.url)
 
 const nonLeadingHashInFileNameRE = /[^/]+\[hash(?::\d+)?\]/
@@ -145,6 +167,22 @@ const modernTargetsBabel =
 
 const outputOptionsForLegacyChunks =
   new WeakSet<Rollup.NormalizedOutputOptions>()
+
+function resolveLegacyOutputMinify(
+  minify: BuildOptions['minify'],
+  supportsOxc: boolean | undefined,
+): Rollup.OutputOptions['minify'] {
+  const usesOxc = supportsOxc && (minify === 'oxc' || minify === true)
+  return usesOxc ? true : false
+}
+
+function resolveLegacyBuildMinify(
+  minify: BuildOptions['minify'],
+  supportsOxc: boolean | undefined,
+): BuildOptions['minify'] {
+  const usesOxc = supportsOxc && (minify === 'oxc' || minify === true)
+  return usesOxc ? 'oxc' : minify ? 'terser' : false
+}
 
 function viteLegacyPlugin(options: Options = {}): Plugin[] {
   let config: ResolvedConfig
@@ -289,6 +327,7 @@ function viteLegacyPlugin(options: Options = {}): Plugin[] {
     },
   }
 
+  let supportsLegacyOxcMinification: boolean | undefined
   const legacyGenerateBundlePlugin: Plugin = {
     name: 'vite:legacy-generate-polyfill-chunk',
     apply: 'build',
@@ -331,6 +370,7 @@ function viteLegacyPlugin(options: Options = {}): Plugin[] {
           opts,
           true,
           genLegacy,
+          supportsLegacyOxcMinification,
         )
         return
       }
@@ -370,12 +410,14 @@ function viteLegacyPlugin(options: Options = {}): Plugin[] {
           legacyPolyfills,
           bundle,
           facadeToLegacyPolyfillMap,
-          // force using terser for legacy polyfill minification, since esbuild
-          // isn't legacy-safe
+          // Legacy polyfill chunks may fallback to terser depending on
+          // configured minifier support.
           config.build,
           'iife',
           opts,
           options.externalSystemJS,
+          false,
+          supportsLegacyOxcMinification,
         )
       }
     },
@@ -396,6 +438,20 @@ function viteLegacyPlugin(options: Options = {}): Plugin[] {
         throw new Error('@vitejs/plugin-legacy does not support library mode.')
       }
       config = _config
+
+      const viteVersion = this.meta.viteVersion
+      supportsLegacyOxcMinification =
+        !!viteVersion &&
+        isVersionGte(viteVersion, legacyOxcMinificationSupportedVersion)
+
+      if (!supportsLegacyOxcMinification && config.build.minify === 'oxc') {
+        config.logger.warn(
+          colors.yellow(
+            `'oxc' minifier is not supported for legacy chunks by Vite version ${viteVersion}. ` +
+              `Please upgrade to Vite version ${legacyOxcMinificationSupportedVersion} or later.`,
+          ),
+        )
+      }
 
       if (isDebug) {
         console.log(`[@vitejs/plugin-legacy] modernTargets:`, modernTargets)
@@ -455,7 +511,10 @@ function viteLegacyPlugin(options: Options = {}): Plugin[] {
           format: 'esm',
           entryFileNames: getLegacyOutputFileName(options.entryFileNames),
           chunkFileNames: getLegacyOutputFileName(options.chunkFileNames),
-          minify: false, // minify with terser instead
+          minify: resolveLegacyOutputMinify(
+            config.build.minify,
+            supportsLegacyOxcMinification,
+          ),
         }
       }
 
@@ -881,9 +940,13 @@ async function buildPolyfillChunk(
   rollupOutputOptions: Rollup.NormalizedOutputOptions,
   excludeSystemJS?: boolean,
   prependModenChunkLegacyGuard?: boolean,
+  supportsLegacyOxcMinification?: boolean,
 ) {
-  let { minify, assetsDir, sourcemap } = buildOptions
-  minify = minify ? 'terser' : false
+  const { assetsDir, sourcemap } = buildOptions
+  const minify = resolveLegacyBuildMinify(
+    buildOptions.minify,
+    supportsLegacyOxcMinification,
+  )
   const res = await build({
     mode,
     // so that everything is resolved from here
@@ -908,6 +971,10 @@ async function buildPolyfillChunk(
           hashCharacters: rollupOutputOptions.hashCharacters,
           entryFileNames: rollupOutputOptions.entryFileNames,
           sourcemapBaseUrl: rollupOutputOptions.sourcemapBaseUrl,
+          minify: resolveLegacyOutputMinify(
+            buildOptions.minify,
+            supportsLegacyOxcMinification,
+          ),
         },
       },
     },
