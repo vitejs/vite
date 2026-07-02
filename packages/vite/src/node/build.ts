@@ -16,7 +16,6 @@ import type {
   RenderedChunk,
   RolldownBuild,
   RolldownOptions,
-  RolldownOutput,
   RolldownWatcher,
   RollupError,
   RollupLog,
@@ -25,6 +24,7 @@ import type {
 } from 'rolldown'
 import { viteLoadFallbackPlugin as nativeLoadFallbackPlugin } from 'rolldown/experimental'
 import { esmExternalRequirePlugin } from 'rolldown/plugins'
+import type { RolldownOutput } from '#types/internal/rollupTypeCompat'
 import type { EsbuildTarget } from '#types/internal/esbuildOptions'
 import type { RollupCommonJSOptions } from '#dep-types/commonjs'
 import type { RollupDynamicImportVarsOptions } from '#dep-types/dynamicImportVars'

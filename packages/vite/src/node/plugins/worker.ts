@@ -1,9 +1,10 @@
 import path from 'node:path'
 import MagicString from 'magic-string'
-import type { RolldownOutput, RollupError } from 'rolldown'
+import type { RollupError, OutputChunk } from 'rolldown'
 import colors from 'picocolors'
 import { type ImportSpecifier, init, parse } from 'es-module-lexer'
 import { viteWebWorkerPostPlugin as nativeWebWorkerPostPlugin } from 'rolldown/experimental'
+import type { RolldownOutput } from '#types/internal/rollupTypeCompat'
 import type { ResolvedConfig } from '../config'
 import type { Plugin } from '../plugin'
 import { ENV_ENTRY, ENV_PUBLIC_PATH } from '../constants'
@@ -267,19 +268,28 @@ async function bundleWorkerEntry(
     await bundle.close()
   }
 
-  const {
-    output: [outputChunk, ...outputChunks],
-  } = result
-  const assets = outputChunks.map((outputChunk) =>
-    outputChunk.type === 'asset'
-      ? outputChunk
-      : {
-          fileName: outputChunk.fileName,
-          originalFileName: null,
-          originalFileNames: [],
-          source: outputChunk.code,
-        },
-  )
+  const outputChunk =
+    result.output.find(
+      (chunk): chunk is OutputChunk => chunk.type === 'chunk' && chunk.isEntry,
+    ) ||
+    result.output.find((chunk): chunk is OutputChunk => chunk.type === 'chunk')
+
+  if (!outputChunk) {
+    throw new Error('Worker bundle entry must be a chunk')
+  }
+
+  const assets = result.output
+    .filter((chunk) => chunk !== outputChunk)
+    .map((chunk) =>
+      chunk.type === 'asset'
+        ? chunk
+        : {
+            fileName: chunk.fileName,
+            originalFileName: null,
+            originalFileNames: [],
+            source: chunk.code,
+          },
+    )
   if (
     (config.build.sourcemap === 'hidden' || config.build.sourcemap === true) &&
     outputChunk.map

@@ -22,6 +22,8 @@ export default defineConfig(
       '**/temp/**',
       '**/.vitepress/cache/**',
       '**/*.snap',
+      'playground/preserve-symlinks/module-a/linked.js',
+      'playground/ssr-wasm/src/imports.js',
     ],
   },
   eslint.configs.recommended,

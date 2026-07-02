@@ -8,5 +8,9 @@ test('should have no 404s', () => {
 })
 
 test('not-preserve-symlinks', async () => {
+  // Wait for the page to load fully before testing
+  await page.waitForLoadState('networkidle')
+  // Ensure the server is stable
+  await page.waitForTimeout(500)
   expect(await page.textContent('#root')).toBe('hello vite')
 })

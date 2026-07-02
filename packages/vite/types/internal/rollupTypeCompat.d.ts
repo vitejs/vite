@@ -2,6 +2,16 @@ import type * as Rolldown from 'rolldown'
 
 export * from 'rolldown'
 
+export interface RolldownOutput extends Omit<
+  Rolldown.RolldownOutput,
+  'output'
+> {
+  output: [
+    Rolldown.OutputChunk | Rolldown.OutputAsset,
+    ...(Rolldown.OutputChunk | Rolldown.OutputAsset)[],
+  ]
+}
+
 /** @deprecated use RolldownBuild instead */
 export type RollupBuild = Rolldown.RolldownBuild
 
@@ -9,7 +19,7 @@ export type RollupBuild = Rolldown.RolldownBuild
 export type RollupOptions = Rolldown.RolldownOptions
 
 /** @deprecated use RolldownOutput instead */
-export type RollupOutput = Rolldown.RolldownOutput
+export type RollupOutput = RolldownOutput
 
 /** @deprecated use RolldownPlugin instead */
 export type RollupPlugin = Rolldown.RolldownPlugin
