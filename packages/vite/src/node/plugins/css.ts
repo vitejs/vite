@@ -470,7 +470,12 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
   // when there are multiple rollup outputs and extracting CSS, only emit once,
   // since output formats have no effect on the generated CSS.
   let hasEmitted = false
-  let chunkCSSMap: Map<string, string>
+  // For cssCodeSplit:false, we record CSS per module (keyed by module id)
+  // within each chunk so that `generateBundle` can interleave styles in the
+  // original source-import order, rather than the chunk-import order.
+  // The outer map key is `chunk.fileName` (which equals `preliminaryFileName`
+  // at `generateBundle` time).
+  let chunkCSSMap: Map<string, Map<string, string>>
 
   const rolldownOptionsOutput = config.build.rolldownOptions.output
   const assetFileNames = (
@@ -667,6 +672,9 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
             // the chunk is empty if it's a dynamic entry chunk that only contains a CSS import
             const isJsChunkEmpty = code === '' && !chunk.isEntry
             let isPureCssChunk = chunk.exports.length === 0
+            // Track CSS per source module, so `generateBundle` can interleave
+            // styles in source-import order when `cssCodeSplit` is `false`.
+            const moduleCSSMap = new Map<string, string>()
             const ids = Object.keys(chunk.modules)
             for (const id of ids) {
               if (styles.has(id)) {
@@ -691,7 +699,9 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
                   isPureCssChunk = false
                 }
 
-                chunkCSS = (chunkCSS || '') + styles.get(id)
+                const moduleCSS = styles.get(id)!
+                moduleCSSMap.set(id, moduleCSS)
+                chunkCSS = (chunkCSS || '') + moduleCSS
               } else if (!isJsChunkEmpty) {
                 // if the module does not have a style, then it's not a pure css chunk.
                 // this is true because in the `transform` hook above, only modules
@@ -952,15 +962,23 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
                   injectInlinedCSS(s, this, code, opts.format, injectCode)
                 }
               } else {
-                // resolve public URL from CSS paths, we need to use absolute paths
-                chunkCSS = resolveAssetUrlsInCss(
-                  chunkCSS,
-                  getCssBundleName(),
-                  defaultCssBundleName,
-                )
+                // resolve public URL from CSS paths, we need to use absolute paths.
+                // Apply per-module so that `generateBundle` can preserve the
+                // original source-import order when assembling the bundle.
+                const resolvedModuleCSSMap = new Map<string, string>()
+                for (const [id, css] of moduleCSSMap) {
+                  resolvedModuleCSSMap.set(
+                    id,
+                    resolveAssetUrlsInCss(
+                      css,
+                      getCssBundleName(),
+                      defaultCssBundleName,
+                    ),
+                  )
+                }
                 // finalizeCss is called for the aggregated chunk in generateBundle
 
-                chunkCSSMap.set(chunk.fileName, chunkCSS)
+                chunkCSSMap.set(chunk.fileName, resolvedModuleCSSMap)
               }
             }
 
@@ -1009,27 +1027,128 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
       ) {
         let extractedCss = ''
         const collected = new Set<OutputChunk>()
+        const visitedModules = new Set<string>()
         // will be populated in order they are used by entry points
         const dynamicImports = new Set<string>()
+
+        // Build a map from module id to the chunk it belongs to so that, while
+        // traversing a chunk's modules in source-import order, we can recurse
+        // into another chunk at the exact position where its module is
+        // imported. This preserves the original CSS import order across chunk
+        // boundaries — see https://github.com/vitejs/vite/issues/22301.
+        const moduleToChunkMap = new Map<string, string>()
+        for (const file in bundle) {
+          const c = bundle[file]
+          if (c.type === 'chunk') {
+            for (const id in c.modules) {
+              moduleToChunkMap.set(id, file)
+            }
+          }
+        }
+
+        const getModuleInfo = this.getModuleInfo.bind(this)
 
         function collect(chunk: OutputChunk | OutputAsset | undefined) {
           if (!chunk || chunk.type !== 'chunk' || collected.has(chunk)) return
           collected.add(chunk)
 
-          // First collect all styles from the synchronous imports (lowest priority)
-          chunk.imports.forEach((importName) => collect(bundle[importName]))
+          const localModuleIds = Object.keys(chunk.modules)
+          const localModuleSet = new Set(localModuleIds)
+          const moduleCSSMap = chunkCSSMap.get(chunk.preliminaryFileName)
+
+          // Walk the chunk's modules in source-import order using
+          // `getModuleInfo(id).importedIds` (which preserves source order).
+          // For modules in another chunk, recurse into that chunk at the
+          // exact position the import appears, interleaving cross-chunk CSS
+          // with this chunk's own CSS. The fallback iteration over
+          // `chunk.modules` catches modules that aren't reached from the
+          // facade module (e.g., side-effect-only auto-injected modules).
+          function walkModule(id: string) {
+            if (visitedModules.has(id)) return
+
+            if (!localModuleSet.has(id)) {
+              // This module belongs to another chunk; recurse into that
+              // chunk and let it process the module. We deliberately do
+              // not mark `id` as visited here so the destination chunk's
+              // own walk can mark it and emit its CSS.
+              const otherChunkName = moduleToChunkMap.get(id)
+              if (otherChunkName !== undefined) {
+                collect(bundle[otherChunkName])
+              } else {
+                // module is not in any chunk; mark visited so we don't
+                // re-traverse it through other importers
+                visitedModules.add(id)
+              }
+              return
+            }
+
+            visitedModules.add(id)
+
+            const info = getModuleInfo(id)
+            if (info) {
+              for (const importedId of info.importedIds) {
+                walkModule(importedId)
+              }
+            }
+
+            const moduleCSS = moduleCSSMap?.get(id)
+            if (moduleCSS) {
+              extractedCss += moduleCSS
+            }
+          }
+
+          if (
+            chunk.facadeModuleId &&
+            localModuleSet.has(chunk.facadeModuleId)
+          ) {
+            walkModule(chunk.facadeModuleId)
+          }
+          for (const id of localModuleIds) {
+            walkModule(id)
+          }
+
           // Save dynamic imports in deterministic order to add the styles later (to have the highest priority)
           chunk.dynamicImports.forEach((importName) =>
             dynamicImports.add(importName),
           )
-          // Then collect the styles of the current chunk (might overwrite some styles from previous imports)
-          extractedCss += chunkCSSMap.get(chunk.preliminaryFileName) ?? ''
+          // Catch any synchronous chunk imports not reached via the module
+          // walk (e.g., implicit imports introduced by Rollup that aren't
+          // declared in any module's `importedIds`).
+          chunk.imports.forEach((importName) => collect(bundle[importName]))
         }
 
         // The bundle is guaranteed to be deterministic, if not then we have a bug in rollup.
-        // So we use it to ensure a deterministic order of styles
+        // So we use it to ensure a deterministic order of styles.
+        // Entries that are imported by another entry are processed last so
+        // that the importer entry's CSS gets to emit in source-import order
+        // (cross-chunk imports recursively trigger `collect` from inside
+        // `walkModule`). Otherwise, with multi-input setups where one entry
+        // is also imported by another entry (e.g., a force-split chunk),
+        // iterating entries in bundle insertion order would emit the
+        // dependency entry's CSS before the importer's CSS.
+        // See https://github.com/vitejs/vite/issues/22301.
+        const entryChunks: OutputChunk[] = []
         for (const chunk of Object.values(bundle)) {
           if (chunk.type === 'chunk' && chunk.isEntry) {
+            entryChunks.push(chunk)
+          }
+        }
+        const entryFileNames = new Set(entryChunks.map((c) => c.fileName))
+        const importedByOtherEntry = new Set<string>()
+        for (const chunk of entryChunks) {
+          for (const imp of chunk.imports) {
+            if (entryFileNames.has(imp)) {
+              importedByOtherEntry.add(imp)
+            }
+          }
+        }
+        for (const chunk of entryChunks) {
+          if (!importedByOtherEntry.has(chunk.fileName)) {
+            collect(chunk)
+          }
+        }
+        for (const chunk of entryChunks) {
+          if (importedByOtherEntry.has(chunk.fileName)) {
             collect(chunk)
           }
         }
