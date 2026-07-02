@@ -1,6 +1,7 @@
 import path from 'node:path'
 import { URL } from 'node:url'
 import type {
+  GetModuleInfo,
   OutputAsset,
   OutputBundle,
   OutputChunk,
@@ -47,7 +48,7 @@ import {
   publicAssetUrlRE,
   urlToBuiltUrl,
 } from './asset'
-import { cssBundleNameCache } from './css'
+import { cssBundleNameCache, cssModuleFileMapCache } from './css'
 import { modulePreloadPolyfillId } from './modulePreloadPolyfill'
 
 interface ScriptAssetsUrl {
@@ -348,63 +349,94 @@ function handleParseError(
 }
 
 /**
- * Collects CSS files for a chunk by traversing its imports depth-first,
- * using a cache to avoid re-analyzing chunks while still returning the
- * correct files when the same chunk is reached via different entry points.
+ * Collects CSS files needed by an entry chunk, ordered by the source-import
+ * position of the CSS modules that produced them.
+ *
+ * Walks the module graph from the entry chunk's facade module in DFS
+ * source-import order. Each CSS module's emitted file (looked up in
+ * `cssModuleFileMap`) is registered at the position in the walk where its
+ * importing module references it. Post-order DFS means a module's
+ * dependencies' CSS is loaded before its own.
+ *
+ * Falls back to the chunk-import post-order walk for any CSS files that
+ * aren't reached via the module graph (e.g., CSS-only chunks with no
+ * facade-reachable module, or implicit Rollup imports).
  */
 export function getCssFilesForChunk(
-  chunk: OutputChunk,
+  entryChunk: OutputChunk,
   bundle: OutputBundle,
   analyzedImportedCssFiles: Map<OutputChunk, string[]>,
-  seenChunks: Set<string> = new Set(),
-  seenCss: Set<string> = new Set(),
+  cssModuleFileMap?: Map<string, string>,
+  getModuleInfo?: GetModuleInfo,
 ): string[] {
-  if (seenChunks.has(chunk.fileName)) {
-    return []
-  }
-  seenChunks.add(chunk.fileName)
-
-  if (analyzedImportedCssFiles.has(chunk)) {
-    const files = analyzedImportedCssFiles.get(chunk)!
-    const additionals = files.filter((file) => !seenCss.has(file))
-    additionals.forEach((file) => seenCss.add(file))
-    return additionals
+  if (analyzedImportedCssFiles.has(entryChunk)) {
+    return analyzedImportedCssFiles.get(entryChunk)!
   }
 
-  // Collect all CSS from imports (unfiltered for caching, filtered for return)
-  const allFiles: string[] = []
-  const filteredFiles: string[] = []
-  chunk.imports.forEach((file) => {
-    const importee = bundle[file]
-    if (importee?.type === 'chunk') {
-      const importeeCss = getCssFilesForChunk(
-        importee,
-        bundle,
-        analyzedImportedCssFiles,
-        seenChunks,
-        seenCss,
-      )
-      filteredFiles.push(...importeeCss)
-      // For cache: use the importee's full cached list
-      if (analyzedImportedCssFiles.has(importee)) {
-        allFiles.push(...analyzedImportedCssFiles.get(importee)!)
-      } else {
-        allFiles.push(...importeeCss)
-      }
-    }
-  })
+  const result: string[] = []
+  const seenCss = new Set<string>()
+  const visitedModules = new Set<string>()
 
-  chunk.viteMetadata!.importedCss.forEach((file) => {
-    allFiles.push(file)
+  const addCssFile = (file: string) => {
     if (!seenCss.has(file)) {
       seenCss.add(file)
-      filteredFiles.push(file)
+      result.push(file)
     }
-  })
+  }
 
-  analyzedImportedCssFiles.set(chunk, unique(allFiles))
+  // DFS the module graph in source-import order. Post-order - register a
+  // module's CSS file after walking its imports - so dependencies' CSS
+  // comes first (preserves the existing cascade priority).
+  const walkModule = (id: string) => {
+    if (visitedModules.has(id)) return
+    visitedModules.add(id)
 
-  return filteredFiles
+    const info = getModuleInfo!(id)
+    if (info) {
+      for (const importedId of info.importedIds) {
+        walkModule(importedId)
+      }
+    }
+
+    const cssFile = cssModuleFileMap!.get(id)
+    if (cssFile !== undefined) addCssFile(cssFile)
+  }
+
+  if (cssModuleFileMap && getModuleInfo) {
+    if (entryChunk.facadeModuleId) {
+      walkModule(entryChunk.facadeModuleId)
+    }
+    // Cover modules in the chunk that aren't reached from the facade (e.g.,
+    // side-effect-only auto-injected modules, or chunks without a facade).
+    if (entryChunk.modules) {
+      for (const id of Object.keys(entryChunk.modules)) {
+        walkModule(id)
+      }
+    }
+  }
+
+  // Fallback for CSS files that aren't associated with any walked module -
+  // e.g., chunks introduced via implicit Rollup edges, or callers that
+  // didn't supply module-graph info. Post-order chunk traversal preserves
+  // the previous behavior for these.
+  const visitedChunks = new Set<OutputChunk>()
+  const walkChunkPostOrder = (chunk: OutputChunk) => {
+    if (visitedChunks.has(chunk)) return
+    visitedChunks.add(chunk)
+    for (const file of chunk.imports) {
+      const imp = bundle[file]
+      if (imp?.type === 'chunk') walkChunkPostOrder(imp)
+    }
+    if (chunk.viteMetadata?.importedCss) {
+      for (const file of chunk.viteMetadata.importedCss) {
+        addCssFile(file)
+      }
+    }
+  }
+  walkChunkPostOrder(entryChunk)
+
+  analyzedImportedCssFiles.set(entryChunk, result)
+  return result
 }
 
 /**
@@ -823,6 +855,9 @@ export function buildHtmlPlugin(config: ResolvedConfig): Plugin {
 
     async generateBundle(options, bundle) {
       const analyzedImportedCssFiles = new Map<OutputChunk, string[]>()
+      const cssModuleFileMap =
+        cssModuleFileMapCache.get(config) ?? new Map<string, string>()
+      const getModuleInfo = this.getModuleInfo.bind(this)
       const inlineEntryChunk = new Set<string>()
       const getImportedChunks = (
         chunk: OutputChunk,
@@ -898,9 +933,13 @@ export function buildHtmlPlugin(config: ResolvedConfig): Plugin {
         chunk: OutputChunk,
         toOutputPath: (filename: string) => string,
       ) =>
-        getCssFilesForChunk(chunk, bundle, analyzedImportedCssFiles).map(
-          (file) => toStyleSheetLinkTag(file, toOutputPath),
-        )
+        getCssFilesForChunk(
+          chunk,
+          bundle,
+          analyzedImportedCssFiles,
+          cssModuleFileMap,
+          getModuleInfo,
+        ).map((file) => toStyleSheetLinkTag(file, toOutputPath))
 
       for (const [normalizedId, html] of processedHtml(this)) {
         const relativeUrlPath = normalizePath(

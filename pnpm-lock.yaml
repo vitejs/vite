@@ -668,6 +668,8 @@ importers:
 
   playground/css-dynamic-import: {}
 
+  playground/css-import-order: {}
+
   playground/css-lightningcss:
     devDependencies:
       lightningcss:

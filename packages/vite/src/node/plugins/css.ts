@@ -279,6 +279,18 @@ export const removedPureCssFilesCache: WeakMap<
 // Used only if the config doesn't code-split CSS (builds a single CSS file)
 export const cssBundleNameCache: WeakMap<ResolvedConfig, string> = new WeakMap()
 
+/**
+ * Maps the id of every CSS module that contributes to an emitted CSS file
+ * to that emitted CSS file's final filename. Built up while chunks are
+ * rendered (and again as pure-CSS chunks are absorbed into their importers).
+ * Consumed by the build-html plugin to order `<link rel="stylesheet">` tags
+ * by the source-import position of the CSS modules.
+ */
+export const cssModuleFileMapCache: WeakMap<
+  ResolvedConfig,
+  Map<string, string>
+> = new WeakMap()
+
 const postcssConfigCache = new WeakMap<
   ResolvedConfig,
   PostCSSConfigResult | null | Promise<PostCSSConfigResult | null>
@@ -525,6 +537,7 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
       hasEmitted = false
       chunkCSSMap = new Map()
       codeSplitEmitQueue = createSerialPromiseQueue()
+      cssModuleFileMapCache.set(config, new Map())
     },
 
     transform: {
@@ -667,23 +680,39 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
             // the chunk is empty if it's a dynamic entry chunk that only contains a CSS import
             const isJsChunkEmpty = code === '' && !chunk.isEntry
             let isPureCssChunk = chunk.exports.length === 0
-            const ids = Object.keys(chunk.modules)
-            for (const id of ids) {
+            const moduleIds = Object.keys(chunk.modules)
+            // Walk the chunk's modules in source-import order so that, when
+            // multiple CSS modules end up in the same chunk, their content is
+            // concatenated in the order the source code imports them.
+            const moduleIdSet = new Set(moduleIds)
+            const visitedIds = new Set<string>()
+            const orderedCssIds: string[] = []
+            const walk = (id: string): void => {
+              if (visitedIds.has(id)) return
+              visitedIds.add(id)
+              // Only walk modules owned by this chunk; cross-chunk imports
+              // are emitted by their own chunk's renderChunk call.
+              if (!moduleIdSet.has(id)) return
+              const info = this.getModuleInfo(id)
+              if (info) {
+                for (const importedId of info.importedIds) {
+                  walk(importedId)
+                }
+              }
               if (styles.has(id)) {
                 // ?transform-only is used for ?url and shouldn't be included in normal CSS chunks
                 if (transformOnlyRE.test(id)) {
-                  continue
+                  return
                 }
 
                 // If this CSS is scoped to its importers exports, check if those importers exports
                 // are rendered in the chunks. If they are not, we can skip bundling this CSS.
-                const cssScopeTo =
-                  this.getModuleInfo(id)?.meta?.vite?.cssScopeTo
+                const cssScopeTo = info?.meta?.vite?.cssScopeTo
                 if (
                   cssScopeTo &&
                   !isCssScopeToRendered(cssScopeTo, renderedModules)
                 ) {
-                  continue
+                  return
                 }
 
                 // a css module contains JS, so it makes this not a pure css chunk
@@ -691,13 +720,27 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
                   isPureCssChunk = false
                 }
 
-                chunkCSS = (chunkCSS || '') + styles.get(id)
+                orderedCssIds.push(id)
               } else if (!isJsChunkEmpty) {
                 // if the module does not have a style, then it's not a pure css chunk.
                 // this is true because in the `transform` hook above, only modules
                 // that are css gets added to the `styles` map.
                 isPureCssChunk = false
               }
+            }
+
+            if (chunk.facadeModuleId && moduleIdSet.has(chunk.facadeModuleId)) {
+              walk(chunk.facadeModuleId)
+            }
+            // Fallback for modules not reached from the facade (e.g.,
+            // side-effect-only auto-injected modules, or manualChunks output
+            // without a facade). Preserves the chunk-record order for those.
+            for (const id of moduleIds) {
+              walk(id)
+            }
+
+            for (const id of orderedCssIds) {
+              chunkCSS = (chunkCSS || '') + styles.get(id)
             }
 
             const publicAssetUrlMap = publicAssetUrlCache.get(config)!
@@ -921,9 +964,15 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
                       .get(this.environment)!
                       .set(chunk.fileName, { referenceId, name: chunk.name })
                   }
-                  chunk.viteMetadata!.importedCss.add(
-                    this.getFileName(referenceId),
-                  )
+                  const emittedCssFile = this.getFileName(referenceId)
+                  chunk.viteMetadata!.importedCss.add(emittedCssFile)
+                  // Record each contributing CSS module's id -> emitted file
+                  // so the html plugin can place `<link>` tags in source
+                  // import order.
+                  const cssModuleFileMap = cssModuleFileMapCache.get(config)!
+                  for (const id of orderedCssIds) {
+                    cssModuleFileMap.set(id, emittedCssFile)
+                  }
                 } else if (this.environment.config.consumer === 'client') {
                   // legacy build and inline css
 
