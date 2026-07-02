@@ -98,7 +98,7 @@
     "cors": "^2.8.6",
     "cross-spawn": "^7.0.6",
     "dotenv-expand": "^13.0.0",
-    "es-module-lexer": "2.1.0",
+    "es-module-lexer": "^2.3.0",
     "esbuild": "^0.28.1",
     "escape-html": "^1.0.3",
     "estree-walker": "^3.0.3",
