@@ -123,7 +123,7 @@ const modernEnvVarMarker = `__VITE_IS_MODERN__`
 
 // Legacy Oxc minification requires coordinated support
 // between plugin-legacy and Vite core.
-const legacyOxcMinificationSupportedVersion = '8.1.2'
+const legacyOxcMinificationSupportedVersion = '8.1.3'
 
 function parseVersionCore(v: string): number[] {
   return v
