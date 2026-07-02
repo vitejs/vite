@@ -29,8 +29,16 @@ const argv = mri<{
   immediate?: boolean
   interactive?: boolean
   eslint?: boolean
+  devtools?: boolean
 }>(process.argv.slice(2), {
-  boolean: ['help', 'overwrite', 'immediate', 'interactive', 'eslint'],
+  boolean: [
+    'help',
+    'overwrite',
+    'immediate',
+    'interactive',
+    'eslint',
+    'devtools',
+  ],
   alias: { h: 'help', t: 'template', i: 'immediate' },
   string: ['template'],
 })
@@ -47,6 +55,7 @@ Options:
   -t, --template NAME                   use a specific template
   -i, --immediate / --no-immediate      install dependencies and start dev
   --eslint / --no-eslint                use ESLint instead of Oxlint (only for React templates)
+  --devtools / --no-devtools            add Vite DevTools (only for Vue templates)
   --overwrite                           remove existing files if target directory is not empty
   --interactive / --no-interactive      force interactive / non-interactive mode
   -h, --help                            display this help message
@@ -446,6 +455,7 @@ async function init() {
   const argImmediate = argv.immediate
   const argInteractive = argv.interactive
   const argEslint = argv.eslint
+  const argDevtools = argv.devtools
 
   const help = argv.help
   if (help) {
@@ -646,7 +656,23 @@ async function init() {
     }
   }
 
-  // 6. Ask about immediate install and package manager
+  // 6. Ask whether to add Vite DevTools (Vue templates only)
+  const isVueTemplate = template === 'vue' || template === 'vue-ts'
+  let devtools = argDevtools
+  if (isVueTemplate && devtools === undefined) {
+    if (interactive) {
+      const devtoolsResult = await prompts.confirm({
+        message: 'Add Vite DevTools?',
+        initialValue: false,
+      })
+      if (prompts.isCancel(devtoolsResult)) return cancel()
+      devtools = devtoolsResult
+    } else {
+      devtools = false
+    }
+  }
+
+  // 7. Ask about immediate install and package manager
   let immediate = argImmediate
   if (immediate === undefined) {
     if (interactive) {
@@ -706,6 +732,10 @@ async function init() {
 
   if (eslint) {
     setupEslint(root, template.endsWith('-ts'))
+  }
+
+  if (devtools && isVueTemplate) {
+    setupDevtools(root, template.endsWith('-ts'))
   }
 
   if (immediate) {
@@ -1021,6 +1051,35 @@ If you are developing a production application, we recommend using TypeScript wi
 `
     return content.slice(0, headingIndex) + eslintSection
   })
+}
+
+function setupDevtools(root: string, isTs: boolean) {
+  // renovate: datasource=npm depName=vite-plugin-vue-devtools
+  const vueDevToolsVersion = '8.1.5'
+
+  editFile(path.resolve(root, 'package.json'), (content) => {
+    const asObject = JSON.parse(content)
+    const devDepsEntries = Object.entries(asObject.devDependencies)
+    devDepsEntries.push(['vite-plugin-vue-devtools', `^${vueDevToolsVersion}`])
+    devDepsEntries.sort()
+    asObject.devDependencies = Object.fromEntries(devDepsEntries)
+    return JSON.stringify(asObject, null, 2) + '\n'
+  })
+
+  editFile(
+    path.resolve(root, `vite.config.${isTs ? 'ts' : 'js'}`),
+    (content) => {
+      return content
+        .replace(
+          `import vue from '@vitejs/plugin-vue'`,
+          `import vue from '@vitejs/plugin-vue'\nimport vueDevTools from 'vite-plugin-vue-devtools'`,
+        )
+        .replace(
+          '  plugins: [vue()],',
+          `  plugins: [\n    vue(),\n    vueDevTools(),\n  ],`,
+        )
+    },
+  )
 }
 
 function updateReactCompilerReadme(root: string, newBody: string) {

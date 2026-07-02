@@ -137,6 +137,7 @@ test('successfully scaffolds a project based on vue starter template', () => {
       '--no-immediate',
       '--template',
       'vue',
+      '--no-devtools',
       '--no-rolldown',
     ],
     {
@@ -235,6 +236,7 @@ test('works with the -t alias', () => {
       '--no-immediate',
       '-t',
       'vue',
+      '--no-devtools',
       '--no-rolldown',
     ],
     {
@@ -269,6 +271,7 @@ test('return help usage how to use create-vite', () => {
   expect(stdout).toContain(message)
   expect(stdout).toContain('-i, --immediate / --no-immediate')
   expect(stdout).toContain('--eslint / --no-eslint')
+  expect(stdout).toContain('--devtools / --no-devtools')
   expect(stdout).toContain('--overwrite')
   expect(stdout).toContain('-h, --help')
 })
@@ -307,4 +310,51 @@ test('accepts immediate flag and skips install prompt', () => {
   expect(stdout).not.toContain('Install and start now?')
   expect(stdout).not.toContain('Installing dependencies')
   expect(stdout).toContain(`Scaffolding project in ${genPath}`)
+})
+
+test('prompts to add Vite DevTools for Vue templates in interactive mode', () => {
+  const { stdout } = run([projectName, '--interactive', '--template', 'vue-ts'])
+  expect(stdout).toContain('Add Vite DevTools?')
+})
+
+test('scaffolds Vue template with Vite DevTools when --devtools is passed', () => {
+  const { stdout } = run([projectName, '--template', 'vue-ts', '--devtools'], {
+    cwd: import.meta.dirname,
+  })
+  expect(stdout).toContain(`Scaffolding project in ${genPath}`)
+
+  const configFile = fs.readFileSync(
+    path.join(genPath, 'vite.config.ts'),
+    'utf-8',
+  )
+  const packageJsonFile = fs.readFileSync(
+    path.join(genPath, 'package.json'),
+    'utf-8',
+  )
+
+  expect(configFile).toContain(
+    `import vueDevTools from 'vite-plugin-vue-devtools'`,
+  )
+  expect(configFile).toContain('vueDevTools()')
+  expect(packageJsonFile).toContain('vite-plugin-vue-devtools')
+})
+
+test('scaffolds Vue template without Vite DevTools by default', () => {
+  const { stdout } = run(
+    [projectName, '--template', 'vue-ts', '--no-devtools'],
+    { cwd: import.meta.dirname },
+  )
+  expect(stdout).toContain(`Scaffolding project in ${genPath}`)
+
+  const configFile = fs.readFileSync(
+    path.join(genPath, 'vite.config.ts'),
+    'utf-8',
+  )
+  const packageJsonFile = fs.readFileSync(
+    path.join(genPath, 'package.json'),
+    'utf-8',
+  )
+
+  expect(configFile).not.toContain('vueDevTools')
+  expect(packageJsonFile).not.toContain('vite-plugin-vue-devtools')
 })
