@@ -1371,6 +1371,102 @@ test('preTransformRequests', async () => {
 describe('loadConfigFromFile', () => {
   const fixtures = path.resolve(import.meta.dirname, './fixtures/config')
 
+  describe('native-incompatibility warnings', () => {
+    const compatRoot = path.resolve(fixtures, './native-compat')
+
+    const loadWithWarnings = async (
+      dir: string,
+      configLoader?: 'bundle' | 'runner' | 'native',
+      configFile = 'vite.config.ts',
+    ) => {
+      const logger = createLogger('info')
+      const warn = vi.spyOn(logger, 'warn').mockImplementation(() => {})
+      const root = path.resolve(compatRoot, dir)
+      await loadConfigFromFile(
+        {} as any,
+        path.resolve(root, configFile),
+        root,
+        undefined,
+        logger,
+        configLoader,
+      )
+      const messages = warn.mock.calls.map((c) => String(c[0]))
+      warn.mockRestore()
+      return messages
+    }
+
+    test('warns on __dirname / __filename', async () => {
+      const messages = await loadWithWarnings('dirname')
+      expect(messages).toHaveLength(1)
+      expect(messages[0]).toContain("configLoader: 'native'")
+      expect(messages[0]).toContain('__dirname')
+      expect(messages[0]).toContain('__filename')
+    })
+
+    test('warns on __dirname in a config using TypeScript syntax', async () => {
+      const messages = await loadWithWarnings('ts-syntax')
+      expect(messages).toHaveLength(1)
+      expect(messages[0]).toContain('__dirname')
+    })
+
+    test('warns on extension-less import', async () => {
+      const messages = await loadWithWarnings('extensionless')
+      expect(messages).toHaveLength(1)
+      expect(messages[0]).toContain('./helper')
+    })
+
+    test('warns on directory-index import', async () => {
+      const messages = await loadWithWarnings('directory-index')
+      expect(messages).toHaveLength(1)
+      expect(messages[0]).toContain('./plugins')
+    })
+
+    test('warns on JSON import without attributes', async () => {
+      const messages = await loadWithWarnings('json')
+      expect(messages).toHaveLength(1)
+      expect(messages[0]).toContain('./data.json')
+    })
+
+    test('does not warn on JSON import with attributes', async () => {
+      expect(await loadWithWarnings('json-ok')).toHaveLength(0)
+    })
+
+    test('does not warn on a native-compatible config', async () => {
+      expect(await loadWithWarnings('clean')).toHaveLength(0)
+    })
+
+    test('does not warn under the native loader', async () => {
+      expect(await loadWithWarnings('clean', 'native')).toHaveLength(0)
+    })
+
+    test('does not warn under the runner loader', async () => {
+      // the runner loader supports extension-less imports, so it loads this
+      // fixture fine; detection is bundle-only, so it must not warn
+      expect(await loadWithWarnings('extensionless', 'runner')).toHaveLength(0)
+    })
+
+    test('does not warn for a CJS config using __dirname', async () => {
+      // a CJS config keeps `__dirname` under the native loader, so the
+      // checks only run for ESM files
+      expect(
+        await loadWithWarnings('cjs', undefined, 'vite.config.cjs'),
+      ).toHaveLength(0)
+    })
+
+    test('warns for an ESM file imported by a CJS config', async () => {
+      // the check is per-file: a CJS config keeps `__dirname`, but the ESM
+      // file it imports does not
+      const messages = await loadWithWarnings(
+        'cjs-imports-esm',
+        undefined,
+        'vite.config.cjs',
+      )
+      expect(messages).toHaveLength(1)
+      expect(messages[0]).toContain('__dirname')
+      expect(messages[0]).toContain('esm-helper.mjs')
+    })
+  })
+
   describe('load default files', () => {
     const root = path.resolve(fixtures, './loadConfigFromFile')
 

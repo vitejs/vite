@@ -118,6 +118,11 @@ import {
 } from './plugins/resolve'
 import type { LogLevel, Logger } from './logger'
 import { createLogger } from './logger'
+import {
+  createNativeConfigCompatPlugin,
+  formatNativeConfigIncompatWarning,
+  type NativeConfigIncompatibility,
+} from './nativeConfigCompat'
 import type { DepOptimizationOptions } from './optimizer'
 import type { JsonOptions } from './plugins/json'
 import type { HtmlAssetSource } from './assetSource'
@@ -2341,13 +2346,16 @@ export async function loadConfigFromFile(
   }
 
   try {
-    const resolver =
-      configLoader === 'bundle'
-        ? bundleAndLoadConfigFile
-        : configLoader === 'runner'
-          ? runnerImportConfigFile
-          : nativeImportConfigFile
-    const { configExport, dependencies } = await resolver(resolvedPath)
+    const { configExport, dependencies } = await (configLoader === 'bundle'
+      ? bundleAndLoadConfigFile(
+          resolvedPath,
+          configRoot,
+          logLevel,
+          customLogger,
+        )
+      : configLoader === 'runner'
+        ? runnerImportConfigFile(resolvedPath)
+        : nativeImportConfigFile(resolvedPath))
     debug?.(`config file loaded in ${getTime()}`)
 
     const config = await (typeof configExport === 'function'
@@ -2401,7 +2409,12 @@ async function runnerImportConfigFile(resolvedPath: string) {
   }
 }
 
-async function bundleAndLoadConfigFile(resolvedPath: string) {
+async function bundleAndLoadConfigFile(
+  resolvedPath: string,
+  configRoot: string,
+  logLevel: LogLevel | undefined,
+  customLogger: Logger | undefined,
+) {
   const isESM =
     typeof process.versions.deno === 'string' || isFilePathESM(resolvedPath)
 
@@ -2412,6 +2425,19 @@ async function bundleAndLoadConfigFile(resolvedPath: string) {
     isESM,
   )
 
+  const { nativeIncompatibilities } = bundled
+  if (nativeIncompatibilities.length) {
+    const seen = new Set<string>()
+    const deduped = nativeIncompatibilities.filter((it) => {
+      const key = `${it.type}|${it.file}|${it.line}|${it.column}|${it.specifier ?? ''}`
+      if (seen.has(key)) return false
+      seen.add(key)
+      return true
+    })
+    const logger = createLogger(logLevel, { customLogger })
+    logger.warn(formatNativeConfigIncompatWarning(deduped, configRoot))
+  }
+
   return {
     configExport: userConfig,
     dependencies: bundled.dependencies,
@@ -2421,7 +2447,11 @@ async function bundleAndLoadConfigFile(resolvedPath: string) {
 async function bundleConfigFile(
   fileName: string,
   isESM: boolean,
-): Promise<{ code: string; dependencies: string[] }> {
+): Promise<{
+  code: string
+  dependencies: string[]
+  nativeIncompatibilities: NativeConfigIncompatibility[]
+}> {
   let importMetaResolverRegistered = false
 
   const root = path.dirname(fileName)
@@ -2431,6 +2461,8 @@ async function bundleConfigFile(
   const importMetaResolveVarName =
     '__vite_injected_original_import_meta_resolve'
   const importMetaResolveRegex = /import\.meta\s*\.\s*resolve/
+
+  const nativeIncompatibilities: NativeConfigIncompatibility[] = []
 
   const bundle = await rolldown({
     input: fileName,
@@ -2456,6 +2488,7 @@ async function bundleConfigFile(
     // this also aligns with other config loader behaviors
     tsconfig: false,
     plugins: [
+      createNativeConfigCompatPlugin(nativeIncompatibilities),
       {
         name: 'externalize-deps',
         resolveId: {
@@ -2580,6 +2613,7 @@ async function bundleConfigFile(
     code: entryChunk.code,
     // exclude `\x00rolldown/runtime.js`
     dependencies: [...allModules].filter((m) => !m.startsWith('\0')),
+    nativeIncompatibilities,
   }
 }
 

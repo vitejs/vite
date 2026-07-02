@@ -1,0 +1,5 @@
+{
+  "name": "@vitejs/test-native-compat",
+  "type": "module",
+  "private": true
+}
