@@ -471,6 +471,8 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
   // since output formats have no effect on the generated CSS.
   let hasEmitted = false
   let chunkCSSMap: Map<string, string>
+  let cssCodeSplitPendingRefIds: Map<string, string[]>
+  let cssUrlPendingRefIds: Map<string, string[]>
 
   const rolldownOptionsOutput = config.build.rolldownOptions.output
   const assetFileNames = (
@@ -525,6 +527,8 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
       hasEmitted = false
       chunkCSSMap = new Map()
       codeSplitEmitQueue = createSerialPromiseQueue()
+      cssCodeSplitPendingRefIds = new Map()
+      cssUrlPendingRefIds = new Map()
     },
 
     transform: {
@@ -826,11 +830,6 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
               ),
             )
             if (urlEmitTasks.length > 0) {
-              const toRelativeRuntime =
-                createToImportMetaURLBasedRelativeRuntime(
-                  opts.format,
-                  config.isWorker,
-                )
               s ||= new MagicString(code)
 
               for (const {
@@ -847,21 +846,16 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
                   source: content,
                 })
 
-                const filename = this.getFileName(referenceId)
-                chunk.viteMetadata!.importedAssets.add(cleanUrl(filename))
-                const replacement = toOutputFilePathInJS(
-                  this.environment,
-                  filename,
-                  'asset',
-                  chunk.fileName,
-                  'js',
-                  toRelativeRuntime,
-                )
-                const replacementString =
-                  typeof replacement === 'string'
-                    ? JSON.stringify(encodeURIPath(replacement)).slice(1, -1)
-                    : `"+${replacement.runtime}+"`
-                s.update(start, end, replacementString)
+                let pending = cssUrlPendingRefIds.get(chunk.fileName)
+                if (!pending) {
+                  pending = []
+                  cssUrlPendingRefIds.set(chunk.fileName, pending)
+                }
+                pending.push(referenceId)
+
+                // avoid writing `getFileName` here because it may return a wrong file name
+                // if the chunk is later deduplicated.
+                s.update(start, end, `__VITE_CSS_DEFERRED__${referenceId}__`)
               }
             }
 
@@ -921,9 +915,13 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
                       .get(this.environment)!
                       .set(chunk.fileName, { referenceId, name: chunk.name })
                   }
-                  chunk.viteMetadata!.importedCss.add(
-                    this.getFileName(referenceId),
-                  )
+
+                  let pending = cssCodeSplitPendingRefIds.get(chunk.fileName)
+                  if (!pending) {
+                    pending = []
+                    cssCodeSplitPendingRefIds.set(chunk.fileName, pending)
+                  }
+                  pending.push(referenceId)
                 } else if (this.environment.config.consumer === 'client') {
                   // legacy build and inline css
 
@@ -978,13 +976,22 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
           },
 
           augmentChunkHash(chunk) {
+            let hash = ''
             if (chunk.viteMetadata?.importedCss.size) {
-              let hash = ''
               for (const id of chunk.viteMetadata.importedCss) {
                 hash += id
               }
-              return hash
             }
+            const codeSplitPending = cssCodeSplitPendingRefIds.get(
+              chunk.fileName,
+            )
+            if (codeSplitPending) {
+              for (const refId of codeSplitPending) {
+                // used to compute hash only, so stale file name is fine
+                hash += this.getFileName(refId)
+              }
+            }
+            return hash || undefined
           },
         }
       : {}),
@@ -993,6 +1000,48 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
       // to avoid emitting duplicate assets for modern build and legacy build
       if (this.environment.config.isOutputOptionsForLegacyChunks?.(opts)) {
         return
+      }
+
+      const cssUrlDeferredRE = /__VITE_CSS_DEFERRED__([\w$]+)__/g
+      const toRelativeRuntime = createToImportMetaURLBasedRelativeRuntime(
+        opts.format,
+        config.isWorker,
+      )
+
+      for (const chunk of Object.values(bundle)) {
+        if (chunk.type !== 'chunk') continue
+
+        const codeSplitRefIds = cssCodeSplitPendingRefIds.get(
+          chunk.preliminaryFileName,
+        )
+        if (codeSplitRefIds) {
+          for (const refId of codeSplitRefIds) {
+            chunk.viteMetadata!.importedCss.add(this.getFileName(refId))
+          }
+          cssCodeSplitPendingRefIds.delete(chunk.preliminaryFileName)
+        }
+
+        if (cssUrlPendingRefIds.has(chunk.preliminaryFileName)) {
+          chunk.code = chunk.code.replace(
+            cssUrlDeferredRE,
+            (_match, referenceId) => {
+              const filename = this.getFileName(referenceId)
+              chunk.viteMetadata!.importedAssets.add(cleanUrl(filename))
+              const replacement = toOutputFilePathInJS(
+                this.environment,
+                filename,
+                'asset',
+                chunk.fileName,
+                'js',
+                toRelativeRuntime,
+              )
+              return typeof replacement === 'string'
+                ? JSON.stringify(encodeURIPath(replacement)).slice(1, -1)
+                : `"+${replacement.runtime}+"`
+            },
+          )
+          cssUrlPendingRefIds.delete(chunk.preliminaryFileName)
+        }
       }
 
       // vite:asset cleans up earlier assets of 'renderChunk',
