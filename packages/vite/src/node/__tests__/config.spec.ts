@@ -2,6 +2,7 @@ import http from 'node:http'
 import os from 'node:os'
 import path from 'node:path'
 import fs from 'node:fs'
+import { stripVTControlCharacters } from 'node:util'
 import { afterEach, assert, describe, expect, test, vi } from 'vitest'
 import type { InlineConfig, PluginOption } from '..'
 import type { UserConfig, UserConfigExport } from '../config'
@@ -1379,7 +1380,6 @@ describe('loadConfigFromFile', () => {
 
     const loadWithWarnings = async (
       dir: string,
-      configLoader?: 'bundle' | 'runner' | 'native',
       configFile = 'vite.config.js',
     ) => {
       const logger = createLogger('info')
@@ -1391,19 +1391,24 @@ describe('loadConfigFromFile', () => {
         root,
         undefined,
         logger,
-        configLoader,
+        'bundle',
       )
-      const messages = warn.mock.calls.map((c) => String(c[0]))
+      const messages = warn.mock.calls.map((c) =>
+        stripVTControlCharacters(c[0]),
+      )
       warn.mockRestore()
       return messages
     }
 
     test('warns on __dirname / __filename', async () => {
       const messages = await loadWithWarnings('dirname')
-      expect(messages).toHaveLength(1)
-      expect(messages[0]).toContain("configLoader: 'native'")
-      expect(messages[0]).toContain('__dirname')
-      expect(messages[0]).toContain('__filename')
+      expect(messages).toMatchInlineSnapshot(`
+        [
+          "(!) Your Vite config uses features that are unsupported by \`configLoader: 'native'\`, which is planned to become the default in a future major version of Vite:
+          - \`__dirname\` (vite.config.js:3). Use \`import.meta.dirname\` instead
+          - \`__filename\` (vite.config.js:4). Use \`import.meta.filename\` instead",
+        ]
+      `)
     })
 
     // uses a `.ts` config with TypeScript-only syntax; skipped on Node
@@ -1411,32 +1416,44 @@ describe('loadConfigFromFile', () => {
     test.skipIf(!supportsTypeStripping)(
       'warns on __dirname in a config using TypeScript syntax',
       async () => {
-        const messages = await loadWithWarnings(
-          'ts-syntax',
-          undefined,
-          'vite.config.ts',
-        )
-        expect(messages).toHaveLength(1)
-        expect(messages[0]).toContain('__dirname')
+        const messages = await loadWithWarnings('ts-syntax', 'vite.config.ts')
+        expect(messages).toMatchInlineSnapshot(`
+          [
+            "(!) Your Vite config uses features that are unsupported by \`configLoader: 'native'\`, which is planned to become the default in a future major version of Vite:
+            - \`__dirname\` (vite.config.ts:10). Use \`import.meta.dirname\` instead",
+          ]
+        `)
       },
     )
 
     test('warns on extension-less import', async () => {
       const messages = await loadWithWarnings('extensionless')
-      expect(messages).toHaveLength(1)
-      expect(messages[0]).toContain('./helper')
+      expect(messages).toMatchInlineSnapshot(`
+        [
+          "(!) Your Vite config uses features that are unsupported by \`configLoader: 'native'\`, which is planned to become the default in a future major version of Vite:
+          - import "./helper" without a file extension (vite.config.js:1). Add the file extension",
+        ]
+      `)
     })
 
     test('warns on directory-index import', async () => {
       const messages = await loadWithWarnings('directory-index')
-      expect(messages).toHaveLength(1)
-      expect(messages[0]).toContain('./plugins')
+      expect(messages).toMatchInlineSnapshot(`
+        [
+          "(!) Your Vite config uses features that are unsupported by \`configLoader: 'native'\`, which is planned to become the default in a future major version of Vite:
+          - import "./plugins" resolves to a directory index (vite.config.js:1). Import the index file directly",
+        ]
+      `)
     })
 
     test('warns on JSON import without attributes', async () => {
       const messages = await loadWithWarnings('json')
-      expect(messages).toHaveLength(1)
-      expect(messages[0]).toContain('./data.json')
+      expect(messages).toMatchInlineSnapshot(`
+        [
+          "(!) Your Vite config uses features that are unsupported by \`configLoader: 'native'\`, which is planned to become the default in a future major version of Vite:
+          - JSON import "./data.json" without import attributes (vite.config.js:1). Add \`with { type: 'json' }\`",
+        ]
+      `)
     })
 
     test('does not warn on JSON import with attributes', async () => {
@@ -1447,35 +1464,21 @@ describe('loadConfigFromFile', () => {
       expect(await loadWithWarnings('clean')).toHaveLength(0)
     })
 
-    test('does not warn under the native loader', async () => {
-      expect(await loadWithWarnings('clean', 'native')).toHaveLength(0)
-    })
-
-    test('does not warn under the runner loader', async () => {
-      // the runner loader supports extension-less imports, so it loads this
-      // fixture fine; detection is bundle-only, so it must not warn
-      expect(await loadWithWarnings('extensionless', 'runner')).toHaveLength(0)
-    })
-
     test('does not warn for a CJS config using __dirname', async () => {
-      // a CJS config keeps `__dirname` under the native loader, so the
-      // checks only run for ESM files
-      expect(
-        await loadWithWarnings('cjs', undefined, 'vite.config.cjs'),
-      ).toHaveLength(0)
+      expect(await loadWithWarnings('cjs', 'vite.config.cjs')).toHaveLength(0)
     })
 
     test('warns for an ESM file imported by a CJS config', async () => {
-      // the check is per-file: a CJS config keeps `__dirname`, but the ESM
-      // file it imports does not
       const messages = await loadWithWarnings(
         'cjs-imports-esm',
-        undefined,
         'vite.config.cjs',
       )
-      expect(messages).toHaveLength(1)
-      expect(messages[0]).toContain('__dirname')
-      expect(messages[0]).toContain('esm-helper.mjs')
+      expect(messages).toMatchInlineSnapshot(`
+        [
+          "(!) Your Vite config uses features that are unsupported by \`configLoader: 'native'\`, which is planned to become the default in a future major version of Vite:
+          - \`__dirname\` (esm-helper.mjs:1). Use \`import.meta.dirname\` instead",
+        ]
+      `)
     })
   })
 

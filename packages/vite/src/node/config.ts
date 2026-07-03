@@ -2425,17 +2425,14 @@ async function bundleAndLoadConfigFile(
     isESM,
   )
 
-  const { nativeIncompatibilities } = bundled
-  if (nativeIncompatibilities.length) {
-    const seen = new Set<string>()
-    const deduped = nativeIncompatibilities.filter((it) => {
-      const key = `${it.type}|${it.file}|${it.line}|${it.column}|${it.specifier ?? ''}`
-      if (seen.has(key)) return false
-      seen.add(key)
-      return true
-    })
+  if (bundled.nativeIncompatibilities.length > 0) {
     const logger = createLogger(logLevel, { customLogger })
-    logger.warn(formatNativeConfigIncompatWarning(deduped, configRoot))
+    logger.warn(
+      formatNativeConfigIncompatWarning(
+        bundled.nativeIncompatibilities,
+        configRoot,
+      ),
+    )
   }
 
   return {

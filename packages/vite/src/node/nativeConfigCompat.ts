@@ -35,6 +35,17 @@ export interface ConfigImportRef {
 const jsTsExtRE = /\.[cm]?[jt]sx?$/
 const indexFileRE = /^index\.[cm]?[jt]sx?$/
 
+const lastSegmentOf = (specifier: string) =>
+  specifier.slice(specifier.lastIndexOf('/') + 1)
+
+/**
+ * A specifier that already carries a JS/TS extension resolves as-is under the
+ * native loader, so it can never be extension-less or a directory index and
+ * needs no resolution to classify.
+ */
+const specifierHasJsExtension = (specifier: string) =>
+  jsTsExtRE.test(lastSegmentOf(specifier))
+
 export function classifyImportRef(
   ref: ConfigImportRef,
   resolvedId: string | null,
@@ -50,7 +61,7 @@ export function classifyImportRef(
 
   if (!resolvedId) return undefined
 
-  const lastSegment = specifier.slice(specifier.lastIndexOf('/') + 1)
+  const lastSegment = lastSegmentOf(specifier)
   const specifierNamesIndex =
     lastSegment === 'index' || indexFileRE.test(lastSegment)
 
@@ -198,10 +209,11 @@ export function createNativeConfigCompatPlugin(
         for (const g of globals) collector.push(g)
         for (const ref of imports) {
           let resolvedId: string | null = null
-          if (!ref.specifier.endsWith('.json')) {
-            const resolved = await this.resolve(ref.specifier, id, {
-              skipSelf: true,
-            })
+          if (
+            !ref.specifier.endsWith('.json') &&
+            !specifierHasJsExtension(ref.specifier)
+          ) {
+            const resolved = await this.resolve(ref.specifier, id)
             resolvedId = resolved?.id ?? null
           }
           const finding = classifyImportRef(ref, resolvedId, id)
