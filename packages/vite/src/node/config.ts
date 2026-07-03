@@ -2304,7 +2304,7 @@ export async function loadConfigFromFile(
   configRoot: string = process.cwd(),
   logLevel?: LogLevel,
   customLogger?: Logger,
-  configLoader: 'bundle' | 'runner' | 'native' = 'bundle',
+  configLoader: 'bundle' | 'runner' | 'native' = 'native',
 ): Promise<{
   path: string
   config: UserConfig
