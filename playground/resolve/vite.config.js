@@ -1,6 +1,6 @@
 import path from 'node:path'
 import { defaultClientConditions, defineConfig, normalizePath } from 'vite'
-import { a } from './config-dep.cjs'
+import configDep from './config-dep.cjs'
 
 const virtualFile = '@virtual-file'
 const virtualId = '\0' + virtualFile
@@ -45,7 +45,7 @@ export default defineConfig({
     conditions: [...defaultClientConditions, 'custom'],
   },
   define: {
-    VITE_CONFIG_DEP_TEST: a,
+    VITE_CONFIG_DEP_TEST: configDep.a,
   },
   plugins: [
     {
