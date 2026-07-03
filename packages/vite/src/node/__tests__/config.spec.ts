@@ -1460,6 +1460,16 @@ describe('loadConfigFromFile', () => {
       expect(await loadWithWarnings('json-ok')).toHaveLength(0)
     })
 
+    test('warns on an extension-less import that resolves to JSON', async () => {
+      const messages = await loadWithWarnings('json-extensionless')
+      expect(messages).toMatchInlineSnapshot(`
+        [
+          "(!) Your Vite config uses features that are unsupported by \`configLoader: 'native'\`, which is planned to become the default in a future major version of Vite:
+          - import "./foo" resolves to a JSON file (vite.config.js:1). Import it with a \`.json\` extension and \`with { type: 'json' }\`",
+        ]
+      `)
+    })
+
     test('does not warn on a native-compatible config', async () => {
       expect(await loadWithWarnings('clean')).toHaveLength(0)
     })

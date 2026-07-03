@@ -61,6 +61,10 @@ export function classifyImportRef(
 
   if (!resolvedId) return undefined
 
+  if (resolvedId.endsWith('.json') && !ref.hasTypeJsonAttribute) {
+    return { type: 'json-without-attributes', ...base }
+  }
+
   const lastSegment = lastSegmentOf(specifier)
   const specifierNamesIndex =
     lastSegment === 'index' || indexFileRE.test(lastSegment)
@@ -164,7 +168,9 @@ function describeIncompatibility(
     case 'directory-index-import':
       return `import "${item.specifier}" resolves to a directory index (${loc}). Import the index file directly`
     case 'json-without-attributes':
-      return `JSON import "${item.specifier}" without import attributes (${loc}). Add \`with { type: 'json' }\``
+      return item.specifier?.endsWith('.json')
+        ? `JSON import "${item.specifier}" without import attributes (${loc}). Add \`with { type: 'json' }\``
+        : `import "${item.specifier}" resolves to a JSON file (${loc}). Import it with a \`.json\` extension and \`with { type: 'json' }\``
   }
 }
 
