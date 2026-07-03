@@ -1,6 +1,7 @@
-import { defineConfig } from 'vite'
+/* eslint-disable import-x/no-commonjs */
+const { defineConfig } = require('vite')
 
-export default defineConfig({
+module.exports = defineConfig({
   server: {
     host: 'localhost',
     headers: {
