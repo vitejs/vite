@@ -1,4 +1,4 @@
-import { value } from './helper.ts'
+import { value } from './helper.js'
 
 export default {
   define: {

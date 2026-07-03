@@ -1374,10 +1374,13 @@ describe('loadConfigFromFile', () => {
   describe('native-incompatibility warnings', () => {
     const compatRoot = path.resolve(fixtures, './native-compat')
 
+    // eslint-disable-next-line n/no-unsupported-features/node-builtins
+    const supportsTypeStripping = !!process.features.typescript
+
     const loadWithWarnings = async (
       dir: string,
       configLoader?: 'bundle' | 'runner' | 'native',
-      configFile = 'vite.config.ts',
+      configFile = 'vite.config.js',
     ) => {
       const logger = createLogger('info')
       const warn = vi.spyOn(logger, 'warn').mockImplementation(() => {})
@@ -1403,11 +1406,20 @@ describe('loadConfigFromFile', () => {
       expect(messages[0]).toContain('__filename')
     })
 
-    test('warns on __dirname in a config using TypeScript syntax', async () => {
-      const messages = await loadWithWarnings('ts-syntax')
-      expect(messages).toHaveLength(1)
-      expect(messages[0]).toContain('__dirname')
-    })
+    // uses a `.ts` config with TypeScript-only syntax; skipped on Node
+    // versions without type stripping support
+    test.skipIf(!supportsTypeStripping)(
+      'warns on __dirname in a config using TypeScript syntax',
+      async () => {
+        const messages = await loadWithWarnings(
+          'ts-syntax',
+          undefined,
+          'vite.config.ts',
+        )
+        expect(messages).toHaveLength(1)
+        expect(messages[0]).toContain('__dirname')
+      },
+    )
 
     test('warns on extension-less import', async () => {
       const messages = await loadWithWarnings('extensionless')
