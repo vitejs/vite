@@ -1500,16 +1500,12 @@ function isEntirelyImport(code: string) {
   // only consider "side-effect" imports, which match <script type=module> semantics exactly
   // the regexes will remove too little in some exotic cases, but false-negatives are alright.
   // Consume one token at a time to avoid backtracking over the whole chunk.
-  let position = 0
-
-  while (position < code.length) {
-    importOrCommentRE.lastIndex = position
+  importOrCommentRE.lastIndex = 0
+  while (importOrCommentRE.lastIndex < code.length) {
     if (!importOrCommentRE.test(code)) {
       return false
     }
-    position = importOrCommentRE.lastIndex
   }
-
   return true
 }
 
