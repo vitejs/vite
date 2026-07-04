@@ -12,6 +12,7 @@ import type {
   RenderedChunk,
   RenderedModule,
   RollupError,
+  SourceMap,
   SourceMapInput,
 } from 'rolldown'
 import { dataToEsm } from '@rollup/pluginutils'
@@ -28,6 +29,7 @@ import type {
   TransformAttributeResult as LightningCssTransformAttributeResult,
   TransformResult as LightningCssTransformResult,
 } from 'lightningcss'
+import convertSourceMap from 'convert-source-map'
 import type { LightningCSSOptions } from '#types/internal/lightningcssOptions'
 import type {
   LessPreprocessorBaseOptions,
@@ -36,7 +38,11 @@ import type {
 } from '#types/internal/cssPreprocessorOptions'
 import type { EsbuildTransformOptions } from '#types/internal/esbuildOptions'
 import type { CustomPluginOptionsVite } from '#types/metadata'
-import { getCodeWithSourcemap, injectSourcesContent } from '../server/sourcemap'
+import {
+  getCodeWithSourcemap,
+  genSourceMapUrl,
+  injectSourcesContent,
+} from '../server/sourcemap'
 import type { EnvironmentModuleNode } from '../server/moduleGraph'
 import {
   createToImportMetaURLBasedRelativeRuntime,
@@ -731,6 +737,9 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
               }
 
               // replace asset url references with resolved url.
+              // these assets are emitted by `vite:asset` during `load`
+              // During `renderChunk`, shortest file names are settled,
+              // so we can use `this.getFileName` to get the final file name.
               chunkCSS = chunkCSS.replace(
                 assetUrlRE,
                 (_, fileHash, postfix = '') => {
@@ -1022,24 +1031,68 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
         }
 
         if (cssUrlPendingRefIds.has(chunk.preliminaryFileName)) {
-          chunk.code = chunk.code.replace(
-            cssUrlDeferredRE,
-            (_match, referenceId) => {
-              const filename = this.getFileName(referenceId)
-              chunk.viteMetadata!.importedAssets.add(cleanUrl(filename))
-              const replacement = toOutputFilePathInJS(
-                this.environment,
-                filename,
-                'asset',
-                chunk.fileName,
-                'js',
-                toRelativeRuntime,
-              )
-              return typeof replacement === 'string'
+          const s = new MagicString(chunk.code)
+
+          cssUrlDeferredRE.lastIndex = 0
+          let match: RegExpExecArray | null
+          while ((match = cssUrlDeferredRE.exec(chunk.code))) {
+            const [full, referenceId] = match
+            const filename = this.getFileName(referenceId)
+            chunk.viteMetadata!.importedAssets.add(cleanUrl(filename))
+            const replacement = toOutputFilePathInJS(
+              this.environment,
+              filename,
+              'asset',
+              chunk.fileName,
+              'js',
+              toRelativeRuntime,
+            )
+            const replacementString =
+              typeof replacement === 'string'
                 ? JSON.stringify(encodeURIPath(replacement)).slice(1, -1)
                 : `"+${replacement.runtime}+"`
-            },
-          )
+            s.update(match.index, match.index + full.length, replacementString)
+          }
+
+          // fix source map, ported fro ./importAnalysisBuild.ts:594
+          if (s.hasChanged()) {
+            chunk.code = s.toString()
+            if (config.build.sourcemap && chunk.map) {
+              const nextMap = s.generateMap({
+                source: chunk.fileName,
+                hires: 'boundary',
+              })
+              const originalFile = chunk.map.file
+              const map = combineSourcemaps(chunk.fileName, [
+                nextMap as RawSourceMap,
+                chunk.map as RawSourceMap,
+              ]) as SourceMap
+              map.toUrl = () => genSourceMapUrl(map)
+              if (originalFile) {
+                map.file = originalFile
+              }
+
+              const originalDebugId = chunk.map.debugId
+              chunk.map = map
+
+              if (config.build.sourcemap === 'inline') {
+                chunk.code = chunk.code.replace(
+                  convertSourceMap.mapFileCommentRegex,
+                  '',
+                )
+                chunk.code += '\n//# sourceMappingURL=' + genSourceMapUrl(map)
+              } else {
+                if (originalDebugId) {
+                  map.debugId = originalDebugId
+                }
+                const mapAsset = bundle[chunk.fileName + '.map']
+                if (mapAsset && mapAsset.type === 'asset') {
+                  mapAsset.source = map.toString()
+                }
+              }
+            }
+          }
+
           cssUrlPendingRefIds.delete(chunk.preliminaryFileName)
         }
       }
