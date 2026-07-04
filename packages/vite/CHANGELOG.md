@@ -1,3 +1,11 @@
+## <small>[8.1.3](https://github.com/vitejs/vite/compare/v8.1.2...v8.1.3) (2026-07-02)</small>
+### Bug Fixes
+
+* **css:** inject inlined CSS after the shebang line ([#22717](https://github.com/vitejs/vite/issues/22717)) ([1534d36](https://github.com/vitejs/vite/commit/1534d362794e856cc718b123cb245e0efcf36b9a))
+* **deps:** bump `es-module-lexer` to 2.3.0 ([#22838](https://github.com/vitejs/vite/issues/22838)) ([7103c3a](https://github.com/vitejs/vite/commit/7103c3af795396e2ad87e1125eb3fc20d60d9430))
+* preload css for nested dynamic imports ([#22759](https://github.com/vitejs/vite/issues/22759)) ([2c53054](https://github.com/vitejs/vite/commit/2c530542da1c50b95b7f0cb17adf82f64ecf97f3))
+* **ssr:** correct stacktrace column position for first line ([#22828](https://github.com/vitejs/vite/issues/22828)) ([c4acd69](https://github.com/vitejs/vite/commit/c4acd6982a051fa10dbd7e3a37e00f0c467793b8))
+
 ## <small>[8.1.2](https://github.com/vitejs/vite/compare/v8.1.1...v8.1.2) (2026-06-30)</small>
 ### Bug Fixes
 
