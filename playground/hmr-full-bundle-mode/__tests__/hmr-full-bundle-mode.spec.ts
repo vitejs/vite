@@ -1,6 +1,14 @@
 import { setTimeout } from 'node:timers/promises'
 import { expect, test, onTestFinished } from 'vitest'
-import { addFile, browserLogs, editFile, isBuild, page, readFile } from '~utils'
+import {
+  addFile,
+  browserLogs,
+  editFile,
+  isBuild,
+  page,
+  readFile,
+  serverLogs,
+} from '~utils'
 
 const assetUrl = /asset-[\w-]+\.png/
 
@@ -25,6 +33,7 @@ if (isBuild) {
       .poll(() => page.textContent('.worker-query'))
       .toBe('worker-query')
     await expect.poll(() => page.textContent('.worker-url')).toBe('worker-url')
+    expect(serverLogs.join('\n')).not.toContain('page reload')
   })
 
   // BUNDLED -> GENERATE_HMR_PATCH -> BUNDLING -> BUNDLE_ERROR -> BUNDLING -> BUNDLED
