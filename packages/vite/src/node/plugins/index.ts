@@ -13,7 +13,6 @@ import {
   type PluginWithRequiredHook,
 } from '../plugin'
 import { watchPackageDataPlugin } from '../packages'
-import { resolveBuildPlugins } from '../build'
 import { oxcResolvePlugin } from './resolve'
 import { optimizedDepsPlugin } from './optimizedDeps'
 import { importAnalysisPlugin } from './importAnalysis'
@@ -51,7 +50,7 @@ export async function resolvePlugins(
   const anyEnvBundled =
     isBuild || Object.values(config.environments).some((env) => env.isBundled)
   const buildPlugins = anyEnvBundled
-    ? resolveBuildPlugins(config)
+    ? (await import('../build')).resolveBuildPlugins(config)
     : { pre: [], post: [] }
   const devtoolsIntegrationPlugin =
     config.devtools.enabled && !isWorker
