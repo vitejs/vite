@@ -387,8 +387,8 @@ importers:
         specifier: ^6.0.1
         version: 6.0.1(jiti@2.7.0)(postcss@8.5.16)(tsx@4.22.4)(yaml@2.9.0)
       postcss-modules:
-        specifier: ^6.0.1
-        version: 6.0.1(postcss@8.5.16)
+        specifier: ^9.0.0
+        version: 9.0.0(postcss@8.5.16)
       premove:
         specifier: ^4.0.0
         version: 4.0.0
@@ -6937,8 +6937,9 @@ packages:
     peerDependencies:
       postcss: ^8.1.0
 
-  postcss-modules@6.0.1:
-    resolution: {integrity: sha512-zyo2sAkVvuZFFy0gc2+4O+xar5dYlaVy/ebO24KT0ftk/iJevSNyPyQellsBLlnccwh7f6V6Y4GvuKRYToNgpQ==}
+  postcss-modules@9.0.0:
+    resolution: {integrity: sha512-nyZGaOkHFRvXy10ryKSE3yfh1EhwSrEX2mIhwZblTTdHbKOfH5fNhAC6eZmXB2uCy7x6Bb1Zib5KS2Yw6gSzHQ==}
+    engines: {node: '>=20.6'}
     peerDependencies:
       postcss: ^8.0.0
 
@@ -13287,7 +13288,7 @@ snapshots:
       icss-utils: 5.1.0(postcss@8.5.16)
       postcss: 8.5.16
 
-  postcss-modules@6.0.1(postcss@8.5.16):
+  postcss-modules@9.0.0(postcss@8.5.16):
     dependencies:
       generic-names: 4.0.0
       icss-utils: 5.1.0(postcss@8.5.16)
