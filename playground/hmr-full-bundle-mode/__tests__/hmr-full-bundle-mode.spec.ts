@@ -25,6 +25,8 @@ if (isBuild) {
       .poll(() => page.textContent('.worker-query'))
       .toBe('worker-query')
     await expect.poll(() => page.textContent('.worker-url')).toBe('worker-url')
+    const cssUrlText = await page.textContent('.css-url')
+    expect(cssUrlText).toMatch(/\/assets\/css-with-asset-[\w-]+\.css/)
   })
 
   // BUNDLED -> GENERATE_HMR_PATCH -> BUNDLING -> BUNDLE_ERROR -> BUNDLING -> BUNDLED

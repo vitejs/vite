@@ -2,10 +2,12 @@ import './hmr.js'
 import './hmr-asset.js'
 import './invalidation-parent.js'
 import assetUrl from './asset.png'
+import cssUrl from './css-with-asset.css?url'
 import WorkerQuery from './worker-query.js?worker'
 
 text('.app', 'hello')
 text('.asset', assetUrl)
+text('.css-url', cssUrl)
 
 const workerQuery = new WorkerQuery()
 workerQuery.postMessage('ping')
