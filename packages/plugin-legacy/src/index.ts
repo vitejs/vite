@@ -34,6 +34,25 @@ async function loadBabel() {
   return (babel ??= import('@babel/core'))
 }
 
+async function loadPolyfillPlugins(): Promise<BabelPlugin[]> {
+  return [
+    [
+      (await import('babel-plugin-polyfill-corejs3')).default,
+      {
+        method: 'usage-global',
+        version: _require('core-js/package.json').version,
+        shippedProposals: true,
+      },
+    ],
+    [
+      (await import('babel-plugin-polyfill-regenerator')).default,
+      {
+        method: 'usage-global',
+      },
+    ],
+  ]
+}
+
 // The requested module 'browserslist' is a CommonJS module
 // which may not support all module.exports as named exports
 const { loadConfig: browserslistLoadConfig } = browserslist
@@ -578,6 +597,7 @@ function viteLegacyPlugin(options: Options = {}): Plugin[] {
         ],
       })
 
+      const polyfillPlugins = needPolyfills ? await loadPolyfillPlugins() : []
       const babelTransformOptions: babel.TransformOptions = {
         babelrc: false,
         configFile: false,
@@ -588,9 +608,13 @@ function viteLegacyPlugin(options: Options = {}): Plugin[] {
         targets,
         assumptions,
         browserslistConfigFile: false,
+        // presets are applied in reverse order, so the effective order is:
+        // 1. the polyfill plugins (last preset) inject core-js/regenerator
+        //    imports based on usage, before preset-env lowers the syntax
+        // 2. preset-env transforms the syntax
+        // 3. `recordAndRemovePolyfillBabelPlugin` catches and removes the
+        //    injected imports before `wrapIIFEBabelPlugin` wraps the body
         presets: [
-          // forcing our plugin to run before preset-env by wrapping it in a
-          // preset so we can catch the injected import statements...
           [
             () => ({
               plugins: [
@@ -606,16 +630,10 @@ function viteLegacyPlugin(options: Options = {}): Plugin[] {
             {
               bugfixes: true,
               modules: false,
-              useBuiltIns: needPolyfills ? 'usage' : false,
-              corejs: needPolyfills
-                ? {
-                    version: _require('core-js/package.json').version,
-                    proposals: false,
-                  }
-                : undefined,
               shippedProposals: true,
             },
           ],
+          [() => ({ plugins: polyfillPlugins })],
         ],
       }
       let result: babel.BabelFileResult | null
@@ -840,22 +858,7 @@ export async function detectPolyfills(
     targets,
     assumptions,
     browserslistConfigFile: false,
-    plugins: [
-      [
-        (await import('babel-plugin-polyfill-corejs3')).default,
-        {
-          method: 'usage-global',
-          version: _require('core-js/package.json').version,
-          shippedProposals: true,
-        },
-      ],
-      [
-        (await import('babel-plugin-polyfill-regenerator')).default,
-        {
-          method: 'usage-global',
-        },
-      ],
-    ],
+    plugins: await loadPolyfillPlugins(),
   })
   for (const node of result!.ast!.program.body) {
     if (node.type === 'ImportDeclaration') {
