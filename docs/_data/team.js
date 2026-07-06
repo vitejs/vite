@@ -116,6 +116,43 @@ export const core = [
   },
 ]
 
+export const advisors = [
+  {
+    avatar: 'https://github.com/serhalp.png',
+    name: 'Philippe Serhal',
+    title: '',
+    org: '',
+    orgLink: '',
+    desc: '',
+    links: [
+      { icon: 'github', link: 'https://github.com/serhalp' },
+      { icon: 'bluesky', link: 'https://bsky.app/profile/philippeserhal.com' },
+    ],
+  },
+  {
+    avatar: 'https://github.com/jamesopstad.png',
+    name: 'James Opstad',
+    title: '',
+    org: '',
+    orgLink: '',
+    desc: '',
+    links: [{ icon: 'github', link: 'https://github.com/jamesopstad' }],
+  },
+  {
+    avatar: 'https://github.com/danielroe.png',
+    name: 'Daniel Roe',
+    title: '',
+    org: '',
+    orgLink: '',
+    desc: '',
+    links: [
+      { icon: 'github', link: 'https://github.com/danielroe' },
+      { icon: 'bluesky', link: 'https://bsky.app/profile/danielroe.dev' },
+    ],
+    sponsor: 'https://github.com/sponsors/danielroe',
+  },
+]
+
 export const emeriti = [
   {
     avatar: 'https://i.imgur.com/KMed6rQ.jpeg',
