@@ -43,6 +43,7 @@ export default defineConfig({
           resolve(dirname, 'relative-input.html'),
         ),
         malformedUrl: resolve(dirname, 'malformed-url.html'),
+        modulepreloadResolved: resolve(dirname, 'modulepreloadResolved.html'),
       },
       external: ['/external-path-by-rollup-options.js'],
     },
@@ -130,6 +131,19 @@ ${
               injectTo: 'body',
             },
           ],
+        }
+      },
+    },
+    {
+      name: 'resolved-virtual-script',
+      resolveId(id) {
+        if (id === '/@resolved-virtual-script') {
+          return '\0resolved-virtual-script'
+        }
+      },
+      load(id) {
+        if (id === '\0resolved-virtual-script') {
+          return `document.title = 'virtual script loaded'`
         }
       },
     },

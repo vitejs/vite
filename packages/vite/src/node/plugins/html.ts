@@ -174,6 +174,25 @@ export const isAsyncScriptMap: WeakMap<
   Map<string, boolean>
 > = new WeakMap()
 
+interface HtmlModulePreload {
+  placeholder: string
+  originalUrl: string
+  resolvedId: string
+}
+
+/**
+ * Module preload links found in each html file during transform. A
+ * `<link rel="modulepreload">` references a module — not a generic asset —
+ * so its href is resolved through the plugin pipeline (like module scripts
+ * are) and rewritten to the output chunk containing that module. The chunk
+ * is only known in `generateBundle`, so the href holds a placeholder until
+ * then.
+ */
+const htmlModulePreloadMap: WeakMap<
+  ResolvedConfig,
+  Map<string, HtmlModulePreload[]>
+> = new WeakMap()
+
 export function nodeIsElement(
   node: DefaultTreeAdapterMap['node'],
 ): node is DefaultTreeAdapterMap['element'] {
@@ -426,6 +445,7 @@ export function buildHtmlPlugin(config: ResolvedConfig): Plugin {
 
   // Same reason with `htmlInlineProxyPlugin`
   isAsyncScriptMap.set(config, new Map())
+  htmlModulePreloadMap.set(config, new Map())
 
   return {
     name: 'vite:build-html',
@@ -498,6 +518,7 @@ export function buildHtmlPlugin(config: ResolvedConfig): Plugin {
         const s = new MagicString(html)
         const scriptUrls: ScriptAssetsUrl[] = []
         const styleUrls: ScriptAssetsUrl[] = []
+        const modulePreloads: HtmlModulePreload[] = []
         let inlineModuleIndex = -1
 
         let everyScriptIsAsync = true
@@ -659,7 +680,36 @@ export function buildHtmlPlugin(config: ResolvedConfig): Plugin {
                   partialEncodeURIPath(toOutputPublicFilePath(url)),
                 )
               } else if (!isExcludedUrl(url)) {
+                const linkRel =
+                  node.nodeName === 'link' ? attr.attributes.rel : undefined
                 if (
+                  linkRel &&
+                  parseRelAttr(linkRel).includes('modulepreload')
+                ) {
+                  // A modulepreload link references a module, not a generic
+                  // asset, so resolve it through the plugin pipeline the same
+                  // way module scripts are — this also covers plugin-resolved
+                  // (e.g. virtual) ids that don't exist on the filesystem
+                  // (#22845). The href is rewritten to the output chunk
+                  // containing the module in generateBundle.
+                  assetUrlsPromises.push(
+                    (async () => {
+                      const resolved = await this.resolve(url, id)
+                      if (resolved && !resolved.external) {
+                        const placeholder = `__VITE_HTML_MODULEPRELOAD__${modulePreloads.length}__`
+                        modulePreloads.push({
+                          placeholder,
+                          originalUrl: attr.value,
+                          resolvedId: normalizePath(resolved.id),
+                        })
+                        overwriteAttrValue(s, attr.location, placeholder)
+                      }
+                      // when unresolvable, leave the href untouched so it can
+                      // be resolved at runtime (e.g. urls handled by a
+                      // server middleware)
+                    })(),
+                  )
+                } else if (
                   node.nodeName === 'link' &&
                   isCSSRequest(url) &&
                   // should not be converted if following attributes are present (#6748)
@@ -752,6 +802,7 @@ export function buildHtmlPlugin(config: ResolvedConfig): Plugin {
         })
 
         isAsyncScriptMap.get(config)!.set(id, everyScriptIsAsync)
+        htmlModulePreloadMap.get(config)!.set(id, modulePreloads)
 
         if (someScriptsAreAsync && someScriptsAreDefer) {
           config.logger.warn(
@@ -934,6 +985,47 @@ export function buildHtmlPlugin(config: ResolvedConfig): Plugin {
         const isAsync = isAsyncScriptMap.get(config)!.get(normalizedId)!
 
         let result = html
+
+        // rewrite modulepreload hrefs to the output chunk containing the
+        // module they resolved to during transform
+        const modulePreloads = htmlModulePreloadMap
+          .get(config)!
+          .get(normalizedId)
+        if (modulePreloads && modulePreloads.length > 0) {
+          const chunks = Object.values(bundle).filter(
+            (c): c is OutputChunk => c.type === 'chunk',
+          )
+          for (const preload of modulePreloads) {
+            // prefer the chunk the module is the facade of, then any chunk
+            // that bundles it
+            const targetChunk =
+              chunks.find(
+                (c) =>
+                  c.facadeModuleId &&
+                  normalizePath(c.facadeModuleId) === preload.resolvedId,
+              ) ??
+              chunks.find((c) =>
+                c.moduleIds.some(
+                  (moduleId) => normalizePath(moduleId) === preload.resolvedId,
+                ),
+              )
+            if (targetChunk) {
+              const builtUrl = partialEncodeURIPath(
+                toOutputAssetFilePath(targetChunk.fileName),
+              )
+              result = result.replace(preload.placeholder, () => builtUrl)
+            } else {
+              config.logger.warn(
+                `\n<link rel="modulepreload" href="${preload.originalUrl}"> in "/${relativeUrlPath}" ` +
+                  `doesn't point to a module included in the bundle, it will remain unchanged`,
+              )
+              result = result.replace(
+                preload.placeholder,
+                () => preload.originalUrl,
+              )
+            }
+          }
+        }
 
         // find corresponding entry chunk
         const chunk = Object.values(bundle).find(

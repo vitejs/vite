@@ -6,6 +6,7 @@ import {
   isBuild,
   isServe,
   page,
+  readFile,
   serverLogs,
   untilBrowserLogAfter,
   viteServer,
@@ -152,6 +153,28 @@ describe('nested w/ query', () => {
 })
 
 describe.runIf(isBuild)('build', () => {
+  describe('modulepreload', () => {
+    test('plugin-resolved href points at the output chunk containing the module', () => {
+      const html = readFile('dist/modulepreloadResolved.html')
+
+      // the plugin-resolved href is rewritten to the built chunk (#22845)
+      expect(html).not.toContain('href="/@resolved-virtual-script"')
+      const preloadHref = html.match(
+        /<link rel="modulepreload" href="([^"]+\.js)"/,
+      )?.[1]
+      expect(preloadHref).toBeTruthy()
+
+      // it points at the same chunk the module script was bundled into
+      const scriptSrc = html.match(
+        /<script type="module"[^>]*src="([^"]+\.js)"/,
+      )?.[1]
+      expect(preloadHref).toBe(scriptSrc)
+
+      // an unresolvable href is left untouched to be resolved at runtime
+      expect(html).toContain('href="/@unresolvable-script"')
+    })
+  })
+
   describe('scriptAsync', () => {
     beforeAll(async () => {
       await page.goto(viteTestUrl + '/scriptAsync.html')
