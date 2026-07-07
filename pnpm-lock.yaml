@@ -457,6 +457,8 @@ importers:
 
   packages/vite/src/node/__tests__/fixtures/config/native-compat: {}
 
+  packages/vite/src/node/__tests__/fixtures/config/native-compat/esm-in-commonjs-pkg: {}
+
   packages/vite/src/node/__tests__/fixtures/config/native-import: {}
 
   packages/vite/src/node/__tests__/fixtures/config/plugin-module-condition: {}
