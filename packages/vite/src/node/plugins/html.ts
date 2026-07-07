@@ -1039,12 +1039,12 @@ export function buildHtmlPlugin(config: ResolvedConfig): Plugin {
           },
         )
         // resolve asset url references
-        result = result.replace(assetUrlRE, (_, fileHash, postfix = '') => {
+        result = result.replace(assetUrlRE, (_, fileHash) => {
           const file = this.getFileName(fileHash)
           if (chunk) {
             chunk.viteMetadata!.importedAssets.add(cleanUrl(file))
           }
-          return encodeURIPath(toOutputAssetFilePath(file)) + postfix
+          return encodeURIPath(toOutputAssetFilePath(file))
         })
 
         result = result.replace(publicAssetUrlRE, (_, fileHash) => {

@@ -44,7 +44,7 @@ import type { Environment } from '../environment'
 import type { PartialEnvironment } from '../baseEnvironment'
 
 // referenceId is base64url but replaces - with $
-export const assetUrlRE: RegExp = /__VITE_ASSET__([\w$]+)__(?:\$_(.*?)__)?/g
+export const assetUrlRE: RegExp = /__VITE_ASSET__([\w$]+)__/g
 
 const jsSourceMapRE = /\.[cm]?js\.map$/
 
@@ -99,13 +99,12 @@ export function renderAssetUrlInJS(
   assetUrlRE.lastIndex = 0
   while ((match = assetUrlRE.exec(code))) {
     s ||= new MagicString(code)
-    const [full, referenceId, postfix = ''] = match
+    const [full, referenceId] = match
     const file = pluginContext.getFileName(referenceId)
     chunk.viteMetadata!.importedAssets.add(cleanUrl(file))
-    const filename = file + postfix
     const replacement = toOutputFilePathInJS(
       environment,
-      filename,
+      file,
       'asset',
       chunk.fileName,
       'js',
@@ -480,7 +479,7 @@ async function fileToBuiltUrl(
       const outputFilename = pluginContext.getFileName(referenceId)
       url = toOutputFilePathInJSForBundledDev(environment, outputFilename)
     } else {
-      url = `__VITE_ASSET__${referenceId}__${postfix ? `$_${postfix}__` : ``}`
+      url = `__VITE_ASSET__${referenceId}__${postfix}`
     }
   }
 
