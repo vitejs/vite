@@ -19,6 +19,9 @@ patchedDependencies:
   dotenv-expand@13.0.0:
     hash: 49330a663821151418e003e822a82a6a61d2f0f8a6e3cab00c1c94815a112889
     path: patches/dotenv-expand@13.0.0.patch
+  postcss-modules@9.0.0:
+    hash: 0c886ee83450c5fd20d2c88b3ba2cf5d3afbb9c440755757f311439897188056
+    path: patches/postcss-modules@9.0.0.patch
   sirv@3.0.2:
     hash: c07c56eb72faea34341d465cde2314e89db472106ed378181e3447893af6bf95
     path: patches/sirv@3.0.2.patch
@@ -388,7 +391,7 @@ importers:
         version: 6.0.1(jiti@2.7.0)(postcss@8.5.16)(tsx@4.22.4)(yaml@2.9.0)
       postcss-modules:
         specifier: ^9.0.0
-        version: 9.0.0(postcss@8.5.16)
+        version: 9.0.0(patch_hash=0c886ee83450c5fd20d2c88b3ba2cf5d3afbb9c440755757f311439897188056)(postcss@8.5.16)
       premove:
         specifier: ^4.0.0
         version: 4.0.0
@@ -13288,7 +13291,7 @@ snapshots:
       icss-utils: 5.1.0(postcss@8.5.16)
       postcss: 8.5.16
 
-  postcss-modules@9.0.0(postcss@8.5.16):
+  postcss-modules@9.0.0(patch_hash=0c886ee83450c5fd20d2c88b3ba2cf5d3afbb9c440755757f311439897188056)(postcss@8.5.16):
     dependencies:
       generic-names: 4.0.0
       icss-utils: 5.1.0(postcss@8.5.16)
