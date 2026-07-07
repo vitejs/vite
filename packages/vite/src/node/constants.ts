@@ -129,6 +129,10 @@ export const CLIENT_ENTRY: string = resolve(
   VITE_PACKAGE_DIR,
   'dist/client/client.mjs',
 )
+export const FBM_CLIENT_ENTRY: string = resolve(
+  VITE_PACKAGE_DIR,
+  'dist/client/fbmClient.mjs',
+)
 export const ENV_ENTRY: string = resolve(
   VITE_PACKAGE_DIR,
   'dist/client/env.mjs',

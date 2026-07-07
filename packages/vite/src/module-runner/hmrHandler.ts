@@ -38,9 +38,9 @@ export function createHMRHandlerForRunner(
         const { triggeredBy } = payload
         const clearEntrypointUrls = triggeredBy
           ? getModulesEntrypoints(
-              runner,
-              getModulesByFile(runner, slash(triggeredBy)),
-            )
+            runner,
+            getModulesByFile(runner, slash(triggeredBy)),
+          )
           : findAllEntrypoints(runner)
 
         if (!clearEntrypointUrls.size) break
@@ -77,6 +77,8 @@ export function createHMRHandlerForRunner(
         break
       }
       case 'ping': // noop
+        break
+      case 'fbm-update': // todo
         break
       default: {
         const check: never = payload

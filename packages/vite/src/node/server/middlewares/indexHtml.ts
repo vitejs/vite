@@ -479,15 +479,19 @@ export function indexHtmlMiddleware(
           return next()
         }
         const secFetchDest = req.headers['sec-fetch-dest']
+        const isDocumentRequest = [
+          'document',
+          'iframe',
+          'frame',
+          'fencedframe',
+          '',
+          undefined,
+        ].includes(secFetchDest)
+        if (isDocumentRequest && file === undefined) {
+          fullBundle.servedFallbackDuringInitialBuild = true
+        }
         if (
-          [
-            'document',
-            'iframe',
-            'frame',
-            'fencedframe',
-            '',
-            undefined,
-          ].includes(secFetchDest) &&
+          isDocumentRequest &&
           ((await fullBundle.triggerBundleRegenerationIfStale()) ||
             file === undefined)
         ) {

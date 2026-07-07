@@ -619,6 +619,19 @@ export interface ExperimentalOptions {
    *
    * This is highly experimental.
    *
+   * HMR semantics under full bundle mode differ from the middleware-based dev server
+   * in three ways (boundaries are computed in the browser from runtime state, not
+   * statically on the server):
+   *
+   * - Acceptance counts only when it executed: an `import.meta.hot.accept()` that is
+   *   visible in the source but never ran (e.g. inside a dead branch) does not suppress
+   *   the update — it triggers a full reload instead.
+   * - `hot.dispose` runs for every module the update re-executes, each receiving a
+   *   fresh `hot.data` object — not only for the accepted module with a shared
+   *   persistent object.
+   * - `hot.invalidate()` is handled fully client-side (a re-walk from the invalidator's
+   *   importers); no request is sent to the server.
+   *
    * @experimental
    * @default false
    */
