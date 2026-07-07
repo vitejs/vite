@@ -183,7 +183,8 @@ export function formatNativeConfigIncompatWarning(
     `\`configLoader: 'native'\`, which is planned to become the default in a ` +
     `future major version of Vite:`
   const lines = items.map((it) => `  - ${describeIncompatibility(it, root)}`)
-  return colors.yellow([`(!) ${header}`, ...lines].join('\n'))
+  const footer = `Set \`VITE_CONFIG_NATIVE_IGNORE_WARNING=true\` to suppress this warning.`
+  return colors.yellow([`(!) ${header}`, ...lines, footer].join('\n'))
 }
 
 export function createNativeConfigCompatPlugin(

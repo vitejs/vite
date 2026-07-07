@@ -2425,7 +2425,10 @@ async function bundleAndLoadConfigFile(
     isESM,
   )
 
-  if (bundled.nativeIncompatibilities.length > 0) {
+  if (
+    bundled.nativeIncompatibilities.length > 0 &&
+    !process.env.VITE_CONFIG_NATIVE_IGNORE_WARNING
+  ) {
     const logger = createLogger(logLevel, { customLogger })
     logger.warn(
       formatNativeConfigIncompatWarning(

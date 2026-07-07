@@ -1406,7 +1406,8 @@ describe('loadConfigFromFile', () => {
         [
           "(!) Your Vite config uses features that are unsupported by \`configLoader: 'native'\`, which is planned to become the default in a future major version of Vite:
           - \`__dirname\` (vite.config.js:3). Use \`import.meta.dirname\` instead
-          - \`__filename\` (vite.config.js:4). Use \`import.meta.filename\` instead",
+          - \`__filename\` (vite.config.js:4). Use \`import.meta.filename\` instead
+        Set \`VITE_CONFIG_NATIVE_IGNORE_WARNING=true\` to suppress this warning.",
         ]
       `)
     })
@@ -1420,7 +1421,8 @@ describe('loadConfigFromFile', () => {
         expect(messages).toMatchInlineSnapshot(`
           [
             "(!) Your Vite config uses features that are unsupported by \`configLoader: 'native'\`, which is planned to become the default in a future major version of Vite:
-            - \`__dirname\` (vite.config.ts:10). Use \`import.meta.dirname\` instead",
+            - \`__dirname\` (vite.config.ts:10). Use \`import.meta.dirname\` instead
+          Set \`VITE_CONFIG_NATIVE_IGNORE_WARNING=true\` to suppress this warning.",
           ]
         `)
       },
@@ -1431,7 +1433,8 @@ describe('loadConfigFromFile', () => {
       expect(messages).toMatchInlineSnapshot(`
         [
           "(!) Your Vite config uses features that are unsupported by \`configLoader: 'native'\`, which is planned to become the default in a future major version of Vite:
-          - import "./helper" without a file extension (vite.config.js:1). Add the file extension",
+          - import "./helper" without a file extension (vite.config.js:1). Add the file extension
+        Set \`VITE_CONFIG_NATIVE_IGNORE_WARNING=true\` to suppress this warning.",
         ]
       `)
     })
@@ -1441,7 +1444,8 @@ describe('loadConfigFromFile', () => {
       expect(messages).toMatchInlineSnapshot(`
         [
           "(!) Your Vite config uses features that are unsupported by \`configLoader: 'native'\`, which is planned to become the default in a future major version of Vite:
-          - import "./plugins" resolves to a directory index (vite.config.js:1). Import the index file directly",
+          - import "./plugins" resolves to a directory index (vite.config.js:1). Import the index file directly
+        Set \`VITE_CONFIG_NATIVE_IGNORE_WARNING=true\` to suppress this warning.",
         ]
       `)
     })
@@ -1451,7 +1455,8 @@ describe('loadConfigFromFile', () => {
       expect(messages).toMatchInlineSnapshot(`
         [
           "(!) Your Vite config uses features that are unsupported by \`configLoader: 'native'\`, which is planned to become the default in a future major version of Vite:
-          - JSON import "./data.json" without import attributes (vite.config.js:1). Add \`with { type: 'json' }\`",
+          - JSON import "./data.json" without import attributes (vite.config.js:1). Add \`with { type: 'json' }\`
+        Set \`VITE_CONFIG_NATIVE_IGNORE_WARNING=true\` to suppress this warning.",
         ]
       `)
     })
@@ -1465,7 +1470,8 @@ describe('loadConfigFromFile', () => {
       expect(messages).toMatchInlineSnapshot(`
         [
           "(!) Your Vite config uses features that are unsupported by \`configLoader: 'native'\`, which is planned to become the default in a future major version of Vite:
-          - import "./foo" resolves to a JSON file (vite.config.js:1). Import it with a \`.json\` extension and \`with { type: 'json' }\`",
+          - import "./foo" resolves to a JSON file (vite.config.js:1). Import it with a \`.json\` extension and \`with { type: 'json' }\`
+        Set \`VITE_CONFIG_NATIVE_IGNORE_WARNING=true\` to suppress this warning.",
         ]
       `)
     })
@@ -1486,7 +1492,8 @@ describe('loadConfigFromFile', () => {
       expect(messages).toMatchInlineSnapshot(`
         [
           "(!) Your Vite config uses features that are unsupported by \`configLoader: 'native'\`, which is planned to become the default in a future major version of Vite:
-          - \`__dirname\` (esm-helper.mjs:1). Use \`import.meta.dirname\` instead",
+          - \`__dirname\` (esm-helper.mjs:1). Use \`import.meta.dirname\` instead
+        Set \`VITE_CONFIG_NATIVE_IGNORE_WARNING=true\` to suppress this warning.",
         ]
       `)
     })
