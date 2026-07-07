@@ -43,7 +43,10 @@ export function importGlobPlugin(config: ResolvedConfig): Plugin {
   return {
     name: 'vite:import-glob',
     applyToEnvironment(environment) {
-      if (environment.config.isBundled) {
+      if (
+        environment.config.isBundled &&
+        !environment.config.resolve.tsconfigPaths
+      ) {
         return nativeImportGlobPlugin({
           root: environment.config.root,
           sourcemap: !!environment.config.build.sourcemap,
@@ -67,6 +70,7 @@ export function importGlobPlugin(config: ResolvedConfig): Plugin {
             this.resolve(im, id, options).then((i) => i?.id || im),
           config.experimental.importGlobRestoreExtension,
           config.logger,
+          config,
         )
         if (result) {
           if (!importGlobMaps.has(this.environment)) {
@@ -254,6 +258,7 @@ export async function parseImportGlob(
   root: string,
   resolveId: IdResolver,
   logger?: Logger,
+  config?: ResolvedConfig,
 ): Promise<ParsedImportGlob[]> {
   let cleanCode: string
   try {
@@ -347,7 +352,7 @@ export async function parseImportGlob(
 
     const globsResolved = await Promise.all(
       globs.map((glob) =>
-        toAbsoluteGlob(glob, root, importer, resolveId, options.base),
+        toAbsoluteGlob(glob, root, importer, resolveId, options.base, config),
       ),
     )
     const isRelative = globs.every((i) => '.!'.includes(i[0]))
@@ -422,6 +427,7 @@ export async function transformGlobImport(
   resolveId: IdResolver,
   restoreQueryExtension = false,
   logger?: Logger,
+  config?: ResolvedConfig,
 ): Promise<TransformGlobImportResult | null> {
   id = slash(id)
   root = slash(root)
@@ -433,6 +439,7 @@ export async function transformGlobImport(
     root,
     resolveId,
     logger,
+    config,
   )
   const matchedFiles = new Set<string>()
 
@@ -647,6 +654,7 @@ export async function toAbsoluteGlob(
   importer: string | undefined,
   resolveId: IdResolver,
   base?: string,
+  config?: ResolvedConfig,
 ): Promise<string> {
   let pre = ''
   if (glob[0] === '!') {
@@ -682,6 +690,29 @@ export async function toAbsoluteGlob(
   )
   if (isAbsolute(resolved)) {
     return pre + globSafeResolvedPath(resolved, glob)
+  }
+
+  if (config?.resolve?.tsconfigPaths && importer) {
+    const { resolveTsconfig } = await import('rolldown/experimental')
+    const result = resolveTsconfig(importer)
+    const paths = result?.tsconfig?.compilerOptions?.paths
+    if (paths) {
+      for (const [key, values] of Object.entries(paths)) {
+        if (!values || (values as any[]).length === 0) continue
+        const value = normalizePath((values as any[])[0])
+        if (key.endsWith('*')) {
+          const prefix = key.slice(0, -1)
+          if (glob.startsWith(prefix)) {
+            const replacement = value.endsWith('*') ? value.slice(0, -1) : value
+            const mapped = replacement + glob.slice(prefix.length)
+            return pre + globSafeResolvedPath(mapped, glob)
+          }
+        } else if (glob === key || glob.startsWith(key + '/')) {
+          const mapped = value + glob.slice(key.length)
+          return pre + globSafeResolvedPath(mapped, glob)
+        }
+      }
+    }
   }
 
   throw new Error(
