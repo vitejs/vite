@@ -15,6 +15,12 @@
 <h2>Glob import with tsconfig paths</h2>
 <p class="glob"></p>
 
+<h2>Glob import with tsconfig fallback paths</h2>
+<p class="glob-fallback"></p>
+
+<h2>Glob import with negated tsconfig paths</h2>
+<p class="glob-negated"></p>
+
 <h2>Nested tsconfig.json & references / include works</h2>
 <p class="nested-a"></p>
 <p class="nested-b"></p>
@@ -53,4 +59,13 @@
 
   const globResult = import.meta.glob('@/nested/*.ts', { eager: true })
   text('.glob', Object.keys(globResult).join('/'))
+
+  const globFallbackResult = import.meta.glob('@fallback/*.js', { eager: true })
+  text('.glob-fallback', Object.keys(globFallbackResult).join('/'))
+
+  const globNegatedResult = import.meta.glob(
+    ['@/nested/*.ts', '!@/nested/b*.ts'],
+    { eager: true },
+  )
+  text('.glob-negated', Object.keys(globNegatedResult).join('/'))
 </script>

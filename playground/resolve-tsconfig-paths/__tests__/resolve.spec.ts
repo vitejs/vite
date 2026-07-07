@@ -40,3 +40,16 @@ test('less @import does not resolve tsconfig paths (unsupported)', async () => {
 test('glob resolves tsconfig paths', async () => {
   await expect.poll(() => page.textContent('.glob')).toContain('a.ts')
 })
+
+test('glob resolves tsconfig fallback paths', async () => {
+  await expect
+    .poll(() => page.textContent('.glob-fallback'))
+    .toContain('fallback.js')
+})
+
+test('glob resolves negated tsconfig paths', async () => {
+  await expect
+    .poll(() => page.textContent('.glob-negated'))
+    .not.toContain('b.ts')
+  await expect.poll(() => page.textContent('.glob-negated')).toContain('a.ts')
+})
