@@ -1497,6 +1497,17 @@ describe('loadConfigFromFile', () => {
         ]
       `)
     })
+
+    test('warns on ESM syntax in a config under a `type: commonjs` package', async () => {
+      const messages = await loadWithWarnings('esm-in-commonjs-pkg')
+      expect(messages).toMatchInlineSnapshot(`
+        [
+          "(!) Your Vite config uses features that are unsupported by \`configLoader: 'native'\`, which is planned to become the default in a future major version of Vite:
+          - ESM syntax in a file loaded as CommonJS (vite.config.js:1). Use a \`.mjs\` extension or set \`"type": "module"\` in the closest package.json
+        Set \`VITE_CONFIG_NATIVE_IGNORE_WARNING=true\` to suppress this warning.",
+        ]
+      `)
+    })
   })
 
   describe('load default files', () => {

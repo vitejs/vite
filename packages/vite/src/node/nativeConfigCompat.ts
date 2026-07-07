@@ -12,6 +12,7 @@ export type NativeConfigIncompatibilityType =
   | 'extensionless-import'
   | 'directory-index-import'
   | 'json-without-attributes'
+  | 'esm-syntax-in-cjs'
 
 export interface NativeConfigIncompatibility {
   type: NativeConfigIncompatibilityType
@@ -153,6 +154,27 @@ export function analyzeConfigModuleReferences(
   return { globals, imports }
 }
 
+const esmStatementTypes = new Set([
+  'ImportDeclaration',
+  'ExportNamedDeclaration',
+  'ExportDefaultDeclaration',
+  'ExportAllDeclaration',
+])
+
+export function findEsmSyntaxInCjs(
+  code: string,
+  ast: ESTree.Program,
+  file: string,
+): NativeConfigIncompatibility | undefined {
+  for (const node of ast.body) {
+    if (esmStatementTypes.has(node.type)) {
+      const { line, column } = numberToPos(code, (node as ESTree.Node).start)
+      return { type: 'esm-syntax-in-cjs', file, line, column }
+    }
+  }
+  return undefined
+}
+
 function describeIncompatibility(
   item: NativeConfigIncompatibility,
   root: string,
@@ -171,6 +193,8 @@ function describeIncompatibility(
       return item.specifier?.endsWith('.json')
         ? `JSON import "${item.specifier}" without import attributes (${loc}). Add \`with { type: 'json' }\``
         : `import "${item.specifier}" resolves to a JSON file (${loc}). Import it with a \`.json\` extension and \`with { type: 'json' }\``
+    case 'esm-syntax-in-cjs':
+      return `ESM syntax in a file loaded as CommonJS (${loc}). Use a \`.mjs\` extension or set \`"type": "module"\` in the closest package.json`
   }
 }
 
@@ -195,10 +219,8 @@ export function createNativeConfigCompatPlugin(
     transform: {
       filter: { id: /\.[cm]?[jt]sx?$/ },
       async handler(code, id) {
-        // only check ESM files
-        if (typeof process.versions.deno !== 'string' && !isFilePathESM(id)) {
-          return null
-        }
+        const isESM =
+          typeof process.versions.deno === 'string' || isFilePathESM(id)
 
         let program: ESTree.Program
         try {
@@ -208,6 +230,16 @@ export function createNativeConfigCompatPlugin(
         } catch {
           return null
         }
+
+        // Node loads this file as CommonJS. ESM-only checks (`__dirname`,
+        // import resolution) don't apply, but ESM syntax itself would throw
+        // under the native loader.
+        if (!isESM) {
+          const finding = findEsmSyntaxInCjs(code, program, id)
+          if (finding) collector.push(finding)
+          return null
+        }
+
         const { globals, imports } = analyzeConfigModuleReferences(
           code,
           program,
