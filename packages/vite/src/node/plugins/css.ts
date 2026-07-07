@@ -727,23 +727,20 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
               }
 
               // replace asset url references with resolved url.
-              chunkCSS = chunkCSS.replace(
-                assetUrlRE,
-                (_, fileHash, postfix = '') => {
-                  const filename = this.getFileName(fileHash) + postfix
-                  chunk.viteMetadata!.importedAssets.add(cleanUrl(filename))
-                  return encodeURIPath(
-                    toOutputFilePathInCss(
-                      filename,
-                      'asset',
-                      cssAssetName,
-                      'css',
-                      config,
-                      toRelative,
-                    ),
-                  )
-                },
-              )
+              chunkCSS = chunkCSS.replace(assetUrlRE, (_, fileHash) => {
+                const filename = this.getFileName(fileHash)
+                chunk.viteMetadata!.importedAssets.add(cleanUrl(filename))
+                return encodeURIPath(
+                  toOutputFilePathInCss(
+                    filename,
+                    'asset',
+                    cssAssetName,
+                    'css',
+                    config,
+                    toRelative,
+                  ),
+                )
+              })
               // resolve public URL from CSS paths
               if (encodedPublicUrls) {
                 const relativePathToPublicFromCSS = normalizePath(
