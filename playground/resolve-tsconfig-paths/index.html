@@ -12,6 +12,9 @@
 <h2>Import using # prefixed path</h2>
 <p class="hash"></p>
 
+<h2>Glob import with tsconfig paths</h2>
+<p class='glob'></p>
+
 <h2>Nested tsconfig.json & references / include works</h2>
 <p class="nested-a"></p>
 <p class="nested-b"></p>
@@ -47,4 +50,7 @@
   import { valueA, valueB } from './src/nested/index.ts'
   text('.nested-a', valueA)
   text('.nested-b', valueB)
+
+  const globResult = import.meta.glob('@/nested/*.ts', { eager: true })
+  text('.glob', Object.keys(globResult).join('/'))
 </script>

@@ -36,3 +36,7 @@ test('sass @use resolves tsconfig paths', async () => {
 test('less @import does not resolve tsconfig paths (unsupported)', async () => {
   await expect.poll(() => getColor('.tsconfig-paths-less')).toBe('navy')
 })
+
+test('glob resolves tsconfig paths', async () => {
+  await expect.poll(() => page.textContent('.glob')).toContain('a.ts')
+})
