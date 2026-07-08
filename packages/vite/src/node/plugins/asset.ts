@@ -403,13 +403,15 @@ export function assetPlugin(config: ResolvedConfig): Plugin {
 export async function fileToUrl(
   pluginContext: PluginContext,
   id: string,
+  format: AssetUrlFormat,
   asFileUrl = false,
 ): Promise<string> {
   const { environment } = pluginContext
   if (!environment.config.isBundled) {
-    return fileToDevUrl(environment, id, asFileUrl)
+    const value = await fileToDevUrl(environment, id, asFileUrl)
+    return formatBuiltAsset({ type: 'string', value }, format)
   } else {
-    return fileToBuiltUrl(pluginContext, id, 'string')
+    return fileToBuiltUrl(pluginContext, id, format)
   }
 }
 
