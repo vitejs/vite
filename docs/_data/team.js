@@ -120,10 +120,10 @@ export const advisors = [
   {
     avatar: 'https://github.com/serhalp.png',
     name: 'Philippe Serhal',
-    title: '',
-    org: '',
-    orgLink: '',
-    desc: '',
+    title: 'Staff Software Engineer',
+    org: 'Netlify',
+    orgLink: 'https://www.netlify.com/',
+    desc: 'Juggling all the frameworks at Netlify',
     links: [
       { icon: 'github', link: 'https://github.com/serhalp' },
       { icon: 'bluesky', link: 'https://bsky.app/profile/philippeserhal.com' },
