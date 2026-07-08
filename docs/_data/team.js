@@ -132,10 +132,10 @@ export const advisors = [
   {
     avatar: 'https://github.com/jamesopstad.png',
     name: 'James Opstad',
-    title: '',
-    org: '',
-    orgLink: '',
-    desc: '',
+    title: 'Senior Engineer',
+    org: 'Cloudflare',
+    orgLink: 'https://www.cloudflare.com/',
+    desc: 'Building developer tools at Cloudflare',
     links: [{ icon: 'github', link: 'https://github.com/jamesopstad' }],
   },
   {
