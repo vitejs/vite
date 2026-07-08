@@ -1,7 +1,6 @@
-// Tests the `PostcssUserConfig` type re-exported from `vite`. It mirrors the
-// `Config` type of `postcss-load-config` (which is bundled into Vite and cannot
-// be re-exported through the bundled `.d.ts`, see #19109). The `Equal` case
-// below locks the two together so the mirror can never silently drift.
+// Tests the `PostcssUserConfig` type exported from `vite` (see #19109). The
+// `Equal` case asserts it stays identical to the `Config` type of the
+// `postcss-load-config` version Vite loads PostCSS configs with.
 import type { Equal, ExpectTrue } from '@type-challenges/utils'
 import type { Config as PostcssLoadConfig } from 'postcss-load-config'
 import type { PostcssUserConfig } from '../index'
