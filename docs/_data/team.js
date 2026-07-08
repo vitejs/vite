@@ -141,10 +141,10 @@ export const advisors = [
   {
     avatar: 'https://github.com/danielroe.png',
     name: 'Daniel Roe',
-    title: '',
-    org: '',
-    orgLink: '',
-    desc: '',
+    title: 'Open Source Maintainer',
+    org: 'Vercel',
+    orgLink: 'https://vercel.com/',
+    desc: 'Leading the Nuxt team',
     links: [
       { icon: 'github', link: 'https://github.com/danielroe' },
       { icon: 'bluesky', link: 'https://bsky.app/profile/danielroe.dev' },
