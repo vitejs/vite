@@ -1,0 +1,10 @@
+/* Imported only for its side effects (no exports used). It mixes a local class
+   with a global rule, so it must NOT be treeshaken away in build even though its
+   exports are unused (#19003). */
+.treeshake-module-side-effect-local {
+  color: red;
+}
+
+:global(.treeshake-module-side-effect) {
+  color: green;
+}

@@ -509,6 +509,17 @@ test.runIf(isBuild)('CSS modules should be treeshaken if not used', () => {
   expect(css).not.toContain('treeshake-module-b')
 })
 
+test('CSS module imported for side effects keeps its global rule', async () => {
+  // an impure CSS module (with a global rule) imported without using its exports
+  // must apply consistently in dev and build (#19003)
+  expect(await getColor('.treeshake-module-side-effect')).toBe('green')
+})
+
+test.runIf(isBuild)('impure CSS modules should not be treeshaken', () => {
+  const css = findAssetFile(/\.css$/, undefined, undefined, true)
+  expect(css).toContain('treeshake-module-side-effect')
+})
+
 test.runIf(isBuild)('Scoped CSS via cssScopeTo should be treeshaken', () => {
   const css = findAssetFile(/\.css$/, undefined, undefined, true)
   expect(css).not.toMatch(/\btreeshake-scoped-b\b/)
