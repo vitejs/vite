@@ -2,7 +2,7 @@ import path from 'node:path'
 import MagicString from 'magic-string'
 import type { ImportSpecifier } from 'es-module-lexer'
 import { init, parse as parseImports } from 'es-module-lexer'
-import type { OutputAsset, SourceMap } from 'rolldown'
+import type { SourceMap } from 'rolldown'
 import { viteBuildImportAnalysisPlugin as nativeBuildImportAnalysisPlugin } from 'rolldown/experimental'
 import type { RawSourceMap } from '@jridgewell/remapping'
 import convertSourceMap from 'convert-source-map'
@@ -13,7 +13,7 @@ import { toOutputFilePathInJS } from '../build'
 import { genSourceMapUrl } from '../server/sourcemap'
 import type { PartialEnvironment } from '../baseEnvironment'
 import { removedPureCssFilesCache } from './css'
-import { getImportMapFilename } from './html'
+import { getImportMap, getImportMapFilename } from './html'
 
 type FileDep = {
   url: string
@@ -43,6 +43,55 @@ function findPreloadMarker(str: string, pos: number = 0): number {
   preloadMarkerRE.lastIndex = pos
   const result = preloadMarkerRE.exec(str)
   return result?.index ?? -1
+}
+
+/**
+ * Pairs each dynamic `import()` with the `__VITE_PRELOAD__` marker that belongs to it.
+ *
+ * Each import is wrapped as `__vitePreload(factory, __VITE_PRELOAD__)`, so its marker
+ * comes right after it. Nested imports nest the wrappers, so the imports and markers
+ * form balanced brackets. For example, in `import('a').then(() => import('b'))`, b's
+ * marker ends up before a's. Pairing each import with the next marker would give b's
+ * marker to both imports and drop a's CSS to `void 0` (#22700). Instead the markers are
+ * matched with a stack in one pass, and each marker closes the innermost import that is
+ * still open.
+ *
+ * The returned array is parallel to `imports`. Entry `i` holds the start position of
+ * import `i`'s marker, or -1 when the import has no marker.
+ */
+export function matchImportsToPreloadMarkers(
+  code: string,
+  imports: readonly ImportSpecifier[],
+): number[] {
+  const importMarkerPos = new Array<number>(imports.length).fill(-1)
+  if (imports.length === 0) return importMarkerPos
+
+  const openImports: number[] = []
+  let nextImport = 0
+  for (
+    let markerStartPos = findPreloadMarker(code, imports[0].e);
+    markerStartPos !== -1;
+    markerStartPos = findPreloadMarker(
+      code,
+      markerStartPos + preloadMarker.length,
+    )
+  ) {
+    while (
+      nextImport < imports.length &&
+      imports[nextImport].e <= markerStartPos
+    ) {
+      openImports.push(nextImport++)
+    }
+    if (openImports.length) {
+      importMarkerPos[openImports.pop()!] = markerStartPos
+    }
+  }
+  // #3051: a lone import whose marker isn't placed after it pairs with the only marker
+  if (imports.length === 1 && importMarkerPos[0] === -1) {
+    importMarkerPos[0] = findPreloadMarker(code)
+  }
+
+  return importMarkerPos
 }
 
 /**
@@ -99,7 +148,7 @@ function preload(
       if (import.meta.resolve) {
         return import.meta.resolve(specifier)
       }
-      return new URL(specifier, import.meta.url).href
+      return new URL(specifier, /** #__KEEP__ */ import.meta.url).href
     }
 
     promise = allSettled(
@@ -193,7 +242,9 @@ function getPreloadCode(
       : // If the base isn't relative, then the deps are relative to the projects `outDir` and the base
         // is appended inside __vitePreload too.
         `function(dep) { return ${JSON.stringify(environment.config.base)}+dep }`
-  const preloadCode = `const scriptRel = ${scriptRel};const assetsURL = ${assetsURL};const seen = {};export const ${preloadMethod} = ${preload.toString()}`
+  // replace `import` as a workaround for stackblitz: https://stackblitz.com/edit/node-vqfvv8dy?file=index.js
+  const preloadMethodCode = preload.toString().replaceAll('𝐢𝐦𝐩𝐨𝐫𝐭', 'import')
+  const preloadCode = `const scriptRel = ${scriptRel};const assetsURL = ${assetsURL};const seen = {};export const ${preloadMethod} = ${preloadMethodCode}`
   return preloadCode
 }
 
@@ -302,20 +353,8 @@ export function buildImportAnalysisPlugin(config: ResolvedConfig): Plugin[] {
       let importMapMapping: Record<string, string> | undefined
       let importMapReverseMapping: Record<string, string> | undefined
       if (config.build.chunkImportMap) {
-        const decoder = new TextDecoder()
-        const importMap = bundle[getImportMapFilename(config)]! as OutputAsset
-        const importMapContent: { imports: Record<string, string> } =
-          JSON.parse(
-            typeof importMap.source === 'string'
-              ? importMap.source
-              : decoder.decode(importMap.source),
-          )
-        importMapMapping = Object.fromEntries(
-          Object.entries(importMapContent.imports).map(([k, v]) => [
-            k.slice(config.base.length),
-            v.slice(config.base.length),
-          ]),
-        )
+        const importMap = getImportMap(bundle, config)!
+        importMapMapping = importMap.mapping
         importMapReverseMapping = Object.fromEntries(
           Object.entries(importMapMapping).map(([k, v]) => [v, k]),
         )
@@ -324,7 +363,7 @@ export function buildImportAnalysisPlugin(config: ResolvedConfig): Plugin[] {
           this.emitFile({
             type: 'asset',
             fileName: 'importmap.legacy.json',
-            source: importMap.source,
+            source: importMap.asset.source,
           })
           delete bundle[getImportMapFilename(config)]
         }
@@ -369,6 +408,8 @@ export function buildImportAnalysisPlugin(config: ResolvedConfig): Plugin[] {
           }
 
           if (imports.length) {
+            const importMarkerPos = matchImportsToPreloadMarkers(code, imports)
+
             for (let index = 0; index < imports.length; index++) {
               // To handle escape sequences in specifier strings, the .n field will be provided where possible.
               const {
@@ -438,11 +479,7 @@ export function buildImportAnalysisPlugin(config: ResolvedConfig): Plugin[] {
                 addDeps(normalizedFile)
               }
 
-              let markerStartPos = findPreloadMarker(code, end)
-              // fix issue #3051
-              if (markerStartPos === -1 && imports.length === 1) {
-                markerStartPos = findPreloadMarker(code)
-              }
+              const markerStartPos = importMarkerPos[index]
 
               if (markerStartPos > 0) {
                 // the dep list includes the main chunk, so only need to reload when there are actual other deps.

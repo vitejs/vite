@@ -16,6 +16,6 @@
     "@vitejs/test-dep-optimized-malicious": "file:dep-optimized-malicious",
     "@vitejs/test-importee-pkg": "file:importee-pkg",
     "magic-string": "^0.30.21",
-    "oxc-parser": "^0.137.0"
+    "oxc-parser": "^0.138.0"
   }
 }
