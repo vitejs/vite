@@ -68,6 +68,7 @@ export function testSourceInput() {
         'source-input': (rule) => {
           const location = rule.loc
           const from = currentStyleSheetSources[location.source_index]
+          if (typeof from !== 'string') return []
           return [
             {
               type: 'style',
