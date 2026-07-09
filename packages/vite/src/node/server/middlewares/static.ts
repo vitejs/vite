@@ -300,9 +300,14 @@ export function isFileLoadingAllowed(
   if (!fs.strict) return true
 
   if (isWindows && filePath.includes('~')) {
-    // `~` is used for Windows 8.3 short names, which can be used to bypass the check.
-    // While is it valid to have files with `~` in the path, we disallow it to be safe.
-    return false
+    // Windows 8.3 short name format: 1-6 alphanumeric chars + ~ + 1-5 digits,
+    // optionally followed by a dot and up to 3 extension chars.
+    // Only check the basename because sirv resolves `..` before calling this
+    // function, making intermediate 8.3 components harmless.
+    const basename = path.win32.basename(filePath)
+    if (/^[A-Z0-9]{1,6}~\d{1,5}(?:\.[A-Z0-9]{0,3})?$/i.test(basename)) {
+      return false
+    }
   }
 
   const hasDriveLetter = isWindows && windowsDriveRE.test(filePath)
