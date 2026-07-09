@@ -210,4 +210,8 @@ import('./then-css/outer.js').then((outerMod) => {
   })
 })
 
+import('./rest-destructure.js').then(({ a, ...rest }) => {
+  text('.dynamic-import-rest', `${a} ${rest.b} ${rest.c}`)
+})
+
 console.log('index.js')
