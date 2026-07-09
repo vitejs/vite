@@ -260,9 +260,9 @@ You can also deploy to a [custom domain](https://surge.sh/help/adding-a-custom-d
 
 ## Azure Static Web Apps
 
-You can quickly deploy your Vite app with Microsoft Azure [Static Web Apps](https://aka.ms/staticwebapps) service. You need:
+You can quickly deploy your Vite app with Microsoft Azure [Static Web Apps](https://azure.microsoft.com/en-us/products/app-service/static) service. You need:
 
-- An Azure account and a subscription key. You can create a [free Azure account here](https://azure.microsoft.com/free).
+- An Azure account and a subscription key. You can create a [free Azure account here](https://azure.microsoft.com/en-us/free).
 - Your app code pushed to [GitHub](https://github.com).
 - The [SWA Extension](https://marketplace.visualstudio.com/items?itemName=ms-azuretools.vscode-azurestaticwebapps) in [Visual Studio Code](https://code.visualstudio.com).
 
