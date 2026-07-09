@@ -1631,6 +1631,7 @@ async function compilePostCSS(
       code: string
       map?: Exclude<SourceMapInput, string>
       modules?: Record<string, string>
+      pure?: boolean
     }
   | undefined
 > {
