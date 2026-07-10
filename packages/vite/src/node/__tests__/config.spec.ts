@@ -15,6 +15,7 @@ import {
 } from '../utils'
 import { createLogger } from '../logger'
 import type { Logger } from '../logger'
+import { isWindows } from '../../shared/utils'
 
 describe('mergeConfig', () => {
   test('handles configs with different alias schemas', () => {
@@ -1298,11 +1299,15 @@ describe('resolveConfig', () => {
         input: 'src/a-b_c$.ts',
         expected: resolveInputFromRoot('src/a-b_c$.ts'),
       },
-      {
-        name: 'windows path',
-        input: 'src\\foo.ts',
-        expected: resolveInputFromRoot('src/foo.ts'),
-      },
+      ...(isWindows
+        ? [
+            {
+              name: 'windows path',
+              input: 'src\\foo.ts',
+              expected: resolveInputFromRoot('src/foo.ts'),
+            },
+          ]
+        : []),
     ]
 
     for (const { name, input, expected } of cases) {
