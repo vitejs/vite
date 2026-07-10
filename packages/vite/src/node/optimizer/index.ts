@@ -1243,15 +1243,15 @@ const lockfileFormats = [
     manager: 'yarn',
   },
   {
+    path: 'bun.lock',
+    checkPatchesDir: 'patches',
+    manager: 'bun',
+  },
+  {
     path: '.rush/temp/shrinkwrap-deps.json',
     // Included in lockfile
     checkPatchesDir: false,
     manager: 'pnpm',
-  },
-  {
-    path: 'bun.lock',
-    checkPatchesDir: 'patches',
-    manager: 'bun',
   },
 
   // discouraged package manager lockfiles
