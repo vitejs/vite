@@ -22,6 +22,7 @@ import {
   type RolldownOptions,
   rolldown,
 } from 'rolldown'
+import { isDynamicPattern } from 'tinyglobby'
 import type {
   DevToolsConfig,
   ResolvedDevToolsConfig,
@@ -916,42 +917,35 @@ function resolveInput(
     return undefined
   }
   if (typeof input === 'string') {
-    assertInputIsNotGlob(input, 'value')
-    return normalizePath(path.resolve(root, input))
+    const unescapedInput = unescapeGlobCharacters(input)
+    return normalizePath(path.resolve(root, unescapedInput))
   }
   if (Array.isArray(input)) {
     return input.map((inp) => {
-      assertInputIsNotGlob(inp, 'value')
-      return normalizePath(path.resolve(root, inp))
+      const unescapedInput = unescapeGlobCharacters(inp)
+      return normalizePath(path.resolve(root, unescapedInput))
     })
   }
   const resolved: Record<string, string> = {}
   for (const key in input) {
-    assertInputIsNotGlob(key, 'key')
-    assertInputIsNotGlob(input[key], 'value')
-    resolved[key] = normalizePath(path.resolve(root, input[key]))
+    const unescapedInput = unescapeGlobCharacters(input[key])
+    resolved[key] = normalizePath(path.resolve(root, unescapedInput))
   }
   return resolved
 }
 
-// Characters that have a special meaning in glob patterns. They are reserved in
-// the `input` option so that it could later be changed to accept globs without
-// breaking existing configs.
-const globCharactersRE = /[*?[\]{}()!+@|]/
+const escapedGlobCharactersRE = /\\([*?[\]{}()!+@|])/g
 
-function assertInputIsNotGlob(value: string, kind: 'key' | 'value'): void {
-  if (value.includes('\\')) {
-    throw new Error(
-      `\`input\` must use \`/\` as the path separator even on Windows, ` +
-        `so the ${kind} ${JSON.stringify(value)} is not allowed.`,
-    )
-  }
-  if (globCharactersRE.test(value)) {
+function unescapeGlobCharacters(value: string): string {
+  if (isDynamicPattern(value)) {
+    // so that it could later be changed to accept globs without a breaking change
     throw new Error(
       `\`input\` cannot contain glob characters. They are reserved, ` +
-        `so the ${kind} ${JSON.stringify(value)} is not allowed.`,
+        `so the ${JSON.stringify(value)} is not allowed. Please escape them with a backslash (\\)`,
     )
   }
+  // unescape glob characters
+  return value.replace(escapedGlobCharactersRE, '$1')
 }
 
 export function resolveDevEnvironmentOptions(

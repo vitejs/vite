@@ -1243,10 +1243,8 @@ describe('resolveConfig', () => {
       { name: 'negation', input: 'src/!(main).ts' },
       { name: 'extglob prefix +', input: 'src/+(page).ts' },
       { name: 'extglob prefix @', input: 'src/@(page).ts' },
-      { name: 'alternation', input: 'src/a|b.ts' },
       { name: 'array element', input: ['src/main.ts', 'src/*.ts'] },
-      { name: 'record value', input: { main: 'src/*.ts' } },
-      { name: 'record key', input: { '[name]': 'src/main.ts' } },
+      { name: 'record', input: { main: 'src/*.ts' } },
     ]
 
     for (const { name, input } of cases) {
@@ -1256,27 +1254,65 @@ describe('resolveConfig', () => {
     }
   })
 
-  test('reserves the `\\` path separator in input', async () => {
-    const cases: { name: string; input: UserConfig['input'] }[] = [
-      { name: 'string value', input: 'src\\main.ts' },
-      { name: 'array element', input: ['src/main.ts', 'src\\admin.ts'] },
-      { name: 'record value', input: { main: 'src\\main.ts' } },
-      { name: 'record key', input: { 'src\\main': 'src/main.ts' } },
+  test('support escaped input', async () => {
+    const cases: {
+      name: string
+      input: UserConfig['input']
+      expected: UserConfig['input']
+    }[] = [
+      {
+        name: 'glob',
+        input: 'src/\\*.ts',
+        expected: resolveInputFromRoot('src/*.ts'),
+      },
+      {
+        name: 'array element',
+        input: ['src/\\*.ts'],
+        expected: [resolveInputFromRoot('src/*.ts')],
+      },
+      {
+        name: 'record',
+        input: { main: 'src/\\*.ts' },
+        expected: { main: resolveInputFromRoot('src/*.ts') },
+      },
     ]
 
-    for (const { name, input } of cases) {
-      await expect(resolveConfig({ input }, 'serve'), name).rejects.toThrow(
-        /`input` must use `\/` as the path separator/,
-      )
+    for (const { name, input, expected } of cases) {
+      await expect(
+        resolveConfig({ input }, 'serve'),
+        name,
+      ).resolves.toMatchObject({
+        input: expected,
+      })
     }
   })
 
   test('allows non-glob special characters in input', async () => {
-    const config = await resolveConfig({ input: 'src/a-b_c$.ts' }, 'serve')
+    const cases: {
+      name: string
+      input: UserConfig['input']
+      expected: UserConfig['input']
+    }[] = [
+      {
+        name: 'special characters',
+        input: 'src/a-b_c$.ts',
+        expected: resolveInputFromRoot('src/a-b_c$.ts'),
+      },
+      {
+        name: 'windows path',
+        input: 'src\\foo.ts',
+        expected: resolveInputFromRoot('src/foo.ts'),
+      },
+    ]
 
-    expect(config.environments.client.input).toBe(
-      resolveInputFromRoot('src/a-b_c$.ts'),
-    )
+    for (const { name, input, expected } of cases) {
+      await expect(
+        resolveConfig({ input }, 'serve'),
+        name,
+      ).resolves.toMatchObject({
+        input: expected,
+      })
+    }
   })
 
   test('is used as the default for build.lib.entry when entry is omitted', async () => {
