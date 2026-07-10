@@ -99,6 +99,7 @@ import {
   assetUrlRE,
   cssEntriesMap,
   fileToUrl,
+  injectRuntimeIntoStringLiteral,
   publicAssetUrlCache,
   publicAssetUrlRE,
   publicFileToBuiltUrl,
@@ -832,6 +833,7 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
                   config.isWorker,
                 )
               s ||= new MagicString(code)
+              const wrappedLiterals = new Set<number>()
 
               for (const {
                 cssAssetName,
@@ -857,11 +859,22 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
                   'js',
                   toRelativeRuntime,
                 )
-                const replacementString =
-                  typeof replacement === 'string'
-                    ? JSON.stringify(encodeURIPath(replacement)).slice(1, -1)
-                    : `"+${replacement.runtime}+"`
-                s.update(start, end, replacementString)
+                if (typeof replacement === 'string') {
+                  s.update(
+                    start,
+                    end,
+                    JSON.stringify(encodeURIPath(replacement)).slice(1, -1),
+                  )
+                } else {
+                  injectRuntimeIntoStringLiteral(
+                    s,
+                    code,
+                    start,
+                    end,
+                    replacement.runtime,
+                    wrappedLiterals,
+                  )
+                }
               }
             }
 

@@ -770,6 +770,11 @@ test('relative path in html asset', async () => {
   expect(await getColor('.relative-css')).toMatch('red')
 })
 
+test('typeof on an asset url keeps its meaning', async () => {
+  expect(await page.textContent('.typeof-asset-url')).toBe('string')
+  expect(await page.textContent('.typeof-inline-css')).toBe('string')
+})
+
 test('url() contains file in publicDir, in <style> tag', async () => {
   expect(await getBg('.style-public-assets')).toContain(iconMatch)
 })

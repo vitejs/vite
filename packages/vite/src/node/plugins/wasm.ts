@@ -5,7 +5,7 @@ import type { RolldownMagicString } from 'rolldown'
 import { createToImportMetaURLBasedRelativeRuntime } from '../build'
 import { type Plugin, perEnvironmentPlugin } from '../plugin'
 import { cleanUrl } from '../../shared/utils'
-import { assetUrlRE, fileToUrl } from './asset'
+import { assetUrlRE, fileToUrl, injectRuntimeIntoStringLiteral } from './asset'
 
 const wasmHelperId = '\0vite/wasm-helper.js'
 
@@ -141,6 +141,7 @@ ${glueCode}
 
                 let match: RegExpExecArray | null
                 let s: RolldownMagicString | MagicString | undefined
+                const wrappedLiterals = new Set<number>()
 
                 wasmInitUrlRE.lastIndex = 0
                 while ((match = wasmInitUrlRE.exec(code))) {
@@ -151,10 +152,13 @@ ${glueCode}
 
                   s ??= meta.magicString ?? new MagicString(code)
 
-                  s.update(
+                  injectRuntimeIntoStringLiteral(
+                    s,
+                    code,
                     match.index,
                     match.index + full.length,
-                    `"+${runtime}+"`,
+                    runtime,
+                    wrappedLiterals,
                   )
                 }
 

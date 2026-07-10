@@ -73,6 +73,91 @@ export function registerCustomMime(): void {
   mrmime.mimes.eot = 'application/vnd.ms-fontobject'
 }
 
+/**
+ * Minimal surface of `MagicString` / rolldown's native magic string that
+ * {@link injectRuntimeIntoStringLiteral} needs.
+ */
+export interface UpdatableMagicString {
+  update(start: number, end: number, content: string): unknown
+  appendLeft(index: number, content: string): unknown
+  appendRight(index: number, content: string): unknown
+}
+
+const quoteChars = new Set(['"', "'", '`'])
+
+function isEscaped(code: string, index: number): boolean {
+  let backslashes = 0
+  for (let i = index - 1; i >= 0 && code[i] === '\\'; i--) {
+    backslashes++
+  }
+  return backslashes % 2 === 1
+}
+
+/**
+ * Scan away from a placeholder for the quote that delimits the string literal
+ * containing it. A placeholder never contains a quote, so within its literal
+ * the only unescaped quote characters are the delimiters themselves.
+ * Returns -1 when no delimiter is found before a line break, which cannot occur
+ * inside a `'`/`"` literal.
+ */
+function findLiteralDelimiter(
+  code: string,
+  from: number,
+  step: 1 | -1,
+): number {
+  for (let i = from; i >= 0 && i < code.length; i += step) {
+    const char = code[i]
+    if (char === '\n' || char === '\r') return -1
+    if (quoteChars.has(char) && !isEscaped(code, i)) return i
+  }
+  return -1
+}
+
+/**
+ * Replace an asset placeholder that sits inside a string literal with a runtime
+ * expression, splicing it out of the literal (`"a" + runtime + "b"`).
+ *
+ * The concatenation binds looser than unary operators and property access, so
+ * the whole literal is wrapped in parentheses. Without them, `typeof "<ph>"`
+ * would become `typeof "" + runtime + ""`, which parses as
+ * `(typeof "") + runtime + ""`. See #22304.
+ *
+ * `wrappedLiterals` tracks which literals already got their parentheses, so a
+ * literal holding several placeholders (a CSS chunk with two `url()`s) is only
+ * wrapped once.
+ */
+export function injectRuntimeIntoStringLiteral(
+  s: UpdatableMagicString,
+  code: string,
+  start: number,
+  end: number,
+  runtime: string,
+  wrappedLiterals: Set<number>,
+): void {
+  const open = findLiteralDelimiter(code, start - 1, -1)
+  const close = open === -1 ? -1 : findLiteralDelimiter(code, end, 1)
+  const quote = code[open]
+  if (
+    close === -1 ||
+    code[close] !== quote ||
+    // a `${` means the bounds we found may belong to a nested expression
+    (quote === '`' && code.slice(open, close).includes('${'))
+  ) {
+    // Not confidently inside a string literal. All placeholders are emitted
+    // inside one, so this should not happen; splice without parens rather than
+    // risk emitting unbalanced ones.
+    s.update(start, end, `"+(${runtime})+"`)
+    return
+  }
+
+  if (!wrappedLiterals.has(open)) {
+    wrappedLiterals.add(open)
+    s.appendLeft(open, '(')
+    s.appendRight(close + 1, ')')
+  }
+  s.update(start, end, `${quote}+(${runtime})+${quote}`)
+}
+
 export function renderAssetUrlInJS(
   pluginContext: PluginContext,
   chunk: RenderedChunk,
@@ -94,7 +179,9 @@ export function renderAssetUrlInJS(
   // Urls added in CSS that is imported in JS end up like
   // var inlined = ".inlined{color:green;background:url(__VITE_ASSET__5aA0Ddc0__)}\n";
 
-  // In both cases, the wrapping should already be fine
+  // In both cases the placeholder sits inside a string literal, so a runtime
+  // replacement has to splice itself out of that literal.
+  const wrappedLiterals = new Set<number>()
 
   assetUrlRE.lastIndex = 0
   while ((match = assetUrlRE.exec(code))) {
@@ -111,11 +198,24 @@ export function renderAssetUrlInJS(
       'js',
       toRelativeRuntime,
     )
-    const replacementString =
-      typeof replacement === 'string'
-        ? JSON.stringify(encodeURIPath(replacement)).slice(1, -1)
-        : `"+${replacement.runtime}+"`
-    s.update(match.index, match.index + full.length, replacementString)
+    const start = match.index
+    const end = match.index + full.length
+    if (typeof replacement === 'string') {
+      s.update(
+        start,
+        end,
+        JSON.stringify(encodeURIPath(replacement)).slice(1, -1),
+      )
+    } else {
+      injectRuntimeIntoStringLiteral(
+        s,
+        code,
+        start,
+        end,
+        replacement.runtime,
+        wrappedLiterals,
+      )
+    }
   }
 
   // Replace __VITE_PUBLIC_ASSET__5aA0Ddc0__ with absolute paths
@@ -136,11 +236,24 @@ export function renderAssetUrlInJS(
       'js',
       toRelativeRuntime,
     )
-    const replacementString =
-      typeof replacement === 'string'
-        ? JSON.stringify(encodeURIPath(replacement)).slice(1, -1)
-        : `"+${replacement.runtime}+"`
-    s.update(match.index, match.index + full.length, replacementString)
+    const start = match.index
+    const end = match.index + full.length
+    if (typeof replacement === 'string') {
+      s.update(
+        start,
+        end,
+        JSON.stringify(encodeURIPath(replacement)).slice(1, -1),
+      )
+    } else {
+      injectRuntimeIntoStringLiteral(
+        s,
+        code,
+        start,
+        end,
+        replacement.runtime,
+        wrappedLiterals,
+      )
+    }
   }
 
   return s

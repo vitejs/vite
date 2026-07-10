@@ -25,7 +25,11 @@ import {
 } from '../build'
 import { cleanUrl } from '../../shared/utils'
 import type { Logger } from '../logger'
-import { fileToUrl, toOutputFilePathInJSForBundledDev } from './asset'
+import {
+  fileToUrl,
+  injectRuntimeIntoStringLiteral,
+  toOutputFilePathInJSForBundledDev,
+} from './asset'
 
 type WorkerBundle = {
   entryFilename: string
@@ -596,6 +600,7 @@ export function webWorkerPlugin(config: ResolvedConfig): Plugin {
               const workerOutputCache = workerOutputCaches.get(
                 config.mainConfig || config,
               )!
+              const wrappedLiterals = new Set<number>()
 
               while ((match = workerAssetUrlRE.exec(code))) {
                 const [full, hash] = match
@@ -613,15 +618,24 @@ export function webWorkerPlugin(config: ResolvedConfig): Plugin {
                   'js',
                   toRelativeRuntime,
                 )
-                const replacementString =
-                  typeof replacement === 'string'
-                    ? JSON.stringify(encodeURIPath(replacement)).slice(1, -1)
-                    : `"+${replacement.runtime}+"`
-                s.update(
-                  match.index,
-                  match.index + full.length,
-                  replacementString,
-                )
+                const start = match.index
+                const end = match.index + full.length
+                if (typeof replacement === 'string') {
+                  s.update(
+                    start,
+                    end,
+                    JSON.stringify(encodeURIPath(replacement)).slice(1, -1),
+                  )
+                } else {
+                  injectRuntimeIntoStringLiteral(
+                    s,
+                    code,
+                    start,
+                    end,
+                    replacement.runtime,
+                    wrappedLiterals,
+                  )
+                }
               }
             }
             return result()
