@@ -15,11 +15,11 @@
     "feed": "^6.0.0",
     "markdown-it-image-size": "^15.0.1",
     "oxc-minify": "^0.139.0",
-    "vitepress": "^2.0.0-alpha.17",
+    "vitepress": "^2.0.0-alpha.18",
     "vitepress-plugin-graphviz": "^0.1.0",
     "vitepress-plugin-group-icons": "^1.7.5",
     "vitepress-plugin-llms": "^1.13.2",
     "vue": "^3.5.39",
-    "vue-tsc": "^3.3.6"
+    "vue-tsc": "^3.3.7"
   }
 }
