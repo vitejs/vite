@@ -26,6 +26,7 @@ declare const __HMR_DIRECT_TARGET__: string
 declare const __HMR_BASE__: string
 declare const __HMR_TIMEOUT__: number
 declare const __HMR_ENABLE_OVERLAY__: boolean
+declare const __HMR_ENABLE_RUNTIME_OVERLAY__: boolean
 declare const __WS_TOKEN__: string
 declare const __SERVER_FORWARD_CONSOLE__: any
 declare const __BUNDLED_DEV__: boolean
@@ -338,6 +339,7 @@ async function handleMessage(payload: HotPayload) {
 }
 
 const enableOverlay = __HMR_ENABLE_OVERLAY__
+const enableRuntimeOverlay = __HMR_ENABLE_RUNTIME_OVERLAY__
 const hasDocument = 'document' in globalThis
 
 function createErrorOverlay(err: ErrorPayload['err']) {
@@ -355,6 +357,45 @@ function clearErrorOverlay() {
 
 function hasErrorOverlay() {
   return document.querySelectorAll(overlayId).length
+}
+
+// Runtime error overlay (opt-in via `server.hmr.overlayRuntimeErrors`).
+// Uncaught errors and unhandled rejections are shown in a small dismissible
+// toast so the page underneath stays usable. Only enabled when the base HMR
+// overlay is also enabled.
+if (hasDocument && enableRuntimeOverlay) {
+  let runtimeErrorToast: ErrorOverlay | undefined
+
+  const normalizeRuntimeError = (
+    value: unknown,
+  ): ErrorPayload['err'] | undefined => {
+    if (value == null) return undefined
+    if (value instanceof Error) {
+      return { message: value.message, stack: value.stack ?? '' }
+    }
+    return { message: String(value), stack: '' }
+  }
+
+  const showRuntimeErrorToast = (value: unknown) => {
+    const err = normalizeRuntimeError(value)
+    if (!err) return
+    try {
+      // only keep the latest runtime error on screen; earlier ones remain in
+      // the console. This avoids stacking toasts on top of each other.
+      runtimeErrorToast?.close()
+      runtimeErrorToast = new ErrorOverlay(err, true, { toast: true })
+      document.body.appendChild(runtimeErrorToast)
+    } catch {
+      // never let the overlay itself break the page
+    }
+  }
+
+  window.addEventListener('error', (event) => {
+    showRuntimeErrorToast(event.error ?? event.message)
+  })
+  window.addEventListener('unhandledrejection', (event) => {
+    showRuntimeErrorToast(event.reason)
+  })
 }
 
 function waitForSuccessfulPing(socketUrl: string) {

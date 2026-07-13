@@ -87,6 +87,8 @@ async function createClientConfigValueReplacer(
 
   const hmrConfig = isObject(config.server.hmr) ? config.server.hmr : undefined
   const overlay = hmrConfig?.overlay !== false
+  // runtime error overlay is opt-in and only active when the base overlay is on
+  const runtimeOverlay = overlay && hmrConfig?.overlayRuntimeErrors === true
 
   // ws.clientPort -> ws.port
   // -> (24678 if middleware mode and WS server is not specified) -> new URL(import.meta.url).port
@@ -114,6 +116,7 @@ async function createClientConfigValueReplacer(
   const hmrBaseReplacement = escapeReplacement(hmrBase)
   const hmrTimeoutReplacement = escapeReplacement(timeout)
   const hmrEnableOverlayReplacement = escapeReplacement(overlay)
+  const hmrEnableRuntimeOverlayReplacement = escapeReplacement(runtimeOverlay)
   const hmrConfigNameReplacement = escapeReplacement(hmrConfigName)
   const wsTokenReplacement = escapeReplacement(config.webSocketToken)
   const serverForwardConsoleReplacement = escapeReplacement(
@@ -135,6 +138,10 @@ async function createClientConfigValueReplacer(
       .replace(`__HMR_BASE__`, hmrBaseReplacement)
       .replace(`__HMR_TIMEOUT__`, hmrTimeoutReplacement)
       .replace(`__HMR_ENABLE_OVERLAY__`, hmrEnableOverlayReplacement)
+      .replace(
+        `__HMR_ENABLE_RUNTIME_OVERLAY__`,
+        hmrEnableRuntimeOverlayReplacement,
+      )
       .replace(`__HMR_CONFIG_NAME__`, hmrConfigNameReplacement)
       .replace(`__WS_TOKEN__`, wsTokenReplacement)
       .replace(`__SERVER_FORWARD_CONSOLE__`, serverForwardConsoleReplacement)

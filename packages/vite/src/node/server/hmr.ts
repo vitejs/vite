@@ -82,6 +82,12 @@ export interface HmrOptions {
   timeout?: number
   overlay?: boolean
   /**
+   * Show uncaught runtime errors and unhandled promise rejections from the
+   * browser in a dismissible toast. Only applies when `overlay` is not `false`.
+   * @default false
+   */
+  overlayRuntimeErrors?: boolean
+  /**
    * @deprecated Use `server.ws.server` instead.
    */
   server?: HttpServer

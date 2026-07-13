@@ -169,6 +169,100 @@ kbd {
   border-color: rgb(54, 57, 64);
   border-image: initial;
 }
+
+.close {
+  display: none;
+  position: absolute;
+  top: 8px;
+  right: 10px;
+  width: 24px;
+  height: 24px;
+  padding: 0;
+  border: none;
+  border-radius: 4px;
+  background: transparent;
+  color: var(--dim);
+  font-family: var(--monospace);
+  font-size: 18px;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.close:hover {
+  color: var(--window-color);
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.close:focus-visible {
+  outline: 1px solid var(--cyan);
+  outline-offset: 1px;
+}
+
+/*
+ * Toast variant: a small, dismissible card anchored to the bottom-right that
+ * is used for runtime errors so the page underneath stays usable.
+ */
+:host(.toast) {
+  top: auto;
+  left: auto;
+  right: 16px;
+  bottom: 16px;
+  width: auto;
+  height: auto;
+  pointer-events: none;
+}
+
+:host(.toast) .backdrop {
+  position: static;
+  width: auto;
+  height: auto;
+  overflow: visible;
+  background: transparent;
+}
+
+:host(.toast) .window {
+  pointer-events: auto;
+  margin: 0;
+  max-width: min(420px, calc(100vw - 32px));
+  max-height: 80vh;
+  padding: 16px;
+  padding-right: 36px;
+}
+
+:host(.toast) .close {
+  display: block;
+}
+
+:host(.toast) pre:empty {
+  display: none;
+}
+
+/* the default tip references clicking the backdrop, which a toast has none of */
+:host(.toast) .tip {
+  display: none;
+}
+
+:host(.toast) .stack {
+  max-height: 30vh;
+  overflow: auto;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  :host(.toast) .window {
+    animation: vite-error-toast-in 0.2s ease-out;
+  }
+}
+
+@keyframes vite-error-toast-in {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
 `
 
 // Error Template
@@ -179,6 +273,11 @@ const createTemplate = () =>
     h(
       'div',
       { class: 'window', part: 'window' },
+      h(
+        'button',
+        { class: 'close', part: 'close', 'aria-label': 'Close' },
+        '×',
+      ),
       h(
         'pre',
         { class: 'message', part: 'message' },
@@ -213,14 +312,39 @@ const codeframeRE = /^(?:>?\s*\d+\s+\|.*|\s+\|\s*\^.*)\r?\n/gm
 // Allow `ErrorOverlay` to extend `HTMLElement` even in environments where
 // `HTMLElement` was not originally defined.
 const { HTMLElement = class {} as typeof globalThis.HTMLElement } = globalThis
+export interface ErrorOverlayOptions {
+  /**
+   * Render a small dismissible toast anchored to the bottom-right instead of a
+   * full-screen overlay. Used for runtime errors so the page stays usable.
+   */
+  toast?: boolean
+}
+
 export class ErrorOverlay extends HTMLElement {
   root: ShadowRoot
   closeOnEsc: (e: KeyboardEvent) => void
 
-  constructor(err: ErrorPayload['err'], links = true) {
+  constructor(
+    err: ErrorPayload['err'],
+    links = true,
+    options: ErrorOverlayOptions = {},
+  ) {
     super()
+    const toast = options.toast === true
     this.root = this.attachShadow({ mode: 'open' })
     this.root.appendChild(createTemplate())
+
+    if (toast) {
+      this.classList.add('toast')
+      // announce to assistive tech and make the card keyboard-focusable so
+      // that Esc works and screen readers pick up the message
+      this.setAttribute('role', 'alert')
+      const windowEl = this.root.querySelector<HTMLElement>('.window')!
+      windowEl.setAttribute('tabindex', '-1')
+      this.root
+        .querySelector('.close')!
+        .addEventListener('click', () => this.close())
+    }
 
     codeframeRE.lastIndex = 0
     const hasFrame = err.frame && codeframeRE.test(err.frame)
@@ -248,9 +372,13 @@ export class ErrorOverlay extends HTMLElement {
       e.stopPropagation()
     })
 
-    this.addEventListener('click', () => {
-      this.close()
-    })
+    if (!toast) {
+      // clicking outside the window (on the backdrop) dismisses the overlay.
+      // a toast has no backdrop, so it is dismissed via the close button or Esc.
+      this.addEventListener('click', () => {
+        this.close()
+      })
+    }
 
     this.closeOnEsc = (e: KeyboardEvent) => {
       if (e.key === 'Escape' || e.code === 'Escape') {

@@ -181,11 +181,13 @@ Specify server response headers.
 
 ## server.hmr
 
-- **Type:** `boolean | { overlay?: boolean }`
+- **Type:** `boolean | { overlay?: boolean, overlayRuntimeErrors?: boolean }`
 
 Disable or configure HMR behavior.
 
 Set `server.hmr.overlay` to `false` to disable the server error overlay.
+
+Set `server.hmr.overlayRuntimeErrors` to `true` to also show uncaught runtime errors and unhandled promise rejections from the browser in a dismissible toast. This is off by default and only applies when `server.hmr.overlay` is not `false`.
 
 ::: warning Deprecated Options
 
