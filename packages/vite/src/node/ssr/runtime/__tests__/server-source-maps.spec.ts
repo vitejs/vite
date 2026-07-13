@@ -76,12 +76,11 @@ describe('module runner initialization', async () => {
   })
 
   it('stacktrace column on first line', async ({ runner, server }) => {
-    // column is off by "use strict"
     const topLevelError = await getError(() =>
       runner.import('/fixtures/has-error-first.js'),
     )
     expect(serializeStack(server, topLevelError)).toBe(
-      '    at <root>/fixtures/has-error-first.js:1:18',
+      '    at <root>/fixtures/has-error-first.js:1:7',
     )
 
     const topLevelErrorTs = await getError(() =>
@@ -101,6 +100,25 @@ describe('module runner initialization', async () => {
       'Error: crash',
       '    at crash (<root>/fixtures/has-error-deep.ts:2:9)',
       '    at Module.main (<root>/fixtures/has-error-deep.ts:6:3)',
+    ])
+  })
+
+  it('call site of an imported binding matches Node column', async ({
+    runner,
+    server,
+  }) => {
+    // Calls to imported bindings are wrapped with `(0, ...)` to avoid binding
+    // `this`. V8 anchors the call-site stack frame of such a parenthesized
+    // callee to the argument list `(`, but the frame should still point to the
+    // start of the callee (matching Node), i.e. column 1 here, not the `(`.
+    // See #19625.
+    const error = await getError(() =>
+      runner.import('/fixtures/has-error-toplevel.js'),
+    )
+    expect(serializeStackDeep(server, error).slice(0, 3)).toEqual([
+      'Error: crash',
+      '    at crash (<root>/fixtures/has-error-toplevel-dep.js:2:9)',
+      '    at <root>/fixtures/has-error-toplevel.js:3:1',
     ])
   })
 

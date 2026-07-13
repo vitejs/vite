@@ -1493,12 +1493,20 @@ export async function applyHtmlTransforms(
   return html
 }
 
-const entirelyImportRE =
-  /^(?:import\s*(?:"[^"\n]*[^\\\n]"|'[^'\n]*[^\\\n]');*|\/\*[\s\S]*?\*\/|\/\/.*[$\n])*$/
+const importOrCommentRE =
+  /\s+|\/\*[\s\S]*?\*\/|\/\/[^\n]*(?:\n|$)|import\s*(?:"(?:[^"\\\n]|\\.)*"|'(?:[^'\\\n]|\\.)*')\s*;*/y
+
 function isEntirelyImport(code: string) {
   // only consider "side-effect" imports, which match <script type=module> semantics exactly
-  // the regexes will remove too little in some exotic cases, but false-negatives are alright
-  return entirelyImportRE.test(code.trim())
+  // the regexes will remove too little in some exotic cases, but false-negatives are alright.
+  // Consume one token at a time to avoid backtracking over the whole chunk.
+  importOrCommentRE.lastIndex = 0
+  while (importOrCommentRE.lastIndex < code.length) {
+    if (!importOrCommentRE.test(code)) {
+      return false
+    }
+  }
+  return true
 }
 
 function getBaseInHTML(urlRelativePath: string, config: ResolvedConfig) {
@@ -1660,4 +1668,35 @@ export function getImportMapFilename(config: ResolvedConfig): string {
     return chunkImportMap.fileName
   }
   return 'importmap.json'
+}
+
+/**
+ * Read and parse the chunk import map asset from the bundle.
+ * Returns `undefined` when the import map is not present in the bundle.
+ */
+export function getImportMap(
+  bundle: OutputBundle,
+  config: ResolvedConfig,
+):
+  | {
+      asset: OutputAsset
+      /** import map entries with the base stripped (placeholder name -> real name) */
+      mapping: Record<string, string>
+    }
+  | undefined {
+  const asset = bundle[getImportMapFilename(config)] as OutputAsset | undefined
+  if (!asset) return undefined
+
+  const content: { imports: Record<string, string> } = JSON.parse(
+    typeof asset.source === 'string'
+      ? asset.source
+      : new TextDecoder().decode(asset.source),
+  )
+  const mapping = Object.fromEntries(
+    Object.entries(content.imports).map(([k, v]) => [
+      k.slice(config.base.length),
+      v.slice(config.base.length),
+    ]),
+  )
+  return { asset, mapping }
 }
