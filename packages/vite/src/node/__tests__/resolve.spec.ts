@@ -11,6 +11,11 @@ describe('import and resolveId', () => {
       configFile: false,
       root: import.meta.dirname,
       logLevel: 'error',
+      // the scanner would otherwise crawl every HTML fixture under `__tests__`
+      optimizeDeps: {
+        noDiscovery: true,
+        include: [],
+      },
       server: {
         middlewareMode: true,
         ws: false,
