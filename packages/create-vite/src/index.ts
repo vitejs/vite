@@ -852,7 +852,7 @@ function setupEslint(root: string, isTs: boolean) {
   // renovate: datasource=npm depName=@eslint/js
   const eslintJsVersion = '10.0.1'
   // renovate: datasource=npm depName=eslint
-  const eslintVersion = '10.6.0'
+  const eslintVersion = '10.7.0'
   // renovate: datasource=npm depName=eslint-plugin-react-hooks
   const eslintPluginReactHooksVersion = '7.1.1'
   // renovate: datasource=npm depName=eslint-plugin-react-refresh
@@ -860,7 +860,7 @@ function setupEslint(root: string, isTs: boolean) {
   // renovate: datasource=npm depName=globals
   const globalsVersion = '17.7.0'
   // renovate: datasource=npm depName=typescript-eslint
-  const typescriptEslintVersion = '8.62.1'
+  const typescriptEslintVersion = '8.63.0'
 
   const eslintConfigForTS = /* js */ `import js from '@eslint/js'
 import globals from 'globals'

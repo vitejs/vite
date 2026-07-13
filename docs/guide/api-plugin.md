@@ -375,9 +375,7 @@ Vite plugins can also provide hooks that serve Vite-specific purposes. These hoo
       originalUrl?: string
     },
   ) =>
-    | IndexHtmlTransformResult
-    | void
-    | Promise<IndexHtmlTransformResult | void>
+    IndexHtmlTransformResult | void | Promise<IndexHtmlTransformResult | void>
 
   type IndexHtmlTransformResult =
     | string
