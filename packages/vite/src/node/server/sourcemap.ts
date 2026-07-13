@@ -55,6 +55,47 @@ interface SourceMapLike {
   sourceRoot?: string
 }
 
+/**
+ * Rewrites the sourcemap's `sources` entries so debuggers (e.g. VS Code) can
+ * resolve them:
+ *
+ * - Absolute file paths are made relative to the module's directory to give
+ *   debuggers a chance to display them meaningfully.
+ * - Non-virtual entries are encoded with {@link encodeURI} so characters like
+ *   whitespace do not break resolution. The sourcemap spec requires `sources`
+ *   entries to be URIs; a raw path containing a space (e.g. `../My Docs/x.ts`)
+ *   yields an invalid URI reference. See https://github.com/vitejs/vite/issues/17977.
+ */
+export function rewriteModuleSourceMapSources(
+  map: SourceMapLike,
+  file: string,
+): void {
+  if (!path.isAbsolute(file)) return
+
+  let modDirname: string | undefined
+  for (let index = 0; index < map.sources.length; index++) {
+    const sourcePath = map.sources[index]
+    if (!sourcePath) continue
+
+    let rewritten = sourcePath
+    // Rewrite sources to relative paths to give debuggers the chance
+    // to resolve and display them in a meaningful way (rather than
+    // with absolute paths).
+    if (path.isAbsolute(rewritten)) {
+      modDirname ??= path.dirname(file)
+      rewritten = path.relative(modDirname, rewritten)
+    }
+
+    // Skip virtual modules (e.g. `\0foo`, `virtual:foo`) — encoding them
+    // would corrupt the identifier the debugger uses to fetch content.
+    if (!virtualSourceRE.test(rewritten)) {
+      rewritten = encodeURI(rewritten)
+    }
+
+    map.sources[index] = rewritten
+  }
+}
+
 async function computeSourceRoute(map: SourceMapLike, file: string) {
   let sourceRoot: string | undefined
   try {

@@ -31,6 +31,7 @@ import {
   applySourcemapIgnoreList,
   extractSourcemapFromFile,
   injectSourcesContent,
+  rewriteModuleSourceMapSources,
 } from './sourcemap'
 import { isFileLoadingAllowed } from './middlewares/static'
 import { throwClosedServerError } from './pluginContainer'
@@ -393,28 +394,7 @@ async function loadAndTransform(
       logger,
     )
 
-    if (path.isAbsolute(mod.file)) {
-      let modDirname
-      for (
-        let sourcesIndex = 0;
-        sourcesIndex < normalizedMap.sources.length;
-        ++sourcesIndex
-      ) {
-        const sourcePath = normalizedMap.sources[sourcesIndex]
-        if (sourcePath) {
-          // Rewrite sources to relative paths to give debuggers the chance
-          // to resolve and display them in a meaningful way (rather than
-          // with absolute paths).
-          if (path.isAbsolute(sourcePath)) {
-            modDirname ??= path.dirname(mod.file)
-            normalizedMap.sources[sourcesIndex] = path.relative(
-              modDirname,
-              sourcePath,
-            )
-          }
-        }
-      }
-    }
+    rewriteModuleSourceMapSources(normalizedMap, mod.file)
   }
 
   if (environment._closing && environment.config.dev.recoverable)
