@@ -108,9 +108,7 @@ export default {
   export default {
     plugins: [
       legacy({
-        modernPolyfills: [
-          /* ... */
-        ],
+        modernPolyfills: [/* ... */],
         renderLegacyChunks: false,
       }),
     ],
