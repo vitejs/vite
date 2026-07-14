@@ -1572,6 +1572,69 @@ switch(1){}f()
   `)
 })
 
+test('a switch-case local shadows an import only within the case block', async () => {
+  expect(
+    await ssrTransformSimpleCode(
+      `import { createObjectProperty as o } from './ast'
+export function buildProps(node) {
+  const marker = () => o('ref_for')
+  switch (o(node.type)) {
+    case 1:
+      let o = node.value
+      console.log(o)
+      break
+  }
+  return o(marker)
+}`,
+    ),
+  ).toMatchInlineSnapshot(`
+    "__vite_ssr_exportName__("buildProps", () => { try { return buildProps } catch {} });
+    const __vite_ssr_import_0__ = await __vite_ssr_import__("./ast", {"importedNames":["createObjectProperty"]});
+
+    function buildProps(node) {
+      const marker = () => (0,__vite_ssr_import_0__.createObjectProperty)('ref_for');
+      switch ((0,__vite_ssr_import_0__.createObjectProperty)(node.type)) {
+        case 1:
+          let o = node.value;
+          console.log(o);
+          break
+      };
+      return (0,__vite_ssr_import_0__.createObjectProperty)(marker)
+    }"
+  `)
+})
+
+test('a switch-case function or class declaration is scoped to the case block', async () => {
+  expect(
+    await ssrTransformSimpleCode(
+      `import { f, C } from './m'
+function run(v) {
+  switch (v) {
+    case 1:
+      function f() {}
+      class C {}
+      console.log(f, C)
+      break
+  }
+  return [f(), new C()]
+}`,
+    ),
+  ).toMatchInlineSnapshot(`
+    "const __vite_ssr_import_0__ = await __vite_ssr_import__("./m", {"importedNames":["f","C"]});
+
+    function run(v) {
+      switch (v) {
+        case 1:
+          function f() {}
+          class C {}
+          console.log(f, C);
+          break
+      };
+      return [(0,__vite_ssr_import_0__.f)(), new __vite_ssr_import_0__.C()]
+    }"
+  `)
+})
+
 test('does not break minified code', async () => {
   // Based on https://unpkg.com/@headlessui/vue@1.7.23/dist/components/transitions/transition.js
   expect(
