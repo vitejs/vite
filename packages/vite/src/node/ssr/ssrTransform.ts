@@ -519,12 +519,8 @@ function walk(
         onStatements(node.consequent)
       }
 
-      // track parent stack, skip for "else-if"/"else" branches as acorn nests
-      // the ast within "if" nodes instead of flattening them
-      if (
-        parent &&
-        !(parent.type === 'IfStatement' && node === parent.alternate)
-      ) {
+      // track parent stack
+      if (parent && !isSkippedParent(node, parent)) {
         parentStack.unshift(parent)
       }
 
@@ -620,10 +616,7 @@ function walk(
 
     leave(node: ESTree.Node, parent: ESTree.Node | null) {
       // untrack parent stack from above
-      if (
-        parent &&
-        !(parent.type === 'IfStatement' && node === parent.alternate)
-      ) {
+      if (parent && !isSkippedParent(node, parent)) {
         parentStack.shift()
       }
 
@@ -761,11 +754,26 @@ type FunctionNodes = ESTree.Node & {
     | `${string}Function${'Expression' | 'Declaration'}`
     | `${string}Method`
 }
+/**
+ * Children that must not see `parent` as an enclosing scope:
+ * - "else-if"/"else" branches, as acorn nests the ast within "if" nodes
+ *   instead of flattening them.
+ * - a `switch` discriminant, which is evaluated outside the case block:
+ *   in `switch (x) { case 1: let x }`, `x` is the outer binding.
+ */
+function isSkippedParent(node: ESTree.Node, parent: ESTree.Node) {
+  return (
+    (parent.type === 'IfStatement' && node === parent.alternate) ||
+    (parent.type === 'SwitchStatement' && node === parent.discriminant)
+  )
+}
+
 function isFunction(node: ESTree.Node): node is FunctionNodes {
   return functionNodeTypeRE.test(node.type)
 }
 
-const blockNodeTypeRE = /^BlockStatement$|^For(?:In|Of)?Statement$/
+const blockNodeTypeRE =
+  /^BlockStatement$|^SwitchStatement$|^For(?:In|Of)?Statement$/
 function isBlock(node: ESTree.Node) {
   return blockNodeTypeRE.test(node.type)
 }
