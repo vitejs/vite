@@ -9,6 +9,9 @@ import m from '@vitejs/test-dep-cjs-with-es-module-flag'
 import cjsFromESM from '@vitejs/test-dep-cjs-compiled-from-esm'
 import cjsFromCJS from '@vitejs/test-dep-cjs-compiled-from-cjs'
 import * as cjsFromCJSNamespace from '@vitejs/test-dep-cjs-compiled-from-cjs'
+import * as cjsProtoMembers from '@vitejs/test-dep-cjs-prototype-members'
+import * as cjsDefaultArray from '@vitejs/test-dep-cjs-default-array'
+import * as cjsDefaultNull from '@vitejs/test-dep-cjs-default-null'
 
 // Test exporting a name that was already imported
 export { useState } from 'react'
@@ -35,6 +38,32 @@ if (
   cjsFromCJSNamespace.bar === 'bar'
 ) {
   text('.cjs-dep-cjs-compiled-from-cjs', 'ok')
+}
+
+if (cjsProtoMembers.Color?.('#2e95c8') === '#2e95c8') {
+  text('.cjs-dep-cjs-prototype-members', 'ok')
+}
+
+if (cjsProtoMembers.nonEnumerable === 'non-enumerable') {
+  text('.cjs-dep-cjs-prototype-members-non-enumerable', 'ok')
+}
+
+const liveGetterFirst = cjsProtoMembers.liveGetter
+if (cjsProtoMembers.liveGetter === liveGetterFirst + 1) {
+  text('.cjs-dep-cjs-prototype-members-live-getter', 'ok')
+}
+
+if (
+  cjsDefaultArray[0] === 'a' &&
+  cjsDefaultArray.length === 3 &&
+  Array.isArray(cjsDefaultArray.default) &&
+  cjsDefaultArray.default.join('') === 'abc'
+) {
+  text('.cjs-dep-cjs-default-array', 'ok')
+}
+
+if (cjsDefaultNull.default === null) {
+  text('.cjs-dep-cjs-default-null', 'ok')
 }
 
 function App() {

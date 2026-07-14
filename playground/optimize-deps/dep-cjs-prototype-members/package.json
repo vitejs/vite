@@ -1,0 +1,6 @@
+{
+  "name": "@vitejs/test-dep-cjs-prototype-members",
+  "private": true,
+  "version": "0.0.0",
+  "main": "index.js"
+}
