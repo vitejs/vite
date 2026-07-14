@@ -2,7 +2,7 @@ import path from 'node:path'
 import MagicString from 'magic-string'
 import type { ImportSpecifier } from 'es-module-lexer'
 import { init, parse as parseImports } from 'es-module-lexer'
-import type { OutputAsset, SourceMap } from 'rolldown'
+import type { SourceMap } from 'rolldown'
 import { viteBuildImportAnalysisPlugin as nativeBuildImportAnalysisPlugin } from 'rolldown/experimental'
 import type { RawSourceMap } from '@jridgewell/remapping'
 import convertSourceMap from 'convert-source-map'
@@ -13,7 +13,7 @@ import { toOutputFilePathInJS } from '../build'
 import { genSourceMapUrl } from '../server/sourcemap'
 import type { PartialEnvironment } from '../baseEnvironment'
 import { removedPureCssFilesCache } from './css'
-import { getImportMapFilename } from './html'
+import { getImportMap, getImportMapFilename } from './html'
 
 type FileDep = {
   url: string
@@ -148,7 +148,7 @@ function preload(
       if (import.meta.resolve) {
         return import.meta.resolve(specifier)
       }
-      return new URL(specifier, import.meta.url).href
+      return new URL(specifier, /** #__KEEP__ */ import.meta.url).href
     }
 
     promise = allSettled(
@@ -242,7 +242,9 @@ function getPreloadCode(
       : // If the base isn't relative, then the deps are relative to the projects `outDir` and the base
         // is appended inside __vitePreload too.
         `function(dep) { return ${JSON.stringify(environment.config.base)}+dep }`
-  const preloadCode = `const scriptRel = ${scriptRel};const assetsURL = ${assetsURL};const seen = {};export const ${preloadMethod} = ${preload.toString()}`
+  // replace `import` as a workaround for stackblitz: https://stackblitz.com/edit/node-vqfvv8dy?file=index.js
+  const preloadMethodCode = preload.toString().replaceAll('𝐢𝐦𝐩𝐨𝐫𝐭', 'import')
+  const preloadCode = `const scriptRel = ${scriptRel};const assetsURL = ${assetsURL};const seen = {};export const ${preloadMethod} = ${preloadMethodCode}`
   return preloadCode
 }
 
@@ -351,20 +353,8 @@ export function buildImportAnalysisPlugin(config: ResolvedConfig): Plugin[] {
       let importMapMapping: Record<string, string> | undefined
       let importMapReverseMapping: Record<string, string> | undefined
       if (config.build.chunkImportMap) {
-        const decoder = new TextDecoder()
-        const importMap = bundle[getImportMapFilename(config)]! as OutputAsset
-        const importMapContent: { imports: Record<string, string> } =
-          JSON.parse(
-            typeof importMap.source === 'string'
-              ? importMap.source
-              : decoder.decode(importMap.source),
-          )
-        importMapMapping = Object.fromEntries(
-          Object.entries(importMapContent.imports).map(([k, v]) => [
-            k.slice(config.base.length),
-            v.slice(config.base.length),
-          ]),
-        )
+        const importMap = getImportMap(bundle, config)!
+        importMapMapping = importMap.mapping
         importMapReverseMapping = Object.fromEntries(
           Object.entries(importMapMapping).map(([k, v]) => [v, k]),
         )
@@ -373,7 +363,7 @@ export function buildImportAnalysisPlugin(config: ResolvedConfig): Plugin[] {
           this.emitFile({
             type: 'asset',
             fileName: 'importmap.legacy.json',
-            source: importMap.source,
+            source: importMap.asset.source,
           })
           delete bundle[getImportMapFilename(config)]
         }

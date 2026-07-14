@@ -148,6 +148,12 @@ test('should load css of nested dynamic import', async () => {
   await expect.poll(() => getColor('.then-css-inner')).toBe('green')
 })
 
+test('should handle object rest destructuring of a dynamic import', async () => {
+  await expect
+    .poll(() => page.textContent('.dynamic-import-rest'))
+    .toMatch('a rest-b rest-c')
+})
+
 test('should work a load path that contains parentheses.', async () => {
   await expect
     .poll(() =>

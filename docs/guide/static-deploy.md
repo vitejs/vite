@@ -302,7 +302,7 @@ Deploy your static site using [Kinsta](https://kinsta.com/static-site-hosting/) 
 
 ## xmit Static Site Hosting
 
-Deploy your static site using [xmit](https://xmit.co) by following this [guide](https://xmit.dev/posts/vite-quickstart/).
+Deploy your static site using [xmit](https://xmit.co) by following this [guide](https://xmit.dev/guides/vite-quickstart/).
 
 ## Zephyr Cloud
 

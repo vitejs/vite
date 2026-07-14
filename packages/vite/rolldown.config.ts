@@ -61,12 +61,6 @@ const sharedNodeOptions = defineConfig({
     format: 'esm',
     externalLiveBindings: false,
   },
-  onwarn(warning, warn) {
-    if (warning.message.includes('Circular dependency')) {
-      return
-    }
-    warn(warning)
-  },
 })
 
 const nodeConfig = defineConfig({
