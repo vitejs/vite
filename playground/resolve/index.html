@@ -136,6 +136,7 @@
 
 <h2>Browser Field</h2>
 <p class="browser">fail</p>
+<p class="browser-field-false-access">fail</p>
 
 <h2>Resolve browser field even if module field exists</h2>
 <p class="browser-module1">fail</p>
@@ -372,8 +373,17 @@
   text('.custom-condition', customConditionMsg)
 
   // should be ok to import a file marked with browser: false
-  import '@vitejs/test-resolve-browser-field/not-browser'
+  import notBrowser from '@vitejs/test-resolve-browser-field/not-browser'
   import '@vitejs/test-resolve-browser-field/multiple.dot.path'
+  // accessing a property of a `browser: false` module must not throw, it should be
+  // `undefined` (same as the production build). Real world example: `object-inspect`
+  // does `require('./util.inspect').custom` with `"./util.inspect.js": false`. (#22022)
+  text(
+    '.browser-field-false-access',
+    notBrowser.anyProperty === undefined
+      ? '[success] access property of browser:false module'
+      : '[fail]',
+  )
 
   // css entry
   import css from 'normalize.css?inline'
