@@ -1572,7 +1572,7 @@ switch(1){}f()
   `)
 })
 
-test('a switch-case local does not shadow an import outside the case block', async () => {
+test('a switch-case local shadows an import only within the case block', async () => {
   expect(
     await ssrTransformSimpleCode(
       `import { createObjectProperty as o } from './ast'
