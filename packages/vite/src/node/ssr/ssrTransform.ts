@@ -369,11 +369,29 @@ async function ssrTransformScript(
           s.prependRight(topNode.start, `const ${id.name} = ${binding};\n`)
         }
       } else if (parent.type === 'CallExpression') {
-        s.update(id.start, id.end, binding)
         // wrap with (0, ...) to avoid method binding `this`
         // https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Operators/Property_accessors#method_binding
-        s.prependRight(id.start, `(0,`)
-        s.appendLeft(id.end, `)`)
+        if (id === parent.callee && !parent.optional) {
+          // V8 anchors the call-site stack frame of a parenthesized callee to
+          // the argument list `(`. Absorb everything from the callee up to the
+          // first argument (or the call's end for an empty argument list) into
+          // the replaced chunk so that `(` maps back to the start of the callee,
+          // keeping stack trace columns aligned with Node (which points to the
+          // callee). Optional calls (`?.()`) are excluded because Node itself
+          // anchors them to the `(`. See #19625.
+          const argsStart = parent.arguments.length
+            ? parent.arguments[0].start
+            : parent.end
+          s.update(
+            id.start,
+            argsStart,
+            `(0,${binding})${code.slice(id.end, argsStart)}`,
+          )
+        } else {
+          s.update(id.start, id.end, binding)
+          s.prependRight(id.start, `(0,`)
+          s.appendLeft(id.end, `)`)
+        }
       } else if (
         // don't transform class name identifier
         !(parent.type === 'ClassExpression' && id === parent.id)

@@ -624,6 +624,61 @@ test('sourcemap is correct for hoisted imports', async () => {
   })
 })
 
+test('sourcemap call site of imported binding maps to callee start', async () => {
+  // When calling an imported binding, the call is wrapped with `(0, ...)` to
+  // avoid binding `this`. V8 anchors the call-site stack frame to the
+  // argument list `(` of such a parenthesized callee. The sourcemap should map
+  // that `(` back to the start of the original callee identifier (matching
+  // Node), instead of the `(`'s own column. See #19625.
+  const wrap = '(0,__vite_ssr_import_0__.fn)'
+
+  // map the call's argument list `(` (the first `(` after the `(0, ...)` wrap)
+  const mapArgParen = (generated: string, map: unknown) => {
+    const afterWrap = generated.indexOf(wrap) + wrap.length
+    const parenIndex = generated.indexOf('(', afterWrap)
+    let line = 1
+    let column = 0
+    for (let i = 0; i < parenIndex; i++) {
+      if (generated[i] === '\n') {
+        line++
+        column = 0
+      } else {
+        column++
+      }
+    }
+    return originalPositionFor(new TraceMap(map as any), { line, column })
+  }
+
+  // The callee `fn` always starts at line 2, column 0. Whitespace and comments
+  // between the callee and the `(` must not change where the frame points.
+  for (const call of [
+    'fn()',
+    'fn ()',
+    'fn /* c */ ()',
+    'fn\n()',
+    'fn(1)',
+    'fn /* c */ (1)',
+  ]) {
+    const code = `import { fn } from 'vue'\n${call}`
+    const result = (await ssrTransform(code, null, 'input.js', code))!
+    expect(mapArgParen(result.code, result.map), call).toMatchObject({
+      source: 'input.js',
+      line: 2,
+      column: 0,
+    })
+  }
+
+  // Optional calls are anchored to the `(` by Node itself (not the callee), so
+  // they must keep mapping to the original `(` (here line 2, column 4).
+  const code = `import { fn } from 'vue'\nfn?.()`
+  const result = (await ssrTransform(code, null, 'input.js', code))!
+  expect(mapArgParen(result.code, result.map)).toMatchObject({
+    source: 'input.js',
+    line: 2,
+    column: 4,
+  })
+})
+
 test('sourcemap with multiple sources', async () => {
   const code = readFixture('bundle.js')
   const map = readFixture('bundle.js.map')

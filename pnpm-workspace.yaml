@@ -19,7 +19,6 @@ patchedDependencies:
   "sirv@3.0.2": "patches/sirv@3.0.2.patch"
   "chokidar@3.6.0": "patches/chokidar@3.6.0.patch"
   "dotenv-expand@13.0.0": "patches/dotenv-expand@13.0.0.patch"
-  "postcss-modules@9.0.0": "patches/postcss-modules@9.0.0.patch"
 peerDependencyRules:
   allowedVersions:
     vite: "*"
@@ -49,7 +48,7 @@ minimumReleaseAge: 1440
 minimumReleaseAgeExclude:
   - rolldown
   - '@rolldown/binding-*'
-  - es-module-lexer@2.3.0
+  - '@voidzero-dev/vitepress-theme@5.0.2'
 blockExoticSubdeps: true
 trustPolicy: no-downgrade
 trustPolicyExclude:
