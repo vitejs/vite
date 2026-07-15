@@ -90,7 +90,7 @@
       "eslint --cache --fix --concurrency auto"
     ]
   },
-  "packageManager": "pnpm@10.34.4",
+  "packageManager": "pnpm@10.33.4",
   "stackblitz": {
     "startCommand": "pnpm --filter='./packages/vite' run dev"
   }
