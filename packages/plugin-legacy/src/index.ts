@@ -190,9 +190,12 @@ const outputOptionsForLegacyChunks =
 function resolveLegacyOutputMinify(
   minify: BuildOptions['minify'],
   supportsOxc: boolean | undefined,
+  target?: BuildOptions['target'],
 ): Rollup.OutputOptions['minify'] {
   const usesOxc = supportsOxc && (minify === 'oxc' || minify === true)
-  return usesOxc ? true : false
+  if (!usesOxc) return false
+  if (target === undefined || target === false) return true
+  return { compress: { target } }
 }
 
 function resolveLegacyBuildMinify(
@@ -437,6 +440,8 @@ function viteLegacyPlugin(options: Options = {}): Plugin[] {
           options.externalSystemJS,
           false,
           supportsLegacyOxcMinification,
+          // Don't use newer syntax for legacy polyfill chunks
+          'es2015',
         )
       }
     },
@@ -944,8 +949,10 @@ async function buildPolyfillChunk(
   excludeSystemJS?: boolean,
   prependModenChunkLegacyGuard?: boolean,
   supportsLegacyOxcMinification?: boolean,
+  overrideMinifyCompressTarget?: BuildOptions['target'],
 ) {
-  const { assetsDir, sourcemap } = buildOptions
+  const { assetsDir, sourcemap, target } = buildOptions
+  const minifyCompressTarget = overrideMinifyCompressTarget ?? target
   const minify = resolveLegacyBuildMinify(
     buildOptions.minify,
     supportsLegacyOxcMinification,
@@ -977,6 +984,7 @@ async function buildPolyfillChunk(
           minify: resolveLegacyOutputMinify(
             buildOptions.minify,
             supportsLegacyOxcMinification,
+            minifyCompressTarget,
           ),
         },
       },
